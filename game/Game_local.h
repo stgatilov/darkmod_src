@@ -933,6 +933,10 @@ public:
 	// Remove any persistent inventory items, clear inter-mission triggers, etc.
 	void					ClearPersistentInfo();
 
+	// Events invoked by the engine on reloadImages or vid_restart
+	void					OnReloadImages();
+	void					OnVidRestart();
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

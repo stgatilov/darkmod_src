@@ -491,6 +491,8 @@ public:
 	virtual void			Hide( void );
 	virtual void			Show( void );
 
+	idPlayerView&			GetPlayerView() { return playerView; }
+
 	void					Init( void );
 	void					PrepareForRestart( void );
 	virtual void			Restart( void );

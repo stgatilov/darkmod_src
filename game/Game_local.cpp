@@ -7270,3 +7270,23 @@ void idGameLocal::ProcessInterMissionTriggers()
 		}
 	}
 }
+
+void idGameLocal::OnReloadImages()
+{
+	idPlayer* player = GetLocalPlayer();
+
+	if (player != NULL)
+	{
+		player->GetPlayerView().OnReloadImages();
+	}
+}
+
+void idGameLocal::OnVidRestart()
+{
+	idPlayer* player = GetLocalPlayer();
+
+	if (player != NULL)
+	{
+		player->GetPlayerView().OnVidRestart();
+	}
+}

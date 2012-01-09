@@ -25,12 +25,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Game_local.h"
 
 #include <boost/bind.hpp>
-#include "sourcehook/sourcehook.h"
-
-extern SourceHook::ISourceHook *g_SHPtr;
-extern int g_PLID;
-
-SH_DECL_HOOK2_void( idCmdSystem, BufferCommandText, SH_NOATTRIB, 0, cmdExecution_t, const char * );
 
 static int MakePowerOfTwo( int num ) {
 	int		pot;
@@ -863,6 +857,15 @@ void idPlayerView::UpdateAmbientLight()
 	// 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
 }
 
+void idPlayerView::OnReloadImages()
+{
+	m_postProcessManager.ScheduleCookedDataUpdate();
+}
+
+void idPlayerView::OnVidRestart()
+{
+	m_postProcessManager.ScheduleCookedDataUpdate();
+}
 
 /*
 ===================
@@ -885,15 +888,12 @@ m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )
 m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
 m_ImageAnisotropyHandle(-1)
 {
-
 	m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
 	m_nFramesToUpdateCookedData = 0;
 
 	// Initialize once this object is created.	
 	this->Initialize();
-
-	SH_ADD_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
 
 	// Get notified on image anisotropy changes
 	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
@@ -905,8 +905,8 @@ m_ImageAnisotropyHandle(-1)
 	}
 }
 
- idPlayerView::dnPostProcessManager::~dnPostProcessManager()
- {
+idPlayerView::dnPostProcessManager::~dnPostProcessManager()
+{
 	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
 
 	if (imageAnistropy != NULL && m_ImageAnisotropyHandle != -1)
@@ -914,17 +914,15 @@ m_ImageAnisotropyHandle(-1)
 		imageAnistropy->RemoveOnModifiedCallback(m_ImageAnisotropyHandle);
 	}
 
- 	// Remove Source Hook before closing. 
-	 SH_REMOVE_HOOK_MEMFUNC(idCmdSystem, BufferCommandText, cmdSystem, this, &idPlayerView::dnPostProcessManager::Hook_BufferCommandText, false );
- }
+}
 
- void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
- {
-	 ScheduleCookedDataUpdate();
- }
+void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
+{
+	ScheduleCookedDataUpdate();
+}
 
- void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
- {
+void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
+{
 	m_nFramesToUpdateCookedData = 1;
 
 	if ( r_postprocess.GetBool())
@@ -935,21 +933,7 @@ m_ImageAnisotropyHandle(-1)
 	{
 		gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_postprocess is enabled.\n", m_nFramesToUpdateCookedData);
 	}
- }
-
- void idPlayerView::dnPostProcessManager::Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText )
- {
-	 // Using idStr::FindText to make sure that we account for trailing white spaces. However, even an invalid command 
-	 // e.g. like "reloadImagesADEAW" would update the cooked data, but that should not be a problem.
-	 if( NULL != a_pcText && 
-		( 0 == idStr::FindText( a_pcText, "reloadimages", false ) || 0 == idStr::FindText(a_pcText, "vid_restart", false ) /*|| 0 == idStr::FindText(a_pcText, "image_anisotropy", false )*/ )
-		 )
-	 {
-		ScheduleCookedDataUpdate();
-	 }
-
-	 RETURN_META(MRES_IGNORED );
- }
+}
 
 void idPlayerView::dnPostProcessManager::Initialize()
 {

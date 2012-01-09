@@ -71,6 +71,10 @@ public:
 
 	void				AddBloodSpray( float duration );
 
+	// Events invoked by the engine on reloadImages or vid_restart
+	void				OnReloadImages();
+	void				OnVidRestart();
+
 private:
 	void				SingleView( idUserInterface *hud, const renderView_t *view, bool drawHUD = true);
 	void				DoubleVision( idUserInterface *hud, const renderView_t *view, int offset );
@@ -153,6 +157,9 @@ private:
 		void Initialize	();						// This method should be invoked when idPlayerView::Restore is called.
 		void Update		();						// Called Every Frame. 
 
+		// Lets the cooked data update the next frame (if activated)
+		void ScheduleCookedDataUpdate	();
+
 	private:
 		// Following methods should not be called by any other object, but itself.
 		void UpdateBackBufferParameters	();		
@@ -162,8 +169,6 @@ private:
 		void Hook_BufferCommandText( cmdExecution_t a_eType, const char *a_pcText );	// Source Hook for idCmdSystem::BufferCommandText - JC.
 
 		void OnImageAnisotropyChanged	();	// gets called when the image_Anisotropy CVAR changes
-
-		void ScheduleCookedDataUpdate	();
 	};
 
 	dnPostProcessManager m_postProcessManager;

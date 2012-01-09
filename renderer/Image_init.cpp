@@ -1075,6 +1075,11 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 		image = globalImages->images[ i ];
 		image->Reload( checkPrecompressed, all );
 	}
+
+	if (game != NULL)
+	{
+		game->OnReloadImages();
+	}
 }
 
 typedef struct {

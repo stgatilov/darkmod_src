@@ -2061,6 +2061,11 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 	// start sound playing again
 	soundSystem->SetMute( false );
+
+	if (game != NULL)
+	{
+		game->OnVidRestart();
+	}
 }
 
 
