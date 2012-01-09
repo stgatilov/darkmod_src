@@ -853,11 +853,6 @@ public:
 	 */
 	float					CalcLightgem(idPlayer*);
 
-	ID_INLINE idList<unsigned char> &GetLightgemRenderBuffer(void)
-	{
-		return m_lightGem.GetLightgemRenderBuffer();
-	}
-
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);

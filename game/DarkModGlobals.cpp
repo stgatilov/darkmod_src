@@ -120,10 +120,6 @@ SourceHook::CSourceHookImpl g_SourceHook;
 SourceHook::ISourceHook *g_SHPtr = NULL;
 int g_PLID = 0;
 
-// stgatilov: Intercepts output of CaptureRenderToFile
-int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath);
-SH_DECL_HOOK4(idFileSystem, WriteFile, SH_NOATTRIB, 0, int, const char *, const void *, int, const char *);
-
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
 CsndProp		g_SoundProp;
@@ -243,9 +239,6 @@ CGlobal::~CGlobal()
 
 void CGlobal::Init()
 {
-	// stgatilov: used for intercepting lightgem render output
-	SH_ADD_HOOK_STATICFUNC(idFileSystem, WriteFile, fileSystem, DM_WriteFile, 0);
-
 	// Report the darkmod path for diagnostic purposes
 	LogString("Darkmod path is %s\r", GetDarkmodPath().c_str());
 
@@ -588,23 +581,6 @@ void DM_Printf(const char* fmt, ...)
 	va_end( arg );
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Console output %s!\r", text);
-}
-
-int DM_WriteFile(const char *relativePath, const void *buffer, int size, const char *basePath)
-{
-	// stgatilov: if it is lightgem render, save it to m_LightGemRenderBuffer
-	if (idStr::Cmp(relativePath, DARKMOD_LG_FILENAME) == 0)
-	{
-		// resize buffer if necessary
-		if (gameLocal.GetLightgemRenderBuffer().Num() != size)
-			gameLocal.GetLightgemRenderBuffer().SetNum(size);
-		// copy image to buffer
-		memcpy(&gameLocal.GetLightgemRenderBuffer()[0], buffer, size);
-		
-		RETURN_META_VALUE(MRES_SUPERCEDE, size);
-	}
-
-	RETURN_META_VALUE(MRES_IGNORED, 0);
 }
 
 void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )

@@ -34,7 +34,6 @@
 #define DARKMOD_LG_VIEWID					-1
 #define DARKMOD_LG_RENDER_WIDTH				50
 
-#define DARKMOD_LG_FILENAME					"TDM_lightgem"
 // The colour is converted to a grayscale value which determines the state
 // of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
@@ -58,12 +57,7 @@ private:
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	idEntityPtr<idEntity>	m_LightgemSurface;
 
-	// stgatilov: The buffer for captured lightgem image
-	idList<unsigned char>	m_LightgemRenderBuffer;
-
 public:
-	ID_INLINE idList<unsigned char> &GetLightgemRenderBuffer ( void ) { return m_LightgemRenderBuffer; }
-	
 	//---------------------------------
 	// Construction/Destruction
 	//---------------------------------
@@ -97,7 +91,7 @@ public:
 	float	Calculate		( idPlayer *	a_pPlayer );
 
 private:
-	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT], float oldColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
 };
 
 #endif // __LIGHTGEM_H__
