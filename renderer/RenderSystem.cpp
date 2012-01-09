@@ -867,6 +867,14 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 	rc->height = height;
 }
 
+void idRenderSystemLocal::GetCurrentRenderCropSize(int& width, int& height)
+{
+	renderCrop_t* rc = &renderCrops[currentRenderCrop];
+
+	width = rc->width;
+	height = rc->height;
+}
+
 /*
 ================
 UnCrop
@@ -976,6 +984,22 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	R_StaticFree( data2 );
 }
 
+void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
+{
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	renderCrop_t *rc = &renderCrops[currentRenderCrop];
+
+	guiModel->EmitFullScreen();
+	guiModel->Clear();
+	R_IssueRenderCommands();
+
+	qglReadBuffer( GL_BACK );
+
+	qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+}
 
 /*
 ==============

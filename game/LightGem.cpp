@@ -166,6 +166,7 @@ float LightGem::Calculate(idPlayer *player)
 	PROFILE_BLOCK_START( LightGem_Calculate_Setup);
 	float dist = cv_lg_distance.GetFloat();			// reasonable distance to get a good look at the player/test model
 	float fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
+	float oldColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 	float fRetVal = 0.0;
 	int playerid;			// player viewid
 	int headid;				// head viewid
@@ -206,7 +207,10 @@ float LightGem::Calculate(idPlayer *player)
 	memset(&rv, 0, sizeof(rv));
 
 	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+	{
 		fColVal[i] = 0.0;
+		oldColVal[i] = 0.0f;
+	}
 
 	for(i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
 		rv.shaderParms[i] = gameLocal.globalShaderParms[i];
@@ -271,7 +275,7 @@ float LightGem::Calculate(idPlayer *player)
 
 	fRetVal = 0.0;
 
-// 	rv1 = rv;
+//	rv1 = rv;
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderTurn %u", m_LightgemShotSpot);
 
 	PROFILE_BLOCK_END( LightGem_Calculate_Setup);
@@ -292,6 +296,7 @@ float LightGem::Calculate(idPlayer *player)
 		}
 
 		m_LightgemShotValue[i] = 0.0;
+		float oldValue = 0;
 
 		PROFILE_BLOCK_START( LightGem_Calculate_ForLoop_switchCase );
 		switch(i)
@@ -334,29 +339,48 @@ float LightGem::Calculate(idPlayer *player)
 			// 45 degree, thus the square shape.
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_RenderScene );
 			renderSystem->CropRenderSize(dim, dim, true);
+
+			// Query the necessary buffer size
+			int width = -1;
+			int height = -1;
+			renderSystem->GetCurrentRenderCropSize(width, height);
+
+			// Ensure image buffer, include extra space for OpenGL padding to word boundaries, 3 channels (RGB) only
+			if (!g_Global.m_RenderImage.Init(width, height, 3)) 
+			{
+				common->Warning("LightGem::Calculate failed, could not init image.");
+				return fRetVal;
+			}
+
 			gameRenderWorld->SetRenderView(&rv);
 			gameRenderWorld->RenderScene(&rv);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_RenderScene );
 
-			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_CaptureRenderToFile );
+			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_CaptureRenderToImage );
+
 			renderSystem->CaptureRenderToFile(DARKMOD_LG_FILENAME);
-			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToFile );
+
+			renderSystem->CaptureRenderToBuffer(g_Global.m_RenderImage.GetImageData());
+			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToImage );
 
 			dp = cv_lg_path.GetString();
-			if(dp != NULL && strlen(dp) != 0)
+			if (dp != NULL && strlen(dp) != 0)
 			{
-				sprintf(dps, "%s_%u.tga", dp, i);
-				dp = dps.c_str();
-				renderSystem->CaptureRenderToFile(dp);
+				sprintf(dps, "screenshots/%s_%u.tga", dp, i);
+				g_Global.m_RenderImage.SaveImageToVfs((idStr(dps) + idStr("_new.tga")).c_str());
+
+				renderSystem->CaptureRenderToFile((idStr(dps) + idStr("_old.tga")).c_str());
 			}
 			else
+			{
 				dp = NULL;
+			}
 
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to lightgem render buffer\n");
 			renderSystem->UnCrop();
 
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_AnalyzeRenderImage );
-			AnalyzeRenderImage(fColVal);
+			AnalyzeRenderImage(fColVal, oldColVal);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_AnalyzeRenderImage );
 
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_Cleanup );
@@ -368,6 +392,16 @@ float LightGem::Calculate(idPlayer *player)
 				if(fColVal[l] > m_LightgemShotValue[i])
 					m_LightgemShotValue[i] = fColVal[l];
 			}
+
+			for(l = 0; l < DARKMOD_LG_MAX_IMAGESPLIT; l++)
+			{
+				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("fColVal[%u] = %f/%f\n", l, fColVal[l], m_LightgemShotValue[i]);
+				if(oldColVal[l] > oldValue)
+					oldValue = oldColVal[l];
+			}
+
+			gameLocal.Printf("Old: %f, New = %f\n", oldValue, m_LightgemShotValue[i]);
+
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_Cleanup );
 		}
 	}
@@ -401,23 +435,26 @@ float LightGem::Calculate(idPlayer *player)
 	return(fRetVal);
 }
 
-void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
+void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT], float oldColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 {
-	Image *im = &g_Global.m_RenderImage ;
+	Image& im = g_Global.m_RenderImage;
 	unsigned long counter[DARKMOD_LG_MAX_IMAGESPLIT];
-	int i, in, k, kn, h, x;
 
-	im->LoadImageFromMemory(&m_LightgemRenderBuffer[0], m_LightgemRenderBuffer.Num(), DARKMOD_LG_FILENAME);
-	const unsigned char *buffer = im->GetImageData();
+	unsigned long oldCounter[DARKMOD_LG_MAX_IMAGESPLIT];
+
+	Image oldimg;
+	oldimg.LoadImageFromMemory(&m_LightgemRenderBuffer[0], m_LightgemRenderBuffer.Num(), DARKMOD_LG_FILENAME);
+	const unsigned char *buffer = im.GetImageData();
+	const unsigned char *oldbuffer = oldimg.GetImageData();
 
 	// This is just an errorhandling to inform the player that something is wrong.
 	// The lightgem will simply blink if the renderbuffer doesn't work.
-	if(buffer == NULL)
+	if (buffer == NULL)
 	{
 		static int indicator = 0;
 		static int lasttime;
 		DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("Unable to read image from lightgem render-buffer\r");
-		for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+		for (int i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
 			fColVal[i] = indicator;
 
 		if(gameLocal.time/1000 != lasttime)
@@ -426,23 +463,25 @@ void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 			indicator = !indicator;
 		}
 
-		goto Quit;
+		return;
 	}
 
-	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+	for (int i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+	{
 		counter[i] = 0;
+		oldCounter[i] = 0;
+	}
 
-	// We always assume a BPP 4 here. We also always assume a square image with an even 
-	// number of lines. An odd number might have only a very small influence though and
-	// most likely get canceled out if a bigger image is used.
-	kn = im->m_Height;
-	h = kn/2;
-	in = im->m_Width;
+	// We always assume a BPP 3 here. We also always assume an even number of lines. 
+	int kn = im.m_Height;
+	int h = kn/2;
+	int in = im.m_Width;
+	int x = 0;
 
 	// First we do the top half
-	for(k = 0; k < h; k++)
+	for (int k = 0; k < h; k++)
 	{
-		for(i = 0; i < in; i++)
+		for (int i = 0; i < in; i++)
 		{
 			if(i < k)
 				x = 0;
@@ -451,17 +490,20 @@ void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 			else
 				x = 1;
 
-			// The order is RGBA.
+			// The order is RGB.
 			fColVal[x] += ((buffer[0] * DARKMOD_LG_RED + buffer[1] * DARKMOD_LG_GREEN + buffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
+			oldColVal[x] += ((oldbuffer[0] * DARKMOD_LG_RED + oldbuffer[1] * DARKMOD_LG_GREEN + oldbuffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
 			counter[x]++;
-			buffer += im->m_Bpp;
+			oldCounter[x]++;
+			buffer += im.m_Bpp;
+			oldbuffer += oldimg.m_Bpp;
 		}
 	}
 
 	// Then we do the bottom half where the triangles are inverted.
-	for(k = (h-1); k >= 0; k--)
+	for (int k = (h-1); k >= 0; k--)
 	{
-		for(i = 0; i < in; i++)
+		for (int i = 0; i < in; i++)
 		{
 			if(i < k)
 				x = 0;
@@ -470,17 +512,22 @@ void LightGem::AnalyzeRenderImage(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT])
 			else
 				x = 3;
 
-			// The order is RGBA.
+			// The order is RGB.
 			fColVal[x] += ((buffer[0] * DARKMOD_LG_RED + buffer[1] * DARKMOD_LG_GREEN + buffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
+			oldColVal[x] += ((oldbuffer[0] * DARKMOD_LG_RED + oldbuffer[1] * DARKMOD_LG_GREEN + oldbuffer[2] * DARKMOD_LG_BLUE) * DARKMOD_LG_SCALE);
 			counter[x]++;
-			buffer += im->m_Bpp;
+			oldCounter[x]++;
+			buffer += im.m_Bpp;
+			oldbuffer += oldimg.m_Bpp;
 		}
 	}
 
 	// Calculate the average for each value
-	for(i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+	for (int i = 0; i < DARKMOD_LG_MAX_IMAGESPLIT; i++)
+	{
 		fColVal[i] = fColVal[i]/counter[i];
+		oldColVal[i] = oldColVal[i]/counter[i];
+	}
 
-Quit:
-	return;
+	gameLocal.Printf("Difference: %f %f %f %f\n", oldColVal[0] - fColVal[0], oldColVal[1] - fColVal[1], oldColVal[2] - fColVal[2], oldColVal[3] - fColVal[3]);
 }

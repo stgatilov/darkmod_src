@@ -97,7 +97,7 @@ public:
 	float	Calculate		( idPlayer *	a_pPlayer );
 
 private:
-	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT], float oldColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
 };
 
 #endif // __LIGHTGEM_H__

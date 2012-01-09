@@ -78,6 +78,56 @@ void Image::Unload()
 	m_Width = m_Height = m_Bpp = 0;
 }
 
+bool Image::Init(int width, int height, int bpp)
+{
+	if (m_Width == width && m_Height == height && m_Bpp == bpp && m_ImageId != IL_IMAGE_NONE)
+	{
+		return true; // nothing to do
+	}
+
+	// Dimensions have changed or no image has been loaded
+	Unload();
+
+	// Generate new image object
+	ilGenImages(1, &m_ImageId);
+	ilBindImage(m_ImageId);
+
+	ILenum format = IL_RGB;
+
+	if (bpp == 3)
+	{
+		format = IL_RGB;
+	}
+	else if (bpp == 4)
+	{
+		format = IL_RGBA;
+	}
+	else
+	{
+		common->Warning("Invalid BPP value %d sent to Image::Init.", bpp);
+		Unload();
+		return false;
+	}
+
+	// Generate a new image using these values
+	ILboolean result = ilTexImage(
+		static_cast<ILuint>(width), static_cast<ILuint>(height), 1, static_cast<ILuint>(bpp),
+		format, IL_UNSIGNED_BYTE, NULL); // no new data to be copied into the image, just allocate the buffer
+	
+	if (result == IL_FALSE)
+	{
+		common->Warning("Could not generate image: error message %s.", ilGetString(ilGetError()));
+		Unload();
+		return false;
+	}
+
+	m_Width = width;
+	m_Height = height;
+	m_Bpp = bpp;
+
+	return true;
+}
+
 bool Image::LoadDevILFromLump(const unsigned char *imageBuffer, unsigned int imageLength) {
 	// generate new DevIL image
 	ilGenImages(1, &m_ImageId);
@@ -208,12 +258,12 @@ unsigned int Image::GetDataLength() const
 	return 0;
 }
 
-const unsigned char* Image::GetImageData() const
+unsigned char* Image::GetImageData()
 {
 	if (m_ImageId != IL_IMAGE_NONE)
 	{
 		ilBindImage(m_ImageId);
-		return static_cast<const unsigned char*>(ilGetData());
+		return static_cast<unsigned char*>(ilGetData());
 	}
 
 	return NULL;
@@ -237,5 +287,5 @@ bool Image::SaveImageToVfs(const char* filename, Format format) const
 	//create directories if necessary
 	fileSystem->CloseFile(fileSystem->OpenFileWrite(filename));
 	//write image file
-	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename), format);
+	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename, "fs_modSavePath"), format);
 }

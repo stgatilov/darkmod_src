@@ -236,10 +236,27 @@ public:
 	// then perform all desired rendering, then capture to an image
 	// if the specified physical dimensions are larger than the current cropped region, they will be cut down to fit
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false ) = 0;
+
+	/**
+	 * greebo: Get the size of the current rendercrop - unless forceDimensions == true has been passed to CropRenderSize()
+	 * the actual dimensions of the rendercrop might differ, so use these to query them, e.g. to allocate a buffer 
+	 * for use with CaptureRenderToBuffer().
+	 */
+	virtual void			GetCurrentRenderCropSize(int& width, int& height) = 0;
+
 	virtual void			CaptureRenderToImage( const char *imageName ) = 0;
 	// fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
 	// to use the default tga loading code without having dimmed down areas in many places
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha = false ) = 0;
+
+	/**
+	 * greebo: Like CaptureRenderToFile, but writes the result into the given byte buffer.
+	 * The buffer is managed by the calling code and needs to provide space for the current rendercrop's 
+	 * size using 3 bytes per pixel (stored in order RGB). Use CropRenderSize(), then GetCurrentRenderCropSize() 
+	 * to receive the necessary size.
+	 */
+	virtual void			CaptureRenderToBuffer(unsigned char* buffer) = 0;
+
 	virtual void			UnCrop() = 0;
 	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 ) = 0;
 
