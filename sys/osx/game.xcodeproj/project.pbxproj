@@ -181,17 +181,6 @@
 		3A537811148E81D7006DC4CE /* SndProp.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E2148E81D7006DC4CE /* SndProp.h */; };
 		3A537812148E81D7006DC4CE /* SndPropLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377E3148E81D7006DC4CE /* SndPropLoader.cpp */; };
 		3A537813148E81D7006DC4CE /* SndPropLoader.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E4148E81D7006DC4CE /* SndPropLoader.h */; };
-		3A537814148E81D7006DC4CE /* FastDelegate.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E6148E81D7006DC4CE /* FastDelegate.h */; };
-		3A537815148E81D7006DC4CE /* sh_list.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E7148E81D7006DC4CE /* sh_list.h */; };
-		3A537816148E81D7006DC4CE /* sh_memfuncinfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E8148E81D7006DC4CE /* sh_memfuncinfo.h */; };
-		3A537817148E81D7006DC4CE /* sh_memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377E9148E81D7006DC4CE /* sh_memory.h */; };
-		3A537818148E81D7006DC4CE /* sh_stack.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377EA148E81D7006DC4CE /* sh_stack.h */; };
-		3A537819148E81D7006DC4CE /* sh_string.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377EB148E81D7006DC4CE /* sh_string.h */; };
-		3A53781A148E81D7006DC4CE /* sh_tinyhash.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377EC148E81D7006DC4CE /* sh_tinyhash.h */; };
-		3A53781B148E81D7006DC4CE /* sh_vector.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377ED148E81D7006DC4CE /* sh_vector.h */; };
-		3A53781C148E81D7006DC4CE /* sourcehook.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377EE148E81D7006DC4CE /* sourcehook.cpp */; };
-		3A53781D148E81D7006DC4CE /* sourcehook.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377EF148E81D7006DC4CE /* sourcehook.h */; };
-		3A53781E148E81D7006DC4CE /* sourcehook_impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377F0148E81D7006DC4CE /* sourcehook_impl.h */; };
 		3A53781F148E81D7006DC4CE /* StaticMulti.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377F1148E81D7006DC4CE /* StaticMulti.cpp */; };
 		3A537820148E81D7006DC4CE /* StaticMulti.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377F2148E81D7006DC4CE /* StaticMulti.h */; };
 		3A537821148E81D7006DC4CE /* Response.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377F4148E81D7006DC4CE /* Response.cpp */; };
@@ -777,17 +766,6 @@
 		3A5377E2148E81D7006DC4CE /* SndProp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SndProp.h; path = ../../game/SndProp.h; sourceTree = SOURCE_ROOT; };
 		3A5377E3148E81D7006DC4CE /* SndPropLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SndPropLoader.cpp; path = ../../game/SndPropLoader.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377E4148E81D7006DC4CE /* SndPropLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SndPropLoader.h; path = ../../game/SndPropLoader.h; sourceTree = SOURCE_ROOT; };
-		3A5377E6148E81D7006DC4CE /* FastDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FastDelegate.h; sourceTree = "<group>"; };
-		3A5377E7148E81D7006DC4CE /* sh_list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_list.h; sourceTree = "<group>"; };
-		3A5377E8148E81D7006DC4CE /* sh_memfuncinfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_memfuncinfo.h; sourceTree = "<group>"; };
-		3A5377E9148E81D7006DC4CE /* sh_memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_memory.h; sourceTree = "<group>"; };
-		3A5377EA148E81D7006DC4CE /* sh_stack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_stack.h; sourceTree = "<group>"; };
-		3A5377EB148E81D7006DC4CE /* sh_string.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_string.h; sourceTree = "<group>"; };
-		3A5377EC148E81D7006DC4CE /* sh_tinyhash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_tinyhash.h; sourceTree = "<group>"; };
-		3A5377ED148E81D7006DC4CE /* sh_vector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sh_vector.h; sourceTree = "<group>"; };
-		3A5377EE148E81D7006DC4CE /* sourcehook.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sourcehook.cpp; sourceTree = "<group>"; };
-		3A5377EF148E81D7006DC4CE /* sourcehook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sourcehook.h; sourceTree = "<group>"; };
-		3A5377F0148E81D7006DC4CE /* sourcehook_impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sourcehook_impl.h; sourceTree = "<group>"; };
 		3A5377F1148E81D7006DC4CE /* StaticMulti.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StaticMulti.cpp; path = ../../game/StaticMulti.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377F2148E81D7006DC4CE /* StaticMulti.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StaticMulti.h; path = ../../game/StaticMulti.h; sourceTree = SOURCE_ROOT; };
 		3A5377F4148E81D7006DC4CE /* Response.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Response.cpp; sourceTree = "<group>"; };
@@ -1320,7 +1298,6 @@
 				3A5377E4148E81D7006DC4CE /* SndPropLoader.h */,
 				81225ABA0912C42F005D34B9 /* Sound.cpp */,
 				81225ABB0912C42F005D34B9 /* Sound.h */,
-				3A5377E5148E81D7006DC4CE /* sourcehook */,
 				3A5377F1148E81D7006DC4CE /* StaticMulti.cpp */,
 				3A5377F2148E81D7006DC4CE /* StaticMulti.h */,
 				3A5377F3148E81D7006DC4CE /* StimResponse */,
@@ -1497,25 +1474,6 @@
 			);
 			name = Shop;
 			path = ../../game/Shop;
-			sourceTree = SOURCE_ROOT;
-		};
-		3A5377E5148E81D7006DC4CE /* sourcehook */ = {
-			isa = PBXGroup;
-			children = (
-				3A5377E6148E81D7006DC4CE /* FastDelegate.h */,
-				3A5377E7148E81D7006DC4CE /* sh_list.h */,
-				3A5377E8148E81D7006DC4CE /* sh_memfuncinfo.h */,
-				3A5377E9148E81D7006DC4CE /* sh_memory.h */,
-				3A5377EA148E81D7006DC4CE /* sh_stack.h */,
-				3A5377EB148E81D7006DC4CE /* sh_string.h */,
-				3A5377EC148E81D7006DC4CE /* sh_tinyhash.h */,
-				3A5377ED148E81D7006DC4CE /* sh_vector.h */,
-				3A5377EE148E81D7006DC4CE /* sourcehook.cpp */,
-				3A5377EF148E81D7006DC4CE /* sourcehook.h */,
-				3A5377F0148E81D7006DC4CE /* sourcehook_impl.h */,
-			);
-			name = sourcehook;
-			path = ../../game/sourcehook;
 			sourceTree = SOURCE_ROOT;
 		};
 		3A5377F3148E81D7006DC4CE /* StimResponse */ = {
@@ -2029,16 +1987,6 @@
 				3A53780F148E81D7006DC4CE /* ShopItem.h in Headers */,
 				3A537811148E81D7006DC4CE /* SndProp.h in Headers */,
 				3A537813148E81D7006DC4CE /* SndPropLoader.h in Headers */,
-				3A537814148E81D7006DC4CE /* FastDelegate.h in Headers */,
-				3A537815148E81D7006DC4CE /* sh_list.h in Headers */,
-				3A537816148E81D7006DC4CE /* sh_memfuncinfo.h in Headers */,
-				3A537817148E81D7006DC4CE /* sh_memory.h in Headers */,
-				3A537818148E81D7006DC4CE /* sh_stack.h in Headers */,
-				3A537819148E81D7006DC4CE /* sh_string.h in Headers */,
-				3A53781A148E81D7006DC4CE /* sh_tinyhash.h in Headers */,
-				3A53781B148E81D7006DC4CE /* sh_vector.h in Headers */,
-				3A53781D148E81D7006DC4CE /* sourcehook.h in Headers */,
-				3A53781E148E81D7006DC4CE /* sourcehook_impl.h in Headers */,
 				3A537820148E81D7006DC4CE /* StaticMulti.h in Headers */,
 				3A537822148E81D7006DC4CE /* Response.h in Headers */,
 				3A537824148E81D7006DC4CE /* ResponseEffect.h in Headers */,
@@ -2414,7 +2362,6 @@
 				3A53780E148E81D7006DC4CE /* ShopItem.cpp in Sources */,
 				3A537810148E81D7006DC4CE /* SndProp.cpp in Sources */,
 				3A537812148E81D7006DC4CE /* SndPropLoader.cpp in Sources */,
-				3A53781C148E81D7006DC4CE /* sourcehook.cpp in Sources */,
 				3A53781F148E81D7006DC4CE /* StaticMulti.cpp in Sources */,
 				3A537821148E81D7006DC4CE /* Response.cpp in Sources */,
 				3A537823148E81D7006DC4CE /* ResponseEffect.cpp in Sources */,
