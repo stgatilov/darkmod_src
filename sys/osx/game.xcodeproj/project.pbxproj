@@ -92,8 +92,6 @@
 		3A53772D148E817F006DC4CE /* HttpConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537723148E817F006DC4CE /* HttpConnection.h */; };
 		3A53772E148E817F006DC4CE /* HttpRequest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537724148E817F006DC4CE /* HttpRequest.cpp */; };
 		3A53772F148E817F006DC4CE /* HttpRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537725148E817F006DC4CE /* HttpRequest.h */; };
-		3A537730148E817F006DC4CE /* I18N.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537726148E817F006DC4CE /* I18N.cpp */; };
-		3A537731148E817F006DC4CE /* I18N.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537727148E817F006DC4CE /* I18N.h */; };
 		3A537766148E8193006DC4CE /* ImageMapManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537732148E8193006DC4CE /* ImageMapManager.cpp */; };
 		3A537767148E8193006DC4CE /* ImageMapManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537733148E8193006DC4CE /* ImageMapManager.h */; };
 		3A537768148E8193006DC4CE /* IniFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537734148E8193006DC4CE /* IniFile.cpp */; };
@@ -688,8 +686,6 @@
 		3A537723148E817F006DC4CE /* HttpConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HttpConnection.h; sourceTree = "<group>"; };
 		3A537724148E817F006DC4CE /* HttpRequest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HttpRequest.cpp; sourceTree = "<group>"; };
 		3A537725148E817F006DC4CE /* HttpRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HttpRequest.h; sourceTree = "<group>"; };
-		3A537726148E817F006DC4CE /* I18N.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = I18N.cpp; path = ../../game/I18N.cpp; sourceTree = SOURCE_ROOT; };
-		3A537727148E817F006DC4CE /* I18N.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = I18N.h; path = ../../game/I18N.h; sourceTree = SOURCE_ROOT; };
 		3A537732148E8193006DC4CE /* ImageMapManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageMapManager.cpp; path = ../../game/ImageMapManager.cpp; sourceTree = SOURCE_ROOT; };
 		3A537733148E8193006DC4CE /* ImageMapManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageMapManager.h; path = ../../game/ImageMapManager.h; sourceTree = SOURCE_ROOT; };
 		3A537734148E8193006DC4CE /* IniFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IniFile.cpp; path = ../../game/IniFile.cpp; sourceTree = SOURCE_ROOT; };
@@ -1239,8 +1235,6 @@
 				3A53771F148E817F006DC4CE /* HidingSpotSearchCollection.cpp */,
 				3A537720148E817F006DC4CE /* HidingSpotSearchCollection.h */,
 				3A537721148E817F006DC4CE /* Http */,
-				3A537726148E817F006DC4CE /* I18N.cpp */,
-				3A537727148E817F006DC4CE /* I18N.h */,
 				81225A740912C42F005D34B9 /* IK.cpp */,
 				81225A750912C42F005D34B9 /* IK.h */,
 				3A537732148E8193006DC4CE /* ImageMapManager.cpp */,
@@ -1990,7 +1984,6 @@
 				3A53772B148E817F006DC4CE /* HidingSpotSearchCollection.h in Headers */,
 				3A53772D148E817F006DC4CE /* HttpConnection.h in Headers */,
 				3A53772F148E817F006DC4CE /* HttpRequest.h in Headers */,
-				3A537731148E817F006DC4CE /* I18N.h in Headers */,
 				3A537767148E8193006DC4CE /* ImageMapManager.h in Headers */,
 				3A537769148E8193006DC4CE /* IniFile.h in Headers */,
 				3A53776B148E8193006DC4CE /* Intersection.h in Headers */,
@@ -2377,7 +2370,6 @@
 				3A53772A148E817F006DC4CE /* HidingSpotSearchCollection.cpp in Sources */,
 				3A53772C148E817F006DC4CE /* HttpConnection.cpp in Sources */,
 				3A53772E148E817F006DC4CE /* HttpRequest.cpp in Sources */,
-				3A537730148E817F006DC4CE /* I18N.cpp in Sources */,
 				3A537766148E8193006DC4CE /* ImageMapManager.cpp in Sources */,
 				3A537768148E8193006DC4CE /* IniFile.cpp in Sources */,
 				3A53776A148E8193006DC4CE /* Intersection.cpp in Sources */,

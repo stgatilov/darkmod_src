@@ -11,6 +11,7 @@
 		3AB238F914B9C568001B0950 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238F814B9C568001B0950 /* libjpeg.a */; };
 		3AB238FF14B9C57A001B0950 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238FE14B9C57A001B0950 /* libpng.a */; };
 		3AB2390314B9C585001B0950 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB2390214B9C585001B0950 /* libziploader.a */; };
+		3AB2390E14B9C7DA001B0950 /* I18N.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2390C14B9C7DA001B0950 /* I18N.cpp */; };
 		812258110912BC79005D34B9 /* snd_efxfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122565F0912BC78005D34B9 /* snd_efxfile.cpp */; };
 		812258120912BC79005D34B9 /* GEWindowWrapper_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */; };
 		812258130912BC79005D34B9 /* edit_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256630912BC79005D34B9 /* edit_stub.cpp */; };
@@ -312,6 +313,8 @@
 		3AB238F814B9C568001B0950 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libjpeg.a; sourceTree = "<absolute>"; };
 		3AB238FE14B9C57A001B0950 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libpng.a; sourceTree = "<absolute>"; };
 		3AB2390214B9C585001B0950 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libziploader.a; sourceTree = "<absolute>"; };
+		3AB2390C14B9C7DA001B0950 /* I18N.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = I18N.cpp; sourceTree = "<group>"; };
+		3AB2390D14B9C7DA001B0950 /* I18N.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = I18N.h; sourceTree = "<group>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -487,7 +490,6 @@
 		812257A40912BC79005D34B9 /* ServerScan.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ServerScan.cpp; sourceTree = "<group>"; };
 		812257A50912BC79005D34B9 /* ServerScan.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = ServerScan.h; sourceTree = "<group>"; };
 		812257A60912BC79005D34B9 /* BuildDefines.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = BuildDefines.h; sourceTree = "<group>"; };
-		812257A70912BC79005D34B9 /* BuildVersion.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = BuildVersion.h; sourceTree = "<group>"; };
 		812257A80912BC79005D34B9 /* CmdSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = CmdSystem.cpp; sourceTree = "<group>"; };
 		812257A90912BC79005D34B9 /* CmdSystem.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = CmdSystem.h; sourceTree = "<group>"; };
 		812257AA0912BC79005D34B9 /* Common.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = Common.cpp; sourceTree = "<group>"; };
@@ -1026,9 +1028,10 @@
 		812257980912BC79005D34B9 /* framework */ = {
 			isa = PBXGroup;
 			children = (
+				3AB2390C14B9C7DA001B0950 /* I18N.cpp */,
+				3AB2390D14B9C7DA001B0950 /* I18N.h */,
 				812257990912BC79005D34B9 /* async */,
 				812257A60912BC79005D34B9 /* BuildDefines.h */,
-				812257A70912BC79005D34B9 /* BuildVersion.h */,
 				812257A80912BC79005D34B9 /* CmdSystem.cpp */,
 				812257A90912BC79005D34B9 /* CmdSystem.h */,
 				812257AA0912BC79005D34B9 /* Common.cpp */,
@@ -1535,6 +1538,7 @@
 				8122590A0912BC79005D34B9 /* CollisionModel_rotate.cpp in Sources */,
 				8122590B0912BC79005D34B9 /* CollisionModel_trace.cpp in Sources */,
 				8122590C0912BC79005D34B9 /* CollisionModel_translate.cpp in Sources */,
+				3AB2390E14B9C7DA001B0950 /* I18N.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
