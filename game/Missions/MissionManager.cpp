@@ -233,7 +233,7 @@ idStr CMissionManager::GetCurrentModName()
 {
 	CModInfoPtr info = GetCurrentModInfo();
 
-	return (info != NULL) ? idStr( gameLocal.m_I18N->Translate( info->modName ) ) : "";
+	return (info != NULL) ? idStr( common->GetLanguageDict()->GetString( info->modName ) ) : "";
 }
 
 int CMissionManager::GetNumNewMods()
@@ -545,11 +545,11 @@ int CMissionManager::ModSortCompare(const int* a, const int* b)
 
 	if (aInfo == NULL || bInfo == NULL) return 0;
 
-	idStr aName = gameLocal.m_I18N->Translate( aInfo->displayName );
-	idStr bName = gameLocal.m_I18N->Translate( bInfo->displayName );
+	idStr aName = common->GetLanguageDict()->GetString( aInfo->displayName );
+	idStr bName = common->GetLanguageDict()->GetString( bInfo->displayName );
 
-	gameLocal.m_I18N->MoveArticlesToBack( aName );
-	gameLocal.m_I18N->MoveArticlesToBack( bName );
+	common->GetI18N()->MoveArticlesToBack( aName );
+	common->GetI18N()->MoveArticlesToBack( bName );
 
 	return aName.Icmp(bName);
 }

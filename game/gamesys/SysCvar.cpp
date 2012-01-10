@@ -127,9 +127,6 @@ idCVar cv_tdm_default_relations_def( "tdm_default_relations_def", "atdm:team_rel
 /**
 * DarkMod GUI CVARs
 **/
-// Tels: can be removed when D3 is open source and we can access sys_lang properly
-idCVar cv_tdm_lang("tdm_lang",	"english",	CVAR_GUI | CVAR_ARCHIVE, "The current used language. Possible values are 'english', 'german', 'russian' etc." );
-
 idCVar cv_tdm_fm_path( "tdm_fm_path", "fms/", CVAR_GUI, "(internal) The path where the fan mission packages are stored.");
 idCVar cv_tdm_fm_desc_file( "tdm_fm_desc_file", "darkmod.txt", CVAR_GUI, "(internal) The description file name of FM packages.");
 idCVar cv_tdm_fm_notes_file( "tdm_fm_notes_file", "readme.txt", CVAR_GUI, "(internal) The readme file name of FM packages.");

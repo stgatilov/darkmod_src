@@ -806,7 +806,7 @@ void idEntity::FixupLocalizedStrings()
 	    idStr spName = spawnArgs.GetString( todo[i], "");
 		if (!spName.IsEmpty())
 		{
-			idStr strTemplate = gameLocal.m_I18N->TemplateFromEnglish( spName );
+			idStr strTemplate = common->GetI18N()->TemplateFromEnglish( spName );
 			// "Maps" resulted in "#str_02390"?
 			if (spName != strTemplate)
 			{
@@ -9925,7 +9925,7 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 		return;
 	}
 
-	gui->SetStateString( key, gameLocal.m_I18N->Translate( src->spawnArgs.GetString( spawnArg, "" ) ) );
+	gui->SetStateString( key, common->GetLanguageDict()->GetString( src->spawnArgs.GetString( spawnArg, "" ) ) );
 	gui->StateChanged( gameLocal.time );
 }
 

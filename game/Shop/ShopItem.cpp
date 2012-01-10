@@ -71,12 +71,12 @@ const idStr& CShopItem::GetID() const {
 
 const idStr CShopItem::GetName() const {
 	// Tels: If nec., translate the name
-	return gameLocal.m_I18N->Translate( this->name );
+	return common->GetLanguageDict()->GetString( this->name );
 }
 
 const idStr CShopItem::GetDescription() const {
 	// Tels: If nec., translate the description
-	return gameLocal.m_I18N->Translate( this->description );
+	return common->GetLanguageDict()->GetString( this->description );
 }
 
 const idStringList& CShopItem::GetClassnames() const

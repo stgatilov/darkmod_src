@@ -18,42 +18,124 @@
  
 ******************************************************************************/
 
-/*
-===============================================================================
-
-  I18N (Internationalization) - manages translations of strings, including FM-
-  specific translations and secondary dictionaries.
-
-  This class is a singleton and initiated/destroyed from gameLocal.
-
-===============================================================================
-*/
-
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "I18N.h"
-#include "sourcehook/sourcehook.h"
 
 // uncomment to have debug printouts
 //#define M_DEBUG 1
 // uncomment to have each Translate() call printed
 //#define T_DEBUG 1
 
-extern SourceHook::ISourceHook *g_SHPtr;
-extern int g_PLID;
+class I18NLocal :
+	public I18N
+{
+public:
+	I18NLocal();
 
-// Declare the detour hook: HOOK0: zero parameters, return value const idLangDict*
-SH_DECL_HOOK0(idCommon, GetLanguageDict, SH_NOATTRIB, 0, const idLangDict*);
+	~I18NLocal();
+
+	/**
+	* Called by idCommon at game init time.
+	*/
+	void				Init();
+
+	// Called at game shutdown time
+	void				Shutdown();
+
+	/**
+	* Attempt to translate a string template in the form of "#str_12345" into
+	* the current user selected language, using the FM specific dict first.
+	*/
+	const char*			Translate( const idStr &in );
+	/**
+	* The same, but with a const char*
+	*/
+	const char*			Translate( const char* in );
+
+	/**
+	* Returns the current active language.
+	*/
+	const idStr&		GetCurrentLanguage() const;
+
+	/**
+	* Print memory usage info.
+    */
+	void				Print() const;
+
+	/**
+	* Load a new character mapping based on the new language. Returns the
+	* number of characters that should be remapped upon dictionary and
+	* readable load time.
+	*/
+	int					LoadCharacterMapping( idStr& lang );
+
+	/**
+	* Set a new laguage (example: "english").
+	*/
+	void				SetLanguage( const char* lang, bool firstTime = false );
+
+	/**
+	* Given an English string like "Maps", returns the "#str_xxxxx" template
+	* string that would result back in "Maps" under English. Can be used to
+	* make translation work even for hard-coded English strings.
+	*/
+	const char*			TemplateFromEnglish( const char* in);
+
+	/**
+	* Changes the given string from "A little House" to "Little House, A",
+	* supporting multiple languages like English, German, French etc.
+	*/
+	void				MoveArticlesToBack(idStr& title);
+
+	/** 
+	* To Intercepts calls to common->GetLanguageDict():
+	*/
+	const idLangDict*	GetLanguageDict() const;
+
+private:
+	// current language
+	idStr				m_lang;
+	// depending on current language, move articles to back of Fm name for display?
+	bool				m_bMoveArticles;
+
+	// A dictionary consisting of the current language + the current FM dict.
+	idLangDict			m_Dict;
+
+	// reverse dictionary for TemplateFromEnglish
+	idDict				m_ReverseDict;
+	// dictionary to map "A ..." to "..., A" for MoveArticlesToBack()
+	idDict				m_ArticlesDict;
+
+	// A table remapping between characters. The string contains two bytes
+	// for each remapped character, Length()/2 is the count.
+	idStr				m_Remap;
+};
+
+I18NLocal	i18nLocal;
+I18N*		i18n = &i18nLocal;
 
 /*
 ===============
-CI18N::CI18N
+I18NLocal::I18NLocal
 ===============
 */
-CI18N::CI18N ( void ) {
+I18NLocal::I18NLocal()
+{}
+
+I18NLocal::~I18NLocal()
+{}
+
+/*
+===============
+I18NLocal::Init
+===============
+*/
+void I18NLocal::Init()
+{
 	// some default values, the object becomes only fully usable after Init(), tho:
 	m_lang = cvarSystem->GetCVarString( "tdm_lang" );
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
@@ -100,82 +182,32 @@ CI18N::CI18N ( void ) {
 	m_ArticlesDict.Set( "The ",	", The" );	// English
 
 	m_Remap.Empty();						// by default, no remaps
-}
 
-CI18N::~CI18N()
-{
-	SH_REMOVE_HOOK_MEMFUNC(idCommon, GetLanguageDict, common, this, &CI18N::GetLanguageDict, false);
-	Print();
-	Shutdown();
-}
-
-/*
-===============
-CI18N::Init
-===============
-*/
-void CI18N::Init ( void ) {
 	// Create the correct dictionary
 	SetLanguage( cvarSystem->GetCVarString( "tdm_lang" ), true );
-
-	// false => pre hook
-	SH_ADD_HOOK_MEMFUNC(idCommon, GetLanguageDict, common, this, &CI18N::GetLanguageDict, false);
 }
 
 /*
 ===============
-CI18N::GetLanguageDict
+I18NLocal::GetLanguageDict
 
 Returns the language dict, so that D3 can use it instead of the system dict. Should
 not be called directly.
 ===============
 */
-const idLangDict* CI18N::GetLanguageDict ( void ) const {
-	RETURN_META_VALUE(MRES_OVERRIDE, &m_Dict);
+const idLangDict* I18NLocal::GetLanguageDict() const
+{
+	return &m_Dict;
 }
 
 /*
 ===============
-CI18N::Save
+I18NLocal::Shutdown
 ===============
 */
-void CI18N::Save( idSaveGame *savefile ) const {
-	//savefile->WriteStr(m_lang);
-}
-
-/*
-===============
-CI18N::Restore
-===============
-*/
-void CI18N::Restore( idRestoreGame *savefile ) {
-#ifdef M_DEBUG
-	common->Printf( "I18N::Restore()\n" );
-#endif
-	// We do nothing here, as the dictionary should not change when
-	// you load a save game.
-}
-
-/*
-===============
-CI18N::Clear
-===============
-*/
-void CI18N::Clear( void ) {
-#ifdef M_DEBUG
-	common->Printf( "I18N::Clear()\n" );
-#endif
-	// Do not clear the dictionary, even tho we are outside a map,
-	// because it might be used for changing menu or HUD strings:
-}
-
-/*
-===============
-CI18N::Shutdown
-===============
-*/
-void CI18N::Shutdown( void ) {
-	common->Printf( "I18N: Shutdown.\n" );
+void I18NLocal::Shutdown()
+{
+	common->Printf( "I18NLocal: Shutdown.\n" );
 	m_lang = "";
 	m_ReverseDict.Clear();
 	m_ArticlesDict.Clear();
@@ -184,12 +216,13 @@ void CI18N::Shutdown( void ) {
 
 /*
 ===============
-CI18N::Print
+I18NLocal::Print
 ===============
 */
-void CI18N::Print( void ) const {
-	common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
-	common->Printf("I18N: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
+void I18NLocal::Print() const
+{
+	common->Printf("I18NLocal: Current language: %s\n", m_lang.c_str() );
+	common->Printf("I18NLocal: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
 	common->Printf(" Main " );
 	m_Dict.Print();
 	common->Printf(" Reverse dict   : " );
@@ -201,62 +234,64 @@ void CI18N::Print( void ) const {
 
 /*
 ===============
-CI18N::Translate
+I18NLocal::Translate
 ===============
 */
-const char* CI18N::Translate( const char* in ) {
+const char* I18NLocal::Translate( const char* in )
+{
 #ifdef T_DEBUG
-	gameLocal.Printf("I18N: Translating '%s'.\n", in == NULL ? "(NULL)" : in);
+	common->Printf("I18NLocal: Translating '%s'.\n", in == NULL ? "(NULL)" : in);
 #endif
 	return m_Dict.GetString( in );				// if not found here, do warn
 }
 
 /*
 ===============
-CI18N::Translate
+I18NLocal::Translate
 ===============
 */
-const char* CI18N::Translate( const idStr &in ) {
+const char* I18NLocal::Translate( const idStr &in ) {
 #ifdef T_DEBUG
-	gameLocal.Printf("I18N: Translating '%s'.\n", in == NULL ? "(NULL)" : in.c_str());
+	common->Printf("I18NLocal: Translating '%s'.\n", in == NULL ? "(NULL)" : in.c_str());
 #endif
 	return m_Dict.GetString( in.c_str() );			// if not found here, do warn
 }
 
 /*
 ===============
-CI18N::TemplateFromEnglish
+I18NLocal::TemplateFromEnglish
 
 If the string is not a template, but an English string, returns a template
 like "#str_01234" from the input. Works only for a limited number of strings
 that appear in the reverse dict.
 ===============
 */
-const char* CI18N::TemplateFromEnglish( const char* in ) {
+const char* I18NLocal::TemplateFromEnglish( const char* in ) {
 #ifdef M_DEBUG
-//	common->Printf( "I18N::TemplateFromEnglish(%s)", in );
+//	common->Printf( "I18NLocal::TemplateFromEnglish(%s)", in );
 #endif
 	return m_ReverseDict.GetString( in, in );
 }
 
 /*
 ===============
-CI18N::GetCurrentLanguage
+I18NLocal::GetCurrentLanguage
 ===============
 */
-const idStr* CI18N::GetCurrentLanguage( void ) const {
-	return &m_lang;
+const idStr& I18NLocal::GetCurrentLanguage() const
+{
+	return m_lang;
 }
 
 /*
 ===============
-CI18N::LoadCharacterMapping
+I18NLocal::LoadCharacterMapping
 
 Loads the character remap table, defaulting to "default.map" if "LANGUAGE.map"
 is not found. This is used to fix bug #2812.
 ===============
 */
-int CI18N::LoadCharacterMapping( idStr& lang ) {
+int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 
 	m_Remap.Empty();		// clear the old mapping
 
@@ -264,13 +299,13 @@ int CI18N::LoadCharacterMapping( idStr& lang ) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	idStr file = "strings/"; file += lang + ".map";
-	int len = idLib::fileSystem->ReadFile( file, (void**)&buffer );
+	int len = fileSystem->ReadFile( file, (void**)&buffer );
 
 	// does not exist
 	if (len <= 0)
 	{
 		file = "strings/default.map";
-		len = idLib::fileSystem->ReadFile( file, (void**)&buffer );
+		len = fileSystem->ReadFile( file, (void**)&buffer );
 	}
 	if (len <= 0)
 	{
@@ -315,26 +350,27 @@ int CI18N::LoadCharacterMapping( idStr& lang ) {
 
 /*
 ===============
-CI18N::SetLanguage
+I18NLocal::SetLanguage
 
 Change the language. Does not check the language here, as to not restrict
 ourselves to a limited support of languages.
 ===============
 */
-void CI18N::SetLanguage( const char* lang, bool firstTime ) {
+void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	if (lang == NULL)
 	{
 		return;
 	}
 #ifdef M_DEBUG
-	common->Printf("I18N: SetLanguage: '%s'.\n", lang);
+	common->Printf("I18NLocal: SetLanguage: '%s'.\n", lang);
 #endif
 
 	// store the new setting
-	idStr oldLang = m_lang; m_lang = lang;
+	idStr oldLang = m_lang; 
+	m_lang = lang;
 
-	// set sysvar tdm_lang
-	cv_tdm_lang.SetString( lang );
+	// set sys_lang
+	cvarSystem->SetCVarString("tdm_lang", lang);
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	idStr newLang = idStr(lang);
@@ -358,31 +394,32 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	// we will load it ourselves.
 	if ( newLang != cvarSystem->GetCVarString( "sys_lang" ) )
 	{
-		common->Printf("I18N: Language '%s' not supported by D3, forcing it.\n", lang);
+		common->Printf("I18NLocal: Language '%s' not supported by D3, forcing it.\n", lang);
 	}
 
 	// build our combined dictionary, first the TDM base dict
 	idStr file = "strings/"; file += m_lang + ".lang";
 	m_Dict.Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() );				// true => clear before load
 
-	idLangDict *FMDict = new idLangDict;
+	idLangDict* fmDict = new idLangDict;
 	file = "strings/fm/"; file += m_lang + ".lang";
-	if ( !FMDict->Load( file, false, m_Remap.Length() / 2, m_Remap.c_str() ) )
+
+	if (!fmDict->Load(file, false, m_Remap.Length() / 2, m_Remap.c_str()))
 	{
-		common->Printf("I18N: '%s' not found.\n", file.c_str() );
+		common->Printf("I18NLocal: '%s' not found.\n", file.c_str() );
 	}
 	else
 	{
 		// else fold the newly loaded strings into the system dict
-		int num = FMDict->GetNumKeyVals( );
+		int num = fmDict->GetNumKeyVals( );
 		const idLangKeyValue*  kv;
 		for (int i = 0; i < num; i++)
 		{	
-			kv = FMDict->GetKeyVal( i );
+			kv = fmDict->GetKeyVal( i );
 			if (kv != NULL)
 			{
 #ifdef M_DEBUG
-				common->Printf("I18N: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
+				common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
 				m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
 			}
@@ -393,18 +430,18 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	// so fall back to the english version by folding these in, too:
 
 	file = "strings/fm/english.lang";
-	if ( !FMDict->Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() ) )
+	if (!fmDict->Load(file, true, m_Remap.Length() / 2, m_Remap.c_str()))
 	{
-		common->Printf("I18N: '%s' not found, skipping it.\n", file.c_str() );
+		common->Printf("I18NLocal: '%s' not found, skipping it.\n", file.c_str() );
 	}
 	else
 	{
 		// else fold the newly loaded strings into the system dict unless they exist already
-		int num = FMDict->GetNumKeyVals( );
+		int num = fmDict->GetNumKeyVals( );
 		const idLangKeyValue*  kv;
 		for (int i = 0; i < num; i++)
 		{	
-			kv = FMDict->GetKeyVal( i );
+			kv = fmDict->GetKeyVal( i );
 			if (kv != NULL)
 			{
 				const char *oldEntry = m_Dict.GetString( kv->key.c_str(), false);
@@ -412,7 +449,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 				if (oldEntry == kv->key.c_str())
 				{
 #ifdef M_DEBUG
-					common->Printf("I18N: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
+					common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
 					m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
 				}
@@ -421,6 +458,7 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	}
 
 	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );
+
 	if ( gui && (!firstTime) && (oldLang != m_lang && (oldLang == "russian" || m_lang == "russian")))
 	{
 		// Restarting the game does not really work, the fonts are still broken
@@ -451,15 +489,24 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
 		// it will land in the Video Settings page
-		gameLocal.Printf("Setting reload\n");
+		common->Printf("Setting reload\n");
 		gui->SetStateInt("reload", 1);
 	}
 	else
 	{
-		gameLocal.Warning("Cannot find guis/mainmenu.gui");
+		common->Warning("Cannot find guis/mainmenu.gui");
 	}
 
-	// Cycle through all active entities and call "onLanguageChanged" on them
+	// TODO: Notify the game about the language change
+	/*
+	if (game != NULL)
+	{
+		game->OnLanguageChanged();
+	}
+	*/
+
+#if 0
+	// From game code: Cycle through all active entities and call "onLanguageChanged" on them
 	// some scriptobjects may implement this function to react on language switching
 	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
 	{
@@ -470,17 +517,18 @@ void CI18N::SetLanguage( const char* lang, bool firstTime ) {
 			thread->Execute();
 		}
 	}
+#endif
 }
 
 /*
 ===============
-CI18N::MoveArticlesToBack
+I18NLocal::MoveArticlesToBack
 
 Changes "A little House" to "Little House, A", supporting multiple languages
 like English, German, French etc.
 ===============
 */
-void CI18N::MoveArticlesToBack(idStr& title)
+void I18NLocal::MoveArticlesToBack(idStr& title)
 {
 	// Do not move articles if the language is italian or polish:
 	if ( !m_bMoveArticles )
@@ -493,14 +541,14 @@ void CI18N::MoveArticlesToBack(idStr& title)
 	// no space, nothing to do
 	if (spaceIdx == -1) { return; }
 
-	idStr Prefix = title.Left( spaceIdx + 1 );
+	idStr prefix = title.Left( spaceIdx + 1 );
 
 	// see if we have Prefix in the dictionary
-	const char* suffix = m_ArticlesDict.GetString( Prefix.c_str(), NULL );
+	const char* suffix = m_ArticlesDict.GetString( prefix.c_str(), NULL );
 	if (suffix != NULL)
 	{
 		// found, remove prefix and append suffix
-		title.StripLeadingOnce( Prefix.c_str() );
+		title.StripLeadingOnce( prefix.c_str() );
 		title += suffix;
 	}
 }

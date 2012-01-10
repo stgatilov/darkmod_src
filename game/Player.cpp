@@ -1821,7 +1821,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	if(hud)
 	{
-		hud->SetStateString( "message", gameLocal.m_I18N->Translate( "#str_02916" ) );
+		hud->SetStateString( "message", common->GetLanguageDict()->GetString( "#str_02916" ) );
 		hud->HandleNamedEvent( "Message" );
 	}
 }
@@ -2566,7 +2566,7 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	}
 	newready = ( idStr::Icmp( userInfo->GetString( "ui_ready" ), "Ready" ) == 0 );
 	if ( ready != newready && gameLocal.mpGame.GetGameState() == idMultiplayerGame::WARMUP && !wantSpectate ) {
-		gameLocal.mpGame.AddChatLine( gameLocal.m_I18N->Translate( "#str_07180" ), userInfo->GetString( "ui_name" ), newready ? gameLocal.m_I18N->Translate( "#str_04300" ) : gameLocal.m_I18N->Translate( "#str_04301" ) );
+		gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( "#str_07180" ), userInfo->GetString( "ui_name" ), newready ? common->GetLanguageDict()->GetString( "#str_04300" ) : common->GetLanguageDict()->GetString( "#str_04301" ) );
 	}
 	ready = newready;
 	team = ( idStr::Icmp( userInfo->GetString( "ui_team" ), "Blue" ) == 0 );
@@ -2688,7 +2688,7 @@ void idPlayer::UpdateHudWeapon( bool flashWeapon )
 	if (!weaponSelected) return; // done here
 
 	// Set the icon and name strings
-	hud->SetStateString("WeaponName", gameLocal.m_I18N->Translate( curWeapon->GetName().c_str() ));
+	hud->SetStateString("WeaponName", common->GetLanguageDict()->GetString( curWeapon->GetName().c_str() ));
 	hud->SetStateString("WeaponIcon", curWeapon->GetIcon().c_str());
 	
 	hud->HandleNamedEvent("OnWeaponChange");
@@ -4112,7 +4112,7 @@ void idPlayer::OnStartShoulderingBody(idEntity* body)
 	}
 
 	// Send the name to the inventory HUD
-	SetGuiString(m_InventoryOverlay, "GrabbedItemName", gameLocal.m_I18N->Translate( itemName ) );
+	SetGuiString(m_InventoryOverlay, "GrabbedItemName", common->GetLanguageDict()->GetString( itemName ) );
 
 	// Notify all GUIs about the event
 	m_overlays.broadcastNamedEvent("OnStartShoulderingBody");
@@ -4321,9 +4321,9 @@ void idPlayer::UpdateLocation( void ) {
 		idLocationEntity *locationEntity = gameLocal.LocationForPoint( GetEyePosition() );
 		if ( locationEntity ) {
 			// Tels: Make it possible that location names like "#str_01234" are automatically translated to "Kitchen"
-			hud->SetStateString( "location", gameLocal.m_I18N->Translate( locationEntity->GetLocation() ) );
+			hud->SetStateString( "location", common->GetLanguageDict()->GetString( locationEntity->GetLocation() ) );
 		} else {
-			hud->SetStateString( "location", gameLocal.m_I18N->Translate( "#str_02911" ) );
+			hud->SetStateString( "location", common->GetLanguageDict()->GetString( "#str_02911" ) );
 		}
 	}
 }
@@ -6652,13 +6652,13 @@ void idPlayer::UpdateInventoryHUD()
 				SetGuiInt(m_InventoryOverlay, "Inventory_GroupVisible", 1);
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemVisible", 1);
 
-				idStr itemName = gameLocal.m_I18N->Translate( curItem->GetName() );
+				idStr itemName = common->GetLanguageDict()->GetString( curItem->GetName() );
 
 				// Tels: translated names can have two lines, so tell the GUI about it
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemNameMultiline", itemName.Find( '\n' ) != -1 ? 1 : 0 );
 
 				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", gameLocal.m_I18N->Translate( curItem->Category()->GetName() ) );
+				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->GetLanguageDict()->GetString( curItem->Category()->GetName() ) );
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", itemName );
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
@@ -11183,7 +11183,7 @@ void idPlayer::SendHUDMessage(const idStr& text)
 		return;
 	}
 
-	hudMessages.Append( gameLocal.m_I18N->Translate( text ) );
+	hudMessages.Append( common->GetLanguageDict()->GetString( text ) );
 }
 
 void idPlayer::SendInventoryPickedUpMessage(const idStr& text)

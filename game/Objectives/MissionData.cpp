@@ -2236,7 +2236,7 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 		CObjective& obj = m_Objectives[index];
 
 		// Set the text (in translated form if the original is "#str_xxxxx")
-		ui->SetStateString(prefix + "_text", gameLocal.m_I18N->Translate( obj.m_text ));
+		ui->SetStateString(prefix + "_text", common->GetLanguageDict()->GetString( obj.m_text ));
 
 		// Set the state, this requires some logic
 		EObjCompletionState state = obj.m_state;
@@ -2317,7 +2317,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 					const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
 						diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
 					// Tels: Make sure we translate the name for the GUI
-					gui->SetStateString(va("diff%dName",diffLevel), gameLocal.m_I18N->Translate( diffName) );
+					gui->SetStateString(va("diff%dName",diffLevel), common->GetLanguageDict()->GetString( diffName) );
 				}
 
 				gui->SetStateBool("SkipShop", worldspawnDict.GetBool("shop_skip", "0"));
@@ -2407,51 +2407,51 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr divider(": ");
 	idStr postfix("");
 
-	key = gameLocal.m_I18N->Translate( "#str_02208" );	// Time
+	key = common->GetLanguageDict()->GetString( "#str_02208" );	// Time
 	value = idStr(GamePlayTimer::TimeToStr(m_Stats.TotalGamePlayTime));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	key = gameLocal.m_I18N->Translate( "#str_02209" );	// Damage Dealt
-	value = idStr(m_Stats.DamageDealt) + space + gameLocal.m_I18N->Translate( "#str_02210" ) + divider + idStr(m_Stats.DamageReceived);	// and received
+	key = common->GetLanguageDict()->GetString( "#str_02209" );	// Damage Dealt
+	value = idStr(m_Stats.DamageDealt) + space + common->GetLanguageDict()->GetString( "#str_02210" ) + divider + idStr(m_Stats.DamageReceived);	// and received
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	/*key = "Damage Received"; 
 	value = idStr(m_Stats.DamageReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
 
-	key = gameLocal.m_I18N->Translate( "#str_02211" );	// Health Restored
+	key = common->GetLanguageDict()->GetString( "#str_02211" );	// Health Restored
 	value = idStr(m_Stats.HealthReceived);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	key = gameLocal.m_I18N->Translate( "#str_02212" );	// Pockets Picked 
+	key = common->GetLanguageDict()->GetString( "#str_02212" );	// Pockets Picked 
 	value = idStr(m_Stats.PocketsPicked);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = gameLocal.m_I18N->Translate( "#str_02213" );	// Loot Acquired
-	value = idStr(m_Stats.GetFoundLootValue()) + gameLocal.m_I18N->Translate( "#str_02214" ) + m_Stats.GetTotalLootInMission();
+	key = common->GetLanguageDict()->GetString( "#str_02213" );	// Loot Acquired
+	value = idStr(m_Stats.GetFoundLootValue()) + common->GetLanguageDict()->GetString( "#str_02214" ) + m_Stats.GetTotalLootInMission();
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line
 
-	key = gameLocal.m_I18N->Translate( "#str_02215" );	// Killed by the Player
+	key = common->GetLanguageDict()->GetString( "#str_02215" );	// Killed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KILL].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = gameLocal.m_I18N->Translate( "#str_02216" );	// KOed by the Player
+	key = common->GetLanguageDict()->GetString( "#str_02216" );	// KOed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KO].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
-	key = gameLocal.m_I18N->Translate( "#str_02217" );	// Bodies found
+	key = common->GetLanguageDict()->GetString( "#str_02217" );	// Bodies found
 	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
-	gui->SetStateString(prefix + idStr(index++), gameLocal.m_I18N->Translate( "#str_02218" ) ); 	// Alerts:
+	gui->SetStateString(prefix + idStr(index++), common->GetLanguageDict()->GetString( "#str_02218" ) ); 	// Alerts:
 	
 	float stealthScore = 0;
 
@@ -2483,29 +2483,29 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 		idStr times;
 		if ( busted == 1 )
 		{
-			sightingBust = va( gameLocal.m_I18N->Translate( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
+			sightingBust = va( common->GetLanguageDict()->GetString( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
 		}
 		else
 		{
-			sightingBust = va( gameLocal.m_I18N->Translate( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
+			sightingBust = va( common->GetLanguageDict()->GetString( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
 		}
 	}
 	else
 	{
-		sightingBust = gameLocal.m_I18N->Translate( "#str_02221" );	// 0 Sightings.
+		sightingBust = common->GetLanguageDict()->GetString( "#str_02221" );	// 0 Sightings.
 		sightingScore = "0";
 	}
 
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + gameLocal.m_I18N->Translate("#str_02223") + ", " +			// Suspicious
-		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + gameLocal.m_I18N->Translate("#str_02224") + ", " + sightingBust;	// Searches
+	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + common->GetLanguageDict()->GetString("#str_02223") + ", " +			// Suspicious
+		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + common->GetLanguageDict()->GetString("#str_02224") + ", " + sightingBust;	// Searches
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	key = gameLocal.m_I18N->Translate( "#str_02225" );	// Stealth Score
+	key = common->GetLanguageDict()->GetString( "#str_02225" );	// Stealth Score
 	value = idStr(stealthScore);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
 
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
-	key = gameLocal.m_I18N->Translate( "#str_02226" );	// Difficulty Level
+	key = common->GetLanguageDict()->GetString( "#str_02226" );	// Difficulty Level
 	value = gameLocal.m_DifficultyManager.GetDifficultyName(difficultyLevel);
 	gui->SetStateString(prefix + idStr(index), key + divider + value + postfix);
 	
@@ -2521,7 +2521,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	index = 30;  // Reset the index to 30 to start .gui lines for "Stealth Score Details" sub-page, starting from gui::listStatistics_item_30.
 	
-	key = gameLocal.m_I18N->Translate( "#str_02227" );		// Stealth Score Details (all alerts * severity)
+	key = common->GetLanguageDict()->GetString( "#str_02227" );		// Stealth Score Details (all alerts * severity)
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
@@ -2547,29 +2547,29 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
-	value = gameLocal.m_I18N->Translate( "#str_02228" );	// Key to Alert Levels:
+	value = common->GetLanguageDict()->GetString( "#str_02228" );	// Key to Alert Levels:
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = idStr("  1. ") + gameLocal.m_I18N->Translate( "#str_02229" );	// Suspicious-1. AI mumbles, continuing on.
+	value = idStr("  1. ") + common->GetLanguageDict()->GetString( "#str_02229" );	// Suspicious-1. AI mumbles, continuing on.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = idStr("  2. ") + gameLocal.m_I18N->Translate( "#str_02230" );	// Suspicious-2. AI mumbles, stops and looks.
+	value = idStr("  2. ") + common->GetLanguageDict()->GetString( "#str_02230" );	// Suspicious-2. AI mumbles, stops and looks.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = idStr("  3. ") + gameLocal.m_I18N->Translate( "#str_02231" );	// Search-1. AI searches.
+	value = idStr("  3. ") + common->GetLanguageDict()->GetString( "#str_02231" );	// Search-1. AI searches.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 
-	value = idStr("  4. ") + gameLocal.m_I18N->Translate( "#str_02232" );	// Search-2. AI searches, runs, draws sword.
+	value = idStr("  4. ") + common->GetLanguageDict()->GetString( "#str_02232" );	// Search-2. AI searches, runs, draws sword.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
 	
-	value = idStr("  5. ") + gameLocal.m_I18N->Translate( "#str_02233" );	// Sighting. AI sees you, attacks if can.
+	value = idStr("  5. ") + common->GetLanguageDict()->GetString( "#str_02233" );	// Sighting. AI sees you, attacks if can.
 	gui->SetStateString(prefix + idStr(index++), value + postfix);
-
-	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
-	idStr alert = idStr( gameLocal.m_I18N->Translate( "#str_02234" ) );	// Alert
+	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
+
+	idStr alert = idStr( common->GetLanguageDict()->GetString( "#str_02234" ) );	// Alert
 	key = alert + " 1." + space + idStr(m_Stats.AIAlerts[1].Overall) + " * 0:";   
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
@@ -2585,7 +2585,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = alert + " 5." + space + idStr(busted) + " * 5:";
 	gui->SetStateString(prefix + idStr(index++), key + postfix);
 	
-	key = gameLocal.m_I18N->Translate( "#str_02235" );			// Stealth Score Total
+	key = common->GetLanguageDict()->GetString( "#str_02235" );			// Stealth Score Total
 	gui->SetStateString(prefix + idStr(index++), key + divider + postfix);
 	
 	//key = "Alerts";

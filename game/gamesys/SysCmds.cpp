@@ -306,7 +306,7 @@ void Cmd_InventoryHotkey_f( const idCmdArgs &args )
 	if( args.Argc() == 2)
 	{
 		// support either "#str_02395" or "Lantern" as input
-		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+		idStr itemName = common->GetI18N()->TemplateFromEnglish( args.Argv(1) );
 		player->SelectInventoryItem( itemName );
 	}
 	else if (args.Argc() == 1)
@@ -349,7 +349,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 	if( args.Argc() == 2)
 	{
 		// support either "#str_02395" or "Lantern" as input
-		idStr itemName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+		idStr itemName = common->GetI18N()->TemplateFromEnglish( args.Argv(1) );
 
 		// Try to lookup the item in the inventory
 		CInventoryItemPtr item = inventory->GetItem( itemName );
@@ -361,7 +361,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		}
 		else
 		{
-			gameLocal.Printf( "%s: Can't find item in player inventory: %s (%s)\n", args.Argv(0), args.Argv(1), gameLocal.m_I18N->Translate(itemName) );
+			gameLocal.Printf( "%s: Can't find item in player inventory: %s (%s)\n", args.Argv(0), args.Argv(1), common->GetLanguageDict()->GetString(itemName) );
 		}
 	}
 }
@@ -414,7 +414,7 @@ void Cmd_InventoryCycleGroup_f( const idCmdArgs &args )
 	if( args.Argc() == 2)
 	{
 		// support either "#str_02391" or "Readables" as input
-		idStr categoryName = gameLocal.m_I18N->TemplateFromEnglish( args.Argv(1) );
+		idStr categoryName = common->GetI18N()->TemplateFromEnglish( args.Argv(1) );
 
 		// Pass the call to the specialised method
 		player->CycleInventoryGroup( categoryName );
@@ -2647,7 +2647,7 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 	if ( idStr::Cmpn( id, STRTABLE_ID, STRTABLE_ID_LENGTH ) != 0 ) {
 		id = STRTABLE_ID + id;
 	}
-	gameLocal.mpGame.AddChatLine( gameLocal.m_I18N->Translate( id ), "<nothing>", "<nothing>", "<nothing>" );	
+	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );	
 }
 
 void Cmd_SetClipMask(const idCmdArgs& args)

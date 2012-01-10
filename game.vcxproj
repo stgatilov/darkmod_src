@@ -438,7 +438,6 @@
     <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
     <ClCompile Include="game\Http\HttpConnection.cpp" />
     <ClCompile Include="game\Http\HttpRequest.cpp" />
-    <ClCompile Include="game\I18N.cpp" />
     <ClCompile Include="game\IK.cpp" />
     <ClCompile Include="game\ImageMapManager.cpp" />
     <ClCompile Include="game\IniFile.cpp" />
@@ -696,7 +695,6 @@
     <ClInclude Include="game\HidingSpotSearchCollection.h" />
     <ClInclude Include="game\Http\HttpConnection.h" />
     <ClInclude Include="game\Http\HttpRequest.h" />
-    <ClInclude Include="game\I18N.h" />
     <ClInclude Include="game\IK.h" />
     <ClInclude Include="game\ImageMapManager.h" />
     <ClInclude Include="game\IniFile.h" />

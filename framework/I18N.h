@@ -29,102 +29,74 @@
   I18N (Internationalization) - manages translations of strings, including FM-
   specific translations and secondary dictionaries.
 
-  This class is a singleton and initiated/destroyed from gameLocal.
-
 ===============================================================================
 */
 
-class CI18N {
+class I18N
+{
 public:
-	//CLASS_PROTOTYPE( CI18N );
-
-						CI18N( void );
-
-						~CI18N();
-
-	void				Save( idSaveGame *savefile ) const;
-	void				Restore( idRestoreGame *savefile );
+	virtual	~I18N() {}
 
 	/**
-	* Called by gameLocal at system startup.
+	* Initialise language and some dictionaries.
 	*/
-	void				Init ( void );
+	virtual void				Init() = 0;
+
 	/**
-    * Called by gameLocal at map shutdown.
-    */
-	void				Clear ( void );
+	 * Shutdown the system, free any dictionaries.
+	 */
+	virtual void				Shutdown() = 0;
 
 	/**
 	* Attempt to translate a string template in the form of "#str_12345" into
 	* the current user selected language, using the FM specific dict first.
 	*/
-	const char*			Translate( const idStr &in );
+	virtual const char*			Translate( const idStr& in ) = 0;
+	
 	/**
 	* The same, but with a const char*
 	*/
-	const char*			Translate( const char* in );
+	virtual const char*			Translate( const char* in ) = 0;
 
 	/**
 	* Returns the current active language.
 	*/
-	const idStr*		GetCurrentLanguage( void ) const;
+	virtual const idStr&		GetCurrentLanguage() const = 0;
 
 	/**
 	* Print memory usage info.
     */
-	void				Print( void ) const;
+	virtual void				Print() const = 0;
 
 	/**
 	* Load a new character mapping based on the new language. Returns the
 	* number of characters that should be remapped upon dictionary and
 	* readable load time.
 	*/
-	int				LoadCharacterMapping( idStr& lang );
+	virtual int					LoadCharacterMapping( idStr& lang ) = 0;
 
 	/**
 	* Set a new laguage (example: "english").
 	*/
-	void				SetLanguage( const char* lang, bool firstTime = false );
+	virtual void				SetLanguage( const char* lang, bool firstTime = false ) = 0;
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template
 	* string that would result back in "Maps" under English. Can be used to
 	* make translation work even for hard-coded English strings.
 	*/
-	const char*			TemplateFromEnglish( const char* in);
+	virtual const char*			TemplateFromEnglish( const char* in) = 0;
 
 	/**
 	* Changes the given string from "A little House" to "Little House, A",
 	* supporting multiple languages like English, German, French etc.
 	*/
-	void				MoveArticlesToBack(idStr& title);
+	virtual void				MoveArticlesToBack(idStr& title) = 0;
 
 	/** 
-	* To Intercepts calls to common->GetLanguageDict():
+	* Replaces the legacy common->GetLanguageDict():
 	*/
-	const idLangDict*	GetLanguageDict(void) const;
-
-
-private:
-	// Called at the end of the game
-	void				Shutdown();
-
-	// current language
-	idStr				m_lang;
-	// depending on current language, move articles to back of Fm name for display?
-	bool				m_bMoveArticles;
-
-	// A dictionary consisting of the current language + the current FM dict.
-	idLangDict			m_Dict;
-
-	// reverse dictionary for TemplateFromEnglish
-	idDict				m_ReverseDict;
-	// dictionary to map "A ..." to "..., A" for MoveArticlesToBack()
-	idDict				m_ArticlesDict;
-
-	// A table remapping between characters. The string contains two bytes
-	// for each remapped character, Length()/2 is the count.
-	idStr				m_Remap;
+	virtual const idLangDict*	GetLanguageDict() const = 0;
 };
 
 #endif /* !__DARKMOD_I18N_H__ */

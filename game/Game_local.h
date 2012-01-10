@@ -125,7 +125,6 @@ void gameError( const char *fmt, ... );
 #include "ImageMapManager.h"
 #include "LightController.h"
 #include "ModMenu.h"
-#include "I18N.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -167,8 +166,6 @@ class ImageMapManager;
 typedef boost::shared_ptr<ImageMapManager> ImageMapManagerPtr;
 class CLightController;
 typedef boost::shared_ptr<CLightController> CLightControllerPtr;
-class CI18N;
-typedef boost::shared_ptr<CI18N> CI18NPtr;
 
 // Forward declare the Conversation System
 namespace ai { 
@@ -524,11 +521,6 @@ public:
 	 * tels: The light controller instance, used to control local ambient lights.
 	 */
 	CLightControllerPtr		m_LightController;
-
-	/**
-	 * tels: The I18N object (for translation etc.)
-	 */
-	CI18NPtr				m_I18N;
 
 	/**
 	 * greebo: The class handling the main menu's shop GUI.

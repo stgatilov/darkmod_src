@@ -97,7 +97,7 @@ idStr DifficultyManager::GetDifficultyName(int level)
 	if (_difficultyNames[level].Length() > 0)
 	{
 		// Tels: Attempt to translate the name, in case the mapper used something like "#str_01234"
-		return gameLocal.m_I18N->Translate( _difficultyNames[level] );
+		return common->GetLanguageDict()->GetString( _difficultyNames[level] );
 	}
 	else // return default names from entityDef
 	{
@@ -105,7 +105,7 @@ idStr DifficultyManager::GetDifficultyName(int level)
 		const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
 
 		// Tels: Translate default difficulty names
-		return gameLocal.m_I18N->Translate( diffDef->dict.GetString(va("diff%ddefault", level), "") );
+		return common->GetLanguageDict()->GetString( diffDef->dict.GetString(va("diff%ddefault", level), "") );
 	}
 }
 

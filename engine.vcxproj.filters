@@ -583,6 +583,9 @@
       <Filter>Ui</Filter>
     </ClInclude>
     <ClInclude Include="framework\precompiled_engine.h" />
+    <ClInclude Include="framework\I18N.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1654,6 +1657,9 @@
       <Filter>Ui</Filter>
     </ClCompile>
     <ClCompile Include="framework\precompiled_engine.cpp" />
+    <ClCompile Include="framework\I18N.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="openal\idal.py">

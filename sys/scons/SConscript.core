@@ -116,6 +116,7 @@ framework_string = ' \
 	EventLoop.cpp \
 	File.cpp \
 	FileSystem.cpp \
+	I18N.cpp \
 	KeyInput.cpp \
 	Unzip.cpp \
 	UsercmdGen.cpp \

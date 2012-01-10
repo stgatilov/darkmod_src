@@ -88,7 +88,6 @@ extern idCVar cv_tdm_menu_music;
 extern idCVar cv_tdm_show_trainer_messages;
 
 extern idCVar cv_tdm_default_relations_def;
-extern idCVar cv_tdm_lang;
 extern idCVar cv_tdm_fm_path;
 extern idCVar cv_tdm_fm_desc_file;
 extern idCVar cv_tdm_fm_current_file;

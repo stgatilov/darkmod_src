@@ -100,6 +100,8 @@ struct MemInfo_t {
 	int				soundAssetsTotal;
 };
 
+class I18N;
+
 class idCommon {
 public:
 	virtual						~idCommon( void ) {}
@@ -186,8 +188,11 @@ public:
 								// static internal errors or cases where the system may be corrupted.
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 
-								// Returns a pointer to the dictionary with language specific strings.
+								// DEPRECATED Returns a pointer to the dictionary with language specific strings.
 	virtual const idLangDict *	GetLanguageDict( void ) = 0;
+
+								// greebo: Provides access to I18N-related methods
+	virtual I18N*				GetI18N() = 0;
 
 								// Returns key bound to the command
 	virtual const char *		KeysFromBinding( const char *bind ) = 0;

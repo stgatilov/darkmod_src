@@ -300,11 +300,7 @@ void idGameLocal::Clear( void )
 	{
 		m_LightController->Clear();
 	}
-	if (m_I18N)
-	{
-		m_I18N->Clear();
-	}
-
+	
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Clear();
 #endif
@@ -526,12 +522,6 @@ void idGameLocal::Init( void ) {
 	// Initialize the LightGem - J.C.Denton
 	m_lightGem.Initialize();
 
-	// Initialise the I18N (internationalization) code (before the Mission Manager!)
-	m_I18N = CI18NPtr(new CI18N);
-	m_I18N->Init();
-	const idStr *tdm_lang = m_I18N->GetCurrentLanguage();
-	Printf("Current language: %s\n", tdm_lang->c_str() );
-
 	// Initialise the mission manager
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
 	m_MissionManager->Init();
@@ -585,8 +575,8 @@ void idGameLocal::CheckTDMVersion()
 	{
 		Printf("HTTP requests disabled, skipping TDM version check.\n");
 
-		msg.title = m_I18N->Translate( "#str_02136" );
-		msg.message = m_I18N->Translate( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
+		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );
+		msg.message = common->GetLanguageDict()->GetString( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -601,10 +591,10 @@ void idGameLocal::CheckTDMVersion()
 	// Check Request Status
 	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		Printf("%s.\n", m_I18N->Translate( "#str_2002") );	// Connection Error
+		Printf("%s.\n", common->GetLanguageDict()->GetString( "#str_2002") );	// Connection Error
 
-		msg.title = m_I18N->Translate( "#str_02136" );		// Version Check Failed
-		msg.message = m_I18N->Translate( "#str_02132" );	// Cannot connect to server.
+		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );		// Version Check Failed
+		msg.message = common->GetLanguageDict()->GetString( "#str_02132" );	// Cannot connect to server.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -619,28 +609,28 @@ void idGameLocal::CheckTDMVersion()
 		int major = node.node().attribute("major").as_int();
 		int minor = node.node().attribute("minor").as_int();
 
-		msg.title = va( m_I18N->Translate( "#str_02132" ), major, minor );	// Most recent version is: 
+		msg.title = va( common->GetLanguageDict()->GetString( "#str_02132" ), major, minor );	// Most recent version is: 
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
 		{
 		case EQUAL:
 			// "Your version %d.%02d is up to date."
-			msg.message = va( m_I18N->Translate( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->GetLanguageDict()->GetString( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case OLDER:
 			// "Your version %d.%02d needs updating."
-			msg.message = va( m_I18N->Translate( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->GetLanguageDict()->GetString( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case NEWER:
 			// "Your version %d.%02d is newer than the most recently published one."
-			msg.message = va( m_I18N->Translate( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->GetLanguageDict()->GetString( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		};
 	}
 	else
 	{
-		msg.title = m_I18N->Translate( "#str_02136" );	// "Version Check Failed"
-		msg.message = m_I18N->Translate( "#str_02137" );	// "Couldn't find current version tag."
+		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );	// "Version Check Failed"
+		msg.message = common->GetLanguageDict()->GetString( "#str_02137" );	// "Couldn't find current version tag."
 
 	}
 
@@ -704,9 +694,6 @@ void idGameLocal::Shutdown( void ) {
 
 	// Destroy the light controller
 	m_LightController.reset();
-
-	// Destroy the I18N system
-	m_I18N.reset();
 
 	// Clear http connection
 	m_HttpConnection.reset();
@@ -839,9 +826,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// Save whatever the light controller needs
 	m_LightController->Save(&savegame);
-
-	// Save whatever the I18N needs
-	m_I18N->Save(&savegame);
 
 	m_DifficultyManager.Save(&savegame);
 
@@ -1619,7 +1603,7 @@ bool idGameLocal::NextMap( void ) {
 	int					i;
 
 	if ( !g_mapCycle.GetString()[0] ) {
-		Printf( m_I18N->Translate( "#str_04294" ) );
+		Printf( common->GetLanguageDict()->GetString( "#str_04294" ) );
 		return false;
 	}
 	if ( fileSystem->ReadFile( g_mapCycle.GetString(), NULL, NULL ) < 0 ) {
@@ -1874,7 +1858,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	m_ModelGenerator->Restore(&savegame);
 	m_ImageMapManager->Restore(&savegame);
 	m_LightController->Restore(&savegame);
-	m_I18N->Restore(&savegame);
 
 	m_DifficultyManager.Restore(&savegame);
 
@@ -2319,10 +2302,6 @@ void idGameLocal::MapShutdown( void ) {
 	if (m_LightController != NULL)
 	{
 		m_LightController->Clear();
-	}
-	if (m_I18N != NULL)
-	{
-		m_I18N->Clear();
 	}
 
 	// greebo: Don't clear the shop - MapShutdown() is called right before loading a map
@@ -3693,23 +3672,23 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
 		ui->SetStateBool("MsgBoxRightButtonVisible", false);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
-		ui->SetStateString("MsgBoxMiddleButtonText", m_I18N->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxMiddleButtonText", common->GetLanguageDict()->GetString("#str_04339"));	// OK
 		break;
 	case GuiMessage::MSG_OK_CANCEL:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_04339"));	// OK
-		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_07203"));	// Cancel
+		ui->SetStateString("MsgBoxLeftButtonText", common->GetLanguageDict()->GetString("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxRightButtonText", common->GetLanguageDict()->GetString("#str_07203"));	// Cancel
 		break;
 	case GuiMessage::MSG_YES_NO:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", m_I18N->Translate("#str_02501"));	// Yes
-		ui->SetStateString("MsgBoxRightButtonText", m_I18N->Translate("#str_02502"));	// No
+		ui->SetStateString("MsgBoxLeftButtonText", common->GetLanguageDict()->GetString("#str_02501"));	// Yes
+		ui->SetStateString("MsgBoxRightButtonText", common->GetLanguageDict()->GetString("#str_02502"));	// No
 		break;
 	};
 
@@ -3761,7 +3740,7 @@ Init a GUI or CVAR variable (including GUI text) from a list of choices and valu
 bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step)
 {
 	idStr cvarName = varName;
-	std::string choices = gameLocal.m_I18N->Translate( inChoices );
+	std::string choices = common->GetLanguageDict()->GetString( inChoices );
 	std::string values  = inValues;
 
 	// figure out the current setting
@@ -3787,7 +3766,7 @@ bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, cons
 	if (choiceParts.size() != valuesParts.size())
 	{
 		gameLocal.Warning("The choices string array '%s' does not have the same number of elements as the values array '%s' for %s!", 
-				choices.c_str(), values.c_str(), cvarName.c_str() ); //gameLocal.m_I18N->Translate( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
+				choices.c_str(), values.c_str(), cvarName.c_str() ); //common->GetLanguageDict()->GetString( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
 		return false;
 	}
 	if (choiceParts.size() <= 0)
@@ -4434,8 +4413,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	{
 		gui->SetStateString("tdmversiontext", va("TDM %d.%02d", TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 		UpdateGUIScaling(gui);
-		gui->SetStateString( "tdm_lang", m_I18N->GetCurrentLanguage()->c_str() );
-		idStr gui_lang = "lang_"; gui_lang += m_I18N->GetCurrentLanguage()->c_str();
+		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
+		idStr gui_lang = "lang_"; gui_lang += common->GetI18N()->GetCurrentLanguage().c_str();
 		gui->SetStateInt( gui_lang, 1 );
 	}
 	else if (cmd == "check_tdm_version")
@@ -4471,24 +4450,24 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	}
 	else if (cmd == "setlang")
 	{
-		const idStr *oldLang = m_I18N->GetCurrentLanguage();
+		const idStr& oldLang = common->GetI18N()->GetCurrentLanguage();
 		idStr newLang = m_GUICommandStack[1];
 
 		// reset lang_oldname and enable lang_newname
 		idStr gui_lang = "lang_"; gui_lang += newLang;
 //		Printf ("Setting %s to 1.\n", gui_lang.c_str() );
 		gui->SetStateInt( gui_lang, 1 );
-		gui_lang = "lang_"; gui_lang += oldLang->c_str();
+		gui_lang = "lang_"; gui_lang += oldLang.c_str();
 //		Printf ("Setting %s to 0.\n", gui_lang.c_str() );
 		gui->SetStateInt( gui_lang, 0 );
 
 		// do this after the step above, or oldLang will be incorrect:
 		Printf("GUI: Language changed to %s.\n", newLang.c_str() );
 		// set the new language and store it, will also reload the GUI
-		gameLocal.m_I18N->SetLanguage( newLang.c_str() );
+		common->GetI18N()->SetLanguage( newLang.c_str() );
 
 		// store it, so the GUI can access it
-		gui->SetStateString( "tdm_lang", m_I18N->GetCurrentLanguage()->c_str() );
+		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
 	}
 	// tels: #2796 build our own "choicedef" as integer/boolean option.
 	else if (cmd == "initchoice" || cmd == "stepchoice")

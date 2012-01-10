@@ -112,6 +112,7 @@
 #include "../framework/CmdSystem.h"
 #include "../framework/CVarSystem.h"
 #include "../framework/Common.h"
+#include "../framework/I18N.h"
 #include "../framework/File.h"
 #include "../framework/FileSystem.h"
 #include "../framework/UsercmdGen.h"
