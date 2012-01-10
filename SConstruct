@@ -15,7 +15,7 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT' ]
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH' ]
 
 # global build mode ------------------------------
 
@@ -68,6 +68,9 @@ NOCONF (default 0, not saved)
 	
 SILENT ( default 0, saved )
 	hide the compiler output, unless error
+
+NO_GCH (default 0)
+	Don't use precompiled headers when building.
 """
 
 if ( not g_sdk ):
@@ -179,6 +182,7 @@ NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
 SILENT = '0'
+NO_GCH = '0'
 
 # end default settings ---------------------------
 
@@ -492,7 +496,7 @@ curl_lib = []
 # if idlib should produce PIC objects ( depending on core or game inclusion )
 local_idlibpic = 0
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH'
 
 # end general configuration ----------------------
 

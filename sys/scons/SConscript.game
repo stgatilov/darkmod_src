@@ -312,11 +312,12 @@ local_env.Append(LIBS = [
 	File('#/linux/boost/lib/libboost_thread.a')
 ])
 
-# greebo: Set up our precompiled header
-GCH_CPPFLAGS = local_env['CPPFLAGS']
-GCH_CPPFLAGS += ['-fPIC']
+if NO_GCH == '0':
+	# greebo: Set up our precompiled header
+	GCH_CPPFLAGS = local_env['CPPFLAGS']
+	GCH_CPPFLAGS += ['-fPIC']
 
-local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
+	local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
 
 # greebo: Use custom compiled devIL in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
