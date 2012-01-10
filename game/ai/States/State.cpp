@@ -82,6 +82,7 @@ const float CHANCE_FOR_GREETING = 0.3f; // 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000; // ms - grayman #2603
 const int REMARK_DISTANCE = 200; // grayman #2903 - no greeting or warning if farther apart than this
 const int MIN_DIST_TO_LOWLIGHT_DOOR = 300; // grayman #2959 - AI must be closer than this to "see" a low-light door
+const int FRIEND_NEAR_DOOR = 150; // grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
 
 //----------------------------------------------------------------------------------------
 // grayman #2903 - no warning if the sender is farther than this horizontally from the alert spot (one per alert type)
@@ -2674,20 +2675,34 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	idEntity* lastUsedBy = door->GetLastUsedBy();
 	if ( lastUsedBy != NULL )
 	{
-		// grayman #1327 - Was the door last used by a friend we can see?
+		// grayman #1327 - Was the door last used by a friend we can see,
+		// or a friend we can't see but who is near the door?
 		// If so, we assume they're the one who opened the door, so it's
 		// not suspicious. CanSeeExt( lastUsedBy, false, false )
 		// doesn't care about FOV (lastUsedBy can be behind owner) and we
 		// don't care how bright it is.
 
-		if ( owner->IsFriend( lastUsedBy ) && owner->CanSeeExt( lastUsedBy, false, false ) )
+		if ( owner->IsFriend( lastUsedBy ) )
 		{
-			// A friend handled the door last, and since I can still see him
-			// he's probably handling the door now, since stims arrive when
-			// the door is opened. Do nothing.
+			if ( owner->CanSeeExt( lastUsedBy, false, false ) )
+			{
+				// A friend handled the door last, and since I can still see him
+				// he's probably handling the door now, since stims arrive when
+				// the door is opened. Do nothing.
 
-			stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
-			return; // a friend I can see opened the door, so all is well
+				stimSource->IgnoreResponse(ST_VISUAL, owner);
+				return; // a friend I can see opened the door, so all is well
+			}
+
+			// can't see him, but is he near the door?
+
+			idVec3 friendOrigin = lastUsedBy->GetPhysics()->GetOrigin();
+			idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
+			if ( (friendOrigin - doorOrigin).LengthSqr() <= FRIEND_NEAR_DOOR*FRIEND_NEAR_DOOR )
+			{
+				stimSource->IgnoreResponse(ST_VISUAL, owner);
+				return; // a friend I can see opened the door, so all is well
+			}
 		}
 	}
 
