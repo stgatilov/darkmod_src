@@ -1713,10 +1713,6 @@ idCommonLocal::GetLanguageDict
 */
 const idLangDict *idCommonLocal::GetLanguageDict( void )
 {
-#ifdef _DEBUG
-	common->Printf("Deprecated call to idCommon::GetLanguageDict");
-#endif
-
 #if 0
 	return &languageDict;
 #endif

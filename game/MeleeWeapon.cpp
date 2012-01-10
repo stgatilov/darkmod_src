@@ -249,12 +249,6 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 		// otherwise, we still don't have a valid collision, just an instanced clipmodel already inside something
 		// fill in best guesses for collision data
 
-		// hack to fix crashes in closed Id code, set material hit to NULL
-		// AI don't SEEM to crash and we want to know armour type was hit, so exception for AI:
-		// Update: Nope, AI crash too.  TODO: Fix this when D3 becomes open source
-		// if( !ent->IsType(idActor::Type) )
-		tr.c.material = NULL;
-
 		// the point is also inaccruate sometimes, set to origin of the weapon object
 		// ishtvan 1/2010: This should be more accurate, to use center of clipmodel
 		// tr.c.point = m_OldOrigin;
