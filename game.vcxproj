@@ -537,7 +537,6 @@
     <ClCompile Include="game\SndProp.cpp" />
     <ClCompile Include="game\SndPropLoader.cpp" />
     <ClCompile Include="game\Sound.cpp" />
-    <ClCompile Include="game\sourcehook\sourcehook.cpp" />
     <ClCompile Include="game\StaticMulti.cpp" />
     <ClCompile Include="game\StimResponse\Response.cpp" />
     <ClCompile Include="game\StimResponse\ResponseEffect.cpp" />
@@ -787,16 +786,6 @@
     <ClInclude Include="game\SndProp.h" />
     <ClInclude Include="game\SndPropLoader.h" />
     <ClInclude Include="game\Sound.h" />
-    <ClInclude Include="game\sourcehook\FastDelegate.h" />
-    <ClInclude Include="game\sourcehook\sh_list.h" />
-    <ClInclude Include="game\sourcehook\sh_memfuncinfo.h" />
-    <ClInclude Include="game\sourcehook\sh_memory.h" />
-    <ClInclude Include="game\sourcehook\sh_stack.h" />
-    <ClInclude Include="game\sourcehook\sh_string.h" />
-    <ClInclude Include="game\sourcehook\sh_tinyhash.h" />
-    <ClInclude Include="game\sourcehook\sh_vector.h" />
-    <ClInclude Include="game\sourcehook\sourcehook.h" />
-    <ClInclude Include="game\sourcehook\sourcehook_impl.h" />
     <ClInclude Include="game\StaticMulti.h" />
     <ClInclude Include="game\StimResponse\Response.h" />
     <ClInclude Include="game\StimResponse\ResponseEffect.h" />

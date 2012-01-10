@@ -35,8 +35,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Relations.h"
 #include "ModMenu.h"
 #include "ai/AI.h"
-#include "sourcehook/sourcehook.h"
-#include "sourcehook/sourcehook_impl.h"
 #include "IniFile.h"
 #include <boost/filesystem.hpp>
 
@@ -115,10 +113,6 @@ static const char *LCString[LC_COUNT+1] = {
 };
 
 #define INI_DEBUG_SECTION "Debug"
-
-SourceHook::CSourceHookImpl g_SourceHook;
-SourceHook::ISourceHook *g_SHPtr = NULL;
-int g_PLID = 0;
 
 // declare various global objects
 CsndPropLoader	g_SoundPropLoader;
@@ -224,9 +218,6 @@ CGlobal::CGlobal()
 	{
 		m_AcuityHash.Add( m_AcuityHash.GenerateKey( m_AcuityNames[i].c_str(), false ), i );
 	}
-
-	/* initialize Sourcehook required global */
-	g_SHPtr = static_cast<SourceHook::ISourceHook*>(&g_SourceHook); 
 }
 
 CGlobal::~CGlobal()

@@ -284,8 +284,7 @@ ModelGenerator.cpp \
 ImageMapManager.cpp \
 LightController.cpp \
 StaticMulti.cpp \
-RawVector.cpp \
-sourcehook/sourcehook.cpp'
+RawVector.cpp'
 
 darkModList = scons_utils.BuildList('../../game/', darkModSrc)
 
