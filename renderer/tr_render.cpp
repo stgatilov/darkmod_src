@@ -652,7 +652,8 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 	if ( !din->diffuseImage || r_skipDiffuse.GetBool() ) {
 		din->diffuseImage = globalImages->blackImage;
 	}
-	if ( !din->specularImage || r_skipSpecular.GetBool() || din->ambientLight ) {
+	// rebb: even ambient light has some specularity
+	if ( !din->specularImage || r_skipSpecular.GetBool() /* || din->ambientLight */ ) {
 		din->specularImage = globalImages->blackImage;
 	}
 	if ( !din->bumpImage || r_skipBump.GetBool() ) {
