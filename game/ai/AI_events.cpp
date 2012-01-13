@@ -828,7 +828,7 @@ void idAI::Event_SpawnThrowableProjectile(const char* projectileName, const char
 	EnsureActiveProjectileInfo();
 
 	// Bind to joint
-	if (jointName == NULL || jointName[0] == NULL)
+	if ((jointName == NULL) || (jointName[0] == NULL))
 	{
 		// No valid joint name
 		activeProjectile.projEnt.GetEntity()->Bind(this, true);
