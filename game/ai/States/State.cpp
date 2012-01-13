@@ -3329,6 +3329,14 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
+	// grayman #2695 - don't set up to handle a door you can't see
+
+	idVec3 doorCenter = frobDoor->GetClosedBox().GetCenter(); // use center of closed door, regardless of whether it's open or closed
+	if ( !owner->CanSeeTargetPoint( doorCenter, frobDoor, false ) ) // 'false' = don't consider illumination
+	{
+		return; // we have no LOS yet
+	}
+
 	if (cv_ai_door_show.GetBool()) 
 	{
 		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 16);
