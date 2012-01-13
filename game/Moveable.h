@@ -100,9 +100,6 @@ protected:
 	void					InitInitialSpline( int startTime );
 	bool					FollowInitialSplinePath( void );
 
-	// greebo: Returns the soundprop name for the given material (e.g. "sprS_bounce_small_hard_on_soft")
-	idStr					GetSoundPropNameForMaterial(const idStr& materialName);
-
 	// greebo: Updates the sliding sounds according to the "pushed" state
 	void					UpdateSlidingSounds();
 

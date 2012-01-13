@@ -518,14 +518,6 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	return false;
 }
 
-idStr idMoveable::GetSoundPropNameForMaterial(const idStr& materialName)
-{
-	// Object type defaults to "medium" and "hard"
-	return idStr("bounce_") + spawnArgs.GetString("spr_object_size", "medium") + 
-		"_" + spawnArgs.GetString("spr_object_hardness", "hard") + 
-		"_on_" + g_Global.GetSurfaceHardness(materialName);
-}
-
 /*
 ============
 idMoveable::Killed

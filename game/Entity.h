@@ -576,6 +576,9 @@ public:
 	idSoundEmitter *		GetSoundEmitter( void ) const;
 	void					FreeSoundEmitter( bool immediate );
 
+	// Returns the soundprop name for the given material (e.g. "sprS_bounce_small_hard_on_soft")
+	idStr					GetSoundPropNameForMaterial(const idStr& materialName);
+
 	// entity binding
 	virtual void			PreBind( void );
 	virtual void			PostBind( void );
