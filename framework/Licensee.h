@@ -99,12 +99,4 @@
 	#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
 #endif
 
-// CD Key file info
-// goes into BASE_GAMEDIR whatever the fs_game is set to
-// two distinct files for easier win32 installer job
-#define CDKEY_FILE						"doomkey"
-#define XPKEY_FILE						"xpkey"
-#define CDKEY_TEXT						"\n// Do not give this file to ANYONE.\n" \
-										"// id Software or Zenimax will NEVER ask you to send this file to them.\n"
-
 #define CONFIG_SPEC						"config.spec"

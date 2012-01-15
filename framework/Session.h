@@ -44,7 +44,6 @@ typedef enum {
 	MSG_OKCANCEL,
 	MSG_YESNO,
 	MSG_PROMPT,
-	MSG_CDKEY,
 	MSG_INFO,
 	MSG_WAIT
 } msgBoxType_t;
@@ -97,7 +96,6 @@ public:
 
 	// fires up the optional GUI event, also returns them if you set wait to true
 	// if MSG_PROMPT and wait, returns the prompt string or NULL if aborted
-	// if MSG_CDKEY and want, returns the cd key or NULL if aborted
 	// network tells wether one should still run the network loop in a wait dialog
 	virtual const char *MessageBox( msgBoxType_t type, const char *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false ) = 0;
 	virtual void	StopBox( void ) = 0;
@@ -109,32 +107,6 @@ public:
 	// this is used by the sound system when an OnDemand sound is loaded, so the game action
 	// doesn't advance and get things out of sync
 	virtual void	TimeHitch( int msec ) = 0;
-
-	// read and write the cd key data to files
-	// doesn't perform any validity checks
-	virtual void	ReadCDKey( void ) = 0;
-	virtual void	WriteCDKey( void ) = 0;
-
-	// returns NULL for if xp is true and xp key is not valid or not present
-	virtual const char *GetCDKey( bool xp ) = 0;
-
-	// check keys for validity when typed in by the user ( with checksum verification )
-	// store the new set of keys if they are found valid
-	virtual bool	CheckKey( const char *key, bool netConnect, bool offline_valid[ 2 ] ) = 0;
-
-	// verify the current set of keys for validity
-	// strict -> keys in state CDKEY_CHECKING state are not ok
-	virtual bool	CDKeysAreValid( bool strict ) = 0;
-	// wipe the key on file if the network check finds it invalid
-	virtual void	ClearCDKey( bool valid[ 2 ] ) = 0;
-
-	// configure gui variables for mainmenu.gui and cd key state
-	virtual void	SetCDKeyGuiVars( void ) = 0;
-
-	virtual bool	WaitingForGameAuth( void ) = 0;
-
-	// got reply from master about the keys. if !valid, auth_msg given
-	virtual void	CDKeysAuthReply( bool valid, const char *auth_msg ) = 0;
 
 	virtual const char *GetCurrentMapName( void ) = 0;
 

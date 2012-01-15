@@ -3035,7 +3035,7 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 		 || !strcmp( path + l - 4, ".dds" )
 #endif
 		 ) {
-		// note: cd and xp keys, as well as config.spec are opened through an explicit OS path and don't hit this
+		// note: config.spec are opened through an explicit OS path and don't hit this
 		return true;
 	}
 	// savegames
@@ -3199,16 +3199,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 		return NULL;
 	}
 
-	// make sure the doomkey file is only readable by game at initialization
-	// any other time the key should only be accessed in memory using the provided functions
-	if( common->IsInitialized() && ( idStr::Icmp( relativePath, CDKEY_FILE ) == 0 || idStr::Icmp( relativePath, XPKEY_FILE ) == 0 ) ) {
-		return NULL;
-	}
-
-	//
 	// search through the path, one element at a time
-	//
-
 	hash = HashFileName( relativePath );
 
 	for ( search = searchPaths; search; search = search->next ) {
