@@ -515,7 +515,6 @@
     <ClCompile Include="game\Projectile.cpp" />
     <ClCompile Include="game\ProjectileResult.cpp" />
     <ClCompile Include="game\pugixml\pugixml.cpp" />
-    <ClCompile Include="game\pugixml\pugixpath.cpp" />
     <ClCompile Include="game\Pvs.cpp" />
     <ClCompile Include="game\PVSToAASMapping.cpp" />
     <ClCompile Include="game\randomizer\mersenne.cpp" />

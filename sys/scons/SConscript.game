@@ -190,7 +190,6 @@ randomizer/ranrotw.cpp \
 randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
-pugixml/pugixpath.cpp \
 Shop/LootRuleSet.cpp \
 Shop/Shop.cpp \
 Shop/ShopItem.cpp \
