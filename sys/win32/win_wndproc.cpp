@@ -73,7 +73,7 @@ void WIN_Sizing(WORD side, RECT *rect)
 
 	// Adjust width/height for window decoration
 	RECT decoRect = { 0, 0, 0, 0 };
-	AdjustWindowRect( &decoRect, WINDOW_STYLE|WS_SYSMENU, FALSE );
+	AdjustWindowRect( &decoRect, WINDOW_STYLE | WS_SYSMENU, FALSE );
 	int decoWidth = decoRect.right - decoRect.left;
 	int decoHeight = decoRect.bottom - decoRect.top;
 
@@ -81,8 +81,10 @@ void WIN_Sizing(WORD side, RECT *rect)
 	height -= decoHeight;
 
 	// Clamp to a minimum size
-	int minWidth = 160;
-	int minHeight = minWidth * SCREEN_HEIGHT / SCREEN_WIDTH;
+	int currentHeight = cvarSystem->GetCVarInteger("r_customHeight");
+	int currentWidth = cvarSystem->GetCVarInteger("r_customWidth");
+	int minWidth = 256;
+	int minHeight = minWidth * currentHeight / currentWidth;
 
 	if ( width < minWidth ) {
 		width = minWidth;
@@ -95,29 +97,29 @@ void WIN_Sizing(WORD side, RECT *rect)
 	switch ( side ) {
 	case WMSZ_LEFT:
 		rect->left = rect->right - width - decoWidth;
-		rect->bottom = rect->top + ( width * SCREEN_HEIGHT / SCREEN_WIDTH ) + decoHeight;
+		rect->bottom = rect->top + ( width * currentHeight / currentWidth ) + decoHeight;
 		break;
 	case WMSZ_RIGHT:
 		rect->right = rect->left + width + decoWidth;
-		rect->bottom = rect->top + ( width * SCREEN_HEIGHT / SCREEN_WIDTH ) + decoHeight;
+		rect->bottom = rect->top + ( width * currentHeight / currentWidth ) + decoHeight;
 		break;
 	case WMSZ_BOTTOM:
 	case WMSZ_BOTTOMRIGHT:
 		rect->bottom = rect->top + height + decoHeight;
-		rect->right = rect->left + ( height * SCREEN_WIDTH / SCREEN_HEIGHT ) + decoWidth;
+		rect->right = rect->left + ( height * currentWidth / currentHeight ) + decoWidth;
 		break;
 	case WMSZ_TOP:
 	case WMSZ_TOPRIGHT:
 		rect->top = rect->bottom - height - decoHeight;
-		rect->right = rect->left + ( height * SCREEN_WIDTH / SCREEN_HEIGHT ) + decoWidth;
+		rect->right = rect->left + ( height * currentWidth / currentHeight ) + decoWidth;
 		break;
 	case WMSZ_BOTTOMLEFT:
 		rect->bottom = rect->top + height + decoHeight;
-		rect->left = rect->right - ( height * SCREEN_WIDTH / SCREEN_HEIGHT ) - decoWidth;
+		rect->left = rect->right - ( height * currentWidth / currentHeight ) - decoWidth;
 		break;
 	case WMSZ_TOPLEFT:
 		rect->top = rect->bottom - height - decoHeight;
-		rect->left = rect->right - ( height * SCREEN_WIDTH / SCREEN_HEIGHT ) - decoWidth;
+		rect->left = rect->right - ( height * currentWidth / currentHeight ) - decoWidth;
 		break;
 	}
 }

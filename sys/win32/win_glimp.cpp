@@ -557,7 +557,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 	//
 	if ( parms.fullScreen ) {
 		exstyle = WS_EX_TOPMOST;
-		stylebits = WS_POPUP|WS_VISIBLE|WS_SYSMENU;
+		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
 		x = 0;
 		y = 0;
@@ -573,7 +573,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 		r.right = parms.width;
 
 		exstyle = 0;
-		stylebits = WINDOW_STYLE|WS_SYSMENU;
+		stylebits = WINDOW_STYLE | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 		AdjustWindowRect (&r, stylebits, FALSE);
 
 		w = r.right - r.left;
@@ -878,7 +878,7 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 
 	if ( parms.fullScreen ) {
 		exstyle = WS_EX_TOPMOST;
-		stylebits = WS_POPUP|WS_VISIBLE|WS_SYSMENU;
+		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
 		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
 		dm.dmPelsWidth  = parms.width;
@@ -918,7 +918,7 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 		dm.dmPelsHeight = win32.desktopHeight;
 		dm.dmBitsPerPel = win32.desktopBitsPixel;
 		exstyle = 0;
-		stylebits = WINDOW_STYLE|WS_SYSMENU;
+		stylebits = WINDOW_STYLE | WS_SYSMENU;
 		AdjustWindowRect (&r, stylebits, FALSE);
 		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
 		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
