@@ -27,36 +27,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
-static bool s_alttab_disabled;
-
-static void WIN_DisableAltTab( void ) {
-	if ( s_alttab_disabled || win32.win_allowAltTab.GetBool() ) {
-		return;
-	}
-	if ( !idStr::Icmp( cvarSystem->GetCVarString( "sys_arch" ), "winnt" ) ) {
-		RegisterHotKey( 0, 0, MOD_ALT, VK_TAB );
-	} else {
-		BOOL old;
-
-		SystemParametersInfo( SPI_SCREENSAVERRUNNING, 1, &old, 0 );
-	}
-	s_alttab_disabled = true;
-}
-
-static void WIN_EnableAltTab( void ) {
-	if ( !s_alttab_disabled || win32.win_allowAltTab.GetBool() ) {
-		return;
-	}
-	if ( !idStr::Icmp( cvarSystem->GetCVarString( "sys_arch" ), "winnt" ) ) {
-		UnregisterHotKey( 0, 0 );
-	} else {
-		BOOL old;
-
-		SystemParametersInfo( SPI_SCREENSAVERRUNNING, 0, &old, 0 );
-	}
-
-	s_alttab_disabled = false;
-}
 
 void WIN_Sizing(WORD side, RECT *rect)
 {
@@ -285,12 +255,6 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 
 			win32.hWnd = hWnd;
 
-			if ( win32.cdsFullscreen ) {
-				WIN_DisableAltTab();
-			} else {
-				WIN_EnableAltTab();
-			}
-
 			// do the OpenGL setup
 			void GLW_WM_CREATE( HWND hWnd );
 			GLW_WM_CREATE( hWnd );
@@ -300,9 +264,6 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 		case WM_DESTROY:
 			// let sound and input know about this?
 			win32.hWnd = NULL;
-			if ( win32.cdsFullscreen ) {
-				WIN_EnableAltTab();
-			}
 			break;
 
 		case WM_CLOSE:

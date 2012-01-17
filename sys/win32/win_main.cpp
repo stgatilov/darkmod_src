@@ -50,8 +50,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_BOOL, "enable mouse input" );
-idCVar Win32Vars_t::win_allowAltTab( "win_allowAltTab", "0", CVAR_SYSTEM | CVAR_BOOL, "allow Alt-Tab when fullscreen" );
-idCVar Win32Vars_t::win_notaskkeys( "win_notaskkeys", "0", CVAR_SYSTEM | CVAR_INTEGER, "disable windows task keys" );
 idCVar Win32Vars_t::win_username( "win_username", "", CVAR_SYSTEM | CVAR_INIT, "windows user name" );
 idCVar Win32Vars_t::win_xpos( "win_xpos", "3", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "horizontal position of window" );
 idCVar Win32Vars_t::win_ypos( "win_ypos", "22", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "vertical position of window" );
@@ -1292,6 +1290,7 @@ EmailCrashReport
   emailer originally from Raven/Quake 4
 ====================
 */
+/*
 void EmailCrashReport( LPSTR messageText ) {
 	LPMAPISENDMAIL	MAPISendMail;
 	MapiMessage		message;
@@ -1334,6 +1333,7 @@ void EmailCrashReport( LPSTR messageText ) {
 		FreeLibrary( mapi );
 	}
 }
+*/
 
 int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse );
 
@@ -1359,7 +1359,6 @@ EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *Excepti
 
 	sprintf( msg, 
 		"Please describe what you were doing when DOOM 3 crashed!\n"
-		"If this text did not pop into your email client please copy and email it to programmers@idsoftware.com\n"
 			"\n"
 			"-= FATAL EXCEPTION =-\n"
 			"\n"
@@ -1401,7 +1400,7 @@ EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *Excepti
 			FPUFlags
 		);
 
-	EmailCrashReport( msg );
+	//EmailCrashReport( msg );
 	common->FatalError( msg );
 
     // Tell the OS to restart the faulting instruction
@@ -1467,12 +1466,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 #if TEST_FPU_EXCEPTIONS != 0
 	common->Printf( Sys_FPU_GetState() );
-#endif
-
-#ifndef	ID_DEDICATED
-	if ( win32.win_notaskkeys.GetInteger() ) {
-		DisableTaskKeys( TRUE, FALSE, /*( win32.win_notaskkeys.GetInteger() == 2 )*/ FALSE );
-	}
 #endif
 
 	Sys_StartAsyncThread();

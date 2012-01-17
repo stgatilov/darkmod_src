@@ -307,10 +307,6 @@ bool IN_StartupKeyboard( void ) {
     else
         dwCoopFlags |= DISCL_BACKGROUND;
 
-    // Disabling the windows key is only allowed only if we are in foreground nonexclusive
-    if( bDisableWindowsKey && !bExclusive && bForeground )
-        dwCoopFlags |= DISCL_NOWINKEY;
-
     // Obtain an interface to the system keyboard device.
     if( FAILED( hr = win32.g_pdi->CreateDevice( GUID_SysKeyboard, &win32.g_pKeyboard, NULL ) ) ) {
 		common->Printf("keyboard: couldn't find a keyboard device\n");
@@ -331,10 +327,15 @@ bool IN_StartupKeyboard( void ) {
     // this device should interact with the system and with other
     // DirectInput applications.
     hr = win32.g_pKeyboard->SetCooperativeLevel( win32.hWnd, dwCoopFlags );
-    if( hr == DIERR_UNSUPPORTED && !bForeground && bExclusive ) {
+
+	// Serpentine : I'm not too sure why this is required - might have just been anti-cheat
+	// However it prevents global hotkeys working (audio-player etc)
+
+/*	if( hr == DIERR_UNSUPPORTED && !bForeground && bExclusive ) {
         common->Printf("keyboard: SetCooperativeLevel() returned DIERR_UNSUPPORTED.\nFor security reasons, background exclusive keyboard access is not allowed.\n");
         return false;
     }
+*/
 
     if( FAILED(hr) ) {
         return false;

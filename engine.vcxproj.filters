@@ -990,9 +990,6 @@
     <ClCompile Include="sys\win32\win_syscon.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
-    <ClCompile Include="sys\win32\win_taskkeyhook.cpp">
-      <Filter>Sys</Filter>
-    </ClCompile>
     <ClCompile Include="sys\win32\win_wndproc.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
