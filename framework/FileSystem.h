@@ -274,6 +274,9 @@ public:
 
 							// ignore case and seperator char distinctions
 	virtual bool			FilenameCompare( const char *s1, const char *s2 ) const = 0;
+
+	// greebo: Returns the full path to the darkmod/ folder.
+	virtual const char*		DarkModPath() const = 0;
 };
 
 extern idFileSystem *		fileSystem;

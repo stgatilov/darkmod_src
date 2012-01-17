@@ -706,6 +706,13 @@ std::string CGlobal::GetModPath(const std::string& modName)
 
 std::string CGlobal::GetDarkmodPath()
 {
+	std::string darkmodPath = fileSystem->DarkModPath();
+
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
+
+	return darkmodPath.c_str();
+
+#if 0
 	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
@@ -733,6 +740,8 @@ std::string CGlobal::GetDarkmodPath()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
 
 	return darkmodPath;
+#endif
+
 #if 0
 	// Path to the parent directory
 	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
