@@ -68,6 +68,9 @@ public:
 	 * greebo: Creates a new image with the given dimension and bit depth.
 	 * Discards any previously loaded image, unless the dimensions match.
 	 *
+	 * @width/height: dimensions in pixels.
+	 * @bpp: this is bytes per pixel, 3 = RGB, 4 = RGBA
+	 *
 	 * @returns: true on success, false otherwise.
 	 */
 	bool Init(int width, int height, int bpp);
