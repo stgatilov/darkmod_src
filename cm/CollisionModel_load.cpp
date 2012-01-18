@@ -3060,7 +3060,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName 
 	// shutdown the hash
 	ShutdownHash();
 
-	common->Printf( "loaded collision model %s\n", model->name.c_str() );
+	//common->Printf( "loaded collision model %s\n", model->name.c_str() );
 
 	return model;
 }
