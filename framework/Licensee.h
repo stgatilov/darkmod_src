@@ -35,11 +35,7 @@
 
 // paths
 #define	CD_BASEDIR						"Doom"
-#ifdef ID_DEMO_BUILD
-	#define BASE_GAMEDIR					"demo"
-#else
-	#define	BASE_GAMEDIR					"base"
-#endif
+#define	BASE_GAMEDIR					"base"
 
 // filenames
 #define	CD_EXE							"doom.exe"
@@ -93,10 +89,6 @@
 #define	WIN32_FAKE_WINDOW_CLASS_NAME	"DOOM3_WGL_FAKE"
 
 // Linux info
-#ifdef ID_DEMO_BUILD
-	#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3-demo"
-#else
-	#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
-#endif
+#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
 
 #define CONFIG_SPEC						"config.spec"

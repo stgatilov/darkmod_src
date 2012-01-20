@@ -76,8 +76,7 @@ the cd path, but can be overridden with a "+set fs_devpath c:\doom" on the comma
 If a user runs the game directly from a CD, the base path would be on the CD. This
 should still function correctly, but all file writes will fail (harmlessly).
 
-The "base game" is the directory under the paths where data comes from by default, and
-can be either "base" or "demo".
+The "base game" is the directory under the paths where data comes from by default "base".
 
 The "current game" may be the same as the base game, or it may be the name of another
 directory under the paths that should be searched for files before looking in the base
@@ -93,19 +92,6 @@ but otherwise they are simply normal zip files. A game directory can have multip
 files of the form "pak0.pk4", "pak1.pk4", etc. Zip files are searched in decending order
 from the highest number to the lowest, and will always take precedence over the filesystem.
 This allows a pk4 distributed as a patch to override all existing data.
-
-Because we will have updated executables freely available online, there is no point to
-trying to restrict demo / oem versions of the game with code changes. Demo / oem versions
-should be exactly the same executables as release versions, but with different data that
-automatically restricts where game media can come from to prevent add-ons from working.
-
-After the paths are initialized, Doom will look for the product.txt file. If not found
-and verified, the game will run in restricted mode. In restricted mode, only files
-contained in demo/pak0.pk4 will be available for loading, and only if the zip header is
-verified to not have been modified. A single exception is made for DoomConfig.cfg. Files
-can still be written out in restricted mode, so screenshots and demos are allowed.
-Restricted mode can be tested by setting "+set fs_restrict 1" on the command line, even
-if there is a valid product.txt under the basepath or cdpath.
 
 If the "fs_copyfiles" cvar is set to 1, then every time a file is sourced from the cd
 path, it will be copied over to the save path. This is a development aid to help build
@@ -462,7 +448,6 @@ private:
 	void					AddGameDirectory( const char *path, const char *dir );
 	void					SetupGameDirectories( const char *gameName );
 	void					Startup( void );
-	void					SetRestrictions( void );
 							// some files can be obtained from directories without compromising si_pure
 	bool					FileAllowedFromDir( const char *path );
 							// searches all the paks, no pure check
@@ -862,17 +847,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	// "//Purgatory/purgatory/doom/base/models/mapobjects/bitch/hologirl.tga"
 	// which won't match any of our drive letter based search paths
 	bool ignoreWarning = false;
-#ifdef ID_DEMO_BUILD
-	base = strstr( OSPath, BASE_GAMEDIR );	
-	idStr tempStr = OSPath;
-	tempStr.ToLower();
-	if ( ( strstr( tempStr, "//" ) || strstr( tempStr, "w:" ) ) && strstr( tempStr, "/doom/base/") ) {
-		// will cause a warning but will load the file. ase models have
-		// hard coded doom/base/ in the material names
-		base = strstr( OSPath, "base" );
-		ignoreWarning = true;
-	}
-#else
+
 	// look for the first complete directory name
 	base = (char *)strstr( OSPath, BASE_GAMEDIR );
 	while ( base ) {
@@ -886,7 +861,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 		}
 		base = strstr( base + 1, BASE_GAMEDIR );
 	}
-#endif
+
 	// fs_game and fs_game_base support - look for first complete name with a mod path
 	// ( fs_game searched before fs_game_base )
 	const char *fsgame = NULL;
@@ -2420,31 +2395,6 @@ void idFileSystemLocal::Startup( void ) {
 }
 
 /*
-===================
-idFileSystemLocal::SetRestrictions
-
-Looks for product keys and restricts media add on ability
-if the full version is not found
-===================
-*/
-void idFileSystemLocal::SetRestrictions( void ) {
-#ifdef ID_DEMO_BUILD
-	common->Printf( "\nRunning in restricted demo mode.\n\n" );
-	// make sure that the pak file has the header checksum we expect
-	searchpath_t	*search;
-	for ( search = searchPaths; search; search = search->next ) {
-		if ( search->pack ) {
-			// a tiny attempt to keep the checksum from being scannable from the exe
-			if ( ( search->pack->checksum ^ 0x84268436u ) != ( DEMO_PAK_CHECKSUM ^ 0x84268436u ) ) {
-				common->FatalError( "Corrupted %s: 0x%x", search->pack->pakFilename.c_str(), search->pack->checksum );
-			}
-		}
-	}
-	cvarSystem->SetCVarBool( "fs_restrict", true );
-#endif
-}
-
-/*
 =====================
 idFileSystemLocal::UpdatePureServerChecksums
 =====================
@@ -2906,9 +2856,6 @@ void idFileSystemLocal::Init( void ) {
 	// try to start up normally
 	Startup( );
 
-	// see if we are going to allow add-ons
-	SetRestrictions();
-
 	// spawn a thread to handle background file reads
 	StartBackgroundDownloadThread();
 
@@ -2931,9 +2878,6 @@ void idFileSystemLocal::Restart( void ) {
 	Shutdown( true );
 
 	Startup( );
-
-	// see if we are going to allow add-ons
-	SetRestrictions();
 
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable

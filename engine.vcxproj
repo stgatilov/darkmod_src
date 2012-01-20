@@ -309,7 +309,6 @@
     <ClInclude Include="framework\DeclPDA.h" />
     <ClInclude Include="framework\DeclSkin.h" />
     <ClInclude Include="framework\DeclTable.h" />
-    <ClInclude Include="framework\DemoChecksum.h" />
     <ClInclude Include="framework\DemoFile.h" />
     <ClInclude Include="framework\EditField.h" />
     <ClInclude Include="framework\EventLoop.h" />

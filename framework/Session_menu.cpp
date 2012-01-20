@@ -302,11 +302,7 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 		guiMainMenu->SetStateString( "inGame", "0" );
 	}
 
-#ifdef ID_DEMO_BUILD
-	guiMainMenu->SetStateString( "nightmare", "0" );
-#else
 	guiMainMenu->SetStateString( "nightmare", cvarSystem->GetCVarBool( "g_nightmare" ) ? "1" : "0" );
-#endif
 	guiMainMenu->SetStateString( "browser_levelshot", "guis/assets/splash/pdtempa" );
 
 	SetMainMenuSkin();
@@ -577,11 +573,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			if ( icmd < args.Argc() ) {
 				StartNewGame( args.Argv( icmd++ ) );
 			} else {
-#ifndef ID_DEMO_BUILD
 				StartNewGame( "game/mars_city1" );
-#else
-				StartNewGame( "game/demo_mars_city1" );
-#endif
 			}
 			// need to do this here to make sure com_frameTime is correct or the gui activates with a time that 
 			// is "however long map load took" time in the past

@@ -175,7 +175,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 #else
 
-#include "../framework/DemoChecksum.h"
 
 // framework
 #include "../framework/Compressor.h"

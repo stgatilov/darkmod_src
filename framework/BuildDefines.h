@@ -78,12 +78,8 @@
 // compiled out.
 //#define ID_DEDICATED
 
-// if this is defined, the executable positively won't work with any paks other
-// than the demo pak, even if productid is present.
-//#define ID_DEMO_BUILD
-
 // don't define ID_ALLOW_TOOLS when we don't want tool code in the executable.
-#if defined( _WIN32 ) && !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD )
+#if defined( _WIN32 ) && !defined( ID_DEDICATED )
 	#define	ID_ALLOW_TOOLS
 #endif
 
