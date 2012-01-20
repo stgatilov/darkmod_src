@@ -426,13 +426,8 @@ idServerScan::GUIAdd
 */
 void idServerScan::GUIAdd( int id, const networkServer_t server ) {
 	idStr name = server.serverInfo.GetString( "si_name", GAME_NAME " Server" );
-	bool d3xp = false;
 	bool mod = false;
 
-	if ( !idStr::Icmp( server.serverInfo.GetString( "fs_game" ), "d3xp" ) ||
-		 !idStr::Icmp( server.serverInfo.GetString( "fs_game_base" ), "d3xp" ) ) {
-		d3xp = true;
-	}
 	if ( server.serverInfo.GetString( "fs_game" )[ 0 ] != '\0' ) {
 		mod = true;
 	}
@@ -443,11 +438,7 @@ void idServerScan::GUIAdd( int id, const networkServer_t server ) {
 	}
 
 	name += "\t";
-	if ( d3xp ) {
-		// FIXME: even for a 'D3XP mod'
-		// could have a specific icon for this case
-		name += "mtr_doom3XPIcon";
-	} else if ( mod ) {
+	if ( mod ) {
 		name += "mtr_doom3Mod";
 	} else {
 		name += "mtr_doom3Icon";
@@ -553,18 +544,9 @@ bool idServerScan::IsFiltered( const networkServer_t server ) {
 		}
 	}
 
-	// autofilter D3XP games if the user does not has the XP installed
-	if(!fileSystem->HasD3XP() && !idStr::Icmp(server.serverInfo.GetString( "fs_game" ), "d3xp")) {
-		return true;
-	}
-
 	// filter based on the game doom or XP
 	if(gui_filter_game.GetInteger() == 1) { //Only Doom
 		if(idStr::Icmp(server.serverInfo.GetString("fs_game"), "")) {
-			return true;
-		}
-	} else if(gui_filter_game.GetInteger() == 2) { //Only D3XP
-		if(idStr::Icmp(server.serverInfo.GetString("fs_game"), "d3xp")) {
 			return true;
 		}
 	}

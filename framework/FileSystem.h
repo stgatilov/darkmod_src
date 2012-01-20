@@ -246,11 +246,6 @@ public:
 							// in some cases you may need to use this directly
 	virtual void			ClearDirCache( void ) = 0;
 
-							// is D3XP installed? even if not running it atm
-	virtual bool			HasD3XP( void ) = 0;
-							// are we using D3XP content ( through a real d3xp run or through a double mod )
-	virtual bool			RunningD3XP( void ) = 0;
-
 							// don't use for large copies - allocates a single memory block for the copy
 	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath ) = 0;
 

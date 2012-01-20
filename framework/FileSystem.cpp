@@ -124,7 +124,6 @@ The filesystem can be safely shutdown and reinitialized with different
 basedir / cddir / game combinations, but all other subsystems that rely on it
 (sound, video) must also be forced to restart.
 
-
 "fs_caseSensitiveOS":
 This cvar is set on operating systems that use case sensitive filesystems (Linux and OSX)
 It is a common situation to have the media reference filenames, whereas the file on disc 
@@ -141,7 +140,7 @@ is stored all lowercase.
 "additional mod path search":
 fs_game_base can be used to set an additional search path
 in search order, fs_game, fs_game_base, BASEGAME
-for instance to base a mod of D3 + D3XP assets, fs_game mymod, fs_game_base d3xp
+for instance to base a mod of D3 assets, fs_game mymod, fs_game_base d3xp TODO: ref TDM
 
 =============================================================================
 */
@@ -361,8 +360,6 @@ public:
 	virtual int				GetReadCount( void ) { return readCount; }
 	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum );
 	virtual void			ClearDirCache( void );
-	virtual bool			HasD3XP( void );
-	virtual bool			RunningD3XP( void );
 	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath );
 	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary );
 	virtual idFile *		MakeTemporaryFile( void );
@@ -428,8 +425,6 @@ private:
 	idDEntry				dir_cache[ MAX_CACHED_DIRS ]; // fifo
 	int						dir_cache_index;
 	int						dir_cache_count;
-
-	int						d3xp;	// 0: didn't check, -1: not installed, 1: installed
 
 private:
 	void					ReplaceSeparators( idStr &path, char sep = PATHSEPERATOR_CHAR );
@@ -499,7 +494,6 @@ idFileSystemLocal::idFileSystemLocal( void ) {
 	loadStack = 0;
 	dir_cache_index = 0;
 	dir_cache_count = 0;
-	d3xp = 0;
 	loadedFileFromDir = false;
 	restartGamePakChecksum = 0;
 	memset( &backgroundThread, 0, sizeof( backgroundThread ) );
@@ -1717,16 +1711,13 @@ idModList *idFileSystemLocal::ListMods( void ) {
 		// see if there are any pk4 files in each directory
 		for( i = 0; i < dirs.Num(); i++ ) {
 			idStr gamepath = BuildOSPath( search[ isearch ], dirs[ i ], "" );
-			ListOSFiles( gamepath, ".pk4", pk4s );
-			if ( pk4s.Num() ) {
-				if ( !list->mods.Find( dirs[ i ] ) ) {
-					// D3 1.3 #31, only list d3xp if the pak is present
-					if ( dirs[ i ].Icmp( "d3xp" ) || HasD3XP() ) {
-						list->mods.Append( dirs[ i ] );
-					}
-				}
-			}
-		}
+ 			ListOSFiles( gamepath, ".pk4", pk4s );
+ 			if ( pk4s.Num() ) {
+ 				if ( !list->mods.Find( dirs[ i ] ) ) {
+					list->mods.Append( dirs[ i ] );
+ 				}
+ 			}
+ 		}
 	}
 	   
 	list->mods.Sort();
@@ -2819,15 +2810,6 @@ void idFileSystemLocal::Init( void ) {
 	// greebo: even the mod save path can be overriden by command line arguments
 	common->StartupVariable( "fs_modSavePath", false );
 
-#if !ID_ALLOW_D3XP
-	if ( fs_game.GetString()[0] && !idStr::Icmp( fs_game.GetString(), "d3xp" ) ) {
-		 fs_game.SetString( NULL );
-	}
-	if ( fs_game_base.GetString()[0] && !idStr::Icmp( fs_game_base.GetString(), "d3xp" ) ) {
-		  fs_game_base.SetString( NULL );
-	}
-#endif	
-	
 	if ( fs_basepath.GetString()[0] == '\0' ) {
 		fs_basepath.SetString( Sys_DefaultBasePath() );
 	}
@@ -3952,92 +3934,6 @@ void idFileSystemLocal::ClearDirCache( void ) {
 	for( i = 0; i < MAX_CACHED_DIRS; i++ ) {
 		dir_cache[ i ].Clear();
 	}
-}
-
-/*
-===============
-idFileSystemLocal::HasD3XP
-===============
-*/
-bool idFileSystemLocal::HasD3XP( void ) {
-	int			i;
-	idStrList	dirs, pk4s;
-	idStr		gamepath;
-
-	if ( d3xp == -1 ) {
-		return false;
-	} else if ( d3xp == 1 ) {
-		return true;
-	}
-	
-#if 0
-	// check for a d3xp directory with a pk4 file
-	// copied over from ListMods - only looks in basepath
-	ListOSFiles( fs_basepath.GetString(), "/", dirs );
-	for ( i = 0; i < dirs.Num(); i++ ) {
-		if ( dirs[i].Icmp( "d3xp" ) == 0 ) {
-			gamepath = BuildOSPath( fs_basepath.GetString(), dirs[ i ], "" );
-			ListOSFiles( gamepath, ".pk4", pk4s );
-			if ( pk4s.Num() ) {
-				d3xp = 1;
-				return true;
-			}
-		}
-	}
-#elif ID_ALLOW_D3XP
-	// check for d3xp's d3xp/pak000.pk4 in any search path
-	// checking wether the pak is loaded by checksum wouldn't be enough:
-	// we may have a different fs_game right now but still need to reply that it's installed
-	const char	*search[4];
-	idFile	  	*pakfile;
-	search[0] = fs_savepath.GetString();
-	search[1] = fs_devpath.GetString();
-	search[2] = fs_basepath.GetString();
-	search[3] = fs_cdpath.GetString();
-	for ( i = 0; i < 4; i++ ) {
-		pakfile = OpenExplicitFileRead( BuildOSPath( search[ i ], "d3xp", "pak000.pk4" ) );
-		if ( pakfile ) {
-			CloseFile( pakfile );
-			d3xp = 1;
-			return true;
-		}
-	}
-#endif
-
-#if ID_ALLOW_D3XP
-	// if we didn't find a pk4 file then the user might have unpacked so look for default.cfg file
-	// that's the old way mostly used during developement. don't think it hurts to leave it there
-	ListOSFiles( fs_basepath.GetString(), "/", dirs );
-	for ( i = 0; i < dirs.Num(); i++ ) {
-		if ( dirs[i].Icmp( "d3xp" ) == 0 ) {
-			
-			gamepath = BuildOSPath( fs_savepath.GetString(), dirs[ i ], "default.cfg" );
-			idFile* cfg = OpenExplicitFileRead(gamepath);
-			if(cfg) {
-				CloseFile(cfg);
-				d3xp = 1;
-				return true;
-			}
-		}
-	}
-#endif
-	d3xp = -1;
-	return false;
-}
-
-/*
-===============
-idFileSystemLocal::RunningD3XP
-===============
-*/
-bool idFileSystemLocal::RunningD3XP( void ) {
-	// TODO: mark the checksum of the gold XP and check for it being referenced ( for double mod support )
-	// a simple fs_game check should be enough for now..
-	if ( !idStr::Icmp( fs_game.GetString(), "d3xp" ) ||
-		 !idStr::Icmp( fs_game_base.GetString(), "d3xp" ) ) {
-		return true;
-	}
-	return false;
 }
 
 /*

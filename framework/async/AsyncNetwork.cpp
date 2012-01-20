@@ -492,12 +492,6 @@ void idAsyncNetwork::BuildInvalidKeyMsg( idStr &msg, bool valid[ 2 ] ) {
 	if ( !valid[ 0 ] ) {
 		msg += common->GetLanguageDict()->GetString( "#str_07194" );
 	}
-	if ( fileSystem->HasD3XP() && !valid[ 1 ] ) {
-		if ( msg.Length() ) {
-			msg += "\n";
-		}
-		msg += common->GetLanguageDict()->GetString( "#str_07195" );
-	}
 	msg += "\n";
 	msg += common->GetLanguageDict()->GetString( "#str_04304" );	
 }

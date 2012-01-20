@@ -420,7 +420,6 @@ void idSessionLocal::ShowLoadingGui() {
 	console->Close();
 
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
-#if 1
 	// Try and prevent the while loop from being skipped over (long hitch on the main thread?)
 	int stop = Sys_Milliseconds() + 1000;
 	int force = 10;
@@ -429,14 +428,6 @@ void idSessionLocal::ShowLoadingGui() {
 		session->Frame();
 		session->UpdateScreen( false );
 	}
-#else
-	int stop = com_ticNumber + 1000.0f / USERCMD_MSEC * 1.0f;
-	while ( com_ticNumber < stop ) {
-		com_frameTime = com_ticNumber * USERCMD_MSEC;
-		session->Frame();
-		session->UpdateScreen( false );
-	}
-#endif
 }
 
 

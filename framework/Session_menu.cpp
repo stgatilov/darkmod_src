@@ -63,12 +63,7 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 	SetGUI( guiMainMenu, NULL );
 	guiMainMenu->HandleNamedEvent( playIntro ? "playIntro" : "noIntro" );
 
-
-	if(fileSystem->HasD3XP()) {
-		guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07202" ));
-	} else {
-		guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07212" ));
-	}
+	guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07212" ));
 
 	console->Close();
 
@@ -308,8 +303,6 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 	SetMainMenuSkin();
 	// Mods Menu
 	SetModsMenuGuiVars();
-
-	guiMsg->SetStateString( "visible_hasxp", fileSystem->HasD3XP() ? "1" : "0" );
 
 #if defined( __linux__ )
 	guiMainMenu->SetStateString( "driver_prompt", "1" );

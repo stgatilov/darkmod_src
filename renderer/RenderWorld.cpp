@@ -1190,7 +1190,7 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 					continue;
 				}
 
-#if 1	/* _D3XP addition. could use a cleaner approach */
+#if 1	/* _D3XP addition. FIXME: could use a cleaner approach */
 				if ( skipPlayer ) {
 					idStr name = model->Name();
 					const char *exclude;
@@ -1233,7 +1233,7 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 					continue;
 				}
 
-#if 1 /* _D3XP addition. could use a cleaner approach */
+#if 1 /* _D3XP addition. FIXME: could use a cleaner approach */
 				if ( skipPlayer ) {
 					idStr name = shader->GetName();
 					const char *exclude;

@@ -1539,7 +1539,7 @@ void idAsyncServer::ProcessChallengeMessage( const netadr_t from, const idBitMsg
 			outMsg.WriteNetadr( from );
 			outMsg.WriteLong( -1 ); // this identifies "challenge" auth vs "connect" auth
 			// protocol 1.37 addition
-			outMsg.WriteByte( fileSystem->RunningD3XP() );
+			// might expect : outMsg.WriteByte( fileSystem->RunningD3XP() );
 			serverPort.SendPacket( idAsyncNetwork::GetMasterAddress(), outMsg.GetData(), outMsg.GetSize() );
 		}
 	}
@@ -1749,7 +1749,7 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 				outMsg.WriteLong( clientId );
 				outMsg.WriteString( guid );	
 				// protocol 1.37 addition
-				outMsg.WriteByte( fileSystem->RunningD3XP() );
+				// might expect : outMsg.WriteByte( fileSystem->RunningD3XP() );
 				serverPort.SendPacket( idAsyncNetwork::GetMasterAddress(), outMsg.GetData(), outMsg.GetSize() );
 			}
 			return;
