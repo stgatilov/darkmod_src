@@ -23,7 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 typedef struct {
-	char	*name;
+	const char	*name;
 	int		keynum;
 	char	*strId;	// localized string id
 } keyname_t;
@@ -187,38 +187,6 @@ public:
 
 bool		key_overstrikeMode = false;
 idKey *		keys = NULL;
-
-#define ID_DOOM_LEGACY
-
-#ifdef ID_DOOM_LEGACY
-
-char *		cheatCodes[] = {
-	"iddqd",		// Invincibility
-	"idkfa",		// All weapons, keys, ammo, and 200% armor
-	"idfa",			// Reset ammunition
-	"idspispopd",	// Walk through walls
-	"idclip",		// Walk through walls
-	"idchoppers",	// Chainsaw
-/*
-	"idbeholds",	// Berserker strength
-	"idbeholdv",	// Temporary invincibility
-	"idbeholdi",	// Temporary invisibility
-	"idbeholda",	// Full automap
-	"idbeholdr",	// Anti-radiation suit
-	"idbeholdl",	// Light amplification visor
-	"idclev",		// Level select
-	"iddt",			// Toggle full map; full map and objects; normal map
-	"idmypos",		// Display coordinates and heading
-	"idmus",		// Change music to indicated level
-	"fhhall",		// Kill all enemies in level
-	"fhshh",		// Invisible to enemies until attack
-*/
-	NULL
-};
-char		lastKeys[32];
-int			lastKeyIndex;
-
-#endif
 
 /*
 ===================
@@ -693,22 +661,6 @@ Called by the system for both key up and key down events
 */
 void idKeyInput::PreliminaryKeyEvent( int keynum, bool down ) {
 	keys[keynum].down = down;
-
-#ifdef ID_DOOM_LEGACY
-	if ( down ) {
-		lastKeys[ 0 + ( lastKeyIndex & 15 )] = keynum;
-		lastKeys[16 + ( lastKeyIndex & 15 )] = keynum;
-		lastKeyIndex = ( lastKeyIndex + 1 ) & 15;
-		for ( int i = 0; cheatCodes[i] != NULL; i++ ) {
-			int l = strlen( cheatCodes[i] );
-			assert( l <= 16 );
-			if ( idStr::Icmpn( lastKeys + 16 + ( lastKeyIndex & 15 ) - l, cheatCodes[i], l ) == 0 ) {
-				common->Printf( "your memory serves you well!\n" );
-				break;
-			}
-		}
-	}
-#endif
 }
 
 /*
