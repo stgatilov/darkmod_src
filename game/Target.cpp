@@ -188,7 +188,6 @@ void idTarget_EndLevel::Event_Activate( idEntity *activator ) {
 	idStr nextMap;
 
 	if ( spawnArgs.GetBool( "endOfGame" ) ) {
-		cvarSystem->SetCVarBool( "g_nightmare", true );
 		gameLocal.sessionCommand = "disconnect";
 		return;
 	}

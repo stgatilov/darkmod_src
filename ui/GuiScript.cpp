@@ -135,7 +135,6 @@ Script_EndGame
 =========================
 */
 void Script_EndGame( idWindow *window, idList<idGSWinVar> *src ) {
-	cvarSystem->SetCVarBool( "g_nightmare", true );
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "disconnect\n" );
 }
 
