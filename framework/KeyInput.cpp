@@ -25,7 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 typedef struct {
 	const char	*name;
 	int		keynum;
-	char	*strId;	// localized string id
+	const char	*strId;	// localized string id
 } keyname_t;
 
 // keys that can be set without a special name
