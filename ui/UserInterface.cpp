@@ -179,11 +179,11 @@ idUserInterface *idUserInterfaceManagerLocal::FindGui( const char *qpath, bool a
 
 	for ( int i = 0; i < c; i++ ) {
 		idUserInterfaceLocal *gui = guis[i];
-		if ( !idStr::Icmp( guis[i]->GetSourceFile(), qpath ) ) {
-			if ( !forceNOTUnique && ( needUnique || guis[i]->IsInteractive() ) ) {
+		if ( !idStr::Icmp( gui->GetSourceFile(), qpath ) ) {
+			if ( !forceNOTUnique && ( needUnique || gui->IsInteractive() ) ) {
 				break;
 			}
-			guis[i]->AddRef();
+			gui->AddRef();
 			return guis[i];
 		}
 	}
