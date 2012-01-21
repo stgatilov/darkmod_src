@@ -191,7 +191,7 @@ enum {
 class idCompiler {
 private:
 	static bool		punctuationValid[ 256 ];
-	static char		*punctuation[];
+	static const char	*punctuation[];
 
 	idParser		parser;
 	idParser		*parserPtr;

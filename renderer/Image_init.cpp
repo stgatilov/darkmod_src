@@ -904,7 +904,7 @@ void R_QuadraticImage( idImage *image ) {
 
 
 typedef struct {
-	char *name;
+	const char *name;
 	int	minimize, maximize;
 } filterName_t;
 
