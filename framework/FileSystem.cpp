@@ -392,7 +392,6 @@ private:
 	idDict					mapDict;			// for GetMapDecl
 
 	static idCVar			fs_debug;
-	static idCVar			fs_restrict;
 	static idCVar			fs_copyfiles;
 	static idCVar			fs_basepath;
 	static idCVar			fs_savepath;
@@ -460,7 +459,6 @@ private:
 	static int				CurlProgressFunction( void *clientp, double dltotal, double dlnow, double ultotal, double ulnow );
 };
 
-idCVar	idFileSystemLocal::fs_restrict( "fs_restrict", "", CVAR_SYSTEM | CVAR_INIT | CVAR_BOOL, "" );
 idCVar	idFileSystemLocal::fs_debug( "fs_debug", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar	idFileSystemLocal::fs_copyfiles( "fs_copyfiles", "0", CVAR_SYSTEM | CVAR_INIT | CVAR_INTEGER, "", 0, 4, idCmdSystem::ArgCompletion_Integer<0,3> );
 idCVar	idFileSystemLocal::fs_basepath( "fs_basepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
@@ -2804,7 +2802,6 @@ void idFileSystemLocal::Init( void ) {
 	common->StartupVariable( "fs_game", false );
 	common->StartupVariable( "fs_game_base", false );
 	common->StartupVariable( "fs_copyfiles", false );
-	common->StartupVariable( "fs_restrict", false );
 	common->StartupVariable( "fs_searchAddons", false );
 
 	// greebo: even the mod save path can be overriden by command line arguments
@@ -3136,7 +3133,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 
 			// if we are running restricted, the only files we
 			// will allow to come from the directory are .cfg files
-			if ( fs_restrict.GetBool() || serverPaks.Num() ) {
+			if ( serverPaks.Num() ) {
 				if ( !FileAllowedFromDir( relativePath ) ) {
 					continue;
 				}

@@ -1411,9 +1411,6 @@ thousands of shots
 void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName ) {
 	int	a,b,c,d, e;
 
-	bool restrict = cvarSystem->GetCVarBool( "fs_restrict" );
-	cvarSystem->SetCVarBool( "fs_restrict", false );
-
 	lastNumber++;
 	if ( lastNumber > 99999 ) {
 		lastNumber = 99999;
@@ -1441,7 +1438,6 @@ void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName ) 
 		}
 		// check again...
 	}
-	cvarSystem->SetCVarBool( "fs_restrict", restrict );
 }
 
 /*
