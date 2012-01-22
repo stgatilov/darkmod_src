@@ -39,8 +39,6 @@ const char* authReplyMsg[] = {
 	"#str_07204",
 	//	"Client unknown to auth",
 	"#str_07205",
-	//	"Access denied - CD Key in use",
-	"#str_07206",
 	//	"Auth custom message", // placeholder - we propagate a message from the master
 	"#str_07207",
 	//	"Authorize Server - Waiting for client"
@@ -219,9 +217,6 @@ void idAsyncServer::Kill( void ) {
 		Sys_Sleep( 10 );
 	}
 
-	// reset any pureness
-	fileSystem->ClearPureChecksums();
-
 	active = false;
 
 	// shutdown any current game
@@ -243,9 +238,6 @@ void idAsyncServer::ExecuteMapChange( void ) {
 	char		bestGameType[ MAX_STRING_CHARS ];
 
 	assert( active );
-
-	// reset any pureness
-	fileSystem->ClearPureChecksums();
 
 	// make sure the map/gametype combo is good
 	game->GetBestGameType( cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"), bestGameType );
@@ -278,12 +270,11 @@ void idAsyncServer::ExecuteMapChange( void ) {
 			common->Printf( "net_serverReloadEngine enabled - doing a full reload\n" );
 		}
 		// tell the clients to reconnect
-		// FIXME: shouldn't they wait for the new pure list, then reload?
 		// in a lot of cases this is going to trigger two reloadEngines for the clients
 		// one to restart, the other one to set paks right ( with addon for instance )
 		// can fix by reconnecting without reloading and waiting for the server to tell..
 		for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-			if ( clients[ i ].clientState >= SCS_PUREWAIT && i != localClientNum ) {
+			if ( clients[ i ].clientState >= SCS_CHILL && i != localClientNum ) {
 				msg.Init( msgBuf, sizeof( msgBuf ) );
 				msg.WriteByte( SERVER_RELIABLE_MESSAGE_RELOAD );
 				SendReliableMessage( i, msg );
@@ -318,25 +309,11 @@ void idAsyncServer::ExecuteMapChange( void ) {
 
 	// re-initialize all connected clients for the new map
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		if ( clients[i].clientState >= SCS_PUREWAIT && i != localClientNum ) {
+		if ( clients[i].clientState >= SCS_CHILL && i != localClientNum ) {
 
 			InitClient( i, clients[i].clientId, clients[i].clientRate );
 
 			SendGameInitToClient( i );
-
-			if ( sessLocal.mapSpawnData.serverInfo.GetBool( "si_pure" ) ) {
-				clients[ i ].clientState = SCS_PUREWAIT;
-			}
-		}
-	}
-
-	// setup the game pak checksums
-	// since this is not dependant on si_pure we catch anything bad before loading map
-	if ( sessLocal.mapSpawnData.serverInfo.GetInt( "si_pure" ) ) {
-		if ( !fileSystem->UpdateGamePakChecksums( ) ) {
-			session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04337" ), common->GetLanguageDict()->GetString ( "#str_04338" ), true );
-			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "disconnect\n" );
-			return;
 		}
 	}
 
@@ -347,19 +324,6 @@ void idAsyncServer::ExecuteMapChange( void ) {
 		BeginLocalClient();
 	} else {
 		game->SetLocalClient( -1 );
-	}
-
-	if ( sessLocal.mapSpawnData.serverInfo.GetInt( "si_pure" ) ) {
-		// lock down the pak list
-		fileSystem->UpdatePureServerChecksums( );
-		// tell the clients so they can work out their pure lists
-		for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-			if ( clients[ i ].clientState == SCS_PUREWAIT ) {
-				if ( !SendReliablePureToClient( i ) ) {
-					clients[ i ].clientState = SCS_CONNECTED;
-				}
-			}
-		}
 	}
 
 	// serverTime gets reset, force a heartbeat so timings restart
@@ -759,13 +723,13 @@ void idAsyncServer::DropClient( int clientNum, const char *reason ) {
 		return;
 	}
 
-	if ( client.clientState >= SCS_PUREWAIT && clientNum != localClientNum ) {
+	if ( client.clientState >= SCS_CHILL && clientNum != localClientNum ) {
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteByte( SERVER_RELIABLE_MESSAGE_DISCONNECT );
 		msg.WriteLong( clientNum );
 		msg.WriteString( reason );
 		for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-			// clientNum so SCS_PUREWAIT client gets it's own disconnect msg
+			// clientNum so SCS_CHILL client gets it's own disconnect msg
 			if ( i == clientNum || clients[i].clientState >= SCS_CONNECTED ) {
 				SendReliableMessage( i, msg );
 			}
@@ -826,7 +790,7 @@ void idAsyncServer::CheckClientTimeouts( void ) {
 			continue;
 		}
 
-		if ( client.clientState >= SCS_PUREWAIT && client.lastPacketTime < clientTimeout ) {
+		if ( client.clientState >= SCS_CHILL && client.lastPacketTime < clientTimeout ) {
 			DropClient( i, "#str_07137" );
 			continue;
 		}
@@ -1244,12 +1208,6 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 			// send game init to client
 			SendGameInitToClient( clientNum );
 
-			if ( sessLocal.mapSpawnData.serverInfo.GetBool( "si_pure" ) ) {
-				client.clientState = SCS_PUREWAIT;
-				if ( !SendReliablePureToClient( clientNum ) ) {
-					client.clientState = SCS_CONNECTED;
-				}
-			}
 		} else if ( idAsyncNetwork::verbose.GetInteger() ) {
 			common->Printf( "ignore unreliable msg from client %d, wrong gameInit, old sequence\n", clientNum );
 		}
@@ -1367,11 +1325,6 @@ void idAsyncServer::ProcessReliableClientMessages( int clientNum ) {
 			}
 			case CLIENT_RELIABLE_MESSAGE_DISCONNECT: {
 				DropClient( clientNum, "#str_07138" );
-				break;
-			}
-			case CLIENT_RELIABLE_MESSAGE_PURE: {
-				// we get this message once the client has successfully updated it's pure list
-				ProcessReliablePure( clientNum, msg );
 				break;
 			}
 			default: {
@@ -1547,82 +1500,6 @@ void idAsyncServer::ProcessChallengeMessage( const netadr_t from, const idBitMsg
 
 /*
 ==================
-idAsyncServer::SendPureServerMessage
-==================
-*/
-bool idAsyncServer::SendPureServerMessage( const netadr_t to, int OS ) {
-	idBitMsg	outMsg;
-	byte		msgBuf[ MAX_MESSAGE_SIZE ];
-	int			serverChecksums[ MAX_PURE_PAKS ];
-	int			gamePakChecksum;
-	int			i;
-
-	fileSystem->GetPureServerChecksums( serverChecksums, OS, &gamePakChecksum );
-	if ( !serverChecksums[ 0 ] ) {
-		// happens if you run fully expanded assets with si_pure 1
-		common->Warning( "pure server has no pak files referenced" );
-		return false;
-	}
-	common->DPrintf( "client %s: sending pure pak list\n", Sys_NetAdrToString( to ) );
-
-	// send our list of required paks
-	outMsg.Init( msgBuf, sizeof( msgBuf ) );
-	outMsg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
-	outMsg.WriteString( "pureServer" );
-
-	i = 0;
-	while ( serverChecksums[ i ] ) {
-		outMsg.WriteLong( serverChecksums[ i++ ] );
-	}
-	outMsg.WriteLong( 0 );
-
-	// write the pak checksum for game code
-	outMsg.WriteLong( gamePakChecksum );
-
-	serverPort.SendPacket( to, outMsg.GetData(), outMsg.GetSize() );
-	return true;
-}
-
-/*
-==================
-idAsyncServer::SendReliablePureToClient
-==================
-*/
-bool idAsyncServer::SendReliablePureToClient( int clientNum ) {
-	idBitMsg	msg;
-	byte		msgBuf[ MAX_MESSAGE_SIZE ];
-	int			serverChecksums[ MAX_PURE_PAKS ];
-	int			i;
-	int			gamePakChecksum;
-
-	fileSystem->GetPureServerChecksums( serverChecksums, clients[ clientNum ].OS, &gamePakChecksum );
-	if ( !serverChecksums[ 0 ] ) {
-		// happens if you run fully expanded assets with si_pure 1
-		common->Warning( "pure server has no pak files referenced" );
-		return false;
-	}
-
-	common->DPrintf( "client %d: sending pure pak list (reliable channel) @ gameInitId %d\n", clientNum, gameInitId );
-
-	msg.Init( msgBuf, sizeof( msgBuf ) );
-	msg.WriteByte( SERVER_RELIABLE_MESSAGE_PURE );
-
-	msg.WriteLong( gameInitId );
-
-	i = 0;
-	while ( serverChecksums[ i ] ) {
-		msg.WriteLong( serverChecksums[ i++ ] );
-	}
-	msg.WriteLong( 0 );
-	msg.WriteLong( gamePakChecksum );
-
-	SendReliableMessage( clientNum, msg );
-
-	return true;
-}
-
-/*
-==================
 idAsyncServer::ValidateChallenge
 ==================
 */
@@ -1686,8 +1563,8 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 	clientId = msg.ReadShort();
 	clientRate = msg.ReadLong();
 
-	// check the client data - only for non pure servers
-	if ( !sessLocal.mapSpawnData.serverInfo.GetInt( "si_pure" ) && clientDataChecksum != serverDataChecksum ) {
+	// check the client data
+	if ( clientDataChecksum != serverDataChecksum ) {
 		PrintOOB( from, SERVER_PRINT_MISC, "#str_04842" );
 		return;
 	}
@@ -1700,9 +1577,6 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 	msg.ReadString( guid, sizeof( guid ) );
 
 	switch ( challenges[ ichallenge ].authState ) {
-		case CDK_PUREWAIT:
-			SendPureServerMessage( from, OS );
-			return;
 		case CDK_ONLYLAN:
 			common->DPrintf( "%s: not a lan client\n", Sys_NetAdrToString( from ) );
 			PrintOOB( from, SERVER_PRINT_MISC, "#str_04843" );
@@ -1754,20 +1628,19 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 			}
 			return;
 		default:
-			assert( challenges[ ichallenge ].authState == CDK_OK || challenges[ ichallenge ].authState == CDK_PUREOK );
+			assert( challenges[ ichallenge ].authState == CDK_OK );
 	}
 
 	numClients = 0;
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
 		serverClient_t &client = clients[ i ];
-		if ( client.clientState >= SCS_PUREWAIT ) {
+		if ( client.clientState >= SCS_CHILL ) {
 			numClients++;
 		}
 	}
 
 	// game may be passworded, client banned by IP or GUID
-	// if authState == CDK_PUREOK, the check was already performed once before entering pure checks
-	// but meanwhile, the max players may have been reached
+	// meanwhile, the max players may have been reached
 	msg.ReadString( password, sizeof( password ) );
 	char reason[MAX_STRING_CHARS];
 	allowReply_t reply = game->ServerAllowClient( numClients, Sys_NetAdrToString( from ), guid, password, reason );
@@ -1783,20 +1656,6 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 		outMsg.WriteString( reason );
 		serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
 
-		return;
-	}
-
-	// enter pure checks if necessary
-	if ( sessLocal.mapSpawnData.serverInfo.GetInt( "si_pure" ) && challenges[ ichallenge ].authState != CDK_PUREOK ) {
-		if ( SendPureServerMessage( from, OS ) ) {
-			challenges[ ichallenge ].authState = CDK_PUREWAIT;
-			return;
-		}
-	}
-
-	// push back decl checksum here when running pure. just an additional safe check
-	if ( sessLocal.mapSpawnData.serverInfo.GetInt( "si_pure" ) && clientDataChecksum != serverDataChecksum ) {
-		PrintOOB( from, SERVER_PRINT_MISC, "#str_04844" );
 		return;
 	}
 
@@ -1817,7 +1676,7 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 				}
 			} else if ( islot == 1 ) {
 				// if this client is not connected and the slot uses the same IP
-				if ( client.clientState >= SCS_PUREWAIT ) {
+				if ( client.clientState >= SCS_CHILL ) {
 					continue;
 				}
 				if ( Sys_CompareNetAdrBase( from, client.channel.GetRemoteAddress() ) ) {
@@ -1880,7 +1739,6 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 	int		checksums[ MAX_PURE_PAKS ];
 	int		gamePakChecksum;
 	int		serverChecksums[ MAX_PURE_PAKS ];
-	int		serverGamePakChecksum;
 
 	// pak checksums, in a 0-terminated list
 	numChecksums = 0;
@@ -1889,7 +1747,7 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 		checksums[ numChecksums++ ] = i;
 		// just to make sure a broken client doesn't crash us
 		if ( numChecksums >= MAX_PURE_PAKS ) {
-			common->Warning( "MAX_PURE_PAKS ( %d ) exceeded in idAsyncServer::ProcessPureMessage\n", MAX_PURE_PAKS );
+			common->Warning( "MAX_PURE_PAKS ( %d ) exceeded\n", MAX_PURE_PAKS );
 			sprintf( reply, "#str_07144" );
 			return false;
 		}
@@ -1898,16 +1756,10 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 
 	// code pak checksum
 	gamePakChecksum = msg.ReadLong( );
-
-	fileSystem->GetPureServerChecksums( serverChecksums, OS, &serverGamePakChecksum );
+	// TODO: Check
 	assert( serverChecksums[ 0 ] );
 
 	// compare the lists
-	if ( serverGamePakChecksum != gamePakChecksum ) {
-		common->Printf( "client %s: invalid game code pak ( 0x%x )\n", from ? Sys_NetAdrToString( *from ) : va( "%d", clientNum ), gamePakChecksum );
-		sprintf( reply, "#str_07145" );
-		return false;
-	}
 	for ( i = 0; serverChecksums[ i ] != 0; i++ ) {
 		if ( checksums[ i ] != serverChecksums[ i ] ) {
 			common->DPrintf( "client %s: pak missing ( 0x%x )\n", from ? Sys_NetAdrToString( *from ) : va( "%d", clientNum ), serverChecksums[ i ] );
@@ -1921,72 +1773,6 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 		return false;
 	}
 	return true;
-}
-
-/*
-==================
-idAsyncServer::ProcessPureMessage
-==================
-*/
-void idAsyncServer::ProcessPureMessage( const netadr_t from, const idBitMsg &msg ) {
-	int		iclient, challenge, clientId;
-	idStr	reply;
-
-	challenge = msg.ReadLong();
-	clientId = msg.ReadShort();
-
-	if ( ( iclient = ValidateChallenge( from, challenge, clientId ) ) == -1 ) {
-		return;
-	}
-
-	if ( challenges[ iclient ].authState != CDK_PUREWAIT ) {
-		common->DPrintf( "client %s: got pure message, not in CDK_PUREWAIT\n", Sys_NetAdrToString( from ) );
-		return;
-	}
-
-	if ( !VerifyChecksumMessage( iclient, &from, msg, reply, challenges[ iclient ].OS ) ) {
-		PrintOOB( from, SERVER_PRINT_MISC, reply );
-		return;
-	}
-
-	common->DPrintf( "client %s: passed pure checks\n", Sys_NetAdrToString( from ) );
-	challenges[ iclient ].authState = CDK_PUREOK; // next connect message will get the client through completely
-}
-
-/*
-==================
-idAsyncServer::ProcessReliablePure
-==================
-*/
-void idAsyncServer::ProcessReliablePure( int clientNum, const idBitMsg &msg ) {
-	idStr		reply;
-	idBitMsg	outMsg;
-	byte		msgBuf[MAX_MESSAGE_SIZE];
-	int			clientGameInitId;
-	
-	clientGameInitId = msg.ReadLong();
-	if ( clientGameInitId != gameInitId ) {
-		common->DPrintf( "client %d: ignoring reliable pure from an old gameInit (%d)\n", clientNum, clientGameInitId );
-		return;
-	}
-
-	if ( clients[ clientNum ].clientState != SCS_PUREWAIT ) {
-		// should not happen unless something is very wrong. still, don't let this crash us, just get rid of the client
-		common->DPrintf( "client %d: got reliable pure while != SCS_PUREWAIT, sending a reload\n", clientNum );
-		outMsg.Init( msgBuf, sizeof( msgBuf ) );
-		outMsg.WriteByte( SERVER_RELIABLE_MESSAGE_RELOAD );
-		SendReliableMessage( clientNum, msg );
-		// go back to SCS_CONNECTED to sleep on the client until it goes away for a reconnect
-		clients[ clientNum ].clientState = SCS_CONNECTED;
-		return;
-	}
-
-	if ( !VerifyChecksumMessage( clientNum, NULL, msg, reply, clients[ clientNum ].OS ) ) {
-		DropClient( clientNum, reply );
-		return;
-	}
-	common->DPrintf( "client %d: passed pure checks (reliable channel)\n", clientNum );
-	clients[ clientNum ].clientState = SCS_CONNECTED;
 }
 
 /*
@@ -2153,12 +1939,6 @@ bool idAsyncServer::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 	// connect from a client
 	if ( idStr::Icmp( string, "connect" ) == 0 ) {
 		ProcessConnectMessage( from, msg );
-		return false;
-	}
-
-	// pure mesasge from a client
-	if ( idStr::Icmp( string, "pureClient" ) == 0 ) {
-		ProcessPureMessage( from, msg );
 		return false;
 	}
 
@@ -2549,7 +2329,7 @@ void idAsyncServer::PacifierUpdate( void ) {
 	realTime = Sys_Milliseconds();
 	ProcessConnectionLessMessages();
 	for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
-		if ( clients[i].clientState >= SCS_PUREWAIT ) {
+		if ( clients[i].clientState >= SCS_CHILL ) {
 			if ( clients[i].channel.UnsentFragmentsLeft() ) {
 				clients[i].channel.SendNextFragment( serverPort, serverTime );
 			} else {
@@ -2684,11 +2464,6 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 	dlRequest = msg.ReadLong();
 
 	if ( ( iclient = ValidateChallenge( from, challenge, clientId ) ) == -1 ) {
-		return;
-	}
-
-	if ( challenges[ iclient ].authState != CDK_PUREWAIT ) {
-		common->DPrintf( "client %s: got download request message, not in CDK_PUREWAIT\n", Sys_NetAdrToString( from ) );
 		return;
 	}
 	

@@ -43,7 +43,7 @@
 ===============================================================================
 */
 
-static const ID_TIME_T		FILE_NOT_FOUND_TIMESTAMP	= 0xFFFFFFFF;
+static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= 0xFFFFFFFF;
 static const int		MAX_PURE_PAKS				= 128;
 static const int		MAX_OSPATH					= 256;
 
@@ -53,13 +53,6 @@ typedef enum {
 	FS_WRITE	= 1,
 	FS_APPEND	= 2
 } fsMode_t;
-
-typedef enum {
-	PURE_OK,		// we are good to connect as-is
-	PURE_RESTART,	// restart required
-	PURE_MISSING,	// pak files missing on the client
-	PURE_NODLL		// no DLL could be extracted
-} fsPureReply_t;
 
 typedef enum {
 	DLTYPE_URL,
@@ -179,27 +172,6 @@ public:
 							// Returns true if a file is in a pak file.
 	virtual bool			FileIsInPAK( const char *relativePath ) = 0;
 							// Returns a space separated string containing the checksums of all referenced pak files.
-							// will call SetPureServerChecksums internally to restrict itself
-	virtual void			UpdatePureServerChecksums( void ) = 0;
-							// setup the mapping of OS -> game pak checksum
-	virtual bool			UpdateGamePakChecksums( void ) = 0;
-							// 0-terminated list of pak checksums
-							// if pureChecksums[ 0 ] == 0, all data sources will be allowed
-							// otherwise, only pak files that match one of the checksums will be checked for files
-							// with the sole exception of .cfg files.
-							// the function tries to configure pure mode from the paks already referenced and this new list
-							// it returns wether the switch was successfull, and sets the missing checksums
-							// the process is verbosive when fs_debug 1
-	virtual fsPureReply_t	SetPureServerChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int gamePakChecksum, int missingChecksums[ MAX_PURE_PAKS ], int *missingGamePakChecksum ) = 0;
-							// fills a 0-terminated list of pak checksums for a client
-							// if OS is -1, give the current game pak checksum. if >= 0, lookup the game pak table (server only)
-	virtual void			GetPureServerChecksums( int checksums[ MAX_PURE_PAKS ], int OS, int *gamePakChecksum ) = 0;
-							// before doing a restart, force the pure list and the search order
-							// if the given checksum list can't be completely processed and set, will error out
-	virtual void			SetRestartChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int gamePakChecksum ) = 0;
-							// equivalent to calling SetPureServerChecksums with an empty list
-	virtual	void			ClearPureChecksums( void ) = 0;
-							// get a mask of supported OSes. if not pure, returns -1
 	virtual int				GetOSMask( void ) = 0;
 							// Reads a complete file.
 							// Returns the length of the file, or -1 on failure.
@@ -254,7 +226,7 @@ public:
 
 	virtual idFile *		MakeTemporaryFile( void ) = 0;
 
-							// make downloaded pak files known so pure negociation works next time
+							// make downloaded pak files known
 	virtual int				AddZipFile( const char *path ) = 0;
 
 							// look for a file in the loaded paks or the addon paks

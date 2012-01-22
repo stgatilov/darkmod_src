@@ -204,7 +204,6 @@ public:
 	void			MapRestart( void );
 	// called by idPlayer whenever it detects a team change (init or switch)
 	void			SwitchToTeam( int clientNum, int oldteam, int newteam );
-	bool			IsPureReady( void ) const;
 	void			ProcessChatMessage( int clientNum, bool team, const char *name, const char *text, const char *sound );
 	void			ProcessVoiceChat( int clientNum, bool team, int index );
 
@@ -292,7 +291,6 @@ private:
 	int				numRankedPlayers;		// ranked players, others may be empty slots or spectators
 	idPlayer *		rankedPlayers[MAX_CLIENTS];
 
-	bool			pureReady;				// defaults to false, set to true once server game is running with pure checksums
 	int				fragLimitTimeout;
 
 	int				switchThrottle[ 3 ];
@@ -348,10 +346,6 @@ private:
 
 ID_INLINE idMultiplayerGame::gameState_t idMultiplayerGame::GetGameState( void ) const {
 	return gameState;
-}
-
-ID_INLINE bool idMultiplayerGame::IsPureReady( void ) const {
-	return pureReady;
 }
 
 ID_INLINE void idMultiplayerGame::ClearFrags( int clientNum ) {
