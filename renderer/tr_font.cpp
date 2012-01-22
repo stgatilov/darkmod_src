@@ -366,7 +366,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 
 		int mw = 0;
 		int mh = 0;
-		for (i = GLYPH_START; i < GLYPH_END; i++) {
+		for (i = GLYPH_START; i <= GLYPH_END; i++) {
 			idStr::snPrintf(name, sizeof(name), "%s/%s", fontName, outFont->glyphs[i].shaderName);
 			outFont->glyphs[i].glyph = declManager->FindMaterial(name);
 			outFont->glyphs[i].glyph->SetSort( SS_GUI );
@@ -435,7 +435,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 
 	maxHeight = 0;
 
-	for (i = GLYPH_START; i < GLYPH_END; i++) {
+	for (i = GLYPH_START; i <= GLYPH_END; i++) {
 		glyph = RE_ConstructGlyphInfo(out, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qtrue);
 	}
 
@@ -449,7 +449,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 
 		glyph = RE_ConstructGlyphInfo(out, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qfalse);
 
-		if (xOut == -1 || yOut == -1 || i == GLYPH_END)  {
+		if (xOut == -1 || yOut == -1)  {
 			// ran out of room
 			// we need to create an image from the bitmap, set all the handles in the glyphs to this point
 			// 
