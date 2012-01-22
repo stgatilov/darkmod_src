@@ -145,6 +145,91 @@ for instance to base a mod of D3 assets, fs_game mymod, fs_game_base d3xp TODO: 
 =============================================================================
 */
 
+
+
+// define to fix special-cases for GetPackStatus so that files that shipped in 
+// the wrong place for Doom 3 don't break pure servers.
+#define DOOM3_PURE_SPECIAL_CASES	
+
+typedef bool (*pureExclusionFunc_t)( const struct pureExclusion_s &excl, int l, const idStr &name );
+
+typedef struct pureExclusion_s {
+	int					nameLen;
+	int					extLen;
+	const char *		name;
+	const char *		ext;
+	pureExclusionFunc_t	func;
+} pureExclusion_t;
+
+bool excludeExtension( const pureExclusion_t &excl, int l, const idStr &name ) {
+	if ( l > excl.extLen && !idStr::Icmp( name.c_str() + l - excl.extLen, excl.ext ) ) {
+		return true;
+	}
+	return false;
+}
+
+bool excludePathPrefixAndExtension( const pureExclusion_t &excl, int l, const idStr &name ) {
+	if ( l > excl.nameLen && !idStr::Icmp( name.c_str() + l - excl.extLen, excl.ext ) && !name.IcmpPrefixPath( excl.name ) ) {
+		return true;
+	}
+	return false;
+}
+
+bool excludeFullName( const pureExclusion_t &excl, int l, const idStr &name ) {
+	if ( l == excl.nameLen && !name.Icmp( excl.name ) ) {
+		return true;
+	}
+	return false;
+}
+
+static pureExclusion_t pureExclusions[] = {
+	{ 0,	0,	NULL,											"/",		excludeExtension },
+	{ 0,	0,	NULL,											"\\",		excludeExtension },
+	{ 0,	0,	NULL,											".pda",		excludeExtension },
+	{ 0,	0,	NULL,											".gui",		excludeExtension },
+	{ 0,	0,	NULL,											".pd",		excludeExtension },
+	{ 0,	0,	NULL,											".lang",	excludeExtension },
+	{ 0,	0,	"sound/VO",										".ogg",		excludePathPrefixAndExtension },
+	{ 0,	0,	"sound/VO",										".wav",		excludePathPrefixAndExtension },
+#if	defined DOOM3_PURE_SPECIAL_CASES	
+	// add any special-case files or paths for pure servers here
+	{ 0,	0,	"sound/ed/marscity/vo_intro_cutscene.ogg",		NULL,		excludeFullName },
+	{ 0,	0,	"sound/weapons/soulcube/energize_01.ogg",		NULL,		excludeFullName },
+	{ 0,	0,	"sound/xian/creepy/vocal_fx",					".ogg",		excludePathPrefixAndExtension },
+	{ 0,	0,	"sound/xian/creepy/vocal_fx",					".wav",		excludePathPrefixAndExtension },
+	{ 0,	0,	"sound/feedback",								".ogg",		excludePathPrefixAndExtension },
+	{ 0,	0,	"sound/feedback",								".wav",		excludePathPrefixAndExtension },
+	{ 0,	0,	"guis/assets/mainmenu/chnote.tga",				NULL,		excludeFullName },
+	{ 0,	0,	"sound/levels/alphalabs2/uac_better_place.ogg",	NULL,		excludeFullName },
+	{ 0,	0,	"textures/bigchars.tga",						NULL,		excludeFullName },
+	{ 0,	0,	"dds/textures/bigchars.dds",					NULL,		excludeFullName },
+	{ 0,	0,	"fonts",										".tga",		excludePathPrefixAndExtension },
+	{ 0,	0,	"dds/fonts",									".dds",		excludePathPrefixAndExtension },
+	{ 0,	0,	"default.cfg",									NULL,		excludeFullName },
+	// russian zpak001.pk4
+	{ 0,	0,  "fonts",										".dat",		excludePathPrefixAndExtension },
+	{ 0,	0,	"guis/temp.guied",								NULL,		excludeFullName },
+#endif
+	{ 0,	0,	NULL,											NULL,		NULL }
+};
+
+// ensures that lengths for pure exclusions are correct
+class idInitExclusions {
+public:
+	idInitExclusions() {
+		for ( int i = 0; pureExclusions[i].func != NULL; i++ ) {
+			if ( pureExclusions[i].name ) {
+				pureExclusions[i].nameLen = idStr::Length( pureExclusions[i].name );
+			}
+			if ( pureExclusions[i].ext ) {
+				pureExclusions[i].extLen = idStr::Length( pureExclusions[i].ext );
+			}
+		}
+	}
+};
+
+static idInitExclusions	initExclusions;
+
 #define MAX_ZIPPED_FILE_NAME	2048
 #define FILE_HASH_SIZE			1024
 
@@ -159,6 +244,13 @@ typedef enum {
 	BINARY_YES,
 	BINARY_NO
 } binaryStatus_t;
+
+typedef enum {
+	PURE_UNKNOWN = 0,	// need to run the pak through GetPackStatus
+	PURE_NEUTRAL,	// neutral regarding pureness. gets in the pure list if referenced
+	PURE_ALWAYS,	// always referenced - for pak* named files, unless NEVER
+	PURE_NEVER		// VO paks. may be referenced, won't be in the pure lists
+} pureStatus_t;
 
 typedef struct {
 	idList<int>			depends;
@@ -176,6 +268,7 @@ typedef struct {
 	bool				addon;						// this is an addon pack - addon_search tells if it's 'active'
 	bool				addon_search;				// is in the search list
 	addonInfo_t			*addon_info;
+	pureStatus_t		pureStatus;
 	bool				isNew;						// for downloaded paks
 	fileInPack_t		*hashTable[FILE_HASH_SIZE];
 	fileInPack_t		*buildBuffer;
@@ -195,8 +288,9 @@ typedef struct searchpath_s {
 // search flags when opening a file
 #define FSFLAG_SEARCH_DIRS		( 1 << 0 )
 #define FSFLAG_SEARCH_PAKS		( 1 << 1 )
-#define FSFLAG_BINARY_ONLY		( 1 << 2 )
-#define FSFLAG_SEARCH_ADDONS	( 1 << 3 )
+#define FSFLAG_PURE_NOREF		( 1 << 2 )
+#define FSFLAG_BINARY_ONLY		( 1 << 3 )
+#define FSFLAG_SEARCH_ADDONS	( 1 << 4 )
 
 // 3 search path (fs_savepath fs_basepath fs_cdpath)
 // + .jpg and .tga
@@ -241,7 +335,12 @@ public:
 	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath );
 	virtual void			CreateOSPath( const char *OSPath );
 	virtual bool			FileIsInPAK( const char *relativePath );
+	virtual void			UpdatePureServerChecksums( void );
 	virtual bool			UpdateGamePakChecksums( void );
+	virtual fsPureReply_t	SetPureServerChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int gamePakChecksum, int missingChecksums[ MAX_PURE_PAKS ], int *missingGamePakChecksum );
+	virtual void			GetPureServerChecksums( int checksums[ MAX_PURE_PAKS ], int OS, int *gamePakChecksum );
+	virtual void			SetRestartChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int gamePakChecksum );
+	virtual	void			ClearPureChecksums( void );
 	virtual int				GetOSMask( void );
 	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp );
 	virtual void			FreeFile( void *buffer );
@@ -313,7 +412,7 @@ private:
 	xthreadInfo				backgroundThread;
 
 	idList<pack_t *>		serverPaks;
-	bool					loadedFileFromDir;		// set to true once a file was loaded from a directory
+	bool					loadedFileFromDir;		// set to true once a file was loaded from a directory - can't switch to pure anymore
 	idList<int>				restartChecksums;		// used during a restart to set things in right order
 	idList<int>				addonChecksums;			// list of checksums that should go to the search list directly ( for restarts )
 	int						restartGamePakChecksum;
@@ -343,14 +442,15 @@ private:
 	void					AddGameDirectory( const char *path, const char *dir );
 	void					SetupGameDirectories( const char *gameName );
 	void					Startup( void );
-
+							// some files can be obtained from directories without compromising si_pure
 	bool					FileAllowedFromDir( const char *path );
-							// searches all the paks
+							// searches all the paks, no pure check
 	pack_t *				GetPackForChecksum( int checksum, bool searchAddons = false );
-							// searches all the paks
+							// searches all the paks, no pure check
 	pack_t *				FindPakForFileChecksum( const char *relativePath, int fileChecksum, bool bReference );
 	idFile_InZip *			ReadFileFromZip( pack_t *pak, fileInPack_t *pakFile, const char *relativePath );
 	int						GetFileChecksum( idFile *file );
+	pureStatus_t			GetPackStatus( pack_t *pak );
 	addonInfo_t *			ParseAddonDef( const char *buf, const int len );
 	void					FollowAddonDependencies( pack_t *pak );
 
@@ -876,6 +976,14 @@ bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) {
 		// is the element a pak file?
 		if ( search->pack && search->pack->hashTable[hash] ) {
 
+			// disregard if it doesn't match one of the allowed pure pak files - or is a localization file
+			if ( serverPaks.Num() ) {
+				GetPackStatus( search->pack );
+				if ( search->pack->pureStatus != PURE_NEVER && !serverPaks.Find( search->pack ) ) {
+					continue; // not on the pure server pak list
+				}
+			}
+
 			// look through all the pak file elements
 			pak = search->pack;
 			pakFile = pak->hashTable[hash];
@@ -1198,6 +1306,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 	pack->addon = false;
 	pack->addon_search = false;
 	pack->addon_info = NULL;
+	pack->pureStatus = PURE_UNKNOWN;
 	pack->isNew = false;
 
 	pack->length = len;
@@ -1404,6 +1513,14 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 			}
 		} else if ( search->pack ) {
 			// look through all the pak file elements
+
+			// exclude any extra packs if we have server paks to search
+			if ( serverPaks.Num() ) {
+				GetPackStatus( search->pack );
+				if ( search->pack->pureStatus != PURE_NEVER && !serverPaks.Find( search->pack ) ) {
+					continue; // not on the pure server pak list
+				}
+			}
 
 			pak = search->pack;
 			buildBuffer = pak->buildBuffer;
@@ -1842,11 +1959,21 @@ void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 			} else {
 				common->Printf( "%s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
 			}
+			if ( fileSystemLocal.serverPaks.Num() ) {
+				if ( fileSystemLocal.serverPaks.Find( sp->pack ) ) {
+					common->Printf( "    on the pure list\n" );
+				} else {
+					common->Printf( "    not on the pure list\n" );
+				}
+			}
 		} else {
 			common->Printf( "%s/%s\n", sp->dir->path.c_str(), sp->dir->gamedir.c_str() );
 		}
 	}
 	common->Printf( "game DLL: 0x%x in pak: 0x%x\n", fileSystemLocal.gameDLLChecksum, fileSystemLocal.gamePakChecksum );
+#if ID_FAKE_PURE
+	common->Printf( "Note: ID_FAKE_PURE is enabled\n" );
+#endif
 	for( i = 0; i < MAX_GAME_OS; i++ ) {
 		if ( fileSystemLocal.gamePakForOS[ i ] ) {
 			common->Printf( "OS %d - pak 0x%x\n", i, fileSystemLocal.gamePakForOS[ i ] );
@@ -2072,14 +2199,14 @@ idFileSystemLocal::Startup
 */
 void idFileSystemLocal::Startup( void ) {
 	searchpath_t	**search;
-	//int				i; // TODO: Check warns for unref
+	int				i;
 	pack_t			*pak;
 	int				addon_index;
 
 	common->Printf( "------ Initializing File System ------\n" );
 
 	if ( restartChecksums.Num() ) {
-		common->Printf( "restarting with %d pak files\n", restartChecksums.Num() ); // TODO: Check this outs
+		common->Printf( "restarting in pure mode with %d pak files\n", restartChecksums.Num() );
 	}
 	if ( addonChecksums.Num() ) {
 		common->Printf( "restarting filesystem with %d addon pak file(s) to include\n", addonChecksums.Num() );
@@ -2162,6 +2289,86 @@ void idFileSystemLocal::Startup( void ) {
 		}
 	}
 
+	// all addon paks found and accounted for
+	assert( !addonChecksums.Num() );
+	addonChecksums.Clear();	// just in case
+
+	if ( restartChecksums.Num() ) {
+		search = &searchPaths;
+		while ( *search ) {
+			if ( !( *search )->pack ) {
+				search = &( ( *search )->next );
+				continue;
+			}
+			if ( ( i = restartChecksums.FindIndex( ( *search )->pack->checksum ) ) != -1 ) {
+				if ( i == 0 ) {
+					// this pak is the next one in the pure search order
+					serverPaks.Append( ( *search )->pack );
+					restartChecksums.RemoveIndex( 0 );
+					if ( !restartChecksums.Num() ) {
+						break; // early out, we're done
+					}
+					search = &( ( *search )->next );
+					continue;
+				} else {
+					// this pak will be on the pure list, but order is not right yet
+					searchpath_t	*aux;
+					aux = ( *search )->next;
+					if ( !aux ) {
+						// last of the list can't be swapped back
+						if ( fs_debug.GetBool() ) {
+							common->Printf( "found pure checksum %x at index %d, but the end of search path is reached\n", ( *search )->pack->checksum, i );
+							idStr checks;
+							checks.Clear();
+							for ( i = 0; i < serverPaks.Num(); i++ ) {
+								checks += va( "%p ", serverPaks[ i ] );
+							}
+							common->Printf( "%d pure paks - %s \n", serverPaks.Num(), checks.c_str() );
+							checks.Clear();
+							for ( i = 0; i < restartChecksums.Num(); i++ ) {
+								checks += va( "%x ", restartChecksums[ i ] );
+							}
+							common->Printf( "%d paks left - %s\n", restartChecksums.Num(), checks.c_str() );
+						}
+						common->FatalError( "Failed to restart with pure mode restrictions for server connect" );
+					}
+					// put this search path at the end of the list
+					searchpath_t *search_end;
+					search_end = ( *search )->next;
+					while ( search_end->next ) {
+						search_end = search_end->next;
+					}
+					search_end->next = *search;
+					*search = ( *search )->next;
+					search_end->next->next = NULL;
+					continue;
+				}
+			}
+			// this pak is not on the pure list
+			search = &( ( *search )->next );
+		}
+		// the list must be empty
+		if ( restartChecksums.Num() ) {
+			if ( fs_debug.GetBool() ) {
+				idStr checks;
+				checks.Clear();
+				for ( i = 0; i < serverPaks.Num(); i++ ) {
+					checks += va( "%p ", serverPaks[ i ] );
+				}
+				common->Printf( "%d pure paks - %s \n", serverPaks.Num(), checks.c_str() );
+				checks.Clear();
+				for ( i = 0; i < restartChecksums.Num(); i++ ) {
+					checks += va( "%x ", restartChecksums[ i ] );
+				}
+				common->Printf( "%d paks left - %s\n", restartChecksums.Num(), checks.c_str() );
+			}
+			common->FatalError( "Failed to restart with pure mode restrictions for server connect" );
+		}
+		// also the game pak checksum
+		// we could check if the game pak is actually present, but we would not be restarting if there wasn't one @ first pure check
+		gamePakChecksum = restartGamePakChecksum;
+	}
+
 	// add our commands
 	cmdSystem->AddCommand( "dir", Dir_f, CMD_FL_SYSTEM, "lists a folder", idCmdSystem::ArgCompletion_FileName );
 	cmdSystem->AddCommand( "dirtree", DirTree_f, CMD_FL_SYSTEM, "lists a folder with subfolders" );
@@ -2176,6 +2383,42 @@ void idFileSystemLocal::Startup( void ) {
 	common->Printf( "--------------------------------------\n" );
 }
 
+/*
+=====================
+idFileSystemLocal::UpdatePureServerChecksums
+=====================
+*/
+void idFileSystemLocal::UpdatePureServerChecksums( void ) {
+	searchpath_t	*search;
+	int				i;
+	pureStatus_t	status;
+
+	serverPaks.Clear();
+	for ( search = searchPaths; search; search = search->next ) {
+		// is the element a referenced pak file?
+		if ( !search->pack ) {
+			continue;
+		}
+		status = GetPackStatus( search->pack );
+		if ( status == PURE_NEVER ) {
+			continue;
+		}
+		if ( status == PURE_NEUTRAL && !search->pack->referenced ) {
+			continue;
+		}
+		serverPaks.Append( search->pack );
+		if ( serverPaks.Num() >= MAX_PURE_PAKS ) {
+			common->FatalError( "MAX_PURE_PAKS ( %d ) exceeded\n", MAX_PURE_PAKS );
+		}
+	}
+	if ( fs_debug.GetBool() ) {
+		idStr checks;
+		for ( i = 0; i < serverPaks.Num(); i++ ) {
+			checks += va( "%x ", serverPaks[ i ]->checksum );
+		}
+		common->Printf( "set pure list - %d paks ( %s)\n", serverPaks.Num(), checks.c_str() );
+	}
+}
 
 /*
 =====================
@@ -2227,6 +2470,7 @@ bool idFileSystemLocal::UpdateGamePakChecksums( void ) {
 	}
 
 	// some sanity checks on the game code references
+	// make sure that at least the local OS got a pure reference
 	if ( !gamePakForOS[ BUILD_OS_ID ] ) {
 		common->Warning( "No game code pak reference found for the local OS" );
 		return false;
@@ -2292,8 +2536,8 @@ int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ 
 		common->DPrintf( "%s is not a donwloadable pak\n", pak->pakFilename.c_str() );
 		return 0;
 	}
-
 	// check the binary
+	// a pure server sets the binary flag when starting the game
 	assert( pak->binary != BINARY_UNKNOWN );
 	pakBinary = ( pak->binary == BINARY_YES ) ? true : false;
 	if ( isBinary != pakBinary ) {
@@ -2318,6 +2562,224 @@ int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ 
 	}
 	idStr::Copynz( path, relativePath, MAX_STRING_CHARS );
 	return pak->length;
+}
+
+/*
+=====================
+idFileSystemLocal::ClearPureChecksums
+=====================
+*/
+void idFileSystemLocal::ClearPureChecksums( void ) {
+	common->DPrintf( "Cleared pure server lock\n" );
+	serverPaks.Clear();
+}
+
+/*
+=====================
+idFileSystemLocal::SetPureServerChecksums
+set the pure paks according to what the server asks
+if that's not possible, identify why and build an answer
+can be:
+  loadedFileFromDir - some files were loaded from directories instead of paks (a restart in pure pak-only is required)
+  missing/wrong checksums - some pak files would need to be installed/updated (downloaded for instance)
+  some pak files currently referenced are not referenced by the server
+  wrong order - if the pak order doesn't match, means some stuff could have been loaded from somewhere else
+server referenced files are prepended to the list if possible ( that doesn't break pureness )
+DLL:
+  the checksum of the pak containing the DLL is maintained seperately, the server can send different replies by OS
+=====================
+*/
+fsPureReply_t idFileSystemLocal::SetPureServerChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int _gamePakChecksum, int missingChecksums[ MAX_PURE_PAKS ], int *missingGamePakChecksum ) {
+	pack_t			*pack;
+	int				i, j, imissing;
+	bool			success = true;
+	bool			canPrepend = true;
+	char			dllName[MAX_OSPATH];
+	int				dllHash;
+	fileInPack_t *	pakFile;
+
+	sys->DLL_GetFileName( "game", dllName, MAX_OSPATH );
+	dllHash = HashFileName( dllName );
+
+	imissing = 0;
+	missingChecksums[ 0 ] = 0;
+	assert( missingGamePakChecksum );
+	*missingGamePakChecksum = 0;
+
+	if ( pureChecksums[ 0 ] == 0 ) {
+		ClearPureChecksums();
+		return PURE_OK;
+	}
+
+	if ( !serverPaks.Num() ) {
+		// there was no pure lockdown yet - lock to what we already have
+		UpdatePureServerChecksums();
+	}
+	i = 0; j = 0;
+	while ( pureChecksums[ i ] ) {
+		if ( j < serverPaks.Num() && serverPaks[ j ]->checksum == pureChecksums[ i ] ) {
+			canPrepend = false; // once you start matching into the list there is no prepending anymore
+			i++; j++; // the pak is matched, is in the right order, continue..
+		} else {
+			pack = GetPackForChecksum( pureChecksums[ i ], true );
+			if ( pack && pack->addon && !pack->addon_search ) {
+				// this is an addon pack, and it's not on our current search list
+				// setting success to false meaning that a restart including this addon is required
+				if ( fs_debug.GetBool() ) {
+					common->Printf( "pak %s checksumed 0x%x is on addon list. Restart required.\n", pack->pakFilename.c_str(), pack->checksum );
+				}
+				success = false;
+			}
+			if ( pack && pack->isNew ) {
+				// that's a downloaded pack, we will need to restart
+				if ( fs_debug.GetBool() ) {
+					common->Printf( "pak %s checksumed 0x%x is a newly downloaded file. Restart required.\n", pack->pakFilename.c_str(), pack->checksum );
+				}
+				success = false;
+			}
+			if ( pack ) {
+				if ( canPrepend ) {
+					// we still have a chance
+					if ( fs_debug.GetBool() ) {
+						common->Printf( "prepend pak %s checksumed 0x%x at index %d\n", pack->pakFilename.c_str(), pack->checksum, j );
+					}
+					// NOTE: there is a light possibility this adds at the end of the list if UpdatePureServerChecksums didn't set anything
+					serverPaks.Insert( pack, j );
+					i++; j++; // continue..
+				} else {
+					success = false;
+					if ( fs_debug.GetBool() ) {
+						// verbose the situation
+						if ( serverPaks.Find( pack ) ) {
+							common->Printf( "pak %s checksumed 0x%x is in the pure list at wrong index. Current index is %d, found at %d\n", pack->pakFilename.c_str(), pack->checksum, j, serverPaks.FindIndex( pack ) );
+						} else {
+							common->Printf( "pak %s checksumed 0x%x can't be added to pure list because of search order\n", pack->pakFilename.c_str(), pack->checksum );
+						}
+					}
+					i++; // advance server checksums only
+				}
+			} else {
+				// didn't find a matching checksum
+				success = false;
+				missingChecksums[ imissing++ ] = pureChecksums[ i ];
+				missingChecksums[ imissing ] = 0;
+				if ( fs_debug.GetBool() ) {
+					common->Printf( "checksum not found - 0x%x\n", pureChecksums[ i ] );
+				}
+				i++; // advance the server checksums only
+			}
+		}
+	}
+	while ( j < serverPaks.Num() ) {
+		success = false; // just in case some extra pak files are referenced at the end of our local list
+		if ( fs_debug.GetBool() ) {
+			common->Printf( "pak %s checksumed 0x%x is an extra reference at the end of local pure list\n", serverPaks[ j ]->pakFilename.c_str(), serverPaks[ j ]->checksum );
+		}
+		j++;
+	}
+
+	// DLL checksuming
+	if ( !_gamePakChecksum ) {
+		// server doesn't have knowledge of code we can use ( OS issue )
+		return PURE_NODLL;
+	}
+	assert( gameDLLChecksum );
+#if ID_FAKE_PURE
+	gamePakChecksum = _gamePakChecksum;
+#endif
+	if ( _gamePakChecksum != gamePakChecksum ) {
+		// current DLL is wrong, search for a pak with the approriate checksum
+		// ( search all paks, the pure list is not relevant here )
+		pack = GetPackForChecksum( _gamePakChecksum );
+		if ( !pack ) {
+			if ( fs_debug.GetBool() ) {
+				common->Printf( "missing the game code pak ( 0x%x )\n", _gamePakChecksum );
+			}
+			// if there are other paks missing they have also been marked above
+			*missingGamePakChecksum = _gamePakChecksum;
+			return PURE_MISSING;
+		}
+		// if assets paks are missing, don't try any of the DLL restart / NODLL
+		if ( imissing ) {
+			return PURE_MISSING;
+		}
+		// we have a matching pak
+		if ( fs_debug.GetBool() ) {
+			common->Printf( "server's game code pak candidate is '%s' ( 0x%x )\n", pack->pakFilename.c_str(), pack->checksum );
+		}
+		// make sure there is a valid DLL for us
+		if ( pack->hashTable[ dllHash ] ) {
+			for ( pakFile = pack->hashTable[ dllHash ]; pakFile; pakFile = pakFile->next ) {
+				if ( !FilenameCompare( pakFile->name, dllName ) ) {
+					gamePakChecksum = _gamePakChecksum;		// this will be used to extract the DLL in pure mode FindDLL
+					return PURE_RESTART;
+				}
+			}
+		}
+		common->Warning( "media is misconfigured. server claims pak '%s' ( 0x%x ) has media for us, but '%s' is not found\n", pack->pakFilename.c_str(), pack->checksum, dllName );
+		return PURE_NODLL;
+	}
+
+	// we reply to missing after DLL check so it can be part of the list
+	if ( imissing ) {
+		return PURE_MISSING;
+	}
+
+	// one last check
+	if ( loadedFileFromDir ) {
+		success = false;
+		if ( fs_debug.GetBool() ) {
+			common->Printf( "SetPureServerChecksums: there are files loaded from dir\n" );
+		}
+	}
+	return ( success ? PURE_OK : PURE_RESTART );
+}
+
+/*
+=====================
+idFileSystemLocal::GetPureServerChecksums
+=====================
+*/
+void idFileSystemLocal::GetPureServerChecksums( int checksums[ MAX_PURE_PAKS ], int OS, int *_gamePakChecksum ) {
+	int i;
+
+	for ( i = 0; i < serverPaks.Num(); i++ ) {
+		checksums[ i ] = serverPaks[ i ]->checksum;
+	}
+	checksums[ i ] = 0;
+	if ( _gamePakChecksum ) {
+		if ( OS >= 0 ) {
+			*_gamePakChecksum = gamePakForOS[ OS ];
+		} else {
+			*_gamePakChecksum = gamePakChecksum;
+		}
+	}
+}
+
+/*
+=====================
+idFileSystemLocal::SetRestartChecksums
+=====================
+*/
+void idFileSystemLocal::SetRestartChecksums( const int pureChecksums[ MAX_PURE_PAKS ], int gamePakChecksum ) {
+	int		i;
+	pack_t	*pack;
+
+	restartChecksums.Clear();
+	i = 0;
+	while ( pureChecksums[ i ] ) {
+		pack = GetPackForChecksum( pureChecksums[ i ], true );
+		if ( !pack ) {
+			common->FatalError( "SetRestartChecksums failed: no pak for checksum 0x%x\n", pureChecksums[i] );
+		}
+		if ( pack->addon && addonChecksums.FindIndex( pack->checksum ) < 0 ) {
+			// can't mark it pure if we're not even gonna search it :-)
+			addonChecksums.Append( pack->checksum );
+		}
+		restartChecksums.Append( pureChecksums[ i ] );
+		i++;
+	}
+	restartGamePakChecksum = gamePakChecksum;
 }
 
 /*
@@ -2494,7 +2956,9 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 		|| !strcmp( path + l - 3, ".so" )
 		|| ( l > 6 && !strcmp( path + l - 6, ".dylib" ) )
 		|| ( l > 10 && !strcmp( path + l - 10, ".scriptcfg" ) )	// configuration script, such as map cycle
-		|| !strcmp( path + l - 4, ".dds" )
+#if ID_PURE_ALLOWDDS
+		 || !strcmp( path + l - 4, ".dds" )
+#endif
 		 ) {
 		// note: config.spec are opened through an explicit OS path and don't hit this
 		return true;
@@ -2520,6 +2984,63 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 	}
 
 	return false;
+}
+
+/*
+===========
+idFileSystemLocal::GetPackStatus
+===========
+*/
+pureStatus_t idFileSystemLocal::GetPackStatus( pack_t *pak ) {
+	int				i, l, hashindex;
+	fileInPack_t	*file;
+	bool			abrt;
+	idStr			name;
+
+	if ( pak->pureStatus != PURE_UNKNOWN ) {
+		return pak->pureStatus;
+	}
+
+	// check content for PURE_NEVER
+	i = 0;
+	file = pak->buildBuffer;
+	for ( hashindex = 0; hashindex < FILE_HASH_SIZE; hashindex++ ) {
+		abrt = false;
+		file = pak->hashTable[ hashindex ];
+		while ( file ) {
+			abrt = true;
+			l = file->name.Length();
+			for ( int j = 0; pureExclusions[j].func != NULL; j++ ) {
+				if ( pureExclusions[j].func( pureExclusions[j], l, file->name ) ) {
+					abrt = false;
+					break;
+				}
+			}
+			if ( abrt ) {
+				common->DPrintf( "pak '%s' candidate for pure: '%s'\n", pak->pakFilename.c_str(), file->name.c_str() );
+				break;
+			}
+			file = file->next;
+			i++;
+		}
+		if ( abrt ) {
+			break;
+		}
+	}
+	if ( i == pak->numfiles ) {
+		pak->pureStatus = PURE_NEVER;
+		return PURE_NEVER;
+	}
+
+	// check pak name for PURE_ALWAYS
+	pak->pakFilename.ExtractFileName( name );
+	if ( !name.IcmpPrefixPath( "pak" ) ) {
+		pak->pureStatus = PURE_ALWAYS;
+		return PURE_ALWAYS;
+	}
+
+	pak->pureStatus = PURE_NEUTRAL;
+	return PURE_NEUTRAL;
 }
 
 /*
@@ -2642,6 +3163,14 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 				common->Printf( "idFileSystem::OpenFileRead: %s (found in '%s/%s')\n", relativePath, dir->path.c_str(), dir->gamedir.c_str() );
 			}
 
+			if ( !loadedFileFromDir && !FileAllowedFromDir( relativePath ) ) {
+				if ( restartChecksums.Num() ) {
+					common->FatalError( "'%s' loaded from directory: Failed to restart with pure mode restrictions for server connect", relativePath );
+				}
+				common->DPrintf( "filesystem: switching to pure mode will require a restart. '%s' loaded from directory.\n", relativePath );
+				loadedFileFromDir = true;
+			}
+
 			// if fs_copyfiles is set
 			if ( allowCopyFiles && fs_copyfiles.GetInteger() ) {
 
@@ -2706,6 +3235,14 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 				continue;
 			}
 
+			// disregard if it doesn't match one of the allowed pure pak files
+			if ( serverPaks.Num() ) {
+				GetPackStatus( search->pack );
+				if ( search->pack->pureStatus != PURE_NEVER && !serverPaks.Find( search->pack ) ) {
+					continue; // not on the pure server pak list
+				}
+			}
+
 			// look through all the pak file elements
 			pak = search->pack;
 
@@ -2737,7 +3274,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 						*foundInPak = pak;
 					}
 
-					if ( !pak->referenced ) {
+					if ( !pak->referenced && !( searchFlags & FSFLAG_PURE_NOREF ) ) {
 						// mark this pak referenced
 						if ( fs_debug.GetInteger( ) ) {
 							common->Printf( "idFileSystem::OpenFileRead: %s -> adding %s to referenced paks\n", relativePath, pak->pakFilename.c_str() );
@@ -3270,24 +3807,31 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	int				dllHash;
 	pack_t			*inPak;
 	pack_t			*pak;
+	fileInPack_t	*pakFile;	
 
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
 	dllHash = HashFileName( dllName );
 
-	// from executable directory first - this is handy for developement
-	dllPath = Sys_EXEPath( );
-	dllPath.StripFilename( );
-	dllPath.AppendPath( dllName );
-	dllFile = OpenExplicitFileRead( dllPath );
+#if ID_FAKE_PURE
+	if ( 1 ) {
+#else
+	if ( !serverPaks.Num() ) {
+#endif
+		// from executable directory first - this is handy for developement
+		dllPath = Sys_EXEPath( );
+		dllPath.StripFilename( );
+		dllPath.AppendPath( dllName );
+		dllFile = OpenExplicitFileRead( dllPath );
 
-	if (dllFile) {
-		common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
+		if (dllFile)
+		{
+			common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
+		}
 	}
-
 	if ( !dllFile ) {
 		if ( !serverPaks.Num() ) {
-			// try to extract from a pak file first
-			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_PAKS | FSFLAG_BINARY_ONLY, &inPak );
+			// not running in pure mode, try to extract from a pak file first
+			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_PAKS | FSFLAG_PURE_NOREF | FSFLAG_BINARY_ONLY, &inPak );
 
 			if (dllFile)
 			{
@@ -3323,6 +3867,34 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 						pak = FindPakForFileChecksum( dllName, gameDLLChecksum, false );
 						pak ? gamePakChecksum = pak->checksum : gamePakChecksum = 0;
 						updateChecksum = false;
+					}
+				}
+			}
+		} else {
+			// we are in pure mode. this path to be reached only for game DLL situations
+			// with a code pak checksum given by server
+			assert( gamePakChecksum );
+			assert( updateChecksum );
+			pak = GetPackForChecksum( gamePakChecksum );
+			if ( !pak ) {
+				// not supposed to happen, bug in pure code?
+				common->Warning( "FindDLL in pure mode: game pak not found ( 0x%x )\n", gamePakChecksum );
+			} else {
+				// extract and copy
+				for ( pakFile = pak->hashTable[dllHash]; pakFile; pakFile = pakFile->next ) {
+					if ( !FilenameCompare( pakFile->name, dllName ) ) {
+						dllFile = ReadFileFromZip( pak, pakFile, dllName );
+						common->Printf( "found DLL in game pak file: %s\n", pak->pakFilename.c_str() );
+						dllPath = RelativePathToOSPath( dllName, "fs_savepath" );
+						CopyFile( dllFile, dllPath );
+						CloseFile( dllFile );
+						dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
+						if ( !dllFile ) {
+							common->Error( "DLL extraction to fs_savepath failed\n" );
+						} else {
+							gameDLLChecksum = GetFileChecksum( dllFile );
+							updateChecksum = false;	// don't try again below
+						}						
 					}
 				}
 			}

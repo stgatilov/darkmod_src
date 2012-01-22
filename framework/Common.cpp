@@ -2446,6 +2446,7 @@ void Com_Help_f( const idCmdArgs &args ) {
 	common->Printf( "  si_fragLimit     - max kills to win (or lives in Last Man Standing).\n" );
 	common->Printf( "  si_timeLimit     - maximum time a game will last.\n" );
 	common->Printf( "  si_warmup        - do pre-game warmup.\n" );
+	common->Printf( "  si_pure          - pure server.\n" );
 	common->Printf( "  g_mapCycle       - name of .scriptcfg file for cycling maps.\n" );
 	common->Printf( "See mapcycle.scriptcfg for an example of a mapcyle script.\n\n" );
 }

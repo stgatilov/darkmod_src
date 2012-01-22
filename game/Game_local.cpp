@@ -1554,7 +1554,8 @@ void idGameLocal::MapRestart( ) {
 				break;
 			}
 			// a select set of si_ changes will cause a full restart of the server
-			if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_map" ) ) ) {
+			if ( keyval->GetValue().Cmp( keyval2->GetValue() ) &&
+				( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
 				break;
 			}
 		}
@@ -6503,7 +6504,7 @@ bool idGameLocal::NeedRestart() {
 		}
 
 		// a select set of si_ changes will cause a full restart of the server
-		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_map" ) ) ) {
+		if ( keyval->GetValue().Cmp( keyval2->GetValue() ) && ( !keyval->GetKey().Cmp( "si_pure" ) || !keyval->GetKey().Cmp( "si_map" ) ) ) {
 			return true;
 		}
 	}

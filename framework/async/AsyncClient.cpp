@@ -147,7 +147,7 @@ idAsyncClient::HandleGuiCommandInternal
 ==================
 */
 const char* idAsyncClient::HandleGuiCommandInternal( const char *cmd ) {
-	if ( !idStr::Cmp( cmd, "abort" ) ) {
+	if ( !idStr::Cmp( cmd, "abort" ) || !idStr::Cmp( cmd, "pure_abort" ) ) {
 		common->DPrintf( "connection aborted\n" );
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 		return "";
@@ -258,6 +258,9 @@ void idAsyncClient::DisconnectFromServer( void ) {
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
 	if ( clientState >= CS_CONNECTED ) {
+		// if we were actually connected, clear the pure list
+		fileSystem->ClearPureChecksums();
+
 		// send reliable disconnect to server
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteByte( CLIENT_RELIABLE_MESSAGE_DISCONNECT );
@@ -270,6 +273,11 @@ void idAsyncClient::DisconnectFromServer( void ) {
 		SendEmptyToServer( true );
 		SendEmptyToServer( true );
 		SendEmptyToServer( true );
+	}
+
+	if ( clientState != CS_PURERESTART ) {
+		channel.Shutdown();
+		clientState = CS_DISCONNECTED;
 	}
 
 	active = false;
@@ -721,6 +729,7 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 	int serverGameInitId, serverGameFrame, serverGameTime;
 	idDict serverSI;
 	usercmd_t *last;
+	bool pureWait;
 
 	serverGameInitId = msg.ReadLong();
 
@@ -743,6 +752,7 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			serverGameFrame = msg.ReadLong();
 			serverGameTime = msg.ReadLong();
 			msg.ReadDeltaDict( serverSI, NULL );
+			pureWait = serverSI.GetBool( "si_pure" );
 
 			InitGame( serverGameInitId, serverGameFrame, serverGameTime, serverSI );
 
@@ -758,9 +768,15 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			// ensure chat icon goes away when the GUI is changed...
 			//cvarSystem->SetCVarBool( "ui_chat", false );
 
-			// load map
-			session->SetGUI( NULL, NULL );
-			sessLocal.ExecuteMapChange();
+			if ( pureWait ) {
+				guiNetMenu = uiManager->FindGui( "guis/netmenu.gui", true, false, true );
+				session->SetGUI( guiNetMenu, HandleGuiCommand );
+				session->MessageBox( MSG_ABORT, common->GetLanguageDict()->GetString ( "#str_04317" ), common->GetLanguageDict()->GetString ( "#str_04318" ), false, "pure_abort" );
+			} else {
+				// load map
+				session->SetGUI( NULL, NULL );
+				sessLocal.ExecuteMapChange();
+			}
 
 			break;
 		}
@@ -843,6 +859,59 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			common->Printf( "unknown unreliable server message %d\n", id );
 			break;
 		}
+	}
+}
+
+/*
+==================
+idAsyncClient::ProcessReliableMessagePure
+==================
+*/
+void idAsyncClient::ProcessReliableMessagePure( const idBitMsg &msg ) {
+	idBitMsg	outMsg;
+	byte		msgBuf[ MAX_MESSAGE_SIZE ];
+	int			inChecksums[ MAX_PURE_PAKS ];
+	int			i;
+	int			gamePakChecksum;
+	int			serverGameInitId;
+
+	session->SetGUI( NULL, NULL );
+
+	serverGameInitId = msg.ReadLong();
+
+	if ( serverGameInitId != gameInitId ) {
+		common->DPrintf( "ignoring pure server checksum from an outdated gameInitId (%d)\n", serverGameInitId );
+		return;
+	}
+
+	if ( !ValidatePureServerChecksums( serverAddress, msg ) ) {
+		
+		return;
+	}
+
+	if ( idAsyncNetwork::verbose.GetInteger() ) {
+		common->Printf( "received new pure server info. ExecuteMapChange and report back\n" );
+	}
+
+	// it is now ok to load the next map with updated pure checksums
+	sessLocal.ExecuteMapChange( true );
+
+	// upon receiving our pure list, the server will send us SCS_INGAME and we'll start getting snapshots
+	fileSystem->GetPureServerChecksums( inChecksums, -1, &gamePakChecksum );
+	outMsg.Init( msgBuf, sizeof( msgBuf ) );
+	outMsg.WriteByte( CLIENT_RELIABLE_MESSAGE_PURE );
+
+	outMsg.WriteLong( gameInitId );
+
+	i = 0;
+	while ( inChecksums[ i ] ) {
+		outMsg.WriteLong( inChecksums[ i++ ] );
+	}
+	outMsg.WriteLong( 0 );
+	outMsg.WriteLong( gamePakChecksum );
+
+	if ( !channel.SendReliableMessage( outMsg ) ) {
+		common->Error( "client->server reliable messages overflow\n" );
 	}
 }
 
@@ -945,11 +1014,15 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				}
 				break;
 			}
+			case SERVER_RELIABLE_MESSAGE_PURE: {
+				ProcessReliableMessagePure( msg );
+				break;
+			}
 			case SERVER_RELIABLE_MESSAGE_RELOAD: {
 				if ( idAsyncNetwork::verbose.GetBool() ) {
 					common->Printf( "got MESSAGE_RELOAD from server\n" );
 				}
-				// simply reconnect, avoid spurious reloads
+				// simply reconnect, so that if the server restarts in pure mode we can get the right list and avoid spurious reloads
 				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "reconnect\n" );
 				break;
 			}
@@ -987,7 +1060,9 @@ void idAsyncClient::ProcessChallengeResponseMessage( const netadr_t from, const 
 	msg.ReadString( serverGame, MAX_STRING_CHARS );
 
 	// the server is running a different game... we need to reload in the correct fs_game
-	// NOTE: if the client can restart directly with the right pak order, then we avoid an extra reloadEngine later..
+	// even pure pak checks would fail if we didn't, as there are files we may not even see atm
+	// NOTE: we could read the pure list from the server at the same time and set it up for the restart
+	// ( if the client can restart directly with the right pak order, then we avoid an extra reloadEngine later.. )
 	if ( idStr::Icmp( cvarSystem->GetCVarString( "fs_game_base" ), serverGameBase ) || idStr::Icmp( cvarSystem->GetCVarString( "fs_game" ), serverGame ) ) {
 		common->Printf( "The server is running a different mod (%s-%s). Restarting..\n", serverGameBase, serverGame );
 		cvarSystem->SetCVarString( "fs_game_base", serverGameBase );
@@ -1286,6 +1361,150 @@ void idAsyncClient::ProcessVersionMessage( const netadr_t from, const idBitMsg &
 
 /*
 ==================
+idAsyncClient::ValidatePureServerChecksums
+==================
+*/
+bool idAsyncClient::ValidatePureServerChecksums( const netadr_t from, const idBitMsg &msg ) {
+	int			i, numChecksums, numMissingChecksums;
+	int			inChecksums[ MAX_PURE_PAKS ];
+	int			inGamePakChecksum;
+	int			missingChecksums[ MAX_PURE_PAKS ];
+	int			missingGamePakChecksum;
+	idBitMsg	dlmsg;
+	byte		msgBuf[MAX_MESSAGE_SIZE];
+
+	// read checksums
+	// pak checksums, in a 0-terminated list
+	numChecksums = 0;
+	do {
+		i = msg.ReadLong( );
+		inChecksums[ numChecksums++ ] = i;
+		// just to make sure a broken message doesn't crash us
+		if ( numChecksums >= MAX_PURE_PAKS ) {
+			common->Warning( "MAX_PURE_PAKS ( %d ) exceeded in idAsyncClient::ProcessPureMessage\n", MAX_PURE_PAKS );
+			return false;
+		}
+	} while ( i );
+	inChecksums[ numChecksums ] = 0;
+	inGamePakChecksum = msg.ReadLong();
+
+	fsPureReply_t reply = fileSystem->SetPureServerChecksums( inChecksums, inGamePakChecksum, missingChecksums, &missingGamePakChecksum );
+	switch ( reply ) {
+		case PURE_RESTART:
+			// need to restart the filesystem with a different pure configuration
+			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+			// restart with the right FS configuration and get back to the server
+			clientState = CS_PURERESTART;	
+			fileSystem->SetRestartChecksums( inChecksums, inGamePakChecksum );
+			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reloadEngine" );
+			return false;
+		case PURE_MISSING: {
+
+			idStr checksums;
+
+			i = 0;
+			while ( missingChecksums[ i ] ) {
+				checksums += va( "0x%x ", missingChecksums[ i++ ] );
+			}
+			numMissingChecksums = i;
+
+			if ( idAsyncNetwork::clientDownload.GetInteger() == 0 ) {
+				// never any downloads
+				idStr message = va( common->GetLanguageDict()->GetString( "#str_07210" ), Sys_NetAdrToString( from ) );
+
+				if ( numMissingChecksums > 0 ) {
+					message += va( common->GetLanguageDict()->GetString( "#str_06751" ), numMissingChecksums, checksums.c_str() );
+				}
+				if ( missingGamePakChecksum ) {
+					message += va( common->GetLanguageDict()->GetString( "#str_06750" ), missingGamePakChecksum );
+				}
+
+				common->Printf( message );
+				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+				session->MessageBox( MSG_OK, message, common->GetLanguageDict()->GetString( "#str_06735" ), true );
+			} else {
+				if ( clientState >= CS_CONNECTED ) {
+					// we are already connected, reconnect to negociate the paks in connectionless mode
+					cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reconnect" );
+					return false;
+				}
+				// ask the server to send back download info
+				common->DPrintf( "missing %d paks: %s\n", numMissingChecksums + ( missingGamePakChecksum ? 1 : 0 ), checksums.c_str() );
+				if ( missingGamePakChecksum ) {
+					common->DPrintf( "game code pak: 0x%x\n", missingGamePakChecksum );
+				}
+				// store the requested downloads
+				GetDownloadRequest( missingChecksums, numMissingChecksums, missingGamePakChecksum );
+				// build the download request message
+				// NOTE: in a specific function?
+				dlmsg.Init( msgBuf, sizeof( msgBuf ) );
+				dlmsg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
+				dlmsg.WriteString( "downloadRequest" );
+				dlmsg.WriteLong( serverChallenge );
+				dlmsg.WriteShort( clientId );
+				// used to make sure the server replies to the same download request
+				dlmsg.WriteLong( dlRequest );
+				// special case the code pak - if we have a 0 checksum then we don't need to download it
+				dlmsg.WriteLong( missingGamePakChecksum );
+				// 0-terminated list of missing paks
+				i = 0;
+				while ( missingChecksums[ i ] ) {
+					dlmsg.WriteLong( missingChecksums[ i++ ] );
+				}
+				dlmsg.WriteLong( 0 );
+				clientPort.SendPacket( from, dlmsg.GetData(), dlmsg.GetSize() );
+			}
+
+			return false;
+		}
+		case PURE_NODLL:
+			common->Printf( common->GetLanguageDict()->GetString( "#str_07211" ), Sys_NetAdrToString( from ) );
+			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
+			return false;
+		default:
+			return true;
+	}
+	return true;
+}
+
+/*
+==================
+idAsyncClient::ProcessPureMessage
+==================
+*/
+void idAsyncClient::ProcessPureMessage( const netadr_t from, const idBitMsg &msg ) {
+	idBitMsg	outMsg;
+	byte		msgBuf[ MAX_MESSAGE_SIZE ];
+	int			i;
+	int			inChecksums[ MAX_PURE_PAKS ];
+	int			gamePakChecksum;
+
+	if ( clientState != CS_CONNECTING ) {
+		common->Printf( "clientState != CS_CONNECTING, pure msg ignored\n" );
+		return;
+	}
+
+	if ( !ValidatePureServerChecksums( from, msg ) ) {
+		return;
+	}
+
+	fileSystem->GetPureServerChecksums( inChecksums, -1, &gamePakChecksum );
+	outMsg.Init( msgBuf, sizeof( msgBuf ) );
+	outMsg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
+	outMsg.WriteString( "pureClient" );
+	outMsg.WriteLong( serverChallenge );
+	outMsg.WriteShort( clientId );
+	i = 0;
+	while ( inChecksums[ i ] ) {
+		outMsg.WriteLong( inChecksums[ i++ ] );
+	}
+	outMsg.WriteLong( 0 );
+	outMsg.WriteLong( gamePakChecksum );
+	clientPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
+}
+
+/*
+==================
 idAsyncClient::ConnectionlessMessage
 ==================
 */
@@ -1349,6 +1568,12 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 	// print request from server
 	if ( idStr::Icmp( string, "print" ) == 0 ) {
 		ProcessPrintMessage( from, msg );
+		return;
+	}
+
+	// server pure list
+	if ( idStr::Icmp( string, "pureServer" ) == 0 ) {
+		ProcessPureMessage( from, msg );
 		return;
 	}
 
@@ -1433,7 +1658,12 @@ void idAsyncClient::SetupConnection( void ) {
 		msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 		msg.WriteString( "connect" );
 		msg.WriteLong( ASYNC_PROTOCOL_VERSION );
-		msg.WriteShort( BUILD_OS_ID ); // 0 to fake win32
+#if ID_FAKE_PURE
+		// fake win32 OS - might need to adapt depending on the case
+		msg.WriteShort( 0 );
+#else
+		msg.WriteShort( BUILD_OS_ID );
+#endif
 		msg.WriteLong( clientDataChecksum );
 		msg.WriteLong( serverChallenge );
 		msg.WriteShort( clientId );
@@ -1569,6 +1799,14 @@ void idAsyncClient::RunFrame( void ) {
 
 	if ( clientState == CS_DISCONNECTED ) {
 		usercmdGen->GetDirectUsercmd();
+		gameTimeResidual = USERCMD_MSEC - 1;
+		clientPredictTime = 0;
+		return;
+	}
+
+	if ( clientState == CS_PURERESTART ) {
+		clientState = CS_DISCONNECTED;
+		Reconnect();
 		gameTimeResidual = USERCMD_MSEC - 1;
 		clientPredictTime = 0;
 		return;

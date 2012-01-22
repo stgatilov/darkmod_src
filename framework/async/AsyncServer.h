@@ -42,6 +42,8 @@ typedef enum {
 					// or a permanent wait if auth said so
 	CDK_OK,
 	CDK_ONLYLAN,
+	CDK_PUREWAIT,
+	CDK_PUREOK,
 	CDK_MAXSTATES
 } authState_t;
 
@@ -83,7 +85,7 @@ typedef struct challenge_s {
 typedef enum {
 	SCS_FREE,			// can be reused for a new connection
 	SCS_ZOMBIE,			// client has been disconnected, but don't reuse connection for a couple seconds
-	SCS_CHILL,		// client is chilling
+	SCS_PUREWAIT,		// client needs to update it's pure checksums before we can go further
 	SCS_CONNECTED,		// client is connected
 	SCS_INGAME			// client is in the game
 } serverClientState_t;
@@ -233,7 +235,11 @@ private:
 	bool				ConnectionlessMessage( const netadr_t from, const idBitMsg &msg );
 	bool				ProcessMessage( const netadr_t from, idBitMsg &msg );
 	void				ProcessAuthMessage( const idBitMsg &msg );
+	bool				SendPureServerMessage( const netadr_t to, int OS );										// returns false if no pure paks on the list
+	void				ProcessPureMessage( const netadr_t from, const idBitMsg &msg );
 	int					ValidateChallenge( const netadr_t from, int challenge, int clientId );	// returns -1 if validate failed
+	bool				SendReliablePureToClient( int clientNum );
+	void				ProcessReliablePure( int clientNum, const idBitMsg &msg );
 	bool				VerifyChecksumMessage( int clientNum, const netadr_t *from, const idBitMsg &msg, idStr &reply, int OS ); // if from is NULL, clientNum is used for error messages
 	void				SendReliableMessage( int clientNum, const idBitMsg &msg );				// checks for overflow and disconnects the faulty client
 	int					UpdateTime( int clamp );

@@ -238,6 +238,11 @@ idGameLocal::ServerAllowClient
 allowReply_t idGameLocal::ServerAllowClient( int numClients, const char *IP, const char *guid, const char *password, char reason[ MAX_STRING_CHARS ] ) {
 	reason[0] = '\0';
 
+	if ( serverInfo.GetInt( "si_pure" ) && !mpGame.IsPureReady() ) {
+		idStr::snPrintf( reason, MAX_STRING_CHARS, "#str_07139" );
+		return ALLOW_NOTYET;
+	}
+
 	if ( !serverInfo.GetInt( "si_maxPlayers" ) ) {
 		idStr::snPrintf( reason, MAX_STRING_CHARS, "#str_07140" );
 		return ALLOW_NOTYET;

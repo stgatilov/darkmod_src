@@ -30,6 +30,7 @@
 
 typedef enum {
 	CS_DISCONNECTED,
+	CS_PURERESTART,
 	CS_CHALLENGING,
 	CS_CONNECTING,
 	CS_CONNECTED,
@@ -190,6 +191,9 @@ private:
 	void				ConnectionlessMessage( const netadr_t from, const idBitMsg &msg );
 	void				ProcessMessage( const netadr_t from, idBitMsg &msg );
 	void				SetupConnection( void );
+	void				ProcessPureMessage( const netadr_t from, const idBitMsg &msg );
+	bool				ValidatePureServerChecksums( const netadr_t from, const idBitMsg &msg );
+	void				ProcessReliableMessagePure( const idBitMsg &msg );
 	static const char*	HandleGuiCommand( const char *cmd );
 	const char*			HandleGuiCommandInternal( const char *cmd );
 	void				SendVersionDLUpdate( int state );
