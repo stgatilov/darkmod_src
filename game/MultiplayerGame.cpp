@@ -224,7 +224,6 @@ void idMultiplayerGame::Clear() {
 	currentMenu = 0;
 	bCurrentMenuMsg = false;
 	nextMenu = 0;
-	pureReady = false;
 	scoreBoard = NULL;
 	spectateGui = NULL;
 	guiChat = NULL;
@@ -1310,8 +1309,6 @@ void idMultiplayerGame::Run() {
 
 	assert( gameLocal.isMultiplayer );
 	assert( !gameLocal.isClient );
-
-	pureReady = true;
 
 	if ( gameState == INACTIVE ) {
 		lastGameType = gameLocal.gameType;

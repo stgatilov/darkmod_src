@@ -49,11 +49,6 @@
 	#define ID_NOLANADDRESS 0
 #endif
 
-// let .dds be loaded from FS without altering pure state. only for developement.
-#ifndef ID_PURE_ALLOWDDS
-	#define ID_PURE_ALLOWDDS 0
-#endif
-
 // build an exe with no CVAR_CHEAT controls
 #ifndef ID_ALLOW_CHEATS
 	#define ID_ALLOW_CHEATS 0
@@ -61,11 +56,6 @@
 
 #ifndef ID_ENABLE_CURL
 	#define ID_ENABLE_CURL 1
-#endif
-
-// fake a pure client. useful to connect an all-debug client to a server
-#ifndef ID_FAKE_PURE
-	#define ID_FAKE_PURE 0
 #endif
 
 // verify checksums in clientinfo traffic
