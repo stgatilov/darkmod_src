@@ -9196,7 +9196,7 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		const idKeyValue *kv = spawnArgs.FindKey( scriptName.c_str() );
 		if( kv != NULL && kv->GetValue().Length() > 0 )
 		{
-			CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+			thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 			bFoundKey = true;
 			break;
 		}
@@ -9208,7 +9208,7 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 		const idKeyValue *kv = spawnArgs.FindKey( "used_action_script" );
 		if( kv != NULL && kv->GetValue().Length() > 0 )
 		{
-			CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
+			thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 		}
 	}
 
