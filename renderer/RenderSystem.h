@@ -71,9 +71,6 @@ typedef struct glconfig_s {
 	// ati r200 extensions
 	bool				atiFragmentShaderAvailable;
 
-	// ati r300
-	bool				atiTwoSidedStencilAvailable;
-
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 
 	int					displayFrequency;

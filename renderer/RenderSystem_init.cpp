@@ -272,12 +272,8 @@ PFNGLALPHAFRAGMENTOP2ATIPROC			qglAlphaFragmentOp2ATI;
 PFNGLALPHAFRAGMENTOP3ATIPROC			qglAlphaFragmentOp3ATI;
 PFNGLSETFRAGMENTSHADERCONSTANTATIPROC	qglSetFragmentShaderConstantATI;
 
-// EXT_stencil_two_side
-PFNGLACTIVESTENCILFACEEXTPROC			qglActiveStencilFaceEXT;
-
-// ATI_separate_stencil
-PFNGLSTENCILOPSEPARATEATIPROC			qglStencilOpSeparateATI;
-PFNGLSTENCILFUNCSEPARATEATIPROC			qglStencilFuncSeparateATI;
+// separate stencil
+PFNGLSTENCILOPSEPARATEPROC				qglStencilOpSeparate;
 
 // ARB_texture_compression
 PFNGLCOMPRESSEDTEXIMAGE2DARBPROC		qglCompressedTexImage2DARB;
@@ -422,6 +418,14 @@ static void R_CheckPortableExtensions( void ) {
 		tr.stencilDecr = GL_DECR;
 	}
 
+	// separate stencil (part of OpenGL 2.0 spec)
+	qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
+	if( qglStencilOpSeparate ) {
+		glConfig.twoSidedStencilAvailable = true;
+	} else {
+		glConfig.twoSidedStencilAvailable = false;
+	}
+
 	// GL_NV_register_combiners
 	glConfig.registerCombinersAvailable = R_CheckExtension( "GL_NV_register_combiners" );
 	if ( glConfig.registerCombinersAvailable ) {
@@ -442,18 +446,6 @@ static void R_CheckPortableExtensions( void ) {
 			GLimp_ExtensionPointer( "glCombinerOutputNV" );
 		qglFinalCombinerInputNV = (void (APIENTRY *)( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage ))
 			GLimp_ExtensionPointer( "glFinalCombinerInputNV" );
-	}
-
-	// GL_EXT_stencil_two_side
-	glConfig.twoSidedStencilAvailable = R_CheckExtension( "GL_EXT_stencil_two_side" );
-	if ( glConfig.twoSidedStencilAvailable ) {
-		qglActiveStencilFaceEXT = (PFNGLACTIVESTENCILFACEEXTPROC)GLimp_ExtensionPointer( "glActiveStencilFaceEXT" );
-	} else {
-		glConfig.atiTwoSidedStencilAvailable = R_CheckExtension( "GL_ATI_separate_stencil" );
-		if ( glConfig.atiTwoSidedStencilAvailable ) {
-			qglStencilFuncSeparateATI  = (PFNGLSTENCILFUNCSEPARATEATIPROC)GLimp_ExtensionPointer( "glStencilFuncSeparateATI" );
-			qglStencilOpSeparateATI = (PFNGLSTENCILOPSEPARATEATIPROC)GLimp_ExtensionPointer( "glStencilOpSeparateATI" );
-		}
 	}
 
 	// GL_ATI_fragment_shader
@@ -1951,14 +1943,12 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 		common->Printf( "swapInterval not forced\n" );
 	}
 #endif
-	
-	bool tss = glConfig.twoSidedStencilAvailable || glConfig.atiTwoSidedStencilAvailable;
 
-	if ( !r_useTwoSidedStencil.GetBool() && tss ) {
+	if ( !r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil available but disabled\n" );
-	} else if ( !tss ) {
+	} else if ( !glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil not available\n" );
-	} else if ( tss ) {
+	} else if ( glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Using two sided stencil\n" );
 	}
 
