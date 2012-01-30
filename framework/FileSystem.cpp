@@ -245,11 +245,11 @@ public:
 	virtual int				GetOSMask( void );
 	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp );
 	virtual void			FreeFile( void *buffer );
-	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_savepath" );
+	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath" );
 	virtual void			RemoveFile( const char *relativePath );	
 	virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileRead( const char *relativePath, bool allowCopyFiles = true, const char* gamedir = NULL );
-	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_savepath" );
+	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath" );
 	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_basepath"   );
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode );
 	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
@@ -2015,6 +2015,13 @@ void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
 		AddGameDirectory( fs_cdpath.GetString(), gameName );
 	}
 
+    // taaaki: setup fm save path -- this should fix the savegame loading while keeping the following logic:
+    // greebo: In between fs_game and fs_game_base, there is the mission folder, which is fms/<missionName>/
+    // fs_game still overrides that one, but the the mission folder should still override fs_game_base
+    if ( fs_modSavePath.GetString()[0] && idStr(gameName) != idStr("base") ) {
+        AddGameDirectory( fs_modSavePath.GetString(), gameName );
+    }
+
 	// setup basepath
 	if ( fs_basepath.GetString()[0] ) {
 		AddGameDirectory( fs_basepath.GetString(), gameName );
@@ -2097,18 +2104,7 @@ void idFileSystemLocal::Startup( void ) {
 	if ( fs_game.GetString()[0] &&
 		 idStr::Icmp( fs_game.GetString(), BASE_GAMEDIR ) &&
 		 idStr::Icmp( fs_game.GetString(), fs_game_base.GetString() ) )
-	{
-		// greebo: In between fs_game and fs_game_base, there is the mission folder, which is fms/<missionName>/
-		// fs_game still overrides that one, but the the mission folder should still override fs_game_base
-		if (fs_game_base.GetString()[0])
-		{
-			idStr fmPath = fs_game_base.GetString();
-			fmPath.AppendPath("fms");
-			fmPath.AppendPath(fs_game.GetString());
-
-			SetupGameDirectories(fmPath);
-		}
-		
+	{		
 		SetupGameDirectories( fs_game.GetString() );
 	}
 

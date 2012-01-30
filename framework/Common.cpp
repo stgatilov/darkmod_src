@@ -616,7 +616,7 @@ void idCommonLocal::DumpWarnings( void ) {
 		return;
 	}
 
-	warningFile = fileSystem->OpenFileWrite( "warnings.txt", "fs_savepath" );
+	warningFile = fileSystem->OpenFileWrite( "warnings.txt", "fs_modSavePath" );
 	if ( warningFile ) {
 
 		warningFile->Printf( "------------- Warnings ---------------\n\n" );
@@ -645,7 +645,7 @@ void idCommonLocal::DumpWarnings( void ) {
 
 #if defined(_WIN32) && !defined(_DEBUG)
 		idStr	osPath;
-		osPath = fileSystem->RelativePathToOSPath( "warnings.txt", "fs_savepath" );
+		osPath = fileSystem->RelativePathToOSPath( "warnings.txt", "fs_modSavePath" );
 		WinExec( va( "Notepad.exe %s", osPath.c_str() ), SW_SHOW );
 #endif
 	}
@@ -3069,7 +3069,7 @@ void idCommonLocal::InitGame( void )
 	CheckToolMode();
 
 	// greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
-	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_modSavepath" ) );
+	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_modSavePath" ) );
 	bool sysDetect = ( file == NULL );
 	if ( file ) {
 		fileSystem->CloseFile( file );
