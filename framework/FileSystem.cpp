@@ -2018,7 +2018,7 @@ void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
     // taaaki: setup fm save path -- this should fix the savegame loading while keeping the following logic:
     // greebo: In between fs_game and fs_game_base, there is the mission folder, which is fms/<missionName>/
     // fs_game still overrides that one, but the the mission folder should still override fs_game_base
-    if ( fs_modSavePath.GetString()[0] && idStr(gameName) != idStr("base") ) {
+    if ( fs_modSavePath.GetString()[0] && idStr::Cmp (gameName, "base") != 0 ) {
         AddGameDirectory( fs_modSavePath.GetString(), gameName );
     }
 
