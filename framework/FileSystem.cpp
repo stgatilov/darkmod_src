@@ -829,7 +829,7 @@ void idFileSystemLocal::RemoveFile( const char *relativePath ) {
 		remove( OSPath );
 	}
 
-	OSPath = BuildOSPath( fs_savepath.GetString(), gameFolder, relativePath );
+	OSPath = BuildOSPath( fs_modSavePath.GetString(), gameFolder, relativePath );
 	remove( OSPath );
 
 	ClearDirCache();
