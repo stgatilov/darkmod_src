@@ -27,10 +27,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
 */
-
 static bool FormatIsDXT( int internalFormat ) {
-	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT 
-	|| internalFormat > GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ) {
+	if ( internalFormat < GL_COMPRESSED_RGB_S3TC_DXT1_EXT || internalFormat > GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT ) {
 		return false;
 	}
 	return true;
@@ -77,6 +75,10 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 	case GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
 		return 8;
 	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+		return 8;
+	case GL_COMPRESSED_LUMINANCE_LATC1_EXT: // TODO Serp: check this, derp
+		return 8;
+	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
 		return 8;
 	case GL_RGBA4:
 		return 16;
@@ -266,7 +268,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1 && glConfig.sharedTexturePaletteAvailable ) {
 			// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
 			return GL_COLOR_INDEX8_EXT;
-		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable ) {
+		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionAvailable ) {
 			// image_useNormalCompression == 2 uses rxgb format which produces really good quality for medium settings
 			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		} else {
@@ -972,6 +974,9 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 ImageProgramStringToFileCompressedFileName
 ================
 */
+/*
+Serpentine : This should be adapted to better allow dds files and normal textures into a single tree.
+*/
 void idImage::ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const {
 	const char	*s;
 	char	*f;
@@ -1031,6 +1036,9 @@ When we are happy with our source data, we can write out precompressed
 versions of everything to speed future load times.
 ================
 */
+/*
+Serpentine : This should either be refactored to be useful (comp location configurable) or removed. If preserved, it should also be simplified.
+*/
 void idImage::WritePrecompressedImage() {
 
 	// Always write the precompressed image if we're making a build
@@ -1062,8 +1070,7 @@ void idImage::WritePrecompressedImage() {
 	switch ( internalFormat ) {
 		case GL_COLOR_INDEX8_EXT:
 		case GL_COLOR_INDEX:
-			// this will not work with dds viewers but we need it in this format to save disk
-			// load speed ( i.e. size ) 
+			// this will not work with dds viewers but we need it in this format to save disk load speed ( i.e. size ) 
 			altInternalFormat = GL_COLOR_INDEX;
 			bitSize = 24;
 		break;
@@ -1331,16 +1338,15 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		return false;
 	}
 
-#if 1 // ( _D3XP had disabled ) - Allow grabbing of DDS's from original Doom pak files
+	// Allow grabbing of DDS's from original Doom pak files
 	// if we are doing a copyFiles, make sure the original images are referenced
 	if ( fileSystem->PerformingCopyFiles() ) {
 		return false;
 	}
-#endif
 
-	if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() != 2 ) {
-		return false;
-	}
+	//if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() >= 2 ) {
+	//	return false;
+	//}
 
 	// god i love last minute hacks :-)
 	if ( com_machineSpec.GetInteger() >= 1 && com_videoRam.GetInteger() >= 128 && imgName.Icmpn( "lights/", 7 ) == 0 ) {
@@ -1473,11 +1479,14 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
         case DDS_MAKEFOURCC( 'D', 'X', 'T', '5' ):
             internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
             break;
-		case DDS_MAKEFOURCC( 'R', 'X', 'G', 'B' ):
-			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		case DDS_MAKEFOURCC( 'A', 'T', 'I', '1' ):
+			internalFormat = GL_COMPRESSED_LUMINANCE_LATC1_EXT;
+			break;
+		case DDS_MAKEFOURCC( 'A', 'T', 'I', '2' ):
+			internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
 			break;
         default:
-            common->Warning( "Invalid compressed internal format\n" );
+            common->Warning( "Invalid compressed internal format: %s\n", imgName.c_str() );
             return;
         }
     } else if ( ( header->ddspf.dwFlags & DDSF_RGBA ) && header->ddspf.dwRGBBitCount == 32 ) {
@@ -1498,7 +1507,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		externalFormat = GL_ALPHA;
 		internalFormat = GL_ALPHA8;
 	} else {
-		common->Warning( "Invalid uncompressed internal format\n" );
+		common->Warning( "Invalid uncompressed internal format: %s\n", imgName.c_str() );
 		return;
 	}
 
@@ -1582,7 +1591,9 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 			return;
 		}
 		// this is an error -- the partial image failed to load
+		common->Warning( "Failed to load partial image : %s", imgName.c_str() );
 		MakeDefault();
+
 		return;
 	}
 
@@ -2154,6 +2165,12 @@ void idImage::Print() const {
 		break;
 	case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 		common->Printf( "DXT5  " );
+		break;
+	case GL_COMPRESSED_LUMINANCE_LATC1_EXT:
+		common->Printf( "LATC1 " );
+		break;
+	case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
+		common->Printf( "LATC2 " );
 		break;
 	case GL_RGBA4:
 		common->Printf( "RGBA4 " );
