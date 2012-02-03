@@ -427,7 +427,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateMovingToSafePos: // grayman #2345
 			{
-				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
+				if ( owner->AI_MOVE_DONE || owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #3004 - leave this state if you're not moving
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
 					owner->TurnToward(centerPos); // grayman #1327
@@ -928,7 +928,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			
 			case EStateMovingToSafePos: // grayman #2345
 			{
-				if (owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL))
+				if (owner->AI_MOVE_DONE || owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #3004 - leave this state if you're not moving
 				{
 					owner->StopMove(MOVE_STATUS_WAITING);
 					owner->TurnToward(centerPos); // grayman #1327
