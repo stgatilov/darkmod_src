@@ -24,8 +24,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Unzip.h"
 
-#define	MAX_PRINT_MSG		4096
-
 /*
 =================
 FS_WriteFloatString
@@ -251,12 +249,12 @@ idFile::Printf
 =================
 */
 int idFile::Printf( const char *fmt, ... ) {
-	char buf[MAX_PRINT_MSG];
+	char buf[MAX_PRINT_MSG_SIZE];
 	int length;
 	va_list argptr;
 
 	va_start( argptr, fmt );
-	length = idStr::vsnPrintf( buf, MAX_PRINT_MSG-1, fmt, argptr );
+	length = idStr::vsnPrintf( buf, MAX_PRINT_MSG_SIZE-1, fmt, argptr );
 	va_end( argptr );
 
 	// so notepad formats the lines correctly
@@ -272,10 +270,10 @@ idFile::VPrintf
 =================
 */
 int idFile::VPrintf( const char *fmt, va_list args ) {
-	char buf[MAX_PRINT_MSG];
+	char buf[MAX_PRINT_MSG_SIZE];
 	int length;
 
-	length = idStr::vsnPrintf( buf, MAX_PRINT_MSG-1, fmt, args );
+	length = idStr::vsnPrintf( buf, MAX_PRINT_MSG_SIZE-1, fmt, args );
 	return Write( buf, length );
 }
 
@@ -285,7 +283,7 @@ idFile::WriteFloatString
 =================
 */
 int idFile::WriteFloatString( const char *fmt, ... ) {
-	char buf[MAX_PRINT_MSG];
+	char buf[MAX_PRINT_MSG_SIZE];
 	int len;
 	va_list argPtr;
 

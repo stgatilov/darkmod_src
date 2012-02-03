@@ -26,7 +26,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../renderer/Image.h"
 #include <iostream>
 
-#define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
 
 typedef enum {

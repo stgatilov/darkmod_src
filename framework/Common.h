@@ -28,6 +28,8 @@
 ==============================================================
 */
 
+#define	MAX_PRINT_MSG_SIZE	16 * 1024
+
 typedef enum {
 	EDITOR_NONE					= 0,
 	EDITOR_RADIANT				= BIT(1),

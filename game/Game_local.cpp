@@ -65,8 +65,6 @@ extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
 extern CsndProp			g_SoundProp;
 
-#define BUFFER_LEN 4096
-
 #ifdef GAME_DLL
 
 idSys *						sys = NULL;
