@@ -418,12 +418,16 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				m_PushForce->SetContactInfo(trace, current.velocity);
 
 				totalMass = pushedEnt->GetPhysics()->GetMass();
+			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: pushedEnt is %s \r", pushedEnt->name.c_str()); // grayman debug
+			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: its mass is %f \r", totalMass); // grayman debug
 			}
 
 			if ( totalMass > 0.0f ) {
 				// decrease velocity based on the total mass of the objects being pushed ?
+			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: current.velocity before hit is (%s) \r", current.velocity.ToString()); // grayman debug
 				current.velocity *= 1.0f - idMath::ClampFloat( 0.0f, 1000.0f, totalMass - 20.0f ) * ( 1.0f / 950.0f );
 				pushed = true;
+			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: current.velocity after hit is (%s) \r", current.velocity.ToString()); // grayman debug
 			}
 	
 			current.origin = trace.endpos;
@@ -3647,6 +3651,7 @@ void idPhysics_Player::UpdateMantleTimers()
 	// Skip all this if done mantling
 	if (m_mantlePhase != notMantling_DarkModMantlePhase && m_mantlePhase != fixClipping_DarkModMantlePhase)
 	{
+		idPlayer* player = static_cast<idPlayer*>(self); // grayman #3010
 		// Handle expiring mantle phases
 		while (framemSecLeft >= m_mantleTime && m_mantlePhase != notMantling_DarkModMantlePhase)
 		{
@@ -3659,6 +3664,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			case hang_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r");
 				m_mantlePhase = pull_DarkModMantlePhase;
+				player->StartSound("snd_player_mantle_pull", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
 				break;
 
 			case pull_DarkModMantlePhase:
@@ -3672,6 +3678,8 @@ void idPhysics_Player::UpdateMantleTimers()
 
 				// Go into crouch
 				current.movementFlags |= PMF_DUCKED;
+
+				player->StartSound("snd_player_mantle_push", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
 				break;
 
 			case push_DarkModMantlePhase:
@@ -3783,6 +3791,8 @@ void idPhysics_Player::StartMantle
 	idVec3 mantleDistanceVec = endPos - startPos;
 //	float mantleDistance = mantleDistanceVec.Length();
 
+	idPlayer* player = static_cast<idPlayer*>(self); // grayman #3010
+
 	// Log starting phase
 	if (initialMantlePhase == hang_DarkModMantlePhase)
 	{
@@ -3804,6 +3814,7 @@ void idPhysics_Player::StartMantle
 	else if (initialMantlePhase == pull_DarkModMantlePhase)
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with pull upward\r");
+		player->StartSound("snd_player_mantle_pull", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
@@ -3816,6 +3827,7 @@ void idPhysics_Player::StartMantle
 
 		// Start with push upward
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push upward\r");
+		player->StartSound("snd_player_mantle_push", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
 	}
 
 	m_mantlePhase = initialMantlePhase;
@@ -4434,6 +4446,8 @@ void idPhysics_Player::PerformMantle()
 	// If the trace found a target, see if it is mantleable
 	if ( trace.fraction < 1.0f ) 
 	{
+		// mantle target found
+
 		// Log trace hit point
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING
 		(
@@ -4455,6 +4469,8 @@ void idPhysics_Player::PerformMantle()
 			mantleEndPoint
 		))
 		{
+			// Mantle target passed mantleability tests
+
 			// Log the end point
 			DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING 
 			(
@@ -4483,8 +4499,8 @@ void idPhysics_Player::PerformMantle()
 				// We are above it, start with push
 				StartMantle(push_DarkModMantlePhase, eyePos, GetOrigin(), mantleEndPoint);
 			}
-		} // Mantle target passed mantleability tests
-	} // End mantle target found
+		}
+	}
 }
 
 //####################################################################
@@ -4495,7 +4511,7 @@ void idPhysics_Player::PerformMantle()
 //####################################################################
 // Start Leaning Mod
 //	Zaccheus (some original geometric drawings)
-//	SophsiticatedZombie (DH) 
+//	SophisticatedZombie (DH) 
 //
 //####################################################################
 
