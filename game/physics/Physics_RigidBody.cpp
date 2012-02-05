@@ -315,16 +315,36 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	for (int i = 0; i < contacts.Num(); i++)
 	{
 		if (contacts[i].entityNum == ENTITYNUM_WORLD)
+		{
 			continue;
+		}
 
 		idEntity* contactEntity = gameLocal.entities[contacts[i].entityNum];
 
 		//gameRenderWorld->DebugArrow(colorBlue, contacts[i].point, contacts[i].point + contacts[i].normal*20, 1, 5000);
 		
 		if (contactEntity == NULL)
+		{
 			continue;
+		}
 
-		if ((impulse * -contacts[i].normal) < 0.0f)
+#if 0 // grayman #3001 - keep in case there are future problems with this fix
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::contact entity %d has a contact normal of (%s)\r",i,contacts[i].normal.ToString(6));
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::the impulse is (%s) \r",impulse.ToString(6));
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::the calculation result is %f \r",impulse * -contacts[i].normal);
+
+		float a = impulse.x * -contacts[i].normal.x;
+		float b = impulse.y * -contacts[i].normal.y;
+		float c = impulse.z * -contacts[i].normal.z;
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::normal.x = %f \r",contacts[i].normal.x);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::normal.y = %f \r",contacts[i].normal.y);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::normal.z = %f \r",contacts[i].normal.z);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::a = %f \r",a);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::b = %f \r",b);
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::c = %f \r",c);
+#endif
+
+		if ((impulse * -contacts[i].normal) <= 0.0f) // grayman #3001 - should have been <=, not <
 		{
 			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Entity %s is not in push direction.\r", contactEntity->name.c_str());
 			continue;
@@ -339,6 +359,7 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 
 	if (numTouching > 0)
 	{
+#if 0 // grayman #3001 - old way (keep for reference, in case there are unwanted side-effects from this fix
 		// Distribute the impulse evenly across the touching entities
 		idVec3 impulseFraction(current.i.linearMomentum / touching.Num());
 		float impulseFractionLen(impulseFraction.LengthFast());
@@ -359,8 +380,44 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 			// Substract this propagated impulse from the remaining one
 			current.i.linearMomentum -= impulseFraction;
 		}
-	}
 
+#else // new way
+
+		// Distribute the impulse evenly across the touching entities
+
+		// The impulse needs to be applied across the touching entities, not
+		// by their count, but by how much of the impulse they will absorb,
+		// based on the relationship between the impulse and each touching
+		// entity's contact normal.
+
+		idVec3 impulseFraction;
+		idVec3 momentum = current.i.linearMomentum; // capture the original impulse amount
+
+		// Now apply a fractional impulse to the touching entities
+		for ( int i = 0 ; i < numTouching ; i++ )
+		{
+			idEntity* pushed = gameLocal.entities[touching[i].entityNum];
+
+			if (pushed == NULL)
+				continue;
+			
+			idVec3 contactNormal = touching[i].normal;
+
+			impulseFraction.x = momentum.x * -contactNormal.x;
+			impulseFraction.y = momentum.y * -contactNormal.y;
+			impulseFraction.z = momentum.z * -contactNormal.z;
+			
+			//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Propagating impulse to entity %s\r", pushed->name.c_str());
+			//gameRenderWorld->DebugArrow(colorRed, touching[i].point, touching[i].point - touching[i].normal*10, 1, 1000);
+
+			pushed->GetPhysics()->PropagateImpulse(id, touching[i].point, impulseFraction);
+
+			// Substract this propagated impulse from the remaining one
+			current.i.linearMomentum -= impulseFraction;
+		}
+#endif
+	}
+	
 	// Save the remaining impulse before reverting the physics state
 	idVec3 remainingImpulse(current.i.linearMomentum);
 
