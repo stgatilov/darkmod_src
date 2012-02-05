@@ -123,6 +123,7 @@ void tdmEAS::AssignElevatorsToClusters()
 			station->elevatorPosition = positionEnt;
 			station->areaNum = areaNum;
 			station->clusterNum = area.cluster;
+			station->elevatorNum = i; // grayman #3005 - this needs to be initialized
 
 			_elevatorStations.push_back(station);
 		}
