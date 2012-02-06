@@ -137,7 +137,7 @@ I18NLocal::Init
 void I18NLocal::Init()
 {
 	// some default values, the object becomes only fully usable after Init(), tho:
-	m_lang = cvarSystem->GetCVarString( "tdm_lang" );
+	m_lang = cvarSystem->GetCVarString( "sys_lang" );
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	m_Dict.Clear();
@@ -184,7 +184,7 @@ void I18NLocal::Init()
 	m_Remap.Empty();						// by default, no remaps
 
 	// Create the correct dictionary
-	SetLanguage( cvarSystem->GetCVarString( "tdm_lang" ), true );
+	SetLanguage( cvarSystem->GetCVarString( "sys_lang" ), true );
 }
 
 /*
@@ -370,32 +370,14 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	m_lang = lang;
 
 	// set sys_lang
-	cvarSystem->SetCVarString("tdm_lang", lang);
+	cvarSystem->SetCVarString("sys_lang", lang);
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
-	idStr newLang = idStr(lang);
-
 	// If we need to remap some characters upon loading one of these languages:
-	LoadCharacterMapping(newLang);
+	LoadCharacterMapping(m_lang);
 
-	// For some reason, "english", "german", "french" and "spanish" share
-	// the same font, but "polish" and "russian" get their own font. But
-	// since "polish" is actually a copy of the normal western font, use
-	// "english" instead to trick D3 into loading the correct font. The
-	// dictionary below will be polish, regardless.
-	if (newLang == "polish")
-	{
-		newLang = "english";
-	}
-	// set sysvar sys_lang (if not possible, D3 will revert to english)
-	cvarSystem->SetCVarString( "sys_lang", newLang.c_str() );
-
-	// If sys_lang differs from lang, the language was not supported, so
-	// we will load it ourselves.
-	if ( newLang != cvarSystem->GetCVarString( "sys_lang" ) )
-	{
-		common->Printf("I18NLocal: Language '%s' not supported by D3, forcing it.\n", lang);
-	}
+	// set sysvar sys_lang
+	cvarSystem->SetCVarString( "sys_lang", m_lang.c_str() );
 
 	// build our combined dictionary, first the TDM base dict
 	idStr file = "strings/"; file += m_lang + ".lang";

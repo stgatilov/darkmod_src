@@ -23,12 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 #include "sys_local.h"
 
-const char * sysLanguageNames[] = {
-	"english", "spanish", "italian", "german", "french", "russian", 
-	"polish", "korean", "japanese", "chinese", NULL
-};
-
-idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "", sysLanguageNames, idCmdSystem::ArgCompletion_String<sysLanguageNames> );
+idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "The current used language. Possible values are 'english', 'german', 'russian' etc." );
 
 idSysLocal			sysLocal;
 idSys *				sys = &sysLocal;

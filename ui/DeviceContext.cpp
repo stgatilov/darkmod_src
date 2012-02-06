@@ -70,7 +70,7 @@ void idDeviceContext::SetupFonts() {
 	fontLang = cvarSystem->GetCVarString( "sys_lang" );
 	
 	// western european languages can use the english font
-	if ( fontLang == "french" || fontLang == "german" || fontLang == "spanish" || fontLang == "italian" ) {
+	if ( fontLang == "french" || fontLang == "german" || fontLang == "spanish" || fontLang == "italian" || fontLang == "polish") {
 		fontLang = "english";
 	}
 

@@ -98,9 +98,6 @@ idCVar com_videoRam( "com_videoRam", "64", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOC
 
 idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
-// Tels: can be removed when D3 is open source and we can access sys_lang properly
-idCVar cv_tdm_lang("tdm_lang",	"english",	CVAR_GUI | CVAR_ARCHIVE, "The current used language. Possible values are 'english', 'german', 'russian' etc." );
-
 
 // com_speeds times
 int				time_gameFrame;
@@ -216,8 +213,6 @@ private:
 	idStrList					errorList;
 
 	int							gameDLL;
-
-	idLangDict					languageDict; // legacy
 
 #ifdef ID_WRITE_VERSION
 	idCompressor *				config_compressor;
@@ -1711,12 +1706,8 @@ idCommonLocal::GetLanguageDict
 */
 const idLangDict *idCommonLocal::GetLanguageDict( void )
 {
-#if 0
-	return &languageDict;
-#endif
-
 	// Redirect the call to I18N
-	return GetI18N()->GetLanguageDict();
+	return i18n->GetLanguageDict();
 }
 
 I18N* idCommonLocal::GetI18N()
@@ -1749,39 +1740,8 @@ idCommonLocal::InitLanguageDict
 ===============
 */
 void idCommonLocal::InitLanguageDict( void ) {
-	idStr fileName;
-	languageDict.Clear();
-
-	//D3XP: Instead of just loading a single lang file for each language
-	//we are going to load all files that begin with the language name
-	//similar to the way pak files work. So you can place english001.lang
-	//to add new strings to the english language dictionary
-	idFileList*	langFiles;
-	langFiles =  fileSystem->ListFilesTree( "strings", ".lang", true );
-	
-	idStrList langList = langFiles->GetList();
 
 	StartupVariable( "sys_lang", false );	// let it be set on the command line - this is needed because this init happens very early
-	idStr langName = cvarSystem->GetCVarString( "sys_lang" );
-
-	//Loop through the list and filter
-	idStrList currentLangList = langList;
-	FilterLangList(&currentLangList, langName);
-	
-	if ( currentLangList.Num() == 0 ) {
-		// reset cvar to default and try to load again
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reset sys_lang" );
-		langName = cvarSystem->GetCVarString( "sys_lang" );
-		currentLangList = langList;
-		FilterLangList(&currentLangList, langName);
-	}
-
-	for( int i = 0; i < currentLangList.Num(); i++ ) {
-		//common->Printf("%s\n", currentLangList[i].c_str());
-		languageDict.Load( currentLangList[i], false );
-	}
-
-	fileSystem->FreeFileList(langFiles);
 
 	Sys_InitScanTable();
 }
@@ -3036,9 +2996,6 @@ void idCommonLocal::Shutdown( void ) {
 	ClearWarnings( GAME_NAME " shutdown" );
 	warningCaption.Clear();
 	errorList.Clear();
-
-	// free language dictionary
-	languageDict.Clear();
 
 	// enable leak test
 	Mem_EnableLeakTest( "doom" );
