@@ -810,8 +810,9 @@ public:
 	// Gets repeatedly called when the player holds down the frob button
 	void					PerformFrobKeyRepeat(int holdTime);
 	// Gets called when the player releases the frob button
-	void					PerformFrobKeyRelease(int holdTime);				
-
+	void					PerformFrobKeyRelease(int holdTime);
+	// grayman #3011 - check if objects are stacked on top of a frobbed inventory item
+	void					CheckForStackedObjects(idEntity* ent);
 
 	// angua: Set ideal crouch state
 	void					EvaluateCrouch();
