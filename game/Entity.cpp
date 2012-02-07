@@ -157,6 +157,7 @@ const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
 const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", NULL, 'v');	// grayman #2787
 const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", NULL, 'v');	// grayman #2787
 const idEventDef EV_IsLight("isLight", NULL, 'd'); // grayman #2905
+const idEventDef EV_ActivateContacts("activateContacts"); // grayman #3011
 
 //===============================================================
 //                   TDM GUI interface
@@ -458,7 +459,8 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
 	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )	// grayman #2478
 	EVENT( EV_IsLight,				idEntity::Event_IsLight )				// grayman #2905
-
+	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )		// grayman #3011
+	
 END_CLASS
 
 /*
@@ -5614,6 +5616,16 @@ void idEntity::RemoveContactEntity( idEntity *ent ) {
 // entities sitting on this entity.
 
 // This could be extended in the future to activate all contact entities.
+
+/*
+================
+idEntity::Event_ActivateContacts
+================
+*/
+void idEntity::Event_ActivateContacts()
+{
+	ActivateContacts();
+}
 
 /*
 ================

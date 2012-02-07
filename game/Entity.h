@@ -1222,6 +1222,8 @@ public:
 
 	void					Event_IsLight(); // grayman #2905
 
+	void					Event_ActivateContacts(); // grayman #3011
+
 	int						team;
 
 	// angua: entities can have personal relationships to other entities that are used instead of the team relations.
