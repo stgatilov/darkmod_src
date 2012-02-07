@@ -89,18 +89,6 @@ protected:
 
 	unsigned long numSpots;
 
-#if 0
-	// grayman debug - these are for stopping the circling movement when a guard is looking for you
-	//                 beyond a cell door. I haven't coded anything yet to use them.
-
-	int p_prevDist2Spot;	// grayman debug -	how far from where you were to where you want to be
-	int p_searchState;		// grayman debug -	enum these
-							//					0 = start search
-							//					1 = initially moving away from goal spot (origin - goal).length > prevDist2Spot
-							//					2 = moving back toward goal spot (origin - goal).length < prevDist2Spot
-							//					3 = once again moving away from goal spot (origin - goal).length > prevDist2Spot (again)
-#endif
-
 	// The first area
 	TDarkmodHidingSpotAreaNode* p_firstArea;
 	TDarkmodHidingSpotAreaNode* p_lastArea;
