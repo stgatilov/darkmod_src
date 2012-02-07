@@ -4657,14 +4657,17 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	result.damageDealt = 0;
 	result.hasLanded = false;
 
-	if (GetPhysics() == NULL) return result;
+	if (GetPhysics() == NULL)
+	{
+		return result;
+	}
 
 	idPhysics& physics = *GetPhysics(); // shortcut
 	
 	// no falling damage if touching a nodamage surface
-	// We do this here since the sound wont be played otherwise
+	// We do this here since the sound won't be played otherwise
 	// as we do no damage if this is true.
-	for( int i = 0; i < physics.GetNumContacts(); i++ )
+	for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
 	{
 		const contactInfo_t &contact = physics.GetContact( i );
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
@@ -4721,9 +4724,28 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	// We've been moving downwards with a certain velocity, set the flag 
-	if (curGravVelocity.LengthFast() < 1 && deltaVecVert*vGravNorm > 100)
+
+	// grayman #2978 - Setting result.hasLanded to true
+	// in the next segment is based on the actor having lost almost
+	// all vertical velocity. But when landing on a sloped surface, the actor hits, then
+	// begins to slide for a few frames, so he still has some downward vertical
+	// velocity here. Even so, for all intents and purposes, he's landed, and we
+	// should tell the calling routine.
+
+	// Even though the ( curGravVelocity.LengthFast() < 1 ) check appears below
+	// to not be necessary, I'm leaving it in in case someone in the future
+	// wants to distinguish between flat and sloped landings.
+
+	if ( ( curGravVelocity.LengthFast() < 1 ) && ( deltaVecVert*vGravNorm > 100 ) )
 	{
-		result.hasLanded = true;
+		result.hasLanded = true; // flat landing
+	}
+
+	if ( !result.hasLanded && ( deltaVecVert*vGravNorm > 100 ) )
+	{
+		result.hasLanded = true; // sloped landing, because there's still some vertical velocity,
+								 // but the change in velocity is large enough to indicate
+								 // having landed
 	}
 
 	if (delta < 390000)
