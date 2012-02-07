@@ -41,6 +41,8 @@ idForce_Field::idForce_Field( void ) {
 	playerOnly		= false;
 	monsterOnly		= false;
 	clipModel		= NULL;
+	playerMass		= 70; // grayman #2975
+	version			= 0;  // grayman #2975
 }
 
 /*
@@ -68,6 +70,8 @@ void idForce_Field::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( playerOnly );
 	savefile->WriteBool( monsterOnly );
 	savefile->WriteClipModel( clipModel );
+	savefile->WriteFloat( playerMass ); // grayman #2975
+	savefile->WriteInt( version );		// grayman #2975
 }
 
 /*
@@ -84,6 +88,8 @@ void idForce_Field::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( playerOnly );
 	savefile->ReadBool( monsterOnly );
 	savefile->ReadClipModel( clipModel );
+	savefile->ReadFloat( playerMass );	// grayman #2975
+	savefile->ReadInt( version );		// grayman #2975
 }
 
 /*
@@ -233,11 +239,33 @@ void idForce_Field::Evaluate( int time ) {
 				break;
 			}
 			case FORCEFIELD_APPLY_IMPULSE: {
+
+				// grayman #2975 - check 'version'. If it's the default setting
+				// of '0', don't alter the magnitude. If it's '1', reduce the magnitude on objects with
+				// a mass smaller than the player, to give them more realistic movement in a forcefield.
+				// The version number is necessary to not break existing maps at the time of this change.
+
+				float factor = 1.0;
+
+				if ( version == 1 )
+				{
+					float mass = entity->spawnArgs.GetFloat("mass","1");
+					factor = mass/playerMass;
+					if ( factor > 1.0 )
+					{
+						factor = 1.0;
+					}
+				}
+
+				float newMagnitude = magnitude*factor;
+
 				if ( randomTorque != 0.0f ) {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude );
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * newMagnitude );
+//					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin() + torque.Cross( dir ) * randomTorque, dir * magnitude );
 				}
 				else {
-					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude );
+					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * newMagnitude );
+//					entity->ApplyImpulse( gameLocal.world, cm->GetId(), cm->GetOrigin(), force * magnitude );
 				}
 				break;
 			}

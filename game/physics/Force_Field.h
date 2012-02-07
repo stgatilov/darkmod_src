@@ -66,6 +66,10 @@ public:
 	void				SetMonsterOnly( bool set ) { monsterOnly = set; }
 						// clip model describing the extents of the force field
 	void				SetClipModel( idClipModel *clipModel );
+						// grayman #2975 - set the player mass for reduced force effect when version == 1
+	void				SetPlayerMass( float mass) { playerMass = mass; }
+						// grayman #2975 - set the version ( 0 = default behavior, 1 = reduced force behavior )
+	void				SetVersion( int newVersion ) { version = newVersion; }
 
 public: // common force interface
 	virtual void		Evaluate( int time );
@@ -80,6 +84,8 @@ private:
 	bool				playerOnly;
 	bool				monsterOnly;
 	idClipModel *		clipModel;
+	float				playerMass; // grayman #2975
+	int					version;	// grayman #2975
 };
 
 #endif /* !__FORCE_FIELD_H__ */
