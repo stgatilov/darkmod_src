@@ -418,16 +418,12 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				m_PushForce->SetContactInfo(trace, current.velocity);
 
 				totalMass = pushedEnt->GetPhysics()->GetMass();
-			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: pushedEnt is %s \r", pushedEnt->name.c_str()); // grayman debug
-			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: its mass is %f \r", totalMass); // grayman debug
 			}
 
 			if ( totalMass > 0.0f ) {
 				// decrease velocity based on the total mass of the objects being pushed ?
-			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: current.velocity before hit is (%s) \r", current.velocity.ToString()); // grayman debug
 				current.velocity *= 1.0f - idMath::ClampFloat( 0.0f, 1000.0f, totalMass - 20.0f ) * ( 1.0f / 950.0f );
 				pushed = true;
-			//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_Player::SlideMove: current.velocity after hit is (%s) \r", current.velocity.ToString()); // grayman debug
 			}
 	
 			current.origin = trace.endpos;
