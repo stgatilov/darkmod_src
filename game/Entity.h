@@ -665,7 +665,9 @@ public:
 	virtual void			AddContactEntity( idEntity *ent );
 							// remove a touching entity
 	virtual void			RemoveContactEntity( idEntity *ent );
-
+							// grayman #3011 - check if objects are sitting on this entity
+	virtual void			ActivateContacts( void );
+	
 	// damage
 							// returns true if this entity can be damaged from the given origin
 	virtual bool			CanDamage( const idVec3 &origin, idVec3 &damagePoint ) const;

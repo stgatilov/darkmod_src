@@ -5610,7 +5610,56 @@ void idEntity::RemoveContactEntity( idEntity *ent ) {
 	GetPhysics()->RemoveContactEntity( ent );
 }
 
+// grayman #3011 - Activate physics thinking for any
+// entities sitting on this entity.
 
+// This could be extended in the future to activate all contact entities.
+
+/*
+================
+idEntity::ActivateContacts
+================
+*/
+void idEntity::ActivateContacts()
+{
+	idList<contactInfo_t> contacts;
+	contacts.SetNum( 10, false );
+
+	idVec6 dir;
+	int num;
+
+	dir.SubVec3(0) = -GetPhysics()->GetGravityNormal(); // look up
+	dir.SubVec3(1) = vec3_origin; // ignore angular velocity
+	idClipModel *clipModel = GetPhysics()->GetClipModel();
+
+	if ( clipModel->IsTraceModel() )
+	{
+		num = gameLocal.clip.Contacts( &contacts[0], 10, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
+	}
+	else
+	{
+		// this entity has no trace model, so create a new clip model
+		// and give it a trace model that can be used for the search
+	
+		idTraceModel trm(GetPhysics()->GetBounds());
+		idClipModel clip(trm);
+		num = gameLocal.clip.Contacts( &contacts[0], 10, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
+	}
+	
+	contacts.SetNum( num, false );
+
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		idEntity* found = gameLocal.entities[contacts[i].entityNum];
+		if ( found != gameLocal.world )
+		{
+			if ( found && found->IsType(idMoveable::Type) )
+			{
+				found->ActivatePhysics( this ); // let this object find that it's sitting on air
+			}
+		}
+	}
+}
 
 /***********************************************************************
 
