@@ -3660,7 +3660,7 @@ void idPhysics_Player::UpdateMantleTimers()
 			case hang_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: Pulling up...\r");
 				m_mantlePhase = pull_DarkModMantlePhase;
-				player->StartSound("snd_player_mantle_pull", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
+				player->StartSound("snd_player_mantle_pull", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
 			case pull_DarkModMantlePhase:
@@ -3675,7 +3675,7 @@ void idPhysics_Player::UpdateMantleTimers()
 				// Go into crouch
 				current.movementFlags |= PMF_DUCKED;
 
-				player->StartSound("snd_player_mantle_push", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
+				player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 				break;
 
 			case push_DarkModMantlePhase:
@@ -3810,7 +3810,7 @@ void idPhysics_Player::StartMantle
 	else if (initialMantlePhase == pull_DarkModMantlePhase)
 	{
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with pull upward\r");
-		player->StartSound("snd_player_mantle_pull", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
+		player->StartSound("snd_player_mantle_pull", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
 	else if (initialMantlePhase == shiftHands_DarkModMantlePhase)
 	{
@@ -3823,7 +3823,7 @@ void idPhysics_Player::StartMantle
 
 		// Start with push upward
 		DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING("Mantle starting with push upward\r");
-		player->StartSound("snd_player_mantle_push", SND_CHANNEL_ANY, 0, false, NULL); // grayman #3010
+		player->StartSound("snd_player_mantle_push", SND_CHANNEL_VOICE, 0, false, NULL); // grayman #3010
 	}
 
 	m_mantlePhase = initialMantlePhase;
