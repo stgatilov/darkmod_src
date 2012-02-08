@@ -42,7 +42,7 @@ idForce_Field::idForce_Field( void ) {
 	monsterOnly		= false;
 	clipModel		= NULL;
 	playerMass		= 70; // grayman #2975
-	version			= 0;  // grayman #2975
+	scaleImpulse	= 0;  // grayman #2975
 }
 
 /*
@@ -70,8 +70,8 @@ void idForce_Field::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( playerOnly );
 	savefile->WriteBool( monsterOnly );
 	savefile->WriteClipModel( clipModel );
-	savefile->WriteFloat( playerMass ); // grayman #2975
-	savefile->WriteInt( version );		// grayman #2975
+	savefile->WriteFloat( playerMass );  // grayman #2975
+	savefile->WriteBool( scaleImpulse ); // grayman #2975
 }
 
 /*
@@ -88,8 +88,8 @@ void idForce_Field::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool( playerOnly );
 	savefile->ReadBool( monsterOnly );
 	savefile->ReadClipModel( clipModel );
-	savefile->ReadFloat( playerMass );	// grayman #2975
-	savefile->ReadInt( version );		// grayman #2975
+	savefile->ReadFloat( playerMass ); // grayman #2975
+	savefile->ReadBool( scaleImpulse ); // grayman #2975
 }
 
 /*
@@ -240,14 +240,14 @@ void idForce_Field::Evaluate( int time ) {
 			}
 			case FORCEFIELD_APPLY_IMPULSE: {
 
-				// grayman #2975 - check 'version'. If it's the default setting
+				// grayman #2975 - check 'scaleImpulse'. If it's the default setting
 				// of '0', don't alter the magnitude. If it's '1', reduce the magnitude on objects with
 				// a mass smaller than the player, to give them more realistic movement in a forcefield.
-				// The version number is necessary to not break existing maps at the time of this change.
+				// The scaleImpulse setting is necessary to not break existing maps at the time of this change.
 
 				float factor = 1.0;
 
-				if ( version == 1 )
+				if ( scaleImpulse == 1 )
 				{
 					float mass = entity->spawnArgs.GetFloat("mass","1");
 					factor = mass/playerMass;

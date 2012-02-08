@@ -927,7 +927,7 @@ void idForceField::Spawn( void ) {
 	forceField.SetPlayerOnly( spawnArgs.GetBool( "playerOnly", "0" ) );
 	forceField.SetMonsterOnly( spawnArgs.GetBool( "monsterOnly", "0" ) );
 
-	// grayman #2975 - for version == 1, use the player mass in a calculation
+	// grayman #2975 - for scaleImpulse == 1, use the player mass in a calculation
 	// that reduces force on small objects. Provides more realistic behavior
 	// when the same force field is used on small objects and the player.
 
@@ -939,7 +939,7 @@ void idForceField::Spawn( void ) {
 	}
 
 	forceField.SetPlayerMass( mass );
-	forceField.SetVersion( spawnArgs.GetInt("version","0") ); // identify when to apply reduced force
+	forceField.SetScale( spawnArgs.GetBool("scale_impulse","0") ); // identify when to apply scaled force
 
 	// set the collision model on the force field
 	forceField.SetClipModel( new idClipModel( GetPhysics()->GetClipModel() ) );

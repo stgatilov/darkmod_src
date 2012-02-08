@@ -68,8 +68,8 @@ public:
 	void				SetClipModel( idClipModel *clipModel );
 						// grayman #2975 - set the player mass for reduced force effect when version == 1
 	void				SetPlayerMass( float mass) { playerMass = mass; }
-						// grayman #2975 - set the version ( 0 = default behavior, 1 = reduced force behavior )
-	void				SetVersion( int newVersion ) { version = newVersion; }
+						// grayman #2975 - set the scaleImpulse flag ( 0 = default behavior (no scaling), 1 = scaled force behavior )
+	void				SetScale( bool newScale ) { scaleImpulse = newScale; }
 
 public: // common force interface
 	virtual void		Evaluate( int time );
@@ -84,8 +84,8 @@ private:
 	bool				playerOnly;
 	bool				monsterOnly;
 	idClipModel *		clipModel;
-	float				playerMass; // grayman #2975
-	int					version;	// grayman #2975
+	float				playerMass;    // grayman #2975
+	bool				scaleImpulse; // grayman #2975
 };
 
 #endif /* !__FORCE_FIELD_H__ */
