@@ -1117,7 +1117,10 @@ void idRestoreGame::ReadSoundCommands( void ) {
 }
 
 void idRestoreGame::ReadHeader( void ) {
-	file->ReadInt( buildNumber );
+	// taaaki: final fix for bug #2997. The WriteHeader() call does not save
+    //         a buildNumber to the file, so reading it out was causing things
+    //         to break.
+    // file->ReadInt( buildNumber );
 	file->ReadInt( codeRevision );
 	file->ReadBool(isCompressed);
 }
