@@ -158,6 +158,7 @@ const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", NULL, 'v');	// grayman #2
 const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", NULL, 'v');	// grayman #2787
 const idEventDef EV_IsLight("isLight", NULL, 'd'); // grayman #2905
 const idEventDef EV_ActivateContacts("activateContacts"); // grayman #3011
+const idEventDef EV_GetLocation("getLocation", NULL, 'e'); // grayman #3013
 
 //===============================================================
 //                   TDM GUI interface
@@ -454,12 +455,12 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 
 	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
 
-	EVENT( EV_CheckMine,			idEntity::Event_CheckMine ) // grayman #2478
-
+	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )				// grayman #2478
 	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
 	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )	// grayman #2478
 	EVENT( EV_IsLight,				idEntity::Event_IsLight )				// grayman #2905
 	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )		// grayman #3011
+	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )			// grayman #3013
 	
 END_CLASS
 
@@ -12299,4 +12300,17 @@ void idEntity::Event_IsLight()
 {
 	idThread::ReturnInt(static_cast<int>(IsType(idLight::Type)));
 }
+
+// grayman #3013
+
+void idEntity::Event_GetLocation()
+{
+	idThread::ReturnEntity( GetLocation() );
+}
+
+idLocationEntity *idEntity::GetLocation( void )
+{
+	return gameLocal.LocationForPoint( GetPhysics()->GetOrigin() );
+}
+
 

@@ -1192,6 +1192,7 @@ public:
 	void					ClearStimIgnoreList(StimType type);
 
 	bool					CheckResponseIgnore(StimType type, idEntity* fromEntity); // grayman #2872
+	idLocationEntity*		GetLocation( void ); // grayman #3013
 
 
 	/**
@@ -1220,9 +1221,13 @@ public:
 	void					Event_SetEntityRelation (idEntity* entity, int relation);
 	void					Event_ChangeEntityRelation(idEntity* entity, int relationChange);
 
-	void					Event_IsLight(); // grayman #2905
+	/**
+	 * grayman - misc. events
+	 */
 
-	void					Event_ActivateContacts(); // grayman #3011
+	void					Event_IsLight();			// grayman #2905
+	void					Event_ActivateContacts();	// grayman #3011
+	void					Event_GetLocation();		// grayman #3013
 
 	int						team;
 
