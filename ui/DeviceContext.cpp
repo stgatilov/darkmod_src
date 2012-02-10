@@ -51,7 +51,7 @@ int idDeviceContext::FindFont( const char *name ) {
 
 	// If the font was not found, try to register it
 	idStr fileName = name;
-	fileName.Replace("fonts", va("fonts/%s", fontLang.c_str()) );
+	fileName.Replace("fonts", common->GetI18N()->GetCurrentFontPath().c_str() );
 
 	fontInfoEx_t fontInfo;
 		int index = fonts.Append( fontInfo );
@@ -66,13 +66,6 @@ int idDeviceContext::FindFont( const char *name ) {
 
 void idDeviceContext::SetupFonts() {
 	fonts.SetGranularity( 1 );
-
-	fontLang = cvarSystem->GetCVarString( "sys_lang" );
-	
-	// western european languages can use the english font
-	if ( fontLang == "french" || fontLang == "german" || fontLang == "spanish" || fontLang == "italian" || fontLang == "polish") {
-		fontLang = "english";
-	}
 
 	// Default font has to be added first
 	FindFont( "fonts" );

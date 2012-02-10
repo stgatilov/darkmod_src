@@ -64,6 +64,11 @@ public:
 	virtual const idStr&		GetCurrentLanguage() const = 0;
 
 	/**
+	* Returns the path to the fonts for the current active language.
+	*/
+	virtual const idStr&		GetCurrentFontPath() const = 0;
+
+	/**
 	* Print memory usage info.
     */
 	virtual void				Print() const = 0;

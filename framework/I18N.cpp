@@ -62,6 +62,11 @@ public:
 	const idStr&		GetCurrentLanguage() const;
 
 	/**
+	* Returns the path to the fonts for the current active language.
+	*/
+	const idStr&		GetCurrentFontPath() const;
+
+	/**
 	* Print memory usage info.
     */
 	void				Print() const;
@@ -99,6 +104,10 @@ public:
 private:
 	// current language
 	idStr				m_lang;
+	
+	// current font path (depends on language)
+	idStr				m_fontPath;
+
 	// depending on current language, move articles to back of Fm name for display?
 	bool				m_bMoveArticles;
 
@@ -136,8 +145,9 @@ I18NLocal::Init
 */
 void I18NLocal::Init()
 {
-	// some default values, the object becomes only fully usable after Init(), tho:
+	// some default values before we initialize everything in SetLanguage()
 	m_lang = cvarSystem->GetCVarString( "sys_lang" );
+	m_fontPath = "fonts/english";
 	m_bMoveArticles = (m_lang != "polish" && m_lang != "italian") ? true : false;
 
 	m_Dict.Clear();
@@ -183,7 +193,7 @@ void I18NLocal::Init()
 
 	m_Remap.Empty();						// by default, no remaps
 
-	// Create the correct dictionary
+	// Create the correct dictionary and set fontLang
 	SetLanguage( cvarSystem->GetCVarString( "sys_lang" ), true );
 }
 
@@ -209,6 +219,7 @@ void I18NLocal::Shutdown()
 {
 	common->Printf( "I18NLocal: Shutdown.\n" );
 	m_lang = "";
+	m_fontPath = "";
 	m_ReverseDict.Clear();
 	m_ArticlesDict.Clear();
 	m_Dict.Clear();
@@ -222,6 +233,7 @@ I18NLocal::Print
 void I18NLocal::Print() const
 {
 	common->Printf("I18NLocal: Current language: %s\n", m_lang.c_str() );
+	common->Printf("I18NLocal: Current font path: %s\n", m_fontPath.c_str() );
 	common->Printf("I18NLocal: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
 	common->Printf(" Main " );
 	m_Dict.Print();
@@ -285,6 +297,16 @@ const idStr& I18NLocal::GetCurrentLanguage() const
 
 /*
 ===============
+I18NLocal::GetCurrentFontPath
+===============
+*/
+const idStr& I18NLocal::GetCurrentFontPath() const
+{
+	return m_fontPath;
+}
+
+/*
+===============
 I18NLocal::LoadCharacterMapping
 
 Loads the character remap table, defaulting to "default.map" if "LANGUAGE.map"
@@ -309,7 +331,7 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 	}
 	if (len <= 0)
 	{
-		common->Warning("Cannot find character remapping for language %s.", lang.c_str() );
+		common->Printf("Found no character remapping for %s.", lang.c_str() );
 		return 0;
 	}
 	
@@ -376,9 +398,6 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	// If we need to remap some characters upon loading one of these languages:
 	LoadCharacterMapping(m_lang);
 
-	// set sysvar sys_lang
-	cvarSystem->SetCVarString( "sys_lang", m_lang.c_str() );
-
 	// build our combined dictionary, first the TDM base dict
 	idStr file = "strings/"; file += m_lang + ".lang";
 	m_Dict.Load( file, true, m_Remap.Length() / 2, m_Remap.c_str() );				// true => clear before load
@@ -437,6 +456,14 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 				}
 			}
 		}
+	}
+
+	// Now set the path to where to load fonts from
+	m_fontPath = idStr( Translate( "#str_04127" ) );
+    if (m_fontPath == "#str_04127")
+	{
+		// by default it is the language
+		m_fontPath = "fonts/" + m_lang;
 	}
 
 	idUserInterface *gui = uiManager->FindGui( "guis/mainmenu.gui", false, true, true );

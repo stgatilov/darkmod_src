@@ -143,7 +143,6 @@ private:
 	idList<idRectangle>	clipRects;
 	
 	static idList<fontInfoEx_t> fonts;
-	idStr fontLang;
 
 	bool				enableClipping;
 
