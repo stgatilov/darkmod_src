@@ -218,7 +218,6 @@ public:
 	idUserInterface *	guiRestartMenu;
 	idUserInterface *	guiLoading;
 	idUserInterface *	guiIntro;
-	idUserInterface *	guiGameOver;
 	idUserInterface *	guiTest;
 	idUserInterface *	guiTakeNotes;
 	

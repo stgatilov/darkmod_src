@@ -263,7 +263,7 @@ idSessionLocal::idSessionLocal
 */
 idSessionLocal::idSessionLocal() {
 	guiInGame = guiMainMenu = guiIntro \
-		= guiRestartMenu = guiLoading = guiGameOver = guiActive \
+		= guiRestartMenu = guiLoading = guiActive \
 		= guiTest = guiMsg = guiMsgRestore = guiTakeNotes = NULL;	
 	
 	menuSoundWorld = NULL;
@@ -2742,7 +2742,6 @@ void idSessionLocal::Init() {
 	guiMainMenu_MapList->Config( guiMainMenu, "mapList" );
 	idAsyncNetwork::client.serverList.GUIConfig( guiMainMenu, "serverList" );
 	guiRestartMenu = uiManager->FindGui( "guis/restart.gui", true, false, true );
-	guiGameOver = uiManager->FindGui( "guis/gameover.gui", true, false, true );
 	guiMsg = uiManager->FindGui( "guis/msg.gui", true, false, true );
 	guiTakeNotes = uiManager->FindGui( "guis/takeNotes.gui", true, false, true );
 	guiIntro = uiManager->FindGui( "guis/intro.gui", true, false, true );
