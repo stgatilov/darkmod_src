@@ -1918,7 +1918,7 @@ idAsyncClient::SendAuthCheck
 	InitPort();
 	clientPort.SendPacket( idAsyncNetwork::GetMasterAddress(), msg.GetData(), msg.GetSize() );
 	return true;
-}/*
+}*/
 
 /*
 ===============
