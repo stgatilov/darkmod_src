@@ -65,8 +65,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = common->GetLanguageDict()->GetString( "#str_02140" );	// Unable to contact Mission Archive
-					msg.message = common->GetLanguageDict()->GetString( "#str_02007" );	// Cannot connect to server.
+					msg.title = common->Translate( "#str_02140" );	// Unable to contact Mission Archive
+					msg.message = common->Translate( "#str_02007" );	// Cannot connect to server.
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 
@@ -103,8 +103,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = common->GetLanguageDict()->GetString( "#str_02008" );	// Mission Details Download Failed
-					msg.message = common->GetLanguageDict()->GetString( "#str_02009" );	// Failed to download the details XML file.
+					msg.title = common->Translate( "#str_02008" );	// Mission Details Download Failed
+					msg.message = common->Translate( "#str_02009" );	// Failed to download the details XML file.
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 
@@ -141,8 +141,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 					gameLocal.Printf("Connection Error.\n");
 
 					GuiMessage msg;
-					msg.title = common->GetLanguageDict()->GetString( "#str_02002" ); // "Connection Error"
-					msg.message = common->GetLanguageDict()->GetString( "#str_02139" ); // "Failed to download the screenshot file."
+					msg.title = common->Translate( "#str_02002" ); // "Connection Error"
+					msg.message = common->Translate( "#str_02139" ); // "Failed to download the screenshot file."
 					msg.type = GuiMessage::MSG_OK;
 					msg.okCmd = "close_msg_box";
 
@@ -179,8 +179,8 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			GuiMessage msg;
 			msg.type = GuiMessage::MSG_OK;
 			msg.okCmd = "close_msg_box";
-			msg.title = common->GetLanguageDict()->GetString( "#str_02140" ); // "Unable to contact Mission Archive"
-			msg.message = common->GetLanguageDict()->GetString( "#str_02141" ); // "HTTP Requests have been disabled,\n cannot check for available missions."
+			msg.title = common->Translate( "#str_02140" ); // "Unable to contact Mission Archive"
+			msg.message = common->Translate( "#str_02141" ); // "HTTP Requests have been disabled,\n cannot check for available missions."
 
 			gameLocal.AddMainMenuMessage(msg);
 
@@ -214,10 +214,10 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		gui->SetStateString("av_mission_author", mods[missionIndex]->author);
 		gui->SetStateString("av_mission_release_date", mods[missionIndex]->releaseDate);
 		gui->SetStateString("av_mission_type", mods[missionIndex]->type == DownloadableMod::Multi ? 
-			common->GetLanguageDict()->GetString("#str_04353") : // Campaign
-			common->GetLanguageDict()->GetString("#str_04352")); // Single Mission
+			common->Translate("#str_04353") : // Campaign
+			common->Translate("#str_04352")); // Single Mission
 		gui->SetStateString("av_mission_version", va("%d", mods[missionIndex]->version));
-		gui->SetStateString("av_mission_size", va("%0.1f %s", mods[missionIndex]->sizeMB, common->GetLanguageDict()->GetString( "#str_02055" )));	// MB
+		gui->SetStateString("av_mission_size", va("%0.1f %s", mods[missionIndex]->sizeMB, common->Translate( "#str_02055" )));	// MB
 
 		gui->SetStateBool("av_mission_details_visible", true);
 
@@ -476,8 +476,8 @@ void CDownloadMenu::UpdateModDetails(idUserInterface* gui)
 		GuiMessage msg;
 		msg.type = GuiMessage::MSG_OK;
 		msg.okCmd = "close_msg_box";
-		msg.title = common->GetLanguageDict()->GetString( "#str_02003" ); // "Code Logic Error"
-		msg.message = common->GetLanguageDict()->GetString( "#str_02004" ); // "No mission details loaded."
+		msg.title = common->Translate( "#str_02003" ); // "Code Logic Error"
+		msg.message = common->Translate( "#str_02004" ); // "No mission details loaded."
 
 		gameLocal.AddMainMenuMessage(msg);
 
@@ -488,7 +488,7 @@ void CDownloadMenu::UpdateModDetails(idUserInterface* gui)
 	gui->SetStateString("av_mission_author", mods[modIndex]->author);
 	gui->SetStateString("av_mission_release_date", mods[modIndex]->releaseDate);
 	gui->SetStateString("av_mission_version", va("%d", mods[modIndex]->version));
-	gui->SetStateString("av_mission_size", va("%0.1f %s", mods[modIndex]->sizeMB, common->GetLanguageDict()->GetString( "#str_02055" )));	// MB
+	gui->SetStateString("av_mission_size", va("%0.1f %s", mods[modIndex]->sizeMB, common->Translate( "#str_02055" )));	// MB
 
 	gui->SetStateString("av_mission_description", mods[modIndex]->description);
 }
@@ -557,7 +557,7 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 
 		if (it == _downloads.end())
 		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? common->GetLanguageDict()->GetString( "#str_02180" ) : "");	// "queued"
+			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? common->Translate( "#str_02180" ) : "");	// "queued"
 			continue;
 		}
 	}
@@ -647,7 +647,7 @@ idStr CDownloadMenu::GetMissionDownloadProgressString(int modIndex)
 
 	if (it == _downloads.end())
 	{
-		return common->GetLanguageDict()->GetString( "#str_02180" );
+		return common->Translate( "#str_02180" );
 	}
 
 	CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(it->second.missionDownloadId);
@@ -663,9 +663,9 @@ idStr CDownloadMenu::GetMissionDownloadProgressString(int modIndex)
 	switch (download->GetStatus())
 	{
 	case CDownload::NOT_STARTED_YET:
-		return common->GetLanguageDict()->GetString( "#str_02180" );	// "queued "
+		return common->Translate( "#str_02180" );	// "queued "
 	case CDownload::FAILED:
-		return common->GetLanguageDict()->GetString( "#str_02181" );	// "failed "
+		return common->Translate( "#str_02181" );	// "failed "
 	case CDownload::IN_PROGRESS:
 	{
 		double totalFraction = download->GetProgressFraction(); 
@@ -764,21 +764,21 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
 	msg.okCmd = "close_msg_box;onDownloadCompleteConfirm";
-	msg.title = common->GetLanguageDict()->GetString( "#str_02142" ); // "Mission Download Result"
+	msg.title = common->Translate( "#str_02142" ); // "Mission Download Result"
 	msg.message = "";
 
 	if (successfulDownloads > 0)
 	{
 		msg.message += va( 
 			// "%d mission/missions successfully downloaded. You'll find it/them in the 'New Mission' page."
-			GetPlural(successfulDownloads, common->GetLanguageDict()->GetString( "#str_02144" ), common->GetLanguageDict()->GetString( "#str_02145" ) ),
+			GetPlural(successfulDownloads, common->Translate( "#str_02144" ), common->Translate( "#str_02145" ) ),
 			successfulDownloads ); 
 	}
 	
 	if (failedDownloads > 0)
 	{
 		// "\n%d mission(s) couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
-		msg.message += va( common->GetLanguageDict()->GetString( "#str_02146" ),
+		msg.message += va( common->Translate( "#str_02146" ),
 			failedDownloads ); 
 	}
 

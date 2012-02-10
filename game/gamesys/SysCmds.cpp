@@ -361,7 +361,7 @@ void Cmd_InventoryUse_f( const idCmdArgs &args )
 		}
 		else
 		{
-			gameLocal.Printf( "%s: Can't find item in player inventory: %s (%s)\n", args.Argv(0), args.Argv(1), common->GetLanguageDict()->GetString(itemName) );
+			gameLocal.Printf( "%s: Can't find item in player inventory: %s (%s)\n", args.Argv(0), args.Argv(1), common->Translate(itemName) );
 		}
 	}
 }
@@ -2540,7 +2540,7 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 	if ( idStr::Cmpn( id, STRTABLE_ID, STRTABLE_ID_LENGTH ) != 0 ) {
 		id = STRTABLE_ID + id;
 	}
-	gameLocal.mpGame.AddChatLine( common->GetLanguageDict()->GetString( id ), "<nothing>", "<nothing>", "<nothing>" );	
+	gameLocal.mpGame.AddChatLine( common->Translate( id ), "<nothing>", "<nothing>", "<nothing>" );	
 }
 
 void Cmd_SetClipMask(const idCmdArgs& args)

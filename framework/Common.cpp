@@ -153,7 +153,7 @@ public:
 	virtual void				ClearWarnings( const char *reason );
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual const idLangDict *	GetLanguageDict( void );
+	virtual const char*			Translate( const char* str );
 
 	virtual I18N*				GetI18N();
 
@@ -190,7 +190,6 @@ private:
 	void						LoadGameDLL( void );
 	void						UnloadGameDLL( void );
 	void						PrintLoadingMessage( const char *msg );
-	void						FilterLangList( idStrList* list, idStr lang );
 
 	// greebo: used to initialise the fs_game/fs_game_base parameters
 	void						InitGameArguments();
@@ -1701,37 +1700,20 @@ void Com_ReloadEngine_f( const idCmdArgs &args ) {
 
 /*
 ===============
-idCommonLocal::GetLanguageDict
+idCommonLocal::Translate
+
+A shortcut to common->GetI18N()->Translate().
 ===============
 */
-const idLangDict *idCommonLocal::GetLanguageDict( void )
+const char *idCommonLocal::Translate( const char* str )
 {
 	// Redirect the call to I18N
-	return i18n->GetLanguageDict();
+	return i18n->Translate(str);
 }
 
 I18N* idCommonLocal::GetI18N()
 {
 	return i18n;
-}
-
-/*
-===============
-idCommonLocal::FilterLangList
-===============
-*/
-void idCommonLocal::FilterLangList( idStrList* list, idStr lang ) {
-	
-	idStr temp;
-	for( int i = 0; i < list->Num(); i++ ) {
-		temp = (*list)[i];
-		temp = temp.Right(temp.Length()-strlen("strings/"));
-		temp = temp.Left(lang.Length());
-		if(idStr::Icmp(temp, lang) != 0) {
-			list->RemoveIndex(i);
-			i--;
-		}
-	}
 }
 
 /*
@@ -2493,7 +2475,7 @@ void idCommonLocal::InitRenderSystem( void ) {
 	}
 
 	renderSystem->InitOpenGL();
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04343" ) );
+	PrintLoadingMessage( Translate( "#str_04343" ) );
 }
 
 /*
@@ -3049,7 +3031,7 @@ void idCommonLocal::InitGame( void )
 	// initialize string database right off so we can use it for loading messages
 	InitLanguageDict();
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04344" ) );
+	PrintLoadingMessage( Translate( "#str_04344" ) );
 
 	// load the font, etc
 	console->LoadGraphics();
@@ -3057,7 +3039,7 @@ void idCommonLocal::InitGame( void )
 	// init journalling, etc
 	eventLoop->Init();
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04345" ) );
+	PrintLoadingMessage( Translate( "#str_04345" ) );
 
 	// exec the startup scripts
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec editor.cfg\n" );
@@ -3087,12 +3069,12 @@ void idCommonLocal::InitGame( void )
 	// init the user command input code
 	usercmdGen->Init();
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04346" ) );
+	PrintLoadingMessage( Translate( "#str_04346" ) );
 
 	// start the sound system, but don't do any hardware operations yet
 	soundSystem->Init();
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04347" ) );
+	PrintLoadingMessage( Translate( "#str_04347" ) );
 
 	// init async network
 	idAsyncNetwork::Init();
@@ -3106,12 +3088,12 @@ void idCommonLocal::InitGame( void )
 		cvarSystem->SetCVarBool( "s_noSound", true );
 	} else {
 		// init OpenGL, which will open a window and connect sound and input hardware
-		PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04348" ) );
+		PrintLoadingMessage( Translate( "#str_04348" ) );
 		InitRenderSystem();
 	}
 #endif
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04349" ) );
+	PrintLoadingMessage( Translate( "#str_04349" ) );
 
 	// initialize the user interfaces
 	uiManager->Init();
@@ -3119,12 +3101,12 @@ void idCommonLocal::InitGame( void )
 	// startup the script debugger
 	// DebuggerServerInit();
 
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04350" ) );
+	PrintLoadingMessage( Translate( "#str_04350" ) );
 
 	// load the game dll
 	LoadGameDLL();
 	
-	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04351" ) );
+	PrintLoadingMessage( Translate( "#str_04351" ) );
 
 	// init the session
 	session->Init();

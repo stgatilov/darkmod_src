@@ -63,7 +63,7 @@ void idSessionLocal::StartMenu( bool playIntro ) {
 	SetGUI( guiMainMenu, NULL );
 	guiMainMenu->HandleNamedEvent( playIntro ? "playIntro" : "noIntro" );
 
-	guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString( "#str_07212" ));
+	guiMainMenu->SetStateString("game_list", common->Translate( "#str_07212" ));
 
 	console->Close();
 
@@ -676,7 +676,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 					if ( mapName[ 0 ] == '\0' ) {
 						mapName = dict->GetString( "path" );
 					}
-					mapName = common->GetLanguageDict()->GetString( mapName );
+					mapName = common->Translate( mapName );
 					guiMainMenu_MapList->Add( i, mapName );
 					if ( !si_map.Icmp( dict->GetString( "path" ) ) ) {
 						guiMainMenu_MapList->SetSelection( guiMainMenu_MapList->Num() - 1 );
@@ -755,7 +755,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 							break;
 					}
 					if ( n_clients > maxclients ) {
-						if ( MessageBox( MSG_OKCANCEL, va( common->GetLanguageDict()->GetString( "#str_04315" ), dedicated ? maxclients : Min( 8, maxclients + 1 ) ), common->GetLanguageDict()->GetString( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
+						if ( MessageBox( MSG_OKCANCEL, va( common->Translate( "#str_04315" ), dedicated ? maxclients : Min( 8, maxclients + 1 ) ), common->Translate( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
 							continue;
 						}
 						cvarSystem->SetCVarInteger( "si_maxPlayers", dedicated ? maxclients : Min( 8, maxclients + 1 ) );
@@ -765,7 +765,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 
 			if ( !dedicated && !cvarSystem->GetCVarBool( "net_LANServer" ) && cvarSystem->GetCVarInteger("si_maxPlayers") > 4 ) {
 				// "Dedicated server mode is recommended for internet servers with more than 4 players. Continue in listen mode?"
-				if ( !MessageBox( MSG_YESNO, common->GetLanguageDict()->GetString ( "#str_00100625" ), common->GetLanguageDict()->GetString ( "#str_00100626" ), true, "yes" )[ 0 ] ) {
+				if ( !MessageBox( MSG_YESNO, common->Translate( "#str_00100625" ), common->Translate ( "#str_00100626" ), true, "yes" )[ 0 ] ) {
 					continue;
 				}
 			}
@@ -855,10 +855,10 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 				if ( old != cvarSystem->GetCVarInteger( "s_numberOfSpeakers" ) ) {
 #ifdef _WIN32
-					MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04142" ), common->GetLanguageDict()->GetString( "#str_04141" ), true );
+					MessageBox( MSG_OK, common->Tranlate( "#str_04142" ), common->Translate( "#str_04141" ), true );
 #else
 					// a message that doesn't mention the windows control panel
-					MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07230" ), common->GetLanguageDict()->GetString( "#str_04141" ), true );
+					MessageBox( MSG_OK, common->Translate( "#str_07230" ), common->Translate( "#str_04141" ), true );
 #endif
 				}
 			}
@@ -868,28 +868,28 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 					switch ( eax ) {
 					case 2:
 						// OpenAL subsystem load failed
-						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07238" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
+						MessageBox( MSG_OK, common->Translate( "#str_07238" ), common->Translate( "#str_07231" ), true );
 						break;
 					case 1:
 						// when you restart
-						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04137" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
+						MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
 						break;
 					case -1:
 						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
 						// disabled
-						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07233" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
+						MessageBox( MSG_OK, common->Translate( "#str_07233" ), common->Translate( "#str_07231" ), true );
 						break;
 					case 0:
 						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
 						// not available
-						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07232" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
+						MessageBox( MSG_OK, common->Translate( "#str_07232" ), common->Translate( "#str_07231" ), true );
 						break;
 					}
 				} else {
 					// also turn off OpenAL so we fully go back to legacy mixer
 					cvarSystem->SetCVarBool( "s_useOpenAL", false );
 					// when you restart
-					MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04137" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
+					MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
 				}
 			}
 			if ( !vcmd.Icmp( "drivar" ) ) {
@@ -1235,34 +1235,34 @@ const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, 
 			guiMsg->SetStateString( "visible_right", "0" );
 			break;
 		case MSG_OK:
-			guiMsg->SetStateString( "mid", common->GetLanguageDict()->GetString( "#str_04339" ) );
+			guiMsg->SetStateString( "mid", common->Translate( "#str_04339" ) );
 			guiMsg->SetStateString( "visible_mid", "1" );
 			guiMsg->SetStateString( "visible_left", "0" );
 			guiMsg->SetStateString( "visible_right", "0" );
 			break;
 		case MSG_ABORT:
-			guiMsg->SetStateString( "mid", common->GetLanguageDict()->GetString( "#str_04340" ) );
+			guiMsg->SetStateString( "mid", common->Translate( "#str_04340" ) );
 			guiMsg->SetStateString( "visible_mid", "1" );
 			guiMsg->SetStateString( "visible_left", "0" );
 			guiMsg->SetStateString( "visible_right", "0" );
 			break;
 		case MSG_OKCANCEL:
-			guiMsg->SetStateString( "left", common->GetLanguageDict()->GetString( "#str_04339" ) );
-			guiMsg->SetStateString( "right", common->GetLanguageDict()->GetString( "#str_04340" ) );
+			guiMsg->SetStateString( "left", common->Translate( "#str_04339" ) );
+			guiMsg->SetStateString( "right", common->Translate( "#str_04340" ) );
 			guiMsg->SetStateString( "visible_mid", "0" );
 			guiMsg->SetStateString( "visible_left", "1" );
 			guiMsg->SetStateString( "visible_right", "1" );
 			break;
 		case MSG_YESNO:
-			guiMsg->SetStateString( "left", common->GetLanguageDict()->GetString( "#str_04341" ) );
-			guiMsg->SetStateString( "right", common->GetLanguageDict()->GetString( "#str_04342" ) );
+			guiMsg->SetStateString( "left", common->Translate( "#str_04341" ) );
+			guiMsg->SetStateString( "right", common->Translate( "#str_04342" ) );
 			guiMsg->SetStateString( "visible_mid", "0" );
 			guiMsg->SetStateString( "visible_left", "1" );
 			guiMsg->SetStateString( "visible_right", "1" );
 			break;
 		case MSG_PROMPT:
-			guiMsg->SetStateString( "left", common->GetLanguageDict()->GetString( "#str_04339" ) );
-			guiMsg->SetStateString( "right", common->GetLanguageDict()->GetString( "#str_04340" ) );
+			guiMsg->SetStateString( "left", common->Translate( "#str_04339" ) );
+			guiMsg->SetStateString( "right", common->Translate( "#str_04340" ) );
 			guiMsg->SetStateString( "visible_mid", "0" );
 			guiMsg->SetStateString( "visible_left", "1" );
 			guiMsg->SetStateString( "visible_right", "1" );

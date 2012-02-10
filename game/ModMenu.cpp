@@ -56,7 +56,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 			// Update mission DB records
 			gameLocal.m_MissionManager->RefreshMetaDataForNewFoundMods();
 
-			gui->SetStateString("newFoundMissionsText", common->GetLanguageDict()->GetString( "#str_02143" ) ); // New missions available
+			gui->SetStateString("newFoundMissionsText", common->Translate( "#str_02143" ) ); // New missions available
 			gui->SetStateString("newFoundMissionsList", gameLocal.m_MissionManager->GetNewFoundModsText());
 			gui->HandleNamedEvent("OnNewMissionsFound");
 
@@ -140,7 +140,7 @@ void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		if (info == NULL) return; // sanity check
 
 		// Issue the named command to the GUI
-		gui->SetStateString("modInstallProgressText", common->GetLanguageDict()->GetString( "#str_02504" ) + info->displayName); // "Installing Mission Package\n\n"
+		gui->SetStateString("modInstallProgressText", common->Translate( "#str_02504" ) + info->displayName); // "Installing Mission Package\n\n"
 	}
 	else if (cmd == "installSelectedMission")
 	{
@@ -214,8 +214,8 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 		
 		// 07208: "You're about to delete the gameplay contents of the mission folder from your disk (mainly savegames and screenshots):"
 		// 07209: "Note that the mission PK4 itself in your darkmod/fms/ folder will not be removed by this operation, you'll still able to play the mission."
-		idStr eraseMissionText = va( idStr( common->GetLanguageDict()->GetString( "#str_07208" ) ) + "\n\n%s\n\n" +
-					     common->GetLanguageDict()->GetString( "#str_07209" ), info->GetModFolderPath().c_str() );
+		idStr eraseMissionText = va( idStr( common->Translate( "#str_07208" ) ) + "\n\n%s\n\n" +
+					     common->Translate( "#str_07209" ), info->GetModFolderPath().c_str() );
 		gui->SetStateString("eraseMissionText", eraseMissionText);
 
 		gui->SetStateString("selectedModCompleted", info->GetModCompletedString());
@@ -265,7 +265,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface* gui)
 		gameLocal.Printf("DisplayBriefingPage: current page is %d\n", _briefingPage);
 
 		// Tels: Translate it properly
-		briefing = common->GetLanguageDict()->GetString( xd->m_data.GetString(page) );
+		briefing = common->Translate( xd->m_data.GetString(page) );
 
 		// set scroll button visibility
 		scrollDown = numPages > _briefingPage;
@@ -308,10 +308,10 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 		}
 
 		gui->SetStateInt(guiAvailable,	info != NULL ? 1 : 0);
-		idStr name = common->GetLanguageDict()->GetString( info != NULL ? info->displayName : "");
+		idStr name = common->Translate( info != NULL ? info->displayName : "");
 		common->GetI18N()->MoveArticlesToBack( name );
 		gui->SetStateString(guiName,	name );
-		gui->SetStateString(guiDesc,	common->GetLanguageDict()->GetString( info != NULL ? info->description : "") );
+		gui->SetStateString(guiDesc,	common->Translate( info != NULL ? info->description : "") );
 		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
 		gui->SetStateString(guiImage,	info != NULL ? info->image : "");
 		gui->SetStateBool(guiCompleted,	info != NULL ? info->ModCompleted() : false);
@@ -324,8 +324,8 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 	CModInfoPtr curModInfo = gameLocal.m_MissionManager->GetCurrentModInfo();
 
 	gui->SetStateBool("hasCurrentMod", curModInfo != NULL);
-	gui->SetStateString("currentModName", common->GetLanguageDict()->GetString( curModInfo != NULL ? curModInfo->displayName : "#str_02189" )); // <No Mission Installed>
-	gui->SetStateString("currentModDesc", common->GetLanguageDict()->GetString( curModInfo != NULL ? curModInfo->description : "" ));	
+	gui->SetStateString("currentModName", common->Translate( curModInfo != NULL ? curModInfo->displayName : "#str_02189" )); // <No Mission Installed>
+	gui->SetStateString("currentModDesc", common->Translate( curModInfo != NULL ? curModInfo->description : "" ));	
 }
 
 bool CModMenu::PerformVersionCheck(const CModInfoPtr& mission, idUserInterface* gui)
@@ -335,7 +335,7 @@ bool CModMenu::PerformVersionCheck(const CModInfoPtr& mission, idUserInterface* 
 	{
 		gui->SetStateString("requiredVersionCheckFailText", 
 			// "Cannot install this mission, as it requires\n%s v%d.%02d.\n\nYou are running v%d.%02d. Please run the tdm_update application to update your installation.",
-			va( common->GetLanguageDict()->GetString( "#str_07210" ),
+			va( common->Translate( "#str_07210" ),
 			GAME_VERSION, mission->requiredMajor, mission->requiredMinor, TDM_VERSION_MAJOR, TDM_VERSION_MINOR));
 
 		gui->HandleNamedEvent("OnRequiredVersionCheckFail");

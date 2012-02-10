@@ -9995,7 +9995,7 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 		return;
 	}
 
-	gui->SetStateString( key, common->GetLanguageDict()->GetString( src->spawnArgs.GetString( spawnArg, "" ) ) );
+	gui->SetStateString( key, common->Translate( src->spawnArgs.GetString( spawnArg, "" ) ) );
 	gui->StateChanged( gameLocal.time );
 }
 

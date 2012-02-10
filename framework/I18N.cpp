@@ -96,11 +96,6 @@ public:
 	*/
 	void				MoveArticlesToBack(idStr& title);
 
-	/** 
-	* To Intercepts calls to common->GetLanguageDict():
-	*/
-	const idLangDict*	GetLanguageDict() const;
-
 private:
 	// current language
 	idStr				m_lang;
@@ -195,19 +190,6 @@ void I18NLocal::Init()
 
 	// Create the correct dictionary and set fontLang
 	SetLanguage( cvarSystem->GetCVarString( "sys_lang" ), true );
-}
-
-/*
-===============
-I18NLocal::GetLanguageDict
-
-Returns the language dict, so that D3 can use it instead of the system dict. Should
-not be called directly.
-===============
-*/
-const idLangDict* I18NLocal::GetLanguageDict() const
-{
-	return &m_Dict;
 }
 
 /*
@@ -331,7 +313,7 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 	}
 	if (len <= 0)
 	{
-		common->Printf("Found no character remapping for %s.", lang.c_str() );
+		common->Printf("Found no character remapping for %s.\n", lang.c_str() );
 		return 0;
 	}
 	
@@ -383,8 +365,8 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		return;
 	}
-#ifdef M_DEBUG
 	common->Printf("I18NLocal: SetLanguage: '%s'.\n", lang);
+#ifdef M_DEBUG
 #endif
 
 	// store the new setting
@@ -429,33 +411,35 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 
 	// With FM strings it can happen that one translation is missing or incomplete,
 	// so fall back to the english version by folding these in, too:
-
-	file = "strings/fm/english.lang";
-	if (!fmDict->Load(file, true, m_Remap.Length() / 2, m_Remap.c_str()))
+	if (m_lang != "english")
 	{
-		common->Printf("I18NLocal: '%s' not found, skipping it.\n", file.c_str() );
-	}
-	else
-	{
-		// else fold the newly loaded strings into the system dict unless they exist already
-		int num = fmDict->GetNumKeyVals( );
-		const idLangKeyValue*  kv;
-		for (int i = 0; i < num; i++)
-		{	
-			kv = fmDict->GetKeyVal( i );
-			if (kv != NULL)
-			{
-				const char *oldEntry = m_Dict.GetString( kv->key.c_str(), false);
-				// if equal, the entry was not found
-				if (oldEntry == kv->key.c_str())
+		file = "strings/fm/english.lang";
+		if (!fmDict->Load(file, true, m_Remap.Length() / 2, m_Remap.c_str()))
+		{
+			common->Printf("I18NLocal: '%s' not found, skipping it.\n", file.c_str() );
+		}
+		else
+		{
+			// else fold the newly loaded strings into the system dict unless they exist already
+			int num = fmDict->GetNumKeyVals( );
+			const idLangKeyValue*  kv;
+			for (int i = 0; i < num; i++)
+			{	
+				kv = fmDict->GetKeyVal( i );
+				if (kv != NULL)
 				{
+					const char *oldEntry = m_Dict.GetString( kv->key.c_str(), false);
+					// if equal, the entry was not found
+					if (oldEntry == kv->key.c_str())
+					{
 #ifdef M_DEBUG
-					common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
+						common->Printf("I18NLocal: Folding '%s' ('%s') into main dictionary as fallback.\n", kv->key.c_str(), kv->value.c_str() );
 #endif
-					m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+						m_Dict.AddKeyVal( kv->key.c_str(), kv->value.c_str() );
+					}
 				}
 			}
-		}
+		}	
 	}
 
 	// Now set the path to where to load fonts from

@@ -287,7 +287,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 				if ( token == ";" ) {
 					if ( str2.Length() ) {
 						str2.StripTrailingWhitespace();
-						str2 = common->GetLanguageDict()->GetString( str2 );
+						str2 = common->Translate( str2 );
 						choices.Append(str2);
 						str2 = "";
 					}

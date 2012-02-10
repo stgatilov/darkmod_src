@@ -74,12 +74,12 @@ public:
 	virtual void			ClearWarnings( const char *reason ) {}
 	virtual void			Error( const char *fmt, ... ) { STDIO_PRINT( "ERROR: ", "\n" ); exit(0); }
 	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit(0); }
-	virtual const idLangDict *GetLanguageDict() { return NULL; }
+	virtual const char *		Translate(const char* msg) { return NULL; }
 	virtual I18N*			GetI18N() { return NULL; }
-	virtual const char *	KeysFromBinding( const char *bind ) { return NULL; }
-	virtual const char *	BindingFromKey( const char *key ) { return NULL; }
-	virtual int				ButtonState( int key ) { return 0; }
-	virtual int				KeyState( int key ) { return 0; }
+	virtual const char *		KeysFromBinding( const char *bind ) { return NULL; }
+	virtual const char *		BindingFromKey( const char *key ) { return NULL; }
+	virtual int			ButtonState( int key ) { return 0; }
+	virtual int			KeyState( int key ) { return 0; }
 };
 
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM, "developer mode" );

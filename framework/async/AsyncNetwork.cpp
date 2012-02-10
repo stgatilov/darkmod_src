@@ -490,9 +490,9 @@ idAsyncNetwork::BuildInvalidKeyMsg
 */
 void idAsyncNetwork::BuildInvalidKeyMsg( idStr &msg, bool valid[ 2 ] ) {
 	if ( !valid[ 0 ] ) {
-		msg += common->GetLanguageDict()->GetString( "#str_07194" );
+		msg += common->Translate( "#str_07194" );
 	}
 	msg += "\n";
-	msg += common->GetLanguageDict()->GetString( "#str_04304" );	
+	msg += common->Translate( "#str_04304" );	
 }
 

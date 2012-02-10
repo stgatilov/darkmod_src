@@ -99,11 +99,11 @@ void idBindWindow::Draw(int time, float x, float y) {
 
 	idStr str;
 	if ( waitingOnKey ) {
-		str = common->GetLanguageDict()->GetString( "#str_07000" );
+		str = common->Translate( "#str_07000" );
 	} else if ( bindName.Length() ) {
 		str = bindName.c_str();
 	} else {
-		str = common->GetLanguageDict()->GetString( "#str_07001" );
+		str = common->Translate( "#str_07001" );
 	}
 
 	if ( waitingOnKey || ( hover && !noEvents && Contains(gui->CursorX(), gui->CursorY()) ) ) {

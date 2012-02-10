@@ -233,7 +233,7 @@ idStr CMissionManager::GetCurrentModName()
 {
 	CModInfoPtr info = GetCurrentModInfo();
 
-	return (info != NULL) ? idStr( common->GetLanguageDict()->GetString( info->modName ) ) : "";
+	return (info != NULL) ? idStr( common->Translate( info->modName ) ) : "";
 }
 
 int CMissionManager::GetNumNewMods()
@@ -545,8 +545,8 @@ int CMissionManager::ModSortCompare(const int* a, const int* b)
 
 	if (aInfo == NULL || bInfo == NULL) return 0;
 
-	idStr aName = common->GetLanguageDict()->GetString( aInfo->displayName );
-	idStr bName = common->GetLanguageDict()->GetString( bInfo->displayName );
+	idStr aName = common->Translate( aInfo->displayName );
+	idStr bName = common->Translate( bInfo->displayName );
 
 	common->GetI18N()->MoveArticlesToBack( aName );
 	common->GetI18N()->MoveArticlesToBack( bName );

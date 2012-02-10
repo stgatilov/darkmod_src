@@ -517,7 +517,7 @@ static void R_CheckPortableExtensions( void ) {
 	// check for minimum set
 	if ( !glConfig.multitextureAvailable || !glConfig.textureEnvCombineAvailable || !glConfig.cubeMapAvailable
 		|| !glConfig.envDot3Available ) {
-			common->Error( common->GetLanguageDict()->GetString( "#str_06780" ) );
+			common->Error( common->Translate( "#str_06780" ) );
 	}
 
  	// GL_EXT_depth_bounds_test

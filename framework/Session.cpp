@@ -802,7 +802,7 @@ void idSessionLocal::StartPlayingRenderDemo( idStr demoName ) {
 	// bring up the loading screen manually, since demos won't
 	// call ExecuteMapChange()
 	guiLoading = uiManager->FindGui( "guis/map/loading.gui", true, false, true );
-	guiLoading->SetStateString( "demo", common->GetLanguageDict()->GetString( "#str_02087" ) );
+	guiLoading->SetStateString( "demo", common->Translate( "#str_02087" ) );
 	readDemo = new idDemoFile;
 	demoName.DefaultFileExtension( ".demo" );
 	if ( !readDemo->OpenForReading( demoName ) ) {
@@ -848,7 +848,7 @@ void idSessionLocal::TimeRenderDemo( const char *demoName, bool twice ) {
 	
 	if ( twice && readDemo ) {
 		// cycle through once to precache everything
-		guiLoading->SetStateString( "demo", common->GetLanguageDict()->GetString( "#str_04852" ) );
+		guiLoading->SetStateString( "demo", common->Translate( "#str_04852" ) );
 		guiLoading->StateChanged( com_frameTime );
 		while ( readDemo ) {
 			insideExecuteMapChange = true;
@@ -1073,7 +1073,7 @@ idStr idSessionLocal::GetAutoSaveName( const char *mapName ) const {
 	const idDecl *mapDecl = declManager->FindType( DECL_MAPDEF, mapName, false );
 	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( mapDecl );
 	if ( mapDef ) {
-		mapName = common->GetLanguageDict()->GetString( mapDef->dict.GetString( "name", mapName ) );
+		mapName = common->Translate( mapDef->dict.GetString( "name", mapName ) );
 	}
 	// Fixme: Localization
 	return va( "^3AutoSave:^0 %s", mapName );
@@ -1601,7 +1601,7 @@ LoadGame_f
 void LoadGame_f( const idCmdArgs &args ) {
 	console->Close();
 	if ( args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = common->GetLanguageDict()->GetString( "#str_07178" );
+		idStr saveName = common->Translate( "#str_07178" );
 		sessLocal.LoadGame( saveName );
 	} else {
 		sessLocal.LoadGame( args.Argv(1) );
@@ -1615,7 +1615,7 @@ SaveGame_f
 */
 void SaveGame_f( const idCmdArgs &args ) {
 	if ( args.Argc() < 2 || idStr::Icmp( args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = common->GetLanguageDict()->GetString( "#str_07178" );
+		idStr saveName = common->Translate( "#str_07178" );
 		if ( sessLocal.SaveGame( saveName ) ) {
 			common->Printf( "%s\n", saveName.c_str() );
 		}
@@ -1707,13 +1707,13 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	}
 
 	if ( game->GetPersistentPlayerInfo( 0 ).GetInt( "health" ) <= 0 ) {
-		MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04311" ), common->GetLanguageDict()->GetString ( "#str_04312" ), true );
+		MessageBox( MSG_OK, common->Translate ( "#str_04311" ), common->Translate ( "#str_04312" ), true );
 		common->Printf( "You must be alive to save the game\n" );
 		return false;
 	}
 
 	if ( Sys_GetDriveFreeSpace( cvarSystem->GetCVarString( "fs_savepath" ) ) < 25 ) {
-		MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04313" ), common->GetLanguageDict()->GetString ( "#str_04314" ), true );
+		MessageBox( MSG_OK, common->Translate ( "#str_04313" ), common->Translate ( "#str_04314" ), true );
 		common->Printf( "Not enough drive space to save the game\n" );
 		return false;
 	}
@@ -1800,7 +1800,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 
 	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>(declManager->FindType( DECL_MAPDEF, mapName, false ));
 	if ( mapDef ) {
-		mapName = common->GetLanguageDict()->GetString( mapDef->dict.GetString( "name", mapName ) );
+		mapName = common->Translate( mapDef->dict.GetString( "name", mapName ) );
 	}
 
 	fileDesc->Printf( "\"%s\"\n", description.c_str() );

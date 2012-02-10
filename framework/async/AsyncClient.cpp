@@ -204,7 +204,7 @@ void idAsyncClient::ConnectToServer( const netadr_t adr ) {
 	active = true;
 
 	guiNetMenu = uiManager->FindGui( "guis/netmenu.gui", true, false, true );
-	guiNetMenu->SetStateString( "status", va( common->GetLanguageDict()->GetString( "#str_06749" ), Sys_NetAdrToString( adr ) ) );
+	guiNetMenu->SetStateString( "status", va( common->Translate( "#str_06749" ), Sys_NetAdrToString( adr ) ) );
 	session->SetGUI( guiNetMenu, HandleGuiCommand );
 }
 
@@ -229,13 +229,13 @@ void idAsyncClient::ConnectToServer( const char *address ) {
 	if ( idStr::IsNumeric( address ) ) {
 		serverNum = atoi( address );
 		if ( serverNum < 0 || serverNum >= serverList.Num() ) {
-			session->MessageBox( MSG_OK, va( common->GetLanguageDict()->GetString( "#str_06733" ), serverNum ), common->GetLanguageDict()->GetString( "#str_06735" ), true );
+			session->MessageBox( MSG_OK, va( common->Translate( "#str_06733" ), serverNum ), common->Translate( "#str_06735" ), true );
 			return;
 		}
 		adr = serverList[ serverNum ].adr;
 	} else {
 		if ( !Sys_StringToNetAdr( address, &adr, true ) ) {
-			session->MessageBox( MSG_OK, va( common->GetLanguageDict()->GetString( "#str_06734" ), address ), common->GetLanguageDict()->GetString( "#str_06735" ), true );
+			session->MessageBox( MSG_OK, va( common->Translate( "#str_06734" ), address ), common->Translate( "#str_06735" ), true );
 			return;
 		}
 	}
@@ -854,7 +854,7 @@ idAsyncClient::ReadLocalizedServerString
 void idAsyncClient::ReadLocalizedServerString( const idBitMsg &msg, char *out, int maxLen ) {
 	msg.ReadString( out, maxLen );
 	// look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
-	idStr::snPrintf( out, maxLen - 1, "%s", common->GetLanguageDict()->GetString( out ) );
+	idStr::snPrintf( out, maxLen - 1, "%s", common->Translate( out ) );
 }
 
 /*
@@ -927,7 +927,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				ReadLocalizedServerString( msg, string, MAX_STRING_CHARS );
 				if ( clientNum == idAsyncClient::clientNum ) {
 					session->Stop();
-					session->MessageBox( MSG_OK, string, common->GetLanguageDict()->GetString ( "#str_04319" ), true );
+					session->MessageBox( MSG_OK, string, common->Translate ( "#str_04319" ), true );
 					session->StartMenu();
 				} else {
 					common->Printf( "client %d %s\n", clientNum, string );
@@ -1067,7 +1067,7 @@ void idAsyncClient::ProcessDisconnectMessage( const netadr_t from, const idBitMs
 		return;
 	}
 	session->Stop();
-	session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04320" ), NULL, true );
+	session->MessageBox( MSG_OK, common->Translate ( "#str_04320" ), NULL, true );
 	session->StartMenu();
 }
 
@@ -1134,9 +1134,9 @@ void idAsyncClient::ProcessPrintMessage( const netadr_t from, const idBitMsg &ms
 	guiNetMenu->SetStateString( "status", string );
 	if ( opcode == SERVER_PRINT_GAMEDENY ) {
 		if ( game_opcode == ALLOW_BADPASS ) {
-			retpass = session->MessageBox( MSG_PROMPT, common->GetLanguageDict()->GetString ( "#str_04321" ), string, true, "passprompt_ok" );
+			retpass = session->MessageBox( MSG_PROMPT, common->Translate ( "#str_04321" ), string, true, "passprompt_ok" );
 			ClearPendingPackets();
-			guiNetMenu->SetStateString( "status",  common->GetLanguageDict()->GetString ( "#str_04322" ));
+			guiNetMenu->SetStateString( "status",  common->Translate ( "#str_04322" ));
 			if ( retpass ) {
 				// #790
 				cvarSystem->SetCVarString( "password", "" );
@@ -1145,7 +1145,7 @@ void idAsyncClient::ProcessPrintMessage( const netadr_t from, const idBitMsg &ms
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 			}
 		} else if ( game_opcode == ALLOW_NO ) {
-			session->MessageBox( MSG_OK, string, common->GetLanguageDict()->GetString ( "#str_04323" ), true );
+			session->MessageBox( MSG_OK, string, common->Translate ( "#str_04323" ), true );
 			ClearPendingPackets();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 		}
@@ -1204,16 +1204,16 @@ idAsyncClient::ProcessAuthKeyMessage
 			break;
 		case AUTHKEY_BAD_BANNED:
 			key_index = msg.ReadByte();
-			auth_msg = common->GetLanguageDict()->GetString( va( "#str_0719%1d", 6 + key_index ) );
+			auth_msg = common->Translate( va( "#str_0719%1d", 6 + key_index ) );
 			auth_msg += "\n";
-			auth_msg += common->GetLanguageDict()->GetString( "#str_04304" );
+			auth_msg += common->Translate( "#str_04304" );
 			valid[ key_index ] = false;
 			break;
 		case AUTHKEY_BAD_INUSE:
 			key_index = msg.ReadByte();
-			auth_msg = common->GetLanguageDict()->GetString( va( "#str_0719%1d", 8 + key_index ) );
+			auth_msg = common->Translate( va( "#str_0719%1d", 8 + key_index ) );
 			auth_msg += "\n";
-			auth_msg += common->GetLanguageDict()->GetString( "#str_04304" );
+			auth_msg += common->Translate( "#str_04304" );
 			valid[ key_index ] = false;
 			break;
 		case AUTHKEY_BAD_MSG:
@@ -1232,14 +1232,14 @@ idAsyncClient::ProcessAuthKeyMessage
 		if ( clientState == CS_CONNECTING ) {
 			while ( 1 ) {
 				// here we use the auth status message
-				retkey = session->MessageBox( MSG_CDKEY, auth_msg, common->GetLanguageDict()->GetString( "#str_04325" ), true );
+				retkey = session->MessageBox( MSG_CDKEY, auth_msg, common->Translate( "#str_04325" ), true );
 				if ( retkey ) {
 					if ( session->CheckKey( retkey, true, valid ) ) {
 						cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reconnect" );
 					} else {
 						// build a more precise message about the offline check failure
 						idAsyncNetwork::BuildInvalidKeyMsg( auth_msg, valid );
-						session->MessageBox( MSG_OK, auth_msg.c_str(), common->GetLanguageDict()->GetString( "#str_04327" ), true );
+						session->MessageBox( MSG_OK, auth_msg.c_str(), common->Translate( "#str_04327" ), true );
 						continue;
 					}
 				} else {
@@ -1716,7 +1716,7 @@ void idAsyncClient::HandleDownloads( void ) {
 		// timing out on no reply
 		updateState = UPDATE_DONE;
 		if ( showUpdateMessage ) {
-			session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04839" ), common->GetLanguageDict()->GetString ( "#str_04837" ), true );
+			session->MessageBox( MSG_OK, common->Translate ( "#str_04839" ), common->Translate ( "#str_04837" ), true );
 			showUpdateMessage = false;
 		}
 		common->DPrintf( "No update available\n" );
@@ -1724,7 +1724,7 @@ void idAsyncClient::HandleDownloads( void ) {
 		// only enter these if the download slot is free
 		if ( updateState == UPDATE_READY ) {
 			// 
-			if ( session->MessageBox( MSG_YESNO, updateMSG, common->GetLanguageDict()->GetString ( "#str_04330" ), true, "yes" )[0] ) {
+			if ( session->MessageBox( MSG_YESNO, updateMSG, common->Translate ( "#str_04330" ), true, "yes" )[0] ) {
 				if ( !updateDirectDownload ) {
 					sys->OpenURL( updateURL, true );
 					updateState = UPDATE_DONE;
@@ -1753,14 +1753,14 @@ void idAsyncClient::HandleDownloads( void ) {
 						SendVersionDLUpdate( 1 );
 						idStr fullPath = f->GetFullPath();
 						fileSystem->CloseFile( f );
-						if ( session->MessageBox( MSG_YESNO, common->GetLanguageDict()->GetString ( "#str_04331" ), common->GetLanguageDict()->GetString ( "#str_04332" ), true, "yes" )[0] ) {
+						if ( session->MessageBox( MSG_YESNO, common->Translate ( "#str_04331" ), common->Translate ( "#str_04332" ), true, "yes" )[0] ) {
 							if ( updateMime == FILE_EXEC ) {
 								sys->StartProcess( fullPath, true );
 							} else {
 								sys->OpenURL( va( "file://%s", fullPath.c_str() ), true );
 							}
 						} else {
-							session->MessageBox( MSG_OK, va( common->GetLanguageDict()->GetString ( "#str_04333" ), fullPath.c_str() ), common->GetLanguageDict()->GetString ( "#str_04334" ), true );
+							session->MessageBox( MSG_OK, va( common->Translate ( "#str_04333" ), fullPath.c_str() ), common->Translate ( "#str_04334" ), true );
 						}
 					} else {
 						if ( backgroundDownload.url.dlerror[ 0 ] ) {
@@ -1770,7 +1770,7 @@ void idAsyncClient::HandleDownloads( void ) {
 						idStr name = f->GetName();
 						fileSystem->CloseFile( f );
 						fileSystem->RemoveFile( name );
-						session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04335" ), common->GetLanguageDict()->GetString ( "#str_04336" ), true );
+						session->MessageBox( MSG_OK, common->Translate ( "#str_04335" ), common->Translate ( "#str_04336" ), true );
 						if ( updateFallback.Length() ) {
 							sys->OpenURL( updateFallback.c_str(), true );
 						} else {
@@ -1814,7 +1814,7 @@ void idAsyncClient::HandleDownloads( void ) {
 				fileSystem->BackgroundDownload( &backgroundDownload );
 				idStr dltitle;
 				// "Downloading %s"
-				sprintf( dltitle, common->GetLanguageDict()->GetString( "#str_07213" ), dlList[ 0 ].filename.c_str() );
+				sprintf( dltitle, common->Translate( "#str_07213" ), dlList[ 0 ].filename.c_str() );
 				if ( numPaks > 1 ) {
 					dltitle += va( " (%d/%d)", pakCount, numPaks );
 				}
@@ -1868,7 +1868,7 @@ void idAsyncClient::HandleDownloads( void ) {
 					// verify the checksum to be what the server says
 					if ( !checksum || checksum != dlList[ 0 ].checksum ) {
 						// "pak is corrupted ( checksum 0x%x, expected 0x%x )"
-						session->MessageBox( MSG_OK, va( common->GetLanguageDict()->GetString( "#str_07214" ) , checksum, dlList[0].checksum ), "Download failed", true );
+						session->MessageBox( MSG_OK, va( common->Translate( "#str_07214" ) , checksum, dlList[0].checksum ), "Download failed", true );
 						fileSystem->RemoveFile( dlList[ 0 ].filename );
 						dlList.Clear();
 						return;
@@ -1883,7 +1883,7 @@ void idAsyncClient::HandleDownloads( void ) {
 					}
 					// "The download failed or was cancelled"
 					// "Download failed"
-					session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07215" ), common->GetLanguageDict()->GetString( "#str_07216" ), true );
+					session->MessageBox( MSG_OK, common->Translate( "#str_07215" ), common->Translate( "#str_07216" ), true );
 					dlList.Clear();
 					return;
 				}
@@ -1928,7 +1928,7 @@ idAsyncClient::CheckTimeout
 bool idAsyncClient::CheckTimeout( void ) {
 	if ( lastPacketTime > 0 && ( lastPacketTime + idAsyncNetwork::clientServerTimeout.GetInteger()*1000 < clientTime ) ) {
 		session->StopBox();
-		session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04328" ), common->GetLanguageDict()->GetString ( "#str_04329" ), true );
+		session->MessageBox( MSG_OK, common->Translate ( "#str_04328" ), common->Translate ( "#str_04329" ), true );
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 		return true;
 	}
@@ -1964,8 +1964,8 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 		// "You are missing required pak files to connect to this server.\nThe server gave a web page though:\n%s\nDo you want to go there now?"
 		// "Missing required files"
-		if ( session->MessageBox( MSG_YESNO, va( common->GetLanguageDict()->GetString( "#str_07217" ), buf ),
-								  common->GetLanguageDict()->GetString( "#str_07218" ), true, "yes" )[ 0 ] ) {
+		if ( session->MessageBox( MSG_YESNO, va( common->Translate( "#str_07217" ), buf ),
+								  common->Translate( "#str_07218" ), true, "yes" )[ 0 ] ) {
 			sys->OpenURL( buf, true );
 		}
 	} else if ( infoType == SERVER_DL_LIST ) {
@@ -2021,7 +2021,7 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 			// "Can't connect to the pure server: no downloads offered"
 			// "Missing required files"
 			dlList.Clear();
-			session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07219" ), common->GetLanguageDict()->GetString( "#str_07218" ), true );
+			session->MessageBox( MSG_OK, common->Translate( "#str_07219" ), common->Translate( "#str_07218" ), true );
 			return;
 		}
 		bool asked = false;
@@ -2029,7 +2029,7 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 			asked = true;
 			// "You need to download game code to connect to this server. Are you sure? You should only answer yes if you trust the server administrators."
 			// "Missing game binaries"
-			if ( !session->MessageBox( MSG_YESNO, common->GetLanguageDict()->GetString( "#str_07220" ), common->GetLanguageDict()->GetString( "#str_07221" ), true, "yes" )[ 0 ] ) {
+			if ( !session->MessageBox( MSG_YESNO, common->Translate( "#str_07220" ), common->Translate( "#str_07221" ), true, "yes" )[ 0 ] ) {
 				dlList.Clear();
 				return;
 			}
@@ -2038,8 +2038,8 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 			asked = true;
 			// "The server only offers to download some of the files required to connect ( %s ). Download anyway?"
 			// "Missing required files"
-			if ( !session->MessageBox( MSG_YESNO, va( common->GetLanguageDict()->GetString( "#str_07222" ), sizeStr.c_str() ),
-									   common->GetLanguageDict()->GetString( "#str_07218" ), true, "yes" )[ 0 ] ) {
+			if ( !session->MessageBox( MSG_YESNO, va( common->Translate( "#str_07222" ), sizeStr.c_str() ),
+									   common->Translate( "#str_07218" ), true, "yes" )[ 0 ] ) {
 				dlList.Clear();
 				return;
 			}
@@ -2047,8 +2047,8 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 		if ( !asked && idAsyncNetwork::clientDownload.GetInteger() == 1 ) {
 			// "You need to download some files to connect to this server ( %s ), proceed?"
 			// "Missing required files"
-			if ( !session->MessageBox( MSG_YESNO, va( common->GetLanguageDict()->GetString( "#str_07224" ), sizeStr.c_str() ),
-									   common->GetLanguageDict()->GetString( "#str_07218" ), true, "yes" )[ 0 ] ) {
+			if ( !session->MessageBox( MSG_YESNO, va( common->Translate( "#str_07224" ), sizeStr.c_str() ),
+									   common->Translate( "#str_07218" ), true, "yes" )[ 0 ] ) {
 				dlList.Clear();
 				return;
 			}
@@ -2057,7 +2057,7 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 		// "You are missing some files to connect to this server, and the server doesn't provide downloads."
 		// "Missing required files"
-		session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07223" ), common->GetLanguageDict()->GetString( "#str_07218" ), true );
+		session->MessageBox( MSG_OK, common->Translate( "#str_07223" ), common->Translate( "#str_07218" ), true );
 	}
 }
 

@@ -476,7 +476,7 @@ void idGuiScript::FixupParms(idWindow *win) {
 					parms[i].own = false;
 				}
 			} else if ( idStr::Cmpn( str->c_str(), STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 ) {
-				str->Set( common->GetLanguageDict()->GetString( str->c_str() ) );
+				str->Set( common->Translate( str->c_str() ) );
 			} else if ( precacheBackground ) {
 				const idMaterial *mat = declManager->FindMaterial( str->c_str() );
 				mat->SetSort( SS_GUI );

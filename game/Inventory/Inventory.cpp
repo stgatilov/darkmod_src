@@ -269,7 +269,7 @@ void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInvento
 	idPlayer* player = static_cast<idPlayer*>(m_Owner.GetEntity());
 
 	// Prepend the "acquired" text
-	idStr pickedUpMsg = common->GetLanguageDict()->GetString( "#str_07215" ) + pickedUpStr;	// Acquired: 
+	idStr pickedUpMsg = common->Translate( "#str_07215" ) + pickedUpStr;	// Acquired: 
 	// and remove any newlines from the message
 	pickedUpMsg.Replace("\n","");
 
@@ -305,19 +305,19 @@ CInventoryItemPtr CInventory::ValidateLoot(idEntity *ent, const bool gotFromShop
 			case LOOT_GOLD:
 				m_Gold += value;
 				LGroupVal = m_Gold;
-				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07320");	// " in Gold"
+				pickedUpMsg += common->Translate("#str_07320");	// " in Gold"
 			break;
 
 			case LOOT_GOODS:
 				m_Goods += value;
 				LGroupVal = m_Goods;
-				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07321");	// " in Goods"
+				pickedUpMsg += common->Translate("#str_07321");	// " in Goods"
 			break;
 
 			case LOOT_JEWELS:
 				m_Jewelry += value;
 				LGroupVal = m_Jewelry;
-				pickedUpMsg += common->GetLanguageDict()->GetString("#str_07322");	// " in Jewels"
+				pickedUpMsg += common->Translate("#str_07322");	// " in Jewels"
 			break;
 			
 			default: break;
@@ -616,7 +616,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 		// Notify the player, if appropriate
 		if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 		{
-			idStr msg = common->GetLanguageDict()->GetString( name );
+			idStr msg = common->Translate( name );
 
 			if (count > 0) 
 			{
@@ -660,7 +660,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 			if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 			{
-				NotifyOwnerAboutPickup( common->GetLanguageDict()->GetString( name ), item);
+				NotifyOwnerAboutPickup( common->Translate( name ), item);
 			}
 
 			// Hide the entity from the map (don't delete the entity)
@@ -1032,7 +1032,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent, const bool gotFromShop
 			{
 				// Tels: For some reason "inv_name" here is "Fire Arrow", even tho this string never appears anywhere
 				// 	 when running f.i. in "German". So use weaponItem->GetName(), which is correctly "#str_02435":
-				idStr msg = common->GetLanguageDict()->GetString( weaponItem->GetName() ); 
+				idStr msg = common->Translate( weaponItem->GetName() ); 
 
 				if (amount > 1)
 				{
@@ -1093,7 +1093,7 @@ CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent, const bool gotFromSh
 
 			if (!ent->spawnArgs.GetBool("inv_map_start", "0") && !ent->spawnArgs.GetBool("inv_no_pickup_message", "0"))
 			{
-				NotifyOwnerAboutPickup( common->GetLanguageDict()->GetString( ent->spawnArgs.GetString("inv_name") ), weaponItem);
+				NotifyOwnerAboutPickup( common->Translate( ent->spawnArgs.GetString("inv_name") ), weaponItem);
 			}
 			
 			// We're done

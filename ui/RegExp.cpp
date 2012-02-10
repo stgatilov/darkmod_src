@@ -252,7 +252,7 @@ void idRegisterList::AddReg( const char *name, int type, idParser *src, idWindow
 		if ( type == idRegister::STRING ) {
 			idToken tok;
 			if ( src->ReadToken( &tok ) ) {
-				tok = common->GetLanguageDict()->GetString( tok );
+				tok = common->Translate( tok );
 				var->Init( tok, win );
 			}
 		} else {

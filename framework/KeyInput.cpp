@@ -339,10 +339,10 @@ const char *idKeyInput::KeyNumToString( int keynum, bool localized ) {
 						return OSX_GetLocalizedString( kn->name );
 						break;
 					default :
-						return common->GetLanguageDict()->GetString( kn->strId ); break;
+						return common->Translate( kn->strId ); break;
 				}
 #else
-				return common->GetLanguageDict()->GetString( kn->strId );
+				return common->Translate( kn->strId );
 #endif
 			}
 		}
@@ -574,14 +574,14 @@ const char *idKeyInput::KeysFromBinding( const char *bind ) {
 		for ( i = 0; i < MAX_KEYS; i++ ) {
 			if ( keys[i].binding.Icmp( bind ) == 0 ) {
 				if ( keyName[0] != '\0' ) {
-					idStr::Append( keyName, sizeof( keyName ), common->GetLanguageDict()->GetString( "#str_07183" ) );
+					idStr::Append( keyName, sizeof( keyName ), common->Translate( "#str_07183" ) );
 				} 
 				idStr::Append( keyName, sizeof( keyName ), KeyNumToString( i, true ) );
 			}
 		}
 	}
 	if ( keyName[0] == '\0' ) {
-		idStr::Copynz( keyName, common->GetLanguageDict()->GetString( "#str_07133" ), sizeof( keyName ) );
+		idStr::Copynz( keyName, common->Translate( "#str_07133" ), sizeof( keyName ) );
 	}
 	idStr::ToLower( keyName );
 	return keyName;

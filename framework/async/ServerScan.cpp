@@ -155,7 +155,7 @@ int idServerScan::InfoResponse( networkServer_t &server ) {
 	const idDecl *mapDecl = declManager->FindType( DECL_MAPDEF, si_map, false );
 	const idDeclEntityDef *mapDef = static_cast< const idDeclEntityDef * >( mapDecl );
 	if ( mapDef ) {
-		const char *mapName = common->GetLanguageDict()->GetString( mapDef->dict.GetString( "name", si_map ) );
+		const char *mapName = common->Translate( mapDef->dict.GetString( "name", si_map ) );
 		server.serverInfo.Set( "si_mapName", mapName );
 	} else {
 		server.serverInfo.Set( "si_mapName", si_map );

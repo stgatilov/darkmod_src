@@ -98,10 +98,6 @@ public:
 	*/
 	virtual void				MoveArticlesToBack(idStr& title) = 0;
 
-	/** 
-	* Replaces the legacy common->GetLanguageDict():
-	*/
-	virtual const idLangDict*	GetLanguageDict() const = 0;
 };
 
 #endif /* !__DARKMOD_I18N_H__ */

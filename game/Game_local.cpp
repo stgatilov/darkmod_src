@@ -573,8 +573,8 @@ void idGameLocal::CheckTDMVersion()
 	{
 		Printf("HTTP requests disabled, skipping TDM version check.\n");
 
-		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );
-		msg.message = common->GetLanguageDict()->GetString( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
+		msg.title = common->Translate( "#str_02136" );
+		msg.message = common->Translate( "#str_02141" );	// HTTP Requests have been disabled,\n cannot check for updates.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -589,10 +589,10 @@ void idGameLocal::CheckTDMVersion()
 	// Check Request Status
 	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		Printf("%s.\n", common->GetLanguageDict()->GetString( "#str_2002") );	// Connection Error
+		Printf("%s.\n", common->Translate( "#str_2002") );	// Connection Error
 
-		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );		// Version Check Failed
-		msg.message = common->GetLanguageDict()->GetString( "#str_02132" );	// Cannot connect to server.
+		msg.title = common->Translate( "#str_02136" );		// Version Check Failed
+		msg.message = common->Translate( "#str_02132" );	// Cannot connect to server.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -607,28 +607,28 @@ void idGameLocal::CheckTDMVersion()
 		int major = node.node().attribute("major").as_int();
 		int minor = node.node().attribute("minor").as_int();
 
-		msg.title = va( common->GetLanguageDict()->GetString( "#str_02132" ), major, minor );	// Most recent version is: 
+		msg.title = va( common->Translate( "#str_02132" ), major, minor );	// Most recent version is: 
 
 		switch (CompareVersion(TDM_VERSION_MAJOR, TDM_VERSION_MINOR, major, minor))
 		{
 		case EQUAL:
 			// "Your version %d.%02d is up to date."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->Translate( "#str_02133"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case OLDER:
 			// "Your version %d.%02d needs updating."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->Translate( "#str_02134"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		case NEWER:
 			// "Your version %d.%02d is newer than the most recently published one."
-			msg.message = va( common->GetLanguageDict()->GetString( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+			msg.message = va( common->Translate( "#str_02135"), TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
 			break;
 		};
 	}
 	else
 	{
-		msg.title = common->GetLanguageDict()->GetString( "#str_02136" );	// "Version Check Failed"
-		msg.message = common->GetLanguageDict()->GetString( "#str_02137" );	// "Couldn't find current version tag."
+		msg.title = common->Translate( "#str_02136" );	// "Version Check Failed"
+		msg.message = common->Translate( "#str_02137" );	// "Couldn't find current version tag."
 
 	}
 
@@ -1600,7 +1600,7 @@ bool idGameLocal::NextMap( void ) {
 	int					i;
 
 	if ( !g_mapCycle.GetString()[0] ) {
-		Printf( common->GetLanguageDict()->GetString( "#str_04294" ) );
+		Printf( common->Translate( "#str_04294" ) );
 		return false;
 	}
 	if ( fileSystem->ReadFile( g_mapCycle.GetString(), NULL, NULL ) < 0 ) {
@@ -3669,23 +3669,23 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
 		ui->SetStateBool("MsgBoxRightButtonVisible", false);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
-		ui->SetStateString("MsgBoxMiddleButtonText", common->GetLanguageDict()->GetString("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxMiddleButtonText", common->Translate("#str_04339"));	// OK
 		break;
 	case GuiMessage::MSG_OK_CANCEL:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", common->GetLanguageDict()->GetString("#str_04339"));	// OK
-		ui->SetStateString("MsgBoxRightButtonText", common->GetLanguageDict()->GetString("#str_07203"));	// Cancel
+		ui->SetStateString("MsgBoxLeftButtonText", common->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxRightButtonText", common->Translate("#str_07203"));	// Cancel
 		break;
 	case GuiMessage::MSG_YES_NO:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", common->GetLanguageDict()->GetString("#str_02501"));	// Yes
-		ui->SetStateString("MsgBoxRightButtonText", common->GetLanguageDict()->GetString("#str_02502"));	// No
+		ui->SetStateString("MsgBoxLeftButtonText", common->Translate("#str_02501"));	// Yes
+		ui->SetStateString("MsgBoxRightButtonText", common->Translate("#str_02502"));	// No
 		break;
 	};
 
@@ -3737,7 +3737,7 @@ Init a GUI or CVAR variable (including GUI text) from a list of choices and valu
 bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step)
 {
 	idStr cvarName = varName;
-	std::string choices = common->GetLanguageDict()->GetString( inChoices );
+	std::string choices = common->Translate( inChoices );
 	std::string values  = inValues;
 
 	// figure out the current setting
@@ -3763,7 +3763,7 @@ bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, cons
 	if (choiceParts.size() != valuesParts.size())
 	{
 		gameLocal.Warning("The choices string array '%s' does not have the same number of elements as the values array '%s' for %s!", 
-				choices.c_str(), values.c_str(), cvarName.c_str() ); //common->GetLanguageDict()->GetString( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
+				choices.c_str(), values.c_str(), cvarName.c_str() ); //common->Translate( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
 		return false;
 	}
 	if (choiceParts.size() <= 0)
