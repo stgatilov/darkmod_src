@@ -266,7 +266,7 @@ CORELINKFLAGS = [ ]
 # for release build, further optimisations that may not work on all files
 OPTCPPFLAGS = [ ]
 
-BASECPPFLAGS.append( BASEFLAGS )
+BASECPPFLAGS.extend( BASEFLAGS.split(' ') )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
