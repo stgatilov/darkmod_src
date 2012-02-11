@@ -15,7 +15,7 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH' ]
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'NO_GCH' ]
 
 # global build mode ------------------------------
 
@@ -62,9 +62,6 @@ BASEFLAGS (default '')
 
 NOCONF (default 0, not saved)
 	ignore site configuration and use defaults + command line only
-	
-SILENT ( default 0, saved )
-	hide the compiler output, unless error
 
 NO_GCH (default 0)
 	Don't use precompiled headers when building.
@@ -177,7 +174,6 @@ NOCONF = '0'
 NOCURL = '0'
 BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
-SILENT = '0'
 NO_GCH = '0'
 
 # end default settings ---------------------------
