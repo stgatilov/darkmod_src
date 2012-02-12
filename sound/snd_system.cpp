@@ -449,7 +449,7 @@ void idSoundSystemLocal::Shutdown() {
 			alDeleteSources( 1, &openalSources[i].handle );
 
 			// clear entry in source array
-			openalSources[i].handle = NULL;
+			openalSources[i].handle = 0;
 			openalSources[i].startTime = 0;
 			openalSources[i].chan = NULL;
 			openalSources[i].inUse = false;
