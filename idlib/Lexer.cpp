@@ -27,7 +27,7 @@
 #define PUNCTABLE
 
 //longer punctuations first
-punctuation_t default_punctuations[] = {
+static const punctuation_t default_punctuations[] = {
 	//binary operators
 	{">>=",P_RSHIFT_ASSIGN},
 	{"<<=",P_LSHIFT_ASSIGN},

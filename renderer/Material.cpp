@@ -221,7 +221,7 @@ typedef struct {
 	int		clearSolid, surfaceFlags, contents;
 } infoParm_t;
 
-static infoParm_t	infoParms[] = {
+static const infoParm_t	infoParms[] = {
 	// game relevant attributes
 	{"solid",		0,	0,	CONTENTS_SOLID },		// may need to override a clearSolid
 	{"water",		1,	0,	CONTENTS_WATER },		// used for water
@@ -2318,7 +2318,7 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 idMaterial::Print
 ===================
 */
-const char *opNames[] = {
+static const char *opNames[] = {
 	"OP_TYPE_ADD",
 	"OP_TYPE_SUBTRACT",
 	"OP_TYPE_MULTIPLY",

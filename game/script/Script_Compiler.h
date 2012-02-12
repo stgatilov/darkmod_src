@@ -25,8 +25,8 @@
 const char * const RESULT_STRING = "<RESULT>";
 
 typedef struct opcode_s {
-	const char		*name;
-	const char		*opname;
+	const char	*name;
+	const char	*opname;
 	int			priority;
 	bool		rightAssociative;
 	idVarDef	*type_a;
@@ -263,7 +263,7 @@ private:
 	void			ParseNamespace( idVarDef *newScope );
 
 public :
-	static opcode_t	opcodes[];
+	static const opcode_t	opcodes[];
 
 					idCompiler();
 	void			CompileFile( const char *text, const char *filename, bool console );

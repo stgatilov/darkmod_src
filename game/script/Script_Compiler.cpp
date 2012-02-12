@@ -38,7 +38,7 @@ const char *idCompiler::punctuation[] = {
 	"=",  "[",  "]",  ".",  "<",  ">" ,  "&",  "|", ":",  NULL
 };
 
-opcode_t idCompiler::opcodes[] = {
+const opcode_t idCompiler::opcodes[] = {
 	{ "<RETURN>", "RETURN", -1, false, &def_void, &def_void, &def_void },
 		
 	{ "++", "UINC_F", 1, true, &def_float, &def_void, &def_void },
@@ -623,8 +623,8 @@ Emits an opcode to push the variable onto the stack.
 ============
 */
 bool idCompiler::EmitPush( idVarDef *expression, const idTypeDef *funcArg ) {
-	opcode_t *op;
-	opcode_t *out;
+	const opcode_t *op;
+	const opcode_t *out;
 
 	out = NULL;
 	for( op = &opcodes[ OP_PUSH_F ]; op->name && !strcmp( op->name, "<PUSH>" ); op++ ) {
@@ -1160,7 +1160,7 @@ idVarDef *idCompiler::LookupDef( const char *name, const idVarDef *baseobj ) {
 	idVarDef	*field;
 	etype_t		type_b;
 	etype_t		type_c;
-	opcode_t	*op;
+	const opcode_t	*op;
 
 	// check if we're accessing a field
 	if ( baseobj && ( baseobj->Type() == ev_object ) ) {
@@ -1457,8 +1457,8 @@ idCompiler::GetExpression
 ==============
 */
 idVarDef *idCompiler::GetExpression( int priority ) {
-	opcode_t		*op;
-	opcode_t		*oldop;
+	const opcode_t	*op;
+	const opcode_t	*oldop;
 	idVarDef		*e;
 	idVarDef		*e2;
 	const idVarDef	*oldtype;
@@ -1671,7 +1671,7 @@ void idCompiler::ParseReturnStatement( void ) {
 	idVarDef	*e;
 	etype_t 	type_a;
 	etype_t 	type_b;
-	opcode_t	*op;
+	const opcode_t	*op;
 
 	if ( CheckToken( ";" ) ) {
 		if ( scope->TypeDef()->ReturnType()->Type() != ev_void ) {
