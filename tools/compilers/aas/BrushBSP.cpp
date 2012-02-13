@@ -1411,6 +1411,12 @@ void idBrushBSP::FloodThroughPortals_r( idBrushBSPNode *node, int contents, int 
 	idBrushBSPPortal *p;
 	int s;
 
+	// PVS-Studio diagnostic message: V595 The 'node' pointer was utilized before it was verified
+	// against nullptr. Check lines: 1421, 1424. DoomDLL brushbsp.cpp 1421
+	// The 'node' pointer is dereferenced first: node->occupied. And then it is suddenly checked if it is not equal to NULL.
+	// This is a very suspicious code. I do not know how to fix it because I do not know the logic of the function operation.
+	// Perhaps it is just enough to write it that way:
+	// if ( node && node->occupied ) {
 	if ( node->occupied ) {
 		common->Error( "FloodThroughPortals_r: node already occupied\n" );
 	}

@@ -1302,6 +1302,6 @@ void idAASFileLocal::DeleteClusters( void ) {
 	portals.Append( portal );
 
 	// first cluster is a dummy
-	memset( &cluster, 0, sizeof( portal ) );
+	memset( &cluster, 0, sizeof( cluster ) );
 	clusters.Append( cluster );
 }

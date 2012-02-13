@@ -3013,7 +3013,7 @@ void GetMaterialStageInfo ( const char* a_strMatStageName, idLexer &a_lexSource,
 bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSearchWords, unsigned int & a_uiStartOffset, unsigned int & a_uiEndOffset,
 								const char a_cBlockStart = '{', const char a_cBlockEnd = '}' )
 {
-	int	uiSearchIndex;
+	unsigned int uiSearchIndex;
 	unsigned int uiSearchOffset = 0;
 	unsigned int iTextLength = idStr::Length(a_text);
 	bool bAreAllWordsFound = false;
@@ -3022,11 +3022,11 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 	{
 
 		uiSearchIndex = idStr::FindText( a_text, (*iter).c_str(), false, uiSearchOffset );
-		//  		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
+		gameLocal.Printf( " Searched %s from offset %d and found index %d \n", (*iter).c_str(),uiSearchOffset, uiSearchIndex );
 
 		if( uiSearchIndex < 0 )
 		{
-			//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
+			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
 			return false;
 		}
 
@@ -3037,7 +3037,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 		{
 			if( uiSearchIndex != uiSearchOffset )
 			{
-				//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
+				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
 
 				//Start the search from the first word again, since all of the search words are important.
 				bAreAllWordsFound = false;
