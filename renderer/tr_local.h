@@ -980,9 +980,6 @@ extern idCVar r_materialOverride;		// override all materials
 
 extern idCVar r_debugRenderToTexture;
 
-// rebb: dedicated ambient
-extern idCVar r_dedicatedAmbient;
-
 /*
 ====================================================================
 
@@ -1327,12 +1324,6 @@ typedef enum {
 	FPROG_AMBIENT,
 	VPROG_GLASSWARP,
 	FPROG_GLASSWARP,
-	// rebb: direct light interactions, related to r_dedicatedAmbient
-	VPROG_TEST_DIRECT,
-	FPROG_TEST_DIRECT,
-	VPROG_INTERACTION_DIRECT,
-	FPROG_INTERACTION_DIRECT,
-	//
 	PROG_USER
 } program_t;
 

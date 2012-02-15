@@ -217,9 +217,6 @@ idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CV
 // greebo: screenshot format CVAR, by default convert the generated TGA to JPG
 idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVAR_ARCHIVE, "Image format used to store ingame screenshots: png/tga/jpg/bmp." );
 
-// rebb: toggle for dedicated ambient light shader use, mainly for performance testing
-idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "0", CVAR_RENDERER | CVAR_BOOL, "enable dedicated ambientLight shader" );
-
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
