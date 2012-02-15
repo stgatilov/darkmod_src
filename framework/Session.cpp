@@ -262,7 +262,7 @@ idSessionLocal::idSessionLocal
 ===============
 */
 idSessionLocal::idSessionLocal() {
-	guiInGame = guiMainMenu = guiIntro = guiRestartMenu = guiLoading = guiActive = guiTest = guiMsg = guiMsgRestore = NULL;	
+	guiInGame = guiMainMenu = guiRestartMenu = guiLoading = guiActive = guiTest = guiMsg = guiMsgRestore = NULL;	
 
 	menuSoundWorld = NULL;
 	
@@ -2666,7 +2666,6 @@ void idSessionLocal::Init() {
 	idAsyncNetwork::client.serverList.GUIConfig( guiMainMenu, "serverList" );
 	guiRestartMenu = uiManager->FindGui( "guis/restart.gui", true, false, true );
 	guiMsg = uiManager->FindGui( "guis/msg.gui", true, false, true );
-	guiIntro = uiManager->FindGui( "guis/intro.gui", true, false, true );
 
 	whiteMaterial = declManager->FindMaterial( "_white" );
 
@@ -2707,7 +2706,7 @@ idSessionLocal::SetPlayingSoundWorld
 ===============
 */
 void idSessionLocal::SetPlayingSoundWorld() {
-	if ( guiActive && ( guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned ) ) ) {
+	if ( guiActive && ( guiActive == guiMainMenu || guiActive == guiLoading || ( guiActive == guiMsg && !mapSpawned ) ) ) {
 		soundSystem->SetPlayingSoundWorld( menuSoundWorld );
 	} else {
 		soundSystem->SetPlayingSoundWorld( sw );

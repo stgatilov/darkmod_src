@@ -492,39 +492,6 @@ void idSessionLocal::HandleRestartMenuCommands( const char *menuCommand ) {
 
 /*
 ==============
-idSessionLocal::HandleIntroMenuCommands
-
-Executes any commands returned by the gui
-==============
-*/
-void idSessionLocal::HandleIntroMenuCommands( const char *menuCommand ) {
-	// execute the command from the menu
-	int i;
-	idCmdArgs args;
-
-	args.TokenizeString( menuCommand, false );
-
-	for( i = 0; i < args.Argc(); ) {
-		const char *cmd = args.Argv( i++ );
-
-		if ( !idStr::Icmp( cmd, "startGame" ) ) {
-			menuSoundWorld->ClearAllSoundEmitters();
-			ExitMenu();
-			continue;
-		}
-
-		if ( !idStr::Icmp( cmd, "play" ) ) {
-			if ( args.Argc() - i >= 1 ) {
-				idStr snd = args.Argv(i++);
-				menuSoundWorld->PlayShaderDirectly(snd);
-			}
-			continue;
-		}
-	}
-}
-
-/*
-==============
 idSessionLocal::UpdateMPLevelShot
 ==============
 */
@@ -560,24 +527,6 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			game->HandleMainMenuCommands( cmd, guiActive );
 		}
 		
-		if ( !idStr::Icmp( cmd, "startGame" ) ) {
-			cvarSystem->SetCVarInteger( "g_skill", guiMainMenu->State().GetInt( "skill" ) );
-			if ( icmd < args.Argc() ) {
-				StartNewGame( args.Argv( icmd++ ) );
-			} else {
-				StartNewGame( "game/mars_city1" );
-			}
-			// need to do this here to make sure com_frameTime is correct or the gui activates with a time that 
-			// is "however long map load took" time in the past
-			common->GUIFrame( false, false );
-			SetGUI( guiIntro, NULL );
-			guiIntro->StateChanged( com_frameTime, true );
-			// stop playing the game sounds
-			soundSystem->SetPlayingSoundWorld( menuSoundWorld );
-
-			continue;
-		}
-
 		if ( !idStr::Icmp( cmd, "quit" ) ) {
 			ExitMenu();
 			common->Quit();
@@ -1087,8 +1036,6 @@ void idSessionLocal::DispatchCommand( idUserInterface *gui, const char *menuComm
 	if ( gui == guiMainMenu ) {
 		HandleMainMenuCommands( menuCommand );
 		return;
-	} else if ( gui == guiIntro) {
-		HandleIntroMenuCommands( menuCommand );
 	} else if ( gui == guiMsg ) {
 		HandleMsgCommands( menuCommand );
 	} else if ( gui == guiRestartMenu ) {

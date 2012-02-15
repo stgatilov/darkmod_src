@@ -3754,7 +3754,7 @@ bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, cons
 			return false;
 		}
 	}
-	// split the choices into a listt
+	// split the choices into a list
 	std::vector<std::string> choiceParts;
 	std::vector<std::string> valuesParts;
 	boost::algorithm::split(choiceParts, choices, boost::algorithm::is_any_of(";"));

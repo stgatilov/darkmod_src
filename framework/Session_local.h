@@ -217,7 +217,6 @@ public:
 	idListGUI *			guiMainMenu_MapList;		// easy map list handling
 	idUserInterface *	guiRestartMenu;
 	idUserInterface *	guiLoading;
-	idUserInterface *	guiIntro;
 	idUserInterface *	guiTest;
 	
 	idUserInterface *	guiMsg;
@@ -293,7 +292,6 @@ public:
 	void				HandleInGameCommands( const char *menuCommand );
 	void				HandleMainMenuCommands( const char *menuCommand );
 	void				HandleChatMenuCommands( const char *menuCommand );
-	void				HandleIntroMenuCommands( const char *menuCommand );
 	void				HandleRestartMenuCommands( const char *menuCommand );
 	void				HandleMsgCommands( const char *menuCommand );
 	void				GetSaveGameList( idStrList &fileList, idList<fileTIME_T> &fileTimes );
