@@ -1446,8 +1446,6 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 
 	int width = glConfig.vidWidth;
 	int height = glConfig.vidHeight;
-	int	x = 0;
-	int y = 0;
 	int	blends = 0;
 
 	switch ( args.Argc() ) {
@@ -1692,8 +1690,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	renderView_t	ref;
 	viewDef_t	primary;
 	int			downSample;
-	char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
-		"_pz.tga", "_nz.tga" };
+	const char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;

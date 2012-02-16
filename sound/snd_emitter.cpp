@@ -504,15 +504,12 @@ Called once each sound frame by the main thread from idSoundWorldLocal::PlaceOri
 ===================
 */
 void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRenderWorld *rw ) {
-	int			i;
-	bool		hasActive = false;
-
 	//
 	// work out the maximum distance of all the playing channels
 	//
 	maxDistance = 0;
 
-	for ( i = 0; i < SOUND_MAX_CHANNELS; i++ ) {
+	for ( int i = 0; i < SOUND_MAX_CHANNELS; i++ ) {
 		idSoundChannel	*chan = &channels[i];
 
 		if ( !chan->triggerState ) {

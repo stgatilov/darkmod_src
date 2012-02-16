@@ -765,7 +765,7 @@ void MaterialConverter::Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 	const unsigned long uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
 
-	gameLocal.Printf("Parsing %d materials, this may take few minutes...\n", uiTotalMats );
+	gameLocal.Printf("Parsing %lu materials, this may take few minutes...\n", uiTotalMats );
 
 	unsigned long i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
 	const unsigned uiMaxMaterialsToProcess = i + uiMaterialsToProcess;
@@ -796,7 +796,7 @@ void MaterialConverter::Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		// Update the statistics for material conversion report.
 		matStatusReport[matConversionStatus]++;
 	}
-	gameLocal.Printf( "Total materials processed: %u\n", i );
+	gameLocal.Printf( "Total materials processed: %lu\n", i );
 
 	// Print the material conversion status report to console. 
 	gameLocal.Printf( matStatusReport[eMaterialConversionStatus_SuccessFullyConverted].m_strStatusReport, matStatusReport[eMaterialConversionStatus_SuccessFullyConverted].m_uiCount );

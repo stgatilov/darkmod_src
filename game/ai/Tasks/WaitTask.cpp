@@ -56,10 +56,8 @@ bool WaitTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("WaitTask performing.\r");
 
-	idAI* owner = _owner.GetEntity();
-
 	// This task may not be performed with empty entity pointer
-	assert(owner != NULL);
+	assert(_owner.GetEntity() != NULL);
 
 	// This task does nothing but wait until the time is over.
 	 if (_waitEndTime <= gameLocal.time)

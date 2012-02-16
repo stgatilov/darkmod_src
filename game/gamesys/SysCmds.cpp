@@ -3308,7 +3308,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 	const unsigned long uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
 
-	gameLocal.Printf("Parsing %d materials, this may take few minutes...\n", uiTotalMats );
+	gameLocal.Printf("Parsing %lu materials, this may take few minutes...\n", uiTotalMats );
 
 	unsigned long ulMaterialsProcessed = 0;
 	unsigned long i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
@@ -3545,7 +3545,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		mat->Invalidate();
 		mat->FreeData();
 	}
-	gameLocal.Printf(" %d Materials processed and changed in total.\n", ulMaterialsProcessed );
+	gameLocal.Printf(" %lu Materials processed and changed in total.\n", ulMaterialsProcessed );
 }
 
 

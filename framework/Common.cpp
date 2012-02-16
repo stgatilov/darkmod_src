@@ -46,14 +46,14 @@ class EngineVersion
 public:
 	EngineVersion()
 	{
-		memset(string, 0, 256);
+		memset(string, 0, sizeof(string));
 	}
 
 	const char* Get()
 	{
-		if (string[0] == NULL)
+		if (string[0] == 0x0)
 		{
-			sprintf( string, "%srev%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+			snprintf( string, sizeof(string) - 1, "%srev%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
 		}
 
 		return string;
