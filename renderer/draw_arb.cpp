@@ -71,7 +71,7 @@ it is set to lessThan for blended transparent surfaces
 ==================
 */
 static void RB_ARB_DrawInteraction( const drawInteraction_t *din ) {
-	const drawSurf_t *surf = din->surf;
+//	const drawSurf_t *surf = din->surf;
 	const srfTriangles_t	*tri = din->surf->geo;
 
 	// set the vertex arrays, which may not all be enabled on a given pass
@@ -271,7 +271,7 @@ it is set to lessThan for blended transparent surfaces
 ==================
 */
 static void RB_ARB_DrawThreeTextureInteraction( const drawInteraction_t *din ) {
-	const drawSurf_t *surf = din->surf;
+//	const drawSurf_t *surf = din->surf;
 	const srfTriangles_t	*tri = din->surf->geo;
 
 	// set the vertex arrays, which may not all be enabled on a given pass
