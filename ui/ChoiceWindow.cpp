@@ -26,6 +26,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "ChoiceWindow.h"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 /*
 ============
@@ -273,71 +275,50 @@ idWinVar *idChoiceWindow::GetWinVarByName(const char *_name, bool fixup, drawWin
 
 // update the lists whenever the WinVar have changed
 void idChoiceWindow::UpdateChoicesAndVals( void ) {
-	idToken token;
-	idStr str2, str3;
-	idLexer src;
-
 	if ( latchedChoices.Icmp( choicesStr ) ) {
 		choices.Clear();
-		src.FreeSource();
-		src.SetFlags( LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
-		src.LoadMemory( choicesStr, choicesStr.Length(), "<ChoiceList>" );
-		if ( src.IsLoaded() ) {
-			while( src.ReadToken( &token ) ) {
-				if ( token == ";" ) {
-					if ( str2.Length() ) {
-						str2.StripTrailingWhitespace();
-						str2 = common->Translate( str2 );
-						choices.Append(str2);
-						str2 = "";
-					}
-					continue;
-				}
-				str2 += token;
-				str2 += " ";
-			}
-			if ( str2.Length() ) {
-				str2.StripTrailingWhitespace();
-				choices.Append( str2 );
-			}
+
+	        // split the choices into a list
+	        std::vector<std::string> choiceParts;
+		std::string choices_std = choicesStr.c_str();
+		boost::algorithm::split(choiceParts, choices_std, boost::algorithm::is_any_of(";"));
+
+		if (choiceParts.size() <= 0)
+		{
+			common->Warning("The choices string array is empty for %s.", cvarStr.c_str());
+			values.Clear();
+                	return;
+		}
+		for (unsigned int i = 0; i < choiceParts.size(); i++)
+		{
+			choices.Append( idStr( choiceParts[i].c_str() ) );
+//			common->Printf("Cur choice: %s (index: %i)\n", choiceParts[i].c_str(), i);
 		}
 		latchedChoices = choicesStr.c_str();
 	}
 	if ( choiceVals.Length() && latchedVals.Icmp( choiceVals ) ) {
 		values.Clear();
-		src.FreeSource();
-		src.SetFlags( LEXFL_ALLOWPATHNAMES | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
-		src.LoadMemory( choiceVals, choiceVals.Length(), "<ChoiceVals>" );
-		str2 = "";
-		bool negNum = false;
-		if ( src.IsLoaded() ) {
-			while( src.ReadToken( &token ) ) {
-				if (token == "-") {
-					negNum = true;
-					continue;
-				} 
-				if (token == ";") {
-					if (str2.Length()) {
-						str2.StripTrailingWhitespace();
-						values.Append( str2 );
-						str2 = "";
-					}
-					continue;
-				}
-				if ( negNum ) {
-					str2 += "-";
-					negNum = false;
-				}
-				str2 += token;
-				str2 += " ";
-			}
-			if ( str2.Length() ) {
-				str2.StripTrailingWhitespace();
-				values.Append( str2 );
-			}
+
+	        // split the values into a list
+		std::vector<std::string> valuesParts;
+		std::string values_std = choiceVals.c_str();
+		boost::algorithm::split(valuesParts, values_std, boost::algorithm::is_any_of(";"));
+
+		if (valuesParts.size() <= 0)
+		{
+			common->Warning("The values string array is empty for %s.", cvarStr.c_str());
+                	return;
 		}
-		if ( choices.Num() != values.Num() ) {
-			common->Warning( "idChoiceWindow:: gui '%s' window '%s' has value count unequal to choices count", gui->GetSourceFile(), name.c_str());
+		for (unsigned int i = 0; i < valuesParts.size(); i++)
+		{
+			values.Append( idStr( valuesParts[i].c_str() ) );
+//			common->Printf("Cur value: %s (index: %i)\n", valuesParts[i].c_str(), i);
+		}
+
+		if (choices.Num() != values.Num())
+		{
+			common->Warning("idChoiceWindow:: gui '%s' window '%s' has value count unequal to choices count",
+				gui->GetSourceFile(), name.c_str() ); 
 		}
 		latchedVals = choiceVals.c_str();
 	}
