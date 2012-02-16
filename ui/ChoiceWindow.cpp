@@ -341,9 +341,6 @@ void idChoiceWindow::Draw(int time, float x, float y) {
 	UpdateChoicesAndVals();
 	UpdateChoice();
 
-	// FIXME: It'd be really cool if textAlign worked, but a lot of the guis have it set wrong because it used to not work
-	textAlign = 0;
-
 	if ( textShadow ) {
 		idStr shadowText = choices[currentChoice];
 		idRectangle shadowRect = textRect;
