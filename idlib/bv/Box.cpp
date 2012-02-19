@@ -708,7 +708,14 @@ idBox::FromPointTranslation
 ============
 */
 void idBox::FromPointTranslation( const idVec3 &point, const idVec3 &translation ) {
-	// FIXME: implement
+/*	idVec3 points;
+
+	// tels: take a line between A and A + translation, compute the box that covers these
+	//	 two points, and assume the box will always cover the entire line
+	points[0] = point;
+	points[1] = point + translation;
+	FromPoints(points, 2);
+*/
 }
 
 /*

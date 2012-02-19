@@ -91,15 +91,12 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 			idLangKeyValue kv;
 			kv.key = tok;
 			kv.value = tok2;
-			if (NULL != remap && remapcount > 0)
+			if (remap && remapcount > 0)
 			{
 				// Tels: fix #2812, some characters like 0xFF ("я" in russian) are not rendered
 				// in the GUI, so replace them (as the font contains the characters elsewhere).
 				// If we were given a replacement table, use it to exchange the characters:
-				for (unsigned int i = 0; i < remapcount; i ++)
-				{
-					kv.value.Replace( remap[i*2], remap[i*2+1] );
-				}
+				kv.value.Remap( remapcount, remap );
 			}
 			assert( kv.key.Cmpn( STRTABLE_ID, STRTABLE_ID_LENGTH ) == 0 );
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );

@@ -214,9 +214,9 @@ I18NLocal::Print
 */
 void I18NLocal::Print() const
 {
-	common->Printf("I18NLocal: Current language: %s\n", m_lang.c_str() );
-	common->Printf("I18NLocal: Current font path: %s\n", m_fontPath.c_str() );
-	common->Printf("I18NLocal: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
+	common->Printf("I18N: Current language: %s\n", m_lang.c_str() );
+	common->Printf("I18N: Current font path: %s\n", m_fontPath.c_str() );
+	common->Printf("I18N: Move articles to back: %s\n", m_bMoveArticles ? "Yes" : "No");
 	common->Printf(" Main " );
 	m_Dict.Print();
 	common->Printf(" Reverse dict   : " );
@@ -313,13 +313,13 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 	}
 	if (len <= 0)
 	{
-		common->Printf("Found no character remapping for %s.\n", lang.c_str() );
+		common->Printf("I18N: Found no character remapping for %s.\n", lang.c_str() );
 		return 0;
 	}
 	
 	src.LoadMemory( buffer, strlen( buffer ), file );
 	if ( !src.IsLoaded() ) {
-		common->Warning("Cannot load character remapping %s.", file.c_str() );
+		common->Warning("I18N: Cannot load character remapping %s.", file.c_str() );
 		return 0;
 	}
 
@@ -338,16 +338,18 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 		}
 		if ( src.ReadToken( &tok2 ) ) {
 			if ( tok2 == "}" ) {
-				common->Warning("Expected a byte, but got } while parsing %s", file.c_str() );
+				common->Warning("I18N: Expected a byte, but got } while parsing %s", file.c_str() );
 				break;
 			}
 			// add the two numbers
 			//	common->Warning("got '%s' '%s'\n", tok.c_str(), tok2.c_str() );
 			m_Remap.Append( (char) tok.GetIntValue() );
 			m_Remap.Append( (char) tok2.GetIntValue() );
-//			common->Printf("Mapping %i (0x%02x) to %i (0x%02x)\n", tok.GetIntValue(), tok.GetIntValue(), tok2.GetIntValue(), tok2.GetIntValue() );
+//			common->Printf("I18N: Mapping %i (0x%02x) to %i (0x%02x)\n", tok.GetIntValue(), tok.GetIntValue(), tok2.GetIntValue(), tok2.GetIntValue() );
 		}
 	}
+
+	common->Printf("I18N: Loaded %i character remapping entries.\n", m_Remap.Length() / 2 );
 
 	return m_Remap.Length() / 2;
 }
@@ -365,7 +367,7 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		return;
 	}
-	common->Printf("I18NLocal: SetLanguage: '%s'.\n", lang);
+	common->Printf("I18N: SetLanguage: '%s'.\n", lang);
 #ifdef M_DEBUG
 #endif
 
@@ -389,7 +391,7 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 
 	if (!fmDict->Load(file, false, m_Remap.Length() / 2, m_Remap.c_str()))
 	{
-		common->Printf("I18NLocal: '%s' not found.\n", file.c_str() );
+		common->Printf("I18N: '%s' not found.\n", file.c_str() );
 	}
 	else
 	{
@@ -482,7 +484,6 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	{
 		// Tell the GUI that it was reloaded, so when it gets initialized the next frame,
 		// it will land in the Video Settings page
-		common->Printf("Setting reload\n");
 		gui->SetStateInt("reload", 1);
 	}
 	else

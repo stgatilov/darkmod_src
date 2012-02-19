@@ -197,6 +197,7 @@ public:
 	idStr &				StripQuotes( void );							// strip quotes around string
 	void				Replace( const char *old, const char *nw );
 	void				Replace( const char old, const char nw );		// faster version of Repace() if you want to swap only one char
+	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
 
 	// file name methods
 	int					FileNameHash( void ) const;						// hash key for the filename (skips extension)
