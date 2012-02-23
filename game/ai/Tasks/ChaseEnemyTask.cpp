@@ -174,7 +174,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 				if (reachablePos != NULL)
 				{
 					// Get the button which will fetch the elevator
-					CMultiStateMoverButton* button = mover->GetButton(reachablePos, reachablePos, BUTTON_TYPE_FETCH);
+					CMultiStateMoverButton* button = mover->GetButton(reachablePos, reachablePos, BUTTON_TYPE_FETCH, owner->GetPhysics()->GetOrigin()); // grayman #3029
 
 					// gameRenderWorld->DebugArrow(colorBlue, owner->GetPhysics()->GetOrigin(), button->GetPhysics()->GetOrigin(), 1, 5000);
 

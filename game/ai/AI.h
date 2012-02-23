@@ -1123,6 +1123,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					m_HandlingElevator;
 
 	/**
+	 * grayman #3029: is set true if the AI can set up to handle a door while handling an elevator,
+	 * allowed only during the approach states of elevator handling
+	 */
+	bool					m_CanSetupDoor;
+
+	/**
 	 * grayman #2603: is set true while the AI is relighting a light.
 	 */
 	bool					m_RelightingLight;
@@ -1511,6 +1517,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					CanSeeTargetPoint( idVec3 point, idEntity* target , bool checkLighting) const; // grayman #2859 & #2959
 
 	idVec3					CanSeeRope( idEntity *ent ) const; // grayman #2872
+
+	float					GetReachTolerance(); // grayman #3029
 
 	// angua: if the focusTime > gameLocal.time, the AI is currently looking at a specified entity or location
 	ID_INLINE int			GetFocusTime()

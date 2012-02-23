@@ -78,15 +78,16 @@ public:
 	void RegisterButton(CMultiStateMoverButton* button, EMMButtonType type);
 
 	/** 
-	 * greebo: Returns the button entity for the given position and the given "use type".
+	 * greebo: Returns the closest button entity for the given position and the given "use type".
 	 *
 	 * @toPosition: the position the elevator needs to go to (to be "fetched" to, to "ride" to).
 	 * @fromPosition: the position the button needs to be accessed from (can be NULL for type == RIDE).
 	 * @type: the desired type of button (fetch or ride)
+	 * @riderOrg: the origin of the AI using the button (grayman #3029)
 	 * 
 	 * @returns: NULL if nothing found.
 	 */
-	CMultiStateMoverButton* GetButton(CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type);
+	CMultiStateMoverButton* GetButton(CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type, idVec3 riderOrg); // grayman #3029
 
 protected:
 	// override idMover's DoneMoving() to trigger targets

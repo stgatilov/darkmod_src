@@ -895,7 +895,25 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 	// always pushed when standing on the pusher
 	if ( physics->IsGroundClipModel( clipModel->GetEntity()->entityNumber, clipModel->GetId() ) ) {
 		// move the entity colliding with all other entities except the pusher itself
-		ClipEntityTranslation( trace, check, NULL, clipModel, move );
+
+		// grayman #3029 - if this is an AI with attachments, we have to make them
+		// temporarily non-solid for the translation check. Though weapons don't
+		// impede movement, pauldrons do.
+
+		if ( check->IsType(idAI::Type) )
+		{
+			idAI* checkAI = static_cast<idAI*>(check);
+
+			checkAI->SaveAttachmentContents();
+			checkAI->SetAttachmentContents(0);
+			ClipEntityTranslation( trace, check, NULL, clipModel, move );
+			checkAI->RestoreAttachmentContents();
+		}
+		else
+		{
+			ClipEntityTranslation( trace, check, NULL, clipModel, move );
+		}
+
 		// if there is a collision
 		if ( trace.fraction < 1.0f ) {
 			// vector along which the entity is pushed
@@ -919,11 +937,13 @@ int idPush::TryTranslatePushEntity( trace_t &results, idEntity *check, idClipMod
 			checkMove = move;
 		}
 	}
-	else {
+	else
+	{
 		// move entity in reverse only colliding with pusher
 		ClipEntityTranslation( results, check, clipModel, NULL, -move );
 		// if no collision with the pusher then the entity is not pushed by the pusher
-		if ( results.fraction >= 1.0f ) {
+		if ( results.fraction >= 1.0f )
+		{
 			return PUSH_NO;
 		}
 
@@ -1113,7 +1133,6 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 
 	if ( flags & PUSHFL_CLIP ) 
 	{
-
 		// can only clip movement of a trace model
 		assert( clipModel->IsTraceModel() );
 
@@ -1162,7 +1181,6 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 	{
 
 		check = entityList[ i ];
-
 		idPhysics *physics = check->GetPhysics();
 
 		// disable the entity for collision detection

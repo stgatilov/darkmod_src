@@ -963,6 +963,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
+	savefile->WriteBool(m_CanSetupDoor);	// grayman #3029
 	savefile->WriteBool(m_RelightingLight);	// grayman #2603
 	savefile->WriteBool(m_ExaminingRope);	// grayman #2872
 	savefile->WriteBool(m_DroppingTorch);	// grayman #2603
@@ -1394,6 +1395,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
+	savefile->ReadBool(m_CanSetupDoor);		// grayman #3029
 	savefile->ReadBool(m_RelightingLight);	// grayman #2603
 	savefile->ReadBool(m_ExaminingRope);	// grayman #2872
 	savefile->ReadBool(m_DroppingTorch);	// grayman #2603
@@ -1917,6 +1919,7 @@ void idAI::Spawn( void )
 	m_dousedLightsSeen.Clear();	// grayman #2603
 
 	m_HandlingElevator = false;
+	m_CanSetupDoor = true;		// grayman #3029
 	m_RelightingLight = false;	// grayman #2603
 	m_ExaminingRope = false;	// grayman #2872
 	m_DroppingTorch = false;	// grayman #2603
@@ -4656,6 +4659,11 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 	}
 
 	return false;
+}
+
+float idAI::GetReachTolerance()
+{
+	return aas_reachability_z_tolerance;
 }
 
 /*

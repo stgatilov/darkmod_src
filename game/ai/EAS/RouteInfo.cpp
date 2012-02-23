@@ -28,18 +28,21 @@ namespace eas {
 
 RouteInfo::RouteInfo() :
 	routeType(ROUTE_TO_CLUSTER),
-	target(-1)
+	target(-1),
+	routeTravelTime(0) // grayman #3029
 {}
 
 RouteInfo::RouteInfo(RouteType type, int targetNum) :
 	routeType(type),
-	target(targetNum)
+	target(targetNum),
+	routeTravelTime(0) // grayman #3029
 {}
 
 // Copy constructor
 RouteInfo::RouteInfo(const RouteInfo& other) :
 	routeType(other.routeType),
-	target(other.target)
+	target(other.target),
+	routeTravelTime(other.routeTravelTime) // grayman #3029
 {
 	// Copy the RouteNodes of the other list, one by one
 	for (RouteNodeList::const_iterator otherNode = other.routeNodes.begin();
@@ -52,7 +55,10 @@ RouteInfo::RouteInfo(const RouteInfo& other) :
 
 bool RouteInfo::operator==(const RouteInfo& other) const
 {
-	if (routeType == other.routeType && target == other.target && routeNodes.size() == other.routeNodes.size())
+	if ( (routeType == other.routeType ) &&
+		 ( target == other.target ) &&
+		 ( routeNodes.size() == other.routeNodes.size() ) &&
+		 ( routeTravelTime == other.routeTravelTime ) ) // grayman #3029
 	{
 		for (RouteNodeList::const_iterator i = routeNodes.begin(), j = other.routeNodes.begin(); i != routeNodes.end(); ++i, ++j)
 		{
@@ -65,7 +71,7 @@ bool RouteInfo::operator==(const RouteInfo& other) const
 		return true; // everything matched
 	}
 
-	return false; // routeType, routeNodes.size() or target mismatched
+	return false; // routeType, routeNodes.size(), target, or routeTravelTime mismatched
 }
 
 bool RouteInfo::operator!=(const RouteInfo& other) const
@@ -83,6 +89,8 @@ void RouteInfo::Save(idSaveGame* savefile) const
 	{
 		(*i)->Save(savefile);
 	}
+
+	savefile->WriteInt(routeTravelTime); // grayman #3029
 }
 
 void RouteInfo::Restore(idRestoreGame* savefile)
@@ -101,6 +109,8 @@ void RouteInfo::Restore(idRestoreGame* savefile)
 		node->Restore(savefile);
 		routeNodes.push_back(node);
 	}
+
+	savefile->ReadInt(routeTravelTime); // grayman #3029
 }
 
 } // namespace eas

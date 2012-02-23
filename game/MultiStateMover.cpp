@@ -127,11 +127,18 @@ void CMultiStateMover::RegisterButton(CMultiStateMoverButton* button, EMMButtonT
 }
 
 CMultiStateMoverButton* CMultiStateMover::GetButton(
-	CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type)
+	CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type, idVec3 riderOrg) // grayman #3029
 {
 	// Sanity checks
-	if (toPosition == NULL) return NULL;
-	if (type == BUTTON_TYPE_RIDE && fromPosition == NULL) return NULL;
+	if (toPosition == NULL)
+	{
+		return NULL;
+	}
+
+	if ( ( type == BUTTON_TYPE_RIDE ) && ( fromPosition == NULL) )
+	{
+		return NULL;
+	}
 
 	switch (type)
 	{
@@ -160,23 +167,50 @@ CMultiStateMoverButton* CMultiStateMover::GetButton(
 	case BUTTON_TYPE_FETCH:
 		{
 			const idVec3& toOrigin = toPosition->GetPhysics()->GetOrigin();
-			for (int i = 0; i < fetchButtons.Num(); i++)
+
+			// grayman #3029 - there could be multiple fetch buttons at the
+			// same station. The AI should choose the closest one. For expediency,
+			// just do a simple distance check from AI to button.
+
+			float bestDist = idMath::INFINITY;
+			CMultiStateMoverButton* bestButton = NULL;
+
+			const char* goalPosition = toPosition->spawnArgs.GetString("position");
+
+			for ( int i = 0 ; i < fetchButtons.Num() ; i++ )
 			{
 				CMultiStateMoverButton* fetchButton = fetchButtons[i].GetEntity();
-				if (fetchButton == NULL) continue;
+				if ( fetchButton == NULL )
+				{
+					continue;
+				}
 
-				if (fetchButton->spawnArgs.GetString("position") != toPosition->spawnArgs.GetString("position")) 
+				if ( fetchButton->spawnArgs.GetString("position") != goalPosition ) 
+//				if (fetchButton->spawnArgs.GetString("position") != toPosition->spawnArgs.GetString("position")) 
 				{
 					// Wrong position
 					continue;
 				}
 
-				// Check if the position of the buttons is appropriate for the given toPosition
-				if (idMath::Fabs(toOrigin.z - fetchButton->GetPhysics()->GetOrigin().z) < 100)
+				idVec3 buttonOrg = fetchButton->GetPhysics()->GetOrigin();
+
+				// Check if the position of the button is appropriate for the given toPosition
+				if ( idMath::Fabs(toOrigin.z - buttonOrg.z) < 100 )
 				{
-					return fetchButton;
+					// Is this button closer to the AI than any others for this position?
+					float dist = (buttonOrg - riderOrg).LengthFast();
+
+					if (dist < bestDist)
+					{
+						bestDist = dist;
+						bestButton = fetchButton;
+					}
+
+//					return fetchButton;
 				}
 			}
+
+			return bestButton;
 		}
 		break;
 	default:

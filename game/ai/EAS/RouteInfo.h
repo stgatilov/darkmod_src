@@ -40,6 +40,7 @@ struct RouteInfo
 	RouteType routeType;		// ROUTE_TO_AREA or ROUTE_TO_CLUSTER, ...
 	int target;					// either the target AREA or the target CLUSTER number, depending on routeType
 	RouteNodeList routeNodes;	// contains the actual route node chain (WALK, USE_ELEVATOR, WALK, etc.)
+	int routeTravelTime;		// grayman #3029 - sum of individual node travel times
 
 	// Default constructor
 	RouteInfo();

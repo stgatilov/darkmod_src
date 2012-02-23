@@ -278,6 +278,8 @@ idVec3 idAASLocal::SubSampleWalkPath( int areaNum, const idVec3 &origin, const i
 	return point;
 }
 
+// grayman #3029 - new version of this method
+
 /*
 ============
 idAASLocal::WalkPathToGoal
@@ -286,7 +288,9 @@ idAASLocal::WalkPathToGoal
 ============
 */
 bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) {
+
 	// Set the default values
+
 	path.type = PATHTYPE_WALK;
 	path.moveGoal = origin;
 	path.moveAreaNum = areaNum;
@@ -295,10 +299,47 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	path.elevatorRoute = eas::RouteInfoPtr();
 	path.firstDoor = NULL;
 
-	if ( file == NULL || areaNum == goalAreaNum ) {
+	if ( ( file == NULL ) || ( areaNum == goalAreaNum ) )
+	{
 		path.moveGoal = goalOrigin;
 		return true;
 	}
+
+	// grayman #3029
+	// The previous approach was to try to find a walkable path to the goal. If one was found,
+	// elevators were ignored.
+
+	// The new approach is to sort the possible routes by estimated travel time. The first
+	// route on the route list is then the preferred route, whether it be a WALK route or
+	// an ELEVATOR route.
+	
+	// grayman #3029 - See if there's a path that uses elevators
+
+	bool elevatorAvailable = false;
+	int elevatorTravelTime = 0;
+	aasPath_t elevatorPath;
+
+	if ( ( actor != NULL ) && actor->CanUseElevators() )
+	{
+		elevatorAvailable = elevatorSystem->FindRouteToGoal(elevatorPath, areaNum, origin, goalAreaNum, goalOrigin, travelFlags, actor, elevatorTravelTime); // grayman #3029
+	}
+
+	if ( elevatorAvailable )
+	{
+		// Since an ELEVATOR route was at the top of the route list, we'll use that.
+		// The route list is sorted by estimated travel times.
+
+		// bring over data from elevatorPath that was set by FindRouteToGoal()
+
+		path.type = elevatorPath.type;
+		path.moveGoal = elevatorPath.moveGoal;
+		path.moveAreaNum = elevatorPath.moveAreaNum;
+		path.elevatorRoute = elevatorPath.elevatorRoute;
+
+		return true; // found an elevator to use
+	}
+
+	// No elevator. We'll look for a walking path
 
 	CFrobDoor* door = NULL;
 
@@ -310,33 +351,43 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	idVec3 endPos;
 	int travelTime, endAreaNum;
 
-	for ( int i = 0; i < maxWalkPathIterations; i++ )
+	for ( int i = 0 ; i < maxWalkPathIterations ; i++ )
 	{
+		// RouteToGoalArea() only considers a walking route. It ignores elevators by design.
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &door, actor ) ) {
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &door, actor ) )
+		{
 			break;
 		}
 
-		if ( !reach ) {
-			return false;
+		if ( !reach )
+		{
+			// A this point, RouteToGoalArea() returned TRUE, but there's no reachability data, which makes
+			// it useless.
+
+			//return false;
+			break;
 		}
 
-		if (door != NULL && path.firstDoor == NULL)
+		if ( ( door != NULL ) && ( path.firstDoor == NULL) )
 		{
 			path.firstDoor = door;
 		}
 
 		// no need to check through the first area
-		if ( areaNum != curAreaNum ) {
+		if ( areaNum != curAreaNum )
+		{
 			// only optimize a limited distance ahead
-			if ( (reach->start - origin).LengthSqr() > Square( maxWalkPathDistance ) ) {
+			if ( (reach->start - origin).LengthSqr() > Square( maxWalkPathDistance ) )
+			{
 #if SUBSAMPLE_WALK_PATH
 				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum, actor );
 #endif
 				return true;
 			}
 
-			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->start, travelFlags, endPos, endAreaNum, actor ) ) {
+			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->start, travelFlags, endPos, endAreaNum, actor ) )
+			{
 #if SUBSAMPLE_WALK_PATH
 				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, reach->start, travelFlags, path.moveAreaNum, actor );
 #endif
@@ -347,19 +398,23 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 		path.moveGoal = reach->start;
 		path.moveAreaNum = curAreaNum;
 
-		if ( reach->travelType != TFL_WALK ) {
+		if ( reach->travelType != TFL_WALK ) // stop if you can't walk through the next area
+		{
 			break;
 		}
 
-		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->end, travelFlags, endPos, endAreaNum, actor ) ) {
+		if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, reach->end, travelFlags, endPos, endAreaNum, actor ) )
+		{
 			return true;
 		}
 
 		path.moveGoal = reach->end;
 		path.moveAreaNum = reach->toAreaNum;
 
-		if ( reach->toAreaNum == goalAreaNum ) {
-			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, goalOrigin, travelFlags, endPos, endAreaNum, actor ) ) {
+		if ( reach->toAreaNum == goalAreaNum )
+		{
+			if ( !idAASLocal::WalkPathValid( areaNum, origin, 0, goalOrigin, travelFlags, endPos, endAreaNum, actor ) )
+			{
 #if SUBSAMPLE_WALK_PATH
 				path.moveGoal = SubSampleWalkPath( areaNum, origin, path.moveGoal, goalOrigin, travelFlags, path.moveAreaNum, actor );
 #endif
@@ -376,45 +431,45 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 		curAreaNum = reach->toAreaNum;
 
 		if ( curAreaNum == lastAreas[0] || curAreaNum == lastAreas[1] ||
-				curAreaNum == lastAreas[2] || curAreaNum == lastAreas[3] ) {
+				curAreaNum == lastAreas[2] || curAreaNum == lastAreas[3] )
+		{
 			common->Warning( "idAASLocal::WalkPathToGoal: local routing minimum going from area %d to area %d", areaNum, goalAreaNum );
 			break;
 		}
 	}
 
-	if ( !reach ) {
-		// No standard reachability, check if the actor can use elevators
-		if (actor != NULL && actor->CanUseElevators())
+	if ( reach )
+	{
+		// walking to goal
+
+		switch( reach->travelType )
 		{
-			return elevatorSystem->FindRouteToGoal(path, areaNum, origin, goalAreaNum, goalOrigin, travelFlags, actor);
+			case TFL_WALKOFFLEDGE:
+				path.type = PATHTYPE_WALKOFFLEDGE;
+				path.secondaryGoal = reach->end;
+				path.reachability = reach;
+				break;
+			case TFL_BARRIERJUMP:
+				path.type |= PATHTYPE_BARRIERJUMP;
+				path.secondaryGoal = reach->end;
+				path.reachability = reach;
+				break;
+			case TFL_JUMP:
+				path.type |= PATHTYPE_JUMP;
+				path.secondaryGoal = reach->end;
+				path.reachability = reach;
+				break;
+			default:
+				break;
 		}
 
-		return false;
+		return true;
 	}
 
-	switch( reach->travelType ) {
-		case TFL_WALKOFFLEDGE:
-			path.type = PATHTYPE_WALKOFFLEDGE;
-			path.secondaryGoal = reach->end;
-			path.reachability = reach;
-			break;
-		case TFL_BARRIERJUMP:
-			path.type |= PATHTYPE_BARRIERJUMP;
-			path.secondaryGoal = reach->end;
-			path.reachability = reach;
-			break;
-		case TFL_JUMP:
-			path.type |= PATHTYPE_JUMP;
-			path.secondaryGoal = reach->end;
-			path.reachability = reach;
-			break;
-		default:
-			break;
-	}
-
-	return true;
+	return false; // no walking path and no elevator
 }
 
+	
 /*
 ============
 idAASLocal::FlyPathValid

@@ -56,6 +56,8 @@ public:
 
 	bool					IsBlocked( void );
 
+	float					GetMoveSpeed( void ); // grayman #3029
+
 	ID_INLINE idPhysics_Parametric*	GetMoverPhysics()
 	{
 		return &physicsObj;

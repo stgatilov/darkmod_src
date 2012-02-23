@@ -1050,6 +1050,17 @@ void idMover::Event_SetMoveSpeed( float speed ) {
 	move_time = 0;			// move_time is calculated for each move when move_speed is non-0
 }
 
+// grayman #3029 - EAS needs this for station-to-station travel times
+/*
+================
+idMover::GetMoveSpeed
+================
+*/
+float idMover::GetMoveSpeed()
+{
+	return move_speed;
+}
+
 /*
 ================
 idMover::Event_SetMoveTime

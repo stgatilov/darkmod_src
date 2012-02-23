@@ -50,11 +50,11 @@ public:
 	void	SetMover(CMultiStateMover* newMover);
 
 	/**
-	 * greebo: Returns the button entity which can be used to fetch the elevator to this position.
+	 * greebo: Returns the closest button entity which can be used to fetch the elevator to this position.
 	 * 
 	 * @returns: NULL if no suitable button found.
 	 */
-	CMultiStateMoverButton*	GetFetchButton();
+	CMultiStateMoverButton*	GetFetchButton( idVec3 riderOrg ); // grayman #3029
 
 	/** 
 	 * greebo: Returns the button entity which can be used to move the associated elevator to 

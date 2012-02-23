@@ -24,6 +24,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "EAS.h"
 
+#define ELEVATOR_TRAVEL_FACTOR 21	// Should be 15, which worked fine for all test maps. But subsequent
+									// testing with the Outpost FM required bumping it to 21 so as not to wreck
+									// how the AI patrolled there.
+
 namespace eas {
 
 tdmEAS::tdmEAS(idAASLocal* aas) :
@@ -43,6 +47,35 @@ void tdmEAS::AddElevator(CMultiStateMover* mover)
 	_elevators.Alloc() = mover;
 }
 
+// grayman - debug cluster data
+
+#if 0
+void tdmEAS::PrintClusterInfo()
+{
+	// print all route counts from cluster to cluster
+
+	int numClusters = _aas->file->GetNumClusters();
+	for ( int j = 1 ; j < numClusters ; j++ )
+	{
+		for ( int k = 1 ; k < numClusters ; k++)
+		{
+			if ( k != j )
+			{
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("..... there are %d routes from %d to %d\r",_clusterInfo[j]->routeToCluster[k].size(),j,k);
+			}
+		}
+	}
+	
+	// print which cluster areas live in, and show area bounds
+
+	int numAreas = _aas->file->GetNumAreas();
+	for ( int j = 0 ; j < numAreas ; j++ )
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("..... area %d (%s) is in cluster %d\r",j,_aas->file->GetArea(j).bounds.ToString(),_aas->file->GetArea(j).cluster);
+	}
+}
+#endif
+
 void tdmEAS::Compile()
 {
 	if (_aas == NULL)
@@ -58,6 +91,8 @@ void tdmEAS::Compile()
 
 	// Now setup the connection information between clusters
 	SetupClusterRouting();
+
+//	PrintClusterInfo(); // grayman - for debugging cluster data
 }
 
 void tdmEAS::SetupClusterInfoStructures() 
@@ -132,6 +167,73 @@ void tdmEAS::AssignElevatorsToClusters()
 	gameLocal.Printf("[%s]: Assigned %d multistatemover positions to AAS areas and ignored %d.\n", _aas->name.c_str(), _elevatorStations.size(), ignoredStations);
 }
 
+// grayman - debug route info
+#if 0
+void tdmEAS::PrintRoutes()
+{
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Routing data ---------------------------------\r");
+	for ( std::size_t startCluster = 1 ; startCluster < _clusterInfo.size() ; startCluster++ )
+	{
+		for ( std::size_t goalCluster = 1 ; goalCluster < _clusterInfo.size() ; goalCluster++ )
+		{
+			if ( startCluster == goalCluster )
+			{
+				continue;
+			}
+
+			int numRoutes = static_cast<int>(_clusterInfo[startCluster]->routeToCluster[goalCluster].size());
+			if ( numRoutes == 0 )
+			{
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No routes from %d to %d\r", startCluster, goalCluster);
+				continue;
+			}
+
+			// print the routing nodes
+
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("----- %d Routes from %d to %d\r", numRoutes, startCluster, goalCluster);
+			RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+			int counter = 1;
+			for ( RouteInfoList::const_iterator j = routes.begin() ; j != routes.end() ; ++j )
+			{
+				RouteType type = (*j)->routeType;
+				idStr routeType = "BAD ROUTE TYPE";
+				switch(type)
+				{
+				case ROUTE_DUMMY:
+					routeType = "DUMMY";
+					break;
+				case ROUTE_TO_AREA:
+					routeType = "AREA";
+					break;
+				case ROUTE_TO_CLUSTER:
+					routeType = "CLUSTER";
+					break;
+				default:
+					break;
+				}
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     ==========\r");
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Route %d is type %s with routeTravelTime %d\r", counter, routeType.c_str(),(*j)->routeTravelTime);
+				RouteNodeList& routeNodes = (*j)->routeNodes;
+				for ( RouteNodeList::const_iterator k = routeNodes.begin() ; k != routeNodes.end() ; ++k )
+				{
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     node----------\r");
+					ActionType actionType = (*k)->type;
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*k)->toArea);
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*k)->toCluster);
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*k)->elevator);
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*k)->elevatorStation);
+					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*k)->nodeTravelTime);
+				}
+				counter++;
+			}
+		}
+	}
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("End of routing data ---------------------------------\r");
+}
+#endif
+
 void tdmEAS::SetupClusterRouting()
 {
 	// First, find all the reachable elevator stations (for each cluster)
@@ -143,30 +245,102 @@ void tdmEAS::SetupClusterRouting()
 	// Remove all dummy routes
 	CondenseRouteInfo();
 
-	// Sort the remaining routes (number of hops is the key)
+//	PrintRoutes(); // print condensed routes
+
+	SumRouteTravelTimes(); // grayman #3029
+
+	// Sort the remaining routes (travel time is the key) // grayman #3029 - change hop check to travelTime check
 	SortRoutes();
+
+//	PrintRoutes(); // print final routes
 }
 
 void tdmEAS::SetupRoutesBetweenClusters()
 {
-	for (std::size_t startCluster = 0; startCluster < _clusterInfo.size(); startCluster++)
+	// grayman #3029 - this was clearing a cluster->cluster route list,
+	// then filling it in using the same loop. The problem with this is
+	// that some routes further down in the list may be filled in by
+	// routes earlier in the list, because the further ones are subroutes
+	// of the earlier ones. Then this loop would wipe out any work that
+	// was already done when the later instance of the route was reached.
+
+	// Instead, clear the routes in one loop and fill them in using a second loop
+
+	// Clear routing lists.
+
+	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
 	{
 		int startArea = _aas->GetAreaInCluster(startCluster);
 
-		if (startArea <= 0) continue;
-		
-		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
+		if (startArea <= 0)
 		{
-			// No routes so far, clear the list
+			continue;
+		}
+		
+		for ( std::size_t goalCluster = 0 ; goalCluster < _clusterInfo[startCluster]->routeToCluster.size() ; goalCluster++ )
+		{
 			_clusterInfo[startCluster]->routeToCluster[goalCluster].clear();
+		}
+	}
 
-			if (goalCluster == startCluster) continue;
+	// Fill in routing lists.
+
+	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
+	{
+		int startArea = _aas->GetAreaInCluster(startCluster);
+
+		if (startArea <= 0)
+		{
+			continue;
+		}
+		
+		for ( std::size_t goalCluster = 0 ; goalCluster < _clusterInfo[startCluster]->routeToCluster.size() ; goalCluster++ )
+		{
+			if ( _clusterInfo[startCluster]->routeToCluster[goalCluster].size() > 0 )
+			{
+				continue; // routes already established from startCluster to goalCluster
+			}
+
+			if ( goalCluster == startCluster )
+			{
+				continue;
+			}
 
 			int goalArea = _aas->GetAreaInCluster(goalCluster);
-			if (goalArea <= 0) continue;
-
+			if ( goalArea <= 0 )
+			{
+				continue;
+			}
+			
 			_routingIterations = 0;
 			FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
+		}
+	}
+}
+
+// grayman #3029 - sum the travel times for each node in a route and place the total in the route info
+
+void tdmEAS::SumRouteTravelTimes()
+{
+	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
+	{
+		for ( std::size_t goalCluster = 0 ; goalCluster < _clusterInfo[startCluster]->routeToCluster.size() ; goalCluster++ )
+		{
+			RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
+
+			if ( !routes.empty() )
+			{
+				for ( RouteInfoList::const_iterator route = routes.begin() ; route != routes.end() ; route++ )
+				{
+					RouteNodeList& routeNodes = (*route)->routeNodes;
+					int travelTime = 0;
+					for ( RouteNodeList::const_iterator node = routeNodes.begin() ; node != routeNodes.end() ; node++ )
+					{
+						travelTime += (*node)->nodeTravelTime;
+					}
+					(*route)->routeTravelTime = travelTime;
+				}
+			}
 		}
 	}
 }
@@ -184,28 +358,51 @@ void tdmEAS::SortRoutes()
 
 void tdmEAS::SortRoute(int startCluster, int goalCluster)
 {
-	// Use a std::map to sort the Routes after their number of "hops"
+	// grayman #3029 - hop sorting can throw away the most desirable elevator
+	// route. Sort by travelTime instead.
+
+	// Use a std::map to sort the Routes by travelTime.
 	typedef std::map<std::size_t, RouteInfoPtr> RouteSortMap;
 
 	RouteInfoList& routeList = _clusterInfo[startCluster]->routeToCluster[goalCluster];
 
 	RouteSortMap sorted;
 
-	// Insert the routeInfo structures, using the hop size as index
+	// Insert the routeInfo structures, using the routeTravelTime as index.
+
 	for (RouteInfoList::const_iterator i = routeList.begin(); i != routeList.end(); ++i)
 	{
 		sorted.insert(RouteSortMap::value_type(
-			(*i)->routeNodes.size(), // number of hops
-			(*i)					 // RouteInfoPtr
+			(*i)->routeTravelTime,	// travelTime
+			(*i)					// RouteInfoPtr
 		));
 	}
 
 	// Wipe the unsorted list
 	routeList.clear();
 
-	// Re-insert the items
-	for (RouteSortMap::const_iterator i = sorted.begin(); i != sorted.end(); ++i)
+	// Re-insert the items.
+	// For ELEVATOR routes, keep only the shortest. It should be the first
+	// ELEVATOR route in the route list, because the list was sorted above,
+	// but we'll check them all just in case.
+
+	// Pure WALK routes have only 1 route node. ELEVATOR routes have at least
+	// 2 route nodes, so we'll recognize ELEVATOR routes if their node count
+	// is > 1.
+
+	int bestTime = 100000;
+	for ( RouteSortMap::const_iterator i = sorted.begin() ; i != sorted.end() ; i++ )
 	{
+		if ( (i->second)->routeNodes.size() > 1 )
+		{
+			int routeTravelTime = (i->second)->routeTravelTime;
+			if ( routeTravelTime > bestTime )
+			{
+				continue; // ignore
+			}
+			bestTime = routeTravelTime;
+		}
+		
 		routeList.push_back(i->second);
 	}
 }
@@ -379,7 +576,6 @@ ElevatorStationInfoPtr tdmEAS::GetElevatorStationInfo(int index)
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
 {
 	_routingIterations++;
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("EAS routing iteration level = %d\r", _routingIterations);
 
 	/**
 	 * greebo: Pseudo-Code:
@@ -396,7 +592,7 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 	else if (_clusterInfo[startCluster]->routeToCluster[goalCluster].size() > 0)
 	{
 		// Routing information to the goal cluster is right there, return it
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Route from cluster %d to %d already exists.\r", startCluster, goalCluster);
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("We already tried to find a route from cluster %d to %d.\r", startCluster, goalCluster);
 	}
 	else
 	{
@@ -420,94 +616,135 @@ RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int g
 			// Walk path possible, allocate a new RouteInfo with a WALK node
 			RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
 
-			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea, goalCluster));
+			RouteNodePtr node(new RouteNode(ACTION_WALK, goalArea, goalCluster, -1, -1, travelTime)); // grayman #3029 - add the travelTime for a WALK node
 			info->routeNodes.push_back(node);
 
 			// Save this WALK route into the cluster
 			InsertUniqueRouteInfo(startCluster, goalCluster, info);
 		}
-		else 
+
+		// grayman #3029 - whether we found a walking route or not,
+		// let's see if there's an elevator route.
+
+		// Check all elevator stations that are reachable from this cluster
+		for (ElevatorStationInfoList::const_iterator station = _clusterInfo[startCluster]->reachableElevatorStations.begin();
+				station != _clusterInfo[startCluster]->reachableElevatorStations.end(); ++station)
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Can NOT walk from cluster %d to %d.\r", startCluster, goalCluster);
+			const ElevatorStationInfoPtr& elevatorInfo = *station;
+			int startStationIndex = GetElevatorStationIndex(elevatorInfo);
 
-			// No walk path possible, check all elevator stations that are reachable from this cluster
-			for (ElevatorStationInfoList::const_iterator station = _clusterInfo[startCluster]->reachableElevatorStations.begin();
-				 station != _clusterInfo[startCluster]->reachableElevatorStations.end(); ++station)
+			// Get all stations reachable via this elevator
+			const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
+
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found %d elevator stations reachable from cluster %d (goal cluster = %d).\r", positionList.Num(), startCluster, goalCluster);
+
+			// Now look at all elevator floors and route from there
+			for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
 			{
-				const ElevatorStationInfoPtr& elevatorInfo = *station;
-				int startStationIndex = GetElevatorStationIndex(elevatorInfo);
+				CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
 
-				// Get all stations reachable via this elevator
-				const idList<MoverPositionInfo>& positionList = elevatorInfo->elevator.GetEntity()->GetPositionInfoList();
-
-				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found %d elevator stations reachable from cluster %d (goal cluster = %d).\r", positionList.Num(), startCluster, goalCluster);
-
-				// Now look at all elevator floors and route from there
-				for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
+				if (positionEnt == elevatorInfo->elevatorPosition.GetEntity())
 				{
-					CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+					// grayman #3029 - if we comment this line, does this let AI walk
+					// across a parked elevator to get to the hallway beyond? (Answer: Yes in one direction, NO in the other)
+					// Also, does it screw up normal elevator use? (Yes)
+					continue; // this is the same position we are starting from, skip that
+				}
 
-					if (positionEnt == elevatorInfo->elevatorPosition.GetEntity())
+				int targetStationIndex = GetElevatorStationIndex(positionEnt);
+
+				int nextArea = GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin());
+
+				if (nextArea <= 0)
+				{
+					continue;
+				}
+
+				int nextCluster = _aas->file->GetArea(nextArea).cluster;
+
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Checking elevator station %d reachable from cluster %d (goal cluster = %d).\r", startStationIndex, startCluster, goalCluster);
+
+				if (nextCluster == goalCluster)
+				{
+					// Hooray, the elevator leads right to the goal cluster, write that down
+					RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+
+					// Walk to the elevator station and use it
+
+					// grayman #3029 - Need to get travelTime for that walk
+
+					int t = 0; // travelTime
+					if ( startArea != elevatorInfo->areaNum )
 					{
-						continue; // this is the same position we are starting from, skip that
+						idReachability* r;
+						// Workaround: Include the TFL_INVALID flag to include deactivated AAS areas
+						_aas->RouteToGoalArea(startArea, _aas->AreaCenter(startArea),elevatorInfo->areaNum, TFL_WALK|TFL_AIR|TFL_INVALID, t, &r, NULL, NULL);
 					}
 
-					int targetStationIndex = GetElevatorStationIndex(positionEnt);
+					RouteNodePtr walkNode(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum, elevatorInfo->elevatorNum, startStationIndex, t)); // grayman #3029
+						
+					// Use the elevator to reach the elevator station in the next cluster
+					int elevatorTravelTime = ( positionEnt->GetPhysics()->GetOrigin() - elevatorInfo->elevatorPosition.GetEntity()->GetPhysics()->GetOrigin() ).LengthFast()/(elevatorInfo->elevator.GetEntity()->GetMoveSpeed());
+					RouteNodePtr useNode(new RouteNode(ACTION_USE_ELEVATOR,
+														nextArea,
+														nextCluster,
+														elevatorInfo->elevatorNum,
+														targetStationIndex,
+														ELEVATOR_TRAVEL_FACTOR*elevatorTravelTime)); // grayman #3029 - factor needed to normalize with horizontal traveltimes
 
-					int nextArea = GetAreaNumForPosition(positionEnt->GetPhysics()->GetOrigin());
-					if (nextArea <= 0) continue;
+					info->routeNodes.push_back(walkNode);
+					info->routeNodes.push_back(useNode);
 
-					int nextCluster = _aas->file->GetArea(nextArea).cluster;
+					// Save this USE_ELEVATOR route into this startCluster
+					InsertUniqueRouteInfo(startCluster, goalCluster, info);
 
-					DM_LOG(LC_AI, LT_INFO)LOGSTRING("Checking elevator station %d reachable from cluster %d (goal cluster = %d).\r", startStationIndex, startCluster, goalCluster);
+					DM_LOG(LC_AI, LT_INFO)LOGSTRING("Elevator leads right to the target cluster %d.\r", goalCluster);
+				}
+				else 
+				{
+					DM_LOG(LC_AI, LT_INFO)LOGSTRING("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
+					// The elevator station does not start in the goal cluster, find a way from there
+					RouteInfoList routes = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
 
-					if (nextCluster == goalCluster)
+					for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); ++i)
 					{
-						// Hooray, the elevator leads right to the goal cluster, write that down
-						RouteInfoPtr info(new RouteInfo(ROUTE_TO_CLUSTER, goalCluster));
+						RouteInfoPtr& foundRoute = *i;
 
-						// Walk to the elevator station and use it
-						RouteNodePtr walkNode(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum, elevatorInfo->elevatorNum, startStationIndex));
-						// Use the elevator to reach the elevator station in the next cluster
-						RouteNodePtr useNode(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum, targetStationIndex));
-
-						info->routeNodes.push_back(walkNode);
-						info->routeNodes.push_back(useNode);
-
-						// Save this USE_ELEVATOR route into this startCluster
-						InsertUniqueRouteInfo(startCluster, goalCluster, info);
-
-						DM_LOG(LC_AI, LT_INFO)LOGSTRING("Elevator leads right to the target cluster %d.\r", goalCluster);
-					}
-					else 
-					{
-						DM_LOG(LC_AI, LT_INFO)LOGSTRING("Investigating route to target cluster %d, starting from station cluster %d.\r", goalCluster, nextCluster);
-						// The elevator station does not start in the goal cluster, find a way from there
-						RouteInfoList routes = FindRoutesToCluster(nextCluster, nextArea, goalCluster, goalArea);
-
-						for (RouteInfoList::iterator i = routes.begin(); i != routes.end(); ++i)
+						// Evaluate the suggested route (check for redundancies)
+						if (!EvaluateRoute(startCluster, goalCluster, elevatorInfo->elevatorNum, foundRoute))
 						{
-							RouteInfoPtr& foundRoute = *i;
-
-							// Evaluate the suggested route (check for redundancies)
-							if (!EvaluateRoute(startCluster, goalCluster, elevatorInfo->elevatorNum, foundRoute))
-							{
-								continue;
-							}
-
-							// Route was accepted, copy it
-							RouteInfoPtr newRoute(new RouteInfo(*foundRoute));
-
-							// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
-							RouteNodePtr useNode(new RouteNode(ACTION_USE_ELEVATOR, nextArea, nextCluster, elevatorInfo->elevatorNum, targetStationIndex));
-							RouteNodePtr walkNode(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum, elevatorInfo->elevatorNum, startStationIndex));
-
-							newRoute->routeNodes.push_front(useNode);
-							newRoute->routeNodes.push_front(walkNode);
-							
-							// Add the compiled information to our repository
-							InsertUniqueRouteInfo(startCluster, goalCluster, newRoute);
+							continue;
 						}
+
+						// Route was accepted, copy it
+						RouteInfoPtr newRoute(new RouteInfo(*foundRoute));
+
+						// Append the valid route objects to the existing chain, but add a "walk to elevator station" to the front
+						int elevatorTravelTime = ( positionEnt->GetPhysics()->GetOrigin() - elevatorInfo->elevatorPosition.GetEntity()->GetPhysics()->GetOrigin() ).LengthFast()/(elevatorInfo->elevator.GetEntity()->GetMoveSpeed());
+						RouteNodePtr useNode(new RouteNode(ACTION_USE_ELEVATOR,
+															nextArea,
+															nextCluster,
+															elevatorInfo->elevatorNum,
+															targetStationIndex,
+															ELEVATOR_TRAVEL_FACTOR*elevatorTravelTime)); // // grayman #3029 - factor needed to normalize with horizontal traveltimes
+
+						// grayman #3029 - Need to get travelTime for the walk node
+
+						int t = 0; // travelTime
+						if ( startArea != elevatorInfo->areaNum )
+						{
+							idReachability* r;
+							// Workaround: Include the TFL_INVALID flag to include deactivated AAS areas
+							_aas->RouteToGoalArea(startArea, _aas->AreaCenter(startArea),elevatorInfo->areaNum, TFL_WALK|TFL_AIR|TFL_INVALID, t, &r, NULL, NULL);
+						}
+
+						RouteNodePtr walkNode(new RouteNode(ACTION_WALK, elevatorInfo->areaNum, elevatorInfo->clusterNum, elevatorInfo->elevatorNum, startStationIndex, t)); // grayman #3029
+
+						newRoute->routeNodes.push_front(useNode);
+						newRoute->routeNodes.push_front(walkNode);
+							
+						// Add the compiled information to our repository
+						InsertUniqueRouteInfo(startCluster, goalCluster, newRoute);
 					}
 				}
 			}
@@ -539,12 +776,11 @@ bool tdmEAS::EvaluateRoute(int startCluster, int goalCluster, int forbiddenEleva
 	}
 
 	// Does the route come across our source cluster?
-	for (RouteNodeList::const_iterator node = route->routeNodes.begin(); 
-		 node != route->routeNodes.end(); ++node)
+	for (RouteNodeList::const_iterator node = route->routeNodes.begin() ; node != route->routeNodes.end(); ++node)
 	{
 		if ((*node)->toCluster == startCluster || (*node)->elevator == forbiddenElevator)
 		{
-			// Route is coming across the same cluster as we started, this is a loop, reject
+			// Route is coming across the same cluster or elevator since we started, so this is a loop. Reject.
 			return false;
 		}
 	}
@@ -591,11 +827,14 @@ int tdmEAS::GetElevatorStationIndex(CMultiStateMoverPosition* positionEnt)
 	return -1;
 }
 
-bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor) 
+// grayman #3029 - look at the first route to see if it's an ELEVATOR route
+bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor, int &elevatorTravelTime) // grayman #3029
 {
 	assert(_aas != NULL);
 	int startCluster = _aas->file->GetArea(areaNum).cluster;
 	int goalCluster = _aas->file->GetArea(goalAreaNum).cluster;
+
+	bool result = false; // grayman #3029 - assume failure
 
 	// Check if we are starting from a portal
 	if (startCluster < 0)
@@ -611,26 +850,48 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 
 	const RouteInfoList& routes = _clusterInfo[startCluster]->routeToCluster[goalCluster];
 
-	// Draw all routes to the target area
-	if (!routes.empty())
+	// Check all routes to the target area
+	if ( !routes.empty() )
 	{
-		const RouteInfoPtr& route = *routes.begin();
+		RouteInfoList::const_iterator route = routes.begin();
 
-		if (route->routeNodes.size() < 2) {
-			// Valid routes have at least two nodes
-			return false;
+		if ( (*route)->routeNodes.size() < 2 ) // Valid elevator routes have at least two nodes
+		{
+			return false; // we were looking for an ELEVATOR route as the first route in the list and didn't find one
 		}
 
-		// We have a valid route, set the elevator flag on the path type
+		// We have a valid ELEVATOR route, set the elevator flag on the path type
+
 		path.type = PATHTYPE_ELEVATOR;
 		path.moveGoal = goalOrigin;
 		path.moveAreaNum = goalAreaNum;
-		path.elevatorRoute = route;
-		return true;
+
+#if 0
+		// grayman - for debugging, print the nodes for this route
+		RouteType type = (*route)->routeType;
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
+		RouteNodeList& routeNodes = (*route)->routeNodes;
+
+		for ( RouteNodeList::const_iterator node = routeNodes.begin() ; node != routeNodes.end() ; node++ )
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     node:\r");
+			ActionType actionType = (*node)->type;
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*node)->toArea);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*node)->toCluster);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*node)->elevator);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*node)->elevatorStation);
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*node)->nodeTravelTime);
+		}
+#endif
+		path.elevatorRoute = *route;
+		elevatorTravelTime = (*route)->routeTravelTime;
+		result = true;
 	}
 
-	return false;
+	return result;
 }
+
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)
 {

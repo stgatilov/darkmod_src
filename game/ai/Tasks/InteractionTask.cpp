@@ -78,13 +78,39 @@ bool InteractionTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	if (_waitEndTime > 0 && gameLocal.time >= _waitEndTime)
+	// grayman #3029 - special case for elevator fetch buttons: we don't
+	// want an AI to fetch a moving elevator. He has to wait for it to come to rest.
+
+	if (_interactEnt->spawnArgs.GetBool("fetch","0"))
+	{
+		for ( int i = 0 ; i < _interactEnt->targets.Num() ; i++ )
+		{
+			idEntity* ent = _interactEnt->targets[i].GetEntity();
+
+			if (ent == NULL)
+			{
+				continue;
+			}
+
+			const char *classname;
+			ent->spawnArgs.GetString("classname", NULL, &classname);
+			if (idStr::Cmp(classname, "atdm:mover_elevator") == 0)
+			{
+				if (!ent->IsAtRest())
+				{
+					return false; // wait for the elevator to come to rest
+				}
+			}
+		}
+	}
+
+	if ( ( _waitEndTime > 0 ) && ( gameLocal.time >= _waitEndTime) )
 	{
 		// Trigger the frob action script
 		_interactEnt->FrobAction(true);
 		return true;
 	}
-	else if (_waitEndTime < 0 && owner->GetMoveStatus() == MOVE_STATUS_DONE)
+	else if ( ( _waitEndTime < 0 ) && ( owner->GetMoveStatus() == MOVE_STATUS_DONE) )
 	{
 		// We've reached our target, turn and look
 		owner->TurnToward(_interactEnt->GetPhysics()->GetOrigin());
@@ -108,7 +134,7 @@ bool InteractionTask::Perform(Subsystem& subsystem)
 		}
 	}
 	
-	return false; // finish this task
+	return false; // continue this task
 }
 
 void InteractionTask::OnFinish(idAI* owner)

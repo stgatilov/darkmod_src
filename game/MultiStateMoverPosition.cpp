@@ -61,12 +61,15 @@ void CMultiStateMoverPosition::SetMover(CMultiStateMover* newMover)
 	mover = newMover;
 }
 
-CMultiStateMoverButton*	CMultiStateMoverPosition::GetFetchButton()
+CMultiStateMoverButton*	CMultiStateMoverPosition::GetFetchButton( idVec3 riderOrg ) // grayman #3029
 {
 	CMultiStateMover* m = mover.GetEntity();
-	if (m == NULL) return NULL;
+	if (m == NULL)
+	{
+		return NULL;
+	}
 
-	return m->GetButton(this, NULL, BUTTON_TYPE_FETCH);
+	return m->GetButton(this, NULL, BUTTON_TYPE_FETCH, riderOrg); // grayman #3029
 }
 
 CMultiStateMoverButton*	CMultiStateMoverPosition::GetRideButton(CMultiStateMoverPosition* toPosition)
@@ -74,7 +77,7 @@ CMultiStateMoverButton*	CMultiStateMoverPosition::GetRideButton(CMultiStateMover
 	CMultiStateMover* m = mover.GetEntity();
 	if (m == NULL) return NULL;
 
-	return m->GetButton(toPosition, this, BUTTON_TYPE_RIDE);
+	return m->GetButton(toPosition, this, BUTTON_TYPE_RIDE, vec3_zero); // grayman #3029
 }
 
 void CMultiStateMoverPosition::Save(idSaveGame *savefile) const

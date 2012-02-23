@@ -53,7 +53,18 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	owner->PushMove(); // Save the move
+	// grayman #3029 - when using an elevator, PushMove() once so you can
+	// pop the move to get off the elevator. Then PushMove() a second time
+	// so you can pop the move once you're off the elevator. This is
+	// necessary because you could encounter the next elevator while
+	// still getting off this one, and it's ignored because you're
+	// still handling this one. A second push/pop lets you see the
+	// new elevator once you're finished with the current one.
+
+	owner->PushMove(); // Save the move for once you're off the elevator
+	owner->PushMove(); // Save the move that will get you off the elevator
+
+	owner->m_HandlingElevator = true; // grayman #3029 - moved from State
 
 	if (_routeInfo.routeNodes.size() < 2)
 	{
@@ -83,13 +94,26 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	if (owner->ReachedPos(pos->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
 	{
 		// We are already at the elevator position, this is true if the elevator is there
+		owner->m_CanSetupDoor = false; // grayman #3029
 		_state = EInitiateMoveToRideButton;
 	}
 	// Start moving towards the elevator station
 	else if (owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
 	{
 		// If AI_MOVE_DONE is true, we are already at the target position
-		_state = (owner->GetMoveStatus() == MOVE_STATUS_DONE) ? EInitiateMoveToRideButton : EMovingTowardsStation;
+		// grayman #3029 - can't set up doors if we're moving toward the ride button, but
+		// we can if moving toward the station.
+
+		if ( owner->GetMoveStatus() == MOVE_STATUS_DONE )
+		{
+			_state = EInitiateMoveToRideButton;
+			owner->m_CanSetupDoor = false;
+		}
+		else
+		{
+			_state = EMovingTowardsStation;
+		}
+//		_state = (owner->GetMoveStatus() == MOVE_STATUS_DONE) ? EInitiateMoveToRideButton : EMovingTowardsStation;
 	}
 	else
 	{
@@ -157,7 +181,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				_state = EInitiateMoveToFetchButton;
 			}
 			else if ((owner->GetPhysics()->GetOrigin() - pos->GetPhysics()->GetOrigin()).LengthSqr() < 500*500 &&
-				      (owner->CanSeeExt(pos, true, false) || owner->CanSeeExt(elevator, true, false)))
+				     (owner->CanSeeExt(pos, true, false) || owner->CanSeeExt(elevator, true, false)))
 			{
 				if (elevator->IsAtPosition(pos))
 				{
@@ -168,20 +192,18 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					// add ourself to the user lists of the elevator and the elevator position
 					elevator->GetUserManager().AddUser(owner);
 					pos->GetUserManager().AddUser(owner);
-
 				}
 				else
 				{
 					// elevator is somewhere else
 					_state = EInitiateMoveToFetchButton;
 				}
-
 			}	
 			break;
 
 		case EInitiateMoveToFetchButton:
 		{
-			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton(owner->GetPhysics()->GetOrigin()); // grayman #3029
 			if (fetchButton == NULL)
 			{
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
@@ -195,7 +217,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 		case EMovingToFetchButton:
 		{
-			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton(owner->GetPhysics()->GetOrigin()); // grayman #3029
 			if (fetchButton == NULL)
 			{
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
@@ -217,27 +239,27 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				masterElevatorUser = elevator->GetUserManager().GetMasterUser();
 				numPositionUsers = pos->GetUserManager().GetNumUsers();
 
-				if (numElevatorUsers > 1 && masterElevatorUser != owner)
+				if ( ( numElevatorUsers > 1 ) && ( masterElevatorUser != owner) )
 				{
-					// elevator is in use, have to wait
+					// If the elevator is at the right position, get onto it.
+					// If the elevator isn't at the right position, it's in
+					// use and you have to wait for your turn.
 
-					// elevator is at the right position, get onto it
 					if (elevator->IsAtPosition(pos))
 					{
 						owner->MoveToPosition(pos->GetPhysics()->GetOrigin());
 						_state = EMoveOntoElevator;
 					}
 				}
-				else
+				else if (elevator->IsAtRest()) // grayman #3029 - don't call a moving elevator (the player is probably using it)
 				{
 					// raise hand to press button
 					owner->TurnToward(fetchButton->GetPhysics()->GetOrigin());
 					owner->Event_LookAtPosition(fetchButton->GetPhysics()->GetOrigin(), 1);
 					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 					_state = EPressFetchButton;
-					_waitEndTime = gameLocal.time + 400;
+					_waitEndTime = gameLocal.time + 1000; // grayman #3029 - was 400, which isn't long enough
 				}
-
 			}
 			else if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
@@ -249,7 +271,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 
 		case EPressFetchButton:
 		{
-			CMultiStateMoverButton* fetchButton = pos->GetFetchButton();
+			CMultiStateMoverButton* fetchButton = pos->GetFetchButton(owner->GetPhysics()->GetOrigin()); // grayman #3029
 			if (fetchButton == NULL)
 			{
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
@@ -288,11 +310,20 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		{
 			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
-				// Move towards ride button
-				_state = EInitiateMoveToRideButton;
-
 				// remove ourself from users list of elevator station
 				pos->GetUserManager().RemoveUser(owner);
+
+				// grayman #3029 - Once we become the master elevator user, we can push
+				// the ride button, assuming we still need to do so. Otherwise,
+				// a slow previous master elevator user who hasn't left the elevator yet could have
+				// problems getting off if we push the button now and the elevator starts moving.
+
+				if ( masterElevatorUser == owner )
+				{
+					// Move towards ride button
+					_state = EInitiateMoveToRideButton;
+					owner->m_CanSetupDoor = false; // grayman #3029
+				}
 			}
 			else if (owner->OnElevator(false))
 			{
@@ -312,13 +343,11 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-
 					// move towards fetch button
 					owner->StopMove(MOVE_STATUS_DONE);
 					_state = EInitiateMoveToFetchButton;
 				}
 			}
-
 		}
 		break;
 
@@ -379,7 +408,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 					owner->Event_LookAtPosition(rideButton->GetPhysics()->GetOrigin(), 1);
 					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 					_state = EPressRideButton;
-					_waitEndTime = gameLocal.time + 400;
+					_waitEndTime = gameLocal.time + 1000; // grayman #3029 - was 400, which isn't long enough
 				}
 			}
 		}
@@ -419,7 +448,7 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			if (elevator->IsAtPosition(targetPos))
 			{
 				// reached target station, get off the elevator
-				_success = true;
+				// _success = true; // grayman #3029 - move this to EGetOffElevator, because completing that is the true meaning of success
 				_state = EGetOffElevator;
 				// Restore the movestate we had before starting this task
 				owner->PopMove();
@@ -433,12 +462,19 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 			break;
 		
 		case EGetOffElevator:
-			if (!owner->OnElevator(false))
+			if ( !owner->OnElevator(false) || ( owner->GetMoveStatus() == MOVE_STATUS_DONE ) ) // grayman #3029 - in case we stopped for some reason
 			{
+				_success = true;
 				return true;
 			}
-			break;
 
+			if (!elevator->IsAtPosition(targetPos)) // grayman #3029 - player hitting a fetch button elsewhere can cause this
+			{
+				// elevator moved away while we attempted to get off, so ride it out and try again
+				_state = ERideOnElevator;
+				_waitEndTime = gameLocal.time + 500;
+			}
+			break;
 
 		default:
 			break;
@@ -448,7 +484,9 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 	// Optional debug output
 	if (cv_ai_elevator_show.GetBool())
 	{
-		DebugDraw(owner);
+	CMultiStateMoverPosition* pos = stationInfo->elevatorPosition.GetEntity();
+	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
+		DebugDraw(owner, pos, elevator);
 	}
 
 	return false; // not finished yet
@@ -461,11 +499,60 @@ bool HandleElevatorTask::IsElevatorStationReachable(CMultiStateMoverPosition* po
 	return true;
 }
 
+#if 0
+// grayman - print elevator queue for debugging
+
+void HandleElevatorTask::PrintElevQueue(CMultiStateMover* elevator)
+{
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Elevator queue ...\r");
+	UserManager eum = elevator->GetUserManager();
+	int numUsers = eum.GetNumUsers();
+	for ( int i = 0 ; i < numUsers ; i++ )
+	{
+		idActor* user = eum.GetUserAtIndex(i);
+		if ( user != NULL )
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     %d: %s\r",i,user->name.c_str());
+		}
+	}
+}
+#endif
+
+void HandleElevatorTask::ReorderElevQueue(CMultiStateMover* elevator)
+{
+	int numUsers = elevator->GetUserManager().GetNumUsers();
+	if (numUsers > 1)
+	{
+		idVec3 elevOrigin = elevator->GetPhysics()->GetOrigin();
+		idActor* closestUser = NULL;	// the user closest to the elevator
+		int masterIndex = 0;			// index of closest user
+		float minDistance = idMath::INFINITY;		// minimum distance of all users
+		for ( int i = 0 ; i < numUsers ; i++ )
+		{
+			idActor* user = elevator->GetUserManager().GetUserAtIndex(i);
+			if ( user != NULL )
+			{
+				float distance = (user->GetPhysics()->GetOrigin() - elevOrigin).LengthFast();
+				if (distance < minDistance)
+				{
+					masterIndex = i;
+					closestUser = user;
+					minDistance = distance;
+				}
+			}
+		}
+
+		if (masterIndex > 0) // only rearrange the queue if someone other than the current master is closer
+		{
+			elevator->GetUserManager().RemoveUser(closestUser);			// remove AI from current spot
+			elevator->GetUserManager().InsertUserAtIndex(closestUser,0);	// and put him at the top
+		}
+	}
+}
+
 void HandleElevatorTask::OnFinish(idAI* owner)
 {
 	//Memory& memory = owner->GetMemory();
-
-	owner->m_HandlingElevator = false;
 
 	// Grab the first RouteNode
 	const eas::RouteNodePtr& node = *_routeInfo.routeNodes.begin();
@@ -481,6 +568,22 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 	CMultiStateMover* elevator = stationInfo->elevator.GetEntity();
 	elevator->GetUserManager().RemoveUser(owner);
 
+	// grayman #3029 - reorder the elevator queue. This should handle this situation:
+	//
+	// 1 - elevator arrives at a station and A gets off
+	// 2 - B is waiting at the station, but isn't the master
+	// 3 - as soon as the elevator arrives, B moves to get on the elevator
+	// 4 - C is waiting at a different station, and is the master
+	// 5 - as soon as A exits, C is allowed to push the fetch button
+	// 6 - the elevator starts to move to C's station, but B may or may not be on the elevator
+
+	// If we reorder the queue to make B the master because he's closer to the elevator,
+	// C won't push his fetch button, and B won't have a problem. This can make AI wait a bit
+	// longer at times for the elevator, but it's better than having AI start to step onto
+	// an elevator, just to have to turn around and awkwardly step off the elevator as it
+	// begins to move.
+
+	ReorderElevQueue(elevator);
 
 	if (!_success)
 	{
@@ -489,8 +592,13 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 
 		// Restore the movestate we had before starting this task
 		owner->PopMove();
-
 	}
+
+	owner->m_HandlingElevator = false;
+	owner->m_CanSetupDoor = true; // grayman #3029
+
+	// grayman #3029 - restore from the first push, regardless of success or failure
+	owner->PopMove();
 }
 
 bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosition* pos)
@@ -498,7 +606,7 @@ bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosit
 	if (!owner->MoveToPosition(pos->GetPhysics()->GetOrigin()))
 	{
 		// Position entity cannot be reached, probably due to elevator not being there, use the button entity
-		CMultiStateMoverButton* button = pos->GetFetchButton();
+		CMultiStateMoverButton* button = pos->GetFetchButton(owner->GetPhysics()->GetOrigin()); // grayman #3029
 		if (button != NULL)
 		{
 			return MoveToButton(owner, button);
@@ -556,7 +664,7 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 	return true;
 }
 
-void HandleElevatorTask::DebugDraw(idAI* owner) 
+void HandleElevatorTask::DebugDraw(idAI* owner, CMultiStateMoverPosition* pos, CMultiStateMover* elevator)
 {
 	// Draw current state
 	idMat3 viewMatrix = gameLocal.GetLocalPlayer()->viewAngles.ToMat3();
@@ -602,6 +710,17 @@ void HandleElevatorTask::DebugDraw(idAI* owner)
 			break;
 	}
 
+	// Indicate if this AI is the master of either queue
+
+	if ( owner == pos->GetUserManager().GetMasterUser() )
+	{
+		str += " (P)";
+	}
+	if ( owner == elevator->GetUserManager().GetMasterUser() )
+	{
+		str += " (E)";
+	}
+	
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colorYellow, viewMatrix, 1, 4 * gameLocal.msec);

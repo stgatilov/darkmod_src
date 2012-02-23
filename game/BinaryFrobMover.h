@@ -544,6 +544,12 @@ protected:
 	**/
 
 	idEntityPtr<idEntity>		m_searching;
+
+	/**
+	* grayman #3029 - temporarily turn off targeting for elevator fetch buttons
+	**/
+
+	bool						m_targetingOff;
 };
 
 #endif /* !BINARYFROBMOVER */

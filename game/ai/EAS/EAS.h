@@ -84,7 +84,7 @@ public:
 
 	// This is the analogous method to idAAS::RouteToGoal. The path variable will contain the right pathing information if a goal was found.
 	// returns TRUE if a route was found, FALSE otherwise.
-	bool FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor);
+	bool FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor, int &elevatorTravelTime); // grayman #3029
 
 	/** 
 	 * greebo: Returns the elevator station with the given index.
@@ -100,10 +100,15 @@ public:
 	void Restore(idRestoreGame* savefile);
 
 	void DrawRoute(int startArea, int goalArea);
+	
+	// grayman - for debugging cluster data
+//	void PrintClusterInfo();
 
 private:
 	void SetupClusterInfoStructures();
 	void AssignElevatorsToClusters();
+
+//	void PrintRoutes(); // grayman - debug routes
 
 	void SetupClusterRouting();
 	void SetupReachableElevatorStations();
@@ -115,6 +120,7 @@ private:
 	// Sorts the existing routes (fastest first)
 	void SortRoutes();
 	void SortRoute(int startCluster, int goalCluster);
+	void SumRouteTravelTimes(); // grayman #3029 - stamps routes with overall travel time
 
 	// Retrieves the internal index of the given mover (or -1 if the mover is not registered)
 	int GetElevatorIndex(CMultiStateMover* mover);

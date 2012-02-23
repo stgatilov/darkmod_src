@@ -148,48 +148,58 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			if (moveDelta > 0)
 			{
 				idVec3 toPath = path->GetPhysics()->GetOrigin() - ownerOrigin;
-				toPath.z = 0; // ignore vertical component
-				float distToPath = toPath.NormalizeFast();
 
-				// The move direction and the distance vector to the path are pointing in roughly the same direction.
-				// The prediction will be rather accurate.
+				// grayman #3029 - Ignore path_corners that are out of reach.
+				// This prevents 'getting near' path_corners that are too far away vertically.
+				// Originally added as a fix for #2717 elsewhere, but not here.
 
-				if (toPath * moveDeltaVec > 0.7f)
+				idBounds bounds = owner->GetPhysics()->GetBounds();
+
+				if ( ( abs(toPath.z) < (bounds[1][2] + 0.4*owner->GetReachTolerance()) ) ) // don't look so far up or down
 				{
-					bool turnNow = false; // whether it's time to make the turn
+					toPath.z = 0; // ignore vertical component
+					float distToPath = toPath.NormalizeFast();
 
-					// will we overshoot the path_corner within the next two checks?
+					// The move direction and the distance vector to the path are pointing in roughly the same direction.
+					// The prediction will be rather accurate.
 
-					if (distToPath <= PATH_PREDICTION_MOVES*moveDelta) // quick check for overshooting
+					if (toPath * moveDeltaVec > 0.7f)
 					{
-						turnNow = true;
-					}
-					else
-					{
-						int frameDelta = gameLocal.framenum - _lastFrameNum;
-						float factor = PATH_PREDICTION_MOVES + PATH_PREDICTION_CONSTANT/static_cast<float>(frameDelta);
-						if (distToPath <= factor*moveDelta) // consider the size of the AI's bounding box if we're w/in a certain range
+						bool turnNow = false; // whether it's time to make the turn
+
+						// will we overshoot the path_corner within the next two checks?
+
+						if (distToPath <= PATH_PREDICTION_MOVES*moveDelta) // quick check for overshooting
 						{
-							// Virtually translate the path_corner position back to the origin and
-							// see if ReachedPos's box check would succeed.
-
-							turnNow = owner->ReachedPosAABBCheck(path->GetPhysics()->GetOrigin() - toPath*factor*moveDelta);
+							turnNow = true;
 						}
-					}
+						else
+						{
+							int frameDelta = gameLocal.framenum - _lastFrameNum;
+							float factor = PATH_PREDICTION_MOVES + PATH_PREDICTION_CONSTANT/static_cast<float>(frameDelta);
+							if (distToPath <= factor*moveDelta) // consider the size of the AI's bounding box if we're w/in a certain range
+							{
+								// Virtually translate the path_corner position back to the origin and
+								// see if ReachedPos's box check would succeed.
 
-					if (turnNow)
-					{
-						// Trigger path targets, now that we've almost reached the corner
-						owner->ActivateTargets(owner);
+								turnNow = owner->ReachedPosAABBCheck(path->GetPhysics()->GetOrigin() - toPath*factor*moveDelta);
+							}
+						}
 
-						// NextPath();
+						if (turnNow)
+						{
+							// Trigger path targets, now that we've almost reached the corner
+							owner->ActivateTargets(owner);
 
-						// Move is done, fall back to PatrolTask
-						DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathCornerTask ending prematurely.\r");
+							// NextPath();
 
-						// End this task, let the next patrol/pathcorner task take up its work before
-						// the AI code is actually reaching its position and issuing StopMove
-						return true;
+							// Move is done, fall back to PatrolTask
+							DM_LOG(LC_AI, LT_INFO)LOGSTRING("PathCornerTask ending prematurely.\r");
+
+							// End this task, let the next patrol/pathcorner task take up its work before
+							// the AI code is actually reaching its position and issuing StopMove
+							return true;
+						}
 					}
 				}
 			}
@@ -219,7 +229,6 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 		// moveToEntity() not yet called, do it now
 		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
 		owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
-
 		_moveInitiated = true;
 	}
 
