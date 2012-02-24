@@ -1937,7 +1937,7 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 	if ( !r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil available but disabled\n" );
 	} else if ( glConfig.twoSidedStencilAvailable ) {
-		common->Printf( "Two sided stencil enabled and enabled\n" );
+		common->Printf( "Two sided stencil available and enabled\n" );
 	} else if ( !glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil not available\n" );
 	}
