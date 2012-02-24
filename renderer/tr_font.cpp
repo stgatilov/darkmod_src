@@ -286,42 +286,31 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 #endif
 	void *faceData;
 	ID_TIME_T ftime;
-	int i, len, fontCount;
+	int len, fontCount;
 	char name[1024];
 
-	int pointSize = 12;
-/*
-	if ( registeredFontCount >= MAX_FONTS ) {
-		common->Warning( "RegisterFont: Too many fonts registered already." );
-		return false;
-	}
-
-	int pointSize = 12;
-	idStr::snPrintf( name, sizeof(name), "%s/fontImage_%i.dat", fontName, pointSize );
-	for ( i = 0; i < registeredFontCount; i++ ) {
-		if ( idStr::Icmp(name, registeredFont[i].fontInfoSmall.name) == 0 ) {
-			memcpy( &font, &registeredFont[i], sizeof( fontInfoEx_t ) );
-			return true;
-		}
-	}
-*/
+	int sizes[3] = { 12, 24, 48 };
+	int sizeCount = 3;
+	int replacements[3*2] = { 
+		// if size 12 is missing try 24 and then 48
+		24, 48,
+		// if 24 is missing, try 48 first, and then 12 as last resort
+		48, 12,
+		// if 48 is missing, try 24 first, then 12 as last resort
+		24, 12
+		};
+	int replacementCount = 2;	// we have 3 fonts, so if one is missing, we have 2 other choices
+	int pointSize;
 
 	memset( &font, 0, sizeof( font ) );
 
-	for ( fontCount = 0; fontCount < 3; fontCount++ ) {
+	for ( fontCount = 0; fontCount < sizeCount; fontCount++ ) {
 
-		if ( fontCount == 0) {
-			pointSize = 12;
-		} else if ( fontCount == 1 ) {
-			pointSize = 24;
-		} else {
-			pointSize = 48;
-		}
-		// we also need to adjust the scale based on point size relative to 48 points as the ui scaling is based on a 48 point font
-		float glyphScale = 1.0f; 		// change the scale to be relative to 1 based on 72 dpi ( so dpi of 144 means a scale of .5 )
-		glyphScale *= 48.0f / pointSize;
+		pointSize = sizes[fontCount];
 
 		idStr::snPrintf( name, sizeof(name), "%s/fontImage_%i.dat", fontName, pointSize );
+
+		// common->Printf( "Trying to load font %s size %i\n", name, pointSize );
 
 		fontInfo_t *outFont;
 		if ( fontCount == 0 ) {
@@ -338,14 +327,39 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 
 		len = fileSystem->ReadFile( name, NULL, &ftime );
 		if ( len != sizeof( fontInfo_t ) ) {
-			common->Warning( "RegisterFont: couldn't find font: '%s'", name );
-			return false;
+			// Couldn't find the font file, so look for other sizes
+			pointSize = 0;
+			for (int i = 0; i < replacementCount; i++) {
+				// if size 24 is missing, try 48 first
+				int replacement = replacements[ fontCount * replacementCount + i ];
+				idStr::snPrintf( name, sizeof(name), "%s/fontImage_%i.dat", fontName, replacement );
+
+				// common->Printf( "Not found, trying to load font %s size %i (i=%i)\n", name, replacement, i );
+
+				len = fileSystem->ReadFile( name, NULL, &ftime );
+				if (len == sizeof( fontInfo_t )) {
+					common->Printf( "Font %s in size %i not found, using size %i instead.\n", fontName, sizes[fontCount], replacement );
+					pointSize = replacement;
+					// end loop
+					i = replacementCount;
+				}
+			}
+			if (pointSize == 0) {
+				// couldn't even find replacement
+				common->Warning( "RegisterFont: couldn't find font: '%s'", name );
+				return false;
+			}
+			// else: use the other size
 		}
+
+		// we also need to adjust the scale based on point size relative to 48 points as the ui scaling is based on a 48 point font
+		float glyphScale = 1.0f; 		// change the scale to be relative to 1 based on 72 dpi ( so dpi of 144 means a scale of .5 )
+		glyphScale *= 48.0f / pointSize;
 
 		fileSystem->ReadFile( name, &faceData, &ftime );
 		fdOffset = 0;
 		fdFile = reinterpret_cast<unsigned char*>(faceData);
-		for( i = 0; i < GLYPHS_PER_FONT; i++ ) {
+		for( int i = 0; i < GLYPHS_PER_FONT; i++ ) {
 			outFont->glyphs[i].height		= readInt();
 			outFont->glyphs[i].top			= readInt();
 			outFont->glyphs[i].bottom		= readInt();

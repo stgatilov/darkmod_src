@@ -58,10 +58,10 @@ int idDeviceContext::FindFont( const char *name ) {
 		if ( renderSystem->RegisterFont( fileName, fonts[index] ) ){
 		idStr::Copynz( fonts[index].name, name, sizeof( fonts[index].name ) );
 		return index;
-		} else {
+	} else {
 		common->Printf( "Could not register font %s [%s]\n", name, fileName.c_str() );
 		return -1;
-}
+	}
 }
 
 void idDeviceContext::SetupFonts() {
