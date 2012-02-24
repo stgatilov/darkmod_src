@@ -8910,7 +8910,8 @@ void idAI::AlertAI(const char *type, float amount)
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
-	m_lastAlertLevel = newAlertLevel;
+	//m_lastAlertLevel = newAlertLevel; // grayman #3019 - since SetAlertLevel() can adjust the new alert level, we need to set m_lastAlertLevel = AI_AlertLevel
+	m_lastAlertLevel = AI_AlertLevel;
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\",  amount %f (modified by acuity %f).  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
@@ -8923,8 +8924,15 @@ void idAI::AlertAI(const char *type, float amount)
 		AI_ALERTED = true;
 	}
 
+	// grayman #3019 - Decide whether to pass the alert
+	// to mission statistics or not. You should only pass it if you're rising
+	// to an alert index higher than where you were.
+
 	// Objectives callback
-	gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
+	if ( AlertIndexIncreased() )
+	{
+		gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
+	}
 }
 
 void idAI::SetAlertLevel(float newAlertLevel)
