@@ -253,8 +253,6 @@ void (APIENTRY *qFreeMemoryNV)( void *pointer );
 
 void (APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
 
-void (APIENTRY * qglColorTableEXT)( int, int, int, int, int, const void * );
-
 
 // ATI_fragment_shader
 PFNGLGENFRAGMENTSHADERSATIPROC			qglGenFragmentShadersATI;
@@ -312,11 +310,11 @@ R_CheckExtension
 */
 bool R_CheckExtension( const char *name ) {
 	if ( !strstr( glConfig.extensions_string, name ) ) {
-		common->Printf( "X..%s not found\n", name );
+		common->Printf( "^1X^0 - %s not found\n", name );
 		return false;
 	}
 
-	common->Printf( "...using %s\n", name );
+	common->Printf( "^2v^0 - using %s\n", name );
 	return true;
 }
 
@@ -328,6 +326,8 @@ R_CheckPortableExtensions
 */
 static void R_CheckPortableExtensions( void ) {
 	glConfig.glVersion = atof( glConfig.version_string );
+
+	common->Printf( "Checking portable OpenGL extensions...\n" );
 
 	// GL_ARB_multitexture
 	glConfig.multitextureAvailable = R_CheckExtension( "GL_ARB_multitexture" );
@@ -376,26 +376,16 @@ static void R_CheckPortableExtensions( void ) {
 	glConfig.anisotropicAvailable = R_CheckExtension( "GL_EXT_texture_filter_anisotropic" );
 	if ( glConfig.anisotropicAvailable ) {
 		qglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glConfig.maxTextureAnisotropy );
-		common->Printf( "   maxTextureAnisotropy: %f\n", glConfig.maxTextureAnisotropy );
+		common->Printf( "    maxTextureAnisotropy: %f\n", glConfig.maxTextureAnisotropy );
 	} else {
 		glConfig.maxTextureAnisotropy = 1;
 	}
 
 	// GL_EXT_texture_lod_bias
-	// The actual extension is broken as specificed, storing the state in the texture unit instead
-	// of the texture object.  The behavior in GL 1.4 is the behavior we use.
-	if ( glConfig.glVersion >= 1.4 || R_CheckExtension( "GL_EXT_texture_lod" ) ) {
-		common->Printf( "...using %s\n", "GL_1.4_texture_lod_bias" );
+	if ( R_CheckExtension( "GL_EXT_texture_lod_bias" ) ) {
 		glConfig.textureLODBiasAvailable = true;
 	} else {
-		common->Printf( "X..%s not found\n", "GL_1.4_texture_lod_bias" );
 		glConfig.textureLODBiasAvailable = false;
-	}
-
-	// GL_EXT_shared_texture_palette
-	glConfig.sharedTexturePaletteAvailable = R_CheckExtension( "GL_EXT_shared_texture_palette" );
-	if ( glConfig.sharedTexturePaletteAvailable ) {
-		qglColorTableEXT = ( void ( APIENTRY * ) ( int, int, int, int, int, const void * ) ) GLimp_ExtensionPointer( "glColorTableEXT" );
 	}
 
 	// GL_EXT_texture3D (not currently used for anything)
@@ -419,11 +409,15 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// separate stencil (part of OpenGL 2.0 spec)
-	qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
-	if( qglStencilOpSeparate ) {
-		glConfig.twoSidedStencilAvailable = true;
-	} else {
-		glConfig.twoSidedStencilAvailable = false;
+	if ( glConfig.glVersion >= 2.0 ) {
+		qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
+		if( qglStencilOpSeparate ) {
+			common->Printf( "^2v^0 - using %s\n", "glStencilOpSeparate" );
+			glConfig.twoSidedStencilAvailable = true;
+		} else {
+			common->Printf( "^1X^0 - %s not found\n", "glStencilOpSeparate" );
+			glConfig.twoSidedStencilAvailable = false;
+		}
 	}
 
 	// GL_NV_register_combiners
@@ -701,7 +695,7 @@ void R_InitOpenGL( void ) {
 
 #ifdef _WIN32
 	static bool glCheck = false;
-	if ( !glCheck && win32.osversion.dwMajorVersion == 6 ) {
+	if ( !glCheck && win32.osversion.dwMajorVersion >= 6 ) {
 		glCheck = true;
 		if ( !idStr::Icmp( glConfig.vendor_string, "Microsoft" ) && idStr::FindText( glConfig.renderer_string, "OpenGL-D3D" ) != -1 ) {
 			if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
@@ -1934,7 +1928,7 @@ typedef BOOL (WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
 extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 	if ( r_swapInterval.GetInteger() && wglSwapIntervalEXT ) {
-		common->Printf( "Forcing swapInterval %i\n", r_swapInterval.GetInteger() );
+		common->Printf( "swapInterval forced (%i)\n", r_swapInterval.GetInteger() );
 	} else {
 		common->Printf( "swapInterval not forced\n" );
 	}
@@ -1942,10 +1936,10 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 	if ( !r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil available but disabled\n" );
+	} else if ( glConfig.twoSidedStencilAvailable ) {
+		common->Printf( "Two sided stencil enabled and enabled\n" );
 	} else if ( !glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil not available\n" );
-	} else if ( glConfig.twoSidedStencilAvailable ) {
-		common->Printf( "Using two sided stencil\n" );
 	}
 
 	if ( vertexCache.IsFast() ) {

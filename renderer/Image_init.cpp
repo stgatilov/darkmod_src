@@ -1376,19 +1376,6 @@ void idImageManager::SetNormalPalette( void ) {
 	temptable[255*3+0] =
 	temptable[255*3+1] =
 	temptable[255*3+2] = 128;
-
-	if ( !glConfig.sharedTexturePaletteAvailable ) {
-		return;
-	}
-
-	qglColorTableEXT( GL_SHARED_TEXTURE_PALETTE_EXT,
-					   GL_RGB,
-					   256,
-					   GL_RGB,
-					   GL_UNSIGNED_BYTE,
-					   temptable );
-
-	qglEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
 }
 
 /*

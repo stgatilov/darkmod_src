@@ -155,18 +155,6 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 			}
 		}
 	}
-
-	if ( glConfig.sharedTexturePaletteAvailable ) {
-		qglTexImage2D( GL_TEXTURE_2D,
-					mipLevel,
-					GL_COLOR_INDEX8_EXT,
-					width,
-					height,
-					0,
-					GL_COLOR_INDEX,
-					GL_UNSIGNED_BYTE,
-					normals );
-	}
 }
 
 
@@ -265,7 +253,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first 
 	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1 && glConfig.sharedTexturePaletteAvailable ) {
+		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1) {
 			// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
 			return GL_COLOR_INDEX8_EXT;
 		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionAvailable ) {
@@ -1410,7 +1398,7 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 
 	// if we don't support color index textures, we must load the full image
 	// should we just expand the 256 color image to 32 bit for upload?
-	if ( ddspf_dwFlags & DDSF_ID_INDEXCOLOR && !glConfig.sharedTexturePaletteAvailable ) {
+	if ( ddspf_dwFlags & DDSF_ID_INDEXCOLOR ) {
 		R_StaticFree( data );
 		return false;
 	}

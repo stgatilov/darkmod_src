@@ -60,7 +60,6 @@ typedef struct glconfig_s {
 	bool				cubeMapAvailable;
 	bool				envDot3Available;
 	bool				texture3DAvailable;
-	bool				sharedTexturePaletteAvailable;
 	bool				ARBVertexBufferObjectAvailable;
 	bool				ARBVertexProgramAvailable;
 	bool				ARBFragmentProgramAvailable;

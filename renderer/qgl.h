@@ -104,9 +104,6 @@ extern	void ( APIENTRY *qglFinalCombinerInputNV )( GLenum variable, GLenum input
 // 3D textures
 extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
 
-// shared texture palette
-extern	void ( APIENTRY *qglColorTableEXT)( int, int, int, int, int, const void * );
-
 // ATI_fragment_shader
 extern	PFNGLGENFRAGMENTSHADERSATIPROC	qglGenFragmentShadersATI;
 extern	PFNGLBINDFRAGMENTSHADERATIPROC	qglBindFragmentShaderATI;
