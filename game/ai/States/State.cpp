@@ -1879,10 +1879,20 @@ void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bo
 {
 	idAI* owner = _owner.GetEntity();
 
-	if (owner == NULL) return;
+	if (owner == NULL)
+	{
+		return;
+	}
 
-	// Switch to failed knockout state
-	owner->GetMind()->PushState(StatePtr(new FailedKnockoutState(attacker, direction, hitHead)));
+	// grayman #3025 - if we're already in the failed KO state,
+	// we have to let the failed KO animation finish before
+	// we allow another failed KO.
+
+	if ( owner->GetMind()->GetState()->GetName() != "FailedKnockout" )
+	{
+		// Switch to failed knockout state
+		owner->GetMind()->PushState(StatePtr(new FailedKnockoutState(attacker, direction, hitHead)));
+	}
 }
 
 void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int damageTaken)
