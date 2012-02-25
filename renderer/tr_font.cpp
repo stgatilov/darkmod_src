@@ -380,7 +380,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 
 		int mw = 0;
 		int mh = 0;
-		for (i = GLYPH_START; i <= GLYPH_END; i++) {
+		for (int i = GLYPH_START; i <= GLYPH_END; i++) {
 			idStr::snPrintf(name, sizeof(name), "%s/%s", fontName, outFont->glyphs[i].shaderName);
 			outFont->glyphs[i].glyph = declManager->FindMaterial(name);
 			outFont->glyphs[i].glyph->SetSort( SS_GUI );
