@@ -202,6 +202,8 @@ private:	// routing data
 	// greebo: This is TDM's EAS "Elevator Awareness System" :)
 	eas::tdmEAS*				elevatorSystem;
 
+	idList<idVec4>				aasColors;				// grayman #3032 - colors of AAS areas for debugging - no need to save/restore
+
 private:	// routing
 	bool						SetupRouting( void );
 	void						ShutdownRouting( void );

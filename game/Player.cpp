@@ -497,6 +497,7 @@ idPlayer::idPlayer() :
 	m_fBlendColVal			= 0;	
 	m_LightgemInterleave	= 0;
 	ignoreWeaponAttack		= false; // grayman #597
+	displayAASAreas			= false; // grayman #3032 - no need to save/restore
 }
 
 /*
@@ -5426,13 +5427,18 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_27:
 			{
-				//LAS.pvsToAASMappingTable.DebugShowMappings(10000);
+				// grayman #3032 - changed to a toggle
+
+				displayAASAreas = !displayAASAreas;
+
+/*				//LAS.pvsToAASMappingTable.DebugShowMappings(10000);
 				idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS(cv_debug_aastype.GetString()));
 					
 				if (aas != NULL)
 				{
 					aas->DrawAreas(GetEyePosition());
 				}
+ */
 			}
 			break;
 
@@ -7156,6 +7162,17 @@ void idPlayer::Think( void )
 			default: waterStr = "WATERLEVEL: ???"; break;
 		};
 		gameRenderWorld->DrawText(waterStr.c_str(), GetEyePosition() + viewAxis.ToAngles().ToForward()*200, 0.7f, colorWhite, viewAxis, 1, 16);
+	}
+
+	if ( displayAASAreas ) // grayman #3032
+	{
+		//LAS.pvsToAASMappingTable.DebugShowMappings(10000);
+		idAASLocal* aas = dynamic_cast<idAASLocal*>(gameLocal.GetAAS(cv_debug_aastype.GetString()));
+					
+		if (aas != NULL)
+		{
+			aas->DrawAreas(GetEyePosition());
+		}
 	}
 
 	// determine if portal sky is in pvs

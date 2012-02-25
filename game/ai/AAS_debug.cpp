@@ -512,51 +512,83 @@ void idAASLocal::Test( const idVec3 &origin ) {
 	}
 }
 
+// grayman #3032 - changed from this:
+
+// Hit the "_impulse27" key and paint AAS areas and cluster numbers
+// on the screen for 1 second.
+
+// to this:
+
+// "_impulse27" is a toggle. When on, paint AAS areas and cluster
+// numbers on the screen each frame. Now it can be left on, painting
+// the local information as the player moves around. Toggle off
+// when no longer needed. The colors are assigned the first time it
+// toggles on, and are kept for the length of the session. They are
+// not saved across savegames because they can just be redetermined
+// after a restore.
+
 void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 {
-	if (file == NULL) return;
-
-	// Get a colour for each cluster
-	idList<idVec4> colours;
-	for (int c = 0; c < file->GetNumClusters(); c++)
+	if ( file == NULL )
 	{
-		colours.Alloc() = idVec4(gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, 1);
+		return;
+	}
+
+	// Initialize AAS area colors if we haven't already done so
+
+	if ( aasColors.Num() == 0 )
+	{
+		// Get a color for each cluster
+
+		int numClusters = file->GetNumClusters();
+
+		for ( int c = 0 ; c < numClusters ; c++ )
+		{
+			aasColors.Alloc() = idVec4(gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, gameLocal.random.RandomFloat() + 0.1f, 1);
+		}
 	}
 
 	idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
 	
 	idList<int> clusterNums;
 
-	for (int i = 0; i < file->GetNumAreas(); i++)
+	// Paint the AAS areas
+
+	for ( int i = 0 ; i < file->GetNumAreas() ; i++ )
 	{
-		idBounds areaBounds = GetAreaBounds(i);
 		idVec3 areaCenter = AreaCenter(i);
 
-		int clusterNum = file->GetArea(i).cluster;
-		clusterNums.AddUnique(clusterNum);
-
-		idVec4 colour = (clusterNum <= 0) ? colorWhite : colours[clusterNum];
-
 		// angua: only draw areas near the player, no need to see them at the other end of the map
-		if ((areaCenter - playerOrigin).LengthFast() < 300)
+		if ( (areaCenter - playerOrigin).LengthFast() < 300 )
 		{
-			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, colour, playerViewMatrix, 1, 1000);
-			gameRenderWorld->DebugBox(colour, idBox(areaBounds), 1000);
+			idBounds areaBounds = GetAreaBounds(i);
+			int clusterNum = file->GetArea(i).cluster;
+			clusterNums.AddUnique(clusterNum);
+			idVec4 color = (clusterNum <= 0) ? colorWhite : aasColors[clusterNum];
+
+			gameRenderWorld->DrawText(va("%d", i), areaCenter, 0.2f, color, playerViewMatrix, 1, 16);
+			gameRenderWorld->DebugBox(color, idBox(areaBounds), 16);
 		}
 	}
 
-	for (int i = 0; i < clusterNums.Num(); i++)
+	// Paint the cluster numbers
+
+	for ( int i = 0 ; i < clusterNums.Num() ; i++ )
 	{
 		int area = GetAreaInCluster(clusterNums[i]);
-		if (area <= 0) continue;
+		if ( area <= 0 )
+		{
+			continue;
+		}
 
 		idVec3 origin = file->GetArea(area).center;
-		if ((origin - playerOrigin).LengthFast() < 1000)
+		if ( (origin - playerOrigin).LengthFast() < 300 )
 		{
-			gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 1000);
+			gameRenderWorld->DrawText(va("%d", clusterNums[i]), origin, 1, colorRed, playerViewMatrix, 1, 16);
 		}
 	}
 }
+
 
 void idAASLocal::DrawEASRoute( const idVec3& playerOrigin, int goalArea )
 {
