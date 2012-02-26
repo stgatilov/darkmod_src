@@ -3030,9 +3030,6 @@ void idCommonLocal::InitGame( void )
 	// Init the i18n manager
 	i18n->Init();
 
-	// initialize string database right off so we can use it for loading messages
-	InitLanguageDict();
-
 	PrintLoadingMessage( Translate( "#str_04344" ) );
 
 	// load the font, etc
