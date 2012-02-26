@@ -2544,15 +2544,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "inv_icon", kv );
 	}
 
-	// handles teleport fx.. this is not ideal but the actual decision on which fx to use
-	// is handled by script code based on the teleport number
-	kv = dict->MatchPrefix( "teleport", NULL );
-	if ( kv && kv->GetValue().Length() ) {
-		int teleportType = atoi( kv->GetValue() );
-		const char *p = ( teleportType ) ? va( "fx/teleporter%i.fx", teleportType ) : "fx/teleporter.fx";
-		declManager->FindType( DECL_FX, p );
-	}
-
 	kv = dict->MatchPrefix( "fx", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
