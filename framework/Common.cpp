@@ -1725,6 +1725,8 @@ void idCommonLocal::InitLanguageDict( void ) {
 
 	StartupVariable( "sys_lang", false );	// let it be set on the command line - this is needed because this init happens very early
 
+	i18n->SetLanguage( cvarSystem->GetCVarString( "sys_lang" ), false );	// false => not the first time
+
 	Sys_InitScanTable();
 }
 
@@ -3047,7 +3049,7 @@ void idCommonLocal::InitGame( void )
 
 	// skip the config file if "safe" is on the command line
 	if ( !SafeMode() ) {
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// DoomConfig.cfg
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
