@@ -361,10 +361,10 @@ void CModMenu::InstallMod(const CModInfoPtr& mod, idUserInterface* gui)
 		switch (result)
 		{
 		case CMissionManager::COPY_FAILURE:
-			msg = "Could not copy files. Maybe the target files are write protected or you're running out of disk space or lacking the required permissions?";
+			msg = common->Translate( "#str_02010" ); // Could not copy files...
 			break;
 		default:
-			msg = "No further explanation available. Well, this was kind of unexpected.";
+			msg = common->Translate( "#str_02011" ); // No further explanation available. Well, this was kind of unexpected.
 		};
 
 		// Feed error messages to GUI
