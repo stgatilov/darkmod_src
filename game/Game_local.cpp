@@ -3720,114 +3720,6 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 
 /*
 ================
-idGameLocal::initChoice
-
-Init a GUI or CVAR variable (including GUI text) from a list of choices and values.
-================
-*/
-bool idGameLocal::InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step)
-{
-	idStr cvarName = varName;
-	std::string choices = common->Translate( inChoices );
-	std::string values  = inValues;
-
-	// figure out the current setting
-	idCVar *cvar = NULL;
-
-	// special case: use this gui variable
-	if (cvarName.Left(5) != "gui::")
-	{
-		cvar = cvarSystem->Find( cvarName.c_str() );
-		if (!cvar)
-		{
-			// ignore, the GUI command buffer was probably just overrun
-			Warning("initChoice: Cannot find CVAR '%s'.", cvarName.c_str() );
-			return false;
-		}
-	}
-	// split the choices into a list
-	std::vector<std::string> choiceParts;
-	std::vector<std::string> valuesParts;
-	boost::algorithm::split(choiceParts, choices, boost::algorithm::is_any_of(";"));
-	boost::algorithm::split(valuesParts, values, boost::algorithm::is_any_of(";"));
-
-	if (choiceParts.size() != valuesParts.size())
-	{
-		gameLocal.Warning("The choices string array '%s' does not have the same number of elements as the values array '%s' for %s!", 
-				choices.c_str(), values.c_str(), cvarName.c_str() ); //common->Translate( m_GUICommandStack[2] ), m_GUICommandStack[3].c_str(), cvarName.c_str() );
-		return false;
-	}
-	if (choiceParts.size() <= 0)
-	{
-		gameLocal.Warning("The choices and values string arrays are empty for %s.", cvarName.c_str());
-		return false;
-	}
-
-	// read out the current setting (this also works with boolean CVARs, as these are simply "0", "1")
-	idStr curValue;
-	if (cvar)
-	{
-		curValue = cvar->GetString();
-	}
-	else
-	{
-		curValue = gui->GetStateString( cvarName.Right( cvarName.Length() -5 ).c_str(), "0" );
-	}
-
-	// Figure out the index of the selected choice/value pair by looking at all the values
-	int iSelected = -1;
-	for (unsigned int i = 0; i < valuesParts.size(); i++)
-	{
-		if (curValue == idStr( valuesParts[i].c_str() ))
-		{
-			// found it
-			iSelected = i;
-			i = valuesParts.size();
-			break;
-		}
-	}
-
-	// Printf("Current value: %s (index: %i)\n", curValue.c_str(), iSelected);
-	if (iSelected < 0)
-	{
-		gameLocal.Warning("The current value for %s (%s) is not in the list of valid choices '%s'.", cvarName.c_str(), curValue.c_str(), values.c_str());
-		return false;
-	}
-
-	// should we advance the setting?
-	if ( step )
-	{
-		iSelected ++;
-		if ( (unsigned int)iSelected >= valuesParts.size())
-		{
-			// wrap around
-			iSelected = 0;
-		}
-		// set the new value
-		Printf("Setting %s to %s (index: %i)\n", cvarName.c_str(), valuesParts[ iSelected ].c_str(), iSelected);
-		if (cvar)
-		{
-			cvar->SetString( valuesParts[ iSelected ].c_str() );
-		}
-	}
-
-	// Printf( "Setting %s to %s\n", GUIVar.c_str(), choiceParts[iSelected].c_str() );
-	if (!cvar)
-	{
-		cvarName = cvarName.Right( cvarName.Length() -5 );		// remove "gui::" prefix
-	}
-	// store the value in "gui::cvarname", so the GUI can access it (important f.i. for the bloom slider visibility)
-	// Printf( "Setting %s to %s\n", cvarName.c_str(), valuesParts[iSelected].c_str() );
-	gui->SetStateString( cvarName.c_str(), valuesParts[iSelected].c_str() );
-	// and set it as text label
-	idStr GUIVar = cvarName + "_text";		// f.i.: tdm_menu_music_text
-	gui->SetStateString( GUIVar.c_str(), choiceParts[iSelected].c_str() );
-
-	return true;
-}
-
-/*
-================
 idGameLocal::HandleMainMenuCommands
 ================
 */
@@ -3903,8 +3795,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// "log" and "notime" take one argument
 		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
-		// these two take 3 arguments each
-		if ( cmd == "initchoice" || cmd == "stepchoice") { m_GUICommandArgs = 3; }
 		// this takes one argument
 		if ( cmd == "setlang") { m_GUICommandArgs = 1; }
 
@@ -4353,17 +4243,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 		gui->SetStateInt("melee_difficulty", setting);
 
-		// init various GUI variables
-		InitGUIChoice( gui, "gui::lp_difficulty",			"#str_07318", "0;1;2;3;4" );
-		InitGUIChoice( gui, "gui::melee_difficulty",		"#str_07319", "0;1;2;3" );
-		InitGUIChoice( gui, "tdm_door_auto_open_on_unlock",	"#str_04221", "0;1" );
-		InitGUIChoice( gui, "tdm_inv_use_on_frob",			"#str_07300", "0;1" );
-		InitGUIChoice( gui, "tdm_inv_hud_pickupmessages",	"#str_04221", "0;1" );
-		InitGUIChoice( gui, "tdm_inv_use_visual_feedback",	"#str_07300", "0;1" );
-		InitGUIChoice( gui, "tdm_dragged_item_highlight",	"#str_07300", "0;1" );
-		InitGUIChoice( gui, "tdm_hud_hide_lightgem", 		"#str_04221", "0;1" );
-
-		// Have the gui enable/disable auto parry
 		gui->HandleNamedEvent("UpdateAutoParryOption");
 	}
 	else if (cmd == "updatemeleedifficulty")
@@ -4456,18 +4335,6 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 
 		// store it, so the GUI can access it
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
-	}
-	// tels: #2796 build our own "choicedef" as integer/boolean option.
-	else if (cmd == "initchoice" || cmd == "stepchoice")
-	{
-		// DEBUG
-//		Printf("GUI: %s\n", cmd.c_str());
-//		for (int i = 0; i < numArgs; i++)
-//		{
-//			Printf( "'%s' ", m_GUICommandStack[i+1].c_str() );
-//		}
-		// arguments are: cvar-name choices values
-		InitGUIChoice( gui, m_GUICommandStack[1].c_str(), m_GUICommandStack[2].c_str(), m_GUICommandStack[3].c_str(), cmd == "stepchoice" ? true : false );
 	}
 //	else
 //	{

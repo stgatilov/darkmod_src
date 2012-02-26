@@ -671,7 +671,6 @@ public:
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );
-	virtual bool			InitGUIChoice( idUserInterface *gui, const char *varName, const char *inChoices, const char *inValues, const bool step = false );
 	virtual void			HandleMainMenuCommands( const char *menuCommand, idUserInterface *gui );
 	/**
 	* Adjusts the size of GUI variables to support stretching/scaling of the GUI.
