@@ -1182,7 +1182,7 @@ const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, 
 			guiMsg->SetStateString( "visible_right", "0" );
 			break;
 		case MSG_OK:
-			guiMsg->SetStateString( "mid", common->Translate( "#str_04339" ) );
+			guiMsg->SetStateString( "mid", common->Translate( "#str_07188" ) );
 			guiMsg->SetStateString( "visible_mid", "1" );
 			guiMsg->SetStateString( "visible_left", "0" );
 			guiMsg->SetStateString( "visible_right", "0" );
@@ -1194,7 +1194,7 @@ const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, 
 			guiMsg->SetStateString( "visible_right", "0" );
 			break;
 		case MSG_OKCANCEL:
-			guiMsg->SetStateString( "left", common->Translate( "#str_04339" ) );
+			guiMsg->SetStateString( "left", common->Translate( "#str_07188" ) );
 			guiMsg->SetStateString( "right", common->Translate( "#str_04340" ) );
 			guiMsg->SetStateString( "visible_mid", "0" );
 			guiMsg->SetStateString( "visible_left", "1" );
@@ -1208,7 +1208,7 @@ const char* idSessionLocal::MessageBox( msgBoxType_t type, const char *message, 
 			guiMsg->SetStateString( "visible_right", "1" );
 			break;
 		case MSG_PROMPT:
-			guiMsg->SetStateString( "left", common->Translate( "#str_04339" ) );
+			guiMsg->SetStateString( "left", common->Translate( "#str_07188" ) );
 			guiMsg->SetStateString( "right", common->Translate( "#str_04340" ) );
 			guiMsg->SetStateString( "visible_mid", "0" );
 			guiMsg->SetStateString( "visible_left", "1" );

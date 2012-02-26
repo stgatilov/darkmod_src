@@ -3669,14 +3669,14 @@ void idGameLocal::HandleGuiMessages(idUserInterface* ui)
 		ui->SetStateBool("MsgBoxLeftButtonVisible", false);
 		ui->SetStateBool("MsgBoxRightButtonVisible", false);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", true);
-		ui->SetStateString("MsgBoxMiddleButtonText", common->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxMiddleButtonText", common->Translate("#str_07188"));	// OK
 		break;
 	case GuiMessage::MSG_OK_CANCEL:
 		ui->SetStateBool("MsgBoxLeftButtonVisible", true);
 		ui->SetStateBool("MsgBoxRightButtonVisible", true);
 		ui->SetStateBool("MsgBoxMiddleButtonVisible", false);
 
-		ui->SetStateString("MsgBoxLeftButtonText", common->Translate("#str_04339"));	// OK
+		ui->SetStateString("MsgBoxLeftButtonText", common->Translate("#str_07188"));	// OK
 		ui->SetStateString("MsgBoxRightButtonText", common->Translate("#str_07203"));	// Cancel
 		break;
 	case GuiMessage::MSG_YES_NO:

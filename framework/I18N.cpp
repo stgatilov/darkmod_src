@@ -471,7 +471,7 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 		gui->SetStateBool("MsgBoxLeftButtonVisible", false);
 		gui->SetStateBool("MsgBoxRightButtonVisible", false);
 		gui->SetStateBool("MsgBoxMiddleButtonVisible", true);
-		gui->SetStateString("MsgBoxMiddleButtonText", Translate("#str_04339"));
+		gui->SetStateString("MsgBoxMiddleButtonText", Translate("#str_07188"));
 
 		gui->SetStateString("MsgBoxMiddleButtonCmd", "close_msg_box");
 	}
