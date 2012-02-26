@@ -291,7 +291,7 @@ void CMultiStateMover::Activate(idEntity* activator)
 
 	if (targetPositionIndex == -1) 
 	{
-		gameLocal.Warning("Multistate mover is targetted by an entity with unknown 'position': %s", targetPosition.c_str());
+		gameLocal.Warning("Multistate mover '%s' is targetted by entity '%s' with unknown 'position': %s", name.c_str(),activator->name.c_str(),targetPosition.c_str());
 		return;
 	}
 

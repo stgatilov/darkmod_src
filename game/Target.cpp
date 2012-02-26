@@ -2060,7 +2060,7 @@ void CTarget_CallScriptFunction::Event_Activate( idEntity *activator )
 	if (scriptFunction == NULL)
 	{
 		// script function not found!
-		gameLocal.Warning("Target %s specifies non-existent script function!", funcName.c_str());
+		gameLocal.Warning("Target '%s' specifies non-existent script function '%s'!", name.c_str(),funcName.c_str());
 		return;
 	}
 

@@ -3452,8 +3452,8 @@ void idActor::LoadVocalSet()
 
 	if (def == NULL)
 	{
-		gameLocal.Warning("Could not find def_vocal_set %s!", vocalSet.c_str());
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_vocal_set %s!", vocalSet.c_str());
+		gameLocal.Warning("%s - Could not find def_vocal_set %s!", name.c_str(),vocalSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("%s - Could not find def_vocal_set %s!", name.c_str(),vocalSet.c_str());
 		return;
 	}
 
@@ -3489,8 +3489,8 @@ void idActor::LoadMeleeSet()
 
 	if (def == NULL)
 	{
-		gameLocal.Warning("Could not find def_melee_set %s!", MeleeSet.c_str());
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Could not find def_melee_set %s!", MeleeSet.c_str());
+		gameLocal.Warning("%s - Could not find def_melee_set %s!", name.c_str(),MeleeSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("%s - Could not find def_melee_set %s!", name.c_str(), MeleeSet.c_str());
 		return;
 	}
 
@@ -4915,7 +4915,7 @@ void idActor::Event_SetAttackFlag(int combatType, int enabled)
 	if (combatType < COMBAT_NONE || combatType >= NUM_COMBAT_TYPES) 
 	{
 		// do nothing
-		gameLocal.Warning("Script is trying to set invalid combatType %d", combatType);
+		gameLocal.Warning("%s - Script is trying to set invalid combatType %d", name.c_str(),combatType);
 		return;
 	}
 

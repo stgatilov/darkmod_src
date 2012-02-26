@@ -2571,7 +2571,7 @@ int idAI::GetThinkInterleave() const // grayman 2414 - add 'const'
 
 	if (maxDist < minDist)
 	{
-		gameLocal.Warning("Minimum distance for interleaved thinking is larger than maximum distance, switching optimization off.");
+		gameLocal.Warning("%s - Minimum distance for interleaved thinking (%f) is larger than maximum distance (%f), switching optimization off.",name.c_str(),minDist,maxDist);
 		return 0;
 	}
 

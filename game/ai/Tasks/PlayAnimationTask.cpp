@@ -57,7 +57,7 @@ void PlayAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Parse animation spawnargs here
 	if (_animName.IsEmpty())
 	{
-		gameLocal.Warning("Cannot start PlayAnimationTask with empty animation name.\n");
+		gameLocal.Warning("%s cannot start PlayAnimationTask with empty animation name.\n",owner->name.c_str());
 		subsystem.FinishTask();
 	}
 
