@@ -972,18 +972,12 @@ void idImage::ImageProgramStringToCompressedFileName( const char *imageProg, cha
 	strcpy( fileName, "dds/" );
 	f = fileName + strlen( fileName );
 
-	int depth = 0;
-
 	// convert all illegal characters to underscores
 	// this could conceivably produce a duplicated mapping, but we aren't going to worry about it
 	for ( s = imageProg ; *s ; s++ ) {
+		// tels: TODO: Why the strange difference between "/ ", ')', ',' and all the other special characters?
 		if ( *s == '/' || *s == '\\' || *s == '(') {
-			if ( depth < 4 ) {
-				*f = '/';
-				depth ++;
-			} else {
-				*f = ' ';
-			}
+			*f = '/';
 			f++;
 		} else if ( *s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.' ) {
 			*f = '_';
