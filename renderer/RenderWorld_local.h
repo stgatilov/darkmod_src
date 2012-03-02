@@ -21,7 +21,7 @@
 #define __RENDERWORLDLOCAL_H__
 
 // assume any lightDef or entityDef index above this is an internal error
-const int LUDICROUS_INDEX	= 50000;
+#define LUDICROUS_INDEX	65537		// (2 ** 16) + 1;
 
 
 typedef struct portal_s {
