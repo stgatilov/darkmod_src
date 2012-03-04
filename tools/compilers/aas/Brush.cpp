@@ -37,7 +37,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 DisplayRealTimeString
 ============
 */
-void DisplayRealTimeString( char *string, ... ) {
+void DisplayRealTimeString( const char *string, ... ) {
 	va_list argPtr;
 	char buf[MAX_STRING_CHARS];
 	static int lastUpdateTime;
