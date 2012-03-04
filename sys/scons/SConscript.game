@@ -295,7 +295,7 @@ local_env = g_game_env.Clone()
 local_env.Prepend(CPPPATH = '#/game')
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-unused', '-Wno-deprecated', '-Winvalid-pch' ] )
+local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
 
 # Link the runtime statically, link statically against libjpeg.a and libpng.a
 # the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
