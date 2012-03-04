@@ -528,15 +528,6 @@
     <ClInclude Include="ui\FieldWindow.h">
       <Filter>Ui</Filter>
     </ClInclude>
-    <ClInclude Include="ui\GameBearShootWindow.h">
-      <Filter>Ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\GameBustOutWindow.h">
-      <Filter>Ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\GameSSDWindow.h">
-      <Filter>Ui</Filter>
-    </ClInclude>
     <ClInclude Include="ui\GuiScript.h">
       <Filter>Ui</Filter>
     </ClInclude>
@@ -1606,15 +1597,6 @@
       <Filter>Ui</Filter>
     </ClCompile>
     <ClCompile Include="ui\FieldWindow.cpp">
-      <Filter>Ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\GameBearShootWindow.cpp">
-      <Filter>Ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\GameBustOutWindow.cpp">
-      <Filter>Ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\GameSSDWindow.cpp">
       <Filter>Ui</Filter>
     </ClCompile>
     <ClCompile Include="ui\GuiScript.cpp">

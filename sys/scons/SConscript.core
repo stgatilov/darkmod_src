@@ -205,9 +205,6 @@ ui_string = ' \
 	DeviceContext.cpp \
 	EditWindow.cpp \
 	FieldWindow.cpp \
-	GameBearShootWindow.cpp \
-	GameBustOutWindow.cpp \
-	GameSSDWindow.cpp \
 	GuiScript.cpp \
 	ListGUI.cpp \
 	ListWindow.cpp \

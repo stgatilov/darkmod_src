@@ -1290,9 +1290,6 @@
     <ClInclude Include="ui\DeviceContext.h" />
     <ClInclude Include="ui\EditWindow.h" />
     <ClInclude Include="ui\FieldWindow.h" />
-    <ClInclude Include="ui\GameBearShootWindow.h" />
-    <ClInclude Include="ui\GameBustOutWindow.h" />
-    <ClInclude Include="ui\GameSSDWindow.h" />
     <ClInclude Include="ui\GuiScript.h" />
     <ClInclude Include="ui\ListGUI.h" />
     <ClInclude Include="ui\ListGUILocal.h" />
@@ -2644,9 +2641,6 @@
     <ClCompile Include="ui\DeviceContext.cpp" />
     <ClCompile Include="ui\EditWindow.cpp" />
     <ClCompile Include="ui\FieldWindow.cpp" />
-    <ClCompile Include="ui\GameBearShootWindow.cpp" />
-    <ClCompile Include="ui\GameBustOutWindow.cpp" />
-    <ClCompile Include="ui\GameSSDWindow.cpp" />
     <ClCompile Include="ui\GuiScript.cpp" />
     <ClCompile Include="ui\ListGUI.cpp" />
     <ClCompile Include="ui\ListWindow.cpp" />

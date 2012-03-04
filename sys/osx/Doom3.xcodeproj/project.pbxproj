@@ -155,9 +155,6 @@
 		812258EF0912BC79005D34B9 /* Session_menu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257D20912BC79005D34B9 /* Session_menu.cpp */; };
 		812258F00912BC79005D34B9 /* Unzip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257D30912BC79005D34B9 /* Unzip.cpp */; };
 		812258F10912BC79005D34B9 /* UsercmdGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257D50912BC79005D34B9 /* UsercmdGen.cpp */; };
-		812258F20912BC79005D34B9 /* GameBearShootWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257D80912BC79005D34B9 /* GameBearShootWindow.cpp */; };
-		812258F30912BC79005D34B9 /* GameBustOutWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257DA0912BC79005D34B9 /* GameBustOutWindow.cpp */; };
-		812258F40912BC79005D34B9 /* GameSSDWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257DC0912BC79005D34B9 /* GameSSDWindow.cpp */; };
 		812258F50912BC79005D34B9 /* ListGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257DE0912BC79005D34B9 /* ListGUI.cpp */; };
 		812258F60912BC79005D34B9 /* BindWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257E10912BC79005D34B9 /* BindWindow.cpp */; };
 		812258F70912BC79005D34B9 /* ChoiceWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257E30912BC79005D34B9 /* ChoiceWindow.cpp */; };
@@ -537,12 +534,6 @@
 		812257D40912BC79005D34B9 /* Unzip.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = Unzip.h; sourceTree = "<group>"; };
 		812257D50912BC79005D34B9 /* UsercmdGen.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = UsercmdGen.cpp; sourceTree = "<group>"; };
 		812257D60912BC79005D34B9 /* UsercmdGen.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = UsercmdGen.h; sourceTree = "<group>"; };
-		812257D80912BC79005D34B9 /* GameBearShootWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GameBearShootWindow.cpp; sourceTree = "<group>"; };
-		812257D90912BC79005D34B9 /* GameBearShootWindow.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = GameBearShootWindow.h; sourceTree = "<group>"; };
-		812257DA0912BC79005D34B9 /* GameBustOutWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GameBustOutWindow.cpp; sourceTree = "<group>"; };
-		812257DB0912BC79005D34B9 /* GameBustOutWindow.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = GameBustOutWindow.h; sourceTree = "<group>"; };
-		812257DC0912BC79005D34B9 /* GameSSDWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = GameSSDWindow.cpp; sourceTree = "<group>"; };
-		812257DD0912BC79005D34B9 /* GameSSDWindow.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = GameSSDWindow.h; sourceTree = "<group>"; };
 		812257DE0912BC79005D34B9 /* ListGUI.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = ListGUI.cpp; sourceTree = "<group>"; };
 		812257DF0912BC79005D34B9 /* ListGUI.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = ListGUI.h; sourceTree = "<group>"; };
 		812257E00912BC79005D34B9 /* ListGUILocal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = ListGUILocal.h; sourceTree = "<group>"; };
@@ -1106,12 +1097,6 @@
 		812257D70912BC79005D34B9 /* ui */ = {
 			isa = PBXGroup;
 			children = (
-				812257D80912BC79005D34B9 /* GameBearShootWindow.cpp */,
-				812257D90912BC79005D34B9 /* GameBearShootWindow.h */,
-				812257DA0912BC79005D34B9 /* GameBustOutWindow.cpp */,
-				812257DB0912BC79005D34B9 /* GameBustOutWindow.h */,
-				812257DC0912BC79005D34B9 /* GameSSDWindow.cpp */,
-				812257DD0912BC79005D34B9 /* GameSSDWindow.h */,
 				812257DE0912BC79005D34B9 /* ListGUI.cpp */,
 				812257DF0912BC79005D34B9 /* ListGUI.h */,
 				812257E00912BC79005D34B9 /* ListGUILocal.h */,
@@ -1511,9 +1496,6 @@
 				812258EF0912BC79005D34B9 /* Session_menu.cpp in Sources */,
 				812258F00912BC79005D34B9 /* Unzip.cpp in Sources */,
 				812258F10912BC79005D34B9 /* UsercmdGen.cpp in Sources */,
-				812258F20912BC79005D34B9 /* GameBearShootWindow.cpp in Sources */,
-				812258F30912BC79005D34B9 /* GameBustOutWindow.cpp in Sources */,
-				812258F40912BC79005D34B9 /* GameSSDWindow.cpp in Sources */,
 				812258F50912BC79005D34B9 /* ListGUI.cpp in Sources */,
 				812258F60912BC79005D34B9 /* BindWindow.cpp in Sources */,
 				812258F70912BC79005D34B9 /* ChoiceWindow.cpp in Sources */,

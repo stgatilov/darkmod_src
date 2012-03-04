@@ -34,10 +34,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "MarkerWindow.h"
 #include "FieldWindow.h"
 
-#include "GameSSDWindow.h"
-#include "GameBearShootWindow.h"
-#include "GameBustOutWindow.h"
-
 // 
 //  gui editor is more integrated into the window now
 #include "../tools/guied/GEWindowWrapper.h"
@@ -2271,39 +2267,6 @@ bool idWindow::Parse( idParser *src, bool rebuild) {
 		  	SaveExpressionParseState();
 			win->Parse(src, rebuild);	
 		  	RestoreExpressionParseState();
-			AddChild(win);
-			win->SetParent(this);
-			dwt.simp = NULL;
-			dwt.win = win;
-			drawWindows.Append(dwt);
-		}
-		else if ( token == "gameSSDDef" ) {
-			idGameSSDWindow *win = new idGameSSDWindow(dc, gui);
-			SaveExpressionParseState();
-			win->Parse(src, rebuild);	
-			RestoreExpressionParseState();
-			AddChild(win);
-			win->SetParent(this);
-			dwt.simp = NULL;
-			dwt.win = win;
-			drawWindows.Append(dwt);
-		}
-		else if ( token == "gameBearShootDef" ) {
-			idGameBearShootWindow *win = new idGameBearShootWindow(dc, gui);
-			SaveExpressionParseState();
-			win->Parse(src, rebuild);	
-			RestoreExpressionParseState();
-			AddChild(win);
-			win->SetParent(this);
-			dwt.simp = NULL;
-			dwt.win = win;
-			drawWindows.Append(dwt);
-		}
-		else if ( token == "gameBustOutDef" ) {
-			idGameBustOutWindow *win = new idGameBustOutWindow(dc, gui);
-			SaveExpressionParseState();
-			win->Parse(src, rebuild);	
-			RestoreExpressionParseState();
 			AddChild(win);
 			win->SetParent(this);
 			dwt.simp = NULL;
