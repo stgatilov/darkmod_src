@@ -3205,6 +3205,7 @@ float idEntity::GetLightQuotient()
 		// Get the bounds and move it upwards a tiny bit
 		idBounds bounds = physics->GetAbsBounds() + physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
 
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idEntity::GetLightQuotient - marker bounds = (%s)\r",bounds.ToString()); // grayman debug
 		// A single point doesn't work with ellipse intersection
 		bounds.ExpandSelf(0.1f); 
 
@@ -12311,6 +12312,13 @@ void idEntity::Event_GetLocation()
 idLocationEntity *idEntity::GetLocation( void )
 {
 	return gameLocal.LocationForPoint( GetPhysics()->GetOrigin() );
+}
+
+// grayman debug
+
+bool idEntity::CastsShadows()
+{
+	return !renderEntity.noShadow;
 }
 
 
