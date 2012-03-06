@@ -461,11 +461,18 @@ void idSessionLocal::HandleRestartMenuCommands( const char *menuCommand ) {
 			continue;
 		}
 
-		if ( !idStr::Icmp( cmd, "restart" ) ) {
-			if ( !LoadGame( GetAutoSaveName( mapSpawnData.serverInfo.GetString("si_map") ) ) ) {
+		//if ( !idStr::Icmp( cmd, "restart" ) ) {
+		//	if ( !LoadGame( GetAutoSaveName( mapSpawnData.serverInfo.GetString("si_map") ) ) ) {
 				// If we can't load the autosave then just restart the map
-				MoveToNewMap( mapSpawnData.serverInfo.GetString("si_map") );
-			}
+		//		MoveToNewMap( mapSpawnData.serverInfo.GetString("si_map") );
+		//	}
+		//	continue;
+		//}
+		
+		if ( !idStr::Icmp( cmd, "restart" ) ) {
+		//	if ( !LoadGame( GetAutoSaveName( mapSpawnData.serverInfo.GetString("si_map") ) ) ) {
+		//		// If we can't load the autosave then just restart the map
+			MoveToNewMap( mapSpawnData.serverInfo.GetString("si_map") );
 			continue;
 		}
 
@@ -748,6 +755,12 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			if ( mapSpawned ) {
 				ExitMenu();
 			}
+			continue;
+		}
+		if ( !idStr::Icmp( cmd, "restart" ) ) {
+		//	if ( !LoadGame( GetAutoSaveName( mapSpawnData.serverInfo.GetString("si_map") ) ) ) {
+		//		// If we can't load the autosave then just restart the map
+			MoveToNewMap( mapSpawnData.serverInfo.GetString("si_map") );
 			continue;
 		}
 
