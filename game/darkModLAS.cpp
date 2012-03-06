@@ -263,7 +263,6 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
 		if ( trace.fraction == 1.0f )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     traced full path\r"); // grayman debug
 			results = true; // completed the path
 			break;
 		}
@@ -272,7 +271,6 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
 
 		if ( trace.fraction < VECTOR_EPSILON )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     trace.fraction < VECTOR_EPSILON\r"); // grayman debug
 			break;
 		}
 
@@ -280,10 +278,9 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
 
 		idEntity* entHit = gameLocal.entities[trace.c.entityNum];
 
-		if ( entHit->CastsShadows() )
+		if ( entHit->CastsShadows() ) // grayman #3047
 //		if ( !entHit->spawnArgs.GetBool( "noshadows", "0" ) )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     trace hit '%s', which casts shadows\r",entHit->name.c_str()); // grayman debug
 			break;
 		}
 
@@ -291,7 +288,6 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore )
 
 		from = trace.endpos;
 		ignore = entHit; // this time, ignore the entity we struck
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     trace hit '%s', which doesn't cast shadows, so we'll continue from here\r",entHit->name.c_str()); // grayman debug
 	}
 
 	return results;
@@ -444,16 +440,12 @@ void darkModLAS::accumulateEffectOfLightsInArea
 
 				idVec3 p1 = testPoint1;
 				idVec3 p2 = p_LASLight->lastWorldPos;
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("first try: tracing light beam from marker corner (%s) to light (%s)\r", p1.ToString(),p2.ToString()); // grayman debug
 
 				bool lightReaches = traceLightPath( p1, p2, p_ignoredEntity );
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("first trace %s\r", lightReaches ? "succeeded" : "failed"); // grayman debug
 				if ( !lightReaches )
 				{
 					p1 = testPoint2;
-					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("second try: tracing light beam from marker corner (%s) to light (%s)\r", p1.ToString(),p2.ToString()); // grayman debug
 					lightReaches = traceLightPath( p1, p2, p_ignoredEntity );
-					DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("second trace %s\r", lightReaches ? "succeeded" : "failed"); // grayman debug
 				}
 				
 				b_excludeLight = !lightReaches;
@@ -984,7 +976,6 @@ float darkModLAS::queryLightingAlongLine
 	
 	idBounds testBounds (mins, maxes);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("darkModLAS::queryLightingAlongLine - testBounds = (%s)\r",testBounds.ToString()); // grayman debug
 	// Run a local PVS query to determine which other areas are visible (and hence could
 	// have lights shing on the target area)
 	int pvsTestAreaIndices[idEntity::MAX_PVS_AREAS];

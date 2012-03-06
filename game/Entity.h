@@ -1193,7 +1193,7 @@ public:
 
 	bool					CheckResponseIgnore(StimType type, idEntity* fromEntity); // grayman #2872
 	idLocationEntity*		GetLocation( void );	// grayman #3013
-	bool					CastsShadows( void );	// grayman debug
+	bool					CastsShadows( void );	// grayman #3047
 	
 	/**
 	 * This triggers a stand-alone response (without an actual Stim) on this entity.
