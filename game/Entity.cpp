@@ -8721,7 +8721,7 @@ idEntity* idAnimatedEntity::GetEntityClosestToJoint( const char* posName, const 
 				float distance = diff.LengthSqr();
 				if (distance < closest_distance && distance < max_dist_sqr) {
 					// closer and close enough
-					gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
+					// gameLocal.Printf ( " distance %f < closest_distance %f and < max_dist_sqr %f ", distance, closest_distance, max_dist_sqr );
 					closest_distance = distance;
 					closest = target;
 				}
