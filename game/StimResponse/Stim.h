@@ -47,7 +47,7 @@ public:
 	 */
 	void AddResponseIgnore(idEntity *);
 	void RemoveResponseIgnore(idEntity *);
-	bool CheckResponseIgnore(idEntity *);
+	bool CheckResponseIgnore(const idEntity *) const;
 
 	void ClearResponseIgnoreList();
 

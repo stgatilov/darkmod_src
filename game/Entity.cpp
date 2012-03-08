@@ -6384,6 +6384,8 @@ void idEntity::ActivateTargets( idEntity *activator ) const
 
 		if (ent == NULL) continue;
 
+		// gameLocal.Printf( "Activating entity '%s' (from %s)", name.c_str(), activator == NULL ? "" : activator->GetName() );
+		
 		// Call the virtual function
 		ent->Activate(activator);
 		 		
@@ -9429,7 +9431,7 @@ void idEntity::IgnoreResponse(StimType type, idEntity* fromEntity)
 
 // grayman #2872
 
-bool idEntity::CheckResponseIgnore(StimType type, idEntity* fromEntity)
+bool idEntity::CheckResponseIgnore(const StimType type, const idEntity* fromEntity) const
 {
 	CStimPtr stim = m_StimResponseColl->GetStimByType(type);
 
@@ -12340,14 +12342,14 @@ void idEntity::Event_GetLocation()
 	idThread::ReturnEntity( GetLocation() );
 }
 
-idLocationEntity *idEntity::GetLocation( void )
+idLocationEntity *idEntity::GetLocation( void ) const
 {
 	return gameLocal.LocationForPoint( GetPhysics()->GetOrigin() );
 }
 
 // grayman #3047
 
-bool idEntity::CastsShadows()
+bool idEntity::CastsShadows() const
 {
 	return !renderEntity.noShadow;
 }

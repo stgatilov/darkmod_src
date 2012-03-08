@@ -145,7 +145,7 @@ void CStim::RemoveResponseIgnore(idEntity *e)
 	}
 }
 
-bool CStim::CheckResponseIgnore(idEntity* e)
+bool CStim::CheckResponseIgnore(const idEntity* e) const
 {
 	int n = m_ResponseIgnore.Num();
 
