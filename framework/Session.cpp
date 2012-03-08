@@ -1091,10 +1091,10 @@ void idSessionLocal::MoveToNewMap( const char *mapName ) {
 
 	ExecuteMapChange();
 
-	if ( !mapSpawnData.serverInfo.GetBool("devmap") ) {
+	//if ( !mapSpawnData.serverInfo.GetBool("devmap") ) {
 		// Autosave at the beginning of the level
-		SaveGame( GetAutoSaveName( mapName ), true );
-	}
+	//	SaveGame( GetAutoSaveName( mapName ), true );
+	//}
 
 	SetGUI( NULL, NULL );
 }
