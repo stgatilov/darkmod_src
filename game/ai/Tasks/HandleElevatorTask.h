@@ -45,11 +45,13 @@ private:
 		EPressFetchButton,
 		EWaitForElevator,
 		EMoveOntoElevator,
+		EPause, // grayman #3050
 		EInitiateMoveToRideButton,
 		EMovingToRideButton,
 		EPressRideButton,
 		ERideOnElevator,
 		EGetOffElevator,
+		EWrapUp, // grayman #3050
 		ENumStates,
 	} _state;
 
@@ -60,6 +62,9 @@ private:
 
 	// Is TRUE if this task has finished successfully
 	bool _success;
+
+	// grayman #3050 - max elevator riders
+	int _maxRiders;
 	
 	// Private constructor
 	HandleElevatorTask();
@@ -76,7 +81,9 @@ public:
 
 	virtual void OnFinish(idAI* owner);
 
-	void ReorderElevQueue(CMultiStateMover* elevator); // grayman #3029
+	void ReorderQueue(UserManager &um, idVec3 point); // grayman #3050
+
+	virtual bool CanAbort(); // grayman #3050
 
 #if 0 // grayman - for debugging an elevator queue
 	void PrintElevQueue(CMultiStateMover* elevator);

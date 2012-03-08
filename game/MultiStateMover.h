@@ -46,6 +46,10 @@ class CMultiStateMover :
 	idList< idEntityPtr<CMultiStateMoverButton> > fetchButtons;
 	idList< idEntityPtr<CMultiStateMoverButton> > rideButtons;
 
+	// grayman #3050 - to help reduce jostling on the elevator
+	bool masterAtRideButton; // is the master in position to push the ride button?
+	UserManager riderManager; // manage a list of riders (which is different than users)
+
 public:
 	CLASS_PROTOTYPE( CMultiStateMover );
 
@@ -88,6 +92,14 @@ public:
 	 * @returns: NULL if nothing found.
 	 */
 	CMultiStateMoverButton* GetButton(CMultiStateMoverPosition* toPosition, CMultiStateMoverPosition* fromPosition, EMMButtonType type, idVec3 riderOrg); // grayman #3029
+
+	// grayman #3050 - for ride management
+	bool IsMasterAtRideButton();
+	void SetMasterAtRideButton(bool atButton);
+	inline UserManager& GetRiderManager()
+	{
+		return riderManager;
+	}
 
 protected:
 	// override idMover's DoneMoving() to trigger targets

@@ -3447,13 +3447,24 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	if (!owner->m_HandlingDoor && !owner->m_HandlingElevator && owner->CanUseElevators()) // grayman #3029
+	// grayman #3050 - can't handle a new elevator if you're resolving a block
+
+	if (owner->movementSubsystem->IsResolvingBlock() || owner->movementSubsystem->IsWaiting())
 	{
-		// Prevent more ElevatorTasks from being pushed
-//		owner->m_HandlingElevator = true; // grayman #3029 - this is too early; moved to Init of task
-		owner->m_CanSetupDoor = true; // grayman #3029
-		owner->movementSubsystem->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
+		return;
 	}
+
+	// grayman #3050 - can't handle a new elevator if you're currently using a door or an elevator or you can't use elevators
+
+	if ( owner->m_HandlingDoor || owner->m_HandlingElevator || !owner->CanUseElevators())
+	{
+		return;
+	}
+
+	// Prevent more ElevatorTasks from being pushed
+//	owner->m_HandlingElevator = true; // grayman #3029 - this is too early; moved to Init of task
+	owner->m_CanSetupDoor = true; // grayman #3029
+	owner->movementSubsystem->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 }
 
 } // namespace ai

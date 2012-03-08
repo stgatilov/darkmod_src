@@ -41,6 +41,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Tasks/PathInteractTask.h"
 #include "Tasks/MoveToPositionTask.h"
 #include "Tasks/FollowActorTask.h"
+#include "Tasks/HandleElevatorTask.h" // grayman #3050
 
 namespace ai
 {
@@ -675,6 +676,7 @@ void MovementSubsystem::SetWaiting(bool solid) // grayman #2345
 	
 	// If you are handling a door, you have to be taken off
 	// that door's queue, so that others can handle the door
+	// grayman - this should never happen, because the door-handling task was killed when the resolve movement task was started
 
 	idAI* owner = _owner.GetEntity();
 	if (owner->m_HandlingDoor)
@@ -733,6 +735,25 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 		{
 			SetBlockedState(EResolvingBlock); // preset this so PopMove() calling RestoreMove() doesn't start handling another door 
 			owner->PopMove(); // flush the movement state saved when door handling began
+		}
+	}
+
+	// grayman #3050 - if handling an elevator, the elevator handling task will disappear, so clean up first
+
+	if (owner->m_HandlingElevator)
+	{
+		const SubsystemPtr& subsys = owner->movementSubsystem;
+		TaskPtr task = subsys->GetCurrentTask();
+		if ( boost::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL )
+		{
+			if ( task->CanAbort() ) // let the elevator task finish if in the final stages
+			{
+				subsys->FinishTask();
+			}
+			else
+			{
+				return; // sorry, need to finish the elevator task first
+			}
 		}
 	}
 

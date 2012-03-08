@@ -3382,10 +3382,42 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 
 CMultiStateMover* idAI::OnElevator(bool mustBeMoving) const
 {
-	idEntity* ent = physicsObj.GetGroundEntity();
+	idEntity* ent = physicsObj.GetGroundEntity(); // grayman #3050 - this MIGHT return a false NULL
+
+	if ( ent == NULL )
+	{
+		// grayman #3050 - when an elevator is moving down, out from under
+		// the feet of this AI, it MIGHT be the case that tracing down 0.25,
+		// the normal criteria for finding the ground, isn't enough.
+		// So let's try to search a bit farther to see if we're on an elevator.
+
+		trace_t t;
+		idVec3 down;
+		idVec3 gravityNormal = physicsObj.GetGravityNormal();
+
+		if ( gravityNormal == vec3_zero )
+		{
+			return NULL;
+		}
+
+		idVec3 org = physicsObj.GetOrigin();
+		idClipModel* clipModel = physicsObj.GetClipModel();
+		down = org + gravityNormal * 4;
+		gameLocal.clip.Translation( t, org, down, clipModel, clipModel->GetAxis(), physicsObj.GetClipMask(), this );
+
+		if ( t.fraction == 1.0f )
+		{
+			return NULL;
+		}
+
+		ent = gameLocal.entities[t.c.entityNum];
+	}
 
 	// Return false if ground entity is not a mover
-	if (ent == NULL || !ent->IsType(CMultiStateMover::Type)) return NULL;
+	if ( ( ent == NULL ) || !ent->IsType(CMultiStateMover::Type) )
+	{
+		return NULL;
+	}
 
 	CMultiStateMover* mover = static_cast<CMultiStateMover*>(ent);
 	if (mustBeMoving)
@@ -11007,7 +11039,7 @@ int idAI::ContinueSearchForHidingSpots()
 
 		m_hidingSpots.clear();
 		// greebo: Now retrieve our share from the completed hiding spot search
-		// Given that three other AI are referencing this hiding spot finder, this AI draws a third.
+		// Given that two other AI are referencing this hiding spot finder, this AI draws a third.
 		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
 
 		// Done with search object, dereference so other AIs know how many
