@@ -119,9 +119,24 @@ void MovementSubsystem::StartPatrol()
 		{
 			// we already have a stored path, patrolling was already started and is resumed now
 			// if we are currently sleeping/sitting, just continue where we are (probably a path_wait)
-			if (owner->GetMoveType() != MOVETYPE_SLEEP && owner->GetMoveType() != MOVETYPE_SIT)
+			if ( ( owner->GetMoveType() != MOVETYPE_SLEEP ) && ( owner->GetMoveType() != MOVETYPE_SIT ) )
 			{
-				idPathCorner* candidate = GetNextPathCorner(path, owner);
+				// grayman #3052 - if path is a path_waitfortrigger, we need to head for lastpath,
+				// as long as it's not null.
+
+				idPathCorner* candidate = NULL;
+
+				if ( idStr::Icmp(path->spawnArgs.GetString("classname"), "path_waitfortrigger") == 0 )
+				{
+					if ( lastPath != NULL)
+					{
+						candidate = lastPath;
+					}
+				}
+				else
+				{
+					candidate = GetNextPathCorner(path, owner);
+				}
 
 				if (candidate != NULL)
 				{
@@ -204,12 +219,26 @@ void MovementSubsystem::RestartPatrol()
 
 	// if the first path is a path corner, just start with that
 	// otherwise, move to idle position before restarting patrol
+
 	if (idStr::Cmp(newPath->spawnArgs.GetString("classname"), "path_corner") != 0)
 	{
-		float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
-		owner->movementSubsystem->PushTask(
-			TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance))
-		);
+		if ( idStr::Icmp(newPath->spawnArgs.GetString("classname"), "path_waitfortrigger") == 0 )
+		{
+			// grayman #3052 - If newPath is a path_waitfortrigger, we can't
+			// set up the MoveToPositionTask() here. It has to be done after the
+			// upcoming PathWaitForTriggerTask().
+
+			// Set a latch to make this happen.
+
+			memory.issueMoveToPositionTask = true;
+		}
+		else
+		{
+			float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
+			owner->movementSubsystem->PushTask(
+				TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance))
+			);
+		}
 	}
 }
 
@@ -371,6 +400,22 @@ void MovementSubsystem::StartPathTask()
 	else if (classname == "path_waitfortrigger")
 	{
 		tasks.push_back(PathWaitForTriggerTaskPtr(new PathWaitForTriggerTask(path)));
+
+		// grayman #3052 - if the AI is coming off an alert and trying to
+		// walk back to where he started, and he hasn't begun patrolling
+		// yet, then the memory.issueMoveToPositionTask latch is set. If set,
+		// follow the PathWaitForTriggerTask() with a MoveToPositionTask()
+		// so the latter gets performed first.
+		
+		idAI* owner = _owner.GetEntity();
+		Memory& memory = owner->GetMemory();
+
+		if ( memory.issueMoveToPositionTask )
+		{
+			float startPosTolerance = owner->spawnArgs.GetFloat("startpos_tolerance", "-1");
+			tasks.push_back(TaskPtr(new MoveToPositionTask(memory.idlePosition, memory.idleYaw, startPosTolerance)));
+			memory.issueMoveToPositionTask = false;
+		}
 	}
 	else if (classname == "path_hide")
 	{

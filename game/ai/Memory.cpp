@@ -93,7 +93,8 @@ Memory::Memory(idAI* owningAI) :
 	fleeingDone(true),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
-	closeSuspiciousDoor(false) // grayman #1327
+	closeSuspiciousDoor(false), // grayman #1327
+	issueMoveToPositionTask(false) // grayman #3052
 {}
 
 // Save/Restore routines
@@ -199,6 +200,8 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(susDoorSameAsCurrentDoor);
 	savefile->WriteFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
+
+	savefile->WriteBool(issueMoveToPositionTask); // grayman #3052
 }
 
 void Memory::Restore(idRestoreGame* savefile)
@@ -336,6 +339,8 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(susDoorSameAsCurrentDoor);
 	savefile->ReadFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
+
+	savefile->ReadBool(issueMoveToPositionTask); // grayman #3052
 }
 
 DoorInfo& Memory::GetDoorInfo(CFrobDoor* door)

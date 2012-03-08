@@ -384,6 +384,9 @@ public:
 	// grayman #2712 - last door handled
 	idEntityPtr<CFrobDoor> lastDoorHandled;
 
+	// grayman #3052 - need to move to the idle map start spot before performing a PathWaitForTrigger task
+	bool issueMoveToPositionTask;
+
 	// grayman #2866 - start of changes
 	idEntityPtr<CFrobDoor> closeMe;	// a door that should be closed
 	idEntityPtr<idEntity> frontPos;	// the door handling position closest to the AI
