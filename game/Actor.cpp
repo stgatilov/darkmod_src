@@ -2045,7 +2045,7 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 			// Trace succeeded or hit the target entity itself
 			return true;
 		}
-		
+
 		// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
 		// however, it might be embedded in a candle and/or a candle holder.
 		// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
@@ -2053,15 +2053,12 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 
 		if (ent->IsType(idLight::Type))
 		{
+			idEntity* entHit = gameLocal.GetTraceEntity(result); // grayman #2603
 			idEntity* bindMaster = ent->GetBindMaster();
-			while (bindMaster != NULL) // exit when bindMaster == NULL or we can see one of them
+			while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
 			{
-				const idVec3& bindMasterOrigin = bindMaster->GetPhysics()->GetOrigin();
-
-				if (!gameLocal.clip.TracePoint(result, eye, bindMasterOrigin, MASK_OPAQUE, this) || 
-					 gameLocal.GetTraceEntity(result) == bindMaster) 
+				if ( entHit == bindMaster ) // grayman #2603
 				{
-					// Trace succeeded or hit the target entity itself
 					return true;
 				}
 				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy

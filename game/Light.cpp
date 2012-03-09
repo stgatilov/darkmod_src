@@ -227,6 +227,8 @@ idLight::idLight()
 	relightAfter		= 0;		// grayman #2603
 	aiBarks.Clear();				// grayman #2603
 
+	startedOff			= false;	// grayman #2905
+
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
 	fadeStart			= 0;

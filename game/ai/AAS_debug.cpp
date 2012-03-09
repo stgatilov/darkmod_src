@@ -559,7 +559,7 @@ void idAASLocal::DrawAreas(const idVec3& playerOrigin)
 		idVec3 areaCenter = AreaCenter(i);
 
 		// angua: only draw areas near the player, no need to see them at the other end of the map
-		if ( (areaCenter - playerOrigin).LengthFast() < 300 )
+		if ( (areaCenter - playerOrigin).LengthFast() < 150 )
 		{
 			idBounds areaBounds = GetAreaBounds(i);
 			int clusterNum = file->GetArea(i).cluster;
