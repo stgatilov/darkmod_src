@@ -45,10 +45,11 @@ JOBS (default 1)
 	Parallel build
 
 BUILD (default debug)
-	Use debug-all/debug/release to select build settings
+	Use debug-all/debug/release/profile to select build settings
 	ex: BUILD="release"
 	debug-all: no optimisations, debugging symbols
 	debug: -O -g
+	profile: -pg -fprofile-arcs (to produce gmon.out, which can be analyzed with gprof)
 	release: all optimisations, including CPU target etc.
 
 BUILD_ROOT (default 'build')
@@ -304,6 +305,13 @@ if ( BUILD == 'debug-all' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'debug' ):
 	OPTCPPFLAGS = [ '-g', '-O1', '-D_DEBUG' ]
+	if ( ID_MCHECK == '0' ):
+		ID_MCHECK = '1'
+elif ( BUILD == 'profile' ):
+	# -fprofile-arcs is needed for gcc 3.x and 4.x
+	OPTCPPFLAGS = [ '-pg', '-fprofile-arcs', '-ftest-coverage', '-O1', '-D_DEBUG' ]
+	BASELINKFLAGS.append( '-pg' );
+	BASELINKFLAGS.append( '-fprofile-arcs' );
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
