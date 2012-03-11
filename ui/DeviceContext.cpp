@@ -53,9 +53,10 @@ int idDeviceContext::FindFont( const char *name ) {
 	idStr fileName = name;
 	fileName.Replace("fonts", common->GetI18N()->GetCurrentFontPath().c_str() );
 
+	// TODO: #3060: This will leak fontInfo entries if the same font cannot be registered multiple times
 	fontInfoEx_t fontInfo;
-		int index = fonts.Append( fontInfo );
-		if ( renderSystem->RegisterFont( fileName, fonts[index] ) ){
+	int index = fonts.Append( fontInfo );
+	if ( renderSystem->RegisterFont( fileName, fonts[index] ) ){
 		idStr::Copynz( fonts[index].name, name, sizeof( fonts[index].name ) );
 		return index;
 	} else {
