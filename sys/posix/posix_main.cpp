@@ -84,6 +84,7 @@ void Posix_Exit(int ret) {
 	if ( exit_spawn[0] ) {
 		Sys_DoStartProcess( exit_spawn, false );
 	}
+	Sys_Printf( "About to exit with code %i\n", set_exit ? set_exit : ret );
 	// in case of signal, handler tries a common->Quit
 	// we use set_exit to maintain a correct exit code
 	if ( set_exit ) {
