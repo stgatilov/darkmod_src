@@ -219,6 +219,7 @@ idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVA
 
 // rebb: toggle for dedicated ambient light shader use, mainly for performance testing
 idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL, "enable dedicated ambientLight shader" );
+idCVar r_stencilShadowMode( "r_stencilShadowMode", "0", CVAR_RENDERER | CVAR_INTEGER, "choose stencil shadow algorithm. 0 - default" );
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );

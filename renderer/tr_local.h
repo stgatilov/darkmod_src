@@ -982,6 +982,7 @@ extern idCVar r_debugRenderToTexture;
 
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
+extern idCVar r_stencilShadowMode;
 
 /*
 ====================================================================
