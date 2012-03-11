@@ -3155,12 +3155,12 @@ void idEntity::Show( void )
 {
 	// greebo: If the pre-hide clipmask is still uninitialised on Show(), the entity 
 	// has not been hidden before. Set this to something valid (i.e. the current clipmask)
-	if ( m_preHideClipMask == -1)
+	if ( m_preHideClipMask == -1 )
 	{
 		m_preHideClipMask = GetPhysics()->GetClipMask();
 	}
 
-	if ( m_preHideContents == -1)
+	if ( m_preHideContents == -1 )
 	{
 		m_preHideContents = GetPhysics()->GetContents();
 	}
@@ -3168,7 +3168,7 @@ void idEntity::Show( void )
 	if ( IsHidden() ) 
 	{
 		fl.hidden = false;
-		if( m_FrobBox && m_bFrobable )
+		if ( m_FrobBox && m_bFrobable )
 		{
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		}
@@ -3178,21 +3178,26 @@ void idEntity::Show( void )
 		idEntity *ent;
 		idEntity *next;
 
-		for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) 
+		for ( ent = GetNextTeamEntity() ; ent != NULL ; ent = next ) 
 		{
 			next = ent->GetNextTeamEntity();
 			if ( ent->GetBindMaster() == this ) 
 			{
-				if (gameLocal.time >= ent->GetHideUntilTime()) // grayman #597 - one second needs to pass before showing
+				if ( gameLocal.time >= ent->GetHideUntilTime() ) // grayman #597 - one second needs to pass before showing
 				{
 					ent->Show();
 					if ( ent->IsType( idLight::Type ) )
 					{
-						static_cast<idLight *>( ent )->On();
+						static_cast<idLight *>(ent)->On();
 					}
 				}
 			}
 		}
+	}
+
+	if ( spawnArgs.GetBool("neverShow","0") ) // grayman #2998
+	{
+		PostEventMS( &EV_Hide, 0 ); // queue a hide for later
 	}
 }
 
@@ -10332,10 +10337,14 @@ void idEntity::ShowAttachmentInd( int ind, bool bShow )
 		goto Quit;
 	}
 
-	if( bShow )
+	if ( bShow )
+	{
 		ent->Show();
+	}
 	else
+	{
 		ent->Hide();
+	}
 
 Quit:
 	return;
