@@ -54,7 +54,7 @@ protected:
 
 private:
 	// Silence compiler warning about assignment operators
-	EscapePointEvaluator& operator=(const EscapePointEvaluator& other) {}
+	EscapePointEvaluator& operator=(const EscapePointEvaluator& other);
 
 public:
 	// Default Constructor
