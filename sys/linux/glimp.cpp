@@ -210,11 +210,10 @@ GLX_TestDGA
 Check for DGA	- update in_dgamouse if needed
 */
 void GLX_TestDGA() {
-	int dga_MajorVersion = 0, dga_MinorVersion = 0;
-
-	assert( dpy );
 
 #if defined( ID_ENABLE_DGA )
+	int dga_MajorVersion = 0, dga_MinorVersion = 0;
+	assert( dpy );
 	if ( !XF86DGAQueryVersion( dpy, &dga_MajorVersion, &dga_MinorVersion ) ) {
 		// unable to query, probalby not supported
 		common->Printf( "Failed to detect DGA DirectVideo Mouse\n" );
