@@ -36,10 +36,10 @@
 	combination. The index of a decl in the per type list also stays the
 	same throughout the lifetime of the engine. Although the pointer to
 	a decl always stays the same, one should never maintain pointers to
-	data inside decls. The data stored in a decl is not garranteed to stay
+	data inside decls. The data stored in a decl is not guaranteed to stay
 	the same for more than one engine frame.
 
-	The decl indexes of explicitely defined decls are garrenteed to be
+	The decl indexes of explicitely defined decls are guaranteed to be
 	consistent based on the parsed decl files. However, the indexes of
 	implicit decls may be different based on the order in which levels
 	are loaded.
