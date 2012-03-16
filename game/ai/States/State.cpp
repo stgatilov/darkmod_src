@@ -431,6 +431,7 @@ void State::OnVisualStim(idEntity* stimSource)
 	// Get AI use of the stim
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%d: State::OnVisualStim: %s is stimmed by %s at a distance of %f\r",gameLocal.time,owner->name.c_str(),stimSource->name.c_str(),(stimSource->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).Length()); // grayman debug
 	// grayman #2603
 
 	// First check the chance of seeing a particular AIUSE type. For AI that have zero chance
@@ -1111,12 +1112,14 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			// Only do this if we don't have an enemy already
 			if (owner->GetEnemy() == NULL)
 			{
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("OnPersonEncounter: %s sees an enemy!!!!\r",owner->name.c_str()); // grayman debug
 				// Living enemy
 				gameLocal.Printf("I see a living enemy!\n");
 				owner->SetEnemy(other);
 				owner->AI_VISALERT = true;
 				
 				owner->SetAlertLevel(owner->thresh_5*2);
+				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     %s's alert level = %f\r",owner->name.c_str(),owner->thresh_5*2); // grayman debug
 				memory.alertClass = EAlertVisual_1;
 				memory.alertType = EAlertTypeEnemy;
 				// An enemy should not be ignored in the future

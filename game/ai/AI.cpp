@@ -567,6 +567,7 @@ idAI::idAI()
 	m_koState = KO_NOT;			// grayman #2604
 	m_earlyThinkCounter = 5 + gameLocal.random.RandomInt(5);	// grayman #2654
 	m_bCanExtricate = true;		// grayman #2603
+	m_ignorePlayer = false;		// grayman debug
 
 	m_bCanOperateDoors = false;
 
@@ -893,6 +894,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_koState );			// grayman #2604
 	savefile->WriteInt( m_earlyThinkCounter );	// grayman #2654
 	savefile->WriteBool( m_bCanExtricate );		// grayman #2603
+	savefile->WriteBool( m_ignorePlayer );		// grayman debug
 	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1318,6 +1320,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	m_koState = static_cast<koState_t>( i );
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
+	savefile->ReadBool(m_ignorePlayer);		// grayman debug
+
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
 	savefile->ReadFloat(thresh_3);
@@ -2164,6 +2168,7 @@ void idAI::Think( void )
 		return;
 	}
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::Think: %s is at (%s)\r",name.c_str(),physicsObj.GetOrigin().ToString()); // grayman debug
 	SetNextThinkFrame();
 
 	// if we are completely closed off from the player, don't do anything at all
@@ -4433,9 +4438,11 @@ bool idAI::CanSee( idEntity *ent, bool useFOV ) const
 	// Test if it is occluded, and use field of vision in the check (true as second parameter)
 	bool cansee = idActor::CanSee( ent, useFOV );
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("CanSee: %s - He's %s my FOV\r",name.c_str(),cansee ? "in" : "NOT in"); // grayman debug
 	// Also consider lighting and visual acuity of AI
 	if (cansee)
 	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     %s is going to check how light affects this\r",name.c_str()); // grayman debug
 		cansee = !IsEntityHiddenByDarkness(ent, 0.1f);	// tels: hard-coded threshold of 0.1f
 	}
 
@@ -6605,6 +6612,7 @@ void idAI::ClearEnemy( void ) {
 	// to check here in case the AI is killed or KO'ed and doesn't
 	// use the normal logging code there.
 
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::ClearEnemy - %s - ClearEnemy() AI_ENEMY_VISIBLE is found to be %s\r",name.c_str(),AI_ENEMY_VISIBLE ? "TRUE" : "FALSE"); // grayman debug
 	if ( AI_ENEMY_VISIBLE )
 	{
 		if ( ( enemy.GetEntity() != NULL ) && ( enemy.GetEntity()->IsType(idPlayer::Type) ) )
@@ -6612,11 +6620,14 @@ void idAI::ClearEnemy( void ) {
 			if ( lastTimePlayerLost < 0 ) // = -1 if the player was never seen or seen but not lost at this point
 			{
 				lastTimePlayerLost = gameLocal.time;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::ClearEnemy - %s - lastTimePlayerLost is set to %d\r",name.c_str(),lastTimePlayerLost); // grayman debug
 				if ( lastTimePlayerSeen > 0 )
 				{
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::ClearEnemy - %s - calling  Add2TimePlayerSeen(%d)\r",name.c_str(),lastTimePlayerSeen,lastTimePlayerLost - lastTimePlayerSeen); // grayman debug
 					gameLocal.m_MissionData->Add2TimePlayerSeen(lastTimePlayerLost - lastTimePlayerSeen);
 				}
 				lastTimePlayerSeen = -1;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::ClearEnemy - %s - lastTimePlayerSeen is set to %d\r",name.c_str(),lastTimePlayerSeen); // grayman debug
 			}
 		}
 	}
@@ -6625,6 +6636,7 @@ void idAI::ClearEnemy( void ) {
 	enemy				= NULL;
 	AI_ENEMY_IN_FOV		= false;
 	AI_ENEMY_VISIBLE	= false;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::ClearEnemy - %s - AI_ENEMY_VISIBLE is set to FALSE()\r",name.c_str()); // grayman debug
 }
 
 /*
@@ -7108,13 +7120,16 @@ void idAI::UpdateEnemyPosition()
 
 		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
-
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::UpdateEnemyPosition - %s - AI_ENEMY_VISIBLE set to TRUE()\r",name.c_str()); // grayman debug
 
 		// Now perform the FOV check manually
 		if (CheckFOV(enemyPos))
 		{
 			AI_ENEMY_IN_FOV = true;
 			// TODO: call SetEnemyPosition here only?
+
+			// The AI won't actually "see" the player until after the Combat pause
+			// that occurs at the start of Combat mode.
 
 			// Store the last time the enemy was visible
 			mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
@@ -7133,7 +7148,7 @@ void idAI::UpdateEnemyPosition()
 
 	// grayman #2887 - track enemy visibility for statistics
 
-	if ( enemyEnt->IsType(idPlayer::Type) )
+	if ( enemyEnt->IsType(idPlayer::Type) && !m_ignorePlayer) // grayman debug - ignore the player when in a Combat mode setup
 	{
 		if ( AI_ENEMY_VISIBLE )
 		{
@@ -7142,6 +7157,7 @@ void idAI::UpdateEnemyPosition()
 				// new sighting
 				gameLocal.m_MissionData->IncrementPlayerSeen();
 				lastTimePlayerSeen = gameLocal.time;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::UpdateEnemyPosition - %s - 1 lastTimePlayerSeen = %d\r",name.c_str(),lastTimePlayerSeen); // grayman debug
 			}
 			else if ( lastTimePlayerLost > 0 )
 			{
@@ -7150,12 +7166,15 @@ void idAI::UpdateEnemyPosition()
 					// new sighting
 					gameLocal.m_MissionData->IncrementPlayerSeen();
 					lastTimePlayerSeen = gameLocal.time;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::UpdateEnemyPosition - %s - 2 lastTimePlayerSeen = %d\r",name.c_str(),lastTimePlayerSeen); // grayman debug
 					lastTimePlayerLost = -1;
 				}
 				else // continuation of previous sighting
 				{
 					lastTimePlayerSeen = lastTimePlayerLost;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::idAI::UpdateEnemyPosition - %s - 3 lastTimePlayerSeen = %d\r",name.c_str(),lastTimePlayerSeen); // grayman debug
 					lastTimePlayerLost = -1;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::UpdateEnemyPosition - %s - lastTimePlayerLost = %d\r",name.c_str(),lastTimePlayerLost); // grayman debug
 				}
 			}
 		}
@@ -7166,11 +7185,13 @@ void idAI::UpdateEnemyPosition()
 			if ( lastTimePlayerLost < 0 )
 			{
 				lastTimePlayerLost = gameLocal.time;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::idAI::UpdateEnemyPosition - %s - lastTimePlayerLost = %d\r",name.c_str(),lastTimePlayerLost); // grayman debug
 				if ( lastTimePlayerSeen > 0 )
 				{
 					gameLocal.m_MissionData->Add2TimePlayerSeen(lastTimePlayerLost - lastTimePlayerSeen);
 				}
 				lastTimePlayerSeen = -1;
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::UpdateEnemyPosition - %s - lastTimePlayerLost = %d\r",name.c_str(),lastTimePlayerLost); // grayman debug
 			}
 		}
 	}
@@ -8933,7 +8954,7 @@ void idAI::AlertAI(const char *type, float amount)
 			}
 			return;
 		}
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor, or grace count %d maxed\r", alertInc, m_AlertGraceThresh,m_AlertGraceCount);
 	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
@@ -9202,26 +9223,37 @@ void idAI::PerformVisualScan(float timecheck)
 
 	if (!CheckFOV(player->GetEyePosition()))
 	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%d: idAI::PerformVisualScan: %s - Player isn't in my FOV\r",gameLocal.time,name.c_str()); // grayman debug
 		return;
 	}
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%d: idAI::PerformVisualScan: %s - Player is in my FOV and is %f away\r",gameLocal.time,name.c_str(),(player->GetEyePosition() - physicsObj.GetOrigin()).Length()); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     I'm at (%s) and the Player is at (%s)\r",physicsObj.GetOrigin().ToString(),player->GetEyePosition().ToString()); // grayman debug
 	// Check the candidate's visibility.
 	float visFrac = GetVisibility(player);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     visFrac = %f\r",visFrac); // grayman debug
 	// Do the percentage check
 	float randFrac = gameLocal.random.RandomFloat();
 	float chance = timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat() * visFrac;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     randFrac = %f\r",randFrac); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     timecheck = %f\r",timecheck); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     s_VisNormtime = %f\r",s_VisNormtime); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     cv_ai_sight_prob = %f\r",cv_ai_sight_prob.GetFloat()); // grayman debug
 	if( randFrac > chance)
 	{
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac ); // grayman debug - comment when done
 		return;
 	}
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Random number check passed\r"); // grayman debug - comment when done
 	// angua: does not take lighting and FOV into account
 	if (!CanSeeExt(player, false, false))
 	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     FAILURE: CanSeeExt() says I can't see the player\r"); // grayman debug - comment when done
 		return;
 	}
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     SUCCESS: CanSeeExt() says I can see the player\r"); // grayman debug - comment when done
 	// greebo: At this point, the actor is identified as enemy and is visible
 	// set AI_VISALERT and the vector for last sighted position
 	// Store the position the enemy was visible
@@ -9233,6 +9265,7 @@ void idAI::PerformVisualScan(float timecheck)
 
 	// angua: alert increase depends on brightness, distance and acuity
 	float incAlert = 4 + 9 * visFrac;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Increasing my alert level by %f\r",incAlert); // grayman debug - comment when done
 
 	if (cv_ai_visdist_show.GetFloat() > 0) 
 	{
@@ -9241,9 +9274,33 @@ void idAI::PerformVisualScan(float timecheck)
 	}
 
 	float newAlertLevel = AI_AlertLevel + incAlert;
-	if (newAlertLevel > thresh_5)
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     My new alert level = %f\r",newAlertLevel); // grayman debug - comment when done
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     And I'm %f from the player\r",(m_LastSight - physicsObj.GetOrigin()).LengthFast()); // grayman debug - comment when done
+
+	if ( newAlertLevel >= thresh_5 )
 	{
-		SetEnemy(player);
+		// grayman debug
+		// Allow ramp up to Combat mode if the distance to the player is less than a cutoff distance.
+
+		if ( ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     My new alert level is high enough to declare an ENEMY!\r"); // grayman debug - comment when done
+			SetEnemy(player);
+			m_ignorePlayer = true; // grayman debug - don't count this instance for mission statistics (defer until Combat state begins)
+
+			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
+			// visibility in the mission data
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     My new alert level is high enough to declare an ENEMY, but I have to adjust it lower because I'm too far away\r"); // grayman debug - comment when done
+			newAlertLevel = thresh_5 - 0.1;
+			incAlert = newAlertLevel - AI_AlertLevel;
+		}
+	}
+	else // grayman debug
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     My new alert level isn't high enough to declare an ENEMY\r"); // grayman debug - comment when done
 	}
 
 	// If the alert amount is larger than everything else encountered this frame
@@ -9254,6 +9311,7 @@ void idAI::PerformVisualScan(float timecheck)
 		m_AlertedByActor = player;
 		AlertAI("vis", incAlert);
 
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     Calling mind->GetState()->OnVisualAlert(player)\r"); // grayman debug - comment when done
 		// Call the visual alert handler on the current state
 		mind->GetState()->OnVisualAlert(player);
 	}
@@ -9289,6 +9347,8 @@ float idAI::GetVisibility( idEntity *ent ) const
 	 */ 
 	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("min dist = %f\r",cv_ai_sightmindist.GetFloat()); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("max dist = %f\r",cv_ai_sightmaxdist.GetFloat()); // grayman debug
 
 	idVec3 delta = GetEyePosition() - player->GetEyePosition();
 	float dist = delta.Length()*s_DOOM_TO_METERS;
@@ -9340,7 +9400,9 @@ float idAI::GetCalibratedLightgemValue() const
 
 	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 
-	float term0 = -0.003f;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GetCalibratedLightgemValue: lgem = %f\r",lgem); // grayman debug
+	float term0 = -0.03f; // grayman debug - Wiki says -0.03f, and angua says this is what it's supposed to be
+//	float term0 = -0.003f;
 	float term1 = 0.03f * lgem;
 	float term2 = 0.001f * idMath::Pow16(lgem, 2);
 	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
@@ -9349,10 +9411,14 @@ float idAI::GetCalibratedLightgemValue() const
 
 	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     clampVal = %f\r",clampVal); // grayman debug
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     acuity = %f\r",GetAcuity("vis")); // grayman debug
 	clampVal *= GetAcuity("vis");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     modified clampVal = %f\r",clampVal); // grayman debug
 
 	if (clampVal > 1)
 	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     clampVal maxed at 1\r"); // grayman debug
 		clampVal = 1;
 	}	
 
@@ -9658,6 +9724,7 @@ float idAI::GetMaximumObservationDistance(idEntity* entity) const
 
 /*---------------------------------------------------------------------------------*/
 
+/* grayman debug - commented out, so not used
 float idAI::GetPlayerVisualStimulusAmount() const
 {
 	float alertAmount = 0.0;
@@ -9700,6 +9767,7 @@ float idAI::GetPlayerVisualStimulusAmount() const
 
 	return alertAmount;
 }
+*/
 
 /*---------------------------------------------------------------------------------*/
 
@@ -9722,6 +9790,7 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		
 		// greebo: Check the visibility of the player depending on lgem and distance
 		float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("IsEntityHiddenByDarkness: visFraction = %f\r",visFraction); // grayman debug
 /*
 		// greebo: Debug output, comment me out
 		gameRenderWorld->DrawText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
@@ -9749,11 +9818,13 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		// Very low threshold for visibility
 		if (visFraction < sightThreshold)
 		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("IsEntityHiddenByDarkness: Not visible, entity is hidden in darkness (%f < %f)\r",visFraction,sightThreshold); // grayman debug
 			// Not visible, entity is hidden in darkness
 			return true;
 		}
 		else
 		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("IsEntityHiddenByDarkness: Visible (%f >= %f)\r",visFraction,sightThreshold); // grayman debug
 			// Visible, visual stim above threshold
 			return false;
 		}

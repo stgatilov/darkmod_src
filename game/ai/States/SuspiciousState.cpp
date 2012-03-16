@@ -42,8 +42,10 @@ const idStr& SuspiciousState::GetName() const
 
 bool SuspiciousState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: SuspiciousState::CheckAlertLevel - %s - checking alert level; are we in the correct state?\r",gameLocal.time,owner->name.c_str()); // grayman debug
 	if (owner->AI_AlertIndex < 2)
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s - alert level too low, dropping back to Observant\r",owner->name.c_str()); // grayman debug
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
 
@@ -138,6 +140,7 @@ void SuspiciousState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("SuspiciousState::Init: %s\r",owner->name.c_str()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SuspiciousState initialised.\r");
 	assert(owner);
 

@@ -148,9 +148,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
 			// greebo: This is taxing and can be replaced by a simpler distance check 
 			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
-			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
 
-			owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
+			// grayman debug - don't run during investigations
+//			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
+//			owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING);
 		}
 
 		return false;

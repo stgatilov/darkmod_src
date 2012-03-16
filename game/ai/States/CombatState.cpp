@@ -36,8 +36,13 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FleeState.h"
 #include "../Library.h"
 
+#define REACTION_TIME_MIN  100	// grayman debug
+#define REACTION_TIME_MAX 2000	// grayman debug
+
 namespace ai
 {
+
+const float s_DOOM_TO_METERS = 0.0254f; // grayman debug
 
 // Get the name of this state
 const idStr& CombatState::GetName() const
@@ -48,8 +53,10 @@ const idStr& CombatState::GetName() const
 
 bool CombatState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: CombatState::CheckAlertLevel - %s - checking alert level; are we in the correct state?\r",gameLocal.time,owner->name.c_str()); // grayman debug
 	if (owner->AI_AlertIndex < 5)
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s - alert level too low, dropping back to Agitated Searching\r",owner->name.c_str()); // grayman debug
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
 		return false;
@@ -67,7 +74,6 @@ void CombatState::OnTactileAlert(idEntity* tactEnt)
 void CombatState::OnVisualAlert(idActor* enemy)
 {
 	// do nothing as of now, we are already in combat mode
-
 }
 
 void CombatState::OnAudioAlert()
@@ -82,7 +88,10 @@ void CombatState::OnAudioAlert()
 
 	if (!owner->AI_ENEMY_VISIBLE)
 	{
-		memory.lastTimeEnemySeen = gameLocal.time;
+		if (owner->m_ignorePlayer) // grayman debug
+		{
+			memory.lastTimeEnemySeen = gameLocal.time;
+		}
 		owner->lastReachableEnemyPos = memory.alertPos;
 		// gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 2, 1000);
 	}
@@ -95,7 +104,10 @@ void CombatState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& directi
 
 void CombatState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 {
-	if (!stimSource->IsType(idActor::Type)) return; // No Actor, quit
+	if (!stimSource->IsType(idActor::Type))
+	{
+		return; // No Actor, quit
+	}
 
 	if (owner->IsFriend(stimSource))
 	{
@@ -115,137 +127,58 @@ void CombatState::Init(idAI* owner)
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatState initialised.\r");
 	assert(owner);
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: CombatState::Init - %s\r",gameLocal.time,owner->name.c_str()); // grayman debug
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
-	// Shortcut reference
-	Memory& memory = owner->GetMemory();
+	if (!owner->GetMind()->PerformCombatCheck())
+	{
+		return;
+	}
 
-	if (!owner->GetMind()->PerformCombatCheck()) return;
-
-	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
+	if ( ( owner->GetMoveType() == MOVETYPE_SIT ) || ( owner->GetMoveType() == MOVETYPE_SLEEP) )
 	{
 		owner->GetUp();
 	}
 
-	// greebo: Check for weapons and flee if we are unarmed.
-	_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
-	_meleePossible = owner->GetNumMeleeWeapons() > 0;
-	_rangedPossible = owner->GetNumRangedWeapons() > 0;
+	// say something along the lines of "huh?"
 
-	if (!_meleePossible && !_rangedPossible)
-	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm unarmed, I'm afraid!\r");
-		owner->GetMind()->SwitchState(STATE_FLEE);
-		return;
-	}
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s barks 'Huh?'\r",owner->name.c_str()); // grayman debug
+	// The communication system plays reaction bark
+	CommMessagePtr message;
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1s", message)));
 
-	// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
-	if (owner->spawnArgs.GetBool("is_civilian", "0"))
-	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm civilian. I'm afraid.\r");
-		owner->GetMind()->SwitchState(STATE_FLEE);
-		return;
-	}
+	// All remaining init code is moved into Think() and done in the EStateInit substate,
+	// because the things it does need to occur after the initial reaction delay.
+
+	// grayman debug
+	// Add a delay before you process the remainder of Init().
+	// The length of the delay depends on the distance to the enemy.
 
 	// We have an enemy, store the enemy entity locally
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
-	owner->StopMove(MOVE_STATUS_DONE);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-
-	owner->movementSubsystem->ClearTasks();
-	owner->senseSubsystem->ClearTasks();
-	owner->actionSubsystem->ClearTasks();
-
-	owner->DrawWeapon();
-
-	// Fill the subsystems with their tasks
-
-	// This will hold the message to be delivered with the bark, if appropriate
-	CommMessagePtr message;
-	
-	// Only alert the bystanders if we didn't receive the alert by message ourselves
-	if (!memory.alertedDueToCommunication)
+	float dist2Enemy = ( enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin() ).LengthFast();
+	int reactionTime =  REACTION_TIME_MIN + (dist2Enemy*(REACTION_TIME_MAX - REACTION_TIME_MIN))/(cv_ai_sight_combat_cutoff.GetFloat()/s_DOOM_TO_METERS);
+	if ( reactionTime > REACTION_TIME_MAX )
 	{
-		message = CommMessagePtr(new CommMessage(
-			CommMessage::DetectedEnemy_CommType, 
-			owner, NULL, // from this AI to anyone 
-			enemy,
-			memory.lastEnemyPos
-		));
+		reactionTime = REACTION_TIME_MAX;
 	}
 
-
-	// The communication system plays starting bark
-	idPlayer* player(NULL);
-	if (enemy->IsType(idPlayer::Type))
-	{
-		player = static_cast<idPlayer*>(enemy);
-	}
-
-	if (player && player->m_bShoulderingBody)
-	{
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_spotted_player_with_body", message))
-		);
-	}
-
-	else if ((MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
-	{
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_to_combat_company", message))
-		);
-	}
-	else
-	{
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_to_combat", message))
-		);
-	}
-
-	// Ranged combat
-	if (_rangedPossible)
-	{
-		if (_meleePossible && 
-			(owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast() < 3 * owner->GetMeleeRange())
-		{
-			ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
-			chaseEnemy->SetEnemy(enemy);
-			owner->movementSubsystem->PushTask(chaseEnemy);
-
-			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
-			_combatType = COMBAT_MELEE;
-		}
-		else
-		{
-			owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
-			owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
-			_combatType = COMBAT_RANGED;
-		}
-	}
-	// Melee combat
-	else
-	{
-		// The movement subsystem should start running to the last enemy position
-		ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
-		chaseEnemy->SetEnemy(enemy);
-		owner->movementSubsystem->PushTask(chaseEnemy);
-
-		owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
-		_combatType = COMBAT_MELEE;
-	}
-
-	// Let the AI update their weapons (make them nonsolid)
-	owner->UpdateAttachmentContents(false);
+	_combatSubState = EStateReaction;
+	_reactionEndTime = gameLocal.time + reactionTime;
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Init - %s - reactionTime = %d\r",owner->name.c_str(),reactionTime); // grayman debug
 }
 
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: CombatState::Think - %s\r",gameLocal.time,owner->name.c_str()); // grayman debug
 	// Do we have an expiry date?
 	if (_endTime > 0)
 	{
@@ -268,77 +201,229 @@ void CombatState::Think(idAI* owner)
 
 	if (!CheckEnemyStatus(enemy, owner))
 	{
+		owner->GetMind()->EndState();
 		return; // state has ended
 	}
 
-	// angua: look at ememy
+	// angua: look at enemy
 	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
-
-	// Flee if we are damaged and the current melee action is finished
-	if (owner->health < _criticalHealth && owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY)
-	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
-		owner->GetMind()->SwitchState(STATE_FLEE);
-		return;
-	}
-
-	if (owner->GetMoveType() != MOVETYPE_ANIM)
-	{
-		owner->GetUp();
-		return;
-	}
-
-	// Switch between melee and ranged combat based on enemy distance
-	float enemyDist = (owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast();
-
-	if (_combatType == COMBAT_MELEE && _rangedPossible && enemyDist > 3 * owner->GetMeleeRange())
-	{
-		owner->movementSubsystem->ClearTasks();
-		owner->actionSubsystem->ClearTasks();
-
-		owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
-		owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
-		_combatType = COMBAT_RANGED;
-	}
-
-	if (_combatType == COMBAT_RANGED && _meleePossible && enemyDist <= 3 * owner->GetMeleeRange())
-	{
-		owner->movementSubsystem->ClearTasks();
-		owner->actionSubsystem->ClearTasks();
-
-		// Allocate a ChaseEnemyTask
-		owner->movementSubsystem->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
-
-		owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
-		_combatType = COMBAT_MELEE;
-	}
 
 	Memory& memory = owner->GetMemory();
 
-	// Check the distance to the enemy, the subsystem tasks need it.
-	memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
-	if( owner->m_bMeleePredictProximity )
-		memory.willBeAbleToHitEnemy = owner->WillBeAbleToHitEntity(enemy, _combatType);
-
-	// Check whether the enemy can hit us in the near future
-	memory.canBeHitByEnemy = owner->CanBeHitByEntity(enemy, _combatType);
-
-	if (!owner->AI_ENEMY_VISIBLE && 
-		(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
+	switch(_combatSubState)
 	{
-		// The enemy is not visible, let's keep track of him for a small amount of time
-		if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+	case EStateReaction:
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - EStateReaction\r",owner->name.c_str()); // grayman debug
+		if ( gameLocal.time >= _reactionEndTime )
 		{
-			// Cheat a bit and take the last reachable position as "visible & reachable"
-			owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
-		}
-		else if (owner->ReachedPos(owner->lastVisibleReachableEnemyPos, MOVE_TO_POSITION)  
-			|| gameLocal.time - memory.lastTimeEnemySeen > 2 * MAX_BLIND_CHASE_TIME)
-		{
-			// BLIND_CHASE_TIME has expired, we have lost the enemy!
-			owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - EStateReaction delay is over\r",owner->name.c_str()); // grayman debug
+
+			// Check to see if the enemy is still visible.
+
+			if ( !owner->CanSee(enemy, true) )
+			{
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - ClearEnemy()\r",owner->name.c_str()); // grayman debug
+				owner->ClearEnemy();
+				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - Lost the enemy, so drop down to Agitated Searching\r",owner->name.c_str()); // grayman debug
+				owner->GetMind()->EndState();
+				return;
+			}
+
+			// Can still see the enemy, so proceed with Combat
+
+			_combatSubState = EStateInit;
 			return;
 		}
+
+		// Is there anything you need to watch out for while in this substate?
+
+		break;
+
+	case EStateInit:
+	{
+		owner->m_ignorePlayer = false; // grayman debug - clear flag that prevents mission statistics on player sightings
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - EStateInit\r",owner->name.c_str()); // grayman debug
+		// The AI has processed his reaction, and need to move into combat, or flee.
+
+		// Handle the things you were doing in Init() ...
+
+		// greebo: Check for weapons and flee if we are unarmed.
+		_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
+		_meleePossible = owner->GetNumMeleeWeapons() > 0;
+		_rangedPossible = owner->GetNumRangedWeapons() > 0;
+
+		if (!_meleePossible && !_rangedPossible)
+		{
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm unarmed, I'm afraid!\r");
+			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
+		}
+
+		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
+		if (owner->spawnArgs.GetBool("is_civilian", "0"))
+		{
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm civilian. I'm afraid.\r");
+			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
+		}
+
+		owner->StopMove(MOVE_STATUS_DONE);
+		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
+
+		owner->movementSubsystem->ClearTasks();
+		owner->senseSubsystem->ClearTasks();
+		owner->actionSubsystem->ClearTasks();
+
+		owner->DrawWeapon();
+
+		// Fill the subsystems with their tasks
+
+		// This will hold the message to be delivered with the bark, if appropriate
+		CommMessagePtr message;
+	
+		// Only alert the bystanders if we didn't receive the alert by message ourselves
+		if (!memory.alertedDueToCommunication)
+		{
+			message = CommMessagePtr(new CommMessage(
+				CommMessage::DetectedEnemy_CommType, 
+				owner, NULL, // from this AI to anyone 
+				enemy,
+				memory.lastEnemyPos
+			));
+		}
+
+		// The communication system plays starting bark
+		idPlayer* player(NULL);
+		if (enemy->IsType(idPlayer::Type))
+		{
+			player = static_cast<idPlayer*>(enemy);
+		}
+
+		if (player && player->m_bShoulderingBody)
+		{
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_spotted_player_with_body", message)));
+		}
+		else if ((MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
+		{
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_to_combat_company", message)));
+		}
+		else
+		{
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_to_combat", message)));
+		}
+
+		// Ranged combat
+		if (_rangedPossible)
+		{
+			if (_meleePossible && 
+				(owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast() < 3 * owner->GetMeleeRange())
+			{
+				ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
+				chaseEnemy->SetEnemy(enemy);
+				owner->movementSubsystem->PushTask(chaseEnemy);
+
+				owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
+				_combatType = COMBAT_MELEE;
+			}
+			else
+			{
+				owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
+				owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
+				_combatType = COMBAT_RANGED;
+			}
+		}
+		// Melee combat
+		else
+		{
+			// The movement subsystem should start running to the last enemy position
+			ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
+			chaseEnemy->SetEnemy(enemy);
+			owner->movementSubsystem->PushTask(chaseEnemy);
+
+			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
+			_combatType = COMBAT_MELEE;
+		}
+
+		// Let the AI update their weapons (make them nonsolid)
+		owner->UpdateAttachmentContents(false);
+
+		_combatSubState = EStateThink;
+		break;
+	}
+
+	case EStateThink:
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("CombatState::Think - %s - EStateThink\r",owner->name.c_str()); // grayman debug
+
+		// Flee if we are damaged and the current melee action is finished
+		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
+		{
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
+			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
+		}
+
+		if (owner->GetMoveType() != MOVETYPE_ANIM)
+		{
+			owner->GetUp();
+			return;
+		}
+
+		// Switch between melee and ranged combat based on enemy distance
+		float enemyDist = (owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin()).LengthFast();
+
+		if ( ( _combatType == COMBAT_MELEE ) && _rangedPossible && ( enemyDist > 3 * owner->GetMeleeRange() ) )
+		{
+			owner->movementSubsystem->ClearTasks();
+			owner->actionSubsystem->ClearTasks();
+
+			owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
+			owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
+			_combatType = COMBAT_RANGED;
+		}
+
+		if ( ( _combatType == COMBAT_RANGED ) && _meleePossible && ( enemyDist <= 3 * owner->GetMeleeRange() ) )
+		{
+			owner->movementSubsystem->ClearTasks();
+			owner->actionSubsystem->ClearTasks();
+
+			// Allocate a ChaseEnemyTask
+			owner->movementSubsystem->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
+
+			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
+			_combatType = COMBAT_MELEE;
+		}
+
+		// Check the distance to the enemy, the subsystem tasks need it.
+		memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
+		if ( owner->m_bMeleePredictProximity )
+		{
+			memory.willBeAbleToHitEnemy = owner->WillBeAbleToHitEntity(enemy, _combatType);
+		}
+
+		// Check whether the enemy can hit us in the near future
+		memory.canBeHitByEnemy = owner->CanBeHitByEntity(enemy, _combatType);
+
+		if (!owner->AI_ENEMY_VISIBLE && 
+			(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
+		{
+			// The enemy is not visible, let's keep track of him for a small amount of time
+			if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
+			{
+				// Cheat a bit and take the last reachable position as "visible & reachable"
+				owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
+			}
+			else if (owner->ReachedPos(owner->lastVisibleReachableEnemyPos, MOVE_TO_POSITION) || 
+					( gameLocal.time - memory.lastTimeEnemySeen > 2 * MAX_BLIND_CHASE_TIME) )
+			{
+				// BLIND_CHASE_TIME has expired, we have lost the enemy!
+				owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+				return;
+			}
+		}
+
+		break;
 	}
 }
 
@@ -404,6 +489,10 @@ void CombatState::Save(idSaveGame* savefile) const
 	_enemy.Save(savefile);
 
 	savefile->WriteInt(_endTime);
+
+	savefile->WriteInt(static_cast<int>(_combatSubState)); // grayman debug
+
+	savefile->WriteInt(_reactionEndTime); // grayman debug
 }
 
 void CombatState::Restore(idRestoreGame* savefile)
@@ -421,6 +510,12 @@ void CombatState::Restore(idRestoreGame* savefile)
 	_enemy.Restore(savefile);
 
 	savefile->ReadInt(_endTime);
+
+	// grayman debug
+	savefile->ReadInt(temp);
+	_combatSubState = static_cast<ECombatSubState>(temp);
+
+	savefile->ReadInt(_reactionEndTime); // grayman debug
 }
 
 StatePtr CombatState::CreateInstance()

@@ -45,14 +45,17 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: AgitatedSearchingState::CheckAlertLevel - %s - checking alert level; are we in the correct state?\r",gameLocal.time,owner->name.c_str()); // grayman debug
 	if (owner->AI_AlertIndex < 4)
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s - alert level too low, dropping back to Searching\r",owner->name.c_str()); // grayman debug
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
 		return false;
 	}
 	else if (owner->AI_AlertIndex > 4)
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s - alert level too high, bumping up to Combat\r",owner->name.c_str()); // grayman debug
 		// Alert index is too high, switch to the higher State
 		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
@@ -74,6 +77,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
 	State::Init(owner);
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init: %s is starting an agitated search\r",owner->name.c_str()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 

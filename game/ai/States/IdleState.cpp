@@ -49,8 +49,10 @@ const idStr& IdleState::GetName() const
 
 bool IdleState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("%d: IdleState::CheckAlertLevel - %s - checking alert level; are we in the correct state?\r",gameLocal.time,owner->name.c_str()); // grayman debug
 	if (owner->AI_AlertIndex > 0)
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("     %s - alert level too high, bumping up to Observant\r",owner->name.c_str()); // grayman debug
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[EObservant]);
 		return false;

@@ -38,6 +38,7 @@ extern idCVar cv_ai_bumpobject_impulse;
 extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;
 extern idCVar cv_ai_sightmaxdist;
+extern idCVar cv_ai_sight_combat_cutoff; // grayman debug
 extern idCVar cv_ai_sightmindist;
 extern idCVar cv_ai_tactalert;
 extern idCVar cv_ai_task_show;

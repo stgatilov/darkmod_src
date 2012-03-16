@@ -42,6 +42,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("LostTrackOfEnemyState initialised\r"); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("LostTrackOfEnemyState initialised.\r");
 	assert(owner);
 

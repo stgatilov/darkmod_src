@@ -1743,11 +1743,13 @@ void CMissionData::AddMissionLoot(LootType lootType, int amount)
 void CMissionData::IncrementPlayerSeen()
 {
 	m_Stats.numberTimesPlayerSeen++;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("CMissionData::IncrementPlayerSeen\r"); // grayman debug
 }
 
 void CMissionData::Add2TimePlayerSeen( int amount )
 {
 	m_Stats.totalTimePlayerSeen += amount;
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("CMissionData::Add2TimePlayerSeen adding %d\r",amount); // grayman debug
 }
 
 /**
