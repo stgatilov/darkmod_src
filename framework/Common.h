@@ -146,7 +146,7 @@ public:
 
 								// Writes the user's configuration to a file
 								// greebo: Added the basePath option to allow for more control
-	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_modSavePath" ) = 0;
+	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_basepath" ) = 0;
 
 								// Writes cvars with the given flags to a file.
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd ) = 0;
@@ -193,9 +193,9 @@ public:
 								// greebo: Provides access to I18N-related methods
 	virtual I18N*				GetI18N() = 0;
 
-						// take a string like "#str_12345" and return a translated version of it.
-						// Shortcut to GetI18N()->Translate()
-	virtual const char *			Translate( const char * str ) = 0;
+						        // take a string like "#str_12345" and return a translated version of it.
+						        // Shortcut to GetI18N()->Translate()
+	virtual const char *		Translate( const char * str ) = 0;
 
 								// Returns key bound to the command
 	virtual const char *		KeysFromBinding( const char *bind ) = 0;

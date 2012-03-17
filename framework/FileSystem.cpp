@@ -249,7 +249,7 @@ public:
 	virtual void			RemoveFile( const char *relativePath );	
 	virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileRead( const char *relativePath, bool allowCopyFiles = true, const char* gamedir = NULL );
-	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath" );
+	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
 	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_basepath"   );
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode );
 	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
@@ -2792,7 +2792,7 @@ idFile *idFileSystemLocal::OpenFileRead( const char *relativePath, bool allowCop
 idFileSystemLocal::OpenFileWrite
 ===========
 */
-idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *basePath ) {
+idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *basePath, const char *gamedir) {
 	const char *path;
 	idStr OSpath;
 	idFile_Permanent *f;
@@ -2806,7 +2806,7 @@ idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *
 		path = fs_savepath.GetString();
 	}
 
-	OSpath = BuildOSPath( path, gameFolder, relativePath );
+	OSpath = BuildOSPath( path, gamedir ? gamedir : gameFolder.c_str(), relativePath );
 
 	if ( fs_debug.GetInteger() ) {
 		common->Printf( "idFileSystem::OpenFileWrite: %s\n", OSpath.c_str() );

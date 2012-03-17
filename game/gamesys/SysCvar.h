@@ -95,7 +95,6 @@ extern idCVar cv_tdm_fm_notes_file;
 extern idCVar cv_tdm_fm_startingmap_file;
 extern idCVar cv_tdm_fm_mapsequence_file;
 extern idCVar cv_tdm_fm_splashimage_file;
-extern idCVar cv_tdm_fm_sync_config_files;
 extern idCVar cv_tdm_fm_restart_delay;
 
 extern idCVar cv_tdm_proxy;

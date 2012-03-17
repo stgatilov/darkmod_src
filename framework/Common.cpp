@@ -139,7 +139,7 @@ public:
 	virtual void				StartupVariable( const char *match, bool once );
 	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
 	virtual void				ActivateTool( bool active );
-	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_modSavePath" );
+	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_basepath" );
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd );
 	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) );
 	virtual void				EndRedirect( void );
@@ -967,7 +967,7 @@ void idCommonLocal::ClearCommandLine( void ) {
 idCommonLocal::SafeMode
 
 Check for "safe" on the command line, which will
-skip loading of config file (DoomConfig.cfg)
+skip loading of config file (Darkmod.cfg)
 ==================
 */
 bool idCommonLocal::SafeMode( void ) {
@@ -1159,7 +1159,7 @@ void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePat
 	idBase64 out;
 #endif
 
-	f = fileSystem->OpenFileWrite( filename, basePath );
+	f = fileSystem->OpenFileWrite( filename, basePath, "darkmod" );
 	if ( !f ) {
 		Printf ("Couldn't write %s.\n", filename );
 		return;
@@ -3046,7 +3046,7 @@ void idCommonLocal::InitGame( void )
 
 	// skip the config file if "safe" is on the command line
 	if ( !SafeMode() ) {
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// DoomConfig.cfg
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// Darkmod.cfg
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 

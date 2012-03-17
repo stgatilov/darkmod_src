@@ -872,10 +872,10 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("FM targetFolder already exists: %s\r", targetFolder.string().c_str());
 	}
 
+#if 0
 	// Path to the darkmod directory
 	fs::path darkmodPath = GetDarkmodPath();
 
-#if 0
 	// greebo: We don't copy PK4s around anymore, they remain in the fms/ subfolders
 
 	// Copy all PK4s from the FM folder (and all subdirectories)
@@ -908,48 +908,9 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 	// Save the name to currentfm.txt
 	WriteCurrentFmFile(modName);
 
-	// Assemble the path to the FM's DoomConfig.cfg
-	fs::path doomConfigPath = targetFolder / "DoomConfig.cfg";
-	
-	// Check if we should synchronise DoomConfig.cfg files
-	if (cv_tdm_fm_sync_config_files.GetBool())
-	{
-		// Yes, sync DoomConfig.cfg
-
-		// Always copy the DoomConfig.cfg from darkmod/ to the new mod/
-		// Remove any DoomConfig.cfg that might exist there beforehand
-		if (!DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath, true))
-		{
-			// Failed copying
-			return COPY_FAILURE;
-		}
-	}
-	else
-	{
-		// No, don't sync DoomConfig.cfg, but at least copy a basic one over there if it doesn't exist
-		if (!fs::exists(doomConfigPath))
-		{
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("DoomConfig.cfg not found in FM folder, copy over from darkmod.\r");
-
-			if (!DoCopyFile(darkmodPath / "DoomConfig.cfg", doomConfigPath))
-			{
-				// Failed copying
-				return COPY_FAILURE;
-			}
-		}
-	}
-
-	// Check if the config.spec file already exists in the mod folder
-	fs::path configSpecPath = targetFolder / "config.spec";
-	if (!fs::exists(configSpecPath))
-	{
-		// Copy the config.spec file from darkmod/ to the new mod/
-		if (!DoCopyFile(darkmodPath / "config.spec", configSpecPath))
-		{
-			// Failed copying
-			return COPY_FAILURE;
-		}
-	}
+    // taaaki: now that fms are loaded directly from <basepath>/darkmod/fms/ 
+    //         we don't need to copy config files around (i.e. just use the 
+    //         one in <basepath>/darkmod/ (same with config.spec)
 
 	return INSTALLED_OK;
 }

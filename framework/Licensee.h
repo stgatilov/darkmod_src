@@ -39,7 +39,7 @@
 
 // filenames
 #define	CD_EXE							"doom.exe"
-#define CONFIG_FILE						"DoomConfig.cfg"
+#define CONFIG_FILE						"Darkmod.cfg"
 
 // base folder where the source code lives
 #define SOURCE_CODE_BASE_FOLDER			"neo"

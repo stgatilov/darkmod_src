@@ -652,20 +652,6 @@ void idGameLocal::Shutdown( void ) {
 		return;
 	}
 
-	if (cv_tdm_fm_sync_config_files.GetBool())
-	{
-		// greebo: Check if we have a game base. If yes, write the current configuration back to the
-		// "darkmod" game base folder, to preserve any settings made while an FM is installed.
-		idStr fs_game_base(cvarSystem->GetCVarString("fs_game_base"));
-
-		if (!fs_game_base.IsEmpty())
-		{
-			// This should write the file into darkmod/ instead of darkmod/fms/outpost/..darkmod/,
-			// therefore use fs_savePath as base.
-			common->WriteConfigToFile("../" + fs_game_base + "/DoomConfig.cfg", "fs_savePath");
-		}
-	}
-
 	Printf( "------------ Game Shutdown -----------\n" );
 	
 	m_lightGem.Deinitialize();
