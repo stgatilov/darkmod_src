@@ -315,7 +315,7 @@ idCVar cv_tdm_hud_opacity(	"tdm_hud_opacity", "0.7",	CVAR_GAME | CVAR_ARCHIVE | 
 idCVar cv_tdm_hud_hide_lightgem(	"tdm_hud_hide_lightgem", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"If set to true (=1), the lightgem will be hidden.", 0, 1 );
 idCVar cv_tdm_inv_hud_pickupmessages(	"tdm_inv_hud_pickupmessages", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT,	"If set to 1, the HUD is displaying the item the player has just picked up.");
 idCVar cv_tdm_inv_loot_sound("tdm_inv_loot_sound", "frob_loot",	CVAR_GAME | CVAR_ARCHIVE, "The name of the sound that is to be played when loot has been acquired.");
-idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' currently selected inventory items will be used on frob.");
+idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' currently selected inventory items will be used on frob.");
 idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
 idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
