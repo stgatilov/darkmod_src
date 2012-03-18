@@ -15,7 +15,8 @@
  $Date$ (Date of last commit)
  $Author$ (Author of last commit)
  
-******************************************************************************/#ifndef __GAME_PLAYER_H__
+******************************************************************************/
+#ifndef __GAME_PLAYER_H__
 #define __GAME_PLAYER_H__
 
 #include "ButtonStateTracker.h"
@@ -82,15 +83,6 @@ const int SAVING_THROW_TIME = 5000;		// maximum one "saving throw" every five se
 
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
-
-// powerups - the "type" in item .def must match
-enum {
-	BERSERK = 0, 
-	INVISIBILITY,
-	MEGAHEALTH,
-	ADRENALINE,
-	MAX_POWERUPS
-};
 
 // powerup modifiers
 enum {
@@ -238,7 +230,6 @@ public:
 		EVENT_IMPULSE = idEntity::EVENT_MAXEVENTS,
 		EVENT_EXIT_TELEPORTER,
 		EVENT_ABORT_TELEPORTER,
-		EVENT_POWERUP,
 		EVENT_SPECTATE,
 		EVENT_MAXEVENTS
 	};
@@ -613,8 +604,8 @@ public:
 	bool					Give( const char *statname, const char *value );
 	void					GiveItem( const char *name );
 	void					GiveHealthPool( float amt );
-	
-	bool					GivePowerUp( int powerup, int time );
+
+	// Unused. Returns always 1.0. Will be replaced by the new effects system eventually.	
 	float					PowerUpModifier( int type );
 
 	int						SlotForWeapon( const char *weaponName );
@@ -1014,7 +1005,6 @@ private:
 	bool					showWeaponViewModel;
 
 	const idDeclSkin *		skin;
-	const idDeclSkin *		powerUpSkin;
 	idStr					baseSkinName;
 
 	int						numProjectilesFired;	// number of projectiles fired

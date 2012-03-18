@@ -702,16 +702,6 @@ void Cmd_Give_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if ( idStr::Icmp( name, "berserk" ) == 0 ) {
-		player->GivePowerUp( BERSERK, SEC2MS( 30.0f ) );
-		return;
-	}
-
-	if ( idStr::Icmp( name, "invis" ) == 0 ) {
-		player->GivePowerUp( INVISIBILITY, SEC2MS( 30.0f ) );
-		return;
-	}
-
 	if ( !give_all && !player->Give( args.Argv(1), args.Argv(2) ) ) {
 		gameLocal.Printf( "unknown item\n" );
 	}

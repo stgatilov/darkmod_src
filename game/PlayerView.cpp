@@ -621,12 +621,7 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	renderSystem->CaptureRenderToImage( "_scratch" );
 	renderSystem->UnCrop();
 
-	// carry red tint if in berserk mode
 	idVec4 color(1, 1, 1, 1);
-	/*if ( gameLocal.time < player->inventory.powerupEndTime[ BERSERK ] ) {
-	color.y = 0;
-	color.z = 0;
-	}*/
 
 	renderSystem->SetColor4( color.x, color.y, color.z, 1.0f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, shift, 1-shift, 1, 0, dvMaterial );
