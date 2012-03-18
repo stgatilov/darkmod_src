@@ -724,7 +724,7 @@ void idStr::Remap( const unsigned int count, const char *table ) {
 	assert(count < 256);
 
 	// ignore tables larger than that
-	int num = count > 256 ? 512 : 2 * count;
+	unsigned int num = count > 256 ? 512 : 2 * count;
 
 	// this nested loop is still faster than calling Replace() "count" times when
 	// count is large, esp. as this is correct, while repeated Replace() are not,
@@ -746,7 +746,7 @@ void idStr::Remap( const unsigned int count, const char *table ) {
 idStr::Mid
 ============
 */
-const char *idStr::Mid( int start, int len, idStr &result ) const {
+const char *idStr::Mid( const int start, const int len, idStr &result ) const {
 	int i;
 
 	result.Empty();
@@ -756,9 +756,7 @@ const char *idStr::Mid( int start, int len, idStr &result ) const {
 		return NULL;
 	}
 
-	if ( start + len >= i ) {
-		len = i - start;
-	}
+	int l = ( start + len >= i ) ? i - start : len;
 
 	result.Append( &data[ start ], len );
 	return result;
@@ -769,7 +767,7 @@ const char *idStr::Mid( int start, int len, idStr &result ) const {
 idStr::Mid
 ============
 */
-idStr idStr::Mid( int start, int len ) const {
+idStr idStr::Mid( const int start, const int len ) const {
 	int i;
 	idStr result;
 
@@ -778,11 +776,9 @@ idStr idStr::Mid( int start, int len ) const {
 		return result;
 	}
 
-	if ( start + len >= i ) {
-		len = i - start;
-	}
+	int l = ( start + len >= i ) ? i - start : len;
 
-	result.Append( &data[ start ], len );
+	result.Append( &data[ start ], l );
 	return result;
 }
 

@@ -178,12 +178,12 @@ public:
 	idStr				RandomPart(const float rand, const char c = ',') const;
 	bool				Filter( const char *filter, bool casesensitive ) const;
 	int					Last( const char c ) const;						// return the index to the last occurance of 'c', returns -1 if not found
-	const char *		Left( int len, idStr &result ) const;			// store the leftmost 'len' characters in the result
-	const char *		Right( int len, idStr &result ) const;			// store the rightmost 'len' characters in the result
-	const char *		Mid( int start, int len, idStr &result ) const;	// store 'len' characters starting at 'start' in result
-	idStr				Left( int len ) const;							// return the leftmost 'len' characters
-	idStr				Right( int len ) const;							// return the rightmost 'len' characters
-	idStr				Mid( int start, int len ) const;				// return 'len' characters starting at 'start'
+	const char *		Left( const int len, idStr &result ) const;			// store the leftmost 'len' characters in the result
+	const char *		Right( const int len, idStr &result ) const;			// store the rightmost 'len' characters in the result
+	const char *		Mid( const int start, const int len, idStr &result ) const;	// store 'len' characters starting at 'start' in result
+	idStr				Left( const int len ) const;							// return the leftmost 'len' characters
+	idStr				Right( const int len ) const;							// return the rightmost 'len' characters
+	idStr				Mid( const int start, const int len ) const;				// return 'len' characters starting at 'start'
 	void				StripLeading( const char c );					// strip char from front as many times as the char occurs
 	void				StripLeading( const char *string );				// strip string from front as many times as the string occurs
 	bool				StripLeadingOnce( const char *string );			// strip string from front just once if it occurs
@@ -868,11 +868,11 @@ ID_INLINE bool idStr::Filter( const char *filter, bool casesensitive ) const {
 	return idStr::Filter( filter, data, casesensitive );
 }
 
-ID_INLINE const char *idStr::Left( int len, idStr &result ) const {
+ID_INLINE const char *idStr::Left( const int len, idStr &result ) const {
 	return Mid( 0, len, result );
 }
 
-ID_INLINE const char *idStr::Right( int len, idStr &result ) const {
+ID_INLINE const char *idStr::Right( const int len, idStr &result ) const {
 	if ( len >= Length() ) {
 		result = *this;
 		return result;
@@ -880,11 +880,11 @@ ID_INLINE const char *idStr::Right( int len, idStr &result ) const {
 	return Mid( Length() - len, len, result );
 }
 
-ID_INLINE idStr idStr::Left( int len ) const {
+ID_INLINE idStr idStr::Left( const int len ) const {
 	return Mid( 0, len );
 }
 
-ID_INLINE idStr idStr::Right( int len ) const {
+ID_INLINE idStr idStr::Right( const int len ) const {
 	if ( len >= Length() ) {
 		return *this;
 	}
