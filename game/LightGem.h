@@ -32,15 +32,17 @@
 #define DARKMOD_LG_ENTITY_NAME				"lightgem_surface"
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
 #define DARKMOD_LG_VIEWID					-1
-#define DARKMOD_LG_RENDER_WIDTH				50
 
-// The colour is converted to a grayscale value which determines the state
-// of the lightgem.
+#define DARKMOD_LG_SIZEX					64 // LG render resolution - width
+#define DARKMOD_LG_SIZEY					64
+#define DARKMOD_LG_BPP						3 // 3 Channels of 8 bits
+
+// The colour is converted to a grayscale value which determines the state of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
 
 #define DARKMOD_LG_MIN						1
 #define DARKMOD_LG_MAX						32
-#define DARKMOD_LG_FRACTION					(1.0f/32.0f)
+#define DARKMOD_LG_FRACTION					(1.0f/32.0f)		// does seem to be used
 #define DARKMOD_LG_RED						0.29900f
 #define DARKMOD_LG_GREEN					0.58700f
 #define DARKMOD_LG_BLUE						0.11400f
@@ -56,6 +58,10 @@ private:
 	int						m_LightgemShotSpot;
 	float					m_LightgemShotValue[DARKMOD_LG_MAX_RENDERPASSES];
 	idEntityPtr<idEntity>	m_LightgemSurface;
+
+	unsigned char*			m_LightgemImgBuffer;					// holds the rendered lg screenshot
+	renderView_t			m_Lightgem_rv;							// a lg specific renderview
+	float					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];	// array of the average brightness of the lg sides
 
 public:
 	//---------------------------------
@@ -91,7 +97,7 @@ public:
 	float	Calculate		( idPlayer *	a_pPlayer );
 
 private:
-	void AnalyzeRenderImage	(float fColVal[DARKMOD_LG_MAX_IMAGESPLIT]);
+	void AnalyzeRenderImage	( );
 };
 
 #endif // __LIGHTGEM_H__
