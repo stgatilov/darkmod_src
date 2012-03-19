@@ -66,7 +66,7 @@ LightGem::LightGem()
 {
 	// our image buffer will be X*Y*Number of channels (RGB)*Size of internal storage type
 	// this allocation will be destroyed in the destructor
-	m_LightgemImgBuffer = (unsigned char*)malloc( (DARKMOD_LG_SIZEX * DARKMOD_LG_SIZEY * DARKMOD_LG_BPP) * sizeof(ILuint) );
+	m_LightgemImgBuffer = (unsigned char*)malloc( (DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_RENDER_WIDTH * DARKMOD_LG_BPP) * sizeof(ILuint) );
 }
 
 LightGem::~LightGem()
@@ -124,12 +124,18 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 	m_Lightgem_rv.width = SCREEN_WIDTH;			// cv_lg_screen_width.GetInteger();
 	m_Lightgem_rv.height = SCREEN_HEIGHT;		// cv_lg_screen_height.GetInteger();
 	m_Lightgem_rv.fov_x = 
-		m_Lightgem_rv.fov_y = 70.0f;
+		m_Lightgem_rv.fov_y = DARKMOD_LG_RENDER_FOV;	// square, TODO: investigate lowering the value to increase performance on tall maps
 	m_Lightgem_rv.x = 
 		m_Lightgem_rv.y = 0;
 
-	m_Lightgem_rv.forceUpdate = false;
-	//m_Lightgem_rv.cramZNear = true;			// Needs testing
+	m_Lightgem_rv.viewaxis = idMat3(	
+		 0.0f, 0.0f, 1.0f,
+		 0.0f, 1.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f
+		);
+
+	//m_Lightgem_rv.forceUpdate = false;
+	//m_Lightgem_rv.cramZNear = false;			// Needs testing
 }
 
 void LightGem::InitializeLightGemEntity( void )
@@ -185,30 +191,28 @@ float LightGem::Calculate(idPlayer *player)
 
 	{ // Get position for lg
 		idEntity* lg = m_LightgemSurface.GetEntity();
-		const idVec3& Cam = player->GetEyePosition();
-		const idVec3& Pos = player->GetPhysics()->GetOrigin();
-		idVec3 LGPos;
+		renderEntity_t* prent = lg->GetRenderEntity();
 
-		LGPos = Pos; // Set the lightgem position to that of the player
-		LGPos.x += (Cam.x - Pos.x) * 0.3f + cv_lg_oxoffs.GetFloat(); // Move the lightgem out a fraction along the leaning x vector
-		LGPos.y += (Cam.y - Pos.y) * 0.3f + cv_lg_oyoffs.GetFloat(); // Move the lightgem out a fraction along the leaning y vector
+		const idVec3& Cam = player->GetEyePosition();
+		idVec3 LGPos = player->GetPhysics()->GetOrigin();// Set the lightgem position to that of the player
+
+		LGPos.x += (Cam.x - LGPos.x) * 0.3f + cv_lg_oxoffs.GetFloat(); // Move the lightgem out a fraction along the leaning x vector
+		LGPos.y += (Cam.y - LGPos.y) * 0.3f + cv_lg_oyoffs.GetFloat(); // Move the lightgem out a fraction along the leaning y vector
 	
 		// Prevent lightgem from clipping into the floor while crouching
 		if ( static_cast<idPhysics_Player*>(player->GetPlayerPhysics())->IsCrouching() ) {
-			LGPos.z = Pos.z + cv_lg_ozoffs.GetFloat() + 50.0f;
+			LGPos.z += 50.0f + cv_lg_ozoffs.GetFloat() ;
 		} else {
 			LGPos.z = Cam.z + cv_lg_ozoffs.GetFloat(); // Set the lightgem's Z-axis position to that of the player's eyes
 		}
 
+		m_Lightgem_rv.vieworg = LGPos;
 		lg->SetOrigin(LGPos); // Move the lightgem testmodel to the players feet based on the eye position
 
-		m_Lightgem_rv.vieworg = LGPos;
+		gameRenderWorld->UpdateEntityDef(lg->GetModelDefHandle(), prent); // Make sure the lg is in the updated position
 	}
-	//
-	// Renderview stuff.
-	//
-	
-	// Note that by getting the shaderparms we will use ambient light, removal of this would give a noticable performance boost.
+
+	// Give the rv the current ambient light values - Not all of the other values, avoiding fancy effects.
 	m_Lightgem_rv.shaderParms[2] = gameLocal.globalShaderParms[2]; // Ambient R
 	m_Lightgem_rv.shaderParms[3] = gameLocal.globalShaderParms[3]; // Ambient G
 	m_Lightgem_rv.shaderParms[4] = gameLocal.globalShaderParms[4]; // Ambient B
@@ -244,55 +248,39 @@ float LightGem::Calculate(idPlayer *player)
 	const int k = cv_lg_hud.GetInteger() - 1;
 	static const int nRenderPasses = cv_lg_renderpasses.GetInteger();
 
-	renderSystem->CropRenderSize(DARKMOD_LG_SIZEX, DARKMOD_LG_SIZEY, true);
+	renderSystem->CropRenderSize(DARKMOD_LG_RENDER_WIDTH, DARKMOD_LG_RENDER_WIDTH, true, true);
 
 	for (int i = 0; i < nRenderPasses; i++)	{
 		PROFILE_BLOCK( LightGem_Calculate_ForLoop);
 
-		// If splitting is disabled(?) or it is not the turn for the shot, we skip it.
-		if ( cv_lg_split.GetBool() && m_LightgemShotSpot != i) {
+		// If splitting is enabled and it is not the turn for the shot, we skip it.
+		if ( cv_lg_split.GetBool() && m_LightgemShotSpot != i ) {
 			continue;
 		}
 
 		m_LightgemShotValue[i] = 0.0f;
 
-		switch(i) { 
-		case 0:	// From the top to bottom
-			//m_Lightgem_rv.vieworg.z += cv_lg_zoffs.GetInteger(); // Serp - Is this needed? dist is already an option for some strange debugging
-			m_Lightgem_rv.viewaxis = idMat3(	
-				0.0f, 0.0f, -1.0f,
-				0.0f, 1.0f,  0.0f,
-				1.0f, 0.0f,  0.0f
-				);
-			break;
-		case 1:	// From bottom to top
-			//m_Lightgem_rv.vieworg.z -= cv_lg_zoffs.GetInteger();
-			m_Lightgem_rv.viewaxis = idMat3(	
-				 0.0f, 0.0f, 1.0f,
-				 0.0f, 1.0f, 0.0f,
-				-1.0f, 0.0f, 0.0f
-				);
-			break;
-		}
+		// Render up and down alternately 
+		m_Lightgem_rv.viewaxis.TransposeSelf();
 
 		// If the hud is enabled we either process all of them in case it is set to 0,
 		// then we don't care which one is actually displayed (most likely the last or
 		// the first one), or we only show the one that should be shown.
-		if ( k == i || k == -1 ) {
+		if ( k == -1 || k == i ) {
 			// We always use a square image, because we render now an overhead shot which
 			// covers all four side of the player at once, using a diamond or pyramid shape.
 			// The result is an image that is split in four triangles with an angle of 
 			// 45 degree, thus the square shape.
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_RenderScene );
 
-			// If there's something wrong with the render content you might want to return this
-			gameRenderWorld->SetRenderView(&m_Lightgem_rv); 
+			//gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
 			gameRenderWorld->RenderScene(&m_Lightgem_rv);
 
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_RenderScene );
 
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to lightgem render buffer\n");
+
 			renderSystem->CaptureRenderToBuffer(m_LightgemImgBuffer);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 
@@ -326,8 +314,9 @@ float LightGem::Calculate(idPlayer *player)
 		}
 	}
 
-	PROFILE_BLOCK_START	( LightGem_Calculate_UnSetup );
 	renderSystem->UnCrop();
+
+	PROFILE_BLOCK_START	( LightGem_Calculate_UnSetup );
 
 	// and switch back our normal render definition - player model and head are returned
 	prent->suppressSurfaceInViewID = playerid;
@@ -379,19 +368,15 @@ void LightGem::AnalyzeRenderImage()
 		Note : Serp - This is a simplification of the early version which used two nested loops
 	*/
 
-	// Bored ? These values should be precomputable.
-	float counter[DARKMOD_LG_MAX_IMAGESPLIT]; // we use a float, since the later division is faster than with an int.
-	memset(counter, 0, sizeof(counter)); // zero the array since we will be incrementing
-
 	int in = 0;
 
-	for ( int x = 0; x < DARKMOD_LG_SIZEX; x++ ) {
-		for ( int y = 0; y < DARKMOD_LG_SIZEY; y++, buffer += DARKMOD_LG_BPP ) { // increment the buffer pos
-			if ( y <= x && x + y >= (DARKMOD_LG_SIZEY -1) ) {
+	for ( int x = 0; x < DARKMOD_LG_RENDER_WIDTH; x++ ) {
+		for ( int y = 0; y < DARKMOD_LG_RENDER_WIDTH; y++, buffer += DARKMOD_LG_BPP ) { // increment the buffer pos
+			if ( y <= x && x + y >= (DARKMOD_LG_RENDER_WIDTH -1) ) {
 				in = 0;
 			} else if ( y < x ) {
 				in = 1;
-			} else if ( y > (DARKMOD_LG_SIZEY -1) - x ) {
+			} else if ( y > (DARKMOD_LG_RENDER_WIDTH -1) - x ) {
 				in = 2;
 			} else {
 				in = 3;
@@ -402,13 +387,13 @@ void LightGem::AnalyzeRenderImage()
 			m_fColVal[in] += (buffer[0] * (DARKMOD_LG_RED  * DARKMOD_LG_SCALE) +
 							  buffer[1] * (DARKMOD_LG_GREEN* DARKMOD_LG_SCALE) +
 							  buffer[2] * (DARKMOD_LG_BLUE * DARKMOD_LG_SCALE));
-			counter[in]++;
 		}
 	}
 
 	// Calculate the average for each value
-	m_fColVal[0] /= counter[0];
-	m_fColVal[1] /= counter[1];
-	m_fColVal[2] /= counter[2];
-	m_fColVal[3] /= counter[3];
+	// Could be moved to the return
+	m_fColVal[0] *= DARKMOD_LG_TRIRATIO;
+	m_fColVal[1] *= DARKMOD_LG_TRIRATIO;
+	m_fColVal[2] *= DARKMOD_LG_TRIRATIO;
+	m_fColVal[3] *= DARKMOD_LG_TRIRATIO;
 }
