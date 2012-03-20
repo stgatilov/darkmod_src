@@ -133,6 +133,7 @@ typedef enum {
 } cubeFiles_t;
 
 #define	MAX_IMAGE_NAME	256
+#define MIN_IMAGE_NAME  4
 
 class idImage {
 public:
