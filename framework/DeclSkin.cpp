@@ -57,39 +57,26 @@ bool idDeclSkin::Parse( const char *text, const int textLength ) {
 	associatedModels.Clear();
 
 	while (1) {
-		if ( !src.ReadToken( &token ) ) {
-			break;
-		}
-
-		if ( !token.Icmp( "}" ) ) {
-			break;
-		}
-		if ( !src.ReadToken( &token2 ) ) {
+		if ( !src.ReadToken( &token ) || !token.Icmp( "}" ) ) {
+			return false;
+		} else if ( !src.ReadToken( &token2 ) ) {
 			src.Warning( "Unexpected end of file" );
 			MakeDefault();
 			return false;
-		}
-
-		if ( !token.Icmp( "model" ) ) {
+		} else if ( !token.Icmp( "model" ) ) {
 			associatedModels.Append( token2 );
-			continue;
-		}
-
-		skinMapping_t	map;
-
-		if ( !token.Icmp( "*" ) ) {
-			// wildcard
-			map.from = NULL;
 		} else {
-			map.from = declManager->FindMaterial( token );
+			skinMapping_t	map;
+
+			if ( !token.Icmp( "*" ) ) {
+				map.from = NULL; // wildcard
+			} else {
+				map.from = declManager->FindMaterial( token );
+			}
+			map.to = declManager->FindMaterial( token2 );
+			mappings.Append( map );
 		}
-
-		map.to = declManager->FindMaterial( token2 );
-
-		mappings.Append( map );
 	}
-
-	return false;
 }
 
 /*
@@ -100,12 +87,12 @@ idDeclSkin::SetDefaultText
 bool idDeclSkin::SetDefaultText( void ) {
 	// if there exists a material with the same name
 	if ( declManager->FindType( DECL_MATERIAL, GetName(), false ) ) {
-		char generated[2048];
+		char generated[512];
 
 		idStr::snPrintf( generated, sizeof( generated ),
 						"skin %s // IMPLICITLY GENERATED\n"
 						"{\n"
-						"_default %s\n"
+						"\t_default %s\n"
 						"}\n", GetName(), GetName() );
 		SetText( generated );
 		return true;
@@ -122,8 +109,8 @@ idDeclSkin::DefaultDefinition
 const char *idDeclSkin::DefaultDefinition( void ) const {
 	return
 		"{\n"
-	"\t"	"\"*\"\t\"_default\"\n"
-		"}";
+		"\t\"*\"\t\"_default\"\n"
+		"}\n";
 }
 
 /*
@@ -143,8 +130,9 @@ idDeclSkin::GetAssociatedModel
 const char *idDeclSkin::GetAssociatedModel( int index ) const {
 	if ( index >= 0 && index < associatedModels.Num() ) {
 		return associatedModels[ index ];
+	} else {
+		return "";
 	}
-	return "";
 }
 
 /*
@@ -153,8 +141,6 @@ RemapShaderBySkin
 ===============
 */
 const idMaterial *idDeclSkin::RemapShaderBySkin( const idMaterial *shader ) const {
-	int		i;
-
 	if ( !shader ) {
 		return NULL;
 	}
@@ -164,7 +150,7 @@ const idMaterial *idDeclSkin::RemapShaderBySkin( const idMaterial *shader ) cons
 		return shader;
 	}
 
-	for ( i = 0; i < mappings.Num() ; i++ ) {
+	for ( int i = 0; i < mappings.Num() ; i++ ) {
 		const skinMapping_t	*map = &mappings[i];
 
 		// NULL = wildcard match
