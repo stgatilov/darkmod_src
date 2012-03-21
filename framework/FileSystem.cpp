@@ -237,7 +237,7 @@ public:
 	virtual idFileList *	ListFilesTree( const char *relativePath, const char *extension, bool sort = false, const char* gamedir = NULL );
 	virtual void			FreeFileList( idFileList *fileList );
 	virtual const char *	OSPathToRelativePath( const char *OSPath );
-	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath );
+	virtual const char *	RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir = NULL );
 	virtual const char *	BuildOSPath( const char *base, const char *game, const char *relativePath );
 	virtual void			CreateOSPath( const char *OSPath );
 	virtual bool			FileIsInPAK( const char *relativePath );
@@ -245,12 +245,12 @@ public:
 	virtual int				GetOSMask( void );
 	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp );
 	virtual void			FreeFile( void *buffer );
-	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath" );
+	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL);
 	virtual void			RemoveFile( const char *relativePath );	
 	virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileRead( const char *relativePath, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
-	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_basepath"   );
+	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_basepath" );
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode );
 	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
 	virtual idFile *		OpenExplicitFileWrite( const char *OSPath );
@@ -808,12 +808,12 @@ idFileSystemLocal::RelativePathToOSPath
 Returns a fully qualified path that can be used with stdio libraries
 =====================
 */
-const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath ) {
+const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir) {
 	const char *path = cvarSystem->GetCVarString( basePath );
 	if ( !path[0] ) {
 		path = fs_savepath.GetString();
 	}
-	return BuildOSPath( path, gameFolder, relativePath );
+	return BuildOSPath( path, gamedir ? gamedir : gameFolder.c_str(), relativePath );
 }
 
 /*
@@ -1023,7 +1023,7 @@ idFileSystemLocal::WriteFile
 Filenames are relative to the search path
 ============
 */
-int idFileSystemLocal::WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath ) {
+int idFileSystemLocal::WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath, const char *gamedir ) {
 	idFile *f;
 
 	if ( !searchPaths ) {
@@ -1034,7 +1034,7 @@ int idFileSystemLocal::WriteFile( const char *relativePath, const void *buffer, 
 		common->FatalError( "idFileSystemLocal::WriteFile: NULL parameter" );
 	}
 
-	f = idFileSystemLocal::OpenFileWrite( relativePath, basePath );
+	f = idFileSystemLocal::OpenFileWrite( relativePath, basePath, gamedir );
 	if ( !f ) {
 		common->Printf( "Failed to open %s\n", relativePath );
 		return -1;
@@ -2026,17 +2026,17 @@ void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
     }
 
 	// setup basepath
-	if ( fs_basepath.GetString()[0] ) {
+	if ( fs_basepath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
 		AddGameDirectory( fs_basepath.GetString(), gameName );
 	}
 
 	// setup devpath
-	if ( fs_devpath.GetString()[0] ) {
+	if ( fs_devpath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
 		AddGameDirectory( fs_devpath.GetString(), gameName );
 	}
 
 	// setup savepath
-	if ( fs_savepath.GetString()[0] ) {
+	if ( fs_savepath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
 		AddGameDirectory( fs_savepath.GetString(), gameName );
 	}
 }

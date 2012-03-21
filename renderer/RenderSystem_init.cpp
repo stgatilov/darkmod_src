@@ -29,6 +29,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../sys/win32/win_local.h"
 #endif
 
+// Boost Regex required for Screenshot slot filter
+#include <boost/regex.hpp>
+
 // functions that are not called every frame
 
 glconfig_t	glConfig;
@@ -1204,19 +1207,36 @@ void Screenshot_AppendFileListForExtension(idStrList &list, const char *director
 	fileSystem->FreeFileList(ptr);
 }
 
-static const char TDM_SCREENSHOT_FILTER[] = "*screenshots[/\\]shot[0-9][0-9][0-9][0-9][0-9].*";
+// taaaki: regex expr for cleaning mission names
+static const boost::regex TDM_MAPNAME_CLEANER("[^a-z0-9_]");
+static const std::string repl ("_");
 
 void Screenshot_ChangeFilename(idStr& filename, const char *extension)
 {
 	static int index = -1;
+    static idStr mapcleaned;
+    static idStr prevmap;
 
+    if (idStr::Cmp(prevmap, cvarSystem->GetCVarString( "fs_game" )) != 0) {
+        index = -1;
+    }
+    
 	// on first access: find the first free screenshot index
-	if (index < 0)
+	if (index < 0 && filename.Length() == 0)
 	{
-		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
+		// taaaki: include the fan mission name, but strip unwanted characters
+        idStr mapname( cvarSystem->GetCVarString( "fs_game" ) );
+        prevmap = mapname;
+        mapname.ToLower();
+        mapcleaned = (boost::regex_replace(std::string(mapname.c_str()), TDM_MAPNAME_CLEANER, repl)).c_str();
+        
+        // taaaki: change screenshot filter format to screenshots/fmname-shot00000.ext
+        const boost::regex TDM_SCREENSHOT_FILTER( va("screenshots[/\\\\]+%s-shot([0-9][0-9][0-9][0-9][0-9]).+", mapcleaned.c_str()) );
+
+        //DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
 		//get directory path
-		idStr directory = filename;
-		directory.StripFilename();
+		idStr directory = "screenshots";
+		//directory.StripFilename();
 		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", directory.c_str());
 
 		//get sorted list of all files in this directory
@@ -1236,33 +1256,37 @@ void Screenshot_ChangeFilename(idStr& filename, const char *extension)
 		//for (int i = 0; i<allFiles.Num(); i++)
 		//	DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
 
-		//iterate through files from end to start, search for the last screenshot file
+		// iterate through files from end to start, search for the last screenshot file
 		index = 1;
-
+        boost::cmatch strIndex;
 		for (int i = allFiles.Num()-1; i>=0; i--)
 		{
-			if (allFiles[i].Filter(TDM_SCREENSHOT_FILTER, false))
+            if (boost::regex_match( allFiles[i].c_str(), strIndex, TDM_SCREENSHOT_FILTER ))
 			{
-				//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
-				idStr strIndex, fileOnly;
-				fileOnly = allFiles[i];
-				fileOnly.StripPath();
-				fileOnly.Mid(4, 5, strIndex);
-				sscanf(strIndex.c_str(), "%d", &index);
+                //DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
+				sscanf(strIndex[1].str().c_str(), "%d", &index);
 				index++;
 				break;
 			}
 		}
 	}
 
-	//process filename (set index and extension)
+	// process filename (set index and extension)
 	char fileOnly[256];
-	idStr::snPrintf(fileOnly, 256, "shot%05d.%s", index, extension);
-	filename.StripFilename();
-	filename.AppendPath(fileOnly);
+    
+    if (filename.Length() == 0) {
+        idStr::snPrintf(fileOnly, 256, "%s-shot%05d.%s", mapcleaned.c_str(), index, extension);
 
-	//increase screenshot index
-	index++;
+        //increase screenshot index
+	    index++;
+    } else {
+        filename.StripFileExtension();
+        filename.StripPath();
+        idStr::snPrintf(fileOnly, 256, "%s.%s", filename.c_str(), extension);
+    }
+
+    filename = "screenshots/";
+	filename.AppendPath(fileOnly);
 }
 
 /*
@@ -1329,53 +1353,50 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		buffer[i+2] = temp;
 	}
 
-	// _D3XP adds viewnote screenie save to cdpath
-	if ( strstr( fileName, "viewnote" ) ) {
-		fileSystem->WriteFile( fileName, buffer, c, "fs_cdpath" );
-	} else
+	// greebo: Check if we should save a screen shot format other than TGA
+	if (idStr::Icmp(r_screenshot_format.GetString(), "tga") != 0)
 	{
-		// greebo: Check if we should save a screen shot format other than TGA
-		if (idStr::Icmp(r_screenshot_format.GetString(), "tga") != 0)
+		// load screenshot file buffer into image
+		Image image;
+		image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot");
+
+		// find the preferred image format
+		idStr extension = r_screenshot_format.GetString();
+
+		Image::Format format = Image::GetFormatFromString(extension.c_str());
+
+		if (format == Image::AUTO_DETECT)
 		{
-			// load screenshot file buffer into image
-			Image image;
-			image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot");
+			common->Warning("Unknown screenshot extension %s, falling back to default.", extension.c_str());
 
-			// find the preferred image format
-			idStr extension = r_screenshot_format.GetString();
+			format = Image::TGA;
+			extension = "tga";
+		}
 
-			Image::Format format = Image::GetFormatFromString(extension.c_str());
+		// change extension and index of screenshot file
+		idStr changedPath(fileName);
+		Screenshot_ChangeFilename(changedPath, extension.c_str());
 
-			if (format == Image::AUTO_DETECT)
-			{
-				common->Warning("Unknown screenshot extension %s, falling back to default.", extension.c_str());
-
-				format = Image::TGA;
-				extension = "tga";
-			}
-
-			// change extension and index of screenshot file
-			idStr changedPath(fileName);
-
-			Screenshot_ChangeFilename(changedPath, extension.c_str());
-
-			// try to save image in other format
-			if (!image.SaveImageToVfs(changedPath, format))
-			{
-				common->Warning("Could not save screenshot: %s", changedPath.c_str());
-			}
-			else
-			{
-				common->Printf( "Wrote %s\n", changedPath.c_str() );
-			}
+		// try to save image in other format
+		if (!image.SaveImageToVfs(changedPath, format))
+		{
+			common->Warning("Could not save screenshot: %s", changedPath.c_str());
 		}
 		else
 		{
-			// Format is TGA, just save the buffer
-			fileSystem->WriteFile( fileName, buffer, c );
-
-			common->Printf( "Wrote %s\n", fileName );
+			common->Printf( "Wrote %s\n", changedPath.c_str() );
 		}
+	}
+	else
+	{
+        // change extension and index of screenshot file
+		idStr changedPath(fileName);
+		Screenshot_ChangeFilename(changedPath, "tga");
+
+		// Format is TGA, just save the buffer
+        fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_basepath", cvarSystem->GetCVarString( "fs_game_base" ) );
+
+		common->Printf( "Wrote %s\n", changedPath.c_str() );
 	}
 
 	R_StaticFree( buffer );
@@ -1384,7 +1405,8 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 }
 
-
+// taaaki: no need for two screenshot naming functions
+#if 0
 /* 
 ================== 
 R_ScreenshotFilename
@@ -1396,7 +1418,11 @@ thousands of shots
 ================== 
 */  
 void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName ) {
-	int	a,b,c,d, e;
+	int	a,b,c,d,e;
+
+    // taaaki: include the fan mission name, but strip unwanted characters
+    idStr mapname = idStr( cvarSystem->GetCVarString( "fs_game" ) );
+    mapname.ToLower();
 
 	lastNumber++;
 	if ( lastNumber > 99999 ) {
@@ -1415,7 +1441,7 @@ void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName ) 
 		frac -= d*10;
 		e = frac;
 
-		sprintf( fileName, "%s%i%i%i%i%i.tga", base, a, b, c, d, e );
+        sprintf( fileName, "%s%s-shot%i%i%i%i%i.tga", base, mapname.c_str(), a, b, c, d, e );
 		if ( lastNumber == 99999 ) {
 			break;
 		}
@@ -1426,6 +1452,7 @@ void R_ScreenshotFilename( int &lastNumber, const char *base, idStr &fileName ) 
 		// check again...
 	}
 }
+#endif
 
 /*
 ================== 
@@ -1451,7 +1478,7 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
 		blends = 1;
-		R_ScreenshotFilename( lastNumber, "screenshots/shot", checkname );
+		//R_ScreenshotFilename( lastNumber, "screenshots/", checkname );
 		break;
 	case 2:
 		width = glConfig.vidWidth;
@@ -1463,7 +1490,7 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 		width = atoi( args.Argv( 1 ) );
 		height = atoi( args.Argv( 2 ) );
 		blends = 1;
-		R_ScreenshotFilename( lastNumber, "screenshots/shot", checkname );
+		//R_ScreenshotFilename( lastNumber, "screenshots/", checkname );
 		break;
 	case 4:
 		width = atoi( args.Argv( 1 ) );
@@ -1475,7 +1502,7 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 		if ( blends > MAX_BLENDS ) {
 			blends = MAX_BLENDS;
 		}
-		R_ScreenshotFilename( lastNumber, "screenshots/shot", checkname );
+		//R_ScreenshotFilename( lastNumber, "screenshots/", checkname );
 		break;
 	default:
 		common->Printf( "usage: screenshot\n       screenshot <filename>\n       screenshot <width> <height>\n       screenshot <width> <height> <blends>\n" );
