@@ -1159,7 +1159,7 @@ void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePat
 	idBase64 out;
 #endif
 
-	f = fileSystem->OpenFileWrite( filename, basePath, "darkmod" );
+	f = fileSystem->OpenFileWrite( filename, basePath, cvarSystem->GetCVarString( "fs_game_base" ) );
 	if ( !f ) {
 		Printf ("Couldn't write %s.\n", filename );
 		return;
