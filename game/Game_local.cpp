@@ -956,8 +956,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( portalSkyActive );
 
-
-
+	savegame.WriteObject(m_mainAmbientLight); // grayman debug
+	
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
 
@@ -2038,7 +2038,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadBool( portalSkyActive );
 
-
+	savegame.ReadObject(reinterpret_cast<idClass *&>(m_mainAmbientLight)); // grayman debug
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -7026,10 +7026,16 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 		}
 	}
 
-	if ( NULL != pEntMainAmbientLight && pEntMainAmbientLight->IsType(idLight::Type) )
-		return static_cast<idLight *>( pEntMainAmbientLight );
-	else if( !a_bCreateNewIfNotFound ) 
-		return NULL;
+	if ( ( NULL != pEntMainAmbientLight ) && pEntMainAmbientLight->IsType(idLight::Type) )
+	{
+		m_mainAmbientLight = static_cast<idLight *>( pEntMainAmbientLight ); // grayman debug - remember the light entity
+		return m_mainAmbientLight;
+	}
+	else if ( !a_bCreateNewIfNotFound )
+	{
+		m_mainAmbientLight = NULL; // grayman debug - remember the light entity
+		return m_mainAmbientLight;
+	}
 
 	gameLocal.Printf( "Ambient light by name of 'ambient_world' not found, attempting to create a new one. \n"); 
 
@@ -7067,8 +7073,8 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
 	}
 
-	return pLightEntMainAmbient;
-
+	m_mainAmbientLight = pLightEntMainAmbient; // grayman debug - remember the light entity
+	return m_mainAmbientLight;
 }
 
 void idGameLocal::ClearPersistentInfo()
@@ -7123,3 +7129,9 @@ void idGameLocal::OnVidRestart()
 		player->GetPlayerView().OnVidRestart();
 	}
 }
+
+idLight* idGameLocal::GetMainAmbient() // grayman debug - retrieve main ambient light entity
+{
+	return m_mainAmbientLight;
+}
+

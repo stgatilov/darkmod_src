@@ -89,6 +89,9 @@ const float s_DOOM_TO_METERS = 0.0254f;
 // TDM: Maximum flee distance for any AI
 const float MAX_FLEE_DISTANCE = 10000.0f;
 
+const float MIN_AMBIENT = 0.10f; // grayman debug
+const float MIN_LIGHTGEM = 3.0f; // grayman debug
+
 class CRelations;
 class CsndProp;
 class CDarkModPlayer;
@@ -9334,6 +9337,7 @@ float idAI::GetVisibility( idEntity *ent ) const
 	{
 		return returnval;
 	}
+
 	idPlayer* player = static_cast<idPlayer*>(ent);
 
 	// angua: probability for being seen (within half a second)
@@ -9396,11 +9400,39 @@ float idAI::GetVisibility( idEntity *ent ) const
 float idAI::GetCalibratedLightgemValue() const
 {
 	idPlayer* player = gameLocal.GetLocalPlayer();
-	if (player == NULL) return 0.0f;
+	if (player == NULL)
+	{
+		return 0.0f;
+	}
 
 	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
-
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GetCalibratedLightgemValue: lgem = %f\r",lgem); // grayman debug
+
+	// grayman debug - clamp lgem to a min value if light from ambient_world is less than another min value
+
+	if ( lgem < MIN_LIGHTGEM )
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is < %f\r",MIN_LIGHTGEM); // grayman debug
+		idLight* mainAmbientLight = gameLocal.GetMainAmbient();
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   found light %s\r",mainAmbientLight ? mainAmbientLight->name.c_str():"NULL"); // grayman debug
+		if ( mainAmbientLight != NULL )
+		{
+			idVec3 color = mainAmbientLight->spawnArgs.GetVector( "_color","1 1 1" );
+			float ambient = (color.x + color.y + color.z)/3;
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   _color = (%s) and ambient = %f\r",color.ToString(),ambient); // grayman debug
+			if ( ambient < MIN_AMBIENT )
+			{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   ambient is < %f, so clamping lgem to %f\r",MIN_AMBIENT,MIN_LIGHTGEM); // grayman debug
+				lgem = MIN_LIGHTGEM;
+			}
+		}
+	}
+	else // grayman debug
+	{
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is >= %f, so no clamping will occur\r",MIN_LIGHTGEM); // grayman debug
+	}
+
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GetCalibratedLightgemValue: adjusted lgem = %f\r",lgem); // grayman debug
 	float term0 = -0.03f; // grayman debug - Wiki says -0.03f, and angua says this is what it's supposed to be
 //	float term0 = -0.003f;
 	float term1 = 0.03f * lgem;

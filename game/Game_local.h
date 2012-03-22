@@ -930,10 +930,13 @@ public:
 	void					OnReloadImages();
 	void					OnVidRestart();
 
+	idLight*				GetMainAmbient(); // grayman debug - retrieve main ambient light entity
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
 	idStr					m_strMainAmbientLightName;	// The name of main ambient light, default is: "ambient_world". - J.C.Denton
+	idLight*				m_mainAmbientLight;		// grayman debug - The main ambient light
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
 	bool					mapCycleLoaded;
