@@ -308,7 +308,8 @@ local_env.Append(LIBS = [
 	#File('/usr/lib32/libpng.so'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
 	File('#/linux/boost/lib/libboost_system.a'),
-	File('#/linux/boost/lib/libboost_thread.a')
+	File('#/linux/boost/lib/libboost_thread.a'),
+	File('#/linux/boost/lib/libboost_regex.a')
 ])
 
 source_list = core_list
