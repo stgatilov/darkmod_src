@@ -36,6 +36,7 @@
 // paths
 #define	CD_BASEDIR						"Doom"
 #define	BASE_GAMEDIR					"base"
+#define BASE_TDM                        "darkmod"
 
 // filenames
 #define	CD_EXE							"doom.exe"

@@ -220,7 +220,7 @@ CModInfoPtr CMissionManager::GetCurrentModInfo()
 	// We only have a mod if game_base is set correctly, otherwise we're in "darkmod".
 	idStr curMission = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_game") : "";
 
-	if (curMission.IsEmpty() || curMission == "darkmod") 
+	if (curMission.IsEmpty() || curMission == BASE_TDM) 
 	{
 		// return NULL when no mission is installed or "darkmod"
 		return CModInfoPtr();

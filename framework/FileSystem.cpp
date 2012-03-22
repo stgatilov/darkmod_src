@@ -3525,7 +3525,7 @@ const char* idFileSystemLocal::DarkModPath() const
 
 		if (modBaseName.IsEmpty())
 		{
-			modBaseName = "darkmod"; // last resort: hardcoded
+			modBaseName = BASE_TDM; // last resort: semi-hardcoded
 
 			common->Printf("idFileSystemLocal::DarkModPath: Falling back to 'darkmod'\n");
 		}

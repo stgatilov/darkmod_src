@@ -535,7 +535,7 @@ const char* Sys_ModSavePath()
 		idStr fsGameBase = cvarSystem->GetCVarString("fs_game_base");
 
 		modSavePath = cvarSystem->GetCVarString("fs_basepath");
-		modSavePath.AppendPath(fsGameBase.IsEmpty() ? "darkmod" : fsGameBase); // fall back to darkmod if fs_game base is empty
+		modSavePath.AppendPath(fsGameBase.IsEmpty() ? BASE_TDM : fsGameBase); // fall back to darkmod if fs_game base is empty
 		modSavePath.AppendPath("fms");
 	}
 

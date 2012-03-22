@@ -726,9 +726,9 @@ std::string CGlobal::GetDarkmodPath()
 
 		if (modBaseName.IsEmpty())
 		{
-			modBaseName = "darkmod"; // last resort: hardcoded
+			modBaseName = BASE_TDM; // last resort: semi-hardcoded
 
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to " + BASE_TDM + "\r");
 		}
 	}
 
@@ -762,9 +762,9 @@ std::string CGlobal::GetDarkmodPath()
 
 		if (modBaseName.IsEmpty())
 		{
-			modBaseName = "darkmod"; // last resort: hardcoded
+			modBaseName = BASE_TDM; // last resort: semi-hardcoded
 
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to 'darkmod'\r");
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to " + BASE_TDM + "\r");
 		}
 	}
 

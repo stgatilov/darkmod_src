@@ -896,7 +896,7 @@ void idCommonLocal::InitGameArguments()
 	bool fsBasePathDefined = false;
 
 	idStr basePath = Sys_DefaultBasePath(); // might be overridden by the arguments below
-	idStr fsGameBase = "darkmod";
+	idStr fsGameBase = BASE_TDM;
 
 	// Search the command line arguments for certain override parameters
 	for (int line = 0; line < com_numConsoleLines; ++line)
@@ -948,7 +948,7 @@ void idCommonLocal::InitGameArguments()
 	// If we still don't have no fs_game nor fs_game_base, fall back to "darkmod"
 	if (!fsGameDefined && !fsGameBaseDefined)
 	{
-		cvarSystem->SetCVarString("fs_game", "darkmod");
+		cvarSystem->SetCVarString("fs_game", BASE_TDM);
 		fsGameDefined = true;
 	}
 }
