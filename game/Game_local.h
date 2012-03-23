@@ -930,13 +930,14 @@ public:
 	void					OnReloadImages();
 	void					OnVidRestart();
 
-	idLight*				GetMainAmbient(); // grayman debug - retrieve main ambient light entity
+	float					GetMainAmbient(); // grayman debug - retrieve the main ambient light RGB average
 
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
 	idStr					m_strMainAmbientLightName;	// The name of main ambient light, default is: "ambient_world". - J.C.Denton
 	idLight*				m_mainAmbientLight;		// grayman debug - The main ambient light
+	float					m_ambientLight;			// grayman debug - the average RGB ambient light value
 	idStr					mapFileName;			// name of the map, empty string if no map loaded
 	idMapFile *				mapFile;				// will be NULL during the game unless in-game editing is used
 	bool					mapCycleLoaded;

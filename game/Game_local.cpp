@@ -956,7 +956,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( portalSkyActive );
 
-	savegame.WriteObject(m_mainAmbientLight); // grayman debug
+	savegame.WriteObject(m_mainAmbientLight);	// grayman debug
+	savegame.WriteFloat(m_ambientLight);		// grayman debug
 	
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
@@ -2039,6 +2040,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( portalSkyActive );
 
 	savegame.ReadObject(reinterpret_cast<idClass *&>(m_mainAmbientLight)); // grayman debug
+	savegame.ReadFloat(m_ambientLight); // grayman debug
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -7029,11 +7031,14 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 	if ( ( NULL != pEntMainAmbientLight ) && pEntMainAmbientLight->IsType(idLight::Type) )
 	{
 		m_mainAmbientLight = static_cast<idLight *>( pEntMainAmbientLight ); // grayman debug - remember the light entity
+		idVec3 color = m_mainAmbientLight->spawnArgs.GetVector( "_color","1 1 1" );
+		m_ambientLight = (color.x + color.y + color.z)/3;
 		return m_mainAmbientLight;
 	}
 	else if ( !a_bCreateNewIfNotFound )
 	{
-		m_mainAmbientLight = NULL; // grayman debug - remember the light entity
+		m_mainAmbientLight = NULL;	// grayman debug - remember the light entity
+		m_ambientLight = 0;			// grayman debug - no ambient light average
 		return m_mainAmbientLight;
 	}
 
@@ -7045,14 +7050,16 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 	for (int i = 0; i < MAX_GENTITIES; i++)
 	{
 		// Find the ambient light with greatest radius.
-		if( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
+		if ( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
 		{
 			idVec3 vec3LightRadius; 
 			idLight *pLight =  static_cast<idLight *>( entities[i] );
 // 			gameLocal.Printf( "Light found %i \n", j++ ); 
 
 			if (!pLight->IsAmbient())
+			{
 				continue;
+			}
 
 			pLight->GetRadius( vec3LightRadius );
 
@@ -7067,13 +7074,24 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 		}
 	}
 
-	if( pLightEntMainAmbient )
+	if ( pLightEntMainAmbient )
 	{
 		m_strMainAmbientLightName = pLightEntMainAmbient->GetName();
 		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
 	}
 
 	m_mainAmbientLight = pLightEntMainAmbient; // grayman debug - remember the light entity
+
+	if ( m_mainAmbientLight )
+	{
+		idVec3 color = m_mainAmbientLight->spawnArgs.GetVector( "_color","1 1 1" );
+		m_ambientLight = (color.x + color.y + color.z)/3;
+	}
+	else
+	{
+		m_ambientLight = 0; // no main ambient light
+	}
+
 	return m_mainAmbientLight;
 }
 
@@ -7130,8 +7148,8 @@ void idGameLocal::OnVidRestart()
 	}
 }
 
-idLight* idGameLocal::GetMainAmbient() // grayman debug - retrieve main ambient light entity
+float idGameLocal::GetMainAmbient() // grayman debug - retrieve main ambient light entity
 {
-	return m_mainAmbientLight;
+	return m_ambientLight;
 }
 

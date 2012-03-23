@@ -89,8 +89,10 @@ const float s_DOOM_TO_METERS = 0.0254f;
 // TDM: Maximum flee distance for any AI
 const float MAX_FLEE_DISTANCE = 10000.0f;
 
-const float MIN_AMBIENT = 0.10f; // grayman debug
-const float MIN_LIGHTGEM = 3.0f; // grayman debug
+// grayman debug - values for lightgem adjustment
+const float LOW_AMBIENT			= 0.10f;
+const float LIGHTGEM_THRESHOLD	= 5.00f;
+const float LIGHTGEM_CLAMP		= 3.00f;
 
 class CRelations;
 class CsndProp;
@@ -9408,28 +9410,23 @@ float idAI::GetCalibratedLightgemValue() const
 	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GetCalibratedLightgemValue: lgem = %f\r",lgem); // grayman debug
 
-	// grayman debug - clamp lgem to a min value if light from ambient_world is less than another min value
+	// grayman debug - clamp lgem to a constant value if light from
+	// the main ambient light (usually 'ambient_world') is less than a threshold value
 
-	if ( lgem < MIN_LIGHTGEM )
+	if ( lgem < LIGHTGEM_THRESHOLD )
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is < %f\r",MIN_LIGHTGEM); // grayman debug
-		idLight* mainAmbientLight = gameLocal.GetMainAmbient();
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   found light %s\r",mainAmbientLight ? mainAmbientLight->name.c_str():"NULL"); // grayman debug
-		if ( mainAmbientLight != NULL )
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is < %f\r",LIGHTGEM_THRESHOLD); // grayman debug
+		float mainAmbientLight = gameLocal.GetMainAmbient();
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   main ambient light has an average ambient of %f\r",mainAmbientLight); // grayman debug
+		if ( mainAmbientLight < LOW_AMBIENT )
 		{
-			idVec3 color = mainAmbientLight->spawnArgs.GetVector( "_color","1 1 1" );
-			float ambient = (color.x + color.y + color.z)/3;
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   _color = (%s) and ambient = %f\r",color.ToString(),ambient); // grayman debug
-			if ( ambient < MIN_AMBIENT )
-			{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   ambient is < %f, so clamping lgem to %f\r",MIN_AMBIENT,MIN_LIGHTGEM); // grayman debug
-				lgem = MIN_LIGHTGEM;
-			}
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   mainAmbientLight is < %f, so clamping lgem to %f\r",LOW_AMBIENT,LIGHTGEM_CLAMP); // grayman debug
+			lgem = LIGHTGEM_CLAMP;
 		}
 	}
 	else // grayman debug
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is >= %f, so no clamping will occur\r",MIN_LIGHTGEM); // grayman debug
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("   lgem is >= %f, so no clamping will occur\r",LIGHTGEM_THRESHOLD); // grayman debug
 	}
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GetCalibratedLightgemValue: adjusted lgem = %f\r",lgem); // grayman debug
