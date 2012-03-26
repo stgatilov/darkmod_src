@@ -22,17 +22,20 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
-void SCR_DrawTextLeftAlign( float &y, const char *text, ... ) id_attribute((format(printf,2,3)));
-void SCR_DrawTextRightAlign( float &y, const char *text, ... ) id_attribute((format(printf,2,3)));
+void SCR_DrawTextLeftAlign ( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
+void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
 
-#define	LINE_WIDTH				78
-#define	NUM_CON_TIMES			4
-#define	CON_TEXTSIZE			0x30000
-#define	TOTAL_LINES				(CON_TEXTSIZE / LINE_WIDTH)
-#define CONSOLE_FIRSTREPEAT		200
-#define CONSOLE_REPEAT			100
 
-#define	COMMAND_HISTORY			64
+#define CONSOLE_POOL			(524288/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
+#define	LINE_WIDTH				(SCREEN_WIDTH / SMALLCHAR_WIDTH -1) // if there are more chars than space to display, they will not wrap
+#define	TOTAL_LINES				(CONSOLE_POOL / LINE_WIDTH) // number of lines in the console buffer
+#define	CON_TEXTSIZE			(TOTAL_LINES * LINE_WIDTH)
+
+#define	NUM_CON_TIMES			4 // used for printing when the console is up (con_noPrint 0)
+#define CONSOLE_FIRSTREPEAT		200 // delay before initial key repeat
+#define CONSOLE_REPEAT			100 // delay between repeats - i.e typematic rate
+#define	COMMAND_HISTORY			64 // number of console commands kept in history buffer
+#define	FPS_FRAMES				4  // number of frames used to average the FPS display
 
 // the console will query the cvar and command systems for
 // command completion information
@@ -92,14 +95,14 @@ private:
 	int					vislines;		// in scanlines
 
 	int					times[NUM_CON_TIMES];	// cls.realtime time the line was generated
-									// for transparent notify lines
+
 	idVec4				color;
 
 	idEditField			historyEditLines[COMMAND_HISTORY];
 
 	int					nextHistoryLine;// the last line in the history buffer, not masked
 	int					historyLine;	// the line being displayed from history buffer
-									// will be <= nextHistoryLine
+										// will be <= nextHistoryLine
 
 	idEditField			consoleField;
 
@@ -123,7 +126,6 @@ idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL|CVAR_SYSTEM|CV
 #endif
 
 
-
 /*
 =============================================================================
 
@@ -137,12 +139,14 @@ idCVar idConsoleLocal::con_noPrint( "con_noPrint", "1", CVAR_BOOL|CVAR_SYSTEM|CV
 SCR_DrawTextLeftAlign
 ==================
 */
-void SCR_DrawTextLeftAlign( float &y, const char *text, ... ) {
+void SCR_DrawTextLeftAlign( int &y, const char *text, ... ) {
 	char string[MAX_STRING_CHARS];
 	va_list argptr;
+
 	va_start( argptr, text );
 	idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
+
 	renderSystem->DrawSmallStringExt( 0, y + 2, string, colorWhite, true, localConsole.charSetShader );
 	y += SMALLCHAR_HEIGHT + 4;
 }
@@ -152,62 +156,46 @@ void SCR_DrawTextLeftAlign( float &y, const char *text, ... ) {
 SCR_DrawTextRightAlign
 ==================
 */
-void SCR_DrawTextRightAlign( float &y, const char *text, ... ) {
+void SCR_DrawTextRightAlign( int &y, const char *text, ... ) {
 	char string[MAX_STRING_CHARS];
 	va_list argptr;
+
 	va_start( argptr, text );
-	int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
+	const int i = idStr::vsnPrintf( string, sizeof( string ), text, argptr );
 	va_end( argptr );
-	renderSystem->DrawSmallStringExt( 635 - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true, localConsole.charSetShader );
+
+	renderSystem->DrawSmallStringExt( SCREEN_WIDTH - i * SMALLCHAR_WIDTH, y + 2, string, colorWhite, true, localConsole.charSetShader );
 	y += SMALLCHAR_HEIGHT + 4;
 }
-
-
-
 
 /*
 ==================
 SCR_DrawFPS
 ==================
 */
-#define	FPS_FRAMES	4
-float SCR_DrawFPS( float y ) {
-	char		*s;
-	int			w;
-	static int	previousTimes[FPS_FRAMES];
-	static int	index;
-	int		i, total;
-	int		fps;
-	static	int	previous;
-	int		t, frameTime;
+int SCR_DrawFPS( int y ) {
+	char	*s;
+	static unsigned int t , w, 
+		frameTime, index, total, fps,
+		previous, previousTimes[FPS_FRAMES];
 
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
 	t = Sys_Milliseconds();
 	frameTime = t - previous;
 	previous = t;
-
 	previousTimes[index % FPS_FRAMES] = frameTime;
 	index++;
-	if ( index > FPS_FRAMES ) {
-		// average multiple frames together to smooth changes out a bit
-		total = 0;
-		for ( i = 0 ; i < FPS_FRAMES ; i++ ) {
-			total += previousTimes[i];
-		}
-		if ( !total ) {
-			total = 1;
-		}
-		fps = 10000 * FPS_FRAMES / total;
-		fps = (fps + 5)/10;
 
-		s = va( "%ifps", fps );
-		w = strlen( s ) * BIGCHAR_WIDTH;
+	// average multiple frames together to smooth changes out a bit
+	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + previousTimes[3] + 1;
+	fps = (1000 * FPS_FRAMES) / total;
 
-		renderSystem->DrawBigStringExt( 635 - w, idMath::FtoiFast( y ) + 2, s, colorWhite, true, localConsole.charSetShader);
-	}
+	s = va( "%ifps", fps );
 
-	return y + BIGCHAR_HEIGHT + 4;
+	renderSystem->DrawBigStringExt( SCREEN_WIDTH - (strlen( s )*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
+
+	return (y + BIGCHAR_HEIGHT + 4);
 }
 
 /*
@@ -215,7 +203,7 @@ float SCR_DrawFPS( float y ) {
 SCR_DrawMemoryUsage
 ==================
 */
-float SCR_DrawMemoryUsage( float y ) {
+int SCR_DrawMemoryUsage( int y ) {
 	memoryStats_t allocs, frees;
 	
 	Mem_GetStats( allocs );
@@ -234,8 +222,8 @@ float SCR_DrawMemoryUsage( float y ) {
 SCR_DrawAsyncStats
 ==================
 */
-float SCR_DrawAsyncStats( float y ) {
-	int i, outgoingRate, incomingRate;
+int SCR_DrawAsyncStats( int y ) {
+	int outgoingRate, incomingRate;
 	float outgoingCompression, incomingCompression;
 
 	if ( idAsyncNetwork::server.IsActive() ) {
@@ -244,7 +232,7 @@ float SCR_DrawAsyncStats( float y ) {
 		SCR_DrawTextRightAlign( y, "total outgoing rate = %d KB/s", idAsyncNetwork::server.GetOutgoingRate() >> 10 );
 		SCR_DrawTextRightAlign( y, "total incoming rate = %d KB/s", idAsyncNetwork::server.GetIncomingRate() >> 10 );
 
-		for ( i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
+		for ( int i = 0; i < MAX_ASYNC_CLIENTS; i++ ) {
 
 			outgoingRate = idAsyncNetwork::server.GetClientOutgoingRate( i );
 			incomingRate = idAsyncNetwork::server.GetClientIncomingRate( i );
@@ -288,16 +276,16 @@ float SCR_DrawAsyncStats( float y ) {
 SCR_DrawSoundDecoders
 ==================
 */
-float SCR_DrawSoundDecoders( float y ) {
-	int index, numActiveDecoders;
+int SCR_DrawSoundDecoders( int y ) {
+	unsigned int localTime, sampleTime, percent;
+	int index = -1;
+	int numActiveDecoders = 0;
 	soundDecoderInfo_t decoderInfo;
 
-	index = -1;
-	numActiveDecoders = 0;
 	while( ( index = soundSystem->GetSoundDecoderInfo( index, decoderInfo ) ) != -1 ) {
-		int localTime = decoderInfo.current44kHzTime - decoderInfo.start44kHzTime;
-		int sampleTime = decoderInfo.num44kHzSamples / decoderInfo.numChannels;
-		int percent;
+		localTime = decoderInfo.current44kHzTime - decoderInfo.start44kHzTime;
+		sampleTime = decoderInfo.num44kHzSamples / decoderInfo.numChannels;
+
 		if ( localTime > sampleTime ) {
 			if ( decoderInfo.looping ) {
 				percent = ( localTime % sampleTime ) * 100 / sampleTime;
@@ -307,9 +295,11 @@ float SCR_DrawSoundDecoders( float y ) {
 		} else {
 			percent = localTime * 100 / sampleTime;
 		}
-		SCR_DrawTextLeftAlign( y, "%3d: %3d%% (%1.2f) %s: %s (%dkB)", numActiveDecoders, percent, decoderInfo.lastVolume, decoderInfo.format.c_str(), decoderInfo.name.c_str(), decoderInfo.numBytes >> 10 );
+		SCR_DrawTextLeftAlign( y, "%3d: %3d%% (%1.2f) %s: %s (%dkB)", numActiveDecoders, percent, decoderInfo.lastVolume, 
+			decoderInfo.format.c_str(), decoderInfo.name.c_str(), decoderInfo.numBytes >> 10 );
 		numActiveDecoders++;
 	}
+
 	return y;
 }
 
@@ -349,18 +339,15 @@ idConsoleLocal::Init
 ==============
 */
 void idConsoleLocal::Init( void ) {
-	int		i;
-
 	keyCatching = false;
 
 	lastKeyEvent = -1;
 	nextKeyEvent = CONSOLE_FIRSTREPEAT;
 
 	consoleField.Clear();
-
 	consoleField.SetWidthInChars( LINE_WIDTH );
 
-	for ( i = 0 ; i < COMMAND_HISTORY ; i++ ) {
+	for ( int i = 0 ; i < COMMAND_HISTORY ; i++ ) {
 		historyEditLines[i].Clear();
 		historyEditLines[i].SetWidthInChars( LINE_WIDTH );
 	}
@@ -388,7 +375,7 @@ the renderSystem is initialized
 ==============
 */
 void idConsoleLocal::LoadGraphics() {
-	charSetShader = declManager->FindMaterial( "textures/bigchars" );
+	charSetShader = declManager->FindMaterial( "textures/consolefont" );
 	whiteShader = declManager->FindMaterial( "_white" );
 	consoleShader = declManager->FindMaterial( "console" );
 }
@@ -398,7 +385,7 @@ void idConsoleLocal::LoadGraphics() {
 idConsoleLocal::Active
 ================
 */
-bool	idConsoleLocal::Active( void ) {
+bool idConsoleLocal::Active( void ) {
 	return keyCatching;
 }
 
@@ -407,10 +394,8 @@ bool	idConsoleLocal::Active( void ) {
 idConsoleLocal::ClearNotifyLines
 ================
 */
-void	idConsoleLocal::ClearNotifyLines() {
-	int		i;
-
-	for ( i = 0 ; i < NUM_CON_TIMES ; i++ ) {
+void idConsoleLocal::ClearNotifyLines() {
+	for ( int i = 0 ; i < NUM_CON_TIMES ; i++ ) {
 		times[i] = 0;
 	}
 }
@@ -420,10 +405,11 @@ void	idConsoleLocal::ClearNotifyLines() {
 idConsoleLocal::Close
 ================
 */
-void	idConsoleLocal::Close() {
+void idConsoleLocal::Close() {
 	keyCatching = false;
 	SetDisplayFraction( 0 );
 	displayFrac = 0;	// don't scroll to that point, go immediately
+
 	ClearNotifyLines();
 }
 
@@ -433,9 +419,7 @@ idConsoleLocal::Clear
 ================
 */
 void idConsoleLocal::Clear() {
-	int		i;
-
-	for ( i = 0 ; i < CON_TEXTSIZE ; i++ ) {
+	for ( int i = 0 ; i < CON_TEXTSIZE ; i++ ) {
 		text[i] = (idStr::ColorIndex(C_COLOR_CYAN)<<8) | ' ';
 	}
 
@@ -451,8 +435,8 @@ Save the console contents out to a file
 */
 void idConsoleLocal::Dump( const char *fileName ) {
 	int		l, x, i;
-	short *	line;
-	idFile *f;
+	short	*line;
+	idFile	*f;
 	char	buffer[LINE_WIDTH + 3];
 
 	f = fileSystem->OpenFileWrite( fileName );
@@ -466,14 +450,16 @@ void idConsoleLocal::Dump( const char *fileName ) {
 	if ( l < 0 ) {
 		l = 0;
 	}
-	for ( ; l <= current ; l++ )
-	{
+
+	for ( ; l <= current ; l++ ) {
 		line = text + ( l % TOTAL_LINES ) * LINE_WIDTH;
 		for ( x = 0; x < LINE_WIDTH; x++ )
-			if ( ( line[x] & 0xff ) > ' ' )
+			if ( ( line[x] & 0xff ) > ' ' ) {
 				break;
-		if ( x != LINE_WIDTH )
+			}
+		if ( x != LINE_WIDTH ) {
 			break;
+		}
 	}
 
 	// write the remaining lines
@@ -575,7 +561,7 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 
 		common->Printf ( "]%s\n", consoleField.GetBuffer() );
 
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, consoleField.GetBuffer() );	// valid command
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, consoleField.GetBuffer() ); // valid command
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "\n" );
 
 		// copy line to history buffer
@@ -586,22 +572,19 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		consoleField.Clear();
 		consoleField.SetWidthInChars( LINE_WIDTH );
 
-		session->UpdateScreen();// force an update, because the command
-								// may take some time
+		session->UpdateScreen(); // force an update, because the command may take some time
+
 		return;
 	}
 
 	// command completion
-
 	if ( key == K_TAB ) {
 		consoleField.AutoComplete();
 		return;
 	}
 
-	// command history (ctrl-p ctrl-n for unix style)
-
-	if ( ( key == K_UPARROW ) ||
-		 ( ( tolower(key) == 'p' ) && idKeyInput::IsDown( K_CTRL ) ) ) {
+	// command history (ctrl-p ctrl-n for unix style, scroll up/down command history)
+	if ( key == K_UPARROW || ( key == 'p' && idKeyInput::IsDown( K_CTRL ) ) ) {
 		if ( nextHistoryLine - historyLine < COMMAND_HISTORY && historyLine > 0 ) {
 			historyLine--;
 		}
@@ -609,8 +592,7 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		return;
 	}
 
-	if ( ( key == K_DOWNARROW ) ||
-		 ( ( tolower( key ) == 'n' ) && idKeyInput::IsDown( K_CTRL ) ) ) {
+	if ( key == K_DOWNARROW || ( key == 'n' && idKeyInput::IsDown( K_CTRL ) ) ) {
 		if ( historyLine == nextHistoryLine ) {
 			return;
 		}
@@ -620,13 +602,6 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 	}
 
 	// console scrolling
-	if ( key == K_PGUP ) {
-		PageUp();
-		lastKeyEvent = eventLoop->Milliseconds();
-		nextKeyEvent = CONSOLE_FIRSTREPEAT;
-		return;
-	}
-
 	if ( key == K_PGDN ) {
 		PageDown();
 		lastKeyEvent = eventLoop->Milliseconds();
@@ -634,13 +609,20 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		return;
 	}
 
-	if ( key == K_MWHEELUP ) {
+	if ( key == K_PGUP ) {
 		PageUp();
+		lastKeyEvent = eventLoop->Milliseconds();
+		nextKeyEvent = CONSOLE_FIRSTREPEAT;
 		return;
 	}
 
 	if ( key == K_MWHEELDOWN ) {
 		PageDown();
+		return;
+	}
+
+	if ( key == K_MWHEELUP ) {
+		PageUp();
 		return;
 	}
 
@@ -667,17 +649,19 @@ deals with scrolling text because we don't have key repeat
 ==============
 */
 void idConsoleLocal::Scroll( ) {
+
 	if (lastKeyEvent == -1 || (lastKeyEvent+200) > eventLoop->Milliseconds()) {
 		return;
 	}
+
 	// console scrolling
-	if ( idKeyInput::IsDown( K_PGUP ) ) {
+	else if ( idKeyInput::IsDown( K_PGUP ) ) {
 		PageUp();
 		nextKeyEvent = CONSOLE_REPEAT;
 		return;
 	}
 
-	if ( idKeyInput::IsDown( K_PGDN ) ) {
+	else if ( idKeyInput::IsDown( K_PGDN ) ) {
 		PageDown();
 		nextKeyEvent = CONSOLE_REPEAT;
 		return;
@@ -704,21 +688,20 @@ Scrolls the console up or down based on conspeed
 ==============
 */
 void idConsoleLocal::UpdateDisplayFraction( void ) {
-	if ( con_speed.GetFloat() <= 0.1f ) {
+	const float consolespeed = con_speed.GetFloat();
+
+	if ( consolespeed < 0.1f ) {
 		fracTime = com_frameTime;
 		displayFrac = finalFrac;
 		return;
-	}
-
-	// scroll towards the destination height
-	if ( finalFrac < displayFrac ) {
-		displayFrac -= con_speed.GetFloat() * ( com_frameTime - fracTime ) * 0.001f;
+	} else if ( finalFrac < displayFrac ) { // scroll towards the destination height
+		displayFrac -= consolespeed * ( com_frameTime - fracTime ) * 0.001f;
 		if ( finalFrac > displayFrac ) {
 			displayFrac = finalFrac;
 		}
 		fracTime = com_frameTime;
 	} else if ( finalFrac > displayFrac ) {
-		displayFrac += con_speed.GetFloat() * ( com_frameTime - fracTime ) * 0.001f;
+		displayFrac += consolespeed * ( com_frameTime - fracTime ) * 0.001f;
 		if ( finalFrac < displayFrac ) {
 			displayFrac = finalFrac;
 		}
@@ -731,16 +714,14 @@ void idConsoleLocal::UpdateDisplayFraction( void ) {
 ProcessEvent
 ==============
 */
-bool	idConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept ) {
+bool idConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept ) {
 	bool consoleKey;
 	consoleKey = event->evType == SE_KEY && ( event->evValue == Sys_GetConsoleKey( false ) || event->evValue == Sys_GetConsoleKey( true ) );
 
 #if ID_CONSOLE_LOCK
 	// If the console's not already down, and we have it turned off, check for ctrl+alt
-	if ( !keyCatching && !com_allowConsole.GetBool() ) {
-		if ( !idKeyInput::IsDown( K_CTRL ) || !idKeyInput::IsDown( K_ALT ) ) {
+	if ( !keyCatching && !com_allowConsole.GetBool() && ( !idKeyInput::IsDown( K_CTRL ) || !idKeyInput::IsDown( K_ALT ) ) ) {
 			consoleKey = false;
-		}
 	}
 #endif
 
@@ -790,10 +771,10 @@ bool	idConsoleLocal::ProcessEvent( const sysEvent_t *event, bool forceAccept ) {
 		// ignore up key events
 		if ( event->evValue2 == 0 ) {
 			return true;
+		} else {
+			KeyDownEvent( event->evValue );
+			return true;
 		}
-
-		KeyDownEvent( event->evValue );
-		return true;
 	}
 
 	// we don't handle things like mouse, joystick, and network packets
@@ -814,20 +795,20 @@ Linefeed
 ===============
 */
 void idConsoleLocal::Linefeed() {
-	int		i;
 
 	// mark time for transparent overlay
-	if ( current >= 0 ) {
+	if ( current > 0 ) {
 		times[current % NUM_CON_TIMES] = com_frameTime;
 	}
 
-	x = 0;
 	if ( display == current ) {
 		display++;
 	}
+
+	x = 0;
 	current++;
-	for ( i = 0; i < LINE_WIDTH; i++ ) {
-		text[(current%TOTAL_LINES)*LINE_WIDTH+i] = (idStr::ColorIndex(C_COLOR_CYAN)<<8) | ' ';
+	for (int i = 0; i < LINE_WIDTH; i++ ) {
+		text[(current % TOTAL_LINES) * LINE_WIDTH + i] = ( ( idStr::ColorIndex(C_COLOR_CYAN)<<8 ) | ' ');
 	}
 }
 
@@ -840,8 +821,7 @@ Handles cursor positioning, line wrapping, etc
 ================
 */
 void idConsoleLocal::Print( const char *txt ) {
-	int		y;
-	int		c, l;
+	int		c, l, y;
 	int		color;
 
 #ifdef ID_ALLOW_TOOLS
@@ -938,25 +918,23 @@ Draw the editline after a ] prompt
 ================
 */
 void idConsoleLocal::DrawInput() {
-	int y, autoCompleteLength;
 
-	y = vislines - ( SMALLCHAR_HEIGHT * 2 );
+	const int y = vislines - ( SMALLCHAR_HEIGHT * 2 );
 
 	if ( consoleField.GetAutoCompleteLength() != 0 ) {
-		autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
+		const int autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
 
 		if ( autoCompleteLength > 0 ) {
-			renderSystem->SetColor4( .8f, .2f, .2f, .45f );
+			renderSystem->SetColor4( 0.8f, 0.2f, 0.2f, 0.45f );
 
 			renderSystem->DrawStretchPic( 2 * SMALLCHAR_WIDTH + consoleField.GetAutoCompleteLength() * SMALLCHAR_WIDTH,
 							y + 2, autoCompleteLength * SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT - 2, 0, 0, 0, 0, whiteShader );
-
 		}
 	}
 
 	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 
-	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, ']', localConsole.charSetShader );
+	renderSystem->DrawSmallChar( 1 * SMALLCHAR_WIDTH, y, '>', localConsole.charSetShader );
 
 	consoleField.Draw(2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, true, charSetShader );
 }
@@ -970,9 +948,7 @@ Draws the last few lines of output transparently over the game top
 ================
 */
 void idConsoleLocal::DrawNotify() {
-	int		x, v;
 	short	*text_p;
-	int		i;
 	int		time;
 	int		currentColor;
 
@@ -983,8 +959,8 @@ void idConsoleLocal::DrawNotify() {
 	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
 	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 
-	v = 0;
-	for ( i = current-NUM_CON_TIMES+1; i <= current; i++ ) {
+	int v = 0;
+	for ( int i = current-NUM_CON_TIMES+1; i <= current; i++ ) {
 		if ( i < 0 ) {
 			continue;
 		}
@@ -998,7 +974,7 @@ void idConsoleLocal::DrawNotify() {
 		}
 		text_p = text + (i % TOTAL_LINES)*LINE_WIDTH;
 		
-		for ( x = 0; x < LINE_WIDTH; x++ ) {
+		for ( int x = 0; x < LINE_WIDTH; x++ ) {
 			if ( ( text_p[x] & 0xff ) == ' ' ) {
 				continue;
 			}
@@ -1023,11 +999,10 @@ Draws the console with the solid background
 ================
 */
 void idConsoleLocal::DrawSolidConsole( float frac ) {
-	int				i, x;
+	int				x;
 	float			y;
-	int				rows;
-	short			*text_p;
-	int				row;
+	int				row, rows;
+	short			*text_p;		
 	int				lines;
 	int				currentColor;
 
@@ -1036,7 +1011,7 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		return;
 	}
 
-	if ( lines > SCREEN_HEIGHT ) {
+	else if ( lines > SCREEN_HEIGHT ) {
 		lines = SCREEN_HEIGHT;
 	}
 
@@ -1050,26 +1025,26 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 
 	renderSystem->SetColor( colorCyan );
 	renderSystem->DrawStretchPic( 0, y, SCREEN_WIDTH, 2, 0, 0, 0, 0, whiteShader );
-	renderSystem->SetColor( colorWhite );
+	//renderSystem->SetColor( colorWhite );
 
 	// draw the version number
 
 	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 
-	idStr version = va("%srev%d", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision());
-	i = version.Length();
+	{
+		const idStr version = va("%srev%d", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision());
+		const int vlen = version.Length();
 
-	for ( x = 0; x < i; x++ ) {
-		renderSystem->DrawSmallChar( SCREEN_WIDTH - ( i - x ) * SMALLCHAR_WIDTH, 
-			(lines-(SMALLCHAR_HEIGHT+SMALLCHAR_HEIGHT/2)), version[x], localConsole.charSetShader );
-
+		for ( x = 0; x < vlen; x++ ) {
+			renderSystem->DrawSmallChar( SCREEN_WIDTH - ( vlen - x ) * SMALLCHAR_WIDTH, 
+				(lines-SMALLCHAR_HEIGHT), version[x], localConsole.charSetShader );
+		}
 	}
 
 
 	// draw the text
 	vislines = lines;
 	rows = (lines-SMALLCHAR_WIDTH)/SMALLCHAR_WIDTH;		// rows of text to draw
-
 	y = lines - (SMALLCHAR_HEIGHT*3);
 
 	// draw from the bottom up
@@ -1083,16 +1058,12 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 		rows--;
 	}
 	
-	row = display;
-
-	if ( x == 0 ) {
-		row--;
-	}
+	row = (x == 0) ? (display -1) : display;
 
 	currentColor = idStr::ColorIndex( C_COLOR_WHITE );
 	renderSystem->SetColor( idStr::ColorForIndex( currentColor ) );
 
-	for ( i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- ) {
+	for ( int i = 0; i < rows; i++, y -= SMALLCHAR_HEIGHT, row-- ) {
 		if ( row < 0 ) {
 			break;
 		}
@@ -1130,12 +1101,14 @@ Draw
 ForceFullScreen is used by the editor
 ==============
 */
-void	idConsoleLocal::Draw( bool forceFullScreen ) {
-	float y = 0.0f;
-
+void idConsoleLocal::Draw( bool forceFullScreen ) {
+#if 0
+	//Is this even possible?
 	if ( !charSetShader ) {
 		return;
 	}
+#endif
+	int y = 0; // Padding from the top of the screen for FPS display etc.
 
 	if ( forceFullScreen ) {
 		// if we are forced full screen because of a disconnect, 
@@ -1149,31 +1122,28 @@ void	idConsoleLocal::Draw( bool forceFullScreen ) {
 
 	UpdateDisplayFraction();
 
-	if ( forceFullScreen ) {
-		DrawSolidConsole( 1.0f );
-	} else if ( displayFrac ) {
+	if ( displayFrac ) {
 		DrawSolidConsole( displayFrac );
-	} else {
-		// only draw the notify lines if the developer cvar is set,
-		// or we are a debug build
-		if ( !con_noPrint.GetBool() ) {
-			DrawNotify();
-		}
+	} else if ( forceFullScreen ) {
+		DrawSolidConsole( 1.0f );
+	} else if ( !con_noPrint.GetBool() ) {
+		// draw the notify lines if the developer cvar is set (ie DEBUG build)
+		DrawNotify();
 	}
 
 	if ( com_showFPS.GetBool() ) {
-		y = SCR_DrawFPS( 0 );
+		y = SCR_DrawFPS( 4 ); // Initial padding from the top of the screen.
 	}
 
 	if ( com_showMemoryUsage.GetBool() ) {
 		y = SCR_DrawMemoryUsage( y );
 	}
 
-	if ( com_showAsyncStats.GetBool() ) {
-		y = SCR_DrawAsyncStats( y );
-	}
-
 	if ( com_showSoundDecoders.GetBool() ) {
 		y = SCR_DrawSoundDecoders( y );
+	}
+	
+	if ( com_showAsyncStats.GetBool() ) {
+		y = SCR_DrawAsyncStats( y );
 	}
 }

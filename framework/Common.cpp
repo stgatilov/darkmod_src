@@ -66,12 +66,14 @@ private:
 EngineVersion engineVersion;
 
 idCVar com_version( "si_version", "not set", CVAR_SYSTEM|CVAR_ROM|CVAR_SERVERINFO, "engine version" );
+
 idCVar com_skipRenderer( "com_skipRenderer", "0", CVAR_BOOL|CVAR_SYSTEM, "skip the renderer completely" );
 idCVar com_machineSpec( "com_machineSpec", "-1", CVAR_INTEGER | CVAR_ARCHIVE | CVAR_SYSTEM, "hardware classification, -1 = not detected, 0 = low quality, 1 = medium quality, 2 = high quality, 3 = ultra quality" );
 idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );
 idCVar com_memoryMarker( "com_memoryMarker", "-1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "used as a marker for memory stats" );
 idCVar com_preciseTic( "com_preciseTic", "1", CVAR_BOOL|CVAR_SYSTEM, "run one game tick every async thread update" );
 idCVar com_asyncInput( "com_asyncInput", "0", CVAR_BOOL|CVAR_SYSTEM, "sample input from the async thread" );
+
 #define ASYNCSOUND_INFO "0: mix sound inline, 1: memory mapped async mix, 2: callback mixing, 3: write async mix"
 #if defined( MACOS_X )
 idCVar com_asyncSound( "com_asyncSound", "2", CVAR_INTEGER|CVAR_SYSTEM|CVAR_ROM, ASYNCSOUND_INFO );
@@ -80,6 +82,7 @@ idCVar com_asyncSound( "com_asyncSound", "3", CVAR_INTEGER|CVAR_SYSTEM|CVAR_ROM,
 #else
 idCVar com_asyncSound( "com_asyncSound", "1", CVAR_INTEGER|CVAR_SYSTEM, ASYNCSOUND_INFO, 0, 1 );
 #endif
+
 idCVar com_forceGenericSIMD( "com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD" );
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode" );
 idCVar com_allowConsole( "com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "allow toggling console with the tilde key" );
@@ -88,13 +91,14 @@ idCVar com_showFPS( "com_showFPS", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_ARCHIVE|CVAR_
 idCVar com_showMemoryUsage( "com_showMemoryUsage", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show total and per frame memory usage" );
 idCVar com_showAsyncStats( "com_showAsyncStats", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show async network stats" );
 idCVar com_showSoundDecoders( "com_showSoundDecoders", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show sound decoders" );
+
 idCVar com_timestampPrints( "com_timestampPrints", "0", CVAR_SYSTEM, "print time with each console print, 1 = msec, 2 = sec", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar com_timescale( "timescale", "1", CVAR_SYSTEM | CVAR_FLOAT, "scales the time", 0.1f, 10.0f );
 idCVar com_logFile( "logFile", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "1 = buffer log, 2 = flush after each print", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar com_logFileName( "logFileName", "qconsole.log", CVAR_SYSTEM | CVAR_NOCHEAT, "name of log file, if empty, qconsole.log will be used" );
 idCVar com_makingBuild( "com_makingBuild", "0", CVAR_BOOL | CVAR_SYSTEM, "1 when making a build" );
 idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "update the load size after loading a map" );
-idCVar com_videoRam( "com_videoRam", "64", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "holds the last amount of detected video ram" );
+idCVar com_videoRam( "com_videoRam", "128", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "holds the last amount of detected video ram" );
 
 idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
@@ -109,7 +113,7 @@ int				com_frameTime;			// time for the current frame in milliseconds
 int				com_frameNumber;		// variable frame number
 volatile int	com_ticNumber;			// 60 hz tics
 int				com_editors;			// currently opened editor(s)
-bool			com_editorActive;		//  true if an editor has focus
+bool			com_editorActive;		// true if an editor has focus
 
 #ifdef _WIN32
 HWND			com_hwndMsg = NULL;
@@ -354,7 +358,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 	// optionally put a timestamp at the beginning of each print,
 	// so we can see how long different init sections are taking
 	if ( com_timestampPrints.GetInteger() ) {
-		int	t = Sys_Milliseconds();
+		unsigned int t = Sys_Milliseconds();
 		if ( com_timestampPrints.GetInteger() == 1 ) {
 			t /= 1000;
 		}
@@ -531,7 +535,7 @@ void idCommonLocal::DWarning( const char *fmt, ... ) {
 	va_end( argptr );
 	msg[sizeof(msg)-1] = '\0';
 
-	Printf( S_COLOR_YELLOW"WARNING: %s\n", msg );
+	Printf( S_COLOR_YELLOW "WARNING:%s\n", msg );
 }
 
 /*
@@ -550,7 +554,7 @@ void idCommonLocal::Warning( const char *fmt, ... ) {
 	va_end( argptr );
 	msg[sizeof(msg)-1] = 0;
 
-	Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_RED "%s\n", msg );
+	Printf( S_COLOR_YELLOW "WARNING:" S_COLOR_RED "%s\n", msg );
 
 	if ( warningList.Num() < MAX_WARNING_LIST ) {
 		warningList.AddUnique( msg );
@@ -563,8 +567,6 @@ idCommonLocal::PrintWarnings
 ==================
 */
 void idCommonLocal::PrintWarnings( void ) {
-	int i;
-
 	if ( !warningList.Num() ) {
 		return;
 	}
@@ -574,8 +576,8 @@ void idCommonLocal::PrintWarnings( void ) {
 	Printf( "------------- Warnings ---------------\n" );
 	Printf( "during %s...\n", warningCaption.c_str() );
 
-	for ( i = 0; i < warningList.Num(); i++ ) {
-		Printf( S_COLOR_YELLOW "WARNING: " S_COLOR_RED "%s\n", warningList[i].c_str() );
+	for ( int i = 0; i < warningList.Num(); i++ ) {
+		Printf( S_COLOR_YELLOW "WARNING:" S_COLOR_RED "%s\n", warningList[i].c_str() );
 	}
 	if ( warningList.Num() ) {
 		if ( warningList.Num() >= MAX_WARNING_LIST ) {
@@ -611,13 +613,12 @@ void idCommonLocal::DumpWarnings( void ) {
 
 	warningFile = fileSystem->OpenFileWrite( "warnings.txt", "fs_modSavePath" );
 	if ( warningFile ) {
-
 		warningFile->Printf( "------------- Warnings ---------------\n\n" );
 		warningFile->Printf( "during %s...\n", warningCaption.c_str() );
 		warningList.Sort();
 		for ( i = 0; i < warningList.Num(); i++ ) {
 			warningList[i].RemoveColors();
-			warningFile->Printf( "WARNING: %s\n", warningList[i].c_str() );
+			warningFile->Printf( "WARNING:%s\n", warningList[i].c_str() );
 		}
 		if ( warningList.Num() >= MAX_WARNING_LIST ) {
 			warningFile->Printf( "\nmore than %d warnings!\n", MAX_WARNING_LIST );
@@ -629,7 +630,7 @@ void idCommonLocal::DumpWarnings( void ) {
 		errorList.Sort();
 		for ( i = 0; i < errorList.Num(); i++ ) {
 			errorList[i].RemoveColors();
-			warningFile->Printf( "ERROR: %s", errorList[i].c_str() );
+			warningFile->Printf( "ERROR:%s", errorList[i].c_str() );
 		}
 
 		warningFile->ForceFlush();
@@ -835,12 +836,12 @@ idCommonLocal::ParseCommandLine
 ==================
 */
 void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
-	int i, current_count;
+	int current_count;
 
 	com_numConsoleLines = 0;
 	current_count = 0;
 	// API says no program path
-	for ( i = 0; i < argc; i++ ) {
+	for ( int i = 0; i < argc; i++ ) {
 		if ( argv[ i ][ 0 ] == '+' ) {
 			com_numConsoleLines++;
 			com_consoleLines[ com_numConsoleLines-1 ].AppendArg( argv[ i ] + 1 );
@@ -850,42 +851,6 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 			}
 			com_consoleLines[ com_numConsoleLines-1 ].AppendArg( argv[ i ] );
 		}
-	}
-}
-
-namespace
-{
-	// Local helper, reading the text contents of the given file 
-	idStr ReadTextFile_Local(const idStr& fileName)
-	{
-		idStr returnValue;
-
-		FILE* file = fopen(fileName.c_str(), "r");
-
-		if (file != NULL)
-		{
-			fseek(file, 0, SEEK_END);
-			std::size_t len = ftell(file);
-			fseek(file, 0, SEEK_SET);
-
-			char* buf = reinterpret_cast<char*>(malloc(len+1));
-
-			std::size_t bytesRead = fread(buf, 1, len, file);
-
-			if (bytesRead != len)
-			{
-				std::cerr << "Warning: bytes read mismatches file length?" << std::endl;
-			}
-
-			buf[len] = 0;
-
-			returnValue = buf;
-			free(buf);
-
-			fclose(file);
-		}
-
-		return returnValue;
 	}
 }
 
@@ -930,8 +895,37 @@ void idCommonLocal::InitGameArguments()
 		// no fs_game defined, try to load the currentfm.txt from darkmod
 		idStr currentModFile = darkmodPath;
 		currentModFile.AppendPath("currentfm.txt");
+		idStr mod;
 
-		idStr mod = ReadTextFile_Local(currentModFile);
+		// this will just read the content of a file - in this case, to get the fm name from
+		// the aforementioned currentModFile
+		{
+			FILE* file = fopen(currentModFile.c_str(), "r");
+			if ( file )	{
+				fseek(file, 0, SEEK_END);
+				size_t len = ftell(file);
+				fseek(file, 0, SEEK_SET);
+
+				char* buf = (char*)malloc(len+1);
+				if ( buf ) {
+					size_t bytesRead = fread(buf, 1, len, file);
+
+					if (bytesRead != len) {
+						common->Warning("Reading currentfm: (%s) bytes read mismatches file length?", currentModFile.c_str());
+					}
+
+					buf[len] = 0;
+					mod = buf;
+
+					free(buf);
+					fclose(file);
+				} else {
+					free(buf);
+					fclose(file);
+					common->FatalError("Reading currentfm:: Failed to allocate memory for read.");
+				}
+			}
+		}
 
 		if (!mod.IsEmpty())
 		{
@@ -971,9 +965,7 @@ skip loading of config file (Darkmod.cfg)
 ==================
 */
 bool idCommonLocal::SafeMode( void ) {
-	int			i;
-
-	for ( i = 0 ; i < com_numConsoleLines ; i++ ) {
+	for ( int i = 0 ; i < com_numConsoleLines ; i++ ) {
 		if ( !idStr::Icmp( com_consoleLines[ i ].Argv(0), "safe" )
 			|| !idStr::Icmp( com_consoleLines[ i ].Argv(0), "cvar_restart" ) ) {
 			com_consoleLines[ i ].Clear();
@@ -992,9 +984,7 @@ and force fullscreen off in those cases
 ==================
 */
 void idCommonLocal::CheckToolMode( void ) {
-	int			i;
-
-	for ( i = 0 ; i < com_numConsoleLines ; i++ ) {
+	for ( int i = 0 ; i < com_numConsoleLines ; i++ ) {
 		if ( !idStr::Icmp( com_consoleLines[ i ].Argv(0), "guieditor" ) ) {
 			com_editors |= EDITOR_GUI;
 		}
@@ -1034,32 +1024,24 @@ be after execing the config and default.
 ==================
 */
 void idCommonLocal::StartupVariable( const char *match, bool once ) {
-	int			i;
 	const char *s;
 
-	i = 0;
-	while (	i < com_numConsoleLines ) {
+	for ( int i = 0; i < com_numConsoleLines; i++) {
 		if ( strcmp( com_consoleLines[ i ].Argv( 0 ), "set" ) ) {
-			i++;
 			continue;
 		}
 
 		s = com_consoleLines[ i ].Argv(1);
-
 		if ( !match || !idStr::Icmp( s, match ) ) {
 			cvarSystem->SetCVarString( s, com_consoleLines[ i ].Argv( 2 ) );
 			if ( once ) {
 				// kill the line
-				int j = i + 1;
-				while ( j < com_numConsoleLines ) {
+				for ( int j = i + 1; j < com_numConsoleLines; j++ ) {
 					com_consoleLines[ j - 1 ] = com_consoleLines[ j ];
-					j++;
 				}
 				com_numConsoleLines--;
-				continue;
 			}
 		}
-		i++;
 	}
 }
 
@@ -1075,12 +1057,11 @@ will keep the demoloop from immediately starting
 ==================
 */
 bool idCommonLocal::AddStartupCommands( void ) {
-	int		i;
 	bool	added;
 
 	added = false;
 	// quote every token, so args with semicolons can work
-	for ( i = 0; i < com_numConsoleLines; i++ ) {
+	for ( int i = 0; i < com_numConsoleLines; i++ ) {
 		if ( !com_consoleLines[i].Argc() ) {
 			continue;
 		}
@@ -1089,6 +1070,7 @@ bool idCommonLocal::AddStartupCommands( void ) {
 		if ( idStr::Icmpn( com_consoleLines[i].Argv(0), "set", 3 ) ) {
 			added = true;
 		}
+
 		// directly as tokenized so nothing gets screwed
 		cmdSystem->BufferCommandArgs( CMD_EXEC_APPEND, com_consoleLines[i] );
 	}
@@ -1139,9 +1121,10 @@ void idCommonLocal::WriteFlaggedCVarsToFile( const char *filename, int flags, co
 	if ( !f ) {
 		Printf( "Couldn't write %s.\n", filename );
 		return;
+	} else {
+		cvarSystem->WriteFlaggedVariables( flags, setCmd, f );
+		fileSystem->CloseFile( f );
 	}
-	cvarSystem->WriteFlaggedVariables( flags, setCmd, f );
-	fileSystem->CloseFile( f );
 }
 
 /*
@@ -1525,88 +1508,6 @@ void OSX_GetVideoCard( int& outVendorId, int& outDeviceId );
 bool OSX_GetCPUIdentification( int& cpuId, bool& oldArchitecture );
 #endif
 void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
-	if ( com_machineSpec.GetInteger() == 3 ) {
-		cvarSystem->SetCVarInteger( "image_anisotropy", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_lodbias", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_forceDownSize", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_roundDown", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_preload", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useAllFormats", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBump", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBumpLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_usePrecompressedTextures", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downsize", 0			, CVAR_ARCHIVE );
-		cvarSystem->SetCVarString( "image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 8, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useCompression", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_ignoreHighQuality", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "s_maxSoundsPerShader", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_mode", 5, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_multiSamples", 0, CVAR_ARCHIVE );
-	} else if ( com_machineSpec.GetInteger() == 2 ) {
-		cvarSystem->SetCVarString( "image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_lodbias", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_forceDownSize", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_roundDown", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_preload", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useAllFormats", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBump", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBumpLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_usePrecompressedTextures", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downsize", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 8, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useCompression", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_ignoreHighQuality", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "s_maxSoundsPerShader", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_mode", 4, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_multiSamples", 0, CVAR_ARCHIVE );
-	} else if ( com_machineSpec.GetInteger() == 1 ) {
-		cvarSystem->SetCVarString( "image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_lodbias", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSize", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_forceDownSize", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_roundDown", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_preload", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useCompression", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useAllFormats", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_usePrecompressedTextures", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBump", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBumpLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 2, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_mode", 3, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_multiSamples", 0, CVAR_ARCHIVE );
-	} else {
-		cvarSystem->SetCVarString( "image_filter", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_lodbias", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_roundDown", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_preload", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useAllFormats", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_usePrecompressedTextures", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_anisotropy", 0, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useCompression", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_ignoreHighQuality", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "s_maxSoundsPerShader", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBump", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBumpLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_mode", 3	, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 2, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "r_multiSamples", 0, CVAR_ARCHIVE );
-	}
-
 	if ( Sys_GetVideoRam() < 128 ) {
 		cvarSystem->SetCVarBool( "image_ignoreHighQuality", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
@@ -1629,24 +1530,6 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 	} else {
 		cvarSystem->SetCVarBool( "com_purgeAll", false, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
-	}
-
-	bool oldCard = false;
-	bool nv10or20 = false;
-	renderSystem->GetCardCaps( oldCard, nv10or20 );
-	if ( oldCard ) {
-		cvarSystem->SetCVarBool( "g_decals", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_projectileLights", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_doubleVision", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_muzzleFlash", false, CVAR_ARCHIVE );
-	} else {
-		cvarSystem->SetCVarBool( "g_decals", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_projectileLights", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_doubleVision", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_muzzleFlash", true, CVAR_ARCHIVE );
-	}
-	if ( nv10or20 ) {
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 1, CVAR_ARCHIVE );
 	}
 
 #if MACOS_X
@@ -2183,16 +2066,16 @@ void Com_LocalizeGuis_f( const idCmdArgs &args ) {
 	idLangDict strTable;
 
 	idStr filename = va("strings/english%.3i.lang", com_product_lang_ext.GetInteger());
-	if(strTable.Load( filename ) == false) {
+	if( strTable.Load( filename ) == false ) {
 		//This is a new file so set the base index
 		strTable.SetBaseID(com_product_lang_ext.GetInteger()*100000);
 	}
 
 	idFileList *files;
 	if ( idStr::Icmp( args.Argv(1), "all" ) == 0 ) {
-		idStr game = cvarSystem->GetCVarString( "fs_game" );
-		if(game.Length()) {
-			files = fileSystem->ListFilesTree( "guis", "*.gui", true, game );
+		idStr curgame = cvarSystem->GetCVarString( "fs_game" );
+		if(curgame.Length()) {
+			files = fileSystem->ListFilesTree( "guis", "*.gui", true, curgame );
 		} else {
 			files = fileSystem->ListFilesTree( "guis", "*.gui", true );
 		}
@@ -2201,8 +2084,8 @@ void Com_LocalizeGuis_f( const idCmdArgs &args ) {
 		}
 		fileSystem->FreeFileList( files );
 
-		if(game.Length()) {
-			files = fileSystem->ListFilesTree( "guis", "*.pd", true, game );
+		if(curgame.Length()) {
+			files = fileSystem->ListFilesTree( "guis", "*.pd", true, curgame );
 		}
 
 		for ( int i = 0; i < files->GetNumFiles(); i++ ) {
@@ -2474,10 +2357,10 @@ idCommonLocal::InitRenderSystem
 void idCommonLocal::InitRenderSystem( void ) {
 	if ( com_skipRenderer.GetBool() ) {
 		return;
+	} else {
+		renderSystem->InitOpenGL();
+		PrintLoadingMessage( Translate( "#str_04343" ) );
 	}
-
-	renderSystem->InitOpenGL();
-	PrintLoadingMessage( Translate( "#str_04343" ) );
 }
 
 /*
@@ -2489,9 +2372,9 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	if ( !( msg && *msg ) ) {
 		return;
 	}
+	int len = strlen( msg );
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, declManager->FindMaterial( "splashScreen" ) );
-	int len = strlen( msg );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );
 	renderSystem->EndFrame( NULL, NULL );
 }
@@ -2546,8 +2429,8 @@ void idCommonLocal::Frame( void ) {
 		// report timing information
 		if ( com_speeds.GetBool() ) {
 			static int	lastTime;
-			int		nowTime = Sys_Milliseconds();
-			int		com_frameMsec = nowTime - lastTime;
+			const int	nowTime = Sys_Milliseconds();
+			const int	com_frameMsec = nowTime - lastTime;
 			lastTime = nowTime;
 			Printf( "frame:%i all:%3i gfr:%3i rf:%3i bk:%3i\n", com_frameNumber, com_frameMsec, time_gameFrame, time_frontend, time_backend );
 			time_gameFrame = 0;
@@ -2614,7 +2497,8 @@ typedef struct {
 	int				mostRecentServerPacketSequence;
 } asyncStats_t;
 
-static const int MAX_ASYNC_STATS = 1024;
+#define MAX_ASYNC_STATS			1024
+
 asyncStats_t	com_asyncStats[MAX_ASYNC_STATS];		// indexed by com_ticNumber
 int prevAsyncMsec;
 int	lastTicMsec;
@@ -2657,36 +2541,36 @@ idCommonLocal::Async
 =================
 */
 void idCommonLocal::Async( void ) {
+	
 	if ( com_shuttingDown ) {
 		return;
 	}
 
-	int	msec = Sys_Milliseconds();
-	if ( !lastTicMsec ) {
-		lastTicMsec = msec - USERCMD_MSEC;
-	}
-
-	if ( !com_preciseTic.GetBool() ) {
+	else if ( !com_preciseTic.GetBool() ) {
 		// just run a single tic, even if the exact msec isn't precise
 		SingleAsyncTic();
 		return;
 	}
 
-	int ticMsec = USERCMD_MSEC;
-
-	// the number of msec per tic can be varies with the timescale cvar
-	float timescale = com_timescale.GetFloat();
-	if ( timescale != 1.0f ) {
-		ticMsec /= timescale;
-		if ( ticMsec < 1 ) {
-			ticMsec = 1;
-		}
+	const int msec = Sys_Milliseconds();
+	if ( !lastTicMsec ) {
+		lastTicMsec = msec - USERCMD_MSEC;
 	}
+
+	int ticMsec = USERCMD_MSEC;
+	const float timescale = com_timescale.GetFloat();
 
 	// don't skip too many
 	if ( timescale == 1.0f ) {
-		if ( lastTicMsec + 10 * USERCMD_MSEC < msec ) {
-			lastTicMsec = msec - 10*USERCMD_MSEC;
+		if ( lastTicMsec + (10 * USERCMD_MSEC) < msec ) {
+			lastTicMsec = msec - (10 * USERCMD_MSEC);
+		}
+	}
+	// the number of msec per tic can be varies with the timescale cvar
+	else {								// i.e if ( timescale != 1.0f )
+		ticMsec /= timescale;
+		if ( ticMsec < 1 ) {
+			ticMsec = 1;
 		}
 	}
 
@@ -2715,6 +2599,7 @@ void idCommonLocal::LoadGameDLL( void ) {
 		common->FatalError( "couldn't find game dynamic library" );
 		return;
 	}
+
 	common->DPrintf( "Loading game DLL: '%s'\n", dllPath );
 	gameDLL = sys->DLL_Load( dllPath );
 	if ( !gameDLL ) {

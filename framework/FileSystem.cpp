@@ -420,7 +420,7 @@ long idFileSystemLocal::HashFileName( const char *fname ) const {
 		if ( letter == '\\' ) {
 			letter = '/';		// damn path names
 		}
-		hash += (long)(letter) * (i+119);
+		hash += (long)(letter * (i+119));
 		i++;
 	}
 	hash &= (FILE_HASH_SIZE-1);
@@ -470,7 +470,6 @@ optional caseSensitiveName is set to case sensitive file name as found on disc (
 ================
 */
 FILE *idFileSystemLocal::OpenOSFile( const char *fileName, const char *mode, idStr *caseSensitiveName ) {
-	int i;
 	FILE *fp;
 	idStr fpath, entry;
 	idStrList list;
@@ -493,7 +492,7 @@ FILE *idFileSystemLocal::OpenOSFile( const char *fileName, const char *mode, idS
 			return NULL;
 		}
 		
-		for ( i = 0; i < list.Num(); i++ ) {
+		for ( int i = 0; i < list.Num(); i++ ) {
 			entry = fpath + PATHSEPERATOR_CHAR + list[i];
 			if ( !entry.Icmp( fileName ) ) {
 				fp = fopen( entry, mode );
@@ -541,12 +540,10 @@ idFileSystemLocal::DirectFileLength
 ================
 */
 int idFileSystemLocal::DirectFileLength( FILE *o ) {
-	int		pos;
-	int		end;
 
-	pos = ftell( o );
+	const int pos = ftell( o );
 	fseek( o, 0, SEEK_END );
-	end = ftell( o );
+	const int end = ftell( o );
 	fseek( o, pos, SEEK_SET );
 	return end;
 }
@@ -590,7 +587,6 @@ Copy a fully specified file from one place to another
 */
 void idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath ) {
 	FILE	*f;
-	int		len;
 	byte	*buf;
 
 	common->Printf( "copy %s to %s\n", fromOSPath, toOSPath );
@@ -599,7 +595,7 @@ void idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath )
 		return;
 	}
 	fseek( f, 0, SEEK_END );
-	len = ftell( f );
+	const int len = ftell( f );
 	fseek( f, 0, SEEK_SET );
 
 	buf = (byte *)Mem_Alloc( len );
@@ -629,12 +625,11 @@ idFileSystemLocal::CopyFile
 */
 void idFileSystemLocal::CopyFile( idFile *src, const char *toOSPath ) {
 	FILE	*f;
-	int		len;
 	byte	*buf;
 
 	common->Printf( "copy %s to %s\n", src->GetName(), toOSPath );
 	src->Seek( 0, FS_SEEK_END );
-	len = src->Tell();
+	const int len = src->Tell();
 	src->Seek( 0, FS_SEEK_SET );
 
 	buf = (byte *)Mem_Alloc( len );
@@ -757,8 +752,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	// fs_game and fs_game_base support - look for first complete name with a mod path
 	// ( fs_game searched before fs_game_base )
 	const char *fsgame = NULL;
-	int igame = 0;
-	for ( igame = 0; igame < 2; igame++ ) {
+	for ( int igame = 0; igame < 2; igame++ ) {
 		if ( igame == 0 ) {
 			fsgame = fs_game.GetString();
 		} else if ( igame == 1 ) {
@@ -784,7 +778,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 		s = strstr( base, "/" );
 		if ( !s ) {
 			s = strstr( base, "\\" );
-		}
+		} 
 		if ( s ) {
 			strcpy( relativePath, s + 1 );
 			if ( fs_debug.GetInteger() > 1 ) {
@@ -797,6 +791,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	if ( !ignoreWarning ) {
 		common->Warning( "idFileSystem::OSPathToRelativePath failed on %s", OSPath );
 	}
+
 	strcpy( relativePath, "" );
 	return relativePath;
 }
@@ -809,10 +804,12 @@ Returns a fully qualified path that can be used with stdio libraries
 =====================
 */
 const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir) {
+
 	const char *path = cvarSystem->GetCVarString( basePath );
 	if ( !path[0] ) {
 		path = fs_savepath.GetString();
 	}
+
 	return BuildOSPath( path, gamedir ? gamedir : gameFolder.c_str(), relativePath );
 }
 
@@ -848,14 +845,9 @@ bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) {
 
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
-	}
-
-	if ( !relativePath ) {
+	} else if ( !relativePath ) {
 		common->FatalError( "idFileSystemLocal::FileIsInPAK: NULL 'relativePath' parameter passed\n" );
-	}
-
-	// qpaths are not supposed to have a leading slash
-	if ( relativePath[0] == '/' || relativePath[0] == '\\' ) {
+	} else if ( relativePath[0] == '/' || relativePath[0] == '\\' ) { // paths are not supposed to have a leading slash
 		relativePath++;
 	}
 
@@ -908,12 +900,10 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
+	} else if ( !relativePath || !relativePath[0] ) {
+		common->FatalError( "idFileSystemLocal::ReadFile: NULL 'relativePath' parameter passed\n" );
 	}
-
-	if ( !relativePath || !relativePath[0] ) {
-		common->FatalError( "idFileSystemLocal::ReadFile with empty name\n" );
-	}
-
+	
 	if ( timestamp ) {
 		*timestamp = FILE_NOT_FOUND_TIMESTAMP;
 	}
@@ -922,25 +912,26 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 		*buffer = NULL;
 	}
 
-	buf = NULL;	// quiet compiler warning
+	//buf = NULL;	// quiet compiler warning - does this apply to GCC? nothing in MSC
 
 	// if this is a .cfg file and we are playing back a journal, read
 	// it from the journal file
 	if ( strstr( relativePath, ".cfg" ) == relativePath + strlen( relativePath ) - 4 ) {
 		isConfig = true;
 		if ( eventLoop && eventLoop->JournalLevel() == 2 ) {
-			int		r;
 
 			loadCount++;
 			loadStack++;
 
 			common->DPrintf( "Loading %s from journal file.\n", relativePath );
+
 			len = 0;
-			r = eventLoop->com_journalDataFile->Read( &len, sizeof( len ) );
+			int	r = eventLoop->com_journalDataFile->Read( &len, sizeof( len ) );
 			if ( r != sizeof( len ) ) {
 				*buffer = NULL;
 				return -1;
 			}
+
 			buf = (byte *)Mem_ClearedAlloc(len+1);
 			*buffer = buf;
 			r = eventLoop->com_journalDataFile->Read( buf, len );
@@ -965,12 +956,12 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 		}
 		return -1;
 	}
-	len = f->Length();
 
 	if ( timestamp ) {
 		*timestamp = f->Timestamp();
 	}
-	
+
+	len = f->Length();
 	if ( !buffer ) {
 		CloseFile( f );
 		return len;
@@ -979,8 +970,7 @@ int idFileSystemLocal::ReadFile( const char *relativePath, void **buffer, ID_TIM
 	loadCount++;
 	loadStack++;
 
-	buf = (byte *)Mem_ClearedAlloc(len+1);
-	*buffer = buf;
+	*buffer = buf = (byte *)Mem_ClearedAlloc(len+1);
 
 	f->Read( buf, len );
 
@@ -1007,8 +997,7 @@ idFileSystemLocal::FreeFile
 void idFileSystemLocal::FreeFile( void *buffer ) {
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
-	}
-	if ( !buffer ) {
+	} else if ( !buffer ) {
 		common->FatalError( "idFileSystemLocal::FreeFile( NULL )" );
 	}
 	loadStack--;
@@ -1028,9 +1017,7 @@ int idFileSystemLocal::WriteFile( const char *relativePath, const void *buffer, 
 
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
-	}
-
-	if ( !relativePath || !buffer ) {
+	} else if ( !relativePath || !buffer ) {
 		common->FatalError( "idFileSystemLocal::WriteFile: NULL parameter" );
 	}
 
@@ -1063,10 +1050,11 @@ addonInfo_t *idFileSystemLocal::ParseAddonDef( const char *buf, const int len ) 
 		src.Warning( "ParseAddonDef: no addonDef" );
 		return NULL;
 	}
-	if ( !src.ReadToken( &token ) ) {
+	else if ( !src.ReadToken( &token ) ) {
 		src.Warning( "Expected {" );
 		return NULL;
 	}
+
 	info = new addonInfo_t;
 	// read addonDef
 	while ( 1 ) {
@@ -1102,6 +1090,7 @@ addonInfo_t *idFileSystemLocal::ParseAddonDef( const char *buf, const int len ) 
 			return NULL;
 		}
 		idDict *dict = new idDict;
+
 		dict->Set( "path", token.c_str() );
 		if ( !src.ReadToken( &token ) ) {
 			src.Warning( "Expected {" );
@@ -1157,7 +1146,6 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 	unz_global_info gi;
 	char			filename_inzip[MAX_ZIPPED_FILE_NAME];
 	unz_file_info	file_info;
-	int				i;
 	long			hash;
 	int				fs_numHeaderLongs;
 	int *			fs_headerLongs;
@@ -1185,7 +1173,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 
 	buildBuffer = new fileInPack_t[gi.number_entry];
 	pack = new pack_t;
-	for( i = 0; i < FILE_HASH_SIZE; i++ ) {
+	for( int i = 0; i < FILE_HASH_SIZE; i++ ) {
 		pack->hashTable[i] = NULL;
 	}
 
@@ -1204,7 +1192,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 
 	unzGoToFirstFile(uf);
 	fs_headerLongs = (int *)Mem_ClearedAlloc( gi.number_entry * sizeof(int) );
-	for ( i = 0; i < (int)gi.number_entry; i++ ) {
+	for ( int i = 0; i < (int)gi.number_entry; i++ ) {
 		err = unzGetCurrentFileInfo( uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0 );
 		if ( err != UNZ_OK ) {
 			break;
@@ -1234,8 +1222,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 			idFile_InZip *file = ReadFileFromZip( pack, pakFile, ADDON_CONFIG );
 			// may be just an empty file if you don't bother about the mapDef
 			if ( file && file->Length() ) {
-				char *buf;
-				buf = new char[ file->Length() + 1 ];
+				char *buf = new char[ file->Length() + 1 ];
 				file->Read( (void *)buf, file->Length() );
 				buf[ file->Length() ] = '\0';
 				pack->addon_info = ParseAddonDef( buf, file->Length() );
@@ -1274,6 +1261,7 @@ int idFileSystemLocal::AddZipFile( const char *path ) {
 		common->Warning( "AddZipFile %s failed\n", path );
 		return 0;
 	}
+
 	// insert the pak at the end of the search list - temporary until we restart
 	pak->isNew = true;
 	search = new searchpath_t;
@@ -1281,11 +1269,13 @@ int idFileSystemLocal::AddZipFile( const char *path ) {
 	search->pack = pak;
 	search->next = NULL;
 	last = searchPaths;
+
 	while ( last->next ) {
 		last = last->next;
 	}
+
 	last->next = search;
-	common->Printf( "Appended pk4 %s with checksum 0x%x\n", pak->pakFilename.c_str(), pak->checksum );
+	common->Printf( "Appended %s (checksum 0x%x)\n", pak->pakFilename.c_str(), pak->checksum );
 	return pak->checksum;
 }
 
@@ -1295,17 +1285,18 @@ idFileSystemLocal::AddUnique
 ===============
 */
 int idFileSystemLocal::AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) const {
-	int i, hashKey;
+	const int hashKey = hashIndex.GenerateKey( name );
 
-	hashKey = hashIndex.GenerateKey( name );
-	for ( i = hashIndex.First( hashKey ); i >= 0; i = hashIndex.Next( i ) ) {
+	for ( int i = hashIndex.First( hashKey ); i >= 0; i = hashIndex.Next( i ) ) {
 		if ( list[i].Icmp( name ) == 0 ) {
 			return i;
 		}
 	}
-	i = list.Append( name );
-	hashIndex.Add( hashKey, i );
-	return i;
+
+	const int r = list.Append( name );
+	hashIndex.Add( hashKey, r );
+
+	return r;
 }
 
 /*
@@ -1314,9 +1305,9 @@ idFileSystemLocal::GetExtensionList
 ===============
 */
 void idFileSystemLocal::GetExtensionList( const char *extension, idStrList &extensionList ) const {
-	int s, e, l;
+	int s, e;
+	const int l = idStr::Length( extension );
 
-	l = idStr::Length( extension );
 	s = 0;
 	while( 1 ) {
 		e = idStr::FindChar( extension, '|', s, l );
@@ -1341,36 +1332,29 @@ When 'sort' is true only the new files added to the list are sorted.
 int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir ) {
 	searchpath_t *	search;
 	fileInPack_t *	buildBuffer;
-	int				i, j;
 	int				pathLength;
 	int				length;
 	const char *	name;
 	pack_t *		pak;
 	idStr			work;
+	int				j;
 
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
-	}
-
-	if ( !extensions.Num() ) {
+	} else if ( !extensions.Num() || !relativePath ) {
 		return 0;
 	}
 
-	if ( !relativePath ) {
-		return 0;
-	}
 	pathLength = strlen( relativePath );
 	if ( pathLength ) {
 		pathLength++;	// for the trailing '/'
 	}
 
 	// search through the path, one element at a time, adding to list
-	for( search = searchPaths; search != NULL; search = search->next ) {
+	for ( search = searchPaths; search != NULL; search = search->next ) {
 		if ( search->dir ) {
-			if(gamedir && strlen(gamedir)) {
-				if(search->dir->gamedir != gamedir) {
+			if ( gamedir && strlen(gamedir) && (search->dir->gamedir != gamedir) ) {
 					continue;
-				}
 			}
 
 			idStrList	sysFiles;
@@ -1378,7 +1362,7 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 
 			netpath = BuildOSPath( search->dir->path, search->dir->gamedir, relativePath );
 
-			for ( i = 0; i < extensions.Num(); i++ ) {
+			for ( int i = 0; i < extensions.Num(); i++ ) {
 
 				// scan for files in the filesystem
 				ListOSFiles( netpath, extensions[i], sysFiles );
@@ -1407,7 +1391,7 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 
 			pak = search->pack;
 			buildBuffer = pak->buildBuffer;
-			for( i = 0; i < pak->numfiles; i++ ) {
+			for( int i = 0; i < pak->numfiles; i++ ) {
 
 				length = buildBuffer[i].name.Length();
 
@@ -1417,7 +1401,6 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 				}
 
 				name = buildBuffer[i].name;
-
 
 				// check for a path match without the trailing '/'
 				if ( pathLength && idStr::Icmpn( name, relativePath, pathLength - 1 ) != 0 ) {
@@ -1497,14 +1480,13 @@ idFileSystemLocal::GetFileListTree
 ===============
 */
 int idFileSystemLocal::GetFileListTree( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, const char* gamedir ) {
-	int i;
 	idStrList slash, folders( 128 );
 	idHashIndex folderHashIndex( 1024, 128 );
 
 	// recurse through the subdirectories
 	slash.Append( "/" );
 	GetFileList( relativePath, slash, folders, folderHashIndex, true, gamedir );
-	for ( i = 0; i < folders.Num(); i++ ) {
+	for ( int i = 0; i < folders.Num(); i++ ) {
 		if ( folders[i][0] == '.' ) {
 			continue;
 		}
@@ -1558,25 +1540,22 @@ void idFileSystemLocal::FreeFileList( idFileList *fileList ) {
 idFileSystemLocal::ListMods
 ===============
 */
+#define MAX_DESCRIPTION		256
 idModList *idFileSystemLocal::ListMods( void ) {
-	int 		i;
-	const int 	MAX_DESCRIPTION = 256;
 	char 		desc[ MAX_DESCRIPTION ];
-
 	idStrList	dirs;
 	idStrList	pk4s;
 
 	idModList	*list = new idModList;
 
 	const char	*search[ 4 ];
-	int			isearch;
 
 	search[0] = fs_savepath.GetString();
 	search[1] = fs_devpath.GetString();
 	search[2] = fs_basepath.GetString();
 	search[3] = fs_cdpath.GetString();
 
-	for ( isearch = 0; isearch < 4; isearch++ ) {
+	for ( int isearch = 0; isearch < 4; isearch++ ) {
 
 		dirs.Clear();
 		pk4s.Clear();
@@ -1587,10 +1566,10 @@ idModList *idFileSystemLocal::ListMods( void ) {
 		dirs.Remove( "." );
 		dirs.Remove( ".." );
 		dirs.Remove( "base" );
-		dirs.Remove( "pb" );
+		dirs.Remove( "pb" ); // Not needed in TDM - punkbuster - remove when standalone
 
 		// see if there are any pk4 files in each directory
-		for( i = 0; i < dirs.Num(); i++ ) {
+		for( int i = 0; i < dirs.Num(); i++ ) {
 			idStr gamepath = BuildOSPath( search[ isearch ], dirs[ i ], "" );
  			ListOSFiles( gamepath, ".pk4", pk4s );
  			if ( pk4s.Num() ) {
@@ -1603,9 +1582,9 @@ idModList *idFileSystemLocal::ListMods( void ) {
 	   
 	list->mods.Sort();
 
+	int isearch;
 	// read the descriptions for each mod - search all paths
-	for ( i = 0; i < list->mods.Num(); i++ ) {
-
+	for ( int i = 0; i < list->mods.Num(); i++ ) {
 		for ( isearch = 0; isearch < 4; isearch++ ) {
 
 			idStr descfile = BuildOSPath( search[ isearch ], list->mods[ i ], "description.txt" );
@@ -1629,7 +1608,7 @@ idModList *idFileSystemLocal::ListMods( void ) {
 	}
 
 	list->mods.Insert( "" );
-	list->descriptions.Insert( "Doom 3" );
+	list->descriptions.Insert( GAME_NAME );
 
 	assert( list->mods.Num() == list->descriptions.Num() );
 
@@ -1688,7 +1667,7 @@ idFileSystemLocal::ListOSFiles
 ===============
 */
 int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension, idStrList &list ) {
-	int i, j, ret;
+	int j, ret;
 
 	if ( !extension ) {
 		extension = "";
@@ -1699,8 +1678,7 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 	}
 
 	// try in cache
-	i = dir_cache_index - 1;
-	while( i >= dir_cache_index - dir_cache_count ) {
+	for ( int i = dir_cache_index - 1; i >= (dir_cache_index - dir_cache_count); i-- ) {
 		j = (i+MAX_CACHED_DIRS) % MAX_CACHED_DIRS;
 		if ( dir_cache[j].Matches( directory, extension ) ) {
 			if ( fs_debug.GetInteger() ) {
@@ -1709,12 +1687,13 @@ int	idFileSystemLocal::ListOSFiles( const char *directory, const char *extension
 			list = dir_cache[j];
 			return list.Num();
 		}
-		i--;
 	}
 
+#if 0
 	if ( fs_debug.GetInteger() ) {
-		//common->Printf( "idFileSystemLocal::ListOSFiles: cache miss: %s\n", directory );
-	}	
+		common->Printf( "idFileSystemLocal::ListOSFiles: cache miss: %s\n", directory );
+	}
+#endif
 
 	ret = Sys_ListFiles( directory, extension, list );
 
@@ -1741,7 +1720,6 @@ void idFileSystemLocal::Dir_f( const idCmdArgs &args ) {
 	idStr		relativePath;
 	idStr		extension;
 	idFileList *fileList;
-	int			i;
 
 	if ( args.Argc() < 2 || args.Argc() > 3 ) {
 		common->Printf( "usage: dir <directory> [extension]\n" );
@@ -1751,14 +1729,14 @@ void idFileSystemLocal::Dir_f( const idCmdArgs &args ) {
 	if ( args.Argc() == 2 ) {
 		relativePath = args.Argv( 1 );
 		extension = "";
-	}
-	else {
+	} else {
 		relativePath = args.Argv( 1 );
 		extension = args.Argv( 2 );
 		if ( extension[0] != '.' ) {
 			common->Warning( "extension should have a leading dot" );
 		}
 	}
+
 	relativePath.BackSlashesToSlashes();
 	relativePath.StripTrailing( '/' );
 
@@ -1767,7 +1745,7 @@ void idFileSystemLocal::Dir_f( const idCmdArgs &args ) {
 
 	fileList = fileSystemLocal.ListFiles( relativePath, extension );
 
-	for ( i = 0; i < fileList->GetNumFiles(); i++ ) {
+	for ( int i = 0; i < fileList->GetNumFiles(); i++ ) {
 		common->Printf( "%s\n", fileList->GetFile( i ) );
 	}
 	common->Printf( "%d files\n", fileList->list.Num() );
@@ -1784,7 +1762,6 @@ void idFileSystemLocal::DirTree_f( const idCmdArgs &args ) {
 	idStr		relativePath;
 	idStr		extension;
 	idFileList *fileList;
-	int			i;
 
 	if ( args.Argc() < 2 || args.Argc() > 3 ) {
 		common->Printf( "usage: dirtree <directory> [extension]\n" );
@@ -1794,14 +1771,14 @@ void idFileSystemLocal::DirTree_f( const idCmdArgs &args ) {
 	if ( args.Argc() == 2 ) {
 		relativePath = args.Argv( 1 );
 		extension = "";
-	}
-	else {
+	} else {
 		relativePath = args.Argv( 1 );
 		extension = args.Argv( 2 );
 		if ( extension[0] != '.' ) {
 			common->Warning( "extension should have a leading dot" );
 		}
 	}
+
 	relativePath.BackSlashesToSlashes();
 	relativePath.StripTrailing( '/' );
 
@@ -1810,7 +1787,7 @@ void idFileSystemLocal::DirTree_f( const idCmdArgs &args ) {
 
 	fileList = fileSystemLocal.ListFilesTree( relativePath, extension );
 
-	for ( i = 0; i < fileList->GetNumFiles(); i++ ) {
+	for ( int i = 0; i < fileList->GetNumFiles(); i++ ) {
 		common->Printf( "%s\n", fileList->GetFile( i ) );
 	}
 	common->Printf( "%d files\n", fileList->list.Num() );
@@ -1825,14 +1802,15 @@ idFileSystemLocal::Path_f
 */
 void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 	searchpath_t *sp;
-	int i;
 	idStr status;
 
 	common->Printf( "Current search path:\n" );
-	for ( sp = fileSystemLocal.searchPaths; sp; sp = sp->next ) {
+
+	sp = fileSystemLocal.searchPaths;
+	while ( sp ) {
 		if ( sp->pack ) {
 			if ( com_developer.GetBool() ) {
-				sprintf( status, "%s (%i files - 0x%x %s", sp->pack->pakFilename.c_str(), sp->pack->numfiles, sp->pack->checksum, sp->pack->referenced ? "referenced" : "not referenced" );
+				sprintf( status, "  %s (%i files - 0x%x %s", sp->pack->pakFilename.c_str(), sp->pack->numfiles, sp->pack->checksum, sp->pack->referenced ? "referenced" : "not referenced" );
 				if ( sp->pack->addon ) {
 					status += " - addon)\n";
 				} else {
@@ -1840,26 +1818,37 @@ void idFileSystemLocal::Path_f( const idCmdArgs &args ) {
 				}
 				common->Printf( status.c_str() );
 			} else {
-				common->Printf( "%s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
+				common->Printf( "  %s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
 			}
 		} else {
-			common->Printf( "%s/%s\n", sp->dir->path.c_str(), sp->dir->gamedir.c_str() );
+			common->Printf( "  %s/%s\n", sp->dir->path.c_str(), sp->dir->gamedir.c_str() );
 		}
+		sp = sp->next;
 	}
-	common->Printf( "game DLL: 0x%x in pak: 0x%x\n", fileSystemLocal.gameDLLChecksum, fileSystemLocal.gamePakChecksum );
-	for( i = 0; i < MAX_GAME_OS; i++ ) {
+
+	if ( fileSystemLocal.gameDLLChecksum ) {
+		common->Printf( "game DLL: 0x%x in pak: 0x%x\n", fileSystemLocal.gameDLLChecksum, fileSystemLocal.gamePakChecksum );
+	}
+
+	for( int i = 0; i < MAX_GAME_OS; i++ ) {
 		if ( fileSystemLocal.gamePakForOS[ i ] ) {
 			common->Printf( "OS %d - pak 0x%x\n", i, fileSystemLocal.gamePakForOS[ i ] );
 		}
 	}
+
 	// show addon packs that are *not* in the search lists
-	common->Printf( "Addon pk4s:\n" );
-	for ( sp = fileSystemLocal.addonPaks; sp; sp = sp->next ) {
-		if ( com_developer.GetBool() ) {
-			common->Printf( "%s (%i files - 0x%x)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles, sp->pack->checksum );
-		} else {
-			common->Printf( "%s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
-		}		
+	sp = fileSystemLocal.addonPaks;
+	if ( sp ) {
+		common->Printf( "Addon pk4s:\n" );
+	
+		while ( sp ) {
+			if ( com_developer.GetBool() && sp->pack ) {
+				common->Printf( "  %s (%i files - 0x%x)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles, sp->pack->checksum );
+			} else if ( sp->pack ) {
+				common->Printf( "  t%s (%i files)\n", sp->pack->pakFilename.c_str(), sp->pack->numfiles );
+			}
+			sp = sp->next;
+		}
 	}
 }
 
@@ -1869,15 +1858,18 @@ idFileSystemLocal::GetOSMask
 ============
 */
 int idFileSystemLocal::GetOSMask( void ) {
-	int i, ret = 0;
-	for( i = 0; i < MAX_GAME_OS; i++ ) {
+	int ret = 0;
+
+	for( int i = 0; i < MAX_GAME_OS; i++ ) {
 		if ( fileSystemLocal.gamePakForOS[ i ] ) {
 			ret |= ( 1 << i );
 		}
 	}
+
 	if ( !ret ) {
 		return -1;
 	}
+
 	return ret;
 }
 
@@ -1890,14 +1882,13 @@ arbitrary files furing an "fs_copyfiles 1" run.
 ============
 */
 void idFileSystemLocal::TouchFile_f( const idCmdArgs &args ) {
-	idFile *f;
 
 	if ( args.Argc() != 2 ) {
 		common->Printf( "Usage: touchFile <file>\n" );
 		return;
 	}
 
-	f = fileSystemLocal.OpenFileRead( args.Argv( 1 ) );
+	idFile *f = fileSystemLocal.OpenFileRead( args.Argv( 1 ) );
 	if ( f ) {
 		fileSystemLocal.CloseFile( f );
 	}
@@ -1945,7 +1936,6 @@ Sets gameFolder, adds the directory to the head of the search paths, then loads 
 ================
 */
 void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir ) {
-	int				i;
 	searchpath_t *	search;
 	pack_t *		pak;
 	idStr			pakfile;
@@ -1986,19 +1976,22 @@ void idFileSystemLocal::AddGameDirectory( const char *path, const char *dir ) {
 	// earlier ones. This makes pak1.pk4 override pak0.pk4
 	pakfiles.Sort();
 
-	for ( i = 0; i < pakfiles.Num(); i++ ) {
+	for ( int i = 0; i < pakfiles.Num(); i++ ) {
 		pakfile = BuildOSPath( path, dir, pakfiles[i] );
 		pak = LoadZipFile( pakfile );
 		if ( !pak ) {
 			continue;
 		}
+
 		// insert the pak after the directory it comes from
 		search = new searchpath_t;
 		search->dir = NULL;
 		search->pack = pak;
 		search->next = searchPaths->next;
 		searchPaths->next = search;
-		common->Printf( "Loaded pk4 %s with checksum 0x%x\n", pakfile.c_str(), pak->checksum );
+
+		// This same info is printed in the next list, if you want checksums use fs_debug.
+		//common->Printf( "  Loaded %s (checksum 0x%x)\n", pakfile.c_str(), pak->checksum );
 	}
 }
 
@@ -2047,12 +2040,15 @@ idFileSystemLocal::FollowDependencies
 ===============
 */
 void idFileSystemLocal::FollowAddonDependencies( pack_t *pak ) {
-	assert( pak );
-	if ( !pak->addon_info || !pak->addon_info->depends.Num() ) {
+	// Serp: I've moved this into the conditional below - I dont see why it's worthy of an assert.
+	//assert( pak );
+
+	if ( !pak || !pak->addon_info || !pak->addon_info->depends.Num() ) {
 		return;
 	}
-	int i, num = pak->addon_info->depends.Num();
-	for ( i = 0; i < num; i++ ) {
+
+	int num = pak->addon_info->depends.Num();
+	for ( int i = 0; i < num; i++ ) {
 		pack_t *deppak = GetPackForChecksum( pak->addon_info->depends[ i ], true );
 		if ( deppak ) {
 			// make sure it hasn't been marked for search already
@@ -2082,14 +2078,13 @@ idFileSystemLocal::Startup
 */
 void idFileSystemLocal::Startup( void ) {
 	searchpath_t	**search;
-	//int				i; // TODO: Check warns for unref
 	pack_t			*pak;
 	int				addon_index;
 
 	common->Printf( "------ Initializing File System ------\n" );
 
 	if ( restartChecksums.Num() ) {
-		common->Printf( "restarting with %d pak files\n", restartChecksums.Num() ); // TODO: Check this outs
+		common->Printf( "restarting with %d pak files\n", restartChecksums.Num() );
 	}
 	if ( addonChecksums.Num() ) {
 		common->Printf( "restarting filesystem with %d addon pak file(s) to include\n", addonChecksums.Num() );
@@ -2147,8 +2142,7 @@ void idFileSystemLocal::Startup( void ) {
 		assert( !( *search )->dir );
 		pak = ( *search )->pack;
 		if ( pak->addon_search ) {
-			common->Printf( "Addon pk4 %s with checksum 0x%x is on the search list\n",
-							pak->pakFilename.c_str(), pak->checksum );
+			common->Printf( "Addon pk4 %s with checksum 0x%x is on the search list\n", pak->pakFilename.c_str(), pak->checksum );
 			search = &( ( *search )->next );
 		} else {
 			// remove from search list, put in addons list
@@ -2156,8 +2150,7 @@ void idFileSystemLocal::Startup( void ) {
 			*search = ( *search )->next;
 			paksearch->next = addonPaks;
 			addonPaks = paksearch;
-			common->Printf( "Addon pk4 %s with checksum 0x%x is on addon list\n",
-							pak->pakFilename.c_str(), pak->checksum );				
+			common->Printf( "Addon pk4 %s with checksum 0x%x is on addon list\n", pak->pakFilename.c_str(), pak->checksum );				
 		}
 	}
 
@@ -2171,7 +2164,7 @@ void idFileSystemLocal::Startup( void ) {
 	// print the current search paths
 	Path_f( idCmdArgs() );
 
-	common->Printf( "file system initialized.\n" );
+	common->Printf( "File System Initialized.\n" );
 	common->Printf( "--------------------------------------\n" );
 }
 
@@ -2198,15 +2191,18 @@ bool idFileSystemLocal::UpdateGamePakChecksums( void ) {
 		if ( !search->pack ) {
 			continue;
 		}
+
 		search->pack->binary = BINARY_NO;
 		for ( pakFile = search->pack->hashTable[confHash]; pakFile; pakFile = pakFile->next ) {
 			if ( !FilenameCompare( pakFile->name, BINARY_CONFIG ) ) {
 				search->pack->binary = BINARY_YES;
 				confFile = ReadFileFromZip( search->pack, pakFile, BINARY_CONFIG );
+
 				buf = new char[ confFile->Length() + 1 ];
 				confFile->Read( (void *)buf, confFile->Length() );
 				buf[ confFile->Length() ] = '\0';
 				lexConf = new idLexer( buf, confFile->Length(), confFile->GetFullPath() );
+
 				while ( lexConf->ReadToken( &token ) ) {
 					if ( token.IsNumeric() ) {
 						id = atoi( token );
@@ -2218,6 +2214,7 @@ bool idFileSystemLocal::UpdateGamePakChecksums( void ) {
 						}
 					}
 				}
+
 				CloseFile( confFile );
 				delete lexConf;
 				delete[] buf;
@@ -2246,23 +2243,29 @@ idFileSystemLocal::GetPackForChecksum
 =====================
 */
 pack_t* idFileSystemLocal::GetPackForChecksum( int checksum, bool searchAddons ) {
-	searchpath_t	*search;
-	for ( search = searchPaths; search; search = search->next ) {
+
+	searchpath_t *search = searchPaths;
+	while ( search ) {
 		if ( !search->pack ) {
 			continue;
-		}
-		if ( search->pack->checksum == checksum ) {
+		} else if ( search->pack->checksum == checksum ) {
 			return search->pack;
+		} else {
+			search = search->next;
 		}
 	}
+
 	if ( searchAddons ) {
-		for ( search = addonPaks; search; search = search->next ) {
-			assert( search->pack && search->pack->addon );
+		search = addonPaks;
+		while ( search && search->pack && search->pack->addon ) {
 			if ( search->pack->checksum == checksum ) {
 				return search->pack;
+			} else {
+				search = search->next;
 			}
 		}
 	}
+
 	return NULL;
 }
 
@@ -2305,18 +2308,21 @@ int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ 
 	testList.Append( fs_devpath.GetString() );
 	testList.Append( fs_basepath.GetString() );
 	testList.Append( fs_cdpath.GetString() );
+
 	for ( i = 0; i < testList.Num(); i ++ ) {
 		if ( testList[ i ].Length() && !testList[ i ].Icmpn( pak->pakFilename, testList[ i ].Length() ) ) {
 			relativePath = pak->pakFilename.c_str() + testList[ i ].Length() + 1;
 			break;
 		}
 	}
+
 	if ( i == testList.Num() ) {
 		common->Warning( "idFileSystem::ValidateDownloadPak: failed to extract relative path for %s", pak->pakFilename.c_str() );
 		return 0;
+	} else {
+		idStr::Copynz( path, relativePath, MAX_STRING_CHARS );
+		return pak->length;
 	}
-	idStr::Copynz( path, relativePath, MAX_STRING_CHARS );
-	return pak->length;
 }
 
 /*
@@ -2414,12 +2420,13 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	searchpath_t *sp, *next, *loop;
 
 	gameFolder.Clear();
-
 	serverPaks.Clear();
+
 	if ( !reloading ) {
 		restartChecksums.Clear();
 		addonChecksums.Clear();
 	}
+
 	loadedFileFromDir = false;
 	gameDLLChecksum = 0;
 	gamePakChecksum = 0;
@@ -2483,18 +2490,17 @@ idFileSystemLocal::FileAllowedFromDir
 ===========
 */
 bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
-	unsigned int l;
 
-	l = strlen( path );
+	const unsigned int l = strlen( path );
 
-	if ( !strcmp( path + l - 4, ".cfg" )		// for config files
+	if  (  !strcmp( path + l - 4, ".cfg" )		// for config files
 		|| !strcmp( path + l - 4, ".dat" )		// for journal files
 		|| !strcmp( path + l - 4, ".dll" )		// dynamic modules are handled a different way for pure
 		|| !strcmp( path + l - 3, ".so" )
-		|| ( l > 6 && !strcmp( path + l - 6, ".dylib" ) )
-		|| ( l > 10 && !strcmp( path + l - 10, ".scriptcfg" ) )	// configuration script, such as map cycle
+		||(!strcmp( path + l - 6, ".dylib" ) && l > 6 )
+		||(!strcmp( path + l - 10, ".scriptcfg") && l > 10 )	// configuration script, such as map cycle
 		|| !strcmp( path + l - 4, ".dds" )
-		 ) {
+		) {
 		// note: config.spec are opened through an explicit OS path and don't hit this
 		return true;
 	}
@@ -2507,6 +2513,8 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 	if ( strstr( path, "screenshots" ) == path && !strcmp( path + l - 4, ".tga" ) ) {
 		return true;
 	}
+
+#if 0 // likely not used in TDM
 	// objective tgas
 	if ( strstr( path, "maps/game" ) == path && 
 		!strcmp( path + l - 4, ".tga" ) ) {
@@ -2517,6 +2525,7 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 		 !strcmp( path + l -4, ".tga" ) ) {
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -2533,24 +2542,32 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 
 	// open a new file on the pakfile
 	file->z = unzReOpen( pak->pakFilename, pak->handle );
-	if ( file->z == NULL ) {
-		common->FatalError( "Couldn't reopen %s", pak->pakFilename.c_str() );
+	if ( !file->z ) {
+		delete file;
+		common->FatalError( "ReadFileFromZip: Couldn't reopen %s", pak->pakFilename.c_str() );
+	} else {
+		file->name = relativePath;
+		file->fullPath = pak->pakFilename + "/" + relativePath;
+		zfi = (unz_s *)file->z;
+
+		// in case the file was new
+		fp = zfi->file;
+
+		// set the file position in the zip file (also sets the current file info)
+		unzSetCurrentFileInfoPosition( pak->handle, pakFile->pos );
+
+		// copy the file info into the unzip structure
+		memcpy( zfi, pak->handle, sizeof(unz_s) );
+
+		// we copy this back into the structure
+		zfi->file = fp;
+
+		// open the file in the zip
+		unzOpenCurrentFile( file->z );
+		file->zipFilePos = pakFile->pos;
+		file->fileSize = zfi->cur_file_info.uncompressed_size;
 	}
-	file->name = relativePath;
-	file->fullPath = pak->pakFilename + "/" + relativePath;
-	zfi = (unz_s *)file->z;
-	// in case the file was new
-	fp = zfi->file;
-	// set the file position in the zip file (also sets the current file info)
-	unzSetCurrentFileInfoPosition( pak->handle, pakFile->pos );
-	// copy the file info into the unzip structure
-	memcpy( zfi, pak->handle, sizeof(unz_s) );
-	// we copy this back into the structure
-	zfi->file = fp;
-	// open the file in the zip
-	unzOpenCurrentFile( file->z );
-	file->zipFilePos = pakFile->pos;
-	file->fileSize = zfi->cur_file_info.uncompressed_size;
+
 	return file;
 }
 
@@ -2575,19 +2592,18 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 	
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
-	}
-
-	if ( !relativePath ) {
+	} else if ( !relativePath ) {
 		common->FatalError( "idFileSystemLocal::OpenFileRead: NULL 'relativePath' parameter passed\n" );
+	} else if ( relativePath[0] == '\0' ) { // edge case
+		// FIXME : Serp - This seems to happen a lot - find out why and see if its fixable
+		//common->Warning("idFileSystemLocal::OpenFileRead: Relative path was empty");
+		return NULL;
+	} else if ( relativePath[0] == '/' || relativePath[0] == '\\' ) { // paths are not supposed to have a leading slash
+		relativePath++;
 	}
 
 	if ( foundInPak ) {
-		*foundInPak = NULL;
-	}
-
-	// qpaths are not supposed to have a leading slash
-	if ( relativePath[0] == '/' || relativePath[0] == '\\' ) {
-		relativePath++;
+		foundInPak = NULL;
 	}
 
 	// make absolutely sure that it can't back up the path.
@@ -2597,11 +2613,6 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 		return NULL;
 	}
 	
-	// edge case
-	if ( relativePath[0] == '\0' ) {
-		return NULL;
-	}
-
 	// search through the path, one element at a time
 	hash = HashFileName( relativePath );
 
@@ -2711,9 +2722,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 			if ( searchFlags & FSFLAG_BINARY_ONLY ) {
 				// make sure this pak is tagged as a binary file
 				if ( pak->binary == BINARY_UNKNOWN ) {
-					int				confHash;
-					fileInPack_t	*pakFile;
-					confHash = HashFileName( BINARY_CONFIG );
+					const int confHash = HashFileName( BINARY_CONFIG );
 					pak->binary = BINARY_NO;
 					for ( pakFile = search->pack->hashTable[confHash]; pakFile; pakFile = pakFile->next ) {
 						if ( !FilenameCompare( pakFile->name, BINARY_CONFIG ) ) {
@@ -2754,9 +2763,8 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 	}
 
 	if ( searchFlags & FSFLAG_SEARCH_ADDONS ) {
-		for ( search = addonPaks; search; search = search->next ) {
-			assert( search->pack );
-			fileInPack_t	*pakFile;
+		search = addonPaks;
+		while ( search && search->pack ) {
 			pak = search->pack;
 			for ( pakFile = pak->hashTable[hash]; pakFile; pakFile = pakFile->next ) {
 				if ( !FilenameCompare( pakFile->name, relativePath ) ) {
@@ -2764,13 +2772,15 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 					if ( foundInPak ) {
 						*foundInPak = pak;
 					}
-					// we don't toggle pure on paks found in addons - they can't be used without a reloadEngine anyway
+#if _DEBUG
 					if ( fs_debug.GetInteger( ) ) {
 						common->Printf( "idFileSystem::OpenFileRead: %s (found in addon pk4 '%s')\n", relativePath, search->pack->pakFilename.c_str() );
 					}
+#endif
 					return file;
 				}
 			}
+			search = search->next;
 		}
 	}
 	
@@ -2954,14 +2964,15 @@ idFile *idFileSystemLocal::OpenFileByMode( const char *relativePath, fsMode_t mo
 	if ( mode == FS_READ ) {
 		return OpenFileRead( relativePath );
 	}
-	if ( mode == FS_WRITE ) {
+	else if ( mode == FS_WRITE ) {
 		return OpenFileWrite( relativePath );
 	}
-	if ( mode == FS_APPEND ) {
+	else if ( mode == FS_APPEND ) {
 		return OpenFileAppend( relativePath, true );
+	} else {
+		common->FatalError( "idFileSystemLocal::OpenFileByMode: bad mode : %i", mode );
+		return NULL;
 	}
-	common->FatalError( "idFileSystemLocal::OpenFileByMode: bad mode" );
-	return NULL;
 }
 
 /*
@@ -2973,6 +2984,7 @@ void idFileSystemLocal::CloseFile( idFile *f ) {
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
 	}
+
 	delete f;
 }
 
@@ -2995,11 +3007,11 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 	if ( !bgl->f ) {
 		return size * nmemb;
 	}
-	#ifdef _WIN32
+#ifdef _WIN32
 		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, size * nmemb );
-	#else
+#else
 		return fwrite( ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
-	#endif
+#endif
 }
 
 /*
@@ -3009,12 +3021,14 @@ idFileSystemLocal::CurlProgressFunction
 */
 int idFileSystemLocal::CurlProgressFunction( void *clientp, double dltotal, double dlnow, double ultotal, double ulnow ) {
 	backgroundDownload_t *bgl = (backgroundDownload_t *)clientp;
+
 	if ( bgl->url.status == DL_ABORTING ) {
 		return 1;
+	} else { 
+		bgl->url.dltotal = dltotal;
+		bgl->url.dlnow = dlnow;
+		return 0;
 	}
-	bgl->url.dltotal = dltotal;
-	bgl->url.dlnow = dlnow;
-	return 0;
 }
 
 /*
@@ -3041,11 +3055,11 @@ dword BackgroundDownloadThread( void *parms ) {
 
 		if ( bgl->opcode == DLTYPE_FILE ) {
 			// use the low level read function, because fread may allocate memory
-			#if defined(WIN32)
-				_read( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, bgl->file.buffer, bgl->file.length );
-			#else
-				fread(  bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
-			#endif
+#ifdef WIN32
+			_read( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, bgl->file.buffer, bgl->file.length );
+#else
+			fread( bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
+#endif
 			bgl->completed = true;
 		} else {
 #if ID_ENABLE_CURL
@@ -3170,7 +3184,7 @@ void idFileSystemLocal::BackgroundDownload( backgroundDownload_t *bgl ) {
 			backgroundDownloads = bgl;
 			Sys_TriggerEvent();
 			Sys_LeaveCriticalSection();
-		} else {
+		} else if ( bgl->f ) {
 			// read zipped file directly
 			bgl->f->Seek( bgl->file.position, FS_SEEK_SET );
 			bgl->f->Read( bgl->file.buffer, bgl->file.length );
@@ -3204,7 +3218,9 @@ pack_t *idFileSystemLocal::FindPakForFileChecksum( const char *relativePath, int
 	pack_t			*pak;
 	fileInPack_t	*pakFile;
 	int				hash;
+
 	assert( !serverPaks.Num() );
+
 	hash = HashFileName( relativePath );
 	for ( search = searchPaths; search; search = search->next ) {
 		if ( search->pack && search->pack->hashTable[ hash ] ) {
@@ -3230,9 +3246,11 @@ pack_t *idFileSystemLocal::FindPakForFileChecksum( const char *relativePath, int
 			}
 		}
 	}
+
 	if ( fs_debug.GetBool() ) {
 		common->Printf( "no pak file found for '%s' checksumed %x\n", relativePath, findChecksum );
 	}
+
 	return NULL;
 }
 
@@ -3242,18 +3260,21 @@ idFileSystemLocal::GetFileChecksum
 =================
 */
 int idFileSystemLocal::GetFileChecksum( idFile *file ) {
-	int len, ret;
 	byte *buf;
 
 	file->Seek( 0, FS_SEEK_END );
-	len = file->Tell();
+	const int len = file->Tell();
 	file->Seek( 0, FS_SEEK_SET );
 	buf = (byte *)Mem_Alloc( len );
+
 	if ( file->Read( buf, len ) != len ) {
+		Mem_Free( buf );
 		common->FatalError( "Short read in idFileSystemLocal::GetFileChecksum()\n" );
 	}
-	ret = MD4_BlockChecksum( buf, len );
+
+	const int ret = MD4_BlockChecksum( buf, len );
 	Mem_Free( buf );
+
 	return ret;
 }
 
@@ -3279,11 +3300,10 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	dllPath.AppendPath( dllName );
 	dllFile = OpenExplicitFileRead( dllPath );
 
-	if (dllFile) {
+	if ( dllFile ) {
 		common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
-	}
-
-	if ( !dllFile ) {
+	} else { 
+		// DLL not found in alongside executable
 		if ( !serverPaks.Num() ) {
 			// try to extract from a pak file first
 			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_PAKS | FSFLAG_BINARY_ONLY, &inPak );
@@ -3351,11 +3371,10 @@ idFileSystemLocal::ClearDirCache
 ================
 */
 void idFileSystemLocal::ClearDirCache( void ) {
-	int i;
 
 	dir_cache_index = 0;
 	dir_cache_count = 0;
-	for( i = 0; i < MAX_CACHED_DIRS; i++ ) {
+	for( int i = 0; i < MAX_CACHED_DIRS; i++ ) {
 		dir_cache[ i ].Clear();
 	}
 }
@@ -3367,17 +3386,18 @@ idFileSystemLocal::MakeTemporaryFile
 */
 idFile * idFileSystemLocal::MakeTemporaryFile( void ) {
 	FILE *f = tmpfile();
-	if ( !f ) {
+	if ( f ) {
+		idFile_Permanent *file = new idFile_Permanent();
+		file->o = f;
+		file->name = "<tempfile>";
+		file->fullPath = "<tempfile>";
+		file->mode = ( 1 << FS_READ ) + ( 1 << FS_WRITE );
+		file->fileSize = 0;
+		return file;
+	} else {
 		common->Warning( "idFileSystem::MakeTemporaryFile failed: %s", strerror( errno ) );
 		return NULL;
 	}
-	idFile_Permanent *file = new idFile_Permanent();
-	file->o = f;
-	file->name = "<tempfile>";
-	file->fullPath = "<tempfile>";
-	file->mode = ( 1 << FS_READ ) + ( 1 << FS_WRITE );
-	file->fileSize = 0;
-	return file;
 }
 
 /*
@@ -3391,7 +3411,7 @@ idFileSystemLocal::FindFile
 	if ( !f ) {
 		return FIND_NO;
 	}
-	if ( !pak ) {
+	else if ( !pak ) {
 		// found in FS, not even in paks
 		return FIND_YES;
 	}
@@ -3404,6 +3424,7 @@ idFileSystemLocal::FindFile
 		delete f;
 		return FIND_ADDON;
 	}
+
 	delete f;
 	return FIND_YES;
 }
@@ -3415,12 +3436,11 @@ account for actual decls and for addon maps
 ===============
 */
 int idFileSystemLocal::GetNumMaps() {
-	int				i;
 	searchpath_t	*search = NULL;
 	int				ret = declManager->GetNumDecls( DECL_MAPDEF );
 	
 	// add to this all addon decls - coming from all addon packs ( searched or not )
-	for ( i = 0; i < 2; i++ ) {
+	for ( int i = 0; i < 2; i++ ) {
 		if ( i == 0 ) {
 			search = searchPaths;
 		} else if ( i == 1 ) {
@@ -3443,10 +3463,9 @@ retrieve the decl dictionary, add a 'path' value
 ===============
 */
 const idDict * idFileSystemLocal::GetMapDecl( int idecl ) {
-	int 					i;
 	const idDecl			*mapDecl;
 	const idDeclEntityDef	*mapDef;
-	int						numdecls = declManager->GetNumDecls( DECL_MAPDEF );
+	const int				numdecls = declManager->GetNumDecls( DECL_MAPDEF );
 	searchpath_t			*search = NULL;
 	
 	if ( idecl < numdecls ) {
@@ -3454,13 +3473,16 @@ const idDict * idFileSystemLocal::GetMapDecl( int idecl ) {
 		mapDef = static_cast<const idDeclEntityDef *>( mapDecl );
 		if ( !mapDef ) {
 			common->Error( "idFileSystemLocal::GetMapDecl %d: not found\n", idecl );
+			return NULL;
+		} else {
+			mapDict = mapDef->dict;
+			mapDict.Set( "path", mapDef->GetName() );
+			return &mapDict;
 		}
-		mapDict = mapDef->dict;
-		mapDict.Set( "path", mapDef->GetName() );
-		return &mapDict;
 	}
+
 	idecl -= numdecls;
-	for ( i = 0; i < 2; i++ ) {
+	for ( int i = 0; i < 2; i++ ) {
 		if ( i == 0 ) {
 			search = searchPaths;
 		} else if ( i == 1 ) {
@@ -3479,6 +3501,7 @@ const idDict * idFileSystemLocal::GetMapDecl( int idecl ) {
 			assert( idecl >= 0 );
 		}
 	}
+
 	return NULL;
 }
 
@@ -3500,7 +3523,7 @@ void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len 
 		file = OpenFileReadFlags( buf, FSFLAG_SEARCH_ADDONS );
 		if ( file ) {
 			// save it out to an addon splash directory
-			int dlen = file->Length();
+			const int dlen = file->Length();
 			char *data = new char[ dlen ];
 			file->Read( data, dlen );
 			CloseFile( file );

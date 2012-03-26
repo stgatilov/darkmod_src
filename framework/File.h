@@ -20,7 +20,9 @@
 #ifndef __FILE_H__
 #define __FILE_H__
 
-#define	MAX_PRINT_MSG_SIZE	16 * 1024
+#ifndef MAX_PRINT_MSG_SIZE
+	#define	MAX_PRINT_MSG_SIZE	16 * 1024
+#endif
 
 /*
 ==============================================================
@@ -54,7 +56,7 @@ public:
 							// Returns the length of the file.
 	virtual int				Length( void );
 							// Return a time value for reload operations.
-	virtual ID_TIME_T			Timestamp( void );
+	virtual ID_TIME_T		Timestamp( void );
 							// Returns offset in file.
 	virtual int				Tell( void );
 							// Forces flush on files being writting to.
@@ -121,7 +123,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual ID_TIME_T			Timestamp( void );
+	virtual ID_TIME_T		Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -163,7 +165,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual ID_TIME_T			Timestamp( void );
+	virtual ID_TIME_T		Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -188,7 +190,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual ID_TIME_T			Timestamp( void );
+	virtual ID_TIME_T		Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
@@ -219,7 +221,7 @@ public:
 	virtual int				Read( void *buffer, int len );
 	virtual int				Write( const void *buffer, int len );
 	virtual int				Length( void );
-	virtual ID_TIME_T			Timestamp( void );
+	virtual ID_TIME_T		Timestamp( void );
 	virtual int				Tell( void );
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
