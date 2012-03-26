@@ -472,11 +472,11 @@ idAsyncNetwork::UpdateUI_f
 */
 void idAsyncNetwork::UpdateUI_f( const idCmdArgs &args ) {
 	if ( args.Argc() != 2 ) {
-		common->Warning( "idAsyncNetwork::UpdateUI_f: wrong arguments\n" );
+		common->Warning( "idAsyncNetwork::UpdateUI_f: wrong arguments" );
 		return;
 	}
 	if ( !server.IsActive() ) {
-		common->Warning( "idAsyncNetwork::UpdateUI_f: server is not active\n" );
+		common->Warning( "idAsyncNetwork::UpdateUI_f: server is not active" );
 		return;
 	}
 	int clientNum = atoi( args.Args( 1 ) );

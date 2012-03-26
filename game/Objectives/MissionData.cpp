@@ -2390,7 +2390,7 @@ void CMissionData::ClearGUIState()
 void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDefName)
 {
 	if (gui == NULL) {
-		gameLocal.Warning("Can't update statistics GUI, invalid handle.\n");
+		gameLocal.Warning("Can't update statistics GUI, invalid handle.");
 		return; // invalid handle, do nothing
 	}
 

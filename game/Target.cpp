@@ -1756,7 +1756,7 @@ void CTarget_SetObjectiveState::Event_Activate( idEntity *activator )
 			gameLocal.m_MissionData->SetCompletionState(objId-1, state);
 		}
 		else {
-			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s", keyVal->GetValue().c_str(), name.c_str());
 		}
 
 		// greebo: Lookup the next matching spawnarg
@@ -1802,7 +1802,7 @@ void CTarget_SetObjectiveVisibility::Event_Activate( idEntity *activator )
 		}
 		else
 		{
-			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
+			gameLocal.Warning("Invalid objective ID %s on CTarget_SetObjectiveState %s", keyVal->GetValue().c_str(), name.c_str());
 			DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("Invalid objective ID %s on CTarget_SetObjectiveState %s\n", keyVal->GetValue().c_str(), name.c_str());
 		}
 	}
@@ -1852,7 +1852,7 @@ void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
 		if (objId > 0 && compId > 0)
 			gameLocal.m_MissionData->SetComponentState_Ext(objId, compId, state);
 		else
-			gameLocal.Warning("Invalid objective component ID %s on CTarget_SetObjectiveState %s\n", StringID.c_str(), name.c_str());
+			gameLocal.Warning("Invalid objective component ID %s on CTarget_SetObjectiveState %s", StringID.c_str(), name.c_str());
 
 		// Lookup the next matching spawnarg
 		keyVal = spawnArgs.MatchPrefix("comp_id", keyVal);

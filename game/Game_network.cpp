@@ -1042,7 +1042,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 
 			if ( i < MAX_CLIENTS && ent ) {
 				// SPAWN_PLAYER should be taking care of spawning the entity with the right spawnId
-				common->Warning( "ClientReadSnapshot: recycling client entity %d\n", i );
+				common->Warning( "ClientReadSnapshot: recycling client entity %d", i );
 			}
 
 			delete ent;

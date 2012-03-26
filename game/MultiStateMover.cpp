@@ -64,13 +64,13 @@ void CMultiStateMover::FindPositionEntities()
 		idStr positionName;
 		if (!moverPos->spawnArgs.GetString("position", "", positionName) || positionName.IsEmpty())
 		{
-			gameLocal.Warning("'position' spawnarg on %s is missing.\n", moverPos->name.c_str());
+			gameLocal.Warning("'position' spawnarg on %s is missing.", moverPos->name.c_str());
 			continue;
 		}
 
 		if (GetPositionInfoIndex(positionName) != -1) 
 		{
-			gameLocal.Warning("Multiple positions with name %s defined for %s.\n", positionName.c_str(), name.c_str());
+			gameLocal.Warning("Multiple positions with name %s defined for %s.", positionName.c_str(), name.c_str());
 			continue;
 		}
 

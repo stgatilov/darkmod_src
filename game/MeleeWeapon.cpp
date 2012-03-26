@@ -159,7 +159,7 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 	if( (key = spawnArgs.FindKey(va("att_type_%s", AttName))) == NULL )
 	{
 		DM_LOG(LC_WEAPON, LT_WARNING)LOGSTRING("Did not find attack %s on melee weapon %s\r", AttName, name.c_str());
-		gameLocal.Warning("Invalid attack name %s on weapon entity %s\n", AttName, name.c_str() );
+		gameLocal.Warning("Invalid attack name %s on weapon entity %s", AttName, name.c_str() );
 		return;
 	}
 
@@ -375,7 +375,7 @@ void CMeleeWeapon::ActivateParry( idActor *ActOwner, const char *ParryName )
 	}
 	else
 	{
-		gameLocal.Warning("Invalid parry name %s on weapon entity %s\n", ParryName, name.c_str() );
+		gameLocal.Warning("Invalid parry name %s on weapon entity %s", ParryName, name.c_str() );
 	}
 
 }

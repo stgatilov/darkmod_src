@@ -171,7 +171,7 @@ Seed::~Seed
 */
 Seed::~Seed(void) {
 
-	//gameLocal.Warning ("SEED %s: Shutdown.\n", GetName() );
+	//gameLocal.Warning ("SEED %s: Shutdown.", GetName() );
 	ClearClasses();
 }
 /*
@@ -928,7 +928,7 @@ int Seed::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 
 	if (rc == 0)
 	{
-		gameLocal.Warning("SEED %s: Wrong falloff %s, expected one of none, cutoff, power, root, linear or func.\n", GetName(), falloff.c_str() );
+		gameLocal.Warning("SEED %s: Wrong falloff %s, expected one of none, cutoff, power, root, linear or func.", GetName(), falloff.c_str() );
 		return 0;
 	}
 
@@ -936,7 +936,7 @@ int Seed::ParseFalloff(idDict const *dict, idStr defaultName, idStr defaultFacto
 	*func_a = dict->GetFloat( "seed_func_a", defaultFactor );
 	if (*func_a < 2.0f)
 	{
-		gameLocal.Warning( "SEED %s: Expect seed_func_a >= 2 when falloff is %s.\n", GetName(), falloff.c_str());
+		gameLocal.Warning( "SEED %s: Expect seed_func_a >= 2 when falloff is %s.", GetName(), falloff.c_str());
 		*func_a = 2.0f;
 	}
 
@@ -1283,17 +1283,17 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		SeedClass.func_max = ent->spawnArgs.GetFloat( "seed_func_max", spawnArgs.GetString( "func_max", "1.0") );
 		if (SeedClass.func_min < 0.0f)
 		{
-			gameLocal.Warning ("SEED %s: func_min %0.2f < 0, setting it to 0.\n", GetName(), SeedClass.func_min );
+			gameLocal.Warning ("SEED %s: func_min %0.2f < 0, setting it to 0.", GetName(), SeedClass.func_min );
 			SeedClass.func_min = 0.0f;
 		}
 		if (SeedClass.func_max > 1.0f)
 		{
-			gameLocal.Warning ("SEED %s: func_max %0.2f < 1.0, setting it to 1.0.\n", GetName(), SeedClass.func_max );
+			gameLocal.Warning ("SEED %s: func_max %0.2f < 1.0, setting it to 1.0.", GetName(), SeedClass.func_max );
 			SeedClass.func_max = 1.0f;
 		}
 		if (SeedClass.func_min > SeedClass.func_max)
 		{
-			gameLocal.Warning ("SEED %s: func_min %0.2f > func_max %0.2f, setting it to 0.\n", GetName(), SeedClass.func_min, SeedClass.func_max );
+			gameLocal.Warning ("SEED %s: func_min %0.2f > func_max %0.2f, setting it to 0.", GetName(), SeedClass.func_min, SeedClass.func_max );
 			SeedClass.func_min = 0.0f;
 		}
 
@@ -1442,7 +1442,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	SeedClass.bunching = ent->spawnArgs.GetFloat( "seed_bunching", spawnArgs.GetString( "bunching", "0") );
 	if (SeedClass.bunching < 0 || SeedClass.bunching > 1.0)
 	{
-		gameLocal.Warning ("SEED %s: Invalid bunching value %0.2f, must be between 0 and 1.0.\n", GetName(), SeedClass.bunching );
+		gameLocal.Warning ("SEED %s: Invalid bunching value %0.2f, must be between 0 and 1.0.", GetName(), SeedClass.bunching );
 		SeedClass.bunching = 0;
 	}
 	if (SeedClass.spacing > 0)
@@ -1615,7 +1615,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 
 	if (SeedClass.z_min != -1000000 && !SeedClass.floor)
 	{
-		gameLocal.Warning( "SEED %s: Warning: Setting seed_z_min/seed_z_max without setting 'seed_floor' to true won't work!\n", GetName() );
+		gameLocal.Warning( "SEED %s: Warning: Setting seed_z_min/seed_z_max without setting 'seed_floor' to true won't work!", GetName() );
 		// just use flooring for this class
 		SeedClass.floor = true;
 	}
@@ -1942,7 +1942,7 @@ void Seed::Prepare( void )
 				if (SeedInhibitor.falloff > 4)
 				{
 					// func is not supported
-					gameLocal.Warning( "SEED %s: falloff=func not yet supported on inhibitors, ignoring it.\n", GetName() );
+					gameLocal.Warning( "SEED %s: falloff=func not yet supported on inhibitors, ignoring it.", GetName() );
 					SeedInhibitor.falloff = 0;
 				}
 
@@ -2087,12 +2087,12 @@ void Seed::Prepare( void )
 
 		if (m_iNumEntities < 0)
 		{
-			gameLocal.Warning( "SEED %s: Entity count %i is invalid!\n", GetName(), m_iNumEntities );
+			gameLocal.Warning( "SEED %s: Entity count %i is invalid!", GetName(), m_iNumEntities );
 			m_iNumEntities = 0;
 		}
 		if (m_iNumEntities == 0 && m_Watched.Num() == 0)
 		{
-			gameLocal.Warning( "SEED %s: Feeling lonely with zero entities to care for.\n", GetName() );
+			gameLocal.Warning( "SEED %s: Feeling lonely with zero entities to care for.", GetName() );
 		}
 	}
 
@@ -3183,7 +3183,7 @@ void Seed::CombineEntities( void )
 	float max_combine_distance = spawnArgs.GetFloat("combine_distance", "2048");
 	if (max_combine_distance < 10)
 	{
-		gameLocal.Warning("SEED %s: combine distance %0.2f < 10, enforcing minimum 10.\n", GetName(), max_combine_distance);
+		gameLocal.Warning("SEED %s: combine distance %0.2f < 10, enforcing minimum 10.", GetName(), max_combine_distance);
 		max_combine_distance = 10;
 	}
 	// square for easier comparing
@@ -3255,11 +3255,11 @@ void Seed::CombineEntities( void )
 		if (NULL == tempModel)
 		{
 			// load model, then combine away
-//			gameLocal.Warning("SEED %s: Load model %s for entity %i.\n", GetName(), entityClass->modelname.c_str(), i);
+//			gameLocal.Warning("SEED %s: Load model %s for entity %i.", GetName(), entityClass->modelname.c_str(), i);
 			tempModel = renderModelManager->FindModel( entityClass->modelname );
 			if (! tempModel)
 			{
-				gameLocal.Warning("SEED %s: Could not load model %s for entity %i, skipping it.\n", GetName(), entityClass->modelname.c_str(), i);
+				gameLocal.Warning("SEED %s: Could not load model %s for entity %i, skipping it.", GetName(), entityClass->modelname.c_str(), i);
 				continue;
 			}
 		}
@@ -3279,7 +3279,7 @@ void Seed::CombineEntities( void )
 		}
 		// 0 => default model, 1 => first stage etc
 		ofs.lod	   = m_LODLevel + 1;
-//		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.\n", GetName(), ofs.lod );
+//		gameLocal.Warning("SEED %s: Using LOD model %i for base entity.", GetName(), ofs.lod );
 		// TODO: pack in the correct alpha value
 		ofs.color  = m_Entities[i].color;
 		ofs.scale  = m_Entities[i].scale;
@@ -3359,7 +3359,7 @@ void Seed::CombineEntities( void )
 			}
 			// 0 => default model, 1 => level 0 etc.
 			ofs.lod		= m_LODLevel + 1;
-//			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.\n", GetName(), ofs.lod, j );
+//			gameLocal.Warning("SEED %s: Using LOD model %i for combined entity %i.", GetName(), ofs.lod, j );
 			// TODO: pack in the new alpha value
 			ofs.color  = m_Entities[j].color;
 			ofs.scale  = m_Entities[j].scale;

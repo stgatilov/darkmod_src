@@ -236,7 +236,7 @@ void idCollisionModelManagerLocal::WriteCollisionModelsToFile( const char *filen
 	// _D3XP was saving to fs_cdpath TODO: Check this is still relevant
 	fp = fileSystem->OpenFileWrite( name, "fs_devpath" );
 	if ( !fp ) {
-		common->Warning( "idCollisionModelManagerLocal::WriteCollisionModelsToFile: Error opening file %s\n", name.c_str() );
+		common->Warning( "idCollisionModelManagerLocal::WriteCollisionModelsToFile: Error opening file %s", name.c_str() );
 		return;
 	}
 

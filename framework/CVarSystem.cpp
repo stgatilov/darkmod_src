@@ -211,7 +211,7 @@ void idInternalCVar::Update( const idCVar *cvar ) {
 	if ( resetString.Length() == 0 ) {
 		resetString = cvar->GetString();
 	} else if ( cvar->GetString()[0] && resetString.Cmp( cvar->GetString() ) != 0 ) {
-		common->Warning( "cvar \"%s\" given initial values: \"%s\" and \"%s\"\n", nameString.c_str(), resetString.c_str(), cvar->GetString() );
+		common->Warning( "cvar \"%s\" given initial values: \"%s\" and \"%s\"", nameString.c_str(), resetString.c_str(), cvar->GetString() );
 	}
 }
 

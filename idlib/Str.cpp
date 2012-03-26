@@ -1618,7 +1618,7 @@ int idStr::snPrintf( char *dest, int size, const char *fmt, ...) {
 		idLib::common->Error( "idStr::snPrintf: overflowed buffer" );
 	}
 	if ( len >= (unsigned int) size ) {
-		idLib::common->Warning( "idStr::snPrintf: overflow of %i in %i\n", len, size );
+		idLib::common->Warning( "idStr::snPrintf: overflow of %i in %i", len, size );
 		len = size;
 	}
 	idStr::Copynz( dest, buffer, size );

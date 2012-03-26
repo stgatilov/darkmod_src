@@ -1046,7 +1046,7 @@ void idMoveableItem::DropItems( idAnimatedEntity  *ent, const char *type, idList
 			jointName = ent->spawnArgs.GetString( key );
 			joint = ent->GetAnimator()->GetJointHandle( jointName );
 			if ( !ent->GetJointWorldTransform( joint, gameLocal.time, origin, axis ) ) {
-				gameLocal.Warning( "%s refers to invalid joint '%s' on entity '%s'\n", key.c_str(), jointName, ent->name.c_str() );
+				gameLocal.Warning( "%s refers to invalid joint '%s' on entity '%s'", key.c_str(), jointName, ent->name.c_str() );
 				origin = ent->GetPhysics()->GetOrigin();
 				axis = ent->GetPhysics()->GetAxis();
 			}

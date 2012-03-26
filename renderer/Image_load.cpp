@@ -1471,7 +1471,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
 			break;
         default:
-            common->Warning( "Invalid compressed internal format: %s\n", imgName.c_str() );
+            common->Warning( "Invalid compressed internal format: %s", imgName.c_str() );
             return;
         }
     } else if ( ( header->ddspf.dwFlags & DDSF_RGBA ) && header->ddspf.dwRGBBitCount == 32 ) {
@@ -1492,7 +1492,7 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 		externalFormat = GL_ALPHA;
 		internalFormat = GL_ALPHA8;
 	} else {
-		common->Warning( "Invalid uncompressed internal format: %s\n", imgName.c_str() );
+		common->Warning( "Invalid uncompressed internal format: %s", imgName.c_str() );
 		return;
 	}
 

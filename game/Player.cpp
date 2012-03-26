@@ -883,7 +883,7 @@ void idPlayer::Spawn( void )
 	if ( m_overlays.createOverlay( 0, LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE )
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE , hud );
 	else
-		gameLocal.Warning( "Unable to create overlay for HUD.\n" );
+		gameLocal.Warning( "Unable to create overlay for HUD." );
 
 	SetLastHitTime( 0 );
 
@@ -2172,7 +2172,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	if ( m_overlays.isExternal( OVERLAYS_MIN_HANDLE  ) )
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE, hud );
 	else
-		gameLocal.Warning( "Unable to relink HUD to overlay system.\n" );
+		gameLocal.Warning( "Unable to relink HUD to overlay system." );
 }
 
 /*
@@ -6735,7 +6735,7 @@ void idPlayer::UpdateUnderWaterEffects() {
 				gameLocal.Printf( "UNDERWATER: After water check overlay is %s\n", overlay.c_str() );
 			}
 			if (overlay.IsEmpty()) { // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
-				gameLocal.Warning( "UNDERWATER: water check overlay failed, check key/val pairs\n" );
+				gameLocal.Warning( "UNDERWATER: water check overlay failed, check key/val pairs" );
 			}
 			else if (!overlay.IsEmpty()) {
 				underWaterGUIHandle = CreateOverlay(overlay.c_str(), LAYER_UNDERWATER);
@@ -8892,7 +8892,7 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 				AI_PAIN = Pain( NULL, NULL, oldHealth - health, lastDamageDir, lastDamageLocation, &def->dict );
 				lastDmgTime = gameLocal.time;
 			} else {
-				common->Warning( "NET: no damage def for damage feedback '%d'\n", lastDamageDef );
+				common->Warning( "NET: no damage def for damage feedback '%d'", lastDamageDef );
 			}
 		}
 	} else if ( health > oldHealth && !stateHitch ) {
@@ -10033,12 +10033,12 @@ idPlayer::Event_SetGui
 */
 void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 	if ( !uiManager->CheckGui(guiFile) ) {
-		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+		gameLocal.Warning( "Unable to load GUI file: %s", guiFile );
 		goto Quit;
 	}
 
 	if ( !m_overlays.exists( handle ) ) {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "Non-existant GUI handle: %d", handle );
 		goto Quit;
 	}
 
@@ -10071,11 +10071,11 @@ void idPlayer::Event_SetGui( int handle, const char *guiFile ) {
 			// Let's set a good default value for whether or not the overlay is interactive.
 			m_overlays.setInteractive( handle, gui->IsInteractive() );
 		} else {
-			gameLocal.Warning( "Unknown error: Unable to load GUI into overlay.\n" );
+			gameLocal.Warning( "Unknown error: Unable to load GUI into overlay." );
 		}
 
 	} else {
-		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
+		gameLocal.Warning( "Cannot call setGui() on external handle: %d", handle );
 	}
 
 	Quit:
@@ -10488,7 +10488,7 @@ void idPlayer::SetImmobilization( const char *source, int type )
 	}
 	else
 	{
-		gameLocal.Warning( "source was empty; no immobilization set\n" );
+		gameLocal.Warning( "source was empty; no immobilization set" );
 	}
 }
 
@@ -10515,7 +10515,7 @@ void idPlayer::SetHinderance( const char *source, float mCap, float aCap )
 	}
 	else
 	{
-		gameLocal.Warning( "source was empty; no hinderance set\n" );
+		gameLocal.Warning( "source was empty; no hinderance set" );
 	}
 }
 
@@ -10541,7 +10541,7 @@ void idPlayer::SetTurnHinderance( const char *source, float mCap, float aCap )
 	}
 	else
 	{
-		gameLocal.Warning( "source was empty; no turn hinderance set\n" );
+		gameLocal.Warning( "source was empty; no turn hinderance set" );
 	}
 }
 
@@ -10597,7 +10597,7 @@ void idPlayer::SetJumpHinderance( const char *source, float mCap, float aCap )
 	}
 	else
 	{
-		gameLocal.Warning( "source was empty; no jump hinderance set\n" );
+		gameLocal.Warning( "source was empty; no jump hinderance set" );
 	}
 }
 

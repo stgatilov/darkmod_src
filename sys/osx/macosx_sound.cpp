@@ -119,7 +119,7 @@ void idAudioHardwareOSX::Reset() {
 		}
 		status = AudioDeviceRemoveIOProc( selectedDevice, DeviceIOProc );
 		if ( status != kAudioHardwareNoError ) {
-			common->Warning( "idAudioHardwareOSX::Reset: AudioDeviceRemoveIOProc failed. status %s\n", ExtractStatus( status ) );
+			common->Warning( "idAudioHardwareOSX::Reset: AudioDeviceRemoveIOProc failed. status %s", ExtractStatus( status ) );
 		}
 		activeIOProc = false;
 	}

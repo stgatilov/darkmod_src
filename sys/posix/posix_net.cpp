@@ -637,7 +637,7 @@ bool idTCP::Init( const char *host, short port ) {
 	NetadrToSockadr(&address, &sadr);
 
 	if (fd) {
-		common->Warning("idTCP::Init: already initialized?\n");
+		common->Warning("idTCP::Init: already initialized?");
 	}
 		
 	if ((fd = socket(PF_INET, SOCK_STREAM, 0)) == -1) {

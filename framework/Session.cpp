@@ -1735,7 +1735,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	// Open savegame file
 	idFile *fileOut = fileSystem->OpenFileWrite( gameFile );
 	if ( fileOut == NULL ) {
-		common->Warning( "Failed to open save file '%s'\n", gameFile.c_str() );
+		common->Warning( "Failed to open save file '%s'", gameFile.c_str() );
 		if ( pauseWorld ) {
 			soundSystem->SetPlayingSoundWorld( pauseWorld );
 			pauseWorld->UnPause();
@@ -1781,7 +1781,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	// the unclean save name on line 1, map name on line 2, screenshot on line 3
 	idFile *fileDesc = fileSystem->OpenFileWrite( descriptionFile );
 	if ( fileDesc == NULL ) {
-		common->Warning( "Failed to open description file '%s'\n", descriptionFile.c_str() );
+		common->Warning( "Failed to open description file '%s'", descriptionFile.c_str() );
 		if ( pauseWorld ) {
 			soundSystem->SetPlayingSoundWorld( pauseWorld );
 			pauseWorld->UnPause();

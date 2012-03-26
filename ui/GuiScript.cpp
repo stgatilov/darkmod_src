@@ -198,7 +198,7 @@ void Script_Transition(idWindow *window, idList<idGSWinVar> *src) {
 		//  added float variable					
 		if (!((vec4 || rect || val) && from && to && timeStr)) {
 			// 
-			common->Warning("Bad transition in gui %s in window %s\n", window->GetGui()->GetSourceFile(), window->GetName());
+			common->Warning("Bad transition in gui %s in window %s", window->GetGui()->GetSourceFile(), window->GetName());
 			return;
 		}
 		int time = atoi(*timeStr);

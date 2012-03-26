@@ -2950,7 +2950,7 @@ void GetMaterialStageInfo ( const char* a_strMatStageName, idLexer &a_lexSource,
 					{
 						if( !a_lexSource.ReadToken( &tknMatStage ) )
 						{
-							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. \n");
+							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. ");
 							break;
 						}
 						// Not using expectTokenString anymore since "Map" is treated as different token than "map". 
@@ -3016,7 +3016,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 
 		if( uiSearchIndex < 0 )
 		{
-			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
+			gameLocal.Warning( " Could not find search word %s", (*iter).c_str() );
 			return false;
 		}
 
@@ -3027,7 +3027,7 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 		{
 			if( uiSearchIndex != uiSearchOffset )
 			{
-				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
+				gameLocal.Warning( " Could not find search word %s in the expected order", (*iter).c_str() );
 
 				//Start the search from the first word again, since all of the search words are important.
 				bAreAllWordsFound = false;
@@ -3086,11 +3086,11 @@ bool FindBlockContainingWords(  const char *a_text, std::vector<idStr>& a_arrSea
 				return true;
 			}
 		}
-		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
+		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
 	}
 
 	// 	if( !bAreAllWordsFound )
-	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
+	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order." );
 	return false;
 }
 
@@ -3506,7 +3506,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		}
 		else
 		{
-			gameLocal.Warning( "Could not determine end of the material block. Skipping this material.\n" );
+			gameLocal.Warning( "Could not determine end of the material block. Skipping this material." );
 			// 				mat->Invalidate();
 			// 				mat->FreeData();
 			continue;
@@ -3528,7 +3528,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 		if( !mat->Parse( strMatTextWithNewBlock.c_str(), strMatTextWithNewBlock.Length() ) )
 		{
-		  gameLocal.Warning( "Material %s had error in the newly inserted text %s. \n Aborting.\n", mat->GetName(), &arrCharNewAmbientBlock[0] );
+		  gameLocal.Warning( "Material %s had error in the newly inserted text %s. \n Aborting.", mat->GetName(), &arrCharNewAmbientBlock[0] );
 		  break;
 		}
 		mat->ReplaceSourceFileText();

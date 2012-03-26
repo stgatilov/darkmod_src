@@ -332,7 +332,7 @@ void CBinaryFrobMover::PostSpawn()
 			}
 			else
 			{
-				gameLocal.Warning("Mover '%s' has start_rotate set, but rotation angles are zero.\r", name.c_str());
+				gameLocal.Warning("Mover '%s' has start_rotate set, but rotation angles are zero.", name.c_str());
 				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has start_rotate set, but rotation angles are zero.\r", name.c_str());
 			}
 		}
@@ -352,7 +352,7 @@ void CBinaryFrobMover::PostSpawn()
 			}
 			else
 			{
-				gameLocal.Warning("Mover '%s' has start_position set, but translation is zero.\r", name.c_str());
+				gameLocal.Warning("Mover '%s' has start_position set, but translation is zero.", name.c_str());
 				DM_LOG(LC_SYSTEM, LT_ERROR)LOGSTRING("[%s] has partial translation set, but translation is zero?\r", name.c_str());
 			}
 		}

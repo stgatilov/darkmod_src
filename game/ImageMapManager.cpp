@@ -165,16 +165,16 @@ int ImageMapManager::GetImageMap( idStr name ) {
 	idFile *fl = NULL;
 	if((fl = fileSystem->OpenFileRead(mapName)) == NULL)
 	{
-		//gameLocal.Warning("ImageMapManager: Could not find %s, trying .png next.\n", mapName.c_str() );
+		//gameLocal.Warning("ImageMapManager: Could not find %s, trying .png next.", mapName.c_str() );
 		idStr m = mapName + ".png";
 		if((fl = fileSystem->OpenFileRead(m)) == NULL)
 		{
-			//gameLocal.Warning("ImageMapManager: Could not find %s, trying .tga next.\n", m.c_str() );
+			//gameLocal.Warning("ImageMapManager: Could not find %s, trying .tga next.", m.c_str() );
 			// can't find PNG, try TGA
 			m = mapName + ".tga";
 			if((fl = fileSystem->OpenFileRead(m)) == NULL)
 			{
-				// gameLocal.Warning("ImageMapManager: Could not find %s, trying .jpg next.\n", m.c_str() );
+				// gameLocal.Warning("ImageMapManager: Could not find %s, trying .jpg next.", m.c_str() );
 				// can't find TGA, try JPG as last resort
 				mapName += ".jpg";
 				if((fl = fileSystem->OpenFileRead(mapName)) == NULL)

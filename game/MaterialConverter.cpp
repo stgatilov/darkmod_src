@@ -177,7 +177,7 @@ void MaterialParsingHelper::GetMaterialStageInfo( const char* a_strMatStageName,
 					{
 						if( !a_lexSource.ReadToken( &tknMatStage ) )
 						{
-							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. \n");
+							gameLocal.Warning( "Unexpected end of material when trying to obtain scale. ");
 							break;
 						}
 						// Not using expectTokenString anymore since "Map" is treated as different token than "map". 
@@ -241,7 +241,7 @@ bool MaterialParsingHelper::FindBlockContainingWords(  const char *a_text, std::
 
 		if( uiSearchIndex < 0 )
 		{
-			//  			gameLocal.Warning( " Could not find search word %s\n", (*iter).c_str() );
+			//  			gameLocal.Warning( " Could not find search word %s", (*iter).c_str() );
 			return false;
 		}
 
@@ -252,7 +252,7 @@ bool MaterialParsingHelper::FindBlockContainingWords(  const char *a_text, std::
 		{
 			if( uiSearchIndex != uiSearchOffset )
 			{
-				//  				gameLocal.Warning( " Could not find search word %s in the expected order\n", (*iter).c_str() );
+				//  				gameLocal.Warning( " Could not find search word %s in the expected order", (*iter).c_str() );
 
 				//Start the search from the first word again, since all of the search words are important.
 				bAreAllWordsFound = false;
@@ -311,11 +311,11 @@ bool MaterialParsingHelper::FindBlockContainingWords(  const char *a_text, std::
 				return true;
 			}
 		}
-		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.\n", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
+		// 		gameLocal.Warning( " Block start found:%d Block End Found:%d, Returning false.", (int)bIsStartOffsetFound, (int)bIsEndOffsetFound );
 	}
 
 	// 	if( !bAreAllWordsFound )
-	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order.\n" );
+	//  		gameLocal.Warning( " Returning false since given words can't be found in the exact given order." );
 	return false;
 }
 
@@ -711,7 +711,7 @@ eMaterialConversionStatus MaterialConverter::ConvertMaterial( idMaterial *a_pMat
 	}
 	else
 	{
-		gameLocal.Warning( "Could not determine end of the material block. Skipping this material.\n" );
+		gameLocal.Warning( "Could not determine end of the material block. Skipping this material." );
 		// 				a_pMaterial->Invalidate();
 		// 				a_pMaterial->FreeData();
 		return eMaterialConversionStatus_Skipped_CouldNotFindEndOfBlock;

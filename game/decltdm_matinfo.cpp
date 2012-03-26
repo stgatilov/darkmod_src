@@ -156,7 +156,7 @@ void tdmDeclTDM_MatInfo::precacheMap( idMapFile *map ) {
 				declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", patch->GetMaterial() );
 				declManager->FindType( DECL_TDM_MATINFO, patch->GetMaterial() );
 			} else {
-				gameLocal.Warning( "tdmDeclTDM_MatInfo(): unknown primitive type: %d\n", prim->GetType() );
+				gameLocal.Warning( "tdmDeclTDM_MatInfo(): unknown primitive type: %d", prim->GetType() );
 			}
 		}
 	}

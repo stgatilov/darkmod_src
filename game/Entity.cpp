@@ -933,7 +933,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 			if (m_LOD->fLODFadeOutRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_LOD->fLODFadeOutRange);
+				gameLocal.Warning (" %s: lod_fadeout_range must be >= 0 but is %f. Ignoring it.", GetName(), m_LOD->fLODFadeOutRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -947,12 +947,12 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 			if (m_LOD->fLODFadeInRange < 0)
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.\n", GetName(), m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be >= 0 but is %f. Ignoring it.", GetName(), m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeInRange = 0.0f;
 			}
 			else if (m_LOD->fLODFadeInRange > 0 && m_LOD->fLODFadeInRange > m_LOD->DistLODSq[1])
 			{
-				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.\n", GetName(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
+				gameLocal.Warning (" %s: lod_fadein_range must be <= lod_1_distance (%f) 0 but is %f. Ignoring it.", GetName(), m_LOD->DistLODSq[1], m_LOD->fLODFadeInRange);
 				m_LOD->fLODFadeOutRange = 0.0f;
 			}
 			else
@@ -1096,7 +1096,7 @@ void idEntity::Spawn( void )
 		if ( m_overlays.createOverlay( 0, OVERLAYS_MIN_HANDLE + i ) >= OVERLAYS_MIN_HANDLE )
 			m_overlays.setGui( OVERLAYS_MIN_HANDLE + i, renderEntity.gui[ i ] );
 		else
-			gameLocal.Warning( "Unable to create overlay for renderentity GUI: %d\n", OVERLAYS_MIN_HANDLE + i );
+			gameLocal.Warning( "Unable to create overlay for renderentity GUI: %d", OVERLAYS_MIN_HANDLE + i );
 	}
 
 	fl.solidForTeam = spawnArgs.GetBool( "solidForTeam", "0" );
@@ -7320,10 +7320,10 @@ void idEntity::Event_RestorePosition( void ) {
 		}
 		if ( part->GetPhysics()->IsType( idPhysics_Parametric::Type ) ) {
 			if ( static_cast<idPhysics_Parametric *>(part->GetPhysics())->IsPusher() ) {
-				gameLocal.Warning( "teleported '%s' which has the pushing mover '%s' bound to it\n", GetName(), part->GetName() );
+				gameLocal.Warning( "teleported '%s' which has the pushing mover '%s' bound to it", GetName(), part->GetName() );
 			}
 		} else if ( part->GetPhysics()->IsType( idPhysics_AF::Type ) ) {
-			gameLocal.Warning( "teleported '%s' which has the articulated figure '%s' bound to it\n", GetName(), part->GetName() );
+			gameLocal.Warning( "teleported '%s' which has the articulated figure '%s' bound to it", GetName(), part->GetName() );
 		}
 	}
 }
@@ -9724,12 +9724,12 @@ if it wanted to.)
 */
 void idEntity::Event_SetGui( int handle, const char *guiFile ) {
 	if ( !uiManager->CheckGui(guiFile) ) {
-		gameLocal.Warning( "Unable to load GUI file: %s\n", guiFile );
+		gameLocal.Warning( "Unable to load GUI file: %s", guiFile );
 		goto Quit;
 	}
 
 	if ( !m_overlays.exists( handle ) ) {
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "Non-existant GUI handle: %d", handle );
 		goto Quit;
 	}
 
@@ -9768,7 +9768,7 @@ void idEntity::Event_SetGui( int handle, const char *guiFile ) {
 		assert( result );
 
 	} else {
-		gameLocal.Warning( "Cannot call setGui() on external handle: %d\n", handle );
+		gameLocal.Warning( "Cannot call setGui() on external handle: %d", handle );
 	}
 
 	Quit:
@@ -9979,13 +9979,13 @@ void idEntity::Event_SetGuiStringFromKey( int handle, const char *key, idEntity 
 {
 	if(!src)
 	{
-		gameLocal.Warning( "Unable to get key, since the source entity was NULL.\n" );
+		gameLocal.Warning( "Unable to get key, since the source entity was NULL." );
 		return;
 	}
 
 	if(!m_overlays.exists(handle))
 	{
-		gameLocal.Warning( "Non-existant GUI handle: %d\n", handle );
+		gameLocal.Warning( "Non-existant GUI handle: %d", handle );
 		return;
 	}
 
@@ -10070,7 +10070,7 @@ void idEntity::Event_LoadExternalData( const char *xdFile, const char* prefix )
 	} 
 	else
 	{
-		gameLocal.Warning("Non-existant xdata declaration: %s\n", xdFile);
+		gameLocal.Warning("Non-existant xdata declaration: %s", xdFile);
 		idThread::ReturnInt( 0 );
 	}
 }
@@ -10144,7 +10144,7 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 // The following is the old system and will be phased out
 	else
 	{
-		//gameLocal.Warning("%s is attaching %s using the deprecated attachment system.\n", name.c_str(), ent->name.c_str());
+		//gameLocal.Warning("%s is attaching %s using the deprecated attachment system.", name.c_str(), ent->name.c_str());
 		angleOffset = ent->spawnArgs.GetAngles( "angles" );
 		originOffset = ent->spawnArgs.GetVector( "origin" );
 	}
@@ -11282,7 +11282,7 @@ void idEntity::DestroyOverlay(int handle)
 			gui->Activate( false, gameLocal.time );
 		m_overlays.destroyOverlay( handle );
 	} else {
-		gameLocal.Warning( "Cannot destroy HUD.\n" );
+		gameLocal.Warning( "Cannot destroy HUD." );
 	}
 }
 
@@ -11550,12 +11550,12 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 						dist = dist3.Length();
 					}
 				// divide by dist
-				//gameLocal.Warning(" dist %0.2f, falloff %0.0f\n", dist, lightFalloff );
+				//gameLocal.Warning(" dist %0.2f, falloff %0.0f", dist, lightFalloff );
 				dist /= dist_scaling;
-				//gameLocal.Warning(" dist is now %0.2f\n", dist );
-				//gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+				//gameLocal.Warning(" dist is now %0.2f", dist );
+				//gameLocal.Warning(" local_light %s", local_light.ToString() );
 				local_light /= dist;
-				//gameLocal.Warning(" local_light %s\n", local_light.ToString() );
+				//gameLocal.Warning(" local_light %s", local_light.ToString() );
 			}
 			sum += local_light;
 		}

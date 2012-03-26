@@ -148,7 +148,7 @@ void idPlayerStart::Event_TeleportStage( idEntity *_player ) {
 
 	if ( !_player->IsType( idPlayer::Type ) ) {
 
-		common->Warning( "idPlayerStart::Event_TeleportStage: entity is not an idPlayer\n" );
+		common->Warning( "idPlayerStart::Event_TeleportStage: entity is not an idPlayer" );
 
 		return;
 

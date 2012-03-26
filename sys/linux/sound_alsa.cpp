@@ -101,7 +101,7 @@ idAudioHardwareALSA::InitFailed
 void idAudioHardwareALSA::InitFailed() {
 	Release();
 	cvarSystem->SetCVarBool( "s_noSound", true );
-	common->Warning( "sound subsystem disabled\n" );
+	common->Warning( "sound subsystem disabled" );
 	common->Printf( "--------------------------------------\n" );
 }
 

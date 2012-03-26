@@ -749,7 +749,7 @@ bool CInventory::ReplaceItem(idEntity* oldItemEnt, idEntity* newItemEnt)
 
 	if (oldItem == NULL)
 	{
-		gameLocal.Warning("Could not find old inventory item for %s\n", oldItemEnt->name.c_str());
+		gameLocal.Warning("Could not find old inventory item for %s", oldItemEnt->name.c_str());
 		DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Could not find old inventory item for %s\n", oldItemEnt->name.c_str());
 		return false;
 	}
@@ -991,7 +991,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent, const bool gotFromShop
 	if (weaponName.IsEmpty())
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
-		gameLocal.Warning("Could not find 'inv_weapon_name' on item %s.\r", ent->name.c_str());
+		gameLocal.Warning("Could not find 'inv_weapon_name' on item %s.", ent->name.c_str());
 		return returnValue;
 	}
 

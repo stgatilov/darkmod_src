@@ -2015,7 +2015,7 @@ bool idWindow::ParseInternalVar(const char *_name, idParser *src) {
 		return true;
 	}
 	if (idStr::Icmp(_name, "play") == 0) {
-		common->Warning( "play encountered during gui parse.. see Robert\n" );
+		common->Warning( "play encountered during gui parse.. see Robert" );
 		idStr playStr;
 		ParseString(src, playStr);
 		return true;

@@ -97,7 +97,7 @@ void ConversationSystem::StartConversation(int index)
 
 	if (conv == NULL)
 	{
-		gameLocal.Warning("StartConversation: Can't find conversation with index %d\n", index);
+		gameLocal.Warning("StartConversation: Can't find conversation with index %d", index);
 		return;
 	}
 
@@ -130,7 +130,7 @@ void ConversationSystem::EndConversation(int index)
 
 	if (conv == NULL)
 	{
-		gameLocal.Warning("StartConversation: Can't find conversation with index %d\n", index);
+		gameLocal.Warning("StartConversation: Can't find conversation with index %d", index);
 		return;
 	}
 

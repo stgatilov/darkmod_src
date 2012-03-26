@@ -1267,12 +1267,12 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					{
 						ent->Detach( command.string->c_str() );
 						// and now remove it from the game world
-						// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'\n", command.string->c_str(), ent->getName().c_str() );
+						// gameLocal.Warning ( "Going to remove attachment '%s' from '%s'", command.string->c_str(), ent->getName().c_str() );
 						attEntity->PostEventMS( &EV_Remove, 0 );
 					}
 					else
 					{
-						gameLocal.Warning ( "Cannot find attachment '%s' to destroy in animation.\n", command.string->c_str() );
+						gameLocal.Warning ( "Cannot find attachment '%s' to destroy in animation.", command.string->c_str() );
 					}
 					break;
 				}

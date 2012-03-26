@@ -69,7 +69,7 @@ void ConversationState::SetConversation(int index)
 {
 	if (gameLocal.m_ConversationSystem->GetConversation(index) == NULL)
 	{
-		gameLocal.Warning("AI ConversationState: Could not find conversation %d\n", index);
+		gameLocal.Warning("AI ConversationState: Could not find conversation %d", index);
 	}
 
 	_conversation = index;

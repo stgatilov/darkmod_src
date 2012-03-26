@@ -1258,7 +1258,7 @@ int idFileSystemLocal::AddZipFile( const char *path ) {
 	fullpath.AppendPath( path );
 	pak = LoadZipFile( fullpath );
 	if ( !pak ) {
-		common->Warning( "AddZipFile %s failed\n", path );
+		common->Warning( "AddZipFile %s failed", path );
 		return 0;
 	}
 

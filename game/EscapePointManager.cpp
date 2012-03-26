@@ -248,7 +248,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 
 	if (escapePoints.Num() == 0)
 	{
-		gameLocal.Warning("No escape point information available for the given aas type in map!\n");
+		gameLocal.Warning("No escape point information available for the given aas type in map!");
 		goal.escapePointId = -1;
 		goal.distance = -1;
 		return goal;

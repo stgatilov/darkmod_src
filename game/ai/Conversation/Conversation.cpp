@@ -444,7 +444,7 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 	if (_actors.Num() == 0)
 	{
 		_isValid = false; // no actors, no conversation
-		gameLocal.Warning("Ignoring conversation %s as it has no actors.\n", _name.c_str());
+		gameLocal.Warning("Ignoring conversation %s as it has no actors.", _name.c_str());
 		return;
 	}
 
@@ -481,7 +481,7 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 	{
 		// No commands, what kind of conversation is this?
 		_isValid = false;
-		gameLocal.Warning("Ignoring conversation %s as it has no commands.\n", _name.c_str());
+		gameLocal.Warning("Ignoring conversation %s as it has no commands.", _name.c_str());
 		return;
 	}
 
@@ -489,7 +489,7 @@ void Conversation::InitFromSpawnArgs(const idDict& dict, int index)
 	if (_talkDistance <= 0.0f)
 	{
 		_isValid = false;
-		gameLocal.Warning("Ignoring conversation %s as it has a talk distance <= 0.\n", _name.c_str());
+		gameLocal.Warning("Ignoring conversation %s as it has a talk distance <= 0.", _name.c_str());
 		return;
 	}
 

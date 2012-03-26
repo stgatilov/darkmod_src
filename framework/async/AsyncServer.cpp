@@ -907,7 +907,7 @@ void idAsyncServer::UpdateUI( int clientNum ) {
 	const idDict	*info = game->GetUserInfo( clientNum );
 
 	if ( !info ) {
-		common->Warning( "idAsyncServer::UpdateUI: no info from game\n" );
+		common->Warning( "idAsyncServer::UpdateUI: no info from game" );
 		return;
 	}
 
@@ -1747,7 +1747,7 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 		checksums[ numChecksums++ ] = i;
 		// just to make sure a broken client doesn't crash us
 		if ( numChecksums >= MAX_PURE_PAKS ) {
-			common->Warning( "MAX_PURE_PAKS ( %d ) exceeded\n", MAX_PURE_PAKS );
+			common->Warning( "MAX_PURE_PAKS ( %d ) exceeded", MAX_PURE_PAKS );
 			sprintf( reply, "#str_07144" );
 			return false;
 		}

@@ -628,7 +628,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 		needScale = true;
 	}
 
-	gameLocal.Warning("Source with %i surfaces. snapshot %s, scaling: %s, needFinish: %s\n", numSurfaces, snapshotName, needScale ? "yes" : "no", needFinish ? "yes" : "no");
+	gameLocal.Warning("Source with %i surfaces. snapshot %s, scaling: %s, needFinish: %s", numSurfaces, snapshotName, needScale ? "yes" : "no", needFinish ? "yes" : "no");
 #ifdef M_DEBUG
 #endif
 
@@ -662,7 +662,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 	// for each needed surface
 	for (int i = 0; i < numSurfaces; i++)
 	{
-		//gameLocal.Warning("Duplicating surface %i.\n", i);
+		//gameLocal.Warning("Duplicating surface %i.", i);
 		surf = source->Surface( i );
 
 		// if we need to call FinishSurface() and this is a backside, skip it
@@ -689,7 +689,7 @@ idRenderModel* CModelGenerator::DuplicateModel (const idRenderModel* source, con
 
 		// copy the material
 		newSurf.shader = surf->shader;
-		//gameLocal.Warning("Duplicating %i verts and %i indexes.\n", surf->geometry->numVerts, surf->geometry->numIndexes );
+		//gameLocal.Warning("Duplicating %i verts and %i indexes.", surf->geometry->numVerts, surf->geometry->numIndexes );
 
 		newSurf.geometry = hModel->AllocSurfaceTriangles( numVerts, numIndexes );
 
@@ -1229,7 +1229,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		numSurfaces = source->NumSurfaces();
 		for (int s = 0; s < numSurfaces; s++)
 		{
-			//gameLocal.Warning("At surface %i of stage %i at offset %i\n", s, lod, o);
+			//gameLocal.Warning("At surface %i of stage %i at offset %i", s, lod, o);
 
 			surf = source->Surface( s );
 			if (!surf) { continue; }
@@ -1245,7 +1245,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 			if (st < 0)
 			{
 #ifdef M_DEBUG
-				gameLocal.Warning("Skipping surface %i.\n", s);
+				gameLocal.Warning("Skipping surface %i.", s);
 #endif
 				continue;
 			}

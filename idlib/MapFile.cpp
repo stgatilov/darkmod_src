@@ -839,7 +839,7 @@ bool idMapFile::Write( const char *fileName, const char *ext, bool fromBasePath 
 	}
 
 	if ( !fp ) {
-		idLib::common->Warning( "Couldn't open %s\n", qpath.c_str() );
+		idLib::common->Warning( "Couldn't open %s", qpath.c_str() );
 		return false;
 	}
 

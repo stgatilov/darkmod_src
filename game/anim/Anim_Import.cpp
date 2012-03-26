@@ -118,7 +118,7 @@ bool idModelExport::CheckMayaInstall( void ) {
 		return true;
 	}
 
-	gameLocal.Warning("Maya key not found in registry, continuing...\n");
+	gameLocal.Warning("Maya key not found in registry, continuing...");
 
 	return true; // greebo: both keys failed, let the game continue anyways
 #endif

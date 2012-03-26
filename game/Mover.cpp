@@ -309,7 +309,7 @@ void idMover::Event_PostRestore( int start, int total, int accel, int decel, int
 	idEntity *splineEntity = splineEnt.GetEntity();
 	if ( !splineEntity ) {
 		// We should never get this event if splineEnt is invalid
-		common->Warning( "Invalid spline entity during restore\n" );
+		common->Warning( "Invalid spline entity during restore" );
 		return;
 	}
 

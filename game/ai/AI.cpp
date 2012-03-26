@@ -11231,7 +11231,7 @@ void idAI::PushMove()
 
 	if (moveStack.size() > 100)
 	{
-		gameLocal.Warning("AI MoveStack contains more than 100 moves! (%s)\n", name.c_str());
+		gameLocal.Warning("AI MoveStack contains more than 100 moves! (%s)", name.c_str());
 	}
 }
 

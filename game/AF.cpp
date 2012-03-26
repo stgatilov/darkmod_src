@@ -921,7 +921,7 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 	physicsObj.SetSelf( self );
 
 	if ( animator == NULL ) {
-		gameLocal.Warning( "Couldn't load af '%s' for entity '%s' at (%s): NULL animator\n", name.c_str(), ent->name.c_str(), ent->GetPhysics()->GetOrigin().ToString(0) );
+		gameLocal.Warning( "Couldn't load af '%s' for entity '%s' at (%s): NULL animator", name.c_str(), ent->name.c_str(), ent->GetPhysics()->GetOrigin().ToString(0) );
 		return false;
 	}
 
@@ -930,7 +930,7 @@ bool idAF::Load( idEntity *ent, const char *fileName ) {
 
 	file = static_cast<const idDeclAF *>( declManager->FindType( DECL_AF, name ) );
 	if ( !file ) {
-		gameLocal.Warning( "Couldn't load af '%s' for entity '%s' at (%s)\n", name.c_str(), ent->name.c_str(), ent->GetPhysics()->GetOrigin().ToString(0) );
+		gameLocal.Warning( "Couldn't load af '%s' for entity '%s' at (%s)", name.c_str(), ent->name.c_str(), ent->GetPhysics()->GetOrigin().ToString(0) );
 		return false;
 	}
 

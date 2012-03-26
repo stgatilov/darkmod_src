@@ -870,7 +870,7 @@ void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) {
 	src.ReadTokenOnLine( &token );
 	int	parm = token.GetIntValue();
 	if ( !token.IsNumeric() || parm < 0 || parm >= MAX_VERTEX_PARMS ) {
-		common->Warning( "bad vertexParm number\n" );
+		common->Warning( "bad vertexParm number" );
 		SetMaterialFlag( MF_DEFAULTED );
 		return;
 	}
@@ -932,7 +932,7 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 	src.ReadTokenOnLine( &token );
 	int	unit = token.GetIntValue();
 	if ( !token.IsNumeric() || unit < 0 || unit >= MAX_FRAGMENT_IMAGES ) {
-		common->Warning( "bad fragmentMap number\n" );
+		common->Warning( "bad fragmentMap number" );
 		SetMaterialFlag( MF_DEFAULTED );
 		return;
 	}

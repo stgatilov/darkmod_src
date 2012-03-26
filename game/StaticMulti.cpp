@@ -367,7 +367,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 			hModel = renderModelManager->FindModel( m );
 			if (!hModel)
 			{
-				gameLocal.Warning("Could not load model %s.\n", m.c_str() );
+				gameLocal.Warning("Could not load model %s.", m.c_str() );
 			}
 		}
 		LODs.Append(hModel);
@@ -393,7 +393,7 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 			hModel = renderModelManager->FindModel( m );
 			if (!hModel)
 			{
-				gameLocal.Warning("Could not load model %s.\n", m.c_str() );
+				gameLocal.Warning("Could not load model %s.", m.c_str() );
 			}
 		}
 		LODs.Append(hModel);

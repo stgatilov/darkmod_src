@@ -900,7 +900,7 @@ void tdmEAS::DrawRoute(int startArea, int goalArea)
 
 	if (startCluster < 0 || goalCluster < 0)
 	{
-		gameLocal.Warning("Cannot draw route, cluster numbers < 0.\r");
+		gameLocal.Warning("Cannot draw route, cluster numbers < 0.");
 		return;
 	}
 

@@ -342,7 +342,7 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 				break;
 			}
 			// add the two numbers
-			//	common->Warning("got '%s' '%s'\n", tok.c_str(), tok2.c_str() );
+			//	common->Warning("got '%s' '%s'", tok.c_str(), tok2.c_str() );
 			m_Remap.Append( (char) tok.GetIntValue() );
 			m_Remap.Append( (char) tok2.GetIntValue() );
 //			common->Printf("I18N: Mapping %i (0x%02x) to %i (0x%02x)\n", tok.GetIntValue(), tok.GetIntValue(), tok2.GetIntValue(), tok2.GetIntValue() );

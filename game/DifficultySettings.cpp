@@ -175,7 +175,7 @@ idList<Setting> Setting::ParseSettingsFromDict(const idDict& dict, int level)
 		}
 		else
 		{
-			gameLocal.Warning("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
+			gameLocal.Warning("Found invalid difficulty settings index: %s.", keyVal->GetKey().c_str());
 			DM_LOG(LC_DIFFICULTY, LT_ERROR)LOGSTRING("Found invalid difficulty settings index: %s.\r", keyVal->GetKey().c_str());
 		}
 	}
@@ -565,7 +565,7 @@ void CVARDifficultySettings::LoadFromEntityDef(const idDict& dict)
 		}
 		else
 		{
-			gameLocal.Warning("Found invalid cvar difficulty settings index: %s.\r", keyVal->GetKey().c_str());
+			gameLocal.Warning("Found invalid cvar difficulty settings index: %s.", keyVal->GetKey().c_str());
 			DM_LOG(LC_DIFFICULTY, LT_ERROR)LOGSTRING("Found invalid cvar difficulty settings index: %s.\r", keyVal->GetKey().c_str());
 		}
 	}

@@ -811,7 +811,7 @@ void CsndPropBase::SetPortalLoss( int handle, float value )
 	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
 	{
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("SetPortalLoss called with invalid portal handle %d.\r", handle );
-		gameLocal.Warning( "SetPortalLoss called with invalid portal handle %d.\n", handle );
+		gameLocal.Warning( "SetPortalLoss called with invalid portal handle %d.", handle );
 
 		goto Quit;
 	}
@@ -830,7 +830,7 @@ float CsndPropBase::GetPortalLoss( int handle )
 	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
 	{
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("GetPortalLoss called with invalid portal handle %d, returning zero loss.\r", handle );
-		gameLocal.Warning( "GetPortalLoss called with invalid portal handle %d, returning zero loss.\n", handle );
+		gameLocal.Warning( "GetPortalLoss called with invalid portal handle %d, returning zero loss.", handle );
 
 		returnval = 0.0;
 		goto Quit;

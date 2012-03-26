@@ -57,7 +57,7 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	idStr animName = path->spawnArgs.GetString("anim");
 	if (animName.IsEmpty())
 	{
-		gameLocal.Warning("path_anim entity %s without 'anim' spawnarg found.\n",path->name.c_str());
+		gameLocal.Warning("path_anim entity %s without 'anim' spawnarg found.",path->name.c_str());
 		subsystem.FinishTask();
 	}
 
