@@ -268,11 +268,17 @@ public:
 	int timeMissingItem;
 	int timeEvidenceIntruders;
 
+	// grayman #2422 - alert level is rising by checking player visibility
+	bool visualAlert;
+
 	// grayman #2603 - abort an ongoing light relight?
 	bool stopRelight;
 
 	// grayman #2872 - abort a rope examination?
 	bool stopExaminingRope;
+
+	// grayman #2422 - next time to generate a random search spot
+	int nextTime2GenRandomSpot;
 
 	// grayman #2603 - a light that's being relit
 	idEntityPtr<idLight> relightLight;

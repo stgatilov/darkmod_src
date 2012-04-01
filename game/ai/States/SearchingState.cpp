@@ -175,14 +175,16 @@ void SearchingState::Think(idAI* owner)
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
 	if (owner->GetMoveType() != MOVETYPE_ANIM)
 	{
 		owner->GetUp();
 		return;
 	}
-
 
 	Memory& memory = owner->GetMemory();
 
@@ -209,7 +211,6 @@ void SearchingState::Think(idAI* owner)
 			owner->SetWaitState("look_around");
 		}
 */
-
 	}
 	// Is a hiding spot search in progress?
 	else if (!memory.hidingSpotInvestigationInProgress)
@@ -219,21 +220,71 @@ void SearchingState::Think(idAI* owner)
 		// Have run out of hiding spots?
 		if (memory.noMoreHidingSpots) 
 		{
-			idVec3 randomOffset(gameLocal.random.RandomFloat()*200.0f - 100, gameLocal.random.RandomFloat()*200.0f - 100, 0);
-			memory.currentSearchSpot = memory.alertPos + randomOffset;
+			if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
+			{
+				// grayman #2422
+				// Generate a random search point, but make sure it's inside an AAS area
+				// and that it's also inside the search volume.
 
-			// Choose to investigate spots closely on a random basis
-			// grayman #2801 - and only if you weren't hit by a projectile
+				idVec3 p;		// random point
+				int areaNum;	// p's area number
+				idVec3 searchSize = owner->m_searchLimits.GetSize();
+				idVec3 searchCenter = owner->m_searchLimits.GetCenter();
+				bool validPoint = false;
+				for ( int i = 0 ; i < 6 ; i++ )
+				{
+					p = searchCenter;
+					p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x/2;
+					p.y += gameLocal.random.RandomFloat()*(searchSize.y) - searchSize.y/2;
+					p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
+					areaNum = owner->PointReachableAreaNum( p );
+					if ( areaNum == 0 )
+					{
+						//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, 500);
+						continue;
+					}
+					owner->GetAAS()->PushPointIntoAreaNum( areaNum, p ); // if this point is outside this area, it will be moved to one of the area's edges
+					if ( !owner->m_searchLimits.ContainsPoint(p) )
+					{
+						//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, 500);
+						continue;
+					}
+					validPoint = true;
+					break;
+				}
 
-			memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeDamage ) );
+				if ( validPoint )
+				{
+					// grayman #2422 - the point chosen 
+					memory.currentSearchSpot = p;
+			
+					// Choose to investigate spots closely on a random basis
+					// grayman #2801 - and only if you weren't hit by a projectile
 
-			owner->actionSubsystem->PushTask(
-				TaskPtr(InvestigateSpotTask::CreateInstance())
-			);
-			//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+					memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeDamage ) );
 
-			// Set the flag to TRUE, so that the sensory scan can be performed
-			memory.hidingSpotInvestigationInProgress = true;
+					owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
+					//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), memory.currentSearchSpot, 1, 500);
+
+					// Set the flag to TRUE, so that the sensory scan can be performed
+					memory.hidingSpotInvestigationInProgress = true;
+				}
+				else // no valid random point found
+				{
+					// Stop moving, the algorithm will choose another spot the next round
+					owner->StopMove(MOVE_STATUS_DONE);
+					memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+					memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+
+					// grayman #2422 - at least turn toward and look at the last invalid point some of the time
+					if ( gameLocal.random.RandomFloat() < 0.5 )
+					{
+						owner->TurnToward(p);
+						owner->Event_LookAtPosition(p,MS2SEC(DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3)));
+					}
+				}
+				memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3);
+			}
 		}
 		// We should have more hiding spots, try to get the next one
 		else if (!ChooseNextHidingSpotToSearch(owner))
@@ -303,6 +354,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 		owner->actionSubsystem->PushTask(
 			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
 		);
+
+		//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
 		// Prevent overwriting this hiding spot in the upcoming Think() call
 		memory.hidingSpotInvestigationInProgress = true;
@@ -417,6 +470,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			// Get location
 			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
 			memory.currentSearchSpot = memory.chosenHidingSpot;
+			//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING(
 				"First spot chosen is index %d of %d spots.\r", 
@@ -454,6 +508,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
 				memory.currentSearchSpot = memory.chosenHidingSpot;
 				memory.hidingSpotSearchDone = true;
+				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 			}
 		}
 	}
@@ -492,7 +547,7 @@ void SearchingState::OnAudioAlert()
 			spotTask->SetNewGoal(memory.alertPos);
 			spotTask->SetInvestigateClosely(false);
 
-			//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 1, 300);
+			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), memory.alertPos, 1, 2000);
 		}
 	}
 

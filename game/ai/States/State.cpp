@@ -200,6 +200,7 @@ void State::OnVisualAlert(idActor* enemy)
 			memory.countEvidenceOfIntruders++;
 			memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 			memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
+			memory.visualAlert = true; // grayman #2422
 		
 			// Do new reaction to stimulus
 			memory.alertedDueToCommunication = false;
@@ -251,6 +252,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 			memory.alertRadius = TACTILE_ALERT_RADIUS;
 			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
 			memory.alertSearchExclusionVolume.Zero();
+			memory.visualAlert = false; // grayman #2422
 
 			// execute the turn manually here
 			owner->TurnToward(memory.alertPos);
@@ -289,6 +291,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 		memory.alertSearchExclusionVolume.Zero();
+		memory.visualAlert = false;
 	}
 }
 
@@ -317,11 +320,49 @@ void State::OnAudioAlert()
 
 	// greebo: Apply a certain fuzziness to the audio alert position
 	// 200 units distance corresponds to 50 units fuzziness in X/Y direction
+	idVec3 start = memory.alertPos; // grayman #2422
 	memory.alertPos += idVec3(
 		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
 		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
 		0 // no fuzziness in z-direction
 	) * distanceToStim / 400.0f;
+
+	// grayman #2422 - to avoid moving the alert point into the void, or into
+	// the room next door, trace from the original point to the fuzzy point. If you encounter
+	// the world, move the fuzzy point there.
+
+	trace_t result;
+	idEntity *ignore = NULL;
+	while ( true )
+	{
+		gameLocal.clip.TracePoint( result, start, memory.alertPos, MASK_OPAQUE, ignore );
+		if ( result.fraction == 1.0f )
+		{
+			break; // reached memory.alertPos, so no need to change it
+		}
+
+		if ( result.fraction < VECTOR_EPSILON )
+		{
+			// no movement on this leg of the trace, so move memory.alertPos to the struck point 
+			memory.alertPos = result.endpos; // move the alert point
+			break;
+		}
+
+		// End the trace if we hit the world
+
+		idEntity* entHit = gameLocal.entities[result.c.entityNum];
+
+		if ( entHit == gameLocal.world )
+		{
+			memory.alertPos = result.endpos; // move the alert point
+			break;
+		}
+
+		// Continue the trace from the struck point
+
+		start = result.endpos;
+		ignore = entHit; // for the next leg, ignore the entity we struck
+	}
 
 	float searchVolModifier = distanceToStim / 600.0f;
 	if (searchVolModifier < 0.4f)
@@ -332,6 +373,7 @@ void State::OnAudioAlert()
 	memory.alertRadius = AUDIO_ALERT_RADIUS;
 	memory.alertSearchVolume = AUDIO_SEARCH_VOLUME * searchVolModifier;
 	memory.alertSearchExclusionVolume.Zero();
+	memory.visualAlert = false; // grayman #2422
 	
 	// Reset the flag (greebo: is this still necessary?)
 	owner->AI_HEARDSOUND = false;
@@ -358,6 +400,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
 	memory.alertRadius = 200;
 	memory.alertType = EAlertTypeWeapon;
+	memory.visualAlert = false; // grayman #2422
 
 	if (!skipVisibilityCheck) 
 	{
@@ -909,6 +952,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.alertSearchExclusionVolume.Zero();
 	
 	owner->AI_VISALERT = false;
+	memory.visualAlert = false; // grayman #2422
 	
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
@@ -974,6 +1018,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	memory.alertSearchExclusionVolume.Zero();
 	
 	owner->AI_VISALERT = false;
+	memory.visualAlert = false; // grayman #2422
 	
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
@@ -1221,6 +1266,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					memory.alertPos = otherMemory.alertPos;
 					memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
 					memory.alertType = otherMemory.alertType;
+					memory.visualAlert = otherMemory.visualAlert; // grayman #2422
 					
 					memory.alertRadius = otherMemory.alertRadius;
 					memory.alertSearchVolume = otherMemory.alertSearchVolume; 
@@ -1783,7 +1829,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 			memory.alertSearchExclusionVolume.Zero();
 			
 			owner->AI_VISALERT = false;
-			
+			memory.visualAlert = false; // grayman #2422			
 			owner->SetAlertLevel(owner->thresh_5 + 0.1);
 		}
 					
@@ -1858,6 +1904,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 			memory.alertSearchExclusionVolume.Zero();
 			
 			owner->AI_VISALERT = false;
+			memory.visualAlert = false; // grayman #2422			
 			
 			owner->SetAlertLevel(owner->thresh_5 + 0.1f);
 		}
@@ -1959,6 +2006,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		memory.investigateStimulusLocationClosely = false;
 		
 		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
 		
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 	}
@@ -1967,6 +2015,8 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 void State::OnMovementBlocked(idAI* owner)
 {
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s ...\r", owner->name.c_str());
+
 	// Determine which type of object is blocking us
 
 	const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
@@ -2001,17 +2051,17 @@ void State::OnMovementBlocked(idAI* owner)
 	if (ent == NULL) 
 	{
 		// Trace didn't hit anything?
-//		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s can't find what's blocking\r", owner->name.c_str());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s can't find what's blocking\r", owner->name.c_str());
 		return;
 	}
 
 	if (ent == gameLocal.world)
 	{
-//		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by world!\r", owner->name.c_str());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by world!\r", owner->name.c_str());
 		return;
 	}
 
-//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
+	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("State::OnMovementBlocked: %s is blocked by entity %s\r", owner->name.c_str(), ent->name.c_str());
 
 	if (cv_ai_debug_blocked.GetBool())
 	{
@@ -2063,6 +2113,16 @@ void State::OnMovementBlocked(idAI* owner)
 				// The master can't have small mass unless the slave does also
 				std::swap(master, slave);
 			}
+		}
+		else if (master->AI_FORWARD && !slave->AI_FORWARD && master->IsSearching()) // grayman #2422
+		{
+			// Stop moving, the searching state will choose another spot soon
+			master->StopMove(MOVE_STATUS_DONE);
+			Memory& memory = master->GetMemory();
+			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+			memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+			master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
+			return;
 		}
 		else
 		{
@@ -2150,6 +2210,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
 
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 	}
@@ -2582,6 +2643,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
 		
 		owner->SetAlertLevel(alert);
 	}
@@ -2632,6 +2694,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
 		
 		owner->SetAlertLevel(owner->thresh_5 - 0.1);
 	}
@@ -2813,6 +2876,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
 
 		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
@@ -2941,6 +3005,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 					memory.alertSearchExclusionVolume.Zero();
+					memory.visualAlert = false; // grayman #2422			
 
 					memory.alertedDueToCommunication = true;
 					memory.stimulusLocationItselfShouldBeSearched = true;
@@ -3093,6 +3158,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				memory.alertPos = directObjectLocation;
 				memory.chosenHidingSpot = directObjectLocation;
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
+				memory.visualAlert = false; // grayman #2422			
 			}
 			break;
 		case CommMessage::AttackOrder_CommType:
@@ -3295,6 +3361,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				memory.alertSearchExclusionVolume.Zero();
 
 				memory.alertedDueToCommunication = true;
+				memory.visualAlert = false; // grayman #2422			
 			}
 			
 			return;

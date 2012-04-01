@@ -308,6 +308,7 @@ void ExamineRopeState::Think(idAI* owner)
 						memory.alertSearchExclusionVolume.Zero();
 						
 						owner->AI_VISALERT = false;
+						memory.visualAlert = false; // grayman #2422
 						
 						// Do new reaction to stimulus
 						memory.stimulusLocationItselfShouldBeSearched = true;

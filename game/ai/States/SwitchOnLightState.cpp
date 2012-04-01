@@ -790,6 +790,7 @@ void SwitchOnLightState::Think(idAI* owner)
 						memory.alertSearchExclusionVolume.Zero();
 							
 						owner->AI_VISALERT = false;
+						memory.visualAlert = false; // grayman #2422			
 
 						// Do new reaction to stimulus after relighting
 						memory.stimulusLocationItselfShouldBeSearched = true;

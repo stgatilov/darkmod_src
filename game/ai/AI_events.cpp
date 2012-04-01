@@ -3219,6 +3219,13 @@ void idAI::Event_StartSearchForHidingSpots
 	idBounds searchExclusionBounds;
 	searchExclusionBounds.Clear(); // no exclusion bounds
 
+	// grayman #2422 - to prevent AI from going upstairs or downstairs
+	// to search spots over/under where they should be searching,
+	// limit the search to the floor where the alert occurred.
+
+	AdjustSearchLimits(searchBounds);
+	m_searchLimits = searchBounds;
+
 	// greebo: Remember the initial alert position
 	GetMemory().alertSearchCenter = hideFromLocation;
 
@@ -3255,8 +3262,6 @@ void idAI::Event_StartSearchForHidingSpots
 		// Search is done since there is no search
 		idThread::ReturnInt(0);
 	}
-
-
 }
 
 //-----------------------------------------------------------------------------------------------------

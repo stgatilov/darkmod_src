@@ -43,6 +43,7 @@ namespace ai
 {
 
 #define STATE_SEARCHING "Searching"
+#define DELAY_RANDOM_SPOT_GEN 3000 // grayman #2422 - don't generate random search spots more often than this (in ms)
 
 class SearchingState :
 	public State

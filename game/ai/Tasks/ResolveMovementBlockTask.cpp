@@ -430,14 +430,18 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			}
 
 			// If we're EWaitingSolid, change to EWaitingNonSolid if the other AI is barely moving.
+			// grayman #2422 - but not if the other AI is searching
 
-			if (owner->movementSubsystem->IsWaitingSolid())
+			if ( !_blockingEntAI->IsSearching() )
 			{
-				float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled();
-				if (traveledPrev < 0.1) // grayman #2345
+				if (owner->movementSubsystem->IsWaitingSolid())
 				{
-					BecomeNonSolid(owner);
-				} 
+					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled();
+					if (traveledPrev < 0.1) // grayman #2345
+					{
+						BecomeNonSolid(owner);
+					} 
+				}
 			}
 		}
 

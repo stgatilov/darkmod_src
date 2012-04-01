@@ -610,6 +610,14 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 			if (!torsoCustomIdleAnim && !legsCustomIdleAnim)
 			{
 				belowThreshold = true;
+
+				// grayman #2422
+				// if traveledPrev == 0, and you're bumping against something, go straight to EBlocked
+				if ( ( traveledPrev == 0 ) && tactileEntity )
+				{
+					_state = EPossiblyBlocked;
+					_lastTimeNotBlocked = gameLocal.time - _blockTimeOut; // in EPossiblyBlocked, don't delay
+				}
 			}
 		}
 		else if (((traveledPrev < 0.3) || (idMath::Fabs(yawDiff) > 45)) && tactileEntity)  // movement is low or you're not heading toward your goal, and you bumped into something

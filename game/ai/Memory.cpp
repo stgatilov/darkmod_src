@@ -62,9 +62,10 @@ Memory::Memory(idAI* owningAI) :
 	timeCorpseFound(0),
 	timeMissingItem(0),
 	timeEvidenceIntruders(0),
-
-	stopRelight(false), // grayman #2603
-	stopExaminingRope(false), // grayman #2872
+	visualAlert(false),			// grayman #2422
+	stopRelight(false),			// grayman #2603
+	stopExaminingRope(false),	// grayman #2872
+	nextTime2GenRandomSpot(0),	// grayman #2422
 	alertClass(EAlertClassCount),
 	alertType(EAlertTypeCount),
 	alertRadius(-1),
@@ -133,9 +134,10 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(timeCorpseFound);
 	savefile->WriteInt(timeMissingItem);
 	savefile->WriteInt(timeEvidenceIntruders);
-
+	savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
 	savefile->WriteBool(stopExaminingRope);		// grayman #2872
+	savefile->WriteInt(nextTime2GenRandomSpot);	// grayman #2422
 	savefile->WriteInt(static_cast<int>(alertClass));
 	savefile->WriteInt(static_cast<int>(alertType));
 	savefile->WriteFloat(alertRadius);
@@ -239,9 +241,10 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(timeCorpseFound);
 	savefile->ReadInt(timeMissingItem);
 	savefile->ReadInt(timeEvidenceIntruders);
-
-	savefile->ReadBool(stopRelight);	// grayman #2603
-	savefile->ReadBool(stopExaminingRope); // grayman #2872
+	savefile->ReadBool(visualAlert);			// grayman #2422
+	savefile->ReadBool(stopRelight);			// grayman #2603
+	savefile->ReadBool(stopExaminingRope);		// grayman #2872
+	savefile->ReadInt(nextTime2GenRandomSpot);	// grayman #2422
 
 	int temp;
 	savefile->ReadInt(temp);

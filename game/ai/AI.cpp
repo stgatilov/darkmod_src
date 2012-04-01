@@ -890,9 +890,10 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteMat3(m_KoRot);
 
 	savefile->WriteBool(m_bCanBeGassed);		// grayman #2468
-	savefile->WriteInt( m_koState );			// grayman #2604
-	savefile->WriteInt( m_earlyThinkCounter );	// grayman #2654
-	savefile->WriteBool( m_bCanExtricate );		// grayman #2603
+	savefile->WriteInt(m_koState);				// grayman #2604
+	savefile->WriteInt(m_earlyThinkCounter);	// grayman #2654
+	savefile->WriteBool(m_bCanExtricate);		// grayman #2603
+	savefile->WriteBounds(m_searchLimits);		// grayman #2422
 	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1318,6 +1319,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	m_koState = static_cast<koState_t>( i );
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
+	savefile->ReadBounds(m_searchLimits);	// grayman #2422
+
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
 	savefile->ReadFloat(thresh_3);
@@ -3865,23 +3868,25 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 idAI::MoveToPosition
 =====================
 */
+
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
 	// Clear the "blocked" flag in the movement subsystem
 	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
 	// Check if we already reached the position
-	if ( ReachedPos( pos, move.moveCommand) ) {
+	if ( ReachedPos( pos, move.moveCommand ) )
+	{
 		StopMove( MOVE_STATUS_DONE );
 		return true;
 	}
 
-	if (GetMoveType() == MOVETYPE_SIT 
-		|| GetMoveType() == MOVETYPE_SLEEP 
-		|| GetMoveType() == MOVETYPE_SIT_DOWN 
-		|| GetMoveType() == MOVETYPE_GET_UP 
-		|| GetMoveType()== MOVETYPE_LAY_DOWN
-		|| GetMoveType()== MOVETYPE_GET_UP_FROM_LYING)
+	if (   ( GetMoveType() == MOVETYPE_SIT )
+		|| ( GetMoveType() == MOVETYPE_SLEEP )
+		|| ( GetMoveType() == MOVETYPE_SIT_DOWN )
+		|| ( GetMoveType() == MOVETYPE_GET_UP )
+		|| ( GetMoveType() == MOVETYPE_LAY_DOWN )
+		|| ( GetMoveType() == MOVETYPE_GET_UP_FROM_LYING ) )
 	{
 		GetUp();
 		return true;
@@ -3890,20 +3895,23 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 	idVec3 org = pos;
 	move.toAreaNum = 0;
 	aasPath_t path;
-	if ( aas ) {
+	if ( aas )
+	{
 		move.toAreaNum = PointReachableAreaNum( org );
 		aas->PushPointIntoAreaNum( move.toAreaNum, org ); // if this point is outside this area, it will be moved to one of the area's edges
 
 		int areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this ) ) {
+		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this ) )
+		{
 			StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 			AI_DEST_UNREACHABLE = true;
 			return false;
 		}
 	}
 
-	if ( !move.toAreaNum && !NewWanderDir( org ) ) {
+	if ( !move.toAreaNum && !NewWanderDir( org ) )
+	{
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
@@ -8823,7 +8831,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
 
-		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be leftover from a previous sound this frame
+		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be left over from a previous sound this frame
 
 		if (propParms->maker->IsType(idActor::Type))
 		{
@@ -8986,7 +8994,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		GetMemory().lastAlertRiseTime = gameLocal.time;
 	}
 	
-	if (AI_DEAD || AI_KNOCKEDOUT) return;
+	if (AI_DEAD || AI_KNOCKEDOUT)
+	{
+		return;
+	}
 	
 	AI_AlertLevel = newAlertLevel;
 
@@ -9009,13 +9020,19 @@ void idAI::SetAlertLevel(float newAlertLevel)
 			if (GetEnemy() != NULL) 
 			{
 				// We have an enemy, raise the index
-				m_prevAlertIndex = AI_AlertIndex;
+				if ( AI_AlertIndex != ai::ECombat ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+				{
+					m_prevAlertIndex = AI_AlertIndex;
+				}
 				AI_AlertIndex = ai::ECombat;
 			}
 			else
 			{
 				// No enemy, can't switch to Combat mode
-				m_prevAlertIndex = AI_AlertIndex;
+				if ( AI_AlertIndex != ai::EAgitatedSearching ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+				{
+					m_prevAlertIndex = AI_AlertIndex;
+				}
 				AI_AlertIndex = ai::EAgitatedSearching;
 				// Set the alert level back to just below combat threshold
 				AI_AlertLevel = thresh_5 - 0.01;
@@ -9023,7 +9040,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		}
 		else
 		{
-			m_prevAlertIndex = AI_AlertIndex;
+			if ( AI_AlertIndex != ai::EAgitatedSearching ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+			{
+				m_prevAlertIndex = AI_AlertIndex;
+			}
 			AI_AlertIndex = ai::EAgitatedSearching;
 		}
 		grace_time = m_gracetime_4;
@@ -9032,7 +9052,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_3)
 	{
-		m_prevAlertIndex = AI_AlertIndex;
+		if ( AI_AlertIndex != ai::EInvestigating ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+		{
+			m_prevAlertIndex = AI_AlertIndex;
+		}
 		AI_AlertIndex = ai::EInvestigating;
 		grace_time = m_gracetime_3;
 		grace_frac = m_gracefrac_3;
@@ -9040,7 +9063,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_2)
 	{
-		m_prevAlertIndex = AI_AlertIndex;
+		if ( AI_AlertIndex != ai::ESuspicious ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+		{
+			m_prevAlertIndex = AI_AlertIndex;
+		}
 		AI_AlertIndex = ai::ESuspicious;
 		grace_time = m_gracetime_2;
 		grace_frac = m_gracefrac_2;
@@ -9048,7 +9074,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else if (newAlertLevel >= thresh_1)
 	{
-		m_prevAlertIndex = AI_AlertIndex;
+		if ( AI_AlertIndex != ai::EObservant ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+		{
+			m_prevAlertIndex = AI_AlertIndex;
+		}
 		AI_AlertIndex = ai::EObservant;
 		grace_time = m_gracetime_1;
 		grace_frac = m_gracefrac_1;
@@ -9056,7 +9085,10 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	}
 	else
 	{
-		m_prevAlertIndex = AI_AlertIndex;
+		if ( AI_AlertIndex != ai::ERelaxed ) // grayman #2422 - only reset m_prevAlertIndex if the current AI_AlertIndex isn't the new AI_AlertIndex
+		{
+			m_prevAlertIndex = AI_AlertIndex;
+		}
 		AI_AlertIndex = ai::ERelaxed;
 		grace_time = 0.0;
 		grace_frac = 0.0;
@@ -10928,6 +10960,95 @@ void idAI::DropOnRagdoll( void )
 		head.GetEntity()->DropOnRagdoll();
 }
 
+// grayman #2422 - adjust search limits to better fit the vertical
+// space in which the alert occurred
+
+void idAI::AdjustSearchLimits(idBounds& bounds)
+{
+	// trace down
+
+	idBounds newBounds = bounds;
+
+	idVec3 start = bounds.GetCenter();
+	idVec3 end = start;
+	end.z -= 300;
+
+	trace_t result;
+	idEntity *ignore = NULL;
+	while ( true )
+	{
+		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
+		if ( result.fraction == 1.0f )
+		{
+			break;
+		}
+
+		if ( result.fraction < VECTOR_EPSILON )
+		{
+			newBounds[0][2] = result.endpos.z; // move the lower bounds
+			break;
+		}
+
+		// End the trace if we hit the world
+
+		idEntity* entHit = gameLocal.entities[result.c.entityNum];
+
+		if ( entHit == gameLocal.world )
+		{
+			newBounds[0][2] = result.endpos.z; // move the lower bounds
+			break;
+		}
+
+		// Continue the trace from the struck point
+
+		start = result.endpos;
+		ignore = entHit; // for the next leg, ignore the entity we struck
+	}
+
+	// trace up
+
+	end = start;
+	end.z += 300;
+	ignore = NULL;
+	while ( true )
+	{
+		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
+		if ( result.fraction == 1.0f )
+		{
+			break;
+		}
+
+		if ( result.fraction < VECTOR_EPSILON )
+		{
+			if ( newBounds[1][2] > result.endpos.z )
+			{
+				newBounds[1][2] = result.endpos.z; // move the upper bounds down
+			}
+			break;
+		}
+
+		// End the trace if we hit the world
+
+		idEntity* entHit = gameLocal.entities[result.c.entityNum];
+
+		if ( entHit == gameLocal.world )
+		{
+			if ( newBounds[1][2] > result.endpos.z )
+			{
+				newBounds[1][2] = result.endpos.z; // move the upper bounds down
+			}
+			break;
+		}
+
+		// Continue the trace from the struck point
+
+		start = result.endpos;
+		ignore = entHit; // for the next leg, ignore the entity we struck
+	}
+
+	bounds = newBounds;
+}
+
 int idAI::StartSearchForHidingSpotsWithExclusionArea
 (
 	const idVec3& hideFromLocation,
@@ -10939,7 +11060,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	idEntity* p_ignoreEntity
 )
 {
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("StartSearchForHidingSpots called.\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("StartSearchForHidingSpotsWithExclusionArea called - %s\r",name.c_str());
 
 	// Destroy any current search
 	destroyCurrentHidingSpotSearch();
@@ -10947,6 +11068,13 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 	// Make caller's search bounds
 	idBounds searchBounds (minBounds, maxBounds);
 	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
+
+	// grayman #2422 - to prevent AI from going upstairs or downstairs
+	// to search spots over/under where they should be searching,
+	// limit the search to the floor where the alert occurred.
+
+	AdjustSearchLimits(searchBounds);
+	m_searchLimits = searchBounds;
 
 	// greebo: Remember the initial alert position
 	ai::Memory& memory = GetMemory();
@@ -11068,13 +11196,25 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
 	int numSpots = m_hidingSpots.getNumSpots();
 
 	// In bounds?
-	if (hidingSpotIndex >= 0 && hidingSpotIndex < numSpots)
+	if ( ( hidingSpotIndex >= 0 ) && ( hidingSpotIndex < numSpots) )
 	{
 		idBounds areaNodeBounds;
 		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
 		if (p_spot != NULL)
 		{
-			outLocation = p_spot->goal.origin;
+			// grayman #2422 - to keep AI from searching the floor above
+			// or below, only return hiding spots that are inside the
+			// requested search volume. Ideally, if we decide this point is outside those
+			// limits, we would move to the next spot on the list, but list index
+			// management is done outside this routine, and we can't tinker
+			// with it here. If the point is NG, return (INFINITY,INFINITY,INFINITY).
+			// That will be checked elsewhere and cause this search to terminate and
+			// possibly start a new one.
+
+			if ( m_searchLimits.ContainsPoint(p_spot->goal.origin) )
+			{
+				outLocation = p_spot->goal.origin; // point is good
+			}
 		}
 
 		if (cv_ai_search_show.GetInteger() >= 1.0)
@@ -11102,11 +11242,18 @@ idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
 				cv_ai_search_show.GetInteger()
 			);
 		}
-
     }
 	else
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
+	}
+
+	// grayman #2422 - this routine might return (0,0,0), but we don't
+	// want AI traveling there. Change to something that's considered invalid.
+
+	if ( outLocation.Compare(idVec3(0,0,0)) )
+	{
+		outLocation = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	}
 
 	// Return the location
