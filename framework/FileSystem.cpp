@@ -2603,7 +2603,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 	}
 
 	if ( foundInPak ) {
-		foundInPak = NULL;
+		*foundInPak = NULL;
 	}
 
 	// make absolutely sure that it can't back up the path.
