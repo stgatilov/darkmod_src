@@ -245,11 +245,14 @@ void CMeleeWeapon::ActivateAttack( idActor *ActOwner, const char *AttName )
 				return;
 			}
 		}
-		
+
 		// otherwise, we still don't have a valid collision, just an instanced clipmodel already inside something
 		// fill in best guesses for collision data
 
-		// the point is also inaccruate sometimes, set to origin of the weapon object
+		// grayman #3071 - replace line deleted as part of the solution to #1151
+		tr.c.material = NULL;
+		
+		// the point is also inaccurate sometimes, set to origin of the weapon object
 		// ishtvan 1/2010: This should be more accurate, to use center of clipmodel
 		// tr.c.point = m_OldOrigin;
 		tr.c.point = pClip->GetBounds().GetCenter();
