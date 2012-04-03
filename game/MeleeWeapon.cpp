@@ -1163,9 +1163,13 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	// get type of material hit (armor, etc)
 	int type;
 	if( tr->c.material != NULL )
+	{
 		type = tr->c.material->GetSurfaceType();
+	}
 	else
+	{
 		type = SURFTYPE_NONE;
+	}
 
 	if ( type == SURFTYPE_NONE )
 	{

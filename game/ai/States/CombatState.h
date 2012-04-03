@@ -44,6 +44,16 @@ protected:
 	// and is not performing any routines anymore
 	int _endTime;
 
+	int _reactionEndTime; // grayman #3063
+
+	// grayman #3063 - break Combat State into smaller bits
+
+	enum ECombatSubState {
+		EStateReaction,
+		EStateInit,
+		EStateThink
+	} _combatSubState;
+
 public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;

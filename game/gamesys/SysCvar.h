@@ -39,6 +39,7 @@ extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;
 extern idCVar cv_ai_sightmaxdist;
 extern idCVar cv_ai_sightmindist;
+extern idCVar cv_ai_sight_combat_cutoff; // grayman #3063
 extern idCVar cv_ai_tactalert;
 extern idCVar cv_ai_task_show;
 extern idCVar cv_ai_alertlevel_show;

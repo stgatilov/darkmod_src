@@ -567,6 +567,7 @@ idAI::idAI()
 	m_koState = KO_NOT;			// grayman #2604
 	m_earlyThinkCounter = 5 + gameLocal.random.RandomInt(5);	// grayman #2654
 	m_bCanExtricate = true;		// grayman #2603
+	m_ignorePlayer = false;		// grayman #3063
 
 	m_bCanOperateDoors = false;
 
@@ -893,6 +894,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_koState);				// grayman #2604
 	savefile->WriteInt(m_earlyThinkCounter);	// grayman #2654
 	savefile->WriteBool(m_bCanExtricate);		// grayman #2603
+	savefile->WriteBool( m_ignorePlayer );		// grayman #3063
 	savefile->WriteBounds(m_searchLimits);		// grayman #2422
 	
 	savefile->WriteFloat(thresh_1);
@@ -1319,6 +1321,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	m_koState = static_cast<koState_t>( i );
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
+	savefile->ReadBool(m_ignorePlayer);		// grayman #3063
 	savefile->ReadBounds(m_searchLimits);	// grayman #2422
 
 	savefile->ReadFloat(thresh_1);
@@ -7117,12 +7120,14 @@ void idAI::UpdateEnemyPosition()
 		// Enemy is considered visible if not hidden in darkness and not obscured
 		AI_ENEMY_VISIBLE = true;
 
-
 		// Now perform the FOV check manually
 		if (CheckFOV(enemyPos))
 		{
 			AI_ENEMY_IN_FOV = true;
 			// TODO: call SetEnemyPosition here only?
+
+			// The AI won't actually "see" the player until after the Combat pause
+			// that occurs at the start of Combat mode.
 
 			// Store the last time the enemy was visible
 			mind->GetMemory().lastTimeEnemySeen = gameLocal.time;
@@ -7141,7 +7146,7 @@ void idAI::UpdateEnemyPosition()
 
 	// grayman #2887 - track enemy visibility for statistics
 
-	if ( enemyEnt->IsType(idPlayer::Type) )
+	if ( enemyEnt->IsType(idPlayer::Type) && !m_ignorePlayer) // grayman #3063 - ignore the player when in a Combat mode setup
 	{
 		if ( AI_ENEMY_VISIBLE )
 		{
@@ -9019,6 +9024,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		{
 			if (GetEnemy() != NULL) 
 			{
+				// We have an enemy, raise the index
 				m_prevAlertIndex = AI_AlertIndex;
 				AI_AlertIndex = ai::ECombat;
 			}
@@ -9222,7 +9228,6 @@ void idAI::PerformVisualScan(float timecheck)
 	float chance = timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat() * visFrac;
 	if( randFrac > chance)
 	{
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Random number check failed: random %f > number %f\r", randFrac, (timecheck / s_VisNormtime) * visFrac );
 		return;
 	}
 
@@ -9253,7 +9258,22 @@ void idAI::PerformVisualScan(float timecheck)
 	float newAlertLevel = AI_AlertLevel + incAlert;
 	if (newAlertLevel > thresh_5)
 	{
-		SetEnemy(player);
+		// grayman #3063
+		// Allow ramp up to Combat mode if the distance to the player is less than a cutoff distance.
+
+		if ( ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
+		{
+			SetEnemy(player);
+			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
+
+			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
+			// visibility in the mission data
+		}
+		else
+		{
+			newAlertLevel = thresh_5 - 0.1;
+			incAlert = newAlertLevel - AI_AlertLevel;
+		}
 	}
 
 	// If the alert amount is larger than everything else encountered this frame
@@ -9346,11 +9366,15 @@ float idAI::GetVisibility( idEntity *ent ) const
 float idAI::GetCalibratedLightgemValue() const
 {
 	idPlayer* player = gameLocal.GetLocalPlayer();
-	if (player == NULL) return 0.0f;
+	if (player == NULL)
+	{
+		return 0.0f;
+	}
 
 	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
 
-	float term0 = -0.003f;
+	float term0 = -0.03f; // grayman #3063 - Wiki says -0.03f, and angua says this is what it's supposed to be
+//	float term0 = -0.003f;
 	float term1 = 0.03f * lgem;
 	float term2 = 0.001f * idMath::Pow16(lgem, 2);
 	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
@@ -9667,7 +9691,7 @@ float idAI::GetMaximumObservationDistance(idEntity* entity) const
 }
 
 /*---------------------------------------------------------------------------------*/
-
+/*
 float idAI::GetPlayerVisualStimulusAmount() const
 {
 	float alertAmount = 0.0;
@@ -9710,7 +9734,7 @@ float idAI::GetPlayerVisualStimulusAmount() const
 
 	return alertAmount;
 }
-
+*/
 /*---------------------------------------------------------------------------------*/
 
 bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThreshold) const

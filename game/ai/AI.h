@@ -1087,6 +1087,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_earlyThinkCounter;	// grayman #2654
 
 	/**
+	* grayman #3063 - flag for ignoring a player sighting prior to entering Combat mode. For mission statistics purposes.
+	**/
+	bool					m_ignorePlayer;
+
+	/**
 	* grayman #2603 - if TRUE, don't allow movement extrication
 	**/
 
@@ -1773,7 +1778,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* by addition of the CVAR tdm_ai_sight_mag. The current alert level is taken 
 	* as reference value and the difference in logarithmic alert units is returned.
 	*/
-	float GetPlayerVisualStimulusAmount() const;
+//	float GetPlayerVisualStimulusAmount() const;
 
 	// attacks
 
