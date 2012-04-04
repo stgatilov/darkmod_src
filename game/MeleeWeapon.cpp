@@ -1473,7 +1473,7 @@ void CMeleeWeapon::CheckAICMSwaps( )
 		if( !pEnt->IsType(idAI::Type) )
 			continue;
 		idAI *pAI = static_cast<idAI *>(pEnt);
-		if( pAI->IsKnockedOut() || pAI->health < 0 || pAI->AI_AlertIndex >= 5 )
+		if( pAI->IsKnockedOut() || pAI->health < 0 || ( pAI->AI_AlertIndex >= ai::ECombat ) )
 			continue;
 		
 		// do the swap

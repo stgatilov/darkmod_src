@@ -61,8 +61,8 @@ const idStr& ConversationState::GetName() const
 
 bool ConversationState::CheckAlertLevel(idAI* owner)
 {
-	// Alert index is too high for index > 0
-	return (owner->AI_AlertIndex <= 0);
+	// Alert index is too high for index > ERelaxed
+	return (owner->AI_AlertIndex <= ERelaxed);
 }
 
 void ConversationState::SetConversation(int index)

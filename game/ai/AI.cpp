@@ -921,6 +921,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(atime3);
 	savefile->WriteFloat(atime4);
 	savefile->WriteFloat(atime_fleedone);
+	savefile->WriteBool(m_canSearch);	// grayman #3069
 
 	savefile->WriteFloat(atime1_fuzzyness);
 	savefile->WriteFloat(atime2_fuzzyness);
@@ -1348,6 +1349,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat(atime3);
 	savefile->ReadFloat(atime4);
 	savefile->ReadFloat(atime_fleedone);
+	savefile->ReadBool(m_canSearch); // grayman #3069
 
 	savefile->ReadFloat(atime1_fuzzyness);
 	savefile->ReadFloat(atime2_fuzzyness);
@@ -1588,6 +1590,7 @@ void idAI::Spawn( void )
 
 	spawnArgs.GetFloat( "alert_time_fleedone",				"60",		atime_fleedone );
 	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"10",		atime_fleedone_fuzzyness );
+	spawnArgs.GetBool( "canSearch",							"1",		m_canSearch); // grayman #3069
 
 	// State setup
 	backboneStates.clear();
@@ -2175,7 +2178,7 @@ void idAI::Think( void )
 	// if we are completely closed off from the player, don't do anything at all
 	// angua: only go dormant while in idle
 	// grayman #2536 - move alert check up in front
-	if (AI_AlertIndex < 1)
+	if (AI_AlertIndex < ai::EObservant)
 	{
 		bool outsidePVS = CheckDormant();
 		if (outsidePVS && cv_ai_opt_disable.GetBool())
@@ -2184,9 +2187,9 @@ void idAI::Think( void )
 		}
 	}
 
-	// grayman #2536 - if dormant and alert index > 0, wake up
+	// grayman #2536 - if dormant and alert index > ERelaxed, wake up
 
-	if ((AI_AlertIndex > 0) && fl.isDormant)
+	if ((AI_AlertIndex > ai::ERelaxed) && fl.isDormant)
 	{
 		dormantStart = 0;
 		fl.hasAwakened = true;
@@ -6056,8 +6059,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		ChangeEntityRelation(attacker, -10);
 
 		// Switch to pain state if idle
-		if (AI_AlertIndex == 0 && damage > 0 && 
-			(damageDef == NULL || !damageDef->GetBool("no_pain_anim", "0")))
+		if ( ( AI_AlertIndex == ai::ERelaxed ) && ( damage > 0 ) && 
+			( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
 		{
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 		}
@@ -8961,7 +8964,9 @@ void idAI::AlertAI(const char *type, float amount)
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\",  amount %f (modified by acuity %f).  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
+	{
 		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+	}
 
 	if (gameLocal.isNewFrame)
 	{
@@ -8973,8 +8978,10 @@ void idAI::AlertAI(const char *type, float amount)
 	// to mission statistics or not. You should only pass it if you're rising
 	// to an alert index higher than where you were.
 
+	// grayman #3069 - and only if the AI can seek out the player
+
 	// Objectives callback
-	if ( AlertIndexIncreased() )
+	if ( AlertIndexIncreased() && m_canSearch )
 	{
 		gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 	}
@@ -8982,6 +8989,14 @@ void idAI::AlertAI(const char *type, float amount)
 
 void idAI::SetAlertLevel(float newAlertLevel)
 {
+	// grayman #3069 - clamp the alert level to just under EInvestigating
+	// if you can't search
+
+	if ( !m_canSearch && ( newAlertLevel >= thresh_3 ) )
+	{
+		newAlertLevel = thresh_3 - 0.1;
+	}
+
 	// greebo: Clamp the (log) alert number to twice the combat threshold.
 	if (newAlertLevel > thresh_5*2)
 	{
@@ -10238,18 +10253,20 @@ void idAI::KnockoutDebugDraw( void )
 	idMat3 HeadAxis(mat3_zero);
 
 	const char * testZone = m_KoZone.c_str();
-	if( AI_KNOCKEDOUT || AI_DEAD || testZone[0] == '\0' )
+	if ( AI_KNOCKEDOUT || AI_DEAD || testZone[0] == '\0' )
 	{
 		return;
 	}
 
 	// Check if the AI is above the alert threshold for KOing
 	// Defined the name of the alert threshold in the AI def for generality
-	if( AI_AlertIndex >= m_KoAlertState)
+	if ( AI_AlertIndex >= m_KoAlertState)
 	{
 		// Do not display if immune
-		if( m_bKoAlertImmune && AI_AlertIndex >= m_KoAlertImmuneState )
+		if ( m_bKoAlertImmune && ( AI_AlertIndex >= m_KoAlertImmuneState ) )
+		{
 			return;
+		}
 
 		// reduce the angle on alert, if needed
 		AngVert = idMath::ACos( m_KoAlertDotVert );

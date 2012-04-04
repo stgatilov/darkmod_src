@@ -389,13 +389,13 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 		if (owner->FacingIdeal() && _preTaskContents == -1)
 		{
-			// grayman #2345 - don't become non-solid if your alert index is > 0. This is because
+			// grayman #2345 - don't become non-solid if your alert index is > ERelaxed. This is because
 			// AI tend to bunch together when agitated, and it doesn't look good if one goes non-solid
 			// and the others repeatedly walk through it.
 
 			// If there's no room to get around you, become non-solid
 
-			if ((owner->AI_AlertIndex == 0) && !Room2Pass(owner))
+			if ((owner->AI_AlertIndex == ERelaxed) && !Room2Pass(owner))
 			{
 				BecomeNonSolid(owner);
 			}

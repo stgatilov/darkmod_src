@@ -2734,7 +2734,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	// grayman #2866 - Delay dealing with this door until my alert level comes down.
 
-	if ( owner->AI_AlertIndex >= 2 )
+	if ( owner->AI_AlertIndex >= ESuspicious )
 	{
 		return;
 	}
@@ -2928,7 +2928,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			// If not too upset, look at them
-			if (owner->AI_AlertIndex < EObservant && owner->greetingState != ECannotGreet &&
+			if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) &&
 				issuingEntity->IsType(idAI::Type))
 			{
 				idAI* otherAI = static_cast<idAI*>(issuingEntity);

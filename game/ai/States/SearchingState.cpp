@@ -44,14 +44,20 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 3)
+	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
+	{
+		owner->SetAlertLevel(owner->thresh_3 - 0.1);
+	}
+
+	if (owner->AI_AlertIndex < EInvestigating)
 	{
 		// Alert index is too low for this state, fall back
 		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->EndState();
 		return false;
 	}
-	else if (owner->AI_AlertIndex > 3)
+
+	if (owner->AI_AlertIndex > EInvestigating)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[EAgitatedSearching]);

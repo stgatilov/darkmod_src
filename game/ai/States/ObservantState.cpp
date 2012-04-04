@@ -44,7 +44,7 @@ const idStr& ObservantState::GetName() const
 
 bool ObservantState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 1)
+	if (owner->AI_AlertIndex < EObservant)
 	{
 		// Alert index is too low for this state, fall back
 
@@ -64,7 +64,7 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 		return false;
 	}
 	
-	if (owner->AI_AlertIndex > 1)
+	if (owner->AI_AlertIndex > EObservant)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[ESuspicious]);

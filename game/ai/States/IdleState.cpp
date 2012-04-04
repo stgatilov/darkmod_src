@@ -49,7 +49,7 @@ const idStr& IdleState::GetName() const
 
 bool IdleState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex > 0)
+	if (owner->AI_AlertIndex > ERelaxed)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[EObservant]);

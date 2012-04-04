@@ -53,7 +53,12 @@ const idStr& CombatState::GetName() const
 
 bool CombatState::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 5)
+	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
+	{
+		owner->SetAlertLevel(owner->thresh_3 - 0.1);
+	}
+
+	if (owner->AI_AlertIndex < ECombat)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();

@@ -38,7 +38,7 @@ const idStr& AgitatedSearchingStateLanternBot::GetName() const
 
 bool AgitatedSearchingStateLanternBot::CheckAlertLevel(idAI* owner)
 {
-	if (owner->AI_AlertIndex < 4)
+	if (owner->AI_AlertIndex < EAgitatedSearching)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();

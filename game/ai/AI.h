@@ -1208,6 +1208,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// De-alert times for each alert level
 	float atime1, atime2, atime3, atime4, atime_fleedone;
 
+	bool m_canSearch; // grayman #3069
+
 	float atime1_fuzzyness, atime2_fuzzyness, atime3_fuzzyness, atime4_fuzzyness, atime_fleedone_fuzzyness;
 
 	// angua: Random head turning
