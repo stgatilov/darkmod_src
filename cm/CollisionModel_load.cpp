@@ -685,6 +685,9 @@ cm_brush_t *idCollisionModelManagerLocal::AllocBrush( cm_model_t *model, int num
 	} else {
 		brush = (cm_brush_t *) Mem_Alloc( size );
 	}
+
+	brush->material = NULL; // greebo: Initialise pointers if you're going to use them
+
 	return brush;
 }
 
