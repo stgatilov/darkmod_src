@@ -147,7 +147,7 @@ public:
 	* Overload bind notify so that when another idAFAttachment is
 	* bound to us, we copy over our data on the actor we're bound to
 	**/
-	virtual void BindNotify( idEntity *ent );
+	virtual void BindNotify( idEntity *ent , const char *jointName); // grayman #3074
 
 	/**
 	* Also overload UnbindNotify to update the clipmodel physics on the AF we're attacehd to

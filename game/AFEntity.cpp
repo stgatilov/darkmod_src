@@ -381,7 +381,7 @@ bool idAFAttachment::IsMantleable()
 /**
 * idAFAttachment::BindNotify
 **/
-void idAFAttachment::BindNotify( idEntity *ent )
+void idAFAttachment::BindNotify( idEntity *ent , const char *jointName) // grayman #3074
 {
 	// copy information over to a bound idAfAttachment
 	if( ent->IsType(idAFAttachment::Type) )

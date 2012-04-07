@@ -28,6 +28,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "TimerManager.h"
 #include "MeleeWeapon.h"
 #include "AbsenceMarker.h"
+#include <boost/algorithm/string/split.hpp> // grayman #3074
+#include <boost/algorithm/string/classification.hpp> // grayman #3074
 
 // #include "logmgr.h"
 /***********************************************************************
@@ -903,7 +905,7 @@ void idActor::Spawn( void )
 	LoadVocalSet();
 
 	// Load replacement animations from our own spawnargs
-	LoadReplacementAnims(spawnArgs);
+	LoadReplacementAnims(spawnArgs,NULL); // grayman #3074 - load all replacements
 
 	FinishSetup();
 
@@ -2367,12 +2369,12 @@ void idActor::Attach( idEntity *ent, const char *PosName, const char *AttName )
 idActor::BindNotify
 ================
 */
-void idActor::BindNotify( idEntity *ent )
+void idActor::BindNotify( idEntity *ent , const char *jointName) // grayman #3074
 {
-	idAFEntity_Base::BindNotify(ent);
+	idAFEntity_Base::BindNotify(ent, jointName); // grayman #3074
 
 	// Override our animations based on the bound entity's replace_anim_* spawnargs
-	LoadReplacementAnims(ent->spawnArgs);
+	LoadReplacementAnims(ent->spawnArgs,jointName); // grayman #3074
 }
 
 /*
@@ -2928,15 +2930,49 @@ const char* idActor::LookupReplacementAnim( const char *animname )
 	return replacement;
 }
 
-void idActor::LoadReplacementAnims(const idDict& spawnArgs)
+void idActor::LoadReplacementAnims(const idDict& spawnArgs, const char *attached2Joint) // grayman #3074
 {
+	// grayman #3074 - Change to syntax of replacement animations.
+	//
+	// "replace_anim_<replacedAnimation>[ jointName]" "<replacingAnimation>"
+	//
+	// Only replace the animation if the joint being attached to matches
+	// the "jointName" defined in the replace_anim, or if jointName being
+	// attached to is NULL.
+
 	for (const idKeyValue* kv = spawnArgs.MatchPrefix("replace_anim_", NULL);
 		 kv != NULL; kv = spawnArgs.MatchPrefix("replace_anim_", kv))
 	{
 		idStr key = kv->GetKey();
 		key.StripLeadingOnce("replace_anim_");
 
-		SetReplacementAnim(key, kv->GetValue());
+		// key holds "<replacedAnimation>[ jointName]"
+		// Separate the substrings before and after the space.
+
+		// Does key contain a space, which indicates two substrings?
+
+		int index = idStr::FindChar(key.c_str(),' ');
+		if ( index > 0 )
+		{
+			std::string keyString = key.c_str();
+			std::vector<std::string> substrings; // will hold the separated substrings
+			boost::algorithm::split(substrings, keyString, boost::algorithm::is_any_of(" "));
+			idStr replacedAnimation = idStr(substrings[0].c_str());
+			const char *jointName = substrings[1].c_str();
+
+			// make the animation replacement if the joint listed for this replacement
+			// matches the joint the entity was attached to (attached2Joint), or if
+			// attached2Joint is NULL
+
+			if ( ( attached2Joint == NULL ) || ( idStr::Icmp(jointName, attached2Joint) == 0 ) )
+			{
+				SetReplacementAnim(replacedAnimation, kv->GetValue());
+			}
+		}
+		else
+		{
+			SetReplacementAnim(key, kv->GetValue());
+		}
 	}
 }
 

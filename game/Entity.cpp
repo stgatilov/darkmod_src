@@ -4232,7 +4232,7 @@ bool idEntity::InitBind( idEntity *master )
 idEntity::FinishBind
 ================
 */
-void idEntity::FinishBind( void )
+void idEntity::FinishBind( const char *jointName ) // grayman #3074
 {
 	// set the master on the physics object
 	physics->SetMaster( bindMaster, fl.bindOrientated );
@@ -4251,7 +4251,7 @@ void idEntity::FinishBind( void )
 	teamMaster->BecomeActive( TH_PHYSICS );
 	
 	// Notify bindmaster of this binding
-	bindMaster->BindNotify( this );
+	bindMaster->BindNotify( this, jointName ); // grayman #3074
 }
 
 /*
@@ -4290,7 +4290,7 @@ void idEntity::Bind( idEntity *master, bool orientated )
 	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind();
+	FinishBind(NULL); // grayman #3074
 
 	PostBind( );
 }
@@ -4349,7 +4349,7 @@ void idEntity::BindToJoint( idEntity *master, const char *jointname, bool orient
 	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind();
+	FinishBind(jointname); // grayman #3074
 
 	PostBind();
 }
@@ -4393,7 +4393,9 @@ void idEntity::BindToJoint( idEntity *master, jointHandle_t jointnum, bool orien
 	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind();
+	idAnimator *masterAnimator = master->GetAnimator();
+	const char *jointName = masterAnimator->GetJointName( jointnum );
+	FinishBind(jointName); // grayman #3074
 
 	PostBind();
 }
@@ -4439,7 +4441,7 @@ void idEntity::BindToBody( idEntity *master, int bodyId, bool orientated )
 	bindMaster = master;
 	fl.bindOrientated = orientated;
 
-	FinishBind();
+	FinishBind(NULL); // grayman #3074
 
 	PostBind();
 }
@@ -10474,7 +10476,7 @@ idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 	return NULL;
 }
 
-void idEntity::BindNotify( idEntity *ent )
+void idEntity::BindNotify( idEntity *ent , const char *jointName) // grayman #3074
 {
 }
 

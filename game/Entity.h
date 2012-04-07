@@ -1064,7 +1064,7 @@ public:
 	* Called when the given entity is about to attach (bind) to this entity.
 	* Does not actually bind it.
 	**/
-	virtual void BindNotify( idEntity *ent );
+	virtual void BindNotify( idEntity *ent , const char *jointName); // grayman #3074
 	
 	/**
 	* Called when the given entity is about to detach (unbind) from this entity.
@@ -1482,7 +1482,7 @@ private:
 
 	// entity binding
 	bool					InitBind( idEntity *master );	// initialize an entity binding
-	void					FinishBind( void );				// finish an entity binding
+	void					FinishBind( const char *jointnum ); // finish an entity binding - grayman #3074
 	void					RemoveBinds( void );			// deletes any entities bound to this object
 	void					QuitTeam( void );				// leave the current team
 

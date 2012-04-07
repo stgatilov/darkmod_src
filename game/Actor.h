@@ -521,7 +521,7 @@ public:
 	/**
 	* Called when the given ent is about to be bound/attached to this actor.
 	**/
-	void					BindNotify( idEntity *ent );
+	void					BindNotify( idEntity *ent, const char *jointName ); // grayman #3074
 	
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.
@@ -566,7 +566,7 @@ public:
 	idAnimator*				GetAnimatorForChannel(int channel);
 
 	// greebo: Searches the given dictionary for animation replacement spawnargs and applies them to this actor
-	void					LoadReplacementAnims(const idDict& spawnArgs);
+	void					LoadReplacementAnims(const idDict& spawnArgs, const char *jointName); // grayman #3074
 
 	const char*				LookupReplacementAnim( const char *name );
 
