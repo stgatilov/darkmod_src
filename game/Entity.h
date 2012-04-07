@@ -720,10 +720,10 @@ public:
 	idCurve_Spline<idVec3> *GetSpline( void ) const;
 	virtual void			ShowEditingDialog( void );
 
-	void					SetHideUntilTime(int time);	// grayman #597
-	int						GetHideUntilTime(void);		// grayman #597
+	void					SetHideUntilTime(const int time);	// grayman #597
+	int						GetHideUntilTime(void) const;		// grayman #597
 	
-	idEntity*				GetAttachmentByPosition(idStr AttPos); // grayman #2603
+	idEntity*				GetAttachmentByPosition(const idStr AttPos) const; // grayman #2603
 
 	enum {
 		EVENT_STARTSOUNDSHADER,
@@ -1012,20 +1012,20 @@ public:
 	/**
 	* Show or hide an attachment, by name or by attachment array index.
 	**/
-	void ShowAttachment( const char *AttName, bool bShow );
-	void ShowAttachmentInd( int ind, bool bShow );
+	void ShowAttachment( const char *AttName, const bool bShow );
+	void ShowAttachmentInd( const int ind, const bool bShow );
 
 	/**
 	* Returns an entity pointer for a given attachment name.
 	* Returns NULL if no such named attachment exists on this entity.
 	**/
-	virtual idEntity *GetAttachment( const char *AttName );
+	virtual idEntity *GetAttachment( const char *AttName ); 
 
 	/**
 	* Returns an entity pointer for a given index of the attachment array.
 	* Returns NULL if no such named attachment exists directly on this entity.
 	**/
-	virtual idEntity *GetAttachment( int ind );
+	virtual idEntity *GetAttachment( const int ind ) const;
 
 	/**
 	* Helper function that looks up the attachment index from the name->index map
@@ -1052,7 +1052,7 @@ public:
 	* Returns a pointer to the attachment position with this name. 
 	* Returns NULL if no attachment position exists with this name.
 	**/
-	virtual SAttachPosition *GetAttachPosition( const char *AttachName );
+	virtual SAttachPosition *GetAttachPosition( const char *AttachName ) const;
 
 	/**
 	* Store the attachment info in the argument references given.
@@ -1087,10 +1087,10 @@ public:
 
 	// Cycles to the prev/next item in the inventory.
 	// direction<0 - cycles to previous, direction>0 - cycles to next
-	virtual void NextPrevInventoryItem(int direction);
+	virtual void NextPrevInventoryItem(const int direction);
 	// Cycles to the prev/next group in the inventory.
 	// direction<0 - cycles to previous, direction>0 - cycles to next
-	virtual void NextPrevInventoryGroup(int direction);	
+	virtual void NextPrevInventoryGroup(const int direction);	
 
 	/**
 	 * greebo: This cycles through a specific inventory group (=category). 
@@ -1621,7 +1621,8 @@ public:			// Events should be public, so they can be used from other places as w
 	/**
 	* Tels: Toggle the noShadow flag on this entity.
 	*/
-	void 					Event_noShadows( bool noShadow );
+	void 					Event_noShadows( const bool noShadow );
+	void 					Event_noShadowsDelayed( const bool noShadow, const float delay );
 
 	void					Event_CheckMine(); // grayman #2478
 

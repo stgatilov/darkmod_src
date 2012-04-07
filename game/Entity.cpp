@@ -150,6 +150,8 @@ const idEventDef EV_SetDroppable( "setDroppable", "d" );
 
 // tels: set noShadow on this entity to the given argument (true/false)
 const idEventDef EV_NoShadows( "noShadows", "d" );
+// tels: like EV_noShadows, but does so after a delay of "delay" ms:
+const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed", "df" );
 
 // tels: Find all lights in the player PVS, then returns their sum.
 const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
@@ -454,6 +456,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT(EV_ChangeEntityRelation,	idEntity::Event_ChangeEntityRelation )
 
 	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
+	EVENT( EV_NoShadowsDelayed,		idEntity::Event_noShadowsDelayed )
 
 	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )				// grayman #2478
 	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
@@ -3081,7 +3084,7 @@ bool idEntity::IsHidden( void ) const {
 idEntity::SetHideUntilTime
 ================
 */
-void idEntity::SetHideUntilTime(int time) // grayman #597
+void idEntity::SetHideUntilTime(const int time) // grayman #597
 {
 	m_HideUntilTime = time;
 }
@@ -3091,7 +3094,7 @@ void idEntity::SetHideUntilTime(int time) // grayman #597
 idEntity::GetHideUntilTime
 ================
 */
-int idEntity::GetHideUntilTime() // grayman #597
+int idEntity::GetHideUntilTime() const // grayman #597
 {
 	return m_HideUntilTime;
 }
@@ -3229,10 +3232,23 @@ idEntity::Event_noShadows
 tels: Turn shadows from this entity on or off.
 ================
 */
-void idEntity::Event_noShadows( bool noShadow ) 
+void idEntity::Event_noShadows( const bool noShadow ) 
 {
 	renderEntity.noShadow = ( noShadow ? 1 : 0 );
 	UpdateVisuals();
+}
+
+/*
+================
+idEntity::Event_noShadowsDelayed
+
+tels: Turn shadows from this entity on or off, after a delay.
+================
+*/
+void idEntity::Event_noShadowsDelayed( const bool noShadow, const float delay ) 
+{
+	// post an event to happen in "delay" ms
+	PostEventMS( &EV_NoShadows, delay, noShadow );
 }
 
 /*
@@ -10308,9 +10324,9 @@ void idEntity::ReAttachToPos
 	m_AttNameMap.insert(AttNameMap::value_type(AttName, ind));
 }
 
-void idEntity::ShowAttachment( const char *AttName, bool bShow )
+void idEntity::ShowAttachment( const char *AttName, const bool bShow )
 {
-	int ind = GetAttachmentIndex( AttName );
+	const int ind = GetAttachmentIndex( AttName );
 	if (ind >= 0 )
 	{
 		ShowAttachmentInd( ind, bShow );
@@ -10321,22 +10337,20 @@ void idEntity::ShowAttachment( const char *AttName, bool bShow )
 	}
 }
 
-void idEntity::ShowAttachmentInd( int ind, bool bShow )
+void idEntity::ShowAttachmentInd( const int ind, const bool bShow )
 {
-	idEntity *ent( NULL );
-
 	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
-		goto Quit;
+		return;
 	}
 
-	ent = m_Attachments[ind].ent.GetEntity();
+	const idEntity *ent = m_Attachments[ind].ent.GetEntity();
 
 	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
-		goto Quit;
+		return;
 	}
 
 	if ( bShow )
@@ -10348,7 +10362,6 @@ void idEntity::ShowAttachmentInd( int ind, bool bShow )
 		ent->Hide();
 	}
 
-Quit:
 	return;
 }
 
@@ -10370,7 +10383,7 @@ int idEntity::GetAttachmentIndex( const char *AttName )
 idEntity *idEntity::GetAttachment( const char *AttName )
 {
 	/* tels: use GetAttachmentIndex() to bypass GetAttachInfo() */
-	int ind = GetAttachmentIndex(AttName);
+	const int ind = GetAttachmentIndex(AttName);
 	if( ind >= 0 )
 		return m_Attachments[ind].ent.GetEntity();
 	else
@@ -10384,32 +10397,28 @@ idEntity *idEntity::GetAttachment( const char *AttName )
 		return NULL;*/
 }
 
-idEntity *idEntity::GetAttachment( int ind )
+idEntity *idEntity::GetAttachment( const int ind ) const
 {
-	idEntity *ent = NULL;
-
 	if( ind < 0 || ind >= m_Attachments.Num() )
 	{
 		// TODO: log invalid index error
-		goto Quit;
+		return NULL;
 	}
 
-	ent = m_Attachments[ind].ent.GetEntity();
+	const idEntity *ent = m_Attachments[ind].ent.GetEntity();
 
 	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
 		// TODO: log bad attachment entity error
-		ent = NULL;
-		goto Quit;
+		return NULL;
 	}
 
-Quit:
 	return ent;
 }
 
 CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 {
-	int ind = GetAttachmentIndex(AttName);
+	const int ind = GetAttachmentIndex(AttName);
 	if( ind >= 0 )
 		return &m_Attachments[ind];
 	else
@@ -10418,9 +10427,9 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 
 // Tels: Get the entity attached at the position given by the attachment position
 // grayman #2603 - resurrected and spruced up for relight work
-idEntity* idEntity::GetAttachmentByPosition( idStr PosName )
+idEntity* idEntity::GetAttachmentByPosition( const idStr PosName ) const
 {
-	int num = m_Attachments.Num();
+	const int num = m_Attachments.Num();
 
 	for (int i = 0 ; i < num ; i++)
 	{
@@ -10441,7 +10450,7 @@ idEntity* idEntity::GetAttachmentByPosition( idStr PosName )
 idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 {
 	/* tels: Look directly at this entity for the attachment */
-	int ind = GetAttachmentIndex(AttName);
+	const int ind = GetAttachmentIndex(AttName);
 	if( ind >= 0 )
 	{
 		/* we found it */
@@ -10450,7 +10459,7 @@ idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 	}
 
 	/* tels: not found, look at entities bound to this entity */
-	idEntity* NextEnt = this;
+	const idEntity* NextEnt = this;
 
 	if ( bindMaster )
 		{
@@ -11081,7 +11090,7 @@ void idEntity::ChangeInventoryIcon(const char* invName, const char* invCategory,
 	}
 }
 
-void idEntity::NextPrevInventoryItem(int direction)
+void idEntity::NextPrevInventoryItem(const int direction)
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	assert(cursor != NULL); // all entities have a cursor after calling InventoryCursor()
@@ -11109,7 +11118,7 @@ void idEntity::NextPrevInventoryItem(int direction)
 	OnInventorySelectionChanged(prev);
 }
 
-void idEntity::NextPrevInventoryGroup(int direction)
+void idEntity::NextPrevInventoryGroup(const int direction)
 {
 	const CInventoryCursorPtr& cursor = InventoryCursor();
 	
@@ -12053,7 +12062,7 @@ void idEntity::ParseAttachPositions( void )
 idEntity::GetAttachPosition
 ================
 */
-SAttachPosition *idEntity::GetAttachPosition( const char *AttachName )
+SAttachPosition *idEntity::GetAttachPosition( const char *AttachName ) const
 {
 	idStr AttName = AttachName;
 	SAttachPosition *returnVal = NULL;

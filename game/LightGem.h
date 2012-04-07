@@ -33,7 +33,7 @@
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
 #define DARKMOD_LG_VIEWID					-1
 
-#define DARKMOD_LG_RENDER_WIDTH				64 // LG render resolution - keep it a PoT
+#define DARKMOD_LG_RENDER_WIDTH				64 // LG render resolution - keep it a power-of-two!
 #define DARKMOD_LG_RENDER_FOV				70.0f
 #define DARKMOD_LG_BPP						3 // 3 Channels of 8 bits
 
