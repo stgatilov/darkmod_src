@@ -2282,13 +2282,16 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 					owner->m_DroppingTorch = true;
 				}
 
-				// If you're in the middle of lighting a light, stop
+				// grayman debug - aborting a relight this way kills the
+				// PlayAnimationTask() request, causing the AI to never drop
+				// his torch
 
+/*				// If you're in the middle of lighting a light, stop
 				if (owner->m_RelightingLight)
 				{
 					owner->GetMemory().stopRelight = true;
 				}
-
+*/
 				return false; // My torch is out, so don't start a relight
 			}
 		}
