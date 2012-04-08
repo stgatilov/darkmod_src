@@ -1052,7 +1052,7 @@ public:
 	* Returns a pointer to the attachment position with this name. 
 	* Returns NULL if no attachment position exists with this name.
 	**/
-	virtual SAttachPosition *GetAttachPosition( const char *AttachName ) const;
+	virtual SAttachPosition *GetAttachPosition( const char *AttachName );
 
 	/**
 	* Store the attachment info in the argument references given.

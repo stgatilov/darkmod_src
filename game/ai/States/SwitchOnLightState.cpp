@@ -312,13 +312,11 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	// Make sure light is still off
 
-	bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
-	bool ignoreLight;
+	const bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
 
 	if (lightOn)
 	{
-		ignoreLight = true;
-		Wrapup(owner,light,ignoreLight);
+		Wrapup(owner,light,true);		// ignore light
 		return;
 	}
 
@@ -551,8 +549,6 @@ void SwitchOnLightState::Init(idAI* owner)
 	// hitting a table a candle is sitting on. Try again later. Also, a wall torch halfway up stairs
 	// might allow for relighting when the AI is walking down the stairs, but not when he's walking up.
 
-	ignoreLight = false;
-
 	// As a light receives negative barks ("light out" and "won't relight light"), the odds of emitting
 	// this type of bark go down. When the light is relit, the odds are reset to 100%. This should reduce
 	// the number of such barks, which can get tiresome.
@@ -572,7 +568,7 @@ void SwitchOnLightState::Init(idAI* owner)
 		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
 	}
 	
-	Wrapup(owner,light,ignoreLight);
+	Wrapup(owner,light,false);		// don't ignoreLight
 }
 
 // Gets called each time the mind is thinking
@@ -593,7 +589,7 @@ void SwitchOnLightState::Think(idAI* owner)
 		return;
 	}
 
-	bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
+	const bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
 	bool ignoreLight;
 
 	if ( owner->m_DroppingTorch ) // grayman debug - delay processing the rest of the relight if the torch is getting dropped

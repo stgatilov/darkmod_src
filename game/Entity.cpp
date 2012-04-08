@@ -10345,7 +10345,7 @@ void idEntity::ShowAttachmentInd( const int ind, const bool bShow )
 		return;
 	}
 
-	const idEntity *ent = m_Attachments[ind].ent.GetEntity();
+	idEntity *ent = m_Attachments[ind].ent.GetEntity();
 
 	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
@@ -10405,7 +10405,7 @@ idEntity *idEntity::GetAttachment( const int ind ) const
 		return NULL;
 	}
 
-	const idEntity *ent = m_Attachments[ind].ent.GetEntity();
+	idEntity *ent = m_Attachments[ind].ent.GetEntity();
 
 	if( !ent || !m_Attachments[ind].ent.IsValid() )
 	{
@@ -12062,7 +12062,7 @@ void idEntity::ParseAttachPositions( void )
 idEntity::GetAttachPosition
 ================
 */
-SAttachPosition *idEntity::GetAttachPosition( const char *AttachName ) const
+SAttachPosition *idEntity::GetAttachPosition( const char *AttachName )
 {
 	idStr AttName = AttachName;
 	SAttachPosition *returnVal = NULL;
