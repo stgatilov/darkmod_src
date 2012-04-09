@@ -851,18 +851,18 @@ public:
 	/**
 	* Toggle whether the entity has been frobbed.  Should ONLY be called by idPlayer::PerformFrobCheck
 	**/
-	virtual void SetFrobbed( bool val );
+	virtual void SetFrobbed( const bool val );
 
 	/**
 	* Set whether this entity is frobable or not
 	**/
-	virtual void SetFrobable( bool val );
+	virtual void SetFrobable( const bool val );
 
 	/**
 	* Return whether the entity is currently frobbed.
 	* Should be false at the beginning of the frame
 	**/
-	virtual bool IsFrobbed( void );
+	virtual bool IsFrobbed( void ) const;
 
 	/**
 	* DarkMod sound prop functions (called by StartSound and StopSound)
@@ -1148,7 +1148,7 @@ public:
 	/**
 	 * Return true if this entity can be mantled, false otherwise.
 	 */
-	virtual bool			IsMantleable();
+	virtual bool			IsMantleable() const;
 
 	// Accessors for the frob peer list
 	virtual void			AddFrobPeer(const idStr& frobPeerName);
@@ -1246,14 +1246,14 @@ public:
 	* Checks with the global Relationship Manager and the personal relations to see if the
 	* other entity is an enemy of this entity.
 	**/
-	bool IsEnemy(const idEntity *other);
+	bool IsEnemy(const idEntity *other) const;
 	// As above, but checks for Friend
-	bool IsFriend(const idEntity *other);
+	bool IsFriend(const idEntity *other) const;
 	// As above, but checks for Neutral
-	bool IsNeutral(const idEntity *other);
+	bool IsNeutral(const idEntity *other) const;
 
 
-	float					GetAbsenceNoticeability();
+	float					GetAbsenceNoticeability() const;
 
 	// angua: this checks whether an entity has been removed or returned to the original position
 	// and spawns or destroys an absence marker
@@ -1289,7 +1289,7 @@ protected:
 	* Activate/deactivate frob highlighting on an entity
 	* Also calls this on any of the entity's peers
 	**/
-	void SetFrobHighlightState( bool bVal );
+	void SetFrobHighlightState( const bool bVal );
 
 	/**
 	* Call ParseAttachmentSpawnargs, spawns the attachements and binds them on to the entity.
@@ -1697,7 +1697,7 @@ public:			// Events should be public, so they can be used from other places as w
 	*
 	* @useLighting: If set to TRUE, takes lighting into account.
 	*/
-	bool					canSeeEntity(idEntity* target, int useLighting);
+	bool					canSeeEntity(idEntity* target, const int useLighting);
 
 	/**
 	* greebo: script event wrapper for the above canSeeEntity() method.

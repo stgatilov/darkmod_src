@@ -9073,7 +9073,7 @@ void idEntity::UpdateFrobState()
 	SetFrobHighlightState(true);
 }
 
-void idEntity::SetFrobHighlightState(bool newState)
+void idEntity::SetFrobHighlightState(const bool newState)
 {
 	if (m_bFrobHighlightState == newState) return; // Avoid unnecessary work
 
@@ -9309,7 +9309,7 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	return false;
 }
 
-void idEntity::SetFrobbed( bool val )
+void idEntity::SetFrobbed( const bool val )
 {
 	if (m_bFrobbed == val) return; // avoid loopbacks and unnecessary work
 
@@ -9330,12 +9330,12 @@ void idEntity::SetFrobbed( bool val )
 	}
 }
 
-bool idEntity::IsFrobbed( void )
+bool idEntity::IsFrobbed( void ) const
 {
 	return m_bFrobbed;
 }
 
-void idEntity::SetFrobable( bool bVal )
+void idEntity::SetFrobable( const bool bVal )
 {
 	// greebo: This is to avoid infinite loops
 	if (m_bFrobable == bVal) return; 
@@ -10708,7 +10708,7 @@ bool idEntity::DestroyAbsenceMarker()
 	return true;
 }
 
-float idEntity::GetAbsenceNoticeability()
+float idEntity::GetAbsenceNoticeability() const
 {
 	return m_AbsenceNoticeability;
 }
@@ -11355,20 +11355,20 @@ idUserInterface* idEntity::GetOverlay(int handle)
 * If this entity (or any entity that it is attached to) has mantling disabled,
 * then this returns false. Otherwise, returns true.
 **/
-bool idEntity::IsMantleable()
+bool idEntity::IsMantleable() const
 {
-	bool returnVal = true;
-	idEntity* ent=this;
+	idEntity* ent = this;
+
 	while (ent!=NULL)
 	{
 		if (!ent->m_bIsMantleable)
 		{
-			returnVal = false;
-			break;
+			return false;
 		}
+		// else continue with the bind master
 		ent = ent->GetBindMaster();
 	}
-	return returnVal;
+	return true;
 }
 
 int idEntity::heal(const char* healDefName, float healScale) {
@@ -11574,7 +11574,7 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 	idThread::ReturnVector( sum );
 }
 
-bool idEntity::canSeeEntity(idEntity* target, int useLighting) {
+bool idEntity::canSeeEntity(idEntity* target, const int useLighting) {
 	// The target point is the origin of the other entity.
 	idVec3 toPos = target->GetPhysics()->GetOrigin();
 
@@ -12242,7 +12242,7 @@ void idEntity::ChangeEntityRelation(idEntity* entity, int relationChange)
 	found->second += relationChange;
 }
 
-bool idEntity::IsFriend(const idEntity *other)
+bool idEntity::IsFriend(const idEntity *other) const
 {
 	if (other == NULL)
 	{
@@ -12267,7 +12267,7 @@ bool idEntity::IsFriend(const idEntity *other)
 	}
 }
 
-bool idEntity::IsNeutral(const idEntity *other)
+bool idEntity::IsNeutral(const idEntity *other) const
 {
 	if (other == NULL)
 	{
@@ -12292,7 +12292,7 @@ bool idEntity::IsNeutral(const idEntity *other)
 	}
 }
 
-bool idEntity::IsEnemy(const idEntity *other )
+bool idEntity::IsEnemy(const idEntity *other ) const
 {
 	if (other == NULL)
 	{
