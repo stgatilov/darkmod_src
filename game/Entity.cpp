@@ -10427,7 +10427,7 @@ CAttachInfo *idEntity::GetAttachInfo( const char *AttName )
 
 // Tels: Get the entity attached at the position given by the attachment position
 // grayman #2603 - resurrected and spruced up for relight work
-idEntity* idEntity::GetAttachmentByPosition( const idStr PosName ) const
+idEntity* idEntity::GetAttachmentByPosition( const idStr PosName )
 {
 	const int num = m_Attachments.Num();
 
@@ -10459,7 +10459,7 @@ idEntity *idEntity::GetAttachmentFromTeam( const char *AttName )
 	}
 
 	/* tels: not found, look at entities bound to this entity */
-	const idEntity* NextEnt = this;
+	idEntity* NextEnt = this;
 
 	if ( bindMaster )
 		{
@@ -11357,16 +11357,15 @@ idUserInterface* idEntity::GetOverlay(int handle)
 **/
 bool idEntity::IsMantleable() const
 {
-	idEntity* ent = this;
-
-	while (ent!=NULL)
+	// the entity itself
+	if (!m_bIsMantleable)
 	{
-		if (!ent->m_bIsMantleable)
-		{
-			return false;
-		}
-		// else continue with the bind master
-		ent = ent->GetBindMaster();
+		return false;
+	}
+	// else continue with the bind master (there is only one bind master per team)
+	if (bindMaster && (! bindMaster->m_bIsMantleable))
+	{
+		return false;
 	}
 	return true;
 }
