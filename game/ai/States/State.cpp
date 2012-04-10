@@ -44,8 +44,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../Grabber.h"
 #include "../Tasks/PlayAnimationTask.h"
 
-#include "ConversationState.h" // grayman #2603
+#include "ConversationState.h"		// grayman #2603
 #include "../../ProjectileResult.h" // grayman #2872
+#include "../../BloodMarker.h"		// grayman #3075
 
 namespace ai
 {
@@ -78,11 +79,12 @@ namespace ai
 #define PERSONGENDER_UNKNOWN	"PERSONGENDER_UNKNOWN"
 
 const int MIN_TIME_BETWEEN_GREETING_CHECKS = 20000; // msecs
-const float CHANCE_FOR_GREETING = 0.3f; // 30% chance for greeting
-const int MIN_TIME_LIGHT_ALERT = 10000; // ms - grayman #2603
-const int REMARK_DISTANCE = 200; // grayman #2903 - no greeting or warning if farther apart than this
-const int MIN_DIST_TO_LOWLIGHT_DOOR = 300; // grayman #2959 - AI must be closer than this to "see" a low-light door
-const int FRIEND_NEAR_DOOR = 150; // grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
+const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
+const int MIN_TIME_LIGHT_ALERT = 10000;		// ms - grayman #2603
+const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if farther apart than this
+const int MIN_DIST_TO_LOWLIGHT_DOOR = 300;	// grayman #2959 - AI must be closer than this to "see" a low-light door
+const int FRIEND_NEAR_DOOR = 150;			// grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
+const int BLOOD2BLEEDER_MIN_DIST = 300;		// grayman #3075 - AI must be closer than this to blood to be considered the owner
 
 //----------------------------------------------------------------------------------------
 // grayman #2903 - no warning if the sender is farther than this horizontally from the alert spot (one per alert type)
@@ -91,6 +93,10 @@ const int WARN_DIST_ENEMY_SEEN = 800;
 const int WARN_DIST_CORPSE_FOUND = 600;
 const int WARN_DIST_MISSING_ITEM = 500;
 const int WARN_DIST_EVIDENCE_INTRUDERS = 400;
+
+// grayman #3075 - when checking whether two AI have seen the same corpse, the two corpse positions
+// are allowed to be up to this far apart to be considered the same corpse
+const int WARN_DIST_BODY_CAN_SHIFT = 100;
 
 const int WARN_DIST_MAX_Z = 100; // no warning if the sender is farther than this vertically from the alert spot (same for each alert type)
 //----------------------------------------------------------------------------------------
@@ -169,6 +175,7 @@ void State::OnVisualAlert(idActor* enemy)
 
 	memory.alertClass = EAlertVisual_1;
 	memory.alertType = EAlertTypeSuspicious;
+	idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
 	memory.alertPos = owner->GetVisDir();
 	memory.alertRadius = VISUAL_ALERT_RADIUS;
 	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
@@ -180,10 +187,10 @@ void State::OnVisualAlert(idActor* enemy)
 	// Is this alert far enough away from the last one we reacted to to
 	// consider it a new alert? Visual alerts are highly compelling and
 	// are always considered new
-	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched);
+	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - lastAlertPosSearched); // grayman #3075
 	float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
 	
-	if (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr())
+	if ( lastAlertPosSearched.Compare(idVec3(0,0,0)) || (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr() ) ) // grayman #3075
 	{
 		// This is a new alert // SZ Dec 30, 2006
 		// Note changed this from thresh_2 to thresh_3 to match thresh designer's intentions
@@ -964,7 +971,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 
 void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 {
-	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+	assert( ( stimSource != NULL ) && ( owner != NULL) ); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
@@ -972,22 +979,49 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	// We've seen this object, don't respond to it again
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
-	if (stimSource->IsType(idWeapon::Type))
+	if ( stimSource->IsType(idWeapon::Type) )
 	{
 		// Is it a friendly weapon?  To find out we need to get its owner.
 		idActor* objectOwner = static_cast<idWeapon*>(stimSource)->GetOwner();
 		
-		if (owner->IsFriend(objectOwner))
+		if ( owner->IsFriend(objectOwner) )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Ignoring visual stim from suspicious weapon with friendly owner\r");
 			return;
 		}
 	}
-	
-	// Vocalize that see something out of place
-	gameLocal.Printf("Hmm, that isn't right!\n");
-	if (owner->AI_AlertLevel < owner->thresh_5 &&
-		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	else if ( stimSource->IsType(CProjectileResult::Type) )
+	{
+		// grayman #3075 - If this arrow is bound to a dead body,
+		// pass the stim response to the body so there's a single unified
+		// response to what's been found.
+
+		// What we have is the projectile result (stimSource) bound
+		// to the arrow, which is eventually bound to the body. Go up the
+		// bindMaster chain until you find the body. (Or not.)
+
+		idEntity *bindMaster = stimSource->GetBindMaster();
+		while ( bindMaster != NULL )
+		{
+			if ( bindMaster->IsType(idAI::Type) )
+			{
+				idAI *boundAI = static_cast<idAI*>(bindMaster);
+
+				// Since arrows aren't allowed to stick into living
+				// AI, we can assume this AI is dead, but we shouldn't
+				// go straight to OnDeadPersonEncounter(). Let
+				// OnPersonEncounter() handle it.
+
+				OnPersonEncounter(boundAI,owner);
+				return;
+			}
+			bindMaster = bindMaster->GetBindMaster();
+		}
+	}
+
+	// Vocalize that we see something out of place
+	gameLocal.Printf("Hmm, that's suspicious!\n");
+	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) &&
+		 ( gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS) )
 	{
 		memory.lastTimeVisualStimBark = gameLocal.time;
 		owner->commSubsystem->AddCommTask(
@@ -1003,7 +1037,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
 	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+	if ( owner->AI_AlertLevel < owner->thresh_4 - 0.1f )
 	{
 		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
@@ -1030,7 +1064,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 
 void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource )
 {
-	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
@@ -1039,7 +1073,7 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// Vocalize that see something out of place
-	gameLocal.Printf("Hmm, that isn't right!\n");
+	gameLocal.Printf("Hmm, that rope shouldn't be there!\n");
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
@@ -1101,13 +1135,13 @@ bool InsideWarningVolume( idVec3 alertPos, idVec3 aiOrigin, int maxDist )
 
 void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 {
-	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
 	Memory& memory = owner->GetMemory();
 
 	bool ignoreStimulusFromNowOn = true;
 	
-	if (!stimSource->IsType(idActor::Type))
+	if ( !stimSource->IsType(idActor::Type) )
 	{
 		return; // No Actor, quit
 	}
@@ -1118,11 +1152,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 	// Are they dead or unconscious?
 	if (other->health <= 0) 
 	{
-		if (ShouldProcessAlert(EAlertTypeDeadPerson))
+		if ( ShouldProcessAlert(EAlertTypeDeadPerson) )
 		{
 			// React to finding body
 			ignoreStimulusFromNowOn = OnDeadPersonEncounter(other, owner);
-			if (ignoreStimulusFromNowOn)
+			if ( ignoreStimulusFromNowOn )
 			{
 				owner->TactileIgnore(stimSource);
 			}
@@ -1191,6 +1225,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 			// grayman #2603 - only join if he's searching and I haven't been searching recently
 			// grayman #2866 - don't join if he's searching a suspicious door. Joining causes congestion at the door.
+
 
 			if ( otherAI->IsSearching() && !( memory.searchFlags & SRCH_WAS_SEARCHING ) && ( otherMemory.alertType != EAlertTypeDoor ) )
 			{
@@ -1278,6 +1313,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 					if ( otherAI->CanSee(owner, true) )
 					{
+						gameLocal.Printf("Hey! Help me search!\n");
 						otherMemory.lastTimeVisualStimBark = gameLocal.time;
 						otherAI->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
 					}
@@ -1323,7 +1359,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					{
 						if ( memory.timeCorpseFound > otherMemory.timeCorpseFound ) // is my corpse alert more recent than the other's?
 						{
-							if ( ( otherMemory.timeCorpseFound == 0 ) || ( otherMemory.posCorpseFound != memory.posCorpseFound ) ) // do we know about the same corpse?
+							// grayman #3075 - since bodies can shift as living AI search
+							// near them, allow for this when checking posCorpseFound settings
+
+							float distBetweenCorpsePositionsSqr = ( otherMemory.posCorpseFound - memory.posCorpseFound ).LengthSqr();
+							if ( ( otherMemory.timeCorpseFound == 0 ) || ( distBetweenCorpsePositionsSqr > Square(WARN_DIST_BODY_CAN_SHIFT) ) ) // do we know about the same corpse?
 							{
 								if ( InsideWarningVolume( memory.posCorpseFound, otherOrigin, WARN_DIST_CORPSE_FOUND ) ) // grayman #2903
 								{
@@ -1762,85 +1802,146 @@ idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
 
 bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 {
-	assert(person != NULL && owner != NULL); // must be fulfilled
+	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 	
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	if (owner->IsEnemy(person))
+	if ( owner->IsEnemy(person) )
 	{
 		// The dead person is your enemy, ignore from now on
 		return true;
 	}
-	else 
+
+	// The dead person isn't an enemy, this is suspicious
+
+	gameLocal.Printf("I see a dead person!\n");
+	memory.deadPeopleHaveBeenFound = true;
+	memory.posCorpseFound = owner->GetPhysics()->GetOrigin(); // grayman #2903
+	memory.timeCorpseFound = gameLocal.time; // grayman #2903
+
+	// We've seen this object, don't respond to it again
+	person->IgnoreResponse(ST_VISUAL, owner);
+
+	// Three more pieces of evidence of something out of place: A dead body is a REALLY bad thing
+	memory.countEvidenceOfIntruders += 3;
+	memory.posEvidenceIntruders = memory.posCorpseFound; // grayman #2903
+	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
+	memory.stopRelight = true; // grayman #2603
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+
+	// Determine what to say
+	idStr soundName;
+	idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+
+	if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
 	{
-		// The dead person is neutral or friendly, this is suspicious
-		gameLocal.Printf("I see dead people!\n");
-		memory.deadPeopleHaveBeenFound = true;
-		memory.posCorpseFound = owner->GetPhysics()->GetOrigin(); // grayman #2903
-		memory.timeCorpseFound = gameLocal.time; // grayman #2903
+		soundName = "snd_foundComradeBody";
+	}
+	else if (personGender == PERSONGENDER_FEMALE)
+	{
+		soundName = "snd_foundDeadFemale";
+	}
+	else
+	{
+		soundName = "snd_foundDeadMale";
+	}
 
-		// We've seen this object, don't respond to it again
-		person->IgnoreResponse(ST_VISUAL, owner);
+	// Speak a reaction
+	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+	{
+		memory.lastTimeVisualStimBark = gameLocal.time;
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask(soundName))
+		);
+	}
 
-		// Three more piece of evidence of something out of place: A dead body is a REALLY bad thing
-		memory.countEvidenceOfIntruders += 3;
-		memory.posEvidenceIntruders = memory.posCorpseFound; // grayman #2903
-		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-		memory.stopRelight = true; // grayman #2603
-		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 
-		// Determine what to say
-		idStr soundName;
-		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
 
-		if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+	// Raise alert level
+	if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
+	{
+		idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
+		memory.alertPos = person->GetPhysics()->GetOrigin();
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeDeadPerson;
+			
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+			
+		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
+		owner->SetAlertLevel(owner->thresh_5 + 0.1);
+
+		// grayman #3075
+		// Is this alert far enough away from the last one we reacted to to
+		// consider it a new alert and restart the search?
+
+		if ( lastAlertPosSearched.Compare(idVec3(0,0,0)) )
 		{
-			soundName = "snd_foundComradeBody";
-		}
-		else if (personGender == PERSONGENDER_FEMALE)
-		{
-			soundName = "snd_foundDeadFemale";
+			// Restart the search, in case we're already searching
+			memory.restartSearchForHidingSpots = true;
 		}
 		else
 		{
-			soundName = "snd_foundDeadMale";
+			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - lastAlertPosSearched);
+	
+			if ( newAlertDeltaFromLastOneSearched.LengthSqr() > memory.alertSearchVolume.LengthSqr() )
+			{
+				// Restart the search, in case we're already searching
+				memory.restartSearchForHidingSpots = true;
+			}
 		}
-
-		// Speak a reaction
-		if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-		{
-			memory.lastTimeVisualStimBark = gameLocal.time;
-			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask(soundName))
-			);
-		}
-
-		// Raise alert level
-		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
-		{
-			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertClass = EAlertVisual_1;
-			memory.alertType = EAlertTypeDeadPerson;
-			
-			// Do search as if there is an enemy that has escaped
-			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-			memory.alertSearchExclusionVolume.Zero();
-			
-			owner->AI_VISALERT = false;
-			memory.visualAlert = false; // grayman #2422			
-			owner->SetAlertLevel(owner->thresh_5 + 0.1);
-		}
-					
-		// Do new reaction to stimulus
-		memory.investigateStimulusLocationClosely = true; // deep investigation
-		memory.stimulusLocationItselfShouldBeSearched = true;
-		memory.alertedDueToCommunication = false;
-		
-		// Callback for objectives
-		owner->FoundBody(person);
 	}
+					
+	// Do new reaction to stimulus
+	memory.investigateStimulusLocationClosely = true; // deep investigation
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.alertedDueToCommunication = false;
+
+	// grayman #3075 - Ignore any blood markers spilled by this body if they're nearby
+
+	if ( person->IsType(idAI::Type) )
+	{
+		idAI* personAI = static_cast<idAI*>(person);
+		idEntity* bloodMarker = personAI->GetBlood();
+		if ( bloodMarker != NULL )
+		{
+			idVec3 personOrg = personAI->GetPhysics()->GetOrigin();
+			float bloodDistSqr = (bloodMarker->GetPhysics()->GetOrigin() - personOrg).LengthSqr();
+
+			// Ignore blood if it's close to the body
+
+			if ( bloodDistSqr <= Square(BLOOD2BLEEDER_MIN_DIST) )
+			{
+				bloodMarker->IgnoreResponse(ST_VISUAL, owner);
+			}
+		}
+	}
+
+	// grayman #3075 - Ignore all suspicious weapons (arrows)
+	// stuck into this body
+
+	idList<idEntity *> children;
+	person->GetTeamChildren(&children); // gets the head, other attachments, and children of all
+	for ( int i = 0 ; i < children.Num() ; i++ )
+	{
+		idEntity *child = children[i];
+		if ( child == NULL )
+		{
+			continue;
+		}
+		idStr aiUse = child->spawnArgs.GetString("AIUse");
+		if ( child->IsType(CProjectileResult::Type) && ( aiUse == AIUSE_SUSPICIOUS ) )
+		{
+			child->IgnoreResponse(ST_VISUAL, owner);
+		}
+	}
+		
+	// Callback for objectives
+	owner->FoundBody(person);
 
 	// Ignore from now on
 	return true;
@@ -1853,7 +1954,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	gameLocal.Printf("I see unconscious people!\n");
+	gameLocal.Printf("I see an unconscious person!\n");
 
 	if (owner->IsEnemy(person))
 	{
@@ -2178,9 +2279,35 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// angua: ignore blood after dead bodies have been found
+/*     grayman #3075 - no longer
 	if (memory.deadPeopleHaveBeenFound)
 	{
 		return;
+	}
+ */
+
+	// grayman #3075 - Each blood marker knows who spilled it.
+	// If the body is nearby and visible, pass the stim response to the body.
+
+	CBloodMarker *marker = static_cast<CBloodMarker*>(stimSource);
+	idAI *bleeder = marker->GetSpilledBy();
+	if ( bleeder != NULL )
+	{
+		// Is the body near the blood marker?
+	
+		idVec3 bleederOrg = bleeder->GetPhysics()->GetOrigin();
+		float bloodDistSqr = (marker->GetPhysics()->GetOrigin() - bleederOrg).LengthSqr();
+
+		// Can we see the bleeder? Use FOV, but use lighting
+		// only if beyond a min distance.
+
+		if ( owner->CanSeeExt(bleeder,true,( bloodDistSqr > Square(BLOOD2BLEEDER_MIN_DIST) )) )
+		{
+			// Pass the stim response to the bleeder
+
+			OnPersonEncounter(bleeder,owner);
+			return;
+		}
 	}
 
 	// Vocalize that see something out of place
@@ -2267,9 +2394,10 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 				{
 					// drop the torch (torch is detached by a frame command in the animation)
 
-					torchLight->spawnArgs.Set("shouldBeOn", "0");	// don't relight
-					torch->spawnArgs.Set("shouldBeOn", "0");		// insurance
-					torchLight->SetStimEnabled(ST_VISUAL,false);	// turn off visual stim; no one cares
+					// grayman #3075 - no longer needed
+//					torchLight->spawnArgs.Set("shouldBeOn", "0");	// don't relight
+//					torch->spawnArgs.Set("shouldBeOn", "0");		// insurance
+//					torchLight->SetStimEnabled(ST_VISUAL,false);	// turn off visual stim; no one cares
 
 					// use one animation if alert level is 4, another if not
 
@@ -2282,7 +2410,7 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 					owner->m_DroppingTorch = true;
 				}
 
-				// grayman debug - aborting a relight this way kills the
+				// grayman #3077 - aborting a relight this way kills the
 				// PlayAnimationTask() request, causing the AI to never drop
 				// his torch
 
@@ -2346,6 +2474,22 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		return; // process later
 	}
 
+	// grayman #3075 - don't process the flame of a carried torch
+	if ( lightType == AIUSE_LIGHTTYPE_TORCH )
+	{
+		// Does this light belong to a carried torch?
+		idEntity* bindMaster = light->GetBindMaster();
+		while ( bindMaster != NULL )
+		{
+			if ( bindMaster->spawnArgs.GetBool("is_torch","0") )
+			{
+				light->SetStimEnabled(ST_VISUAL,false);	// turn off visual stim; no one cares
+				return;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+	}
+
 	// Don't process a light the player is carrying
 
 	CGrabber* grabber = gameLocal.m_Grabber;
@@ -2365,7 +2509,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 					light->SetRelightAfter();
 					return;
 				}
-				e = e->GetBindMaster();
+				e = e->GetBindMaster(); // go up the hierarchy
 			}
 		}
 	}
@@ -2424,6 +2568,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 		return;
 	}
@@ -2545,6 +2690,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		light->SetBeingRelit(true); // this light is being relit
 		stimSource->IgnoreResponse(ST_VISUAL,owner); // ignore this stim while turning the light back on
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light))); // set out to relight
+		gameLocal.Printf("That light should be on! And I'm going to relight it.\n");
 	}
 	else // Can't relight
 	{
@@ -2564,6 +2710,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 	}
 }
@@ -2774,7 +2921,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 			idVec3 friendOrigin = lastUsedBy->GetPhysics()->GetOrigin();
 			idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
-			if ( (friendOrigin - doorOrigin).LengthSqr() <= FRIEND_NEAR_DOOR*FRIEND_NEAR_DOOR )
+			if ( (friendOrigin - doorOrigin).LengthSqr() <= Square(FRIEND_NEAR_DOOR) )
 			{
 				stimSource->IgnoreResponse(ST_VISUAL, owner);
 				return; // a friend I can see opened the door, so all is well

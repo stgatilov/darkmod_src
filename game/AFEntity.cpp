@@ -412,10 +412,10 @@ void idAFAttachment::DropOnRagdoll( void )
 	int mask(0);
 
 	// Drop TDM attachments
-	for( int i=0; i<m_Attachments.Num(); i++ )
+	for ( int i = 0 ; i < m_Attachments.Num() ; i++ )
 	{
 		ent = m_Attachments[i].ent.GetEntity();
-		if( !ent || !m_Attachments[i].ent.IsValid() )
+		if ( !ent || !m_Attachments[i].ent.IsValid() )
 			continue;
 		
 		// greebo: Check if we should set some attachments to nonsolid
@@ -449,7 +449,8 @@ void idAFAttachment::DropOnRagdoll( void )
 
 		bool bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
 		
-		if( !bDrop ) {
+		if ( !bDrop )
+		{
 			continue;
 		}
 
@@ -487,6 +488,10 @@ void idAFAttachment::DropOnRagdoll( void )
 
 		ent->GetPhysics()->Activate();
 		ent->m_droppedByAI = true; // grayman #1330
+
+		// grayman #3075 - set m_SetInMotionByActor here
+		ent->m_SetInMotionByActor = NULL;
+		ent->m_MovedByActor = NULL;
 	}
 }
 

@@ -122,7 +122,7 @@ void DeadState::Init(idAI* owner)
 		}
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Death state entered for AI: %s, frame %d\n", owner->name.c_str(), gameLocal.framenum);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Death state entered for AI: %s, frame %d\r", owner->name.c_str(), gameLocal.framenum);
 
 	_waitingForDeath = true;
 }

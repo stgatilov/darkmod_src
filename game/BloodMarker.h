@@ -38,8 +38,10 @@ protected:
 	// True if this bloodsplat is in the process of disappearing
 	bool					_isFading;
 
+	idAI*					_spilledBy; // grayman #3075
+
 public:
-	void					Init(const idStr& splat, const idStr& splatFading, float size);
+	void					Init(const idStr& splat, const idStr& splatFading, float size, idAI* bleeder); // grayman #3075 - note who bled
 	void					Event_GenerateBloodSplat();
 
 	/**
@@ -47,6 +49,11 @@ public:
 	 * for water stims.
 	 */
 	void					OnStim(const CStimPtr& stim, idEntity* stimSource);
+
+	/**
+	 * grayman #3075: get the AI that spilled this blood
+	 */
+	idAI*					GetSpilledBy(void);
 
 	// Save and restore
 	void					Save( idSaveGame *savefile ) const;

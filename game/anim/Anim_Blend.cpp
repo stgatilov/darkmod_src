@@ -1321,6 +1321,10 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						origin.z -= DROP_DOWN_ADJUSTMENT;
 						detachedEntity->GetPhysics()->SetOrigin( origin );
 						detachedEntity->m_droppedByAI = true; // grayman #1330
+
+						// grayman #3075 - set m_SetInMotionByActor here
+						detachedEntity->m_SetInMotionByActor = NULL;
+						detachedEntity->m_MovedByActor = NULL;
 					}
 					break;
 				}

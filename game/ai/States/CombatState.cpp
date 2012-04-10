@@ -148,6 +148,22 @@ void CombatState::Init(idAI* owner)
 		owner->GetUp();
 	}
 
+	// grayman #3075 - if we're kneeling, doing close inspection of
+	// a spot, stop the animation. Otherwise, the kneeling animation gets
+	// restarted a few moments later.
+
+	idStr torsoString = "Torso_KneelDown";
+	idStr legsString = "Legs_KneelDown";
+	bool torsoKneelingAnim = (torsoString.Cmp(owner->GetAnimState(ANIMCHANNEL_TORSO)) == 0);
+	bool legsKneelingAnim = (legsString.Cmp(owner->GetAnimState(ANIMCHANNEL_LEGS)) == 0);
+
+	if ( torsoKneelingAnim || legsKneelingAnim )
+	{
+		// Reset anims
+		owner->StopAnim(ANIMCHANNEL_TORSO, 0);
+		owner->StopAnim(ANIMCHANNEL_LEGS, 0);
+	}
+
 	// say something along the lines of "huh?"
 
 	// The communication system plays reaction bark

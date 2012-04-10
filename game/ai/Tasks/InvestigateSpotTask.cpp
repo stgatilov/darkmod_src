@@ -88,12 +88,32 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	// grayman #3075 - if we've entered combat mode, we want to
+	// end this task. But first, if we're kneeling, kill the
+	// kneeling animation
+
+	if ( owner->AI_AlertIndex == ECombat )
+	{
+		idStr torsoString = "Torso_KneelDown";
+		idStr legsString = "Legs_KneelDown";
+		bool torsoKneelingAnim = (torsoString.Cmp(owner->GetAnimState(ANIMCHANNEL_TORSO)) == 0);
+		bool legsKneelingAnim = (legsString.Cmp(owner->GetAnimState(ANIMCHANNEL_LEGS)) == 0);
+
+		if ( torsoKneelingAnim && legsKneelingAnim )
+		{
+			// Reset anims
+			owner->StopAnim(ANIMCHANNEL_TORSO, 0);
+			owner->StopAnim(ANIMCHANNEL_LEGS, 0);
+		}
+		return true;
+	}
+	
 	if (_exitTime > 0)
 	{
 		// Return TRUE if the time is over, else FALSE (continue)
 		return (gameLocal.time > _exitTime);
 	}
-	
+
 	// No exit time set, continue with ordinary process
 
 	if (owner->m_HandlingDoor || owner->m_HandlingElevator)

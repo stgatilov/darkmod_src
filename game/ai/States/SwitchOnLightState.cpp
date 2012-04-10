@@ -35,7 +35,7 @@ namespace ai
 
 // grayman #2603 - heights for determining whether a light or switch is high/med/low off the floor
 
-#define RELIGHT_HEIGHT_HIGH 66 // grayman debug - bump up 1 to accomodate light origin change in desk lamp
+#define RELIGHT_HEIGHT_HIGH 66 // grayman #3077 - bump up 1 to accomodate light origin change in desk lamp
 #define RELIGHT_HEIGHT_LOW  30
 #define RELIGHT_MAX_HEIGHT 100 // grayman #2603 - AI can't reach a light or switch higher than this
 
@@ -592,7 +592,7 @@ void SwitchOnLightState::Think(idAI* owner)
 	const bool lightOn = ((light->GetLightLevel() > 0) && !light->IsSmoking());
 	bool ignoreLight;
 
-	if ( owner->m_DroppingTorch ) // grayman debug - delay processing the rest of the relight if the torch is getting dropped
+	if ( owner->m_DroppingTorch ) // grayman #3077 - delay processing the rest of the relight if the torch is getting dropped
 	{
 		return;
 	}

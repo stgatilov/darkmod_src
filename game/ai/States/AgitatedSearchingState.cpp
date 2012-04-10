@@ -84,7 +84,10 @@ void AgitatedSearchingState::Init(idAI* owner)
 	assert(owner);
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if ( !CheckAlertLevel(owner) )
+	{
+		return;
+	}
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
@@ -106,10 +109,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 		memory.alertPos
 	));
 
-
 	if (owner->AlertIndexIncreased())
 	{
-
 		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
 		{
 			owner->commSubsystem->AddCommTask(
@@ -140,6 +141,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
+
+	memory.searchFlags |= SRCH_WAS_SEARCHING; // grayman #3075
 }
 
 // Gets called each time the mind is thinking

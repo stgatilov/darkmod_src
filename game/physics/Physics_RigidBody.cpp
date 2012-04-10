@@ -1285,7 +1285,7 @@ void idPhysics_RigidBody::Rest( void )
 	}
 
 //	self->m_SetInMotionByActor = NULL;
-	self->m_droppedByAI = false; // grayman #1330
+//	self->m_droppedByAI = false; // grayman #1330 // grayman #3075 - use this designation while at rest, for collision events
 }
 
 /*

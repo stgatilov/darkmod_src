@@ -3489,6 +3489,11 @@ void idAI::Event_DropTorch() // grayman #2603
 			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
 			GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
 			m_DroppingTorch = false;
+
+			// grayman #3075 - set m_SetInMotionByActor here
+			ent->m_SetInMotionByActor = this;
+			ent->m_MovedByActor = this;
+
 			break;
 		}
 	}

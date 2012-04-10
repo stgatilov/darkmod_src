@@ -5592,28 +5592,29 @@ bool idPhysics_AF::CollisionImpulse( float timeStep, idAFBody *body, trace_t &co
 	ent->GetImpactInfo( self, collision.c.id, collision.c.point, &info );
 
 	// Update moved by and set in motion by actor
-	if( self->m_SetInMotionByActor.GetEntity() )
+	if ( self->m_SetInMotionByActor.GetEntity() && !ent->m_droppedByAI ) // grayman #3075 - don't pass these settings along if dropped by an AI
 	{
 		ent->m_SetInMotionByActor = self->m_SetInMotionByActor.GetEntity();
 		ent->m_MovedByActor = self->m_MovedByActor.GetEntity();
 	}
+
 	// Note: Actors should not overwrite the moved by other actors when they are hit with something
 	// So only overwrite if MovedByActor is NULL
-	if( ent->IsType(idActor::Type) 
+	if ( ent->IsType(idActor::Type) 
 		&& self->m_SetInMotionByActor.GetEntity() == NULL
 		&& !(static_cast<idActor *>(ent)->IsKnockedOut() || ent->health < 0) )
 	{
 		self->m_SetInMotionByActor = (idActor *) ent;
 		self->m_MovedByActor = (idActor *) ent;
 	}
-	if( self->IsType(idActor::Type) 
+
+	if ( self->IsType(idActor::Type) 
 		&& ent->m_SetInMotionByActor.GetEntity() == NULL
 		&& !(static_cast<idActor *>(self)->IsKnockedOut() || self->health < 0) )
 	{
 		ent->m_SetInMotionByActor = (idActor *) self;
 		ent->m_MovedByActor = (idActor *) self;
 	}
-
 
 	// collision point relative to the body center of mass
 	r = collision.c.point - (body->current->worldOrigin + body->centerOfMass * body->current->worldAxis);
@@ -5622,7 +5623,8 @@ bool idPhysics_AF::CollisionImpulse( float timeStep, idAFBody *body, trace_t &co
 	// subtract velocity of other entity
 	velocity -= info.velocity;
 	// never stick
-	if ( velocity * collision.c.normal > 0.0f ) {
+	if ( velocity * collision.c.normal > 0.0f )
+	{
 		velocity = collision.c.normal;
 	}
 	inverseWorldInertiaTensor = body->current->worldAxis.Transpose() * body->inverseInertiaTensor * body->current->worldAxis;
@@ -5632,7 +5634,8 @@ bool idPhysics_AF::CollisionImpulse( float timeStep, idAFBody *body, trace_t &co
 #else
 	impulseDenominator = body->invMass + ( ( inverseWorldInertiaTensor * r.Cross( collision.c.normal ) ).Cross( r ) * collision.c.normal );
 #endif
-	if ( info.invMass ) {
+	if ( info.invMass )
+	{
 		impulseDenominator += info.invMass + ( ( info.invInertiaTensor * info.position.Cross( collision.c.normal ) ).Cross( info.position ) * collision.c.normal );
 	}
 	impulse = (impulseNumerator / impulseDenominator) * collision.c.normal;
@@ -6308,7 +6311,10 @@ void idPhysics_AF::Rest( void ) {
 
 	self->BecomeInactive( TH_PHYSICS );
 	self->m_SetInMotionByActor = NULL;
-	self->m_droppedByAI = false; // grayman #1330
+	//self->m_droppedByAI = false; // grayman #1330 // grayman #3075 - keep the designation for use while resting
+	
+	// grayman #3075 - set m_MovedByActor to NULL here
+	self->m_MovedByActor = NULL;
 }
 
 /*

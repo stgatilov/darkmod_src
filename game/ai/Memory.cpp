@@ -73,7 +73,7 @@ Memory::Memory(idAI* owningAI) :
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
 	alertedDueToCommunication(false),
-	lastAlertPosSearched(0,0,0),
+//	lastAlertPosSearched(0,0,0), // grayman #3075 - not being used
 	alertSearchCenter(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	alertSearchVolume(0,0,0),
 	alertSearchExclusionVolume(0,0,0),
@@ -144,7 +144,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 	savefile->WriteBool(investigateStimulusLocationClosely);
 	savefile->WriteBool(alertedDueToCommunication);
-	savefile->WriteVec3(lastAlertPosSearched);
+//	savefile->WriteVec3(lastAlertPosSearched); // grayman #3075 - not being used
 	savefile->WriteVec3(alertSearchCenter);
 	savefile->WriteVec3(alertSearchVolume);
 	savefile->WriteVec3(alertSearchExclusionVolume);
@@ -257,7 +257,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 	savefile->ReadBool(investigateStimulusLocationClosely);
 	savefile->ReadBool(alertedDueToCommunication);
-	savefile->ReadVec3(lastAlertPosSearched);
+//	savefile->ReadVec3(lastAlertPosSearched); // grayman #3075 - not being used
 	savefile->ReadVec3(alertSearchCenter);
 	savefile->ReadVec3(alertSearchVolume);
 	savefile->ReadVec3(alertSearchExclusionVolume);

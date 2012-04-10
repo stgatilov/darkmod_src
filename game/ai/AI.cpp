@@ -520,6 +520,7 @@ idAI::idAI()
 	m_canResolveBlock	= true;	 // grayman #2345
 	m_leftQueue			= false; // grayman #2345
 	m_performRelight	= false; // grayman #2603
+	m_bloodMarker		= NULL;  // grayman #3075
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -808,6 +809,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( headFocusRate );
 	savefile->WriteInt( focusAlignTime );
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
+	savefile->WriteObject(m_bloodMarker);		// grayman #3075
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteBool(m_performRelight);		// grayman #2603
@@ -1220,6 +1222,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( headFocusRate );
 	savefile->ReadInt( focusAlignTime );
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_bloodMarker));	// grayman #3075
 	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
 	savefile->ReadBool(m_leftQueue);		// grayman #2345
 	savefile->ReadBool(m_performRelight);	// grayman #2603
@@ -4514,7 +4517,7 @@ bool idAI::CanSeeTargetPoint( idVec3 point, idEntity* target , bool checkLightin
 		float maxDistanceToObserve = GetMaximumObservationDistanceForPoints(point, topPoint);
 		idVec3 ownOrigin = physicsObj.GetOrigin();
 
-		return ( ( ( point - ownOrigin).LengthSqr() ) < ( maxDistanceToObserve * maxDistanceToObserve ) ); // grayman #2866
+		return ( ( ( point - ownOrigin).LengthSqr() ) < Square(maxDistanceToObserve) ); // grayman #2866
 	}
 
 	return true;
@@ -6347,16 +6350,16 @@ void idAI::SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float 
 
 	const idDict* markerDef = gameLocal.FindEntityDefDict("atdm:blood_marker", false);
 
-	if (markerDef == NULL)
+	if ( markerDef == NULL )
 	{
-		gameLocal.Error( "Failed to find definition of blood marker entity " );
+		gameLocal.Error( "Failed to find definition of blood marker entity" );
 		return;
 	}
 
 	idEntity* ent;
 	gameLocal.SpawnEntityDef(*markerDef, &ent, false);
 
-	if (!ent || !ent->IsType(CBloodMarker::Type)) 
+	if ( !ent || !ent->IsType(CBloodMarker::Type) ) 
 	{
 		gameLocal.Error( "Failed to spawn blood marker entity" );
 		return;
@@ -6364,7 +6367,7 @@ void idAI::SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float 
 
 	CBloodMarker* bloodMarker = static_cast<CBloodMarker*>(ent);
 	bloodMarker->SetOrigin(markerOrigin);
-	bloodMarker->Init(splat, splatFading, size);
+	bloodMarker->Init(splat, splatFading, size, this); // grayman #3075 - pass the AI who spilled the blood
 	bloodMarker->Event_GenerateBloodSplat();
 }
 
@@ -8892,7 +8895,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 void idAI::AlertAI(const char *type, float amount)
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AlertAI called\r");
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::AlertAI - %s AlertAI called with type %s and amount %f\r",name.c_str(),type,amount);
 
 	if (m_bIgnoreAlerts)
 	{
@@ -9018,7 +9021,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	{
 		return;
 	}
-	
+
 	AI_AlertLevel = newAlertLevel;
 
 	if (AI_AlertLevel > m_maxAlertLevel)
@@ -9491,9 +9494,19 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			mind->GetState()->OnPersonEncounter(tactEnt, this);
 		}
 	}
+
 	if (!IsEnemy(responsibleActor)) 
 	{
 		return; // not an enemy, no alert
+	}
+
+	// grayman #3075 - if we bumped something that was dropped
+	// by an AI, ignore this object from now on to avoid
+	// re-alerting us every time we touch it
+
+	if ( tactEnt->m_droppedByAI )
+	{
+		TactileIgnore(tactEnt);
 	}
 
 	// greebo: We touched an enemy, check if it's an unconscious body or corpse
@@ -9815,7 +9828,7 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		idVec3 observeFrom = GetEyePosition();
 		idVec3 midPoint = p_entity->GetPhysics()->GetAbsBounds().GetCenter();
 
-		if ( (observeFrom - midPoint).LengthSqr() > maxDistanceToObserve*maxDistanceToObserve )
+		if ( (observeFrom - midPoint).LengthSqr() > Square(maxDistanceToObserve) )
 		{
 			// Draw debug graphic?
 			if (cv_ai_visdist_show.GetFloat() > 1.0f)
@@ -10858,14 +10871,16 @@ void idAI::DropOnRagdoll( void )
 	}
 
 	// Drop TDM style attachments
-	for( int i=0; i<m_Attachments.Num(); i++ )
+	for ( int i = 0 ; i < m_Attachments.Num() ; i++ )
 	{
 		ent = m_Attachments[i].ent.GetEntity();
-		if( !ent || !m_Attachments[i].ent.IsValid() )
+		if ( !ent || !m_Attachments[i].ent.IsValid() )
+		{
 			continue;
+		}
 
 		// deactivate any melee weapon actions at this point
-		if( ent->IsType(CMeleeWeapon::Type) )
+		if ( ent->IsType(CMeleeWeapon::Type) )
 		{
 			CMeleeWeapon *pWeap = static_cast<CMeleeWeapon *>(ent);
 			pWeap->DeactivateAttack();
@@ -10876,7 +10891,7 @@ void idAI::DropOnRagdoll( void )
 		// greebo: Check if we should set some attachments to nonsolid
 		// this applies for instance to the builder guard's pauldrons which
 		// cause twitching and self-collisions when going down
-		if (ent->spawnArgs.GetBool( "drop_set_nonsolid" ))
+		if ( ent->spawnArgs.GetBool( "drop_set_nonsolid" ) )
 		{
 			int curContents = ent->GetPhysics()->GetContents();
 
@@ -10912,7 +10927,8 @@ void idAI::DropOnRagdoll( void )
 
 		bool bDrop = ent->spawnArgs.GetBool( "drop_when_ragdoll" );
 		
-		if( !bDrop ) {
+		if ( !bDrop )
+		{
 			continue;
 		}
 
@@ -10922,13 +10938,13 @@ void idAI::DropOnRagdoll( void )
 		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
 		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
-		if( bDropWhenDrawn )
+		if ( bDropWhenDrawn )
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Testing drop weapon %s\r", ent->name.c_str() );
 			
 			bool bIsMelee = ent->spawnArgs.GetBool( "is_weapon_melee" );
 
-			if( bIsMelee && !GetAttackFlag(COMBAT_MELEE) )
+			if ( bIsMelee && !GetAttackFlag(COMBAT_MELEE) )
 			{
 				DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Melee weapon was not drawn\r" );
 				continue;
@@ -10936,7 +10952,7 @@ void idAI::DropOnRagdoll( void )
 
 			bool bIsRanged = ent->spawnArgs.GetBool( "is_weapon_ranged" );
 
-			if( bIsRanged && !GetAttackFlag(COMBAT_RANGED) )
+			if ( bIsRanged && !GetAttackFlag(COMBAT_RANGED) )
 			{
 				continue;
 			}
@@ -10945,23 +10961,33 @@ void idAI::DropOnRagdoll( void )
 		// Proceed with droppage
 		DetachInd( i );
 
-		if( bSetSolid )
+		if ( bSetSolid )
+		{
 			mask = CONTENTS_SOLID;
-		if( bSetCorpse )
+		}
+
+		if ( bSetCorpse )
+		{
 			mask = mask | CONTENTS_CORPSE;
+		}
 
-		if( mask )
+		if ( mask )
+		{
 			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | mask );
+		}
 
-		if( bSetFrob )
+		if ( bSetFrob )
+		{
 			ent->m_bFrobable = true;
+		}
 
 		// greebo: Check if we should extinguish the attachment, like torches
 		if ( bExtinguish )
 		{
 			// Get the delay in milliseconds
 			int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
-			if (delay < 0) {
+			if (delay < 0)
+			{
 				delay = 0;
 			}
 
@@ -10971,12 +10997,18 @@ void idAI::DropOnRagdoll( void )
 
 		ent->GetPhysics()->Activate();
 		ent->m_droppedByAI = true; // grayman #1330
+
+		// grayman #3075 - set m_SetInMotionByActor
+		ent->m_SetInMotionByActor = NULL;
+		ent->m_MovedByActor = NULL;
 	}
 
 	// also perform some of these same operations on attachments to our head,
 	// because they are stored differently than attachments to us
-	if( head.GetEntity() )
+	if ( head.GetEntity() )
+	{
 		head.GetEntity()->DropOnRagdoll();
+	}
 }
 
 // grayman #2422 - adjust search limits to better fit the vertical
@@ -11510,7 +11542,7 @@ void idAI::ShowDebugInfo()
 		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
-	if( cv_ai_alertlevel_show.GetBool() )
+	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
 	{
 		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
@@ -11608,6 +11640,18 @@ int idAI::GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr)
 		}
 	}
 	return -1;
+}
+
+// grayman #3075 - set and get AI's blood marker, if any
+
+void idAI::SetBlood(idEntity *marker)
+{
+	m_bloodMarker = marker;
+}
+
+idEntity* idAI::GetBlood(void)
+{
+	return m_bloodMarker;
 }
 
 bool idAI::SwitchToConversationState(const idStr& conversationName)

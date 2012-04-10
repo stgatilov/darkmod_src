@@ -307,7 +307,9 @@ public:
 	// Position of the last alert causing stimulus which was searched.
     // This is used to compare new stimuli to the previous stimuli searched
     // to determine if a new search is necessary
-	idVec3 lastAlertPosSearched;
+	// grayman #3075 - this wasn't being used, and was causing errors because
+	// it was always (0,0,0)
+//	idVec3 lastAlertPosSearched;
 
 	// greebo: This is the position of the alert that was used to set up a hiding spot search.
 	idVec3 alertSearchCenter;

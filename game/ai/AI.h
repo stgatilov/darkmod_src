@@ -1225,6 +1225,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_canResolveBlock;		// grayman #2345 - whether we can resolve a block if asked
 	bool m_leftQueue;			// grayman #2345 - if we timed out waiting in a door queue
 	bool m_performRelight;		// grayman #2603 - set to TRUE by a script function when it's time to relight a light
+	idEntity* m_bloodMarker;	// grayman #3075
 
 	// The mind of this AI
 	ai::MindPtr mind;
@@ -1906,7 +1907,12 @@ public:
 
 	void					SetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr);
 	int						GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr);
-	
+
+	// grayman #3075 - set and get an AI's blood marker
+
+	void					SetBlood(idEntity *marker);
+	idEntity*				GetBlood(void);
+		
 	//
 	// ai/ai_events.cpp
 	//

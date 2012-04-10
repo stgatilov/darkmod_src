@@ -77,7 +77,10 @@ void SearchingState::Init(idAI* owner)
 	assert(owner);
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if ( !CheckAlertLevel(owner) )
+	{
+		return;
+	}
 
 	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
@@ -140,7 +143,7 @@ void SearchingState::Init(idAI* owner)
 	}
 	else if (memory.alertType == EAlertTypeEnemy)
 	{
-		// clear the alert type, so we can react to other alert types (such as a dead person)
+		// reduce the alert type, so we can react to other alert types (such as a dead person)
 		memory.alertType = EAlertTypeSuspicious;
 	}
 	
