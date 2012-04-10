@@ -1025,7 +1025,7 @@ public:
 	* Returns an entity pointer for a given index of the attachment array.
 	* Returns NULL if no such named attachment exists directly on this entity.
 	**/
-	virtual idEntity *GetAttachment( const int ind ) const;
+	virtual idEntity *GetAttachment( const int ind );
 
 	/**
 	* Helper function that looks up the attachment index from the name->index map

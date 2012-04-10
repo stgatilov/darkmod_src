@@ -10397,7 +10397,7 @@ idEntity *idEntity::GetAttachment( const char *AttName )
 		return NULL;*/
 }
 
-idEntity *idEntity::GetAttachment( const int ind ) const
+idEntity *idEntity::GetAttachment( const int ind )
 {
 	if( ind < 0 || ind >= m_Attachments.Num() )
 	{

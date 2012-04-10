@@ -47,8 +47,8 @@ public:
 	/**
 	 * Functions that must be forwarded to the master.
 	 */
-	virtual void			SetFrobbed(bool val);
-	bool					IsFrobbed();
+	virtual void			SetFrobbed(const bool val);
+	bool					IsFrobbed() const;
 
 	// Action function, these are re-routed to the frobmaster entity
 	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse);	// Overrides idEntity::CanBeUsedBy

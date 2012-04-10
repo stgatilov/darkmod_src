@@ -96,8 +96,8 @@ public:
 	virtual void			ClosePortal();
 
 	// Override the idEntity frob methods
-	virtual void			SetFrobbed(bool val);
-	virtual bool			IsFrobbed();
+	virtual void			SetFrobbed(const bool val);
+	virtual bool			IsFrobbed() const;
 
 	// angua: returns the number of open peers
 	ID_INLINE int			GetOpenPeersNum()

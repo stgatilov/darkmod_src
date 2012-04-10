@@ -70,7 +70,7 @@ void CFrobHandle::Event_Tap()
 	Tap();
 }
 
-void CFrobHandle::SetFrobbed(bool val)
+void CFrobHandle::SetFrobbed(const bool val)
 {
 	if (m_FrobLock) return; // Prevent an infinite loop here.
 
@@ -88,7 +88,7 @@ void CFrobHandle::SetFrobbed(bool val)
 	m_FrobLock = false;
 }
 
-bool CFrobHandle::IsFrobbed()
+bool CFrobHandle::IsFrobbed() const
 {
 	return (m_FrobMaster != NULL) ? m_FrobMaster->IsFrobbed() : idEntity::IsFrobbed();
 }

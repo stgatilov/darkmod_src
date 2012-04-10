@@ -580,7 +580,7 @@ void CFrobDoor::ClosePortal()
 	}
 }
 
-void CFrobDoor::SetFrobbed(bool val)
+void CFrobDoor::SetFrobbed(const bool val)
 {
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("door_body [%s] %08lX is frobbed\r", name.c_str(), this);
 
@@ -598,7 +598,7 @@ void CFrobDoor::SetFrobbed(bool val)
 	m_Lock->OnFrobbedStatusChange(val);
 }
 
-bool CFrobDoor::IsFrobbed()
+bool CFrobDoor::IsFrobbed() const
 {
 	// If the door has a handle and it is frobbed, then we are also considered 
 	// to be frobbed.
