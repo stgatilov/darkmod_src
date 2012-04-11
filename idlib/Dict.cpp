@@ -21,7 +21,7 @@
 #pragma hdrstop
 
 
-
+#define MAX_RANDOM_KEYS			2048
 
 idStrPool		idDict::globalKeys;
 idStrPool		idDict::globalValues;
@@ -34,7 +34,6 @@ idDict::operator=
 ================
 */
 idDict &idDict::operator=( const idDict &other ) {
-	int i;
 
 	// check for assignment to self
 	if ( this == &other ) {
@@ -46,7 +45,7 @@ idDict &idDict::operator=( const idDict &other ) {
 	args = other.args;
 	argHash = other.argHash;
 
-	for ( i = 0; i < args.Num(); i++ ) {
+	for ( int i = 0; i < args.Num(); i++ ) {
 		args[i].key = globalKeys.CopyString( args[i].key );
 		args[i].value = globalValues.CopyString( args[i].value );
 	}
@@ -62,7 +61,7 @@ idDict::Copy
 ================
 */
 void idDict::Copy( const idDict &other ) {
-	int i, n, *found;
+	int i, *found;
 	idKeyValue kv;
 
 	// check for assignment to self
@@ -70,7 +69,7 @@ void idDict::Copy( const idDict &other ) {
 		return;
 	}
 
-	n = other.args.Num();
+	const int n = other.args.Num();
 
 	if ( args.Num() ) {
 		found = (int *) _alloca16( other.args.Num() * sizeof( int ) );
@@ -103,7 +102,6 @@ idDict::TransferKeyValues
 ================
 */
 void idDict::TransferKeyValues( idDict &other ) {
-	int i, n;
 
 	if ( this == &other ) {
 		return;
@@ -116,9 +114,9 @@ void idDict::TransferKeyValues( idDict &other ) {
 
 	Clear();
 
-	n = other.args.Num();
+	const int n = other.args.Num();
 	args.SetNum( n );
-	for ( i = 0; i < n; i++ ) {
+	for ( int i = 0; i < n; i++ ) {
 		args[i].key = other.args[i].key;
 		args[i].value = other.args[i].value;
 	}
@@ -136,18 +134,16 @@ idDict::Parse
 bool idDict::Parse( idParser &parser ) {
 	idToken	token;
 	idToken	token2;
-	bool	errors;
-
-	errors = false;
+	bool errors = false;
 
 	parser.ExpectTokenString( "{" );
 	parser.ReadToken( &token );
-	while( ( token.type != TT_PUNCTUATION ) || ( token != "}" ) ) {
+	while( token.type != TT_PUNCTUATION || token != "}" ) {
 		if ( token.type != TT_STRING ) {
 			parser.Error( "Expected quoted string, but found '%s'", token.c_str() );
 		}
 
-		if ( !parser.ReadToken( &token2 ) ) {
+		else if ( !parser.ReadToken( &token2 ) ) {
 			parser.Error( "Unexpected end of file" );
 		}
 
@@ -155,6 +151,7 @@ bool idDict::Parse( idParser &parser ) {
 			parser.Warning( "'%s' already defined", token.c_str() );
 			errors = true;
 		}
+
 		Set( token, token2 );
 
 		if ( !parser.ReadToken( &token ) ) {
@@ -171,12 +168,11 @@ idDict::SetDefaults
 ================
 */
 void idDict::SetDefaults( const idDict *dict ) {
-	int i, n;
 	const idKeyValue *kv, *def;
 	idKeyValue newkv;
 
-	n = dict->args.Num();
-	for( i = 0; i < n; i++ ) {
+	const int n = dict->args.Num();
+	for( int i = 0; i < n; i++ ) {
 		def = &dict->args[i];
 		kv = FindKey( def->GetKey() );
 		if ( !kv ) {
@@ -195,18 +191,17 @@ Tels: Like SetDefaults(), but skips all entries starting with skip:
 ================
 */
 void idDict::SetDefaults( const idDict *dict, const idStr &skip ) {
-	int i, n, l;
 	const idKeyValue *kv, *def;
 	idKeyValue newkv;
 
-	n = dict->args.Num();
-	l = skip.Length();
-	for( i = 0; i < n; i++ ) {
+	const int l = skip.Length();
+	for( int i = 0; i < dict->args.Num() ; i++ ) {
 		def = &dict->args[i];
-		if (def->GetKey().Icmpn(skip, l) == 0)
-		{
+
+		if (def->GetKey().Icmpn(skip, l) == 0) {
 			continue;
 		}
+
 		kv = FindKey( def->GetKey() );
 		if ( !kv ) {
 			newkv.key = globalKeys.CopyString( def->key );
@@ -222,9 +217,8 @@ idDict::Clear
 ================
 */
 void idDict::Clear( void ) {
-	int i;
 
-	for( i = 0; i < args.Num(); i++ ) {
+	for( int i = 0; i < args.Num(); i++ ) {
 		globalKeys.FreeString( args[i].key );
 		globalValues.FreeString( args[i].value );
 	}
@@ -239,11 +233,8 @@ idDict::Print
 ================
 */
 void idDict::Print() const {
-	int i;
-	int n;
 
-	n = args.Num();
-	for( i = 0; i < n; i++ ) {
+	for( int i = 0; i < args.Num(); i++ ) {
 		idLib::common->Printf( "%s = %s\n", args[i].GetKey().c_str(), args[i].GetValue().c_str() );
 	}
 }
@@ -259,17 +250,19 @@ idDict::Checksum
 */
 int	idDict::Checksum( void ) const {
 	unsigned long ret;
-	int i, n;
 
 	idList<idKeyValue> sorted = args;
 	sorted.Sort( KeyCompare );
-	n = sorted.Num();
+
 	CRC32_InitChecksum( ret );
-	for( i = 0; i < n; i++ ) {
-		CRC32_UpdateChecksum( ret, sorted[i].GetKey().c_str(), sorted[i].GetKey().Length() );
+	
+	for( int i = 0; i < sorted.Num(); i++ ) {
+		CRC32_UpdateChecksum( ret, sorted[i].GetKey().c_str(),   sorted[i].GetKey().Length() );
 		CRC32_UpdateChecksum( ret, sorted[i].GetValue().c_str(), sorted[i].GetValue().Length() );
 	}
+
 	CRC32_FinishChecksum( ret );
+
 	return ret;
 }
 
@@ -279,11 +272,9 @@ idDict::Allocated
 ================
 */
 size_t idDict::Allocated( void ) const {
-	int		i;
-	size_t	size;
+	size_t	size = args.Allocated() + argHash.Allocated();
 
-	size = args.Allocated() + argHash.Allocated();
-	for( i = 0; i < args.Num(); i++ ) {
+	for ( int i = 0; i < args.Num(); i++ ) {
 		size += args[i].Size();
 	}
 
@@ -296,14 +287,13 @@ idDict::Set
 ================
 */
 void idDict::Set( const char *key, const char *value ) {
-	int i;
 	idKeyValue kv;
 
 	if ( key == NULL || key[0] == '\0' ) {
 		return;
 	}
 
-	i = FindKeyIndex( key );
+	const int i = FindKeyIndex( key );
 	if ( i != -1 ) {
 		// first set the new value and then free the old value to allow proper self copying
 		const idPoolStr *oldValue = args[i].value;
@@ -459,10 +449,11 @@ WriteString
 ================
 */
 static void WriteString( const char *s, idFile *f ) {
-	int	len = strlen( s );
-	if ( len >= MAX_STRING_CHARS-1 ) {
+
+	if ( strlen( s ) >= MAX_STRING_CHARS-1 ) {
 		idLib::common->Error( "idDict::WriteToFileHandle: bad string" );
 	}
+
 	f->Write( s, strlen(s) + 1 );
 }
 
@@ -472,15 +463,14 @@ idDict::FindKey
 ================
 */
 const idKeyValue *idDict::FindKey( const char *key ) const {
-	int i, hash;
 
 	if ( key == NULL || key[0] == '\0' ) {
 		idLib::common->DWarning( "idDict::FindKey: empty key" );
 		return NULL;
 	}
 
-	hash = argHash.GenerateKey( key, false );
-	for ( i = argHash.First( hash ); i != -1; i = argHash.Next( i ) ) {
+	const int hash = argHash.GenerateKey( key, false );
+	for ( int i = argHash.First( hash ); i != -1; i = argHash.Next( i ) ) {
 		if ( args[i].GetKey().Icmp( key ) == 0 ) {
 			return &args[i];
 		}
@@ -501,7 +491,7 @@ int idDict::FindKeyIndex( const char *key ) const {
 		return 0;
 	}
 
-	int hash = argHash.GenerateKey( key, false );
+	const int hash = argHash.GenerateKey( key, false );
 	for ( int i = argHash.First( hash ); i != -1; i = argHash.Next( i ) ) {
 		if ( args[i].GetKey().Icmp( key ) == 0 ) {
 			return i;
@@ -517,10 +507,9 @@ idDict::Delete
 ================
 */
 void idDict::Delete( const char *key ) {
-	int hash, i;
+	const int hash = argHash.GenerateKey( key, false );
 
-	hash = argHash.GenerateKey( key, false );
-	for ( i = argHash.First( hash ); i != -1; i = argHash.Next( i ) ) {
+	for ( int i = argHash.First( hash ); i != -1; i = argHash.Next( i ) ) {
 		if ( args[i].GetKey().Icmp( key ) == 0 ) {
 			globalKeys.FreeString( args[i].key );
 			globalValues.FreeString( args[i].value );
@@ -544,14 +533,12 @@ idDict::MatchPrefix
 ================
 */
 const idKeyValue *idDict::MatchPrefix( const char *prefix, const idKeyValue *lastMatch ) const {
-	int	i;
-	int len;
-	int start;
 
 	assert( prefix );
-	len = strlen( prefix );
 
-	start = -1;
+	const int len = strlen( prefix );
+	int start = -1;
+
 	if ( lastMatch ) {
 		start = args.FindIndex( *lastMatch );
 		assert( start >= 0 );
@@ -560,11 +547,12 @@ const idKeyValue *idDict::MatchPrefix( const char *prefix, const idKeyValue *las
 		}
 	}
 
-	for( i = start + 1; i < args.Num(); i++ ) {
+	for ( int i = start + 1; i < args.Num(); i++ ) {
 		if ( !args[i].GetKey().Icmpn( prefix, len ) ) {
 			return &args[i];
 		}
 	}
+
 	return NULL;
 }
 
@@ -575,7 +563,6 @@ idDict::RandomPrefix
 */
 const char *idDict::RandomPrefix( const char *prefix, idRandom &random ) const {
 	int count;
-	const int MAX_RANDOM_KEYS = 2048;
 	const char *list[MAX_RANDOM_KEYS];
 	const idKeyValue *kv;
 
@@ -583,6 +570,7 @@ const char *idDict::RandomPrefix( const char *prefix, idRandom &random ) const {
 	for ( count = 0, kv = MatchPrefix( prefix ); kv && count < MAX_RANDOM_KEYS; kv = MatchPrefix( prefix, kv ) ) {
 		list[count++] = kv->GetValue().c_str();
 	}
+
 	return list[random.RandomInt( count )];
 }
 
@@ -592,8 +580,11 @@ idDict::WriteToFileHandle
 ================
 */
 void idDict::WriteToFileHandle( idFile *f ) const {
+
 	int c = LittleLong( args.Num() );
+
 	f->Write( &c, sizeof( c ) );
+
 	for ( int i = 0; i < args.Num(); i++ ) {        // don't loop on the swapped count use the original
 		WriteString( args[i].GetKey().c_str(), f );
 		WriteString( args[i].GetValue().c_str(), f );
@@ -615,6 +606,7 @@ static idStr ReadString( idFile *f ) {
 			break;
 		}
 	}
+
 	if ( len == MAX_STRING_CHARS ) {
 		idLib::common->Error( "idDict::ReadFromFileHandle: bad string" );
 	}
@@ -705,10 +697,13 @@ void idDict::ListKeys_f( const idCmdArgs &args ) {
 	for ( i = 0; i < globalKeys.Num(); i++ ) {
 		keyStrings.Append( globalKeys[i] );
 	}
+
 	keyStrings.Sort();
+
 	for ( i = 0; i < keyStrings.Num(); i++ ) {
 		idLib::common->Printf( "%s\n", keyStrings[i]->c_str() );
 	}
+
 	idLib::common->Printf( "%5d keys\n", keyStrings.Num() );
 }
 
@@ -724,9 +719,12 @@ void idDict::ListValues_f( const idCmdArgs &args ) {
 	for ( i = 0; i < globalValues.Num(); i++ ) {
 		valueStrings.Append( globalValues[i] );
 	}
+
 	valueStrings.Sort();
+
 	for ( i = 0; i < valueStrings.Num(); i++ ) {
 		idLib::common->Printf( "%s\n", valueStrings[i]->c_str() );
 	}
+
 	idLib::common->Printf( "%5d values\n", valueStrings.Num() );
 }

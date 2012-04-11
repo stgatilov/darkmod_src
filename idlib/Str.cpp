@@ -734,8 +734,7 @@ void idStr::Remap( const unsigned int count, const char *table ) {
 		for (unsigned int i = 0; i < num; i += 2) {
 			if (data[c] == table[i]) {
 				data[c] = table[i+1];
-				// abord the search a soon as we find the replacement
-				i = num;
+				break; // abort the search once we find the replacement
 			}
 		}
 	}
