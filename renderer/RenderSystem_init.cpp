@@ -29,9 +29,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../sys/win32/win_local.h"
 #endif
 
-// Boost Regex required for Screenshot slot filter
-#include <boost/regex.hpp>
-
 // functions that are not called every frame
 
 glconfig_t	glConfig;
@@ -67,7 +64,8 @@ idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
 idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
-idCVar r_useIndexBuffers( "r_useIndexBuffers", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
+// Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
+idCVar r_useIndexBuffers( "r_useIndexBuffers", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
 idCVar r_useInfiniteFarZ( "r_useInfiniteFarZ", "1", CVAR_RENDERER | CVAR_BOOL, "use the no-far-clip-plane trick" );
@@ -956,91 +954,75 @@ void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
 R_ReportImageDuplication_f
 
 Checks for images with the same hash value and does a better comparison
+
+
 ===================
 */
 void R_ReportImageDuplication_f( const idCmdArgs &args ) {
-	int		i, j;
+	int	count = 0;
 
 	common->Printf( "Images with duplicated contents:\n" );
 
-	int	count = 0;
-
-	for ( i = 0 ; i < globalImages->images.Num() ; i++ ) {
+	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		idImage	*image1 = globalImages->images[i];
 
-		if ( image1->isPartialImage ) {
-			// ignore background loading stubs
+		if ( image1->isPartialImage     || // ignore background loading stubs
+			 image1->generatorFunction  || // ignore procedural images
+			 image1->type != TT_2D		|| // ignore cube maps
+			 image1->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+			 image1->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+			 image1->defaulted ) {
 			continue;
 		}
-		if ( image1->generatorFunction ) {
-			// ignore procedural images
-			continue;
-		}
-		if ( image1->cubeFiles != CF_2D ) {
-			// ignore cube maps
-			continue;
-		}
-		if ( image1->defaulted ) {
-			continue;
-		}
+
 		byte	*data1;
-		int		w1, h1;
+		int		h1 = 0; int w1 = 0;
 
 		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
 
-		for ( j = 0 ; j < i ; j++ ) {
+		for ( int j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
 
-			if ( image2->isPartialImage ) {
-				continue;
-			}
-			if ( image2->generatorFunction ) {
-				continue;
-			}
-			if ( image2->cubeFiles != CF_2D ) {
-				continue;
-			}
-			if ( image2->defaulted ) {
-				continue;
-			}
-			if ( image1->imageHash != image2->imageHash ) {
-				continue;
-			}
-			if ( image2->uploadWidth != image1->uploadWidth
-				|| image2->uploadHeight != image1->uploadHeight ) {
-				continue;
-			}
-			if ( !idStr::Icmp( image1->imgName, image2->imgName ) ) {
-				// ignore same image-with-different-parms
+			if ( image2->isPartialImage     || // ignore background loading stubs
+				 image2->generatorFunction  || // ignore procedural images
+				 image2->type != TT_2D		|| // ignore cube maps
+				 image2->imageHash == 0		|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+				 image2->imageHash == -1	|| // FIXME: This is a hack - Some images are not being hashed - Fonts/gui mainly
+				 image2->defaulted ) {
 				continue;
 			}
 
-			byte	*data2;
-			int		w2, h2;
-
-			R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
-
-			if ( w2 != w1 || h2 != h1 ) {
-				R_StaticFree( data2 );
+			else if ( image1->imageHash    != image2->imageHash    ||
+					  image1->uploadWidth  != image2->uploadWidth  ||
+				      image1->uploadHeight != image2->uploadHeight ||
+					  !idStr::Icmp( image1->imgName, image2->imgName ) // ignore same image-with-different-parms
+					  ) { 
 				continue;
 			}
 
-			if ( memcmp( data1, data2, w1*h1*4 ) ) {
-				R_StaticFree( data2 );
-				continue;
+			else {
+				byte	*data2;
+				int		h2 = 0; int w2 = 0;
+
+				R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
+				
+				if ( w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) {
+					R_StaticFree( data2 );
+					continue;
+				}
+
+				common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
+				session->UpdateScreen( true );
+				count++;
+				break;
 			}
-
-			R_StaticFree( data2 );
-
-			common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
-			session->UpdateScreen( true );
-			count++;
-			break;
 		}
-
 		R_StaticFree( data1 );
 	}
-	common->Printf( "%i / %i collisions\n", count, globalImages->images.Num() );
+
+	const idStr repcol = ( count < 20 ) ? S_COLOR_GREEN : S_COLOR_RED;
+
+	common->Printf( repcol + "Result : %i collisions out of %i images\n", count, globalImages->images.Num() );
 }
 
 /* 
@@ -1142,10 +1124,10 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte	*temp = (byte *)R_StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
+	byte *temp = (byte *)R_StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
 
-	int	oldWidth = glConfig.vidWidth;
-	int oldHeight = glConfig.vidHeight;
+	const int oldWidth = glConfig.vidWidth;
+	const int oldHeight = glConfig.vidHeight;
 
 	tr.tiledViewport[0] = width;
 	tr.tiledViewport[1] = height;
@@ -1166,14 +1148,8 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 				session->UpdateScreen();
 			}
 
-			int w = oldWidth;
-			if ( xo + w > width ) {
-				w = width - xo;
-			}
-			int h = oldHeight;
-			if ( yo + h > height ) {
-				h = height - yo;
-			}
+			int w = ( xo + oldWidth > width )   ? (width - xo)  : oldWidth;
+			int h = ( yo + oldHeight > height ) ? (height - yo) : oldHeight;
 
 			qglReadBuffer( GL_FRONT );
 			qglReadPixels( 0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, temp ); 
@@ -1200,91 +1176,25 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	glConfig.vidHeight = oldHeight;
 }
 
-void Screenshot_AppendFileListForExtension(idStrList &list, const char *directory, const char *extension)
-{
-	idFileList *ptr = fileSystem->ListFiles(directory, extension, false, true);
-	list.Append(ptr->GetList());
-	fileSystem->FreeFileList(ptr);
-}
-
-// taaaki: regex expr for cleaning mission names
-static const boost::regex TDM_MAPNAME_CLEANER("[^a-z0-9_]");
-static const std::string repl ("_");
-
 void Screenshot_ChangeFilename(idStr& filename, const char *extension)
 {
-	static int index = -1;
-    static idStr mapcleaned;
-    static idStr prevmap;
+	idStr mapname( cvarSystem->GetCVarString( "fs_game" ) );
+	char thetime[MAX_IMAGE_NAME/2];
 
-    if (idStr::Cmp(prevmap, cvarSystem->GetCVarString( "fs_game" )) != 0) {
-        index = -1;
-    }
-    
-	// on first access: find the first free screenshot index
-	if (index < 0 && filename.Length() == 0)
-	{
-		// taaaki: include the fan mission name, but strip unwanted characters
-        idStr mapname( cvarSystem->GetCVarString( "fs_game" ) );
-        prevmap = mapname;
-        mapname.ToLower();
-        mapcleaned = (boost::regex_replace(std::string(mapname.c_str()), TDM_MAPNAME_CLEANER, repl)).c_str();
-        
-        // taaaki: change screenshot filter format to screenshots/fmname-shot00000.ext
-        const boost::regex TDM_SCREENSHOT_FILTER( va("screenshots[/\\\\]+%s-shot([0-9][0-9][0-9][0-9][0-9]).+", mapcleaned.c_str()) );
-
-        //DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Received screenshot filename \"%s\".\r", filename.c_str());
-		//get directory path
-		idStr directory = "screenshots";
-		//directory.StripFilename();
-		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Searching directory \"%s\" for screenshots...\r", directory.c_str());
-
-		//get sorted list of all files in this directory
-		idStrList allFiles;
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".png");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".bmp");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".jpg");
-		Screenshot_AppendFileListForExtension(allFiles, directory.c_str(), ".tga");
-
-		//for (int i = 0; i<allFiles.Num(); i++)
-			//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
-
-		idStrListSortPaths(allFiles);
-
-		//DM_LOG(LC_MISC,LT_INFO)LOGSTRING("-----------\r");
-
-		//for (int i = 0; i<allFiles.Num(); i++)
-		//	DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Screenshot:    \"%s\"\r", allFiles[i].c_str());
-
-		// iterate through files from end to start, search for the last screenshot file
-		index = 1;
-        boost::cmatch strIndex;
-		for (int i = allFiles.Num()-1; i>=0; i--)
-		{
-            if (boost::regex_match( allFiles[i].c_str(), strIndex, TDM_SCREENSHOT_FILTER ))
-			{
-                //DM_LOG(LC_MISC,LT_INFO)LOGSTRING("Found screenshot \"%s\"!\r", allFiles[i].c_str());
-				sscanf(strIndex[1].str().c_str(), "%d", &index);
-				index++;
-				break;
-			}
-		}
+	if ( !mapname || mapname[0] == '\0' ) {
+		mapname = "noFm";
 	}
 
-	// process filename (set index and extension)
-	char fileOnly[256];
+	{
+		time_t tt;
+		time(&tt);
+		struct tm * ltime = localtime(&tt);
+
+		strftime(thetime, sizeof(thetime) ,"_%Y-%m-%d_%H.%M.%S.", ltime);
+	}
+
+	const idStr fileOnly = mapname + thetime + extension;
     
-    if (filename.Length() == 0) {
-        idStr::snPrintf(fileOnly, 256, "%s-shot%05d.%s", mapcleaned.c_str(), index, extension);
-
-        //increase screenshot index
-	    index++;
-    } else {
-        filename.StripFileExtension();
-        filename.StripPath();
-        idStr::snPrintf(fileOnly, 256, "%s.%s", filename.c_str(), extension);
-    }
-
     filename = "screenshots/";
 	filename.AppendPath(fileOnly);
 }
@@ -1523,22 +1433,20 @@ Save out a screenshot showing the stencil buffer expanded by 16x range
 */
 void R_StencilShot( void ) {
 	byte		*buffer;
-	int			i, c;
 
-	int	width = tr.GetScreenWidth();
-	int	height = tr.GetScreenHeight();
+	const int	width = tr.GetScreenWidth();
+	const int	height = tr.GetScreenHeight();
+	const int	pix = width * height;
+	const int	flen = pix * 3 + 18;
 
-	int	pix = width * height;
-
-	c = pix * 3 + 18;
-	buffer = (byte *)Mem_Alloc(c);
-	memset (buffer, 0, 18);
+	buffer = (byte *)Mem_Alloc( flen );
+	memset(buffer, 0, 18);
 
 	byte *byteBuffer = (byte *)Mem_Alloc(pix);
 
 	qglReadPixels( 0, 0, width, height, GL_STENCIL_INDEX , GL_UNSIGNED_BYTE, byteBuffer ); 
 
-	for ( i = 0 ; i < pix ; i++ ) {
+	for ( int i = 0 ; i < pix ; i++ ) {
 		buffer[18+i*3] =
 		buffer[18+i*3+1] =
 			//		buffer[18+i*3+2] = ( byteBuffer[i] & 15 ) * 16;
@@ -1546,14 +1454,14 @@ void R_StencilShot( void ) {
 	}
 
 	// fill in the header (this is vertically flipped, which qglReadPixels emits)
-	buffer[2] = 2;		// uncompressed type
+	buffer[ 2] = 2;		// uncompressed type
 	buffer[12] = width & 255;
 	buffer[13] = width >> 8;
 	buffer[14] = height & 255;
 	buffer[15] = height >> 8;
 	buffer[16] = 24;	// pixel size
 
-	fileSystem->WriteFile( "screenshots/stencilShot.tga", buffer, c, "fs_savepath" );
+	fileSystem->WriteFile( "screenshots/stencilShot.tga", buffer, flen, "fs_savepath" );
 
 	Mem_Free( buffer );
 	Mem_Free( byteBuffer );	
@@ -1568,21 +1476,26 @@ envshot <basename>
 Saves out env/<basename>_ft.tga, etc
 ================== 
 */  
+const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+
 void R_EnvShot_f( const idCmdArgs &args ) {
 	idStr		fullname;
 	const char	*baseName;
-	int			i;
 	idMat3		axis[6];
 	renderView_t	ref;
 	viewDef_t	primary;
-	int			blends;
-	const char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
-	int			size;
+	int			blends, size;
 
-	if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
+	if ( !tr.primaryView ) {
+		common->Printf( "No primary view.\n" );
+		return;
+	}
+	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
 		common->Printf( "USAGE: envshot <basename> [size] [blends]\n" );
 		return;
 	}
+
+	primary = *tr.primaryView;
 	baseName = args.Argv( 1 );
 
 	blends = 1;
@@ -1596,13 +1509,6 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		size = 256;
 		blends = 1;
 	}
-
-	if ( !tr.primaryView ) {
-		common->Printf( "No primary view.\n" );
-		return;
-	}
-
-	primary = *tr.primaryView;
 
 	memset( &axis, 0, sizeof( axis ) );
 	axis[0][0][0] = 1;
@@ -1629,14 +1535,14 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	axis[5][1][0] = 1;
 	axis[5][2][1] = 1;
 
-	for ( i = 0 ; i < 6 ; i++ ) {
+	for ( int i = 0 ; i < 6 ; i++ ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
 		ref.fov_x = ref.fov_y = 90;
 		ref.width = glConfig.vidWidth;
 		ref.height = glConfig.vidHeight;
 		ref.viewaxis = axis[i];
-		sprintf( fullname, "env/%s%s", baseName, extensions[i] );
+		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		tr.TakeScreenshot( size, size, fullname, blends, &ref );
 	}
 
@@ -1699,6 +1605,7 @@ void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result
 	result[3] = buffers[axis][(y*size+x)*4+3];
 }
 
+
 /* 
 ================== 
 R_MakeAmbientMap_f
@@ -1709,13 +1616,12 @@ Saves out env/<basename>_amb_ft.tga, etc
 ================== 
 */  
 void R_MakeAmbientMap_f( const idCmdArgs &args ) {
-	idStr fullname;
+	//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+	idStr		fullname;
 	const char	*baseName;
-	int			i;
 	renderView_t	ref;
 	viewDef_t	primary;
-	int			downSample;
-	const char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+	//int		downSample;
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;
@@ -1726,7 +1632,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	}
 	baseName = args.Argv( 1 );
 
-	downSample = 0;
+	//downSample = 0;
 	if ( args.Argc() == 3 ) {
 		outSize = atoi( args.Argv( 2 ) );
 	} else {
@@ -1759,8 +1665,8 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	cubeAxis[5][2][1] = 1;
 
 	// read all of the images
-	for ( i = 0 ; i < 6 ; i++ ) {
-		sprintf( fullname, "env/%s%s", baseName, extensions[i] );
+	for ( int i = 0 ; i < 6 ; i++ ) {
+		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		common->Printf( "loading %s\n", fullname.c_str() );
 		session->UpdateScreen();
 		R_LoadImage( fullname, &buffers[i], &width, &height, NULL, true );
@@ -1779,7 +1685,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	byte	*outBuffer = (byte *)_alloca( outSize * outSize * 4 );
 
 	for ( int map = 0 ; map < 2 ; map++ ) {
-		for ( i = 0 ; i < 6 ; i++ ) {
+		for ( int i = 0 ; i < 6 ; i++ ) {
 			for ( int x = 0 ; x < outSize ; x++ ) {
 				for ( int y = 0 ; y < outSize ; y++ ) {
 					idVec3	dir;
@@ -1822,9 +1728,9 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 			}
 
 			if ( map == 0 ) {
-				sprintf( fullname, "env/%s_amb%s", baseName, extensions[i] );
+				sprintf( fullname, "env/%s_amb%s", baseName, cubeExtensions[i] );
 			} else {
-				sprintf( fullname, "env/%s_spec%s", baseName, extensions[i] );
+				sprintf( fullname, "env/%s_spec%s", baseName, cubeExtensions[i] );
 			}
 			common->Printf( "writing %s\n", fullname.c_str() );
 			session->UpdateScreen();
@@ -1832,9 +1738,9 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		}
 	}
 
-	for ( i = 0 ; i < 6 ; i++ ) {
-		if ( buffers[i] ) {
-			Mem_Free( buffers[i] );
+	for ( int f = 0 ; f < 6 ; f++ ) {
+		if ( buffers[f] ) {
+			Mem_Free( buffers[f] );
 		}
 	}
 } 
@@ -1848,14 +1754,14 @@ R_SetColorMappings
 ===============
 */
 void R_SetColorMappings( void ) {
-	int		i, j;
+	int		j;
 	float	g, b;
 	int		inf;
 
 	b = r_brightness.GetFloat();
 	g = r_gamma.GetFloat();
 
-	for ( i = 0; i < 256; i++ ) {
+	for ( int i = 0; i < 256; i++ ) {
 		j = i * b;
 		if (j > 255) {
 			j = 255;
@@ -1983,7 +1889,6 @@ R_VidRestart_f
 =================
 */
 void R_VidRestart_f( const idCmdArgs &args ) {
-	int	err;
 
 	// if OpenGL isn't started, do nothing
 	if ( !glConfig.isInitialized ) {
@@ -2061,9 +1966,9 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	R_RegenerateWorld_f( idCmdArgs() );
 
 	// check for problems
-	err = qglGetError();
+	int err = qglGetError();
 	if ( err != GL_NO_ERROR ) {
-		common->Printf( "glGetError() = 0x%x\n", err );
+		common->Error( "glGetError() = 0x%x\n", err );
 	}
 
 	// start sound playing again
@@ -2088,9 +1993,8 @@ void R_InitMaterials( void ) {
 	}
 	declManager->FindMaterial( "_default", false );
 
-	// needed by R_DeriveLightData
-	declManager->FindMaterial( "lights/defaultPointLight" );
-	declManager->FindMaterial( "lights/defaultProjectedLight" );
+	tr.defaultShaderPoint = declManager->FindMaterial( "lights/defaultPointLight" );
+	tr.defaultShaderProj  = declManager->FindMaterial( "lights/defaultProjectedLight" );
 }
 
 
@@ -2280,7 +2184,7 @@ void idRenderSystemLocal::Init( void ) {
 	identitySpace.modelMatrix[2*4+2] = 1.0f;
 
 	// determine which back end we will use
-	// ??? this is invalid here as there is not enough information to set it up correctly
+	// FIXME : ??? this is invalid here as there is not enough information to set it up correctly
 	SetBackEndRenderer();
 
 	common->Printf( "renderSystem initialized.\n" );

@@ -31,38 +31,41 @@
 #define PROC_FILE_EXT				"proc"
 #define	PROC_FILE_ID				"mapProcFile003"
 
-// shader parms
-const int MAX_GLOBAL_SHADER_PARMS	= 12;
-
-const int SHADERPARM_RED			= 0;
-const int SHADERPARM_GREEN			= 1;
-const int SHADERPARM_BLUE			= 2;
-const int SHADERPARM_ALPHA			= 3;
-const int SHADERPARM_TIMESCALE		= 3;
-const int SHADERPARM_TIMEOFFSET		= 4;
-const int SHADERPARM_DIVERSITY		= 5;	// random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
-const int SHADERPARM_MODE			= 7;	// for selecting which shader passes to enable
-const int SHADERPARM_TIME_OF_DEATH	= 7;	// for the monster skin-burn-away effect enable and time offset
-
-// model parms
-const int SHADERPARM_MD5_SKINSCALE	= 8;	// for scaling vertex offsets on md5 models (jack skellington effect)
-
-const int SHADERPARM_MD3_FRAME		= 8;
-const int SHADERPARM_MD3_LASTFRAME	= 9;
-const int SHADERPARM_MD3_BACKLERP	= 10;
-
-const int SHADERPARM_BEAM_END_X		= 8;	// for _beam models
-const int SHADERPARM_BEAM_END_Y		= 9;
-const int SHADERPARM_BEAM_END_Z		= 10;
-const int SHADERPARM_BEAM_WIDTH		= 11;
-
-const int SHADERPARM_SPRITE_WIDTH		= 8;
-const int SHADERPARM_SPRITE_HEIGHT		= 9;
-
-const int SHADERPARM_PARTICLE_STOPTIME = 8;	// don't spawn any more particles after this time
+// portals
+#define NUM_PORTAL_ATTRIBUTES		3
 
 // guis
-const int MAX_RENDERENTITY_GUI		= 3;
+#define MAX_RENDERENTITY_GUI		3
+
+// shader parms
+#define	MAX_GLOBAL_SHADER_PARMS		12
+
+#define SHADERPARM_RED				0
+#define SHADERPARM_GREEN			1
+#define SHADERPARM_BLUE				2
+#define SHADERPARM_ALPHA			3
+
+#define SHADERPARM_TIMESCALE		3
+#define SHADERPARM_TIMEOFFSET		4
+#define SHADERPARM_DIVERSITY		5	// random between 0.0 and 1.0 for some effects (muzzle flashes, etc)
+#define SHADERPARM_MODE				7	// for selecting which shader passes to enable
+#define SHADERPARM_TIME_OF_DEATH	7	// for the monster skin-burn-away effect enable and time offset
+
+// model parms
+#define SHADERPARM_MD5_SKINSCALE	8	// for scaling vertex offsets on md5 models (jack skellington effect)
+#define SHADERPARM_MD3_FRAME		8
+#define SHADERPARM_MD3_LASTFRAME	9
+#define SHADERPARM_MD3_BACKLERP		10
+
+#define SHADERPARM_BEAM_END_X		8	// for _beam models
+#define SHADERPARM_BEAM_END_Y		9
+#define SHADERPARM_BEAM_END_Z		10
+#define SHADERPARM_BEAM_WIDTH		11
+
+#define SHADERPARM_SPRITE_WIDTH		8
+#define SHADERPARM_SPRITE_HEIGHT	9
+
+#define SHADERPARM_PARTICLE_STOPTIME 8	// don't spawn any more particles after this time
 
 
 typedef bool(*deferredEntityCallback_t)( renderEntity_s *, const renderView_s * );
@@ -187,7 +190,6 @@ typedef struct renderLight_s {
 	// muzzle flash lights will not cast shadows from player and weapon world models
 	int						lightId;
 
-
 	const idMaterial *		shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
 	idSoundEmitter *		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
@@ -243,16 +245,13 @@ typedef struct modelTrace_s {
 } modelTrace_t;
 
 
-static const int NUM_PORTAL_ATTRIBUTES = 3;
-
 typedef enum {
-	PS_BLOCK_NONE = 0,
+	PS_BLOCK_NONE =			0,
+	PS_BLOCK_VIEW =			1,
+	PS_BLOCK_LOCATION =		2,		// game map location strings often stop in hallways
+	PS_BLOCK_AIR =			4,		// windows between pressurized and unpresurized areas
 
-	PS_BLOCK_VIEW = 1,
-	PS_BLOCK_LOCATION = 2,		// game map location strings often stop in hallways
-	PS_BLOCK_AIR = 4,			// windows between pressurized and unpresurized areas
-
-	PS_BLOCK_ALL = (1<<NUM_PORTAL_ATTRIBUTES)-1
+	PS_BLOCK_ALL = (1<<NUM_PORTAL_ATTRIBUTES)-1,
 } portalConnection_t;
 
 

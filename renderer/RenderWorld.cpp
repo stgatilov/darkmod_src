@@ -160,9 +160,10 @@ ResizeInteractionTable
 void idRenderWorldLocal::ResizeInteractionTable() {
 	// we overflowed the interaction table, so dump it
 	// we may want to resize this in the future if it turns out to be common
-	common->Printf( "idRenderWorldLocal::ResizeInteractionTable: overflowed interactionTableWidth, dumping\n" );
+	common->Warning( "Overflowed interactionTableWidth - table removed and disabled" );
 	R_StaticFree( interactionTable );
 	interactionTable = NULL;
+	r_useInteractionTable.SetBool( 0 );
 }
 
 /*
@@ -617,7 +618,7 @@ void idRenderWorldLocal::ProjectOverlay( qhandle_t entityHandle, const idPlane l
 	}
 	model = R_EntityDefDynamicModel( def );
 
-	if ( def->overlay == NULL ) {
+	if ( !def->overlay ) {
 		def->overlay = idRenderModelOverlay::Alloc();
 	}
 	def->overlay->CreateOverlay( model, localTextureAxis, material );
@@ -1375,24 +1376,25 @@ void idRenderWorldLocal::AddEntityRefToArea( idRenderEntityLocal *def, portalAre
 
 	if ( !def ) {
 		common->Error( "idRenderWorldLocal::AddEntityRefToArea: NULL def" );
+	} 
+	else {
+		ref = areaReferenceAllocator.Alloc();
+
+		tr.pc.c_entityReferences++;
+
+		ref->entity = def;
+
+		// link to entityDef
+		ref->ownerNext = def->entityRefs;
+		def->entityRefs = ref;
+
+		// link to end of area list
+		ref->area = area;
+		ref->areaNext = &area->entityRefs;
+		ref->areaPrev = area->entityRefs.areaPrev;
+		ref->areaNext->areaPrev = ref;
+		ref->areaPrev->areaNext = ref;
 	}
-
-	ref = areaReferenceAllocator.Alloc();
-
-	tr.pc.c_entityReferences++;
-
-	ref->entity = def;
-
-	// link to entityDef
-	ref->ownerNext = def->entityRefs;
-	def->entityRefs = ref;
-
-	// link to end of area list
-	ref->area = area;
-	ref->areaNext = &area->entityRefs;
-	ref->areaPrev = area->entityRefs.areaPrev;
-	ref->areaNext->areaPrev = ref;
-	ref->areaPrev->areaNext = ref;
 }
 
 /*
@@ -1455,37 +1457,51 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		this->CreateLightDefInteractions( ldef );
 	}
 
+#if DEBUG
 	int end = Sys_Milliseconds();
 	int	msec = end - start;
 
 	common->Printf( "idRenderWorld::GenerateAllInteractions, msec = %i, staticAllocCount = %i.\n", msec, tr.staticAllocCount );
-
+#endif
 
 	// build the interaction table
 	if ( r_useInteractionTable.GetBool() ) {
-		interactionTableWidth = entityDefs.Num() + 100;
-		interactionTableHeight = lightDefs.Num() + 100;
-		int	size =  interactionTableWidth * interactionTableHeight * sizeof( *interactionTable );
+		// FIXME: Serp
+		// This is temp, and should be changed to better represent the map ent/light count,
+		// Note : Should allocate a nice PoT of 67108864 - try to preserve a PoT in fixed version.
+		const int BUFFER = 4096;
+		interactionTableWidth = BUFFER; // this->entityDefs.Num() + padding
+		interactionTableHeight = BUFFER; // this->lightDefs.Num() + padding
+		const int size = (interactionTableWidth * interactionTableHeight) * sizeof( interactionTable ); 
 		interactionTable = (idInteraction **)R_ClearedStaticAlloc( size );
 
+		//common->Printf( "entityDefs.Num(): %i\n", this->entityDefs.Num() );
+		//common->Printf( "lightDefs.Num(): %i\n", this->lightDefs.Num() );
+		//common->Printf( "sizeof( interactionTable ): %i\n", sizeof( interactionTable ) );
+		//common->Printf( "whole size: %i bytes\n", size );
+
+		int index;
 		int	count = 0;
+		idRenderLightLocal *ldef;
+		idRenderEntityLocal	*edef;
+		idInteraction *inter;
 		for ( int i = 0 ; i < this->lightDefs.Num() ; i++ ) {
-			idRenderLightLocal	*ldef = this->lightDefs[i];
+			ldef = this->lightDefs[i];
 			if ( !ldef ) {
 				continue;
 			}
-			idInteraction	*inter;
 			for ( inter = ldef->firstInteraction; inter != NULL; inter = inter->lightNext ) {
-				idRenderEntityLocal	*edef = inter->entityDef;
-				int index = ldef->index * interactionTableWidth + edef->index;
+				edef = inter->entityDef;
+				index = ldef->index * interactionTableWidth + edef->index;
 
 				interactionTable[ index ] = inter;
 				count++;
 			}
 		}
-
-		common->Printf( "interactionTable size: %i bytes\n", size );
-		common->Printf( "%i interaction take %i bytes\n", count, count * sizeof( idInteraction ) );
+		common->Printf( "interactionTable generated of size: %i bytes\n", size );
+#if DEBUG
+		common->Printf( "%i interactions take %i bytes\n", count, count * sizeof( idInteraction ) );
+#endif
 	}
 
 	// entities flagged as noDynamicInteractions will no longer make any
@@ -1498,10 +1514,9 @@ idRenderWorldLocal::FreeInteractions
 ===================
 */
 void idRenderWorldLocal::FreeInteractions() {
-	int			i;
 	idRenderEntityLocal	*def;
 
-	for ( i = 0 ; i < entityDefs.Num(); i++ ) {
+	for (int i = 0 ; i < entityDefs.Num(); i++ ) {
 		def = entityDefs[i];
 		if ( !def ) {
 			continue;
@@ -1530,13 +1545,11 @@ We might alternatively choose to do this with an area flow.
 */
 void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), 
 								 int nodeNum ) {
-	int			i;
 	areaNode_t	*node;
-	bool	front, back;
-
+	
 	if ( nodeNum < 0 ) {
-		portalArea_t	*area;
-		int		areaNum = -1 - nodeNum;
+		portalArea_t *area;
+		int areaNum = -1 - nodeNum;
 
 		area = &portalAreas[ areaNum ];
 		if ( area->viewCount == tr.viewCount ) {
@@ -1546,8 +1559,7 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 
 		if ( def ) {
 			AddEntityRefToArea( def, area );
-		}
-		if ( light ) {
+		} else if ( light ) {
 			AddLightRefToArea( light, area );
 		}
 
@@ -1578,8 +1590,7 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
 		}
 		return;
-	}
-	if ( sd <= -sphere->GetRadius() ) {
+	} else if ( sd < -sphere->GetRadius() ) {
 		nodeNum = node->children[1];
 		if ( nodeNum ) {	// 0 = solid
 			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
@@ -1587,9 +1598,12 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 		return;
 	}
 
-	// exact check all the points against the node plane
-	front = back = false;
 #ifdef MACOS_X	//loop unrolling & pre-fetching for performance
+	// NOTE : Serp - I have no doubt totally broken this, I care... not so much.
+	// exact check all the points against the node plane
+	int		i;
+	bool	front, back;
+	front = back = false;
 	const idVec3 norm = node->plane.Normal();
 	const float plane3 = node->plane[3];
 	float D0, D1, D2, D3;
@@ -1639,32 +1653,42 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 		}	
 	}
 #else
-	for ( i = 0 ; i < numPoints ; i++ ) {
-		float d;
 
+	// exact check all the points against the node plane
+	int		i;
+	float	d;
+	bool	front, back;
+	int		nodeNum2;
+	front = back = false;
+
+	for ( i = 0 ; i < numPoints ; i++ ) {
 		d = points[i] * node->plane.Normal() + node->plane[3];
-		if ( d >= 0.0f ) {
+
+		if ( d > 0.0f ) {
 		    front = true;
-		} else if ( d <= 0.0f ) {
+		} else {
 		    back = true;
 		}
-		if ( back && front ) {
-		    break;
+		if ( back && front) {
+		    nodeNum = node->children[0];
+			nodeNum2 = node->children[1];
+			if ( nodeNum ) {	// 0 = solid
+				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
+			} 
+			if ( nodeNum2 ) {	// 0 = solid
+				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum2 );
+			}
+			return;
 		}
 	}
 #endif
-	if ( front ) {
-		nodeNum = node->children[0];
+
+	if ( front || back) {
+		nodeNum = node->children[back];
 		if ( nodeNum ) {	// 0 = solid
 			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
 		}
-	}
-	if ( back ) {
-		nodeNum = node->children[1];
-		if ( nodeNum ) {	// 0 = solid
-			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-		}
-	}
+	} 
 }
 
 /*
@@ -1673,9 +1697,9 @@ PushVolumeIntoTree
 ==============
 */
 void idRenderWorldLocal::PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) ) {
-	int i;
-	float radSquared, lr;
+	float lr, radSquared = 0.0f;
 	idVec3 mid, dir;
+	int i;
 
 	if ( areaNodes == NULL ) {
 		return;
@@ -1683,14 +1707,12 @@ void idRenderWorldLocal::PushVolumeIntoTree( idRenderEntityLocal *def, idRenderL
 
 	// calculate a bounding sphere for the points
 	mid.Zero();
-	for ( i = 0; i < numPoints; i++ ) {
+	for (i = 0; i < numPoints; i++ ) {
 		mid += points[i];
 	}
 	mid *= ( 1.0f / numPoints );
 
-	radSquared = 0;
-
-	for ( i = 0; i < numPoints; i++ ) {
+	for (i = 0; i < numPoints; i++ ) {
 		dir = points[i] - mid;
 		lr = dir * dir;
 		if ( lr > radSquared ) {
@@ -1698,7 +1720,7 @@ void idRenderWorldLocal::PushVolumeIntoTree( idRenderEntityLocal *def, idRenderL
 		}
 	}
 
-	idSphere sphere( mid, sqrt( radSquared ) );
+	const idSphere sphere( mid, sqrt( radSquared ) );
 
 	PushVolumeIntoTree_r( def, light, &sphere, numPoints, points, 0 );
 }
@@ -2105,26 +2127,27 @@ R_RemapShaderBySkin
 */
 const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSkin *skin, const idMaterial *customShader ) {
 
-	if ( !shader ) {
+	// This is unlikely and fatal
+	/*if ( !shader ) {
 		return NULL;
-	}
-
+	}*/
+		
+	// early exit if we arnt doing anything
 	// never remap surfaces that were originally nodraw, like collision hulls
-	if ( !shader->IsDrawn() ) {
+	if ( !skin || !shader->IsDrawn()) {
 		return shader;
 	}
 
+	// Note: This does not seem to be evaluated ever, tho there is reasoning below for its inclusion.
+	// FIXME : If no reports, comment him out.
 	if ( customShader ) {
+		common->Warning("Skin CustomShader. Please report this.");
 		// this is sort of a hack, but cause deformed surfaces to map to empty surfaces,
 		// so the item highlight overlay doesn't highlight the autosprite surface
 		if ( shader->Deform() ) {
 			return NULL;
 		}
-		return const_cast<idMaterial *>(customShader);
-	}
-
-	if ( !skin || !shader ) {
-		return const_cast<idMaterial *>(shader);
+		return customShader;
 	}
 
 	return skin->RemapShaderBySkin( shader );

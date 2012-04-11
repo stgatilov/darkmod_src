@@ -77,9 +77,8 @@ void idRenderModelStatic::Print() const {
 
 	common->Printf( "    verts  tris material\n" );
 	for ( int i = 0 ; i < NumSurfaces() ; i++ ) {
-		const modelSurface_t	*surf = Surface( i );
-
-		srfTriangles_t *tri = surf->geometry;
+		const modelSurface_t *surf = Surface( i );
+		const srfTriangles_t *tri = surf->geometry;
 		const idMaterial *material = surf->shader;
 		
 		if ( !tri ) {
@@ -135,9 +134,9 @@ void idRenderModelStatic::List() const {
 
 	totalBytes = Memory();
 
-	char	closed = 'C';
+	char closed = 'C';
 	for ( int j = 0 ; j < NumSurfaces() ; j++ ) {
-		const modelSurface_t	*surf = Surface( j );
+		const modelSurface_t *surf = Surface( j );
 		if ( !surf->geometry ) {
 			continue;
 		}
@@ -151,8 +150,7 @@ void idRenderModelStatic::List() const {
 
 	if ( IsDynamicModel() == DM_CACHED ) {
 		common->Printf( " (DM_CACHED)" );
-	}
-	if ( IsDynamicModel() == DM_CONTINUOUS ) {
+	} else if ( IsDynamicModel() == DM_CONTINUOUS ) {
 		common->Printf( " (DM_CONTINUOUS)" );
 	}
 	if ( defaulted ) {
@@ -160,8 +158,7 @@ void idRenderModelStatic::List() const {
 	}
 	if ( bounds[0][0] >= bounds[1][0] ) {
 		common->Printf( " (EMPTY BOUNDS)" );
-	}
-	if ( bounds[1][0] - bounds[0][0] > 100000 ) {
+	} else if ( bounds[1][0] - bounds[0][0] > 100000 ) {
 		common->Printf( " (HUGE BOUNDS)" );
 	}
 
@@ -327,10 +324,9 @@ void idRenderModelStatic::InitEmpty( const char *fileName ) {
 	// world, and have already been considered for optimized shadows
 	// other model names are inline entity models, and need to be
 	// shadowed normally
+	isStaticWorldModel = false;
 	if ( !idStr::Cmpn( fileName, "_area", 5 ) ) {
 		isStaticWorldModel = true;
-	} else {
-		isStaticWorldModel = false;
 	}
 
 	name = fileName;
@@ -818,7 +814,7 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *as
 
 		// It seems like the tools our artists are using often generate
 		// verts and texcoords slightly separated that should be merged
-		// note that we really should combine the surfaces with common materials
+		// FIXME : note that we really should combine the surfaces with common materials
 		// before doing this operation, because we can miss a slop combination
 		// if they are in different surfaces
 
@@ -2098,10 +2094,9 @@ idRenderModelStatic::PurgeModel
 ================
 */
 void idRenderModelStatic::PurgeModel() {
-	int		i;
 	modelSurface_t	*surf;
 
-	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
 		surf = &surfaces[i];
 
 		if ( surf->geometry ) {
@@ -2148,10 +2143,10 @@ void idRenderModelStatic::ReadFromDemoFile( class idDemoFile *f ) {
 
 	InitEmpty( f->ReadHashString() );
 
-	int i, j, numSurfaces;
+	int numSurfaces;
 	f->ReadInt( numSurfaces );
 	
-	for ( i = 0 ; i < numSurfaces ; i++ ) {
+	for ( int i = 0 ; i < numSurfaces ; i++ ) {
 		modelSurface_t	surf;
 		
 		surf.shader = declManager->FindMaterial( f->ReadHashString() );
@@ -2160,12 +2155,12 @@ void idRenderModelStatic::ReadFromDemoFile( class idDemoFile *f ) {
 		
 		f->ReadInt( tri->numIndexes );
 		R_AllocStaticTriSurfIndexes( tri, tri->numIndexes );
-		for ( j = 0; j < tri->numIndexes; ++j )
+		for ( int j = 0; j < tri->numIndexes; ++j )
 			f->ReadInt( (int&)tri->indexes[j] );
 		
 		f->ReadInt( tri->numVerts );
 		R_AllocStaticTriSurfVerts( tri, tri->numVerts );
-		for ( j = 0; j < tri->numVerts; ++j ) {
+		for ( int j = 0; j < tri->numVerts; ++j ) {
 			f->ReadVec3( tri->verts[j].xyz );
 			f->ReadVec2( tri->verts[j].st );
 			f->ReadVec3( tri->verts[j].normal );
@@ -2199,20 +2194,20 @@ void idRenderModelStatic::WriteToDemoFile( class idDemoFile *f ) {
 	f->WriteInt( data[0] );
 	f->WriteHashString( this->Name() );
 
-	int i, j, iData = surfaces.Num();
+	int iData = surfaces.Num();
 	f->WriteInt( iData );
 
-	for ( i = 0 ; i < surfaces.Num() ; i++ ) {
+	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
 		const modelSurface_t	*surf = &surfaces[i];
 		
 		f->WriteHashString( surf->shader->GetName() );
 		
 		srfTriangles_t *tri = surf->geometry;
 		f->WriteInt( tri->numIndexes );
-		for ( j = 0; j < tri->numIndexes; ++j )
+		for ( int j = 0; j < tri->numIndexes; ++j )
 			f->WriteInt( (int&)tri->indexes[j] );
 		f->WriteInt( tri->numVerts );
-		for ( j = 0; j < tri->numVerts; ++j ) {
+		for ( int j = 0; j < tri->numVerts; ++j ) {
 			f->WriteVec3( tri->verts[j].xyz );
 			f->WriteVec2( tri->verts[j].st );
 			f->WriteVec3( tri->verts[j].normal );
@@ -2274,9 +2269,7 @@ idRenderModelStatic::DeleteSurfaceWithId
 =================
 */
 bool idRenderModelStatic::DeleteSurfaceWithId( int id ) {
-	int i;
-
-	for ( i = 0; i < surfaces.Num(); i++ ) {
+	for ( int i = 0; i < surfaces.Num(); i++ ) {
 		if ( surfaces[i].id == id ) {
 			R_FreeStaticTriSurf( surfaces[i].geometry );
 			surfaces.RemoveIndex( i );
@@ -2292,9 +2285,7 @@ idRenderModelStatic::DeleteSurfacesWithNegativeId
 =================
 */
 void idRenderModelStatic::DeleteSurfacesWithNegativeId( void ) {
-	int i;
-
-	for ( i = 0; i < surfaces.Num(); i++ ) {
+	for ( int i = 0; i < surfaces.Num(); i++ ) {
 		if ( surfaces[i].id < 0 ) {
 			R_FreeStaticTriSurf( surfaces[i].geometry );
 			surfaces.RemoveIndex( i );
@@ -2309,9 +2300,7 @@ idRenderModelStatic::FindSurfaceWithId
 =================
 */
 bool idRenderModelStatic::FindSurfaceWithId( int id, int &surfaceNum ) {
-	int i;
-
-	for ( i = 0; i < surfaces.Num(); i++ ) {
+	for ( int i = 0; i < surfaces.Num(); i++ ) {
 		if ( surfaces[i].id == id ) {
 			surfaceNum = i;
 			return true;

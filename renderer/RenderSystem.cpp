@@ -723,8 +723,10 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	// check for dynamic changes that require some initialization
 	R_CheckCvars();
 
+#ifdef DEBUG
     // check for errors
 	GL_CheckErrors();
+#endif
 
 	// add the swapbuffers command
 	cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );

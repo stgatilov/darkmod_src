@@ -3288,8 +3288,8 @@ void TestGetSpecularTextureCoords( void ) {
 	int i, j;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	ALIGN16( idDrawVert drawVerts[COUNT] );
-	ALIGN16( idVec4 texCoords1[COUNT] );
-	ALIGN16( idVec4 texCoords2[COUNT] );
+	ALIGN16( idVec3 texCoords1[COUNT] );
+	ALIGN16( idVec3 texCoords2[COUNT] );
 	ALIGN16( int indexes[COUNT*3] );
 	ALIGN16( idVec3 lightVectors1[COUNT] );
 	ALIGN16( idVec3 lightVectors2[COUNT] );

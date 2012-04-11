@@ -292,7 +292,7 @@ ID_INLINE idMat2 idMat2::Inverse( void ) const {
 
 	invMat = *this;
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -307,7 +307,7 @@ ID_INLINE idMat2 idMat2::InverseFast( void ) const {
 
 	invMat = *this;
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else
@@ -711,7 +711,7 @@ ID_INLINE idMat3 idMat3::Inverse( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -726,7 +726,7 @@ ID_INLINE idMat3 idMat3::InverseFast( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else
@@ -1131,7 +1131,7 @@ ID_INLINE idMat4 idMat4::Inverse( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -1146,7 +1146,7 @@ ID_INLINE idMat4 idMat4::InverseFast( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else
@@ -1448,7 +1448,7 @@ ID_INLINE idMat5 idMat5::Inverse( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -1463,7 +1463,7 @@ ID_INLINE idMat5 idMat5::InverseFast( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else
@@ -1787,7 +1787,7 @@ ID_INLINE idMat6 idMat6::Inverse( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -1802,7 +1802,7 @@ ID_INLINE idMat6 idMat6::InverseFast( void ) const {
 
 	invMat = *this;
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else
@@ -2643,7 +2643,7 @@ ID_INLINE idMatX idMatX::Inverse( void ) const {
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
 	
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseSelf();
 	assert( r );
 #else
@@ -2685,7 +2685,7 @@ ID_INLINE idMatX idMatX::InverseFast( void ) const {
 	invMat.SetTempSize( numRows, numColumns );
 	memcpy( invMat.mat, mat, numRows * numColumns * sizeof( float ) );
 
-#ifdef DEBUG
+#ifdef _DEBUG
 	int r = invMat.InverseFastSelf();
 	assert( r );
 #else

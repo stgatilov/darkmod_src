@@ -55,8 +55,7 @@ srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWindi
 			const idPlane &plane2 = planes[j];
 			if ( j == i ) {
 				continue;
-			}
-			if ( !w.ClipInPlace( -plane2, ON_EPSILON ) ) {
+			} else if ( !w.ClipInPlace( -plane2, ON_EPSILON ) ) {
 				break;
 			}
 		}

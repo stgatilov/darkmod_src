@@ -17,6 +17,9 @@
  
 ******************************************************************************/
 
+#ifndef __R_IMAGE_H__
+#define __R_IMAGE_H__
+
 /*
 ====================================================================
 
@@ -46,13 +49,15 @@ qglDisable( GL_TEXTURE_* )
 ====================================================================
 */
 
+
+
 typedef enum {
 	IS_UNLOADED,	// no gl texture number
 	IS_PARTIAL,		// has a texture number and the low mip levels loaded
 	IS_LOADED		// has a texture number and the full mip hierarchy
 } imageState_t;
 
-static const int	MAX_TEXTURE_LEVELS = 14;
+#define	MAX_TEXTURE_LEVELS				14
 
 // surface description flags
 const unsigned long DDSF_CAPS           = 0x00000001l;
@@ -75,9 +80,9 @@ const unsigned long DDSF_ID_INDEXCOLOR	= 0x10000000l;
 const unsigned long DDSF_ID_MONOCHROME	= 0x20000000l;
 
 // dwCaps1 flags
-const unsigned long DDSF_COMPLEX         = 0x00000008l;
-const unsigned long DDSF_TEXTURE         = 0x00001000l;
-const unsigned long DDSF_MIPMAP          = 0x00400000l;
+const unsigned long DDSF_COMPLEX        = 0x00000008l;
+const unsigned long DDSF_TEXTURE        = 0x00001000l;
+const unsigned long DDSF_MIPMAP         = 0x00400000l;
 
 #define DDS_MAKEFOURCC(a, b, c, d) ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24))
 
@@ -486,3 +491,4 @@ IMAGEPROGRAM
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
 const char *R_ParsePastImageProgram( idLexer &src );
 
+#endif /* !__R_IMAGE_H__ */

@@ -41,7 +41,6 @@ typedef struct glconfig_s {
 
 	float				glVersion;				// atof( version_string )
 
-
 	int					maxTextureSize;			// queried from GL
 	int					maxTextureUnits;
 	int					maxTextureCoords;
@@ -56,24 +55,21 @@ typedef struct glconfig_s {
 	bool				textureLODBiasAvailable;
 	bool				textureEnvAddAvailable;
 	bool				textureEnvCombineAvailable;
-	bool				registerCombinersAvailable;
+	bool				texture3DAvailable;
 	bool				cubeMapAvailable;
 	bool				envDot3Available;
-	bool				texture3DAvailable;
+
+	bool				registerCombinersAvailable;
 	bool				ARBVertexBufferObjectAvailable;
 	bool				ARBVertexProgramAvailable;
 	bool				ARBFragmentProgramAvailable;
 	bool				twoSidedStencilAvailable;
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
-
-	// ati r200 extensions
-	bool				atiFragmentShaderAvailable;
+	bool				atiFragmentShaderAvailable; // ati r200 extensions
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
-
 	int					displayFrequency;
-
 	bool				isFullscreen;
 
 	bool				allowNV30Path;
@@ -85,13 +81,22 @@ typedef struct glconfig_s {
 	bool				isInitialized;
 } glconfig_t;
 
+#define SMALLCHAR_WIDTH		8
+#define SMALLCHAR_HEIGHT	16
+#define BIGCHAR_WIDTH		16
+#define BIGCHAR_HEIGHT		16
+
+// all drawing is done to a 640 x 480 virtual screen size
+// and will be automatically scaled to the real resolution
+#define SCREEN_WIDTH		640
+#define SCREEN_HEIGHT		480
 
 // font support 
-const int GLYPH_START			= 0;
-const int GLYPH_END				= 255;
-const int GLYPH_CHARSTART		= 32;
-const int GLYPH_CHAREND			= 127;
-const int GLYPHS_PER_FONT		= GLYPH_END - GLYPH_START + 1;
+#define GLYPH_START			0
+#define GLYPH_END			255
+#define GLYPH_CHARSTART		32
+#define GLYPH_CHAREND		127
+#define GLYPHS_PER_FONT		(GLYPH_END - GLYPH_START + 1)
 
 typedef struct {
 	int					height;			// number of scan lines
@@ -130,16 +135,6 @@ typedef struct {
 	char				name[64];
 } fontInfoEx_t;
 
-const int SMALLCHAR_WIDTH		= 8;
-const int SMALLCHAR_HEIGHT		= 16;
-const int BIGCHAR_WIDTH			= 16;
-const int BIGCHAR_HEIGHT		= 16;
-
-// all drawing is done to a 640 x 480 virtual screen size
-// and will be automatically scaled to the real resolution
-const int SCREEN_WIDTH			= 640;
-const int SCREEN_HEIGHT			= 480;
-
 class idRenderWorld;
 
 
@@ -156,9 +151,7 @@ public:
 	virtual void			Shutdown( void ) = 0;
 
 	virtual void			InitOpenGL( void ) = 0;
-
 	virtual void			ShutdownOpenGL( void ) = 0;
-
 	virtual bool			IsOpenGLRunning( void ) const = 0;
 
 	virtual bool			IsFullScreen( void ) const = 0;
@@ -202,9 +195,6 @@ public:
 
 	// draw the 2D pics that were saved out with the current demo frame
 	virtual void			DrawDemoPics() = 0;
-
-	// FIXME: add an interface for arbitrary point/texcoord drawing
-
 
 	// a frame cam consist of 2D drawing and potentially multiple 3D scenes
 	// window sizes are needed to convert SCREEN_WIDTH / SCREEN_HEIGHT values

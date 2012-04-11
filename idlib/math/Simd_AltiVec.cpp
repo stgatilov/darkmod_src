@@ -8321,7 +8321,7 @@ idSIMD_AltiVec::CreateSpecularTextureCoords
 	The texture coordinates are only calculated for the vertices referenced by the indexes.
 ============
 */
-void VPCALL idSIMD_AltiVec::CreateSpecularTextureCoords( idVec4 *texCoords, const idVec3 &lightOrigin, const idVec3 &viewOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
+void VPCALL idSIMD_AltiVec::CreateSpecularTextureCoords( idVec3 *texCoords, const idVec3 &lightOrigin, const idVec3 &viewOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 		
 	bool *used = (bool *)_alloca16( numVerts * sizeof( used[0] ) );
 	memset( used, 0, numVerts * sizeof( used[0] ) );
@@ -8473,14 +8473,14 @@ void VPCALL idSIMD_AltiVec::CreateSpecularTextureCoords( idVec4 *texCoords, cons
 			vec_ste( vecTC0, 0, &texCoords[index][0] );
 			vec_ste( vecTC1, 0, &texCoords[index][1] );
 			vec_ste( vecTC2, 0, &texCoords[index][2] );
-			vec_ste( (vector float)(1.0), 0, &texCoords[index][3] );
+			//vec_ste( (vector float)(1.0), 0, &texCoords[index][3] );
 		}
 		
 		if ( used[index+1] ) {
 			vec_ste( vecTC3, 0, &texCoords[index+1][0] );
 			vec_ste( vecTC4, 0, &texCoords[index+1][1] );
 			vec_ste( vecTC5, 0, &texCoords[index+1][2] );
-			vec_ste( (vector float)(1.0), 0, &texCoords[index+1][3] );	
+			//vec_ste( (vector float)(1.0), 0, &texCoords[index+1][3] );	
 		}
 	}
 
@@ -8555,7 +8555,7 @@ void VPCALL idSIMD_AltiVec::CreateSpecularTextureCoords( idVec4 *texCoords, cons
 		vec_ste( vecTC0, 0, &texCoords[index][0] );
 		vec_ste( vecTC1, 0, &texCoords[index][1] );
 		vec_ste( vecTC2, 0, &texCoords[index][2] );
-		vec_ste( (vector float)(1.0), 0, &texCoords[index][3] );
+		//vec_ste( (vector float)(1.0), 0, &texCoords[index][3] );
 	
 	}
 }

@@ -19,7 +19,9 @@
 
 // vertex cache calls should only be made by the front end
 
-const int NUM_VERTEX_FRAMES = 2;
+#define NUM_VERTEX_FRAMES			2
+#define FRAME_MEMORY_BYTES			0x200000 // frame size
+#define EXPAND_HEADERS				1024
 
 typedef enum {
 	TAG_FREE,
@@ -37,7 +39,7 @@ typedef struct vertCache_s {
 	int				size;				// may be larger than the amount asked for, due
 										// to round up and minimum fragment sizes
 	int				tag;				// a tag of 0 is a free block
-	struct vertCache_s	**	user;				// will be set to zero when purged
+	struct vertCache_s	**	user;		// will be set to zero when purged
 	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
 	int				frameUsed;			// it can't be purged if near the current frame
 } vertCache_t;
@@ -49,7 +51,7 @@ public:
 	void			Shutdown();
 
 	// just for gfxinfo printing
-	bool			IsFast();
+	bool			IsFast( ) { return !virtualMemory; };
 
 	// called when vertex programs are enabled or disabled, because
 	// the cached data is no longer valid
@@ -95,6 +97,8 @@ public:
 	void			List();
 
 private:
+	bool			virtualMemory;			// not fast stuff
+
 	void			InitMemoryBlocks( int size );
 	void			ActuallyFree( vertCache_t *block );
 
@@ -112,8 +116,6 @@ private:
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
 
-	bool			virtualMemory;			// not fast stuff
-
 	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW_ARB
 
 	vertCache_t		*tempBuffers[NUM_VERTEX_FRAMES];		// allocated at startup
@@ -127,8 +129,6 @@ private:
 	vertCache_t		deferredFreeList;		// head of doubly linked list
 	vertCache_t		staticHeaders;			// head of doubly linked list in MRU order,
 											// staticHeaders.next is most recently used
-
-	int				frameBytes;				// for each of NUM_VERTEX_FRAMES frames
 };
 
 extern	idVertexCache	vertexCache;

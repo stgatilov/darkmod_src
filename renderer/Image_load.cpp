@@ -109,7 +109,6 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 	byte	*normals;
 	const byte	*in;
 	byte	*out;
-	int		i, j;
 	int		x, y, z;
 	int		row;
 
@@ -117,14 +116,14 @@ void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba
 	row = width < 4 ? 4 : width;
 
 	normals = (byte *)_alloca( row * height );
-	if ( !normals ) {
+	if ( normals == NULL ) {
 		common->Error( "R_UploadCompressedNormalMap: _alloca failed" );
 	}
 
 	in = rgba;
 	out = normals;
-	for ( i = 0 ; i < height ; i++, out += row, in += width * 4 ) {
-		for ( j = 0 ; j < width ; j++ ) {
+	for ( int i = 0 ; i < height ; i++, out += row, in += width * 4 ) {
+		for ( int j = 0 ; j < width ; j++ ) {
 			x = in[ j * 4 + 0 ];
 			y = in[ j * 4 + 1 ];
 			z = in[ j * 4 + 2 ];
@@ -492,7 +491,7 @@ There is no way to specify explicit mip map levels
 void idImage::GenerateImage( const byte *pic, int width, int height, 
 					   textureFilter_t filterParm, bool allowDownSizeParm, 
 					   textureRepeat_t repeatParm, textureDepth_t depthParm ) {
-	bool	preserveBorder;
+	bool		preserveBorder;
 	byte		*scaledBuffer;
 	int			scaled_width, scaled_height;
 	byte		*shrunk;
@@ -701,7 +700,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	SetImageFilterAndRepeat();
 
 	// see if we messed anything up
+#ifdef _DEBUG
 	GL_CheckErrors();
+#endif
 }
 
 
@@ -834,8 +835,10 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 		common->FatalError( "R_CreateImage: bad texture repeat" );
 	}
 
+#ifdef _DEBUG
 	// see if we messed anything up
 	GL_CheckErrors();
+#endif
 }
 
 
@@ -952,8 +955,10 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 		miplevel++;
 	}
 
+#ifdef _DEBUG
 	// see if we messed anything up
 	GL_CheckErrors();
+#endif
 }
 
 
@@ -976,7 +981,7 @@ void idImage::ImageProgramStringToCompressedFileName( const char *imageProg, cha
 	// this could conceivably produce a duplicated mapping, but we aren't going to worry about it
 	for ( s = imageProg ; *s ; s++ ) {
 		// tels: TODO: Why the strange difference between "/ ", ')', ',' and all the other special characters?
-		if ( *s == '/' || *s == '\\' || *s == '(') {
+		if ( *s == '/' || *s == '\\' || *s == '(' ) {
 			*f = '/';
 			f++;
 		} else if ( *s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.' ) {
@@ -1684,12 +1689,14 @@ Automatically enables 2D mapping, cube mapping, or 3D texturing if needed
 ==============
 */
 void idImage::Bind() {
+#if DEBUG
 	if ( tr.logFile ) {
 		RB_LogComment( "idImage::Bind( %s )\n", imgName.c_str() );
 	}
+#endif
 
 	// if this is an image that we are caching, move it to the front of the LRU chain
-	if ( partialImage ) {
+	if ( isPartialImage ) {
 		if ( cacheUsageNext ) {
 			// unlink from old position
 			cacheUsageNext->cacheUsagePrev = cacheUsagePrev;
@@ -1705,7 +1712,7 @@ void idImage::Bind() {
 
 	// load the image if necessary (FIXME: not SMP safe!)
 	if ( texnum == TEXTURE_NOT_LOADED ) {
-		if ( partialImage ) {
+		if ( isPartialImage ) {
 			// if we have a partial image, go ahead and use that
 			this->partialImage->Bind();
 
@@ -1725,7 +1732,7 @@ void idImage::Bind() {
 	frameUsed = backEnd.frameCount;
 	bindCount++;
 
-	tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
+	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 
 	// enable or disable apropriate texture modes
 	if ( tmu->textureType != type && ( backEnd.glState.currenttmu <	glConfig.maxTextureUnits ) ) {
@@ -1780,12 +1787,13 @@ do any enable / disable changes
 ==============
 */
 void idImage::BindFragment() {
+#if DEBUG
 	if ( tr.logFile ) {
 		RB_LogComment( "idImage::BindFragment %s )\n", imgName.c_str() );
 	}
-
+#endif
 	// if this is an image that we are caching, move it to the front of the LRU chain
-	if ( partialImage ) {
+	if ( isPartialImage ) {
 		if ( cacheUsageNext ) {
 			// unlink from old position
 			cacheUsageNext->cacheUsagePrev = cacheUsagePrev;
@@ -1801,7 +1809,7 @@ void idImage::BindFragment() {
 
 	// load the image if necessary (FIXME: not SMP safe!)
 	if ( texnum == TEXTURE_NOT_LOADED ) {
-		if ( partialImage ) {
+		if ( isPartialImage ) {
 			// if we have a partial image, go ahead and use that
 			this->partialImage->BindFragment();
 

@@ -2738,7 +2738,7 @@ idSIMD_Generic::CreateSpecularTextureCoords
 	The texture coordinates are only calculated for the vertices referenced by the indexes.
 ============
 */
-void VPCALL idSIMD_Generic::CreateSpecularTextureCoords( idVec4 *texCoords, const idVec3 &lightOrigin, const idVec3 &viewOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
+void VPCALL idSIMD_Generic::CreateSpecularTextureCoords( idVec3 *texCoords, const idVec3 &lightOrigin, const idVec3 &viewOrigin, const idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes ) {
 
 	bool *used = (bool *)_alloca16( numVerts * sizeof( used[0] ) );
 	memset( used, 0, numVerts * sizeof( used[0] ) );
@@ -2774,7 +2774,6 @@ void VPCALL idSIMD_Generic::CreateSpecularTextureCoords( idVec4 *texCoords, cons
 		texCoords[i][0] = lightDir * v->tangents[0];
 		texCoords[i][1] = lightDir * v->tangents[1];
 		texCoords[i][2] = lightDir * v->normal;
-		texCoords[i][3] = 1.0f;
 	}
 }
 
