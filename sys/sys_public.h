@@ -211,17 +211,6 @@ typedef struct sysEvent_s {
 	void *			evPtr;				// this must be manually freed if not NULL
 } sysEvent_t;
 
-typedef struct sysMemoryStats_s {
-	int memoryLoad;
-	int totalPhysical;
-	int availPhysical;
-	int totalPageFile;
-	int availPageFile;
-	int totalVirtual;
-	int availVirtual;
-	int availExtendedVirtual;
-} sysMemoryStats_t;
-
 typedef unsigned long address_t;
 
 template<class type> class idList;		// for Sys_ListFiles
@@ -297,10 +286,6 @@ int				Sys_GetVideoRam( void );
 
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );
-
-// returns memory stats
-void			Sys_GetCurrentMemoryStatus( sysMemoryStats_t &stats );
-void			Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats );
 
 // lock and unlock memory
 bool			Sys_LockMemory( void *ptr, int bytes );

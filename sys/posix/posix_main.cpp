@@ -344,14 +344,6 @@ void Sys_GetMemoryStatus( sysMemoryStats_t &stats ) {
 	common->Printf( "FIXME: Sys_GetMemoryStatus stub\n" );
 }
 
-void Sys_GetCurrentMemoryStatus( sysMemoryStats_t &stats ) {
-	common->Printf( "FIXME: Sys_GetCurrentMemoryStatus\n" );
-}
-
-void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats ) {
-	common->Printf( "FIXME: Sys_GetExeLaunchMemoryStatus\n" );
-}
-
 /*
 =================
 Sys_Init

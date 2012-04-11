@@ -68,19 +68,8 @@ xthreadInfo *g_threads[MAX_THREADS];
 
 int g_thread_count = 0;
 
-static sysMemoryStats_t exeLaunchMemoryStats;
-
 static	xthreadInfo	threadInfo;
 static	HANDLE		hTimer;
-
-/*
-================
-Sys_GetExeLaunchMemoryStatus
-================
-*/
-void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats ) {
-	stats = exeLaunchMemoryStats;
-}
 
 /*
 ==================
@@ -1425,8 +1414,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	const HCURSOR hcurSave = ::SetCursor( LoadCursor( 0, IDC_WAIT ) );
 
 	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-
-	Sys_GetCurrentMemoryStatus( exeLaunchMemoryStats );
 
 #if 0
     DWORD handler = (DWORD)_except_handler;
