@@ -11599,7 +11599,7 @@ void idAI::ShowDebugInfo()
 	}
 }
 
-const idStr& idAI::GetNextIdleAnim()
+const idStr& idAI::GetNextIdleAnim() const
 {
 	return m_NextIdleAnim;
 }
@@ -11649,7 +11649,7 @@ void idAI::SetBlood(idEntity *marker)
 	m_bloodMarker = marker;
 }
 
-idEntity* idAI::GetBlood(void)
+idEntity* idAI::GetBlood(void) const
 {
 	return m_bloodMarker;
 }

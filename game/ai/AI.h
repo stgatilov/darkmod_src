@@ -1900,7 +1900,7 @@ public:
 	// greebo: Contains all the checks for CVAR-dependent debug info
 	void					ShowDebugInfo();
 
-	const idStr&			GetNextIdleAnim();
+	const idStr&			GetNextIdleAnim() const;
 	void					SetNextIdleAnim(const idStr& nextIdleAnim);
 
 	// grayman #2603 - work with the list of delayed visual stims
@@ -1911,7 +1911,7 @@ public:
 	// grayman #3075 - set and get an AI's blood marker
 
 	void					SetBlood(idEntity *marker);
-	idEntity*				GetBlood(void);
+	idEntity*				GetBlood(void) const;
 		
 	//
 	// ai/ai_events.cpp
