@@ -9655,13 +9655,24 @@ void idEntity::OnAddToLocationEntity(CObjectiveLocation* locationEnt)
 	idEntityPtr<CObjectiveLocation> locationEntPtr;
 	locationEntPtr = locationEnt;
 
-	// Ensure that objective locations don't add themselves twice or more times
+	// Ensure that objective locations don't add themselves twice or more times.
+
 	// Tels: The assert below triggers under Debug build when loading Heart, took
-	// it out since it will be ignored under Release builds anyway
+	// it out since it will be ignored under Release builds anyway.
+
+	// grayman: This assert was being triggered by multiple requests that
+	// the location entity be registered with the same entity. This is legal (it
+	// can happen) when that entity has multiple clip models, since clip model
+	// intersection with the location entity was used to build the list of entities
+	// inside the location entity. So the assert statement shouldn't be used, and
+	// the routine should just handle being fed the same location entity, which it
+	// already does.
+
 	//assert(m_objLocations.FindIndex(locationEntPtr) == -1);
+
 	if (m_objLocations.FindIndex(locationEntPtr) != -1)
 	{
-		return;
+		return; // this entity already knows it's inside the location entity
 	}
 
 	m_objLocations.Alloc() = locationEntPtr;

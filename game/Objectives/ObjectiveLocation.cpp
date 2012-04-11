@@ -150,9 +150,15 @@ void CObjectiveLocation::Think()
 				continue;
 			}
 
+			// ClipModelsTouchingBounds() will count each clip model in a multiple
+			// clip model entity as a separate entity. This will fill 'current' with
+			// repeated entries for the same entity. When the list is used below to
+			// register entities using OnAddToLocationEntity(), that routine needs to
+			// filter out the extra instances so only one is added.
+
 			if (entity->m_bIsObjective)
 			{
-				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), entity->name.c_str() );
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location 1 %s found entity %s during clock tick. \r", name.c_str(), entity->name.c_str() );
 				current.Alloc() = entity;
 			}
 		}
@@ -168,7 +174,7 @@ void CObjectiveLocation::Think()
 		{
 			if( Ents[i] && Ents[i]->m_bIsObjective )
 			{
-				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
+				DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objective location 2 %s found entity %s during clock tick. \r", name.c_str(), Ents[i]->name.c_str() );
 				current.Alloc() = Ents[i];
 			}
 		}
