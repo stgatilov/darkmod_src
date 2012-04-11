@@ -337,15 +337,6 @@ const char *Posix_Cwd( void ) {
 
 /*
 =================
-Sys_GetMemoryStatus
-=================
-*/
-void Sys_GetMemoryStatus( sysMemoryStats_t &stats ) {
-	common->Printf( "FIXME: Sys_GetMemoryStatus stub\n" );
-}
-
-/*
-=================
 Sys_Init
 Posix_EarlyInit/Posix_LateInit is better
 =================
