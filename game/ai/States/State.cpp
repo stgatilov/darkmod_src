@@ -1147,10 +1147,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 	}
 
 	// Hard-cast the stimsource onto an actor 
-	idActor* other = static_cast<idActor*>(stimSource);	
+	idActor* other = static_cast<idActor*>(stimSource);
 
-	// Are they dead or unconscious?
-	if (other->health <= 0) 
+	if (other->health <= 0) // Are they dead?
 	{
 		if ( ShouldProcessAlert(EAlertTypeDeadPerson) )
 		{
@@ -1166,7 +1165,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			ignoreStimulusFromNowOn = false;
 		}
 	}
-	else if (other->IsKnockedOut())
+	else if (other->IsKnockedOut()) // Are they unconscious?
 	{
 		if (ShouldProcessAlert(EAlertTypeUnconsciousPerson))
 		{
@@ -1807,13 +1806,52 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	if ( owner->IsEnemy(person) )
+	// grayman #3075 - Ignore any blood markers spilled by this body if they're nearby
+
+	if ( person->IsType(idAI::Type) )
 	{
-		// The dead person is your enemy, ignore from now on
+		idAI* personAI = static_cast<idAI*>(person);
+		idEntity* bloodMarker = personAI->GetBlood();
+		if ( bloodMarker != NULL )
+		{
+			idVec3 personOrg = personAI->GetPhysics()->GetOrigin();
+			float bloodDistSqr = (bloodMarker->GetPhysics()->GetOrigin() - personOrg).LengthSqr();
+
+			// Ignore blood if it's close to the body
+
+			if ( bloodDistSqr <= Square(BLOOD2BLEEDER_MIN_DIST) )
+			{
+				bloodMarker->IgnoreResponse(ST_VISUAL, owner);
+			}
+		}
+	}
+
+	// grayman #3075 - Ignore all suspicious weapons (arrows)
+	// stuck into this body
+
+	idList<idEntity *> children;
+	person->GetTeamChildren(&children); // gets the head, other attachments, and children of all
+	for ( int i = 0 ; i < children.Num() ; i++ )
+	{
+		idEntity *child = children[i];
+		if ( child == NULL )
+		{
+			continue;
+		}
+		idStr aiUse = child->spawnArgs.GetString("AIUse");
+		if ( child->IsType(CProjectileResult::Type) && ( aiUse == AIUSE_SUSPICIOUS ) )
+		{
+			child->IgnoreResponse(ST_VISUAL, owner);
+		}
+	}
+	
+	if ( owner->IsEnemy(person) || owner->IsNeutral(person) ) // grayman #3078 - ignore neutrals too
+	{
+		// ignore from now on
 		return true;
 	}
 
-	// The dead person isn't an enemy, this is suspicious
+	// The dead person is a friend, so this is suspicious
 
 	gameLocal.Printf("I see a dead person!\n");
 	memory.deadPeopleHaveBeenFound = true;
@@ -1855,8 +1893,6 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 			CommunicationTaskPtr(new SingleBarkTask(soundName))
 		);
 	}
-
-
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
@@ -1900,46 +1936,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	memory.investigateStimulusLocationClosely = true; // deep investigation
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.alertedDueToCommunication = false;
-
-	// grayman #3075 - Ignore any blood markers spilled by this body if they're nearby
-
-	if ( person->IsType(idAI::Type) )
-	{
-		idAI* personAI = static_cast<idAI*>(person);
-		idEntity* bloodMarker = personAI->GetBlood();
-		if ( bloodMarker != NULL )
-		{
-			idVec3 personOrg = personAI->GetPhysics()->GetOrigin();
-			float bloodDistSqr = (bloodMarker->GetPhysics()->GetOrigin() - personOrg).LengthSqr();
-
-			// Ignore blood if it's close to the body
-
-			if ( bloodDistSqr <= Square(BLOOD2BLEEDER_MIN_DIST) )
-			{
-				bloodMarker->IgnoreResponse(ST_VISUAL, owner);
-			}
-		}
-	}
-
-	// grayman #3075 - Ignore all suspicious weapons (arrows)
-	// stuck into this body
-
-	idList<idEntity *> children;
-	person->GetTeamChildren(&children); // gets the head, other attachments, and children of all
-	for ( int i = 0 ; i < children.Num() ; i++ )
-	{
-		idEntity *child = children[i];
-		if ( child == NULL )
-		{
-			continue;
-		}
-		idStr aiUse = child->spawnArgs.GetString("AIUse");
-		if ( child->IsType(CProjectileResult::Type) && ( aiUse == AIUSE_SUSPICIOUS ) )
-		{
-			child->IgnoreResponse(ST_VISUAL, owner);
-		}
-	}
-		
+	
 	// Callback for objectives
 	owner->FoundBody(person);
 
@@ -1949,75 +1946,73 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 
 bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 {
-	assert(person != NULL && owner != NULL); // must be fulfilled
+	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	gameLocal.Printf("I see an unconscious person!\n");
-
-	if (owner->IsEnemy(person))
+	if ( owner->IsEnemy(person) || owner->IsNeutral(person) ) // grayman #3078 - ignore neutrals too
 	{
-		// The unconscious person is your enemy, ignore from now on
+		// The unconscious person is your enemy or neutral, ignore from now on
 		return true;
 	}
-	else 
+
+	gameLocal.Printf("I see an unconscious person!\n");
+
+	memory.unconsciousPeopleHaveBeenFound = true;
+	memory.countEvidenceOfIntruders += 2; // grayman #2603
+	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
+	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
+	memory.stopRelight = true; // grayman #2603
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+
+	// We've seen this object, don't respond to it again
+	person->IgnoreResponse(ST_VISUAL, owner);
+
+	// Determine what to say
+	idStr soundName;
+	idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+
+	if (personGender == PERSONGENDER_FEMALE)
 	{
-		memory.unconsciousPeopleHaveBeenFound = true;
-		memory.countEvidenceOfIntruders += 2; // grayman #2603
-		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
-		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-		memory.stopRelight = true; // grayman #2603
-		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-
-		// We've seen this object, don't respond to it again
-		person->IgnoreResponse(ST_VISUAL, owner);
-
-		// Determine what to say
-		idStr soundName;
-		idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
-
-		if (personGender == PERSONGENDER_FEMALE)
-		{
-			soundName = "snd_foundUnconsciousFemale";
-		}
-		else
-		{
-			soundName = "snd_foundUnconsciousMale";
-		}
-
-		// Speak a reaction
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask(soundName))
-		);
-
-		// Raise alert level
-		if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
-		{
-			memory.alertPos = person->GetPhysics()->GetOrigin();
-			memory.alertClass = EAlertVisual_1;
-			memory.alertType = EAlertTypeUnconsciousPerson;
-			
-			// Do search as if there is an enemy that has escaped
-			memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-			memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-			memory.alertSearchExclusionVolume.Zero();
-			
-			owner->AI_VISALERT = false;
-			memory.visualAlert = false; // grayman #2422			
-			
-			owner->SetAlertLevel(owner->thresh_5 + 0.1f);
-		}
-					
-		// Do new reaction to stimulus
-		memory.investigateStimulusLocationClosely = true; // deep investigation
-		memory.stimulusLocationItselfShouldBeSearched = true;
-		memory.alertedDueToCommunication = false;
-		
-		// Callback for objectives
-		owner->FoundBody(person);
+		soundName = "snd_foundUnconsciousFemale";
 	}
+	else
+	{
+		soundName = "snd_foundUnconsciousMale";
+	}
+
+	// Speak a reaction
+	memory.lastTimeVisualStimBark = gameLocal.time;
+	owner->commSubsystem->AddCommTask(
+		CommunicationTaskPtr(new SingleBarkTask(soundName))
+	);
+
+	// Raise alert level
+	if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
+	{
+		memory.alertPos = person->GetPhysics()->GetOrigin();
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeUnconsciousPerson;
+			
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+			
+		owner->AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422			
+			
+		owner->SetAlertLevel(owner->thresh_5 + 0.1f);
+	}
+					
+	// Do new reaction to stimulus
+	memory.investigateStimulusLocationClosely = true; // deep investigation
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.alertedDueToCommunication = false;
+		
+	// Callback for objectives
+	owner->FoundBody(person);
 
 	// Ignore from now on
 	return true;
@@ -2271,7 +2266,7 @@ void State::OnMovementBlocked(idAI* owner)
 
 void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 {
-	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
 	Memory& memory = owner->GetMemory();
 

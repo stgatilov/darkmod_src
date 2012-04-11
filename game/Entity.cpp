@@ -12272,23 +12272,22 @@ bool idEntity::IsNeutral(const idEntity *other) const
 	{
 		return false;
 	}
-	else if (other->team == -1)
+
+	if (other->team == -1)
 	{
 		// entities with team -1 (not set) are neutral
 		return true;
 	}
-	else
-	{
-		// angua: look up entity specific relation
-		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
-		if (found != m_EntityRelations.end())
-		{
-			return (found->second == 0);
-		}
 
-		// angua: no specific relation found, fall back to standard team relations
-		return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
+	// angua: look up entity specific relation
+	EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+	if (found != m_EntityRelations.end())
+	{
+		return (found->second == 0);
 	}
+
+	// angua: no specific relation found, fall back to standard team relations
+	return gameLocal.m_RelationsManager->IsNeutral(team, other->team);
 }
 
 bool idEntity::IsEnemy(const idEntity *other ) const
