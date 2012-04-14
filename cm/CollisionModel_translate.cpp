@@ -775,9 +775,9 @@ void idCollisionModelManagerLocal::Translation( trace_t *results, const idVec3 &
 	cm_trmVertex_t *vert;
 	ALIGN16( static cm_traceWork_t tw );
 
-	assert( ((byte *)&start) < ((byte *)results) || ((byte *)&start) > (((byte *)results) + sizeof( trace_t )) );
-	assert( ((byte *)&end) < ((byte *)results) || ((byte *)&end) > (((byte *)results) + sizeof( trace_t )) );
-	assert( ((byte *)&trmAxis) < ((byte *)results) || ((byte *)&trmAxis) > (((byte *)results) + sizeof( trace_t )) );
+	assert( ((byte *)&start) < ((byte *)results) || ((byte *)&start) >= (((byte *)results) + sizeof( trace_t )) );
+	assert( ((byte *)&end) < ((byte *)results) || ((byte *)&end) >= (((byte *)results) + sizeof( trace_t )) );
+	assert( ((byte *)&trmAxis) < ((byte *)results) || ((byte *)&trmAxis) >= (((byte *)results) + sizeof( trace_t )) );
 
 	memset( results, 0, sizeof( *results ) );
 
