@@ -77,7 +77,10 @@ void idDeviceContext::SetFont( int num ) {
 	if ( num >= 0 && num < fonts.Num() ) {
 		activeFont = &fonts[num];
 	} else {
-		activeFont = &fonts[0];
+		// only if we have at least one font
+		if (fonts.Num() > 0) {
+			activeFont = &fonts[0];
+		}
 	}
 }
 
@@ -89,7 +92,11 @@ void idDeviceContext::Init() {
 	whiteImage->SetSort( SS_GUI );
 	mbcs = false;
 	SetupFonts();
-	activeFont = &fonts[0];
+	if (fonts.Num() > 0) {
+		activeFont = &fonts[0];
+	} else {
+		common->Warning( "idDeviceContext::Init: Need at least one font as the default font." );
+	}
 	colorPurple = idVec4(1, 0, 1, 1);
 	colorOrange = idVec4(1, 1, 0, 1);
 	colorYellow = idVec4(0, 1, 1, 1);
