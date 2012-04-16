@@ -1438,7 +1438,9 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		return;
 	}
 
+#if DEBUG
 	int start = Sys_Milliseconds();
+#endif
 
 	generateAllInteractionsCalled = false;
 

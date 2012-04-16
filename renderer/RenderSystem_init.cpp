@@ -33,8 +33,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 glconfig_t	glConfig;
 
-static void GfxInfo_f( void );
-
 const char *r_rendererArgs[] = { "best", "arb", "arb2", "Cg", "exp", "nv10", "nv20", "r200", NULL };
 
 idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );
