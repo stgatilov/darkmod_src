@@ -52,8 +52,10 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
 const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
 const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
-const idEventDef AI_PerformRelight("performRelight"); // grayman #2603
-const idEventDef AI_DropTorch("dropTorch");	// grayman #2603
+const idEventDef AI_PerformRelight("performRelight");    // grayman #2603
+const idEventDef AI_DropTorch("dropTorch");			     // grayman #2603
+const idEventDef AI_ShowInterest("showInterest", "ev");  // grayman #2816
+const idEventDef AI_Bark("bark", "s");					 // grayman #2816
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -553,6 +555,8 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT ( AI_PerformRelight,					idAI::Event_PerformRelight)	// grayman #2603
 	EVENT ( AI_DropTorch,						idAI::Event_DropTorch)		// grayman #2603
+	EVENT ( AI_ShowInterest,					idAI::Event_ShowInterest)	// grayman #2603
+	EVENT ( AI_Bark,							idAI::Event_Bark)			// grayman #2816
 
 END_CLASS
 
@@ -3498,6 +3502,33 @@ void idAI::Event_DropTorch() // grayman #2603
 		}
 	}
 }
+
+// grayman #2816 - turn toward and look at entity
+
+void idAI::Event_ShowInterest (idEntity* ent, const idVec3& pos)
+{
+	// Initially, turn toward and look at the entity that hit you.
+
+	float duration = INTEREST_DURATION + INTEREST_VARIATION*(gameLocal.random.RandomFloat() - 0.5f );
+
+	Event_TurnToEntity( ent );
+	Event_LookAtEntity( ent, duration/1000.0f );
+
+	// And a short time later, look in the direction the entity came from.
+
+	idVec3 p = pos;
+	PostEventMS( &AI_TurnToPos, static_cast<int>(duration), p );
+	PostEventMS( &AI_LookAtPosition, static_cast<int>(duration), p, duration );
+	m_ShowingInterest = false; // this has done its job at this point - no need for it to be true until TurnToPos() runs
+}
+
+void idAI::Event_Bark(const char* soundName)
+{
+	idStr bark = soundName;
+	Bark(bark);
+}
+
+
 
 
 

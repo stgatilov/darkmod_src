@@ -3126,7 +3126,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Fun is trying to call getBody with bodyID %d\r", bodID );
 		idAFBody* StruckBody = GetAFPhysics()->GetBody( bodID );
 		
-		if( StruckBody != NULL )
+		if ( StruckBody != NULL )
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Struck body %s\r",StruckBody->GetName().c_str());
 			idEntity* reroute = StruckBody->GetRerouteEnt();
@@ -3140,7 +3140,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		}
 	}
 
-	if ( !fl.takedamage ) {
+	if ( !fl.takedamage )
+	{
 		return;
 	}
 
@@ -3151,21 +3152,60 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		return;
 	}
 
-	if ( !inflictor ) {
+	if ( !inflictor )
+	{
 		inflictor = gameLocal.world;
 	}
-	if ( !attacker ) {
+
+	if ( !attacker )
+	{
 		attacker = gameLocal.world;
 	}
 
 	// Try to find the damage entityDef
 	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName );
-	if ( !damageDef ) {
+	if ( !damageDef )
+	{
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );
 	}
 
-	// Get the damage amount
-	int damage = static_cast<int>(damageDef->GetInt( "damage" ) * damageScale);
+	// grayman #2816 - hit by melee weapon or moveable?
+
+	bool hitByMelee = false;
+	bool hitByMoveable = false;
+	if ( inflictor->IsType(CMeleeWeapon::Type) )
+	{
+		hitByMelee = true;
+	}
+	else if ( inflictor->IsType(idMoveable::Type) )
+	{
+		hitByMoveable = true;
+	}
+	
+	float mass = 1.0f;
+	bool falling = false; // falling moveable?
+	idVec3 velocity(0,0,0);
+
+	if ( hitByMoveable )
+	{
+		mass = inflictor->spawnArgs.GetFloat("mass","1");
+		float velocityHorz = velocity.ToVec2().LengthFast();
+		falling = ( ( velocity.z < 0 ) && ( abs(velocity.z) > velocityHorz ) );
+	}
+
+	int damage = 0;
+
+	// grayman #2816 - scale damage?
+
+	bool scaleDamage = damageDef->GetBool( "scale_damage", "0" );
+	if ( scaleDamage ) // Moveable
+	{
+		damage = static_cast<int>(damageScale * mass / 5.0f);
+	}
+	else // Melee or not a Moveable
+	{
+		damage = static_cast<int>(damageDef->GetInt( "damage" ) * damageScale);
+	}
 
 	damage = GetDamageForLocation( damage, location );
 
@@ -3180,26 +3220,56 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// DarkMod: check for KO damage type and knockout AI if appropriate
 	bool bKO = damageDef->GetBool( "knockout" );
 	bool bKOPowerBlow = damageDef->GetBool( "knockout_power" );
-	
-	if( (bKO || bKOPowerBlow) && collision )
+
+	if ( ( bKO || bKOPowerBlow ) && collision )
 	{
-		if( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
+		// grayman #2816 - Differentiate between falling objects and thrown objects.
+		// Falling objects with enough mass and doing enough damage will force a KO.
+
+		if ( hitByMoveable && ( damage >= MIN_DAMAGE_FOR_KO ) && falling && ( mass >= MIN_MASS_FOR_KO ) && ( velocity.LengthSqr() >= Square(MIN_VEL_FOR_KO) ) )
 		{
-			// For now, first KO blow does no health damage
-			damage = 0;
+			// check if we're hitting the right zone (usually the head)
+			if ( idStr::Cmp(GetDamageGroup( location ), static_cast<idAI*>(this)->m_KoZone) == 0 )
+			{
+				// Bypass immunity/alertness/helmet checks and force a KO.
+
+				static_cast<idAI*>(this)->Event_KO_Knockout( attacker );
+			
+				damage = 0; // KO does no health damage.
+			}
+		}
+		else if ( ( hitByMelee && !inflictor->m_droppedByAI ) || ( !hitByMelee && ( damage >= MIN_DAMAGE_FOR_KO ) ) ) // grayman #2816
+		{
+			if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
+			{
+				// For now, first KO blow does no health damage
+				damage = 0;
+			}
 		}
 	}
 
+	// grayman #2816 - when hit by a moveable, either thrown or dropped,
+	// don't let the AI pass away
+
+	if ( damage > 0 )
+	{
+		if ( hitByMoveable && ( damage >= health ) )
+		{
+			damage = health / 2; // damage falls to 0 when health = 1, otherwise take half their health
+		}
+	}
+	
 	if ( damage > 0 )
 	{
 		// Apply the damage
-		health -= damage;
 
-		if (lowHealthThreshold != -1 && health <= lowHealthThreshold)
+		health -= damage; // ouch!!
+
+		if ( ( lowHealthThreshold != -1 ) && ( health <= lowHealthThreshold ) )
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s's fell below health threshold %d, firing script %s\r", name.c_str(), lowHealthThreshold, lowHealthScript.c_str());
 
-			if (!lowHealthScript.IsEmpty())
+			if ( !lowHealthScript.IsEmpty() )
 			{
 				CallScriptFunctionArgs(lowHealthScript, true, 0, "e", this);
 			}
@@ -3266,7 +3336,8 @@ idActor::Pain
 =====================
 */
 bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef ) {
-	if ( af.IsLoaded() && !IsKnockedOut() ) {
+	if ( af.IsLoaded() && !IsKnockedOut() )
+	{
 		// clear impacts
 		af.Rest();
 
@@ -3274,7 +3345,15 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 		BecomeActive( TH_PHYSICS );
 	}
 
-	if ( gameLocal.time < pain_debounce_time ) {
+	if ( gameLocal.time < pain_debounce_time )
+	{
+		return false;
+	}
+
+	// grayman #2816 - no pain sounds or animation if knocked out
+
+	if ( IsKnockedOut() )
+	{
 		return false;
 	}
 

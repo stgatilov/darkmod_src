@@ -244,6 +244,7 @@ bool Mind::SetTarget()
 		{
 			// Invalid enemy type, todo?
 			//DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Tactile entity is of wrong type: %s\r", tactEnt->name.c_str());
+			// grayman: a tactile entity can be objects other than actors, so not being an actor isn't illegal
 			return false;
 		}
 

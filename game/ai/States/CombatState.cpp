@@ -36,8 +36,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FleeState.h"
 #include "../Library.h"
 
-#define REACTION_TIME_MIN  100	// grayman #3063
-#define REACTION_TIME_MAX 2000	// grayman #3063
+#define REACTION_TIME_MIN      100	// grayman #3063
+#define REACTION_TIME_MAX     2000	// grayman #3063
+#define ENEMY_DEAD_BARK_DELAY 1500	// grayman #2816
 
 namespace ai
 {
@@ -449,6 +450,9 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 
 	if (enemy->AI_DEAD)
 	{
+		// grayman #2816 - remember the last enemy killed
+		owner->SetLastKilled(enemy);
+
 		owner->ClearEnemy();
 		owner->StopMove(MOVE_STATUS_DONE);
 
@@ -458,11 +462,22 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 		// TODO: Check if more enemies are in range
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
 
-		// Emit the killed player bark
+		// grayman #2816 - need to delay the victory bark, because it's
+		// being emitted too soon. Can't simply put a delay on SingleBarkTask()
+		// because the AI clears his communication tasks when he drops back into
+		// Suspicious mode, which wipes out the victory bark.
+		// We need to post an event for later and emit the bark then.
+
+		// new way
+
+		owner->PostEventMS(&AI_Bark,ENEMY_DEAD_BARK_DELAY,"snd_killed_enemy");
+
+/* old way
+		// Emit the killed enemy bark
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
 		);
-
+ */
 		// Set the expiration date of this state
 		_endTime = gameLocal.time + 3000;
 

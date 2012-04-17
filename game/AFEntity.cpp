@@ -1695,10 +1695,14 @@ void idAFEntity_Base::Damage( idEntity *inflictor, idEntity *attacker, const idV
 	}
 	
 	// check for reroute entity on the AF body and damage this instead
-	if( reroute != NULL )
+	if ( reroute != NULL )
+	{
 		reroute->Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+	}
 	else
+	{
 		idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+	}
 }
 
 /*

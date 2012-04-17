@@ -520,7 +520,10 @@ idAI::idAI()
 	m_canResolveBlock	= true;	 // grayman #2345
 	m_leftQueue			= false; // grayman #2345
 	m_performRelight	= false; // grayman #2603
+	m_ShowingInterest	= false; // grayman #2816
 	m_bloodMarker		= NULL;  // grayman #3075
+	m_lastKilled		= NULL;	 // grayman #2816
+	m_justKilledSomeone = false; // grayman #2816
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -810,9 +813,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( focusAlignTime );
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteObject(m_bloodMarker);		// grayman #3075
+	savefile->WriteObject(m_lastKilled);		// grayman #2816
+	savefile->WriteBool(m_justKilledSomeone);	// grayman #2816
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteBool(m_performRelight);		// grayman #2603
+	savefile->WriteBool(m_ShowingInterest);		// grayman #2816
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1223,9 +1229,12 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( focusAlignTime );
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_bloodMarker));	// grayman #3075
-	savefile->ReadBool(m_canResolveBlock);	// grayman #2345
-	savefile->ReadBool(m_leftQueue);		// grayman #2345
-	savefile->ReadBool(m_performRelight);	// grayman #2603
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_lastKilled));	// grayman #2816
+	savefile->ReadBool(m_justKilledSomeone); // grayman #2816
+	savefile->ReadBool(m_canResolveBlock);	 // grayman #2345
+	savefile->ReadBool(m_leftQueue);		 // grayman #2345
+	savefile->ReadBool(m_performRelight);	 // grayman #2603
+	savefile->ReadBool(m_ShowingInterest);	 // grayman #2816
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -5863,7 +5872,6 @@ void idAI::StaticMove( void ) {
 
 void idAI::Bark(const idStr& soundName)
 {
-
 	// Allocate a singlebarktask with the given sound and enqueue it
 	commSubsystem->AddCommTask(
 		ai::CommunicationTaskPtr(new ai::SingleBarkTask(soundName))
@@ -6047,13 +6055,21 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 	// force a blink
 	blink_time = 0;
 
+	// grayman #2816 - if no pain was registered in idActor::Pain() then exit
+
+	if ( !AI_PAIN )
+	{
+		return false;
+	}
+
 	// ignore damage from self
 	if ( attacker != this )
 	{
 		if ( inflictor )
 		{
 			AI_SPECIAL_DAMAGE = inflictor->spawnArgs.GetInt( "special_damage" );
-		} else
+		}
+		else
 		{
 			AI_SPECIAL_DAMAGE = 0;
 		}
@@ -6312,7 +6328,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 		GetMind()->GetState()->OnProjectileHit(static_cast<idProjectile*>(inflictor), attacker, damageTaken);
 	}
 
-	if (attacker != NULL && IsEnemy(attacker))
+	if ( ( attacker != NULL ) && IsEnemy(attacker) )
 	{
 		GetMemory().hasBeenAttackedByEnemy = true;
 	}
@@ -8803,7 +8819,10 @@ bool idAI::CheckHearing( SSprParms *propParms )
 
 void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
-	if (m_bIgnoreAlerts) return;
+	if (m_bIgnoreAlerts)
+	{
+		return;
+	}
 
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
@@ -8837,7 +8856,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	//	alert to overwrite another alert this frame
-	if (GetAcuity("aud") > 0 && psychLoud > m_AlertLevelThisFrame)
+	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) )
 	{
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
@@ -8862,7 +8881,11 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		// angua: the actor who produced this noise is either unknown or an enemy
 		// alert now
-		if (!m_AlertedByActor.GetEntity() || IsEnemy(m_AlertedByActor.GetEntity()))
+		// grayman #2816 - no alert if it was made by someone we killed
+
+		idActor *soundMaker = m_AlertedByActor.GetEntity();
+		if ( !soundMaker || // alert if unknown
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
 			AlertAI( "aud", psychLoud );
 
@@ -8912,9 +8935,16 @@ void idAI::AlertAI(const char *type, float amount)
 	// Ignore actors in notarget mode
 	idActor* actor = m_AlertedByActor.GetEntity();
 
-	if (actor != NULL && actor->fl.notarget)
+	if ( actor && actor->fl.notarget)
 	{
 		// Actor is set to notarget, quit
+		return;
+	}
+
+	// grayman #2816 - don't respond to sounds made by someone you last killed
+
+	if ( actor && ( actor == m_lastKilled ) )
+	{
 		return;
 	}
 
@@ -9426,7 +9456,12 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		return;
 	}
 
-	if (tactEnt == NULL || CheckTactileIgnore(tactEnt))
+	if ( tactEnt == NULL )
+	{
+		return;
+	}
+
+	if ( CheckTactileIgnore(tactEnt) )
 	{
 		return;
 	}
@@ -9481,45 +9516,77 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	idActor* responsibleActor = 
 		(tactEnt->IsType(idActor::Type)) ? static_cast<idActor*>(tactEnt) : tactEnt->m_SetInMotionByActor.GetEntity();
 
-	if (responsibleActor == NULL)
+	if ( responsibleActor == NULL )
 	{
 		return;
 	}
 
-	if (IsFriend(responsibleActor))
+	// grayman #2816 - separate into actors and non-actors
+
+	if ( !tactEnt->IsType(idActor::Type) )
 	{
-		if (responsibleActor->health <= 0 || responsibleActor->IsKnockedOut())
+		// non-actors
+
+		// Since kicking objects is handled elsewhere, this is
+		// an object that most likely was thrown at the AI by
+		// the player.
+
+		// We don't care whether the actor responsible for the
+		// struck object is a friend, neutral, or an enemy. We
+		// need to react to something hitting us.
+
+		// grayman #3075 - if we bumped something that was dropped
+		// by an AI, ignore it from now on to avoid
+		// re-alerting us every time we touch it
+
+		if ( tactEnt->m_droppedByAI )
 		{
-			// angua: We've found a friend that is dead or unconscious
-			mind->GetState()->OnPersonEncounter(tactEnt, this);
+			TactileIgnore(tactEnt);
+		}
+
+		// If we put this object in motion, ignore it
+
+		if ( tactEnt->m_SetInMotionByActor.GetEntity() == this )
+		{
+			return;
+		}
+
+//		TactileIgnore(tactEnt); // ignore further contacts with this object
+	}
+	else // actors
+	{
+		if ( IsFriend(responsibleActor) )
+		{
+			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
+			{
+				// angua: We've found a friend that is dead or unconscious
+				mind->GetState()->OnPersonEncounter(tactEnt, this);
+			}
+		}
+
+		if ( !IsEnemy(responsibleActor) ) 
+		{
+			return; // not an enemy, no alert
+		}
+
+		// greebo: We touched an enemy, check if it's an unconscious body or corpse
+		if (tactEnt->IsType(idAI::Type) && 
+			(static_cast<idAI*>(tactEnt)->AI_DEAD || static_cast<idAI*>(tactEnt)->AI_KNOCKEDOUT))
+		{
+			// When AI_DEAD or AI_KNOCKEDOUT ignore this alert from now on to avoid
+			// re-alerting us every time we touch it again and again
+			TactileIgnore(tactEnt);
 		}
 	}
 
-	if (!IsEnemy(responsibleActor)) 
+	// grayman #2816 - if this is the last AI you killed, ignore it
+	if ( tactEnt->IsType(idAI::Type) && ( tactEnt == m_lastKilled ) )
 	{
-		return; // not an enemy, no alert
-	}
-
-	// grayman #3075 - if we bumped something that was dropped
-	// by an AI, ignore this object from now on to avoid
-	// re-alerting us every time we touch it
-
-	if ( tactEnt->m_droppedByAI )
-	{
-		TactileIgnore(tactEnt);
-	}
-
-	// greebo: We touched an enemy, check if it's an unconscious body or corpse
-	if (tactEnt->IsType(idAI::Type) && 
-		(static_cast<idAI*>(tactEnt)->AI_DEAD || static_cast<idAI*>(tactEnt)->AI_KNOCKEDOUT))
-	{
-		// When AI_DEAD or AI_KNOCKEDOUT ignore this alert from now on to avoid
-		// re-alerting us every time we touch it again and again
-		TactileIgnore(tactEnt);
+		return;
 	}
 
 	// Set the alert amount to the according tactile alert value
-	if (amount == -1)
+	if ( amount == -1 )
 	{
 		amount = cv_ai_tactalert.GetFloat();
 	}
@@ -9535,6 +9602,17 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	// Notify the currently active state
 	mind->GetState()->OnTactileAlert(tactEnt);
 
+	// grayman #2816 - Wait a bit to turn toward and look at what hit you (other than another AI).
+	// Then turn back in the direction the object came from.
+	if ( !m_ShowingInterest && !tactEnt->IsType(idAI::Type) )
+	{
+		idVec3 velocity = tactEnt->GetPhysics()->GetLinearVelocity(); // incoming direction
+		velocity.NormalizeFast();
+		idVec3 pos = GetEyePosition() - velocity*INTEREST_DIST;
+		PostEventMS( &AI_ShowInterest, INTEREST_DELAY, tactEnt, pos);
+		m_ShowingInterest = true;
+	}
+
 	// Set last visual contact location to this location as that is used in case
 	// the target gets away
 	m_LastSight = tactEnt->GetPhysics()->GetOrigin();
@@ -9547,7 +9625,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	AI_TACTALERT = true;
 
-	if( cv_ai_debug.GetBool() )
+	if ( cv_ai_debug.GetBool() )
 	{
 		// Note: This can spam the log a lot, so only put it in if cv_ai_debug.GetBool() is true
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s FELT entity %s\r", name.c_str(), tactEnt->name.c_str() );
@@ -9569,9 +9647,6 @@ bool idAI::CheckTactileIgnore(idEntity* tactEnt)
 	}
 	return false;
 }
-
-
-
 
 idActor *idAI::FindEnemy(bool useFOV)
 {
@@ -9700,7 +9775,6 @@ idActor* idAI::FindFriendlyAI(int requiredTeam)
 	return candidate;
 
 }
-
 
 /*---------------------------------------------------------------------------------*/
 
@@ -10076,7 +10150,6 @@ void idAI::CheckTactile()
 
 	if (bumped)
 	{
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("TACT: AI %s is bumping actor %s.\r", name.c_str(), blockingEnt->name.c_str() );
 		HadTactile(static_cast<idActor*>(blockingEnt));
 	}
 }
@@ -10106,7 +10179,7 @@ idAI::TestKnockoutBlow
 
 bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow )
 {
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Attempted KO of AI %s\r", name.c_str());
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - Attempted KO of AI %s\r", name.c_str());
 
 	if ( AI_DEAD )
 	{
@@ -10123,7 +10196,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 
 	const char* locationName = GetDamageGroup( location );
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName);
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName);
 
 	// check if we're hitting the right zone (usually the head)
 	if ( idStr::Cmp(locationName, m_KoZone) != 0 )
@@ -10245,7 +10318,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	if ( ( dotHoriz >= minDotHoriz ) && ( dotVert >= minDotVert) )
 	{
 		// We just got knocked the taff out!
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s was knocked out by a blow to the head\r", name.c_str());
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s was knocked out by a blow to the head\r", name.c_str());
 		Event_KO_Knockout(attacker); // grayman #2468
 
 		return true;
@@ -10407,11 +10480,14 @@ void idAI::Knockout( idEntity* inflictor )
 	mind->PushState(STATE_KNOCKED_OUT);
 
 	// Update TDM objective system
-	bool bPlayerResponsible = (inflictor != NULL && inflictor == gameLocal.GetLocalPlayer() );
+	bool bPlayerResponsible = ( ( inflictor != NULL ) && ( inflictor == gameLocal.GetLocalPlayer() ) );
 	gameLocal.m_MissionData->MissionEvent(COMP_KO, this, inflictor, bPlayerResponsible);
+
 	// Mark the body as last moved by the player
 	if( bPlayerResponsible )
+	{
 		m_MovedByActor = gameLocal.GetLocalPlayer();
+	}
 
 	// greebo: Stop lipsyncing now
 	m_lipSyncActive = false;
@@ -11653,6 +11729,15 @@ idEntity* idAI::GetBlood(void) const
 {
 	return m_bloodMarker;
 }
+
+// grayman #2816 - remember who you killed, for barking and tactile alert events
+
+void idAI::SetLastKilled(idEntity *killed)
+{
+	m_lastKilled = killed;
+	m_justKilledSomeone = true; // used to skip regular rampdown bark in favor of a "killed" bark
+}
+
 
 bool idAI::SwitchToConversationState(const idStr& conversationName)
 {

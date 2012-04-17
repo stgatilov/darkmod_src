@@ -87,7 +87,7 @@ namespace ai
 
 // Considered cause radius around a tactile event
 #define TACTILE_ALERT_RADIUS 10.0f
-#define TACTILE_SEARCH_VOLUME idVec3(40,40,40)
+#define TACTILE_SEARCH_VOLUME idVec3(100,100,100) // grayman #2816 - was (40,40,40) which makes them stand still
 
 // Considered cause radius around a visual event
 #define VISUAL_ALERT_RADIUS 25.0f

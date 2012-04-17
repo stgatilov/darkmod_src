@@ -1142,7 +1142,6 @@ void idEntity::Spawn( void )
 	// so we have to wait until all entities are spawned to do that
 
 	health = spawnArgs.GetInt( "health" );
-
 	InitDefaultPhysics( origin, axis );
 
 	// TDM: Set custom contents, and store it so it doesn't get overwritten
@@ -3728,19 +3727,25 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 	const idSoundShader *shader;
 	const char *sound;
 
-	if ( length ) 
+	if ( length )
+	{
 		*length = 0;
+	}
 
 	// we should ALWAYS be playing sounds from the def.
 	// hardcoded sounds MUST be avoided at all times because they won't get precached.
 	assert( idStr::Icmpn( soundName, "snd_", 4 ) == 0 );
 
-	if ( !spawnArgs.GetString( soundName, "", &sound ) ) 
+	if ( !spawnArgs.GetString( soundName, "", &sound ) )
+	{
 		return false;
+	}
 
 	// ignore empty spawnargs
-	if ( sound[0] == '\0' ) 
+	if ( sound[0] == '\0' )
+	{
 		return false;
+	}
 
 	if ( !gameLocal.isNewFrame ) 
 	{
@@ -5836,16 +5841,21 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
-	if ( damage ) {
+	if ( damage )
+	{
 		// do the damage
 		health -= damage;
-		if ( health <= 0 ) {
-			if ( health < -999 ) {
+		if ( health <= 0 )
+		{
+			if ( health < -999 )
+			{
 				health = -999;
 			}
 
 			Killed( inflictor, attacker, damage, dir, location );
-		} else {
+		}
+		else
+		{
 			Pain( inflictor, attacker, damage, dir, location );
 		}
 	}
@@ -12308,27 +12318,27 @@ bool idEntity::IsEnemy(const idEntity *other ) const
 		// The NULL pointer is not your enemy! As long as you remember to check for it to avoid crashes.
 		return false;
 	}
-	else if (other->team == -1)
+
+	if (other->team == -1)
 	{
 		// entities with team -1 (not set) are neutral
 		return false;
 	}
-	else if (other->fl.notarget)
+
+	if (other->fl.notarget)
 	{
 		return false;
 	}
-	else
-	{
-		// angua: look up entity specific relation
-		EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
-		if (found != m_EntityRelations.end())
-		{
-			return (found->second < 0);
-		}
 
-		// angua: no specific relation found, fall back to standard team relations
-		return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
+	// angua: look up entity specific relation
+	EntityRelationsMap::const_iterator found = m_EntityRelations.find(other);
+	if (found != m_EntityRelations.end())
+	{
+		return (found->second < 0);
 	}
+
+	// angua: no specific relation found, fall back to standard team relations
+	return gameLocal.m_RelationsManager->IsEnemy(team, other->team);
 }
 
 void idEntity::Event_IsEnemy( idEntity *ent )

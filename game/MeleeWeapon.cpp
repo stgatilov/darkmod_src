@@ -1226,9 +1226,9 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		}
 	}
 
-	if( other->fl.takedamage )
+	if ( other->fl.takedamage )
 	{
-		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at clipmodel id %d, joint handle %d\r", tr->c.id, CLIPMODEL_ID_TO_JOINT_HANDLE(tr->c.id) );
+		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at clipmodel id %d, joint handle %d\r", tr->c.id, location );
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
 		(

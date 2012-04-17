@@ -383,7 +383,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 		float bounceSoundMinVelocity = cv_bounce_sound_min_vel.GetFloat();
 		float bounceSoundMaxVelocity = cv_bounce_sound_max_vel.GetFloat();
 
- 		if ( v > bounceSoundMinVelocity && gameLocal.time > nextSoundTime )
+ 		if ( ( v > bounceSoundMinVelocity ) && ( gameLocal.time > nextSoundTime ) )
 		{ 
 			const idMaterial *material = collision.c.material;
 
@@ -414,7 +414,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 			// angua: modify the volume set in the def instead of setting a fixed value. 
 			// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
-			float f = v > bounceSoundMaxVelocity ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
+			float f = ( v > bounceSoundMaxVelocity ) ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
 
 			float volume = sndShader->GetParms()->volume + f;
 
@@ -448,12 +448,12 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 		// tels:
 		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter=%i and v=%f and time=%f > m_nextCollideScriptTime=%f.\r",
 				name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
- 		if ( m_collideScriptCounter != 0 && v > m_minScriptVelocity && gameLocal.time > m_nextCollideScriptTime ) 
+ 		if ( ( m_collideScriptCounter != 0 ) && ( v > m_minScriptVelocity ) && ( gameLocal.time > m_nextCollideScriptTime ) )
 		{ 
 	 		if ( m_collideScriptCounter > 0)
 			{
-			// if positive, decrement it, so -1 stays as it is (for 0, we never come here)
-	 		m_collideScriptCounter --;
+				// if positive, decrement it, so -1 stays as it is (for 0, we never come here)
+	 			m_collideScriptCounter --;
 			}
 
 			// call the script
@@ -481,19 +481,57 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 			m_nextCollideScriptTime = gameLocal.time + 300;
 		}
-
 	}
 
 	idEntity* ent = gameLocal.entities[ collision.c.entityNum ];
-
-	if ( canDamage && damage.Length() && gameLocal.time > nextDamageTime ) 
+	idActor* entActor = NULL;
+	if ( ent && ent->IsType(idActor::Type) )
 	{
-		if ( ent && v > minDamageVelocity ) 
+		entActor = static_cast<idActor*>(ent);
+	}
+
+	// grayman #2816 - in order to allow knockouts from dropped objects,
+	// we have to allow collisions where the velocity is < minDamageVelocity,
+	// because dropped objects can have low velocity, while at the same time
+	// carrying enough damage to warrant a KO possibility.
+
+	if ( canDamage && damage.Length() && ( gameLocal.time > nextDamageTime ) )
+	{
+		if ( ( ent && !entActor ) || ( entActor && !entActor->AI_DEAD ) /*&& ( v > minDamageVelocity )*/ ) // grayman #2816 - don't bother with corpses
 		{
-			float f = v > maxDamageVelocity ? 1.0f : idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			float f = 1.0f; // used when v >= maxDamageVelocity
+			if ( v < minDamageVelocity )
+			{
+				f = 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
+			}
+			else if ( v < maxDamageVelocity )
+			{
+				f = idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+			}
+
+			// scale the damage by the surface type multiplier, if any
+
+			idStr SurfTypeName;
+			g_Global.GetSurfName( collision.c.material, SurfTypeName );
+			SurfTypeName = "damage_mult_" + SurfTypeName;
+			f *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
+
 			idVec3 dir = velocity;
 			dir.NormalizeFast();
-			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) );
+
+			// Use a technique similar to what's used for a melee collision
+			// to find a better joint (location), because when the head is
+			// hit, the joint isn't identified correctly w/o it.
+
+			int location = JOINT_HANDLE_TO_CLIPMODEL_ID( collision.c.id );
+			if ( ( collision.c.contents & CONTENTS_CORPSE ) && ent->IsType(idAFEntity_Base::Type) )
+			{
+				idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
+				location = entAF->JointForBody(collision.c.id);
+			}
+
+			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, location, const_cast<trace_t *>(&collision) );
+//			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) ); // old, inaccurate way when a head is struck
 			nextDamageTime = gameLocal.time + 1000;
 		}
 	}
@@ -503,7 +541,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	{
 		ProcCollisionStims( ent, collision.c.id );
 
-		if( ent->IsType( idAI::Type ) )
+		if ( ent->IsType( idAI::Type ) )
 		{
 			idAI *alertee = static_cast<idAI *>(ent);
 			alertee->TactileAlert( this );

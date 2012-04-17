@@ -127,6 +127,10 @@ void ObservantState::Init(idAI* owner)
 				soundName = "snd_alert1";
 			}
 		}
+		else if ( owner->m_justKilledSomeone ) // grayman #2816 - no bark if we barked about the death when it happened
+		{
+			owner->m_justKilledSomeone = false; // but turn off the flag
+		}
 		else if (owner->HasSeenEvidence())
 		{
 			if (owner->m_lastAlertLevel >= owner->thresh_3)
@@ -139,7 +143,7 @@ void ObservantState::Init(idAI* owner)
 			soundName = "snd_alertdown0SeenNoEvidence";
 		}
 
-		if (memory.alertType != EAlertTypeMissingItem)
+		if ( ( memory.alertType != EAlertTypeMissingItem) && ( !soundName.IsEmpty() ) ) // grayman #2816 - don't set up empty sounds
 		{
 			CommunicationTaskPtr barkTask(new SingleBarkTask(soundName));
 
