@@ -770,14 +770,21 @@ Reload the material displayed by r_showSurfaceInfo
 =====================
 */
 static void R_ReloadSurface_f( const idCmdArgs &args ) {
-	modelTrace_t mt;
-	idVec3 start, end;
-	
-	// start far enough away that we don't hit the player model
-	start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
-	end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
-	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false ) ) {
+
+	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
+	if ( tr.primaryView->renderView.viewID == RENDERTOOLS_SKIP_ID ) {
 		return;
+	}
+	
+	modelTrace_t mt;
+
+	// start far enough away that we don't hit the player model
+	{
+		const idVec3 start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
+		const idVec3 end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
+		if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true) ) {
+			return;
+		}
 	}
 
 	common->Printf( "Reloading %s\n", mt.material->GetName() );

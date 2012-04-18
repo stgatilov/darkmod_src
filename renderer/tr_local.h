@@ -23,6 +23,8 @@
 #include "Image.h"
 #include "MegaTexture.h"
 
+#define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
+
 class idRenderWorldLocal;
 
 // everything that is needed by the backend needs

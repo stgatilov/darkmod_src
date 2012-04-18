@@ -778,18 +778,21 @@ Debugging tool
 =====================
 */
 static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	modelTrace_t mt;
-	idVec3 start, end;
 	
-	if ( !r_showSurfaceInfo.GetBool() ) {
+	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
+	if ( !r_showSurfaceInfo.GetBool() || tr.primaryView->renderView.viewID == RENDERTOOLS_SKIP_ID ) {
 		return;
 	}
 
+	modelTrace_t mt;
+
 	// start far enough away that we don't hit the player model
-	start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
-	end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
-	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false ) ) {
-		return;
+	{
+		const idVec3 start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
+		const idVec3 end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
+		if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false, true ) ) {
+			return;
+		}
 	}
 
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -797,19 +800,17 @@ static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglDisable( GL_TEXTURE_2D );
 	qglDisable( GL_STENCIL_TEST );
 
-	qglColor3f( 1, 1, 1 );
-
 	GL_State( GLS_POLYMODE_LINE );
 
-	qglPolygonOffset( -1, -2 );
 	qglEnable( GL_POLYGON_OFFSET_LINE );
+	//qglPolygonOffset( -1.0f, -2.0f );
 
 	float	matrix[16];
 
 	// transform the object verts into global space
 	R_AxisToModelMatrix( mt.entity->axis, mt.entity->origin, matrix );
 
-	tr.primaryWorld->DrawText( mt.entity->hModel->Name(), mt.point + tr.primaryView->renderView.viewaxis[2] * 12,
+	tr.primaryWorld->DrawText( mt.entity->hModel->Name(), mt.point + tr.primaryView->renderView.viewaxis[2] * 16,
 		0.35f, colorRed, tr.primaryView->renderView.viewaxis );
 	tr.primaryWorld->DrawText( mt.material->GetName(), mt.point, 
 		0.35f, colorBlue, tr.primaryView->renderView.viewaxis );

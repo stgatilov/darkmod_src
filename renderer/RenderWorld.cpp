@@ -1131,14 +1131,13 @@ idRenderWorldLocal::Trace
 */
 // FIXME: _D3XP added those.
 const char* playerModelExcludeList[] = {
-	"models/md5/characters/player/d3xp_spplayer.md5mesh",
-	"models/md5/characters/player/head/d3xp_head.md5mesh",
-	"models/md5/weapons/pistol_world/worldpistol.md5mesh",
+	"models/md5/chars/thief/thief_head.md5mesh",
+	"models/md5/chars/thief/tdm_ai_thief.md5mesh",
 	NULL
 };
 
 const char* playerMaterialExcludeList[] = {
-	"muzzlesmokepuff",
+	"models/props/misc/lightgem_surface",
 	NULL
 };
 
