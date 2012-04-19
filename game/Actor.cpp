@@ -3173,7 +3173,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	bool hitByMelee = false;
 	bool hitByMoveable = false;
-	if ( inflictor->IsType(CMeleeWeapon::Type) )
+	if ( inflictor->IsType(CMeleeWeapon::Type) && ( attacker != gameLocal.world ) && ( inflictor->GetBindMaster() != NULL ) )
 	{
 		hitByMelee = true;
 	}
@@ -3189,6 +3189,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	if ( hitByMoveable )
 	{
 		mass = inflictor->spawnArgs.GetFloat("mass","1");
+		velocity = inflictor->GetPhysics()->GetLinearVelocity();
 		float velocityHorz = velocity.ToVec2().LengthFast();
 		falling = ( ( velocity.z < 0 ) && ( abs(velocity.z) > velocityHorz ) );
 	}

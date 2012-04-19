@@ -484,71 +484,127 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	}
 
 	idEntity* ent = gameLocal.entities[ collision.c.entityNum ];
-	idActor* entActor = NULL;
-	if ( ent && ent->IsType(idActor::Type) )
-	{
-		entActor = static_cast<idActor*>(ent);
-	}
 
-	// grayman #2816 - in order to allow knockouts from dropped objects,
-	// we have to allow collisions where the velocity is < minDamageVelocity,
-	// because dropped objects can have low velocity, while at the same time
-	// carrying enough damage to warrant a KO possibility.
+	// grayman #2816 - if we hit the world, skip all the damage work
 
-	if ( canDamage && damage.Length() && ( gameLocal.time > nextDamageTime ) )
+	if ( ent != gameLocal.world )
 	{
-		if ( ( ent && !entActor ) || ( entActor && !entActor->AI_DEAD ) /*&& ( v > minDamageVelocity )*/ ) // grayman #2816 - don't bother with corpses
+		idActor* hitActor = NULL;
+		if ( ent && ent->IsType(idActor::Type) )
 		{
-			float f = 1.0f; // used when v >= maxDamageVelocity
-			if ( v < minDamageVelocity )
+			hitActor = static_cast<idActor*>(ent);
+		}
+
+		// grayman #2816 - Check for reroute entity (can happen with attachments to AI)
+
+		idEntity* reroute = NULL;
+
+		if ( ent && ent->IsType(idAFEntity_Base::Type) )
+		{
+			idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
+			int bodID = entAF->BodyForClipModelId( collision.c.id );
+			idAFBody* StruckBody = entAF->GetAFPhysics()->GetBody( bodID );
+
+			if ( StruckBody != NULL )
 			{
-				f = 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
+				reroute = StruckBody->GetRerouteEnt();
+				if ( reroute != NULL )
+				{
+					ent = reroute;
+				}
 			}
-			else if ( v < maxDamageVelocity )
+		}
+		else // is ent attached to something else?
+		{
+			idEntity* bindMaster = ent->GetBindMaster();
+			if ( bindMaster )
 			{
-				f = idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+				ent = bindMaster;
 			}
+		}
 
-			// scale the damage by the surface type multiplier, if any
+		idActor* entActor = NULL;
+		if ( ent && ent->IsType(idActor::Type) )
+		{
+			entActor = static_cast<idActor*>(ent);
+		}
 
-			idStr SurfTypeName;
-			g_Global.GetSurfName( collision.c.material, SurfTypeName );
-			SurfTypeName = "damage_mult_" + SurfTypeName;
-			f *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
+		// grayman #2816 - in order to allow knockouts from dropped objects,
+		// we have to allow collisions where the velocity is < minDamageVelocity,
+		// because dropped objects can have low velocity, while at the same time
+		// carrying enough damage to warrant a KO possibility.
 
-			idVec3 dir = velocity;
-			dir.NormalizeFast();
-
-			// Use a technique similar to what's used for a melee collision
-			// to find a better joint (location), because when the head is
-			// hit, the joint isn't identified correctly w/o it.
-
-			int location = JOINT_HANDLE_TO_CLIPMODEL_ID( collision.c.id );
-			if ( ( collision.c.contents & CONTENTS_CORPSE ) && ent->IsType(idAFEntity_Base::Type) )
+		if ( canDamage && damage.Length() && ( gameLocal.time > nextDamageTime ) )
+		{
+			if ( ( ent && !entActor ) || ( entActor && !entActor->AI_DEAD ) /*&& ( v > minDamageVelocity )*/ ) // grayman #2816 - don't bother with corpses
 			{
-				idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
-				location = entAF->JointForBody(collision.c.id);
-			}
+				float f = 1.0f; // used when v >= maxDamageVelocity
+				if ( v < minDamageVelocity )
+				{
+					f = 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
+				}
+				else if ( v < maxDamageVelocity )
+				{
+					f = idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+				}
 
-			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, location, const_cast<trace_t *>(&collision) );
-//			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) ); // old, inaccurate way when a head is struck
-			nextDamageTime = gameLocal.time + 1000;
+				// scale the damage by the surface type multiplier, if any
+
+				idStr SurfTypeName;
+				g_Global.GetSurfName( collision.c.material, SurfTypeName );
+				SurfTypeName = "damage_mult_" + SurfTypeName;
+				f *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
+
+				idVec3 dir = velocity;
+				dir.NormalizeFast();
+
+				// Use a technique similar to what's used for a melee collision
+				// to find a better joint (location), because when the head is
+				// hit, the joint isn't identified correctly w/o it.
+
+				int location = JOINT_HANDLE_TO_CLIPMODEL_ID( collision.c.id );
+				if ( ( collision.c.contents & CONTENTS_CORPSE ) && ent->IsType(idAFEntity_Base::Type) )
+				{
+					idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
+					location = entAF->JointForBody(collision.c.id);
+				}
+
+				int preHealth = ent->health;
+
+				ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, location, const_cast<trace_t *>(&collision) );
+	//			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) ); // old, inaccurate way when a head is struck
+
+				// if no damage was done, don't reset nextDamageTime
+
+				if ( ent->health < preHealth )
+				{
+					nextDamageTime = gameLocal.time + 1000;
+				}
+			}
+		}
+
+		// Darkmod: Collision stims and a tactile alert if it collides with an AI
+		if ( ent )
+		{
+			ProcCollisionStims( ent, collision.c.id );
+
+			// grayman #2816 - cover all cases of where the actor to be alerted might be
+
+			if ( hitActor && hitActor->IsType( idAI::Type ) )
+			{
+				idAI *alertee = static_cast<idAI *>(hitActor);
+				alertee->TactileAlert( this );
+			}
+			else if ( entActor && entActor->IsType( idAI::Type ) )
+			{
+				idAI *alertee = static_cast<idAI *>(entActor);
+				alertee->TactileAlert( this );
+			}
 		}
 	}
 
-	// Darkmod: Collision stims and a tactile alert if it collides with an AI
-	if ( ent )
+	if ( fxCollide.Length() && ( gameLocal.time > nextCollideFxTime ) )
 	{
-		ProcCollisionStims( ent, collision.c.id );
-
-		if ( ent->IsType( idAI::Type ) )
-		{
-			idAI *alertee = static_cast<idAI *>(ent);
-			alertee->TactileAlert( this );
-		}
-	}
-
-	if ( fxCollide.Length() && gameLocal.time > nextCollideFxTime ) {
 		idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
 		nextCollideFxTime = gameLocal.time + 3500;
 	}
