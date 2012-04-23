@@ -242,6 +242,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	{
 		return true;
 	}
+
+	// grayman #2816 - stop door handling for various reasons
+
+	if ( memory.stopHandlingDoor )
+	{
+		return true;
+	}
 	
 	// grayman #2700 - we get a certain amount of time to complete a move
 	// to the mid position or back position before leaving door handling
@@ -2212,6 +2219,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	_leaveDoor = -1; // reset timeout for leaving the door
 	_doorHandlingState = EStateNone;
 	owner->m_canResolveBlock = true; // grayman #2345
+	memory.stopHandlingDoor = false; // grayman #2816
 }
 
 bool HandleDoorTask::CanAbort() // grayman #2706

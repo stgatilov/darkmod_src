@@ -55,12 +55,6 @@ const int	TEMP_THINK_DISTANCE			= 200;	// increase interleave think frames
 const int	TEMP_THINK_FACTOR			= 8;	// used to determine when to increase thinking
 												// when moving to a goal position
 
-// grayman #2816 - constants for looking at objects that strike the AI
-const int INTEREST_DELAY				= 1000;	// ms - when getting hit by something, wait this long before turning toward it
-const int INTEREST_DURATION				= 2000;	// ms - and look at it for this long (+/- a random variation)
-const int INTEREST_VARIATION			=  400;	// ms - max variation
-const int INTEREST_DIST					=  300; // pick a point this far away, back where the object came from and look at it
-
 // used to declare the Dark Mod Acuity values array.
 // THIS MUST BE CHANGED if you want more than 15 acuities
 static const int s_MAXACUITIES = 15;
@@ -174,8 +168,6 @@ extern const idEventDef AI_GetObservationPosition;
 
 // Darkmod communication issuing event
 extern const idEventDef AI_IssueCommunication;
-
-extern const idEventDef AI_ShowInterest; // grayman #2816
 
 extern const idEventDef AI_Bark; // grayman #2816
 
@@ -397,6 +389,7 @@ public:
 	* The amount is in alert units, so as usual 1 = barely noticible, 
 	*	10 = twice as noticable, etc.
 	**/
+
 	void TactileAlert(idEntity* tactEnt, float amount = -1);
 
 	/**
@@ -1235,7 +1228,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_leftQueue;			// grayman #2345 - if we timed out waiting in a door queue
 	bool m_performRelight;		// grayman #2603 - set to TRUE by a script function when it's time to relight a light
 	idEntity* m_bloodMarker;	// grayman #3075
-	bool m_ShowingInterest;		// grayman #2816 - reaction after being hit by something
+	bool m_ReactingToHit;		// grayman #2816 - reaction after being hit by something
 	idEntity* m_lastKilled;		// grayman #2816 - the last enemy we killed
 	bool m_justKilledSomeone;	// grayman #2816 - remember just killing someone so correct bark is emitted when alert level comes down
 
@@ -2211,9 +2204,6 @@ public:
 
 	// grayman #2603 - drop torch
 	void Event_DropTorch();
-
-	// grayman #2816 - show interest in an entity
-	void Event_ShowInterest (idEntity* ent, const idVec3& pos);
 
 	// grayman #2816 - bark
 	void Event_Bark(const char* soundName);

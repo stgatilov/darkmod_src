@@ -107,6 +107,7 @@ void ConversationState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+	memory.stopReactingToHit = true; // grayman #2816
 
 	ConversationPtr conversation = gameLocal.m_ConversationSystem->GetConversation(_conversation);
 	if (conversation == NULL)

@@ -289,6 +289,7 @@ void SearchingState::Think(idAI* owner)
 					owner->StopMove(MOVE_STATUS_DONE);
 					memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 					memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+					memory.stopReactingToHit = true; // grayman #2816
 
 					// grayman #2422 - at least turn toward and look at the last invalid point some of the time
 					if ( gameLocal.random.RandomFloat() < 0.5 )
@@ -310,6 +311,7 @@ void SearchingState::Think(idAI* owner)
 			owner->StopMove(MOVE_STATUS_DONE);
 			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 			memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+			memory.stopReactingToHit = true; // grayman #2816
 		}
 		else
 		{
@@ -356,6 +358,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+	memory.stopReactingToHit = true; // grayman #2816
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes

@@ -3225,9 +3225,11 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	if ( ( bKO || bKOPowerBlow ) && collision )
 	{
 		// grayman #2816 - Differentiate between falling objects and thrown objects.
-		// Falling objects with enough mass and doing enough damage will force a KO.
+		// Falling objects with enough mass and traveling fast enough will force a KO.
 
-		if ( hitByMoveable && ( damage >= MIN_DAMAGE_FOR_KO ) && falling && ( mass >= MIN_MASS_FOR_KO ) && ( velocity.LengthSqr() >= Square(MIN_VEL_FOR_KO) ) )
+		bool canKO = ( ( mass >= MIN_MASS_FOR_KO ) && ( velocity.LengthSqr() >= Square(MIN_VEL_FOR_KO) ) );
+
+		if ( hitByMoveable && falling && canKO )
 		{
 			// check if we're hitting the right zone (usually the head)
 			if ( idStr::Cmp(GetDamageGroup( location ), static_cast<idAI*>(this)->m_KoZone) == 0 )
@@ -3239,7 +3241,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 				damage = 0; // KO does no health damage.
 			}
 		}
-		else if ( ( hitByMelee && !inflictor->m_droppedByAI ) || ( !hitByMelee && ( damage >= MIN_DAMAGE_FOR_KO ) ) ) // grayman #2816
+		else if ( ( hitByMelee && !inflictor->m_droppedByAI ) || ( !hitByMelee && canKO ) ) // grayman #2816
 		{
 			if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
 			{

@@ -613,6 +613,9 @@
       <Filter>Script</Filter>
     </ClCompile>
     <ClCompile Include="game\precompiled_game.cpp" />
+    <ClCompile Include="game\ai\States\HitByMoveableState.cpp">
+      <Filter>AI\States</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1185,6 +1188,9 @@
       <Filter>Script</Filter>
     </ClInclude>
     <ClInclude Include="game\precompiled_game.h" />
+    <ClInclude Include="game\ai\States\HitByMoveableState.h">
+      <Filter>AI\States</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />

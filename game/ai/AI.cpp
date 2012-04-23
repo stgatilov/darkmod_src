@@ -520,7 +520,7 @@ idAI::idAI()
 	m_canResolveBlock	= true;	 // grayman #2345
 	m_leftQueue			= false; // grayman #2345
 	m_performRelight	= false; // grayman #2603
-	m_ShowingInterest	= false; // grayman #2816
+	m_ReactingToHit	= false; // grayman #2816
 	m_bloodMarker		= NULL;  // grayman #3075
 	m_lastKilled		= NULL;	 // grayman #2816
 	m_justKilledSomeone = false; // grayman #2816
@@ -818,7 +818,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteBool(m_performRelight);		// grayman #2603
-	savefile->WriteBool(m_ShowingInterest);		// grayman #2816
+	savefile->WriteBool(m_ReactingToHit);		// grayman #2816
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1234,7 +1234,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_canResolveBlock);	 // grayman #2345
 	savefile->ReadBool(m_leftQueue);		 // grayman #2345
 	savefile->ReadBool(m_performRelight);	 // grayman #2603
-	savefile->ReadBool(m_ShowingInterest);	 // grayman #2816
+	savefile->ReadBool(m_ReactingToHit);	 // grayman #2816
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -6211,6 +6211,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
+	GetMemory().stopReactingToHit = true; // grayman #2816
 
 	ClearEnemy();
 	AI_DEAD	= true;
@@ -7332,6 +7333,7 @@ bool idAI::SetEnemy(idActor* newEnemy)
 		memory.lastTimeEnemySeen = gameLocal.time;
 		memory.stopRelight = true; // grayman #2603
 		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
+		memory.stopReactingToHit = true; // grayman #2816
 
 		return true; // valid enemy
 	}
@@ -9579,6 +9581,32 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		}
 	}
 
+	// grayman #2816 - Do we need to react to getting hit by a moveable?
+
+	if ( !m_ReactingToHit )
+	{
+		if ( !tactEnt->IsType(idAI::Type) )
+		{
+			// Wait a bit to turn toward and look at what hit you (other than another AI).
+			// Then turn back in the direction the object came from.
+
+			mind->GetState()->OnHitByMoveable(this, tactEnt);
+			return;
+		}
+	}
+	else
+	{
+		if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
+		{
+			GetMemory().stopReactingToHit = true; // stop the current reaction
+		}
+		
+		if ( !tactEnt->IsType(idAI::Type) )
+		{
+			return; // process moveable hit next time around
+		}
+	}
+
 	// grayman #2816 - if this is the last AI you killed, ignore it
 	if ( tactEnt->IsType(idAI::Type) && ( tactEnt == m_lastKilled ) )
 	{
@@ -9601,17 +9629,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	// Notify the currently active state
 	mind->GetState()->OnTactileAlert(tactEnt);
-
-	// grayman #2816 - Wait a bit to turn toward and look at what hit you (other than another AI).
-	// Then turn back in the direction the object came from.
-	if ( !m_ShowingInterest && !tactEnt->IsType(idAI::Type) )
-	{
-		idVec3 velocity = tactEnt->GetPhysics()->GetLinearVelocity(); // incoming direction
-		velocity.NormalizeFast();
-		idVec3 pos = GetEyePosition() - velocity*INTEREST_DIST;
-		PostEventMS( &AI_ShowInterest, INTEREST_DELAY, tactEnt, pos);
-		m_ShowingInterest = true;
-	}
 
 	// Set last visual contact location to this location as that is used in case
 	// the target gets away
@@ -10469,6 +10486,7 @@ void idAI::Knockout( idEntity* inflictor )
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
+	GetMemory().stopReactingToHit = true; // grayman #2816
 
 	ClearEnemy();
 

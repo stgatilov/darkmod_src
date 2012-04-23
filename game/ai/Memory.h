@@ -277,6 +277,15 @@ public:
 	// grayman #2872 - abort a rope examination?
 	bool stopExaminingRope;
 
+	// grayman #2816 - abort looking at a moveable that hit you
+	bool stopReactingToHit;
+
+	// grayman #2816 - abort door handling
+	bool stopHandlingDoor;
+
+	// grayman #2816 - abort elevator handling
+	bool stopHandlingElevator;
+
 	// grayman #2422 - next time to generate a random search spot
 	int nextTime2GenRandomSpot;
 
@@ -391,6 +400,9 @@ public:
 
 	// grayman #2712 - last door handled
 	idEntityPtr<CFrobDoor> lastDoorHandled;
+
+	// grayman #2816 - moveable that hit the AI
+	idEntityPtr<idEntity> hitByThisMoveable;
 
 	// grayman #3052 - need to move to the idle map start spot before performing a PathWaitForTrigger task
 	bool issueMoveToPositionTask;

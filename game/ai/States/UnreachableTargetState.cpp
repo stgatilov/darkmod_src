@@ -102,6 +102,7 @@ void UnreachableTargetState::Init(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
+	memory.stopReactingToHit = true; // grayman #2816
 
 	owner->actionSubsystem->ClearTasks();
 

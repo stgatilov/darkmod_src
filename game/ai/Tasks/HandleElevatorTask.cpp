@@ -170,6 +170,13 @@ bool HandleElevatorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
+	// grayman #2816 - stop elevator handling for various reasons
+
+	if ( owner->GetMemory().stopHandlingElevator )
+	{
+		return true;
+	}
+	
 	// grayman #3050 - Special check for ending state that doesn't need all the elevator information.
 
 	if ( _state == EWrapUp )
@@ -707,6 +714,7 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 
 	owner->m_HandlingElevator = false;
 	owner->m_CanSetupDoor = true; // grayman #3029
+	owner->GetMemory().stopHandlingElevator = false; // grayman #2816
 
 	// grayman #3029 - restore from the first push, regardless of success or failure
 	owner->PopMove();

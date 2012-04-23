@@ -183,6 +183,7 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'" />
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)lib\$(PlatformShortName);$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">$(SolutionDir)..\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent />
@@ -328,6 +329,7 @@
     <ClCompile Include="game\ai\States\FailedKnockoutState.cpp" />
     <ClCompile Include="game\ai\States\FleeDoneState.cpp" />
     <ClCompile Include="game\ai\States\FleeState.cpp" />
+    <ClCompile Include="game\ai\States\HitByMoveableState.cpp" />
     <ClCompile Include="game\ai\States\IdleSleepState.cpp" />
     <ClCompile Include="game\ai\States\IdleState.cpp" />
     <ClCompile Include="game\ai\States\KnockedOutState.cpp" />
@@ -592,6 +594,7 @@
     <ClInclude Include="game\ai\States\FailedKnockoutState.h" />
     <ClInclude Include="game\ai\States\FleeDoneState.h" />
     <ClInclude Include="game\ai\States\FleeState.h" />
+    <ClInclude Include="game\ai\States\HitByMoveableState.h" />
     <ClInclude Include="game\ai\States\IdleSleepState.h" />
     <ClInclude Include="game\ai\States\IdleState.h" />
     <ClInclude Include="game\ai\States\KnockedOutState.h" />

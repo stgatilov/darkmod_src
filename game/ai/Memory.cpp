@@ -65,6 +65,9 @@ Memory::Memory(idAI* owningAI) :
 	visualAlert(false),			// grayman #2422
 	stopRelight(false),			// grayman #2603
 	stopExaminingRope(false),	// grayman #2872
+	stopReactingToHit(false),	// grayman #2816
+	stopHandlingDoor(false),	// grayman #2816
+	stopHandlingElevator(false),// grayman #2816
 	nextTime2GenRandomSpot(0),	// grayman #2422
 	alertClass(EAlertClassCount),
 	alertType(EAlertTypeCount),
@@ -137,6 +140,9 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
 	savefile->WriteBool(stopExaminingRope);		// grayman #2872
+	savefile->WriteBool(stopReactingToHit);		// grayman #2816
+	savefile->WriteBool(stopHandlingDoor);		// grayman #2816
+	savefile->WriteBool(stopHandlingElevator);	// grayman #2816
 	savefile->WriteInt(nextTime2GenRandomSpot);	// grayman #2422
 	savefile->WriteInt(static_cast<int>(alertClass));
 	savefile->WriteInt(static_cast<int>(alertType));
@@ -165,8 +171,9 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
-	lastDoorHandled.Save(savefile); // grayman #2712
-	relightLight.Save(savefile);	// grayman #2603
+	lastDoorHandled.Save(savefile);   // grayman #2712
+	hitByThisMoveable.Save(savefile); // grayman #2816
+	relightLight.Save(savefile);	  // grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
 	savefile->WriteInt(searchFlags);			// grayman #2603
 
@@ -244,6 +251,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(visualAlert);			// grayman #2422
 	savefile->ReadBool(stopRelight);			// grayman #2603
 	savefile->ReadBool(stopExaminingRope);		// grayman #2872
+	savefile->ReadBool(stopReactingToHit);		// grayman #2816
+	savefile->ReadBool(stopHandlingDoor);		// grayman #2816
+	savefile->ReadBool(stopHandlingElevator);	// grayman #2816
 	savefile->ReadInt(nextTime2GenRandomSpot);	// grayman #2422
 
 	int temp;
@@ -278,8 +288,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(fleeingDone);
 	savefile->ReadVec3(positionBeforeTakingCover);
 	savefile->ReadBool(resolvingMovementBlock);
-	lastDoorHandled.Restore(savefile);	// grayman #2712
-	relightLight.Restore(savefile);		// grayman #2603
+	lastDoorHandled.Restore(savefile);	 // grayman #2712
+	hitByThisMoveable.Restore(savefile); // grayman #2816
+	relightLight.Restore(savefile);		 // grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
 	savefile->ReadInt(searchFlags);				// grayman #2603
 

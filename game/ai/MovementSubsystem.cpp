@@ -784,6 +784,7 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 			frobDoor->GetUserManager().ResetMaster(frobDoor); // redefine which AI is the master door user
 		}
 		owner->m_HandlingDoor = false;
+		owner->GetMemory().stopHandlingDoor = false; // grayman #2816
 		if (owner->m_RestoreMove) // AI run toward where they saw you last. Don't save that location when handling doors.
 		{
 			SetBlockedState(EResolvingBlock); // preset this so PopMove() calling RestoreMove() doesn't start handling another door 

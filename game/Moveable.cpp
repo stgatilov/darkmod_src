@@ -52,14 +52,17 @@ static const float BOUNCE_SOUND_MIN_VELOCITY	= 80.0f;
 static const float BOUNCE_SOUND_MAX_VELOCITY	= 200.0f;
 static const float SLIDING_VELOCITY_THRESHOLD	= 5.0f;
 
+const float MIN_DAMAGE_VELOCITY = 200; // grayman #2816 - was 100
+const float MAX_DAMAGE_VELOCITY = 600; // grayman #2816 - was 200
+
 /*
 ================
 idMoveable::idMoveable
 ================
 */
 idMoveable::idMoveable( void ) {
-	minDamageVelocity		= 100.0f;
-	maxDamageVelocity		= 200.0f;
+	minDamageVelocity		= MIN_DAMAGE_VELOCITY; // grayman #2816
+	maxDamageVelocity		= MAX_DAMAGE_VELOCITY; // grayman #2816
 	nextCollideFxTime		= 0;
 	nextDamageTime			= 0;
 	nextSoundTime			= 0;
@@ -170,8 +173,17 @@ void idMoveable::Spawn( void ) {
 
 	damage = spawnArgs.GetString( "def_damage", "" );
 	canDamage = spawnArgs.GetBool( "damageWhenActive" ) ? false : true;
-	minDamageVelocity = spawnArgs.GetFloat( "minDamageVelocity", "100" );
-	maxDamageVelocity = spawnArgs.GetFloat( "maxDamageVelocity", "200" );
+
+	minDamageVelocity = spawnArgs.GetFloat( "minDamageVelocity", "-1" );
+	if ( minDamageVelocity == -1 ) // grayman #2816
+	{
+		minDamageVelocity = MIN_DAMAGE_VELOCITY;
+	}
+	maxDamageVelocity = spawnArgs.GetFloat( "maxDamageVelocity", "-1" );
+	if ( maxDamageVelocity == -1 ) // grayman #2816
+	{
+		maxDamageVelocity = MAX_DAMAGE_VELOCITY;
+	}
 	nextDamageTime = 0;
 	nextSoundTime = 0;
 
@@ -539,13 +551,14 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 			if ( ( ent && !entActor ) || ( entActor && !entActor->AI_DEAD ) /*&& ( v > minDamageVelocity )*/ ) // grayman #2816 - don't bother with corpses
 			{
 				float f = 1.0f; // used when v >= maxDamageVelocity
+
 				if ( v < minDamageVelocity )
 				{
-					f = 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
+					f = 0.0f;
 				}
 				else if ( v < maxDamageVelocity )
 				{
-					f = idMath::Sqrt( v - minDamageVelocity ) * ( 1.0f / idMath::Sqrt( maxDamageVelocity - minDamageVelocity ) );
+					f = idMath::Sqrt( v - minDamageVelocity ) / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
 				}
 
 				// scale the damage by the surface type multiplier, if any

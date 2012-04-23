@@ -107,6 +107,7 @@ public:
 	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
+	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt); // grayman #2816
 
 	// greebo: Gets called by OnPersonEncounter on finding a dead body
 	// returns TRUE when the stim should be ignored from now on, FALSE otherwise

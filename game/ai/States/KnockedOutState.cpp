@@ -56,6 +56,7 @@ void KnockedOutState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
 	owner->GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining rope
+	owner->GetMemory().stopReactingToHit = true; // grayman #2816
 
 	//owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 	//owner->StopAnim(ANIMCHANNEL_LEGS, 0);
