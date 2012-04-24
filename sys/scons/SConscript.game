@@ -237,6 +237,7 @@ ai/States/SwitchOnLightState.cpp \
 ai/States/ExamineRopeState.cpp \
 ai/States/TakeCoverState.cpp \
 ai/States/UnreachableTargetState.cpp \
+ai/States/HitByMoveable.cpp \
 ai/Tasks/ChaseEnemyRangedTask.cpp \
 ai/Tasks/ChaseEnemyTask.cpp \
 ai/Tasks/CombatTask.cpp \
