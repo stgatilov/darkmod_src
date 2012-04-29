@@ -9585,12 +9585,12 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( !m_ReactingToHit )
 	{
-		if ( !tactEnt->IsType(idAI::Type) )
+		if ( !tactEnt->IsType(idActor::Type) )
 		{
 			// Wait a bit to turn toward and look at what hit you (other than another AI).
 			// Then turn back in the direction the object came from.
 
-			mind->GetState()->OnHitByMoveable(this, tactEnt);
+			mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
 			return;
 		}
 	}
@@ -9601,7 +9601,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			GetMemory().stopReactingToHit = true; // stop the current reaction
 		}
 		
-		if ( !tactEnt->IsType(idAI::Type) )
+		if ( !tactEnt->IsType(idActor::Type) )
 		{
 			return; // process moveable hit next time around
 		}

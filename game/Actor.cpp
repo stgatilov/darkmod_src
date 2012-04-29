@@ -3173,27 +3173,17 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	bool hitByMelee = false;
 	bool hitByMoveable = false;
+	float mass = 1.0f;
 	if ( inflictor->IsType(CMeleeWeapon::Type) && ( attacker != gameLocal.world ) && ( inflictor->GetBindMaster() != NULL ) )
 	{
 		hitByMelee = true;
 	}
 	else if ( inflictor->IsType(idMoveable::Type) )
 	{
+		mass = inflictor->spawnArgs.GetFloat("mass","1");
 		hitByMoveable = true;
 	}
 	
-	float mass = 1.0f;
-	bool falling = false; // falling moveable?
-	idVec3 velocity(0,0,0);
-
-	if ( hitByMoveable )
-	{
-		mass = inflictor->spawnArgs.GetFloat("mass","1");
-		velocity = inflictor->GetPhysics()->GetLinearVelocity();
-		float velocityHorz = velocity.ToVec2().LengthFast();
-		falling = ( ( velocity.z < 0 ) && ( abs(velocity.z) > velocityHorz ) );
-	}
-
 	int damage = 0;
 
 	// grayman #2816 - scale damage?
@@ -3213,8 +3203,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// apply stealth damage multiplier - only active for derived AI class
 	damage *= StealthDamageMult();
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
-
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 
@@ -3224,24 +3212,83 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 	if ( ( bKO || bKOPowerBlow ) && collision )
 	{
-		// grayman #2816 - Differentiate between falling objects and thrown objects.
-		// Falling objects with enough mass and traveling fast enough will force a KO.
+		// Objects with enough mass and traveling fast enough will force a KO.
 
-		bool canKO = ( ( mass >= MIN_MASS_FOR_KO ) && ( velocity.LengthSqr() >= Square(MIN_VEL_FOR_KO) ) );
-
-		if ( hitByMoveable && falling && canKO )
+		if ( hitByMoveable )
 		{
-			// check if we're hitting the right zone (usually the head)
-			if ( idStr::Cmp(GetDamageGroup( location ), static_cast<idAI*>(this)->m_KoZone) == 0 )
-			{
-				// Bypass immunity/alertness/helmet checks and force a KO.
+			idVec3 velocity = inflictor->GetPhysics()->GetLinearVelocity();
 
-				static_cast<idAI*>(this)->Event_KO_Knockout( attacker );
-			
-				damage = 0; // KO does no health damage.
+			// The normal of the struck surface and the velocity of
+			// the striking object can sometimes indicate that the
+			// object was moving AWAY from the struck surface at the
+			// time of collision. In those cases, normalSpeed will
+			// be negative, so we'll just flip its sign so we get a
+			// result that's usable when trying to determine if this
+			// is a potential KO blow. After all, the object DID strike.
+
+			float normalSpeed = -collision->c.normal*velocity;
+			bool canKO = ( mass*normalSpeed >= 1000 );
+
+			// If my mass is small enough, and canKO is TRUE, the object
+			// should kill me, regardless of how much damage I'm about to
+			// receive, and what my health is.
+
+			if ( canKO && ( GetPhysics()->GetMass() <= MIN_MASS_FOR_KO ) )
+			{
+				damage = health; // kill me
+				canKO = false;	 // don't bother with the KO
+			}
+
+			if ( canKO )
+			{
+				// If the object is falling, we can force a KO if it hit an actor's head.
+				// If it's not falling, we should test if the blow hit the right place
+				// w/in the actor's KO zone, as we normally would with a blackjack blow.
+
+				idVec2 horzVelocity = velocity.ToVec2();
+				float horzSpeed = horzVelocity.LengthFast();
+				float vertDelta = collision->endpos.z - GetEyePosition().z;
+
+				if ( ( velocity.z < 0 ) && ( vertDelta > 0 ) && ( abs(velocity.z) > horzSpeed ) ) // falling?
+				{
+					// Bypass "determined immunity"/alertness/helmet checks and force a KO.
+					// Two situations can prevent a forced KO:
+					// 1 - m_bCanBeKnockedOut is true ("immune_ko" is set in the *.def file)
+					// 2 - m_KoZone is "" ("ko_zone" is set to "" in the *.def file)
+
+					if ( IsType(idAI::Type) ) // should always be true, since the player processes his own damage, but follow convention ...
+					{
+						idAI* meAI = static_cast<idAI*>(this);
+
+						if ( meAI->m_bCanBeKnockedOut && !meAI->m_KoZone.IsEmpty() )
+						{
+							meAI->Event_KO_Knockout( attacker );
+							damage = 0; // KO does no health damage.
+						}
+						else
+						{
+							// If there's enough impulse to force a KO, but the *.def file
+							// says we're immune to KOs, apply at least a small amount of damage
+							// equivalent to what we'd get from a blackjack blow
+
+							if ( damage == 0 )
+							{
+								damage += 2;
+							}
+						}
+					}
+				}
+				else // object is coming in from the side
+				{
+					if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
+					{
+						// For now, first KO blow does no health damage
+						damage = 0;
+					}
+				}
 			}
 		}
-		else if ( ( hitByMelee && !inflictor->m_droppedByAI ) || ( !hitByMelee && canKO ) ) // grayman #2816
+		else if ( hitByMelee && !inflictor->m_droppedByAI ) // grayman #2816
 		{
 			if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
 			{
@@ -3252,11 +3299,11 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	}
 
 	// grayman #2816 - when hit by a moveable, either thrown or dropped,
-	// don't let the AI pass away
+	// don't let the AI pass away unless it has a small mass.
 
 	if ( damage > 0 )
 	{
-		if ( hitByMoveable && ( damage >= health ) )
+		if ( hitByMoveable && ( damage >= health ) && ( GetPhysics()->GetMass() > MIN_MASS_FOR_KO ) )
 		{
 			damage = health / 2; // damage falls to 0 when health = 1, otherwise take half their health
 		}
@@ -3268,6 +3315,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 		health -= damage; // ouch!!
 
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 		if ( ( lowHealthThreshold != -1 ) && ( health <= lowHealthThreshold ) )
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Actor %s's fell below health threshold %d, firing script %s\r", name.c_str(), lowHealthThreshold, lowHealthScript.c_str());

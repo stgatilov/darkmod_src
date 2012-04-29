@@ -28,9 +28,9 @@ namespace ai
 #define STATE_HIT_BY_MOVEABLE "HitByMoveable"
 
 // grayman #2816 - constants for looking at objects that strike the AI
-const int HIT_DELAY	     = 1000; // ms - when getting hit by something, wait this long before turning toward it
-const int HIT_DURATION	 = 2000; // ms - and look at it for this long (+/- a random variation)
-const int HIT_VARIATION  =  400; // ms - max variation
+//const float HIT_DELAY	  = 1.0f; // seconds - when getting hit by something, wait this long before turning toward it
+//const float HIT_DURATION  = 2.0f; // seconds - and look at it for this long (+/- a random variation)
+//const float HIT_VARIATION = (HIT_DURATION/5); // seconds - max variation
 const int HIT_DIST		 =  150; // pick a point this far away, back where the object came from and look at it
 const int HIT_FIND_THROWER_HORZ = 300; // how far out to look for a friendly/neutral AI
 const int HIT_FIND_THROWER_VERT = 150; // how far up/down to look for a friendly/neutral AI
@@ -42,8 +42,9 @@ private:
 	idVec3 _pos;							// a position to look back at
 	idEntityPtr<idActor> _responsibleActor;	// who threw the object
 
-	// time to wait before proceeding with a state
-	int _waitEndTime;
+	int _waitEndTime;			// time to wait before proceeding with a state
+	float _lookAtDuration;		// how long to look at what hit you
+	float _lookBackDuration;	// how long to look back at where the object came from
 
 	enum EHitByMoveableState
 	{

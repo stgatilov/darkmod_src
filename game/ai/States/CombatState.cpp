@@ -235,13 +235,19 @@ void CombatState::Think(idAI* owner)
 		if ( gameLocal.time >= _reactionEndTime )
 		{
 			// Check to see if the enemy is still visible.
+			// grayman #2816 - Visibility doesn't matter if you're in combat because
+			// you bumped into your enemy.
 
-			if ( !owner->CanSee(enemy, true) )
+			idEntity* tactEnt = owner->GetTactEnt();
+			if ( ( tactEnt == NULL ) || !tactEnt->IsType(idActor::Type) || ( tactEnt != enemy ) || !owner->AI_TACTALERT ) 
 			{
-				owner->ClearEnemy();
-				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
-				owner->GetMind()->EndState();
-				return;
+				if ( !owner->CanSee(enemy, true) )
+				{
+					owner->ClearEnemy();
+					owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+					owner->GetMind()->EndState();
+					return;
+				}
 			}
 
 			// Can still see the enemy, so proceed with Combat
@@ -258,7 +264,7 @@ void CombatState::Think(idAI* owner)
 	{
 		owner->m_ignorePlayer = false; // grayman #3063 - clear flag that prevents mission statistics on player sightings
 
-		// The AI has processed his reaction, and need to move into combat, or flee.
+		// The AI has processed his reaction, and needs to move into combat, or flee.
 
 		// Handle the things you were doing in Init() ...
 

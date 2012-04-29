@@ -125,8 +125,7 @@ public:
 */
 
 // grayman #2816 - constants for moveables striking AI
-const float	MIN_MASS_FOR_KO   = 20.0f;
-const float MIN_VEL_FOR_KO    = 15.0f;
+const float	MIN_MASS_FOR_KO = 5.0f;
 
 extern const idEventDef AI_EnableEyeFocus;
 extern const idEventDef AI_DisableEyeFocus;

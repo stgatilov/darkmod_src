@@ -608,8 +608,8 @@ void idAFAttachment::Damage( idEntity *inflictor, idEntity *attacker, const idVe
 
 	if ( body ) 
 	{
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AF Attachment %s passing along damage to actor %s at attachjoint %d \r", name.c_str(), body->name.c_str(), (int) attachJoint );
 		body->Damage( inflictor, attacker, dir, damageDefName, damageScale, attachJoint, pTrace );
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AF Attachment %s passed along damage to actor %s at attachjoint %d \r", name.c_str(), body->name.c_str(), (int) attachJoint );
 	}
 }
 

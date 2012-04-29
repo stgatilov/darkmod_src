@@ -1133,8 +1133,7 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	// Vocalize that something hit me
 	if ( owner->AI_AlertLevel < owner->thresh_5 )
 	{
-		gameLocal.Printf("Hey! What was that?\n");
-		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundSuspiciousItem")));
+		gameLocal.Printf("Something hit me!\n");
 	}
 
 	owner->GetMemory().hitByThisMoveable = tactEnt;

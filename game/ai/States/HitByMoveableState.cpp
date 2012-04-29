@@ -22,6 +22,7 @@
 
 static bool versioned = RegisterVersionedFile("$Id: HitByMoveableState.cpp 5363 2012-04-01 18:08:35Z grayman $");
 
+#include "../Tasks/SingleBarkTask.h"
 #include "HitByMoveableState.h"
 
 namespace ai
@@ -57,7 +58,16 @@ void HitByMoveableState::Init(idAI* owner)
 	idEntity* tactEnt = owner->GetMemory().hitByThisMoveable.GetEntity();
 	if ( tactEnt == NULL )
 	{
-		Wrapup(owner);
+		Wrapup(owner); // no entity = no reaction
+		return;
+	}
+
+	if ( !owner->spawnArgs.GetBool("canSearch","1") )
+	{
+		// TODO: AI that won't search should probably change
+		// direction, or flee.
+
+		Wrapup(owner); // won't search, so shouldn't react
 		return;
 	}
 
@@ -79,6 +89,9 @@ void HitByMoveableState::Init(idAI* owner)
 	_pos = owner->GetEyePosition() + dir*HIT_DIST; // where to look when turning back
 
 	_responsibleActor = tactEnt->m_SetInMotionByActor;	// who threw it
+
+	_lookAtDuration   = owner->spawnArgs.GetFloat("hitByMoveableLookAtTime","2.0");   // how long to look at what hit you
+	_lookBackDuration = owner->spawnArgs.GetFloat("hitByMoveableLookBackTime","2.0"); // how long to look back at where the object came from
 
 	// TODO: Do we need to abort door or elevator handling here?
 	// How about relighting?
@@ -104,7 +117,7 @@ void HitByMoveableState::Init(idAI* owner)
 		_hitByMoveableState = EStateStarting;
 	}
 
-	_waitEndTime = gameLocal.time + HIT_DELAY; // slight pause before reacting
+	_waitEndTime = gameLocal.time + 500; // pause before reacting
 	owner->m_ReactingToHit = true;
 }
 
@@ -149,20 +162,29 @@ void HitByMoveableState::Think(idAI* owner)
 				_hitByMoveableState = EStateTurnToward;
 			}
 			break;
-		case EStateTurnToward: // Turn toward the entity that hit you.
+		case EStateTurnToward: // Turn toward the object that hit you.
 			{
-				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
-				_hitByMoveableState = EStateLookAt;
-				_waitEndTime = gameLocal.time + HIT_DELAY;
+				// if _lookAtDuration is 0, skip turning toward and looking at the object
+
+				if ( _lookAtDuration == 0 )
+				{
+					_hitByMoveableState = EStateTurnBack;
+				}
+				else
+				{
+					owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
+					_hitByMoveableState = EStateLookAt;
+					_waitEndTime = gameLocal.time + 1000;
+				}
 			}
 			break;
 		case EStateLookAt: // look at the entity
 			if (gameLocal.time >= _waitEndTime)
 			{
-				float duration = HIT_DURATION + HIT_VARIATION*(gameLocal.random.RandomFloat() - 0.5f );
-				owner->Event_LookAtEntity( tactEnt, duration/1000.0f );
+				float duration = _lookAtDuration + (_lookAtDuration/5)*(gameLocal.random.RandomFloat() - 0.5f );
+				owner->Event_LookAtEntity( tactEnt, duration );
 
-				_waitEndTime = gameLocal.time + duration;
+				_waitEndTime = gameLocal.time + duration*1000;
 				_hitByMoveableState = EStateTurnBack;
 			}
 			break;
@@ -170,17 +192,19 @@ void HitByMoveableState::Think(idAI* owner)
 			if (gameLocal.time >= _waitEndTime)
 			{
 				owner->TurnToward(_pos);
-				float duration = HIT_DURATION + HIT_VARIATION*(gameLocal.random.RandomFloat() - 0.5f );
-				_waitEndTime = gameLocal.time + duration;
+				_waitEndTime = gameLocal.time + 1000;
 				_hitByMoveableState = EStateLookBack;
 			}
 			break;
 		case EStateLookBack: // look in the direction the entity came from
 			if (gameLocal.time >= _waitEndTime)
 			{
-				float duration = HIT_DURATION + HIT_VARIATION*(gameLocal.random.RandomFloat() - 0.5f );
-				owner->Event_LookAtPosition( _pos, duration/1000.0f );
-				_waitEndTime = gameLocal.time + duration;
+				if ( _lookBackDuration > 0 )
+				{
+					float duration = _lookBackDuration + (_lookBackDuration/5)*(gameLocal.random.RandomFloat() - 0.5f );
+					owner->Event_LookAtPosition( _pos, duration );
+					_waitEndTime = gameLocal.time + duration*1000;
+				}
 				_hitByMoveableState = EStateFinal;
 			}
 			break;
@@ -216,41 +240,54 @@ void HitByMoveableState::Think(idAI* owner)
 						continue;
 					}
 
-					if ( !candidate->IsType(idAI::Type) ) // skip non-AI
+					if ( !candidate->IsType(idActor::Type) ) // skip non-Actors
 					{
 						continue;
 					}
 
-					idAI *candidateAI = static_cast<idAI *>(candidate);
+					idActor *candidateActor = static_cast<idActor *>(candidate);
 
-					// Only look for humanoids. The AIUse check allows
-					// persons and undead to be considered, and leaves out
-					// werebeasts, which are probably the only other AI
-					// capable of putting something in motion. I think that's
-					// okay. We just don't want to consider rats, spiders, etc.
-
-					idStr aiUse = candidateAI->spawnArgs.GetString("AIUse");
-					if ( ( aiUse != "AIUSE_PERSON" ) && ( aiUse != "AIUSE_UNDEAD" ) ) // skip non-persons
+					if ( candidateActor->GetPhysics()->GetMass() <= 5.0 ) // skip actors with small mass (rats, spiders)
 					{
 						continue;
 					}
 
-					if ( candidateAI->IsKnockedOut() || ( candidateAI->health < 0 ) || ( candidateAI->GetMoveType() == MOVETYPE_SLEEP ) )
+					if ( candidateActor->IsKnockedOut() || ( candidateActor->health < 0 ) )
 					{
-						continue; // skip if knocked out, dead, or asleep
+						continue; // skip if knocked out or dead
 					}
 
-					if ( candidateAI->fl.notarget )
+					if ( candidateActor->IsType(idAI::Type) )
+					{
+						if ( static_cast<idAI*>(candidateActor)->GetMoveType() == MOVETYPE_SLEEP )
+						{
+							continue; // skip if asleep
+						}
+					}
+
+					if ( candidateActor->fl.notarget )
 					{
 						continue; // skip if NOTARGET is set
 					}
 
-					if ( owner->IsFriend(candidateAI) || owner->IsNeutral(candidateAI) )
+					if ( owner->IsFriend(candidateActor) || owner->IsNeutral(candidateActor) )
 					{
 						// make sure there's LOS (no walls in between)
 
-						if ( owner->CanSeeExt( candidateAI, false, false ) ) // don't use FOV or lighting, to increase chance of success
+						if ( owner->CanSeeExt( candidateActor, false, false ) ) // don't use FOV or lighting, to increase chance of success
 						{
+							// look at your friend/neutral if they're in your FOV
+							int delay = 0; // bark delay
+							if ( owner->CanSeeExt( candidateActor, true, false) ) // use FOV this time, but ignore lighting
+							{
+								owner->Event_LookAtPosition(candidateActor->GetEyePosition(),2.0f);
+								delay = 1000; // give head time to move before barking
+							}
+
+							// bark an admonishment whether you're facing them or not
+
+							CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_admonish_friend",message,delay)));
 							Wrapup(owner);
 							return;
 						}
@@ -322,6 +359,8 @@ void HitByMoveableState::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_waitEndTime);
 	savefile->WriteInt(static_cast<int>(_hitByMoveableState));
 	savefile->WriteVec3(_pos);
+	savefile->WriteFloat(_lookAtDuration);
+	savefile->WriteFloat(_lookBackDuration);
 }
 
 void HitByMoveableState::Restore(idRestoreGame* savefile)
@@ -334,6 +373,8 @@ void HitByMoveableState::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	_hitByMoveableState = static_cast<EHitByMoveableState>(temp);
 	savefile->ReadVec3(_pos);
+	savefile->ReadFloat(_lookAtDuration);
+	savefile->ReadFloat(_lookBackDuration);
 }
 
 StatePtr HitByMoveableState::CreateInstance()

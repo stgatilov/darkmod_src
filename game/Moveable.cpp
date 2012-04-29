@@ -496,49 +496,54 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	}
 
 	idEntity* ent = gameLocal.entities[ collision.c.entityNum ];
+	trace_t newCollision = collision; // grayman #2816 - in case we need to modify collision
 
 	// grayman #2816 - if we hit the world, skip all the damage work
 
-	if ( ent != gameLocal.world )
+	if ( ent && ( ent != gameLocal.world ) )
 	{
-		idActor* hitActor = NULL;
-		if ( ent && ent->IsType(idActor::Type) )
-		{
-			hitActor = static_cast<idActor*>(ent);
-		}
-
-		// grayman #2816 - Check for reroute entity (can happen with attachments to AI)
-
 		idEntity* reroute = NULL;
+		idActor* entActor = NULL;
 
-		if ( ent && ent->IsType(idAFEntity_Base::Type) )
+		if ( ent->IsType(idActor::Type) )
 		{
-			idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
-			int bodID = entAF->BodyForClipModelId( collision.c.id );
-			idAFBody* StruckBody = entAF->GetAFPhysics()->GetBody( bodID );
-
-			if ( StruckBody != NULL )
-			{
-				reroute = StruckBody->GetRerouteEnt();
-				if ( reroute != NULL )
-				{
-					ent = reroute;
-				}
-			}
+			entActor = static_cast<idActor*>(ent); // the object hit an actor directly
 		}
-		else // is ent attached to something else?
+		else if ( ent->IsType(idAFAttachment::Type ) )
+		{
+			newCollision.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( static_cast<idAFAttachment*>(ent)->GetAttachJoint() );
+		}
+
+		// go up the bindMaster chain to see if an Actor is lurking
+
+		if ( entActor == NULL ) // no actor yet, so ent is an attachment or an attached moveable
 		{
 			idEntity* bindMaster = ent->GetBindMaster();
-			if ( bindMaster )
+			while ( bindMaster != NULL )
 			{
-				ent = bindMaster;
-			}
-		}
+				if ( bindMaster->IsType(idActor::Type) )
+				{
+					entActor = static_cast<idActor*>(bindMaster); // the object hit something attached to an actor
 
-		idActor* entActor = NULL;
-		if ( ent && ent->IsType(idActor::Type) )
-		{
-			entActor = static_cast<idActor*>(ent);
+					// If ent is an idAFAttachment, we can leave ent alone
+					// and pass the damage to it. It will, in turn, pass the
+					// damage to the actor it's attached to. (helmets)
+
+					// If ent is NOT an attachment, we have to change it to
+					// be the actor we just found. Inventor goggles are an
+					// example of when we have to do this, because they're
+					// an idMoveable, and they DON'T transfer their damage
+					// to the actor they're attached to.
+
+					if ( !ent->IsType(idAFAttachment::Type ) )
+					{
+						ent = bindMaster;
+					}
+
+					break;
+				}
+				bindMaster = bindMaster->GetBindMaster(); // go up the chain
+			}
 		}
 
 		// grayman #2816 - in order to allow knockouts from dropped objects,
@@ -548,9 +553,9 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 		if ( canDamage && damage.Length() && ( gameLocal.time > nextDamageTime ) )
 		{
-			if ( ( ent && !entActor ) || ( entActor && !entActor->AI_DEAD ) /*&& ( v > minDamageVelocity )*/ ) // grayman #2816 - don't bother with corpses
+			if ( !entActor || !entActor->AI_DEAD )
 			{
-				float f = 1.0f; // used when v >= maxDamageVelocity
+				float f;
 
 				if ( v < minDamageVelocity )
 				{
@@ -558,13 +563,17 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 				}
 				else if ( v < maxDamageVelocity )
 				{
-					f = idMath::Sqrt( v - minDamageVelocity ) / idMath::Sqrt( maxDamageVelocity - minDamageVelocity );
+					f = idMath::Sqrt(( v - minDamageVelocity ) / ( maxDamageVelocity - minDamageVelocity ));
+				}
+				else
+				{
+					f = 1.0f; // capped when v >= maxDamageVelocity
 				}
 
 				// scale the damage by the surface type multiplier, if any
 
 				idStr SurfTypeName;
-				g_Global.GetSurfName( collision.c.material, SurfTypeName );
+				g_Global.GetSurfName( newCollision.c.material, SurfTypeName );
 				SurfTypeName = "damage_mult_" + SurfTypeName;
 				f *= spawnArgs.GetFloat( SurfTypeName.c_str(), "1.0" ); 
 
@@ -575,44 +584,28 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 				// to find a better joint (location), because when the head is
 				// hit, the joint isn't identified correctly w/o it.
 
-				int location = JOINT_HANDLE_TO_CLIPMODEL_ID( collision.c.id );
-				if ( ( collision.c.contents & CONTENTS_CORPSE ) && ent->IsType(idAFEntity_Base::Type) )
+				int location = JOINT_HANDLE_TO_CLIPMODEL_ID( newCollision.c.id );
+
+				// If this moveable is attached to an AI, identify that AI.
+				// Otherwise, assume it was put in motion by someone.
+
+				idEntity* attacker = GetPhysics()->GetClipModel()->GetOwner();
+				if ( attacker == NULL )
 				{
-					idAFEntity_Base *entAF = static_cast<idAFEntity_Base *>(ent);
-					location = entAF->JointForBody(collision.c.id);
+					attacker = m_SetInMotionByActor.GetEntity();
 				}
-
-				int preHealth = ent->health;
-
-				ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, location, const_cast<trace_t *>(&collision) );
-	//			ent->Damage( this, GetPhysics()->GetClipModel()->GetOwner(), dir, damage, f, CLIPMODEL_ID_TO_JOINT_HANDLE(collision.c.id), const_cast<trace_t *>(&collision) ); // old, inaccurate way when a head is struck
-
-				// if no damage was done, don't reset nextDamageTime
-
-				if ( ent->health < preHealth )
-				{
-					nextDamageTime = gameLocal.time + 1000;
-				}
+				
+				ent->Damage( this, attacker, dir, damage, f, location, const_cast<trace_t *>(&newCollision) );
+				nextDamageTime = gameLocal.time + 1000;
 			}
 		}
 
 		// Darkmod: Collision stims and a tactile alert if it collides with an AI
-		if ( ent )
+		ProcCollisionStims( ent, newCollision.c.id ); // grayman #2816 - use new collision
+
+		if ( entActor && entActor->IsType( idAI::Type ) )
 		{
-			ProcCollisionStims( ent, collision.c.id );
-
-			// grayman #2816 - cover all cases of where the actor to be alerted might be
-
-			if ( hitActor && hitActor->IsType( idAI::Type ) )
-			{
-				idAI *alertee = static_cast<idAI *>(hitActor);
-				alertee->TactileAlert( this );
-			}
-			else if ( entActor && entActor->IsType( idAI::Type ) )
-			{
-				idAI *alertee = static_cast<idAI *>(entActor);
-				alertee->TactileAlert( this );
-			}
+			static_cast<idAI *>(entActor)->TactileAlert( this );
 		}
 	}
 
@@ -634,20 +627,24 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 {
 	bool bPlayerResponsible(false);
 
-	if ( unbindOnDeath ) {
+	if ( unbindOnDeath )
+	{
 		Unbind();
 	}
 
 	// tels: call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
 
-	if ( explode ) {
-		if ( brokenModel == "" ) {
+	if ( explode )
+	{
+		if ( brokenModel == "" )
+		{
 			PostEventMS( &EV_Remove, 1000 );
 		}
 	}
 
-	if ( renderEntity.gui[ 0 ] ) {
+	if ( renderEntity.gui[ 0 ] )
+	{
 		renderEntity.gui[ 0 ] = NULL;
 	}
 
@@ -656,9 +653,13 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 	fl.takedamage = false;
 
 	if ( attacker && attacker->IsType( idPlayer::Type ) )
+	{
 		bPlayerResponsible = ( attacker == gameLocal.GetLocalPlayer() );
-	else if( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	}
+	else if ( attacker && attacker->m_SetInMotionByActor.GetEntity() )
+	{
 		bPlayerResponsible = ( attacker->m_SetInMotionByActor.GetEntity() == gameLocal.GetLocalPlayer() );
+	}
 
 	gameLocal.m_MissionData->MissionEvent( COMP_DESTROY, this, bPlayerResponsible );
 }
