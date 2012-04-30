@@ -757,7 +757,7 @@ const char *idStr::Mid( const int start, const int len, idStr &result ) const {
 
 	int l = ( start + len >= i ) ? i - start : len;
 
-	result.Append( &data[ start ], len );
+	result.Append( &data[ start ], l );
 	return result;
 }
 
