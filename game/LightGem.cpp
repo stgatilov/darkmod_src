@@ -189,6 +189,11 @@ float LightGem::Calculate(idPlayer *player)
 	PROFILE_BLOCK( LightGem_Calculate );
 	PROFILE_BLOCK_START( LightGem_Calculate_Setup);
 
+	// If player is hidden (i.e the whole player entity is actually hidden)
+	if ( player->GetModelDefHandle() == -1 ) {
+		return 0.0f;
+	}
+
 	{ // Get position for lg
 		idEntity* lg = m_LightgemSurface.GetEntity();
 		renderEntity_t* prent = lg->GetRenderEntity();
