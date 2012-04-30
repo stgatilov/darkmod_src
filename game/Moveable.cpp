@@ -502,7 +502,6 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 	if ( ent && ( ent != gameLocal.world ) )
 	{
-		idEntity* reroute = NULL;
 		idActor* entActor = NULL;
 
 		if ( ent->IsType(idActor::Type) )
