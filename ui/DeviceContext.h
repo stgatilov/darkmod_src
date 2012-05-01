@@ -65,8 +65,6 @@ public:
 
 	void				SetSize(float width, float height);
 
-	const idMaterial	*GetScrollBarImage(int index);
-
 	void				DrawCursor(float *x, float *y, float size);
 	void				SetCursor(int n);
 
