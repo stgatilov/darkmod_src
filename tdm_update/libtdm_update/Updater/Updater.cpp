@@ -55,7 +55,7 @@ Updater::Updater(const UpdaterOptions& options, const fs::path& executable) :
 	_options.CheckProxy(_conn);
 
 	_ignoreList.insert("doomconfig.cfg");
-	_ignoreList.insert("dmargs.txt");
+	_ignoreList.insert("darkmod.cfg");
 
 	MirrorDownload::InitRandomizer();
 
@@ -101,7 +101,7 @@ void Updater::UpdateMirrors()
 	std::string mirrorsUrl = TDM_MIRRORS_SERVER;
 	mirrorsUrl += TDM_MIRRORS_FILE;
 
-	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from thedarkmod.com...");
+	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from %s...", mirrorsUrl.c_str() );
 
 	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
 
