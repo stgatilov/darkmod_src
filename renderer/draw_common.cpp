@@ -1134,6 +1134,47 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 	//rebb : mainly for testing different implementations
 	switch( r_stencilShadowMode.GetInteger() ) {
+		// uses twoSidedStencil if enabled/available, otherwise Carmack's workaround
+		case 2:
+		{
+			if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
+				if( !external ) {
+					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP );
+					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP );
+				} else {
+					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr );
+					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr );
+				}
+
+				GL_Cull( CT_TWO_SIDED );
+				RB_DrawShadowElementsWithCounters( tri, numIndexes );
+			} else {
+				// Carmack's original "patent-free workaround" ( slow )
+				if( !external ) {
+					// "preload" the stencil buffer with the number of volumes
+					// that get clipped by the near or far clip plane
+					qglStencilOp( GL_KEEP, tr.stencilDecr, tr.stencilDecr );
+					GL_Cull( CT_FRONT_SIDED );
+					RB_DrawShadowElementsWithCounters( tri, numIndexes );
+					qglStencilOp( GL_KEEP, tr.stencilIncr, tr.stencilIncr );
+					GL_Cull( CT_BACK_SIDED );
+					RB_DrawShadowElementsWithCounters( tri, numIndexes );
+				}
+
+				// traditional depth-pass stencil shadows
+				qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
+				GL_Cull( CT_FRONT_SIDED );
+				RB_DrawShadowElementsWithCounters( tri, numIndexes );
+
+				qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilDecr );
+				GL_Cull( CT_BACK_SIDED );
+				RB_DrawShadowElementsWithCounters( tri, numIndexes );
+			}
+
+			break;
+		}
+
+		// uses twoSidedStencil if enabled/available
 		case 1:
 		{
 			// patent-free work around
@@ -1163,7 +1204,6 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 					GL_Cull( CT_TWO_SIDED );
 					RB_DrawShadowElementsWithCounters( tri, numIndexes );
 				} else {	
-					// doom3 shadowelements seem to be inverted, so render frontculled backculled instead of the other way around
 					qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
 					GL_Cull( CT_FRONT_SIDED );
 					RB_DrawShadowElementsWithCounters( tri, numIndexes );
@@ -1176,6 +1216,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 			break;
 		}
 
+		// uses twoSidedStencil if enabled/available, alternative path broken for camera-in-shadow case
 		default:
 		{
 			// patent-free work around
