@@ -834,8 +834,6 @@ void idGameLocal::SaveGame( idFile *f ) {
 	debugtools::TimerManager::Instance().Save(&savegame);
 #endif
 
-	savegame.WriteInt( g_skill.GetInteger() );
-
 	savegame.WriteDict( &serverInfo );
 
 	savegame.WriteInt( numClients );
@@ -1865,9 +1863,6 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 #ifdef TIMING_BUILD
 	debugtools::TimerManager::Instance().Restore(&savegame);
 #endif
-
-	savegame.ReadInt( i );
-	g_skill.SetInteger( i );
 
 	// precache the player
 	FindEntityDef( cv_player_spawnclass.GetString(), false );
@@ -5042,53 +5037,8 @@ idGameLocal::InhibitEntitySpawn
 */
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	
-	bool result = false;
-
-	/* greebo: Disabled vanilla D3 stuff, will be handled by our DifficultyManager 
-	if ( isMultiplayer ) {
-		spawnArgs.GetBool( "not_multiplayer", "0", result );
-	} else if ( g_skill.GetInteger() == 0 ) {
-		spawnArgs.GetBool( "not_easy", "0", result );
-	} else if ( g_skill.GetInteger() == 1 ) {
-		spawnArgs.GetBool( "not_medium", "0", result );
-	} else {
-		spawnArgs.GetBool( "not_hard", "0", result );
-	}
-
-	const char *name;
-
-	if ( g_skill.GetInteger() == 3 ) { 
-		name = spawnArgs.GetString( "classname" );
-		if ( idStr::Icmp( name, "item_medkit" ) == 0 || idStr::Icmp( name, "item_medkit_small" ) == 0 ) {
-			result = true;
-		}
-	}
-
-	}*/
-
 	// Consult the difficulty manager, whether this entity should be prevented from being spawned.
-	result = m_DifficultyManager.InhibitEntitySpawn(spawnArgs);
-
-	return result;
-}
-
-/*
-================
-idGameLocal::SetSkill
-================
-*/
-void idGameLocal::SetSkill( int value ) {
-	int skill_level;
-
-	if ( value < 0 ) {
-		skill_level = 0;
-	} else if ( value > 3 ) {
-		skill_level = 3;
-	} else {
-		skill_level = value;
-	}
-
-	g_skill.SetInteger( skill_level );
+	return m_DifficultyManager.InhibitEntitySpawn(spawnArgs);
 }
 
 /*
@@ -5142,8 +5092,6 @@ void idGameLocal::SpawnMapEntities( void ) {
 		Printf("No mapfile present\n");
 		return;
 	}
-
-	SetSkill( g_skill.GetInteger() );
 
 	// Add the lightgem to the map before anything else happened
 	// so it will be included as if it were a regular map entity.

@@ -252,7 +252,6 @@ public:
 
 	int						lastHitTime;			// last time projectile fired by player hit target
 	int						lastSndHitTime;			// MP hit sound - != lastHitTime because we throttle
-	int						lastSavingThrowTime;	// for the "free miss" effect
 
 	// The GUI of the lockpick visualisation HUD
 	int						lockpickHUD;

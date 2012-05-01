@@ -284,7 +284,6 @@ idPlayer::idPlayer() :
 
 	lastHitTime				= 0;
 	lastSndHitTime			= 0;
-	lastSavingThrowTime		= 0;
 
 	lockpickHUD				= 0;
 
@@ -972,31 +971,6 @@ void idPlayer::Spawn( void )
 	// copy step volumes over from cvars
 	UpdateMoveVolumes();
 
-	if ( !gameLocal.isMultiplayer )
-	{
-		if ( g_skill.GetInteger() < 2 )
-		{
-			if ( health < 25 )
-			{
-				health = 25;
-			}
-			if ( g_useDynamicProtection.GetBool() )
-			{
-				g_damageScale.SetFloat( 1.0f );
-			}
-		}
-		else
-		{
-			g_damageScale.SetFloat( 1.0f );
-			g_armorProtection.SetFloat( ( g_skill.GetInteger() < 2 ) ? 0.4f : 0.2f );
-			if ( g_skill.GetInteger() == 3 )
-			{
-				healthTake = true;
-				nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
-			}
-		}
-	}
-
 	lockpickHUD = CreateOverlay("guis/tdm_lockpick.gui", 20);
 
 	// Clear the lightgem modifiers
@@ -1560,7 +1534,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( lastHitTime );
 	savefile->WriteInt( lastSndHitTime );
-	savefile->WriteInt( lastSavingThrowTime );
 
 	savefile->WriteInt( lockpickHUD );
 	savefile->WriteBool( hasLanded );
@@ -1865,7 +1838,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( lastHitTime );
 	savefile->ReadInt( lastSndHitTime );
-	savefile->ReadInt( lastSavingThrowTime );
 
 	savefile->ReadInt( lockpickHUD );
 	savefile->ReadBool( hasLanded );
@@ -3186,15 +3158,6 @@ void idPlayer::UpdatePowerUps( void ) {
 		}
 
 		healthPulse = true;
-	}
-	if ( !gameLocal.inCinematic && influenceActive == 0 && g_skill.GetInteger() == 3 && gameLocal.time > nextHealthTake && !AI_DEAD && health > g_healthTakeLimit.GetInteger() ) {
-		assert( !gameLocal.isClient );	// healthPool never be set on client
-		health -= g_healthTakeAmt.GetInteger();
-		if ( health < g_healthTakeLimit.GetInteger() ) {
-			health = g_healthTakeLimit.GetInteger();
-		}
-		nextHealthTake = gameLocal.time + g_healthTakeTime.GetInteger() * 1000;
-		healthTake = true;
 	}
 }
 
@@ -6907,21 +6870,6 @@ void idPlayer::Think( void )
 			TouchTriggers();
 		}
 
-		// not done on clients for various reasons. don't do it on server and save the sound channel for other things
-		/*if ( !gameLocal.isMultiplayer ) {
-			SetCurrentHeartRate();
-			float scale = g_damageScale.GetFloat();
-			if ( g_useDynamicProtection.GetBool() && scale < 1.0f && gameLocal.time - lastDmgTime > 500 ) {
-				if ( scale < 1.0f ) {
-					scale += 0.05f;
-				}
-				if ( scale > 1.0f ) {
-					scale = 1.0f;
-				}
-				g_damageScale.SetFloat( scale );
-			}
-		}*/
-
 #if 0
 		// update GUIs, Items, and character interactions
 		UpdateFocus();
@@ -7344,26 +7292,6 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	damage = GetDamageForLocation( damage, location );
 
 	idPlayer *player = attacker->IsType( idPlayer::Type ) ? static_cast<idPlayer*>(attacker) : NULL;
-	if ( !gameLocal.isMultiplayer ) {
-		if ( inflictor != gameLocal.world ) {
-			switch ( g_skill.GetInteger() ) {
-				case 0: 
-					damage *= 0.80f;
-					if ( damage < 1 ) {
-						damage = 1;
-					}
-					break;
-				case 2:
-					damage *= 1.70f;
-					break;
-				case 3:
-					damage *= 3.5f;
-					break;
-				default:
-					break;
-			}
-		}
-	}
 
 	// always give half damage if hurting self
 	if ( attacker == this ) {
@@ -7547,13 +7475,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		if ( !gameLocal.isMultiplayer ) 
 		{
 			float scale = g_damageScale.GetFloat();
-			/*if ( g_useDynamicProtection.GetBool() && g_skill.GetInteger() < 2 ) {
-				if ( gameLocal.time > lastDmgTime + 500 && scale > 0.25f ) {
-					scale -= 0.05f;
-					g_damageScale.SetFloat( scale );
-				}
-			}*/
-
 			if ( scale > 0.0f ) 
 			{
 				damage *= scale;

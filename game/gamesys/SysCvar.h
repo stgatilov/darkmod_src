@@ -393,7 +393,6 @@ extern idCVar	r_aspectRatio;
 extern idCVar	g_monsters;
 extern idCVar	g_decals;
 extern idCVar	g_knockback;
-extern idCVar	g_skill;
 extern idCVar	g_gravity;
 extern idCVar	g_skipFX;
 extern idCVar	g_skipParticles;
@@ -416,10 +415,6 @@ extern idCVar	g_stopTime;
 extern idCVar	g_armorProtection;
 extern idCVar	g_armorProtectionMP;
 extern idCVar	g_damageScale;
-extern idCVar	g_useDynamicProtection;
-extern idCVar	g_healthTakeTime;
-extern idCVar	g_healthTakeAmt;
-extern idCVar	g_healthTakeLimit;
 
 extern idCVar	g_showPVS;
 extern idCVar	g_showTargets;

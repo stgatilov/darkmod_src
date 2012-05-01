@@ -8000,38 +8000,6 @@ bool idAI::AttackMelee( const char *meleeDefName ) {
 		return false;
 	}
 
-	// check for the "saving throw" automatic melee miss on lethal blow
-	// stupid place for this.
-
-/**
-* Saving throws removed.  Uncomment the following for saving throws.
-**/
-
-/*** BEGIN SAVING THROWS SECTION *****
-	bool forceMiss = false;
-	if ( enemyEnt->IsType( idPlayer::Type ) && g_skill.GetInteger() < 2 ) {
-		int	damage, armor;
-		idPlayer *player = static_cast<idPlayer*>( enemyEnt );
-		player->CalcDamagePoints( this, this, meleeDef, 1.0f, INVALID_JOINT, &damage, &armor );
-
-		if ( enemyEnt->health <= damage ) {
-			int	t = gameLocal.time - player->lastSavingThrowTime;
-			if ( t > SAVING_THROW_TIME ) {
-				player->lastSavingThrowTime = gameLocal.time;
-				t = 0;
-			}
-			if ( t < 1000 ) {
-				gameLocal.Printf( "Saving throw.\n" );
-				forceMiss = true;
-			}
-		}
-	}
-
-
-	// make sure the trace can actually hit the enemy
-	if ( forceMiss || !TestMelee() ) {
-****** END SAVING THROWS SECTION *******/
-
 	if ( !TestMelee() )
 	{
 		// missed

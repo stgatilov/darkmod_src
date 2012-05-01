@@ -729,7 +729,6 @@ public:
 	void					SetupEAS();
 
 	bool					CheatsOk( bool requirePlayer = true );
-	void					SetSkill( int value );
 	gameState_t				GameState( void ) const;
 
 	/**
