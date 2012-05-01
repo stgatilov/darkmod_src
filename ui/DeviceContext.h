@@ -99,17 +99,6 @@ public:
 		ALIGN_RIGHT
 	};
 
-	enum {
-		SCROLLBAR_HBACK,
-		SCROLLBAR_VBACK,
-		SCROLLBAR_THUMB,
-		SCROLLBAR_RIGHT,
-		SCROLLBAR_LEFT,
-		SCROLLBAR_UP,
-		SCROLLBAR_DOWN,
-		SCROLLBAR_COUNT
-	};
-
 	static idVec4 colorPurple;
 	static idVec4 colorOrange;
 	static idVec4 colorYellow;
@@ -127,7 +116,6 @@ private:
 	void				Clear( void );
 
 	const idMaterial	*cursorImages[CURSOR_COUNT];
-	const idMaterial	*scrollBarImages[SCROLLBAR_COUNT];
 	const idMaterial	*whiteImage;
 	fontInfoEx_t		*activeFont;
 	fontInfo_t			*useFont;

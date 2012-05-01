@@ -70,7 +70,13 @@ void idDeviceContext::SetupFonts() {
 	fonts.SetGranularity( 1 );
 
 	// Default font has to be added first
-	FindFont( "fonts" );
+	if (FindFont( "fonts" ) == -1) {
+		// Could not find default font, try "fonts/stone" as replacement
+		// Happens for instance if D3 assets are not available
+		if (FindFont( "fonts/stone" ) == -1) {
+			common->Warning( "Could not find font 'fonts' nor 'fonts/stone', have no default font!\n" );
+		}
+	}
 }
 
 void idDeviceContext::SetFont( int num ) {
@@ -108,22 +114,8 @@ void idDeviceContext::Init() {
 	colorNone = idVec4(0, 0, 0, 0);
 	cursorImages[CURSOR_ARROW] = declManager->FindMaterial("ui/assets/guicursor_arrow.tga");
 	cursorImages[CURSOR_HAND] = declManager->FindMaterial("ui/assets/guicursor_hand.tga");
-	scrollBarImages[SCROLLBAR_HBACK] = declManager->FindMaterial("ui/assets/scrollbarh.tga");
-	scrollBarImages[SCROLLBAR_VBACK] = declManager->FindMaterial("ui/assets/scrollbarv.tga");
-	scrollBarImages[SCROLLBAR_THUMB] = declManager->FindMaterial("ui/assets/scrollbar_thumb.tga");
-	scrollBarImages[SCROLLBAR_RIGHT] = declManager->FindMaterial("ui/assets/scrollbar_right.tga");
-	scrollBarImages[SCROLLBAR_LEFT] = declManager->FindMaterial("ui/assets/scrollbar_left.tga");
-	scrollBarImages[SCROLLBAR_UP] = declManager->FindMaterial("ui/assets/scrollbar_up.tga");
-	scrollBarImages[SCROLLBAR_DOWN] = declManager->FindMaterial("ui/assets/scrollbar_down.tga");
 	cursorImages[CURSOR_ARROW]->SetSort( SS_GUI );
 	cursorImages[CURSOR_HAND]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_HBACK]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_VBACK]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_THUMB]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_RIGHT]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_LEFT]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_UP]->SetSort( SS_GUI );
-	scrollBarImages[SCROLLBAR_DOWN]->SetSort( SS_GUI );
 	cursor = CURSOR_ARROW;
 	enableClipping = true;
 	overStrikeMode = true;
@@ -838,13 +830,6 @@ int idDeviceContext::MaxCharHeight(float scale) {
 	SetFontByScale(scale);
 	float useScale = scale * useFont->glyphScale;
 	return idMath::FtoiFast( activeFont->maxHeight * useScale );
-}
-
-const idMaterial *idDeviceContext::GetScrollBarImage(int index) {
-	if (index >= SCROLLBAR_HBACK && index < SCROLLBAR_COUNT) {
-		return scrollBarImages[index];
-	}
-	return scrollBarImages[SCROLLBAR_HBACK];
 }
 
 // this only supports left aligned text
