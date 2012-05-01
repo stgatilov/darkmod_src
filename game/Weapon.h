@@ -200,9 +200,6 @@ private:
 	bool					hide;
 	bool					disabled;
 
-	// berserk
-	int						berserk;
-
 	// these are the player render view parms, which include bobbing
 	idVec3					playerViewOrigin;
 	idMat3					playerViewAxis;

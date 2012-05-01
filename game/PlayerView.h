@@ -175,7 +175,6 @@ private:
 
 	const idMaterial *	tunnelMaterial;		// health tunnel vision
 	const idMaterial *	armorMaterial;		// armor damage view effect
-	const idMaterial *	berserkMaterial;	// berserk effect
 	const idMaterial *	irGogglesMaterial;	// ir effect
 	const idMaterial *	bloodSprayMaterial; // blood spray
 	const idMaterial *	lagoMaterial;		// lagometer drawing

@@ -141,7 +141,6 @@ idWeapon::idWeapon() {
 	nozzleGlowHandle		= -1;
 	modelDefHandle			= -1;
 
-	berserk					= 2;
 	brassDelay				= 0;
 
 	allowDrop				= true;
@@ -281,8 +280,6 @@ void idWeapon::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( hide );
 	savefile->WriteBool( disabled );
 
-	savefile->WriteInt( berserk );
-
 	savefile->WriteVec3( playerViewOrigin );
 	savefile->WriteMat3( playerViewAxis );
 
@@ -419,8 +416,6 @@ void idWeapon::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( hideOffset );
 	savefile->ReadBool( hide );
 	savefile->ReadBool( disabled );
-
-	savefile->ReadInt( berserk );
 
 	savefile->ReadVec3( playerViewOrigin );
 	savefile->ReadMat3( playerViewAxis );
@@ -1040,7 +1035,6 @@ void idWeapon::GetWeaponDef( const char *objectname, int ammoinclip ) {
 	}
 
 	zoomFov = weaponDef->dict.GetInt( "zoomFov", "70" );
-	berserk = weaponDef->dict.GetInt( "berserk", "2" );
 
 	weaponAngleOffsetAverages = weaponDef->dict.GetInt( "weaponAngleOffsetAverages", "10" );
 	weaponAngleOffsetScale = weaponDef->dict.GetFloat( "weaponAngleOffsetScale", "0.25" );
