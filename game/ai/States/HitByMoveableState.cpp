@@ -272,24 +272,29 @@ void HitByMoveableState::Think(idAI* owner)
 
 					if ( owner->IsFriend(candidateActor) || owner->IsNeutral(candidateActor) )
 					{
-						// make sure there's LOS (no walls in between)
+						// Don't admonish the alleged thrower if tactEnt came in from above (dropped)
 
-						if ( owner->CanSeeExt( candidateActor, false, false ) ) // don't use FOV or lighting, to increase chance of success
+						if ( _pos.z <= owner->GetEyePosition().z )
 						{
-							// look at your friend/neutral if they're in your FOV
-							int delay = 0; // bark delay
-							if ( owner->CanSeeExt( candidateActor, true, false) ) // use FOV this time, but ignore lighting
+							// make sure there's LOS (no walls in between)
+
+							if ( owner->CanSeeExt( candidateActor, false, false ) ) // don't use FOV or lighting, to increase chance of success
 							{
-								owner->Event_LookAtPosition(candidateActor->GetEyePosition(),2.0f);
-								delay = 1000; // give head time to move before barking
+								// look at your friend/neutral if they're in your FOV
+								int delay = 0; // bark delay
+								if ( owner->CanSeeExt( candidateActor, true, false) ) // use FOV this time, but ignore lighting
+								{
+									owner->Event_LookAtPosition(candidateActor->GetEyePosition(),2.0f);
+									delay = 1000; // give head time to move before barking
+								}
+
+								// bark an admonishment whether you're facing them or not
+
+								CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
+								owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_admonish_friend",message,delay)));
+								Wrapup(owner);
+								return;
 							}
-
-							// bark an admonishment whether you're facing them or not
-
-							CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_admonish_friend",message,delay)));
-							Wrapup(owner);
-							return;
 						}
 					}
 				}

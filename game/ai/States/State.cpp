@@ -1128,12 +1128,15 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 	}
 }
 
+// grayman #2816
+
 void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 {
 	// Vocalize that something hit me
 	if ( owner->AI_AlertLevel < owner->thresh_5 )
 	{
 		gameLocal.Printf("Something hit me!\n");
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
 	}
 
 	owner->GetMemory().hitByThisMoveable = tactEnt;
