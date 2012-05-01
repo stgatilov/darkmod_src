@@ -403,8 +403,6 @@ public:
 	float					healthPool;			// amount of health to give over time
 	int						nextHealthPulse;
 	bool					healthPulse;
-	bool					healthTake;
-	int						nextHealthTake;
 	// greebo: added these to make the interval customisable
 	int						healthPoolStepAmount;			// The amount of healing in each pulse
 	int						healthPoolTimeInterval;			// The time between health pulses

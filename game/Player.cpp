@@ -305,8 +305,6 @@ idPlayer::idPlayer() :
 	healthPool				= 0.0f;
 	nextHealthPulse			= 0;
 	healthPulse				= false;
-	nextHealthTake			= 0;
-	healthTake				= false;
 	healthPoolTimeInterval	= HEALTHPULSE_TIME;
 	healthPoolTimeIntervalFactor = 1.0f;
 	healthPoolStepAmount	= 5;
@@ -635,8 +633,6 @@ void idPlayer::Init( void ) {
 	healthPool		= 0.0f;
 	nextHealthPulse = 0;
 	healthPulse		= false;
-	nextHealthTake	= 0;
-	healthTake		= false;
 
 	SetupWeaponEntity();
 	currentWeapon = -1;
@@ -1577,8 +1573,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( healthPool );
 	savefile->WriteInt( nextHealthPulse );
 	savefile->WriteBool( healthPulse );
-	savefile->WriteInt( nextHealthTake );
-	savefile->WriteBool( healthTake );
 
 	savefile->WriteInt(healthPoolStepAmount);
 	savefile->WriteInt(healthPoolTimeInterval);
@@ -1890,8 +1884,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( healthPool );
 	savefile->ReadInt( nextHealthPulse );
 	savefile->ReadBool( healthPulse );
-	savefile->ReadInt( nextHealthTake );
-	savefile->ReadBool( healthTake );
 
 	savefile->ReadInt(healthPoolStepAmount);
 	savefile->ReadInt(healthPoolTimeInterval);
@@ -2613,12 +2605,6 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 		_hud->HandleNamedEvent( "healthPulse" );
 		StartSound( "snd_healthpulse", SND_CHANNEL_ITEM, 0, false, NULL );
 		healthPulse = false;
-	}
-
-	if ( healthTake ) {
-		_hud->HandleNamedEvent( "healthPulse" );
-		StartSound( "snd_healthtake", SND_CHANNEL_ITEM, 0, false, NULL );
-		healthTake = false;
 	}
 
 	UpdateHudAmmo();
