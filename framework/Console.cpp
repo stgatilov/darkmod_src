@@ -175,7 +175,7 @@ SCR_DrawFPS
 */
 int SCR_DrawFPS( int y ) {
 	char	*s;
-	static unsigned int t , w, 
+	static unsigned int t , 
 		frameTime, index, total, fps,
 		previous, previousTimes[FPS_FRAMES];
 
