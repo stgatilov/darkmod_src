@@ -2772,7 +2772,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 					if ( foundInPak ) {
 						*foundInPak = pak;
 					}
-#if _DEBUG
+#ifdef _DEBUG
 					if ( fs_debug.GetInteger( ) ) {
 						common->Printf( "idFileSystem::OpenFileRead: %s (found in addon pk4 '%s')\n", relativePath, search->pack->pakFilename.c_str() );
 					}

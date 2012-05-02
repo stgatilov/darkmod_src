@@ -289,7 +289,7 @@ float LightGem::Calculate(idPlayer *player)
 			renderSystem->CaptureRenderToBuffer(m_LightgemImgBuffer);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 
-#if _DEBUG
+#ifdef _DEBUG
 			{ // Save render if we have a path specified (for debugging)
 				const char* dp = cv_lg_path.GetString();
 				if ( dp[0] ) {

@@ -1437,7 +1437,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		return;
 	}
 
-#if DEBUG
+#ifdef _DEBUG
 	int start = Sys_Milliseconds();
 #endif
 
@@ -1458,7 +1458,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		this->CreateLightDefInteractions( ldef );
 	}
 
-#if DEBUG
+#ifdef _DEBUG
 	int end = Sys_Milliseconds();
 	int	msec = end - start;
 
@@ -1500,7 +1500,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 			}
 		}
 		common->Printf( "interactionTable generated of size: %i bytes\n", size );
-#if DEBUG
+#ifdef _DEBUG
 		common->Printf( "%i interactions take %i bytes\n", count, count * sizeof( idInteraction ) );
 #endif
 	}

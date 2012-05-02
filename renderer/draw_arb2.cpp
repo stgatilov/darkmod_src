@@ -436,7 +436,7 @@ void R_LoadARBProgram( int progIndex ) {
 
 	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
 		strlen( start ), (unsigned char *)start );
-#if DEBUG
+#ifdef _DEBUG
 	int err = qglGetError();
 	int		ofs;
 	qglGetIntegerv( GL_PROGRAM_ERROR_POSITION_ARB, (GLint *)&ofs );

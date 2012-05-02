@@ -992,7 +992,7 @@ void R_AddLightSurfaces( void ) {
 			}
 
 			// Serp : Pretty sure this wont be possible
-#if DEBUG
+#ifdef _DEBUG
 			if ( !light->parms.prelightModel->NumSurfaces() ) {
 				common->Error( "no surfs in prelight model '%s'", light->parms.prelightModel->Name() );
 			}
