@@ -354,7 +354,6 @@
     <ClInclude Include="renderer\simplex.h" />
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
-    <ClInclude Include="renderer\wglext.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
     <ClInclude Include="sound\OggVorbis\vorbissrc\backends.h" />
@@ -403,6 +402,7 @@
     <ClInclude Include="sound\OggVorbis\ogg\os_types.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
+    <ClInclude Include="sys\win32\wglext.h" />
     <ClInclude Include="sys\win32\win_local.h" />
     <ClInclude Include="sys\win32\rc\AFEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\Common_resource.h" />

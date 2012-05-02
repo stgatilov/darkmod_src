@@ -276,9 +276,6 @@
     <ClInclude Include="renderer\VertexCache.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\wglext.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="sound\snd_local.h">
       <Filter>Sound</Filter>
     </ClInclude>
@@ -573,6 +570,9 @@
     <ClInclude Include="framework\precompiled_engine.h" />
     <ClInclude Include="framework\I18N.h">
       <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="sys\win32\wglext.h">
+      <Filter>Sys</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

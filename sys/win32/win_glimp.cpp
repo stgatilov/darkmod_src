@@ -68,70 +68,11 @@ PFNWGLRELEASETEXIMAGEARBPROC	wglReleaseTexImageARB;
 PFNWGLSETPBUFFERATTRIBARBPROC	wglSetPbufferAttribARB;
 
 
-
-/* ARB_pixel_format */
-#define WGL_NUMBER_PIXEL_FORMATS_ARB       0x2000
-#define WGL_DRAW_TO_WINDOW_ARB             0x2001
-#define WGL_DRAW_TO_BITMAP_ARB             0x2002
-#define WGL_ACCELERATION_ARB               0x2003
-#define WGL_NEED_PALETTE_ARB               0x2004
-#define WGL_NEED_SYSTEM_PALETTE_ARB        0x2005
-#define WGL_SWAP_LAYER_BUFFERS_ARB         0x2006
-#define WGL_SWAP_METHOD_ARB                0x2007
-#define WGL_NUMBER_OVERLAYS_ARB            0x2008
-#define WGL_NUMBER_UNDERLAYS_ARB           0x2009
-#define WGL_TRANSPARENT_ARB                0x200A
-#define WGL_SHARE_DEPTH_ARB                0x200C
-#define WGL_SHARE_STENCIL_ARB              0x200D
-#define WGL_SHARE_ACCUM_ARB                0x200E
-#define WGL_SUPPORT_GDI_ARB                0x200F
-#define WGL_SUPPORT_OPENGL_ARB             0x2010
-#define WGL_DOUBLE_BUFFER_ARB              0x2011
-#define WGL_STEREO_ARB                     0x2012
-#define WGL_PIXEL_TYPE_ARB                 0x2013
-#define WGL_COLOR_BITS_ARB                 0x2014
-#define WGL_RED_BITS_ARB                   0x2015
-#define WGL_RED_SHIFT_ARB                  0x2016
-#define WGL_GREEN_BITS_ARB                 0x2017
-#define WGL_GREEN_SHIFT_ARB                0x2018
-#define WGL_BLUE_BITS_ARB                  0x2019
-#define WGL_BLUE_SHIFT_ARB                 0x201A
-#define WGL_ALPHA_BITS_ARB                 0x201B
-#define WGL_ALPHA_SHIFT_ARB                0x201C
-#define WGL_ACCUM_BITS_ARB                 0x201D
-#define WGL_ACCUM_RED_BITS_ARB             0x201E
-#define WGL_ACCUM_GREEN_BITS_ARB           0x201F
-#define WGL_ACCUM_BLUE_BITS_ARB            0x2020
-#define WGL_ACCUM_ALPHA_BITS_ARB           0x2021
-#define WGL_DEPTH_BITS_ARB                 0x2022
-#define WGL_STENCIL_BITS_ARB               0x2023
-#define WGL_AUX_BUFFERS_ARB                0x2024
-#define WGL_NO_ACCELERATION_ARB            0x2025
-#define WGL_GENERIC_ACCELERATION_ARB       0x2026
-#define WGL_FULL_ACCELERATION_ARB          0x2027
-#define WGL_SWAP_EXCHANGE_ARB              0x2028
-#define WGL_SWAP_COPY_ARB                  0x2029
-#define WGL_SWAP_UNDEFINED_ARB             0x202A
-#define WGL_TYPE_RGBA_ARB                  0x202B
-#define WGL_TYPE_COLORINDEX_ARB            0x202C
-#define WGL_TRANSPARENT_RED_VALUE_ARB      0x2037
-#define WGL_TRANSPARENT_GREEN_VALUE_ARB    0x2038
-#define WGL_TRANSPARENT_BLUE_VALUE_ARB     0x2039
-#define WGL_TRANSPARENT_ALPHA_VALUE_ARB    0x203A
-#define WGL_TRANSPARENT_INDEX_VALUE_ARB    0x203B
-
-/* ARB_multisample */
-#define WGL_SAMPLE_BUFFERS_ARB             0x2041
-#define WGL_SAMPLES_ARB                    0x2042
-
-
-
 //
 // function declaration
 //
 bool QGL_Init( const char *dllname );
 void     QGL_Shutdown( void );
-
 
 
 /*
@@ -193,7 +134,7 @@ void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigne
 	}
 
 	if ( !SetDeviceGammaRamp( win32.hDC, table ) ) {
-		common->Printf( "WARNING: SetDeviceGammaRamp failed.\n" );
+		common->Warning( "SetDeviceGammaRamp failed." );
 	}
 }
 
@@ -300,6 +241,8 @@ void GLW_CheckWGLExtensions( HDC hDC ) {
 	wglBindTexImageARB = (PFNWGLBINDTEXIMAGEARBPROC)GLimp_ExtensionPointer("wglBindTexImageARB");
 	wglReleaseTexImageARB = (PFNWGLRELEASETEXIMAGEARBPROC)GLimp_ExtensionPointer("wglReleaseTexImageARB");
 	wglSetPbufferAttribARB = (PFNWGLSETPBUFFERATTRIBARBPROC)GLimp_ExtensionPointer("wglSetPbufferAttribARB");
+
+	qglGetIntegerv( GL_MAX_SAMPLES, (GLint *)&glConfig.maxSamples );
 }
 
 /*
@@ -362,9 +305,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	{
 		sizeof(PIXELFORMATDESCRIPTOR),	// size of this pfd
 		1,								// version number
-		PFD_DRAW_TO_WINDOW |			// support window
-		PFD_SUPPORT_OPENGL |			// support OpenGL
-		PFD_DOUBLEBUFFER,				// double buffered
+		PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,	// support window, OpenGL, double buffered
 		PFD_TYPE_RGBA,					// RGBA type
 		32,								// 32-bit color depth
 		0, 0, 0, 0, 0, 0,				// color bits ignored
@@ -389,7 +330,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		common->Printf( "...getting DC: " );
 
 		if ( ( win32.hDC = GetDC( win32.hWnd ) ) == NULL ) {
-			common->Printf( "^3failed^0\n" );
+			common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 			return false;
 		}
 		common->Printf( "succeeded\n" );
@@ -440,7 +381,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		// otherwise use the GDI functions.
 		//
 		if ( ( win32.pixelformat = ChoosePixelFormat( win32.hDC, &src ) ) == 0 ) {
-			common->Printf( "...^3GLW_ChoosePFD failed^0\n");
+			common->Warning( "GLW_ChoosePFD failed");
 			return false;
 		}
 		common->Printf( "...PIXELFORMAT %d selected\n", win32.pixelformat );
@@ -459,7 +400,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 
 	// the same SetPixelFormat is used either way
 	if ( SetPixelFormat( win32.hDC, win32.pixelformat, &win32.pfd ) == FALSE ) {
-		common->Printf( "...^3SetPixelFormat failed^0\n", win32.hDC );
+		common->Warning( "SetPixelFormat failed", win32.hDC );
 		return false;
 	}
 
@@ -468,7 +409,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	//
 	common->Printf( "...creating GL context: " );
 	if ( ( win32.hGLRC = qwglCreateContext( win32.hDC ) ) == 0 ) {
-		common->Printf( "^3failed^0\n" );
+		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
 	}
 	common->Printf( "succeeded\n" );
@@ -477,7 +418,7 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
 		qwglDeleteContext( win32.hGLRC );
 		win32.hGLRC = NULL;
-		common->Printf( "^3failed^0\n" );
+		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
 		return false;
 	}
 	common->Printf( "succeeded\n" );
@@ -612,7 +553,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 		 NULL);
 
 	if ( !win32.hWnd ) {
-		common->Printf( "^3GLW_CreateWindow() - Couldn't create window^0\n" );
+		common->Warning( "GLW_CreateWindow() Couldn't create window" );
 		return false;
 	}
 
@@ -694,11 +635,11 @@ static bool GLW_SetFullScreen( glimpParms_t parms ) {
 			if ( matched ) {
 				// we got a resolution match, but not a frequency match
 				// so disable the frequency requirement
-				common->Printf( "...^3%dhz is unsupported at %dx%d^0\n", parms.displayHz, parms.width, parms.height );
+				common->Printf( "..." S_COLOR_YELLOW "%dhz is unsupported at %dx%d\n" S_COLOR_DEFAULT, parms.displayHz, parms.width, parms.height );
 				parms.displayHz = 0;
 				break;
 			}
-			common->Printf( "...^3%dx%d is unsupported in 32 bit^0\n", parms.width, parms.height );
+			common->Printf( "..." S_COLOR_YELLOW "%dx%d is unsupported in 32 bit\n" S_COLOR_DEFAULT, parms.width, parms.height );
 			return false;
 		}
 		if ( (int)devmode.dmPelsWidth >= parms.width
@@ -739,7 +680,7 @@ static bool GLW_SetFullScreen( glimpParms_t parms ) {
 	//
 	// the exact mode failed, so scan EnumDisplaySettings for the next largest mode
 	//
-	common->Printf( "^3failed^0, " );
+	common->Printf( S_COLOR_YELLOW "failed" S_COLOR_DEFAULT ", " );
 	
 	PrintCDSError( cdsRet );
 
@@ -764,10 +705,9 @@ static bool GLW_SetFullScreen( glimpParms_t parms ) {
 		}
 	}
 
-	common->Printf( "\n...^3no high res mode found^0\n" );
+	common->Warning( "No high res mode found" );
 	return false;
 }
-
 
 
 /*
@@ -800,7 +740,7 @@ bool GLimp_Init( glimpParms_t parms ) {
 
 	// we can't run in a window unless it is 32 bpp
 	if ( win32.desktopBitsPixel < 32 && !parms.fullScreen ) {
-		common->Printf("^3Windowed mode requires 32 bit desktop depth^0\n");
+		common->Warning("GLimp_Init: Windowed mode requires 32 bit desktop depth");
 		return false;
 	}
 
@@ -819,13 +759,19 @@ bool GLimp_Init( glimpParms_t parms ) {
 	// not archived.
 	driverName = r_glDriver.GetString()[0] ? r_glDriver.GetString() : "opengl32";
 	if ( !QGL_Init( driverName ) ) {
-		common->Printf( "^3GLimp_Init() could not load r_glDriver \"%s\"^0\n", driverName );
+		common->Warning("GLimp_Init: Could not load r_glDriver \"%s\"", driverName );
 		return false;
 	}
 
 	// getting the wgl extensions involves creating a fake window to get a context,
 	// which is pretty disgusting, and seems to mess with the AGP VAR allocation
 	GLW_GetWGLExtensionsWithFakeWindow();
+
+	if ( parms.multiSamples > glConfig.maxSamples ) {
+		common->Warning( "GLimp_Init: Tried to set multiSamples above the maximum supported by hardware" );
+		parms.multiSamples = glConfig.maxSamples;
+		r_multiSamples.SetInteger( glConfig.maxSamples );
+	}
 
 	// try to change to fullscreen
 	if ( parms.fullScreen ) {
@@ -867,7 +813,7 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 
 	memset( &dm, 0, sizeof( dm ) );
 	dm.dmSize = sizeof( dm );
-	dm.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
 	if ( parms.displayHz != 0 ) {
 		dm.dmDisplayFrequency = parms.displayHz;
 		dm.dmFields |= DM_DISPLAYFREQUENCY;
