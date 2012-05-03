@@ -993,6 +993,11 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 {
 	assert( ( stimSource != NULL ) && ( owner != NULL) ); // must be fulfilled
 
+	if ( owner->AI_AlertLevel >= owner->thresh_5 ) // grayman #2423 - pay no attention if in combat
+	{
+		return;
+	}
+
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
@@ -1132,8 +1137,8 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 
 void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 {
-	// Vocalize that something hit me
-	if ( owner->AI_AlertLevel < owner->thresh_5 )
+	// Vocalize that something hit me, but only if I'm not in combat mode, and I'm not in pain this frame
+	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) && !owner->AI_PAIN )
 	{
 		gameLocal.Printf("Something hit me!\n");
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
@@ -1233,21 +1238,22 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				owner->SetAlertLevel(owner->thresh_5*2);
 				memory.alertClass = EAlertVisual_1;
 				memory.alertType = EAlertTypeEnemy;
-				// An enemy should not be ignored in the future
-				ignoreStimulusFromNowOn = false;
 			}
+
+			// An enemy should not be ignored in the future - grayman #2423 - moved out of above test so all enemies are remembered
+			ignoreStimulusFromNowOn = false;
 		}
 		else if (owner->IsFriend(other))
 		{
-			// Remember last time a friendly AI was seen
-			memory.lastTimeFriendlyAISeen = gameLocal.time;
-
 			if (!other->IsType(idAI::Type))
 			{
 				return; // safeguard
 			}
 
 			idAI* otherAI = static_cast<idAI*>(other);
+
+			// Remember last time a friendly AI was seen
+			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			if (otherAI->GetMoveType() == MOVETYPE_SLEEP) // grayman #2464 - is the other asleep?
 			{
