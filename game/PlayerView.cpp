@@ -50,7 +50,6 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	dvMaterial = declManager->FindMaterial( "_scratch" );
 	tunnelMaterial = declManager->FindMaterial( "textures/decals/tunnel" );
 	armorMaterial = declManager->FindMaterial( "armorViewEffect" );
-	irGogglesMaterial = declManager->FindMaterial( "textures/decals/irblend" );
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
 
@@ -116,7 +115,6 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteMaterial( tunnelMaterial );
 	savefile->WriteMaterial( armorMaterial );
-	savefile->WriteMaterial( irGogglesMaterial );
 	savefile->WriteMaterial( bloodSprayMaterial );
 	savefile->WriteFloat( lastDamageTime );
 
@@ -167,7 +165,6 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadMaterial( tunnelMaterial );
 	savefile->ReadMaterial( armorMaterial );
-	savefile->ReadMaterial( irGogglesMaterial );
 	savefile->ReadMaterial( bloodSprayMaterial );
 	savefile->ReadFloat( lastDamageTime );
 
