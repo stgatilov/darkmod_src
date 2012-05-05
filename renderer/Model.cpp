@@ -1234,7 +1234,7 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 			}
 
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToModelSurfaces: model %s has too many verts for a poly! Make sure you triplet it down", name.c_str() );
+				common->Warning( "ConvertLWOToModelSurfaces: model \'%s\' has too many verts for a poly! Make sure you triplet it down", name.c_str() );
 				continue;
 			}
 
@@ -1463,7 +1463,7 @@ struct aseModel_s *idRenderModelStatic::ConvertLWOToASE( const struct st_lwObjec
 			}
 
 			if ( poly->nverts != 3 ) {
-				common->Warning( "ConvertLWOToASE: model %s has too many verts for a poly! Make sure you triplet it down", fileName );
+				common->Warning( "ConvertLWOToASE: model \'%s\' has too many verts for a poly! Make sure you triplet it down", fileName );
 				continue;
 			}
 	
