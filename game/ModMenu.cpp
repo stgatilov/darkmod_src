@@ -309,8 +309,19 @@ void CModMenu::UpdateGUI(idUserInterface* gui)
 
 		gui->SetStateInt(guiAvailable,	info != NULL ? 1 : 0);
 		idStr name = common->Translate( info != NULL ? info->displayName : "");
-		common->GetI18N()->MoveArticlesToBack( name );
-		gui->SetStateString(guiName,	name );
+
+		// grayman #3110
+		idStr prefix = "";
+		idStr suffix = "";
+		common->GetI18N()->MoveArticlesToBack( name, prefix, suffix );
+		if ( !suffix.IsEmpty() )
+		{
+			// found, remove prefix and append suffix
+			name.StripLeadingOnce( prefix.c_str() );
+			name += suffix;
+		}
+
+		gui->SetStateString(guiName,	name);
 		gui->SetStateString(guiDesc,	common->Translate( info != NULL ? info->description : "") );
 		gui->SetStateString(guiAuthor,	info != NULL ? info->author : "");
 		gui->SetStateString(guiImage,	info != NULL ? info->image : "");

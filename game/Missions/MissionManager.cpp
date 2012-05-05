@@ -536,6 +536,8 @@ void CMissionManager::GenerateModList()
 	SortModList();
 }
 
+// grayman #3110 - rewritten due to freed memory crashes
+
 // Compare functor to sort missions by title
 int CMissionManager::ModSortCompare(const int* a, const int* b)
 {
@@ -543,13 +545,32 @@ int CMissionManager::ModSortCompare(const int* a, const int* b)
 	CModInfoPtr aInfo = gameLocal.m_MissionManager->GetModInfo(*a);
 	CModInfoPtr bInfo = gameLocal.m_MissionManager->GetModInfo(*b);
 
-	if (aInfo == NULL || bInfo == NULL) return 0;
+	if ( ( aInfo == NULL ) || ( bInfo == NULL) )
+	{
+		return 0;
+	}
 
 	idStr aName = common->Translate( aInfo->displayName );
-	idStr bName = common->Translate( bInfo->displayName );
+	idStr prefix = "";
+	idStr suffix = "";
+	common->GetI18N()->MoveArticlesToBack( aName, prefix, suffix );
+	if ( !suffix.IsEmpty() )
+	{
+		// found, remove prefix and append suffix
+		aName.StripLeadingOnce( prefix.c_str() );
+		aName += suffix;
+	}
 
-	common->GetI18N()->MoveArticlesToBack( aName );
-	common->GetI18N()->MoveArticlesToBack( bName );
+	idStr bName = common->Translate( bInfo->displayName );
+	prefix = "";
+	suffix = "";
+	common->GetI18N()->MoveArticlesToBack( bName, prefix, suffix );
+	if ( !suffix.IsEmpty() )
+	{
+		// found, remove prefix and append suffix
+		bName.StripLeadingOnce( prefix.c_str() );
+		bName += suffix;
+	}
 
 	return aName.Icmp(bName);
 }

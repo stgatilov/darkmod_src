@@ -93,11 +93,10 @@ public:
 	virtual const char*			TemplateFromEnglish( const char* in) = 0;
 
 	/**
-	* Changes the given string from "A little House" to "Little House, A",
+	* Changes the given string from "A Little House" to "Little House, A",
 	* supporting multiple languages like English, German, French etc.
 	*/
-	virtual void				MoveArticlesToBack(idStr& title) = 0;
-
+	virtual void				MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix) = 0; // grayman #3110
 };
 
 #endif /* !__DARKMOD_I18N_H__ */

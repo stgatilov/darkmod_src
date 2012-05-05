@@ -91,10 +91,10 @@ public:
 	const char*			TemplateFromEnglish( const char* in);
 
 	/**
-	* Changes the given string from "A little House" to "Little House, A",
+	* Changes the given string from "A Little House" to "Little House, A",
 	* supporting multiple languages like English, German, French etc.
 	*/
-	void				MoveArticlesToBack(idStr& title);
+	void				MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix); // grayman #3110
 
 private:
 	// current language
@@ -518,12 +518,18 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 ===============
 I18NLocal::MoveArticlesToBack
 
-Changes "A little House" to "Little House, A", supporting multiple languages
+Changes "A Little House" to "Little House, A", supporting multiple languages
 like English, German, French etc.
 ===============
 */
-void I18NLocal::MoveArticlesToBack(idStr& title)
+
+// grayman #3110 - rewritten to avoid crashes from freeing memory in the caller
+
+void I18NLocal::MoveArticlesToBack(const idStr& title, idStr& prefix, idStr& suffix)
 {
+	prefix = "";
+	suffix = "";
+
 	// Do not move articles if the language is italian or polish:
 	if ( !m_bMoveArticles )
 	{
@@ -533,17 +539,23 @@ void I18NLocal::MoveArticlesToBack(idStr& title)
 	// find index of first " "
 	int spaceIdx = title.Find(' ');
 	// no space, nothing to do
-	if (spaceIdx == -1) { return; }
-
-	idStr prefix = title.Left( spaceIdx + 1 );
-
-	// see if we have Prefix in the dictionary
-	const char* suffix = m_ArticlesDict.GetString( prefix.c_str(), NULL );
-	if (suffix != NULL)
+	if ( spaceIdx == -1 )
 	{
-		// found, remove prefix and append suffix
-		title.StripLeadingOnce( prefix.c_str() );
-		title += suffix;
+		return;
 	}
+
+	idStr prfx = title.Left( spaceIdx + 1 );
+
+	// see if we have prfx in the dictionary
+	const char* sfx = m_ArticlesDict.GetString( prfx.c_str(), NULL );
+
+	if ( sfx != NULL )
+	{
+		prefix = prfx;
+		suffix = sfx;
+	}
+
+	// return prefix and suffix to caller
+	return;
 }
 
