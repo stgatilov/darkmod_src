@@ -31,7 +31,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <conio.h>
 
 #include "win_local.h"
-#include "rc/AFEditor_resource.h"
 #include "rc/doom_resource.h"
 
 #define COPY_ID			1
