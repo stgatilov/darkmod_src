@@ -30,17 +30,8 @@ idCVar idMegaTexture::r_skipMegaTexture( "r_skipMegaTexture", "0", CVAR_RENDERER
 idCVar idMegaTexture::r_terrainScale( "r_terrainScale", "3", CVAR_RENDERER | CVAR_INTEGER, "vertically scale USGS data" );
 
 /*
-
 allow sparse population of the upper detail tiles
-
 */
-
-int RoundDownToPowerOfTwo( int num ) {
-	int		pot;
-	for (pot = 1 ; (pot*2) <= num ; pot<<=1) {
-	}
-	return pot;
-}
 
 static union {
 	int		intVal;
@@ -462,15 +453,6 @@ void idTextureLevel::Invalidate() {
 //===================================================================================================
 
 
-typedef struct _TargaHeader {
-	unsigned char 	id_length, colormap_type, image_type;
-	unsigned short	colormap_index, colormap_length;
-	unsigned char	colormap_size;
-	unsigned short	x_origin, y_origin, width, height;
-	unsigned char	pixel_size, attributes;
-} TargaHeader;
-
-
 static byte ReadByte( idFile *f ) {
 	byte	b;
 
@@ -717,8 +699,8 @@ void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
 	megaTextureHeader_t		mtHeader;
 
 	mtHeader.tileSize = TILE_SIZE;
-	mtHeader.tilesWide = RoundDownToPowerOfTwo( targa_header.width ) / TILE_SIZE;
-	mtHeader.tilesHigh = RoundDownToPowerOfTwo( targa_header.height ) / TILE_SIZE;
+	mtHeader.tilesWide = idMath::FloorPowerOfTwo( targa_header.width ) / TILE_SIZE;
+	mtHeader.tilesHigh = idMath::FloorPowerOfTwo( targa_header.height ) / TILE_SIZE;
 
 	idStr	outName = name;
 	outName.StripFileExtension();
