@@ -331,7 +331,7 @@ typedef struct {
 	char			name[64];
 } progDef_t;
 
-static	const int	MAX_GLPROGS = 200;
+#define MAX_GLPROGS			64 // Serp [05/05/2012] - Was 200 - Do we use anything near that many? 64 sounds like plenty.
 
 // a single file can have both a vertex program and a fragment program
 static progDef_t	progs[MAX_GLPROGS] = {
@@ -351,8 +351,8 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_NV20_DIFFUSE_AND_SPECULAR_COLOR, "nv20_diffuseAndSpecularColor.vp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },
+	//{ GL_VERTEX_PROGRAM_ARB, VPROG_GLASSWARP, "arbVP_glasswarp.txt" },		// Missing from release? Remove if that is the case
+	//{ GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP, "arbFP_glasswarp.txt" },		// Missing from release? Remove if that is the case
 
 	// rebb: direct light interaction files for performance testing
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT, "test_direct.vfp" },
@@ -375,15 +375,15 @@ void R_LoadARBProgram( int progIndex ) {
 	char	*buffer;
 	char	*start, *end;
 
-	common->Printf( "%s", fullPath.c_str() );
-
 	// load the program even if we don't support it, so
 	// fs_copyfiles can generate cross-platform data dumps
 	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
 	if ( !fileBuffer ) {
-		common->Printf( ": File not found\n" );
+		common->Warning( "LoadARBProgram: \'%s\' not found", fullPath.c_str() );
 		return;
 	}
+
+	common->Printf( "%s", fullPath.c_str() );
 
 	// copy to stack memory and free
 	buffer = (char *)_alloca( strlen( fileBuffer ) + 1 );
@@ -407,26 +407,26 @@ void R_LoadARBProgram( int progIndex ) {
 	start = NULL;
 	if ( progs[progIndex].target == GL_VERTEX_PROGRAM_ARB ) {
 		if ( !glConfig.ARBVertexProgramAvailable ) {
-			common->Printf( ": GL_VERTEX_PROGRAM_ARB not available\n" );
+			common->Printf( S_COLOR_RED ": GL_VERTEX_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
 		}
 		start = strstr( (char *)buffer, "!!ARBvp" );
 	}
 	if ( progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB ) {
 		if ( !glConfig.ARBFragmentProgramAvailable ) {
-			common->Printf( ": GL_FRAGMENT_PROGRAM_ARB not available\n" );
+			common->Printf( S_COLOR_RED ": GL_FRAGMENT_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
 		}
 		start = strstr( (char *)buffer, "!!ARBfp" );
 	}
 	if ( !start ) {
-		common->Printf( ": !!ARB not found\n" );
+		common->Printf( S_COLOR_RED ": !!ARB not found\n"  S_COLOR_DEFAULT  );
 		return;
 	}
 	end = strstr( start, "END" );
 
 	if ( !end ) {
-		common->Printf( ": END not found\n" );
+		common->Printf( S_COLOR_RED ": END not found\n"  S_COLOR_DEFAULT  );
 		return;
 	}
 	end[3] = 0;
@@ -436,6 +436,7 @@ void R_LoadARBProgram( int progIndex ) {
 
 	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
 		strlen( start ), (unsigned char *)start );
+
 #ifdef _DEBUG
 	int err = qglGetError();
 	int		ofs;
@@ -458,6 +459,7 @@ void R_LoadARBProgram( int progIndex ) {
 		return;
 	}
 #endif
+
 	common->Printf( "\n" );
 }
 
