@@ -45,10 +45,13 @@ public:
 
 							// model associations are just for the preview dialog in the editor
 	const int				GetNumModelAssociations() const;
-	const char *			GetAssociatedModel( int index ) const;
+	const char *			GetAssociatedModel( const int index ) const;
 
 private:
 	idList<skinMapping_t>	mappings;
+	// The list of models associated with this skin is only to guide the
+	// user selection in the editor. The skin will be applied for any model
+	// the entity has, regardless on whether it is in this list, or not.
 	idStrList				associatedModels;
 };
 

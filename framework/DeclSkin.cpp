@@ -64,6 +64,9 @@ bool idDeclSkin::Parse( const char *text, const int textLength ) {
 			MakeDefault();
 			return false;
 		} else if ( !token.Icmp( "model" ) ) {
+			// The list of models associated with this skin is only to guide the
+			// user selection in the editor. The skin will be applied for any model
+			// the entity has, regardless on whether it is in this list, or not.
 			associatedModels.Append( token2 );
 		} else {
 			skinMapping_t	map;
@@ -127,7 +130,7 @@ const int idDeclSkin::GetNumModelAssociations(void ) const {
 idDeclSkin::GetAssociatedModel
 ================
 */
-const char *idDeclSkin::GetAssociatedModel( int index ) const {
+const char *idDeclSkin::GetAssociatedModel( const int index ) const {
 	if ( index >= 0 && index < associatedModels.Num() ) {
 		return associatedModels[ index ];
 	} else {
