@@ -266,19 +266,32 @@ idRenderModelStatic::InitFromFile
 */
 void idRenderModelStatic::InitFromFile( const char *fileName ) {
 	bool loaded;
+	idStr fallback = "";
 	idStr extension;
 
+	// set name = fileName
 	InitEmpty( fileName );
 
 	// FIXME: load new .proc map format
-
 	name.ExtractFileExtension( extension );
 
 	if ( extension.Icmp( "ase" ) == 0 ) {
 		loaded		= LoadASE( name );
+		// Tels: #3111 try to load LWO as a fallback
+		if (!loaded) {
+			name.Replace(".ase",".lwo");
+			fallback 	= "LWO";
+			loaded		= LoadLWO( name );
+		}
 		reloadable	= true;
 	} else if ( extension.Icmp( "lwo" ) == 0 ) {
 		loaded		= LoadLWO( name );
+		// Tels: #3111 try to load ASE as a fallback
+		if (!loaded) {
+			name.Replace(".lwo",".ase");
+			fallback 	= "ASE";
+			loaded		= LoadASE( name );
+		}
 		reloadable	= true;
 	} else if ( extension.Icmp( "flt" ) == 0 ) {
 		loaded		= LoadFLT( name );
@@ -292,7 +305,11 @@ void idRenderModelStatic::InitFromFile( const char *fileName ) {
 	}
 
 	if ( !loaded ) {
-		common->Warning( "Couldn't load model: '%s'", name.c_str() );
+		if (fallback.IsEmpty()) {
+			common->Warning( "Couldn't load model: '%s'", name.c_str() );
+		} else {
+			common->Warning( "Couldn't load model: '%s' (nor the fallback to %s)", name.c_str(), fallback.c_str() );
+		}
 		MakeDefaultModel();
 		return;
 	}
