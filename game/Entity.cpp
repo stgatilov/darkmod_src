@@ -243,6 +243,8 @@ const idEventDef EV_TDM_PropSound( "propSound", "s" );
 // potentially attack the given entity (first parameter) at range.
 const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", "e", 'f' );
 
+// Tels: #3113 after spawning all entities, decide if they need to be hidden
+const idEventDef EV_HideByLODBias( "hideByLODBias" );
 
 #ifdef MOD_WATERPHYSICS
 
@@ -465,6 +467,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_IsLight,				idEntity::Event_IsLight )				// grayman #2905
 	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )		// grayman #3011
 	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )			// grayman #3013
+	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )			// tels #3113
 	
 END_CLASS
 
@@ -830,47 +833,83 @@ void idEntity::FixupLocalizedStrings()
 
 /*
 ================
-idEntity::HideByLODBias
+idEntity::Event_HideByLODBias
 
 Tels: The menu setting "Object Detail" changed, so we need to check
 	  if this entity is now hidden or visible.
 */
-bool idEntity::HideByLODBias( const float lodbias, const bool later )
+void idEntity::Event_HideByLODBias( void )
 {
+	float lodbias = cv_lod_bias.GetFloat();
+
+	// ignore worldspawn
+	if (IsType( idWorldspawn::Type ))
+	{
+		return;
+	}
+
 	if (lodbias < m_MinLODBias || lodbias > m_MaxLODBias)
 	{
-		if (!fl.hidden)
+		// FuncPortals are closed instead of hidden
+		if ( IsType( idFuncPortal::Type ) )
 		{
-			//gameLocal.Printf ("%s: Hiding due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
-			//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
-			// hidden due to menu setting
-		   	if (later)							// is true during entity spawn
+			gameLocal.Printf ("%s: Closing portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+					GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+			static_cast<idFuncPortal *>( this )->ClosePortal();
+		}
+		else
+		{
+			// if a lod_hidden_skin is set, just set the new skin instead of hiding the entity
+			if (!m_HiddenSkin.IsEmpty())
 			{
-				PostEventMS( &EV_Hide, 100 ); // queue a hide for later
+//				gameLocal.Printf ("%s: Setting hidden skin %s.\n", GetName(), m_HiddenSkin.c_str() );
+				Event_SetSkin( m_HiddenSkin.c_str() );
 			}
 			else
 			{
-				Hide();
+				if (!fl.hidden)
+				{
+//					gameLocal.Printf ("%s: Hiding due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+//							GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+					Hide();
+					// and make inactive
+					BecomeInactive(TH_PHYSICS|TH_THINK);
+				}
 			}
-			// and make inactive
-			BecomeInactive(TH_PHYSICS|TH_THINK);
+			// mark this entity as "hidden" for later show
+			m_LODLevel = -1;
 		}
-		// do not run the normal LOD
-		m_DistCheckTimeStamp = NOLOD;
-		// mark this entity as "hidden" for later show
-		m_LODLevel = -1;
-		return true;
+		return;
 	}	
 
-	// avoid showing entities that where not hidden by LODBias
-	if (fl.hidden && m_LODLevel == -1 && m_DistCheckTimeStamp == NOLOD)
+	if ( IsType( idFuncPortal::Type ) )
 	{
-		//gameLocal.Printf ("%s: Showing due to lodbias %0.2f being between %0.2f and %0.2f.\n",
-		//			GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
-		m_LODLevel = 0;
-		Show();
+		gameLocal.Printf ("%s: Opening portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+				GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+		static_cast<idFuncPortal *>( this )->OpenPortal();
 	}
-	return false;
+	else
+	{
+		// do not "restore" the original skin during entity spawn
+		if (!m_HiddenSkin.IsEmpty())
+		{
+			// just restore the orginal skin
+//			gameLocal.Printf ("%s: Restoring skin %s.\n", GetName(), m_VisibleSkin.c_str() );
+			Event_SetSkin( m_VisibleSkin.c_str() );
+		}
+		// avoid showing entities that where not hidden by LODBias
+		else
+		{
+			if (fl.hidden && m_LODLevel == -1 && m_DistCheckTimeStamp == NOLOD)
+			{
+				m_LODLevel = 0;
+				//gameLocal.Printf ("%s: Showing due to lodbias %0.2f being between %0.2f and %0.2f.\n",
+				//			GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+				Show();
+			}
+		}
+	}
+	return;
 }
 
 /*
@@ -895,13 +934,19 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	m_MinLODBias = dict->GetFloat( "min_lod_bias", "0" );
 	m_MaxLODBias = dict->GetFloat( "max_lod_bias", "10" );
 
+	m_HiddenSkin = dict->GetString( "lod_hidden_skin", "");
+	m_VisibleSkin = "";
+
 	if (m_MinLODBias > m_MaxLODBias)
 	{
 		m_MinLODBias = m_MaxLODBias - 0.1f;
 	}
-	// if this returns true, the entity is hidden
-	if (HideByLODBias( cv_lod_bias.GetFloat(), true ))
+
+	if (m_MinLODBias > 0 || m_MaxLODBias < 10)
 	{
+		// if this returns true, the entity is hidden
+		Event_HideByLODBias();
+		m_DistCheckTimeStamp = NOLOD;
 		return 0;
 	}
 
@@ -1308,6 +1353,12 @@ void idEntity::Spawn( void )
 	}
 	m_StartBounds = GetPhysics()->GetAbsBounds();
 	m_AbsenceStatus = false;
+
+	if (renderEntity.customSkin && spawnArgs.GetString("lod_hidden_skin") != "")
+	{
+		m_VisibleSkin = renderEntity.customSkin->GetName();
+//		gameLocal.Printf ("%s: Storing current skin %s.\n", GetName(), m_VisibleSkin.c_str() );
+	}
 
 	// parse LOD spawnargs
 	m_LODHandle = ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() );
@@ -1862,8 +1913,11 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_ModelLODCur);
 	savefile->WriteInt(m_SkinLODCur);
 
+	// #3113
 	savefile->WriteFloat(m_MinLODBias);
 	savefile->WriteFloat(m_MaxLODBias);
+	savefile->WriteString(m_HiddenSkin);
+	savefile->WriteString(m_VisibleSkin);
 
 	// grayman #2341 - don't save previous voice and body shaders and indices,
 	// since they're irrelevant across saved games
@@ -2147,8 +2201,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_ModelLODCur);
 	savefile->ReadInt(m_SkinLODCur);
 
+	// #3113
 	savefile->ReadFloat(m_MinLODBias);
 	savefile->ReadFloat(m_MaxLODBias);
+	savefile->ReadString(m_HiddenSkin);
+	savefile->ReadString(m_VisibleSkin);
 
 	// grayman #2341 - restore previous voice and body shaders and indices
 

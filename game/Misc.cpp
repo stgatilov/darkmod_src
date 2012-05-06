@@ -2790,7 +2790,6 @@ void idFuncPortal::Spawn( void )
 		state = spawnArgs.GetBool( "start_on" );
 		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
 	}
-
 	if( (m_Distance = spawnArgs.GetFloat( "portal_dist", "0.0" )) <= 0 )
 		goto Quit;
 
@@ -2826,6 +2825,34 @@ void idFuncPortal::Event_Activate( idEntity *activator )
 
 	// activate our targets
 	PostEventMS( &EV_ActivateTargets, 0, activator );
+}
+
+/*
+================
+idFuncPortal::ClosePortal
+================
+*/
+void idFuncPortal::ClosePortal( void )
+{
+	if ( portal > 0 ) 
+	{
+		state = true;
+		gameLocal.SetPortalState( portal, PS_BLOCK_ALL );
+	}
+}
+
+/*
+================
+idFuncPortal::OpenPortal
+================
+*/
+void idFuncPortal::OpenPortal( void ) 
+{
+	if ( portal > 0 ) 
+	{
+		state = false;
+		gameLocal.SetPortalState( portal, PS_BLOCK_NONE );
+	}
 }
 
 void idFuncPortal::Think( void )

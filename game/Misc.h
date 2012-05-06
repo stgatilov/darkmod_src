@@ -642,6 +642,9 @@ public:
 	void				Restore( idRestoreGame *savefile );
 	void				Think( void );
 
+	void				OpenPortal( void );
+	void				ClosePortal( void );
+
 private:
 	qhandle_t			portal;
 	bool				state;

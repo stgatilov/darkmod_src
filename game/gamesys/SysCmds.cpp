@@ -3549,13 +3549,12 @@ void Cmd_LODBiasChanged_f( const idCmdArgs& args )
 	// gameLocal.Printf("LOD Bias (Object Detail) changed, checking %i entities.\n", gameLocal.num_entities);
 	// Run through all entities and Hide()/Show() them according to their MinLODBias and
 	// MaxLODBias values.
-	float lodbias = cv_lod_bias.GetFloat();
 	for (int j = 0; j < gameLocal.num_entities; j++)
 	{
 		idEntity *c_ent = gameLocal.entities[ j ];
 		if (c_ent)
 		{
-			c_ent->HideByLODBias(lodbias);
+			c_ent->Event_HideByLODBias();
 		}
 	}
 }
