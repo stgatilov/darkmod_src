@@ -4278,6 +4278,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// Add the command to buffer, but no need to issue it immediately. 
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
 	}
+	else if (cmd == "lod_bias_changed")		// Adding a way to update cooked data from menu - J.C.Denton
+	{
+		// Add the command to buffer, but no need to issue it immediately. 
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_lod_bias_changed" );
+	}
 	else if (cmd == "resetbrightness")
 	{
 		idCVar * cvar = cvarSystem->Find( "r_brightness" );

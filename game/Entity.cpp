@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
  
@@ -789,6 +790,10 @@ idEntity::idEntity()
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = 0;
 
+	// by default active
+	m_MinLODBias = 0.0f;
+	m_MaxLODBias = 10.0f;
+
 	// grayman #597 - for hiding arrows when nocked to the bow
 	m_HideUntilTime = 0;
 }
@@ -825,6 +830,51 @@ void idEntity::FixupLocalizedStrings()
 
 /*
 ================
+idEntity::HideByLODBias
+
+Tels: The menu setting "Object Detail" changed, so we need to check
+	  if this entity is now hidden or visible.
+*/
+bool idEntity::HideByLODBias( const float lodbias, const bool later )
+{
+	if (lodbias < m_MinLODBias || lodbias > m_MaxLODBias)
+	{
+		if (!fl.hidden)
+		{
+			//gameLocal.Printf ("%s: Hiding due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+			//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+			// hidden due to menu setting
+		   	if (later)							// is true during entity spawn
+			{
+				PostEventMS( &EV_Hide, 100 ); // queue a hide for later
+			}
+			else
+			{
+				Hide();
+			}
+			// and make inactive
+			BecomeInactive(TH_PHYSICS|TH_THINK);
+		}
+		// do not run the normal LOD
+		m_DistCheckTimeStamp = NOLOD;
+		// mark this entity as "hidden" for later show
+		m_LODLevel = -1;
+		return true;
+	}	
+
+	// avoid showing entities that where not hidden by LODBias
+	if (fl.hidden && m_LODLevel == -1 && m_DistCheckTimeStamp == NOLOD)
+	{
+		//gameLocal.Printf ("%s: Showing due to lodbias %0.2f being between %0.2f and %0.2f.\n",
+		//			GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+		m_LODLevel = 0;
+		Show();
+	}
+	return false;
+}
+
+/*
+================
 idEntity::ParseLODSpawnargs
 
 Tels: Look at dist_think_interval, lod_1_distance etc. and fill the m_LOD
@@ -839,16 +889,31 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 {
 	lod_data_t *m_LOD = NULL;
 
+	m_DistCheckTimeStamp = 0;
+
+	// by default these are always used
+	m_MinLODBias = dict->GetFloat( "min_lod_bias", "0" );
+	m_MaxLODBias = dict->GetFloat( "max_lod_bias", "10" );
+
+	if (m_MinLODBias > m_MaxLODBias)
+	{
+		m_MinLODBias = m_MaxLODBias - 0.1f;
+	}
+	// if this returns true, the entity is hidden
+	if (HideByLODBias( cv_lod_bias.GetFloat(), true ))
+	{
+		return 0;
+	}
+
 	int d = int(1000.0f * dict->GetFloat( "dist_check_period", "0" ));
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
-	m_DistCheckTimeStamp = 0;
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
 	if (d == 0 && fHideDistance < 0.1f)
 	{
 		// no LOD wanted
-	    m_DistCheckTimeStamp = NOLOD;
+		m_DistCheckTimeStamp = NOLOD;
 		return 0;
 	}
 
@@ -1797,6 +1862,9 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_ModelLODCur);
 	savefile->WriteInt(m_SkinLODCur);
 
+	savefile->WriteFloat(m_MinLODBias);
+	savefile->WriteFloat(m_MaxLODBias);
+
 	// grayman #2341 - don't save previous voice and body shaders and indices,
 	// since they're irrelevant across saved games
 
@@ -2076,6 +2144,9 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_LODLevel);
 	savefile->ReadInt(m_ModelLODCur);
 	savefile->ReadInt(m_SkinLODCur);
+
+	savefile->ReadFloat(m_MinLODBias);
+	savefile->ReadFloat(m_MaxLODBias);
 
 	// grayman #2341 - restore previous voice and body shaders and indices
 
@@ -3105,17 +3176,20 @@ idEntity::Hide
 */
 void idEntity::Hide( void ) 
 {
-	if ( !IsHidden() ) 
+	if ( !fl.hidden )
 	{
 		fl.hidden = true;
 
 		idPhysics* p = GetPhysics();
 
-		m_preHideContents = p->GetContents();
-		m_preHideClipMask = p->GetClipMask();
+		if (p)
+		{
+			m_preHideContents = p->GetContents();
+			m_preHideClipMask = p->GetClipMask();
+		}
 
 		if( m_FrobBox )
-			m_FrobBox->SetContents(0);
+				m_FrobBox->SetContents(0);
 
 		FreeModelDef();
 		UpdateVisuals();
@@ -3124,7 +3198,7 @@ void idEntity::Hide( void )
 		// set the frob pointers to NULL to avoid stale pointers
 		idPlayer* player = gameLocal.GetLocalPlayer();
 	
-		if (player != NULL)
+		if (player)
 		{
 			if (player->m_FrobEntity.GetEntity() == this)
 			{
@@ -3167,7 +3241,7 @@ void idEntity::Show( void )
 		m_preHideContents = GetPhysics()->GetContents();
 	}
 
-	if ( IsHidden() ) 
+	if ( fl.hidden ) 
 	{
 		fl.hidden = false;
 		if ( m_FrobBox && m_bFrobable )

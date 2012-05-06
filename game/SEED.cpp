@@ -3898,6 +3898,7 @@ void Seed::Think( void )
 
 			PrepareEntities();
 		}
+
 		// save the new value
 		m_fLODBias = cv_lod_bias.GetFloat();
 	}

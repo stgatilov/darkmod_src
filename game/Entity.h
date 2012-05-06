@@ -404,7 +404,8 @@ public:
 	int						m_DistCheckTimeStamp;
 
 	/**
-	* Current LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden)
+	* Current LOD (0 - normal, 1,2,3,4,5 LOD, 6 hidden). For entities
+	* hidden by MinLODBias/MaxLODBias, is -1 to mark it as hidden.
 	**/
 	int						m_LODLevel;
 
@@ -414,6 +415,14 @@ public:
 	*/
 	int						m_ModelLODCur;
 	int						m_SkinLODCur;
+
+	/* Each entity is hidden (and stops thinking) when tdm_lod_bias
+	*  is between m_MinLODBias and m_MaxLODBias. Thus entities can
+	*  be removed for slower machines without having the full LOD
+	*  system active for this entity.
+	*/
+	float					m_MinLODBias;
+	float					m_MaxLODBias;
 
 	/* grayman #597 - hide until this timer expires. For
 	*  hiding arrows when they're first nocked.
@@ -449,6 +458,12 @@ public:
 	 * Tels: Stop LOD changes permanently. If doTeam is true, also disables it on teammembers.
 	 */
 	void					StopLOD( const bool doTeam);
+
+	/**
+	 * Tels: Hide the entity if tdm_lod_bias is outside MinLODBias .. MaxLODBias. later is
+	 * true during entity spawn to delay the Hide() a bit to prevent crashes.
+	*/
+	bool					HideByLODBias( const float lodbias, const bool later = false );
 
 	/**
 	 * Tels: Stop LOD changes temporarily. If doTeam is true, also disables it on teammembers.

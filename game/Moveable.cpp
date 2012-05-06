@@ -636,7 +636,7 @@ void idMoveable::Killed( idEntity *inflictor, idEntity *attacker, int damage, co
 
 	if ( explode )
 	{
-		if ( brokenModel == "" )
+		if ( brokenModel.IsEmpty() )
 		{
 			PostEventMS( &EV_Remove, 1000 );
 		}
