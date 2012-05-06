@@ -1868,10 +1868,12 @@ void idEntity::Save( idSaveGame *savefile ) const
 	// grayman #2341 - don't save previous voice and body shaders and indices,
 	// since they're irrelevant across saved games
 
-	savefile->WriteSoundShader(NULL);	// previousVoiceShader
-	savefile->WriteInt(0);				// previousVoiceIndex
-	savefile->WriteSoundShader(NULL);	// previousBodyShader
-	savefile->WriteInt(0);				// previousBodyIndex
+	// removed, since there's no point in saving variables that aren't necessary
+
+	//savefile->WriteSoundShader(NULL);	// previousVoiceShader
+	//savefile->WriteInt(0);			// previousVoiceIndex
+	//savefile->WriteSoundShader(NULL);	// previousBodyShader
+	//savefile->WriteInt(0);			// previousBodyIndex
 
 	// grayman #597
 
@@ -2150,10 +2152,11 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	// grayman #2341 - restore previous voice and body shaders and indices
 
-	savefile->ReadSoundShader((const idSoundShader *&)previousVoiceShader);
-	savefile->ReadInt(previousVoiceIndex);
-	savefile->ReadSoundShader((const idSoundShader *&)previousBodyShader);
-	savefile->ReadInt(previousBodyIndex);
+	// restoring is unnecessary; simply set to NULL and 0
+	previousVoiceShader = NULL;
+	previousVoiceIndex = 0;
+	previousBodyShader = NULL;
+	previousBodyIndex = 0;
 
 	// grayman #597
 
