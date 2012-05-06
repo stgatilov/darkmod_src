@@ -64,7 +64,7 @@ void LeakFile (tree_t *tree)
 	ospath = fileSystem->RelativePathToOSPath( filename );
 	linefile = fopen( ospath, "w" );
 	if ( !linefile ) {
-		common->Error( "Couldn't open %s\n", filename.c_str() );
+		common->Error( "Couldn't open %s\n", ospath.c_str() );
 	}
 
 	count = 0;
