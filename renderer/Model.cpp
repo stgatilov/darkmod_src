@@ -308,7 +308,7 @@ void idRenderModelStatic::InitFromFile( const char *fileName ) {
 		if (fallback.IsEmpty()) {
 			common->Warning( "Couldn't load model: '%s'", name.c_str() );
 		} else {
-			common->Warning( "Couldn't load model: '%s' (nor the fallback to %s)", name.c_str(), fallback.c_str() );
+			common->Warning( "Couldn't load model: '%s' (nor the fallback to %s)", fileName, fallback.c_str() );
 		}
 		MakeDefaultModel();
 		return;
