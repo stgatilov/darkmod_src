@@ -466,7 +466,18 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #23
 
 	if (owner->movementSubsystem->GetPrevTraveled() < 0.1)
 	{
-		owner->movementSubsystem->AttemptToExtricate();
+		// grayman #3119 - if searching, and you're going nowhere,
+		// restart the search, in the hope that you'll be sent
+		// somewhere new
+
+		if ( owner->IsSearching() )
+		{
+			owner->GetMemory().restartSearchForHidingSpots = true;
+		}
+		else
+		{
+			owner->movementSubsystem->AttemptToExtricate();
+		}
 		owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 	}
 
