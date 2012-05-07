@@ -69,13 +69,10 @@ int idDeviceContext::FindFont( const char *name ) {
 void idDeviceContext::SetupFonts() {
 	fonts.SetGranularity( 1 );
 
-	// Default font has to be added first
-	if (FindFont( "fonts" ) == -1) {
-		// Could not find default font, try "fonts/stone" as replacement
-		// Happens for instance if D3 assets are not available
-		if (FindFont( "fonts/stone" ) == -1) {
-			common->Warning( "Could not find font 'fonts' nor 'fonts/stone', have no default font!\n" );
-		}
+	// Try fonts/stone as the first font, so that any fallback occurs to it, instead
+	// of the D3-only "default font":
+	if (FindFont( "fonts/stone" ) == -1) {
+		common->Warning( "Could not find 'fonts/stone', have no default font!\n" );
 	}
 }
 
