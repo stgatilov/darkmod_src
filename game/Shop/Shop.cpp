@@ -1050,7 +1050,7 @@ void CShop::UpdateGUI(idUserInterface* gui)
 	{
 		// nothing for sale, let the user know
 		gui->SetStateInt("forSaleAvail0", 0);
-		gui->SetStateString("forSale0_name", "<no items for sale>");
+		gui->SetStateString("forSale0_name", common->Translate( "#str_02314" )); 		// "<no items for sale>"
 		// Tels: Fix #2661: do not show a description if nothing is for sale
 		gui->SetStateString("gui::forSale0_desc", "");
 		gui->SetStateString("gui::forSale0_image", "");
