@@ -2045,6 +2045,34 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			SetMaterialFlag( MF_NOSHADOWS );
 			continue;
 		}
+		// PARTICLE_MACRO to shorten some definitions
+		else if ( !token.Icmp( "PARTICLE_MACRO" ) ) {
+			// discrete
+			surfaceFlags |= SURF_DISCRETE;
+			// noimpact
+			surfaceFlags |= SURF_NOIMPACT;
+			// nonsolid
+			contentFlags &= ~CONTENTS_SOLID;
+			// noShadows
+			SetMaterialFlag( MF_NOSHADOWS );
+			// noSelfShadows
+			SetMaterialFlag( MF_NOSELFSHADOW );
+			// translucent
+			coverage = MC_TRANSLUCENT;
+		}
+		// GLASS_MACRO to shorten some definitions
+		else if ( !token.Icmp( "GLASS_MACRO" ) ) {
+			cullType = CT_TWO_SIDED;
+			// twoSided implies no-shadows, because the shadow
+			// volume would be coplanar with the surface, giving depth fighting
+			// we could make this no-self-shadows, but it may be more important
+			// to receive shadows from no-self-shadow monsters
+			SetMaterialFlag( MF_NOSHADOWS );
+			// noSelfShadows
+			SetMaterialFlag( MF_NOSELFSHADOW );
+			// translucent
+			coverage = MC_TRANSLUCENT;
+		}
 		else if ( token == "{" ) {
 			// create the new stage
 			ParseStage( src, trpDefault );
