@@ -2059,6 +2059,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			SetMaterialFlag( MF_NOSELFSHADOW );
 			// translucent
 			coverage = MC_TRANSLUCENT;
+			continue;
 		}
 		// GLASS_MACRO to shorten some definitions
 		else if ( !token.Icmp( "GLASS_MACRO" ) ) {
@@ -2072,6 +2073,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			SetMaterialFlag( MF_NOSELFSHADOW );
 			// translucent
 			coverage = MC_TRANSLUCENT;
+			continue;
 		}
 		else if ( token == "{" ) {
 			// create the new stage
