@@ -3496,6 +3496,18 @@ void idAI::Event_DropTorch() // grayman #2603
 			ent->m_SetInMotionByActor = this;
 			ent->m_MovedByActor = this;
 
+			// grayman #3123 - this could be happening to a lit torch,
+			// so douse the torch once it's dropped
+
+			int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
+			if (delay < 0)
+			{
+				delay = 0;
+			}
+
+			// Schedule the extinguish event
+			ent->PostEventMS(&EV_ExtinguishLights, delay);
+
 			break;
 		}
 	}

@@ -51,7 +51,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../EscapePointManager.h"
 #include "../PositionWithinRangeFinder.h"
 #include "../TimerManager.h"
-#include "../ProjectileResult.h" // grayman #2872
+#include "../ProjectileResult.h"	 // grayman #2872
 
 // For handling the opening of doors and other binary Frob movers
 #include "../BinaryFrobMover.h"
@@ -8062,7 +8062,7 @@ void idAI::PushWithAF( void ) {
 			continue;
 		}
 
-		// make sure we havent pushed this entity already.  this avoids causing double damage
+		// make sure we haven't pushed this entity already.  this avoids causing double damage
 		for( j = 0; j < num_pushed; j++ ) {
 			if ( pushed_ents[ j ] == touchList[ i ].touchedEnt ) {
 				break;
@@ -10899,6 +10899,28 @@ void idAI::DrawWeapon()
 		thread->DelayedStart(0);
 	}*/
 	// greebo: Replaced the above thread spawn with an animstate switch
+
+	// grayman #3123 - if this AI is carrying something in his
+	// left hand, and he uses a ranged weapon, he needs to drop what's in his left hand first
+
+	if ( GetNumRangedWeapons() > 0 )
+	{
+		idEntity* torch = GetTorch();
+		if ( torch )
+		{
+			Event_DropTorch();
+		}
+		else // anything else in the left hand?
+		{
+			idEntity* inHand = GetAttachmentByPosition("hand_l");
+			if ( inHand )
+			{
+				// Something in the left hand, so drop it
+				Detach(inHand->name.c_str());
+			}
+		}
+	}
+	
 	SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawWeapon", 4);
 }
 
