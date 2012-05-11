@@ -30,6 +30,7 @@
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR	1
 #define TDM_VERSION_MINOR	8
+#define GAME_API_VERSION	TDM_VERSION_MAJOR * 100 + TDM_VERSION_MINOR	// e.g. 108
 #define ENGINE_VERSION		"TDM 1.08"	// printed in console
 
 // paths

@@ -23,6 +23,7 @@
 #if defined(__linux__) || defined(MACOS_X)
 #include "../idlib/Lib.h"
 #include "../sound/sound.h"
+#include "../framework/Licensee.h"
 #endif
 
 /*
@@ -330,8 +331,6 @@ extern idGameEdit *				gameEdit;
 
 ===============================================================================
 */
-
-const int GAME_API_VERSION		= 108;
 
 class idCmdSystem;
 class idNetworkSystem;
