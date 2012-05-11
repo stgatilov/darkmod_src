@@ -331,7 +331,7 @@ extern idGameEdit *				gameEdit;
 ===============================================================================
 */
 
-const int GAME_API_VERSION		= 8;
+const int GAME_API_VERSION		= 108;
 
 class idCmdSystem;
 class idNetworkSystem;

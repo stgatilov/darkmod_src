@@ -168,12 +168,12 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 		// stuff initialised and getting segfaults.
 		std::cerr << "FATAL: Incorrect game version: required " 
 			<< GAME_API_VERSION << ", got " << import->version << "\n"
-			<< "Ensure the correct Doom 3 patches are installed." << std::endl;
+			<< "Use the latest TheDarkMod executable with the latest game DLL." << std::endl;
 		abort();
 	}
 
 	// set interface pointers used by idLib
-	idLib::sys					= sys;
+	idLib::sys				= sys;
 	idLib::common				= common;
 	idLib::cvarSystem			= cvarSystem;
 	idLib::fileSystem			= fileSystem;
