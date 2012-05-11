@@ -23,8 +23,9 @@
 #if defined(__linux__) || defined(MACOS_X)
 #include "../idlib/Lib.h"
 #include "../sound/sound.h"
-#include "../framework/Licensee.h"
 #endif
+
+#include "../framework/Licensee.h"
 
 /*
 ===============================================================================
