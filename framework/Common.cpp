@@ -53,7 +53,7 @@ public:
 	{
 		if (string[0] == 0x0)
 		{
-			sprintf( string, "%srev%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+			sprintf( string, "%s #%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
 		}
 
 		return string;

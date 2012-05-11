@@ -1028,11 +1028,9 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	//renderSystem->SetColor( colorWhite );
 
 	// draw the version number
-
 	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
-
 	{
-		const idStr version = va("%srev%d", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision());
+		const idStr version = va("%s #%d", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision());
 		const int vlen = version.Length();
 
 		for ( x = 0; x < vlen; x++ ) {

@@ -25,18 +25,17 @@
 ===============================================================================
 */
 
-#define GAME_NAME						"The Dark Mod"		// appears on window titles and errors
+#define GAME_NAME		"The Dark Mod"	// appears on window titles and errors
 
 // greebo: Defines the darkmod release version
-#define TDM_VERSION_MAJOR 1
-#define TDM_VERSION_MINOR 8
-
-#define ENGINE_VERSION					"Doom 1.3.1"	// printed in console
+#define TDM_VERSION_MAJOR	1
+#define TDM_VERSION_MINOR	8
+#define ENGINE_VERSION		"TDM 1.08"	// printed in console
 
 // paths
-#define	CD_BASEDIR						"Doom"
-#define	BASE_GAMEDIR					"base"
-#define BASE_TDM                        "darkmod"
+#define	CD_BASEDIR		"Doom"
+#define	BASE_GAMEDIR		"base"
+#define BASE_TDM		"darkmod"
 
 // filenames
 #define	CD_EXE							"doom.exe"
