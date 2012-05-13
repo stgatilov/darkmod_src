@@ -2045,6 +2045,41 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			SetMaterialFlag( MF_NOSHADOWS );
 			continue;
 		}
+		// TWOSIDED_DECAL_MACRO to shorten some definitions
+		else if ( !token.Icmp( "TWOSIDED_DECAL_MACRO" ) ) {
+			// polygonOffset
+			SetMaterialFlag( MF_POLYGONOFFSET );
+			polygonOffset = 1;
+
+			// sort decal
+			sort = SS_DECAL;
+
+			// discrete and nonsolid
+			surfaceFlags |= SURF_DISCRETE;
+			contentFlags &= ~CONTENTS_SOLID;
+
+			// noimpact
+			surfaceFlags |= SURF_NOIMPACT;
+
+			// nonsolid
+			contentFlags &= ~CONTENTS_SOLID;
+
+			// twosided
+			cullType = CT_TWO_SIDED;
+			// twoSided implies no-shadows, because the shadow
+			// volume would be coplanar with the surface, giving depth fighting
+			// we could make this no-self-shadows, but it may be more important
+			// to receive shadows from no-self-shadow monsters
+
+			// noShadows
+			SetMaterialFlag( MF_NOSHADOWS );
+			// noSelfShadows
+			SetMaterialFlag( MF_NOSELFSHADOW );
+
+			// translucent
+			coverage = MC_TRANSLUCENT;
+			continue;
+		}
 		// PARTICLE_MACRO to shorten some definitions
 		else if ( !token.Icmp( "PARTICLE_MACRO" ) ) {
 			// discrete
