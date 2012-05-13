@@ -6520,11 +6520,24 @@ void idPlayer::UpdateInventoryHUD()
 				idStr itemName = common->Translate( curItem->GetName() );
 
 				// Tels: translated names can have two lines, so tell the GUI about it
-				SetGuiInt(m_InventoryOverlay, "Inventory_ItemNameMultiline", itemName.Find( '\n' ) != -1 ? 1 : 0 );
+				int newline_index = itemName.Find( '\n' );
+				if (newline_index != -1)
+				{
+					// two lines
+					SetGuiInt(m_InventoryOverlay, "Inventory_ItemNameMultiline", 1 );
+					SetGuiString(m_InventoryOverlay, "Inventory_ItemName", itemName.Left( newline_index) );
+					SetGuiString(m_InventoryOverlay, "Inventory_ItemName_2", itemName.Mid( newline_index + 1, itemName.Length() - newline_index - 1 ) );
+				}
+				else
+				{
+					// only one line
+					SetGuiInt(m_InventoryOverlay, "Inventory_ItemNameMultiline", 0 );
+					SetGuiString(m_InventoryOverlay, "Inventory_ItemName", itemName );
+					SetGuiString(m_InventoryOverlay, "Inventory_ItemName_2", "");
+				}
 
 				SetGuiFloat(m_InventoryOverlay, "Inventory_ItemStackable", curItem->IsStackable() ? 1 : 0);
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemGroup", common->Translate( curItem->Category()->GetName() ) );
-				SetGuiString(m_InventoryOverlay, "Inventory_ItemName", itemName );
 				SetGuiInt(m_InventoryOverlay, "Inventory_ItemCount", curItem->GetCount());
 				SetGuiString(m_InventoryOverlay, "Inventory_ItemIcon", curItem->GetIcon().c_str());
 			}
