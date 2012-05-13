@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
  
@@ -65,40 +66,40 @@ public:
 	/**
 	 * greebo: Returns the category of the focused item or NULL if no inventory is attached.
 	 */
-	CInventoryCategoryPtr	GetCurrentCategory();
+	CInventoryCategoryPtr	GetCurrentCategory() const;
 
 	/**
 	 * Set the current item index.
 	 * Validation of the index is done when doing Nex/Prev Category
 	 * so we don't really care whether this is a valid index or not.
 	 */
-	void						SetCurrentItem(int index) { m_CurrentItem = index; }
+	void					SetCurrentItem(int index) { m_CurrentItem = index; }
 
 	/**
 	 * Returns the current index within the category of the item pointed at.
 	 */
-	int							GetCurrentItemIndex() { return m_CurrentItem; }
+	int						GetCurrentItemIndex() const { return m_CurrentItem; }
 
 	/**
 	 * greebo: Returns TRUE if the item pointed at is the the last item in this category.
 	 * Note that the "wraparund" setting doesn't affect this method.
 	 */
-	bool						IsLastItemInCategory();
+	bool					IsLastItemInCategory() const;
 
-	void						SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
-	void						SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
+	void					SetCategoryLock(bool bLock) { m_CategoryLock = bLock; }
+	void					SetWrapAround(bool bWrap) { m_WrapAround = bWrap; }
 
-	void						RemoveCategoryIgnored(const CInventoryCategoryPtr& category);
-	void						RemoveCategoryIgnored(const idStr& categoryName);
+	void					RemoveCategoryIgnored(const CInventoryCategoryPtr& category);
+	void					RemoveCategoryIgnored(const idStr& categoryName);
 
-	void						AddCategoryIgnored(const CInventoryCategoryPtr& category);
-	void						AddCategoryIgnored(const idStr& categoryName);
+	void					AddCategoryIgnored(const CInventoryCategoryPtr& category);
+	void					AddCategoryIgnored(const idStr& categoryName);
 
 	// Returns the unique ID of this cursor
-	int							GetId();
+	int						GetId() const;
 
 protected:
-	bool						IsCategoryIgnored(const CInventoryCategoryPtr& category) const;
+	bool					IsCategoryIgnored(const CInventoryCategoryPtr& category) const;
 
 protected:
 

@@ -37,7 +37,7 @@ CInventoryCursor::CInventoryCursor(CInventory* inventory, int id) :
 	m_CursorId(id)
 {}
 
-int	CInventoryCursor::GetId()
+int	CInventoryCursor::GetId() const
 {
 	return m_CursorId;
 }
@@ -353,12 +353,12 @@ bool CInventoryCursor::IsCategoryIgnored(const CInventoryCategoryPtr& category) 
 	return (m_CategoryIgnore.FindIndex(categoryIndex) != -1);
 }
 
-CInventoryCategoryPtr CInventoryCursor::GetCurrentCategory()
+CInventoryCategoryPtr CInventoryCursor::GetCurrentCategory() const
 {
 	return (m_Inventory != NULL) ? m_Inventory->GetCategory(m_CurrentCategory) : CInventoryCategoryPtr();
 }
 
-bool CInventoryCursor::IsLastItemInCategory()
+bool CInventoryCursor::IsLastItemInCategory() const
 {
 	if (m_Inventory == NULL) return true; // no inventory => last item
 
