@@ -435,7 +435,8 @@ void R_LoadARBProgram( int progIndex ) {
 	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
 		strlen( start ), (unsigned char *)start );
 
-#ifdef _DEBUG
+// this is pretty important for quick shader debugging, better have it in always
+//#ifdef _DEBUG
 	int err = qglGetError();
 	int		ofs;
 	qglGetIntegerv( GL_PROGRAM_ERROR_POSITION_ARB, (GLint *)&ofs );
@@ -456,7 +457,7 @@ void R_LoadARBProgram( int progIndex ) {
 		common->Printf( "\nGL_PROGRAM_ERROR_POSITION_ARB != -1 without error\n" );
 		return;
 	}
-#endif
+//#endif
 
 	common->Printf( "\n" );
 }
