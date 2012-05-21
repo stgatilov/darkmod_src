@@ -189,7 +189,11 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 
 	int numUsers = door->GetUserManager().GetNumUsers();
 
-	if (owner->AI_RUN) // grayman #2670
+	if ( _doorShouldBeClosed ) // grayman #3104 - if in this state, continue to head for _backPos
+	{
+		useMid = false; // use _backPos
+	}
+	else if (owner->AI_RUN) // grayman #2670
 	{
 		// run for the mid position
 	}
@@ -368,7 +372,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			case EStateApproachingDoor:
 			{
-				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+				idVec3 dir = centerPos - owner->GetPhysics()->GetOrigin(); // grayman #3104 - distance from center of door
 				dir.z = 0;
 				float dist = dir.LengthFast();
 				if (masterUser == owner)
@@ -533,6 +537,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (masterUser == owner)
 					{
+						frobDoor->SetWasFoundLocked(frobDoor->IsLocked()); // grayman #3104
 						if (!OpenDoor())
 						{
 							return true;
@@ -574,6 +579,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				owner->TurnToward(closedPos);
 				if (masterUser == owner)
 				{
+					frobDoor->SetWasFoundLocked(frobDoor->IsLocked()); // grayman #3104
 					if (!OpenDoor())
 					{
 						return true;
@@ -620,7 +626,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// If the door should ALWAYS be locked or it was locked before => lock it
 				// but only if the owner is able to unlock it in the first place
 				if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
-					(_wasLocked || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
+					(_wasLocked || frobDoor->GetWasFoundLocked() || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0"))) // grayman #3104
 				{
 					frobDoor->Lock(false); // lock the door
 				}
@@ -643,7 +649,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else
 					{
 						if (owner->CanUnlock(doubleDoor) && AllowedToLock(owner) &&
-							(_wasLocked || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0")))
+							(_wasLocked || doubleDoor->GetWasFoundLocked() || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0"))) // grayman #3104
 						{
 							doubleDoor->Lock(false); // lock the second door
 						}
@@ -743,7 +749,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// on the AI's orientation to the door, so make sure we're close enough
 					// to the door to make the test valid.
 
-					idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+					idVec3 dir = centerPos - owner->GetPhysics()->GetOrigin(); // grayman #3104 - use center of closed door
 					dir.z = 0;
 					float dist2Door = dir.LengthFast();
 
@@ -847,7 +853,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 				}
 
-				idVec3 dir = frobDoorOrg - owner->GetPhysics()->GetOrigin();
+				idVec3 dir = centerPos - owner->GetPhysics()->GetOrigin(); // grayman #3104 - use center of closed door
 				dir.z = 0;
 				float dist = dir.LengthFast();
 				if (dist <= QUEUE_DISTANCE)
@@ -865,7 +871,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								idAI* searchingAI = static_cast<idAI*>(searchingEnt);
 								if ( searchingAI != owner )
 								{
-									idVec3 dirSearching = frobDoorOrg - searchingAI->GetPhysics()->GetOrigin();
+									idVec3 dirSearching = centerPos - searchingAI->GetPhysics()->GetOrigin(); // grayman #3104 - use center of closed door
 									dirSearching.z = 0;
 									float distSearching = dirSearching.LengthFast() - 32;
 									if ( distSearching <= dist )
@@ -1179,6 +1185,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// grayman #2345 - new state
 
 			case EStateMovingToMidPos:
+
+				// grayman #3104 - when searching, an AI can get far from the
+				// door as he searches, but he still thinks he's handling a door
+				// because he hasn't yet reached the mid position. If he wanders
+				// too far while searching, quit door handling
+
+				if ( owner->IsSearching() )
+				{
+					// We can assume the AI has wandered off if his distance
+					// from the mid position is less than his distance to the
+					// door center, and he's beyond a threshold distance.
+					
+					float dist2Goal = ( _midPos - ownerOrigin ).LengthFast();
+					float dist2Door = ( centerPos - ownerOrigin).LengthFast();
+					if ( ( dist2Door > QUEUE_DISTANCE ) && ( dist2Door > dist2Goal ) )
+					{
+						return true;
+					}
+				}
 	
 				if (_canHandleDoor)
 				{
@@ -1220,7 +1245,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						return true;
 					}
-					else
+
+					if ( !owner->IsSearching() ) // grayman #3104 - it's ok to stand still while searching
 					{
 						owner->MoveToPosition(_midPos,HANDLE_DOOR_ACCURACY);
 					}
@@ -1235,6 +1261,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				break;
 
 			case EStateMovingToBackPos:
+
+				// grayman #3104 - when searching, an AI can get far from the
+				// door as he searches, but he still thinks he's handling a door
+				// because he hasn't yet reached the back position. If he wanders
+				// too far while searching, quit door handling
+
+				if ( owner->IsSearching() )
+				{
+					// We can assume the AI has wandered off if his distance
+					// from the back position is less than his distance to the
+					// door center, and he's beyond a threshold distance.
+					
+					float dist2Goal = ( _backPos - ownerOrigin ).LengthFast();
+					float dist2Door = ( centerPos - ownerOrigin).LengthFast();
+					if ( ( dist2Door > QUEUE_DISTANCE ) && ( dist2Door > dist2Goal ) )
+					{
+						return true;
+					}
+				}
 
 				// check blocked
 
@@ -1319,7 +1364,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							return true;
 						}
 					}
-					else
+					else if ( !owner->IsSearching() ) // grayman #3104 - it's ok to stand still while searching
 					{
 						owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 					}
@@ -1363,7 +1408,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
-				if (gameLocal.time >= _waitEndTime && (numUsers < 2 || _doorInTheWay))
+				if ( ( gameLocal.time >= _waitEndTime ) && ( ( numUsers < 2 ) || _doorInTheWay))
 				{
 					frobDoor->SetLastUsedBy(owner); // grayman #2859
 					frobDoor->Close(true);
@@ -1374,7 +1419,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 				break;
-
 
 			case EStateClosingDoor:
 				if (!AllowedToClose(owner) ||
@@ -1574,7 +1618,7 @@ idVec3 HandleDoorTask::GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away)
 
 	if (away)
 	{
-		normalMidOffset *= doorWidth; // grayman #2712 - when the door swings away from you, clear it before ending the task
+		normalMidOffset *= 1.25*doorWidth; // grayman #2712 - when the door swings away from you, clear it before ending the task
 	}
 	else
 	{
@@ -1781,7 +1825,7 @@ bool HandleDoorTask::OpenDoor()
 			// Door is locked and we cannot unlock it
 			// Check if we can open the other part of a double door
 			CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
-			if (doubleDoor != NULL && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
+			if ( ( doubleDoor != NULL ) && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
 			{
 				ResetDoor(owner, doubleDoor);
 				if (AllowedToUnlock(owner))
@@ -1841,6 +1885,10 @@ void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
 		{
 			_backPos = towardPos;
 		}
+
+		// grayman #3104 - also need mid position
+
+		_midPos = this->GetMidPos(owner,frobDoor,true);
 	}
 	else // normal door
 	{
@@ -2126,8 +2174,8 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 														// at the correct spot. If they're not already on
 														// the queue, RemoveUser() does nothing.
 
-		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
-		idVec3 dir = newUser->GetPhysics()->GetOrigin() - doorOrigin;
+		idVec3 centerPos = frobDoor->GetClosedBox().GetCenter();		// grayman #3104 - use center of closed door
+		idVec3 dir = newUser->GetPhysics()->GetOrigin() - centerPos;	// grayman #3104 - use center of closed door
 		dir.z = 0;
 		float newUserDistanceSqr = dir.LengthSqr();
 		float qSqr = Square(QUEUE_DISTANCE);
@@ -2136,7 +2184,7 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
 			if ( user != NULL )
 			{
-				idVec3 userDir = user->GetPhysics()->GetOrigin() - doorOrigin;
+				idVec3 userDir = user->GetPhysics()->GetOrigin() - centerPos; // grayman #3104 - use center of closed door
 				userDir.z = 0;
 				float userDistanceSqr = userDir.LengthSqr();
 				if ( userDistanceSqr > qSqr ) // only cut in front of users not yet standing
@@ -2187,20 +2235,41 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 		frobDoor->GetUserManager().RemoveUser(owner);
 		frobDoor->GetUserManager().ResetMaster(frobDoor); // grayman #2345/#2706 - redefine which AI is the master
+
+		// grayman #3104 - If you're the last one through the
+		// door, set whether it's locked or unlocked. This takes
+		// care of the problem of a door that's left open because
+		// the last AI through was called off the door before
+		// closing it. We don't want the door's locked state
+		// from that use to govern what happens the next time
+		// the door is used.
+
+		if ( frobDoor->GetUserManager().GetNumUsers() == 0 )
+		{
+			frobDoor->SetWasFoundLocked(frobDoor->IsLocked()); // will only be true if the door is closed and locked
+		}
+
 		// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
 
 		CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 		if (doubleDoor != NULL)
 		{
 			doubleDoor->GetUserManager().RemoveUser(owner);		// grayman #2345 - need to do for this what we did for a single door
-			frobDoor->GetUserManager().ResetMaster(doubleDoor);	// grayman #2345/#2706 - redefine which AI is the master
+			doubleDoor->GetUserManager().ResetMaster(doubleDoor);	// grayman #2345/#2706 - redefine which AI is the master
+
+			// grayman #3104 - reset locked state for 2nd door
+
+			if ( doubleDoor->GetUserManager().GetNumUsers() == 0 )
+			{
+				doubleDoor->SetWasFoundLocked(doubleDoor->IsLocked()); // will only be true if the door is closed and locked
+			}
 		}
 		memory.lastDoorHandled = frobDoor; // grayman #2712
 	}
 
 	memory.doorRelated.currentDoor = NULL;
 
-	if ( memory.closeSuspiciousDoor ) // grayman #2866
+	if ( memory.closeSuspiciousDoor && frobDoor && ( memory.closeMe.GetEntity() == frobDoor ) ) // grayman #2866 - grayman #3104 - only forget suspicious door if it's the one I'm finishing now
 	{
 		memory.closeMe = NULL;
 		memory.closeSuspiciousDoor = false;
@@ -2214,6 +2283,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		}
 		owner->TurnToward(owner->GetCurrentYaw() - angleAdjustment); // turn away from the door
 		owner->SetAlertLevel( ( owner->thresh_1 + owner->thresh_2 ) / 2.0f); // alert level is just below thresh_2 at this point, so this drops it down halfway to thresh_1
+		frobDoor->AllowResponse(ST_VISUAL,owner); // grayman #3104 - respond again to this visual stim, in case the door was never closed
 	}
 
 	_leaveDoor = -1; // reset timeout for leaving the door
@@ -2290,7 +2360,7 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			str = "EStateMovingToFrontPos";
 			break;
 		case EStateApproachingDoor:
-			str = "EStateMovingToFrontPos";
+			str = "EStateApproachingDoor";
 			break;
 		case EStateMovingToMidPos: // grayman #2345
 			str = "EStateMovingToMidPos";

@@ -123,6 +123,8 @@ public:
 	idEntity*				GetLastUsedBy();				// grayman #2859
 	void					SetSearching(idEntity* ent);	// grayman #2866
 	idEntity*				GetSearching();					// grayman #2866
+	void					SetWasFoundLocked(bool state);	// grayman #3104
+	bool					GetWasFoundLocked();			// grayman #3104
 	bool					GetDoorHandlingEntities(idAI* owner, idList< idEntityPtr<idEntity> > &list); // grayman #2866
 
 protected:

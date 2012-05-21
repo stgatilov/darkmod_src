@@ -71,6 +71,24 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 				return false; // others are queued up to use the door, so quit
 			}
 
+			// grayman #3104 - if I'm handling a door now, I won't be able to initiate
+			// handling of the suspicious door in order to close it. So I'll forget about
+			// doing that, and let the suspicious door stim me again. Perhaps I'll see it
+			// later.
+
+			if ( owner->m_HandlingDoor )
+			{
+				CFrobDoor* currentDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+				if ( currentDoor && ( currentDoor != door ) )
+				{
+					memory.closeMe = NULL;
+					memory.closeSuspiciousDoor = false;
+					door->SetSearching(NULL);
+					door->AllowResponse(ST_VISUAL,owner); // respond to the next stim
+					return false;
+				}
+			}
+
 			memory.closeFromAwayPos = false; // close from the side the door swings toward
 			if ( memory.susDoorSameAsCurrentDoor )
 			{

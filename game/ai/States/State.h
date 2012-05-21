@@ -160,8 +160,9 @@ protected:
 	// Get the sound shader name for owner, when responding to a greeting from otherAI
 	virtual idStr GetGreetingResponseSound(idAI* owner, idAI* otherAI);
 
-	bool CheckTorch(idAI* owner,idLight* light); // grayman - check for potential torch drop
+	bool CheckTorch(idAI* owner, idLight* light); // grayman - check for potential torch drop
 
+	bool SomeoneNearDoor(idAI* owner, CFrobDoor* door); // grayman #3104
 
 private:
 	void OnMessageDetectedSomethingSuspicious(CommMessage& message);

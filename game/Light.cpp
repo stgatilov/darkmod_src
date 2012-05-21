@@ -787,8 +787,8 @@ void idLight::On( void ) {
 idLight::Off
 ================
 */
-void idLight::Off( const bool stopSound ) {
-
+void idLight::Off( const bool stopSound )
+{
 	currentLevel = 0;
 
 	if ( stopSound && refSound.referenceSound && refSound.referenceSound->CurrentlyPlaying() ) {
@@ -1370,15 +1370,19 @@ void idLight::Event_ToggleOnOff( idEntity *activator ) {
 		return;
 	}
 
-	if ( !currentLevel ) {
+	if ( !currentLevel )
+	{
 		On();
 	}
-	else {
+	else
+	{
 		currentLevel--;
-		if ( !currentLevel ) {
+		if ( !currentLevel )
+		{
 			Off();
 		}
-		else {
+		else
+		{
 			SetLightLevel();
 		}
 	}

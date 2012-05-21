@@ -91,6 +91,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_lastUsedBy = NULL;	// grayman #2859
 	m_searching = NULL;		// grayman #1327 - someone searching around this door
 	m_targetingOff = false; // grayman #3029
+	m_wasFoundLocked = false; // grayman #3104
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
@@ -169,6 +170,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	m_lastUsedBy.Save(savefile);			// grayman #2859
 	m_searching.Save(savefile);				// grayman #1327
 	savefile->WriteBool(m_targetingOff);	// grayman #3029
+	savefile->WriteBool(m_wasFoundLocked);	// grayman #3104
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -228,6 +230,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	m_lastUsedBy.Restore(savefile);		// grayman #2859
 	m_searching.Restore(savefile);		// grayman #1327
 	savefile->ReadBool(m_targetingOff);	// grayman #3029
+	savefile->ReadBool(m_wasFoundLocked); // grayman #3104
 }
 
 void CBinaryFrobMover::Spawn()

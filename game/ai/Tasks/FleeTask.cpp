@@ -144,7 +144,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			// Get the distance to the enemy
 			float enemyDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), enemy->GetPhysics()->GetOrigin());
 
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Enemy is as near as %d", enemyDistance);
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Enemy is as near as %f\r", enemyDistance);
 			if (enemyDistance < 500)
 			{
 				// Increase the fleeRadius (the nearer the enemy, the more)

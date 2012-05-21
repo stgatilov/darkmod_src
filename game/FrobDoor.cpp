@@ -1113,6 +1113,18 @@ idEntity* CFrobDoor::GetSearching()
 	return m_searching.GetEntity();
 }
 
+// grayman #3104
+
+void CFrobDoor::SetWasFoundLocked(bool state)
+{
+	m_wasFoundLocked = state;
+}
+
+bool CFrobDoor::GetWasFoundLocked()
+{
+	return m_wasFoundLocked;
+}
+
 // grayman #2866 - GetDoorHandlingEntities() finds the door handling entities when a door uses them.
 
 bool CFrobDoor::GetDoorHandlingEntities( idAI* owner, idList< idEntityPtr<idEntity> > &list )

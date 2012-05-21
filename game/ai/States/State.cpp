@@ -84,7 +84,7 @@ const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000;		// ms - grayman #2603
 const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if farther apart than this
 const int MIN_DIST_TO_LOWLIGHT_DOOR = 300;	// grayman #2959 - AI must be closer than this to "see" a low-light door
-const int FRIEND_NEAR_DOOR = 150;			// grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
+const int PERSON_NEAR_DOOR = 150;			// grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
 const int BLOOD2BLEEDER_MIN_DIST = 300;		// grayman #3075 - AI must be closer than this to blood to be considered the owner
 
 //----------------------------------------------------------------------------------------
@@ -748,7 +748,6 @@ void State::OnVisualStim(idEntity* stimSource)
 
 		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, true ) ) // 'true' = consider illumination
 		{
-
 			// grayman #2959 - if owner is handling this door, he should recognize
 			// that it's open and shouldn't be, regardless of illumination. He's about
 			// to use it, after all. This is similar to bumping into a hanging rope
@@ -2894,10 +2893,55 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	}
 }
 
+// grayman #3104
+
+bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
+{
+	int num;
+	idEntity* candidate;
+	idClipModel* cm;
+	idClipModel* clipModels[ MAX_GENTITIES ];
+
+	idVec3 doorCenter = door->GetClosedBox().GetCenter();
+	idBounds doorBounds(idVec3(doorCenter.x - PERSON_NEAR_DOOR, doorCenter.y - PERSON_NEAR_DOOR, doorCenter.z - 50),
+						idVec3(doorCenter.x + PERSON_NEAR_DOOR, doorCenter.y + PERSON_NEAR_DOOR, doorCenter.z + 50));
+	
+	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		cm = clipModels[i];
+		candidate = cm->GetEntity();
+		if ( candidate == owner )
+		{
+			continue; // skip observer
+		}
+
+		if ( !candidate->IsType(idAI::Type) )
+		{
+			continue; // skip non-AIs
+		}
+
+		idAI* candidateAI = static_cast<idAI*>(candidate);
+
+		if ( !candidateAI->m_bCanOperateDoors )
+		{
+			continue; // skip AIs who can't handle doors
+		}
+
+		// check visibility
+
+		if ( owner->CanSeeExt( candidateAI, false, false ) )
+		{
+			return true;
+		}
+	}
+
+	return false; // no visible door-handling AI near the door
+}
 
 void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 {
-	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
@@ -2942,35 +2986,40 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	idEntity* lastUsedBy = door->GetLastUsedBy();
 	if ( lastUsedBy != NULL )
 	{
-		// grayman #1327 - Was the door last used by a friend we can see,
-		// or a friend we can't see but who is near the door?
+		// grayman #1327 - Was the door last used by someone we can see,
+		// or someone we can't see but who is near the door?
 		// If so, we assume they're the one who opened the door, so it's
 		// not suspicious. CanSeeExt( lastUsedBy, false, false )
 		// doesn't care about FOV (lastUsedBy can be behind owner) and we
 		// don't care how bright it is.
 
-		if ( owner->IsFriend( lastUsedBy ) )
+		if ( owner->CanSeeExt( lastUsedBy, false, false ) )
 		{
-			if ( owner->CanSeeExt( lastUsedBy, false, false ) )
-			{
-				// A friend handled the door last, and since I can still see him
-				// he's probably handling the door now, since stims arrive when
-				// the door is opened. Do nothing.
+			// I can still see who last used this door, so
+			// he's probably handling the door now, since stims arrive when
+			// the door is opened. Do nothing.
 
-				stimSource->IgnoreResponse(ST_VISUAL, owner);
-				return; // a friend I can see opened the door, so all is well
-			}
-
-			// can't see him, but is he near the door?
-
-			idVec3 friendOrigin = lastUsedBy->GetPhysics()->GetOrigin();
-			idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
-			if ( (friendOrigin - doorOrigin).LengthSqr() <= Square(FRIEND_NEAR_DOOR) )
-			{
-				stimSource->IgnoreResponse(ST_VISUAL, owner);
-				return; // a friend I can see opened the door, so all is well
-			}
+			stimSource->IgnoreResponse(ST_VISUAL, owner);
+			return; // someone I can see opened the door, so all is well
 		}
+
+		// can't see him, but is he near the door?
+
+		idVec3 personOrigin = lastUsedBy->GetPhysics()->GetOrigin();
+		idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
+		if ( (personOrigin - doorOrigin).LengthSqr() <= Square(PERSON_NEAR_DOOR) )
+		{
+			stimSource->IgnoreResponse(ST_VISUAL, owner);
+			return; // someone I can't see opened the door, so all is well
+		}
+	}
+
+	// grayman #3104 - is anyone near the door who might have opened it?
+
+	if ( SomeoneNearDoor(owner, door) )
+	{
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
+		return; // I see someone near the door who might have opened it, so all is well
 	}
 
 	// The open door is now suspicious.
@@ -2983,7 +3032,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 		// Don't handle the door yourself; the searching AI will close it when done.
 		// Since someone's already searching around the door, don't get involved.
 
-		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
+//		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #3104 - keep responding to the door in case the other AI leaves it open
 		return;
 	}
 
@@ -3057,7 +3106,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 
-	if ( owner->AI_AlertLevel < owner->thresh_4 - 0.1f )
+	if ( owner->AI_AlertLevel < ( owner->thresh_4 - 0.1f ) )
 	{
 		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
 //		memory.alertPos = stimSource->GetPhysics()->GetOrigin(); // grayman #2866 - old way, which doesn't work well with sliding doors
@@ -3608,20 +3657,24 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
-	// grayman #2695 - don't set up to handle a door you can't see
+	// grayman #2695 - don't set up to handle a door you can't see.
+	// grayman #3104 - unless you're closing a suspicious door
 
-	idVec3 doorCenter = frobDoor->GetClosedBox().GetCenter(); // use center of closed door, regardless of whether it's open or closed
-	if ( !owner->CanSeeTargetPoint( doorCenter, frobDoor, false ) ) // 'false' = don't consider illumination
+	Memory& memory = owner->GetMemory();
+
+	if ( !memory.closeSuspiciousDoor )
 	{
-		return; // we have no LOS yet
+		idVec3 doorCenter = frobDoor->GetClosedBox().GetCenter(); // use center of closed door, regardless of whether it's open or closed
+		if ( !owner->CanSeeTargetPoint( doorCenter, frobDoor, false ) ) // 'false' = don't consider illumination
+		{
+			return; // we have no LOS yet
+		}
 	}
 
 	if (cv_ai_door_show.GetBool()) 
 	{
 		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 16);
 	}
-
-	Memory& memory = owner->GetMemory();
 
 	// check if we already have a door to handle
 	// don't start a DoorHandleTask if it is the same door or the other part of a double door
@@ -3660,14 +3713,15 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		memory.doorRelated.currentDoor = frobDoor;
 		owner->movementSubsystem->PushTask(HandleDoorTask::CreateInstance());
 	}
-	else 
+	else // currentDoor exists
 	{
-		if (frobDoor != currentDoor && frobDoor != currentDoor->GetDoubleDoor())
+		if ( ( frobDoor != currentDoor ) && ( frobDoor != currentDoor->GetDoubleDoor() ) )
 		{
 			// this is a new door
 
 			// if there is already a door handling task active, 
 			// terminate that one so we can start a new one next time
+
 			const SubsystemPtr& subsys = owner->movementSubsystem;
 			TaskPtr task = subsys->GetCurrentTask();
 
@@ -3683,23 +3737,31 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			else
 			{
 				// angua: current door is set but no door handling task active
-				// door handling task was probably terminated before inititalisation
+				// door handling task was probably terminated before initialisation
 				// clear current door
 				memory.doorRelated.currentDoor = NULL;
 			}
 		}
 		else // this is our current door
 		{
-			const SubsystemPtr& subsys = owner->movementSubsystem;
+			// grayman #3104 - there's a problem when the current door task
+			// has just completed its Perform() step and is about to start
+			// its OnFinish() step. At this point, HandleDoorTask is NOT the
+			// current task. Testing showed it was PathCornerTask, so that snuck
+			// in somehow before the OnFinish() ran for HandleDoorTask. NULLing
+			// currentDoor below doesn't let OnFinish() do everything it needs to.
+
+/*			const SubsystemPtr& subsys = owner->movementSubsystem;
 			TaskPtr task = subsys->GetCurrentTask();
 
 			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) == NULL)
 			{
 				// angua: current door is set but no door handling task active
-				// door handling task was probably terminated before inititalisation
+				// door handling task was probably terminated before initialisation
 				// clear current door
 				memory.doorRelated.currentDoor = NULL;
 			}
+*/
 		}
 	}
 }

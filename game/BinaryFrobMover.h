@@ -550,6 +550,12 @@ protected:
 	**/
 
 	bool						m_targetingOff;
+
+	/**
+	* grayman #3104 - when an AI needs to use this door, was it locked?
+	**/
+
+	bool						m_wasFoundLocked;
 };
 
 #endif /* !BINARYFROBMOVER */
