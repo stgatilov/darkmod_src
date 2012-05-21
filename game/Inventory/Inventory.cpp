@@ -269,9 +269,9 @@ void CInventory::NotifyOwnerAboutPickup(const idStr& pickedUpStr, const CInvento
 	idPlayer* player = static_cast<idPlayer*>(m_Owner.GetEntity());
 
 	// Prepend the "acquired" text
-	idStr pickedUpMsg = common->Translate( "#str_07215" ) + pickedUpStr;	// Acquired: 
-	// and remove any newlines from the message
-	pickedUpMsg.Replace("\n","");
+	idStr pickedUpMsg = common->Translate( "#str_07215" ) + pickedUpStr;	// Acquired:
+	// and replace any newlines from the message with a space so "New\nItem" becomes "New Item"
+	pickedUpMsg.Replace("\n"," ");
 
 	// Now actually send the message
 	player->SendInventoryPickedUpMessage(pickedUpMsg);

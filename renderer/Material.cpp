@@ -2034,7 +2034,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			SetMaterialFlag( MF_POLYGONOFFSET );
 			polygonOffset = 1;
 
-			// discrete
+			// discrete and nonsolid
 			surfaceFlags |= SURF_DISCRETE;
 			contentFlags &= ~CONTENTS_SOLID;
 
