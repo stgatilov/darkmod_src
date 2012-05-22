@@ -594,8 +594,12 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 					attacker = m_SetInMotionByActor.GetEntity();
 				}
 				
+				int preHealth = ent->health;
 				ent->Damage( this, attacker, dir, damage, f, location, const_cast<trace_t *>(&newCollision) );
-				nextDamageTime = gameLocal.time + 1000;
+				if ( ent->health < preHealth ) // only set the timer if there was damage
+				{
+					nextDamageTime = gameLocal.time + 1000;
+				}
 			}
 		}
 
