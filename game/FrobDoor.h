@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
  
@@ -117,20 +118,20 @@ public:
 	 * to the player instead of the bounding box center, which might be on the far side
 	 * of a closed portal. This method gets applied to doors without handles, usually.
 	 */
-	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis) const;
 
 	void					SetLastUsedBy(idEntity* ent);	// grayman #2859
-	idEntity*				GetLastUsedBy();				// grayman #2859
+	idEntity*				GetLastUsedBy() const;			// grayman #2859
 	void					SetSearching(idEntity* ent);	// grayman #2866
-	idEntity*				GetSearching();					// grayman #2866
+	idEntity*				GetSearching() const;			// grayman #2866
 	void					SetWasFoundLocked(bool state);	// grayman #3104
-	bool					GetWasFoundLocked();			// grayman #3104
+	bool					GetWasFoundLocked() const;		// grayman #3104
 	bool					GetDoorHandlingEntities(idAI* owner, idList< idEntityPtr<idEntity> > &list); // grayman #2866
 
 protected:
 
 	// Returns the handle nearest to the given position
-	CFrobDoorHandle*		GetNearestHandle(const idVec3& pos);
+	CFrobDoorHandle*		GetNearestHandle(const idVec3& pos) const;
 
 	/**
 	 * This will read the spawnargs lockpick_bar, lockpick_rotate and 
@@ -180,14 +181,14 @@ protected:
 	// Helper functions to cycle through the m_OpenList members
 	void					OpenPeers();
 	void					ClosePeers();
-	void					OpenClosePeers(bool open);
+	void					OpenClosePeers(const bool open);
 
 	// Taps all doorhandles of open peers
 	void					TapPeers();
 
 	void					LockPeers();
 	void					UnlockPeers();
-	void					LockUnlockPeers(bool lock);
+	void					LockUnlockPeers(const bool lock);
 
 	// Accessor functions for adding and removing peers
 	void					AddOpenPeer(const idStr& peerName);
