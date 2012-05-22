@@ -461,13 +461,13 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
 	EVENT( EV_NoShadowsDelayed,		idEntity::Event_noShadowsDelayed )
 
-	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )				// grayman #2478
-	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )		// grayman #2478
-	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )	// grayman #2478
-	EVENT( EV_IsLight,				idEntity::Event_IsLight )				// grayman #2905
-	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )		// grayman #3011
-	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )			// grayman #3013
-	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )			// tels #3113
+	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )					// grayman #2478
+	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )			// grayman #2478
+	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )		// grayman #2478
+	EVENT( EV_IsLight,				idEntity::Event_IsLight )					// grayman #2905
+	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )			// grayman #3011
+	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )				// grayman #3013
+	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )				// tels #3113
 	
 END_CLASS
 
@@ -10900,8 +10900,10 @@ float idEntity::RangedThreatTo(idEntity* target)
 
 void idEntity::GetTeamChildren( idList<idEntity *> *list )
 {
-// ishtvan: TODO: I think this is WRONG and can go up and across the team hierarchy when called on bind children
-// It only works as advertised when called on bindmasters
+	// ishtvan: TODO: I think this is WRONG and can go up and across the team hierarchy when called on bind children
+	// It only works as advertised when called on bindmasters.
+	// grayman - ABSOLUTELY!!! This routine can wrongly tell you that your brothers and sisters are your children.
+
 	idEntity *NextEnt = NULL;
 	
 	list->Clear();

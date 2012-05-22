@@ -318,9 +318,13 @@ void darkModLAS::accumulateEffectOfLightsInArea
 		gameRenderWorld->DebugArrow(colorBlue, testPoint1, testPoint2, 2, 1000);
 	}
 
-	assert(areaIndex >= 0 && areaIndex < m_numAreas);
+	assert( ( areaIndex >= 0 ) && ( areaIndex < m_numAreas ) );
 	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
 
+	// grayman #3132 - factor in the ambient light, if any
+
+	inout_totalIllumination += gameLocal.GetAmbientIllumination(testPoint1);
+	
 	// Iterate lights in this area
 	while (p_cursor != NULL)
 	{
@@ -430,7 +434,6 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			}
 			else if (b_useShadows && p_LASLight->p_idLight->CastsShadow()) 
 			{
-
 				// grayman #2853 - If the trace hits something before completing, that thing has to be checked to see if
 				// it casts shadows. If it doesn't, then it has to be ignored and the trace must be run again from the struck
 				// point to the end. This has to be done iteratively, since there might be several non-shadow-casting entities

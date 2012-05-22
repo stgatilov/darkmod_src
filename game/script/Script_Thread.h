@@ -233,6 +233,7 @@ private:
 	void						Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument);
 	
 	void						Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine ); // grayman #2787
+	void						Event_GetMainAmbientLight(); // grayman #3132
 
 public:							
 								CLASS_PROTOTYPE( idThread );

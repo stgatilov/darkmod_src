@@ -5253,6 +5253,50 @@ int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> 
 
 /*
 =============
+idGameLocal::GetAmbientIllumination
+
+grayman #3132 - returns the ambient illumination at a point
+=============
+*/
+
+float idGameLocal::GetAmbientIllumination( const idVec3 point ) const
+{
+	float illumination = 0;
+	bool locationAmbient = false;
+
+	// If there's a location entity with "ambient_light" defined,
+	// use that color.
+
+	idLocationEntity* location = gameLocal.LocationForPoint(point);
+	if ( location != NULL )
+	{
+		idVec3 color;
+		location->spawnArgs.GetVector( "ambient_light", "0 0 0", color );
+		if ( color != vec3_zero )
+		{
+			illumination = (color.x * DARKMOD_LG_RED + color.y * DARKMOD_LG_GREEN + color.z * DARKMOD_LG_BLUE);
+			locationAmbient = true;
+		}
+	}
+
+	// If there's no location entity, or there is and it has no
+	// "ambient_light" spawnarg, use the color of the main ambient light.
+
+	if ( !locationAmbient )
+	{
+		idLight* ambientLight = gameLocal.FindMainAmbientLight(false);
+		if ( ambientLight != NULL )
+		{
+			idVec3 color = ambientLight->GetBaseColor();
+			illumination = (color.x * DARKMOD_LG_RED + color.y * DARKMOD_LG_GREEN + color.z * DARKMOD_LG_BLUE);
+		}
+	}
+
+	return illumination;
+}
+
+/*
+=============
 idGameLocal::GetTraceEntity
 
 returns the master entity of a trace.  for example, if the trace entity is the player's head, it will return the player.
@@ -6952,47 +6996,55 @@ Usage:	Finds main ambient light by the name "ambient_world".
 ===================
 */
 
-idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= false */ )
+idLight* idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= false */ )
 {
 	int hash, i;
 	idEntity *pEntMainAmbientLight = NULL;
 
 	hash = entityHash.GenerateKey( m_strMainAmbientLightName, true );
-	for ( i = entityHash.First( hash ); i != -1; i = entityHash.Next( i ) ) {
-		if ( entities[i] && entities[i]->name.Icmp( m_strMainAmbientLightName ) == 0 ) {
+	for ( i = entityHash.First( hash ) ; i != -1 ; i = entityHash.Next( i ) )
+	{
+		if ( entities[i] && entities[i]->name.Icmp( m_strMainAmbientLightName ) == 0 )
+		{
 			pEntMainAmbientLight =  entities[i];
 			break;
 		}
 	}
 
-	if ( NULL != pEntMainAmbientLight && pEntMainAmbientLight->IsType(idLight::Type) )
+	if ( ( NULL != pEntMainAmbientLight ) && pEntMainAmbientLight->IsType(idLight::Type) )
+	{
 		return static_cast<idLight *>( pEntMainAmbientLight );
-	else if( !a_bCreateNewIfNotFound ) 
+	}
+	else if ( !a_bCreateNewIfNotFound )
+	{
 		return NULL;
+	}
 
 	gameLocal.Printf( "Ambient light by name of 'ambient_world' not found, attempting to create a new one. \n"); 
 
 	idLight *pLightEntMainAmbient = NULL;
 	float fMaxRadius = 0.0f;
 
-	for (int i = 0; i < MAX_GENTITIES; i++)
+	for ( int i = 0 ; i < MAX_GENTITIES ; i++)
 	{
 		// Find the ambient light with greatest radius.
-		if( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
+		if ( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
 		{
 			idVec3 vec3LightRadius; 
 			idLight *pLight =  static_cast<idLight *>( entities[i] );
 // 			gameLocal.Printf( "Light found %i \n", j++ ); 
 
 			if (!pLight->IsAmbient())
+			{
 				continue;
+			}
 
 			pLight->GetRadius( vec3LightRadius );
 
 			float fRadius = vec3LightRadius.Length();
 			//gameLocal.Printf( "The Light is ambient, max radius: %f current radius: %f  \n", fMaxRadius, fRadius ); 
 
-			if( fRadius > fMaxRadius )
+			if ( fRadius > fMaxRadius )
 			{
 				fMaxRadius = fRadius;
 				pLightEntMainAmbient = pLight;
@@ -7000,14 +7052,13 @@ idLight * idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fal
 		}
 	}
 
-	if( pLightEntMainAmbient )
+	if ( pLightEntMainAmbient )
 	{
 		m_strMainAmbientLightName = pLightEntMainAmbient->GetName();
 		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
 	}
 
 	return pLightEntMainAmbient;
-
 }
 
 void idGameLocal::ClearPersistentInfo()

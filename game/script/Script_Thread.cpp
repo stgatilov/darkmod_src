@@ -148,6 +148,9 @@ const idEventDef EV_HandleMissionEvent("handleMissionEvent", "eds");
 
 const idEventDef EV_Thread_CanPlant( "canPlant", "vvEe", 'f' );  // grayman #2787
 
+// grayman #3132 - get main ambient light
+const idEventDef EV_GetMainAmbientLight("getMainAmbientLight", NULL, 'e');
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -250,6 +253,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_HandleMissionEvent,			idThread::Event_HandleMissionEvent )
 
 	EVENT( EV_Thread_CanPlant,	 			idThread::Event_CanPlant )	// grayman #2787
+
+	EVENT( EV_GetMainAmbientLight,			idThread::Event_GetMainAmbientLight ) // grayman #3132
 
 	END_CLASS
 
@@ -2085,5 +2090,13 @@ void idThread::Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd,
 	}
 
 	idThread::ReturnFloat( vineFriendly );
+}
+
+// grayman #3132
+
+void idThread::Event_GetMainAmbientLight()
+{
+	idLight* light = gameLocal.FindMainAmbientLight(false);
+	idThread::ReturnEntity(light);
 }
 
