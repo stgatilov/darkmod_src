@@ -1266,7 +1266,6 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			// grayman #2603 - only join if he's searching and I haven't been searching recently
 			// grayman #2866 - don't join if he's searching a suspicious door. Joining causes congestion at the door.
 
-
 			if ( otherAI->IsSearching() && !( memory.searchFlags & SRCH_WAS_SEARCHING ) && ( otherMemory.alertType != EAlertTypeDoor ) )
 			{
 				// grayman #1327 - warning should be specific
@@ -1335,9 +1334,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					owner->SetAlertLevel(otherAI->AI_AlertLevel * 0.7f); // inherit a reduced alert level
 
 					owner->StopMove(MOVE_STATUS_DONE);
-					owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
-					owner->GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining rope
-					owner->GetMemory().stopReactingToHit = true; // grayman #2816
+					memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+					memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+					memory.stopReactingToHit = true; // grayman #2816
 
 					memory.alertPos = otherMemory.alertPos;
 					memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
@@ -1351,8 +1350,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					memory.alertedDueToCommunication = true;
 
 					// The other AI might bark, but only if he can see you.
+					// grayman #3070 - he won't bark if he's in combat mode
 
-					if ( otherAI->CanSee(owner, true) )
+					if ( otherAI->CanSee(owner, true) && ( otherAI->AI_AlertIndex < ECombat ) )
 					{
 						gameLocal.Printf("Hey! Help me search!\n");
 						otherMemory.lastTimeVisualStimBark = gameLocal.time;
@@ -2254,7 +2254,10 @@ void State::OnMovementBlocked(idAI* owner)
 				std::swap(master, slave);
 			}
 		}
-		else if (master->AI_FORWARD && !slave->AI_FORWARD && master->IsSearching()) // grayman #2422
+		else if (master->AI_FORWARD && // grayman #2422
+				 !slave->AI_FORWARD &&
+				 master->IsSearching() &&
+				 ( master->AI_AlertIndex < ECombat ) ) // grayman #3070 - don't stop master if he's in combat
 		{
 			// Stop moving, the searching state will choose another spot soon
 			master->StopMove(MOVE_STATUS_DONE);
@@ -3228,9 +3231,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				{
 					
 					// Bark
-					//owner->GetSubsystem(SubsysCommunication)->PushTask(
-					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					//);
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 
 					gameLocal.Printf("Ok, I'm helping you.\n");
 
@@ -3277,9 +3279,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					gameLocal.Printf("I'll attack it with my ranged weapon!\n");
 
 					// Bark
-					//owner->GetSubsystem(SubsysCommunication)->PushTask(
-					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					//);
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -3311,9 +3312,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					gameLocal.Printf("I'll attack it with my melee weapon!\n");
 
 					// Bark
-					//owner->GetSubsystem(SubsysCommunication)->PushTask(
-					//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-					//);
+					owner->GetSubsystem(SubsysCommunication)->PushTask(
+						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 					
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -3563,18 +3563,17 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 
 		if (numSpots > 0)
 		{
-/*			// What is the distance to the friend?  If it is greater than a certain amount, shout intention
+			// What is the distance to the friend?  If it is greater than a certain amount, shout intention
 			// to come help
-			float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+/*			float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 			if (distanceToIssuer >= MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
 			{
 				// Bark
 				// angua: this one was getting quite annoying if you hear it all the time
-				//owner->GetSubsystem(SubsysCommunication)->PushTask(
-				//	SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend"))
-				//);
-			}*/
-			
+				owner->GetSubsystem(SubsysCommunication)->PushTask(
+					SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
+			}
+ */			
 			// If AI that called out has a higher alert num, raise ours
 			// to match theirs due to urgency in their voice
 			float otherAlertLevel = 0.0f;

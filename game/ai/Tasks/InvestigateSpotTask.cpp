@@ -181,7 +181,9 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		{
 			owner->GetAAS()->PushPointIntoAreaNum( toAreaNum, goal ); // if this point is outside this area, it will be moved to one of the area's edges
 		
-			if ( owner->IsSearching() && !owner->movementSubsystem->IsResolvingBlock() )
+			if ( owner->IsSearching() &&
+				!owner->movementSubsystem->IsResolvingBlock() &&
+				( owner->AI_AlertIndex < ECombat ) ) // grayman #3070 - point is valid if in combat mode
 			{
 				if ( !owner->m_searchLimits.ContainsPoint(goal) )
 				{

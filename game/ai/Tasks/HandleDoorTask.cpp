@@ -1189,7 +1189,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// grayman #3104 - when searching, an AI can get far from the
 				// door as he searches, but he still thinks he's handling a door
 				// because he hasn't yet reached the mid position. If he wanders
-				// too far while searching, quit door handling
+				// too far while searching or in combat mode, quit door handling
 
 				if ( owner->IsSearching() )
 				{
@@ -1265,7 +1265,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// grayman #3104 - when searching, an AI can get far from the
 				// door as he searches, but he still thinks he's handling a door
 				// because he hasn't yet reached the back position. If he wanders
-				// too far while searching, quit door handling
+				// too far while searching or in combat mode, quit door handling
 
 				if ( owner->IsSearching() )
 				{

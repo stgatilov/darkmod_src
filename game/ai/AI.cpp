@@ -11241,7 +11241,7 @@ int idAI::StartSearchForHidingSpotsWithExclusionArea
 
 bool idAI::IsSearching() // grayman #2603
 {
-	return (AI_AlertLevel >= thresh_3);
+	return (AI_AlertLevel >= thresh_3); // note that this also returns TRUE if in combat mode
 }
 
 int idAI::ContinueSearchForHidingSpots()
