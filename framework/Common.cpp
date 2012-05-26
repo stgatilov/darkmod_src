@@ -1520,7 +1520,6 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 
 	if ( Sys_GetSystemRam() < 512 ) {
 		cvarSystem->SetCVarBool( "image_ignoreHighQuality", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "s_maxSoundsPerShader", 1, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "image_downSizeLimit", 256, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 1, CVAR_ARCHIVE );

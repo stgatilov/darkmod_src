@@ -463,16 +463,6 @@ void idGameLocal::Init( void ) {
 
 	InitConsoleCommands();
 
-	// greebo: Let the proxy CVARs overwrite the closed source counter-part
-	cvarSystem->SetCVarInteger("s_doorDistanceAdd", cv_tdm_s_doorDistanceAdd.GetInteger());
-	cvarSystem->SetCVarFloat("gui_mediumFontLimit", cv_tdm_gui_mediumFontLimit.GetFloat());
-	cvarSystem->SetCVarFloat("gui_smallFontLimit", cv_tdm_gui_smallFontLimit.GetFloat());
-
-	if (cv_tdm_s_maxSoundsPerShader.GetInteger() != -1)
-	{
-		cvarSystem->SetCVarInteger("s_maxSoundsPerShader", cv_tdm_s_maxSoundsPerShader.GetInteger());
-	}
-	
 	// load default scripts
 	program.Startup( SCRIPT_DEFAULT );
 	

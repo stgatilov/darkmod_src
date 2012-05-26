@@ -34,10 +34,8 @@ idVec4 idDeviceContext::colorBlack;
 idVec4 idDeviceContext::colorWhite;
 idVec4 idDeviceContext::colorNone;
 
-
-idCVar gui_smallFontLimit( "gui_smallFontLimit", "0.30", CVAR_GUI | CVAR_ARCHIVE, "" );
-idCVar gui_mediumFontLimit( "gui_mediumFontLimit", "0.60", CVAR_GUI | CVAR_ARCHIVE, "" );
-
+idCVar gui_smallFontLimit( "gui_smallFontLimit", "0.15", CVAR_GUI | CVAR_ARCHIVE, "Fonts up to this scale will use the small font size (12 px)" );
+idCVar gui_mediumFontLimit( "gui_mediumFontLimit", "0.30", CVAR_GUI | CVAR_ARCHIVE, "Fonts up to this scale will use the medium font size (24 px)" );
 
 idList<fontInfoEx_t> idDeviceContext::fonts;
 
