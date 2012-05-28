@@ -1546,33 +1546,30 @@ We might alternatively choose to do this with an area flow.
 */
 void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRenderLightLocal *light, const idSphere *sphere, int numPoints, const idVec3 (*points), 
 								 int nodeNum ) {
-	areaNode_t	*node;
 	
 	if ( nodeNum < 0 ) {
-		portalArea_t *area;
-		int areaNum = -1 - nodeNum;
-
-		area = &portalAreas[ areaNum ];
+		portalArea_t *area = &portalAreas[ (-1 - nodeNum) ];
 		if ( area->viewCount == tr.viewCount ) {
 			return;	// already added a reference here
 		}
+
 		area->viewCount = tr.viewCount;
 
 		if ( def ) {
 			AddEntityRefToArea( def, area );
-		} else if ( light ) {
+		}
+		if ( light ) {
 			AddLightRefToArea( light, area );
 		}
 
 		return;
 	}
 
-	node = areaNodes + nodeNum;
+	areaNode_t	*node = areaNodes + nodeNum;
 
 	// if we know that all possible children nodes only touch an area
 	// we have already marked, we can early out
-	if ( r_useNodeCommonChildren.GetBool() &&
-		node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS ) {
+	if ( r_useNodeCommonChildren.GetBool() && node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS ) {
 		// note that we do NOT try to set a reference in this area
 		// yet, because the test volume may yet wind up being in the
 		// solid part, which would cause bounds slightly poked into
@@ -1582,107 +1579,51 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 		}
 	}
 
-	// if the bounding sphere is completely on one side, don't
-	// bother checking the individual points
-	float sd = node->plane.Distance( sphere->GetOrigin() );
-	if ( sd >= sphere->GetRadius() ) {
-		nodeNum = node->children[0];
-		if ( nodeNum ) {	// 0 = solid
-			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-		}
-		return;
-	} else if ( sd < -sphere->GetRadius() ) {
-		nodeNum = node->children[1];
-		if ( nodeNum ) {	// 0 = solid
-			PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-		}
-		return;
-	}
-
-#ifdef MACOS_X	//loop unrolling & pre-fetching for performance
-	// NOTE : Serp - I have no doubt totally broken this, I care... not so much.
-	// exact check all the points against the node plane
-	int		i;
-	bool	front, back;
-	front = back = false;
-	const idVec3 norm = node->plane.Normal();
-	const float plane3 = node->plane[3];
-	float D0, D1, D2, D3;
-
-	for ( i = 0 ; i < numPoints - 4; i+=4 ) {
-		D0 = points[i+0] * norm + plane3;
-		D1 = points[i+1] * norm + plane3;
-		if ( !front && D0 >= 0.0f ) {
-		    front = true;
-		} else if ( !back && D0 <= 0.0f ) {
-		    back = true;
-		}
-		D2 = points[i+1] * norm + plane3;
-		if ( !front && D1 >= 0.0f ) {
-		    front = true;
-		} else if ( !back && D1 <= 0.0f ) {
-		    back = true;
-		}
-		D3 = points[i+1] * norm + plane3;
-		if ( !front && D2 >= 0.0f ) {
-		    front = true;
-		} else if ( !back && D2 <= 0.0f ) {
-		    back = true;
-		}
-		
-		if ( !front && D3 >= 0.0f ) {
-		    front = true;
-		} else if ( !back && D3 <= 0.0f ) {
-		    back = true;
-		}
-		if ( back && front ) {
-		    break;
-		}
-	}
-	if(!(back && front)) {
-		for (; i < numPoints ; i++ ) {
-			float d;
-			d = points[i] * node->plane.Normal() + node->plane[3];
-			if ( d >= 0.0f ) {
-				front = true;
-			} else if ( d <= 0.0f ) {
-				back = true;
-			}
-			if ( back && front ) {
-				break;
-			}
-		}	
-	}
-#else
-
-	// exact check all the points against the node plane
-	int		i;
-	float	d;
-	bool	front, back;
-	int		nodeNum2;
-	front = back = false;
-
-	for ( i = 0 ; i < numPoints ; i++ ) {
-		d = points[i] * node->plane.Normal() + node->plane[3];
-
-		if ( d > 0.0f ) {
-		    front = true;
-		} else {
-		    back = true;
-		}
-		if ( back && front) {
-		    nodeNum = node->children[0];
-			nodeNum2 = node->children[1];
+	// if the bounding sphere is completely on one side, don't bother checking the individual points
+	{
+		const float sphereDist = node->plane.Distance( sphere->GetOrigin() );
+		const float sphereRad = sphere->GetRadius();
+		if ( sphereDist >= sphereRad ) {
+			nodeNum = node->children[0];
 			if ( nodeNum ) {	// 0 = solid
 				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
-			} 
-			if ( nodeNum2 ) {	// 0 = solid
-				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum2 );
+			}
+			return;
+		} else if ( sphereDist < -sphereRad ) {
+			nodeNum = node->children[1];
+			if ( nodeNum ) {	// 0 = solid
+				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
 			}
 			return;
 		}
 	}
-#endif
+
+	// exact check all the points against the node plane
+	bool front = false;
+	bool back = false;
+	const idVec3 norm = node->plane.Normal();
+	const float plane3 = node->plane[3];
+
+	for ( int i = 0 ; i < numPoints ; i++ ) {
+
+		if ( ( points[i] * norm + plane3 ) >= 0.0f ) {
+		    front = true;
+		} else {
+		    back = true;
+		}
+
+		if ( back && front ) {
+		    nodeNum = node->children[0];
+			if ( nodeNum ) {	// 0 = solid
+				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
+			}
+			nodeNum = node->children[1];
+			if ( nodeNum ) {	// 0 = solid
+				PushVolumeIntoTree_r( def, light, sphere, numPoints, points, nodeNum );
+			}
+			return;
+		}
+	}
 
 	if ( front || back) {
 		nodeNum = node->children[back];
@@ -1692,36 +1633,36 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	} 
 }
 
+
 /*
 ==============
 PushVolumeIntoTree
 ==============
 */
 void idRenderWorldLocal::PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) ) {
-	float lr, radSquared = 0.0f;
-	idVec3 mid, dir;
 	int i;
+	idVec3 mid;
+	float lr, radius = 0.0f;
 
-	if ( areaNodes == NULL ) {
+	if ( !areaNodes ) {
 		return;
 	}
 
 	// calculate a bounding sphere for the points
-	mid.Zero();
-	for (i = 0; i < numPoints; i++ ) {
+	for ( i = 0; i < numPoints; i++ ) {
 		mid += points[i];
 	}
+
 	mid *= ( 1.0f / numPoints );
 
-	for (i = 0; i < numPoints; i++ ) {
-		dir = points[i] - mid;
-		lr = dir * dir;
-		if ( lr > radSquared ) {
-			radSquared = lr;
+	for ( i = 0; i < numPoints; i++ ) {
+		lr = (points[i] - mid).Length();
+		if ( lr > radius ) {
+			radius = lr;
 		}
 	}
 
-	const idSphere sphere( mid, sqrt( radSquared ) );
+	const idSphere sphere( mid, radius );
 
 	PushVolumeIntoTree_r( def, light, &sphere, numPoints, points, 0 );
 }
