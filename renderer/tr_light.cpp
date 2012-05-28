@@ -189,10 +189,10 @@ void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
 
+	const idDrawVert *verts = surf->geo->verts;
 	const int numVerts = surf->geo->numVerts;
 	const int size = numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
-	const idDrawVert *verts = surf->geo->verts;
 
 	for ( int i = 0; i < numVerts; i++ ) {
 		texCoords[i][0] = verts[i].xyz[0] - localViewOrigin[0];
@@ -213,10 +213,9 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	const int *parms = surf->material->GetTexGenRegisters();
 
-	// Serp while ugly, these are constant for the call.
-	const float	wobbleDegrees = surf->shaderRegisters[ parms[0] ] * idMath::PI / 180;
-	const float	wobbleSpeed   = surf->shaderRegisters[ parms[1] ] * 2 * idMath::PI / 60;
-	const float	rotateSpeed   = surf->shaderRegisters[ parms[2] ] * 2 * idMath::PI / 60;
+	const float	wobbleDegrees = surf->shaderRegisters[ parms[0] ] * idMath::PI / 180.0f;
+	const float	wobbleSpeed   = surf->shaderRegisters[ parms[1] ] * 2.0f * idMath::PI / 60.0f;
+	const float	rotateSpeed   = surf->shaderRegisters[ parms[2] ] * 2.0f * idMath::PI / 60.0f;
 
 	// very ad-hoc "wobble" transform
 	float	transform[16];
@@ -225,14 +224,13 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 	float	s = sin( a ) * sin( wobbleDegrees );
 	float	c = cos( a ) * sin( wobbleDegrees );
 
-
 	idVec3	axis[3];
 
 	axis[2][0] = c;
 	axis[2][1] = s;
 	axis[2][2] = z;
 
-	axis[1][0] = -sin( a * 2 ) * sin( wobbleDegrees );
+	axis[1][0] = -sin( a * 2.0f ) * sin( wobbleDegrees );
 	axis[1][2] = -s * sin( wobbleDegrees );
 	axis[1][1] = sqrt( 1.0f - ( axis[1][0] * axis[1][0] + axis[1][2] * axis[1][2] ) );
 
@@ -298,7 +296,7 @@ static void R_SpecularTexGen( drawSurf_t *surf, const idVec3 &globalLightOrigin,
 	tri = surf->geo;
 
 	// Serp - Changed to 3 component from 4 in gpl release
-	int	size = tri->numVerts * sizeof( idVec4 );
+	const int size = tri->numVerts * sizeof( idVec3 );
 	idVec3 *texCoords = (idVec3 *) _alloca16( size );
 
 #if 1
