@@ -98,23 +98,23 @@ void idMaterial::CommonInit() {
 	unsmoothedTangents = false;
 	gui = NULL;
 	memset( deformRegisters, 0, sizeof( deformRegisters ) );
-	editorAlpha = 1.0;
+	editorAlpha = 1.0f;
 	spectrum = 0;
-	polygonOffset = 0;
+	polygonOffset = 0.0f;
 	suppressInSubview = false;
 	refCount = 0;
 	portalSky = false;
 
 	decalInfo.stayTime = 10000;
 	decalInfo.fadeTime = 4000;
-	decalInfo.start[0] = 1;
-	decalInfo.start[1] = 1;
-	decalInfo.start[2] = 1;
-	decalInfo.start[3] = 1;
-	decalInfo.end[0] = 0;
-	decalInfo.end[1] = 0;
-	decalInfo.end[2] = 0;
-	decalInfo.end[3] = 0;
+	decalInfo.start[0] = 1.0f;
+	decalInfo.start[1] = 1.0f;
+	decalInfo.start[2] = 1.0f;
+	decalInfo.start[3] = 1.0f;
+	decalInfo.end[0] = 0.0f;
+	decalInfo.end[1] = 0.0f;
+	decalInfo.end[2] = 0.0f;
+	decalInfo.end[3] = 0.0f;
 }
 
 /*
@@ -127,7 +127,7 @@ idMaterial::idMaterial() {
 
 	// we put this here instead of in CommonInit, because
 	// we don't want it cleared when a material is purged
-	surfaceArea = 0;
+	surfaceArea = 0.0f;
 }
 
 /*
@@ -144,11 +144,10 @@ idMaterial::FreeData
 ===============
 */
 void idMaterial::FreeData() {
-	int i;
 
 	if ( stages ) {
 		// delete any idCinematic textures
-		for ( i = 0; i < numStages; i++ ) {
+		for ( int i = 0; i < numStages; i++ ) {
 			if ( stages[i].texture.cinematic != NULL ) {
 				delete stages[i].texture.cinematic;
 				stages[i].texture.cinematic = NULL;
@@ -189,8 +188,7 @@ idImage *idMaterial::GetEditorImage( void ) const {
 	if ( !editorImageName.Length()) {
 		// _D3XP :: First check for a diffuse image, then use the first
 		if ( numStages && stages ) {
-			int i;
-			for( i = 0; i < numStages; i++ ) {
+			for( int i = 0; i < numStages; i++ ) {
 				if ( stages[i].lighting == SL_DIFFUSE ) {
 					editorImage = stages[i].texture.image;
 					break;
@@ -332,11 +330,11 @@ void idMaterial::ParseSort( idLexer &src ) {
 		return;
 	}
 
-	if ( !token.Icmp( "subview" ) ) {
+	else if ( !token.Icmp( "subview" ) ) {
 		sort = SS_SUBVIEW;
 	} else if ( !token.Icmp( "opaque" ) ) {
 		sort = SS_OPAQUE;
-	}else if ( !token.Icmp( "decal" ) ) {
+	} else if ( !token.Icmp( "decal" ) ) {
 		sort = SS_DECAL;
 	} else if ( !token.Icmp( "far" ) ) {
 		sort = SS_FAR;
@@ -367,9 +365,11 @@ void idMaterial::ParseDecalInfo( idLexer &src ) {
 
 	decalInfo.stayTime = src.ParseFloat() * 1000;
 	decalInfo.fadeTime = src.ParseFloat() * 1000;
+
 	float	start[4], end[4];
 	src.Parse1DMatrix( 4, start );
 	src.Parse1DMatrix( 4, end );
+
 	for ( int i = 0 ; i < 4 ; i++ ) {
 		decalInfo.start[i] = start[i];
 		decalInfo.end[i] = end[i];
@@ -394,6 +394,7 @@ int idMaterial::GetExpressionConstant( float f ) {
 		SetMaterialFlag( MF_DEFAULTED );
 		return 0;
 	}
+
 	pd->registerIsTemporary[i] = false;
 	pd->shaderRegisters[i] = f;
 	numRegisters++;
@@ -407,14 +408,16 @@ idMaterial::GetExpressionTemporary
 =============
 */
 int idMaterial::GetExpressionTemporary( void ) {
-	if ( numRegisters == MAX_EXPRESSION_REGISTERS ) {
+	if ( numRegisters >= MAX_EXPRESSION_REGISTERS ) {
 		common->Warning( "GetExpressionTemporary: material '%s' hit MAX_EXPRESSION_REGISTERS", GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
 		return 0;
 	}
+
 	pd->registerIsTemporary[numRegisters] = true;
 	numRegisters++;
-	return numRegisters - 1;
+
+	return (numRegisters - 1);
 }
 
 /*
@@ -445,27 +448,27 @@ int idMaterial::EmitOp( int a, int b, expOpType_t opType ) {
 		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) {
 			return b;
 		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
+		else if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
 			return a;
 		}
-		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
+		else if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
 			return GetExpressionConstant( pd->shaderRegisters[a] + pd->shaderRegisters[b] );
 		}
 	}
-	if ( opType == OP_TYPE_MULTIPLY ) {
+	else if ( opType == OP_TYPE_MULTIPLY ) {
 		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 1 ) {
 			return b;
 		}
-		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) {
+		else if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) {
 			return a;
 		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 1 ) {
+		else if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 1 ) {
 			return a;
 		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
+		else if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
 			return b;
 		}
-		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
+		else if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
 			return GetExpressionConstant( pd->shaderRegisters[a] * pd->shaderRegisters[b] );
 		}
 	}
@@ -485,10 +488,7 @@ idMaterial::ParseEmitOp
 =================
 */
 int idMaterial::ParseEmitOp( idLexer &src, int a, expOpType_t opType, int priority ) {
-	int		b;
-
-	b = ParseExpressionPriority( src, priority );
-	return EmitOp( a, b, opType );
+	return EmitOp( a, ParseExpressionPriority( src, priority ), opType );
 }
 
 /*
@@ -500,111 +500,110 @@ Returns a register index
 */
 int idMaterial::ParseTerm( idLexer &src ) {
 	idToken token;
-	int		a, b;
 
 	src.ReadToken( &token );
 
 	if ( token == "(" ) {
-		a = ParseExpression( src );
+		int a = ParseExpression( src );
 		MatchToken( src, ")" );
 		return a;
 	}
 
-	if ( !token.Icmp( "time" ) ) {
+	else if ( !token.Icmp( "time" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_TIME;
 	}
-	if ( !token.Icmp( "parm0" ) ) {
+	else if ( !token.Icmp( "parm0" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM0;
 	}
-	if ( !token.Icmp( "parm1" ) ) {
+	else if ( !token.Icmp( "parm1" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM1;
 	}
-	if ( !token.Icmp( "parm2" ) ) {
+	else if ( !token.Icmp( "parm2" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM2;
 	}
-	if ( !token.Icmp( "parm3" ) ) {
+	else if ( !token.Icmp( "parm3" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM3;
 	}
-	if ( !token.Icmp( "parm4" ) ) {
+	else if ( !token.Icmp( "parm4" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM4;
 	}
-	if ( !token.Icmp( "parm5" ) ) {
+	else if ( !token.Icmp( "parm5" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM5;
 	}
-	if ( !token.Icmp( "parm6" ) ) {
+	else if ( !token.Icmp( "parm6" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM6;
 	}
-	if ( !token.Icmp( "parm7" ) ) {
+	else if ( !token.Icmp( "parm7" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM7;
 	}
-	if ( !token.Icmp( "parm8" ) ) {
+	else if ( !token.Icmp( "parm8" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM8;
 	}
-	if ( !token.Icmp( "parm9" ) ) {
+	else if ( !token.Icmp( "parm9" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM9;
 	}
-	if ( !token.Icmp( "parm10" ) ) {
+	else if ( !token.Icmp( "parm10" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM10;
 	}
-	if ( !token.Icmp( "parm11" ) ) {
+	else if ( !token.Icmp( "parm11" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_PARM11;
 	}
-	if ( !token.Icmp( "global0" ) ) {
+	else if ( !token.Icmp( "global0" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL0;
 	}
-	if ( !token.Icmp( "global1" ) ) {
+	else if ( !token.Icmp( "global1" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL1;
 	}
-	if ( !token.Icmp( "global2" ) ) {
+	else if ( !token.Icmp( "global2" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL2;
 	}
-	if ( !token.Icmp( "global3" ) ) {
+	else if ( !token.Icmp( "global3" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL3;
 	}
-	if ( !token.Icmp( "global4" ) ) {
+	else if ( !token.Icmp( "global4" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL4;
 	}
-	if ( !token.Icmp( "global5" ) ) {
+	else if ( !token.Icmp( "global5" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL5;
 	}
-	if ( !token.Icmp( "global6" ) ) {
+	else if ( !token.Icmp( "global6" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL6;
 	}
-	if ( !token.Icmp( "global7" ) ) {
+	else if ( !token.Icmp( "global7" ) ) {
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL7;
 	}
-	if ( !token.Icmp( "fragmentPrograms" ) ) {
+	else if ( !token.Icmp( "fragmentPrograms" ) ) {
 		return GetExpressionConstant( (float) glConfig.ARBFragmentProgramAvailable );
 	}
 
-	if ( !token.Icmp( "sound" ) ) {
+	else if ( !token.Icmp( "sound" ) ) {
 		pd->registersAreConstant = false;
 		return EmitOp( 0, 0, OP_TYPE_SOUND );
 	}
 
 	// parse negative numbers
-	if ( token == "-" ) {
+	else if ( token == "-" ) {
 		src.ReadToken( &token );
 		if ( token.type == TT_NUMBER || token == "." ) {
 			return GetExpressionConstant( -(float) token.GetFloatValue() );
@@ -614,7 +613,7 @@ int idMaterial::ParseTerm( idLexer &src ) {
 		return 0;
 	}
 
-	if ( token.type == TT_NUMBER || token == "." || token == "-" ) {
+	else if ( token.type == TT_NUMBER || token == "." || token == "-" ) {
 		return GetExpressionConstant( (float) token.GetFloatValue() );
 	}
 
@@ -629,7 +628,7 @@ int idMaterial::ParseTerm( idLexer &src ) {
 	// parse a table expression
 	MatchToken( src, "[" );
 
-	b = ParseExpression( src );
+	int b = ParseExpression( src );
 
 	MatchToken( src, "]" );
 
@@ -646,70 +645,70 @@ Returns a register index
 #define	TOP_PRIORITY 4
 int idMaterial::ParseExpressionPriority( idLexer &src, int priority ) {
 	idToken token;
-	int		a;
 
 	if ( priority == 0 ) {
 		return ParseTerm( src );
 	}
 
-	a = ParseExpressionPriority( src, priority - 1 );
+	int a = ParseExpressionPriority( src, priority - 1 );
 
 	if ( TestMaterialFlag( MF_DEFAULTED ) ) {	// we have a parse error
 		return 0;
 	}
 
-	if ( !src.ReadToken( &token ) ) {
+	else if ( !src.ReadToken( &token ) ) {
 		// we won't get EOF in a real file, but we can
 		// when parsing from generated strings
 		return a;
 	}
 
-	if ( priority == 1 && token == "*" ) {
+	else if ( priority == 1 && token == "*" ) {
 		return ParseEmitOp( src, a, OP_TYPE_MULTIPLY, priority );
 	}
-	if ( priority == 1 && token == "/" ) {
+	else if ( priority == 1 && token == "/" ) {
 		return ParseEmitOp( src, a, OP_TYPE_DIVIDE, priority );
 	}
-	if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
+	else if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
 		return ParseEmitOp( src, a, OP_TYPE_MOD, priority );
 	}
-	if ( priority == 2 && token == "+" ) {
+	else if ( priority == 2 && token == "+" ) {
 		return ParseEmitOp( src, a, OP_TYPE_ADD, priority );
 	}
-	if ( priority == 2 && token == "-" ) {
+	else if ( priority == 2 && token == "-" ) {
 		return ParseEmitOp( src, a, OP_TYPE_SUBTRACT, priority );
 	}
-	if ( priority == 3 && token == ">" ) {
+	else if ( priority == 3 && token == ">" ) {
 		return ParseEmitOp( src, a, OP_TYPE_GT, priority );
 	}
-	if ( priority == 3 && token == ">=" ) {
+	else if ( priority == 3 && token == ">=" ) {
 		return ParseEmitOp( src, a, OP_TYPE_GE, priority );
 	}
-	if ( priority == 3 && token == "<" ) {
+	else if ( priority == 3 && token == "<" ) {
 		return ParseEmitOp( src, a, OP_TYPE_LT, priority );
 	}
-	if ( priority == 3 && token == "<=" ) {
+	else if ( priority == 3 && token == "<=" ) {
 		return ParseEmitOp( src, a, OP_TYPE_LE, priority );
 	}
-	if ( priority == 3 && token == "==" ) {
+	else if ( priority == 3 && token == "==" ) {
 		return ParseEmitOp( src, a, OP_TYPE_EQ, priority );
 	}
-	if ( priority == 3 && token == "!=" ) {
+	else if ( priority == 3 && token == "!=" ) {
 		return ParseEmitOp( src, a, OP_TYPE_NE, priority );
 	}
-	if ( priority == 4 && token == "&&" ) {
+	else if ( priority == 4 && token == "&&" ) {
 		return ParseEmitOp( src, a, OP_TYPE_AND, priority );
 	}
-	if ( priority == 4 && token == "||" ) {
+	else if ( priority == 4 && token == "||" ) {
 		return ParseEmitOp( src, a, OP_TYPE_OR, priority );
 	}
+	else {
+		// assume that anything else terminates the expression
+		// not too robust error checking...
 
-	// assume that anything else terminates the expression
-	// not too robust error checking...
+		src.UnreadToken( &token );
 
-	src.UnreadToken( &token );
-
-	return a;
+		return a;
+	}
 }
 
 /*
@@ -731,11 +730,11 @@ idMaterial::ClearStage
 */
 void idMaterial::ClearStage( shaderStage_t *ss ) {
 	ss->drawStateBits = 0;
-	ss->conditionRegister = GetExpressionConstant( 1 );
+	ss->conditionRegister = GetExpressionConstant( 1.0f );
 	ss->color.registers[0] =
 	ss->color.registers[1] =
 	ss->color.registers[2] =
-	ss->color.registers[3] = GetExpressionConstant( 1 );
+	ss->color.registers[3] = GetExpressionConstant( 1.0f );
 }
 
 /*
@@ -814,32 +813,32 @@ void idMaterial::ParseBlend( idLexer &src, shaderStage_t *stage ) {
 	}
 
 	// blending combinations
-	if ( !token.Icmp( "blend" ) ) {
+	else if ( !token.Icmp( "blend" ) ) {
 		stage->drawStateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 		return;
 	}
-	if ( !token.Icmp( "add" ) ) {
+	else if ( !token.Icmp( "add" ) ) {
 		stage->drawStateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
 		return;
 	}
-	if ( !token.Icmp( "filter" ) || !token.Icmp( "modulate" ) ) {
+	else if ( !token.Icmp( "filter" ) || !token.Icmp( "modulate" ) ) {
 		stage->drawStateBits = GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
 		return;
 	}
-	if (  !token.Icmp( "none" ) ) {
+	else if (  !token.Icmp( "none" ) ) {
 		// none is used when defining an alpha mask that doesn't draw
 		stage->drawStateBits = GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE;
 		return;
 	}
-	if ( !token.Icmp( "bumpmap" ) ) {
+	else if ( !token.Icmp( "bumpmap" ) ) {
 		stage->lighting = SL_BUMP;
 		return;
 	}
-	if ( !token.Icmp( "diffusemap" ) ) {
+	else if ( !token.Icmp( "diffusemap" ) ) {
 		stage->lighting = SL_DIFFUSE;
 		return;
 	}
-	if ( !token.Icmp( "specularmap" ) ) {
+	else if ( !token.Icmp( "specularmap" ) ) {
 		stage->lighting = SL_SPECULAR;
 		return;
 	}
@@ -874,7 +873,7 @@ void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) {
 		SetMaterialFlag( MF_DEFAULTED );
 		return;
 	}
-	if ( parm >= newStage->numVertexParms ) {
+	else if ( parm >= newStage->numVertexParms ) {
 		newStage->numVertexParms = parm+1;
 	}
 
@@ -892,8 +891,8 @@ void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) {
 
 	src.ReadTokenOnLine( &token );
 	if ( !token[0] || token.Icmp( "," ) ) {
-		newStage->vertexParms[parm][2] = GetExpressionConstant( 0 );
-		newStage->vertexParms[parm][3] = GetExpressionConstant( 1 );
+		newStage->vertexParms[parm][2] = GetExpressionConstant( 0.0f );
+		newStage->vertexParms[parm][3] = GetExpressionConstant( 1.0f );
 		return;
 	}
 
@@ -901,7 +900,7 @@ void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) {
 
 	src.ReadTokenOnLine( &token );
 	if ( !token[0] || token.Icmp( "," ) ) {
-		newStage->vertexParms[parm][3] = GetExpressionConstant( 1 );
+		newStage->vertexParms[parm][3] = GetExpressionConstant( 1.0f );
 		return;
 	}
 
@@ -916,18 +915,13 @@ idMaterial::ParseFragmentMap
 */
 void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 	const char			*str;
-	textureFilter_t		tf;
-	textureRepeat_t		trp;
-	textureDepth_t		td;
-	cubeFiles_t			cubeMap;
-	bool				allowPicmip;
 	idToken				token;
 
-	tf = TF_DEFAULT;
-	trp = TR_REPEAT;
-	td = TD_DEFAULT;
-	allowPicmip = true;
-	cubeMap = CF_2D;
+	textureFilter_t tf = TF_DEFAULT;
+	textureRepeat_t trp = TR_REPEAT;
+	textureDepth_t td = TD_DEFAULT;
+	cubeFiles_t cubeMap = CF_2D;
+	bool allowPicmip = true;
 
 	src.ReadTokenOnLine( &token );
 	int	unit = token.GetIntValue();
@@ -953,53 +947,54 @@ void idMaterial::ParseFragmentMap( idLexer &src, newShaderStage_t *newStage ) {
 			cubeMap = CF_NATIVE;
 			continue;
 		}
-		if ( !token.Icmp( "cameraCubeMap" ) ) {
+		else if ( !token.Icmp( "cameraCubeMap" ) ) {
 			cubeMap = CF_CAMERA;
 			continue;
 		}
-		if ( !token.Icmp( "nearest" ) ) {
+		else if ( !token.Icmp( "nearest" ) ) {
 			tf = TF_NEAREST;
 			continue;
 		}
-		if ( !token.Icmp( "linear" ) ) {
+		else if ( !token.Icmp( "linear" ) ) {
 			tf = TF_LINEAR;
 			continue;
 		}
-		if ( !token.Icmp( "clamp" ) ) {
+		else if ( !token.Icmp( "clamp" ) ) {
 			trp = TR_CLAMP;
 			continue;
 		}
-		if ( !token.Icmp( "noclamp" ) ) {
+		else if ( !token.Icmp( "noclamp" ) ) {
 			trp = TR_REPEAT;
 			continue;
 		}
-		if ( !token.Icmp( "zeroclamp" ) ) {
+		else if ( !token.Icmp( "zeroclamp" ) ) {
 			trp = TR_CLAMP_TO_ZERO;
 			continue;
 		}
-		if ( !token.Icmp( "alphazeroclamp" ) ) {
+		else if ( !token.Icmp( "alphazeroclamp" ) ) {
 			trp = TR_CLAMP_TO_ZERO_ALPHA;
 			continue;
 		}
-		if ( !token.Icmp( "forceHighQuality" ) ) {
+		else if ( !token.Icmp( "forceHighQuality" ) ) {
 			td = TD_HIGH_QUALITY;
 			continue;
 		}
 
-		if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) {
+		else if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) {
 			if ( !globalImages->image_ignoreHighQuality.GetInteger() ) {
 				td = TD_HIGH_QUALITY;
 			}
 			continue;
 		}
-		if ( !token.Icmp( "nopicmip" ) ) {
+		else if ( !token.Icmp( "nopicmip" ) ) {
 			allowPicmip = false;
 			continue;
 		}
-
-		// assume anything else is the image name
-		src.UnreadToken( &token );
-		break;
+		else {
+			// assume anything else is the image name
+			src.UnreadToken( &token );
+			break;
+		}
 	}
 	str = R_ParsePastImageProgram( src );
 
@@ -1090,8 +1085,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 	}
 
 	tf = TF_DEFAULT;
-	trp = trpDefault;
 	td = TD_DEFAULT;
+	trp = trpDefault;
 	allowPicmip = true;
 	cubeMap = CF_2D;
 
@@ -1108,42 +1103,44 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		if ( TestMaterialFlag( MF_DEFAULTED ) ) {	// we have a parse error
 			return;
 		}
-		if ( !src.ExpectAnyToken( &token ) ) {
+		else if ( !src.ExpectAnyToken( &token ) ) {
 			SetMaterialFlag( MF_DEFAULTED );
 			return;
 		}
 
 		// the close brace for the entire material ends the draw block
-		if ( token == "}" ) {
+		else if ( token == "}" ) {
 			break;
 		}
 
 		//BSM Nerve: Added for stage naming in the material editor
-		if( !token.Icmp( "name") ) {
-			src.SkipRestOfLine();
+		else if(  !token.Icmp( "name") ) {
+			src.SkipRestOfLine();	// Serp - I am not sure that this should be used here, materials may not be folded.
+									//        left it in for safety.
+			//src.ReadTokenOnLine( &token ); // replace with?
 			continue;
 		}
 
 		// image options
-		if ( !token.Icmp( "blend" ) ) {
+		else if ( !token.Icmp( "blend" ) ) {
 			ParseBlend( src, ss );
 			continue;
 		}
 
-		if (  !token.Icmp( "map" ) ) {
+		else if (  !token.Icmp( "map" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			continue;
 		}
 
-		if (  !token.Icmp( "remoteRenderMap" ) ) {
+		else if (  !token.Icmp( "remoteRenderMap" ) ) {
 			ts->dynamic = DI_REMOTE_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
 			continue;
 		}
 
-		if (  !token.Icmp( "mirrorRenderMap" ) ) {
+		else if (  !token.Icmp( "mirrorRenderMap" ) ) {
 			ts->dynamic = DI_MIRROR_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
@@ -1151,27 +1148,27 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		if (  !token.Icmp( "xrayRenderMap" ) ) {
+		else if (  !token.Icmp( "xrayRenderMap" ) ) {
 			ts->dynamic = DI_XRAY_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
-		if (  !token.Icmp( "screen" ) ) {
+		else if (  !token.Icmp( "screen" ) ) {
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
-		if (  !token.Icmp( "screen2" ) ) {
+		else if (  !token.Icmp( "screen2" ) ) {
 			ts->texgen = TG_SCREEN2;
 			continue;
 		}
-		if (  !token.Icmp( "glassWarp" ) ) {
+		else if (  !token.Icmp( "glassWarp" ) ) {
 			ts->texgen = TG_GLASSWARP;
 			continue;
 		}
 
-		if ( !token.Icmp( "videomap" ) ) {
+		else if ( !token.Icmp( "videomap" ) ) {
 			// note that videomaps will always be in clamp mode, so texture
 			// coordinates had better be in the 0 to 1 range
 			if ( !src.ReadToken( &token ) ) {
@@ -1191,7 +1188,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "soundmap" ) ) {
+		else if ( !token.Icmp( "soundmap" ) ) {
 			if ( !src.ReadToken( &token ) ) {
 				common->Warning( "missing parameter for 'soundmap' keyword in material '%s'", GetName() );
 				continue;
@@ -1201,67 +1198,67 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "cubeMap" ) ) {
+		else if ( !token.Icmp( "cubeMap" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_NATIVE;
 			continue;
 		}
 
-		if ( !token.Icmp( "cameraCubeMap" ) ) {
+		else if ( !token.Icmp( "cameraCubeMap" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_CAMERA;
 			continue;
 		}
 
-		if ( !token.Icmp( "ignoreAlphaTest" ) ) {
+		else if ( !token.Icmp( "ignoreAlphaTest" ) ) {
 			ss->ignoreAlphaTest = true;
 			continue;
 		}
-		if ( !token.Icmp( "nearest" ) ) {
+		else if ( !token.Icmp( "nearest" ) ) {
 			tf = TF_NEAREST;
 			continue;
 		}
-		if ( !token.Icmp( "linear" ) ) {
+		else if ( !token.Icmp( "linear" ) ) {
 			tf = TF_LINEAR;
 			continue;
 		}
-		if ( !token.Icmp( "clamp" ) ) {
+		else if ( !token.Icmp( "clamp" ) ) {
 			trp = TR_CLAMP;
 			continue;
 		}
-		if ( !token.Icmp( "noclamp" ) ) {
+		else if ( !token.Icmp( "noclamp" ) ) {
 			trp = TR_REPEAT;
 			continue;
 		}
-		if ( !token.Icmp( "zeroclamp" ) ) {
+		else if ( !token.Icmp( "zeroclamp" ) ) {
 			trp = TR_CLAMP_TO_ZERO;
 			continue;
 		}
-		if ( !token.Icmp( "alphazeroclamp" ) ) {
+		else if ( !token.Icmp( "alphazeroclamp" ) ) {
 			trp = TR_CLAMP_TO_ZERO_ALPHA;
 			continue;
 		}
-		if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) {
+		else if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) {
 			if ( !globalImages->image_ignoreHighQuality.GetInteger() ) {
 				td = TD_HIGH_QUALITY;
 			}
 			continue;
 		}
-		if ( !token.Icmp( "forceHighQuality" ) ) {
+		else if ( !token.Icmp( "forceHighQuality" ) ) {
 			td = TD_HIGH_QUALITY;
 			continue;
 		}
-		if ( !token.Icmp( "nopicmip" ) ) {
+		else if ( !token.Icmp( "nopicmip" ) ) {
 			allowPicmip = false;
 			continue;
 		}
-		if ( !token.Icmp( "vertexColor" ) ) {
+		else if ( !token.Icmp( "vertexColor" ) ) {
 			ss->vertexColor = SVC_MODULATE;
 			continue;
 		}
-		if ( !token.Icmp( "inverseVertexColor" ) ) {
+		else if ( !token.Icmp( "inverseVertexColor" ) ) {
 			ss->vertexColor = SVC_INVERSE_MODULATE;
 			continue;
 		}
@@ -1269,7 +1266,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		// privatePolygonOffset
 		else if ( !token.Icmp( "privatePolygonOffset" ) ) {
 			if ( !src.ReadTokenOnLine( &token ) ) {
-				ss->privatePolygonOffset = 1;
+				ss->privatePolygonOffset = 1.0f;
 				continue;
 			}
 			// explict larger (or negative) offset
@@ -1279,7 +1276,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 
 		// texture coordinate generation
-		if ( !token.Icmp( "texGen" ) ) {
+		else if ( !token.Icmp( "texGen" ) ) {
 			src.ExpectAnyToken( &token );
 			if ( !token.Icmp( "normal" ) ) {
 				ts->texgen = TG_DIFFUSE_CUBE;
@@ -1298,69 +1295,67 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			}
 			continue;
 		}
-		if ( !token.Icmp( "scroll" ) || !token.Icmp( "translate" ) ) {
+		else if ( !token.Icmp( "scroll" ) || !token.Icmp( "translate" ) ) {
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
-			matrix[0][0] = GetExpressionConstant( 1 );
-			matrix[0][1] = GetExpressionConstant( 0 );
+			matrix[0][0] = GetExpressionConstant( 1.0f );
+			matrix[0][1] = GetExpressionConstant( 0.0f );
 			matrix[0][2] = a;
-			matrix[1][0] = GetExpressionConstant( 0 );
-			matrix[1][1] = GetExpressionConstant( 1 );
+			matrix[1][0] = GetExpressionConstant( 0.0f );
+			matrix[1][1] = GetExpressionConstant( 1.0f );
 			matrix[1][2] = b;
 
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "scale" ) ) {
+		else if ( !token.Icmp( "scale" ) ) {
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
 			// this just scales without a centering
 			matrix[0][0] = a;
-			matrix[0][1] = GetExpressionConstant( 0 );
-			matrix[0][2] = GetExpressionConstant( 0 );
-			matrix[1][0] = GetExpressionConstant( 0 );
+			matrix[0][1] = GetExpressionConstant( 0.0f );
+			matrix[0][2] = GetExpressionConstant( 0.0f );
+			matrix[1][0] = GetExpressionConstant( 0.0f );
 			matrix[1][1] = b;
-			matrix[1][2] = GetExpressionConstant( 0 );
+			matrix[1][2] = GetExpressionConstant( 0.0f );
 
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "centerScale" ) ) {
+		else if ( !token.Icmp( "centerScale" ) ) {
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
 			// this subtracts 0.5, then scales, then adds 0.5
 			matrix[0][0] = a;
-			matrix[0][1] = GetExpressionConstant( 0 );
-			matrix[0][2] = EmitOp( GetExpressionConstant( 0.5 ), EmitOp( GetExpressionConstant( 0.5 ), a, OP_TYPE_MULTIPLY ), OP_TYPE_SUBTRACT );
-			matrix[1][0] = GetExpressionConstant( 0 );
+			matrix[0][1] = GetExpressionConstant( 0.0f );
+			matrix[0][2] = EmitOp( GetExpressionConstant( 0.5f ), EmitOp( GetExpressionConstant( 0.5f ), a, OP_TYPE_MULTIPLY ), OP_TYPE_SUBTRACT );
+			matrix[1][0] = GetExpressionConstant( 0.0f );
 			matrix[1][1] = b;
-			matrix[1][2] = EmitOp( GetExpressionConstant( 0.5 ), EmitOp( GetExpressionConstant( 0.5 ), b, OP_TYPE_MULTIPLY ), OP_TYPE_SUBTRACT );
+			matrix[1][2] = EmitOp( GetExpressionConstant( 0.5f ), EmitOp( GetExpressionConstant( 0.5f ), b, OP_TYPE_MULTIPLY ), OP_TYPE_SUBTRACT );
 
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "shear" ) ) {
+		else if ( !token.Icmp( "shear" ) ) {
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
 			// this subtracts 0.5, then shears, then adds 0.5
-			matrix[0][0] = GetExpressionConstant( 1 );
+			matrix[0][0] = GetExpressionConstant( 1.0f );
 			matrix[0][1] = a;
-			matrix[0][2] = EmitOp( GetExpressionConstant( -0.5 ), a, OP_TYPE_MULTIPLY );
+			matrix[0][2] = EmitOp( GetExpressionConstant( -0.5f ), a, OP_TYPE_MULTIPLY );
 			matrix[1][0] = b;
-			matrix[1][1] = GetExpressionConstant( 1 );
-			matrix[1][2] = EmitOp( GetExpressionConstant( -0.5 ), b, OP_TYPE_MULTIPLY );
+			matrix[1][1] = GetExpressionConstant( 1.0f );
+			matrix[1][2] = EmitOp( GetExpressionConstant( -0.5f ), b, OP_TYPE_MULTIPLY );
 
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "rotate" ) ) {
+		else if ( !token.Icmp( "rotate" ) ) {
 			const idDeclTable *table;
-			int		sinReg, cosReg;
-
 			// in cycles
 			a = ParseExpression( src );
 
@@ -1370,7 +1365,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				SetMaterialFlag( MF_DEFAULTED );
 				return;
 			}
-			sinReg = EmitOp( table->Index(), a, OP_TYPE_TABLE );
+			const int sinReg = EmitOp( table->Index(), a, OP_TYPE_TABLE );
 
 			table = static_cast<const idDeclTable *>( declManager->FindType( DECL_TABLE, "cosTable", false ) );
 			if ( !table ) {
@@ -1378,51 +1373,51 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				SetMaterialFlag( MF_DEFAULTED );
 				return;
 			}
-			cosReg = EmitOp( table->Index(), a, OP_TYPE_TABLE );
+			const int cosReg = EmitOp( table->Index(), a, OP_TYPE_TABLE );
 
 			// this subtracts 0.5, then rotates, then adds 0.5
 			matrix[0][0] = cosReg;
-			matrix[0][1] = EmitOp( GetExpressionConstant( 0 ), sinReg, OP_TYPE_SUBTRACT );
-			matrix[0][2] = EmitOp( EmitOp( EmitOp( GetExpressionConstant( -0.5 ), cosReg, OP_TYPE_MULTIPLY ), 
-										EmitOp( GetExpressionConstant( 0.5 ), sinReg, OP_TYPE_MULTIPLY ), OP_TYPE_ADD ),
-										GetExpressionConstant( 0.5 ), OP_TYPE_ADD );
+			matrix[0][1] = EmitOp( GetExpressionConstant( 0.0f ), sinReg, OP_TYPE_SUBTRACT );
+			matrix[0][2] = EmitOp( EmitOp( EmitOp( GetExpressionConstant( -0.5f ), cosReg, OP_TYPE_MULTIPLY ), 
+										EmitOp( GetExpressionConstant( 0.5f ), sinReg, OP_TYPE_MULTIPLY ), OP_TYPE_ADD ),
+										GetExpressionConstant( 0.5f ), OP_TYPE_ADD );
 
 			matrix[1][0] = sinReg;
 			matrix[1][1] = cosReg;
-			matrix[1][2] = EmitOp( EmitOp( EmitOp( GetExpressionConstant( -0.5 ), sinReg, OP_TYPE_MULTIPLY ), 
-										EmitOp( GetExpressionConstant( -0.5 ), cosReg, OP_TYPE_MULTIPLY ), OP_TYPE_ADD ),
-										GetExpressionConstant( 0.5 ), OP_TYPE_ADD );
+			matrix[1][2] = EmitOp( EmitOp( EmitOp( GetExpressionConstant( -0.5f ), sinReg, OP_TYPE_MULTIPLY ), 
+										EmitOp( GetExpressionConstant( -0.5f ), cosReg, OP_TYPE_MULTIPLY ), OP_TYPE_ADD ),
+										GetExpressionConstant( 0.5f ), OP_TYPE_ADD );
 
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
 
 		// color mask options
-		if ( !token.Icmp( "maskRed" ) ) {
+		else if ( !token.Icmp( "maskRed" ) ) {
 			ss->drawStateBits |= GLS_REDMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskGreen" ) ) {
+		else if ( !token.Icmp( "maskGreen" ) ) {
 			ss->drawStateBits |= GLS_GREENMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskBlue" ) ) {
+		else if ( !token.Icmp( "maskBlue" ) ) {
 			ss->drawStateBits |= GLS_BLUEMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskAlpha" ) ) {
+		else if ( !token.Icmp( "maskAlpha" ) ) {
 			ss->drawStateBits |= GLS_ALPHAMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskColor" ) ) {
+		else if ( !token.Icmp( "maskColor" ) ) {
 			ss->drawStateBits |= GLS_COLORMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskDepth" ) ) {
+		else if ( !token.Icmp( "maskDepth" ) ) {
 			ss->drawStateBits |= GLS_DEPTHMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "alphaTest" ) ) {
+		else if ( !token.Icmp( "alphaTest" ) ) {
 			ss->hasAlphaTest = true;
 			ss->alphaTestRegister = ParseExpression( src );
 			coverage = MC_PERFORATED;
@@ -1430,7 +1425,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}		
 
 		// shorthand for 2D modulated
-		if ( !token.Icmp( "colored" ) ) {
+		else if ( !token.Icmp( "colored" ) ) {
 			ss->color.registers[0] = EXP_REG_PARM0;
 			ss->color.registers[1] = EXP_REG_PARM1;
 			ss->color.registers[2] = EXP_REG_PARM2;
@@ -1438,8 +1433,7 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			pd->registersAreConstant = false;
 			continue;
 		}
-
-		if ( !token.Icmp( "color" ) ) {
+		else if ( !token.Icmp( "color" ) ) {
 			ss->color.registers[0] = ParseExpression( src );
 			MatchToken( src, "," );
 			ss->color.registers[1] = ParseExpression( src );
@@ -1449,57 +1443,57 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "red" ) ) {
+		else if ( !token.Icmp( "red" ) ) {
 			ss->color.registers[0] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "green" ) ) {
+		else if ( !token.Icmp( "green" ) ) {
 			ss->color.registers[1] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "blue" ) ) {
+		else if ( !token.Icmp( "blue" ) ) {
 			ss->color.registers[2] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "alpha" ) ) {
+		else if ( !token.Icmp( "alpha" ) ) {
 			ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "rgb" ) ) {
+		else if ( !token.Icmp( "rgb" ) ) {
 			ss->color.registers[0] = ss->color.registers[1] = 
 				ss->color.registers[2] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "rgba" ) ) {
+		else if ( !token.Icmp( "rgba" ) ) {
 			ss->color.registers[0] = ss->color.registers[1] = 
 				ss->color.registers[2] = ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
 
-		if ( !token.Icmp( "if" ) ) {
+		else if ( !token.Icmp( "if" ) ) {
 			ss->conditionRegister = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "program" ) ) {
+		else if ( !token.Icmp( "program" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "fragmentProgram" ) ) {
+		else if ( !token.Icmp( "fragmentProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "vertexProgram" ) ) {
+		else if ( !token.Icmp( "vertexProgram" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "megaTexture" ) ) {
+		else if ( !token.Icmp( "megaTexture" ) ) {
 			if ( src.ReadTokenOnLine( &token ) ) {
 				newStage.megaTexture = new idMegaTexture;
 				if ( !newStage.megaTexture->InitFromMegaFile( token.c_str() ) ) {
@@ -1513,23 +1507,20 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			}
 		}
 
-
-		if ( !token.Icmp( "vertexParm" ) ) {
+		else if ( !token.Icmp( "vertexParm" ) ) {
 			ParseVertexParm( src, &newStage );
 			continue;
 		}
 
-		if (  !token.Icmp( "fragmentMap" ) ) {	
+		else if (  !token.Icmp( "fragmentMap" ) ) {	
 			ParseFragmentMap( src, &newStage );
 			continue;
+		} else {
+			common->Warning( "unknown token '%s' in material '%s'", token.c_str(), GetName() );
+			SetMaterialFlag( MF_DEFAULTED );
+			return;
 		}
-
-
-		common->Warning( "unknown token '%s' in material '%s'", token.c_str(), GetName() );
-		SetMaterialFlag( MF_DEFAULTED );
-		return;
 	}
-
 
 	// if we are using newStage, allocate a copy of it
 	if ( newStage.fragmentProgram || newStage.vertexProgram ) {
@@ -1581,36 +1572,36 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		return;
 	}
 
-	if ( !token.Icmp( "sprite" ) ) {
+	else if ( !token.Icmp( "sprite" ) ) {
 		deform = DFRM_SPRITE;
 		cullType = CT_TWO_SIDED;
 		SetMaterialFlag( MF_NOSHADOWS );
 		return;
 	}
-	if ( !token.Icmp( "tube" ) ) {
+	else if ( !token.Icmp( "tube" ) ) {
 		deform = DFRM_TUBE;
 		cullType = CT_TWO_SIDED;
 		SetMaterialFlag( MF_NOSHADOWS );
 		return;
 	}
-	if ( !token.Icmp( "flare" ) ) {
+	else if ( !token.Icmp( "flare" ) ) {
 		deform = DFRM_FLARE;
 		cullType = CT_TWO_SIDED;
 		deformRegisters[0] = ParseExpression( src );
 		SetMaterialFlag( MF_NOSHADOWS );
 		return;
 	}
-	if ( !token.Icmp( "expand" ) ) {
+	else if ( !token.Icmp( "expand" ) ) {
 		deform = DFRM_EXPAND;
 		deformRegisters[0] = ParseExpression( src );
 		return;
 	}
-	if ( !token.Icmp( "move" ) ) {
+	else if ( !token.Icmp( "move" ) ) {
 		deform = DFRM_MOVE;
 		deformRegisters[0] = ParseExpression( src );
 		return;
 	}
-	if ( !token.Icmp( "turbulent" ) ) {
+	else if ( !token.Icmp( "turbulent" ) ) {
 		deform = DFRM_TURB;
 
 		if ( !src.ExpectAnyToken( &token ) ) {
@@ -1625,11 +1616,11 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		deformRegisters[2] = ParseExpression( src );
 		return;
 	}
-	if ( !token.Icmp( "eyeBall" ) ) {
+	else if ( !token.Icmp( "eyeBall" ) ) {
 		deform = DFRM_EYEBALL;
 		return;
 	}
-	if ( !token.Icmp( "particle" ) ) {
+	else if ( !token.Icmp( "particle" ) ) {
 		deform = DFRM_PARTICLE;
 		if ( !src.ExpectAnyToken( &token ) ) {
 			src.Warning( "deform particle missing particle name" );
@@ -1639,7 +1630,7 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		deformDecl = declManager->FindType( DECL_PARTICLE, token.c_str(), true );
 		return;
 	}
-	if ( !token.Icmp( "particle2" ) ) {
+	else if ( !token.Icmp( "particle2" ) ) {
 		deform = DFRM_PARTICLE2;
 		if ( !src.ExpectAnyToken( &token ) ) {
 			src.Warning( "deform particle missing particle name" );
@@ -1649,8 +1640,10 @@ void idMaterial::ParseDeform( idLexer &src ) {
 		deformDecl = declManager->FindType( DECL_PARTICLE, token.c_str(), true );
 		return;
 	}
-	src.Warning( "Bad deform type '%s'", token.c_str() );
-	SetMaterialFlag( MF_DEFAULTED );
+	else {
+		src.Warning( "Bad deform type '%s'", token.c_str() );
+		SetMaterialFlag( MF_DEFAULTED );
+	}
 }
 
 
@@ -1697,10 +1690,6 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 		return;
 	}
 
-	if ( numStages == MAX_SHADER_STAGES ) {
-		return;
-	}
-
 	if ( !hasBump ) {
 		idStr::snPrintf( buffer, sizeof( buffer ), "blend bumpmap\nmap _flat\n}\n" );
 		newSrc.LoadMemory( buffer, strlen(buffer), "bumpmap" );
@@ -1709,14 +1698,9 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 		newSrc.FreeSource();
 	}
 
-	if ( !hasDiffuse && !hasSpecular && !hasReflection ) {
-		idStr::snPrintf( buffer, sizeof( buffer ), "blend diffusemap\nmap _white\n}\n" );
-		newSrc.LoadMemory( buffer, strlen(buffer), "diffusemap" );
-		newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-		ParseStage( newSrc, trpDefault );
-		newSrc.FreeSource();
+	if ( numStages == MAX_SHADER_STAGES ) {
+		return;
 	}
-
 }
 
 /*
@@ -1775,21 +1759,16 @@ If there is any error during parsing, defaultShader will be set.
 */
 void idMaterial::ParseMaterial( idLexer &src ) {
 	idToken		token;
-	int			s;
 	char		buffer[1024];
 	const char	*str;
 	idLexer		newSrc;
-	int			i;
-
-	s = 0;
 
 	numOps = 0;
 	numRegisters = EXP_REG_NUM_PREDEFINED;	// leave space for the parms to be copied in
-	for ( i = 0 ; i < numRegisters ; i++ ) {
+	numStages = 0;
+	for ( int i = 0 ; i < numRegisters ; i++ ) {
 		pd->registerIsTemporary[i] = true;		// they aren't constants that can be folded
 	}
-
-	numStages = 0;
 
 	textureRepeat_t	trpDefault = TR_REPEAT;		// allow a global setting for repeat
 
@@ -1797,19 +1776,19 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		if ( TestMaterialFlag( MF_DEFAULTED ) ) {	// we have a parse error
 			return;
 		}
-		if ( !src.ExpectAnyToken( &token ) ) {
+		else if ( !src.ExpectAnyToken( &token ) ) {
 			SetMaterialFlag( MF_DEFAULTED );
 			return;
 		}
 
 		// end of material definition
-		if ( token == "}" ) {
+		else if ( token == "}" ) {
 			break;
 		}
 		else if ( !token.Icmp( "qer_editorimage") ) {
 			src.ReadTokenOnLine( &token );
 			editorImageName = token.c_str();
-			src.SkipRestOfLine();
+			//src.SkipRestOfLine(); // Serp - I am not sure that this should be used here, materials may not be folded.
 			continue;
 		}
 		// description
@@ -1822,13 +1801,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( CheckSurfaceParm( &token ) ) {
 			continue;
 		}
-
-
 		// polygonOffset
 		else if ( !token.Icmp( "polygonOffset" ) ) {
 			SetMaterialFlag( MF_POLYGONOFFSET );
 			if ( !src.ReadTokenOnLine( &token ) ) {
-				polygonOffset = 1;
+				polygonOffset = 1.0f;
 				continue;
 			}
 			// explict larger (or negative) offset
@@ -1950,9 +1927,8 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// light volumes
 		else if ( !token.Icmp( "lightFalloffImage" ) ) {
 			str = R_ParsePastImageProgram( src );
-			idStr	copy;
+			idStr copy = str;	// so other things don't step on it
 
-			copy = str;	// so other things don't step on it
 			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT );
 			continue;
 		}
@@ -2030,51 +2006,31 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		// DECAL_MACRO for backwards compatibility with the preprocessor macros
 		else if ( !token.Icmp( "DECAL_MACRO" ) ) {
-			// polygonOffset
-			SetMaterialFlag( MF_POLYGONOFFSET );
-			polygonOffset = 1;
+			SetMaterialFlag( MF_POLYGONOFFSET );				// polygonOffset
+			polygonOffset = 1.0f;
 
-			// discrete and nonsolid
-			surfaceFlags |= SURF_DISCRETE;
-			contentFlags &= ~CONTENTS_SOLID;
+			sort = SS_DECAL;									// sort decal
+			surfaceFlags |= SURF_DISCRETE;						// discrete
+			contentFlags &= ~CONTENTS_SOLID;					// nonsolid
 
-			// sort decal
-			sort = SS_DECAL;
-
-			// noShadows
-			SetMaterialFlag( MF_NOSHADOWS );
+			SetMaterialFlag( MF_NOSHADOWS );					// noShadows
 			continue;
 		}
 		// TWOSIDED_DECAL_MACRO to shorten some definitions
 		else if ( !token.Icmp( "TWOSIDED_DECAL_MACRO" ) ) {
-			// polygonOffset
-			SetMaterialFlag( MF_POLYGONOFFSET );
-			polygonOffset = 1;
+			SetMaterialFlag( MF_POLYGONOFFSET );				// polygonOffset
+			polygonOffset = 1.0f;
 
-			// sort decal
-			sort = SS_DECAL;
+			sort = SS_DECAL;									// sort decal
+			surfaceFlags |= ( SURF_DISCRETE | SURF_NOIMPACT );	// discrete and noimpact
+			contentFlags &= ~CONTENTS_SOLID;					// nonsolid
+			cullType = CT_TWO_SIDED;							// twosided
 
-			// discrete and nonsolid
-			surfaceFlags |= SURF_DISCRETE;
-			contentFlags &= ~CONTENTS_SOLID;
-
-			// noimpact
-			surfaceFlags |= SURF_NOIMPACT;
-
-			// nonsolid
-			contentFlags &= ~CONTENTS_SOLID;
-
-			// twosided
-			cullType = CT_TWO_SIDED;
 			// twoSided implies no-shadows, because the shadow
 			// volume would be coplanar with the surface, giving depth fighting
 			// we could make this no-self-shadows, but it may be more important
 			// to receive shadows from no-self-shadow monsters
-
-			// noShadows
-			SetMaterialFlag( MF_NOSHADOWS );
-			// noSelfShadows
-			SetMaterialFlag( MF_NOSELFSHADOW );
+			SetMaterialFlag( MF_NOSHADOWS | MF_NOSELFSHADOW );	// noShadows and noSelfShadows
 
 			// translucent
 			coverage = MC_TRANSLUCENT;
@@ -2082,18 +2038,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		}
 		// PARTICLE_MACRO to shorten some definitions
 		else if ( !token.Icmp( "PARTICLE_MACRO" ) ) {
-			// discrete
-			surfaceFlags |= SURF_DISCRETE;
-			// noimpact
-			surfaceFlags |= SURF_NOIMPACT;
-			// nonsolid
-			contentFlags &= ~CONTENTS_SOLID;
-			// noShadows
-			SetMaterialFlag( MF_NOSHADOWS );
-			// noSelfShadows
-			SetMaterialFlag( MF_NOSELFSHADOW );
-			// translucent
-			coverage = MC_TRANSLUCENT;
+			surfaceFlags |= ( SURF_DISCRETE | SURF_NOIMPACT );	// discrete and noimpact
+			contentFlags &= ~CONTENTS_SOLID;					// nonsolid
+			SetMaterialFlag( MF_NOSHADOWS | MF_NOSELFSHADOW );	// noShadows and noSelfShadows
+			
+			coverage = MC_TRANSLUCENT;							// translucent
 			continue;
 		}
 		// GLASS_MACRO to shorten some definitions
@@ -2103,11 +2052,9 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			// volume would be coplanar with the surface, giving depth fighting
 			// we could make this no-self-shadows, but it may be more important
 			// to receive shadows from no-self-shadow monsters
-			SetMaterialFlag( MF_NOSHADOWS );
-			// noSelfShadows
-			SetMaterialFlag( MF_NOSELFSHADOW );
-			// translucent
-			coverage = MC_TRANSLUCENT;
+			SetMaterialFlag( MF_NOSHADOWS | MF_NOSELFSHADOW );	// noShadows and noSelfShadows
+
+			coverage = MC_TRANSLUCENT;							// translucent
 			continue;
 		}
 		else if ( token == "{" ) {
@@ -2116,7 +2063,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			continue;
 		}
 		else {
-			common->Warning( "unknown general material parameter '%s' in '%s'", token.c_str(), GetName() );
+			common->Warning( "Unknown general material parameter '%s' in '%s'", token.c_str(), GetName() );
 			SetMaterialFlag( MF_DEFAULTED );
 			return;
 		}
@@ -2136,8 +2083,8 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 	// we can't just call ReceivesLighting(), because the stages are still
 	// in temporary form
 	if ( cullType == CT_TWO_SIDED ) {
-		for ( i = 0 ; i < numStages ; i++ ) {
-			if ( pd->parseStages[i].lighting != SL_AMBIENT || pd->parseStages[i].texture.texgen != TG_EXPLICIT ) {
+		for ( int l = 0 ; l < numStages ; l++ ) {
+			if ( pd->parseStages[l].lighting != SL_AMBIENT || pd->parseStages[l].texture.texgen != TG_EXPLICIT ) {
 				if ( cullType == CT_TWO_SIDED ) {
 					cullType = CT_FRONT_SIDED;
 					shouldCreateBackSides = true;
@@ -2149,11 +2096,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 
 	// currently a surface can only have one unique texgen for all the stages on old hardware
 	texgen_t firstGen = TG_EXPLICIT;
-	for ( i = 0; i < numStages; i++ ) {
-		if ( pd->parseStages[i].texture.texgen != TG_EXPLICIT ) {
+	for ( int k = 0; k < numStages; k++ ) {
+		if ( pd->parseStages[k].texture.texgen != TG_EXPLICIT ) {
 			if ( firstGen == TG_EXPLICIT ) {
-				firstGen = pd->parseStages[i].texture.texgen;
-			} else if ( firstGen != pd->parseStages[i].texture.texgen ) {
+				firstGen = pd->parseStages[k].texture.texgen;
+			} else if ( firstGen != pd->parseStages[k].texture.texgen ) {
 				common->Warning( "material '%s' has multiple stages with a texgen", GetName() );
 				break;
 			}
@@ -2241,7 +2188,7 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 			( pd->parseStages[0].drawStateBits & GLS_SRCBLEND_BITS ) == GLS_SRCBLEND_ONE_MINUS_DST_ALPHA
 			) {
 			// blended with the destination
-				coverage = MC_TRANSLUCENT;
+			coverage = MC_TRANSLUCENT;
 		} else {
 			coverage = MC_OPAQUE;
 		}
@@ -2257,9 +2204,9 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 
 	// if we are translucent, draw with an alpha in the editor
 	if ( coverage == MC_TRANSLUCENT ) {
-		editorAlpha = 0.5;
+		editorAlpha = 0.5f;
 	} else {
-		editorAlpha = 1.0;
+		editorAlpha = 1.0f;
 	}
 
 	// the sorts can make reasonable defaults
@@ -2397,16 +2344,17 @@ const char *opNames[] = {
 	"OP_TYPE_EQ",
 	"OP_TYPE_NE",
 	"OP_TYPE_AND",
-	"OP_TYPE_OR"
+	"OP_TYPE_OR",
+	"OP_TYPE_SOUND"
 };
 
 void idMaterial::Print() const {
-	int			i;
+	int i;
 
 	for ( i = EXP_REG_NUM_PREDEFINED ; i < GetNumRegisters() ; i++ ) {
 		common->Printf( "register %i: %f\n", i, expressionRegisters[i] );
 	}
-	common->Printf( "\n" );
+
 	for ( i = 0 ; i < numOps ; i++ ) {
 		const expOp_t *op = &ops[i];
 		if ( op->opType == OP_TYPE_TABLE ) {
@@ -2455,7 +2403,6 @@ set to their apropriate values.
 void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MAX_ENTITY_SHADER_PARMS],
 									const viewDef_t *view, idSoundEmitter *soundEmitter ) const {
 	int		i, b;
-	expOp_t	*op;
 
 	// copy the material constants
 	for ( i = EXP_REG_NUM_PREDEFINED ; i < numRegisters ; i++ ) {
@@ -2485,7 +2432,14 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 	registers[EXP_REG_GLOBAL6] = view->renderView.shaderParms[6];
 	registers[EXP_REG_GLOBAL7] = view->renderView.shaderParms[7];
 
-	op = ops;
+
+	expOp_t	*op = ops;
+
+	if ( !op && numOps ) {
+		common->FatalError( "R_EvaluateExpression: NULL operators pointer" );
+		return;
+	}
+
 	for ( i = 0 ; i < numOps ; i++, op++ ) {
 		switch( op->opType ) {
 		case OP_TYPE_ADD:
@@ -2502,20 +2456,13 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 			break;
 		case OP_TYPE_MOD:
 			b = (int)registers[op->b];
-			b = b != 0 ? b : 1;
+			b = ( b != 0 ) ? b : 1;
 			registers[op->c] = (int)registers[op->a] % b;
 			break;
 		case OP_TYPE_TABLE:
 			{
 				const idDeclTable *table = static_cast<const idDeclTable *>( declManager->DeclByIndex( DECL_TABLE, op->a ) );
 				registers[op->c] = table->TableLookup( registers[op->b] );
-			}
-			break;
-		case OP_TYPE_SOUND:
-			if ( soundEmitter ) {
-				registers[op->c] = soundEmitter->CurrentAmplitude();
-			} else {
-				registers[op->c] = 0;
 			}
 			break;
 		case OP_TYPE_GT:
@@ -2542,11 +2489,17 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 		case OP_TYPE_OR:
 			registers[op->c] = registers[ op->a ] || registers[op->b];
 			break;
+		case OP_TYPE_SOUND:
+			if ( soundEmitter ) {
+				registers[op->c] = soundEmitter->CurrentAmplitude();
+			} else {
+				registers[op->c] = 0.0f;
+			}
+			break;
 		default:
 			common->FatalError( "R_EvaluateExpression: bad opcode" );
 		}
 	}
-
 }
 
 /*
@@ -2723,23 +2676,21 @@ idMaterial::SetDefaultText
 */
 bool idMaterial::SetDefaultText( void ) {
 	// if there exists an image with the same name
-	if ( 1 ) { //fileSystem->ReadFile( GetName(), NULL ) != -1 ) {
-		char generated[2048];
-		idStr::snPrintf( generated, sizeof( generated ), 
-						"material %s // IMPLICITLY GENERATED\n"
-						"{\n"
-						"{\n"
-						"blend blend\n"
-						"colored\n"
-						"map \"%s\"\n"
-						"clamp\n"
-						"}\n"
-						"}\n", GetName(), GetName() );
-		SetText( generated );
-		return true;
-	} else {
-		return false;
-	}
+	//if ( 1 ) { //fileSystem->ReadFile( GetName(), NULL ) != -1 ) {
+	char generated[2048];
+	idStr::snPrintf( generated, sizeof( generated ), 
+					"material %s // IMPLICITLY GENERATED\n"
+					"{\n"
+					"\t"	"{\n"
+					"\t"	"blend blend\n"
+					"\t"	"colored\n"
+					"\t"	"map \"%s\"\n"
+					"\t"	"clamp\n"
+					"\t"	"}\n"
+					"}\n", GetName(), GetName() );
+	SetText( generated );
+
+	return true;
 }
 
 /*
@@ -2749,12 +2700,12 @@ idMaterial::DefaultDefinition
 */
 const char *idMaterial::DefaultDefinition() const {
 	return
-		"{\n"
+	"{\n"
 	"\t"	"{\n"
-	"\t\t"		"blend\tblend\n"
-	"\t\t"		"map\t\t_default\n"
+	"\t\t"	"blend\tblend\n"
+	"\t\t"	"map\t\t_default\n"
 	"\t"	"}\n"
-		"}";
+	"}";
 }
 
 
@@ -2777,8 +2728,7 @@ const shaderStage_t *idMaterial::GetBumpStage( void ) const {
 idMaterial::ReloadImages
 ===================
 */
-void idMaterial::ReloadImages( bool force ) const
-{
+void idMaterial::ReloadImages( bool force ) const {
 	for ( int i = 0 ; i < numStages ; i++ ) {
 		if ( stages[i].newStage ) {
 			for ( int j = 0 ; j < stages[i].newStage->numFragmentProgramImages ; j++ ) {
