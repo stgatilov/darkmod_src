@@ -263,6 +263,7 @@ void idCommonLocal::BeginRedirect( char *buffer, int buffersize, void (*flush)( 
 	if ( !buffer || !buffersize || !flush ) {
 		return;
 	}
+
 	rd_buffer = buffer;
 	rd_buffersize = buffersize;
 	rd_flush = flush;
@@ -300,6 +301,7 @@ BOOL CALLBACK EnumWindowsProc( HWND hwnd, LPARAM lParam ) {
 		com_hwndMsg = hwnd;
 		return FALSE;
 	}
+
 	return TRUE;
 }
 
@@ -510,7 +512,7 @@ void idCommonLocal::DPrintf( const char *fmt, ... ) {
 	bool temp = com_refreshOnPrint;
 	com_refreshOnPrint = false;
 
-	Printf( S_COLOR_RED"%s", msg );
+	Printf( S_COLOR_RED "%s", msg );
 
 	com_refreshOnPrint = temp;
 }
@@ -535,7 +537,7 @@ void idCommonLocal::DWarning( const char *fmt, ... ) {
 	va_end( argptr );
 	msg[sizeof(msg)-1] = '\0';
 
-	Printf( S_COLOR_YELLOW "WARNING:%s\n", msg );
+	Printf( S_COLOR_YELLOW "WARNING:" S_COLOR_RED "%s\n", msg );
 }
 
 /*
@@ -552,7 +554,7 @@ void idCommonLocal::Warning( const char *fmt, ... ) {
 	va_start( argptr, fmt );
 	idStr::vsnPrintf( msg, sizeof(msg), fmt, argptr );
 	va_end( argptr );
-	msg[sizeof(msg)-1] = 0;
+	msg[sizeof(msg)-1] = '\0';
 
 	Printf( S_COLOR_YELLOW "WARNING:" S_COLOR_RED "%s\n", msg );
 
@@ -626,7 +628,7 @@ void idCommonLocal::DumpWarnings( void ) {
 			warningFile->Printf( "\n%d warnings.\n", warningList.Num() );
 		}
 
-		warningFile->Printf( "\n\n-------------- Errors ---------------\n\n" );
+		warningFile->Printf( "\n-------------- Errors ---------------\n\n" );
 		errorList.Sort();
 		for ( i = 0; i < errorList.Num(); i++ ) {
 			errorList[i].RemoveColors();
@@ -722,11 +724,11 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 		com_errorEntered = 0;
 		throw idException( errorMessage );
 	} else if ( code == ERP_DROP ) {
-		Printf( "********************\nERROR: %s\n********************\n", errorMessage );
+		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", errorMessage );
 		com_errorEntered = 0;
 		throw idException( errorMessage );
 	} else {
-		Printf( "********************\nERROR: %s\n********************\n", errorMessage );
+		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", errorMessage );
 	}
 
 	if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
@@ -756,7 +758,7 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 		// full screen rendering window covering the
 		// error dialog
 
-		Sys_Printf( "FATAL: recursed fatal error:\n%s\n", errorMessage );
+		Sys_Printf( "FATAL:recursed fatal error:\n%s\n", errorMessage );
 
 		va_start( argptr, fmt );
 		idStr::vsnPrintf( errorMessage, sizeof(errorMessage), fmt, argptr );
@@ -858,29 +860,23 @@ void idCommonLocal::InitGameArguments()
 {
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
-	bool fsBasePathDefined = false;
 
 	idStr basePath = Sys_DefaultBasePath(); // might be overridden by the arguments below
 	idStr fsGameBase = BASE_TDM;
 
 	// Search the command line arguments for certain override parameters
-	for (int line = 0; line < com_numConsoleLines; ++line)
-	{
+	for (int line = 0; line < com_numConsoleLines; ++line) {
 		const idCmdArgs& args = com_consoleLines[line];
 
-		for (int arg = 0; arg < args.Argc(); ++arg)
-		{
+		for (int arg = 0; arg < args.Argc(); ++arg) {
 			fsGameDefined |= idStr::Cmp(args.Argv(arg), "fs_game") == 0;
 
-			if (idStr::Cmp(args.Argv(arg), "fs_game_base") == 0)
-			{
+			if (idStr::Cmp(args.Argv(arg), "fs_game_base") == 0) {
 				fsGameBaseDefined = true;
 				fsGameBase = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
 			}
 			
-			if (idStr::Cmp(args.Argv(arg), "fs_basepath") == 0)
-			{
-				fsBasePathDefined = true;
+			if (idStr::Cmp(args.Argv(arg), "fs_basepath") == 0) {
 				basePath = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
 			}
 		}
@@ -890,8 +886,7 @@ void idCommonLocal::InitGameArguments()
 	idStr darkmodPath = basePath;
 	darkmodPath.AppendPath(fsGameBase);
 	
-	if (!fsGameDefined && !fsGameBaseDefined)
-	{
+	if (!fsGameDefined && !fsGameBaseDefined) {
 		// no fs_game defined, try to load the currentfm.txt from darkmod
 		idStr currentModFile = darkmodPath;
 		currentModFile.AppendPath("currentfm.txt");
@@ -940,8 +935,7 @@ void idCommonLocal::InitGameArguments()
 	}
 
 	// If we still don't have no fs_game nor fs_game_base, fall back to "darkmod"
-	if (!fsGameDefined && !fsGameBaseDefined)
-	{
+	if (!fsGameDefined && !fsGameBaseDefined) {
 		cvarSystem->SetCVarString("fs_game", BASE_TDM);
 		fsGameDefined = true;
 	}
@@ -1057,9 +1051,8 @@ will keep the demoloop from immediately starting
 ==================
 */
 bool idCommonLocal::AddStartupCommands( void ) {
-	bool	added;
+	bool added = false;
 
-	added = false;
 	// quote every token, so args with semicolons can work
 	for ( int i = 0; i < com_numConsoleLines; i++ ) {
 		if ( !com_consoleLines[i].Argc() ) {
@@ -1182,6 +1175,7 @@ void idCommonLocal::WriteConfiguration( void ) {
 	if ( !( cvarSystem->GetModifiedFlags() & CVAR_ARCHIVE ) ) {
 		return;
 	}
+
 	cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
 
 	// disable printing out the "Writing to:" message
@@ -1587,14 +1581,12 @@ idCommonLocal::Translate
 A shortcut to common->GetI18N()->Translate().
 ===============
 */
-const char *idCommonLocal::Translate( const char* str )
-{
+const char *idCommonLocal::Translate( const char* str ) {
 	// Redirect the call to I18N
 	return i18n->Translate(str);
 }
 
-I18N* idCommonLocal::GetI18N()
-{
+I18N* idCommonLocal::GetI18N() {
 	return i18n;
 }
 
@@ -1858,21 +1850,21 @@ bool TestGuiParm(const char* parm, const char* value, idStrList& excludeList) {
 	}
 
 	//Numeric
-	if(testVal.IsNumeric()) {
+	else if(testVal.IsNumeric()) {
 		return false;
 	}
 
 	//Contains ::
-	if(testVal.Find("::") != -1) {
+	else if(testVal.Find("::") != -1) {
 		return false;
 	}
 
 	//Contains /
-	if(testVal.Find("/") != -1) {
+	else if(testVal.Find("/") != -1) {
 		return false;
 	}
 
-	if(excludeList.Find(testVal)) {
+	else if(excludeList.Find(testVal)) {
 		return false;
 	}
 
@@ -1884,7 +1876,7 @@ void GetFileList(const char* dir, const char* ext, idStrList& list) {
 	//Recurse Subdirectories
 	idStrList dirList;
 	Sys_ListFiles(dir, "/", dirList);
-	for(int i = 0; i < dirList.Num(); i++) {
+	for ( int i = 0; i < dirList.Num(); i++ ) {
 		if(dirList[i] == "." || dirList[i] == "..") {
 			continue;
 		}
@@ -1894,7 +1886,7 @@ void GetFileList(const char* dir, const char* ext, idStrList& list) {
 
 	idStrList fileList;
 	Sys_ListFiles(dir, ext, fileList);
-	for(int i = 0; i < fileList.Num(); i++) {
+	for( int i = 0; i < fileList.Num(); i++ ) {
 		idStr fullName = va("%s/%s", dir, fileList[i].c_str());
 		list.Append(fullName);
 	}
@@ -1920,32 +1912,29 @@ int LocalizeMap(const char* mapName, idLangDict &langDict, ListHash& listHash, i
 
 				idStrList* list;
 				listHash.Get(classname, &list);
-				if(list) {
+				if ( list ) {
 
-					for(int k = 0; k < list->Num(); k++) {
+					for( int k = 0; k < list->Num(); k++ ) {
 
 						idStr val = ent->epairs.GetString((*list)[k], "");
 						
-						if(val.Length() && classname == "info_location" && (*list)[k] == "location") {
+						if ( val.Length() && classname == "info_location" && (*list)[k] == "location" ) {
 							hasLocation = true;
 						}
 
-						if(val.Length() && TestMapVal(val)) {
-							
-							if(!hasLocation || (*list)[k] == "location") {
-								//Localize it!!!
-								strCount++;
-								ent->epairs.Set( (*list)[k], langDict.AddString( val ) );
-							}
+						if ( val.Length() && TestMapVal(val) && ( !hasLocation || (*list)[k] == "location" ) ) {
+							//Localize it!!!
+							strCount++;
+							ent->epairs.Set( (*list)[k], langDict.AddString( val ) );
 						}
 					}
 				}
 
 				listHash.Get("all", &list);
-				if(list) {
-					for(int k = 0; k < list->Num(); k++) {
+				if ( list ) {
+					for ( int k = 0; k < list->Num(); k++ ) {
 						idStr val = ent->epairs.GetString((*list)[k], "");
-						if(val.Length() && TestMapVal(val)) {
+						if ( val.Length() && TestMapVal(val) ) {
 							//Localize it!!!
 							strCount++;
 							ent->epairs.Set( (*list)[k], langDict.AddString( val ) );
@@ -1955,8 +1944,8 @@ int LocalizeMap(const char* mapName, idLangDict &langDict, ListHash& listHash, i
 
 				//Localize the gui_parms
 				const idKeyValue* kv = ent->epairs.MatchPrefix("gui_parm");
-				while( kv ) {
-					if(TestGuiParm(kv->GetKey(), kv->GetValue(), excludeList)) {
+				while ( kv ) {
+					if ( TestGuiParm(kv->GetKey(), kv->GetValue(), excludeList) ) {
 						//Localize It!
 						strCount++;
 						ent->epairs.Set( kv->GetKey(), langDict.AddString( kv->GetValue() ) );
@@ -1967,7 +1956,7 @@ int LocalizeMap(const char* mapName, idLangDict &langDict, ListHash& listHash, i
 		}
 		if(writeFile && strCount > 0)  {
 			//Before we write the map file lets make a backup of the original
-			idStr file =  fileSystem->RelativePathToOSPath(mapName);
+			idStr file = fileSystem->RelativePathToOSPath(mapName);
 			idStr bak = file.Left(file.Length() - 4);
 			bak.Append(".bak_loc");
 			fileSystem->CopyFile( file, bak );
@@ -1992,30 +1981,25 @@ void Com_LocalizeMaps_f( const idCmdArgs &args ) {
 	}
 
 	int strCount = 0;
-	
-	bool count = false;
 	bool dictUpdate = false;
 	bool write = false;
 
 	if ( idStr::Icmp( args.Argv(1), "count" ) == 0 ) {
-		count = true;
+		// Serp - this has been left here to preserve expectations - count is/was always implied
 	} else if ( idStr::Icmp( args.Argv(1), "dictupdate" ) == 0 ) {
-		count = true;
 		dictUpdate = true;
 	} else if ( idStr::Icmp( args.Argv(1), "all" ) == 0 ) {
-		count = true;
 		dictUpdate = true;
 		write = true;
 	} else {
 		common->Printf( "Invalid Command\n" );
 		common->Printf( "Usage: localizeMaps <count | dictupdate | all>\n" );
 		return;
-
 	}
 
 	idLangDict strTable;
 	idStr filename = va("strings/english%.3i.lang", com_product_lang_ext.GetInteger());
-	if(strTable.Load( filename ) == false) {
+	if ( strTable.Load( filename ) == false ) {
 		//This is a new file so set the base index
 		strTable.SetBaseID(com_product_lang_ext.GetInteger()*100000);
 	}
@@ -2028,7 +2012,7 @@ void Com_LocalizeMaps_f( const idCmdArgs &args ) {
 	idStrList excludeList;
 	LoadGuiParmExcludeList(excludeList);
 
-	if(args.Argc() == 3) {
+	if ( args.Argc() == 3 ) {
 		strCount += LocalizeMap(args.Argv(2), strTable, listHash, excludeList, write);
 	} else {
 		idStrList files;
@@ -2039,13 +2023,10 @@ void Com_LocalizeMaps_f( const idCmdArgs &args ) {
 		}
 	}
 
-	if(count) {
-		common->Printf("Localize String Count: %d\n", strCount);
-	}
-
+	common->Printf("Localize String Count: %d\n", strCount);
 	common->SetRefreshOnPrint( false );
 
-	if(dictUpdate) {
+	if ( dictUpdate ) {
 		strTable.Save( filename );
 	}
 }
@@ -2078,6 +2059,7 @@ void Com_LocalizeGuis_f( const idCmdArgs &args ) {
 		} else {
 			files = fileSystem->ListFilesTree( "guis", "*.gui", true );
 		}
+
 		for ( int i = 0; i < files->GetNumFiles(); i++ ) {
 			commonLocal.LocalizeGui( files->GetFile( i ), strTable );
 		}
@@ -2095,6 +2077,7 @@ void Com_LocalizeGuis_f( const idCmdArgs &args ) {
 	} else {
 		commonLocal.LocalizeGui( args.Argv(1), strTable );
 	}
+
 	strTable.Save( filename );
 }
 
@@ -2188,31 +2171,27 @@ void Com_LocalizeMapsTest_f( const idCmdArgs &args ) {
 
 					idStrList* list;
 					listHash.Get(classname, &list);
-					if(list) {
-
-						for(int k = 0; k < list->Num(); k++) {
+					if ( list ) {
+						for ( int k = 0; k < list->Num(); k++ ) {
 
 							idStr val = ent->epairs.GetString((*list)[k], "");
 							
-							if(classname == "info_location" && (*list)[k] == "location") {
+							if ( classname == "info_location" && (*list)[k] == "location" ) {
 								hasLocation = true;
 							}
 
-							if(val.Length() && TestMapVal(val)) {
-								
-								if(!hasLocation || (*list)[k] == "location") {
-									idStr out = va("%s,%s,%s\r\n", val.c_str(), (*list)[k].c_str(), file.c_str());
-									localizeFile->Write( out.c_str(), out.Length() );
-								}
+							if (val.Length() && TestMapVal(val) && (!hasLocation || (*list)[k] == "location") ) {
+								idStr out = va("%s,%s,%s\r\n", val.c_str(), (*list)[k].c_str(), file.c_str());
+								localizeFile->Write( out.c_str(), out.Length() );
 							}
 						}
 					}
 
 					listHash.Get("all", &list);
-					if(list) {
-						for(int k = 0; k < list->Num(); k++) {
+					if ( list ) {
+						for ( int k = 0; k < list->Num(); k++ ) {
 							idStr val = ent->epairs.GetString((*list)[k], "");
-							if(val.Length() && TestMapVal(val)) {
+							if ( val.Length() && TestMapVal(val) ) {
 								idStr out = va("%s,%s,%s\r\n", val.c_str(), (*list)[k].c_str(), file.c_str());
 								localizeFile->Write( out.c_str(), out.Length() );
 							}
@@ -2373,7 +2352,7 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	}
 	int len = strlen( msg );
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
-	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, declManager->FindMaterial( "splashScreen" ) );
+	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, declManager->FindMaterial( "splashScreen" ) );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );
 	renderSystem->EndFrame( NULL, NULL );
 }
@@ -2462,9 +2441,11 @@ void idCommonLocal::GUIFrame( bool execCmd, bool network ) {
 	Sys_GenerateEvents();
 	eventLoop->RunEventLoop( execCmd );	// and execute any commands
 	com_frameTime = com_ticNumber * USERCMD_MSEC;
+
 	if ( network ) {
 		idAsyncNetwork::RunFrame();
 	}
+
 	session->Frame();
 	session->UpdateScreen( false );	
 }
@@ -2587,14 +2568,15 @@ idCommonLocal::LoadGameDLL
 void idCommonLocal::LoadGameDLL( void ) {
 #ifdef __DOOM_DLL__
 	char			dllPath[ MAX_OSPATH ];
-
 	gameImport_t	gameImport;
 	gameExport_t	gameExport;
 	GetGameAPI_t	GetGameAPI;
 
+	memset(dllPath, 0, sizeof(dllPath));
+
 	fileSystem->FindDLL( "game", dllPath, true );
 
-	if ( !dllPath[ 0 ] ) {
+	if ( !dllPath[0] ) {
 		common->FatalError( "couldn't find game dynamic library" );
 		return;
 	}
@@ -2966,6 +2948,7 @@ void idCommonLocal::InitGame( void )
 	idAsyncNetwork::server.InitPort();
 	cvarSystem->SetCVarBool( "s_noSound", true );
 #else
+
 	if ( idAsyncNetwork::serverDedicated.GetInteger() == 1 ) {
 		idAsyncNetwork::server.InitPort();
 		cvarSystem->SetCVarBool( "s_noSound", true );
