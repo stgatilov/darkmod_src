@@ -2493,7 +2493,7 @@ void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MA
 			if ( soundEmitter ) {
 				registers[op->c] = soundEmitter->CurrentAmplitude();
 			} else {
-				registers[op->c] = 0.0f;
+				registers[op->c] = 1.0f;
 			}
 			break;
 		default:
