@@ -46,7 +46,7 @@
 #define DARKMOD_LG_RED						0.29900f
 #define DARKMOD_LG_GREEN					0.58700f
 #define DARKMOD_LG_BLUE						0.11400f
-#define DARKMOD_LG_SCALE					(1.0/255.0)			// scaling factor for grayscale value
+#define DARKMOD_LG_SCALE					(1.0f/255.0f)			// scaling factor for grayscale value
 #define DARKMOD_LG_TRIRATIO					(1.0f/((DARKMOD_LG_RENDER_WIDTH*DARKMOD_LG_RENDER_WIDTH)/4.0f))
 
 //----------------------------------

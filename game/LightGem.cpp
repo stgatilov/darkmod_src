@@ -278,7 +278,7 @@ float LightGem::Calculate(idPlayer *player)
 			// 45 degree, thus the square shape.
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_RenderScene );
 
-			//gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
+			gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
 			gameRenderWorld->RenderScene(&m_Lightgem_rv);
 
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_RenderScene );
@@ -289,7 +289,7 @@ float LightGem::Calculate(idPlayer *player)
 			renderSystem->CaptureRenderToBuffer(m_LightgemImgBuffer);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 
-#ifdef _DEBUG
+#if 0
 			{ // Save render if we have a path specified (for debugging)
 				const char* dp = cv_lg_path.GetString();
 				if ( dp[0] ) {
