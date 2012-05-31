@@ -70,12 +70,11 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 	}
 
 	// this may be triggered by a model trace or other non-view related source, to which we should look like an empty model
-	if ( renderEntity == NULL || viewDef == NULL ) {
+	if ( !renderEntity || !viewDef ) {
 		delete cachedModel;
 		return NULL;
 	}
-
-	if ( r_skipParticles.GetBool() ) {
+	else if ( r_skipParticles.GetBool() ) {
 		delete cachedModel;
 		return NULL;
 	}
@@ -88,15 +87,13 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 	}
 	*/
 
-	if ( cachedModel != NULL ) {
-
+	else if ( cachedModel ) {
 		assert( dynamic_cast<idRenderModelStatic *>(cachedModel) != NULL );
 		assert( idStr::Icmp( cachedModel->Name(), parametricParticle_SnapshotName ) == 0 );
 
 		staticModel = static_cast<idRenderModelStatic *>(cachedModel);
-
-	} else {
-
+	}
+	else {
 		staticModel = new idRenderModelStatic;
 		staticModel->InitEmpty( parametricParticle_SnapshotName );
 	}
@@ -111,29 +108,26 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 	for ( int stageNum = 0; stageNum < particleSystem->stages.Num(); stageNum++ ) {
 		idParticleStage *stage = particleSystem->stages[stageNum];
 
-		if ( !stage->material ) {
+		if ( !stage->material || !stage->cycleMsec ) {
 			continue;
 		}
-		if ( !stage->cycleMsec ) {
-			continue;
-		}
-		if ( stage->hidden ) {		// just for gui particle editor use
+		else if ( stage->hidden ) {		// just for gui particle editor use
 			staticModel->DeleteSurfaceWithId( stageNum );
 			continue;
 		}
 
 		idRandom steppingRandom, steppingRandom2;
 
-		int stageAge = g.renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
-		int	stageCycle = stageAge / stage->cycleMsec;
+		const int stageAge = g.renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
+		const int stageCycle = stageAge / stage->cycleMsec;
 
 		// some particles will be in this cycle, some will be in the previous cycle
-		steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );
-		steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );
+		steppingRandom.SetSeed ( (( stageCycle << 10 )     & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
+		steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
 
-		int	count = stage->totalParticles * stage->NumQuadsPerParticle();
+		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
 
-		int surfaceNum;
+		int surfaceNum = 0;
 		modelSurface_t *surf;
 
 		if ( staticModel->FindSurfaceWithId( stageNum, surfaceNum ) ) {
@@ -155,23 +149,39 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 		for ( int index = 0; index < stage->totalParticles; index++ ) {
 			g.index = index;
 
+			// calculate local age for this index 
+			//const int bunchOffset = (index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles;
+			//const int particleAge = stageAge - bunchOffset
+			const int particleAge = stageAge - ((index * 1000 * stage->particleLife * stage->spawnBunching) / stage->totalParticles);
+			const int particleCycle = particleAge / stage->cycleMsec;
+			
+			// before the particleSystem has spawned or
+			// cycled systems will only run cycle times
+			if ( particleCycle < 0 || ( stage->cycles && particleCycle >= stage->cycles ) ) {
+				continue;
+			}
+			
+			const int inCycleTime = particleAge - particleCycle * stage->cycleMsec;
+			
+			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
+				g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] * 1000 ) {
+				// don't fire any more particles
+				continue;
+			}
+
+			// supress particles before or after the age clamp
+			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
+			if ( g.frac < 0.0f || g.frac > 1.0f) {
+				// < 0.0f ; yet to be spawned
+				// > 1.0f ; particle is in the deadTime band
+				continue;
+			} else {
+				g.age = g.frac * stage->particleLife;
+			}
+
 			// bump the random
 			steppingRandom.RandomInt();
 			steppingRandom2.RandomInt();
-
-			// calculate local age for this index 
-			int	bunchOffset = stage->particleLife * 1000 * stage->spawnBunching * index / stage->totalParticles;
-
-			int particleAge = stageAge - bunchOffset;
-			int	particleCycle = particleAge / stage->cycleMsec;
-			if ( particleCycle < 0 ) {
-				// before the particleSystem spawned
-				continue;
-			}
-			if ( stage->cycles && particleCycle >= stage->cycles ) {
-				// cycled systems will only run cycle times
-				continue;
-			}
 
 			if ( particleCycle == stageCycle ) {
 				g.random = steppingRandom;
@@ -179,29 +189,8 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 				g.random = steppingRandom2;
 			}
 
-			int	inCycleTime = particleAge - particleCycle * stage->cycleMsec;
-
-			if ( renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME] && 
-				g.renderView->time - inCycleTime >= renderEntity->shaderParms[SHADERPARM_PARTICLE_STOPTIME]*1000 ) {
-				// don't fire any more particles
-				continue;
-			}
-
-			// supress particles before or after the age clamp
-			g.frac = (float)inCycleTime / ( stage->particleLife * 1000 );
-			if ( g.frac < 0.0f ) {
-				// yet to be spawned
-				continue;
-			}
-			if ( g.frac > 1.0f ) {
-				// this particle is in the deadTime band
-				continue;
-			}
-
 			// this is needed so aimed particles can calculate origins at different times
 			g.originalRandom = g.random;
-
-			g.age = g.frac * stage->particleLife;
 
 			// if the particle doesn't get drawn because it is faded out or beyond a kill region, don't increment the verts
 			numVerts += stage->CreateParticle( &g, verts + numVerts );
@@ -266,9 +255,7 @@ idRenderModelPrt::Memory
 ====================
 */
 int idRenderModelPrt::Memory() const {
-	int total = 0;
-
-	total += idRenderModelStatic::Memory();
+	int total = idRenderModelStatic::Memory();
 
 	if ( particleSystem ) {
 		total += sizeof( *particleSystem );
