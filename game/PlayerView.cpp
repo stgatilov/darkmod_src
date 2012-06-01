@@ -48,7 +48,7 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	memset( &view, 0, sizeof( view ) );
 	player = NULL;
 	dvMaterial = declManager->FindMaterial( "_scratch" );
-	tunnelMaterial = declManager->FindMaterial( "textures/decals/tunnel" );
+	tunnelMaterial = declManager->FindMaterial( "textures/darkmod/decals/tunnel" );	// damage overlay
 	armorMaterial = declManager->FindMaterial( "armorViewEffect" );
 	bloodSprayMaterial = declManager->FindMaterial( "textures/decals/bloodspray" );
 	lagoMaterial = declManager->FindMaterial( LAGO_MATERIAL, false );
@@ -573,6 +573,10 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 		if ( alpha < 1.0f  )
 		{
+			// Tels: parm0: when the last damage occured
+			// Tels: parm1: TODO: set here f.i. to color the material different when in gas cloud
+			// Tels: parm2: TODO: set here f.i. to color the material different when poisened
+			// Tels: parm3: alpha value, depending on health
 			renderSystem->SetColor4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );
 		}
