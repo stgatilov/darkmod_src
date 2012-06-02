@@ -136,6 +136,8 @@ public:
 	// Invoked when the movement subsystem considers this AI as blocked
 	virtual void OnMovementBlocked(idAI* owner);
 
+	virtual void ForgetSittingSleeping() {}; // grayman #3154
+
 protected:
 	/**
 	 * greebo: Gets called by OnTactileAlert when the offending entity is 

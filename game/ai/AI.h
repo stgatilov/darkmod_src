@@ -2208,6 +2208,9 @@ public:
 	// grayman #2816 - bark
 	void Event_Bark(const char* soundName);
 
+	// grayman #3154
+	void Event_EmptyHand(const char* hand);
+
 #ifdef TIMING_BUILD
 private:
 	int aiThinkTimer;

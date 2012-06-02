@@ -459,6 +459,13 @@ void MovementSubsystem::StartPathTask()
 		gameLocal.Warning("Unknown path corner classname '%s' on %s", classname.c_str(),path->name.c_str());
 		return;
 	}
+
+	// grayman #3154 - forget that you started the map sitting or sleeping, if you did
+
+	idAI* owner = _owner.GetEntity();
+	owner->GetMind()->GetState()->ForgetSittingSleeping();
+	owner->spawnArgs.SetBool("sitting",false);
+	owner->spawnArgs.SetBool("sleeping",false);
 	
 	// Push the (rest of the) tasks to the subsystem
 	for (std::list<TaskPtr>::iterator i = tasks.begin(); i != tasks.end(); ++i)

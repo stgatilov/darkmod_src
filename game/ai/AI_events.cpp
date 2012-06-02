@@ -52,9 +52,10 @@ const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntit
 const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
 const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
 const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
-const idEventDef AI_PerformRelight("performRelight");    // grayman #2603
-const idEventDef AI_DropTorch("dropTorch");			     // grayman #2603
-const idEventDef AI_Bark("bark", "s");					 // grayman #2816
+const idEventDef AI_PerformRelight("performRelight");	// grayman #2603
+const idEventDef AI_DropTorch("dropTorch");			    // grayman #2603
+const idEventDef AI_Bark("bark", "s");					// grayman #2816
+const idEventDef AI_EmptyHand("emptyHand", "s");		// grayman #3154
 
 const idEventDef AI_SetEnemy( "setEnemy", "E" );
 const idEventDef AI_ClearEnemy( "clearEnemy" );
@@ -555,6 +556,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_PerformRelight,					idAI::Event_PerformRelight)	// grayman #2603
 	EVENT ( AI_DropTorch,						idAI::Event_DropTorch)		// grayman #2603
 	EVENT ( AI_Bark,							idAI::Event_Bark)			// grayman #2816
+	EVENT ( AI_EmptyHand,						idAI::Event_EmptyHand)		// grayman #3154
 
 END_CLASS
 
@@ -3465,6 +3467,26 @@ void idAI::Event_HasSeenEvidence()
 void idAI::Event_PerformRelight() // grayman #2603
 {
 	m_performRelight = true;
+}
+
+void idAI::Event_EmptyHand(const char* hand) // grayman #3154
+{
+	idStr handStr = hand;
+	idEntity* inHand = GetAttachmentByPosition(handStr);
+	if (inHand)
+	{
+		// find this and drop it
+
+		for ( int i = 0 ; i < m_Attachments.Num() ; i++ )
+		{
+			idEntity* ent = m_Attachments[i].ent.GetEntity();
+			if ( ent == inHand )
+			{
+				DetachInd(i);
+				return;
+			}
+		}
+	}
 }
 
 void idAI::Event_DropTorch() // grayman #2603

@@ -48,6 +48,8 @@ public:
 
 	static StatePtr CreateInstance();
 
+	virtual void ForgetSittingSleeping() { _startSitting = _startSleeping = false; };   // grayman #3154
+
 protected:
 	// Returns the initial idle bark sound, depending on the alert level 
 	// and the current state of mind

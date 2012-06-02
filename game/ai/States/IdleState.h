@@ -52,6 +52,10 @@ public:
 	**/
 	virtual void OnChangeTarget(idAI *owner);
 
+	// grayman #3154 - forget you were sitting or sleeping at map start
+
+	virtual void ForgetSittingSleeping() { _startSitting = _startSleeping = false; };
+
 protected:
 
 	bool _startSitting;

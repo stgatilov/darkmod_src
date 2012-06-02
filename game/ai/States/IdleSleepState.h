@@ -49,6 +49,8 @@ public:
 	**/
 	virtual void OnChangeTarget(idAI *owner);
 
+	virtual void ForgetSittingSleeping() { _startSitting = _startSleeping = false; };   // grayman #3154
+
 protected:
 
 	// Override base class method
