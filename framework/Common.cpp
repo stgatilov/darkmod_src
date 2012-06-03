@@ -911,6 +911,7 @@ void idCommonLocal::InitGameArguments()
 
 					buf[len] = 0;
 					mod = buf;
+					mod.StripTrailingWhitespace();
 
 					free(buf);
 					fclose(file);
