@@ -2978,6 +2978,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 	const renderView_t *view;
 	int curframe = framenum;
 
+	ret.sessionCommand[0] = 0; // grayman #3139 - must be cleared here, to handle the "player waiting" time
 	g_Global.m_Frame = curframe;
 	DM_LOG(LC_FRAME, LT_INFO)LOGSTRING("Frame start\r");
 
