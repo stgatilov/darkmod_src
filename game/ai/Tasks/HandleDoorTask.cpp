@@ -318,15 +318,18 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			return true;
 		}
 
-		// grayman #2866 - If we're handling a door that's supposed
+/*		// grayman #2866 - If we're handling a door that's supposed
 		// to be closed, and we were going to close it, and we find
 		// it closed, we're done.
+
+		// grayman - Later on, found out that a door marked should_always_be_locked wasn't
+		// getting relocked with the following code in place, so now it's no longer used.
 
 		if ( _doorShouldBeClosed )
 		{
 			return true; // ends the task
 		}
-
+*/
 		switch (_doorHandlingState)
 		{
 			case EStateNone:
