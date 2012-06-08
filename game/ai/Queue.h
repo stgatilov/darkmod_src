@@ -112,7 +112,7 @@ public:
 			element->Restore(savefile);
 
 			// Add the element to the queue
-			push_back(element);
+			this->push_back(element);
 		}
 	}
 };
