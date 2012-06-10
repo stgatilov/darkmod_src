@@ -101,7 +101,8 @@ void Updater::UpdateMirrors()
 	std::string mirrorsUrl = TDM_MIRRORS_SERVER;
 	mirrorsUrl += TDM_MIRRORS_FILE;
 
-	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from %s...", mirrorsUrl.c_str() );
+//	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from %s...", mirrorsUrl.c_str() ); // grayman - NG: too many args
+	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloading mirror list from %s...") % mirrorsUrl).str()); // grayman - fixed
 
 	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
 
@@ -111,7 +112,7 @@ void Updater::UpdateMirrors()
 
 	if (request->GetStatus() == HttpRequest::OK)
 	{
-		TraceLog::Write(LOG_VERBOSE, "done. ");
+		TraceLog::Write(LOG_VERBOSE, "Done. ");
 
 		// Load the mirrors from the file
 		LoadMirrors();
