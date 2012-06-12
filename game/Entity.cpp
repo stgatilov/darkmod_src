@@ -4382,6 +4382,23 @@ bool idEntity::InitBind( idEntity *master )
 	return true;
 }
 
+// grayman #3156 - make sure everyone on the team has the same cinematic setting
+
+void idEntity::SetCinematicOnTeam(idEntity* ent)
+{
+	bool cinematicSetting = ent->cinematic;
+	idList<idEntity *> children;
+	ent->GetTeamChildren(&children);
+	for ( int i = 0 ; i < children.Num() ; i++ )
+	{
+		idEntity *child = children[i];
+		if ( child )
+		{
+			child->cinematic = cinematicSetting;
+		}
+	}
+}
+
 /*
 ================
 idEntity::FinishBind
@@ -4401,6 +4418,8 @@ void idEntity::FinishBind( const char *jointName ) // grayman #3074
 
 	// if our bindMaster is enabled during a cinematic, we must be, too
 	cinematic = bindMaster->cinematic;
+
+	SetCinematicOnTeam(bindMaster); // grayman #3156
 
 	// make sure the team master is active so that physics get run
 	teamMaster->BecomeActive( TH_PHYSICS );
@@ -8642,6 +8661,8 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
 
+	SetCinematicOnTeam(this); // grayman #3156
+
 	CAttachInfo	&attach = m_Attachments.Alloc();
 	attach.channel = animator.GetChannelForJoint( joint );
 	attach.ent = ent;
@@ -8715,6 +8736,8 @@ void idAnimatedEntity::ReAttachToCoords
 
 	ent->BindToJoint( this, joint, true );
 	ent->cinematic = cinematic;
+
+	SetCinematicOnTeam(this); // grayman #3156
 
 	// set the spawnargs for later retrieval as well
 	ent->spawnArgs.Set( "joint", jointName.c_str() );
@@ -10332,6 +10355,8 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 	ent->Bind( this, true );
 	ent->cinematic = cinematic;
 
+	SetCinematicOnTeam(this); // grayman #3156
+
 	CAttachInfo	&attach = m_Attachments.Alloc();
 	attach.channel = 0; // overloaded in animated classes
 	attach.ent = ent;
@@ -10423,6 +10448,8 @@ void idEntity::ReAttachToCoords
 
 	ent->Bind( this, true );
 	ent->cinematic = cinematic;
+
+	SetCinematicOnTeam(this); // grayman #3156
 
 	// set the spawnargs for later retrieval as well
 	ent->spawnArgs.Set( "joint", "" );

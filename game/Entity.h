@@ -1291,6 +1291,8 @@ public:
 	// Restores all CONTENTS values, previously saved with SaveAttachmentContents()
 	void RestoreAttachmentContents();
 
+	void SetCinematicOnTeam( idEntity* ent ); // grayman #3156
+
 protected:
 	/**
 	* Update frob highlight state if frobbed.
