@@ -166,6 +166,8 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 	else {
 		// Wrong game version, throw a meaningful error rather than leaving
 		// stuff initialised and getting segfaults.
+		// The old dll (pre v1.08) will output something like:
+		// "Ensure the correct Doom 3 patches are installed." which is misleading.
 		std::cerr << "FATAL: Incorrect game version: required " 
 			<< GAME_API_VERSION << ", got " << import->version << "\n"
 			<< "Use the latest TheDarkMod executable with the latest game DLL." << std::endl;
