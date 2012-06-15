@@ -2614,6 +2614,7 @@ void idCommonLocal::LoadGameDLL( void ) {
 
 	gameExport							= *GetGameAPI( &gameImport );
 
+	// Tels: The game DLL does its own check, and exits, so this check is is probably never run.
 	if ( gameExport.version != GAME_API_VERSION ) {
 		Sys_DLL_Unload( gameDLL );
 		gameDLL = NULL;
