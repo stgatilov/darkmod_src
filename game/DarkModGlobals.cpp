@@ -699,82 +699,18 @@ std::string CGlobal::GetModPath(const std::string& modName)
 {
 	fs::path path = GetDarkmodPath();	// c:\games\doom3\darkmod
 	path /= cv_tdm_fm_path.GetString();	// fms/
-	path /= modName;					// <fs_game>
-
+	path /= modName;					// <fs_currentfm>
+    
 	return path.string();
 }
 
 std::string CGlobal::GetDarkmodPath()
 {
-	std::string darkmodPath = fileSystem->DarkModPath();
+	std::string darkmodPath = fileSystem->ModPath();
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
 
 	return darkmodPath.c_str();
-
-#if 0
-	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
-
-	if (modBaseName.IsEmpty())
-	{
-		// Fall back to fs_game if no game_base is set
-		modBaseName = cvarSystem->GetCVarString("fs_game");
-
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
-
-		if (modBaseName.IsEmpty())
-		{
-			modBaseName = BASE_TDM; // last resort: semi-hardcoded
-
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to " + BASE_TDM + "\r");
-		}
-	}
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Base path is %s\r", cvarSystem->GetCVarString("fs_basePath"));
-
-	// basepath = something like c:\games\doom3, modBaseName is usually darkmod
-	std::string darkmodPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basePath"), modBaseName, "");
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.c_str());
-
-	return darkmodPath;
-#endif
-
-#if 0
-	// Path to the parent directory
-	fs::path parentPath(fileSystem->RelativePathToOSPath("", "fs_savepath"));
-	parentPath = parentPath.remove_leaf().remove_leaf();
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Parent path is %s\r", parentPath.string().c_str());
-
-	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game_base is %s\r", modBaseName.c_str());
-
-	if (modBaseName.IsEmpty())
-	{
-		// Fall back to fs_game if no game_base is set
-		modBaseName = cvarSystem->GetCVarString("fs_game");
-
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("fs_game is %s\r", modBaseName.c_str());
-
-		if (modBaseName.IsEmpty())
-		{
-			modBaseName = BASE_TDM; // last resort: semi-hardcoded
-
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Falling back to " + BASE_TDM + "\r");
-		}
-	}
-
-	// Path to the darkmod directory
-	fs::path darkmodPath(parentPath / modBaseName.c_str());
-
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Resulting darkmod path is %s\r", darkmodPath.string().c_str());
-
-	return darkmodPath.file_string();
-#endif
 }
 
 LC_LogClass CGlobal::GetLogClassForString(const char* str)

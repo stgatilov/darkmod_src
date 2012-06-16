@@ -506,7 +506,14 @@ Sys_DefaultSavePath
 ==============
 */
 const char *Sys_DefaultSavePath( void ) {
-	return cvarSystem->GetCVarString( "fs_basepath" );
+	static idStr savePath;
+    // taaaki: default savepath changed to the mod dir.
+    if ( savePath.IsEmpty() ) {
+        savePath = cvarSystem->GetCVarString("fs_basepath");
+        savePath.AppendPath(cvarSystem->GetCVarString("fs_mod"));
+    }
+
+	return savePath.c_str();
 }
 
 /*
@@ -514,17 +521,13 @@ const char *Sys_DefaultSavePath( void ) {
 Sys_ModSavePath
 ==============
 */
-const char* Sys_ModSavePath()
-{
+const char* Sys_ModSavePath( void ) {
 	// greebo: In Windows, we use the basepath + "darkmod/fms/" as savepath 
+    // taaaki: changed this to savepath + "fms/"
 	static idStr modSavePath;
 	
-	if (modSavePath.IsEmpty())
-	{
-		idStr fsGameBase = cvarSystem->GetCVarString("fs_game_base");
-
-		modSavePath = cvarSystem->GetCVarString("fs_basepath");
-		modSavePath.AppendPath(fsGameBase.IsEmpty() ? BASE_TDM : fsGameBase); // fall back to darkmod if fs_game base is empty
+	if ( modSavePath.IsEmpty() ) {
+		modSavePath = cvarSystem->GetCVarString("fs_savepath");
 		modSavePath.AppendPath("fms");
 	}
 

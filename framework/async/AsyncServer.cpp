@@ -1471,8 +1471,8 @@ void idAsyncServer::ProcessChallengeMessage( const netadr_t from, const idBitMsg
 	outMsg.WriteString( "challengeResponse" );
 	outMsg.WriteLong( challenges[i].challenge );
 	outMsg.WriteShort( serverId );
-	outMsg.WriteString( cvarSystem->GetCVarString( "fs_game_base" ) );
-	outMsg.WriteString( cvarSystem->GetCVarString( "fs_game" ) );
+	outMsg.WriteString( cvarSystem->GetCVarString( "fs_mod" ) );
+	outMsg.WriteString( cvarSystem->GetCVarString( "fs_currentfm" ) );
 
 	serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
 

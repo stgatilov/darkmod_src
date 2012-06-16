@@ -311,9 +311,9 @@ idModelExport::ExportModel
 ====================
 */
 bool idModelExport::ExportModel( const char *model ) {
-	const char *game = cvarSystem->GetCVarString( "fs_game" );
+	const char *game = cvarSystem->GetCVarString( "fs_currentfm" );
 	if ( strlen(game) == 0 ) {
-		game = BASE_GAMEDIR;
+		game = BASE_TDM;
 	}
 
 	Reset();
@@ -336,9 +336,9 @@ idModelExport::ExportAnim
 ====================
 */
 bool idModelExport::ExportAnim( const char *anim ) {
-	const char *game = cvarSystem->GetCVarString( "fs_game" );
+	const char *game = cvarSystem->GetCVarString( "fs_currentfm" );
 	if ( strlen(game) == 0 ) {
-		game = BASE_GAMEDIR;
+		game = BASE_TDM;
 	}
 
 	Reset();
@@ -497,9 +497,9 @@ int idModelExport::ParseExportSection( idParser &parser ) {
 
 			Reset();
 			if ( ParseOptions( lex ) ) {
-				const char *game = cvarSystem->GetCVarString( "fs_game" );
+				const char *game = cvarSystem->GetCVarString( "fs_currentfm" );
 				if ( strlen(game) == 0 ) {
-					game = BASE_GAMEDIR;
+					game = BASE_TDM;
 				}
 
 				if ( command == "mesh" ) {

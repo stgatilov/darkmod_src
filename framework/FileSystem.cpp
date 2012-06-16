@@ -80,7 +80,7 @@ The "base game" is the directory under the paths where data comes from by defaul
 
 The "current game" may be the same as the base game, or it may be the name of another
 directory under the paths that should be searched for files before looking in the base
-game. The game directory is set with "+set fs_game myaddon" on the command line. This is
+game. The game directory is set with "+set fs_mod myaddon" on the command line. This is
 the basis for addons.
 
 No other directories outside of the base game and current game will ever be referenced by
@@ -138,9 +138,10 @@ attempt to correct the situation by forcing the path to lowercase. This assumes 
 is stored all lowercase.
 
 "additional mod path search":
-fs_game_base can be used to set an additional search path
-in search order, fs_game, fs_game_base, BASEGAME
-for instance to base a mod of D3 assets, fs_game mymod, fs_game_base d3xp TODO: ref TDM
+fs_mod can be used to set an additional search path
+in search order, fs_mod, BASE_TDM, BASE_GAMEDIR
+for instance to base a mod of D3 assets, fs_mod mymod ("darkmod" and "base" are 
+automatically included in the searchpath). 
 
 =============================================================================
 */
@@ -250,7 +251,7 @@ public:
 	virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileRead( const char *relativePath, bool allowCopyFiles = true, const char* gamedir = NULL );
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
-	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_basepath" );
+	virtual idFile *		OpenFileAppend( const char *relativePath, bool sync = false, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode );
 	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
 	virtual idFile *		OpenExplicitFileWrite( const char *OSPath );
@@ -271,7 +272,7 @@ public:
 	virtual void			FindMapScreenshot( const char *path, char *buf, int len );
 	virtual bool			FilenameCompare( const char *s1, const char *s2 ) const;
 
-	virtual const char*		DarkModPath() const;
+	virtual const char*		ModPath() const;
 
 	static void				Dir_f( const idCmdArgs &args );
 	static void				DirTree_f( const idCmdArgs &args );
@@ -298,12 +299,15 @@ private:
 	static idCVar			fs_savepath;
 	static idCVar			fs_cdpath;
 	static idCVar			fs_devpath;
-	static idCVar			fs_game;
-	static idCVar			fs_game_base;
 	static idCVar			fs_caseSensitiveOS;
 	static idCVar			fs_searchAddons;
 
-	// greebo: For regular TDM missions, all savegames/demos/etc. should be written to darkmod/fms/<fs_game>/... 
+    // taaaki: fs_game and fs_game_base have been removed as TDM is no longer a mod and these fs cvars were causing
+    // confusion due to inconsistent usage. fs_mod has been added to allow for mods of TDM.
+    static idCVar           fs_mod;
+    static idCVar           fs_currentfm;
+
+	// greebo: For regular TDM missions, all savegames/demos/etc. should be written to darkmod/fms/<fs_currentfm>/... 
 	// instead of creating a folder in fs_basePath. So, use "fs_modSavePath" as argument to filesystem->OpenFileWrite()
 	// The value of modSavePath is something like C:\Games\Doom3\darkmod\fms\ in Win32, or ~/.doom3/darkmod/fms/ in Linux.
 	static idCVar			fs_modSavePath;
@@ -365,8 +369,10 @@ idCVar	idFileSystemLocal::fs_basepath( "fs_basepath", "", CVAR_SYSTEM | CVAR_INI
 idCVar	idFileSystemLocal::fs_savepath( "fs_savepath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	idFileSystemLocal::fs_cdpath( "fs_cdpath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar	idFileSystemLocal::fs_devpath( "fs_devpath", "", CVAR_SYSTEM | CVAR_INIT, "" );
-idCVar	idFileSystemLocal::fs_game( "fs_game", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "mod path" );
-idCVar  idFileSystemLocal::fs_game_base( "fs_game_base", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "alternate mod path, searched after the main fs_game path, before the basedir" );
+
+// taaaki: Removed fs_game and fs_game_base and replaced with fs_mod and fs_currentfm
+idCVar  idFileSystemLocal::fs_mod( "fs_mod", "darkmod", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO | CVAR_ROM, "Path to custom TDM mod." );
+idCVar  idFileSystemLocal::fs_currentfm( "fs_currentfm", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "The currently installed fan mission." );
 #ifdef WIN32
 idCVar	idFileSystemLocal::fs_caseSensitiveOS( "fs_caseSensitiveOS", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 #else
@@ -681,7 +687,11 @@ const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, 
 		// extract the path, make sure it's all lowercase
 		idStr testPath, fileName;
 
-		sprintf( testPath, "%s/%s", game , relativePath );
+        if ( strlen(game) == 0) {
+		    sprintf( testPath, "%s", relativePath );
+        } else {
+            sprintf( testPath, "%s/%s", game , relativePath );
+        }
 		testPath.StripFilename();
 
 		if ( testPath.HasUpper() ) {
@@ -693,7 +703,11 @@ const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, 
 				testPath.ToLower();
 				fileName = relativePath;
 				fileName.StripPath();
-				sprintf( newPath, "%s/%s/%s", base, testPath.c_str(), fileName.c_str() );
+                if ( testPath.Length() == 0) {
+				    sprintf( newPath, "%s/%s", base, fileName.c_str() );
+                } else {
+                    sprintf( newPath, "%s/%s/%s", base, testPath.c_str(), fileName.c_str() );
+                }
 				ReplaceSeparators( newPath );
 				common->DPrintf( "Fixed up to %s\n", newPath.c_str() );
 				idStr::Copynz( OSPath, newPath, sizeof( OSPath ) );
@@ -705,7 +719,11 @@ const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, 
 	idStr strBase = base;
 	strBase.StripTrailing( '/' );
 	strBase.StripTrailing( '\\' );
-	sprintf( newPath, "%s/%s/%s", strBase.c_str(), game, relativePath );
+    if ( strlen(game) == 0) {
+        sprintf( newPath, "%s/%s", strBase.c_str(), relativePath );
+    } else {
+        sprintf( newPath, "%s/%s/%s", strBase.c_str(), game, relativePath );
+    }
 	ReplaceSeparators( newPath );
 	idStr::Copynz( OSPath, newPath, sizeof( OSPath ) );
 	return OSPath;
@@ -723,9 +741,10 @@ search paths.
 
 ================
 */
+#define GPATH_COUNT 4
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
-	char *s, *base;
+	char *s, *base = NULL;
 
 	// skip a drive letter?
 
@@ -735,44 +754,31 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	// which won't match any of our drive letter based search paths
 	bool ignoreWarning = false;
 
-	// look for the first complete directory name
-	base = (char *)strstr( OSPath, BASE_GAMEDIR );
-	while ( base ) {
-		char c1 = '\0', c2;
-		if ( base > OSPath ) {
-			c1 = *(base - 1);
-		}
-		c2 = *( base + strlen( BASE_GAMEDIR ) );
-		if ( ( c1 == '/' || c1 == '\\' ) && ( c2 == '/' || c2 == '\\' ) ) {
-			break;
-		}
-		base = strstr( base + 1, BASE_GAMEDIR );
-	}
+    static const char * gamePath = NULL;
+    for ( int gpath = 0; gpath < GPATH_COUNT; gpath++) {
+        switch (gpath) {
+            case 0: gamePath = BASE_GAMEDIR; break;
+            case 1: gamePath = BASE_TDM; break;
+            case 2: gamePath = fs_mod.GetString(); break;
+            case 3: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
+            default: gamePath = NULL; break;
+        }
 
-	// fs_game and fs_game_base support - look for first complete name with a mod path
-	// ( fs_game searched before fs_game_base )
-	const char *fsgame = NULL;
-	for ( int igame = 0; igame < 2; igame++ ) {
-		if ( igame == 0 ) {
-			fsgame = fs_game.GetString();
-		} else if ( igame == 1 ) {
-			fsgame = fs_game_base.GetString();
-		}
-		if ( base == NULL && fsgame && strlen( fsgame ) ) {
-			base = (char *)strstr( OSPath, fsgame );
-			while ( base ) {
+        if ( base == NULL && gamePath && strlen( gamePath ) ) {
+            base = (char *)strstr( OSPath, gamePath );
+            while ( base ) {
 				char c1 = '\0', c2;
 				if ( base > OSPath ) {
 					c1 = *(base - 1);
 				}
-				c2 = *( base + strlen( fsgame ) );
+				c2 = *( base + strlen( gamePath ) );
 				if ( ( c1 == '/' || c1 == '\\' ) && ( c2 == '/' || c2 == '\\' ) ) {
 					break;
 				}
-				base = strstr( base + 1, fsgame );
+				base = strstr( base + 1, gamePath );
 			}
 		}
-	}
+    }
 
 	if ( base ) {
 		s = strstr( base, "/" );
@@ -807,7 +813,7 @@ const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, c
 
 	const char *path = cvarSystem->GetCVarString( basePath );
 	if ( !path[0] ) {
-		path = fs_savepath.GetString();
+		path = fs_savepath.GetString(); // taaaki - need to re-evaluate this as the default
 	}
 
 	return BuildOSPath( path, gamedir ? gamedir : gameFolder.c_str(), relativePath );
@@ -1251,7 +1257,7 @@ the isNew flag is set to true, indicating that we cannot add this pak to the sea
 ===============
 */
 int idFileSystemLocal::AddZipFile( const char *path ) {
-	idStr			fullpath = fs_savepath.GetString();
+	idStr			fullpath = fs_savepath.GetString(); // taaaki - is savepath the correct place to look?
 	pack_t			*pak;
 	searchpath_t	*search, *last;
 
@@ -1567,6 +1573,7 @@ idModList *idFileSystemLocal::ListMods( void ) {
 		dirs.Remove( ".." );
 		dirs.Remove( "base" );
 		dirs.Remove( "pb" ); // Not needed in TDM - punkbuster - remove when standalone
+        /*dirs.Remove( "darkmod" ); // taaaki - not sure if this is needed, but darkmod isn't a mod*/
 
 		// see if there are any pk4 files in each directory
 		for( int i = 0; i < dirs.Num(); i++ ) {
@@ -1927,7 +1934,6 @@ void idFileSystemLocal::TouchFileList_f( const idCmdArgs &args ) {
 
 }
 
-
 /*
 ================
 idFileSystemLocal::AddGameDirectory
@@ -2003,33 +2009,27 @@ idFileSystemLocal::SetupGameDirectories
 ================
 */
 void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
-	// setup cdpath
+	// taaaki: TODO - after 1.08, ::Startup and ::SetupGameDirectories need 
+    //                to be looked at. We can probably get rid of fs_cdpath
+    //                and simplify the searchpaths
+    
+    // setup cdpath
 	if ( fs_cdpath.GetString()[0] ) {
 		AddGameDirectory( fs_cdpath.GetString(), gameName );
 	}
 
-    // taaaki: setup fm save path -- this should fix the savegame loading while keeping the following logic:
-    // greebo: In between fs_game and fs_game_base, there is the mission folder, which is fms/<missionName>/
-    // fs_game still overrides that one, but the the mission folder should still override fs_game_base
-    if ( fs_modSavePath.GetString()[0] && 
-         idStr::Cmp (gameName, BASE_GAMEDIR) != 0 &&
-         idStr::Cmp (gameName, fs_game_base.GetString()) != 0 )
-    {
-        AddGameDirectory( fs_modSavePath.GetString(), gameName );
-    }
-
 	// setup basepath
-	if ( fs_basepath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
+	if ( fs_basepath.GetString()[0] ) {
 		AddGameDirectory( fs_basepath.GetString(), gameName );
 	}
 
 	// setup devpath
-	if ( fs_devpath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
+	if ( fs_devpath.GetString()[0] ) {
 		AddGameDirectory( fs_devpath.GetString(), gameName );
 	}
 
 	// setup savepath
-	if ( fs_savepath.GetString()[0] ) { // && idStr::Cmp (gameName, fs_game.GetString()) != 0 ) {
+	if ( fs_savepath.GetString()[0] ) {
 		AddGameDirectory( fs_savepath.GetString(), gameName );
 	}
 }
@@ -2091,22 +2091,28 @@ void idFileSystemLocal::Startup( void ) {
 	}
 
 	SetupGameDirectories( BASE_GAMEDIR );
+    SetupGameDirectories( BASE_TDM );
 
-	// fs_game_base override
-	if ( fs_game_base.GetString()[0] &&
-		 idStr::Icmp( fs_game_base.GetString(), BASE_GAMEDIR ) ) {
-		SetupGameDirectories( fs_game_base.GetString() );
+    // fs_mod override
+	if ( fs_mod.GetString()[0] &&
+		 idStr::Icmp( fs_mod.GetString(), BASE_GAMEDIR ) &&
+         idStr::Icmp( fs_mod.GetString(), BASE_TDM ) ) {
+		SetupGameDirectories( fs_mod.GetString() );
 	}
 
-	// fs_game override
-	if ( fs_game.GetString()[0] &&
-		 idStr::Icmp( fs_game.GetString(), BASE_GAMEDIR ) &&
-		 idStr::Icmp( fs_game.GetString(), fs_game_base.GetString() ) )
-	{		
-		SetupGameDirectories( fs_game.GetString() );
-	}
+    // taaaki: setup fm path -- 
+    //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod") > BASE_GAMEDIR ("base")
+    // The following logic has been deprecated:
+    //   Old logic: In between fs_ and fs_game_base, there is the mission folder, which is fms/<missionName>/
+    //   fs_game still overrides that one, but the the mission folder should still override fs_game_base
+    if ( fs_modSavePath.GetString()[0] && 
+         fs_currentfm.GetString()[0] &&
+         idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
+         idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) ) {
+        AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+    }
 
-	// currently all addons are in the search list - deal with filtering out and dependencies now
+    // currently all addons are in the search list - deal with filtering out and dependencies now
 	// scan through and deal with dependencies
 	search = &searchPaths;
 	while ( *search ) {
@@ -2167,7 +2173,6 @@ void idFileSystemLocal::Startup( void ) {
 	common->Printf( "File System Initialized.\n" );
 	common->Printf( "--------------------------------------\n" );
 }
-
 
 /*
 =====================
@@ -2303,7 +2308,7 @@ int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ 
 		return 0;
 	}
 
-	// extract a path that includes the fs_game: != OSPathToRelativePath
+	// extract a path that includes the fs_currentfm: != OSPathToRelativePath
 	testList.Append( fs_savepath.GetString() );
 	testList.Append( fs_devpath.GetString() );
 	testList.Append( fs_basepath.GetString() );
@@ -2342,10 +2347,14 @@ void idFileSystemLocal::Init( void ) {
 	common->StartupVariable( "fs_savepath", false );
 	common->StartupVariable( "fs_cdpath", false );
 	common->StartupVariable( "fs_devpath", false );
-	common->StartupVariable( "fs_game", false );
-	common->StartupVariable( "fs_game_base", false );
 	common->StartupVariable( "fs_copyfiles", false );
 	common->StartupVariable( "fs_searchAddons", false );
+
+    // taaaki: we have replaced fs_game and fs_game_base with these
+    //         however, I want to prevent modification of fs_mod
+    //         for the meanwhile
+    //common->StartupVariable( "fs_mod", false ); 
+	common->StartupVariable( "fs_currentfm", false );
 
 	// greebo: even the mod save path can be overriden by command line arguments
 	common->StartupVariable( "fs_modSavePath", false );
@@ -2362,17 +2371,16 @@ void idFileSystemLocal::Init( void ) {
 
 	if ( fs_devpath.GetString()[0] == '\0' ) {
 #ifdef WIN32
-		fs_devpath.SetString( fs_cdpath.GetString()[0] ? fs_cdpath.GetString() : fs_basepath.GetString() );
+		fs_devpath.SetString( fs_cdpath.GetString()[0] ? fs_cdpath.GetString() : Sys_ModSavePath() );
 #else
-		fs_devpath.SetString( fs_savepath.GetString() );
+		fs_devpath.SetString( Sys_ModSavePath() );
 #endif
 	}
 
-	// greebo: By default, set the mod save path to <fs_game_base>/fms/.
+	// greebo: By default, set the mod save path to BASE_TDM/fms/.
 	// The exact location depends on the platform we're on
-	if ( fs_modSavePath.GetString()[0] == '\0' )
-	{
-		fs_modSavePath.SetString(Sys_ModSavePath());
+	if ( fs_modSavePath.GetString()[0] == '\0' ) {
+		fs_modSavePath.SetString( Sys_ModSavePath() );
 	}
 
 	// try to start up normally
@@ -2475,7 +2483,6 @@ bool idFileSystemLocal::IsInitialized( void ) const {
 	return ( searchPaths != NULL );
 }
 
-
 /*
 =================================================================================
 
@@ -2506,11 +2513,13 @@ bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 	}
 	// savegames
 	if ( strstr( path, "savegames" ) == path &&
-		( !strcmp( path + l - 4, ".tga" ) || !strcmp( path + l -4, ".txt" ) || !strcmp( path + l - 5, ".save" ) ) ) {
+		( !strcmp( path + l - 4, ".tga" ) || !strcmp( path + l - 4, ".txt" ) || !strcmp( path + l - 5, ".save" ) ) ) {
 		return true;
 	}
 	// screen shots
-	if ( strstr( path, "screenshots" ) == path && !strcmp( path + l - 4, ".tga" ) ) {
+	if ( strstr( path, "screenshots" ) == path && 
+        ( !strcmp( path + l - 4, ".tga" ) || !strcmp( path + l - 4, ".jpg" ) || 
+          !strcmp( path + l - 4, ".png" ) || !strcmp( path + l - 4, ".bmp" ) ) ) {
 		return true;
 	}
 
@@ -2805,7 +2814,7 @@ idFile *idFileSystemLocal::OpenFileRead( const char *relativePath, bool allowCop
 idFileSystemLocal::OpenFileWrite
 ===========
 */
-idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *basePath, const char *gamedir) {
+idFile *idFileSystemLocal::OpenFileWrite( const char *relativePath, const char *basePath, const char *gamedir ) {
 	const char *path;
 	idStr OSpath;
 	idFile_Permanent *f;
@@ -2919,7 +2928,7 @@ idFile *idFileSystemLocal::OpenExplicitFileWrite( const char *OSPath ) {
 idFileSystemLocal::OpenFileAppend
 ===========
 */
-idFile *idFileSystemLocal::OpenFileAppend( const char *relativePath, bool sync, const char *basePath ) {
+idFile *idFileSystemLocal::OpenFileAppend( const char *relativePath, bool sync, const char *basePath, const char *gamedir ) {
 	const char *path;
 	idStr OSpath;
 	idFile_Permanent *f;
@@ -2933,7 +2942,7 @@ idFile *idFileSystemLocal::OpenFileAppend( const char *relativePath, bool sync, 
 		path = fs_savepath.GetString();
 	}
 
-	OSpath = BuildOSPath( path, gameFolder, relativePath );
+	OSpath = BuildOSPath( path, gamedir ? gamedir : gameFolder.c_str(), relativePath );
 	CreateOSPath( OSpath );
 
 	if ( fs_debug.GetInteger() ) {
@@ -2987,7 +2996,6 @@ void idFileSystemLocal::CloseFile( idFile *f ) {
 
 	delete f;
 }
-
 
 /*
 =================================================================================
@@ -3312,7 +3320,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 			{
 				common->Printf( "found DLL in pak file: %s, extracting to darkmod path\n", dllFile->GetFullPath() );
 				
-				dllPath = DarkModPath();
+				dllPath = ModPath();
 				dllPath.Append(dllName);
 
 				//dllPath = RelativePathToOSPath( dllName, "fs_savepath" );
@@ -3536,33 +3544,24 @@ void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len 
 	}
 }
 
-
-const char* idFileSystemLocal::DarkModPath() const
-{
-	idStr modBaseName = cvarSystem->GetCVarString("fs_game_base");
+const char* idFileSystemLocal::ModPath() const {
+    idStr modBaseName = cvarSystem->GetCVarString("fs_mod");
 
 	if (modBaseName.IsEmpty())
 	{
-		// Fall back to fs_game if no game_base is set
-		modBaseName = cvarSystem->GetCVarString("fs_game");
-
-		if (modBaseName.IsEmpty())
-		{
-			modBaseName = BASE_TDM; // last resort: semi-hardcoded
-
-			common->Printf("idFileSystemLocal::DarkModPath: Falling back to 'darkmod'\n");
-		}
+		// Fall back to BASE_TDM if no custom_mod is set
+		modBaseName = BASE_TDM; // last resort: semi-hardcoded
+		common->Printf("idFileSystemLocal::ModPath: Falling back to 'darkmod'\n");
 	}
 
-	// basepath = something like c:\games\doom3, modBaseName is usually darkmod
+    // basepath = something like c:\games\doom3, modBaseName is usually darkmod
 	static char path[MAX_STRING_CHARS];
 	path[0] = '\0';
 
-	const char* darkmodPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basePath"), modBaseName, "");
+	const char* modPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basepath"), modBaseName, "");
 
-	if (darkmodPath != NULL && darkmodPath[0] != '\0')
-	{
-		idStr::Copynz(path, darkmodPath, sizeof(path));
+	if (modPath != NULL && modPath[0] != '\0') {
+		idStr::Copynz(path, modPath, sizeof(path));
 	}
 
 	return path;

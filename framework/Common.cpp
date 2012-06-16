@@ -195,7 +195,7 @@ private:
 	void						UnloadGameDLL( void );
 	void						PrintLoadingMessage( const char *msg );
 
-	// greebo: used to initialise the fs_game/fs_game_base parameters
+	// greebo: used to initialise the fs_currentfm/fs_mod parameters
 	void						InitGameArguments();
 
 	bool						com_fullyInitialized;
@@ -856,38 +856,44 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 	}
 }
 
-void idCommonLocal::InitGameArguments()
-{
+void idCommonLocal::InitGameArguments() {
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
+	bool fsBasePathDefined = false;
 
 	idStr basePath = Sys_DefaultBasePath(); // might be overridden by the arguments below
-	idStr fsGameBase = BASE_TDM;
+	
+    // taaaki - while we want to be able to support mods in the future, I want to limit
+    //          this ability until the TDM and D3 source merge is in a better state.
+    bool enableMods = false;
+    idStr fsGameBase = BASE_TDM;
+    fsGameBaseDefined = true; 
 
 	// Search the command line arguments for certain override parameters
 	for (int line = 0; line < com_numConsoleLines; ++line) {
 		const idCmdArgs& args = com_consoleLines[line];
 
 		for (int arg = 0; arg < args.Argc(); ++arg) {
-			fsGameDefined |= idStr::Cmp(args.Argv(arg), "fs_game") == 0;
+			fsGameDefined |= idStr::Cmp(args.Argv(arg), "fs_currentfm") == 0;
 
-			if (idStr::Cmp(args.Argv(arg), "fs_game_base") == 0) {
+			if (enableMods && idStr::Cmp(args.Argv(arg), "fs_mod") == 0) {
 				fsGameBaseDefined = true;
 				fsGameBase = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
 			}
 			
 			if (idStr::Cmp(args.Argv(arg), "fs_basepath") == 0) {
+				fsBasePathDefined = true;
 				basePath = (args.Argc() > arg + 1) ? args.Argv(arg + 1) : "";
 			}
 		}
 	}
 
-	// Construct the darkmod path - use fs_game_base, if specified
+	// Construct the darkmod path - use fs_mod, if specified
 	idStr darkmodPath = basePath;
 	darkmodPath.AppendPath(fsGameBase);
 	
-	if (!fsGameDefined && !fsGameBaseDefined) {
-		// no fs_game defined, try to load the currentfm.txt from darkmod
+	if ( !fsGameDefined ) {
+		// no fs_currentfm defined, try to load the currentfm.txt from darkmod
 		idStr currentModFile = darkmodPath;
 		currentModFile.AppendPath("currentfm.txt");
 		idStr mod;
@@ -923,22 +929,26 @@ void idCommonLocal::InitGameArguments()
 			}
 		}
 
-		if (!mod.IsEmpty())
-		{
-			// Set the fs_game CVAR to the value found in the .txt file
-			cvarSystem->SetCVarString("fs_game", mod.c_str());
+		if (!mod.IsEmpty()) {
+			// Set the fs_currentfm CVAR to the value found in the .txt file
+			cvarSystem->SetCVarString("fs_currentfm", mod.c_str());
 			fsGameDefined = true;
 
-			// Set the fs_game_base parameter too
-			cvarSystem->SetCVarString("fs_game_base", fsGameBase);
+			// Set the fs_mod parameter too
+			cvarSystem->SetCVarString("fs_mod", fsGameBase);
 			fsGameBaseDefined = true;
 		}
 	}
 
-	// If we still don't have no fs_game nor fs_game_base, fall back to "darkmod"
-	if (!fsGameDefined && !fsGameBaseDefined) {
-		cvarSystem->SetCVarString("fs_game", BASE_TDM);
+	// If we still don't have fs_currentfm nor fs_mod, fall back to "darkmod"
+	if ( !fsGameDefined ) {
+		cvarSystem->SetCVarString("fs_currentfm", BASE_TDM);
 		fsGameDefined = true;
+	}
+
+    if ( !fsGameBaseDefined ) {
+        cvarSystem->SetCVarString("fs_mod", BASE_TDM);
+		fsGameBaseDefined = true;
 	}
 }
 
@@ -1111,7 +1121,7 @@ idCommonLocal::WriteFlaggedCVarsToFile
 void idCommonLocal::WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd ) {
 	idFile *f;
 
-	f = fileSystem->OpenFileWrite( filename );
+	f = fileSystem->OpenFileWrite( filename, "fs_savepath", "" );
 	if ( !f ) {
 		Printf( "Couldn't write %s.\n", filename );
 		return;
@@ -1136,7 +1146,7 @@ void idCommonLocal::WriteConfigToFile( const char *filename, const char* basePat
 	idBase64 out;
 #endif
 
-	f = fileSystem->OpenFileWrite( filename, basePath, cvarSystem->GetCVarString( "fs_game_base" ) );
+	f = fileSystem->OpenFileWrite( filename, basePath, "" );
 	if ( !f ) {
 		Printf ("Couldn't write %s.\n", filename );
 		return;
@@ -1183,7 +1193,7 @@ void idCommonLocal::WriteConfiguration( void ) {
 	bool developer = com_developer.GetBool();
 	com_developer.SetBool( false );
 
-	WriteConfigToFile( CONFIG_FILE );
+	WriteConfigToFile( CONFIG_FILE, "fs_savepath" );
 
 	// restore the developer cvar
 	com_developer.SetBool( developer );
@@ -2054,7 +2064,8 @@ void Com_LocalizeGuis_f( const idCmdArgs &args ) {
 
 	idFileList *files;
 	if ( idStr::Icmp( args.Argv(1), "all" ) == 0 ) {
-		idStr curgame = cvarSystem->GetCVarString( "fs_game" );
+		// taaaki: tels, should this reference darkmod or the specific mission?
+        idStr curgame = cvarSystem->GetCVarString( "fs_mod" ); 
 		if(curgame.Length()) {
 			files = fileSystem->ListFilesTree( "guis", "*.gui", true, curgame );
 		} else {
@@ -2863,7 +2874,7 @@ idCommonLocal::InitGame
 */
 void idCommonLocal::InitGame( void )
 {
-	// greebo: Check if we have fs_game and/or fs_game_base defined, if not fall back to default values
+	// greebo: Check if we have fs_currentfm and/or fs_mod defined, if not fall back to default values
 	// Do this before initialising the filesystem
 	InitGameArguments();
 
@@ -2876,21 +2887,9 @@ void idCommonLocal::InitGame( void )
 	// force r_fullscreen 0 if running a tool
 	CheckToolMode();
 
-	// greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
-	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_modSavePath" ) );
-	bool sysDetect = ( file == NULL );
-	if ( file ) {
-		fileSystem->CloseFile( file );
-	} else {
-		file = fileSystem->OpenFileWrite( CONFIG_SPEC );
-		fileSystem->CloseFile( file );
-	}
-	
 	idCmdArgs args;
-	if ( sysDetect ) {
-		SetMachineSpec();
-		Com_ExecMachineSpec_f( args );
-	}
+	SetMachineSpec();
+    Com_ExecMachineSpec_f( args );
 
 	// initialize the renderSystem data structures, but don't start OpenGL yet
 	renderSystem->Init();
@@ -2970,7 +2969,11 @@ void idCommonLocal::InitGame( void )
 	// DebuggerServerInit();
 
 	PrintLoadingMessage( Translate( "#str_04350" ) );
-
+    const char * bp =  cvarSystem->GetCVarString("fs_basepath");
+    const char * sp =  cvarSystem->GetCVarString("fs_savepath");
+    const char * mp =  cvarSystem->GetCVarString("fs_mod");
+    const char * fp =  cvarSystem->GetCVarString("fs_currentfm");
+    const char * msp =  cvarSystem->GetCVarString("fs_modSavePath");
 	// load the game dll
 	LoadGameDLL();
 	
@@ -2982,13 +2985,11 @@ void idCommonLocal::InitGame( void )
 	// have to do this twice.. first one sets the correct r_mode for the renderer init
 	// this time around the backend is all setup correct.. a bit fugly but do not want
 	// to mess with all the gl init at this point.. an old vid card will never qualify for 
-	if ( sysDetect ) {
-		SetMachineSpec();
-		Com_ExecMachineSpec_f( args );
-		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
-		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
-		cmdSystem->ExecuteCommandBuffer();
-	}
+	SetMachineSpec();
+	Com_ExecMachineSpec_f( args );
+	cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
+	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
+	cmdSystem->ExecuteCommandBuffer();
 }
 
 /*

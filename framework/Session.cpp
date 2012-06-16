@@ -1854,7 +1854,7 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 
 	// Open savegame file
 	// only allow loads from the game directory because we don't want a base game to load
-	idStr game = cvarSystem->GetCVarString( "fs_game" );
+	idStr game = cvarSystem->GetCVarString( "fs_currentfm" );
 	savegameFile = fileSystem->OpenFileRead( in, true, game.Length() ? game : NULL );
 
 	if ( savegameFile == NULL ) {

@@ -31,7 +31,7 @@
 class CMissionDB
 {
 private:
-	// Named mission info structures (fs_game => info)
+	// Named mission info structures (fs_currentfm => info)
 	typedef std::map<std::string, CModInfoPtr> MissionInfoMap;
 	MissionInfoMap _missionInfo;
 
@@ -43,7 +43,7 @@ public:
 	// Saves changed data to disk
 	void Save();
 
-	// Returns the mission info structure for this fs_game
+	// Returns the mission info structure for this fs_currentfm
 	// Always returns non-NULL, if the name is not existing, 
 	// a new structure will be created
 	const CModInfoPtr& GetModInfo(const idStr& name);

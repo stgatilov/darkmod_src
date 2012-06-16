@@ -288,8 +288,7 @@ bool Image::SaveImageToFile(const fs::path& path, Format format) const
 bool Image::SaveImageToVfs(const char* filename, Format format) const
 {
 	//create directories if necessary
-    const char *gamedir = cvarSystem->GetCVarString( "fs_game_base" );
-	fileSystem->CloseFile(fileSystem->OpenFileWrite(filename, "fs_basepath", gamedir));
+	fileSystem->CloseFile(fileSystem->OpenFileWrite(filename, "fs_savepath", ""));
 	//write image file
-	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename, "fs_basepath", gamedir), format);
+	return SaveDevILToFile(fileSystem->RelativePathToOSPath(filename, "fs_savepath", ""), format);
 }

@@ -215,10 +215,10 @@ void CMissionManager::OnMissionComplete()
 
 CModInfoPtr CMissionManager::GetCurrentModInfo()
 {
-	idStr gameBase = cvarSystem->GetCVarString("fs_game_base");
+	idStr gameBase = cvarSystem->GetCVarString("fs_mod");
 
-	// We only have a mod if game_base is set correctly, otherwise we're in "darkmod".
-	idStr curMission = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_game") : "";
+	// We only have a mod if custom_mod is set correctly, otherwise we're in "darkmod".
+	idStr curMission = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_currentfm") : "";
 
 	if (curMission.IsEmpty() || curMission == BASE_TDM) 
 	{
@@ -320,12 +320,14 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 
 	fs::path darkmodPath = GetDarkmodPath();
 
-	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
+	fs::path fmPath;
+    fmPath = darkmodPath / cv_tdm_fm_path.GetString();
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.file_string().c_str());
 
 	// greebo: Use boost::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
+    // TODO: taaaki - implement error checking - i.e. check if fms folder exists, etc.
 	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
 		if (fs::is_directory(*i)) continue;
@@ -541,7 +543,7 @@ void CMissionManager::GenerateModList()
 // Compare functor to sort missions by title
 int CMissionManager::ModSortCompare(const int* a, const int* b)
 {
-	// Get the mission titles (fs_game stuff)
+	// Get the mission titles (fs_currentfm stuff)
 	CModInfoPtr aInfo = gameLocal.m_MissionManager->GetModInfo(*a);
 	CModInfoPtr bInfo = gameLocal.m_MissionManager->GetModInfo(*b);
 
@@ -1353,7 +1355,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 	pugi::xpath_node_set nodes = doc->select_nodes("//tdm/availableMissions//mission");
 
-	const char* fs_game = cvarSystem->GetCVarString("fs_game");
+	const char* fs_currentfm = cvarSystem->GetCVarString("fs_currentfm");
 
 	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
 	{
@@ -1372,9 +1374,9 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		mission.version = node.attribute("version").as_int();
 		mission.isUpdate = false;
 
-		if (idStr::Cmp(mission.modName.c_str(), fs_game) == 0)
+		if (idStr::Cmp(mission.modName.c_str(), fs_currentfm) == 0)
 		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removing currently installed mission %s from the list of downloadable missions.\r", fs_game);
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removing currently installed mission %s from the list of downloadable missions.\r", fs_currentfm);
 			continue;
 		}
 

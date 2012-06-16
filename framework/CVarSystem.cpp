@@ -565,9 +565,17 @@ void idCVarSystemLocal::SetInternal( const char *name, const char *value, int fl
 	internal = FindInternal( name );
 
 	if ( internal ) {
-		internal->InternalSetString( value );
-		internal->flags |= flags & ~CVAR_STATIC;
-		internal->UpdateCheat();
+        // if a cvar is marked read-only and init, it should not be possible to modify 
+        // it using commandline arguments
+        int cvro = internal->flags & CVAR_ROM;
+        int cvinit = internal->flags & CVAR_INIT;
+        if ( !( cvro && cvinit) ) {
+		    internal->InternalSetString( value );
+		    internal->flags |= flags & ~CVAR_STATIC;
+		    internal->UpdateCheat();
+        } else {
+            common->Warning("Attempt to modify read-only CVAR, %s, failed.", name);
+        }
 	} else {
 		internal = new idInternalCVar( name, value, flags );
 		hash = cvarHash.GenerateKey( internal->nameString.c_str(), false );

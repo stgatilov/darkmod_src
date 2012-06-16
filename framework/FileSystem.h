@@ -143,7 +143,7 @@ public:
 							// Returns true if we are doing an fs_copyfiles.
 	virtual bool			PerformingCopyFiles( void ) const = 0;
 							// Returns a list of mods found along with descriptions
-							// 'mods' contains the directory names to be passed to fs_game
+							// 'mods' contains the directory names to be passed to fs_mod
 							// 'descriptions' contains a free form string to be used in the UI
 	virtual idModList *		ListMods( void ) = 0;
 							// Frees the given mod list
@@ -194,7 +194,7 @@ public:
 							// Opens a file for writing, will create any needed subdirectories.
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) = 0;
 							// Opens a file for writing at the end.
-	virtual idFile *		OpenFileAppend( const char *filename, bool sync = false, const char *basePath = "fs_basepath" ) = 0;
+	virtual idFile *		OpenFileAppend( const char *filename, bool sync = false, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) = 0;
 							// Opens a file for reading, writing, or appending depending on the value of mode.
 	virtual idFile *		OpenFileByMode( const char *relativePath, fsMode_t mode ) = 0;
 							// Opens a file for reading from a full OS path.
@@ -242,8 +242,8 @@ public:
 							// ignore case and seperator char distinctions
 	virtual bool			FilenameCompare( const char *s1, const char *s2 ) const = 0;
 
-	// greebo: Returns the full path to the darkmod/ folder.
-	virtual const char*		DarkModPath() const = 0;
+	// greebo: Returns the full path to the darkmod/ folder or custom_mod/ if set.
+	virtual const char*		ModPath() const = 0;
 };
 
 extern idFileSystem *		fileSystem;

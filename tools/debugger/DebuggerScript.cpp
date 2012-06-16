@@ -121,7 +121,7 @@ bool rvDebuggerScript::Load ( const char* filename )
 		mProgram->CompileFile ( SCRIPT_DEFAULT );
 		
 		//BSM Nerve: Loads a game specific main script file
-		idStr gamedir = cvarSystem->GetCVarString( "fs_game" );
+		idStr gamedir = cvarSystem->GetCVarString( "fs_currentfm" );
 		if(gamedir.Length() > 0) {
 
 			idStr scriptFile = va("script/%s_main.script", gamedir.c_str());

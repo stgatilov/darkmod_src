@@ -1183,7 +1183,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 
 void Screenshot_ChangeFilename(idStr& filename, const char *extension)
 {
-	idStr mapname( cvarSystem->GetCVarString( "fs_game" ) );
+	idStr mapname( cvarSystem->GetCVarString( "fs_currentfm" ) );
 	char thetime[MAX_IMAGE_NAME/2];
 
 	if ( !mapname || mapname[0] == '\0' ) {
@@ -1309,7 +1309,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 		Screenshot_ChangeFilename(changedPath, "tga");
 
 		// Format is TGA, just save the buffer
-        fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_basepath", cvarSystem->GetCVarString( "fs_game_base" ) );
+        fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
 
 		common->Printf( "Wrote %s\n", changedPath.c_str() );
 	}
@@ -1413,7 +1413,7 @@ void R_StencilShot( void ) {
 	buffer[15] = height >> 8;
 	buffer[16] = 24;	// pixel size
 
-	fileSystem->WriteFile( "screenshots/stencilShot.tga", buffer, flen, "fs_savepath" );
+	fileSystem->WriteFile( "screenshots/stencilShot.tga", buffer, flen, "fs_savepath", "" );
 
 	Mem_Free( buffer );
 	Mem_Free( byteBuffer );	

@@ -192,7 +192,7 @@ class CMissionManager
 private:
 	CMissionDBPtr _missionDB;
 
-	// A plain list of available fs_game names
+	// A plain list of available fs_currentfm names
 	idStringList _availableMods;
 
 	// A list of path => path associations for moving files around
@@ -315,7 +315,7 @@ public:
 	// Installs mod (by index)
 	InstallResult InstallMod(int index);
 
-	// Installs mod (by fs_game name)
+	// Installs mod (by fs_currentfm name)
 	InstallResult InstallMod(const idStr& name);
 
 	// Writes the given mod name to the currentfm.txt file

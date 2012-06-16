@@ -36,7 +36,7 @@ private:
 	// TRUE if the underlying declaration has been altered and needs saving
 	bool _declDirty;
 
-	// The cached size of the fs_game folder, in KB
+	// The cached size of the fs_currentfm folder, in KB
 	std::size_t _modFolderSize;
 	bool		_modFolderSizeComputed;
 
@@ -49,7 +49,7 @@ public:
 	// Public Properties - these aren't stored in the mod info declaration
 	// but are constructed from the text files found in the fms/mod/ folders.
 
-	idStr modName;			// The mod name (fs_game)
+	idStr modName;			// The mod name (fs_currentfm)
 	idStr displayName;		// The display name of the mission
 	idStr pathToFMPackage;	// path to PK4 in fms/ folder
 	idStr description;		// description text
@@ -71,7 +71,7 @@ public:
 		requiredMinor(TDM_VERSION_MINOR)
 	{}
 
-	// Returns the size requirements of the fs_game folder
+	// Returns the size requirements of the fs_currentfm folder
 	// Returns 0 if the mod has not been installed yet
 	std::size_t GetModFolderSize();
 
