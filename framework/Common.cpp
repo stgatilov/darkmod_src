@@ -613,7 +613,7 @@ void idCommonLocal::DumpWarnings( void ) {
 		return;
 	}
 
-	warningFile = fileSystem->OpenFileWrite( "warnings.txt", "fs_modSavePath" );
+	warningFile = fileSystem->OpenFileWrite( "warnings.txt", "fs_savepath", "" );
 	if ( warningFile ) {
 		warningFile->Printf( "------------- Warnings ---------------\n\n" );
 		warningFile->Printf( "during %s...\n", warningCaption.c_str() );
@@ -641,7 +641,7 @@ void idCommonLocal::DumpWarnings( void ) {
 
 #if defined(_WIN32) && !defined(_DEBUG)
 		idStr	osPath;
-		osPath = fileSystem->RelativePathToOSPath( "warnings.txt", "fs_modSavePath" );
+		osPath = fileSystem->RelativePathToOSPath( "warnings.txt", "fs_savepath", "" );
 		WinExec( va( "Notepad.exe %s", osPath.c_str() ), SW_SHOW );
 #endif
 	}
@@ -857,18 +857,18 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 }
 
 void idCommonLocal::InitGameArguments() {
+    int i;
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
 	bool fsBasePathDefined = false;
-
 	idStr basePath = Sys_DefaultBasePath(); // might be overridden by the arguments below
 	
     // taaaki - while we want to be able to support mods in the future, I want to limit
     //          this ability until the TDM and D3 source merge is in a better state.
     bool enableMods = false;
     idStr fsGameBase = BASE_TDM;
-    fsGameBaseDefined = true; 
-
+    fsGameBaseDefined = true;
+    
 	// Search the command line arguments for certain override parameters
 	for (int line = 0; line < com_numConsoleLines; ++line) {
 		const idCmdArgs& args = com_consoleLines[line];
@@ -940,15 +940,34 @@ void idCommonLocal::InitGameArguments() {
 		}
 	}
 
-	// If we still don't have fs_currentfm nor fs_mod, fall back to "darkmod"
-	if ( !fsGameDefined ) {
-		cvarSystem->SetCVarString("fs_currentfm", BASE_TDM);
-		fsGameDefined = true;
-	}
-
+    // If we still don't have fs_mod, fall back to "darkmod"
     if ( !fsGameBaseDefined ) {
         cvarSystem->SetCVarString("fs_mod", BASE_TDM);
 		fsGameBaseDefined = true;
+	}
+
+    // taaaki - at the very least, check if the specified fan mission 
+    // folder exists in <fs_mod>/fms/
+    if ( fsGameDefined ) {
+        idStrList fmList;
+        idStr fmPath = darkmodPath;
+        fmPath.AppendPath("fms");
+        idStr curFm = idStr(cvarSystem->GetCVarString("fs_currentfm"));
+    
+        Sys_ListFiles( fmPath.c_str(), "/", fmList );
+        
+        if ( fmList.FindIndex( curFm ) < 0 ) {
+            // didn't find the mission in the list
+            fsGameDefined = false;
+            common->Warning("Fan mission path does not exist for installed fm: %s", curFm.c_str());
+        }
+    }
+
+	// If we still don't have fs_currentfm or the fm directory does not 
+    // exist, fall back to "darkmod"
+	if ( !fsGameDefined ) {
+		cvarSystem->SetCVarString("fs_currentfm", BASE_TDM);
+		fsGameDefined = true;
 	}
 }
 

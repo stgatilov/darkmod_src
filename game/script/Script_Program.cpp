@@ -1769,7 +1769,7 @@ bool idProgram::CompileText( const char *source, const char *text, bool console 
 	idStr		ospath;
 
 	// use a full os path for GetFilenum since it calls OSPathToRelativePath to convert filenames from the parser
-	ospath = fileSystem->RelativePathToOSPath( source );
+	ospath = fileSystem->RelativePathToOSPath( source, "fs_savepath", "" );
 	filenum = GetFilenum( ospath );
 
 	try {

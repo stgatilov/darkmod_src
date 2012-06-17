@@ -217,7 +217,7 @@ CModInfoPtr CMissionManager::GetCurrentModInfo()
 {
 	idStr gameBase = cvarSystem->GetCVarString("fs_mod");
 
-	// We only have a mod if custom_mod is set correctly, otherwise we're in "darkmod".
+	// We only have a mod if fs_mod is set correctly, otherwise we're in "darkmod".
 	idStr curMission = (!gameBase.IsEmpty()) ? cvarSystem->GetCVarString("fs_currentfm") : "";
 
 	if (curMission.IsEmpty() || curMission == BASE_TDM) 
