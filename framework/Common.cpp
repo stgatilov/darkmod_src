@@ -857,7 +857,6 @@ void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
 }
 
 void idCommonLocal::InitGameArguments() {
-    int i;
 	bool fsGameDefined = false;
 	bool fsGameBaseDefined = false;
 	bool fsBasePathDefined = false;
