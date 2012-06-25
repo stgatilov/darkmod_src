@@ -2905,9 +2905,21 @@ void idCommonLocal::InitGame( void )
 	// force r_fullscreen 0 if running a tool
 	CheckToolMode();
 
+    // greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
+	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath", "" ) );
+	bool sysDetect = ( file == NULL );
+	if ( file ) {
+		fileSystem->CloseFile( file );
+	} else {
+		file = fileSystem->OpenFileWrite( CONFIG_SPEC, "fs_savepath", "" );
+		fileSystem->CloseFile( file );
+	}
+
 	idCmdArgs args;
-	SetMachineSpec();
-    Com_ExecMachineSpec_f( args );
+	if ( sysDetect ) {
+		SetMachineSpec();
+		Com_ExecMachineSpec_f( args );
+	}
 
 	// initialize the renderSystem data structures, but don't start OpenGL yet
 	renderSystem->Init();
@@ -2987,11 +2999,7 @@ void idCommonLocal::InitGame( void )
 	// DebuggerServerInit();
 
 	PrintLoadingMessage( Translate( "#str_04350" ) );
-    const char * bp =  cvarSystem->GetCVarString("fs_basepath");
-    const char * sp =  cvarSystem->GetCVarString("fs_savepath");
-    const char * mp =  cvarSystem->GetCVarString("fs_mod");
-    const char * fp =  cvarSystem->GetCVarString("fs_currentfm");
-    const char * msp =  cvarSystem->GetCVarString("fs_modSavePath");
+
 	// load the game dll
 	LoadGameDLL();
 	
@@ -3003,11 +3011,13 @@ void idCommonLocal::InitGame( void )
 	// have to do this twice.. first one sets the correct r_mode for the renderer init
 	// this time around the backend is all setup correct.. a bit fugly but do not want
 	// to mess with all the gl init at this point.. an old vid card will never qualify for 
-	SetMachineSpec();
-	Com_ExecMachineSpec_f( args );
-	cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
-	cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
-	cmdSystem->ExecuteCommandBuffer();
+	if ( sysDetect ) {
+		SetMachineSpec();
+		Com_ExecMachineSpec_f( args );
+		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
+		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
+		cmdSystem->ExecuteCommandBuffer();
+	}
 }
 
 /*

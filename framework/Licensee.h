@@ -95,3 +95,5 @@
 
 // Linux info
 #define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
+
+#define CONFIG_SPEC						"config.spec"
