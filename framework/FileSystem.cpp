@@ -2022,16 +2022,6 @@ void idFileSystemLocal::SetupGameDirectories( const char *gameName ) {
 	if ( fs_basepath.GetString()[0] ) {
 		AddGameDirectory( fs_basepath.GetString(), gameName );
 	}
-
-	// setup devpath
-	if ( fs_devpath.GetString()[0] ) {
-		AddGameDirectory( fs_devpath.GetString(), gameName );
-	}
-
-	// setup savepath
-	if ( fs_savepath.GetString()[0] ) {
-		AddGameDirectory( fs_savepath.GetString(), gameName );
-	}
 }
 
 /*
