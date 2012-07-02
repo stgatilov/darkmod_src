@@ -34,6 +34,7 @@
 
 static idStr	basepath;
 static idStr	savepath;
+static idStr	homepath;
 static idStr	modSavepath; // greebo: Added for TDM mission handling
 
 /*
@@ -105,14 +106,29 @@ void Sys_AsyncThread( void ) {
 
 /*
  ==============
+ Sys_HomeSavePath
+ ==============
+ */
+const char *Sys_HomeSavePath(void) {
+#if defined( ID_DEMO_BUILD )
+	sprintf( homepath, "%s/.doom3-demo", getenv( "HOME" ) );
+#else
+	sprintf( homepath, "%s/.doom3", getenv( "HOME" ) );
+#endif
+	return homepath.c_str();
+}
+
+/*
+ ==============
  Sys_DefaultSavePath
  ==============
  */
 const char *Sys_DefaultSavePath(void) {
+	idStr fsMod = cvarSystem->GetCVarString("fs_mod");
 #if defined( ID_DEMO_BUILD )
-	sprintf( savepath, "%s/.doom3-demo", getenv( "HOME" ) );
+	sprintf( savepath, "%s/.doom3-demo/%s", getenv( "HOME" ), fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );
 #else
-	sprintf( savepath, "%s/.doom3", getenv( "HOME" ) );
+	sprintf( savepath, "%s/.doom3/%s", getenv( "HOME" ), fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );
 #endif
 	return savepath.c_str();
 }
@@ -124,9 +140,7 @@ const char *Sys_DefaultSavePath(void) {
  */
 const char* Sys_ModSavePath()
 {
-	idStr fsGameBase = cvarSystem->GetCVarString("fs_game_base");
-
-	sprintf( modSavepath, "%s/%s/%s", Sys_DefaultSavePath(), fsGameBase.IsEmpty() ? "darkmod" : fsGameBase.c_str(), "fms" );
+	sprintf( modSavepath, "%s/%s", Sys_DefaultSavePath(), "fms" );
 	return modSavepath.c_str();
 }
 

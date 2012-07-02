@@ -2090,6 +2090,14 @@ void idFileSystemLocal::Startup( void ) {
 		SetupGameDirectories( fs_mod.GetString() );
 	}
 
+#ifndef _WIN32
+	idStr homeSave = Sys_HomeSavePath();
+	if ( homeSave.c_str()[0] && 
+         fs_mod.GetString()[0] ) {
+        AddGameDirectory( homeSave.c_str(), fs_mod.GetString() );
+    }
+#endif
+
     // taaaki: setup fm path -- 
     //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod") > BASE_GAMEDIR ("base")
     // The following logic has been deprecated:
@@ -3535,20 +3543,11 @@ void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len 
 }
 
 const char* idFileSystemLocal::ModPath() const {
-    idStr modBaseName = cvarSystem->GetCVarString("fs_mod");
-
-	if (modBaseName.IsEmpty())
-	{
-		// Fall back to BASE_TDM if no custom_mod is set
-		modBaseName = BASE_TDM; // last resort: semi-hardcoded
-		common->Printf("idFileSystemLocal::ModPath: Falling back to 'darkmod'\n");
-	}
-
     // basepath = something like c:\games\doom3, modBaseName is usually darkmod
 	static char path[MAX_STRING_CHARS];
 	path[0] = '\0';
 
-	const char* modPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_basepath"), modBaseName, "");
+	const char* modPath = fileSystem->BuildOSPath(cvarSystem->GetCVarString("fs_savepath"), "", "");
 
 	if (modPath != NULL && modPath[0] != '\0') {
 		idStr::Copynz(path, modPath, sizeof(path));

@@ -349,6 +349,7 @@ ID_TIME_T			Sys_FileTimeStamp( FILE *fp );
 const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char *	Sys_DefaultCDPath( void );
 const char *	Sys_DefaultBasePath( void );
+const char *	Sys_HomeSavePath( void );
 const char *	Sys_DefaultSavePath( void );
 const char *	Sys_ModSavePath( void ); // greebo: added this for TDM mission handling
 const char *	Sys_EXEPath( void );

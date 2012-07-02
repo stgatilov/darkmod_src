@@ -949,12 +949,11 @@ void idCommonLocal::InitGameArguments() {
     // folder exists in <fs_mod>/fms/
     if ( fsGameDefined ) {
         idStrList fmList;
-        idStr fmPath = darkmodPath;
-        fmPath.AppendPath("fms");
-        idStr curFm = idStr(cvarSystem->GetCVarString("fs_currentfm"));
-    
+        idStr fmPath = Sys_ModSavePath();
+        idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
+
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
-        
+
         if ( fmList.FindIndex( curFm ) < 0 ) {
             // didn't find the mission in the list
             fsGameDefined = false;
