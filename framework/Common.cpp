@@ -949,7 +949,12 @@ void idCommonLocal::InitGameArguments() {
     // folder exists in <fs_mod>/fms/
     if ( fsGameDefined ) {
         idStrList fmList;
+#ifdef _WIN32
+        idStr fmPath = darkmodPath;
+        fmPath.AppendPath("fms");
+#else
         idStr fmPath = Sys_ModSavePath();
+#endif
         idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
 
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
