@@ -1619,7 +1619,10 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		// just use flooring for this class
 		SeedClass.floor = true;
 	}
-	gameLocal.Printf( "SEED %s: Adding class %s.\n", GetName(), SeedClass.classname.c_str() );
+	if (m_iDebug > 0)
+	{
+		gameLocal.Printf( "SEED %s: Adding class %s.\n", GetName(), SeedClass.classname.c_str() );
+	}
 
 	// if the size on x or y is very small, use "0.2" instead. This is to avoid that models
 	// consisting of a flat plane get 0 as size:
@@ -1790,7 +1793,10 @@ void Seed::ComputeEntityCount( void )
 		m_iNumEntities = max_entities;
 	}
 
-	gameLocal.Printf( "SEED %s: Entity count: %i.\n", GetName(), m_iNumEntities );
+	if (m_iDebug > 0)
+	{
+		gameLocal.Printf( "SEED %s: Entity count: %i.\n", GetName(), m_iNumEntities );
+	}
 
 	// We do no longer impose a limit, as no more than SPAWN_LIMIT will be existing:
 	/* if (m_iNumEntities > SPAWN_LIMIT)
@@ -1835,7 +1841,7 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 		origin.z += (my_size.z / 2) - 1;
 		args.SetVector("origin", origin);
 
-		gameLocal.Printf("SEED %s: my origin: %s template origin %s\n", GetName(), m_origin.ToString(), origin.ToString() );
+//		gameLocal.Printf("SEED %s: my origin: %s template origin %s\n", GetName(), m_origin.ToString(), origin.ToString() );
 
 		// classname and model
 		args.Set("classname", entityClass);
@@ -1930,7 +1936,10 @@ void Seed::Prepare( void )
 			{
 				idBounds b = ent->GetRenderEntity()->bounds; 
 				SeedInhibitor.size = b.GetSize();
-				gameLocal.Printf( "SEED %s: Inhibitor size %s\n", GetName(), SeedInhibitor.size.ToString() );
+				if (m_iDebug)
+				{
+					gameLocal.Printf( "SEED %s: Inhibitor size %s\n", GetName(), SeedInhibitor.size.ToString() );
+				}
 
 				SeedInhibitor.origin = ent->spawnArgs.GetVector( "origin" );
 				// the "axis" part does not work, as DR simply rotates the brush model, but does not record an axis
@@ -1972,7 +1981,7 @@ void Seed::Prepare( void )
 				// have either inhibit or noinhibit in the spawnargs?
 				if ( !prefix.IsEmpty())
 				{
-					gameLocal.Printf( "SEED %s: Inhibitor has %s set.\n", GetName(), prefix.c_str() );
+//					gameLocal.Printf( "SEED %s: Inhibitor has %s set.\n", GetName(), prefix.c_str() );
    					kv = ent->spawnArgs.MatchPrefix( prefix, NULL );
 					while( kv )
 					{
@@ -1991,8 +2000,11 @@ void Seed::Prepare( void )
 			// If this entity wants us to watch over his brethren, add them to our list:
 			if ( ent->spawnArgs.GetBool( "seed_watch_brethren", "0" ) )
 			{
-				gameLocal.Printf( "SEED %s: %s (class %s, model %s) wants us to take care of his brethren.\n",
+				if (m_iDebug)
+				{
+					gameLocal.Printf( "SEED %s: %s (class %s, model %s) wants us to take care of his brethren.\n",
 						GetName(), ent->GetName(), ent->GetEntityDefName(), ent->spawnArgs.GetString("model","") );
+				}
 				AddClassFromEntity( ent, true, false );
 
 				idPhysics *p = ent->GetPhysics();
@@ -2142,7 +2154,10 @@ void Seed::Prepare( void )
 		{
 			// spawn all entities
 			int num = m_Entities.Num();
-			gameLocal.Printf( "SEED %s: Spawning all %i entities.\n", GetName(), num );
+			if (m_iDebug)
+			{
+				gameLocal.Printf( "SEED %s: Spawning all %i entities.\n", GetName(), num );
+			}
 
 			bool canRemoveMyself = true;
 
@@ -2164,7 +2179,10 @@ void Seed::Prepare( void )
 
 			if (canRemoveMyself)
 			{
-				gameLocal.Printf( "SEED %s: Removing myself.\n", GetName() );
+				if (m_iDebug)
+				{
+					gameLocal.Printf( "SEED %s: Removing myself.\n", GetName() );
+				}
 				// clear out memory just to be sure
 				ClearClasses();
 				m_Entities.Clear();
