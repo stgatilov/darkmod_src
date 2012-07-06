@@ -155,6 +155,7 @@ const idEventDef EV_ChangeWeaponName("changeWeaponName", "ss", NULL);
 const idEventDef EV_GetCurWeaponName("getCurWeaponName", NULL, 's');
 const idEventDef EV_SetActiveInventoryMapEnt("setActiveInventoryMapEnt", "e");
 const idEventDef EV_ClearActiveInventoryMap("clearActiveInventoryMap", NULL);
+const idEventDef EV_ClearActiveInventoryMapEnt("clearActiveInventoryMapEnt", NULL); // grayman #3164
 
 // ishtvan: Let scripts get the currently frobbed entity, and set "frob only used by" mode
 const idEventDef EV_Player_GetFrobbed("getFrobbed", NULL, 'e');
@@ -239,6 +240,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_GetCurWeaponName,				idPlayer::Event_GetCurWeaponName )
 	EVENT( EV_SetActiveInventoryMapEnt,		idPlayer::Event_SetActiveInventoryMapEnt )
 	EVENT( EV_ClearActiveInventoryMap,		idPlayer::Event_ClearActiveInventoryMap )
+	EVENT( EV_ClearActiveInventoryMapEnt,	idPlayer::Event_ClearActiveInventoryMapEnt ) // grayman #3164
 
 	EVENT( EV_Player_GetFrobbed,			idPlayer::Event_GetFrobbed )
 	EVENT( EV_Player_SetFrobOnlyUsedByInv,	idPlayer::Event_SetFrobOnlyUsedByInv )
@@ -2964,7 +2966,8 @@ void idPlayer::FireWeapon( void )
 		{
 			AI_ATTACK_HELD = true;
 			weapon.GetEntity()->BeginAttack();
-		} else if( cv_weapon_next_on_empty.GetBool() )
+		}
+		else if ( cv_weapon_next_on_empty.GetBool() )
 		{
 			NextBestWeapon();
 		}
@@ -3772,9 +3775,11 @@ idPlayer::Weapon_GUI
 */
 void idPlayer::Weapon_GUI( void )
 {
-	if ( idealWeapon != currentWeapon ) {
+	if ( idealWeapon != currentWeapon )
+	{
 		Weapon_Combat();
 	}
+
 	StopFiring();
 	weapon.GetEntity()->LowerWeapon();
 
@@ -3783,13 +3788,15 @@ void idPlayer::Weapon_GUI( void )
 		return;
 	}
 
-	if ( ( oldButtons ^ usercmd.buttons ) & BUTTON_ATTACK ) {
+	if ( ( oldButtons ^ usercmd.buttons ) & BUTTON_ATTACK )
+	{
 		sysEvent_t ev;
 		const char *command = NULL;
 		bool updateVisuals = false;
 
 		idUserInterface *ui = ActiveGui();
-		if ( ui ) {
+		if ( ui )
+		{
 			ev = sys->GenerateMouseButtonEvent( 1, ( usercmd.buttons & BUTTON_ATTACK ) != 0 );
 			command = ui->HandleEvent( &ev, gameLocal.time, &updateVisuals );
 #if 0
@@ -3798,15 +3805,19 @@ void idPlayer::Weapon_GUI( void )
 			}
 #endif
 		}
-		if ( gameLocal.isClient ) {
+		if ( gameLocal.isClient )
+		{
 			// we predict enough, but don't want to execute commands
 			return;
 		}
 
 #if 0
-		if ( focusGUIent ) {
+		if ( focusGUIent )
+		{
 			HandleGuiCommands( focusGUIent, command );
-		} else {
+		}
+		else
+		{
 			HandleGuiCommands( this, command );
 		}
 #else // greebo: Replaced the above with this, no focusGUIEnt anymore
@@ -5492,8 +5503,6 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 void idPlayer::PerformKeyRepeat(int impulse, int holdTime)
 {
-
-
 	switch (impulse)
 	{
 		case IMPULSE_23:		// TDM Crouch
@@ -6750,7 +6759,7 @@ void idPlayer::Think( void )
 	// Solarsplace 19th Nov 2010 - Bug tracker id 0002424
 	if ( ! (gameLocal.mainMenuExited && ( usercmd.buttons & BUTTON_ATTACK )) )
 	{
-        	allowAttack = true;
+		allowAttack = true;
 		gameLocal.mainMenuExited = false;
 	}
 
@@ -6904,13 +6913,13 @@ void idPlayer::Think( void )
 	PerformFrobCheck();
 
 	// greebo: Close any opened inventory maps when releasing the attack button (#2460)
-	if (m_ActiveInventoryMapEnt.GetEntity() != NULL && (oldButtons & BUTTON_ATTACK) && !(usercmd.buttons & BUTTON_ATTACK))
+	if ( ( m_ActiveInventoryMapEnt.GetEntity() != NULL ) && (oldButtons & BUTTON_ATTACK) && !(usercmd.buttons & BUTTON_ATTACK) )
 	{
 		ClearActiveInventoryMap();
 
 		// Disallow attacks to avoid triggering the weapon immediately after closing the map
 		allowAttack = false;
-	}
+ 	}
 
 	// Check if we just hit the attack button
 	idEntity* frobbedEnt = m_FrobEntity.GetEntity();
@@ -11272,7 +11281,10 @@ void idPlayer::ClearActiveInventoryMap()
 {
 	idEntity* mapEnt = m_ActiveInventoryMapEnt.GetEntity();
 
-	if (mapEnt == NULL) return;
+	if (mapEnt == NULL)
+	{
+		return;
+	}
 
 	// Call the method inventory_map::clear(entity userEnt)
 	idThread* thread = mapEnt->CallScriptFunctionArgs("clear", true, 0, "ee", mapEnt, this);
@@ -11300,6 +11312,11 @@ void idPlayer::Event_SetActiveInventoryMapEnt(idEntity* mapEnt)
 	}
 
 	m_ActiveInventoryMapEnt = mapEnt;
+}
+
+void idPlayer::Event_ClearActiveInventoryMapEnt() // grayman #3164
+{
+	m_ActiveInventoryMapEnt = NULL;
 }
 
 void idPlayer::Event_GetFrobbed()

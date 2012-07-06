@@ -1368,6 +1368,8 @@ private:
 	// Sets the currently active map (feedback method for inventory map scripts)
 	void					Event_SetActiveInventoryMapEnt(idEntity* mapEnt);
 
+	void					Event_ClearActiveInventoryMapEnt(); // grayman #3164
+	
 	// return the frobbed entity
 	void					Event_GetFrobbed();
 	// enables "frob only ents used by active inventory item" mode
