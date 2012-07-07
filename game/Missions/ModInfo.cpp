@@ -279,7 +279,9 @@ bool CModInfo::LoadMetaData()
 	if (versionPos >= 0)
 	{
 		requiredVersionStr = idStr(modFileContent, versionPos, len);
+		
 		Strip("Required TDM Version:", requiredVersionStr);
+		requiredVersionStr.StripLeadingOnce('v');	// tels: "v1.07" => "1.07"		(#3170)
 
 		// Parse version
 		int dotPos = requiredVersionStr.Find('.');
@@ -305,6 +307,5 @@ bool CModInfo::LoadMetaData()
 
 void CModInfo::Strip( const char *fieldname, idStr &input) {
 	input.StripLeadingOnce(fieldname);
-	input.StripLeadingWhitespace();
-	input.StripTrailingWhitespace();
+	input.StripWhitespace();
 }
