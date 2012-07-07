@@ -499,9 +499,8 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 	trace_t newCollision = collision; // grayman #2816 - in case we need to modify collision
 
 	// grayman #2816 - if we hit the world, skip all the damage work
-	// grayman #3168 - if this moveable isn't pushable, skip all the damage work
 
-	if ( ent && ( ent != gameLocal.world ) && GetPhysics()->IsPushable() )
+	if ( ent && ( ent != gameLocal.world ) )
 	{
 		idActor* entActor = NULL;
 
