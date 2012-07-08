@@ -726,7 +726,7 @@ void DialogScriptEditor::OnBnClickedOk() {
 	scriptText.Replace( "\r", "\r\n" );
 	scriptText.Replace( "\v", "\r\n" );
 
-	if ( fileSystem->WriteFile( fileName, scriptText, scriptText.Length(), "fs_devpath" ) == -1 ) {
+	if ( fileSystem->WriteFile( fileName, scriptText, scriptText.Length(), "fs_devpath", "" ) == -1 ) {
 		MessageBox( va( "Couldn't save: %s", fileName.c_str() ), va( "Error saving: %s", fileName.c_str() ), MB_OK | MB_ICONERROR );
 		return;
 	}

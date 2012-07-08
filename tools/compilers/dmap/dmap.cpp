@@ -295,7 +295,17 @@ void Dmap( const idCmdArgs &args ) {
 		passedName = "maps/" + passedName;
 	}
 
-	idStr stripped = passedName;
+    // taaaki - support map files from darkmod/fms/<mission>/maps as well as darkmod/maps
+    //          this is done by opening the file to get the true full path, then converting
+    //          the path back to a RelativePath based off fs_devpath
+    passedName.SetFileExtension( "map" );
+    idFile *fp = idLib::fileSystem->OpenFileRead( passedName, false, "" );
+    if ( fp ) {
+        passedName = idLib::fileSystem->OSPathToRelativePath(fp->GetFullPath());
+        idLib::fileSystem->CloseFile( fp );
+    }
+
+    idStr stripped = passedName;
 	stripped.StripFileExtension();
 	idStr::Copynz( dmapGlobals.mapFileBase, stripped, sizeof(dmapGlobals.mapFileBase) );
 

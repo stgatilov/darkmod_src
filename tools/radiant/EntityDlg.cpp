@@ -1029,7 +1029,7 @@ void CEntityDlg::OnLbnDblclkListkeyval()
 		Value = "script/" + Key;
 		if ( fileSystem->ReadFile( Value, NULL, NULL ) == -1) {
 			sprintf( work, "// Script for %s\n// \n\nvoid main() {\n\n}\n\n", currentmap );
-			fileSystem->WriteFile( Value, work.c_str(), work.Length(), "fs_devpath" );
+			fileSystem->WriteFile( Value, work.c_str(), work.Length(), "fs_devpath", "" );
 		}
 		work = fileSystem->RelativePathToOSPath( Value );
 		WinExec( va( "notepad.exe %s", work.c_str() ), SW_SHOW );

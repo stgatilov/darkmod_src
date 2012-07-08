@@ -473,7 +473,7 @@ void CPreviewDlg::OnBnClickedButtonAdd()
 			str += "\"\r\n\t\"";
 			str += ci.Comments;
 			str += "\"\r\n}\r\n";
-			fileSystem->WriteFile(path, (void*)&str[0], str.Length(), "fs_devpath");
+			fileSystem->WriteFile(path, (void*)&str[0], str.Length(), "fs_devpath", "");
 
 		}
 	}

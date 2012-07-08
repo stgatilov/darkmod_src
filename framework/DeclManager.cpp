@@ -1982,7 +1982,7 @@ bool idDeclLocal::ReplaceSourceFileText( void ) {
 	memcpy( buffer + sourceTextOffset, declText, textLength );
 
 	// write out new file
-	file = fileSystem->OpenFileWrite( GetFileName(), "fs_devpath" );
+	file = fileSystem->OpenFileWrite( GetFileName(), "fs_devpath", "" );
 	if ( !file ) {
 		Mem_Free( buffer );
 		common->Warning( "Couldn't open %s for writing.", GetFileName() );

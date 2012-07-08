@@ -2368,11 +2368,7 @@ void idFileSystemLocal::Init( void ) {
 	}
 
 	if ( fs_devpath.GetString()[0] == '\0' ) {
-#ifdef WIN32
-		fs_devpath.SetString( fs_cdpath.GetString()[0] ? fs_cdpath.GetString() : Sys_ModSavePath() );
-#else
-		fs_devpath.SetString( Sys_ModSavePath() );
-#endif
+        fs_devpath.SetString( Sys_DefaultSavePath() ); // taaaki - TODO - check if this actually works in linux
 	}
 
 	// greebo: By default, set the mod save path to BASE_TDM/fms/.

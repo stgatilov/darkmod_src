@@ -832,7 +832,7 @@ bool idMapFile::Write( const char *fileName, const char *ext, bool fromBasePath 
 	idLib::common->Printf( "writing %s...\n", qpath.c_str() );
 
 	if ( fromBasePath ) {
-		fp = idLib::fileSystem->OpenFileWrite( qpath, "fs_devpath" );
+		fp = idLib::fileSystem->OpenFileWrite( qpath, "fs_devpath", "" );
 	}
 	else {
 		fp = idLib::fileSystem->OpenExplicitFileWrite( qpath );

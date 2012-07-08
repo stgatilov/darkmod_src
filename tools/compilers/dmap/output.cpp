@@ -638,7 +638,7 @@ void WriteOutputFile( void ) {
 
 	common->Printf( "writing %s\n", qpath.c_str() );
 
-	procFile = fileSystem->OpenFileWrite( qpath, "fs_devpath" );
+	procFile = fileSystem->OpenFileWrite( qpath, "fs_devpath", "" );
 	if ( !procFile ) {
 		common->Error( "Error opening %s", qpath.c_str() );
 	}

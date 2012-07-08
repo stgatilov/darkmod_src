@@ -1369,7 +1369,7 @@ void idBrushBSP::LeakFile( const idStr &fileName ) {
 
 	common->Printf( "writing %s...\n", qpath.c_str() );
 
-	lineFile = fileSystem->OpenFileWrite( qpath, "fs_devpath" );
+	lineFile = fileSystem->OpenFileWrite( qpath, "fs_devpath", "" );
 	if ( !lineFile ) {
 		common->Error( "Couldn't open %s\n", qpath.c_str() );
 		return;

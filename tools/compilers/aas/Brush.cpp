@@ -1505,7 +1505,7 @@ idBrushMap::idBrushMap( const idStr &fileName, const idStr &ext ) {
 
 	common->Printf( "writing %s...\n", qpath.c_str() );
 
-	fp = fileSystem->OpenFileWrite( qpath, "fs_devpath" );
+	fp = fileSystem->OpenFileWrite( qpath, "fs_devpath", "" );
 	if ( !fp ) {
 		common->Error( "Couldn't open %s\n", qpath.c_str() );
 		return;

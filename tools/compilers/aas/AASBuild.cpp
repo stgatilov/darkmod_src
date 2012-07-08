@@ -907,6 +907,17 @@ void RunAAS_f( const idCmdArgs &args ) {
 			if ( mapName.Icmpn( "maps/", 4 ) != 0 ) {
 				mapName = "maps/" + mapName;
 			}
+
+            // taaaki - support map files from darkmod/fms/<mission>/maps as well as darkmod/maps
+            //          this is done by opening the file to get the true full path, then converting
+            //          the path back to a RelativePath based off fs_devpath
+            mapName.SetFileExtension( "map" );
+            idFile *fp = idLib::fileSystem->OpenFileRead( mapName, false, "" );
+            if ( fp ) {
+                mapName = idLib::fileSystem->OSPathToRelativePath(fp->GetFullPath());
+                idLib::fileSystem->CloseFile( fp );
+            }
+
 			aas.Build( mapName, &settings );
 		}
 

@@ -190,7 +190,7 @@ public:
 							// get the name without file extension
 	const char *			GetName( void ) const { return name; }
 							// get the file time
-	ID_TIME_T					GetFileTime( void ) const { return fileTime; }
+	ID_TIME_T				GetFileTime( void ) const { return fileTime; }
 							// get CRC for the map geometry
 							// texture coordinates and entity key/value pairs are not taken into account
 	unsigned int			GetGeometryCRC( void ) const { return geometryCRC; }
@@ -207,7 +207,7 @@ public:
 
 protected:
 	float					version;
-	ID_TIME_T					fileTime;
+	ID_TIME_T				fileTime;
 	unsigned int			geometryCRC;
 	idList<idMapEntity *>	entities;
 	idStr					name;
