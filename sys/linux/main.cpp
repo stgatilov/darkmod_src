@@ -110,12 +110,9 @@ void Sys_AsyncThread( void ) {
  ==============
  */
 const char *Sys_HomeSavePath(void) {
-#if defined( ID_DEMO_BUILD )
-	sprintf( homepath, "%s/.doom3-demo", getenv( "HOME" ) );
-#else
 	sprintf( homepath, "%s/.doom3", getenv( "HOME" ) );
-#endif
-	return homepath.c_str();
+	
+    return homepath.c_str();
 }
 
 /*
@@ -125,11 +122,8 @@ const char *Sys_HomeSavePath(void) {
  */
 const char *Sys_DefaultSavePath(void) {
 	idStr fsMod = cvarSystem->GetCVarString("fs_mod");
-#if defined( ID_DEMO_BUILD )
-	sprintf( savepath, "%s/.doom3-demo/%s", getenv( "HOME" ), fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );
-#else
 	sprintf( savepath, "%s/.doom3/%s", getenv( "HOME" ), fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );
-#endif
+
 	return savepath.c_str();
 }
 

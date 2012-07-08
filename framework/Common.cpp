@@ -888,7 +888,11 @@ void idCommonLocal::InitGameArguments() {
 	}
 
 	// Construct the darkmod path - use fs_mod, if specified
+#ifdef _WIN32
 	idStr darkmodPath = basePath;
+#else
+    idStr darkmodPath = Sys_HomeSavePath();
+#endif
 	darkmodPath.AppendPath(fsGameBase);
 	
 	if ( !fsGameDefined ) {
