@@ -224,9 +224,14 @@ void SuspiciousState::Init(idAI* owner)
 			bark = "snd_alert1";
 		}
 
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask(bark))
-		);
+		if ( !memory.alertedDueToCommunication ) // grayman #2920
+		{
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+		}
+		else
+		{
+			memory.alertedDueToCommunication = false; // reset
+		}
 	}
 	else
 	{

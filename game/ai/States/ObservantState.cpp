@@ -145,14 +145,23 @@ void ObservantState::Init(idAI* owner)
 
 		if ( ( memory.alertType != EAlertTypeMissingItem) && ( !soundName.IsEmpty() ) ) // grayman #2816 - don't set up empty sounds
 		{
-			CommunicationTaskPtr barkTask(new SingleBarkTask(soundName));
+			// grayman #2920 - only bark if this isn't in response to having been warned
 
-			owner->commSubsystem->AddCommTask(barkTask);
+			if ( !memory.alertedDueToCommunication )
+			{
+				CommunicationTaskPtr barkTask(new SingleBarkTask(soundName));
 
-			// Push a wait task (1 sec) with the bark priority -1, to have it queued
-			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new CommWaitTask(1000, barkTask->GetPriority() - 1))
-			);
+				owner->commSubsystem->AddCommTask(barkTask);
+
+				// Push a wait task (1 sec) with the bark priority -1, to have it queued
+				owner->commSubsystem->AddCommTask(
+					CommunicationTaskPtr(new CommWaitTask(1000, barkTask->GetPriority() - 1))
+				);
+			}
+			else
+			{
+				memory.alertedDueToCommunication = false; // reset
+			}
 		}
 	}
 

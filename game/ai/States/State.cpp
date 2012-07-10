@@ -95,6 +95,8 @@ const int WARN_DIST_CORPSE_FOUND = 600;
 const int WARN_DIST_MISSING_ITEM = 500;
 const int WARN_DIST_EVIDENCE_INTRUDERS = 400;
 
+const int WARNING_RESPONSE_DELAY = 3500; // grayman #2920 - how long to delay before responding to a warning (ms)
+
 // grayman #3075 - when checking whether two AI have seen the same corpse, the two corpse positions
 // are allowed to be up to this far apart to be considered the same corpse
 const int WARN_DIST_BODY_CAN_SHIFT = 100;
@@ -3443,12 +3445,16 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 					memory.posEvidenceIntruders = issuerMemory.posEvidenceIntruders;
 					memory.timeEvidenceIntruders = issuerMemory.timeEvidenceIntruders;
+					memory.alertedDueToCommunication = true; // grayman #2920
 
 					if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 					{
 						owner->SetAlertLevel(owner->thresh_2*0.5f);
 					}
 				}
+
+				// grayman #2920 - issue a delayed warning response
+				owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			}
 			break;
 		case CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
@@ -3469,11 +3475,15 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			memory.countEvidenceOfIntruders++; // grayman #2903
 			memory.posEvidenceIntruders = memory.posMissingItem; // grayman #2903
 			memory.timeEvidenceIntruders = memory.timeMissingItem;
+			memory.alertedDueToCommunication = true; // grayman #2920
 
 			if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
+
+			// grayman #2920 - issue a delayed warning response
+			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
 		case CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType: // grayman #1327
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_CorpseHasBeenSeen_CommType\r");
@@ -3493,11 +3503,15 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			memory.countEvidenceOfIntruders += 3; // grayman #2903
 			memory.posEvidenceIntruders = memory.posCorpseFound; // grayman #2903
 			memory.timeEvidenceIntruders = memory.timeCorpseFound;
+			memory.alertedDueToCommunication = true; // grayman #2920
 
 			if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
+
+			// grayman #2920 - issue a delayed warning response
+			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
 		case CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType:
 			// Note: We deliberately don't care if the issuer is a friend or not
@@ -3511,11 +3525,15 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				memory.posEnemySeen = issuingMemory.posEnemySeen;
 				memory.timeEnemySeen = issuingMemory.timeEnemySeen;
 			}
+			memory.alertedDueToCommunication = true; // grayman #2920
 
 			if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
+
+			// grayman #2920 - issue a delayed warning response
+			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
 	} // switch
 }

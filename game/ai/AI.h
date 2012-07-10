@@ -171,6 +171,8 @@ extern const idEventDef AI_IssueCommunication;
 
 extern const idEventDef AI_Bark; // grayman #2816
 
+extern const idEventDef AI_RestartPatrol; // grayman #2920
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -2210,6 +2212,9 @@ public:
 
 	// grayman #3154
 	void Event_EmptyHand(const char* hand);
+
+	// grayman #2920
+	void Event_RestartPatrol();
 
 #ifdef TIMING_BUILD
 private:

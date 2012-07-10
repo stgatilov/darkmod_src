@@ -91,7 +91,26 @@ void AlertIdleState::Init(idAI* owner)
 
 	if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
 	{
+		// grayman #2920 - if patrolling, stop for a moment
+		// to draw weapon, then continue on. This lets the "walk_alerted"
+		// animation take hold.
+
+		bool startMovingAgain = false;
+		if ( owner->AI_FORWARD )
+		{
+			startMovingAgain = true;
+			owner->movementSubsystem->ClearTasks();
+			owner->StopMove(MOVE_STATUS_DONE);
+		}
+
 		owner->DrawWeapon();
+
+		if ( startMovingAgain )
+		{
+			// allow enough time for weapon to be drawn,
+			// then start patrolling again
+			owner->PostEventMS(&AI_RestartPatrol,1500);
+		}
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

@@ -370,6 +370,8 @@ const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
 
 const idEventDef AI_HasSeenEvidence( "hasSeenEvidence", NULL, 'd' );
 
+const idEventDef AI_RestartPatrol( "restartPatrol" ); // grayman #2920
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -557,6 +559,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_DropTorch,						idAI::Event_DropTorch)		// grayman #2603
 	EVENT ( AI_Bark,							idAI::Event_Bark)			// grayman #2816
 	EVENT ( AI_EmptyHand,						idAI::Event_EmptyHand)		// grayman #3154
+	EVENT ( AI_RestartPatrol,					idAI::Event_RestartPatrol)	// grayman #2920
 
 END_CLASS
 
@@ -3487,6 +3490,11 @@ void idAI::Event_EmptyHand(const char* hand) // grayman #3154
 			}
 		}
 	}
+}
+
+void idAI::Event_RestartPatrol() // grayman #2920
+{
+	movementSubsystem->StartPatrol();
 }
 
 void idAI::Event_DropTorch() // grayman #2603
