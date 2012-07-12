@@ -836,7 +836,6 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			int	damage = damageDef->GetInt( "damage" );
 			damageInflicted = ( damage > 0 );
 
-			// grayman #2906 - check for the special case of hitting a mine.
 			// If a mine is unarmed, it won't take damage or explode.
 
 			if ( damageInflicted )
@@ -859,7 +858,9 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 	}
 
-	if ( damageInflicted ) // grayman #2794
+	// grayman #3178 - allow damage decal if damage was inflicted or the projectile hit the world or hit a func_static
+
+	if ( damageInflicted || ( ent == gameLocal.world ) || ent->IsType(idStaticEntity::Type) ) // grayman #2794
 	{
 		// if the projectile causes a damage effect
 		if ( spawnArgs.GetBool( "impact_damage_effect" ) )
@@ -928,6 +929,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	if ( *decal == '\0' ) {
 		decal = projectileDef.GetString( "mtr_detonate" );
 	}
+
 	if ( *decal != '\0' ) {
 		gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, projectileDef.GetFloat( "decal_size", "6.0" ), decal );
 	}
