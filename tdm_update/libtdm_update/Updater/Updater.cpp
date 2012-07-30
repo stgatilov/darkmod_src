@@ -890,16 +890,16 @@ fs::path Updater::GetTargetPath()
 	fs::path targetPath = fs::current_path();
 
 	// If the current path is the actual engine path, switch folders to "darkmod"
-	// We don't want to download the PK4s into the DOOM3.exe location
-	if (Util::PathIsDoom3EnginePath(targetPath))
+	// We don't want to download the PK4s into the TheDarkMod.exe location
+	if (Util::PathIsTDMEnginePath(targetPath))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, "D3 engine found in current path, switching directories.");
+		TraceLog::WriteLine(LOG_VERBOSE, "TDM engine found in current path, switching directories.");
 
 		targetPath /= TDM_STANDARD_MOD_FOLDER;
 
 		if (!fs::exists(targetPath))
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "D3/darkmod path not found, creating folder: " + targetPath.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "darkmod/ path not found, creating folder: " + targetPath.file_string());
 
 			fs::create_directory(targetPath);
 		}
@@ -1201,6 +1201,19 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 	fs::path destPath = GetTargetPath();
 
+	// grayman - The TDM binaries (TheDarkMod.exe for Windows, and thedarkmod.x86 for linux) must be copied
+	// up one level after extraction. Treat them separate from other files that they're zipped with.
+	//
+	// tdm_update exists in its own PK4, so we can assume tdm_update and the TDM binaries will never be found in the same PK4.
+
+	bool TDMbinaryPresent = false; // grayman - true if this zip contains "TheDarkMod.exe" or "thedarkmod.x86"
+
+#ifdef WIN32
+	const std::string TDM_BINARY_NAME("TheDarkMod.exe");
+#else
+	const std::string TDM_BINARY_NAME("thedarkmod.x86");
+#endif
+
 	try
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, "Extracting files from " + zipFilePath.file_string());
@@ -1212,11 +1225,18 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			_updatingUpdater = true;
 		}
 
+		// Check if the archive contains the TDM binary
+		if (zipFile->ContainsFile(TDM_BINARY_NAME))
+		{
+			// Set the flag for later use
+			TDMbinaryPresent = true;
+		}
+
 		std::list<fs::path> extractedFiles;
 
 		if (_updatingUpdater)
 		{
-			// Update all files, but save the updater binary, this will be handled seperately
+			// Update all files, but save the updater binary; this will be handled separately
 			std::set<std::string> hardIgnoreList;
 			hardIgnoreList.insert(_executable.string());
 
@@ -1235,9 +1255,30 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			// Prepare the update batch file
 			PrepareUpdateBatchFile(tempUpdater);
 		}
+		else if (TDMbinaryPresent)
+		{
+			// Update all files, but save the TDM binary; this will be handled separately
+			std::set<std::string> hardIgnoreList;
+			hardIgnoreList.insert(TDM_BINARY_NAME);
+
+			// Extract all but the TDM binary
+			// Ignore DoomConfig.cfg, etc. if already existing
+			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList, hardIgnoreList); 
+
+			// Extract the TDM binary
+			fs::path binaryFileName = destPath / TDM_BINARY_NAME;
+			zipFile->ExtractFileTo(TDM_BINARY_NAME, binaryFileName);
+
+			// Set the executable bit on the TDM binary
+			File::MarkAsExecutable(binaryFileName);
+
+			// Copy it up one level
+
+			File::Copy(destPath / ("../" + TDM_BINARY_NAME), binaryFileName);
+		}
 		else
 		{
-			// Regular archive (without updater), extract all files, ignore existing DoomConfig.cfg
+			// Regular archive (without updater or TDM binary), extract all files, ignore existing DoomConfig.cfg
 			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
 		}
 

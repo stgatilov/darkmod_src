@@ -67,17 +67,19 @@ public:
 	 * greebo: Checks if the current path is the one Doom3.exe is located in.
 	 * This is used to determine whether this is a clean installation attempt
 	 * and the user downloaded the tdm_update.exe into the wrong folder.
+
+	 * grayman - check for The Dark Mod, not D3
 	 */
-	static bool PathIsDoom3EnginePath(const fs::path& path)
+	static bool PathIsTDMEnginePath(const fs::path& path)
 	{
 
 #if WIN32
-		std::string d3ExecutableName = "DOOM3.exe";
+		std::string tdmExecutableName = "TheDarkMod.exe";
 #else 
-		std::string d3ExecutableName = "base/gamex86.so";
+		std::string tdmExecutableName = "base/gamex86.so";
 #endif
 
-		if (fs::exists(path / d3ExecutableName))
+		if (fs::exists(path / tdmExecutableName))
 		{
 			return true;
 		}
@@ -90,8 +92,8 @@ public:
 		Sleep(millisecs);
 	}
 
-	// Platform-dependent process check routine (searches for gamex86.dll/gamex86.so)
-	static bool D3IsRunning();
+	// Platform-dependent process check routine (grayman - searches for TheDarkMod.exe)
+	static bool TDMIsRunning();
 
 	// Platform-dependent process check routine (searches for DarkRadiant)
 	static bool DarkRadiantIsRunning();
