@@ -817,10 +817,10 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 				if ( old != cvarSystem->GetCVarInteger( "s_numberOfSpeakers" ) ) {
 #ifdef _WIN32
-					MessageBox( MSG_OK, common->Translate( "#str_04142" ), common->Translate( "#str_04141" ), true );
+					MessageBox( MSG_OK, common->Translate( "#str_07236" ), common->Translate( "#str_07235" ), true );
 #else
 					// a message that doesn't mention the windows control panel
-					MessageBox( MSG_OK, common->Translate( "#str_07230" ), common->Translate( "#str_04141" ), true );
+					MessageBox( MSG_OK, common->Translate( "#str_07234" ), common->Translate( "#str_07235" ), true );
 #endif
 				}
 			}
