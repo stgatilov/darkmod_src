@@ -36,6 +36,7 @@ const char* OSX_GetLocalizedString( const char* );
 #endif
 
 // names not in this list can either be lowercase ascii, or '0xnn' hex sequences
+// TODO: add CTRL RIGHT, SHIFT RIGHT
 keyname_t keynames[] =
 {
 	{"TAB",				K_TAB,				"#str_07018"},
@@ -49,7 +50,7 @@ keyname_t keynames[] =
 	{"RIGHTARROW",		K_RIGHTARROW,		"#str_07026"},
 
 	{"ALT",				K_ALT,				"#str_07027"},
-	{"RIGHTALT",		K_RIGHT_ALT,		"#str_07027"},
+	{"RIGHTALT",		K_RIGHT_ALT,		"#str_07193"},
 	{"CTRL",			K_CTRL,				"#str_07028"},
 	{"SHIFT",			K_SHIFT,			"#str_07029"},
 
