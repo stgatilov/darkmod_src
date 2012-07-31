@@ -155,6 +155,9 @@ void I18NLocal::Init()
 	m_ReverseDict.Set( "Readables",	"#str_02391" );
 	m_ReverseDict.Set( "Keys",		"#str_02392" );
 	m_ReverseDict.Set( "Potions",	"#str_02393" );
+	m_ReverseDict.Set( "Tools",		"#str_02394" );
+	// Do not add "Weapons", these do not have an inv_category (as it is invisible anyway). FIXME later?
+	// m_ReverseDict.Set( "Weapons",		"#str_02411" );
 
 	// inventory item names used in keybindings
 	m_ReverseDict.Set( "Mine",			"#str_02202" );
@@ -164,6 +167,8 @@ void I18NLocal::Init()
 	m_ReverseDict.Set( "Health Potion",	"#str_02398" );
 	m_ReverseDict.Set( "Breath Potion",	"#str_02399" );
 	m_ReverseDict.Set( "Holy Water",	"#str_02400" );
+	m_ReverseDict.Set( "Corpse",		"#str_02409" );
+	m_ReverseDict.Set( "Body",			"#str_02410" );
 	m_ReverseDict.Set( "Flashbomb",		"#str_02438" );
 	m_ReverseDict.Set( "Flashmine",		"#str_02439" );
 	m_ReverseDict.Set( "Explosive Mine","#str_02440" );
