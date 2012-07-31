@@ -76,7 +76,7 @@ public:
 #if WIN32
 		std::string tdmExecutableName = "TheDarkMod.exe";
 #else 
-		std::string tdmExecutableName = "base/gamex86.so";
+		std::string tdmExecutableName = "thedarkmod.x86";
 #endif
 
 		if (fs::exists(path / tdmExecutableName))
