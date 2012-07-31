@@ -52,10 +52,12 @@ class TimerManager
 		idTimer timer;
 		idStr entityName;
 		idStr name;
-		double runTime;	// total running time
-		double maxTime;	// maximum time between start and stop
-		int maxTimeCall; // the number of the call where maxTime was found
-		int runCount;	
+		double runTime;		// total running time
+		double maxTime;		// maximum time between start and stop
+		int maxTimeCall;	// the number of the call where maxTime was found
+		double max2Time;	// the second largest time between start and stop
+		double minTime;		// minimum time
+		int runCount;
 	};
 
 public:

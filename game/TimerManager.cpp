@@ -42,6 +42,11 @@ void TimerManager::Save(idSaveGame* savefile) const
 		savefile->WriteFloat(static_cast<float>(iterator->second.runTime));
 		savefile->WriteFloat(static_cast<float>(iterator->second.maxTime));
 		savefile->WriteInt(iterator->second.maxTimeCall);
+		savefile->WriteFloat(static_cast<float>(iterator->second.max2Time));
+		savefile->WriteFloat(static_cast<float>(iterator->second.minTime));
+
+
+
 	}
 }
 
@@ -63,6 +68,11 @@ void TimerManager::Restore(idRestoreGame* savefile)
 		savefile->ReadFloat(temp);
 		info.maxTime = static_cast<double>(temp);
 		savefile->ReadInt(info.maxTimeCall);
+		savefile->ReadFloat(temp);
+		info.max2Time = static_cast<double>(temp);
+		savefile->ReadFloat(temp);
+		info.minTime = static_cast<double>(temp);
+
 
 		_timers.insert(TimerMap::value_type(timerId, info));
 	}
@@ -80,6 +90,8 @@ int	TimerManager::CreateTimer(const idStr& entityname, const idStr& name)
 	info.runTime = 0;
 	info.maxTime = 0;
 	info.maxTimeCall = 0;
+	info.max2Time = 0;
+	info.minTime = 0;
 
 	_timers.insert(TimerMap::value_type(timerId, info));
 
@@ -112,9 +124,19 @@ void TimerManager::StopTimer(int timerId)
 		info.runTime += info.timer.Milliseconds();
 		if (info.timer.Milliseconds() > info.maxTime)
 		{
+			info.max2Time = info.maxTime;		// the old max time now becomes the second largest 
 			info.maxTime = info.timer.Milliseconds();
 			info.maxTimeCall = info.runCount;
 		}
+		else if (info.timer.Milliseconds() > info.max2Time)
+		{
+			info.max2Time = info.timer.Milliseconds();
+		}
+		else if (info.timer.Milliseconds() < info.minTime || info.minTime == 0)
+		{
+			info.minTime = info.timer.Milliseconds();
+		}
+
 		info.timer.Clear();
 	}
 }
@@ -129,6 +151,8 @@ void TimerManager::ResetTimers()
 		info.runTime = 0;
 		info.maxTime = 0;
 		info.maxTimeCall = 0;
+		info.max2Time = 0;
+		info.minTime = 0;
 	}
 }
 
@@ -146,27 +170,32 @@ void TimerManager::PrintTimerResults()
 		gameLocal.Printf("Total run time: %lf ms\n", info.runTime);
 		gameLocal.Printf("Mean run time per call: %lf ms\n", meanRunTime);
 		gameLocal.Printf("Max runtime: %lf ms at call number %d\n", info.maxTime, info.maxTimeCall);
+		gameLocal.Printf("Second largest runtime: %lf ms\n", info.max2Time);
+		gameLocal.Printf("Min runtime: %lf ms\n", info.minTime);
+
 		gameLocal.Printf("---------------------------------\n");
 	}
 }
 
 void TimerManager::DumpTimerResults(const char* const separator, const char* const comma)
 {
-	idStr buffer = va("Entity%sTimer%sNumCalls%sTotalRunTime / ms%sMeanRunTime / ms%sMaxRunTime / ms%sAt Call\n", 
-		separator,separator,separator,separator,separator,separator);
+	idStr buffer = va("Entity%sTimer%sNumCalls%sTotalRunTime / ms%sMeanRunTime / ms%sMaxRunTime / ms%sAt Call%sMax2Time%sMinTime\n", 
+		separator,separator,separator,separator,separator,separator,separator,separator);
 
 	for (TimerMap::iterator iterator = _timers.begin(); iterator != _timers.end(); ++iterator)
 	{
 		TimerInfo& info = iterator->second;
 		float meanRunTime = info.runCount > 0 ? (info.runTime / info.runCount) : 0;
-		buffer += va("%s%s%s%s%d%s%lf%s%lf%s%lf%s%d\n", 
+		buffer += va("%s%s%s%s%d%s%lf%s%lf%s%lf%s%d%s%lf%s%lf\n", 
 			info.entityName.c_str(), separator,
 			info.name.c_str(), separator,
 			info.runCount, separator,
 			info.runTime, separator,
 			meanRunTime, separator,
 			info.maxTime, separator,
-			info.maxTimeCall);
+			info.maxTimeCall, separator,
+			info.max2Time, separator,
+			info.minTime);
 	}
 
 	buffer.Replace(".", comma);
