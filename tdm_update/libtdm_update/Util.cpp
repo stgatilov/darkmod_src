@@ -34,7 +34,7 @@ namespace fs = boost::filesystem;
 namespace tdm
 {
 
-bool Util::D3IsRunning()
+bool Util::TDMIsRunning()
 {
 	DWORD processes[1024];
 	DWORD num;
@@ -63,9 +63,16 @@ bool Util::D3IsRunning()
 
 				std::string processName(szProcessName);
 
-				if (processName == "DOOM3.exe")
+				// grayman - This was checking for "Doom3.exe". Starting with 1.08, the D3
+				// executable is no longer needed to run TDM, so we'll check for TheDarkMod.exe
+				// instead.
+
+				if (processName == "TheDarkMod.exe")
 				{
-					HMODULE hModules[1024];
+					// At this point, we know we need to quit. There's no longer a need
+					// to check for "gamex86.dll".
+
+/*					HMODULE hModules[1024];
 					DWORD cbNeeded;
 
 					if (EnumProcessModules(hProcess, hModules, sizeof(hModules), &cbNeeded))
@@ -87,6 +94,12 @@ bool Util::D3IsRunning()
 							}
 						}
 					}
+ */
+					// instead, quit
+
+					CloseHandle(hProcess); // close the handle, we're terminating
+
+					return true;
 				}
 			}
 		}
@@ -157,7 +170,7 @@ namespace tdm
 namespace
 {
 	const std::string PROC_FOLDER("/proc/");
-	const std::string DOOM_PROCESS_NAME("doom.x86"); 
+	const std::string TDM_PROCESS_NAME("thedarkmod.x86"); // grayman - looking for tdm now instead of doom3
 
 	bool CheckProcessFile(const std::string& name, const std::string& processName)
 	{
@@ -202,12 +215,12 @@ namespace
 
 } // namespace
 
-bool Util::D3IsRunning()
+bool Util::TDMIsRunning()
 {
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
 	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
 	{
-		if (CheckProcessFile(i->leaf(), DOOM_PROCESS_NAME))
+		if (CheckProcessFile(i->leaf(), TDM_PROCESS_NAME)) // grayman - looking for tdm now instead of doom3
 		{
 			return true;
 		}
@@ -290,9 +303,9 @@ bool FindProcessByName(const char* processName)
 	return result;
 }
 
-bool Util::D3IsRunning()
+bool Util::TDMIsRunning()
 {
-	return FindProcessByName("Doom 3");
+	return FindProcessByName("TheDarkMod"); // grayman - look for TDM instead of "Doom 3". Is "TheDarkMod" the correct process name?
 }
 
 bool Util::DarkRadiantIsRunning()

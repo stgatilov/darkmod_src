@@ -175,15 +175,16 @@ void UpdateController::PerformStep(UpdateStep step)
 	switch (step)
 	{
 	case Init:
-		// Check if D3 is active
-		if (Util::D3IsRunning())
+		// Check if TDM is active
+		if (Util::TDMIsRunning())
 		{
-			_view.OnWarning("The Doom 3 process was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit Doom 3 before continuing.");
+			// grayman - change "Doom3" to "The Dark Mod"
+			_view.OnWarning("The Dark Mod was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit The Dark Mod before continuing.");
 		}
 
 		if (Util::DarkRadiantIsRunning())
 		{
-			_view.OnWarning("DarkRadiant was found to be in the list of active processes.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit DarkRadiant before continuing.");
+			_view.OnWarning("DarkRadiant was found to be active.\nThe updater will not be able to update any Dark Mod PK4s.\nPlease exit DarkRadiant before continuing.");
 		}
 
 		break;

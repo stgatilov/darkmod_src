@@ -138,4 +138,5 @@ public:
 	CButton _advOptionsButton;
 	CButton _showLogButton;
 	afx_msg void OnBnClickedShowLogButton();
+	afx_msg void OnNMCustomdrawProgress1(NMHDR *pNMHDR, LRESULT *pResult);
 };
