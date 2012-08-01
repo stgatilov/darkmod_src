@@ -1272,9 +1272,9 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			// Set the executable bit on the TDM binary
 			File::MarkAsExecutable(binaryFileName);
 
-			// Copy it up one level
+			// Move it up one level
 
-			File::Copy(destPath / ("../" + TDM_BINARY_NAME), binaryFileName);
+			File::Move(destPath / ("../" + TDM_BINARY_NAME), binaryFileName);
 		}
 		else
 		{
