@@ -1471,7 +1471,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		// This is temp, and should be changed to better represent the map ent/light count,
 		// Note : Should allocate a nice PoT of 67108864 - try to preserve a PoT in fixed version.
 		const int BUFFER = 4096;
-		interactionTableWidth = BUFFER; // this->entityDefs.Num() + padding
+		interactionTableWidth = 2*BUFFER; // this->entityDefs.Num() + padding // grayman #3192 - double this dimension
 		interactionTableHeight = BUFFER; // this->lightDefs.Num() + padding
 		const int size = (interactionTableWidth * interactionTableHeight) * sizeof( interactionTable ); 
 		interactionTable = (idInteraction **)R_ClearedStaticAlloc( size );
