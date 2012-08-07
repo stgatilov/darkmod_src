@@ -53,8 +53,8 @@ public:
 	virtual void				PrintInfo( void ) const;
 
 public:
-	bool						Load( const idStr &fileName, unsigned int mapFileCRC );
-	bool						Write( const idStr &fileName, unsigned int mapFileCRC );
+	bool						Load( const idStr &fileName, const unsigned int mapFileCRC );
+	bool						Write( const idStr &fileName, const unsigned int mapFileCRC );
 
 	int							MemorySize( void ) const;
 	void						ReportRoutingEfficiency( void ) const;

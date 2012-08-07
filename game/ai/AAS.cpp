@@ -72,7 +72,7 @@ idAASLocal::~idAASLocal( void ) {
 idAASLocal::Init
 ============
 */
-bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
+bool idAASLocal::Init( const idStr &mapName, const unsigned int mapFileCRC ) {
 	// Clear the elevator system before reloading
 	elevatorSystem->Clear();
 

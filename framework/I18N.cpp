@@ -262,7 +262,8 @@ I18NLocal::TemplateFromEnglish
 
 If the string is not a template, but an English string, returns a template
 like "#str_01234" from the input. Works only for a limited number of strings
-that appear in the reverse dict.
+that appear in the reverse dict and is used mainly to make inventory categories
+for entities with hard-coded category names work.
 ===============
 */
 const char* I18NLocal::TemplateFromEnglish( const char* in ) {

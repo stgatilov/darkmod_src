@@ -545,7 +545,7 @@ bool idCollisionModelManagerLocal::ParseCollisionModel( idLexer *src ) {
 idCollisionModelManagerLocal::LoadCollisionModelFile
 ================
 */
-bool idCollisionModelManagerLocal::LoadCollisionModelFile( const char *name, unsigned int mapFileCRC ) {
+bool idCollisionModelManagerLocal::LoadCollisionModelFile( const char *name, const unsigned int mapFileCRC ) {
 	idStr fileName;
 	idToken token;
 	idLexer *src;

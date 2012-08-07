@@ -617,7 +617,7 @@ void idAASFileLocal::Clear( void ) {
 idAASFileLocal::Write
 ================
 */
-bool idAASFileLocal::Write( const idStr &fileName, unsigned int mapFileCRC ) {
+bool idAASFileLocal::Write( const idStr &fileName, const unsigned int mapFileCRC ) {
 	int i, num;
 	idFile *aasFile;
 	idReachability *reach;
@@ -1089,7 +1089,7 @@ void idAASFileLocal::FinishAreas( void ) {
 idAASFileLocal::Load
 ================
 */
-bool idAASFileLocal::Load( const idStr &fileName, unsigned int mapFileCRC ) {
+bool idAASFileLocal::Load( const idStr &fileName, const unsigned int mapFileCRC ) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGESCAPECHARS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWPATHNAMES );
 	idToken token;
 	int depth;
@@ -1122,7 +1122,7 @@ bool idAASFileLocal::Load( const idStr &fileName, unsigned int mapFileCRC ) {
 
 	c = token.GetUnsignedLongValue();
 	if ( mapFileCRC && c != mapFileCRC ) {
-		common->Warning( "AAS file '%s' is out of date", name.c_str() );
+		common->Warning( "AAS file '%s' is out of date (mapFileCRC %lu vs. token CRC %lu)", name.c_str(), mapFileCRC, c );
 		return false;
 	}
 

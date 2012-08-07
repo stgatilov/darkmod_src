@@ -88,7 +88,7 @@ class idAASLocal :
 public:
 								idAASLocal( void );
 	virtual						~idAASLocal( void );
-	virtual bool				Init( const idStr &mapName, unsigned int mapFileCRC );
+	virtual bool				Init( const idStr &mapName, const unsigned int mapFileCRC );
 	virtual void				Shutdown( void );
 
 	virtual void				Stats( void ) const;

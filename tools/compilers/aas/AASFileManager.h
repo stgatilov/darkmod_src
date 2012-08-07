@@ -32,7 +32,7 @@ class idAASFileManager {
 public:
 	virtual						~idAASFileManager( void ) {}
 
-	virtual idAASFile *			LoadAAS( const char *fileName, unsigned int mapFileCRC ) = 0;
+	virtual idAASFile *			LoadAAS( const char *fileName, const unsigned int mapFileCRC ) = 0;
 	virtual void				FreeAAS( idAASFile *file ) = 0;
 };
 

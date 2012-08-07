@@ -88,7 +88,7 @@ public:
 	static idAAS *				Alloc( void );
 	virtual						~idAAS( void ) = 0;
 								// Initialize for the given map.
-	virtual bool				Init( const idStr &mapName, unsigned int mapFileCRC ) = 0;
+	virtual bool				Init( const idStr &mapName, const unsigned int mapFileCRC ) = 0;
 								// Print AAS stats.
 	virtual void				Stats( void ) const = 0;
 								// Test from the given origin.

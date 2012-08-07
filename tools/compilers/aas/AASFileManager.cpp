@@ -37,7 +37,7 @@ class idAASFileManagerLocal : public idAASFileManager {
 public:
 	virtual						~idAASFileManagerLocal( void ) {}
 
-	virtual idAASFile *			LoadAAS( const char *fileName, unsigned int mapFileCRC );
+	virtual idAASFile *			LoadAAS( const char *fileName, const unsigned int mapFileCRC );
 	virtual void				FreeAAS( idAASFile *file );
 };
 
@@ -50,7 +50,7 @@ idAASFileManager *				AASFileManager = &AASFileManagerLocal;
 idAASFileManagerLocal::LoadAAS
 ================
 */
-idAASFile *idAASFileManagerLocal::LoadAAS( const char *fileName, unsigned int mapFileCRC ) {
+idAASFile *idAASFileManagerLocal::LoadAAS( const char *fileName, const unsigned int mapFileCRC ) {
 	idAASFileLocal *file = new idAASFileLocal();
 	if ( !file->Load( fileName, mapFileCRC ) ) {
 		delete file;
