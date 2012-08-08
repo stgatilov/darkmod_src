@@ -83,7 +83,7 @@ public:
 	/**
 	* Set a new laguage (example: "english").
 	*/
-	virtual void				SetLanguage( const char* lang, bool firstTime = false ) = 0;
+	virtual bool				SetLanguage( const char* lang, bool firstTime = false ) = 0;
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template

@@ -251,25 +251,33 @@ void CModMenu::DisplayBriefingPage(idUserInterface* gui)
 	{
 		gameLocal.Printf("DisplayBriefingPage: xdata found.\n");
 
-		// get page count from xdata
-		int numPages = xd->m_data.GetInt("num_pages");
+		// get page count from xdata (tels: and if nec., translate it #3193)
+		idStr strNumPages = common->Translate( xd->m_data.GetString("num_pages") );
+		if (!strNumPages.IsNumeric())
+		{
+			gameLocal.Warning("DisplayBriefingPage: num_pages '%s' is not numeric!", strNumPages.c_str());
+		}
+		else
+		{
+			int numPages = atoi(strNumPages.c_str());
 
-		gameLocal.Printf("DisplayBriefingPage: numPages is %d\n", numPages);
+			gameLocal.Printf("DisplayBriefingPage: numPages is %d\n", numPages);
 
-		// ensure current page is between 1 and page count, inclusive
-		_briefingPage = idMath::ClampInt(1, numPages, _briefingPage);
+			// ensure current page is between 1 and page count, inclusive
+			_briefingPage = idMath::ClampInt(1, numPages, _briefingPage);
 
-		// load up page text
-		idStr page = va("page%d_body", _briefingPage);
+			// load up page text
+			idStr page = va("page%d_body", _briefingPage);
 
-		gameLocal.Printf("DisplayBriefingPage: current page is %d\n", _briefingPage);
+			gameLocal.Printf("DisplayBriefingPage: current page is %d\n", _briefingPage);
 
-		// Tels: Translate it properly
-		briefing = common->Translate( xd->m_data.GetString(page) );
+			// Tels: Translate it properly
+			briefing = common->Translate( xd->m_data.GetString(page) );
 
-		// set scroll button visibility
-		scrollDown = numPages > _briefingPage;
-		scrollUp = _briefingPage > 1;
+			// set scroll button visibility
+			scrollDown = numPages > _briefingPage;
+			scrollUp = _briefingPage > 1;
+		}
 	}
 	else
 	{

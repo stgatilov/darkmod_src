@@ -73,6 +73,7 @@ extern const idEventDef EV_AI_SetRelation;
 extern const idEventDef EV_AI_OffsetRelation;
 
 extern const idEventDef EV_PointInLiquid;
+extern const idEventDef EV_Translate;
 
 extern const idEventDef EV_TDM_SetPortSoundLoss;
 extern const idEventDef EV_TDM_GetPortSoundLoss;
@@ -205,6 +206,11 @@ private:
 
 	// Emits the string to the session command variable in gameLocal.
 	void						Event_SessionCommand(const char* cmd);
+
+	/**
+	* Tels: #3193 - translate a string template into the current language.
+	*/
+	void						Event_Translate(const char* input);
 
 	// For test purposes only.
 	void						Event_DebugTDM_MatInfo( const char *mat );

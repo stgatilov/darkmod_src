@@ -132,6 +132,10 @@ const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
 // greebo: General water test function, tests if a point is in a liquid
 const idEventDef EV_PointInLiquid( "pointInLiquid", "ve", 'f' );
 
+// tels: Translate a string into the current language
+const idEventDef EV_Translate( "translate", "s", 's' );
+
+
 const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
 
 // greebo: Writes the string to the Darkmod.log file using DM_LOG
@@ -244,6 +248,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
 	
 	EVENT( EV_PointInLiquid,				idThread::Event_PointInLiquid )
+	EVENT( EV_Translate,				idThread::Event_Translate )
 
 	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
 	
@@ -2030,6 +2035,11 @@ void idThread::Event_PointInLiquid( const idVec3 &point, idEntity* ignoreEntity 
 	// Check if the point is in water
 	int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, ignoreEntity );
 	ReturnFloat( (contents & MASK_WATER) ? 1 : 0);
+}
+
+void idThread::Event_Translate( const char* input ) {
+	// Tels: #3193 - Translate a string template into the current language
+	ReturnString( common->Translate(input) );
 }
 
 void idThread::Event_SessionCommand(const char* cmd)

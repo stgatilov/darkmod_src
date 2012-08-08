@@ -81,7 +81,7 @@ public:
 	/**
 	* Set a new laguage (example: "english").
 	*/
-	void				SetLanguage( const char* lang, bool firstTime = false );
+	bool				SetLanguage( const char* lang, bool firstTime = false );
 
 	/**
 	* Given an English string like "Maps", returns the "#str_xxxxx" template
@@ -365,13 +365,14 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 I18NLocal::SetLanguage
 
 Change the language. Does not check the language here, as to not restrict
-ourselves to a limited support of languages.
+ourselves to a limited support of languages. Returns true if the language
+changed, false if it was not modified.
 ===============
 */
-void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
+bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 	if (lang == NULL)
 	{
-		return;
+		return false;
 	}
 	common->Printf("I18N: SetLanguage: '%s'.\n", lang);
 #ifdef M_DEBUG
@@ -497,27 +498,7 @@ void I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 		common->Warning("Cannot find guis/mainmenu.gui");
 	}
 
-	// TODO: Notify the game about the language change
-	/*
-	if (game != NULL)
-	{
-		game->OnLanguageChanged();
-	}
-	*/
-
-#if 0
-	// From game code: Cycle through all active entities and call "onLanguageChanged" on them
-	// some scriptobjects may implement this function to react on language switching
-	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
-	{
-		idThread* thread = ent->CallScriptFunctionArgs("onLanguageChanged", true, 0, "e", ent);
-
-		if (thread != NULL)
-		{
-			thread->Execute();
-		}
-	}
-#endif
+	return (oldLang != m_lang) ? true : false;
 }
 
 /*
