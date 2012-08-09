@@ -4310,10 +4310,20 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// do this after the step above, or oldLang will be incorrect:
 		Printf("GUI: Language changed to %s.\n", newLang.c_str() );
 		// set the new language and store it, will also reload the GUI
-		common->GetI18N()->SetLanguage( newLang.c_str() );
-
-		// store it, so the GUI can access it
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
+		if (common->GetI18N()->SetLanguage( newLang.c_str() ))
+		{
+			// Tels: #3193: Cycle through all active entities and call "onLanguageChanged" on them
+			// some scriptobjects (like for readables) may implement this function to react on language switching
+			for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+			{
+				idThread* thread = ent->CallScriptFunctionArgs("onLanguageChanged", true, 0, "e", ent);
+				if (thread != NULL)
+				{
+					thread->Execute();
+				}
+			}
+		}
 	}
 //	else
 //	{
