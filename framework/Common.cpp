@@ -2998,21 +2998,15 @@ void idCommonLocal::InitGame( void )
 	}
 #endif
 
-	PrintLoadingMessage( Translate( "#str_04349" ) );
-
 	// initialize the user interfaces
 	uiManager->Init();
 
 	// startup the script debugger
 	// DebuggerServerInit();
 
-	PrintLoadingMessage( Translate( "#str_04350" ) );
-
 	// load the game dll
 	LoadGameDLL();
 	
-	PrintLoadingMessage( Translate( "#str_04351" ) );
-
 	// init the session
 	session->Init();
 
