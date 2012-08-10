@@ -174,7 +174,6 @@ private:
 	dnPostProcessManager m_postProcessManager;
 
 	const idMaterial *	tunnelMaterial;		// health tunnel vision
-	const idMaterial *	armorMaterial;		// armor damage view effect
 	const idMaterial *	bloodSprayMaterial; // blood spray
 	const idMaterial *	lagoMaterial;		// lagometer drawing
 	float				lastDamageTime;		// accentuate the tunnel effect for a while

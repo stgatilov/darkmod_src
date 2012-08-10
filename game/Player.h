@@ -398,7 +398,6 @@ public:
 	int						lastDmgTime;
 	int						deathClearContentsTime;
 	bool					doingDeathSkin;
-	int						lastArmorPulse;		// lastDmgTime if we had armor at time of hit
 	float					stamina;
 	float					healthPool;			// amount of health to give over time
 	int						nextHealthPulse;
@@ -568,7 +567,7 @@ public:
 	virtual void			GetAIAimTargets( const idVec3 &lastSightPos, idVec3 &headPos, idVec3 &chestPos );
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
 	void					CalcDamagePoints(  idEntity *inflictor, idEntity *attacker, const idDict *damageDef,
-							   const float damageScale, const int location, int *health, int *armor );
+							   const float damageScale, const int location, int *health );
 	virtual	void			Damage
 							( 
 							idEntity *inflictor, idEntity *attacker, const idVec3 &dir,

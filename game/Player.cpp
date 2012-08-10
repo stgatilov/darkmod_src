@@ -302,7 +302,6 @@ idPlayer::idPlayer() :
 	lastHeartBeat			= 0;
 	lastDmgTime				= 0;
 	deathClearContentsTime	= 0;
-	lastArmorPulse			= -10000;
 	stamina					= 0.0f;
 	healthPool				= 0.0f;
 	nextHealthPulse			= 0;
@@ -586,7 +585,6 @@ void idPlayer::Init( void ) {
 	showWeaponViewModel		= GetUserInfo()->GetBool( "ui_showGun" );
 
 	lastDmgTime				= 0;
-	lastArmorPulse			= -10000;
 	lastHeartAdjust			= 0;
 	lastHeartBeat			= 0;
 	heartInfo.Init( 0, 0, 0, 0 );
@@ -883,9 +881,6 @@ void idPlayer::Spawn( void )
 		gameLocal.Warning( "Unable to create overlay for HUD." );
 
 	SetLastHitTime( 0 );
-
-	// load the armor sound feedback
-	declManager->FindSound( "player_sounds_hitArmor" );
 
 	// set up conditions for animation
 	LinkScriptVariables();
@@ -1570,7 +1565,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( lastDmgTime );
 	savefile->WriteInt( deathClearContentsTime );
 	savefile->WriteBool( doingDeathSkin );
-	savefile->WriteInt( lastArmorPulse );
 	savefile->WriteFloat( stamina );
 	savefile->WriteFloat( healthPool );
 	savefile->WriteInt( nextHealthPulse );
@@ -1881,7 +1875,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( lastDmgTime );
 	savefile->ReadInt( deathClearContentsTime );
 	savefile->ReadBool( doingDeathSkin );
-	savefile->ReadInt( lastArmorPulse );
 	savefile->ReadFloat( stamina );
 	savefile->ReadFloat( healthPool );
 	savefile->ReadInt( nextHealthPulse );
@@ -7278,9 +7271,8 @@ would have killed the player, possibly allowing a "saving throw"
 =================
 */
 void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const idDict *damageDef,
-							   const float damageScale, const int location, int *health, int *armor ) {
+							   const float damageScale, const int location, int *health ) {
 	int		damage;
-	int		armorSave;
 
 	// grayman #2816 - calculate damage differently if hit by a moveable
 	bool scaleDamage = damageDef->GetBool( "scale_damage", "0" );
@@ -7322,30 +7314,6 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 
-	// save some from armor
-	if ( !damageDef->GetBool( "noArmor" ) ) {
-		/*float armor_protection;
-
-		armor_protection = ( gameLocal.isMultiplayer ) ? g_armorProtectionMP.GetFloat() : g_armorProtection.GetFloat();
-
-		armorSave = ceil( damage * armor_protection );
-		if ( armorSave >= inventory.armor ) {
-			armorSave = inventory.armor;
-		}*/
-		armorSave = 0;
-
-		if ( !damage ) {
-			armorSave = 0;
-		} else if ( armorSave >= damage ) {
-			armorSave = damage - 1;
-			damage = 1;
-		} else {
-			damage -= armorSave;
-		}
-	} else {
-		armorSave = 0;
-	}
-
 	// check for team damage
 	if ( gameLocal.gameType == GAME_TDM
 		&& !gameLocal.serverInfo.GetBool( "si_teamDamage" )
@@ -7357,7 +7325,6 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	}
 
 	*health = damage;
-	*armor = armorSave;
 }
 
 /*
@@ -7382,7 +7349,6 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 {
 	idVec3		kick;
 	int			damage;
-	int			armorSave;
 	int			knockback;
 	idVec3		damage_from;
 	idVec3		localDamageVector;	
@@ -7421,7 +7387,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		return;
 	}
 
-	CalcDamagePoints( inflictor, attacker, &damageDef->dict, damageScale, location, &damage, &armorSave );
+	CalcDamagePoints( inflictor, attacker, &damageDef->dict, damageScale, location, &damage );
 
 	// determine knockback
 	damageDef->dict.GetInt( "knockback", "20", knockback );
@@ -7442,24 +7408,14 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		physicsObj.SetKnockBack( idMath::ClampInt( 50, 200, knockback * 2 ) );
 	}
 
-	// give feedback on the player view and audibly when armor is helping
-	/*if ( armorSave ) {
-		inventory.armor -= armorSave;
-
-		if ( gameLocal.time > lastArmorPulse + 200 ) {
-			StartSound( "snd_hitArmor", SND_CHANNEL_ITEM, 0, false, NULL );
-		}
-		lastArmorPulse = gameLocal.time;
-	}*/
-	
 	if ( damageDef->dict.GetBool( "burn" ) ) 
 	{
 		StartSound( "snd_burn", SND_CHANNEL_BODY3, 0, false, NULL );
 	}
 
 	if ( g_debugDamage.GetInteger() ) {
-		gameLocal.Printf( "client:%i health:%i damage:%i armor:%i\n", 
-			entityNumber, health, damage, armorSave );
+		gameLocal.Printf( "client:%i health:%i damage:%i\n", 
+			entityNumber, health, damage );
 	}
 
 	// move the world direction vector to local coordinates
@@ -7534,7 +7490,7 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
 			if ( damageDef->dict.GetBool( "no_air" ) ) 
 			{
-				if ( !armorSave && health > 0 ) 
+				if ( health > 0 ) 
 				{
 					StopSound( SND_CHANNEL_VOICE, false );
 					StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
