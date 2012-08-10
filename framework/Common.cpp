@@ -2375,7 +2375,6 @@ void idCommonLocal::InitRenderSystem( void ) {
 		return;
 	} else {
 		renderSystem->InitOpenGL();
-		PrintLoadingMessage( Translate( "#str_04343" ) );
 	}
 }
 
