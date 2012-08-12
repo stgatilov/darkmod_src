@@ -784,6 +784,32 @@ void Updater::PerformDifferentialUpdateStep()
 		package->ExtractFileTo(f->file.string(), targetPath / f->file);
 	}
 
+	// grayman debug - if TDM executable exists at this point, move it up one level
+
+#if WIN32
+	std::string tdmExecutableName = "TheDarkMod.exe";
+#else 
+	std::string tdmExecutableName = "thedarkmod.x86";
+#endif
+
+	if (fs::exists(targetPath / tdmExecutableName))
+	{
+		// Set the executable bit on the TDM binary
+		File::MarkAsExecutable(targetPath / tdmExecutableName);
+
+		// Move it up one level
+
+		if (File::Move(targetPath / tdmExecutableName, targetPath / ("../" + tdmExecutableName)))
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, "1 - Successfully moved binary " + tdmExecutableName + " up one level to " + targetPath.string() + "/../"); // grayman debug
+		}
+		else
+		{
+			// Move failed
+			TraceLog::WriteLine(LOG_VERBOSE, "1 - Failed to move binary " + tdmExecutableName + " up one level to " + targetPath.string() + "/../"); // grayman debug
+		}
+	}
+
 	// Close the ZIP file before removing it
 	package.reset();
 
@@ -890,10 +916,10 @@ fs::path Updater::GetTargetPath()
 	fs::path targetPath = fs::current_path();
 
 	// If the current path is the actual engine path, switch folders to "darkmod"
-	// We don't want to download the PK4s into the TheDarkMod.exe location
-	if (Util::PathIsTDMEnginePath(targetPath))
+	// We don't want to download the PK4s into the Doom3.exe location
+	if (Util::PathIsDoom3EnginePath(targetPath))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, "TDM engine found in current path, switching directories.");
+		TraceLog::WriteLine(LOG_VERBOSE, "Doom3 found in current path, switching directories.");
 
 		targetPath /= TDM_STANDARD_MOD_FOLDER;
 
@@ -1272,9 +1298,19 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			// Set the executable bit on the TDM binary
 			File::MarkAsExecutable(binaryFileName);
 
-			// Copy it up one level
+			// Move it up one level
 
-			File::Copy(destPath / ("../" + TDM_BINARY_NAME), binaryFileName);
+			if (File::Move(binaryFileName, destPath / ("../" + TDM_BINARY_NAME)))
+			{
+				TraceLog::WriteLine(LOG_VERBOSE, "2 - Successfully moved binary " + binaryFileName.string() + " up one level to " + destPath.string() + "/../"); // grayman debug
+				TraceLog::WriteLine(LOG_VERBOSE, "2 - zipFilePath = " + zipFilePath.file_string()); // grayman debug
+			}
+			else
+			{
+				// Move failed
+				TraceLog::WriteLine(LOG_VERBOSE, "2 - Failed to move binary " + binaryFileName.string() + " up one level to " + destPath.string() + "/../"); // grayman debug
+				TraceLog::WriteLine(LOG_VERBOSE, "2 - zipFilePath = " + zipFilePath.file_string()); // grayman debug
+			}
 		}
 		else
 		{
