@@ -3019,6 +3019,10 @@ void idCommonLocal::InitGame( void )
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 		cmdSystem->ExecuteCommandBuffer();
 	}
+
+	// tels: #3199: now that the game DLL is loaded, we can execute another config, this
+	// enables it to run f.i. dmap (dmap before DLL load produces no AAS):
+	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autocommands.cfg\n" );
 }
 
 /*
