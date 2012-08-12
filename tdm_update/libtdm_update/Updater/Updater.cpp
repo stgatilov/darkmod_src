@@ -794,6 +794,9 @@ void Updater::PerformDifferentialUpdateStep()
 
 	if (fs::exists(targetPath / tdmExecutableName))
 	{
+		// Set the executable bit on the TDM binary
+		File::MarkAsExecutable(targetPath / tdmExecutableName);
+
 		// Move it up one level
 
 		if (File::Move(targetPath / tdmExecutableName, targetPath / ("../" + tdmExecutableName)))
