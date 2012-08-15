@@ -222,6 +222,9 @@ float LightGem::Calculate(idPlayer *player)
 	m_Lightgem_rv.shaderParms[3] = gameLocal.globalShaderParms[3]; // Ambient G
 	m_Lightgem_rv.shaderParms[4] = gameLocal.globalShaderParms[4]; // Ambient B
 
+	// angua: render view needs current time, otherwise it will be unable to see time-dependent changes in light shaders such as flickering torches
+	m_Lightgem_rv.time = gameLocal.GetTime();
+
 	// Make sure the player model is hidden in the lightgem renders
 	renderEntity_t* prent = player->GetRenderEntity();
 	const int pdef = player->GetModelDefHandle();
