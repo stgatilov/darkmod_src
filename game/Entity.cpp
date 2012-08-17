@@ -4266,8 +4266,8 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 
 	if (bIsSusp)
 	{
-		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
+		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn );
 		// exit here, because we don't want to allow playing both
 		// env. sound AND susp. sound for the same sound and entity
 		return;

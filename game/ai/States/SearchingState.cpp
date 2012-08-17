@@ -202,8 +202,14 @@ void SearchingState::Think(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
-	// Do we have an ongoing hiding spot search?
-	if (!memory.hidingSpotSearchDone)
+	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
+	if (memory.restartSearchForHidingSpots)
+	{
+		// We should restart the search (probably due to a new incoming stimulus)
+		// Setup a new hiding spot search
+		StartNewHidingSpotSearch(owner);
+	}
+	else if (!memory.hidingSpotSearchDone) // Do we have an ongoing hiding spot search?
 	{
 		// Let the hiding spot search do its task
 		PerformHidingSpotSearch(owner);
@@ -232,6 +238,7 @@ void SearchingState::Think(idAI* owner)
 		// Spot search and investigation done, what next?
 
 		// Have run out of hiding spots?
+
 		if (memory.noMoreHidingSpots) 
 		{
 			if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
@@ -326,19 +333,22 @@ void SearchingState::Think(idAI* owner)
 			memory.hidingSpotInvestigationInProgress = true;
 		}
 	}
+/* grayman #3200 - moved up
 	else if (memory.restartSearchForHidingSpots)
 	{
 		// We should restart the search (probably due to a new incoming stimulus)
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
 	}
-//	else // grayman #3063 - moved to front
-//	{
+
+	else // grayman #3063 - moved to front
+	{
 		// Move to Hiding spot is ongoing, do additional sensory tasks here
 
 		// Let the AI check its senses
-//		owner->PerformVisualScan();
-//	}
+		owner->PerformVisualScan();
+	}
+ */
 }
 
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
@@ -554,7 +564,7 @@ void SearchingState::OnAudioAlert()
 
 	if (!memory.alertPos.Compare(memory.currentSearchSpot, 50))
 	{
-		// The position of the sound is different to the current search spot, redefine the goal
+		// The position of the sound is different from the current search spot, so redefine the goal
 		TaskPtr curTask = owner->actionSubsystem->GetCurrentTask();
 		InvestigateSpotTaskPtr spotTask = boost::dynamic_pointer_cast<InvestigateSpotTask>(curTask);
 			
@@ -563,9 +573,21 @@ void SearchingState::OnAudioAlert()
 			// Redirect the owner to a new position
 			spotTask->SetNewGoal(memory.alertPos);
 			spotTask->SetInvestigateClosely(false);
+			memory.restartSearchForHidingSpots = true; // grayman #3200
 
 			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), memory.alertPos, 1, 2000);
 		}
+	}
+	else
+	{
+		// grayman #3200 - we're about to ignore the new sound and continue with
+		// the current search, but we should at least turn toward the new sound
+		// to acknowledge having heard it
+
+		owner->StopMove(MOVE_STATUS_DONE);
+		owner->TurnToward(memory.alertPos);
+		owner->Event_LookAtPosition(memory.alertPos,MS2SEC(DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3)));
+		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.alertPos, 1, 2000);
 	}
 
 	if (memory.alertSearchCenter != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
