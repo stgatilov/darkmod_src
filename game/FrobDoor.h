@@ -118,7 +118,7 @@ public:
 	 * to the player instead of the bounding box center, which might be on the far side
 	 * of a closed portal. This method gets applied to doors without handles, usually.
 	 */
-	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis) const;
+	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
 
 	void					SetLastUsedBy(idEntity* ent);	// grayman #2859
 	idEntity*				GetLastUsedBy() const;			// grayman #2859

@@ -998,7 +998,7 @@ CFrobDoorHandle* CFrobDoor::GetNearestHandle(const idVec3& pos) const
 	return returnValue;
 }
 
-bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis) const
+bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 {
 	// This will kick in for doors without any handles, these are playing their
 	// sounds from the nearest point to the player's eyes, mid-bounding-box.
