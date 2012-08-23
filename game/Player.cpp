@@ -5957,18 +5957,26 @@ void idPlayer::AdjustSpeed( void )
 		speed = pm_spectatespeed.GetFloat();
 		bobFrac = 0.0f;
 	}
-	else if ( noclip && !( usercmd.buttons & BUTTON_RUN ))
+	else if ( noclip )
 	{
-		// "Walk" noclip
-		speed = pm_noclipspeed.GetFloat();
-		bobFrac = 0.0f;
+		if (usercmd.buttons & BUTTON_RUN)
+		{		// "run" noclip
+			speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
+			bobFrac = 0.0f;
+		} 
+		else if (usercmd.buttons & BUTTON_5)
+		{
+			// slow "creep" noclip
+			speed = pm_noclipspeed.GetFloat() * cv_pm_creepmod.GetFloat();
+			bobFrac = 0.0f;
+		} 
+		else
+		{
+			// "Walk" noclip
+			speed = pm_noclipspeed.GetFloat();
+			bobFrac = 0.0f;
+		}
 	}
-	else if ( noclip && ( usercmd.buttons & BUTTON_RUN ))
-	{
-		// "run" noclip
-		speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
-		bobFrac = 0.0f;
-	} 
 	// running case
 	// TDM: removed check for not crouching..
 	else if ( !physicsObj.OnLadder() && ( usercmd.buttons & BUTTON_RUN ) && ( usercmd.forwardmove || usercmd.rightmove ) ) 
