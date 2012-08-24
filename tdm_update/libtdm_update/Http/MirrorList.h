@@ -25,6 +25,7 @@
 #include <map>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string/erase.hpp> // grayman #3208
 
 namespace tdm
 {
@@ -48,6 +49,10 @@ struct Mirror
 		url(url_),
 		weight(weight_)
 	{
+		// grayman #3208 - remove all spaces in the url
+		boost::algorithm::ierase_all(url, " ");
+
+		// url should terminate with "/"
 		if (!boost::algorithm::ends_with(url, "/"))
 		{
 			url += "/";
