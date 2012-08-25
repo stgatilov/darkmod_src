@@ -497,7 +497,15 @@ Sys_DefaultBasePath
 ==============
 */
 const char *Sys_DefaultBasePath( void ) {
-	return Sys_Cwd();
+    static idStr basePath;
+    if ( basePath.IsEmpty() ) {
+        // TheDarkMod.exe is now located under darkmod/ so we need to set basepath to
+        // the one level above the current exe directory 
+        basePath = Sys_Cwd();
+        basePath.StripFilename();
+    }
+    
+    return basePath.c_str();
 }
 
 /*
@@ -507,7 +515,7 @@ Sys_DefaultSavePath
 */
 const char *Sys_DefaultSavePath( void ) {
 	static idStr savePath;
-    // taaaki: default savepath changed to the mod dir.
+    // default savepath changed to the mod dir.
     if ( savePath.IsEmpty() ) {
         savePath = cvarSystem->GetCVarString("fs_basepath");
         savePath.AppendPath(cvarSystem->GetCVarString("fs_mod"));
