@@ -2110,6 +2110,15 @@ void idFileSystemLocal::Startup( void ) {
         AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
     }
 
+    // if fs_devpath is set by the user, assume that this is a wip directory and add it to the top of the searchpaths
+    if ( fs_devpath.GetString()[0] && 
+         fs_currentfm.GetString()[0] &&
+         idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
+         idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) &&
+         idStr::Icmp( fs_devpath.GetString(), Sys_DefaultSavePath() ) ) {
+        AddGameDirectory( fs_devpath.GetString(), "" );
+    }
+
     // currently all addons are in the search list - deal with filtering out and dependencies now
 	// scan through and deal with dependencies
 	search = &searchPaths;
