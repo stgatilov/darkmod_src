@@ -706,6 +706,8 @@ void CMissionManager::InitStartingMap()
 	{
 		// We have a startingmap
 		_curStartingMap = buffer;
+		// Tels: Avoid that startingmap containing a line-feed leads to errors
+		_curStartingMap.StripWhitespace();
 		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
 	}
 	else
