@@ -102,7 +102,7 @@ bool idLangDict::Load( const char *fileName, const bool clear /* _D3XP */, const
 			hash.Add( GetHashKey( kv.key ), args.Append( kv ) );
 		}
 	}
-	idLib::common->Printf( "%i strings read from %s\n", args.Num(), fileName );
+	idLib::common->Printf( "I18N: %i strings read from %s\n", args.Num(), fileName );
 	idLib::fileSystem->FreeFile( (void*)buffer );
 	
 	return true;
