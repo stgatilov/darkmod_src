@@ -245,8 +245,8 @@ void CGlobal::Init()
 
 #else   // LINUX
 	
-	std::string iniPath = 
-		std::string(getenv("HOME")) + "/.doom3/darkmod/darkmod.ini";
+	std::string iniPath = GetDarkmodPath();
+	iniPath += "/darkmod.ini";
 	
 #endif
 
@@ -698,7 +698,7 @@ void CGlobal::InitSurfaceHardness()
 
 std::string CGlobal::GetModPath(const std::string& modName)
 {
-	fs::path path = GetDarkmodPath();	// c:\games\doom3\darkmod
+	fs::path path = GetDarkmodPath();	// f.i. c:\games\doom3\darkmod
 	path /= cv_tdm_fm_path.GetString();	// fms/
 	path /= modName;					// <fs_currentfm>
     
