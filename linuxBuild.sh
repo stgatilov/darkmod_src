@@ -14,7 +14,7 @@ mv gamex86-base.so gamex86.so
 #strip gamex86.so
 #strip thedarkmod.x86
 
-cp thedarkmod.x86 ~/.doom3/
+cp thedarkmod.x86 ~/.doom3/darkmod/
 
 # Only if this directory exists
 if [ -d ~/games/doom3/ ]; then
