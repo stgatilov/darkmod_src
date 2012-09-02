@@ -1314,6 +1314,7 @@ private:
 	void					Event_SetObjectiveOptional( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveOngoing( int ObjIndex, bool bVal );
 	void					Event_SetObjectiveEnabling( int ObjIndex, const char *strIn );
+	void					Event_SetObjectiveText( int ObjIndex, const char *descr );
 
 	/**
 	* greebo: This scriptevent routes the call to the member method "GiveHealthPool".

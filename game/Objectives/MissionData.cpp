@@ -1289,6 +1289,23 @@ void CMissionData::SetObjectiveOngoing(int objIndex, bool ongoing)
 	m_Objectives[objIndex].m_bOngoing = ongoing;
 }
 
+void CMissionData::SetObjectiveText(int objIndex, const char *descr)
+{
+	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	{
+		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveText: Invalid objective index: %d\r", objIndex);
+		return;
+	}
+	m_Objectives[objIndex].m_text = descr;
+	// make the GUI update itself
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	if (player == NULL)
+	{
+		gameLocal.Error("No player at SetObjectiveText!\n");
+	}
+	player->UpdateObjectivesGUI();
+}
+
 void CMissionData::SetEnablingObjectives(int objIndex, const idStr& enablingStr)
 {
 	if (objIndex > m_Objectives.Num() || objIndex < 0)

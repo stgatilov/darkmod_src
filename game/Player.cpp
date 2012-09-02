@@ -119,6 +119,8 @@ const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", "dd" );
 const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", "dd" );
 const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
 const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
+// Tels: Modify the displayed text for an objective. Can also be a string template like #str_20000
+const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", "ds" );
 // greebo: This allows scripts to set the "healthpool" for gradual healing
 const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
 const idEventDef EV_Player_WasDamaged("wasDamaged", NULL, 'd');
@@ -211,6 +213,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
+	EVENT( EV_Player_SetObjectiveText,	idPlayer::Event_SetObjectiveText )
 
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
@@ -10112,6 +10115,11 @@ void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )
 void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 {
 	gameLocal.m_MissionData->SetEnablingObjectives(ObjIndex, strIn);
+}
+
+void idPlayer::Event_SetObjectiveText( int ObjIndex, const char *descr )
+{
+	gameLocal.m_MissionData->SetObjectiveText(ObjIndex - 1, descr);
 }
 
 void idPlayer::Event_GiveHealthPool( float amount ) {

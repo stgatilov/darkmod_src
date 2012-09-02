@@ -208,6 +208,11 @@ public:
 	void SetEnablingObjectives(int objIndex, const idStr& enablingStr);
 
 	/**
+	* Tels #3217: Change the text of an objective.
+	**/
+	void CMissionData::SetObjectiveText(int objIndex, const char *descr);
+
+	/**
 	* Getters for the mission stats.  Takes an objective component event type,
 	* index for the category (for example, the index would be the team int if 
 	* you are calling GetStatByTeam)
