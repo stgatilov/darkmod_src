@@ -304,7 +304,7 @@ void CMissionData::MissionEvent
 	if(!Ent1)
 	{
 		// log error
-		goto Quit;
+		return;
 	}
 	FillParmsData( Ent1, &data1 );
 	data1.bWhileAirborne = bWhileAirborne;
@@ -316,9 +316,6 @@ void CMissionData::MissionEvent
 		FillParmsData( Ent2, &data2 );
 		MissionEvent( CompType, &data1, &data2, bBoolArg );
 	}
-
-Quit:
-	return;
 }
 
 bool	CMissionData::MatchSpec
@@ -587,7 +584,9 @@ void CMissionData::UpdateObjectives( void )
 
 	// Check if any objective states have changed:
 	if( !m_bObjsNeedUpdate )
-		goto Quit;
+	{
+		return;
+	}
 	m_bObjsNeedUpdate = false;
 
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objectives in need of updating \r");
@@ -631,7 +630,7 @@ void CMissionData::UpdateObjectives( void )
 
 			if( !bObjEnabled )
 			{
-				goto Quit;
+				return;
 			}
 
 			DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Objectives: Objective %d COMPLETED\r", i+1);
@@ -650,9 +649,6 @@ void CMissionData::UpdateObjectives( void )
 			SetCompletionState(i, STATE_INCOMPLETE );
 		}
 	}
-
-Quit:
-	return;
 }
 
 void CMissionData::Event_ObjectiveComplete( int ind )
@@ -907,78 +903,75 @@ void CMissionData::Event_MissionEnd()
 
 int CMissionData::GetStatOverall( EComponentType CompType, int AlertLevel )
 {
-	int returnVal(0);
-
 	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
-		goto Quit;
+	{
+		return 0;
+	}
 
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertLevel ].Overall;
-	else
-		returnVal = m_Stats.AIStats[ CompType ].Overall;
+	{
+		return m_Stats.AIAlerts[ AlertLevel ].Overall;
+	}
 
-Quit:
-	return returnVal;
+	// else
+	return m_Stats.AIStats[ CompType ].Overall;
 }
 
 int CMissionData::GetStatByTeam( EComponentType CompType, int index, int AlertLevel )
 {
-	int returnVal(0);
-
 	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
-		goto Quit;
-	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByTeam[index];
-	else
-		returnVal = m_Stats.AIStats[ CompType ].ByTeam[index];
+	{
+		return 0;
+	}
 
-Quit:
-	return returnVal;
+	if( CompType == COMP_ALERT )
+	{
+		return m_Stats.AIAlerts[ AlertLevel ].ByTeam[index];
+	}
+	// else
+	return m_Stats.AIStats[ CompType ].ByTeam[index];
 }
 
 int CMissionData::GetStatByType( EComponentType CompType, int index, int AlertLevel )
 {
-	int returnVal(0);
-
 	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
-		goto Quit;
+	{
+		return 0;
+	}
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByType[index];
-	else
-		returnVal = m_Stats.AIStats[ CompType ].ByType[index];
-
-Quit:
-	return returnVal;
+	{
+		return m_Stats.AIAlerts[ AlertLevel ].ByType[index];
+	}
+	// else
+	return m_Stats.AIStats[ CompType ].ByType[index];
 }
 
 int CMissionData::GetStatByInnocence( EComponentType CompType, int index, int AlertLevel )
 {
-	int returnVal(0);
-
 	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
-		goto Quit;
+	{
+		return 0;
+	}
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertLevel ].ByInnocence[index];
-	else
-		returnVal = m_Stats.AIStats[ CompType ].ByInnocence[index];
-
-Quit:
-	return returnVal;
+	{
+		return m_Stats.AIAlerts[ AlertLevel ].ByInnocence[index];
+	}
+	// else
+	return m_Stats.AIStats[ CompType ].ByInnocence[index];
 }
 
 int CMissionData::GetStatAirborne( EComponentType CompType, int AlertLevel )
 {
-	int returnVal(0);
-
 	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
-		goto Quit;
+	{
+		return 0;
+	}
 	if( CompType == COMP_ALERT )
-		returnVal = m_Stats.AIAlerts[ AlertLevel ].WhileAirborne;
-	else
-		returnVal = m_Stats.AIStats[ CompType ].WhileAirborne;
-
-Quit:
-	return returnVal;
+	{
+		return m_Stats.AIAlerts[ AlertLevel ].WhileAirborne;
+	}
+	//else
+	return m_Stats.AIStats[ CompType ].WhileAirborne;
 }
 
 void CMissionData::AIDamagedByPlayer( int DamageAmount )
@@ -1084,19 +1077,16 @@ void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bSta
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
-		goto Quit;
+		return;
 	}
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("SetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
-		goto Quit;
+		return;
 	}
 
 	// call internal SetComponentState
 	SetComponentState( ObjIndex, CompIndex, bState );
-
-Quit:
-	return;
 }
 
 void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
@@ -1175,42 +1165,32 @@ void CMissionData::SetCompletionState( int ObjIndex, int State, bool fireEvents 
 
 int CMissionData::GetCompletionState( int ObjIndex )
 {
-	int returnInt = -1;
-
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetCompletionState: Bad objective index: %d \r", ObjIndex );
 		gameLocal.Printf("WARNING: Objective system: Attempt was made to get completion state of invalid objective index: %d \n", ObjIndex);
-		goto Quit;
+		return -1;
 	}
 
-	returnInt = m_Objectives[ObjIndex].m_state;
-
-Quit:
-	return returnInt;
+	return m_Objectives[ObjIndex].m_state;
 }
 
 bool CMissionData::GetComponentState( int ObjIndex, int CompIndex )
 {
-	bool bReturnVal(false);
-
 	if( ObjIndex >= m_Objectives.Num() || ObjIndex < 0  )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetComponentState: Objective num %d out of bounds. \r", (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective System: GetComponentState: Objective num %d out of bounds. \n", (ObjIndex+1) );
-		goto Quit;
+		return false;
 	}
 	if( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
 	{
 		DM_LOG(LC_OBJECTIVES,LT_WARNING)LOGSTRING("GetComponentState: Component num %d out of bounds for objective %d. \r", (CompIndex+1), (ObjIndex+1) );
 		gameLocal.Printf("WARNING: Objective System: GetComponentState: Component num %d out of bounds for objective %d. \n", (CompIndex+1), (ObjIndex+1) );
-		goto Quit;
+		return false;
 	}
 
-	bReturnVal = m_Objectives[ObjIndex].m_Components[CompIndex].m_bState;
-
-Quit:
-	return bReturnVal;
+	return m_Objectives[ObjIndex].m_Components[CompIndex].m_bState;
 }
 
 void CMissionData::UnlatchObjective( int ObjIndex )
