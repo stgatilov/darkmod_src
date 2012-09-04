@@ -13,6 +13,7 @@ idlib_string = ' \
 	bv/Frustum.cpp \
 	bv/Sphere.cpp \
 	bv/Box.cpp \
+	containers/HashIndex.cpp \
 	geometry/DrawVert.cpp \
 	geometry/Winding2D.cpp \
 	geometry/Surface_SweptSpline.cpp \
@@ -37,33 +38,42 @@ idlib_string = ' \
 	math/Simd.cpp \
 	math/Simd_Generic.cpp \
 	math/Vector.cpp \
+	Base64.cpp \
 	BitMsg.cpp \
+	CmdArgs.cpp \
+	Dict.cpp \
+	Heap.cpp \
+	Image.cpp \
 	LangDict.cpp \
 	Lexer.cpp \
 	Lib.cpp \
-	containers/HashIndex.cpp \
-	Dict.cpp \
-	Str.cpp \
-	Parser.cpp \
 	MapFile.cpp \
-	CmdArgs.cpp \
-	Image.cpp \
-	Token.cpp \
-	Base64.cpp \
-	Timer.cpp \
+	Parser.cpp \
 	RevisionTracker.cpp \
-	Heap.cpp'
+	Str.cpp \
+	Timer.cpp'
+
+# greebo: Compile the token source with less aggressive optimisation, to resolve issue #3184
+
+idlib_noopt_string = ' \
+	bv/Frustum_gcc.cpp \
+	Token.cpp'
 
 idlib_list = scons_utils.BuildList( 'idlib', idlib_string )
+idlib_noopt_list = scons_utils.BuildList( 'idlib', idlib_noopt_string )
 
 for i in range( len( idlib_list ) ):
 	idlib_list[ i ] = '../../' + idlib_list[ i ]
 
+for i in range( len( idlib_noopt_list ) ):
+	idlib_noopt_list[ i ] = '../../' + idlib_noopt_list[ i ]
+
 local_env = g_env.Clone()
-local_env_noopt = g_env.Clone()
 
 # The idlib files use the idlib/precompiled.h header, make sure it's the first to be found
 local_env.Prepend(CPPPATH = '#/idlib')
+
+local_env_noopt = local_env.Clone()
 
 # max allowed -O1
 flags = OPTCPPFLAGS
@@ -71,16 +81,28 @@ try:
 	flags.remove( '-O3' )
 	flags.insert( 0, '-O1' )
 except:
+	#print('Warning: Cannot set optimization flags')
 	pass
+
+try:
+	local_env_noopt['CPPFLAGS'].remove('-O3')
+except:
+	print('Error: O3 not found in regular CPPFLAGS, not removing this one.')
+	pass
+
 local_env_noopt.Append( CPPFLAGS = flags )
 
 ret_list = []
+
 if ( local_idlibpic == 0 ):
 	for f in idlib_list:
 		ret_list += local_env.StaticObject( source = f )
-	ret_list += local_env_noopt.StaticObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
+	for f in idlib_noopt_list:
+		ret_list += local_env_noopt.StaticObject( source = f )
 else:
 	for f in idlib_list:
 		ret_list += local_env.SharedObject( source = f )
-	ret_list += local_env_noopt.SharedObject( source = [ '../../idlib/bv/Frustum_gcc.cpp' ] )
+	for f in idlib_noopt_list:
+		ret_list += local_env_noopt.SharedObject( source = f )
+
 Return( 'ret_list' )
