@@ -1354,7 +1354,7 @@ void idEntity::Spawn( void )
 	m_StartBounds = GetPhysics()->GetAbsBounds();
 	m_AbsenceStatus = false;
 
-	if (renderEntity.customSkin && spawnArgs.GetString("lod_hidden_skin") != "")
+	if (renderEntity.customSkin && !idStr(spawnArgs.GetString("lod_hidden_skin")).IsEmpty())
 	{
 		m_VisibleSkin = renderEntity.customSkin->GetName();
 //		gameLocal.Printf ("%s: Storing current skin %s.\n", GetName(), m_VisibleSkin.c_str() );
