@@ -210,7 +210,7 @@ public:
 	/**
 	* Tels #3217: Change the text of an objective.
 	**/
-	void CMissionData::SetObjectiveText(int objIndex, const char *descr);
+	void SetObjectiveText(int objIndex, const char *descr);
 
 	/**
 	* Getters for the mission stats.  Takes an objective component event type,
