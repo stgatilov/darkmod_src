@@ -957,18 +957,6 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			idAsyncNetwork::client.SendVersionCheck( true );
 			continue;
 		}
-
-		// triggered from mainmenu or mpmain
-		if ( !idStr::Icmp( cmd, "punkbuster" ) ) {
-			idStr vcmd;
-			if ( args.Argc() - icmd >= 1 ) {
-				vcmd = args.Argv( icmd++ );
-			}
-			// filtering PB based on enabled/disabled
-			idAsyncNetwork::client.serverList.ApplyFilter( );
-			SetPbMenuGuiVars();
-			continue;
-		}
 	}
 }
 

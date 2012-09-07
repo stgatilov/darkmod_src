@@ -1545,6 +1545,8 @@ void idFileSystemLocal::FreeFileList( idFileList *fileList ) {
 ===============
 idFileSystemLocal::ListMods
 ===============
+
+Tels: Could entirely be removed unless we want to have "mods to darkmod".
 */
 #define MAX_DESCRIPTION		256
 idModList *idFileSystemLocal::ListMods( void ) {
@@ -1573,7 +1575,7 @@ idModList *idFileSystemLocal::ListMods( void ) {
 		dirs.Remove( ".." );
 		dirs.Remove( "base" );
 		dirs.Remove( "pb" ); // Not needed in TDM - punkbuster - remove when standalone
-        /*dirs.Remove( "darkmod" ); // taaaki - not sure if this is needed, but darkmod isn't a mod*/
+	        /*dirs.Remove( "darkmod" ); // taaaki - not sure if this is needed, but darkmod isn't a mod*/
 
 		// see if there are any pk4 files in each directory
 		for( int i = 0; i < dirs.Num(); i++ ) {

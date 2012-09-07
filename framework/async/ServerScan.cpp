@@ -433,10 +433,6 @@ void idServerScan::GUIAdd( int id, const networkServer_t server ) {
 	}
 
 	name += "\t";
-	if ( server.serverInfo.GetString( "sv_punkbuster" )[ 0 ] == '1' ) {
-		name += "mtr_PB";
-	}
-
 	name += "\t";
 	if ( mod ) {
 		name += "mtr_doom3Mod";
