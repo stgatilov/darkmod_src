@@ -158,6 +158,15 @@ bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
 
 	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Entity %s is allowed to spawn: %s.\r", target.GetString("name"), isAllowed ? "YES" : "NO");
 
+	// Tels: #3223: See if this entity should spawn this time
+	float random_remove = target.GetFloat( "random_remove", "1.1");
+	float random_value = gameLocal.random.RandomFloat();
+	if (random_remove < random_value)
+	{
+		isAllowed = false;
+		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Removing entity %s due to random_remove %f < %f.\r", target.GetString("name"), random_remove, random_value);
+	}
+
 	// Return false if the entity is allowed to spawn
 	return !isAllowed;
 }
