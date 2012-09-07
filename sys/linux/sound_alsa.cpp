@@ -152,12 +152,13 @@ bool idAudioHardwareALSA::Initialize( void ) {
 	// channels
 
 	// sanity over number of speakers
-	if ( idSoundSystemLocal::s_numberOfSpeakers.GetInteger() != 6 && idSoundSystemLocal::s_numberOfSpeakers.GetInteger() != 2 ) {
-		common->Warning( "invalid value for s_numberOfSpeakers. Use either 2 or 6" );
+	m_channels = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
+	if ( m_channels != 6 && m_channels != 2 && m_channels != 8) {
+		common->Warning( "invalid value for s_numberOfSpeakers. Use either 2, 6 or 8" );
 		idSoundSystemLocal::s_numberOfSpeakers.SetInteger( 2 );
+		m_channels = 2;
 	}
 
-	m_channels = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
 	if ( ( err = id_snd_pcm_hw_params_set_channels( m_pcm_handle, hwparams, m_channels ) ) < 0 ) {
 		common->Printf( "error setting %d channels: %s\n", m_channels, id_snd_strerror( err ) );
 		if ( idSoundSystemLocal::s_numberOfSpeakers.GetInteger() != 2 ) {

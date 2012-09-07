@@ -227,12 +227,13 @@ bool idAudioHardwareOSS::Initialize( ) {
 	// channels ----------------------------------------------------
 
 	// sanity over number of speakers
-	if ( idSoundSystemLocal::s_numberOfSpeakers.GetInteger() != 6 && idSoundSystemLocal::s_numberOfSpeakers.GetInteger() != 2 ) {
-		common->Warning( "invalid value for s_numberOfSpeakers. Use either 2 or 6" );
+	m_channels = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
+	if ( m_channels != 6 && m_channels != 2 && m_channels != 8) {
+		common->Warning( "invalid value for s_numberOfSpeakers. Use either 2, 6 or 8" );
 		idSoundSystemLocal::s_numberOfSpeakers.SetInteger( 2 );
+		m_channels = 2;
 	}
 
-	m_channels = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
 	if ( ioctl( m_audio_fd, SNDCTL_DSP_CHANNELS, &m_channels ) == -1 ) {
 		common->Warning( "ioctl SNDCTL_DSP_CHANNELS %d failed: %s", idSoundSystemLocal::s_numberOfSpeakers.GetInteger(), strerror(errno) );
 		InitFailed();
