@@ -162,9 +162,36 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 
 	if (outFile == NULL) 
 	{
-		// couldn't open file for writing
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ExtractFileTo]: Cannot open destination file " + destPath.file_string());
-		return false; 
+		// grayman - Couldn't open the file. Perhaps the directory doesn't exist.
+		// Try creating it if not.
+
+		bool success = false;
+
+		fs::path directory = fs::path(destPath).branch_path();
+
+		if (!fs::exists(directory))
+		{
+			// Directory isn't there. Try to create it.
+
+			if (fs::create_directories(directory))
+			{
+				// Directory now exists. Try fopen() again.
+
+				outFile = fopen(destPath.file_string().c_str(), "wb");
+
+				if (outFile != NULL)
+				{
+					success = true;
+				}
+			}
+		}
+
+		if (!success)
+		{
+			// couldn't open file for writing
+			tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ExtractFileTo]: Cannot open destination file " + destPath.file_string());
+			return false;
+		}
 	}
 
 	unz_file_info info;
