@@ -56,14 +56,14 @@ private:
 	{
 		bool operator()(const KeyValuePair& kvp1, const KeyValuePair& kvp2) const
 		{
-			return boost::algorithm::ilexicographical_compare(kvp1.first, kvp2.first);
+			return boost::algorithm::lexicographical_compare(kvp1.first, kvp2.first);
 		}
 	};
 
 	typedef std::set<KeyValuePair, KeyCompareFunctor> KeyValues;
 
-	// Settings map: the key is a composite of <ConfigSection>.<key>
-	// Keys are compared case-insensitively
+	// KeyValuePairs are compared key-wise, case-sensitively
+	// Settings names are compared case-insensitively
 	typedef std::map<std::string, KeyValues, SectionCompareFunctor> SettingMap;
 	SettingMap _settings;
 
