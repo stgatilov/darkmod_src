@@ -187,14 +187,6 @@ idLiquid::Event_Touch
 ================
 */
 void idLiquid::Event_Touch( idEntity *other, trace_t *trace ) {
-// FIXME: for QuakeCon
-/*
-	idVec3 pos;
-
-	pos = other->GetPhysics()->GetOrigin() - GetPhysics()->GetOrigin();
-	model->IntersectBounds( other->GetPhysics()->GetBounds().Translate( pos ), -10.0f );
-*/
-
 	idPhysics_Liquid *liquid;
 	idPhysics_Actor *phys;
 
