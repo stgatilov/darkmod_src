@@ -482,7 +482,8 @@ void UpdateGuiParms( idUserInterface *gui, const idDict *args ) {
 	}
 	const idKeyValue *kv = args->MatchPrefix( "gui_parm", NULL );
 	while( kv ) {
-		gui->SetStateString( kv->GetKey(), kv->GetValue() );
+		// tels: Fix #3230
+		gui->SetStateString( kv->GetKey(), common->Translate( kv->GetValue() ) );
 		kv = args->MatchPrefix( "gui_parm", kv );
 	}
 	gui->SetStateBool( "noninteractive",  args->GetBool( "gui_noninteractive" ) ) ;
