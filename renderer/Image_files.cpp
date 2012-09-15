@@ -888,6 +888,11 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 			fileSystem->CloseFile( f );
 			return;	// just getting timestamp
 		}
+	  	if ( len == 0 ) {
+			fileSystem->CloseFile( f );
+			return;	// angua: image file is empty, just getting timestamp
+		}
+
 		fbuffer = (byte *)Mem_ClearedAlloc( len + 4096 );
 		f->Read( fbuffer, len );
 		fileSystem->CloseFile( f );
