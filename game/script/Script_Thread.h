@@ -144,6 +144,7 @@ private:
 	void 						Event_GetPersistantVector( const char *key );
 
 	void						Event_GetCurrentMissionNum();
+	void						Event_GetTDMVersion() const;
 
 	void						Event_AngToForward( idAngles &ang );
 	void						Event_AngToRight( idAngles &ang );
