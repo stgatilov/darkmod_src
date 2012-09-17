@@ -460,6 +460,7 @@ g_base_env.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found
 g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
+g_base_env.Append(CPPPATH = '#/include/libjpeg')
 g_base_env.Append(CPPPATH = '#/include/devil')
 g_base_env.Append(CPPPATH = '#/')
 

@@ -1,0 +1,91 @@
+#*****************************************************************************
+#                    The Dark Mod GPL Source Code
+# 
+# This file is part of the The Dark Mod Source Code, originally based 
+# on the Doom 3 GPL Source Code as published in 2011.
+# 
+# The Dark Mod Source Code is free software: you can redistribute it 
+# and/or modify it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation, either version 3 of the License, 
+# or (at your option) any later version. For details, see LICENSE.TXT.
+# 
+# Project: The Dark Mod (http://www.thedarkmod.com/)
+# 
+# $Revision$ (Revision of last commit) 
+# $Date$ (Date of last commit)
+# $Author$ (Author of last commit)
+# 
+#*****************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+libjpeg_string = ' \
+	jaricom.c \
+	jcapimin.c \
+	jcapistd.c \
+	jcarith.c \
+	jccoefct.c \
+	jccolor.c \
+	jcdctmgr.c \
+	jchuff.c \
+	jcinit.c \
+	jcmainct.c \
+	jcmarker.c \
+	jcmaster.c \
+	jcomapi.c \
+	jcparam.c \
+	jcprepct.c \
+	jcsample.c \
+	jctrans.c \
+	jdapimin.c \
+	jdapistd.c \
+	jdarith.c \
+	jdatadst.c \
+	jdatasrc.c \
+	jdcoefct.c \
+	jdcolor.c \
+	jddctmgr.c \
+	jdhuff.c \
+	jdinput.c \
+	jdmainct.c \
+	jdmarker.c \
+	jdmaster.c \
+	jdmerge.c \
+	jdpostct.c \
+	jdsample.c \
+	jdtrans.c \
+	jerror.c \
+	jfdctflt.c \
+	jfdctfst.c \
+	jfdctint.c \
+	jidctflt.c \
+	jidctfst.c \
+	jidctint.c \
+	jmemmgr.c \
+	jmemnobs.c \
+	jquant1.c \
+	jquant2.c \
+	jutils.c \
+	transupp.c'
+
+libjpeg_list = scons_utils.BuildList( '', libjpeg_string )
+
+# greebo: The source files are located in darkmod_src/lib/libjpeg, for all platforms
+
+for i in range( len( libjpeg_list ) ):
+	libjpeg_list[ i ] = '../../lib/libjpeg/' + libjpeg_list[ i ]
+
+local_env = g_env.Clone()
+
+# Use the libjpeg headers
+local_env.Append(CPPPATH = '#/include/libjpeg')
+
+ret_list = []
+
+for f in libjpeg_list:
+	ret_list += local_env.SharedObject( source = f )
+
+Return( 'ret_list' )

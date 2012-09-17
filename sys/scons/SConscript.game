@@ -298,13 +298,12 @@ local_env.Prepend(CPPPATH = '#/game')
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
 
-# Link the runtime statically, link statically against libjpeg.a and libpng.a
-# the corresponding packages libpng12-dev and libjpeg-dev must be available on the system
-local_env.Append( LINKFLAGS = [ '-lrt', '-ljpeg', '-lpng' ] )
+# Link the runtime statically, link statically against libpng.a
+# the corresponding package libpng12-dev must be available on the system
+local_env.Append( LINKFLAGS = [ '-lrt', '-lpng' ] )
 
 local_env.Append(LIBS = [
-	# Uncomment these if you're on a x64 system - there is no libjpeg.a on Ubuntu x64 for instance
-	#File('/usr/lib32/libjpeg.so'),
+	# Uncomment this if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
 	#File('/usr/lib32/libpng.so'),
 	File('#/linux/libcurl/libcurl.a'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
@@ -319,10 +318,11 @@ if NO_GCH == '0':
 
 	local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
 
-# greebo: Use custom compiled devIL in Linux
+# greebo: Use custom compiled devIL and libjpeg in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
+libjpeg_list = SConscript( '../../sys/scons/SConscript.libjpeg' )
 
-full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list
+full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list
 
 ret = local_env.SharedLibrary('game', full_list )
 
