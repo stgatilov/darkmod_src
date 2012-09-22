@@ -860,7 +860,12 @@ void CShop::CheckPicks(ShopItemList& list)
 	for (int i = 0; i < list.Num(); i++) // regrab list size each iteration because it can change
 	{
 		idStr itemName = list[i]->GetName();
-		if ((idStr::Icmp(itemName,"Snake Lockpick") == 0) ||
+		// tels: #3198: compare agains the translated string templates (itemName here migth be
+		//			    something like "Schlange"), and to be save, also against the English names
+		//			    to catch all cases
+		if ((idStr::Icmp(itemName, common->Translate("#str_02201")) == 0) ||
+			(idStr::Icmp(itemName, common->Translate("#str_02200")) == 0) ||
+			(idStr::Icmp(itemName,"Snake Lockpick") == 0) ||
 			(idStr::Icmp(itemName,"Triangle Lockpick") == 0))
 		{
 			list.RemoveIndex(i--); // decrement index to account for removed item

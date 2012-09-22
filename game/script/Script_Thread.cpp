@@ -71,6 +71,9 @@ const idEventDef EV_Thread_GetPersistantVector( "getPersistantVector", "s", 'v' 
 // Returns the number of the current mission (0-based)
 const idEventDef EV_Thread_GetCurrentMissionNum( "getCurrentMissionNum", NULL, 'f' );
 
+// Returns the version of TDM as floats, 1.08 for v1.08 etc.
+const idEventDef EV_Thread_GetTDMVersion( "getTDMVersion", NULL, 'd' );
+
 const idEventDef EV_Thread_AngToForward( "angToForward", "v", 'v' );
 const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
 const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
@@ -189,6 +192,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_GetPersistantVector,	idThread::Event_GetPersistantVector )
 
 	EVENT( EV_Thread_GetCurrentMissionNum,	idThread::Event_GetCurrentMissionNum )
+	EVENT( EV_Thread_GetTDMVersion,		idThread::Event_GetTDMVersion )
 
 	EVENT( EV_Thread_AngToForward,			idThread::Event_AngToForward )
 	EVENT( EV_Thread_AngToRight,			idThread::Event_AngToRight )
@@ -1326,6 +1330,12 @@ void idThread::Event_GetPersistantVector( const char *key ) {
 void idThread::Event_GetCurrentMissionNum()
 {
 	ReturnFloat(gameLocal.m_MissionManager->GetCurrentMissionIndex());
+}
+
+void idThread::Event_GetTDMVersion() const
+{
+	// Tels: #3232 Return version as 108, 109 etc.
+	idThread::ReturnInt( GAME_API_VERSION );
 }
 
 /*

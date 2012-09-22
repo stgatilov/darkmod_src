@@ -967,6 +967,20 @@ void idCommonLocal::InitGameArguments() {
             // didn't find the mission in the list
             fsGameDefined = false;
             common->Warning("Fan mission path does not exist for installed fm: %s", curFm.c_str());
+        } else {
+            idStrList pk4List, mapList;
+
+            fmPath.AppendPath(curFm);
+            Sys_ListFiles( fmPath.c_str(), ".pk4", pk4List );
+
+            fmPath.AppendPath("maps");
+            Sys_ListFiles( fmPath.c_str(), ".map", mapList );
+
+            if ( pk4List.Num() == 0 && mapList.Num() == 0 ) {
+                // fanmission folder exists, but didn't find a pk4 or map file
+                fsGameDefined = false;
+                common->Warning("Fan mission map does not exist for installed fm: %s", curFm.c_str());
+            }
         }
     }
 
