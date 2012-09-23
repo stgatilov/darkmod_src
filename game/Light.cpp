@@ -41,6 +41,7 @@ const idEventDef EV_Light_SetLightParm( "setLightParm", "df" );
 const idEventDef EV_Light_SetLightParms( "setLightParms", "ffff" );
 const idEventDef EV_Light_SetRadiusXYZ( "setRadiusXYZ", "fff" );
 const idEventDef EV_Light_SetRadius( "setRadius", "f" );
+const idEventDef EV_Light_GetRadius( "getRadius", NULL, 'v' );
 const idEventDef EV_Light_On( "On", NULL );
 const idEventDef EV_Light_Off( "Off", NULL );
 const idEventDef EV_Light_FadeOut( "fadeOutLight", "f" );
@@ -63,6 +64,7 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_SetLightParms,	idLight::Event_SetLightParms )
 	EVENT( EV_Light_SetRadiusXYZ,	idLight::Event_SetRadiusXYZ )
 	EVENT( EV_Light_SetRadius,		idLight::Event_SetRadius )
+	EVENT( EV_Light_GetRadius,		idLight::Event_GetRadius )
 	EVENT( EV_Hide,					idLight::Event_Hide )
 	EVENT( EV_Show,					idLight::Event_Show )
 	EVENT( EV_Light_On,				idLight::Event_On )
@@ -1307,6 +1309,15 @@ idLight::Event_SetRadius
 */
 void idLight::Event_SetRadius( float radius ) {
 	SetRadius( radius );
+}
+
+/*
+================
+tels: idLight::Event_GetRadius
+================
+*/
+void idLight::Event_GetRadius( ) const {
+	idThread::ReturnVector( GetRadius() );
 }
 
 /*

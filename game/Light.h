@@ -90,6 +90,7 @@ public:
 	 * Tels: return the current light radius.
 	 */
 	void			GetRadius( idVec3 &out ) const;
+	const idVec3 &		GetRadius( void ) const { return idVec3(renderLight.lightRadius[0], renderLight.lightRadius[1], renderLight.lightRadius[2] ); }
 
 	virtual void	ShowEditingDialog( void );
 
@@ -284,6 +285,7 @@ private:
 	void			Event_SetLightParm( int parmnum, float value );
 	void			Event_SetLightParms( float parm0, float parm1, float parm2, float parm3 );
 	void			Event_SetRadiusXYZ( float x, float y, float z );
+	void			Event_GetRadius( void ) const;
 	void			Event_SetRadius( float radius );
 	void			Event_Hide( void );
 	void			Event_Show( void );
