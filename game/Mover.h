@@ -183,6 +183,8 @@ public:
 	void					Event_UpdateRotation( void );
 	void					Event_SetMoveSpeed( float speed );
 	void					Event_SetMoveTime( float time );
+	void					Event_GetMoveSpeed( void ) const;
+	void					Event_GetMoveTime( void ) const;
 	void					Event_SetDecelerationTime( float time );
 	void					Event_SetAccellerationTime( float time );
 	void					Event_MoveTo( idEntity *ent );
