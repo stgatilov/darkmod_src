@@ -1345,7 +1345,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 
 	batch << "@start " << updater.file_string() << " " << arguments;
 #else // POSIX
-	// grayman debug - new way, to accomodate spaces in pathnames
+	// grayman - accomodate spaces in pathnames
 	tempUpdater = GetTargetPath() / tempUpdater;
 	updater = GetTargetPath() / updater;
 
@@ -1359,21 +1359,6 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
 
 	batch << "\"" << updater.file_string() << "\" " << arguments;
-	/* previous way
-	tempUpdater = GetTargetPath() / tempUpdater;
-	updater = GetTargetPath() / updater;
-
-	batch << "#!/bin/bash" << std::endl;
-	batch << "echo \"Upgrading TDM Updater executable...\"" << std::endl;
-	batch << "cd " << GetTargetPath().file_string() << std::endl; 
-	batch << "sleep 2s" << std::endl;
-	batch << "mv -f " << tempUpdater.file_string() << " " << updater.file_string() << std::endl;
-	batch << "chmod +x " << updater.file_string() << std::endl;
-	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
-	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
-
-	batch << updater.file_string() << " " << arguments;
-	*/
 #endif
 
 	batch.close();
