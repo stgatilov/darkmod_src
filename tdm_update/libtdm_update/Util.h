@@ -90,10 +90,10 @@ public:
 		Sleep(millisecs);
 	}
 
-	// Platform-dependent process check routine (grayman - searches for TheDarkMod.exe)
+	// Platform-dependent process check routine (grayman - searches for TheDarkMod executable among active processes)
 	static bool TDMIsRunning();
 
-	// Platform-dependent process check routine (searches for DarkRadiant)
+	// Platform-dependent process check routine (searches for the DarkRadiant executable among active processes)
 	static bool DarkRadiantIsRunning();
 };
 

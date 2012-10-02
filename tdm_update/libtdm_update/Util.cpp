@@ -305,7 +305,7 @@ bool FindProcessByName(const char* processName)
 
 bool Util::TDMIsRunning()
 {
-	return FindProcessByName("TheDarkMod"); // grayman - look for TDM instead of "Doom 3". Is "TheDarkMod" the correct process name?
+	return FindProcessByName("thedarkmod"); // grayman - look for TDM instead of "Doom 3".
 }
 
 bool Util::DarkRadiantIsRunning()
