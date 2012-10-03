@@ -392,6 +392,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		if (ent != NULL)
 		{
 			// Post a trigger event
+			gameLocal.Warning("Conversation Command: 'ActivateTarget' activating entity %s", command.GetArgument(0).c_str());
 			ent->PostEventMS(&EV_Activate, 0, owner);
 			// We're done
 			_state = EReady;

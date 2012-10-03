@@ -370,7 +370,6 @@ private:
 	void					Event_Melee( void );
 	void					Event_GetWorldModel( void );
 	void					Event_AllowDrop( int allow );
-	void					Event_AutoReload( void );
 	void					Event_NetReload( void );
 	void					Event_IsInvisible( void );
 	void					Event_NetEndReload( void );
