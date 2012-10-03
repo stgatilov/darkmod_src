@@ -3620,7 +3620,7 @@ void idActor::LoadVocalSet()
 		return;
 	}
 
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s", vocalSet.c_str(), name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s\r", vocalSet.c_str(), name.c_str());
 
 	int i = 0;
 
@@ -3636,7 +3636,7 @@ void idActor::LoadVocalSet()
 		spawnArgs.Set(kv->GetKey(), kv->GetValue());
 	}
 
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s", i, name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copied %d vocal set spawnargs to actor %s\r", i, name.c_str());
 }
 
 void idActor::LoadMeleeSet()
