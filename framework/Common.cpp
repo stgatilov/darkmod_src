@@ -2963,15 +2963,9 @@ void idCommonLocal::InitGame( void )
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec default.cfg\n" );
 
 	// skip the config file if "safe" is on the command line
-	if ( !SafeMode() ) {
-        if ( fileSystem->FindFile(CONFIG_FILE) == FIND_NO ) {
-            // if the user has just updated to TDM 1.08 or has lost Darkmod.cfg, the settings from
-            // DoomConfig are used if DoomConfig.cfg actually exists
-            // If it doesn't exist, defaults will just be used.
-            cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec DoomConfig.cfg\n" );
-        } else {
-            cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// Darkmod.cfg
-        }
+        if ( !SafeMode() && (fileSystem->FindFile(CONFIG_FILE) != FIND_NO) ) {
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec " CONFIG_FILE "\n" );		// Darkmod.cfg
+		// if it does not exist, ignore it and only use "default.cfg", Darkmod.cfg will be written upon exit
 	}
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec autoexec.cfg\n" );
 
