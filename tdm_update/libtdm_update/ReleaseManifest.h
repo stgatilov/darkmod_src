@@ -215,7 +215,7 @@ private:
 
 		// Construct the starting path
 		fs::path inclusionPath = repositoryRoot;
-		inclusionPath /= inclusion.value;
+		inclusionPath /= boost::algorithm::trim_copy(inclusion.value);
 
 		// Add the inclusion path itself
 		std::string relativeInclusionPath = inclusionPath.string().substr(repositoryRoot.string().length() + 1);
@@ -256,6 +256,8 @@ private:
 			}
 		}
 		
+		//TraceLog::WriteLine(LOG_PROGRESS, "Inclusion path: " + inclusionPath.string() + "---");
+
 		if (!fs::is_directory(inclusionPath))
 		{
 			TraceLog::WriteLine(LOG_PROGRESS, "Skipping non-file and non-folder: " + inclusionPath.string());
