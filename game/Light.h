@@ -90,7 +90,7 @@ public:
 	 * Tels: return the current light radius.
 	 */
 	void			GetRadius( idVec3 &out ) const;
-	const idVec3 &		GetRadius( void ) const { return idVec3(renderLight.lightRadius[0], renderLight.lightRadius[1], renderLight.lightRadius[2] ); }
+	idVec3			GetRadius( void ) const { return idVec3(renderLight.lightRadius[0], renderLight.lightRadius[1], renderLight.lightRadius[2] ); }
 
 	virtual void	ShowEditingDialog( void );
 
