@@ -220,7 +220,7 @@ public:
 				continue; // skip directories
 			}
 
-			std::string filename = file.leaf();
+			std::string filename = file.leaf().string();
 
 			fs::path relativePath = File::GetRelativePath(file, folder);
 
@@ -274,7 +274,7 @@ public:
 
 				if (zipFile == NULL)
 				{
-					TraceLog::WriteLine(LOG_STANDARD, "  Failed to open archive: " + file.file_string());
+					TraceLog::WriteLine(LOG_STANDARD, "  Failed to open archive: " + file.string());
 					continue;
 				}
 

@@ -76,7 +76,7 @@ void Packager::CalculateSetDifference()
 				continue;
 			}
 
-			TraceLog::WriteLine(LOG_VERBOSE, "PK4 to be removed: " + i->second.file.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "PK4 to be removed: " + i->second.file.string());
 			_difference.pk4sToBeRemoved.insert(i->second);
 		}
 	}
@@ -98,7 +98,7 @@ void Packager::CalculateSetDifference()
 				continue;
 			}
 
-			TraceLog::WriteLine(LOG_VERBOSE, "PK4 to be added: " + i->second.file.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "PK4 to be added: " + i->second.file.string());
 			_difference.pk4sToBeAdded.insert(i->second);
 		}
 	}
@@ -212,13 +212,13 @@ void Packager::CreateUpdatePackage()
 
 	_difference.filename = updatePackagePath;
 
-	TraceLog::WriteLine(LOG_STANDARD, "Creating update package at " + updatePackagePath.file_string());
+	TraceLog::WriteLine(LOG_STANDARD, "Creating update package at " + updatePackagePath.string());
 
 	ZipFileWritePtr updatePackage = Zip::OpenFileWrite(updatePackagePath, Zip::CREATE);
 
 	if (updatePackage == NULL)
 	{
-		throw FailureException("Couldn't create " + updatePackagePath.file_string());
+		throw FailureException("Couldn't create " + updatePackagePath.string());
 	}
 
 	IniFilePtr updateDesc = IniFile::Create();
@@ -339,7 +339,7 @@ void Packager::CreateVersionInformation()
 	if (fs::exists(versionInfoFile))
 	{
 		// Load existing version information
-		TraceLog::WriteLine(LOG_STANDARD, "Loading existing version information file: " + versionInfoFile.file_string());
+		TraceLog::WriteLine(LOG_STANDARD, "Loading existing version information file: " + versionInfoFile.string());
 		versionInfo = IniFile::ConstructFromFile(versionInfoFile);
 	}
 	else
@@ -373,7 +373,7 @@ void Packager::CreateVersionInformation()
 				versionInfo->SetValue(memberSection, "crc", CRC::ToString(m->crc));
 				versionInfo->SetValue(memberSection, "filesize", boost::lexical_cast<std::string>(m->filesize));
 
-				if (noCrcFiles.find(boost::algorithm::to_lower_copy(m->file.file_string())) != noCrcFiles.end())
+				if (noCrcFiles.find(boost::algorithm::to_lower_copy(m->file.string())) != noCrcFiles.end())
 				{
 					versionInfo->SetValue(memberSection, "allow_local_modifications", "1");
 				}
@@ -382,7 +382,7 @@ void Packager::CreateVersionInformation()
 	}
 
 	// Save the file
-	TraceLog::WriteLine(LOG_STANDARD, "Saving version information file: " + versionInfoFile.file_string());
+	TraceLog::WriteLine(LOG_STANDARD, "Saving version information file: " + versionInfoFile.string());
 	versionInfo->ExportToFile(versionInfoFile);
 }
 
@@ -408,7 +408,7 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 		throw FailureException("Cannot open this package.");
 	}
 
-	TraceLog::WriteLine(LOG_STANDARD, "Loading update info file from package: " + path.file_string());
+	TraceLog::WriteLine(LOG_STANDARD, "Loading update info file from package: " + path.string());
 
 	std::string updateInfoStr = package->LoadTextFile(TDM_UDPATE_INFO_FILE);
 
@@ -435,7 +435,7 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 
 	if (targetFile == NULL)
 	{
-		TraceLog::WriteLine(LOG_STANDARD, "Cannot find target version info file, creating afresh: " + targetPath.file_string());
+		TraceLog::WriteLine(LOG_STANDARD, "Cannot find target version info file, creating afresh: " + targetPath.string());
 
 		targetFile = IniFile::Create();
 	}
@@ -445,11 +445,11 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 	std::string section = (boost::format("UpdatePackage from %s to %s") % fromVersion % toVersion).str();
 
 	// Store the information
-	targetFile->SetValue(section, "package", path.leaf());
+	targetFile->SetValue(section, "package", path.leaf().string());
 	targetFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(fs::file_size(path)));
 	targetFile->SetValue(section, "crc", CRC::ToString(CRC::GetCrcForFile(path)));
 
-	TraceLog::WriteLine(LOG_STANDARD, "Saving INI file: " + targetPath.file_string());
+	TraceLog::WriteLine(LOG_STANDARD, "Saving INI file: " + targetPath.string());
 
 	targetFile->ExportToFile(targetPath);
 }
@@ -460,7 +460,7 @@ void Packager::LoadManifest()
 	manifestPath /= TDM_MANIFEST_PATH;
 	manifestPath /= _options.Get("name") + TDM_MANIFEST_EXTENSION;
 
-	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + manifestPath.file_string() + "...");
+	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + manifestPath.string() + "...");
 
 	_manifest.LoadFromFile(manifestPath);
 
@@ -479,7 +479,7 @@ void Packager::LoadBaseManifest()
 	baseManifestPath /= TDM_MANIFEST_PATH;
 	baseManifestPath /= std::string("base") + TDM_MANIFEST_EXTENSION;
 
-	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + baseManifestPath.file_string() + "...");
+	TraceLog::Write(LOG_STANDARD, "Loading manifest at: " + baseManifestPath.string() + "...");
 
 	_baseManifest.LoadFromFile(baseManifestPath);
 
@@ -499,7 +499,7 @@ void Packager::CheckRepository()
 	{
 		if (!fs::exists(darkmodPath / i->sourceFile))
 		{
-			TraceLog::WriteLine(LOG_STANDARD, (boost::format("Could not find file %s in your darkmod path: ") % i->sourceFile.file_string()).str());
+			TraceLog::WriteLine(LOG_STANDARD, (boost::format("Could not find file %s in your darkmod path: ") % i->sourceFile.string()).str());
 			missingFiles++;
 		}
 	}
@@ -518,7 +518,7 @@ void Packager::LoadInstructionFile()
 	instrFile /= TDM_MANIFEST_PATH;
 	instrFile /= (boost::format("%s_maps%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_maps.txt
 
-	TraceLog::WriteLine(LOG_STANDARD, "Loading package instruction file: " + instrFile.file_string() + "...");
+	TraceLog::WriteLine(LOG_STANDARD, "Loading package instruction file: " + instrFile.string() + "...");
 
 	_instructionFile.LoadFromFile(instrFile);
 
@@ -619,7 +619,7 @@ void Packager::SaveManifest()
 	manifestPath /= (boost::format("%s%s") % _options.Get("release-name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod.txt
 
 	TraceLog::WriteLine(LOG_STANDARD, "");
-	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Writing manifest to %s...") % manifestPath.file_string()).str());
+	TraceLog::WriteLine(LOG_STANDARD, (boost::format("Writing manifest to %s...") % manifestPath.string()).str());
 
 	_manifest.WriteToFile(manifestPath);
 
@@ -632,7 +632,7 @@ void Packager::LoadPk4Mapping()
 	mappingFile /= TDM_MANIFEST_PATH;
 	mappingFile /= (boost::format("%s_pk4s%s") % _options.Get("name") % TDM_MANIFEST_EXTENSION).str(); // e.g. darkmod_pk4s.txt
 
-	TraceLog::Write(LOG_STANDARD, "Loading PK4 mapping file: " + mappingFile.file_string() + "...");
+	TraceLog::Write(LOG_STANDARD, "Loading PK4 mapping file: " + mappingFile.string() + "...");
 
 	_pk4Mappings.LoadFromFile(mappingFile);
 

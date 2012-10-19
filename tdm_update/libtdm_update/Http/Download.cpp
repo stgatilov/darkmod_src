@@ -91,7 +91,7 @@ void Download::Start()
 		// Make sure the folder exists
 		if (!fs::create_directories(folder))
 		{
-			throw std::runtime_error("Could not create directory: " + folder.file_string());
+			throw std::runtime_error("Could not create directory: " + folder.string());
 		}
 	}
 
@@ -181,7 +181,7 @@ void Download::Perform()
 		const std::string& url = _urls[_curUrl];
 
 		// Create a new request
-		_request = _conn->CreateRequest(url, _tempFilename.file_string());
+		_request = _conn->CreateRequest(url, _tempFilename.string());
 	
 		// Start the download, blocks until finished or aborted
 		_request->Perform();
@@ -250,7 +250,7 @@ const fs::path& Download::GetDestFilename() const
 
 std::string Download::GetFilename() const
 {
-	return _destFilename.leaf();
+	return _destFilename.leaf().string();
 }
 
 bool Download::CheckIntegrity()
@@ -277,7 +277,7 @@ bool Download::CheckIntegrity()
 		if (zipFile == NULL) 
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloaded file failed the zip check: %s") %
-				_tempFilename.file_string()).str());
+				_tempFilename.string()).str());
 			return false; // failed the ZIP check
 		}
 	}

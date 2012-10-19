@@ -99,11 +99,11 @@ public:
 	void LoadFromFile(const fs::path& file)
 	{
 		// Start parsing
-		std::ifstream stream(file.file_string().c_str());
+		std::ifstream stream(file.string().c_str());
 
 		if (!stream)
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "[PackageInstructions]: Cannot open file " + file.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "[PackageInstructions]: Cannot open file " + file.string());
 			return;
 		}
 

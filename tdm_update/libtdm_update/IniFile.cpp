@@ -53,11 +53,11 @@ IniFilePtr IniFile::Create()
 IniFilePtr IniFile::ConstructFromFile(const fs::path& filename)
 {
 	// Start parsing
-	std::ifstream iniFile(filename.file_string().c_str());
+	std::ifstream iniFile(filename.string().c_str());
 
 	if (!iniFile)
     {
-        tdm::TraceLog::WriteLine(LOG_VERBOSE, "[IniFile]: Cannot open file " + filename.file_string());
+        tdm::TraceLog::WriteLine(LOG_VERBOSE, "[IniFile]: Cannot open file " + filename.string());
 		return IniFilePtr();
     }
 
@@ -178,7 +178,7 @@ void IniFile::ForeachSection(SectionVisitor& visitor) const
 
 void IniFile::ExportToFile(const fs::path& file, const std::string& headerComments) const
 {
-	std::ofstream stream(file.file_string().c_str());
+	std::ofstream stream(file.string().c_str());
 
 	if (!headerComments.empty())
 	{

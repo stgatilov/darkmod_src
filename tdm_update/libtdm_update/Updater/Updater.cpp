@@ -45,7 +45,7 @@ namespace updater
 Updater::Updater(const UpdaterOptions& options, const fs::path& executable) :
 	_options(options),
 	_downloadManager(new DownloadManager),
-	_executable(boost::algorithm::to_lower_copy(executable.file_string())), // convert that file to lower to be sure
+	_executable(boost::algorithm::to_lower_copy(executable.string())), // convert that file to lower to be sure
 	_updatingUpdater(false)
 {
 	// Set up internet connectivity
@@ -106,7 +106,7 @@ void Updater::UpdateMirrors()
 
 	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
 
-	HttpRequestPtr request = _conn->CreateRequest(mirrorsUrl, mirrorPath.file_string());
+	HttpRequestPtr request = _conn->CreateRequest(mirrorsUrl, mirrorPath.string());
 
 	request->Perform();
 
@@ -170,7 +170,7 @@ void Updater::GetVersionInfoFromServer()
 
 	if (versionInfo == NULL) 
 	{
-		TraceLog::Error("Cannot find downloaded version info file: " + (GetTargetPath() / TDM_VERSION_INFO_FILE).file_string());
+		TraceLog::Error("Cannot find downloaded version info file: " + (GetTargetPath() / TDM_VERSION_INFO_FILE).string());
 		return;
 	}
 
@@ -227,22 +227,22 @@ void Updater::DetermineLocalVersion()
 			
 			fs::path candidate = GetTargetPath() / f->second.file;
 
-			if (boost::algorithm::to_lower_copy(candidate.leaf()) == boost::algorithm::to_lower_copy(_executable.leaf()))
+			if (boost::algorithm::to_lower_copy(candidate.leaf().string()) == boost::algorithm::to_lower_copy(_executable.leaf().string()))
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Ignoring updater executable: %s.") % candidate.file_string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Ignoring updater executable: %s.") % candidate.string()).str());
 				continue;
 			}
 
 			if (!fs::exists(candidate))
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is missing.") % candidate.file_string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is missing.") % candidate.string()).str());
 				mismatch = true;
 				continue;
 			}
 
 			if (f->second.localChangesAllowed) 
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s exists, local changes are allowed, skipping.") % candidate.file_string()).str());
+				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s exists, local changes are allowed, skipping.") % candidate.string()).str());
 				continue;
 			}
 
@@ -251,7 +251,7 @@ void Updater::DetermineLocalVersion()
 			if (candidateFilesize != f->second.filesize)
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching size, expected %d but found %d.")
-					% candidate.file_string() % f->second.filesize % candidateFilesize).str());
+					% candidate.string() % f->second.filesize % candidateFilesize).str());
 				mismatch = true;
 				continue;
 			}
@@ -262,13 +262,13 @@ void Updater::DetermineLocalVersion()
 			if (crc != f->second.crc)
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching CRC, expected %x but found %x.")
-					% candidate.file_string() % f->second.crc % crc).str());
+					% candidate.string() % f->second.crc % crc).str());
 				mismatch = true;
 				continue;
 			}
 
 			// The file is matching - record this version
-			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is matching version %s.") % candidate.file_string() % v->first).str());
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is matching version %s.") % candidate.string() % v->first).str());
 
 			_fileVersions[candidate.string()] = v->first;
 		}
@@ -490,7 +490,7 @@ void Updater::DownloadDifferentialUpdate()
 
 		if (!VerifyUpdatePackageAt(it->second, packageTargetPath))
 		{
-			throw FailureException("Failed to download update package: " + packageTargetPath.file_string());
+			throw FailureException("Failed to download update package: " + packageTargetPath.string());
 		}
 	}
 }
@@ -499,14 +499,14 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 {
 	if (!fs::exists(package))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("VerifyUpdatePackageAt: File %s does not exist.") % package.file_string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("VerifyUpdatePackageAt: File %s does not exist.") % package.string()).str());
 		return false;
 	}
 
 	if (fs::file_size(package) != info.filesize)
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching size, expected %d but found %d.")
-			% package.file_string() % info.filesize % fs::file_size(package)).str());
+			% package.string() % info.filesize % fs::file_size(package)).str());
 		return false;
 	}
 
@@ -516,12 +516,12 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 	if (crc != info.crc)
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s has mismatching CRC, expected %x but found %x.")
-			% package.file_string() % info.crc % crc).str());
+			% package.string() % info.crc % crc).str());
 		return false;
 	}
 
 	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("File %s is intact with checksum %x.")
-			% package.file_string() % crc).str());
+			% package.string() % crc).str());
 	return true; // all checks passed, file is ok
 }
 
@@ -546,7 +546,7 @@ void Updater::PerformDifferentialUpdateStep()
 
 	if (!VerifyUpdatePackageAt(it->second, packageTargetPath))
 	{
-		throw FailureException("Update package not found at the expected location: " + packageTargetPath.file_string());
+		throw FailureException("Update package not found at the expected location: " + packageTargetPath.string());
 	}
 
 	UpdatePackage& info = it->second;
@@ -555,7 +555,7 @@ void Updater::PerformDifferentialUpdateStep()
 
 	if (package == NULL)
 	{
-		throw FailureException("Update package cannot be opened: " + packageTargetPath.file_string());
+		throw FailureException("Update package cannot be opened: " + packageTargetPath.string());
 	}
 
 	{
@@ -807,12 +807,12 @@ void Updater::PerformDifferentialUpdateStep()
 	// Remove the update package after completion
 	if (!_options.IsSet("keep-update-packages"))
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Removing package after differential update completion: %s") % packageTargetPath.file_string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Removing package after differential update completion: %s") % packageTargetPath.string()).str());
 		File::Remove(packageTargetPath);
 	}
 	else
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Keeping package after differential update completion: %s") % packageTargetPath.file_string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Keeping package after differential update completion: %s") % packageTargetPath.string()).str());
 	}
 }
 
@@ -903,7 +903,7 @@ fs::path Updater::GetTargetPath()
 
 	// If the current path is the actual engine path, switch folders to "darkmod"
 	// We don't want to download the PK4s into the Doom3.exe location
-	if (Util::PathIsDoom3EnginePath(targetPath))
+	if (Util::PathIsTDMEnginePath(targetPath))
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, "Doom3 found in current path, switching directories.");
 
@@ -911,7 +911,7 @@ fs::path Updater::GetTargetPath()
 
 		if (!fs::exists(targetPath))
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "darkmod/ path not found, creating folder: " + targetPath.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "darkmod/ path not found, creating folder: " + targetPath.string());
 
 			fs::create_directory(targetPath);
 		}
@@ -929,7 +929,7 @@ void Updater::CheckLocalFiles()
 	// Get the current path
 	fs::path targetPath = GetTargetPath();
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Checking target folder: " + targetPath.file_string());
+	TraceLog::WriteLine(LOG_VERBOSE, "Checking target folder: " + targetPath.string());
 
 	// List PK4 inventory to logfile, for reference
 	for (fs::directory_iterator i = fs::directory_iterator(targetPath); 
@@ -937,7 +937,7 @@ void Updater::CheckLocalFiles()
 	{
 		if (File::IsPK4(*i))
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + i->string());
+			TraceLog::WriteLine(LOG_VERBOSE, "[PK4 Inventory] Found " + i->path().string());
 		}
 	}
 
@@ -957,11 +957,11 @@ void Updater::CheckLocalFiles()
 
 		if (i->second.isArchive && !i->second.members.empty())
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "Checking archive members of: " + i->second.file.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "Checking archive members of: " + i->second.file.string());
 
 			for (std::set<ReleaseFile>::const_iterator m = i->second.members.begin(); m != i->second.members.end(); ++m)
 			{
-				TraceLog::WriteLine(LOG_VERBOSE, "Checking for member file: " + m->file.file_string());
+				TraceLog::WriteLine(LOG_VERBOSE, "Checking for member file: " + m->file.string());
 
 				if (!CheckLocalFile(targetPath, *m))
 				{
@@ -972,7 +972,7 @@ void Updater::CheckLocalFiles()
 		}
 		else
 		{
-			TraceLog::Write(LOG_VERBOSE, "Checking for archive file: " + i->second.file.file_string() + "...");
+			TraceLog::Write(LOG_VERBOSE, "Checking for archive file: " + i->second.file.string() + "...");
 
 			if (!CheckLocalFile(targetPath, i->second))
 			{
@@ -1002,12 +1002,12 @@ bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& rel
 
 	fs::path localFile = installPath / releaseFile.file;
 
-	TraceLog::Write(LOG_VERBOSE, " Checking for file " + releaseFile.file.file_string() + ": ");
+	TraceLog::Write(LOG_VERBOSE, " Checking for file " + releaseFile.file.string() + ": ");
 
 	if (fs::exists(localFile))
 	{
 		// File exists, check ignore list
-		if (_ignoreList.find(boost::algorithm::to_lower_copy(releaseFile.file.file_string())) != _ignoreList.end())
+		if (_ignoreList.find(boost::algorithm::to_lower_copy(releaseFile.file.string())) != _ignoreList.end())
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "OK, file will not be updated. ");
 			return true; // ignore this file
@@ -1225,7 +1225,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 	try
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, "Extracting files from " + zipFilePath.file_string());
+		TraceLog::WriteLine(LOG_VERBOSE, "Extracting files from " + zipFilePath.string());
 
 		// Check if the archive contains the updater binary
 		if (zipFile->ContainsFile(_executable.string()))
@@ -1287,7 +1287,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, "All files successfully extracted from " + zipFilePath.file_string());
+		TraceLog::WriteLine(LOG_VERBOSE, "All files successfully extracted from " + zipFilePath.string());
 
 #ifndef WIN32
 		// In Linux or Mac, mark *.linux files as executable after extraction
@@ -1310,7 +1310,7 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 	}
 	catch (std::runtime_error& ex)
 	{
-		TraceLog::WriteLine(LOG_VERBOSE, "Failed to extract files from " + zipFilePath.file_string() + ": " + ex.what());
+		TraceLog::WriteLine(LOG_VERBOSE, "Failed to extract files from " + zipFilePath.string() + ": " + ex.what());
 	}
 }
 
@@ -1319,9 +1319,9 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	// Create a new batch file in the target location
 	_updateBatchFile = GetTargetPath() / TDM_UPDATE_UPDATER_BATCH_FILE;
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Preparing TDM update batch file in " + _updateBatchFile.file_string());
+	TraceLog::WriteLine(LOG_VERBOSE, "Preparing TDM update batch file in " + _updateBatchFile.string());
 
-	std::ofstream batch(_updateBatchFile.file_string().c_str());
+	std::ofstream batch(_updateBatchFile.string().c_str());
 
 	fs::path tempUpdater = temporaryUpdater.leaf();
 	fs::path updater = _executable.leaf();
@@ -1337,13 +1337,13 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 
 #ifdef WIN32
 	batch << "@ping 127.0.0.1 -n 2 -w 1000 > nul" << std::endl; // # hack equivalent to Wait 2
-	batch << "@copy " << tempUpdater.file_string() << " " << updater.file_string() << " >nul" << std::endl;
-	batch << "@del " << tempUpdater.file_string() << std::endl;
+	batch << "@copy " << tempUpdater.string() << " " << updater.string() << " >nul" << std::endl;
+	batch << "@del " << tempUpdater.string() << std::endl;
 	batch << "@echo TDM Updater executable has been updated." << std::endl;
 
 	batch << "@echo Re-launching TDM Updater executable." << std::endl << std::endl;
 
-	batch << "@start " << updater.file_string() << " " << arguments;
+	batch << "@start " << updater.string() << " " << arguments;
 #else // POSIX
 	// grayman - accomodate spaces in pathnames
 	tempUpdater = GetTargetPath() / tempUpdater;
@@ -1351,14 +1351,14 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 
 	batch << "#!/bin/bash" << std::endl;
 	batch << "echo \"Upgrading TDM Updater executable...\"" << std::endl;
-	batch << "cd \"" << GetTargetPath().file_string() << "\"" << std::endl; 
+	batch << "cd \"" << GetTargetPath().string() << "\"" << std::endl; 
 	batch << "sleep 2s" << std::endl;
-	batch << "mv -f \"" << tempUpdater.file_string() << "\" \"" << updater.file_string() << "\"" << std::endl;
-	batch << "chmod +x \"" << updater.file_string() << "\"" << std::endl;
+	batch << "mv -f \"" << tempUpdater.string() << "\" \"" << updater.string() << "\"" << std::endl;
+	batch << "chmod +x \"" << updater.string() << "\"" << std::endl;
 	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
 	batch << "echo \"Re-launching TDM Updater executable.\"" << std::endl;
 
-	batch << "\"" << updater.file_string() << "\" " << arguments;
+	batch << "\"" << updater.string() << "\" " << arguments;
 #endif
 
 	batch.close();
@@ -1500,10 +1500,10 @@ void Updater::RestartUpdater()
 		fs::path parentPath = _updateBatchFile;
 		parentPath.remove_leaf().remove_leaf();
 
-		TraceLog::WriteLine(LOG_VERBOSE, "Starting batch file " + _updateBatchFile.file_string() + " in " + parentPath.file_string());
+		TraceLog::WriteLine(LOG_VERBOSE, "Starting batch file " + _updateBatchFile.string() + " in " + parentPath.string());
 
-		BOOL success = CreateProcess(NULL, (LPSTR) _updateBatchFile.file_string().c_str(), NULL, NULL,  false, 0, NULL,
-			parentPath.file_string().c_str(), &siStartupInfo, &piProcessInfo);
+		BOOL success = CreateProcess(NULL, (LPSTR) _updateBatchFile.string().c_str(), NULL, NULL,  false, 0, NULL,
+			parentPath.string().c_str(), &siStartupInfo, &piProcessInfo);
 
 		if (!success)
 		{
@@ -1530,13 +1530,13 @@ void Updater::RestartUpdater()
 
 	if (!_updateBatchFile.empty())
 	{
-		TraceLog::WriteLine(LOG_STANDARD, "Relaunching tdm_update via shell script " + _updateBatchFile.file_string());
+		TraceLog::WriteLine(LOG_STANDARD, "Relaunching tdm_update via shell script " + _updateBatchFile.string());
 
 		// Perform the system command in a fork
 		if (fork() == 0)
 		{
 			// Don't wait for the subprocess to finish
-			system((_updateBatchFile.file_string() + " &").c_str());
+			system((_updateBatchFile.string() + " &").c_str());
 			exit(EXIT_SUCCESS);
 			return;
 		}
@@ -1554,7 +1554,7 @@ void Updater::PostUpdateCleanup()
 	for (fs::directory_iterator i = fs::directory_iterator(GetTargetPath()); 
 		i != fs::directory_iterator(); )
 	{
-		if (boost::algorithm::starts_with(i->string(), TMP_FILE_PREFIX))
+		if (boost::algorithm::starts_with(i->path().string(), TMP_FILE_PREFIX))
 		{
 			File::Remove(*i++);
 		}

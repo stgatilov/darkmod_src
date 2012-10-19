@@ -53,11 +53,11 @@ public:
 	void LoadFromFile(const fs::path& mappingFile)
 	{
 		// Start parsing
-		std::ifstream file(mappingFile.file_string().c_str());
+		std::ifstream file(mappingFile.string().c_str());
 
 		if (!file)
 		{
-			TraceLog::WriteLine(LOG_VERBOSE, "[Pk4Mappings]: Cannot open file " + mappingFile.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "[Pk4Mappings]: Cannot open file " + mappingFile.string());
 			return;
 		}
 

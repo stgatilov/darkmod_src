@@ -158,7 +158,7 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 	File::Remove(destPath);
 
 	// Try to open the destination path before uncompressing the file
-	FILE* outFile = fopen(destPath.file_string().c_str(), "wb");
+	FILE* outFile = fopen(destPath.string().c_str(), "wb");
 
 	if (outFile == NULL) 
 	{
@@ -177,7 +177,7 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 			{
 				// Directory now exists. Try fopen() again.
 
-				outFile = fopen(destPath.file_string().c_str(), "wb");
+				outFile = fopen(destPath.string().c_str(), "wb");
 
 				if (outFile != NULL)
 				{
@@ -189,7 +189,7 @@ bool ZipFileRead::ExtractFileTo(const std::string& filename, const fs::path& des
 		if (!success)
 		{
 			// couldn't open file for writing
-			tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ExtractFileTo]: Cannot open destination file " + destPath.file_string());
+			tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ExtractFileTo]: Cannot open destination file " + destPath.string());
 			return false;
 		}
 	}
@@ -464,7 +464,7 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 {
 	if (!boost::filesystem::exists(fileToCompress))
 	{
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Cannot find file for compression " + fileToCompress.file_string());
+		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Cannot find file for compression " + fileToCompress.string());
 		return false;
 	}
 
@@ -512,11 +512,11 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 
 	if (status != ZIP_OK)
 	{
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Cannot open file in zip. " + fileToCompress.file_string());
+		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Cannot open file in zip. " + fileToCompress.string());
 		return false;
 	}
 
-	FILE* inFileBinary = fopen(fileToCompress.file_string().c_str(), "rb");
+	FILE* inFileBinary = fopen(fileToCompress.string().c_str(), "rb");
 
 	if (!inFileBinary)
 	{
@@ -537,7 +537,7 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 
 			if (status != ZIP_OK)
 			{
-				tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Failure writing compressed data. " + fileToCompress.file_string() + ": " + intToStr(status));
+				tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Failure writing compressed data. " + fileToCompress.string() + ": " + intToStr(status));
 				zipCloseFileInZip(_handle);
 				return false;
 			}
@@ -552,7 +552,7 @@ bool ZipFileWrite::DeflateFile(const fs::path& fileToCompress, const std::string
 
 	if (status != ZIP_OK)
 	{
-		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Failure closing compressed file. " + fileToCompress.file_string() + ": " + intToStr(status));
+		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[DeflateFile]: Failure closing compressed file. " + fileToCompress.string() + ": " + intToStr(status));
 		return false;
 	}
 
@@ -632,14 +632,14 @@ bool ZipFileWrite::CopyFileFromZip(const ZipFileReadPtr& fromZip, const std::str
 
 ZipFileReadPtr Zip::OpenFileRead(const fs::path& fullPath)
 {
-	unzFile handle = unzOpen(fullPath.file_string().c_str());
+	unzFile handle = unzOpen(fullPath.string().c_str());
 
 	return (handle != NULL) ? ZipFileReadPtr(new ZipFileRead(handle)) : ZipFileReadPtr();
 }
 
 ZipFileWritePtr Zip::OpenFileWrite(const fs::path& fullPath, WriteMode mode)
 {
-	zipFile handle = zipOpen(fullPath.file_string().c_str(), mode == APPEND ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
+	zipFile handle = zipOpen(fullPath.string().c_str(), mode == APPEND ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
 
 	return (handle != NULL) ? ZipFileWritePtr(new ZipFileWrite(handle)) : ZipFileWritePtr();
 }
@@ -678,17 +678,17 @@ void Zip::RemoveFilesFromArchive(const fs::path& fullPath, const std::set<std::s
 
 	fs::path temporaryPath = fullPath;
 	temporaryPath.remove_leaf().remove_leaf();
-	temporaryPath /= TMP_FILE_PREFIX + fullPath.leaf();
+	temporaryPath /= TMP_FILE_PREFIX + fullPath.leaf().string();
 
 	TraceLog::WriteLine(LOG_VERBOSE, 
-		(boost::format("Removing %d files from archive %s") % membersToRemove.size() % fullPath.file_string()).str());
+		(boost::format("Removing %d files from archive %s") % membersToRemove.size() % fullPath.string()).str());
 
 	{
 		ZipFileReadPtr source = OpenFileRead(fullPath);
 
 		if (source == NULL)
 		{
-			TraceLog::Error("Cannot open archive for reading: " + fullPath.file_string());
+			TraceLog::Error("Cannot open archive for reading: " + fullPath.string());
 			return;
 		}
 

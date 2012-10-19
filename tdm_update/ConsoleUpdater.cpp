@@ -481,7 +481,7 @@ void ConsoleUpdater::PrintProgress()
 		line += " " + verb;
 
 		std::size_t remainingLength = line.length() > 79 ? 0 : 79 - line.length();
-		line += GetShortenedString(_info.file.leaf(), remainingLength);
+		line += GetShortenedString(_info.file.leaf().string(), remainingLength);
 	}
 	break;
 	};

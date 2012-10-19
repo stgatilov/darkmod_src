@@ -36,11 +36,11 @@ public:
 	// Returns the path relative to the given root
 	static fs::path GetRelativePath(const fs::path& absolute, const fs::path& root)
 	{
-		std::string fullString = absolute.file_string();
+		std::string fullString = absolute.string();
 
-		if (boost::algorithm::starts_with(fullString, root.file_string()))
+		if (boost::algorithm::starts_with(fullString, root.string()))
 		{
-			boost::algorithm::replace_first(fullString, root.file_string(), "");
+			boost::algorithm::replace_first(fullString, root.string(), "");
 
 			if (fullString.length() > 0 && (fullString[0] == '/' || fullString[0] == '\\'))
 			{
@@ -94,12 +94,12 @@ public:
 			if (fs::exists(fileToRemove))
 			{
 				fs::remove(fileToRemove);
-				TraceLog::WriteLine(LOG_VERBOSE, "Removed file " + fileToRemove.file_string());
+				TraceLog::WriteLine(LOG_VERBOSE, "Removed file " + fileToRemove.string());
 			}
 
 			return true;
 		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
+		catch (fs::filesystem_error& e)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Exception while removing file: " + std::string(e.what()));
 			return false;
@@ -111,11 +111,11 @@ public:
 		try
 		{
 			fs::rename(fromPath, toPath);
-			TraceLog::WriteLine(LOG_VERBOSE, "Moved " + fromPath.file_string() + " to " + toPath.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "Moved " + fromPath.string() + " to " + toPath.string());
 
 			return true;
 		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
+		catch (fs::filesystem_error& e)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Exception while moving file: " + std::string(e.what()));
 
@@ -128,11 +128,11 @@ public:
 		try
 		{
 			fs::copy_file(fromPath, toPath);
-			TraceLog::WriteLine(LOG_VERBOSE, "Copied " + fromPath.file_string() + " to " + toPath.file_string());
+			TraceLog::WriteLine(LOG_VERBOSE, "Copied " + fromPath.string() + " to " + toPath.string());
 
 			return true;
 		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
+		catch (fs::filesystem_error& e)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Exception while copying file: " + std::string(e.what()));
 
