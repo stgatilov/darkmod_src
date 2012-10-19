@@ -289,6 +289,9 @@ BASECPPFLAGS.append( '-fmessage-length=0' )
 # gcc 4.0
 BASECPPFLAGS.append( '-fpermissive' )
 
+# Use the v3 interface
+BASECPPFLAGS.append( '-DBOOST_FILESYSTEM_VERSION=3' )
+
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
