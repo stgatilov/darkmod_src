@@ -27,7 +27,7 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>"$(SolutionDir)tools\7zip\7z" u -tzip "$(SolutionDir)..\darkmod\tdm_game01.pk4" "$(TargetPath)"</Command>
+      <Command>"$(SolutionDir)tools\7zip\7z" u -tzip "$(OutDir)tdm_game01.pk4" "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>
