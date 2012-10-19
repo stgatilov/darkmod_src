@@ -54,7 +54,7 @@ IniFilePtr IniFile::Create()
 IniFilePtr IniFile::ConstructFromFile(const fs::path& filename)
 {
 	// Start parsing
-	std::ifstream iniFile(filename.file_string().c_str());
+	std::ifstream iniFile(filename.string().c_str());
 
 	if (!iniFile)
     {
@@ -178,7 +178,7 @@ void IniFile::ForeachSection(SectionVisitor& visitor) const
 
 void IniFile::ExportToFile(const fs::path& file, const std::string& headerComments) const
 {
-	std::ofstream stream(file.file_string().c_str());
+	std::ofstream stream(file.string().c_str());
 
 	if (!headerComments.empty())
 	{

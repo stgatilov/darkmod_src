@@ -129,25 +129,25 @@ void CMissionManager::CleanupModFolder(const idStr& name)
 		{
 			if (boost::algorithm::to_lower_copy(fs::extension(*i)) == ".pk4")
 			{
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase PK4 files %s\r", i->string().c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase PK4 files %s\r", i->path().string().c_str());
 				continue;
 			}
 
-			if (i->filename() == cv_tdm_fm_desc_file.GetString() || 
-				i->filename() == cv_tdm_fm_notes_file.GetString() || 
-				i->filename() == cv_tdm_fm_splashimage_file.GetString())
+			if (i->path().filename() == cv_tdm_fm_desc_file.GetString() || 
+				i->path().filename() == cv_tdm_fm_notes_file.GetString() || 
+				i->path().filename() == cv_tdm_fm_splashimage_file.GetString())
 			{
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase meta data file %s\r", i->string().c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase meta data file %s\r", i->path().string().c_str());
 				continue;
 			}
 
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will erase recursively: %s\r", i->string().c_str());
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will erase recursively: %s\r", i->path().string().c_str());
 			fs::remove_all(*i);
 		}
 	}
 	else
 	{
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Cannot erase mod folder %s, directory not found\r", modPath.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Cannot erase mod folder %s, directory not found\r", modPath.string().c_str());
 		return;
 	}
 
@@ -323,7 +323,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 	fs::path fmPath;
     fmPath = darkmodPath / cv_tdm_fm_path.GetString();
 
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.file_string().c_str());
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.string().c_str());
 
 	// greebo: Use boost::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
@@ -335,7 +335,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		fs::path pk4path = *i;
 
 		// Check extension
-		idStr extLower = pk4path.extension().c_str();
+		idStr extLower = pk4path.extension().string().c_str();
 		extLower.ToLower();
 
 		if (extLower != extension)
@@ -343,31 +343,31 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 			continue;
 		}
 
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %s in FM root folder: %s\r", extension.c_str(), pk4path.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Found %s in FM root folder: %s\r", extension.c_str(), pk4path.string().c_str());
 
 		// Does the PK4 file contain a proper description file?
-		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
+		CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.string().c_str());
 
 		if (pk4file == NULL)
 		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4 in root folder: %s\r", pk4path.file_string().c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4 in root folder: %s\r", pk4path.string().c_str());
 			continue; // failed to open zip file
 		}
 
 		// Check if this is a l10n pack, if yes we need to move it to the same mod folder
-		bool isL10nPack = boost::algorithm::iends_with(pk4path.stem(), "_l10n");
+		bool isL10nPack = boost::algorithm::iends_with(pk4path.stem().string(), "_l10n");
 
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("This is a localisation pack: %s\r", isL10nPack ? "yes" : "no");
 
 		// Ordinary missions PK4s require a proper description file in it
 		if (!isL10nPack && !pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Ignoring PK4 file, no 'darkmod.txt' found inside archive: %s\r", pk4path.file_string().c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Ignoring PK4 file, no 'darkmod.txt' found inside archive: %s\r", pk4path.string().c_str());
 			continue; // no darkmod.txt
 		}
 
 		// Deduce the mod folder name based on the PK4 name
-		idStr modName = pk4path.leaf().c_str();
+		idStr modName = pk4path.leaf().string().c_str();
 		modName.StripPath();
 		modName.StripFileExtension();
 		modName.ToLower();
@@ -400,12 +400,12 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		// Create the fm folder, if necessary
 		if (!fs::exists(modFolder))
 		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder doesn't exist for PK4, creating: %s\r", modFolder.file_string().c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Mod folder doesn't exist for PK4, creating: %s\r", modFolder.string().c_str());
 			try
 			{
 				fs::create_directory(modFolder);
 			}
-			catch (fs::basic_filesystem_error<fs::path>& e)
+			catch (fs::filesystem_error& e)
 			{
 				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while creating folder for PK4: %s\r", e.what());
 			}
@@ -453,7 +453,7 @@ void CMissionManager::GenerateModList()
 	fs::path darkmodPath = GetDarkmodPath();
 	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
 
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for mods in FM folder: %s\r", fmPath.file_string().c_str());
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for mods in FM folder: %s\r", fmPath.string().c_str());
 
 	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
@@ -461,10 +461,10 @@ void CMissionManager::GenerateModList()
 
 		if (!fs::is_directory(modFolder)) continue; // skip non-folders
 
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for description file %s in %s.\r", cv_tdm_fm_desc_file.GetString(), modFolder.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Looking for description file %s in %s.\r", cv_tdm_fm_desc_file.GetString(), modFolder.string().c_str());
 
 		// Take the folder name as mod name
-		idStr modName = modFolder.filename().c_str();
+		idStr modName = modFolder.filename().string().c_str();
 
 		// Check for an uncompressed darkmod.txt file
 		fs::path descFileName = modFolder / cv_tdm_fm_desc_file.GetString();
@@ -477,14 +477,14 @@ void CMissionManager::GenerateModList()
 		}
 
 		// no "darkmod.txt" file found, check in the PK4 files
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.string().c_str());
 
 		// Check for PK4s in that folder
 		for (fs::directory_iterator pk4Iter = fs::directory_iterator(modFolder); pk4Iter != fs::directory_iterator(); ++pk4Iter)
 		{
 			fs::path pk4path = *pk4Iter;
 
-			idStr extension = pk4path.extension().c_str();
+			idStr extension = pk4path.extension().string().c_str();
 			extension.ToLower();
 
 			if (extension != ".pk4")
@@ -492,18 +492,18 @@ void CMissionManager::GenerateModList()
 				continue;
 			}
 
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found PK4 file %s.\r", pk4path.file_string().c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found PK4 file %s.\r", pk4path.string().c_str());
 
-			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.file_string().c_str());
+			CZipFilePtr pk4file = CZipLoader::Instance().OpenFile(pk4path.string().c_str());
 
 			if (pk4file == NULL)
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4: %s\r", pk4path.file_string().c_str());
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Could not open PK4: %s\r", pk4path.string().c_str());
 				continue; // failed to open zip file
 			}
 
 			// Check if this is a localisation pack, don't extract files from those
-			bool isL10nPack = boost::algorithm::iends_with(pk4path.stem(), "_l10n");
+			bool isL10nPack = boost::algorithm::iends_with(pk4path.stem().string(), "_l10n");
 
 			if (!isL10nPack && pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
@@ -631,7 +631,7 @@ bool CMissionManager::DoCopyFile(const fs::path& source, const fs::path& dest, b
 			fs::remove(dest);
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Destination file %s already exists, has been removed before copying.\r", dest.string().c_str());
 		}
-		catch (fs::basic_filesystem_error<fs::path>& e)
+		catch (fs::filesystem_error& e)
 		{
 			// Don't care about removal error
 			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Caught exception while removing destination file %s: %s\r", dest.string().c_str(), e.what());
@@ -646,7 +646,7 @@ bool CMissionManager::DoCopyFile(const fs::path& source, const fs::path& dest, b
 
 		return true;
 	}
-	catch (fs::basic_filesystem_error<fs::path>& e)
+	catch (fs::filesystem_error& e)
 	{
 		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Exception while coyping file from %s to %s: %s\r", 
 			source.string().c_str(), dest.string().c_str(), e.what());
@@ -660,11 +660,11 @@ bool CMissionManager::DoRemoveFile(const fs::path& fileToRemove)
 	try
 	{
 		fs::remove(fileToRemove);
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removed file in %s\r", fileToRemove.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Removed file in %s\r", fileToRemove.string().c_str());
 
 		return true;
 	}
-	catch (fs::basic_filesystem_error<fs::path>& e)
+	catch (fs::filesystem_error& e)
 	{
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while removing file: %s\r", e.what());
 		return false;
@@ -676,11 +676,11 @@ bool CMissionManager::DoMoveFile(const fs::path& fromPath, const fs::path& toPat
 	try
 	{
 		fs::rename(fromPath, toPath);
-		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Moved %s to %s\r", fromPath.file_string().c_str(), toPath.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Moved %s to %s\r", fromPath.string().c_str(), toPath.string().c_str());
 
 		return true;
 	}
-	catch (fs::basic_filesystem_error<fs::path>& e)
+	catch (fs::filesystem_error& e)
 	{
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Exception while moving file: %s\r", e.what());
 
@@ -945,10 +945,10 @@ bool CMissionManager::WriteCurrentFmFile(const idStr& modName)
 	// Path to file that holds the current FM name
 	fs::path currentFMPath(GetDarkmodPath() / cv_tdm_fm_current_file.GetString());
 
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.file_string().c_str());
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Trying to save current FM name to %s\r", currentFMPath.string().c_str());
 
 	// Save the name of the new mod
-	FILE* currentFM = fopen(currentFMPath.file_string().c_str(), "w+");
+	FILE* currentFM = fopen(currentFMPath.string().c_str(), "w+");
 
 	if (currentFM != NULL)
 	{
@@ -957,11 +957,11 @@ bool CMissionManager::WriteCurrentFmFile(const idStr& modName)
 	}
 	else
 	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Could not save current FM name to %s\r", currentFMPath.string().c_str());
 		return false;
 	}
 
-	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.file_string().c_str());
+	DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Successfully saved current FM name to %s\r", currentFMPath.string().c_str());
 	return true;
 }
 
@@ -1019,7 +1019,7 @@ int CMissionManager::StartReloadDownloadableMods()
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_LIST_FILENAME;
 
-	CDownloadPtr download(new CDownload(missionListUrls, tempFilename.file_string().c_str()));
+	CDownloadPtr download(new CDownload(missionListUrls, tempFilename.string().c_str()));
 
 	_refreshModListDownloadId = gameLocal.m_DownloadManager->AddDownload(download);
 
@@ -1050,7 +1050,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadDownloadableModsReq
 		{
 			XmlDocumentPtr doc(new pugi::xml_document);
 		
-			pugi::xml_parse_result result = doc->load_file(tempFilename.file_string().c_str());
+			pugi::xml_parse_result result = doc->load_file(tempFilename.string().c_str());
 			
 			if (result)
 			{
@@ -1088,7 +1088,7 @@ int CMissionManager::StartDownloadingModDetails(int modNum)
 	fs::path tempFilename = g_Global.GetDarkmodPath();
 	tempFilename /= TMP_MISSION_DETAILS_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.file_string().c_str()));
+	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
 
 	// Store the mod number in the download class
 	download->GetUserData().id = modNum;
@@ -1122,7 +1122,7 @@ CMissionManager::RequestStatus CMissionManager::ProcessReloadModDetailsRequest()
 		{
 			XmlDocumentPtr doc(new pugi::xml_document);
 		
-			pugi::xml_parse_result result = doc->load_file(tempFilename.file_string().c_str());
+			pugi::xml_parse_result result = doc->load_file(tempFilename.string().c_str());
 
 			if (result)
 			{
@@ -1179,7 +1179,7 @@ int CMissionManager::StartDownloadingMissionScreenshot(int missionIndex, int scr
 	tempFilename /= cv_tdm_fm_path.GetString();
 	tempFilename /= TMP_MISSION_SCREENSHOT_FILENAME;
 
-	CDownloadPtr download(new CDownload(url, tempFilename.file_string().c_str()));
+	CDownloadPtr download(new CDownload(url, tempFilename.string().c_str()));
 
 	// Store the mission and screenshot number in the download class
 	download->GetUserData().id = missionIndex;
@@ -1326,7 +1326,7 @@ void CMissionManager::LoadModDetailsFromXml(const XmlDocumentPtr& doc, int modNu
 
 		if (fs::exists(localPath))
 		{
-			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found existing local screenshot copy %s\r", localPath.file_string().c_str());
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Found existing local screenshot copy %s\r", localPath.string().c_str());
 
 			// File exists, store that in the screenshot filename
 			screenshot->filename = mod.GetLocalScreenshotPath(screenshotNum);
@@ -1461,11 +1461,11 @@ const DownloadableModList& CMissionManager::GetDownloadableMods() const
 
 bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum)
 {
-	Image image(tempFilename.file_string().c_str());
+	Image image(tempFilename.string().c_str());
 
 	if (!image.LoadImageFromFile(tempFilename))
 	{
-		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Failed to load image: %s\r", tempFilename.file_string().c_str());
+		DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("Failed to load image: %s\r", tempFilename.string().c_str());
 		return false;
 	}
 
@@ -1488,7 +1488,7 @@ bool CMissionManager::ProcessMissionScreenshot(const fs::path& tempFilename, Dow
 	// Save the file locally as JPEG
 	if (!image.SaveImageToFile(targetPath, Image::JPG))
 	{
-		gameLocal.Printf("Could not save image to %s\n", targetPath.file_string().c_str());
+		gameLocal.Printf("Could not save image to %s\n", targetPath.string().c_str());
 		return false;
 	}
 	else
