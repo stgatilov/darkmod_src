@@ -472,6 +472,15 @@ public:
 	void										Disassemble( void ) const;
 	void										FreeData( void );
 
+	enum DocFileFormat
+	{
+		FORMAT_D3_SCRIPT,
+		FORMAT_XML,
+		FORMAT_MEDIAWIKI
+	};
+
+	void										WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format);
+
 	const char									*GetFilename( int num );
 	int											GetFilenum( const char *name );
 	int											GetLineNumberForStatement( int index );
@@ -510,6 +519,10 @@ public:
 	void										ReturnEntity( idEntity *ent );
 	
 	int											NumFilenames( void ) { return fileList.Num( ); }
+
+private:
+	// greebo: Registers all events declared by the static idEventDef variables
+	void										RegisterScriptEvents();
 };
 
 /*

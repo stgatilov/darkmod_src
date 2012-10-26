@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Game_local.h"
+#include <boost/algorithm/string/predicate.hpp>
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
@@ -1893,12 +1894,73 @@ void idProgram::FreeData( void ) {
 	filename = "";
 }
 
+void idProgram::RegisterScriptEvents()
+{
+	int numEvents = idEventDef::NumEventCommands();
+
+	for (int i = 0; i < numEvents; ++i)
+	{
+		const idEventDef* eventDef = idEventDef::GetEventCommand(i);
+
+		const char* eventName = eventDef->GetName();
+
+		if (eventName != NULL && (eventName[0] == '<' || eventName[0] == '_'))
+		{
+			continue; // ignore all event names starting with '<', these mark internal events
+		}
+
+		const char* argFormat = eventDef->GetArgFormat();
+		int numArgs = strlen(argFormat);
+		bool argumentsValid = true;
+
+		// Check if any of the argument types is invalid before allocating anything
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			if (argType == NULL)
+			{
+				argumentsValid = false;
+				break;
+			}
+		}
+
+		if (!argumentsValid)
+		{
+			continue; // ignore this event, it has invalid arguments
+		}
+
+		idTypeDef* returnType = idCompiler::GetTypeForEventArg(eventDef->GetReturnType());
+
+		idTypeDef* type = AllocType(ev_function, NULL, eventDef->GetName(), type_function.Size(), returnType);
+		type->def = AllocDef(type, eventDef->GetName(), &def_namespace, true);
+
+		function_t &func	= AllocFunction(type->def);
+		func.eventdef		= eventDef;
+		func.parmSize.SetNum(eventDef->GetNumArgs());
+
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			type->AddFunctionParm(argType, "");
+
+			func.parmTotal += argType->Size();
+			func.parmSize[arg] = argType->Size();
+		}
+
+		// mark the parms as local
+		func.locals	= func.parmTotal;
+	}
+}
+
 /*
 ================
 idProgram::Startup
 ================
 */
-void idProgram::Startup( const char *defaultScript ) {
+void idProgram::Startup( const char *defaultScript )
+{
 	gameLocal.Printf( "Initializing scripts\n" );
 
 	// make sure all data is freed up
@@ -1906,6 +1968,9 @@ void idProgram::Startup( const char *defaultScript ) {
 
 	// get ready for loading scripts
 	BeginCompilation();
+
+	// Register all known script events
+	RegisterScriptEvents();
 
 	// load the default script
 	if ( defaultScript && *defaultScript ) {
@@ -2135,5 +2200,69 @@ void idProgram::ReturnEntity( idEntity *ent ) {
 		*returnDef->value.entityNumberPtr = ent->entityNumber + 1;
 	} else {
 		*returnDef->value.entityNumberPtr = 0;
+	}
+}
+
+namespace
+{
+	struct CompareCaseInsensitively : std::binary_function<std::string, std::string, bool>
+	{
+		bool operator() (const std::string & s1, const std::string & s2) const
+		{
+			return boost::algorithm::ilexicographical_compare(s1, s2);
+		}
+	};
+}
+
+void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format)
+{
+	// First, assemble a alphabetically sorted list of events
+	typedef std::map<std::string, const idEventDef*, CompareCaseInsensitively> Eventmap;
+	Eventmap eventMap;
+
+	for (int i = 0; i < idEventDef::NumEventCommands(); ++i)
+	{
+		const idEventDef* def = idEventDef::GetEventCommand(i);
+
+		eventMap[std::string(def->GetName())] = def;
+	}
+
+	for (Eventmap::const_iterator i = eventMap.begin(); i != eventMap.end(); ++i)
+	{
+		const idEventDef& ev = *i->second;
+
+		const char* eventName = ev.GetName();
+
+		if (eventName != NULL && (eventName[0] == '<' || eventName[0] == '_'))
+		{
+			continue; // ignore all event names starting with '<', these mark internal events
+		}
+
+		//const char* argFormat = ev.GetArgFormat();
+		//int numArgs = strlen(argFormat);
+
+		/*// Check if any of the argument types is invalid before allocating anything
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			if (argType == NULL)
+			{
+				argumentsValid = false;
+				break;
+			}
+		}*/
+
+		idTypeDef* returnType = idCompiler::GetTypeForEventArg(ev.GetReturnType());
+
+		switch (format)
+		{
+		case FORMAT_D3_SCRIPT:
+			const char* out = va("scriptEvent %s\t\t%s\n", returnType->Name(), eventName);
+			outputFile.Write(out, strlen(out));
+			break;
+		};
+
+		gameLocal.Printf("Event: %s\n", i->second->GetName());
 	}
 }

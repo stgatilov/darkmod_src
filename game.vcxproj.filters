@@ -1191,6 +1191,9 @@
     <ClInclude Include="game\ai\States\HitByMoveableState.h">
       <Filter>AI\States</Filter>
     </ClInclude>
+    <ClInclude Include="game\gamesys\EventArgs.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />

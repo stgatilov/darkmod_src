@@ -246,7 +246,6 @@ private:
 	idVarDef		*GetTerm( void );
 	bool			TypeMatches( etype_t type1, etype_t type2 ) const;
 	idVarDef		*GetExpression( int priority );
-	idTypeDef		*GetTypeForEventArg( char argType );
 	void			PatchLoop( int start, int continuePos );
 	void			ParseReturnStatement( void );
 	void			ParseWhileStatement( void );
@@ -267,6 +266,8 @@ public :
 
 					idCompiler();
 	void			CompileFile( const char *text, const char *filename, bool console );
+
+	static idTypeDef		*GetTypeForEventArg( char argType );
 };
 
 #endif /* !__SCRIPT_COMPILER_H__ */

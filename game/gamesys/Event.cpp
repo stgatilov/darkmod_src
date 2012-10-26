@@ -54,24 +54,72 @@ static char eventErrorMsg[ 128 ];
 idEventDef::idEventDef
 ================
 */
-idEventDef::idEventDef( const char *command, const char *formatspec, char returnType ) {
+idEventDef::idEventDef(const char *command, const char *formatspec, char returnType_) :
+	name(command),
+	description("no description"),
+	returnType(returnType_)
+{
+	// Convert the legacy format string to an argument vector
+	if (formatspec != NULL)
+	{
+		int argCount = strlen(formatspec);
+
+		for (int i = 0; i < argCount; ++i)
+		{
+			args.push_back(EventArg());
+			args.back().type = formatspec[i];
+			args.back().name = "";
+			args.back().desc = "";
+		}
+	}
+
+	Construct();
+}
+
+idEventDef::idEventDef(const char* name_, const EventArgs& args_, char returnType_, const char* description_) :
+	name(name_),
+	description(description_),
+	returnType(returnType_),
+	args(args_)
+{
+	Construct();
+}
+
+idEventDef::~idEventDef()
+{
+	if (formatspec != NULL && formatspec[0] != '\0')
+	{
+		delete[] formatspec;
+	}
+}
+
+void idEventDef::Construct()
+{
 	idEventDef		*ev;
 	int				i;
 	unsigned int	bits;
 
-	assert( command );
-	assert( !idEvent::initialized );
+	assert(name != NULL);
+	assert(!idEvent::initialized);
+	
+	if (!args.empty())
+	{
+		char* format = new char[args.size() + 1];
+		format[args.size()] = '\0';
 
-	// Allow NULL to indicate no args, but always store it as ""
-	// so we don't have to check for it.
-	if ( !formatspec ) {
-		formatspec = "";
+		std::size_t arg = 0;
+		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i, ++arg)
+		{
+			format[arg] = i->type;
+		}
+
+		this->formatspec = format;
+	}
+	else
+	{
+		this->formatspec = "";
 	}
 	
-	this->name = command;
-	this->formatspec = formatspec;
-	this->returnType = returnType;
-
 	numargs = strlen( formatspec );
 	assert( numargs <= D_EVENT_MAXARGS );
 	if ( numargs > D_EVENT_MAXARGS ) {
@@ -84,9 +132,13 @@ idEventDef::idEventDef( const char *command, const char *formatspec, char return
 	bits = 0;
 	argsize = 0;
 	memset( argOffset, 0, sizeof( argOffset ) );
-	for( i = 0; i < numargs; i++ ) {
+
+	for( i = 0; i < numargs; i++ )
+	{
 		argOffset[ i ] = argsize;
-		switch( formatspec[ i ] ) {
+
+		switch( formatspec[ i ] )
+		{
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
 			argsize += sizeof( float );
@@ -132,18 +184,18 @@ idEventDef::idEventDef( const char *command, const char *formatspec, char return
 	eventnum = numEventDefs;
 	for( i = 0; i < eventnum; i++ ) {
 		ev = eventDefList[ i ];
-		if ( strcmp( command, ev->name ) == 0 ) {
+		if ( strcmp( name, ev->name ) == 0 ) {
 			if ( strcmp( formatspec, ev->formatspec ) != 0 ) {
 				eventError = true;
 				sprintf( eventErrorMsg, "idEvent '%s' defined twice with same name but differing format strings ('%s'!='%s').",
-					command, formatspec, ev->formatspec );
+					name, formatspec, ev->formatspec );
 				return;
 			}
 
 			if ( ev->returnType != returnType ) {
 				eventError = true;
 				sprintf( eventErrorMsg, "idEvent '%s' defined twice with same name but differing return types ('%c'!='%c').",
-					command, returnType, ev->returnType );
+					name, returnType, ev->returnType );
 				return;
 			}
 			// Don't bother putting the duplicate event in list.
