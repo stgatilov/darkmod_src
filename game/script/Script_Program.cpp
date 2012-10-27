@@ -2239,7 +2239,12 @@ namespace
 	{
 		idStr out = "/**\n";
 		out += " * ";
-		out += ev.GetDescription();
+
+		// Format line breaks in the description
+		idStr desc(ev.GetDescription());
+		desc.Replace("\n", "\n * ");
+
+		out += desc;
 		
 		const EventArgs& args = ev.GetArgs();
 
@@ -2250,7 +2255,11 @@ namespace
 
 		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
 		{
-			out += va("\n * @%s: %s", i->name, i->desc);
+			// Format line breaks in the description
+			idStr desc(i->desc);
+			desc.Replace("\n", "\n * ");
+
+			out += va("\n * @%s: %s", i->name, desc.c_str());
 		}
 
 		out += "\n */";
