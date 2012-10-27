@@ -131,28 +131,57 @@ const idEventDef EV_GetContents( "getContents", EventArgs(), 'f', "Returns the c
 const idEventDef EV_SetClipMask( "setClipMask", EventArgs('d', "clipMask", ""), EV_RETURNS_VOID, "Sets the clipmask of the physics object.");
 const idEventDef EV_GetClipMask( "getClipMask", EventArgs(), 'd', "Returns the clipmask of the physics object." );
 
-const idEventDef EV_GetSize( "getSize", EventArgs(), 'v', "" );
-const idEventDef EV_SetSize( "setSize", EventArgs('v', "", "", 'v', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_GetMins( "getMins", EventArgs(), 'v', "" );
-const idEventDef EV_GetMaxs( "getMaxs", EventArgs(), 'v', "" );
-const idEventDef EV_IsHidden( "isHidden", EventArgs(), 'd', "" );
-const idEventDef EV_Hide( "hide", EventArgs(), EV_RETURNS_VOID, "");
-const idEventDef EV_Show( "show", EventArgs(), EV_RETURNS_VOID, "");
-const idEventDef EV_Touches( "touches", EventArgs('E', "", ""), 'd', "" );
-const idEventDef EV_ClearSignal( "clearSignal", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_GetShaderParm( "getShaderParm", EventArgs('d', "", ""), 'f', "" );
-const idEventDef EV_SetShaderParm( "setShaderParm", EventArgs('d', "", "", 'f', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_SetShaderParms( "setShaderParms", "ffff" );
-const idEventDef EV_SetColor( "setColor", "fff" );
-const idEventDef EV_GetColor( "getColor", EventArgs(), 'v', "" );
-const idEventDef EV_CacheSoundShader( "cacheSoundShader", EventArgs('s', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_StartSoundShader( "startSoundShader", EventArgs('s', "", "", 'd', "", ""), 'f', "" );
-const idEventDef EV_StartSound( "startSound", "sdd", 'f' );
-const idEventDef EV_StopSound( "stopSound", EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_FadeSound( "fadeSound", "dff" );
-const idEventDef EV_SetSoundVolume( "setSoundVolume", EventArgs('f', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_GetNextKey( "getNextKey", EventArgs('s', "", "", 's', "", ""), 's', "" );
-const idEventDef EV_SetKey( "setKey", EventArgs('s', "", "", 's', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_GetSize( "getSize", EventArgs(), 'v', "Gets the size of this entity's bounding box." );
+const idEventDef EV_SetSize( "setSize", EventArgs('v', "min", "minimum corner coordinates", 'v', "max", "maximum corner coordinates"), EV_RETURNS_VOID, "Sets the size of this entity's bounding box.");
+const idEventDef EV_GetMins( "getMins", EventArgs(), 'v', "Gets the minimum corner of this entity's bounding box." );
+const idEventDef EV_GetMaxs( "getMaxs", EventArgs(), 'v', "Gets the maximum corner of this entity's bounding box." );
+const idEventDef EV_IsHidden( "isHidden", EventArgs(), 'd', "checks if the entity's model is invisible." );
+const idEventDef EV_Hide( "hide", EventArgs(), EV_RETURNS_VOID, "Makes this entity invisible.");
+const idEventDef EV_Show( "show", EventArgs(), EV_RETURNS_VOID, "Makes this entity visible if it has a model.");
+const idEventDef EV_Touches( "touches", EventArgs('E', "other", "the entity to check against"), 'd', "Returns true if this entity touches the other entity." );
+const idEventDef EV_ClearSignal( "clearSignal", EventArgs('d', "signalNum", "signal number"), EV_RETURNS_VOID, "Disables the callback function on the specified signal.");
+const idEventDef EV_GetShaderParm( "getShaderParm", EventArgs('d', "parm", "shader parm index"), 'f', "Gets the value of the specified shader parm." );
+const idEventDef EV_SetShaderParm( "setShaderParm", EventArgs('d', "parm", "shader parm index", 'f', "value", "new value"), EV_RETURNS_VOID, "Sets the value of the specified shader parm.");
+const idEventDef EV_SetShaderParms( "setShaderParms", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue", 'f', "parm3", "alpha"), EV_RETURNS_VOID, 
+	"Sets shader parms Parm0, Parm1, Parm2, and Parm3 (red, green, blue, and alpha respectively)." );
+const idEventDef EV_SetColor( "setColor", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue"), EV_RETURNS_VOID, 
+	"Sets the RGB color of this entity (shader parms Parm0, Parm1, Parm2)." );
+const idEventDef EV_GetColor( "getColor", EventArgs(), 'v', "Gets the color of this entity (shader parms Parm0, Parm1, Parm2)." );
+
+const idEventDef EV_CacheSoundShader( "cacheSoundShader", EventArgs('s', "shaderName", "the sound shader to cache"), EV_RETURNS_VOID, 
+	"Ensure the specified sound shader is loaded by the system.\nPrevents cache misses when playing sound shaders.");
+const idEventDef EV_StartSoundShader( "startSoundShader", EventArgs('s', "shaderName", "the sound shader to play", 'd', "channel", "the channel to play the sound on"), 'f', 
+	"Plays a specific sound shader on the channel and returns the length of the sound in\n" \
+	"seconds. This is not the preferred method of playing a sound since you must ensure\n" \
+	"that the sound is loaded." );
+const idEventDef EV_StartSound( "startSound", 
+	EventArgs('s', "sound", "the spawnarg to reference, e.g. 'snd_move'", 'd', "channel", "the channel to play on", 'd', "netSync", "-"), 'f', 
+	"Plays the sound specified by the snd_* key/value pair on the channel and returns\n" \
+	"the length of the sound in seconds. This is the preferred method for playing sounds on an\n" \
+	"entity since it ensures that the sound is precached." );
+
+const idEventDef EV_StopSound( "stopSound", EventArgs('d', "channel", "the channel to stop playback on", 'd', "netSync", "-"), EV_RETURNS_VOID, "Stops a specific sound shader on the channel.");
+const idEventDef EV_FadeSound( "fadeSound", EventArgs('d', "channel", "", 'f', "newLevel", "", 'f', "fadeTime", ""), EV_RETURNS_VOID, 
+	"Fades the sound on this entity to a new level over a period of time.  Use SND_CHANNEL_ANY for all currently playing sounds." );
+
+const idEventDef EV_SetSoundVolume( "setSoundVolume", EventArgs('f', "newLevel", ""), EV_RETURNS_VOID, "Set the volume of the sound to play, must be issued before startSoundShader.");
+
+const idEventDef EV_GetNextKey( "getNextKey", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', 
+	"searches for the name of a spawn arg that matches the prefix.  for example,\n" \
+	"passing in \"attack_target\" matches \"attack_target1\", \"attack_targetx\", \"attack_target_enemy\", \n" \
+	"etc. The returned string is the name of the key which can then be passed into\n" \
+	"functions like getKey() to lookup the value of that spawn arg.  This\n" \
+	"is useful for when you have multiple values to look up, like when you\n" \
+	"target multiple objects.  To find the next matching key, pass in the previous\n" \
+	"result and the next key returned will be the first one that matches after\n" \
+	"the previous result.  pass in "" to get the first match.  returns "" when no \n" \
+	"more keys match.  Note to coders: this is the same as MatchPrefix in the game code.");
+
+const idEventDef EV_SetKey( "setKey", EventArgs('s', "key", "the spawnarg to set", 's', "value", "the value to store"), EV_RETURNS_VOID, 
+	"Sets a key on this entity's spawn args. Note that most spawn args are evaluated when\n" \
+	"this entity spawns in, so this will not change the entity's behavior in most cases.\n" \
+	"This is chiefly for saving data the script needs in an entity for later retrieval.");
+
 const idEventDef EV_GetKey( "getKey", EventArgs('s', "", ""), 's', "" );
 const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "", ""), 'f', "" );
 const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "", ""), 'f', "" );
