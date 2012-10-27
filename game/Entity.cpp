@@ -259,17 +259,17 @@ const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed",
 	"in ms, turning shadows cast by this entity on or off.");
 
 // tels: Find all lights in the player PVS, then returns their sum.
-const idEventDef EV_GetLightInPVS("getLightInPVS", EventArgs('f', "", "", 'f', "", ""), 'v', 
+const idEventDef EV_GetLightInPVS("getLightInPVS", 
+	EventArgs('f', "falloff", "0: no falloff with distance\n" \
+							" 0.5: sqrt(linear) falloff	(dist 100 => 1/10)\n" \
+							" 1: linear falloff			(dist 100 => 1/100)\n" \
+							" 2: square falloff			(dist 100 => 1/10000)\n", 
+			  'f', "scaling", "factor to scale the distance, can be used to lower/raise distance factor\n" \
+					" after the linear or square scaling has been used\n" \
+					"good looking values are approx: sqrt(linear): 0.01, linear: 0.1, square 1.0"), 
+	'v', 
 	"Computes the sum of all light in the PVS of the entity you\n" \
-	"call this on, and returns a vector with the sum.\n" \
-	"parameters: falloff, distance_scaling:\n" \
-	" falloff == 0: no falloff with distance\n" \
-	" falloff == 0.5: sqrt(linear) falloff	(dist 100 => 1/10)\n" \
-	" falloff == 1: linear falloff			(dist 100 => 1/100)\n" \
-	" falloff == 2: square falloff			(dist 100 => 1/10000)\n" \
-	" distance scaling: factor to scale the distance, can be used to lower/raise distance factor\n" \
-	" after the linear or square scaling has been used.\n" \
-	" good looking values are approx: sqrt(linear): 0.01, linear: 0.1, square 1.0");
+	"call this on, and returns a vector with the sum.");
 
 const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
 const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
@@ -317,28 +317,71 @@ const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "type", 
 	"The new value of the changed type is returned (e.g. the new GOODS value if this has been changed).\n" \
 	"Note: The LOOT_TOTAL type can't be changed and 0 is returned.");
 
-const idEventDef EV_AddInvItem("addInvItem", EventArgs('e', "", ""), EV_RETURNS_VOID, "");					// Adds an entity to the inventory
-const idEventDef EV_AddItemToInv("addItemToInv", EventArgs('e', "", ""), EV_RETURNS_VOID, "");				// Adds this entity to the inventory of the given entity (reversed AddInvItem)
-const idEventDef EV_ReplaceInvItem("replaceInvItem", EventArgs('e', "", "", 'E', "", ""), 'd', "");	// olditem, newitem -> 1 if succeeded
-const idEventDef EV_GetNextInvItem("getNextInvItem", EventArgs(), 'e', "");		// switches to the next inventory item
-const idEventDef EV_GetPrevInvItem("getPrevInvItem", EventArgs(), 'e', "");		// switches to the previous inventory item
-const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
-const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
-const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss");					// Changes the inventory icon of the given item.
+const idEventDef EV_AddInvItem("addInvItem", EventArgs('e', "inv_item", ""), EV_RETURNS_VOID, 
+	"Adds the given item to the inventory. Depending on the type\n" \
+	"the passed entity will be removed from the game (as for loot items) or hidden.");
 
-const idEventDef EV_SetCurInvCategory("setCurInvCategory", EventArgs('s', "", ""), 'd', "");	// category name -> 1 = success
-const idEventDef EV_SetCurInvItem("setCurInvItem", EventArgs('s', "", ""), 'e', "");				// itemname -> entity
-const idEventDef EV_GetCurInvCategory("getCurInvCategory", EventArgs(), 's', "");
-const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", EventArgs(), 'e', "");
-const idEventDef EV_GetCurInvItemName("getCurInvItemName", EventArgs(), 's', "");
-const idEventDef EV_GetCurInvItemId("getCurInvItemId", EventArgs(), 's', "");
-const idEventDef EV_GetCurInvIcon("getCurInvIcon", EventArgs(), 's', "");
+const idEventDef EV_AddItemToInv("addItemToInv", EventArgs('e', "target", ""), EV_RETURNS_VOID, 
+	"Adds the entity to the given entity's inventory. Depending on the type\n" \
+	"the entity will be removed from the game (as for loot items) or hidden.\n" \
+	"Example: $book->addItemToInv($player1);");				// Adds this entity to the inventory of the given entity (reversed AddInvItem)
+
+const idEventDef EV_ReplaceInvItem("replaceInvItem", EventArgs('e', "oldItem", "", 'E', "newItem", "can be $null_entity"), 
+	'd', 
+	"Replaces the entity <oldItem> with <newItem> in the inventory,\n" \
+	"while keeping <oldItem>'s inventory position intact.\n" \
+	"\n" \
+	"Note: The position guarantee only applies if <oldItem> and newItem \n" \
+	"share the same category. If the categories are different, the position of <newItem>\n" \
+	"is likely to be different than the one of <oldItem>.\n" \
+	"\n" \
+	"Note that <oldItem> will be removed from the inventory. \n" \
+	"If <newItem> is the $null_entity, <oldItem> is just removed and no replacement happens.\n" \
+	"\n" \
+	"Returns 1 if the operation was successful, 0 otherwise.");	// olditem, newitem -> 1 if succeeded");
+const idEventDef EV_GetNextInvItem("getNextInvItem", EventArgs(), 'e', 
+	"Cycles the standard cursor to the next inventory item.\n" \
+	"Returns the item entity pointed to after the operation is complete.");		// switches to the next inventory item
+const idEventDef EV_GetPrevInvItem("getPrevInvItem", EventArgs(), 'e', 
+	"Cycles the standard cursor to the previous inventory item.\n" \
+	"Returns the item entity pointed to after the operation is complete.");		// switches to the previous inventory item
+const idEventDef EV_ChangeInvItemCount("changeInvItemCount", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 'd', "amount", ""), 
+	EV_RETURNS_VOID, 
+	"Decreases the inventory item stack count by amount. The item is addressed\n" \
+	"using the name and category of the item. These are usually defined on the inventory\n" \
+	"item entity (\"inv_name\", \"inv_category\")\n" \
+	"\n" \
+	"Amount can be both negative and positive.");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
+
+const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 'd', "amount", ""), 
+	EV_RETURNS_VOID, 
+	"Sets the lightgem modifier value of the given item. Valid arguments are\n" \
+	"between 0 and 32 (which is the maximum lightgem value)."); // Changes the lightgem modifier value of the given item.
+const idEventDef EV_ChangeInvIcon("changeInvIcon", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 's', "icon", ""),
+	EV_RETURNS_VOID, "Sets the inventory icon of the given item in the given category to <icon>.");
+
+const idEventDef EV_SetCurInvCategory("setCurInvCategory", EventArgs('s', "categoryName", ""), 'd', 
+	"Sets the inventory cursor to the first item of the named category.\n" \
+	"Returns 1 on success, 0 on failure (e.g. wrong category name)");	// category name -> 1 = success
+const idEventDef EV_SetCurInvItem("setCurInvItem", EventArgs('s', "itemName", ""), 'e', 
+	"Sets the inventory cursor to the named item.\n" \
+	"Returns: the item entity of the newly selected item (can be $null_entity).");				// itemname -> entity
+const idEventDef EV_GetCurInvCategory("getCurInvCategory", EventArgs(), 's', "Returns the name of the currently highlighted inventory category.");
+const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", EventArgs(), 'e', "Returns the currently highlighted inventory item entity.");
+const idEventDef EV_GetCurInvItemName("getCurInvItemName", EventArgs(), 's', "Returns the name of the currently highlighted inventory item (the one defined in \"inv_name\").");
+const idEventDef EV_GetCurInvItemId("getCurInvItemId", EventArgs(), 's', 
+	"Returns the name of the currently highlighted inventory item (the one defined in \"inv_item_id\").\n" \
+	"Most items will return an empty string, unless the \"inv_item_id\" is set on purpose.");
+const idEventDef EV_GetCurInvIcon("getCurInvIcon", EventArgs(), 's', "Returns the icon of the currently highlighted inventory item.");
 
 // greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
-const idEventDef EV_InitInventory("initInventory", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_InitInventory("_initInventory", EventArgs('d', "", ""), EV_RETURNS_VOID, "Private event which runs right after spawn time to check the inventory-related spawnargs.");
 
 // grayman #2478 - event which runs after spawn time to see if a mine is armed
-const idEventDef EV_CheckMine("checkMine");
+const idEventDef EV_CheckMine("_checkMine", EventArgs(), EV_RETURNS_VOID, "Private event - runs after spawn time to see if a mine is armed");
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
