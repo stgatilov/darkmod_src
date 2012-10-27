@@ -182,76 +182,141 @@ const idEventDef EV_SetKey( "setKey", EventArgs('s', "key", "the spawnarg to set
 	"this entity spawns in, so this will not change the entity's behavior in most cases.\n" \
 	"This is chiefly for saving data the script needs in an entity for later retrieval.");
 
-const idEventDef EV_GetKey( "getKey", EventArgs('s', "", ""), 's', "" );
-const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "", ""), 'f', "" );
-const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "", ""), 'f', "" );
-const idEventDef EV_GetVectorKey( "getVectorKey", EventArgs('s', "", ""), 'v', "" );
-const idEventDef EV_GetEntityKey( "getEntityKey", EventArgs('s', "", ""), 'e', "" );
-const idEventDef EV_RemoveKey( "removeKey", EventArgs('s', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_RestorePosition( "restorePosition", EventArgs(), EV_RETURNS_VOID, "" );
+const idEventDef EV_GetKey( "getKey", EventArgs('s', "key", "spawnarg name"), 's', 
+	"Retrieves the value of a specific spawn arg." );
+const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the integer value of a specific spawn arg." );
+const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the floating point value of a specific spawn arg." );
+const idEventDef EV_GetVectorKey( "getVectorKey", EventArgs('s', "key", "spawnarg name"), 'v', "Retrieves the vector value of a specific spawn arg." );
+const idEventDef EV_GetEntityKey( "getEntityKey", EventArgs('s', "key", "spawnarg name"), 'e', "Retrieves the entity specified by the spawn arg." );
+const idEventDef EV_RemoveKey( "removeKey", EventArgs('s', "key", "the spawnarg to remove"), EV_RETURNS_VOID, "Removes a key from an object's spawnargs, so things like getNextKey() don't retrieve it.");
+const idEventDef EV_RestorePosition( "restorePosition", EventArgs(), EV_RETURNS_VOID, 
+	"Returns this entity to the position stored in the \"origin\" spawn arg.\n" \
+	"This is the position the entity was spawned in unless the \"origin\" key is changed.\n" \
+	"Note that there is no guarantee that the entity won't be stuck in another entity\n" \
+	"when moved, so care should be taken to make sure that isn't possible." );
+
 const idEventDef EV_UpdateCameraTarget( "<updateCameraTarget>", EventArgs(), EV_RETURNS_VOID, "");
-const idEventDef EV_DistanceTo( "distanceTo", EventArgs('E', "", ""), 'f', "" );
-const idEventDef EV_DistanceToPoint( "distanceToPoint", EventArgs('v', "", ""), 'f', "" );
-const idEventDef EV_StartFx( "startFx", EventArgs('s', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_HasFunction( "hasFunction", EventArgs('s', "", ""), 'd', "" );
-const idEventDef EV_CallFunction( "callFunction", EventArgs('s', "", ""), EV_RETURNS_VOID, "");
+
+const idEventDef EV_DistanceTo( "distanceTo", EventArgs('E', "other", ""), 'f', "Returns the distance of this entity to another entity." );
+const idEventDef EV_DistanceToPoint( "distanceToPoint", EventArgs('v', "point", ""), 'f', "Returns the distance of this entity to a point." );
+const idEventDef EV_StartFx( "startFx", EventArgs('s', "fx", ""), EV_RETURNS_VOID, "Starts an FX on this entity.");
+const idEventDef EV_HasFunction( "hasFunction", EventArgs('s', "functionName", ""), 'd', "checks if an entity's script object has a specific function" );
+const idEventDef EV_CallFunction( "callFunction", EventArgs('s', "functionName", ""), EV_RETURNS_VOID, 
+	"Calls a function on an entity's script object. See also\n" \
+	"scripts/tdm_events.script for callGlobalFunction.");
 const idEventDef EV_CallGlobalFunction( "callGlobalFunction", EventArgs('s', "", "", 'E', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_SetNeverDormant( "setNeverDormant", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_SetNeverDormant( "setNeverDormant", EventArgs('d', "enable", "1 = enable, 0 = disable"), EV_RETURNS_VOID, "enables or prevents an entity from going dormant");
 
-// greebo: Extinguishes all lights (i.e. the <self> entity plus all bound lights)
-const idEventDef EV_ExtinguishLights("extinguishLights", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_ExtinguishLights("extinguishLights", EventArgs(), EV_RETURNS_VOID, "Extinguishes all lights (i.e. the <self> entity plus all bound lights)");
 
-const idEventDef EV_InPVS( "inPVS", EventArgs(), 'd', "" );
+const idEventDef EV_InPVS( "inPVS", EventArgs(), 'd', 
+	"Returns non-zero if this entity is in PVS.\n" \
+	"For lights, it will return true when the light's bounding box is in PVS,\n" \
+	"even though the light may not actually be in PVS. (an unmoved shadowcasting\n" \
+	"light may not be visible to PVS areas its bounding box intersects with)");
+
 // greebo: Script event definition for dealing damage
-const idEventDef EV_Damage("damage", "EEvsf");
+const idEventDef EV_Damage("damage", EventArgs(
+	'E', "inflictor", "the entity causing the damage (maybe a projectile)", 
+	'E', "attacker", "the \"parent\" entity of the inflictor, the one that is responsible for the inflictor (can be the same)", 
+	'v', "dir", "the direction the attack is coming from.", 
+	's', "damageDefName", "the name of the damage entityDef to know what damage is being dealt to <self> (e.g. \"damage_lava\")", 
+	'f', "damageScale", "the scale of the damage (pass 1.0 as default, this should be ok)."), 
+	EV_RETURNS_VOID, 
+	"Deals damage to this entity (gets translated into the idEntity::Damage() method within the SDK).");
+
 // greebo: Script event definition for healing 
 // Takes the name of the healing entity and the healing scale, returns an integer
-const idEventDef EV_Heal("heal", EventArgs('s', "", "", 'f', "", ""), 'd', "");
+const idEventDef EV_Heal("heal", 
+	EventArgs('s', "healDefName", "the name of the entityDef containing the healing information (e.g. \"heal_potion\")", 
+			  'f', "healScale", "the scaling value to be applied to the healAmount found in the healEntityDef"), 
+    'd', 
+	"Heals the entity this is called on using the specified healing entityDef.\n" \
+	"Returns 1 if the entity could be healed, 0 otherwise (if the entity is already at full health, for ex.)");
 
 // tels: Teleport the entity to the position/orientation of the given entity
-const idEventDef EV_TeleportTo("teleportTo", EventArgs('e', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TeleportTo("teleportTo", EventArgs('e', "other", ""), EV_RETURNS_VOID, 
+	"Teleports the entity to the position of the other entity, plus a possible\n" \
+	"offset and random offset (defined on the spawnargs of the entity to be teleported)");
 
 // ishtvan: Get/setd droppable on entity and associated inventory item
-const idEventDef EV_IsDroppable( "isDroppable", EventArgs(), 'd', "" );
-const idEventDef EV_SetDroppable( "setDroppable", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_IsDroppable( "isDroppable", EventArgs(), 'd', "Get whether an item may be dropped from the inventory");
+const idEventDef EV_SetDroppable( "setDroppable", 
+	EventArgs('d', "droppable", "if non-zero the item becomes droppable, when called with 0 the item becomes non-droppable"), 
+	EV_RETURNS_VOID, 
+	"Set whether an item may be dropped from the inventory.\n" \
+	"");
 
 // tels: set noShadow on this entity to the given argument (true/false)
-const idEventDef EV_NoShadows( "noShadows", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_NoShadows( "noShadows", EventArgs('d', "noShadows", "1 = disable shadows, 0 = enable shadows"), EV_RETURNS_VOID, 
+	"Sets the noShadow property on the entity to true/false, turning shadowcasting\n" \
+	"on or off for this entity.");
+
 // tels: like EV_noShadows, but does so after a delay of "delay" ms:
-const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed", EventArgs('d', "", "", 'f', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed", 
+	EventArgs('d', "noShadows", "1 = disable shadows, 0 = enable shadows", 'f', "delay", "delay in ms"), EV_RETURNS_VOID, 
+	"Sets the noShadow property on the entity to true/false after delay\n" \
+	"in ms, turning shadows cast by this entity on or off.");
 
 // tels: Find all lights in the player PVS, then returns their sum.
-const idEventDef EV_GetLightInPVS("getLightInPVS", EventArgs('f', "", "", 'f', "", ""), 'v', "");
+const idEventDef EV_GetLightInPVS("getLightInPVS", EventArgs('f', "", "", 'f', "", ""), 'v', 
+	"Computes the sum of all light in the PVS of the entity you\n" \
+	"call this on, and returns a vector with the sum.\n" \
+	"parameters: falloff, distance_scaling:\n" \
+	" falloff == 0: no falloff with distance\n" \
+	" falloff == 0.5: sqrt(linear) falloff	(dist 100 => 1/10)\n" \
+	" falloff == 1: linear falloff			(dist 100 => 1/100)\n" \
+	" falloff == 2: square falloff			(dist 100 => 1/10000)\n" \
+	" distance scaling: factor to scale the distance, can be used to lower/raise distance factor\n" \
+	" after the linear or square scaling has been used.\n" \
+	" good looking values are approx: sqrt(linear): 0.01, linear: 0.1, square 1.0");
 
-const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", EventArgs(), 'v', "");	// grayman #2787
-const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", EventArgs(), 'v', "");	// grayman #2787
+const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
+const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
+
 const idEventDef EV_IsLight("isLight", EventArgs(), 'd', ""); // grayman #2905
-const idEventDef EV_ActivateContacts("activateContacts"); // grayman #3011
-const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', ""); // grayman #3013
+const idEventDef EV_ActivateContacts("activateContacts", EventArgs(), EV_RETURNS_VOID, "Activate objects sitting on this object."); // grayman #3011
+const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', 
+	"Returns the idLocation entity corresponding to the entity's current location.\n" \
+	"This was player-specific before, but is now available to all entities."); // grayman #3013
 
 //===============================================================
 //                   TDM GUI interface
 //===============================================================
-const idEventDef EV_SetGui( "setGui", EventArgs('d', "", "", 's', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_GetGui( "getGui", EventArgs('d', "", ""), 's', "" );
-const idEventDef EV_SetGuiString( "setGuiString", "dss" );
-const idEventDef EV_GetGuiString( "getGuiString", EventArgs('d', "", "", 's', "", ""), 's', "" );
-const idEventDef EV_SetGuiFloat( "setGuiFloat", "dsf" );
-const idEventDef EV_GetGuiFloat( "getGuiFloat", EventArgs('d', "", "", 's', "", ""), 'f', "" );
-const idEventDef EV_SetGuiInt( "setGuiInt", "dsd" );
-const idEventDef EV_GetGuiInt( "getGuiInt", EventArgs('d', "", "", 's', "", ""), 'f', "" );
-const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", "dses" );
-const idEventDef EV_CallGui( "callGui", EventArgs('d', "", "", 's', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_CreateOverlay( "createOverlay", EventArgs('s', "", "", 'd', "", ""), 'd', "" );
-const idEventDef EV_DestroyOverlay( "destroyOverlay", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_LoadExternalData( "loadExternalData", EventArgs('s', "", "", 's', "", ""), 'd', "" );
+const idEventDef EV_SetGui( "setGui", EventArgs('d', "handle", "", 's', "guiFile", ""), EV_RETURNS_VOID, "Loads a new file into an existing GUI.");
+const idEventDef EV_GetGui( "getGui", EventArgs('d', "handle", ""), 's', "Returns the file currently loaded by a GUI." );
+const idEventDef EV_SetGuiString( "setGuiString", 
+	EventArgs('d', "handle", "", 's', "key", "", 's', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiString( "getGuiString", EventArgs('d', "handle", "", 's', "key", ""), 's', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiFloat( "setGuiFloat", EventArgs('d', "handle", "", 's', "key", "", 'f', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiFloat( "getGuiFloat", EventArgs('d', "handle", "", 's', "key", ""), 'f', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiInt( "setGuiInt", EventArgs('d', "handle", "", 's', "key", "", 'd', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiInt( "getGuiInt", EventArgs('d', "handle", "", 's', "key", ""), 'f', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", 
+	EventArgs('d', "handle", "", 's', "key", "", 'e', "src", "", 's', "srcKey", ""),
+	EV_RETURNS_VOID, 
+	"This is a kludge. It is equivelant to: setGuiString( handle, key, src.getKey(srcKey) )\n" \
+	"However, it's used to bypass the 127 char size limit on script strings." );
+const idEventDef EV_CallGui( "callGui", EventArgs('d', "handle", "", 's', "namedEvent", ""), EV_RETURNS_VOID, "Calls a named event in a GUI.");
+const idEventDef EV_CreateOverlay( "createOverlay", EventArgs('s', "guiFile", "", 'd', "layer", ""), 'd', "Creates a GUI overlay. (must be used on the player)" );
+const idEventDef EV_DestroyOverlay( "destroyOverlay", EventArgs('d', "handle", ""), EV_RETURNS_VOID, "Destroys a GUI overlay. (must be used on the player)");
+const idEventDef EV_LoadExternalData( "loadExternalData", EventArgs('s', "declFile", "", 's', "prefix", ""), 'd', "Load an external xdata declaration." );
 
 
 //===============================================================
 //                   TDM Inventory
 //===============================================================
-const idEventDef EV_GetLootAmount("getLootAmount", EventArgs('d', "", ""), 'd', "");				// returns the current value for the given group
-const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "", "", 'd', "", ""), 'd', "");		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
+const idEventDef EV_GetLootAmount("getLootAmount", EventArgs('d', "type", ""), 'd', 
+	"Returns the amount of loot for the given type (e.g. LOOT_GOODS). Pass LOOT_TOTAL\n" \
+	"to return the sum of all loot types.");
+const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "type", "", 'd', "amount", ""), 'd', 
+	"Changes the loot amount of the given Type (e.g. GOODS) by <amount>\n" \
+	"The new value of the changed type is returned (e.g. the new GOODS value if this has been changed).\n" \
+	"Note: The LOOT_TOTAL type can't be changed and 0 is returned.");
+
 const idEventDef EV_AddInvItem("addInvItem", EventArgs('e', "", ""), EV_RETURNS_VOID, "");					// Adds an entity to the inventory
 const idEventDef EV_AddItemToInv("addItemToInv", EventArgs('e', "", ""), EV_RETURNS_VOID, "");				// Adds this entity to the inventory of the given entity (reversed AddInvItem)
 const idEventDef EV_ReplaceInvItem("replaceInvItem", EventArgs('e', "", "", 'E', "", ""), 'd', "");	// olditem, newitem -> 1 if succeeded
