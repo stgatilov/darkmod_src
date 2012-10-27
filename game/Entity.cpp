@@ -273,7 +273,7 @@ const idEventDef EV_GetTeam("getTeam", NULL, 'd');
 const idEventDef EV_SetTeam("setTeam", "d");
 
 //const idEventDef EV_IsEnemy( "isEnemy", "E", 'd' );
-const idEventDef EV_IsEnemy( "isEnemy", EventArgs('E', "entity", "The entity in question"), 'd', "Extensive description");
+const idEventDef EV_IsEnemy( "isEnemy", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is an enemy.");
 
 const idEventDef EV_IsFriend( "isFriend", "E", 'd' );
 const idEventDef EV_IsNeutral( "isNeutral", "E", 'd' );

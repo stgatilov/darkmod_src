@@ -191,7 +191,7 @@ const idEventDef AI_EndState("endState", NULL, 'd');
 
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
-const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
+//const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
 const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
 const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
 
