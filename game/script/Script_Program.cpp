@@ -2217,6 +2217,9 @@ namespace
 	{
 		idStr out;
 
+		static const char* gen = "abcdefghijklmnopqrstuvwxyz";
+		int g = 0;
+
 		const EventArgs& args = ev.GetArgs();
 
 		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
@@ -2225,7 +2228,8 @@ namespace
 
 			idTypeDef* type = idCompiler::GetTypeForEventArg(i->type);
 
-			out += va("%s %s", type->Name(), i->name);
+			// Use a generic variable name "a", "b", "c", etc. if no name present
+			out += va("%s %s", type->Name(), strlen(i->name) > 0 ? i->name : idStr(gen[g++]));
 		}
 
 		return out;
@@ -2286,8 +2290,8 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 		Write(outputFile, "/**\n");
 		Write(outputFile, " * The Dark Mod Script Event Documentation\n");
 		Write(outputFile, " * \n");
-		Write(outputFile, " * This file has been generated automatically through tdm_gen_script_event_doc\n");
-		Write(outputFile, " * Date: " + dateStr + "\n");
+		Write(outputFile, " * This file has been generated automatically by the tdm_gen_script_event_doc console command.\n");
+		Write(outputFile, " * Last update: " + dateStr + "\n");
 		Write(outputFile, " */\n");
 		break;
 	};

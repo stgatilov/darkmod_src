@@ -55,7 +55,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 const idEventDef EV_PostSpawn( "<postspawn>", NULL );
 const idEventDef EV_FindTargets( "<findTargets>", NULL );
 const idEventDef EV_Touch( "<touch>", "et" );
-const idEventDef EV_GetName( "getName", NULL, 's' );
+
+const idEventDef EV_GetName("getName", EventArgs(), 's', "Returns the name of this entity.");
 const idEventDef EV_SetName( "setName", "s" );
 const idEventDef EV_IsType ( "isType", "s" , 'd' );
 const idEventDef EV_Activate( "activate", "e" );

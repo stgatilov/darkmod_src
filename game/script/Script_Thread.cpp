@@ -147,11 +147,12 @@ const idEventDef EV_LogString("logString", "dds");
 // Propagates the string to the sessioncommand variable in gameLocal
 const idEventDef EV_SessionCommand("sessionCommand", "s");
 
-// Generic interface for passing on mission events from scripts to the SDK
-// First argument is the entity which has triggered this event (e.g. a readable)
-// Second argument is a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event
-// Third argument is an optional string parameter
-const idEventDef EV_HandleMissionEvent("handleMissionEvent", "eds");
+const idEventDef EV_HandleMissionEvent("handleMissionEvent", 
+	EventArgs('e', "objEnt", "the entity that triggered this event (e.g. a readable)", 
+			  'd', "eventType", "a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event", 
+			  's', "argument", "an optional string parameter, eventtype-specific."), 
+			  EV_RETURNS_VOID, 
+			  "Generic interface for passing on mission events from scripts to the SDK. Available since TDM 1.02");
 
 const idEventDef EV_Thread_CanPlant( "canPlant", "vvEe", 'f' );  // grayman #2787
 
