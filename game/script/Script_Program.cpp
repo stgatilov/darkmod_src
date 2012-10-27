@@ -2253,6 +2253,11 @@ namespace
 
 		return out;
 	}
+
+	inline void Write(idFile& out, const idStr& str)
+	{
+		out.Write(str.c_str(), str.Length());
+	}
 }
 
 void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format)
@@ -2267,6 +2272,25 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 
 		eventMap[std::string(def->GetName())] = def;
 	}
+
+	time_t timer = time(NULL);
+	struct tm* t = localtime(&timer);
+
+	idStr dateStr = va("%04u-%02u-%02u %02u:%02u\r", t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min);
+
+	switch (format)
+	{
+	case FORMAT_D3_SCRIPT:
+		Write(outputFile, "#ifndef __TDM_EVENTS__\n");
+		Write(outputFile, "#define __TDM_EVENTS__\n\n");
+		Write(outputFile, "/**\n");
+		Write(outputFile, " * The Dark Mod Script Event Documentation\n");
+		Write(outputFile, " * \n");
+		Write(outputFile, " * This file has been generated automatically through tdm_gen_script_event_doc\n");
+		Write(outputFile, " * Date: " + dateStr + "\n");
+		Write(outputFile, " */\n");
+		break;
+	};
 
 	for (Eventmap::const_iterator i = eventMap.begin(); i != eventMap.end(); ++i)
 	{
@@ -2306,10 +2330,17 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 			idStr documentation = GetEventDocumentation(ev);
 			idStr out = va("\n%s\nscriptEvent %s\t\t%s(%s);\n", 
 				documentation.c_str(), returnType->Name(), eventName, signature.c_str());
-			outputFile.Write(out.c_str(), out.Length());
+			Write(outputFile, out);
 			break;
 		};
-
-		gameLocal.Printf("Event: %s\n", i->second->GetName());
 	}
+
+	switch (format)
+	{
+	case FORMAT_D3_SCRIPT:
+		Write(outputFile, "\n\n#endif\n");
+		break;
+	};
+
+	gameLocal.Printf("Documentation written to: %s\n", outputFile.GetFullPath());
 }
