@@ -43,7 +43,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 */
 
 const idEventDef EV_DropToFloor( "<dropToFloor>" );
-const idEventDef EV_RespawnItem( "respawn" );
+const idEventDef EV_RespawnItem( "respawn", EventArgs(), EV_RETURNS_VOID, "Respawn" );
 const idEventDef EV_RespawnFx( "<respawnFx>" );
 const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
 const idEventDef EV_HideObjective( "<hideobjective>", "e" );
