@@ -52,9 +52,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #define NOLOD -100000
 
 // overridable events
-const idEventDef EV_PostSpawn( "<postspawn>", NULL );
-const idEventDef EV_FindTargets( "<findTargets>", NULL );
-const idEventDef EV_Touch( "<touch>", "et" );
+const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_FindTargets( "<findTargets>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Touch( "<touch>", EventArgs('e', "", "", 't', "", ""), EV_RETURNS_VOID, "internal" );
 
 const idEventDef EV_GetName("getName", EventArgs(), 's', "Returns the name of this entity.");
 const idEventDef EV_SetName( "setName", EventArgs('s', "name", "the new name"), EV_RETURNS_VOID, "Sets the name of this entity.");
@@ -387,73 +387,95 @@ const idEventDef EV_CheckMine("_checkMine", EventArgs(), EV_RETURNS_VOID, "Priva
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
 // for stims and responses are pretty much the same.
-const idEventDef EV_StimAdd( "StimAdd", EventArgs('d', "", "", 'f', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_StimRemove( "StimRemove", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_StimEnable( "StimEnable", EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseEnable( "ResponseEnable", EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseAdd( "ResponseAdd", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseRemove( "ResponseRemove", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseIgnore( "ResponseIgnore", EventArgs('d', "", "", 'e', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseAllow( "ResponseAllow", EventArgs('d', "", "", 'e', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseSetAction( "ResponseSetAction", EventArgs('d', "", "", 's', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ResponseTrigger( "ResponseTrigger", EventArgs('e', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_GetResponseEntity( "GetResponseEntity", EventArgs(), 'e', "");
+const idEventDef EV_StimAdd( "StimAdd", EventArgs('d', "type", "", 'f', "radius", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_StimRemove( "StimRemove", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_StimEnable( "StimEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
+const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", EventArgs('d', "type", ""), EV_RETURNS_VOID, 
+	"This clears the ignore list for the stim of the given type\n" \
+	"It can be used if an entity changes state in some way that it would no longer be ignored");
+const idEventDef EV_ResponseEnable( "ResponseEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseAdd( "ResponseAdd", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseRemove( "ResponseRemove", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseIgnore( "ResponseIgnore", EventArgs('d', "type", "", 'e', "responder", ""), EV_RETURNS_VOID, 
+	"This functions must be called on the stim entity. It will add the response\n" \
+	"to the ignore list, so that subsequent stims, should not trigger the stim anymore.");
+const idEventDef EV_ResponseAllow( "ResponseAllow", EventArgs('d', "type", "", 'e', "responder", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseSetAction( "ResponseSetAction", EventArgs('d', "type", "", 's', "action", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseTrigger( "ResponseTrigger", EventArgs('e', "source", "", 'd', "stimType", ""), EV_RETURNS_VOID, 
+	"Fires a response on this entity, without a stim (a stand-alone response, so to say)");
+const idEventDef EV_GetResponseEntity( "GetResponseEntity", EventArgs(), 'e', 
+	"Returns the entity which should take the response. Some entities like AI heads are not\n" \
+	"responding themselves to stims, but relay it to another entity (i.e. the bodies they're attached to).");
 
-// StimType, Hours, minutes, seconds, miliseconds(?)
-const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
-const idEventDef EV_TimerStop( "StopTimer", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_TimerStart( "StartTimer", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_TimerRestart( "RestartTimer", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_TimerReset( "ResetTimer", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_TimerSetState( "SetTimerState", EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerCreate( "CreateTimer", 
+	EventArgs('d', "stimId", "", 'd', "hour", "", 'd', "minutes", "", 'd', "seconds", "", 'd', "milliseconds", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerStop( "StopTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerStart( "StartTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerRestart( "RestartTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerReset( "ResetTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerSetState( "SetTimerState", EventArgs('d', "stimId", "", 'd', "state", ""), EV_RETURNS_VOID, "");
 
 // soundprop event: Propagate sound directly from scripting
-const idEventDef EV_TDM_PropSoundMod( "propSoundMod", EventArgs('s', "", "", 'f', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TDM_PropSoundMod( "propSoundMod", EventArgs('s', "name", "", 'f', "volMod", ""), EV_RETURNS_VOID, 
+	"propagate a sound directly with a volume modifier");
 // I don't think scripting supports optional argument, so I must do this
-const idEventDef EV_TDM_PropSound( "propSound", EventArgs('s', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TDM_PropSound( "propSound", EventArgs('s', "name", ""), EV_RETURNS_VOID, 
+	"Sound propagation scriptfunctions on all entities\n" \
+	"propagate a sound directly without playing an audible sound");
 
 // For detecting ranged enemies. Returns nonzero if this entity could
 // potentially attack the given entity (first parameter) at range.
-const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", EventArgs('e', "", ""), 'f', "" );
+const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", EventArgs('e', "target", ""), 'f', 
+	"Could this entity threaten the given (target) entity from a distance?" );
 
 // Tels: #3113 after spawning all entities, decide if they need to be hidden
 const idEventDef EV_HideByLODBias( "hideByLODBias" );
 
 #ifdef MOD_WATERPHYSICS
 
-const idEventDef EV_GetMass( "getMass", EventArgs('d', "", "") , 'f', "" );
-
-const idEventDef EV_IsInLiquid( "isInLiquid", EventArgs(), 'd', "" );
+const idEventDef EV_GetMass( "getMass", EventArgs('d', "body", "") , 'f', "Gets mass of a body for an entity" );
+const idEventDef EV_IsInLiquid( "isInLiquid", EventArgs(), 'd', "Returns 1 if the entity is in or touching a liquid." );
 
 #endif      // MOD_WATERPHYSICS
 
-const idEventDef EV_CopyBind( "copyBind", EventArgs('e', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_IsFrobable( "isFrobable", EventArgs(), 'd', "" );
-const idEventDef EV_SetFrobable( "setFrobable", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_IsHilighted( "isHilighted", EventArgs(), 'd', "" );
-const idEventDef EV_Frob("frob", EventArgs(), 'd', "");
-const idEventDef EV_FrobHilight("frobHilight", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_CopyBind( "copyBind", EventArgs('e', "other", ""), EV_RETURNS_VOID, 
+	"copy bind information of other to this entity\n" \
+	"(i.e., bind this entity to the same entity that other is bound to)");
+const idEventDef EV_IsFrobable( "isFrobable", EventArgs(), 'd', "Get whether the entity is frobable" );
+const idEventDef EV_SetFrobable( "setFrobable", EventArgs('d', "frobable", ""), EV_RETURNS_VOID, "Set whether the entity is frobable");
+const idEventDef EV_IsHilighted( "isHilighted", EventArgs(), 'd', "Returns true if entity is currently frobhilighted." );
+const idEventDef EV_Frob("frob", EventArgs(), 'd', 
+	"Frobs the entity (i.e. simulates a frob action performed by the player).\n" \
+	"Returns TRUE if the entity is frobable, FALSE otherwise.");
+const idEventDef EV_FrobHilight("frobHilight", EventArgs('d', "state", ""), EV_RETURNS_VOID, "ishtvan: Tries to make the entity frobhilight or not");
 
 // greebo: Script event to check whether this entity can see a target entity
-const idEventDef EV_CanSeeEntity("canSeeEntity", EventArgs('e', "", "", 'd', "", ""), 'd', "");
+const idEventDef EV_CanSeeEntity("canSeeEntity", EventArgs('e', "target", "", 'd', "useLighting", ""), 'd', 
+	"This is a general version of idAI::canSee, that can be used\n" \
+	"by all entities. It doesn't regard FOV,\n" \
+	"it just performs a trace to check whether the target is\n" \
+	"occluded by world geometry. Is probably useful for stim/response as well\n" \
+	"Pass useLighting = true to take the lighting of the target entity\n" \
+	"into account. Use \"isEntityHidden\" as a script event with a\n" \
+	"threshold.\n" \
+	"The constant threshold value for useLighting is defined within the SDK in game/entity.h.");
 
-const idEventDef EV_CanBeUsedBy("canBeUsedBy", EventArgs('e', "", ""), 'd', "");
+const idEventDef EV_CanBeUsedBy("canBeUsedBy", EventArgs('e', "ent", ""), 'd', "Returns true if the entity can be used by the argument entity");
 
-const idEventDef EV_CheckAbsence("checkAbsence");
+const idEventDef EV_CheckAbsence("checkAbsence", EventArgs(), EV_RETURNS_VOID, "description missing");
 
 // greebo: TDM: Team accessor script events
-const idEventDef EV_GetTeam("getTeam", EventArgs(), 'd', "");
-const idEventDef EV_SetTeam("setTeam", EventArgs('d', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_GetTeam("getTeam", EventArgs(), 'd', "Returns the current team number.");
+const idEventDef EV_SetTeam("setTeam", EventArgs('d', "newTeam", ""), EV_RETURNS_VOID, "Sets the team number of this entity.");
 
-//const idEventDef EV_IsEnemy( "isEnemy", EventArgs('E', "", ""), 'd' );
 const idEventDef EV_IsEnemy( "isEnemy", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is an enemy.");
+const idEventDef EV_IsFriend( "isFriend", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is a friend.");
+const idEventDef EV_IsNeutral( "isNeutral", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is neutral.");
 
-const idEventDef EV_IsFriend( "isFriend", EventArgs('E', "", ""), 'd', "" );
-const idEventDef EV_IsNeutral( "isNeutral", EventArgs('E', "", ""), 'd', "" );
-
-const idEventDef EV_SetEntityRelation( "setEntityRelation", EventArgs('E', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
-const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", EventArgs('E', "", "", 'd', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_SetEntityRelation( "setEntityRelation", EventArgs('E', "ent", "", 'd', "relation", ""), EV_RETURNS_VOID, 
+	"Set a relation to another entity, this can be friendly (>0), neutral(0) or hostile (<0)");
+const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", EventArgs('E', "ent", "", 'd', "relationChange", ""), EV_RETURNS_VOID, 
+	"This changes the current relation to an entity by adding the new amount.");
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
