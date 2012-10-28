@@ -66,7 +66,7 @@ const idEventDef AI_ProcessVisualStim("processVisualStim", EventArgs('e', "stimS
 
 const idEventDef AI_PerformRelight("performRelight", EventArgs(), EV_RETURNS_VOID, "Deal with doused lights.");	// grayman #2603
 const idEventDef AI_DropTorch("dropTorch", EventArgs(), EV_RETURNS_VOID, "no description");			    // grayman #2603
-const idEventDef AI_Bark("bark", EventArgs('s', "sound name, e.g. 'snd_warn_response'", ""), EV_RETURNS_VOID, "Let the AI bark a certain sound.");	// grayman #2816
+const idEventDef AI_Bark("bark", EventArgs('s', "sound", "sound name, e.g. 'snd_warn_response'"), EV_RETURNS_VOID, "Let the AI bark a certain sound.");	// grayman #2816
 const idEventDef AI_EmptyHand("emptyHand", EventArgs('s', "hand", ""), EV_RETURNS_VOID, "no description");		// grayman #3154
 
 const idEventDef AI_SetEnemy( "setEnemy", EventArgs('E', "enemy", ""), EV_RETURNS_VOID, "Make the given entity an enemy.");
