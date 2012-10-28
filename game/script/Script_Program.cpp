@@ -2213,6 +2213,9 @@ namespace
 		}
 	};
 
+	// Alphabetically sorted event map
+	typedef std::map<std::string, const idEventDef*, CompareCaseInsensitively> Eventmap;
+
 	idStr GetEventArgumentString(const idEventDef& ev)
 	{
 		idStr out;
@@ -2279,12 +2282,76 @@ namespace
 	{
 		out.Write(str.c_str(), str.Length());
 	}
+
+	inline bool eventIsPublic(const idEventDef& ev)
+	{
+		const char* eventName = ev.GetName();
+
+		if (eventName != NULL && (eventName[0] == '<' || eventName[0] == '_'))
+		{
+			return false; // ignore all event names starting with '<', these mark internal events
+		}
+
+		const char* argFormat = ev.GetArgFormat();
+		int numArgs = strlen(argFormat);
+
+		// Check if any of the argument types is invalid before allocating anything
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			if (argType == NULL)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	inline void WriteD3ScriptDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
+	{
+		Write(out, "#ifndef __TDM_EVENTS__\n");
+		Write(out, "#define __TDM_EVENTS__\n\n");
+		Write(out, "/**\n");
+		Write(out, " * The Dark Mod Script Event Documentation\n");
+		Write(out, " * \n");
+		Write(out, " * This file has been generated automatically by the tdm_gen_script_event_doc console command.\n");
+		Write(out, " * Last update: " + dateStr + "\n");
+		Write(out, " */\n");
+		Write(out, "\n");
+		Write(out, "// ===== THIS FILE ONLY SERVES FOR DOCUMENTATION PURPOSES, IT'S NOT ACTUALLY READ BY THE GAME =======\n");
+		Write(out, "// ===== If you want to force this file to be loaded, change the line below to #if 1 ================\n");
+		Write(out, "#if 0\n");
+		Write(out, "\n");
+		Write(out, "\n");
+
+		for (Eventmap::const_iterator i = events.begin(); i != events.end(); ++i)
+		{
+			const idEventDef& ev = *i->second;
+
+			if (!eventIsPublic(ev)) continue;
+
+			idTypeDef* returnType = idCompiler::GetTypeForEventArg(ev.GetReturnType());
+
+			idStr signature = GetEventArgumentString(ev);
+			idStr documentation = GetEventDocumentation(ev);
+			idStr outStr = va("\n%s\nscriptEvent %s\t\t%s(%s);\n", 
+				documentation.c_str(), returnType->Name(), ev.GetName(), signature.c_str());
+
+			Write(out, outStr);
+		}
+
+		Write(out, "\n");
+		Write(out, "#endif\n");
+		Write(out, "\n");
+		Write(out, "\n\n#endif\n");
+	}
 }
 
 void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format)
 {
 	// First, assemble a alphabetically sorted list of events
-	typedef std::map<std::string, const idEventDef*, CompareCaseInsensitively> Eventmap;
 	Eventmap eventMap;
 
 	for (int i = 0; i < idEventDef::NumEventCommands(); ++i)
@@ -2302,73 +2369,7 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 	switch (format)
 	{
 	case FORMAT_D3_SCRIPT:
-		Write(outputFile, "#ifndef __TDM_EVENTS__\n");
-		Write(outputFile, "#define __TDM_EVENTS__\n\n");
-		Write(outputFile, "/**\n");
-		Write(outputFile, " * The Dark Mod Script Event Documentation\n");
-		Write(outputFile, " * \n");
-		Write(outputFile, " * This file has been generated automatically by the tdm_gen_script_event_doc console command.\n");
-		Write(outputFile, " * Last update: " + dateStr + "\n");
-		Write(outputFile, " */\n");
-		Write(outputFile, "\n");
-		Write(outputFile, "// ===== THIS FILE ONLY SERVES FOR DOCUMENTATION PURPOSES, IT'S NOT ACTUALLY READ BY THE GAME =======\n");
-		Write(outputFile, "// ===== If you want to force this file to be loaded, change the line below to #if 1 ================\n");
-		Write(outputFile, "#if 0\n");
-		Write(outputFile, "\n");
-		Write(outputFile, "\n");
-		break;
-	};
-
-	for (Eventmap::const_iterator i = eventMap.begin(); i != eventMap.end(); ++i)
-	{
-		const idEventDef& ev = *i->second;
-
-		const char* eventName = ev.GetName();
-
-		if (eventName != NULL && (eventName[0] == '<' || eventName[0] == '_'))
-		{
-			continue; // ignore all event names starting with '<', these mark internal events
-		}
-
-		const char* argFormat = ev.GetArgFormat();
-		int numArgs = strlen(argFormat);
-		bool argumentsValid = true;
-
-		// Check if any of the argument types is invalid before allocating anything
-		for (int arg = 0; arg < numArgs; ++arg)
-		{
-			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
-
-			if (argType == NULL)
-			{
-				argumentsValid = false;
-				break;
-			}
-		}
-
-		if (!argumentsValid) continue; // skip this event;
-
-		idTypeDef* returnType = idCompiler::GetTypeForEventArg(ev.GetReturnType());
-
-		switch (format)
-		{
-		case FORMAT_D3_SCRIPT:
-			idStr signature = GetEventArgumentString(ev);
-			idStr documentation = GetEventDocumentation(ev);
-			idStr out = va("\n%s\nscriptEvent %s\t\t%s(%s);\n", 
-				documentation.c_str(), returnType->Name(), eventName, signature.c_str());
-			Write(outputFile, out);
-			break;
-		};
-	}
-
-	switch (format)
-	{
-	case FORMAT_D3_SCRIPT:
-		Write(outputFile, "\n");
-		Write(outputFile, "#endif\n");
-		Write(outputFile, "\n");
-		Write(outputFile, "\n\n#endif\n");
+		WriteD3ScriptDoc(eventMap, outputFile, dateStr);
 		break;
 	};
 
