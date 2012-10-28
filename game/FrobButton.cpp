@@ -31,10 +31,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // CFrobButton
 //===============================================================================
 
-const idEventDef EV_TDM_Button_Operate("Operate", NULL);
+const idEventDef EV_TDM_Operate("Operate", EventArgs(), EV_RETURNS_VOID, "Call this to operate this entity.");
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobButton )
-	EVENT( EV_TDM_Button_Operate,	CFrobButton::Operate)
+	EVENT( EV_TDM_Operate,	CFrobButton::Operate)
 END_CLASS
 
 void CFrobButton::Save(idSaveGame *savefile) const

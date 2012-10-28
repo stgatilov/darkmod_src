@@ -44,10 +44,18 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //CFrobDoor
 //===============================================================================
 
-const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", "f" );
-const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", NULL, 'e' );
+const idEventDef EV_TDM_Door_OpenDoor( "OpenDoor", EventArgs('f', "master", ""), EV_RETURNS_VOID, 
+	"The OpenDoor method is necessary to give the FrobDoorHandles a \n" \
+	"\"low level\" open routine. The CFrobDoor::Open() call is re-routed to\n" \
+	"the FrobDoorHandle::Tap() method, so there must be a way to actually\n" \
+	"let the door open. Which is what this method does.\n" \
+	"\n" \
+	"Note: Shouldn't be called directly by scripters, call handle->Tap() instead.\n" \
+	"Unless you know what you're doing.");
+const idEventDef EV_TDM_Door_GetDoorhandle( "GetDoorhandle", EventArgs(), 'e', "Returns the handle entity of this door. Can return NULL (== $null_entity)" );
 
-const idEventDef EV_TDM_Door_ClearPlayerImmobilization("EV_TDM_Door_ClearPlayerImmobilization", "e"); // allows player to handle weapons again
+const idEventDef EV_TDM_Door_ClearPlayerImmobilization("_EV_TDM_Door_ClearPlayerImmobilization", 
+	EventArgs('e', "", ""), EV_RETURNS_VOID, "internal"); // allows player to handle weapons again
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
 	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)

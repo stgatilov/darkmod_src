@@ -33,7 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //===============================================================================
 // CFrobLockHandle
 //===============================================================================
-const idEventDef EV_TDM_Handle_GetLock( "GetLock", NULL, 'e' );
+const idEventDef EV_TDM_Handle_GetLock( "GetLock", EventArgs(), 'e', "Returns the associated lock of this handle." );
 
 CLASS_DECLARATION( CFrobHandle, CFrobLockHandle )
 	EVENT( EV_TDM_Handle_GetLock,		CFrobLockHandle::Event_GetLock )

@@ -25,12 +25,13 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "FrobLever.h"
+#include "FrobButton.h"
 
-const idEventDef EV_TDM_Lever_Operate( "Operate", NULL );
-const idEventDef EV_TDM_Lever_Switch( "Switch", "d" );
+const idEventDef EV_TDM_Lever_Switch( "Switch", EventArgs('d', "newState", ""), 
+	EV_RETURNS_VOID, "Set the new lever state to the argument (0 = off)" );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobLever )
-	EVENT( EV_TDM_Lever_Operate,		CFrobLever::Event_Operate)
+	EVENT( EV_TDM_Operate,				CFrobLever::Event_Operate)
 	EVENT( EV_TDM_Lever_Switch,			CFrobLever::Event_Switch)
 END_CLASS
 

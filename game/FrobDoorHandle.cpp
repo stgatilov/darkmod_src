@@ -33,7 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //===============================================================================
 // CFrobDoorHandle
 //===============================================================================
-const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", NULL, 'e' );
+const idEventDef EV_TDM_Handle_GetDoor( "GetDoor", EventArgs(), 'e', "Returns the associated door entity for this handle." );
 
 CLASS_DECLARATION( CFrobHandle, CFrobDoorHandle )
 	EVENT( EV_TDM_Handle_GetDoor,		CFrobDoorHandle::Event_GetDoor )
