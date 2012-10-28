@@ -429,7 +429,7 @@ const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", EventArgs('e', "target
 	"Could this entity threaten the given (target) entity from a distance?" );
 
 // Tels: #3113 after spawning all entities, decide if they need to be hidden
-const idEventDef EV_HideByLODBias( "hideByLODBias" );
+const idEventDef EV_HideByLODBias( "hideByLODBias", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 #ifdef MOD_WATERPHYSICS
 

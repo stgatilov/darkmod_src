@@ -414,7 +414,7 @@ idFuncSplat
 */
 
 
-const idEventDef EV_Splat( "<Splat>" );
+const idEventDef EV_Splat( "<Splat>", EventArgs(), EV_RETURNS_VOID, "internal" );
 CLASS_DECLARATION( idFuncEmitter, idFuncSplat )
 EVENT( EV_Activate,		idFuncSplat::Event_Activate )
 EVENT( EV_Splat,		idFuncSplat::Event_Splat )

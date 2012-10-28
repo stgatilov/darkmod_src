@@ -223,8 +223,8 @@ void idTypeInfo::Shutdown() {
 
 ***********************************************************************/
 
-const idEventDef EV_Remove( "<immediateremove>", NULL );
-const idEventDef EV_SafeRemove( "remove", NULL );
+const idEventDef EV_Remove( "<immediateremove>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SafeRemove( "remove", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 ABSTRACT_DECLARATION( NULL, idClass )
 	EVENT( EV_Remove,				idClass::Event_Remove )

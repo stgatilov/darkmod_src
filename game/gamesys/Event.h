@@ -77,9 +77,6 @@ private:
 
 public:
 
-	// Deprecated: the "old-style" event declaration, no documentation available
-	idEventDef( const char *command, const char *formatspec = NULL, char returnType = EV_RETURNS_VOID );
-
 	// Define a named event with the given arguments, return type and documentation
 	idEventDef(const char* command, const EventArgs& args, char returnType, const char* description);
 

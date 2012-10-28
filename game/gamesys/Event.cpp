@@ -49,33 +49,6 @@ int idEventDef::numEventDefs = 0;
 static bool eventError = false;
 static char eventErrorMsg[ 128 ];
 
-/*
-================
-idEventDef::idEventDef
-================
-*/
-idEventDef::idEventDef(const char *command, const char *formatspec, char returnType_) :
-	name(command),
-	description("no description"),
-	returnType(returnType_)
-{
-	// Convert the legacy format string to an argument vector
-	if (formatspec != NULL)
-	{
-		int argCount = strlen(formatspec);
-
-		for (int i = 0; i < argCount; ++i)
-		{
-			args.push_back(EventArg());
-			args.back().type = formatspec[i];
-			args.back().name = "";
-			args.back().desc = "";
-		}
-	}
-
-	Construct();
-}
-
 idEventDef::idEventDef(const char* name_, const EventArgs& args_, char returnType_, const char* description_) :
 	name(name_),
 	description(description_),

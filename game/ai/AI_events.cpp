@@ -115,7 +115,7 @@ const idEventDef AI_MoveToEntity( "moveToEntity", EventArgs('e', "destination", 
 const idEventDef AI_MoveToPosition( "moveToPosition", EventArgs('v', "position", ""), EV_RETURNS_VOID, "");
 const idEventDef AI_SlideTo( "slideTo", EventArgs('v', "position", "", 'f', "time", ""), EV_RETURNS_VOID, "");
 const idEventDef AI_FacingIdeal( "facingIdeal", EventArgs(), 'd', "");
-const idEventDef AI_FaceEnemy( "faceEnemy" );
+const idEventDef AI_FaceEnemy( "faceEnemy", EventArgs(), EV_RETURNS_VOID, "" );
 const idEventDef AI_FaceEntity( "faceEntity", EventArgs('E', "ent", ""), EV_RETURNS_VOID, "");
 const idEventDef AI_GetCombatNode( "getCombatNode", EventArgs(), 'e', "");
 const idEventDef AI_EnemyInCombatCone( "enemyInCombatCone", EventArgs('E', "combatNode", "", 'd', "use_current_enemy_location", ""), 'd', "no description");

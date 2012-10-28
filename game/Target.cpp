@@ -1639,7 +1639,7 @@ idTarget_FadeSoundClass
 ===============================================================================
 */
 
-const idEventDef EV_RestoreVolume( "<RestoreVolume>" );
+const idEventDef EV_RestoreVolume( "<RestoreVolume>", EventArgs(), EV_RETURNS_VOID, "internal" );
 CLASS_DECLARATION( idTarget, idTarget_FadeSoundClass )
 EVENT( EV_Activate,	idTarget_FadeSoundClass::Event_Activate )
 EVENT( EV_RestoreVolume, idTarget_FadeSoundClass::Event_RestoreVolume )
