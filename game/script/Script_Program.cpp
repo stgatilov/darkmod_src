@@ -2310,6 +2310,12 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 		Write(outputFile, " * This file has been generated automatically by the tdm_gen_script_event_doc console command.\n");
 		Write(outputFile, " * Last update: " + dateStr + "\n");
 		Write(outputFile, " */\n");
+		Write(outputFile, "\n");
+		Write(outputFile, "// ===== THIS FILE ONLY SERVES FOR DOCUMENTATION PURPOSES, IT'S NOT ACTUALLY READ BY THE GAME =======\n");
+		Write(outputFile, "// ===== If you want to force this file to be loaded, change the line below to #if 1 ================\n");
+		Write(outputFile, "#if 0\n");
+		Write(outputFile, "\n");
+		Write(outputFile, "\n");
 		break;
 	};
 
@@ -2359,6 +2365,9 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 	switch (format)
 	{
 	case FORMAT_D3_SCRIPT:
+		Write(outputFile, "\n");
+		Write(outputFile, "#endif\n");
+		Write(outputFile, "\n");
 		Write(outputFile, "\n\n#endif\n");
 		break;
 	};
