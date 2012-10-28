@@ -93,7 +93,7 @@ const idEventDef EV_Player_StartMouseGesture( "startMouseGesture",
 							"A DecideTime of -1 means wait forever until the button is released.",
 					'd', "deadTime", "how long after attack is pressed that mouse control remains dampened by the fraction turnHinderance."),
 		EV_RETURNS_VOID,
-		"*Ishtvan: Start tracking a mouse gesture that started when the key impulse was pressed.\n" \
+		"Start tracking a mouse gesture that started when the key impulse was pressed.\n" \
 		"Discretizes analog mouse movement into a few different gesture possibilities.\n" \
 		"Impulse arg can also be a button, see the UB_* enum in usercmdgen.h.\n" \
 		"For now, only one mouse gesture check at a time.");
