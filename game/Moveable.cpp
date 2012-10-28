@@ -1154,8 +1154,8 @@ idExplodingBarrel
 
 ===============================================================================
 */
-const idEventDef EV_Respawn( "<respawn>" );
-const idEventDef EV_TriggerTargets( "<triggertargets>" );
+const idEventDef EV_Respawn( "<respawn>" , EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_TriggerTargets( "<triggertargets>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idBarrel, idExplodingBarrel )
 	EVENT( EV_Activate,					idExplodingBarrel::Event_Activate )
