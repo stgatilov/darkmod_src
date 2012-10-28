@@ -45,8 +45,8 @@ const idEventDef EV_Light_SetRadiusXYZ( "setRadiusXYZ", EventArgs('f', "x", "", 
 	"Sets the width/length/height of the light bounding box.");
 const idEventDef EV_Light_SetRadius( "setRadius", EventArgs('f', "radius", ""), EV_RETURNS_VOID, "Sets the size of the bounding box, x=y=z=radius.");
 const idEventDef EV_Light_GetRadius( "getRadius", EventArgs(), 'v', "Returns the light radius." );
-const idEventDef EV_Light_On( "On", EventArgs(), EV_RETURNS_VOID, "Turns the light on.");
-const idEventDef EV_Light_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Turns the light off.");
+const idEventDef EV_Light_On( "On", EventArgs(), EV_RETURNS_VOID, "Turns the entity on.");
+const idEventDef EV_Light_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Turns the entity off.");
 const idEventDef EV_Light_FadeOut( "fadeOutLight", EventArgs('f', "time", "in seconds"), EV_RETURNS_VOID, "Turns the light out over the given time in seconds.");
 const idEventDef EV_Light_FadeIn( "fadeInLight", EventArgs('f', "time", "in seconds"), EV_RETURNS_VOID, "Turns the light on over the given time in seconds.");
 

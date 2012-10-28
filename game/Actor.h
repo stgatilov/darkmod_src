@@ -159,6 +159,9 @@ extern const idEventDef AI_GetMeleeLastHitByType;
 extern const idEventDef AI_MeleeBestParry;
 extern const idEventDef AI_MeleeNameForNum;
 
+extern const idEventDef AI_ShowAttachment;
+extern const idEventDef AI_ShowAttachmentInd;
+
 class idDeclParticle;
 
 class idAnimState {

@@ -46,16 +46,16 @@ const char* s_ACTIVE_SCRIPT_NAME = "active";
 **/
 const char* s_DUD_SCRIPT_NAME = "dud";
 
-const idEventDef EV_TDM_GetFinalVel( "getFinalVel", NULL, 'v' );
-const idEventDef EV_TDM_GetFinalAngVel( "getFinalAngVel", NULL, 'v' );
-const idEventDef EV_TDM_GetAxialDir( "getAxialDir", NULL, 'v' );
-const idEventDef EV_TDM_GetProjMass( "getProjMass", NULL, 'f' );
-const idEventDef EV_TDM_GetSurfType( "getSurfType", NULL, 's' );
-const idEventDef EV_TDM_GetSurfNormal( "getSurfNormal", NULL, 'v' );
-const idEventDef EV_TDM_GetStruckEnt( "getStruckEnt", NULL, 'e' );
-const idEventDef EV_TDM_GetIncidenceAngle( "getIncidenceAngle", NULL, 'f' );
-const idEventDef EV_TDM_GetActualStruckEnt( "getActualStruckEnt", NULL, 'e' ); // grayman #837
-const idEventDef EV_TDM_IsVineFriendly( "isVineFriendly", NULL, 'f' ); // grayman #2787
+const idEventDef EV_TDM_GetFinalVel( "getFinalVel", EventArgs(), 'v', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetFinalAngVel( "getFinalAngVel", EventArgs(), 'v', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetAxialDir( "getAxialDir", EventArgs(), 'v', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetProjMass( "getProjMass", EventArgs(), 'f', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetSurfType( "getSurfType", EventArgs(), 's', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetSurfNormal( "getSurfNormal", EventArgs(), 'v', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetStruckEnt( "getStruckEnt", EventArgs(), 'e', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetIncidenceAngle( "getIncidenceAngle", EventArgs(), 'f', "Getter for projectile result variable" );
+const idEventDef EV_TDM_GetActualStruckEnt( "getActualStruckEnt", EventArgs(), 'e', "Getter for projectile result variable" ); // grayman #837
+const idEventDef EV_TDM_IsVineFriendly( "isVineFriendly", EventArgs(), 'f', "Vine-arrow event" ); // grayman #2787
 
 CLASS_DECLARATION( idEntity, CProjectileResult )
 	EVENT( EV_TDM_GetFinalVel,				CProjectileResult::Event_GetFinalVel )

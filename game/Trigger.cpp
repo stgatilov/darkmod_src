@@ -33,8 +33,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_Enable( "enable", NULL );
-const idEventDef EV_Disable( "disable", NULL );
+const idEventDef EV_Enable( "enable", EventArgs(), EV_RETURNS_VOID, "Enables the mover/trigger" );
+const idEventDef EV_Disable( "disable", EventArgs(), EV_RETURNS_VOID, "Disables the mover/trigger" );
 
 CLASS_DECLARATION( idEntity, idTrigger )
 	EVENT( EV_Enable,	idTrigger::Event_Enable )
