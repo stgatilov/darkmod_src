@@ -8263,13 +8263,26 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 ===============================================================================
 */
 
-const idEventDef EV_GetJointHandle( "getJointHandle", "s", 'd' );
-const idEventDef EV_ClearAllJoints( "clearAllJoints" );
-const idEventDef EV_ClearJoint( "clearJoint", "d" );
-const idEventDef EV_SetJointPos( "setJointPos", "ddv" );
-const idEventDef EV_SetJointAngle( "setJointAngle", "ddv" );
-const idEventDef EV_GetJointPos( "getJointPos", "d", 'v' );
-const idEventDef EV_GetJointAngle( "getJointAngle", "d", 'v' );
+const idEventDef EV_GetJointHandle( "getJointHandle", EventArgs('s', "jointname", ""), 'd', 
+	"Looks up the number of the specified joint. Returns INVALID_JOINT if the joint is not found." );
+const idEventDef EV_ClearAllJoints( "clearAllJoints", EventArgs(), EV_RETURNS_VOID, 
+	"Removes any custom transforms on all joints." );
+const idEventDef EV_ClearJoint( "clearJoint", EventArgs('d', "jointnum", ""), EV_RETURNS_VOID, 
+	"Removes any custom transforms on the specified joint." );
+const idEventDef EV_SetJointPos( "setJointPos", 
+	EventArgs('d', "jointnum", "", 
+			  'd', "transform_type", "",
+			  'v', "pos", ""), 
+	EV_RETURNS_VOID,
+	"Modifies the position of the joint based on the transform type.");
+const idEventDef EV_SetJointAngle( "setJointAngle", 
+	EventArgs('d', "jointnum", "", 
+			  'd', "transform_type", "",
+			  'v', "angles", ""), 
+	EV_RETURNS_VOID,
+	"Modifies the orientation of the joint based on the transform type.");
+const idEventDef EV_GetJointPos( "getJointPos", EventArgs('d', "jointnum", ""), 'v', "Returns the position of the joint in world space." );
+const idEventDef EV_GetJointAngle( "getJointAngle", EventArgs('d', "jointnum", ""), 'v', "Returns the angular orientation of the joint in world space." );
 
 CLASS_DECLARATION( idEntity, idAnimatedEntity )
 	EVENT( EV_GetJointHandle,		idAnimatedEntity::Event_GetJointHandle )
