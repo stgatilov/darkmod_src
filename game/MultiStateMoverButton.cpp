@@ -30,8 +30,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // CMultiStateMoverButton
 //===============================================================================
 
-const idEventDef EV_RegisterSelfWithElevator("MSMBRegisterSelfWithElevator", NULL);
-const idEventDef EV_RestoreTargeting("restoreTargeting", "ddd", NULL); // grayman #3029
+const idEventDef EV_RegisterSelfWithElevator("_MSMBRegisterSelfWithElevator", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_RestoreTargeting("_restoreTargeting", 
+	EventArgs('d', "", "", 'd', "", "", 'd', "", ""), EV_RETURNS_VOID, "internal"); // grayman #3029
 
 CLASS_DECLARATION( CFrobButton, CMultiStateMoverButton )
 	EVENT( EV_RegisterSelfWithElevator,		CMultiStateMoverButton::Event_RegisterSelfWithElevator)

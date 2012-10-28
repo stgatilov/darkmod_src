@@ -48,12 +48,13 @@ static const char* StateNames[] =
 };
 
 // Events to be implemented by owner classes
-const idEventDef EV_TDM_Lock_StatusUpdate("TDM_Lock_StatusUpdate", NULL);
-const idEventDef EV_TDM_Lock_OnLockPicked("TDM_Lock_OnLockPicked", NULL);
-const idEventDef EV_TDM_Lock_OnLockStatusChange("TDM_Lock_OnLockStatusChange", "d"); // 1 = locked, 0 = locked
-
+const idEventDef EV_TDM_Lock_StatusUpdate("TDM_Lock_StatusUpdate", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_TDM_Lock_OnLockPicked("TDM_Lock_OnLockPicked", EventArgs(), EV_RETURNS_VOID, "internal");
 // Internal events, no need to expose these to scripts
-const idEventDef EV_TDM_LockpickSoundFinished("TDM_LockpickSoundFinished", "d"); // pass the next state as argument
+const idEventDef EV_TDM_Lock_OnLockStatusChange("_TDM_Lock_OnLockStatusChange", 
+	EventArgs('d', "state", "1 = locked, 0 = locked"), EV_RETURNS_VOID, "internal");
+const idEventDef EV_TDM_LockpickSoundFinished("_TDM_LockpickSoundFinished", 
+	EventArgs('d', "nextState", ""), EV_RETURNS_VOID, "internal"); // pass the next state as argument
 
 CLASS_DECLARATION( idClass, PickableLock )
 	EVENT( EV_TDM_LockpickSoundFinished,	PickableLock::Event_LockpickSoundFinished )
