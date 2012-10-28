@@ -36,16 +36,21 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // CBinaryFrobMover
 //===============================================================================
 
-const idEventDef EV_TDM_FrobMover_Open( "Open", NULL );
-const idEventDef EV_TDM_FrobMover_Close( "Close", NULL );
-const idEventDef EV_TDM_FrobMover_ToggleOpen( "ToggleOpen", NULL );
-const idEventDef EV_TDM_FrobMover_Lock( "Lock", NULL );
-const idEventDef EV_TDM_FrobMover_Unlock( "Unlock", NULL );
-const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", NULL );
-const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", NULL, 'f' );
-const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", NULL, 'f' );
-const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", NULL, 'f' );
-const idEventDef EV_TDM_FrobMover_HandleLockRequest( "HandleLockRequest", NULL ); // used for periodic checks to lock the door once it is fully closed
+const idEventDef EV_TDM_FrobMover_Open( "Open", EventArgs(), EV_RETURNS_VOID, "Opens the frobmover, regardless of its previous state. The mover will not move when it's locked. ");
+const idEventDef EV_TDM_FrobMover_Close( "Close", EventArgs(), EV_RETURNS_VOID, "Closes the frobmover, regardless of its previous state. Mover must be open, otherwise nothing happens.");
+const idEventDef EV_TDM_FrobMover_ToggleOpen( "ToggleOpen", EventArgs(), EV_RETURNS_VOID, 
+	"Toggles the mover state. Closes when fully open, opens when fully closed. If the mover is \"interrupted\" (e.g. when the player frobbed the mover in between), the move direction depends on the state of the internal \"intent_open\" flag. ");
+const idEventDef EV_TDM_FrobMover_Lock( "Lock", EventArgs(), EV_RETURNS_VOID, "Locks the mover. Calls to Open() will not succeed after this call. ");
+const idEventDef EV_TDM_FrobMover_Unlock( "Unlock", EventArgs(), EV_RETURNS_VOID, "Unlocks the mover. Calls to Open() will succeed after this call. Depending on the value of the spawnarg \"open_on_unlock\" the mover might automatically open after this call. ");
+const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", EventArgs(), EV_RETURNS_VOID, 
+	"Toggles the lock state. Unlocked movers will be locked and vice versa.\n" \
+	"The notes above concerning Unlock() still apply if this call unlocks the mover. ");
+const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", EventArgs(), 'f', 
+	"Returns true (nonzero) if the mover is open, which is basically\n" \
+	"the same as \"not closed\". A mover is considered closed when it is at its close position." );
+const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", EventArgs(), 'f', "Returns true (nonzero) if the mover is currently locked." );
+const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", EventArgs(), 'f', "Returns true (nonzero) if this frobmover is pickable." );
+const idEventDef EV_TDM_FrobMover_HandleLockRequest( "_handleLockRequest", EventArgs(), EV_RETURNS_VOID, "internal"); // used for periodic checks to lock the door once it is fully closed
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )

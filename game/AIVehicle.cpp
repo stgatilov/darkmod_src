@@ -33,10 +33,14 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //CAIVehicle
 //===============================================================================
 
-const idEventDef EV_SetController( "setController", "e" );
-const idEventDef EV_ClearController( "clearController" );
-const idEventDef EV_FrobRidable( "frobRidable", "e" );
-const idEventDef EV_GetMoveAnim( "getMoveAnim", NULL, 's' );
+const idEventDef EV_SetController( "setController", EventArgs('e', "playerController", ""), EV_RETURNS_VOID, 
+	"Let a player assume movement control of an AI vehicle\n" \
+	"(may be remote control as in a player on a coach pulled by a horse)");
+const idEventDef EV_ClearController( "clearController", EventArgs(), EV_RETURNS_VOID, 
+	"Need separate clearController because scripting doesn't like passing in $null_entity?\n" \
+	"(greebo: one could remove this function and set the argument type of setController to 'E'.");
+const idEventDef EV_FrobRidable( "frobRidable", EventArgs('e', "playerController", ""), EV_RETURNS_VOID, "Called when a player directly mounts or dismounts a ridable AI." );
+const idEventDef EV_GetMoveAnim( "getMoveAnim", EventArgs(), 's', "Returns the name of the player-requested movement anim for a player controlled AI vehicle" );
 
 CLASS_DECLARATION( idAI, CAIVehicle )
 	EVENT( EV_SetController,	CAIVehicle::Event_SetController )
