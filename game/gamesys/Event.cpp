@@ -128,6 +128,11 @@ void idEventDef::Construct()
 		return;
 	}
 
+	if (idStr::Length(description) == 0)
+	{
+		description = "No description";
+	}
+
 	// make sure the format for the args is valid, calculate the formatspecindex, and the offsets for each arg
 	bits = 0;
 	argsize = 0;

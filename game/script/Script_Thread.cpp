@@ -49,7 +49,7 @@ const idEventDef EV_Thread_PrintLn( "println", EventArgs('s', "text", ""), EV_RE
 const idEventDef EV_Thread_Say( "say", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Multiplayer - Print this line on the network");
 const idEventDef EV_Thread_Assert( "assert", EventArgs('f', "condition", ""), EV_RETURNS_VOID, "Breaks if the condition is zero. (Only works in debug builds.)");
 const idEventDef EV_Thread_Trigger( "trigger", EventArgs('e', "entityToTrigger", ""), EV_RETURNS_VOID, "Triggers the given entity.");
-const idEventDef EV_Thread_SetCvar( "setcvar", EventArgs('s', "name", "", 's', "", "value"), EV_RETURNS_VOID, "Sets a cvar.");
+const idEventDef EV_Thread_SetCvar( "setcvar", EventArgs('s', "name", "", 's', "value", ""), EV_RETURNS_VOID, "Sets a cvar.");
 const idEventDef EV_Thread_GetCvar( "getcvar", EventArgs('s', "name", ""), 's', "Returns the string for a cvar.");
 const idEventDef EV_Thread_Random( "random", EventArgs('f', "range", ""), 'f', "Returns a random value X where 0 <= X < range.");
 const idEventDef EV_Thread_GetTime( "getTime", EventArgs(), 'f', "Returns the current game time in seconds." );

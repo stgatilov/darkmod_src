@@ -2248,10 +2248,7 @@ namespace
 		
 		const EventArgs& args = ev.GetArgs();
 
-		if (!args.empty())
-		{
-			out += "\n * ";
-		}
+		idStr argDesc;
 
 		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
 		{
@@ -2264,7 +2261,13 @@ namespace
 			idStr desc(i->desc);
 			desc.Replace("\n", "\n * ");
 
-			out += va("\n * @%s: %s", i->name, desc.c_str());
+			argDesc += va("\n * @%s: %s", i->name, desc.c_str());
+		}
+
+		if (!argDesc.IsEmpty())
+		{
+			out += "\n * ";
+			out += argDesc;
 		}
 
 		out += "\n */";
