@@ -38,9 +38,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 const idEventDef EV_Weapon_Clear( "<clear>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_Weapon_GetOwner( "getOwner", EventArgs(), 'e', "Returns the owning entity" );
 const idEventDef EV_Weapon_Next( "nextWeapon", EventArgs(), EV_RETURNS_VOID, "" );
-const idEventDef EV_Weapon_State( "weaponState", EventArgs('s', "stateFunction", "", 'd', "blendFrames", ""), EV_RETURNS_VOID, "" );
+const idEventDef EV_Weapon_State( "weaponState", EventArgs('s', "stateFunction", "", 'd', "blendFrames", ""), EV_RETURNS_VOID, "no description" );
 const idEventDef EV_Weapon_UseAmmo( "useAmmo", EventArgs('d', "amount", ""), EV_RETURNS_VOID, "Eats the specified amount of ammo" );
-const idEventDef EV_Weapon_AddToClip( "addToClip", EventArgs('d', "ammount", ""), EV_RETURNS_VOID, "" );
+const idEventDef EV_Weapon_AddToClip( "addToClip", EventArgs('d', "amount", ""), EV_RETURNS_VOID, "" );
 const idEventDef EV_Weapon_AmmoInClip( "ammoInClip", EventArgs(), 'f', "" );
 const idEventDef EV_Weapon_AmmoAvailable( "ammoAvailable", EventArgs(), 'f', "Number of shots left in inventory" );
 const idEventDef EV_Weapon_TotalAmmoCount( "totalAmmoCount", EventArgs(), 'f', 

@@ -2255,6 +2255,11 @@ namespace
 
 		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
 		{
+			if (idStr::Length(i->desc) == 0)
+			{
+				continue;
+			}
+
 			// Format line breaks in the description
 			idStr desc(i->desc);
 			desc.Replace("\n", "\n * ");
