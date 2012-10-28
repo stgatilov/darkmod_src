@@ -2238,7 +2238,7 @@ namespace
 		return out;
 	}
 
-	idStr GetEventDocumentation(const idEventDef& ev)
+	idStr GetEventDocumentationD3Script(const idEventDef& ev)
 	{
 		idStr out = "/**\n";
 		out += " * ";
@@ -2283,6 +2283,11 @@ namespace
 		out.Write(str.c_str(), str.Length());
 	}
 
+	inline void Writeln(idFile& out, const idStr& str)
+	{
+		out.Write((str + "\n").c_str(), str.Length() + 1);
+	}
+
 	inline bool eventIsPublic(const idEventDef& ev)
 	{
 		const char* eventName = ev.GetName();
@@ -2309,7 +2314,7 @@ namespace
 		return true;
 	}
 
-	inline void WriteD3ScriptDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
+	void WriteD3ScriptDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
 	{
 		Write(out, "#ifndef __TDM_EVENTS__\n");
 		Write(out, "#define __TDM_EVENTS__\n\n");
@@ -2335,7 +2340,7 @@ namespace
 			idTypeDef* returnType = idCompiler::GetTypeForEventArg(ev.GetReturnType());
 
 			idStr signature = GetEventArgumentString(ev);
-			idStr documentation = GetEventDocumentation(ev);
+			idStr documentation = GetEventDocumentationD3Script(ev);
 			idStr outStr = va("\n%s\nscriptEvent %s\t\t%s(%s);\n", 
 				documentation.c_str(), returnType->Name(), ev.GetName(), signature.c_str());
 
@@ -2346,6 +2351,82 @@ namespace
 		Write(out, "#endif\n");
 		Write(out, "\n");
 		Write(out, "\n\n#endif\n");
+	}
+
+	idStr GetEventDocumentationMediawiki(const idEventDef& ev)
+	{
+		idStr out = ":";
+
+		// Format line breaks in the description
+		idStr desc(ev.GetDescription());
+		desc.Replace("\n", " "); // no artificial line breaks
+
+		out += desc;
+		out += "\n";
+		
+		const EventArgs& args = ev.GetArgs();
+
+		idStr argDesc;
+
+		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
+		{
+			if (idStr::Length(i->desc) == 0)
+			{
+				continue;
+			}
+
+			// Format line breaks in the description
+			idStr desc(i->desc);
+			desc.Replace("\n", " "); // no artificial line breaks
+
+			argDesc += va("::''%s'': %s\n", i->name, desc.c_str());
+		}
+
+		if (!argDesc.IsEmpty())
+		{
+			//out += "\n:";
+			out += argDesc;
+		}
+
+		return out;
+	}
+
+	void WriteMediaWikiDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
+	{
+		Writeln(out, "This page has been generated automatically by the tdm_gen_script_event_doc console command.");
+		Writeln(out, "Last update: " + dateStr);
+		Writeln(out, "");
+
+		// Table of contents, but don't show level 4 headlines
+		Writeln(out, "<div class=\"toclimit-3\">");
+		Writeln(out, "__TOC__");
+		Writeln(out, "</div>");
+
+		Writeln(out, "= TDM Script Event Reference =");
+		Writeln(out, "");
+		Writeln(out, "== Alphabetic List ==");
+
+		for (Eventmap::const_iterator i = events.begin(); i != events.end(); ++i)
+		{
+			const idEventDef& ev = *i->second;
+
+			if (!eventIsPublic(ev)) continue;
+
+			idTypeDef* returnType = idCompiler::GetTypeForEventArg(ev.GetReturnType());
+
+			idStr signature = GetEventArgumentString(ev);
+			idStr documentation = GetEventDocumentationMediawiki(ev);
+
+			idStr outStr = va("==== scriptEvent %s '''%s'''(%s); ====\n", 
+				returnType->Name(), ev.GetName(), signature.c_str());
+
+			Writeln(out, outStr);
+			Writeln(out, documentation);
+		}
+
+		// TODO: Overview grouped by idClass
+
+		Writeln(out, "[[Category:Scripting]]");
 	}
 }
 
@@ -2370,6 +2451,9 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 	{
 	case FORMAT_D3_SCRIPT:
 		WriteD3ScriptDoc(eventMap, outputFile, dateStr);
+		break;
+	case FORMAT_MEDIAWIKI:
+		WriteMediaWikiDoc(eventMap, outputFile, dateStr);
 		break;
 	};
 
