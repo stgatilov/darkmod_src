@@ -43,7 +43,14 @@ const idEventDef EV_Thread_Wait( "wait", EventArgs('f', "time", ""), EV_RETURNS_
 const idEventDef EV_Thread_WaitFrame( "waitFrame", EventArgs(), EV_RETURNS_VOID, "Suspends execution of current thread for one game frame." );
 const idEventDef EV_Thread_WaitFor( "waitFor", EventArgs('e', "mover", ""), EV_RETURNS_VOID, "Waits for the given entity to complete it's move.");
 const idEventDef EV_Thread_WaitForThread( "waitForThread", EventArgs('d', "threadNumber", ""), EV_RETURNS_VOID, "Waits for the given thread to terminate.");
-const idEventDef EV_Thread_WaitForRender( "waitForRender", EventArgs('e', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_Thread_WaitForRender( "waitForRender", EventArgs('e', "e", ""), EV_RETURNS_VOID, 
+	"Suspends the current thread until 'e' might have been rendered.\n" \
+	"It's event based, so it doesn't waste CPU repeatedly checking inPVS().\n" \
+	"e.inPVS() will very likely be true when the thread resumes.\n" \
+	"If e.inPVS() is true, calling waitForRender() will probably just wait\n" \
+	"a frame, unless D3 can figure out that the entity doesn't need to be rendered.\n" \
+	"Optimizations regarding shadowcasting lights may not apply to this function -\n" \
+	"it is based purely off whether or not the entity's bounding box is visible.");
 const idEventDef EV_Thread_Print( "print", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Prints the given string to the console.");
 const idEventDef EV_Thread_PrintLn( "println", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Prints the given line to the console.");
 const idEventDef EV_Thread_Say( "say", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Multiplayer - Print this line on the network");

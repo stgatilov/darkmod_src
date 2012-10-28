@@ -105,7 +105,7 @@ const idEventDef EV_SetModel( "setModel", EventArgs('s', "modelName", ""), EV_RE
 const idEventDef EV_SetSkin( "setSkin", EventArgs('s', "skinName", ""), EV_RETURNS_VOID, "Sets the skin this entity uses.  Set to \"\" to turn off the skin.");
 
 const idEventDef EV_GetWorldOrigin( "getWorldOrigin", EventArgs(), 'v', "Returns the current world-space position of this entity (regardless of any bind parent)." );
-const idEventDef EV_SetWorldOrigin( "setWorldOrigin", EventArgs('v', "", ""), EV_RETURNS_VOID, "Sets the current position of this entity (regardless of any bind parent).");
+const idEventDef EV_SetWorldOrigin( "setWorldOrigin", EventArgs('v', "origin", ""), EV_RETURNS_VOID, "Sets the current position of this entity (regardless of any bind parent).");
 const idEventDef EV_GetOrigin( "getOrigin", EventArgs(), 'v', "Returns the current position of this entity (relative to bind parent if any)." );
 const idEventDef EV_SetOrigin( "setOrigin", EventArgs('v', "origin", "the new origin"), EV_RETURNS_VOID, "Sets the current position of this entity (relative to it's bind parent if any)");
 const idEventDef EV_GetAngles( "getAngles", EventArgs(), 'v', "Returns the current orientation of this entity (relative to bind parent if any)." );
@@ -204,7 +204,10 @@ const idEventDef EV_HasFunction( "hasFunction", EventArgs('s', "functionName", "
 const idEventDef EV_CallFunction( "callFunction", EventArgs('s', "functionName", ""), EV_RETURNS_VOID, 
 	"Calls a function on an entity's script object. See also\n" \
 	"scripts/tdm_events.script for callGlobalFunction.");
-const idEventDef EV_CallGlobalFunction( "callGlobalFunction", EventArgs('s', "", "", 'E', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_CallGlobalFunction( "callGlobalFunction", EventArgs('s', "functionName", "", 'E', "other", ""), EV_RETURNS_VOID, 
+	"calls a global function and passes the other entity along as the first argument\n" \
+	"calls the function in a new thread, so it continues executing in the current\n" \
+	"thread right away (unlike entity.callFunction( \"blah\"))");
 const idEventDef EV_SetNeverDormant( "setNeverDormant", EventArgs('d', "enable", "1 = enable, 0 = disable"), EV_RETURNS_VOID, "enables or prevents an entity from going dormant");
 
 const idEventDef EV_ExtinguishLights("extinguishLights", EventArgs(), EV_RETURNS_VOID, "Extinguishes all lights (i.e. the <self> entity plus all bound lights)");

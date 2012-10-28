@@ -1841,7 +1841,7 @@ idAFEntity_Gibbable
 ===============================================================================
 */
 
-const idEventDef EV_Gib( "gib", EventArgs('s', "", ""), EV_RETURNS_VOID, "" );
+const idEventDef EV_Gib( "gib", EventArgs('s', "damageDefName", ""), EV_RETURNS_VOID, "" );
 const idEventDef EV_Gibbed( "<gibbed>", EventArgs(), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idAFEntity_Base, idAFEntity_Gibbable )

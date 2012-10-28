@@ -235,7 +235,7 @@ const idEventDef AI_AnimTurn( "animTurn", EventArgs('f', "angle", "Pass in the m
 	EV_RETURNS_VOID, "Enable/disable animation controlled turning.");
 const idEventDef AI_AllowHiddenMovement( "allowHiddenMovement", EventArgs('d', "enable", ""), EV_RETURNS_VOID, 
 	"Normally, when hidden, monsters do not run physics. This enables physics when hidden.");
-const idEventDef AI_TriggerParticles( "triggerParticles", EventArgs('s', "", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_TriggerParticles( "triggerParticles", EventArgs('s', "jointName", ""), EV_RETURNS_VOID, "no description");
 const idEventDef AI_FindActorsInBounds( "findActorsInBounds", EventArgs('v', "mins", "", 'v', "maxs", ""), 'e', 
 	"Returns an entity within the bounds specified");
 const idEventDef AI_CanReachPosition( "canReachPosition", EventArgs('v', "pos", ""), 'd', 
@@ -246,7 +246,7 @@ const idEventDef AI_CanReachEnemy( "canReachEnemy", EventArgs(), 'd',
 	"Returns true if character can walk to enemy's position. For walking monsters, enemy should be near the floor.");
 const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", EventArgs('e', "ent", ""), 'v', 
 	"Returns the position of the entity within the AAS if possible, otherwise just the entity position.");
-const idEventDef AI_ReEvaluateArea("reEvaluateArea", EventArgs('d', "", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_ReEvaluateArea("_reEvaluateArea", EventArgs('d', "areanum", ""), EV_RETURNS_VOID, "internal");
 
 // TDM
 const idEventDef AI_PlayAndLipSync( "playAndLipSync", EventArgs('s', "soundName", "", 's', "animName", ""), 'd', 
@@ -279,7 +279,7 @@ const idEventDef AI_GetTactEnt( "getTactEnt", EventArgs(), 'e', "ai sense of tou
 const idEventDef AI_SetAcuity( "setAcuity", EventArgs('s', "type", "", 'f', "val", ""), EV_RETURNS_VOID, "ai generalized alerts");
 const idEventDef AI_GetAcuity( "getAcuity", EventArgs('s', "type", ""), 'f', "ai generalized alerts");
 const idEventDef AI_GetAudThresh( "getAudThresh", EventArgs(), 'f', "no description");
-const idEventDef AI_SetAudThresh( "setAudThresh", EventArgs('f', "", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_SetAudThresh( "setAudThresh", EventArgs('f', "val", ""), EV_RETURNS_VOID, "no description");
 const idEventDef AI_GetAlertActor( "getAlertActor", EventArgs(), 'e', "Get the actor that alerted the AI in this frame.");
 const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", 
 	EventArgs('f', "frac", "the fraction of the alert below which they should ignore alerts during the grace period.", 
