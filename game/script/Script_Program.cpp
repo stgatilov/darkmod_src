@@ -2391,6 +2391,49 @@ namespace
 		return out;
 	}
 
+	idList<idTypeInfo*> GetRespondingTypes(const idEventDef& ev)
+	{
+		idList<idTypeInfo*> tempList;
+
+		int numTypes = idClass::GetNumTypes();
+
+		for (int i = 0; i < numTypes; ++i)
+		{
+			idTypeInfo* info = idClass::GetType(i);
+
+			if (info->RespondsTo(ev))
+			{
+				tempList.Append(info);
+			}
+		}
+
+		idList<idTypeInfo*> finalList;
+
+		// Remove subclasses from the list, only keep top-level nodes
+		for (int i = 0; i < tempList.Num(); ++i)
+		{
+			bool isSubclass = false;
+
+			for (int j = 0; j < tempList.Num(); ++j)
+			{
+				if (i == j) continue;
+
+				if (tempList[i]->IsType(*tempList[j]))
+				{
+					isSubclass = true;
+					break;
+				}
+			}
+
+			if (!isSubclass)
+			{
+				finalList.Append(tempList[i]);
+			}
+		}
+
+		return finalList;
+	}
+
 	void WriteMediaWikiDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
 	{
 		Writeln(out, "This page has been generated automatically by the tdm_gen_script_event_doc console command.");
@@ -2422,9 +2465,23 @@ namespace
 
 			Writeln(out, outStr);
 			Writeln(out, documentation);
-		}
 
-		// TODO: Overview grouped by idClass
+			// Get type response info
+			idList<idTypeInfo*> list = GetRespondingTypes(ev);
+
+			idStr typeInfoStr;
+
+			for (int t = 0; t < list.Num(); ++t)
+			{
+				typeInfoStr += (typeInfoStr.IsEmpty()) ? "" : ", ";
+				typeInfoStr += "''";
+				typeInfoStr += list[t]->classname;
+				typeInfoStr += "''";
+			}
+
+			typeInfoStr = ":Types responding to this event: " + typeInfoStr;
+			Writeln(out, typeInfoStr);
+		}
 
 		Writeln(out, "[[Category:Scripting]]");
 	}
