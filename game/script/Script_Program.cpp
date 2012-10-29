@@ -2434,6 +2434,11 @@ namespace
 		return finalList;
 	}
 
+	int SortTypesByClassname(idTypeInfo* const* a, idTypeInfo* const* b)
+	{
+		return idStr::Cmp((*a)->classname, (*b)->classname);
+	}
+
 	void WriteMediaWikiDoc(const Eventmap& events, idFile& out, const idStr& dateStr)
 	{
 		Writeln(out, "This page has been generated automatically by the tdm_gen_script_event_doc console command.");
@@ -2468,6 +2473,7 @@ namespace
 
 			// Get type response info
 			idList<idTypeInfo*> list = GetRespondingTypes(ev);
+			list.Sort(SortTypesByClassname);
 
 			idStr typeInfoStr;
 
