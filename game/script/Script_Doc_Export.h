@@ -75,4 +75,16 @@ private:
 	idStr GetEventDoc(const idEventDef* ev, bool includeSpawnclassInfo);
 };
 
+// XML exporter
+class ScriptEventDocGeneratorXml :
+	public ScriptEventDocGenerator
+{
+public:
+	void WriteDoc(idFile& outputFile);
+
+private:
+	idStr GetEventDescription(const idEventDef& ev);
+	idStr GetEventDoc(const idEventDef* ev, bool includeSpawnclassInfo);
+};
+
 #endif

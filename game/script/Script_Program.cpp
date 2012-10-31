@@ -2219,6 +2219,12 @@ void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format
 			generator.WriteDoc(outputFile);
 		}
 		break;
+	case FORMAT_XML:
+		{
+			ScriptEventDocGeneratorXml generator;
+			generator.WriteDoc(outputFile);
+		}
+		break;
 	};
 
 	gameLocal.Printf("Documentation written to: %s\n", outputFile.GetFullPath());
