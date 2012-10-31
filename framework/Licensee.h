@@ -29,14 +29,14 @@
 
 // greebo: Defines the darkmod release version
 #define TDM_VERSION_MAJOR	1
-#define TDM_VERSION_MINOR	8
+#define TDM_VERSION_MINOR	9
 // tels: This value compiled into both .exe and .dll (.x86 and .so on linux), and after loading
 //	 the dll, the dll compares its value with this value. If both mismatch, the dll outputs
 //	 and error and exits out. This ensures that the .exe does not load "outdated" dlls.
 //	 Unfortunately, the check is done in the dll and the messsage comes from there, too.
 //	 Game_local.cpp around line 150 is where it is done.
 #define GAME_API_VERSION	TDM_VERSION_MAJOR * 100 + TDM_VERSION_MINOR	// e.g. 108
-#define ENGINE_VERSION		"TDM 1.08"	// printed in console
+#define ENGINE_VERSION		"TDM 1.09"	// printed in console
 
 // paths
 #define	CD_BASEDIR		"Doom"
