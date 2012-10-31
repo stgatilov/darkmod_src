@@ -345,13 +345,13 @@ void ScriptEventDocGeneratorMediaWiki::WriteDoc(idFile& out)
 
 		Write(out, GetEventDoc(ev, true));
 
-		idList<idTypeInfo*> list = GetRespondingTypes(*ev);
-		list.Sort(SortTypesByClassname);
+		idList<idTypeInfo*> respTypeList = GetRespondingTypes(*ev);
+		respTypeList.Sort(SortTypesByClassname);
 			
 		// Collect info for each spawnclass
-		for (int t = 0; t < list.Num(); ++t)
+		for (int t = 0; t < respTypeList.Num(); ++t)
 		{
-			idTypeInfo* type = list[t];
+			idTypeInfo* type = respTypeList[t];
 			SpawnclassEventMap::iterator typeIter = spawnClassEventMap.find(type);
 
 			// Put the event in the class info map
@@ -422,6 +422,7 @@ void ScriptEventDocGeneratorXml::WriteDoc(idFile& out)
 
 		evDescNode.append_attribute("value").set_value(desc.c_str());
 
+		// Arguments
 		static const char* gen = "abcdefghijklmnopqrstuvwxyz";
 		int g = 0;
 
@@ -442,10 +443,19 @@ void ScriptEventDocGeneratorXml::WriteDoc(idFile& out)
 			argNode.append_attribute("description").set_value(desc.c_str());
 		}
 
-		idList<idTypeInfo*> list = GetRespondingTypes(*ev);
-		list.Sort(SortTypesByClassname);
+		idList<idTypeInfo*> respTypeList = GetRespondingTypes(*ev);
+		respTypeList.Sort(SortTypesByClassname);
 
-		// TODO
+		// Responding Events
+		pugi::xml_node evRespTypesNode = eventNode.append_child("respondingTypes");
+
+		for (int t = 0; t < respTypeList.Num(); ++t)
+		{
+			idTypeInfo* type = respTypeList[t];
+
+			pugi::xml_node respTypeNode = evRespTypesNode.append_child("respondingType");
+			respTypeNode.append_attribute("spawnclass").set_value(type->classname);
+		}
 	}
 
 	std::stringstream stream;
