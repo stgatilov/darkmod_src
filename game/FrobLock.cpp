@@ -28,12 +28,13 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Inventory/InventoryItem.h"
 #include "Inventory/Category.h"
 
-const idEventDef EV_TDM_FrobLock_TriggerTargets("EV_TDM_FrobLock_TriggerTargets", NULL); // triggers general targets
-const idEventDef EV_TDM_FrobLock_TriggerLockTargets("EV_TDM_FrobLock_TriggerLockTargets", NULL); // triggers lock targets
-const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("EV_TDM_FrobLock_TriggerUnlockTargets", NULL); // triggers unlock targets
-const idEventDef EV_TDM_FrobLock_ClearPlayerImmobilization("EV_TDM_FrobLock_ClearPlayerImmobilization", "e"); // allows player to handle weapons again
+const idEventDef EV_TDM_FrobLock_TriggerTargets("_EV_TDM_FrobLock_TriggerTargets", EventArgs(), EV_RETURNS_VOID, "internal"); // triggers general targets
+const idEventDef EV_TDM_FrobLock_TriggerLockTargets("_EV_TDM_FrobLock_TriggerLockTargets", EventArgs(), EV_RETURNS_VOID, "internal"); // triggers lock targets
+const idEventDef EV_TDM_FrobLock_TriggerUnlockTargets("_EV_TDM_FrobLock_TriggerUnlockTargets", EventArgs(), EV_RETURNS_VOID, "internal"); // triggers unlock targets
+const idEventDef EV_TDM_FrobLock_ClearPlayerImmobilization("_EV_TDM_FrobLock_ClearPlayerImmobilization", 
+	EventArgs('e', "", ""), EV_RETURNS_VOID, "internal"); // allows player to handle weapons again
 
-const idEventDef EV_TDM_FrobLock_Open("Open", NULL); // attempts to open the lock
+const idEventDef EV_TDM_FrobLock_Open("Open", EventArgs(), EV_RETURNS_VOID, ""); // attempts to open the lock
 
 CLASS_DECLARATION( idStaticEntity, CFrobLock )
 	EVENT( EV_PostSpawn,							CFrobLock::PostSpawn )

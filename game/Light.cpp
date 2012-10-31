@@ -35,26 +35,29 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_Light_SetShader( "setShader", "s" );
-const idEventDef EV_Light_GetLightParm( "getLightParm", "d", 'f' );
-const idEventDef EV_Light_SetLightParm( "setLightParm", "df" );
-const idEventDef EV_Light_SetLightParms( "setLightParms", "ffff" );
-const idEventDef EV_Light_SetRadiusXYZ( "setRadiusXYZ", "fff" );
-const idEventDef EV_Light_SetRadius( "setRadius", "f" );
-const idEventDef EV_Light_GetRadius( "getRadius", NULL, 'v' );
-const idEventDef EV_Light_On( "On", NULL );
-const idEventDef EV_Light_Off( "Off", NULL );
-const idEventDef EV_Light_FadeOut( "fadeOutLight", "f" );
-const idEventDef EV_Light_FadeIn( "fadeInLight", "f" );
+const idEventDef EV_Light_SetShader( "setShader", EventArgs('s', "shader", ""), EV_RETURNS_VOID, "Sets the shader to be used for the light.");
+const idEventDef EV_Light_GetLightParm( "getLightParm", EventArgs('d', "parmNum", ""), 'f', "Gets a shader parameter." );
+const idEventDef EV_Light_SetLightParm( "setLightParm", EventArgs('d', "parmNum", "", 'f', "value", ""), EV_RETURNS_VOID, "Sets a shader parameter.");
+const idEventDef EV_Light_SetLightParms( "setLightParms", 
+	EventArgs('f', "parm0", "", 'f', "parm1", "", 'f', "parm2", "", 'f', "parm3", ""), EV_RETURNS_VOID, 
+	"Sets the red/green/blue/alpha shader parms on the light and the model.");
+const idEventDef EV_Light_SetRadiusXYZ( "setRadiusXYZ", EventArgs('f', "x", "", 'f', "y", "", 'f', "z", ""), EV_RETURNS_VOID, 
+	"Sets the width/length/height of the light bounding box.");
+const idEventDef EV_Light_SetRadius( "setRadius", EventArgs('f', "radius", ""), EV_RETURNS_VOID, "Sets the size of the bounding box, x=y=z=radius.");
+const idEventDef EV_Light_GetRadius( "getRadius", EventArgs(), 'v', "Returns the light radius." );
+const idEventDef EV_Light_On( "On", EventArgs(), EV_RETURNS_VOID, "Turns the entity on.");
+const idEventDef EV_Light_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Turns the entity off.");
+const idEventDef EV_Light_FadeOut( "fadeOutLight", EventArgs('f', "time", "in seconds"), EV_RETURNS_VOID, "Turns the light out over the given time in seconds.");
+const idEventDef EV_Light_FadeIn( "fadeInLight", EventArgs('f', "time", "in seconds"), EV_RETURNS_VOID, "Turns the light on over the given time in seconds.");
 
 // TDM Additions:
-const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", NULL, 'v' );
-const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", "v" );
-const idEventDef EV_Light_GetLightLevel ("getLightLevel", NULL, 'f');
-const idEventDef EV_Light_AddToLAS("addToLAS", NULL);
-const idEventDef EV_Light_FadeToLight( "fadeToLight", "vf" );
-const idEventDef EV_Smoking("smoking", "d");
-const idEventDef EV_SetStartedOff("setStartedOff", NULL); // grayman #2905
+const idEventDef EV_Light_GetLightOrigin( "getLightOrigin", EventArgs(), 'v', "Get the light origin (independent of its visual model)" );
+const idEventDef EV_Light_SetLightOrigin( "setLightOrigin", EventArgs('v', "pos", ""), EV_RETURNS_VOID, "Set origin of lights independent of model origin");
+const idEventDef EV_Light_GetLightLevel ("getLightLevel", EventArgs(), 'f', "Get level (intensity) of a light, <= 0.0 indicates it is off");
+const idEventDef EV_Light_AddToLAS("_addToLAS", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_Light_FadeToLight( "fadeToLight", EventArgs('v', "color", "", 'f', "time", ""), EV_RETURNS_VOID, "Fades the light to the given color over a given time." );
+const idEventDef EV_Smoking("smoking", EventArgs('d', "state", "1 = smoking, 0 = not smoking"), EV_RETURNS_VOID, "flame is now smoking (1), or not (0)");
+const idEventDef EV_SetStartedOff("setStartedOff", EventArgs(), EV_RETURNS_VOID, "no description"); // grayman #2905
 
 
 CLASS_DECLARATION( idEntity, idLight )

@@ -27,8 +27,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Objectives/MissionData.h"
 #include "StimResponse/StimResponseCollection.h"
 
-const idEventDef EV_UpdateSoundLoss( "updateSoundLoss", NULL );
-const idEventDef EV_DampenSound( "dampenSound", "d" );
+const idEventDef EV_UpdateSoundLoss( "_updateSoundLoss", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_DampenSound( "dampenSound", EventArgs('d', "dampen", "1 = dampened, 0 = not dampened"), EV_RETURNS_VOID, 
+	"Toggle whether the shattering sound is dampened on the window,\n" \
+	"e.g., when covered by moss." );
 
 CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_Activate, idBrittleFracture::Event_Activate )

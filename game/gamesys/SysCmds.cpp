@@ -180,6 +180,46 @@ void Cmd_EndMission_f(const idCmdArgs& args)
 	}
 }
 
+void Cmd_GenScriptEventDoc_f(const idCmdArgs& args)
+{
+	if (args.Argc() != 3)
+	{
+		gameLocal.Printf("usage: tdm_gen_script_event_doc <filename> <format>\n");
+		gameLocal.Printf("   with format being one of the following: d3script, xml, mediawiki\n");
+		return;
+	}
+
+	idStr formatStr = args.Argv(2);
+	formatStr.ToLower();
+	
+	idProgram::DocFileFormat format = idProgram::FORMAT_D3_SCRIPT;
+
+	if (formatStr == "xml")
+	{
+		format = idProgram::FORMAT_XML;
+	}
+	else if (formatStr == "mediawiki")
+	{
+		format = idProgram::FORMAT_MEDIAWIKI;
+	}
+	else if (formatStr == "d3script")
+	{
+		format = idProgram::FORMAT_D3_SCRIPT;
+	}
+	else
+	{
+		gameLocal.Warning( "Format must be one of the following: d3script, xml, mediawiki\n");
+		return;
+	}
+
+	idFile* file = fileSystem->OpenFileWrite(args.Argv(1));
+
+	gameLocal.program.WriteScriptEventDocFile(*file, format);
+
+	file->Flush();
+	fileSystem->CloseFile(file);
+}
+
 /*
 ==================
 Cmd_AttachmentOffset_f
@@ -3712,6 +3752,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 
 	cmdSystem->AddCommand( "tdm_end_mission", Cmd_EndMission_f, CMD_FL_GAME, "Ends this mission and proceeds to the next.");
 
+	cmdSystem->AddCommand( "tdm_gen_script_event_doc", Cmd_GenScriptEventDoc_f, CMD_FL_GAME, "Generates a script event doc file in a certain format.");
 
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
 	cmdSystem->AddCommand( "exportmodels",			Cmd_ExportModels_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"exports models", ArgCompletion_DefFile );

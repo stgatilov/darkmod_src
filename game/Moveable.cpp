@@ -34,10 +34,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_BecomeNonSolid( "becomeNonSolid" );
-const idEventDef EV_SetOwnerFromSpawnArgs( "<setOwnerFromSpawnArgs>" );
-const idEventDef EV_IsAtRest( "isAtRest", NULL, 'd' );
-const idEventDef EV_EnableDamage( "enableDamage", "f" );
+const idEventDef EV_BecomeNonSolid( "becomeNonSolid", EventArgs(), EV_RETURNS_VOID, "Makes the moveable non-solid for other entities." );
+const idEventDef EV_SetOwnerFromSpawnArgs( "<setOwnerFromSpawnArgs>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_IsAtRest( "isAtRest", EventArgs(), 'd', "Returns true if object is not moving" );
+const idEventDef EV_EnableDamage( "enableDamage", EventArgs('f', "enable", ""), EV_RETURNS_VOID, "enable/disable damage" );
 
 CLASS_DECLARATION( idEntity, idMoveable )
 	EVENT( EV_Activate,					idMoveable::Event_Activate )
@@ -1154,8 +1154,8 @@ idExplodingBarrel
 
 ===============================================================================
 */
-const idEventDef EV_Respawn( "<respawn>" );
-const idEventDef EV_TriggerTargets( "<triggertargets>" );
+const idEventDef EV_Respawn( "<respawn>" , EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_TriggerTargets( "<triggertargets>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idBarrel, idExplodingBarrel )
 	EVENT( EV_Activate,					idExplodingBarrel::Event_Activate )

@@ -670,10 +670,10 @@ idTarget_SetInfluence
 ===============================================================================
 */
 
-const idEventDef EV_RestoreInfluence( "<RestoreInfluece>" );
-const idEventDef EV_GatherEntities( "<GatherEntities>" );
-const idEventDef EV_Flash( "<Flash>", "fd" );
-const idEventDef EV_ClearFlash( "<ClearFlash>", "f" );
+const idEventDef EV_RestoreInfluence( "<RestoreInfluece>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_GatherEntities( "<GatherEntities>", EventArgs(), EV_RETURNS_VOID, "internal"  );
+const idEventDef EV_Flash( "<Flash>", EventArgs('f', "", "", 'd', "", ""), EV_RETURNS_VOID, "internal");
+const idEventDef EV_ClearFlash( "<ClearFlash>", EventArgs('f', "", ""), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idTarget, idTarget_SetInfluence )
 	EVENT( EV_Activate,	idTarget_SetInfluence::Event_Activate )
@@ -1639,7 +1639,7 @@ idTarget_FadeSoundClass
 ===============================================================================
 */
 
-const idEventDef EV_RestoreVolume( "<RestoreVolume>" );
+const idEventDef EV_RestoreVolume( "<RestoreVolume>", EventArgs(), EV_RETURNS_VOID, "internal" );
 CLASS_DECLARATION( idTarget, idTarget_FadeSoundClass )
 EVENT( EV_Activate,	idTarget_FadeSoundClass::Event_Activate )
 EVENT( EV_RestoreVolume, idTarget_FadeSoundClass::Event_RestoreVolume )

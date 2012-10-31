@@ -69,7 +69,7 @@ void idSpawnableEntity::Spawn() {
 ===============================================================================
 */
 
-const idEventDef EV_TeleportStage( "<TeleportStage>", "e" );
+const idEventDef EV_TeleportStage( "<TeleportStage>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idEntity, idPlayerStart )
 	EVENT( EV_Activate,			idPlayerStart::Event_TeleportPlayer )
@@ -507,7 +507,7 @@ void tdmPathFlee::Spawn( void ) {
 ===============================================================================
 */
 
-const idEventDef EV_RestoreDamagable( "<RestoreDamagable>" );
+const idEventDef EV_RestoreDamagable( "<RestoreDamagable>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idEntity, idDamagable )
 	EVENT( EV_Activate,			idDamagable::Event_BecomeBroken )
@@ -843,7 +843,7 @@ void idSpring::Spawn( void ) {
 ===============================================================================
 */
 
-const idEventDef EV_Toggle( "Toggle", NULL );
+const idEventDef EV_Toggle( "Toggle", EventArgs(), EV_RETURNS_VOID, "Turns the forcefield on and off." );
 
 CLASS_DECLARATION( idEntity, idForceField )
 	EVENT( EV_Activate,		idForceField::Event_Activate )
@@ -997,11 +997,19 @@ void idForceField::Event_FindTargets( void ) {
 ===============================================================================
 */
 
-const idEventDef EV_Animated_Start( "<start>" );
-const idEventDef EV_LaunchMissiles( "launchMissiles", "ssssdf" );
-const idEventDef EV_LaunchMissilesUpdate( "<launchMissiles>", "dddd" );
-const idEventDef EV_AnimDone( "<AnimDone>", "d" );
-const idEventDef EV_StartRagdoll( "startRagdoll" );
+const idEventDef EV_Animated_Start( "<start>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_LaunchMissiles( "launchMissiles", 
+	EventArgs('s', "projectilename", "",
+			  's', "sound", "",
+			  's', "launchbone", "",
+			  's', "targetbone", "",
+			  'd', "numshots", "",
+			  'f', "framedelay", ""),
+	EV_RETURNS_VOID, 
+	"Launches a projectile.");
+const idEventDef EV_LaunchMissilesUpdate( "<launchMissiles>", EventArgs('d', "", "", 'd', "", "", 'd', "", "", 'd', "", ""), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_AnimDone( "<AnimDone>", EventArgs('d', "", ""), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_StartRagdoll( "startRagdoll", EventArgs(), EV_RETURNS_VOID, "Switches to a ragdoll taking over the animation." );
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idAnimated )
 	EVENT( EV_Activate,				idAnimated::Event_Activate )
@@ -2010,7 +2018,7 @@ idLocationSeparatorEntity
 ===============================================================================
 */
 
-const idEventDef EV_GetPortalHandle( "getPortalHandle", NULL, 'f' );
+const idEventDef EV_GetPortalHandle( "getPortalHandle", EventArgs(), 'f', "Returns the portal handle." );
 
 CLASS_DECLARATION( idEntity, idLocationSeparatorEntity )
 	EVENT( EV_GetPortalHandle,		idLocationSeparatorEntity::Event_GetPortalHandle )
@@ -3360,13 +3368,13 @@ void idPortalSky::Event_Activate( idEntity *activator ) {
 ===============================================================================
 */
 
-const idEventDef EV_Vine_SetPrime( "setPrime", "e", 0 );
-const idEventDef EV_Vine_GetPrime( "getPrime", NULL, 'e' );
-const idEventDef EV_Vine_AddDescendant( "addDescendant", "e", 0 );
-const idEventDef EV_Vine_CanWater( "canWater", NULL, 'f' );
-const idEventDef EV_Vine_SetWatered( "setWatered", NULL, 0 );
-const idEventDef EV_Vine_ClearWatered( "clearWatered", NULL, 0 );
-const idEventDef EV_Vine_ScaleVine( "scaleVine", "f", 0 );
+const idEventDef EV_Vine_SetPrime( "setPrime", EventArgs('e', "vine", ""), EV_RETURNS_VOID, "Event called using vine.*()" );
+const idEventDef EV_Vine_GetPrime( "getPrime", EventArgs(), 'e', "Event called using vine.*()" );
+const idEventDef EV_Vine_AddDescendant( "addDescendant", EventArgs('e', "vine", ""), EV_RETURNS_VOID, "Event called using vine.*()" );
+const idEventDef EV_Vine_CanWater( "canWater", EventArgs(), 'f', "Event called using vine.*()" );
+const idEventDef EV_Vine_SetWatered( "setWatered", EventArgs(), EV_RETURNS_VOID, "Event called using vine.*()" );
+const idEventDef EV_Vine_ClearWatered( "clearWatered", EventArgs(), EV_RETURNS_VOID, "Event called using vine.*()" );
+const idEventDef EV_Vine_ScaleVine( "scaleVine", EventArgs('f', "factor", ""), EV_RETURNS_VOID, "Event called using vine.*()" );
 
 CLASS_DECLARATION( idStaticEntity, tdmVine )
 	EVENT( EV_Vine_SetPrime, 		tdmVine::Event_SetPrime)

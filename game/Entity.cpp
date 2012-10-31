@@ -52,232 +52,433 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #define NOLOD -100000
 
 // overridable events
-const idEventDef EV_PostSpawn( "<postspawn>", NULL );
-const idEventDef EV_FindTargets( "<findTargets>", NULL );
-const idEventDef EV_Touch( "<touch>", "et" );
-const idEventDef EV_GetName( "getName", NULL, 's' );
-const idEventDef EV_SetName( "setName", "s" );
-const idEventDef EV_IsType ( "isType", "s" , 'd' );
-const idEventDef EV_Activate( "activate", "e" );
-const idEventDef EV_ActivateTargets( "activateTargets", "e" );
-const idEventDef EV_AddTarget( "addTarget", "e" );
-const idEventDef EV_RemoveTarget( "removeTarget", "e" );
-const idEventDef EV_NumTargets( "numTargets", NULL, 'f' );
-const idEventDef EV_GetTarget( "getTarget", "f", 'e' );
-const idEventDef EV_RandomTarget( "randomTarget", "s", 'e' );
-const idEventDef EV_Bind( "bind", "e" );
-const idEventDef EV_BindPosition( "bindPosition", "e" );
-const idEventDef EV_BindToJoint( "bindToJoint", "esf" );
-const idEventDef EV_BindToBody( "bindToBody", "edd" );
-const idEventDef EV_GetBindMaster( "getBindMaster", NULL, 'e' );
-const idEventDef EV_NumBindChildren( "numBindChildren", NULL, 'd' );
-const idEventDef EV_GetBindChild( "getBindChild", "d", 'e' );
-const idEventDef EV_Unbind( "unbind", NULL );
-const idEventDef EV_RemoveBinds( "removeBinds" );
-const idEventDef EV_SpawnBind( "<spawnbind>", NULL );
-const idEventDef EV_SetOwner( "setOwner", "e" );
-const idEventDef EV_SetModel( "setModel", "s" );
-const idEventDef EV_SetSkin( "setSkin", "s" );
-const idEventDef EV_GetWorldOrigin( "getWorldOrigin", NULL, 'v' );
-const idEventDef EV_SetWorldOrigin( "setWorldOrigin", "v" );
-const idEventDef EV_GetOrigin( "getOrigin", NULL, 'v' );
-const idEventDef EV_SetOrigin( "setOrigin", "v" );
-const idEventDef EV_GetAngles( "getAngles", NULL, 'v' );
-const idEventDef EV_SetAngles( "setAngles", "v" );
-const idEventDef EV_GetLinearVelocity( "getLinearVelocity", NULL, 'v' );
-const idEventDef EV_SetLinearVelocity( "setLinearVelocity", "v" );
-const idEventDef EV_GetAngularVelocity( "getAngularVelocity", NULL, 'v' );
-const idEventDef EV_SetAngularVelocity( "setAngularVelocity", "v" );
+const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_FindTargets( "<findTargets>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Touch( "<touch>", EventArgs('e', "", "", 't', "", ""), EV_RETURNS_VOID, "internal" );
+
+const idEventDef EV_GetName("getName", EventArgs(), 's', "Returns the name of this entity.");
+const idEventDef EV_SetName( "setName", EventArgs('s', "name", "the new name"), EV_RETURNS_VOID, "Sets the name of this entity.");
+const idEventDef EV_IsType ( "isType", EventArgs('s', "spawnclass", "spawn class name"), 'd', "Returns true if this entity is of the given type." );
+
+const idEventDef EV_Activate( "activate", EventArgs('e', "activator", "the entity that caused the action (usually the player)"), 
+	EV_RETURNS_VOID, "Activates this entity as if it was activated by a trigger." );
+
+const idEventDef EV_ActivateTargets( "activateTargets", EventArgs('e', "activator", "the entity that caused the action (usually the player)"), 
+	EV_RETURNS_VOID, "Causes this entity to activate all it's targets. Similar to how a trigger activates entities." );
+
+const idEventDef EV_AddTarget( "addTarget", EventArgs('e', "target", "the entity to add as target"), EV_RETURNS_VOID, "Add a target to this entity.");
+const idEventDef EV_RemoveTarget( "removeTarget", EventArgs('e', "target", "the entity to remove from the targets"), EV_RETURNS_VOID, "Remove a target from this entity." );
+const idEventDef EV_NumTargets( "numTargets", EventArgs(), 'f', "Returns the number of entities this entity has targeted." );
+const idEventDef EV_GetTarget( "getTarget", EventArgs('f', "num", "The target number."), 'e', "Returns the requested target entity." );
+const idEventDef EV_RandomTarget( "randomTarget", EventArgs('s', "ignoreName", "the name of an entity to ignore"), 'e', 
+	"Returns a random targeted entity. Pass in an entity name to skip that entity." );
+
+const idEventDef EV_Bind( "bind", EventArgs('e', "master", "the entity to bind to"), EV_RETURNS_VOID, 
+	"Fixes this entity's position and orientation relative to another entity,\nsuch that when the master entity moves, so does this entity." );
+
+const idEventDef EV_BindPosition( "bindPosition", EventArgs('e', "master", "the entity to bind to"), EV_RETURNS_VOID, 
+	"Fixes this entity's position (but not orientation) relative to another entity,\nsuch that when the master entity moves, so does this entity.");
+
+const idEventDef EV_BindToJoint( "bindToJoint", 
+	EventArgs('e', "master", "the entity to bind to", 
+			  's', "boneName", "the bone name", 
+			  'f', "rotateWithMaster", "-"), EV_RETURNS_VOID, 
+	"Fixes this entity's position and orientation relative to a bone on another entity,\nsuch that when the master's bone moves, so does this entity.");
+
+const idEventDef EV_BindToBody( "bindToBody", 
+	EventArgs('e', "master", "entity to bind to", 
+			  'd', "bodyID", "AF body ID to bind to", 
+			  'd', "orientated", "binds the orientation as well as position, if set to 1"), EV_RETURNS_VOID, "Bind to AF body");
+
+const idEventDef EV_GetBindMaster( "getBindMaster", EventArgs(), 'e', "Returns the entity's bindmaster");
+const idEventDef EV_NumBindChildren( "numBindChildren", EventArgs(), 'd', "Returns the number of bound entities lower down in the bind chain than this entity" );
+const idEventDef EV_GetBindChild( "getBindChild", EventArgs('d', "ind", "child index"), 'e', "Returns the ind_th bind child of this entity or NULL if index is invalid.\nNOTE: indices start at zero" );
+const idEventDef EV_Unbind( "unbind", EventArgs(), EV_RETURNS_VOID, "Detaches this entity from its master.");
+const idEventDef EV_RemoveBinds( "removeBinds", EventArgs(), EV_RETURNS_VOID, "Removes all attached entities from the game" );
+
+const idEventDef EV_SpawnBind( "<spawnbind>", EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_SetOwner( "setOwner", EventArgs('e', "owner", "the entity which will be made owner of this entity"), 
+	EV_RETURNS_VOID, "Sets the owner of this entity. Entities will never collide with their owner.");
+
+const idEventDef EV_SetModel( "setModel", EventArgs('s', "modelName", ""), EV_RETURNS_VOID, "Sets the model this entity uses");
+const idEventDef EV_SetSkin( "setSkin", EventArgs('s', "skinName", ""), EV_RETURNS_VOID, "Sets the skin this entity uses.  Set to \"\" to turn off the skin.");
+
+const idEventDef EV_GetWorldOrigin( "getWorldOrigin", EventArgs(), 'v', "Returns the current world-space position of this entity (regardless of any bind parent)." );
+const idEventDef EV_SetWorldOrigin( "setWorldOrigin", EventArgs('v', "origin", ""), EV_RETURNS_VOID, "Sets the current position of this entity (regardless of any bind parent).");
+const idEventDef EV_GetOrigin( "getOrigin", EventArgs(), 'v', "Returns the current position of this entity (relative to bind parent if any)." );
+const idEventDef EV_SetOrigin( "setOrigin", EventArgs('v', "origin", "the new origin"), EV_RETURNS_VOID, "Sets the current position of this entity (relative to it's bind parent if any)");
+const idEventDef EV_GetAngles( "getAngles", EventArgs(), 'v', "Returns the current orientation of this entity (relative to bind parent if any)." );
+const idEventDef EV_SetAngles( "setAngles", EventArgs('v', "angles", "the new orientation"), EV_RETURNS_VOID, "Sets the current orientation of this entity (relative to bind parent if any)");
+const idEventDef EV_GetLinearVelocity( "getLinearVelocity", EventArgs(), 'v', 
+	"Gets the current linear velocity of this entity. The linear velocity of a physics\nobject is a vector that defines the translation of the center of mass in units per second." );
+const idEventDef EV_SetLinearVelocity( "setLinearVelocity", EventArgs('v', "velocity", ""), EV_RETURNS_VOID, 
+	"Sets the current linear velocity of this entity in units per second.\nThe linear velocity of a physics object is a vector that defines the translation of the center of mass in units per second.");
+const idEventDef EV_GetAngularVelocity( "getAngularVelocity", EventArgs(), 'v', 
+	"Gets the current angular velocity of this entity. The angular velocity of\n" \
+	"a physics object is a vector that passes through the center of mass. The\n" \
+	"direction of this vector defines the axis of rotation and the magnitude\n" \
+	"defines the rate of rotation about the axis in radians per second." );
+const idEventDef EV_SetAngularVelocity( "setAngularVelocity", EventArgs('v', "velocity", ""), EV_RETURNS_VOID, 
+	"Sets the current angular velocity of this entity. The angular velocity of\n" \
+	"a physics object is a vector that passes through the center of mass. The\n" \
+	"direction of this vector defines the axis of rotation and the magnitude\n" \
+	"defines the rate of rotation about the axis in radians per second.");
+
 // greebo: Accessor events for the clipmask/contents flags
-const idEventDef EV_SetContents( "setContents", "f" );
-const idEventDef EV_GetContents( "getContents", NULL, 'f' );
-const idEventDef EV_SetClipMask( "setClipMask", "d" );
-const idEventDef EV_GetClipMask( "getClipMask", NULL, 'd' );
+const idEventDef EV_SetContents( "setContents", EventArgs('f', "contents", ""), EV_RETURNS_VOID, "Sets the contents of the physics object.");
+const idEventDef EV_GetContents( "getContents", EventArgs(), 'f', "Returns the contents of the physics object." );
+const idEventDef EV_SetClipMask( "setClipMask", EventArgs('d', "clipMask", ""), EV_RETURNS_VOID, "Sets the clipmask of the physics object.");
+const idEventDef EV_GetClipMask( "getClipMask", EventArgs(), 'd', "Returns the clipmask of the physics object." );
 
-const idEventDef EV_GetSize( "getSize", NULL, 'v' );
-const idEventDef EV_SetSize( "setSize", "vv" );
-const idEventDef EV_GetMins( "getMins", NULL, 'v' );
-const idEventDef EV_GetMaxs( "getMaxs", NULL, 'v' );
-const idEventDef EV_IsHidden( "isHidden", NULL, 'd' );
-const idEventDef EV_Hide( "hide", NULL );
-const idEventDef EV_Show( "show", NULL );
-const idEventDef EV_Touches( "touches", "E", 'd' );
-const idEventDef EV_ClearSignal( "clearSignal", "d" );
-const idEventDef EV_GetShaderParm( "getShaderParm", "d", 'f' );
-const idEventDef EV_SetShaderParm( "setShaderParm", "df" );
-const idEventDef EV_SetShaderParms( "setShaderParms", "ffff" );
-const idEventDef EV_SetColor( "setColor", "fff" );
-const idEventDef EV_GetColor( "getColor", NULL, 'v' );
-const idEventDef EV_CacheSoundShader( "cacheSoundShader", "s" );
-const idEventDef EV_StartSoundShader( "startSoundShader", "sd", 'f' );
-const idEventDef EV_StartSound( "startSound", "sdd", 'f' );
-const idEventDef EV_StopSound( "stopSound", "dd" );
-const idEventDef EV_FadeSound( "fadeSound", "dff" );
-const idEventDef EV_SetSoundVolume( "setSoundVolume", "f" );
-const idEventDef EV_GetNextKey( "getNextKey", "ss", 's' );
-const idEventDef EV_SetKey( "setKey", "ss" );
-const idEventDef EV_GetKey( "getKey", "s", 's' );
-const idEventDef EV_GetIntKey( "getIntKey", "s", 'f' );
-const idEventDef EV_GetFloatKey( "getFloatKey", "s", 'f' );
-const idEventDef EV_GetVectorKey( "getVectorKey", "s", 'v' );
-const idEventDef EV_GetEntityKey( "getEntityKey", "s", 'e' );
-const idEventDef EV_RemoveKey( "removeKey", "s" );
-const idEventDef EV_RestorePosition( "restorePosition" );
-const idEventDef EV_UpdateCameraTarget( "<updateCameraTarget>", NULL );
-const idEventDef EV_DistanceTo( "distanceTo", "E", 'f' );
-const idEventDef EV_DistanceToPoint( "distanceToPoint", "v", 'f' );
-const idEventDef EV_StartFx( "startFx", "s" );
-const idEventDef EV_HasFunction( "hasFunction", "s", 'd' );
-const idEventDef EV_CallFunction( "callFunction", "s" );
-const idEventDef EV_CallGlobalFunction( "callGlobalFunction", "sE" );
-const idEventDef EV_SetNeverDormant( "setNeverDormant", "d" );
+const idEventDef EV_GetSize( "getSize", EventArgs(), 'v', "Gets the size of this entity's bounding box." );
+const idEventDef EV_SetSize( "setSize", EventArgs('v', "min", "minimum corner coordinates", 'v', "max", "maximum corner coordinates"), EV_RETURNS_VOID, "Sets the size of this entity's bounding box.");
+const idEventDef EV_GetMins( "getMins", EventArgs(), 'v', "Gets the minimum corner of this entity's bounding box." );
+const idEventDef EV_GetMaxs( "getMaxs", EventArgs(), 'v', "Gets the maximum corner of this entity's bounding box." );
+const idEventDef EV_IsHidden( "isHidden", EventArgs(), 'd', "checks if the entity's model is invisible." );
+const idEventDef EV_Hide( "hide", EventArgs(), EV_RETURNS_VOID, "Makes this entity invisible.");
+const idEventDef EV_Show( "show", EventArgs(), EV_RETURNS_VOID, "Makes this entity visible if it has a model.");
+const idEventDef EV_Touches( "touches", EventArgs('E', "other", "the entity to check against"), 'd', "Returns true if this entity touches the other entity." );
+const idEventDef EV_ClearSignal( "clearSignal", EventArgs('d', "signalNum", "signal number"), EV_RETURNS_VOID, "Disables the callback function on the specified signal.");
+const idEventDef EV_GetShaderParm( "getShaderParm", EventArgs('d', "parm", "shader parm index"), 'f', "Gets the value of the specified shader parm." );
+const idEventDef EV_SetShaderParm( "setShaderParm", EventArgs('d', "parm", "shader parm index", 'f', "value", "new value"), EV_RETURNS_VOID, "Sets the value of the specified shader parm.");
+const idEventDef EV_SetShaderParms( "setShaderParms", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue", 'f', "parm3", "alpha"), EV_RETURNS_VOID, 
+	"Sets shader parms Parm0, Parm1, Parm2, and Parm3 (red, green, blue, and alpha respectively)." );
+const idEventDef EV_SetColor( "setColor", EventArgs('f', "parm0", "red", 'f', "parm1", "green", 'f', "parm2", "blue"), EV_RETURNS_VOID, 
+	"Sets the RGB color of this entity (shader parms Parm0, Parm1, Parm2)." );
+const idEventDef EV_GetColor( "getColor", EventArgs(), 'v', "Gets the color of this entity (shader parms Parm0, Parm1, Parm2)." );
 
-// greebo: Extinguishes all lights (i.e. the <self> entity plus all bound lights)
-const idEventDef EV_ExtinguishLights("extinguishLights", NULL);
+const idEventDef EV_CacheSoundShader( "cacheSoundShader", EventArgs('s', "shaderName", "the sound shader to cache"), EV_RETURNS_VOID, 
+	"Ensure the specified sound shader is loaded by the system.\nPrevents cache misses when playing sound shaders.");
+const idEventDef EV_StartSoundShader( "startSoundShader", EventArgs('s', "shaderName", "the sound shader to play", 'd', "channel", "the channel to play the sound on"), 'f', 
+	"Plays a specific sound shader on the channel and returns the length of the sound in\n" \
+	"seconds. This is not the preferred method of playing a sound since you must ensure\n" \
+	"that the sound is loaded." );
+const idEventDef EV_StartSound( "startSound", 
+	EventArgs('s', "sound", "the spawnarg to reference, e.g. 'snd_move'", 'd', "channel", "the channel to play on", 'd', "netSync", "-"), 'f', 
+	"Plays the sound specified by the snd_* key/value pair on the channel and returns\n" \
+	"the length of the sound in seconds. This is the preferred method for playing sounds on an\n" \
+	"entity since it ensures that the sound is precached." );
 
-const idEventDef EV_InPVS( "inPVS", NULL, 'd' );
+const idEventDef EV_StopSound( "stopSound", EventArgs('d', "channel", "the channel to stop playback on", 'd', "netSync", "-"), EV_RETURNS_VOID, "Stops a specific sound shader on the channel.");
+const idEventDef EV_FadeSound( "fadeSound", EventArgs('d', "channel", "", 'f', "newLevel", "", 'f', "fadeTime", ""), EV_RETURNS_VOID, 
+	"Fades the sound on this entity to a new level over a period of time.  Use SND_CHANNEL_ANY for all currently playing sounds." );
+
+const idEventDef EV_SetSoundVolume( "setSoundVolume", EventArgs('f', "newLevel", ""), EV_RETURNS_VOID, "Set the volume of the sound to play, must be issued before startSoundShader.");
+
+const idEventDef EV_GetNextKey( "getNextKey", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', 
+	"searches for the name of a spawn arg that matches the prefix.  for example,\n" \
+	"passing in \"attack_target\" matches \"attack_target1\", \"attack_targetx\", \"attack_target_enemy\", \n" \
+	"etc. The returned string is the name of the key which can then be passed into\n" \
+	"functions like getKey() to lookup the value of that spawn arg.  This\n" \
+	"is useful for when you have multiple values to look up, like when you\n" \
+	"target multiple objects.  To find the next matching key, pass in the previous\n" \
+	"result and the next key returned will be the first one that matches after\n" \
+	"the previous result.  pass in "" to get the first match.  returns "" when no \n" \
+	"more keys match.  Note to coders: this is the same as MatchPrefix in the game code.");
+
+const idEventDef EV_SetKey( "setKey", EventArgs('s', "key", "the spawnarg to set", 's', "value", "the value to store"), EV_RETURNS_VOID, 
+	"Sets a key on this entity's spawn args. Note that most spawn args are evaluated when\n" \
+	"this entity spawns in, so this will not change the entity's behavior in most cases.\n" \
+	"This is chiefly for saving data the script needs in an entity for later retrieval.");
+
+const idEventDef EV_GetKey( "getKey", EventArgs('s', "key", "spawnarg name"), 's', 
+	"Retrieves the value of a specific spawn arg." );
+const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the integer value of a specific spawn arg." );
+const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the floating point value of a specific spawn arg." );
+const idEventDef EV_GetVectorKey( "getVectorKey", EventArgs('s', "key", "spawnarg name"), 'v', "Retrieves the vector value of a specific spawn arg." );
+const idEventDef EV_GetEntityKey( "getEntityKey", EventArgs('s', "key", "spawnarg name"), 'e', "Retrieves the entity specified by the spawn arg." );
+const idEventDef EV_RemoveKey( "removeKey", EventArgs('s', "key", "the spawnarg to remove"), EV_RETURNS_VOID, "Removes a key from an object's spawnargs, so things like getNextKey() don't retrieve it.");
+const idEventDef EV_RestorePosition( "restorePosition", EventArgs(), EV_RETURNS_VOID, 
+	"Returns this entity to the position stored in the \"origin\" spawn arg.\n" \
+	"This is the position the entity was spawned in unless the \"origin\" key is changed.\n" \
+	"Note that there is no guarantee that the entity won't be stuck in another entity\n" \
+	"when moved, so care should be taken to make sure that isn't possible." );
+
+const idEventDef EV_UpdateCameraTarget( "<updateCameraTarget>", EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_DistanceTo( "distanceTo", EventArgs('E', "other", ""), 'f', "Returns the distance of this entity to another entity." );
+const idEventDef EV_DistanceToPoint( "distanceToPoint", EventArgs('v', "point", ""), 'f', "Returns the distance of this entity to a point." );
+const idEventDef EV_StartFx( "startFx", EventArgs('s', "fx", ""), EV_RETURNS_VOID, "Starts an FX on this entity.");
+const idEventDef EV_HasFunction( "hasFunction", EventArgs('s', "functionName", ""), 'd', "checks if an entity's script object has a specific function" );
+const idEventDef EV_CallFunction( "callFunction", EventArgs('s', "functionName", ""), EV_RETURNS_VOID, 
+	"Calls a function on an entity's script object. See also\n" \
+	"scripts/tdm_events.script for callGlobalFunction.");
+const idEventDef EV_CallGlobalFunction( "callGlobalFunction", EventArgs('s', "functionName", "", 'E', "other", ""), EV_RETURNS_VOID, 
+	"calls a global function and passes the other entity along as the first argument\n" \
+	"calls the function in a new thread, so it continues executing in the current\n" \
+	"thread right away (unlike entity.callFunction( \"blah\"))");
+const idEventDef EV_SetNeverDormant( "setNeverDormant", EventArgs('d', "enable", "1 = enable, 0 = disable"), EV_RETURNS_VOID, "enables or prevents an entity from going dormant");
+
+const idEventDef EV_ExtinguishLights("extinguishLights", EventArgs(), EV_RETURNS_VOID, "Extinguishes all lights (i.e. the <self> entity plus all bound lights)");
+
+const idEventDef EV_InPVS( "inPVS", EventArgs(), 'd', 
+	"Returns non-zero if this entity is in PVS.\n" \
+	"For lights, it will return true when the light's bounding box is in PVS,\n" \
+	"even though the light may not actually be in PVS. (an unmoved shadowcasting\n" \
+	"light may not be visible to PVS areas its bounding box intersects with)");
+
 // greebo: Script event definition for dealing damage
-const idEventDef EV_Damage("damage", "EEvsf");
+const idEventDef EV_Damage("damage", EventArgs(
+	'E', "inflictor", "the entity causing the damage (maybe a projectile)", 
+	'E', "attacker", "the \"parent\" entity of the inflictor, the one that is responsible for the inflictor (can be the same)", 
+	'v', "dir", "the direction the attack is coming from.", 
+	's', "damageDefName", "the name of the damage entityDef to know what damage is being dealt to <self> (e.g. \"damage_lava\")", 
+	'f', "damageScale", "the scale of the damage (pass 1.0 as default, this should be ok)."), 
+	EV_RETURNS_VOID, 
+	"Deals damage to this entity (gets translated into the idEntity::Damage() method within the SDK).");
+
 // greebo: Script event definition for healing 
 // Takes the name of the healing entity and the healing scale, returns an integer
-const idEventDef EV_Heal("heal", "sf", 'd');
+const idEventDef EV_Heal("heal", 
+	EventArgs('s', "healDefName", "the name of the entityDef containing the healing information (e.g. \"heal_potion\")", 
+			  'f', "healScale", "the scaling value to be applied to the healAmount found in the healEntityDef"), 
+    'd', 
+	"Heals the entity this is called on using the specified healing entityDef.\n" \
+	"Returns 1 if the entity could be healed, 0 otherwise (if the entity is already at full health, for ex.)");
 
 // tels: Teleport the entity to the position/orientation of the given entity
-const idEventDef EV_TeleportTo("teleportTo", "e");
+const idEventDef EV_TeleportTo("teleportTo", EventArgs('e', "other", ""), EV_RETURNS_VOID, 
+	"Teleports the entity to the position of the other entity, plus a possible\n" \
+	"offset and random offset (defined on the spawnargs of the entity to be teleported)");
 
 // ishtvan: Get/setd droppable on entity and associated inventory item
-const idEventDef EV_IsDroppable( "isDroppable", NULL, 'd' );
-const idEventDef EV_SetDroppable( "setDroppable", "d" );
+const idEventDef EV_IsDroppable( "isDroppable", EventArgs(), 'd', "Get whether an item may be dropped from the inventory");
+const idEventDef EV_SetDroppable( "setDroppable", 
+	EventArgs('d', "droppable", "if non-zero the item becomes droppable, when called with 0 the item becomes non-droppable"), 
+	EV_RETURNS_VOID, 
+	"Set whether an item may be dropped from the inventory.\n" \
+	"");
 
 // tels: set noShadow on this entity to the given argument (true/false)
-const idEventDef EV_NoShadows( "noShadows", "d" );
+const idEventDef EV_NoShadows( "noShadows", EventArgs('d', "noShadows", "1 = disable shadows, 0 = enable shadows"), EV_RETURNS_VOID, 
+	"Sets the noShadow property on the entity to true/false, turning shadowcasting\n" \
+	"on or off for this entity.");
+
 // tels: like EV_noShadows, but does so after a delay of "delay" ms:
-const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed", "df" );
+const idEventDef EV_NoShadowsDelayed( "noShadowsDelayed", 
+	EventArgs('d', "noShadows", "1 = disable shadows, 0 = enable shadows", 'f', "delay", "delay in ms"), EV_RETURNS_VOID, 
+	"Sets the noShadow property on the entity to true/false after delay\n" \
+	"in ms, turning shadows cast by this entity on or off.");
 
 // tels: Find all lights in the player PVS, then returns their sum.
-const idEventDef EV_GetLightInPVS("getLightInPVS", "ff", 'v');
+const idEventDef EV_GetLightInPVS("getLightInPVS", 
+	EventArgs('f', "falloff", "0: no falloff with distance\n" \
+							" 0.5: sqrt(linear) falloff	(dist 100 => 1/10)\n" \
+							" 1: linear falloff			(dist 100 => 1/100)\n" \
+							" 2: square falloff			(dist 100 => 1/10000)\n", 
+			  'f', "scaling", "factor to scale the distance, can be used to lower/raise distance factor\n" \
+					" after the linear or square scaling has been used\n" \
+					"good looking values are approx: sqrt(linear): 0.01, linear: 0.1, square 1.0"), 
+	'v', 
+	"Computes the sum of all light in the PVS of the entity you\n" \
+	"call this on, and returns a vector with the sum.");
 
-const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", NULL, 'v');	// grayman #2787
-const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", NULL, 'v');	// grayman #2787
-const idEventDef EV_IsLight("isLight", NULL, 'd'); // grayman #2905
-const idEventDef EV_ActivateContacts("activateContacts"); // grayman #3011
-const idEventDef EV_GetLocation("getLocation", NULL, 'e'); // grayman #3013
+const idEventDef EV_GetVinePlantLoc("getVinePlantLoc", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
+const idEventDef EV_GetVinePlantNormal("getVinePlantNormal", EventArgs(), 'v', "Event important to the growing of vines from vine arrows");	// grayman #2787
+
+const idEventDef EV_IsLight("isLight", EventArgs(), 'd', ""); // grayman #2905
+const idEventDef EV_ActivateContacts("activateContacts", EventArgs(), EV_RETURNS_VOID, "Activate objects sitting on this object."); // grayman #3011
+const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', 
+	"Returns the idLocation entity corresponding to the entity's current location.\n" \
+	"This was player-specific before, but is now available to all entities."); // grayman #3013
 
 //===============================================================
 //                   TDM GUI interface
 //===============================================================
-const idEventDef EV_SetGui( "setGui", "ds" );
-const idEventDef EV_GetGui( "getGui", "d", 's' );
-const idEventDef EV_SetGuiString( "setGuiString", "dss" );
-const idEventDef EV_GetGuiString( "getGuiString", "ds", 's' );
-const idEventDef EV_SetGuiFloat( "setGuiFloat", "dsf" );
-const idEventDef EV_GetGuiFloat( "getGuiFloat", "ds", 'f' );
-const idEventDef EV_SetGuiInt( "setGuiInt", "dsd" );
-const idEventDef EV_GetGuiInt( "getGuiInt", "ds", 'f' );
-const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", "dses" );
-const idEventDef EV_CallGui( "callGui", "ds" );
-const idEventDef EV_CreateOverlay( "createOverlay", "sd", 'd' );
-const idEventDef EV_DestroyOverlay( "destroyOverlay", "d" );
-const idEventDef EV_LoadExternalData( "loadExternalData", "ss", 'd' );
+const idEventDef EV_SetGui( "setGui", EventArgs('d', "handle", "", 's', "guiFile", ""), EV_RETURNS_VOID, "Loads a new file into an existing GUI.");
+const idEventDef EV_GetGui( "getGui", EventArgs('d', "handle", ""), 's', "Returns the file currently loaded by a GUI." );
+const idEventDef EV_SetGuiString( "setGuiString", 
+	EventArgs('d', "handle", "", 's', "key", "", 's', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiString( "getGuiString", EventArgs('d', "handle", "", 's', "key", ""), 's', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiFloat( "setGuiFloat", EventArgs('d', "handle", "", 's', "key", "", 'f', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiFloat( "getGuiFloat", EventArgs('d', "handle", "", 's', "key", ""), 'f', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiInt( "setGuiInt", EventArgs('d', "handle", "", 's', "key", "", 'd', "val", ""), 
+	EV_RETURNS_VOID, "Sets a GUI parameter." );
+const idEventDef EV_GetGuiInt( "getGuiInt", EventArgs('d', "handle", "", 's', "key", ""), 'f', "Returns a GUI parameter." );
+const idEventDef EV_SetGuiStringFromKey( "setGuiStringFromKey", 
+	EventArgs('d', "handle", "", 's', "key", "", 'e', "src", "", 's', "srcKey", ""),
+	EV_RETURNS_VOID, 
+	"This is a kludge. It is equivelant to: setGuiString( handle, key, src.getKey(srcKey) )\n" \
+	"However, it's used to bypass the 127 char size limit on script strings." );
+const idEventDef EV_CallGui( "callGui", EventArgs('d', "handle", "", 's', "namedEvent", ""), EV_RETURNS_VOID, "Calls a named event in a GUI.");
+const idEventDef EV_CreateOverlay( "createOverlay", EventArgs('s', "guiFile", "", 'd', "layer", ""), 'd', "Creates a GUI overlay. (must be used on the player)" );
+const idEventDef EV_DestroyOverlay( "destroyOverlay", EventArgs('d', "handle", ""), EV_RETURNS_VOID, "Destroys a GUI overlay. (must be used on the player)");
+const idEventDef EV_LoadExternalData( "loadExternalData", EventArgs('s', "declFile", "", 's', "prefix", ""), 'd', "Load an external xdata declaration." );
 
 
 //===============================================================
 //                   TDM Inventory
 //===============================================================
-const idEventDef EV_GetLootAmount("getLootAmount", "d", 'd');				// returns the current value for the given group
-const idEventDef EV_ChangeLootAmount("changeLootAmount", "dd", 'd');		// Changes the loot amount of the given group by the given amount, returns the new amount of that type
-const idEventDef EV_AddInvItem("addInvItem", "e");					// Adds an entity to the inventory
-const idEventDef EV_AddItemToInv("addItemToInv", "e");					// Adds this entity to the inventory of the given entity (reversed AddInvItem)
-const idEventDef EV_ReplaceInvItem("replaceInvItem", "eE", 'd');	// olditem, newitem -> 1 if succeeded
-const idEventDef EV_GetNextInvItem("getNextInvItem", "", 'e');		// switches to the next inventory item
-const idEventDef EV_GetPrevInvItem("getPrevInvItem", "", 'e');		// switches to the previous inventory item
-const idEventDef EV_ChangeInvItemCount("changeInvItemCount", "ssd");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
-const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", "ssd"); // Changes the lightgem modifier value of the given item.
-const idEventDef EV_ChangeInvIcon("changeInvIcon", "sss");					// Changes the inventory icon of the given item.
+const idEventDef EV_GetLootAmount("getLootAmount", EventArgs('d', "type", ""), 'd', 
+	"Returns the amount of loot for the given type (e.g. LOOT_GOODS). Pass LOOT_TOTAL\n" \
+	"to return the sum of all loot types.");
+const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "type", "", 'd', "amount", ""), 'd', 
+	"Changes the loot amount of the given Type (e.g. GOODS) by <amount>\n" \
+	"The new value of the changed type is returned (e.g. the new GOODS value if this has been changed).\n" \
+	"Note: The LOOT_TOTAL type can't be changed and 0 is returned.");
 
-const idEventDef EV_SetCurInvCategory("setCurInvCategory", "s", 'd');	// category name -> 1 = success
-const idEventDef EV_SetCurInvItem("setCurInvItem", "s", 'e');				// itemname -> entity
-const idEventDef EV_GetCurInvCategory("getCurInvCategory", NULL, 's');
-const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", NULL, 'e');
-const idEventDef EV_GetCurInvItemName("getCurInvItemName", NULL, 's');
-const idEventDef EV_GetCurInvItemId("getCurInvItemId", NULL, 's');
-const idEventDef EV_GetCurInvIcon("getCurInvIcon", NULL, 's');
+const idEventDef EV_AddInvItem("addInvItem", EventArgs('e', "inv_item", ""), EV_RETURNS_VOID, 
+	"Adds the given item to the inventory. Depending on the type\n" \
+	"the passed entity will be removed from the game (as for loot items) or hidden.");
+
+const idEventDef EV_AddItemToInv("addItemToInv", EventArgs('e', "target", ""), EV_RETURNS_VOID, 
+	"Adds the entity to the given entity's inventory. Depending on the type\n" \
+	"the entity will be removed from the game (as for loot items) or hidden.\n" \
+	"Example: $book->addItemToInv($player1);");				// Adds this entity to the inventory of the given entity (reversed AddInvItem)
+
+const idEventDef EV_ReplaceInvItem("replaceInvItem", EventArgs('e', "oldItem", "", 'E', "newItem", "can be $null_entity"), 
+	'd', 
+	"Replaces the entity <oldItem> with <newItem> in the inventory,\n" \
+	"while keeping <oldItem>'s inventory position intact.\n" \
+	"\n" \
+	"Note: The position guarantee only applies if <oldItem> and newItem \n" \
+	"share the same category. If the categories are different, the position of <newItem>\n" \
+	"is likely to be different than the one of <oldItem>.\n" \
+	"\n" \
+	"Note that <oldItem> will be removed from the inventory. \n" \
+	"If <newItem> is the $null_entity, <oldItem> is just removed and no replacement happens.\n" \
+	"\n" \
+	"Returns 1 if the operation was successful, 0 otherwise.");	// olditem, newitem -> 1 if succeeded");
+const idEventDef EV_GetNextInvItem("getNextInvItem", EventArgs(), 'e', 
+	"Cycles the standard cursor to the next inventory item.\n" \
+	"Returns the item entity pointed to after the operation is complete.");		// switches to the next inventory item
+const idEventDef EV_GetPrevInvItem("getPrevInvItem", EventArgs(), 'e', 
+	"Cycles the standard cursor to the previous inventory item.\n" \
+	"Returns the item entity pointed to after the operation is complete.");		// switches to the previous inventory item
+const idEventDef EV_ChangeInvItemCount("changeInvItemCount", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 'd', "amount", ""), 
+	EV_RETURNS_VOID, 
+	"Decreases the inventory item stack count by amount. The item is addressed\n" \
+	"using the name and category of the item. These are usually defined on the inventory\n" \
+	"item entity (\"inv_name\", \"inv_category\")\n" \
+	"\n" \
+	"Amount can be both negative and positive.");		// Changes the stack count (call with "inv_name", "inv_category" and amount)
+
+const idEventDef EV_ChangeInvLightgemModifier("changeInvLightgemModifier", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 'd', "amount", ""), 
+	EV_RETURNS_VOID, 
+	"Sets the lightgem modifier value of the given item. Valid arguments are\n" \
+	"between 0 and 32 (which is the maximum lightgem value)."); // Changes the lightgem modifier value of the given item.
+const idEventDef EV_ChangeInvIcon("changeInvIcon", 
+	EventArgs('s', "name", "name of the item", 's', "category", "the item's category", 's', "icon", ""),
+	EV_RETURNS_VOID, "Sets the inventory icon of the given item in the given category to <icon>.");
+
+const idEventDef EV_SetCurInvCategory("setCurInvCategory", EventArgs('s', "categoryName", ""), 'd', 
+	"Sets the inventory cursor to the first item of the named category.\n" \
+	"Returns 1 on success, 0 on failure (e.g. wrong category name)");	// category name -> 1 = success
+const idEventDef EV_SetCurInvItem("setCurInvItem", EventArgs('s', "itemName", ""), 'e', 
+	"Sets the inventory cursor to the named item.\n" \
+	"Returns: the item entity of the newly selected item (can be $null_entity).");				// itemname -> entity
+const idEventDef EV_GetCurInvCategory("getCurInvCategory", EventArgs(), 's', "Returns the name of the currently highlighted inventory category.");
+const idEventDef EV_GetCurInvItemEntity("getCurInvItemEntity", EventArgs(), 'e', "Returns the currently highlighted inventory item entity.");
+const idEventDef EV_GetCurInvItemName("getCurInvItemName", EventArgs(), 's', "Returns the name of the currently highlighted inventory item (the one defined in \"inv_name\").");
+const idEventDef EV_GetCurInvItemId("getCurInvItemId", EventArgs(), 's', 
+	"Returns the name of the currently highlighted inventory item (the one defined in \"inv_item_id\").\n" \
+	"Most items will return an empty string, unless the \"inv_item_id\" is set on purpose.");
+const idEventDef EV_GetCurInvIcon("getCurInvIcon", EventArgs(), 's', "Returns the icon of the currently highlighted inventory item.");
 
 // greebo: "Private" event which runs right after spawn time to check the inventory-related spawnargs.
-const idEventDef EV_InitInventory("initInventory", "d");
+const idEventDef EV_InitInventory("_initInventory", EventArgs('d', "", ""), EV_RETURNS_VOID, "Private event which runs right after spawn time to check the inventory-related spawnargs.");
 
 // grayman #2478 - event which runs after spawn time to see if a mine is armed
-const idEventDef EV_CheckMine("checkMine");
+const idEventDef EV_CheckMine("_checkMine", EventArgs(), EV_RETURNS_VOID, "Private event - runs after spawn time to see if a mine is armed");
 
 // The Dark Mod Stim/Response interface functions for scripting
 // Normally I don't like names, which are "the other way around"
 // but I think in this case it would be ok, because the interface
 // for stims and responses are pretty much the same.
-const idEventDef EV_StimAdd( "StimAdd", "df" );
-const idEventDef EV_StimRemove( "StimRemove", "d" );
-const idEventDef EV_StimEnable( "StimEnable", "dd" );
-const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", "d" );
-const idEventDef EV_ResponseEnable( "ResponseEnable", "dd" );
-const idEventDef EV_ResponseAdd( "ResponseAdd", "d" );
-const idEventDef EV_ResponseRemove( "ResponseRemove", "d" );
-const idEventDef EV_ResponseIgnore( "ResponseIgnore", "de" );
-const idEventDef EV_ResponseAllow( "ResponseAllow", "de" );
-const idEventDef EV_ResponseSetAction( "ResponseSetAction", "ds" );
-const idEventDef EV_ResponseTrigger( "ResponseTrigger", "ed" );
-const idEventDef EV_GetResponseEntity( "GetResponseEntity", NULL, 'e' );
+const idEventDef EV_StimAdd( "StimAdd", EventArgs('d', "type", "", 'f', "radius", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_StimRemove( "StimRemove", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_StimEnable( "StimEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
+const idEventDef EV_StimClearIgnoreList( "StimClearIgnoreList", EventArgs('d', "type", ""), EV_RETURNS_VOID, 
+	"This clears the ignore list for the stim of the given type\n" \
+	"It can be used if an entity changes state in some way that it would no longer be ignored");
+const idEventDef EV_ResponseEnable( "ResponseEnable", EventArgs('d', "type", "", 'd', "state", "0 = disabled, 1 = enabled"), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseAdd( "ResponseAdd", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseRemove( "ResponseRemove", EventArgs('d', "type", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseIgnore( "ResponseIgnore", EventArgs('d', "type", "", 'e', "responder", ""), EV_RETURNS_VOID, 
+	"This functions must be called on the stim entity. It will add the response\n" \
+	"to the ignore list, so that subsequent stims, should not trigger the stim anymore.");
+const idEventDef EV_ResponseAllow( "ResponseAllow", EventArgs('d', "type", "", 'e', "responder", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseSetAction( "ResponseSetAction", EventArgs('d', "type", "", 's', "action", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_ResponseTrigger( "ResponseTrigger", EventArgs('e', "source", "", 'd', "stimType", ""), EV_RETURNS_VOID, 
+	"Fires a response on this entity, without a stim (a stand-alone response, so to say)");
+const idEventDef EV_GetResponseEntity( "GetResponseEntity", EventArgs(), 'e', 
+	"Returns the entity which should take the response. Some entities like AI heads are not\n" \
+	"responding themselves to stims, but relay it to another entity (i.e. the bodies they're attached to).");
 
-// StimType, Hours, minutes, seconds, miliseconds(?)
-const idEventDef EV_TimerCreate( "CreateTimer", "ddddd" );
-const idEventDef EV_TimerStop( "StopTimer", "d" );
-const idEventDef EV_TimerStart( "StartTimer", "d" );
-const idEventDef EV_TimerRestart( "RestartTimer", "d" );
-const idEventDef EV_TimerReset( "ResetTimer", "d" );
-const idEventDef EV_TimerSetState( "SetTimerState", "dd" );
+const idEventDef EV_TimerCreate( "CreateTimer", 
+	EventArgs('d', "stimId", "", 'd', "hour", "", 'd', "minutes", "", 'd', "seconds", "", 'd', "milliseconds", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerStop( "StopTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerStart( "StartTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerRestart( "RestartTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerReset( "ResetTimer", EventArgs('d', "stimId", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_TimerSetState( "SetTimerState", EventArgs('d', "stimId", "", 'd', "state", ""), EV_RETURNS_VOID, "");
 
 // soundprop event: Propagate sound directly from scripting
-const idEventDef EV_TDM_PropSoundMod( "propSoundMod", "sf" );
+const idEventDef EV_TDM_PropSoundMod( "propSoundMod", EventArgs('s', "name", "", 'f', "volMod", ""), EV_RETURNS_VOID, 
+	"propagate a sound directly with a volume modifier");
 // I don't think scripting supports optional argument, so I must do this
-const idEventDef EV_TDM_PropSound( "propSound", "s" );
+const idEventDef EV_TDM_PropSound( "propSound", EventArgs('s', "name", ""), EV_RETURNS_VOID, 
+	"Sound propagation scriptfunctions on all entities\n" \
+	"propagate a sound directly without playing an audible sound");
 
 // For detecting ranged enemies. Returns nonzero if this entity could
 // potentially attack the given entity (first parameter) at range.
-const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", "e", 'f' );
+const idEventDef EV_TDM_RangedThreatTo( "rangedThreatTo", EventArgs('e', "target", ""), 'f', 
+	"Could this entity threaten the given (target) entity from a distance?" );
 
 // Tels: #3113 after spawning all entities, decide if they need to be hidden
-const idEventDef EV_HideByLODBias( "hideByLODBias" );
+const idEventDef EV_HideByLODBias( "hideByLODBias", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 #ifdef MOD_WATERPHYSICS
 
-const idEventDef EV_GetMass( "getMass", "d" , 'f' );
-
-const idEventDef EV_IsInLiquid( "isInLiquid", NULL, 'd' );
+const idEventDef EV_GetMass( "getMass", EventArgs('d', "body", "") , 'f', "Gets mass of a body for an entity" );
+const idEventDef EV_IsInLiquid( "isInLiquid", EventArgs(), 'd', "Returns 1 if the entity is in or touching a liquid." );
 
 #endif      // MOD_WATERPHYSICS
 
-const idEventDef EV_CopyBind( "copyBind", "e" );
-const idEventDef EV_IsFrobable( "isFrobable", NULL, 'd' );
-const idEventDef EV_SetFrobable( "setFrobable", "d" );
-const idEventDef EV_IsHilighted( "isHilighted", NULL, 'd' );
-const idEventDef EV_Frob("frob", NULL, 'd');
-const idEventDef EV_FrobHilight("frobHilight", "d" );
+const idEventDef EV_CopyBind( "copyBind", EventArgs('e', "other", ""), EV_RETURNS_VOID, 
+	"copy bind information of other to this entity\n" \
+	"(i.e., bind this entity to the same entity that other is bound to)");
+const idEventDef EV_IsFrobable( "isFrobable", EventArgs(), 'd', "Get whether the entity is frobable" );
+const idEventDef EV_SetFrobable( "setFrobable", EventArgs('d', "frobable", ""), EV_RETURNS_VOID, "Set whether the entity is frobable");
+const idEventDef EV_IsHilighted( "isHilighted", EventArgs(), 'd', "Returns true if entity is currently frobhilighted." );
+const idEventDef EV_Frob("frob", EventArgs(), 'd', 
+	"Frobs the entity (i.e. simulates a frob action performed by the player).\n" \
+	"Returns TRUE if the entity is frobable, FALSE otherwise.");
+const idEventDef EV_FrobHilight("frobHilight", EventArgs('d', "state", ""), EV_RETURNS_VOID, "ishtvan: Tries to make the entity frobhilight or not");
 
 // greebo: Script event to check whether this entity can see a target entity
-const idEventDef EV_CanSeeEntity("canSeeEntity", "ed", 'd');
+const idEventDef EV_CanSeeEntity("canSeeEntity", EventArgs('e', "target", "", 'd', "useLighting", ""), 'd', 
+	"This is a general version of idAI::canSee, that can be used\n" \
+	"by all entities. It doesn't regard FOV,\n" \
+	"it just performs a trace to check whether the target is\n" \
+	"occluded by world geometry. Is probably useful for stim/response as well\n" \
+	"Pass useLighting = true to take the lighting of the target entity\n" \
+	"into account. Use \"isEntityHidden\" as a script event with a\n" \
+	"threshold.\n" \
+	"The constant threshold value for useLighting is defined within the SDK in game/entity.h.");
 
-const idEventDef EV_CanBeUsedBy("canBeUsedBy", "e", 'd');
+const idEventDef EV_CanBeUsedBy("canBeUsedBy", EventArgs('e', "ent", ""), 'd', "Returns true if the entity can be used by the argument entity");
 
-const idEventDef EV_CheckAbsence("checkAbsence");
+const idEventDef EV_CheckAbsence("checkAbsence", EventArgs(), EV_RETURNS_VOID, "description missing");
 
 // greebo: TDM: Team accessor script events
-const idEventDef EV_GetTeam("getTeam", NULL, 'd');
-const idEventDef EV_SetTeam("setTeam", "d");
+const idEventDef EV_GetTeam("getTeam", EventArgs(), 'd', "Returns the current team number.");
+const idEventDef EV_SetTeam("setTeam", EventArgs('d', "newTeam", ""), EV_RETURNS_VOID, "Sets the team number of this entity.");
 
-const idEventDef EV_IsEnemy( "isEnemy", "E", 'd' );
-const idEventDef EV_IsFriend( "isFriend", "E", 'd' );
-const idEventDef EV_IsNeutral( "isNeutral", "E", 'd' );
+const idEventDef EV_IsEnemy( "isEnemy", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is an enemy.");
+const idEventDef EV_IsFriend( "isFriend", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is a friend.");
+const idEventDef EV_IsNeutral( "isNeutral", EventArgs('E', "ent", "The entity in question"), 'd', "Returns true if the given entity is neutral.");
 
-const idEventDef EV_SetEntityRelation( "setEntityRelation", "Ed");
-const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", "Ed");
+const idEventDef EV_SetEntityRelation( "setEntityRelation", EventArgs('E', "ent", "", 'd', "relation", ""), EV_RETURNS_VOID, 
+	"Set a relation to another entity, this can be friendly (>0), neutral(0) or hostile (<0)");
+const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", EventArgs('E', "ent", "", 'd', "relationChange", ""), EV_RETURNS_VOID, 
+	"This changes the current relation to an entity by adding the new amount.");
 
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
@@ -8065,13 +8266,26 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 ===============================================================================
 */
 
-const idEventDef EV_GetJointHandle( "getJointHandle", "s", 'd' );
-const idEventDef EV_ClearAllJoints( "clearAllJoints" );
-const idEventDef EV_ClearJoint( "clearJoint", "d" );
-const idEventDef EV_SetJointPos( "setJointPos", "ddv" );
-const idEventDef EV_SetJointAngle( "setJointAngle", "ddv" );
-const idEventDef EV_GetJointPos( "getJointPos", "d", 'v' );
-const idEventDef EV_GetJointAngle( "getJointAngle", "d", 'v' );
+const idEventDef EV_GetJointHandle( "getJointHandle", EventArgs('s', "jointname", ""), 'd', 
+	"Looks up the number of the specified joint. Returns INVALID_JOINT if the joint is not found." );
+const idEventDef EV_ClearAllJoints( "clearAllJoints", EventArgs(), EV_RETURNS_VOID, 
+	"Removes any custom transforms on all joints." );
+const idEventDef EV_ClearJoint( "clearJoint", EventArgs('d', "jointnum", ""), EV_RETURNS_VOID, 
+	"Removes any custom transforms on the specified joint." );
+const idEventDef EV_SetJointPos( "setJointPos", 
+	EventArgs('d', "jointnum", "", 
+			  'd', "transform_type", "",
+			  'v', "pos", ""), 
+	EV_RETURNS_VOID,
+	"Modifies the position of the joint based on the transform type.");
+const idEventDef EV_SetJointAngle( "setJointAngle", 
+	EventArgs('d', "jointnum", "", 
+			  'd', "transform_type", "",
+			  'v', "angles", ""), 
+	EV_RETURNS_VOID,
+	"Modifies the orientation of the joint based on the transform type.");
+const idEventDef EV_GetJointPos( "getJointPos", EventArgs('d', "jointnum", ""), 'v', "Returns the position of the joint in world space." );
+const idEventDef EV_GetJointAngle( "getJointAngle", EventArgs('d', "jointnum", ""), 'v', "Returns the angular orientation of the joint in world space." );
 
 CLASS_DECLARATION( idEntity, idAnimatedEntity )
 	EVENT( EV_GetJointHandle,		idAnimatedEntity::Event_GetJointHandle )

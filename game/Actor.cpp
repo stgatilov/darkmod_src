@@ -397,98 +397,169 @@ const char *idActor::MeleeTypeNames[ NUM_MELEE_TYPES ] = {
 	"Over", "LR", "RL", "Thrust", "General", "General"
 };
 
-const idEventDef AI_EnableEyeFocus( "enableEyeFocus" );
-const idEventDef AI_DisableEyeFocus( "disableEyeFocus" );
-const idEventDef EV_Footstep( "footstep" );
-const idEventDef EV_FootstepLeft( "leftFoot" );
-const idEventDef EV_FootstepRight( "rightFoot" );
-const idEventDef EV_EnableWalkIK( "EnableWalkIK" );
-const idEventDef EV_DisableWalkIK( "DisableWalkIK" );
-const idEventDef EV_EnableLegIK( "EnableLegIK", "d" );
-const idEventDef EV_DisableLegIK( "DisableLegIK", "d" );
-const idEventDef AI_StopAnim( "stopAnim", "dd" );
+const idEventDef AI_EnableEyeFocus( "enableEyeFocus", EventArgs(), EV_RETURNS_VOID, "Enables eye focus.");
+const idEventDef AI_DisableEyeFocus( "disableEyeFocus", EventArgs(), EV_RETURNS_VOID, "Disables eye focus.");
+const idEventDef EV_Footstep( "footstep", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_FootstepLeft( "leftFoot", EventArgs(), EV_RETURNS_VOID, "Changes to left foot and plays footstep sound.");
+const idEventDef EV_FootstepRight( "rightFoot", EventArgs(), EV_RETURNS_VOID, "Changes to right foot and plays footstep sound.");
+const idEventDef EV_EnableWalkIK( "EnableWalkIK", EventArgs(), EV_RETURNS_VOID, "enables walk IK");
+const idEventDef EV_DisableWalkIK( "DisableWalkIK", EventArgs(), EV_RETURNS_VOID, "disables walk IK");
+const idEventDef EV_EnableLegIK( "EnableLegIK", EventArgs('d', "num", ""), EV_RETURNS_VOID, "enables leg IK");
+const idEventDef EV_DisableLegIK( "DisableLegIK", EventArgs('d', "num", ""), EV_RETURNS_VOID, "disables leg IK");
+const idEventDef AI_StopAnim( "stopAnim", EventArgs('d', "channel", "", 'd', "frames", ""), 
+	EV_RETURNS_VOID, "Stops the animation currently playing on the given channel over the given number of frames.");
 // NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
 // by idWeapon (maybe due to limited polymorphism in scripting?)
-const idEventDef AI_PlayAnim( "playAnim", "ds", 'd' );
-const idEventDef AI_PauseAnim( "pauseAnim", "dd" );
-const idEventDef AI_AnimIsPaused( "animIsPaused", "d", 'd' );
-const idEventDef AI_PlayCycle( "playCycle", "ds", 'd' );
-const idEventDef AI_IdleAnim( "idleAnim", "ds", 'd' );
-const idEventDef AI_SetSyncedAnimWeight( "setSyncedAnimWeight", "ddf" );
-const idEventDef AI_SyncAnimChannels("syncAnimChannels", "ddf");
-const idEventDef AI_SetBlendFrames( "setBlendFrames", "dd" );
-const idEventDef AI_GetBlendFrames( "getBlendFrames", "d", 'd' );
-const idEventDef AI_AnimState( "animState", "dsd" );
-const idEventDef AI_GetAnimState( "getAnimState", "d", 's' );
-const idEventDef AI_InAnimState( "inAnimState", "ds", 'd' );
-const idEventDef AI_FinishAction( "finishAction", "s" );
-const idEventDef AI_FinishChannelAction( "finishChannelAction", "ds" );
-const idEventDef AI_AnimDone( "animDone", "dd", 'd' );
-const idEventDef AI_OverrideAnim( "overrideAnim", "d" );
-const idEventDef AI_EnableAnim( "enableAnim", "dd" );
-const idEventDef AI_DisableAnimchannel( "disableAnimchannel", "d" );
-const idEventDef AI_PreventPain( "preventPain", "f" );
-const idEventDef AI_DisablePain( "disablePain" );
-const idEventDef AI_EnablePain( "enablePain" );
-const idEventDef AI_GetPainAnim( "getPainAnim", NULL, 's' );
-const idEventDef AI_SetAnimPrefix( "setAnimPrefix", "s" );
-const idEventDef AI_HasAnim( "hasAnim", "ds", 'f' );
-const idEventDef AI_CheckAnim( "checkAnim", "ds" );
-const idEventDef AI_ChooseAnim( "chooseAnim", "ds", 's' );
-const idEventDef AI_AnimLength( "animLength", "ds", 'f' );
-const idEventDef AI_AnimDistance( "animDistance", "ds", 'f' );
-const idEventDef AI_HasEnemies( "hasEnemies", NULL, 'd' );
-const idEventDef AI_NextEnemy( "nextEnemy", "E", 'e' );
-const idEventDef AI_ClosestEnemyToPoint( "closestEnemyToPoint", "v", 'e' );
-const idEventDef AI_SetNextState( "setNextState", "s" );
-const idEventDef AI_SetState( "setState", "s" );
-const idEventDef AI_GetState( "getState", NULL, 's' );
-const idEventDef AI_GetHead( "getHead", NULL, 'e' );
-const idEventDef AI_GetEyePos( "getEyePos", NULL, 'v' );
+const idEventDef AI_PlayAnim( "playAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Plays the given animation on the given channel.  Returns false if anim doesn't exist.");
+const idEventDef AI_PauseAnim( "pauseAnim", EventArgs('d', "channel", "", 'd', "bPause", "true = pause, false = unpause"), EV_RETURNS_VOID, 
+	"Pause all animations playing on the given channel.\n" \
+	"NOTE: Can also be used used by idWeapons");
+const idEventDef AI_AnimIsPaused( "animIsPaused", EventArgs('d', "channel", ""), 'd', "Return whether the given anim channel is paused");
+const idEventDef AI_PlayCycle( "playCycle", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Continuously repeats the given animation on the given channel.  Returns false if anim doesn't exist.");
+const idEventDef AI_IdleAnim( "idleAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Plays the given idle animation on the given channel.  Returns false if anim doesn't exist.");
+const idEventDef AI_SetSyncedAnimWeight( "setSyncedAnimWeight", EventArgs('d', "channel", "", 'd', "animindex", "", 'f', "weight", ""), 
+	EV_RETURNS_VOID, "Sets the blend amount on multi-point anims.");
+const idEventDef AI_SyncAnimChannels("syncAnimChannels", EventArgs('d', "fromChannel", "", 'd', "toChannel", "", 'f', "blendFrames", ""), 
+	EV_RETURNS_VOID, "Synchronises the channels");
+const idEventDef AI_SetBlendFrames( "setBlendFrames", EventArgs('d', "channel", "", 'd', "blendFrame", ""), EV_RETURNS_VOID, "Sets the number of frames to blend between animations on the given channel.");
+const idEventDef AI_GetBlendFrames( "getBlendFrames", EventArgs('d', "channel", ""), 'd', "Returns the number of frames to blend between animations on the given channel.");
+const idEventDef AI_AnimState( "animState", EventArgs('d', "channel", "", 's', "stateFunction", "", 'd', "blendFrame", ""), 
+	EV_RETURNS_VOID, "Sets a new animation state script function for the given channel.");
+const idEventDef AI_GetAnimState( "getAnimState", EventArgs('d', "channel", ""), 's', "Returns the name of the current animation state script function used for the given channel.");
+const idEventDef AI_InAnimState( "inAnimState", EventArgs('d', "channel", "", 's', "stateFunc", ""), 
+	'd', "Returns true if the given animation state script function is currently used for the given channel.");
+const idEventDef AI_FinishAction( "finishAction", EventArgs('s', "action", ""), EV_RETURNS_VOID, "Finishes the given wait action.");
+const idEventDef AI_FinishChannelAction( "finishChannelAction", EventArgs('d', "channel", "", 's', "animname", ""), 
+	EV_RETURNS_VOID, "Overloaded finishAction function for setting the waitstate on each channel separately");
+const idEventDef AI_AnimDone( "animDone", EventArgs('d', "channel", "", 'd', "blendOutFrames", ""), 'd', 
+	"Returns true if the animation playing on the given channel\n" \
+	"is completed considering a number of blend frames.");
+const idEventDef AI_OverrideAnim( "overrideAnim", EventArgs('d', "channel", ""), EV_RETURNS_VOID, 
+	"Disables the animation currently playing on the given channel and syncs\n" \
+	"the animation with the animation of the nearest animating channel.");
+const idEventDef AI_EnableAnim( "enableAnim", EventArgs('d', "channel", "", 'd', "blendFrames", ""), EV_RETURNS_VOID, "Enables animation on the given channel.");
+const idEventDef AI_DisableAnimchannel( "disableAnimchannel", EventArgs('d', "channel", ""), EV_RETURNS_VOID, "Used to disable a certain animchannel (for example if the ai is dead)");
+const idEventDef AI_PreventPain( "preventPain", EventArgs('f', "duration", "time in seconds"), EV_RETURNS_VOID, "Prevents any pain animation from being played for the given time in seconds.");
+const idEventDef AI_DisablePain( "disablePain", EventArgs(), EV_RETURNS_VOID, "Disables pain animations.");
+const idEventDef AI_EnablePain( "enablePain", EventArgs(), EV_RETURNS_VOID, "Enables pain animations.");
+const idEventDef AI_GetPainAnim( "getPainAnim", EventArgs(), 's', "Returns the name of the pain animation.");
+const idEventDef AI_SetAnimPrefix( "setAnimPrefix", EventArgs('s', "prefix", ""), EV_RETURNS_VOID, "Sets a string which is placed in front of any animation names.");
+const idEventDef AI_HasAnim( "hasAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'f', "Returns true when an entity has a specific animation.");
+const idEventDef AI_CheckAnim( "checkAnim", EventArgs('d', "channel", "", 's', "animName", ""), EV_RETURNS_VOID, "Ensures that the animation exists and causes an error if it doesn't.");
+const idEventDef AI_ChooseAnim( "chooseAnim", EventArgs('d', "channel", "", 's', "animName", ""), 's', "Chooses a random anim and returns the name. Useful for doing move tests on anims.");
+const idEventDef AI_AnimLength( "animLength", EventArgs('d', "channel", "", 's', "animName", ""), 'f', 
+	"Returns the length of the anim in seconds. If the entity has multiple anims with animName,\n" \
+	"length may not match the anim that is played. Use chooseAnim to get a non-random anim\n" \
+	"and pass that string into animLength.");
+const idEventDef AI_AnimDistance( "animDistance", EventArgs('d', "channel", "", 's', "animName", ""), 'f', 
+	"Returns the distance that the anim travels. If the entity has multiple anims with animName,\n" \
+	"the distance may not match the anim that is played. Use chooseAnim to get a non-random anim\n" \
+	"and pass that string into animDistance.");
+
+const idEventDef AI_HasEnemies( "hasEnemies", EventArgs(), 'd', "Returns true if the actor has one or more enemies.");
+const idEventDef AI_NextEnemy( "nextEnemy", EventArgs('E', "lastEnemy", ""), 'e', "Returns the next enemy the actor has acquired.");
+const idEventDef AI_ClosestEnemyToPoint( "closestEnemyToPoint", EventArgs('v', "point", ""), 'e', "Returns the enemy closest to the given location.");
+const idEventDef AI_SetNextState( "setNextState", EventArgs('s', "stateFunc", ""), EV_RETURNS_VOID, 
+	"Sets the next state and waits until thread exits, or a frame delay before calling it.\n" \
+	"Handy for setting the state in the constructor.");
+const idEventDef AI_SetState( "setState", EventArgs('s', "stateFunc", ""), EV_RETURNS_VOID, "Sets the next state and goes to it immediately");
+const idEventDef AI_GetState( "getState", EventArgs(), 's', "Gets the current state.");
+const idEventDef AI_GetHead( "getHead", EventArgs(), 'e', "Returns the entity used for the character's head, if it has one.");
+const idEventDef AI_GetEyePos( "getEyePos", EventArgs(), 'v', "Get eye position of the player and the AI");
 
 // greebo: Moved these from ai_events.cpp to here
-const idEventDef AI_SetHealth( "setHealth", "f" );
-const idEventDef AI_GetHealth( "getHealth", NULL, 'f' );
+const idEventDef AI_SetHealth( "setHealth", EventArgs('f', "health", ""), EV_RETURNS_VOID, "Use these to set the health of AI or players (this also updates the AI_DEAD flag)");
+const idEventDef AI_GetHealth( "getHealth", EventArgs(), 'f', "Returns the current health.");
 
 // Attachment Related Events:
-const idEventDef AI_Attach( "attach", "es" );
-const idEventDef AI_AttachToPos( "attachToPos", "ess" );
-const idEventDef AI_ReAttachToPos( "reAttachToPos", "ss" );
-const idEventDef AI_ReAttachToCoords( "reAttachToCoords", "ssvv" );
-const idEventDef AI_DropAttachment( "dropAttachment", "s" );
-const idEventDef AI_ShowAttachment( "showAttachment", "sd" );
-const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", "d" );
-const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", "dd" );
-const idEventDef AI_GetAttachment( "getAttachment", "s", 'e' );
-const idEventDef AI_GetAttachmentInd( "getAttachmentInd", "d", 'e' );
-const idEventDef AI_GetNumAttachments( "getNumAttachments", NULL, 'd' );
+const idEventDef AI_Attach( "attach", EventArgs('e', "ent", "", 's', "attName", "the desired name of the attachment, e.g., 'melee_weapon'"), EV_RETURNS_VOID, 
+	"Attach an entity to the AI.\n" \
+	"Entity spawnArgs checked for attachments are:\n" \
+	" - \"origin\", \"angles\", and \"joint\".\n" \
+	"These must be set prior to calling attach.");
+const idEventDef AI_AttachToPos( "attachToPos", EventArgs('e', "ent", "", 's', "position", "", 's', "attName", "the desired name of the attachment, e.g., 'melee_weapon'"), EV_RETURNS_VOID, 
+	"Attach an entity to the AI, using a named attachment position");
+const idEventDef AI_ReAttachToPos( "reAttachToPos", 
+	EventArgs('s', "attName", "the name of the attachment we want to reattach.", 
+			  's', "position", "the new position we want to attach it to."), 
+	EV_RETURNS_VOID, 
+	"Reattach an existing attachment to a named attachment position.\n" \
+	"Example: reAttachToPos( melee_weapon, right_hand_held )");
+const idEventDef AI_ReAttachToCoords( "reAttachToCoords", 
+	EventArgs('s', "attName", "the name of the attachment we want to reattach. ", 
+			  's', "joint", "the name of the joint to attach to", 
+			  'v', "offset", "the translation offset from joint", 
+			  'v', "angles", "a (pitch, yaw, roll) angle vector that defines the rotation \n" \
+							"of the attachment relative to the joint's orientation"), 
+	EV_RETURNS_VOID, 
+	"Reattach an existing attachment");
+const idEventDef AI_DropAttachment( "dropAttachment", EventArgs('s', "attName", ""), EV_RETURNS_VOID, "Drop the attachment for the given attachment name.");
+const idEventDef AI_ShowAttachment( "showAttachment", EventArgs('s', "attName", "", 'd', "show", "true shows attachment, false hides it."),
+	EV_RETURNS_VOID, "Show or hide an attachment.");
+const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", EventArgs('d', "index", ""), EV_RETURNS_VOID, "Drop the attachment for the given index.");
+const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", EventArgs('d', "index", "starts at 0.", 'd', "show", "true shows attachment, false hides it."), EV_RETURNS_VOID, "Show or hide an attachment by array index.");
+const idEventDef AI_GetAttachment( "getAttachment", EventArgs('s', "attName", ""), 'e', 
+	"Get the attached entity with the given attachment name\n" \
+	"Will be NULL if the name is invalid or if the entity no longer exists");
+const idEventDef AI_GetAttachmentInd( "getAttachmentInd", EventArgs('d', "index", ""), 'e', 
+	"Get the attached entity at the given index\n" \
+	"Will be NULL if the index is invalid or the entity no longer exists");
+const idEventDef AI_GetNumAttachments( "getNumAttachments", EventArgs(), 'd', 
+	"Return the number of attachments on an AI.\n" \
+	"Used to iterate through the attachments if desired.");
 // Weapon attachment related events
-const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", NULL, 'd' );
-const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", NULL, 'd' );
+const idEventDef AI_GetNumRangedWeapons( "getNumRangedWeapons", EventArgs(), 'd', 
+	"Returns the number of ranged weapons attached to an actor.\n" \
+	"This refers to the TDM-style attachments with the spawnarg\n" \
+	"'is_weapon_ranged' set to '1'.");
+const idEventDef AI_GetNumMeleeWeapons( "getNumMeleeWeapons", EventArgs(), 'd', 
+	"Returns the number of melee weapons attached to an actor.\n" \
+	"This refers to the TDM-style attachments with the spawnarg\n" \
+	"'is_weapon_melee' set to '1'.");
 
 // Getting/setting attack flags
-const idEventDef AI_GetAttackFlag( "getAttackFlag", "d", 'd' );
-const idEventDef AI_SetAttackFlag( "setAttackFlag", "dd" );
+const idEventDef AI_GetAttackFlag( "getAttackFlag", EventArgs('d', "combatType", "see tdm_defs.script for possible enum values"), 'd', 
+	"Returns 1 if the given attack flag is activated.");
+const idEventDef AI_SetAttackFlag( "setAttackFlag", EventArgs('d', "combatType", "see tdm_defs.script for possible enum values", 'd', "enabled", ""), 
+	EV_RETURNS_VOID, "Activate or deactivate the given attack flag");
 
 // melee combat events
-const idEventDef AI_MeleeAttackStarted( "meleeAttackStarted", "d" );
-const idEventDef AI_MeleeParryStarted( "meleeParryStarted", "d" );
-const idEventDef AI_MeleeActionHeld( "meleeActionHeld" );
-const idEventDef AI_MeleeActionReleased( "meleeActionReleased" );
-const idEventDef AI_MeleeActionFinished( "meleeActionFinished" );
-const idEventDef AI_GetMeleeActionState( "getMeleeActState", NULL, 'd' );
-const idEventDef AI_GetMeleeActionPhase( "getMeleeActPhase", NULL, 'd' );
-const idEventDef AI_GetMeleeActionType( "getMeleeActType", NULL, 'd' );
-const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", NULL, 'd' );
-const idEventDef AI_GetMeleeResult( "getMeleeResult", NULL, 'd' );
-const idEventDef AI_GetMeleeLastHitByType( "getMeleeLastHitByType", NULL, 'd' );
-const idEventDef AI_MeleeBestParry( "meleeBestParry", NULL, 'd' );
-const idEventDef AI_MeleeNameForNum( "meleeNameForNum", "d", 's' );
+const idEventDef AI_MeleeAttackStarted( "meleeAttackStarted", EventArgs('d', "attType", ""), EV_RETURNS_VOID, 
+	"Registers the start of a given melee attack\n" \
+	"Intended to be called from a script that also starts the animation");
+const idEventDef AI_MeleeParryStarted( "meleeParryStarted", EventArgs('d', "parType", ""), EV_RETURNS_VOID, 
+	"Registers the start of a given melee parry\n" \
+	"Intended to be called from a script that also starts the animation");
+const idEventDef AI_MeleeActionHeld( "meleeActionHeld", EventArgs(), EV_RETURNS_VOID, "Called when the melee action reaches the \"hold\" point.");
+const idEventDef AI_MeleeActionReleased( "meleeActionReleased", EventArgs(), EV_RETURNS_VOID, "Called when the melee action is released from the hold point.");
+const idEventDef AI_MeleeActionFinished( "meleeActionFinished", EventArgs(), EV_RETURNS_VOID, "Called when the animation for the melee action has finished.");
+const idEventDef AI_GetMeleeActionState( "getMeleeActState", EventArgs(), 'd', "Returns the current melee action state (attacking/defending).");
+const idEventDef AI_GetMeleeActionPhase( "getMeleeActPhase", EventArgs(), 'd', "Returns the current melee action phase (holding,recovering,etc).");
+const idEventDef AI_GetMeleeActionType( "getMeleeActType", EventArgs(), 'd', "Returns the current melee action type (overhead,thrust,etc.).");
+const idEventDef AI_GetMeleeLastActTime( "getMeleeLastActTime", EventArgs(), 'd', 
+	"Returns the melee type of the last attack to hit this actor.\n" \
+	"Defaults to MELEETYPE_UNBLOCKABLE if we were not hit before.");
+const idEventDef AI_GetMeleeResult( "getMeleeResult", EventArgs(), 'd', 
+	"Get the result of the last melee action\n" \
+	"Follows MELEERESULT_* enum defined in tdm_defs.script");
+const idEventDef AI_GetMeleeLastHitByType( "getMeleeLastHitByType", EventArgs(), 'd', "Returns the game time that the most recent melee action ended (in ms)");
+const idEventDef AI_MeleeBestParry( "meleeBestParry", EventArgs(), 'd', 
+	"Returns the melee type integer of the best parry given the enemy attacks at the time\n" \
+	"If no attacking enemy is found, returns default of MELEETYPE_RL\n" \
+	"Follows MELEETYPE_* enum defined in tdm_defs.script");
+const idEventDef AI_MeleeNameForNum( "meleeNameForNum", EventArgs('d', "num", ""), 's', 
+	"Converts a melee type integer to a string name suffix\n" \
+	"Used for finding the right animation for a given type, etc.\n" \
+	"Possible names are, in order: \"Over, LR, RL, Thrust, General\"\n" \
+	"Where general blocks all attacks types except unblockable");
 
 // greebo: anim replacement script events
-const idEventDef AI_SetReplacementAnim( "setReplacementAnim", "ss");
-const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", "s", 's');
-const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", "s");
+const idEventDef AI_SetReplacementAnim( "setReplacementAnim", EventArgs('s', "animToReplace", "", 's', "replacement", ""), EV_RETURNS_VOID, 
+	"Replaces the animation \"animToReplace\" with \"replacement\"");
+const idEventDef AI_LookupReplacementAnim( "lookupReplacementAnim", EventArgs('s', "anim", ""), 's', 
+	"Returns the current replacement animation for \"anim\". Returns empty if no replacement anim ");
+const idEventDef AI_RemoveReplacementAnim( "removeReplacementAnim", EventArgs('s', "anim", ""), EV_RETURNS_VOID, 
+	"Removes the replacement for the given \"anim\"");
 
 CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_EnableEyeFocus,			idActor::Event_EnableEyeFocus )

@@ -102,6 +102,7 @@ game_string = ' \
 	physics/Physics_StaticMulti.cpp \
 	physics/Push.cpp \
 	script/Script_Compiler.cpp \
+	script/Script_Doc_Export.cpp \
 	script/Script_Interpreter.cpp \
 	script/Script_Program.cpp \
 	script/Script_Thread.cpp'

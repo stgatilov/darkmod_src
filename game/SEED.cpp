@@ -102,7 +102,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // what we consider solid when flooring entities
 #define CONTENTS_SOLIDFLOOR 	CONTENTS_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_RENDERMODEL | CONTENTS_OPAQUE | CONTENTS_MOVEABLECLIP
 
-const idEventDef EV_CullAll( "cullAll", "" );
+const idEventDef EV_CullAll( "cullAll", EventArgs(), EV_RETURNS_VOID, "Cull (remove from world) all entities." );
 
 /*
 ===============================================================================

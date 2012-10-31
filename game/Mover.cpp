@@ -47,45 +47,67 @@ idMover
 ===============================================================================
 */
 
-const idEventDef EV_FindGuiTargets( "<FindGuiTargets>", NULL );
-const idEventDef EV_TeamBlocked( "<teamblocked>", "ee" );
-const idEventDef EV_PartBlocked( "<partblocked>", "e" );
-const idEventDef EV_ReachedPos( "<reachedpos>", NULL );
-const idEventDef EV_ReachedAng( "<reachedang>", NULL );
-const idEventDef EV_PostRestore( "<postrestore>", "ddddd" );
-const idEventDef EV_StopMoving( "stopMoving", NULL );
-const idEventDef EV_StopRotating( "stopRotating", NULL );
-const idEventDef EV_Speed( "speed", "f" );
-const idEventDef EV_Time( "time", "f" );
-const idEventDef EV_GetMoveSpeed( "getMoveSpeed", NULL, 'f' );
-const idEventDef EV_GetMoveTime( "getMoveTime", NULL, 'f' );
-const idEventDef EV_AccelTime( "accelTime", "f" );
-const idEventDef EV_DecelTime( "decelTime", "f" );
-const idEventDef EV_MoveTo( "moveTo", "e" );
-const idEventDef EV_MoveToPos( "moveToPos", "v" );
-const idEventDef EV_Move( "move", "ff" );
-const idEventDef EV_MoveAccelerateTo( "accelTo", "ff" );
-const idEventDef EV_MoveDecelerateTo( "decelTo", "ff" );
-const idEventDef EV_RotateDownTo( "rotateDownTo", "df" );
-const idEventDef EV_RotateUpTo( "rotateUpTo", "df" );
-const idEventDef EV_RotateTo( "rotateTo", "v" );
-const idEventDef EV_Rotate( "rotate", "v" );
-const idEventDef EV_RotateOnce( "rotateOnce", "v" );
-const idEventDef EV_Bob( "bob", "ffv" );
-const idEventDef EV_Sway( "sway", "ffv" );
-const idEventDef EV_Mover_OpenPortal( "openPortal" );
-const idEventDef EV_Mover_ClosePortal( "closePortal" );
-const idEventDef EV_AccelSound( "accelSound", "s" );
-const idEventDef EV_DecelSound( "decelSound", "s" );
-const idEventDef EV_MoveSound( "moveSound", "s" );
-const idEventDef EV_Mover_InitGuiTargets( "<initguitargets>", NULL );
-const idEventDef EV_EnableSplineAngles( "enableSplineAngles", NULL );
-const idEventDef EV_DisableSplineAngles( "disableSplineAngles", NULL );
-const idEventDef EV_RemoveInitialSplineAngles( "removeInitialSplineAngles", NULL );
-const idEventDef EV_StartSpline( "startSpline", "e" );
-const idEventDef EV_StopSpline( "stopSpline", NULL );
-const idEventDef EV_IsMoving( "isMoving", NULL, 'd' );
-const idEventDef EV_IsRotating( "isRotating", NULL, 'd' );
+const idEventDef EV_FindGuiTargets( "<FindGuiTargets>", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_TeamBlocked( "<teamblocked>", EventArgs('e', "", "", 'e', "", ""), EV_RETURNS_VOID, "internal");
+const idEventDef EV_PartBlocked( "<partblocked>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal");
+const idEventDef EV_ReachedPos( "<reachedpos>", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_ReachedAng( "<reachedang>", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_PostRestore( "<postrestore>", 
+	EventArgs('d', "", "", 'd', "", "", 'd', "", "", 'd', "", "", 'd', "", ""), EV_RETURNS_VOID, "internal");
+
+const idEventDef EV_StopMoving( "stopMoving", EventArgs(), EV_RETURNS_VOID, "Stops any translational movement.");
+const idEventDef EV_StopRotating( "stopRotating", EventArgs(), EV_RETURNS_VOID, "Stops any rotational movement.");
+const idEventDef EV_Speed( "speed", EventArgs('f', "speed", ""), EV_RETURNS_VOID, "Sets the movement speed. Set this speed before initiating a new move.");
+const idEventDef EV_Time( "time", EventArgs('f', "time", ""), EV_RETURNS_VOID, "Sets the movement time. Set this time before initiating a new move.");
+const idEventDef EV_GetMoveSpeed( "getMoveSpeed", EventArgs(), 'f', "Get the movement speed.");
+const idEventDef EV_GetMoveTime( "getMoveTime", EventArgs(), 'f', "Gets the movement time.");
+const idEventDef EV_AccelTime( "accelTime", EventArgs('f', "time", ""), EV_RETURNS_VOID, "Sets the acceleration time. Set this acceleration time before initiating a new move.");
+const idEventDef EV_DecelTime( "decelTime", EventArgs('f', "time", ""), EV_RETURNS_VOID, "Sets the deceleration time. Set this deceleration time before initiating a new move.");
+const idEventDef EV_MoveTo( "moveTo", EventArgs('e', "targetEntity", ""), EV_RETURNS_VOID, 
+	"Initiates a translation to the position of an entity.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_MoveToPos( "moveToPos", EventArgs('v', "pos", ""), EV_RETURNS_VOID, 
+	"Initiates a translation to an absolute position.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_Move( "move", EventArgs('f', "angle", "", 'f', "distance", ""), EV_RETURNS_VOID, 
+	"Initiates a translation with the given distance in the given yaw direction.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_MoveAccelerateTo( "accelTo", EventArgs('f', "speed", "", 'f', "time", ""), EV_RETURNS_VOID, "Initiates an acceleration to the given speed over the given time in seconds.");
+const idEventDef EV_MoveDecelerateTo( "decelTo", EventArgs('f', "speed", "", 'f', "time", ""), EV_RETURNS_VOID, "Initiates a deceleration to the given speed over the given time in seconds.");
+const idEventDef EV_RotateDownTo( "rotateDownTo", EventArgs('d', "axis", "", 'f', "angle", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation about the given axis by decreasing the current angle towards the given angle.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_RotateUpTo( "rotateUpTo", EventArgs('d', "axis", "", 'f', "angle", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation about the given axis by increasing the current angle towards the given angle.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_RotateTo( "rotateTo", EventArgs('v', "angles", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation towards the given Euler angles.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_Rotate( "rotate", EventArgs('v', "angleSpeed", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation with the given angular speed.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_RotateOnce( "rotateOnce", EventArgs('v', "angles", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation towards the current angles plus the given Euler angles.\n" \
+	"Uses the current speed/time and acceleration and deceleration settings.");
+const idEventDef EV_Bob( "bob", EventArgs('f', "speed", "", 'f', "phase", "", 'v', "distance", ""), EV_RETURNS_VOID, 
+	"Initiates a translation back and forth along the given vector with the given speed and phase.");
+const idEventDef EV_Sway( "sway", EventArgs('f', "speed", "", 'f', "phase", "", 'v', "angles", ""), EV_RETURNS_VOID, 
+	"Initiates a rotation back and forth along the given angles with the given speed and phase.");
+const idEventDef EV_Mover_OpenPortal( "openPortal", EventArgs(), EV_RETURNS_VOID, "Opens the renderer portal associated with this mover.");
+const idEventDef EV_Mover_ClosePortal( "closePortal", EventArgs(), EV_RETURNS_VOID, "Closes the renderer portal associated with this mover.");
+const idEventDef EV_AccelSound( "accelSound", EventArgs('s', "sound", ""), EV_RETURNS_VOID, "Sets the sound to be played when the mover accelerates.");
+const idEventDef EV_DecelSound( "decelSound", EventArgs('s', "sound", ""), EV_RETURNS_VOID, "Sets the sound to be played when the mover decelerates.");
+const idEventDef EV_MoveSound( "moveSound", EventArgs('s', "sound", ""), EV_RETURNS_VOID, "Sets the sound to be played when the moving.");
+const idEventDef EV_Mover_InitGuiTargets( "<initguitargets>", EventArgs(), EV_RETURNS_VOID, "internal");
+const idEventDef EV_EnableSplineAngles( "enableSplineAngles", EventArgs(), EV_RETURNS_VOID, "Enables aligning the mover with the spline direction.");
+const idEventDef EV_DisableSplineAngles( "disableSplineAngles", EventArgs(), EV_RETURNS_VOID, "Disables aligning the mover with the spline direction.");
+const idEventDef EV_RemoveInitialSplineAngles( "removeInitialSplineAngles", EventArgs(), EV_RETURNS_VOID, 
+	"Subtracts the initial spline angles to maintain the initial orientation of the mover.");
+const idEventDef EV_StartSpline( "startSpline", EventArgs('e', "spline", ""), EV_RETURNS_VOID, 
+	"Starts moving along a spline stored on the given entity.");
+const idEventDef EV_StopSpline( "stopSpline", EventArgs(), EV_RETURNS_VOID, "Stops moving along a spline.");
+const idEventDef EV_IsMoving( "isMoving", EventArgs(), 'd',  "Returns true if a mover is moving" );
+const idEventDef EV_IsRotating( "isRotating", EventArgs(), 'd', "Returns true if a mover is rotating" );
 
 CLASS_DECLARATION( idEntity, idMover )
 	EVENT( EV_FindGuiTargets,		idMover::Event_FindGuiTargets )
@@ -1684,10 +1706,10 @@ Pos1 is "at rest", pos2 is "activated"
 ===============================================================================
 */
 
-const idEventDef EV_Mover_ReturnToPos1( "<returntopos1>", NULL );
-const idEventDef EV_Mover_MatchTeam( "<matchteam>", "dd" );
-const idEventDef EV_Mover_Enable( "enable", NULL );
-const idEventDef EV_Mover_Disable( "disable", NULL );
+const idEventDef EV_Mover_ReturnToPos1( "<returntopos1>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Mover_MatchTeam( "<matchteam>", EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Mover_Enable( "enable", EventArgs(), EV_RETURNS_VOID, "Enables the mover/trigger" );
+const idEventDef EV_Mover_Disable( "disable", EventArgs(), EV_RETURNS_VOID, "Disables the mover/trigger" );
 
 CLASS_DECLARATION( idEntity, idMover_Binary )
 	EVENT( EV_FindGuiTargets,			idMover_Binary::Event_FindGuiTargets )

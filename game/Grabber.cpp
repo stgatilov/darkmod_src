@@ -39,7 +39,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", NULL, 0 );
+const idEventDef EV_Grabber_CheckClipList( "<checkClipList>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 // TODO: Make most of these cvars
 

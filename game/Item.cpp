@@ -42,12 +42,12 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_DropToFloor( "<dropToFloor>" );
-const idEventDef EV_RespawnItem( "respawn" );
-const idEventDef EV_RespawnFx( "<respawnFx>" );
-const idEventDef EV_GetPlayerPos( "<getplayerpos>" );
-const idEventDef EV_HideObjective( "<hideobjective>", "e" );
-const idEventDef EV_CamShot( "<camshot>" );
+const idEventDef EV_DropToFloor( "<dropToFloor>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_RespawnItem( "respawn", EventArgs(), EV_RETURNS_VOID, "Respawn" );
+const idEventDef EV_RespawnFx( "<respawnFx>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_GetPlayerPos( "<getplayerpos>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_HideObjective( "<hideobjective>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_CamShot( "<camshot>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idEntity, idItem )
 	EVENT( EV_DropToFloor,		idItem::Event_DropToFloor )

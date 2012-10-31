@@ -35,34 +35,37 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //
 // event defs
 //
-const idEventDef EV_Weapon_Clear( "<clear>" );
-const idEventDef EV_Weapon_GetOwner( "getOwner", NULL, 'e' );
-const idEventDef EV_Weapon_Next( "nextWeapon" );
-const idEventDef EV_Weapon_State( "weaponState", "sd" );
-const idEventDef EV_Weapon_UseAmmo( "useAmmo", "d" );
-const idEventDef EV_Weapon_AddToClip( "addToClip", "d" );
-const idEventDef EV_Weapon_AmmoInClip( "ammoInClip", NULL, 'f' );
-const idEventDef EV_Weapon_AmmoAvailable( "ammoAvailable", NULL, 'f' );
-const idEventDef EV_Weapon_TotalAmmoCount( "totalAmmoCount", NULL, 'f' );
-const idEventDef EV_Weapon_ClipSize( "clipSize", NULL, 'f' );
-const idEventDef EV_Weapon_WeaponOutOfAmmo( "weaponOutOfAmmo" );
-const idEventDef EV_Weapon_WeaponReady( "weaponReady" );
-const idEventDef EV_Weapon_WeaponReloading( "weaponReloading" );
-const idEventDef EV_Weapon_WeaponHolstered( "weaponHolstered" );
-const idEventDef EV_Weapon_WeaponRising( "weaponRising" );
-const idEventDef EV_Weapon_WeaponLowering( "weaponLowering" );
-const idEventDef EV_Weapon_Flashlight( "flashlight", "d" );
-const idEventDef EV_Weapon_LaunchProjectiles( "launchProjectiles", "dffff" );
-const idEventDef EV_Weapon_CreateProjectile( "createProjectile", NULL, 'e' );
-const idEventDef EV_Weapon_EjectBrass( "ejectBrass" );
-const idEventDef EV_Weapon_Melee( "melee", NULL, 'd' );
-const idEventDef EV_Weapon_GetWorldModel( "getWorldModel", NULL, 'e' );
-const idEventDef EV_Weapon_AllowDrop( "allowDrop", "d" );
-const idEventDef EV_Weapon_NetReload( "netReload" );
-const idEventDef EV_Weapon_IsInvisible( "isInvisible", NULL, 'f' );
-const idEventDef EV_Weapon_NetEndReload( "netEndReload" );
-const idEventDef EV_Weapon_ShowAttachment( "showAttachment", "sd" );
-const idEventDef EV_Weapon_ShowAttachmentInd( "showAttachmentInd", "dd" );
+const idEventDef EV_Weapon_Clear( "<clear>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Weapon_GetOwner( "getOwner", EventArgs(), 'e', "Returns the owning entity" );
+const idEventDef EV_Weapon_Next( "nextWeapon", EventArgs(), EV_RETURNS_VOID, "" );
+const idEventDef EV_Weapon_State( "weaponState", EventArgs('s', "stateFunction", "", 'd', "blendFrames", ""), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_UseAmmo( "useAmmo", EventArgs('d', "amount", ""), EV_RETURNS_VOID, "Eats the specified amount of ammo" );
+const idEventDef EV_Weapon_AddToClip( "addToClip", EventArgs('d', "amount", ""), EV_RETURNS_VOID, "" );
+const idEventDef EV_Weapon_AmmoInClip( "ammoInClip", EventArgs(), 'f', "" );
+const idEventDef EV_Weapon_AmmoAvailable( "ammoAvailable", EventArgs(), 'f', "Number of shots left in inventory" );
+const idEventDef EV_Weapon_TotalAmmoCount( "totalAmmoCount", EventArgs(), 'f', 
+	"Amount of ammo in inventory. since each shot may use more than 1 ammo, this is different than ammoAvailable()" );
+const idEventDef EV_Weapon_ClipSize( "clipSize", EventArgs(), 'f', "" );
+const idEventDef EV_Weapon_WeaponOutOfAmmo( "weaponOutOfAmmo", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_WeaponReady( "weaponReady", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_WeaponReloading( "weaponReloading", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_WeaponHolstered( "weaponHolstered", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_WeaponRising( "weaponRising", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_WeaponLowering( "weaponLowering", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_Flashlight( "flashlight", EventArgs('d', "enable", ""), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_LaunchProjectiles( "launchProjectiles", 
+	EventArgs('d', "num_projectiles", "", 'f', "spread", "", 'f', "fuseOffset", "", 'f', "launchPower", "", 'f', "dmgPower", ""), 
+	EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_CreateProjectile( "createProjectile", EventArgs(), 'e', "no description" );
+const idEventDef EV_Weapon_EjectBrass( "ejectBrass", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_Melee( "melee", EventArgs(), 'd', "no description" );
+const idEventDef EV_Weapon_GetWorldModel( "getWorldModel", EventArgs(), 'e', "Returns the entity that controls the world model" );
+const idEventDef EV_Weapon_AllowDrop( "allowDrop", EventArgs('d', "allow", ""), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_NetReload( "netReload", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef EV_Weapon_IsInvisible( "isInvisible", EventArgs(), 'f', "no description" );
+const idEventDef EV_Weapon_NetEndReload( "netEndReload", EventArgs(), EV_RETURNS_VOID, "no description" );
+//const idEventDef EV_Weapon_ShowAttachment( "showAttachment", EventArgs('s', "", "", 'd', "", ""), EV_RETURNS_VOID, "" );
+//const idEventDef EV_Weapon_ShowAttachmentInd( "showAttachmentInd", "EventArgs('d', "", "", 'd', "", ""), EV_RETURNS_VOID, "" );
 
 //
 // class def
@@ -92,8 +95,8 @@ CLASS_DECLARATION( idAnimatedEntity, idWeapon )
 	EVENT( AI_AnimDone,							idWeapon::Event_AnimDone )
 	EVENT( EV_Weapon_Next,						idWeapon::Event_Next )
 	EVENT( EV_SetSkin,							idWeapon::Event_SetSkin )
-	EVENT( EV_Weapon_ShowAttachment,			idWeapon::ShowAttachment )
-	EVENT( EV_Weapon_ShowAttachmentInd,			idWeapon::ShowAttachmentInd )
+	EVENT( AI_ShowAttachment,					idWeapon::ShowAttachment )
+	EVENT( AI_ShowAttachmentInd,				idWeapon::ShowAttachmentInd )
 	EVENT( EV_Weapon_Flashlight,				idWeapon::Event_Flashlight )
 	EVENT( EV_Light_GetLightParm,				idWeapon::Event_GetLightParm )
 	EVENT( EV_Light_SetLightParm,				idWeapon::Event_SetLightParm )

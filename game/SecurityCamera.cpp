@@ -42,11 +42,11 @@ static bool versioned = RegisterVersionedFile("$Id$");
 	
 ***********************************************************************/
 
-const idEventDef EV_SecurityCam_ReverseSweep( "<reverseSweep>" );
-const idEventDef EV_SecurityCam_ContinueSweep( "<continueSweep>" );
-const idEventDef EV_SecurityCam_Pause( "<pause>" );
-const idEventDef EV_SecurityCam_Alert( "<alert>" );
-const idEventDef EV_SecurityCam_AddLight( "<addLight>" );
+const idEventDef EV_SecurityCam_ReverseSweep( "<reverseSweep>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SecurityCam_ContinueSweep( "<continueSweep>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SecurityCam_Pause( "<pause>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SecurityCam_Alert( "<alert>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_ReverseSweep,		idSecurityCamera::Event_ReverseSweep )

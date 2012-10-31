@@ -32,8 +32,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_Fx_KillFx( "_killfx" );
-const idEventDef EV_Fx_Action( "_fxAction", "e" );		// implemented by subclasses
+const idEventDef EV_Fx_KillFx( "_killfx", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Fx_Action( "_fxAction", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal" );		// implemented by subclasses
 
 CLASS_DECLARATION( idEntity, idEntityFx )
 EVENT( EV_Activate,	   	idEntityFx::Event_Trigger )

@@ -757,13 +757,27 @@ idEntity* idAFAttachment::GetResponseEntity()
 ===============================================================================
 */
 
-const idEventDef EV_SetConstraintPosition( "SetConstraintPosition", "sv" );
-const idEventDef EV_GetLinearVelocityB( "getLinearVelocityB", "d", 'v' );
-const idEventDef EV_GetAngularVelocityB( "getAngularVelocityB", "d", 'v' );
-const idEventDef EV_SetLinearVelocityB( "setLinearVelocityB", "vd" );
-const idEventDef EV_SetAngularVelocityB( "setAngularVelocityB", "vd" );
-const idEventDef EV_GetNumBodies( "getNumBodies", NULL, 'd' );
-const idEventDef EV_RestoreAddedEnts( "restoreAddedEnts", NULL );
+const idEventDef EV_SetConstraintPosition( "SetConstraintPosition", EventArgs('s', "constraintName", "", 'v', "position", ""), EV_RETURNS_VOID, 
+		"Moves the constraint with the given name that binds this entity to another entity." );
+	
+const idEventDef EV_GetLinearVelocityB( "getLinearVelocityB", EventArgs('d', "id", ""), 'v', 
+		"Get the linear velocitiy of a particular body\n" \
+		"Returns (0,0,0) if the body ID is invalid.");
+
+const idEventDef EV_GetAngularVelocityB( "getAngularVelocityB", EventArgs('d', "id", ""), 'v', 
+		"Get the angular velocitiy of a particular body\n" \
+		"Returns (0,0,0) if the body ID is invalid.");
+
+const idEventDef EV_SetLinearVelocityB( "setLinearVelocityB", EventArgs('v', "velocity", "", 'd', "id", "" ), EV_RETURNS_VOID, 
+		"Set the linear velocity of a particular body");
+
+const idEventDef EV_SetAngularVelocityB( "setAngularVelocityB", EventArgs('v', "velocity", "", 'd', "id", "" ), EV_RETURNS_VOID, 
+		"Set the angular velocity of a particular body");
+
+const idEventDef EV_GetNumBodies( "getNumBodies", EventArgs(), 'd', 
+		"Returns the number of bodies in the AF. If the AF physics pointer is NULL, it returns 0.");
+
+const idEventDef EV_RestoreAddedEnts( "restoreAddedEnts", EventArgs(), EV_RETURNS_VOID, "");
 
 CLASS_DECLARATION( idAnimatedEntity, idAFEntity_Base )
 	EVENT( EV_SetConstraintPosition,	idAFEntity_Base::Event_SetConstraintPosition )
@@ -1827,8 +1841,8 @@ idAFEntity_Gibbable
 ===============================================================================
 */
 
-const idEventDef EV_Gib( "gib", "s" );
-const idEventDef EV_Gibbed( "<gibbed>" );
+const idEventDef EV_Gib( "gib", EventArgs('s', "damageDefName", ""), EV_RETURNS_VOID, "" );
+const idEventDef EV_Gibbed( "<gibbed>", EventArgs(), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idAFEntity_Base, idAFEntity_Gibbable )
 	EVENT( EV_Gib,		idAFEntity_Gibbable::Event_Gib )

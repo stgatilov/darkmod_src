@@ -33,8 +33,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
-const idEventDef EV_Enable( "enable", NULL );
-const idEventDef EV_Disable( "disable", NULL );
+const idEventDef EV_Enable( "enable", EventArgs(), EV_RETURNS_VOID, "Enables the mover/trigger" );
+const idEventDef EV_Disable( "disable", EventArgs(), EV_RETURNS_VOID, "Disables the mover/trigger" );
 
 CLASS_DECLARATION( idEntity, idTrigger )
 	EVENT( EV_Enable,	idTrigger::Event_Enable )
@@ -245,7 +245,7 @@ void idTrigger::Spawn( void )
 ===============================================================================
 */
 
-const idEventDef EV_TriggerAction( "<triggerAction>", "e" );
+const idEventDef EV_TriggerAction( "<triggerAction>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idTrigger, idTrigger_Multi )
 	EVENT( EV_Touch,			idTrigger_Multi::Event_Touch )
@@ -710,7 +710,7 @@ void idTrigger_EntityName::Event_Touch( idEntity *other, trace_t *trace ) {
 ===============================================================================
 */
 
-const idEventDef EV_Timer( "<timer>", NULL );
+const idEventDef EV_Timer( "<timer>", EventArgs(), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idTrigger, idTrigger_Timer )
 	EVENT( EV_Timer,		idTrigger_Timer::Event_Timer )

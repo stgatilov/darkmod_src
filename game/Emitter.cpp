@@ -33,8 +33,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Emitter.h"
 
-const idEventDef EV_EmitterAddModel( "emitterAddModel", "sv" );
-const idEventDef EV_EmitterGetNumModels( "emitterGetNumModels", NULL, 'f' );
+const idEventDef EV_EmitterAddModel( "emitterAddModel", EventArgs('s', "modelName", "", 'v', "modelOffset", ""), EV_RETURNS_VOID, 
+	"Adds a new particle (or regular, if you wish) model to the emitter,\n" \
+	"located at modelOffset units away from the emitter's origin." );
+const idEventDef EV_EmitterGetNumModels( "emitterGetNumModels", EventArgs(), 'f', "Returns the number of models/particles this emitter has. Always >= 1." );
 
 CLASS_DECLARATION( idStaticEntity, idFuncEmitter )
 	EVENT( EV_Activate,				idFuncEmitter::Event_Activate )
@@ -412,7 +414,7 @@ idFuncSplat
 */
 
 
-const idEventDef EV_Splat( "<Splat>" );
+const idEventDef EV_Splat( "<Splat>", EventArgs(), EV_RETURNS_VOID, "internal" );
 CLASS_DECLARATION( idFuncEmitter, idFuncSplat )
 EVENT( EV_Activate,		idFuncSplat::Event_Activate )
 EVENT( EV_Splat,		idFuncSplat::Event_Splat )

@@ -61,7 +61,7 @@ renderView_t *idCamera::GetRenderView() {
   idCameraView
 
 ***********************************************************************/
-const idEventDef EV_Camera_SetAttachments( "<getattachments>", NULL );
+const idEventDef EV_Camera_SetAttachments( "<getattachments>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idCamera, idCameraView )
 	EVENT( EV_Activate,				idCameraView::Event_Activate )
@@ -220,8 +220,8 @@ void idCameraView::GetViewParms( renderView_t *view ) {
 ===============================================================================
 */
 
-const idEventDef EV_Camera_Start( "start", NULL );
-const idEventDef EV_Camera_Stop( "stop", NULL );
+const idEventDef EV_Camera_Start( "start", EventArgs(), EV_RETURNS_VOID, "Starts a spline or anim camera moving.");
+const idEventDef EV_Camera_Stop( "stop", EventArgs(), EV_RETURNS_VOID, "Stops a spline or anim camera moving." );
 
 CLASS_DECLARATION( idCamera, idCameraAnim )
 	EVENT( EV_Thread_SetCallback,	idCameraAnim::Event_SetCallback )

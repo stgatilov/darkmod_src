@@ -32,131 +32,191 @@ static bool versioned = RegisterVersionedFile("$Id$");
 class CRelations;
 class CsndProp;
 
-const idEventDef EV_Thread_Execute( "<execute>", NULL );
-const idEventDef EV_Thread_SetCallback( "<script_setcallback>", NULL );
-const idEventDef EV_Thread_SetRenderCallback( "<script_setrendercallback>", NULL );
+const idEventDef EV_Thread_Execute( "<execute>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Thread_SetCallback( "<script_setcallback>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Thread_SetRenderCallback( "<script_setrendercallback>", EventArgs(), EV_RETURNS_VOID, "internal" );
 																	
 // script callable events
-const idEventDef EV_Thread_TerminateThread( "terminate", "d" );
-const idEventDef EV_Thread_Pause( "pause", NULL );
-const idEventDef EV_Thread_Wait( "wait", "f" );
-const idEventDef EV_Thread_WaitFrame( "waitFrame" );
-const idEventDef EV_Thread_WaitFor( "waitFor", "e" );
-const idEventDef EV_Thread_WaitForThread( "waitForThread", "d" );
-const idEventDef EV_Thread_WaitForRender( "waitForRender", "e" );
-const idEventDef EV_Thread_Print( "print", "s" );
-const idEventDef EV_Thread_PrintLn( "println", "s" );
-const idEventDef EV_Thread_Say( "say", "s" );
-const idEventDef EV_Thread_Assert( "assert", "f" );
-const idEventDef EV_Thread_Trigger( "trigger", "e" );
-const idEventDef EV_Thread_SetCvar( "setcvar", "ss" );
-const idEventDef EV_Thread_GetCvar( "getcvar", "s", 's' );
-const idEventDef EV_Thread_Random( "random", "f", 'f' );
-const idEventDef EV_Thread_GetTime( "getTime", NULL, 'f' );
-const idEventDef EV_Thread_KillThread( "killthread", "s" );
-const idEventDef EV_Thread_SetThreadName( "threadname", "s" );
-const idEventDef EV_Thread_GetEntity( "getEntity", "s", 'e' );
-const idEventDef EV_Thread_Spawn( "spawn", "s", 'e' );
-const idEventDef EV_Thread_CopySpawnArgs( "copySpawnArgs", "e" );
-const idEventDef EV_Thread_SetSpawnArg( "setSpawnArg", "ss" );
-const idEventDef EV_Thread_SpawnString( "SpawnString", "ss", 's' );
-const idEventDef EV_Thread_SpawnFloat( "SpawnFloat", "sf", 'f' );
-const idEventDef EV_Thread_SpawnVector( "SpawnVector", "sv", 'v' );
-const idEventDef EV_Thread_ClearPersistantArgs( "clearPersistantArgs" );
-const idEventDef EV_Thread_SetPersistantArg( "setPersistantArg", "ss" );
-const idEventDef EV_Thread_GetPersistantString( "getPersistantString", "s", 's' );
-const idEventDef EV_Thread_GetPersistantFloat( "getPersistantFloat", "s", 'f' );
-const idEventDef EV_Thread_GetPersistantVector( "getPersistantVector", "s", 'v' );
+const idEventDef EV_Thread_TerminateThread( "terminate", EventArgs('d', "threadNumber", ""), EV_RETURNS_VOID, "Terminates a thread.");
+const idEventDef EV_Thread_Pause( "pause", EventArgs(), EV_RETURNS_VOID, "Pauses the current thread." );
+const idEventDef EV_Thread_Wait( "wait", EventArgs('f', "time", ""), EV_RETURNS_VOID, "Suspends execution of the current thread for the given number of seconds.");
+const idEventDef EV_Thread_WaitFrame( "waitFrame", EventArgs(), EV_RETURNS_VOID, "Suspends execution of current thread for one game frame." );
+const idEventDef EV_Thread_WaitFor( "waitFor", EventArgs('e', "mover", ""), EV_RETURNS_VOID, "Waits for the given entity to complete it's move.");
+const idEventDef EV_Thread_WaitForThread( "waitForThread", EventArgs('d', "threadNumber", ""), EV_RETURNS_VOID, "Waits for the given thread to terminate.");
+const idEventDef EV_Thread_WaitForRender( "waitForRender", EventArgs('e', "e", ""), EV_RETURNS_VOID, 
+	"Suspends the current thread until 'e' might have been rendered.\n" \
+	"It's event based, so it doesn't waste CPU repeatedly checking inPVS().\n" \
+	"e.inPVS() will very likely be true when the thread resumes.\n" \
+	"If e.inPVS() is true, calling waitForRender() will probably just wait\n" \
+	"a frame, unless D3 can figure out that the entity doesn't need to be rendered.\n" \
+	"Optimizations regarding shadowcasting lights may not apply to this function -\n" \
+	"it is based purely off whether or not the entity's bounding box is visible.");
+const idEventDef EV_Thread_Print( "print", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Prints the given string to the console.");
+const idEventDef EV_Thread_PrintLn( "println", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Prints the given line to the console.");
+const idEventDef EV_Thread_Say( "say", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Multiplayer - Print this line on the network");
+const idEventDef EV_Thread_Assert( "assert", EventArgs('f', "condition", ""), EV_RETURNS_VOID, "Breaks if the condition is zero. (Only works in debug builds.)");
+const idEventDef EV_Thread_Trigger( "trigger", EventArgs('e', "entityToTrigger", ""), EV_RETURNS_VOID, "Triggers the given entity.");
+const idEventDef EV_Thread_SetCvar( "setcvar", EventArgs('s', "name", "", 's', "value", ""), EV_RETURNS_VOID, "Sets a cvar.");
+const idEventDef EV_Thread_GetCvar( "getcvar", EventArgs('s', "name", ""), 's', "Returns the string for a cvar.");
+const idEventDef EV_Thread_Random( "random", EventArgs('f', "range", ""), 'f', "Returns a random value X where 0 <= X < range.");
+const idEventDef EV_Thread_GetTime( "getTime", EventArgs(), 'f', "Returns the current game time in seconds." );
+const idEventDef EV_Thread_KillThread( "killthread", EventArgs('s', "threadName", ""), EV_RETURNS_VOID, "Kills all threads with the specified name");
+const idEventDef EV_Thread_SetThreadName( "threadname", EventArgs('s', "name", ""), EV_RETURNS_VOID, "Sets the name of the current thread.");
+const idEventDef EV_Thread_GetEntity( "getEntity", EventArgs('s', "name", ""), 'e', "Returns a reference to the entity with the specified name.");
+const idEventDef EV_Thread_Spawn( "spawn", EventArgs('s', "classname", ""), 'e', "Creates an entity of the specified classname and returns a reference to the entity.");
+const idEventDef EV_Thread_CopySpawnArgs( "copySpawnArgs", EventArgs('e', "ent", ""), EV_RETURNS_VOID, "copies the spawn args from an entity");
+const idEventDef EV_Thread_SetSpawnArg( "setSpawnArg", EventArgs('s', "key", "", 's', "value", ""), EV_RETURNS_VOID, "Sets a key/value pair to be used when a new entity is spawned.");
+const idEventDef EV_Thread_SpawnString( "SpawnString", EventArgs('s', "key", "", 's', "default", ""), 's', "Returns the string for the given spawn argument." );
+const idEventDef EV_Thread_SpawnFloat( "SpawnFloat", EventArgs('s', "key", "", 'f', "default", ""), 'f', "Returns the floating point value for the given spawn argument.");
+const idEventDef EV_Thread_SpawnVector( "SpawnVector", EventArgs('s', "key", "", 'v', "default", ""), 'v', "Returns the vector for the given spawn argument.");
+const idEventDef EV_Thread_ClearPersistantArgs( "clearPersistantArgs", EventArgs(), EV_RETURNS_VOID, "Clears data that persists between maps." );
+const idEventDef EV_Thread_SetPersistantArg( "setPersistantArg", EventArgs('s', "key", "", 's', "value", ""), EV_RETURNS_VOID, "Sets a key/value pair that persists between maps");
+const idEventDef EV_Thread_GetPersistantString( "getPersistantString", EventArgs('s', "key", ""), 's', "Returns the string for the given persistent arg");
+const idEventDef EV_Thread_GetPersistantFloat( "getPersistantFloat", EventArgs('s', "key", ""), 'f', "Returns the floating point value for the given persistent arg");
+const idEventDef EV_Thread_GetPersistantVector( "getPersistantVector", EventArgs('s', "key", ""), 'v', "Returns the vector for the given persistent arg");
 
 // Returns the number of the current mission (0-based)
-const idEventDef EV_Thread_GetCurrentMissionNum( "getCurrentMissionNum", NULL, 'f' );
+const idEventDef EV_Thread_GetCurrentMissionNum( "getCurrentMissionNum", EventArgs(), 'f', "Returns the number of the current mission (0-based, the first mission has number 0).");
 
 // Returns the version of TDM as floats, 1.08 for v1.08 etc.
-const idEventDef EV_Thread_GetTDMVersion( "getTDMVersion", NULL, 'd' );
+const idEventDef EV_Thread_GetTDMVersion( "getTDMVersion", EventArgs(), 'd', 
+	"Get the current TDM version as integer. The value will be 108\n" \
+	"for v1.08, 109 for v1.09 and 200 for v2.00 etc." );
 
-const idEventDef EV_Thread_AngToForward( "angToForward", "v", 'v' );
-const idEventDef EV_Thread_AngToRight( "angToRight", "v", 'v' );
-const idEventDef EV_Thread_AngToUp( "angToUp", "v", 'v' );
-const idEventDef EV_Thread_Sine( "sin", "f", 'f' );
-const idEventDef EV_Thread_Cosine( "cos", "f", 'f' );
-const idEventDef EV_Thread_Log( "log", "f", 'f' );
-const idEventDef EV_Thread_Pow( "pow", "ff", 'f' );
-const idEventDef EV_Thread_SquareRoot( "sqrt", "f", 'f' );
-const idEventDef EV_Thread_Normalize( "vecNormalize", "v", 'v' );
-const idEventDef EV_Thread_VecLength( "vecLength", "v", 'f' );
-const idEventDef EV_Thread_VecDotProduct( "DotProduct", "vv", 'f' );
-const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", "vv", 'v' );
-const idEventDef EV_Thread_VecToAngles( "VecToAngles", "v", 'v' );
-const idEventDef EV_Thread_OnSignal( "onSignal", "des" );
-const idEventDef EV_Thread_ClearSignal( "clearSignalThread", "de" );
-const idEventDef EV_Thread_SetCamera( "setCamera", "e" );
-const idEventDef EV_Thread_FirstPerson( "firstPerson", NULL );
-const idEventDef EV_Thread_Trace( "trace", "vvvvde", 'f' );
-const idEventDef EV_Thread_TracePoint( "tracePoint", "vvde", 'f' );
-const idEventDef EV_Thread_GetTraceFraction( "getTraceFraction", NULL, 'f' );
-const idEventDef EV_Thread_GetTraceEndPos( "getTraceEndPos", NULL, 'v' );
-const idEventDef EV_Thread_GetTraceNormal( "getTraceNormal", NULL, 'v' );
-const idEventDef EV_Thread_GetTraceEntity( "getTraceEntity", NULL, 'e' );
-const idEventDef EV_Thread_GetTraceJoint( "getTraceJoint", NULL, 's' );
-const idEventDef EV_Thread_GetTraceBody( "getTraceBody", NULL, 's' );
-const idEventDef EV_Thread_FadeIn( "fadeIn", "vf" );
-const idEventDef EV_Thread_FadeOut( "fadeOut", "vf" );
-const idEventDef EV_Thread_FadeTo( "fadeTo", "vff" );
-const idEventDef EV_Thread_StartMusic( "music", "s" );
-const idEventDef EV_Thread_Error( "error", "s" );
-const idEventDef EV_Thread_Warning( "warning", "s" );
-const idEventDef EV_Thread_StrLen( "strLength", "s", 'd' );
-const idEventDef EV_Thread_StrLeft( "strLeft", "sd", 's' );
-const idEventDef EV_Thread_StrRight( "strRight", "sd", 's' );
-const idEventDef EV_Thread_StrSkip( "strSkip", "sd", 's' );
-const idEventDef EV_Thread_StrMid( "strMid", "sdd", 's' );
-const idEventDef EV_Thread_StrToFloat( "strToFloat", "s", 'f' );
-const idEventDef EV_Thread_RadiusDamage( "radiusDamage", "vEEEsf" );
-const idEventDef EV_Thread_IsClient( "isClient", NULL, 'f' );
-const idEventDef EV_Thread_IsMultiplayer( "isMultiplayer", NULL, 'f' );
-const idEventDef EV_Thread_GetFrameTime( "getFrameTime", NULL, 'f' );
-const idEventDef EV_Thread_GetTicsPerSecond( "getTicsPerSecond", NULL, 'f' );
-const idEventDef EV_Thread_DebugLine( "debugLine", "vvvf" );
-const idEventDef EV_Thread_DebugArrow( "debugArrow", "vvvdf" );
-const idEventDef EV_Thread_DebugCircle( "debugCircle", "vvvfdf" );
-const idEventDef EV_Thread_DebugBounds( "debugBounds", "vvvf" );
-const idEventDef EV_Thread_DrawText( "drawText", "svfvdf" );
-const idEventDef EV_Thread_InfluenceActive( "influenceActive", NULL, 'd' );
+const idEventDef EV_Thread_AngToForward( "angToForward", EventArgs('v', "angles", ""), 'v', "Returns a forward vector for the given Euler angles.");
+const idEventDef EV_Thread_AngToRight( "angToRight", EventArgs('v', "angles", ""), 'v', "Returns a right vector for the given Euler angles.");
+const idEventDef EV_Thread_AngToUp( "angToUp", EventArgs('v', "angles", ""), 'v', "Returns an up vector for the given Euler angles.");
+const idEventDef EV_Thread_Sine( "sin", EventArgs('f', "degrees", ""), 'f', "Returns the sine of the given angle in degrees.");
+const idEventDef EV_Thread_Cosine( "cos", EventArgs('f', "degrees", ""), 'f', "Returns the cosine of the given angle in degrees.");
+const idEventDef EV_Thread_Log( "log", EventArgs('f', "x", ""), 'f', "Returns the log of the given argument");
+const idEventDef EV_Thread_Pow( "pow", EventArgs('f', "x", "", 'f', "y", ""), 'f', "Returns the power of x to y");
+const idEventDef EV_Thread_SquareRoot( "sqrt", EventArgs('f', "square", ""), 'f', "Returns the square root of the given number.");
+const idEventDef EV_Thread_Normalize( "vecNormalize", EventArgs('v', "vec", ""), 'v', "Returns the normalized version of the given vector.");
+const idEventDef EV_Thread_VecLength( "vecLength", EventArgs('v', "vec", ""), 'f', "Returns the length of the given vector.");
+const idEventDef EV_Thread_VecDotProduct( "DotProduct", EventArgs('v', "vec1", "", 'v', "vec2", ""), 'f', "Returns the dot product of the two vectors.");
+const idEventDef EV_Thread_VecCrossProduct( "CrossProduct", EventArgs('v', "vec1", "", 'v', "vec2", ""), 'v', "Returns the cross product of the two vectors.");
+const idEventDef EV_Thread_VecToAngles( "VecToAngles", EventArgs('v', "vec", ""), 'v', "Returns Euler angles for the given direction.");
+const idEventDef EV_Thread_OnSignal( "onSignal", EventArgs('d', "signalNum", "", 'e', "ent", "", 's', "functionName", ""), EV_RETURNS_VOID, "Sets a script callback function for when the given signal is raised on the given entity.");
+const idEventDef EV_Thread_ClearSignal( "clearSignalThread", EventArgs('d', "signalNum", "", 'e', "ent", ""), EV_RETURNS_VOID, "Clears the script callback function set for when the given signal is raised on the given entity.");
+const idEventDef EV_Thread_SetCamera( "setCamera", EventArgs('e', "cameraEnt", ""), EV_RETURNS_VOID, "Turns over view control to the given camera entity.");
+const idEventDef EV_Thread_FirstPerson( "firstPerson", EventArgs(), EV_RETURNS_VOID, "Returns view control to the player entity." );
+const idEventDef EV_Thread_Trace( "trace", 
+	EventArgs('v', "start", "", 
+			  'v', "end", "",
+			  'v', "mins", "",
+			  'v', "maxs", "",
+			  'd', "contents_mask", "",
+			  'e', "passEntity", ""), 
+	'f', 
+	"Returns the fraction of movement completed before the box from 'mins' to 'maxs' hits solid geometry\n" \
+	"when moving from 'start' to 'end'. The 'passEntity' is considered non-solid during the move." );
+
+const idEventDef EV_Thread_TracePoint( "tracePoint", 
+	EventArgs('v', "start", "", 
+			  'v', "end", "",
+			  'd', "contents_mask", "",
+			  'e', "passEntity", ""), 
+	'f', 
+	"Returns the fraction of movement completed before the trace hits solid geometry\n" \
+	"when moving from 'start' to 'end'. The 'passEntity' is considered non-solid during the move." );
+
+const idEventDef EV_Thread_GetTraceFraction( "getTraceFraction", EventArgs(), 'f', "Returns the fraction of movement completed during the last call to trace or tracePoint." );
+const idEventDef EV_Thread_GetTraceEndPos( "getTraceEndPos", EventArgs(), 'v', "Returns the position the trace stopped due to a collision with solid geometry during the last call to trace or tracePoint");
+const idEventDef EV_Thread_GetTraceNormal( "getTraceNormal", EventArgs(), 'v', "Returns the normal of the hit plane during the last call to trace or tracePoint");
+const idEventDef EV_Thread_GetTraceEntity( "getTraceEntity", EventArgs(), 'e', "Returns a reference to the entity which was hit during the last call to trace or tracePoint");
+const idEventDef EV_Thread_GetTraceJoint( "getTraceJoint", EventArgs(), 's', 
+	"Returns the number of the skeletal joint closest to the location on the entity which was hit\n" \
+	"during the last call to trace or tracePoint" );
+const idEventDef EV_Thread_GetTraceBody( "getTraceBody", EventArgs(), 's', "Returns the number of the body part of the entity which was hit during the last call to trace or tracePoint" );
+const idEventDef EV_Thread_FadeIn( "fadeIn", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades towards the given color over the given time in seconds.");
+const idEventDef EV_Thread_FadeOut( "fadeOut", EventArgs('v', "color", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades from the given color over the given time in seconds.");
+const idEventDef EV_Thread_FadeTo( "fadeTo", EventArgs('v', "color", "", 'f', "alpha", "", 'f', "time", "in seconds"), EV_RETURNS_VOID, "Fades to the given color up to the given alpha over the given time in seconds.");
+const idEventDef EV_Thread_StartMusic( "music", EventArgs('s', "shaderName", ""), EV_RETURNS_VOID, "Starts playing background music.");
+const idEventDef EV_Thread_Error( "error", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Issues an error.");
+const idEventDef EV_Thread_Warning( "warning", EventArgs('s', "text", ""), EV_RETURNS_VOID, "Issues a warning.");
+const idEventDef EV_Thread_StrLen( "strLength", EventArgs('s', "text", ""), 'd', "Returns the number of characters in the string" );
+const idEventDef EV_Thread_StrLeft( "strLeft", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns a string composed of the first num characters" );
+const idEventDef EV_Thread_StrRight( "strRight", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns a string composed of the last num characters" );
+const idEventDef EV_Thread_StrSkip( "strSkip", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns the string following the first num characters" );
+const idEventDef EV_Thread_StrMid( "strMid", EventArgs('s', "text", "", 'd', "start", "", 'd', "num", ""), 's', "Returns a string composed of the characters from start to start + num" );
+const idEventDef EV_Thread_StrToFloat( "strToFloat", EventArgs('s', "text", ""), 'f', "Returns the numeric value of a string" );
+const idEventDef EV_Thread_RadiusDamage( "radiusDamage", 
+	EventArgs('v', "origin", "",
+			  'E', "inflictor", "the entity causing the damage",
+			  'E', "attacker", "",
+			  'E', "ignore", "an entity to not cause damage to",
+			  's', "damageDefName", "",
+			  'f', "dmgPower", "scales the damage (for cases where damage is dependent on time)"), 
+	EV_RETURNS_VOID,
+	"damages entities within a radius defined by the damageDef.  inflictor is the entity \n" \
+	"causing the damage and can be the same as the attacker (in the case \n " \
+	"of projectiles, the projectile is the inflictor, while the attacker is the character \n" \
+	"that fired the projectile).");
+const idEventDef EV_Thread_IsClient( "isClient", EventArgs(), 'f', "networking - checks for client" );
+const idEventDef EV_Thread_IsMultiplayer( "isMultiplayer", EventArgs(), 'f', "checks if it's a multiplayer game" );
+const idEventDef EV_Thread_GetFrameTime( "getFrameTime", EventArgs(), 'f', "returns the length of time between game frames.  this is not related to renderer frame rate." );
+const idEventDef EV_Thread_GetTicsPerSecond( "getTicsPerSecond", EventArgs(), 'f', "returns the number of game frames per second.  this is not related to renderer frame rate." );
+
+const idEventDef EV_Thread_DebugLine( "debugLine", 
+	EventArgs('v', "color", "", 'v', "start", "", 'v', "end", "", 'f', "lifetime", ""), EV_RETURNS_VOID, 
+	"line drawing for debug visualization.  lifetime of 0 == 1 frame." );
+const idEventDef EV_Thread_DebugArrow( "debugArrow", 
+	EventArgs('v', "color", "", 'v', "start", "", 'v', "end", "", 'd', "size", "", 'f', "lifetime", ""), EV_RETURNS_VOID, 
+	"line drawing for debug visualization.  lifetime of 0 == 1 frame." );
+const idEventDef EV_Thread_DebugCircle( "debugCircle", 
+	EventArgs('v', "color", "", 'v', "origin", "", 'v', "dir", "", 'f', "radius", "", 'd', "numSteps", "", 'f', "lifetime", ""), EV_RETURNS_VOID, 
+	"line drawing for debug visualization.  lifetime of 0 == 1 frame." );
+const idEventDef EV_Thread_DebugBounds( "debugBounds", 
+	EventArgs('v', "color", "", 'v', "mins", "", 'v', "maxs", "", 'f', "lifetime", ""),
+	EV_RETURNS_VOID, "line drawing for debug visualization.  lifetime of 0 == 1 frame." );
+const idEventDef EV_Thread_DrawText( "drawText", 
+	EventArgs('s', "text", "",
+			  'v', "origin", "",
+			  'f', "scale", "",
+			  'v', "color", "",
+			  'd', "align", "0 = left, 1 = center, 2 = right",
+			  'f', "lifetime", ""),
+	EV_RETURNS_VOID, 
+	"text drawing for debugging. lifetime of 0 == 1 frame." );
+
+const idEventDef EV_Thread_InfluenceActive( "influenceActive", EventArgs(), 'd', "Checks if an influence is active" );
 
 //AI relationship manager events
-const idEventDef EV_AI_GetRelationSys( "getRelation", "dd", 'd' );
-const idEventDef EV_AI_SetRelation( "setRelation", "ddd" );
-const idEventDef EV_AI_OffsetRelation( "offsetRelation", "ddd" );
+const idEventDef EV_AI_GetRelationSys( "getRelation", EventArgs('d', "team1", "", 'd', "team2", ""), 'd', "");
+const idEventDef EV_AI_SetRelation( "setRelation", EventArgs('d', "team1", "", 'd', "team2", "", 'd', "val", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_AI_OffsetRelation( "offsetRelation", EventArgs('d', "team1", "", 'd', "team2", "", 'd', "val", ""), EV_RETURNS_VOID, "");
 
 // Dark Mod soundprop events
-const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", "df" );
-const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", "d", 'f' );
+const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", EventArgs('d', "handle", "", 'f', "value", ""), EV_RETURNS_VOID, "Sound propagation scriptfunction on the sys object");
+const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", EventArgs('d', "handle", ""), 'f', "Sound propagation scriptfunction on the sys object");
 
 // greebo: General water test function, tests if a point is in a liquid
-const idEventDef EV_PointInLiquid( "pointInLiquid", "ve", 'f' );
+const idEventDef EV_PointInLiquid( "pointInLiquid", EventArgs('v', "point", "", 'e', "ignoreEntity", ""), 'f', 
+	"Checks if a point is in a liquid, returns 1 if this is the case.");
 
 // tels: Translate a string into the current language
-const idEventDef EV_Translate( "translate", "s", 's' );
+const idEventDef EV_Translate( "translate", EventArgs('s', "input", ""), 's', "Translates a string (like #str_12345) into the current language");
 
-
-const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", "s" );
+const idEventDef EV_Thread_DebugTDM_MatInfo( "debug_tdm_material", EventArgs('s', "file", ""), EV_RETURNS_VOID, "For temporary debuging purposes only. Should be removed eventually.");
 
 // greebo: Writes the string to the Darkmod.log file using DM_LOG
-const idEventDef EV_LogString("logString", "dds");
+const idEventDef EV_LogString("logString", EventArgs('d', "logClass", "", 'd', "logType", "", 's', "output", ""), EV_RETURNS_VOID, "This is the script counterpart to DM_LOG");
 
 // Propagates the string to the sessioncommand variable in gameLocal
-const idEventDef EV_SessionCommand("sessionCommand", "s");
+const idEventDef EV_SessionCommand("sessionCommand", EventArgs('s', "cmd", ""), EV_RETURNS_VOID, "Sends the sessioncommand to the game");
 
-// Generic interface for passing on mission events from scripts to the SDK
-// First argument is the entity which has triggered this event (e.g. a readable)
-// Second argument is a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event
-// Third argument is an optional string parameter
-const idEventDef EV_HandleMissionEvent("handleMissionEvent", "eds");
+const idEventDef EV_HandleMissionEvent("handleMissionEvent", 
+	EventArgs('e', "objEnt", "the entity that triggered this event (e.g. a readable)", 
+			  'd', "eventType", "a numeric identifier (enumerated both in MissionData.h and tdm_defs.script) specifying the type of event", 
+			  's', "argument", "an optional string parameter, eventtype-specific."), 
+			  EV_RETURNS_VOID, 
+			  "Generic interface for passing on mission events from scripts to the SDK. Available since TDM 1.02");
 
-const idEventDef EV_Thread_CanPlant( "canPlant", "vvEe", 'f' );  // grayman #2787
+const idEventDef EV_Thread_CanPlant( "canPlant", 
+	EventArgs('v', "traceStart", "", 'v', "traceEnd", "", 'E', "ignore", "", 'e', "vine", ""), 'f', "" );  // grayman #2787
 
 // grayman #3132 - get main ambient light
-const idEventDef EV_GetMainAmbientLight("getMainAmbientLight", NULL, 'e');
+const idEventDef EV_GetMainAmbientLight("getMainAmbientLight", EventArgs(), 'e', "");
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )

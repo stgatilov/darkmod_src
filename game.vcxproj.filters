@@ -616,6 +616,9 @@
     <ClCompile Include="game\ai\States\HitByMoveableState.cpp">
       <Filter>AI\States</Filter>
     </ClCompile>
+    <ClCompile Include="game\script\Script_Doc_Export.cpp">
+      <Filter>Script</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1190,6 +1193,12 @@
     <ClInclude Include="game\precompiled_game.h" />
     <ClInclude Include="game\ai\States\HitByMoveableState.h">
       <Filter>AI\States</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gamesys\EventArgs.h">
+      <Filter>GameSys</Filter>
+    </ClInclude>
+    <ClInclude Include="game\script\Script_Doc_Export.h">
+      <Filter>Script</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

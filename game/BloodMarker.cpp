@@ -26,7 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "BloodMarker.h"
 #include "StimResponse/Stim.h"
 
-const idEventDef EV_GenerateBloodSplat("TDM_GenerateBloodSplat", NULL);
+const idEventDef EV_GenerateBloodSplat("_TDM_GenerateBloodSplat", EventArgs(), EV_RETURNS_VOID, "internal");
 
 CLASS_DECLARATION( idEntity, CBloodMarker )
 	EVENT( EV_GenerateBloodSplat, CBloodMarker::Event_GenerateBloodSplat )

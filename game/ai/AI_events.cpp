@@ -44,333 +44,402 @@ class CRelations;
 
 ***********************************************************************/
 
-const idEventDef AI_FindEnemy( "findEnemy", "d", 'e' );
-const idEventDef AI_FindEnemyAI( "findEnemyAI", "d", 'e' );
-const idEventDef AI_FindEnemyInCombatNodes( "findEnemyInCombatNodes", NULL, 'e' );
-const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntity", "E", 'e' );
+const idEventDef AI_FindEnemy( "findEnemy", EventArgs('d', "onlyInFov", ""), 'e', "Finds enemy player in PVS");
+const idEventDef AI_FindEnemyAI( "findEnemyAI", EventArgs('d', "onlyInFov", ""), 'e', "Finds enemy monster in PVS");
+const idEventDef AI_FindEnemyInCombatNodes( "findEnemyInCombatNodes", EventArgs(), 'e', "Finds enemy player in attack cones");
+const idEventDef AI_ClosestReachableEnemyOfEntity( "closestReachableEnemyOfEntity", EventArgs('E', "team_mate", ""), 'e', 
+	"Finds another character's closest reachable enemy");
 // greebo: TDM Event: Try to find a visible AI of the given team
-const idEventDef AI_FindFriendlyAI( "findFriendlyAI", "d", 'e' );
-const idEventDef AI_ProcessBlindStim( "processBlindStim", "ed" );
-const idEventDef AI_ProcessVisualStim("processVisualStim", "e");
-const idEventDef AI_PerformRelight("performRelight");	// grayman #2603
-const idEventDef AI_DropTorch("dropTorch");			    // grayman #2603
-const idEventDef AI_Bark("bark", "s");					// grayman #2816
-const idEventDef AI_EmptyHand("emptyHand", "s");		// grayman #3154
+const idEventDef AI_FindFriendlyAI( "findFriendlyAI", 
+	EventArgs('d', "team", "used to constrain the search to a given team.\nSet this to -1 to let the code ignore this argument"), 
+	'e', 
+	"Use this to find a visible AI friendly to ourselves.\n" \
+	"It basically iterates over all active entities in the map and looks for friendly actors.\n" \
+	"The pythagorean distance is taken to evaluate the distance.\n" \
+	"\n" \
+	"Don't call this every frame, this might get expensive in larger maps.\n" \
+	"Returns the nearest visible actor entity or the $null_entity, if none was found.");
 
-const idEventDef AI_SetEnemy( "setEnemy", "E" );
-const idEventDef AI_ClearEnemy( "clearEnemy" );
-const idEventDef AI_MuzzleFlash( "muzzleFlash", "s" );
-const idEventDef AI_CreateMissile( "createMissile", "s", 'e' );
-const idEventDef AI_CreateMissileFromDef( "createMissileFromDef", "ss", 'e' ); // arg1 = def name, arg2 = joint name
-const idEventDef AI_AttackMissile( "attackMissile", "s", 'e' );
-const idEventDef AI_FireMissileAtTarget( "fireMissileAtTarget", "ss", 'e' );
-const idEventDef AI_LaunchMissile( "launchMissile", "vv", 'e' );
-const idEventDef AI_AttackMelee( "attackMelee", "s", 'd' );
-const idEventDef AI_DirectDamage( "directDamage", "es" );
-const idEventDef AI_RadiusDamageFromJoint( "radiusDamageFromJoint", "ss" );
-const idEventDef AI_BeginAttack( "attackBegin", "s" );
-const idEventDef AI_EndAttack( "attackEnd" );
-const idEventDef AI_MeleeAttackToJoint( "meleeAttackToJoint", "ss", 'd' );
-const idEventDef AI_RandomPath( "randomPath", NULL, 'e' );
-const idEventDef AI_CanBecomeSolid( "canBecomeSolid", NULL, 'f' );
-const idEventDef AI_BecomeSolid( "becomeSolid" );
-const idEventDef AI_BecomeRagdoll( "becomeRagdoll", NULL, 'd' );
-const idEventDef AI_StopRagdoll( "stopRagdoll" );
-const idEventDef AI_AllowDamage( "allowDamage" );
-const idEventDef AI_IgnoreDamage( "ignoreDamage" );
-const idEventDef AI_GetCurrentYaw( "getCurrentYaw", NULL, 'f' );
-const idEventDef AI_TurnTo( "turnTo", "f" );
-const idEventDef AI_TurnToPos( "turnToPos", "v" );
-const idEventDef AI_TurnToEntity( "turnToEntity", "E" );
-const idEventDef AI_MoveStatus( "moveStatus", NULL, 'd' );
-const idEventDef AI_StopMove( "stopMove" );
-const idEventDef AI_MoveToCover( "moveToCover" );
-const idEventDef AI_MoveToCoverFrom( "moveToCoverFrom", "E" );
-const idEventDef AI_MoveToEnemy( "moveToEnemy" );
-const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight" );
-const idEventDef AI_MoveOutOfRange( "moveOutOfRange", "ef" );
+const idEventDef AI_ProcessBlindStim( "processBlindStim", EventArgs('e', "stimSource", "", 'd', "skipVisibilityCheck", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_ProcessVisualStim("processVisualStim", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, 
+	"Use this call to let the AI react to a visual stim (coming from the source entity).");
+
+const idEventDef AI_PerformRelight("performRelight", EventArgs(), EV_RETURNS_VOID, "Deal with doused lights.");	// grayman #2603
+const idEventDef AI_DropTorch("dropTorch", EventArgs(), EV_RETURNS_VOID, "no description");			    // grayman #2603
+const idEventDef AI_Bark("bark", EventArgs('s', "sound", "sound name, e.g. 'snd_warn_response'"), EV_RETURNS_VOID, "Let the AI bark a certain sound.");	// grayman #2816
+const idEventDef AI_EmptyHand("emptyHand", EventArgs('s', "hand", ""), EV_RETURNS_VOID, "no description");		// grayman #3154
+
+const idEventDef AI_SetEnemy( "setEnemy", EventArgs('E', "enemy", ""), EV_RETURNS_VOID, "Make the given entity an enemy.");
+const idEventDef AI_ClearEnemy( "clearEnemy", EventArgs(), EV_RETURNS_VOID, "Clears the enemy entity" );
+const idEventDef AI_MuzzleFlash( "muzzleFlash", EventArgs('s', "jointname", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_CreateMissile( "createMissile", EventArgs('s', "jointname", ""), 'e', "returns projectile created");
+const idEventDef AI_CreateMissileFromDef( "createMissileFromDef", EventArgs('s', "defName", "", 's', "jointName", ""), 'e', "");
+const idEventDef AI_AttackMissile( "attackMissile", EventArgs('s', "jointName", ""), 'e', "returns projectile fired");
+const idEventDef AI_FireMissileAtTarget( "fireMissileAtTarget", EventArgs('s', "jointname", "", 's', "targetname", ""), 'e', 
+	"Launches a missile at entity specified by 'attack_target'.  returns projectile fired");
+const idEventDef AI_LaunchMissile( "launchMissile", EventArgs('v', "origin", "", 'v', "angles", ""), 'e', "Returns the projectile entity");
+const idEventDef AI_AttackMelee( "attackMelee", EventArgs('s', "damageDef", ""), 'd', "Returns true if the attack hit");
+const idEventDef AI_DirectDamage( "directDamage", EventArgs('e', "damageTarget", "", 's', "damageDef", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_RadiusDamageFromJoint( "radiusDamageFromJoint", EventArgs('s', "jointname", "", 's', "damageDef", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_BeginAttack( "attackBegin", EventArgs('s', "damageDef", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_EndAttack( "attackEnd", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MeleeAttackToJoint( "meleeAttackToJoint", EventArgs('s', "joint", "", 's', "damageDef", ""), 'd', "no description");
+const idEventDef AI_RandomPath( "randomPath", EventArgs(), 'e', "no description");
+const idEventDef AI_CanBecomeSolid( "canBecomeSolid", EventArgs(), 'f', "no description");
+const idEventDef AI_BecomeSolid( "becomeSolid", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_BecomeRagdoll( "becomeRagdoll", EventArgs(), 'd', "enables the ragdoll if the entity has one");
+const idEventDef AI_StopRagdoll( "stopRagdoll", EventArgs(), EV_RETURNS_VOID, "turns off the ragdoll" );
+const idEventDef AI_AllowDamage( "allowDamage", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_IgnoreDamage( "ignoreDamage", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_GetCurrentYaw( "getCurrentYaw", EventArgs(), 'f', "no description");
+const idEventDef AI_TurnTo( "turnTo", EventArgs('f', "yaw", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_TurnToPos( "turnToPos", EventArgs('v', "pos", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_TurnToEntity( "turnToEntity", EventArgs('E', "ent", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_MoveStatus( "moveStatus", EventArgs(), 'd', "no description");
+const idEventDef AI_StopMove( "stopMove", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MoveToCover( "moveToCover", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MoveToCoverFrom( "moveToCoverFrom", EventArgs('E', "ent", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_MoveToEnemy( "moveToEnemy", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MoveToEnemyHeight( "moveToEnemyHeight", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MoveOutOfRange( "moveOutOfRange", EventArgs('e', "ent", "", 'f', "range", ""), EV_RETURNS_VOID, "no description");
 // greebo: Flee from an entity
-const idEventDef AI_Flee( "flee", "edd", 'd' );
-const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", "es" );
-const idEventDef AI_Wander( "wander" );
-const idEventDef AI_MoveToEntity( "moveToEntity", "e" );
-const idEventDef AI_MoveToPosition( "moveToPosition", "v" );
-const idEventDef AI_SlideTo( "slideTo", "vf" );
-const idEventDef AI_FacingIdeal( "facingIdeal", NULL, 'd' );
-const idEventDef AI_FaceEnemy( "faceEnemy" );
-const idEventDef AI_FaceEntity( "faceEntity", "E" );
-const idEventDef AI_GetCombatNode( "getCombatNode", NULL, 'e' );
-const idEventDef AI_EnemyInCombatCone( "enemyInCombatCone", "Ed", 'd' );
-const idEventDef AI_WaitMove( "waitMove" );
-const idEventDef AI_GetJumpVelocity( "getJumpVelocity", "vff", 'v' );
-const idEventDef AI_EntityInAttackCone( "entityInAttackCone", "E", 'd' );
-const idEventDef AI_CanSeeEntity( "canSee", "E", 'd' );
-const idEventDef AI_CanSeeEntityExt( "canSeeExt", "Edd", 'd' );
-const idEventDef AI_CanSeePositionExt( "canSeePositionExt", "vdd", 'd' );
-const idEventDef AI_IsEntityHidden( "isEntityHidden", "Ed", 'd' );
-const idEventDef AI_SetTalkTarget( "setTalkTarget", "E" );
-const idEventDef AI_GetTalkTarget( "getTalkTarget", NULL, 'e' );
-const idEventDef AI_SetTalkState( "setTalkState", "d" );
-const idEventDef AI_EnemyRange( "enemyRange", NULL, 'f' );
-const idEventDef AI_EnemyRange2D( "enemyRange2D", NULL, 'f' );
-const idEventDef AI_GetEnemy( "getEnemy", NULL, 'e' );
-const idEventDef AI_GetEnemyPos( "getEnemyPos", NULL, 'v' );
-const idEventDef AI_GetEnemyEyePos( "getEnemyEyePos", NULL, 'v' );
-const idEventDef AI_PredictEnemyPos( "predictEnemyPos", "f", 'v' );
-const idEventDef AI_CanHitEnemy( "canHitEnemy", NULL, 'd' );
-const idEventDef AI_CanHitEnemyFromAnim( "canHitEnemyFromAnim", "s", 'd' );
-const idEventDef AI_CanHitEnemyFromJoint( "canHitEnemyFromJoint", "s", 'd' );
-const idEventDef AI_EnemyPositionValid( "enemyPositionValid", NULL, 'd' );
-const idEventDef AI_ChargeAttack( "chargeAttack", "s" );
-const idEventDef AI_TestChargeAttack( "testChargeAttack", NULL, 'f' );
-const idEventDef AI_TestMoveToPosition( "testMoveToPosition", "v", 'd' );
-const idEventDef AI_TestAnimMoveTowardEnemy( "testAnimMoveTowardEnemy", "s", 'd' );
-const idEventDef AI_TestAnimMove( "testAnimMove", "s", 'd' );
-const idEventDef AI_TestMeleeAttack( "testMeleeAttack", NULL, 'd' );
-const idEventDef AI_TestAnimAttack( "testAnimAttack", "s", 'd' );
-const idEventDef AI_Shrivel( "shrivel", "f" );
-const idEventDef AI_Burn( "burn" );
-const idEventDef AI_ClearBurn( "clearBurn" );
-const idEventDef AI_PreBurn( "preBurn" );
-const idEventDef AI_SetSmokeVisibility( "setSmokeVisibility", "dd" );
-const idEventDef AI_NumSmokeEmitters( "numSmokeEmitters", NULL, 'd' );
-const idEventDef AI_WaitAction( "waitAction", "s" );
-const idEventDef AI_StopThinking( "stopThinking" );
-const idEventDef AI_GetTurnDelta( "getTurnDelta", NULL, 'f' );
-const idEventDef AI_GetMoveType( "getMoveType", NULL, 'd' );
-const idEventDef AI_SetMoveType( "setMoveType", "d" );
-const idEventDef AI_SaveMove( "saveMove" );
-const idEventDef AI_RestoreMove( "restoreMove" );
-const idEventDef AI_AllowMovement( "allowMovement", "f" );
-const idEventDef AI_JumpFrame( "<jumpframe>" );
-const idEventDef AI_EnableClip( "enableClip" );
-const idEventDef AI_DisableClip( "disableClip" );
-const idEventDef AI_EnableGravity( "enableGravity" );
-const idEventDef AI_DisableGravity( "disableGravity" );
-const idEventDef AI_EnableAFPush( "enableAFPush" );
-const idEventDef AI_DisableAFPush( "disableAFPush" );
-const idEventDef AI_SetFlySpeed( "setFlySpeed", "f" );
-const idEventDef AI_SetFlyOffset( "setFlyOffset", "d" );
-const idEventDef AI_ClearFlyOffset( "clearFlyOffset" );
-const idEventDef AI_GetClosestHiddenTarget( "getClosestHiddenTarget", "s", 'e' );
-const idEventDef AI_GetRandomTarget( "getRandomTarget", "s", 'e' );
-const idEventDef AI_TravelDistanceToPoint( "travelDistanceToPoint", "v", 'f' );
-const idEventDef AI_TravelDistanceToEntity( "travelDistanceToEntity", "e", 'f' );
-const idEventDef AI_TravelDistanceBetweenPoints( "travelDistanceBetweenPoints", "vv", 'f' );
-const idEventDef AI_TravelDistanceBetweenEntities( "travelDistanceBetweenEntities", "ee", 'f' );
-const idEventDef AI_LookAtEntity( "lookAt", "Ef" );
-const idEventDef AI_LookAtEnemy( "lookAtEnemy", "f" );
-const idEventDef AI_SetJointMod( "setBoneMod", "d" );
-const idEventDef AI_ThrowMoveable( "throwMoveable" );
-const idEventDef AI_ThrowAF( "throwAF" );
-const idEventDef AI_RealKill( "<kill>" );
-const idEventDef AI_Kill( "kill" );
-const idEventDef AI_WakeOnFlashlight( "wakeOnFlashlight", "d" );
-const idEventDef AI_LocateEnemy( "locateEnemy" );
-const idEventDef AI_KickObstacles( "kickObstacles", "Ef" );
-const idEventDef AI_GetObstacle( "getObstacle", NULL, 'e' );
-const idEventDef AI_PushPointIntoAAS( "pushPointIntoAAS", "v", 'v' );
-const idEventDef AI_GetTurnRate( "getTurnRate", NULL, 'f' );
-const idEventDef AI_SetTurnRate( "setTurnRate", "f" );
-const idEventDef AI_AnimTurn( "animTurn", "f" );
-const idEventDef AI_AllowHiddenMovement( "allowHiddenMovement", "d" );
-const idEventDef AI_TriggerParticles( "triggerParticles", "s" );
-const idEventDef AI_FindActorsInBounds( "findActorsInBounds", "vv", 'e' );
-const idEventDef AI_CanReachPosition( "canReachPosition", "v", 'd' );
-const idEventDef AI_CanReachEntity( "canReachEntity", "E", 'd' );
-const idEventDef AI_CanReachEnemy( "canReachEnemy", NULL, 'd' );
-const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", "e", 'v' );
-const idEventDef AI_ReEvaluateArea("reEvaluateArea", "d");
+const idEventDef AI_Flee( "flee", EventArgs('e', "entToFleeFrom", "", 'd', "algorithm", "", 'd', "distanceOption", ""), 'd', 
+	"Flee from the given entity. Pass the escape point lookup algorithm (e.g. EP_FIND_GUARDED)\n" \
+	"and the distanceOption (e.g. EP_DIST_NEAREST) to specify how the best escape point can be found.\n" \
+	"Refer to the tdm_defs.script file to see all the constants.\n\n" \
+	"When algorithm is set to EP_FIND_AAS_AREA_FAR_FROM_THREAT, the distanceOption is interpreted as minimum threat distance.\n" \
+	"Returns FALSE if no escape point could be found.");
+const idEventDef AI_MoveToAttackPosition( "moveToAttackPosition", EventArgs('e', "ent", "", 's', "attack_anim", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_Wander( "wander", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_MoveToEntity( "moveToEntity", EventArgs('e', "destination", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_MoveToPosition( "moveToPosition", EventArgs('v', "position", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_SlideTo( "slideTo", EventArgs('v', "position", "", 'f', "time", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_FacingIdeal( "facingIdeal", EventArgs(), 'd', "");
+const idEventDef AI_FaceEnemy( "faceEnemy", EventArgs(), EV_RETURNS_VOID, "" );
+const idEventDef AI_FaceEntity( "faceEntity", EventArgs('E', "ent", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_GetCombatNode( "getCombatNode", EventArgs(), 'e', "");
+const idEventDef AI_EnemyInCombatCone( "enemyInCombatCone", EventArgs('E', "combatNode", "", 'd', "use_current_enemy_location", ""), 'd', "no description");
+const idEventDef AI_WaitMove( "waitMove", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_GetJumpVelocity( "getJumpVelocity", EventArgs('v', "pos", "", 'f', "speed", "", 'f', "max_jump_height", ""), 'v', "no description");
+const idEventDef AI_EntityInAttackCone( "entityInAttackCone", EventArgs('E', "ent", ""), 'd', "no description");
+const idEventDef AI_CanSeeEntity( "canSee", EventArgs('E', "ent", ""), 'd', "no description");
+const idEventDef AI_CanSeeEntityExt( "canSeeExt", 
+	EventArgs('E', "ent", "", 
+			  'd', "b_useFOV", "If 0 the entity will be visible even if the AI's back is turned to it", 
+			  'd', "b_useLighting", "If b_useLighting is 0 the entity will be visible in complete darkness.\n" \
+				   "If it is 1, the entity will only be visible if there is light shining on it, but the slightest\n" \
+				   "light is enought. Use \"isEntityHidden\" as a script event with a threshold instead."), 
+	'd', 
+	"This is an alternate version of canSee that can optionally\n" \
+	"choose to use field of vision and lighting calculations.");
+const idEventDef AI_CanSeePositionExt( "canSeePositionExt", 
+	EventArgs('v', "position", "", 
+			  'd', "b_useFOV", "If 0 the entity will be visible even if the AI's back is turned to it", 
+			  'd', "b_useLighting", "If 0 the entity will be visible in complete darkness"), 
+	'd', 
+	"This is an alternate version of canSeeExt that tests a location\n" \
+	"rather than an entity. Note that any actor at the position may make it\n" \
+	"not seeable from a distance.");
+const idEventDef AI_IsEntityHidden( "isEntityHidden", 
+	EventArgs('E', "ent", "", 
+			  'd', "f_sightThreshold", "goes from 0.0 (entity visible in complete darkness) to 1.0\n" \
+									   "(entity only visible if completely lit up)."), 
+	'd', 
+	"This is an alternate version of canSee, using FOV, distance and lighting.");
+const idEventDef AI_SetTalkTarget( "setTalkTarget", EventArgs('E', "target", ""), EV_RETURNS_VOID, "Sets the entity (player) trying to talk to the character");
+const idEventDef AI_GetTalkTarget( "getTalkTarget", EventArgs(), 'e', "Returns the entity (player) trying to talk to the character");
+const idEventDef AI_SetTalkState( "setTalkState", EventArgs('d', "state", ""), EV_RETURNS_VOID, 
+	"Sets whether the player can talk to this character or not.");
+const idEventDef AI_EnemyRange( "enemyRange", EventArgs(), 'f', "no description");
+const idEventDef AI_EnemyRange2D( "enemyRange2D", EventArgs(), 'f', "no description");
+const idEventDef AI_GetEnemy( "getEnemy", EventArgs(), 'e', "no description");
+const idEventDef AI_GetEnemyPos( "getEnemyPos", EventArgs(), 'v', "no description");
+const idEventDef AI_GetEnemyEyePos( "getEnemyEyePos", EventArgs(), 'v', "no description");
+const idEventDef AI_PredictEnemyPos( "predictEnemyPos", EventArgs('f', "time", ""), 'v', "Tries to predict the player's movement based on the AAS and his direction of movement.");
+
+const idEventDef AI_CanHitEnemy( "canHitEnemy", EventArgs(), 'd', "no description");
+const idEventDef AI_CanHitEnemyFromAnim( "canHitEnemyFromAnim", EventArgs('s', "anim", ""), 'd', "no description");
+const idEventDef AI_CanHitEnemyFromJoint( "canHitEnemyFromJoint", EventArgs('s', "jointname", ""), 'd', "no description");
+const idEventDef AI_EnemyPositionValid( "enemyPositionValid", EventArgs(), 'd', "no description");
+const idEventDef AI_ChargeAttack( "chargeAttack", EventArgs('s', "damageDef", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_TestChargeAttack( "testChargeAttack", EventArgs(), 'f', "no description");
+const idEventDef AI_TestMoveToPosition( "testMoveToPosition", EventArgs('v', "position", ""), 'd', "no description");
+const idEventDef AI_TestAnimMoveTowardEnemy( "testAnimMoveTowardEnemy", EventArgs('s', "animname", ""), 'd', "no description");
+const idEventDef AI_TestAnimMove( "testAnimMove", EventArgs('s', "animname", ""), 'd', "no description");
+const idEventDef AI_TestMeleeAttack( "testMeleeAttack", EventArgs(), 'd', "no description");
+const idEventDef AI_TestAnimAttack( "testAnimAttack", EventArgs('s', "animname", ""), 'd', "no description");
+const idEventDef AI_Shrivel( "shrivel", EventArgs('f', "time", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_Burn( "burn", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_ClearBurn( "clearBurn", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_PreBurn( "preBurn", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_SetSmokeVisibility( "setSmokeVisibility", 
+	EventArgs('d', "particle_num", "", 'd', "on", ""), EV_RETURNS_VOID, 
+	"enables/disables smoke particles on bones.  pass in the particle #,\n" \
+	"or ALL_PARTICLES for turning on/off all particle systems.\n" \
+	"particles are spawned in the order they appear in the entityDef");
+const idEventDef AI_NumSmokeEmitters( "numSmokeEmitters", EventArgs(), 'd', "Returns the # of emitters defined by 'smokeParticleSystem' in the entitydef");
+const idEventDef AI_WaitAction( "waitAction", EventArgs('s', "name", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_StopThinking( "stopThinking", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_GetTurnDelta( "getTurnDelta", EventArgs(), 'f', "no description");
+const idEventDef AI_GetMoveType( "getMoveType", EventArgs(), 'd', "Returns the current movetype");
+const idEventDef AI_SetMoveType( "setMoveType", EventArgs('d', "movetype", ""), EV_RETURNS_VOID, "Set the current movetype.  movetypes are defined in tdm_ai.script");
+const idEventDef AI_SaveMove( "saveMove", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_RestoreMove( "restoreMove", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_AllowMovement( "allowMovement", EventArgs('f', "allow", ""), EV_RETURNS_VOID, "");
+const idEventDef AI_JumpFrame( "<jumpframe>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef AI_EnableClip( "enableClip", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_DisableClip( "disableClip", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_EnableGravity( "enableGravity", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_DisableGravity( "disableGravity", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_EnableAFPush( "enableAFPush", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_DisableAFPush( "disableAFPush", EventArgs(), EV_RETURNS_VOID, "no description" );
+
+const idEventDef AI_SetFlySpeed( "setFlySpeed", EventArgs('f', "speed", ""), EV_RETURNS_VOID, 
+	"Set the speed flying creatures move at. Also sets speed for moveTypeSlide.");
+const idEventDef AI_SetFlyOffset( "setFlyOffset", EventArgs('d', "offset", ""), EV_RETURNS_VOID, 
+	"Sets the preferred height relative to the player's view height to fly at.");
+const idEventDef AI_ClearFlyOffset( "clearFlyOffset", EventArgs(), EV_RETURNS_VOID, 
+	"Sets the preferred height relative to the player's view height to fly at to the value set in the def file." );
+
+const idEventDef AI_GetClosestHiddenTarget( "getClosestHiddenTarget", EventArgs('s', "entity_type", ""), 'e', 
+	"Finds the closest targeted entity of the specified type.");
+const idEventDef AI_GetRandomTarget( "getRandomTarget", EventArgs('s', "entity_type", ""), 'e', "Finds a random targeted entity of the specified type.");
+const idEventDef AI_TravelDistanceToPoint( "travelDistanceToPoint", EventArgs('v', "destination", ""), 'f', "Approximate travel distance to point.");
+const idEventDef AI_TravelDistanceToEntity( "travelDistanceToEntity", EventArgs('e', "destination", ""), 'f', "Approximate travel distance to entity.");
+const idEventDef AI_TravelDistanceBetweenPoints( "travelDistanceBetweenPoints", 
+	EventArgs('v', "source", "", 'v', "dest", ""), 'f', "Approximate travel distance between two points.");
+const idEventDef AI_TravelDistanceBetweenEntities( "travelDistanceBetweenEntities", EventArgs('e', "source", "", 'e', "dest", ""), 'f', 
+	"Approximate travel distance between two entities.");
+const idEventDef AI_LookAtEntity( "lookAt", EventArgs('E', "focusEntity", "", 'f', "duration", ""), EV_RETURNS_VOID, 
+	"Aims the character's eyes and head toward an entity for a period of time.");
+const idEventDef AI_LookAtEnemy( "lookAtEnemy", EventArgs('f', "duration", ""), EV_RETURNS_VOID, 
+	"Aims the character's eyes and head toward the current enemy for a period of time.");
+const idEventDef AI_SetJointMod( "setBoneMod", EventArgs('d', "allowBoneMod", ""), EV_RETURNS_VOID, 
+	"Enables or disables head looking (may be obsolete).");
+const idEventDef AI_ThrowMoveable( "throwMoveable", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_ThrowAF( "throwAF", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_RealKill( "<kill>", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_Kill( "kill", EventArgs(), EV_RETURNS_VOID, "Kills the monster." );
+const idEventDef AI_WakeOnFlashlight( "wakeOnFlashlight", EventArgs('d', "enable", ""), EV_RETURNS_VOID, "Tells the monster to activate when flashlight shines on them.");
+const idEventDef AI_LocateEnemy( "locateEnemy", EventArgs(), EV_RETURNS_VOID, 
+	"Updates the last known position of the enemy independent from whether or not the enemy is visible." );
+const idEventDef AI_KickObstacles( "kickObstacles", 
+	EventArgs('E', "kickEnt", "pass in $null_entity if you don't have a specific entity to kick", 'f', "force", ""), 
+	EV_RETURNS_VOID, 
+	"Kicks any obstacle in the character's path.");
+const idEventDef AI_GetObstacle( "getObstacle", EventArgs(), 'e', "Gets the obstacle in the character's path");
+const idEventDef AI_PushPointIntoAAS( "pushPointIntoAAS", EventArgs('v', "post", ""), 'v', "Tries to push the point into a valid AAS area");
+const idEventDef AI_GetTurnRate( "getTurnRate", EventArgs(), 'f', "Gets the rate the character turns.");
+const idEventDef AI_SetTurnRate( "setTurnRate", EventArgs('f', "rate", ""), EV_RETURNS_VOID, "Set the rate the character turns at");
+const idEventDef AI_AnimTurn( "animTurn", EventArgs('f', "angle", "Pass in the maximum # of degrees the animation turns. Use an amount of 0 to disable."), 
+	EV_RETURNS_VOID, "Enable/disable animation controlled turning.");
+const idEventDef AI_AllowHiddenMovement( "allowHiddenMovement", EventArgs('d', "enable", ""), EV_RETURNS_VOID, 
+	"Normally, when hidden, monsters do not run physics. This enables physics when hidden.");
+const idEventDef AI_TriggerParticles( "triggerParticles", EventArgs('s', "jointName", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_FindActorsInBounds( "findActorsInBounds", EventArgs('v', "mins", "", 'v', "maxs", ""), 'e', 
+	"Returns an entity within the bounds specified");
+const idEventDef AI_CanReachPosition( "canReachPosition", EventArgs('v', "pos", ""), 'd', 
+	"Returns true if character can walk to specified position. For walking monsters, position should be near the floor.");
+const idEventDef AI_CanReachEntity( "canReachEntity", EventArgs('E', "ent", ""), 'd', 
+	"Returns true if character can walk to entity's position. For walking monsters, entity should be near the floor.");
+const idEventDef AI_CanReachEnemy( "canReachEnemy", EventArgs(), 'd', 
+	"Returns true if character can walk to enemy's position. For walking monsters, enemy should be near the floor.");
+const idEventDef AI_GetReachableEntityPosition( "getReachableEntityPosition", EventArgs('e', "ent", ""), 'v', 
+	"Returns the position of the entity within the AAS if possible, otherwise just the entity position.");
+const idEventDef AI_ReEvaluateArea("_reEvaluateArea", EventArgs('d', "areanum", ""), EV_RETURNS_VOID, "internal");
 
 // TDM
-const idEventDef AI_PlayAndLipSync( "playAndLipSync", "ss", 'd' );
+const idEventDef AI_PlayAndLipSync( "playAndLipSync", EventArgs('s', "soundName", "", 's', "animName", ""), 'd', 
+	"Play the given sound, using the given lipsync animation.\n" \
+	"The lipsync animation should just be a simple non-loopable animation\n" \
+	"of the mouth opening in a linear fashion. The code will select individual\n" \
+	"frames from this to construct a simple lipsyncing effect which is in\n" \
+	"time with the sound.\n" \
+	"\n" \
+	"Returns the length of the played sound in seconds.");
 
-const idEventDef AI_PushState("pushState", "s");
-const idEventDef AI_SwitchState("switchState", "s");
-const idEventDef AI_EndState("endState", NULL, 'd');
+const idEventDef AI_PushState("pushState", EventArgs('s', "stateName", ""), EV_RETURNS_VOID, "Pushes the state with the given name, current one is postponed.");
+const idEventDef AI_SwitchState("switchState", EventArgs('s', "stateName", ""), EV_RETURNS_VOID, "Switches to the state with the given name, current one is ended.");
+const idEventDef AI_EndState("endState", EventArgs(), 'd', "Ends the current state with the given name, returns TRUE if more than one state is remaining.");
 
 // DarkMod AI Relations Events
-const idEventDef AI_GetRelationEnt( "getRelationEnt", "E", 'd' );
-const idEventDef AI_IsEnemy( "isEnemy", "E", 'd' );
-const idEventDef AI_IsFriend( "isFriend", "E", 'd' );
-const idEventDef AI_IsNeutral( "isNeutral", "E", 'd' );
+const idEventDef AI_GetRelationEnt( "getRelationEnt", EventArgs('E', "ent", ""), 'd', "no description");
+//const idEventDef AI_IsEnemy( "isEnemy", EventArgs('E', "", ""), 'd', "");
+//const idEventDef AI_IsFriend( "isFriend", EventArgs('E', "", ""), 'd', "");
+//const idEventDef AI_IsNeutral( "isNeutral", EventArgs('E', "", ""), 'd', "");
 
 // Alert events
-const idEventDef AI_SetAlertLevel( "setAlertLevel", "f" );
-const idEventDef AI_Alert( "alert", "sf" );
-const idEventDef AI_VisScan( "visScan", NULL, 'e' );
-const idEventDef AI_GetSndDir( "getSndDir", NULL, 'v' );
-const idEventDef AI_GetVisDir( "getVisDir", NULL, 'v' );
-const idEventDef AI_GetTactEnt( "getTactEnt", NULL, 'e');
-const idEventDef AI_SetAcuity( "setAcuity", "sf" );
-const idEventDef AI_GetAcuity( "getAcuity", "s", 'f' );
-const idEventDef AI_GetAudThresh( "getAudThresh", NULL, 'f' );
-const idEventDef AI_SetAudThresh( "setAudThresh", "f" );
-const idEventDef AI_GetAlertActor( "getAlertActor", NULL, 'e' );
-const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", "fff" );
-const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", NULL, 'e' );
-const idEventDef AI_FoundBody( "foundBody", "e" );
+const idEventDef AI_SetAlertLevel( "setAlertLevel", EventArgs('f', "newLevel", ""), EV_RETURNS_VOID, 
+	"Set the alert level (AI_AlertLevel). This should always be called instead of setting AI_AlertLevel directly.");
+const idEventDef AI_Alert( "alert", EventArgs('s', "type", "", 'f', "val", ""), EV_RETURNS_VOID, "ai generalized alerts");
+const idEventDef AI_VisScan( "visScan", EventArgs(), 'e', "ai visibility ");
+const idEventDef AI_GetSndDir( "getSndDir", EventArgs(), 'v', "ai hearing of sound ");
+const idEventDef AI_GetVisDir( "getVisDir", EventArgs(), 'v', "ai visibility ");
+const idEventDef AI_GetTactEnt( "getTactEnt", EventArgs(), 'e', "ai sense of touch");
+const idEventDef AI_SetAcuity( "setAcuity", EventArgs('s', "type", "", 'f', "val", ""), EV_RETURNS_VOID, "ai generalized alerts");
+const idEventDef AI_GetAcuity( "getAcuity", EventArgs('s', "type", ""), 'f', "ai generalized alerts");
+const idEventDef AI_GetAudThresh( "getAudThresh", EventArgs(), 'f', "no description");
+const idEventDef AI_SetAudThresh( "setAudThresh", EventArgs('f', "val", ""), EV_RETURNS_VOID, "no description");
+const idEventDef AI_GetAlertActor( "getAlertActor", EventArgs(), 'e', "Get the actor that alerted the AI in this frame.");
+const idEventDef AI_SetAlertGracePeriod( "setAlertGracePeriod", 
+	EventArgs('f', "frac", "the fraction of the alert below which they should ignore alerts during the grace period.", 
+			  'f', "duration", "the duration of the period in seconds", 
+			  'f', "count", "the number of alerts ignored above which the grace period is invalid"), 
+	EV_RETURNS_VOID, 
+	"This starts the alert grace period for an AI.\n" \
+	"Should be called in the same frame as the alert that pushes them into a higher state.");
+const idEventDef AI_ClosestReachableEnemy( "closestReachableEnemy", EventArgs(), 'e', "Used for determining tactile alert targets");
+const idEventDef AI_FoundBody( "foundBody", EventArgs('e', "body", ""), EV_RETURNS_VOID, "Objective callback for when an AI finds a body.");
 
-/*!
-* A look at event that just looks at a position in space
-*
-* @param lookAtWorldPosition The position in space to look at
-*
-* @param durationInSeconds The duration to look in seconds
-*/
-const idEventDef AI_LookAtPosition ("lookAtPosition", "vf");
+const idEventDef AI_LookAtPosition ("lookAtPosition", 
+	EventArgs('v', "lookAtWorldPosition", "position in space to look at", 
+			  'f', "durationInSeconds", "duration to look in seconds"), 
+	EV_RETURNS_VOID, 
+	"This method is just like the vanilla Doom3 lookAt and lookAtEnemy\n" \
+	"methods, but instead of looking at an entity, it looks at a position\n" \
+	"in worldspace.\n" \
+	"\n" \
+	"That is, it turns the head of the AI to look at the position.");
 
-/*!
-* A look at event that just looks at a set of angles relative
-* to the current body facing of the AI
-*
-* @param yawAngleClockwise Negative angles are to the left of the AIs body
-*	and positive angles are to the right.
-*
-* @param pitchAngleUp Negative values are down and positive values are up
-*	where down and up are defined by the body axis.
-*
-* @param rollAngle This is currently unused and does nothing
-*
-* @param durationInSeconds The duration to look in seconds
-*
-*/
-const idEventDef AI_LookAtAngles ("lookAtAngles", "ffff");
+const idEventDef AI_LookAtAngles ("lookAtAngles", 
+	EventArgs('f', "yawAngleClockwise", "Negative angles are to the left of \nthe AIs body and positive angles are to the right.", 
+			  'f', "pitchAngleUp", "Negative values are down and positive values are up \nwhere down and up are defined by the body axis.", 
+			  'f', "rollAngle", "This is currently unused and does nothing.", 
+			  'f', "durationInSeconds", "The duration to look in seconds."), 
+	EV_RETURNS_VOID, 
+	"A look at event that just looks at a set of angles relative\n "\
+	"to the current body facing of the AI.\n" \
+	"This method is just like the vanilla Doom3 lookAt and lookAtEnemy\n" \
+	"methods, but it looks at the specified angles from the current body\n" \
+	"facing of the AI.");
 
-
-/*!
-* script callable: spawnThrowableProjectile
-*
-* @param projectileName The name of the projectile to spawn
-*	(as seen in a .def file) Must be descended from idProjectile
-*
-* @param pstr_attachJointName The name of the joint on the model
-*	to which the particle should be attached for throwing. If this
-*	is NULL or the empty string, then it is attached to the model center.
-*
-* @returns a pointer to a projectile entity that can be 
-*   thrown by the AI. You can use AI_LaunchMissle (e* = launchMissle(v,v) )
-*   to throw the stone.
-*
-*/
-const idEventDef AI_SpawnThrowableProjectile ("spawnThrowableProjectile", "ss", 'e');
+const idEventDef AI_SpawnThrowableProjectile("spawnThrowableProjectile", 
+	EventArgs('s', "projectileName", "The name of the projectile to spawn\n(as seen in a .def file) Must be descended from idProjectile", 
+			  's', "jointName", "The name of the joint on the model\n" \
+								"to which the particle should be attached for throwing. If this\n" \
+								"is NULL or the empty string, then it is attached to the model center."), 
+	'e', 
+	"This method spawns a projectile of the type named by the caller and\n" \
+	"attaches it to the joint given by the caller.  The projectile becomes\n" \
+	"the AI's firable projectile.\n" \
+	"Returns a pointer to a projectile entity that can be \n" \
+	"thrown by the AI. You can use AI_LaunchMissle (e* = launchMissle(v,v) )\n" \
+	"to throw the stone.");
 
 // DarkMod Hiding spot detection Events
-/*!
-* This event finds hiding spots in the bounds given by two vectors.
-*
-* The first paramter is a vector which gives the location of the
-* eye from which hiding is desired.
-*
-* The second vector gives the minimums in each dimension for the
-* search space.  
-*
-* The third and fourth vectors give the min and max bounds within which spots should be tested
-*
-* The fifth parameter gives the bit flags of the types of hiding spots
-* for which the search should look.
-*
-* The sixth parameter indicates an entity that should be ignored in
-* the visual occlusion checks.  This is usually the searcher itself but
-* can be NULL.
-*
-* This method will only start the search, if it returns 1, you should call
-* continueSearchForHidingSpots every frame to do more processing until that function
-* returns 0.
-*
-* The return value is a 0 for failure, 1 for success.
-*/
-const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", "vvvdE", 'd');
+const idEventDef AI_StartSearchForHidingSpots ("startSearchForHidingSpots", 
+	EventArgs('v', "hideFromPos", "a vector which gives the location of the\neye from which hiding is desired.",
+			  'v', "minSearchBounds", "a vector giving the minimums in each dimension for the search space",
+			  'v', "maxSearchBounds", "a vector giving the maximums in each dimension for the search space",
+			  'd', "hidingSpotTypesAllowed", "the bit flags of the types of hiding spots\n for which the search should look.",
+			  'E', "ignoreEntity", "indicates an entity that should be ignored in\n" \
+								   "the visual occlusion checks.  This is usually the searcher itself but\n" \
+								   "can be the $null_entity."), 
+	'd', 
+	"This event finds hiding spots in the bounds given by two vectors.\n" \
+	"This method will only start the search, if it returns 1, you should call\n" \
+	"continueSearchForHidingSpots every frame to do more processing until that function\n" \
+	"returns 0.\n" \
+	"\n" \
+	"The return value is a 0 for failure, 1 for success.");
 
 // Documentation see idAI::StartSearchForHidingSpotsWithExclusionArea
-const idEventDef AI_StartSearchForHidingSpotsWithExclusionArea ("startSearchForHidingSpotsWithExclusionArea", "vvvvvdE", 'd');
+const idEventDef AI_StartSearchForHidingSpotsWithExclusionArea ("startSearchForHidingSpotsWithExclusionArea", 
+	EventArgs('v', "hideFromLocation", "a vector which gives the location of the\neye from which hiding is desired.",
+			  'v', "minBounds", "the minimums in each dimension for the search space.",
+			  'v', "maxBounds", "the maximums in each dimension for the search space.",
+			  'v', "exclusionMinBounds", "give the min bounds of an area where\n" \
+										 "spots should NOT be tested. This overrides the third and fourth parameters\n" \
+										 "where they overlap (producing a dead zone where points are not tested)",
+			  'v', "exclusionMaxBounds", "give the max bounds of an area where spots should NOT be tested",
+			  'd', "hidingSpotTypesAllowed", "the bit flags of the types of hiding spots\nfor which the search should look.",
+			  'E', "ignoreEntity", "indicates an entity that should be ignored in\n" \
+								   "the visual occlusion checks.  This is usually the searcher itself but\n" \
+								   "can be $null_entity."),
+	'd', 
+	"This method finds hiding spots in the bounds given by two vectors, and also excludes\n" \
+	"any points contained within a different pair of vectors.\n\n" \
+	"This method will only start the search, if it returns 1, you should call\n" \
+	"continueSearchForHidingSpots every frame to do more processing until that function\n" \
+	"returns 0.\n" \
+	"\n" \
+	"The return value is a 0 for failure, 1 for success.");
 
-/*
-* This method continues searching for hiding spots. It will only find so many before
-* returning so as not to cause long delays.  Detected spots are added to the currently
-* building hiding spot list.
-*
-* The return value is 0 if the end of the search was reached, or 1 if there
-* is more processing to do (call this method again next AI frame)
-*
-*/
-const idEventDef AI_ContinueSearchForHidingSpots ("continueSearchForHidingSpots", NULL, 'd');
+const idEventDef AI_ContinueSearchForHidingSpots ("continueSearchForHidingSpots", EventArgs(), 'd', 
+	"This method continues searching for hiding spots. It will only find so many before\n" \
+	"returning so as not to cause long delays.  Detected spots are added to the currently\n" \
+	"building hiding spot list.\n" \
+	"\n" \
+	"The return value is 0 if the end of the search was reached, or 1 if there\n" \
+	"is more processing to do (call this method again next AI frame)");
 
-/*!
-* This should be called when the script is done with the hiding spot 
-* search to free up memory.
-*/
-const idEventDef AI_CloseHidingSpotSearch ("closeHidingSpotSearch", "");
+const idEventDef AI_CloseHidingSpotSearch ("closeHidingSpotSearch", EventArgs(), EV_RETURNS_VOID, 
+	"This should be called when the script is done with the hiding spot\n" \
+	"search to free up memory.");
 
-/*!
-* This re-sorts an existing search based on a new search center and radius.
-*
-* @param newCenter The new center of the search
-* 
-* @param newRadius The new radius of the search. Points outside the original
-*	search will not be added.
-*
-*/
-const idEventDef AI_ResortHidingSpotSearch ("resortHidingSpotSearch", "vv");
+const idEventDef AI_ResortHidingSpotSearch ("resortHidingSpotSearch", 
+	EventArgs('v', "newCenter", "the new center of the search", 
+			  'v', "newRadius", "the new radius of the search.\n Points outside the original search will not be added."), 
+	EV_RETURNS_VOID, 
+	"This re-sorts an existing search based on a new search center and radius.");
 
-/*!
-* This event returns the number of hiding spots by the current
-* hiding spot query. If there is no current query, this returns -1
-*/
-const idEventDef AI_GetNumHidingSpots ("getNumHidingSpots", "", 'd');
+const idEventDef AI_GetNumHidingSpots ("getNumHidingSpots", EventArgs(), 'd',
+	"This event returns the number of hiding spots by the current\n" \
+	"hiding spot query. If there is no current query, this returns -1");
 
-/*!
-* This event returns the Nth hiding spot location. 
-* Param is 0 based hiding spot index
-*/
-const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", "d", 'v');
+const idEventDef AI_GetNthHidingSpotLocation ("getNthHidingSpotLocation", EventArgs('d', "hidingSpotIndex", "0 based hiding spot index"), 'v', 
+	"This event returns the Nth hiding spot location.");
 
-/*!
-* This event returns the Nth hiding spot type. 
-* Param is 0 based hiding spot index
-*/
-const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", "d", 'd');
+const idEventDef AI_GetNthHidingSpotType ("getNthHidingSpotType", EventArgs('d', "hidingSpotIndex", "0 based hiding spot index"), 'd', 
+	"This event returns the Nth hiding spot type.");
 
-/*!
-* This event splits off half of the hiding spot list of another entity
-* and sets our hiding spot list to the "taken" points.
-*
-* As such, it is useful for getting hiding spots from a seraching AI that this
-* AI is trying to assist.
-*
-* @param p_otherEntity The other entity who's hiding spots we are taking
-* 
-* @return The number of points in the list gotten
-*/
-const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitiesHidingSpotList", "e", 'd');
+const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList ("getSomeOfOtherEntitiesHidingSpotList", 
+	EventArgs('e', "otherEntity", "The other entity who's hiding spots we are taking"), 
+	'd', 
+	"This event splits off half of the hiding spot list of another entity\n" \
+	"and sets our hiding spot list to the \"taken\" points.\n\n" \
+	"As such, it is useful for getting hiding spots from a seraching AI that this\n" \
+	"AI is trying to assist.\n\n" \
+	"Returns the number of points in the list gotten.");
 
-/*!
-* This event gets the alert number of another AI (AI_AlertLevel variable value)
-*
-* @param p_otherEntity The other AI entity who's alert number is being querried
-*
-* @return The alert number of the other AI, 0.0 if its not an AI or is NULL
-*/
-const idEventDef AI_GetAlertLevelOfOtherAI ("getAlertLevelOfOtherAI", "e", 'f');
+const idEventDef AI_GetAlertLevelOfOtherAI ("getAlertLevelOfOtherAI", 
+	EventArgs('e', "otherEntity", "the other AI entity who's alert number is being queried"), 'f', 
+	"This event gets the alert number of another AI (AI_AlertLevel variable value)\n" \
+	"Returns the alert number of the other AI, 0.0 if its not an AI or is NULL");
 
-/*!
-* This event is used to get a position that the AI can move to observe a 
-* given position.  It is useful for looking at hiding spots that can't be reached,
-* and performing other investigation functions.
-*/
-const idEventDef AI_GetObservationPosition ("getObservationPosition", "vf", 'v');
+const idEventDef AI_GetObservationPosition ("getObservationPosition", 
+	EventArgs('v', "targetPoint", "the world position to be observed", 
+	'f', "visualAcuityZeroToOne", "the visual acuity of the AI on a scale of 0.0 to 1.0\n" \
+								  "where 0.0 is blind and 1.0 is perfect vision."), 
+	'v', 
+	"This event is used to get a position that the AI can move to observe a \n" \
+	"given position.  It is useful for looking at hiding spots that can't be reached,\n" \
+	"and performing other investigation functions.\n\n" \
+	"Returns a world position from which the observation can take\n" \
+	"place. Returns the current AI origin if no such point is found.\n" \
+	"\n" \
+	"@sideEffect This uses the AI_DEST_UNREACHABLE flag variable \n" \
+	"to indicate if a point was found. It will be true if none\n" \
+	"was found, false if one was found.");
 
 /**
 * These events handle a knockout of the AI (takes the attacker as argument)
 **/
-const idEventDef AI_KO_Knockout( "KO_Knockout", "E" ); // grayman #2468
-const idEventDef AI_Gas_Knockout( "Gas_Knockout", "E" ); // grayman #2468
+const idEventDef AI_KO_Knockout( "KO_Knockout", 
+	EventArgs('E', "inflictor", "is the entity causing the knockout, can be the $null_entity"), 
+	EV_RETURNS_VOID, "AI knockout"); // grayman #2468
 
-const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", NULL, 's' );
+const idEventDef AI_Gas_Knockout( "Gas_Knockout", 
+	EventArgs('E', "inflictor", "the entity causing the knockout, can be the $null_entity"), 
+	EV_RETURNS_VOID, "AI knockout"); // grayman #2468
 
-const idEventDef AI_HasSeenEvidence( "hasSeenEvidence", NULL, 'd' );
+const idEventDef AI_GetNextIdleAnim( "getNextIdleAnim", EventArgs(), 's', 
+	"This returns the name of the next idle anim to be played on this AI (used by AnimState scripts).");
 
-const idEventDef AI_RestartPatrol( "restartPatrol" ); // grayman #2920
+const idEventDef AI_HasSeenEvidence( "hasSeenEvidence", EventArgs(), 'd', 
+	"This returns 1 when the AI has seen evidence of intruders before (an enemy, a body...)");
+
+const idEventDef AI_RestartPatrol( "restartPatrol", EventArgs(), EV_RETURNS_VOID, "no description" ); // grayman #2920
 
 /*
 * This is the AI event table class for a generic NPC actor.

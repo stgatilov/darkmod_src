@@ -33,6 +33,7 @@ Event are used for scheduling tasks and for linking script commands.
 
 #include "../../idlib/Lib.h"
 #include <cstring>
+#include "EventArgs.h"
 
 #define D_EVENT_MAXARGS				8			// if changed, enable the CREATE_EVENT_CODE define in Event.cpp to generate switch statement for idClass::ProcessEventArgPtr.
 												// running the game will then generate c:\doom\base\events.txt, the contents of which should be copied into the switch statement.
@@ -48,10 +49,13 @@ Event are used for scheduling tasks and for linking script commands.
 
 #define MAX_EVENTS					8192
 
+#define EV_RETURNS_VOID				D_EVENT_VOID
+
 class idClass;
 class idTypeInfo;
 
-class idEventDef {
+class idEventDef 
+{
 private:
 	const char					*name;
 	const char					*formatspec;
@@ -61,26 +65,42 @@ private:
 	size_t						argsize;
 	int							argOffset[ D_EVENT_MAXARGS ];
 	int							eventnum;
+
+	// description - what does this event do?
+	const char*					description;
+	EventArgs					args;
+
 	const idEventDef *			next;
 
 	static idEventDef *			eventDefList[MAX_EVENTS];
 	static int					numEventDefs;
 
 public:
-								idEventDef( const char *command, const char *formatspec = NULL, char returnType = 0 );
-								
-	const char					*GetName( void ) const;
-	const char					*GetArgFormat( void ) const;
-	unsigned int				GetFormatspecIndex( void ) const;
-	char						GetReturnType( void ) const;
-	int							GetEventNum( void ) const;
-	int							GetNumArgs( void ) const;
-	size_t						GetArgSize( void ) const;
-	int							GetArgOffset( int arg ) const;
 
-	static int					NumEventCommands( void );
+	// Define a named event with the given arguments, return type and documentation
+	idEventDef(const char* command, const EventArgs& args, char returnType, const char* description);
+
+	~idEventDef();
+
+	const char*					GetName() const;
+	const char*					GetDescription() const;
+	const char*					GetArgFormat() const;
+	unsigned int				GetFormatspecIndex() const;
+	char						GetReturnType() const;
+	int							GetEventNum() const;
+	int							GetNumArgs() const;
+	const EventArg&				GetArg(int argIndex) const;
+	const EventArgs&			GetArgs() const;
+	size_t						GetArgSize() const;
+	int							GetArgOffset(int arg) const;
+
+	static int					NumEventCommands();
 	static const idEventDef		*GetEventCommand( int eventnum );
 	static const idEventDef		*FindEvent( const char *name );
+
+private:
+	// Shared constructor
+	void Construct();
 };
 
 class idSaveGame;
@@ -145,6 +165,11 @@ ID_INLINE const char *idEventDef::GetName( void ) const {
 	return name;
 }
 
+ID_INLINE const char* idEventDef::GetDescription() const
+{
+	return description;
+}
+
 /*
 ================
 idEventDef::GetArgFormat
@@ -179,6 +204,16 @@ idEventDef::GetNumArgs
 */
 ID_INLINE int idEventDef::GetNumArgs( void ) const {
 	return numargs;
+}
+
+ID_INLINE const EventArg& idEventDef::GetArg(int argIndex) const
+{
+	return args[argIndex];
+}
+
+ID_INLINE const EventArgs& idEventDef::GetArgs() const
+{
+	return args;
 }
 
 /*

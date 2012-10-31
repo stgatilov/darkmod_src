@@ -20,6 +20,8 @@
 #ifndef FROBBUTTON_H
 #define FROBBUTTON_H
 
+extern const idEventDef EV_TDM_Operate;
+
 /** 
  * angua: This class is designed specifically for buttons.
  * It doesn't do much more than using the BinaryFrobMover functions for now

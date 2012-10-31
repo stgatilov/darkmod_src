@@ -8557,7 +8557,7 @@ idCombatNode
 
 ***********************************************************************/
 
-const idEventDef EV_CombatNode_MarkUsed( "markUsed" );
+const idEventDef EV_CombatNode_MarkUsed( "markUsed", EventArgs(), EV_RETURNS_VOID, "Disables the combat node if \"use_once\" is set on the entity." );
 
 CLASS_DECLARATION( idEntity, idCombatNode )
 	EVENT( EV_CombatNode_MarkUsed,				idCombatNode::Event_MarkUsed )

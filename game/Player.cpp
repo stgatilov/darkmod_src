@@ -67,101 +67,229 @@ const float MIN_BOB_SPEED = 5.0f;
 const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
-const idEventDef EV_Player_GetButtons( "getButtons", NULL, 'd' );
-const idEventDef EV_Player_GetMove( "getMove", NULL, 'v' );
-const idEventDef EV_Player_GetViewAngles( "getViewAngles", NULL, 'v' );
-const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", NULL, 'd');
-const idEventDef EV_Player_MouseGestureFinished( "mouseGestureFinished", NULL, 'd' );
-const idEventDef EV_Player_ClearMouseDeadTime("clearMouseDeadTime");
-const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", "ddddfdd" );
-const idEventDef EV_Player_StopMouseGesture( "stopMouseGesture" );
-const idEventDef EV_Player_StopFxFov( "stopFxFov" );
-const idEventDef EV_Player_EnableWeapon( "enableWeapon" );
-const idEventDef EV_Player_DisableWeapon( "disableWeapon" );
-const idEventDef EV_Player_GetCurrentWeapon( "getCurrentWeapon", NULL, 's' );
-const idEventDef EV_Player_GetPreviousWeapon( "getPreviousWeapon", NULL, 's' );
-const idEventDef EV_Player_SelectWeapon( "selectWeapon", "s" );
-const idEventDef EV_Player_GetWeaponEntity( "getWeaponEntity", NULL, 'e' );
-const idEventDef EV_Player_ExitTeleporter( "exitTeleporter" );
-const idEventDef EV_SpectatorTouch( "spectatorTouch", "et" );
-const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon", NULL, 's' );
+const idEventDef EV_Player_GetButtons( "getButtons", EventArgs(), 'd', "Returns the button state from the current user command." );
 
-const idEventDef EV_Player_GetEyePos( "getEyePos", NULL, 'v' );
-const idEventDef EV_Player_SetImmobilization( "setImmobilization", "sd" );
-const idEventDef EV_Player_GetImmobilization( "getImmobilization", "s", 'd' );
-const idEventDef EV_Player_GetNextImmobilization( "getNextImmobilization", "ss", 's' );
-const idEventDef EV_Player_SetHinderance( "setHinderance", "sff" );
-const idEventDef EV_Player_GetHinderance( "getHinderance", "s", 'v' );
-const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", "ss", 's' );
-const idEventDef EV_Player_SetTurnHinderance( "setTurnHinderance", "sff" );
-const idEventDef EV_Player_GetTurnHinderance( "getTurnHinderance", "s", 'v' );
-const idEventDef EV_Player_GetNextTurnHinderance( "getNextTurnHinderance", "ss", 's' );
+const idEventDef EV_Player_GetMove( "getMove", EventArgs(), 'v',
+	"Returns the movement relative to the player's view angles from the current user command.\n" \
+	"vector_x = forward, vector_y = right, vector_z = up");
 
-const idEventDef EV_Player_SetGui( "setGui", "ds" );
-const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", NULL, 'd' );
+const idEventDef EV_Player_GetViewAngles( "getViewAngles", EventArgs(), 'v', "Returns the player view angles.");
 
-const idEventDef EV_Player_PlayStartSound( "playStartSound", NULL );
-const idEventDef EV_Player_MissionFailed("missionFailed", NULL );
-const idEventDef EV_Player_CustomDeath("customDeath", NULL );
-const idEventDef EV_Player_DeathMenu("deathMenu", NULL );
-const idEventDef EV_Player_HoldEntity( "holdEntity", "E", 'f' );
-const idEventDef EV_Player_HeldEntity( "heldEntity", NULL, 'E' );
+const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", EventArgs(), 'd', 
+	"Returns the results of the last mouse gesture in enum form.\n" \
+	"(see the definition for MOUSEDIR_* for which numbers correspond to which directions)");
 
-const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", "e" );
+const idEventDef EV_Player_MouseGestureFinished( "mouseGestureFinished", EventArgs(), 'd', "Returns true if the player is not currently doing a mouse gesture.");
+
+const idEventDef EV_Player_ClearMouseDeadTime("clearMouseDeadTime",EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_Player_StartMouseGesture( "startMouseGesture", 
+		EventArgs(	'd', "key", "", 
+					'd', "thresh", "Waits until the threshold mouse input thresh is reached before deciding.", 
+					'd', "test", "determines which test to do (0 = up/down, 1 = left/right, 2 = 4 directions, 3 = 8 directions).", 
+					'd', "inverted", "inverts the movement if set to 1, does not if 0",
+					'f', "turnHinderance", "Sets the max player view turn rate when checking this mouse gesture (0 => player view locked, 1.0 => no effect on view turning)",
+					'd', "decideTime", "time in milliseconds after which the mouse gesture is auto-decided, in the event that the mouse movement threshold was not reached.\n" \
+							"A DecideTime of -1 means wait forever until the button is released.",
+					'd', "deadTime", "how long after attack is pressed that mouse control remains dampened by the fraction turnHinderance."),
+		EV_RETURNS_VOID,
+		"Start tracking a mouse gesture that started when the key impulse was pressed.\n" \
+		"Discretizes analog mouse movement into a few different gesture possibilities.\n" \
+		"Impulse arg can also be a button, see the UB_* enum in usercmdgen.h.\n" \
+		"For now, only one mouse gesture check at a time.");
+	
+const idEventDef EV_Player_StopMouseGesture( "stopMouseGesture", EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_Player_StopFxFov( "stopFxFov", EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_Player_EnableWeapon( "enableWeapon", EventArgs(), EV_RETURNS_VOID, "Enables the player weapon.");
+const idEventDef EV_Player_DisableWeapon( "disableWeapon", EventArgs(), EV_RETURNS_VOID, "Lowers and disables the player weapon." );
+const idEventDef EV_Player_GetCurrentWeapon( "getCurrentWeapon", EventArgs(), 's', "Returns weaponX where X is the number of the weapon the player is currently holding.");
+const idEventDef EV_Player_GetPreviousWeapon( "getPreviousWeapon", EventArgs(), 's', "Returns weaponX where X is the number of the weapon the player was previously holding.");
+const idEventDef EV_Player_SelectWeapon( "selectWeapon", EventArgs('s', "weapon", ""), EV_RETURNS_VOID, "Selects the weapon the player is holding.");
+const idEventDef EV_Player_GetWeaponEntity( "getWeaponEntity", EventArgs(), 'e', "Returns the entity for the player's weapon");
+const idEventDef EV_Player_ExitTeleporter( "exitTeleporter", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_SpectatorTouch( "spectatorTouch", EventArgs('e', "", "", 't', "", ""), EV_RETURNS_VOID, "");
+const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon",EventArgs(), 's', "");
+
+const idEventDef EV_Player_GetEyePos( "getEyePos", EventArgs(), 'v', "get eye position of the player and the AI");
+
+const idEventDef EV_Player_SetImmobilization( "setImmobilization", EventArgs('s', "source", "", 'd', "type", ""), EV_RETURNS_VOID, 
+		"Used to set immobilization from a source.\n" \
+		"Warning: Not a finalized version. It's subject to change, so use it at your own risk.)");
+
+const idEventDef EV_Player_GetImmobilization( "getImmobilization", EventArgs('s', "source", ""), 'd', 
+		"Used to get immobilization from a source.\n"\
+		"Warning: Not a finalized version. It's subject to change, so use it at your own risk.)");
+
+const idEventDef EV_Player_GetNextImmobilization( "getNextImmobilization", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's',
+		"Used to get immobilization from a source.\n"\
+		"Warning: Not a finalized version. It's subject to change, so use it at your own risk.)");
+
+
+const idEventDef EV_Player_SetHinderance( "setHinderance", 
+		EventArgs(	's', "source", "", 
+					'f', "mCap", "mCap values from all sources are multiplied together to define a cap", 
+					'f', "fCap", "fCap values are not additive, the smallest one among all the sources is used"),
+		EV_RETURNS_VOID, "Used to set hinderance from a source." );
+
+const idEventDef EV_Player_GetHinderance( "getHinderance", EventArgs('s', "source", ""), 'v', "Used to get hinderance from a source." );
+const idEventDef EV_Player_GetNextHinderance( "getNextHinderance", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', "Used to get the next hinderance from a source.");
+
+
+const idEventDef EV_Player_SetTurnHinderance( "setTurnHinderance", 
+			EventArgs(	's', "source", "", 
+					'f', "mCap", "mCap values from all sources are multiplied together to define a cap", 
+					'f', "fCap", "fCap values are not additive, the smallest one among all the sources is used"),
+			EV_RETURNS_VOID, "Set the hinderance on the view turning from a source");
+	
+const idEventDef EV_Player_GetTurnHinderance( "getTurnHinderance", EventArgs('s', "source", ""), 'v', "* Get the hinderance on the view turning from a source");
+const idEventDef EV_Player_GetNextTurnHinderance( "getNextTurnHinderance", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', "Get the next hinderance on the view turning from a source");
+
+
+const idEventDef EV_Player_SetGui( "setGui", EventArgs('d', "handle", "", 's', "guiFile", ""), EV_RETURNS_VOID, "Loads a new file into an existing GUI." );
+const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", EventArgs(), 'd', "Gets the default inventory overlay for the player. All other entities will return an invalid value.");
+
+const idEventDef EV_Player_PlayStartSound( "playStartSound", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_Player_MissionFailed("missionFailed", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_Player_CustomDeath("customDeath", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_Player_DeathMenu("deathMenu", EventArgs(), EV_RETURNS_VOID, "");
+
+
+const idEventDef EV_Player_HoldEntity( "holdEntity", EventArgs('E', "entity", ""), 'f', 
+		"Forces the player to hold an entity (e.g. puts it into the grabber).\n" \
+		"Drops whatever is in the player's hands if $null is passed to it.\n" \
+		"Returns 1 if successful, 0 if not.");
+
+const idEventDef EV_Player_HeldEntity( "heldEntity", EventArgs(), 'E', "Returns the entity currently being held, or $null if the player's hands are empty.");
+
+const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", EventArgs('e', "ropeEnt", ""), EV_RETURNS_VOID, 
+		"Called when rope arrow ropes are removed, removes stale pointers on the player object.");
+
+
 // NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
-const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", "dd" );
-const idEventDef EV_Player_GetObjectiveState( "getObjectiveState", "d", 'd');
-const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", "ddd" );
-const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", "dd", 'd' );
-const idEventDef EV_Player_ObjectiveUnlatch( "objectiveUnlatch", "d" );
-const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", "dd" );
-const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", "dd" );
-const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", "dd" );
-const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", "dd" );
-const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", "ds" );
-// Tels: Modify the displayed text for an objective. Can also be a string template like #str_20000
-const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", "ds" );
-// greebo: This allows scripts to set the "healthpool" for gradual healing
-const idEventDef EV_Player_GiveHealthPool("giveHealthPool", "f");
-const idEventDef EV_Player_WasDamaged("wasDamaged", NULL, 'd');
+const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", EventArgs('d', "ObjNum", "", 'd', "State", ""), EV_RETURNS_VOID, 
+		"Used to set the state of objectives from the script.\n" \
+		"For example, use this to invalidate an objective when something happens in your mission.\n" \
+		"The first argument is the numerical index of the objective (taking 'user' objective indices, starting at 1).\n" \
+		"Choose from the following for the second argument: OBJ_INCOMPLETE, OBJ_COMPLETE, OBJ_INVALID, OBJ_FAILED.\n" \
+		"Use this on $player1 like $player1.setObjectiveState(1, OBJ_COMPLETE);" );
 
-const idEventDef EV_Mission_Success("missionSuccess", NULL);
-const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", NULL);
-const idEventDef EV_DisconnectFromMission("_disconnectFromMission", NULL);
+const idEventDef EV_Player_GetObjectiveState( "getObjectiveState", EventArgs('d', "ObjNum", ""), 'd', 
+		"returns the current state of the objective with the number ObjNum (taking 'user' objective indices, starting at 1 instead of 0)\n" \
+		"State is one of the following: OBJ_INCOMPLETE = 0, OBJ_COMPLETE = 1, OBJ_INVALID = 2, OBJ_FAILED = 3");
+
+const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", 
+		EventArgs(	'd', "ObjNum", "objective number (taking 'user' objective indices, starting at 1)", 
+					'd', "CompNum", "component number", 
+					'd', "state", "1 or 0 for true or false"), 
+		EV_RETURNS_VOID, "Used to set the state of custom objective components");
+
+const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", EventArgs('d', "ObjNum", "", 'd', "CompNum", ""), 'd', "Used to get the state of custom objective components");
+
+const idEventDef EV_Player_ObjectiveUnlatch( "objectiveUnlatch", EventArgs('d', "ObjNum", ""), EV_RETURNS_VOID, "Unlatch an irreversible objective that has latched into a state");
+const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", EventArgs('d', "ObjNum", "", 'd', "CompNum", ""), EV_RETURNS_VOID, 
+		"Unlatch an irreversible objective component that has latched into a state");
+
+const idEventDef EV_Player_SetObjectiveVisible( "setObjectiveVisible", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective visibility.");
+const idEventDef EV_Player_SetObjectiveOptional( "setObjectiveOptional", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective mandatory." );
+const idEventDef EV_Player_SetObjectiveOngoing( "setObjectiveOngoing", EventArgs('d', "ObjNum", "", 'd', "val", "1 for true, 0 for false"), EV_RETURNS_VOID, "Sets objective ongoing." );
+
+const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling", 
+		EventArgs(	'd', "ObjNum", "", 
+					's', "strIn", "takes the form of a string that is a space-delimited list of integer objectives representing the new enabling objectives.\n" \
+									"E.g. : '1 2 3 4'"), EV_RETURNS_VOID, 
+		"Set an objective's enabling objectives (objectives that must be completed before that objective may be completed).");
+
+// Tels: Modify the displayed text for an objective. Can also be a string template like #str_20000 (#3217)
+const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", EventArgs('d', "ObjNum", "", 's', "newText", ""), EV_RETURNS_VOID, 
+		"Modify the displayed text for an objective. Can also be a string template like #str_20000");
+
+
+// greebo: This allows scripts to set the "healthpool" for gradual healing
+const idEventDef EV_Player_GiveHealthPool("giveHealthPool", EventArgs('f', "amount", ""), EV_RETURNS_VOID, 
+		"This increases/decreases the healthpool of the player by the given amount.\n" \
+		"The healthpool is gradually decreased over time, healing (damaging?) the player.");
+
+const idEventDef EV_Player_WasDamaged("wasDamaged", EventArgs(), 'd', "Check if the player was damaged this frame.");
+
+const idEventDef EV_Mission_Success("missionSuccess", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_TriggerMissionEnd("triggerMissionEnd", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_DisconnectFromMission("_disconnectFromMission", EventArgs(), EV_RETURNS_VOID, "");
 
 // Private event to process intermission triggers
-const idEventDef EV_ProcessInterMissionTriggers("_processInterMissionTriggers");
+const idEventDef EV_ProcessInterMissionTriggers("_processInterMissionTriggers", EventArgs(), EV_RETURNS_VOID, "");
 
-const idEventDef EV_GetLocation("getLocation", NULL, 'e');
+const idEventDef EV_GetLocation("getLocation", EventArgs(), 'e', "Returns the idLocation entity corresponding to the entity's current location.");
+
 
 // greebo: These events are handling the FOV.
-const idEventDef EV_Player_StartZoom("startZoom", "fff");
-const idEventDef EV_Player_EndZoom("endZoom", "f");
-const idEventDef EV_Player_ResetZoom("resetZoom", NULL);
-const idEventDef EV_Player_GetFov("getFov", NULL, 'f');
+const idEventDef EV_Player_StartZoom("startZoom", 
+		EventArgs(	'f', "duration", "duration of the transition in msec", 
+					'f', "startFOV", "The start FOV, this is clamped to [1..179]", 
+					'f', "endFOV", "The end FOV, this is clamped to [1..179]"), 
+		EV_RETURNS_VOID, 
+		"Call this to start the zoom in event. The player FOV is gradually zoomed in until over the given timespan.");
 
-const idEventDef EV_Player_PauseGame("pauseGame", NULL);
-const idEventDef EV_Player_UnpauseGame("unpauseGame", NULL);
-const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", NULL);
+const idEventDef EV_Player_EndZoom("endZoom", EventArgs('f', "duration", "duration of the transition in msec"),  EV_RETURNS_VOID, 
+		"Starts the zoom out event, which performs a gradual transition back to the default FOV.\n" \
+		"May be called during a transition as well to intercept a pending zoom in transition.");
 
-const idEventDef EV_CheckAAS("checkAAS", NULL);
+const idEventDef EV_Player_ResetZoom("resetZoom", EventArgs(), EV_RETURNS_VOID, "Cancels any pending zoom transitions and resets the FOV to normal.");
+const idEventDef EV_Player_GetFov("getFov", EventArgs(), 'f', "This returns the current FOV of the player.");
+
+
+const idEventDef EV_Player_PauseGame("pauseGame", EventArgs(), EV_RETURNS_VOID, 
+		"Pauses the game. This should only be called for threads that are explicitly maintained\n" \
+		"by a special SDK method, because ordinary threads won't get executed during g_stopTime == true.\n" \
+		"Note: This is used by the objective GUI threads.\n" \
+		"Note: Must be called on the player entity, not the sys entity.");
+
+const idEventDef EV_Player_UnpauseGame("unpauseGame", EventArgs(), EV_RETURNS_VOID, 
+		"Unpauses the game. Most scripts are not executed during g_stopTime == true and won't get into the position of calling this.");
+
+const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", EventArgs(), EV_RETURNS_VOID, "");
+
+const idEventDef EV_CheckAAS("checkAAS", EventArgs(), EV_RETURNS_VOID, "");
 
 // greebo: Allows scripts to set a named lightgem modifier to a certain value (e.g. "lantern" => 32)
-const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", "sd");
-const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", NULL);
+const idEventDef EV_Player_SetLightgemModifier("setLightgemModifier", EventArgs('s', "modifierName", "", 'd', "value", ""), EV_RETURNS_VOID, 
+		"Sets the named lightgem modifier to a certain value. An example would be the player lantern: setLightgemModifier(\"lantern\", 32).\n" \
+		"This way multiple modifiers can be set by concurrent script threads.");
+
+const idEventDef EV_ReadLightgemModifierFromWorldspawn("readLightgemModifierFromWorldspawn", EventArgs(), EV_RETURNS_VOID, "");
 
 // greebo: Changes the projectile entityDef name of the given weapon (e.g. "broadhead").
-const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", "ss", NULL);
-const idEventDef EV_ResetWeaponProjectile("resetWeaponProjectile", "s", NULL);
-const idEventDef EV_ChangeWeaponName("changeWeaponName", "ss", NULL);
-const idEventDef EV_GetCurWeaponName("getCurWeaponName", NULL, 's');
-const idEventDef EV_SetActiveInventoryMapEnt("setActiveInventoryMapEnt", "e");
-const idEventDef EV_ClearActiveInventoryMap("clearActiveInventoryMap", NULL);
-const idEventDef EV_ClearActiveInventoryMapEnt("clearActiveInventoryMapEnt", NULL); // grayman #3164
+const idEventDef EV_ChangeWeaponProjectile("changeWeaponProjectile", EventArgs('s', "weaponName", "", 's', "projectileDefName", ""), EV_RETURNS_VOID, 
+		"Changes the projectile entityDef name of the given weapon (e.g. \"broadhead\")\n" \
+		"to the specified entityDef (e.g. \"atdm:projectile_broadhead\").");
+
+const idEventDef EV_ResetWeaponProjectile("resetWeaponProjectile", EventArgs('s', "weaponName", ""), EV_RETURNS_VOID, 
+		"Reloads the original projectile def name from the weaponDef. Used to revert a change made by the event changeWeaponProjectile().");
+
+const idEventDef EV_ChangeWeaponName("changeWeaponName", EventArgs('s', "weaponName", "", 's', "displayName", ""), EV_RETURNS_VOID, 
+		"Changes the display name of the given weapon item to something different.\n" \
+		"Pass an empty string to reset the display name to the definition as found in the weaponDef.");
+
+const idEventDef EV_GetCurWeaponName("getCurWeaponName", EventArgs(), 's', 
+		"Returns the name of the current weapon, as defined by \"inv_weapon_name\" in the weaponDef.");
+
+const idEventDef EV_SetActiveInventoryMapEnt("setActiveInventoryMapEnt", EventArgs('e', "mapEnt", ""), EV_RETURNS_VOID, 
+		"Notify the player about a new active map entity. This clears out any previously active maps.");
+
+const idEventDef EV_ClearActiveInventoryMap("clearActiveInventoryMap", EventArgs(), EV_RETURNS_VOID, 
+		"Clear the active inventory map entity");	// grayman #3164
+
+const idEventDef EV_ClearActiveInventoryMapEnt("clearActiveInventoryMapEnt", EventArgs(), EV_RETURNS_VOID, 
+		"Clear the active inventory map entity"); // grayman #3164
 
 // ishtvan: Let scripts get the currently frobbed entity, and set "frob only used by" mode
-const idEventDef EV_Player_GetFrobbed("getFrobbed", NULL, 'e');
-const idEventDef EV_Player_SetFrobOnlyUsedByInv("setFrobOnlyUsedByInv", "d", NULL);
+const idEventDef EV_Player_GetFrobbed("getFrobbed", EventArgs(), 'e', 
+		"Returns the currently frobhilighted entity. Sets \"frob only used by\" mode");
+
+const idEventDef EV_Player_SetFrobOnlyUsedByInv("setFrobOnlyUsedByInv", EventArgs('d', "OnOff", ""), EV_RETURNS_VOID, 
+		"Engages or disengages a mode where we only frobhilight entities that can be used by our current inventory item.\n" \
+		"This also disables general frobactions and only allows \"used by\" frob actions.");
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )

@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Game_local.h"
+#include "Script_Doc_Export.h"
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
@@ -1893,12 +1894,73 @@ void idProgram::FreeData( void ) {
 	filename = "";
 }
 
+void idProgram::RegisterScriptEvents()
+{
+	int numEvents = idEventDef::NumEventCommands();
+
+	for (int i = 0; i < numEvents; ++i)
+	{
+		const idEventDef* eventDef = idEventDef::GetEventCommand(i);
+
+		const char* eventName = eventDef->GetName();
+
+		if (eventName != NULL && (eventName[0] == '<' || eventName[0] == '_'))
+		{
+			continue; // ignore all event names starting with '<', these mark internal events
+		}
+
+		const char* argFormat = eventDef->GetArgFormat();
+		int numArgs = strlen(argFormat);
+		bool argumentsValid = true;
+
+		// Check if any of the argument types is invalid before allocating anything
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			if (argType == NULL)
+			{
+				argumentsValid = false;
+				break;
+			}
+		}
+
+		if (!argumentsValid)
+		{
+			continue; // ignore this event, it has invalid arguments
+		}
+
+		idTypeDef* returnType = idCompiler::GetTypeForEventArg(eventDef->GetReturnType());
+
+		idTypeDef* type = AllocType(ev_function, NULL, eventDef->GetName(), type_function.Size(), returnType);
+		type->def = AllocDef(type, eventDef->GetName(), &def_namespace, true);
+
+		function_t &func	= AllocFunction(type->def);
+		func.eventdef		= eventDef;
+		func.parmSize.SetNum(eventDef->GetNumArgs());
+
+		for (int arg = 0; arg < numArgs; ++arg)
+		{
+			idTypeDef* argType = idCompiler::GetTypeForEventArg(argFormat[arg]);
+
+			type->AddFunctionParm(argType, "");
+
+			func.parmTotal += argType->Size();
+			func.parmSize[arg] = argType->Size();
+		}
+
+		// mark the parms as local
+		func.locals	= func.parmTotal;
+	}
+}
+
 /*
 ================
 idProgram::Startup
 ================
 */
-void idProgram::Startup( const char *defaultScript ) {
+void idProgram::Startup( const char *defaultScript )
+{
 	gameLocal.Printf( "Initializing scripts\n" );
 
 	// make sure all data is freed up
@@ -1906,6 +1968,9 @@ void idProgram::Startup( const char *defaultScript ) {
 
 	// get ready for loading scripts
 	BeginCompilation();
+
+	// Register all known script events
+	RegisterScriptEvents();
 
 	// load the default script
 	if ( defaultScript && *defaultScript ) {
@@ -2136,4 +2201,31 @@ void idProgram::ReturnEntity( idEntity *ent ) {
 	} else {
 		*returnDef->value.entityNumberPtr = 0;
 	}
+}
+
+void idProgram::WriteScriptEventDocFile(idFile& outputFile, DocFileFormat format)
+{
+	switch (format)
+	{
+	case FORMAT_D3_SCRIPT:
+		{
+			ScriptEventDocGeneratorD3Script generator;
+			generator.WriteDoc(outputFile);
+		}
+		break;
+	case FORMAT_MEDIAWIKI:
+		{
+			ScriptEventDocGeneratorMediaWiki generator;
+			generator.WriteDoc(outputFile);
+		}
+		break;
+	case FORMAT_XML:
+		{
+			ScriptEventDocGeneratorXml generator;
+			generator.WriteDoc(outputFile);
+		}
+		break;
+	};
+
+	gameLocal.Printf("Documentation written to: %s\n", outputFile.GetFullPath());
 }

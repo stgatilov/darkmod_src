@@ -30,7 +30,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 //===============================================================================
 // CFrobHandle
 //===============================================================================
-const idEventDef EV_TDM_Handle_Tap( "Tap", NULL );
+const idEventDef EV_TDM_Handle_Tap( "Tap", EventArgs(), EV_RETURNS_VOID, "Operates this handle." );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobHandle )
 	EVENT( EV_TDM_Handle_Tap,	CFrobHandle::Event_Tap )
