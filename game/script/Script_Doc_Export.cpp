@@ -53,7 +53,7 @@ namespace
 			idTypeDef* type = idCompiler::GetTypeForEventArg(i->type);
 
 			// Use a generic variable name "a", "b", "c", etc. if no name present
-			out += va("%s %s", type->Name(), strlen(i->name) > 0 ? i->name : idStr(gen[g++]));
+			out += va("%s %s", type->Name(), strlen(i->name) > 0 ? i->name : idStr(gen[g++]).c_str());
 		}
 
 		return out;
