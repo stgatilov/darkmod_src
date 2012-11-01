@@ -2400,17 +2400,26 @@ void idCompiler::ParseEventDef( idTypeDef *returnType, const char *name ) {
 	idStr			parmName;
 
 	ev = idEventDef::FindEvent( name );
-	if ( !ev ) {
-		Error( "Unknown event '%s'", name );
+	if ( !ev )
+	{
+		Warning( "Unknown event declared in scripts: '%s'", name );
+		SkipToSemicolon();
+		return;
 	}
-
+	
 	// set the return type
 	expectedType = GetTypeForEventArg( ev->GetReturnType() );
+
 	if ( !expectedType ) {
-		Error( "Invalid return type '%c' in definition of '%s' event.", ev->GetReturnType(), name );
+		Warning( "Invalid return type '%c' in definition of '%s' event.", ev->GetReturnType(), name );
+		SkipToSemicolon();
+		return;
 	}
+
 	if ( returnType != expectedType ) {
-		Error( "Return type doesn't match internal return type '%s'", expectedType->Name() );
+		Warning( "Return type doesn't match internal return type '%s'", expectedType->Name() );
+		SkipToSemicolon();
+		return;
 	}
 
 	idTypeDef newtype( ev_function, NULL, name, type_function.Size(), returnType );
@@ -2419,39 +2428,66 @@ void idCompiler::ParseEventDef( idTypeDef *returnType, const char *name ) {
 
 	format = ev->GetArgFormat();
 	num = strlen( format );
-	for( i = 0; i < num; i++ ) {
+	for( i = 0; i < num; i++ )
+	{
 		expectedType = GetTypeForEventArg( format[ i ] );
-		if ( !expectedType || ( expectedType == &type_void ) ) {
-			Error( "Invalid parameter '%c' in definition of '%s' event.", format[ i ], name );
+
+		if ( !expectedType || ( expectedType == &type_void ) )
+		{
+			Warning( "Invalid parameter '%c' in definition of '%s' event.", format[ i ], name );
+			SkipToSemicolon();
+			return;
 		}
 
 		argType = ParseType();
 		ParseName( parmName );
-		if ( argType != expectedType ) {
-			Error( "The type of parm %d ('%s') does not match the internal type '%s' in definition of '%s' event.", 
+
+		if ( argType != expectedType )
+		{
+			Warning( "The type of parm %d ('%s') does not match the internal type '%s' in definition of '%s' event.", 
 				i + 1, parmName.c_str(), expectedType->Name(), name );
+			SkipToSemicolon();
+			return;
 		}
 
 		newtype.AddFunctionParm( argType, "" );
 
-		if ( i < num - 1 ) {
-			if ( CheckToken( ")" ) ) {
-				Error( "Too few parameters for event definition.  Internal definition has %d parameters.", num );
+		if ( i < num - 1 )
+		{
+			if ( CheckToken( ")" ) )
+			{
+				Warning( "Too few parameters for event definition.  Internal definition has %d parameters.", num );
+				SkipToSemicolon();
+				return;
 			}
-			ExpectToken( "," );
+
+			if (!CheckToken( "," ))
+			{
+				SkipToSemicolon();
+				return;
+			}
 		}
 	}
-	if ( !CheckToken( ")" ) ) {
-		Error( "Too many parameters for event definition.  Internal definition has %d parameters.", num );
+	if ( !CheckToken( ")" ) )
+	{
+		Warning( "Too many parameters for event definition.  Internal definition has %d parameters.", num );
+		SkipToSemicolon();
+		return;
 	}
+
 	ExpectToken( ";" );
 
 	type = gameLocal.program.FindType( name );
-	if ( type ) {
-		if ( !newtype.MatchesType( *type ) || ( type->def->value.functionPtr->eventdef != ev ) ) {
-			Error( "Type mismatch on redefinition of '%s'", name );
+	if ( type )
+	{
+		if ( !newtype.MatchesType( *type ) || ( type->def->value.functionPtr->eventdef != ev ) )
+		{
+			Warning( "Type mismatch on redefinition of '%s'", name );
+			return;
 		}
-	} else {
+	} 
+	else 
+	{
 		type = gameLocal.program.AllocType( newtype );
 		type->def = gameLocal.program.AllocDef( type, name, &def_namespace, true );
 
