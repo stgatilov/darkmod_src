@@ -186,6 +186,10 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			src.ReadTokenOnLine( &token );
 			desc = token.c_str();
 		}
+		else if ( !token.Icmp( "editor_displayFolder" ) ) {
+			// angua: the display folder for sorting the sounds in the editor, this can be ignored here
+			src.SkipRestOfLine();
+		}
 		// mindistance
 		else if ( !token.Icmp( "mindistance" ) ) {
 			parms.minDistance = src.ParseFloat();
