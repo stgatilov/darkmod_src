@@ -91,9 +91,6 @@
     <Filter Include="Tools\Particle">
       <UniqueIdentifier>{527cec37-a4ca-4466-9d91-f925361a7aea}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tools\PDA">
-      <UniqueIdentifier>{06cc72d4-f944-4821-8693-667ae16daaee}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Tools\Radiant">
       <UniqueIdentifier>{60417518-1848-4aa4-87d8-b8d81c6c1ac4}</UniqueIdentifier>
     </Filter>
@@ -142,9 +139,6 @@
       <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="framework\DeclParticle.h">
-      <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\DeclPDA.h">
       <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="framework\DeclSkin.h">
@@ -628,9 +622,6 @@
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="framework\DeclParticle.cpp">
-      <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\DeclPDA.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="framework\DeclSkin.cpp">
@@ -1385,9 +1376,6 @@
     </ClCompile>
     <ClCompile Include="tools\particle\DialogParticleEditor.cpp">
       <Filter>Tools\Particle</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\pda\DialogPDAEditor.cpp">
-      <Filter>Tools\PDA</Filter>
     </ClCompile>
     <ClCompile Include="tools\radiant\autocaulk.cpp">
       <Filter>Tools\Radiant</Filter>
@@ -2172,9 +2160,6 @@
     </CustomBuildStep>
     <CustomBuildStep Include="tools\particle\DialogParticleEditor.h">
       <Filter>Tools\Particle</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\pda\DialogPDAEditor.h">
-      <Filter>Tools\PDA</Filter>
     </CustomBuildStep>
     <CustomBuildStep Include="tools\radiant\autocaulk.h">
       <Filter>Tools\Radiant</Filter>

@@ -1540,10 +1540,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 					// in-game Script Editor
 					ScriptEditorRun();
 				}
-				if ( com_editors & EDITOR_PDA ) {
-					// in-game PDA Editor
-					PDAEditorRun();
-				}
 			}
 		}
 #endif

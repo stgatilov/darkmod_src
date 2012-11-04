@@ -308,7 +308,6 @@
     <ClInclude Include="framework\DeclFX.h" />
     <ClInclude Include="framework\DeclManager.h" />
     <ClInclude Include="framework\DeclParticle.h" />
-    <ClInclude Include="framework\DeclPDA.h" />
     <ClInclude Include="framework\DeclSkin.h" />
     <ClInclude Include="framework\DeclTable.h" />
     <ClInclude Include="framework\DemoFile.h" />
@@ -1326,7 +1325,6 @@
     <ClCompile Include="framework\DeclFX.cpp" />
     <ClCompile Include="framework\DeclManager.cpp" />
     <ClCompile Include="framework\DeclParticle.cpp" />
-    <ClCompile Include="framework\DeclPDA.cpp" />
     <ClCompile Include="framework\DeclSkin.cpp" />
     <ClCompile Include="framework\DeclTable.cpp" />
     <ClCompile Include="framework\DemoFile.cpp" />
@@ -2304,11 +2302,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="tools\particle\DialogParticleEditor.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="tools\pda\DialogPDAEditor.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>

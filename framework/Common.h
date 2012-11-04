@@ -41,7 +41,7 @@ typedef enum {
 	EDITOR_DECL					= BIT(7),
 	EDITOR_AF					= BIT(8),
 	EDITOR_PARTICLE				= BIT(9),
-	EDITOR_PDA					= BIT(10),
+	//EDITOR_PDA					= BIT(10),
 	EDITOR_AAS					= BIT(11),
 	EDITOR_MATERIAL				= BIT(12)
 } toolFlag_t;

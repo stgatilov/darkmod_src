@@ -65,12 +65,6 @@ void	ParticleEditorShutdown( void );
 void	ParticleEditorRun( void );
 
 
-// in-game PDA Editor
-void	PDAEditorInit( const idDict *spawnArgs );
-void	PDAEditorShutdown( void );
-void	PDAEditorRun( void );
-
-
 // in-game Script Editor
 void	ScriptEditorInit( const idDict *spawnArgs );
 void	ScriptEditorShutdown( void );

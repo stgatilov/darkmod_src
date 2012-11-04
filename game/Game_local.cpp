@@ -2556,22 +2556,6 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		kv = dict->MatchPrefix( "def", kv );
 	}
 
-	kv = dict->MatchPrefix( "video", NULL );
-	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_VIDEO, kv->GetValue().c_str(), false );
-		}
-		kv = dict->MatchPrefix( "video", kv );
-	}
-
-	kv = dict->MatchPrefix( "audio", NULL );
-	while( kv ) {
-		if ( kv->GetValue().Length() ) {
-			declManager->FindType( DECL_AUDIO, kv->GetValue().c_str(), false );
-		}
-		kv = dict->MatchPrefix( "audio", kv );
-	}
-
 	kv = dict->MatchPrefix( "xdata", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {

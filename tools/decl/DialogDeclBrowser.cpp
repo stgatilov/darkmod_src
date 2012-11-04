@@ -308,12 +308,6 @@ void DialogDeclBrowser::EditSelected( void ) const {
 			ParticleEditorInit( &spawnArgs );
 			break;
 		}
-		case DECL_PDA: {
-			decl = declManager->DeclByIndex( type, index, false );
-			spawnArgs.Set( "pda", decl->GetName() );
-			PDAEditorInit( &spawnArgs );
-			break;
-		}
 		case DECLTYPE_SCRIPT:
 		case DECLTYPE_GUI: {
 			idStr typeName, declName;
