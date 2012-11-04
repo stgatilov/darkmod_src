@@ -34,7 +34,7 @@ typedef enum {
 	EDITOR_NONE					= 0,
 	EDITOR_RADIANT				= BIT(1),
 	EDITOR_GUI					= BIT(2),
-	EDITOR_DEBUGGER				= BIT(3),
+	//EDITOR_DEBUGGER				= BIT(3),
 	EDITOR_SCRIPT				= BIT(4),
 	EDITOR_LIGHT				= BIT(5),
 	EDITOR_SOUND				= BIT(6),
