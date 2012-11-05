@@ -493,11 +493,7 @@ bool I18NLocal::SetLanguage( const char* lang, bool firstTime ) {
 		// it will land in the Video Settings page
 		gui->SetStateInt("reload", 1);
 	}
-	else
-	{
-		common->Warning("Cannot find guis/mainmenu.gui");
-	}
-
+	
 	return (oldLang != m_lang) ? true : false;
 }
 
