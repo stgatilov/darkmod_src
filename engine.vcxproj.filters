@@ -73,9 +73,6 @@
     <Filter Include="Tools\Compilers\RoqVQ">
       <UniqueIdentifier>{c53bab3f-79ce-44fe-916e-04c51a7d93a9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Tools\Debugger">
-      <UniqueIdentifier>{bdc52484-8a48-4b82-b396-9228f0304808}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Tools\Decl">
       <UniqueIdentifier>{6b6929e6-0646-465b-9c53-e0b8535bf175}</UniqueIdentifier>
     </Filter>
@@ -1197,33 +1194,6 @@
     <ClCompile Include="tools\compilers\roqvq\roqParam.cpp">
       <Filter>Tools\Compilers\RoqVQ</Filter>
     </ClCompile>
-    <ClCompile Include="tools\debugger\debugger.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerApp.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerBreakpoint.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerClient.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerFindDlg.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerQuickWatchDlg.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerScript.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerServer.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
-    <ClCompile Include="tools\debugger\DebuggerWindow.cpp">
-      <Filter>Tools\Debugger</Filter>
-    </ClCompile>
     <ClCompile Include="tools\decl\DialogDeclBrowser.cpp">
       <Filter>Tools\Decl</Filter>
     </ClCompile>
@@ -1989,33 +1959,6 @@
     </CustomBuildStep>
     <CustomBuildStep Include="tools\common\PropTree\PropTreeView.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerApp.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerBreakpoint.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerClient.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerFindDlg.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerMessages.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerQuickWatchDlg.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerScript.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerServer.h">
-      <Filter>Tools\Debugger</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerWindow.h">
-      <Filter>Tools\Debugger</Filter>
     </CustomBuildStep>
     <CustomBuildStep Include="tools\decl\DialogDeclBrowser.h">
       <Filter>Tools\Decl</Filter>
