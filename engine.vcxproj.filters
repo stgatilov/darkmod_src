@@ -441,9 +441,6 @@
     <ClInclude Include="sys\win32\rc\ParticleEditor_resource.h">
       <Filter>Sys\RC</Filter>
     </ClInclude>
-    <ClInclude Include="sys\win32\rc\PDAEditor_resource.h">
-      <Filter>Sys\RC</Filter>
-    </ClInclude>
     <ClInclude Include="sys\win32\rc\PropTree_resource.h">
       <Filter>Sys\RC</Filter>
     </ClInclude>
@@ -1815,9 +1812,6 @@
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
     <ResourceCompile Include="sys\win32\rc\ParticleEditor.rc">
-      <Filter>Sys\RC</Filter>
-    </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\PDAEditor.rc">
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
     <ResourceCompile Include="sys\win32\rc\PropTree.rc">

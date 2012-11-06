@@ -63,7 +63,5 @@ void	DebuggerServerShutdown( void ) {}
 void	DebuggerServerPrint( const char *text ) {}
 void	DebuggerServerCheckBreakpoint( idInterpreter *interpreter, idProgram *program, int instructionPointer ) {}
 
-void	PDAEditorInit( const idDict *spawnArgs ) { common->Printf( "The PDA editor only runs on Win32\n" ); }
-
 void	MaterialEditorInit() { common->Printf( "The Material editor only runs on Win32\n" ); }
 void	MaterialEditorPrintConsole( const char *text ) {}
