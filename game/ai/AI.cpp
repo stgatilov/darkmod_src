@@ -1877,6 +1877,11 @@ void idAI::Spawn( void )
 
 	move.blockTime = 0;
 
+	if (spawnArgs.GetBool("can_fly", "0"))
+	{
+		move.moveType = MOVETYPE_FLY;
+	}
+
 	SetAAS();
 
 	InitProjectileInfo();
@@ -2275,6 +2280,12 @@ void idAI::Think( void )
 		{
 			// clear the ik before we do anything else so the skeleton doesn't get updated twice
 			walkIK.ClearJointMods();
+
+			if (spawnArgs.GetBool("can_fly", "0") && move.moveType == MOVETYPE_ANIM)
+			{
+				move.moveType = MOVETYPE_FLY;
+			}
+
 
 			// Update moves, depending on move type 
 			switch (move.moveType)
@@ -2995,7 +3006,8 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 
 	idBounds bounds = GetPhysics()->GetBounds();
 
-	if (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance)) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
+// angua: don't do this check when flying
+	if (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance) && GetMoveType() != MOVETYPE_FLY) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
 	{
 		goalAreaNum = 0;
 		return false;
@@ -5772,8 +5784,9 @@ void idAI::FlyMove( void ) {
 		idVec3 vel = physicsObj.GetLinearVelocity();
 
 		if ( GetMovePos( goalPos ) ) {
-			CheckObstacleAvoidance( goalPos, newDest );
-			goalPos = newDest;
+			// angua: this fucks up the height movement, disabled for now...
+			// the height of the seekpos is changed in FindOptimalPath 
+			// CheckObstacleAvoidance( goalPos, newDest );
 		}
 
 		if ( move.speed	) {
