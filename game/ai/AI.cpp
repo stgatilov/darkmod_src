@@ -1877,11 +1877,6 @@ void idAI::Spawn( void )
 
 	move.blockTime = 0;
 
-	if (spawnArgs.GetBool("can_fly", "0"))
-	{
-		move.moveType = MOVETYPE_FLY;
-	}
-
 	SetAAS();
 
 	InitProjectileInfo();
@@ -1982,6 +1977,11 @@ void idAI::Spawn( void )
 	BecomeActive( TH_THINK );
 
 	// init the move variables
+	if (spawnArgs.GetString("movetype") == "FLY")
+	{
+		move.moveType = MOVETYPE_FLY;
+	}
+
 	StopMove( MOVE_STATUS_DONE );
 
 	// Schedule a post-spawn event to parse the rest of the spawnargs
@@ -2280,12 +2280,6 @@ void idAI::Think( void )
 		{
 			// clear the ik before we do anything else so the skeleton doesn't get updated twice
 			walkIK.ClearJointMods();
-
-			if (spawnArgs.GetBool("can_fly", "0") && move.moveType == MOVETYPE_ANIM)
-			{
-				move.moveType = MOVETYPE_FLY;
-			}
-
 
 			// Update moves, depending on move type 
 			switch (move.moveType)
