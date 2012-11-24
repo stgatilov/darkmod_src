@@ -22,6 +22,8 @@
 
 // defined in script/ai_base.script.  please keep them up to date.
 // greebo: also be sure to update the ai::setMoveTypeFromSpawnargs() script method in the same file.
+// angua: and don't forget to update idAI::SetMoveType( idStr moveType ) 
+
 enum moveType_t {
 	MOVETYPE_DEAD,
 	MOVETYPE_ANIM,

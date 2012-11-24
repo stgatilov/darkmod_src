@@ -40,6 +40,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Tasks/PathLookatTask.h"
 #include "Tasks/PathInteractTask.h"
 #include "Tasks/MoveToPositionTask.h"
+#include "Tasks/PathSetMovetypeTask.h"
 #include "Tasks/FollowActorTask.h"
 #include "Tasks/HandleElevatorTask.h" // grayman #3050
 
@@ -453,6 +454,11 @@ void MovementSubsystem::StartPathTask()
 		// Add a new task, even if the actor is NULL - the task will deal with that
 		tasks.push_back(FollowActorTaskPtr(new FollowActorTask(actor)));
 	}
+	else if (classname == "path_set_movetype")
+	{
+		tasks.push_back(PathSetMovetypeTaskPtr(new PathSetMovetypeTask(path)));
+	}
+
 	else
 	{
 		// Finish this task

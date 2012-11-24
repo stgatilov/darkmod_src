@@ -383,7 +383,10 @@ void CombatState::Think(idAI* owner)
 			return;
 		}
 
-		if (owner->GetMoveType() != MOVETYPE_ANIM)
+	if (owner->GetMoveType() == MOVETYPE_SIT 
+		|| owner->GetMoveType() == MOVETYPE_SLEEP
+		|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
+		|| owner->GetMoveType() == MOVETYPE_LAY_DOWN)
 		{
 			owner->GetUp();
 			return;

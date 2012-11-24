@@ -1516,6 +1516,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	}
 
 	void					SetMoveType( int moveType );
+	void					SetMoveType( idStr moveType );
+
 
 	
 	/**

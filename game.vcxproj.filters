@@ -619,6 +619,9 @@
     <ClCompile Include="game\script\Script_Doc_Export.cpp">
       <Filter>Script</Filter>
     </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathSetMovetypeTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1199,6 +1202,9 @@
     </ClInclude>
     <ClInclude Include="game\script\Script_Doc_Export.h">
       <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathSetMovetypeTask.h">
+      <Filter>AI\Tasks</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

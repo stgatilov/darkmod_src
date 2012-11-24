@@ -367,6 +367,7 @@
     <ClCompile Include="game\ai\Tasks\PathHideTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathInteractTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathLookatTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathSetMovetypeTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathShowTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathSitTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathSleepTask.cpp" />
@@ -633,6 +634,7 @@
     <ClInclude Include="game\ai\Tasks\PathHideTask.h" />
     <ClInclude Include="game\ai\Tasks\PathInteractTask.h" />
     <ClInclude Include="game\ai\Tasks\PathLookatTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathSetMovetypeTask.h" />
     <ClInclude Include="game\ai\Tasks\PathShowTask.h" />
     <ClInclude Include="game\ai\Tasks\PathSitTask.h" />
     <ClInclude Include="game\ai\Tasks\PathSleepTask.h" />

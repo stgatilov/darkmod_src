@@ -1977,7 +1977,7 @@ void idAI::Spawn( void )
 	BecomeActive( TH_THINK );
 
 	// init the move variables
-	if (spawnArgs.GetString("movetype") == "FLY")
+	if ( idStr::Icmp( spawnArgs.GetString("movetype"),"FLY" ) == 0 )
 	{
 		move.moveType = MOVETYPE_FLY;
 	}
@@ -4112,6 +4112,60 @@ void idAI::SetMoveType( int moveType ) {
 	}
 }
 
+void idAI::SetMoveType( idStr moveType ) 
+{
+	if (moveType.Icmp("MOVETYPE_DEAD") == 0)
+	{
+		SetMoveType(MOVETYPE_DEAD);
+	}
+	else if (moveType.Icmp("MOVETYPE_ANIM") == 0)
+	{
+		SetMoveType(MOVETYPE_ANIM);
+	}
+	else if (moveType.Icmp("MOVETYPE_SLIDE") == 0)
+	{
+		SetMoveType(MOVETYPE_SLIDE);
+	}
+	else if (moveType.Icmp("MOVETYPE_FLY") == 0)
+	{
+		SetMoveType(MOVETYPE_FLY);
+	}
+	else if (moveType.Icmp("MOVETYPE_STATIC") == 0)
+	{
+		SetMoveType(MOVETYPE_STATIC);
+	}
+	else if (moveType.Icmp("MOVETYPE_SIT") == 0)
+	{
+		SetMoveType(MOVETYPE_SIT);
+	}
+	else if (moveType.Icmp("MOVETYPE_SIT_DOWN") == 0)
+	{
+		SetMoveType(MOVETYPE_SIT_DOWN);
+	}
+	else if (moveType.Icmp("MOVETYPE_SLEEP") == 0)
+	{
+		SetMoveType(MOVETYPE_SLEEP);
+	}
+	else if (moveType.Icmp("MOVETYPE_LAY_DOWN") == 0)
+	{
+		SetMoveType(MOVETYPE_LAY_DOWN);
+	}
+	else if (moveType.Icmp("MOVETYPE_GET_UP") == 0)
+	{
+		SetMoveType(MOVETYPE_GET_UP);
+	}
+	else if (moveType.Icmp("MOVETYPE_GET_UP_FROM_LYING") == 0)
+	{
+		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
+	}
+	else
+	{
+		gameLocal.Warning( "Invalid movetype %s", moveType );
+	}
+
+
+}
+
 /*
 ================
 idAI::StepDirection
@@ -5307,6 +5361,7 @@ void idAI::AnimMove()
 
 	physicsObj.SetDelta( delta );
 	physicsObj.ForceDeltaMove( disableGravity );
+	physicsObj.UseFlyMove( false );
 
 	{
 		START_SCOPED_TIMING(aiPhysicsTimer, scopedPhysicsTimer);
@@ -11804,13 +11859,13 @@ void idAI::GetUp()
 {
 	moveType_t moveType = GetMoveType();
 
-	if (moveType == MOVETYPE_SIT)
+	if (moveType == MOVETYPE_SIT || moveType == MOVETYPE_SIT_DOWN)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 
 	}
-	else if (moveType == MOVETYPE_SLEEP)
+	else if (moveType == MOVETYPE_SLEEP || MOVETYPE_LAY_DOWN)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");

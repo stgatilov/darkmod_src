@@ -189,16 +189,21 @@ void SearchingState::Think(idAI* owner)
 		return;
 	}
 
-	if (owner->GetMoveType() != MOVETYPE_ANIM)
+	// grayman #3063 - move up so it gets done each time,
+	// regardless of what state the hiding spot search is in.
+	// Let the AI check its senses
+	owner->PerformVisualScan();
+
+
+	if (owner->GetMoveType() == MOVETYPE_SIT 
+		|| owner->GetMoveType() == MOVETYPE_SLEEP
+		|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
+		|| owner->GetMoveType() == MOVETYPE_LAY_DOWN)
 	{
 		owner->GetUp();
 		return;
 	}
 
-	// grayman #3063 - move up so it gets done each time,
-	// regardless of what state the hiding spot search is in.
-	// Let the AI check its senses
-	owner->PerformVisualScan();
 
 	Memory& memory = owner->GetMemory();
 
