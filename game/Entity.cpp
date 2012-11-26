@@ -2738,7 +2738,7 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 			m_SkinLODCur = m_LODLevel;
 		}
 		// level 0 is the default
-		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << (m_LODLevel + 1))) > 0 ? 1 : 0;
+		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
 
 		// switched LOD
 		return true;
