@@ -89,8 +89,8 @@ const idEventDef AI_CanBecomeSolid( "canBecomeSolid", EventArgs(), 'f', "no desc
 const idEventDef AI_BecomeSolid( "becomeSolid", EventArgs(), EV_RETURNS_VOID, "no description" );
 const idEventDef AI_BecomeRagdoll( "becomeRagdoll", EventArgs(), 'd', "enables the ragdoll if the entity has one");
 const idEventDef AI_StopRagdoll( "stopRagdoll", EventArgs(), EV_RETURNS_VOID, "turns off the ragdoll" );
-const idEventDef AI_AllowDamage( "allowDamage", EventArgs(), EV_RETURNS_VOID, "no description" );
-const idEventDef AI_IgnoreDamage( "ignoreDamage", EventArgs(), EV_RETURNS_VOID, "no description" );
+const idEventDef AI_AllowDamage( "allowDamage", EventArgs(), EV_RETURNS_VOID, "The AI can take damage again." );
+const idEventDef AI_IgnoreDamage( "ignoreDamage", EventArgs(), EV_RETURNS_VOID, "The AI can no longer take damage." );
 const idEventDef AI_GetCurrentYaw( "getCurrentYaw", EventArgs(), 'f', "no description");
 const idEventDef AI_TurnTo( "turnTo", EventArgs('f', "yaw", ""), EV_RETURNS_VOID, "no description");
 const idEventDef AI_TurnToPos( "turnToPos", EventArgs('v', "pos", ""), EV_RETURNS_VOID, "no description");
