@@ -262,6 +262,7 @@ ai/Tasks/PathHideTask.cpp \
 ai/Tasks/PathInteractTask.cpp \
 ai/Tasks/PathLookatTask.cpp \
 ai/Tasks/PathShowTask.cpp \
+ai/Tasks/PathSetMovetypeTask.cpp \
 ai/Tasks/PathSitTask.cpp \
 ai/Tasks/PathSleepTask.cpp \
 ai/Tasks/PathTask.cpp \
