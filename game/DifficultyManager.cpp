@@ -80,7 +80,7 @@ void DifficultyManager::Init(idMapFile* mapFile)
 	LoadMapDifficultySettings(mapFile);
 }
 
-void DifficultyManager::SetDifficultyLevel(int difficulty)
+void DifficultyManager::SetDifficultyLevel(const int difficulty)
 {
 	_difficulty = difficulty;
 }
@@ -156,7 +156,7 @@ bool DifficultyManager::InhibitEntitySpawn(const idDict& target) {
 	// The entity is allowed to spawn by default, must be set to 1 by the mapper
 	isAllowed = !target.GetBool(key, "0");
 
-	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Entity %s is allowed to spawn: %s.\r", target.GetString("name"), isAllowed ? "YES" : "NO");
+	DM_LOG(LC_DIFFICULTY, LT_INFO)LOGSTRING("Entity %s is allowed to spawn on difficulty %i: %s.\r", target.GetString("name"), _difficulty, isAllowed ? "YES" : "NO");
 
 	// Tels: #3223: See if this entity should spawn this time
 	float random_remove = target.GetFloat( "random_remove", "1.1");

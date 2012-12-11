@@ -23,62 +23,8 @@
 extern const idEventDef EV_Thread_Execute;
 extern const idEventDef EV_Thread_SetCallback;
 extern const idEventDef EV_Thread_SetRenderCallback;
-extern const idEventDef EV_Thread_TerminateThread;
-extern const idEventDef EV_Thread_Pause;
 extern const idEventDef EV_Thread_Wait;
 extern const idEventDef EV_Thread_WaitFrame;
-extern const idEventDef EV_Thread_WaitFor;
-extern const idEventDef EV_Thread_WaitForThread;
-extern const idEventDef EV_Thread_Print;
-extern const idEventDef EV_Thread_PrintLn;
-extern const idEventDef EV_Thread_Say;
-extern const idEventDef EV_Thread_Assert;
-extern const idEventDef EV_Thread_Trigger;
-extern const idEventDef EV_Thread_SetCvar;
-extern const idEventDef EV_Thread_GetCvar;
-extern const idEventDef EV_Thread_Random;
-extern const idEventDef EV_Thread_GetTime;
-extern const idEventDef EV_Thread_KillThread;
-extern const idEventDef EV_Thread_SetThreadName;
-extern const idEventDef EV_Thread_GetEntity;
-extern const idEventDef EV_Thread_Spawn;
-extern const idEventDef EV_Thread_SetSpawnArg;
-extern const idEventDef EV_Thread_SpawnString;
-extern const idEventDef EV_Thread_SpawnFloat;
-extern const idEventDef EV_Thread_SpawnVector;
-extern const idEventDef EV_Thread_AngToForward;
-extern const idEventDef EV_Thread_AngToRight;
-extern const idEventDef EV_Thread_AngToUp;
-extern const idEventDef EV_Thread_Sine;
-extern const idEventDef EV_Thread_Cosine;
-extern const idEventDef EV_Thread_Log;
-extern const idEventDef EV_Thread_Pow;
-extern const idEventDef EV_Thread_Normalize;
-extern const idEventDef EV_Thread_VecLength;
-extern const idEventDef EV_Thread_VecDotProduct;
-extern const idEventDef EV_Thread_VecCrossProduct;
-extern const idEventDef EV_Thread_OnSignal;
-extern const idEventDef EV_Thread_ClearSignal;
-extern const idEventDef EV_Thread_SetCamera;
-extern const idEventDef EV_Thread_FirstPerson;
-extern const idEventDef EV_Thread_TraceFraction;
-extern const idEventDef EV_Thread_TracePos;
-extern const idEventDef EV_Thread_FadeIn;
-extern const idEventDef EV_Thread_FadeOut;
-extern const idEventDef EV_Thread_FadeTo;
-extern const idEventDef EV_Thread_Restart;
-
-extern const idEventDef EV_AI_GetRelationSys;
-extern const idEventDef EV_AI_SetRelation;
-extern const idEventDef EV_AI_OffsetRelation;
-
-extern const idEventDef EV_PointInLiquid;
-extern const idEventDef EV_Translate;
-
-extern const idEventDef EV_TDM_SetPortSoundLoss;
-extern const idEventDef EV_TDM_GetPortSoundLoss;
-
-extern const idEventDef EV_HandleMissionEvent;
 
 class idThread : public idClass {
 private:
@@ -240,7 +186,8 @@ private:
 	void						Event_HandleMissionEvent(idEntity* entity, int eventType, const char* argument);
 	
 	void						Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine ); // grayman #2787
-	void						Event_GetMainAmbientLight(); // grayman #3132
+	void						Event_GetMainAmbientLight();	// grayman #3132
+	void						Event_GetDifficultyLevel();	// tels    #3271
 
 public:							
 								CLASS_PROTOTYPE( idThread );

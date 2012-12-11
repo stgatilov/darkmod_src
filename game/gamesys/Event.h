@@ -47,7 +47,7 @@ Event are used for scheduling tasks and for linking script commands.
 #define	D_EVENT_ENTITY_NULL			'E'			// event can handle NULL entity pointers
 #define D_EVENT_TRACE				't'
 
-#define MAX_EVENTS					8192
+#define MAX_EVENTS					8192		// we can have so many different events (functions) overall
 
 #define EV_RETURNS_VOID				D_EVENT_VOID
 

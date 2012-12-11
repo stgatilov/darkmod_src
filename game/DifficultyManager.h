@@ -72,7 +72,7 @@ public:
 	void Init(idMapFile* mapFile);
 	
 	// Accessor methods for the currently chosen difficulty level
-	void SetDifficultyLevel(int difficulty);
+	void SetDifficultyLevel(const int difficulty);
 	int GetDifficultyLevel() const;
 
 	// Returns the display name for the given level, which must an integer in [0..DIFFICULTY_COUNT)
