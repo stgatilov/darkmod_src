@@ -439,7 +439,7 @@ void idConsoleLocal::Dump( const char *fileName ) {
 	idFile	*f;
 	char	buffer[LINE_WIDTH + 3];
 
-	f = fileSystem->OpenFileWrite( fileName );
+	f = fileSystem->OpenFileWrite( fileName, "fs_devpath", "" );
 	if ( !f ) {
 		common->Warning( "couldn't open %s", fileName );
 		return;
