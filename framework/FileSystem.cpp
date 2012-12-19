@@ -3310,14 +3310,14 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
     // taaaki: blunt fix for old dlls in darkmod/ - just extract dll from pk4 everytime
     //         will investigate a friendlier fix for SVN builds and future releases
 	// from executable directory first - this is handy for developement
-	//dllPath = Sys_EXEPath( );
-	//dllPath.StripFilename( );
-	//dllPath.AppendPath( dllName );
-	//dllFile = OpenExplicitFileRead( dllPath );
+	dllPath = Sys_EXEPath( );
+	dllPath.StripFilename( );
+	dllPath.AppendPath( dllName );
+	dllFile = OpenExplicitFileRead( dllPath );
 
-	//if ( dllFile ) {
-	//	common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
-	//} else { 
+	if ( dllFile ) {
+		common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
+	} else { 
 		// DLL not found in alongside executable
 		if ( !serverPaks.Num() ) {
 			// try to extract from a pak file first
@@ -3357,7 +3357,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 				}
 			}
 		}
-	//}
+	}
 	if ( updateChecksum ) {
 		if ( dllFile ) {
 			gameDLLChecksum = GetFileChecksum( dllFile );
