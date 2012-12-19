@@ -443,12 +443,15 @@ void CsndProp::Propagate
 	SPopArea			*pPopArea;
 
 	idTimer timer_Prop;
-	timer_Prop.Clear();
-	timer_Prop.Start();
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Clear();
+		timer_Prop.Start();
+	}
 
-	m_TimeStampProp= gameLocal.time;
+	m_TimeStampProp = gameLocal.time;
 
-	if( cv_spr_debug.GetBool() )
+	if ( cv_spr_debug.GetBool() )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \r", maker->name.c_str(), sndName.c_str(), volMod, durMod );
 		gameLocal.Printf("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \n", maker->name.c_str(), sndName.c_str(), volMod, durMod );
@@ -472,7 +475,10 @@ void CsndProp::Propagate
 	const idDict* parms = gameLocal.FindEntityDefDict( va("sprGS_%s", sndName.c_str() ), false );
 
 	// redundancy, this is already checked in CheckSound()
-	if (!parms) return;
+	if (!parms)
+	{
+		return;
+	}
 
 	float vol0 = parms->GetFloat("vol","0") + volMod;
 
@@ -484,7 +490,7 @@ void CsndProp::Propagate
 	// later we will put a permananet value in the def for globals->Vol
 	vol0 += cv_ai_sndvol.GetFloat();
 
-	if (cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type))
+	if ( cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type) )
 	{
 		gameRenderWorld->DrawText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
 	}
@@ -515,8 +521,10 @@ void CsndProp::Propagate
 
 	range = pow(2.0f, ((vol0 - m_SndGlobals.MaxRangeCalVol) / 7.0f) ) * m_SndGlobals.MaxRange * s_METERS_TO_DOOM;
 
-	if( cv_spr_debug.GetBool() )
+	if ( cv_spr_debug.GetBool() )
+	{
 		gameLocal.Printf("Propagation volume: %0.02f Range: %0.02f units (%0.02f m)\n", vol0, range, range / s_METERS_TO_DOOM);
+	}
 
 	// Debug drawing of the range
 	if (cv_spr_radius_show.GetBool()) 
@@ -529,24 +537,24 @@ void CsndProp::Propagate
 
 	// get a list of all ents with type idAI's or Listeners
 	
-	for (idAI* ai = gameLocal.spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next())
+	for ( idAI* ai = gameLocal.spawnedAI.Next() ; ai != NULL ; ai = ai->aiNode.Next() )
 	{
 		// TODO: Put in Listeners later
 		validTypeEnts.Append(ai);
 	}
 	
-	if( cv_spr_debug.GetBool() )
+	if ( cv_spr_debug.GetBool() )
 	{
 		gameLocal.Printf("Found %d ents with valid type for propagation\n", validTypeEnts.Num() );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
+		timer_Prop.Stop(); // grayman - only time things if the debug cvar is set
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished finding all AI entities, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
+		timer_Prop.Start();
 	}
 
-	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished finding all AI entities, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
-	timer_Prop.Start();
 	// cull the list by testing distance and valid team flag
 
-	for ( int i=0; i<validTypeEnts.Num(); i++ )
+	for ( int i = 0 ; i < validTypeEnts.Num() ; i++ )
 	{
 		bValidTeam = false; 
 
@@ -554,12 +562,14 @@ void CsndProp::Propagate
 		testAI = static_cast<idAI *>( validTypeEnts[i] );
 
 		// do not propagate to dead or unconscious AI
-		if( testAI->health <= 0 || testAI->IsKnockedOut() )
-			continue;
-		
-		if( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
+		if ( ( testAI->health <= 0 ) || testAI->IsKnockedOut() )
 		{
-			if( cv_spr_debug.GetBool() )
+			continue;
+		}
+		
+		if ( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
+		{
+			if ( cv_spr_debug.GetBool() )
 			{
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is not within propagation cutoff range %f\r", testAI->name.c_str(), range );
 				gameLocal.Printf("AI %s is not within propagation cutoff range %0.2f\n", testAI->name.c_str(), range );
@@ -569,12 +579,14 @@ void CsndProp::Propagate
 
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is within propagation cutoff range %f\r", testAI->name.c_str(), range );
 
-		if( mteam == -1 )
+		if ( mteam == -1 )
 		{
 			// for now, inanimate objects alert everyone
 			bValidTeam = true;
-			if( cv_spr_debug.GetBool() )
+			if ( cv_spr_debug.GetBool() )
+			{
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound was propagated from inanimate object: Alerts all teams\r" );
+			}
 		}
 		else
 		{
@@ -587,29 +599,38 @@ void CsndProp::Propagate
 			if ( tmask.m_field & compMask.m_field )
 			{
 				bValidTeam = true;
-				if( cv_spr_debug.GetBool() )
+				if ( cv_spr_debug.GetBool() )
+				{
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s has a valid team for soundprop\r", testAI->name.c_str() );
+				}
 			}
 		}
 
 		// TODO : Add another else if for the case of Listeners
 		
 		// don't alert the AI that caused the sound
-		if( bValidTeam && testAI != maker )
+		if ( bValidTeam && ( testAI != maker ) )
 		{
-			if( cv_spr_debug.GetBool() )
+			if ( cv_spr_debug.GetBool() )
+			{
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found a valid propagation target: %s\r", testAI->name.c_str() );
+			}
 			validEnts.Append( validTypeEnts[i] );
 			continue;
 		}
-		if( cv_spr_debug.GetBool() )
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s does not have a valid team for propagation\r", testAI->name.c_str() );
 
+		if ( cv_spr_debug.GetBool() )
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s does not have a valid team for propagation\r", testAI->name.c_str() );
+		}
 	}
 
-	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished culling AI list, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
-	timer_Prop.Start();
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Stop();
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished culling AI list, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
+		timer_Prop.Start();
+	}
 
 	/* handle environmental sounds here
 
@@ -620,7 +641,7 @@ void CsndProp::Propagate
 
 	numEnt = gameLocal.clip.EntitiesTouchingBounds( envBounds, -1, inrangeEnts2, MAX_ENTS ); 
 
-	for( int j =0; j < numEnt; j++)
+	for ( int j =0 ; j < numEnt ; j++ )
 	{
 		// if the entities are in the env. sound hash
 		// add them to the list of env. sounds to check for this propagation
@@ -628,33 +649,39 @@ void CsndProp::Propagate
 	*/
 
 	// Don't bother propagation if no one is in range
-	if (validEnts.Num() == 0) return;
+	if ( validEnts.Num() == 0 )
+	{
+		return;
+	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Beginning propagation to %d targets\r", validEnts.Num() );
-
 
 	// ======================== BEGIN WAVEFRONT EXPANSION ===================
 
 	// Populate the AI lists in the m_PopAreas array, use timestamp method to check if it's the first visit
 	
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Filling populated areas array with AI\r" );
-	for(int j = 0; j < validEnts.Num(); j++)
+	for ( int j = 0 ; j < validEnts.Num() ; j++ )
 	{
 		int AIAreaNum = gameRenderWorld->PointInArea( validEnts[j]->GetPhysics()->GetOrigin() );
 		
-		//Sometimes PointInArea returns -1, don't know why
-		if (AIAreaNum < 0)
+		// Sometimes PointInArea returns -1, don't know why
+		if ( AIAreaNum < 0 )
+		{
 			continue;
+		}
 
 		pPopArea = &m_PopAreas[AIAreaNum];
 		
-		if( pPopArea == NULL )
+		if ( pPopArea == NULL )
+		{
 			continue;
+		}
 
 		//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("TimeStamp Debug: Area timestamp %d, new timestamp %d \r", pPopArea->addedTime, m_TimeStampProp);
 
 		// check if this is the first update to the pop. area in this propagation
-		if( pPopArea->addedTime != m_TimeStampProp )
+		if ( pPopArea->addedTime != m_TimeStampProp )
 		{
 			//update the timestamp
 			pPopArea->addedTime = m_TimeStampProp;
@@ -681,26 +708,38 @@ void CsndProp::Propagate
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processed AI %s in area %d\r", validEnts[j]->name.c_str(), AIAreaNum );
 	}
 	
-	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished filling populated areas, comptime=%lf [ms]\r", timer_Prop.Milliseconds() );
-	timer_Prop.Start();
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Stop();
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished filling populated areas, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
+		timer_Prop.Start();
+	}
 
 	bExpandFinished = ExpandWave( vol0, origin );
 
 	//TODO: If bExpandFinished == false, either fake propagation or
 	// delay further expansion until later frame
-	if(bExpandFinished == false)
+	if ( bExpandFinished == false )
+	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion was stopped when max node number %d was exceeded, or propagation was aborted\r", s_MAX_FLOODNODES );
+	}
 
-	timer_Prop.Stop();
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
-	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: COMPTIME=%lf [ms]\r", timer_Prop.Milliseconds() );
-	timer_Prop.Start();
+
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Stop();
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: COMPTIME = %lf [ms]\r", timer_Prop.Milliseconds() );
+		timer_Prop.Start();
+	}
 
 	ProcessPopulated( vol0, origin, &propParms );
 
-	timer_Prop.Stop();
-	DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Total TIME for propagation: %lf [ms]\r", timer_Prop.Milliseconds() );
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Stop();
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Total TIME for propagation: %lf [ms]\r", timer_Prop.Milliseconds() );
+	}
 }
 
 void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags *addFlags, UTeamMask *tmask )
@@ -745,7 +784,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	propParms->frequency = parms->GetInt("freq","-1");
 	propParms->bandwidth = parms->GetFloat("width", "-1");
 	
-	if( cv_spr_debug.GetBool() )
+	if ( cv_spr_debug.GetBool() )
 	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Finished transfering sound prop parms\r");
 	}
@@ -764,9 +803,9 @@ bool CsndProp::CheckSound( const char *sndNameGlobal, bool isEnv )
 	if ( !parms )
 	{
 		// Don't log this, because it happens all the time.  Most sounds played with idEntity::StartSound are not propagated.
-		//if( cv_spr_debug.GetBool() )
-			//gameLocal.Warning("[Soundprop] Could not find sound def for sound \"%s\" Sound not propagated.", sndNameGlobal );
-		//DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Could not find sound def for sound \"%s\" Sound not propagated.\r", sndNameGlobal );
+		// if ( cv_spr_debug.GetBool() )
+		// gameLocal.Warning("[Soundprop] Could not find sound def for sound \"%s\" Sound not propagated.", sndNameGlobal );
+		// DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Could not find sound def for sound \"%s\" Sound not propagated.\r", sndNameGlobal );
 		returnval = false;
 		goto Quit;
 	}
@@ -1167,7 +1206,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 	if( ai == NULL ) return;
 
 	// check AI hearing, get environmental noise, etc
-	if( cv_spr_debug.GetBool() )
+	if ( cv_spr_debug.GetBool() )
 	{
 		gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
 						  propParms->name.c_str(), ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
