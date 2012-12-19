@@ -1569,30 +1569,42 @@ bool CGrabber::Dequip( void )
 	idPlayer *player = m_player.GetEntity();
 
 	// inventory items go back in inventory on dequipping
-	if( player->AddToInventory(ent) )
+
+	// grayman #3128 - but first let's check and see if this
+	// is an inventory item
+
+	if ( ent->spawnArgs.FindKey("inv_name") != NULL )
 	{
-		StopDrag();
-		bDequipped = true;
+		if ( player->AddToInventory(ent) )
+		{
+			StopDrag();
+			bDequipped = true;
+		}
+
+		// junk items dequip back to the hands
+		// test if item is successfully dequipped
+		else if ( player->DropToHands(ent) )
+		{
+			// put in hands (should already be dragged?)
+			bDequipped = true;
+		}
+		else
+		{
+			// There wasn't space to dequip the item to hands
+			player->StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
+		}
 	}
-	// junk items dequip back to the hands
-	// test if item is successfully dequipped
-	else if( player->DropToHands(ent) )
+	else // not an inventory item, so it might need special handling
 	{
-		// put in hands (should already be dragged?)
 		bDequipped = true;
-	}
-	else
-	{
-		// There wasn't space to dequip the item to hands
-		player->StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
 	}
 
 	// tels: Execute a potential dequip script
-	if( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
+	if ( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
 	{ 
 		// Call the script
-	        idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
-		if (thread != NULL)
+	    idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
+		if ( thread != NULL )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
@@ -1600,7 +1612,7 @@ bool CGrabber::Dequip( void )
 	}
 
 	// ishtvan: Test general "equip in world system"
-	if( bDequipped && ent->spawnArgs.GetBool("equip_in_world") )
+	if ( bDequipped && ent->spawnArgs.GetBool("equip_in_world") )
 	{
 		if( ent->spawnArgs.GetBool("equip_draw_on_top") )
 			ent->GetRenderEntity()->weaponDepthHack = false;
