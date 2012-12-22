@@ -74,9 +74,6 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 
 	ClearEffects();
 
-	// greebo: Set the bool to the inverse of the CVAR, so that the code triggers 
-	// an update in the first frame
-	//cur_amb_method = !cv_ambient_method.GetBool();
 	// JC: Just set the flag so that we know that the update is needed.
 	cv_ambient_method.SetModified();
 	cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
@@ -126,9 +123,6 @@ void idPlayerView::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteObject( player );
 	savefile->WriteRenderView( view );
-
-	// Save games are not going to work after this change - JC Denton
-	// 	savefile->WriteBool(cur_amb_method);
 }
 
 /*
@@ -175,9 +169,6 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadObject( reinterpret_cast<idClass *&>( player ) );
 	savefile->ReadRenderView( view );
-
-	// Save games are not going to work after this change - JC Denton
-	// 	savefile->ReadBool(cur_amb_method);
 
 	// Re-Initialize the PostProcess Manager.	- JC Denton
 	this->m_postProcessManager.Initialize();
@@ -826,7 +817,7 @@ void idPlayerView::UpdateAmbientLight()
 	{
 		if ( 0 == cv_ambient_method.GetInteger() ) // If the Ambient Light method is used
 		{
-			gameLocal.globalShaderParms[5] = 0;										// Make sure we set this flag to 0 so that materials know which pass is to be enabled.
+			gameLocal.globalShaderParms[5] = 0;				// Make sure we set this flag to 0 so that materials know which pass is to be enabled.
 			gameLocal.globalShaderParms[2] = 0; // Set global shader parm 2 to 0
 			gameLocal.globalShaderParms[3] = 0; // Set global shader parm 3 to 0
 			gameLocal.globalShaderParms[4] = 0; // Set global shader parm 4 to 0
@@ -836,7 +827,7 @@ void idPlayerView::UpdateAmbientLight()
 		else // If the Texture Brightness method is used
 		{
 
-			gameLocal.globalShaderParms[5] = Min( 2, Max (1, cv_ambient_method.GetInteger() ) );
+			gameLocal.globalShaderParms[5] = 1;				// enable the extra shader branch
 			idVec3 ambient_color = pAmbientLight->spawnArgs.GetVector( "_color" );				 // Get the ambient color from the spawn arguments
 			gameLocal.globalShaderParms[2] = ambient_color.x * 1.5f; // Set global shader parm 2 to Red value of ambient light
 			gameLocal.globalShaderParms[3] = ambient_color.y * 1.5f; // Set global shader parm 3 to Green value of ambient light
@@ -851,8 +842,6 @@ void idPlayerView::UpdateAmbientLight()
 		gameLocal.Printf( "Note: The main ambient light could not be determined\n"); // Show in console of light not existing in map
 	}
 	cv_ambient_method.ClearModified();
-	// Clean this up later since not needed. JC Denton
-	// 	cur_amb_method = cv_ambient_method.GetBool(); // Set the current ambient method to the CVar value
 }
 
 void idPlayerView::OnReloadImages()
