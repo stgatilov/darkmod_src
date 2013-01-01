@@ -202,8 +202,7 @@ const idEventDef EV_DistanceToPoint( "distanceToPoint", EventArgs('v', "point", 
 const idEventDef EV_StartFx( "startFx", EventArgs('s', "fx", ""), EV_RETURNS_VOID, "Starts an FX on this entity.");
 const idEventDef EV_HasFunction( "hasFunction", EventArgs('s', "functionName", ""), 'd', "checks if an entity's script object has a specific function" );
 const idEventDef EV_CallFunction( "callFunction", EventArgs('s', "functionName", ""), EV_RETURNS_VOID, 
-	"Calls a function on an entity's script object. See also\n" \
-	"scripts/tdm_events.script for callGlobalFunction.");
+	"Calls a function on an entity's script object. See also callGlobalFunction().");
 const idEventDef EV_CallGlobalFunction( "callGlobalFunction", EventArgs('s', "functionName", "", 'E', "other", ""), EV_RETURNS_VOID, 
 	"calls a global function and passes the other entity along as the first argument\n" \
 	"calls the function in a new thread, so it continues executing in the current\n" \
