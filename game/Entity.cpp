@@ -4961,14 +4961,23 @@ void idEntity::DetachOnAlert( const int alertIndex )
 				// Tels:
 				if ( ent->spawnArgs.GetInt("_spawned_by_anim","0") == 1 )
 				{
-					// gameLocal.Printf("Removing entity %s spanwed by animation\n", ent->GetName() );
+					// gameLocal.Printf("Removing entity %s spawned by animation\n", ent->GetName() );
 					// this entity was spawned automatically by an animation, remove it
 					// from the game to prevent left-overs from alerted-during-animation guards
 					ent->PostEventMS( &EV_Remove, 0 );
 					// and make inactive in the meantime
 					ent->BecomeInactive(TH_PHYSICS|TH_THINK);
 				}
+
 				DetachInd(ind);	
+				CheckAfterDetach(ent); // grayman #2624 - check for frobability and whether to extinguish
+				
+				// grayman #2624 - account for a falling attachment
+
+				ent->GetPhysics()->Activate();
+				ent->m_droppedByAI = true;
+				ent->m_SetInMotionByActor = NULL;
+				ent->m_MovedByActor = NULL;
 			}
 		}
 	}
@@ -10588,9 +10597,10 @@ void idEntity::Attach( idEntity *ent, const char *PosName, const char *AttName )
 void idEntity::Detach( const char *AttName )
 {
 	int ind = GetAttachmentIndex( AttName );
-	if (ind >= 0 && ind < m_Attachments.Num() )
+	if ( ( ind >= 0 ) && ( ind < m_Attachments.Num() ) )
 	{
 		DetachInd( ind );
+		CheckAfterDetach( m_Attachments[ind].ent.GetEntity() ); // grayman #2624 - check for frobability and whether to extinguish
 	}
 	else
 	{
@@ -10627,6 +10637,42 @@ void idEntity::DetachInd( int ind )
 
 Quit:
 	return;
+}
+
+// grayman #2624 - check whether dropped attachment should become frobable or should be extinguished
+
+void idEntity::CheckAfterDetach( idEntity *ent )
+{
+	if ( ent == NULL )
+	{
+		return;
+	}
+
+	bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable", "0" );
+	bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
+
+	if ( bSetFrob )
+	{
+		ent->m_bFrobable = true;
+	}
+
+	// Check if we should extinguish the attachment, like torches or lanterns
+	if ( bExtinguish )
+	{
+		// Get the delay in milliseconds
+		int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "4"));
+		if ( delay < 0 )
+		{
+			delay = 0;
+		}
+
+		// grayman #2624 - add a random amount for variability
+		int random = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay_random", "0"));
+		delay += random * gameLocal.random.RandomFloat();
+
+		// Schedule the extinguish event
+		ent->PostEventMS(&EV_ExtinguishLights, delay);
+	}
 }
 
 void idEntity::ReAttachToCoords
@@ -12571,17 +12617,43 @@ void idEntity::Event_GetClipMask()
 
 void idEntity::Event_ExtinguishLights()
 {
-	// greebo: First, check if we ourselves are a light
-	if (IsType(idLight::Type)) 
+	// grayman #2624 - if this entity is currently being held by the
+	// player, don't extinguish it
+
+	CGrabber *grabber = gameLocal.m_Grabber;
+	idEntity *heldEntity = grabber->GetSelected();
+
+	if ( heldEntity == this )
+	{
+		return;
+	}
+
+	// grayman #2624 - special case for lanterns: don't extinguish if vertical
+
+	if ( spawnArgs.GetBool("is_lantern","0") )
+	{
+		const idVec3& gravityNormal = GetPhysics()->GetGravityNormal();
+		idMat3 axis = GetPhysics()->GetAxis();
+		idVec3 result(0,0,0);
+		axis.ProjectVector(-gravityNormal,result);
+		float verticality = result * (-gravityNormal);
+		if ( verticality > idMath::Cos(DEG2RAD(45)) )
+		{
+			return; // lantern is w/in 45 degrees of vertical, so don't extinguish it
+		}
+	}
+
+	// greebo: check if we ourselves are a light
+	if ( IsType(idLight::Type) ) 
 	{
 		// Call the script function to extinguish this light
 		CallScriptFunctionArgs("frob_extinguish", true, 0, "e", this);
 	}
 
 	// Now go through the teamChain and check for lights
-	for (idEntity* ent = teamChain; ent != NULL; ent = ent->teamChain)
+	for ( idEntity* ent = teamChain ; ent != NULL ; ent = ent->teamChain )
 	{
-		if (ent->IsType(idLight::Type))
+		if ( ent->IsType(idLight::Type) )
 		{
 			ent->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", ent);
 		}

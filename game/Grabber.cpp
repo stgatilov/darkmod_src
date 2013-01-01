@@ -294,6 +294,33 @@ void CGrabber::StopDrag( void )
 	m_AFBodyLastZ = 0.0f;
 
 	m_DistanceCount = 0;
+
+	// grayman #2624 - I want to determine if this is a lantern that's being dropped.
+	// If it is, I want to post an event to extinguish it. That event will extinguish it only if it's not
+	// in a vertical position at the time. I don't see anything here that tells the held object it's
+	// being let go, so I assume there's code in the object that recognizes it needs to
+	// fall. That's where I'd want to post the extinguish event, but I don't know where that
+	// is, so I'm going to put it here. If someone knows how to do this better, please
+	// move this code where it belongs.
+
+	idEntity* draggedEntity = m_dragEnt.GetEntity();
+	if ( ( draggedEntity != NULL ) && draggedEntity->spawnArgs.GetBool("is_lantern","0") )
+	{
+		// Get the delay in milliseconds
+		int delay = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay", "4"));
+		if ( delay < 0 )
+		{
+			delay = 0;
+		}
+
+		// add a random amount for variability
+		int random = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay_random", "0"));
+		delay += random * gameLocal.random.RandomFloat();
+
+		// Schedule the extinguish event
+		draggedEntity->PostEventMS(&EV_ExtinguishLights, delay);
+	}
+
 	m_dragEnt = NULL;
 
 	m_drag.SetRefEnt( NULL );
@@ -1483,7 +1510,7 @@ bool CGrabber::Equip( void )
 	{
 		// Call the script
         idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
-		if (thread != NULL)
+		if ( thread != NULL )
 		{
 			// Run the thread at once, the script result might be needed below.
 			thread->Execute();
@@ -1558,11 +1585,14 @@ bool CGrabber::Equip( void )
 bool CGrabber::Dequip( void )
 {
 	bool bDequipped(false);
+	bool bRunScript(false); // grayman #2624
 	idStr str;
 	idEntity *ent = m_EquippedEnt.GetEntity();
 
-	if( !ent )
+	if ( !ent )
+	{
 		return false;
+	}
 
 	gameLocal.Printf("Dequip called\n");
 
@@ -1570,37 +1600,33 @@ bool CGrabber::Dequip( void )
 
 	// inventory items go back in inventory on dequipping
 
-	// grayman #3128 - but first let's check and see if this
-	// is an inventory item
-
-	if ( ent->spawnArgs.FindKey("inv_name") != NULL )
+	if ( player->AddToInventory(ent) )
 	{
-		if ( player->AddToInventory(ent) )
-		{
-			StopDrag();
-			bDequipped = true;
-		}
-
-		// junk items dequip back to the hands
-		// test if item is successfully dequipped
-		else if ( player->DropToHands(ent) )
-		{
-			// put in hands (should already be dragged?)
-			bDequipped = true;
-		}
-		else
-		{
-			// There wasn't space to dequip the item to hands
-			player->StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
-		}
-	}
-	else // not an inventory item, so it might need special handling
-	{
+		StopDrag();
 		bDequipped = true;
+	}
+	// grayman #2624 - special case for lantern, which does not
+	// behave like other non-inventory items. In its case, "dequip"
+	// doesn't mean drop, it means toggle the light
+	else if ( ent->spawnArgs.GetBool("is_lantern","0") )
+	{
+		bRunScript = true;
+	}
+	// junk items and shouldered bodies dequip back to the hands
+	// test if item is successfully dequipped
+	else if ( player->DropToHands(ent) )
+	{
+		// put in hands (should already be dragged?)
+		bDequipped = true;
+	}
+	else
+	{
+		// Not dequipped yet
+		player->StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );
 	}
 
 	// tels: Execute a potential dequip script
-	if ( bDequipped && ent->spawnArgs.GetString("dequip_action_script", "", str))
+	if ( ( bDequipped || bRunScript ) && ent->spawnArgs.GetString("dequip_action_script", "", str))
 	{ 
 		// Call the script
 	    idThread* thread = CallScriptFunctionArgs(str.c_str(), true, 0, "e", ent);
@@ -1614,9 +1640,12 @@ bool CGrabber::Dequip( void )
 	// ishtvan: Test general "equip in world system"
 	if ( bDequipped && ent->spawnArgs.GetBool("equip_in_world") )
 	{
-		if( ent->spawnArgs.GetBool("equip_draw_on_top") )
+		if ( ent->spawnArgs.GetBool("equip_draw_on_top") )
+		{
 			ent->GetRenderEntity()->weaponDepthHack = false;
-		if( ent->spawnArgs.GetBool("equip_nonsolid") )
+		}
+
+		if ( ent->spawnArgs.GetBool("equip_nonsolid") )
 		{
 			ent->GetPhysics()->SetContents( m_EquippedEntContents );
 			ent->GetPhysics()->SetClipMask( m_EquippedEntClipMask );
@@ -1633,10 +1662,10 @@ bool CGrabber::Dequip( void )
 		m_bEquippedEntInWorld = false;
 	}
 
-	if( bDequipped )
+	if ( bDequipped )
 	{
 		// call unshoulderbody if dequipping a body
-		if( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
+		if ( ent->IsType(idAFEntity_Base::Type) && ent->spawnArgs.GetBool("shoulderable") )
 		{
 			// greebo: Pass the entity along, the m_EquippedEnt reference might already be set to NULL at this point
 			UnShoulderBody(ent);
@@ -1657,12 +1686,14 @@ void CGrabber::UseEquipped( void )
 	idStr str;
 	idEntity *ent = GetEquipped();
 	
-	if( !ent )
+	if ( !ent )
+	{
 		return;
+	}
 
 	gameLocal.Printf("Use equipped called\n");
 
-    if(ent->spawnArgs.GetString("equipped_use_script", "", str))
+    if (ent->spawnArgs.GetString("equipped_use_script", "", str))
 	{ 
 		gameLocal.Printf("Use equipped found script\n");
 		// Call the script

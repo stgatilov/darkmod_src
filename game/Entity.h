@@ -1017,6 +1017,12 @@ public:
 	virtual void DetachInd( int ind );
 
 	/**
+	* grayman #2624 - check whether dropped attachment should become
+	* frobable or should be extinguished
+	**/
+	virtual void CheckAfterDetach( idEntity* ent );
+
+	/**
 	* Reattach an existing attachment to the given offset and angles relative
 	* to the origin and orientatin of the entity
 	*

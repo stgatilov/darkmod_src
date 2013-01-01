@@ -456,8 +456,6 @@ void idAFAttachment::DropOnRagdoll( void )
 
 		bool bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
 		bool bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
-		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
-		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
 		// Proceed with droppage
 		DetachInd( i );
@@ -470,10 +468,16 @@ void idAFAttachment::DropOnRagdoll( void )
 		if( mask )
 			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | mask );
 
+		CheckAfterDetach( ent ); // grayman #2624 - check for frobability and whether to extinguish
+
+		// grayman #2624 - now handled by CheckAfterDetach() above
+/*
+		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
 		if( bSetFrob )
 			ent->m_bFrobable = true;
 
 		// greebo: Check if we should extinguish the attachment, like torches
+		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 		if ( bExtinguish )
 		{
 			// Get the delay in milliseconds
@@ -485,7 +489,7 @@ void idAFAttachment::DropOnRagdoll( void )
 			// Schedule the extinguish event
 			ent->PostEventMS(&EV_ExtinguishLights, delay);
 		}
-
+ */
 		ent->GetPhysics()->Activate();
 		ent->m_droppedByAI = true; // grayman #1330
 

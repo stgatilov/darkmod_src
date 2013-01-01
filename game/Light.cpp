@@ -1075,8 +1075,6 @@ bool idLight::IsVertical(float degreesFromVertical)
 	idStr lightType = spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
 	bool shouldBeVert = spawnArgs.GetBool("should_be_vert","0");
 
-	// Only makes sense for flames with the "douse_horiz" spawnarg
-
 	if ((lightType == AIUSE_LIGHTTYPE_TORCH) && shouldBeVert)
 	{
 		const idVec3& gravityNormal = GetPhysics()->GetGravityNormal();

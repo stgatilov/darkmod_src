@@ -60,9 +60,12 @@ void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float mag
 		}
 	}
 
-	if (_scriptFunction == NULL) return;
+	if ( _scriptFunction == NULL )
+	{
+		return;
+	}
 
-	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script, effectPostfix = %s...\r", _effectPostfix.c_str());
+	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseEffect Script %s, effectPostfix = %s...\r", _effectPostfix.c_str(),_scriptFunction->Name());
 
 	idThread *pThread = new idThread(_scriptFunction);
 	int n = pThread->GetThreadNum();

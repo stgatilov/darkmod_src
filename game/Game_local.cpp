@@ -6761,18 +6761,26 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 			const CStimPtr& stim = srColl->GetStim(stimIdx);
 
 			if (stim->m_MaxFireCount == 0)
+			{
 				// Maximum number of firings reached, do not process this stim
 				continue;
+			}
 
 			if (stim->m_State != SS_ENABLED)
+			{
 				continue; // Stim is not enabled
+			}
 
 			if (stim->m_bCollisionBased && !stim->m_bCollisionFired)
+			{
 				continue; // Collision-based stim that did not fire with ::Collide this frame
+			}
 
 			// Check the interleaving timer and don't eval stim if it's not up yet
-			if (gameLocal.time - stim->m_TimeInterleaveStamp < stim->m_TimeInterleave)
+			if ( ( gameLocal.time - stim->m_TimeInterleaveStamp ) < stim->m_TimeInterleave)
+			{
 				continue;
+			}
 
 			// If stim has a finite duration, check if it expired. If so, disable the stim.
 			if (stim->m_Duration != 0 && (gameLocal.time - stim->m_EnabledTimeStamp) > stim->m_Duration )
@@ -6807,7 +6815,9 @@ void idGameLocal::ProcessStimResponse(unsigned long ticks)
 
 			// If stim is not disabled
 			if (stim->m_State == SS_DISABLED)
+			{
 				continue;
+			}
 
 			float radius = stim->GetRadius();
 

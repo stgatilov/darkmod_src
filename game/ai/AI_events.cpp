@@ -3554,7 +3554,16 @@ void idAI::Event_EmptyHand(const char* hand) // grayman #3154
 			idEntity* ent = m_Attachments[i].ent.GetEntity();
 			if ( ent == inHand )
 			{
-				DetachInd(i);
+				DetachInd( i );
+				CheckAfterDetach( ent ); // grayman #2624 - check for frobability and whether to extinguish
+
+				// grayman #2624 - account for a falling attachment
+
+				ent->GetPhysics()->Activate();
+				ent->m_droppedByAI = true;
+				ent->m_SetInMotionByActor = NULL;
+				ent->m_MovedByActor = NULL;
+
 				return;
 			}
 		}
@@ -3595,6 +3604,10 @@ void idAI::Event_DropTorch() // grayman #2603
 			ent->m_SetInMotionByActor = this;
 			ent->m_MovedByActor = this;
 
+			CheckAfterDetach( ent ); // grayman #2624 - check for frobability and whether to extinguish
+
+			// grayman #2624 - now handled by CheckAfterDetach() above
+/*
 			// grayman #3123 - this could be happening to a lit torch,
 			// so douse the torch once it's dropped
 
@@ -3606,7 +3619,7 @@ void idAI::Event_DropTorch() // grayman #2603
 
 			// Schedule the extinguish event
 			ent->PostEventMS(&EV_ExtinguishLights, delay);
-
+ */
 			break;
 		}
 	}

@@ -11073,8 +11073,6 @@ void idAI::DropOnRagdoll( void )
 		bool bDropWhenDrawn = ent->spawnArgs.GetBool( "drop_when_drawn" );
 		bool bSetSolid = ent->spawnArgs.GetBool( "drop_add_contents_solid" );
 		bool bSetCorpse = ent->spawnArgs.GetBool( "drop_add_contents_corpse" );
-		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
-		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
 		if ( bDropWhenDrawn )
 		{
@@ -11099,6 +11097,8 @@ void idAI::DropOnRagdoll( void )
 		// Proceed with droppage
 		DetachInd( i );
 
+		CheckAfterDetach( ent ); // grayman #2624 - check for frobability and whether to extinguish
+
 		if ( bSetSolid )
 		{
 			mask = CONTENTS_SOLID;
@@ -11113,6 +11113,11 @@ void idAI::DropOnRagdoll( void )
 		{
 			ent->GetPhysics()->SetContents( ent->GetPhysics()->GetContents() | mask );
 		}
+
+		// grayman #2624 - now handled by CheckAfterDetach() above
+/*
+		bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable" );
+		bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
 		if ( bSetFrob )
 		{
@@ -11132,7 +11137,7 @@ void idAI::DropOnRagdoll( void )
 			// Schedule the extinguish event
 			ent->PostEventMS(&EV_ExtinguishLights, delay);
 		}
-
+*/
 		ent->GetPhysics()->Activate();
 		ent->m_droppedByAI = true; // grayman #1330
 
