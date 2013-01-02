@@ -1576,11 +1576,12 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_Touches( idEntity *ent );
 	void					Event_GetNextKey( const char *prefix, const char *lastMatch );
 	void					Event_SetKey( const char *key, const char *value );
-	void					Event_GetKey( const char *key );
-	void					Event_GetIntKey( const char *key );
-	void					Event_GetFloatKey( const char *key );
-	void					Event_GetVectorKey( const char *key );
-	void					Event_GetEntityKey( const char *key );
+	void					Event_GetKey( const char *key ) const;
+	void					Event_GetIntKey( const char *key ) const;
+	void					Event_GetBoolKey( const char *key ) const;
+	void					Event_GetFloatKey( const char *key ) const;
+	void					Event_GetVectorKey( const char *key ) const;
+	void					Event_GetEntityKey( const char *key ) const;
 	void					Event_RemoveKey( const char *key );
 	void					Event_RestorePosition( void );
 	void					Event_UpdateCameraTarget( void );

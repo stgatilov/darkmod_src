@@ -183,10 +183,11 @@ const idEventDef EV_SetKey( "setKey", EventArgs('s', "key", "the spawnarg to set
 	"This is chiefly for saving data the script needs in an entity for later retrieval.");
 
 const idEventDef EV_GetKey( "getKey", EventArgs('s', "key", "spawnarg name"), 's', 
-	"Retrieves the value of a specific spawn arg." );
-const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the integer value of a specific spawn arg." );
-const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the floating point value of a specific spawn arg." );
-const idEventDef EV_GetVectorKey( "getVectorKey", EventArgs('s', "key", "spawnarg name"), 'v', "Retrieves the vector value of a specific spawn arg." );
+	"Retrieves the value of a specific spawn arg, defaulting to ''." );
+const idEventDef EV_GetIntKey( "getIntKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the integer value of a specific spawn arg, defaulting to 0." );
+const idEventDef EV_GetBoolKey( "getBoolKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the boolean value of a specific spawn arg, defaulting to false." );
+const idEventDef EV_GetFloatKey( "getFloatKey", EventArgs('s', "key", "spawnarg name"), 'f', "Retrieves the floating point value of a specific spawn arg, defaulting to 0.0f." );
+const idEventDef EV_GetVectorKey( "getVectorKey", EventArgs('s', "key", "spawnarg name"), 'v', "Retrieves the vector value of a specific spawn arg, defaulting to '0 0 0'." );
 const idEventDef EV_GetEntityKey( "getEntityKey", EventArgs('s', "key", "spawnarg name"), 'e', "Retrieves the entity specified by the spawn arg." );
 const idEventDef EV_RemoveKey( "removeKey", EventArgs('s', "key", "the spawnarg to remove"), EV_RETURNS_VOID, "Removes a key from an object's spawnargs, so things like getNextKey() don't retrieve it.");
 const idEventDef EV_RestorePosition( "restorePosition", EventArgs(), EV_RETURNS_VOID, 
@@ -544,6 +545,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetKey,				idEntity::Event_SetKey )
 	EVENT( EV_GetKey,				idEntity::Event_GetKey )
 	EVENT( EV_GetIntKey,			idEntity::Event_GetIntKey )
+	EVENT( EV_GetBoolKey,			idEntity::Event_GetBoolKey )
 	EVENT( EV_GetFloatKey,			idEntity::Event_GetFloatKey )
 	EVENT( EV_GetVectorKey,			idEntity::Event_GetVectorKey )
 	EVENT( EV_GetEntityKey,			idEntity::Event_GetEntityKey )
@@ -7605,7 +7607,7 @@ void idEntity::Event_SetKey( const char *key, const char *value ) {
 idEntity::Event_GetKey
 ================
 */
-void idEntity::Event_GetKey( const char *key ) {
+void idEntity::Event_GetKey( const char *key ) const {
 	const char *value;
 
 	spawnArgs.GetString( key, "", &value );
@@ -7617,12 +7619,26 @@ void idEntity::Event_GetKey( const char *key ) {
 idEntity::Event_GetIntKey
 ================
 */
-void idEntity::Event_GetIntKey( const char *key ) {
+void idEntity::Event_GetIntKey( const char *key ) const {
 	int value;
 
 	spawnArgs.GetInt( key, "0", value );
 
-	// scripts only support floats
+	// TODO: scripts only support floats
+	idThread::ReturnFloat( value );
+}
+
+/*
+================
+idEntity::Event_GetBoolKey
+================
+*/
+void idEntity::Event_GetBoolKey( const char *key ) const {
+	bool value;
+
+	spawnArgs.GetBool( key, "0", value );
+
+	// TODO: scripts only support floats
 	idThread::ReturnFloat( value );
 }
 
@@ -7631,7 +7647,7 @@ void idEntity::Event_GetIntKey( const char *key ) {
 idEntity::Event_GetFloatKey
 ================
 */
-void idEntity::Event_GetFloatKey( const char *key ) {
+void idEntity::Event_GetFloatKey( const char *key ) const {
 	float value;
 
 	spawnArgs.GetFloat( key, "0", value );
@@ -7643,7 +7659,7 @@ void idEntity::Event_GetFloatKey( const char *key ) {
 idEntity::Event_GetVectorKey
 ================
 */
-void idEntity::Event_GetVectorKey( const char *key ) {
+void idEntity::Event_GetVectorKey( const char *key ) const {
 	idVec3 value;
 
 	spawnArgs.GetVector( key, "0 0 0", value );
@@ -7655,7 +7671,7 @@ void idEntity::Event_GetVectorKey( const char *key ) {
 idEntity::Event_GetEntityKey
 ================
 */
-void idEntity::Event_GetEntityKey( const char *key ) {
+void idEntity::Event_GetEntityKey( const char *key ) const {
 	idEntity *ent;
 	const char *entname;
 
