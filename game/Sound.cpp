@@ -33,7 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 */
 
 const idEventDef EV_Speaker_On( "On", EventArgs(), EV_RETURNS_VOID, "Turns the entity on." );
-const idEventDef EV_Speaker_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Turns the entity on." );
+const idEventDef EV_Speaker_Off( "Off", EventArgs(), EV_RETURNS_VOID, "Turns the entity off." );
 const idEventDef EV_Speaker_Timer( "<timer>", EventArgs(), EV_RETURNS_VOID, "internal" );
 
 CLASS_DECLARATION( idEntity, idSound )
