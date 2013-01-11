@@ -58,6 +58,11 @@ extern const idEventDef EV_Player_GetLocation;
 extern const idEventDef EV_Player_GetFrobbed;
 extern const idEventDef EV_Player_SetFrobOnlyUsedByInv;
 
+// tels: #3282
+extern const idEventDef EV_Player_GetShouldered;
+extern const idEventDef EV_Player_GetDragged;
+extern const idEventDef EV_Player_GetGrabbed;
+
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
 const int	LAND_RETURN_TIME = 300;
@@ -350,12 +355,6 @@ public:
 	* Set to true if the player is holding an item with the Grabber
 	**/
 	bool					m_bGrabberActive;
-
-	/**
-	* Set to true if the player is dragging a body
-	* NOT YET IMPLEMENTED
-	**/
-	bool					m_bDraggingBody;
 
 	/**
 	* Set to true if the player is shouldering a body
@@ -1370,9 +1369,14 @@ private:
 	void					Event_ClearActiveInventoryMapEnt(); // grayman #3164
 	
 	// return the frobbed entity
-	void					Event_GetFrobbed();
+	void					Event_GetFrobbed() const;
 	// enables "frob only ents used by active inventory item" mode
 	void					Event_SetFrobOnlyUsedByInv( bool Value );
+
+	// tels: #3282
+	void					Event_GetShouldered() const;
+	void					Event_GetDragged() const;
+	void					Event_GetGrabbed() const;
 
 	// Call gameLocal.ProcessInterMissionTriggers
 	void					Event_ProcessInterMissionTriggers();

@@ -328,7 +328,6 @@ void CGrabber::StopDrag( void )
 	idPlayer* player = m_player.GetEntity();
 	if (player != NULL)
 	{
-		player->m_bDraggingBody = false;
 		player->m_bGrabberActive = false;
 		player->SetImmobilization( "Grabber", 0 );
 		player->SetHinderance( "Grabber", 1.0f, 1.0f );
@@ -1780,3 +1779,16 @@ void CGrabber::Forget( idEntity* ent )
 			RemoveFromClipList( ent );
 	}
 }
+
+/*
+Tels: Return the shouldered entity for #3282
+*/
+idEntity* CGrabber::GetShouldered( void ) const
+{
+	idEntity* ent = m_EquippedEnt.GetEntity();
+
+	// we can only shoulder AF entities, so if the equipped entity is one of these, it is shouldered
+	return (ent && ent->spawnArgs.GetBool("shoulderable") && ent->IsType(idAFEntity_Base::Type)) ? ent : NULL;
+}
+	
+

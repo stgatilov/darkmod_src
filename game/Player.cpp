@@ -285,11 +285,21 @@ const idEventDef EV_ClearActiveInventoryMapEnt("clearActiveInventoryMapEnt", Eve
 
 // ishtvan: Let scripts get the currently frobbed entity, and set "frob only used by" mode
 const idEventDef EV_Player_GetFrobbed("getFrobbed", EventArgs(), 'e', 
-		"Returns the currently frobhilighted entity. Sets \"frob only used by\" mode");
+		"Returns the currently frobhilighted entity. This includes entities the player has in his hands. Sets \"frob only used by\" mode");
 
 const idEventDef EV_Player_SetFrobOnlyUsedByInv("setFrobOnlyUsedByInv", EventArgs('d', "OnOff", ""), EV_RETURNS_VOID, 
 		"Engages or disengages a mode where we only frobhilight entities that can be used by our current inventory item.\n" \
 		"This also disables general frobactions and only allows \"used by\" frob actions.");
+
+// tels #3282:
+const idEventDef EV_Player_GetShouldered("getShouldered", EventArgs(), 'e', 
+		"Returns the currently shouldered body, otherwise $null_entity. See also getDragged(), getGrabbed() and getFrobbed().");
+const idEventDef EV_Player_GetDragged("getDragged", EventArgs(), 'e', 
+		"Returns the currently dragged body. Returns $null_entity if the body is shouldered, the player has nothing in his\n" \
+		"hands, or he has a non-AF entity in his hands. See also getShouldered(), getGrabbed() and getFrobbed().");
+const idEventDef EV_Player_GetGrabbed("getGrabbed", EventArgs(), 'e', 
+		"Returns the currently entity in the players hands. Returns $null_entity if the player has nothing in his hands\n" \
+		"Dragging or shouldering a body counts as grabbing it. See also getDragged(), getShouldered(), getFrobbed().");
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -374,6 +384,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_ClearActiveInventoryMapEnt,	idPlayer::Event_ClearActiveInventoryMapEnt ) // grayman #3164
 
 	EVENT( EV_Player_GetFrobbed,			idPlayer::Event_GetFrobbed )
+	EVENT( EV_Player_GetDragged,			idPlayer::Event_GetDragged )
+	EVENT( EV_Player_GetGrabbed,			idPlayer::Event_GetGrabbed )
+	EVENT( EV_Player_GetShouldered,			idPlayer::Event_GetShouldered )
 	EVENT( EV_Player_SetFrobOnlyUsedByInv,	idPlayer::Event_SetFrobOnlyUsedByInv )
 
 	EVENT( EV_ProcessInterMissionTriggers,	idPlayer::Event_ProcessInterMissionTriggers )
@@ -606,7 +619,6 @@ idPlayer::idPlayer() :
 	m_bFrobOnlyUsedByInv	= false;
 
 	m_bGrabberActive		= false;
-	m_bDraggingBody			= false;
 	m_bShoulderingBody		= false;
 
 	m_IdealCrouchState		= false;
@@ -1863,7 +1875,6 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	//savefile->WriteFloat( pm_stamina.GetFloat() );
 
 	savefile->WriteBool( m_bGrabberActive );
-	savefile->WriteBool( m_bDraggingBody );
 	savefile->WriteBool( m_bShoulderingBody );
 
 	savefile->WriteBool( m_IdealCrouchState );
@@ -2195,7 +2206,6 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	//pm_stamina.SetFloat( set );
 
 	savefile->ReadBool( m_bGrabberActive );
-	savefile->ReadBool( m_bDraggingBody );
 	savefile->ReadBool( m_bShoulderingBody );
 
 	savefile->ReadBool( m_IdealCrouchState );
@@ -5467,7 +5477,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			{
 				idEntity *frob = m_FrobEntity.GetEntity();
 				if(frob != NULL)
+				{
 					grabber->PutInHands(frob, frob->GetPhysics()->GetAxis() );
+				}
 			}
 		}
 		break;
@@ -11419,9 +11431,34 @@ void idPlayer::Event_ClearActiveInventoryMapEnt() // grayman #3164
 	m_ActiveInventoryMapEnt = NULL;
 }
 
-void idPlayer::Event_GetFrobbed()
+void idPlayer::Event_GetFrobbed() const
 {
 	idThread::ReturnEntity( m_FrobEntity.GetEntity() );
+}
+
+// Tels #3282
+void idPlayer::Event_GetShouldered() const
+{
+	idThread::ReturnEntity( m_bShoulderingBody ? gameLocal.m_Grabber->GetShouldered() : NULL );
+}
+
+// Tels #3282
+void idPlayer::Event_GetDragged() const
+{
+	// shouldering a body, or having something not draggable counts not as "dragging":
+	if (m_bShoulderingBody)
+	{
+		idThread::ReturnEntity( NULL );
+	}
+	idEntity* ent = gameLocal.m_Grabber->GetSelected();
+	idThread::ReturnEntity( (ent && ent->IsType(idAFEntity_Base::Type)) ? ent : NULL );
+}
+
+// Tels #3282
+void idPlayer::Event_GetGrabbed() const
+{
+	// if we shoulder a body, return NULL, otherwise the entity
+	idThread::ReturnEntity( m_bShoulderingBody ? NULL : gameLocal.m_Grabber->GetSelected() );
 }
 
 void idPlayer::Event_SetFrobOnlyUsedByInv( bool value )

@@ -61,6 +61,11 @@ public:
 
 		idEntity *				GetEquipped( void ) const { return m_EquippedEnt.GetEntity(); }
 
+		/**
+		* Tels: Return the shouldered entity for #3282
+		**/
+		idEntity*				GetShouldered( void ) const;
+	
 		bool					IsInClipList( idEntity *ent ) const;
 		bool					HasClippedEntity( void ) const;
 
@@ -181,7 +186,6 @@ public:
 		**/
 		void					SetPlayer( idPlayer *player ) { m_player = player; };
 
-public:
 		/**
 		* Set to true if the grabbed entity is colliding this frame
 		**/
