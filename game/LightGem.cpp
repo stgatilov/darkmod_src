@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "LightGem.h"
+#include "Grabber.h"
 
 // Temporary profiling related macros
 
@@ -245,6 +246,21 @@ float LightGem::Calculate(idPlayer *player)
 	gameRenderWorld->UpdateEntityDef(pdef, prent); 
 	gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
+	// Currently grabbed entities should not cast a shadow on the lightgem to avoid exploits
+	int heldDef, heldSurfID, heldShadID;
+	renderEntity_t *heldRE;
+	idEntity	*heldEnt	= gameLocal.m_Grabber->GetSelected();
+	if( heldEnt ) {
+		heldRE = heldEnt->GetRenderEntity();
+		heldDef = heldEnt->GetModelDefHandle();
+		heldSurfID = heldRE->suppressSurfaceInViewID;
+		heldShadID = heldRE->suppressShadowInViewID;
+		heldRE->suppressShadowInViewID = DARKMOD_LG_VIEWID;
+		heldRE->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
+
+		gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+	}
+
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderTurn %u", m_LightgemShotSpot);
 	PROFILE_BLOCK_END( LightGem_Calculate_Setup);
 
@@ -333,6 +349,13 @@ float LightGem::Calculate(idPlayer *player)
 	hrent->suppressShadowInViewID = hsid;
 	gameRenderWorld->UpdateEntityDef(pdef, prent);
 	gameRenderWorld->UpdateEntityDef(hdef, hrent);
+
+	// switch back currently grabbed entity settings
+	if( heldEnt ) {
+		heldRE->suppressSurfaceInViewID = heldSurfID;
+		heldRE->suppressShadowInViewID = heldShadID;
+		gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+	}
 
 	m_LightgemShotSpot++;
 	if( m_LightgemShotSpot >= nRenderPasses ) {
