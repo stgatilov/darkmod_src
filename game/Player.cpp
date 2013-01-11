@@ -112,7 +112,7 @@ const idEventDef EV_Player_ExitTeleporter( "exitTeleporter", EventArgs(), EV_RET
 const idEventDef EV_SpectatorTouch( "spectatorTouch", EventArgs('e', "", "", 't', "", ""), EV_RETURNS_VOID, "");
 const idEventDef EV_Player_GetIdealWeapon( "getIdealWeapon",EventArgs(), 's', "");
 
-const idEventDef EV_Player_GetEyePos( "getEyePos", EventArgs(), 'v', "get eye position of the player and the AI");
+const idEventDef EV_Player_GetEyePos( "getEyePos", EventArgs(), 'v', "Get eye position of the player and the AI.");
 
 const idEventDef EV_Player_SetImmobilization( "setImmobilization", EventArgs('s', "source", "", 'd', "type", ""), EV_RETURNS_VOID, 
 		"Used to set immobilization from a source.\n" \
