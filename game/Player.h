@@ -69,6 +69,7 @@ const int	FOCUS_GUI_TIME = 500;
 
 #define ARROW_WEAPON_INDEX_BEGIN 3		// grayman #597 - weapons at or above this index are arrows
 
+// Heart rate constansts
 const int DEAD_HEARTRATE = 0;			// fall to as you die
 const int LOWHEALTH_HEARTRATE_ADJ = 20; // 
 const int DYING_HEARTRATE = 30;			// used for volumen calc when dying/dead
@@ -78,8 +79,6 @@ const int MAX_HEARTRATE = 130;			// maximum
 const int ZERO_VOLUME = -40;			// volume at zero
 const int DMG_VOLUME = 5;				// volume when taking damage
 const int DEATH_VOLUME = 15;			// volume at death
-
-const int SAVING_THROW_TIME = 5000;		// maximum one "saving throw" every five seconds
 
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
