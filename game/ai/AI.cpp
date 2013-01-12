@@ -4660,7 +4660,7 @@ idAI::CanSeePositionExt
 This method can ignore lighting conditions and/or field of vision.
 =====================
 */
-bool idAI::CanSeePositionExt( idVec3 position, const bool useFOV, const bool useLighting ) const
+bool idAI::CanSeePositionExt( idVec3 position, const bool useFOV, const bool useLighting )
 {
 	if ( useFOV && !CheckFOV( position ) )
 	{
