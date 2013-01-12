@@ -4660,7 +4660,7 @@ idAI::CanSeePositionExt
 This method can ignore lighting conditions and/or field of vision.
 =====================
 */
-bool idAI::CanSeePositionExt( idVec3 position, bool useFOV, bool useLighting )
+bool idAI::CanSeePositionExt( idVec3 position, const bool useFOV, const bool useLighting ) const
 {
 	if ( useFOV && !CheckFOV( position ) )
 	{
@@ -11869,7 +11869,6 @@ void idAI::GetUp()
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 	}
-//	else if ( moveType == MOVETYPE_SLEEP || MOVETYPE_LAY_DOWN ) // grayman - this logic makes no sense, even though the compiler likes it
 	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // this is probably what it was meant to be
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
