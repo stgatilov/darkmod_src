@@ -251,14 +251,18 @@ float LightGem::Calculate(idPlayer *player)
 	renderEntity_t *heldRE;
 	idEntity	*heldEnt	= gameLocal.m_Grabber->GetSelected();
 	if( heldEnt ) {
-		heldRE = heldEnt->GetRenderEntity();
 		heldDef = heldEnt->GetModelDefHandle();
-		heldSurfID = heldRE->suppressSurfaceInViewID;
-		heldShadID = heldRE->suppressShadowInViewID;
-		heldRE->suppressShadowInViewID = DARKMOD_LG_VIEWID;
-		heldRE->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
 
-		gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+		// tels: #3286: Only update the entityDef if it is valid
+		if (heldDef >= 0)
+		{
+			heldRE = heldEnt->GetRenderEntity();
+			heldSurfID = heldRE->suppressSurfaceInViewID;
+			heldShadID = heldRE->suppressShadowInViewID;
+			heldRE->suppressShadowInViewID = DARKMOD_LG_VIEWID;
+			heldRE->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
+			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+		}
 	}
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("RenderTurn %u", m_LightgemShotSpot);
@@ -352,9 +356,13 @@ float LightGem::Calculate(idPlayer *player)
 
 	// switch back currently grabbed entity settings
 	if( heldEnt ) {
-		heldRE->suppressSurfaceInViewID = heldSurfID;
-		heldRE->suppressShadowInViewID = heldShadID;
-		gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+		// tels: #3286: Only update the entityDef if it is valid
+		if (heldDef >= 0)
+		{
+			heldRE->suppressSurfaceInViewID = heldSurfID;
+			heldRE->suppressShadowInViewID = heldShadID;
+			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
+		}
 	}
 
 	m_LightgemShotSpot++;
