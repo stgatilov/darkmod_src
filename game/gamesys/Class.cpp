@@ -223,8 +223,10 @@ void idTypeInfo::Shutdown() {
 
 ***********************************************************************/
 
-const idEventDef EV_Remove( "<immediateremove>", EventArgs(), EV_RETURNS_VOID, "internal" );
-const idEventDef EV_SafeRemove( "remove", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_Remove( "<immediateremove>", EventArgs(), EV_RETURNS_VOID, 
+		"Internalad. Removes the entity from the game. Use remove() or kill()." );
+const idEventDef EV_SafeRemove( "remove", EventArgs(), EV_RETURNS_VOID, 
+		"Removes the entity from the game. For AI, use kill() instead." );
 
 ABSTRACT_DECLARATION( NULL, idClass )
 	EVENT( EV_Remove,				idClass::Event_Remove )
