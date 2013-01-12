@@ -88,8 +88,10 @@ const idEventDef EV_Thread_AngToRight( "angToRight", EventArgs('v', "angles", ""
 const idEventDef EV_Thread_AngToUp( "angToUp", EventArgs('v', "angles", ""), 'v', "Returns an up vector for the given Euler angles.");
 const idEventDef EV_Thread_Sine( "sin", EventArgs('f', "degrees", ""), 'f', "Returns the sine of the given angle in degrees.");
 const idEventDef EV_Thread_Cosine( "cos", EventArgs('f', "degrees", ""), 'f', "Returns the cosine of the given angle in degrees.");
-const idEventDef EV_Thread_Log( "log", EventArgs('f', "x", ""), 'f', "Returns the log of the given argument");
-const idEventDef EV_Thread_Pow( "pow", EventArgs('f', "x", "", 'f', "y", ""), 'f', "Returns the power of x to y");
+const idEventDef EV_Thread_Log( "log", EventArgs('f', "x", ""), 'f', "Returns the log of the given argument.");
+const idEventDef EV_Thread_Pow( "pow", EventArgs('f', "x", "", 'f', "y", ""), 'f', "Returns the power of x to y.");
+const idEventDef EV_Thread_Ceil( "ceil", EventArgs('f', "x", ""), 'f', "Returns the smallest integer that is greater than or equal to the given value.");
+const idEventDef EV_Thread_Floor( "floor", EventArgs('f', "x", ""), 'f', "Returns the largest integer that is less than or equal to the given value.");
 const idEventDef EV_Thread_SquareRoot( "sqrt", EventArgs('f', "square", ""), 'f', "Returns the square root of the given number.");
 const idEventDef EV_Thread_Normalize( "vecNormalize", EventArgs('v', "vec", ""), 'v', "Returns the normalized version of the given vector.");
 const idEventDef EV_Thread_VecLength( "vecLength", EventArgs('v', "vec", ""), 'f', "Returns the length of the given vector.");
@@ -139,7 +141,8 @@ const idEventDef EV_Thread_StrLeft( "strLeft", EventArgs('s', "text", "", 'd', "
 const idEventDef EV_Thread_StrRight( "strRight", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns a string composed of the last num characters" );
 const idEventDef EV_Thread_StrSkip( "strSkip", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns the string following the first num characters" );
 const idEventDef EV_Thread_StrMid( "strMid", EventArgs('s', "text", "", 'd', "start", "", 'd', "num", ""), 's', "Returns a string composed of the characters from start to start + num" );
-const idEventDef EV_Thread_StrToFloat( "strToFloat", EventArgs('s', "text", ""), 'f', "Returns the numeric value of a string" );
+const idEventDef EV_Thread_StrToFloat( "strToFloat", EventArgs('s', "text", ""), 'f', "Returns the numeric value of the given string." );
+const idEventDef EV_Thread_StrToInt( "strToInt", EventArgs('s', "text", ""), 'f', "Returns the integer value of the given string." );
 const idEventDef EV_Thread_RadiusDamage( "radiusDamage", 
 	EventArgs('v', "origin", "",
 			  'E', "inflictor", "the entity causing the damage",
@@ -264,6 +267,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Cosine,				idThread::Event_GetCosine )
 	EVENT( EV_Thread_Log,				idThread::Event_GetLog )
 	EVENT( EV_Thread_Pow,				idThread::Event_GetPow )
+	EVENT( EV_Thread_Floor,				idThread::Event_GetFloor )
+	EVENT( EV_Thread_Ceil,				idThread::Event_GetCeil )
 	EVENT( EV_Thread_SquareRoot,			idThread::Event_GetSquareRoot )
 	EVENT( EV_Thread_Normalize,				idThread::Event_VecNormalize )
 	EVENT( EV_Thread_VecLength,				idThread::Event_VecLength )
@@ -295,6 +300,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_StrSkip,				idThread::Event_StrSkip )
 	EVENT( EV_Thread_StrMid,				idThread::Event_StrMid )
 	EVENT( EV_Thread_StrToFloat,			idThread::Event_StrToFloat )
+	EVENT( EV_Thread_StrToInt,			idThread::Event_StrToInt )
 	EVENT( EV_Thread_RadiusDamage,			idThread::Event_RadiusDamage )
 	EVENT( EV_Thread_IsClient,				idThread::Event_IsClient )
 	EVENT( EV_Thread_IsMultiplayer,			idThread::Event_IsMultiplayer )
@@ -1399,7 +1405,7 @@ void idThread::Event_GetCurrentMissionNum()
 void idThread::Event_GetTDMVersion() const
 {
 	// Tels: #3232 Return version as 108, 109 etc.
-	idThread::ReturnInt( GAME_API_VERSION );
+	ReturnInt( GAME_API_VERSION );
 }
 
 /*
@@ -1469,6 +1475,22 @@ Tels: idThread::Event_GetPow
 */
 void idThread::Event_GetPow( const float x, const float y ) {
 	ReturnFloat( idMath::Pow( x, y ) );
+}
+
+/*
+Tels: idThread::Event_GetCeil - returns the smallest integer that is greater than or equal to the given value
+================
+*/
+void idThread::Event_GetCeil( const float x ) {
+	ReturnInt( idMath::Ceil( x ) );
+}
+
+/*
+Tels: idThread::Event_GetFloor - returns the largest integer that is less than or equal to the given value
+================
+*/
+void idThread::Event_GetFloor( const float x ) {
+	ReturnInt( idMath::Floor( x ) );
 }
 
 /*
@@ -1910,7 +1932,19 @@ void idThread::Event_StrToFloat( const char *string ) {
 	float result;
 
 	result = atof( string );
-	idThread::ReturnFloat( result );
+	ReturnFloat( result );
+}
+
+/*
+================
+tels: idThread::Event_StrToInt( const char *string )
+================
+*/
+void idThread::Event_StrToInt( const char *string ) {
+	int result;
+
+	result = atoi( string );
+	ReturnInt( result );
 }
 
 /*
