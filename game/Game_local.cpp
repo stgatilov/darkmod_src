@@ -959,7 +959,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteVec3( gravity );
 
-	// gamestate
+	// gamestate is not saved, instead if is just set to ACTIVE upon Restore()
 
 	savegame.WriteBool( influenceActive );
 	savegame.WriteInt( nextGibTime );
@@ -2205,8 +2205,12 @@ idGameLocal::MapShutdown
 ============
 */
 void idGameLocal::MapShutdown( void ) {
+	if (gamestate == GAMESTATE_NOMAP)
+	{
+		// tels: #3287 don't shut down everything twice
+		return;
+	}
 	Printf( "--------- Game Map Shutdown ----------\n" );
-	
 	gamestate = GAMESTATE_SHUTDOWN;
 
 	if ( gameRenderWorld ) {
@@ -2292,7 +2296,7 @@ void idGameLocal::MapShutdown( void ) {
 	// Save the current walkspeed
 	m_walkSpeed = pm_walkspeed.GetFloat();
 
-	Printf( "--------------------------------------\n" );
+	Printf( "--------- Game Map Shutdown done -----\n" );
 }
 
 /*
