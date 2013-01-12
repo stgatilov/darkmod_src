@@ -962,7 +962,7 @@ int idDeviceContext::DrawText( const char *text, float textScale, int textAlign,
 		}
 
 		int nextCharWidth = ( idStr::CharIsPrintable(*p) ? CharWidth( *p, textScale ) : cursorSkip );
-		// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
+		// FIXME: this is a temp hack until the guis can be fixed to not overflow the bounding rectangles
 		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
 		//	The following line and the !linebreak in the if statement below should be removed
 		nextCharWidth = 0;
@@ -1064,6 +1064,7 @@ char *idRectangle::String( void ) const {
 	char	*s;
 
 	// use an array so that multiple toString's won't collide
+	// TODO: This is not thread-safe and can still collide!
 	s = str[ index ];
 	index = (index + 1)&7;
 
