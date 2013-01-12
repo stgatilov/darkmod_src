@@ -6824,6 +6824,9 @@ void idEntity::AddTarget(idEntity* target)
 /*
 ================
 idEntity::Teleport
+
+TODO: This does not set the view angles, so if you teleport the player, he will
+	  not copy the view from the target, e.g. still look at the same direction.
 ================
 */
 void idEntity::Teleport( const idVec3 &origin, const idAngles &angles, idEntity *destination ) {
