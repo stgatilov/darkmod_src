@@ -37,6 +37,7 @@ typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 extern const idEventDef EV_Player_GetButtons;
 extern const idEventDef EV_Player_GetMove;
 extern const idEventDef EV_Player_GetViewAngles;
+extern const idEventDef EV_Player_SetViewAngles;
 extern const idEventDef EV_Player_GetMouseGesture;
 extern const idEventDef EV_Player_MouseGestureFinished;
 extern const idEventDef EV_Player_StartMouseGesture;
@@ -1229,6 +1230,7 @@ private:
 	void					Event_GetButtons( void );
 	void					Event_GetMove( void );
 	void					Event_GetViewAngles( void );
+	void					Event_SetViewAngles( const idVec3* vec );
 	void					Event_StopFxFov( void );
 	void					Event_EnableWeapon( void );
 	void					Event_DisableWeapon( void );
