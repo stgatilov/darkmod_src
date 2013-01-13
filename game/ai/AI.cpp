@@ -11869,7 +11869,7 @@ void idAI::GetUp()
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 	}
-	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // this is probably what it was meant to be
+	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // grayman #3290 - corrected logic
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
