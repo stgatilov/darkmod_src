@@ -158,7 +158,7 @@ Seed::Seed( void ) {
 	m_iThinkCounter = 0;
 
 	m_DistCheckTimeStamp = 0;
-	m_DistCheckInterval = 0.5f;
+	m_DistCheckInterval = 500;		// 500 ms
 	m_bDistCheckXYOnly = false;
 
 	m_iNumEntitiesInGame = 0;
