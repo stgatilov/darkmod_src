@@ -240,7 +240,9 @@ const idEventDef EV_Player_EndZoom("endZoom", EventArgs('f', "duration", "durati
 		"May be called during a transition as well to intercept a pending zoom in transition.");
 
 const idEventDef EV_Player_ResetZoom("resetZoom", EventArgs(), EV_RETURNS_VOID, "Cancels any pending zoom transitions and resets the FOV to normal.");
-const idEventDef EV_Player_GetFov("getFov", EventArgs(), 'f', "This returns the current FOV of the player.");
+const idEventDef EV_Player_GetFov("getFov", EventArgs(), 'f',
+		"This returns the current FOV of the player.\n" \
+		"You can modify the current FOV with startZoom() and endZoom().");
 
 
 const idEventDef EV_Player_PauseGame("pauseGame", EventArgs(), EV_RETURNS_VOID, 
