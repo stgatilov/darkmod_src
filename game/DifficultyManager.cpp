@@ -23,6 +23,8 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "DifficultyManager.h"
+#include "Game_local.h"
+#include "Objectives/MissionData.h"
 
 namespace difficulty {
 
@@ -92,21 +94,19 @@ int DifficultyManager::GetDifficultyLevel() const
 
 idStr DifficultyManager::GetDifficultyName(int level)
 {
-	assert(level >= 0 && level < DIFFICULTY_COUNT);
+	assert( ( level >= 0 ) && ( level < DIFFICULTY_COUNT ) );
 
-	if (_difficultyNames[level].Length() > 0)
+	if ( _difficultyNames[level].Length() > 0 )
 	{
 		// Tels: Attempt to translate the name, in case the mapper used something like "#str_01234"
 		return common->Translate( _difficultyNames[level] );
 	}
-	else // return default names from entityDef
-	{
-		const idDecl* diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
-		const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
 
-		// Tels: Translate default difficulty names
-		return common->Translate( diffDef->dict.GetString(va("diff%ddefault", level), "") );
-	}
+	const idDecl* diffDecl = declManager->FindType(DECL_ENTITYDEF, "difficultyMenu", false);
+	const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
+
+	// Tels: Translate default difficulty names
+	return common->Translate( diffDef->dict.GetString(va("diff%ddefault", level), "") );
 }
 
 void DifficultyManager::Save(idSaveGame* savefile)
@@ -240,6 +240,7 @@ void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
 			diffDef->dict.GetString(va("diff%ddefault",diffLevel), "")
 		);
 	}
+	gameLocal.m_MissionData->SetDifficultyNames(_difficultyNames); // grayman #3292
 }
 
 void DifficultyManager::LoadMapDifficultySettings(idMapEntity* ent)

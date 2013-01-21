@@ -72,6 +72,11 @@ void MissionStatistics::Clear()
 
 	totalTimePlayerSeen = 0;	// grayman #2887
 	numberTimesPlayerSeen = 0;	// grayman #2887
+
+	for ( int i = 0 ; i < DIFFICULTY_COUNT ; i++) // grayman #3292
+	{
+		_difficultyNames[i] = "";
+	}
 }
 
 void MissionStatistics::Save(idSaveGame* savefile) const
@@ -133,6 +138,11 @@ void MissionStatistics::Save(idSaveGame* savefile) const
 	for (int i = 0; i < ObjectiveStates.Num(); ++i)
 	{
 		savefile->WriteInt(ObjectiveStates[i]);
+	}
+	
+	for ( int i = 0 ; i < DIFFICULTY_COUNT ; i++) // grayman #3292
+	{
+		savefile->WriteString(_difficultyNames[i]);
 	}
 }
 
@@ -203,6 +213,11 @@ void MissionStatistics::Restore(idRestoreGame* savefile)
 		assert(state >= STATE_INCOMPLETE && state <= STATE_FAILED);
 
 		ObjectiveStates[i] = static_cast<EObjCompletionState>(state);
+	}
+
+	for (int i = 0; i < DIFFICULTY_COUNT; i++) // grayman #3292
+	{
+		savefile->ReadString(_difficultyNames[i]);
 	}
 }
 
