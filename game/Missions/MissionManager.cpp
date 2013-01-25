@@ -1372,7 +1372,21 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		mission.author = node.attribute("author").value();
 		mission.releaseDate = node.attribute("releaseDate").value();
 		mission.type = idStr::Icmp(node.attribute("type").value(), "multi") == 0 ? DownloadableMod::Multi : DownloadableMod::Single;
+
 		mission.modName = node.attribute("internalName").value();
+		// Tels #3294: We need to clean the server-side modName of things like uppercase letters, trailing ".pk4" etc.
+		//	       Otherwise we get duplicated entries in the MissionDB like "broads.pk4" and "broads" or "VFAT1" and "vfat1":
+		mission.modName.ToLower();
+		mission.modName.StripTrailingOnce(".pk4");
+
+		// Clean modName string from any weird characters
+		int modNameLen = mission.modName.Length();
+		for (int i = 0; i < modNameLen; ++i)
+		{
+			if (idStr::CharIsAlpha(mission.modName[i]) || idStr::CharIsNumeric(mission.modName[i])) continue;
+			mission.modName[i] = '_'; // replace non-ASCII keys with underscores
+		}
+
 		mission.version = node.attribute("version").as_int();
 		mission.isUpdate = false;
 

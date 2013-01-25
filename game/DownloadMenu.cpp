@@ -425,7 +425,7 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Final path to the FM file
 		idStr missionPath = targetPath + mod.modName + ".pk4";
 
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the mission PK4 to %s.\r", missionPath.c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the mission PK4 to %s (modName %s).\r", missionPath.c_str(), mod.modName.c_str());
 
 		// Check for valid PK4 files after download
 		CDownloadPtr download(new CDownload(mod.missionUrls, missionPath, true));
