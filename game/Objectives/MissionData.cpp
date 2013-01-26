@@ -2402,49 +2402,48 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr prefix = va("%s_item_", listDefName.c_str());
 	
 	idStr divider(": ");
-	idStr postfix("");
 
 	key = common->Translate( "#str_02208" );	// Time
 	value = idStr(GamePlayTimer::TimeToStr(m_Stats.TotalGamePlayTime));
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	key = common->Translate( "#str_02209" );	// Damage Dealt
 	value = idStr(m_Stats.DamageDealt) + space + common->Translate( "#str_02210" ) + divider + idStr(m_Stats.DamageReceived);	// and received
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	/*key = "Damage Received"; 
 	value = idStr(m_Stats.DamageReceived);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);*/
 
 	key = common->Translate( "#str_02211" );	// Health Restored
 	value = idStr(m_Stats.HealthReceived);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	key = common->Translate( "#str_02212" );	// Pockets Picked 
 	value = idStr(m_Stats.PocketsPicked);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02213" );	// Loot Acquired
 	value = idStr(m_Stats.GetFoundLootValue()) + common->Translate( "#str_02214" ) + m_Stats.GetTotalLootInMission();
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line
 
 	key = common->Translate( "#str_02215" );	// Killed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KILL].Overall);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02216" );	// KOed by the Player
 	value = idStr(m_Stats.AIStats[COMP_KO].Overall);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02217" );	// Bodies found
 	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
@@ -2456,7 +2455,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	{
 		/*key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
 		value = idStr(m_Stats.MaxAlertIndices[i]);
-		gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);*/
+		gui->SetStateString(prefix + idStr(index++), key + divider + value);*/
 
 		// Increase the stealth factor based on the number of alerted AI (m_Stats.AIAlerts[i].Overall) weighted with the seriousness
 		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
@@ -2495,72 +2494,72 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + common->Translate("#str_02223") + ", " +			// Suspicious
 		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + common->Translate("#str_02224") + ", " + sightingBust;	// Searches
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 	
 	key = common->Translate( "#str_02225" );	// Stealth Score
 	value = idStr(stealthScore);
-	gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	key = common->Translate( "#str_02226" );	// Difficulty Level
 	value = gameLocal.m_MissionData->GetDifficultyName(difficultyLevel); // grayman #3292 - get from mission stats, not from difficulty manager
-	gui->SetStateString(prefix + idStr(index), key + divider + value + postfix);
+	gui->SetStateString(prefix + idStr(index), key + divider + value);
 	
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);
-	gui->SetStateString(prefix + idStr(index++), key + "\t" + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 	key = "GameLocal.time";
 	value = idStr(gameLocal.time);
-	gui->SetStateString(prefix + idStr(index++), key + "\t" + value + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
 	key = "GameLocal.realClientTime";
 	value = idStr(gameLocal.realClientTime);
-	gui->SetStateString(prefix + idStr(index++), key + "\t" + value + postfix);*/
+	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);*/
 	
 	index = 30;  // Reset the index to 30 to start .gui lines for "Stealth Score Details" sub-page, starting from gui::listStatistics_item_30.
 	
 	key = common->Translate( "#str_02227" );		// Stealth Score Details (all alerts * severity)
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	// these are right aligned
 	key = idStr("0");
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 
 	key = idStr(m_Stats.AIAlerts[2].Overall);  
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 		
 	key = idStr(m_Stats.AIAlerts[3].Overall * 2);  
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 
 	key = idStr(m_Stats.AIAlerts[4].Overall * 3);  
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = sightingScore;  
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = idStr(stealthScore);  
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	value = common->Translate( "#str_02228" );	// Key to Alert Levels:
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 	
 	value = idStr("  1. ") + common->Translate( "#str_02229" );	// Suspicious-1. AI mumbles, continuing on.
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 	
 	value = idStr("  2. ") + common->Translate( "#str_02230" );	// Suspicious-2. AI mumbles, stops and looks.
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 	
 	value = idStr("  3. ") + common->Translate( "#str_02231" );	// Search-1. AI searches.
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 
 	value = idStr("  4. ") + common->Translate( "#str_02232" );	// Search-2. AI searches, runs, draws sword.
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 	
 	value = idStr("  5. ") + common->Translate( "#str_02233" );	// Sighting. AI sees you, attacks if can.
-	gui->SetStateString(prefix + idStr(index++), value + postfix);
+	gui->SetStateString(prefix + idStr(index++), value);
 
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
@@ -2568,26 +2567,26 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	idStr alert = idStr( common->Translate( "#str_02234" ) );	// Alert
 	key = alert + " 1." + space + idStr(m_Stats.AIAlerts[1].Overall) + " * 0:";   
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = alert + " 2." + space + idStr(m_Stats.AIAlerts[2].Overall) + " * 1:";
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 
 	key = alert + " 3." + space + idStr(m_Stats.AIAlerts[3].Overall) + " * 2:";
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 
 	key = alert + " 4." + space + idStr(m_Stats.AIAlerts[4].Overall) + " * 3:";
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = alert + " 5." + space + idStr(busted) + " * 5:";
-	gui->SetStateString(prefix + idStr(index++), key + postfix);
+	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = common->Translate( "#str_02235" );			// Stealth Score Total
-	gui->SetStateString(prefix + idStr(index++), key + divider + postfix);
+	gui->SetStateString(prefix + idStr(index++), key + divider);
 	
 	//key = "Alerts";
 	//value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Minor, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
-	//gui->SetStateString(prefix + idStr(index++), key + divider + value + postfix);	
+	//gui->SetStateString(prefix + idStr(index++), key + divider + value);	
 	
 }
 
