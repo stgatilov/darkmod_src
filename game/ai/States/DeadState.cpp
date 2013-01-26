@@ -96,6 +96,7 @@ void DeadState::Init(idAI* owner)
 	}
 
 	// Run a death script, if applicable
+	// TODO: We should figure out who is responsible for the death and pass it along to the script
 	idStr deathScript;
 	if (owner->spawnArgs.GetString("death_script", "", deathScript))
 	{

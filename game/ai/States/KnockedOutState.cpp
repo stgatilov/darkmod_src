@@ -1,3 +1,4 @@
+// vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
  
@@ -54,9 +55,9 @@ void KnockedOutState::Init(idAI* owner)
 
 	// Stop move!
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
-	owner->GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining rope
-	owner->GetMemory().stopReactingToHit = true; // grayman #2816
+	owner->GetMemory().stopRelight = true;		// grayman #2603 - abort a relight in progress
+	owner->GetMemory().stopExaminingRope = true;	// grayman #2872 - stop examining rope
+	owner->GetMemory().stopReactingToHit = true;	// grayman #2816
 
 	//owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 	//owner->StopAnim(ANIMCHANNEL_LEGS, 0);
@@ -77,11 +78,48 @@ void KnockedOutState::Init(idAI* owner)
 */
 	owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_KO", 0);
 	owner->SetWaitState(ANIMCHANNEL_HEAD, "knock_out");
+
+	// Tels: #3297 Run a KO FX
+	idStr koFX;
+	if (owner->spawnArgs.GetString("fx_on_ko", "", koFX))
+	{
+		owner->Event_StartFx(koFX);
+	}
+
+	// Tels: #3297 Run a ko script, if applicable
+	// TODO: We should figure out who is responsible for the KO and pass it along to the script
+	idStr koScript;
+	if (owner->spawnArgs.GetString("ko_script", "", koScript))
+	{
+		const function_t* scriptFunction = owner->scriptObject.GetFunction(koScript);
+		if (scriptFunction == NULL)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global.\r", koScript.c_str());
+			scriptFunction = gameLocal.program.FindFunction(koScript.c_str());
+		}
+
+		if (scriptFunction)
+		{
+			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Running KO Script\r");
+
+			idThread* thread = new idThread(scriptFunction);
+			thread->CallFunctionArgs(scriptFunction, true, "e", owner);
+			thread->DelayedStart(0);
+
+			// Start execution immediately
+			thread->Execute();
+		}
+		else
+		{
+			DM_LOG(LC_AI, LT_ERROR)LOGSTRING("KO Script not found! [%s]\r", koScript.c_str());
+		}
+	}
 }
 
 // Gets called each time the mind is thinking
 void KnockedOutState::Think(idAI* owner)
 {
+	// wait until the animations are finished, then enter the knockout state
 	if (_waitingForKnockout 
 		&&	idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "knock_out"
 		&&	idStr(owner->WaitState(ANIMCHANNEL_LEGS)) != "knock_out"
