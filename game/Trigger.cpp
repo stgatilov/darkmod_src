@@ -534,7 +534,10 @@ idTrigger_EntityName::idTrigger_EntityName( void ) {
 	random = 0.0f;
 	delay = 0.0f;
 	random_delay = 0.0f;
-	nextTriggerTime = 0;
+	// Tels: Trigger should not fire during the first or second frame, otherwise they
+	//	 can trigger entities where the script object is not yet initialized,
+	//	 which will lead to endless loops or other inconsistencies.
+	nextTriggerTime = 32;
 	triggerFirst = false;
 }
 
@@ -597,7 +600,10 @@ void idTrigger_EntityName::Spawn( void )
 		gameLocal.Error( "idTrigger_EntityName '%s' at (%s) doesn't have 'entityname' key specified", name.c_str(), GetPhysics()->GetOrigin().ToString(0) );
 	}
 
-	nextTriggerTime = 0;
+	// Tels: Trigger should not fire during the first or second frame, otherwise they
+	//	 can trigger entities where the script object is not yet initialized,
+	//	 which will lead to endless loops or other inconsistencies.
+	nextTriggerTime = 32;
 
 	if ( !spawnArgs.GetBool( "noTouch" ) ) 
 	{
@@ -617,11 +623,15 @@ void idTrigger_EntityName::TriggerAction( idEntity *activator ) {
 	ActivateTargets( activator );
 	CallScript();
 
+	DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("idTrigger_EntityName '%s' TriggerAction was called.", name.c_str() );
+	
 	if ( wait >= 0 ) {
 		nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
+		// delay was already added by the caller
 	} else {
 		// we can't just remove (this) here, because this is a touch function
 		// called while looping through area links...
+		// Tels: Set the next trigger time to the next frame (e.g. this won't happen), then remove ourselves
 		nextTriggerTime = gameLocal.time + 1;
 		PostEventMS( &EV_Remove, 0 );
 	}
@@ -647,6 +657,9 @@ so wait for the delay time before firing
 ================
 */
 void idTrigger_EntityName::Event_Trigger( idEntity *activator ) {
+
+	DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("idTrigger_EntityName '%s' was triggerd (next: %i, time %i)", name.c_str(), nextTriggerTime, gameLocal.time );
+
 	if ( nextTriggerTime > gameLocal.time ) {
 		// can't retrigger until the wait is over
 		return;
@@ -679,6 +692,9 @@ idTrigger_EntityName::Event_Touch
 ================
 */
 void idTrigger_EntityName::Event_Touch( idEntity *other, trace_t *trace ) {
+
+	DM_LOG(LC_ENTITY, LT_DEBUG)LOGSTRING("idTrigger_EntityName '%s' was touched (next: %i, time %i)", name.c_str(), nextTriggerTime, gameLocal.time );
+
 	if( triggerFirst ) {
 		return;
 	}
