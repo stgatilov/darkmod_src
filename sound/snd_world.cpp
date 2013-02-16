@@ -724,25 +724,32 @@ set at maxDistance
 */
 static const int MAX_PORTAL_TRACE_DEPTH = 10;
 
-void idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const idVec3& soundOrigin, idSoundEmitterLocal *def ) {
-
-	if ( dist >= def->distance ) {
+bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, idSoundEmitterLocal *def , SoundChainResults *results) // grayman #3042
+{
+	if ( dist >= def->distance )
+	{
 		// we can't possibly hear the sound through this chain of portals
-		return;
+		return false;
 	}
 
-	if ( soundArea == listenerArea ) {
-		float	fullDist = dist + (soundOrigin - listenerQU).LengthFast();
-		if ( fullDist < def->distance ) {
-			def->distance = fullDist;
-			def->spatializedOrigin = soundOrigin;
+	if ( soundArea == listenerArea )
+	{
+		float fullDist = dist + (soundOrigin - listenerQU).LengthFast();
+		if ( fullDist < def->distance )
+		{
+			results->distance = fullDist; // found the listener, so no need to travel distances beyond this
+			results->spatializedOrigin = soundOrigin;
+			results->loss = loss; // grayman #3042 - total accumulated volume loss across portals
+			results->spatialDistance = (soundOrigin - listenerQU).LengthFast();
+			return true;
 		}
-		return;
+		return false;
 	}
 
-	if ( stackDepth == MAX_PORTAL_TRACE_DEPTH ) {
+	if ( stackDepth == MAX_PORTAL_TRACE_DEPTH )
+	{
 		// don't spend too much time doing these calculations in big maps
-		return;
+		return false;
 	}
 
 	soundPortalTrace_t newStack;
@@ -750,65 +757,76 @@ void idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 	newStack.prevStack = prevStack;
 
 	int numPortals = rw->NumPortalsInArea( soundArea );
-	for( int p = 0; p < numPortals; p++ ) {
+
+	idList<SoundChainResults *> chainResults;
+	chainResults.Clear();
+	
+	for ( int p = 0 ; p < numPortals ; p++ )
+	{
 		exitPortal_t re = rw->GetPortal( soundArea, p );
 
-		float	occlusionDistance = 0;
+		// grayman #3042 - This section used to apply the default idSoundSystemLocal::s_doorDistanceAdd
+		// value if the portal was closed (450). To let us use the dB sound loss values placed
+		// on doors, let's calculate the door occlusion differently. Since a door will change the
+		// amount of sound loss as it opens and closes, and values can also be set by other entities
+		// (i.e. location separators), we'll use the current loss regardless of whether the portal
+		// is open or closed, so we don't need to check for that.
 
-		// air blocking windows will block sound like closed doors
-		if ( (re.blockingBits & ( PS_BLOCK_VIEW | PS_BLOCK_AIR ) ) ) {
-			// we could just completely cut sound off, but reducing the volume works better
-			// continue;
-			occlusionDistance = idSoundSystemLocal::s_doorDistanceAdd.GetFloat();
-		}
-
-		// what area are we about to go look at
+		// what area are we about to go look at?
 		int otherArea = re.areas[0];
-		if ( re.areas[0] == soundArea ) {
+		if ( re.areas[0] == soundArea )
+		{
 			otherArea = re.areas[1];
 		}
 
 		// if this area is already in our portal chain, don't bother looking into it
 		const soundPortalTrace_t *prev;
-		for ( prev = prevStack ; prev ; prev = prev->prevStack ) {
-			if ( prev->portalArea == otherArea ) {
+		for ( prev = prevStack ; prev ; prev = prev->prevStack )
+		{
+			if ( prev->portalArea == otherArea )
+			{
 				break;
 			}
 		}
-		if ( prev ) {
+		if ( prev )
+		{
 			continue;
 		}
 
 		// pick a point on the portal to serve as our virtual sound origin
 #if 1
-		idVec3	source;
+		idVec3 source;
 
 		idPlane	pl;
 		re.w->GetPlane( pl );
 
-		float	scale;
-		idVec3	dir = listenerQU - soundOrigin;
-		if ( !pl.RayIntersection( soundOrigin, dir, scale ) ) {
+		float  scale;
+		idVec3 dir = listenerQU - soundOrigin;
+		if ( !pl.RayIntersection( soundOrigin, dir, scale ) )
+		{
 			source = re.w->GetCenter();
-		} else {
+		}
+		else
+		{
 			source = soundOrigin + scale * dir;
 
 			// if this point isn't inside the portal edges, slide it in
-			for ( int i = 0 ; i < re.w->GetNumPoints() ; i++ ) {
+			for ( int i = 0 ; i < re.w->GetNumPoints() ; i++ )
+			{
 				int j = ( i + 1 ) % re.w->GetNumPoints();
 				idVec3	edgeDir = (*(re.w))[j].ToVec3() - (*(re.w))[i].ToVec3();
 				idVec3	edgeNormal;
 
 				edgeNormal.Cross( pl.Normal(), edgeDir );
 
-				idVec3	fromVert = source - (*(re.w))[j].ToVec3();
+				idVec3 fromVert = source - (*(re.w))[j].ToVec3();
 
-				float	d = edgeNormal * fromVert;
-				if ( d > 0 ) {
+				float d = edgeNormal * fromVert;
+				if ( d > 0 )
+				{
 					// move it in
 					float div = edgeNormal.Normalize();
 					d /= div;
-
 					source -= d * edgeNormal;
 				}
 			}
@@ -868,9 +886,110 @@ void idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 
 		idVec3 tlen = source - soundOrigin;
 		float tlenLength = tlen.LengthFast();
+		SoundChainResults *res = new SoundChainResults;
 
-		ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength+occlusionDistance, source, def );
+		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer, source, def, res ) ) // grayman #3042
+		{
+			chainResults.Append(res);
+		}
 	}
+
+	if ( chainResults.Num() > 0 ) // were there any usable results?
+	{
+		// get results from each chain and average
+
+		int numChains = chainResults.Num();
+
+		float aveLoss = 0;
+		float aveDist = 0;
+		idVec3 aveSpatialOrigin(0,0,0);
+
+		// special case of only 1 chain
+
+		if ( numChains == 1 )
+		{
+			aveSpatialOrigin = chainResults[0]->spatializedOrigin;
+			aveDist = chainResults[0]->distance;
+			aveLoss = chainResults[0]->loss;
+		}
+
+		else // 2 or more chains
+		// grayman #3042 use the highest volume in this chain
+		// determine effective volume at the spatialized origin
+		{
+			float maxVol = 0.0f;
+			int pickMe = -1;
+			float mind = def->minDistance * METERS_TO_DOOM;
+			float maxd = def->maxDistance * METERS_TO_DOOM;
+			bool quadratic = idSoundSystemLocal::s_quadraticFalloff.GetBool();
+			idList<float> volList; // list of effective chain volumes
+			volList.Clear();
+	
+			for ( int i = 0 ; i < numChains ; i++ )
+			{
+				SoundChainResults *scr = chainResults[i];
+				float dlen = scr->distance;
+				float vol = soundSystemLocal.dB2Scale(def->parms.volume - scr->loss);
+
+				// reduce effective volume based on distance
+				if ( dlen >= maxd )
+				{
+					vol = 0.0f;
+				}
+				else if ( dlen > mind )
+				{
+					float frac = idMath::ClampFloat( 0.0f, 1.0f, 1.0f - ((dlen - mind) / (maxd - mind)));
+					if (quadratic)
+					{
+						frac *= frac;
+					}
+					vol *= frac;
+				}
+
+				volList.Append(vol); // add to list of effective chain volumes
+			
+				if ( vol > maxVol )
+				{
+					pickMe = i;
+					maxVol = vol;
+				}
+			}
+
+			SoundChainResults *scr = chainResults[pickMe];
+			aveLoss = scr->loss;
+			aveDist = scr->distance;
+
+			// if stackDepth is 0, determine a spatial origin derived from all effective chain volumes.
+			if ( stackDepth == 0 )
+			{
+				float totalEffectiveVolume = 0;
+				for ( int i = 0 ; i < volList.Num() ; i++ )
+				{
+					totalEffectiveVolume += volList[i];
+				}
+
+				for ( int i = 0 ; i < volList.Num() ; i++ )
+				{
+					SoundChainResults *scr1 = chainResults[i];
+					float factor = volList[i]/totalEffectiveVolume;
+					aveSpatialOrigin += (scr1->spatializedOrigin)*factor;
+				}
+			}
+			else
+			{
+				aveSpatialOrigin = scr->spatializedOrigin; // use the spatial origin for this chain path
+			}
+		}
+
+		results->spatializedOrigin = aveSpatialOrigin;
+		results->distance = aveDist;
+		results->loss = aveLoss;
+		results->spatialDistance = (aveSpatialOrigin - listenerQU).LengthFast();
+
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -1560,6 +1679,7 @@ Mixes MIXBUFFER_SAMPLES samples starting at current44kHz sample time into
 finalMixBuffer
 ===============
 */
+
 void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSoundChannel *chan,
 				   int current44kHz, int numSpeakers, float *finalMixBuffer ) {
 	int j;
@@ -1626,15 +1746,26 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	// this isn't exactly correct, because the modified volume will get applied to
 	// some initial chunk of the loop as well, because the volume is scaled for the
 	// entire mix buffer
-	if ( shader->leadinVolume && current44kHz - chan->trigger44kHzTime < sample->LengthIn44kHzSamples() ) {
-		volume = soundSystemLocal.dB2Scale( shader->leadinVolume );
-	} else {
-		volume = soundSystemLocal.dB2Scale( parms->volume );
+
+	float volumeDB = 0; // grayman #3042
+	if ( shader->leadinVolume && ( ( current44kHz - chan->trigger44kHzTime ) < sample->LengthIn44kHzSamples() ) )
+	{
+		volumeDB = shader->leadinVolume;
+	}
+	else
+	{
+		volumeDB = parms->volume;
 	}
 
+	// grayman #3042 - apply accumulated volume loss from possibly traveling through portals
+	if ( !global && !noOcclusion )
+	{
+		volumeDB -= sound->volumeLoss;
+	}
+	volume = soundSystemLocal.dB2Scale( volumeDB );
+		
 	// global volume scale
 	volume *= soundSystemLocal.dB2Scale( idSoundSystemLocal::s_volume.GetFloat() );
-
 
 	// volume fading
 	float	fadeDb = chan->channelFade.FadeDbAt44kHz( current44kHz );
@@ -1642,7 +1773,6 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 
 	fadeDb = soundClassFade[parms->soundClass].FadeDbAt44kHz( current44kHz );
 	volume *= soundSystemLocal.dB2Scale( fadeDb );
-	
 
 	//
 	// if it's a global sound then
@@ -1650,29 +1780,39 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	float	spatialize = 1;
 	idVec3 spatializedOriginInMeters;
-	if ( !global ) {
-		float	dlen;
+	if ( !global )
+	{
+		float dlen;
 
-		if ( noOcclusion ) {
+		if ( noOcclusion )
+		{
 			// use the real origin and distance
 			spatializedOriginInMeters = sound->origin * DOOM_TO_METERS;
 			dlen = sound->realDistance;
-		} else {
+		}
+		else
+		{
 			// use the possibly portal-occluded origin and distance
 			spatializedOriginInMeters = sound->spatializedOrigin * DOOM_TO_METERS;
 			dlen = sound->distance;
 		}
 
 		// reduce volume based on distance
-		if ( dlen >= maxd ) {
+		if ( dlen >= maxd )
+		{
 			volume = 0.0f;
-		} else if ( dlen > mind ) {
+		}
+		else if ( dlen > mind )
+		{
 			float frac = idMath::ClampFloat( 0.0f, 1.0f, 1.0f - ((dlen - mind) / (maxd - mind)));
-			if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() ) {
+			if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() )
+			{
 				frac *= frac;
 			}
 			volume *= frac;
-		} else if ( mind > 0.0f ) {
+		}
+		else if ( mind > 0.0f )
+		{
 			// we tweak the spatialization bias when you are inside the minDistance
 			spatialize = dlen / mind;
 		}
@@ -1711,7 +1851,8 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	// allocate and initialize hardware source
 	// 
-	if ( idSoundSystemLocal::useOpenAL && sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) {
+	if ( idSoundSystemLocal::useOpenAL && sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED )
+	{
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );
 		}
@@ -1802,9 +1943,11 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				chan->triggered = false;
 			}
 		}
-	} else {
-
-		if ( slowmoActive && !chan->disallowSlow ) {
+	}
+	else
+	{
+		if ( slowmoActive && !chan->disallowSlow )
+		{
 			idSlowChannel slow = sound->GetSlowChannel( chan );
 
 			slow.AttachSoundChannel( chan );
@@ -1817,7 +1960,9 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				}
 
 			sound->SetSlowChannel( chan, slow );
-		} else {
+		}
+		else
+		{
 			sound->ResetSlowChannel( chan );
 
 			// if we are getting a stereo sample adjust accordingly
@@ -1833,17 +1978,22 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 		// work out the left / right ear values
 		//
 		float	ears[6];
-		if ( global || omni ) {
+		if ( global || omni )
+		{
 			// same for all speakers
-			for ( int i = 0 ; i < 6 ; i++ ) {
+			for ( int i = 0 ; i < 6 ; i++ )
+			{
 				ears[i] = idSoundSystemLocal::s_globalFraction.GetFloat() * volume;
 			}
 			ears[3] = idSoundSystemLocal::s_subFraction.GetFloat() * volume;		// subwoofer
 
-		} else {
+		} 
+		else
+		{
 			CalcEars( numSpeakers, spatializedOriginInMeters, listenerPos, listenerAxis, ears, spatialize );
 
-			for ( int i = 0 ; i < 6 ; i++ ) {
+			for ( int i = 0 ; i < 6 ; i++ )
+			{
 				ears[i] *= volume;
 			}
 		}

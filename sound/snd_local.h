@@ -422,6 +422,16 @@ public:
 
 };
 
+class SoundChainResults // grayman #3042
+{
+public:
+						SoundChainResults( void ) { }
+	float				loss; // accumulated sound loss
+	idVec3				spatializedOrigin; // where the sound seems to come from
+	float				distance; // path distance back to the sound emitter
+	float				spatialDistance; // distance back to the spacializedOrigin
+};
+
 class idSoundEmitterLocal : public idSoundEmitter {
 public:
 
@@ -475,7 +485,9 @@ public:
 
 
 	// the following are calculated in UpdateEmitter, and don't need to be archived
-	float				maxDistance;				// greatest of all playing channel distances
+	float				maxDistance;				// greatest of all playing channel max distances
+	float				minDistance;				// smallest of all playing channel min distances // grayman #3042
+	float				volumeLoss;					// grayman #3042 - accumulated volume loss while traversing portals
 	int					lastValidPortalArea;		// so an emitter that slides out of the world continues playing
 	bool				playing;					// if false, no channel is active
 	bool				hasShakes;
@@ -610,7 +622,7 @@ public:
 												int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					AVIUpdate( void );
-	void					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const idVec3& soundOrigin, idSoundEmitterLocal *def );
+	bool					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, idSoundEmitterLocal *def , SoundChainResults *results); // grayman #3042
 	float					FindAmplitude( idSoundEmitterLocal *sound, const int localTime, const idVec3 *listenerPosition, const s_channelType channel, bool shakesOnly );
 
 	//============================================

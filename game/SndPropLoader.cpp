@@ -141,7 +141,8 @@ void CsndPropBase::Save(idSaveGame *savefile) const
 		savefile->WriteInt(m_PortData[i].LocalIndex[1]);
 		savefile->WriteInt(m_PortData[i].Areas[0]);
 		savefile->WriteInt(m_PortData[i].Areas[1]);
-		savefile->WriteFloat(m_PortData[i].loss);
+		savefile->WriteFloat(m_PortData[i].lossAI); // grayman #3042
+		savefile->WriteFloat(m_PortData[i].lossPlayer); // grayman #3042
 	}
 }
 
@@ -205,7 +206,8 @@ void CsndPropBase::Restore(idRestoreGame *savefile)
 		savefile->ReadInt(m_PortData[i].LocalIndex[1]);
 		savefile->ReadInt(m_PortData[i].Areas[0]);
 		savefile->ReadInt(m_PortData[i].Areas[1]);
-		savefile->ReadFloat(m_PortData[i].loss);
+		savefile->ReadFloat(m_PortData[i].lossAI); // grayman #3042
+		savefile->ReadFloat(m_PortData[i].lossPlayer); // grayman #3042
 	}
 }
 
@@ -635,17 +637,17 @@ void CsndPropLoader::CreateAreasData ( void )
 	}
 
 	// Initialize portal data array
-	for ( int k2 = 0; k2 < m_numPortals; k2++ )
+	for ( int k2 = 0 ; k2 < m_numPortals ; k2++ )
 	{
-		m_PortData[k2].loss = 0;
-
+		m_PortData[k2].lossAI = 0; // grayman #3042
+		m_PortData[k2].lossPlayer = 0; // grayman #3042
 		m_PortData[k2].LocalIndex[0] = -1;
 		m_PortData[k2].LocalIndex[1] = -1;
 		m_PortData[k2].Areas[0] = -1;
 		m_PortData[k2].Areas[1] = -1;
 	}
 	
-	for ( i = 0; i < m_numAreas; i++ ) 
+	for ( i = 0 ; i < m_numAreas ; i++ ) 
 	{
 		area = &m_sndAreas[i];
 		area->LossMult = 1.0;
@@ -805,43 +807,75 @@ void CsndPropBase::DestroyAreasData( void )
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Destroy Areas data finished.\r");
 }
 
-void CsndPropBase::SetPortalLoss( int handle, float value )
+void CsndPropBase::SetPortalAILoss( int handle, float value )
 {
 	// make sure the handle is valid
-	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
+	if ( ( handle < 1 ) || ( handle > gameRenderWorld->NumPortals() ) )
 	{
-		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("SetPortalLoss called with invalid portal handle %d.\r", handle );
-		gameLocal.Warning( "SetPortalLoss called with invalid portal handle %d.", handle );
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("SetPortalAILoss called with invalid portal handle %d.\r", handle );
+		gameLocal.Warning( "SetPortalAILoss called with invalid portal handle %d.", handle );
 
-		goto Quit;
+		return;
 	}
 
-	m_PortData[ handle - 1 ].loss = value;
+	// grayman #3042 - separate loss values for AI and player
+	m_PortData[ handle - 1 ].lossAI = value;
 
-Quit:
-	return;
+	// grayman #3042 - no need to tell the engine about this value, since the engine doesn't use it.
 }
 
-float CsndPropBase::GetPortalLoss( int handle )
+void CsndPropBase::SetPortalPlayerLoss( int handle, float value )
 {
-	float returnval;
-
 	// make sure the handle is valid
-	if( handle < 1 || handle > gameRenderWorld->NumPortals() )
+	if ( ( handle < 1 ) || ( handle > gameRenderWorld->NumPortals() ) )
 	{
-		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("GetPortalLoss called with invalid portal handle %d, returning zero loss.\r", handle );
-		gameLocal.Warning( "GetPortalLoss called with invalid portal handle %d, returning zero loss.", handle );
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("SetPortalPlayerLoss called with invalid portal handle %d.\r", handle );
+		gameLocal.Warning( "SetPortalPlayerLoss called with invalid portal handle %d.", handle );
 
-		returnval = 0.0;
-		goto Quit;
+		return;
 	}
 
-	returnval = m_PortData[ handle - 1 ].loss;
+	// grayman #3042 - separate loss values for AI and player, and tell the engine
+	m_PortData[ handle - 1 ].lossPlayer = value;
+	gameRenderWorld->SetPortalPlayerLoss(handle,value);
+}
 
-Quit:
+float CsndPropBase::GetPortalAILoss( int handle )
+{
+	float returnval = 0.0;
+
+	// make sure the handle is valid
+	if ( ( handle < 1 ) || ( handle > gameRenderWorld->NumPortals() ) )
+	{
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("GetPortalAILoss called with invalid portal handle %d, returning zero loss.\r", handle );
+		gameLocal.Warning( "GetPortalAILoss called with invalid portal handle %d, returning zero loss.", handle );
+	}
+	else
+	{
+		returnval = m_PortData[ handle - 1 ].lossAI; // grayman #3042
+	}
+
 	return returnval;
 }
 
+
+float CsndPropBase::GetPortalPlayerLoss( int handle )
+{
+	float returnval = 0.0;
+
+	// make sure the handle is valid
+	if ( ( handle < 1 ) || ( handle > gameRenderWorld->NumPortals() ) )
+	{
+		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("GetPortalPlayerLoss called with invalid portal handle %d, returning zero loss.\r", handle );
+		gameLocal.Warning( "GetPortalPlayerLoss called with invalid portal handle %d, returning zero loss.", handle );
+	}
+	else
+	{
+		returnval = m_PortData[ handle - 1 ].lossPlayer; // grayman #3042
+	}
+
+	return returnval;
+}
 
 // ======================= CsndPropLoader =============================
 

@@ -831,6 +831,7 @@ exitPortal_t idRenderWorldLocal::GetPortal( int areaNum, int portalNum ) {
 			ret.areas[1] = portal->intoArea;
 			ret.w = portal->w;
 			ret.blockingBits = portal->doublePortal->blockingBits;
+			ret.lossPlayer = portal->doublePortal->lossPlayer; // grayman #3042
 			ret.portalHandle = portal->doublePortal - doublePortals + 1;
 			return ret;
 		}
@@ -841,6 +842,33 @@ exitPortal_t idRenderWorldLocal::GetPortal( int areaNum, int portalNum ) {
 
 	memset( &ret, 0, sizeof( ret ) );
 	return ret;
+}
+
+/*
+==============
+SetPortalPlayerLoss
+==============
+*/
+void idRenderWorldLocal::SetPortalPlayerLoss( qhandle_t portal, float loss ) // grayman #3042
+{
+	if ( portal == 0 )
+	{
+		return;
+	}
+
+	if ( ( portal < 1 ) || ( portal > numInterAreaPortals ) )
+	{
+		common->Error( "SetPortalPlayerLoss: bad portal number %i", portal );
+	}
+	doublePortals[portal-1].lossPlayer = loss; // grayman #3042
+
+	if ( session->writeDemo )
+	{
+		session->writeDemo->WriteInt( DS_RENDER );
+		session->writeDemo->WriteInt( DC_SET_PLAYER_PORTAL_LOSS );
+		session->writeDemo->WriteInt( portal );
+		session->writeDemo->WriteFloat( loss );
+	}
 }
 
 /*

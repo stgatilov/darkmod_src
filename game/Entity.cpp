@@ -4090,6 +4090,13 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 		return true;
 	}
 	
+	// grayman #3042 - don't play sounds until the frame counter has started
+	if ( gameLocal.framenum == 0 )
+	{
+		PostEventSec( &EV_StartSound, 0.1f, soundName, channel, broadcast );
+		return true;
+	}
+
 	// DarkMod sound propagation:
 	PropSoundDirect(soundName, true, false, propVolMod);
 
@@ -4117,6 +4124,19 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 	}
 
 	if ( !gameLocal.isNewFrame ) {
+		return true;
+	}
+
+	// grayman #3042 - delay playing sound until the frame counter has started. This prevents
+	// sounds that start at mission start from playing until the player is ready and has
+	// pressed the ATTACK button. Prior to this change, such sounds could not be occluded
+	// through portals because doors on those portals don't set their sound loss values
+	// until the framenum has started advancing and the game timer has started to run. The result
+	// was that the player would hear nearby sounds while sitting at the player ready screen, and
+	// they would disappear when the player pressed the ATTACK button.
+	if ( gameLocal.framenum == 0 )
+	{
+		PostEventSec( &EV_StartSoundShader, 0.1f, shader->GetName(), channel);
 		return true;
 	}
 

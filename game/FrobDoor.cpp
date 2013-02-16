@@ -74,6 +74,13 @@ CFrobDoor::CFrobDoor()
 	m_FrobActionScript = "frob_door";
 	m_DoubleDoor = NULL;
 	m_LastHandleUpdateTime = -1;
+
+	// grayman #3042 - sound loss variables
+	m_lossOpen = 0;
+	m_lossDoubleOpen = 0;
+	m_lossClosed = 0;
+	m_lossBaseAI = 0;		// AI sound loss provided by other entities, i.e. location separator
+	m_lossBasePlayer = 0;	// Player sound loss provided by other entities, i.e. location separator
 }
 
 CFrobDoor::~CFrobDoor()
@@ -104,6 +111,15 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	}
 
 	savefile->WriteInt(m_LastHandleUpdateTime);
+
+	// grayman #3042 - sound loss variables
+	savefile->WriteFloat(m_lossOpen);
+	savefile->WriteFloat(m_lossDoubleOpen);
+	savefile->WriteFloat(m_lossClosed);
+	savefile->WriteFloat(m_lossBaseAI);
+	savefile->WriteFloat(m_lossBasePlayer);
+
+	savefile->WriteBool(m_isTransparent);	// grayman #3042
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -134,11 +150,21 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 
 	savefile->ReadInt(m_LastHandleUpdateTime);
 
+	// grayman #3042 - sound loss variables
+	savefile->ReadFloat(m_lossOpen);	
+	savefile->ReadFloat(m_lossDoubleOpen);
+	savefile->ReadFloat(m_lossClosed);
+	savefile->ReadFloat(m_lossBaseAI);
+	savefile->ReadFloat(m_lossBasePlayer);
+
+	savefile->ReadBool(m_isTransparent);		// grayman #3042
+
 	SetDoorTravelFlag();
 }
 
 void CFrobDoor::Spawn()
-{}
+{
+}
 
 void CFrobDoor::PostSpawn()
 {
@@ -148,12 +174,20 @@ void CFrobDoor::PostSpawn()
 	// Locate the double door entity before closing our portal
 	FindDoubleDoor();
 
+	// grayman #3042 - obtain sound loss values
+	m_lossOpen = spawnArgs.GetFloat("loss_open", "1.0");
+	m_lossDoubleOpen = spawnArgs.GetFloat("loss_double_open", "1.0");
+	m_lossClosed = spawnArgs.GetFloat("loss_closed", "15.0");
+
+	// grayman #3042 - does this door contain a transparent texture?
+	m_isTransparent = spawnArgs.GetBool("transparent","0");
+
 	// Wait until here for the first update of sound loss, in case a double door is open
 	UpdateSoundLoss();
 
 	if (!m_Open)
 	{
-		// Door starts _completely_ closed, try to shut the portal
+		// Door starts _completely_ closed, try to shut the portal.
 		ClosePortal();
 	}
 
@@ -509,33 +543,75 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 void CFrobDoor::UpdateSoundLoss()
 {
-	if (!areaPortal) return; // not a portal door
+	if (!areaPortal)
+	{
+		return; // not a portal door
+	}
 
-	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
+	CFrobDoor* doorB = m_DoubleDoor.GetEntity();
 
-	// If we have no double door, assume the bool to be "open"
-	bool doubleDoorIsOpen = (doubleDoor != NULL) ? doubleDoor->IsOpen() : true;
-	bool thisDoorIsOpen = IsOpen();
+	float loss = 0;
+	bool AisOpen = IsOpen();
+
+	if ( doorB )
+	{
+		bool BisOpen = doorB->IsOpen();
+		if ( AisOpen )
+		{
+			if ( BisOpen ) // A and B both open
+			{
+				float loss_B = doorB->m_lossOpen + ( doorB->m_lossClosed - doorB->m_lossOpen )*( 1 - doorB->GetFractionalPosition() );
+				loss = m_lossOpen + ( m_lossClosed - m_lossOpen )*( 1 - GetFractionalPosition() ); // fractional loss from A
+				if ( loss_B < loss )
+				{
+					loss = loss_B;
+				}
+			}
+			else // A open, B closed
+			{
+				loss = m_lossDoubleOpen + ( m_lossClosed - m_lossDoubleOpen )*( 1 - GetFractionalPosition() );
+			}
+		}
+		else
+		{
+			if ( BisOpen ) // A closed, B open
+			{
+				loss = doorB->m_lossDoubleOpen + ( doorB->m_lossClosed - doorB->m_lossDoubleOpen )*( 1 - doorB->GetFractionalPosition() );
+			}
+			else // A and B both closed
+			{
+				loss = doorB->m_lossClosed;
+				if ( m_lossClosed > loss )
+				{
+					loss = m_lossClosed;
+				}
+			}
+		}
+	}
+	else // no double door
+	{
+		if ( AisOpen )
+		{
+			loss = m_lossOpen + ( m_lossClosed - m_lossOpen )*( 1 - GetFractionalPosition() );
+		}
+		else // A is closed
+		{
+			loss = m_lossClosed;
+		}
+	}
+
+	// Add loss from other entities, if present (i.e. location separators)
+
+	// grayman #3042 - this comment was here, and I left it,
+	// though I don't know who made it or what it means. AFAIK,
+	// there's no spawnarg called sound_char.
 
 	// TODO: check the spawnarg: sound_char, and return the 
 	// appropriate loss for that door, open or closed
 
-	float lossDB = 0.0f;
-
-	if (thisDoorIsOpen && doubleDoorIsOpen)
-	{
-		lossDB = spawnArgs.GetFloat("loss_open", "1.0");
-	}
-	else if (thisDoorIsOpen && !doubleDoorIsOpen)
-	{
-		lossDB = spawnArgs.GetFloat("loss_double_open", "1.0");
-	}
-	else
-	{
-		lossDB = spawnArgs.GetFloat("loss_closed", "15.0");
-	}
-	
-	gameLocal.m_sndProp->SetPortalLoss(areaPortal, lossDB);
+	// grayman #3042 - allow a base loss value for AI and one for Player
+	gameLocal.m_sndProp->SetPortalAILoss(areaPortal, loss + m_lossBaseAI);
+	gameLocal.m_sndProp->SetPortalPlayerLoss(areaPortal, loss + m_lossBasePlayer);
 }
 
 void CFrobDoor::FindDoubleDoor()
@@ -547,23 +623,27 @@ void CFrobDoor::FindDoubleDoor()
 
 	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
 
-	for (int i = 0; i < numListedClipModels; i++) 
+	for ( int i = 0 ; i < numListedClipModels ; i++ ) 
 	{
 		idClipModel* clipModel = clipModelList[i];
 		idEntity* obEnt = clipModel->GetEntity();
 
 		// Ignore self
-		if (obEnt == this) continue;
+		if ( obEnt == this )
+		{
+			continue;
+		}
 
-		if (obEnt->IsType(CFrobDoor::Type))
+		if ( obEnt->IsType(CFrobDoor::Type) )
 		{
 			// check the visportal inside the other door, if it's the same as this one => double door
 			int testPortal = gameRenderWorld->FindPortal(obEnt->GetPhysics()->GetAbsBounds());
 
-			if (testPortal == areaPortal && testPortal != 0)
+			if ( ( testPortal == areaPortal ) && ( testPortal != 0 ) )
 			{
 				DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("FrobDoor %s found double door %s\r", name.c_str(), obEnt->name.c_str());
 				m_DoubleDoor = static_cast<CFrobDoor*>(obEnt);
+				break; // grayman #3042
 			}
 		}
 	}
@@ -574,8 +654,20 @@ CFrobDoor* CFrobDoor::GetDoubleDoor()
 	return m_DoubleDoor.GetEntity();
 }
 
+void CFrobDoor::SetLossBase( float lossAI, float lossPlayer ) // grayman #3042
+{
+	m_lossBaseAI = lossAI;
+	m_lossBasePlayer = lossPlayer;
+}
+
 void CFrobDoor::ClosePortal()
 {
+	// grayman #3042 - don't close if the door is marked "transparent"
+	if ( m_isTransparent )
+	{
+		return;
+	}
+
 	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
 
 	if (doubleDoor == NULL || !doubleDoor->IsOpen())
@@ -1189,3 +1281,16 @@ bool CFrobDoor::GetDoorHandlingEntities( idAI* owner, idList< idEntityPtr<idEnti
 
 	return positionsFound;
 }
+
+// grayman #3042 - need to think while moving
+
+void CFrobDoor::Think( void )
+{
+	idEntity::Think();
+
+	if ( IsMoving() )
+	{
+		UpdateSoundLoss();
+	}
+}
+

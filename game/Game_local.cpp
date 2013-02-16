@@ -1658,9 +1658,15 @@ void idGameLocal::MapPopulate( void ) {
 	m_sndPropLoader->FillLocationData();
 
 	// Transfer sound prop data from loader to gameplay object
+
+	// grayman #3042 - A bit of explanation here. Prior to this point,
+	// sound data is stored in m_sndPropLoader. After this point, sound
+	// data needs to go in m_sndProp. This is important for sound-related
+	// spawnargs that don't get set up until the PostSpawn() routines are
+	// run for certain entities.
 	m_sndProp->SetupFromLoader( m_sndPropLoader );
 
-	m_sndPropLoader->Shutdown();
+	m_sndPropLoader->Shutdown(); // And here's why you can't use m_sndPropLoader after this point
 	
 	// Initialise the escape point manager after all the entities have been spawned.
 	m_EscapePointManager->InitAAS();

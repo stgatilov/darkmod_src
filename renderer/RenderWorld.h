@@ -32,7 +32,7 @@
 #define	PROC_FILE_ID				"mapProcFile003"
 
 // portals
-#define NUM_PORTAL_ATTRIBUTES		3
+#define NUM_PORTAL_ATTRIBUTES		4 // grayman #3042 - was 3, but I added PS_BLOCK_SOUND
 
 // guis
 #define MAX_RENDERENTITY_GUI		3
@@ -223,6 +223,7 @@ typedef struct {
 	int					areas[2];		// areas connected by this portal
 	const idWinding	*	w;				// winding points have counter clockwise ordering seen from areas[0]
 	int					blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
+	float				lossPlayer;		// grayman #3042 - sound loss (in dB) for Player-heard sounds
 	qhandle_t			portalHandle;
 } exitPortal_t;
 
@@ -250,6 +251,7 @@ typedef enum {
 	PS_BLOCK_VIEW =			1,
 	PS_BLOCK_LOCATION =		2,		// game map location strings often stop in hallways
 	PS_BLOCK_AIR =			4,		// windows between pressurized and unpresurized areas
+	PS_BLOCK_SOUND =		8,		// grayman #3042 - PS_BLOCK_VIEW should not be used to determine sound occlusion
 
 	PS_BLOCK_ALL = (1<<NUM_PORTAL_ATTRIBUTES)-1,
 } portalConnection_t;
@@ -329,6 +331,9 @@ public:
 	// multiple bits can be set to block multiple things, ie: ( PS_VIEW | PS_LOCATION | PS_AIR )
 	virtual	void			SetPortalState( qhandle_t portal, int blockingBits ) = 0;
 	virtual int				GetPortalState( qhandle_t portal ) = 0;
+
+	// grayman #3042 - set portal sound loss (in dB)
+	virtual void			SetPortalPlayerLoss( qhandle_t portal, float loss ) = 0;
 
 	// returns true only if a chain of portals without the given connection bits set
 	// exists between the two areas (a door doesn't separate them, etc)

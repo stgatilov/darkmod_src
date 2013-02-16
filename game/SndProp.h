@@ -168,8 +168,10 @@ public:
 	* the given portal handle.
 	*
 	* This one calls the base class function, plus updates the portal losses timestamp
+	* grayman #3042 - split into AI- and Player-specific loss
 	**/
-	void SetPortalLoss( int handle, float value );
+	void SetPortalAILoss( int handle, float value );
+	void SetPortalPlayerLoss( int handle, float value );
 
 	/**
 	* Static var for AI checking the default threshold
@@ -283,7 +285,6 @@ protected:
 	* come from close to the same spot, for optimization.
 	**/
 	SEventArea		*m_EventAreas;
-
 };
 
 #endif

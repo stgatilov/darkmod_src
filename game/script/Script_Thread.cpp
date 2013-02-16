@@ -191,7 +191,11 @@ const idEventDef EV_AI_OffsetRelation( "offsetRelation", EventArgs('d', "team1",
 
 // Dark Mod soundprop events
 const idEventDef EV_TDM_SetPortSoundLoss( "setPortSoundLoss", EventArgs('d', "handle", "", 'f', "value", ""), EV_RETURNS_VOID, "Sound propagation scriptfunction on the sys object");
+const idEventDef EV_TDM_SetPortAISoundLoss( "setPortAISoundLoss", EventArgs('d', "handle", "", 'f', "value", ""), EV_RETURNS_VOID, "AI sound propagation scriptfunction on the sys object");
+const idEventDef EV_TDM_SetPortPlayerSoundLoss( "setPortPlayerSoundLoss", EventArgs('d', "handle", "", 'f', "value", ""), EV_RETURNS_VOID, "Player sound loss scriptfunction on the sys object");
 const idEventDef EV_TDM_GetPortSoundLoss( "getPortSoundLoss", EventArgs('d', "handle", ""), 'f', "Sound propagation scriptfunction on the sys object");
+const idEventDef EV_TDM_GetPortAISoundLoss( "getPortAISoundLoss", EventArgs('d', "handle", ""), 'f', "AI sound propagation scriptfunction on the sys object");
+const idEventDef EV_TDM_GetPortPlayerSoundLoss( "getPortPlayerSoundLoss", EventArgs('d', "handle", ""), 'f', "Player sound loss  scriptfunction on the sys object");
 
 // greebo: General water test function, tests if a point is in a liquid
 const idEventDef EV_PointInLiquid( "pointInLiquid", EventArgs('v', "point", "", 'e', "ignoreEntity", ""), 'f', 
@@ -317,11 +321,17 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_AI_GetRelationSys,			idThread::Event_GetRelation )
 	EVENT( EV_AI_SetRelation,				idThread::Event_SetRelation )
 	EVENT( EV_AI_OffsetRelation,			idThread::Event_OffsetRelation )
-	EVENT( EV_TDM_SetPortSoundLoss,			idThread::Event_SetPortSoundLoss )
-	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortSoundLoss )
+
+	// grayman #3042 - allow AI- and Player-specific sound loss script access
+	EVENT( EV_TDM_SetPortSoundLoss,			idThread::Event_SetPortAISoundLoss ) // legacy sets AI loss, as it always did
+	EVENT( EV_TDM_SetPortAISoundLoss,		idThread::Event_SetPortAISoundLoss )
+	EVENT( EV_TDM_SetPortPlayerSoundLoss,	idThread::Event_SetPortPlayerSoundLoss )
+	EVENT( EV_TDM_GetPortSoundLoss,			idThread::Event_GetPortAISoundLoss ) // legacy gets AI loss, as it always did
+	EVENT( EV_TDM_GetPortAISoundLoss,		idThread::Event_GetPortAISoundLoss )
+	EVENT( EV_TDM_GetPortPlayerSoundLoss,	idThread::Event_GetPortPlayerSoundLoss )
 	
 	EVENT( EV_PointInLiquid,				idThread::Event_PointInLiquid )
-	EVENT( EV_Translate,				idThread::Event_Translate )
+	EVENT( EV_Translate,					idThread::Event_Translate )
 
 	EVENT( EV_Thread_DebugTDM_MatInfo,		idThread::Event_DebugTDM_MatInfo )
 	
@@ -2081,14 +2091,24 @@ void	idThread::Event_OffsetRelation( int team1, int team2, int offset )
 	gameLocal.m_RelationsManager->ChangeRel( team1, team2, offset );
 }
 
-void	idThread::Event_SetPortSoundLoss( int handle, float value )
+void idThread::Event_SetPortAISoundLoss( int handle, float value )
 {
-	gameLocal.m_sndProp->SetPortalLoss( handle, value );
+	gameLocal.m_sndProp->SetPortalAILoss( handle, value );
 }
 
-void	idThread::Event_GetPortSoundLoss( int handle )
+void idThread::Event_SetPortPlayerSoundLoss( int handle, float value )
 {
-	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalLoss( handle ) );
+	gameLocal.m_sndProp->SetPortalPlayerLoss( handle, value );
+}
+
+void idThread::Event_GetPortAISoundLoss( int handle )
+{
+	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalAILoss( handle ) );
+}
+
+void idThread::Event_GetPortPlayerSoundLoss( int handle )
+{
+	idThread::ReturnFloat( gameLocal.m_sndProp->GetPortalPlayerLoss( handle ) );
 }
 
 void idThread::Event_LogString(int logClass, int logType, const char* output) 

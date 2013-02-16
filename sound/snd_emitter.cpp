@@ -367,9 +367,10 @@ void idSoundEmitterLocal::Clear( void ) {
 
 	playing = false;
 	hasShakes = false;
-	ampTime = 0;								// last time someone queried
+	ampTime = 0;			// last time someone queried
 	amplitude = 0;
-	maxDistance = 10.0f;						// meters
+	maxDistance = 10.0f;	// meters
+	minDistance = 0.0f;		// grayman #3042
 	spatializedOrigin.Zero();
 
 	memset( &parms, 0, sizeof( parms ) );
@@ -503,20 +504,31 @@ idSoundEmitterLocal::Spatialize
 Called once each sound frame by the main thread from idSoundWorldLocal::PlaceOrigin
 ===================
 */
+
 void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRenderWorld *rw ) {
+
 	//
 	// work out the maximum distance of all the playing channels
+	// grayman #3042 - also work out the minimum distance
 	//
 	maxDistance = 0;
+	minDistance = idMath::INFINITY;
 
-	for ( int i = 0; i < SOUND_MAX_CHANNELS; i++ ) {
-		idSoundChannel	*chan = &channels[i];
+	for ( int i = 0 ; i < SOUND_MAX_CHANNELS ; i++ )
+	{
+		idSoundChannel *chan = &channels[i];
 
-		if ( !chan->triggerState ) {
+		if ( !chan->triggerState )
+		{
 			continue;
 		}
-		if ( chan->parms.maxDistance > maxDistance ) {
+		if ( chan->parms.maxDistance > maxDistance )
+		{
 			maxDistance = chan->parms.maxDistance;
+		}
+		if ( chan->parms.minDistance < minDistance )
+		{
+			minDistance = chan->parms.minDistance;
 		}
 	}
 
@@ -527,7 +539,8 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 	idVec3 len = listenerPos - realOrigin;
 	realDistance = len.LengthFast();
 
-	if ( realDistance >= maxDistance ) {
+	if ( realDistance >= maxDistance )
+	{
 		// no way to possibly hear it
 		distance = realDistance;
 		return;
@@ -537,33 +550,54 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 	// work out virtual origin and distance, which may be from a portal instead of the actual origin
 	//
 	distance = maxDistance * METERS_TO_DOOM;
-	if ( listenerArea == -1 ) {		// listener is outside the world
+	if ( listenerArea == -1 )
+	{		// listener is outside the world
 		return;
 	}
-	if ( rw ) {
+
+	if ( rw )
+	{
 		// we have a valid renderWorld
 		int soundInArea = rw->PointInArea( origin );
-		if ( soundInArea == -1 ) {
-			if ( lastValidPortalArea == -1 ) {		// sound is outside the world
+		if ( soundInArea == -1 )
+		{
+			if ( lastValidPortalArea == -1 )		// sound is outside the world
+			{
 				distance = realDistance;
 				spatializedOrigin = origin;			// sound is in our area
+				volumeLoss = 0; // grayman #3042 - no volume loss when in the same area
 				return;
 			}
 			soundInArea = lastValidPortalArea;
 		}
 		lastValidPortalArea = soundInArea;
-		if ( soundInArea == listenerArea ) {
+		if ( soundInArea == listenerArea )
+		{
 			distance = realDistance;
-			spatializedOrigin = origin;			// sound is in our area
+			spatializedOrigin = origin; // sound is in our area
+			volumeLoss = 0; // grayman #3042 - no volume loss when in the same area
 			return;
 		}
 
-		soundWorld->ResolveOrigin( 0, NULL, soundInArea, 0.0f, origin, this );
+		volumeLoss = 0; // grayman #3042 - accumulates volume loss via ResolveOrigin() processing
+
+		SoundChainResults results;
+		if ( soundWorld->ResolveOrigin( 0, NULL, soundInArea, 0.0f, 0.0f, origin, this, &results ) ) // grayman #3042
+		{
+			// get results
+			spatializedOrigin = results.spatializedOrigin;
+			distance = results.distance;
+			volumeLoss = results.loss;
+		}
+
 		distance /= METERS_TO_DOOM;
-	} else {
+	}
+	else
+	{
 		// no portals available
 		distance = realDistance;
-		spatializedOrigin = origin;			// sound is in our area
+		spatializedOrigin = origin; // sound is in our area
+		volumeLoss = 0;
 	}
 }
 
@@ -644,7 +678,8 @@ returns the length of the started sound in msec
 int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channelType channel, float diversity, int soundShaderFlags, bool allowSlow ) {
 	int i;
 
-	if ( !shader ) {
+	if ( !shader )
+	{
 		return 0;
 	}
 

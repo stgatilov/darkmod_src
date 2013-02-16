@@ -1420,7 +1420,7 @@ void idMover::Event_OpenPortal( void )
 ================
 idMover::Event_ClosePortal
 
-Sets the portal associtated with this mover to be closed
+Sets the portal associatated with this mover to be closed
 ================
 */
 void idMover::Event_ClosePortal( void ) 
@@ -2198,7 +2198,7 @@ void idMover_Binary::Event_Disable( void ) {
 ================
 idMover_Binary::Event_OpenPortal
 
-Sets the portal associtated with this mover to be open
+Sets the portal associated with this mover to be open
 ================
 */
 void idMover_Binary::Event_OpenPortal( void ) {

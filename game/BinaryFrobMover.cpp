@@ -232,10 +232,10 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 		m_registeredAI[i].Restore(savefile);
 	}
 
-	m_lastUsedBy.Restore(savefile);		// grayman #2859
-	m_searching.Restore(savefile);		// grayman #1327
-	savefile->ReadBool(m_targetingOff);	// grayman #3029
-	savefile->ReadBool(m_wasFoundLocked); // grayman #3104
+	m_lastUsedBy.Restore(savefile);				// grayman #2859
+	m_searching.Restore(savefile);				// grayman #1327
+	savefile->ReadBool(m_targetingOff);			// grayman #3029
+	savefile->ReadBool(m_wasFoundLocked);		// grayman #3104
 }
 
 void CBinaryFrobMover::Spawn()
@@ -1231,11 +1231,12 @@ float CBinaryFrobMover::GetFractionalPosition()
 	const idAngles& localAngles = physicsObj.GetLocalAngles();
 	
 	// check for non-zero rotation first
-	idRotation maxRot = (m_OpenAngles - m_ClosedAngles).Normalize360().ToRotation();
-	if( maxRot.GetAngle() != 0 )
+	// grayman #3042 - normalize to 180, not 360
+	float maxRotAngle = (m_OpenAngles - m_ClosedAngles).Normalize180().ToRotation().GetAngle();
+	if ( maxRotAngle != 0 )
 	{
-		idRotation curRot = (localAngles - m_ClosedAngles).Normalize360().ToRotation();
-		returnval = curRot.GetAngle() / maxRot.GetAngle();
+		idRotation curRot = (localAngles - m_ClosedAngles).Normalize180().ToRotation();
+		returnval = curRot.GetAngle() / maxRotAngle;
 	}
 	else
 	{

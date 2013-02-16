@@ -59,6 +59,8 @@ public:
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 
+	virtual void			Think( void ); // grayman #3042 - need to think while moving
+
 	/** 
 	 * greebo: The OpenDoor method is necessary to give the FrobDoorHandles a 
 	 * "low level" open routine. The CFrobDoor::Open() call is re-routed to 
@@ -114,8 +116,8 @@ public:
 	virtual int				FrobMoverStartSound(const char* soundName);
 
 	/** 
-	 * greebo: Override the standard idEntity method to emit sounds from the nearest position 
-	 * to the player instead of the bounding box center, which might be on the far side
+	 * greebo: Override the standard idEntity method so sounds are emitted from the nearest position 
+	 * to the player instead of from the bounding box center, which might be on the far side
 	 * of a closed portal. This method gets applied to doors without handles, usually.
 	 */
 	virtual bool			GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis);
@@ -127,6 +129,7 @@ public:
 	void					SetWasFoundLocked(bool state);	// grayman #3104
 	bool					GetWasFoundLocked() const;		// grayman #3104
 	bool					GetDoorHandlingEntities(idAI* owner, idList< idEntityPtr<idEntity> > &list); // grayman #2866
+	void					SetLossBase( float lossAI, float lossPlayer ); // grayman #3042
 
 protected:
 
@@ -247,6 +250,22 @@ protected:
 
 	// The last time we issues an "Update handle" call
 	int							m_LastHandleUpdateTime;
+
+	/**
+	* grayman #3042 - sound loss values
+	**/
+	float						m_lossOpen;
+	float						m_lossDoubleOpen;
+	float						m_lossClosed;
+	float						m_lossBaseAI;
+	float						m_lossBasePlayer;
+
+	/**
+	* grayman #3042 - m_isTransparent set to 1 means don't close a visportal when closing.
+	* this allows us to run a visportal through this type of door, associating it with the
+	* door, but not closing it when the door is closed.
+	**/
+	bool						m_isTransparent;
 };
 
 #endif /* FROBDOOR_H */

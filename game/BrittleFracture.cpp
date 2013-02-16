@@ -74,6 +74,9 @@ idBrittleFracture::idBrittleFracture( void ) {
 
 	m_AreaPortal = 0;
 	m_bSoundDamped = false;
+
+	m_lossBaseAI = 0;		// grayman #3042
+	m_lossBasePlayer = 0;	// grayman #3042
 }
 
 /*
@@ -163,6 +166,9 @@ void idBrittleFracture::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( m_AreaPortal );
 	savefile->WriteBool( m_bSoundDamped );
+
+	savefile->WriteFloat( m_lossBaseAI );		// grayman #3042
+	savefile->WriteFloat( m_lossBasePlayer );	// grayman #3042
 }
 
 /*
@@ -253,6 +259,9 @@ void idBrittleFracture::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_AreaPortal );
 	savefile->ReadBool( m_bSoundDamped );
 
+	savefile->ReadFloat( m_lossBaseAI );		// grayman #3042
+	savefile->ReadFloat( m_lossBasePlayer );	// grayman #3042
+
 	UpdateSoundLoss();
 }
 
@@ -305,8 +314,10 @@ void idBrittleFracture::Spawn( void ) {
 	// Dark Mod: see if we are on a visportal
 	m_AreaPortal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds() );
 
-	//schedule updating the sound loss for after soundprop gameplay has initialized
-	PostEventMS( &EV_UpdateSoundLoss, 0 );
+	// schedule updating the sound loss for after soundprop gameplay has initialized
+	PostEventMS( &EV_UpdateSoundLoss, 20 ); // grayman #3042 - wait for 20ms instead of 0,
+											// to give portal entities time to spawn and
+											// run their post-spawn
 }
 
 /*
@@ -1377,16 +1388,28 @@ void idBrittleFracture::UpdateSoundLoss( void )
 	float SetVal(0.0f);
 
 	if ( !m_AreaPortal )
-		goto Quit;
+	{
+		return;
+	}
 
-	if( IsBroken() )
+	if ( IsBroken() )
+	{
 		SetVal = spawnArgs.GetFloat( "loss_broken", "0.0");
+	}
 	else
+	{
 		SetVal = spawnArgs.GetFloat( "loss_unbroken", "15.0");
+	}
 
-	gameLocal.m_sndProp->SetPortalLoss( m_AreaPortal, SetVal );
-
-Quit:
-	return;
+	gameLocal.m_sndProp->SetPortalAILoss( m_AreaPortal, SetVal +  m_lossBaseAI ); // grayman #3042 - add base loss from portal entities
+	gameLocal.m_sndProp->SetPortalPlayerLoss( m_AreaPortal, SetVal +  m_lossBasePlayer ); // grayman #3042 - add base loss from portal entities
 }
+
+void idBrittleFracture::SetLossBase (float lossAI, float lossPlayer) // grayman #3042
+{
+	m_lossBaseAI = lossAI;
+	m_lossBasePlayer = lossPlayer;
+}
+
+
 		

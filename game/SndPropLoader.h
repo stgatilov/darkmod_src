@@ -164,8 +164,9 @@ typedef struct SPortData_s
 	// indices of the portal in the two areas connected by it
 	// order is arbitrary
 	int LocalIndex[2];
-	int Areas[2]; // area numbers that match up with the local index numbers
-	float loss; // acoustical loss [dB] when going through the portal
+	int Areas[2];		// area numbers that match up with the local index numbers
+	float lossAI;		// grayman #3042 - acoustical loss [dB] to AI when going through the portal
+	float lossPlayer;	// grayman #3042 - acoustical loss [dB] to Player when going through the portal
 } SPortData;
 
 /**
@@ -257,16 +258,19 @@ public:
 
 	/**
 	* Insert the loss argument into the portal data array entry for 
-	* the given portal handle
+	* the given portal handle.
+	* grayman #3042 - allow AI- and Player-specific loss
 	**/
-	void SetPortalLoss( int handle, float value );
+	void SetPortalAILoss( int handle, float value );
+	void SetPortalPlayerLoss( int handle, float value );
 
 	/**
 	* Get the acoustical loss for the given portal handle
 	* Portal handle must be between 1 and the number of portals in the map
+	* grayman #3042 - allow AI- and Player-specific loss
 	**/
-	float GetPortalLoss( int handle );
-
+	float GetPortalAILoss( int handle );
+	float GetPortalPlayerLoss( int handle );
 
 protected:
 

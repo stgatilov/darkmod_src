@@ -78,6 +78,17 @@ public:
 	virtual void				ClientPredictionThink( void );
 	virtual bool				ClientReceiveEvent( int event, int time, const idBitMsg &msg );
 
+	/**
+	* Update soundprop to set losses in associated portal, if portal is present
+	* Called on spawn and when it breaks
+	**/
+	void						UpdateSoundLoss( void );
+
+	/**
+	* grayman #3042 - Allow portal entities to set their sound loss as a base level for this entity's sound loss
+	**/
+	void						SetLossBase (float lossAI, float lossPlayer);
+
 private:
 	// setttings
 	const idMaterial *			material;
@@ -113,6 +124,12 @@ private:
 	**/
 	qhandle_t					m_AreaPortal;
 
+	/**
+	* grayman #3042 - additional sound loss provided by portal entities touching the same portal
+	**/
+	float						m_lossBaseAI;
+	float						m_lossBasePlayer;
+
 	bool						UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const;
 	static bool					ModelCallback( renderEntity_s *renderEntity, const renderView_t *renderView );
 
@@ -129,12 +146,6 @@ private:
 	void						Event_Activate( idEntity *activator );
 	void						Event_Touch( idEntity *other, trace_t *trace );
 	void						Event_DampenSound( bool bDampen );
-
-	/**
-	* Update soundprop to set losses in associated portal, if portal is present
-	* Called on spawn and when it breaks
-	**/
-	void						UpdateSoundLoss( void );
 };
 
 #endif /* !__GAME_BRITTLEFRACTURE_H__ */

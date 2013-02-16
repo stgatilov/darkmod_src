@@ -180,9 +180,12 @@ private:
 	* TDM Soundprop Events:
 	* Set or get the acoustical loss for a portal with a given handle.
 	* Handle must be greater than zero and less than the number of portals in the map.
+	* grayman #3042 - allow access to AI- and Player-specific loss
 	**/
-	void						Event_SetPortSoundLoss( int handle, float value );
-	void						Event_GetPortSoundLoss( int handle );
+	void						Event_SetPortAISoundLoss( int handle, float value );
+	void						Event_SetPortPlayerSoundLoss( int handle, float value );
+	void						Event_GetPortAISoundLoss( int handle );
+	void						Event_GetPortPlayerSoundLoss( int handle );
 	
 	// The scriptevent counterpart of DM_LOG
 	void						Event_LogString(int logClass, int logType, const char* output);

@@ -1883,14 +1883,17 @@ END_CLASS
 idTextEntity::Spawn
 ================
 */
-void idTextEntity::Spawn( void ) {
-	// these are cached as the are used each frame
+void idTextEntity::Spawn( void )
+{
+	// these are cached as they are used each frame
 	text = spawnArgs.GetString( "text" );
 	playerOriented = spawnArgs.GetBool( "playerOriented" );
-	bool force = spawnArgs.GetBool( "force" );
-	if ( developer.GetBool() || force ) {
-		BecomeActive(TH_THINK);
-	}
+
+	// grayman #3042 - this used to only start thinking if the "developer"
+	// boolean was set. I couldn't get that to work at map start, and changing
+	// it while playing wouldn't get the text to show, so I changed how it was done.
+	force = spawnArgs.GetBool( "force" );
+	BecomeActive(TH_THINK);
 }
 
 /*
@@ -1898,9 +1901,11 @@ void idTextEntity::Spawn( void ) {
 idTextEntity::Save
 ================
 */
-void idTextEntity::Save( idSaveGame *savefile ) const {
+void idTextEntity::Save( idSaveGame *savefile ) const
+{
 	savefile->WriteString( text );
 	savefile->WriteBool( playerOriented );
+	savefile->WriteBool( force ); // grayman #3042
 }
 
 /*
@@ -1908,9 +1913,11 @@ void idTextEntity::Save( idSaveGame *savefile ) const {
 idTextEntity::Restore
 ================
 */
-void idTextEntity::Restore( idRestoreGame *savefile ) {
+void idTextEntity::Restore( idRestoreGame *savefile )
+{
 	savefile->ReadString( text );
 	savefile->ReadBool( playerOriented );
+	savefile->ReadBool( force ); // grayman #3042
 }
 
 /*
@@ -1918,19 +1925,20 @@ void idTextEntity::Restore( idRestoreGame *savefile ) {
 idTextEntity::Think
 ================
 */
-void idTextEntity::Think( void ) {
-	if ( thinkFlags & TH_THINK ) {
+void idTextEntity::Think( void )
+{
+	if ( force || developer.GetBool() ) // grayman #3042
+	{
 		gameRenderWorld->DrawText( text, GetPhysics()->GetOrigin(), 0.25, colorWhite, playerOriented ? gameLocal.GetLocalPlayer()->viewAngles.ToMat3() : GetPhysics()->GetAxis().Transpose(), 1 );
-		for ( int i = 0; i < targets.Num(); i++ ) {
-			if ( targets[i].GetEntity() ) {
+		for ( int i = 0 ; i < targets.Num() ; i++ )
+		{
+			if ( targets[i].GetEntity() )
+			{
 				gameRenderWorld->DebugArrow( colorBlue, GetPhysics()->GetOrigin(), targets[i].GetEntity()->GetPhysics()->GetOrigin(), 1 );
 			}
 		}
-	} else {
-		BecomeInactive( TH_ALL );
 	}
 }
-
 
 /*
 ===============================================================================
@@ -1994,7 +2002,6 @@ void idVacuumSeparatorEntity::Spawn() {
 		gameLocal.Warning( "VacuumSeparator '%s' didn't contact a portal", spawnArgs.GetString( "name" ) );
 		return;
 	}
-	gameLocal.SetPortalState( portal, PS_BLOCK_AIR | PS_BLOCK_LOCATION );
 }
 
 /*
@@ -2013,15 +2020,232 @@ void idVacuumSeparatorEntity::Event_Activate( idEntity *activator ) {
 /*
 ===============================================================================
 
-idLocationSeparatorEntity
+idPortalEntity
 
 ===============================================================================
 */
 
 const idEventDef EV_GetPortalHandle( "getPortalHandle", EventArgs(), 'f', "Returns the portal handle." );
+const idEventDef EV_GetSoundLoss( "getSoundLoss", EventArgs(), 'f', "Returns the sound loss value (dB)." ); // grayman #3042
+const idEventDef EV_SetSoundLoss( "setSoundLoss", EventArgs('f',"loss",""), EV_RETURNS_VOID, "Sets the sound loss value (dB)." ); // grayman #3042
 
-CLASS_DECLARATION( idEntity, idLocationSeparatorEntity )
-	EVENT( EV_GetPortalHandle,		idLocationSeparatorEntity::Event_GetPortalHandle )
+CLASS_DECLARATION( idEntity, idPortalEntity )
+	EVENT( EV_GetPortalHandle,		idPortalEntity::Event_GetPortalHandle )
+	EVENT( EV_GetSoundLoss,			idPortalEntity::Event_GetSoundLoss )	// grayman #3042
+	EVENT( EV_SetSoundLoss,			idPortalEntity::Event_SetSoundLoss )	// grayman #3042
+	EVENT( EV_PostSpawn,			idPortalEntity::Event_PostSpawn )		// grayman #3042
+END_CLASS
+
+/*
+================
+idPortalEntity::Spawn
+================
+*/
+void idPortalEntity::Spawn()
+{
+	idBounds b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
+	m_Portal = gameRenderWorld->FindPortal( b );
+
+	if ( !m_Portal ) 
+	{
+		gameLocal.Warning( "idPortalEntity '%s' didn't contact a portal", GetName() );
+		return;
+	}
+
+	m_Entity = NULL;
+	m_EntityLocationDone = false;
+
+	// store the sound loss for the associated portal
+	m_SoundLoss = spawnArgs.GetFloat("sound_loss", "0.0");
+
+	// grayman #3042 - store booleans for whether the sound loss
+	// applies only to AI, only to the Player, or both, or neither
+	m_applyToAI = spawnArgs.GetBool("apply_loss_to_AI", "1");
+	m_applyToPlayer = spawnArgs.GetBool("apply_loss_to_Player", "1");
+
+	// store the light loss factor for this portal
+	m_LightLoss = spawnArgs.GetFloat("light_loss", "0.0");
+}
+
+// grayman #3042 - Doors and brittle fractures need to know about any portal entities they share a portal with.
+// This is for use with sound loss, since portal entity sound loss needs to be added to
+// sound losses defined by the door or brittle fracture.
+
+void idPortalEntity::Event_PostSpawn( void )
+{
+	// Find a door or brittle fracture touching me and give it my sound_loss value
+
+	if ( !m_Portal )
+	{
+		return; // no portal, so there's nothing to do
+	}
+
+	// While it might be tempting to skip the rest of this if m_SoundLoss is zero,
+	// we can't, because the loss value can be changed dynamically, and we need to
+	// handle when it's set to zero that way.
+
+	// Search for a door or brittle fracture that shares my portal. After the first
+	// time this is attempted, set m_EntityLocationDone to TRUE to indicate
+	// we don't need to search again if the sound loss value is dynamically set
+	// by a script later.
+
+	if ( !m_EntityLocationDone )
+	{
+		idBounds b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
+		idClipModel* clipModelList[MAX_GENTITIES];
+		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, CONTENTS_SOLID, clipModelList, MAX_GENTITIES );
+
+		for ( int i = 0 ; i < numListedClipModels ; i++ ) 
+		{
+			idClipModel* clipModel = clipModelList[i];
+			idEntity* obEnt = clipModel->GetEntity();
+
+			if ( obEnt == NULL )
+			{
+				continue;
+			}
+
+			if ( obEnt == this ) // skip myself
+			{
+				continue;
+			}
+
+			if ( obEnt->IsType(CFrobDoor::Type) || obEnt->IsType(idBrittleFracture::Type) )
+			{
+				// Check the visportal touching the found entity. If it's the same as ours, we're done.
+				int testPortal = gameRenderWorld->FindPortal(obEnt->GetPhysics()->GetAbsBounds());
+
+				if ( ( testPortal == m_Portal ) && ( testPortal != 0 ) )
+				{
+					DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("idPortalEntity::Event_PostSpawn - touching %s\r", obEnt->name.c_str());
+					m_Entity = obEnt;
+					break; // Assume only one door or brittle fracture
+				}
+			}
+		}
+
+		m_EntityLocationDone = true;
+	}
+
+	// If we have an entity we share the portal with, set its base sound loss level to ours
+
+	if ( m_Entity != NULL )
+	{
+		float m_SoundLossAI = m_applyToAI ? m_SoundLoss : 0.0f;
+		float m_SoundLossPlayer = m_applyToPlayer ? m_SoundLoss : 0.0f;
+
+		if ( m_Entity->IsType(CFrobDoor::Type) )
+		{
+			CFrobDoor *door = static_cast<CFrobDoor*>(m_Entity);
+			door->SetLossBase( m_SoundLossAI, m_SoundLossPlayer );
+			door->UpdateSoundLoss(); // tell the door to pass the total loss to the portal
+
+			// If this door is part of a double door, tell the other door about the portal entity's sound loss.
+			// He won't know about the portal entity if it's not touching him.
+
+			CFrobDoor* doubleDoor = door->GetDoubleDoor();
+			if ( doubleDoor )
+			{
+				doubleDoor->SetLossBase( m_SoundLossAI, m_SoundLossPlayer );
+			}
+		}
+		else if ( m_Entity->IsType(idBrittleFracture::Type) )
+		{
+			idBrittleFracture *bf = static_cast<idBrittleFracture*>(m_Entity);
+			bf->SetLossBase( m_SoundLossAI, m_SoundLossPlayer );
+			bf->UpdateSoundLoss(); // tell the brittle fracture to pass the total loss to the portal
+		}
+	}
+	else // place our loss value on the portal directly
+	{
+		if ( m_applyToAI )
+		{
+			gameLocal.m_sndProp->SetPortalAILoss( m_Portal, m_SoundLoss );
+		}
+		if ( m_applyToPlayer )
+		{
+			gameLocal.m_sndProp->SetPortalPlayerLoss( m_Portal, m_SoundLoss );
+		}
+	}
+}
+
+/*
+================
+idPortalEntity::Save
+
+Tels: Each idPortalEntity contains the handle of the portal it
+	  is connected to, so we can let it return the handle.
+================
+*/
+void idPortalEntity::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteFloat( m_SoundLoss );
+	savefile->WriteFloat( m_LightLoss );
+	savefile->WriteInt( m_Portal );
+	savefile->WriteObject(m_Entity);				// grayman #3042
+	savefile->WriteBool(m_EntityLocationDone);	// grayman #3042
+}
+
+void idPortalEntity::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadFloat( m_SoundLoss );
+	savefile->ReadFloat( m_LightLoss );
+	savefile->ReadInt( m_Portal );
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Entity));		// grayman #3042
+	savefile->ReadBool(m_EntityLocationDone);						// grayman #3042
+}
+
+qhandle_t idPortalEntity::GetPortalHandle( void ) const
+{
+	return m_Portal;
+}
+
+float idPortalEntity::GetLightLoss( void ) const
+{
+	return m_LightLoss;
+}
+
+// grayman #3042 - retrieve sound loss
+
+float idPortalEntity::GetSoundLoss( void ) const
+{
+	return m_SoundLoss;
+}
+
+void idPortalEntity::SetSoundLoss( const float loss )
+{
+	m_SoundLoss = loss;
+	Event_PostSpawn();
+}
+
+void idPortalEntity::Event_GetPortalHandle( void )
+{
+	if ( !m_Portal )
+	{
+		return idThread::ReturnFloat( -1.0f );
+	}
+	idThread::ReturnFloat( (float) m_Portal );
+}
+
+void idPortalEntity::Event_GetSoundLoss( void ) // grayman #3042
+{
+	idThread::ReturnFloat( m_SoundLoss );
+}
+
+void idPortalEntity::Event_SetSoundLoss( const float loss ) // grayman #3042
+{
+	SetSoundLoss(loss);
+}
+
+/*
+===============================================================================
+
+idLocationSeparatorEntity
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idPortalEntity, idLocationSeparatorEntity )
 END_CLASS
 
 /*
@@ -2031,68 +2255,51 @@ idLocationSeparatorEntity::Spawn
 */
 void idLocationSeparatorEntity::Spawn() 
 {
-	idBounds b;
-
-	// Tels: TODO: keep the portal handle as member, add Save/Restore
-	// and a script event to return the portal handle, so getPortalSoundLoss()
-	// and setPortalSoundLoss() can use it.
-	b = idBounds( spawnArgs.GetVector( "origin" ) ).Expand( 16 );
-	m_Portal = gameRenderWorld->FindPortal( b );
-
 	if ( !m_Portal ) 
 	{
-		gameLocal.Warning( "LocationSeparator '%s' didn't contact a portal", GetName() );
 		return;
 	}
+
 	gameLocal.SetPortalState( m_Portal, PS_BLOCK_LOCATION );
 
-	// update the sound loss for the associated portal (Note sound loss must be positive)
-	m_SoundLoss = spawnArgs.GetFloat("sound_loss", "0.0");
-	gameLocal.m_sndPropLoader->SetPortalLoss( m_Portal, idMath::Fabs(m_SoundLoss) );
-
-	// store the light loss factor for this portal
-	m_LightLoss = spawnArgs.GetFloat("light_loss", "0.0");
-
+	// grayman #3042 - Schedule a post-spawn event to search for touching doors or brittle fractures.
+	// This event has to occur after the CFrobDoor PostSpawn() event, because
+	// that's where double doors learn about each other. That delay is 16,
+	// so make this one 18.
+	PostEventMS( &EV_PostSpawn, 18 );
 }
+
+// grayman #3042 - add idPortalSettingsEntity. This entity is like a location
+// separator, except that it doesn't mark location boundaries.
+
+/*
+===============================================================================
+
+idPortalSettingsEntity
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idPortalEntity, idPortalSettingsEntity )
+END_CLASS
 
 /*
 ================
-idLocationSeparatorEntity::Save
-
-Tels: Each idLocationSeparatorEntity contains the handle of the portal it
-	  is connected to, so we can let it return the handle.
+idPortalSettingsEntity::Spawn
 ================
 */
-void idLocationSeparatorEntity::Save( idSaveGame *savefile ) const
+void idPortalSettingsEntity::Spawn() 
 {
-	savefile->WriteFloat( m_SoundLoss );
-	savefile->WriteFloat( m_LightLoss );
-	savefile->WriteInt( m_Portal );
-}
-
-void idLocationSeparatorEntity::Restore( idRestoreGame *savefile )
-{
-	savefile->ReadFloat( m_SoundLoss );
-	savefile->ReadFloat( m_LightLoss );
-	savefile->ReadInt( m_Portal );
-}
-
-void idLocationSeparatorEntity::Event_GetPortalHandle( void )
-{
-	if ( !m_Portal ) {
-		return idThread::ReturnFloat( -1.0f );
+	if ( !m_Portal ) 
+	{
+		return;
 	}
-	idThread::ReturnFloat( (float) m_Portal );
-}
 
-qhandle_t idLocationSeparatorEntity::GetPortalHandle( void ) const
-{
-	return m_Portal;
-}
-
-float idLocationSeparatorEntity::GetLightLoss( void ) const
-{
-	return m_LightLoss;
+	// Schedule a post-spawn event to search for touching doors and brittle fractures.
+	// This event has to occur after the CFrobDoor PostSpawn() event, because
+	// that's where double doors learn about each other. That delay is 16,
+	// so make this one 18.
+	PostEventMS( &EV_PostSpawn, 18 );
 }
 
 /*
@@ -2777,7 +2984,8 @@ void idFuncPortal::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadInt( (int &)portal );
 	savefile->ReadBool( state );
-	gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+//	gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
+	gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
 
 	savefile->ReadBool( m_bDistDependent );
 	savefile->ReadFloat( m_Distance );
@@ -2796,7 +3004,8 @@ void idFuncPortal::Spawn( void )
 	if ( portal > 0 ) 
 	{
 		state = spawnArgs.GetBool( "start_on" );
-		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+//		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
+		gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
 	}
 	if( (m_Distance = spawnArgs.GetFloat( "portal_dist", "0.0" )) <= 0 )
 		goto Quit;
@@ -2828,7 +3037,8 @@ void idFuncPortal::Event_Activate( idEntity *activator )
 	if ( portal > 0 ) 
 	{
 		state = !state;
-		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE );
+//		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
+		gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
 	}
 
 	// activate our targets
@@ -2845,7 +3055,8 @@ void idFuncPortal::ClosePortal( void )
 	if ( portal > 0 ) 
 	{
 		state = true;
-		gameLocal.SetPortalState( portal, PS_BLOCK_ALL );
+//		gameLocal.SetPortalState( portal, PS_BLOCK_ALL ); // grayman #3042 - old way
+		gameLocal.SetPortalState( portal, PS_BLOCK_VIEW ); // grayman #3042 - new way
 	}
 }
 

@@ -392,6 +392,7 @@ public:
 private:
 	idStr				text;
 	bool				playerOriented;
+	bool				force; // grayman #3042
 };
 
 
@@ -433,9 +434,17 @@ public:
 private:
 };
 
-class idLocationSeparatorEntity : public idEntity {
+/*
+===============================================================================
+
+idPortalEntity
+
+===============================================================================
+*/
+
+class idPortalEntity : public idEntity {
 public:
-	CLASS_PROTOTYPE( idLocationSeparatorEntity );
+	CLASS_PROTOTYPE( idPortalEntity );
 
 	void				Spawn( void );
 
@@ -443,15 +452,25 @@ public:
 	void				Restore( idRestoreGame *savefile );
 
 	qhandle_t			GetPortalHandle( void ) const;
+
 	// Returns a factor (0..1.0) that says how  much light the portal lets through
 	float				GetLightLoss( void ) const;
-	void				Event_GetPortalHandle( void );	
+	float				GetSoundLoss( void ) const; // grayman #3042
+	void				SetSoundLoss( const float loss ); // grayman #3042
+	void				Event_GetPortalHandle( void );
+	void				Event_GetSoundLoss( void ); // grayman #3042
+	void				Event_SetSoundLoss( const float loss ); // grayman #3042
+	/**
+	* grayman #3042 - The post-spawn event looks for touching doors and brittle fractures
+	* that might not be available at spawn time.
+	**/
+	void				Event_PostSpawn( void );
 
-private:
+public:
 
 	/**
 	* Soundprop: Volume loss for sounds traveling through this portal, in
-	* addition to a potential door on this portal.
+	* addition to a potential door or brittle fracture on this portal.
 	**/
 	float				m_SoundLoss;
 
@@ -464,7 +483,48 @@ private:
 	* Tels: Handle of the portal this entity touches.
 	**/
 	qhandle_t			m_Portal;
+
+private:
+	/**
+	* grayman #3042 - Save a pointer to a door or brittle fracture that shares the portal with this portal entity
+	**/
+	idEntity*			m_Entity;
+	bool				m_EntityLocationDone;
+
+	/*
+	* grayman #3042 - Whether sound loss applies to AI, Player, both, or neither
+	**/
+	bool				m_applyToAI;
+	bool				m_applyToPlayer;
 };
+
+class idLocationSeparatorEntity : public idPortalEntity
+{
+public:
+	CLASS_PROTOTYPE( idLocationSeparatorEntity );
+
+	void				Spawn( void );
+
+public:
+};
+
+// grayman #3042 - entity to provide settings on a portal w/o splitting locations
+
+class idPortalSettingsEntity : public idPortalEntity
+{
+public:
+	CLASS_PROTOTYPE( idPortalSettingsEntity );
+
+	void				Spawn( void );
+};
+
+/*
+===============================================================================
+
+idVacuumSeparatorEntity
+
+===============================================================================
+*/
 
 class idVacuumSeparatorEntity : public idEntity {
 public:
@@ -491,7 +551,6 @@ public:
 
 private:
 };
-
 
 /*
 ===============================================================================
