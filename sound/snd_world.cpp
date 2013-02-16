@@ -732,19 +732,29 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		return false;
 	}
 
-	if ( soundArea == listenerArea )
+	// grayman #3042 - If how far we've traveled plus the minimum distance needed to reach the listener
+	// from here is greater than the sound's max distance, then there's no need to continue, because
+	// the listener won't hear the sound using this chain of portals along this path.
+
+	float distToListener = (soundOrigin - listenerQU).LengthFast(); // min distance remaining to reach listener
+	if ( ( dist + distToListener ) >= def->distance )
 	{
-		float fullDist = dist + (soundOrigin - listenerQU).LengthFast();
-		if ( fullDist < def->distance )
-		{
-			results->distance = fullDist; // found the listener, so no need to travel distances beyond this
-			results->spatializedOrigin = soundOrigin;
-			results->loss = loss; // grayman #3042 - total accumulated volume loss across portals
-			results->spatialDistance = (soundOrigin - listenerQU).LengthFast();
-			return true;
-		}
 		return false;
 	}
+
+	// If we've reached the sound area the listener is in, our journey is over. Place the
+	// results in the "results" object and return to the level above us.
+
+	if ( soundArea == listenerArea )
+	{
+		results->distance = dist + distToListener; // found the listener, so no need to travel distances beyond this
+		results->spatializedOrigin = soundOrigin;
+		results->loss = loss; // grayman #3042 - total accumulated volume loss across portals
+		results->spatialDistance = distToListener;
+		return true;
+	}
+
+	// We haven't reached the listener yet, so we need to keep going.
 
 	if ( stackDepth == MAX_PORTAL_TRACE_DEPTH )
 	{
