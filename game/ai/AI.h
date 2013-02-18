@@ -1233,6 +1233,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_ReactingToHit;		// grayman #2816 - reaction after being hit by something
 	idEntity* m_lastKilled;		// grayman #2816 - the last enemy we killed
 	bool m_justKilledSomeone;	// grayman #2816 - remember just killing someone so correct bark is emitted when alert level comes down
+	bool m_deckedByPlayer;		// grayman #3314 - TRUE if the player killed or KO'ed me (for mission statistics "bodies found")
 
 	// The mind of this AI
 	ai::MindPtr mind;

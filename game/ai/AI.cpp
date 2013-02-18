@@ -524,6 +524,7 @@ idAI::idAI()
 	m_bloodMarker		= NULL;  // grayman #3075
 	m_lastKilled		= NULL;	 // grayman #2816
 	m_justKilledSomeone = false; // grayman #2816
+	m_deckedByPlayer	= false; // grayman #3314
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -819,6 +820,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
 	savefile->WriteBool(m_performRelight);		// grayman #2603
 	savefile->WriteBool(m_ReactingToHit);		// grayman #2816
+	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1235,6 +1237,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_leftQueue);		 // grayman #2345
 	savefile->ReadBool(m_performRelight);	 // grayman #2603
 	savefile->ReadBool(m_ReactingToHit);	 // grayman #2816
+	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -6355,9 +6358,13 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, attacker, bPlayerResponsible );
+
 	// Mark the body as last moved by the player
-	if( bPlayerResponsible )
+	if ( bPlayerResponsible )
+	{
 		m_MovedByActor = gameLocal.GetLocalPlayer();
+		m_deckedByPlayer = true; // grayman #3314
+	}
 
 	// greebo: Set the lipsync flag to FALSE, we're dead
 	m_lipSyncActive = false;
@@ -8982,7 +8989,7 @@ void idAI::AlertAI(const char *type, float amount)
 
 	if (m_AlertGraceTime)
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period active, testing... \r");
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period (%d) active, testing... \r",m_AlertGraceTime);
 		if (gameLocal.time > m_AlertGraceStart + m_AlertGraceTime)
 		{
 			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period found to have expired. Resetting. \r");
@@ -10527,6 +10534,7 @@ void idAI::Knockout( idEntity* inflictor )
 	if( bPlayerResponsible )
 	{
 		m_MovedByActor = gameLocal.GetLocalPlayer();
+		m_deckedByPlayer = true; // grayman #3314
 	}
 
 	// greebo: Stop lipsyncing now
@@ -10607,11 +10615,11 @@ idAI::FoundBody
 */
 void idAI::FoundBody( idEntity *body )
 {
-	bool bPlayerResp = false;
-	if( m_MovedByActor.GetEntity() && m_MovedByActor.GetEntity() == gameLocal.GetLocalPlayer() )
-		bPlayerResp = true;
-
-	gameLocal.m_MissionData->MissionEvent( COMP_AI_FIND_BODY, body, bPlayerResp );
+	// grayman #3314 - if m_deckedByPlayer is true, the player killed or KO'ed this body
+	if ( body->IsType(idAI::Type) )
+	{
+		gameLocal.m_MissionData->MissionEvent( COMP_AI_FIND_BODY, body, static_cast<idAI*>(body)->m_deckedByPlayer );
+	}
 }
 
 void idAI::AddMessage(const ai::CommMessagePtr& message)
