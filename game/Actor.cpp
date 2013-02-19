@@ -4913,7 +4913,30 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	const idVec3& vGravNorm = physics.GetGravityNormal();
-	const idVec3& curVelocity = physics.GetLinearVelocity();
+	idVec3 curVelocity = physics.GetLinearVelocity();
+
+	// grayman #0578 - velocity for the purposes of this method needs to be the
+	// relative velocity of the actor to the entity he's landing on.
+
+	idVec3 landedOnVelocity(0,0,0);
+	for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
+	{
+		const contactInfo_t &contact = physics.GetContact(i);
+		if ( contact.entityNum == ENTITYNUM_WORLD )
+		{
+			break;
+		}
+		idEntity* ent = gameLocal.entities[contact.entityNum];
+		if ( !ent )
+		{
+			continue;
+		}
+
+		landedOnVelocity = ent->GetPhysics()->GetLinearVelocity();
+		break;
+	}
+
+	curVelocity = curVelocity + landedOnVelocity; // relative velocity
 
 	// The current speed parallel to gravity
 	idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
