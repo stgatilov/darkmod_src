@@ -56,24 +56,29 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool FleeTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Flee Task performing.\r");
-
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 	Memory& memory = owner->GetMemory();
 	idActor* enemy = _enemy.GetEntity();
 
-	// angua: bad luck, my friend, yuo've been too slow...
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s Flee Task performing.\r",owner->name.c_str());
+
+	// angua: bad luck, my friend, you've been too slow...
 	// no more fleeing necessary when dead or ko'ed
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
+		owner->fleeingEvent = false; // grayman #3317
 		return true;
 	}
 
 	// if the enemy we're fleeing from dies, enemy gets set to NULL
-	if (enemy == NULL )
+	if ( enemy == NULL )
 	{
-		return true;
+		// grayman #3317 - if we're not fleeing an event, we can quit fleeing
+		if ( !owner->fleeingEvent )
+		{
+			return true;
+		}
 	}
 
 	//gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
@@ -84,12 +89,26 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	// TODO: should be spawn arg, make member 
 	int maxFleeTime = 60000;
 
-	if (_failureCount > 5 || 
-			(owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor) ||
-			gameLocal.time > _fleeStartTime + maxFleeTime)
+	if ( ( _failureCount > 5 ) || 
+		 ( owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor && !owner->m_HandlingElevator ) ||
+		 ( gameLocal.time > _fleeStartTime + maxFleeTime ) )
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
-		//Fleeing is done, check if we can see the enemy
+
+		// Done fleeing.
+
+		// grayman #3317 - If we were fleeing a murder or KO, quit
+
+		if ( owner->fleeingEvent )
+		{
+			memory.fleeingDone = true;
+			owner->fleeingEvent = false;
+			// Turn around to look back to where we came from
+			owner->TurnToward(owner->GetCurrentYaw() + 180);
+			return true;
+		}
+
+		// check if we can see the enemy
 		if (owner->AI_ENEMY_VISIBLE)
 		{
 			_failureCount = 0;
@@ -107,6 +126,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		else
 		{
 			memory.fleeingDone = true;
+			owner->fleeingEvent = false;
 			// Turn around to look back to where we came from
 			owner->TurnToward(owner->GetCurrentYaw() + 180);
 			return true;
@@ -119,9 +139,9 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		owner->AI_RUN = true;
 		if (_escapeSearchLevel >= 3)
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Trying to find escape route - FIND_FRIENDLY_GUARDED.");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Trying to find escape route - FIND_FRIENDLY_GUARDED.\r");
 			// Flee to the nearest friendly guarded escape point
-			if (!owner->Flee(enemy, FIND_FRIENDLY_GUARDED, _distOpt))
+			if (!owner->Flee(enemy, owner->fleeingEvent, FIND_FRIENDLY_GUARDED, _distOpt))
 			{
 				_escapeSearchLevel = 2;
 			}
@@ -130,26 +150,34 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		else if (_escapeSearchLevel == 2)
 		{
 			// Try to find another escape route
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Trying alternate escape route - FIND_FRIENDLY.");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Trying alternate escape route - FIND_FRIENDLY.\r");
 			// Find another escape route to ANY friendly escape point
-			if (!owner->Flee(enemy, FIND_FRIENDLY, _distOpt))
+			if (!owner->Flee(enemy, owner->fleeingEvent, FIND_FRIENDLY, _distOpt))
 			{
 				_escapeSearchLevel = 1;
 			}
 		}
 		else
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Searchlevel = 1, ZOMG, Panic mode, gotta run now!\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Searchlevel = 1, OMG, Panic mode, gotta run now!\r");
 
-			// Get the distance to the enemy
-			float enemyDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), enemy->GetPhysics()->GetOrigin());
-
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Enemy is as near as %f\r", enemyDistance);
-			if (enemyDistance < 500)
+			float threatDistance = 0; // grayman #3317
+			// Get the distance to the enemy if we're fleeing one
+			if ( enemy != NULL )
 			{
-				// Increase the fleeRadius (the nearer the enemy, the more)
-				// The enemy is still near, run further
-				if (!owner->Flee(enemy, FIND_AAS_AREA_FAR_FROM_THREAT, 500))
+				threatDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), enemy->GetPhysics()->GetOrigin());
+			}
+			else // otherwise use distance to the event we're fleeing
+			{
+				threatDistance = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), memory.posEvidenceIntruders);
+			}
+
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Threat is as near as %f\r", threatDistance);
+			if ( threatDistance < 500 )
+			{
+				// Increase the fleeRadius (the nearer the threat, the more)
+				// The threat is still near, run farther away
+				if (!owner->Flee(enemy, owner->fleeingEvent, FIND_AAS_AREA_FAR_FROM_THREAT, 500))
 				{
 					// No point could be found.
 					_failureCount++;

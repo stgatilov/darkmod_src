@@ -67,6 +67,12 @@ void FleeDoneState::Init(idAI* owner)
  	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT ) // grayman #3317 - only go to STATE_FLEE_DONE if not KO'ed or dead
+	{
+		owner->GetMind()->EndState();
+		return;
+	}
+		
 	// Slow turning for 5 seconds to look for friends
 	owner->StopMove(MOVE_STATUS_DONE);
 	_oldTurnRate = owner->GetTurnRate();
@@ -81,6 +87,12 @@ void FleeDoneState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void FleeDoneState::Think(idAI* owner)
 {
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT ) // grayman #3317 - quit if KO'ed or dead
+	{
+		owner->GetMind()->EndState();
+		return;
+	}
+
 	UpdateAlertLevel();
 		
 	// Ensure we are in the correct alert level
@@ -118,7 +130,7 @@ void FleeDoneState::Think(idAI* owner)
 		if ( friendlyAI != NULL)
 		{
 			// We found a friend, cry for help to him
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Found friendly AI %s \r", friendlyAI->name.c_str());
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s found friendly AI %s, crying for help\r", owner->name.c_str(),friendlyAI->name.c_str());
 
 			_searchForFriendDone = true;
 			owner->movementSubsystem->ClearTasks();
@@ -137,7 +149,6 @@ void FleeDoneState::Think(idAI* owner)
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
 			owner->commSubsystem->AddCommTask(barkTask);
 			memory.lastTimeVisualStimBark = gameLocal.time;
-
 		}
 		else if (gameLocal.time >= _turnEndTime)
 		{

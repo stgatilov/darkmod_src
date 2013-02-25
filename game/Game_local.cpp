@@ -6131,6 +6131,7 @@ idEntity *idGameLocal::SelectInitialSpawnPoint( idPlayer *player ) {
 		// a starting point in the briefing?
 
 		bool foundSpot = false;
+		spot.ent = NULL;
 		if ( m_StartPosition != NULL && m_StartPosition[0] != '\0' )
 		{
 			spot.ent = FindEntity( m_StartPosition );
@@ -7118,5 +7119,41 @@ void idGameLocal::OnVidRestart()
 	if (player != NULL)
 	{
 		player->GetPlayerView().OnVidRestart();
+	}
+}
+
+// grayman #3317 - Clear the time a stim last fired from an entity, so that
+// it can be fired immediately instead of waiting for the next time it was
+// scheduled to fire.
+
+void idGameLocal::AllowImmediateStim( idEntity* e, int stimType )
+{
+	// Find the entity on the list of stimming entities
+	for ( int i = 0 ; i < m_StimEntity.Num() ; i++ )
+	{
+		idEntity* entity = m_StimEntity[i].GetEntity();
+		if ( entity == NULL )
+		{
+			continue;
+		}
+		if ( entity == e )
+		{
+			CStimResponseCollection* srColl = entity->GetStimResponseCollection();
+			assert( srColl != NULL );
+			int numStims = srColl->GetNumStims();
+
+			// Traverse through the stims on this entity, searching
+			// for a match with the type we want
+			for ( int stimIdx = 0 ; stimIdx < numStims ; ++stimIdx )
+			{
+				const CStimPtr& stim = srColl->GetStim(stimIdx);
+				if ( stim->m_StimTypeId == (StimType) stimType )
+				{
+					stim->m_TimeInterleaveStamp = 0; // allow immediate firing of this stim
+					break;
+				}
+			}
+			break;
+		}
 	}
 }

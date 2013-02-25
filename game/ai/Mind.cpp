@@ -161,7 +161,7 @@ void Mind::SwitchState(const idStr& stateName)
 {
 	if (_stateQueue.size() > 0)
 	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s to %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s from %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
 	}
 	else
 	{

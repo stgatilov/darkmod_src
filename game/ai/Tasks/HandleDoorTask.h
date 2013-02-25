@@ -35,6 +35,7 @@ namespace ai
 								// position instead of the default 32x32 ('-1').
 								// grayman #2706 - returned to default value of -1. Tighter than this
 								// might cause problems.
+#define HANDLE_DOOR_ACCURACY_RUNNING 24 // grayman #3317 - less accuracy when moving faster
 
 class HandleDoorTask;
 typedef boost::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
@@ -73,7 +74,6 @@ private:
 	int _leaveQueue;		// grayman #2345
 	int _leaveDoor;			// grayman #2700
 	bool _triedFitting;		// grayman #2345
-	bool _wasRunning;		// grayman #2694
 	bool _canHandleDoor;	// grayman #2712
 	bool _doorShouldBeClosed; // grayman #2866
 public:

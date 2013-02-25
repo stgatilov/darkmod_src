@@ -63,6 +63,9 @@ struct EscapeConditions
 	// The threatening entity to flee from
 	idEntityPtr<idEntity> fromEntity;
 
+	// grayman #3317 - if we're fleeing from a murder or KO, this will be where that event took place
+	idVec3 threatPosition;
+
 	// The AAS the fleeing AI is using.
 	idAAS* aas;
 

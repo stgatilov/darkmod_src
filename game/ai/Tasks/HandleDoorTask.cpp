@@ -136,8 +136,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_wasLocked = false;
 
-	_wasRunning = false; // grayman #2694
-
 	if (frobDoor->IsLocked())
 	{
 		// check if we have already tried the door
@@ -295,9 +293,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	// bounds[0][2] += 16; // old way
 	float size = bounds[1][0];
 
-	//idEntity* frontPosEntity = _frontPosEnt.GetEntity();
-	//idEntity* backPosEntity = _backPosEnt.GetEntity();
-
 	if (cv_ai_door_show.GetBool()) 
 	{
 		DrawDebugOutput(owner);
@@ -333,19 +328,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		switch (_doorHandlingState)
 		{
 			case EStateNone:
-				if (doubleDoor != NULL && doubleDoor->IsOpen())
+				if ( ( doubleDoor != NULL ) && doubleDoor->IsOpen() )
 				{
 					// the other part of the double door is already open
 					// no need to open this one
 					ResetDoor(owner, doubleDoor);
-
-					if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning)
-					{
-						// TODO: position not reachable, need a better one
-					}
-					_doorHandlingState = EStateApproachingDoor;
-					
-					break;
 				}
 				else
 				{
@@ -357,20 +344,23 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					idEntity* controller = GetRemoteControlEntityForDoor();
 
-					if (controller != NULL && masterUser == owner && controller->GetUserManager().GetNumUsers() == 0)
+					if ( ( controller != NULL ) && ( masterUser == owner ) && ( controller->GetUserManager().GetNumUsers() == 0 ) )
 					{
 						// We have an entity to control this door, interact with it
 						owner->StopMove(MOVE_STATUS_DONE);
 						subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
 						return false;
 					}
-
-					if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
-					{
-						// TODO: position not reachable, need a better one
-					}
-					_doorHandlingState = EStateApproachingDoor;
 				}
+
+				// grayman #3317 - use less position accuracy when running
+				if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+				{
+					// TODO: position not reachable, need a better one
+				}
+
+				_doorHandlingState = EStateApproachingDoor;
+
 				break;
 
 			case EStateApproachingDoor:
@@ -390,7 +380,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 						else
 						{
-							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
+							// grayman #3317 - use less position accuracy when running
+							if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
 							{
 								// TODO: position not reachable, need a better one
 							}
@@ -480,18 +471,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					owner->TurnToward(closedPos);
 					_waitEndTime = gameLocal.time + 750;
 					_doorHandlingState = EStateWaitBeforeOpen;
-					owner->AI_RUN = (_wasRunning || owner->AI_RUN); // grayman #2694
 					break;
 				}
 				else if (owner->AI_MOVE_DONE)
 				{
-					owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+					// grayman #3317 - use less position accuracy when running
+					if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+					{
+						// TODO: position not reachable, need a better one
+					}
 				}
-				else if (owner->AI_RUN && ((_frontPos - ownerOrigin).LengthFast() < 50)) // grayman #2694
-				{
-					_wasRunning = true;
-					owner->AI_RUN = false; // stop running so you can zero in on _frontPos and not run around it in circles
-				}
+
 				break;
 			}
 
@@ -702,9 +692,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{
 							return true;
 						}
-						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
-						_doorHandlingState = EStateApproachingDoor;
 
+						// grayman #3317 - use less position accuracy when running
+						if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+						{
+							// TODO: position not reachable, need a better one
+						}
+
+						_doorHandlingState = EStateApproachingDoor;
 					}
 					else if (!AllowedToOpen(owner))
 					{
@@ -725,7 +720,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							}
 						}
 
-						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+						// grayman #3317 - use less position accuracy when running
+						if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+						{
+							// TODO: position not reachable, need a better one
+						}
+
 						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
@@ -903,11 +903,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						}
 						else
 						{
-							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
-							{
-								// TODO: position not reachable, need a better one
-							}
-							_doorHandlingState = EStateMovingToFrontPos;
+							PickWhere2Go(frobDoor); // grayman #3317 - go through an already-opened door, don't bother with _frontPos
+//							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
+//							{
+//								// TODO: position not reachable, need a better one
+//							}
+//							_doorHandlingState = EStateMovingToFrontPos;
 						}
 					}
 					else if (dist <= NEAR_DOOR_DISTANCE) // grayman #1327 - too close to door when you're not the master
@@ -935,8 +936,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else if (owner->MoveDone())
 				{
-					owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY);	// grayman #2345 - need more accurate AI positioning
-					_doorHandlingState = EStateMovingToFrontPos;			// grayman #2712
+					// grayman #3317 - use less position accuracy when running
+					if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+					{
+						// TODO: position not reachable, need a better one
+					}
+
+					_doorHandlingState = EStateMovingToFrontPos; // grayman #2712
 				}
 			
 				break;
@@ -995,7 +1001,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else if (owner->AI_MOVE_DONE)
 					{
-						owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
+						// grayman #3317 - use less position accuracy when running
+						if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+						{
+							// TODO: position not reachable, need a better one
+						}
 					}
 				}
 				// door is already open, move to back position or mid position
@@ -2437,7 +2447,6 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_leaveQueue);		// grayman #2345
 	savefile->WriteInt(_leaveDoor);			// grayman #2700
 	savefile->WriteBool(_triedFitting);		// grayman #2345
-	savefile->WriteBool(_wasRunning);		// grayman #2694
 	savefile->WriteBool(_canHandleDoor);	// grayman #2712
 	savefile->WriteBool(_doorShouldBeClosed); // grayman #2866
 
@@ -2463,7 +2472,6 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_leaveQueue);		// grayman #2345
 	savefile->ReadInt(_leaveDoor);		// grayman #2700
 	savefile->ReadBool(_triedFitting);	// grayman #2345
-	savefile->ReadBool(_wasRunning);	// grayman #2694
 	savefile->ReadBool(_canHandleDoor);	// grayman #2712
 	savefile->ReadBool(_doorShouldBeClosed); // grayman #2866
 

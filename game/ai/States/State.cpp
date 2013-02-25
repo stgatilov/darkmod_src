@@ -37,6 +37,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FailedKnockoutState.h"
 #include "ExamineRopeState.h"   // grayman #2872
 #include "HitByMoveableState.h" // grayman #2816
+#include "FleeState.h" // grayman #3317
 
 #include "../../BinaryFrobMover.h"
 #include "../../FrobDoor.h"
@@ -86,6 +87,11 @@ const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if 
 const int MIN_DIST_TO_LOWLIGHT_DOOR = 300;	// grayman #2959 - AI must be closer than this to "see" a low-light door
 const int PERSON_NEAR_DOOR = 150;			// grayman #2959 - AI must be closer than this to a suspicious door to be considered handling it
 const int BLOOD2BLEEDER_MIN_DIST = 300;		// grayman #3075 - AI must be closer than this to blood to be considered the owner
+
+// grayman #3317 - If an AI's body is discovered w/in this amount of time after death or KO,
+// the finding AI should react differently than if the body is found after this
+// amount of time has passed.
+const int DISCOVERY_TIME_LIMIT = 4000;		// in ms
 
 //----------------------------------------------------------------------------------------
 // grayman #2903 - no warning if the sender is farther than this horizontally from the alert spot (one per alert type)
@@ -1018,8 +1024,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	else if ( stimSource->IsType(CProjectileResult::Type) )
 	{
 		// grayman #3075 - If this arrow is bound to a dead body,
-		// pass the stim response to the body so there's a single unified
-		// response to what's been found.
+		// ignore it. The dead body will be found separately.
 
 		// What we have is the projectile result (stimSource) bound
 		// to the arrow, which is eventually bound to the body. Go up the
@@ -1030,15 +1035,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 		{
 			if ( bindMaster->IsType(idAI::Type) )
 			{
-				idAI *boundAI = static_cast<idAI*>(bindMaster);
-
-				// Since arrows aren't allowed to stick into living
-				// AI, we can assume this AI is dead, but we shouldn't
-				// go straight to OnDeadPersonEncounter(). Let
-				// OnPersonEncounter() handle it.
-
-				OnPersonEncounter(boundAI,owner);
-				return;
+				return; // ignore the arrow
 			}
 			bindMaster = bindMaster->GetBindMaster();
 		}
@@ -1267,8 +1264,11 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 			// grayman #2603 - only join if he's searching and I haven't been searching recently
 			// grayman #2866 - don't join if he's searching a suspicious door. Joining causes congestion at the door.
+			// grayman #3317 - surely don't join if I'm fleeing! Feets don't fail me now!!
 
-			if ( otherAI->IsSearching() && !( memory.searchFlags & SRCH_WAS_SEARCHING ) && ( otherMemory.alertType != EAlertTypeDoor ) )
+			bool fleeing = (owner->GetMind()->GetState()->GetName() == "Flee" );
+
+			if ( !fleeing && otherAI->IsSearching() && !( memory.searchFlags & SRCH_WAS_SEARCHING ) && ( otherMemory.alertType != EAlertTypeDoor ) )
 			{
 				// grayman #1327 - warning should be specific
 
@@ -1481,8 +1481,8 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							// Basically this has the effect that AI evaluate the greeting chance
 							// immediately after they enter the greeting radius and ignore all stims for 
 							// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
-							if (info.lastConsiderTime > -1 && 
-								gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS)
+							if ( ( info.lastConsiderTime > -1 ) && 
+								 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
 							{
 								// Not enough time has passed, ignore this stim
 								consider = false;
@@ -1520,10 +1520,60 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			// Don't ignore in future
 			ignoreStimulusFromNowOn = false;
 		}
-		else
+		else // neutral person
 		{
-			// Living neutral persons are not being handled, ignore it from now on
-			ignoreStimulusFromNowOn = true;
+			// grayman #3317 - don't ignore people you're neutral to, otherwise you won't
+			// recognize that they died or got KO'ed later
+
+			if (!other->IsType(idAI::Type))
+			{
+				return; // safeguard
+			}
+
+			idAI* otherAI = static_cast<idAI*>(other);
+
+			if (otherAI->GetMoveType() == MOVETYPE_SLEEP)
+			{
+				return; // nothing else to do
+			}
+
+			if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) )
+			{
+				Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
+
+				bool consider = true;
+
+				// Owner has a certain chance of greeting when encountering the other person 
+				// this chance does not get re-evaluated for a given amount of time
+				// Basically this has the effect that AI evaluate the greeting chance
+				// immediately after they enter the greeting radius and ignore all stims for 
+				// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
+				if ( ( info.lastConsiderTime > -1 ) && 
+					 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+				{
+					// Not enough time has passed, ignore this stim
+					consider = false;
+				}
+				else
+				{
+					info.lastConsiderTime = gameLocal.time;
+					consider = (gameLocal.random.RandomFloat() > 1.0f - CHANCE_FOR_GREETING);
+				}
+
+				if (consider && 
+					owner->CheckFOV(otherAI->GetEyePosition()) && 
+					otherAI->CheckFOV(owner->GetEyePosition()))
+				{
+					// A special GreetingBarkTask is handling this
+
+					// Get the sound and queue the task
+					idStr greetSound = GetGreetingSound(owner, otherAI);
+					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
+				}
+			}
+					
+			// Don't ignore in future
+			ignoreStimulusFromNowOn = false;
 		}
 	}
 
@@ -1561,7 +1611,6 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 				soundName = "snd_greeting_generic";
 			}
 		}
-
 	}
 
 	// the other AI is a builder
@@ -1614,10 +1663,8 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 		}
 	}
 
-
 	if (soundName.IsEmpty())
 	{
-
 		// this AI is a guard
 		if (owner->spawnArgs.GetBool("is_civilian") == false &&
 			(owner->GetNumMeleeWeapons() > 0 || owner->GetNumRangedWeapons() > 0))
@@ -1667,7 +1714,6 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 			// the other AI is a civilian
 			else
 			{
-				
 				// check for gender specific barks
 				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
 				if (otherPersonGender == PERSONGENDER_FEMALE)
@@ -1705,7 +1751,6 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 						soundName = "snd_greeting_civilian";
 					}
 				}
-				
 			}
 		}
 
@@ -1794,7 +1839,6 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 						soundName = "snd_greeting_civilian";
 					}
 				}
-				
 			}
 		}
 	}
@@ -1807,6 +1851,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 			soundName = "snd_greeting_generic";
 		}
 	}
+
 	return soundName;
 }
 
@@ -1847,9 +1892,6 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 {
 	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 	
-	// Memory shortcut
-	Memory& memory = owner->GetMemory();
-
 	// grayman #3075 - Ignore any blood markers spilled by this body if they're nearby
 
 	if ( person->IsType(idAI::Type) )
@@ -1889,21 +1931,75 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 		}
 	}
 	
-	if ( owner->IsEnemy(person) || owner->IsNeutral(person) ) // grayman #3078 - ignore neutrals too
+	if ( owner->IsEnemy(person) ) // grayman #3317 - allow neutrals past this point
 	{
 		// ignore from now on
 		return true;
 	}
 
-	// The dead person is a friend, so this is suspicious
+	// We've seen this person, don't respond to them again
+	person->IgnoreResponse(ST_VISUAL, owner);
+
+	// grayman #3317 - Rats and other non-people can get to this point.
+	// In case we ever want to add specific behavior for reacting to
+	// a dead person (i.e. rats gnaw on corpses) we can start adding that here.
+	// For now, let's only continue this if we're a person.
+
+	idStr aiUse = owner->spawnArgs.GetString("AIUse");
+
+	if ( aiUse != AIUSE_PERSON )
+	{
+		return true;
+	}
+
+	// grayman #3317 - We want a random delay at this point, so we'll
+	// post an event to handle the reaction. Control will go over to AI_events.cpp
+	// to handle the event, and immediately call Post_OnDeadPersonEncounter() below.
+
+	int delay = 500 + gameLocal.random.RandomInt(1000); // ms
+	owner->PostEventMS(&AI_OnDeadPersonEncounter,delay,person);
+
+	return true; // Ignore from now on
+}
+
+// grayman #3317
+
+void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
+{
+	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
+
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
+	{
+		return; // can't react if you're dead or KO'ed
+	}
+		
+	bool fleeing = false; // TRUE = I'm going to flee, FALSE = I'm not going to flee
+	bool ISawItHappen = ( gameLocal.time < ( person->m_timeFellDown + DISCOVERY_TIME_LIMIT ) );
+
+	// If I'm a civilan, or unarmed, I'll flee
+	if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
+	{
+		fleeing = true;
+	}
+
+	// If I'm not already planning to flee, react 50% of the time if this is a neutral and I didn't see it happen.
+
+	if ( !fleeing &&
+		 owner->IsNeutral(person) &&
+		 ( gameLocal.random.RandomFloat() < 0.5f ) &&
+		 !ISawItHappen )
+	{
+		owner->FoundBody(person); // register this in case Mission Objectives cares
+		return;
+	}
+
+	// The dead person is a friend or a neutral, so this is suspicious
 
 	gameLocal.Printf("I see a dead person!\n");
+	Memory& memory = owner->GetMemory();
 	memory.deadPeopleHaveBeenFound = true;
 	memory.posCorpseFound = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeCorpseFound = gameLocal.time; // grayman #2903
-
-	// We've seen this object, don't respond to it again
-	person->IgnoreResponse(ST_VISUAL, owner);
 
 	// Three more pieces of evidence of something out of place: A dead body is a REALLY bad thing
 	memory.countEvidenceOfIntruders += 3;
@@ -1914,33 +2010,35 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	memory.stopReactingToHit = true; // grayman #2816
 
 	// Determine what to say
-	idStr soundName;
-	idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+	// grayman #3317 - say nothing if you're a witness ( ISawItHappen is TRUE )
 
-	if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+	if ( !ISawItHappen )
 	{
-		soundName = "snd_foundComradeBody";
-	}
-	else if (personGender == PERSONGENDER_FEMALE)
-	{
-		soundName = "snd_foundDeadFemale";
-	}
-	else
-	{
-		soundName = "snd_foundDeadMale";
+		// Speak a reaction
+		if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+		{
+			idStr soundName;
+			idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+
+			if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+			{
+				soundName = "snd_foundComradeBody";
+			}
+			else if (personGender == PERSONGENDER_FEMALE)
+			{
+				soundName = "snd_foundDeadFemale";
+			}
+			else
+			{
+				soundName = "snd_foundDeadMale";
+			}
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+		}
 	}
 
-	// Speak a reaction
-	if (gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
-	{
-		memory.lastTimeVisualStimBark = gameLocal.time;
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask(soundName))
-		);
-	}
-
-	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
+	// Raise alert level if planning to search
+	if ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) )
 	{
 		idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
 		memory.alertPos = person->GetPhysics()->GetOrigin();
@@ -1960,6 +2058,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 		// Is this alert far enough away from the last one we reacted to to
 		// consider it a new alert and restart the search?
 
+		// If lastAlertPosSearched is [0,0,0], restart
 		if ( lastAlertPosSearched.Compare(idVec3(0,0,0)) )
 		{
 			// Restart the search, in case we're already searching
@@ -1976,34 +2075,95 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 			}
 		}
 	}
-					
-	// Do new reaction to stimulus
-	memory.investigateStimulusLocationClosely = true; // deep investigation
-	memory.stimulusLocationItselfShouldBeSearched = true;
+	// grayman #3317 - No close search if death just happened. Otherwise, there's a chance
+
+	bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
+
+	memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
+	memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
 	memory.alertedDueToCommunication = false;
-	
+					
 	// Callback for objectives
 	owner->FoundBody(person);
 
-	// Ignore from now on
-	return true;
+	// Flee if you planned to, and you aren't already fleeing
+	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
+	{
+		owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
+		owner->GetMind()->SwitchState(STATE_FLEE);
+	}
 }
 
 bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 {
 	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
-	// Memory shortcut
-	Memory& memory = owner->GetMemory();
-
-	if ( owner->IsEnemy(person) || owner->IsNeutral(person) ) // grayman #3078 - ignore neutrals too
+	if ( owner->IsEnemy(person) ) // grayman #3317 - allow neutrals past this point
 	{
-		// The unconscious person is your enemy or neutral, ignore from now on
+		// The unconscious person is your enemy, ignore from now on
 		return true;
+	}
+
+	// We've seen this person, don't respond to them again
+	person->IgnoreResponse(ST_VISUAL, owner);
+
+	// grayman #3317 - Rats and other non-people can get to this point.
+	// In case we ever want to add specific behavior for reacting to
+	// an unconscious person (i.e. rats gnaw on body) we can start adding that here.
+	// For now, let's only continue this if we're a person.
+
+	idStr aiUse = owner->spawnArgs.GetString("AIUse");
+
+	if ( aiUse != AIUSE_PERSON )
+	{
+		return true;
+	}
+
+	// grayman #3317 - We want a random delay at this point, so we'll
+	// post an event to handle the reaction. Control will go over to AI_events.cpp
+	// to handle the event, and immediately call Post_OnUnconsciousPersonEncounter() below.
+
+	int delay = 500 + gameLocal.random.RandomInt(1000); // ms
+	owner->PostEventMS(&AI_OnUnconsciousPersonEncounter,delay,person);
+
+	return true;
+}
+
+void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
+{
+	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
+
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
+	{
+		return; // can't react if you're dead or KO'ed
+	}
+		
+	bool fleeing = false; // TRUE = I'm going to flee, FALSE = I'm not going to flee
+	bool ISawItHappen = ( gameLocal.time < ( person->m_timeFellDown + DISCOVERY_TIME_LIMIT ) );
+
+	// If I'm a civilan, or unarmed, and I saw it happen, I'll flee
+	if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
+	{
+		if ( ISawItHappen )
+		{
+			fleeing = true;
+		}
+	}
+
+	// Only react 50% of the time if this is a neutral and I didn't witness the KO.
+
+	if ( !fleeing &&
+		 owner->IsNeutral(person) &&
+		 gameLocal.random.RandomFloat() < 0.5f &&
+		 !ISawItHappen )
+	{
+		owner->FoundBody(person);
+		return;
 	}
 
 	gameLocal.Printf("I see an unconscious person!\n");
 
+	Memory& memory = owner->GetMemory();
 	memory.unconsciousPeopleHaveBeenFound = true;
 	memory.countEvidenceOfIntruders += 2; // grayman #2603
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
@@ -2012,30 +2172,33 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 	memory.stopReactingToHit = true; // grayman #2816
 
-	// We've seen this object, don't respond to it again
-	person->IgnoreResponse(ST_VISUAL, owner);
-
 	// Determine what to say
-	idStr soundName;
-	idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+	// grayman #3317 - say nothing if you're a witness
 
-	if (personGender == PERSONGENDER_FEMALE)
+	if ( !ISawItHappen )
 	{
-		soundName = "snd_foundUnconsciousFemale";
-	}
-	else
-	{
-		soundName = "snd_foundUnconsciousMale";
-	}
+		// Speak a reaction
+		if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS )
+		{
+			idStr soundName;
+			idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
 
-	// Speak a reaction
-	memory.lastTimeVisualStimBark = gameLocal.time;
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask(soundName))
-	);
+			if (personGender == PERSONGENDER_FEMALE)
+			{
+				soundName = "snd_foundUnconsciousFemale";
+			}
+			else
+			{
+				soundName = "snd_foundUnconsciousMale";
+			}
+
+			memory.lastTimeVisualStimBark = gameLocal.time;
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+		}
+	}
 
 	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_5 + 0.1f)
+	if ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) )
 	{
 		memory.alertPos = person->GetPhysics()->GetOrigin();
 		memory.alertClass = EAlertVisual_1;
@@ -2052,16 +2215,23 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		owner->SetAlertLevel(owner->thresh_5 + 0.1f);
 	}
 					
-	// Do new reaction to stimulus
-	memory.investigateStimulusLocationClosely = true; // deep investigation
-	memory.stimulusLocationItselfShouldBeSearched = true;
+	// grayman #3317 - No close search if KO just happened. Otherwise, there's a chance
+
+	bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
+
+	memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
+	memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
 	memory.alertedDueToCommunication = false;
 		
 	// Callback for objectives
 	owner->FoundBody(person);
 
-	// Ignore from now on
-	return true;
+	// Flee if you planned to, and you aren't already fleeing
+	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
+	{
+		owner->fleeingEvent = true; // I'm fleeing the scene of the KO, not fleeing an enemy
+		owner->GetMind()->SwitchState(STATE_FLEE);
+	}
 }
 
 void State::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
@@ -2332,7 +2502,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
  */
 
 	// grayman #3075 - Each blood marker knows who spilled it.
-	// If the body is nearby and visible, pass the stim response to the body.
+	// If the body is nearby and visible, don't process this blood marker.
 
 	CBloodMarker *marker = static_cast<CBloodMarker*>(stimSource);
 	idAI *bleeder = marker->GetSpilledBy();
@@ -2348,9 +2518,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 
 		if ( owner->CanSeeExt(bleeder,true,( bloodDistSqr > Square(BLOOD2BLEEDER_MIN_DIST) )) )
 		{
-			// Pass the stim response to the bleeder
-
-			OnPersonEncounter(bleeder,owner);
+			// grayman #3317 - The body will be found separately, so don't process the blood marker
 			return;
 		}
 	}
@@ -3156,7 +3324,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 	if (issuingEntity != NULL)
 	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Got incoming message from %s\r", issuingEntity->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s Got incoming message from %s\r", owner->name.c_str(),issuingEntity->name.c_str());
 	}
 
 	Memory& memory = owner->GetMemory();
@@ -3229,9 +3397,16 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					break;
 				}
 
+				// grayman #3317 - Can't help if I'm fleeing
+				idStr myState = owner->GetMind()->GetState()->GetName();
+				if ( ( myState == "Flee" ) || ( myState == "FleeDone" ) )
+				{
+					gameLocal.Printf("I'm fleeing, so I can't help!\n");
+					break;
+				}
+
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
-					
 					// Bark
 					owner->GetSubsystem(SubsysCommunication)->PushTask(
 						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));

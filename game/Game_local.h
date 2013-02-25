@@ -930,6 +930,8 @@ public:
 	void					OnReloadImages();
 	void					OnVidRestart();
 
+	void					AllowImmediateStim( idEntity* e, int stimType ); // grayman #3317
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

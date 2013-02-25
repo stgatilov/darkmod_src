@@ -468,6 +468,8 @@ idAI::idAI()
 	lastTimePlayerSeen = -1;
 	lastTimePlayerLost = -1;
 
+	fleeingEvent = false; // grayman #3317
+
 	memset( &worldMuzzleFlash, 0, sizeof ( worldMuzzleFlash ) );
 	worldMuzzleFlashHandle = -1;
 
@@ -803,6 +805,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(lastTimePlayerSeen);		// grayman #2887
 	savefile->WriteInt(lastTimePlayerLost);		// grayman #2887
+
+	savefile->WriteBool(fleeingEvent);			// grayman #3317
 
 	savefile->WriteAngles( eyeMin );
 	savefile->WriteAngles( eyeMax );
@@ -1220,6 +1224,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lastUpdateEnemyPositionTime);
 	savefile->ReadInt(lastTimePlayerSeen);	// grayman #2887
 	savefile->ReadInt(lastTimePlayerLost);	// grayman #2887
+
+	savefile->ReadBool(fleeingEvent);		// grayman #3317
 
 	savefile->ReadAngles( eyeMin );
 	savefile->ReadAngles( eyeMax );
@@ -3131,6 +3137,12 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.lastMoveOrigin.Zero();
 	move.lastMoveTime	= gameLocal.time;
 	move.accuracy		= -1;
+
+	if ( name == "dude1" )
+	{
+		int z = 0;
+		z++;
+	}
 }
 
 const idVec3& idAI::GetMoveDest() const
@@ -3457,11 +3469,12 @@ CMultiStateMover* idAI::OnElevator(bool mustBeMoving) const
 	return mover;
 }
 
-bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
+bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, int distanceOption) // grayman #3317
 {
 	EscapePointAlgorithm algorithmType = static_cast<EscapePointAlgorithm>(algorithm);
 	
-	if ( !aas || !entityToFleeFrom ) {
+	if ( !aas || ( !entityToFleeFrom && !fleeingEvent ) ) // grayman #3317
+	{
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
@@ -3482,6 +3495,17 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 		EscapeConditions conditions;
 		
 		conditions.fromEntity = entityToFleeFrom;
+
+		// grayman #3317 - need threat position if fleeing an event
+		if ( fleeingEvent )
+		{
+			conditions.threatPosition = GetMemory().posEvidenceIntruders;
+		}
+		else
+		{
+			conditions.threatPosition.Zero();
+		}
+
 		conditions.aas = aas;
 		conditions.fromPosition = org;
 		conditions.self = this;
@@ -3509,23 +3533,36 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 		// algorithm == FIND_AAS_AREA_FAR_FROM_THREAT
 
 		int	areaNum = PointReachableAreaNum(org);
-		
-		// consider the entity the monster is getting close to as an obstacle
-		aasObstacle_t obstacle;
-		obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
-
 		idVec3 pos;
+		aasObstacle_t obstacle;
+		int numObstacles;
 
-		if ( entityToFleeFrom == enemy.GetEntity() ) {
-			pos = lastVisibleEnemyPos;
-		} else {
-			pos = entityToFleeFrom->GetPhysics()->GetOrigin();
+		if ( entityToFleeFrom != NULL ) // grayman #3317
+		{
+			// consider the entity the monster is getting close to as an obstacle
+			obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
+
+			if ( entityToFleeFrom == enemy.GetEntity() )
+			{
+				pos = lastVisibleEnemyPos;
+			}
+			else
+			{
+				pos = entityToFleeFrom->GetPhysics()->GetOrigin();
+			}
+
+			numObstacles = 1;
+		}
+		else // fleeing from an event (i.e. murder)
+		{
+			pos = GetMemory().posEvidenceIntruders;
+			numObstacles = 0;
 		}
 
 		// Setup the evaluator class
 		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100);
 		aasGoal_t dummy;
-		aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, &obstacle, 1, findEscapeArea);
+		aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, &obstacle, numObstacles, findEscapeArea); // grayman #3317
 
 		aasGoal_t& goal = findEscapeArea.GetEscapeGoal();
 
@@ -3542,40 +3579,6 @@ bool idAI::Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption)
 	StopMove(MOVE_STATUS_DONE);
 	MoveToPosition(moveDest);
 	return true;
-/*
-	if ( ReachedPos( moveDest, move.moveCommand ) ) {
-		StopMove( MOVE_STATUS_DONE );
-		return true;
-	}
-	
-	if ( !move.toAreaNum && !NewWanderDir( moveDest ) ) 
-	{
-		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
-		AI_DEST_UNREACHABLE = true;
-		return false;
-	}
-*/
-/* grayman - the section below can't be reached because
-   of the 'return true' above, so I'm commenting it out.
-   The section above this, just below the 'return', was
-   already commented out.
-
-	move.moveDest		= moveDest;
-	move.toAreaNum		= moveAreaNum;
-	move.goalEntity		= entityToFleeFrom;
-	move.moveCommand	= MOVE_FLEE;
-	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.range			= MAX_FLEE_DISTANCE;
-	move.speed			= fly_speed;
-	move.startTime		= gameLocal.time;
-	move.accuracy		= -1;
-	AI_MOVE_DONE		= false;
-	AI_DEST_UNREACHABLE = false;
-	AI_FORWARD			= true;
-	m_pathRank			= rank; // grayman #2345
-
-	return true;
- */
 }
 
 /*
@@ -6280,6 +6283,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	ClearEnemy();
 	AI_DEAD	= true;
+
+	// grayman #3317 - mark time of death and allow immediate visual stimming from this dead AI so
+	// that nearby AI can react quickly, instead of waiting for the next-scheduled
+	// visual stim from this AI
+	m_timeFellDown = gameLocal.time;
+	gameLocal.AllowImmediateStim( this, ST_VISUAL );
 
 	// make monster nonsolid
 	if (spawnArgs.GetBool("nonsolid_on_ragdoll", "1"))
@@ -10521,6 +10530,12 @@ void idAI::Knockout( idEntity* inflictor )
 
 	AI_KNOCKEDOUT = true;
 
+	// grayman #3317 - mark time of KO and allow immediate visual stimming from this KO'ed AI so
+	// that nearby AI can react quickly, instead of waiting for the next-scheduled
+	// visual stim from this AI
+	m_timeFellDown = gameLocal.time;
+	gameLocal.AllowImmediateStim( this, ST_VISUAL );
+
 	// greebo: Switch the mind to KO state, this will trigger PostKnockout() when
 	// the animation is done
 	mind->ClearStates();
@@ -10962,10 +10977,20 @@ void idAI::DrawWeapon()
 	}*/
 	// greebo: Replaced the above thread spawn with an animstate switch
 
+	// grayman #3317 - Can't draw a weapon if you don't have one.
+
+	int numMeleeWeapons = GetNumMeleeWeapons();
+	int numRangedWeapons = GetNumRangedWeapons();
+
+	if ( ( numMeleeWeapons == 0) && ( numRangedWeapons == 0 ) )
+	{
+		return; // nothing to do
+	}
+
 	// grayman #3123 - if this AI is carrying something in his
 	// left hand, and he uses a ranged weapon, he needs to drop what's in his left hand first
 
-	if ( GetNumRangedWeapons() > 0 )
+	if ( numRangedWeapons  > 0)
 	{
 		idEntity* torch = GetTorch();
 		if ( torch )

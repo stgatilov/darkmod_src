@@ -30,7 +30,7 @@ EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_startAreaNum(conditions.self.GetEntity()->PointReachableAreaNum(conditions.fromPosition, 2.0f)),
 	_bestTime(0),
 	_distanceMultiplier((conditions.distanceOption == DIST_FARTHEST) ? -1 : 1),
-	_threatPosition(conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin())
+	_threatPosition(conditions.fromEntity.GetEntity() != NULL ? conditions.fromEntity.GetEntity()->GetPhysics()->GetOrigin() : conditions.threatPosition) // grayman #3317
 {}
 
 bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)

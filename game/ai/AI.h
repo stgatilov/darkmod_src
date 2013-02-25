@@ -173,6 +173,9 @@ extern const idEventDef AI_Bark; // grayman #2816
 
 extern const idEventDef AI_RestartPatrol; // grayman #2920
 
+extern const idEventDef AI_OnDeadPersonEncounter; // grayman #3317
+extern const idEventDef AI_OnUnconsciousPersonEncounter; // grayman #3317
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -805,6 +808,11 @@ public: // greebo: Made these public
 
 	int						lastTimePlayerSeen;
 	int						lastTimePlayerLost;
+
+	// grayman #3317 - if this is TRUE, we're fleeing an event (like witnessing a murder),
+	// and don't necessarily have an enemy.
+
+	bool					fleeingEvent;
 
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
@@ -1616,8 +1624,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	/**
 	 * greebo: Flee from the given entity. Pass the maximum distance this AI should search escape areas in.
+	 * grayman #3317 - can also flee a murder or KO, w/o having an enemy
 	 */
-	bool					Flee(idEntity* entityToFleeFrom, int algorithm, int distanceOption);
+	bool					Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, int distanceOption); // grayman #3317
 	aasGoal_t				GetPositionWithinRange(const idVec3& targetPos);
 	idVec3					GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne);
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
@@ -2218,6 +2227,9 @@ public:
 
 	// grayman #2920
 	void Event_RestartPatrol();
+
+	void Event_OnDeadPersonEncounter(idActor* person); // grayman #3317
+	void Event_OnUnconsciousPersonEncounter(idActor* person); // grayman #3317
 
 #ifdef TIMING_BUILD
 private:

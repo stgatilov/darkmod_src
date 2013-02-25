@@ -76,7 +76,8 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	// Check the last time we greeted this AI
 	int lastGreetingTime = owner->GetMemory().GetGreetingInfo(_greetingTarget).lastGreetingTime;
 
-	if (lastGreetingTime > 0 && lastGreetingTime < gameLocal.time + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)
+	if ( ( lastGreetingTime > 0 ) && ( gameLocal.time < lastGreetingTime + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR ) ) // grayman #3317
+//	if (lastGreetingTime > 0 && lastGreetingTime < gameLocal.time + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR) // bad check was letting AI greet once and then never again
 	{
 		// Too early
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: time since last greet too short: %s to %s, %d msecs\r", 

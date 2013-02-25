@@ -385,6 +385,11 @@ public:
 	**/
 	int						m_nextKickTime;
 
+	/**
+	* grayman #3317 - when we were killed or KO'ed
+	**/
+	int						m_timeFellDown;
+
 public:
 							idActor( void );
 	virtual					~idActor( void );

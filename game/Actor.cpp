@@ -712,7 +712,6 @@ idActor::idActor( void ) {
 	m_MeleeRepeatedPostParryDelayMax	= 0;
 	m_MeleeCurrentRepeatedPostParryDelay	= 0;
 
-
 	state				= NULL;
 	idealState			= NULL;
 
@@ -735,6 +734,8 @@ idActor::idActor( void ) {
 	blink_max			= 0;
 
 	finalBoss			= false;
+
+	m_timeFellDown		= 0;	 // grayman #3317
 
 	m_Attachments.SetGranularity( 1 );
 
@@ -1346,6 +1347,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(static_cast<int>(*i));
 	}
 
+	savefile->WriteInt(m_timeFellDown); // grayman #3317
+
 	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
@@ -1534,6 +1537,8 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		assert(static_cast<ECombatType>(temp) >= COMBAT_NONE && static_cast<ECombatType>(temp) <= COMBAT_RANGED);
 		m_AttackFlags.insert(temp);
 	}
+
+	savefile->ReadInt(m_timeFellDown); // grayman #3317
 
 	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
@@ -3724,11 +3729,11 @@ void idActor::LoadMeleeSet()
 	if (def == NULL)
 	{
 		gameLocal.Warning("%s - Could not find def_melee_set %s!", name.c_str(),MeleeSet.c_str());
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("%s - Could not find def_melee_set %s!", name.c_str(), MeleeSet.c_str());
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("%s - Could not find def_melee_set %s!\r", name.c_str(), MeleeSet.c_str());
 		return;
 	}
 
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying melee set %s to actor %s", MeleeSet.c_str(), name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying melee set %s to actor %s\r", MeleeSet.c_str(), name.c_str());
 
 	// Copy ALL spawnargs from melee set over to this entity
 	spawnArgs.Copy( def->dict );
