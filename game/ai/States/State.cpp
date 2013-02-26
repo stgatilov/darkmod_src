@@ -68,6 +68,7 @@ namespace ai
 #define PERSONTYPE_THIEF			"PERSONTYPE_THIEF"
 #define PERSONTYPE_PRIEST			"PERSONTYPE_PRIEST"
 #define PERSONTYPE_ELITE			"PERSONTYPE_ELITE"
+#define PERSONTYPE_BEGGAR			"PERSONTYPE_BEGGAR" // grayman #3323
 
 //----------------------------------------------------------------------------------------
 // The following strings define genders of person, these are used if AIUse is AIUSE_PERSON 
@@ -1628,6 +1629,15 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 		if (owner->spawnArgs.FindKey( "snd_greeting_pagan") != NULL)
 		{
 			soundName = "snd_greeting_pagan";
+		}
+	}
+
+	// grayman #3323 - the other AI is a beggar
+	else if (otherPersonType == PERSONTYPE_BEGGAR)
+	{
+		if (owner->spawnArgs.FindKey( "snd_greeting_beggar") != NULL)
+		{
+			soundName = "snd_greeting_beggar";
 		}
 	}
 
