@@ -737,6 +737,8 @@ idActor::idActor( void ) {
 
 	m_timeFellDown		= 0;	 // grayman #3317
 
+	m_isMute			= false; // grayman #3202
+
 	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -1349,6 +1351,8 @@ void idActor::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(m_timeFellDown); // grayman #3317
 
+	savefile->WriteBool(m_isMute);		// grayman #3202
+
 	SAVE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
 	SAVE_TIMER_HANDLE(actorGetWallEdgesTimer, savefile);
@@ -1538,7 +1542,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		m_AttackFlags.insert(temp);
 	}
 
-	savefile->ReadInt(m_timeFellDown); // grayman #3317
+	savefile->ReadInt(m_timeFellDown);	// grayman #3317
+
+	savefile->ReadBool(m_isMute);		// grayman #3202
 
 	RESTORE_TIMER_HANDLE(actorGetObstaclesTimer, savefile);
 	RESTORE_TIMER_HANDLE(actorGetPointOutsideObstaclesTimer, savefile);
@@ -3685,7 +3691,11 @@ void idActor::LoadVocalSet()
 	// Try to look up the entityDef
 	idStr vocalSet = spawnArgs.GetString("def_vocal_set");
 
-	if (vocalSet.IsEmpty()) return; // nothing to do
+	if (vocalSet.IsEmpty())
+	{
+		m_isMute = true; // grayman #3202
+		return;
+	}
 
 	const idDeclEntityDef* def = gameLocal.FindEntityDef(vocalSet, false);
 
@@ -3693,7 +3703,13 @@ void idActor::LoadVocalSet()
 	{
 		gameLocal.Warning("%s - Could not find def_vocal_set %s!", name.c_str(),vocalSet.c_str());
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("%s - Could not find def_vocal_set %s!", name.c_str(),vocalSet.c_str());
+		m_isMute = true; // grayman #3202
 		return;
+	}
+
+	if ( idStr::FindText(vocalSet,"ai_vocal_set_mute") >= 0 ) // grayman #3202
+	{
+		m_isMute = true;
 	}
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Copying vocal set %s to actor %s\r", vocalSet.c_str(), name.c_str());

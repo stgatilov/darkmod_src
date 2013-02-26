@@ -390,6 +390,11 @@ public:
 	**/
 	int						m_timeFellDown;
 
+	/**
+	* grayman #3202 - whether actor is mute or not
+	**/
+	bool					m_isMute;
+
 public:
 							idActor( void );
 	virtual					~idActor( void );

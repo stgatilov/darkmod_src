@@ -1363,7 +1363,8 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					}
 				}
 			}
-			else if ( !otherAI->IsSearching() ) // grayman #2903
+			// grayman #3202 - don't issue a warning or greeting if you're mute
+			else if ( !otherAI->IsSearching()  && !owner->m_isMute ) // grayman #2903
 			{
 				// grayman #1327 - apply the distance check to both warnings and greetings
 
@@ -1372,6 +1373,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				idVec3 dir = origin - otherOrigin;
 				dir.z = 0;
 				float distSqr = dir.LengthSqr();
+
 				if ( distSqr <= Square(REMARK_DISTANCE) )
 				{
 					// Issue a communication stim to the friend we spotted.
@@ -1538,38 +1540,53 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				return; // nothing else to do
 			}
 
-			if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) )
+			// grayman #3202 - don't issue a greeting if you're mute
+			if (!owner->m_isMute)
 			{
-				Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
+				// apply the distance check to greetings
 
-				bool consider = true;
+				const idVec3& origin = owner->GetPhysics()->GetOrigin();
+				const idVec3& otherOrigin = otherAI->GetPhysics()->GetOrigin();
+				idVec3 dir = origin - otherOrigin;
+				dir.z = 0;
+				float distSqr = dir.LengthSqr();
 
-				// Owner has a certain chance of greeting when encountering the other person 
-				// this chance does not get re-evaluated for a given amount of time
-				// Basically this has the effect that AI evaluate the greeting chance
-				// immediately after they enter the greeting radius and ignore all stims for 
-				// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
-				if ( ( info.lastConsiderTime > -1 ) && 
-					 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+				if ( ( distSqr <= Square(REMARK_DISTANCE) ) && !owner->m_isMute )
 				{
-					// Not enough time has passed, ignore this stim
-					consider = false;
-				}
-				else
-				{
-					info.lastConsiderTime = gameLocal.time;
-					consider = (gameLocal.random.RandomFloat() > 1.0f - CHANCE_FOR_GREETING);
-				}
+					if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) )
+					{
+						Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
 
-				if (consider && 
-					owner->CheckFOV(otherAI->GetEyePosition()) && 
-					otherAI->CheckFOV(owner->GetEyePosition()))
-				{
-					// A special GreetingBarkTask is handling this
+						bool consider = true;
 
-					// Get the sound and queue the task
-					idStr greetSound = GetGreetingSound(owner, otherAI);
-					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
+						// Owner has a certain chance of greeting when encountering the other person 
+						// this chance does not get re-evaluated for a given amount of time
+						// Basically this has the effect that AI evaluate the greeting chance
+						// immediately after they enter the greeting radius and ignore all stims for 
+						// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
+						if ( ( info.lastConsiderTime > -1 ) && 
+							 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+						{
+							// Not enough time has passed, ignore this stim
+							consider = false;
+						}
+						else
+						{
+							info.lastConsiderTime = gameLocal.time;
+							consider = (gameLocal.random.RandomFloat() > 1.0f - CHANCE_FOR_GREETING);
+						}
+
+						if (consider && 
+							owner->CheckFOV(otherAI->GetEyePosition()) && 
+							otherAI->CheckFOV(owner->GetEyePosition()))
+						{
+							// A special GreetingBarkTask is handling this
+
+							// Get the sound and queue the task
+							idStr greetSound = GetGreetingSound(owner, otherAI);
+							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
+						}
+					}
 				}
 			}
 					
@@ -3354,8 +3371,11 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
 			// If not too upset, look at them
-			if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) &&
-				issuingEntity->IsType(idAI::Type))
+			// grayman #3202 - if mute, you can't reply
+			if ( ( owner->AI_AlertIndex < EObservant ) &&
+				 ( owner->greetingState != ECannotGreet ) &&
+				issuingEntity->IsType(idAI::Type) &&
+				!owner->m_isMute )
 			{
 				idAI* otherAI = static_cast<idAI*>(issuingEntity);
 
@@ -3366,6 +3386,14 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
 				);
 			}
+			else // grayman #3202 - reset greetingState so we can receive greetings in the future
+			{
+				if ( owner->greetingState != ECannotGreet )
+				{
+					owner->greetingState = ENotGreetingAnybody;
+				}
+			}
+
 			break;
 		case CommMessage::FriendlyJoke_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: FriendlyJoke_CommType\r");
