@@ -294,10 +294,9 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 
 	assert(evaluator); // the pointer must be non-NULL after this point
 	
-	// Start with the second point in the list
-	for (int i = 0; i < escapePoints.Num(); i++)
+	for ( int i = 0 ; i < escapePoints.Num() ; i++ )
 	{
-		if (!evaluator->Evaluate(escapePoints[i])) 
+		if ( !evaluator->Evaluate(escapePoints[i]) ) 
 		{
 			// Evaluator returned FALSE, break the loop
 			break;
@@ -306,7 +305,7 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 
 	goal.escapePointId = evaluator->GetBestEscapePoint();
 
-	if (goal.escapePointId == -1)
+	if ( goal.escapePointId == -1 )
 	{
 		// No point found, return false
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No escape point found!\r");

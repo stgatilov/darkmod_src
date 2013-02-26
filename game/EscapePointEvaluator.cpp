@@ -46,7 +46,14 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 
 	// Calculate the traveltime
 	idReachability* reach;
-	_conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, NULL, _conditions.self.GetEntity());
+
+	// grayman #3100 - factor in whether the point is reachable, don't just look at distance
+	bool canReachPoint = _conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, NULL, _conditions.self.GetEntity());
+
+	if ( !canReachPoint )
+	{
+		return true; // can't get to it, so keep looking
+	}
 	
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Traveltime to point %d = %d\r", escapePoint.id, travelTime);
 
