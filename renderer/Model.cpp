@@ -678,13 +678,57 @@ void idRenderModelStatic::FinishSurfaces() {
 	}
 
 	// calculate the bounds
-	if ( surfaces.Num() == 0 ) {
+	if ( surfaces.Num() == 0 )
+	{
 		bounds.Zero();
-	} else {
+	}
+	else
+	{
 		bounds.Clear();
-		for ( i = 0 ; i < surfaces.Num() ; i++ ) {
-			modelSurface_t	*surf = &surfaces[i];
+		for ( i = 0 ; i < surfaces.Num() ; i++ )
+		{
+			modelSurface_t *surf = &surfaces[i];
 
+			// grayman #3278 - solution provided by Zbyl
+			// if the surface has a deformation, increase the bounds
+			switch ( surf->shader->Deform() )
+			{
+			case DFRM_NONE:
+				break;
+			case DFRM_PARTICLE:
+			case DFRM_PARTICLE2:
+				{
+				// expand surface bounds to include any emitted particles
+				// Note that this is an approximation. True bounds could be
+				// calculated by simulating R_ParticleDeform().
+				srfTriangles_t *tri = surf->geometry;
+				const idDeclParticle *particleSystem = (idDeclParticle *)surf->shader->GetDeformDecl();
+				tri->bounds.AddBounds(particleSystem->bounds);
+				}
+				break;
+			default:
+				{
+				// the amount here is somewhat arbitrary, designed to handle
+				// autosprites and flares, but could be done better with exact
+				// deformation information.
+				// Note that this doesn't handle deformations that are skinned in
+				// at run time...
+				srfTriangles_t *tri = surf->geometry;
+				idVec3 mid = ( tri->bounds[1] + tri->bounds[0] ) * 0.5f;
+				float  radius = ( tri->bounds[0] - mid ).Length();
+				radius += 20.0f;
+
+				tri->bounds[0][0] = mid[0] - radius;
+				tri->bounds[0][1] = mid[1] - radius;
+				tri->bounds[0][2] = mid[2] - radius;
+
+				tri->bounds[1][0] = mid[0] + radius;
+				tri->bounds[1][1] = mid[1] + radius;
+				tri->bounds[1][2] = mid[2] + radius;
+				}
+				break;
+
+/* previous method
 			// if the surface has a deformation, increase the bounds
 			// the amount here is somewhat arbitrary, designed to handle
 			// autosprites and flares, but could be done better with exact
@@ -704,11 +748,10 @@ void idRenderModelStatic::FinishSurfaces() {
 				tri->bounds[1][0] = mid[0] + radius;
 				tri->bounds[1][1] = mid[1] + radius;
 				tri->bounds[1][2] = mid[2] + radius;
+ */
 			}
-
 			// add to the model bounds
 			bounds.AddBounds( surf->geometry->bounds );
-
 		}
 	}
 }
