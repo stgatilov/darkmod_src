@@ -1062,6 +1062,9 @@ void CBinaryFrobMover::OnOpenPositionReached()
 {
 	TellRegisteredUsers(); // grayman #1145
 
+	// play the opened sound when the door opens completely
+	FrobMoverStartSound("snd_opened"); // grayman #3263
+
 	// trigger our targets when completely opened, if set to do so
 	if (spawnArgs.GetBool("trigger_when_opened", "0"))
 	{
