@@ -1867,10 +1867,28 @@ void idLight::Event_InPVS()
 }
 
 // Returns true if this is an ambient light. - J.C.Denton
-bool idLight::IsAmbient(void)
+bool idLight::IsAmbient(void) const
 {
 	if( renderLight.shader )
 		return renderLight.shader->IsAmbientLight();
+
+	return false; 
+}
+
+// Returns true if this is a fog light. - tels
+bool idLight::IsFog(void) const
+{
+	if( renderLight.shader )
+		return renderLight.shader->IsFogLight();
+
+	return false; 
+}
+
+// Returns true if this is a blend light. - tels
+bool idLight::IsBlend(void) const
+{
+	if( renderLight.shader )
+		return renderLight.shader->IsBlendLight();
 
 	return false; 
 }

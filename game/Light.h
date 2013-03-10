@@ -129,10 +129,12 @@ public:
 	/**
 	 * Returns true if the light is a parallel light.
 	 */
-	inline bool		IsParallel(void) { return renderLight.parallel; };
-	inline bool		IsPointlight(void) { return renderLight.pointLight; };
+	inline bool		IsParallel(void) { return renderLight.parallel; } const;
+	inline bool		IsPointlight(void) { return renderLight.pointLight; } const;
 	bool			CastsShadow(void);
-	bool			IsAmbient(void);	// Returns true if this is an ambient light. - J.C.Denton
+	bool			IsAmbient(void) const;		// Returns true if this is an ambient light. - J.C.Denton
+	bool			IsFog(void) const;		// Returns true if this is a fog light. - tels
+	bool			IsBlend(void) const;		// Returns true if this is a blend light. - tels
 
 	/**
 	 * GetLightCone returns the lightdata.
