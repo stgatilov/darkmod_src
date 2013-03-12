@@ -397,64 +397,69 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
  		if ( ( v > bounceSoundMinVelocity ) && ( gameLocal.time > nextSoundTime ) )
 		{ 
-			const idMaterial *material = collision.c.material;
+			// grayman #3331 - some moveables should not bother with bouncing sounds
 
-			idStr sndNameLocal;
-			idStr surfaceName; // "tile", "glass", etc.
-
-			if (material != NULL)
+			if ( !spawnArgs.GetBool("no_bounce_sound", "0") )
 			{
-				surfaceName = g_Global.GetSurfName(material);
+				const idMaterial *material = collision.c.material;
 
-				// Prepend the snd_bounce_ prefix to check for a surface-specific sound
-				idStr sndNameWithSurface = "snd_bounce_" + surfaceName;
+				idStr sndNameLocal;
+				idStr surfaceName; // "tile", "glass", etc.
 
-				if (spawnArgs.FindKey(sndNameWithSurface) != NULL)
+				if (material != NULL)
 				{
-					sndNameLocal = sndNameWithSurface;
+					surfaceName = g_Global.GetSurfName(material);
+
+					// Prepend the snd_bounce_ prefix to check for a surface-specific sound
+					idStr sndNameWithSurface = "snd_bounce_" + surfaceName;
+
+					if (spawnArgs.FindKey(sndNameWithSurface) != NULL)
+					{
+						sndNameLocal = sndNameWithSurface;
+					}
+					else
+					{
+						sndNameLocal = "snd_bounce";
+					}
 				}
-				else
+
+				const char* sound = spawnArgs.GetString(sndNameLocal);
+				const idSoundShader* sndShader = declManager->FindSound(sound);
+
+				//f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+
+				// angua: modify the volume set in the def instead of setting a fixed value. 
+				// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
+				float f = ( v > bounceSoundMaxVelocity ) ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
+
+				float volume = sndShader->GetParms()->volume + f;
+
+				if (cv_moveable_collision.GetBool())
 				{
-					sndNameLocal = "snd_bounce";
+					gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+					gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+					gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
 				}
-			}
 
-			const char* sound = spawnArgs.GetString(sndNameLocal);
-			const idSoundShader* sndShader = declManager->FindSound(sound);
+				SetSoundVolume(volume);
 
-			//f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
+				// greebo: We don't use StartSound() here, we want to do the sound propagation call manually
+				StartSoundShader(sndShader, SND_CHANNEL_ANY, 0, false, NULL);
 
-			// angua: modify the volume set in the def instead of setting a fixed value. 
-			// At minimum velocity, the volume should be "min_velocity_volume_decrease" lower (in db) than the one specified in the def
-			float f = ( v > bounceSoundMaxVelocity ) ? 0.0f : spawnArgs.GetFloat("min_velocity_volume_decrease", "0") * ( idMath::Sqrt(v - bounceSoundMinVelocity) * (1.0f / idMath::Sqrt( bounceSoundMaxVelocity - bounceSoundMinVelocity)) - 1 );
+				// grayman #2603 - don't propagate a sound if this is a doused torch dropped by an AI
 
-			float volume = sndShader->GetParms()->volume + f;
+				if (!spawnArgs.GetBool("is_torch","0"))
+				{
+					idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
 
-			if (cv_moveable_collision.GetBool())
-			{
-				gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
-				gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
-				gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
-			}
-
-			SetSoundVolume(volume);
-
-			// greebo: We don't use StartSound() here, we want to do the sound propagation call manually
-			StartSoundShader(sndShader, SND_CHANNEL_ANY, 0, false, NULL);
-
-			// grayman #2603 - don't propagate a sound if this is a doused torch dropped by an AI
-
-			if (!spawnArgs.GetBool("is_torch","0"))
-			{
-				idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
-
-				// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
-				PropSoundS( NULL, sndPropName, f );
-			}
+					// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
+					PropSoundS( NULL, sndPropName, f );
+				}
 			
-			SetSoundVolume(0.0f);
+				SetSoundVolume(0.0f);
 
-			nextSoundTime = gameLocal.time + 500;
+				nextSoundTime = gameLocal.time + 500;
+			}
 		}
 
 		// tels:

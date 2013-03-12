@@ -52,6 +52,7 @@ namespace ai
 #define AIUSE_WEAPON			"AIUSE_WEAPON"
 #define AIUSE_SUSPICIOUS		"AIUSE_SUSPICIOUS"	// grayman #1327
 #define AIUSE_ROPE				"AIUSE_ROPE"		// grayman #2872
+#define AIUSE_ANIMAL			"AIUSE_ANIMAL"		// grayman #3331
 
 //----------------------------------------------------------------------------------------
 // The following key and values are used for identifying types of lights
@@ -128,6 +129,7 @@ enum EAlertType
 	EAlertTypeDamage,
 	EAlertTypeSuspiciousItem,	// grayman #1327
 	EAlertTypeRope,				// grayman #2872
+	EAlertTypeHitByProjectile,	// grayman #3331
 	EAlertTypeCount
 };
 
@@ -261,6 +263,9 @@ public:
 	idVec3 posCorpseFound;
 	idVec3 posMissingItem;
 	idVec3 posEvidenceIntruders;
+
+	// grayman #3331 - force a hiding spot search (don't rely just on the alert index changing)
+	bool mandatory;
 
 	// grayman #2903 - timestamps of alerts that can lead to warnings between AI
 	int timeEnemySeen;

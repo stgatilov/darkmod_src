@@ -345,6 +345,7 @@ void HitByMoveableState::Think(idAI* owner)
 					}
 
 					owner->AI_TACTALERT = true;
+					memory.mandatory = true; // grayman #3331
 				}
 
 				Wrapup(owner);

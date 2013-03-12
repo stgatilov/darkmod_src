@@ -3379,7 +3379,7 @@ void idAI::Event_ContinueSearchForHidingSpots()
 void idAI::Event_CloseHidingSpotSearch ()
 {
     // Destroy current hiding spot search
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Closing hiding spot search\r");
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s Closing hiding spot search\r",name.c_str());
 	destroyCurrentHidingSpotSearch();
 }
 

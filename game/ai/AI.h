@@ -1906,7 +1906,7 @@ public:
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
 	
 	/** Call the script function DrawWeapon (in a new thread) if it exists */
-	void					DrawWeapon();
+	void					DrawWeapon(ECombatType type); // grayman #3331
 	/** Call the script function SheathWeapon (in a new thread) if it exists */
 	void					SheathWeapon();
 

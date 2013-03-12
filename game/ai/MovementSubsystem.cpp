@@ -643,7 +643,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 		case ENotBlocked:
 			if (belowThreshold)
 			{
-				// Yellow alarm, we might be blocked, or we might as well
+				// Yellow alarm, we might be blocked, or we might
 				// just have been starting to move
 				_state = EPossiblyBlocked;
 				// Changed state to possibly blocked, record time

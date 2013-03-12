@@ -51,7 +51,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../EscapePointManager.h"
 #include "../PositionWithinRangeFinder.h"
 #include "../TimerManager.h"
-#include "../ProjectileResult.h"	 // grayman #2872
+#include "../ProjectileResult.h" // grayman #2872
 
 // For handling the opening of doors and other binary Frob movers
 #include "../BinaryFrobMover.h"
@@ -1649,6 +1649,7 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "headturn_duration_max",			"3",		headTurnSec);
 	m_headTurnMaxDuration = SEC2MS(headTurnSec);
 
+	alertTypeWeight[ai::EAlertTypeHitByProjectile]		= 55; // grayman #3331
 	alertTypeWeight[ai::EAlertTypeEnemy]				= 50;
 	alertTypeWeight[ai::EAlertTypeDamage]				= 45;
 	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
@@ -1704,7 +1705,6 @@ void idAI::Spawn( void )
 	m_oldVisualAcuity = GetAcuity("vis");	// Tels fix #2408
 
 	spawnArgs.GetFloat("alert_aud_thresh", va("%f",gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold), m_AudThreshold );
-
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
 	current_cinematic = 0;
 
@@ -2954,7 +2954,14 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 	idVec3 size = aas->GetSettings()->boundingBoxes[0][1] * boundsScale;
 
 	// Construct the modifed bounds, based on the parameters (max.z = 32)
-	idBounds bounds(-size, idVec3(size.x, size.y, 32.0f));
+
+	// grayman #3331 - because the default boundsScale is 2.0, this causes min.z
+	// to be set to -136 for humanoids. This causes points to be pushed downward
+	// to aas areas on the floor below, causing AI to try to walk to where they
+	// can't walk to, or shouldn't be walking to. Let's try setting min.z = -32 and see what happens.
+	idBounds bounds(idVec3(-size.x, -size.y, -32.0f), idVec3(size.x, size.y, 32.0f));
+//	idBounds bounds(-size, idVec3(size.x, size.y, 32.0f));
+
 	idVec3 newPos = pos + offset;
 
 /*	idBounds temp(bounds);
@@ -4752,7 +4759,8 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 {
 	pvsHandle_t handle = gameLocal.pvs.SetupCurrentPVS( actor->GetPVSAreas(), actor->GetNumPVSAreas() );
 
-	if ( !gameLocal.pvs.InCurrentPVS( handle, GetPVSAreas(), GetNumPVSAreas() ) ) {
+	if ( !gameLocal.pvs.InCurrentPVS( handle, GetPVSAreas(), GetNumPVSAreas() ) )
+	{
 		gameLocal.pvs.FreeCurrentPVS( handle );
 		return false;
 	}
@@ -4768,7 +4776,8 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 
 	trace_t results;
 	gameLocal.clip.TracePoint( results, eye, point, MASK_SOLID, actor );
-	if ( results.fraction >= 1.0f || ( gameLocal.GetTraceEntity( results ) == this ) ) {
+	if ( ( results.fraction >= 1.0f ) || ( gameLocal.GetTraceEntity( results ) == this ) )
+	{
 		physicsObj.EnableClip();
 		return true;
 	}
@@ -4778,7 +4787,8 @@ bool idAI::EntityCanSeePos( idActor *actor, const idVec3 &actorOrigin, const idV
 
 	gameLocal.clip.TracePoint( results, eye, point, MASK_SOLID, actor );
 	physicsObj.EnableClip();
-	if ( results.fraction >= 1.0f || ( gameLocal.GetTraceEntity( results ) == this ) ) {
+	if ( ( results.fraction >= 1.0f ) || ( gameLocal.GetTraceEntity( results ) == this ) )
+	{
 		return true;
 	}
 
@@ -6101,7 +6111,8 @@ int idAI::ReactionTo( const idEntity *ent )
 	}
 
 	// monsters will fight when attacked by lower ranked monsters.  rank 0 never fights back.
-	if ( rank && ( actor->rank < rank ) ) {
+	if ( rank && ( actor->rank < rank ) )
+	{
 		return ATTACK_ON_DAMAGE;
 	}
 
@@ -6146,8 +6157,9 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		ChangeEntityRelation(attacker, -10);
 
 		// Switch to pain state if idle
-		if ( ( AI_AlertIndex == ai::ERelaxed ) && ( damage > 0 ) && 
-			( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
+		if ( ( AI_AlertIndex == ai::ERelaxed ) &&
+			 ( damage > 0 ) && 
+			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
 		{
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 		}
@@ -7371,17 +7383,19 @@ bool idAI::SetEnemy(idActor* newEnemy)
 	// greebo: Check if the new enemy is different
 	if (enemy.GetEntity() != newEnemy)
 	{
-		// Update the enemy pointer 
-		enemy = newEnemy;
-
-		enemyNode.AddToEnd(newEnemy->enemyList);
+		// grayman #3331 - don't reset the 'enemy' pointer if the
+		// new enemy is dead
 
 		// Check if the new enemy is dead
 		if (newEnemy->health <= 0)
 		{
-			EnemyDead();
 			return false; // not a valid enemy
 		}
+
+		// Update the enemy pointer 
+		enemy = newEnemy;
+
+		enemyNode.AddToEnd(newEnemy->enemyList);
 
 		int enemyAreaNum(-1);
 
@@ -8034,13 +8048,29 @@ bool idAI::TestRanged()
 	// stgatilov: Look at the UNLEANED player's eye position
 	// to achieve this, we treat player as ordinary actor
 	if (enemyEnt->IsType(idPlayer::Type))
+	{
 		enemyPoint = enemyEnt->idActor::GetEyePosition();
+	}
 	else
+	{
 		enemyPoint = enemyEnt->GetEyePosition();
+	}
 
 	// Test if the enemy is within range, in FOV and not occluded
 	float dist = (GetEyePosition() - enemyPoint).LengthFast();
-	return dist <= fire_range && CanSeePositionExt(enemyPoint, false, false);
+
+	// grayman #3331 - the call to CanSeePositionExt() below isn't the correct
+	// one to make here. That's designed to test if the enemy can see you when
+	// you're standing behind something, and shouldn't be given an eye position
+	// as the starting point (enemyPoint). It traces to that point, and if that
+	// fails, it looks N units above that, where N = the enemy's height, which
+	// makes no sense for what we're trying to do here.
+	//
+	// Instead, use CanSee(), which checks if you can see the enemy's eyes, his
+	// shoulders, and his feet, looking for a good trace on any of them.
+
+	return ( ( dist <= fire_range ) && CanSee(enemyEnt, true) );
+//	return ( ( dist <= fire_range ) && CanSeePositionExt(enemyPoint, false, false) );
 }
 
 
@@ -10967,7 +10997,7 @@ void idAI::StopLipSync()
 ===================== Sheathing/drawing weapons =====================
 */
 
-void idAI::DrawWeapon() 
+void idAI::DrawWeapon(ECombatType type) 
 {
 	/*const function_t* func = scriptObject.GetFunction("DrawWeapon");
 	if (func) {
@@ -10982,16 +11012,22 @@ void idAI::DrawWeapon()
 	int numMeleeWeapons = GetNumMeleeWeapons();
 	int numRangedWeapons = GetNumRangedWeapons();
 
-	if ( ( numMeleeWeapons == 0) && ( numRangedWeapons == 0 ) )
+	if ( ( numMeleeWeapons == 0 ) && ( numRangedWeapons == 0 ) )
 	{
 		return; // nothing to do
 	}
 
-	// grayman #3123 - if this AI is carrying something in his
-	// left hand, and he uses a ranged weapon, he needs to drop what's in his left hand first
+	// grayman #3331 - draw the requested weapon
 
-	if ( numRangedWeapons  > 0)
+	if ( ( type == COMBAT_MELEE ) && ( numMeleeWeapons > 0 ) )
 	{
+		SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawMeleeWeapon", 4);
+	}
+	else if ( ( type == COMBAT_RANGED ) && ( numRangedWeapons > 0 ) )
+	{
+		// grayman #3123 - if this AI is carrying something in his
+		// left hand, he needs to drop it first
+
 		idEntity* torch = GetTorch();
 		if ( torch )
 		{
@@ -11006,9 +11042,8 @@ void idAI::DrawWeapon()
 				Detach(inHand->name.c_str());
 			}
 		}
+		SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawRangedWeapon", 4);
 	}
-	
-	SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawWeapon", 4);
 }
 
 void idAI::SheathWeapon() 

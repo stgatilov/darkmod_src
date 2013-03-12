@@ -190,6 +190,7 @@ void State::OnVisualAlert(idActor* enemy)
 	memory.alertRadius = VISUAL_ALERT_RADIUS;
 	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
 	memory.alertSearchExclusionVolume.Zero();
+	memory.mandatory = false; // grayman #3331
 	
 	// set the flag back (greebo: Is this still necessary?)
 	owner->AI_VISALERT = false;
@@ -280,19 +281,22 @@ void State::OnTactileAlert(idEntity* tactEnt)
 				memory.alertType = EAlertTypeSuspicious;
 			}
 
-			memory.alertClass = EAlertTactile;
-			memory.alertPos = owner->GetPhysics()->GetOrigin();
-			memory.alertRadius = TACTILE_ALERT_RADIUS;
-			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
-			memory.alertSearchExclusionVolume.Zero();
-			memory.visualAlert = false; // grayman #2422
+			// grayman #3331 - if fleeing, do none of this
+			if ( owner->GetMind()->GetState()->GetName() != "Flee" )
+			{
+				memory.alertClass = EAlertTactile;
+				memory.alertPos = owner->GetPhysics()->GetOrigin();
+				memory.alertRadius = TACTILE_ALERT_RADIUS;
+				memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
+				memory.alertSearchExclusionVolume.Zero();
+				memory.visualAlert = false; // grayman #2422
+				memory.mandatory = true;	// grayman #3331
 
-			// grayman #2816 - turn toward what hit you, not toward your origin
+				// grayman #2816 - turn toward what hit you, not toward your origin
 
-			owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
-//			owner->TurnToward(memory.alertPos);
-			
-			owner->AI_TACTALERT = false;
+				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
+				owner->AI_TACTALERT = false;
+			}
 		}
 	}
 }
@@ -327,6 +331,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 		memory.alertSearchExclusionVolume.Zero();
 		memory.visualAlert = false;
+		memory.mandatory = true; // grayman #3331
 	}
 }
 
@@ -342,12 +347,23 @@ void State::OnAudioAlert()
 
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertAudio;
-	if ( ShouldProcessAlert( EAlertTypeSuspicious ) ) // grayman #2801 - don't change the alert type if the current alert type has more weight
+
+	// grayman #3331 - this is sketchy. It's the only alert that gets processed
+	// even if its alert weight is below the current alert weight. It can pull
+	// a searching AI off his search. Is that the right thing to do?
+	if ( !ShouldProcessAlert( EAlertTypeSuspicious ) )
+	{
+		return;
+	}
+/*	if ( ShouldProcessAlert( EAlertTypeSuspicious ) ) // grayman #2801 - don't change the alert type if the current alert type has more weight
 	{
 		memory.alertType = EAlertTypeSuspicious;
 	}
+ */
+	memory.alertType = EAlertTypeSuspicious; // grayman #3331 - delete if you revert the part above
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
+	memory.mandatory = false; // grayman #3331
 
 	// Search within radius of stimulus that is 1/3 the distance from the
 	// observer to the point at the time heard
@@ -436,6 +452,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 	memory.alertRadius = 200;
 	memory.alertType = EAlertTypeWeapon;
 	memory.visualAlert = false; // grayman #2422
+	memory.mandatory = true;	// grayman #3331
 
 	if (!skipVisibilityCheck) 
 	{
@@ -564,6 +581,11 @@ void State::OnVisualStim(idEntity* stimSource)
 	{
 		aiUseType = EAIuse_Missing_Item_Marker;
 		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMissingItem");
+	}
+	else if (aiUse == AIUSE_MONSTER) // grayman #3331
+	{
+		aiUseType = EAIuse_Monster;
+		chanceToNotice = owner->spawnArgs.GetFloat("chanceNoticeMonster");
 	}
 	else if (aiUse == AIUSE_BROKEN_ITEM)
 	{
@@ -988,6 +1010,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	
 	owner->AI_VISALERT = false;
 	memory.visualAlert = false; // grayman #2422
+	memory.mandatory = false;	// grayman #3331
 	
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
@@ -1078,6 +1101,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	
 	owner->AI_VISALERT = false;
 	memory.visualAlert = false; // grayman #2422
+	memory.mandatory = false;	// grayman #3331
 	
 	// Do new reaction to stimulus
 	memory.stimulusLocationItselfShouldBeSearched = true;
@@ -1345,6 +1369,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 					memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
 					memory.alertType = otherMemory.alertType;
 					memory.visualAlert = otherMemory.visualAlert; // grayman #2422
+					memory.mandatory = false; // grayman #3331
 					
 					memory.alertRadius = otherMemory.alertRadius;
 					memory.alertSearchVolume = otherMemory.alertSearchVolume; 
@@ -2078,7 +2103,8 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 			
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 		owner->SetAlertLevel(owner->thresh_5 + 0.1);
 
 		// grayman #3075
@@ -2237,7 +2263,8 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 			
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 			
 		owner->SetAlertLevel(owner->thresh_5 + 0.1f);
 	}
@@ -2289,21 +2316,42 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		return;
 	}
 
+	// grayman #3331 - If you're a civilian, or you're unarmed, flee!
+	// But only if no damage was done. When damaged, the flee is handled
+	// by PainState, because we have to wait for the pain animation
+	// to finish.
+	if ( damageTaken == 0 )
+	{
+		if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
+			 owner->spawnArgs.GetBool("is_civilian", "0") )
+		{
+			owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
+			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
+		}
+	}
+
 	// grayman #2801 - When the projectile_result from an arrow isn't allowed
 	// to stick around (leading to the AI barking about something suspicious),
 	// this is where we have to alert the AI, regardless of whether he was
 	// damaged or not.
 
 	EAlertType alertType;
-	if ( damageTaken > 0 )
+
+	// grayman #3331 - someone just hit you with a projectile. Unless you're
+	// already in combat mode, you should react to this regardless of what
+	// else you're doing.
+
+/*	if ( damageTaken > 0 )
 	{
 		alertType = EAlertTypeDamage;
-//		return;
 	}
 	else
 	{
 		alertType = EAlertTypeWeapon;
 	}
+ */
+	alertType = EAlertTypeHitByProjectile; // grayman #3331
 
 	if ( !ShouldProcessAlert( alertType ) )
 	{
@@ -2313,7 +2361,8 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to projectile.\r", owner->name.c_str());
 	
-	if ( owner->AI_AlertLevel < ( owner->thresh_5 - 0.1f ) )
+	if ( owner->AI_AlertLevel < owner->thresh_5 ) // grayman #3331 - ignore only if in combat
+//	if ( owner->AI_AlertLevel < ( owner->thresh_5 - 0.1f ) )
 	{
 		Memory& memory = owner->GetMemory();
 
@@ -2334,6 +2383,18 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		// Start searching halfway between us and the attacker
 
 		memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
+
+		// grayman #3331 - trace down until you hit something
+		idVec3 bottomPoint = memory.alertPos;
+		bottomPoint.z -= 1000;
+
+		trace_t result;
+		if ( gameLocal.clip.TracePoint(result, memory.alertPos, bottomPoint, MASK_OPAQUE, NULL) )
+		{
+			// Found the floor.
+			memory.alertPos.z = result.endpos.z + 1; // move the target point to just above the floor
+		}
+
 		memory.alertClass = EAlertTactile;
 		memory.alertType = alertType;
 		
@@ -2342,12 +2403,16 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
 		memory.alertSearchExclusionVolume.Zero();
 
+		memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
 		memory.investigateStimulusLocationClosely = false;
-		
+		memory.restartSearchForHidingSpots = true; // grayman #3331
 		owner->AI_VISALERT = false;
 		memory.visualAlert = false; // grayman #2422			
+		memory.mandatory = true; // grayman #3331
 		
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		owner->TurnToward(memory.alertPos); // grayman #3331
 	}
 }
 
@@ -2578,7 +2643,8 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 	}
@@ -3035,7 +3101,8 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 		
 		owner->SetAlertLevel(alert);
 	}
@@ -3087,7 +3154,8 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 		
 		owner->SetAlertLevel(owner->thresh_5 - 0.1);
 	}
@@ -3319,7 +3387,8 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
 
 		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
 	}
@@ -3465,7 +3534,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 					memory.alertSearchExclusionVolume.Zero();
-					memory.visualAlert = false; // grayman #2422			
+					memory.visualAlert = false; // grayman #2422
+					memory.mandatory = false;	// grayman #3331
 
 					memory.alertedDueToCommunication = true;
 					memory.stimulusLocationItselfShouldBeSearched = true;
@@ -3616,7 +3686,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				memory.alertPos = directObjectLocation;
 				memory.chosenHidingSpot = directObjectLocation;
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
-				memory.visualAlert = false; // grayman #2422			
+				memory.visualAlert = false; // grayman #2422
+				memory.mandatory = false;	// grayman #3331
 			}
 			break;
 		case CommMessage::AttackOrder_CommType:
@@ -3835,7 +3906,8 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				memory.alertSearchExclusionVolume.Zero();
 
 				memory.alertedDueToCommunication = true;
-				memory.visualAlert = false; // grayman #2422			
+				memory.visualAlert = false; // grayman #2422
+				memory.mandatory = false;	// grayman #3331
 			}
 			
 			return;

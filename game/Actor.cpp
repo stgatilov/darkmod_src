@@ -2950,7 +2950,10 @@ int idActor::GetAnim( int channel, const char *animname ) {
 	}
 
 	anim = animatorPtr->GetAnim( replacement );
-	if (!anim) anim = animatorPtr->GetAnim( animname );
+	if (!anim)
+	{
+		anim = animatorPtr->GetAnim( animname );
+	}
 
 	return anim;
 }
@@ -5118,10 +5121,13 @@ void idActor::Event_MeleeActionReleased()
 	// attacks go to executing phase, parries jump straight to recovering
 	// CMeleeWeapon handles toggling attacks from executing to recovering
 	if( m_MeleeStatus.m_ActionState == MELEEACTION_ATTACK )
+	{
 		m_MeleeStatus.m_ActionPhase = MELEEPHASE_EXECUTING;
+	}
 	else
+	{
 		m_MeleeStatus.m_ActionPhase = MELEEPHASE_RECOVERING;
-
+	}
 
 	m_MeleeStatus.m_PhaseChangeTime = gameLocal.time;
 }

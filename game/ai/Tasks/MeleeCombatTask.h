@@ -70,6 +70,7 @@ class MeleeCombatTask :
 	* Gets cleared if a timer expires before the next repeated attack. 
 	**/
 	int						_NumAttReps;
+	bool					_EnemyUsesUnarmedCombat; // grayman #3331
 
 public:
 	// Get the name of this task

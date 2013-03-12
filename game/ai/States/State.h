@@ -188,6 +188,7 @@ private:
 		EAIuse_Door,
 		EAIuse_Suspicious,	// grayman #1327
 		EAIuse_Rope,		// grayman #2872
+		EAIuse_Monster,		// grayman #3331
 		ENumMarkers,		// invalid index
 	};
 

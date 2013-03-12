@@ -572,16 +572,21 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 		// Connect the projectile def and joint name with a pipe and store that
 		fc.string = new idStr(projectileDefName + "|" + token);
 	}
-	else if ( token == "launch_missile" ) {
-		if( !src.ReadTokenOnLine( &token ) ) {
+	else if ( token == "launch_missile" )
+	{
+		if( !src.ReadTokenOnLine( &token ) )
+		{
 			return "Unexpected end of line";
 		}
-		if ( !modelDef->FindJoint( token ) ) {
+		if ( !modelDef->FindJoint( token ) )
+		{
 			return va( "Joint '%s' not found", token.c_str() );
 		}
 		fc.type = FC_LAUNCHMISSILE;
 		fc.string = new idStr( token );
-	} else if ( token == "fire_missile_at_target" ) {
+	}
+	else if ( token == "fire_missile_at_target" )
+	{
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -1562,7 +1567,9 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 
 					// Update the associated actor's melee status
 					if( ActOwner )
+					{
 						ActOwner->Event_MeleeActionHeld();
+					}
 
 					break;
 				}
@@ -2534,14 +2541,19 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 			frame || ( ( endtime > 0 ) && ( fromtime > endtime )
 			|| m_bPaused )
 		)
+	{
 		return;
+	}
 
 	const idAnim *anim = Anim();
 
 	if ( !anim || !anim->HasFrameCommands() )
+	{
 		return;
+	}
 
-	if ( totime <= starttime ) {
+	if ( totime <= starttime )
+	{
 		// don't play until next frame or we'll play commands twice.
 		// this happens on the player sometimes.
 		return;
@@ -2549,7 +2561,8 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 
 	fromFrameTime	= AnimTime( fromtime );
 	toFrameTime		= AnimTime( totime );
-	if ( toFrameTime < fromFrameTime ) {
+	if ( toFrameTime < fromFrameTime )
+	{
 		toFrameTime += anim->Length();
 	}
 
@@ -2557,10 +2570,13 @@ void idAnimBlend::CallFrameCommands( idEntity *ent, int fromtime, int totime ) c
 	md5anim->ConvertTimeToFrame( fromFrameTime, cycle, frame1 );
 	md5anim->ConvertTimeToFrame( toFrameTime, cycle, frame2 );
 
-	if ( fromFrameTime <= 0 ) {
+	if ( fromFrameTime <= 0 )
+	{
 		// make sure first frame is called
 		const_cast<idAnim *>(anim)->CallFrameCommands( ent, -1, frame2.frame1, const_cast<idAnimBlend *>(this) );
-	} else {
+	}
+	else
+	{
 		const_cast<idAnim *>(anim)->CallFrameCommands( ent, frame1.frame1, frame2.frame1, const_cast<idAnimBlend *>(this) );
 	}
 }
@@ -4345,6 +4361,7 @@ void idAnimator::SetFrame( int channelNum, int animNum, int frame, int currentTi
 	}
 
 	PushAnims( channelNum, currentTime, blendTime );
+
 	channels[ channelNum ][ 0 ].SetFrame( modelDef, animNum, frame, currentTime, blendTime, entity );
 	if ( entity ) {
 		entity->BecomeActive( TH_ANIMATE );
@@ -4936,26 +4953,33 @@ void idAnimator::ClearAFPose( void ) {
 idAnimator::ServiceAnims
 =====================
 */
-void idAnimator::ServiceAnims( int fromtime, int totime ) {
+void idAnimator::ServiceAnims( int fromtime, int totime )
+{
 	int			i, j;
 	idAnimBlend	*blend;
 
-	if ( !modelDef ) {
+	if ( !modelDef )
+	{
 		return;
 	}
 
-	if ( modelDef->ModelHandle() ) {
+	if ( modelDef->ModelHandle() )
+	{
 		blend = channels[ 0 ];
-		for( i = 0; i < ANIM_NumAnimChannels; i++ ) {
-			for( j = 0; j < ANIM_MaxAnimsPerChannel; j++, blend++ ) {
+		for ( i = 0 ; i < ANIM_NumAnimChannels ; i++ )
+		{
+			for ( j = 0 ; j < ANIM_MaxAnimsPerChannel ; j++, blend++ )
+			{
 				blend->CallFrameCommands( entity, fromtime, totime );
 			}
 		}
 	}
 
-	if ( !IsAnimating( totime ) ) {
+	if ( !IsAnimating( totime ) )
+	{
 		stoppedAnimatingUpdate = true;
-		if ( entity ) {
+		if ( entity )
+		{
 			entity->BecomeInactive( TH_ANIMATE );
 
 			// present one more time with stopped animations so the renderer can properly recreate interactions

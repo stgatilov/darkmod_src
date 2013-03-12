@@ -26,6 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/SingleBarkTask.h"
 #include "../Memory.h"
 #include "../Library.h"
+#include "FleeState.h"	 // grayman #3331
 
 namespace ai
 {
@@ -57,7 +58,6 @@ void PainState::Init(idAI* owner)
 	// Set end time
 	_stateEndTime = gameLocal.time + 5000;
 	
-	// Set the alert position 50 units in the attacking direction
 	memory.alertPos = owner->GetPhysics()->GetOrigin();
 
 	// Do a single bark and assemble an AI message
@@ -76,11 +76,21 @@ void PainState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void PainState::Think(idAI* owner)
 {
-	if (gameLocal.time >= _stateEndTime || 
-		idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "pain") 
+	if ( ( gameLocal.time >= _stateEndTime ) || 
+		 ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "pain" ) ) 
 	{
-		// End this state
-		owner->GetMind()->EndState();
+		// grayman #3331 - civilians and unarmed AI should flee
+		if ( ( ( owner->GetNumMeleeWeapons()  == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
+				owner->spawnArgs.GetBool("is_civilian", "0") )
+		{
+			owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
+			owner->GetMind()->SwitchState(STATE_FLEE);
+		}
+		else
+		{
+			// End this state
+			owner->GetMind()->EndState();
+		}
 	}
 }
 

@@ -71,7 +71,11 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMemory();
+	// grayman #3331 - if fleeing, stop chasing the enemy
+	if ( owner->GetMind()->GetState()->GetName() == "Flee" )
+	{
+		return true;
+	}
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
@@ -80,8 +84,19 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	// grayman #3331 - if enemy is dead or knocked out, stop the chase
+
+	if ( enemy->AI_DEAD || enemy->IsKnockedOut() )
+	{
+		return true;
+	}
+
+	Memory& memory = owner->GetMemory();
+
+	bool enemyUnreachable = false;
+
 	// are we currently flat-footed?
-	if( owner->m_bFlatFooted )
+	if ( owner->m_bFlatFooted )
 	{
 		_reachEnemyCheck = 0;
 
@@ -90,7 +105,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		// Turn to the player
 		owner->TurnToward(enemy->GetEyePosition());
 
-		if( (gameLocal.time - owner->m_FlatFootedTimer) > owner->m_FlatFootedTime )
+		if ( (gameLocal.time - owner->m_FlatFootedTimer) > owner->m_FlatFootedTime )
 		{
 			owner->m_bFlatFooted = false;
 		}
@@ -113,10 +128,10 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 
 		if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 		{
-			// Position has been reached, turn to player, if visible
+			// Position has been reached, turn to enemy, if visible
 			if (owner->AI_ENEMY_VISIBLE)
 			{
-				// angua: Turn to the player
+				// angua: Turn to the enemy
 				owner->TurnToward(enemy->GetEyePosition());
 			}
 		}
@@ -140,6 +155,11 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 
 			idVec3 targetPoint = enemy->GetPhysics()->GetOrigin() 
 					+ (targetDirection * owner->GetMeleeRange());
+
+			// grayman #3331 - move 10 unit adjustment to here from below
+			idVec3 forward = owner->viewAxis.ToAngles().ToForward();
+			targetPoint -= 10 * forward;
+
 			idVec3 bottomPoint = targetPoint;
 			bottomPoint.z -= 70;
 			
@@ -147,8 +167,11 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 			if (gameLocal.clip.TracePoint(result, targetPoint, bottomPoint, MASK_OPAQUE, NULL))
 			{
 				targetPoint.z = result.endpos.z + 1;
-				idVec3 forward = owner->viewAxis.ToAngles().ToForward();
-				targetPoint -= 10 * forward;
+
+				// grayman #3331 - these 2 lines were in the wrong place, and could push targetPoint out into space.
+				// Moved above, before the trace, where the space below would be detected, making the point unreachable.
+//				idVec3 forward = owner->viewAxis.ToAngles().ToForward();
+//				targetPoint -= 10 * forward;
 
 				if (!owner->MoveToPosition(targetPoint))
 				{
@@ -184,20 +207,36 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 				}
 			}
 
+			// grayman #3331 - Try what ChaseEnemyRangedTask does - look for a nearby
+			// spot that might let you sight the enemy again.
+
+			aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
+			if (goal.areaNum != -1)
+			{
+				// Found a suitable attack position, now move to it
+				if (owner->MoveToPosition(goal.origin))
+				{
+					owner->lastVisibleReachableEnemyPos = goal.origin; // since this is your last gasp, pretend this is the last place you saw the enemy
+					return false; // keep going
+				}
+			}
+
 			// Destination unreachable!
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
-			gameLocal.Printf("Destination unreachable... \n");
-			owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
-			return true;
+
+			enemyUnreachable = true;
 		}
 	}
 	else
+	{
+		enemyUnreachable = true;
+	}
+
+	if ( enemyUnreachable )
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
 		gameLocal.Printf("Destination unreachable... \n");
 		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 		return true;
-
 	}
 
 	return false; // not finished yet

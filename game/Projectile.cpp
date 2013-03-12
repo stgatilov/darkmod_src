@@ -781,7 +781,8 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		if ( !projectileFlags.detonate_on_world ) {
 			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) ) {
 				float len = velocity.Length();
-				if ( len > BOUNCE_SOUND_MIN_VELOCITY ) {
+				if ( ( len > BOUNCE_SOUND_MIN_VELOCITY ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
+				{
 					SetSoundVolume( len > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( len - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) ) );
 					StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, true, NULL );
 				}

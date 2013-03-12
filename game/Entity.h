@@ -284,10 +284,10 @@ public:
 	int					m_CustomContents;
 
 	/**
-	 * UsedBy ist the list of entity names that this entity can be used by.
+	 * UsedBy is the list of entity names that this entity can be used by.
 	 * i.e. A door can have a list of keys that can unlock it. A fountain can
 	 * be used by a water arrow to make it holy, etc.
-	 * The list is initialized by the key "used"_by" in the entity and contains
+	 * The list is initialized by the key "used_by" in the entity and contains
 	 * the names of the entities seperated by ';'. If the first character of
 	 * the name is a '*' the name donates a classname instead of an entity. In
 	 * this case all entities of that class can be used by this entity.

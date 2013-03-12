@@ -53,6 +53,15 @@ void MeleeCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	_PrevAttParried = MELEETYPE_UNBLOCKABLE;
 	_PrevAttTime = 0;
 	_NumAttReps = 0;
+
+	// grayman #3331 - note if your enemy uses an unarmed melee attack. If so,
+	// you can skip parries.
+
+	idActor* enemy = _enemy.GetEntity();
+	if ( enemy )
+	{
+		_EnemyUsesUnarmedCombat = enemy->spawnArgs.GetBool("unarmed_melee","0");
+	}
 }
 
 bool MeleeCombatTask::Perform(Subsystem& subsystem)
@@ -63,7 +72,7 @@ bool MeleeCombatTask::Perform(Subsystem& subsystem)
 	assert(ownerEnt != NULL);
 
 	idActor* enemy = _enemy.GetEntity();
-	if (enemy == NULL || enemy->IsKnockedOut() || enemy->health <= 0)
+	if ( ( enemy == NULL ) || enemy->IsKnockedOut() || ( enemy->health <= 0 ) )
 	{
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No enemy, terminating task!\r");
 		return true; // terminate me
@@ -145,11 +154,12 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 			&& (enemyStatus.m_ActionPhase != MELEEPHASE_RECOVERING)
 			&& owner->GetMemory().canBeHitByEnemy
 			&& !_bForceAttack
+			&& !_EnemyUsesUnarmedCombat // grayman #3331 - skip parries if enemy uses unarmed melee combat
 		)
 	{
 		// check if our enemy made the same attack before
 		EMeleeType AttType = enemyStatus.m_ActionType;
-		if( _PrevEnemy.GetEntity() == enemy && _PrevAttParried == AttType
+		if ( ( _PrevEnemy.GetEntity() == enemy ) && ( _PrevAttParried == AttType )
 			&& (gameLocal.time - _PrevAttTime) < owner->m_MeleeRepAttackTime )
 		{
 			_NumAttReps++;
@@ -177,8 +187,10 @@ void MeleeCombatTask::PerformReady(idAI* owner)
 			StartParry(owner);
 		}
 	}
-
-	// If we can't attack or parry, wait until we can
+	else
+	{
+		// If we can't attack or parry, wait until we can
+	}
 }
 
 void MeleeCombatTask::PerformAttack(idAI* owner)
@@ -271,7 +283,7 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 	CMeleeStatus& enemyStatus = _enemy.GetEntity()->m_MeleeStatus;
 	EMeleeActPhase phase = ownerStatus.m_ActionPhase;
 	
-	if( phase == MELEEPHASE_PREPARING )
+	if ( phase == MELEEPHASE_PREPARING )
 	{
 		if( cv_melee_state_debug.GetBool() )
 		{
@@ -280,9 +292,8 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		}
 
 		// wait until done with initial delay, then start the animation
-		if( _bInPreParryDelayState && ((gameLocal.time - _ParryDelayTimer) > _PreParryDelay) )
+		if ( _bInPreParryDelayState && ((gameLocal.time - _ParryDelayTimer) > _PreParryDelay) )
 		{
-
 			// Set the waitstate, this gets cleared by script when the anim is done
 			owner->SetWaitState("melee_action");
 
@@ -297,7 +308,8 @@ void MeleeCombatTask::PerformParry(idAI* owner)
 		// don't do anything, animation will update status when it reaches hold point
 		return;
 	}
-	else if( phase == MELEEPHASE_HOLDING )
+
+	if ( phase == MELEEPHASE_HOLDING )
 	{
 		if( cv_melee_state_debug.GetBool() )
 		{
@@ -392,9 +404,11 @@ void MeleeCombatTask::StartAttack(idAI* owner)
 	idList<EMeleeType> attacks = ownerStatus.m_attacks;
 
 	// if our enemy is parrying a direction, attack along a different direction
-	if( enemyStatus.m_ActionState == MELEEACTION_PARRY )
+	// grayman #3331 - if we have only one attack, we can't remove it from
+	// the attack list, otherwise we'll just stand there
+	if ( ( enemyStatus.m_ActionState == MELEEACTION_PARRY ) && ( attacks.Num() > 1 ) )
 	{
-		if( enemyStatus.m_ActionType != MELEETYPE_BLOCKALL )
+		if ( enemyStatus.m_ActionType != MELEETYPE_BLOCKALL )
 		{
 			attacks.Remove( enemyStatus.m_ActionType );
 		}
@@ -499,6 +513,7 @@ void MeleeCombatTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_PrevAttParried);
 	savefile->WriteInt(_PrevAttTime);
 	savefile->WriteInt(_NumAttReps);
+	savefile->WriteBool(_EnemyUsesUnarmedCombat); // grayman #3331
 }
 
 void MeleeCombatTask::Restore(idRestoreGame* savefile)
@@ -518,6 +533,7 @@ void MeleeCombatTask::Restore(idRestoreGame* savefile)
 	_PrevAttParried = (EMeleeType) i;
 	savefile->ReadInt(_PrevAttTime);
 	savefile->ReadInt(_NumAttReps);
+	savefile->ReadBool(_EnemyUsesUnarmedCombat); // grayman #3331
 }
 
 MeleeCombatTaskPtr MeleeCombatTask::CreateInstance()

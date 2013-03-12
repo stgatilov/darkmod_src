@@ -55,7 +55,11 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	Memory& memory = owner->GetMemory();
+	// grayman #3331 - if fleeing, stop chasing the enemy
+	if ( owner->GetMind()->GetState()->GetName() == "Flee" )
+	{
+		return true;
+	}
 
 	idActor* enemy = _enemy.GetEntity();
 	if (enemy == NULL)
@@ -63,6 +67,14 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
 		return true;
 	}
+
+	// grayman #3331 - if enemy is dead or knocked out, stop the chase
+	if ( enemy->AI_DEAD || enemy->IsKnockedOut() )
+	{
+		return true;
+	}
+
+	Memory& memory = owner->GetMemory();
 
 	idStr waitState(owner->WaitState());
 
@@ -76,18 +88,22 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		// Turn to the player
 		owner->TurnToward(enemy->GetEyePosition());
 	}
-	
-	// try to get to the last visible enemy position
+
+/* grayman #3331 - The MoveToPosition() below thinks the AI can get to the last visible
+   enemy position, but the truth is that it might be unreachable, the aas system giving a false
+   positive. Trying to get to it causes unwanted behavior. Let's try skipping this part.
+
+    // try to get to the last visible enemy position
 	else if (waitState != "ranged_attack" && owner->MoveToPosition(owner->lastVisibleEnemyPos))
 	{
 		_hasGoal = false;
 		if (owner->AI_MOVE_DONE)
 		{
-			// Position has been reached, turn to player, if visible
+			// Position has been reached, turn to enemy, if visible
 			if (owner->AI_ENEMY_VISIBLE)
 			{
-				// Turn to the player
-				owner->TurnToward(owner->GetEyePosition());
+				// Turn to the enemy
+				owner->TurnToward(enemy->GetEyePosition());
 			}
 		}
 		else
@@ -95,10 +111,11 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 			// AI is moving, this is ok
 		}
 	}
+ */
 	else 
 	{
 		// try to find an attack position using the AAS system
-		if (waitState != "ranged_attack" && (!_hasGoal || owner->AI_MOVE_DONE))
+		if ( ( waitState != "ranged_attack" ) && (!_hasGoal || owner->AI_MOVE_DONE) )
 		{
 			// Can't reach the last visible enemy position,find another position within range
 			aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
@@ -121,6 +138,23 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 				return true;
 			}
 		}
+	}
+
+	// grayman #3331
+	if (owner->AI_MOVE_DONE)
+	{
+		// Position has been reached, turn to enemy, if visible
+		if (owner->AI_ENEMY_VISIBLE)
+		{
+			// Turn to the enemy
+			owner->TurnToward(enemy->GetEyePosition());
+		}
+		else
+		{
+			// Turn to the last visible enemy position
+			owner->TurnToward(owner->lastVisibleEnemyPos);
+		}
+		_hasGoal = false;
 	}
 
 	return false; // not finished yet

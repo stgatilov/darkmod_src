@@ -58,6 +58,7 @@ Memory::Memory(idAI* owningAI) :
 	posCorpseFound(0,0,0),
 	posMissingItem(0,0,0),
 	posEvidenceIntruders(0,0,0),
+	mandatory(false),			// grayman #3331
 	timeEnemySeen(0),
 	timeCorpseFound(0),
 	timeMissingItem(0),
@@ -133,6 +134,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(posCorpseFound);
 	savefile->WriteVec3(posMissingItem);
 	savefile->WriteVec3(posEvidenceIntruders);
+	savefile->WriteBool(mandatory);				// grayman #3331
 	savefile->WriteInt(timeEnemySeen);
 	savefile->WriteInt(timeCorpseFound);
 	savefile->WriteInt(timeMissingItem);
@@ -244,6 +246,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(posCorpseFound);
 	savefile->ReadVec3(posMissingItem);
 	savefile->ReadVec3(posEvidenceIntruders);
+	savefile->ReadBool(mandatory);				// grayman #3331
 	savefile->ReadInt(timeEnemySeen);
 	savefile->ReadInt(timeCorpseFound);
 	savefile->ReadInt(timeMissingItem);

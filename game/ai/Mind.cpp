@@ -161,11 +161,11 @@ void Mind::SwitchState(const idStr& stateName)
 {
 	if (_stateQueue.size() > 0)
 	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s from %s (%s)\r", stateName.c_str(), _stateQueue.front()->GetName().c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Mind::SwitchState - %s switching from %s to %s\r", _owner.GetEntity()->name.c_str(),_stateQueue.front()->GetName().c_str(),stateName.c_str());
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Switching to %s (%s)\r", stateName.c_str(), _owner.GetEntity()->name.c_str());
+		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Mind::SwitchState - %s switching to %s\r",_owner.GetEntity()->name.c_str(),stateName.c_str());
 	}
 
 	// greebo: Switch the state without destroying the current State object immediately

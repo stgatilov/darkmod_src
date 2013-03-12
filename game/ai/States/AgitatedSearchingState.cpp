@@ -137,7 +137,19 @@ void AgitatedSearchingState::Init(idAI* owner)
 		);
 	}
 	
-	owner->DrawWeapon();
+	// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
+	// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
+	// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
+	// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
+
+	if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
+	{
+		owner->DrawWeapon(COMBAT_RANGED);
+	}
+	else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
+	{
+		owner->DrawWeapon(COMBAT_MELEE);
+	}
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);

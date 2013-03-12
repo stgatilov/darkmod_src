@@ -51,7 +51,22 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
 
 	// Draw weapon, if we haven't already
-	owner->DrawWeapon();
+	if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
+	{
+		// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
+		// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
+		// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
+		// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
+
+		if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
+		{
+			owner->DrawWeapon(COMBAT_RANGED);
+		}
+		else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
+		{
+			owner->DrawWeapon(COMBAT_MELEE);
+		}
+	}
 
 	// Setup the search parameters
 	memory.alertPos = owner->lastVisibleReachableEnemyPos;
@@ -65,6 +80,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 	owner->ClearEnemy();
 	memory.visualAlert = false; // grayman #2422
+	memory.mandatory = true;	// grayman #3331
 
 	// Enqueue a lost track of enemy bark
 	owner->commSubsystem->AddCommTask(

@@ -78,7 +78,6 @@ void CombatState::OnTactileAlert(idEntity* tactEnt)
 void CombatState::OnVisualAlert(idActor* enemy)
 {
 	// do nothing as of now, we are already in combat mode
-
 }
 
 void CombatState::OnAudioAlert()
@@ -192,6 +191,23 @@ void CombatState::Init(idAI* owner)
 	_enemy = owner->GetEnemy();
 	idActor* enemy = _enemy.GetEntity();
 
+	// grayman #3331 - clear combat state
+	_combatType = COMBAT_NONE;
+	
+	// get melee possibilities
+
+	_meleePossible  = ( owner->GetNumMeleeWeapons()  > 0 );
+	_rangedPossible = ( owner->GetNumRangedWeapons() > 0 );
+
+	// grayman #3331 - save combat possibilities
+	_unarmedMelee = owner->spawnArgs.GetBool("unarmed_melee","0");
+	_unarmedRanged = owner->spawnArgs.GetBool("unarmed_ranged","0");
+	_armedMelee = _meleePossible && !_unarmedMelee;
+	_armedRanged = _rangedPossible && !_unarmedRanged;
+
+	// grayman #3331 - do we need an initial delay at weapon drawing?
+	_needInitialDrawDelay = !( owner->GetAttackFlag(COMBAT_MELEE) || owner->GetAttackFlag(COMBAT_RANGED) ); // not if we have a weapon raised
+
 	idVec3 vec2Enemy = enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
 	vec2Enemy.z = 0; // ignore vertical component
 	float dist2Enemy = vec2Enemy.LengthFast();
@@ -200,6 +216,10 @@ void CombatState::Init(idAI* owner)
 	{
 		reactionTime = REACTION_TIME_MAX;
 	}
+
+	// grayman #3331 - add a bit of variability so multiple AI spotting the enemy in the same frame aren't in sync
+
+	reactionTime += gameLocal.random.RandomInt(REACTION_TIME_MAX/2);
 
 	_combatSubState = EStateReaction;
 	_reactionEndTime = gameLocal.time + reactionTime;
@@ -225,8 +245,27 @@ void CombatState::Think(idAI* owner)
 		owner->GetMind()->EndState();
 		return;
 	}
+	
+	// grayman #3331 - make sure you're still fighting the same enemy. If not, switch sometimes.
 
 	idActor* enemy = _enemy.GetEntity();
+	idActor* newEnemy = owner->GetEnemy();
+
+	if ( enemy )
+	{
+		if ( newEnemy && ( newEnemy != enemy ) )
+		{
+			if ( gameLocal.random.RandomFloat() < 0.25 ) // small chance of switching
+			{
+				owner->GetMind()->EndState();
+				return; // state has ended
+			}
+		}
+	}
+	else
+	{
+		enemy = newEnemy;
+	}
 
 	if (!CheckEnemyStatus(enemy, owner))
 	{
@@ -239,50 +278,69 @@ void CombatState::Think(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
+	idVec3 vec2Enemy = enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+	float dist2Enemy = vec2Enemy.LengthFast();
+
+	// grayman #3331 - need to take vertical separation into account. It's possible to have the origins
+	// close enough to be w/in the melee zone, but still be unable to hit the enemy.
+
+	bool inMeleeRange = ( dist2Enemy <= ( 3 * owner->GetMeleeRange() ) );
+
+	ECombatType newCombatType;
+	
+	if ( inMeleeRange && _meleePossible )
+	{
+		newCombatType = COMBAT_MELEE;
+	}
+	else if ( !inMeleeRange && _rangedPossible )
+	{
+		newCombatType = COMBAT_RANGED;
+	}
+	else if ( !inMeleeRange && !_rangedPossible && _meleePossible )
+	{
+		newCombatType = COMBAT_MELEE;
+	}
+	else // will flee when reaction time is over
+	{
+		newCombatType = COMBAT_NONE;
+	}
+
+	// Check for situation where you're in the melee zone, yet you're unable to hit
+	// the enemy. This can happen if the enemy is above or below you and you can't
+	// reach them.
+
 	switch(_combatSubState)
 	{
 	case EStateReaction:
-		if ( gameLocal.time >= _reactionEndTime )
 		{
-			// Check to see if the enemy is still visible.
-			// grayman #2816 - Visibility doesn't matter if you're in combat because
-			// you bumped into your enemy.
-
-			idEntity* tactEnt = owner->GetTactEnt();
-			if ( ( tactEnt == NULL ) || !tactEnt->IsType(idActor::Type) || ( tactEnt != enemy ) || !owner->AI_TACTALERT ) 
-			{
-				if ( !owner->CanSee(enemy, true) )
-				{
-					owner->ClearEnemy();
-					owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
-					owner->GetMind()->EndState();
-					return;
-				}
-			}
-
-			// Can still see the enemy, so proceed with Combat
-
-			_combatSubState = EStateInit;
-			return;
+		if ( gameLocal.time < _reactionEndTime )
+		{
+			return; // stay in this state until the reaction time expires
 		}
 
-		// Is there anything you need to watch out for while in this substate?
+		// Check to see if the enemy is still visible.
+		// grayman #2816 - Visibility doesn't matter if you're in combat because
+		// you bumped into your enemy.
 
-		break;
+		idEntity* tactEnt = owner->GetTactEnt();
+		if ( ( tactEnt == NULL ) || !tactEnt->IsType(idActor::Type) || ( tactEnt != enemy ) || !owner->AI_TACTALERT ) 
+		{
+			if ( !owner->CanSee(enemy, true) )
+			{
+				owner->ClearEnemy();
+				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+				owner->GetMind()->EndState();
+				return;
+			}
+		}
 
-	case EStateInit:
-	{
 		owner->m_ignorePlayer = false; // grayman #3063 - clear flag that prevents mission statistics on player sightings
 
 		// The AI has processed his reaction, and needs to move into combat, or flee.
 
-		// Handle the things you were doing in Init() ...
+		_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 
 		// greebo: Check for weapons and flee if we are unarmed.
-		_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
-		_meleePossible = owner->GetNumMeleeWeapons() > 0;
-		_rangedPossible = owner->GetNumRangedWeapons() > 0;
-
 		if (!_meleePossible && !_rangedPossible)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm unarmed, I'm afraid!\r");
@@ -293,23 +351,41 @@ void CombatState::Think(idAI* owner)
 		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
 		if (owner->spawnArgs.GetBool("is_civilian", "0"))
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm civilian. I'm afraid.\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm a civilian. I'm afraid.\r");
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}
 
-		owner->StopMove(MOVE_STATUS_DONE);
 		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
 		memory.stopReactingToHit = true; // grayman #2816
 
+		_combatSubState = EStateDoOnce;
+		break;
+		}
+
+	case EStateDoOnce:
+		{
+		// Check for sitting or sleeping
+
+		if (   owner->GetMoveType() == MOVETYPE_SIT 
+			|| owner->GetMoveType() == MOVETYPE_SLEEP
+			|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
+			|| owner->GetMoveType() == MOVETYPE_LAY_DOWN )
+		{
+			owner->GetUp(); // okay if called multiple times
+			return;
+		}
+
+		// not sitting or sleeping at this point
+
+		// Stop what you're doing
+		owner->StopMove(MOVE_STATUS_DONE);
 		owner->movementSubsystem->ClearTasks();
 		owner->senseSubsystem->ClearTasks();
 		owner->actionSubsystem->ClearTasks();
 
-		owner->DrawWeapon();
-
-		// Fill the subsystems with their tasks
+		// Bark
 
 		// This will hold the message to be delivered with the bark, if appropriate
 		CommMessagePtr message;
@@ -332,25 +408,281 @@ void CombatState::Think(idAI* owner)
 			player = static_cast<idPlayer*>(enemy);
 		}
 
+		idStr bark = "";
+
 		if (player && player->m_bShoulderingBody)
 		{
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_spotted_player_with_body", message)));
+			bark = "snd_spotted_player_with_body";
 		}
 		else if ((MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
 		{
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_to_combat_company", message)));
+			bark = "snd_to_combat_company";
 		}
 		else
 		{
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_to_combat", message)));
+			bark = "snd_to_combat";
 		}
 
-		// Ranged combat
-		if (_rangedPossible)
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark, message)));
+
+		_justDrewWeapon = false;
+		_combatSubState = EStateCheckWeaponState;
+		break;
+		}
+
+	case EStateCheckWeaponState:
+		// check which combat type we should use
 		{
-			if (_meleePossible && 
-				(owner->GetPhysics()->GetOrigin()-enemy->GetPhysics()->GetOrigin()).LengthFast() < 3 * owner->GetMeleeRange())
+		// Can you continue with your current combat type, and not have to switch weapons?
+
+		// Check for case where melee combat has stalled. You're in the melee zone, but you're
+		// unable to hit the enemy. Perhaps he's higher or lower than you and you can't reach him.
+
+		if ( !owner->AI_FORWARD && // not moving
+			 ( _combatType == COMBAT_MELEE ) && // in melee combat
+			 _rangedPossible &&    // ranged combat is possible
+			 !owner->TestMelee() ) // I can't hit the enemy
+		{
+			float        orgZ = owner->GetPhysics()->GetOrigin().z;
+			float      height = owner->GetPhysics()->GetBounds().GetSize().z;
+			float   enemyOrgZ = enemy->GetPhysics()->GetOrigin().z;
+			float enemyHeight = enemy->GetPhysics()->GetBounds().GetSize().z;
+			if ( ( (orgZ + height + owner->melee_range_vert) < enemyOrgZ ) || // enemy too high
+							     ( (enemyOrgZ + enemyHeight) < orgZ ) ) // enemy too low
 			{
+				newCombatType = COMBAT_RANGED;
+			}
+		}
+
+		if ( newCombatType == _combatType )
+		{
+			// yes - no need to run weapon-switching animations
+			_combatSubState = EStateCombatAndChecks;
+			return;
+		}
+
+		// Do you need to switch a melee or ranged weapon? You might already have one
+		// drawn, or you might have none drawn, or you might have to change weapons,
+		// or you might be using unarmed attacks, and you don't need a drawn weapon.
+
+		// Check for unarmed combat.
+
+		if ( _unarmedMelee && ( newCombatType == COMBAT_MELEE ) )
+		{
+			// unarmed combat doesn't need attached weapons
+			_combatType = COMBAT_NONE; // clear ranged combat tasks and start melee combat tasks
+			_combatSubState = EStateCombatAndChecks;
+			return;
+		}
+
+		if ( _unarmedRanged && ( newCombatType == COMBAT_RANGED ) )
+		{
+			// unarmed combat doesn't need attached weapons
+			_combatType = COMBAT_NONE; // clear melee combat tasks and start ranged combat tasks
+			_combatSubState = EStateCombatAndChecks;
+			return;
+		}
+
+		// Do you have a drawn weapon?
+
+		if ( owner->GetAttackFlag(COMBAT_MELEE) && ( newCombatType == COMBAT_MELEE ) )
+		{
+			// melee weapon is already drawn
+			_combatSubState = EStateCombatAndChecks;
+			return;
+		}
+
+		if ( owner->GetAttackFlag(COMBAT_RANGED) && ( newCombatType == COMBAT_RANGED ) )
+		{
+			// ranged weapon is already drawn
+			_combatSubState = EStateCombatAndChecks;
+			return;
+		}
+
+		// At this point, we know we need to draw a weapon that's not already drawn.
+		// See if you need to sheathe a drawn weapon.
+
+		if ( ( ( newCombatType == COMBAT_RANGED ) && owner->GetAttackFlag(COMBAT_MELEE)  ) ||
+		     ( ( newCombatType == COMBAT_MELEE  ) && owner->GetAttackFlag(COMBAT_RANGED) ) )
+		{
+			// switch from one type of weapon to another
+			owner->movementSubsystem->ClearTasks();
+			owner->actionSubsystem->ClearTasks();
+			_combatType = COMBAT_NONE;
+
+			// sheathe melee weapon so you can draw ranged weapon
+			owner->SheathWeapon();
+			_waitEndTime = gameLocal.time + 2000; // safety net
+			_combatSubState = EStateSheathingWeapon;
+			return;
+		}
+
+		// No need to sheathe a weapon
+		_combatSubState = EStateDrawWeapon;
+
+		break;
+		}
+
+	case EStateSheathingWeapon:
+		{
+		// if you're sheathing a weapon, stay in this state until it's done, or until the timer expires
+
+		const char *currentAnimState = owner->GetAnimState(ANIMCHANNEL_TORSO);
+		idStr torsoString = "Torso_SheathWeapon";
+		if ( torsoString.Cmp(currentAnimState) == 0 )
+		{
+			if ( gameLocal.time < _waitEndTime )
+			{
+				return;
+			}
+		}
+
+		_combatSubState = EStateDrawWeapon;
+
+		break;
+		}
+
+	case EStateDrawWeapon:
+		{
+		// grayman #3331 - if you don't already have the correct weapon drawn,
+		// draw a ranged weapon if you're far from the enemy, and you have a 
+		// ranged weapon, otherwise draw your melee weapon
+
+		bool drawingWeapon = false;
+
+		if ( !inMeleeRange )
+		{
+			// beyond melee range
+			if ( !owner->GetAttackFlag(COMBAT_RANGED) && _rangedPossible )
+			{
+				owner->DrawWeapon(COMBAT_RANGED);
+				drawingWeapon = true;
+			}
+			else // no ranged weapon
+			{
+				owner->DrawWeapon(COMBAT_MELEE);
+				drawingWeapon = true;
+			}
+		}
+		else // in melee range
+		{
+			if ( !owner->GetAttackFlag(COMBAT_MELEE) && _meleePossible )
+			{
+				owner->DrawWeapon(COMBAT_MELEE);
+				drawingWeapon = true;
+			}
+		}
+
+		// grayman #3331 - if this is the first weapon draw, to make sure the weapon is drawn
+		// before starting combat, delay some before starting to chase the enemy.
+		// The farther away the enemy is, the better the chance that you'll start chasing before your
+		// weapon is drawn. If he's close, this gives you time to completely draw your weapon before
+		// engaging him. The interesting distance is how far you have to travel to get w/in melee range.
+
+		if ( _needInitialDrawDelay ) // True if this is the first time through, and you don't already have a raised weapon
+		{
+			int delay = 0;
+
+			if ( drawingWeapon )
+			{
+				delay = (int)(2064.0f - 20.0f*(dist2Enemy - owner->GetMeleeRange()));
+				if ( delay < 0 )
+				{
+					delay = gameLocal.random.RandomInt(2064);
+				}
+				_waitEndTime = gameLocal.time + delay;
+				_combatSubState = EStateDrawingWeapon;
+			}
+			else
+			{
+				_combatSubState = EStateCombatAndChecks;
+			}
+			_needInitialDrawDelay = false; // No need to do this again
+		}
+		else
+		{
+			if ( drawingWeapon )
+			{
+				_waitEndTime = gameLocal.time;
+				_combatSubState = EStateDrawingWeapon;
+			}
+			else
+			{
+				_combatSubState = EStateCombatAndChecks;
+			}
+		}
+
+		break;
+		}
+
+	case EStateDrawingWeapon:
+		{
+		// grayman #3331 - stay in this state until weapon-drawing animation completes
+
+		const char *currentAnimState = owner->GetAnimState(ANIMCHANNEL_TORSO);
+		idStr torsoString1 = "Torso_DrawMeleeWeapon";
+		idStr torsoString2 = "Torso_DrawRangedWeapon";
+		if ( ( torsoString1.Cmp(currentAnimState) == 0 ) || ( torsoString2.Cmp(currentAnimState) == 0 ) )
+		{
+			return; // wait until weapon is drawn
+		}
+
+		if ( gameLocal.time < _waitEndTime )
+		{
+			return; // wait until timer expires
+		}
+
+		// Weapon is now drawn
+
+		_justDrewWeapon = true;
+		_combatSubState = EStateCombatAndChecks;
+
+		break;
+		}
+
+	case EStateCombatAndChecks:
+		{
+		// Need to check if a weapon that was just drawn is correct for the zone you're now in, in case
+		// you started drawing the correct weapon for one zone, and while it was drawing, you switched
+		// to the other zone.
+		
+		if ( _justDrewWeapon )
+		{
+			if ( newCombatType == COMBAT_RANGED )
+			{
+				// beyond melee range
+				if ( !owner->GetAttackFlag(COMBAT_RANGED) && _rangedPossible )
+				{
+					// wrong weapon raised - go back and get the correct one
+					_justDrewWeapon = false;
+					_combatSubState = EStateCheckWeaponState;
+					return;
+				}
+			}
+			else // in melee combat
+			{
+				if ( !owner->GetAttackFlag(COMBAT_MELEE) && _meleePossible )
+				{
+					// wrong weapon raised - go back and get the correct one
+					_justDrewWeapon = false;
+					_combatSubState = EStateCheckWeaponState;
+					return;
+				}
+			}
+		}
+
+		if ( _combatType == COMBAT_NONE ) // Either combat hasn't been initially set up, or you're switching weapons
+		{
+			if ( newCombatType == COMBAT_RANGED )
+			{
+				// Set up ranged combat
+				owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
+				owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
+				_combatType = COMBAT_RANGED;
+			}
+			else
+			{
+				// Set up melee combat
 				ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
 				chaseEnemy->SetEnemy(enemy);
 				owner->movementSubsystem->PushTask(chaseEnemy);
@@ -358,78 +690,15 @@ void CombatState::Think(idAI* owner)
 				owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
 				_combatType = COMBAT_MELEE;
 			}
-			else
-			{
-				owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
-				owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
-				_combatType = COMBAT_RANGED;
-			}
-		}
-		// Melee combat
-		else
-		{
-			// The movement subsystem should start running to the last enemy position
-			ChaseEnemyTaskPtr chaseEnemy = ChaseEnemyTask::CreateInstance();
-			chaseEnemy->SetEnemy(enemy);
-			owner->movementSubsystem->PushTask(chaseEnemy);
 
-			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
-			_combatType = COMBAT_MELEE;
-		}
-
-		// Let the AI update their weapons (make them nonsolid)
-		owner->UpdateAttachmentContents(false);
-
-		_combatSubState = EStateThink;
-		break;
-	}
-
-	case EStateThink:
-		// Flee if we are damaged and the current melee action is finished
-		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
-		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid!\r");
-			owner->GetMind()->SwitchState(STATE_FLEE);
-			return;
-		}
-
-	if (owner->GetMoveType() == MOVETYPE_SIT 
-		|| owner->GetMoveType() == MOVETYPE_SLEEP
-		|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
-		|| owner->GetMoveType() == MOVETYPE_LAY_DOWN)
-		{
-			owner->GetUp();
-			return;
-		}
-
-		// Switch between melee and ranged combat based on enemy distance
-		float enemyDist = (owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin()).LengthFast();
-
-		if ( ( _combatType == COMBAT_MELEE ) && _rangedPossible && ( enemyDist > 3 * owner->GetMeleeRange() ) )
-		{
-			owner->movementSubsystem->ClearTasks();
-			owner->actionSubsystem->ClearTasks();
-
-			owner->actionSubsystem->PushTask(RangedCombatTask::CreateInstance());
-			owner->movementSubsystem->PushTask(ChaseEnemyRangedTask::CreateInstance());
-			_combatType = COMBAT_RANGED;
-		}
-
-		if ( ( _combatType == COMBAT_RANGED ) && _meleePossible && ( enemyDist <= 3 * owner->GetMeleeRange() ) )
-		{
-			owner->movementSubsystem->ClearTasks();
-			owner->actionSubsystem->ClearTasks();
-
-			// Allocate a ChaseEnemyTask
-			owner->movementSubsystem->PushTask(TaskPtr(new ChaseEnemyTask(enemy)));
-
-			owner->actionSubsystem->PushTask(MeleeCombatTask::CreateInstance());
-			_combatType = COMBAT_MELEE;
+			// Let the AI update their weapons (make them nonsolid)
+			owner->UpdateAttachmentContents(false);
 		}
 
 		// Check the distance to the enemy, the subsystem tasks need it.
 		memory.canHitEnemy = owner->CanHitEntity(enemy, _combatType);
-		if ( owner->m_bMeleePredictProximity )
+		// grayman #3331 - willBeAbleToHitEnemy is only relevant if canHitEnemy is FALSE
+		if ( owner->m_bMeleePredictProximity && !memory.canHitEnemy )
 		{
 			memory.willBeAbleToHitEnemy = owner->WillBeAbleToHitEntity(enemy, _combatType);
 		}
@@ -437,8 +706,8 @@ void CombatState::Think(idAI* owner)
 		// Check whether the enemy can hit us in the near future
 		memory.canBeHitByEnemy = owner->CanBeHitByEntity(enemy, _combatType);
 
-		if (!owner->AI_ENEMY_VISIBLE && 
-			(( _combatType == COMBAT_MELEE  && !memory.canHitEnemy) || _combatType == COMBAT_RANGED))
+		if ( !owner->AI_ENEMY_VISIBLE && 
+			 ( ( ( _combatType == COMBAT_MELEE )  && !memory.canHitEnemy ) || ( _combatType == COMBAT_RANGED) ) )
 		{
 			// The enemy is not visible, let's keep track of him for a small amount of time
 			if (gameLocal.time - memory.lastTimeEnemySeen < MAX_BLIND_CHASE_TIME)
@@ -447,7 +716,7 @@ void CombatState::Think(idAI* owner)
 				owner->lastVisibleReachableEnemyPos = owner->lastReachableEnemyPos;
 			}
 			else if (owner->ReachedPos(owner->lastVisibleReachableEnemyPos, MOVE_TO_POSITION) || 
-					( gameLocal.time - memory.lastTimeEnemySeen > 2 * MAX_BLIND_CHASE_TIME) )
+					( ( gameLocal.time - memory.lastTimeEnemySeen ) > 2 * MAX_BLIND_CHASE_TIME) )
 			{
 				// BLIND_CHASE_TIME has expired, we have lost the enemy!
 				owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
@@ -455,6 +724,20 @@ void CombatState::Think(idAI* owner)
 			}
 		}
 
+		// Flee if you're damaged and the current melee action is finished
+		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
+		{
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
+			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
+		}
+
+		_combatSubState = EStateCheckWeaponState;
+
+		break;
+		}
+
+	default:
 		break;
 	}
 }
@@ -529,16 +812,18 @@ void CombatState::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_criticalHealth);
 	savefile->WriteBool(_meleePossible);
 	savefile->WriteBool(_rangedPossible);
-
 	savefile->WriteInt(static_cast<int>(_combatType));
-
 	_enemy.Save(savefile);
-
 	savefile->WriteInt(_endTime);
-
 	savefile->WriteInt(static_cast<int>(_combatSubState)); // grayman #3063
-
 	savefile->WriteInt(_reactionEndTime); // grayman #3063
+	savefile->WriteInt(_waitEndTime);	  // grayman #3331
+	savefile->WriteBool(_needInitialDrawDelay); // grayman #3331
+	savefile->WriteBool(_unarmedMelee);		// grayman #3331
+	savefile->WriteBool(_unarmedRanged);	// grayman #3331
+	savefile->WriteBool(_armedMelee);		// grayman #3331
+	savefile->WriteBool(_armedRanged);		// grayman #3331
+	savefile->WriteBool(_justDrewWeapon);	// grayman #3331
 }
 
 void CombatState::Restore(idRestoreGame* savefile)
@@ -554,7 +839,6 @@ void CombatState::Restore(idRestoreGame* savefile)
 	_combatType = static_cast<ECombatType>(temp);
 
 	_enemy.Restore(savefile);
-
 	savefile->ReadInt(_endTime);
 
 	// grayman #3063
@@ -562,6 +846,13 @@ void CombatState::Restore(idRestoreGame* savefile)
 	_combatSubState = static_cast<ECombatSubState>(temp);
 
 	savefile->ReadInt(_reactionEndTime); // grayman #3063
+	savefile->ReadInt(_waitEndTime);	 // grayman #3331
+	savefile->ReadBool(_needInitialDrawDelay); // grayman #3331
+	savefile->ReadBool(_unarmedMelee);	 // grayman #3331
+	savefile->ReadBool(_unarmedRanged);	 // grayman #3331
+	savefile->ReadBool(_armedMelee);	 // grayman #3331
+	savefile->ReadBool(_armedRanged);	 // grayman #3331
+	savefile->ReadBool(_justDrewWeapon); // grayman #3331
 }
 
 StatePtr CombatState::CreateInstance()

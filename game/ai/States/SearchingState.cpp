@@ -96,7 +96,7 @@ void SearchingState::Init(idAI* owner)
 
 	idStr bark;
 
-	if (owner->AlertIndexIncreased())
+	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
@@ -360,9 +360,10 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
 
-	// Clear the flag in any case
+	// Clear flags
 	memory.restartSearchForHidingSpots = false;
 	memory.noMoreHidingSpots = false;
+	memory.mandatory = false; // grayman #3331
 
 	// Clear all the ongoing tasks
 	owner->senseSubsystem->ClearTasks();

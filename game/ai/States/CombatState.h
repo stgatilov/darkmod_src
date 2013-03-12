@@ -37,6 +37,10 @@ protected:
 	int _criticalHealth;
 	bool _meleePossible;
 	bool _rangedPossible;
+	bool _unarmedMelee;		// grayman #3331
+	bool _unarmedRanged;	// grayman #3331
+	bool _armedMelee;		// grayman #3331
+	bool _armedRanged;		// grayman #3331
 
 	ECombatType _combatType;
 
@@ -46,12 +50,27 @@ protected:
 
 	int _reactionEndTime; // grayman #3063
 
-	// grayman #3063 - break Combat State into smaller bits
+	// grayman #3331 - time to wait before proceeding with a state
+	int _waitEndTime;
 
-	enum ECombatSubState {
+	// grayman #3331 - the first time you draw your weapon, you might need a small delay
+	bool _needInitialDrawDelay;
+
+	// grayman #3331 - keep track of whether you just drew a weapon
+	bool _justDrewWeapon;
+	
+	// grayman #3063 - break Combat State into smaller bits
+	// grayman #3331 - new state design
+
+	enum ECombatSubState
+	{
 		EStateReaction,
-		EStateInit,
-		EStateThink
+		EStateDoOnce,
+		EStateCheckWeaponState,
+		EStateSheathingWeapon,
+		EStateDrawWeapon,
+		EStateDrawingWeapon,
+		EStateCombatAndChecks
 	} _combatSubState;
 
 public:

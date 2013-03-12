@@ -45,8 +45,8 @@ void ThrowObjectTask::Init(idAI* owner, Subsystem& subsystem)
 	_projectileDelayMin = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_min", "7.0"));
 	_projectileDelayMax = SEC2MS(owner->spawnArgs.GetFloat("outofreach_projectile_delay_max", "10.0"));
 
-	// First throw after 3 seconds
-	_nextThrowObjectTime = gameLocal.time + 3000;
+	// grayman #3331 - add randomness to first throw, anywhere from 2 to 4 seconds
+	_nextThrowObjectTime = static_cast<int>(gameLocal.time + 2000 + 2000*gameLocal.random.RandomFloat());
 }
 
 bool ThrowObjectTask::Perform(Subsystem& subsystem)
@@ -69,12 +69,15 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		// Turn to the player
 		// We don't need the check for enemy == NULL, since this should not be the case if the enemy is visible
 		owner->TurnToward(enemy->GetEyePosition());
+
+		// grayman #3331 - look at enemy's eyes
+		owner->Event_LookAtPosition(enemy->GetEyePosition(),3.0f);
 	}
 
 	// angua: Throw after the delay has expired, but only if
 	// the player is visible  and object throwing is enabled for this AI
-	if (_nextThrowObjectTime <= gameLocal.time && 
-		owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
+	if ( ( _nextThrowObjectTime <= gameLocal.time ) && 
+		 owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0"))
 	{
 		idStr waitState(owner->WaitState());
 		if (waitState != "throw")
@@ -102,7 +105,6 @@ void ThrowObjectTask::OnFinish(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 0);
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 0);
 	owner->SetWaitState("");
-
 }
 
 void ThrowObjectTask::Save(idSaveGame* savefile) const

@@ -796,6 +796,7 @@ void SwitchOnLightState::Think(idAI* owner)
 						// Do new reaction to stimulus after relighting
 						memory.stimulusLocationItselfShouldBeSearched = true;
 						memory.alertedDueToCommunication = false;
+						memory.mandatory = false; // grayman #3331
 					}
 				}
 
