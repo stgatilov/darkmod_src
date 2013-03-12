@@ -129,8 +129,8 @@ public:
 	/**
 	 * Returns true if the light is a parallel light.
 	 */
-	inline bool		IsParallel(void) { return renderLight.parallel; } const;
-	inline bool		IsPointlight(void) { return renderLight.pointLight; } const;
+	inline bool		IsParallel(void) { return renderLight.parallel; };
+	inline bool		IsPointlight(void) { return renderLight.pointLight; };
 	bool			CastsShadow(void);
 	bool			IsAmbient(void) const;		// Returns true if this is an ambient light. - J.C.Denton
 	bool			IsFog(void) const;		// Returns true if this is a fog light. - tels
