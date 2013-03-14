@@ -40,6 +40,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../game/ai/AAS.h"
 
+#define EXTRA_PLAYER_LOSS 10.0f // grayman #3042
+
 //===============================================================================
 //CFrobDoor
 //===============================================================================
@@ -550,41 +552,81 @@ void CFrobDoor::UpdateSoundLoss()
 
 	CFrobDoor* doorB = m_DoubleDoor.GetEntity();
 
-	float loss = 0;
-	bool AisOpen = IsOpen();
+	// grayman #3042 - add extra loss to loss_closed on doors, but only for the player,
+	// so bring sound volume across doors back to what the player used to hear
 
+	float loss_AI = 0;
+	float loss_Player = 0;
+	bool  AisOpen = IsOpen();
+	float A_fractionOpen = GetFractionalPosition();
+	float A_lossOpen = m_lossOpen;
+	float A_lossDoubleOpen = m_lossDoubleOpen;
+	float A_lossClosed = m_lossClosed;
+	
 	if ( doorB )
 	{
+		float B_lossOpen = doorB->m_lossOpen;
+		float B_lossDoubleOpen = doorB->m_lossDoubleOpen;
+		float B_lossClosed = doorB->m_lossClosed;
+		float B_fractionOpen = doorB->GetFractionalPosition();
 		bool BisOpen = doorB->IsOpen();
+
 		if ( AisOpen )
 		{
 			if ( BisOpen ) // A and B both open
 			{
-				float loss_B = doorB->m_lossOpen + ( doorB->m_lossClosed - doorB->m_lossOpen )*( 1 - doorB->GetFractionalPosition() );
-				loss = m_lossOpen + ( m_lossClosed - m_lossOpen )*( 1 - GetFractionalPosition() ); // fractional loss from A
-				if ( loss_B < loss )
+				// AI
+
+				float loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*( 1 - B_fractionOpen );
+				loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen ); // fractional loss from A
+				if ( loss_B < loss_AI )
 				{
-					loss = loss_B;
+					loss_AI = loss_B;
+				}
+
+				// Player
+				A_lossClosed += EXTRA_PLAYER_LOSS;
+				B_lossClosed += EXTRA_PLAYER_LOSS;
+
+				loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*( 1 - B_fractionOpen );
+				loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen ); // fractional loss from A
+				if ( loss_B < loss_Player )
+				{
+					loss_Player = loss_B;
 				}
 			}
 			else // A open, B closed
 			{
-				loss = m_lossDoubleOpen + ( m_lossClosed - m_lossDoubleOpen )*( 1 - GetFractionalPosition() );
+				// AI
+				loss_AI = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*( 1 - A_fractionOpen );
+
+				// Player
+				A_lossClosed += EXTRA_PLAYER_LOSS;
+				loss_Player = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*( 1 - A_fractionOpen );
 			}
 		}
 		else
 		{
 			if ( BisOpen ) // A closed, B open
 			{
-				loss = doorB->m_lossDoubleOpen + ( doorB->m_lossClosed - doorB->m_lossDoubleOpen )*( 1 - doorB->GetFractionalPosition() );
+				// AI
+				loss_AI = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*( 1 - B_fractionOpen );
+
+				// Player
+				B_lossClosed += EXTRA_PLAYER_LOSS;
+				loss_Player = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*( 1 - B_fractionOpen );
 			}
 			else // A and B both closed
 			{
-				loss = doorB->m_lossClosed;
-				if ( m_lossClosed > loss )
+				// AI
+				loss_AI = B_lossClosed;
+				if ( A_lossClosed > loss_AI )
 				{
-					loss = m_lossClosed;
+					loss_AI = A_lossClosed;
 				}
+
+				// Player
+				loss_Player = loss_AI + EXTRA_PLAYER_LOSS;
 			}
 		}
 	}
@@ -592,11 +634,17 @@ void CFrobDoor::UpdateSoundLoss()
 	{
 		if ( AisOpen )
 		{
-			loss = m_lossOpen + ( m_lossClosed - m_lossOpen )*( 1 - GetFractionalPosition() );
+			// AI
+			loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen );
+
+			// Player
+			A_lossClosed += EXTRA_PLAYER_LOSS;
+			loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen );
 		}
 		else // A is closed
 		{
-			loss = m_lossClosed;
+			loss_AI = A_lossClosed;
+			loss_Player = A_lossClosed + EXTRA_PLAYER_LOSS;
 		}
 	}
 
@@ -610,8 +658,8 @@ void CFrobDoor::UpdateSoundLoss()
 	// appropriate loss for that door, open or closed
 
 	// grayman #3042 - allow a base loss value for AI and one for Player
-	gameLocal.m_sndProp->SetPortalAILoss(areaPortal, loss + m_lossBaseAI);
-	gameLocal.m_sndProp->SetPortalPlayerLoss(areaPortal, loss + m_lossBasePlayer);
+	gameLocal.m_sndProp->SetPortalAILoss(areaPortal, loss_AI + m_lossBaseAI);
+	gameLocal.m_sndProp->SetPortalPlayerLoss(areaPortal, loss_Player + m_lossBasePlayer);
 }
 
 void CFrobDoor::FindDoubleDoor()
