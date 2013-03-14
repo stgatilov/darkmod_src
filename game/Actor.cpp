@@ -1760,13 +1760,32 @@ bool idActor::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 idActor::GetPhysicsToSoundTransform
 ================
 */
-bool idActor::GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) {
-	if ( soundJoint != INVALID_JOINT ) {
+bool idActor::GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis )
+{
+	if ( soundJoint != INVALID_JOINT )
+	{
 		animator.GetJointTransform( soundJoint, gameLocal.time, origin, axis );
 		origin += modelOffset;
 		axis = viewAxis;
-	} else {
-		origin = GetPhysics()->GetGravityNormal() * -eyeOffset.z;
+	}
+	else
+	{
+		// grayman #3340 - this was giving the location of standing
+		// eyes whether the actor was standing or sleeping.
+		// This causes a problem when sleeping in a low-ceilinged
+		// room, because it pushes the sound origin up into the void,
+		// or possibly even the room above. If sleeping, use the AI's
+		// origin, which is not technically where his mouth is, but it's
+		// good enough for what we're doing here, and certainly better
+		// than being in the room above.
+		if ( IsType(idAI::Type) && ( static_cast<idAI*>(this)->GetMoveType() == MOVETYPE_SLEEP ) )
+		{
+			origin.Zero();
+		}
+		else
+		{
+			origin = GetPhysics()->GetGravityNormal() * -eyeOffset.z;
+		}
 		axis.Identity();
 	}
 	return true;
