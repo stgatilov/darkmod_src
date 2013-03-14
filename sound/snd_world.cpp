@@ -927,8 +927,8 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		// grayman #3042 use the highest volume in this chain
 		// determine effective volume at the spatialized origin
 		{
-			float maxVol = 0.0f;
-			int pickMe = -1;
+			float maxVol = -100000.0f;
+			int pickMe = 0;
 			float mind = def->minDistance * METERS_TO_DOOM;
 			float maxd = def->maxDistance * METERS_TO_DOOM;
 			bool quadratic = idSoundSystemLocal::s_quadraticFalloff.GetBool();
