@@ -3144,12 +3144,6 @@ void idAI::StopMove( moveStatus_t status ) {
 	move.lastMoveOrigin.Zero();
 	move.lastMoveTime	= gameLocal.time;
 	move.accuracy		= -1;
-
-	if ( name == "dude1" )
-	{
-		int z = 0;
-		z++;
-	}
 }
 
 const idVec3& idAI::GetMoveDest() const
