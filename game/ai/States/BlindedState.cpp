@@ -82,8 +82,10 @@ void BlindedState::Init(idAI* owner)
 		owner->SetAlertLevel(owner->thresh_5 - 1);
 	}
 
-	_oldAcuity = owner->GetAcuity("vis");
+	_oldVisAcuity = owner->GetAcuity("vis");
 	owner->SetAcuity("vis", 0);
+	_oldAudAcuity = owner->GetAcuity("aud"); // Smoke #2829
+	owner->SetAcuity("aud",_oldAudAcuity*0.25f); // Smoke #2829
 }
 
 // Gets called each time the mind is thinking
@@ -97,7 +99,8 @@ void BlindedState::Think(idAI* owner)
 		owner->SetWaitState(ANIMCHANNEL_TORSO, "");
 		owner->SetWaitState(ANIMCHANNEL_LEGS, "");
 
-		owner->SetAcuity("vis", _oldAcuity);
+		owner->SetAcuity("vis", _oldVisAcuity);
+		owner->SetAcuity("aud", _oldAudAcuity); // Smoke #2829
 
 		owner->GetMind()->EndState();
 		return;
@@ -109,7 +112,8 @@ void BlindedState::Save(idSaveGame* savefile) const
 	State::Save(savefile);
 
 	savefile->WriteInt(_endTime);
-	savefile->WriteFloat(_oldAcuity);
+	savefile->WriteFloat(_oldVisAcuity);
+	savefile->WriteFloat(_oldAudAcuity); // Smoke #2829
 }
 
 void BlindedState::Restore(idRestoreGame* savefile)
@@ -117,7 +121,8 @@ void BlindedState::Restore(idRestoreGame* savefile)
 	State::Restore(savefile);
 
 	savefile->ReadInt(_endTime);
-	savefile->ReadFloat(_oldAcuity);
+	savefile->ReadFloat(_oldVisAcuity);
+	savefile->ReadFloat(_oldAudAcuity); // Smoke #2829
 }
 
 StatePtr BlindedState::CreateInstance()
