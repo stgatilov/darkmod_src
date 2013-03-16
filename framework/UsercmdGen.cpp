@@ -489,7 +489,7 @@ int idUsercmdGenLocal::GetNumUserCommands( void ) {
 
 /*
 ================
-idUsercmdGenLocal::GetNumUserCommands
+idUsercmdGenLocal::GetUserCommandName
 ================
 */
 const char *idUsercmdGenLocal::GetUserCommandName( int index ) {

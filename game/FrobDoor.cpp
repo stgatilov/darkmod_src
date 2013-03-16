@@ -40,7 +40,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../game/ai/AAS.h"
 
-#define EXTRA_PLAYER_LOSS 10.0f // grayman #3042
+#define EXTRA_PLAYER_LOSS 9.0f // grayman #3042
 
 //===============================================================================
 //CFrobDoor
