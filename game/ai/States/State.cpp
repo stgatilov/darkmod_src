@@ -1266,6 +1266,96 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 			// An enemy should not be ignored in the future - grayman #2423 - moved out of above test so all enemies are remembered
 			ignoreStimulusFromNowOn = false;
 		}
+		// grayman #3338 - allow greetings and warnings to the player,
+		// when he's a friend. When he's neutral to me, just give greetings.
+		else if ( other->IsType(idPlayer::Type) )
+		{
+			idPlayer* player = static_cast<idPlayer*>(other);
+
+			if ( owner->IsFriend(player) )
+			{
+				// Remember last time you saw a friendly face
+				memory.lastTimeFriendlyAISeen = gameLocal.time;
+			}
+
+			// don't issue a warning or greeting if you're mute
+			if ( !owner->m_isMute ) // grayman #2903
+			{
+				// the distance check was applied before calling this
+				// method, so we're inside the greeting distance
+
+				// Make sure enough time has passed since the last time
+				// we greeted the player.
+
+				Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(player);
+				if ( ( info.lastConsiderTime > -1 ) && 
+						( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+				{
+					// Not enough time has passed, no warning or greeting
+				}
+				else
+				{
+					info.lastConsiderTime = gameLocal.time;
+
+					// apply some randomness
+					if ( gameLocal.random.RandomFloat() > ( 1.0f - CHANCE_FOR_GREETING ) )
+					{
+						// Variables for the sound
+						idStr soundName = "";
+
+						// Allow warnings if the player is a friend
+						if ( owner->IsFriend(player) )
+						{
+							const idVec3& playerOrigin = player->GetPhysics()->GetOrigin();
+
+							// did I see an enemy?
+							if ( ( memory.timeEnemySeen > 0 ) &&
+									InsideWarningVolume( memory.posEnemySeen, playerOrigin, WARN_DIST_ENEMY_SEEN ) )
+							{
+								soundName = "snd_warnSawEnemy";
+							}
+							// did I see a corpse?
+							else if ( ( memory.timeCorpseFound > 0 ) &&
+										InsideWarningVolume( memory.posCorpseFound, playerOrigin, WARN_DIST_CORPSE_FOUND ) )
+							{
+								soundName = "snd_warnFoundCorpse";
+							}
+							// did I notice an item was missing?
+							else if ( ( memory.timeMissingItem  > 0 ) &&
+										InsideWarningVolume( memory.posMissingItem, playerOrigin, WARN_DIST_MISSING_ITEM ) )
+							{
+								soundName = "snd_warnMissingItem";
+							}
+							// do I have evidence of intruders?
+							else if ( ( memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION ) &&
+									  ( memory.timeEvidenceIntruders > 0 ) &&
+									  InsideWarningVolume( memory.posEvidenceIntruders, playerOrigin, WARN_DIST_EVIDENCE_INTRUDERS ) )
+							{
+								soundName = "snd_warnSawEvidence";
+							}
+						}
+
+						// If no warning is being given, see if a greeting is appropriate
+
+						if ( soundName.IsEmpty() && owner->CanGreet() )
+						{
+							soundName = "snd_greeting_generic";
+						}
+					
+						// Speak the chosen sound
+
+						if ( !soundName.IsEmpty() )
+						{
+							memory.lastTimeVisualStimBark = gameLocal.time;
+							CommMessagePtr message;
+							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName, message)));
+						}
+					}
+				}
+			}
+			// Don't ignore in future
+			ignoreStimulusFromNowOn = false;
+		}
 		else if (owner->IsFriend(other))
 		{
 			if (!other->IsType(idAI::Type))
@@ -1414,7 +1504,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 						{
 							if ( InsideWarningVolume( memory.posEnemySeen, otherOrigin, WARN_DIST_ENEMY_SEEN ) ) // grayman #2903
 							{
-								gameLocal.Printf("%s sees a friend, and is warning them that enemies have been seen.\n",owner->name.c_str());
+								gameLocal.Printf("%s sees %s, and warns that enemies have been seen.\n",owner->name.c_str(),other->name.c_str());
 								message = CommMessagePtr(new CommMessage(
 									CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
 									owner, other, // from this AI to the other
@@ -1438,7 +1528,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							{
 								if ( InsideWarningVolume( memory.posCorpseFound, otherOrigin, WARN_DIST_CORPSE_FOUND ) ) // grayman #2903
 								{
-									gameLocal.Printf("%s sees a friend, and is warning them that a dead person was found.\n",owner->name.c_str());
+									gameLocal.Printf("%s sees %s, and warns that a dead person was found.\n",owner->name.c_str(),other->name.c_str());
 									message = CommMessagePtr(new CommMessage(
 										CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType, 
 										owner, other, // from this AI to the other
@@ -1459,7 +1549,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 							{
 								if ( InsideWarningVolume( memory.posMissingItem, otherOrigin, WARN_DIST_MISSING_ITEM ) ) // grayman #2903
 								{
-									gameLocal.Printf("%s sees a friend, and is warning them that items were stolen.\n",owner->name.c_str());
+									gameLocal.Printf("%s sees %s, and warns that items were stolen.\n",owner->name.c_str(),other->name.c_str());
 									message = CommMessagePtr(new CommMessage(
 										CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType, 
 										owner, other, // from this AI to the other
@@ -1482,7 +1572,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 								{
 									if ( InsideWarningVolume( memory.posEvidenceIntruders, otherOrigin, WARN_DIST_EVIDENCE_INTRUDERS ) ) // grayman #2903
 									{
-										gameLocal.Printf("%s sees a friend, and is warning them of evidence he's concerned about\n",owner->name.c_str());
+										gameLocal.Printf("%s sees %s, and warns of evidence he's concerned about\n",owner->name.c_str(),other->name.c_str());
 										message = CommMessagePtr(new CommMessage(
 											CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
 											owner, other, // from this AI to the other
@@ -1498,7 +1588,7 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 
 					if ( soundName.IsEmpty() )
 					{
-						if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) )
+						if ( owner->CanGreet() && otherAI->CanGreet() )
 						{
 							Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
 
@@ -1576,9 +1666,9 @@ void State::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 				dir.z = 0;
 				float distSqr = dir.LengthSqr();
 
-				if ( ( distSqr <= Square(REMARK_DISTANCE) ) && !owner->m_isMute )
+				if ( distSqr <= Square(REMARK_DISTANCE) )
 				{
-					if ( ( owner->AI_AlertIndex < EObservant ) && ( owner->greetingState != ECannotGreet ) )
+					if ( owner->CanGreet() && otherAI->CanGreet() )
 					{
 						Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
 
@@ -3439,27 +3529,26 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			// Have seen a friend
 			memory.lastTimeFriendlyAISeen = gameLocal.time;
 
-			// If not too upset, look at them
-			// grayman #3202 - if mute, you can't reply
-			if ( ( owner->AI_AlertIndex < EObservant ) &&
-				 ( owner->greetingState != ECannotGreet ) &&
-				issuingEntity->IsType(idAI::Type) &&
-				!owner->m_isMute )
+			if ( issuingEntity->IsType(idAI::Type) )
 			{
 				idAI* otherAI = static_cast<idAI*>(issuingEntity);
 
-				// Get the sound and queue the task
-				idStr greetSound = GetGreetingResponseSound(owner, otherAI);
-
-				owner->commSubsystem->AddCommTask(
-					CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
-				);
-			}
-			else // grayman #3202 - reset greetingState so we can receive greetings in the future
-			{
-				if ( owner->greetingState != ECannotGreet )
+				// grayman #3202 - if mute, you can't reply
+				if ( owner->CanGreet() && !owner->m_isMute )
 				{
-					owner->greetingState = ENotGreetingAnybody;
+					// Get the sound and queue the task
+					idStr greetSound = GetGreetingResponseSound(owner, otherAI);
+
+					owner->commSubsystem->AddCommTask(
+						CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
+					);
+				}
+				else // grayman #3202 - reset greetingState so we can receive greetings in the future
+				{
+					if ( owner->greetingState != ECannotGreet )
+					{
+						owner->greetingState = ENotGreetingAnybody;
+					}
 				}
 			}
 
@@ -3722,7 +3811,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				
 				if ( memory.countEvidenceOfIntruders < warningAmount )
 				{
-					gameLocal.Printf("%s has been warned about evidence of intruders.\n",owner->name.c_str());
 					memory.countEvidenceOfIntruders = warningAmount;
 				
 					// grayman #2903 - register where the issuing entity saw the evidence
@@ -3737,6 +3825,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					}
 				}
 
+			gameLocal.Printf("%s has been warned by %s about evidence of intruders.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 				// grayman #2920 - issue a delayed warning response
 				owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			}
@@ -3744,7 +3833,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 		case CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
-			gameLocal.Printf("%s has been warned that items were stolen.\n",owner->name.c_str());
 			memory.itemsHaveBeenStolen = true;
 
 			// grayman #2903 - register where the issuing entity saw the missing item
@@ -3766,13 +3854,13 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
+			gameLocal.Printf("%s has been warned by %s that items were stolen.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
 		case CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType: // grayman #1327
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_CorpseHasBeenSeen_CommType\r");
 			// Note: We deliberately don't care if the issuer is a friend or not
-			gameLocal.Printf("%s has been warned that a dead person was found.\n",owner->name.c_str());
 			memory.deadPeopleHaveBeenFound = true;
 
 			// grayman #2903 - register where the issuing entity saw the corpse
@@ -3794,6 +3882,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
+			gameLocal.Printf("%s has been warned by %s that a dead person was found.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
@@ -3816,6 +3905,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
+			gameLocal.Printf("%s has been warned by %s that an enemy was seen.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;

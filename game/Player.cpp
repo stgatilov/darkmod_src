@@ -11487,3 +11487,9 @@ void idPlayer::Event_ProcessInterMissionTriggers()
 {
 	gameLocal.ProcessInterMissionTriggers();
 }
+
+bool idPlayer::CanGreet() // grayman #3338
+{
+	// Player can always respond to a greeting, but he never says anything
+	return true;
+}

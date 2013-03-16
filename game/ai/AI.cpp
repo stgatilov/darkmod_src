@@ -62,6 +62,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <boost/lexical_cast.hpp>
 
+const int MIN_TIME_BETWEEN_GREETING_CHECKS = 2000; // msecs grayman #3338
+const int MAX_DISTANCE_FOR_GREETING = 200; // grayman #3338
+
 //TODO: Move these to AI def:
 
 // Visual detection parameters
@@ -9330,8 +9333,11 @@ void idAI::PerformVisualScan(float timecheck)
 		return;
 	}
 
-	// Ignore dead actors or non-enemies
-	if (player->health <= 0 || !IsEnemy(player))
+	// Ignore dead actors
+	// grayman #3338 - move enemy test below, beyond the point
+	// where we know we can see him. this allows for greetings.
+//	if (player->health <= 0 || !IsEnemy(player))
+	if ( player->health <= 0 )
 	{
 		return;
 	}
@@ -9346,7 +9352,7 @@ void idAI::PerformVisualScan(float timecheck)
 	// Do the percentage check
 	float randFrac = gameLocal.random.RandomFloat();
 	float chance = timecheck / s_VisNormtime * cv_ai_sight_prob.GetFloat() * visFrac;
-	if( randFrac > chance)
+	if ( randFrac > chance )
 	{
 		return;
 	}
@@ -9354,6 +9360,25 @@ void idAI::PerformVisualScan(float timecheck)
 	// angua: does not take lighting and FOV into account
 	if (!CanSeeExt(player, false, false))
 	{
+		return;
+	}
+
+	// grayman #3338 - if the player is not an enemy, process him like
+	// a visual stim to the AI. this allows AI->player warnings and greetings
+	if ( !IsEnemy(player) )
+	{
+		idVec3 dir = GetPhysics()->GetOrigin() - player->GetPhysics()->GetOrigin();
+		if ( dir.LengthFast() <= MAX_DISTANCE_FOR_GREETING )
+		{
+			ai::Memory::GreetingInfo& info = GetMemory().GetGreetingInfo(player);
+			if ( !( ( info.lastPlayerEncounterTime > -1 ) && 
+				  ( gameLocal.time < info.lastPlayerEncounterTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) ) )
+			{
+				info.lastPlayerEncounterTime = gameLocal.time;
+				mind->GetState()->OnPersonEncounter(player,this);
+			}
+		}
+
 		return;
 	}
 
@@ -12107,3 +12132,18 @@ void idAI::ParseKnockoutInfo()
 	tempAngles = spawnArgs.GetAngles("fov_rotation");
 	m_FOVRot = tempAngles.ToMat3();
 }
+
+bool idAI::CanGreet() // grayman #3338
+{
+	if ( ( greetingState == ECannotGreet )    || // can never greet
+		 ( greetingState == ECannotGreetYet ) || // not allowed to greet yet
+		 ( AI_AlertIndex >= ai::EObservant)	  || // too alert
+		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") ) ||  // visible melee weapon drawn
+		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) ) // visible ranged weapon drawn
+	{
+		return false;
+	}
+
+	return true;
+}
+

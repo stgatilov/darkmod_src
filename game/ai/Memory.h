@@ -451,9 +451,15 @@ public:
 		// This is used to "ignore" visual stims for greeting for a while
 		int lastConsiderTime;
 
+		// The last time the player was spotted and not considered
+		// an enemy, for consideration of barking a warning or greeting
+		// at him from friendly AI.
+		int lastPlayerEncounterTime;
+
 		GreetingInfo() :
 			lastGreetingTime(-1),
-			lastConsiderTime(-1)
+			lastConsiderTime(-1),
+			lastPlayerEncounterTime(-1) // grayman #3338
 		{}
 	};
 

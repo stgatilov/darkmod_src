@@ -225,6 +225,7 @@ struct CrashLandResult
 enum GreetingState
 {
 	ECannotGreet = 0,		// actor is not able to greet (e.g. spiders)
+	ECannotGreetYet,		// grayman #3338 - can greet, but not yet allowed to
 	ENotGreetingAnybody,	// actor is currently not greeting anybody (free)
 	EWaitingForGreeting,	// actor is receiving a greeting from somebody else
 	EGoingToGreet,			// actor is about to greet somebody 
@@ -539,6 +540,11 @@ public:
 	**/
 	void					BindNotify( idEntity *ent, const char *jointName ); // grayman #3074
 	
+	/**
+	* Called to determine if an actor can exchange greetings with another actor.
+	**/
+	virtual bool			CanGreet(); // grayman #3338
+
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.
 	**/

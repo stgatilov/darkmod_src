@@ -593,6 +593,8 @@ public:
 	float					CalcFov( bool honorZoom );
 	void					CalculateViewWeaponPos( idVec3 &origin, idMat3 &axis );
 	idVec3					GetEyePosition( void ) const;
+	bool					CanGreet(); // grayman #3338
+
 	void					GetViewPos( idVec3 &origin, idMat3 &axis ) const;
 	void					OffsetThirdPersonView( float angle, float range, float height, bool clip );
 

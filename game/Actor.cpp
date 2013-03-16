@@ -4921,6 +4921,12 @@ void idActor::SetAttackFlag(ECombatType type, bool enabled)
 	}
 }
 
+bool idActor::CanGreet() // grayman #3338
+{
+	// Player and AI provide their own responses
+	return true;
+}
+
 /****************************************************************************************
 	=====================
 	idActor::CrashLand

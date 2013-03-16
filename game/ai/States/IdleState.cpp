@@ -269,6 +269,16 @@ void IdleState::InitialiseCommunication(idAI* owner)
 		// Push a single bark to the communication subsystem first, it fires only once
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner))));
+
+		// grayman #3338 - Delay greetings if coming off a search.
+		// Divide the max alert level achieved so far in half, and
+		// delay for that number of minutes.
+		if ( owner->greetingState != ECannotGreet )
+		{
+			owner->greetingState = ECannotGreetYet;
+			float delay = (owner->m_maxAlertIndex/2.0f)*60.0f;
+			owner->PostEventSec(&AI_AllowGreetings,delay);
+		}
 	}
 }
 

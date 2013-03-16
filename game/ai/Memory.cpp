@@ -199,6 +199,7 @@ void Memory::Save(idSaveGame* savefile) const
 		savefile->WriteObject(i->first);
 		savefile->WriteInt(i->second.lastGreetingTime);
 		savefile->WriteInt(i->second.lastConsiderTime);
+		savefile->WriteInt(i->second.lastPlayerEncounterTime); // grayman #3338
 	}
 
 	// grayman #2866 - start of changes
@@ -344,6 +345,7 @@ void Memory::Restore(idRestoreGame* savefile)
 		
 		savefile->ReadInt(result.first->second.lastGreetingTime);
 		savefile->ReadInt(result.first->second.lastConsiderTime);
+		savefile->ReadInt(result.first->second.lastPlayerEncounterTime); // grayman #3338
 	}
 
 	// grayman #2866 - start of changes

@@ -53,11 +53,9 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	SingleBarkTask::Init(owner, subsystem);
 
 	// Check the prerequisites - are both AI available for greeting?
-	if (owner->greetingState == ECannotGreet || 
-		_greetingTarget->greetingState == ECannotGreet)
+	if ( !owner->CanGreet() || !_greetingTarget->CanGreet() || owner->m_isMute ) // grayman #3338
 	{
 		// Owner or other AI cannot do greetings
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Actors cannot great each other: %s to %s\r", owner->name.c_str(), _greetingTarget->name.c_str());
 		subsystem.FinishTask();
 		return;
 	}
@@ -81,7 +79,7 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// Too early
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: time since last greet too short: %s to %s, %d msecs\r", 
-			owner->name.c_str(), _greetingTarget->name.c_str(), gameLocal.time - lastGreetingTime);
+		owner->name.c_str(), _greetingTarget->name.c_str(), gameLocal.time - lastGreetingTime);
 		
 		subsystem.FinishTask();
 		return;
@@ -145,7 +143,7 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 		}
 	}
 
-	if (_barkStartTime > 0 && gameLocal.time > _barkStartTime + 50000)
+	if ( ( _barkStartTime > 0 ) && ( gameLocal.time > _barkStartTime + 50000 ) )
 	{
 		gameLocal.Printf("Force termination of GreetingBarkTask after 50 seconds: %s.\n", owner->name.c_str());
 		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("Force termination of GreetingBarkTask after 50 seconds: %s.\r", owner->name.c_str());
@@ -157,7 +155,7 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 
 void GreetingBarkTask::OnFinish(idAI* owner)
 {
-	if (owner != NULL && owner->greetingState != ECannotGreet)
+	if ( ( owner != NULL ) && ( owner->greetingState != ECannotGreet ) )
 	{
 		owner->greetingState = ENotGreetingAnybody;
 	}

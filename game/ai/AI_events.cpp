@@ -444,6 +444,8 @@ const idEventDef AI_RestartPatrol( "restartPatrol", EventArgs(), EV_RETURNS_VOID
 const idEventDef AI_OnDeadPersonEncounter( "<onDeadPersonEncounter>", EventArgs('e', "person", "the dead AI"), EV_RETURNS_VOID, "internal" ); // grayman #3317
 const idEventDef AI_OnUnconsciousPersonEncounter( "<onUnconsciousPersonEncounter>", EventArgs('e', "person", "the unconscious AI"), EV_RETURNS_VOID, "internal" ); // grayman #3317
 
+const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #debug
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -634,6 +636,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_RestartPatrol,					idAI::Event_RestartPatrol)	// grayman #2920
 	EVENT ( AI_OnDeadPersonEncounter,			idAI::Event_OnDeadPersonEncounter) // grayman #3317
 	EVENT ( AI_OnUnconsciousPersonEncounter,	idAI::Event_OnUnconsciousPersonEncounter) // grayman #3317
+	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
 
 END_CLASS
 
@@ -3648,6 +3651,13 @@ void idAI::Event_OnDeadPersonEncounter(idActor* person)
 void idAI::Event_OnUnconsciousPersonEncounter(idActor* person)
 {
 	mind->GetState()->Post_OnUnconsciousPersonEncounter(person, this);
+}
+
+// grayman #3338
+
+void idAI::Event_AllowGreetings()
+{
+	greetingState = ENotGreetingAnybody;
 }
 
 

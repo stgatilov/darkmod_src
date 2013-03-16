@@ -176,6 +176,8 @@ extern const idEventDef AI_RestartPatrol; // grayman #2920
 extern const idEventDef AI_OnDeadPersonEncounter; // grayman #3317
 extern const idEventDef AI_OnUnconsciousPersonEncounter; // grayman #3317
 
+extern const idEventDef AI_AllowGreetings; // grayman #3338
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -1451,6 +1453,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	virtual bool			TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr, int location, bool bIsPowerBlow );  
 	
 	/**
+	* Can the AI greet someone?
+	**/
+	bool					CanGreet(); // grayman #3338
+
+	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,
 	* also can be called by itself and is called by scriptevent AI_KO_Knockout.
 	*
@@ -2230,6 +2237,8 @@ public:
 
 	void Event_OnDeadPersonEncounter(idActor* person); // grayman #3317
 	void Event_OnUnconsciousPersonEncounter(idActor* person); // grayman #3317
+
+	void Event_AllowGreetings(); // grayman #3338
 
 #ifdef TIMING_BUILD
 private:
