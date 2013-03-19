@@ -45,7 +45,7 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+	void OnActorEncounter(idEntity* stimSource, idAI* owner);
 
 	virtual bool CheckAlertLevel(idAI* owner);
 

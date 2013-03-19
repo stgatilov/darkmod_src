@@ -91,8 +91,20 @@ void UnreachableTargetState::Init(idAI* owner)
 		memory.lastEnemyPos
 	));
 
+	// grayman #3343 - accommodate different barks for human and non-human enemies
+
+	idStr bark = "";
+	idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+	if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+	{
+		bark = "snd_cantReachTargetMonster";
+	}
+	else
+	{
+		bark = "snd_cantReachTarget";
+	}
 	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_cantReachTarget", message))
+		CommunicationTaskPtr(new SingleBarkTask(bark, message))
 	);
 
 	// The sensory system does nothing so far

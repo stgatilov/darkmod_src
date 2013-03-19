@@ -165,7 +165,7 @@ void FleeDoneState::Think(idAI* owner)
 }
 
 
-void FleeDoneState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
+void FleeDoneState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
@@ -192,7 +192,7 @@ void FleeDoneState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 		}
 	}
 
-	State::OnPersonEncounter(stimSource, owner);
+	State::OnActorEncounter(stimSource, owner);
 }
 
 

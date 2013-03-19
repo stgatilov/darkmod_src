@@ -3645,12 +3645,12 @@ void idAI::Event_Bark(const char* soundName)
 
 void idAI::Event_OnDeadPersonEncounter(idActor* person)
 {
-	mind->GetState()->Post_OnDeadPersonEncounter(person, this);
+	mind->GetState()->Post_OnDeadActorEncounter(person, this);
 }
 
 void idAI::Event_OnUnconsciousPersonEncounter(idActor* person)
 {
-	mind->GetState()->Post_OnUnconsciousPersonEncounter(person, this);
+	mind->GetState()->Post_OnUnconsciousActorEncounter(person, this);
 }
 
 // grayman #3338

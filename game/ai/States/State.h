@@ -101,7 +101,7 @@ public:
 	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner); // grayman #1327
 	virtual void OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource ); // grayman #2872
-	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
 	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
@@ -109,7 +109,7 @@ public:
 	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
 	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt); // grayman #2816
 
-	// greebo: Gets called by OnPersonEncounter on finding a dead body
+	// greebo: Gets called by OnActorEncounter on finding a dead body
 	// returns TRUE when the stim should be ignored from now on, FALSE otherwise
 	virtual bool OnDeadPersonEncounter(idActor* person, idAI* owner);
 
@@ -117,8 +117,8 @@ public:
 	virtual bool OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	// grayman #3317 - post events for finding dead or unconscious AI
-	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner);
-	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnDeadActorEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner);
 
 	/**
 	 * greebo: Called if an attacker performed a failed knockout attack
@@ -189,6 +189,7 @@ private:
 		EAIuse_Suspicious,	// grayman #1327
 		EAIuse_Rope,		// grayman #2872
 		EAIuse_Monster,		// grayman #3331
+		EAIuse_Undead,		// grayman #3343
 		ENumMarkers,		// invalid index
 	};
 

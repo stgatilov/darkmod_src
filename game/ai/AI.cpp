@@ -9375,7 +9375,7 @@ void idAI::PerformVisualScan(float timecheck)
 				  ( gameLocal.time < info.lastPlayerEncounterTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) ) )
 			{
 				info.lastPlayerEncounterTime = gameLocal.time;
-				mind->GetState()->OnPersonEncounter(player,this);
+				mind->GetState()->OnActorEncounter(player,this);
 			}
 		}
 
@@ -9657,7 +9657,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
 			{
 				// angua: We've found a friend that is dead or unconscious
-				mind->GetState()->OnPersonEncounter(tactEnt, this);
+				mind->GetState()->OnActorEncounter(tactEnt, this);
 			}
 		}
 

@@ -109,7 +109,7 @@ private:
 	// Private helper for debug output
 	void DrawDebugOutput(idAI* owner);
 
-	void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+	void OnActorEncounter(idEntity* stimSource, idAI* owner);
 };
 typedef boost::shared_ptr<ConversationState> ConversationStatePtr;
 

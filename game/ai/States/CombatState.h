@@ -88,14 +88,14 @@ public:
 	virtual void OnVisualAlert(idActor* enemy);
 	virtual void OnAudioAlert();
 
-	virtual void OnPersonEncounter(idEntity* stimSource, idAI* owner);
+	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
 
 	// grayman #3317 - It's possible that an AI will enter Combat mode after encountering a
 	// dead or KO'ed AI, but before the post processing for those events occurs. If that happens,
 	// these methods will catch the post processing and abort it.
-	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner);
-	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnDeadActorEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner);
 	
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

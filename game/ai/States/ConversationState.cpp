@@ -744,7 +744,7 @@ void ConversationState::DrawDebugOutput(idAI* owner)
 }
 
 // angua: override visual stim to avoid greetings during conversation
-void ConversationState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
+void ConversationState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
@@ -758,7 +758,7 @@ void ConversationState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 	// Are they dead or unconscious?
 	if (other->health <= 0 || other->IsKnockedOut() || owner->IsEnemy(other))
 	{
-		State::OnPersonEncounter(stimSource, owner);
+		State::OnActorEncounter(stimSource, owner);
 	}
 }
 

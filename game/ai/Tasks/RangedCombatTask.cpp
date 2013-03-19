@@ -76,7 +76,19 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 
 			if (_lastCombatBarkTime == -1)
 			{
-				EmitCombatBark(owner, "snd_combat_ranged");
+				// grayman #3343 - accommodate different barks for human and non-human enemies
+
+				idStr bark = "";
+				idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+				if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+				{
+					bark = "snd_combat_ranged_monster";
+				}
+				else
+				{
+					bark = "snd_combat_ranged";
+				}
+				EmitCombatBark(owner, bark);
 			}
 		}
 		else

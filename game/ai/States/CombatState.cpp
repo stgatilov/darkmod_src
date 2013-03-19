@@ -106,7 +106,7 @@ void CombatState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& directi
 	// Ignore failed knockout attempts in combat mode
 }
 
-void CombatState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
+void CombatState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 {
 	if (!stimSource->IsType(idActor::Type))
 	{
@@ -121,12 +121,12 @@ void CombatState::OnPersonEncounter(idEntity* stimSource, idAI* owner)
 	// angua: ignore other people during combat
 }
 
-void CombatState::Post_OnDeadPersonEncounter(idActor* person, idAI* owner) // grayman #3317
+void CombatState::Post_OnDeadActorEncounter(idActor* person, idAI* owner) // grayman #3317
 {
 	// don't react to a dead person
 }
 
-void CombatState::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner) // grayman #3317
+void CombatState::Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner) // grayman #3317
 {
 	// don't react to an unconscious person
 }
@@ -402,6 +402,9 @@ void CombatState::Think(idAI* owner)
 		}
 
 		// The communication system plays starting bark
+
+		// grayman #3343 - accommodate different barks for human and non-human enemies
+
 		idPlayer* player(NULL);
 		if (enemy->IsType(idPlayer::Type))
 		{
@@ -416,11 +419,27 @@ void CombatState::Think(idAI* owner)
 		}
 		else if ((MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK)
 		{
-			bark = "snd_to_combat_company";
+			idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+			if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+			{
+				bark = "snd_to_combat_company_monster";
+			}
+			else
+			{
+				bark = "snd_to_combat_company";
+			}
 		}
 		else
 		{
-			bark = "snd_to_combat";
+			idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+			if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+			{
+				bark = "snd_to_combat_monster";
+			}
+			else
+			{
+				bark = "snd_to_combat";
+			}
 		}
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark, message)));
@@ -773,7 +792,19 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 
 		// new way
 
-		owner->PostEventMS(&AI_Bark,ENEMY_DEAD_BARK_DELAY,"snd_killed_enemy");
+		// grayman #3343 - accommodate different barks for human and non-human enemies
+
+		idStr bark = "";
+		idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+		if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+		{
+			bark = "snd_killed_monster";
+		}
+		else
+		{
+			bark = "snd_killed_enemy";
+		}
+		owner->PostEventMS(&AI_Bark,ENEMY_DEAD_BARK_DELAY,bark);
 
 /* old way
 		// Emit the killed enemy bark
