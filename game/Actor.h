@@ -822,6 +822,7 @@ public:
 	void					Event_GetAnimState( int channel );
 	void					Event_InAnimState( int channel, const char *name );
 	void					Event_FinishAction( const char *name );
+	void					Event_ReloadTorchReplacementAnims( void ); // grayman #3166
 	void					Event_FinishChannelAction(int channel, const char *name );
 	void					Event_AnimDone( int channel, int blendFrames );
 	void					Event_HasAnim( int channel, const char *name );

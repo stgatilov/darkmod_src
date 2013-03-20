@@ -3615,20 +3615,16 @@ void idAI::Event_DropTorch() // grayman #2603
 
 			CheckAfterDetach( ent ); // grayman #2624 - check for frobability and whether to extinguish
 
-			// grayman #2624 - now handled by CheckAfterDetach() above
-/*
-			// grayman #3123 - this could be happening to a lit torch,
-			// so douse the torch once it's dropped
+			// grayman #3166 - reload replacement anims for any drawn weapons.
+			// Don't worry about ranged weapons because actors can't hold ranged
+			// weapons and torches at the same time.
 
-			int delay = SEC2MS(ent->spawnArgs.GetInt("extinguish_on_drop_delay", "3"));
-			if (delay < 0)
+			idEntity* inHand = GetAttachmentByPosition("hand_r");
+			if (inHand && (idStr::Cmp(inHand->spawnArgs.GetString("AIUse"), AIUSE_WEAPON) == 0))
 			{
-				delay = 0;
+				LoadReplacementAnims(inHand->spawnArgs,"RightHand");
 			}
 
-			// Schedule the extinguish event
-			ent->PostEventMS(&EV_ExtinguishLights, delay);
- */
 			break;
 		}
 	}

@@ -429,6 +429,7 @@ const idEventDef AI_GetAnimState( "getAnimState", EventArgs('d', "channel", ""),
 const idEventDef AI_InAnimState( "inAnimState", EventArgs('d', "channel", "", 's', "stateFunc", ""), 
 	'd', "Returns true if the given animation state script function is currently used for the given channel.");
 const idEventDef AI_FinishAction( "finishAction", EventArgs('s', "action", ""), EV_RETURNS_VOID, "Finishes the given wait action.");
+const idEventDef AI_ReloadTorchReplacementAnims( "reloadTorchReplacementAnims", EventArgs(), EV_RETURNS_VOID, "If actor has a torch, reload the torch's replacement anims."); // grayman #3166
 const idEventDef AI_FinishChannelAction( "finishChannelAction", EventArgs('d', "channel", "", 's', "animname", ""), 
 	EV_RETURNS_VOID, "Overloaded finishAction function for setting the waitstate on each channel separately");
 const idEventDef AI_AnimDone( "animDone", EventArgs('d', "channel", "", 'd', "blendOutFrames", ""), 'd', 
@@ -590,6 +591,7 @@ CLASS_DECLARATION( idAFEntity_Gibbable, idActor )
 	EVENT( AI_GetAnimState,				idActor::Event_GetAnimState )
 	EVENT( AI_InAnimState,				idActor::Event_InAnimState )
 	EVENT( AI_FinishAction,				idActor::Event_FinishAction )
+	EVENT( AI_ReloadTorchReplacementAnims, idActor::Event_ReloadTorchReplacementAnims) // grayman #3166
 	EVENT( AI_FinishChannelAction,		idActor::Event_FinishChannelAction )
 	EVENT( AI_AnimDone,					idActor::Event_AnimDone )
 	EVENT( AI_OverrideAnim,				idActor::Event_OverrideAnim )
@@ -2494,11 +2496,30 @@ void idActor::UnbindNotify( idEntity *ent )
 		idStr key = KeyVal->GetKey();
 		key.StripLeadingOnce("replace_anim_");
 
-		if (strcmp(m_replacementAnims.GetString( key ), KeyVal->GetValue().c_str()) == 0 )
+		// grayman #3166
+		// key holds "<replacedAnimation>[ jointName]"
+		// Separate the substrings before and after the space.
+
+		// Does key contain a space, which indicates two substrings?
+
+		idStr replacedAnimation = key;
+		idStr replacingAnimation = KeyVal->GetValue();
+
+		int index = idStr::FindChar(key.c_str(),' ');
+		if ( index > 0 )
+		{
+			std::string keyString = key.c_str();
+			std::vector<std::string> substrings; // will hold the separated substrings
+			boost::algorithm::split(substrings, keyString, boost::algorithm::is_any_of(" "));
+			replacedAnimation = idStr(substrings[0].c_str());
+			// ignore substrings[1] because we don't need it
+		}
+
+		if (strcmp(m_replacementAnims.GetString( replacedAnimation ), replacingAnimation.c_str()) == 0 )
 		{
 			// This animation override is present, so remove it
 			//gameLocal.Warning( "idActor: Removing replacement animation %s", KeyVal->GetValue().c_str() );
-			m_replacementAnims.Delete( key );
+			m_replacementAnims.Delete( replacedAnimation );
 		}
 
 		KeyVal = ent->spawnArgs.MatchPrefix( "replace_anim_", KeyVal );
@@ -4602,6 +4623,22 @@ void idActor::Event_AnimDistance( int channel, const char *animname ) {
 	}
 	
 	idThread::ReturnFloat( 0.0f );
+}
+
+// grayman #3166 - reload replacement animations from a torch
+// if the actor is carrying one
+
+void idActor::Event_ReloadTorchReplacementAnims( void )
+{
+	if ( IsType(idAI::Type) )
+	{
+		idAI* me = static_cast<idAI*>(this);
+		idEntity* torch = me->GetTorch();
+		if ( torch )
+		{
+			LoadReplacementAnims(torch->spawnArgs,NULL); // grayman #3074
+		}
+	}
 }
 
 /*

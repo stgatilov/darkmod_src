@@ -10739,15 +10739,14 @@ Quit:
 	return;
 }
 
-void idEntity::ReAttachToPos
-	( const char *AttName, const char *PosName  ) 
+void idEntity::ReAttachToPos ( const char *AttName, const char *PosName  ) 
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttachToPos called with attachment name %s, positiong %s, on entity %s\r", AttName, PosName, name.c_str());
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idEntity::ReAttachToPos called with attachment name %s, position %s, on entity %s\r", AttName, PosName, name.c_str());
 
 	int ind = GetAttachmentIndex( AttName );
 	if (ind == -1 )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("idEntity::ReAttachToPos called with invalid attachment name %s on entity %s\r", AttName, name.c_str());
 		return;
 	}
 
@@ -10755,7 +10754,7 @@ void idEntity::ReAttachToPos
 
 	if( !ent )
 	{
-		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
+		DM_LOG(LC_AI,LT_WARNING)LOGSTRING("idEntity::ReAttachToPos called with invalid attached entity on entity %s\r", AttName, name.c_str());
 		return;
 	}
 
@@ -10764,7 +10763,7 @@ void idEntity::ReAttachToPos
 	// into this place in the array.
 
 	DetachInd( ind );
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("ReAttaching...\r");
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idEntity::ReAttaching...\r");
 	Attach( ent, PosName, AttName );
 
 	int indEnd = m_Attachments.Num();
@@ -10772,7 +10771,7 @@ void idEntity::ReAttachToPos
 	// greebo: Decrease the end index by 1 before passing it to operator[]
 	indEnd--;
 
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("End index is %d\r", indEnd);
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idEntity::End index is %d\r", indEnd);
 
 	// Copy the attachment info from the end of the list over the previous index
 	m_Attachments[ind] = m_Attachments[indEnd];
