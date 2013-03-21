@@ -110,6 +110,9 @@ const int WARN_DIST_BODY_CAN_SHIFT = 100;
 
 const int WARN_DIST_MAX_Z = 100; // no warning if the sender is farther than this vertically from the alert spot (same for each alert type)
 //----------------------------------------------------------------------------------------
+const int VIS_STIM_DELAY_MIN = 1500; // grayman #2924 - min amount of time delay (ms) before processing certain visual stims
+const int VIS_STIM_DELAY_MAX = 3000; // grayman #2924 - max amount of time delay (ms) before processing certain visual stims
+//----------------------------------------------------------------------------------------
 // The following defines a key that should be non-0 if the device should be closed
 #define AIUSE_SHOULDBECLOSED_KEY		"shouldBeClosed"
 
@@ -885,18 +888,21 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	// Process non-actor stim types
 
+	// grayman #2924 - Check whether this alert type should be
+	// processed, based on what other stims/alerts the AI has experienced.
+
 	switch(aiUseType)
 	{
 	case EAIuse_Weapon:
-		if (ShouldProcessAlert(EAlertTypeWeapon))
+		if (!ShouldProcessAlert(EAlertTypeWeapon))
 		{
-			OnVisualStimWeapon(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Suspicious: // grayman #1327
-		if (ShouldProcessAlert(EAlertTypeSuspiciousItem))
+		if (!ShouldProcessAlert(EAlertTypeSuspiciousItem))
 		{
-			OnVisualStimSuspicious(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Rope: // grayman #2872
@@ -904,11 +910,12 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			OnVisualStimRope(stimSource,owner,ropeStimSource);
 		}
+		return;
 		break;
 	case EAIuse_Blood_Evidence:
-		if (ShouldProcessAlert(EAlertTypeBlood))
+		if (!ShouldProcessAlert(EAlertTypeBlood))
 		{
-			OnVisualStimBlood(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Lightsource:
@@ -916,28 +923,72 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			OnVisualStimLightSource(stimSource,owner);
 		}
+		return;
 		break;
 	case EAIuse_Missing_Item_Marker:
-		if (ShouldProcessAlert(EAlertTypeMissingItem))
+		if (!ShouldProcessAlert(EAlertTypeMissingItem))
 		{
-			OnVisualStimMissingItem(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Broken_Item:
-		if (ShouldProcessAlert(EAlertTypeBrokenItem))
+		if (!ShouldProcessAlert(EAlertTypeBrokenItem))
 		{
-			OnVisualStimBrokenItem(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Door:
-		if (ShouldProcessAlert(EAlertTypeDoor))
+		if (!ShouldProcessAlert(EAlertTypeDoor))
 		{
-			OnVisualStimDoor(stimSource,owner);
+			return;
 		}
 		break;
 	case EAIuse_Default:
 	default:
+		return;
 		break;
+	}
+
+	// grayman #2924 - We're going to process this visual stim.
+	// Ignore it in the future
+
+	stimSource->IgnoreResponse(ST_VISUAL, owner);
+
+	// Delay the processing randomly between VIS_STIM_DELAY_MIN and VIS_STIM_DELAY_MAX ms.
+
+	int delay = VIS_STIM_DELAY_MIN + gameLocal.random.RandomInt(VIS_STIM_DELAY_MAX - VIS_STIM_DELAY_MIN);
+
+	// Post the event to do the processing
+	owner->PostEventMS( &AI_DelayedVisualStim, delay, stimSource);
+}
+
+void State::DelayedVisualStim(idEntity* stimSource, idAI* owner)
+{
+	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
+
+	if (aiUse == AIUSE_WEAPON)
+	{
+		OnVisualStimWeapon(stimSource,owner);
+	}
+	else if (aiUse == AIUSE_DOOR)
+	{
+		OnVisualStimDoor(stimSource,owner);
+	}
+	else if (aiUse == AIUSE_SUSPICIOUS)
+	{
+		OnVisualStimSuspicious(stimSource,owner);
+	}
+	else if (aiUse == AIUSE_BLOOD_EVIDENCE)
+	{
+		OnVisualStimBlood(stimSource,owner);
+	}
+	else if (aiUse == AIUSE_MISSING_ITEM_MARKER)
+	{
+		OnVisualStimMissingItem(stimSource,owner);
+	}
+	else if (aiUse == AIUSE_BROKEN_ITEM)
+	{
+		OnVisualStimBrokenItem(stimSource,owner);
 	}
 }
 
@@ -965,7 +1016,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
+//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
 	if (stimSource->IsType(idWeapon::Type))
 	{
@@ -1031,6 +1082,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 
 	if ( owner->AI_AlertLevel >= owner->thresh_5 ) // grayman #2423 - pay no attention if in combat
 	{
+		stimSource->AllowResponse(ST_VISUAL, owner); // grayman #2924
 		return;
 	}
 
@@ -1537,7 +1589,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							{
 								if ( InsideWarningVolume( memory.posEnemySeen, otherOrigin, WARN_DIST_ENEMY_SEEN ) ) // grayman #2903
 								{
-									gameLocal.Printf("%s sees %s, and warns that enemies have been seen.\n",owner->name.c_str(),other->name.c_str());
+									gameLocal.Printf("%d: %s sees %s, and warns that enemies have been seen.\n",gameLocal.time,owner->name.c_str(),otherAI->name.c_str());
 									message = CommMessagePtr(new CommMessage(
 										CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
 										owner, other, // from this AI to the other
@@ -1561,7 +1613,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								{
 									if ( InsideWarningVolume( memory.posCorpseFound, otherOrigin, WARN_DIST_CORPSE_FOUND ) ) // grayman #2903
 									{
-										gameLocal.Printf("%s sees %s, and warns that a dead person was found.\n",owner->name.c_str(),other->name.c_str());
+										gameLocal.Printf("%d: %s sees %s, and warns that a dead person was found.\n",gameLocal.time,owner->name.c_str(),otherAI->name.c_str());
 										message = CommMessagePtr(new CommMessage(
 											CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType, 
 											owner, other, // from this AI to the other
@@ -1582,7 +1634,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								{
 									if ( InsideWarningVolume( memory.posMissingItem, otherOrigin, WARN_DIST_MISSING_ITEM ) ) // grayman #2903
 									{
-										gameLocal.Printf("%s sees %s, and warns that items were stolen.\n",owner->name.c_str(),other->name.c_str());
+										gameLocal.Printf("%d: %s sees %s, and warns that something missing.\n",gameLocal.time,owner->name.c_str(),otherAI->name.c_str());
 										message = CommMessagePtr(new CommMessage(
 											CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType, 
 											owner, other, // from this AI to the other
@@ -1605,7 +1657,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									{
 										if ( InsideWarningVolume( memory.posEvidenceIntruders, otherOrigin, WARN_DIST_EVIDENCE_INTRUDERS ) ) // grayman #2903
 										{
-											gameLocal.Printf("%s sees %s, and warns of evidence he's concerned about\n",owner->name.c_str(),other->name.c_str());
+											gameLocal.Printf("%d: %s sees %s, and warns of evidence he's concerned about\n",gameLocal.time,owner->name.c_str(),otherAI->name.c_str());
 											message = CommMessagePtr(new CommMessage(
 												CommMessage::ConveyWarning_EvidenceOfIntruders_CommType, 
 												owner, other, // from this AI to the other
@@ -2721,7 +2773,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Ignore from now on
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
+//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
 	// angua: ignore blood after dead bodies have been found
 /*     grayman #3075 - no longer
@@ -3167,7 +3219,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
+//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 	
 	// Can we notice missing items
 	if (owner->spawnArgs.GetFloat("chanceNoticeMissingItem") <= 0.0)
@@ -3246,7 +3298,6 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	}
 }
 
-
 void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
@@ -3254,7 +3305,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// We've seen this object, don't respond to it again
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
+//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
 	gameLocal.Printf("Something is broken over there!\n");
 
@@ -3351,6 +3402,9 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
+
+	// grayman #2924 - enable the response
+	stimSource->AllowResponse(ST_VISUAL, owner);
 
 	// Update the info structure for this door
 	DoorInfo& doorInfo = memory.GetDoorInfo(door);
@@ -3553,6 +3607,14 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 	
 	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
 	idEntity* recipientEntity = message.m_p_recipientEntity.GetEntity();
+
+	// grayman #2924 - was this message was meant for me? If recipientEntity
+	// is me or is NULL, I'll listen to it. Otherwise, I'll ignore it.
+	if ( recipientEntity && ( recipientEntity != owner ) )
+	{
+		return;
+	}
+
 	idEntity* directObjectEntity = message.m_p_directObjectEntity.GetEntity();
 	const idVec3& directObjectLocation = message.m_directObjectLocation;
 
@@ -3873,7 +3935,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					}
 				}
 
-			gameLocal.Printf("%s has been warned by %s about evidence of intruders.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
+				gameLocal.Printf("%d: %s has been warned by %s about evidence of intruders.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 				// grayman #2920 - issue a delayed warning response
 				owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			}
@@ -3902,7 +3964,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			gameLocal.Printf("%s has been warned by %s that items were stolen.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
+			gameLocal.Printf("%d: %s has been warned by %s that items were stolen.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
@@ -3930,7 +3992,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			gameLocal.Printf("%s has been warned by %s that a dead person was found.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
+			gameLocal.Printf("%d: %s has been warned by %s that a dead person was found.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
@@ -3953,7 +4015,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			gameLocal.Printf("%s has been warned by %s that an enemy was seen.\n",owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
+			gameLocal.Printf("%d: %s has been warned by %s that an enemy was seen.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;

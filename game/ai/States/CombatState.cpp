@@ -836,6 +836,13 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 	return true; // Enemy still alive and kicking
 }
 
+// grayman #2924 - don't process any stim that ends up here; we're busy
+
+void CombatState::DelayedVisualStim(idEntity* stimSource, idAI* owner)
+{
+	stimSource->AllowResponse(ST_VISUAL, owner); // see it again later
+}
+
 void CombatState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);

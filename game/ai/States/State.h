@@ -120,6 +120,9 @@ public:
 	virtual void Post_OnDeadActorEncounter(idActor* person, idAI* owner);
 	virtual void Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner);
 
+	// grayman #2924 - process visual stims after a delay
+	virtual void DelayedVisualStim( idEntity* stimSource, idAI* owner);
+
 	/**
 	 * greebo: Called if an attacker performed a failed knockout attack
 	 *

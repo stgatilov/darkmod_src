@@ -178,6 +178,8 @@ extern const idEventDef AI_OnUnconsciousPersonEncounter; // grayman #3317
 
 extern const idEventDef AI_AllowGreetings; // grayman #3338
 
+extern const idEventDef AI_DelayedVisualStim; // grayman #2924
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -2239,6 +2241,8 @@ public:
 	void Event_OnUnconsciousPersonEncounter(idActor* person); // grayman #3317
 
 	void Event_AllowGreetings(); // grayman #3338
+
+	void Event_DelayedVisualStim(idEntity* stimSource); // grayman #2924
 
 #ifdef TIMING_BUILD
 private:

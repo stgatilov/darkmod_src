@@ -444,7 +444,9 @@ const idEventDef AI_RestartPatrol( "restartPatrol", EventArgs(), EV_RETURNS_VOID
 const idEventDef AI_OnDeadPersonEncounter( "<onDeadPersonEncounter>", EventArgs('e', "person", "the dead AI"), EV_RETURNS_VOID, "internal" ); // grayman #3317
 const idEventDef AI_OnUnconsciousPersonEncounter( "<onUnconsciousPersonEncounter>", EventArgs('e', "person", "the unconscious AI"), EV_RETURNS_VOID, "internal" ); // grayman #3317
 
-const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #debug
+const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3338
+
+const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
 /*
 * This is the AI event table class for a generic NPC actor.
@@ -637,6 +639,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_OnDeadPersonEncounter,			idAI::Event_OnDeadPersonEncounter) // grayman #3317
 	EVENT ( AI_OnUnconsciousPersonEncounter,	idAI::Event_OnUnconsciousPersonEncounter) // grayman #3317
 	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
+	EVENT ( AI_DelayedVisualStim,				idAI::Event_DelayedVisualStim) // grayman #2924
 
 END_CLASS
 
@@ -3630,7 +3633,6 @@ void idAI::Event_DropTorch() // grayman #2603
 	}
 }
 
-
 void idAI::Event_Bark(const char* soundName)
 {
 	idStr bark = soundName;
@@ -3655,6 +3657,15 @@ void idAI::Event_AllowGreetings()
 {
 	greetingState = ENotGreetingAnybody;
 }
+
+// grayman #2924
+
+void idAI::Event_DelayedVisualStim(idEntity* stimSource)
+{
+	mind->GetState()->DelayedVisualStim(stimSource, this);
+}
+
+
 
 
 
