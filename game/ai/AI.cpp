@@ -4170,10 +4170,8 @@ void idAI::SetMoveType( idStr moveType )
 	}
 	else
 	{
-		gameLocal.Warning( "Invalid movetype %s", moveType );
+		gameLocal.Warning( "Invalid movetype %s", moveType.c_str() );
 	}
-
-
 }
 
 /*
