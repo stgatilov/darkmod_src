@@ -93,9 +93,14 @@ void FleeState::Init(idAI* owner)
 		singleBark = "snd_to_flee_event";
 	}
 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask(singleBark,message))
-	);
+	// grayman #3140 - if hit by an arrow, issue a different bark
+	if ( memory.causeOfPain == EPC_Projectile )
+	{
+		singleBark = "snd_taking_fire";
+		memory.causeOfPain = EPC_None;
+	}
+
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
 
 	owner->commSubsystem->AddSilence(3000);
 

@@ -544,8 +544,8 @@ void CsndProp::Propagate
 	
 	if ( cv_spr_debug.GetBool() )
 	{
-		gameLocal.Printf("Found %d ents with valid type for propagation\n", validTypeEnts.Num() );
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d ents with valid type for propagation\r", validTypeEnts.Num() );
+		gameLocal.Printf("Found %d valid AIs to propagate to\n", validTypeEnts.Num() );
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d valid AIs to propagate to\r", validTypeEnts.Num() );
 		timer_Prop.Stop(); // grayman - only time things if the debug cvar is set
 		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished finding all AI entities, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
 		timer_Prop.Start();
@@ -587,8 +587,17 @@ void CsndProp::Propagate
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound was propagated from inanimate object: Alerts all teams\r" );
 			}
 		}
+		else if ( testAI == maker ) // grayman #3140 - makers don't ping themselves
+		{
+			// do nothing, bValidTeam is false at this point
+		}
 		else
 		{
+			// grayman - tmask holds flags that describe which team
+			// relationships should receive the propagated sound.
+			// When one or more of the flags matches the relationship
+			// flags between the maker and the listener (testAI), then
+			// the listener should respond to the sound.
 			compMask.m_bits.same = ( testAI->team == mteam );
 			compMask.m_bits.friendly = testAI->IsFriend(maker);
 			compMask.m_bits.neutral = testAI->IsNeutral(maker);
@@ -607,8 +616,7 @@ void CsndProp::Propagate
 
 		// TODO : Add another else if for the case of Listeners
 		
-		// don't alert the AI that caused the sound
-		if ( bValidTeam && ( testAI != maker ) )
+		if ( bValidTeam /* && ( testAI != maker ) */ ) // grayman #3140 - maker test moved up
 		{
 			if ( cv_spr_debug.GetBool() )
 			{
@@ -620,7 +628,7 @@ void CsndProp::Propagate
 
 		if ( cv_spr_debug.GetBool() )
 		{
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s does not have a valid team for propagation\r", testAI->name.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s either doesn't have a valid team for propagation, or is the maker\r", testAI->name.c_str() );
 		}
 	}
 
@@ -650,6 +658,13 @@ void CsndProp::Propagate
 	// Don't bother propagation if no one is in range
 	if ( validEnts.Num() == 0 )
 	{
+		// grayman #3140 - We're done propagating, clear the message list of the issuing AI, if appropriate
+		if ( maker->IsType(idAI::Type) )
+		{
+			idAI* makerAI = static_cast<idAI*>(maker);
+			makerAI->ClearMessages();
+		}
+
 		return;
 	}
 
@@ -750,7 +765,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	
 	DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Parsing team alert and propagation flags from propagated_sounds.def\r");
 	
-	// note: by default, if the key is not found, GetBool returns false
+	// note: by default, if the key is not found, GetBool returns 'false' for the first 3, and 'true' for prop_to_enemy
 	tempflags.m_bits.same = parms->GetBool("prop_to_same");
 	tempflags.m_bits.friendly = parms->GetBool("prop_to_friend");
 	tempflags.m_bits.neutral = parms->GetBool("prop_to_neutral");
@@ -1207,10 +1222,10 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 	// check AI hearing, get environmental noise, etc
 	if ( cv_spr_debug.GetBool() )
 	{
-		gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
+		gameLocal.Printf("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s\n", 
 						  propParms->name.c_str(), ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
 
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s \r", 
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated sound %s to AI %s, from origin %s : Propagated volume %f, Apparent origin of sound: %s\r", 
 											  propParms->name.c_str(), ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
 	}
 

@@ -58,19 +58,24 @@ void PainState::Init(idAI* owner)
 	// Set end time
 	_stateEndTime = gameLocal.time + 5000;
 	
-	memory.alertPos = owner->GetPhysics()->GetOrigin();
+	// grayman #3140 - if drowning, skip issuing a message. The drowning
+	// sound effect is handled in idActor::Damage().
+	if ( memory.causeOfPain != EPC_Drown )
+	{
+		memory.alertPos = owner->GetPhysics()->GetOrigin();
 
-	// Do a single bark and assemble an AI message
-	CommMessagePtr message = CommMessagePtr(new CommMessage(
-		CommMessage::DetectedEnemy_CommType, 
-		owner, NULL, // from this AI to anyone
-		NULL,
-		memory.alertPos
-	));
+		// Do a single bark and assemble an AI message
+		CommMessagePtr message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedEnemy_CommType, 
+			owner, NULL, // from this AI to anyone
+			NULL,
+			memory.alertPos
+		));
 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message))
-	);
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message))
+		);
+	}
 }
 
 // Gets called each time the mind is thinking
@@ -79,18 +84,58 @@ void PainState::Think(idAI* owner)
 	if ( ( gameLocal.time >= _stateEndTime ) || 
 		 ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "pain" ) ) 
 	{
-		// grayman #3331 - civilians and unarmed AI should flee
-		if ( ( ( owner->GetNumMeleeWeapons()  == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
-				owner->spawnArgs.GetBool("is_civilian", "0") )
+		bool willBark = ( owner->AI_AlertLevel < owner->thresh_5 ); // don't bark a response if in combat
+
+		bool willFlee = ( ( ( owner->GetNumMeleeWeapons()  == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
+							  owner->spawnArgs.GetBool("is_civilian", "0") );
+
+		// grayman #3140 - what caused this pain?
+
+		Memory& memory = owner->GetMemory();
+		if ( memory.causeOfPain == EPC_Drown )
+		{
+			// no bark and no fleeing if drowning
+			willBark = false;
+			willFlee = false;
+		}
+		else if ( memory.causeOfPain == EPC_Projectile )
+		{
+			// If fleeing, snd_taking_fire will be played at the start of the flee state,
+			// so there's no reason to play it here.
+
+			// If not fleeing, play snd_taking_fire here.
+
+			willBark = !willFlee;
+			memory.timeEnemySeen = gameLocal.time;
+			memory.posEnemySeen = owner->GetPhysics()->GetOrigin();
+		}
+
+		if ( willBark )
+		{
+			// grayman #3140 - Emit the snd_taking_fire bark
+
+			// This will hold the message to be delivered with the bark
+			CommMessagePtr message;
+	
+			message = CommMessagePtr(new CommMessage(
+				CommMessage::RequestForHelp_CommType, 
+				owner, NULL, // from this AI to anyone 
+				NULL,
+				owner->GetPhysics()->GetOrigin()
+			));
+
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
+		}
+
+		if ( willFlee ) // grayman #3331 - civilians and unarmed AI should flee
 		{
 			owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
 			owner->GetMind()->SwitchState(STATE_FLEE);
+			return;
 		}
-		else
-		{
-			// End this state
-			owner->GetMind()->EndState();
-		}
+
+		// End this state
+		owner->GetMind()->EndState();
 	}
 }
 

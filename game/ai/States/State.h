@@ -153,7 +153,7 @@ protected:
 	 *         an idProjectile. It does not alert the owning AI, as this is
 	 *         handled in the calling OnTactileAlert method.
 	 */
-	virtual void OnProjectileHit(idProjectile* projectile);
+//	virtual void OnProjectileHit(idProjectile* projectile); // grayman #3140 - no longer used
 
 	/**
 	 * greebo: Method implemented by the States to check

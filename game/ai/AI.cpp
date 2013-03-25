@@ -6152,10 +6152,36 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		ChangeEntityRelation(attacker, -10);
 
 		// Switch to pain state if idle
-		if ( ( AI_AlertIndex == ai::ERelaxed ) &&
+		if ( /*( AI_AlertIndex == ai::ERelaxed ) && */ // grayman #3140 - go to PainState at any alert level
 			 ( damage > 0 ) && 
 			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
 		{
+			// grayman #3140 - note what caused the damage, in case PainState needs to do something special.
+			// Start with the basic causes (arrow, melee, moveable) and expand to the others as needed.
+			ai::Memory& memory = GetMemory();
+			memory.causeOfPain = ai::EPC_None;
+			if ( inflictor )
+			{
+				if ( inflictor->IsType(idProjectile::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Projectile;
+				}
+				else if ( inflictor->IsType(CMeleeWeapon::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Melee;
+				}
+				else if ( inflictor->IsType(idMoveable::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Moveable;
+				}
+			}
+			else
+			{
+				if ( damageDef->GetBool( "no_air" ) ) 
+				{
+					memory.causeOfPain = ai::EPC_Drown;
+				}
+			}
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 		}
 	}
@@ -6406,7 +6432,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 		return;
 	}
 
-	if (inflictor != NULL && inflictor->IsType(idProjectile::Type))
+	if ( ( inflictor != NULL ) && inflictor->IsType(idProjectile::Type))
 	{
 		int damageTaken = preHitHealth - health;
 
@@ -8969,7 +8995,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// Retrieve the messages from the other AI, if there are any
 		if (propParms->makerAI != NULL)
 		{
-			for (int i = 0; i < propParms->makerAI->m_Messages.Num(); i++)
+			for ( int i = 0 ; i < propParms->makerAI->m_Messages.Num() ; i++ )
 			{
 				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
 			}
@@ -12136,7 +12162,8 @@ bool idAI::CanGreet() // grayman #3338
 	if ( ( greetingState == ECannotGreet )    || // can never greet
 		 ( greetingState == ECannotGreetYet ) || // not allowed to greet yet
 		 ( AI_AlertIndex >= ai::EObservant)	  || // too alert
-		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") ) ||  // visible melee weapon drawn
+		 ( mind->GetState()->GetName() == "Flee" ) || // grayman #3140 - no greeting if fleeing
+		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") ) || // visible melee weapon drawn
 		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) ) // visible ranged weapon drawn
 	{
 		return false;

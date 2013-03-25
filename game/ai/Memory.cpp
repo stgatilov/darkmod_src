@@ -147,6 +147,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stopHandlingElevator);	// grayman #2816
 	savefile->WriteInt(nextTime2GenRandomSpot);	// grayman #2422
 	savefile->WriteInt(static_cast<int>(alertClass));
+	savefile->WriteInt(static_cast<int>(causeOfPain)); // grayman #3140
 	savefile->WriteInt(static_cast<int>(alertType));
 	savefile->WriteFloat(alertRadius);
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
@@ -263,6 +264,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	int temp;
 	savefile->ReadInt(temp);
 	alertClass = static_cast<EAlertClass>(temp);
+
+	savefile->ReadInt(temp);
+	causeOfPain = static_cast<EPainCause>(temp); // grayman #3140
 
 	savefile->ReadInt(temp);
 	alertType = static_cast<EAlertType>(temp);

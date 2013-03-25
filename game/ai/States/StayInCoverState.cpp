@@ -100,6 +100,7 @@ void StayInCoverState::Think(idAI* owner)
 	}
 }
 
+/* grayman #3140 - no longer used
 void StayInCoverState::OnProjectileHit(idProjectile* projectile)
 {
 	idAI* owner = _owner.GetEntity();
@@ -120,6 +121,7 @@ void StayInCoverState::OnProjectileHit(idProjectile* projectile)
 		owner->GetMind()->EndState();
 	}
 }
+*/
 
 void StayInCoverState::Save(idSaveGame* savefile) const
 {

@@ -247,7 +247,9 @@ void State::OnTactileAlert(idEntity* tactEnt)
 	// If this is a projectile, fire the corresponding event
 	if (tactEnt->IsType(idProjectile::Type))
 	{
-		OnProjectileHit(static_cast<idProjectile*>(tactEnt));
+		// grayman #3140 - now handled by the path through
+		// idProjectile::Collide()->idAI::Damage()
+		//OnProjectileHit(static_cast<idProjectile*>(tactEnt));
 	}
 	else 
 	{
@@ -304,6 +306,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 	}
 }
 
+/* grayman #3140 - no longer used
 void State::OnProjectileHit(idProjectile* projectile)
 {
 	idAI* owner = _owner.GetEntity();
@@ -337,6 +340,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 		memory.mandatory = true; // grayman #3331
 	}
 }
+*/
 
 void State::OnAudioAlert() 
 {
@@ -1574,7 +1578,13 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 					dir.z = 0;
 					float distSqr = dir.LengthSqr();
 
-					if ( distSqr <= Square(REMARK_DISTANCE) )
+					float remarkLimit = REMARK_DISTANCE;
+					if ( owner->GetMind()->GetState()->GetName() == "Flee" ) // grayman #3140 - increase remark limit if fleeing
+					{
+						remarkLimit *= 3;
+					}
+
+					if ( distSqr <= Square(remarkLimit) )
 					{
 						// Issue a communication stim to the friend we spotted.
 						// We can issue warnings, greetings, etc...
@@ -1589,7 +1599,6 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							{
 								if ( InsideWarningVolume( memory.posEnemySeen, otherOrigin, WARN_DIST_ENEMY_SEEN ) ) // grayman #2903
 								{
-									gameLocal.Printf("%d: %s sees %s, and warns that enemies have been seen.\n",gameLocal.time,owner->name.c_str(),otherAI->name.c_str());
 									message = CommMessagePtr(new CommMessage(
 										CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
 										owner, other, // from this AI to the other
@@ -2506,16 +2515,32 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		return;
 	}
 
+	bool isAfraid = ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
+						owner->spawnArgs.GetBool("is_civilian", "0") );
+
 	// grayman #3331 - If you're a civilian, or you're unarmed, flee!
 	// But only if no damage was done. When damaged, the flee is handled
 	// by PainState, because we have to wait for the pain animation
 	// to finish.
 	if ( damageTaken == 0 )
 	{
-		if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
-			 owner->spawnArgs.GetBool("is_civilian", "0") )
+		if ( isAfraid )
 		{
-			owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
+			// grayman #3140 - Emit the snd_taking_fire bark
+
+			// This will hold the message to be delivered with the bark
+			CommMessagePtr message;
+	
+			message = CommMessagePtr(new CommMessage(
+				CommMessage::SearchOrder_CommType, 
+				owner, NULL, // from this AI to anyone 
+				NULL,
+				owner->GetPhysics()->GetOrigin()
+			));
+
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
+
+			owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}
@@ -2532,15 +2557,6 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	// already in combat mode, you should react to this regardless of what
 	// else you're doing.
 
-/*	if ( damageTaken > 0 )
-	{
-		alertType = EAlertTypeDamage;
-	}
-	else
-	{
-		alertType = EAlertTypeWeapon;
-	}
- */
 	alertType = EAlertTypeHitByProjectile; // grayman #3331
 
 	if ( !ShouldProcessAlert( alertType ) )
@@ -2551,8 +2567,43 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to projectile.\r", owner->name.c_str());
 	
+	// grayman #3140 - If a civilan or not armed, you only got here because
+	// damage was taken. PainState will set up fleeing, and we don't want
+	// you searching, so there's nothing remaining for you to do here.
+
+	if ( isAfraid )
+	{
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		// Treat getting hit by a projectile as proof that an enemy is present.
+		Memory& memory = owner->GetMemory();
+		memory.timeEnemySeen = gameLocal.time;
+		memory.posEnemySeen = owner->GetPhysics()->GetOrigin();
+		return;
+	}
+
+	// At this point, if no damage was taken, emit a bark.
+	if ( damageTaken == 0 )
+	{
+		// grayman #3140 - Emit the snd_taking_fire bark
+
+		// This will hold the message to be delivered with the bark
+		CommMessagePtr message;
+	
+		message = CommMessagePtr(new CommMessage(
+			CommMessage::SearchOrder_CommType, 
+			owner, NULL, // from this AI to anyone 
+			NULL,
+			owner->GetPhysics()->GetOrigin()
+		));
+
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
+	}
+
+	// At this point, you're armed and not a civilian, and either damage was taken, or it wasn't.
+	// Set up a search.
+
 	if ( owner->AI_AlertLevel < owner->thresh_5 ) // grayman #3331 - ignore only if in combat
-//	if ( owner->AI_AlertLevel < ( owner->thresh_5 - 0.1f ) )
 	{
 		Memory& memory = owner->GetMemory();
 

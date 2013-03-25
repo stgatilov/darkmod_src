@@ -340,18 +340,11 @@ void CombatState::Think(idAI* owner)
 
 		_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 
-		// greebo: Check for weapons and flee if we are unarmed.
-		if (!_meleePossible && !_rangedPossible)
+		// greebo: Check for weapons and flee if ...
+		if ( ( !_meleePossible && !_rangedPossible )		 || // ... I'm unarmed
+			 ( owner->spawnArgs.GetBool("is_civilian", "0")) || // ... I'm a civilian, and don't fight
+			 ( owner->health < _criticalHealth ) )			    // grayman #3140 ... I'm very damaged and can't afford to engage in combat
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm unarmed, I'm afraid!\r");
-			owner->GetMind()->SwitchState(STATE_FLEE);
-			return;
-		}
-
-		// greebo: Check for civilian AI, which will always flee in face of a combat (this is a temporary query)
-		if (owner->spawnArgs.GetBool("is_civilian", "0"))
-		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm a civilian. I'm afraid.\r");
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}

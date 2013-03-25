@@ -50,7 +50,7 @@ public:
 
 protected:
 	// Override the base class method to catch projectile hit events
-	virtual void OnProjectileHit(idProjectile* projectile);
+//	virtual void OnProjectileHit(idProjectile* projectile); // grayman #3140 - no longer used
 };
 
 } // namespace ai

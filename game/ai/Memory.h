@@ -145,6 +145,19 @@ enum EAlertState
 	EAlertStateNum
 };
 
+// grayman #3140 - what caused my pain?
+enum EPainCause
+{
+	EPC_None = 0,
+	EPC_Projectile,
+	EPC_Melee,
+	EPC_Drown,
+	EPC_KO,
+	EPC_Fall,
+	EPC_Moveable,
+	EPC_Num
+};
+
 const char* const AlertStateNames[EAlertStateNum] = 
 {
 	"Relaxed",
@@ -263,6 +276,9 @@ public:
 	idVec3 posCorpseFound;
 	idVec3 posMissingItem;
 	idVec3 posEvidenceIntruders;
+
+	// grayman #3140 - cause of pain
+	EPainCause causeOfPain;
 
 	// grayman #3331 - force a hiding spot search (don't rely just on the alert index changing)
 	bool mandatory;
