@@ -2580,6 +2580,7 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 		unzOpenCurrentFile( file->z );
 		file->zipFilePos = pakFile->pos;
 		file->fileSize = zfi->cur_file_info.uncompressed_size;
+        file->fileLastMod = Sys_DosToUnixTime(zfi->cur_file_info.dosDate);
 	}
 
 	return file;
@@ -3298,6 +3299,7 @@ idFileSystemLocal::FindDLL
 */
 void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], bool updateChecksum ) {
 	idFile			*dllFile = NULL;
+    idFile          *dllFileInPak = NULL;
 	char			dllName[MAX_OSPATH];
 	idStr			dllPath;
 	int				dllHash;
@@ -3315,49 +3317,66 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	dllPath.AppendPath( dllName );
 	dllFile = OpenExplicitFileRead( dllPath );
 
+    if ( !serverPaks.Num() ) {
+		// try to find dll in a pak file
+		dllFileInPak = OpenFileReadFlags( dllName, FSFLAG_SEARCH_PAKS | FSFLAG_BINARY_ONLY, &inPak );
+    }
+
 	if ( dllFile ) {
 		common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
-	} else { 
-		// DLL not found in alongside executable
-		if ( !serverPaks.Num() ) {
-			// try to extract from a pak file first
-			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_PAKS | FSFLAG_BINARY_ONLY, &inPak );
+	} 
+    
+    if ( dllFileInPak ) {
+		common->Printf( "Found DLL in pak file: %s\n", dllFileInPak->GetFullPath() );
+    }
 
-			if (dllFile) {
-				common->Printf( "found DLL in pak file: %s, extracting to darkmod path\n", dllFile->GetFullPath() );
-				
-				dllPath = ModPath();
-				dllPath.Append(dllName);
+    if ( dllFile && (dllFileInPak == NULL || (dllFileInPak && dllFile->Timestamp() >= dllFileInPak->Timestamp())) ) {
+        common->Printf( "DLL in EXE path is newer, ignoring DLL in pak file\n" );
+        if ( dllFileInPak ) {
+            CloseFile( dllFileInPak );
+		    dllFileInPak = NULL;
+        }
+    } else { 
+		if ( dllFileInPak ) {
+			common->Printf( "DLL in pak file is newer, extracting to darkmod path\n", dllFileInPak->GetFullPath() );
+			
+            if ( dllFile ) {
+                CloseFile( dllFile );
+		        dllFile = NULL;
+            }
 
-				//dllPath = RelativePathToOSPath( dllName, "fs_savepath" );
-				CopyFile( dllFile, dllPath );
+			dllPath = ModPath();
+			dllPath.Append(dllName);
 
-				CloseFile( dllFile );
+			//dllPath = RelativePathToOSPath( dllName, "fs_savepath" );
+			CopyFile( dllFileInPak, dllPath );
 
-				dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
+			CloseFile( dllFileInPak );
+                 
+			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
 
-				if ( !dllFile ) {
-					common->Error( "DLL extraction to darkmod path failed\n" );
-				} else if ( updateChecksum ) {
+			if ( !dllFile ) {
+				common->Error( "DLL extraction to darkmod path failed\n" );
+			} else if ( updateChecksum ) {
+				gameDLLChecksum = GetFileChecksum( dllFile );
+				gamePakChecksum = inPak->checksum;
+				updateChecksum = false;	// don't try again below
+			}
+		} else {
+			// didn't find a source in a pak file, try in the directory
+			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
+			if ( dllFile ) {
+				if ( updateChecksum ) {
 					gameDLLChecksum = GetFileChecksum( dllFile );
-					gamePakChecksum = inPak->checksum;
-					updateChecksum = false;	// don't try again below
-				}
-			} else {
-				// didn't find a source in a pak file, try in the directory
-				dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
-				if ( dllFile ) {
-					if ( updateChecksum ) {
-						gameDLLChecksum = GetFileChecksum( dllFile );
-						// see if we can mark a pak file
-						pak = FindPakForFileChecksum( dllName, gameDLLChecksum, false );
-						pak ? gamePakChecksum = pak->checksum : gamePakChecksum = 0;
-						updateChecksum = false;
-					}
+					// see if we can mark a pak file
+					pak = FindPakForFileChecksum( dllName, gameDLLChecksum, false );
+					pak ? gamePakChecksum = pak->checksum : gamePakChecksum = 0;
+					updateChecksum = false;
 				}
 			}
 		}
 	}
+
 	if ( updateChecksum ) {
 		if ( dllFile ) {
 			gameDLLChecksum = GetFileChecksum( dllFile );

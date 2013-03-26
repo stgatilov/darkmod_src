@@ -411,6 +411,43 @@ long Sys_FileTimeStamp(FILE * fp) {
 	return st.st_mtime;
 }
 
+/*
+=================
+Sys_DosToUnixTime
+=================
+*/
+long Sys_DosToUnixTime( unsigned long dostime ) {
+	ID_TIME_T unix_time = 0;
+    unsigned int sec, min, hour, day, mon, year;
+    struct tm dostm;
+
+    // break dos time down into its sec, min, hour components
+    sec = (dostime & 0x1F) * 2;
+    min = (dostime & 0x7E0) >> 5;
+    hour = (dostime & 0xF800)  >> 11; 
+
+    // temporarily remove time component
+    year = dostime >> 16;
+    
+    // break dos date down into its day, month, year components
+    day = year & 0x1F;
+    mon = (year & 0x1E0) >> 5;
+    year = (year >> 9) + 1980;
+
+    if (sec <= 60 && min <= 59 && hour <= 23 && day >= 1 && day <= 31 && mon >= 1 && mon <= 12 && year <= 2107) {
+        dostm.tm_sec = sec;
+        dostm.tm_min = min;
+        dostm.tm_hour = hour;
+        dostm.tm_mday = day;
+        dostm.tm_mon = mon - 1;
+        dostm.tm_year = year - 1900;
+        
+        unix_time = mktime(&dostm);
+    }
+
+	return (long) unix_time;
+}
+
 void Sys_Sleep(int msec) {
 	if ( msec < 20 ) {
 		static int last = 0;

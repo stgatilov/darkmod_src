@@ -232,6 +232,7 @@ private:
 	idStr					fullPath;		// full file path including pak file name
 	int						zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
+    ID_TIME_T               fileLastMod;    // last modified date/time of the file
 	void *					z;				// unzip info
 };
 

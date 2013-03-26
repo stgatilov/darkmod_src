@@ -96,7 +96,8 @@ idCommon *			common = &commonLocal;
 */
 
 void			Sys_Mkdir( const char *path ) {}
-ID_TIME_T			Sys_FileTimeStamp( FILE *fp ) { return 0; }
+ID_TIME_T		Sys_FileTimeStamp( FILE *fp ) { return 0; }
+ID_TIME_T       Sys_DosToUnixTime( unsigned long dostime ) { return 0; }
 
 #ifdef _WIN32
 
