@@ -332,7 +332,7 @@ void HitByMoveableState::Think(idAI* owner)
 					owner->m_AlertedByActor = responsible;
 
 					amount *= owner->GetAcuity("tact");
-					owner->AlertAI("tact", amount);
+					owner->PreAlertAI("tact", amount); // grayman #3356
 
 					// Set last visual contact location to this location as that is used in case
 					// the target gets away.

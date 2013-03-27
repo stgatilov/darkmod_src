@@ -65,6 +65,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 const int MIN_TIME_BETWEEN_GREETING_CHECKS = 2000; // msecs grayman #3338
 const int MAX_DISTANCE_FOR_GREETING = 200; // grayman #3338
 
+const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
+const int AUD_ALERT_DELAY_MAX = 1500; // grayman #3356 - max amount of time delay (ms) before processing an audio alert
+
 //TODO: Move these to AI def:
 
 // Visual detection parameters
@@ -6148,41 +6151,44 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 			AI_SPECIAL_DAMAGE = 0;
 		}
 
-		// AI don't like being attacked
-		ChangeEntityRelation(attacker, -10);
-
-		// grayman #3355 - set attacker as enemy?
-		if ( attacker->IsType(idActor::Type) )
+		if ( !attacker->fl.notarget ) // grayman #3356
 		{
-			idActor* currentEnemy = GetEnemy();
-			bool setNewEnemy = false;
+			// AI don't like being attacked
+			ChangeEntityRelation(attacker, -10);
 
-			if ( currentEnemy == NULL )
+			// grayman #3355 - set attacker as enemy?
+			if ( attacker->IsType(idActor::Type) )
 			{
-				setNewEnemy = true;
-			}
-			else // we have an enemy
-			{
-				if ( attacker != currentEnemy )
+				idActor* currentEnemy = GetEnemy();
+				bool setNewEnemy = false;
+
+				if ( currentEnemy == NULL )
 				{
-					idVec3 ownerOrigin = GetPhysics()->GetOrigin();
-					float dist2EnemySqr = ( currentEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
-					float dist2AttackerSqr = ( attacker->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
-					if ( dist2AttackerSqr < dist2EnemySqr )
+					setNewEnemy = true;
+				}
+				else // we have an enemy
+				{
+					if ( attacker != currentEnemy )
 					{
-						setNewEnemy = true;
+						idVec3 ownerOrigin = GetPhysics()->GetOrigin();
+						float dist2EnemySqr = ( currentEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+						float dist2AttackerSqr = ( attacker->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+						if ( dist2AttackerSqr < dist2EnemySqr )
+						{
+							setNewEnemy = true;
+						}
 					}
 				}
-			}
 
-			if (setNewEnemy)
-			{
-				SetEnemy(static_cast<idActor*>(attacker));
-				AI_VISALERT = false;
+				if (setNewEnemy)
+				{
+					SetEnemy(static_cast<idActor*>(attacker));
+					AI_VISALERT = false;
 				
-				SetAlertLevel(thresh_5*2);
-				GetMemory().alertClass = ai::EAlertNone;
-				GetMemory().alertType = ai::EAlertTypeEnemy;
+					SetAlertLevel(thresh_5*2);
+					GetMemory().alertClass = ai::EAlertNone;
+					GetMemory().alertType = ai::EAlertTypeEnemy;
+				}
 			}
 		}
 
@@ -9022,7 +9028,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		if ( !soundMaker || // alert if unknown
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
-			AlertAI( "aud", psychLoud );
+			PreAlertAI( "aud", psychLoud ); // grayman #3356
 
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
@@ -9058,7 +9064,20 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	}
 }
 
-void idAI::AlertAI(const char *type, float amount)
+// grayman - Preprocessing of an alert, for the purpose of inserting
+// a delay for audio alerts
+
+void idAI::PreAlertAI(const char *type, float amount)
+{
+	int delay = 0;
+	if ( idStr(type) == "aud" )
+	{
+		delay = AUD_ALERT_DELAY_MIN + gameLocal.random.RandomInt(AUD_ALERT_DELAY_MAX - AUD_ALERT_DELAY_MIN);
+	}
+	PostEventMS(&AI_AlertAI,delay,type,amount);
+}
+
+void idAI::Event_AlertAI(const char *type, float amount)
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::AlertAI - %s AlertAI called with type %s and amount %f\r",name.c_str(),type,amount);
 
@@ -9095,7 +9114,7 @@ void idAI::AlertAI(const char *type, float amount)
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period (%d) active, testing... \r",m_AlertGraceTime);
 		if (gameLocal.time > m_AlertGraceStart + m_AlertGraceTime)
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period found to have expired. Resetting. \r");
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period has expired. Resetting. \r");
 			m_AlertGraceTime = 0;
 			m_AlertGraceActor = NULL;
 			m_AlertGraceStart = 0;
@@ -9108,7 +9127,7 @@ void idAI::AlertAI(const char *type, float amount)
 				  actor == m_AlertGraceActor.GetEntity() && 
 				  m_AlertGraceCount < m_AlertGraceCountLimit)
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period allowed, ignoring alert. \r");
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Waiting for grace period to expire, ignoring alert.\r");
 			m_AlertGraceCount++;
 
 			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
@@ -9124,7 +9143,7 @@ void idAI::AlertAI(const char *type, float amount)
 			}
 			return;
 		}
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor is not grace period actor\r", alertInc, m_AlertGraceThresh);
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor doesn't use a grace period\r", alertInc, m_AlertGraceThresh);
 	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
@@ -9494,7 +9513,7 @@ void idAI::PerformVisualScan(float timecheck)
 	{
 		// Remember this actor
 		m_AlertedByActor = player;
-		AlertAI("vis", incAlert);
+		PreAlertAI("vis", incAlert); // grayman #3356
 
 		// Call the visual alert handler on the current state
 		mind->GetState()->OnVisualAlert(player);
@@ -9779,7 +9798,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	m_AlertedByActor = responsibleActor;
 
 	amount *= GetAcuity("tact");
-	AlertAI("tact", amount);
+	PreAlertAI("tact", amount); // grayman #3356
 
 	// Notify the currently active state
 	mind->GetState()->OnTactileAlert(tactEnt);

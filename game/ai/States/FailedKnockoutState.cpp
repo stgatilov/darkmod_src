@@ -118,7 +118,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.mandatory = true;	// grayman #3331
 
 		// Alert the AI
-		owner->AlertAI("tact", owner->thresh_5*2);
+		owner->PreAlertAI("tact", owner->thresh_5*2); // grayman #3356
 
 		// End this state
 		owner->GetMind()->EndState();

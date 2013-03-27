@@ -180,6 +180,8 @@ extern const idEventDef AI_AllowGreetings; // grayman #3338
 
 extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
+extern const idEventDef AI_AlertAI; // grayman #3356
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -427,7 +429,7 @@ public:
 	* NOTE: For "alert units," an alert of 1 corresponds to just barely
 	* seeing something or just barely hearing a whisper of a sound.
 	**/
-	void AlertAI( const char *type, float amount );
+	void idAI::PreAlertAI(const char *type, float amount); // grayman #3356
 
 	/**
 	 * greebo: Sets the AI_AlertLevel of this AI and updates the AI_AlertIndex.
@@ -2243,6 +2245,8 @@ public:
 	void Event_AllowGreetings(); // grayman #3338
 
 	void Event_DelayedVisualStim(idEntity* stimSource); // grayman #2924
+
+	void Event_AlertAI(const char *type, float amount); // grayman #3356
 
 #ifdef TIMING_BUILD
 private:

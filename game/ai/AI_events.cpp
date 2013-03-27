@@ -448,6 +448,8 @@ const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_
 
 const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
+const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount"), EV_RETURNS_VOID, "internal" ); // grayman #3356
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -640,6 +642,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_OnUnconsciousPersonEncounter,	idAI::Event_OnUnconsciousPersonEncounter) // grayman #3317
 	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
 	EVENT ( AI_DelayedVisualStim,				idAI::Event_DelayedVisualStim) // grayman #2924
+	EVENT ( AI_AlertAI,							idAI::Event_AlertAI)		// grayman #3356
 
 END_CLASS
 
@@ -3223,7 +3226,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 
 void idAI::Event_Alert( const char *type, float amount )
 {
-	AlertAI( type, amount );
+	PreAlertAI( type, amount ); // grayman #3356
 }
 
 void idAI::Event_GetSndDir( void )

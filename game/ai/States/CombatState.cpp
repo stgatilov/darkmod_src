@@ -203,6 +203,7 @@ void CombatState::Init(idAI* owner)
 
 	if (!_meleePossible && !_rangedPossible)
 	{
+		owner->fleeingEvent = false; // grayman #3356
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -301,6 +302,7 @@ void CombatState::Think(idAI* owner)
 	
 	if ( inMeleeRange && !_meleePossible ) // grayman #3355 - can't fight up close
 	{
+		owner->fleeingEvent = false; // grayman #3356
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -354,6 +356,7 @@ void CombatState::Think(idAI* owner)
 			 ( owner->spawnArgs.GetBool("is_civilian", "0")) || // ... I'm a civilian, and don't fight
 			 ( owner->health < _criticalHealth ) )			    // grayman #3140 ... I'm very damaged and can't afford to engage in combat
 		{
+			owner->fleeingEvent = false; // grayman #3356
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}
@@ -741,6 +744,7 @@ void CombatState::Think(idAI* owner)
 		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
+			owner->fleeingEvent = false; // grayman #3356
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}
