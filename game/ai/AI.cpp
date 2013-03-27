@@ -3584,7 +3584,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 	}
 
 	StopMove(MOVE_STATUS_DONE);
-	MoveToPosition(moveDest);
+	MoveToPosition(moveDest,50); // grayman #3357 - stop when you get w/in 50 of goal
 	return true;
 }
 
