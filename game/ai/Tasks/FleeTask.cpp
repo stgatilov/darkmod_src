@@ -68,6 +68,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
 		owner->fleeingEvent = false; // grayman #3317
+		memory.fleeingDone = true;
 		return true;
 	}
 
@@ -77,6 +78,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		// grayman #3317 - if we're not fleeing an event, we can quit fleeing
 		if ( !owner->fleeingEvent )
 		{
+			memory.fleeingDone = true;
 			return true;
 		}
 	}
@@ -95,7 +97,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	{
 		owner->StopMove(MOVE_STATUS_DONE);
 
-		// Done fleeing.
+		// Done fleeing?
 
 		// grayman #3317 - If we were fleeing a murder or KO, quit
 
@@ -111,6 +113,23 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		// check if we can see the enemy
 		if (owner->AI_ENEMY_VISIBLE)
 		{
+			// grayman #3355 - we might have fled because we were too close to the
+			// enemy, and don't have a melee weapon. Check if we're far
+			// enough away to use our ranged weapon, if we have one. Don't worry if
+			// our health is low or we're a civilian. The combat code will sort it out.
+
+			float dist2Enemy = ( enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+			if ( ( dist2Enemy > ( 3 * owner->GetMeleeRange() ) ) && ( owner->GetNumRangedWeapons() > 0 ) )
+			{
+				memory.fleeingDone = true;
+				owner->fleeingEvent = false;
+				// Turn toward enemy
+				owner->TurnToward(enemy->GetPhysics()->GetOrigin());
+				return true;
+			}
+
+			// continue fleeing
+
 			_failureCount = 0;
 			if (_distOpt == DIST_NEAREST)
 			{

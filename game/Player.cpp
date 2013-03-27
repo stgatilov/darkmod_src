@@ -10806,7 +10806,7 @@ void idPlayer::PlayFootStepSound()
 		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
-		PropSoundDirect( localSound, true, false );
+		PropSoundDirect( localSound, true, false, 0.0f, 0 ); // grayman #3355
 
 		lastFootstepPlaytime = gameLocal.time;
 	}

@@ -61,6 +61,8 @@ CommMessage::CommMessage
 	m_p_directObjectEntity = in_p_directObjectEntity;
 	m_directObjectLocation = in_directObjectLocation;
 
+	m_msgTag = 0; // grayman #3355
+
 	// Record position of issuance
 	m_positionOfIssuance.x = 0.0;
 	m_positionOfIssuance.y = 0.0;
@@ -90,6 +92,7 @@ CommMessage::CommMessage()
 	m_commType = NumCommTypes;
 	m_p_issuingEntity = NULL;
 	m_p_recipientEntity = NULL;
+	m_msgTag = 0; // grayman #3355
 	m_p_directObjectEntity = NULL;
 	m_directObjectLocation.Zero();
 	m_positionOfIssuance.Zero();
@@ -103,6 +106,7 @@ void CommMessage::Save(idSaveGame *savefile) const
 	m_p_directObjectEntity.Save(savefile);
 	savefile->WriteVec3(m_directObjectLocation);
 	savefile->WriteVec3(m_positionOfIssuance);
+	savefile->WriteInt(m_msgTag); // grayman #3355
 }
 
 void CommMessage::Restore(idRestoreGame *savefile)
@@ -115,6 +119,7 @@ void CommMessage::Restore(idRestoreGame *savefile)
 	m_p_directObjectEntity.Restore(savefile);
 	savefile->ReadVec3(m_directObjectLocation);
 	savefile->ReadVec3(m_positionOfIssuance);
+	savefile->ReadInt(m_msgTag); // grayman #3355
 }
 
 } // namespace ai

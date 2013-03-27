@@ -313,6 +313,8 @@ void idGameLocal::Clear( void )
 	m_lightGem.Clear();
 	m_DoLightgem = true;
 
+	m_uniqueMessageTag = 0; // grayman #3355
+
 	m_InterMissionTriggers.Clear();
 	
 	serverInfo.Clear();
@@ -511,6 +513,9 @@ void idGameLocal::Init( void ) {
 
 	// Initialize the LightGem - J.C.Denton
 	m_lightGem.Initialize();
+
+	// grayman #3355 - Initialize the AI message tag
+	m_uniqueMessageTag = 0;
 
 	// Initialise the mission manager
 	m_MissionManager = CMissionManagerPtr(new CMissionManager);
@@ -966,6 +971,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	//Save LightGem - J.C.Denton
 	m_lightGem.Save( savegame );
+
+	savegame.WriteInt( m_uniqueMessageTag ); // grayman #3355
 
 	savegame.WriteInt(m_InterMissionTriggers.Num());
 	for (int i = 0; i < m_InterMissionTriggers.Num(); ++i)
@@ -2054,6 +2061,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// Restore LightGem				- J.C.Denton
 	m_lightGem.Restore( savegame );
+
+	savegame.ReadInt( m_uniqueMessageTag ); // grayman #3355
 
 	savegame.ReadInt(num);
 	m_InterMissionTriggers.SetNum(num);
@@ -7156,4 +7165,12 @@ void idGameLocal::AllowImmediateStim( idEntity* e, int stimType )
 			break;
 		}
 	}
+}
+
+// grayman #3355
+
+int idGameLocal::GetNextMessageTag()
+{
+	m_uniqueMessageTag++;
+	return ( m_uniqueMessageTag );
 }

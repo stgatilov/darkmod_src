@@ -453,7 +453,7 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 					idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
 
 					// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
-					PropSoundS( NULL, sndPropName, f );
+					PropSoundS( NULL, sndPropName, f, 0 ); // grayman #3355
 				}
 			
 				SetSoundVolume(0.0f);

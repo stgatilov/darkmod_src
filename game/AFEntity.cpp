@@ -1212,7 +1212,7 @@ bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity 
 
 				idStr sndPropName = GetSoundPropNameForMaterial(surfaceName);
 				// Propagate a suspicious sound, using the "group" convention (soft, hard, small, med, etc.)
-				PropSoundS( NULL, sndPropName, f );
+				PropSoundS( NULL, sndPropName, f , 0); // grayman #3355
 
 //			if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
 				// don't set the volume unless there is a bounce sound as it overrides the entire channel

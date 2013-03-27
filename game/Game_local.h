@@ -333,6 +333,7 @@ struct SSprParms
 
 	idEntity*	maker;		// it turns out the AI needs to know who made the sound to avoid bugs in some cases
 	idAI*		makerAI;	// a shorthand of the above. If this is non NULL the <maker> entity is an AI.
+	int			messageTag;	// grayman #3355 - a unique number that's shared with a message associated with this sound
 };
 
 //============================================================================
@@ -932,6 +933,8 @@ public:
 
 	void					AllowImmediateStim( idEntity* e, int stimType ); // grayman #3317
 
+	int						GetNextMessageTag(); // grayman #3355
+
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 
@@ -984,6 +987,8 @@ private:
 
 	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	LightGem				m_lightGem;
+
+	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
 	
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger

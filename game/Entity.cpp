@@ -480,6 +480,9 @@ const idEventDef EV_SetEntityRelation( "setEntityRelation", EventArgs('E', "ent"
 const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", EventArgs('E', "ent", "", 'd', "relationChange", ""), EV_RETURNS_VOID, 
 	"This changes the current relation to an entity by adding the new amount.");
 
+const idEventDef EV_PropagateSound( "<propagateSound>", EventArgs('s', "soundName", "", 'f', "propVolMod", "", 'd', "msgTag", ""), EV_RETURNS_VOID, "Generates a propagated sound" ); // grayman #3355
+
+
 ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_Thread_SetRenderCallback,	idEntity::Event_WaitForRender )
 
@@ -663,13 +666,14 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_NoShadows,			idEntity::Event_noShadows )
 	EVENT( EV_NoShadowsDelayed,		idEntity::Event_noShadowsDelayed )
 
-	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )					// grayman #2478
-	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )			// grayman #2478
-	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )		// grayman #2478
-	EVENT( EV_IsLight,				idEntity::Event_IsLight )					// grayman #2905
-	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )			// grayman #3011
-	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )				// grayman #3013
-	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )				// tels #3113
+	EVENT( EV_CheckMine,			idEntity::Event_CheckMine )			// grayman #2478
+	EVENT( EV_GetVinePlantLoc,		idEntity::Event_GetVinePlantLoc )	// grayman #2478
+	EVENT( EV_GetVinePlantNormal,	idEntity::Event_GetVinePlantNormal )// grayman #2478
+	EVENT( EV_IsLight,				idEntity::Event_IsLight )			// grayman #2905
+	EVENT( EV_ActivateContacts,		idEntity::Event_ActivateContacts )	// grayman #3011
+	EVENT( EV_GetLocation,			idEntity::Event_GetLocation )		// grayman #3013
+	EVENT( EV_HideByLODBias,		idEntity::Event_HideByLODBias )		// tels #3113
+	EVENT( EV_PropagateSound,		idEntity::Event_PropSoundDirect )	// grayman #3355
 	
 END_CLASS
 
@@ -4059,7 +4063,7 @@ idStr idEntity::GetSoundPropNameForMaterial(const idStr& materialName)
 idEntity::StartSound
 ================
 */
-bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod) 
+bool idEntity::StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod, int msgTag ) // grayman #3355 
 {
 	const idSoundShader *shader;
 	const char *sound;
@@ -4090,13 +4094,34 @@ bool idEntity::StartSound( const char *soundName, const s_channelType channel, i
 		return true;
 	}
 
-	// DarkMod sound propagation:
-	PropSoundDirect(soundName, true, false, propVolMod);
+	// grayman #3355 - run StartSoundShader() first so you can get the
+	// length of the sound in ms. Then delay that amount, and 
+	// run PropSoundDirect(). This lets associated messages be processed
+	// at the end of the sound, rather than the start. More realistic.
 
 	// play the audible sound
 	shader = declManager->FindSound( sound );
 
-	return StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
+	bool results = StartSoundShader( shader, channel, soundShaderFlags, broadcast, length );
+
+	int delay = 0;
+
+	if (( msgTag > 0 ) && length )
+	{
+		delay = *length; // if this sound has a message associated with it, and 'length' is not NULL, delay '*length' ms
+	}
+
+	// DarkMod sound propagation:
+	PostEventMS(&EV_PropagateSound, delay, soundName, propVolMod, msgTag);
+
+//	PropSoundDirect(soundName, true, false, propVolMod, msgTag); // grayman #3355
+
+	return results;
+}
+
+void idEntity::Event_PropSoundDirect( const char *soundName, float propVolMod, int msgTag )
+{
+	PropSoundDirect(soundName, true, false, propVolMod, msgTag); // grayman #3355
 }
 
 /*
@@ -4298,7 +4323,7 @@ idEntity::PropSoundS
 // the last two values should be optional, so <global sound name>:volMod,
 // and <global sound name>,durMod also work.
 
-void idEntity::PropSoundS( const char *localName, const char *globalName, float VolModIn )
+void idEntity::PropSoundS( const char *localName, const char *globalName, float VolModIn, int msgTag ) // grayman #3355
 {
 	if (cv_sndprop_disable.GetBool())
 	{
@@ -4392,7 +4417,7 @@ Quit:
 
 		gameLocal.m_sndProp->Propagate( volMod, durMod, gName, 
 										GetPhysics()->GetOrigin(), 
-										this ); 
+										this, NULL, msgTag ); // grayman #3355
 	}
 
 	return;
@@ -4444,7 +4469,7 @@ idEntity::PropSoundDirect
 ================
 */
 
-void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn )
+void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn, int msgTag ) // grayman #3355
 {
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
 	
@@ -4470,7 +4495,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	if (bIsSusp)
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local suspicious sound def for %s on entity, attempting to propagate with global sound %s\r", sprName.c_str(), sprNameSG.c_str() );
-		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn );
+		PropSoundS( sprName.c_str(), sprNameSG.c_str(), VolModIn, msgTag ); // grayman #3355
 		// exit here, because we don't want to allow playing both
 		// env. sound AND susp. sound for the same sound and entity
 		return;
@@ -4497,7 +4522,7 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 	else
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
-		PropSoundS( NULL, sprNameSG.c_str(), VolModIn );
+		PropSoundS( NULL, sprNameSG.c_str(), VolModIn, msgTag ); // grayman #3355
 	}
 }
 
@@ -10100,12 +10125,12 @@ void idEntity::OnRemoveFromLocationEntity(CObjectiveLocation* locationEnt)
 
 void idEntity::Event_PropSound( const char *sndName )
 {
-	PropSoundDirect( sndName, false, false, 0.0f );
+	PropSoundDirect( sndName, false, false, 0.0f, 0 ); // grayman #3355
 }
 
 void idEntity::Event_PropSoundMod( const char *sndName, float VolModIn )
 {
-	PropSoundDirect( sndName, false, false, VolModIn );
+	PropSoundDirect( sndName, false, false, VolModIn, 0 ); // grayman #3355
 }
 
 /*

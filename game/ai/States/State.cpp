@@ -1336,7 +1336,30 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 		if (owner->IsEnemy(other))
 		{
 			// Only do this if we don't have an enemy already
-			if (owner->GetEnemy() == NULL)
+			// grayman #3355 - or we have one, but this new one is closer (and presumed more of a threat)
+
+			bool setNewEnemy = false;
+
+			if ( owner->GetEnemy() == NULL )
+			{
+				setNewEnemy = true;
+			}
+			else // we have an enemy
+			{
+				idActor* enemy = owner->GetEnemy(); // current enemy
+				if ( other != enemy )
+				{
+					idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+					float dist2EnemySqr = ( enemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+					float dist2OtherSqr = ( other->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+					if ( dist2OtherSqr < dist2EnemySqr )
+					{
+						setNewEnemy = true;
+					}
+				}
+			}
+
+			if (setNewEnemy)
 			{
 				// Living enemy
 				gameLocal.Printf("I see a living enemy!\n");

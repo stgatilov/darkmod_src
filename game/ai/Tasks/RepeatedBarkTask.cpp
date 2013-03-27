@@ -81,13 +81,15 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 
 		if (!owner->MouthIsUnderwater())
 		{
+			int msgTag = 0; // grayman #3355
 			// Setup the message to be propagated, if we have one
 			if (_message != NULL)
 			{
-				owner->AddMessage(_message);
+				msgTag = gameLocal.GetNextMessageTag(); // grayman #3355
+				owner->AddMessage(_message,msgTag);
 			}
 
-			_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+			_barkLength = owner->PlayAndLipSync(_soundName, "talk1", msgTag);
 		}
 		else
 		{

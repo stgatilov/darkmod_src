@@ -3459,7 +3459,7 @@ void idWeapon::Event_Melee( void ) {
 			sndName.StripLeading("snd_");
 			sndName = meleeDef->dict.GetString( va("sprS_%s", sndName.c_str()) );
 			if( !sndName.IsEmpty() )
-				PropSoundDirect( sndName.c_str(), false, false );
+				PropSoundDirect( sndName.c_str(), false, false, 0.0f, 0 ); // grayman #3355
 		}
 
 		idThread::ReturnInt( hit );

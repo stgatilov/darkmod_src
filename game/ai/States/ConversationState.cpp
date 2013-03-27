@@ -714,7 +714,7 @@ int ConversationState::Talk(idAI* owner, const idStr& soundName)
 	}
 
 	// Start the sound
-	int length = owner->PlayAndLipSync(CONVERSATION_SPAWNARG, "talk1");
+	int length = owner->PlayAndLipSync(CONVERSATION_SPAWNARG, "talk1", 0); // grayman #3355
 
 	// Clear the spawnarg again
 	owner->spawnArgs.Set(CONVERSATION_SPAWNARG, "");

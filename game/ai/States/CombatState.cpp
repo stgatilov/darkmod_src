@@ -199,6 +199,14 @@ void CombatState::Init(idAI* owner)
 	_meleePossible  = ( owner->GetNumMeleeWeapons()  > 0 );
 	_rangedPossible = ( owner->GetNumRangedWeapons() > 0 );
 
+	// grayman #3355 - flee if you have no weapons
+
+	if (!_meleePossible && !_rangedPossible)
+	{
+		owner->GetMind()->SwitchState(STATE_FLEE);
+		return;
+	}
+
 	// grayman #3331 - save combat possibilities
 	_unarmedMelee = owner->spawnArgs.GetBool("unarmed_melee","0");
 	_unarmedRanged = owner->spawnArgs.GetBool("unarmed_ranged","0");
@@ -246,8 +254,8 @@ void CombatState::Think(idAI* owner)
 		return;
 	}
 	
-	// grayman #3331 - make sure you're still fighting the same enemy. If not, switch sometimes.
-
+	// grayman #3331 - make sure you're still fighting the same enemy.
+	// grayman #3355 - fight the closest enemy
 	idActor* enemy = _enemy.GetEntity();
 	idActor* newEnemy = owner->GetEnemy();
 
@@ -255,7 +263,10 @@ void CombatState::Think(idAI* owner)
 	{
 		if ( newEnemy && ( newEnemy != enemy ) )
 		{
-			if ( gameLocal.random.RandomFloat() < 0.25 ) // small chance of switching
+			idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+			float dist2EnemySqr = ( enemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+			float dist2NewEnemySqr = ( newEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+			if ( dist2NewEnemySqr < dist2EnemySqr )
 			{
 				owner->GetMind()->EndState();
 				return; // state has ended
@@ -288,21 +299,19 @@ void CombatState::Think(idAI* owner)
 
 	ECombatType newCombatType;
 	
-	if ( inMeleeRange && _meleePossible )
+	if ( inMeleeRange && !_meleePossible ) // grayman #3355 - can't fight up close
 	{
-		newCombatType = COMBAT_MELEE;
+		owner->GetMind()->SwitchState(STATE_FLEE);
+		return;
 	}
-	else if ( !inMeleeRange && _rangedPossible )
+
+	if ( !inMeleeRange && _rangedPossible )
 	{
 		newCombatType = COMBAT_RANGED;
 	}
-	else if ( !inMeleeRange && !_rangedPossible && _meleePossible )
+	else
 	{
 		newCombatType = COMBAT_MELEE;
-	}
-	else // will flee when reaction time is over
-	{
-		newCombatType = COMBAT_NONE;
 	}
 
 	// Check for situation where you're in the melee zone, yet you're unable to hit
@@ -522,7 +531,7 @@ void CombatState::Think(idAI* owner)
 			owner->actionSubsystem->ClearTasks();
 			_combatType = COMBAT_NONE;
 
-			// sheathe melee weapon so you can draw ranged weapon
+			// sheathe current weapon so you can draw the other weapon
 			owner->SheathWeapon();
 			_waitEndTime = gameLocal.time + 2000; // safety net
 			_combatSubState = EStateSheathingWeapon;
@@ -538,15 +547,10 @@ void CombatState::Think(idAI* owner)
 	case EStateSheathingWeapon:
 		{
 		// if you're sheathing a weapon, stay in this state until it's done, or until the timer expires
-
-		const char *currentAnimState = owner->GetAnimState(ANIMCHANNEL_TORSO);
-		idStr torsoString = "Torso_SheathWeapon";
-		if ( torsoString.Cmp(currentAnimState) == 0 )
+		// grayman #3355 - check wait state
+		if ( ( gameLocal.time < _waitEndTime ) && ( idStr(owner->WaitState()) == "sheath") )
 		{
-			if ( gameLocal.time < _waitEndTime )
-			{
-				return;
-			}
+			return;
 		}
 
 		_combatSubState = EStateDrawWeapon;
@@ -629,12 +633,8 @@ void CombatState::Think(idAI* owner)
 
 	case EStateDrawingWeapon:
 		{
-		// grayman #3331 - stay in this state until weapon-drawing animation completes
-
-		const char *currentAnimState = owner->GetAnimState(ANIMCHANNEL_TORSO);
-		idStr torsoString1 = "Torso_DrawMeleeWeapon";
-		idStr torsoString2 = "Torso_DrawRangedWeapon";
-		if ( ( torsoString1.Cmp(currentAnimState) == 0 ) || ( torsoString2.Cmp(currentAnimState) == 0 ) )
+		// grayman #3355 - check wait state
+		if ( idStr(owner->WaitState()) == "draw" )
 		{
 			return; // wait until weapon is drawn
 		}
@@ -683,6 +683,7 @@ void CombatState::Think(idAI* owner)
 			}
 		}
 
+		_justDrewWeapon = false;
 		if ( _combatType == COMBAT_NONE ) // Either combat hasn't been initially set up, or you're switching weapons
 		{
 			if ( newCombatType == COMBAT_RANGED )

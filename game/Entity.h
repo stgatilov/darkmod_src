@@ -588,7 +588,7 @@ public:
 	virtual bool			CanPlayChatterSounds( void ) const;
 
 	// angua: propVolMod only modifies the volume of the propagated sound
-	bool					StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod = 0);
+	bool					StartSound( const char *soundName, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length, float propVolMod = 0, int msgTag = 0); // grayman #3355
 	bool					StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length);
 	void					StopSound( const s_channelType channel, bool broadcast );	// pass SND_CHANNEL_ANY to stop all sounds
 	void					SetSoundVolume( float volume );
@@ -596,6 +596,9 @@ public:
 	int						GetListenerId( void ) const;
 	idSoundEmitter *		GetSoundEmitter( void ) const;
 	void					FreeSoundEmitter( bool immediate );
+
+	void					Event_PropSoundDirect( const char *soundName, float propVolMod, int msgTag ); // grayman #3355
+
 
 	// Returns the soundprop name for the given material (e.g. "sprS_bounce_small_hard_on_soft")
 	idStr					GetSoundPropNameForMaterial(const idStr& materialName);
@@ -905,7 +908,7 @@ public:
 	/**
 	* Propagate a suspicious sound
 	**/
-	void PropSoundS( const char *localName, const char *globalName, float VolModIn = 0.0f );
+	void PropSoundS( const char *localName, const char *globalName, float VolModIn = 0.0f, int msgTag = 0); // grayman #3355
 
 	/**
 	* Propagate an environmental sound (called by PropSound)
@@ -926,9 +929,11 @@ public:
 	*
 	* VolModIn is a modifier in dB added to the volume, in addition to 
 	* any modifier that might be present in the local sound def.
+	*
+	* msgTag is a unique identifier that matches a message, if there is one
 	**/
 	void PropSoundDirect( const char *sndName, bool bForceLocal = false, 
-						  bool bAssumeEnv = false, float VolModIn = 0.0f );
+						  bool bAssumeEnv = false, float VolModIn = 0.0f, int msgTag = 0 ); // grayman #3355
 
 	CStimResponseCollection *GetStimResponseCollection(void) { return m_StimResponseColl; };
 

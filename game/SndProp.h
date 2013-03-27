@@ -145,7 +145,7 @@ public:
 	void	Restore(idRestoreGame *savefile);
 
 	void Propagate( float volMod, float durMod, const idStr& soundName,
-		idVec3 origin, idEntity *maker, USprFlags *addFlags = NULL );
+		idVec3 origin, idEntity *maker, USprFlags *addFlags = NULL, int msgTag = 0 ); // grayman #3355
 
 	/**
 	* Get the appropriate vars from the sndPropLoader after

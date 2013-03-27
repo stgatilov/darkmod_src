@@ -759,7 +759,7 @@ int PickableLock::PropPickSound(const idStr& picksound, ELockpickState nextState
 {
 	m_SoundTimerStarted++;
 
-	m_Owner->PropSoundDirect(picksound, true, false);
+	m_Owner->PropSoundDirect(picksound, true, false, 0.0f, 0); // grayman #3355
 
 	int length = 0;
 

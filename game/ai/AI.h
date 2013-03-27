@@ -462,10 +462,10 @@ public:
 	void FoundBody( idEntity *body );
 
 	// Adds a message to the queue
-	void AddMessage(const ai::CommMessagePtr& message);
+	void AddMessage(const ai::CommMessagePtr& message, int msgTag); // grayman #3355
 
-	// Removes all messages
-	void ClearMessages();
+	// Removes all messages if msgTag == 0, else only removes all messages with the matching msgTag
+	void ClearMessages(int msgTag); // grayman #3355
 
 	/**
 	* Get the volume modifier for a given movement type
@@ -1907,7 +1907,7 @@ public:
 	/**
 	 * Plays and lipsyncs the given sound name, returns the duration in msecs.
 	 */
-	int						PlayAndLipSync(const char *soundName, const char *animName);
+	int						PlayAndLipSync(const char *soundName, const char *animName, int msgTag); // grayman #3355
 
 	// Lip sync stuff
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing

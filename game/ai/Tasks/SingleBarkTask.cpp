@@ -94,13 +94,16 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 	_barkLength = 0;
 	if (!owner->MouthIsUnderwater())
 	{
+		int msgTag = 0; // grayman #3355
 		// Push the message and play the sound
 		if (_message != NULL)
 		{
-			owner->AddMessage(_message);
+			// Setup the message to be propagated, if we have one
+			msgTag = gameLocal.GetNextMessageTag(); // grayman #3355
+			owner->AddMessage(_message,msgTag);
 		}
 
-		_barkLength = owner->PlayAndLipSync(_soundName, "talk1");
+		_barkLength = owner->PlayAndLipSync(_soundName, "talk1", msgTag); // grayman #3355
 		
 		// Sanity check the returned length
 		if (_barkLength == 0)

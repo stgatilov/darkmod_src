@@ -1332,7 +1332,7 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 		if( !sndName.IsEmpty() )
 		{
 			// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Propagating AI sound %s\r", sndName.c_str());
-			PropSoundDirect( sndName.c_str(), false, false );
+			PropSoundDirect( sndName.c_str(), false, false, 0.0f, 0 ); // grayman #3355
 		}
 	}
 	// DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeCollision: Done!\r");

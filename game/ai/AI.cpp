@@ -6056,7 +6056,7 @@ void idAI::PlayFootStepSound()
 		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
-		PropSoundDirect( localSound, true, false );
+		PropSoundDirect( localSound, true, false, 0.0f, 0 ); // grayman #3355
 	}
 }
 
@@ -6151,8 +6151,44 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		// AI don't like being attacked
 		ChangeEntityRelation(attacker, -10);
 
+		// grayman #3355 - set attacker as enemy?
+		if ( attacker->IsType(idActor::Type) )
+		{
+			idActor* currentEnemy = GetEnemy();
+			bool setNewEnemy = false;
+
+			if ( currentEnemy == NULL )
+			{
+				setNewEnemy = true;
+			}
+			else // we have an enemy
+			{
+				if ( attacker != currentEnemy )
+				{
+					idVec3 ownerOrigin = GetPhysics()->GetOrigin();
+					float dist2EnemySqr = ( currentEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+					float dist2AttackerSqr = ( attacker->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+					if ( dist2AttackerSqr < dist2EnemySqr )
+					{
+						setNewEnemy = true;
+					}
+				}
+			}
+
+			if (setNewEnemy)
+			{
+				SetEnemy(static_cast<idActor*>(attacker));
+				AI_VISALERT = false;
+				
+				SetAlertLevel(thresh_5*2);
+				GetMemory().alertClass = ai::EAlertNone;
+				GetMemory().alertType = ai::EAlertTypeEnemy;
+			}
+		}
+
 		// Switch to pain state if idle
 		if ( /*( AI_AlertIndex == ai::ERelaxed ) && */ // grayman #3140 - go to PainState at any alert level
+			 ( AI_AlertIndex < ai::ECombat ) && // grayman #3355 - pain anims mess up combat, so don't allow them
 			 ( damage > 0 ) && 
 			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
 		{
@@ -8997,7 +9033,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		{
 			for ( int i = 0 ; i < propParms->makerAI->m_Messages.Num() ; i++ )
 			{
-				mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
+				// grayman #3355 - Only pass messages that have a zero message tag, or a
+				// message tag that matches the sound's.
+				ai::CommMessagePtr message = propParms->makerAI->m_Messages[i];
+				if ( ( message->m_msgTag == 0 ) || ( message->m_msgTag == propParms->messageTag ) )
+				{
+					mind->GetState()->OnAICommMessage(*message, psychLoud);
+//					mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
+				}
 			}
 		}
 
@@ -10710,15 +10753,30 @@ void idAI::FoundBody( idEntity *body )
 	}
 }
 
-void idAI::AddMessage(const ai::CommMessagePtr& message)
+void idAI::AddMessage(const ai::CommMessagePtr& message, int msgTag) // grayman #3355
 {
 	assert(message != NULL);
+	message->m_msgTag = msgTag; // grayman #3355
 	m_Messages.Append(message);
 }
 
-void idAI::ClearMessages()
+void idAI::ClearMessages(int msgTag)
 {
-	m_Messages.Clear();
+	if ( msgTag == 0)
+	{
+		m_Messages.Clear();
+		return;
+	}
+
+	// grayman #3355 - only clear messages that have a matching message tag
+	for ( int i = 0 ; i < m_Messages.Num() ; i++ )
+	{
+		ai::CommMessagePtr message = m_Messages[i];
+		if ( message->m_msgTag == msgTag )
+		{
+			m_Messages.RemoveIndex(i--);
+		}
+	}
 }
 
 /*
@@ -10974,11 +11032,11 @@ void idAI::setAirTicks(int airTicks) {
 /*
 ===================== Lipsync =====================
 */
-int idAI::PlayAndLipSync(const char *soundName, const char *animName)
+int idAI::PlayAndLipSync(const char *soundName, const char *animName, int msgTag) // grayman #3355
 {
 	// Play sound
 	int duration;
-	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration );
+	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration, 0, msgTag ); // grayman #3355
 
 	if (cv_ai_bark_show.GetBool())
 	{
@@ -11021,7 +11079,7 @@ void idAI::Event_PlayAndLipSync( const char *soundName, const char *animName )
 	// grayman - might have to add drowning check here if anyone
 	// ever uses this function in a script.
 
-	idThread::ReturnInt(static_cast<int>(MS2SEC(PlayAndLipSync(soundName, animName))));
+	idThread::ReturnInt(static_cast<int>(MS2SEC(PlayAndLipSync(soundName, animName, 0)))); // grayman #3355
 }
 
 void idAI::StopLipSync()
@@ -11087,6 +11145,7 @@ void idAI::DrawWeapon(ECombatType type)
 		}
 		SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawRangedWeapon", 4);
 	}
+	SetWaitState("draw"); // grayman #3355
 }
 
 void idAI::SheathWeapon() 
@@ -11099,6 +11158,7 @@ void idAI::SheathWeapon()
 	}*/
 	// greebo: Replaced the above thread spawn with an animstate switch
 	SetAnimState(ANIMCHANNEL_TORSO, "Torso_SheathWeapon", 4);
+	SetWaitState("sheath"); // grayman #3355
 }
 
 void idAI::DropOnRagdoll( void )

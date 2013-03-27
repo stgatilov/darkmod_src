@@ -426,7 +426,8 @@ Quit:
 void CsndProp::Propagate 
 	( float volMod, float durMod, const idStr& sndName,
 	 idVec3 origin, idEntity *maker,
-	 USprFlags *addFlags )
+	 USprFlags *addFlags,
+	 int msgTag ) // grayman #3355
 
 {
 	bool bValidTeam(false),
@@ -507,6 +508,7 @@ void CsndProp::Propagate
 	propParms.maker = maker;
 	propParms.makerAI = (maker->IsType(idAI::Type)) ? static_cast<idAI*>(maker) : NULL;
 	propParms.origin = origin;
+	propParms.messageTag = msgTag; // grayman #3355
 
 	// For objects (non-actors) the team will be set to -1
 	mteam = (maker->IsType(idActor::Type)) ? static_cast<idActor*>(maker)->team : -1;
@@ -655,14 +657,14 @@ void CsndProp::Propagate
 	}
 	*/
 
-	// Don't bother propagation if no one is in range
+	// Don't bother propagating if no one is in range
 	if ( validEnts.Num() == 0 )
 	{
-		// grayman #3140 - We're done propagating, clear the message list of the issuing AI, if appropriate
-		if ( maker->IsType(idAI::Type) )
+		// grayman #3140 - clear messages from the issuing AI's message list that 
+		// have a message tag that matches this sound's msgTag
+		if ( propParms.makerAI )
 		{
-			idAI* makerAI = static_cast<idAI*>(maker);
-			makerAI->ClearMessages();
+			propParms.makerAI->ClearMessages(propParms.messageTag); // grayman #3355
 		}
 
 		return;
@@ -1098,7 +1100,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 
 				propParms->propVol = volInit - tempLoss;
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in (source area) area %d\r", ai->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing AI %s in (source area) area %d\r", ai->name.c_str(), area);
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist to AI: %f [m], Propagated volume found to be %f [dB]\r", tempDist, propParms->propVol);
 				
 				ProcessAI( ai, origin, propParms );
@@ -1196,7 +1198,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated volume found to be %f\r", propParms->propVol);
 				
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", ai->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Let AI %s in area %d process the sound\r", ai->name.c_str(), area);
 				ProcessAI( ai, origin, propParms );
 			}
 		}
@@ -1209,15 +1211,21 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 	}
 
 	// greebo: We're done propagating, clear the message list of the issuing AI, if appropriate
-	if (propParms->makerAI != NULL)
+	// grayman #3355 - clear messages from the issuing AI's message list that match this sound's msgTag
+	if ( propParms->makerAI != NULL )
 	{
-		propParms->makerAI->ClearMessages();
+		// grayman #3140 - clear messages from the issuing AI's message list that 
+		// have a message tag that matches this sound's msgTag
+		propParms->makerAI->ClearMessages(propParms->messageTag);
 	}
 }
 
 void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 {
-	if( ai == NULL ) return;
+	if ( ai == NULL )
+	{
+		return;
+	}
 
 	// check AI hearing, get environmental noise, etc
 	if ( cv_spr_debug.GetBool() )
@@ -1247,7 +1255,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 		// noiseVol = GetEnvNoise( &propParms, origin, AI->GetEyePosition() );
 		float noise = 0;
 		
-		//message the AI
+		// the AI hears the sound
 		ai->HearSound( propParms, noise, origin );
 	}
 }

@@ -223,6 +223,12 @@ struct CommMessage
 	idEntityPtr<idEntity> m_p_recipientEntity;
 
 	/*!
+	* This field contains a unique number that associates this message with
+	* a particular propagated sound.
+	*/
+	int m_msgTag; // grayman #3355
+
+	/*!
 	* This field indicates the entity which is the entity mentioned in the
 	* communication.
 	*/
