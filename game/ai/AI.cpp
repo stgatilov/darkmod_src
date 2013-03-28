@@ -551,6 +551,8 @@ idAI::idAI()
 	m_AlertGraceCountLimit = 0;
 	m_AudThreshold = 0.0f;
 	m_oldVisualAcuity = 0.0f;
+	m_sleepFloorZ = 0;  // grayman #2416
+	m_getupEndTime = 0; // grayman #2416
 
 	/**
 	* Darkmod: No hiding spot search by default
@@ -845,6 +847,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteFloat( m_Acuities[ i ] );
 	}
 	savefile->WriteFloat(m_oldVisualAcuity);
+	savefile->WriteFloat(m_sleepFloorZ); // grayman #2416
+	savefile->WriteInt(m_getupEndTime);	 // grayman #2416
 	savefile->WriteFloat( m_AudThreshold );
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
@@ -1265,6 +1269,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadFloat( m_Acuities[ i ] );
 	}
 	savefile->ReadFloat(m_oldVisualAcuity);
+	savefile->ReadFloat(m_sleepFloorZ); // grayman #2416
+	savefile->ReadInt(m_getupEndTime);	// grayman #2416
 	savefile->ReadFloat( m_AudThreshold );
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
@@ -2207,6 +2213,17 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
+	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
+	if ( ( gameLocal.time < m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
+	{
+		idVec3 origin = physicsObj.GetOrigin();
+		if ( origin.z < m_sleepFloorZ )
+		{
+			origin.z = m_sleepFloorZ;
+			physicsObj.SetOrigin(origin);
+		}
+	}
+			
 	// if we are completely closed off from the player, don't do anything at all
 	// angua: only go dormant while in idle
 	// grayman #2536 - move alert check up in front
@@ -11169,6 +11186,12 @@ void idAI::DrawWeapon(ECombatType type)
 
 void idAI::SheathWeapon() 
 {
+	// grayman #2416 - only sheathe a weapon if one is drawn
+	if ( !GetAttackFlag(COMBAT_MELEE) && !GetAttackFlag(COMBAT_RANGED) )
+	{
+		return;
+	}
+
 	/*const function_t* func = scriptObject.GetFunction("SheathWeapon");
 	if (func) {
 		idThread* thread = new idThread(func);
@@ -12063,6 +12086,7 @@ void idAI::GetUp()
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
+		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
 
 		// Reset visual, hearing and tactile acuity
 		SetAcuity("vis", m_oldVisualAcuity);		// Tels: fix #2408
@@ -12083,6 +12107,17 @@ void idAI::LayDown()
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
+
+	// grayman #2416 - register where the floor is. Can't just use origin.z,
+	// because AI who start missions sleeping might not have lowered to the
+	// floor yet when mappers start them floating above the floor.
+
+	idVec3 start = physicsObj.GetOrigin();
+	idVec3 end = start;
+	end.z -= 1000;
+	trace_t result;
+	gameLocal.clip.TracePoint(result, start, end, MASK_OPAQUE, this);
+	m_sleepFloorZ = result.endpos.z; // this point is 0.25 above the floor
 
 	// Tels: Sleepers are blind
 	m_oldVisualAcuity = GetAcuity("vis");

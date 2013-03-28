@@ -114,9 +114,17 @@ void FleeState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 
 	// Play the surprised animation
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Surprise", 5);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Surprise", 5);
-	owner->SetWaitState("surprise");
+	// grayman #2416 - don't play if sitting or sleeping
+	moveType_t moveType = owner->GetMoveType();
+
+	if ( ( moveType == MOVETYPE_ANIM  ) ||
+		 ( moveType == MOVETYPE_SLIDE ) ||
+		 ( moveType == MOVETYPE_FLY   ) )
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Surprise", 5);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Surprise", 5);
+//		owner->SetWaitState("surprise"); // grayman #2416 - no one's watching or resetting this
+	}
 }
 
 // Gets called each time the mind is thinking

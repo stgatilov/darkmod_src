@@ -7433,7 +7433,6 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	int damage;
 
 	// grayman #2816 - calculate damage differently if hit by a moveable
-	bool scaleDamage = damageDef->GetBool( "scale_damage", "0" );
 	float f = 1.0f;
 	if ( inflictor->IsType(idMoveable::Type) ) // Moveable
 	{
