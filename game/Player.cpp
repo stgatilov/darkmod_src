@@ -7430,16 +7430,24 @@ would have killed the player, possibly allowing a "saving throw"
 */
 void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const idDict *damageDef,
 							   const float damageScale, const int location, int *health ) {
-	int		damage;
+	int damage;
 
 	// grayman #2816 - calculate damage differently if hit by a moveable
 	bool scaleDamage = damageDef->GetBool( "scale_damage", "0" );
 	float f = 1.0f;
-	if ( scaleDamage ) // Moveable
+	if ( inflictor->IsType(idMoveable::Type) ) // Moveable
 	{
 		float mass = inflictor->spawnArgs.GetFloat("mass","1");
 		f = mass/5.0f;
-		damage = 1;
+
+		// grayman #3358 - if the moveable has a "damage" spawnarg, use that.
+		// This lets mappers override the damage def value for damage.
+		damage = inflictor->spawnArgs.GetInt("damage","0");
+		if ( damage == 0 )
+		{
+			// If not, use the "damage" value from the damage def
+			damage = static_cast<int>(damageDef->GetInt("damage"));
+		}
 	}
 	else // Melee or not a Moveable
 	{
@@ -7452,11 +7460,15 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	idPlayer *player = attacker->IsType( idPlayer::Type ) ? static_cast<idPlayer*>(attacker) : NULL;
 
 	// always give half damage if hurting self
-	if ( attacker == this ) {
-		if ( gameLocal.isMultiplayer ) {
+	if ( attacker == this )
+	{
+		if ( gameLocal.isMultiplayer )
+		{
 			// only do this in mp so single player plasma and rocket splash is very dangerous in close quarters
 			damage *= damageDef->GetFloat( "selfDamageScale", "0.5" );
-		} else {
+		}
+		else
+		{
 			damage *= damageDef->GetFloat( "selfDamageScale", "1" );
 		}
 	}

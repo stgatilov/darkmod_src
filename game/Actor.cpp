@@ -3309,19 +3309,28 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		hitByMoveable = true;
 	}
 	
-	int damage = 0;
+	int damage;
 
 	// grayman #2816 - scale damage?
 
-	bool scaleDamage = damageDef->GetBool( "scale_damage", "0" );
-	if ( scaleDamage ) // Moveable
+	if ( hitByMoveable ) // Moveable
 	{
-		damage = static_cast<int>(damageScale * mass / 5.0f);
+		// grayman #3358 - if the moveable has a "damage" spawnarg, use that.
+		// This lets mappers override the damage def value for damage.
+		damage = inflictor->spawnArgs.GetInt("damage","0");
+		if ( damage == 0 )
+		{
+			// If not, use the "damage" value from the damage def
+			damage = static_cast<int>(damageDef->GetInt("damage"));
+		}
+		damage *= static_cast<int>(mass / 5.0f); // grayman #3358
 	}
-	else // Melee or not a Moveable
+	else
 	{
-		damage = static_cast<int>(damageDef->GetInt( "damage" ) * damageScale);
+		damage = static_cast<int>(damageDef->GetInt("damage")); // grayman #3358
 	}
+
+	damage *= damageScale;
 
 	damage = GetDamageForLocation( damage, location );
 
@@ -3426,9 +3435,14 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// grayman #2816 - when hit by a moveable, either thrown or dropped,
 	// don't let the AI pass away unless it has a small mass.
 
+	// grayman #3358 - if "kill_all" is "1", bypass this adjustment to the damage
+
 	if ( damage > 0 )
 	{
-		if ( hitByMoveable && ( damage >= health ) && ( GetPhysics()->GetMass() > MIN_MASS_FOR_KO ) )
+		if ( hitByMoveable &&
+			 !( damageDef->GetBool( "kill_all", "0" ) ) &&
+			 ( damage >= health ) &&
+			 ( GetPhysics()->GetMass() > MIN_MASS_FOR_KO ) )
 		{
 			damage = health / 2; // damage falls to 0 when health = 1, otherwise take half their health
 		}
