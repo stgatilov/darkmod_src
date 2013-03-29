@@ -1361,7 +1361,10 @@ void idAI::Event_MoveToCover( void ) {
 	if (!enemyEnt) common->Printf("Warning: Entity is null\n");
 
 	StopMove( MOVE_STATUS_DEST_NOT_FOUND );
-	if ( !enemyEnt || !MoveToCover( enemyEnt, lastVisibleEnemyPos ) ) {
+
+	// grayman #3280 - enemies look with their eyes, not their feet
+	if ( !enemyEnt || !MoveToCover( enemyEnt, enemyEnt->GetEyePosition() ) ) 
+	{
 		return;
 	}
 }

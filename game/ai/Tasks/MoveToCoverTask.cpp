@@ -47,7 +47,8 @@ void MoveToCoverTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_FORWARD = true;
 	owner->m_pathRank = owner->rank; // grayman #2345
 
-	owner->MoveToCover(enemy, owner->lastVisibleEnemyPos);
+	// grayman #3280 - enemies look with their eyes, not their feet
+	owner->MoveToCover(enemy, enemy->GetEyePosition()); 
 }
 
 bool MoveToCoverTask::Perform(Subsystem& subsystem)

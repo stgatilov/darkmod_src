@@ -68,7 +68,8 @@ void UnreachableTargetState::Init(idAI* owner)
 	if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
 	{
 		aasGoal_t hideGoal;
-		_takingCoverPossible = owner->LookForCover(hideGoal, enemy, owner->lastVisibleEnemyPos);
+		 // grayman #3280 - enemies look with their eyes, not their feet
+		_takingCoverPossible = owner->LookForCover(hideGoal, enemy, enemy->GetEyePosition());
 		if (_takingCoverPossible)
 		{
 			// We should not go into TakeCoverState if we are already at a suitable position
@@ -79,6 +80,7 @@ void UnreachableTargetState::Init(idAI* owner)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Taking Cover Possible: %d \r" , _takingCoverPossible);
 		}
 	}
+
 	_takeCoverTime = -1;
 
 	// Fill the subsystems with their tasks
@@ -278,13 +280,15 @@ void UnreachableTargetState::Think(idAI* owner)
 	_reachEnemyCheck %= 4;
 	
 	// Wait at least for 3 seconds (_takeCoverTime) after starting to throw before taking cover
-	// If a ranged thread from the player is detected (bow is out)
+	// If a ranged threat from the player is detected (bow is out)
 	// take cover if possible after throwing animation is finished
 	idStr waitState(owner->WaitState());
 
-	if ( _takingCoverPossible && waitState != "throw" &&
-		_takeCoverTime > 0 && gameLocal.time > _takeCoverTime &&
-		( enemy->RangedThreatTo(owner) || !owner->spawnArgs.GetBool("taking_cover_only_from_archers","0") ))
+	if ( _takingCoverPossible &&
+		 ( waitState != "throw" ) &&
+		 ( _takeCoverTime > 0 ) &&
+		 ( gameLocal.time > _takeCoverTime ) &&
+		 ( enemy->RangedThreatTo(owner) || !owner->spawnArgs.GetBool("taking_cover_only_from_archers","0") ))
 	{
 		owner->GetMind()->SwitchState(STATE_TAKE_COVER);
 	}

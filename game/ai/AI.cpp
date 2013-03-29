@@ -3999,7 +3999,10 @@ idAI::LookForCover
 */
 bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 &hideFromPos) 
 {
-	if (aas == NULL) return false;
+	if (aas == NULL)
+	{
+		return false;
+	}
 
 	idBounds bounds;
 	aasObstacle_t obstacle;
@@ -11840,8 +11843,19 @@ void idAI::RestoreMove(const idMoveState& saved)
 		break;
 
 	case MOVE_TO_COVER :
-		MoveToCover( saved.goalEntity.GetEntity(), lastVisibleEnemyPos );
+		{
+		// grayman #3280 - enemies look with their eyes, not their feet
+		idEntity* ent = saved.goalEntity.GetEntity();
+		if ( ent->IsType(idActor::Type))
+		{
+			MoveToCover( ent, static_cast<idActor*>(ent)->GetEyePosition() );
+		}
+		else
+		{
+			MoveToCover( ent, lastVisibleEnemyPos );
+		}
 		break;
+		}
 
 	case MOVE_TO_POSITION :
 		MoveToPosition( saved.moveDest );
