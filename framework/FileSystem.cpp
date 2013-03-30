@@ -3309,9 +3309,9 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
 	dllHash = HashFileName( dllName );
 
-    // taaaki: blunt fix for old dlls in darkmod/ - just extract dll from pk4 everytime
-    //         will investigate a friendlier fix for SVN builds and future releases
-	// from executable directory first - this is handy for developement
+    // try locate a game dll/so in the executable directory as well as in a pak file.
+    // compare the last modified timestamps and use the latest version of the game dll/so.
+	// place dev game dll/so in executable directory for development testing.
 	dllPath = Sys_EXEPath( );
 	dllPath.StripFilename( );
 	dllPath.AppendPath( dllName );
