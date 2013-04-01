@@ -32,15 +32,18 @@ namespace ai
 SingleBarkTask::SingleBarkTask() :
 	CommunicationTask(""),
 	_startDelay(0),
+	_allowDuringAnim(true), // grayman #3182
 	_endTime(-1)
 {}
 
 SingleBarkTask::SingleBarkTask(const idStr& soundName, 
 							   const CommMessagePtr& message, 
-							   int startDelay)
+							   int startDelay,
+							   bool allowDuringAnim) // grayman #3182
 :	CommunicationTask(soundName),
 	_message(message),
 	_startDelay(startDelay),
+	_allowDuringAnim(allowDuringAnim), // grayman #3182
 	_endTime(-1)
 {}
 
@@ -70,6 +73,10 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 		return false; // waiting for start delay to pass
 	}
 
+	// This task may not be performed with empty entity pointers
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
 	// If an endtime has been set, the bark is already playing
 	if (_endTime > 0)
 	{
@@ -83,16 +90,23 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	// This task may not be performed with empty entity pointers
-	idAI* owner = _owner.GetEntity();
-	assert(owner != NULL);
-
 	// No end time set yet, emit our bark
 
 	// grayman #2169 - no barks while underwater
 
+	// grayman #3182 - no barks when an idle animation is playing and _allowDuringAnim == false
+	// An idle animation that includes a voice frame command will have set
+	// the wait state to 'idle'. An idle animation that has no voice frame
+	// command will have set the wait state to 'idle_no_voice'.
+
 	_barkLength = 0;
-	if (!owner->MouthIsUnderwater())
+	bool canPlay = true;
+	if ( ( idStr(owner->WaitState() ) == "idle" ) && !_allowDuringAnim ) // grayman #3182
+	{
+		canPlay = false;
+	}
+
+	if ( canPlay && !owner->MouthIsUnderwater() ) // grayman #3182
 	{
 		int msgTag = 0; // grayman #3355
 		// Push the message and play the sound
@@ -103,6 +117,8 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 			owner->AddMessage(_message,msgTag);
 		}
 
+		owner->GetMind()->GetMemory().currentlyBarking = true; // grayman #3182 - idle anims w/voices cannot start
+															   // until this bark is finished
 		_barkLength = owner->PlayAndLipSync(_soundName, "talk1", msgTag); // grayman #3355
 		
 		// Sanity check the returned length
@@ -117,6 +133,11 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 
 	// End the task as soon as we've finished playing the sound
 	return !IsBarking();
+}
+
+void SingleBarkTask::OnFinish(idAI* owner)
+{
+	owner->GetMind()->GetMemory().currentlyBarking = false;
 }
 
 void SingleBarkTask::SetSound(const idStr& soundName)
@@ -135,6 +156,8 @@ void SingleBarkTask::Save(idSaveGame* savefile) const
 	CommunicationTask::Save(savefile);
 
 	savefile->WriteInt(_startDelay);
+	savefile->WriteBool(_allowDuringAnim); // grayman #3182
+
 	savefile->WriteInt(_endTime);
 
 	savefile->WriteBool(_message != NULL);
@@ -149,6 +172,7 @@ void SingleBarkTask::Restore(idRestoreGame* savefile)
 	CommunicationTask::Restore(savefile);
 
 	savefile->ReadInt(_startDelay);
+	savefile->ReadBool(_allowDuringAnim); // grayman #3182
 	savefile->ReadInt(_endTime);
 
 	bool hasMessage;

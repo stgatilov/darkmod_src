@@ -40,6 +40,7 @@ private:
 	int _barkRepeatIntervalMin;
 	int _barkRepeatIntervalMax;
 	int _nextBarkTime;
+	bool _prevBarkDone; // grayman #3182
 
 	// The message which should be delivered when barking
 	CommMessagePtr _message;

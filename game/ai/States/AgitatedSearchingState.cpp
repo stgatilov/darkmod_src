@@ -102,6 +102,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 
+	owner->commSubsystem->ClearTasks(); // grayman #3182
+
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
 		CommMessage::DetectedSomethingSuspicious_CommType, 
 		owner, NULL, // from this AI to anyone

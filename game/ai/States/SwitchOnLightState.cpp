@@ -518,7 +518,7 @@ void SwitchOnLightState::Init(idAI* owner)
 				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 		}
 
 		light->IgnoreResponse(ST_VISUAL, owner);
@@ -565,7 +565,7 @@ void SwitchOnLightState::Init(idAI* owner)
 			bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 		}
 		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 	}
 	
 	Wrapup(owner,light,false);		// don't ignoreLight
@@ -693,7 +693,8 @@ void SwitchOnLightState::Think(idAI* owner)
 						if (light->NegativeBark(owner))
 						{
 							memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
-							owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch")));
+							CommMessagePtr message; // no message, but the argument is needed so the 'false' flag can be included
+							owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch",message,0,false))); // grayman #3182
 						}
 
 						// TODO: Try moving closer?

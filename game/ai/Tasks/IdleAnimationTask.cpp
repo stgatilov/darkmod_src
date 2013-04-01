@@ -180,6 +180,19 @@ void IdleAnimationTask::AttemptToPlayAnim(idAI* owner, const idStringList& anims
 		{
 			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
 		}
+
+		// grayman #3182 - Set one of two different wait states.
+		// "idle" represents an idle animation that includes a
+		// voice frame command, and "idle_no_voice" represents an
+		// idle animation that doesn't include a voice frame command.
+		if ( AnimHasVoiceFlag(owner, anims[animIndex]) )
+		{
+			owner->SetWaitState("idle");
+		}
+		else
+		{
+			owner->SetWaitState("idle_no_voice");
+		}
 	}
 }
 
@@ -193,15 +206,18 @@ int IdleAnimationTask::GetNewIdleAnimIndex(const idStringList& anims, idAI* owne
 		excludedIndices.Append(_lastIdleAnim);
 
 		// Be sure to select one which doesn't interfere and is different to the last one
-		while (excludedIndices.Num() < animCount)
+		while ( excludedIndices.Num() < animCount )
 		{
 			int animIdx = gameLocal.random.RandomInt(animCount);
 
 			// If we already tried that anim, get a new one
-			if (excludedIndices.FindIndex(animIdx) != -1) continue;
+			if ( excludedIndices.FindIndex(animIdx) != -1 )
+			{
+				continue;
+			}
 
 			// Check if anim is suitable at this point
-			if (!AnimIsApplicable(owner, anims[animIdx]))
+			if ( !AnimIsApplicable(owner, anims[animIdx]) )
 			{
 				// Cannot play this one
 				excludedIndices.Append(animIdx);
@@ -246,9 +262,18 @@ bool IdleAnimationTask::AnimIsApplicable(idAI* owner, const idStr& animName)
 	}
 
 	// Check if this anim interferes with random head turning
-	if (owner->GetMemory().currentlyHeadTurning && AnimHasNoHeadTurnFlag(owner, torsoAnimNum))
+	if ( owner->GetMemory().currentlyHeadTurning && AnimHasNoHeadTurnFlag(owner, torsoAnimNum) )
 	{
 //		gameLocal.Printf("Inhibited idle animation %s, since random head turning is active.\n", animName.c_str());
+
+		// Cannot play this one at this point
+		return false;
+	}
+
+	// grayman #3182 - Check if this anim plays a voice bark, which would interfere with ongoing voice barks
+	if ( owner->GetMemory().currentlyBarking && AnimHasVoiceFlag(owner, animName) )
+	{
+//		gameLocal.Printf("Inhibited idle animation %s, since barking is active.\n", animName.c_str());
 
 		// Cannot play this one at this point
 		return false;
@@ -264,6 +289,22 @@ bool IdleAnimationTask::AnimHasNoHeadTurnFlag(idAI* owner, int animNum)
 	animFlags_t animflags = animator->GetAnimFlags(animNum);
 
 	return animflags.no_random_headturning;
+}
+
+// grayman #3182
+bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
+{
+	int torsoAnimNum = owner->GetAnim(ANIMCHANNEL_TORSO, animName);
+
+	if ( torsoAnimNum == 0 )
+	{
+		return false;
+	}
+
+	idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_TORSO);
+	animFlags_t animflags = animator->GetAnimFlags(torsoAnimNum);
+
+	return animflags.has_voice_fc;
 }
 
 void IdleAnimationTask::OnFinish(idAI* owner)

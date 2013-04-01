@@ -281,7 +281,8 @@ idAnim::AddFrameCommand
 Returns NULL if no error.
 =====================
 */
-const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def ) {
+const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def, animFlags_t *flags ) // grayman #3182
+{
 	int					i;
 	int					index;
 	idStr				text;
@@ -344,33 +345,49 @@ const char *idAnim::AddFrameCommand( const idDeclModelDef *modelDef, int framenu
 				gameLocal.Warning( "Sound '%s' not found", token.c_str() );
 			}
 		}
-	} else if ( token == "sound_voice" ) {
-		if( !src.ReadTokenOnLine( &token ) ) {
+	} else if ( token == "sound_voice" )
+	{
+		if ( !src.ReadTokenOnLine( &token ) )
+		{
 			return "Unexpected end of line";
 		}
 		fc.type = FC_SOUND_VOICE;
-		if ( !token.Cmpn( "snd_", 4 ) ) {
+		if ( !token.Cmpn( "snd_", 4 ) )
+		{
 			fc.string = new idStr( token );
-		} else {
+		}
+		else
+		{
 			fc.soundShader = declManager->FindSound( token );
-			if ( fc.soundShader->GetState() == DS_DEFAULTED ) {
+			if ( fc.soundShader->GetState() == DS_DEFAULTED )
+			{
 				gameLocal.Warning( "Sound '%s' not found", token.c_str() );
 			}
 		}
-	} else if ( token == "sound_voice2" ) {
-		if( !src.ReadTokenOnLine( &token ) ) {
+		flags->has_voice_fc = true; // grayman #3182
+	}
+	else if ( token == "sound_voice2" )
+	{
+		if ( !src.ReadTokenOnLine( &token ) )
+		{
 			return "Unexpected end of line";
 		}
 		fc.type = FC_SOUND_VOICE2;
-		if ( !token.Cmpn( "snd_", 4 ) ) {
+		if ( !token.Cmpn( "snd_", 4 ) )
+		{
 			fc.string = new idStr( token );
-		} else {
+		}
+		else
+		{
 			fc.soundShader = declManager->FindSound( token );
-			if ( fc.soundShader->GetState() == DS_DEFAULTED ) {
+			if ( fc.soundShader->GetState() == DS_DEFAULTED )
+			{
 				gameLocal.Warning( "Sound '%s' not found", token.c_str() );
 			}
 		}
-	} else if ( token == "sound_body" ) {
+		flags->has_voice_fc = true; // grayman #3182
+	}
+	else if ( token == "sound_body" ) {
 		if( !src.ReadTokenOnLine( &token ) ) {
 			return "Unexpected end of line";
 		}
@@ -980,10 +997,16 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					if (command.soundShader == NULL)
 					{
 						// greebo: Use the communication subsystem for AI (issue #2483)
+
+						// grayman - Voice sounds coming through here want to use SingleBarkTask to
+						// play the sound. This lets the AI's lips move. These frame command sounds
+						// all begin with 'snd_'.
+
 						if (ent->IsType(idAI::Type))
 						{
+							ai::CommMessagePtr message;
 							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
-								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string),message))
 							);
 						}
 						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE, 0, false, NULL ) )
@@ -994,6 +1017,10 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					}
 					else
 					{
+						// grayman - Voice sounds that come through here do NOT use lip syncing,
+						// and do NOT begin with 'snd_'. They tend to begin with 'tdm_'. Since they
+						// don't go through SingleBarkTask, we don't need to worry about 'allowSound'
+						// as we do above.
 						ent->StartSoundShader( command.soundShader, SND_CHANNEL_VOICE, 0, false, NULL );
 					}
 					break;
@@ -1005,8 +1032,9 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 						// greebo: Use the communication subsystem for AI (issue #2483)
 						if (ent->IsType(idAI::Type))
 						{
+							ai::CommMessagePtr message;
 							static_cast<idAI*>(ent)->commSubsystem->AddCommTask(
-								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string)))
+								ai::CommunicationTaskPtr(new ai::SingleBarkTask(*(command.string),message))
 							);
 						}
 						else if ( !ent->StartSound( command.string->c_str(), SND_CHANNEL_VOICE2, 0, false, NULL ) )
@@ -3408,7 +3436,7 @@ bool idDeclModelDef::ParseAnim( idLexer &src, int numDefaultAnims ) {
 				framenum = token.GetIntValue();
 
 				// put the command on the specified frame of the animation
-				err = anim->AddFrameCommand( this, framenum, src, NULL );
+				err = anim->AddFrameCommand( this, framenum, src, NULL, &flags ); // grayman #3182
 				if ( err ) {
 					src.Warning( "%s", err );
 					MakeDefault();

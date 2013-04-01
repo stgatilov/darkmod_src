@@ -256,11 +256,12 @@ void IdleState::InitialiseMovement(idAI* owner)
 			);
 		}
 	}
-	
 }
 
 void IdleState::InitialiseCommunication(idAI* owner)
 {
+	owner->commSubsystem->ClearTasks(); // grayman #3182
+
 	Memory& memory = owner->GetMemory(); // grayman #2603 - only allow rampdown barks if the AI was searching
 
 	if (memory.searchFlags & SRCH_WAS_SEARCHING)
@@ -309,27 +310,31 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	idStr soundName("");
 
 	if (!owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
-		!owner->m_ExaminingRope &&		// grayman #2872 - No rampdown bark if examining a rope.
-		(owner->m_maxAlertLevel >= owner->thresh_1) &&
-		(owner->m_maxAlertLevel < owner->thresh_4))
+		!owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
+//		(owner->m_maxAlertLevel >= owner->thresh_1) &&  // grayman #3182 - not necessary; if memory.alertClass has something
+//		(owner->m_maxAlertLevel < owner->thresh_4))		// other than EAlertNone, the AI experienced something worth barking about
 	{
 		if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{
 			soundName = "snd_alertdown0sus";
 		}
-		else if (memory.alertClass == EAlertVisual_1)
+		else if (memory.alertClass == EAlertVisual_1) // grayman #3182
 		{
-			soundName = "snd_alertdown0s";
+			if (memory.alertType != EAlertTypeMissingItem)
+			{
+				soundName = "snd_alertdown0s";
+			}
 		}
 		else if (memory.alertClass == EAlertAudio)
 		{
 			soundName = "snd_alertdown0h";
 		}
-		else
+		else if (memory.alertClass != EAlertNone) // grayman #3182
 		{
 			soundName = "snd_alertdown0";
 		}
 	}
+
 	return soundName;
 }
 

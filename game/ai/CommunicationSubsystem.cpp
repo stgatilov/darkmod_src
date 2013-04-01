@@ -58,34 +58,78 @@ bool CommunicationSubsystem::AddCommTask(const CommunicationTaskPtr& communicati
 			int priority = communicationTask->GetPriority();
 			int currentPriority = GetCurrentPriority();
 
-			if (priority > currentPriority)
+			if ( priority > currentPriority )
 			{
 				// The new bark has higher priority, clear all current bark tasks and start the new one
-				ClearTasks();
+				// grayman #3182 - only clear tasks if the current task is a SingleBark task. Running
+				// ClearTasks() when RepeatedBarkTask is running kills it, and it doesn't restart again
+				// until the AI's alert level goes up and comes back down.
+				if ( ( curCommTask != NULL ) && ( curCommTask->GetName() == "SingleBark" ) )
+				{
+					ClearTasks();
+				}
 				PushTask(communicationTask);
 				return true;
 			}
-			else if (priority == currentPriority)
+
+			if ( priority == currentPriority )
 			{
 				// the new bark has the same priority as the old one
-				if (curCommTask != NULL && !curCommTask->IsBarking())
+
+				// grayman #3182 - looks like this was designed to switch a current
+				// SingleBark task to a new SingleBark task, but what happens sometimes
+				// is that a current RepeatedBark gets switched to a new SingleBark
+				// task, and that kills the RepeatedBark task, which never restarts,
+				// preventing AI from ever emitting their idle barks again.
+
+				// So we'll only let the switch happen if the current task is a
+				// SingleBark task and it's currently not emitting a bark.
+
+				if ( curCommTask != NULL )
 				{
-					// If the current bark is not playing at the moment, switch to the new one
-					SwitchTask(communicationTask);
-					return true;
+					if ( curCommTask->GetName() == "SingleBark" )
+					{
+						if ( !curCommTask->IsBarking() )
+						{
+							// If the current Single Bark task is not playing at the moment, switch to the new one.
+							// This should not happen, because a Single Bark task ends when its bark completes.
+
+							SwitchTask(communicationTask);
+							return true;
+						}
+
+						return false; // discard new bark
+					}
+
+					// Repeated bark task is running
+					if ( !curCommTask->IsBarking() )
+					{
+						PushTask(communicationTask);
+						return true;
+					}
+
+					// Current comm task is barking, discard new task
+
+					return false;
 				}
 
-				// If the current bark is playing at the moment, discard the new one
-				return false;
-			}
-			else // priority is lower than the current one
-			{
-				QueueTask(communicationTask);
+				// No comm task running
+
+				PushTask(communicationTask);
 				return true;
 			}
+
+			// priority is lower than the current one
+			QueueTask(communicationTask);
+			return true;
 		}
 		case EOverride:	
-			ClearTasks();
+			// grayman - ClearTasks() will kill RepeatedBarkTask if it's the current task,
+			// so only run ClearTasks() if the current task is SingleBarkTask.
+			if ( ( curCommTask != NULL ) && ( curCommTask->GetName() == "SingleBark" ) )
+			{
+				ClearTasks();
+			}
 			PushTask(communicationTask);
 			return true;
 		case EQueue:

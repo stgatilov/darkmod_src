@@ -99,11 +99,12 @@ void FleeDoneState::Think(idAI* owner)
 	if (!CheckAlertLevel(owner)) 
 	{
 		// terminate FleeDoneState when time is over
+/*		grayman #3182 - already done by CheckAlertLevel()
 		owner->movementSubsystem->ClearTasks();
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		owner->SetTurnRate(_oldTurnRate);
-
+ */
 		owner->GetMind()->EndState();
 		return;
 	}

@@ -38,6 +38,8 @@ class SingleBarkTask :
 protected:
 	int _startDelay;
 
+	bool _allowDuringAnim; // grayman #3182
+
 	int _endTime;
 
 	// The message which should be delivered when barking
@@ -47,18 +49,22 @@ protected:
 	SingleBarkTask();
 
 public:
-	// Constructor taking a sound name as argument
+	// Constructor taking a sound name as argument.
 	// Optional arguments are the message to deliver
-	// and the time to pass in ms before the bark should be played
+	// and the time to pass in ms before the bark should be played.
+	// grayman #3182 - add another optional arg, whether this
+	// bark can be played during an idle animation.
 	SingleBarkTask(const idStr& soundName, 
 				   const CommMessagePtr& message = CommMessagePtr(),
-				   int startDelayMS = 0);
+				   int startDelayMS = 0,
+				   bool allowDuringAnim = true);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
 
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 	virtual bool Perform(Subsystem& subsystem);
+	virtual void OnFinish(idAI* owner); // grayman #3182
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

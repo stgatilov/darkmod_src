@@ -65,6 +65,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
+	owner->commSubsystem->ClearTasks(); // grayman #3182
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
@@ -107,7 +108,7 @@ void AgitatedSearchingStateLanternBot::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
-		owner->GetMind()->EndState();
+//		owner->GetMind()->EndState(); // grayman #3182 - already done in CheckAlertLevel()
 		return;
 	}
 

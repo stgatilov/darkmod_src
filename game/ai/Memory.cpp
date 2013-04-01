@@ -117,6 +117,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(countEvidenceOfIntruders);
 	savefile->WriteInt(nextHeadTurnCheckTime);
 	savefile->WriteBool(currentlyHeadTurning);
+	savefile->WriteBool(currentlyBarking); // grayman #3182
 	savefile->WriteInt(headTurnEndTime);
 	savefile->WriteVec3(idlePosition);
 	savefile->WriteFloat(idleYaw);
@@ -231,6 +232,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(countEvidenceOfIntruders);
 	savefile->ReadInt(nextHeadTurnCheckTime);
 	savefile->ReadBool(currentlyHeadTurning);
+	savefile->ReadBool(currentlyBarking); // grayman #3182
 	savefile->ReadInt(headTurnEndTime);
 	savefile->ReadVec3(idlePosition);
 	savefile->ReadFloat(idleYaw);

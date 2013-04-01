@@ -62,6 +62,7 @@ bool CombatState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex < ECombat)
 	{
 		// Alert index is too low for this state, fall back
+		owner->GetMemory().alertClass = EAlertNone; // grayman #3182 - no alert idle state rampdown bark
 		owner->GetMind()->EndState();
 		return false;
 	}
@@ -251,7 +252,7 @@ void CombatState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
-		owner->GetMind()->EndState();
+//		owner->GetMind()->EndState(); // grayman #3182 - already done in CheckAlertLevel()
 		return;
 	}
 	
@@ -744,7 +745,7 @@ void CombatState::Think(idAI* owner)
 		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
-			owner->fleeingEvent = false; // grayman #3356
+			owner->fleeingEvent = false; // grayman #3182
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}

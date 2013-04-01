@@ -3138,7 +3138,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 		return;
@@ -3280,7 +3280,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000)));
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 	}

@@ -244,6 +244,7 @@ public:
 	// Random head turning
 	int nextHeadTurnCheckTime;
 	bool currentlyHeadTurning;
+	bool currentlyBarking; // grayman #3182
 	int headTurnEndTime;
 
 	idVec3 idlePosition;

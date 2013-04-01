@@ -223,6 +223,7 @@ typedef struct {
 	bool					ai_no_turn					: 1;
 	bool					anim_turn					: 1;
 	bool					no_random_headturning		: 1;
+	bool					has_voice_fc				: 1; // grayman #3182
 } animFlags_t;
 
 
@@ -357,7 +358,7 @@ public:
 	bool						GetOrigin( idVec3 &offset, int animNum, int time, int cyclecount ) const;
 	bool						GetOriginRotation( idQuat &rotation, int animNum, int currentTime, int cyclecount ) const;
 	bool						GetBounds( idBounds &bounds, int animNum, int time, int cyclecount ) const;
-	const char					*AddFrameCommand( const class idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def );
+	const char					*AddFrameCommand( const class idDeclModelDef *modelDef, int framenum, idLexer &src, const idDict *def, animFlags_t *flags ); // grayman #3182
 	void						CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *caller );
 	bool						HasFrameCommands( void ) const;
 

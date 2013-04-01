@@ -75,6 +75,9 @@ protected:
 	// Returns TRUE if the given anim has no_random_head_turning set 
 	bool AnimHasNoHeadTurnFlag(idAI* owner, int animNum);
 
+	// grayman #3182 - Returns TRUE if the given anim has has_voice_fc set (has a voice frame command)
+	bool AnimHasVoiceFlag(idAI* owner, const idStr& animName);
+
 	// Returns a new idle anim index
 	virtual int GetNewIdleAnimIndex(const idStringList& anims, idAI* owner);
 
