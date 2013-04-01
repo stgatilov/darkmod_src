@@ -41,6 +41,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../game/ai/AAS.h"
 
 #define EXTRA_PLAYER_LOSS 9.0f // grayman #3042
+#define FRACTION_OPEN_FOR_MAX_VOL 0.50f // grayman #3042 - fraction open at which max
+										// sound volume comes through an opening door
 
 //===============================================================================
 //CFrobDoor
@@ -558,7 +560,14 @@ void CFrobDoor::UpdateSoundLoss()
 	float loss_AI = 0;
 	float loss_Player = 0;
 	bool  AisOpen = IsOpen();
+
 	float A_fractionOpen = GetFractionalPosition();
+	float fA = 1.0 - A_fractionOpen/FRACTION_OPEN_FOR_MAX_VOL;
+	if ( fA < 0 )
+	{
+		fA = 0;
+	}
+
 	float A_lossOpen = m_lossOpen;
 	float A_lossDoubleOpen = m_lossDoubleOpen;
 	float A_lossClosed = m_lossClosed;
@@ -568,7 +577,14 @@ void CFrobDoor::UpdateSoundLoss()
 		float B_lossOpen = doorB->m_lossOpen;
 		float B_lossDoubleOpen = doorB->m_lossDoubleOpen;
 		float B_lossClosed = doorB->m_lossClosed;
+
 		float B_fractionOpen = doorB->GetFractionalPosition();
+		float fB = 1.0 - B_fractionOpen/FRACTION_OPEN_FOR_MAX_VOL;
+		if ( fB < 0 )
+		{
+			fB = 0;
+		}
+
 		bool BisOpen = doorB->IsOpen();
 
 		if ( AisOpen )
@@ -577,8 +593,8 @@ void CFrobDoor::UpdateSoundLoss()
 			{
 				// AI
 
-				float loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*( 1 - B_fractionOpen );
-				loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen ); // fractional loss from A
+				float loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*fB;
+				loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*fA; // fractional loss from A
 				if ( loss_B < loss_AI )
 				{
 					loss_AI = loss_B;
@@ -588,8 +604,8 @@ void CFrobDoor::UpdateSoundLoss()
 				A_lossClosed += EXTRA_PLAYER_LOSS;
 				B_lossClosed += EXTRA_PLAYER_LOSS;
 
-				loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*( 1 - B_fractionOpen );
-				loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen ); // fractional loss from A
+				loss_B = B_lossOpen + ( B_lossClosed - B_lossOpen )*fB;
+				loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*fA; // fractional loss from A
 				if ( loss_B < loss_Player )
 				{
 					loss_Player = loss_B;
@@ -598,11 +614,11 @@ void CFrobDoor::UpdateSoundLoss()
 			else // A open, B closed
 			{
 				// AI
-				loss_AI = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*( 1 - A_fractionOpen );
+				loss_AI = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*fA;
 
 				// Player
 				A_lossClosed += EXTRA_PLAYER_LOSS;
-				loss_Player = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*( 1 - A_fractionOpen );
+				loss_Player = A_lossDoubleOpen + ( A_lossClosed - A_lossDoubleOpen )*fA;
 			}
 		}
 		else
@@ -610,11 +626,11 @@ void CFrobDoor::UpdateSoundLoss()
 			if ( BisOpen ) // A closed, B open
 			{
 				// AI
-				loss_AI = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*( 1 - B_fractionOpen );
+				loss_AI = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*fB;
 
 				// Player
 				B_lossClosed += EXTRA_PLAYER_LOSS;
-				loss_Player = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*( 1 - B_fractionOpen );
+				loss_Player = B_lossDoubleOpen + ( B_lossClosed - B_lossDoubleOpen )*fB;
 			}
 			else // A and B both closed
 			{
@@ -635,11 +651,11 @@ void CFrobDoor::UpdateSoundLoss()
 		if ( AisOpen )
 		{
 			// AI
-			loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen );
+			loss_AI = A_lossOpen + ( A_lossClosed - A_lossOpen )*fA;
 
 			// Player
 			A_lossClosed += EXTRA_PLAYER_LOSS;
-			loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*( 1 - A_fractionOpen );
+			loss_Player = A_lossOpen + ( A_lossClosed - A_lossOpen )*fA;
 		}
 		else // A is closed
 		{
