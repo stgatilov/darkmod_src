@@ -1457,6 +1457,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							memory.lastTimeVisualStimBark = gameLocal.time;
 							CommMessagePtr message;
 							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName, message)));
+							owner->Event_LookAtPosition(player->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
 						}
 					}
 				}
@@ -1587,6 +1588,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							gameLocal.Printf("Hey! Help me search!\n");
 							otherMemory.lastTimeVisualStimBark = gameLocal.time;
 							otherAI->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+							otherAI->Event_LookAtPosition(owner->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
 						}
 					}
 				}
@@ -1742,12 +1744,14 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							}
 						}
 					
-						// Speak the chosen sound
+						// Speak the chosen sound. soundName is empty if a
+						// greeting was set up.
 
 						if ( !soundName.IsEmpty() ) // grayman #2603
 						{
 							memory.lastTimeVisualStimBark = gameLocal.time;
 							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName, message)));
+							owner->Event_LookAtPosition(other->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
 						}
 					}
 				}
@@ -1826,6 +1830,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								// Get the sound and queue the task
 								idStr greetSound = GetGreetingSound(owner, otherAI);
 								owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
+								owner->Event_LookAtPosition(otherAI->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
 							}
 						}
 					}
