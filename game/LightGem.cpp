@@ -247,10 +247,12 @@ float LightGem::Calculate(idPlayer *player)
 	gameRenderWorld->UpdateEntityDef(hdef, hrent);
 
 	// Currently grabbed entities should not cast a shadow on the lightgem to avoid exploits
-	int heldDef, heldSurfID, heldShadID;
-	renderEntity_t *heldRE;
-	idEntity	*heldEnt	= gameLocal.m_Grabber->GetSelected();
-	if( heldEnt ) {
+	int heldDef = 0;
+	int heldSurfID = 0;
+	int heldShadID = 0;
+	renderEntity_t *heldRE = NULL;
+	idEntity *heldEnt = gameLocal.m_Grabber->GetSelected();
+	if ( heldEnt ) {
 		heldDef = heldEnt->GetModelDefHandle();
 
 		// tels: #3286: Only update the entityDef if it is valid

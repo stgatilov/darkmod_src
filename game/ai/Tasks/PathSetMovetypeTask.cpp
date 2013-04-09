@@ -59,7 +59,7 @@ void PathSetMovetypeTask::Init(idAI* owner, Subsystem& subsystem)
 	movetype.Append(_path.GetEntity()->spawnArgs.GetString("movetype", "ANIM"));
 	owner->SetMoveType(movetype);
 
-	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();
+//	idPathCorner* nextPath = owner->GetMemory().nextPath.GetEntity();
 
 }
 

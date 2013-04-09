@@ -248,9 +248,9 @@ bool MaterialParsingHelper::FindBlockContainingWords(  const char *a_text, std::
 		bAreAllWordsFound = true;
 
 		// Make sure that, this is not the first word we have found.
-		if( a_arrSearchWords.begin() != iter )
+		if ( a_arrSearchWords.begin() != iter )
 		{
-			if( uiSearchIndex != uiSearchOffset )
+			if ( uiSearchIndex != uiSearchOffset )
 			{
 				//  				gameLocal.Warning( " Could not find search word %s in the expected order", (*iter).c_str() );
 
