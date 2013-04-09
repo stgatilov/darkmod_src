@@ -107,9 +107,12 @@ idPhysics_Liquid::Splash
 	Causes the liquid to splash but only if the velocity is greater than minSplashVelocity
 ================
 */
-void idPhysics_Liquid::Splash( idEntity *other, float volume, impactInfo_t &info, trace_t &collision ) {
+void idPhysics_Liquid::Splash( idEntity *other, float volume, impactInfo_t &info, trace_t &collision )
+{
+	int num = collision.c.entityNum; // grayman #1104
 	collision.c.entityNum = other->entityNumber;
 	self->Collide(collision,info.velocity);
+	collision.c.entityNum = num; // grayman #1104 - restore original entityNum
 }
 
 /*

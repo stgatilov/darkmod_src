@@ -851,6 +851,8 @@ public:
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);
 	void					RemoveResponse(idEntity *);
+	bool					DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, const idEntity* ent ); // grayman #1104
+
 	
 	/************************************************************************/
 	/* J.C.Denton:	Finds the main ambient light and creates a new one if	*/

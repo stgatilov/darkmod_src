@@ -6592,15 +6592,184 @@ void idGameLocal::RemoveResponse(idEntity *e)
 	}
 }
 
+// grayman #1104 - DoesOpeningExist() looks for any opening along the axis of the
+// normal of the surface the original trace impacted. It creates a grid of points
+// to test from, and applies a randomized jitter to the grid, to minimize testing
+// the same points in future fires of the gas stim.
+
+#define GAS_GRID_SIZE     16.0f // grid spacing on the trace plane
+#define GAS_PLANE_OFFSET  10.0f // how far to back up from the impacted plane when setting a plane to trace from
+#define GAS_MAX_TRACES	  32    // max number of traces to try
+#define GAS_JITTER		  (GAS_GRID_SIZE/2) // max jitter randomness to add at start of each session
+
+#define GAS_DOWN  1
+#define GAS_LEFT  2
+#define GAS_UP    3
+#define GAS_RIGHT 4
+
+bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, const idEntity* ent )
+{
+	float dist2Target = (target - origin).LengthFast();
+
+	// Trace from target to origin to determine rough barrier depth
+	trace_t result;
+	gameLocal.clip.TracePoint(result, target, origin, (CONTENTS_WATER|CONTENTS_SOLID), ent);
+	
+	float barrierDepth = dist2Target*(1 - result.fraction);
+	idVec3 forwardVector = (GAS_PLANE_OFFSET + barrierDepth + GAS_PLANE_OFFSET)*(-normal); // use this at testPoint to find endPoint
+
+	idVec3 planeOrigin = origin + GAS_PLANE_OFFSET*normal; // origin of plane from which we'll launch the traces
+	idVec3 normalRight;
+	idVec3 normalUp;
+	normal.OrthogonalBasis(normalRight,normalUp);
+	int divisions; // (divisions+1) test points per side ((divisions+1) x (divisions+1))
+	idVec3 testPoint;
+	idVec3 deltaRight; // vector when moving right or left
+	idVec3 deltaUp; // vector when moving up or down
+	if ( radius < GAS_GRID_SIZE )
+	{
+		divisions = 2; // (spotCount+1) test points per side ((spotCount+1) x (spotCount+1))
+		deltaRight = radius*normalRight;
+		deltaUp = radius*normalUp;
+	}
+	else
+	{
+		divisions = (int)(2*radius/GAS_GRID_SIZE);
+		deltaRight = GAS_GRID_SIZE*normalRight;
+		deltaUp = GAS_GRID_SIZE*normalUp;
+	}
+
+	idVec3 jitter = GAS_JITTER*(gameLocal.random.RandomFloat() - 0.5)*normalRight + GAS_JITTER*(gameLocal.random.RandomFloat() - 0.5)*normalUp;
+	testPoint = planeOrigin + jitter + radius*normalRight + radius*normalUp;
+	int counter = 0;
+
+	int state = GAS_DOWN;
+	int n = 0;
+	int end = divisions;
+
+	while ( end >= 0 )
+	{
+		// Only process testPoint if the total travel distance through it
+		// to the target is less than the radius. If that's the case, the gas
+		// can't reach the target, and we can move on to the next testPoint.
+		// For this calculation, assume the distance from testPoint to endPoint
+		// is barrierDepth, ignoring GAS_PLANE_OFFSET.
+
+		idVec3 endPoint = testPoint + forwardVector;
+		float dist2TestPoint = (testPoint - planeOrigin).LengthFast(); // first leg
+		// barrierDepth = second leg
+		float dist2Target = (target - endPoint).LengthFast(); // third leg
+		if ( (dist2TestPoint + barrierDepth + dist2Target) <= radius )
+		{
+			// Only consider testPoint if there's a clear path
+			// to the origin. This keeps us from considering points
+			// in neighboring rooms.
+
+			counter++;
+			if ( !gameLocal.clip.TracePoint(result, origin, testPoint, (CONTENTS_WATER|CONTENTS_SOLID), NULL) )
+			{
+				// Trace from the test point forward (forwardVector) to see if there's an opening through the barrier
+
+				counter++;
+				if ( !gameLocal.clip.TracePoint(result, testPoint, endPoint, (CONTENTS_WATER|CONTENTS_SOLID), ent) )
+				{
+					// One last trace to perform: can endPoint see the target? This covers the case where we've
+					// punched through, but not to the room where target lives.
+
+					counter++;
+					if ( !gameLocal.clip.TracePoint(result, endPoint, target, (CONTENTS_WATER|CONTENTS_SOLID), ent) )
+					{
+						return true; // reached the target
+					}
+				}
+
+				if ( counter >= GAS_MAX_TRACES )
+				{
+					return false; // quit early
+				}
+			}
+		}
+
+		// Go to next test point. To reduce the amount of repeat traces close
+		// to the origin, test points around the perimeter first, and spiral in
+		// toward the origin. As the radius expands, if previous radii haven't
+		// found any openings, openings found with the expanded radius are
+		// most likely to be found around the perimeter, in space untested before
+		// now. We have to spiral all the way to the origin, though, in case an
+		// opening appeared near the origin (i.e. a window or door gets opened)
+		// since the previous smaller radius was tested.
+
+		n++;
+		switch (state)
+		{
+		case GAS_DOWN:
+			if ( n > end )
+			{
+				end--;
+				n = 0;
+				testPoint -= deltaRight;
+				state = GAS_LEFT;
+			}
+			else
+			{
+				testPoint -= deltaUp;
+			}
+			break;
+		case GAS_LEFT:
+			if ( n > end )
+			{
+				n = 0;
+				testPoint += deltaUp;
+				state = GAS_UP;
+			}
+			else
+			{
+				testPoint -= deltaRight;
+			}
+			break;
+		case GAS_UP:
+			if ( n > end )
+			{
+				end--;
+				n = 0;
+				testPoint += deltaRight;
+				state = GAS_RIGHT;
+			}
+			else
+			{
+				testPoint += deltaUp;
+			}
+			break;
+		case GAS_RIGHT:
+			if ( n > end )
+			{
+				n = 0;
+				testPoint -= deltaUp;
+				state = GAS_DOWN;
+			}
+			else
+			{
+				testPoint += deltaRight;
+			}
+			break;
+		}
+	}
+
+	return false;
+}
+
+
 int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin)
 {
 	int numResponses = 0;
-	for (int i = 0; i < numEntities; i++)
+	for ( int i = 0 ; i < numEntities ; i++ )
 	{
 		// ignore the original entity because an entity shouldn't respond 
 		// to its own stims.
-		if (srEntities[i] == originator || srEntities[i]->GetResponseEntity() == originator)
+		if ( ( srEntities[i] == originator ) || ( srEntities[i]->GetResponseEntity() == originator ) )
+		{
 			continue;
+		}
 
 		// Check if the radius is really fitting. EntitiesTouchingBounds is using a rectangular volume
 		// greebo: Be sure to use this check only if "use bounds" is set to false
@@ -6610,23 +6779,81 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			float radiusSqr = stim->GetRadius();
 			radiusSqr *= radiusSqr; 
 
-			// grayman #2468 - handle AI with no separate head entities
-
 			idEntity *ent = srEntities[i];
 			idVec3 entitySpot = ent->GetPhysics()->GetOrigin();
 
-			if (stim->m_StimTypeId == ST_GAS) // grayman #2721 - only need the mouth location if this is a gas stim
+			if ( stim->m_StimTypeId == ST_GAS )
 			{
-				if (!ent->IsType(idAFAttachment::Type)) // is this an attached head?
+				// grayman #1104 - doused lights don't turn their gas stim responses
+				// off, so they're still queried for their response. To reduce the
+				// potential of running traces when a barrier is present, ignore
+				// doused lights.
+
+				if ( ent->IsType(idLight::Type) )
 				{
-					// no separate head entity, so find the mouth
-
-					if (ent->IsType(idAI::Type))
+					if ( static_cast<idLight*>(ent)->GetLightLevel() <= 0 )
 					{
-						idAI* entAI = static_cast<idAI*>(ent);
+						continue;
+					}
+				}
+				else // not a light
+				{
+					// To minimize tracing, check if AI are already dead or knocked out. No point
+					// in passing a gas stim reponse to them if they aren't going to use it.
 
-						entitySpot = entAI->GetEyePosition();
-						entitySpot.z += entAI->m_MouthOffset.z;
+					idAFAttachment* head = NULL;
+					idEntity* body = NULL;
+					if ( ent->IsType(idAFAttachment::Type) ) // is this an attached head?
+					{
+						head = static_cast<idAFAttachment*>(ent);
+						// this is an AI's head, so get his body
+						body = static_cast<idAFAttachment*>(ent)->GetBody();
+					}
+					else if (ent->IsType(idAI::Type))
+					{
+						// this is an AI w/a built-in head
+						body = ent;
+					}
+
+					if ( body && body->IsType(idAI::Type))
+					{
+						idAI* ai = static_cast<idAI*>(body);
+						if ( ai->AI_KNOCKEDOUT || ai->AI_DEAD )
+						{
+							continue;
+						}
+					}
+
+					if ( head == NULL ) // is this an attached head?
+					{
+						// not an attached head, so is this an AI with a built-in head,
+						// or perhaps the body of an AI with an attached head?
+
+						if ( ent->IsType(idActor::Type) )
+						{
+							idActor* entActor = static_cast<idActor*>(ent);
+							if ( entActor->GetHead() )
+							{
+								continue; // skip the body because the head is processed
+										  // separately, and will provide the response
+							}
+
+							// No head attachment, so obtain the mouth position from the body,
+							// given as an offset from the eyes.
+
+							idMat3 viewaxis;
+							entActor->GetViewPos(entitySpot,viewaxis); // get eye position and orientation
+							entitySpot += viewaxis * entActor->m_MouthOffset;
+						}
+					}
+					else
+					{
+						// This is a separate head. Add in the mouth offset oriented by head axis.
+						// The mouth offset is relative to the head's origin.
+						if ( body && body->IsType(idActor::Type))
+						{
+							entitySpot += head->GetPhysics()->GetAxis() * static_cast<idActor*>(body)->m_MouthOffset;
+						}
 					}
 				}
 			}
@@ -6635,6 +6862,25 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			{
 				// Too far away
 				continue;
+			}
+
+			// grayman #1104 - for a gas stim, see if there's a clear path
+			// between the stim origin and the entity being stimmed
+
+			if ( stim->m_StimTypeId == ST_GAS )
+			{
+				// Test LOS between stim origin and entitySpot. If it exists,
+				// the gas reached the target. If it doesn't, probe the
+				// are between the stim origin and the target to see if there's
+				// an opening the gas could leak through.
+				trace_t result;
+				if ( gameLocal.clip.TracePoint(result, stimOrigin, entitySpot, MASK_SOLID, ent) )
+				{
+					if (!DoesOpeningExist( stimOrigin, entitySpot, stim->GetRadius(), result.c.normal, ent ) )
+					{
+						continue; // there's no path to the other side
+					}
+				}
 			}
 		}
 

@@ -741,6 +741,8 @@ idActor::idActor( void ) {
 
 	m_isMute			= false; // grayman #3202
 
+	m_MouthOffset		= vec3_zero; // grayman #1104
+
 	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -873,6 +875,8 @@ void idActor::Spawn( void )
 	m_MeleeRepeatedPostParryDelayMax	= spawnArgs.GetInt("melee_repeated_post_parry_delay_max");
 	m_MeleeNumRepAttacks				= spawnArgs.GetInt("melee_num_rep_attacks");
 	m_MeleeRepAttackTime				= spawnArgs.GetInt("melee_rep_attack_time");
+
+	m_MouthOffset						= spawnArgs.GetVector("mouth_offset"); // grayman #1104
 
 	LoadAF();
 
@@ -1235,6 +1239,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_MeleeCurrentRepeatedPostParryDelay );
 	savefile->WriteInt( m_pathRank );		// grayman #2345
 	savefile->WriteInt( m_nextKickTime );	// grayman #2728
+	savefile->WriteVec3( m_MouthOffset );	// grayman #1104
 
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
@@ -1433,8 +1438,9 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMin );
 	savefile->ReadInt( m_MeleeRepeatedPostParryDelayMax );
 	savefile->ReadInt( m_MeleeCurrentRepeatedPostParryDelay );
-	savefile->ReadInt( m_pathRank );	// grayman #2345
-	savefile->ReadInt(m_nextKickTime);	// grayman #2728
+	savefile->ReadInt( m_pathRank );	 // grayman #2345
+	savefile->ReadInt( m_nextKickTime ); // grayman #2728
+	savefile->ReadVec3( m_MouthOffset ); // grayman #1104
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -4976,6 +4982,11 @@ bool idActor::CanGreet() // grayman #3338
 {
 	// Player and AI provide their own responses
 	return true;
+}
+
+idAFAttachment* idActor::GetHead() // grayman #1104
+{
+	return head.GetEntity();
 }
 
 /****************************************************************************************

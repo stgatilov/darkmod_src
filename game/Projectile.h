@@ -132,6 +132,8 @@ public :
 	void					MineExplode( int entityNumber ); // grayman #2478
 	bool					IsMine();	// grayman #2478
 	bool					IsArmed();	// grayman #2906
+	bool					DetonateOnWater(); // grayman #1104
+	void					SetNoSplashDamage(bool setting); // grayman #1104
 	void					AttackAction(idPlayer* player); // grayman #2934
 	void					Event_ActivateProjectile();
 
@@ -144,6 +146,7 @@ protected:
 		bool				randomShaderSpin			: 1;
 		bool				isTracer					: 1;
 		bool				noSplashDamage				: 1;
+		bool				detonate_on_water			: 1; // grayman #1104
 	} projectileFlags;
 
 	float					thrust;

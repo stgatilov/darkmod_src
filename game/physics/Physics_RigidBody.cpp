@@ -605,25 +605,29 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 		idEntity *ent = gameLocal.entities[waterCollision.c.entityNum];
 
 		// make sure the object didn't collide with something before hitting the water (we don't splash for that case)
-		if( !collided || waterCollision.fraction < collision.fraction ) {
-
+		if( !collided || ( waterCollision.fraction < collision.fraction ) )
+		{
 			// if the object collides with something with a physics_liquid
-			if( ent->GetPhysics()->IsType( idPhysics_Liquid::Type ) ) {
+			if ( ent->GetPhysics()->IsType( idPhysics_Liquid::Type ) )
+			{
 				idPhysics_Liquid *liquid = static_cast<idPhysics_Liquid *>(ent->GetPhysics());
 				impactInfo_t info;
 
 				self->GetImpactInfo(ent,waterCollision.c.id,waterCollision.c.point,&info);
 
 				// apply water splash friction
-				if( this->water == NULL ) {
+				if ( this->water == NULL )
+				{
 					idVec3 impulse = -info.velocity * this->volume * liquid->GetDensity() * 0.25f;
 					impulse = (impulse * gravityNormal) * gravityNormal;
 
-					if( next.i.linearMomentum.LengthSqr() < impulse.LengthSqr() ) {
+					if ( next.i.linearMomentum.LengthSqr() < impulse.LengthSqr() )
+					{
 						// cancel falling, maintain sideways movement (lateral?)
 						next.i.linearMomentum -= (next.i.linearMomentum * gravityNormal) * gravityNormal;
 					}
-					else {
+					else
+					{
 						next.i.angularMomentum += ( waterCollision.c.point - ( next.i.position + centerOfMass * next.i.orientation ) ).Cross( impulse );
 						next.i.linearMomentum += impulse * 0.5f;
 					}
@@ -631,6 +635,39 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 
 				this->SetWater(liquid, ent->spawnArgs.GetFloat("murkiness", "0"));
 				this->water->Splash(this->self,this->volume,info,waterCollision);
+
+				// grayman #1104 - we collided with water. should we detonate?
+
+				if ( this->self->IsType(idProjectile::Type) )
+				{
+					idProjectile* projectile = static_cast<idProjectile*>(this->self);
+					if ( projectile->DetonateOnWater() )
+					{
+						// Detonation doesn't occur here, but we have to tell the calling routines
+						// that we impacted something, and that will lead to detonation.
+
+						// Copy the collision data from waterCollision to collision
+						// so the calling routines can use it.
+
+						collision.fraction = waterCollision.fraction;	// fraction of movement completed, 1.0 = didn't hit anything
+						collision.endpos = waterCollision.endpos;		// final position of trace model
+						collision.endAxis = waterCollision.endAxis;		// final axis of trace model
+						collision.c = waterCollision.c;					// contact information, only valid if fraction < 1.0
+
+						// set the next state to the state at the moment of impact
+						next.i.position = waterCollision.endpos;
+						next.i.orientation = waterCollision.endAxis;
+						next.i.linearMomentum = current.i.linearMomentum;
+						next.i.angularMomentum = current.i.angularMomentum;
+						collided = true;
+
+						// Do we apply any splash damage?
+						if ( projectile->spawnArgs.GetBool("no_water_splash_damage", "0") )
+						{
+							projectile->SetNoSplashDamage(true);
+						}
+					}
+				}
 			}
 		}
 	}

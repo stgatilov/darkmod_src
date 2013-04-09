@@ -567,7 +567,6 @@ idAI::idAI()
 	m_HeadJointID = INVALID_JOINT;
 	m_OrigHeadCM = NULL;
 	m_bHeadCMSwapped = false;
-	m_MouthOffset = vec3_zero;
 
 	m_bCanBeKnockedOut = true;
 	m_HeadCenterOffset = vec3_zero;
@@ -900,7 +899,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_AirTicksMax);
 	savefile->WriteInt(m_AirCheckInterval);
 
-	savefile->WriteVec3(m_MouthOffset);
 	savefile->WriteBool(m_bCanBeKnockedOut);
 	savefile->WriteVec3(m_HeadCenterOffset);
 	savefile->WriteMat3(m_FOVRot);
@@ -1336,7 +1334,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_AirTicksMax);
 	savefile->ReadInt(m_AirCheckInterval);
 
-	savefile->ReadVec3(m_MouthOffset);
 	savefile->ReadBool(m_bCanBeKnockedOut);
 	savefile->ReadVec3(m_HeadCenterOffset);
 	savefile->ReadMat3(m_FOVRot);
@@ -1925,7 +1922,6 @@ void idAI::Spawn( void )
 	}
 
 	// Dark Mod: set up drowning
-	m_MouthOffset = spawnArgs.GetVector("mouth_offset");
 	// set up drowning timer (add a random bit to make it asynchronous w/ respect to other AI)
 	m_bCanDrown = spawnArgs.GetBool( "can_drown", "1" );
 	m_AirCheckTimer = gameLocal.time + gameLocal.random.RandomInt( 8000 );

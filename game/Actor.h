@@ -396,6 +396,12 @@ public:
 	**/
 	bool					m_isMute;
 
+	/**
+	* Offset relative to the head origin when the head is separate, or the eye 
+	* when the head is attached. Used to locate the mouth.
+	**/
+	idVec3					m_MouthOffset; // grayman #1104
+
 public:
 							idActor( void );
 	virtual					~idActor( void );
@@ -544,6 +550,11 @@ public:
 	* Called to determine if an actor can exchange greetings with another actor.
 	**/
 	virtual bool			CanGreet(); // grayman #3338
+
+	/**
+	* Retrieve head, if any
+	**/
+	idAFAttachment*			GetHead(); // grayman #1104
 
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.

@@ -3668,7 +3668,10 @@ void idAI::Event_AllowGreetings()
 
 void idAI::Event_DelayedVisualStim(idEntity* stimSource)
 {
-	mind->GetState()->DelayedVisualStim(stimSource, this);
+	if ( stimSource ) // grayman #1104 - stimSource might have been removed before the delay ended
+	{
+		mind->GetState()->DelayedVisualStim(stimSource, this);
+	}
 }
 
 

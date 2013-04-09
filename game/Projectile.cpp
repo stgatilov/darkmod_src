@@ -391,6 +391,7 @@ void idProjectile::Launch( const idVec3 &start, const idVec3 &dir, const idVec3 
 
 	projectileFlags.detonate_on_world	= spawnArgs.GetBool( "detonate_on_world" );
 	projectileFlags.detonate_on_actor	= spawnArgs.GetBool( "detonate_on_actor" );
+	projectileFlags.detonate_on_water	= spawnArgs.GetBool( "detonate_on_water" ); // grayman #1104
 	projectileFlags.randomShaderSpin	= spawnArgs.GetBool( "random_shader_spin" );
 
 	if ( mass <= 0 ) {
@@ -729,6 +730,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 	// get the entity the projectile collided with
 	ent = gameLocal.entities[ collision.c.entityNum ];
+	bool hitWater = ent->GetPhysics()->IsType( idPhysics_Liquid::Type ); // grayman #1104
 
 	if ( ent )
 	{
@@ -773,13 +775,19 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	//	ent->ProcessEvent( &EV_Activate , this );
 	//}
 
-	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) ) {
-		if ( !projectileFlags.detonate_on_actor ) {
+	if ( ent->IsType( idActor::Type ) || ( ent->IsType( idAFAttachment::Type ) && static_cast<const idAFAttachment*>(ent)->GetBody()->IsType( idActor::Type ) ) )
+	{
+		if ( !projectileFlags.detonate_on_actor )
+		{
 			return false;
 		}
-	} else {
-		if ( !projectileFlags.detonate_on_world ) {
-			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) ) {
+	}
+	else
+	{
+		if ( !projectileFlags.detonate_on_world )
+		{
+			if ( !StartSound( "snd_ricochet", SND_CHANNEL_ITEM, 0, true, NULL ) )
+			{
 				float len = velocity.Length();
 				if ( ( len > BOUNCE_SOUND_MIN_VELOCITY ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some projectiles should not propagate a bounce sound
 				{
@@ -797,7 +805,14 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	// unlink the clip model because we no longer need it
 	GetPhysics()->UnlinkClip();
 
-	damageDefName = spawnArgs.GetString( "def_damage" );
+	if ( hitWater ) // grayman #1104
+	{
+		damageDefName = spawnArgs.GetString( "def_damage_water" );
+	}
+	else
+	{
+		damageDefName = spawnArgs.GetString( "def_damage" );
+	}
 
 	ignore = NULL;
 
@@ -1127,7 +1142,7 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// DarkMod: Check material list to see if it's activated
 	g_Global.GetSurfName( collision.c.material, SurfTypeName );
-	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s \r", SurfTypeName.c_str() );
+	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Weapon: Projectile surface was %s\r", SurfTypeName.c_str() );
 
 	bActivated = TestActivated( SurfTypeName.c_str() );
 // TODO: Add spawnarg option to only play explode sound and explode light on activate
@@ -1245,14 +1260,19 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	}
 
 	// splash damage
-	if ( !projectileFlags.noSplashDamage ) {
+	if ( !projectileFlags.noSplashDamage )
+	{
 		float delay = spawnArgs.GetFloat( "delay_splash" );
-		if ( delay ) {
-			if ( removeTime < delay * 1000 ) {
+		if ( delay )
+		{
+			if ( removeTime < delay * 1000 )
+			{
 				removeTime = static_cast<int>( delay + 0.10f ) * 1000;
 			}
 			PostEventSec( &EV_RadiusDamage, delay, ignore );
-		} else {
+		}
+		else
+		{
 			Event_RadiusDamage( ignore );
 		}
 	}
@@ -1306,44 +1326,69 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 
 	// DarkMod: Spawn projectile result entity
 	DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Checking projectile result:\r" );
-	if( spawnArgs.GetBool( "has_result", "0" ) )
+	if ( spawnArgs.GetBool( "has_result", "0" ) )
 	{
 		DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Has_result set to true\r" );
-		const char* resultName = spawnArgs.GetString("def_result");
+		const char* resultName = "";
+
+		// grayman #1104 - is there a different result when colliding with water?
+		idEntity* ent = gameLocal.entities[collision.c.entityNum];
+		if ( ent && ent->GetPhysics()->IsType( idPhysics_Liquid::Type ) )
+		{
+			resultName = spawnArgs.GetString("def_result_water");
+		}
+
+		if ( idStr(resultName).IsEmpty() )
+		{
+			resultName = spawnArgs.GetString("def_result");
+		}
 
 		const idDict *resultDef = gameLocal.FindEntityDefDict( resultName, false );
-		if( resultDef )
+		if ( resultDef )
 		{
-			idEntity *ent2;
+			// grayman #1104 - some projectile results (i.e. gas) aren't allowed in water
 
-			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Result object found for projectile %s\r", name.c_str());
-
-			gameLocal.SpawnEntityDef( *resultDef, &ent2, false );
-			if ( !ent2 || !ent2->IsType( CProjectileResult::Type ) ) 
+			bool createResult = true;
+			int contents = gameLocal.clip.Contents( collision.endpos, NULL, mat3_identity, -1, this );
+			if (contents & MASK_WATER)
 			{
-				DM_LOG(LC_WEAPON, LT_ERROR)LOGSTRING("Projectile %s has a non projectile result entity in projectile_result.\r", name.c_str());
-				gameLocal.Error( "'projectile_result' is not a CProjectileResult" );
+				// Result wants to spawn in water. Allowed?
+				createResult = spawnArgs.GetBool("allow_result_in_water","1");
 			}
 
-			DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Spawned projectile result\r" );
+			if ( createResult )
+			{
+				idEntity *ent2;
 
-			CProjectileResult *result = static_cast<CProjectileResult *>( ent2 );
+				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING("Result object found for projectile %s\r", name.c_str());
 
-			// Populate the data object to pass to the projectile result object
-			SFinalProjData DataIn;
+				gameLocal.SpawnEntityDef( *resultDef, &ent2, false );
+				if ( !ent2 || !ent2->IsType( CProjectileResult::Type ) ) 
+				{
+					DM_LOG(LC_WEAPON, LT_ERROR)LOGSTRING("Projectile %s has a non projectile result entity in projectile_result.\r", name.c_str());
+					gameLocal.Error( "'projectile_result' is not a CProjectileResult" );
+				}
+
+				DM_LOG(LC_WEAPON, LT_DEBUG)LOGSTRING( "Spawned projectile result\r" );
+
+				CProjectileResult *result = static_cast<CProjectileResult *>( ent2 );
+
+				// Populate the data object to pass to the projectile result object
+				SFinalProjData DataIn;
 			
-			DataIn.Owner = owner.GetEntity();
-			DataIn.FinalOrigin = collision.endpos;
-			DataIn.FinalAxis = GetPhysics()->GetAxis();
-			DataIn.LinVelocity = tempVel;
-			DataIn.AngVelocity = tempAngVel;
-			// rotate the axial direction by the axis to get world direction vector
-			DataIn.AxialDir = DataIn.FinalAxis * spawnArgs.GetVector( "axial_dir", "0 0 1" );
-			DataIn.mass = GetPhysics()->GetMass();
-			DataIn.SurfaceType = SurfTypeName;
+				DataIn.Owner = owner.GetEntity();
+				DataIn.FinalOrigin = collision.endpos;
+				DataIn.FinalAxis = GetPhysics()->GetAxis();
+				DataIn.LinVelocity = tempVel;
+				DataIn.AngVelocity = tempAngVel;
+				// rotate the axial direction by the axis to get world direction vector
+				DataIn.AxialDir = DataIn.FinalAxis * spawnArgs.GetVector( "axial_dir", "0 0 1" );
+				DataIn.mass = GetPhysics()->GetMass();
+				DataIn.SurfaceType = SurfTypeName;
 
-			// Set up the projectile result with the last known results of the projectile
-			result->Init( &DataIn, collision, this, bActivated );
+				// Set up the projectile result with the last known results of the projectile
+				result->Init( &DataIn, collision, this, bActivated );
+			}
 		}
 	}
 
@@ -1894,6 +1939,28 @@ bool idProjectile::IsLocked()
 }
 
 /*
+================================
+idProjectile::DetonateOnWater - grayman #1104
+================================
+*/
+
+bool idProjectile::DetonateOnWater()
+{
+	return projectileFlags.detonate_on_water;
+}
+
+/*
+================================
+idProjectile::SetNoSplashDamage - grayman #1104
+================================
+*/
+
+void idProjectile::SetNoSplashDamage( bool setting )
+{
+	projectileFlags.noSplashDamage = setting;
+}
+
+/*
 =============================================
 idProjectile::Event_ClearPlayerImmobilization - grayman #2478
 =============================================
@@ -1953,6 +2020,7 @@ void idProjectile::Event_Mine_Replace()
 		PostEventMS( &EV_Remove, 1 ); // Remove the projectile, which has been replaced
 	}
 }
+
 
 /*
 ===============================================================================
@@ -2179,6 +2247,7 @@ void idGuidedProjectile::Launch( const idVec3 &start, const idVec3 &dir, const i
 	burstVelocity = spawnArgs.GetFloat( "burstVelocity", "1.25" );
 	UpdateVisuals();
 }
+
 
 
 /*

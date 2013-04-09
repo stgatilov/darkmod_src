@@ -1082,12 +1082,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int						m_AirCheckInterval;
 
 	/**
-	* Offset relative to the head origin when the head is separate, or the eye 
-	* when the head is attached. Used to locate the mouth.
-	**/
-	idVec3					m_MouthOffset;
-
-	/**
 	* Set to true if the AI can be KO'd (defaults to true)
 	**/
 	bool					m_bCanBeKnockedOut;
