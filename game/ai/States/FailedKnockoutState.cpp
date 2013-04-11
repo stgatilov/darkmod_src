@@ -118,7 +118,8 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.mandatory = true;	// grayman #3331
 
 		// Alert the AI
-		owner->PreAlertAI("tact", owner->thresh_5*2); // grayman #3356
+		// grayman #3009 - pass the alert position so the AI can look at the spot
+		owner->PreAlertAI("tact", owner->thresh_5*2, memory.alertPos); // grayman #3356
 
 		// End this state
 		owner->GetMind()->EndState();

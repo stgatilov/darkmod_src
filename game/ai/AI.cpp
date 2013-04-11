@@ -2404,7 +2404,6 @@ void idAI::Think( void )
 				LayDownMove();
 				break;
 
-
 			default:
 				break;
 			}
@@ -2700,8 +2699,6 @@ void idAI::LinkScriptVariables( void )
 
 	AI_SIT_DOWN_ANGLE.LinkTo(scriptObject, "AI_SIT_DOWN_ANGLE");
 	AI_SIT_UP_ANGLE.LinkTo(scriptObject, "AI_SIT_UP_ANGLE");
-
-
 }
 
 /*
@@ -4963,12 +4960,24 @@ bool idAI::TurnToward( const idVec3 &pos ) {
 	idVec3 local_dir;
 	float lengthSqr;
 
-	dir = pos - physicsObj.GetOrigin();
-	physicsObj.GetGravityAxis().ProjectVector( dir, local_dir );
-	local_dir.z = 0.0f;
-	lengthSqr = local_dir.LengthSqr();
-	if ( lengthSqr > Square( 2.0f ) || ( lengthSqr > Square( 0.1f ) && enemy.GetEntity() == NULL ) ) {
-		ideal_yaw = idMath::AngleNormalize180( local_dir.ToYaw() );
+	// grayman #3009 - you're not allowed to do this if you're sitting or playing a 'get_up' animation.
+	// When sitting, it looks like crap when the AI spins in his chair.
+	// The 'get_up' animation sometimes relies on turning toward a specific yaw, and the animation
+	// will get screwed up if you allow this turn here.
+
+	if ( ( move.moveType != MOVETYPE_SIT ) &&
+		 ( move.moveType != MOVETYPE_GET_UP ) &&
+		 ( move.moveType != MOVETYPE_GET_UP_FROM_LYING ) )
+	{
+		dir = pos - physicsObj.GetOrigin();
+		physicsObj.GetGravityAxis().ProjectVector( dir, local_dir );
+		local_dir.z = 0.0f;
+		lengthSqr = local_dir.LengthSqr();
+		if (   ( lengthSqr > Square( 2.0f ) ) ||
+			 ( ( lengthSqr > Square( 0.1f ) ) && ( enemy.GetEntity() == NULL ) ) )
+		{
+			ideal_yaw = idMath::AngleNormalize180( local_dir.ToYaw() );
+		}
 	}
 
 	bool result = FacingIdeal();
@@ -5285,7 +5294,7 @@ idAI::DeadMove
 */
 void idAI::DeadMove( void ) {
 	idVec3				delta;
-	monsterMoveResult_t	moveResult;
+	//monsterMoveResult_t	moveResult;
 
 	idVec3 org = physicsObj.GetOrigin();
 
@@ -5294,7 +5303,7 @@ void idAI::DeadMove( void ) {
 
 	RunPhysics();
 
-	moveResult = physicsObj.GetMoveResult();
+	//moveResult = physicsObj.GetMoveResult();
 	AI_ONGROUND = physicsObj.OnGround();
 }
 
@@ -5571,7 +5580,7 @@ void idAI::SlideMove( void ) {
 	idVec3				delta;
 	idVec3				goalDelta;
 	float				goalDist;
-	monsterMoveResult_t	moveResult;
+	//monsterMoveResult_t	moveResult;
 	idVec3				newDest;
 
 	idVec3 oldorigin = physicsObj.GetOrigin();
@@ -5646,7 +5655,7 @@ void idAI::SlideMove( void ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 5000 );
 	}
 
-	moveResult = physicsObj.GetMoveResult();
+	//moveResult = physicsObj.GetMoveResult();
 	if ( !m_bAFPushMoveables && attack.Length() && TestMelee() ) {
 		DirectDamage( attack, enemy.GetEntity() );
 	} else {
@@ -9044,7 +9053,8 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		if ( !soundMaker || // alert if unknown
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
-			PreAlertAI( "aud", psychLoud ); // grayman #3356
+			// grayman #3009 - pass the sound position so the AI can look at it
+			PreAlertAI( "aud", psychLoud, origin ); // grayman #3356
 
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
@@ -9083,8 +9093,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 // grayman - Preprocessing of an alert, for the purpose of inserting
 // a delay for audio alerts
 
-void idAI::PreAlertAI(const char *type, float amount)
+void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 {
+	// grayman #3009 - look at alertSpot
+	if ( alertSpot != idVec3(0,0,0) )
+	{
+		Event_LookAtPosition(alertSpot,((float)AI_AlertLevel)/10.0f);
+	}
+
 	int delay = 0;
 	if ( idStr(type) == "aud" )
 	{
@@ -9529,7 +9545,8 @@ void idAI::PerformVisualScan(float timecheck)
 	{
 		// Remember this actor
 		m_AlertedByActor = player;
-		PreAlertAI("vis", incAlert); // grayman #3356
+
+		PreAlertAI("vis", incAlert, idVec3(0,0,0)); // grayman #3356
 
 		// Call the visual alert handler on the current state
 		mind->GetState()->OnVisualAlert(player);
@@ -9814,7 +9831,17 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	m_AlertedByActor = responsibleActor;
 
 	amount *= GetAcuity("tact");
-	PreAlertAI("tact", amount); // grayman #3356
+	// grayman #3009 - pass the location of the player's eyes so the AI can look at them
+	idVec3 lookAtPos(0,0,0);
+	if ( tactEnt->IsType(idActor::Type) )
+	{
+		lookAtPos = static_cast<idActor*>(tactEnt)->GetEyePosition();
+	}
+	else
+	{
+		lookAtPos = tactEnt->GetPhysics()->GetOrigin();
+	}
+	PreAlertAI("tact", amount, lookAtPos); // grayman #3356
 
 	// Notify the currently active state
 	mind->GetState()->OnTactileAlert(tactEnt);
@@ -9847,10 +9874,18 @@ void idAI::TactileIgnore(idEntity* tactEnt)
 bool idAI::CheckTactileIgnore(idEntity* tactEnt)
 {
 	TactileIgnoreList::iterator i = tactileIgnoreEntities.find(tactEnt);
-	if (i != tactileIgnoreEntities.end())
+	if ( i != tactileIgnoreEntities.end() )
 	{
 		return true;
 	}
+
+	// grayman #3009 - ignore all tactile alerts while getting up
+
+	if ( ( move.moveType == MOVETYPE_GET_UP ) || ( move.moveType == MOVETYPE_GET_UP_FROM_LYING ) )
+	{
+		return true;
+	}
+
 	return false;
 }
 

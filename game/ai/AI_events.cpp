@@ -3229,7 +3229,7 @@ void idAI::Event_SetAlertLevel( float newAlertLevel)
 
 void idAI::Event_Alert( const char *type, float amount )
 {
-	PreAlertAI( type, amount ); // grayman #3356
+	PreAlertAI( type, amount, idVec3(0,0,0) ); // grayman #3356
 }
 
 void idAI::Event_GetSndDir( void )

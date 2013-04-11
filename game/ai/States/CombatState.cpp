@@ -374,12 +374,20 @@ void CombatState::Think(idAI* owner)
 		{
 		// Check for sitting or sleeping
 
-		if (   owner->GetMoveType() == MOVETYPE_SIT 
-			|| owner->GetMoveType() == MOVETYPE_SLEEP
-			|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
-			|| owner->GetMoveType() == MOVETYPE_LAY_DOWN )
+		moveType_t moveType = owner->GetMoveType();
+		if (   moveType == MOVETYPE_SIT 
+			|| moveType == MOVETYPE_SLEEP
+			|| moveType == MOVETYPE_SIT_DOWN
+			|| moveType == MOVETYPE_LAY_DOWN )
 		{
 			owner->GetUp(); // okay if called multiple times
+			return;
+		}
+
+		// grayman #3009 - check for getting up from sitting or sleeping
+		if ( moveType == MOVETYPE_GET_UP || 
+			 moveType == MOVETYPE_GET_UP_FROM_LYING )
+		{
 			return;
 		}
 

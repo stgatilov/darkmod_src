@@ -3806,7 +3806,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				{
 					// no enemy set or enemy not found yet
 					// set up search
-					owner->PreAlertAI("aud", psychLoud); // grayman #3356
+					// grayman #3009 - pass the alert position so the AI can look at it
+					owner->PreAlertAI("aud", psychLoud, directObjectLocation); // grayman #3356
 
 					memory.alertPos = directObjectLocation;
 					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;

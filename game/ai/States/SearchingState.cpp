@@ -57,6 +57,26 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 		return false;
 	}
 
+	// grayman #3009 - can't enter this state if sitting, sleeping,
+	// sitting down, lying down, or getting up from sitting or sleeping
+
+	moveType_t moveType = owner->GetMoveType();
+	if ( moveType == MOVETYPE_SIT      || 
+		 moveType == MOVETYPE_SLEEP    ||
+		 moveType == MOVETYPE_SIT_DOWN ||
+		 moveType == MOVETYPE_LAY_DOWN )
+	{
+		owner->GetUp(); // it's okay to call this multiple times
+		owner->GetMind()->EndState();
+		return false;
+	}
+
+	if ( ( moveType == MOVETYPE_GET_UP ) ||	( moveType == MOVETYPE_GET_UP_FROM_LYING ) )
+	{
+		owner->GetMind()->EndState();
+		return false;
+	}
+
 	if (owner->AI_AlertIndex > EInvestigating)
 	{
 		// Alert index is too high, switch to the higher State

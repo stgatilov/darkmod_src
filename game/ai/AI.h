@@ -429,7 +429,7 @@ public:
 	* NOTE: For "alert units," an alert of 1 corresponds to just barely
 	* seeing something or just barely hearing a whisper of a sound.
 	**/
-	void idAI::PreAlertAI(const char *type, float amount); // grayman #3356
+	void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot); // grayman #3356
 
 	/**
 	 * greebo: Sets the AI_AlertLevel of this AI and updates the AI_AlertIndex.
