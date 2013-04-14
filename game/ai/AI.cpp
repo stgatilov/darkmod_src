@@ -6176,6 +6176,43 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 			AI_SPECIAL_DAMAGE = 0;
 		}
 
+		// grayman #3372 - set up pain animation before raising the alert level
+
+		// Switch to pain state if not in combat
+		if ( /*( AI_AlertIndex == ai::ERelaxed ) && */ // grayman #3140 - go to PainState at any alert level
+			 ( AI_AlertIndex < ai::ECombat ) && // grayman #3355 - pain anims mess up combat, so don't allow them
+			 ( damage > 0 ) && 
+			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
+		{
+			// grayman #3140 - note what caused the damage, in case PainState needs to do something special.
+			// Start with the basic causes (arrow, melee, moveable) and expand to the others as needed.
+			ai::Memory& memory = GetMemory();
+			memory.causeOfPain = ai::EPC_None;
+			if ( inflictor )
+			{
+				if ( inflictor->IsType(idProjectile::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Projectile;
+				}
+				else if ( inflictor->IsType(CMeleeWeapon::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Melee;
+				}
+				else if ( inflictor->IsType(idMoveable::Type) )
+				{
+					memory.causeOfPain = ai::EPC_Moveable;
+				}
+			}
+			else
+			{
+				if ( damageDef->GetBool( "no_air" ) ) 
+				{
+					memory.causeOfPain = ai::EPC_Drown;
+				}
+			}
+			GetMind()->PushState(ai::StatePtr(new ai::PainState));
+		}
+		
 		if ( !attacker->fl.notarget ) // grayman #3356
 		{
 			// AI don't like being attacked
@@ -6215,41 +6252,6 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					GetMemory().alertType = ai::EAlertTypeEnemy;
 				}
 			}
-		}
-
-		// Switch to pain state if idle
-		if ( /*( AI_AlertIndex == ai::ERelaxed ) && */ // grayman #3140 - go to PainState at any alert level
-			 ( AI_AlertIndex < ai::ECombat ) && // grayman #3355 - pain anims mess up combat, so don't allow them
-			 ( damage > 0 ) && 
-			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
-		{
-			// grayman #3140 - note what caused the damage, in case PainState needs to do something special.
-			// Start with the basic causes (arrow, melee, moveable) and expand to the others as needed.
-			ai::Memory& memory = GetMemory();
-			memory.causeOfPain = ai::EPC_None;
-			if ( inflictor )
-			{
-				if ( inflictor->IsType(idProjectile::Type) )
-				{
-					memory.causeOfPain = ai::EPC_Projectile;
-				}
-				else if ( inflictor->IsType(CMeleeWeapon::Type) )
-				{
-					memory.causeOfPain = ai::EPC_Melee;
-				}
-				else if ( inflictor->IsType(idMoveable::Type) )
-				{
-					memory.causeOfPain = ai::EPC_Moveable;
-				}
-			}
-			else
-			{
-				if ( damageDef->GetBool( "no_air" ) ) 
-				{
-					memory.causeOfPain = ai::EPC_Drown;
-				}
-			}
-			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 		}
 	}
 
