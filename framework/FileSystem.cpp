@@ -2072,6 +2072,7 @@ void idFileSystemLocal::Startup( void ) {
 	searchpath_t	**search;
 	pack_t			*pak;
 	int				addon_index;
+    bool            addFsModSave = false;
 
 	common->Printf( "------ Initializing File System ------\n" );
 
@@ -2101,7 +2102,7 @@ void idFileSystemLocal::Startup( void ) {
 #endif
 
     // taaaki: setup fm path -- 
-    //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod") > BASE_GAMEDIR ("base")
+    //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod") > BASE_GAMEDIR ("base")]
     // The following logic has been deprecated:
     //   Old logic: In between fs_ and fs_game_base, there is the mission folder, which is fms/<missionName>/
     //   fs_game still overrides that one, but the the mission folder should still override fs_game_base
@@ -2109,7 +2110,10 @@ void idFileSystemLocal::Startup( void ) {
          fs_currentfm.GetString()[0] &&
          idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
          idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) ) {
-        AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+        
+        // don't add the modSavePath just yet. wait to see if devpath has been modified
+        addFsModSave = true;
+        //AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
     }
 
     // if fs_devpath is set by the user, assume that this is a wip directory and add it to the top of the searchpaths
@@ -2118,7 +2122,33 @@ void idFileSystemLocal::Startup( void ) {
          idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
          idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) &&
          idStr::Icmp( fs_devpath.GetString(), Sys_DefaultSavePath() ) ) {
-        AddGameDirectory( fs_devpath.GetString(), "" );
+        
+        //AddGameDirectory( fs_devpath.GetString(), "" );
+        idStr devbase ( fs_devpath.GetString() );
+        idStr devfm ( fs_devpath.GetString() ); 
+        devbase.StripFilename();
+        devfm.StripPath();
+
+        // if fs_modSavePath has been modified (cmdline args) and differs from the default, use the 
+        // supplied version. otherwise, recreate fs_modSavePath using the devpath
+        if ( addFsModSave && idStr::Icmp( fs_modSavePath.GetString(), Sys_ModSavePath() ) ) {
+            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+        } else {
+            fs_modSavePath.SetString( devbase.c_str() );
+            AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
+            addFsModSave = false;
+        }
+
+        // check if the supplied fs_currentfm is the same as the lowest level directory
+        // supplied in the fs_devpath argument. if not, use the directory from the devpath
+        if ( idStr::Icmp ( devfm.c_str(), fs_currentfm.GetString() ) == 0 ) {
+            AddGameDirectory( devbase.c_str(), fs_currentfm.GetString() );
+        } else {
+            AddGameDirectory( devbase.c_str(), devfm.c_str() );
+        }
+    } else if ( addFsModSave ) {
+        // devpath was not modified, so we can add fs_modSavePath with the current fm to the searchpath
+        AddGameDirectory( fs_modSavePath.GetString(), fs_currentfm.GetString() );
     }
 
     // currently all addons are in the search list - deal with filtering out and dependencies now
