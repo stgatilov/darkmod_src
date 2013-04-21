@@ -447,10 +447,13 @@ idPlayer::idPlayer() :
 	hud						= NULL;
 	inventoryHUDNeedsUpdate = true;
 
+#ifdef PLAYER_HEARTBEAT
 	heartRate				= BASE_HEARTRATE;
 	heartInfo.Init( 0, 0, 0, 0 );
 	lastHeartAdjust			= 0;
 	lastHeartBeat			= 0;
+#endif // PLAYER_HEARTBEAT
+
 	lastDmgTime				= 0;
 	deathClearContentsTime	= 0;
 	stamina					= 0.0f;
@@ -735,9 +738,12 @@ void idPlayer::Init( void ) {
 	showWeaponViewModel		= GetUserInfo()->GetBool( "ui_showGun" );
 
 	lastDmgTime				= 0;
+
+#ifdef PLAYER_HEARTBEAT
 	lastHeartAdjust			= 0;
 	lastHeartBeat			= 0;
 	heartInfo.Init( 0, 0, 0, 0 );
+#endif // PLAYER_HEARTBEAT
 
 	bobCycle				= 0;
 	bobFrac					= 0.0f;
@@ -788,8 +794,10 @@ void idPlayer::Init( void ) {
 	currentWeapon = -1;
 	previousWeapon = -1;
 
+#ifdef PLAYER_HEARTBEAT
 	heartRate = BASE_HEARTRATE;
 	AdjustHeartRate( BASE_HEARTRATE, 0.0f, 0.0f, true );
+#endif // PLAYER_HEARTBEAT
 
 	idealLegsYaw = 0.0f;
 	legsYaw = 0.0f;
@@ -1702,6 +1710,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( weapon_fists );
 
+#ifdef PLAYER_HEARTBEAT
 	savefile->WriteInt( heartRate );
 	savefile->WriteBool(m_HeartBeatAllow);
 
@@ -1712,6 +1721,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt( lastHeartAdjust );
 	savefile->WriteInt( lastHeartBeat );
+#endif // PLAYER_HEARTBEAT
+
 	savefile->WriteInt( lastDmgTime );
 	savefile->WriteInt( deathClearContentsTime );
 	savefile->WriteBool( doingDeathSkin );
@@ -2007,6 +2018,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( weapon_fists );
 
+#ifdef PLAYER_HEARTBEAT
 	savefile->ReadInt( heartRate );
 	savefile->ReadBool(m_HeartBeatAllow);
 
@@ -2021,6 +2033,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt( lastHeartAdjust );
 	savefile->ReadInt( lastHeartBeat );
+#endif // PLAYER_HEARTBEAT
+
 	savefile->ReadInt( lastDmgTime );
 	savefile->ReadInt( deathClearContentsTime );
 	savefile->ReadBool( doingDeathSkin );
@@ -2738,7 +2752,10 @@ void idPlayer::UpdateHudStats( idUserInterface *_hud )
 	//_hud->SetStateInt( "player_stamina", staminapercentage );
 	_hud->SetStateInt( "player_shadow", 1 );
 
-	_hud->SetStateInt( "player_hr", heartRate );
+#ifdef PLAYER_HEARTBEAT
+	_hud->SetStateInt( "player_hr", heartRate ); // there is no "player_hr" hud indicator in TDM
+#endif // PLAYER_HEARTBEAT
+
 	// Commented out by Dram. TDM does not use stamina
 	//_hud->SetStateInt( "player_nostamina", ( max_stamina == 0 ) ? 1 : 0 );
 
@@ -3190,13 +3207,20 @@ bool idPlayer::Give( const char *statname, const char *value ) {
 			stamina = 100;
 		}
 
-	} else if ( !idStr::Icmp( statname, "heartRate" ) ) {
+	}
+	
+#ifdef PLAYER_HEARTBEAT
+	else if ( !idStr::Icmp( statname, "heartRate" ) )
+	{
 		heartRate += atoi( value );
-		if ( heartRate > MAX_HEARTRATE ) {
+		if ( heartRate > MAX_HEARTRATE )
+		{
 			heartRate = MAX_HEARTRATE;
 		}
+	}
+#endif // PLAYER_HEARTBEAT
 
-	} else if ( !idStr::Icmp( statname, "air" ) ) {
+	else if ( !idStr::Icmp( statname, "air" ) ) {
 		if ( airTics >= pm_airTics.GetInteger() ) {
 			return false;
 		}
@@ -4915,6 +4939,7 @@ Quit:
 	return;
 }
 
+#ifdef PLAYER_HEARTBEAT
 /*
 ==============
 idPlayer::AdjustHeartRate
@@ -4931,13 +4956,13 @@ Firing a weapon adds 1 beat per second up to a maximum of COMBAT_HEARTRATE
 
 Being at less than 25% stamina adds 5 beats per second up to ZEROSTAMINA_HEARTRATE
 
-All heartrates are target rates.. the heart rate will start falling as soon as there have been no adjustments for 5 seconds
+All heartrates are target rates. The heart rate will start falling as soon as there have been no adjustments for 5 seconds
 Once it starts falling it always tries to get to DEF_HEARTRATE
 
 The exception to the above rule is upon death at which point the rate is set to DYING_HEARTRATE and starts falling 
 immediately to zero
 
-Heart rate volumes go from zero ( -40 db for DEF_HEARTRATE to 5 db for MAX_HEARTRATE ) the volume is 
+Heart rate volumes go from zero ( -40 db for DEF_HEARTRATE ) to 5 db ( for MAX_HEARTRATE ) the volume is 
 scaled linearly based on the actual rate
 
 Exception to the above rule is once the player is dead, the dying heart rate starts at either the current volume if
@@ -4980,54 +5005,65 @@ int idPlayer::GetBaseHeartRate( void ) {
 idPlayer::SetCurrentHeartRate
 ==============
 */
-void idPlayer::SetCurrentHeartRate( void ) {
-	/// reasons why we should exit
-	if( false == airless && health > 0 )
+void idPlayer::SetCurrentHeartRate( void )
+{
+	// reasons why we should exit
+	if ( !airless && ( health > 0 ) )
     {
-		if( true == m_HeartBeatAllow )
+		if ( m_HeartBeatAllow )
 		{
-			AdjustHeartRate( BASE_HEARTRATE, 5.5f, 0.0f, false );/// We were allowing so fade it
+			AdjustHeartRate( BASE_HEARTRATE, 5.5f, 0.0f, false ); // We were allowing so fade it
+			m_HeartBeatAllow = false;
 		}
-		else /// We were NOT allowing it so set to default
+		else // We were NOT allowing it so set to default
 		{
 			heartRate = BASE_HEARTRATE;
 		}
-		m_HeartBeatAllow = false;
         return;
     }
-	/*
-	if( false == m_HeartBeatAllow )/// we did not want heartbeat heard so make sure
+
+/*
+	if ( false == m_HeartBeatAllow ) // we did not want heartbeat heard so make sure
     {
 		heartInfo.Init( gameLocal.time, 0, BASE_HEARTRATE, BASE_HEARTRATE );
 		heartRate = BASE_HEARTRATE;
 		StopSound( SND_CHANNEL_HEART, false );
     }
-	*/
-	m_HeartBeatAllow = true;
+ */
 
+	m_HeartBeatAllow = true;
 
 	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float) health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
 
-	/// removed adrenaline affect - Rich
+	// removed adrenaline affect - Rich
 	heartRate = idMath::FtoiFast( heartInfo.GetCurrentValue( gameLocal.time ) );
 	int currentRate = GetBaseHeartRate();
-	if ( health >= 0 && gameLocal.time > lastHeartAdjust + 2500 ) {
+	if ( ( health >= 0 ) && ( gameLocal.time > ( lastHeartAdjust + 2500 ) ) )
+	{
 		AdjustHeartRate( currentRate, 2.5f, 0.0f, false );
 	}
+
 	int bps = idMath::FtoiFast( 60.0f / heartRate * 1000.0f );
-	if ( gameLocal.time - lastHeartBeat > bps ) {
+	if ( ( gameLocal.time - lastHeartBeat ) > bps )
+	{
 		int dmgVol = DMG_VOLUME;
 		int deathVol = DEATH_VOLUME;
 		int zeroVol = ZERO_VOLUME;
 		float pct = 0.0;
-		if ( heartRate > BASE_HEARTRATE && health > 0 ) {
+		if ( ( heartRate > BASE_HEARTRATE ) && ( health > 0 ) )
+		{
 			pct = (float)(heartRate - base) / (MAX_HEARTRATE - base);
 			pct *= ((float)dmgVol - (float)zeroVol);
-		} else if ( health <= 0 ) {
+		}
+		else if ( health <= 0 )
+		{
 			pct = (float)(heartRate - DYING_HEARTRATE) / (BASE_HEARTRATE - DYING_HEARTRATE);
-			if ( pct > 1.0f ) {
+			if ( pct > 1.0f )
+			{
 				pct = 1.0f;
-			} else if (pct < 0.0f) {
+			}
+			else if ( pct < 0.0f )
+			{
 				pct = 0.0f;
 			}
 			pct *= ((float)deathVol - (float)zeroVol);
@@ -5035,10 +5071,11 @@ void idPlayer::SetCurrentHeartRate( void ) {
 
 		pct += (float)zeroVol;
 
-		if ( pct != zeroVol ) {
+		if ( pct != zeroVol )
+		{
 			StartSound( "snd_heartbeat", SND_CHANNEL_HEART, SSF_PRIVATE_SOUND, false, NULL );
 			// modify just this channel to a custom volume
-			soundShaderParms_t	parms;
+			soundShaderParms_t parms;
 			memset( &parms, 0, sizeof( parms ) );
 			parms.volume = pct;
 			refSound.referenceSound->ModifySound( SND_CHANNEL_HEART, &parms );
@@ -5047,6 +5084,7 @@ void idPlayer::SetCurrentHeartRate( void ) {
 		lastHeartBeat = gameLocal.time;
 	}
 }
+#endif // PLAYER_HEARTBEAT
 
 /*
 ==============
@@ -7023,11 +7061,20 @@ void idPlayer::Think( void )
 
 	Move();
 
-	if ( !g_stopTime.GetBool() ) {
-
-		if ( !noclip && !spectating && ( health > 0 ) && !IsHidden() ) {
+	if ( !g_stopTime.GetBool() )
+	{
+		if ( !noclip && !spectating && ( health > 0 ) && !IsHidden() )
+		{
 			TouchTriggers();
 		}
+
+#ifdef PLAYER_HEARTBEAT
+		// grayman - allow heartbeat
+		if ( !gameLocal.isMultiplayer )
+		{
+			SetCurrentHeartRate();
+		}
+#endif // PLAYER_HEARTBEAT
 
 #if 0
 		// update GUIs, Items, and character interactions
@@ -7294,8 +7341,10 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		return;
 	}
 
+#ifdef PLAYER_HEARTBEAT
 	heartInfo.Init( 0, 0, 0, BASE_HEARTRATE );
 	AdjustHeartRate( DEAD_HEARTRATE, 10.0f, 0.0f, true );
+#endif // PLAYER_HEARTBEAT
 
 	AI_DEAD = true;
 
@@ -9884,14 +9933,14 @@ bool idPlayer::DropToHands( idEntity *ent, CInventoryItemPtr item )
 
 			// Replace the entity to be dropped with the newly spawned one.
 			ent = spawnedEntity;
-	        }
+	    }
             
-	        // If the item is referenced by any objective with a item-location component set the flag
-	        // so it will be considered by location entities.
-	        if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
-	        {
-	            ent->m_bIsObjective = true;
-	        }
+	    // If the item is referenced by any objective with a item-location component set the flag
+	    // so it will be considered by location entities.
+	    if ( gameLocal.m_MissionData->MatchLocationObjectives( ent ) )
+	    {
+	        ent->m_bIsObjective = true;
+	    }
 
 		grabber->PutInHands( ent, dropPoint, dropAxis );
 		DM_LOG(LC_INVENTORY, LT_INFO)LOGSTRING("Item was successfully put in hands: %s\r", ent->name.c_str());

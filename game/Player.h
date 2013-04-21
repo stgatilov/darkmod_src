@@ -75,16 +75,26 @@ const int	FOCUS_GUI_TIME = 500;
 
 #define ARROW_WEAPON_INDEX_BEGIN 3		// grayman #597 - weapons at or above this index are arrows
 
-// Heart rate constansts
+// grayman - We aren't using the heartbeat code anymore, so I wrapped
+// it in an #ifdef. Uncomment the following line if anyone wants to use it.
+// In its current state, it won't play a heartbeat while the player is alive,
+// and will only play a couple after the player dies, so there's no point
+// using it as is.
+
+//#define PLAYER_HEARTBEAT
+
+#ifdef PLAYER_HEARTBEAT
+// Heart rate constants
 const int DEAD_HEARTRATE = 0;			// fall to as you die
 const int LOWHEALTH_HEARTRATE_ADJ = 20; // 
-const int DYING_HEARTRATE = 30;			// used for volumen calc when dying/dead
+const int DYING_HEARTRATE = 30;			// used for volume calc when dying/dead
 const int BASE_HEARTRATE = 70;			// default
 const int ZEROSTAMINA_HEARTRATE = 115;  // no stamina
 const int MAX_HEARTRATE = 130;			// maximum
 const int ZERO_VOLUME = -40;			// volume at zero
 const int DMG_VOLUME = 5;				// volume when taking damage
 const int DEATH_VOLUME = 15;			// volume at death
+#endif // PLAYER_HEARTBEAT
 
 const int ASYNC_PLAYER_INV_AMMO_BITS = idMath::BitsForInteger( 999 );	// 9 bits to cover the range [0, 999]
 const int ASYNC_PLAYER_INV_CLIP_BITS = -7;								// -7 bits to cover the range [-1, 60]
@@ -389,11 +399,14 @@ public:
 
 	int						weapon_fists;
 
-	bool					m_HeartBeatAllow; /// disable hearbeat except when dying or drowning - Need this to track state
+#ifdef PLAYER_HEARTBEAT
+	bool					m_HeartBeatAllow; // disable hearbeat except when dying or drowning - Need this to track state
 	int						heartRate;
 	idInterpolate<float>	heartInfo;
 	int						lastHeartAdjust;
 	int						lastHeartBeat;
+#endif // PLAYER_HEARTBEAT
+
 	int						lastDmgTime;
 	int						deathClearContentsTime;
 	bool					doingDeathSkin;
@@ -644,7 +657,10 @@ public:
 	// greebo: This method updates the player's movement hinderance when weapons are drawn
 	void					UpdateWeaponEncumbrance();
 
+#ifdef PLAYER_HEARTBEAT
 	void					AdjustHeartRate( int target, float timeInSecs, float delay, bool force );
+#endif // PLAYER_HEARTBEAT
+
 	void					SetCurrentHeartRate( void );
 	int						GetBaseHeartRate( void );
 	void					UpdateAir( void );
