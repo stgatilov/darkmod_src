@@ -3814,13 +3814,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	const idStr& cmd = m_GUICommandStack[0];
 
 	// seen the command and its arguments, now handle it
-/*	if (cmd != "mainmenu_heartbeat" && cmd != "log")
+/*	if ( ( cmd != "mainmenu_heartbeat" ) && ( cmd != "briefingvideoheartbeat" ) && ( cmd != "log" ) )
 	{
 		// debug output, but ignore the frequent ones
 		Printf("MainMenu cmd: %s (%i args)\n", cmd.c_str(), numArgs);
 	}
-*/
-
+ */
 	// Watch out for objectives GUI-related commands
 	// TODO: Handle here commands with arguments, too.
 	m_MissionData->HandleMainMenuCommands(cmd, gui);
