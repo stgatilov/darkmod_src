@@ -599,11 +599,15 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 					attacker = m_SetInMotionByActor.GetEntity();
 				}
 				
-				int preHealth = ent->health;
-				ent->Damage( this, attacker, dir, damage, f, location, const_cast<trace_t *>(&newCollision) );
-				if ( ent->health < preHealth ) // only set the timer if there was damage
+				// grayman #3370 - if the entity being hit is the attacker, don't do damage
+				if ( attacker != ent )
 				{
-					nextDamageTime = gameLocal.time + 1000;
+					int preHealth = ent->health;
+					ent->Damage( this, attacker, dir, damage, f, location, const_cast<trace_t *>(&newCollision) );
+					if ( ent->health < preHealth ) // only set the timer if there was damage
+					{
+						nextDamageTime = gameLocal.time + 1000;
+					}
 				}
 			}
 		}

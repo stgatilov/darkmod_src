@@ -5043,6 +5043,16 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 			continue;
 		}
 
+		// grayman #3370 - for some reason, moveables can attain high,
+		// short-lived velocities. Since the fix to #0578 was meant
+		// for jumping onto moving elevators (movers), we'll ignore
+		// moveables, which tend to be smaller items that get kicked around
+
+		if ( ent->IsType(idMoveable::Type) )
+		{
+			continue;
+		}
+
 		landedOnVelocity = ent->GetPhysics()->GetLinearVelocity();
 		break;
 	}
