@@ -742,13 +742,13 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = idMath::Fabs(bounds[0][1]);
 
-	// in front of the button 
+	// Find spot in front of the button,
 	// assuming that the button translates in when pressed
-	idVec3 trans = button->spawnArgs.GetVector("translation", "0 2 0");
+	idVec3 trans = button->spawnArgs.GetVector("translate", "1 0 0"); // grayman #3389 - was "translation"
 	trans.z = 0;
 	if (trans.NormalizeFast() == 0)
 	{
-		trans = idVec3(1, 0, 0);
+		trans = idVec3(1, 0, 0); // somewhere to start
 	}
 
 	const idVec3& buttonOrigin = button->GetPhysics()->GetOrigin();
@@ -756,6 +756,14 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 	// angua: target position is in front of the button with a distance 
 	// a little bit larger than the AI's bounding box
 	idVec3 target = buttonOrigin - size * 1.2f * trans;
+
+	// grayman #3389 - find floor beneath 'target' and subsequent 'targets' if necessary
+
+	idVec3 bottomPoint = target;
+	bottomPoint.z -= 1000;
+	trace_t result;
+	gameLocal.clip.TracePoint(result, target, bottomPoint, MASK_OPAQUE, NULL);
+	target.z = result.endpos.z + 1; // move the target point to just above the floor
 
 	if (!owner->MoveToPosition(target))
 	{
@@ -765,14 +773,26 @@ bool HandleElevatorTask::MoveToButton(idAI* owner, CMultiStateMoverButton* butto
 
 		trans = trans.Cross(gravity);
 		target = buttonOrigin - size * 1.2f * trans;
+		bottomPoint = target;
+		bottomPoint.z -= 1000;
+		gameLocal.clip.TracePoint(result, target, bottomPoint, MASK_OPAQUE, NULL);
+		target.z = result.endpos.z + 1; // move the target point to just above the floor
 		if (!owner->MoveToPosition(target))
 		{
 			trans *= -1;
 			target = buttonOrigin - size * 1.2f * trans;
+			bottomPoint = target;
+			bottomPoint.z -= 1000;
+			gameLocal.clip.TracePoint(result, target, bottomPoint, MASK_OPAQUE, NULL);
+			target.z = result.endpos.z + 1; // move the target point to just above the floor
 			if (!owner->MoveToPosition(target))
 			{
 				trans = trans.Cross(gravity);
 				target = buttonOrigin - size * 1.2f * trans;
+				bottomPoint = target;
+				bottomPoint.z -= 1000;
+				gameLocal.clip.TracePoint(result, target, bottomPoint, MASK_OPAQUE, NULL);
+				target.z = result.endpos.z + 1; // move the target point to just above the floor
 				if (!owner->MoveToPosition(target))
 				{
 					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
