@@ -398,7 +398,10 @@ int CShop::GetMaxAmmo(const idStr& weaponName)
 	return 50;
 #else
 	int max_ammo = 1;
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponName,false); // grayman #3391 - don't create a default 'weaponDict'
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(weaponName,true); // grayman #3391 - don't create a default 'weaponDict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if (weaponDict != NULL)
 	{
 		max_ammo = weaponDict->GetInt("max_ammo", "1");

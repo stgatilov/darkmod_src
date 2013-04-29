@@ -172,7 +172,10 @@ CommunicationSubsystem::EActionTypeOnConflict
 	CommunicationSubsystem::GetActionTypeForSound(const CommunicationTaskPtr& communicationTask)
 {
 	// Check if we have a specific action to take when the new sound has lower prio
-	const idDict* dict = gameLocal.FindEntityDefDict(BARK_PRIORITY_DEF,false); // grayman #3391 - don't create a default 'dict'
+	const idDict* dict = gameLocal.FindEntityDefDict(BARK_PRIORITY_DEF,true); // grayman #3391 - don't create a default 'dict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 
 	if (dict == NULL) 
 	{

@@ -222,7 +222,7 @@ int idCinematic::AnimationLength() {
 
 /*
 ==============
-idCinematicLocal::ResetTime
+idCinematic::ResetTime
 ==============
 */
 void idCinematic::ResetTime(int milliseconds) {
@@ -1269,7 +1269,6 @@ idCinematicLocal::RoQReset
 ==============
 */
 void idCinematicLocal::RoQReset() {
-	
 	iFile->Seek( 0, FS_SEEK_SET );
 	iFile->Read( file, 16 );
 	RoQ_init();

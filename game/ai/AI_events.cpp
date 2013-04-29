@@ -899,7 +899,10 @@ void idAI::Event_SpawnThrowableProjectile(const char* projectileName, const char
 	RemoveProjectile();
 	
 	// Load definition from movable.def
-	const idDict* projectileDef = gameLocal.FindEntityDefDict(projectileName,false); // grayman #3391 - don't create a default 'projectileDef'
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(projectileName,true); // grayman #3391 - don't create a default 'projectileDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 
 	if (!projectileDef)
 	{
@@ -975,7 +978,10 @@ void idAI::Event_CreateMissileFromDef(const char* defName, const char *jointname
 	RemoveProjectile();
 
 	// Load definition from movable.def
-	const idDict* projectileDef = gameLocal.FindEntityDefDict(defName,false); // grayman #3391 - don't create a default 'projectileDef'
+	const idDict* projectileDef = gameLocal.FindEntityDefDict(defName,true); // grayman #3391 - don't create a default 'projectileDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 
 	if (!projectileDef)
 	{

@@ -178,7 +178,10 @@ void DifficultyManager::LoadDefaultDifficultySettings()
 	// Construct the entityDef name (e.g. atdm:difficulty_settings_default)
 	idStr defName(DEFAULT_DIFFICULTY_ENTITYDEF);
 
-	const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName, false); // grayman #3391 - don't create a default 'difficultyDict'
+	const idDict* difficultyDict = gameLocal.FindEntityDefDict(defName, true); // grayman #3391 - don't create a default 'difficultyDict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 
 	if (difficultyDict != NULL)
 	{

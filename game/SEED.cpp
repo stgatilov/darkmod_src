@@ -1493,7 +1493,10 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		SeedClass.spawnDist *= SeedClass.spawnDist;
 	}
 
-	const idDict* dict = gameLocal.FindEntityDefDict( SeedClass.classname, false ); // grayman #3391 - don't create a default 'dict'
+	const idDict* dict = gameLocal.FindEntityDefDict( SeedClass.classname, true ); // grayman #3391 - don't create a default 'dict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 
 	if (!dict)
 	{

@@ -6222,7 +6222,10 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		attacker = gameLocal.world;
 	}
 
-	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, false ); // grayman #3391 - don't create a default 'damageDef'
+	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, true ); // grayman #3391 - don't create a default 'damageDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if ( !damageDef )
 	{
 		gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
@@ -11859,7 +11862,10 @@ bool idEntity::IsMantleable() const
 }
 
 int idEntity::heal(const char* healDefName, float healScale) {
-	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName, false ); // grayman #3391 - don't create a default 'healDef'
+	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName, true ); // grayman #3391 - don't create a default 'healDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if ( !healDef )
 	{
 		gameLocal.Error( "Unknown healDef '%s'\n", healDefName );

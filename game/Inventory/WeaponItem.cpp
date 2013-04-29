@@ -114,7 +114,10 @@ void CInventoryWeaponItem::SetEnabled(bool enabled)
 int CInventoryWeaponItem::GetMaxAmmo()
 {
 	// Get the "max_ammo" spawnarg from the weapon dictionary
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'weaponDict'
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,true); // grayman #3391 - don't create a default 'weaponDict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if ( weaponDict == NULL )
 	{
 		return -1;
@@ -184,7 +187,10 @@ void CInventoryWeaponItem::SetWeaponIndex(int index)
 
 	// Now that the weapon index is known, cache a few values from the owner spawnargs
 
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'weaponDict'
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,true); // grayman #3391 - don't create a default 'weaponDict'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if (weaponDict == NULL)
 	{
 		return;
@@ -219,7 +225,10 @@ void CInventoryWeaponItem::SetProjectileDefName(const idStr& weaponDefName)
 
 void CInventoryWeaponItem::ResetProjectileDefName()
 {
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'projectileDef'
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,true); // grayman #3391 - don't create a default 'projectileDef'
+																				// We want 'false' here, but FindEntityDefDict()
+																				// will print its own warning, so let's not
+																				// clutter the console with a redundant message
 	if (weaponDict == NULL)
 	{
 		return;
