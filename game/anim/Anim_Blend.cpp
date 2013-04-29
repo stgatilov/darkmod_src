@@ -1453,7 +1453,7 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 					{
 						// spawn the entity
 						idEntity* spawnedEntity;
-						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass );
+						const idDict* entityDef = gameLocal.FindEntityDefDict( EntClass, false );  // grayman #3391 - don't create a default 'entityDef'
 
 						if (!entityDef)
 						{

@@ -160,7 +160,7 @@ CResponseEffect* CResponse::AddResponseEffect(const idStr& effectEntityDef,
 	
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Seeking EffectEntity [%s]\r", effectEntityDef.c_str());
 	// Try to locate the specified entity definition
-	const idDict* dict = gameLocal.FindEntityDefDict(effectEntityDef.c_str());
+	const idDict* dict = gameLocal.FindEntityDefDict(effectEntityDef.c_str(),false); // grayman #3391 - don't create a default 'dict'
 
 	if (effectEntityDef == "effect_script")
 	{

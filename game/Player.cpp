@@ -1242,7 +1242,7 @@ void idPlayer::AddWeaponsToInventory()
 
 		idStr weaponDef(kv->GetValue());
 
-		if (gameLocal.FindEntityDefDict(weaponDef) == NULL)
+		if (gameLocal.FindEntityDefDict(weaponDef, false) == NULL) // grayman #3391 - don't create a default 'entityDef'
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Weapon entityDef not found: %s\r", weaponDef.c_str());
 			continue;

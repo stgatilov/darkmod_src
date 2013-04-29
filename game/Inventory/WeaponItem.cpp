@@ -114,8 +114,11 @@ void CInventoryWeaponItem::SetEnabled(bool enabled)
 int CInventoryWeaponItem::GetMaxAmmo()
 {
 	// Get the "max_ammo" spawnarg from the weapon dictionary
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
-	if (weaponDict == NULL) return -1;
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'weaponDict'
+	if ( weaponDict == NULL )
+	{
+		return -1;
+	}
 
 	return weaponDict->GetInt(WEAPON_MAX_AMMO, "0");
 }
@@ -181,8 +184,11 @@ void CInventoryWeaponItem::SetWeaponIndex(int index)
 
 	// Now that the weapon index is known, cache a few values from the owner spawnargs
 
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
-	if (weaponDict == NULL) return;
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'weaponDict'
+	if (weaponDict == NULL)
+	{
+		return;
+	}
 
 	m_AllowedEmpty = !weaponDict->GetBool(WEAPON_AMMO_REQUIRED, "1");
 	m_IsToggleable = weaponDict->GetBool(WEAPON_IS_TOGGLEABLE, "0");
@@ -213,8 +219,11 @@ void CInventoryWeaponItem::SetProjectileDefName(const idStr& weaponDefName)
 
 void CInventoryWeaponItem::ResetProjectileDefName()
 {
-	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName);
-	if (weaponDict == NULL) return;
+	const idDict* weaponDict = gameLocal.FindEntityDefDict(m_WeaponDefName,false); // grayman #3391 - don't create a default 'projectileDef'
+	if (weaponDict == NULL)
+	{
+		return;
+	}
 
 	m_ProjectileDefName = weaponDict->GetString("def_projectile");
 }

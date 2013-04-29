@@ -3294,7 +3294,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	}
 
 	// Try to find the damage entityDef
-	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName );
+	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName, false ); // grayman #3391 - don't create a default 'damageDef'
 	if ( !damageDef )
 	{
 		gameLocal.Error( "Unknown damageDef '%s'", damageDefName );

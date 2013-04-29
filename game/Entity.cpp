@@ -6222,8 +6222,9 @@ void idEntity::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		attacker = gameLocal.world;
 	}
 
-	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
-	if ( !damageDef ) {
+	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, false ); // grayman #3391 - don't create a default 'damageDef'
+	if ( !damageDef )
+	{
 		gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
 	}
 
@@ -11858,8 +11859,9 @@ bool idEntity::IsMantleable() const
 }
 
 int idEntity::heal(const char* healDefName, float healScale) {
-	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName );
-	if ( !healDef ) {
+	const idDict* healDef = gameLocal.FindEntityDefDict( healDefName, false ); // grayman #3391 - don't create a default 'healDef'
+	if ( !healDef )
+	{
 		gameLocal.Error( "Unknown healDef '%s'\n", healDefName );
 	}
 

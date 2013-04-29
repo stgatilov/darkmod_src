@@ -1493,7 +1493,7 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		SeedClass.spawnDist *= SeedClass.spawnDist;
 	}
 
-	const idDict* dict = gameLocal.FindEntityDefDict( SeedClass.classname );
+	const idDict* dict = gameLocal.FindEntityDefDict( SeedClass.classname, false ); // grayman #3391 - don't create a default 'dict'
 
 	if (!dict)
 	{

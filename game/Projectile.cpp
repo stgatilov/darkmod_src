@@ -847,7 +847,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		{
 			// grayman #2794 - if no damage is being inflicted, then there's no need for a damage effect
 
-			const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+			const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, false ); // grayman #3391 - don't create a default 'damageDef'
 			if ( !damageDef )
 			{
 				gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );

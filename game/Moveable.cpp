@@ -1503,7 +1503,7 @@ void idExplodingBarrel::Damage( idEntity *inflictor, idEntity *attacker, const i
 					  const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
 {
 
-	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName );
+	const idDict *damageDef = gameLocal.FindEntityDefDict( damageDefName, false ); // grayman #3391 - don't create a default 'damageDef'
 	if ( !damageDef ) {
 		gameLocal.Error( "Unknown damageDef '%s'\n", damageDefName );
 	}

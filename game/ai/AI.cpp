@@ -2049,7 +2049,7 @@ void idAI::InitProjectileInfo()
 
 void idAI::InitProjectileInfoFromDict(idAI::ProjectileInfo& info, const char* entityDef) const
 {
-	const idDict* dict = gameLocal.FindEntityDefDict(entityDef);
+	const idDict* dict = gameLocal.FindEntityDefDict(entityDef,false); // grayman #3391 - don't create a default 'dict'
 
 	if (dict == NULL)
 	{

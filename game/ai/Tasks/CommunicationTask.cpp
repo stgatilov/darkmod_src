@@ -36,7 +36,7 @@ CommunicationTask::CommunicationTask(const idStr& soundName) :
 	_soundName(soundName)
 {
 	// Look up priority
-	const idDict* dict = gameLocal.FindEntityDefDict(BARK_PRIORITY_DEF);
+	const idDict* dict = gameLocal.FindEntityDefDict(BARK_PRIORITY_DEF,false); // grayman #3391 - don't create a default 'dict'
 
 	if (dict != NULL)
 	{
