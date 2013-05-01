@@ -40,7 +40,7 @@ void CBloodMarker::Event_GenerateBloodSplat()
 	if (!_isFading)
 	{
 		// Read the stay duration from the material info
-		const idMaterial* material = declManager->FindMaterial(_bloodSplat);
+		const idMaterial* material = declManager->FindMaterial(_bloodSplat, false); // grayman #3391 - no default, please
 
 		if (material != NULL)
 		{
