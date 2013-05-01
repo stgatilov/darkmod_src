@@ -155,7 +155,6 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 
 	savefile->Write( &flags, sizeof( flags ) );
 
-
 	savefile->WriteFloat( thrust );
 	savefile->WriteInt( thrust_end );
 
@@ -177,6 +176,9 @@ void idProjectile::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteStaticObject( thruster );
+
+	// The lock class is saved by the idSaveGame class on close, no need to handle it here
+	savefile->WriteObject(m_Lock); // grayman #3353
 }
 
 /*
@@ -223,6 +225,9 @@ void idProjectile::Restore( idRestoreGame *savefile ) {
 		dir.NormalizeFast();
 		gameLocal.smokeParticles->EmitSmoke( smokeFly, gameLocal.time, gameLocal.random.RandomFloat(), GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
+
+	// The lock class is restored by the idRestoreGame, don't handle it here
+	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock)); // grayman #3353
 }
 
 /*
@@ -2090,8 +2095,6 @@ void idGuidedProjectile::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( unGuided );
 	savefile->WriteFloat( burstDist );
 	savefile->WriteFloat( burstVelocity );
-	// The lock class is saved by the idSaveGame class on close, no need to handle it here
-	savefile->WriteObject(m_Lock); // grayman #2478
 }
 
 /*
@@ -2113,7 +2116,6 @@ void idGuidedProjectile::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( burstDist );
 	savefile->ReadFloat( burstVelocity );
 	// The lock class is restored by the idRestoreGame, don't handle it here
-	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock)); // grayman #2478
 }
 
 

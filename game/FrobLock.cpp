@@ -67,6 +67,7 @@ void CFrobLock::AddObjectsToSaveGame(idSaveGame* savefile)
 
 void CFrobLock::Save(idSaveGame *savefile) const
 {
+	// The lock class is saved by the idSaveGame class on close, no need to handle it here
 	savefile->WriteObject(m_Lock);
 
 	savefile->WriteInt(m_Lockhandles.Num());
@@ -80,6 +81,7 @@ void CFrobLock::Save(idSaveGame *savefile) const
 
 void CFrobLock::Restore( idRestoreGame *savefile )
 {
+	// The lock class is restored by the idRestoreGame, don't handle it here
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_Lock));
 
 	int num;
