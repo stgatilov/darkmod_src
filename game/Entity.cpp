@@ -4330,6 +4330,13 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 		return;
 	}
 
+	// grayman #3393 - don't propagate sounds in early frames,
+	// because some AI might not yet be set up to hear them
+	if ( gameLocal.framenum < 10 )
+	{
+		return;
+	}
+
 	int start, end = -1, len;
 	bool bHasComma(false), bHasColon(false), bFoundSnd(false);
 	float volMod(0.0), durMod(1.0);
