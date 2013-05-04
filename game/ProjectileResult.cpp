@@ -126,6 +126,18 @@ void CProjectileResult::Init
 
 	m_bActivated = bActivate;
 
+	// grayman #3258 - the projectile result needs to know who fired the projectile
+	// so it can tell the AI Alert code, which tells mission statistics
+	idEntity* ent = m_ProjData.Owner.GetEntity();
+	if ( ent && ent->IsType(idActor::Type) )
+	{
+		m_MovedByActor = static_cast<idActor*>(ent);
+	}
+	else
+	{
+		m_MovedByActor = NULL;
+	}
+
 	// calculate and store the (max) angle of incidence
 // NOTE: For now, angle of incidence is based on velocity, not axis
 // To base it on axis we would need all projectiles to follow some modeleing

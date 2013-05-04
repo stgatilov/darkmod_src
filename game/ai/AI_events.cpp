@@ -448,7 +448,7 @@ const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_
 
 const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
-const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount"), EV_RETURNS_VOID, "internal" ); // grayman #3356
+const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 
 /*
 * This is the AI event table class for a generic NPC actor.

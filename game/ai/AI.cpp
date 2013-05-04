@@ -9111,17 +9111,19 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 	{
 		delay = AUD_ALERT_DELAY_MIN + gameLocal.random.RandomInt(AUD_ALERT_DELAY_MAX - AUD_ALERT_DELAY_MIN);
 	}
-	PostEventMS(&AI_AlertAI,delay,type,amount);
+	PostEventMS(&AI_AlertAI,delay,type,amount,m_AlertedByActor.GetEntity()); // grayman #3258
 }
 
-void idAI::Event_AlertAI(const char *type, float amount)
+void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // grayman #3258
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::AlertAI - %s AlertAI called with type %s and amount %f\r",name.c_str(),type,amount);
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s AlertAI called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL");
 
 	if (m_bIgnoreAlerts)
 	{
 		return;
 	}
+
+	m_AlertedByActor = actor; // grayman #3258
 
 	float acuity = GetAcuity(type);
 	// Calculate the amount the current AI_AlertLevel is about to be increased
@@ -9131,7 +9133,7 @@ void idAI::Event_AlertAI(const char *type, float amount)
 	float alertInc = amount;
 
 	// Ignore actors in notarget mode
-	idActor* actor = m_AlertedByActor.GetEntity();
+//	idActor* actor = m_AlertedByActor.GetEntity();
 
 	if ( actor && actor->fl.notarget)
 	{

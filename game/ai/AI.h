@@ -2243,7 +2243,7 @@ public:
 
 	void Event_DelayedVisualStim(idEntity* stimSource); // grayman #2924
 
-	void Event_AlertAI(const char *type, float amount); // grayman #3356
+	void Event_AlertAI(const char *type, float amount, idActor* actor); // grayman #3356 & #3258
 
 #ifdef TIMING_BUILD
 private:
