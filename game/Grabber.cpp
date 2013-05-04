@@ -1615,6 +1615,7 @@ bool CGrabber::Dequip( void )
 	// test if item is successfully dequipped
 	else if ( player->DropToHands(ent) )
 	{
+		ent->m_SetInMotionByActor = (idActor *) player; // grayman #3394
 		// put in hands (should already be dragged?)
 		bDequipped = true;
 	}

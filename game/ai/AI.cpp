@@ -6476,6 +6476,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// Mark the body as last moved by the player
 	if ( bPlayerResponsible )
 	{
+		m_SetInMotionByActor = gameLocal.GetLocalPlayer(); // grayman #3394
 		m_MovedByActor = gameLocal.GetLocalPlayer();
 		m_deckedByPlayer = true; // grayman #3314
 	}
@@ -9036,7 +9037,18 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		if (propParms->maker->IsType(idActor::Type))
 		{
-			m_AlertedByActor = static_cast<idActor *>(propParms->maker);
+			// grayman #3394 - maker might have made the sound, but was
+			// he put in motion by the player?
+
+			idActor* setInMotionBy = propParms->maker->m_SetInMotionByActor.GetEntity();
+			if ( setInMotionBy != NULL )
+			{
+				m_AlertedByActor = setInMotionBy;
+			}
+			else
+			{
+				m_AlertedByActor = static_cast<idActor *>(propParms->maker);
+			}
 		}
 		else
 		{
@@ -9052,6 +9064,8 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		// angua: the actor who produced this noise is either unknown or an enemy
 		// alert now
+		// grayman #3394 - it could also have been made by a body hitting the floor,
+		// and that body might be a friend
 		// grayman #2816 - no alert if it was made by someone we killed
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
@@ -9064,7 +9078,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
 		}
-
+		
 		// Retrieve the messages from the other AI, if there are any
 		if (propParms->makerAI != NULL)
 		{
@@ -10684,7 +10698,7 @@ void idAI::Knockout( idEntity* inflictor )
 //	if( !m_bCanBeKnockedOut ) // grayman #2468 - this test has been moved up a level
 //		return;
 
-	if( AI_KNOCKEDOUT || AI_DEAD )
+	if ( AI_KNOCKEDOUT || AI_DEAD )
 	{
 		AI_PAIN = true;
 		AI_DAMAGE = true;
@@ -10739,8 +10753,9 @@ void idAI::Knockout( idEntity* inflictor )
 	gameLocal.m_MissionData->MissionEvent(COMP_KO, this, inflictor, bPlayerResponsible);
 
 	// Mark the body as last moved by the player
-	if( bPlayerResponsible )
+	if ( bPlayerResponsible )
 	{
+		m_SetInMotionByActor = gameLocal.GetLocalPlayer(); // grayman #3394
 		m_MovedByActor = gameLocal.GetLocalPlayer();
 		m_deckedByPlayer = true; // grayman #3314
 	}

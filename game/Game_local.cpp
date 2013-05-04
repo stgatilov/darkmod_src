@@ -5841,8 +5841,16 @@ void idGameLocal::BloodSplat( const idVec3 &origin, const idVec3 &dir, float siz
 	size = halfSize + random.RandomFloat() * halfSize;
 	trm.SetupPolygon( verts, 4 );
 	mdl.LoadModel( trm );
-	clip.Translation( results, origin, origin + dir * 64.0f, &mdl, mat3_identity, CONTENTS_SOLID, NULL );
-	ProjectDecal( results.endpos, dir, 2.0f * size, true, size, material );
+
+	// grayman #3394 - normalize dir so splats aren't thrown
+	// onto faraway surfaces
+	idVec3 direction = dir;
+	direction.NormalizeFast();
+
+	if ( clip.Translation( results, origin, origin + direction * 64.0f, &mdl, mat3_identity, CONTENTS_SOLID, NULL ) )
+	{
+		ProjectDecal( results.endpos, dir, 2.0f * size, true, size, material );
+	}
 }
 
 /*
