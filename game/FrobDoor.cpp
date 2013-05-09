@@ -181,7 +181,7 @@ void CFrobDoor::PostSpawn()
 	// grayman #3042 - obtain sound loss values
 	m_lossOpen = spawnArgs.GetFloat("loss_open", "1.0");
 	m_lossDoubleOpen = spawnArgs.GetFloat("loss_double_open", "1.0");
-	m_lossClosed = spawnArgs.GetFloat("loss_closed", "15.0");
+	m_lossClosed = spawnArgs.GetFloat("loss_closed", "10.0");
 
 	// grayman #3042 - does this door contain a transparent texture?
 	m_isTransparent = spawnArgs.GetBool("transparent","0");
