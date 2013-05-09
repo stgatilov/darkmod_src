@@ -1407,7 +1407,7 @@ void idMover::Event_Sway( float speed, float phase, idAngles &depth ) {
 ================
 idMover::Event_OpenPortal
 
-Sets the portal associtated with this mover to be open
+Sets the portal associated with this mover to be open
 ================
 */
 void idMover::Event_OpenPortal( void ) 
@@ -1434,7 +1434,7 @@ void idMover::Event_ClosePortal( void )
 ================
 idMover::OpenPortal
 
-Sets the portal associtated with this mover to be open
+Sets the portal associated with this mover to be open
 ================
 */
 void idMover::OpenPortal() {
@@ -1447,7 +1447,7 @@ void idMover::OpenPortal() {
 ================
 idMover::ClosePortal
 
-Sets the portal associtated with this mover to be closed
+Sets the portal associated with this mover to be closed
 ================
 */
 void idMover::ClosePortal() {
@@ -2215,7 +2215,7 @@ void idMover_Binary::Event_OpenPortal( void ) {
 ================
 idMover_Binary::Event_ClosePortal
 
-Sets the portal associtated with this mover to be closed
+Sets the portal associated with this mover to be closed
 ================
 */
 void idMover_Binary::Event_ClosePortal( void ) {

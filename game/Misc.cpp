@@ -2260,7 +2260,11 @@ void idLocationSeparatorEntity::Spawn()
 		return;
 	}
 
-	gameLocal.SetPortalState( m_Portal, PS_BLOCK_LOCATION );
+	// grayman #3399 - OR in the PS_BLOCK_LOCATION bit so other bits aren't affected
+	int blockingBits = gameRenderWorld->GetPortalState( m_Portal );
+	blockingBits |= PS_BLOCK_LOCATION;
+
+	gameLocal.SetPortalState( m_Portal, blockingBits );
 
 	// grayman #3042 - Schedule a post-spawn event to search for touching doors or brittle fractures.
 	// This event has to occur after the CFrobDoor PostSpawn() event, because
@@ -2984,8 +2988,19 @@ void idFuncPortal::Restore( idRestoreGame *savefile )
 {
 	savefile->ReadInt( (int &)portal );
 	savefile->ReadBool( state );
-//	gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
-	gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
+
+	// grayman #3399 - change only the PS_BLOCK_VIEW bit so other bits aren't affected
+	int blockingBits = gameRenderWorld->GetPortalState( portal );
+
+	if ( state )
+	{
+		blockingBits |= PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW on
+	}
+	else
+	{
+		blockingBits &= ~PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW off
+	}
+	gameLocal.SetPortalState( portal, blockingBits );
 
 	savefile->ReadBool( m_bDistDependent );
 	savefile->ReadFloat( m_Distance );
@@ -3003,12 +3018,24 @@ void idFuncPortal::Spawn( void )
 	portal = gameRenderWorld->FindPortal( GetPhysics()->GetAbsBounds().Expand( 32.0f ) );
 	if ( portal > 0 ) 
 	{
+		// grayman #3399 - change only the PS_BLOCK_VIEW bit so other bits aren't affected
+		int blockingBits = gameRenderWorld->GetPortalState( portal );
+
 		state = spawnArgs.GetBool( "start_on" );
-//		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
-		gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
+		if ( state )
+		{
+			blockingBits |= PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW on
+		}
+		else
+		{
+			blockingBits &= ~PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW off
+		}
+		gameLocal.SetPortalState( portal, blockingBits );
 	}
 	if( (m_Distance = spawnArgs.GetFloat( "portal_dist", "0.0" )) <= 0 )
-		goto Quit;
+	{
+		return;
+	}
 
 	// distance dependent portals from this point on:
 	m_bDistDependent = true;
@@ -3023,7 +3050,6 @@ void idFuncPortal::Spawn( void )
 	// only start thinking if it's distance dependent.
 	BecomeActive( TH_THINK );
 
-Quit:
 	return;
 }
 
@@ -3037,8 +3063,18 @@ void idFuncPortal::Event_Activate( idEntity *activator )
 	if ( portal > 0 ) 
 	{
 		state = !state;
-//		gameLocal.SetPortalState( portal, state ? PS_BLOCK_ALL : PS_BLOCK_NONE ); // grayman #3042 - old way
-		gameLocal.SetPortalState( portal, state ? PS_BLOCK_VIEW : PS_BLOCK_NONE ); // grayman #3042 - new way
+		// grayman #3399 - change only the PS_BLOCK_VIEW bit so other bits aren't affected
+		int blockingBits = gameRenderWorld->GetPortalState( portal );
+
+		if ( state )
+		{
+			blockingBits |= PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW on
+		}
+		else
+		{
+			blockingBits &= ~PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW off
+		}
+		gameLocal.SetPortalState( portal, blockingBits );
 	}
 
 	// activate our targets
@@ -3055,8 +3091,11 @@ void idFuncPortal::ClosePortal( void )
 	if ( portal > 0 ) 
 	{
 		state = true;
-//		gameLocal.SetPortalState( portal, PS_BLOCK_ALL ); // grayman #3042 - old way
-		gameLocal.SetPortalState( portal, PS_BLOCK_VIEW ); // grayman #3042 - new way
+		// grayman #3399 - change only the PS_BLOCK_VIEW bit so other bits aren't affected
+		int blockingBits = gameRenderWorld->GetPortalState( portal );
+
+		blockingBits |= PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW on
+		gameLocal.SetPortalState( portal, blockingBits );
 	}
 }
 
@@ -3070,7 +3109,11 @@ void idFuncPortal::OpenPortal( void )
 	if ( portal > 0 ) 
 	{
 		state = false;
-		gameLocal.SetPortalState( portal, PS_BLOCK_NONE );
+		// grayman #3399 - change only the PS_BLOCK_VIEW bit so other bits aren't affected
+		int blockingBits = gameRenderWorld->GetPortalState( portal );
+
+		blockingBits &= ~PS_BLOCK_VIEW; // turn PS_BLOCK_VIEW off
+		gameLocal.SetPortalState( portal, blockingBits );
 	}
 }
 
