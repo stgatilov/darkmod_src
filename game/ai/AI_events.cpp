@@ -450,6 +450,8 @@ const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "st
 
 const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 
+const idEventDef AI_GetSleepLocation( "getSleepLocation", EventArgs(), 'f', "0 = floor sleeper, 1 = bed sleeper"); // grayman #3396
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -643,6 +645,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
 	EVENT ( AI_DelayedVisualStim,				idAI::Event_DelayedVisualStim) // grayman #2924
 	EVENT ( AI_AlertAI,							idAI::Event_AlertAI)		// grayman #3356
+	EVENT ( AI_GetSleepLocation,				idAI::Event_GetSleepLocation) // grayman #3396
 
 END_CLASS
 

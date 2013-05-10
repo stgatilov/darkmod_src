@@ -182,6 +182,8 @@ extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
 extern const idEventDef AI_AlertAI; // grayman #3356
 
+extern const idEventDef AI_GetSleepLocation; // grayman #3396
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -2244,6 +2246,8 @@ public:
 	void Event_DelayedVisualStim(idEntity* stimSource); // grayman #2924
 
 	void Event_AlertAI(const char *type, float amount, idActor* actor); // grayman #3356 & #3258
+
+	void Event_GetSleepLocation(); // grayman #3396
 
 #ifdef TIMING_BUILD
 private:
