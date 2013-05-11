@@ -6023,7 +6023,8 @@ void idGameLocal::SpreadLocations() {
 			if ( i == areaNum ) {
 				continue;
 			}
-			if ( gameRenderWorld->AreasAreConnected( areaNum, i, PS_BLOCK_LOCATION ) ) {
+			if ( gameRenderWorld->AreasAreConnected( areaNum, i, PS_BLOCK_LOCATION ) )
+			{
 				locationEntities[i] = static_cast<idLocationEntity *>(ent);
 			}
 		}
@@ -6701,7 +6702,36 @@ bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, co
 					// punched through, but not to the room where target lives.
 
 					counter++;
-					if ( !gameLocal.clip.TracePoint(result, endPoint, target, (CONTENTS_WATER|CONTENTS_SOLID), ent) )
+					if ( gameLocal.clip.TracePoint(result, endPoint, target, (CONTENTS_WATER|CONTENTS_SOLID), ent) )
+					{
+						// We hit something. Does it belong to the same tree chain as the entity
+						// we're trying to reach? For example, the origin of a candle flame might
+						// be embedded in the top of a candle holder, in which case LOS would fail.
+
+						idEntity* entHit = gameLocal.entities[result.c.entityNum];
+						if ( entHit != NULL )
+						{
+							// Check bindmasters of our target entity. Is any of them entHit?
+
+							idEntity *bindMaster = ent->GetBindMaster();
+							bool entHitFound = false;
+							while ( bindMaster != NULL )
+							{
+								if ( bindMaster == entHit )
+								{
+									entHitFound = true;
+									break;
+								}
+								bindMaster = bindMaster->GetBindMaster();
+							}
+
+							if ( entHitFound )
+							{
+								return true; // reached the target
+							}
+						}
+					}
+					else
 					{
 						return true; // reached the target
 					}
@@ -6895,14 +6925,39 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 			{
 				// Test LOS between stim origin and entitySpot. If it exists,
 				// the gas reached the target. If it doesn't, probe the
-				// are between the stim origin and the target to see if there's
+				// area between the stim origin and the target to see if there's
 				// an opening the gas could leak through.
 				trace_t result;
 				if ( gameLocal.clip.TracePoint(result, stimOrigin, entitySpot, MASK_SOLID, ent) )
 				{
-					if (!DoesOpeningExist( stimOrigin, entitySpot, stim->GetRadius(), result.c.normal, ent ) )
+					// We hit something. Does it belong to the same tree chain as the entity
+					// we're trying to reach? For example, the origin of a candle flame might
+					// be embedded in the top of a candle holder, in which case LOS would fail.
+
+					idEntity* entHit = gameLocal.entities[result.c.entityNum];
+					if ( entHit != NULL )
 					{
-						continue; // there's no path to the other side
+						// Check bindmasters of our target entity. Is any of them entHit?
+
+						idEntity *bindMaster = ent->GetBindMaster();
+						bool entHitFound = false;
+						while ( bindMaster != NULL )
+						{
+							if ( bindMaster == entHit )
+							{
+								entHitFound = true;
+								break;
+							}
+							bindMaster = bindMaster->GetBindMaster();
+						}
+
+						if ( !entHitFound )
+						{
+							if (!DoesOpeningExist( stimOrigin, entitySpot, stim->GetRadius(), result.c.normal, ent ) )
+							{
+								continue; // there's no path to the other side
+							}
+						}
 					}
 				}
 			}
