@@ -12353,8 +12353,3 @@ bool idAI::CanGreet() // grayman #3338
 	return true;
 }
 
-void idAI::Event_GetSleepLocation() // grayman #3396
-{
-	idThread::ReturnInt(spawnArgs.GetInt("sleep_location","1"));
-}
-
