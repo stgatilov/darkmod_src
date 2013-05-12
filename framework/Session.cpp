@@ -1653,28 +1653,27 @@ Turns a bad file name into a good one or your money back
 ===============
 */
 void idSessionLocal::ScrubSaveGameFileName( idStr &saveFileName ) const {
-	int i;
-	idStr inFileName;
 
-	inFileName = saveFileName;
-	inFileName.RemoveColors();
-	inFileName.StripFileExtension();
+	saveFileName.RemoveColors();
+	// Tels: fix 02682: Just strip ".save", but keep potentially other "extensions" like
+	//	 .01 so we turn "test_1.03.save" into "test_1_03" and not "test_1".
+	saveFileName.Remove(".save");
 
-	saveFileName.Clear();
-
-	int len = inFileName.Length();
-	for ( i = 0; i < len; i++ ) {
-		if ( strchr( "',.~!@#$%^&*()[]{}<>\\|/=?+;:-\'\"", inFileName[i] ) ) {
-			// random junk
-			saveFileName += '_';
-		} else if ( (const unsigned char)inFileName[i] >= 128 ) {
-			// high ascii chars
-			saveFileName += '_';
-		} else if ( inFileName[i] == ' ' ) {
-			saveFileName += '_';
-		} else {
-			saveFileName += inFileName[i];
+	// we just modify characters, but keep the length
+	int len = saveFileName.Length();
+	for ( int i = 0; i < len; i++ ) {
+		// random junk or a high-bit character, or a control character including space
+		if ( ( (const unsigned char)saveFileName[i] >= 128 ) ||
+		     ( (const unsigned char)saveFileName[i] <= 32  ) ||
+		     ( strchr( ",.~!@#$%^&*()[]{}<>\\|/=?+;:-'\"", saveFileName[i] ) ) ) {
+			saveFileName[i] = '_';
 		}
+		// else keep character
+	}
+	if (len == 0)
+	{
+		// disallow empty file names (if the user uses ".save", or ".save.save" etc)
+		saveFileName = "default";
 	}
 }
 
