@@ -405,12 +405,12 @@ idCVar cv_ambient_method("tdm_ambient_method", "0",    CVAR_GAME | CVAR_INTEGER 
 /**
  * Volume of speakers with s_music set
  */
-idCVar cv_music_volume("tdm_music_volume",	"1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for speakers with s_music set. Goes from -40 to 0." );
+idCVar cv_music_volume("tdm_music_volume",		     "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for speakers with s_music set. Goes from -40 to 0.", -40, 0 );
 
 // Tels:
-idCVar cv_voice_player_volume("tdm_voice_player_volume",	 "1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the player voice speaker. Goes from -20 to 0." ); // grayman #3395
-idCVar cv_voice_from_off_volume("tdm_voice_from_off_volume", "1.0",	CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the voice-over speaker. Goes from -20 to 0." ); // grayman #3395
-idCVar cv_moveable_collision("tdm_show_moveable_collision",	"0",	CVAR_GAME | CVAR_BOOL, "If set to 1, shows the velocity at which the moveable collides and the volume of the resulting sound." );
+idCVar cv_voice_player_volume("tdm_voice_player_volume",     "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the player voice. Goes from -20 to 0.", -20, 0 ); // grayman #3395
+idCVar cv_voice_from_off_volume("tdm_voice_from_off_volume", "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, "Volume in dB for the narrator voice. Goes from -20 to 0.", -20, 0 ); // grayman #3395
+idCVar cv_moveable_collision("tdm_show_moveable_collision",  "0", CVAR_GAME | CVAR_BOOL, "If set to 1, shows the velocity at which the moveable collides and the volume of the resulting sound." );
 
 /**
 * DarkMod LOD system
