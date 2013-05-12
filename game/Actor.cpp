@@ -5038,6 +5038,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		const contactInfo_t &contact = physics.GetContact(i);
 		if ( contact.entityNum == ENTITYNUM_WORLD )
 		{
+			// we assume the world does not move
 			break;
 		}
 		idEntity* ent = gameLocal.entities[contact.entityNum];
@@ -5051,6 +5052,8 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		// for jumping onto moving elevators (movers), we'll ignore
 		// moveables, which tend to be smaller items that get kicked around
 
+		// Tels: That would mean you could not jump on a stack of crates traveling
+		//	 on a large elavator, though?
 		if ( ent->IsType(idMoveable::Type) )
 		{
 			continue;
