@@ -162,22 +162,10 @@ def SetupUtils( env ):
 	gamepaks = idGamePaks()
 	env.BuildGamePak = gamepaks.BuildGamePak
 	env.SharedLibrarySafe = SharedLibrarySafe
-	try:
-		import SDK
-		sdk = SDK.idSDK()
-		env.PreBuildSDK = sdk.PreBuildSDK
-		env.BuildSDK = sdk.BuildSDK
-	except:
-		print 'SDK.py hookup failed'
-		env.PreBuildSDK = NotImplementedStub
-		env.BuildSDK = NotImplementedStub
-	try:
-		import Setup
-		setup = Setup.idSetup()
-		env.BuildSetup = setup.BuildSetup
-	except:
-		print 'Setup.py hookup failed'
-		env.BuildSetup = NotImplementedStub
+	# no longer used by TDM
+	env.PreBuildSDK = NotImplementedStub
+	env.BuildSDK = NotImplementedStub
+	env.BuildSetup = NotImplementedStub
 
 def BuildList( s_prefix, s_string ):
 	s_list = string.split( s_string )
