@@ -198,7 +198,8 @@ public:
 	idStr &				StripQuotes( void );							// strip quotes around string
 	void				StripWhitespace( void );						// tels: strip leading and trailing white space characters (c <= 0x20)
 	void				Replace( const char *old, const char *nw );
-	void				Replace( const char old, const char nw );		// faster version of Repace() if you want to swap only one char
+	void				Replace( const char old, const char nw );		// Tels: faster version of Replace() if you want to swap only one char
+	void				Remove( const char *old );						// Tels: Faster than Replace("..","");
 	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
 
 	// file name methods
@@ -207,6 +208,7 @@ public:
 	idStr &				SetFileExtension( const char *extension );		// set the given file extension
 	idStr &				StripFileExtension( void );						// remove any file extension
 	idStr &				StripAbsoluteFileExtension( void );				// remove any file extension looking from front (useful if there are multiple .'s)
+																		// (removes everything after the first ".")
 	idStr &				DefaultFileExtension( const char *extension );	// if there's no file extension use the default
 	idStr &				DefaultPath( const char *basepath );			// if there's no path use the default
 	void				AppendPath( const char *text );					// append a partial path

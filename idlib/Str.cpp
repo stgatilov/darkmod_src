@@ -678,18 +678,21 @@ idStr::Replace
 ============
 */
 void idStr::Replace( const char *old, const char *nw ) {
-	int		oldLen, newLen, i, j, count;
+	int		oldLen, newLen, i, j, count, oldStrLen;
 	idStr	oldString( data );
 
 	assert(old);
-	assert(nw);
+
+	// if passed NULL, treat it as Remove()
+	if (!nw) { return Remove(old); }
 
 	oldLen = strlen( old );
 	newLen = strlen( nw );
+	oldStrLen = oldString.Length();
 
 	// Work out how big the new string will be
 	count = 0;
-	for( i = 0; i < oldString.Length(); i++ ) {
+	for( i = 0; i <= oldStrLen - oldLen; i++ ) {
 		if( !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
 			count++;
 			i += oldLen - 1;
@@ -700,8 +703,8 @@ void idStr::Replace( const char *old, const char *nw ) {
 		EnsureAlloced( len + ( ( newLen - oldLen ) * count ) + 2, false );
 
 		// Replace the old data with the new data
-		for( i = 0, j = 0; i < oldString.Length(); i++ ) {
-			if( !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
+		for( i = 0, j = 0; i < oldStrLen; i++ ) {
+			if( (i <= oldStrLen - oldLen) && !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
 				memcpy( data + j, nw, newLen );
 				i += oldLen - 1;
 				j += newLen;
@@ -710,8 +713,10 @@ void idStr::Replace( const char *old, const char *nw ) {
 				j++;
 			}
 		}
+		// zero-terminate
 		data[j] = 0;
-		len = strlen( data );
+		// set new length
+		len = j;
 	}
 }
 
@@ -729,6 +734,37 @@ void idStr::Replace( const char old, const char nw ) {
 		if (data[i] == old) { data[i] = nw; }
 	}
 }
+
+/*
+============
+idStr::Remove - works like Replace("string","");
+============
+*/
+void idStr::Remove( const char *old ) {
+	int		oldLen, i, j, oldStrLen;
+	idStr	oldString( data );
+
+	assert(old);
+
+	oldLen = strlen( old );
+	oldStrLen = oldString.Length();
+
+	// Remove the old data
+	for( i = 0, j = 0; i < oldStrLen; i++ ) {
+		if( (i <= oldStrLen - oldLen) && !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
+			// continue after the string to be removed
+			i += oldLen - 1;
+		} else {
+			data[j] = oldString[i];
+			j++;
+		}
+	}
+	// zero-terminate
+	data[j] = 0;
+	// set new length
+	len = j;
+}
+
 
 /*
 ============
@@ -942,6 +978,9 @@ idStr &idStr::StripFileExtension( void ) {
 /*
 ============
 idStr::StripAbsoluteFileExtension
+
+Strips the string of anything after the first dot, so this will
+turn "test.exe.dat.1.03" into "test".
 ============
 */
 idStr &idStr::StripAbsoluteFileExtension( void ) {
