@@ -1558,6 +1558,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_StartSound( const char *soundName, int channel, int netSync );
 	void					Event_FadeSound( int channel, float to, float over );
 	void					Event_SetSoundVolume( float to );
+	void					Event_GetSoundVolume( const char* soundName ); // grayman #3395
 	void					Event_GetWorldOrigin( void );
 	void					Event_SetWorldOrigin( idVec3 const &org );
 	void					Event_GetOrigin( void );

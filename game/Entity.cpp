@@ -165,6 +165,7 @@ const idEventDef EV_FadeSound( "fadeSound", EventArgs('d', "channel", "", 'f', "
 	"Fades the sound on this entity to a new level over a period of time.  Use SND_CHANNEL_ANY for all currently playing sounds." );
 
 const idEventDef EV_SetSoundVolume( "setSoundVolume", EventArgs('f', "newLevel", ""), EV_RETURNS_VOID, "Set the volume of the sound to play, must be issued before startSoundShader.");
+const idEventDef EV_GetSoundVolume( "getSoundVolume", EventArgs('s', "soundName", "the name of the sound"), 'f', "Get the volume of the sound to play."); // grayman #3395
 
 const idEventDef EV_GetNextKey( "getNextKey", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', 
 	"searches for the name of a spawn arg that matches the prefix.  for example,\n" \
@@ -523,6 +524,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_StopSound,			idEntity::Event_StopSound )
 	EVENT( EV_FadeSound,			idEntity::Event_FadeSound )
 	EVENT( EV_SetSoundVolume,		idEntity::Event_SetSoundVolume )
+	EVENT( EV_GetSoundVolume,		idEntity::Event_GetSoundVolume ) // grayman #3395
 	EVENT( EV_GetWorldOrigin,		idEntity::Event_GetWorldOrigin )
 	EVENT( EV_SetWorldOrigin,		idEntity::Event_SetWorldOrigin )
 	EVENT( EV_GetOrigin,			idEntity::Event_GetOrigin )
@@ -7459,6 +7461,31 @@ tels:
 */
 void idEntity::Event_SetSoundVolume( float volume ) {
 	refSound.parms.volume = volume;
+}
+
+/*
+================
+idEntity::Event_GetSoundVolume
+
+grayman #3395
+================
+*/
+void idEntity::Event_GetSoundVolume( const char* soundName )
+{
+	float volume;
+	const idSoundShader *sndShader = declManager->FindSound(soundName);
+
+	if ( sndShader->GetState() == DS_DEFAULTED )
+	{
+		gameLocal.Warning( "Sound '%s' not found", soundName );
+		volume = 0;
+	}
+	else
+	{
+		volume = sndShader->GetParms()->volume;
+	}
+
+	idThread::ReturnFloat(volume);
 }
 
 /*
