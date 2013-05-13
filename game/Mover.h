@@ -80,7 +80,7 @@ protected:
 	} moverCommand_t;
 
 	//
-	// mover directions.  make sure to change script/doom_defs.script if you add any, or change their order
+	// mover directions.  make sure to change script/tdm_defs.script if you add any, or change their order
 	//
 	typedef enum {
 		DIR_UP				= -1,
