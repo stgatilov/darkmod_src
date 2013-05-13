@@ -163,31 +163,50 @@ Get the default base path
 - binary image path
 - current directory
 - hardcoded
-Try to be intelligent: if there is no BASE_GAMEDIR, try the next path
+Try to be intelligent: if there is no BASE_TDM ("darkmod"), try the next path
 ================
 */
 const char *Sys_DefaultBasePath(void) {
 	struct stat st;
 	idStr testbase;
+
+	// first the path where the executable resides
 	basepath = Sys_EXEPath();
 	if ( basepath.Length() ) {
 		basepath.StripFilename();
-		testbase = basepath; testbase += "/"; testbase += BASE_GAMEDIR;
+		testbase = basepath + "/" + BASE_TDM;
+//		common->Printf( "testing exe '%s'\n", testbase.c_str() );
 		if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
 			return basepath.c_str();
 		} else {
-			common->Printf( "no '%s' directory in exe path %s, skipping\n", BASE_GAMEDIR, basepath.c_str() );
+			common->Printf( "no '%s' directory in exe path %s, skipping\n", BASE_TDM, basepath.c_str() );
+		}
+		// next try "path_to_executable/.." (one up), maybe the executable is in the same dir as the "darkmod" directory
+		// strip the last part of basepath
+		// "/home/user/games/tdm/darkmod/" => "/home/user/games/tdm/"
+		if (basepath.StripTrailingOnce("/darkmod"))
+		{
+			testbase = basepath + "/" + BASE_TDM;
+//			common->Printf( "testing .. '%s'\n", testbase.c_str() );
+			if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
+				return basepath.c_str();
+			} else {
+				common->Printf( "exe inside 'darkmod/' path, but could not traverse up, skipping\n" );
+			}
 		}
 	}
+	// next try the current path
 	if ( basepath != Posix_Cwd() ) {
 		basepath = Posix_Cwd();
-		testbase = basepath; testbase += "/"; testbase += BASE_GAMEDIR;
+		testbase = basepath; testbase += "/"; testbase += BASE_TDM;
+//		common->Printf( "testing posix '%s'\n", testbase.c_str() );
 		if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
 			return basepath.c_str();
 		} else {
-			common->Printf("no '%s' directory in cwd path %s, skipping\n", BASE_GAMEDIR, basepath.c_str());
+			common->Printf("no '%s' directory in cwd path %s, skipping\n", BASE_TDM, basepath.c_str());
 		}
 	}
+	// which is again the current dir
 	common->Printf( "WARNING: using hardcoded default base path\n" );
 	return LINUX_DEFAULT_PATH;
 }
