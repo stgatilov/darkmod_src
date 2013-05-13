@@ -1093,7 +1093,6 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 
 			int stageAge = g.renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
 			int	stageCycle = stageAge / stage->cycleMsec;
-			int	inCycleTime = stageAge - stageCycle * stage->cycleMsec;
 
 			// some particles will be in this cycle, some will be in the previous cycle
 			steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );
