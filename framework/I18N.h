@@ -18,7 +18,7 @@
  
 ******************************************************************************/
 
-// Copyright (C) 2011 Tels (Donated to The Dark Mod)
+// Copyright (C) 2011-2013 Tels (Donated to The Dark Mod)
 
 #ifndef __DARKMOD_I18N_H__
 #define __DARKMOD_I18N_H__
@@ -91,6 +91,7 @@ public:
 	* make translation work even for hard-coded English strings.
 	*/
 	virtual const char*			TemplateFromEnglish( const char* in) = 0;
+	virtual const char*			TemplateFromEnglish( const idStr &in) = 0;
 
 	/**
 	* Changes the given string from "A Little House" to "Little House, A",

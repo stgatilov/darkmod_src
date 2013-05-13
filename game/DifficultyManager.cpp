@@ -229,7 +229,7 @@ void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
 
 	// greebo: Find out the names of the difficulty settings
 	idMapEntity* worldSpawn = mapFile->GetEntity(0);
-	idDict mapDict = worldSpawn->epairs;
+	const idDict& mapDict = worldSpawn->epairs;
 
 	// Determine the difficulty level string. The defaults are the "difficultyMenu" entityDef.
 	// Maps can override these values by use of the difficulty#Name value on the spawnargs of 
@@ -238,9 +238,12 @@ void DifficultyManager::LoadMapDifficultySettings(idMapFile* mapFile)
 	const idDeclEntityDef* diffDef = static_cast<const idDeclEntityDef*>(diffDecl);
 	for (int diffLevel = 0; diffLevel < DIFFICULTY_COUNT; diffLevel++)
 	{
-		_difficultyNames[diffLevel] = mapDict.GetString(
-			va("difficulty%dName",diffLevel),
-			diffDef->dict.GetString(va("diff%ddefault",diffLevel), "")
+		// Tels: #3411 if the name is a hard-coded english name, turn it into a #str_12345 template if possible
+		_difficultyNames[diffLevel] = common->GetI18N()->TemplateFromEnglish(
+			mapDict.GetString(
+				va("difficulty%dName",diffLevel),
+				diffDef->dict.GetString(va("diff%ddefault",diffLevel), "")
+			)
 		);
 	}
 	gameLocal.m_MissionData->SetDifficultyNames(_difficultyNames); // grayman #3292

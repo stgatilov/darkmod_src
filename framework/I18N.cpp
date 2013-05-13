@@ -89,6 +89,7 @@ public:
 	* make translation work even for hard-coded English strings.
 	*/
 	const char*			TemplateFromEnglish( const char* in);
+	const char*			TemplateFromEnglish( const idStr &in);
 
 	/**
 	* Changes the given string from "A Little House" to "Little House, A",
@@ -173,6 +174,39 @@ void I18NLocal::Init()
 	m_ReverseDict.Set( "Flashmine",		"#str_02439" );
 	m_ReverseDict.Set( "Explosive Mine","#str_02440" );
 	
+	// difficulty names
+	m_ReverseDict.Set( "Easy",				"#str_03000" );
+	m_ReverseDict.Set( "Casual",			"#str_03001" );
+	m_ReverseDict.Set( "Novice",			"#str_03002" );
+	m_ReverseDict.Set( "Beginner",			"#str_03003" );
+	m_ReverseDict.Set( "Medium",			"#str_03004" );
+	m_ReverseDict.Set( "Normal",			"#str_03005" );
+	m_ReverseDict.Set( "Challenging",		"#str_03006" );
+	m_ReverseDict.Set( "Expert",			"#str_03007" );
+	m_ReverseDict.Set( "Master",			"#str_03008" );
+	m_ReverseDict.Set( "Veteran",			"#str_03009" );
+	m_ReverseDict.Set( "Hardcore",			"#str_03010" );
+	m_ReverseDict.Set( "Difficult",			"#str_03011" );
+	m_ReverseDict.Set( "Hard",				"#str_03012" );
+	m_ReverseDict.Set( "Apprentice",		"#str_03013" );
+	m_ReverseDict.Set( "Professional",		"#str_03014" );
+	m_ReverseDict.Set( "Braggard",			"#str_03015" );
+    // Monster names (also used as difficulty names)
+	m_ReverseDict.Set( "Ghost",				"#str_08003" );
+	m_ReverseDict.Set( "Spirit",			"#str_08009" );
+	m_ReverseDict.Set( "Zombie",			"#str_08015" );
+	m_ReverseDict.Set( "Ghoul",				"#str_08016" );
+	m_ReverseDict.Set( "Wraith",			"#str_08017" );
+	m_ReverseDict.Set( "Werebeast",			"#str_08018" );
+    // Other names (also used as difficulty names)
+	m_ReverseDict.Set( "Rogue",				"#str_08336" );
+	m_ReverseDict.Set( "Thief",				"#str_08340" );
+	m_ReverseDict.Set( "Thug",				"#str_08341" );
+	m_ReverseDict.Set( "Smuggler",			"#str_08352" );
+	m_ReverseDict.Set( "Shadow",			"#str_08353" );
+	m_ReverseDict.Set( "Swindler",			"#str_08354" );
+	m_ReverseDict.Set( "Taffer",			"#str_08355" );
+
 	// The article prefixes, with the suffix to use instead
 	m_ArticlesDict.Set( "A ",	", A" );	// English, Portuguese
 	m_ArticlesDict.Set( "An ",	", An" );	// English
@@ -263,14 +297,16 @@ I18NLocal::TemplateFromEnglish
 If the string is not a template, but an English string, returns a template
 like "#str_01234" from the input. Works only for a limited number of strings
 that appear in the reverse dict and is used mainly to make inventory categories
-for entities with hard-coded category names work.
+for entities with hard-coded category names work. Returns the original string
+if it cannot be found in the reverse dict.
 ===============
 */
 const char* I18NLocal::TemplateFromEnglish( const char* in ) {
-#ifdef M_DEBUG
-//	common->Printf( "I18NLocal::TemplateFromEnglish(%s)", in );
-#endif
 	return m_ReverseDict.GetString( in, in );
+}
+
+const char* I18NLocal::TemplateFromEnglish( const idStr &in ) {
+	return m_ReverseDict.GetString( in.c_str(), in.c_str() );
 }
 
 /*
