@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p ~/.doom3/darkmod
+mkdir -p ~/games/tdm/darkmod
 
 # make sure this file exists
 touch scons.signatures.dblite
@@ -14,15 +14,11 @@ mv gamex86-base.so gamex86.so
 #strip gamex86.so
 #strip thedarkmod.x86
 
-cp thedarkmod.x86 ~/.doom3/darkmod/
+cp thedarkmod.x86 ~/games/tdm/darkmod/
+cp thedarkmod.x86 ~/games/tdm/
 
-# Only if this directory exists
-if [ -d ~/games/doom3/ ]; then
-  cp thedarkmod.x86 ~/games/doom3/thedarkmod.x86
-fi
-
-cp tdm_game02.pk4 ~/.doom3/darkmod/tdm_game02.pk4
-if [ -f ~/.doom3/darkmod/gamex86.so ]; then
-  rm ~/.doom3/darkmod/gamex86.so
+cp tdm_game02.pk4 ~/games/tdm/darkmod/tdm_game02.pk4
+if [ -f ~/games/tdm/darkmod/gamex86.so ]; then
+  rm ~/games/tdm/darkmod/gamex86.so
 fi
 
