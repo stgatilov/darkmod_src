@@ -1030,13 +1030,13 @@ void Sys_StartAsyncThread( void ) {
 ================
 Sys_AlreadyRunning
 
-returns true if there is a copy of D3 running already
+returns true if there is a copy of TDM running already
 ================
 */
 bool Sys_AlreadyRunning( void ) {
 #ifndef DEBUG
 	if ( !win32.win_allowMultipleInstances.GetBool() ) {
-		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "DOOM3" );
+		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "TDM" );
 		if ( ::GetLastError() == ERROR_ALREADY_EXISTS || ::GetLastError() == ERROR_ACCESS_DENIED ) {
 			return true;
 		}
@@ -1320,58 +1320,6 @@ const char *GetExceptionCodeInfo( UINT code ) {
 	}
 }
 
-/*
-====================
-EmailCrashReport
-
-  emailer originally from Raven/Quake 4
-====================
-*/
-/*
-void EmailCrashReport( LPSTR messageText ) {
-	LPMAPISENDMAIL	MAPISendMail;
-	MapiMessage		message;
-	static int lastEmailTime = 0;
-
-	if ( Sys_Milliseconds() < lastEmailTime + 10000 ) {
-		return;
-	}
-
-	lastEmailTime = Sys_Milliseconds();
-
-	HINSTANCE mapi = LoadLibrary( "MAPI32.DLL" ); 
-	if( mapi ) {
-		MAPISendMail = ( LPMAPISENDMAIL )GetProcAddress( mapi, "MAPISendMail" );
-		if( MAPISendMail ) {
-			MapiRecipDesc toProgrammers =
-			{
-				0,										// ulReserved
-					MAPI_TO,							// ulRecipClass
-					"DOOM 3 Crash",						// lpszName
-					"SMTP:programmers@idsoftware.com",	// lpszAddress
-					0,									// ulEIDSize
-					0									// lpEntry
-			};
-
-			memset( &message, 0, sizeof( message ) );
-			message.lpszSubject = "DOOM 3 Fatal Error";
-			message.lpszNoteText = messageText;
-			message.nRecipCount = 1;
-			message.lpRecips = &toProgrammers;
-
-			MAPISendMail(
-				0,									// LHANDLE lhSession
-				0,									// ULONG ulUIParam
-				&message,							// lpMapiMessage lpMessage
-				MAPI_DIALOG,						// FLAGS flFlags
-				0									// ULONG ulReserved
-				);
-		}
-		FreeLibrary( mapi );
-	}
-}
-*/
-
 int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse );
 
 /*
@@ -1395,7 +1343,7 @@ EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *Excepti
 
 
 	sprintf( msg, 
-		"Please describe what you were doing when DOOM 3 crashed!\n"
+		"Please describe what you were doing when TDM crashed!\n"
 			"\n"
 			"-= FATAL EXCEPTION =-\n"
 			"\n"
