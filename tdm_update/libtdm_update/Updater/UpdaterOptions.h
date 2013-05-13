@@ -117,7 +117,7 @@ private:
 		// Get options from command line
 		_desc.add_options()
 			("proxy", bpo::value<std::string>(), "Use a proxy to connect to the internet, example \n--proxy=http://user:pass@proxy:port\n")
-			("targetdir", bpo::value<std::string>(), "The folder which should be updated.\n--targetdir=c:\\games\\doom3\\darkmod\n")
+			("targetdir", bpo::value<std::string>(), "The folder which should be updated.\n--targetdir=c:\\games\\tdm\\darkmod\n")
 			("help", "Display this help page")
 			("keep-mirrors", "Don't download updated mirrors list from the server, use local one.")
 			("keep-update-packages", "Don't delete downloaded update packages after applying them.")
