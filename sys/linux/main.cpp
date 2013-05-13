@@ -34,7 +34,6 @@
 
 static idStr	basepath;
 static idStr	savepath;
-static idStr	homepath;
 static idStr	modSavepath; // greebo: Added for TDM mission handling
 
 /*
@@ -110,9 +109,7 @@ void Sys_AsyncThread( void ) {
  ==============
  */
 const char *Sys_HomeSavePath(void) {
-	sprintf( homepath, "%s/.doom3", getenv( "HOME" ) );
-	
-    return homepath.c_str();
+	return ".";					// tels #2966
 }
 
 /*
@@ -122,7 +119,7 @@ const char *Sys_HomeSavePath(void) {
  */
 const char *Sys_DefaultSavePath(void) {
 	idStr fsMod = cvarSystem->GetCVarString("fs_mod");
-	sprintf( savepath, "%s/.doom3/%s", getenv( "HOME" ), fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );
+	sprintf( savepath, "./%s", fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );	// tels #2966
 
 	return savepath.c_str();
 }
@@ -144,7 +141,7 @@ Sys_EXEPath
 ==============
 */
 const char *Sys_EXEPath( void ) {
-	static char	buf[ 1024 ];
+	static char	buf[ 2048 ];
 	idStr		linkpath;
 	int			len;
 
@@ -152,7 +149,7 @@ const char *Sys_EXEPath( void ) {
 	sprintf( linkpath, "/proc/%d/exe", getpid() );
 	len = readlink( linkpath.c_str(), buf, sizeof( buf ) );
 	if ( len == -1 ) {
-		Sys_Printf("couldn't stat exe path link %s\n", linkpath.c_str());
+		Sys_Printf("Couldn't stat exe path link %s\n", linkpath.c_str());
 		buf[ 0 ] = '\0';
 	}
 	return buf;
