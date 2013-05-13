@@ -6545,7 +6545,7 @@ void idAI::DropBlood(idEntity *inflictor)
 void idAI::SpawnBloodMarker(const idStr& splat, const idStr& splatFading, float size)
 {
 	trace_t result;
-	gameLocal.clip.TracePoint(result, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 60 * idVec3(0, 0, -1), MASK_OPAQUE, this);
+	gameLocal.clip.TracePoint(result, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 100 * idVec3(0, 0, -1), MASK_OPAQUE, this); // grayman #3386 - was looking down 60
 
 	idVec3 markerOrigin = result.endpos + idVec3(0, 0, 2);
 
