@@ -380,7 +380,13 @@ void idPathCorner::DrawDebugInfo( void ) {
 idPathCorner::RandomPath
 ============
 */
-idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *ignore, idAI* owner ) {
+idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *ignore, idAI* owner )
+{
+	if ( source == NULL ) // grayman #3405
+	{
+		return NULL;
+	}
+
 	idPathCorner *path[ MAX_GENTITIES ];
 
 	int num(0);
@@ -390,18 +396,19 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 
 	idEntity* candidate(NULL);
 
-	for (int i = 0; i < source->targets.Num(); i++ ) {
+	for ( int i = 0 ; i < source->targets.Num() ; i++ )
+	{
 		idEntity* ent = source->targets[ i ].GetEntity();
 		if ( ent && ( ent != ignore ) && ent->IsType( idPathCorner::Type ) ) 
 		{
-
 			if (owner)
 			{
 				if (owner->HasSeenEvidence() && ent->spawnArgs.GetBool("idle_only", "0"))
 				{
 					continue;
 				}
-				else if (!owner->HasSeenEvidence() && ent->spawnArgs.GetBool("alert_idle_only", "0"))
+				
+				if (!owner->HasSeenEvidence() && ent->spawnArgs.GetBool("alert_idle_only", "0"))
 				{
 					continue;
 				}
@@ -442,7 +449,8 @@ idPathCorner *idPathCorner::RandomPath( const idEntity *source, const idEntity *
 	// probability comparison didn't return a path
 
 	// no path without chance spawn arg (chance sum is < 1)
-	if ( !num ) {
+	if ( !num )
+	{
 		if (candidate)
 		{
 			// return the path with the highest chance

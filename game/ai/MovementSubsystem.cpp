@@ -179,7 +179,10 @@ void MovementSubsystem::StartPatrol()
 
 idPathCorner* MovementSubsystem::GetNextPathCorner(idPathCorner* curPath, idAI* owner)
 {
-	if (curPath == NULL) return NULL; // safety check
+	if (curPath == NULL)
+	{
+		return NULL; // safety check
+	}
 
 	idPathCorner* currentTestPath = curPath;
 	
@@ -215,6 +218,13 @@ void MovementSubsystem::RestartPatrol()
 	Memory& memory = owner->GetMemory();
 
 	idPathCorner* newPath = idPathCorner::RandomPath(owner, NULL, owner);
+
+	// grayman #3405 - handle case where newPath == NULL
+	if ( newPath == NULL )
+	{
+		return; // nowhere to go, so stay where you are
+	}
+
 	memory.currentPath = newPath;
 	memory.nextPath = idPathCorner::RandomPath(newPath, NULL, owner);
 
