@@ -49,7 +49,7 @@ public:
 
 		// Add some custom examples
 		TraceLog::WriteLine(LOG_STANDARD, "");
-		TraceLog::WriteLine(LOG_STANDARD, "Command: --create-manifest --darkmoddir=c:/games/doom3/darkmod [--release-name=darkmod]");
+		TraceLog::WriteLine(LOG_STANDARD, "Command: --create-manifest --darkmoddir=c:/games/tdm/darkmod [--release-name=darkmod]");
 		TraceLog::WriteLine(LOG_STANDARD, " The parameter 'darkmoddir' is mandatory, the optional --release-name parameter specifies the name of the package (defaults to 'darkmod').");
 		TraceLog::WriteLine(LOG_STANDARD, "");
 		TraceLog::WriteLine(LOG_STANDARD, "Command: --create-update-package");
@@ -60,7 +60,7 @@ public:
 		TraceLog::WriteLine(LOG_STANDARD, "");
 		TraceLog::WriteLine(LOG_STANDARD, "Examples:");
 		TraceLog::WriteLine(LOG_STANDARD, "-------------------------------------------------------------------------------------");
-		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-package [--name=darkmod] --darkmoddir=c:/games/doom3/darkmod --outputdir=d:/temp/package");
+		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-package [--name=darkmod] --darkmoddir=c:/games/tdm/darkmod --outputdir=d:/temp/package");
 		TraceLog::WriteLine(LOG_STANDARD, " This will create a full release PK4 set in the specified output directory. The name argument is optional and will default to 'darkmod'. The darkmoddir parameter specifies the darkmod SVN repository. The manifest will be taken from <darkmoddir>/devel/manifests/<releasename>.txt");
 		TraceLog::WriteLine(LOG_STANDARD, "");
 		TraceLog::WriteLine(LOG_STANDARD, "-------------------------------------------------------------------------------------");
@@ -79,7 +79,7 @@ public:
 		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --create-crc-info --basedir=d:/temp/darkmod1.02");
 		TraceLog::WriteLine(LOG_STANDARD, " This will calculate the CRCs for the release set in the given base dir and write/overwrite the crc_info.txt into the same folder.");
 		TraceLog::WriteLine(LOG_STANDARD, "");
-		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --check-repository --darkmoddir=c:/games/doom3/darkmod");
+		TraceLog::WriteLine(LOG_STANDARD, " tdm_package --check-repository --darkmoddir=c:/games/tdm/darkmod");
 		TraceLog::WriteLine(LOG_STANDARD, " This will check your repository for completeness.");
 		TraceLog::WriteLine(LOG_STANDARD, "");
 	}
