@@ -441,7 +441,7 @@ void idConsoleLocal::Dump( const char *fileName ) {
 
 	f = fileSystem->OpenFileWrite( fileName, "fs_devpath", "" );
 	if ( !f ) {
-		common->Warning( "couldn't open %s", fileName );
+		common->Warning( "Couldn't open %s", fileName );
 		return;
 	}
 

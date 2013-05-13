@@ -806,7 +806,7 @@ void idSessionLocal::StartPlayingRenderDemo( idStr demoName ) {
 	readDemo = new idDemoFile;
 	demoName.DefaultFileExtension( ".demo" );
 	if ( !readDemo->OpenForReading( demoName ) ) {
-		common->Printf( "couldn't open %s\n", demoName.c_str() );
+		common->Printf( "Couldn't open %s\n", demoName.c_str() );
 		delete readDemo;
 		readDemo = NULL;
 		Stop();
@@ -1473,7 +1473,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 
 	// let the renderSystem load all the geometry
 	if ( !rw->InitFromMap( fullMapName ) ) {
-		common->Error( "couldn't load %s", fullMapName.c_str() );
+		common->Error( "Couldn't load %s", fullMapName.c_str() );
 	}
 
 	// for the synchronous networking we needed to roll the angles over from

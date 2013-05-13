@@ -228,7 +228,7 @@ void idCmdSystemLocal::Exec_f( const idCmdArgs &args ) {
 	filename.DefaultFileExtension( ".cfg" );
 	len = fileSystem->ReadFile( filename, reinterpret_cast<void **>(&f), NULL );
 	if ( !f ) {
-		common->Printf( "couldn't exec %s\n", args.Argv(1) );
+		common->Printf( "Couldn't exec %s - file does not exist.\n", args.Argv(1) );
 		return;
 	}
 	common->Printf( "execing %s\n", args.Argv(1) );
