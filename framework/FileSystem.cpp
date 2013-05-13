@@ -309,7 +309,7 @@ private:
 
 	// greebo: For regular TDM missions, all savegames/demos/etc. should be written to darkmod/fms/<fs_currentfm>/... 
 	// instead of creating a folder in fs_basePath. So, use "fs_modSavePath" as argument to filesystem->OpenFileWrite()
-	// The value of modSavePath is something like C:\Games\Doom3\darkmod\fms\ in Win32, or ~/.doom3/darkmod/fms/ in Linux.
+	// The value of modSavePath is something like C:\Games\TDM\darkmod\fms\ in Win32, or /home/user/games/tdm/darkmod/fms/ in Linux.
 	static idCVar			fs_modSavePath;
 
 	backgroundDownload_t *	backgroundDownloads;
@@ -3597,7 +3597,7 @@ void idFileSystemLocal::FindMapScreenshot( const char *path, char *buf, int len 
 }
 
 const char* idFileSystemLocal::ModPath() const {
-    // basepath = something like c:\games\doom3, modBaseName is usually darkmod
+    // basepath = something like c:\games\tdm, modBaseName is usually darkmod
 	static char path[MAX_STRING_CHARS];
 	path[0] = '\0';
 
