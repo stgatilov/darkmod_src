@@ -39,20 +39,19 @@
 #define ENGINE_VERSION		"TDM 2.00"	// printed in console
 
 // paths
-#define	CD_BASEDIR		"Doom"
-#define	BASE_GAMEDIR		"base"
-#define BASE_TDM		"darkmod"
+#define	BASE_GAMEDIR					"base"
+#define BASE_TDM					"darkmod"
 
 // filenames
-#define CONFIG_FILE						"Darkmod.cfg"
+#define CONFIG_FILE					"Darkmod.cfg"
 
 // base folder where the source code lives
-#define SOURCE_CODE_BASE_FOLDER			"neo"
+#define SOURCE_CODE_BASE_FOLDER				"tdm"
 
 
 // default idnet host address
 #ifndef IDNET_HOST
-	#define IDNET_HOST					"idnet.ua-corp.com"
+	#define IDNET_HOST				"tdmnet.thedarkmod.com"
 #endif
 
 // default idnet master port
@@ -62,7 +61,7 @@
 
 // default network server port
 #ifndef PORT_SERVER
-	#define	PORT_SERVER					27666
+	#define	PORT_SERVER				27666
 #endif
 
 // broadcast scan this many ports after PORT_SERVER so a single machine can run multiple servers
@@ -70,7 +69,7 @@
 
 // see ASYNC_PROTOCOL_VERSION
 // use a different major for each game
-#define ASYNC_PROTOCOL_MAJOR			1
+#define ASYNC_PROTOCOL_MAJOR				1
 
 // Savegame Version
 // Update when you can no longer maintain compatibility with previous savegames
@@ -84,16 +83,16 @@
 #define RENDERDEMO_VERSION				2
 
 // editor info
-#define EDITOR_DEFAULT_PROJECT			"doom.qe4"
-#define EDITOR_REGISTRY_KEY				"DOOMRadiant"
-#define EDITOR_WINDOWTEXT				"DOOMEdit"
+#define EDITOR_DEFAULT_PROJECT				"tdm.qe4"
+#define EDITOR_REGISTRY_KEY				"DarkRadiant"
+#define EDITOR_WINDOWTEXT				"DarkEdit"
 
 // win32 info
-#define WIN32_CONSOLE_CLASS				"DOOM 3 WinConsole"
-#define	WIN32_WINDOW_CLASS_NAME			"DOOM3"
-#define	WIN32_FAKE_WINDOW_CLASS_NAME	"DOOM3_WGL_FAKE"
+#define WIN32_CONSOLE_CLASS				"TDM WinConsole"
+#define	WIN32_WINDOW_CLASS_NAME				"TDM"
+#define	WIN32_FAKE_WINDOW_CLASS_NAME			"TDM_WGL_FAKE"
 
 // Linux info
-#define LINUX_DEFAULT_PATH			"/usr/local/games/doom3"
+#define LINUX_DEFAULT_PATH				"."	
 
-#define CONFIG_SPEC						"config.spec"
+#define CONFIG_SPEC					"config.spec"

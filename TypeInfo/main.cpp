@@ -105,15 +105,10 @@ ID_TIME_T       Sys_DosToUnixTime( unsigned long dostime ) { return 0; }
 #include <direct.h>
 
 const char *Sys_Cwd( void ) {
-	static char cwd[1024];
+	static char cwd[2048];
 
 	_getcwd( cwd, sizeof( cwd ) - 1 );
 	cwd[sizeof( cwd ) - 1] = 0;
-
-	int i = idStr::FindText( cwd, CD_BASEDIR, false );
-	if ( i >= 0 ) {
-		cwd[i + strlen( CD_BASEDIR )] = '\0';
-	}
 
 	return cwd;
 }
