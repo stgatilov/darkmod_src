@@ -1701,13 +1701,15 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	}
 
 	if ( game->GetPersistentPlayerInfo( 0 ).GetInt( "health" ) <= 0 ) {
-		MessageBox( MSG_OK, common->Translate ( "#str_04311" ), common->Translate ( "#str_04312" ), true );
+		// "Must be alive" and "Unable to save"
+		MessageBox( MSG_OK, common->Translate ( "#str_02012" ), common->Translate ( "#str_02013" ), true );
 		common->Printf( "You must be alive to save the game\n" );
 		return false;
 	}
 
 	if ( Sys_GetDriveFreeSpace( cvarSystem->GetCVarString( "fs_savepath" ) ) < 25 ) {
-		MessageBox( MSG_OK, common->Translate ( "#str_04313" ), common->Translate ( "#str_04314" ), true );
+		// "Not eough space" and "Unable to save"
+		MessageBox( MSG_OK, common->Translate ( "#str_02014" ), common->Translate ( "#str_02013" ), true );
 		common->Printf( "Not enough drive space to save the game\n" );
 		return false;
 	}
