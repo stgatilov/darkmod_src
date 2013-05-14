@@ -1574,8 +1574,6 @@ idModList *idFileSystemLocal::ListMods( void ) {
 		dirs.Remove( "." );
 		dirs.Remove( ".." );
 		dirs.Remove( "base" );
-		dirs.Remove( "pb" ); // Not needed in TDM - punkbuster - remove when standalone
-	        /*dirs.Remove( "darkmod" ); // taaaki - not sure if this is needed, but darkmod isn't a mod*/
 
 		// see if there are any pk4 files in each directory
 		for( int i = 0; i < dirs.Num(); i++ ) {
