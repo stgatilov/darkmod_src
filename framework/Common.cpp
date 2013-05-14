@@ -821,9 +821,9 @@ command lines.
 
 All of these are valid:
 
-doom +set test blah +map test
-doom set test blah+map test
-doom set test blah + map test
+thedarkmod +set test blah +map test
+thedarkmod set test blah+map test
+thedarkmod set test blah + map test
 
 ============================================================================
 */
@@ -2388,7 +2388,7 @@ idCommonLocal::InitSIMD
 =================
 */
 void idCommonLocal::InitSIMD( void ) {
-	idSIMD::InitProcessor( "doom", com_forceGenericSIMD.GetBool() );
+	idSIMD::InitProcessor( "tdm", com_forceGenericSIMD.GetBool() );
 	com_forceGenericSIMD.ClearModified();
 }
 
@@ -2874,7 +2874,7 @@ void idCommonLocal::Shutdown( void ) {
 	errorList.Clear();
 
 	// enable leak test
-	Mem_EnableLeakTest( "doom" );
+	Mem_EnableLeakTest( "tdm_main" );
 
 	// shutdown idLib
 	idLib::ShutDown();
