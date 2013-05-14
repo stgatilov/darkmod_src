@@ -2311,8 +2311,11 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 
 				for (int diffLevel = 0; diffLevel < DIFFICULTY_COUNT; diffLevel++)
 				{
-					const char* diffName = worldspawnDict.GetString(va("difficulty%dName",diffLevel),
-						diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""));
+					// Tels: #3411 - translate common names like "Easy" back to "#str_12345":
+					const char* diffName = common->GetI18N()->TemplateFromEnglish(
+						worldspawnDict.GetString(va("difficulty%dName",diffLevel),
+						diffDef->dict.GetString(va("diff%ddefault",diffLevel), ""))
+					);
 					// Tels: Make sure we translate the name for the GUI
 					gui->SetStateString(va("diff%dName",diffLevel), common->Translate( diffName) );
 				}
