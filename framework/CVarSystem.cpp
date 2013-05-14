@@ -1124,7 +1124,7 @@ void idCVarSystemLocal::ListByFlags( const idCmdArgs &args, cvarFlags_t flags ) 
 
 	if ( args.Argc() > argNum ) {
 		match = args.Args( argNum, -1 );
-		match.Replace( " ", "" );
+		match.Remove( ' ' );
 	} else {
 		match = "";
 	}

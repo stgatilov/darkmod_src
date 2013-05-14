@@ -1385,7 +1385,7 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void (*generatorF
 
 	// strip any .tga file extensions from anywhere in the _name
 	idStr name = _name;
-	name.Replace( ".tga", "" );
+	name.Remove( ".tga" );
 	name.BackSlashesToSlashes();
 
 	// see if the image already exists
@@ -1433,7 +1433,7 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	idStr name = _name;
-	name.Replace( ".tga", "" );
+	name.Remove( ".tga" );
 	name.BackSlashesToSlashes();
 
 	// see if the image is already loaded, unless we are in a reloadImages call
@@ -1575,7 +1575,7 @@ idImage *idImageManager::GetImage( const char *_name ) const {
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	idStr name = _name;
-	name.Replace( ".tga", "" );
+	name.Remove( ".tga" );
 	name.BackSlashesToSlashes();
 
 	// look in loaded images

@@ -4212,7 +4212,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 		cpuid_t cpuid = idLib::sys->GetProcessorId();
 		idStr argString = args.Args();
 
-		argString.Replace( " ", "" );
+		argString.Remove( ' ' );
 
 		if ( idStr::Icmp( argString, "MMX" ) == 0 ) {
 			if ( !( cpuid & CPUID_MMX ) ) {

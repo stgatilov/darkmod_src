@@ -204,7 +204,7 @@ void DialogDeclEditor::LoadDecl( idDecl *decl ) {
 	declText = localDeclText;
 
 	// clean up new-line crapola
-	declText.Replace( "\r", "" );
+	declText.Remove( '\r' );
 	declText.Replace( "\n", "\r" );
 	declText.Replace( "\v", "\r" );
 	declText.StripLeading( '\r' );
@@ -624,7 +624,7 @@ void DialogDeclEditor::OnBnClickedTest() {
 		declEdit.GetText( declText );
 
 		// clean up new-line crapola
-		declText.Replace( "\n", "" );
+		declText.Remove( '\n' );
 		declText.Replace( "\r", "\r\n" );
 		declText.Replace( "\v", "\r\n" );
 		declText.StripLeading( "\r\n" );
@@ -661,7 +661,7 @@ void DialogDeclEditor::OnBnClickedOk() {
 		declEdit.GetText( declText );
 
 		// clean up new-line crapola
-		declText.Replace( "\n", "" );
+		declText.Remove( '\n' );
 		declText.Replace( "\r", "\r\n" );
 		declText.Replace( "\v", "\r\n" );
 		declText.StripLeading( "\r\n" );

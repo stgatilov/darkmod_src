@@ -200,6 +200,7 @@ public:
 	void				Replace( const char *old, const char *nw );
 	void				Replace( const char old, const char nw );		// Tels: faster version of Replace() if you want to swap only one char
 	void				Remove( const char *old );						// Tels: Faster than Replace("..","");
+	void				Remove( const char rem );						// Tels: Faster version of Remove(" ");
 	void				Remap( const unsigned int tablesize, const char *table );	// Table-driven remap (replace A w/ B, and B w/ C etc.) many chars simultanously
 
 	// file name methods

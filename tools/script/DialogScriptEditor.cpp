@@ -145,7 +145,7 @@ void DialogScriptEditor::InitScriptEvents( void ) {
 			index = whiteSpace.Find( "//" );
 			if ( index != -1 ) {
 				info.help = whiteSpace.Right( whiteSpace.Length() - index );
-				info.help.Replace( "\r", "" );
+				info.help.Remove( '\r' );
 				info.help.Replace( "\n", "\r\n" );
 			} else {
 				info.help = "";
@@ -252,7 +252,7 @@ void DialogScriptEditor::OpenFile( const char *fileName ) {
 	this->fileName = fileName;
 
 	// clean up new-line crapola
-	scriptText.Replace( "\r", "" );
+	scriptText.Remove( '\r' );
 	scriptText.Replace( "\n", "\r" );
 	scriptText.Replace( "\v", "\r" );
 
@@ -722,7 +722,7 @@ void DialogScriptEditor::OnBnClickedOk() {
 	scriptEdit.GetText( scriptText );
 
 	// clean up new-line crapola
-	scriptText.Replace( "\n", "" );
+	scriptText.Remove( '\n' );
 	scriptText.Replace( "\r", "\r\n" );
 	scriptText.Replace( "\v", "\r\n" );
 

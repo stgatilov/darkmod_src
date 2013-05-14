@@ -487,7 +487,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 
 	if ( args.Argc() > 1 ) {
 		match = args.Args();
-		match.Replace( " ", "" );
+		match.Remove( ' ' );
 	} else {
 		match = "";
 	}

@@ -737,21 +737,20 @@ void idStr::Replace( const char old, const char nw ) {
 
 /*
 ============
-idStr::Remove - works like Replace("string","");
+idStr::Remove - Tels: works like Replace("string","");
 ============
 */
 void idStr::Remove( const char *old ) {
-	int		oldLen, i, j, oldStrLen;
+	int		oldLen, i, j;
 	idStr	oldString( data );
 
 	assert(old);
 
 	oldLen = strlen( old );
-	oldStrLen = oldString.Length();
 
 	// Remove the old data
-	for( i = 0, j = 0; i < oldStrLen; i++ ) {
-		if( (i <= oldStrLen - oldLen) && !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
+	for( i = 0, j = 0; i < len; i++ ) {
+		if( (i <= len - oldLen) && !idStr::Cmpn( &oldString[i], old, oldLen ) ) {
 			// continue after the string to be removed
 			i += oldLen - 1;
 		} else {
@@ -765,6 +764,27 @@ void idStr::Remove( const char *old ) {
 	len = j;
 }
 
+/*
+============
+idStr::Remove - Tels: removes all occurances of the given char
+============
+*/
+void idStr::Remove( const char rem ) {
+	int		i, j;
+
+	idStr	oldString( data );
+
+	// Remove the old data
+	for( i = 0, j = 0; i < len; i++ ) {
+		if (oldString[i] != rem) {
+			data[j] = oldString[i]; j++;
+		}
+	}
+	// zero-terminate
+	data[j] = 0;
+	// set new length
+	len = j;
+}
 
 /*
 ============

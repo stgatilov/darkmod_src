@@ -128,7 +128,7 @@ void idCmdSystemLocal::ListByFlags( const idCmdArgs &args, cmdFlags_t flags ) {
 
 	if ( args.Argc() > 1 ) {
 		match = args.Args( 1, -1 );
-		match.Replace( " ", "" );
+		match.Remove( ' ' );
 	} else {
 		match = "";
 	}

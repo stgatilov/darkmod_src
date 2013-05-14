@@ -101,7 +101,7 @@ idStr MaterialEditView::GetSourceText() {
 	idStr text;
 	m_textView.GetText(text);
 
-	text.Replace( "\n", "" );
+	text.Remove( '\n' );
 	text.Replace( "\r", "\r\n" );
 	text.Replace( "\v", "\r\n" );
 	text.StripLeading( "\r\n" );
@@ -128,7 +128,7 @@ void MaterialEditView::GetMaterialSource() {
 			idStr text = material->GetEditSourceText();
 
 			// clean up new-line crapola
-			text.Replace( "\r", "" );
+			text.Remove( '\r' );
 			text.Replace( "\n", "\r" );
 			text.Replace( "\v", "\r" );
 			text.StripLeading( '\r' );
