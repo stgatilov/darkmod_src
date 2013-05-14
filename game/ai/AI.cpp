@@ -62,7 +62,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <boost/lexical_cast.hpp>
 
-const int MIN_TIME_BETWEEN_GREETING_CHECKS = 2000; // msecs grayman #3338
+const int MIN_TIME_BETWEEN_GREETING_CHECKS = 20000; // msecs grayman #3338
 const int MAX_DISTANCE_FOR_GREETING = 200; // grayman #3338
 
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
