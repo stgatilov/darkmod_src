@@ -435,9 +435,9 @@ void idServerScan::GUIAdd( int id, const networkServer_t server ) {
 	name += "\t";
 	name += "\t";
 	if ( mod ) {
-		name += "mtr_doom3Mod";
+		name += "mtr_tdmMod";
 	} else {
-		name += "mtr_doom3Icon";
+		name += "mtr_tdmIcon";
 	}
 	name += "\t";
 	name += va( "%i/%i\t", server.clients, server.serverInfo.GetInt( "si_maxPlayers" ) );
