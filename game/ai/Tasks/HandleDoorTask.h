@@ -93,6 +93,8 @@ public:
 	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
 	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away); // grayman #2345/#2712
 
+	void MoveToSafePosition(CFrobDoor* door); // grayman #3390
+
 	void PickWhere2Go(CFrobDoor* door); // grayman #2345
 
 	void GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor);
