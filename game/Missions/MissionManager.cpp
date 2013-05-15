@@ -1359,6 +1359,10 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 	const char* fs_currentfm = cvarSystem->GetCVarString("fs_currentfm");
 
+	// Tels: #3419 - After game start the sequence is always the same, so set a random seed
+	time_t seconds = time(NULL);
+	gameLocal.random.SetSeed( static_cast<int>(seconds) );
+
 	for (pugi::xpath_node_set::const_iterator i = nodes.begin(); i != nodes.end(); ++i)	
 	{
 		pugi::xml_node node = i->node();
@@ -1439,7 +1443,8 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			// Only accept English downloadlinks
 			if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
 
-			mission.missionUrls.Append(locNode.attribute("url").value());
+			// Tels: #3419: Randomize the order of download URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
+			mission.missionUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.missionUrls.Num() + 2 ) );
 		}
 
 		// Localisation packs
@@ -1449,7 +1454,8 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 		{
 			pugi::xml_node locNode = loc->node();
 
-			mission.l10nPackUrls.Append(locNode.attribute("url").value());
+			// Tels: #3419: Randomize the order of l10n URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
+			mission.l10nPackUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.l10nPackUrls.Num() + 2 ) );
 		}
 
 		// Only add missions with valid locations
