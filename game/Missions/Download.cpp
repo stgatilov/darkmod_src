@@ -180,11 +180,11 @@ void CDownload::Perform()
 			// Download error
 			if (_request->GetStatus() == CHttpRequest::ABORTED)
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download aborted.\r");
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from '%s' aborted.", url.c_str());
 			}
 			else
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error.\r");
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());
 			}
 
 			// Proceed to the next URL

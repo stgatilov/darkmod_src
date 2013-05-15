@@ -425,7 +425,13 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Final path to the FM file
 		idStr missionPath = targetPath + mod.modName + ".pk4";
 
-		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the mission PK4 to %s (modName %s).\r", missionPath.c_str(), mod.modName.c_str());
+		DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the mission PK4 to %s (modName %s).", missionPath.c_str(), mod.modName.c_str());
+
+		// log all the URLs
+		for (int u = 0; u < mod.missionUrls.Num(); u++)
+		{
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING(" URL: '%s'", mod.missionUrls[u].c_str());
+		}
 
 		// Check for valid PK4 files after download
 		CDownloadPtr download(new CDownload(mod.missionUrls, missionPath, true));
@@ -436,11 +442,15 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 		// Check if there is a Localisation pack available
 		if (mod.l10nPackUrls.Num() > 0)
 		{
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("There are l10n pack URLs listed for this FM.\r");
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("There are l10n pack URLs listed for this FM.");
 
+			for (int u = 0; u < mod.l10nPackUrls.Num(); u++)
+			{
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING(" l10n pack URL: '%s'", mod.l10nPackUrls[u].c_str());
+			}
 			idStr l10nPackPath = targetPath + mod.modName + "_l10n.pk4";
 
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the l10n pack to %s.\r", l10nPackPath.c_str());
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will download the l10n pack to %s.", l10nPackPath.c_str());
 
 			CDownloadPtr l10nDownload(new CDownload(mod.l10nPackUrls, l10nPackPath, true));
 
