@@ -89,6 +89,16 @@ void CHttpRequest::InitRequest()
 
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
+	// Tels: #3261: only allow FTP, FTPS, HTTP and HTTPS (HTTPS and FTPS need SSL support compiled in)
+	curl_easy_setopt(_handle, CURLOPT_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+
+	// Tels: #3261: allow redirects on the server, with a limit of 10 redirects, and limit
+	// 	 the protocols to FTP, FTPS, HTTP, HTTPS to avoid rogue servers giving us random
+	//	 things like Telnet or POP3 on random targets.
+	curl_easy_setopt(_handle, CURLOPT_FOLLOWLOCATION,			       true);
+	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
+	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
 	{
@@ -131,6 +141,7 @@ void CHttpRequest::Perform()
 			_progress = 1.0;
 			break;
 		default:
+			DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Download from '%s' failed with curl status %i.", _url.c_str(), result);
 			_status = FAILED;
 		};
 	}

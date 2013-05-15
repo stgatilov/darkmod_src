@@ -83,6 +83,16 @@ void HttpRequest::InitRequest()
 		LIBTDM_UPDATE_VERSION % LIBTDM_UPDATE_PLATFORM).str();
 	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
 
+	// Tels: #3261: only allow FTP, FTPS, HTTP and HTTPS (HTTPS and FTPS need SSL support compiled in)
+	curl_easy_setopt(_handle, CURLOPT_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+
+	// Tels: #3261: allow redirects on the server, with a limit of 10 redirects, and limit
+	// 	 the protocols to FTP, FTPS, HTTP, HTTPS to avoid rogue servers giving us random
+	//	 things like Telnet or POP3 on random targets.
+	curl_easy_setopt(_handle, CURLOPT_FOLLOWLOCATION,			       true);
+	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
+	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
 	{
