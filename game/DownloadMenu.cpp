@@ -682,10 +682,11 @@ idStr CDownloadMenu::GetMissionDownloadProgressString(int modIndex)
 
 		if (l10nDownload)
 		{
-			// We assume the L10n pack to consume 3% of the whole download 
-			// which is probably an overestimation, but who cares exactly
-			totalFraction *= 0.97f;
-			totalFraction += 0.03f * l10nDownload->GetProgressFraction();
+			// We assume the L10n pack to consume 10% of the whole download 
+			// This is just a rough guess, for some missions the l10n pack
+			// is bigger than the mission, for others it is only 5%
+			totalFraction *= 0.90f;
+			totalFraction += 0.10f * l10nDownload->GetProgressFraction();
 		}
 
 		return va("%0.1f%s", totalFraction*100, "% ");
