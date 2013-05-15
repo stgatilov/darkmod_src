@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	RegisterLogWriters();
 
 	TraceLog::WriteLine(LOG_STANDARD, 
-		(boost::format("TDM Updater v%s (c) 2009-2012 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
+		(boost::format("TDM Updater v%s (c) 2009-2013 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	ConsoleUpdater updater(argc, argv);
