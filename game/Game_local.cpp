@@ -6632,7 +6632,7 @@ void idGameLocal::RemoveResponse(idEntity *e)
 #define GAS_UP    3
 #define GAS_RIGHT 4
 
-bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, const idEntity* ent )
+bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, idEntity* ent )
 {
 	float dist2Target = (target - origin).LengthFast();
 
@@ -6702,39 +6702,16 @@ bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, co
 					// punched through, but not to the room where target lives.
 
 					counter++;
-					if ( gameLocal.clip.TracePoint(result, endPoint, target, (CONTENTS_WATER|CONTENTS_SOLID), ent) )
-					{
-						// We hit something. Does it belong to the same tree chain as the entity
-						// we're trying to reach? For example, the origin of a candle flame might
-						// be embedded in the top of a candle holder, in which case LOS would fail.
+					idVec3 normal;
 
-						idEntity* entHit = gameLocal.entities[result.c.entityNum];
-						if ( entHit != NULL )
-						{
-							// Check bindmasters of our target entity. Is any of them entHit?
+					int traceResult = TraceGasPath( testPoint, endPoint, ent, normal );
 
-							idEntity *bindMaster = ent->GetBindMaster();
-							bool entHitFound = false;
-							while ( bindMaster != NULL )
-							{
-								if ( bindMaster == entHit )
-								{
-									entHitFound = true;
-									break;
-								}
-								bindMaster = bindMaster->GetBindMaster();
-							}
-
-							if ( entHitFound )
-							{
-								return true; // reached the target
-							}
-						}
-					}
-					else
+					if ( traceResult == 0 )
 					{
 						return true; // reached the target
 					}
+
+					return false; // didn't reach the target
 				}
 
 				if ( counter >= GAS_MAX_TRACES )
@@ -6810,6 +6787,70 @@ bool idGameLocal::DoesOpeningExist( const idVec3 origin, const idVec3 target, co
 	}
 
 	return false;
+}
+
+// grayman #1104 - check what's between two points
+// return 0 = completed the path
+//        1 = didn't complete the path, seek an opening
+//        2 = didn't complete the path, don't seek an opening
+
+int idGameLocal::TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3& normal )
+{
+	trace_t trace;
+
+	int result = 0; // completed the path
+	int traceCount = 1; // which trace # we're on
+
+	while ( true )
+	{
+		gameLocal.clip.TracePoint( trace, from, to, MASK_SOLID, ignore );
+		if ( trace.fraction == 1.0f )
+		{
+			// completed the path
+			break;
+		}
+
+		// prevent infinite loops where we get stuck inside the intersection of 2 entities
+
+		if ( ( traceCount > 1 ) && ( trace.fraction < VECTOR_EPSILON ) )
+		{
+			// see if there's an opening to leak through
+			normal = trace.c.normal;
+			result = 1;
+			break;
+		}
+
+		// End the trace if we hit the world or a door
+
+		idEntity* entHit = gameLocal.entities[trace.c.entityNum];
+
+		if ( entHit == gameLocal.world )
+		{
+			// see if there's an opening to leak through
+			normal = trace.c.normal;
+			result = 1;
+			break;
+		}
+
+		if ( entHit->IsType(CFrobDoor::Type) )
+		{
+			// ignore an open door, but a closed door stops gas
+			if ( !static_cast<CFrobDoor*>(entHit)->IsOpen() )
+			{
+				// door is closed, don't seek an opening
+				result = 2;
+				break;
+			}
+		}
+
+		// Continue the trace from the struck point
+
+		from = trace.endpos;
+		ignore = entHit; // this time, ignore the entity we struck
+		traceCount++;
+	}
+
+	return result;
 }
 
 
@@ -6927,38 +6968,25 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 				// the gas reached the target. If it doesn't, probe the
 				// area between the stim origin and the target to see if there's
 				// an opening the gas could leak through.
-				trace_t result;
-				if ( gameLocal.clip.TracePoint(result, stimOrigin, entitySpot, MASK_SOLID, ent) )
+
+				idVec3 normal;
+
+				int pathResult = TraceGasPath( stimOrigin, entitySpot, ent, normal );
+				if ( pathResult == 0 )
 				{
-					// We hit something. Does it belong to the same tree chain as the entity
-					// we're trying to reach? For example, the origin of a candle flame might
-					// be embedded in the top of a candle holder, in which case LOS would fail.
-
-					idEntity* entHit = gameLocal.entities[result.c.entityNum];
-					if ( entHit != NULL )
+					// path to target exists, gas it
+				}
+				else if ( pathResult == 1 )
+				{
+					// didn't complete the path, but there might be an opening to leak through
+					if (!DoesOpeningExist( stimOrigin, entitySpot, stim->GetRadius(), normal, ent ) )
 					{
-						// Check bindmasters of our target entity. Is any of them entHit?
-
-						idEntity *bindMaster = ent->GetBindMaster();
-						bool entHitFound = false;
-						while ( bindMaster != NULL )
-						{
-							if ( bindMaster == entHit )
-							{
-								entHitFound = true;
-								break;
-							}
-							bindMaster = bindMaster->GetBindMaster();
-						}
-
-						if ( !entHitFound )
-						{
-							if (!DoesOpeningExist( stimOrigin, entitySpot, stim->GetRadius(), result.c.normal, ent ) )
-							{
-								continue; // there's no path to the other side
-							}
-						}
+						continue; // there's no path to the other side
 					}
+				}
+				else // pathResult == 2
+				{
+					continue; // there's no path to the other side
 				}
 			}
 		}

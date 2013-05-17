@@ -851,7 +851,7 @@ public:
 	void					RemoveStim(idEntity *);
 	bool					AddResponse(idEntity *);
 	void					RemoveResponse(idEntity *);
-	bool					DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, const idEntity* ent ); // grayman #1104
+	bool					DoesOpeningExist( const idVec3 origin, const idVec3 target, const float radius, const idVec3 normal, idEntity* ent ); // grayman #1104
 
 	
 	/************************************************************************/
@@ -886,6 +886,12 @@ public:
 	*
 	*/
 	int						DoResponseAction(const CStimPtr& stim, int numEntities, idEntity* originator, const idVec3& stimOrigin);
+
+	/**
+	 * Trace a LOS path from gas origin to a point.
+	 */
+	int						TraceGasPath( idVec3 from, idVec3 to, idEntity* ignore, idVec3& normal ); // grayman #1104
+
 
 	/**
 	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.
