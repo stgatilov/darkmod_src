@@ -451,11 +451,48 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 	//gameRenderWorld->RenderScene( &hackedView );
 
-	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyAcive() && g_enablePortalSky.GetBool() ) {
+	// grayman #3108 - contributed by neuro & 7318
+	idVec3 diff, currentEyePos, PSOrigin, Zero;
+	
+	Zero.Zero();
+		
+	if ( ( gameLocal.CheckGlobalPortalSky() ) || ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_LOCAL ) ) {		
+		// in a case of a moving portalSky
+		
+		currentEyePos = hackedView.vieworg;
+		
+		if ( gameLocal.playerOldEyePos == Zero ) {
+			// Initialize playerOldEyePos. This will only happen in one tick.
+			gameLocal.playerOldEyePos = currentEyePos;
+		}
 
-		renderView_t	portalView = hackedView;
+		diff = ( currentEyePos - gameLocal.playerOldEyePos) / gameLocal.portalSkyScale;
+		gameLocal.portalSkyGlobalOrigin += diff; // This is for the global portalSky.
+												 // It should keep going even when not active.
+	}
 
-		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
+	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() ) {
+		
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
+			PSOrigin = gameLocal.portalSkyOrigin;
+		}
+		
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_GLOBAL ) {
+			PSOrigin = gameLocal.portalSkyGlobalOrigin;
+		}
+		
+		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_LOCAL ) {
+			gameLocal.portalSkyOrigin += diff;
+			PSOrigin = gameLocal.portalSkyOrigin;
+		}
+	
+		gameLocal.playerOldEyePos = currentEyePos;
+		// end neuro & 7318
+
+		renderView_t portalView = hackedView;
+
+		portalView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
+//		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
 		portalView.viewaxis = portalView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
 
 		// setup global fixup projection vars
@@ -474,8 +511,8 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 			pot = MakePowerOfTwo( h );
 			shiftScale.y = (float)h / pot;
 
-			hackedView.shaderParms[6] = shiftScale.x;
-			hackedView.shaderParms[7] = shiftScale.y;
+			hackedView.shaderParms[6] = shiftScale.x; // grayman #3108 - neuro used [4], we use [6]
+			hackedView.shaderParms[7] = shiftScale.y; // grayman #3108 - neuro used [5], we use [7]
 		}
 
 		gameRenderWorld->RenderScene( &portalView );
@@ -483,13 +520,18 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
 	}
+	else // grayman #3108 - contributed by 7318 
+	{
+		// So if g_enablePortalSky is disabled, GlobalPortalSkies doesn't break.
+		// When g_enablePortalSky gets re-enabled, GlobalPortalSkies keeps working. 
+		gameLocal.playerOldEyePos = currentEyePos;
+	}
 
 	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
 	gameRenderWorld->RenderScene( &hackedView );
 	// process the frame
 
 	//	fxManager->Process( &hackedView );
-
 
 	if ( player->spectating ) {
 		return;
@@ -555,7 +597,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		{
 			// Tels: parm0: when the last damage occured
 			// Tels: parm1: TODO: set here f.i. to color the material different when in gas cloud
-			// Tels: parm2: TODO: set here f.i. to color the material different when poisened
+			// Tels: parm2: TODO: set here f.i. to color the material different when poisoned
 			// Tels: parm3: alpha value, depending on health
 			renderSystem->SetColor4( ( player->health <= 0.0f ) ? MS2SEC( gameLocal.time ) : lastDamageTime, 1.0f, 1.0f, ( player->health <= 0.0f ) ? 0.0f : alpha );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, tunnelMaterial );

@@ -3562,10 +3562,8 @@ idPortalSky
 */
 
 CLASS_DECLARATION( idEntity, idPortalSky )
-
 	EVENT( EV_PostSpawn,			idPortalSky::Event_PostSpawn )
 	EVENT( EV_Activate,				idPortalSky::Event_Activate )
-
 END_CLASS
 
 /*
@@ -3592,23 +3590,42 @@ idPortalSky::Spawn
 ===============
 */
 
-void idPortalSky::Spawn( void ) {
-	if ( !spawnArgs.GetBool( "triggered" ) ) {
+void idPortalSky::Spawn( void )
+{
+	// grayman #3108 - contributed by neuro & 7318
+	if ( spawnArgs.GetInt( "type" ) == PORTALSKY_GLOBAL )
+	{
+		gameLocal.SetGlobalPortalSky( spawnArgs.GetString( "name" ) );
+		gameLocal.portalSkyGlobalOrigin = GetPhysics()->GetOrigin();
+	}
+
+	if ( !spawnArgs.GetBool( "triggered" ) )
+	{
+		gameLocal.portalSkyScale = spawnArgs.GetInt( "scale", "16" );	
 		PostEventMS( &EV_PostSpawn, 1 );
 	}
+	// end neuro & 7318
 }
 
 /*
 ================
 idPortalSky::Event_PostSpawn
 ================
-
 */
 
-void idPortalSky::Event_PostSpawn() {
+void idPortalSky::Event_PostSpawn()
+{
+	// grayman #3108 - contributed by neuro & 7318
+	gameLocal.SetCurrentPortalSkyType( spawnArgs.GetInt( "type", "0" ) );
+
+	if ( gameLocal.GetCurrentPortalSkyType() != PORTALSKY_GLOBAL )
+	{
+		// Standard and local portalSky share the origin. It's in the execution that things change.
+		gameLocal.portalSkyOrigin = GetPhysics()->GetOrigin();
+	}
 
 	gameLocal.SetPortalSkyEnt( this );
-
+	// end neuro & 7318
 }
 
 /*
@@ -3617,10 +3634,21 @@ idPortalSky::Event_Activate
 ================
 */
 
-void idPortalSky::Event_Activate( idEntity *activator ) {
-	gameLocal.SetPortalSkyEnt( this );
-}
+void idPortalSky::Event_Activate( idEntity *activator )
+{
+	// grayman #3108 - contributed by neuro & 7318
+	gameLocal.SetCurrentPortalSkyType( spawnArgs.GetInt( "type", "0" ) );
 
+	if ( gameLocal.GetCurrentPortalSkyType() != PORTALSKY_GLOBAL )
+	{
+		// Standard and local portalSky share the origin. It's in the execution that things change.
+		gameLocal.portalSkyOrigin = GetPhysics()->GetOrigin();
+	}	
+
+	gameLocal.portalSkyScale = spawnArgs.GetInt( "scale", "16" );
+	gameLocal.SetPortalSkyEnt( this );
+	// end neuro & 7318
+}
 
 /*
 ===============================================================================

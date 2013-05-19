@@ -1114,6 +1114,20 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 	numSourceAreas = gameRenderWorld->BoundsInAreas( spectated->GetPlayerPhysics()->GetAbsBounds(), sourceAreas, idEntity::MAX_PVS_AREAS );
 	pvsHandle = gameLocal.pvs.SetupCurrentPVS( sourceAreas, numSourceAreas, PVS_NORMAL );
 
+	// grayman #3108 - contributed by neuro & 7318
+	// Add portalSky areas to PVS
+	if ( portalSkyEnt.GetEntity() ) {
+		pvsHandle_t	otherPVS, newPVS;
+		idEntity *skyEnt = portalSkyEnt.GetEntity();
+
+		otherPVS = gameLocal.pvs.SetupCurrentPVS( skyEnt->GetPVSAreas(), skyEnt->GetNumPVSAreas() );
+		newPVS = gameLocal.pvs.MergeCurrentPVS( pvsHandle, otherPVS );
+		pvs.FreeCurrentPVS( pvsHandle );
+		pvs.FreeCurrentPVS( otherPVS );
+		pvsHandle = newPVS;
+	}
+	// end neuro & 7318
+
 	// read the PVS from the snapshot
 #if ASYNC_WRITE_PVS
 	int serverPVS[idEntity::MAX_PVS_AREAS];

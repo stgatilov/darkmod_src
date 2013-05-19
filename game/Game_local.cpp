@@ -399,6 +399,9 @@ void idGameLocal::Clear( void )
 
 	portalSkyEnt			= NULL;
 	portalSkyActive			= false;
+	playerOldEyePos.Zero();			 // grayman #3108 - contributed by 7318
+	globalPortalSky			= false; // grayman #3108 - contributed by 7318
+
 	//	ResetSlowTimeVars();
 
 	m_GamePlayTimer.Clear();
@@ -937,7 +940,13 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	savegame.WriteBool( portalSkyActive );
 
-
+	// grayman #3108 - contributed by 7318
+	savegame.WriteBool( globalPortalSky );
+	savegame.WriteInt( currentPortalSkyType );
+	savegame.WriteVec3( playerOldEyePos );
+	savegame.WriteVec3( portalSkyGlobalOrigin );
+	savegame.WriteVec3( portalSkyOrigin );
+	// end 7318
 
 	savegame.WriteBool( mapCycleLoaded );
 	savegame.WriteInt( spawnCount );
@@ -1383,7 +1392,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	portalSkyActive			= false;
 
-
+	playerOldEyePos.Zero();			 // grayman #3108 - contributed by 7318
+	globalPortalSky			= false; // grayman #3108 - contributed by 7318
 
 	vacuumAreaNum = -1;		// if an info_vacuum is spawned, it will set this
 
@@ -2024,7 +2034,13 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	savegame.ReadBool( portalSkyActive );
 
-
+	// grayman #3108 - contributed by 7318
+	savegame.ReadBool( globalPortalSky );
+	savegame.ReadInt( currentPortalSkyType );
+	savegame.ReadVec3( playerOldEyePos );
+	savegame.ReadVec3( portalSkyGlobalOrigin );
+	savegame.ReadVec3( portalSkyOrigin );
+	// end 7318
 
 	savegame.ReadBool( mapCycleLoaded );
 	savegame.ReadInt( spawnCount );
@@ -2800,8 +2816,7 @@ void idGameLocal::SetupPlayerPVS( void ) {
 			playerConnectedAreas = newPVS;
 		}
 
-
-		// if portalSky is preset, then merge into pvs so we get rotating brushes, etc
+		// if portalSky is present, then merge into pvs so we get rotating brushes, etc
 
 		if ( portalSkyEnt.GetEntity() ) {
 			idEntity *skyEnt = portalSkyEnt.GetEntity();
@@ -6298,31 +6313,69 @@ void idGameLocal::ThrottleUserInfo( void ) {
 }
 
 /*
-
 =================
-
-idPlayer::SetPortalSkyEnt
-
+idGameLocal::SetPortalSkyEnt
 =================
-
 */
 
 void idGameLocal::SetPortalSkyEnt( idEntity *ent ) {
 	portalSkyEnt = ent;
 }
 
-
-
 /*
 =================
-idPlayer::IsPortalSkyAcive
+idGameLocal::IsPortalSkyActive
 =================
 */
-bool idGameLocal::IsPortalSkyAcive() {
+bool idGameLocal::IsPortalSkyActive() {
 	return portalSkyActive;
 }
 
+// grayman #3108 - contributed by neuro & 7318
 
+/*
+=================
+idGameLocal::CheckGlobalPortalSky
+=================
+*/
+bool idGameLocal::CheckGlobalPortalSky() {
+	return globalPortalSky;
+}
+
+/*
+=================
+idGameLocal::SetGlobalPortalSky			// 7318
+=================
+*/
+void idGameLocal::SetGlobalPortalSky( const char *name ) {
+
+	if ( CheckGlobalPortalSky() ) {
+		Error( "There is more than one global portalSky.\nDelete them until you have just one.\nportalSky '%s' causes it.", name );
+	}
+	else {
+		globalPortalSky = true;
+	}
+}
+
+/*
+=================
+idGameLocal::SetCurrentPortalSkyType		// 7318
+=================
+*/
+void idGameLocal::SetCurrentPortalSkyType( int type ) {
+	currentPortalSkyType = type;
+}
+
+/*
+=================
+idGameLocal::GetCurrentPortalSkyType		// 7318
+=================
+*/
+int idGameLocal::GetCurrentPortalSkyType() {
+	return currentPortalSkyType;
+}
+
+// end neuro & 7318
 
 /*
 ===========
@@ -6332,8 +6385,6 @@ idGameLocal::SelectTimeGroup
 
 void idGameLocal::SelectTimeGroup( int timeGroup ) { }
 
-
-
 /*
 ===========
 idGameLocal::GetTimeGroupTime
@@ -6342,8 +6393,6 @@ idGameLocal::GetTimeGroupTime
 int idGameLocal::GetTimeGroupTime( int timeGroup ) {
 	return gameLocal.time;
 }
-
-
 
 /*
 ===========

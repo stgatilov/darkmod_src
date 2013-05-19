@@ -276,6 +276,14 @@ typedef struct {
 	int			dist;
 } spawnSpot_t;
 
+// grayman #3108 - contributed by 7318
+enum {
+	PORTALSKY_STANDARD = 0,			// classic portalsky
+	PORTALSKY_GLOBAL = 1,			// always following portal sky
+	PORTALSKY_LOCAL = 2,			// following portal sky from a spot
+};
+// end 7318
+
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
 * Therefore they are global.
@@ -632,7 +640,20 @@ public:
 	bool					portalSkyActive;
 
 	void					SetPortalSkyEnt( idEntity *ent );
-	bool					IsPortalSkyAcive();
+	bool					IsPortalSkyActive();
+
+	// grayman #3108 - contributed by 7318
+	bool					globalPortalSky;	
+	int						portalSkyScale;		
+	int						currentPortalSkyType; // 0 = classic, 1 = global, 2 = local 
+	idVec3					portalSkyOrigin;	
+	idVec3					portalSkyGlobalOrigin;	
+	idVec3					playerOldEyePos;	
+	bool					CheckGlobalPortalSky();	
+	void					SetGlobalPortalSky(const char *name);
+	void					SetCurrentPortalSkyType(int type); // 0 = classic, 1 = global, 2 = local
+	int						GetCurrentPortalSkyType(); // 0 = classic, 1 = global, 2 = local
+	// end 7318
 
 	// tels: a list of all speaker entities with s_music set, these are affected by s_vol_music:
 	idList<int>				musicSpeakers;
