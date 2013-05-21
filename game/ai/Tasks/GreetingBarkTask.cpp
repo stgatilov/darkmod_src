@@ -29,15 +29,14 @@ static bool versioned = RegisterVersionedFile("$Id$");
 namespace ai
 {
 
-const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 3*60*1000; // 3 minutes
-
 GreetingBarkTask::GreetingBarkTask() :
 	SingleBarkTask()
 {}
 
-GreetingBarkTask::GreetingBarkTask(const idStr& soundName, idActor* greetingTarget) :
+GreetingBarkTask::GreetingBarkTask(const idStr& soundName, idActor* greetingTarget, bool isInitialGreeting) : // grayman #3415
 	SingleBarkTask(soundName),
-	_greetingTarget(greetingTarget)
+	_greetingTarget(greetingTarget),
+	_isInitialGreeting(isInitialGreeting) // grayman #3415
 {}
 
 // Get the name of this task
@@ -62,29 +61,31 @@ void GreetingBarkTask::Init(idAI* owner, Subsystem& subsystem)
 
 	// Allow state "waiting for greeting" for owner
 	// Allow state "after Greeting" for the other AI
-	if ((owner->greetingState != ENotGreetingAnybody && owner->greetingState != EWaitingForGreeting) || 
-		(_greetingTarget->greetingState != ENotGreetingAnybody && _greetingTarget->greetingState != EAfterGreeting))
+	if ( ( ( owner->greetingState != ENotGreetingAnybody )           && ( owner->greetingState != EWaitingForGreeting ) ) || 
+		 ( ( _greetingTarget->greetingState != ENotGreetingAnybody ) && ( _greetingTarget->greetingState != EAfterGreeting ) ) )
 	{
-		// Target is busy
+		// Someone is busy
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: one of the actors is busy: %s to %s\r", owner->name.c_str(), _greetingTarget->name.c_str());
 		subsystem.FinishTask();
 		return;
 	}
 
-	// Check the last time we greeted this AI
-	int lastGreetingTime = owner->GetMemory().GetGreetingInfo(_greetingTarget).lastGreetingTime;
+	// grayman #3415 - If both actors are sitting, disallow a greeting, on the
+	// assumption that they've been that way for awhile, and any greetings would
+	// already have happened. To keep pent-up greetings from occurring when one
+	// actor stands up, move the allowed greeting time into the future.
 
-	if ( ( lastGreetingTime > 0 ) && ( gameLocal.time < lastGreetingTime + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR ) ) // grayman #3317
-//	if (lastGreetingTime > 0 && lastGreetingTime < gameLocal.time + MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR) // bad check was letting AI greet once and then never again
+	idAI* otherAI = static_cast<idAI*>(_greetingTarget);
+	if ( (owner->GetMoveType() == MOVETYPE_SIT ) && (otherAI->GetMoveType() == MOVETYPE_SIT ) )
 	{
-		// Too early
-		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Cannot greet: time since last greet too short: %s to %s, %d msecs\r", 
-		owner->name.c_str(), _greetingTarget->name.c_str(), gameLocal.time - lastGreetingTime);
-		
+		int delay = (MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
+		int nextGreetingTime = gameLocal.time + delay;
+		owner->GetMemory().GetGreetingInfo(otherAI).nextGreetingTime = nextGreetingTime;
+		otherAI->GetMemory().GetGreetingInfo(owner).nextGreetingTime = nextGreetingTime;
 		subsystem.FinishTask();
 		return;
 	}
-	
+
 	// Both AI are not greeting each other so far, continue
 	owner->greetingState = EGoingToGreet;
 	_greetingTarget->greetingState = EWaitingForGreeting;
@@ -104,19 +105,29 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 	{
 		owner->greetingState = EAfterGreeting;
 
-		if (_greetingTarget != NULL && _greetingTarget->IsType(idAI::Type))
+		if ( ( _greetingTarget != NULL ) && _greetingTarget->IsType(idAI::Type) )
 		{
 			idAI* otherAI = static_cast<idAI*>(_greetingTarget);
 
-			CommMessage message(
-				CommMessage::Greeting_CommType, 
-				owner, otherAI, // from this AI to the other
-				NULL,
-				owner->GetPhysics()->GetOrigin()
-			);
+			if ( _isInitialGreeting ) // grayman #3415 - only send a msg if you're the initiator
+			{
 
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Sending AI Comm Message to %s.\r", otherAI->name.c_str());
-			otherAI->GetMind()->GetState()->OnAICommMessage(message, 0);
+				CommMessage message(
+					CommMessage::Greeting_CommType, 
+					owner, otherAI, // from this AI to the other
+					NULL,
+					owner->GetPhysics()->GetOrigin()
+				);
+
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Sending AI Comm Message to %s.\r", otherAI->name.c_str());
+				otherAI->GetMind()->GetState()->OnAICommMessage(message, 0);
+			}
+
+			// grayman #3415
+			// Establish next time owner can greet otherAI.
+
+			int delay = (MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
+			owner->GetMemory().GetGreetingInfo(otherAI).nextGreetingTime = gameLocal.time + delay;
 		}
 
 		// Owner is done here
@@ -130,10 +141,6 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 	{
 		// End time is set, we're currently barking
 		owner->greetingState = EIsGreeting;
-
-		// Remember the time we greeted this actor
-		Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(_greetingTarget);
-		info.lastGreetingTime = gameLocal.time;
 
 		int timeLeft = _endTime - gameLocal.time;
 
@@ -155,9 +162,22 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 
 void GreetingBarkTask::OnFinish(idAI* owner)
 {
-	if ( ( owner != NULL ) && ( owner->greetingState != ECannotGreet ) )
+	if ( owner )
 	{
-		owner->greetingState = ENotGreetingAnybody;
+		if ( owner->greetingState != ECannotGreet )
+		{
+			owner->greetingState = ENotGreetingAnybody;
+		}
+
+		// grayman #3415 - If this was a response, no further action from the target AI
+
+		if ( !_isInitialGreeting )
+		{
+			if ( _greetingTarget->greetingState != ECannotGreet )
+			{
+				_greetingTarget->greetingState = ENotGreetingAnybody;
+			}
+		}
 	}
 }
 
@@ -167,6 +187,7 @@ void GreetingBarkTask::Save(idSaveGame* savefile) const
 	SingleBarkTask::Save(savefile);
 
 	savefile->WriteObject(_greetingTarget);
+	savefile->WriteBool(_isInitialGreeting); // grayman #3415
 }
 
 void GreetingBarkTask::Restore(idRestoreGame* savefile)
@@ -174,6 +195,7 @@ void GreetingBarkTask::Restore(idRestoreGame* savefile)
 	SingleBarkTask::Restore(savefile);
 
 	savefile->ReadObject(reinterpret_cast<idClass*&>(_greetingTarget));
+	savefile->ReadBool(_isInitialGreeting); // grayman #3415
 }
 
 GreetingBarkTaskPtr GreetingBarkTask::CreateInstance()

@@ -193,6 +193,9 @@ const char* const AlertStateNames[EAlertStateNum] =
 //#define SRCH_WARNED_EVIDENCE		16	// set when warned by another AI that evidence is mounting
 //#define SRCH_WARNED ( SRCH_WARNED_ENEMY | SRCH_WARNED_CORPSE | SRCH_WARNED_MISSING_ITEM | SRCH_WARNED_EVIDENCE )
 
+const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 8*60; // grayman #3415 - 8 minutes 
+const int EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR  = 4*60; // grayman #3415 - random 0->4 min added to base 8 minutes
+
 /**
  * greebo: This class acts as container for all kinds of state variables.
  */
@@ -460,23 +463,11 @@ public:
 
 	struct GreetingInfo
 	{
-		// The last time the associated AI was greeted by the owner
-		int lastGreetingTime;
-
-		// The last time the actor was met and considered for greeting
-		// the actual greeting doesn't have to be performed
-		// This is used to "ignore" visual stims for greeting for a while
-		int lastConsiderTime;
-
-		// The last time the player was spotted and not considered
-		// an enemy, for consideration of barking a warning or greeting
-		// at him from friendly AI.
-		int lastPlayerEncounterTime;
+		// The next time an associated AI can be greeted by the owner
+		int nextGreetingTime; // grayman #3415
 
 		GreetingInfo() :
-			lastGreetingTime(-1),
-			lastConsiderTime(-1),
-			lastPlayerEncounterTime(-1) // grayman #3338
+			nextGreetingTime(gameLocal.random.RandomInt(MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)*1000) // grayman #3415
 		{}
 	};
 

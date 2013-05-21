@@ -38,13 +38,15 @@ class GreetingBarkTask :
 protected:
 
 	idActor* _greetingTarget;
+	bool	 _isInitialGreeting; // grayman #3415 - true when this AI initiates the greeting,
+								 // false when this AI is responding to the greeting
 
 	// Default constructor
 	GreetingBarkTask();
 
 public:
 	// Constructor taking a sound name and the target actor as argument
-	GreetingBarkTask(const idStr& soundName, idActor* greetingTarget);
+	GreetingBarkTask(const idStr& soundName, idActor* greetingTarget, bool isInitialGreeting); // grayman #3415
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

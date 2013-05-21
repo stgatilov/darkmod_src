@@ -62,9 +62,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <boost/lexical_cast.hpp>
 
-const int MIN_TIME_BETWEEN_GREETING_CHECKS = 20000; // msecs grayman #3338
-const int MAX_DISTANCE_FOR_GREETING = 200; // grayman #3338
-
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
 const int AUD_ALERT_DELAY_MAX = 1500; // grayman #3356 - max amount of time delay (ms) before processing an audio alert
 
@@ -9506,18 +9503,7 @@ void idAI::PerformVisualScan(float timecheck)
 	// a visual stim to the AI. this allows AI->player warnings and greetings
 	if ( !IsEnemy(player) )
 	{
-		idVec3 dir = GetPhysics()->GetOrigin() - player->GetPhysics()->GetOrigin();
-		if ( dir.LengthFast() <= MAX_DISTANCE_FOR_GREETING )
-		{
-			ai::Memory::GreetingInfo& info = GetMemory().GetGreetingInfo(player);
-			if ( !( ( info.lastPlayerEncounterTime > -1 ) && 
-				  ( gameLocal.time < info.lastPlayerEncounterTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) ) )
-			{
-				info.lastPlayerEncounterTime = gameLocal.time;
-				mind->GetState()->OnActorEncounter(player,this);
-			}
-		}
-
+		mind->GetState()->OnActorEncounter(player,this);
 		return;
 	}
 
@@ -12344,8 +12330,8 @@ bool idAI::CanGreet() // grayman #3338
 		 ( greetingState == ECannotGreetYet ) || // not allowed to greet yet
 		 ( AI_AlertIndex >= ai::EObservant)	  || // too alert
 		 ( mind->GetState()->GetName() == "Flee" ) || // grayman #3140 - no greeting if fleeing
-		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") ) || // visible melee weapon drawn
-		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) ) // visible ranged weapon drawn
+		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") )  || // visible melee weapon drawn
+		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) )  // visible ranged weapon drawn
 	{
 		return false;
 	}

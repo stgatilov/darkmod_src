@@ -81,7 +81,6 @@ namespace ai
 #define PERSONGENDER_FEMALE		"PERSONGENDER_FEMALE"
 #define PERSONGENDER_UNKNOWN	"PERSONGENDER_UNKNOWN"
 
-const int MIN_TIME_BETWEEN_GREETING_CHECKS = 20000; // msecs
 const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000;		// ms - grayman #2603
 const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if farther apart than this
@@ -1389,76 +1388,68 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 			// don't issue a warning or greeting if you're mute
 			if ( !owner->m_isMute ) // grayman #2903
 			{
-				// the distance check was applied before calling this
-				// method, so we're inside the greeting distance
-
-				// Make sure enough time has passed since the last time
-				// we greeted the player.
-
-				Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(player);
-				if ( ( info.lastConsiderTime > -1 ) && 
-						( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+				idVec3 dir = owner->GetPhysics()->GetOrigin() - player->GetPhysics()->GetOrigin();
+				if ( dir.LengthFast() <= REMARK_DISTANCE )
 				{
-					// Not enough time has passed, no warning or greeting
-				}
-				else
-				{
-					info.lastConsiderTime = gameLocal.time;
+					// Variables for the sound
+					idStr soundName = "";
 
-					// apply some randomness
-					if ( gameLocal.random.RandomFloat() > ( 1.0f - CHANCE_FOR_GREETING ) )
+					// Allow warnings if the player is a friend
+					if ( owner->IsFriend(player) )
 					{
-						// Variables for the sound
-						idStr soundName = "";
+						const idVec3& playerOrigin = player->GetPhysics()->GetOrigin();
 
-						// Allow warnings if the player is a friend
-						if ( owner->IsFriend(player) )
+						// did I see an enemy?
+						if ( ( memory.timeEnemySeen > 0 ) &&
+								InsideWarningVolume( memory.posEnemySeen, playerOrigin, WARN_DIST_ENEMY_SEEN ) )
 						{
-							const idVec3& playerOrigin = player->GetPhysics()->GetOrigin();
-
-							// did I see an enemy?
-							if ( ( memory.timeEnemySeen > 0 ) &&
-									InsideWarningVolume( memory.posEnemySeen, playerOrigin, WARN_DIST_ENEMY_SEEN ) )
-							{
-								soundName = "snd_warnSawEnemy";
-							}
-							// did I see a corpse?
-							else if ( ( memory.timeCorpseFound > 0 ) &&
-										InsideWarningVolume( memory.posCorpseFound, playerOrigin, WARN_DIST_CORPSE_FOUND ) )
-							{
-								soundName = "snd_warnFoundCorpse";
-							}
-							// did I notice an item was missing?
-							else if ( ( memory.timeMissingItem  > 0 ) &&
-										InsideWarningVolume( memory.posMissingItem, playerOrigin, WARN_DIST_MISSING_ITEM ) )
-							{
-								soundName = "snd_warnMissingItem";
-							}
-							// do I have evidence of intruders?
-							else if ( ( memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION ) &&
-									  ( memory.timeEvidenceIntruders > 0 ) &&
-									  InsideWarningVolume( memory.posEvidenceIntruders, playerOrigin, WARN_DIST_EVIDENCE_INTRUDERS ) )
-							{
-								soundName = "snd_warnSawEvidence";
-							}
+							soundName = "snd_warnSawEnemy";
 						}
+						// did I see a corpse?
+						else if ( ( memory.timeCorpseFound > 0 ) &&
+									InsideWarningVolume( memory.posCorpseFound, playerOrigin, WARN_DIST_CORPSE_FOUND ) )
+						{
+							soundName = "snd_warnFoundCorpse";
+						}
+						// did I notice an item was missing?
+						else if ( ( memory.timeMissingItem  > 0 ) &&
+									InsideWarningVolume( memory.posMissingItem, playerOrigin, WARN_DIST_MISSING_ITEM ) )
+						{
+							soundName = "snd_warnMissingItem";
+						}
+						// do I have evidence of intruders?
+						else if ( ( memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_COMMUNICATE_SUSPICION ) &&
+									( memory.timeEvidenceIntruders > 0 ) &&
+									InsideWarningVolume( memory.posEvidenceIntruders, playerOrigin, WARN_DIST_EVIDENCE_INTRUDERS ) )
+						{
+							soundName = "snd_warnSawEvidence";
+						}
+					}
+							
+					if ( soundName.IsEmpty() && owner->CanGreet() )
+					{
+						// See if a greeting is appropriate
 
-						// If no warning is being given, see if a greeting is appropriate
+						// Check the next time we can greet the player
+						Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(player);
+						int nextGreetingTime = info.nextGreetingTime; 
 
-						if ( soundName.IsEmpty() && owner->CanGreet() )
+						if ( gameLocal.time >= nextGreetingTime ) // grayman #3415
 						{
 							soundName = "snd_greeting_generic";
+							int delay = ( MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
+							info.nextGreetingTime = gameLocal.time + delay;
 						}
-					
-						// Speak the chosen sound
+					}
 
-						if ( !soundName.IsEmpty() )
-						{
-							memory.lastTimeVisualStimBark = gameLocal.time;
-							CommMessagePtr message;
-							owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName, message)));
-							owner->Event_LookAtPosition(player->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
-						}
+					// Speak the chosen sound
+
+					if ( !soundName.IsEmpty() )
+					{
+						memory.lastTimeVisualStimBark = gameLocal.time;
+						CommMessagePtr message;
+						owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName, message)));
+						owner->Event_LookAtPosition(player->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
 					}
 				}
 			}
@@ -1520,7 +1511,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 						memory.timeEnemySeen = otherMemory.timeEnemySeen;
 					}
 					else if ( ( otherMemory.alertType == EAlertTypeDeadPerson ) &&
-							  ( otherMemory.posCorpseFound == memory.posCorpseFound ) ) // do we know about the same corpse?
+							  ( otherMemory.posCorpseFound != memory.posCorpseFound ) ) // do we know about the same corpse?
 					{
 						// warn about finding a corpse
 						//gameLocal.Printf("%s found a friend, who is warning about finding a corpse\n",owner->name.c_str());
@@ -1709,37 +1700,19 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 						{
 							if ( owner->CanGreet() && otherAI->CanGreet() )
 							{
-								Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
+								// grayman #3415 - Check when we can greet this AI again
+								int nextGreetingTime = owner->GetMemory().GetGreetingInfo(otherAI).nextGreetingTime;
 
-								bool consider = true;
-
-								// Owner has a certain chance of greeting when encountering the other person 
-								// this chance does not get re-evaluated for a given amount of time
-								// Basically this has the effect that AI evaluate the greeting chance
-								// immediately after they enter the greeting radius and ignore all stims for 
-								// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
-								if ( ( info.lastConsiderTime > -1 ) && 
-									 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+								if ( gameLocal.time >= nextGreetingTime )
 								{
-									// Not enough time has passed, ignore this stim
-									consider = false;
-								}
-								else
-								{
-									info.lastConsiderTime = gameLocal.time;
-									consider = (gameLocal.random.RandomFloat() > 1.0f - CHANCE_FOR_GREETING);
-								}
+									if ( owner->CheckFOV(otherAI->GetEyePosition()) )
+									{
+										// A special GreetingBarkTask is handling this
 
-								if (consider && 
-									owner->CheckFOV(otherAI->GetEyePosition()) && 
-									otherAI->CheckFOV(owner->GetEyePosition()))
-								{
-									// A special GreetingBarkTask is handling this
-
-									// Get the sound and queue the task
-									idStr greetSound = GetGreetingSound(owner, otherAI);
-
-									owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
+										// Get the sound and queue the task
+										idStr greetSound = GetGreetingSound(owner, otherAI);
+										owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI, true)));
+									}
 								}
 							}
 						}
@@ -1800,37 +1773,19 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 					{
 						if ( owner->CanGreet() && otherAI->CanGreet() )
 						{
-							Memory::GreetingInfo& info = owner->GetMemory().GetGreetingInfo(otherAI);
+							// grayman #3415 - Check when we can greet this AI again
+							int nextGreetingTime = owner->GetMemory().GetGreetingInfo(otherAI).nextGreetingTime;
 
-							bool consider = true;
-
-							// Owner has a certain chance of greeting when encountering the other person 
-							// this chance does not get re-evaluated for a given amount of time
-							// Basically this has the effect that AI evaluate the greeting chance
-							// immediately after they enter the greeting radius and ignore all stims for 
-							// the next 20 secs. (i.e. one chance evaluation per 20 seconds)
-							if ( ( info.lastConsiderTime > -1 ) && 
-								 ( gameLocal.time < info.lastConsiderTime + MIN_TIME_BETWEEN_GREETING_CHECKS ) )
+							if ( gameLocal.time >= nextGreetingTime )
 							{
-								// Not enough time has passed, ignore this stim
-								consider = false;
-							}
-							else
-							{
-								info.lastConsiderTime = gameLocal.time;
-								consider = (gameLocal.random.RandomFloat() > 1.0f - CHANCE_FOR_GREETING);
-							}
+								if ( owner->CheckFOV(otherAI->GetEyePosition()) )
+								{
+									// A special GreetingBarkTask is handling this
 
-							if (consider && 
-								owner->CheckFOV(otherAI->GetEyePosition()) && 
-								otherAI->CheckFOV(owner->GetEyePosition()))
-							{
-								// A special GreetingBarkTask is handling this
-
-								// Get the sound and queue the task
-								idStr greetSound = GetGreetingSound(owner, otherAI);
-								owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI)));
-								owner->Event_LookAtPosition(otherAI->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
+									// Get the sound and queue the task
+									idStr greetSound = GetGreetingSound(owner, otherAI);
+									owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI, true)));
+								}
 							}
 						}
 					}
@@ -3727,10 +3682,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				{
 					// Get the sound and queue the task
 					idStr greetSound = GetGreetingResponseSound(owner, otherAI);
-
-					owner->commSubsystem->AddCommTask(
-						CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI))
-					);
+					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI, false))); // grayman #3415
 				}
 				else // grayman #3202 - reset greetingState so we can receive greetings in the future
 				{
