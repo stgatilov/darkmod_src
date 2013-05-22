@@ -704,7 +704,7 @@ void idPhysics_Monster::RestoreState( void ) {
 
 /*
 ================
-idPhysics_Player::SetOrigin
+idPhysics_Monster::SetOrigin
 ================
 */
 void idPhysics_Monster::SetOrigin( const idVec3 &newOrigin, int id ) {

@@ -2210,7 +2210,7 @@ void idAI::Think( void )
 	SetNextThinkFrame();
 
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
-	if ( ( gameLocal.time < m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
+	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
 		idVec3 origin = physicsObj.GetOrigin();
 		if ( origin.z < m_sleepFloorZ )

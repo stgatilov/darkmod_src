@@ -529,6 +529,18 @@ void State::OnVisualStim(idEntity* stimSource)
 		return;
 	}
 
+	// grayman #2416 - If I'm in the middle of certain animations, do nothing
+
+	moveType_t moveType = owner->GetMoveType();
+	if ( moveType == MOVETYPE_SIT_DOWN			|| // standing->sitting
+		 moveType == MOVETYPE_GET_UP			|| // sitting->standing
+		 moveType == MOVETYPE_GET_UP_FROM_LYING	|| // sleeping->standing
+		 moveType == MOVETYPE_SLEEP				|| // sleeping
+		 moveType == MOVETYPE_LAY_DOWN )		   // standing->lying down
+	{
+		return;
+	}
+
 	// Get AI use of the stim
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
 
@@ -3221,7 +3233,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		light->SetBeingRelit(true); // this light is being relit
 		stimSource->IgnoreResponse(ST_VISUAL,owner); // ignore this stim while turning the light back on
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light))); // set out to relight
-		gameLocal.Printf("That light should be on! And I'm going to relight it.\n");
+		gameLocal.Printf("%s - That light %s should be on! And I'm going to relight it.\n",owner->GetName(),stimSource->GetName());
 	}
 	else // Can't relight
 	{
