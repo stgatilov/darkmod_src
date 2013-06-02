@@ -437,7 +437,6 @@ public:
 	 * This also updates the grace timers, alert times and checks for
 	 * a valid agitatedsearching>combat transition.
 	 *
-	 * Additionally, the transition alert sounds ("snd_alertdown2") are played.
 	 */
 	void SetAlertLevel(float newAlertLevel);
 
@@ -468,6 +467,8 @@ public:
 
 	// Removes all messages if msgTag == 0, else only removes all messages with the matching msgTag
 	void ClearMessages(int msgTag); // grayman #3355
+
+	bool CheckOutgoingMessages(ai::CommMessage::TCommType type, idActor* receiver); // grayman #3424
 
 	/**
 	* Get the volume modifier for a given movement type
@@ -898,7 +899,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	**/
 	float					m_AlertLevelThisFrame;
 
-
 	// angua: stores the previous alert index at alert index changes
 	int						m_prevAlertIndex;
 
@@ -1008,8 +1008,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* The spots resulting from the current search or gotten from
 	* another AI.
 	*/
-	CDarkmodHidingSpotTree m_hidingSpots;
+	CDarkmodHidingSpotTree	m_hidingSpots;
 
+	// An array of random numbers serving as indexes into the hiding spot list.
+	std::vector< int >		m_randomHidingSpotIndexes;
 
 	/**
 	* Used for drowning
@@ -1245,6 +1247,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	idEntity* m_lastKilled;		// grayman #2816 - the last enemy we killed
 	bool m_justKilledSomeone;	// grayman #2816 - remember just killing someone so correct bark is emitted when alert level comes down
 	bool m_deckedByPlayer;		// grayman #3314 - TRUE if the player killed or KO'ed me (for mission statistics "bodies found")
+	bool m_allowAudioAlerts;	// grayman #3424 - latch to prevent audio alert processing
 
 	// The mind of this AI
 	ai::MindPtr mind;

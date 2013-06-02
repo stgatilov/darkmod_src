@@ -123,7 +123,7 @@ void SearchingState::Init(idAI* owner)
 
 		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 		{
-			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2)) // grayman #2603
+			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
 			{
 				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
 				{
@@ -214,7 +214,6 @@ void SearchingState::Think(idAI* owner)
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
-
 	if (owner->GetMoveType() == MOVETYPE_SIT 
 		|| owner->GetMoveType() == MOVETYPE_SLEEP
 		|| owner->GetMoveType() == MOVETYPE_SIT_DOWN
@@ -224,8 +223,9 @@ void SearchingState::Think(idAI* owner)
 		return;
 	}
 
-
 	Memory& memory = owner->GetMemory();
+
+	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 
 	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
 	if (memory.restartSearchForHidingSpots)
@@ -307,7 +307,7 @@ void SearchingState::Think(idAI* owner)
 					// Choose to investigate spots closely on a random basis
 					// grayman #2801 - and only if you weren't hit by a projectile
 
-					memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeDamage ) );
+					memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeHitByProjectile ) );
 
 					owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
 					//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), memory.currentSearchSpot, 1, 500);
@@ -395,6 +395,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 	memory.stopReactingToHit = true; // grayman #2816
+
+	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes
@@ -485,6 +487,30 @@ void SearchingState::PerformHidingSpotSearch(idAI* owner)
 	}
 }
 
+void SearchingState::RandomizeHidingSpotList(idAI* owner) // grayman #3424
+{
+	// Randomize an array of ints to be used for indexes into
+	// the list of hiding spot.
+
+	int numSpots = owner->m_hidingSpots.getNumSpots();
+	owner->m_randomHidingSpotIndexes.clear(); // clear any existing array elements
+
+	// Fill the array with integers from 0 to numSpots-1.
+	for ( int i = 0 ; i < numSpots ; i++ )
+	{
+		owner->m_randomHidingSpotIndexes.push_back(i);
+	}
+
+    // Shuffle elements by randomly exchanging pairs.
+    for ( int i = 0 ; i < (numSpots-1) ; i++ )
+	{
+        int r = i + gameLocal.random.RandomInt(numSpots - i); // Random remaining position.
+        int temp = owner->m_randomHidingSpotIndexes[i];
+		owner->m_randomHidingSpotIndexes[i] = owner->m_randomHidingSpotIndexes[r];
+		owner->m_randomHidingSpotIndexes[r] = temp;
+    }
+}
+
 bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
@@ -512,7 +538,37 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			*/
 			// greebo: TODO? This isn't random choosing...
 
-			int spotIndex = 0; 
+			// grayman #3424
+			// Randomize hiding spot list indexes before selecting anything from the list.
+			RandomizeHidingSpotList(owner);
+
+			// grayman #3424 - catch an invalid starting spot early, rather than letting InvestigateSpotTask
+			// be queued to run, only to discover the spot is invalid. If all available spots are invalid,
+			// quit the search.
+
+			int spotIndex = -1;
+			idVec3 spot;
+			for ( int i = 0 ; i < numSpots ; i++ )
+			{
+				// Get location
+				spot = owner->GetNthHidingSpotLocation(owner->m_randomHidingSpotIndexes[i]);
+				if ( !spot.Compare(idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY) ) )
+				{
+					spotIndex = i;
+					break; // valid spot
+				}
+			}
+
+			if ( spotIndex == -1 ) // no valid spots?
+			{
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("No valid spots to search.\r");
+				memory.hidingSpotSearchDone = false;
+				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+				memory.currentChosenHidingSpotIndex = -1;
+				memory.firstChosenHidingSpotIndex = -1;
+				memory.noMoreHidingSpots = true;
+				return false;
+			}
 
 			// Remember which hiding spot we have chosen at start
 			memory.firstChosenHidingSpotIndex = spotIndex;
@@ -520,8 +576,7 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 			// Note currently chosen hiding spot
 			memory.currentChosenHidingSpotIndex = spotIndex;
 			
-			// Get location
-			memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(spotIndex);
+			memory.chosenHidingSpot = spot;
 			memory.currentSearchSpot = memory.chosenHidingSpot;
 			//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
@@ -532,36 +587,47 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 		}
 		else 
 		{
-			// Make sure we stay in bounds
-			memory.currentChosenHidingSpotIndex++;
-			if (memory.currentChosenHidingSpotIndex >= numSpots)
-			{
-				memory.currentChosenHidingSpotIndex = 0;
-			}
+			// grayman #3424 - catch invalid spots early, rather than letting InvestigateSpotTask
+			// be queued to run, only to discover the spot is invalid.
 
-			// Have we wrapped around to first one searched?
-			if (memory.currentChosenHidingSpotIndex == memory.firstChosenHidingSpotIndex || 
-				memory.currentChosenHidingSpotIndex < 0)
+			for ( int i = 0 ; i < numSpots ; i++ )
 			{
-				// No more hiding spots
-				DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots to search.\r");
-				memory.hidingSpotSearchDone = false;
-				memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-				memory.currentChosenHidingSpotIndex = -1;
-				memory.firstChosenHidingSpotIndex = -1;
-				memory.noMoreHidingSpots = true;
-				return false;
-			}
-			else
-			{
+				// Make sure we stay in bounds
+				memory.currentChosenHidingSpotIndex++;
+				if (memory.currentChosenHidingSpotIndex >= numSpots)
+				{
+					memory.currentChosenHidingSpotIndex = 0;
+				}
+
+				// Have we wrapped around to first one searched?
+				if ( ( memory.currentChosenHidingSpotIndex == memory.firstChosenHidingSpotIndex ) || 
+					 ( memory.currentChosenHidingSpotIndex < 0 ) )
+				{
+					// No more hiding spots
+					DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots to search.\r");
+					memory.hidingSpotSearchDone = false;
+					memory.chosenHidingSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+					memory.currentChosenHidingSpotIndex = -1;
+					memory.firstChosenHidingSpotIndex = -1;
+					memory.noMoreHidingSpots = true;
+					return false;
+				}
+
 				// Index is valid, let's acquire the position
-				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Next spot chosen is index %d of %d, first was %d.\r", 
-					memory.currentChosenHidingSpotIndex, numSpots-1, memory.firstChosenHidingSpotIndex);
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Next spot chosen is index %d of %d\r", 
+					owner->m_randomHidingSpotIndexes[memory.currentChosenHidingSpotIndex], numSpots-1);
 
-				memory.chosenHidingSpot = owner->GetNthHidingSpotLocation(memory.currentChosenHidingSpotIndex);
-				memory.currentSearchSpot = memory.chosenHidingSpot;
+				idVec3 spot = owner->GetNthHidingSpotLocation(owner->m_randomHidingSpotIndexes[memory.currentChosenHidingSpotIndex]);
+				if ( spot.Compare(idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY) ) )
+				{
+					continue; // skip this spot
+				}
+
+				memory.chosenHidingSpot = spot;
+				memory.currentSearchSpot = spot;
 				memory.hidingSpotSearchDone = true;
-				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
+				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), spot, 1, 2000);
+				break;
 			}
 		}
 	}

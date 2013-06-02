@@ -62,6 +62,13 @@ void HitByMoveableState::Init(idAI* owner)
 		return;
 	}
 
+	// grayman #3424 - don't process if dead or unconscious
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
+	{
+		Wrapup(owner);
+		return;
+	}
+
 	if ( !owner->spawnArgs.GetBool("canSearch","1") )
 	{
 		// TODO: AI that won't search should probably change
@@ -124,6 +131,13 @@ void HitByMoveableState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void HitByMoveableState::Think(idAI* owner)
 {
+	// grayman #3424 - don't process if dead or unconscious
+	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
+	{
+		Wrapup(owner);
+		return;
+	}
+
 	// check if something happened to abort the state
 	if (owner->GetMemory().stopReactingToHit)
 	{

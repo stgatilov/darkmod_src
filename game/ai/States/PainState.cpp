@@ -46,6 +46,13 @@ void PainState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("PainState initialised.\r");
 	assert(owner);
 
+	// grayman #3424 - if already playing a pain anim, skip this one
+
+	if ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) == "pain" )
+	{
+		return;
+	}
+
 	Memory& memory = owner->GetMemory();
 
 	// Play the animation
@@ -69,7 +76,8 @@ void PainState::Init(idAI* owner)
 			CommMessage::DetectedEnemy_CommType, 
 			owner, NULL, // from this AI to anyone
 			NULL,
-			memory.alertPos
+			memory.alertPos,
+			0
 		));
 
 		owner->commSubsystem->AddCommTask(
@@ -106,7 +114,6 @@ void PainState::Think(idAI* owner)
 			// If not fleeing, play snd_taking_fire here.
 
 			willBark = !willFlee;
-			memory.timeEnemySeen = gameLocal.time;
 			memory.posEnemySeen = owner->GetPhysics()->GetOrigin();
 		}
 
@@ -121,7 +128,8 @@ void PainState::Think(idAI* owner)
 				CommMessage::RequestForHelp_CommType, 
 				owner, NULL, // from this AI to anyone 
 				NULL,
-				owner->GetPhysics()->GetOrigin()
+				owner->GetPhysics()->GetOrigin(),
+				0
 			));
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));

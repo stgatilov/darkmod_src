@@ -55,13 +55,9 @@ Memory::Memory(idAI* owningAI) :
 
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
 	posEnemySeen(0,0,0),
-	posCorpseFound(0,0,0),
 	posMissingItem(0,0,0),
 	posEvidenceIntruders(0,0,0),
 	mandatory(false),			// grayman #3331
-	timeEnemySeen(0),
-	timeCorpseFound(0),
-	timeMissingItem(0),
 	timeEvidenceIntruders(0),
 	visualAlert(false),			// grayman #2422
 	stopRelight(false),			// grayman #2603
@@ -99,7 +95,8 @@ Memory::Memory(idAI* owningAI) :
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
 	closeSuspiciousDoor(false), // grayman #1327
-	issueMoveToPositionTask(false) // grayman #3052
+	issueMoveToPositionTask(false), // grayman #3052
+	currentSearchEventID(-1) // grayman #3424
 {}
 
 // Save/Restore routines
@@ -128,17 +125,14 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(itemsHaveBeenBroken);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
+	savefile->WriteBool(prevSawEvidence); // grayman #3424
 	savefile->WriteVec3(alertPos);
 	
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
 	savefile->WriteVec3(posEnemySeen);
-	savefile->WriteVec3(posCorpseFound);
 	savefile->WriteVec3(posMissingItem);
 	savefile->WriteVec3(posEvidenceIntruders);
 	savefile->WriteBool(mandatory);				// grayman #3331
-	savefile->WriteInt(timeEnemySeen);
-	savefile->WriteInt(timeCorpseFound);
-	savefile->WriteInt(timeMissingItem);
 	savefile->WriteInt(timeEvidenceIntruders);
 	savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
@@ -149,6 +143,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(nextTime2GenRandomSpot);	// grayman #2422
 	savefile->WriteInt(static_cast<int>(alertClass));
 	savefile->WriteInt(static_cast<int>(causeOfPain)); // grayman #3140
+	savefile->WriteBool(painStatePushedThisFrame); // grayman #3424
 	savefile->WriteInt(static_cast<int>(alertType));
 	savefile->WriteFloat(alertRadius);
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
@@ -177,6 +172,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(resolvingMovementBlock);
 	lastDoorHandled.Save(savefile);   // grayman #2712
 	hitByThisMoveable.Save(savefile); // grayman #2816
+	corpseFound.Save(savefile);		  // grayman #3424
 	relightLight.Save(savefile);	  // grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
 	savefile->WriteInt(searchFlags);			// grayman #2603
@@ -200,6 +196,7 @@ void Memory::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteObject(i->first);
 		savefile->WriteInt(i->second.nextGreetingTime); // grayman #3415
+		savefile->WriteInt(i->second.nextWarningTime); // grayman #3424
 	}
 
 	// grayman #2866 - start of changes
@@ -212,6 +209,8 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(susDoorSameAsCurrentDoor);
 	savefile->WriteFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
+
+	savefile->WriteInt(currentSearchEventID); // grayman #3424
 
 	savefile->WriteBool(issueMoveToPositionTask); // grayman #3052
 }
@@ -241,17 +240,14 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(itemsHaveBeenBroken);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
+	savefile->ReadBool(prevSawEvidence); // grayman #3424
 	savefile->ReadVec3(alertPos);
 
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
 	savefile->ReadVec3(posEnemySeen);
-	savefile->ReadVec3(posCorpseFound);
 	savefile->ReadVec3(posMissingItem);
 	savefile->ReadVec3(posEvidenceIntruders);
 	savefile->ReadBool(mandatory);				// grayman #3331
-	savefile->ReadInt(timeEnemySeen);
-	savefile->ReadInt(timeCorpseFound);
-	savefile->ReadInt(timeMissingItem);
 	savefile->ReadInt(timeEvidenceIntruders);
 	savefile->ReadBool(visualAlert);			// grayman #2422
 	savefile->ReadBool(stopRelight);			// grayman #2603
@@ -267,6 +263,8 @@ void Memory::Restore(idRestoreGame* savefile)
 
 	savefile->ReadInt(temp);
 	causeOfPain = static_cast<EPainCause>(temp); // grayman #3140
+
+	savefile->ReadBool(painStatePushedThisFrame); // grayman #3424
 
 	savefile->ReadInt(temp);
 	alertType = static_cast<EAlertType>(temp);
@@ -298,6 +296,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(resolvingMovementBlock);
 	lastDoorHandled.Restore(savefile);	 // grayman #2712
 	hitByThisMoveable.Restore(savefile); // grayman #2816
+	corpseFound.Restore(savefile);		 // grayman #3424
 	relightLight.Restore(savefile);		 // grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
 	savefile->ReadInt(searchFlags);				// grayman #2603
@@ -348,6 +347,7 @@ void Memory::Restore(idRestoreGame* savefile)
 			ActorGreetingInfoMap::value_type(ai, GreetingInfo()));
 		
 		savefile->ReadInt(result.first->second.nextGreetingTime); // grayman #3415
+		savefile->ReadInt(result.first->second.nextWarningTime); // grayman #3424
 	}
 
 	// grayman #2866 - start of changes
@@ -360,6 +360,8 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(susDoorSameAsCurrentDoor);
 	savefile->ReadFloat(savedAlertLevelDecreaseRate);
 	// end of #2866 changes
+
+	savefile->ReadInt(currentSearchEventID); // grayman #3424
 
 	savefile->ReadBool(issueMoveToPositionTask); // grayman #3052
 }

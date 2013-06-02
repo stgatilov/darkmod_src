@@ -1087,12 +1087,20 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 			propParms->bSameArea = true;
 			propParms->direction = origin;
 
-			for(int j=0; j < pPopArea->AIContents.Num(); j++)
+			for ( int j=0 ; j < pPopArea->AIContents.Num() ; j++ )
 			{
 				idAI* ai = pPopArea->AIContents[j].GetEntity();
 				
 				if (ai == NULL)
+				{
 					continue;
+				}
+
+				// grayman #3424 - don't react if you made the propagated sound
+				if (ai == propParms->maker)
+				{
+					continue;
+				}
 
 				tempDist = (origin - ai->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
 				tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;

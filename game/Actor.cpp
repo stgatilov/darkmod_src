@@ -743,6 +743,12 @@ idActor::idActor( void ) {
 
 	m_MouthOffset		= vec3_zero; // grayman #1104
 
+	m_suspiciousEventIDs.Clear(); // grayman #3424
+
+	m_haveSearchedEventID.Clear(); // grayman #3424
+
+	m_warningEvents.Clear(); // grayman #3424
+
 	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -1241,6 +1247,28 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_nextKickTime );	// grayman #2728
 	savefile->WriteVec3( m_MouthOffset );	// grayman #1104
 
+	// grayman #3424
+	savefile->WriteInt(m_suspiciousEventIDs.Num());
+	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	{
+		savefile->WriteInt(m_suspiciousEventIDs[i]);
+	}
+
+	// grayman #3424
+	savefile->WriteInt(m_haveSearchedEventID.Num());
+	for ( int i = 0 ; i < m_haveSearchedEventID.Num() ; i++ )
+	{
+		savefile->WriteBool(m_haveSearchedEventID[i]);
+	}
+
+	// grayman #3424
+	savefile->WriteInt(m_warningEvents.Num());
+	for ( int i = 0 ; i < m_warningEvents.Num() ; i++ )
+	{
+		savefile->WriteInt(m_warningEvents[i].eventID);
+		m_warningEvents[i].entity.Save(savefile);
+	}
+
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
@@ -1441,6 +1469,34 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_pathRank );	 // grayman #2345
 	savefile->ReadInt( m_nextKickTime ); // grayman #2728
 	savefile->ReadVec3( m_MouthOffset ); // grayman #1104
+
+	// grayman #3424
+	savefile->ReadInt(num);
+	m_suspiciousEventIDs.Clear();
+	m_suspiciousEventIDs.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		savefile->ReadInt(m_suspiciousEventIDs[i]);
+	}
+
+	// grayman #3424
+	savefile->ReadInt(num);
+	m_haveSearchedEventID.Clear();
+	m_haveSearchedEventID.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		savefile->ReadBool(m_haveSearchedEventID[i]);
+	}
+
+	// grayman #3424
+	savefile->ReadInt(num);
+	m_warningEvents.Clear();
+	m_warningEvents.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		savefile->ReadInt(m_warningEvents[i].eventID);
+		m_warningEvents[i].entity.Restore(savefile);
+	}
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );
@@ -4991,6 +5047,125 @@ idAFAttachment* idActor::GetHead() // grayman #1104
 {
 	return head.GetEntity();
 }
+
+// grayman #3424
+void idActor::MarkEventAsSearched( int eventID )
+{
+	if ( eventID >= 0 )
+	{
+		// Do I know about this event?
+
+		for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+		{
+			if ( m_suspiciousEventIDs[i] == eventID )
+			{
+				// I know about it. Mark it 'searched'.
+				m_haveSearchedEventID[i] = true;
+				return;
+			}
+		}
+	}
+}
+
+// grayman #3424
+bool idActor::HasSearchedEvent( int eventID )
+{
+	if ( eventID < 0 )
+	{
+		return false;
+	}
+
+	// Do I know about this event?
+
+	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	{
+		if ( m_suspiciousEventIDs[i] == eventID )
+		{
+			// I know about it. Have I already searched it?
+
+			return m_haveSearchedEventID[i];
+		}
+	}
+	return false;
+}
+
+bool idActor::HasBeenWarned( idActor* other, int eventID )
+{
+	// Go through my list of warnings and see if I've already been warned.
+
+	for ( int i = 0 ; i < m_warningEvents.Num() ; i++ )
+	{
+		if ( ( m_warningEvents[i].eventID == eventID ) && ( m_warningEvents[i].entity.GetEntity() == other ) )
+		{
+			return true;
+		}
+	}
+
+	return false; // No warning on file
+}
+
+bool idActor::FindSuspiciousEvent( int eventID ) // grayman #3424
+{
+	if ( eventID < 0 )
+	{
+		return false;
+	}
+
+	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	{
+		if ( m_suspiciousEventIDs[i] == eventID )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
+{
+	if ( eventID < 0 )
+	{
+		return false;
+	}
+
+	// If I already know about this event, no need to add it.
+	if ( FindSuspiciousEvent( eventID ) )
+	{
+		return false;
+	}
+
+	m_suspiciousEventIDs.Append(eventID);
+	m_haveSearchedEventID.Append(false); // grayman dedug 2
+	return true;
+}
+
+// grayman #3424 - Add a warning event. This represents a warning
+// having passed between 'this' and 'other'.
+
+void idActor::AddWarningEvent( idEntity* other, int eventID)
+{
+	WarningEvent we;
+	we.entity = other;
+	we.eventID = eventID;
+
+	m_warningEvents.Append(we);
+}
+
+// grayman #3424 - log a suspicious event
+
+int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ) 
+{
+	SuspiciousEvent se;
+	se.type = type;
+	se.location = loc;
+	se.entity = entity;
+
+	int index = gameLocal.LogSuspiciousEvent(se);
+	AddSuspiciousEvent(index); // I know about this event
+	return index;
+}
+
+
 
 /****************************************************************************************
 	=====================

@@ -68,11 +68,6 @@ void IdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("IdleState initialised.\r");
 	assert(owner);
 
-	// Memory shortcut
-	Memory& memory = owner->GetMemory();
-//	memory.alertClass = EAlertNone; // grayman #2603 - moved further down, otherwise we don't hear the correct rampdown bark
-//	memory.alertType = EAlertTypeNone;
-
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 	
@@ -85,9 +80,15 @@ void IdleState::Init(idAI* owner)
 	_alertLevelDecreaseRate = 0.01f;
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
 	owner->SheathWeapon();
+
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
 
 	// Initialise the animation state
 	if (_startSitting && memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
@@ -148,7 +149,6 @@ void IdleState::Init(idAI* owner)
 		owner->AI_SIT_UP_ANGLE = memory.idleYaw;
 	}	
 
-
 	InitialiseCommunication(owner);
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
@@ -208,7 +208,10 @@ void IdleState::Think(idAI* owner)
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
 	// Let the AI check its senses
 	owner->PerformVisualScan();
@@ -267,6 +270,7 @@ void IdleState::InitialiseCommunication(idAI* owner)
 	if (memory.searchFlags & SRCH_WAS_SEARCHING)
 	{
 		memory.searchFlags = 0; // clear
+		memory.currentSearchEventID = -1; // grayman #3424
 		// Push a single bark to the communication subsystem first, it fires only once
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner))));
@@ -314,7 +318,11 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 //		(owner->m_maxAlertLevel >= owner->thresh_1) &&  // grayman #3182 - not necessary; if memory.alertClass has something
 //		(owner->m_maxAlertLevel < owner->thresh_4))		// other than EAlertNone, the AI experienced something worth barking about
 	{
-		if (memory.alertClass == EAlertVisual_2) // grayman #2603
+		if (memory.alertClass == EAlertVisual_3) // grayman #3424
+		{
+			// no rampdown bark
+		}
+		else if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{
 			soundName = "snd_alertdown0sus";
 		}

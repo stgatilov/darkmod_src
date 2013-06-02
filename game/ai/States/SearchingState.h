@@ -82,6 +82,9 @@ protected:
 	// Stores the result in the AI's Memory (hiding spot indices)
 	// return TRUE when a hiding spot is available, FALSE if not.
 	virtual bool ChooseNextHidingSpotToSearch(idAI* owner);
+
+	// Randomizes the hiding spot list before any spots are chosen from it.
+	void RandomizeHidingSpotList(idAI* owner); // grayman #3424
 };
 
 } // namespace ai

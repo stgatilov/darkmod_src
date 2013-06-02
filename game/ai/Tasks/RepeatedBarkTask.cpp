@@ -77,7 +77,7 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	// grayman #3182 - when the bark itself is finished, allow idle animations again
-	// Use _prevBarkDone to keep from setting playIdleAnamiations over and over and over.
+	// Use _prevBarkDone to keep from setting playIdleAnimations over and over and over.
 	if ( !_prevBarkDone && !IsBarking() )
 	{
 		owner->GetMind()->GetMemory().currentlyBarking = false;

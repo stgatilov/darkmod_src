@@ -198,7 +198,8 @@ struct CommMessage
 		idEntity* in_p_issuingEntity,
 		idEntity* in_p_recipientEntity,
 		idEntity* in_p_directObjectEntity,
-		const idVec3& in_directObjectLocation
+		const idVec3& in_directObjectLocation,
+		int in_eventID // grayman #3424
 	);
 
 	void Save(idSaveGame *savefile) const;
@@ -239,6 +240,11 @@ struct CommMessage
 	* the communication.
 	*/
 	idVec3 m_directObjectLocation;
+
+	/*
+	* grayman #3424
+	*/
+	int m_eventID;
 
 	/*!
 	* This is the position of the issuing entity at the time of issuance

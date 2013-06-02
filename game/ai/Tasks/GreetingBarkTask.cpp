@@ -116,7 +116,8 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 					CommMessage::Greeting_CommType, 
 					owner, otherAI, // from this AI to the other
 					NULL,
-					owner->GetPhysics()->GetOrigin()
+					owner->GetPhysics()->GetOrigin(),
+					0
 				);
 
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Sending AI Comm Message to %s.\r", otherAI->name.c_str());

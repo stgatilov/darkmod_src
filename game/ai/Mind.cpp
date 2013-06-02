@@ -331,14 +331,12 @@ bool Mind::PerformCombatCheck()
 		
 		// Spotted an enemy
 		memory.enemiesHaveBeenSeen = true;
-
 		memory.alertType = EAlertTypeEnemy;
-		
 		idActor* enemy = owner->GetEnemy();
 
+		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemy->GetPhysics()->GetOrigin(), NULL ); // grayman #3424  
 		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
-		memory.posEnemySeen = owner->GetPhysics()->GetOrigin();	// grayman #2903
-		memory.timeEnemySeen = gameLocal.time;	// grayman #2903
+		memory.posEnemySeen = enemy->GetPhysics()->GetOrigin();	// grayman #2903
 		
 		return true; // entered combat mode
 	}

@@ -80,7 +80,8 @@ void FleeState::Init(idAI* owner)
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		NULL,
-		memory.alertPos
+		memory.alertPos,
+		0
 	));
 
 	// grayman #3317 - Use a different initial flee bark
@@ -102,7 +103,7 @@ void FleeState::Init(idAI* owner)
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
 
-	owner->commSubsystem->AddSilence(3000);
+	owner->commSubsystem->AddSilence(3000 + gameLocal.random.RandomInt(1500)); // grayman #3424;
 
 	CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));
 	owner->commSubsystem->AddCommTask(barkTask);

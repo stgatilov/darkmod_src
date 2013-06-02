@@ -53,11 +53,6 @@ void AlertIdleState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AlertIdleState initialised.\r");
 	assert(owner);
 
-	// grayman #2603 - clear recent alerts, which allows us to see new, lower-weighted, alerts
-	Memory& memory = owner->GetMemory();
-//	memory.alertClass = EAlertNone; // grayman #2603 - moved further down, otherwise we don't hear the correct rampdown bark
-//	memory.alertType = EAlertTypeNone;
-
 	_alertLevelDecreaseRate = 0.005f;
 
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
@@ -71,6 +66,9 @@ void AlertIdleState::Init(idAI* owner)
 
 	InitialiseMovement(owner);
 	InitialiseCommunication(owner);
+
+	// grayman #2603 - clear recent alerts, which allows us to see new, lower-weighted, alerts
+	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
 
@@ -91,37 +89,50 @@ void AlertIdleState::Init(idAI* owner)
 
 	if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
 	{
-		// grayman #2920 - if patrolling, stop for a moment
-		// to draw weapon, then continue on. This lets the "walk_alerted"
-		// animation take hold.
-
-		bool startMovingAgain = false;
-		if ( owner->AI_FORWARD )
-		{
-			startMovingAgain = true;
-			owner->movementSubsystem->ClearTasks();
-			owner->StopMove(MOVE_STATUS_DONE);
-		}
-
 		// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
 		// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
 		// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
 		// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
 
-		if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
-		{
-			owner->DrawWeapon(COMBAT_RANGED);
-		}
-		else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
-		{
-			owner->DrawWeapon(COMBAT_MELEE);
-		}
+		bool shouldDrawMeleeWeapon  = ( ( owner->GetNumMeleeWeapons() > 0 )  && !owner->spawnArgs.GetBool("unarmed_melee","0") );
+		bool shouldDrawRangedWeapon = ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") );
 
-		if ( startMovingAgain )
+		// grayman #3424 - don't pause to draw a weapon if you have no weapon to draw
+
+		if ( shouldDrawMeleeWeapon || shouldDrawRangedWeapon )
 		{
-			// allow enough time for weapon to be drawn,
-			// then start patrolling again
-			owner->PostEventMS(&AI_RestartPatrol,1500);
+			// grayman #2920 - if patrolling, stop for a moment
+			// to draw weapon, then continue on. This lets the "walk_alerted"
+			// animation take hold.
+
+			bool startMovingAgain = false;
+			if ( owner->AI_FORWARD )
+			{
+				startMovingAgain = true;
+				owner->movementSubsystem->ClearTasks();
+				owner->StopMove(MOVE_STATUS_DONE);
+			}
+
+			// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
+			// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
+			// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
+			// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
+
+			if ( shouldDrawRangedWeapon )
+			{
+				owner->DrawWeapon(COMBAT_RANGED);
+			}
+			else if ( shouldDrawMeleeWeapon )
+			{
+				owner->DrawWeapon(COMBAT_MELEE);
+			}
+
+			if ( startMovingAgain )
+			{
+				// allow enough time for weapon to be drawn,
+				// then start patrolling again
+				owner->PostEventMS(&AI_RestartPatrol,1500);
+			}
 		}
 	}
 
@@ -137,11 +148,15 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 	idStr soundName("");
 
 	if (!owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
-		!owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
+		!owner->m_ExaminingRope ) 		// grayman #2872 - No rampdown bark if examining a rope.
 //		(owner->m_maxAlertLevel >= owner->thresh_1) &&  // grayman #3182 - not necessary; if memory.alertClass has something
 //		(owner->m_maxAlertLevel < owner->thresh_4))		// other than EAlertNone, the AI experienced something worth barking about
 	{
-		if (memory.alertClass == EAlertVisual_2) // grayman #2603
+		if ( memory.alertClass == EAlertVisual_3 ) // grayman #3424
+		{
+			// no bark
+		}
+		else if (memory.alertClass == EAlertVisual_2) // grayman #2603
 		{
 			soundName = "snd_alertdown0sus";
 		}

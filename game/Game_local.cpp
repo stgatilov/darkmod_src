@@ -407,6 +407,8 @@ void idGameLocal::Clear( void )
 	m_GamePlayTimer.Clear();
 
 	musicSpeakers.Clear();
+
+	m_suspiciousEvents.Clear(); // grayman #3424
 }
 
 /*
@@ -871,6 +873,17 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteInt( musicSpeakers[ i ] );
 	}
 
+	// grayman #3424 - save the list of suspicious events
+	savegame.WriteInt(m_suspiciousEvents.Num());
+	for ( int i = 0 ; i < m_suspiciousEvents.Num() ; i++ )
+	{
+		SuspiciousEvent se = m_suspiciousEvents[i];
+
+		savegame.WriteInt(static_cast<int>(se.type));
+		savegame.WriteVec3(se.location);
+		se.entity.Save(&savegame);
+	}
+	
 	savegame.WriteInt(spawnedAI.Num());
 	for (idAI* ai = spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next()) {
 		savegame.WriteObject(ai);
@@ -1952,6 +1965,19 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		int id;
 		savegame.ReadInt( id );
 		musicSpeakers.Append( id );
+	}
+
+	// grayman #3424
+	savegame.ReadInt(num);
+	m_suspiciousEvents.Clear();
+	m_suspiciousEvents.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		int type;
+		savegame.ReadInt(type);
+		m_suspiciousEvents[i].type = static_cast<EventType>(type);
+		savegame.ReadVec3(m_suspiciousEvents[i].location);
+		m_suspiciousEvents[i].entity.Restore(&savegame);
 	}
 
 	savegame.ReadInt( num );
@@ -5643,7 +5669,7 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 			}
 
 			ent->Damage( inflictor, attacker, dir, damageDefName, damageScale, INVALID_JOINT );
-		} 
+		}
 	}
 
 	// push physics objects
@@ -7576,3 +7602,71 @@ int idGameLocal::GetNextMessageTag()
 	m_uniqueMessageTag++;
 	return ( m_uniqueMessageTag );
 }
+
+// grayman #3424
+
+int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity )
+{
+	idEntityPtr<idEntity> _entity;	// entity, if relevant
+
+	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
+	{
+		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
+		bool found = false;
+		if ( se.type == type ) // type of event
+		{
+			// check location
+
+			if ( !location.Compare(idVec3(0,0,0)))
+			{
+				if ( location.Compare(se.location))
+				{
+					found = true;
+				}
+			}
+
+			// check entity
+
+			if ( entity != NULL )
+			{
+				if ( se.entity.GetEntity() == entity )
+				{
+					found = true;
+				}
+			}
+		}
+
+		if ( found )
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )   
+{
+	int index = -1;
+	if ( se.type == E_EventTypeEnemy )
+	{
+		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL );
+	}
+	else if ( se.type == E_EventTypeDeadPerson )
+	{
+		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity() );
+	}
+	else if ( se.type == E_EventTypeMissingItem )
+	{
+		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, NULL );
+	}
+
+	if ( index < 0 )
+	{
+		gameLocal.m_suspiciousEvents.Append(se); // log this new event
+		index = gameLocal.m_suspiciousEvents.Num() - 1;
+	}
+
+	return index;
+}
+
+

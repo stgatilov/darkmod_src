@@ -144,7 +144,7 @@ void FleeDoneState::Think(idAI* owner)
 			// Create a new help message
 			CommMessagePtr message(new CommMessage(
 				CommMessage::RequestForHelp_CommType, 
-				owner, friendlyAI, NULL, memory.alertPos)
+				owner, friendlyAI, NULL, memory.alertPos, 0)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
@@ -184,7 +184,7 @@ void FleeDoneState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 			memory.lastTimeVisualStimBark = gameLocal.time;
 			CommMessagePtr message(new CommMessage(
 				CommMessage::RequestForHelp_CommType, 
-				owner, other, NULL, memory.alertPos)
+				owner, other, NULL, memory.alertPos, 0)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));

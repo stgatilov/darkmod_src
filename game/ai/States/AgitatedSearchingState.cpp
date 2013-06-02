@@ -128,7 +128,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 		CommMessage::DetectedSomethingSuspicious_CommType, 
 		owner, NULL, // from this AI to anyone
 		NULL,
-		memory.alertPos
+		memory.alertPos,
+		0
 	));
 
 	if (owner->AlertIndexIncreased())
@@ -141,19 +142,21 @@ void AgitatedSearchingState::Init(idAI* owner)
 		}
 	}
 
-	owner->commSubsystem->AddSilence(5000);
+	owner->commSubsystem->AddSilence(5000 + gameLocal.random.RandomInt(3000)); // grayman #3424
 
 	int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 	int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
 
 	if (owner->HasSeenEvidence())
 	{
+		memory.prevSawEvidence = true; // grayman #3424
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime, message))
 		);
 	}
 	else
 	{
+		memory.prevSawEvidence = false; // grayman #3424
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime, message))
 		);
@@ -183,6 +186,38 @@ void AgitatedSearchingState::Init(idAI* owner)
 void AgitatedSearchingState::Think(idAI* owner)
 {
 	SearchingState::Think(owner);
+
+	// grayman #3424 - If we saw evidence (for the first time) between the previous think frame and now,
+	// we need to change the repeated bark.
+
+	Memory& memory = owner->GetMemory();
+	if (memory.prevSawEvidence)
+	{
+		// no change needed
+	}
+	else if (owner->HasSeenEvidence())
+	{
+		memory.prevSawEvidence = true;
+
+		// Switch repeated bark
+
+		owner->commSubsystem->ClearTasks();
+
+		CommMessagePtr message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedSomethingSuspicious_CommType, 
+			owner, NULL, // from this AI to anyone
+			NULL,
+			memory.alertPos,
+			0
+		));
+
+		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
+		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
+
+		owner->commSubsystem->AddCommTask(
+			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime, message))
+		);
+	}
 }
 
 StatePtr AgitatedSearchingState::CreateInstance()

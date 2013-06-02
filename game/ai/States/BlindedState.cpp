@@ -64,7 +64,8 @@ void BlindedState::Init(idAI* owner)
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		NULL,
-		memory.alertPos
+		memory.alertPos,
+		0
 	));
 
 	owner->commSubsystem->AddCommTask(

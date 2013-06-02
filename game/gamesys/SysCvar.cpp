@@ -78,10 +78,10 @@ idCVar cv_ai_sight_scale	(		"tdm_ai_sight_scale",		"1000.0",		CVAR_GAME | CVAR_A
 idCVar cv_ai_show_enemy_visibility ("tdm_ai_show_enemy_visibility",	"0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, the visibility of the AI's enemy is drawn (red = obscured or hidden in darkness, green = the opposite).");
 idCVar cv_ai_show_conversationstate("tdm_ai_show_conversationstate", "0",		CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If set to 1, the AI will draw debug output with regard to their conversation state.");
 
-idCVar cv_ai_acuity_L3	(			"tdm_ai_acuity_L3",			"1.1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 3 but not yet 4");
-idCVar cv_ai_acuity_L4	(			"tdm_ai_acuity_L4",			"1.3",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 4 but not yet 5");
-idCVar cv_ai_acuity_L5	(			"tdm_ai_acuity_L5",			"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is at alert level 5");
-idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acutities of an AI is multiplied if the AI is suspicious due to evidence. It is in addition to the other modifiers.");
+idCVar cv_ai_acuity_L3	(			"tdm_ai_acuity_L3",			"1.1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 3 but not yet 4");
+idCVar cv_ai_acuity_L4	(			"tdm_ai_acuity_L4",			"1.3",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 4 but not yet 5");
+idCVar cv_ai_acuity_L5	(			"tdm_ai_acuity_L5",			"1.5",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is at alert level 5");
+idCVar cv_ai_acuity_susp(			"tdm_ai_acuity_susp",		"1.2",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "This is the amount by which the acuities of an AI are multiplied if the AI is suspicious due to evidence. It is in addition to the other modifiers.");
 
 idCVar cv_sndprop_disable(			"tdm_sndprop_disable",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation will not be calculated." );
 idCVar cv_spr_debug(				"tdm_spr_debug",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, sound propagation debugging information will be sent to the console, and the log information will become more detailed." );

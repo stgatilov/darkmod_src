@@ -122,12 +122,12 @@ void CombatState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 	// angua: ignore other people during combat
 }
 
-void CombatState::Post_OnDeadActorEncounter(idActor* person, idAI* owner) // grayman #3317
+void CombatState::Post_OnDeadPersonEncounter(idActor* person, idAI* owner) // grayman #3317
 {
 	// don't react to a dead person
 }
 
-void CombatState::Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner) // grayman #3317
+void CombatState::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner) // grayman #3317
 {
 	// don't react to an unconscious person
 }
@@ -411,7 +411,8 @@ void CombatState::Think(idAI* owner)
 				CommMessage::DetectedEnemy_CommType, 
 				owner, NULL, // from this AI to anyone 
 				enemy,
-				memory.lastEnemyPos
+				memory.lastEnemyPos,
+				0
 			));
 		}
 

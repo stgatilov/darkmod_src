@@ -79,7 +79,8 @@ void FailedKnockoutState::Init(idAI* owner)
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL, // from this AI to anyone
 		_attacker,
-		memory.alertPos
+		memory.alertPos,
+		0
 	));
 
 	owner->commSubsystem->AddCommTask(
@@ -95,19 +96,21 @@ void FailedKnockoutState::Think(idAI* owner)
 		return; // wait...
 	}
 
-	if (gameLocal.time >= _stateEndTime || 
-		idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "failed_ko") 
+	if ( ( gameLocal.time >= _stateEndTime ) || 
+		 ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "failed_ko" ) )
 	{
 		Memory& memory = owner->GetMemory();
 
 		// Alert this AI
 		memory.alertClass = EAlertTactile;
 		memory.alertType = EAlertTypeEnemy;
+
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman #3424
 	
 		// Set the alert position 50 units in the attacking direction
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-		memory.countEvidenceOfIntruders++;
+		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_FAILED_KO;
 		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.alertedDueToCommunication = false;

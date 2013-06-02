@@ -114,7 +114,7 @@ void ObservantState::Init(idAI* owner)
 
 		if (owner->AlertIndexIncreased() && (memory.alertType != EAlertTypeMissingItem))
 		{
-			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2)) // grayman #2603
+			if ( (memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
 			{
 				soundName = "snd_alert1s";
 			}

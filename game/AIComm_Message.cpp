@@ -51,7 +51,8 @@ CommMessage::CommMessage
 	idEntity* in_p_issuingEntity,
 	idEntity* in_p_recipientEntity,
 	idEntity* in_p_directObjectEntity,
-	const idVec3& in_directObjectLocation
+	const idVec3& in_directObjectLocation,
+	int in_eventID // grayman #3424
 )
 {
 	// Set member variables
@@ -60,6 +61,7 @@ CommMessage::CommMessage
 	m_p_recipientEntity = in_p_recipientEntity;
 	m_p_directObjectEntity = in_p_directObjectEntity;
 	m_directObjectLocation = in_directObjectLocation;
+	m_eventID = in_eventID; // grayman #3424
 
 	m_msgTag = 0; // grayman #3355
 
@@ -94,6 +96,7 @@ CommMessage::CommMessage()
 	m_p_recipientEntity = NULL;
 	m_msgTag = 0; // grayman #3355
 	m_p_directObjectEntity = NULL;
+	m_eventID = 0; // grayman #3424
 	m_directObjectLocation.Zero();
 	m_positionOfIssuance.Zero();
 }
@@ -105,6 +108,7 @@ void CommMessage::Save(idSaveGame *savefile) const
 	m_p_recipientEntity.Save(savefile);
 	m_p_directObjectEntity.Save(savefile);
 	savefile->WriteVec3(m_directObjectLocation);
+	savefile->WriteInt(m_eventID); // grayman #3424
 	savefile->WriteVec3(m_positionOfIssuance);
 	savefile->WriteInt(m_msgTag); // grayman #3355
 }
@@ -118,6 +122,7 @@ void CommMessage::Restore(idRestoreGame *savefile)
 	m_p_recipientEntity.Restore(savefile);
 	m_p_directObjectEntity.Restore(savefile);
 	savefile->ReadVec3(m_directObjectLocation);
+	savefile->ReadInt(m_eventID); // grayman #3424
 	savefile->ReadVec3(m_positionOfIssuance);
 	savefile->ReadInt(m_msgTag); // grayman #3355
 }

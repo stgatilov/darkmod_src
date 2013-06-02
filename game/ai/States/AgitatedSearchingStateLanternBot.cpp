@@ -80,7 +80,8 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL,// from this AI to anyone 
 		NULL,
-		_curAlertPos
+		_curAlertPos,
+		0
 	));
 
 	// The communication system plays starting bark

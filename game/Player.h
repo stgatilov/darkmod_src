@@ -474,6 +474,9 @@ public:
 	int						m_WaitUntilReadyGuiHandle;
 	int						m_WaitUntilReadyGuiTime;
 
+	// grayman #3424 - keep track of intruder evidence when meeting friends
+	int						timeEvidenceIntruders;
+
 public:
 	CLASS_PROTOTYPE( idPlayer );
 

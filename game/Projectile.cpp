@@ -1004,7 +1004,8 @@ idProjectile::Killed
 ================
 */
 void idProjectile::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
-	if ( spawnArgs.GetBool( "detonate_on_death" ) ) {
+	if ( spawnArgs.GetBool( "detonate_on_death" ) )
+	{
 		trace_t collision;
 
 		memset( &collision, 0, sizeof( collision ) );
@@ -1012,10 +1013,13 @@ void idProjectile::Killed( idEntity *inflictor, idEntity *attacker, int damage, 
 		collision.endpos = GetPhysics()->GetOrigin();
 		collision.c.point = GetPhysics()->GetOrigin();
 		collision.c.normal.Set( 0, 0, 1 );
+		AddDefaultDamageEffect( collision, collision.c.normal ); // grayman #3424
 		Explode( collision, NULL );
 		physicsObj.ClearContacts();
 		physicsObj.PutToRest();
-	} else {
+	}
+	else
+	{
 		Fizzle();
 	}
 }
@@ -1140,7 +1144,11 @@ void idProjectile::Explode( const trace_t &collision, idEntity *ignore ) {
 	int			removeTime;
 	bool		bActivated;
 
-	if ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) {
+	// grayman #3424 - if a mine in an INACTIVE state (before it's armed) is
+	// Killed, it should explode.
+
+	if ( !isMine && ( state == INACTIVE || state == EXPLODED || state == FIZZLED ) )
+	{
 		return;
 	}
 

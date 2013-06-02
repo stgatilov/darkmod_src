@@ -648,6 +648,7 @@ idPlayer::idPlayer() :
 	m_LightgemInterleave	= 0;
 	ignoreWeaponAttack		= false; // grayman #597
 	displayAASAreas			= false; // grayman #3032 - no need to save/restore
+	timeEvidenceIntruders	= 0;	 // grayman #3424
 }
 
 /*
@@ -1940,7 +1941,8 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_LightgemValue);
 	savefile->WriteFloat(m_fColVal);
 	savefile->WriteInt(m_LightgemInterleave);
-	savefile->WriteBool(ignoreWeaponAttack); // grayman #597
+	savefile->WriteBool(ignoreWeaponAttack);   // grayman #597
+	savefile->WriteInt(timeEvidenceIntruders); // grayman #3424
 
 	if(hud)
 	{
@@ -2287,7 +2289,8 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_LightgemValue);
 	savefile->ReadFloat(m_fColVal);
 	savefile->ReadInt(m_LightgemInterleave);
-	savefile->ReadBool(ignoreWeaponAttack); // grayman #597
+	savefile->ReadBool(ignoreWeaponAttack);   // grayman #597
+	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
 
 	// create combat collision hull for exact collision detection
 	SetCombatModel();

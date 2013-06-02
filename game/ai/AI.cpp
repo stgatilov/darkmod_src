@@ -530,6 +530,7 @@ idAI::idAI()
 	m_lastKilled		= NULL;	 // grayman #2816
 	m_justKilledSomeone = false; // grayman #2816
 	m_deckedByPlayer	= false; // grayman #3314
+	m_allowAudioAlerts  = true;  // grayman #3424
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -829,6 +830,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_performRelight);		// grayman #2603
 	savefile->WriteBool(m_ReactingToHit);		// grayman #2816
 	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
+	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -871,7 +873,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_AlertGraceCountLimit );
 
 	savefile->WriteInt(m_Messages.Num());
-	for (i = 0; i < m_Messages.Num(); i++)
+	for ( i = 0 ; i < m_Messages.Num() ; i++ )
 	{
 		m_Messages[i]->Save(savefile);
 	}
@@ -882,6 +884,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteInt(m_HidingSpotSearchHandle);
 	m_hidingSpots.Save(savefile);
+
+	// grayman #3424
+	int num = m_randomHidingSpotIndexes.size();
+	savefile->WriteInt(num);
+	for ( i = 0 ; i < num ; i++ )
+	{
+		savefile->WriteInt(m_randomHidingSpotIndexes[i]);
+	}
 
 	savefile->WriteInt(m_AirCheckTimer);
 	savefile->WriteBool(m_bCanDrown);
@@ -1249,6 +1259,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_performRelight);	 // grayman #2603
 	savefile->ReadBool(m_ReactingToHit);	 // grayman #2816
 	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
+	savefile->ReadBool(m_allowAudioAlerts);	 // grayman #3424
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -1311,6 +1322,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt(m_HidingSpotSearchHandle);
 	m_hidingSpots.Restore(savefile);
+
+	// grayman #3424
+	savefile->ReadInt(num);
+	m_randomHidingSpotIndexes.clear();
+	for ( i = 0 ; i < num ; i++ )
+	{
+		int n;
+		savefile->ReadInt(n);
+		m_randomHidingSpotIndexes.push_back(n);
+	}
 
 	savefile->ReadInt(m_AirCheckTimer);
 	savefile->ReadBool(m_bCanDrown);
@@ -1587,11 +1608,12 @@ void idAI::Spawn( void )
 	//// DarkMod: Alert level parameters
 	// The default values of these spawnargs are normally set in tdm_ai_base.def, so the default values
 	// here are somewhat superfluous. It's better than having defaults of 0 here though.
-	spawnArgs.GetFloat( "alert_thresh1",		"1.5",		thresh_1 );
-	spawnArgs.GetFloat( "alert_thresh2",		"6",		thresh_2 );
-	spawnArgs.GetFloat( "alert_thresh3",		"8",		thresh_3 );
-	spawnArgs.GetFloat( "alert_thresh4",		"18",		thresh_4 );
-	spawnArgs.GetFloat( "alert_thresh5",		"23",		thresh_5 );
+	spawnArgs.GetFloat( "alert_thresh1",		"1.5",		thresh_1 ); // The alert level threshold for reaching ObservantState (bark, but otherwise no reaction)
+	spawnArgs.GetFloat( "alert_thresh2",		"6",		thresh_2 ); // The alert level threshold for reaching SuspiciousState (bark, look, may stop and turn)
+	spawnArgs.GetFloat( "alert_thresh3",		"8",		thresh_3 ); // The alert level threshold for reaching SearchingState (Investigation)
+	spawnArgs.GetFloat( "alert_thresh4",		"18",		thresh_4 ); // The alert level threshold for reaching AgitatedSearchingState
+																		// (Investigation, Weapon out, AI is quite sure that there is someone around)
+	spawnArgs.GetFloat( "alert_thresh5",		"23",		thresh_5 ); // The alert level threshold for reaching CombatState
 	// Grace period info for each alert level
 	spawnArgs.GetFloat( "alert_gracetime1",		"2",		m_gracetime_1 );
 	spawnArgs.GetFloat( "alert_gracetime2",		"2",		m_gracetime_2 );
@@ -1655,11 +1677,20 @@ void idAI::Spawn( void )
 	spawnArgs.GetFloat( "headturn_duration_max",			"3",		headTurnSec);
 	m_headTurnMaxDuration = SEC2MS(headTurnSec);
 
-	alertTypeWeight[ai::EAlertTypeHitByProjectile]		= 55; // grayman #3331
-	alertTypeWeight[ai::EAlertTypeEnemy]				= 50;
-	alertTypeWeight[ai::EAlertTypeDamage]				= 45;
-	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
+	// grayman #3424 - Several alert types need to have the same weight,
+	// so that a new instance of any of them will override the previous instance
+	// of any of them. Otherwise we have precedence problems when an AI is
+	// busy searching because of one of them and a new stimulus arrives.
+	alertTypeWeight[ai::EAlertTypeHitByProjectile]		= 40; // grayman #3331
+	alertTypeWeight[ai::EAlertTypeEnemy]				= 40;
+	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 40;
 	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
+
+	//alertTypeWeight[ai::EAlertTypeHitByProjectile]	= 55; // grayman #3331
+	//alertTypeWeight[ai::EAlertTypeEnemy]				= 50;
+	//alertTypeWeight[ai::EAlertTypeDamage]				= 45;
+	//alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
+
 	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
 	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872
 	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327
@@ -2245,6 +2276,9 @@ void idAI::Think( void )
 	// save old origin and velocity for crashlanding
 	idVec3 oldOrigin = physicsObj.GetOrigin();
 	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
+
+	// grayman #3424 - clear pain flag
+	GetMemory().painStatePushedThisFrame = false;
 
 	if (thinkFlags & TH_THINK)
 	{
@@ -6182,7 +6216,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		if ( /*( AI_AlertIndex == ai::ERelaxed ) && */ // grayman #3140 - go to PainState at any alert level
 			 ( AI_AlertIndex < ai::ECombat ) && // grayman #3355 - pain anims mess up combat, so don't allow them
 			 ( damage > 0 ) && 
-			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")))
+			 ( ( damageDef == NULL ) || !damageDef->GetBool("no_pain_anim", "0")) &&
+			 !GetMemory().painStatePushedThisFrame ) // grayman #3424 - don't push more than one pain state per frame
 		{
 			// grayman #3140 - note what caused the damage, in case PainState needs to do something special.
 			// Start with the basic causes (arrow, melee, moveable) and expand to the others as needed.
@@ -6211,6 +6246,7 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 				}
 			}
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
+			memory.painStatePushedThisFrame = true;
 		}
 		
 		if ( !attacker->fl.notarget ) // grayman #3356
@@ -9025,7 +9061,10 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
 	//	alert to overwrite another alert this frame
-	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) )
+	// grayman #3424 - audio alerts shouldn't be allowed in the delays between
+	// methods like OnDeadPersonEncounter() and Post_OnDeadPersonEnvounter() because
+	// they can mess with what's happening in those methods.
+	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) && m_allowAudioAlerts )
 	{
 		AI_HEARDSOUND = true;
 		m_SoundDir = origin;
@@ -9111,6 +9150,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 {
+	// grayman #3424 - don't process if dead or unconscious
+
+	if ( AI_DEAD || AI_KNOCKEDOUT )
+	{
+		return;
+	}
+
 	// grayman #3009 - look at alertSpot
 	if ( alertSpot != idVec3(0,0,0) )
 	{
@@ -9130,6 +9176,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s AlertAI called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL");
 
 	if (m_bIgnoreAlerts)
+	{
+		return;
+	}
+
+	if ( AI_DEAD || AI_KNOCKEDOUT ) // grayman #3424
 	{
 		return;
 	}
@@ -9202,8 +9253,6 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
-	//m_lastAlertLevel = newAlertLevel; // grayman #3019 - since SetAlertLevel() can adjust the new alert level, we need to set m_lastAlertLevel = AI_AlertLevel
-	m_lastAlertLevel = AI_AlertLevel;
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\",  amount %f (modified by acuity %f).  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
@@ -9233,6 +9282,13 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 void idAI::SetAlertLevel(float newAlertLevel)
 {
+	if (AI_DEAD || AI_KNOCKEDOUT)  // grayman #3424 - moved earlier
+	{
+		return;
+	}
+
+	float currentAlertLevel = AI_AlertLevel; // grayman #3424
+
 	// grayman #3069 - clamp the alert level to just under EInvestigating
 	// if you can't search
 
@@ -9249,18 +9305,6 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else if (newAlertLevel < 0)
 	{
 		newAlertLevel = 0;
-	}
-
-	bool alertRising = (newAlertLevel > AI_AlertLevel);
-
-	if (alertRising)
-	{
-		GetMemory().lastAlertRiseTime = gameLocal.time;
-	}
-	
-	if (AI_DEAD || AI_KNOCKEDOUT)
-	{
-		return;
 	}
 
 	AI_AlertLevel = newAlertLevel;
@@ -9351,6 +9395,14 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		m_maxAlertIndex = AI_AlertIndex;
 	}
 	
+	bool alertRising = (AI_AlertLevel > currentAlertLevel);
+
+	if (alertRising)
+	{
+		GetMemory().lastAlertRiseTime = gameLocal.time;
+		m_lastAlertLevel = AI_AlertLevel; // grayman #3424
+	}
+
 	// Begin the grace period
 	if (alertRising)
 	{
@@ -9503,7 +9555,18 @@ void idAI::PerformVisualScan(float timecheck)
 	// a visual stim to the AI. this allows AI->player warnings and greetings
 	if ( !IsEnemy(player) )
 	{
-		mind->GetState()->OnActorEncounter(player,this);
+		// Recheck visibility, taking light and FOV into account
+		if (!CanSee(player, true))
+		{
+			return;
+		}
+
+		// grayman #3424 - immediate time checks to avoid a lot of processing in OnActorEncounter()
+		ai::Memory::GreetingInfo& info = GetMemory().GetGreetingInfo(player);
+		if ( ( gameLocal.time >= info.nextGreetingTime ) || ( gameLocal.time >= info.nextWarningTime ) )
+		{
+			mind->GetState()->OnActorEncounter(player,this);
+		}
 		return;
 	}
 
@@ -10857,6 +10920,25 @@ void idAI::ClearMessages(int msgTag)
 	}
 }
 
+// grayman #3424 - Do I have an outgoing message of a certain type
+// in the queue for a certain receiver? If so, return TRUE, else FALSE. This
+// is useful in preventing the sending of the same message twice.
+
+bool idAI::CheckOutgoingMessages( ai::CommMessage::TCommType type, idActor* receiver)
+{
+	for ( int i = 0 ; i < m_Messages.Num() ; i++ )
+	{
+		ai::CommMessagePtr message = m_Messages[i];
+		if ( ( message->m_commType == type ) &&
+			    ( message->m_p_recipientEntity.GetEntity() == receiver ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /*
 =====================
 idAI::CheckFOV
@@ -11495,7 +11577,7 @@ void idAI::AdjustSearchLimits(idBounds& bounds)
 		ignore = entHit; // for the next leg, ignore the entity we struck
 	}
 
-	bounds = newBounds;
+	bounds = newBounds.ExpandSelf(2.0); // grayman #3424 - expand a bit to catch floors
 }
 
 int idAI::StartSearchForHidingSpotsWithExclusionArea
@@ -11615,8 +11697,8 @@ int idAI::ContinueSearchForHidingSpots()
 			);
 
 		m_hidingSpots.clear();
-		// greebo: Now retrieve our share from the completed hiding spot search
-		// Given that two other AI are referencing this hiding spot finder, this AI draws a third.
+		// greebo: Now retrieve our share from the completed hiding spot search.
+		// For example, if two other AI are referencing this hiding spot finder, this AI draws a third.
 		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
 
 		// Done with search object, dereference so other AIs know how many
@@ -11737,6 +11819,16 @@ int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
 
 	// Move points from their tree to ours
 	p_othersTree.getOneNth(2, m_hidingSpots);
+
+	// grayman #3424 - when grabbing hiding spots from someone else, both
+	// parties need to act like they're just starting the search. Otherwise,
+	// if the party who lost spots is already searching, he'll think he's
+	// still got the original number, which can lead to problems. This
+	// won't lead to the other party repeating every spot he's already
+	// searched, since spot selection is now randomized.
+
+	GetMemory().firstChosenHidingSpotIndex = -1;
+	p_otherAI->GetMemory().firstChosenHidingSpotIndex = -1;
 
 	// Done
 	return m_hidingSpots.getNumSpots();

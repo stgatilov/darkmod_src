@@ -117,8 +117,8 @@ public:
 	virtual bool OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	// grayman #3317 - post events for finding dead or unconscious AI
-	virtual void Post_OnDeadActorEncounter(idActor* person, idAI* owner);
-	virtual void Post_OnUnconsciousActorEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner);
+	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	// grayman #2924 - process visual stims after a delay
 	virtual void DelayedVisualStim( idEntity* stimSource, idAI* owner);
@@ -176,7 +176,8 @@ protected:
 	bool SomeoneNearDoor(idAI* owner, CFrobDoor* door); // grayman #3104
 
 private:
-	void OnMessageDetectedSomethingSuspicious(CommMessage& message);
+	void  OnMessageDetectedSomethingSuspicious(CommMessage& message);
+	int   ProcessWarning( idActor* owner, idActor* other, EventType type, const int warningDist ); // grayman #3424
 
 	// grayman #2603 - visual stim markers
 	enum StimMarker

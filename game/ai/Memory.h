@@ -103,11 +103,27 @@ namespace ai
 #define LOST_ENEMY_ALERT_RADIUS 200.0
 #define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
 
+// grayman #3424 - increase in evidence count per event type
+#define EVIDENCE_COUNT_INCREASE_ENEMY        1
+#define EVIDENCE_COUNT_INCREASE_CORPSE       3
+#define EVIDENCE_COUNT_INCREASE_MISSING_ITEM 1
+#define EVIDENCE_COUNT_INCREASE_FAILED_KO    1
+#define EVIDENCE_COUNT_INCREASE_VIS_ALERT    1
+#define EVIDENCE_COUNT_INCREASE_WEAPON       2
+#define EVIDENCE_COUNT_INCREASE_SUSPICIOUS   1
+#define EVIDENCE_COUNT_INCREASE_ROPE         1
+#define EVIDENCE_COUNT_INCREASE_UNCONSCIOUS  1
+#define EVIDENCE_COUNT_INCREASE_BLOOD        1
+#define EVIDENCE_COUNT_INCREASE_LIGHT        1
+#define EVIDENCE_COUNT_INCREASE_BROKEN_ITEM  1
+#define EVIDENCE_COUNT_INCREASE_DOOR         1
+
 enum EAlertClass 
 {
 	EAlertNone,
 	EAlertVisual_1,
 	EAlertVisual_2, // grayman #2603
+	EAlertVisual_3, // grayman #3424
 	EAlertTactile,
 	EAlertAudio,
 	EAlertClassCount
@@ -126,7 +142,7 @@ enum EAlertType
 	EAlertTypeMissingItem,
 	EAlertTypeBrokenItem,
 	EAlertTypeDoor,
-	EAlertTypeDamage,
+	//EAlertTypeDamage,
 	EAlertTypeSuspiciousItem,	// grayman #1327
 	EAlertTypeRope,				// grayman #2872
 	EAlertTypeHitByProjectile,	// grayman #3331
@@ -169,6 +185,9 @@ const char* const AlertStateNames[EAlertStateNum] =
 };
 
 #define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15000 // milliseconds
+#define MINIMUM_TIME_BETWEEN_WARNINGS (3*60) // grayman #3424 - seconds
+#define VARIABLE_TIME_BETWEEN_WARNINGS 60 // grayman #3424 - seconds
+#define DELAY_BETWEEN_WARNING_FAILURES 3 // grayman #3424 - seconds
 
 // SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
 // group stimulous barks, in seconds
@@ -272,26 +291,30 @@ public:
 	bool unconsciousPeopleHaveBeenFound;
 	bool deadPeopleHaveBeenFound;
 
+	// grayman #3424 - did the AI see evidence the previous think frame?
+	bool prevSawEvidence;
+
 	// position of alert causing stimulus
 	idVec3 alertPos;
 
 	// grayman #2903 - positions of AI when there's an alert that can lead to warnings between AI
 	idVec3 posEnemySeen;
-	idVec3 posCorpseFound;
 	idVec3 posMissingItem;
 	idVec3 posEvidenceIntruders;
 
 	// grayman #3140 - cause of pain
 	EPainCause causeOfPain;
 
+	// grayman #3424 - only push one pain state per frame
+	bool painStatePushedThisFrame;
+
 	// grayman #3331 - force a hiding spot search (don't rely just on the alert index changing)
 	bool mandatory;
 
 	// grayman #2903 - timestamps of alerts that can lead to warnings between AI
-	int timeEnemySeen;
-	int timeCorpseFound;
-	int timeMissingItem;
 	int timeEvidenceIntruders;
+
+	idEntityPtr<idEntity> corpseFound; // grayman #3424
 
 	// grayman #2422 - alert level is rising by checking player visibility
 	bool visualAlert;
@@ -443,6 +466,8 @@ public:
 	float savedAlertLevelDecreaseRate; // used w/door handling in Observant state
 	// end of #2866 changes
 
+	int currentSearchEventID;		// grayman #3424 - current suspicious event being searched
+
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;
 	// This maps AAS area numbers to door info structures
@@ -466,8 +491,12 @@ public:
 		// The next time an associated AI can be greeted by the owner
 		int nextGreetingTime; // grayman #3415
 
+		// The next time an associated AI can receive a warning from the owner
+		int nextWarningTime; // grayman #3424
+
 		GreetingInfo() :
-			nextGreetingTime(gameLocal.random.RandomInt(MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)*1000) // grayman #3415
+			nextGreetingTime(gameLocal.random.RandomInt(MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR)*1000), // grayman #3415
+			nextWarningTime(0) // grayman #3424
 		{}
 	};
 

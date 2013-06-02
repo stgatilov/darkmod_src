@@ -234,6 +234,14 @@ enum GreetingState
 	ENumAIGreetingStates,	// invalid state
 };
 
+// Hold information about a warning you have given or received
+struct WarningEvent
+{
+	int eventID;					// id of the suspicious event warned about
+	idEntityPtr<idEntity> entity;	// giver if you received this; receiver if you sent it
+};
+
+
 #define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
 
 class idActor : public idAFEntity_Gibbable {
@@ -402,6 +410,20 @@ public:
 	**/
 	idVec3					m_MouthOffset; // grayman #1104
 
+	/**
+	* grayman #3424 - List of suspicious event ids this actor knows about.
+	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
+	**/
+	idList<int>				m_suspiciousEventIDs;
+	
+	idList<bool>			m_haveSearchedEventID; // grayman #3424
+
+	/**
+	* grayman #3424 - List of warnings this actor has either given or received.
+	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
+	**/
+	idList<WarningEvent>	m_warningEvents;
+
 public:
 							idActor( void );
 	virtual					~idActor( void );
@@ -555,6 +577,18 @@ public:
 	* Retrieve head, if any
 	**/
 	idAFAttachment*			GetHead(); // grayman #1104
+
+	/**
+	* Suspicious events
+	* grayman #3424
+	**/
+	bool					FindSuspiciousEvent( int eventID );
+	bool					AddSuspiciousEvent( int eventID );
+	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ); 
+	void					AddWarningEvent( idEntity* other, int eventID );
+	bool					HasBeenWarned( idActor* other, int eventID );
+	bool					HasSearchedEvent( int eventID );
+	void					MarkEventAsSearched( int eventID );
 
 	/**
 	* Called when the given ent is about to be unbound/detached from this actor.

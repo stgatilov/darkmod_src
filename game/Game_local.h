@@ -284,6 +284,7 @@ enum {
 };
 // end 7318
 
+
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
 * Therefore they are global.
@@ -405,6 +406,26 @@ private:
 
 #include "LightGem.h"
 //============================================================================
+
+// grayman #3424 - These are the events that are considered suspicious, in that they raise
+// the alert levels of AI. Non-specific events that simply add to intruder evidence don't
+// need to be kept this way.
+
+enum EventType
+{
+	E_EventTypeEnemy = 0,	// enemy is seen ("snd_warnSawEnemy")
+							// enemy tried to KO me ("snd_warnSawEnemy")
+	E_EventTypeDeadPerson,	// found a corpse ("snd_warnFoundCorpse")
+	E_EventTypeMissingItem	// noticed something was stolen ("snd_warnMissingItem")
+};
+
+// Hold information about a suspicious event (corpse, unconscious person, missing item, etc.)
+struct SuspiciousEvent
+{
+	EventType type;					// type of event
+	idVec3 location;				// location
+	idEntityPtr<idEntity> entity;	// entity, if relevant
+};
 
 class idDeclEntityDef;
 
@@ -654,6 +675,9 @@ public:
 	void					SetCurrentPortalSkyType(int type); // 0 = classic, 1 = global, 2 = local
 	int						GetCurrentPortalSkyType(); // 0 = classic, 1 = global, 2 = local
 	// end 7318
+
+	// grayman #3424 - The list of suspicious events
+	idList<SuspiciousEvent> m_suspiciousEvents;
 
 	// tels: a list of all speaker entities with s_music set, these are affected by s_vol_music:
 	idList<int>				musicSpeakers;
@@ -964,6 +988,9 @@ public:
 
 	int						GetNextMessageTag(); // grayman #3355
 
+	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity ); // grayman #3424
+	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424  
+	
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
 

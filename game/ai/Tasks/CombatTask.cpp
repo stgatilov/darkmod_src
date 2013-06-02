@@ -52,7 +52,8 @@ void CombatTask::EmitCombatBark(idAI* owner, const idStr& sndName)
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL, // from this AI to anyone 
 		owner->GetEnemy(),
-		owner->GetPhysics()->GetOrigin()
+		owner->GetPhysics()->GetOrigin(),
+		0
 	));
 
 	_lastCombatBarkTime = gameLocal.time;

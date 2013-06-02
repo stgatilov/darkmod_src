@@ -90,7 +90,8 @@ void UnreachableTargetState::Init(idAI* owner)
 		CommMessage::RequestForMissileHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		enemy,
-		memory.lastEnemyPos
+		memory.lastEnemyPos,
+		0
 	));
 
 	// grayman #3343 - accommodate different barks for human and non-human enemies
