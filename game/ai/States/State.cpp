@@ -357,14 +357,6 @@ void State::OnAudioAlert()
 	Memory& memory = owner->GetMemory();
 //	memory.alertClass = EAlertAudio; // grayman #3424 - move to later
 
-	// grayman #3331 - this is sketchy. It's the only alert that gets processed
-	// even if its alert weight is below the current alert weight. It can pull
-	// a searching AI off his search. Is that the right thing to do?
-	if ( !ShouldProcessAlert( EAlertTypeSuspicious ) )
-	{
-		return;
-	}
-
 	// grayman #3424 - If alertClass is not EAlertNone,
 	// don't change it to EAlertAudio. Doing so causes
 	// the wrong rampdown bark when the AI comes out of a search near
@@ -373,9 +365,9 @@ void State::OnAudioAlert()
 	if ( memory.alertClass == EAlertNone )
 	{
 		memory.alertClass = EAlertAudio;
+		memory.alertType = EAlertTypeSuspicious;
 	}
 
-	memory.alertType = EAlertTypeSuspicious;
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
 	memory.mandatory = false; // grayman #3331
@@ -387,6 +379,7 @@ void State::OnAudioAlert()
 	// greebo: Apply a certain fuzziness to the audio alert position
 	// 200 units distance corresponds to 50 units fuzziness in X/Y direction
 	idVec3 start = memory.alertPos; // grayman #2422
+
 	memory.alertPos += idVec3(
 		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
 		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
@@ -4402,7 +4395,6 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	if (owner->IsFriend(issuingEntity))
 	{
 		EAlertType ieAlertType = static_cast<idAI*>(issuingEntity)->GetMemory().alertType;
-		EAlertType ownerAlertType = memory.alertType;
 
 		// grayman #3424 - rather than using a search flag, compare the alert type weights,
 		// as is done when new alerts arrive

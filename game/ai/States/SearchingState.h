@@ -44,6 +44,7 @@ namespace ai
 
 #define STATE_SEARCHING "Searching"
 #define DELAY_RANDOM_SPOT_GEN 3000 // grayman #2422 - don't generate random search spots more often than this (in ms)
+#define LOOK_AT_AUDIO_SPOT_DURATION 2000 // grayman #3424 - how long to look at an audio alert if you do
 
 class SearchingState :
 	public State

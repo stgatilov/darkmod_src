@@ -676,9 +676,19 @@ void SearchingState::OnAudioAlert()
 		// the current search, but we should at least turn toward the new sound
 		// to acknowledge having heard it
 
-		owner->StopMove(MOVE_STATUS_DONE);
-		owner->TurnToward(memory.alertPos);
-		owner->Event_LookAtPosition(memory.alertPos,MS2SEC(DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3)));
+		// grayman #3424 - If we're on the move, only look at alertPos. Turning toward
+		// it disrupts whatever movement we're doing. If we're standing still, turn
+		// toward the spot as well as look at it.
+
+		//owner->StopMove(MOVE_STATUS_DONE);
+		if ( !owner->AI_FORWARD )
+		{
+			owner->TurnToward(memory.alertPos);
+		}
+
+		idVec3 target = memory.alertPos;
+		target.z += 32;
+		owner->Event_LookAtPosition(target,MS2SEC(LOOK_AT_AUDIO_SPOT_DURATION + (gameLocal.random.RandomFloat() - 0.5)*1000));
 		//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.alertPos, 1, 2000);
 	}
 
