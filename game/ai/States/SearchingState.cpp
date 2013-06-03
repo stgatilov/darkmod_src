@@ -121,6 +121,9 @@ void SearchingState::Init(idAI* owner)
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
 
+		// grayman #3423 - when the alert level is ascending, kill the repeated bark task
+		owner->commSubsystem->ClearTasks();
+
 		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 		{
 			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
