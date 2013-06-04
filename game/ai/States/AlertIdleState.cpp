@@ -147,33 +147,44 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 
-	if (!owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
-		!owner->m_ExaminingRope ) 		// grayman #2872 - No rampdown bark if examining a rope.
-//		(owner->m_maxAlertLevel >= owner->thresh_1) &&  // grayman #3182 - not necessary; if memory.alertClass has something
-//		(owner->m_maxAlertLevel < owner->thresh_4))		// other than EAlertNone, the AI experienced something worth barking about
+	if ( !owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
+		 !owner->m_ExaminingRope ) 		// grayman #2872 - No rampdown bark if examining a rope.
 	{
-		if ( memory.alertClass == EAlertVisual_3 ) // grayman #3424
+		EAlertClass aclass = memory.alertClass;
+		if (owner->m_justKilledSomeone) // grayman #2816 - no bark if we barked about the death when it happened
 		{
-			// no bark
+			owner->m_justKilledSomeone = false; // but turn off the flag
 		}
-		else if (memory.alertClass == EAlertVisual_2) // grayman #2603
+		else if (aclass == EAlertVisual_3) // grayman #3424
+		{
+			soundName = "snd_alertdown0SeenEvidence";
+		}
+		else if (aclass == EAlertVisual_2) // grayman #2603
 		{
 			soundName = "snd_alertdown0sus";
 		}
-		else if (memory.alertClass == EAlertVisual_1) // grayman #3182
+		else if (aclass == EAlertVisual_1) // grayman #3182
 		{
 			if (memory.alertType != EAlertTypeMissingItem)
 			{
 				soundName = "snd_alertdown0s";
 			}
 		}
-		else if (memory.alertClass == EAlertAudio)
+		else if (aclass == EAlertAudio)
 		{
 			soundName = "snd_alertdown0h";
 		}
-		else if (memory.alertClass != EAlertNone) // grayman #3182
+		else if (owner->m_lastAlertLevel >= owner->thresh_3)
 		{
-			soundName = "snd_alertdown0";
+			// has gone up to at least Searching
+			soundName = "snd_alertdown0SeenEvidence";
+		}
+		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious
+		{
+			if (aclass != EAlertNone) // grayman #3182
+			{
+				soundName = "snd_alertdown0";
+			}
 		}
 	}
 

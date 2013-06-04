@@ -61,6 +61,7 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 		}
 
 		owner->GetMind()->EndState();
+		owner->GetMemory().alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3438
 		return false;
 	}
 	
@@ -107,63 +108,8 @@ void ObservantState::Init(idAI* owner)
 	// Stop playing idle animation
 	owner->actionSubsystem->ClearTasks();
 
-	if (owner->GetMoveType() != MOVETYPE_SLEEP)
-	{
-		// barking
-		idStr soundName("");
-
-		if (owner->AlertIndexIncreased() && (memory.alertType != EAlertTypeMissingItem))
-		{
-			if ( (memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
-			{
-				soundName = "snd_alert1s";
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				soundName = "snd_alert1h";
-			}
-			else
-			{
-				soundName = "snd_alert1";
-			}
-		}
-		else if ( owner->m_justKilledSomeone ) // grayman #2816 - no bark if we barked about the death when it happened
-		{
-			owner->m_justKilledSomeone = false; // but turn off the flag
-		}
-		else if (owner->HasSeenEvidence())
-		{
-			if (owner->m_lastAlertLevel >= owner->thresh_3)
-			{
-				soundName = "snd_alertdown0SeenEvidence";
-			}
-		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_4)
-		{
-			soundName = "snd_alertdown0SeenNoEvidence";
-		}
-
-		if ( ( memory.alertType != EAlertTypeMissingItem) && ( !soundName.IsEmpty() ) ) // grayman #2816 - don't set up empty sounds
-		{
-			// grayman #2920 - only bark if this isn't in response to having been warned
-
-			if ( !memory.alertedDueToCommunication )
-			{
-				CommunicationTaskPtr barkTask(new SingleBarkTask(soundName));
-
-				owner->commSubsystem->AddCommTask(barkTask);
-
-				// Push a wait task (1 sec) with the bark priority -1, to have it queued
-				owner->commSubsystem->AddCommTask(
-					CommunicationTaskPtr(new CommWaitTask(1000, barkTask->GetPriority() - 1))
-				);
-			}
-			else
-			{
-				memory.alertedDueToCommunication = false; // reset
-			}
-		}
-	}
+	// grayman #3438 - kill the repeated bark task
+	owner->commSubsystem->ClearTasks();
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);

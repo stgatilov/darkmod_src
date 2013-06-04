@@ -155,7 +155,7 @@ enum EAlertState
 	ERelaxed = 0,
 	EObservant,
 	ESuspicious,
-	EInvestigating,
+	ESearching,
 	EAgitatedSearching,
 	ECombat,
 	EAlertStateNum
@@ -203,15 +203,6 @@ const char* const AlertStateNames[EAlertStateNum] =
 // grayman #2603 - how long to wait until barking again about a light that's out
 #define REBARK_DELAY 15000
 
-// grayman #2603 - search flags
-// grayman #1327 - broke single warning flag into specific warning flags
-#define SRCH_WAS_SEARCHING			1	// set when searching occurred while alert
-//#define SRCH_WARNED_ENEMY			2	// set when warned by another AI that an enemy was seen
-//#define SRCH_WARNED_CORPSE			4	// set when warned by another AI that someone died
-//#define SRCH_WARNED_MISSING_ITEM	8	// set when warned by another AI that something was stolen
-//#define SRCH_WARNED_EVIDENCE		16	// set when warned by another AI that evidence is mounting
-//#define SRCH_WARNED ( SRCH_WARNED_ENEMY | SRCH_WARNED_CORPSE | SRCH_WARNED_MISSING_ITEM | SRCH_WARNED_EVIDENCE )
-
 const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 8*60; // grayman #3415 - 8 minutes 
 const int EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR  = 4*60; // grayman #3415 - random 0->4 min added to base 8 minutes
 
@@ -252,9 +243,6 @@ public:
 
 	// grayman #2603 - The next time a light stim can make the AI bark
 	int nextTimeLightStimBark;
-
-	// grayman #2603 - flags relevant to searching
-	int searchFlags;
 
 	/*!
 	* This variable indicates the number of out of place things that the

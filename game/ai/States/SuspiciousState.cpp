@@ -148,11 +148,11 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 		if ( owner->m_canSearch )
 		{
 			// Alert index is too high, switch to the higher State
-			owner->GetMind()->PushState(owner->backboneStates[EInvestigating]);
+			owner->GetMind()->PushState(owner->backboneStates[ESearching]);
 			return false;
 		}
 
-		owner->SetAlertLevel(owner->thresh_3 - 0.1); // set alert level to just under EInvestigating
+		owner->SetAlertLevel(owner->thresh_3 - 0.1); // set alert level to just under ESearching
 	}
 
 	// Alert Index is matching, return OK
@@ -182,6 +182,9 @@ void SuspiciousState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 
+	// grayman #3438 - kill the repeated bark task
+	owner->commSubsystem->ClearTasks();
+
 	if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
 		owner->GetUp();
@@ -195,49 +198,52 @@ void SuspiciousState::Init(idAI* owner)
 		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 		memory.stopReactingToHit = true; // grayman #2816
 
-		if (!owner->CheckFOV(memory.alertPos) && owner->GetMoveType() == MOVETYPE_ANIM)
+		if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
 		{
-			// Search spot is not within FOV, turn towards the position
-			// don't turn while sitting
-			owner->TurnToward(memory.alertPos);
+			if ( !owner->CheckFOV(memory.alertPos) && ( owner->GetMoveType() == MOVETYPE_ANIM ) )
+			{
+				// Search spot is not within FOV, turn towards the position
+				// don't turn while sitting
+				owner->TurnToward(memory.alertPos);
+			}
 		}
 	}
 
-	// In any case, look at the point to investigate
-	owner->Event_LookAtPosition(memory.alertPos, 2.0f);
+	if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
+	{
+		// In any case, look at the point to investigate
+		owner->Event_LookAtPosition(memory.alertPos, 2.0f);
+	}
 
-	// barking
-	idStr bark;
+	// Play bark if alert level is ascending
 
 	if (owner->AlertIndexIncreased())
 	{
-		if ((memory.alertClass == EAlertVisual_1) ||
-			(memory.alertClass == EAlertVisual_2) ||
-			(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424
-		{
-			bark = "snd_alert1s";
-		}
-		else if (memory.alertClass == EAlertAudio)
-		{
-			bark = "snd_alert1h";
-		}
-		else
-		{
-			bark = "snd_alert1";
-		}
-
 		if ( !memory.alertedDueToCommunication ) // grayman #2920
 		{
+			// barking
+			idStr bark;
+
+			if ((memory.alertClass == EAlertVisual_1) ||
+				(memory.alertClass == EAlertVisual_2) ||
+				(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424
+			{
+				bark = "snd_alert1s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				bark = "snd_alert1h";
+			}
+			else
+			{
+				bark = "snd_alert1";
+			}
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
 		}
 		else
 		{
 			memory.alertedDueToCommunication = false; // reset
 		}
-	}
-	else
-	{
-		owner->commSubsystem->ClearTasks();
 	}
 
 	// Let the AI update their weapons (make them nonsolid)
@@ -257,6 +263,7 @@ void SuspiciousState::Think(idAI* owner)
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 }
+
 
 StatePtr SuspiciousState::CreateInstance()
 {

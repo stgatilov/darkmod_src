@@ -129,7 +129,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 		owner, NULL, // from this AI to anyone
 		NULL,
 		memory.alertPos,
-		0
+		memory.currentSearchEventID // grayman #3438
 	));
 
 	if (owner->AlertIndexIncreased())
@@ -178,8 +178,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
-
-	memory.searchFlags |= SRCH_WAS_SEARCHING; // grayman #3075
 }
 
 // Gets called each time the mind is thinking
@@ -208,7 +206,7 @@ void AgitatedSearchingState::Think(idAI* owner)
 			owner, NULL, // from this AI to anyone
 			NULL,
 			memory.alertPos,
-			0
+			memory.currentSearchEventID // grayman #3438
 		));
 
 		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));

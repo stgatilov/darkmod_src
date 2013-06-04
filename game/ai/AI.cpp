@@ -1647,7 +1647,7 @@ void idAI::Spawn( void )
 	backboneStates[ai::ERelaxed]			= spawnArgs.GetString("state_name_0", STATE_IDLE);
 	backboneStates[ai::EObservant]			= spawnArgs.GetString("state_name_1", STATE_OBSERVANT);
 	backboneStates[ai::ESuspicious]			= spawnArgs.GetString("state_name_2", STATE_SUSPICIOUS);
-	backboneStates[ai::EInvestigating]		= spawnArgs.GetString("state_name_3", STATE_SEARCHING);
+	backboneStates[ai::ESearching]		= spawnArgs.GetString("state_name_3", STATE_SEARCHING);
 	backboneStates[ai::EAgitatedSearching]	= spawnArgs.GetString("state_name_4", STATE_AGITATED_SEARCHING);
 	backboneStates[ai::ECombat]				= spawnArgs.GetString("state_name_5", STATE_COMBAT);
 	
@@ -9289,7 +9289,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 
 	float currentAlertLevel = AI_AlertLevel; // grayman #3424
 
-	// grayman #3069 - clamp the alert level to just under EInvestigating
+	// grayman #3069 - clamp the alert level to just under ESearching
 	// if you can't search
 
 	if ( !m_canSearch && ( newAlertLevel >= thresh_3 ) )
@@ -9352,7 +9352,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	else if (newAlertLevel >= thresh_3)
 	{
 		m_prevAlertIndex = AI_AlertIndex;
-		AI_AlertIndex = ai::EInvestigating;
+		AI_AlertIndex = ai::ESearching;
 		grace_time = m_gracetime_3;
 		grace_frac = m_gracefrac_3;
 		grace_count = m_gracecount_3;

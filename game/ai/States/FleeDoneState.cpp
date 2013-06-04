@@ -200,7 +200,7 @@ void FleeDoneState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 bool FleeDoneState::CheckAlertLevel(idAI* owner)
 {
 	// FleeDoneState terminates itself when the AI reaches Suspicious (aka Investigating)
-	if (owner->AI_AlertIndex < EInvestigating)
+	if (owner->AI_AlertIndex < ESearching)
 	{
 		// Alert index is too low for this state, fall back
 		owner->movementSubsystem->ClearTasks();

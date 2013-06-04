@@ -199,7 +199,7 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	{
 		// walk to the mid position
 	}
-	else if ( owner->AI_AlertIndex >= EInvestigating ) // grayman #2866 - when approaching to investigate a door, walk to mid, not to back
+	else if ( owner->AI_AlertIndex >= ESearching ) // grayman #2866 - when approaching to investigate a door, walk to mid, not to back
 	{
 		// walk to the mid position
 	}
@@ -404,7 +404,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough())
 					{
-						if (owner->AI_AlertIndex >= EInvestigating)
+						if (owner->AI_AlertIndex >= ESearching)
 						{
 							return true;
 						}
@@ -607,7 +607,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						if (FitsThrough())
 						{
-							if (owner->AI_AlertIndex >= EInvestigating)
+							if (owner->AI_AlertIndex >= ESearching)
 							{
 								return true;
 							}
@@ -812,7 +812,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (FitsThrough())
 					{
 						// gap is large enough, go through if searching or in combat
-						if (owner->AI_AlertIndex >= EInvestigating)
+						if (owner->AI_AlertIndex >= ESearching)
 						{
 							return true;
 						}
@@ -927,7 +927,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				else
 				{
 					// no need for waiting, door is already open, let's move
-					if (owner->AI_AlertIndex >= EInvestigating)
+					if (owner->AI_AlertIndex >= ESearching)
 					{
 						return true;
 					}
@@ -989,7 +989,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-					if (owner->AI_AlertIndex >= EInvestigating)
+					if (owner->AI_AlertIndex >= ESearching)
 					{
 						return true;
 					}
@@ -1113,7 +1113,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (FitsThrough() && masterUser == owner)
 					{
-						if (owner->AI_AlertIndex >= EInvestigating)
+						if (owner->AI_AlertIndex >= ESearching)
 						{
 							return true;
 						}
@@ -1139,7 +1139,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				else if	(!frobDoor->IsChangingState() && masterUser == owner)
 				{
 					// grayman #2712 - he can't stop being master until he's through the door
-//					if (owner->AI_AlertIndex >= EInvestigating)
+//					if (owner->AI_AlertIndex >= ESearching)
 //					{
 //						return true;
 //					}
@@ -1383,7 +1383,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			else // open
 			{
 				if (!AllowedToClose(owner) ||
-					(!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) ||
+					(!_doorInTheWay && (owner->AI_AlertIndex >= ESearching)) ||
 					 owner->AI_RUN) // grayman #2670
 				{
 					return true;
@@ -1414,7 +1414,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			else // open
 			{
 				if (!AllowedToClose(owner) ||
-					(!_doorInTheWay && (owner->AI_AlertIndex >= EInvestigating)) ||
+					(!_doorInTheWay && (owner->AI_AlertIndex >= ESearching)) ||
 					 owner->AI_RUN) // grayman #2670
 				{
 					return true;
@@ -1483,7 +1483,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			else // open
 			{
 				if (!AllowedToClose(owner) ||
-					(owner->AI_AlertIndex >= EInvestigating) ||
+					(owner->AI_AlertIndex >= ESearching) ||
 					 owner->AI_RUN) // grayman #2670
 				{
 					return true;

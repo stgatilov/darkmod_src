@@ -79,7 +79,7 @@ void RandomHeadturnTask::PerformHeadTurnCheck()
 
 	// Chance to turn head is higher when the AI is searching or has seen evidence of intruders
 	float chance;
-	if ( ( owner->AI_AlertIndex >= EInvestigating ) || owner->HasSeenEvidence() )
+	if ( ( owner->AI_AlertIndex >= ESearching ) || owner->HasSeenEvidence() )
 	{
 		chance = owner->m_headTurnChanceIdle * owner->m_headTurnFactorAlerted;
 	}

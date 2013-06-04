@@ -1457,8 +1457,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								if (eventID >= 0)
 								{
 									player->AddSuspiciousEvent(eventID);    // player now knows about this event
-									owner->AddWarningEvent(player,eventID); // log that owner warned player about this event
-									player->AddWarningEvent(owner,eventID); // log that owner warned player about this event
+									owner->AddWarningEvent(player,eventID); // log that a warning passed between us
+									player->AddWarningEvent(owner,eventID); // log that a warning passed between us
 									soundName = "snd_warnSawEnemy";
 								}
 							
@@ -1469,8 +1469,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									if (eventID >= 0)
 									{
 										player->AddSuspiciousEvent(eventID);    // player now knows about this event
-										owner->AddWarningEvent(player,eventID); // log that owner warned player about this event
-										player->AddWarningEvent(owner,eventID); // log that owner warned player about this event
+										owner->AddWarningEvent(player,eventID); // log that a warning passed between us
+										player->AddWarningEvent(owner,eventID); // log that a warning passed between us
 										soundName = "snd_warnFoundCorpse";
 									}
 								}
@@ -1482,8 +1482,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									if (eventID >= 0)
 									{
 										player->AddSuspiciousEvent(eventID);    // player now knows about this event
-										owner->AddWarningEvent(player,eventID); // log that owner warned player about this event
-										player->AddWarningEvent(owner,eventID); // log that owner warned player about this event
+										owner->AddWarningEvent(player,eventID); // log that a warning passed between us
+										player->AddWarningEvent(owner,eventID); // log that a warning passed between us
 										soundName = "snd_warnMissingItem";
 									}
 								}
@@ -1579,7 +1579,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 				bool fleeing = (owner->GetMind()->GetState()->GetName() == "Flee" );
 
-				if ( !fleeing && otherAI->IsSearching() && !( memory.searchFlags & SRCH_WAS_SEARCHING ) && ( otherMemory.alertType != EAlertTypeDoor ) )
+				if ( !fleeing && otherAI->IsSearching() && !( owner->m_lastAlertLevel >= owner->thresh_3 ) && ( otherMemory.alertType != EAlertTypeDoor ) ) // grayman #3438
 				{
 					// grayman #1327 - warning should be specific
 
@@ -1624,8 +1624,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									memory.posEnemySeen = otherMemory.posEnemySeen;
 									owner->AddSuspiciousEvent(eventID);
 								}
-								owner->AddWarningEvent(otherAI,eventID); // log that otherAI warned owner about this event
-								otherAI->AddWarningEvent(owner,eventID); // log that otherAI warned owner about this event
+								owner->AddWarningEvent(otherAI,eventID); // log that a warning passed between us
+								otherAI->AddWarningEvent(owner,eventID); // log that a warning passed between us
 								soundName = "snd_warnSawEnemy";
 							}
 						}
@@ -1652,8 +1652,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									memory.timeEvidenceIntruders = gameLocal.time;
 									owner->AddSuspiciousEvent(eventID);
 								}
-								owner->AddWarningEvent(otherAI,eventID); // log that otherAI warned owner about this event
-								otherAI->AddWarningEvent(owner,eventID); // log that otherAI warned owner about this event
+								owner->AddWarningEvent(otherAI,eventID); // log that a warning passed between us
+								otherAI->AddWarningEvent(owner,eventID); // log that a warning passed between us
 								soundName = "snd_warnFoundCorpse";
 								owner->SetAlertLevel(owner->thresh_4 + 0.1); // don't inherit a reduced alert level. dead people are bad.
 							}
@@ -1680,8 +1680,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[eventID].location;
 									memory.timeEvidenceIntruders = gameLocal.time;
 								}
-								owner->AddWarningEvent(otherAI,eventID); // log that otherAI warned owner about this event
-								otherAI->AddWarningEvent(owner,eventID); // log that otherAI warned owner about this event
+								owner->AddWarningEvent(otherAI,eventID); // log that a warning passed between us
+								otherAI->AddWarningEvent(owner,eventID); // log that a warning passed between us
 								soundName = "snd_warnMissingItem";
 								owner->SetAlertLevel(otherAI->AI_AlertLevel * 0.7f); // inherit a reduced alert level
 							}
@@ -1759,8 +1759,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 				}
 				// grayman #3202 - don't issue a warning or greeting if you're mute
 				// grayman #3424 - or if your friend has been searching recently
-				else if ( !(otherAI->GetMemory().searchFlags & SRCH_WAS_SEARCHING)  && !owner->m_isMute ) // grayman #2903 
-				//else if ( !otherAI->IsSearching()  && !owner->m_isMute ) // grayman #2903
+				else if ( !(otherAI->m_lastAlertLevel >= owner->thresh_3)  && !owner->m_isMute ) // grayman #2903 // grayman #3438 
 				{
 					// grayman #1327 - apply the distance check to both warnings and greetings
 
@@ -3362,7 +3361,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
-			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
+			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 		return;
 	}
@@ -3388,7 +3387,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 			owner->m_dousedLightsSeen.Append(stimSourcePtr); // add this light to the list
 
-			// Raise alert level if we already have some evidence of intruders
+			// grayman #3438 - move alert level change to SwitchOnLightState
+/*			// Raise alert level if we already have some evidence of intruders
 
 			if ((owner->AI_AlertLevel < owner->thresh_3) && 
 				(memory.enemiesHaveBeenSeen || (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)))
@@ -3401,7 +3401,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 					owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
 				}
 			}
-
+ */
 			owner->m_LatchedSearch = true; // set up search after light is relit
 		}
 	}
@@ -3484,7 +3484,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 		light->SetBeingRelit(true); // this light is being relit
 		stimSource->IgnoreResponse(ST_VISUAL,owner); // ignore this stim while turning the light back on
 		owner->GetMind()->SwitchState(StatePtr(new SwitchOnLightState(light))); // set out to relight
-		gameLocal.Printf("%s - That light %s should be on! And I'm going to relight it.\n",owner->GetName(),stimSource->GetName());
+		//gameLocal.Printf("%s - That light %s should be on! And I'm going to relight it.\n",owner->GetName(),stimSource->GetName());
 	}
 	else // Can't relight
 	{
@@ -3504,7 +3504,7 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
-			gameLocal.Printf("That light should be on! But I won't relight it now.\n");
+			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 		}
 	}
 }
@@ -4285,8 +4285,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if (issuingEntity->IsType(idActor::Type))
 			{
 				idActor* issuer = static_cast<idActor*>(issuingEntity);
-				owner->AddWarningEvent(issuer,message.m_eventID); // log that owner received a warning about this event
-				issuer->AddWarningEvent(owner,message.m_eventID); // log that issuer warned owner about this event
+				owner->AddWarningEvent(issuer,message.m_eventID); // log that a warning passed between us
+				issuer->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
 			}
 			memory.alertedDueToCommunication = true; // grayman #2920
 
@@ -4317,8 +4317,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if (issuingEntity->IsType(idActor::Type))
 			{
 				idActor* issuer = static_cast<idActor*>(issuingEntity);
-				owner->AddWarningEvent(issuer,message.m_eventID); // log that owner received a warning about this event
-				issuer->AddWarningEvent(owner,message.m_eventID); // log that issuer warned owner about this event
+				owner->AddWarningEvent(issuer,message.m_eventID); // log that a warning passed between us
+				issuer->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
 			}
 			memory.alertedDueToCommunication = true; // grayman #2920
 
@@ -4348,8 +4348,8 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if (issuingEntity->IsType(idActor::Type))
 			{
 				idActor* issuer = static_cast<idActor*>(issuingEntity);
-				owner->AddWarningEvent(issuer,message.m_eventID); // log that owner received a warning about this event
-				issuer->AddWarningEvent(owner,message.m_eventID); // log that issuer warned owner about this event
+				owner->AddWarningEvent(issuer,message.m_eventID); // log that a warning passed between us
+				issuer->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
 			}
 			memory.alertedDueToCommunication = true; // grayman #2920
 
@@ -4392,41 +4392,35 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		return;
 	}
 
+	// grayman #3438 - don't respond if I just finished searching
+	if ( !owner->IsSearching() && ( owner->m_lastAlertLevel >= owner->thresh_3 ) )
+	{
+		return;
+	}
+
 	if (owner->IsFriend(issuingEntity))
 	{
-		EAlertType ieAlertType = static_cast<idAI*>(issuingEntity)->GetMemory().alertType;
+		idAI* issuingAI = static_cast<idAI*>(issuingEntity);
+		Memory& issuerMemory = issuingAI->GetMemory();
+		EAlertType ieAlertType = issuerMemory.alertType;
 
-		// grayman #3424 - rather than using a search flag, compare the alert type weights,
+		// grayman #3424 - compare the alert type weights,
 		// as is done when new alerts arrive
 		if ( !ShouldProcessAlert(ieAlertType))
 		{
 			return;
 		}
 
-		// grayman #2903 - Have I been searching recently? If so, don't respond to this
-		// request until my alert level drops back to idle, when 
-		// memory.searchFlags is cleared.
+		// grayman #3438 - If I already searched this event, I won't search it again.
+		if ( ( message.m_eventID >= 0 ) && owner->HasSearchedEvent(message.m_eventID) )
+		{
+			return;
+		}
 
-/*		if ( memory.searchFlags & SRCH_WAS_SEARCHING ) // grayman #3424 - ignore searchFlags
-		{
-			return;
-		}
- */
-		// grayman #3424 - If I already searched this event, I won't search it again.
-		if (owner->HasSearchedEvent(message.m_eventID))
-		{
-			return;
-		}
-		
-		// If AI that called out has a higher alert num, raise ours
+		// If AI that called out has a higher alert level, raise ours
 		// to match theirs due to urgency in their voice
-		float otherAlertLevel = 0.0f;
-			
-		if (issuingEntity->IsType(idAI::Type))
-		{
-			// Inherit the alert level of the other AI, but attenuate it a bit
-			otherAlertLevel = static_cast<idAI*>(issuingEntity)->AI_AlertLevel * 0.7f;
-		}
+		// Inherit the alert level of the other AI, but attenuate it a bit
+		float otherAlertLevel = issuingAI->AI_AlertLevel * 0.7f;
 
 		//gameLocal.Printf("The AI who noticed something has an alert num of %f\n", otherAlertLevel);
 		// grayman #3424 - Only enter the sender's search if 'otherAlertLevel' is higher than mine,
@@ -4452,25 +4446,40 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 				}
  			
-				owner->SetAlertLevel(otherAlertLevel);
+				// grayman #3438 - only reset my alert level if I'm currently not searching
+				if ( owner->AI_AlertLevel < owner->thresh_3 )
+				{
+					owner->SetAlertLevel(otherAlertLevel);
+				}
+
 				owner->StopMove(MOVE_STATUS_DONE);
 				memory.stopRelight = true; // grayman #2603 - abort a relight in progress
 				memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
 				memory.stopReactingToHit = true; // grayman #2816
 
-				Memory& otherMemory = static_cast<idAI*>(issuingEntity)->GetMemory();
-
-				memory.alertPos = otherMemory.alertPos;
+				memory.alertPos = issuerMemory.alertPos;
 				memory.alertClass = EAlertNone;
 				memory.alertType = EAlertTypeSuspicious;
 				
-				memory.alertRadius = otherMemory.alertRadius;
-				memory.alertSearchVolume = otherMemory.alertSearchVolume; 
+				memory.alertRadius = issuerMemory.alertRadius;
+				memory.alertSearchVolume = issuerMemory.alertSearchVolume; 
 				memory.alertSearchExclusionVolume.Zero();
 
 				memory.alertedDueToCommunication = true;
 				memory.visualAlert = false; // grayman #2422
 				memory.mandatory = false;	// grayman #3331
+
+				// grayman #3438
+				if ( message.m_eventID >= 0 )
+				{
+					if ( !owner->FindSuspiciousEvent(message.m_eventID) )
+					{
+						owner->AddSuspiciousEvent(message.m_eventID);
+					}
+					owner->AddWarningEvent(issuingAI,message.m_eventID); // log that a warning passed between us
+					issuingAI->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
+					memory.currentSearchEventID = message.m_eventID; // grayman #3424
+				}
 			}
 			else
 			{

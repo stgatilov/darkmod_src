@@ -71,7 +71,7 @@ void IdleState::Init(idAI* owner)
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 	
-	if (owner->HasSeenEvidence() && owner->spawnArgs.GetBool("disable_alert_idle", "0") == false)
+	if (owner->HasSeenEvidence() && ( owner->spawnArgs.GetBool("disable_alert_idle", "0") == false) )
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
 		return;
@@ -267,13 +267,9 @@ void IdleState::InitialiseCommunication(idAI* owner)
 
 	Memory& memory = owner->GetMemory(); // grayman #2603 - only allow rampdown barks if the AI was searching
 
-	if (memory.searchFlags & SRCH_WAS_SEARCHING)
+	if (owner->m_lastAlertLevel >= owner->thresh_3)
 	{
-		memory.searchFlags = 0; // clear
 		memory.currentSearchEventID = -1; // grayman #3424
-		// Push a single bark to the communication subsystem first, it fires only once
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask(GetInitialIdleBark(owner))));
 
 		// grayman #3338 - Delay greetings if coming off a search.
 		// Divide the max alert level achieved so far in half, and
@@ -284,6 +280,13 @@ void IdleState::InitialiseCommunication(idAI* owner)
 			float delay = (owner->m_maxAlertIndex/2.0f)*60.0f;
 			owner->PostEventSec(&AI_AllowGreetings,delay);
 		}
+	}
+
+	// Push a single bark to the communication subsystem first, it fires only once
+	idStr bark = GetInitialIdleBark(owner);
+	if (!bark.IsEmpty())
+	{
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
 	}
 }
 
@@ -313,33 +316,36 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 	// Decide what sound it is appropriate to play
 	idStr soundName("");
 
-	if (!owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
-		!owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
-//		(owner->m_maxAlertLevel >= owner->thresh_1) &&  // grayman #3182 - not necessary; if memory.alertClass has something
-//		(owner->m_maxAlertLevel < owner->thresh_4))		// other than EAlertNone, the AI experienced something worth barking about
+	if ( !owner->m_RelightingLight &&	// grayman #2603 - No rampdown bark if relighting a light.
+		 !owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
 	{
-		if (memory.alertClass == EAlertVisual_3) // grayman #3424
-		{
-			// no rampdown bark
-		}
-		else if (memory.alertClass == EAlertVisual_2) // grayman #2603
+		EAlertClass aclass = memory.alertClass;
+		if (aclass == EAlertVisual_2) // grayman #2603
 		{
 			soundName = "snd_alertdown0sus";
 		}
-		else if (memory.alertClass == EAlertVisual_1) // grayman #3182
+		else if (aclass == EAlertVisual_1) // grayman #3182
 		{
 			if (memory.alertType != EAlertTypeMissingItem)
 			{
 				soundName = "snd_alertdown0s";
 			}
 		}
-		else if (memory.alertClass == EAlertAudio)
+		else if (aclass == EAlertAudio)
 		{
 			soundName = "snd_alertdown0h";
 		}
-		else if (memory.alertClass != EAlertNone) // grayman #3182
+		else if (owner->m_lastAlertLevel >= owner->thresh_4)
 		{
-			soundName = "snd_alertdown0";
+			// has gone up to Agitated Searching
+			soundName = "snd_alertdown0SeenNoEvidence";
+		}
+		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
+		{
+			if (aclass != EAlertNone) // grayman #3182
+			{
+				soundName = "snd_alertdown0";
+			}
 		}
 	}
 

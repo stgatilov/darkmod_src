@@ -886,7 +886,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* 	ai::ERelaxed           == 0 if AI_AlertLevel < thresh_1
 	* 	ai::EObservant         == 1 if thresh_1 <= AI_AlertLevel < thresh_2
 	* 	ai::ESuspicious        == 2 if thresh_2 <= AI_AlertLevel < thresh_3
-	* 	ai::EInvestigating     == 3 if thresh_3 <= AI_AlertLevel < thresh_4
+	* 	ai::ESearching     == 3 if thresh_3 <= AI_AlertLevel < thresh_4
 	* 	ai::EAgitatedSearching == 4 if thresh_4 <= AI_AlertLevel < thresh_5
 	*   ai::ECombat            == 5 if thresh_5 <= AI_AlertLevel (and an enemy is known)
 	**/

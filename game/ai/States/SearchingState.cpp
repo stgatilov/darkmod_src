@@ -49,7 +49,7 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
 	}
 
-	if (owner->AI_AlertIndex < EInvestigating)
+	if (owner->AI_AlertIndex < ESearching)
 	{
 		// Alert index is too low for this state, fall back
 		owner->Event_CloseHidingSpotSearch();
@@ -77,7 +77,7 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 		return false;
 	}
 
-	if (owner->AI_AlertIndex > EInvestigating)
+	if (owner->AI_AlertIndex > ESearching)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->GetMind()->PushState(owner->backboneStates[EAgitatedSearching]);
@@ -114,8 +114,6 @@ void SearchingState::Init(idAI* owner)
 
 	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / alertTime;
 
-	idStr bark;
-
 	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
 		// Setup a new hiding spot search
@@ -124,11 +122,16 @@ void SearchingState::Init(idAI* owner)
 		// grayman #3423 - when the alert level is ascending, kill the repeated bark task
 		owner->commSubsystem->ClearTasks();
 
+		// Play bark if alert level is ascending
+
+		idStr bark;
+
 		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 		{
+			bool friendsNear = ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK );
 			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
 			{
-				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				if ( friendsNear )
 				{
 					bark = "snd_alert3sc";
 				}
@@ -139,7 +142,7 @@ void SearchingState::Init(idAI* owner)
 			}
 			else if (memory.alertClass == EAlertAudio)
 			{
-				if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+				if ( friendsNear )
 				{
 					bark = "snd_alert3hc";
 				}
@@ -148,7 +151,7 @@ void SearchingState::Init(idAI* owner)
 					bark = "snd_alert3h";
 				}
 			}
-			else if ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK )
+			else if ( friendsNear )
 			{
 				bark = "snd_alert3c";
 			}
@@ -180,8 +183,6 @@ void SearchingState::Init(idAI* owner)
 		// Let the AI update their weapons (make them solid)
 		owner->UpdateAttachmentContents(true);
 	}
-
-	memory.searchFlags |= SRCH_WAS_SEARCHING; // grayman #2603
 }
 
 void SearchingState::OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem)
@@ -382,6 +383,12 @@ void SearchingState::Think(idAI* owner)
 void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 {
 	Memory& memory = owner->GetMemory();
+
+	// grayman #3438 - exit if there's no focus for the search
+	if ( memory.alertPos.x == idMath::INFINITY )
+	{
+		return;
+	}
 
 	// Clear flags
 	memory.restartSearchForHidingSpots = false;

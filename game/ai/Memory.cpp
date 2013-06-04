@@ -37,7 +37,6 @@ Memory::Memory(idAI* owningAI) :
 	lastTimeEnemySeen(-1),
 	lastTimeVisualStimBark(-1),
 	nextTimeLightStimBark(-1),	// grayman #2603
-	searchFlags(0),				// grayman #2603
 	countEvidenceOfIntruders(0),
 	nextHeadTurnCheckTime(0),
 	currentlyHeadTurning(false),
@@ -51,7 +50,7 @@ Memory::Memory(idAI* owningAI) :
 	itemsHaveBeenBroken(false),
 	unconsciousPeopleHaveBeenFound(false),
 	deadPeopleHaveBeenFound(false),
-	alertPos(0,0,0),
+	alertPos(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY), // grayman #3438
 
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
 	posEnemySeen(0,0,0),
@@ -175,7 +174,6 @@ void Memory::Save(idSaveGame* savefile) const
 	corpseFound.Save(savefile);		  // grayman #3424
 	relightLight.Save(savefile);	  // grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
-	savefile->WriteInt(searchFlags);			// grayman #2603
 
 	doorRelated.currentDoor.Save(savefile);
 
@@ -299,7 +297,6 @@ void Memory::Restore(idRestoreGame* savefile)
 	corpseFound.Restore(savefile);		 // grayman #3424
 	relightLight.Restore(savefile);		 // grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
-	savefile->ReadInt(searchFlags);				// grayman #2603
 
 	doorRelated.currentDoor.Restore(savefile);
 	// Clear the containers before restoring them
