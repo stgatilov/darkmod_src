@@ -52,6 +52,7 @@ void BlindedState::Init(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Blinded", 4);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Blinded", 4);
 
+	owner->SetWaitState("blinded"); // grayman #3431
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "blinded");
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "blinded");
 
@@ -87,6 +88,8 @@ void BlindedState::Init(idAI* owner)
 	owner->SetAcuity("vis", 0);
 	_oldAudAcuity = owner->GetAcuity("aud"); // Smoke #2829
 	owner->SetAcuity("aud",_oldAudAcuity*0.25f); // Smoke #2829
+
+	_staring = false; // grayman #3431 (set to true when you stare at the ground)
 }
 
 // Gets called each time the mind is thinking
@@ -104,7 +107,20 @@ void BlindedState::Think(idAI* owner)
 		owner->SetAcuity("aud", _oldAudAcuity); // Smoke #2829
 
 		owner->GetMind()->EndState();
-		return;
+	}
+	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431
+	{
+		int duration = _endTime - gameLocal.time;
+		if ( duration > 0 )
+		{
+			// Stare at the ground in front of you, as if you're trying to get your sight back
+
+			idVec3 vec = owner->viewAxis.ToAngles().ToForward()*24;
+			vec.z = 0;
+			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + vec;
+			owner->Event_LookAtPosition(lookAtMe, MS2SEC(duration));
+			_staring = true;
+		}
 	}
 }
 
@@ -115,6 +131,7 @@ void BlindedState::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_endTime);
 	savefile->WriteFloat(_oldVisAcuity);
 	savefile->WriteFloat(_oldAudAcuity); // Smoke #2829
+	savefile->WriteBool(_staring); // grayman #3431
 }
 
 void BlindedState::Restore(idRestoreGame* savefile)
@@ -124,6 +141,7 @@ void BlindedState::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_endTime);
 	savefile->ReadFloat(_oldVisAcuity);
 	savefile->ReadFloat(_oldAudAcuity); // Smoke #2829
+	savefile->ReadBool(_staring); // grayman #3431
 }
 
 StatePtr BlindedState::CreateInstance()

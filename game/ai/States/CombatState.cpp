@@ -132,6 +132,28 @@ void CombatState::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner
 	// don't react to an unconscious person
 }
 
+// grayman #3431
+
+void CombatState::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
+{
+	if ( CanBeBlinded(stimSource, skipVisibilityCheck) )
+	{
+		// We're about to be blinded. Exit Combat State.
+		idAI* owner = _owner.GetEntity();
+		owner->GetMind()->EndState();
+
+		// Blind me!
+		State::OnBlindStim(stimSource, skipVisibilityCheck);
+
+		Memory& memory = owner->GetMemory();
+
+		// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
+		owner->ClearEnemy();
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = true;	// grayman #3331
+	}
+}
+
 void CombatState::Init(idAI* owner)
 {
 	// Init base class first
@@ -181,7 +203,7 @@ void CombatState::Init(idAI* owner)
 	CommMessagePtr message;
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1s", message)));
 
-	// All remaining init code is moved into Think() and done in the EStateInit substate,
+	// All remaining init code is moved into Think() and done in the EStateReaction substate,
 	// because the things it does need to occur after the initial reaction delay.
 
 	// grayman #3063
@@ -255,7 +277,7 @@ void CombatState::Think(idAI* owner)
 //		owner->GetMind()->EndState(); // grayman #3182 - already done in CheckAlertLevel()
 		return;
 	}
-	
+
 	// grayman #3331 - make sure you're still fighting the same enemy.
 	// grayman #3355 - fight the closest enemy
 	idActor* enemy = _enemy.GetEntity();

@@ -66,7 +66,7 @@ public:
 			 ++i)
 		{
 			debugInfo << (*i)->GetName();
-			debugInfo << "\n";
+			debugInfo << " \n";
 		}
 		return debugInfo.str();
 	}

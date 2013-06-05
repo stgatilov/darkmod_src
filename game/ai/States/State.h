@@ -91,6 +91,8 @@ public:
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);
 
+	virtual bool CanBeBlinded(idEntity* stimSource, bool skipVisibilityCheck); // grayman #3431
+
 	// Handles incoming visual stims coming from the given entity
 	virtual void OnVisualStim(idEntity* stimSource);
 

@@ -30,6 +30,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/HandleElevatorTask.h"
 #include "../../AIComm_Message.h"
 #include "../../StimResponse/StimResponse.h"
+#include "LostTrackOfEnemyState.h" // grayman #3431
 #include "SearchingState.h"
 #include "CombatState.h"
 #include "BlindedState.h"
@@ -440,6 +441,60 @@ void State::OnAudioAlert()
 	memory.stimulusLocationItselfShouldBeSearched = true;
 }
 
+// grayman #3431 - check whether we're blinded by a blind stim
+
+bool State::CanBeBlinded(idEntity* stimSource, bool skipVisibilityCheck)
+{
+	idAI* owner = _owner.GetEntity();
+
+	// Don't react if we are already blind
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT || owner->GetAcuity("vis") == 0)
+	{
+		return false;
+	}
+
+	bool blinded = false;
+
+	// greebo: We don't check for alert type weights here, flashbombs are "top priority"
+
+	Memory& memory = owner->GetMemory();
+
+	if (!skipVisibilityCheck) 
+	{
+		// Perform visibility check
+		// Check FOV first
+		if (owner->CheckFOV(stimSource->GetPhysics()->GetOrigin()))
+		{
+			// FOV check passed, check occlusion (skip lighting check)
+			if (owner->CanSeeExt(stimSource, false, false))
+			{
+				// Success, AI is blinded
+				blinded = true;
+			}
+		}
+		else
+		{
+			// greebo: FOV check might have failed, still consider near explosions of flashbombs
+			// as some AI might be so close to the player that dropping a flashbomb goes outside FOV
+			idVec3 distVec = (stimSource->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin());
+			float dist = distVec.NormalizeFast();
+			
+			// Check if the distance is within 100 units and the explosion is in front of us
+			if ( ( dist < 100.0f ) && ( distVec * owner->viewAxis.ToAngles().ToForward() ) > 0)
+			{
+				blinded = true;
+			}
+		}
+	}
+	else 
+	{
+		// Skip visibility check
+		blinded = true;
+	}
+
+	return blinded;
+}
+
 void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 {
 	idAI* owner = _owner.GetEntity();
@@ -457,53 +512,23 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 	memory.alertClass = EAlertVisual_1;
 	memory.alertedDueToCommunication = false;
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	memory.alertRadius = 200;
+	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS; // grayman #3431
+	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; // grayman #3431
+	memory.alertSearchExclusionVolume.Zero(); // grayman #3431
 	memory.alertType = EAlertTypeWeapon;
 	memory.visualAlert = false; // grayman #2422
 	memory.mandatory = true;	// grayman #3331
 
-	if (!skipVisibilityCheck) 
+	if ( CanBeBlinded(stimSource, skipVisibilityCheck) )
 	{
-		// Perform visibility check
-		// Check FOV first
-		if (owner->CheckFOV(stimSource->GetPhysics()->GetOrigin()))
+		// grayman #3431 - if the AI has an enemy, queue a "lost enemy" state so it plays
+		// after the blinded state completes
+		if ( owner->GetEnemy() )
 		{
-			// FOV check passed, check occlusion (skip lighting check)
-			if (owner->CanSeeExt(stimSource, false, false))
-			{
-				// Success, AI is blinded
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI can see the flash, switching to BlindedState.\r");
-				owner->GetMind()->PushState(STATE_BLINDED);
-			}
-			else
-			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI cannot see the flash.\r");
-			}
+			owner->GetMind()->PushState(STATE_LOST_TRACK_OF_ENEMY);
 		}
-		else
-		{
-			// greebo: FOV check might have failed, still consider near explosions of flashbombs
-			// as some AI might be so close to the player that dropping a flashbomb goes outside FOV
-			idVec3 distVec = (stimSource->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin());
-			float dist = distVec.NormalizeFast();
-			
-			// Check if the distance is within 100 units and the explosion is in front of us
-			if (dist < 100.0f && distVec * owner->viewAxis.ToAngles().ToForward() > 0)
-			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI blinded by flash at its feet, switching to BlindedState.\r");
-				owner->GetMind()->PushState(STATE_BLINDED);
-			}
-			else
-			{
-				DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI cannot see the flash.\r");
-			}
-		}
-	}
-	else 
-	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Visibility check for flash skipped, switching to BlindedState.\r");
 
-		// Skip visibility check
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI blinded by flash, switching to BlindedState.\r");
 		owner->GetMind()->PushState(STATE_BLINDED);
 	}
 }

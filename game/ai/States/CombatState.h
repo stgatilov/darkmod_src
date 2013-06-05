@@ -96,6 +96,8 @@ public:
 	// these methods will catch the post processing and abort it.
 	virtual void Post_OnDeadPersonEncounter(idActor* person, idAI* owner);
 	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
+
+	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck); // grayman #3431
 	
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

@@ -32,9 +32,10 @@ class BlindedState :
 	public State
 {
 private:
-	int _endTime;
+	int   _endTime;
 	float _oldVisAcuity; // to restore visual acuity
 	float _oldAudAcuity; // Smoke #2829 - to restore audio acuity
+	bool  _staring;		 // grayman #3431 (true = staring at ground)
 
 public:
 	// Get the name of this state
