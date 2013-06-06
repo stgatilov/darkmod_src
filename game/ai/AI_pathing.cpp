@@ -99,30 +99,30 @@ void PrintNode(pathNode_t* node,int level,obstacle_t obstacles[])
 		pad += "   ";
 	}
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s ------ node -----\r",pad.c_str());
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dir = %d (0 = left & 1 = right?)\r",pad.c_str(),node->dir);
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s pos = [%s] (parent's pos + parent's delta)\r",pad.c_str(),node->pos.ToString());
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s delta = [%s] (?)\r",pad.c_str(),node->delta.ToString());
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s dist = %f (distance to seekPos)\r",pad.c_str(),sqrt(node->dist));
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %d (blocking obstacle index)\r",pad.c_str(),node->obstacle);
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s edgeNum = %d (blocking edge num)\r",pad.c_str(),node->edgeNum);
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s numNodes = %d (num nodes down from root)\r",pad.c_str(),node->numNodes);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s ------ node -----\r",pad.c_str());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s dir = %d (0 = left & 1 = right?)\r",pad.c_str(),node->dir);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s pos = [%s] (parent's pos + parent's delta)\r",pad.c_str(),node->pos.ToString());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s delta = [%s] (?)\r",pad.c_str(),node->delta.ToString());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s dist = %f (distance to seekPos)\r",pad.c_str(),sqrt(node->dist));
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s obstacle = %d (blocking obstacle index)\r",pad.c_str(),node->obstacle);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s edgeNum = %d (blocking edge num)\r",pad.c_str(),node->edgeNum);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s numNodes = %d (num nodes down from root)\r",pad.c_str(),node->numNodes);
 
 	if (node->obstacle != -1)
 	{
 		idEntity *e = obstacles[node->obstacle].entity;
 		if (e)
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = %s\r",pad.c_str(),e->name.c_str());
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s obstacle = %s\r",pad.c_str(),e->name.c_str());
 		}
 		else
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle = NULL\r",pad.c_str());
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s obstacle = NULL\r",pad.c_str());
 		}
 	}
 	else
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("%s obstacle index = -1\r",pad.c_str());
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%s obstacle index = -1\r",pad.c_str());
 	}
 }
 
@@ -393,7 +393,7 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 GetObstacles
 ============
 */
-int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum, 
+int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, int areaNum,
 				  const idVec3 &startPos, const idVec3 &seekPos, obstacle_t *obstacles, int maxObstacles, 
 				  idBounds &clipBounds, obstaclePath_t& pathInfo ) 
 {
@@ -515,47 +515,36 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			
 			*/
 
-			bool sameDirection = false;		// self and actor traveling in roughly the same direction?
-			bool actorSameFaster = false;	// actor is traveling at the same speed or faster than you
+			// grayman #3414 - corrections to pathing around actors
 			const idVec3& actorVel = obPhys->GetLinearVelocity();
-			float actorSpeedSqr = actorVel.LengthSqr();
-			idVec3 myVel = physics->GetLinearVelocity();
-			float mySpeedSqr = myVel.LengthSqr();
-			// moving in about the same direction?
-			if (actorVel * myVel > 0.0f)
+			float actorSpeed = actorVel.LengthFast();
+			const idVec3 myVel = physics->GetLinearVelocity();
+			float mySpeed = myVel.LengthFast();
+
+			bool sameDirection = (actorVel * myVel > 0.0f); // moving in about the same direction?
+			bool slowerSpeed = false;
+
+			// technical note - you can't just compare one speed with the other. Due to floating point
+			// issues, they can effectively be the same speed, but represented by slightly different values
+			bool sameSpeed = ( abs(mySpeed - actorSpeed) < 1 );    // am I roughly the same speed as the actor?
+			if (!sameSpeed)
 			{
-				sameDirection = true;
+				slowerSpeed = (mySpeed < actorSpeed); // am I slower than the actor?
 			}
 
-			// actor's speed is faster or equal to self?
-			if (actorSpeedSqr >= mySpeedSqr)
+			if (sameDirection)
 			{
-				actorSameFaster = true;
-			}
-
-			if (self->m_pathRank > obEntActor->m_pathRank)
-			{
-				if (actorSameFaster)
+				if ( slowerSpeed || sameSpeed )
 				{
-					continue;
-				}
-				else if (!sameDirection)
-				{
-					continue;
+					continue; // ignore actor; you won't meet
 				}
 			}
-			else if (self->m_pathRank == obEntActor->m_pathRank)
+			else // walking toward each other
 			{
-				self->m_pathRank++; // increase mine and ignore the other actor
-				continue; // ignore
-			}
-
-			// Self's path rank is lower than the actor's. If the actor is moving in the same
-			// direction and is traveling at the same speed or faster, ignore them.
-
-			else if (sameDirection && actorSameFaster)
-			{
-				continue; // ignore
+				if (self->m_pathRank > obEntActor->m_pathRank)
+				{
+					continue; // ignore actor; he'll walk around you
+				}
 			}
 		} 
 		// SZ: Oct 9, 2006: BinaryMovers are now dynamic pathing obstacles too
@@ -1126,7 +1115,8 @@ void PrunePathTree( pathNode_t *root, const idVec2 &seekPos ) {
 OptimizePath
 ============
 */
-int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obstacle_t *obstacles, int numObstacles, idVec2 optimizedPath[MAX_OBSTACLE_PATH] ) {
+int OptimizePath( const pathNode_t *root, const pathNode_t *leafNode, const obstacle_t *obstacles, int numObstacles, idVec2 optimizedPath[MAX_OBSTACLE_PATH] )
+{
 	int i, numPathPoints, edgeNums[2];
 	const pathNode_t *curNode, *nextNode;
 	idVec2 curPos, curDelta, bounds[2];
@@ -1209,7 +1199,8 @@ FindOptimalPath
   Returns true if there is a path all the way to the goal.
 ============
 */
-bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int numObstacles, const float height, const idVec3 &curDir, idVec3 &seekPos ) {
+bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int numObstacles, const float height, const idVec3 &curDir, idVec3 &seekPos )
+{
 	int i, numPathPoints, bestNumPathPoints;
 	const pathNode_t *node, *lastNode, *bestNode;
 	idVec2 optimizedPath[MAX_OBSTACLE_PATH];
@@ -1275,12 +1266,15 @@ bool FindOptimalPath( const pathNode_t *root, const obstacle_t *obstacles, int n
 		}
 	}
 
-	if ( !pathToGoalExists ) {
+	if ( !pathToGoalExists )
+	{
 		if (root->children[0] != NULL)
 		{
 			seekPos.ToVec2() = root->children[0]->pos;
 		}
-	} else if ( !optimizedPathCalculated ) {
+	}
+	else if	( !optimizedPathCalculated )
+	{
 		OptimizePath( root, bestNode, obstacles, numObstacles, optimizedPath );
 		seekPos.ToVec2() = optimizedPath[1];
 	}
@@ -1306,7 +1300,8 @@ idAI::FindPathAroundObstacles
   Finds a path around dynamic obstacles using a path tree with clockwise and counter clockwise edge walks.
 ============
 */
-bool idAI::FindPathAroundObstacles(const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner ) {
+bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ignore, const idVec3 &startPos, const idVec3 &seekPos, obstaclePath_t &path, idActor* owner )
+{
 	// Initialise the path structure with reasonable defaults
 	path.seekPos = seekPos;
 	path.firstObstacle = NULL;
