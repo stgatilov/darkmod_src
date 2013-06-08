@@ -104,34 +104,35 @@ void Sys_AsyncThread( void ) {
 }
 
 /*
- ==============
- Sys_HomeSavePath
- ==============
- */
-const char *Sys_HomeSavePath(void) {
-	return ".";					// tels #2966
-}
-
-/*
- ==============
- Sys_DefaultSavePath
- ==============
- */
+==============
+Sys_DefaultSavePath
+==============
+*/
 const char *Sys_DefaultSavePath(void) {
-	idStr fsMod = cvarSystem->GetCVarString("fs_mod");
-	sprintf( savepath, "./%s", fsMod.IsEmpty() ? "darkmod" : fsMod.c_str() );	// tels #2966
+    if ( savepath.IsEmpty() ) {
+        idStr fsMod = cvarSystem->GetCVarString("fs_mod");
+
+        sprintf( savepath, "%s", Sys_DefaultBasePath() );
+
+        if (!fsMod.IsEmpty() && idStr::Cmp( fsMod.c_str(), BASE_TDM ) ) {
+            // mod isn't "darkmod", so add the mod dir
+            sprintf( savepath, "%s/%s", savepath.c_str(), fsMod.c_str() );
+        }
+    }
 
 	return savepath.c_str();
 }
 
 /*
- ==============
- Sys_ModSavePath
- ==============
- */
-const char* Sys_ModSavePath()
-{
-	sprintf( modSavepath, "%s/%s", Sys_DefaultSavePath(), "fms" );
+==============
+Sys_ModSavePath
+==============
+*/
+const char* Sys_ModSavePath() {
+    if ( modSavepath.IsEmpty() ) {
+        sprintf( modSavepath, "%s/%s", Sys_DefaultSavePath(), "fms" );
+    }
+
 	return modSavepath.c_str();
 }
 
@@ -167,46 +168,57 @@ Try to be intelligent: if there is no BASE_TDM ("darkmod"), try the next path
 ================
 */
 const char *Sys_DefaultBasePath(void) {
-	struct stat st;
-	idStr testbase;
+    if ( basepath.IsEmpty() ) {
+        struct stat st;
+        idStr testbase;
 
-	// first the path where the executable resides
-	basepath = Sys_EXEPath();
-	if ( basepath.Length() ) {
-		basepath.StripFilename();
-		testbase = basepath + "/" + BASE_TDM;
-//		common->Printf( "testing exe '%s'\n", testbase.c_str() );
-		if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
-			return basepath.c_str();
-		} else {
-			common->Printf( "no '%s' directory in exe path %s, skipping\n", BASE_TDM, basepath.c_str() );
-		}
-		// next try "path_to_executable/.." (one up), maybe the executable is in the same dir as the "darkmod" directory
-		// strip the last part of basepath
-		// "/home/user/games/tdm/darkmod/" => "/home/user/games/tdm/"
-		if (basepath.StripTrailingOnce("/darkmod"))
-		{
-			testbase = basepath + "/" + BASE_TDM;
-//			common->Printf( "testing .. '%s'\n", testbase.c_str() );
-			if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
-				return basepath.c_str();
-			} else {
-				common->Printf( "exe inside 'darkmod/' path, but could not traverse up, skipping\n" );
-			}
-		}
-	}
-	// next try the current path
-	if ( basepath != Posix_Cwd() ) {
-		basepath = Posix_Cwd();
-		testbase = basepath; testbase += "/"; testbase += BASE_TDM;
-//		common->Printf( "testing posix '%s'\n", testbase.c_str() );
-		if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
-			return basepath.c_str();
-		} else {
-			common->Printf("no '%s' directory in cwd path %s, skipping\n", BASE_TDM, basepath.c_str());
-		}
-	}
-	// which is again the current dir
+        // first the path where the executable resides
+        basepath = Sys_EXEPath();
+        if ( basepath.Length() ) {
+            basepath.StripFilename();
+            testbase = basepath;
+            testbase.StripFilename(); // strip a second time to get rid of mod dir
+            testbase += "/"; testbase += BASE_TDM;
+            if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
+                return basepath.c_str();
+            } else {
+                common->Printf( "no '%s' directory in exe path %s, skipping\n", BASE_TDM, basepath.c_str() );
+            }
+
+            /* we don't want the binary to live anywhere except darkmod/
+
+            // next try "path_to_executable/.." (one up), maybe the executable is in the same dir as the "darkmod" directory
+            // strip the last part of basepath
+            // "/home/user/games/tdm/darkmod/" => "/home/user/games/tdm/"
+            if (basepath.StripTrailingOnce("/darkmod"))
+            {
+                testbase = basepath + "/" + BASE_TDM;
+                if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
+                    return basepath.c_str();
+                } else {
+                    common->Printf( "exe inside 'darkmod/' path, but could not traverse up, skipping\n" );
+                }
+            }
+            */
+        }
+
+        // next try the current path
+        if ( basepath != Posix_Cwd() ) {
+            basepath = Posix_Cwd();
+            testbase = basepath;
+            testbase.StripFilename();
+            testbase += "/"; testbase += BASE_TDM;
+            if ( stat( testbase.c_str(), &st ) != -1 && S_ISDIR( st.st_mode ) ) {
+                return basepath.c_str();
+            } else {
+                common->Printf("no '%s' directory in cwd path %s, skipping\n", BASE_TDM, basepath.c_str());
+            }
+        }
+    } else {
+        return basepath.c_str();
+    }
+
+    // try the current path
 	common->Printf( "WARNING: using hardcoded default base path\n" );
 	return LINUX_DEFAULT_PATH;
 }
@@ -491,10 +503,10 @@ void idSysLocal::OpenURL( const char *url, bool quit ) {
 }
 
 /*
- ==================
- Sys_DoPreferences
- ==================
- */
+==================
+Sys_DoPreferences
+==================
+*/
 void Sys_DoPreferences( void ) { }
 
 /*

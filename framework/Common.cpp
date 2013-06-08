@@ -143,7 +143,7 @@ public:
 	virtual void				StartupVariable( const char *match, bool once );
 	virtual void				InitTool( const toolFlag_t tool, const idDict *dict );
 	virtual void				ActivateTool( bool active );
-	virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_basepath" );
+    virtual void				WriteConfigToFile( const char *filename, const char* basePath = "fs_savepath" );
 	virtual void				WriteFlaggedCVarsToFile( const char *filename, int flags, const char *setCmd );
 	virtual void				BeginRedirect( char *buffer, int buffersize, void (*flush)( const char * ) );
 	virtual void				EndRedirect( void );
@@ -864,7 +864,7 @@ void idCommonLocal::InitGameArguments() {
 	
     // taaaki - while we want to be able to support mods in the future, I want to limit
     //          this ability until the TDM and D3 source merge is in a better state.
-    bool enableMods = false;
+    bool enableMods = true;
     idStr fsGameBase = BASE_TDM;
     fsGameBaseDefined = true;
     
@@ -887,13 +887,11 @@ void idCommonLocal::InitGameArguments() {
 		}
 	}
 
-	// Construct the darkmod path - use fs_mod, if specified
-#ifdef _WIN32
+    // Construct the darkmod path - use fs_mod, if specified and different from "darkmod"
 	idStr darkmodPath = basePath;
-#else
-    idStr darkmodPath = Sys_HomeSavePath();
-#endif
-	darkmodPath.AppendPath(fsGameBase);
+    if ( idStr::Icmp( fsGameBase.c_str(), BASE_TDM ) ) {
+        darkmodPath.AppendPath(fsGameBase);
+    }
 	
 	if ( !fsGameDefined ) {
 		// no fs_currentfm defined, try to load the currentfm.txt from darkmod
@@ -953,33 +951,38 @@ void idCommonLocal::InitGameArguments() {
     // folder exists in <fs_mod>/fms/
     if ( fsGameDefined ) {
         idStrList fmList;
-#ifdef _WIN32
         idStr fmPath = darkmodPath;
-        fmPath.AppendPath("fms");
-#else
-        idStr fmPath = Sys_ModSavePath();
-#endif
         idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
 
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
+        fmPath.AppendPath("fms");
 
-        if ( fmList.FindIndex( curFm ) < 0 ) {
-            // didn't find the mission in the list
+        if ( fmList.FindIndex( "fms" ) < 0 ) {
+            // didn't find the fms folder
+            // taaaki - do we create one? I don't see why not
+            Sys_Mkdir( fmPath.c_str() );
             fsGameDefined = false;
-            common->Warning("Fan mission path does not exist for installed fm: %s", curFm.c_str());
+            common->Warning("Fan missions directory does not exist");
         } else {
-            idStrList pk4List, mapList;
+            Sys_ListFiles( fmPath.c_str(), "/", fmList );
 
-            fmPath.AppendPath(curFm);
-            Sys_ListFiles( fmPath.c_str(), ".pk4", pk4List );
-
-            fmPath.AppendPath("maps");
-            Sys_ListFiles( fmPath.c_str(), ".map", mapList );
-
-            if ( pk4List.Num() == 0 && mapList.Num() == 0 ) {
-                // fanmission folder exists, but didn't find a pk4 or map file
+            // check if the currently selected fm folder exists
+            if ( fmList.FindIndex( curFm ) < 0 ) {
                 fsGameDefined = false;
-                common->Warning("Fan mission map does not exist for installed fm: %s", curFm.c_str());
+                common->Warning("Fan missions path does not exist for installed fm: %s", curFm.c_str());
+            } else {
+                idStrList pk4List, mapList;
+                fmPath.AppendPath(curFm);
+                Sys_ListFiles( fmPath.c_str(), ".pk4", pk4List );
+
+                fmPath.AppendPath("maps");
+                Sys_ListFiles( fmPath.c_str(), ".map", mapList );
+
+                if ( pk4List.Num() == 0 && mapList.Num() == 0 ) {
+                    // fanmission folder exists, but didn't find a pk4 or map file
+                    fsGameDefined = false;
+                    common->Warning("Fan mission map does not exist for installed fm: %s", curFm.c_str());
+                }
             }
         }
     }

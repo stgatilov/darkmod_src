@@ -123,17 +123,20 @@ const char *Sys_DefaultBasePath( void ) {
 
 const char *Sys_DefaultSavePath( void ) {
     static idStr savePath;
-    // taaaki: default savepath changed to the mod dir.
+    // default savepath changed to the mod dir.
     if ( savePath.IsEmpty() ) {
         savePath = cvarSystem->GetCVarString("fs_basepath");
-        savePath.AppendPath(cvarSystem->GetCVarString("fs_mod"));
+
+        // only append the mod if it isn't "darkmod"
+        if ( idStr::Icmp( cvarSystem->GetCVarString("fs_mod"), BASE_TDM ) ) {
+            savePath.AppendPath(cvarSystem->GetCVarString("fs_mod"));
+        }
     }
 
-	return savePath.c_str();
+    return savePath.c_str();
 }
 
-const char* Sys_ModSavePath()
-{
+const char* Sys_ModSavePath() {
 	// greebo: In Windows, we use the basepath + "darkmod/fms/" as savepath 
     // taaaki: changed this to savepath + "fms/"
 	static idStr modSavePath;

@@ -139,9 +139,7 @@ is stored all lowercase.
 
 "additional mod path search":
 fs_mod can be used to set an additional search path
-in search order, fs_mod, BASE_TDM, BASE_GAMEDIR
-for instance to base a mod of D3 assets, fs_mod mymod ("darkmod" and "base" are 
-automatically included in the searchpath). 
+in search order, fs_mod > BASE_TDM
 
 =============================================================================
 */
@@ -309,7 +307,7 @@ private:
 
 	// greebo: For regular TDM missions, all savegames/demos/etc. should be written to darkmod/fms/<fs_currentfm>/... 
 	// instead of creating a folder in fs_basePath. So, use "fs_modSavePath" as argument to filesystem->OpenFileWrite()
-	// The value of modSavePath is something like C:\Games\TDM\darkmod\fms\ in Win32, or /home/user/games/tdm/darkmod/fms/ in Linux.
+    // The value of modSavePath is something like C:\Games\TDM\darkmod\fms\ in Win32, or /home/user/games/tdm/darkmod/fms/ in Linux.
 	static idCVar			fs_modSavePath;
 
 	backgroundDownload_t *	backgroundDownloads;
@@ -371,7 +369,7 @@ idCVar	idFileSystemLocal::fs_cdpath( "fs_cdpath", "", CVAR_SYSTEM | CVAR_INIT, "
 idCVar	idFileSystemLocal::fs_devpath( "fs_devpath", "", CVAR_SYSTEM | CVAR_INIT, "" );
 
 // taaaki: Removed fs_game and fs_game_base and replaced with fs_mod and fs_currentfm
-idCVar  idFileSystemLocal::fs_mod( "fs_mod", "darkmod", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO | CVAR_ROM, "Path to custom TDM mod." );
+idCVar  idFileSystemLocal::fs_mod( "fs_mod", "darkmod", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "Path to custom TDM mod." );
 idCVar  idFileSystemLocal::fs_currentfm( "fs_currentfm", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "The currently installed fan mission." );
 #ifdef WIN32
 idCVar	idFileSystemLocal::fs_caseSensitiveOS( "fs_caseSensitiveOS", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -2081,18 +2079,22 @@ void idFileSystemLocal::Startup( void ) {
 		common->Printf( "restarting filesystem with %d addon pak file(s) to include\n", addonChecksums.Num() );
 	}
 
-	SetupGameDirectories( BASE_GAMEDIR );
-    SetupGameDirectories( BASE_TDM );
+    AddGameDirectory( fs_basepath.GetString(), "" ); // always add the basepath
 
     // fs_mod override
-	if ( fs_mod.GetString()[0] &&
-		 idStr::Icmp( fs_mod.GetString(), BASE_GAMEDIR ) &&
+    if ( fs_mod.GetString()[0] &&
          idStr::Icmp( fs_mod.GetString(), BASE_TDM ) ) {
 		SetupGameDirectories( fs_mod.GetString() );
 	}
 
-#ifndef _WIN32
-	idStr homeSave = Sys_HomeSavePath();
+#if 0
+// taaaki - this code will no longer be necessary if individual user save locations are abolished.
+//          remove when certain
+
+//#ifndef _WIN32
+    // taaaki - TODO - this probably doesn't need to be here anymore since we don't
+    //                 appear to be using the user's homedir to store configs
+    idStr homeSave = Sys_HomeSavePath();
 	if ( homeSave.c_str()[0] && 
          fs_mod.GetString()[0] ) {
         AddGameDirectory( homeSave.c_str(), fs_mod.GetString() );
@@ -2100,13 +2102,12 @@ void idFileSystemLocal::Startup( void ) {
 #endif
 
     // taaaki: setup fm path -- 
-    //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod") > BASE_GAMEDIR ("base")]
+    //   fs_modSavePath/fs_currentfm > fs_mod > BASE_TDM ("darkmod")
     // The following logic has been deprecated:
     //   Old logic: In between fs_ and fs_game_base, there is the mission folder, which is fms/<missionName>/
     //   fs_game still overrides that one, but the the mission folder should still override fs_game_base
     if ( fs_modSavePath.GetString()[0] && 
          fs_currentfm.GetString()[0] &&
-         idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
          idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) ) {
         
         // don't add the modSavePath just yet. wait to see if devpath has been modified
@@ -2117,7 +2118,6 @@ void idFileSystemLocal::Startup( void ) {
     // if fs_devpath is set by the user, assume that this is a wip directory and add it to the top of the searchpaths
     if ( fs_devpath.GetString()[0] && 
          fs_currentfm.GetString()[0] &&
-         idStr::Icmp( fs_currentfm.GetString(), BASE_GAMEDIR ) &&
          idStr::Icmp( fs_currentfm.GetString(), fs_mod.GetString() ) &&
          idStr::Icmp( fs_devpath.GetString(), Sys_DefaultSavePath() ) ) {
         
@@ -2388,9 +2388,7 @@ void idFileSystemLocal::Init( void ) {
 	common->StartupVariable( "fs_searchAddons", false );
 
     // taaaki: we have replaced fs_game and fs_game_base with these
-    //         however, I want to prevent modification of fs_mod
-    //         for the meanwhile
-    //common->StartupVariable( "fs_mod", false ); 
+    common->StartupVariable( "fs_mod", false ); 
 	common->StartupVariable( "fs_currentfm", false );
 
 	// greebo: even the mod save path can be overriden by command line arguments
@@ -2407,7 +2405,7 @@ void idFileSystemLocal::Init( void ) {
 	}
 
 	if ( fs_devpath.GetString()[0] == '\0' ) {
-        fs_devpath.SetString( Sys_DefaultSavePath() ); // taaaki - TODO - check if this actually works in linux
+        fs_devpath.SetString( Sys_DefaultSavePath() );
 	}
 
 	// greebo: By default, set the mod save path to BASE_TDM/fms/.
@@ -2420,7 +2418,7 @@ void idFileSystemLocal::Init( void ) {
 	Startup( );
 
 	// spawn a thread to handle background file reads
-	StartBackgroundDownloadThread();
+    StartBackgroundDownloadThread( );
 
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
