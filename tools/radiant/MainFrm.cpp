@@ -2149,15 +2149,10 @@ void RunBsp (const char *command) {
 		char buff[2048];
 
 		idStr base = cvarSystem->GetCVarString( "fs_basepath" );
-		idStr cd = cvarSystem->GetCVarString( "fs_cdpath" );
 		idStr paths;
 		if (base.Length()) {
 			paths += "+set fs_basepath ";
 			paths += base;
-		}
-		if (cd.Length()) {
-			paths += "+set fs_cdpath ";
-			paths += cd;
 		}
 
 		::GetModuleFileName(AfxGetApp()->m_hInstance, buff, sizeof(buff));

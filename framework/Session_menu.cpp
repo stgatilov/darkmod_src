@@ -343,7 +343,7 @@ bool idSessionLocal::HandleSaveGameMenuCommand( idCmdArgs &args, int &icmd ) {
 				idStr game = cvarSystem->GetCVarString( "fs_currentfm" );
 				idFile *file;
 				if(game.Length()) {
-					file = fileSystem->OpenFileRead( saveFileName, true, game );
+                    file = fileSystem->OpenFileRead( saveFileName, game );
 				} else {
 					file = fileSystem->OpenFileRead( saveFileName );
 				}

@@ -373,8 +373,7 @@ void R_LoadARBProgram( int progIndex ) {
 	char	*buffer;
 	char	*start, *end;
 
-	// load the program even if we don't support it, so
-	// fs_copyfiles can generate cross-platform data dumps
+    // load the program even if we don't support it
 	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
 	if ( !fileBuffer ) {
 		common->Warning( "LoadARBProgram: \'%s\' not found", fullPath.c_str() );

@@ -663,12 +663,6 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 	// always turn this off after an error
 	com_refreshOnPrint = false;
 
-	// when we are running automated scripts, make sure we
-	// know if anything failed
-	if ( cvarSystem->GetCVarInteger( "fs_copyfiles" ) ) {
-		code = ERP_FATAL;
-	}
-
 	// if we don't have GL running, make it a fatal error
 	if ( !renderSystem->IsOpenGLRunning() ) {
 		code = ERP_FATAL;

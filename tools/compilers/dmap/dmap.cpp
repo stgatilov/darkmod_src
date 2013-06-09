@@ -299,7 +299,7 @@ void Dmap( const idCmdArgs &args ) {
     //          this is done by opening the file to get the true full path, then converting
     //          the path back to a RelativePath based off fs_devpath
     passedName.SetFileExtension( "map" );
-    idFile *fp = idLib::fileSystem->OpenFileRead( passedName, false, "" );
+    idFile *fp = idLib::fileSystem->OpenFileRead( passedName, "" );
     if ( fp ) {
         passedName = idLib::fileSystem->OSPathToRelativePath(fp->GetFullPath());
         idLib::fileSystem->CloseFile( fp );

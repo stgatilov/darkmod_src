@@ -2143,11 +2143,6 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 	// parse it
 	ParseMaterial( src );
 
-	// if we are doing an fs_copyfiles, also reference the editorImage
-	if ( cvarSystem->GetCVarInteger( "fs_copyFiles" ) ) {
-		GetEditorImage();
-	}
-
 	//
 	// count non-lit stages
 	numAmbientStages = 0;

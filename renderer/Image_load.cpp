@@ -1279,11 +1279,6 @@ bool idImage::ShouldImageBePartialCached() {
 		return false;
 	}
 
-	// if we are doing a copyFiles, make sure the original images are referenced
-	if ( fileSystem->PerformingCopyFiles() ) {
-		return false;
-	}
-
 	char	filename[MAX_IMAGE_NAME];
 	ImageProgramStringToCompressedFileName( imgName, filename );
 
@@ -1326,10 +1321,6 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	}
 
 	// Allow grabbing of DDS's from original Doom pak files
-	// if we are doing a copyFiles, make sure the original images are referenced
-	if ( fileSystem->PerformingCopyFiles() ) {
-		return false;
-	}
 
 	//if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() >= 2 ) {
 	//	return false;

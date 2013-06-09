@@ -113,10 +113,6 @@ const char *Sys_Cwd( void ) {
 	return cwd;
 }
 
-const char *Sys_DefaultCDPath( void ) {
-	return "";
-}
-
 const char *Sys_DefaultBasePath( void ) {
 	return Sys_Cwd();
 }
@@ -194,7 +190,6 @@ int Sys_ListFiles( const char *directory, const char *extension, idStrList &list
 
 #else
 
-const char *	Sys_DefaultCDPath( void ) { return ""; }
 const char *	Sys_DefaultBasePath( void ) { return ""; }
 const char *	Sys_DefaultSavePath( void ) { return ""; }
 int				Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) { return 0; }

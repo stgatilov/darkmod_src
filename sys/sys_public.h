@@ -348,7 +348,6 @@ ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
 ID_TIME_T       Sys_DosToUnixTime( unsigned long dostime );
 // NOTE: do we need to guarantee the same output on all platforms?
 const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
-const char *	Sys_DefaultCDPath( void );
 const char *	Sys_DefaultBasePath( void );
 const char *	Sys_HomeSavePath( void );
 const char *	Sys_DefaultSavePath( void );
