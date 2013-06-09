@@ -208,10 +208,12 @@ public:
 	// Will automatically tile render large screen shots if necessary
 	// Samples is the number of jittered frames for anti-aliasing
 	// If ref == NULL, session->updateScreen will be used
+    // envshot check added since we do not want to use the usual screenshot
+    // renaming for the envshot function
 	// This will perform swapbuffers, so it is NOT an approppriate way to
 	// generate image files that happen during gameplay, as for savegame
 	// markers.  Use WriteRender() instead.
-	virtual void			TakeScreenshot( int width, int height, const char *fileName, int samples, struct renderView_s *ref ) = 0;
+	virtual void			TakeScreenshot( int width, int height, const char *fileName, int samples, struct renderView_s *ref, bool envshot = false ) = 0;
 
 	// the render output can be cropped down to a subset of the real screen, as
 	// for save-game reviews and split-screen multiplayer.  Users of the renderer

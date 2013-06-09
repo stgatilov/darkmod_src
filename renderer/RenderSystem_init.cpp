@@ -1195,13 +1195,13 @@ void Screenshot_ChangeFilename(idStr& filename, const char *extension)
 		time(&tt);
 		struct tm * ltime = localtime(&tt);
 
-		strftime(thetime, sizeof(thetime) ,"_%Y-%m-%d_%H.%M.%S.", ltime);
+		strftime( thetime, sizeof(thetime) ,"_%Y-%m-%d_%H.%M.%S.", ltime );
 	}
 
 	const idStr fileOnly = mapname + thetime + extension;
     
     filename = "screenshots/";
-	filename.AppendPath(fileOnly);
+	filename.AppendPath( fileOnly );
 }
 
 /*
@@ -1215,7 +1215,7 @@ Downsample is the number of steps to mipmap the image before saving it
 If ref == NULL, session->updateScreen will be used
 ================== 
 */  
-void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fileName, int blends, renderView_t *ref ) {
+void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fileName, int blends, renderView_t *ref, bool envshot ) {
 	byte		*buffer;
 	int			i, j, c, temp;
 
@@ -1262,51 +1262,48 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 	// swap rgb to bgr
 	c = 18 + width * height * 3;
-	for (i=18 ; i<c ; i+=3) {
+	for ( i=18 ; i<c ; i+=3 ) {
 		temp = buffer[i];
 		buffer[i] = buffer[i+2];
 		buffer[i+2] = temp;
 	}
 
 	// greebo: Check if we should save a screen shot format other than TGA
-	if (idStr::Icmp(r_screenshot_format.GetString(), "tga") != 0)
-	{
+	if ( !envshot && (idStr::Icmp(r_screenshot_format.GetString(), "tga" ) != 0) ) {
 		// load screenshot file buffer into image
 		Image image;
-		image.LoadImageFromMemory((const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot");
+		image.LoadImageFromMemory( (const unsigned char *)buffer, (unsigned int)c, "TDM_screenshot" );
 
 		// find the preferred image format
-		idStr extension = r_screenshot_format.GetString();
+		idStr extension = r_screenshot_format.GetString( );
 
-		Image::Format format = Image::GetFormatFromString(extension.c_str());
+		Image::Format format = Image::GetFormatFromString( extension.c_str() );
 
-		if (format == Image::AUTO_DETECT)
-		{
-			common->Warning("Unknown screenshot extension %s, falling back to default.", extension.c_str());
+		if ( format == Image::AUTO_DETECT ) {
+			common->Warning( "Unknown screenshot extension %s, falling back to default.", extension.c_str() );
 
 			format = Image::TGA;
 			extension = "tga";
 		}
 
 		// change extension and index of screenshot file
-		idStr changedPath(fileName);
-		Screenshot_ChangeFilename(changedPath, extension.c_str());
+		idStr changedPath( fileName );
+		Screenshot_ChangeFilename( changedPath, extension.c_str() );
 
 		// try to save image in other format
-		if (!image.SaveImageToVfs(changedPath, format))
-		{
-			common->Warning("Could not save screenshot: %s", changedPath.c_str());
-		}
-		else
-		{
+		if ( !image.SaveImageToVfs(changedPath, format) ) {
+			common->Warning( "Could not save screenshot: %s", changedPath.c_str() );
+		} else {
 			common->Printf( "Wrote %s\n", changedPath.c_str() );
 		}
-	}
-	else
-	{
+	} else {
         // change extension and index of screenshot file
-		idStr changedPath(fileName);
-		Screenshot_ChangeFilename(changedPath, "tga");
+		idStr changedPath( fileName );
+        
+        // if envshot is being used, don't name the image using the map + date convention
+        if ( !envshot ) {
+		    Screenshot_ChangeFilename( changedPath, "tga" );
+        }
 
 		// Format is TGA, just save the buffer
         fileSystem->WriteFile( changedPath.c_str(), buffer, c, "fs_savepath", "" );
@@ -1317,7 +1314,6 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
-
 }
 
 /*
@@ -1495,7 +1491,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		ref.height = glConfig.vidHeight;
 		ref.viewaxis = axis[i];
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
-		tr.TakeScreenshot( size, size, fullname, blends, &ref );
+		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
 	}
 
 	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
