@@ -203,8 +203,8 @@ const char* const AlertStateNames[EAlertStateNum] =
 // grayman #2603 - how long to wait until barking again about a light that's out
 #define REBARK_DELAY 15000
 
-const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 8*60; // grayman #3415 - 8 minutes 
-const int EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR  = 4*60; // grayman #3415 - random 0->4 min added to base 8 minutes
+const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 4*60; // grayman #3415 - 4 minutes 
+const int EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR  = 3*60; // grayman #3415 - random 0->3 min added to base minutes
 
 /**
  * greebo: This class acts as container for all kinds of state variables.
