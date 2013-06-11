@@ -62,7 +62,7 @@ const idStr& ConversationState::GetName() const
 bool ConversationState::CheckAlertLevel(idAI* owner)
 {
 	// Alert index is too high for index > ERelaxed
-	return (owner->AI_AlertIndex <= ERelaxed);
+	return (owner->AI_AlertIndex <= ESuspicious); // grayman #3449 - was ERelaxed
 }
 
 void ConversationState::SetConversation(int index)
@@ -91,7 +91,11 @@ void ConversationState::Init(idAI* owner)
 	_alertLevelDecreaseRate = 0.01f;
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is too alert to start a conversation\r", owner->GetName());
+		return;
+	}
 
 	// Check dialogue prerequisites
 	if (!CheckConversationPrerequisites())
@@ -159,6 +163,7 @@ void ConversationState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner)) 
 	{
+		DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is too alert to continue a conversation\r", owner->GetName());
 		owner->GetMind()->SwitchState(owner->backboneStates[EObservant]);
 		return;
 	}
@@ -166,7 +171,7 @@ void ConversationState::Think(idAI* owner)
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
-	if (_finishTime > 0 && gameLocal.time > _finishTime)
+	if ( ( _finishTime > 0 ) && ( gameLocal.time > _finishTime ) )
 	{
 		// Allow new incoming commands
 		_state = EReady;

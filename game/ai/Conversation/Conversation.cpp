@@ -25,10 +25,11 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <climits>
 #include "Conversation.h"
 #include "../States/ConversationState.h"
-
-const int MAX_ALERT_LEVEL_TO_START_CONVERSATION = 1;
+#include "../Memory.h"
 
 namespace ai {
+
+const int MAX_ALERT_LEVEL_TO_START_CONVERSATION = ESuspicious; // grayman #3449 - was '1'
 
 Conversation::Conversation() :
 	_isValid(false),
@@ -104,13 +105,14 @@ bool Conversation::CheckConditions()
 
 		if (ai == NULL || ai->IsKnockedOut() || ai->health <= 0)
 		{
-			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is KO or dead!.\r", _actors[i].c_str(), _name.c_str());
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is KO or dead!\r", _actors[i].c_str(), _name.c_str());
 			return false;
 		}
 
 		if (ai->AI_AlertIndex > MAX_ALERT_LEVEL_TO_START_CONVERSATION)
 		{
 			// AI is too alerted to start this conversation
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s in conversation %s is too alert to start this conversation\r", _actors[i].c_str(), _name.c_str());
 			return false;
 		}
 
