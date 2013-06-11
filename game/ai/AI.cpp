@@ -12428,6 +12428,15 @@ bool idAI::CanGreet() // grayman #3338
 		return false;
 	}
 
+	// grayman #3448 - no greeting if involved in a conversation
+
+	ai::ConversationStatePtr convState = boost::dynamic_pointer_cast<ai::ConversationState>(GetMind()->GetState());
+
+	if (convState != NULL)
+	{
+		return false;
+	}
+
 	return true;
 }
 
