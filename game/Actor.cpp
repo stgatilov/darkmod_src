@@ -3105,8 +3105,7 @@ const char* idActor::LookupReplacementAnim( const char *animname )
 		replacement = m_replacementAnims.GetString( replacement );
 		
 		// Avoid infinite loops
-		tries++;
-		if (tries > 500)
+		if (++tries > 50)
 		{
 			gameLocal.Warning("Infinite loop detected in replacements for animation '%s' applied to actor '%s'\n",
 				animname, this->name.c_str());

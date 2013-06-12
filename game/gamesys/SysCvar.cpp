@@ -94,28 +94,29 @@ idCVar cv_ai_visdist_show (			"tdm_ai_visdist_show",		"0.0",			CVAR_GAME | CVAR_
 
 idCVar cv_ai_opt_disable (			"tdm_ai_opt_disable",		"1",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will be completely disabled if they have neverdormant set to 0.");
 idCVar cv_ai_opt_noanims (			"tdm_ai_opt_noanims",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs will not animate.");
-idCVar cv_ai_opt_novisualscan (			"tdm_ai_opt_novisualscan",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will not look for enemies, not even enemy AIs.");
+idCVar cv_ai_opt_novisualscan (		"tdm_ai_opt_novisualscan",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will not look for enemies, not even enemy AIs.");
 idCVar cv_ai_opt_forceopt (			"tdm_ai_opt_forceopt",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs will always be treated as being outside the PVS for the purposes of the other tdm_ai_opt_* spawnargs." );
 idCVar cv_ai_opt_nothink (			"tdm_ai_opt_nothink",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not perform their regular thinking routine (including Mind)." );
-idCVar cv_ai_opt_interleavethinkmindist (			"tdm_ai_opt_interleavethinkmindist",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), the AI will start interleaved thinking if the distance to the player is greater than the set value." );
-idCVar cv_ai_opt_interleavethinkmaxdist (			"tdm_ai_opt_interleavethinkmaxdist",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), this is the distance where interleave frame will reach its maximum value." );
-idCVar cv_ai_opt_interleavethinkskippvscheck (		"tdm_ai_opt_interleavethinkskipPVS",		"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If true (nonzero), the player PVS check for interleaved thinking will be skipped, so that the AI can also do interleaved thinking while in view." );
-idCVar cv_ai_opt_interleavethinkframes (			"tdm_ai_opt_interleavethinkframes",			"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "If true (nonzero), this is the maximum interleaved thinking frame number." );
-idCVar cv_ai_opt_update_enemypos_interleave (		"tdm_ai_opt_update_enemypos_interleave",	"48",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time to pass between enemy position updates. Set this to 0 for updates each frame." );
+idCVar cv_ai_opt_interleavethinkmindist (		"tdm_ai_opt_interleavethinkmindist",		"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), the AI will start interleaved thinking if the distance to the player is greater than the set value." );
+idCVar cv_ai_opt_interleavethinkmaxdist (		"tdm_ai_opt_interleavethinkmaxdist",		"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If true (nonzero), this is the distance where interleave frame will reach its maximum value." );
+idCVar cv_ai_opt_interleavethinkskippvscheck (	"tdm_ai_opt_interleavethinkskipPVS",		"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If true (nonzero), the player PVS check for interleaved thinking will be skipped, so that the AI can also do interleaved thinking while in view." );
+idCVar cv_ai_opt_interleavethinkframes (		"tdm_ai_opt_interleavethinkframes",			"0",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "If true (nonzero), this is the maximum interleaved thinking frame number." );
+idCVar cv_ai_opt_update_enemypos_interleave (	"tdm_ai_opt_update_enemypos_interleave",	"48",	CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Time to pass between enemy position updates. Set this to 0 for updates each frame." );
 
-idCVar cv_ai_opt_nomind (			"tdm_ai_opt_nomind",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI has its Mind thinking routines disabled." );
-idCVar cv_ai_opt_novisualstim (			"tdm_ai_opt_novisualstim",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not process any incoming visual stimuli." );
-idCVar cv_ai_opt_nolipsync (			"tdm_ai_opt_nolipsync",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not play lipsync animations." );
-idCVar cv_ai_opt_nopresent (			"tdm_ai_opt_nopresent",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not be presented." );
+idCVar cv_ai_opt_nomind (						"tdm_ai_opt_nomind",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI has its Mind thinking routines disabled." );
+idCVar cv_ai_opt_novisualstim (					"tdm_ai_opt_novisualstim",			"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not process any incoming visual stimuli." );
+idCVar cv_ai_opt_nolipsync (					"tdm_ai_opt_nolipsync",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not play lipsync animations." );
+idCVar cv_ai_opt_nopresent (					"tdm_ai_opt_nopresent",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not be presented." );
 idCVar cv_ai_opt_noobstacleavoidance (			"tdm_ai_opt_noobstacleavoidance",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not check for obstacles." );
 idCVar cv_ai_hiding_spot_max_light_quotient(	"tdm_ai_hiding_spot_max_light_quotient",	"2.0",	CVAR_GAME | CVAR_FLOAT, "Hiding spot search light quotient." );
 idCVar cv_ai_max_hiding_spot_tests_per_frame(	"tdm_ai_max_hiding_spot_tests_per_frame",	"10",	CVAR_GAME | CVAR_INTEGER, "This is the maximum number of hiding spot point tests to do in a single AI frame." );
+idCVar cv_ai_debug_transition_barks(			"tdm_ai_debug_transition_barks",			"0",	CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, prints to the console the AI barks during alert level transitions, and events that would cause the AI to use Alert Idle");
+idCVar cv_ai_debug_greetings(					"tdm_ai_debug_greetings",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If set to 1, prints to the console the AI greeting and response barks");
+idCVar cv_ai_debug_anims (						"tdm_ai_debug_anims",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), show debug info about AI anims in the console and log file." );
 
-idCVar cv_ai_debug_anims (			"tdm_ai_debug_anims",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), show debug info about AI anims in the console and log file." );
+idCVar cv_show_health (							"tdm_show_health",					"0",            CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), show health of entities for debugging." );
 
-idCVar cv_show_health (          "tdm_show_health",   "0",            CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), show health of entities for debugging." );
-
-idCVar cv_ai_show_aasfuncobstacle_state("tdm_ai_show_aasfuncobstacle_state",	"0", CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
+idCVar cv_ai_show_aasfuncobstacle_state(		"tdm_ai_show_aasfuncobstacle_state",	"0",		CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
 idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the new enhanced interaction are used. Set to 0 to use default interaction shader." );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );

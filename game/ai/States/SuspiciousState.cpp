@@ -239,6 +239,11 @@ void SuspiciousState::Init(idAI* owner)
 				bark = "snd_alert1";
 			}
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%s enters Suspicious state and barks '%s'\n",owner->GetName(),bark.c_str());
+			}
 		}
 		else
 		{

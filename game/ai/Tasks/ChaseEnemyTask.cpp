@@ -234,7 +234,7 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	if ( enemyUnreachable )
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
-		gameLocal.Printf("Destination unreachable... \n");
+		//gameLocal.Printf("Destination unreachable... \n");
 		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 		return true;
 	}

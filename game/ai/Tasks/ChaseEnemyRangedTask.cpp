@@ -132,7 +132,7 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 				// We did not find a reachable attack position 
 				// it might be that the AI is not able to reach the enemy at all
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
-				gameLocal.Printf("Destination unreachable... \n");
+				//gameLocal.Printf("Destination unreachable... \n");
 				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 				owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 				return true;

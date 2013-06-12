@@ -82,7 +82,7 @@ namespace ai
 #define PERSONGENDER_FEMALE		"PERSONGENDER_FEMALE"
 #define PERSONGENDER_UNKNOWN	"PERSONGENDER_UNKNOWN"
 
-const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
+//const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000;		// ms - grayman #2603
 const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if farther apart than this
 const int MIN_DIST_TO_LOWLIGHT_DOOR = 300;	// grayman #2959 - AI must be closer than this to "see" a low-light door
@@ -456,8 +456,6 @@ bool State::CanBeBlinded(idEntity* stimSource, bool skipVisibilityCheck)
 	bool blinded = false;
 
 	// greebo: We don't check for alert type weights here, flashbombs are "top priority"
-
-	Memory& memory = owner->GetMemory();
 
 	if (!skipVisibilityCheck) 
 	{
@@ -1077,7 +1075,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	}
 	
 	// Vocalize that see something out of place
-	gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
+	//gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
@@ -1169,7 +1167,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	}
 
 	// Vocalize that we see something out of place
-	gameLocal.Printf("Hmm, that's suspicious!\n");
+	//gameLocal.Printf("Hmm, that's suspicious!\n");
 	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) &&
 		 ( gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS) )
 	{
@@ -1225,7 +1223,7 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
 	// Vocalize that see something out of place
-	gameLocal.Printf("Hmm, that rope shouldn't be there!\n");
+	//gameLocal.Printf("Hmm, that rope shouldn't be there!\n");
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
@@ -1266,7 +1264,7 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	// Vocalize that something hit me, but only if I'm not in combat mode, and I'm not in pain this frame
 	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) && !owner->AI_PAIN )
 	{
-		gameLocal.Printf("Something hit me!\n");
+		//gameLocal.Printf("Something hit me!\n");
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
 	}
 
@@ -1434,7 +1432,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 			if (setNewEnemy)
 			{
 				// Living enemy
-				gameLocal.Printf("I see a living enemy!\n");
+				//gameLocal.Printf("I see a living enemy!\n");
 				owner->SetEnemy(other);
 				owner->AI_VISALERT = true;
 				
@@ -1555,6 +1553,11 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							soundName = "snd_greeting_generic";
 							int delay = ( MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
 							info.nextGreetingTime = gameLocal.time + delay;
+
+							if (cv_ai_debug_greetings.GetBool())
+							{
+								gameLocal.Printf("%s barks greeting '%s' to the player\n\n",owner->GetName(),soundName.c_str());
+							}
 						}
 					}
 
@@ -1646,6 +1649,12 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[eventID].location;
 									memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 									memory.enemiesHaveBeenSeen = true;
+
+									if (cv_ai_debug_transition_barks.GetBool())
+									{
+										gameLocal.Printf("%s is warned by %s about an enemy, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+									}
+
 									memory.posEnemySeen = otherMemory.posEnemySeen;
 									owner->AddSuspiciousEvent(eventID);
 								}
@@ -1672,6 +1681,12 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								{
 									learnedViaComm = true; // grayman #3424
 									memory.deadPeopleHaveBeenFound = true;
+
+									if (cv_ai_debug_transition_barks.GetBool())
+									{
+										gameLocal.Printf("%s is warned by %s about a dead person, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+									}
+
 									memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE;
 									memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[eventID].location;
 									memory.timeEvidenceIntruders = gameLocal.time;
@@ -1700,6 +1715,12 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 									learnedViaComm = true; // grayman #3424
 									owner->AddSuspiciousEvent(eventID);
 									memory.itemsHaveBeenStolen = true;
+
+									if (cv_ai_debug_transition_barks.GetBool())
+									{
+										gameLocal.Printf("%s is warned by %s about a missing item, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+									}
+
 									memory.posMissingItem = otherMemory.posMissingItem;
 									memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_MISSING_ITEM;
 									memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[eventID].location;
@@ -1770,7 +1791,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 						if ( otherAI->CanSee(owner, true) && ( otherAI->AI_AlertIndex < ECombat ) )
 						{
-							gameLocal.Printf("Hey! Help me search!\n");
+							//gameLocal.Printf("Hey! Help me search!\n");
 							otherMemory.lastTimeVisualStimBark = gameLocal.time;
 							otherAI->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
 							otherAI->Event_LookAtPosition(owner->GetEyePosition(), 1.0 + gameLocal.random.RandomFloat()); // grayman #2925
@@ -2484,9 +2505,15 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 
 	// The dead person is a friend or a neutral, so this is suspicious
 
-	gameLocal.Printf("I see a dead person!\n");
+	//gameLocal.Printf("I see a dead person!\n");
 	Memory& memory = owner->GetMemory();
 	memory.deadPeopleHaveBeenFound = true;
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%s found a dead person, will use Alert Idle\n",owner->GetName());
+	}
+
 	memory.corpseFound = person; // grayman #3424
 	
 	if ( !alreadyKnow )
@@ -2676,10 +2703,16 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		return;
 	}
 
-	gameLocal.Printf("I see an unconscious person!\n");
+	//gameLocal.Printf("I see an unconscious person!\n");
 
 	Memory& memory = owner->GetMemory();
 	memory.unconsciousPeopleHaveBeenFound = true;
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%s found an unconscious person, will use Alert Idle\n",owner->GetName());
+	}
+
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_UNCONSCIOUS; // grayman #2603
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
@@ -3131,7 +3164,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	owner->commSubsystem->AddCommTask(
 		CommunicationTaskPtr(new SingleBarkTask("snd_foundBlood"))
 	);
-	gameLocal.Printf("Is that blood?\n");
+	//gameLocal.Printf("Is that blood?\n");
 	
 	// One more piece of evidence of something out of place
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_BLOOD;
@@ -3553,7 +3586,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	if (stimSource->team != -1 && !owner->IsFriend(stimSource))
 	{
 		// Its not something we know about
-		gameLocal.Printf("The missing item wasn't on my team\n");
+		//gameLocal.Printf("The missing item wasn't on my team\n");
 		return;
 	}
 
@@ -3593,7 +3626,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 
 	if (!alreadyKnow)
 	{
-		gameLocal.Printf("Something is missing from over there!\n");
+		//gameLocal.Printf("Something is missing from over there!\n");
 	}
 
 	if ( alert < ( owner->thresh_4 + 0.1f ) )
@@ -3610,6 +3643,12 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 
 	// One more piece of evidence of something out of place
 	memory.itemsHaveBeenStolen = true;
+
+	if (cv_ai_debug_transition_barks.GetBool()) 
+	{
+		gameLocal.Printf("%s sees that something is missing, will use Alert Idle\n",owner->GetName());
+	}
+
 	if ( !alreadyKnow )
 	{
 		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_MISSING_ITEM;
@@ -3658,7 +3697,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	// We've seen this object, don't respond to it again
 //	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
-	gameLocal.Printf("Something is broken over there!\n");
+	//gameLocal.Printf("Something is broken over there!\n");
 
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
@@ -3677,6 +3716,12 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 
 	// One more piece of evidence of something out of place
 	memory.itemsHaveBeenBroken = true;
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%s sees something broken, will use Alert Idle\n",owner->GetName());
+	}
+
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_BROKEN_ITEM;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
@@ -3885,7 +3930,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	memory.lastTimeVisualStimBark = gameLocal.time;
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundOpenDoor")));
-	gameLocal.Printf("%s: That door (%s) isn't supposed to be open!\n",owner->name.c_str(),door->name.c_str());
+	//gameLocal.Printf("%s: That door (%s) isn't supposed to be open!\n",owner->name.c_str(),door->name.c_str());
 	
 	// This is a door that's supposed to be closed.
 	// Search for a while. Remember the door so you can close it later. 
@@ -4047,7 +4092,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// Do we already have a target we are dealing with?
 				if (owner->GetEnemy() != NULL)
 				{
-					gameLocal.Printf("I'm too busy, I have a target!\n");
+					//gameLocal.Printf("I'm too busy, I have a target!\n");
 					break;
 				}
 
@@ -4055,7 +4100,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				idStr myState = owner->GetMind()->GetState()->GetName();
 				if ( ( myState == "Flee" ) || ( myState == "FleeDone" ) )
 				{
-					gameLocal.Printf("I'm fleeing, so I can't help!\n");
+					//gameLocal.Printf("I'm fleeing, so I can't help!\n");
 					break;
 				}
 
@@ -4065,7 +4110,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					owner->GetSubsystem(SubsysCommunication)->PushTask(
 						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 
-					gameLocal.Printf("Ok, I'm helping you.\n");
+					//gameLocal.Printf("Ok, I'm helping you.\n");
 
 					owner->SetEnemy(static_cast<idActor*>(directObjectEntity));
 					owner->GetMind()->PerformCombatCheck();
@@ -4102,13 +4147,13 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// Do we already have a target we are dealing with?
 				if (owner->GetEnemy() != NULL)
 				{
-					gameLocal.Printf("I'm too busy, I have a target!\n");
+					//gameLocal.Printf("I'm too busy, I have a target!\n");
 					break;
 				}
 
 				if (directObjectEntity->IsType(idActor::Type))
 				{
-					gameLocal.Printf("I'll attack it with my ranged weapon!\n");
+					//gameLocal.Printf("I'll attack it with my ranged weapon!\n");
 
 					// Bark
 					owner->GetSubsystem(SubsysCommunication)->PushTask(
@@ -4135,13 +4180,13 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// Do we already have a target we are dealing with?
 				if (owner->GetEnemy() != NULL)
 				{
-					gameLocal.Printf("I'm too busy, I have a target!\n");
+					//gameLocal.Printf("I'm too busy, I have a target!\n");
 					break;
 				}
 
 				if (directObjectEntity->IsType(idActor::Type))
 				{
-					gameLocal.Printf("I'll attack it with my melee weapon!\n");
+					//gameLocal.Printf("I'll attack it with my melee weapon!\n");
 
 					// Bark
 					owner->GetSubsystem(SubsysCommunication)->PushTask(
@@ -4153,7 +4198,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 			else 
 			{
-				gameLocal.Printf("I don't have a melee weapon or I am not getting involved.\n");
+				//gameLocal.Printf("I don't have a melee weapon or I am not getting involved.\n");
 				if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 				{
 					owner->SetAlertLevel(owner->thresh_2*0.5f);
@@ -4162,7 +4207,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::RequestForLight_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForLight_CommType\r");
-			gameLocal.Printf("I don't know how to bring light!\n");
+			//gameLocal.Printf("I don't know how to bring light!\n");
 			break;
 		case CommMessage::DetectedSomethingSuspicious_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
@@ -4242,7 +4287,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			// Set this as our enemy and enter combat
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
-				gameLocal.Printf("Yes sir! Attacking your specified target!\n");
+				//gameLocal.Printf("Yes sir! Attacking your specified target!\n");
 
 				if (directObjectEntity->IsType(idActor::Type))
 				{
@@ -4289,7 +4334,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					}
 				}
 
-				gameLocal.Printf("%d: %s has been warned by %s about evidence of intruders.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 				// grayman #2920 - issue a delayed warning response
 				owner->Bark("snd_warn_response");
 //				owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
@@ -4302,6 +4346,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
 			{
 				memory.itemsHaveBeenStolen = true;
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%s is warned by %s about a missing item, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+				}
+
 				owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
 				memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_MISSING_ITEM; // grayman #2903
 				memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[message.m_eventID].location; // grayman #2903
@@ -4320,7 +4370,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel( owner->thresh_2*0.5f );
 			}
 
-			gameLocal.Printf("%d: %s has been warned by %s that items were stolen.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->Bark("snd_warn_response");
 //			owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
@@ -4334,6 +4383,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
 			{
 				memory.deadPeopleHaveBeenFound = true;
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%s is warned by %s about a dead person, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+				}
+
 				owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
 				memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE; // grayman #2903
 				memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[message.m_eventID].location;
@@ -4352,7 +4407,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			gameLocal.Printf("%d: %s has been warned by %s that a dead person was found.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->Bark("snd_warn_response");
 
@@ -4365,6 +4419,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
 			{
 				memory.enemiesHaveBeenSeen = true;
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%s is warned by %s about an enemy, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+				}
+
 				memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_ENEMY;
 				memory.posEvidenceIntruders = gameLocal.m_suspiciousEvents[message.m_eventID].location;
 				memory.timeEvidenceIntruders = gameLocal.time;
@@ -4383,7 +4443,6 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			gameLocal.Printf("%d: %s has been warned by %s that an enemy was seen.\n",gameLocal.time,owner->name.c_str(),issuingEntity ? issuingEntity->name.c_str():"NULL");
 			// grayman #2920 - issue a delayed warning response
 			owner->Bark("snd_warn_response");
 			//owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");

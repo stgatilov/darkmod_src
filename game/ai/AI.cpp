@@ -538,6 +538,7 @@ idAI::idAI()
 	m_prevAlertIndex = 0;
 	m_maxAlertLevel = 0;
 	m_maxAlertIndex = 0;
+	m_lastAlertLevel = 0;
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
@@ -6549,6 +6550,11 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 	if ( ( attacker != NULL ) && IsEnemy(attacker) )
 	{
 		GetMemory().hasBeenAttackedByEnemy = true;
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%s is damaged by an enemy, will use Alert Idle\n",GetName());
+		}
 	}
 }
 
@@ -9140,7 +9146,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		if ( cv_ai_debug.GetBool() )
 		{
-			gameLocal.Printf("AI %s HEARD a sound\n", name.c_str());
+			gameLocal.Printf("%s HEARD a sound\n", name.c_str());
 		}
 	}
 }
@@ -9254,11 +9260,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: AI %s alerted by alert type \"%s\",  amount %f (modified by acuity %f).  Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: %s alerted by alert type \"%s\", amount %f (modified by acuity %f). Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
 	{
-		gameLocal.Printf("[TDM AI] ALERT: AI %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent.  Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+		gameLocal.Printf("[TDM AI] ALERT: %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent. Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
 	}
 
 	if (gameLocal.isNewFrame)

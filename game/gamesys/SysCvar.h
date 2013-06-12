@@ -354,6 +354,10 @@ extern idCVar cv_moveable_collision;
 // Tels: LOD system: multiplier for the LOD distance to be used
 extern idCVar cv_lod_bias;
 
+// grayman: for debugging 'evidence' barks and greetings
+extern idCVar cv_ai_debug_transition_barks;
+extern idCVar cv_ai_debug_greetings;
+
 /**
 * CVars added for Darkmod knockout and field of vision changes
 */

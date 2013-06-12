@@ -160,11 +160,16 @@ void SearchingState::Init(idAI* owner)
 				bark = "snd_alert3";
 			}
 
-			// Allocate a singlebarktask, set the sound and enqueue it
+			// Allocate a SingleBarkTask, set the sound and enqueue it
 
 			owner->commSubsystem->AddCommTask(
 				CommunicationTaskPtr(new SingleBarkTask(bark))
 			);
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%s enters Searching state, and barks '%s'\n",owner->GetName(),bark.c_str());
+			}
 		}
 	}
 	else if (memory.alertType == EAlertTypeEnemy)

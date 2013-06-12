@@ -481,6 +481,11 @@ void CombatState::Think(idAI* owner)
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark, message)));
 
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%s enters Combat state, barks '%s'\n",owner->GetName(),bark.c_str());
+		}
+
 		_justDrewWeapon = false;
 		_combatSubState = EStateCheckWeaponState;
 		break;

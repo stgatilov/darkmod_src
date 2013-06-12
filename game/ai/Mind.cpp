@@ -331,6 +331,12 @@ bool Mind::PerformCombatCheck()
 		
 		// Spotted an enemy
 		memory.enemiesHaveBeenSeen = true;
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%s sees an enemy, will use Alert Idle\n",owner->GetName());
+		}
+
 		memory.alertType = EAlertTypeEnemy;
 		idActor* enemy = owner->GetEnemy();
 

@@ -287,6 +287,18 @@ void IdleState::InitialiseCommunication(idAI* owner)
 	if (!bark.IsEmpty())
 	{
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			if (owner->HasSeenEvidence())
+			{
+				gameLocal.Printf("%s barks '%s' when entering Alert Idle state\n",owner->GetName(),bark.c_str());
+			}
+			else
+			{
+				gameLocal.Printf("%s barks '%s' when entering Idle state\n",owner->GetName(),bark.c_str());
+			}
+		}
 	}
 }
 

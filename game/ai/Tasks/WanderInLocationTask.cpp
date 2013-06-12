@@ -123,7 +123,7 @@ bool WanderInLocationTask::Perform(Subsystem& subsystem)
 	{
 		if (!owner->MoveToPosition(_location))
 		{
-			gameLocal.Printf("WanderInLocationTask: Destination unreachable... \n");
+			//gameLocal.Printf("WanderInLocationTask: Destination unreachable... \n");
 		}
 
 	}

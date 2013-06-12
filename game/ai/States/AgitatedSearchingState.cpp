@@ -134,11 +134,16 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if (memory.alertedDueToCommunication == false && (memory.alertType == EAlertTypeSuspicious || memory.alertType == EAlertTypeEnemy))
+		if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) ) )
 		{
 			owner->commSubsystem->AddCommTask(
 				CommunicationTaskPtr(new SingleBarkTask("snd_alert4",message))
 			);
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%s enters Agitated Searching state, barks 'snd_alert4'\n",owner->GetName());
+			}
 		}
 	}
 

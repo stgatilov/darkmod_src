@@ -61,6 +61,11 @@ void FailedKnockoutState::Init(idAI* owner)
 	// Failed KO counts as attack
 	memory.hasBeenAttackedByEnemy = true;
 
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%s is attacked by an enemy (failed KO), will use Alert Idle\n",owner->GetName());
+	}
+
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");

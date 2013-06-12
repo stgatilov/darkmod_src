@@ -65,8 +65,8 @@ Memory::Memory(idAI* owningAI) :
 	stopHandlingDoor(false),	// grayman #2816
 	stopHandlingElevator(false),// grayman #2816
 	nextTime2GenRandomSpot(0),	// grayman #2422
-	alertClass(EAlertClassCount),
-	alertType(EAlertTypeCount),
+	alertClass(EAlertNone),
+	alertType(EAlertTypeNone),
 	alertRadius(-1),
 	lastAudioAlertTime(-1),
 	stimulusLocationItselfShouldBeSearched(false),

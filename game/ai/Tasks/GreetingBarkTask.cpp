@@ -140,6 +140,18 @@ bool GreetingBarkTask::Perform(Subsystem& subsystem)
 	}
 	else 
 	{
+		if ( owner->greetingState == EGoingToGreet )
+		{
+			if (cv_ai_debug_greetings.GetBool())
+			{
+				gameLocal.Printf("%s barks '%s' to %s\n",owner->GetName(),_soundName.c_str(),_greetingTarget->GetName());
+				if ( !_isInitialGreeting )
+				{
+					gameLocal.Printf("\n");
+				}
+			}
+		}
+
 		// End time is set, we're currently barking
 		owner->greetingState = EIsGreeting;
 
