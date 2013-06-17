@@ -2066,11 +2066,6 @@ void idPortalEntity::Spawn()
 	// store the sound loss for the associated portal
 	m_SoundLoss = spawnArgs.GetFloat("sound_loss", "0.0");
 
-	// grayman #3042 - store booleans for whether the sound loss
-	// applies only to AI, only to the Player, or both, or neither
-	m_applyToAI = spawnArgs.GetBool("apply_loss_to_AI", "1");
-	m_applyToPlayer = spawnArgs.GetBool("apply_loss_to_Player", "1");
-
 	// store the light loss factor for this portal
 	m_LightLoss = spawnArgs.GetFloat("light_loss", "0.0");
 }
@@ -2096,6 +2091,13 @@ void idPortalEntity::Event_PostSpawn( void )
 	// time this is attempted, set m_EntityLocationDone to TRUE to indicate
 	// we don't need to search again if the sound loss value is dynamically set
 	// by a script later.
+
+	// grayman #3042 - Store booleans for whether the sound loss
+	// applies only to AI, only to the Player, or both, or neither.
+	// grayman #3455 - Read these spawnargs as needed, instead of storing
+	// them in the entity.
+	bool applyToAI = spawnArgs.GetBool("apply_loss_to_AI", "1");
+	bool applyToPlayer = spawnArgs.GetBool("apply_loss_to_Player", "1");
 
 	if ( !m_EntityLocationDone )
 	{
@@ -2139,8 +2141,8 @@ void idPortalEntity::Event_PostSpawn( void )
 
 	if ( m_Entity != NULL )
 	{
-		float m_SoundLossAI = m_applyToAI ? m_SoundLoss : 0.0f;
-		float m_SoundLossPlayer = m_applyToPlayer ? m_SoundLoss : 0.0f;
+		float m_SoundLossAI = applyToAI ? m_SoundLoss : 0.0f;
+		float m_SoundLossPlayer = applyToPlayer ? m_SoundLoss : 0.0f;
 
 		if ( m_Entity->IsType(CFrobDoor::Type) )
 		{
@@ -2166,11 +2168,11 @@ void idPortalEntity::Event_PostSpawn( void )
 	}
 	else // place our loss value on the portal directly
 	{
-		if ( m_applyToAI )
+		if ( applyToAI )
 		{
 			gameLocal.m_sndProp->SetPortalAILoss( m_Portal, m_SoundLoss );
 		}
-		if ( m_applyToPlayer )
+		if ( applyToPlayer )
 		{
 			gameLocal.m_sndProp->SetPortalPlayerLoss( m_Portal, m_SoundLoss );
 		}

@@ -490,12 +490,6 @@ private:
 	**/
 	idEntity*			m_Entity;
 	bool				m_EntityLocationDone;
-
-	/*
-	* grayman #3042 - Whether sound loss applies to AI, Player, both, or neither
-	**/
-	bool				m_applyToAI;
-	bool				m_applyToPlayer;
 };
 
 class idLocationSeparatorEntity : public idPortalEntity

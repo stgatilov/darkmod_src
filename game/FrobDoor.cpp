@@ -164,6 +164,8 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_isTransparent);		// grayman #3042
 
 	SetDoorTravelFlag();
+
+	UpdateSoundLoss(); // grayman #3455
 }
 
 void CFrobDoor::Spawn()
