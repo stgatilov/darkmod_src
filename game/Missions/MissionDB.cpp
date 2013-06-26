@@ -128,7 +128,7 @@ void CMissionDB::Save()
 
 	fileSystem->CloseFile(outFile);
 
-	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Done saving mission info declarartions\r");
+	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Done saving mission info declarations\r");
 }
 
 const CModInfoPtr& CMissionDB::GetModInfo(const idStr& name)
