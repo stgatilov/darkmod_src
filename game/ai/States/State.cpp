@@ -94,6 +94,13 @@ const int BLOOD2BLEEDER_MIN_DIST = 300;		// grayman #3075 - AI must be closer th
 // amount of time has passed.
 const int DISCOVERY_TIME_LIMIT = 4000;		// in ms
 
+// grayman #3462 - for use with AI looking at opening doors
+const float MIN_DOOR_OPEN_FOR_DRAWING_ATTENTION = 0.2f; // a non-suspicious opening door must be open more than this to draw the
+														// attention of nearby AI
+const float DURATION_TO_LOOK_AT_OPENING_DOOR = 2.0f; // how long to look at an opening door (seconds)
+const int DOOR_OPEN_GRACE_PERIOD = 5000; // a suspicious door opened just a crack won't draw attention
+										 // for this period of time (ms)
+
 //----------------------------------------------------------------------------------------
 // grayman #2903 - no warning if the sender is farther than this horizontally from the alert spot (one per alert type)
 
@@ -821,6 +828,13 @@ void State::OnVisualStim(idEntity* stimSource)
 			return;
 		}
 
+		// grayman #3462 - If owner is the last one to open this door, ignore the stim
+		if ( owner == door->GetLastUsedBy() )
+		{
+			stimSource->IgnoreResponse(ST_VISUAL, owner);
+			return;
+		}
+
 		// grayman #2866 - check visibility of door's center when it's closed instead of its origin
 
 		idVec3 targetPoint = door->GetClosedBox().GetCenter();
@@ -837,7 +851,7 @@ void State::OnVisualStim(idEntity* stimSource)
 				CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
 				if ( ( frobDoor == NULL ) || ( frobDoor != stimSource ) )
 				{
-					return; // handling a door, but not the one that stimmed the owner
+					return; // handling a door, but not the one that stimmed the owner, so ignore the stim for now
 				}
 
 				// We're on the queue of the door that stimmed us.
@@ -845,7 +859,7 @@ void State::OnVisualStim(idEntity* stimSource)
 
 				if ( (owner->GetPhysics()->GetOrigin() - targetPoint).LengthFast() > MIN_DIST_TO_LOWLIGHT_DOOR )
 				{
-					return; // handling the door that stimmed us, but we're not close enough yet
+					return; // handling the door that stimmed us, but we're not close enough yet, so ignore the stim for now
 				}
 
 				// Repeat the CanSee, but w/o the lighting check this time.
@@ -853,13 +867,16 @@ void State::OnVisualStim(idEntity* stimSource)
 
 				if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, false ) ) // 'false' = don't consider illumination
 				{
-					return; // handling the door that stimmed us, but we have no LOS yet
+					return; // handling the door that stimmed us, but we have no LOS yet, so ignore the stim for now
 				}
 			}
+/*			grayman #3462 - don't ignore it at this point. It might be in the act of opening, which an AI
+							should react to regardless of illumination
 			else
 			{
 				return; // not handling a door
 			}
+ */
 		}
 	}
 	else if (aiUseType == EAIuse_Broken_Item)
@@ -978,11 +995,92 @@ void State::OnVisualStim(idEntity* stimSource)
 		}
 		break;
 	case EAIuse_Door:
+		{
 		if (!ShouldProcessAlert(EAlertTypeDoor))
 		{
 			return;
 		}
+
+		Memory& memory = owner->GetMemory();
+		CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
+		bool suspicious = stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY);
+
+		// grayman #3462 - look at an opening door, unless you're in combat mode
+
+		if ( owner->AI_AlertIndex < ECombat )
+		{
+			// grayman #3462 - Let AI look at the door if it's open more than a certain
+			// amount, and the door opened recently.
+
+			// Is the door open only a small amount?
+
+			if ( door->GetFractionalPosition() < MIN_DOOR_OPEN_FOR_DRAWING_ATTENTION )
+			{
+				if ( !suspicious )
+				{
+					// Non-suspicious door isn't open enough to warrant attention. Keep the stim
+					// enabled, however, in case the door opens more later.
+					return;
+				}
+
+				// Has enough time passed since the suspicious door opened for AI to notice it?
+				// This gives the player a small amount of time where he can peek through a suspicious door
+				// that's partially open w/o getting spotted.
+
+				if ( gameLocal.time < door->GetMoveStartTime() + DOOR_OPEN_GRACE_PERIOD + gameLocal.random.RandomInt(1000) )
+				{
+					return; // still in our grace period, so try again later
+				}
+			}
+
+			// A suspicious door is worth looking at regardless of how long it's been open.
+			// A non-suspicious door is only worth looking at if it's recently been fully opened.
+			// The latter check is needed because door stims occur roughly 1.5 second apart, and if
+			// the first stim arrives when the door is only cracked open, and the second arrives after
+			// the door is fully opened, we could miss the fact that it was just opened.
+
+			if ( suspicious || ( gameLocal.time <= door->GetMoveStartTime() + 2*door->GetMoveTime() ) )
+			{
+				// The open door is interesting. Look at its center (not at its origin).
+				idVec3 lookAt = door->GetClosedBox().GetCenter();
+				lookAt.z += 32; // simulate looking at eye level
+				owner->Event_LookAtPosition(lookAt, DURATION_TO_LOOK_AT_OPENING_DOOR);
+			}
+		}
+
+		// grayman #2866 - Delay dealing with this door until my alert level comes down.
+
+		if ( owner->AI_AlertIndex >= ESearching ) // grayman #3462 - was ESuspicious
+		{
+			return;
+		}
+
+		// Update the info structure for this door
+		DoorInfo& doorInfo = memory.GetDoorInfo(door);
+
+		doorInfo.lastTimeSeen = gameLocal.time;
+		doorInfo.wasOpen = door->IsOpen();
+
+		// greebo: If the door is open, remove the corresponding area from the "forbidden" list
+		if (door->IsOpen()) 
+		{
+			// Also, reset the "locked" property, open doors can't be locked
+			doorInfo.wasLocked = false;
+
+			// Enable the area for pathfinding again now that the door is open
+			gameLocal.m_AreaManager.RemoveForbiddenArea(doorInfo.areaNum, owner);
+		}
+
+		// Is it supposed to be closed?
+		if ( !suspicious )
+		{
+			// door is not supposed to be closed, so ignore it in the future
+			stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
+			return;
+		}
+
 		break;
+		}
 	case EAIuse_Default:
 	default:
 		return;
@@ -3747,12 +3845,12 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 }
 
 // grayman #3104
+// grayman #3462 - tighten up conditions of success
 
 bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
 {
 	int num;
 	idEntity* candidate;
-	idClipModel* cm;
 	idClipModel* clipModels[ MAX_GENTITIES ];
 
 	idVec3 doorCenter = door->GetClosedBox().GetCenter();
@@ -3762,8 +3860,7 @@ bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
 	num = gameLocal.clip.ClipModelsTouchingBounds( doorBounds, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
 	for ( int i = 0 ; i < num ; i++ )
 	{
-		cm = clipModels[i];
-		candidate = cm->GetEntity();
+		candidate = clipModels[i]->GetEntity();
 		if ( candidate == owner )
 		{
 			continue; // skip observer
@@ -3776,25 +3873,40 @@ bool State::SomeoneNearDoor(idAI* owner, CFrobDoor* door)
 
 		idAI* candidateAI = static_cast<idAI*>(candidate);
 
-		if ( !candidateAI->m_bCanOperateDoors )
+		if ( candidateAI->AI_DEAD || candidateAI->AI_KNOCKEDOUT )
 		{
-			continue; // skip AIs who can't handle doors
+			continue; // skip those who are dead or unconscious
 		}
 
-		// check visibility
+		if ( !candidateAI->m_bCanOperateDoors )
+		{
+			continue; // skip those who can't handle doors
+		}
 
 		if ( owner->CanSeeExt( candidateAI, false, false ) )
 		{
-			return true;
+			continue; // skip those we can't see
+		}
+
+		// Is the candidate currently handling our door, or
+		// was our door the last door he handled?
+
+		if ( ( candidateAI->GetMemory().doorRelated.currentDoor.GetEntity() == door ) ||
+		     ( candidateAI->GetMemory().lastDoorHandled.GetEntity() == door ) )
+		{
+			return true; // found our door handler
 		}
 	}
 
-	return false; // no visible door-handling AI near the door
+	return false; // couldn't find any likely door openers
 }
 
 void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 {
 	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
+
+	// At this point, we're dealing with an open door that should be closed.
+	// Open doors that don't need to be closed have been weeded out.
 
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
@@ -3802,72 +3914,43 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	// grayman #2924 - enable the response
 	stimSource->AllowResponse(ST_VISUAL, owner);
 
-	// Update the info structure for this door
-	DoorInfo& doorInfo = memory.GetDoorInfo(door);
-
-	doorInfo.lastTimeSeen = gameLocal.time;
-	doorInfo.wasOpen = door->IsOpen();
-
-	// greebo: If the door is open, remove the corresponding area from the "forbidden" list
-	if (door->IsOpen()) 
-	{
-		// Also, reset the "locked" property, open doors can't be locked
-		doorInfo.wasLocked = false;
-
-		// Enable the area for pathfinding again now that the door is open
-		gameLocal.m_AreaManager.RemoveForbiddenArea(doorInfo.areaNum, owner);
-	}
-
-	// Is it supposed to be closed?
-	if (!stimSource->spawnArgs.GetBool(AIUSE_SHOULDBECLOSED_KEY))
-	{
-		// door is not supposed to be closed, ignore
-		stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2866
-		return;
-	}
-
-	// grayman #2866 - Delay dealing with this door until my alert level comes down.
-
-	if ( owner->AI_AlertIndex >= ESuspicious )
-	{
-		return;
-	}
-
 	// grayman #2859 - Check who last used the door.
 
-	// grayman #2959 - the door is suspicious if:
+	// grayman #2959 - the door needs checking if:
 	// - lastUsedBy is NULL (no one's ever used it, or the player used it last)
-	// - lastUsedBy is friendly but not in sight
+	// - lastUsedBy is friendly or neutral, but not in sight
 	
 	idEntity* lastUsedBy = door->GetLastUsedBy();
 	if ( lastUsedBy != NULL )
 	{
-		// grayman #1327 - Was the door last used by someone we can see,
-		// or someone we can't see but who is near the door?
-		// If so, we assume they're the one who opened the door, so it's
+		// grayman #1327 - Was the door last used by someone I can see,
+		// or someone I can't see but who is near the door?
+		// If so, I assume they're the one who opened the door, so it's
 		// not suspicious. CanSeeExt( lastUsedBy, false, false )
-		// doesn't care about FOV (lastUsedBy can be behind owner) and we
+		// doesn't care about FOV (lastUsedBy can be behind me) and I
 		// don't care how bright it is.
 
 		if ( owner->CanSeeExt( lastUsedBy, false, false ) )
 		{
 			// I can still see who last used this door, so
-			// he's probably handling the door now, since stims arrive when
+			// he's probably handling the door now, since stims begin arriving when
 			// the door is opened. Do nothing.
 
 			stimSource->IgnoreResponse(ST_VISUAL, owner);
 			return; // someone I can see opened the door, so all is well
 		}
 
+/*		grayman #3462 - don't cheat
 		// can't see him, but is he near the door?
 
 		idVec3 personOrigin = lastUsedBy->GetPhysics()->GetOrigin();
-		idVec3 doorOrigin = door->GetPhysics()->GetOrigin();
-		if ( (personOrigin - doorOrigin).LengthSqr() <= Square(PERSON_NEAR_DOOR) )
+		idVec3 doorCenter = door->GetClosedBox().GetCenter();
+		if ( (personOrigin - doorCenter).LengthSqr() <= Square(PERSON_NEAR_DOOR) )
 		{
 			stimSource->IgnoreResponse(ST_VISUAL, owner);
-			return; // someone I can't see opened the door, so all is well
+			return; // someone I can't see opened the door and is still near it, so all is well
 		}
+ */
 	}
 
 	// grayman #3104 - is anyone near the door who might have opened it?

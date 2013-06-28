@@ -362,7 +362,7 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("LogFile created at %04u.%02u.%02u %02u:%02u:%02u\r",
 		t->tm_year+1900, t->tm_mon+1, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec);
 
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL compiled on " __DATE__ " " __TIME__ "\r");
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("DLL last cleaned and rebuilt on " __DATE__ " " __TIME__ "\r");
 
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d, code revision %d\r", 
 		GAME_VERSION, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, RevisionTracker::Instance().GetHighestRevision());

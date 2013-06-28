@@ -97,6 +97,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_searching = NULL;		// grayman #1327 - someone searching around this door
 	m_targetingOff = false; // grayman #3029
 	m_wasFoundLocked = false; // grayman #3104
+	m_timeDoorStartedMoving = 0; // grayman #3462
 }
 
 CBinaryFrobMover::~CBinaryFrobMover()
@@ -176,6 +177,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	m_searching.Save(savefile);				// grayman #1327
 	savefile->WriteBool(m_targetingOff);	// grayman #3029
 	savefile->WriteBool(m_wasFoundLocked);	// grayman #3104
+	savefile->WriteInt(m_timeDoorStartedMoving); // grayman #3462
 }
 
 void CBinaryFrobMover::Restore( idRestoreGame *savefile )
@@ -236,6 +238,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	m_searching.Restore(savefile);				// grayman #1327
 	savefile->ReadBool(m_targetingOff);			// grayman #3029
 	savefile->ReadBool(m_wasFoundLocked);		// grayman #3104
+	savefile->ReadInt(m_timeDoorStartedMoving); // grayman #3462
 }
 
 void CBinaryFrobMover::Spawn()
@@ -902,6 +905,18 @@ void CBinaryFrobMover::GetRemainingMovement(idVec3& out_deltaPosition, idAngles&
 	// Done
 }
 
+// grayman #3462
+int CBinaryFrobMover::GetMoveStartTime()
+{
+	return m_timeDoorStartedMoving;
+}
+
+// grayman #3462
+int CBinaryFrobMover::GetMoveTime()
+{
+	return move_time;
+}
+
 float CBinaryFrobMover::GetMoveTimeFraction()
 {
 	// Get the current angles
@@ -991,7 +1006,7 @@ int CBinaryFrobMover::GetAASArea(idAAS* aas)
 
 void CBinaryFrobMover::OnMoveStart(bool opening)
 {
-	// Clear this door from the ignore list so AI can react to it again
+	// Clear this door from the ignore list so AI can react to it again.
 	// grayman #2859 - but only if the door was closed and is now opening
 
 	if ( opening )
@@ -999,6 +1014,9 @@ void CBinaryFrobMover::OnMoveStart(bool opening)
 		ClearStimIgnoreList(ST_VISUAL);
 		EnableStim(ST_VISUAL);
 	}
+
+	// grayman #3462 - note when door started to move
+	m_timeDoorStartedMoving = gameLocal.time;
 }
 
 bool CBinaryFrobMover::PreOpen() 

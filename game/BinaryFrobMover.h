@@ -241,6 +241,18 @@ public:
 	 */
 	virtual bool IsAtClosedPosition();
 
+	/**
+	 * grayman #3462 - retrieve the amount of time it takes to move
+	 *
+	 */
+	int GetMoveTime();
+
+	/**
+	 * grayman #3462 - retrieve the time when the mover started to open
+	 *
+	 */
+	int GetMoveStartTime();
+
 protected:
 
 	// ===================== Overridable events ================
@@ -556,6 +568,11 @@ protected:
 	**/
 
 	bool						m_wasFoundLocked;
+
+	/**
+	* grayman #3462 - when the door started moving
+	**/
+	int							m_timeDoorStartedMoving;
 };
 
 #endif /* !BINARYFROBMOVER */

@@ -75,6 +75,8 @@ void CStimResponseCollection::Restore(idRestoreGame *savefile)
 
 CStimPtr CStimResponseCollection::CreateStim(idEntity* p_owner, StimType type)
 {
+/*	grayman #3462 - undo the following change
+
 	// grayman #2862 - don't create a visual stim for a door that's not marked shouldBeClosed
 
 	if (( type == ST_VISUAL ) &&
@@ -83,7 +85,7 @@ CStimPtr CStimResponseCollection::CreateStim(idEntity* p_owner, StimType type)
 	{
 		return CStimPtr(); // null result
 	}
-
+ */
 	// Increase the counter to the next ID
 	gameLocal.m_HighestSRId++;
 	DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Creating Stim with ID: %d\r", gameLocal.m_HighestSRId);
