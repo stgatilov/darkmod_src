@@ -63,12 +63,12 @@ namespace ai
 #define PERSONTYPE_GENERIC			"PERSONTYPE_GENERIC"
 #define PERSONTYPE_NOBLE			"PERSONTYPE_NOBLE"
 #define PERSONTYPE_CITYWATCH		"PERSONTYPE_CITYWATCH"
-#define PERSONTYPE_MERC_PROGUARD	"PERSONTYPE_MERC_PROGUARD"
+#define PERSONTYPE_PROGUARD			"PERSONTYPE_PROGUARD" // grayman #3457
 #define PERSONTYPE_BUILDER			"PERSONTYPE_BUILDER"
 #define PERSONTYPE_PAGAN			"PERSONTYPE_PAGAN"
 #define PERSONTYPE_THIEF			"PERSONTYPE_THIEF"
 #define PERSONTYPE_PRIEST			"PERSONTYPE_PRIEST"
-#define PERSONTYPE_ELITE			"PERSONTYPE_ELITE"
+//#define PERSONTYPE_ELITE			"PERSONTYPE_ELITE" // grayman #3457 - no longer need ELITE
 #define PERSONTYPE_BEGGAR			"PERSONTYPE_BEGGAR" // grayman #3323
 
 //----------------------------------------------------------------------------------------
@@ -2166,100 +2166,102 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 {
 	idStr soundName;
 
-	// Get the types of the two persons
+	// Get the types of the two persons.
 	idStr ownPersonType(owner->spawnArgs.GetString(PERSONTYPE_KEY));
 	idStr otherPersonType(otherAI->spawnArgs.GetString(PERSONTYPE_KEY));
 
-	// the other AI is a priest
+	// Get the other person's gender in case it's needed.
+	idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+
+	// Start with barks to specific character types, used regardless of who it comes from.
+	
 	if (otherPersonType == PERSONTYPE_PRIEST)
 	{
-		if (ownPersonType != PERSONTYPE_PRIEST)
+		if (ownPersonType == PERSONTYPE_PRIEST) // priests use generic greeting for other priests
 		{
-			if (owner->spawnArgs.FindKey( "snd_greeting_cleric") != NULL)
+			if (owner->spawnArgs.FindKey("snd_greeting_builder") != NULL) // grayman #3457
+			{
+				soundName = "snd_greeting_builder"; // grayman #3457
+			}
+		}
+		else
+		{
+			if (owner->spawnArgs.FindKey("snd_greeting_cleric") != NULL)
 			{
 				soundName = "snd_greeting_cleric";
 			}
 		}
-
-		// priests use generic greeting for other priests
-		else
-		{
-			if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
-			{
-				soundName = "snd_greeting_generic";
-			}
-		}
 	}
-
-	// the other AI is a builder
 	else if (otherPersonType == PERSONTYPE_BUILDER)
 	{
-		if (owner->spawnArgs.FindKey( "snd_greeting_builder") != NULL)
+		if (owner->spawnArgs.FindKey("snd_greeting_builder") != NULL)
 		{
 			soundName = "snd_greeting_builder";
 		}
 	}
-
-	// the other AI is a pagan
 	else if (otherPersonType == PERSONTYPE_PAGAN)
 	{
-		if (owner->spawnArgs.FindKey( "snd_greeting_pagan") != NULL)
+		if (owner->spawnArgs.FindKey("snd_greeting_pagan") != NULL)
 		{
 			soundName = "snd_greeting_pagan";
 		}
 	}
-
-	// grayman #3323 - the other AI is a beggar
-	else if (otherPersonType == PERSONTYPE_BEGGAR)
+	else if (otherPersonType == PERSONTYPE_BEGGAR) // grayman #3323
 	{
-		if (owner->spawnArgs.FindKey( "snd_greeting_beggar") != NULL)
+		if (owner->spawnArgs.FindKey("snd_greeting_beggar") != NULL)
 		{
 			soundName = "snd_greeting_beggar";
 		}
 	}
-
-	// this AI is a noble
-	else if (ownPersonType == PERSONTYPE_NOBLE)
+	else if (otherPersonType == PERSONTYPE_CITYWATCH) // grayman #3457 - Is the other AI a citywatch, and owner is not?
 	{
-		// nobles use generic greeting for other nobles
-		if (otherPersonType == PERSONTYPE_NOBLE)
+		if (ownPersonType != PERSONTYPE_CITYWATCH)
 		{
-			if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
+			if (owner->spawnArgs.FindKey("snd_greeting_citywatch") != NULL)
 			{
-				soundName = "snd_greeting_generic";
-			}
-		}
-
-		// the other AI is a guard
-		else if (otherAI->spawnArgs.GetBool("is_civilian") == 0 &&
-				(otherAI->GetNumMeleeWeapons() > 0 || otherAI->GetNumRangedWeapons() > 0))
-		{
-			if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_guard") != NULL)
-			{
-				soundName = "snd_greeting_noble_to_guard";
-			}
-		}
-
-		// the other AI is a civilian
-		else
-		{
-			if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_civilian") != NULL)
-			{
-				soundName = "snd_greeting_noble_to_civilian";
+				soundName = "snd_greeting_citywatch";
 			}
 		}
 	}
 
 	if (soundName.IsEmpty())
 	{
-		// this AI is a guard
-		if (owner->spawnArgs.GetBool("is_civilian") == false &&
-			(owner->GetNumMeleeWeapons() > 0 || owner->GetNumRangedWeapons() > 0))
+		// Handle a noble or a high ranking person (or an average person speaking to _really_ low-ranking person)
+		// greeting others. These are "snooty" greetings.
+		if ( (ownPersonType == PERSONTYPE_NOBLE) || (owner->spawnArgs.GetInt("rank", "0") > (otherAI->spawnArgs.GetInt("rank", "0") + 1) ) ) // grayman #3457
 		{
-			// the other AI is a noble
+			// nobles use generic greeting for other nobles
 			if (otherPersonType == PERSONTYPE_NOBLE)
 			{
-				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+				if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
+				{
+					soundName = "snd_greeting_generic";
+				}
+			}
+			else if ( (otherPersonType == PERSONTYPE_PROGUARD) || (otherPersonType == PERSONTYPE_CITYWATCH) ) // grayman #3457
+  			{
+				if (owner->spawnArgs.FindKey("snd_greeting_noble_to_guard") != NULL)
+				{
+					soundName = "snd_greeting_noble_to_guard";
+				}
+			}
+			else // the other AI is a civilian
+			{
+				if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_civilian") != NULL)
+				{
+					soundName = "snd_greeting_noble_to_civilian";
+				}
+			}
+		}
+	}
+
+	if (soundName.IsEmpty())
+	{
+        // Is this AI a guard or a Builder (Builders speak to guards as equals)?
+		if ( (ownPersonType == PERSONTYPE_PROGUARD) || (ownPersonType == PERSONTYPE_CITYWATCH) || (ownPersonType == PERSONTYPE_BUILDER) ) // grayman #3457
+		{
+			if (otherPersonType == PERSONTYPE_NOBLE)
+			{
 				if (otherPersonGender == PERSONGENDER_FEMALE)
 				{
 					if (owner->spawnArgs.FindKey( "snd_greeting_guard_to_noble_female") != NULL)
@@ -2283,10 +2285,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 					}
 				}
 			}
-
-			// the other AI is a guard
-			else if (otherAI->spawnArgs.GetBool("is_civilian") == 0 &&
-				(otherAI->GetNumMeleeWeapons() > 0 || otherAI->GetNumRangedWeapons() > 0))
+			else if ( (otherPersonType == PERSONTYPE_PROGUARD) || (otherPersonType == PERSONTYPE_CITYWATCH)  ) // grayman #3457
 			{	
 				if (owner->spawnArgs.FindKey( "snd_greeting_guard_to_guard") != NULL)
 				{
@@ -2297,12 +2296,8 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 					soundName = "snd_greeting_guard";
 				}
 			}
-
-			// the other AI is a civilian
-			else
+			else // the other AI is a generic character
 			{
-				// check for gender specific barks
-				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
 				if (otherPersonGender == PERSONGENDER_FEMALE)
 				{
 					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_female") != NULL)
@@ -2326,7 +2321,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 					}
 				}
 
-				// no gender specific barks, use generic greeting to civilian
+				// If no gender specific barks, use generic greeting to civilian.
 				if (soundName.IsEmpty())
 				{
 					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_civilian") != NULL)
@@ -2340,97 +2335,90 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 				}
 			}
 		}
+	}
 
-		// this AI is a civilian
-		else
+	if (soundName.IsEmpty())
+	{
+		// This AI is not a guard, builder, noble, or high-ranking character.
+		// PROBLEM: A greeting Priest can make it to here, and he's a high-ranking character.
+
+		if (otherPersonType == PERSONTYPE_NOBLE)
 		{
-			// the other AI is a noble
-			if (otherPersonType == PERSONTYPE_NOBLE)
+			if (otherPersonGender == PERSONGENDER_FEMALE)
 			{
-				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
-				if (otherPersonGender == PERSONGENDER_FEMALE)
+				if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_female") != NULL)
 				{
-					if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_female") != NULL)
-					{
-						soundName = "snd_greeting_civilian_to_noble_female";
-					}
-					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
-					{
-						soundName = "snd_greeting_noble_female";
-					}
+					soundName = "snd_greeting_civilian_to_noble_female";
 				}
-				else if (otherPersonGender == PERSONGENDER_MALE)
+				else if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
 				{
-					if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_male") != NULL)
-					{
-						soundName = "snd_greeting_civilian_to_noble_male";
-					}
-					else if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
-					{
-						soundName = "snd_greeting_noble_male";
-					}
+					soundName = "snd_greeting_noble_female";
+				}
+			}
+			else if (otherPersonGender == PERSONGENDER_MALE)
+			{
+				if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_male") != NULL)
+				{
+					soundName = "snd_greeting_civilian_to_noble_male";
+				}
+				else if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
+				{
+					soundName = "snd_greeting_noble_male";
+				}
+			}
+		}
+		else if ( (otherPersonType == PERSONTYPE_PROGUARD) || (otherPersonType == PERSONTYPE_CITYWATCH) ) // grayman #3457
+		{	
+			if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_guard") != NULL)
+			{
+				soundName = "snd_greeting_civilian_to_guard";
+			}
+			else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
+			{
+				soundName = "snd_greeting_guard";
+			}
+		}
+		else // the other AI is a generic character too
+		{
+			if (otherPersonGender == PERSONGENDER_FEMALE)
+			{
+				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_female") != NULL)
+				{
+					soundName = "snd_greeting_civilian_to_female";
+				}
+				else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
+				{
+					soundName = "snd_greeting_female";
+				}
+			}
+			else if (otherPersonGender == PERSONGENDER_MALE)
+			{
+				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_male") != NULL)
+				{
+					soundName = "snd_greeting_civilian_to_male";
+				}
+				else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
+				{
+					soundName = "snd_greeting_male";
 				}
 			}
 
-			// the other AI is a guard
-			else if (otherAI->spawnArgs.GetBool("is_civilian") == false &&
-				(otherAI->GetNumMeleeWeapons() > 0 || otherAI->GetNumRangedWeapons() > 0))
-			{	
-				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_guard") != NULL)
-				{
-					soundName = "snd_greeting_civilian_to_guard";
-				}
-				else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
-				{
-					soundName = "snd_greeting_guard";
-				}
-			}
-
-			// the other AI is a civilian
-			else
+			// If no gender specific barks, use generic greeting to civilian.
+			if (soundName.IsEmpty())
 			{
-				// check for gender specific barks
-				idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
-				if (otherPersonGender == PERSONGENDER_FEMALE)
+				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_civilian") != NULL)
 				{
-					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_female") != NULL)
-					{
-						soundName = "snd_greeting_civilian_to_female";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
-					{
-						soundName = "snd_greeting_female";
-					}
+					soundName = "snd_greeting_civilian_to_civilian";
 				}
-				else if (otherPersonGender == PERSONGENDER_MALE)
+				else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
 				{
-					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_male") != NULL)
-					{
-						soundName = "snd_greeting_civilian_to_male";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
-					{
-						soundName = "snd_greeting_male";
-					}
-				}
-
-				// no gender specific barks, use generic greeting to civilian
-				if (soundName.IsEmpty())
-				{
-					if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_civilian") != NULL)
-					{
-						soundName = "snd_greeting_civilian_to_civilian";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
-					{
-						soundName = "snd_greeting_civilian";
-					}
+					soundName = "snd_greeting_civilian";
 				}
 			}
 		}
 	}
 
-	// no sound found yet, use generic one
+	// If no sound assigned yet, use generic one.
 	if (soundName.IsEmpty())
 	{
 		if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
@@ -2448,7 +2436,7 @@ idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
 	int ownerRank = owner->spawnArgs.GetInt("rank", "0");
 	int otherRank = otherAI->spawnArgs.GetInt("rank", "0");
 
-	if (ownerRank != 0 && otherRank != 0)
+	if ( ( ownerRank != 0 ) && ( otherRank != 0 ) )
 	{
 		// Rank spawnargs valid, compare
 		return (ownerRank < otherRank) ? "snd_response_positive_superior" : "snd_response_positive";
@@ -2458,9 +2446,9 @@ idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
 	idStr ownPersonType(owner->spawnArgs.GetString(PERSONTYPE_KEY));
 	idStr otherPersonType(otherAI->spawnArgs.GetString(PERSONTYPE_KEY));
 
-	// Nobles, elites or priest, just use the generic ones for everybody.
-	if (ownPersonType == PERSONTYPE_NOBLE || ownPersonType == PERSONTYPE_ELITE || 
-		ownPersonType == PERSONTYPE_PRIEST)
+	// Nobles and priests just use the generic ones for everybody.
+	if ( ( ownPersonType == PERSONTYPE_NOBLE ) || /*ownPersonType == PERSONTYPE_ELITE || */ // grayman #3457 - no longer need ELITE
+		 ( ownPersonType == PERSONTYPE_PRIEST ) )
 	{
 		// Owner is a "superior"
 		return "snd_response_positive";
@@ -2468,9 +2456,9 @@ idStr State::GetGreetingResponseSound(idAI* owner, idAI* otherAI)
 
 	// Owner is not superior, check other type
 
-	// For most characters (civilian or guard), any noble, elite or priest would be considered a superior.
-	bool otherIsSuperior = (otherPersonType == PERSONTYPE_NOBLE || 
-		otherPersonType == PERSONTYPE_ELITE || otherPersonType == PERSONTYPE_PRIEST);
+	// For most characters (civilian or guard), any noble or priest would be considered a superior.
+	bool otherIsSuperior = ( ( otherPersonType == PERSONTYPE_NOBLE ) || 
+		/* otherPersonType == PERSONTYPE_ELITE || */ ( otherPersonType == PERSONTYPE_PRIEST ) ); // grayman #3457 - no longer need ELITE
 
 	return (otherIsSuperior) ? "snd_response_positive_superior" : "snd_response_positive";
 }
