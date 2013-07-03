@@ -839,6 +839,15 @@ void State::OnVisualStim(idEntity* stimSource)
 
 		idVec3 targetPoint = door->GetClosedBox().GetCenter();
 
+		// first, check LOS w/o considering illumination
+
+		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, false ) ) // 'false' = don't consider illumination
+		{
+			return; // not reacting to this door this time
+		}
+
+		// We know owner has LOS to the door. Is there enough light to see it?
+		
 		if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, true ) ) // 'true' = consider illumination
 		{
 			// grayman #2959 - if owner is handling this door, he should recognize
@@ -861,22 +870,7 @@ void State::OnVisualStim(idEntity* stimSource)
 				{
 					return; // handling the door that stimmed us, but we're not close enough yet, so ignore the stim for now
 				}
-
-				// Repeat the CanSee, but w/o the lighting check this time.
-				// We need LOS before we can "see" the suspicious door.
-
-				if ( !owner->CanSeeTargetPoint( targetPoint, stimSource, false ) ) // 'false' = don't consider illumination
-				{
-					return; // handling the door that stimmed us, but we have no LOS yet, so ignore the stim for now
-				}
 			}
-/*			grayman #3462 - don't ignore it at this point. It might be in the act of opening, which an AI
-							should react to regardless of illumination
-			else
-			{
-				return; // not handling a door
-			}
- */
 		}
 	}
 	else if (aiUseType == EAIuse_Broken_Item)
