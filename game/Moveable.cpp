@@ -463,8 +463,8 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 		}
 
 		// tels:
-		DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter=%i and v=%f and time=%f > m_nextCollideScriptTime=%f.\r",
-				name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
+		//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Moveable %s might call script_collide %s because m_collideScriptCounter = %i and v = %f and time (%d) > m_nextCollideScriptTime (%d)\r",
+		//		name.c_str(), m_scriptCollide.c_str(), m_collideScriptCounter, v, gameLocal.time, m_nextCollideScriptTime );
  		if ( ( m_collideScriptCounter != 0 ) && ( v > m_minScriptVelocity ) && ( gameLocal.time > m_nextCollideScriptTime ) )
 		{ 
 	 		if ( m_collideScriptCounter > 0)

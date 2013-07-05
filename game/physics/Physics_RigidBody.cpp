@@ -28,8 +28,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS
 
+const float STOP_SPEED = 50.0f; // grayman #3452 (was 10) - allow less movement at end to prevent excessive jiggling
+const float OLD_STOP_SPEED = 10.0f; // grayman #3452 - still needed at this value for some of the math
+
 #ifdef MOD_WATERPHYSICS
-const int STOP_SPEED            = 10;
 // if linearVelocity < WATER_STOP_LINEAR && angularVelocity < WATER_STOP_ANGULAR then set the RB to rest
 // and we need  this->noMoveTime + NO_MOVE_TIME < gameLocal.getTime()
 const idVec3 WATER_STOP_LINEAR(10.0f,10.0f,10.0f);
@@ -37,10 +39,7 @@ const idVec3 WATER_STOP_ANGULAR(500000.0f,500000.0f,500000.0f);
 const int NO_MOVE_TIME          = 200;
 static const float MAX_GRABBER_EXT_VELOCITY		= 120.0f;
 static const float MAX_GRABBER_EXT_ANGVEL		= 5.0f;
-#else
-const float STOP_SPEED		= 10.0f;
 #endif
-
 
 #undef RB_TIMINGS
 
@@ -50,7 +49,6 @@ static int numRigidBodies = 0;
 static idTimer timer_total, timer_collision;
 #endif
 
-
 /*
 ================
 RigidBodyDerivatives
@@ -59,7 +57,7 @@ RigidBodyDerivatives
 void RigidBodyDerivatives( const float t, const void *clientData, const float *state, float *derivatives ) {
 	const idPhysics_RigidBody *p = (idPhysics_RigidBody *) clientData;
 	rigidBodyIState_t *s = (rigidBodyIState_t *) state;
-	// NOTE: this struct should be build conform rigidBodyIState_t
+	// NOTE: this struct should conform to rigidBodyIState_t
 	struct rigidBodyDerivatives_s {
 		idVec3				linearVelocity;
 		idMat3				angularMatrix;
@@ -77,10 +75,13 @@ void RigidBodyDerivatives( const float t, const void *clientData, const float *s
 
 #ifdef MOD_WATERPHYSICS
     // underwater we have a higher friction
-    if( p->GetWaterLevelf() == 0.0f  ) {
+    if( p->GetWaterLevelf() == 0.0f )
+	{
         d->force = - p->linearFriction * s->linearMomentum + p->current.externalForce;
         d->torque = - p->angularFriction * s->angularMomentum + p->current.externalTorque;
-    } else {
+    }
+	else
+	{
         // don't let water friction go less than 25% of the water viscosity
         float percent = Max(0.25f,p->GetSubmergedPercent(s->position,s->orientation.Transpose()));
 
@@ -219,7 +220,8 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 
 #ifdef MOD_WATERPHYSICS
 	// apply a water gravity if the body is in water
-	if( this->SetWaterLevelf() != 0.0f ) {
+	if ( this->SetWaterLevelf() != 0.0f )
+	{
 		idVec3 bCenter;
 		idVec3 bForce(gravityVector),rForce(-gravityVector);
 		float bMass,fraction,liquidMass;
@@ -245,9 +247,14 @@ void idPhysics_RigidBody::Integrate( float deltaTime, rigidBodyPState_t &next ) 
 
 		// take the body out of water if it's not in water.
 		if( !inWater ) this->SetWater(NULL, 0.0f);
-	} else 
-#endif
+	}
+	else
+	{
 		next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
+	}
+#else
+	next.i.linearMomentum += deltaTime * gravityVector * mass; // apply normal gravity
+#endif
 
 	current.i.orientation.TransposeSelf();
 	next.i.orientation.TransposeSelf();
@@ -290,8 +297,8 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	current.i.angularMomentum.Zero();
 	ApplyImpulse(0, point, impulse);
 
-//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum before friction:", current.i.linearMomentum);
-//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum before friction:", current.i.angularMomentum);
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Linear Momentum before friction: [%s]\r", current.i.linearMomentum.ToString());
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Angular Momentum before friction: [%s]\r", current.i.angularMomentum.ToString());
 
 	// Calculate the friction using this state
 	//ContactFriction(current.lastTimeStep);
@@ -300,8 +307,8 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 	//current.i.linearMomentum *= 1.0f;
 	//current.i.angularMomentum *= 1.0f;
 
-//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Linear Momentum after friction:", current.i.linearMomentum);
-//	DM_LOG(LC_ENTITY, LT_INFO)LOGVECTOR("Angular Momentum after friction:", current.i.angularMomentum);
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Linear Momentum after friction: [%s]", current.i.linearMomentum.ToString());
+	//DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Angular Momentum after friction: [%s]", current.i.angularMomentum.ToString());
 
 	// The list of all the touching entities
 	idList<contactInfo_t> touching;
@@ -343,7 +350,6 @@ bool idPhysics_RigidBody::PropagateImpulse(const int id, const idVec3& point, co
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::b = %f \r",b);
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::c = %f \r",c);
 #endif
-
 		if ((impulse * -contacts[i].normal) <= 0.0f) // grayman #3001 - should have been <=, not <
 		{
 			DM_LOG(LC_ENTITY, LT_INFO)LOGSTRING("Entity %s is not in push direction.\r", contactEntity->name.c_str());
@@ -476,7 +482,7 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	}
 	// Note: Actors should not overwrite the moved by other actors when they are hit with something
 	// So only overwrite if MovedByActor is NULL
-	if( ent->IsType(idActor::Type) 
+	if ( ent->IsType(idActor::Type) 
 		&& self->m_SetInMotionByActor.GetEntity() == NULL
 		&& !(static_cast<idActor *>(ent)->IsKnockedOut() || ent->health < 0) )
 	{
@@ -497,10 +503,12 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 	// velocity in normal direction
 	vel = velocity * collision.c.normal;
 
-	if ( vel > -STOP_SPEED ) {
-		impulseNumerator = STOP_SPEED;
+	if ( vel > -OLD_STOP_SPEED ) // grayman #3452 - was STOP_SPEED
+	{
+		impulseNumerator = OLD_STOP_SPEED;
 	}
-	else {
+	else
+	{
 		impulseNumerator = -( 1.0f + bouncyness ) * vel;
 	}
 	impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( collision.c.normal ) ).Cross( r ) * collision.c.normal );
@@ -593,6 +601,9 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 		next.i.orientation = collision.endAxis;
 		next.i.linearMomentum = current.i.linearMomentum;
 		next.i.angularMomentum = current.i.angularMomentum;
+
+		idEntity* collidedWith = gameLocal.entities[collision.c.entityNum];
+
 		collided = true;
 	}
 
@@ -691,8 +702,15 @@ idPhysics_RigidBody::ContactFriction
   Uses absolute velocity at the contact points instead of the velocity relative to the contact object.
 ================
 */
-void idPhysics_RigidBody::ContactFriction( float deltaTime ) {
-	int i;
+
+// grayman #3452 - Average the linear and angular momentums
+// across contact points that share the same normal. Otherwise, there's the possibility of building
+// up tremendous momentum that will cause an object to bounce way more than it should. Also, don't
+// add the momentums to the overall object momentum as each point is considered. All points should be
+// considered simultaneously, then averaged to provide the correct resultant momentums. This is what
+// was causing falling planks to fall in slow motion: too much friction acting against gravity.
+void idPhysics_RigidBody::ContactFriction( float deltaTime )
+{
 	float magnitude, impulseNumerator, impulseDenominator;
 	idMat3 inverseWorldInertiaTensor;
 	idVec3 linearVelocity, angularVelocity;
@@ -702,42 +720,119 @@ void idPhysics_RigidBody::ContactFriction( float deltaTime ) {
 
 	massCenter = current.i.position + centerOfMass * current.i.orientation;
 
-	for ( i = 0; i < contacts.Num(); i++ ) {
+	linearVelocity = inverseMass * current.i.linearMomentum;
+	angularVelocity = inverseWorldInertiaTensor * current.i.angularMomentum;
 
+	// Keep lists of contact point normals and calculated momentums. Average the
+	// momentums across all points that have the same normal.
+
+	idList<idVec3> normals; // list of different contact point normals
+	normals.Clear();
+
+	idList<idVec3> lm; // list of summed linear momentum for each set of normals
+	lm.Clear();
+
+	idList<idVec3> am; // list of summed angular momentum for each set of normals
+	am.Clear();
+
+	idList<int> normalCount; // list of the number of contributing points for each normal set
+	normalCount.Clear();
+
+	for ( int i = 0 ; i < contacts.Num() ; i++ )
+	{
+		idVec3 contactNormal = contacts[i].normal;
 		r = contacts[i].point - massCenter;
 
+		// fudge factor - Needed to reduce the momentum drag on
+		// plank-shaped objects, whose center of mass can be far from its
+		// edges, w/o affecting more compact objects like pots and crates and apples,
+		// where the center of mass is closer to the edges.
+		float rLength = r.Length();
+		if ( rLength < 1.0f )
+		{
+			rLength = 1.0f;
+		}
+		float ff = rLength/4.0f; // fudge factor
+
 		// calculate velocity at contact point
-		linearVelocity = inverseMass * current.i.linearMomentum;
-		angularVelocity = inverseWorldInertiaTensor * current.i.angularMomentum;
-		velocity = linearVelocity + angularVelocity.Cross(r);
+		velocity = linearVelocity + angularVelocity.Cross(r); // angularVelocity.Cross(r) is torque? (http://iweb.tntech.edu/murdock/books/v2chap2.pdf)
 
 		// velocity along normal vector
-		normalVelocity = ( velocity * contacts[i].normal ) * contacts[i].normal;
+		normalVelocity = ( velocity * contactNormal ) * contactNormal;
 
 		// calculate friction impulse
-		normal = -( velocity - normalVelocity );
-		magnitude = normal.Normalize();
+		idVec3 planeVelocity = -( velocity - normalVelocity ); // velocity on the plane the contact point lies in
+		magnitude = planeVelocity.Normalize();
 		impulseNumerator = contactFriction * magnitude;
-		impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( normal ) ).Cross( r ) * normal );
-		impulse = (impulseNumerator / impulseDenominator) * normal;
+		impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( planeVelocity ) ).Cross( r ) * planeVelocity );
+		impulse = (impulseNumerator / impulseDenominator) * planeVelocity;
 
-		// apply friction impulse
-		current.i.linearMomentum += impulse;
-		current.i.angularMomentum += r.Cross(impulse);
+		impulse /= ff; // fudge factor
 
-		// if moving towards the surface at the contact point
-		if ( normalVelocity * contacts[i].normal < 0.0f ) {
+		// Search for the index of a normal set that's close to this point's normal
+		int matchingIndex = -1;
+		for ( int j = 0 ; j < normals.Num() ; j++)
+		{
+			if ( contactNormal.Compare(normals[j],0.01f) ) // Allow [-0 -0 1] to match [0 0 1]
+			{
+				matchingIndex = j;
+				break;
+			}
+		}
+
+		if ( matchingIndex == -1) // if no match
+		{
+			// this is the first impulse calculation for this normal
+			normals.Append(contactNormal);
+			matchingIndex = normals.Num() - 1;
+			lm.Append(impulse);
+			am.Append(r.Cross(impulse));
+			normalCount.Append(1);
+		}
+		else // if there was a match
+		{
+			// this is another impulse for an existing normal
+			lm[matchingIndex] += impulse;
+			am[matchingIndex] += r.Cross(impulse);
+			normalCount[matchingIndex]++;
+		}
+
+		// if moving towards the surface at the contact point <- original comment
+		// grayman - It appears that the following determines the amount of force (impulse) applied to the rigid body
+		// by the plane the contact point lies in. When there are multiple contact points, we get multiple
+		// forces. These can mount up dramatically, so they need to be damped. Otherwise, dropping a crate
+		// on a flat horizontal surface could have upwards of 10 contact points and cause the crate to bounce
+		// up to the ceiling. We can't delete this section, because it helps to keep objects from bouncing
+		// around when they're trying to settle at the end of a move.
+		if ( normalVelocity * contactNormal < 0.0f )
+		{
 			// calculate impulse
-			normal = -normalVelocity;
+			normal = -normalVelocity; // the component of velocity that pushes on the rb
 			impulseNumerator = normal.Normalize();
 			impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( normal ) ).Cross( r ) * normal );
 			impulse = (impulseNumerator / impulseDenominator) * normal;
 
-			// apply impulse
-			current.i.linearMomentum += impulse;
-			current.i.angularMomentum += r.Cross( impulse );
+			impulse /= ff; // fudge factor
+
+			// this is another impulse for an existing normal
+			lm[matchingIndex] += impulse;
+			am[matchingIndex] += r.Cross(impulse);
 		}
 	}
+
+	// To calculate the final momentums, average the momentums for each different
+	// normal, then add them together.
+
+	idVec3 linearMomentumFromFriction(0,0,0);
+	idVec3 angularMomentumFromFriction(0,0,0);
+	for ( int i = 0 ; i < normals.Num() ; i++)
+	{
+		linearMomentumFromFriction += lm[i]/(float)normalCount[i];
+		angularMomentumFromFriction += am[i]/(float)normalCount[i];
+	}
+
+	current.i.linearMomentum += linearMomentumFromFriction;
+	current.i.angularMomentum += angularMomentumFromFriction;
 }
 
 /*
@@ -759,55 +854,75 @@ bool idPhysics_RigidBody::TestIfAtRest( void ) const {
 	idMat3 inverseWorldInertiaTensor;
 	idFixedWinding contactWinding;
 
-	if ( current.atRest >= 0 ) {
+	if ( current.atRest >= 0 )
+	{
 		return true;
 	}
 #ifdef MOD_WATERPHYSICS
     // do some special checks if the body is in water
-    if( this->water != NULL ) {
-        if( this->current.i.linearMomentum.LengthSqr() < WATER_STOP_LINEAR.LengthSqr() &&
-            this->current.i.angularMomentum.LengthSqr() < WATER_STOP_ANGULAR.LengthSqr() ) {
+    if ( this->water != NULL )
+	{
+        if ( this->current.i.linearMomentum.LengthSqr() < WATER_STOP_LINEAR.LengthSqr() &&
+            this->current.i.angularMomentum.LengthSqr() < WATER_STOP_ANGULAR.LengthSqr() )
+		{
 
-            if( this->noMoveTime == 0 ) {
+            if ( this->noMoveTime == 0 )
+			{
                 this->noMoveTime = gameLocal.GetTime();
-            } else if( this->noMoveTime+NO_MOVE_TIME < gameLocal.GetTime() ) {
+            }
+			else if ( this->noMoveTime+NO_MOVE_TIME < gameLocal.GetTime() )
+			{
                 this->noMoveTime = 0;
                 return true;
             }
-        } else {
+        }
+		else
+		{
             this->noMoveTime = 0;
         }
     }
 #endif
 
 	// need at least 3 contact points to come to rest
-	if ( contacts.Num() < 3 ) {
+	if ( contacts.Num() < 3 )
+	{
 		return false;
 	}
 
 	// get average contact plane normal
+	// grayman - might be a bug here, because if the object slides into a wall,
+	// one or more contacts will be on the floor, and one or more will be on
+	// the wall. Averaging these makes no sense, and could cause the object to
+	// think it's on an incline when it isn't. It should only average the normals
+	// that are close to the gravity vector, and ignore everything else.
+	// There are no reported issues with it, however, so I'm leaving it as is. 
+
 	normal.Zero();
-	for ( i = 0; i < contacts.Num(); i++ ) {
+	for ( i = 0 ; i < contacts.Num() ; i++ )
+	{
 		normal += contacts[i].normal;
 	}
 	normal /= (float) contacts.Num();
 	normal.Normalize();
 
 	// if on a too steep surface
-	if ( (normal * gravityNormal) > -0.7f ) {
+	if ( (normal * gravityNormal) > -0.7f )
+	{
 		return false;
 	}
 
 	// create bounds for contact points
 	contactWinding.Clear();
-	for ( i = 0; i < contacts.Num(); i++ ) {
+	for ( i = 0 ; i < contacts.Num() ; i++ )
+	{
 		// project point onto plane through origin orthogonal to the gravity
 		point = contacts[i].point - (contacts[i].point * gravityNormal) * gravityNormal;
 		contactWinding.AddToConvexHull( point, gravityNormal );
 	}
 
 	// need at least 3 contact points to come to rest
-	if ( contactWinding.GetNumPoints() < 3 ) {
+	if ( contactWinding.GetNumPoints() < 3 )
+	{
 		return false;
 	}
 
@@ -816,7 +931,8 @@ bool idPhysics_RigidBody::TestIfAtRest( void ) const {
 	point -= (point * gravityNormal) * gravityNormal;
 
 	// if the point is not inside the winding
-	if ( !contactWinding.PointInside( gravityNormal, point, 0 ) ) {
+	if ( !contactWinding.PointInside( gravityNormal, point, 0 ) )
+	{
 		return false;
 	}
 
@@ -828,11 +944,13 @@ bool idPhysics_RigidBody::TestIfAtRest( void ) const {
 	v -= gv * gravityNormal;
 
 	// if too much velocity orthogonal to gravity direction
-	if ( v.Length() > STOP_SPEED ) {
+	if ( v.Length() > STOP_SPEED )
+	{
 		return false;
 	}
 	// if too much velocity in gravity direction
-	if ( gv > 2.0f * STOP_SPEED || gv < -2.0f * STOP_SPEED ) {
+	if ( ( gv > 2.0f * STOP_SPEED ) || ( gv < -2.0f * STOP_SPEED ) )
+	{
 		return false;
 	}
 
@@ -841,7 +959,8 @@ bool idPhysics_RigidBody::TestIfAtRest( void ) const {
 	av = inverseWorldInertiaTensor * current.i.angularMomentum;
 
 	// if too much rotational velocity
-	if ( av.LengthSqr() > STOP_SPEED ) {
+	if ( av.LengthSqr() > STOP_SPEED )
+	{
 		return false;
 	}
 
@@ -1362,7 +1481,7 @@ void idPhysics_RigidBody::Activate( void ) {
 ================
 idPhysics_RigidBody::PutToRest
 
-  put to rest untill something collides with this physics object
+  put to rest until something collides with this physics object
 ================
 */
 void idPhysics_RigidBody::PutToRest( void ) {
@@ -1501,6 +1620,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		clipModel->Link( gameLocal.clip, self, clipModel->GetId(), current.i.position, current.i.orientation );
 		current.i.linearMomentum = mass * ( ( current.i.position - oldOrigin ) / timeStep );
 		current.i.angularMomentum = inertiaTensor * ( ( current.i.orientation * oldAxis.Transpose() ).ToAngularVelocity() / timeStep );
+
 		current.externalForce.Zero();
 		current.externalTorque.Zero();		
 
@@ -1551,9 +1671,11 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 	// set the new state
 	current = next;
 
-	if ( collided ) {
+	if ( collided )
+	{
 		// apply collision impulse
-		if ( CollisionImpulse( collision, impulse ) ) {
+		if ( CollisionImpulse( collision, impulse ) )
+		{
 			current.atRest = gameLocal.time;
 		}
 	}
@@ -1563,7 +1685,8 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	DebugDraw();
 
-	if ( !noContact ) {
+	if ( !noContact )
+	{
 
 #ifdef RB_TIMINGS
 		timer_collision.Start();
@@ -1576,24 +1699,30 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 #endif
 
 		// check if the body has come to rest
-		if ( current.externalForce.LengthSqr() == 0.0f && TestIfAtRest() ) {
+		if ( ( current.externalForce.LengthSqr() == 0.0f ) && TestIfAtRest() )
+		{
 			// put to rest
 			Rest();
 			cameToRest = true;
-		}  else {
+		}
+		else
+		{
 			// apply contact friction
 			ContactFriction( timeStep );
 		}
 	}
 
-	if ( current.atRest < 0 ) {
+	if ( current.atRest < 0 )
+	{
 		ActivateContactEntities();
 	}
 
-	if ( collided ) {
+	if ( collided )
+	{
 		// if the rigid body didn't come to rest or the other entity is not at rest
 		ent = gameLocal.entities[collision.c.entityNum];
-		if ( ent && ( !cameToRest || !ent->IsAtRest() ) ) {
+		if ( ent && ( !cameToRest || !ent->IsAtRest() ) )
+		{
 			// apply impact to other entity
 			ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
 
@@ -1746,7 +1875,7 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 	}
 
 	// tels: check that the impulse does not exceed the max values
-	// FIXME: the comparisation here is just a dummy
+	// FIXME: the comparison here is just a dummy
 	if ((maxForce.x > 0) && 
 	    ((fabs(impulse.x) > maxForce.x) || 
 		 (fabs(impulse.y) > maxForce.y) || 
@@ -1774,6 +1903,7 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 
 	current.i.linearMomentum += impulse;
 	current.i.angularMomentum += ( point - ( current.i.position + centerOfMass * current.i.orientation ) ).Cross( impulse );
+
 	Activate();
 }
 
@@ -1782,8 +1912,10 @@ void idPhysics_RigidBody::ApplyImpulse( const int id, const idVec3 &point, const
 idPhysics_RigidBody::AddForce
 ================
 */
-void idPhysics_RigidBody::AddForce( const int id, const idVec3 &point, const idVec3 &force ) {
-	if ( noImpact ) {
+void idPhysics_RigidBody::AddForce( const int id, const idVec3 &point, const idVec3 &force )
+{
+	if ( noImpact )
+	{
 		return;
 	}
 	current.externalForcePoint = point;

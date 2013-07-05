@@ -41,7 +41,7 @@ const idEventDef EV_Thread_TerminateThread( "terminate", EventArgs('d', "threadN
 const idEventDef EV_Thread_Pause( "pause", EventArgs(), EV_RETURNS_VOID, "Pauses the current thread." );
 const idEventDef EV_Thread_Wait( "wait", EventArgs('f', "time", ""), EV_RETURNS_VOID, "Suspends execution of the current thread for the given number of seconds.");
 const idEventDef EV_Thread_WaitFrame( "waitFrame", EventArgs(), EV_RETURNS_VOID, "Suspends execution of current thread for one game frame." );
-const idEventDef EV_Thread_WaitFor( "waitFor", EventArgs('e', "mover", ""), EV_RETURNS_VOID, "Waits for the given entity to complete it's move.");
+const idEventDef EV_Thread_WaitFor( "waitFor", EventArgs('e', "mover", ""), EV_RETURNS_VOID, "Waits for the given entity to complete its move.");
 const idEventDef EV_Thread_WaitForThread( "waitForThread", EventArgs('d', "threadNumber", ""), EV_RETURNS_VOID, "Waits for the given thread to terminate.");
 const idEventDef EV_Thread_WaitForRender( "waitForRender", EventArgs('e', "e", ""), EV_RETURNS_VOID, 
 	"Suspends the current thread until 'e' might have been rendered.\n" \
