@@ -88,7 +88,15 @@ void CombatState::OnAudioAlert()
 
 	Memory& memory = owner->GetMemory();
 
-	memory.alertClass = EAlertAudio;
+	// grayman debug - If alertClass is not EAlertNone,
+	// don't change it to EAlertAudio. Doing so causes
+	// the wrong rampdown bark when the AI comes out of a search.
+
+	if ( memory.alertClass == EAlertNone )
+	{
+		memory.alertClass = EAlertAudio;
+	}
+
 	memory.alertPos = owner->GetSndDir();
 
 	if (!owner->AI_ENEMY_VISIBLE)

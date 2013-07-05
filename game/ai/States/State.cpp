@@ -363,7 +363,6 @@ void State::OnAudioAlert()
 	}
 
 	Memory& memory = owner->GetMemory();
-//	memory.alertClass = EAlertAudio; // grayman #3424 - move to later
 
 	// grayman #3424 - If alertClass is not EAlertNone,
 	// don't change it to EAlertAudio. Doing so causes

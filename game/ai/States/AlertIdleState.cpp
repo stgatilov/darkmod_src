@@ -170,14 +170,14 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 				soundName = "snd_alertdown0s";
 			}
 		}
-		else if (aclass == EAlertAudio)
-		{
-			soundName = "snd_alertdown0h";
-		}
 		else if (owner->m_lastAlertLevel >= owner->thresh_3)
 		{
 			// has gone up to at least Searching
 			soundName = "snd_alertdown0SeenEvidence";
+		}
+		else if (aclass == EAlertAudio)
+		{
+			soundName = "snd_alertdown0h";
 		}
 		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious
 		{
