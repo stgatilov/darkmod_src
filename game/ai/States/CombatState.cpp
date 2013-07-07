@@ -88,7 +88,7 @@ void CombatState::OnAudioAlert()
 
 	Memory& memory = owner->GetMemory();
 
-	// grayman debug - If alertClass is not EAlertNone,
+	// If alertClass is not EAlertNone,
 	// don't change it to EAlertAudio. Doing so causes
 	// the wrong rampdown bark when the AI comes out of a search.
 
@@ -235,6 +235,7 @@ void CombatState::Init(idAI* owner)
 	if (!_meleePossible && !_rangedPossible)
 	{
 		owner->fleeingEvent = false; // grayman #3356
+		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -334,6 +335,7 @@ void CombatState::Think(idAI* owner)
 	if ( inMeleeRange && !_meleePossible ) // grayman #3355 - can't fight up close
 	{
 		owner->fleeingEvent = false; // grayman #3356
+		owner->emitFleeBarks = false; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
@@ -388,6 +390,7 @@ void CombatState::Think(idAI* owner)
 			 ( owner->health < _criticalHealth ) )			    // grayman #3140 ... I'm very damaged and can't afford to engage in combat
 		{
 			owner->fleeingEvent = false; // grayman #3356
+			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}
@@ -790,6 +793,7 @@ void CombatState::Think(idAI* owner)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
 			owner->fleeingEvent = false; // grayman #3182
+			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}

@@ -138,6 +138,7 @@ void PainState::Think(idAI* owner)
 		if ( willFlee ) // grayman #3331 - civilians and unarmed AI should flee
 		{
 			owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
+			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}

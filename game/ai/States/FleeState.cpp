@@ -70,43 +70,46 @@ void FleeState::Init(idAI* owner)
 	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(1000)));
 	owner->movementSubsystem->QueueTask(FleeTask::CreateInstance());
 
-	// The communication system cries for help
-	owner->StopSound(SND_CHANNEL_VOICE, false);
-	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
-/*	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));*/// TODO_AI
+	if ( owner->emitFleeBarks ) // grayman #3474
+	{
+		// The communication system cries for help
+		owner->StopSound(SND_CHANNEL_VOICE, false);
+		owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	/*	owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new WaitTask(200)));*/// TODO_AI
 	
-	// Setup the message to be delivered each time
-	CommMessagePtr message(new CommMessage(
-		CommMessage::RequestForHelp_CommType, 
-		owner, NULL, // from this AI to anyone 
-		NULL,
-		memory.alertPos,
-		0
-	));
+		// Setup the message to be delivered each time
+		CommMessagePtr message(new CommMessage(
+			CommMessage::RequestForHelp_CommType, 
+			owner, NULL, // from this AI to anyone 
+			NULL,
+			memory.alertPos,
+			0
+		));
 
-	// grayman #3317 - Use a different initial flee bark
-	// depending on whether the AI is fleeing an enemy, or fleeing
-	// a witnessed murder or KO.
+		// grayman #3317 - Use a different initial flee bark
+		// depending on whether the AI is fleeing an enemy, or fleeing
+		// a witnessed murder or KO.
 
-	idStr singleBark = "snd_to_flee";
-	if ( owner->fleeingEvent )
-	{
-		singleBark = "snd_to_flee_event";
+		idStr singleBark = "snd_to_flee";
+		if ( owner->fleeingEvent )
+		{
+			singleBark = "snd_to_flee_event";
+		}
+
+		// grayman #3140 - if hit by an arrow, issue a different bark
+		if ( memory.causeOfPain == EPC_Projectile )
+		{
+			singleBark = "snd_taking_fire";
+			memory.causeOfPain = EPC_None;
+		}
+
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
+
+		owner->commSubsystem->AddSilence(3000 + gameLocal.random.RandomInt(1500)); // grayman #3424;
+
+		CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));
+		owner->commSubsystem->AddCommTask(barkTask);
 	}
-
-	// grayman #3140 - if hit by an arrow, issue a different bark
-	if ( memory.causeOfPain == EPC_Projectile )
-	{
-		singleBark = "snd_taking_fire";
-		memory.causeOfPain = EPC_None;
-	}
-
-	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
-
-	owner->commSubsystem->AddSilence(3000 + gameLocal.random.RandomInt(1500)); // grayman #3424;
-
-	CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));
-	owner->commSubsystem->AddCommTask(barkTask);
 
 	// The sensory system 
 	owner->senseSubsystem->ClearTasks();

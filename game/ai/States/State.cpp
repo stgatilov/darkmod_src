@@ -2701,6 +2701,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
+		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 	}
 }
@@ -2857,6 +2858,7 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the KO, not fleeing an enemy
+		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 	}
 }
@@ -2921,6 +2923,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
 
 			owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
+			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
 		}

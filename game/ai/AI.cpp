@@ -813,6 +813,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(lastTimePlayerLost);		// grayman #2887
 
 	savefile->WriteBool(fleeingEvent);			// grayman #3317
+	savefile->WriteBool(emitFleeBarks);			// grayman #3474
 
 	savefile->WriteAngles( eyeMin );
 	savefile->WriteAngles( eyeMax );
@@ -1242,6 +1243,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lastTimePlayerLost);	// grayman #2887
 
 	savefile->ReadBool(fleeingEvent);		// grayman #3317
+	savefile->ReadBool(emitFleeBarks);		// grayman #3474
 
 	savefile->ReadAngles( eyeMin );
 	savefile->ReadAngles( eyeMax );

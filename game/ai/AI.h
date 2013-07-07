@@ -821,6 +821,10 @@ public: // greebo: Made these public
 
 	bool					fleeingEvent;
 
+	// grayman #3474 - if this is TRUE, emit fleeing barks, otherwise don't
+
+	bool					emitFleeBarks;
+
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
 	idScriptBool			AI_TALK;

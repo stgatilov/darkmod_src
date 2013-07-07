@@ -120,6 +120,14 @@ void FleeDoneState::Think(idAI* owner)
 		owner->SetTurnRate(_oldTurnRate);
 
 		owner->GetMind()->EndState();
+		return; // grayman #3474
+	}
+
+	if ( !owner->emitFleeBarks ) // grayman #3474
+	{
+		// not crying for help, time to end this state
+		owner->GetMind()->EndState();
+		return;
 	}
 
 	// Shortcut reference
