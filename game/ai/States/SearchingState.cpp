@@ -115,11 +115,14 @@ void SearchingState::Init(idAI* owner)
 
 	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / alertTime;
 
-	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
+	if ( memory.mandatory ) // grayman #3331
 	{
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
+	}
 
+	if ( owner->AlertIndexIncreased() )
+	{
 		// grayman #3423 - when the alert level is ascending, kill the repeated bark task
 		owner->commSubsystem->ClearTasks();
 
