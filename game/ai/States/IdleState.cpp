@@ -292,11 +292,11 @@ void IdleState::InitialiseCommunication(idAI* owner)
 		{
 			if (owner->HasSeenEvidence())
 			{
-				gameLocal.Printf("%s barks '%s' when entering Alert Idle state\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%s barks '%s' when ramping down to Alert Idle state\n",owner->GetName(),bark.c_str());
 			}
 			else
 			{
-				gameLocal.Printf("%s barks '%s' when entering Idle state\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%s barks '%s' when ramping down to Idle state\n",owner->GetName(),bark.c_str());
 			}
 		}
 	}
@@ -332,29 +332,29 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 		 !owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
 	{
 		EAlertClass aclass = memory.alertClass;
-		if (aclass == EAlertVisual_2) // grayman #2603
-		{
-			soundName = "snd_alertdown0sus";
-		}
-		else if (aclass == EAlertVisual_1) // grayman #3182
-		{
-			if (memory.alertType != EAlertTypeMissingItem)
-			{
-				soundName = "snd_alertdown0s";
-			}
-		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_4)
+		if (owner->m_lastAlertLevel >= owner->thresh_4)
 		{
 			// has gone up to Agitated Searching
 			soundName = "snd_alertdown0SeenNoEvidence";
 		}
-		else if (aclass == EAlertAudio)
-		{
-			soundName = "snd_alertdown0h";
-		}
 		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
-			if (aclass != EAlertNone) // grayman #3182
+			if (aclass == EAlertVisual_2) // grayman #2603
+			{
+				soundName = "snd_alertdown0sus";
+			}
+			else if (aclass == EAlertVisual_1) // grayman #3182
+			{
+				if (memory.alertType != EAlertTypeMissingItem)
+				{
+					soundName = "snd_alertdown0s";
+				}
+			}
+			else if (aclass == EAlertAudio)
+			{
+				soundName = "snd_alertdown0h";
+			}
+			else if (aclass != EAlertNone) // grayman #3182
 			{
 				soundName = "snd_alertdown0";
 			}

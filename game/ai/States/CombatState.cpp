@@ -494,7 +494,7 @@ void CombatState::Think(idAI* owner)
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
-			gameLocal.Printf("%s enters Combat state, barks '%s'\n",owner->GetName(),bark.c_str());
+			gameLocal.Printf("%s rises to Combat state, barks '%s'\n",owner->GetName(),bark.c_str());
 		}
 
 		_justDrewWeapon = false;

@@ -122,6 +122,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Setup a new hiding spot search
 	StartNewHidingSpotSearch(owner);
 
+	// kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
@@ -136,13 +137,21 @@ void AgitatedSearchingState::Init(idAI* owner)
 	{
 		if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) ) )
 		{
-			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask("snd_alert4",message))
-			);
+			idStr soundName = "";
+			if (owner->HasSeenEvidence())
+			{
+				soundName = "snd_alert4";
+			}
+			else
+			{
+				soundName = "snd_alert4NoEvidence";
+			}
+
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s enters Agitated Searching state, barks 'snd_alert4'\n",owner->GetName());
+				gameLocal.Printf("%s rises to Agitated Searching state, barks '%s'\n",owner->GetName(),soundName.c_str());
 			}
 		}
 	}

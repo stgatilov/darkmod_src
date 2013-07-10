@@ -151,37 +151,37 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 		 !owner->m_ExaminingRope ) 		// grayman #2872 - No rampdown bark if examining a rope.
 	{
 		EAlertClass aclass = memory.alertClass;
-		if (owner->m_justKilledSomeone) // grayman #2816 - no bark if we barked about the death when it happened
+		if (owner->m_justKilledSomeone) // grayman #2816 - no bark, since we barked about the death when it happened
 		{
 			owner->m_justKilledSomeone = false; // but turn off the flag
 		}
-		else if (aclass == EAlertVisual_3) // grayman #3424
+		else if (owner->m_lastAlertLevel >= owner->thresh_4)
 		{
+			// has gone up to at least Agitated Searching
 			soundName = "snd_alertdown0SeenEvidence";
 		}
-		else if (aclass == EAlertVisual_2) // grayman #2603
+		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
-			soundName = "snd_alertdown0sus";
-		}
-		else if (aclass == EAlertVisual_1) // grayman #3182
-		{
-			if (memory.alertType != EAlertTypeMissingItem)
+			if (aclass == EAlertVisual_3) // grayman #3424
 			{
-				soundName = "snd_alertdown0s";
+				soundName = "snd_alertdown0SeenEvidence";
 			}
-		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_3)
-		{
-			// has gone up to at least Searching
-			soundName = "snd_alertdown0SeenEvidence";
-		}
-		else if (aclass == EAlertAudio)
-		{
-			soundName = "snd_alertdown0h";
-		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious
-		{
-			if (aclass != EAlertNone) // grayman #3182
+			else if (aclass == EAlertVisual_2) // grayman #2603
+			{
+				soundName = "snd_alertdown0sus";
+			}
+			else if (aclass == EAlertVisual_1) // grayman #3182
+			{
+				if (memory.alertType != EAlertTypeMissingItem)
+				{
+					soundName = "snd_alertdown0s";
+				}
+			}
+			else if (aclass == EAlertAudio)
+			{
+				soundName = "snd_alertdown0h";
+			}
+			else if (aclass != EAlertNone) // grayman #3182
 			{
 				soundName = "snd_alertdown0";
 			}

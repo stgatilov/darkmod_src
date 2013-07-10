@@ -113,6 +113,42 @@ void ObservantState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
+
+	// grayman #3472 - Play bark if alert level is ascending
+
+	if (owner->AlertIndexIncreased())
+	{
+		if ( !memory.alertedDueToCommunication ) // grayman #2920
+		{
+			// barking
+			idStr bark;
+
+			if ((memory.alertClass == EAlertVisual_1) ||
+				(memory.alertClass == EAlertVisual_2) ||
+				(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424
+			{
+				bark = "snd_alert1s";
+			}
+			else if (memory.alertClass == EAlertAudio)
+			{
+				bark = "snd_alert1h";
+			}
+			else
+			{
+				bark = "snd_alert1";
+			}
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%s rises to Observant state, barks '%s'\n",owner->GetName(),bark.c_str());
+			}
+		}
+		else
+		{
+			memory.alertedDueToCommunication = false; // reset
+		}
+	}
 }
 
 // Gets called each time the mind is thinking

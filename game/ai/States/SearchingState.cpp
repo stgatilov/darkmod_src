@@ -26,6 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Memory.h"
 #include "../Tasks/InvestigateSpotTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/RepeatedBarkTask.h" // grayman #3472
 #include "../Library.h"
 #include "IdleState.h"
 #include "AgitatedSearchingState.h"
@@ -168,7 +169,7 @@ void SearchingState::Init(idAI* owner)
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s enters Searching state, and barks '%s'\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%s rises to Searching state, barks '%s'\n",owner->GetName(),bark.c_str());
 			}
 		}
 	}
@@ -178,6 +179,30 @@ void SearchingState::Init(idAI* owner)
 		memory.alertType = EAlertTypeSuspicious;
 	}
 	
+	// grayman #3472 - When ascending, set up a repeated bark
+
+	if ( owner->AlertIndexIncreased() )
+	{
+		owner->commSubsystem->AddSilence(5000 + gameLocal.random.RandomInt(3000)); // grayman #3424
+
+		// This will hold the message to be delivered with the bark
+		CommMessagePtr message(new CommMessage(
+			CommMessage::DetectedEnemy_CommType, 
+			owner, NULL,// from this AI to anyone 
+			NULL,
+			idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
+			0
+		));
+
+		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
+		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new RepeatedBarkTask("snd_state3", minTime, maxTime, message)));
+	}
+	else // descending
+	{
+		// Allow repeated barks from Agitated Searching to continue.
+	}
+
 	if (!owner->HasSeenEvidence())
 	{
 		owner->SheathWeapon();

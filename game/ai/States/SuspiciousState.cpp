@@ -242,7 +242,7 @@ void SuspiciousState::Init(idAI* owner)
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s enters Suspicious state and barks '%s'\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%s rises to Suspicious state, barks '%s'\n",owner->GetName(),bark.c_str());
 			}
 		}
 		else
