@@ -115,7 +115,7 @@ void SearchingState::Init(idAI* owner)
 
 	_alertLevelDecreaseRate = (owner->thresh_4 - owner->thresh_3) / alertTime;
 
-	if ( memory.mandatory ) // grayman #3331
+	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
 		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner);
