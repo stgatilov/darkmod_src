@@ -190,8 +190,8 @@ void SuspiciousState::Init(idAI* owner)
 		owner->GetUp();
 	}
 	
-	if (gameLocal.random.RandomFloat() > 0.5f)
-	{
+//	if (gameLocal.random.RandomFloat() > 0.5f) // grayman #3472 - AI should stop every time.
+//	{
 		owner->movementSubsystem->ClearTasks();
 		owner->StopMove(MOVE_STATUS_DONE);
 		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
@@ -207,7 +207,7 @@ void SuspiciousState::Init(idAI* owner)
 				owner->TurnToward(memory.alertPos);
 			}
 		}
-	}
+//	}
 
 	if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
 	{
