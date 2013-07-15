@@ -191,7 +191,7 @@ const char* const AlertStateNames[EAlertStateNum] =
 
 // SZ: Maximum amount of time since last visual or audio contact with a friendly person to use
 // group stimulous barks, in seconds
-#define MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK 10.0f
+#define MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK 5.0f // grayman - was 10.0f
 
 // TODO: Parameterize these as darkmod globals
 #define HIDING_OBJECT_HEIGHT 0.35f
