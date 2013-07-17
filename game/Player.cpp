@@ -6885,35 +6885,44 @@ void idPlayer::StartFxOnBone( const char *fx, const char *bone ) {
 	idEntityFx::StartFx( fx, &offset, &axis, this, true );
 }
 
-void idPlayer::UpdateUnderWaterEffects() {
-	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD ) {
-		if (!underWaterEffectsActive) {
+void idPlayer::UpdateUnderWaterEffects()
+{
+	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD )
+	{
+		if (!underWaterEffectsActive)
+		{
 			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
 
 			// Underwater GUI section, allows custom water guis for each water entity etc - Dram
 			idStr overlay;
 			idPhysics_Liquid* CurWaterEnt = GetPlayerPhysics()->GetWater();
-			if (CurWaterEnt != NULL) { // Get the GUI from the current water entity
+			if (CurWaterEnt != NULL)
+			{ // Get the GUI from the current water entity
 				idEntity* CurEnt = CurWaterEnt->GetSelf();
-				if (CurEnt != NULL) {
+				if (CurEnt != NULL)
+				{
 					overlay = CurEnt->spawnArgs.GetString("underwater_gui");
 				}
 				gameLocal.Printf( "UNDERWATER: After water check overlay is %s\n", overlay.c_str() );
 			}
-			if (overlay.IsEmpty()) { // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
+			if (overlay.IsEmpty()) // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
+			{
 				gameLocal.Warning( "UNDERWATER: water check overlay failed, check key/val pairs" );
 			}
-			else if (!overlay.IsEmpty()) {
+			else
+			{
 				underWaterGUIHandle = CreateOverlay(overlay.c_str(), LAYER_UNDERWATER);
 			}
 			underWaterEffectsActive = true;
 		}
 	}
-	else {
+	else
+	{
 		if (underWaterEffectsActive)
 		{
 			StopSound( SND_CHANNEL_DEMONIC, false );
-			if (underWaterGUIHandle != -1) {
+			if (underWaterGUIHandle != -1)
+			{
 				DestroyOverlay(underWaterGUIHandle);
 				underWaterGUIHandle = -1;
 			}
