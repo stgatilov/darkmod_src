@@ -8750,7 +8750,7 @@ void idAnimatedEntity::AddLocalDamageEffect
 
 	if ( !collisionMaterial || collisionMaterial->GetSurfaceType() == SURFTYPE_NONE )
 	{
-		surfName = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+		surfName = gameLocal.surfaceTypeNames[ GetDefaultSurfaceType() ];
 	}
 	else
 	{

@@ -3416,7 +3416,7 @@ void idWeapon::Event_Melee( void ) {
 					int type = tr.c.material->GetSurfaceType();
 
 					if ( type == SURFTYPE_NONE ) 
-						materialType = gameLocal.sufaceTypeNames[ GetDefaultSurfaceType() ];
+						materialType = gameLocal.surfaceTypeNames[ GetDefaultSurfaceType() ];
 					else
 						g_Global.GetSurfName( tr.c.material, materialType );
 

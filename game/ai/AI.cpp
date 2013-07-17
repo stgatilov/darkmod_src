@@ -6091,15 +6091,12 @@ void idAI::PlayFootStepSound()
 	
 	sound = spawnArgs.GetString( localSound.c_str() );
 
-/* grayman #2787 - redundant
-
 	// if a sound was not found for that specific material, use default
 	if ( sound.IsEmpty() && ( waterLevel != WATERLEVEL_HEAD ) )
 	{
 		sound = spawnArgs.GetString( "snd_footstep" );
 		localSound = "snd_footstep";
 	}
- */
 
 	/***
 	* AI footsteps always propagate as snd_footstep for now

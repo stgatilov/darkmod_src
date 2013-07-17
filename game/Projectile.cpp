@@ -937,7 +937,7 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	} 
 	else 
 	{
-		typeName = gameLocal.sufaceTypeNames[ SURFTYPE_METAL ];
+		typeName = gameLocal.surfaceTypeNames[ SURFTYPE_METAL ];
 	}
 	
 	// play impact sound

@@ -99,7 +99,7 @@ idAnimManager				animationLib;
 idGameLocal					gameLocal;
 idGame *					game = &gameLocal;	// statically pointed at an idGameLocal
 
-const char *idGameLocal::sufaceTypeNames[ MAX_SURFACE_TYPES ] = {
+const char *idGameLocal::surfaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };

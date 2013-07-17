@@ -589,7 +589,7 @@ void CGlobal::GetSurfName(const idMaterial *material, idStr &strIn )
 
 	if( surftype != SURFTYPE_15 )
 	{
-		strIn = gameLocal.sufaceTypeNames[ surftype ];
+		strIn = gameLocal.surfaceTypeNames[ surftype ];
 		goto Quit;
 	}
 
@@ -624,7 +624,7 @@ idStr CGlobal::GetSurfName(const idMaterial* material)
 
 	if (surftype != SURFTYPE_15)
 	{
-		return gameLocal.sufaceTypeNames[ surftype ];
+		return gameLocal.surfaceTypeNames[ surftype ];
 	}
 
 	// return the first word of the description if it has surftype_15

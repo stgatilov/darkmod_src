@@ -648,7 +648,7 @@ public:
 	float					clientSmoothing;		// smoothing of other clients in the view
 	int						entityDefBits;			// bits required to store an entity def number
 
-	static const char *		sufaceTypeNames[ MAX_SURFACE_TYPES ];	// text names for surface types
+	static const char *		surfaceTypeNames[ MAX_SURFACE_TYPES ];	// text names for surface types
 	/**
 	* DarkMod: text names for new surface types
 	**/
