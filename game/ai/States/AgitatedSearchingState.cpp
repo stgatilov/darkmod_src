@@ -151,7 +151,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s rises to Agitated Searching state, barks '%s'\n",owner->GetName(),soundName.c_str());
+				gameLocal.Printf("%d: %s rises to Agitated Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
 			}
 		}
 	}

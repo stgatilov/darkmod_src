@@ -601,9 +601,6 @@ bool idPhysics_RigidBody::CheckForCollisions( const float deltaTime, rigidBodyPS
 		next.i.orientation = collision.endAxis;
 		next.i.linearMomentum = current.i.linearMomentum;
 		next.i.angularMomentum = current.i.angularMomentum;
-
-		idEntity* collidedWith = gameLocal.entities[collision.c.entityNum];
-
 		collided = true;
 	}
 

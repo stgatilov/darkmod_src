@@ -133,7 +133,7 @@ void SearchingState::Init(idAI* owner)
 		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 		{
 			bool friendsNear = ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK );
-			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) || (memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424
+			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) /*|| (memory.alertClass == EAlertVisual_3)*/ ) // grayman #2603, #3424, grayman #3472 - no longer needed
 			{
 				if ( friendsNear )
 				{
@@ -172,7 +172,7 @@ void SearchingState::Init(idAI* owner)
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s rises to Searching state, barks '%s'\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 			}
 		}
 	}

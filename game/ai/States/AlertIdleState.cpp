@@ -162,11 +162,12 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 		}
 		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
-			if (aclass == EAlertVisual_3) // grayman #3424
-			{
-				soundName = "snd_alertdown0SeenEvidence";
-			}
-			else if (aclass == EAlertVisual_2) // grayman #2603
+			// grayman #3472 - no longer needed
+//			if (aclass == EAlertVisual_3) // grayman #3424
+//			{
+//				soundName = "snd_alertdown0SeenEvidence";
+//			}
+			if (aclass == EAlertVisual_2) // grayman #2603
 			{
 				soundName = "snd_alertdown0sus";
 			}

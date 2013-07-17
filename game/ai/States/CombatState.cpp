@@ -91,11 +91,12 @@ void CombatState::OnAudioAlert()
 	// If alertClass is not EAlertNone,
 	// don't change it to EAlertAudio. Doing so causes
 	// the wrong rampdown bark when the AI comes out of a search.
+	// grayman #3472 - rampdown bark changes make this check moot
 
-	if ( memory.alertClass == EAlertNone )
-	{
+//	if ( memory.alertClass == EAlertNone )
+//	{
 		memory.alertClass = EAlertAudio;
-	}
+//	}
 
 	memory.alertPos = owner->GetSndDir();
 
@@ -204,6 +205,9 @@ void CombatState::Init(idAI* owner)
 		owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 		owner->StopAnim(ANIMCHANNEL_LEGS, 0);
 	}
+
+	// grayman #3472 - kill the repeated bark task
+	owner->commSubsystem->ClearTasks(); // grayman #3182
 
 	// say something along the lines of "huh?"
 
@@ -494,7 +498,7 @@ void CombatState::Think(idAI* owner)
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
-			gameLocal.Printf("%s rises to Combat state, barks '%s'\n",owner->GetName(),bark.c_str());
+			gameLocal.Printf("%d: %s rises to Combat state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 		}
 
 		_justDrewWeapon = false;

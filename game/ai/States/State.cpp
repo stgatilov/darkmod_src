@@ -194,6 +194,12 @@ void State::OnVisualAlert(idActor* enemy)
 	Memory& memory = owner->GetMemory();
 
 	memory.alertClass = EAlertVisual_1;
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s spots the player and sets EAlertVisual_1\n",gameLocal.time,owner->GetName());
+	}
+
 	memory.alertType = EAlertTypeSuspicious;
 	idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
 	memory.alertPos = owner->GetVisDir();
@@ -369,11 +375,17 @@ void State::OnAudioAlert()
 	// the wrong rampdown bark when the AI comes out of a search near
 	// something more important, like a dead body.
 
-	if ( memory.alertClass == EAlertNone )
-	{
+	// grayman #3472 - rampdown bark changes make this check moot
+
+//	if ( memory.alertClass == EAlertNone )
+//	{
 		memory.alertClass = EAlertAudio;
 		memory.alertType = EAlertTypeSuspicious;
-	}
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s hears something and sets EAlertAudio\n",gameLocal.time,owner->GetName());
+		}
+//	}
 
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
@@ -1743,7 +1755,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 									if (cv_ai_debug_transition_barks.GetBool())
 									{
-										gameLocal.Printf("%s is warned by %s about an enemy, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+										gameLocal.Printf("%d: %s is warned by %s about an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName(),otherAI->GetName());
 									}
 
 									memory.posEnemySeen = otherMemory.posEnemySeen;
@@ -1775,7 +1787,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 									if (cv_ai_debug_transition_barks.GetBool())
 									{
-										gameLocal.Printf("%s is warned by %s about a dead person, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+										gameLocal.Printf("%d: %s is warned by %s about a dead person, will use Alert Idle\n",gameLocal.time,owner->GetName(),otherAI->GetName());
 									}
 
 									memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE;
@@ -1809,7 +1821,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 									if (cv_ai_debug_transition_barks.GetBool())
 									{
-										gameLocal.Printf("%s is warned by %s about a missing item, will use Alert Idle\n",owner->GetName(),otherAI->GetName());
+										gameLocal.Printf("%d: %s is warned by %s about a missing item, will use Alert Idle\n",gameLocal.time,owner->GetName(),otherAI->GetName());
 									}
 
 									memory.posMissingItem = otherMemory.posMissingItem;
@@ -2523,7 +2535,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	// grayman #3424 - set these alert values here instead of after
 	// the delay, to lock out lesser alert stims from being processed
 	Memory& memory = owner->GetMemory();
-	memory.alertClass = EAlertVisual_3; // grayman #3424
+	memory.alertClass = EAlertVisual_1; // grayman #3424, grayman #3472 - was _3, which is no longer needed
 	memory.alertType = EAlertTypeDeadPerson;
 
 	// grayman #3317 - We want a random delay at this point, so we'll
@@ -2590,7 +2602,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
-		gameLocal.Printf("%s found a dead person, will use Alert Idle\n",owner->GetName());
+		gameLocal.Printf("%d: %s found a dead person, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
 	memory.corpseFound = person; // grayman #3424
@@ -2734,7 +2746,7 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	// grayman #3424 - set these alert values here instead of after
 	// the delay, to lock out lesser alert stims from being processed
 	Memory& memory = owner->GetMemory();
-	memory.alertClass = EAlertVisual_3; // grayman #3424
+	memory.alertClass = EAlertVisual_1; // grayman #3424, grayman #3472 - was _3, which is no longer needed
 	memory.alertType = EAlertTypeUnconsciousPerson;
 
 	// grayman #3317 - We want a random delay at this point, so we'll
@@ -2790,7 +2802,7 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
-		gameLocal.Printf("%s found an unconscious person, will use Alert Idle\n",owner->GetName());
+		gameLocal.Printf("%d: %s found an unconscious person, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_UNCONSCIOUS; // grayman #2603
@@ -3728,7 +3740,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool()) 
 	{
-		gameLocal.Printf("%s sees that something is missing, will use Alert Idle\n",owner->GetName());
+		gameLocal.Printf("%d: %s sees that something is missing, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
 	if ( !alreadyKnow )
@@ -3801,7 +3813,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
-		gameLocal.Printf("%s sees something broken, will use Alert Idle\n",owner->GetName());
+		gameLocal.Printf("%d: %s sees something broken, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_BROKEN_ITEM;
@@ -4416,7 +4428,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					gameLocal.Printf("%s is warned by %s about a missing item, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+					gameLocal.Printf("%d: %s is warned by %s about a missing item, will use Alert Idle\n",gameLocal.time,owner->GetName(),issuingEntity->GetName());
 				}
 
 				owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
@@ -4453,7 +4465,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					gameLocal.Printf("%s is warned by %s about a dead person, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+					gameLocal.Printf("%d: %s is warned by %s about a dead person, will use Alert Idle\n",gameLocal.time,owner->GetName(),issuingEntity->GetName());
 				}
 
 				owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
@@ -4489,7 +4501,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					gameLocal.Printf("%s is warned by %s about an enemy, will use Alert Idle\n",owner->GetName(),issuingEntity->GetName());
+					gameLocal.Printf("%d: %s is warned by %s about an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName(),issuingEntity->GetName());
 				}
 
 				memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_ENEMY;

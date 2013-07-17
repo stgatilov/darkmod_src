@@ -225,8 +225,8 @@ void SuspiciousState::Init(idAI* owner)
 			idStr bark;
 
 			if ((memory.alertClass == EAlertVisual_1) ||
-				(memory.alertClass == EAlertVisual_2) ||
-				(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424
+				(memory.alertClass == EAlertVisual_2) )
+				//(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424, grayman #3472 - no longer needed
 			{
 				bark = "snd_alert1s";
 			}
@@ -242,7 +242,7 @@ void SuspiciousState::Init(idAI* owner)
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%s rises to Suspicious state, barks '%s'\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%d: %s rises to Suspicious state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 			}
 		}
 		else

@@ -63,7 +63,7 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
-		gameLocal.Printf("%s is attacked by an enemy (failed KO), will use Alert Idle\n",owner->GetName());
+		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
 	// Play the animation

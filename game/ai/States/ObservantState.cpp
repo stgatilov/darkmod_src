@@ -111,44 +111,48 @@ void ObservantState::Init(idAI* owner)
 	// grayman #3438 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks();
 
-	// Let the AI update their weapons (make them nonsolid)
-	owner->UpdateAttachmentContents(false);
-
 	// grayman #3472 - Play bark if alert level is ascending
+	// grayman #3487 - But not if asleep
 
-	if (owner->AlertIndexIncreased())
+	if (owner->GetMoveType() != MOVETYPE_SLEEP)
 	{
-		if ( !memory.alertedDueToCommunication ) // grayman #2920
+		if (owner->AlertIndexIncreased())
 		{
-			// barking
-			idStr bark;
+			if ( !memory.alertedDueToCommunication ) // grayman #2920
+			{
+				// barking
+				idStr bark;
 
-			if ((memory.alertClass == EAlertVisual_1) ||
-				(memory.alertClass == EAlertVisual_2) ||
-				(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424
-			{
-				bark = "snd_alert1s";
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				bark = "snd_alert1h";
+				if ((memory.alertClass == EAlertVisual_1) ||
+					(memory.alertClass == EAlertVisual_2) )
+					//(memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424, grayman #3472 - no longer needed
+				{
+					bark = "snd_alert1s";
+				}
+				else if (memory.alertClass == EAlertAudio)
+				{
+					bark = "snd_alert1h";
+				}
+				else
+				{
+					bark = "snd_alert1";
+				}
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s rises to Observant state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+				}
 			}
 			else
 			{
-				bark = "snd_alert1";
+				memory.alertedDueToCommunication = false; // reset
 			}
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
-
-			if (cv_ai_debug_transition_barks.GetBool())
-			{
-				gameLocal.Printf("%s rises to Observant state, barks '%s'\n",owner->GetName(),bark.c_str());
-			}
-		}
-		else
-		{
-			memory.alertedDueToCommunication = false; // reset
 		}
 	}
+
+	// Let the AI update their weapons (make them nonsolid)
+	owner->UpdateAttachmentContents(false);
 }
 
 // Gets called each time the mind is thinking

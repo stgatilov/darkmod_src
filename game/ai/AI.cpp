@@ -6555,7 +6555,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
-			gameLocal.Printf("%s is damaged by an enemy, will use Alert Idle\n",GetName());
+			gameLocal.Printf("%d: %s is damaged by an enemy, will use Alert Idle\n",gameLocal.time,GetName());
 		}
 	}
 }
@@ -9166,9 +9166,14 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 	}
 
 	// grayman #3009 - look at alertSpot
-	if ( alertSpot != idVec3(0,0,0) )
+	// grayman #3487 - but not if asleep
+
+	if ( move.moveType != MOVETYPE_SLEEP )
 	{
-		Event_LookAtPosition(alertSpot,((float)AI_AlertLevel)/10.0f);
+		if ( alertSpot != idVec3(0,0,0) )
+		{
+			Event_LookAtPosition(alertSpot,((float)AI_AlertLevel)/10.0f);
+		}
 	}
 
 	int delay = 0;

@@ -89,7 +89,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
-		gameLocal.Printf("%s loses track of the enemy, barks 'snd_lostTrackOfEnemy'\n",owner->GetName());
+		gameLocal.Printf("%d: %s loses track of the enemy, barks 'snd_lostTrackOfEnemy'\n",gameLocal.time,owner->GetName());
 	}
 
 	// For now, clear the action tasks and movement tasks

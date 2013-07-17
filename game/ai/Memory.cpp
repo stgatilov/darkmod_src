@@ -33,7 +33,7 @@ Memory::Memory(idAI* owningAI) :
 	lastAlertRiseTime(-1),
 	deadTimeAfterAlertRise(300),
 	lastPatrolChatTime(-1),
-	lastTimeFriendlyAISeen(-1000),
+	lastTimeFriendlyAISeen(-10000), // grayman #3472 - must be less than -5000
 	lastTimeEnemySeen(-1),
 	lastTimeVisualStimBark(-1),
 	nextTimeLightStimBark(-1),	// grayman #2603

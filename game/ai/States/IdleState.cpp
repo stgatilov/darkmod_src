@@ -292,11 +292,11 @@ void IdleState::InitialiseCommunication(idAI* owner)
 		{
 			if (owner->HasSeenEvidence())
 			{
-				gameLocal.Printf("%s barks '%s' when ramping down to Alert Idle state\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%d: %s barks '%s' when ramping down to Alert Idle state\n",gameLocal.time,owner->GetName(),bark.c_str());
 			}
 			else
 			{
-				gameLocal.Printf("%s barks '%s' when ramping down to Idle state\n",owner->GetName(),bark.c_str());
+				gameLocal.Printf("%d: %s barks '%s' when ramping down to Idle state\n",gameLocal.time,owner->GetName(),bark.c_str());
 			}
 		}
 	}

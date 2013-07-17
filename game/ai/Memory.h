@@ -123,7 +123,7 @@ enum EAlertClass
 	EAlertNone,
 	EAlertVisual_1,
 	EAlertVisual_2, // grayman #2603
-	EAlertVisual_3, // grayman #3424
+	//EAlertVisual_3, // grayman #3424, grayman #3472 - no longer needed
 	EAlertTactile,
 	EAlertAudio,
 	EAlertClassCount

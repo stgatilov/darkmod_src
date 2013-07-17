@@ -334,7 +334,7 @@ bool Mind::PerformCombatCheck()
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
-			gameLocal.Printf("%s sees an enemy, will use Alert Idle\n",owner->GetName());
+			gameLocal.Printf("%d: %s sees an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName());
 		}
 
 		memory.alertType = EAlertTypeEnemy;
