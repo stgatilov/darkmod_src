@@ -67,6 +67,9 @@ const float MIN_BOB_SPEED = 5.0f;
 const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
+// grayman #3485 - additional volume reduction when falling/jumping when crouched
+const float FALL_JUMP_CROUCH_VOL_ADJUST = -5.0f;
+
 const idEventDef EV_Player_GetButtons( "getButtons", EventArgs(), 'd', "Returns the button state from the current user command." );
 
 const idEventDef EV_Player_GetMove( "getMove", EventArgs(), 'v',
@@ -4622,6 +4625,18 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 
+	// grayman #3485 - new way to decide whether the player has landed, for footstep playing
+	if (result.hasLanded && ( savedVelocity.z < -300) )
+	{
+		hasLanded = true;
+		PlayFootStepSound();
+	}
+	else
+	{
+		hasLanded = false;
+	}
+
+	/* old way
 	if (result.hasLanded && 
 		( (!AI_CROUCH && savedVelocity.z < -300) || savedVelocity.z < -600) )
 	{
@@ -4631,9 +4646,8 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	else
 	{
 		hasLanded = false;
-	}
-	
-	
+	}*/
+
 	if (health < 0)
 	{
 		// This was a deadly fall
@@ -10795,6 +10809,13 @@ void idPlayer::PlayFootStepSound()
 
 	// start footstep sound based on material type
 	const idMaterial* material = GetPhysics()->GetContact( 0 ).material;
+
+	float crouchVolAdjust = 0.0f; // grayman #3485 - volume adjustment for landing when crouched
+	if ( hasLanded && AI_CROUCH )
+	{
+		crouchVolAdjust = FALL_JUMP_CROUCH_VOL_ADJUST;
+	}
+
 	if ( material != NULL ) 
 	{
 		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Player %s stepped on entity %s, material %s \r", name.c_str(), gameLocal.entities[GetPhysics()->GetContact( 0 ).entityNum]->name.c_str(), material->GetName() );  
@@ -10876,12 +10897,12 @@ void idPlayer::PlayFootStepSound()
 	{
 		// apply the movement type modifier to the volume
 		const idSoundShader* sndShader = declManager->FindSound( sound );
-		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() );
+		SetSoundVolume( sndShader->GetParms()->volume + GetMovementVolMod() + crouchVolAdjust); // grayman #3485
 		StartSoundShader( sndShader, SND_CHANNEL_BODY, 0, false, NULL );
 		SetSoundVolume( 0.0f );
 
 		// propagate the suspicious sound to other AI
-		PropSoundDirect( localSound, true, false, 0.0f, 0 ); // grayman #3355
+		PropSoundDirect( localSound, true, false, crouchVolAdjust, 0 ); // grayman #3355, grayman #3485
 
 		lastFootstepPlaytime = gameLocal.time;
 	}
