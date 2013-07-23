@@ -1539,6 +1539,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 		return move.moveType;
 	}
 
+	ID_INLINE int			GetMoveStartTime() const // grayman #3492
+	{
+		return move.startTime;
+	}
+
 	void					SetMoveType( int moveType );
 	void					SetMoveType( idStr moveType );
 

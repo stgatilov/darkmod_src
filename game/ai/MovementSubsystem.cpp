@@ -594,7 +594,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 	// Check the owner's move type to decide whether 
 	// we should watch out for possible blocking or not
 
-	if ((owner->GetMoveType() == MOVETYPE_ANIM) && owner->AI_FORWARD)
+	if ((owner->GetMoveType() == MOVETYPE_ANIM) && owner->AI_FORWARD && ( gameLocal.time > owner->GetMoveStartTime() + 1000) ) // grayman #3492
 	{
 		// Owner is supposed to be moving
 
