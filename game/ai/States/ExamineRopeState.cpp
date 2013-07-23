@@ -299,7 +299,7 @@ void ExamineRopeState::Think(idAI* owner)
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = _examineSpot;
-						memory.alertClass = EAlertVisual_2;
+						memory.alertClass = EAlertVisual_4; // grayman #3498 (was _2)
 						memory.alertType = EAlertTypeSuspiciousItem;
 
 						// Do search as if there is an enemy that has escaped

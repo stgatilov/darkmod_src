@@ -667,6 +667,7 @@ public:
 	void					SetCurrentHeartRate( void );
 	int						GetBaseHeartRate( void );
 	void					UpdateAir( void );
+	void					PlaySwimmingSplashSound( const char *soundName ); // grayman #3413
 	
 	/**
 	* This updates the audiovisual effects when the player is underwater

@@ -156,6 +156,12 @@ void FleeDoneState::Think(idAI* owner)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s flees, barks 'snd_flee'\n",gameLocal.time,owner->GetName());
+			}
+
 			owner->commSubsystem->AddCommTask(barkTask);
 			memory.lastTimeVisualStimBark = gameLocal.time;
 		}
@@ -196,6 +202,12 @@ void FleeDoneState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 			); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s flees, barks 'snd_flee'\n",gameLocal.time,owner->GetName());
+			}
+
 			owner->commSubsystem->AddCommTask(barkTask);
 			memory.lastTimeVisualStimBark = gameLocal.time;
 		}

@@ -201,12 +201,15 @@ void State::OnVisualAlert(idActor* enemy)
 	}
 
 	memory.alertType = EAlertTypeSuspicious;
-	idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
+	//idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075, grayman #3492
 	memory.alertPos = owner->GetVisDir();
 	memory.alertRadius = VISUAL_ALERT_RADIUS;
 	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
 	memory.alertSearchExclusionVolume.Zero();
 	memory.mandatory = false; // grayman #3331
+	// Visual stimuli are locatable enough that we should
+	// search the exact stim location first
+	memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3492 - moved up from below
 	
 	// set the flag back (greebo: Is this still necessary?)
 	owner->AI_VISALERT = false;
@@ -214,34 +217,33 @@ void State::OnVisualAlert(idActor* enemy)
 	// Is this alert far enough away from the last one we reacted to to
 	// consider it a new alert? Visual alerts are highly compelling and
 	// are always considered new
-	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - lastAlertPosSearched); // grayman #3075
+	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3075, grayman #3492
 	float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
 	
-	if ( lastAlertPosSearched.Compare(idVec3(0,0,0)) || (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr() ) ) // grayman #3075
+	if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) || (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr() ) ) // grayman #3075
 	{
 		// This is a new alert // SZ Dec 30, 2006
 		// Note changed this from thresh_2 to thresh_3 to match thresh designer's intentions
+
+		// grayman #3492 - moved up from below
+		// greebo: TODO: Each incoming stimulus == evidence of intruders?
+		// One more piece of evidence of something out of place
+		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_VIS_ALERT;
+		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
+		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
+		memory.visualAlert = true; // grayman #2422
+		
+		// Do new reaction to stimulus
+		memory.alertedDueToCommunication = false;
+		// end of section moved up
+
 		if (owner->IsSearching()) // grayman #2603
 		{
 			// We are in searching mode or we are switching to it, handle this new incoming alert
 
-			// Visual stimuli are locatable enough that we should
-			// search the exact stim location first
-			memory.stimulusLocationItselfShouldBeSearched = true;
-			
-			// greebo: TODO: Each incoming stimulus == evidence of intruders?
-			// One more piece of evidence of something out of place
-			memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_VIS_ALERT;
-			memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
-			memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-			memory.visualAlert = true; // grayman #2422
-		
-			// Do new reaction to stimulus
-			memory.alertedDueToCommunication = false;
-
 			// Restart the search, in case we're already searching
 			memory.restartSearchForHidingSpots = true;
-		}	
+		}
 	} // Not too close to last stimulus or is visual stimulus
 }
 
@@ -1186,6 +1188,11 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask("snd_foundWeapon"))
 		);
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s stimmed by weapon, barks 'snd_foundWeapon'\n",gameLocal.time,owner->GetName());
+		}
 	}
 
 	// TWO more piece of evidence of something out of place: A weapon is not a good thing
@@ -1278,6 +1285,11 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask("snd_foundSuspiciousItem"))
 		);
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s spots something suspicious, barks 'snd_foundSuspiciousItem'\n",gameLocal.time,owner->GetName());
+		}
 	}
 
 	// One more piece of evidence of something out of place.
@@ -1334,6 +1346,11 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new SingleBarkTask("snd_foundSuspiciousItem"))
 		);
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s spots a rope, barks 'snd_foundSuspiciousItem'\n",gameLocal.time,owner->GetName());
+		}
 	}
 
 	// One more piece of evidence of something out of place.
@@ -1369,6 +1386,11 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	{
 		//gameLocal.Printf("Something hit me!\n");
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
+	}
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s hit by moveable, barks 'snd_notice_generic'\n",gameLocal.time,owner->GetName());
 	}
 
 	owner->GetMemory().hitByThisMoveable = tactEnt;
@@ -2648,6 +2670,11 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 				}
 				memory.lastTimeVisualStimBark = gameLocal.time;
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s found a dead body, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+				}
 			}
 		}
 	}
@@ -2659,7 +2686,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 	// search and alert level rise to occur.
 	if ( !alreadyKnow && ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) ) )
 	{
-		idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075
+		//idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075, grayman #3492
 		memory.alertPos = person->GetPhysics()->GetOrigin();
 		memory.currentSearchEventID = eventID; // grayman #3424
 		//memory.alertClass = EAlertVisual_3; // grayman #3424 - move before the delay
@@ -2680,15 +2707,15 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		// Is this alert far enough away from the last one we reacted to to
 		// consider it a new alert and restart the search?
 
-		// If lastAlertPosSearched is [0,0,0], restart
-		if ( lastAlertPosSearched.Compare(idVec3(0,0,0)) )
+		// If last alert position searched is [0,0,0], restart
+		if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) ) // grayman #3492
 		{
 			// Restart the search, in case we're already searching
 			memory.restartSearchForHidingSpots = true;
 		}
 		else
 		{
-			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - lastAlertPosSearched);
+			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3492
 	
 			if ( newAlertDeltaFromLastOneSearched.LengthSqr() > memory.alertSearchVolume.LengthSqr() )
 			{
@@ -2835,6 +2862,11 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 
 			memory.lastTimeVisualStimBark = gameLocal.time;
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s found an unconscious person, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+			}
 		}
 	}
 
@@ -2934,6 +2966,11 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
 
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s hit by an arrow, barks 'snd_taking_fire'\n",gameLocal.time,owner->GetName());
+			}
+
 			owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
 			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
@@ -2994,6 +3031,11 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		));
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s hit by an arrow, barks 'snd_taking_fire'\n",gameLocal.time,owner->GetName());
+		}
 	}
 
 	// At this point, you're armed and not a civilian, and either damage was taken, or it wasn't.
@@ -3255,9 +3297,13 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 
 	// Vocalize that see something out of place
 	memory.lastTimeVisualStimBark = gameLocal.time;
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_foundBlood"))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundBlood")));
+	
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s spots blood, barks 'snd_foundBlood'\n",gameLocal.time,owner->GetName());
+	}
+
 	//gameLocal.Printf("Is that blood?\n");
 	
 	// One more piece of evidence of something out of place

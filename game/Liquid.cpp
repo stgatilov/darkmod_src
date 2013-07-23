@@ -183,19 +183,24 @@ void idLiquid::Spawn() {
 idLiquid::Event_Touch
 
 	This is mainly used for actors who touch the liquid, it spawns a splash
-	near they're feet if they're moving fast enough.
+	near their feet if they're moving fast enough.
 ================
 */
-void idLiquid::Event_Touch( idEntity *other, trace_t *trace ) {
+void idLiquid::Event_Touch( idEntity *other, trace_t *trace )
+{
 	idPhysics_Liquid *liquid;
 	idPhysics_Actor *phys;
 
-	if( !other->GetPhysics()->IsType(idPhysics_Actor::Type) )
+	if ( !other->GetPhysics()->IsType(idPhysics_Actor::Type) )
+	{
 		return;
+	}
 
 	phys = static_cast<idPhysics_Actor *>(other->GetPhysics());
-	if( phys->GetWaterLevel() != WATERLEVEL_FEET )
+	if ( phys->GetWaterLevel() != WATERLEVEL_FEET )
+	{
 		return;
+	}
 
 	impactInfo_t info;
 	other->GetImpactInfo(this,trace->c.id,trace->c.point,&info);
@@ -208,11 +213,13 @@ void idLiquid::Event_Touch( idEntity *other, trace_t *trace ) {
 	// (this is such a bad thing to do!!!)
 	// TODO: Fixme...
 	//		1) Probably the best way to fix this is put a wait timer inside the actor and have this
-	//		function set/reset that timer for when the actor should spawn particles at it's feet.
+	//		function set/reset that timer for when the actor should spawn particles at its feet.
 	//		2) Actors don't spawn particles at their feet, it's usually at the origin, for some
 	//		reason info.position is (null), needs a fix so that splash position is correct
 	if(	gameLocal.random.RandomFloat() > 0.5f )
+	{
 		return;
+	}
 
 	this->Collide(*trace,info.velocity);
 }
@@ -223,7 +230,8 @@ idLiquid::Collide
 	Spawns a splash particle and attaches a sound to the colliding entity.
 ================
 */
-bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity ) {
+bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity )
+{
 	idEntity *e = gameLocal.entities[collision.c.entityNum];
 	idPhysics_Liquid *phys = static_cast<idPhysics_Liquid *>( this->GetPhysics() );
 	const idDeclParticle *splash;
@@ -237,32 +245,64 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	eMass = e->GetPhysics()->GetMass();
 	splashSpot = collision.c.point;
 		
-	if( velSquare > phys->GetMinSplashVelocity().LengthSqr() ) {
+	if ( velSquare > phys->GetMinSplashVelocity().LengthSqr() )
+	{
 		// pick which splash particle to spawn
 		// first we check the entity, if it's not defined we use
 		// one defined for this liquid.
 		sName = e->spawnArgs.GetString(this->smokeName.c_str());
-		if( *sName != '\0' ) {
+		if ( *sName != '\0' )
+		{
 			// load entity particle
 			splash = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE,sName));
 		}
-		else {
+		else
+		{
 			// load a liquid particle based on the mass of the splashing entity
-			if( eMass < SMALL_SPLASH )
+			if ( eMass < SMALL_SPLASH )
+			{
 				splash = this->splash[0];
-			else if( eMass < MEDIUM_SPLASH )
+			}
+			else if ( eMass < MEDIUM_SPLASH )
+			{
 				splash = this->splash[1];
+			}
 			else
+			{
 				splash = this->splash[2];
+			}
 		}
 	
-		// only play the sound for a splash
+		// play the sound for a splash
 		e->StartSound( this->soundName.c_str(), SND_CHANNEL_ANY, 0, false, NULL);
+
+		// grayman #3413 - propagate the global sound for the splash
+
+		idStr size = e->spawnArgs.GetString("spr_object_size");
+		if ( size.IsEmpty() )
+		{
+			if ( eMass < SMALL_SPLASH )
+			{
+				size = "small";
+			}
+			else if ( eMass < MEDIUM_SPLASH )
+			{
+				size = "medium";
+			}
+			else
+			{
+				size = "large";
+			}
+		}
+		idStr splashName = idStr("splash_") + size;
+		e->PropSoundS( NULL,splashName,0,0 );
 	}
-	else if( velSquare > phys->GetMinWaveVelocity().LengthSqr() ) {
+	else if ( velSquare > phys->GetMinWaveVelocity().LengthSqr() )
+	{
 		splash = this->waves;
 	}
-	else {
+	else
+	{
 		// the object is moving to slow so we abort
 		return true;
 	}

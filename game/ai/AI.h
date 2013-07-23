@@ -278,7 +278,7 @@ public:
 	void					Restore( idRestoreGame *savefile );
 
 	void					Spawn( void );
-	void					HeardSound( idEntity *ent, const char *action );
+	//void					HeardSound( idEntity *ent, const char *action );
 	idActor					*GetEnemy( void ) const;
 	void					TalkTo( idActor *actor );
 	talkState_t				GetTalkState( void ) const;
@@ -1984,7 +1984,7 @@ public:
 	void					Event_FindFriendlyAI(int requiredTeam);
 
 	void					Event_ClosestReachableEnemyOfEntity( idEntity *team_mate );
-	void					Event_HeardSound( int ignore_team );
+	//void					Event_HeardSound( int ignore_team );
 	void					Event_SetEnemy( idEntity *ent );
 	void					Event_ClearEnemy( void );
 	void					Event_FoundBody( idEntity *body );

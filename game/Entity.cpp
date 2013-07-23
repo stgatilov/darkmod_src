@@ -4346,7 +4346,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 
 	// if there is no local name, skip all the loading of local flags
 	// and parms.
-	if( localName == NULL )
+	if ( localName == NULL )
 	{
 		bFoundSnd = gameLocal.m_sndProp->CheckSound( globalName, false );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundS: Propagating global sound %s without checking local sound\r", globalName);
@@ -4360,7 +4360,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 	len = gName.Length();
 
 	// parse volMod, when durMod may or may not be present
-	if( (start = gName.Find(':')) != -1 )
+	if ( (start = gName.Find(':')) != -1 )
 	{
 		bHasColon = true;
 		start++;
@@ -4384,14 +4384,14 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 	}
 
 	// parse durMod
-	if( (start = gName.Find(',')) != -1 )
+	if ( (start = gName.Find(',')) != -1 )
 	{
 		bHasComma = true;
 		start++;
 		end = gName.Length();
 
 		idStr tempstr = gName.Mid(start, (end - start));
-		if( !tempstr.IsNumeric() || start >= end )
+		if ( !tempstr.IsNumeric() || start >= end )
 		{
 			gameLocal.Warning( "[Soundprop] Bad duration multiplier for sound %s on entity %s.", localName, name.c_str() );
 			DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Bad duration multiplier for sound %s on entity %s.\r", localName, name.c_str() );
@@ -4407,19 +4407,25 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 	// we will need locName for this.
 	
 	// strip the durmod and volmod off of the global name
-	if( bHasColon )
+	if ( bHasColon )
+	{
 		end = gName.Find(':');
-	else if( bHasComma && !bHasColon )
+	}
+	else if ( bHasComma && !bHasColon )
+	{
 		end = gName.Find(',');
-	else if( !bHasComma && !bHasColon )
+	}
+	else if ( !bHasComma && !bHasColon )
+	{
 		end = gName.Length();
+	}
 
 	gName = gName.Mid(0, end);
 
 	bFoundSnd = gameLocal.m_sndProp->CheckSound( gName.c_str(), false );
 
 Quit:
-	if( bFoundSnd )
+	if ( bFoundSnd )
 	{
 		// add the input volume modifier
 		volMod += VolModIn;
@@ -4509,7 +4515,8 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 		// env. sound AND susp. sound for the same sound and entity
 		return;
 	}
-	else if (bIsEnv)
+
+	if (bIsEnv)
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found local environmental sound def for %s on entity, attempting to propagating with global sound %s\r", sprName.c_str(), sprNameEG.c_str() );
 		PropSoundE( sprName.c_str(), sprNameEG.c_str(), VolModIn );
@@ -4528,11 +4535,9 @@ void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAss
 		PropSoundE( NULL, sprNameEG.c_str(), VolModIn );
 		return;
 	}
-	else
-	{
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
-		PropSoundS( NULL, sprNameSG.c_str(), VolModIn, msgTag ); // grayman #3355
-	}
+
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Did not find local def for sound %s, attempting to propagate it as global suspicious\r", sprNameSG.c_str() );
+	PropSoundS( NULL, sprNameSG.c_str(), VolModIn, msgTag ); // grayman #3355
 }
 
 /***********************************************************************
@@ -10223,24 +10228,27 @@ script changing GUIs, then the script could easily send spawnargs to the GUI
 if it wanted to.)
 ================
 */
-void idEntity::Event_SetGui( int handle, const char *guiFile ) {
-	if ( !uiManager->CheckGui(guiFile) ) {
+void idEntity::Event_SetGui( int handle, const char *guiFile )
+{
+	if ( !uiManager->CheckGui(guiFile) )
+	{
 		gameLocal.Warning( "Unable to load GUI file: %s", guiFile );
 		goto Quit;
 	}
 
-	if ( !m_overlays.exists( handle ) ) {
+	if ( !m_overlays.exists( handle ) )
+	{
 		gameLocal.Warning( "Non-existant GUI handle: %d", handle );
 		goto Quit;
 	}
 
 	// Entity GUIs are handled differently from regular ones.
-	if ( handle >= 1 && handle <= MAX_RENDERENTITY_GUI ) {
-
+	if ( ( handle >= 1 ) && ( handle <= MAX_RENDERENTITY_GUI ) )
+	{
 		assert( m_overlays.isExternal( handle ) );
 
-		if ( renderEntity.gui[ handle-1 ] && renderEntity.gui[ handle-1 ]->IsUniqued() ) {
-
+		if ( renderEntity.gui[ handle-1 ] && renderEntity.gui[ handle-1 ]->IsUniqued() )
+		{
 			// We're dealing with an existing unique GUI.
 			// We need to read a new GUI into it.
 
@@ -10248,27 +10256,29 @@ void idEntity::Event_SetGui( int handle, const char *guiFile ) {
 			const idDict &state = renderEntity.gui[ handle-1 ]->State();
 			const idKeyValue *kv;
 			while ( ( kv = state.MatchPrefix( "" ) ) != NULL )
+			{
 				renderEntity.gui[ handle-1 ]->DeleteStateVar( kv->GetKey() );
+			}
 
 			renderEntity.gui[ handle-1 ]->InitFromFile( guiFile );
-
-		} else {
-
-			// We're either dealing with a non-existant GUI, or a non-unique one.
+		}
+		else
+		{
+			// We're either dealing with a non-existent GUI, or a non-unique one.
 			// It's safe to just set the render entity to point to a new GUI without
 			// bothering to deallocate the previous GUI.
 			renderEntity.gui[ handle-1 ] = uiManager->FindGui( guiFile, true, true );
 			m_overlays.setGui( handle, renderEntity.gui[ handle - 1 ] );
 			assert( renderEntity.gui[ handle-1 ] );
-
 		}
-
-	} else if ( !m_overlays.isExternal( handle ) ) {
-
+	}
+	else if ( !m_overlays.isExternal( handle ) )
+	{
 		bool result = m_overlays.setGui( handle, guiFile );
 		assert( result );
-
-	} else {
+	}
+	else
+	{
 		gameLocal.Warning( "Cannot call setGui() on external handle: %d", handle );
 	}
 
@@ -10283,26 +10293,31 @@ idEntity::Event_GetGui
 Returns the file loaded by a specific GUI.
 ================
 */
-void idEntity::Event_GetGui( int handle ) {
+void idEntity::Event_GetGui( int handle )
+{
 	idUserInterface *gui = m_overlays.getGui( handle );
 	if ( gui )
+	{
 		idThread::ReturnString( gui->Name() );
+	}
 	else
+	{
 		idThread::ReturnString( "" );
+	}
 }
 
 void idEntity::SetGuiString(int handle, const char *key, const char *val)
 {
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui(handle);
-		if(gui == NULL)
+		if (gui == NULL)
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 			goto Quit;
 		}
 
-		if(!gui->IsUniqued())
+		if (!gui->IsUniqued())
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
 			goto Quit;
@@ -10336,16 +10351,22 @@ const char *idEntity::GetGuiString(int handle, const char *key)
 {
 	const char *retStr = NULL;
 
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui(handle);
-		if(gui)
+		if (gui)
+		{
 			retStr = gui->GetStateString(key);
+		}
 		else
+		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		}
 	}
 	else
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+	}
 
 	return retStr;
 }
@@ -10354,24 +10375,26 @@ void idEntity::Event_GetGuiString(int handle, const char *key)
 {
 	const char *retStr = GetGuiString(handle, key);
 
-	if(retStr == NULL)
+	if (retStr == NULL)
+	{
 		retStr = "";
+	}
 
 	idThread::ReturnString(retStr);
 }
 
 void idEntity::SetGuiFloat( int handle, const char *key, float f)
 {
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui(handle);
-		if(gui == NULL)
+		if (gui == NULL)
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 			goto Quit;
 		}
 
-		if(!gui->IsUniqued())
+		if (!gui->IsUniqued())
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
 			goto Quit;
@@ -10381,7 +10404,9 @@ void idEntity::SetGuiFloat( int handle, const char *key, float f)
 		gui->StateChanged(gameLocal.time);
 	}
 	else
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+	}
 
 Quit:
 	return;
@@ -10395,16 +10420,22 @@ void idEntity::Event_SetGuiFloat(int handle, const char *key, float f)
 float idEntity::GetGuiFloat(int handle, const char *key)
 {
 	float retVal = 0;
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui( handle );
 		if (gui)
+		{
 			retVal = gui->GetStateFloat(key);
+		}
 		else
+		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		}
 	}
 	else
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+	}
 
 	return retVal;
 }
@@ -10416,16 +10447,16 @@ void idEntity::Event_GetGuiFloat(int handle, const char *key)
 
 void idEntity::SetGuiInt( int handle, const char *key, int n)
 {
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui(handle);
-		if(gui == NULL)
+		if (gui == NULL)
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
 			goto Quit;
 		}
 
-		if(!gui->IsUniqued())
+		if (!gui->IsUniqued())
 		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("GUI is not unique. Handle: %d [%s]\r", handle, key);
 			goto Quit;
@@ -10435,7 +10466,9 @@ void idEntity::SetGuiInt( int handle, const char *key, int n)
 		gui->StateChanged(gameLocal.time);
 	}
 	else
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+	}
 
 Quit:
 	return;
@@ -10449,16 +10482,22 @@ void idEntity::Event_SetGuiInt(int handle, const char *key, int n)
 int idEntity::GetGuiInt(int handle, const char *key)
 {
 	int retVal = 0;
-	if(m_overlays.exists(handle))
+	if (m_overlays.exists(handle))
 	{
 		idUserInterface *gui = m_overlays.getGui(handle);
 		if (gui)
+		{
 			retVal = gui->GetStateInt(key);
+		}
 		else
+		{
 			DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Handle points to NULL GUI: %d [%s]\r", handle, key);
+		}
 	}
 	else
+	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("setGui: Non-existant GUI handle: %d\r", handle);
+	}
 
 	return retVal;
 }

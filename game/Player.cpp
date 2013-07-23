@@ -5106,30 +5106,92 @@ void idPlayer::SetCurrentHeartRate( void )
 }
 #endif // PLAYER_HEARTBEAT
 
+#ifdef MOD_WATERPHYSICS
 /*
-==============
-idPlayer::UpdateAir
-==============
+=================================
+idPlayer::PlaySwimmingSplashSound
+=================================
 */
-void idPlayer::UpdateAir( void ) {	
-	if ( health <= 0 ) {
+
+// grayman #3413
+void idPlayer::PlaySwimmingSplashSound( const char *soundName )
+{
+	// Determine player's vertical speed parallel to gravity
+	const idVec3 curVelocity = GetPhysics()->GetLinearVelocity();
+	const idVec3& vGravNorm = GetPhysics()->GetGravityNormal();
+	const idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
+	const float verticalVelocity = curGravVelocity.LengthFast();
+
+	// Adjust volume depending on vertical velocity.
+	// If vel is under 10, there's no sound.
+	// If vel is between 10 and 20, the volume adjustment varies between -10 and 0.
+	// If vel is over 20, the sound plays at full volume.
+	// The same volume adjustment is applied to the propagated sound.
+
+	if ( verticalVelocity <= 10.0f )
+	{
+		return; // silent
+	}
+
+	float volAdjust = 0;
+	if ( verticalVelocity <= 20.0f )
+	{
+		volAdjust = verticalVelocity - 20.0f;
+	}
+
+	const char* sound;
+	if ( !spawnArgs.GetString( soundName, "", &sound ) )
+	{
+		return;
+	}
+
+	// ignore empty spawnargs
+	if ( sound[0] == '\0' )
+	{
+		return;
+	}
+
+	const idSoundShader	*sndShader = declManager->FindSound( sound );
+	SetSoundVolume( sndShader->GetParms()->volume + volAdjust);
+	StartSoundShader( sndShader, SND_CHANNEL_ANY, SSF_GLOBAL, false, NULL );
+	SetSoundVolume( 0.0f );
+
+	// propagate the suspicious sound to AI
+	PropSoundDirect( soundName, true, false, volAdjust, 0 );
+}
+#endif // MOD_WATERPHYSICS
+
+/*
+===================
+idPlayer::UpdateAir
+===================
+*/
+void idPlayer::UpdateAir( void )
+{	
+	if ( health <= 0 )
+	{
 		return;
 	}
 
 	// see if the player is connected to the info_vacuum
-	bool	newAirless = false;
+	bool newAirless = false;
 
-	if ( gameLocal.vacuumAreaNum != -1 ) {
+	if ( gameLocal.vacuumAreaNum != -1 )
+	{
 		int	num = GetNumPVSAreas();
-		if ( num > 0 ) {
-			int		areaNum;
+		if ( num > 0 )
+		{
+			int areaNum;
 
 			// if the player box spans multiple areas, get the area from the origin point instead,
 			// otherwise a rotating player box may poke into an outside area
-			if ( num == 1 ) {
+			if ( num == 1 )
+			{
 				const int	*pvsAreas = GetPVSAreas();
 				areaNum = pvsAreas[0];
-			} else {
+			}
+			else
+			{
 				areaNum = gameRenderWorld->PointInArea( this->GetPhysics()->GetOrigin() );
 			}
 			newAirless = gameRenderWorld->AreasAreConnected( gameLocal.vacuumAreaNum, areaNum, PS_BLOCK_AIR );
@@ -5146,58 +5208,84 @@ void idPlayer::UpdateAir( void ) {
 		newAirless = true;	// MOD_WATERPHYSICS
 	}
 
-#endif		// MOD_WATERPHYSICS
+#endif // MOD_WATERPHYSICS
 
-
-	if ( newAirless ) {
-		if ( !airless ) {
+	if ( newAirless )
+	{
+		if ( !airless )
+		{
+#ifdef MOD_WATERPHYSICS
+			// player is dropping below the surface of the water
+			PlaySwimmingSplashSound( "snd_decompress" );
+#else
 			StartSound( "snd_decompress", SND_CHANNEL_ANY, SSF_GLOBAL, false, NULL );
+#endif // MOD_WATERPHYSICS
 			StartSound( "snd_noAir", SND_CHANNEL_BODY2, 0, false, NULL );
-			if ( hud ) {
+			if ( hud )
+			{
 				hud->HandleNamedEvent( "noAir" );
 			}
 		}
+
 		airTics--;
-		if ( airTics < 0 ) {
+
+		if ( airTics < 0 )
+		{
 			airTics = 0;
 			// check for damage
 			const idDict *damageDef = gameLocal.FindEntityDefDict( "damage_noair", false );
 			int dmgTiming = 1000 * (damageDef ? static_cast<int>(damageDef->GetFloat( "delay", "3.0" )) : 3 );
-			if ( gameLocal.time > lastAirDamage + dmgTiming ) {
+			if ( gameLocal.time > lastAirDamage + dmgTiming )
+			{
 				Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
 				lastAirDamage = gameLocal.time;
 			}
 		}
 		
-	} else {
-		if ( airless ) {
+	}
+	else
+	{
+		if ( airless )
+		{
+#ifdef MOD_WATERPHYSICS
+			// player is rising above the surface of the water
+			PlaySwimmingSplashSound( "snd_recompress" );
+#else
 			StartSound( "snd_recompress", SND_CHANNEL_ANY, SSF_GLOBAL, false, NULL );
+#endif // MOD_WATERPHYSICS
 			StopSound( SND_CHANNEL_BODY2, false );
-			if ( hud ) {
+			if ( hud )
+			{
 				hud->HandleNamedEvent( "Air" );
 			}
 		}
-		airTics+=2;	// regain twice as fast as lose
-		if ( airTics > pm_airTics.GetInteger() ) {
+
+		airTics += 2;	// regain twice as fast as lose
+		if ( airTics > pm_airTics.GetInteger() )
+		{
 			airTics = pm_airTics.GetInteger();
 		}
 	}
 
 	airless = newAirless;
 
-	if ( hud ) {
+	if ( hud )
+	{
 		hud->SetStateInt( "player_air", 100 * airTics / pm_airTics.GetInteger() );
 	}
 }
 
-int	idPlayer::getAirTicks() const {
+int	idPlayer::getAirTicks() const
+{
 	return airTics;
 }
 
-void idPlayer::setAirTicks(int airTicks) {
+void idPlayer::setAirTicks(int airTicks)
+{
 	airTics = airTicks;
 	// Clamp to maximum value
-	if( airTics > pm_airTics.GetInteger() ) {
+	if ( airTics > pm_airTics.GetInteger() )
+	{
 		airTics = pm_airTics.GetInteger();
 	}
 }

@@ -59,9 +59,7 @@ void CombatTask::EmitCombatBark(idAI* owner, const idStr& sndName)
 	_lastCombatBarkTime = gameLocal.time;
 
 	// The communication system 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask(sndName, message))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(sndName, message)));
 }
 
 void CombatTask::Save(idSaveGame* savefile) const

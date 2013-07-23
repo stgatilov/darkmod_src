@@ -356,7 +356,7 @@ private:
 	**/
 	float					m_ClimbMaxVelVert;
 	/**
-	* Distance between repitions of the climbing sound, in vertical and horizontal direction
+	* Distance between repetitions of the climbing sound, in vertical and horizontal direction
 	* An integer number of doomunits
 	**/
 	int						m_ClimbSndRepDistVert;

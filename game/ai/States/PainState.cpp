@@ -80,9 +80,12 @@ void PainState::Init(idAI* owner)
 			0
 		));
 
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message))
-		);
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message)));
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s is hurt, barks 'snd_pain_large'\n",gameLocal.time,owner->GetName());
+		}
 	}
 }
 
@@ -133,6 +136,11 @@ void PainState::Think(idAI* owner)
 			));
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s is hurt, barks 'snd_taking_fire'\n",gameLocal.time,owner->GetName());
+			}
 		}
 
 		if ( willFlee ) // grayman #3331 - civilians and unarmed AI should flee

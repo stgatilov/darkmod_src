@@ -152,7 +152,10 @@ void IdleState::Init(idAI* owner)
 	InitialiseCommunication(owner);
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
+	memory.alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3413
 
+	memory.agitatedSearched = false; // grayman #3496
+		
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
 	// Push the regular patrol barking to the list too
@@ -339,7 +342,7 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 		}
 		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
-			if (aclass == EAlertVisual_2) // grayman #2603
+			if ( ( aclass == EAlertVisual_2 ) || ( aclass == EAlertVisual_4 ) ) // grayman #2603, grayman #3498
 			{
 				soundName = "snd_alertdown0sus";
 			}

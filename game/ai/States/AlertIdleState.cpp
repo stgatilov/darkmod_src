@@ -71,7 +71,10 @@ void AlertIdleState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
+	memory.alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3413
 
+	memory.agitatedSearched = false; // grayman #3496
+		
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));
 
@@ -167,7 +170,7 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 //			{
 //				soundName = "snd_alertdown0SeenEvidence";
 //			}
-			if (aclass == EAlertVisual_2) // grayman #2603
+			if ( ( aclass == EAlertVisual_2 ) || ( aclass == EAlertVisual_4 ) ) // grayman #2603, grayman #3498
 			{
 				soundName = "snd_alertdown0sus";
 			}

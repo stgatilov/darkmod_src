@@ -112,6 +112,10 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
+	// grayman #3496 - note that we spent time in Agitated Search
+
+	memory.agitatedSearched = true;
+
 	CalculateAlertDecreaseRate(owner);
 	
 	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
@@ -135,23 +139,36 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) ) )
+		// grayman #3496 - enough time passed since last alert bark?
+		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 		{
-			idStr soundName = "";
-			if (owner->HasSeenEvidence())
+			if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) ) )
 			{
-				soundName = "snd_alert4";
-			}
-			else
-			{
-				soundName = "snd_alert4NoEvidence";
-			}
+				idStr soundName = "";
+				if (owner->HasSeenEvidence())
+				{
+					soundName = "snd_alert4";
+				}
+				else
+				{
+					soundName = "snd_alert4NoEvidence";
+				}
 
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
 
+				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s rises to Agitated Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+				}
+			}
+		}
+		else
+		{
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%d: %s rises to Agitated Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+				gameLocal.Printf("%d: %s rises to Agitated Searching state, can't bark 'snd_alert4{NoEvidence}' yet\n",gameLocal.time,owner->GetName());
 			}
 		}
 	}

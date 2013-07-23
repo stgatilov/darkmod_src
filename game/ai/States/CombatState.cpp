@@ -209,11 +209,41 @@ void CombatState::Init(idAI* owner)
 	// grayman #3472 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
-	// say something along the lines of "huh?"
+	// grayman #3496
+	// Enough time passed since last alert bark?
 
-	// The communication system plays reaction bark
-	CommMessagePtr message;
-	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1s", message)));
+	if ( gameLocal.time >= owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+	{
+		// grayman #3496 - But only bark if you haven't recently spent time in Agitated Search.
+
+		if ( !owner->GetMemory().agitatedSearched )
+		{
+			// The communication system plays reaction bark
+			CommMessagePtr message;
+			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert5", message)));
+
+			owner->GetMemory().lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s enters Combat State, barks surprised reaction 'snd_alert5'\n",gameLocal.time,owner->GetName());
+			}
+		}
+		else
+		{
+			if (cv_ai_debug_transition_barks.GetBool())
+			{
+				gameLocal.Printf("%d: %s enters Combat State after spending time in Agitated Searching, so won't bark 'snd_alert5'\n",gameLocal.time,owner->GetName());
+			}
+		}
+	}
+	else
+	{
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s enters Combat State, can't bark 'snd_alert5' yet\n",gameLocal.time,owner->GetName());
+		}
+	}
 
 	// All remaining init code is moved into Think() and done in the EStateReaction substate,
 	// because the things it does need to occur after the initial reaction delay.
@@ -453,6 +483,12 @@ void CombatState::Think(idAI* owner)
 			));
 		}
 
+		// grayman #3496 - This is an alert bark, but it's not subject to the delay
+		// between alert barks because the previous bark will end before we get here.
+		// It's also the culmination of a journey up from Idle State, and if the AI is
+		// going to go after an enemy, this bark needs to be heard.
+		// We'll still reset the last alert bark time, though.
+
 		// The communication system plays starting bark
 
 		// grayman #3343 - accommodate different barks for human and non-human enemies
@@ -496,9 +532,11 @@ void CombatState::Think(idAI* owner)
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark, message)));
 
+		owner->GetMemory().lastTimeAlertBark = gameLocal.time; // grayman #3496
+
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
-			gameLocal.Printf("%d: %s rises to Combat state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+			gameLocal.Printf("%d: %s starts combat, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 		}
 
 		_justDrewWeapon = false;

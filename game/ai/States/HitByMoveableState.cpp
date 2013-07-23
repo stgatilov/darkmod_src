@@ -306,6 +306,12 @@ void HitByMoveableState::Think(idAI* owner)
 
 								CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 								owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_admonish_friend",message,delay)));
+
+								if (cv_ai_debug_transition_barks.GetBool())
+								{
+									gameLocal.Printf("%d: %s hit by moveable, barks 'snd_admonish_friend'\n",gameLocal.time,owner->GetName());
+								}
+
 								Wrapup(owner);
 								return;
 							}

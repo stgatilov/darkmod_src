@@ -798,7 +798,7 @@ void SwitchOnLightState::Think(idAI* owner)
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = light->GetPhysics()->GetOrigin();
-						memory.alertClass = EAlertVisual_2;
+						memory.alertClass = EAlertVisual_4; // grayman #3498 - was _2
 						memory.alertType = EAlertTypeLightSource;
 						
 						// Prepare search as if there is an enemy that has escaped

@@ -36,6 +36,7 @@ Memory::Memory(idAI* owningAI) :
 	lastTimeFriendlyAISeen(-10000), // grayman #3472 - must be less than -5000
 	lastTimeEnemySeen(-1),
 	lastTimeVisualStimBark(-1),
+	lastTimeAlertBark(-MIN_TIME_BETWEEN_ALERT_BARKS), // grayman #3496
 	nextTimeLightStimBark(-1),	// grayman #2603
 	countEvidenceOfIntruders(0),
 	nextHeadTurnCheckTime(0),
@@ -72,7 +73,7 @@ Memory::Memory(idAI* owningAI) :
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
 	alertedDueToCommunication(false),
-//	lastAlertPosSearched(0,0,0), // grayman #3075 - not being used
+	lastAlertPosSearched(0,0,0), // grayman #3492 - reinstate this
 	alertSearchCenter(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	alertSearchVolume(0,0,0),
 	alertSearchExclusionVolume(0,0,0),
@@ -110,6 +111,8 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(lastTimeFriendlyAISeen);
 	savefile->WriteInt(lastTimeEnemySeen);
 	savefile->WriteInt(lastTimeVisualStimBark);
+	savefile->WriteInt(lastTimeAlertBark); // grayman #3496
+	savefile->WriteBool(agitatedSearched); // grayman #3496
 	savefile->WriteInt(countEvidenceOfIntruders);
 	savefile->WriteInt(nextHeadTurnCheckTime);
 	savefile->WriteBool(currentlyHeadTurning);
@@ -148,7 +151,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 	savefile->WriteBool(investigateStimulusLocationClosely);
 	savefile->WriteBool(alertedDueToCommunication);
-//	savefile->WriteVec3(lastAlertPosSearched); // grayman #3075 - not being used
+	savefile->WriteVec3(lastAlertPosSearched); // grayman #3492 - reinstate this
 	savefile->WriteVec3(alertSearchCenter);
 	savefile->WriteVec3(alertSearchVolume);
 	savefile->WriteVec3(alertSearchExclusionVolume);
@@ -224,6 +227,8 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(lastTimeFriendlyAISeen);
 	savefile->ReadInt(lastTimeEnemySeen);
 	savefile->ReadInt(lastTimeVisualStimBark);
+	savefile->ReadInt(lastTimeAlertBark); // grayman #3496
+	savefile->ReadBool(agitatedSearched); // grayman #3496
 	savefile->ReadInt(countEvidenceOfIntruders);
 	savefile->ReadInt(nextHeadTurnCheckTime);
 	savefile->ReadBool(currentlyHeadTurning);
@@ -271,7 +276,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 	savefile->ReadBool(investigateStimulusLocationClosely);
 	savefile->ReadBool(alertedDueToCommunication);
-//	savefile->ReadVec3(lastAlertPosSearched); // grayman #3075 - not being used
+	savefile->ReadVec3(lastAlertPosSearched); // grayman #3492 - reinstate this
 	savefile->ReadVec3(alertSearchCenter);
 	savefile->ReadVec3(alertSearchVolume);
 	savefile->ReadVec3(alertSearchExclusionVolume);

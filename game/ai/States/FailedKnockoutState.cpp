@@ -88,9 +88,12 @@ void FailedKnockoutState::Init(idAI* owner)
 		0
 	));
 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
+	}
 }
 
 // Gets called each time the mind is thinking
@@ -126,7 +129,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.mandatory = true;	// grayman #3331
 
 		// Alert the AI
-		// grayman #3009 - pass the alert position so the AI can look at the spot
+		// grayman #3009 - pass the alert position so the AI can look at it
 		owner->PreAlertAI("tact", owner->thresh_5*2, memory.alertPos); // grayman #3356
 
 		// End this state

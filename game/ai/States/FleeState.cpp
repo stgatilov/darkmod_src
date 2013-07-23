@@ -105,6 +105,11 @@ void FleeState::Init(idAI* owner)
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
 
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s flees, barks '%s'\n",gameLocal.time,owner->GetName(),singleBark.c_str());
+		}
+
 		owner->commSubsystem->AddSilence(3000 + gameLocal.random.RandomInt(1500)); // grayman #3424;
 
 		CommunicationTaskPtr barkTask(new RepeatedBarkTask("snd_flee", 4000,8000, message));

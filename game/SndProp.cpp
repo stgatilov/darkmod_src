@@ -1249,7 +1249,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 	{
 		gameRenderWorld->DrawText( va("Volume: %.2f", propParms->propVol), 
 			(ai->GetEyePosition() - ai->GetPhysics()->GetGravityNormal() * 65.0f), 0.25f, 
-			colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
+			colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 1000);
 	}
 
 	// convert the SPL to loudness and store it in parms

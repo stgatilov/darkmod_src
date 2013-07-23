@@ -118,35 +118,49 @@ void ObservantState::Init(idAI* owner)
 	{
 		if (owner->AlertIndexIncreased())
 		{
-			if ( !memory.alertedDueToCommunication ) // grayman #2920
+			// grayman #3496 - enough time passed since last alert bark?
+			if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 			{
-				// barking
-				idStr bark;
+				if ( !memory.alertedDueToCommunication && ( memory.alertClass != EAlertVisual_4 ) ) // grayman #2920, grayman #3498
+				{
+					// barking
+					idStr bark;
 
-				if ((memory.alertClass == EAlertVisual_1) ||
-					(memory.alertClass == EAlertVisual_2) )
-					//(memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424, grayman #3472 - no longer needed
-				{
-					bark = "snd_alert1s";
-				}
-				else if (memory.alertClass == EAlertAudio)
-				{
-					bark = "snd_alert1h";
+					if ((memory.alertClass == EAlertVisual_1) ||
+						(memory.alertClass == EAlertVisual_2) )
+						//(memory.alertClass == EAlertVisual_3) ) // grayman #2603, #3424, grayman #3472 - no longer needed
+					{
+						bark = "snd_alert1s";
+					}
+					else if (memory.alertClass == EAlertAudio)
+					{
+						bark = "snd_alert1h";
+					}
+					else
+					{
+						bark = "snd_alert1";
+					}
+
+					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+					memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+					if (cv_ai_debug_transition_barks.GetBool())
+					{
+						gameLocal.Printf("%d: %s rises to Observant state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					}
 				}
 				else
 				{
-					bark = "snd_alert1";
-				}
-				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
-
-				if (cv_ai_debug_transition_barks.GetBool())
-				{
-					gameLocal.Printf("%d: %s rises to Observant state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					memory.alertedDueToCommunication = false; // reset
 				}
 			}
 			else
 			{
-				memory.alertedDueToCommunication = false; // reset
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s rises to Observant state, can't bark 'snd_alert1s' yet\n",gameLocal.time,owner->GetName());
+				}
 			}
 		}
 	}

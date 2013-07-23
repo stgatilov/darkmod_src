@@ -190,14 +190,16 @@ void SuspiciousState::Init(idAI* owner)
 		owner->GetUp();
 	}
 	
-//	if (gameLocal.random.RandomFloat() > 0.5f) // grayman #3472 - AI should stop every time.
-//	{
-		owner->movementSubsystem->ClearTasks();
-		owner->StopMove(MOVE_STATUS_DONE);
-		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-		memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-		memory.stopReactingToHit = true; // grayman #2816
+	owner->movementSubsystem->ClearTasks();
+	owner->StopMove(MOVE_STATUS_DONE);
+	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
+	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
+	memory.stopReactingToHit = true; // grayman #2816
 
+	// do various things if alert level is ascending
+
+	if (owner->AlertIndexIncreased())
+	{
 		if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
 		{
 			if ( !owner->CheckFOV(memory.alertPos) && ( owner->GetMoveType() == MOVETYPE_ANIM ) )
@@ -206,43 +208,51 @@ void SuspiciousState::Init(idAI* owner)
 				// don't turn while sitting
 				owner->TurnToward(memory.alertPos);
 			}
+
+			// In any case, look at the point to investigate
+			owner->Event_LookAtPosition(memory.alertPos, 2.0f);
 		}
-//	}
 
-	if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
-	{
-		// In any case, look at the point to investigate
-		owner->Event_LookAtPosition(memory.alertPos, 2.0f);
-	}
-
-	// Play bark if alert level is ascending
-
-	if (owner->AlertIndexIncreased())
-	{
 		if ( !memory.alertedDueToCommunication ) // grayman #2920
 		{
-			// barking
-			idStr bark;
+			if ( memory.alertClass != EAlertVisual_4) // grayman #3498
+			{
+				// grayman #3496 - enough time passed since last alert bark?
+				if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+				{
+					// barking
+					idStr bark;
 
-			if ((memory.alertClass == EAlertVisual_1) ||
-				(memory.alertClass == EAlertVisual_2) )
-				//(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424, grayman #3472 - no longer needed
-			{
-				bark = "snd_alert1s";
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				bark = "snd_alert1h";
-			}
-			else
-			{
-				bark = "snd_alert1";
-			}
-			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+					if ((memory.alertClass == EAlertVisual_1) ||
+						(memory.alertClass == EAlertVisual_2) )
+						//(memory.alertClass == EAlertVisual_3)) // grayman #2603, #3424, grayman #3472 - no longer needed
+					{
+						bark = "snd_alert1s";
+					}
+					else if (memory.alertClass == EAlertAudio)
+					{
+						bark = "snd_alert1h";
+					}
+					else
+					{
+						bark = "snd_alert1";
+					}
+					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
 
-			if (cv_ai_debug_transition_barks.GetBool())
-			{
-				gameLocal.Printf("%d: %s rises to Suspicious state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+					if (cv_ai_debug_transition_barks.GetBool())
+					{
+						gameLocal.Printf("%d: %s rises to Suspicious state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					}
+				}
+				else
+				{
+					if (cv_ai_debug_transition_barks.GetBool())
+					{
+						gameLocal.Printf("%d: %s rises to Suspicious state, can't bark 'snd_alert1{s/h}' yet\n",gameLocal.time,owner->GetName());
+					}
+				}
 			}
 		}
 		else

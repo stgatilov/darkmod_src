@@ -73,6 +73,11 @@ void BlindedState::Init(idAI* owner)
 		CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message))
 	);
 
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s is blinded, barks 'snd_blinded'\n",gameLocal.time,owner->GetName());
+	}
+
 	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "4")) + 
 		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "2"));
 

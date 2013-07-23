@@ -106,9 +106,12 @@ void UnreachableTargetState::Init(idAI* owner)
 	{
 		bark = "snd_cantReachTarget";
 	}
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask(bark, message))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark, message)));
+
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s can't reach the target, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+	}
 
 	// The sensory system does nothing so far
 	owner->senseSubsystem->ClearTasks();

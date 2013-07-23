@@ -6065,7 +6065,7 @@ void idAI::PlayFootStepSound()
 	}
 
 	waterLevel_t waterLevel = static_cast<idPhysics_Actor *>(GetPhysics())->GetWaterLevel();
-	// If player is walking in liquid, replace the bottom surface sound with water sounds
+	// If actor is walking in liquid, replace the bottom surface sound with water sounds
 	if (waterLevel == WATERLEVEL_FEET )
 	{
 		localSound = "snd_footstep_puddle";
@@ -9019,6 +9019,7 @@ bool idAI::CheckHearing( SSprParms *propParms )
 {
 	bool returnval(false);
 
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	if (propParms->loudness > m_AudThreshold)
 	{
 		returnval = true;
@@ -9072,7 +9073,25 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) && m_allowAudioAlerts )
 	{
 		AI_HEARDSOUND = true;
-		m_SoundDir = origin;
+
+		// grayman #3413 - use sound origin as alert origin if it can be reached.
+		// If not, use the apparent sound origin, which might be in a portal.
+
+		idVec3 myOrigin = GetPhysics()->GetOrigin();
+		int areaNum = PointReachableAreaNum(myOrigin, 1.0f);
+		int soundAreaNum = PointReachableAreaNum(origin, 1.0f);
+		aasPath_t path;
+		idVec3 goal;
+
+		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, origin, this) )
+		{
+			m_SoundDir = origin; // use real sound origin
+		}
+		else
+		{
+			m_SoundDir = propParms->direction; // use apparent sound origin
+		}
+		//m_SoundDir = origin; // original setting
 
 		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be left over from a previous sound this frame
 
@@ -9113,8 +9132,8 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		if ( !soundMaker || // alert if unknown
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
-			// grayman #3009 - pass the sound position so the AI can look at it
-			PreAlertAI( "aud", psychLoud, origin ); // grayman #3356
+			// grayman #3009 - pass the alert position so the AI can look at it
+			PreAlertAI( "aud", psychLoud, propParms->direction ); // grayman #3356
 
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
@@ -9162,13 +9181,21 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 		return;
 	}
 
+	// grayman #3413 - moved to individual states??????????????
 	// grayman #3009 - look at alertSpot
 	// grayman #3487 - but not if asleep
 
 	if ( move.moveType != MOVETYPE_SLEEP )
 	{
-		if ( alertSpot != idVec3(0,0,0) )
+		if ( alertSpot.x != idMath::INFINITY )
 		{
+			// if not moving, turn toward spot if it's not in your FOV
+			if ( !AI_FORWARD && !CheckFOV(alertSpot) )
+			{
+				TurnToward(alertSpot);
+			}
+
+			// look at the spot
 			Event_LookAtPosition(alertSpot,((float)AI_AlertLevel)/10.0f);
 		}
 	}
@@ -10453,7 +10480,7 @@ void idAI::CheckTactile()
 
 		if (blockingEnt && blockingEnt->IsType(idPlayer::Type)) // player has no movement subsystem
 		{
-			// aesthetics: Dont react to dead player?
+			// aesthetics: Don't react to dead player?
 			if (blockingEnt->health > 0)
 			{
 				bumped = true;

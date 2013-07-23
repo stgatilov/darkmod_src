@@ -52,6 +52,8 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 
 	if (owner->AI_AlertIndex < ESearching)
 	{
+		owner->GetMemory().agitatedSearched = false; // grayman #3496 - clear this if descending
+		
 		// Alert index is too low for this state, fall back
 		owner->Event_CloseHidingSpotSearch();
 		owner->GetMind()->EndState();
@@ -128,51 +130,65 @@ void SearchingState::Init(idAI* owner)
 
 		// Play bark if alert level is ascending
 
-		idStr bark;
-
-		if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
+		// grayman #3496 - enough time passed since last alert bark?
+		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 		{
-			bool friendsNear = ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK );
-			if ((memory.alertClass == EAlertVisual_1) || (memory.alertClass == EAlertVisual_2) /*|| (memory.alertClass == EAlertVisual_3)*/ ) // grayman #2603, #3424, grayman #3472 - no longer needed
+			idStr bark;
+
+			if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
 			{
-				if ( friendsNear )
+				bool friendsNear = ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK );
+				if ( (memory.alertClass == EAlertVisual_1) ||
+					 (memory.alertClass == EAlertVisual_2) ||      // grayman #2603, #3424 
+					 // (memory.alertClass == EAlertVisual_3) ) || // grayman #3472 - no longer needed
+					 (memory.alertClass == EAlertVisual_4) )       // grayman #3498
 				{
-					bark = "snd_alert3sc";
+					if ( friendsNear )
+					{
+						bark = "snd_alert3sc";
+					}
+					else
+					{
+						bark = "snd_alert3s";
+					}
+				}
+				else if (memory.alertClass == EAlertAudio)
+				{
+					if ( friendsNear )
+					{
+						bark = "snd_alert3hc";
+					}
+					else
+					{
+						bark = "snd_alert3h";
+					}
+				}
+				else if ( friendsNear )
+				{
+					bark = "snd_alert3c";
 				}
 				else
 				{
-					bark = "snd_alert3s";
+					bark = "snd_alert3";
 				}
-			}
-			else if (memory.alertClass == EAlertAudio)
-			{
-				if ( friendsNear )
+
+				// Allocate a SingleBarkTask, set the sound and enqueue it
+
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+
+				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					bark = "snd_alert3hc";
-				}
-				else
-				{
-					bark = "snd_alert3h";
+					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 				}
 			}
-			else if ( friendsNear )
-			{
-				bark = "snd_alert3c";
-			}
-			else
-			{
-				bark = "snd_alert3";
-			}
-
-			// Allocate a SingleBarkTask, set the sound and enqueue it
-
-			owner->commSubsystem->AddCommTask(
-				CommunicationTaskPtr(new SingleBarkTask(bark))
-			);
-
+		}
+		else
+		{
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
-				gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+				gameLocal.Printf("%d: %s rises to Searching state, can't bark 'snd_alert3{s/sc/h/hc/c}' yet\n",gameLocal.time,owner->GetName());
 			}
 		}
 	}
@@ -440,6 +456,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 	memory.stopReactingToHit = true; // grayman #2816
 
 	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
+
+	memory.lastAlertPosSearched = memory.alertPos; // grayman #3492
 
 	// If we are supposed to search the stimulus location do that instead 
 	// of just standing around while the search completes

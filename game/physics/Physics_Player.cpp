@@ -2605,7 +2605,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	}
 
 	// enable weapon if not swimming
-	if( waterLevel <= WATERLEVEL_FEET && static_cast<idPlayer*>(self)->GetImmobilization("WaterMove") )
+	if ( ( waterLevel <= WATERLEVEL_FEET ) && static_cast<idPlayer*>(self)->GetImmobilization("WaterMove") && walking ) // grayman #3413
 	{
 		static_cast<idPlayer*>(self)->SetImmobilization("WaterMove", 0);
 	}

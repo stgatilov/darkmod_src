@@ -124,6 +124,7 @@ enum EAlertClass
 	EAlertVisual_1,
 	EAlertVisual_2, // grayman #2603
 	//EAlertVisual_3, // grayman #3424, grayman #3472 - no longer needed
+	EAlertVisual_4, // grayman #3498 - latched visual alert
 	EAlertTactile,
 	EAlertAudio,
 	EAlertClassCount
@@ -197,11 +198,14 @@ const char* const AlertStateNames[EAlertStateNum] =
 #define HIDING_OBJECT_HEIGHT 0.35f
 #define MAX_SPOTS_PER_SEARCH_CALL 100
 
-// The maximum time the AI is able to follow the enemy although it's invisible
+// The maximum time the AI is able to follow the enemy although it's invisible (ms)
 #define MAX_BLIND_CHASE_TIME 3000
 
-// grayman #2603 - how long to wait until barking again about a light that's out
+// grayman #2603 - how long to wait until barking again about a light that's out (ms)
 #define REBARK_DELAY 15000
+
+// grayman #3496 - how long to wait after an alert bark before issuing the next alert bark (ms)
+#define MIN_TIME_BETWEEN_ALERT_BARKS 3000
 
 const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 4*60; // grayman #3415 - 4 minutes 
 const int EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR  = 3*60; // grayman #3415 - random 0->3 min added to base minutes
@@ -241,6 +245,14 @@ public:
 	// The last time a visual stim made the AI bark
 	int lastTimeVisualStimBark;
 
+	// grayman #3496 - the last time a rising alert bark was issued
+	int lastTimeAlertBark;
+
+	// grayman #3496 - whether the AI has recently spent time in Agitated Search.
+	// Set to TRUE when in Agitated Search. Set to FALSE when dropping out of
+	// Searching State. Also set to FALSE when entering Idle or Alert Idle.
+	bool agitatedSearched;
+		
 	// grayman #2603 - The next time a light stim can make the AI bark
 	int nextTimeLightStimBark;
 
@@ -352,9 +364,9 @@ public:
 	// Position of the last alert causing stimulus which was searched.
     // This is used to compare new stimuli to the previous stimuli searched
     // to determine if a new search is necessary
-	// grayman #3075 - this wasn't being used, and was causing errors because
-	// it was always (0,0,0)
-//	idVec3 lastAlertPosSearched;
+	// grayman #3075 - this wasn't being used, and was causing errors because it was always (0,0,0)
+	// grayman #3492 - reinstate this
+	idVec3 lastAlertPosSearched;
 
 	// greebo: This is the position of the alert that was used to set up a hiding spot search.
 	idVec3 alertSearchCenter;
