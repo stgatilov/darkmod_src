@@ -598,7 +598,8 @@ void SwitchOnLightState::Think(idAI* owner)
 	}
 		
 	// check if something happened to abort the relight (i.e. higher alert, dropped torch)
-	if (owner->GetMemory().stopRelight )
+	// grayman #3510 - if the relight anim is running, wait for it to finish
+	if ( owner->GetMemory().stopRelight && ( idStr(owner->WaitState()) != "relight" ) )
 	{
 		ignoreLight = lightOn;
 		Wrapup(owner,light,ignoreLight);
@@ -873,6 +874,7 @@ void SwitchOnLightState::StartSwitchOn(idAI* owner, idLight* light)
 	}
 
 	owner->SetAnimState(ANIMCHANNEL_TORSO, torsoAnimation.c_str(), 4); // this plays the legs anim also
+	owner->SetWaitState("relight"); // grayman #3510
 }
 
 void SwitchOnLightState::Save(idSaveGame* savefile) const
