@@ -85,8 +85,6 @@ void IdleState::Init(idAI* owner)
 		return;
 	}
 
-	owner->SheathWeapon();
-
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
@@ -171,6 +169,9 @@ void IdleState::Init(idAI* owner)
 			CommunicationTaskPtr(new RepeatedBarkTask("snd_relaxed", idleBarkIntervalMin, idleBarkIntervalMax))
 		);
 	}
+
+	// grayman #3505 - can't sheathe weapon until after the Idle anims were requested
+	owner->SheathWeapon();
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
