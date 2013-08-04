@@ -591,6 +591,12 @@ int main(int argc, const char **argv) {
 	Sys_Printf( "memory consistency checking enabled\n" );
 #endif
 	
+    // do not allow TDM to be run as root
+    if ( getuid() == 0 ) {
+        Sys_Printf( "The Dark Mod should not be run as root.\n" );
+        Posix_Exit( EXIT_FAILURE );
+    }
+
 	Posix_EarlyInit( );
 
 	if ( argc > 1 ) {
