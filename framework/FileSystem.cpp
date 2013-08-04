@@ -710,7 +710,7 @@ search paths.
 
 ================
 */
-#define GPATH_COUNT 3
+#define GPATH_COUNT 4
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
 	char *s, *base = NULL;
@@ -735,9 +735,10 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
     static const char * gamePath = NULL;
     for ( int gpath = 0; gpath < GPATH_COUNT; gpath++) {
         switch (gpath) {
-            case 0: gamePath = BASE_TDM; break;
-            case 1: gamePath = fs_mod.GetString(); break;
-            case 2: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
+            case 0: gamePath = BASE_GAMEDIR; break; // taaaki - seems to be some issues with removing this - need to look into it further
+            case 1: gamePath = BASE_TDM; break;
+            case 2: gamePath = fs_mod.GetString(); break;
+            case 3: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
             default: gamePath = NULL; break;
         }
 
