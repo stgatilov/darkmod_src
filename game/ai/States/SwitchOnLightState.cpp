@@ -519,6 +519,8 @@ void SwitchOnLightState::Init(idAI* owner)
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
+
+			owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 		}
 
 		light->IgnoreResponse(ST_VISUAL, owner);
@@ -566,6 +568,8 @@ void SwitchOnLightState::Init(idAI* owner)
 		}
 		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
+
+		owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 	}
 	
 	Wrapup(owner,light,false);		// don't ignoreLight
@@ -696,6 +700,8 @@ void SwitchOnLightState::Think(idAI* owner)
 							memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
 							CommMessagePtr message; // no message, but the argument is needed so the 'false' flag can be included
 							owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch",message,0,false))); // grayman #3182
+
+							owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 						}
 
 						// TODO: Try moving closer?

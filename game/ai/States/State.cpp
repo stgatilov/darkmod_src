@@ -3553,6 +3553,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
+
+			owner->Event_LookAtEntity(stimSource,2.0f); // grayman #3506 - look at the light
 		}
 		return;
 	}
@@ -3696,6 +3698,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
+
+			owner->Event_LookAtEntity(stimSource,2.0f); // grayman #3506 - look at the light
 		}
 	}
 }
