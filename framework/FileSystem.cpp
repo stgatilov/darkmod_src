@@ -710,7 +710,7 @@ search paths.
 
 ================
 */
-#define GPATH_COUNT 4
+#define GPATH_COUNT 3
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
 	char *s, *base = NULL;
@@ -723,21 +723,29 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	// which won't match any of our drive letter based search paths
 	bool ignoreWarning = false;
 
+    // taaaki: on the fence about doing this - it goes against the the fact that the
+    //         filesystem was designed for case sensitive directory names.
+    //         see comments regarding fs_caseSensitiveOS at beginning of this file
+    // if the OS is case insensitive, convert the OSPath to lowercase
+    idStr lowerPath = OSPath;
+    if ( cvarSystem->GetCVarBool( "fs_caseSensitiveOS" ) == false ) {
+        lowerPath.ToLower();
+    }
+
     static const char * gamePath = NULL;
     for ( int gpath = 0; gpath < GPATH_COUNT; gpath++) {
         switch (gpath) {
-            case 0: gamePath = BASE_GAMEDIR; break;
-            case 1: gamePath = BASE_TDM; break;
-            case 2: gamePath = fs_mod.GetString(); break;
-            case 3: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
+            case 0: gamePath = BASE_TDM; break;
+            case 1: gamePath = fs_mod.GetString(); break;
+            case 2: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
             default: gamePath = NULL; break;
         }
 
         if ( base == NULL && gamePath && strlen( gamePath ) ) {
-            base = (char *)strstr( OSPath, gamePath );
+            base = (char *)strstr( lowerPath.c_str(), gamePath );
             while ( base ) {
 				char c1 = '\0', c2;
-				if ( base > OSPath ) {
+				if ( base > lowerPath.c_str() ) {
 					c1 = *(base - 1);
 				}
 				c2 = *( base + strlen( gamePath ) );
@@ -757,14 +765,14 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 		if ( s ) {
 			strcpy( relativePath, s + 1 );
 			if ( fs_debug.GetInteger() > 1 ) {
-				common->Printf( "idFileSystem::OSPathToRelativePath: %s becomes %s\n", OSPath, relativePath );
+				common->Printf( "idFileSystem::OSPathToRelativePath: %s becomes %s\n", lowerPath.c_str(), relativePath );
 			}
 			return relativePath;
 		}
 	}
 
 	if ( !ignoreWarning ) {
-		common->Warning( "idFileSystem::OSPathToRelativePath failed on %s", OSPath );
+		common->Warning( "idFileSystem::OSPathToRelativePath failed on %s", lowerPath.c_str() );
 	}
 
 	strcpy( relativePath, "" );
