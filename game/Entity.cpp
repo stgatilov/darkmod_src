@@ -481,7 +481,8 @@ const idEventDef EV_SetEntityRelation( "setEntityRelation", EventArgs('E', "ent"
 const idEventDef EV_ChangeEntityRelation( "changeEntityRelation", EventArgs('E', "ent", "", 'd', "relationChange", ""), EV_RETURNS_VOID, 
 	"This changes the current relation to an entity by adding the new amount.");
 
-const idEventDef EV_PropagateSound( "<propagateSound>", EventArgs('s', "soundName", "", 'f', "propVolMod", "", 'd', "msgTag", ""), EV_RETURNS_VOID, "Generates a propagated sound" ); // grayman #3355
+const idEventDef EV_PropagateSound( "propagateSound", EventArgs('s', "soundName", "", 'f', "propVolMod", "", 'd', "msgTag", ""), EV_RETURNS_VOID, "Generates a propagated sound" ); // grayman #3355
+//const idEventDef EV_PropagateSound( "<propagateSound>", EventArgs('s', "soundName", "", 'f', "propVolMod", "", 'd', "msgTag", ""), EV_RETURNS_VOID, "Generates a propagated sound" ); // grayman #3355
 
 
 ABSTRACT_DECLARATION( idClass, idEntity )

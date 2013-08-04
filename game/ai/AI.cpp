@@ -942,10 +942,12 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_gracefrac_2);
 	savefile->WriteFloat(m_gracefrac_3);
 	savefile->WriteFloat(m_gracefrac_4);
-	savefile->WriteFloat(m_gracecount_1);
-	savefile->WriteFloat(m_gracecount_2);
-	savefile->WriteFloat(m_gracecount_3);
-	savefile->WriteFloat(m_gracecount_4);
+
+	// grayman #3492 - these ints were being saved as floats and read back as ints
+	savefile->WriteInt(m_gracecount_1);
+	savefile->WriteInt(m_gracecount_2);
+	savefile->WriteInt(m_gracecount_3);
+	savefile->WriteInt(m_gracecount_4);
 
 	savefile->WriteFloat(atime1);
 	savefile->WriteFloat(atime2);
@@ -1620,28 +1622,28 @@ void idAI::Spawn( void )
 	// Grace period info for each alert level
 	spawnArgs.GetFloat( "alert_gracetime1",		"2",		m_gracetime_1 );
 	spawnArgs.GetFloat( "alert_gracetime2",		"2",		m_gracetime_2 );
-	spawnArgs.GetFloat( "alert_gracetime3",		"3.5",		m_gracetime_3 );
+	spawnArgs.GetFloat( "alert_gracetime3",		"3",		m_gracetime_3 );
 	spawnArgs.GetFloat( "alert_gracetime4",		"2",		m_gracetime_4 );
 	spawnArgs.GetFloat( "alert_gracefrac1",		"1.2",		m_gracefrac_1 );
 	spawnArgs.GetFloat( "alert_gracefrac2",		"1.2",		m_gracefrac_2 );
-	spawnArgs.GetFloat( "alert_gracefrac3",		"1.2",		m_gracefrac_3 );
+	spawnArgs.GetFloat( "alert_gracefrac3",		"1",		m_gracefrac_3 );
 	spawnArgs.GetFloat( "alert_gracefrac4",		"1.0",		m_gracefrac_4 );
 	spawnArgs.GetInt  ( "alert_gracecount1",	"5",		m_gracecount_1 );
 	spawnArgs.GetInt  ( "alert_gracecount2",	"5",		m_gracecount_2 );
-	spawnArgs.GetInt  ( "alert_gracecount3",	"5",		m_gracecount_3 );
+	spawnArgs.GetInt  ( "alert_gracecount3",	"4",		m_gracecount_3 );
 	spawnArgs.GetInt  ( "alert_gracecount4",	"4",		m_gracecount_4 );
 	// De-alert times for each alert level
-	spawnArgs.GetFloat( "alert_time1",			"4",		atime1 );
-	spawnArgs.GetFloat( "alert_time2",			"6",		atime2 );
+	spawnArgs.GetFloat( "alert_time1",			"5",		atime1 );
+	spawnArgs.GetFloat( "alert_time2",			"8",		atime2 );
 	spawnArgs.GetFloat( "alert_time3",			"30",		atime3 );
-	spawnArgs.GetFloat( "alert_time4",			"120",		atime4 );
-	spawnArgs.GetFloat( "alert_time1_fuzzyness",			"4",		atime1_fuzzyness );
-	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"6",		atime2_fuzzyness );
-	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"30",		atime3_fuzzyness );
-	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"120",		atime4_fuzzyness );
+	spawnArgs.GetFloat( "alert_time4",			"65",		atime4 );
+	spawnArgs.GetFloat( "alert_time1_fuzzyness",			"1.5",		atime1_fuzzyness );
+	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"2",		atime2_fuzzyness );
+	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"10",		atime3_fuzzyness );
+	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"20",		atime4_fuzzyness );
 
-	spawnArgs.GetFloat( "alert_time_fleedone",				"60",		atime_fleedone );
-	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"10",		atime_fleedone_fuzzyness );
+	spawnArgs.GetFloat( "alert_time_fleedone",				"80",		atime_fleedone );
+	spawnArgs.GetFloat( "alert_time_fleedone_fuzzyness",	"40",		atime_fleedone_fuzzyness );
 	spawnArgs.GetBool( "canSearch",							"1",		m_canSearch); // grayman #3069
 
 	// State setup
@@ -9224,10 +9226,10 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	m_AlertedByActor = actor; // grayman #3258
 
-	float acuity = GetAcuity(type);
 	// Calculate the amount the current AI_AlertLevel is about to be increased
-	// float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
 	// angua: alert amount already includes acuity
+	// float acuity = GetAcuity(type);
+	// float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
 
 	float alertInc = amount;
 
@@ -9247,12 +9249,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 		return;
 	}
 
-	if (m_AlertGraceTime)
+	if ( m_AlertGraceTime && !AI_VISALERT ) // grayman #3492 - ignore grace periods for player spotting
 	{
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period (%d) active, testing... \r",m_AlertGraceTime);
 		if (gameLocal.time > m_AlertGraceStart + m_AlertGraceTime)
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Grace period has expired. Resetting. \r");
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: %s Grace period has expired. Resetting.\r",name.c_str());
 			m_AlertGraceTime = 0;
 			m_AlertGraceActor = NULL;
 			m_AlertGraceStart = 0;
@@ -9260,12 +9261,12 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 			m_AlertGraceCount = 0;
 			m_AlertGraceCountLimit = 0;
 		}
-		else if (alertInc < m_AlertGraceThresh && 
+		else if (alertInc < m_AlertGraceThresh &&
 				  actor != NULL &&
 				  actor == m_AlertGraceActor.GetEntity() && 
 				  m_AlertGraceCount < m_AlertGraceCountLimit)
 		{
-			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Waiting for grace period to expire, ignoring alert.\r");
+			DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: %s Waiting for grace period to expire, ignoring alert.\r",name.c_str());
 			m_AlertGraceCount++;
 
 			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
@@ -9281,7 +9282,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 			}
 			return;
 		}
-		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Alert %f above threshold %f, or actor doesn't use a grace period\r", alertInc, m_AlertGraceThresh);
+		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: Alert %f above threshold %f, grace count has reached its limit, grace period has expired\r", alertInc, m_AlertGraceThresh);
 	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value
@@ -9291,11 +9292,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: %s alerted by alert type \"%s\", amount %f (modified by acuity %f). Total alert level now: %f\r", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: %s alerted by alert type \"%s\", amount %f. Total alert level now: %f\r", name.c_str(), type, amount, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
 	{
-		gameLocal.Printf("[TDM AI] ALERT: %s alerted by alert type \"%s\", base amount %f, modified by acuity %f percent. Total alert level now: %f\n", name.c_str(), type, amount, acuity, (float) AI_AlertLevel );
+		gameLocal.Printf("[TDM AI] ALERT: %s alerted by alert type \"%s\", base amount %f. Total alert level now: %f\n", name.c_str(), type, amount, (float) AI_AlertLevel );
 	}
 
 	if (gameLocal.isNewFrame)
@@ -9543,6 +9544,143 @@ idEntity *idAI::GetTactEnt( void )
 	return m_TactAlertEnt.GetEntity();
 }
 
+// grayman #3492 - refactored PerformVisualScan() to provide a uniform increase in alert level
+
+void idAI::PerformVisualScan(float timecheck)
+{
+	// Only perform enemy checks if we are in the player's PVS
+	if ( (GetAcuity("vis") <= 0 ) || !gameLocal.InPlayerPVS(this) )
+	{
+		return;
+	}
+
+	idActor* player = gameLocal.GetLocalPlayer();
+	if (m_bIgnoreAlerts || player->fl.notarget)
+	{
+		// notarget
+		return;
+	}
+
+	// Ignore dead actors
+	if ( player->health <= 0 )
+	{
+		return;
+	}
+
+	if (!CheckFOV(player->GetEyePosition()))
+	{
+		// if we can't see the player's eyes, maybe we can see his feet
+		if (!CheckFOV(player->GetPhysics()->GetOrigin()))
+		{
+			return;
+		}
+	}
+
+	// angua: does not take lighting and FOV into account
+	if (!CanSeeExt(player, false, false))
+	{
+		return;
+	}
+
+	// grayman #3338 - if the player is not an enemy, process him like
+	// a visual stim to the AI. this allows AI->player warnings and greetings
+	if ( !IsEnemy(player) )
+	{
+		// Recheck visibility, taking light and FOV into account
+		if (!CanSee(player, true))
+		{
+			return;
+		}
+
+		// grayman #3424 - immediate time checks to avoid a lot of processing in OnActorEncounter()
+		ai::Memory::GreetingInfo& info = GetMemory().GetGreetingInfo(player);
+		if ( ( gameLocal.time >= info.nextGreetingTime ) || ( gameLocal.time >= info.nextWarningTime ) )
+		{
+			mind->GetState()->OnActorEncounter(player,this);
+		}
+		return;
+	}
+
+	// greebo: At this point, the actor is identified as enemy and is visible
+	// set AI_VISALERT and the vector for last sighted position
+	// Store the position the enemy was visible
+	m_LastSight = player->GetPhysics()->GetOrigin();
+	AI_VISALERT = true;
+	
+	// Check the candidate's visibility.
+	float vis = GetVisibility(player);
+
+	if ( vis == 0.0f )
+	{
+		return; // AI can't see player
+	}
+
+	// Use the 'AI Vision' choice on the gameplay menu
+	// 0 = nearly blind
+	// 1 = forgiving
+	// 2 = challenging
+	// 3 = hardcore
+
+	int visionLevel = cv_ai_vision.GetInteger(); // returns one a number from 0 -> 3
+	float visionFactor;
+
+	switch (visionLevel)
+	{
+	case 0:
+		visionFactor = cv_ai_vision_nearly_blind.GetFloat();
+		break;
+	default:
+	case 1:
+		visionFactor = cv_ai_vision_forgiving.GetFloat();
+		break;
+	case 2:
+		visionFactor = cv_ai_vision_challenging.GetFloat();
+		break;
+	case 3:
+		visionFactor = cv_ai_vision_hardcore.GetFloat();
+		break;
+	}
+
+	float alertInc = visionFactor*vis;
+	float newAlertLevel = AI_AlertLevel + alertInc;
+
+	if (newAlertLevel >= thresh_5)
+	{
+		// grayman #3063
+		// Allow ramp up to Combat mode if the distance to the player is less than a cutoff distance.
+
+		if ( ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
+		{
+			SetEnemy(player);
+			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
+
+			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
+			// visibility in the mission data
+		}
+		else
+		{
+			newAlertLevel = thresh_5 - 0.1;
+			alertInc = newAlertLevel - AI_AlertLevel;
+		}
+	}
+
+	// If the alert amount is larger than everything else encountered this frame
+	// ignore the previous alerts and remember this actor as enemy.
+	if ( alertInc > m_AlertLevelThisFrame )
+	{
+		// Remember this actor
+		m_AlertedByActor = player;
+
+		Event_AlertAI("vis", alertInc, player);
+
+		// Call the visual alert handler on the current state
+		mind->GetState()->OnVisualAlert(player);
+	}
+
+	return;
+}
+
+/* grayman #3492 - original
 void idAI::PerformVisualScan(float timecheck)
 {
 	// Only perform enemy checks if we are in the player's PVS
@@ -9653,7 +9791,7 @@ void idAI::PerformVisualScan(float timecheck)
 		// Remember this actor
 		m_AlertedByActor = player;
 
-		PreAlertAI("vis", incAlert, idVec3(0,0,0)); // grayman #3356
+		PreAlertAI("vis", incAlert, player->GetEyePosition()); // grayman #3356
 
 		// Call the visual alert handler on the current state
 		mind->GetState()->OnVisualAlert(player);
@@ -9662,8 +9800,64 @@ void idAI::PerformVisualScan(float timecheck)
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), player->name.c_str() );
 
 	return;
+} end of original */
+
+// grayman #3492 - refactored GetVisibility to provide a uniform increase in alert level
+
+float idAI::GetVisibility( idEntity *ent ) const
+{
+	// Returns a visibility factor per frame
+	
+	// for now, only players may have their visibility checked
+	if (!ent->IsType( idPlayer::Type ))
+	{
+		return 0.0f;
+	}
+
+	idPlayer* player = static_cast<idPlayer*>(ent);
+
+	// this depends only on the brightness of the light gem and the AI's visual acuity
+	float clampVal = GetCalibratedLightgemValue();
+	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
+	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
+
+	idVec3 delta = GetEyePosition() - player->GetEyePosition();
+	float dist = delta.LengthFast()*s_DOOM_TO_METERS;
+
+	if (dist > clampdist) 
+	{
+		if (dist >= safedist)
+		{
+			clampVal = 0.0f;
+		}
+		else
+		{
+			clampVal *= ( 1.0f - (dist - clampdist)/(safedist - clampdist) );
+		}
+	}
+
+	if (cv_ai_visdist_show.GetFloat() > 0) 
+	{
+		idStr alertText(clampVal);
+		alertText = "clampVal: "+ alertText;
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		idStr alertText2(clampdist);
+		alertText2 = "clampdist: "+ alertText2;
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		idStr alertText3(safedist);
+		alertText3 = "safedist: "+ alertText3;
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		idStr alertText4(dist);
+		alertText4 = "distance: "+ alertText4;
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+	}
+
+	return clampVal;
 }
 
+/* grayman #3492 - original
 
 float idAI::GetVisibility( idEntity *ent ) const
 {
@@ -9683,24 +9877,23 @@ float idAI::GetVisibility( idEntity *ent ) const
 	// this depends only on the brightness of the light gem and the AI's visual acuity
 	float clampVal = GetCalibratedLightgemValue();
 
-	/**
-	 * angua: within the clampDist, the probability stays constant
-	 * the probability decreases linearly towards 0 between clampdist and savedist
-	 * both distances are scaled with clampVal
-	 */ 
+	// angua: within the clampDist, the probability stays constant
+	// the probability decreases linearly towards 0 between clampdist and savedist
+	// both distances are scaled with clampVal
+
 	float clampdist = cv_ai_sightmindist.GetFloat() * clampVal;
 	float safedist = clampdist + (cv_ai_sightmaxdist.GetFloat() - cv_ai_sightmindist.GetFloat()) * clampVal;
 
 	idVec3 delta = GetEyePosition() - player->GetEyePosition();
 	float dist = delta.Length()*s_DOOM_TO_METERS;
 
-	if (dist < clampdist) 
+	if (dist <= clampdist) 
 	{
 		returnval = clampVal;
 	}
 	else 
 	{
-		if (dist > safedist) 
+		if (dist >= safedist) 
 		{
 			returnval = 0;
 		}
@@ -9732,7 +9925,7 @@ float idAI::GetVisibility( idEntity *ent ) const
 	}
 	
 	return returnval;
-}
+} end of original */
 
 float idAI::GetCalibratedLightgemValue() const
 {
@@ -9756,10 +9949,11 @@ float idAI::GetCalibratedLightgemValue() const
 
 	clampVal *= GetAcuity("vis");
 
+	/* grayman #3492 - allow values > 1
 	if (clampVal > 1)
 	{
 		clampVal = 1;
-	}	
+	} */
 
 	// Debug output
 	if (cv_ai_visdist_show.GetFloat() > 0) 
@@ -11315,6 +11509,13 @@ void idAI::DrawWeapon(ECombatType type)
 		return; // nothing to do
 	}
 
+	// grayman #3492 - don't draw a weapon if you're already in the act of drawing one
+
+	if ( idStr(WaitState()) == "draw" )
+	{
+		return;
+	}
+
 	// grayman #3331 - draw the requested weapon
 
 	if ( ( type == COMBAT_MELEE ) && ( numMeleeWeapons > 0 ) )
@@ -11616,6 +11817,7 @@ void idAI::AdjustSearchLimits(idBounds& bounds)
 
 	bounds = newBounds.ExpandSelf(2.0); // grayman #3424 - expand a bit to catch floors
 }
+
 
 int idAI::StartSearchForHidingSpotsWithExclusionArea
 (

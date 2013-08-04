@@ -287,6 +287,13 @@ idCVar cv_melee_forbid_auto_parry(		"tdm_melee_forbid_auto_parry", "0", CVAR_GAM
 idCVar cv_melee_max_particles(			"tdm_melee_max_particles", "10", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Max number of particles a single melee swing can generate (eye candy setting)." );
 idCVar cv_melee_difficulty(				"tdm_melee_difficulty", "normal", CVAR_GAME | CVAR_ARCHIVE, "Melee difficulty as set by the menu (Do not adjust ingame, cheater!!)" );
 
+// grayman #3492 - AI Vision
+idCVar cv_ai_vision(					"tdm_ai_vision", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "AI Vision as set by the menu");
+idCVar cv_ai_vision_nearly_blind(		"tdm_ai_vision_nearly_blind", "0.1", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Nearly Blind', set by the menu");
+idCVar cv_ai_vision_forgiving(			"tdm_ai_vision_forgiving", "0.7", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
+idCVar cv_ai_vision_challenging(		"tdm_ai_vision_challenging", "1.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Challenging', set by the menu");
+idCVar cv_ai_vision_hardcore(			"tdm_ai_vision_hardcore", "1.5", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Hardcore', set by the menu");
+
 idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) to draw the linear impulse of (some) entities." );
 
 /**
@@ -321,7 +328,6 @@ idCVar cv_tdm_inv_use_on_frob("tdm_inv_use_on_frob", "1",	CVAR_GAME | CVAR_ARCHI
 idCVar cv_tdm_door_control("tdm_door_control", "0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Acivates experimental door control.  When active, hold down frob and move mouse to fine-control a door.");
 idCVar cv_tdm_door_control_sensitivity( "tdm_door_control_sensitivity", "0.01", CVAR_GAME | CVAR_FLOAT, "Sets fine door control mouse sensitivity." );
 idCVar cv_tdm_inv_use_visual_feedback("tdm_inv_use_visual_feedback", "1",	CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "When set to '1' the HUD is giving visual feedback when the currently selected item is used on the highlighted one.");
-
 
 idCVar cv_tdm_rope_pull_force_factor("tdm_rope_pull_force_factor", "140", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The factor by which the pulling force when jumping on a rope gets multiplied.");
 

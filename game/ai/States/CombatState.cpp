@@ -37,8 +37,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Library.h"
 
 #define REACTION_TIME_MIN      100	// grayman #3063
-#define REACTION_TIME_MAX     2000	// grayman #3063
-#define ENEMY_DEAD_BARK_DELAY 1500	// grayman #2816
+#define REACTION_TIME_MAX     1000	// grayman #3063 // grayman #3492
 
 namespace ai
 {
@@ -264,6 +263,8 @@ void CombatState::Init(idAI* owner)
 	_meleePossible  = ( owner->GetNumMeleeWeapons()  > 0 );
 	_rangedPossible = ( owner->GetNumRangedWeapons() > 0 );
 
+	/* grayman #3492 - should wait until after the reaction time before fleeing
+
 	// grayman #3355 - flee if you have no weapons
 
 	if (!_meleePossible && !_rangedPossible)
@@ -272,7 +273,7 @@ void CombatState::Init(idAI* owner)
 		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
-	}
+	} */
 
 	// grayman #3331 - save combat possibilities
 	_unarmedMelee = owner->spawnArgs.GetBool("unarmed_melee","0");
@@ -284,7 +285,7 @@ void CombatState::Init(idAI* owner)
 	_needInitialDrawDelay = !( owner->GetAttackFlag(COMBAT_MELEE) || owner->GetAttackFlag(COMBAT_RANGED) ); // not if we have a weapon raised
 
 	idVec3 vec2Enemy = enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
-	vec2Enemy.z = 0; // ignore vertical component
+	//vec2Enemy.z = 0; // ignore vertical component
 	float dist2Enemy = vec2Enemy.LengthFast();
 	int reactionTime =  REACTION_TIME_MIN + (dist2Enemy*(REACTION_TIME_MAX - REACTION_TIME_MIN))/(cv_ai_sight_combat_cutoff.GetFloat()/s_DOOM_TO_METERS);
 	if ( reactionTime > REACTION_TIME_MAX )
@@ -675,7 +676,7 @@ void CombatState::Think(idAI* owner)
 		}
 		else // in melee range
 		{
-			if ( !owner->GetAttackFlag(COMBAT_MELEE) && _meleePossible )
+			if ( _meleePossible && !owner->GetAttackFlag(COMBAT_MELEE) )
 			{
 				owner->DrawWeapon(COMBAT_MELEE);
 				drawingWeapon = true;
@@ -872,6 +873,9 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 
 		// TODO: Check if more enemies are in range
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+
+		// grayman #3473 - stop looking at the spot you were looking at when you killed the enemy
+		owner->SetFocusTime(gameLocal.time);
 
 		// grayman #2816 - need to delay the victory bark, because it's
 		// being emitted too soon. Can't simply put a delay on SingleBarkTask()

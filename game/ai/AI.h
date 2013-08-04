@@ -1580,6 +1580,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 		return focusTime;
 	}
 
+	// grayman #3473
+	ID_INLINE void			SetFocusTime(int t)
+	{
+		focusTime = t;
+	}
+
 	void					BlockedFailSafe( void );
 	/**
 	* Overloaded idActor::CheckFOV with FOV check that depends on head joint orientation

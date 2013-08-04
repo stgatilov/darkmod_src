@@ -185,12 +185,33 @@ void UnreachableTargetState::Think(idAI* owner)
 		return;
 	}
 
+	// grayman #3492 - if you kill the enemy with a rock, behave the same
+	// way you would had you killed him with a weapon
+
 	if (enemy->AI_DEAD)
 	{
+		owner->SetLastKilled(enemy);
 		owner->ClearEnemy();
-
 		owner->StopMove(MOVE_STATUS_DONE);
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.5);
+		
+		// grayman #3473 - stop looking at the spot you were looking at when you killed the enemy
+		owner->SetFocusTime(gameLocal.time);
+
+		// bark about death
+
+		idStr bark = "";
+		idStr enemyAiUse = enemy->spawnArgs.GetString("AIUse");
+		if ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) )
+		{
+			bark = "snd_killed_monster";
+		}
+		else
+		{
+			bark = "snd_killed_enemy";
+		}
+		owner->PostEventMS(&AI_Bark,ENEMY_DEAD_BARK_DELAY,bark);
+
 		owner->GetMind()->EndState();
 		return;
 	}

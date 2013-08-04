@@ -4266,6 +4266,23 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("melee_difficulty", setting);
 
 		gui->HandleNamedEvent("UpdateAutoParryOption");
+
+		// grayman #3492 - AI Vision
+		setting = cv_ai_vision.GetInteger(); // returns one a number from 0 -> 3
+		gui->SetStateInt("ai_vision",setting);
+	}
+	else if (cmd == "updateaivision") // grayman #3492 - AI vision
+	{
+		// AI Vision setting changed, update CVARs
+		int setting = gui->GetStateInt("ai_vision", "-1");
+		if ( ( setting >= 0 ) && ( setting <= 3 ) )
+		{
+			cv_ai_vision.SetInteger(setting);
+		}
+		else
+		{
+			gameLocal.Warning("Unknown value for AI Vision encountered!");
+		}
 	}
 	else if (cmd == "updatemeleedifficulty")
 	{

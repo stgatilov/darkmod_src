@@ -99,6 +99,8 @@ namespace ai
 #define AUDIO_ALERT_FUZZINESS 100.0f
 #define AUDIO_SEARCH_VOLUME idVec3(300,300,200)
 
+#define ENEMY_DEAD_BARK_DELAY 1500	// grayman #2816
+
 // Area searched around last sighting after losing an enemy
 #define LOST_ENEMY_ALERT_RADIUS 200.0
 #define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)

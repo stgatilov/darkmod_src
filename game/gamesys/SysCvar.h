@@ -333,6 +333,13 @@ extern idCVar cv_bow_aimer;
 // melee difficulty
 extern idCVar cv_melee_difficulty;
 
+// grayman #3492 - AI Vision
+extern idCVar cv_ai_vision;
+extern idCVar cv_ai_vision_nearly_blind;
+extern idCVar cv_ai_vision_forgiving;
+extern idCVar cv_ai_vision_challenging;
+extern idCVar cv_ai_vision_hardcore;
+
 extern idCVar cv_door_auto_open_on_unlock;
 
 extern idCVar cv_dm_distance;

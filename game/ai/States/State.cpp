@@ -192,14 +192,7 @@ void State::OnVisualAlert(idActor* enemy)
 	}
 
 	Memory& memory = owner->GetMemory();
-
 	memory.alertClass = EAlertVisual_1;
-
-	if (cv_ai_debug_transition_barks.GetBool())
-	{
-		gameLocal.Printf("%d: %s spots the player and sets EAlertVisual_1\n",gameLocal.time,owner->GetName());
-	}
-
 	memory.alertType = EAlertTypeSuspicious;
 	//idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075, grayman #3492
 	memory.alertPos = owner->GetVisDir();

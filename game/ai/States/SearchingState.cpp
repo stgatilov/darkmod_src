@@ -321,6 +321,8 @@ void SearchingState::Think(idAI* owner)
 		{
 			if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
 			{
+				memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3);
+
 				// grayman #2422
 				// Generate a random search point, but make sure it's inside an AAS area
 				// and that it's also inside the search volume.
@@ -329,25 +331,31 @@ void SearchingState::Think(idAI* owner)
 				int areaNum;	// p's area number
 				idVec3 searchSize = owner->m_searchLimits.GetSize();
 				idVec3 searchCenter = owner->m_searchLimits.GetCenter();
+				
+				//gameRenderWorld->DebugBox(colorWhite, idBox(owner->m_searchLimits), MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+
 				bool validPoint = false;
 				for ( int i = 0 ; i < 6 ; i++ )
 				{
 					p = searchCenter;
 					p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x/2;
 					p.y += gameLocal.random.RandomFloat()*(searchSize.y) - searchSize.y/2;
-					p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
+					p.z += gameLocal.random.RandomFloat()*(searchSize.z) - searchSize.z/2;
+					//p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
 					areaNum = owner->PointReachableAreaNum( p );
 					if ( areaNum == 0 )
 					{
-						//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, 500);
+						//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 						continue;
 					}
 					owner->GetAAS()->PushPointIntoAreaNum( areaNum, p ); // if this point is outside this area, it will be moved to one of the area's edges
 					if ( !owner->m_searchLimits.ContainsPoint(p) )
 					{
-						//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, 500);
+						//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 						continue;
 					}
+
+					//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 					validPoint = true;
 					break;
 				}
@@ -368,7 +376,8 @@ void SearchingState::Think(idAI* owner)
 					// Set the flag to TRUE, so that the sensory scan can be performed
 					memory.hidingSpotInvestigationInProgress = true;
 				}
-				else // no valid random point found
+
+				if ( !validPoint ) // no valid random point found
 				{
 					// Stop moving, the algorithm will choose another spot the next round
 					owner->StopMove(MOVE_STATUS_DONE);
@@ -377,13 +386,18 @@ void SearchingState::Think(idAI* owner)
 					memory.stopReactingToHit = true; // grayman #2816
 
 					// grayman #2422 - at least turn toward and look at the last invalid point some of the time
-					if ( gameLocal.random.RandomFloat() < 0.5 )
+					// grayman #3492 - do it every time
+					//if ( gameLocal.random.RandomFloat() < 0.5 )
+					//{
+					p.z += 60; // look up a bit, to simulate searching for the player's head
+					if (!owner->CheckFOV(p))
 					{
 						owner->TurnToward(p);
-						owner->Event_LookAtPosition(p,MS2SEC(DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3)));
 					}
+					owner->Event_LookAtPosition(p,MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
+					//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
+					//}
 				}
-				memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3);
 			}
 		}
 		// We should have more hiding spots, try to get the next one

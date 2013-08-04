@@ -122,13 +122,22 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		return false;
 	}
 
+	// grayman #3510
+	if (owner->m_RelightingLight)
+	{
+		// Wait, we're busy relighting a light so we have more light to search by
+		return false;
+	}
+	
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin(); // grayman #3492
+
 	if (!_moveInitiated)
 	{
 		idVec3 destPos = _searchSpot;
 
 		// greebo: For close investigation, don't step up to the very spot, to prevent the AI
 		// from kneeling into bloodspots or corpses
-		idVec3 direction = owner->GetPhysics()->GetOrigin() - _searchSpot;
+		idVec3 direction = ownerOrigin - _searchSpot;
 		if (_investigateClosely)
 		{
 			idVec3 dir = direction;
@@ -144,13 +153,13 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		if (!_investigateClosely && (direction.LengthFast() < INVESTIGATE_SPOT_STOP_DIST))
 		{
-			// Look at the point to investigate
-			owner->Event_LookAtPosition(_searchSpot, 2.0f);
-
 			// Wait a bit
 			_exitTime = static_cast<int>(
 				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 			);
+
+			// Look at the point to investigate
+			owner->Event_LookAtPosition(_searchSpot, MS2SEC(_exitTime - gameLocal.time + 100));
 
 			return false; // grayman #2422
 		}
@@ -195,13 +204,28 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		if ( pointValid )
 		{
 			pointValid = owner->MoveToPosition(goal);
-			_moveInitiated = true;
 		}
 
 		if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
 		{
 			// Hiding spot not reachable, terminate task in the next round
-			_exitTime = gameLocal.time;
+			//_exitTime = gameLocal.time;
+
+			// grayman #3492 - look at the spot
+
+			_exitTime = static_cast<int>(
+				gameLocal.time + ((float)(INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat())))/2.0f // grayman #2640
+			);
+
+			idVec3 p = _searchSpot;
+			p.z += 60; // look up a bit, to simulate searching for the player's head
+			if (!owner->CheckFOV(p))
+			{
+				owner->TurnToward(p);
+			}
+
+			owner->Event_LookAtPosition(p, MS2SEC(_exitTime - gameLocal.time + 100));
+			//gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), p, 1, MS2SEC(_exitTime - gameLocal.time + 100));
 		}
 		else
 		{
@@ -213,8 +237,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Also, travelDist is inaccurate when an AAS area is large, so compare
 			// it to the actual distance and use the larger of the two.
 
-			float travelDist = owner->TravelDistance(owner->GetPhysics()->GetOrigin(), _searchSpot);
-			float actualDist = (owner->GetPhysics()->GetOrigin() - _searchSpot).LengthFast();
+			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), _searchSpot, 1, MS2SEC(_exitTime - gameLocal.time + 100));
+			_moveInitiated = true;
+			float travelDist = owner->TravelDistance(ownerOrigin, _searchSpot);
+			float actualDist = (ownerOrigin - _searchSpot).LengthFast();
 			if ( actualDist > travelDist )
 			{
 				travelDist = actualDist;
@@ -224,10 +250,11 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			{
 				owner->AI_RUN = false;
 			}
-			else if ( owner->GetMemory().visualAlert ) // spotted the player by testing his visibility?
-			{
-				owner->AI_RUN = false; // when AI's alert index enters Combat mode, that code will get him running
-			}
+			// grayman #3492
+			//else if ( owner->GetMemory().visualAlert ) // spotted the player by testing his visibility?
+			//{
+			//	owner->AI_RUN = false; // when AI's alert index enters Combat mode, that code will get him running
+			//}
 			else // searching for some other reason, and we're far away, so run
 			{
 				owner->AI_RUN = true;
@@ -244,13 +271,14 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot unreachable.\r", _searchSpot);
 		return true;
 	}
-	else if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
+
+	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		// grayman #2928 - don't kneel down if you're too far from the original stim
 
-		float dist = ( owner->GetPhysics()->GetOrigin() - owner->GetMemory().alertSearchCenter).LengthFast();
+		float dist = ( ownerOrigin - owner->GetMemory().alertSearchCenter).LengthFast();
 
 		if ( _investigateClosely && ( dist < INVESTIGATE_SPOT_CLOSELY_MAX_DIST ) )
 		{
@@ -259,9 +287,9 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 			// Check the position of the stim, is it closer to the eyes than to the feet?
 			// If it's lower than the eye position, kneel down and investigate
-			const idVec3& origin = owner->GetPhysics()->GetOrigin();
+			//const idVec3& origin = owner->GetPhysics()->GetOrigin();
 			idVec3 eyePos = owner->GetEyePosition();
-			if ((_searchSpot - origin).LengthSqr() < (_searchSpot - eyePos).LengthSqr())
+			if ((_searchSpot - ownerOrigin).LengthSqr() < (_searchSpot - eyePos).LengthSqr())
 			{
 				// Close to the feet, kneel down and investigate closely
 				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
@@ -290,7 +318,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		bool stopping = false;
 		if (!_investigateClosely)
 		{
-			float distToSpot = (_searchSpot - owner->GetPhysics()->GetOrigin()).LengthFast();
+			float distToSpot = (_searchSpot - ownerOrigin).LengthFast();
 			if (owner->CanSeePositionExt(_searchSpot, true, true))
 			{
 				if (distToSpot < INVESTIGATE_SPOT_STOP_DIST) 
@@ -310,8 +338,21 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Stop moving, we can see the point
 			owner->StopMove(MOVE_STATUS_DONE);
 
-			//Look at the point to investigate
-			owner->Event_LookAtPosition(_searchSpot, 2.0f);
+			// grayman #3492 - Look at a random point that may be anywhere
+			// between the search point and a point 1/2 the AI's height
+			// above his eye level.
+
+			idVec3 p = _searchSpot;
+			float height = owner->GetPhysics()->GetBounds().GetSize().z;
+			float bottom = p.z;
+			float top = owner->GetEyePosition().z + height/2.0f;
+			float dist = top - bottom;
+			dist *= gameLocal.random.RandomFloat();
+			p.z += dist;
+
+			// Look at the point to investigate
+			owner->Event_LookAtPosition(p, 3.0f);
+			//owner->Event_LookAtPosition(_searchSpot, 2.0f);
 
 			// Wait a bit
 			_exitTime = static_cast<int>(
