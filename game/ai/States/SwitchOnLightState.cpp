@@ -697,7 +697,6 @@ void SwitchOnLightState::Think(idAI* owner)
 
 						if (light->NegativeBark(owner))
 						{
-							memory.nextTimeLightStimBark = gameLocal.time + REBARK_DELAY;
 							CommMessagePtr message; // no message, but the argument is needed so the 'false' flag can be included
 							owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask("snd_noRelightTorch",message,0,false))); // grayman #3182
 
