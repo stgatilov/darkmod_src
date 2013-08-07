@@ -903,6 +903,7 @@ fs::path Updater::GetTargetPath()
 
 	// If the current path is the actual engine path, switch folders to "darkmod"
 	// We don't want to download the PK4s into the Doom3.exe location
+	/* grayman - no longer necessary
 	if (Util::PathIsTDMEnginePath(targetPath))
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, "Doom3 found in current path, switching directories.");
@@ -918,6 +919,7 @@ fs::path Updater::GetTargetPath()
 
 		TraceLog::WriteLine(LOG_VERBOSE, " Changed working directory to darkmod/, continuing update process.");
 	}
+	*/
 
 	return targetPath;
 }
