@@ -69,7 +69,9 @@ public:
 	 * and the user downloaded the tdm_update.exe into the wrong folder.
 
 	 * grayman - check for The Dark Mod, not D3
+	 * grayman - no longer necessary for 2.00.
 	 */
+/*
 	static bool PathIsTDMEnginePath(const fs::path& path)
 	{
 
@@ -86,6 +88,7 @@ public:
 
 		return false;
 	}
+	*/
 
 	static void Wait(int millisecs)
 	{
