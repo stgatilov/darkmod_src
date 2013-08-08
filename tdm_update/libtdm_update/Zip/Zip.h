@@ -88,6 +88,11 @@ public:
 
 	~ZipFileRead();
 
+	/** 
+	 * Returns the number of files in this archive
+	 */
+	std::size_t GetNumFiles() const;
+
 	/**
 	 * Visit each archive member using the given visitor class.
 	 */

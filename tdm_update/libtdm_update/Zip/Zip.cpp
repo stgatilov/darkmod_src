@@ -51,6 +51,26 @@ ZipFileRead::~ZipFileRead()
 	unzClose(_handle);
 }
 
+std::size_t ZipFileRead::GetNumFiles() const
+{
+	std::size_t fileCount = 0;
+
+	int result = unzGoToFirstFile(_handle);
+
+	if (result != UNZ_OK)
+	{
+		throw std::runtime_error("[ForeachFile]: Cannot go to first file: " + intToStr(result));
+	}
+
+	while (result == UNZ_OK)
+	{
+		++fileCount;
+		result = unzGoToNextFile(_handle);
+	}
+
+	return fileCount;
+}
+
 void ZipFileRead::ForeachFile(Visitor& visitor)
 {
 	int result = unzGoToFirstFile(_handle);
@@ -639,6 +659,19 @@ ZipFileReadPtr Zip::OpenFileRead(const fs::path& fullPath)
 
 ZipFileWritePtr Zip::OpenFileWrite(const fs::path& fullPath, WriteMode mode)
 {
+	if (mode == APPEND)
+	{
+		// greebo: Check if the target file is existing but empty - in that case the APPEND flag will not work as the handle
+		// returned by zipOpen will be 0.
+		ZipFileReadPtr checkExisting = Zip::OpenFileRead(fullPath);
+
+		if (checkExisting == NULL || checkExisting->GetNumFiles() == 0)
+		{
+			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("The existing file appears to be empty, we're going to overwrite the file afresh: %s") % fullPath.string()).str());
+			mode = CREATE;
+		}
+	}
+
 	zipFile handle = zipOpen(fullPath.string().c_str(), mode == APPEND ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
 
 	return (handle != NULL) ? ZipFileWritePtr(new ZipFileWrite(handle)) : ZipFileWritePtr();
