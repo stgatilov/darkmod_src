@@ -661,7 +661,7 @@ ZipFileWritePtr Zip::OpenFileWrite(const fs::path& fullPath, WriteMode mode)
 {
 	if (mode == APPEND)
 	{
-		// greebo: Check if the target file is existing but empty - in that case the APPEND flag will not work as the handle
+		// greebo #3514: Check if the target file is existing but empty - in that case the APPEND flag will not work as the handle
 		// returned by zipOpen will be 0.
 		ZipFileReadPtr checkExisting = Zip::OpenFileRead(fullPath);
 
@@ -710,7 +710,8 @@ void Zip::RemoveFilesFromArchive(const fs::path& fullPath, const std::set<std::s
 	if (membersToRemove.empty()) return; // quick bail out on empty removal list
 
 	fs::path temporaryPath = fullPath;
-	temporaryPath.remove_leaf().remove_leaf();
+	//temporaryPath.remove_leaf().remove_leaf(); // grayman #3514 - don't go so far up
+	temporaryPath.remove_leaf();
 	temporaryPath /= TMP_FILE_PREFIX + fullPath.leaf().string();
 
 	TraceLog::WriteLine(LOG_VERBOSE, 
