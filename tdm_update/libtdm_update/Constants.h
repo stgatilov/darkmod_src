@@ -22,7 +22,7 @@
 namespace tdm
 {
 
-const char* const LIBTDM_UPDATE_VERSION = "0.60";
+const char* const LIBTDM_UPDATE_VERSION = "0.61";
 
 const char* const LIBTDM_UPDATE_PLATFORM = 
 #ifdef WIN32
