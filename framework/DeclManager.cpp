@@ -1496,16 +1496,6 @@ void idDeclManagerLocal::WritePrecacheCommands( idFile *f ) {
 /********************************************************************/
 
 const idMaterial *idDeclManagerLocal::FindMaterial( const char *name, bool makeDefault ) {
-	// grayman #3391 - call FindType(), but don't have it make a default
-	// material if it can't find what we're looking for.
-	const idMaterial *material = static_cast<const idMaterial *>(FindType( DECL_MATERIAL, name, false ));
-	if ( material == NULL )
-	{
-		common->Printf("STANDALONE - can't find material '%s'\n",name);
-	}
-
-	// Now call FindType() again, and let it create a default material if requested
-
 	return static_cast<const idMaterial *>( FindType( DECL_MATERIAL, name, makeDefault ) );
 }
 
@@ -1516,16 +1506,6 @@ const idMaterial *idDeclManagerLocal::MaterialByIndex( int index, bool forcePars
 /********************************************************************/
 
 const idDeclSkin *idDeclManagerLocal::FindSkin( const char *name, bool makeDefault ) {
-	// grayman #3391 - call FindType(), but don't have it make a default
-	// skin if it can't find what we're looking for.
-	const idDeclSkin *skin = static_cast<const idDeclSkin *>(FindType( DECL_SKIN, name, false ));
-	if ( skin == NULL )
-	{
-		common->Printf("STANDALONE - can't find skin '%s'\n",name);
-	}
-
-	// Now call FindType() again, and let it create a default skin if requested
-
 	return static_cast<const idDeclSkin *>( FindType( DECL_SKIN, name, makeDefault ) );
 }
 
@@ -1536,16 +1516,6 @@ const idDeclSkin *idDeclManagerLocal::SkinByIndex( int index, bool forceParse ) 
 /********************************************************************/
 
 const idSoundShader *idDeclManagerLocal::FindSound( const char *name, bool makeDefault ) {
-	// grayman #3391 - call FindType(), but don't have it make a default
-	// sound if it can't find what we're looking for.
-	const idSoundShader *sound = static_cast<const idSoundShader *>(FindType( DECL_SOUND, name, false ));
-	if ( sound == NULL )
-	{
-		common->Printf("STANDALONE - can't find sound '%s'\n",name);
-	}
-
-	// Now call FindType() again, and let it create a default sound if requested
-
 	return static_cast<const idSoundShader *>( FindType( DECL_SOUND, name, makeDefault ) );
 }
 

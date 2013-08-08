@@ -5100,18 +5100,7 @@ idGameLocal::FindEntityDefDict
 */
 const idDict *idGameLocal::FindEntityDefDict( const char *name, bool makeDefault ) const
 {
-	// grayman #3391 - call FindEntityDef(), but don't have it make a default
-	// entity definition if it can't find what we're looking for.
-
-	const idDeclEntityDef *decl = FindEntityDef( name, false );
-
-	if ( !decl )
-	{
-		gameLocal.Printf("STANDALONE - can't find entity definition '%s'\n",name);
-	}
-
-	// Now call FindEntityDef() again, and let it create a default entity definition if requested
-	decl = FindEntityDef( name, makeDefault );
+	const idDeclEntityDef *decl = FindEntityDef( name, makeDefault );
 	return decl ? &decl->dict : NULL;
 }
 
