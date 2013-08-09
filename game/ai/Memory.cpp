@@ -113,6 +113,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(lastTimeVisualStimBark);
 	savefile->WriteInt(lastTimeAlertBark); // grayman #3496
 	savefile->WriteBool(agitatedSearched); // grayman #3496
+	savefile->WriteBool(mightHaveSeenPlayer); // grayman #3515
 	savefile->WriteInt(countEvidenceOfIntruders);
 	savefile->WriteInt(nextHeadTurnCheckTime);
 	savefile->WriteBool(currentlyHeadTurning);
@@ -229,6 +230,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(lastTimeVisualStimBark);
 	savefile->ReadInt(lastTimeAlertBark); // grayman #3496
 	savefile->ReadBool(agitatedSearched); // grayman #3496
+	savefile->ReadBool(mightHaveSeenPlayer); // grayman #3515
 	savefile->ReadInt(countEvidenceOfIntruders);
 	savefile->ReadInt(nextHeadTurnCheckTime);
 	savefile->ReadBool(currentlyHeadTurning);

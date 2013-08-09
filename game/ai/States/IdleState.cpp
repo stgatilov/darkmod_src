@@ -154,6 +154,8 @@ void IdleState::Init(idAI* owner)
 
 	memory.agitatedSearched = false; // grayman #3496
 		
+	memory.mightHaveSeenPlayer = false; // grayman #3515
+
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
 	// Push the regular patrol barking to the list too

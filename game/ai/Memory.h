@@ -106,7 +106,7 @@ namespace ai
 #define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
 
 // grayman #3424 - increase in evidence count per event type
-#define EVIDENCE_COUNT_INCREASE_ENEMY        1
+#define EVIDENCE_COUNT_INCREASE_ENEMY        3 // grayman #3515 - was 1
 #define EVIDENCE_COUNT_INCREASE_CORPSE       3
 #define EVIDENCE_COUNT_INCREASE_MISSING_ITEM 1
 #define EVIDENCE_COUNT_INCREASE_FAILED_KO    1
@@ -254,6 +254,10 @@ public:
 	// Set to TRUE when in Agitated Search. Set to FALSE when dropping out of
 	// Searching State. Also set to FALSE when entering Idle or Alert Idle.
 	bool agitatedSearched;
+
+	// grayman #3515 - whether you might have seen the player, and registered
+	// a bump in your evidence count when you rose into Searching state
+	bool mightHaveSeenPlayer;
 		
 	// grayman #2603 - The next time a light stim can make the AI bark
 	int nextTimeLightStimBark;
