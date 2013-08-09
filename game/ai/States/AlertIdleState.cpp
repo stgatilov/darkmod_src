@@ -74,6 +74,8 @@ void AlertIdleState::Init(idAI* owner)
 	memory.alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3413
 
 	memory.agitatedSearched = false; // grayman #3496
+
+	memory.mightHaveSeenPlayer = false; // grayman #3515
 		
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));

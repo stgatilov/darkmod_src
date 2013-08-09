@@ -215,13 +215,15 @@ void State::OnVisualAlert(idActor* enemy)
 	
 	if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) || (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr() ) ) // grayman #3075
 	{
-		// This is a new alert // SZ Dec 30, 2006
-		// Note changed this from thresh_2 to thresh_3 to match thresh designer's intentions
-
 		// grayman #3492 - moved up from below
-		// greebo: TODO: Each incoming stimulus == evidence of intruders?
-		// One more piece of evidence of something out of place
-		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_VIS_ALERT;
+
+		// grayman #3515 - only bump the evidence count if you're in Searching or higher,
+		// and you haven't already bumped the count for a player sighting
+		if ( ( owner->AI_AlertIndex >= ESearching ) && !memory.mightHaveSeenPlayer )
+		{
+			memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_VIS_ALERT;
+			memory.mightHaveSeenPlayer = true;
+		}
 		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.visualAlert = true; // grayman #2422
