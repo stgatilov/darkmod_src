@@ -815,7 +815,7 @@ void Updater::PerformDifferentialUpdateStep()
 		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Keeping package after differential update completion: %s") % packageTargetPath.string()).str());
 	}
 
-	// grayman #3414 - remove DLL file
+	// grayman #3514 - remove DLL file
 
 #if WIN32
 	std::string tdmDLLName = "gamex86.dll";
