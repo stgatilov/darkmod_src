@@ -3229,6 +3229,13 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	int				dllHash;
 	pack_t			*inPak;
 	pack_t			*pak;
+    time_t          timePak = 0, timeDll = 0;
+
+#ifdef WIN32
+    #define GAMEEXT "DLL"
+#else
+    #define GAMEEXT "SO"
+#endif
 
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
 	dllHash = HashFileName( dllName );
@@ -3247,22 +3254,28 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
     }
 
 	if ( dllFile ) {
-		common->Printf( "Found DLL in EXE path: %s\n", dllFile->GetFullPath() );
-	} 
+        timeDll = dllFile->Timestamp();
+		common->Printf( "gamex86 - Found %s in EXE path with timestamp of %d - %s\n", GAMEEXT, timeDll, dllFile->GetFullPath() ); 
+	} else {
+        common->Printf( "gamex86 - No %s found in EXE path\n", GAMEEXT ); 
+    }
     
     if ( dllFileInPak ) {
-		common->Printf( "Found DLL in pak file: %s\n", dllFileInPak->GetFullPath() );
+        timePak = dllFileInPak->Timestamp();
+		common->Printf( "gamex86 - Found %s in pak file with timestamp of %d - %s\n", GAMEEXT, timePak, dllFileInPak->GetFullPath() );
+    } else {
+        common->Printf( "gamex86 - No %s found in pak file\n", GAMEEXT );
     }
 
-    if ( dllFile && (dllFileInPak == NULL || (dllFileInPak && dllFile->Timestamp() >= dllFileInPak->Timestamp())) ) {
-        common->Printf( "DLL in EXE path is newer, ignoring DLL in pak file\n" );
+    if ( dllFile && (dllFileInPak == NULL || (dllFileInPak && timeDll >= timePak)) ) {
+        common->Printf( "gamex86 - %s in EXE path is newer, ignoring %s in pak file\n", GAMEEXT, GAMEEXT );
         if ( dllFileInPak ) {
             CloseFile( dllFileInPak );
 		    dllFileInPak = NULL;
         }
     } else { 
 		if ( dllFileInPak ) {
-			common->Printf( "DLL in pak file is newer, extracting to darkmod path\n", dllFileInPak->GetFullPath() );
+			common->Printf( "gamex86 - %s in pak file is newer, extracting to darkmod path\n", GAMEEXT, dllFileInPak->GetFullPath() );
 			
             if ( dllFile ) {
                 CloseFile( dllFile );
@@ -3280,7 +3293,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
 
 			if ( !dllFile ) {
-				common->Error( "DLL extraction to darkmod path failed\n" );
+				common->Error( "%s extraction to darkmod path failed\n", GAMEEXT );
 			} else if ( updateChecksum ) {
 				gameDLLChecksum = GetFileChecksum( dllFile );
 				gamePakChecksum = inPak->checksum;
