@@ -290,7 +290,7 @@ idCVar cv_melee_difficulty(				"tdm_melee_difficulty", "normal", CVAR_GAME | CVA
 // grayman #3492 - AI Vision
 idCVar cv_ai_vision(					"tdm_ai_vision", "1", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "AI Vision as set by the menu");
 idCVar cv_ai_vision_nearly_blind(		"tdm_ai_vision_nearly_blind", "0.1", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Nearly Blind', set by the menu");
-idCVar cv_ai_vision_forgiving(			"tdm_ai_vision_forgiving", "0.7", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
+idCVar cv_ai_vision_forgiving(			"tdm_ai_vision_forgiving", "0.6", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Forgiving', set by the menu");
 idCVar cv_ai_vision_challenging(		"tdm_ai_vision_challenging", "1.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Challenging', set by the menu");
 idCVar cv_ai_vision_hardcore(			"tdm_ai_vision_hardcore", "1.5", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Vision 'Hardcore', set by the menu");
 
