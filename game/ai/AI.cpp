@@ -1615,7 +1615,7 @@ void idAI::Spawn( void )
 	// here are somewhat superfluous. It's better than having defaults of 0 here though.
 	spawnArgs.GetFloat( "alert_thresh1",		"1.5",		thresh_1 ); // The alert level threshold for reaching ObservantState (bark, but otherwise no reaction)
 	spawnArgs.GetFloat( "alert_thresh2",		"6",		thresh_2 ); // The alert level threshold for reaching SuspiciousState (bark, look, may stop and turn)
-	spawnArgs.GetFloat( "alert_thresh3",		"8",		thresh_3 ); // The alert level threshold for reaching SearchingState (Investigation)
+	spawnArgs.GetFloat( "alert_thresh3",		"10",		thresh_3 ); // The alert level threshold for reaching SearchingState (Investigation) // grayman #3492 - was 8
 	spawnArgs.GetFloat( "alert_thresh4",		"18",		thresh_4 ); // The alert level threshold for reaching AgitatedSearchingState
 																		// (Investigation, Weapon out, AI is quite sure that there is someone around)
 	spawnArgs.GetFloat( "alert_thresh5",		"23",		thresh_5 ); // The alert level threshold for reaching CombatState
@@ -1635,11 +1635,11 @@ void idAI::Spawn( void )
 	// De-alert times for each alert level
 	spawnArgs.GetFloat( "alert_time1",			"5",		atime1 );
 	spawnArgs.GetFloat( "alert_time2",			"8",		atime2 );
-	spawnArgs.GetFloat( "alert_time3",			"30",		atime3 );
+	spawnArgs.GetFloat( "alert_time3",			"25",		atime3 ); // grayman #3492 - was 30
 	spawnArgs.GetFloat( "alert_time4",			"65",		atime4 );
 	spawnArgs.GetFloat( "alert_time1_fuzzyness",			"1.5",		atime1_fuzzyness );
 	spawnArgs.GetFloat( "alert_time2_fuzzyness",			"2",		atime2_fuzzyness );
-	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"10",		atime3_fuzzyness );
+	spawnArgs.GetFloat( "alert_time3_fuzzyness",			"8",		atime3_fuzzyness ); // grayman #3492 - was 10
 	spawnArgs.GetFloat( "alert_time4_fuzzyness",			"20",		atime4_fuzzyness );
 
 	spawnArgs.GetFloat( "alert_time_fleedone",				"80",		atime_fleedone );
@@ -7560,13 +7560,9 @@ bool idAI::SetEnemy(idActor* newEnemy)
 		memory.stopRelight = true; // grayman #2603
 		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
 		memory.stopReactingToHit = true; // grayman #2816
+	}
 
-		return true; // valid enemy
-	}
-	else
-	{
-		return true; // still a valid enemy
-	}
+	return true; // a valid enemy
 }
 
 /*
@@ -9544,6 +9540,7 @@ idEntity *idAI::GetTactEnt( void )
 	return m_TactAlertEnt.GetEntity();
 }
 
+#if 1
 // grayman #3492 - refactored PerformVisualScan() to provide a uniform increase in alert level
 
 void idAI::PerformVisualScan(float timecheck)
@@ -9601,12 +9598,6 @@ void idAI::PerformVisualScan(float timecheck)
 		return;
 	}
 
-	// greebo: At this point, the actor is identified as enemy and is visible
-	// set AI_VISALERT and the vector for last sighted position
-	// Store the position the enemy was visible
-	m_LastSight = player->GetPhysics()->GetOrigin();
-	AI_VISALERT = true;
-	
 	// Check the candidate's visibility.
 	float vis = GetVisibility(player);
 
@@ -9615,13 +9606,19 @@ void idAI::PerformVisualScan(float timecheck)
 		return; // AI can't see player
 	}
 
+	// greebo: At this point, the actor is identified as enemy and is visible
+	// set AI_VISALERT and the vector for last sighted position
+	// Store the position the enemy was visible
+	m_LastSight = player->GetPhysics()->GetOrigin();
+	AI_VISALERT = true;
+	
 	// Use the 'AI Vision' choice on the gameplay menu
 	// 0 = nearly blind
 	// 1 = forgiving
 	// 2 = challenging
 	// 3 = hardcore
 
-	int visionLevel = cv_ai_vision.GetInteger(); // returns one a number from 0 -> 3
+	int visionLevel = cv_ai_vision.GetInteger(); // returns a number representing 'AI Vision'
 	float visionFactor;
 
 	switch (visionLevel)
@@ -9676,11 +9673,11 @@ void idAI::PerformVisualScan(float timecheck)
 		// Call the visual alert handler on the current state
 		mind->GetState()->OnVisualAlert(player);
 	}
-
-	return;
 }
 
-/* grayman #3492 - original
+#else
+
+// grayman #3492 - original
 void idAI::PerformVisualScan(float timecheck)
 {
 	// Only perform enemy checks if we are in the player's PVS
@@ -9800,8 +9797,10 @@ void idAI::PerformVisualScan(float timecheck)
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI %s SAW actor %s\r", name.c_str(), player->name.c_str() );
 
 	return;
-} end of original */
+}
+#endif
 
+#if 1
 // grayman #3492 - refactored GetVisibility to provide a uniform increase in alert level
 
 float idAI::GetVisibility( idEntity *ent ) const
@@ -9857,7 +9856,9 @@ float idAI::GetVisibility( idEntity *ent ) const
 	return clampVal;
 }
 
-/* grayman #3492 - original
+#else
+
+// grayman #3492 - original
 
 float idAI::GetVisibility( idEntity *ent ) const
 {
@@ -9925,7 +9926,8 @@ float idAI::GetVisibility( idEntity *ent ) const
 	}
 	
 	return returnval;
-} end of original */
+}
+#endif
 
 float idAI::GetCalibratedLightgemValue() const
 {
