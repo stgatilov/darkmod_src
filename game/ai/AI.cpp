@@ -535,6 +535,8 @@ idAI::idAI()
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
 	m_AlertLevelThisFrame = 0.0f;
+	m_lookAtAlertSpot = false; // grayman #3520
+	m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY); // grayman #3520
 	m_prevAlertIndex = 0;
 	m_maxAlertLevel = 0;
 	m_maxAlertIndex = 0;
@@ -853,6 +855,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( m_SoundDir );
 	savefile->WriteVec3( m_LastSight );
 	savefile->WriteFloat( m_AlertLevelThisFrame );
+	savefile->WriteBool( m_lookAtAlertSpot ); // grayman #3520
+	savefile->WriteVec3( m_lookAtPos ); // grayman #3520
 	savefile->WriteInt( m_prevAlertIndex );
 	savefile->WriteFloat( m_maxAlertLevel);
 	savefile->WriteInt( m_maxAlertIndex);
@@ -1286,6 +1290,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadVec3( m_SoundDir );
 	savefile->ReadVec3( m_LastSight );
 	savefile->ReadFloat( m_AlertLevelThisFrame );
+	savefile->ReadBool( m_lookAtAlertSpot ); // grayman #3520
+	savefile->ReadVec3( m_lookAtPos ); // grayman #3520
 	savefile->ReadInt( m_prevAlertIndex );
 	savefile->ReadFloat( m_maxAlertLevel );
 	savefile->ReadInt( m_maxAlertIndex);
@@ -9130,11 +9136,11 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		if ( !soundMaker || // alert if unknown
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
-			// grayman #3009 - pass the alert position so the AI can look at it
-			PreAlertAI( "aud", psychLoud, propParms->direction ); // grayman #3356
-
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
+
+			// grayman #3009 - pass the alert position so the AI can look at it
+			PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
 		}
 		
 		// Retrieve the messages from the other AI, if there are any
@@ -9170,7 +9176,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 // grayman - Preprocessing of an alert, for the purpose of inserting
 // a delay for audio alerts
 
-void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
+void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 {
 	// grayman #3424 - don't process if dead or unconscious
 
@@ -9179,24 +9185,7 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 alertSpot)
 		return;
 	}
 
-	// grayman #3413 - moved to individual states??????????????
-	// grayman #3009 - look at alertSpot
-	// grayman #3487 - but not if asleep
-
-	if ( move.moveType != MOVETYPE_SLEEP )
-	{
-		if ( alertSpot.x != idMath::INFINITY )
-		{
-			// if not moving, turn toward spot if it's not in your FOV
-			if ( !AI_FORWARD && !CheckFOV(alertSpot) )
-			{
-				TurnToward(alertSpot);
-			}
-
-			// look at the spot
-			Event_LookAtPosition(alertSpot,((float)AI_AlertLevel)/10.0f);
-		}
-	}
+	m_lookAtPos = lookAt; // grayman #3520 - look here when looking at the alert (might be different than alertPos)
 
 	int delay = 0;
 	if ( idStr(type) == "aud" )
@@ -9220,15 +9209,6 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 		return;
 	}
 
-	m_AlertedByActor = actor; // grayman #3258
-
-	// Calculate the amount the current AI_AlertLevel is about to be increased
-	// angua: alert amount already includes acuity
-	// float acuity = GetAcuity(type);
-	// float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
-
-	float alertInc = amount;
-
 	// Ignore actors in notarget mode
 //	idActor* actor = m_AlertedByActor.GetEntity();
 
@@ -9244,6 +9224,15 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	{
 		return;
 	}
+
+	m_AlertedByActor = actor; // grayman #3258
+
+	// Calculate the amount the current AI_AlertLevel is about to be increased
+	// angua: alert amount already includes acuity
+	// float acuity = GetAcuity(type);
+	// float alertInc = amount * acuity * 0.01f; // Acuity is defaulting to 100 (= 100%)
+
+	float alertInc = amount;
 
 	if ( m_AlertGraceTime && !AI_VISALERT ) // grayman #3492 - ignore grace periods for player spotting
 	{
@@ -9279,6 +9268,17 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 			return;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: Alert %f above threshold %f, grace count has reached its limit, grace period has expired\r", alertInc, m_AlertGraceThresh);
+	}
+
+	// grayman #3520 - look at alert spot, unless it's a 'vis' alert
+	if ( idStr(type) != "vis" )
+	{
+		m_lookAtAlertSpot = true;
+	}
+	else
+	{
+		m_lookAtAlertSpot = false;
+		m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
 	}
 
 	// set the last alert value so that simultaneous alerts only overwrite if they are greater than the value

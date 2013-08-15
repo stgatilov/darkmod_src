@@ -429,7 +429,7 @@ public:
 	* NOTE: For "alert units," an alert of 1 corresponds to just barely
 	* seeing something or just barely hearing a whisper of a sound.
 	**/
-	void PreAlertAI(const char *type, float amount, idVec3 alertSpot); // grayman #3356
+	void PreAlertAI(const char *type, float amount, idVec3 lookAt); // grayman #3356
 
 	/**
 	 * greebo: Sets the AI_AlertLevel of this AI and updates the AI_AlertIndex.
@@ -902,6 +902,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Should be cleared at the start of each frame.
 	**/
 	float					m_AlertLevelThisFrame;
+
+	// grayman #3520 - an alert has occurred, and depending on State,
+	// the AI might want to look at the alert spot
+	bool					m_lookAtAlertSpot;
+	idVec3					m_lookAtPos; // the spot to look at
 
 	// angua: stores the previous alert index at alert index changes
 	int						m_prevAlertIndex;
