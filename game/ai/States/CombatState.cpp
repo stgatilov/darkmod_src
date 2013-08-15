@@ -352,6 +352,13 @@ void CombatState::Think(idAI* owner)
 		return; // state has ended
 	}
 
+	// grayman #3520 - don't look toward new alerts
+	if ( owner->m_lookAtAlertSpot )
+	{
+		owner->m_lookAtAlertSpot = false;
+		owner->m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
+	}
+
 	// angua: look at enemy
 	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
 

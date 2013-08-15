@@ -220,6 +220,7 @@ void AgitatedSearchingState::Think(idAI* owner)
 	// we need to change the repeated bark.
 
 	Memory& memory = owner->GetMemory();
+
 	if (memory.prevSawEvidence)
 	{
 		// no change needed

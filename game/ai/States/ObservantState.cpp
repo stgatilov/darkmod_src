@@ -179,6 +179,24 @@ void ObservantState::Think(idAI* owner)
 		return;
 	}
 	
+	// grayman #3520 - look at alert spots
+	if (owner->m_lookAtAlertSpot)
+	{
+		owner->m_lookAtAlertSpot = false;
+		if ( owner->GetMoveType() != MOVETYPE_SLEEP ) // grayman #3487 - not if asleep
+		{
+			idVec3 alertSpot = owner->m_lookAtPos;
+			if ( alertSpot.x != idMath::INFINITY )
+			{
+				if (owner->CheckFOV(alertSpot))
+				{
+					owner->Event_LookAtPosition(alertSpot,((float)owner->AI_AlertLevel)/10.0f);
+				}
+			}
+		}
+		owner->m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
+	}
+
 	// grayman #2866 - zero alert decrease rate if handling a door or elevator
 
 	if ((owner->m_HandlingDoor) || (owner->m_HandlingElevator))

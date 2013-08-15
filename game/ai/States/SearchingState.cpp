@@ -280,6 +280,27 @@ void SearchingState::Think(idAI* owner)
 
 	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 
+	// grayman #3520 - look at alert spots
+	if ( owner->m_lookAtAlertSpot )
+	{
+		owner->m_lookAtAlertSpot = false;
+		idVec3 alertSpot = owner->m_lookAtPos;
+		if ( alertSpot.x != idMath::INFINITY ) // grayman #3438
+		{
+			if ( !owner->CheckFOV(alertSpot) )
+			{
+				// Search spot is not within FOV, turn towards the position
+				owner->TurnToward(alertSpot);
+				owner->Event_LookAtPosition(alertSpot, 2.0f);
+			}
+			else
+			{
+				owner->Event_LookAtPosition(alertSpot, 2.0f);
+			}
+		}
+		owner->m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
+	}
+
 	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
 	if (memory.restartSearchForHidingSpots)
 	{

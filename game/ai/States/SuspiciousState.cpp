@@ -200,19 +200,6 @@ void SuspiciousState::Init(idAI* owner)
 
 	if (owner->AlertIndexIncreased())
 	{
-		if ( memory.alertPos.x != idMath::INFINITY ) // grayman #3438
-		{
-			if ( !owner->CheckFOV(memory.alertPos) && ( owner->GetMoveType() == MOVETYPE_ANIM ) )
-			{
-				// Search spot is not within FOV, turn towards the position
-				// don't turn while sitting
-				owner->TurnToward(memory.alertPos);
-			}
-
-			// In any case, look at the point to investigate
-			owner->Event_LookAtPosition(memory.alertPos, 2.0f);
-		}
-
 		if ( !memory.alertedDueToCommunication ) // grayman #2920
 		{
 			if ( memory.alertClass != EAlertVisual_4) // grayman #3498
@@ -275,6 +262,29 @@ void SuspiciousState::Think(idAI* owner)
 		return;
 	}
 	
+	// grayman #3520 - look at alert spots
+	if ( owner->m_lookAtAlertSpot )
+	{
+		owner->m_lookAtAlertSpot = false;
+		idVec3 alertSpot = owner->m_lookAtPos;
+		if ( alertSpot.x != idMath::INFINITY ) // grayman #3438
+		{
+			bool inFOV = owner->CheckFOV(alertSpot);
+			if ( !inFOV && ( owner->GetMoveType() == MOVETYPE_ANIM ) )
+			{
+				// Search spot is not within FOV, turn towards the position
+				// don't turn while sitting
+				owner->TurnToward(alertSpot);
+				owner->Event_LookAtPosition(alertSpot, 2.0f);
+			}
+			else if (inFOV)
+			{
+				owner->Event_LookAtPosition(alertSpot, 2.0f);
+			}
+		}
+		owner->m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
+	}
+
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 }
