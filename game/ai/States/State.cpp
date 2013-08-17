@@ -1727,7 +1727,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 				bool fleeing = (owner->GetMind()->GetState()->GetName() == "Flee" );
 
-				if ( !fleeing && otherAI->IsSearching() && !( owner->m_lastAlertLevel >= owner->thresh_3 ) && ( otherMemory.alertType != EAlertTypeDoor ) ) // grayman #3438
+				if ( !fleeing && otherAI->IsSearching() && !( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) && ( otherMemory.alertType != EAlertTypeDoor ) ) // grayman #3438
 				{
 					// grayman #1327 - warning should be specific
 
@@ -1925,7 +1925,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 				}
 				// grayman #3202 - don't issue a warning or greeting if you're mute
 				// grayman #3424 - or if your friend has been searching recently
-				else if ( !(otherAI->m_lastAlertLevel >= owner->thresh_3)  && !owner->m_isMute ) // grayman #2903 // grayman #3438 
+				else if ( !(otherAI->m_recentHighestAlertLevel >= owner->thresh_3)  && !owner->m_isMute ) // grayman #2903 // grayman #3438 
 				{
 					// grayman #1327 - apply the distance check to both warnings and greetings
 
@@ -4601,7 +4601,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	}
 
 	// grayman #3438 - don't respond if I just finished searching
-	if ( !owner->IsSearching() && ( owner->m_lastAlertLevel >= owner->thresh_3 ) )
+	if ( !owner->IsSearching() && ( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) )
 	{
 		return;
 	}

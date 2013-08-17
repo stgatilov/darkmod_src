@@ -77,6 +77,8 @@ void AlertIdleState::Init(idAI* owner)
 
 	memory.mightHaveSeenPlayer = false; // grayman #3515
 		
+	owner->m_recentHighestAlertLevel = 0; // grayman #3472
+
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));
 
@@ -160,12 +162,12 @@ idStr AlertIdleState::GetInitialIdleBark(idAI* owner)
 		{
 			owner->m_justKilledSomeone = false; // but turn off the flag
 		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_4)
+		else if (owner->m_recentHighestAlertLevel >= owner->thresh_4)
 		{
 			// has gone up to at least Agitated Searching
 			soundName = "snd_alertdown0SeenEvidence";
 		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
+		else if (owner->m_recentHighestAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
 			// grayman #3472 - no longer needed
 //			if (aclass == EAlertVisual_3) // grayman #3424
