@@ -916,7 +916,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	int							m_maxAlertIndex;
 
 	// angua: the alert level the AI had after the last alert level increase
-	float						m_lastAlertLevel;
+	// grayman #3472 - to remove ambiguity, and confusion with m_maxAlertLevel, change the name to reflect the
+	// variable's true meaning: when rising from Idle or AlertIdle into the
+	// higher alert states, and returning back to Idle or AlertIdle, m_recentHighestAlertLevel
+	// holds the highest alert level achieved. When returning to Idle or Alert Idle,
+	// and after emitting a relevant rampdown bark, this variable is reset to 0, the
+	// lowest alert level.
+	float						m_recentHighestAlertLevel;
 
 	/**
 	* If true, the AI ignores alerts during all actions

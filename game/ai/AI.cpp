@@ -540,7 +540,7 @@ idAI::idAI()
 	m_prevAlertIndex = 0;
 	m_maxAlertLevel = 0;
 	m_maxAlertIndex = 0;
-	m_lastAlertLevel = 0;
+	m_recentHighestAlertLevel = 0;
 	m_AlertedByActor = NULL;
 
 	m_TactAlertEnt = NULL;
@@ -860,7 +860,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_prevAlertIndex );
 	savefile->WriteFloat( m_maxAlertLevel);
 	savefile->WriteInt( m_maxAlertIndex);
-	savefile->WriteFloat(m_lastAlertLevel);
+	savefile->WriteFloat(m_recentHighestAlertLevel);
 	savefile->WriteBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Save( savefile );
@@ -1295,7 +1295,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_prevAlertIndex );
 	savefile->ReadFloat( m_maxAlertLevel );
 	savefile->ReadInt( m_maxAlertIndex);
-	savefile->ReadFloat(m_lastAlertLevel);
+	savefile->ReadFloat(m_recentHighestAlertLevel);
 	savefile->ReadBool( m_bIgnoreAlerts );
 
 	m_AlertedByActor.Restore( savefile );
@@ -9434,7 +9434,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 	if (alertRising)
 	{
 		GetMemory().lastAlertRiseTime = gameLocal.time;
-		m_lastAlertLevel = AI_AlertLevel; // grayman #3424
+		m_recentHighestAlertLevel = AI_AlertLevel; // grayman #3424
 	}
 
 	// Begin the grace period

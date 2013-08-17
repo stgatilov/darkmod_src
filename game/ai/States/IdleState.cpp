@@ -156,6 +156,8 @@ void IdleState::Init(idAI* owner)
 		
 	memory.mightHaveSeenPlayer = false; // grayman #3515
 
+	owner->m_recentHighestAlertLevel = 0; // grayman #3472
+
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
 	// Push the regular patrol barking to the list too
@@ -273,7 +275,7 @@ void IdleState::InitialiseCommunication(idAI* owner)
 
 	Memory& memory = owner->GetMemory(); // grayman #2603 - only allow rampdown barks if the AI was searching
 
-	if (owner->m_lastAlertLevel >= owner->thresh_3)
+	if (owner->m_recentHighestAlertLevel >= owner->thresh_3)
 	{
 		memory.currentSearchEventID = -1; // grayman #3424
 
@@ -338,12 +340,12 @@ idStr IdleState::GetInitialIdleBark(idAI* owner)
 		 !owner->m_ExaminingRope )		// grayman #2872 - No rampdown bark if examining a rope.
 	{
 		EAlertClass aclass = memory.alertClass;
-		if (owner->m_lastAlertLevel >= owner->thresh_4)
+		if (owner->m_recentHighestAlertLevel >= owner->thresh_4)
 		{
 			// has gone up to Agitated Searching
 			soundName = "snd_alertdown0SeenNoEvidence";
 		}
-		else if (owner->m_lastAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
+		else if (owner->m_recentHighestAlertLevel >= owner->thresh_2) // has gone up to Suspicious or Searching
 		{
 			if ( ( aclass == EAlertVisual_2 ) || ( aclass == EAlertVisual_4 ) ) // grayman #2603, grayman #3498
 			{
