@@ -9530,11 +9530,12 @@ void idPlayer::CalculateWeakLightgem()
 			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineEllipsoid returned %u\r", inter);
 		}
-		else
+		else // projected light
 		{
 			bStump = false;
 			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
 			inter = IntersectLineCone(vPlayerSeg, vLightCone, vResult, bStump);
+			vLight = vLightCone[ELC_ORIGIN]; // grayman #3524
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineCone returned %u\r", inter);
 		}
 
@@ -9545,7 +9546,9 @@ void idPlayer::CalculateWeakLightgem()
 		// our case and doesn't make a difference for the gameplay so we simply ignore it and
 		// consider only cases where the player is at least partially inside the cone.
 		if (inter != INTERSECT_FULL)
+		{
 			continue;
+		}
 
 		if (light->CastsShadow())
 		{
@@ -9553,7 +9556,7 @@ void idPlayer::CalculateWeakLightgem()
 				|CONTENTS_MOVEABLECLIP|CONTENTS_BODY|CONTENTS_CORPSE|CONTENTS_RENDERMODEL
 				|CONTENTS_FLASHLIGHT_TRIGGER, this);
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("TraceFraction: %f\r", trace.fraction);
-			if(trace.fraction < 1.0f)
+			if (trace.fraction < 1.0f)
 			{
 				DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light [%s] can not be seen\r", light->name.c_str());
 				continue;
@@ -9575,7 +9578,10 @@ void idPlayer::CalculateWeakLightgem()
 
 		bMinOneLight = true;
 
-		fLightgemVal += light->GetDistanceColor(distance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+		// grayman #3524 - use vLight, not the light origin
+		fLightgemVal += light->GetDistanceColor(distance, vLight.x - fx, vLight.y - fy);
+		//fLightgemVal += light->GetDistanceColor(distance, vLightCone[ELL_ORIGIN].x - fx, vLightCone[ELL_ORIGIN].y - fy);
+
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("%s in x/y: %f/%f   Distance:   %f/%f   Brightness: %f\r",
 			light->name.c_str(), fx, fy, fLightgemVal, distance, light->m_MaxLightRadius);
 

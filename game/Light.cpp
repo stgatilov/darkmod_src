@@ -1813,7 +1813,9 @@ bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Axis, idVec3 &Center)
 
 	Origin = GetPhysics()->GetOrigin();
 	Axis = renderLight.lightRadius;
-	Center = renderLight.lightCenter;
+	// grayman #3524 - take entity rotation into account
+	Center = GetPhysics()->GetAxis()*renderLight.lightCenter;
+	//Center = renderLight.lightCenter;
 
 	return rc;
 }

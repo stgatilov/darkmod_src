@@ -393,11 +393,12 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineEllipsoid returned %u\r", inter);
 		}
-		else
+		else // projected light
 		{
 			bool bStump = false;
 			p_LASLight->p_idLight->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
 			inter = IntersectLineCone(vTargetSeg, vLightCone, vResult, bStump);
+			vLight = vLightCone[ELC_ORIGIN]; // grayman #3524
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineCone returned %u\r", inter);
 		}
 
@@ -422,8 +423,12 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			// Determine intensity of this light at the distance from its origin to the
 			// test point
 			idVec3 testPosNoZ = testPoint1;
-			testPosNoZ.z = p_LASLight->lastWorldPos.z;
-			testDistance = (p_LASLight->lastWorldPos - testPosNoZ).Length();
+
+			// grayman #3524 - use vLight instead of lastWorldPos
+			testPosNoZ.z = vLight.z;
+			testDistance = (vLight - testPosNoZ).Length();
+//			testPosNoZ.z = p_LASLight->lastWorldPos.z;
+//			testDistance = (p_LASLight->lastWorldPos - testPosNoZ).Length();
 
 			// Fast and cheap test to see if the item could be in the area of the light.
 			// Well, it is not exactly cheap, but it is the cheapest test that we can do at this point. :)
@@ -442,7 +447,10 @@ void darkModLAS::accumulateEffectOfLightsInArea
 				// also applies to the candle holding the flame.
 
 				idVec3 p1 = testPoint1;
-				idVec3 p2 = p_LASLight->lastWorldPos;
+
+				// grayman #3524 - use vLight instead of lastWorldPos
+				idVec3 p2 = vLight;
+//				idVec3 p2 = p_LASLight->lastWorldPos;
 
 				bool lightReaches = traceLightPath( p1, p2, p_ignoredEntity );
 				if ( !lightReaches )
@@ -518,8 +526,10 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			inout_totalIllumination += p_LASLight->p_idLight->GetDistanceColor
 			(
 				testDistance, 
-				vLightCone[ELL_ORIGIN].x - fx, 
-				vLightCone[ELL_ORIGIN].y - fy
+				vLight.x - fx, // grayman #3524 - use vLight, not the light's origin
+				vLight.y - fy
+				//vLightCone[ELL_ORIGIN].x - fx, 
+				//vLightCone[ELL_ORIGIN].y - fy
 			);
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
 			(

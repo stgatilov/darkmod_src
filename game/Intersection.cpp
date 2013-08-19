@@ -484,6 +484,9 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 	idStr txt;
 	idStr format("Frustum[%u]");
 	idVec3 EndPoint(rkLine[LSG_ORIGIN]+rkLine[LSG_DIRECTION]);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("  rkLine[LSG_ORIGIN] = [%s]\r", rkLine[LSG_ORIGIN].ToString());
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("  rkLine[LSG_DIRECTION] = [%s]\r", rkLine[LSG_DIRECTION].ToString());
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("  EndPoint = [%s]\r", EndPoint.ToString());
 
 	R_SetLightProject(lightProject,
 					   rkCone[ELC_ORIGIN],
@@ -502,10 +505,10 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 */
 	n = format.Length();
 
-	// Calculate the angle between the player and the lightvector.
+	// Calculate the angle between the target and the lightvector.
 	angle = rkCone[ELA_TARGET].Length() * rkLine[LSG_DIRECTION].Length();
 	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Denominator: %f\r", angle);
-	if(angle >= idMath::FLT_EPSILON)
+	if ( angle >= idMath::FLT_EPSILON )
 	{
 		angle = idMath::ACos((rkCone[ELA_TARGET] * rkLine[LSG_DIRECTION])/angle);
 //		if(t > (idMath::PI/2))
@@ -514,11 +517,13 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Angle: %f\r", angle);
 	}
 	else
+	{
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Impossible line!\r");
+	}
 
 	bCalcIntersection = false;
 	l = 0;
-	for(i = 0; i < 6; i++)
+	for ( i = 0 ; i < 6 ; i++ )
 	{
 		sprintf(txt, format, i);
 
@@ -530,52 +535,64 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u]: Start %u   End: %u\r", i, Start[i], End[i]);
 
 		// If the points are all on the outside there will be no intersections
-		if(Start[i] == PLANESIDE_BACK || End[i] == PLANESIDE_BACK)
+		if ( ( Start[i] == PLANESIDE_BACK ) || ( End[i] == PLANESIDE_BACK ) )
+		{
 			bCalcIntersection = true;
+		}
 	}
 
 	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("CalcIntersection: %u\r", bCalcIntersection);
-	if(bCalcIntersection == true)
+	if (bCalcIntersection == true)
 	{
-		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "PlayerOrigin", rkLine[LSG_ORIGIN]);
-		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "PlayerDirection", rkLine[LSG_DIRECTION]);
+		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "TargetOrigin", rkLine[LSG_ORIGIN]);
+		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "TargetDirection", rkLine[LSG_DIRECTION]);
 		DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "Endpoint", EndPoint);
 
 		for(i = 0; i < 6; i++)
 		{
-			if(frustum[i].LineIntersection(rkLine[LSG_ORIGIN], rkLine[LSG_DIRECTION], &t) == true)
+			if (frustum[i].LineIntersection(rkLine[LSG_ORIGIN], rkLine[LSG_DIRECTION], &t) == true)
 			{
 				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u] intersects\r", i);
 				Intersect[l] = rkLine[LSG_ORIGIN] + t*rkLine[LSG_DIRECTION];
 				l++;
 
-				if(l > 1)
+				if (l > 1)
+				{
 					break;
+				}
 			}
 		}
 	}
 
-	if(l < 2)
+	if (l < 2)
+	{
 		rc = INTERSECT_OUTSIDE;
+	}
 	else
 	{
 		rc = INTERSECT_FULL;
 		bStart = bEnd = true;
-		for(i = 0; i < 6; i++)
+		for (i = 0; i < 6; i++)
 		{
 			x = frustum[i].Side(Intersect[0], idMath::FLT_EPSILON);
 			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/0] intersection test returns %u\r", i, x);
-			if(x != PLANESIDE_BACK)
+			if (x != PLANESIDE_BACK)
+			{
 				bStart = false;
+			}
 
 			x = frustum[i].Side(Intersect[1], idMath::FLT_EPSILON);
 			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/1] intersection test returns %u\r", i, x);
-			if(x != PLANESIDE_BACK)
+			if (x != PLANESIDE_BACK)
+			{
 				bEnd = false;
+			}
 		}
 
-		if(bStart == false && bEnd == false)
+		if (bStart == false && bEnd == false)
+		{
 			rc = INTERSECT_OUTSIDE;
+		}
 	}
 
 	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Intersection count = %u\r", l);
