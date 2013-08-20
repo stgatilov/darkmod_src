@@ -814,20 +814,6 @@ void Updater::PerformDifferentialUpdateStep()
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, (boost::format(" Keeping package after differential update completion: %s") % packageTargetPath.string()).str());
 	}
-
-	// grayman #3514 - remove DLL file
-
-#if WIN32
-	std::string tdmDLLName = "gamex86.dll";
-#else 
-	std::string tdmDLLName = "gamex86.so";
-#endif
-
-	if (fs::exists(targetPath / tdmDLLName))
-	{
-		// remove the DLL
-		File::Remove(targetPath / tdmDLLName);
-	}
 }
 
 std::string Updater::GetDeterminedLocalVersion()
@@ -1579,6 +1565,20 @@ void Updater::PostUpdateCleanup()
 			++i;
 		}
 	}
+
+	// grayman #3514 - Remove DLL file in case the user is updating an existing installation.
+	// Also remove leftover updater file.
+
+#if WIN32
+	std::string tdmDLLName = "gamex86.dll";
+	std::string tdmUpdateName = "_tdm_update.exe";
+#else 
+	std::string tdmDLLName = "gamex86.so";
+	std::string tdmUpdateName = "_tdm_update.linux";
+#endif
+
+	File::Remove(GetTargetPath() / tdmDLLName);
+	File::Remove(GetTargetPath() / tdmUpdateName);
 }
 
 void Updater::CancelDownloads()
