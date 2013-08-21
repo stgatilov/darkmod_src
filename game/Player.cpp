@@ -8230,7 +8230,8 @@ void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bo
 idPlayer::GetEyePosition
 ===============
 */
-idVec3 idPlayer::GetEyePosition( void ) const {
+idVec3 idPlayer::GetEyePosition( void ) const
+{
 	idVec3 org;
  
 	// use the smoothed origin if spectating another player in multiplayer
@@ -8246,6 +8247,7 @@ idVec3 idPlayer::GetEyePosition( void ) const {
 	* Move eye position due to leaning
 	* angua: need to check whether physics type is correct, dead player uses AF physics
 	*/
+
 	idPhysics* physics = GetPhysics();
 	if (physics->IsType(idPhysics_Player::Type))
 	{

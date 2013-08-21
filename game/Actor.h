@@ -411,6 +411,12 @@ public:
 	idVec3					m_MouthOffset; // grayman #1104
 
 	/**
+	* Offset relative to the head origin when the head is separate, or the body origin 
+	* when the head is attached.
+	**/
+	idVec3					m_EyeOffset; // grayman #3525
+
+	/**
 	* grayman #3424 - List of suspicious event ids this actor knows about.
 	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
 	**/
@@ -661,7 +667,7 @@ public:
 	**/
 	virtual float			GetMovementVolMod( void ) { return 0; };
 
-	virtual bool			IsKnockedOut( void ) { return false; };
+	virtual bool			IsKnockedOut( void ) const { return false; };
 
 	virtual bool			CanUseElevators() const { return canUseElevators; }
 
