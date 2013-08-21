@@ -1500,7 +1500,8 @@ void Updater::RestartUpdater()
 		siStartupInfo.cb = sizeof(siStartupInfo);
 
 		fs::path parentPath = _updateBatchFile;
-		parentPath.remove_leaf().remove_leaf();
+		parentPath.remove_leaf(); // grayman #3514 - only remove one leaf
+		//parentPath.remove_leaf().remove_leaf();
 
 		TraceLog::WriteLine(LOG_VERBOSE, "Starting batch file " + _updateBatchFile.string() + " in " + parentPath.string());
 
