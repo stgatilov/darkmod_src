@@ -743,6 +743,8 @@ idActor::idActor( void ) {
 
 	m_MouthOffset		= vec3_zero; // grayman #1104
 
+	m_EyeOffset			= vec3_zero; // grayman #3525
+
 	m_suspiciousEventIDs.Clear(); // grayman #3424
 
 	m_haveSearchedEventID.Clear(); // grayman #3424
@@ -883,6 +885,8 @@ void idActor::Spawn( void )
 	m_MeleeRepAttackTime				= spawnArgs.GetInt("melee_rep_attack_time");
 
 	m_MouthOffset						= spawnArgs.GetVector("mouth_offset"); // grayman #1104
+
+	m_EyeOffset							= spawnArgs.GetVector("eye_offset"); // grayman #3525
 
 	LoadAF();
 
@@ -1246,6 +1250,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( m_pathRank );		// grayman #2345
 	savefile->WriteInt( m_nextKickTime );	// grayman #2728
 	savefile->WriteVec3( m_MouthOffset );	// grayman #1104
+	savefile->WriteVec3( m_EyeOffset );	// grayman #3525
 
 	// grayman #3424
 	savefile->WriteInt(m_suspiciousEventIDs.Num());
@@ -1469,6 +1474,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( m_pathRank );	 // grayman #2345
 	savefile->ReadInt( m_nextKickTime ); // grayman #2728
 	savefile->ReadVec3( m_MouthOffset ); // grayman #1104
+	savefile->ReadVec3( m_EyeOffset );	// grayman #3525
 
 	// grayman #3424
 	savefile->ReadInt(num);
@@ -2070,7 +2076,8 @@ idVec3 idActor::EyeOffset( void ) const {
 idActor::GetEyePosition
 =====================
 */
-idVec3 idActor::GetEyePosition( void ) const {
+idVec3 idActor::GetEyePosition( void ) const
+{
 	return GetPhysics()->GetOrigin() + ( GetPhysics()->GetGravityNormal() * -eyeOffset.z );
 }
 
@@ -2158,7 +2165,7 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	idVec3 eye(GetEyePosition());
 
 	// angua: If the target entity is an idActor,
-	// use its eyeposition, the origin and the shoulders
+	// use its eye position, its origin and its shoulders
 	if (ent->IsType(idActor::Type)) 
 	{
 		idActor* actor = static_cast<idActor*>(ent);
@@ -2171,34 +2178,33 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 			// gameRenderWorld->DebugArrow(colorGreen,eye, entityEyePos, 1, 32);
 			return true;
 		}
-		else if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+
+		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
 			 gameLocal.GetTraceEntity(result) == actor) 
 		{
 			// Eye to origin trace succeeded
 			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin, 1, 32);
 			return true;
 		}
-		else  
-		{
-			idVec3 origin;
-			idMat3 viewaxis;
-			actor->GetViewPos(origin, viewaxis);
 
-			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-			idVec3 dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
+		idVec3 origin;
+		idMat3 viewaxis;
+		actor->GetViewPos(origin, viewaxis);
+
+		const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+		idVec3 dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
 			
-			float dist = 8;
+		float dist = 8;
 
-			if (!gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
-				|| gameLocal.GetTraceEntity(result) == actor
-				|| !gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
-				|| gameLocal.GetTraceEntity(result) == actor)
-			{
-				// Eye to shoulders traces succeeded
-				// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, 1, 32);
-				// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, 1, 32);	
-				return true;
-			}
+		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
+			|| gameLocal.GetTraceEntity(result) == actor
+			|| !gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, MASK_OPAQUE, this) // grayman #3525 - was tracing to same shoulder twice 
+			|| gameLocal.GetTraceEntity(result) == actor)
+		{
+			// Eye to shoulders traces succeeded
+			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, 1, 32);
+			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, 1, 32);	
+			return true;
 		}
 	}
 	// otherwise just use the origin (for general entities).

@@ -483,6 +483,11 @@ public:
 	**/
 	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
 
+	/**
+	* grayman #3525 - get eye position
+	**/
+	idVec3 GetEyePosition( void ) const;
+
 	/** 
 	* Ishtvan: Swap the AI's head CM to a larger one
 	* (Used to make blackjacking easier, currently only called when a blackjack swings nearby)

@@ -11306,6 +11306,49 @@ bool idAI::CanReachEnemy()
 	return PathToGoal(path, areaNum, org, toAreaNum, pos, this);
 }
 
+/*
+=====================
+idAI::GetEyePosition
+=====================
+*/
+idVec3 idAI::GetEyePosition( void ) const
+{
+	// grayman #3525 - a more accurate eye position, accounting for standing,
+	// sitting, and lying down (KO'ed or killed)
+
+	idVec3 eyePosition;
+
+	idEntity *headEnt = head.GetEntity();
+
+	// *.def file will store the coordinates of the mouth relative ("mouth_offset") to the head origin
+	// or relative to the eyes ("eye_height"). This should be defined by the modeler.
+
+	// check for attached head
+	if ( headEnt )
+	{
+		eyePosition = headEnt->GetPhysics()->GetOrigin();
+
+		// add the eye offset oriented by head axis
+		eyePosition += headEnt->GetPhysics()->GetAxis() * m_EyeOffset;
+	}
+	else if ( AI_KNOCKEDOUT || AI_DEAD )
+	{
+		// grayman #3525 - total kludge, since I can't tell where the head is
+		idVec3 center = GetPhysics()->GetAbsBounds().GetCenter();
+		eyePosition = GetPhysics()->GetOrigin();
+		eyePosition.z = center.z;
+		eyePosition += viewAxis.ToAngles().ToForward() * m_EyeOffset.x;
+	}
+	else // standing
+	{
+		eyePosition = GetPhysics()->GetOrigin() +
+					( GetPhysics()->GetGravityNormal() * -m_EyeOffset.z ) +
+					( viewAxis.ToAngles().ToForward() * m_EyeOffset.x);
+	}
+
+	return eyePosition;
+}
+
 bool idAI::MouthIsUnderwater( void )
 {
 	bool bReturnVal( false );
@@ -11314,27 +11357,25 @@ bool idAI::MouthIsUnderwater( void )
 	idEntity *headEnt = head.GetEntity();
 
 	// *.def file will store the coordinates of the mouth relative ("mouth_offset") to the head origin
-	// or relative to the eyes ("eye_height"). This should be defined by the modeler.
+	// or relative to the eyes. This should be defined by the modeler.
 
 	// check for attached head
-	if( headEnt )
+	if ( headEnt )
 	{
 		MouthPosition = headEnt->GetPhysics()->GetOrigin();
 
-		// add in the mouth offset oriented by head axis
+		// add the mouth offset oriented by head axis
 		MouthPosition += headEnt->GetPhysics()->GetAxis() * m_MouthOffset;
 	}
-	else if( af.IsLoaded() && AI_KNOCKEDOUT )
-	{
-		MouthPosition = af.GetPhysics()->GetOrigin( m_HeadBodyID );
-
-		// add in the mouth offset oriented by head axis
-		MouthPosition += af.GetPhysics()->GetAxis( m_HeadBodyID ) * m_MouthOffset;
-	}
-	else
+	else if ( AI_KNOCKEDOUT || AI_DEAD )
 	{
 		MouthPosition = GetEyePosition();
-		MouthPosition.z += m_MouthOffset.z; // grayman #1488 - check at the mouth, not the eyes
+	}
+	else // standing
+	{
+		MouthPosition = GetEyePosition() +
+						( GetPhysics()->GetGravityNormal() * -m_MouthOffset.z ) +
+						( viewAxis.ToAngles().ToForward() * m_MouthOffset.x);
 	}
 
 	// check if the mouth position is underwater
