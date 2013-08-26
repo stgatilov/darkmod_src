@@ -68,7 +68,7 @@ const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SE
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
 // grayman #3485 - additional volume reduction when falling/jumping when crouched
-const float FALL_JUMP_CROUCH_VOL_ADJUST = -5.0f;
+const float FALL_JUMP_CROUCH_VOL_ADJUST = -7.0f;
 
 const idEventDef EV_Player_GetButtons( "getButtons", EventArgs(), 'd', "Returns the button state from the current user command." );
 
