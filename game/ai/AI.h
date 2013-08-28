@@ -481,7 +481,10 @@ public:
 	/**
 	* Returns true if AI is knocked out
 	**/
-	bool  IsKnockedOut( void ) { return (AI_KNOCKEDOUT!=0); };
+	bool  IsKnockedOut( void )
+	{
+		return (AI_KNOCKEDOUT!=0);
+	};
 
 	/**
 	* grayman #3525 - get eye position

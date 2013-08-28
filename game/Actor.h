@@ -667,7 +667,7 @@ public:
 	**/
 	virtual float			GetMovementVolMod( void ) { return 0; };
 
-	virtual bool			IsKnockedOut( void ) const { return false; };
+	virtual bool			IsKnockedOut( void ) { return false; };
 
 	virtual bool			CanUseElevators() const { return canUseElevators; }
 
