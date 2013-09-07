@@ -267,7 +267,7 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 			break;
 
 		case WM_CLOSE:
-			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit" );
+			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
 			break;
 
 		case WM_ACTIVATE:

@@ -1199,7 +1199,7 @@ void idMultiplayerGame::ExecuteVote( void ) {
 			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
 			if ( needRestart ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap\n" );
 			}
 			break;
 		case VOTE_FRAGLIMIT:
@@ -1207,7 +1207,7 @@ void idMultiplayerGame::ExecuteVote( void ) {
 			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
 			if ( needRestart ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap\n" );
 			}
 			break;
 		case VOTE_GAMETYPE:
@@ -1226,7 +1226,7 @@ void idMultiplayerGame::ExecuteVote( void ) {
 			needRestart = gameLocal.NeedRestart();
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
 			if ( needRestart ) {
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap\n" );
 			}
 			break;
 		case VOTE_NEXTMAP:

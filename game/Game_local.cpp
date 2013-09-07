@@ -1564,7 +1564,7 @@ void idGameLocal::MapRestart( ) {
 		}
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "rescanSI" );
 		if ( i != newInfo.GetNumKeyVals() ) {
-			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap" );
+			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap\n" );
 		} else {
 			outMsg.Init( msgBuf, sizeof( msgBuf ) );
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_RESTART );
@@ -4334,12 +4334,12 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	else if (cmd == "updatecookedmathdata")		// Adding a way to update cooked data from menu - J.C.Denton
 	{
 		// Add the command to buffer, but no need to issue it immediately. 
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData" );
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_updateCookedMathData\n" );
 	}
 	else if (cmd == "lod_bias_changed")		// Adding a way to update cooked data from menu - J.C.Denton
 	{
 		// Add the command to buffer, but no need to issue it immediately. 
-		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_lod_bias_changed" );
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "tdm_lod_bias_changed\n" );
 	}
 	else if (cmd == "resetbrightness")
 	{
