@@ -446,9 +446,17 @@ public:
 	bool AlertIndexIncreased();
 
 	/**
-	* Returns the float val of the specific AI's acuity
-	* Acuity type is a char, from the same list as alert types
-	* That list is defined in DarkModGlobals.cpp
+	* Returns the float val of the specific AI's acuity.
+	* Acuity type is a char, from the same list as alert types.
+	* That list is defined in DarkModGlobals.cpp.
+	**/
+	float idAI::GetBaseAcuity(const char *type) const; // grayman #3552
+
+	/**
+	* Returns the float val of the specific AI's acuity, accounting for
+	* factors like drunkeness.
+	* Acuity type is a char, from the same list as alert types.
+	* That list is defined in DarkModGlobals.cpp.
 	**/
 	float GetAcuity( const char *type ) const;
 
