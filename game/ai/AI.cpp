@@ -1742,7 +1742,7 @@ void idAI::Spawn( void )
 	// DarkMod: Set the AI acuities from the spawnargs.
 
 	m_Acuities.Clear();
-	for( int ind=0; ind < g_Global.m_AcuityNames.Num(); ind++)
+	for ( int ind = 0 ; ind < g_Global.m_AcuityNames.Num() ; ind++ )
 	{
 		float tempFloat = spawnArgs.GetFloat( va("acuity_%s", g_Global.m_AcuityNames[ind].c_str()), "100" );
 		// angua: divide by 100 to transform percent into fractions
@@ -1750,7 +1750,8 @@ void idAI::Spawn( void )
 		m_Acuities.Append( tempFloat );
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuities Array: index %d, name %s, value %f\r", ind, g_Global.m_AcuityNames[ind].c_str(), m_Acuities[ind]);
 	}
-	m_oldVisualAcuity = GetAcuity("vis");	// Tels fix #2408
+	m_oldVisualAcuity = GetBaseAcuity("vis"); // grayman #3552
+	//m_oldVisualAcuity = GetAcuity("vis"); // Tels fix #2408
 
 	spawnArgs.GetFloat("alert_aud_thresh", va("%f",gameLocal.m_sndProp->m_SndGlobals.DefaultThreshold), m_AudThreshold );
 	spawnArgs.GetInt(	"num_cinematics",		"0",		num_cinematics );
@@ -9059,7 +9060,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	* as much, 20 is four times as much, etc.
 	**/
 
-	// angua: alert increase is scaled by alertFactor (defined on prpagated sound). 
+	// angua: alert increase is scaled by alertFactor (defined on propagated sound). 
 	// This way, different sounds can result in different alert increase at the same volume
 	float psychLoud = 1 + (propParms->loudness - m_AudThreshold) * propParms->alertFactor;
 	
@@ -9159,7 +9160,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			}
 		}
 
-		if( cv_spr_show.GetBool() )
+		if ( cv_spr_show.GetBool() )
 		{
 			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 
 				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
@@ -9449,33 +9450,65 @@ bool idAI::AlertIndexIncreased()
 	return (AI_AlertIndex > m_prevAlertIndex);
 }
 
+// grayman #3552 - get original acuity w/o applying factors like drunkeness
+
+float idAI::GetBaseAcuity(const char *type) const
+{
+	float returnval(0);
+
+	// Try to look up the ID in the hashindex. This corresponds to an entry in m_acuityNames.
+	int ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey(type, false) );
+
+	if ( ind == -1 )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AI %s attempted to query nonexistant acuity type: %s", GetName(), type);
+		gameLocal.Warning("[AI] AI %s attempted to query nonexistant acuity type: %s", GetName(), type);
+	}
+	else if ( ind > m_Acuities.Num() )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Acuity index %d exceeds acuity array size %d!\r", ind, m_Acuities.Num());
+	}
+	else
+	{
+		// Look up the acuity value using the index from the hashindex
+		returnval = m_Acuities[ind];
+	}
+
+	return returnval;
+}
+
 float idAI::GetAcuity(const char *type) const
 {
-	float returnval(-1);
+	float returnval = GetBaseAcuity(type);
+
+	/* grayman #3552 - this part is now done by GetBaseAcuity().
 
 	// Try to lookup the ID in the hashindex. This corresponds to an entry in m_acuityNames.
 	int ind = g_Global.m_AcuityHash.First( g_Global.m_AcuityHash.GenerateKey(type, false) );
-//	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Retrived Acuity index %d for type %s\r", ind, type);
 
 	if (ind == -1 )
 	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
-		gameLocal.Warning("[AI] AI %s attempted to query nonexistant acuity type: %s", name.c_str(), type);
 		return returnval;
 	}
 	else if (ind > m_Acuities.Num())
 	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Acuity index %d exceed acuity array size %d!\r", ind, m_Acuities.Num());
 		return returnval;
 	}
 
-	// Lookup the acuity value using the index from the hashindex
+	// Look up the acuity value using the index from the hashindex
 	returnval = m_Acuities[ind];
+
+ */
+
+	if (returnval <= 0 )
+	{
+		return 0;
+	}
 
 	// SZ: June 10, 2007
 	// Acuities are now modified by alert level
-	if (returnval > 0.0)
-	{
+//	if (returnval > 0.0)
+//	{
 		if (m_maxAlertLevel >= thresh_5)
 		{
 			returnval *= cv_ai_acuity_L5.GetFloat();
@@ -9488,10 +9521,10 @@ float idAI::GetAcuity(const char *type) const
 		{
 			returnval *= cv_ai_acuity_L3.GetFloat();
 		}
-	}
+//	}
 
 	// angua: drunken AI have reduced acuity, unless they have seen evidence of intruders
-	if (spawnArgs.GetBool("drunk", "0") && HasSeenEvidence() == false)
+	if ( spawnArgs.GetBool("drunk", "0") && !HasSeenEvidence() )
 	{
 		returnval *= spawnArgs.GetFloat("drunk_acuity_factor", "1");
 	}
@@ -9546,7 +9579,7 @@ idEntity *idAI::GetTactEnt( void )
 void idAI::PerformVisualScan(float timecheck)
 {
 	// Only perform enemy checks if we are in the player's PVS
-	if ( (GetAcuity("vis") <= 0 ) || !gameLocal.InPlayerPVS(this) )
+	if ( ( GetAcuity("vis") <= 0 ) || !gameLocal.InPlayerPVS(this) )
 	{
 		return;
 	}
@@ -12517,8 +12550,10 @@ void idAI::GetUp()
 
 		// Reset visual, hearing and tactile acuity
 		SetAcuity("vis", m_oldVisualAcuity);		// Tels: fix #2408
-		SetAcuity("aud", GetAcuity("aud") * 2);
-		SetAcuity("tact", GetAcuity("tact") * 2);
+		SetAcuity("aud", GetBaseAcuity("aud") * 2); // grayman #3552
+		SetAcuity("tact", GetBaseAcuity("tact") * 2); // grayman #3552
+		//SetAcuity("aud", GetAcuity("aud") * 2);
+		//SetAcuity("tact", GetAcuity("tact") * 2);
 	}
 }
 
@@ -12547,13 +12582,16 @@ void idAI::LayDown()
 	m_sleepFloorZ = result.endpos.z; // this point is 0.25 above the floor
 
 	// Tels: Sleepers are blind
-	m_oldVisualAcuity = GetAcuity("vis");
+	m_oldVisualAcuity = GetBaseAcuity("vis"); // grayman #3552
+	//m_oldVisualAcuity = GetAcuity("vis");
 	SetAcuity("vis", 0);
 
 	// Reduce hearing and tactile acuity by 50%
 	// TODO: use spawn args
-	SetAcuity("aud", GetAcuity("aud") * 0.5);
-	SetAcuity("tact", GetAcuity("tact") * 0.5);
+	SetAcuity("aud", GetBaseAcuity("aud") * 0.5); // grayman #3552
+	SetAcuity("tact", GetBaseAcuity("tact") * 0.5); // grayman #3552
+	//SetAcuity("aud", GetAcuity("aud") * 0.5);
+	//SetAcuity("tact", GetAcuity("tact") * 0.5);
 }
 
 

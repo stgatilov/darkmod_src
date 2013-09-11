@@ -89,9 +89,12 @@ void BlindedState::Init(idAI* owner)
 		owner->SetAlertLevel(owner->thresh_5 - 1);
 	}
 
-	_oldVisAcuity = owner->GetAcuity("vis");
+	_oldVisAcuity = owner->GetBaseAcuity("vis"); // grayman #3552
+//	_oldVisAcuity = owner->GetAcuity("vis");
 	owner->SetAcuity("vis", 0);
-	_oldAudAcuity = owner->GetAcuity("aud"); // Smoke #2829
+
+	_oldAudAcuity = owner->GetBaseAcuity("aud"); // grayman #3552
+	//_oldAudAcuity = owner->GetAcuity("aud"); // Smoke #2829
 	owner->SetAcuity("aud",_oldAudAcuity*0.25f); // Smoke #2829
 
 	_staring = false; // grayman #3431 (set to true when you stare at the ground)
