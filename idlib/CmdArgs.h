@@ -30,7 +30,7 @@
 
 class idCmdArgs {
 public:
-							idCmdArgs( void ) { argc = 0; }
+							idCmdArgs( void ) { argc = 0; memset (tokenized, 0, MAX_COMMAND_STRING); }
 							idCmdArgs( const char *text, bool keepAsStrings ) { TokenizeString( text, keepAsStrings ); }
 
 	void					operator=( const idCmdArgs &args );
@@ -49,7 +49,7 @@ public:
 	void					TokenizeString( const char *text, bool keepAsStrings );
 
 	void					AppendArg( const char *text );
-	void					Clear( void ) { argc = 0; }
+	void					Clear( void ) { argc = 0; memset (tokenized, 0, MAX_COMMAND_STRING); }
 	const char **			GetArgs( int *argc );
 
 private:
