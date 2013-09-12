@@ -326,6 +326,7 @@ void idCmdSystemLocal::Init( void ) {
 	completionString = "*";
 
 	textLength = 0;
+    memset (textBuf, 0, MAX_CMD_BUFFER);
 }
 
 /*
@@ -637,7 +638,7 @@ void idCmdSystemLocal::ExecuteCommandBuffer( void ) {
 			if ( !( quotes & 1 ) &&  text[i] == ';' ) {
 				break;	// don't break if inside a quoted string
 			}
-			if ( text[i] == '\n' || text[i] == '\r' ) {
+			if ( text[i] == '\n' || text[i] == '\r' || text[i] == 0 ) {
 				break;
 			}
 		}
@@ -654,11 +655,11 @@ void idCmdSystemLocal::ExecuteCommandBuffer( void ) {
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec) can insert data at the
 		// beginning of the text buffer
-
+        i++;
 		if ( i == textLength ) {
 			textLength = 0;
+            memset (textBuf, 0, MAX_CMD_BUFFER);
 		} else {
-			i++;
 			textLength -= i;
 			memmove( text, text+i, textLength );
 		}
