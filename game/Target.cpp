@@ -33,6 +33,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Missions/MissionManager.h"
 #include "ai/Conversation/ConversationSystem.h"
 #include "StimResponse/StimResponseCollection.h"
+#include <boost/algorithm/string/split.hpp> // grayman #3554
+#include <boost/algorithm/string/classification.hpp> // grayman #3554
 
 /*
 ===============================================================================
@@ -1840,21 +1842,44 @@ void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
 	// Cycle through all matching spawnargs
 	while (keyVal != NULL) 
 	{
+		bool success = false; // whether we have a valid key value string
+							  // of the form "O,C", where O and C are numbers
+							  // greater than zero
+
 		idStr StringID = keyVal->GetValue();
-		idStr objIDStr(StringID), compIDStr(StringID);
 		
-		objIDStr.StripTrailing(",");
-		compIDStr.StripLeading(",");
-		
-		int objId = atoi( objIDStr.c_str() );
-		int compId = atoi( compIDStr.c_str() );
+		// grayman #3554 - split the obj/comp string
+		// For the record, StripTrailing(",") removes all trailing commas,
+		// which is not what we want. StripLeading(",") strips all leading
+		// commas, which is also not what we want.
+		//objIDStr.StripTrailing(",");
+		//compIDStr.StripLeading(",");
 
-		if (objId > 0 && compId > 0)
-			gameLocal.m_MissionData->SetComponentState_Ext(objId, compId, state);
-		else
+		int index = idStr::FindChar(StringID.c_str(),',');
+		if ( index > 0 )
+		{
+			std::vector<std::string> substrings; // will hold the separated substrings
+			std::string ids = StringID.c_str();
+			boost::algorithm::split(substrings, ids, boost::algorithm::is_any_of(","));
+			const char* objective = idStr(substrings[0].c_str());
+			const char* component = idStr(substrings[1].c_str());
+		
+			int objId = atoi( objective );
+			int compId = atoi( component );
+
+			if ( ( objId > 0 ) && ( compId > 0) )
+			{
+				gameLocal.m_MissionData->SetComponentState_Ext(objId, compId, state);
+				success = true;
+			}
+		}
+		
+		if (!success)
+		{
 			gameLocal.Warning("Invalid objective component ID %s on CTarget_SetObjectiveState %s", StringID.c_str(), name.c_str());
+		}
 
-		// Lookup the next matching spawnarg
+		// Get the next matching spawnarg
 		keyVal = spawnArgs.MatchPrefix("comp_id", keyVal);
 	}
 }
