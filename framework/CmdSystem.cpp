@@ -660,11 +660,12 @@ void idCmdSystemLocal::ExecuteCommandBuffer( void ) {
 		// delete the text from the command buffer and move remaining commands down
 		// this is necessary because commands (exec) can insert data at the
 		// beginning of the text buffer
-        i++;
+        
 		if ( i == textLength ) {
 			textLength = 0;
             memset (textBuf, 0, MAX_CMD_BUFFER);
 		} else {
+            i++;
 			textLength -= i;
 			memmove( text, text+i, textLength );
 		}
