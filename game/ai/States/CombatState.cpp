@@ -709,6 +709,9 @@ void CombatState::Think(idAI* owner)
 				}
 				_waitEndTime = gameLocal.time + delay;
 				_combatSubState = EStateDrawingWeapon;
+
+				// grayman #3563 - safety net when drawing a weapon
+				_drawEndTime = gameLocal.time + MAX_DRAW_DURATION;
 			}
 			else
 			{
@@ -722,13 +725,15 @@ void CombatState::Think(idAI* owner)
 			{
 				_waitEndTime = gameLocal.time;
 				_combatSubState = EStateDrawingWeapon;
+
+				// grayman #3563 - safety net when drawing a weapon
+				_drawEndTime = gameLocal.time + MAX_DRAW_DURATION;
 			}
 			else
 			{
 				_combatSubState = EStateCombatAndChecks;
 			}
 		}
-
 		break;
 		}
 
@@ -737,7 +742,10 @@ void CombatState::Think(idAI* owner)
 		// grayman #3355 - check wait state
 		if ( idStr(owner->WaitState()) == "draw" )
 		{
-			return; // wait until weapon is drawn
+			if ( gameLocal.time < _drawEndTime ) // grayman #3563 - check safety net
+			{
+				return; // wait until weapon is drawn
+			}
 		}
 
 		if ( gameLocal.time < _waitEndTime )

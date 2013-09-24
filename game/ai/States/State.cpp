@@ -170,6 +170,7 @@ void State::Save(idSaveGame* savefile) const
 	_owner.Save(savefile);
 
 	savefile->WriteFloat(_alertLevelDecreaseRate);
+	savefile->WriteInt(_drawEndTime); // grayman #3563
 }
 
 void State::Restore(idRestoreGame* savefile)
@@ -177,6 +178,7 @@ void State::Restore(idRestoreGame* savefile)
 	_owner.Restore(savefile);
 
 	savefile->ReadFloat(_alertLevelDecreaseRate);
+	savefile->ReadInt(_drawEndTime); // grayman #3563
 }
 
 void State::OnVisualAlert(idActor* enemy)
