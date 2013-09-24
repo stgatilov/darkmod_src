@@ -280,7 +280,9 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		float dist = ( ownerOrigin - owner->GetMemory().alertSearchCenter).LengthFast();
 
-		if ( _investigateClosely && ( dist < INVESTIGATE_SPOT_CLOSELY_MAX_DIST ) )
+		// grayman #3563 - don't kneel down if you're drawing a weapon
+
+		if ( _investigateClosely && ( dist < INVESTIGATE_SPOT_CLOSELY_MAX_DIST ) && ( idStr(owner->WaitState()) != "draw") )
 		{
 			// Stop previous moves
 			owner->StopMove(MOVE_STATUS_WAITING);
@@ -294,6 +296,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				// Close to the feet, kneel down and investigate closely
 				owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
 				owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KneelDown", 6);
+				owner->SetWaitState("kneel_down"); // grayman #3563
 			}
 
 			// Wait a bit, setting _exitTime sets the lifetime of this task

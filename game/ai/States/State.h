@@ -28,12 +28,15 @@
 namespace ai
 {
 
+#define MAX_DRAW_DURATION 2000  // grayman #3563
+
 class State
 {
 protected:
 	// The owning entity
 	idEntityPtr<idAI> _owner;
 	float _alertLevelDecreaseRate;
+	int _drawEndTime; // grayman #3563 - safety net when drawing a weapon
 
 public:
 	// Get the name of this state
