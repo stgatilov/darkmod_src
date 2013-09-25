@@ -223,6 +223,7 @@ public:
 	bool					CollisionImpulse( const trace_t &collision, idVec3 &impulse );
 private:
 	void					ContactFriction( float deltaTime );
+	void					SmallMassContactFriction( float deltaTime ); // grayman #3452
 	void					DropToFloorAndRest( void );
 #ifdef MOD_WATERPHYSICS
 	bool					TestIfAtRest( void );

@@ -834,6 +834,64 @@ void idPhysics_RigidBody::ContactFriction( float deltaTime )
 
 /*
 ================
+idPhysics_RigidBody::SmallMassContactFriction
+
+  grayman #3452 - Objects with small mass have a problem with the new ContactFriction()
+  method above. As a temporary workaround, provide the previous version
+  for objects with small mass
+================
+*/
+void idPhysics_RigidBody::SmallMassContactFriction( float deltaTime ) {
+	int i;
+	float magnitude, impulseNumerator, impulseDenominator;
+	idMat3 inverseWorldInertiaTensor;
+	idVec3 linearVelocity, angularVelocity;
+	idVec3 massCenter, r, velocity, normal, impulse, normalVelocity;
+
+	inverseWorldInertiaTensor = current.i.orientation.Transpose() * inverseInertiaTensor * current.i.orientation;
+
+	massCenter = current.i.position + centerOfMass * current.i.orientation;
+
+	for ( i = 0; i < contacts.Num(); i++ ) {
+
+		r = contacts[i].point - massCenter;
+
+		// calculate velocity at contact point
+		linearVelocity = inverseMass * current.i.linearMomentum;
+		angularVelocity = inverseWorldInertiaTensor * current.i.angularMomentum;
+		velocity = linearVelocity + angularVelocity.Cross(r);
+
+		// velocity along normal vector
+		normalVelocity = ( velocity * contacts[i].normal ) * contacts[i].normal;
+
+		// calculate friction impulse
+		normal = -( velocity - normalVelocity );
+		magnitude = normal.Normalize();
+		impulseNumerator = contactFriction * magnitude;
+		impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( normal ) ).Cross( r ) * normal );
+		impulse = (impulseNumerator / impulseDenominator) * normal;
+
+		// apply friction impulse
+		current.i.linearMomentum += impulse;
+		current.i.angularMomentum += r.Cross(impulse);
+
+		// if moving towards the surface at the contact point
+		if ( normalVelocity * contacts[i].normal < 0.0f ) {
+			// calculate impulse
+			normal = -normalVelocity;
+			impulseNumerator = normal.Normalize();
+			impulseDenominator = inverseMass + ( ( inverseWorldInertiaTensor * r.Cross( normal ) ).Cross( r ) * normal );
+			impulse = (impulseNumerator / impulseDenominator) * normal;
+
+			// apply impulse
+			current.i.linearMomentum += impulse;
+			current.i.angularMomentum += r.Cross( impulse );
+		}
+	}
+}
+
+/*
+================
 idPhysics_RigidBody::TestIfAtRest
 
   Returns true if the body is considered at rest.
@@ -1705,7 +1763,14 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		else
 		{
 			// apply contact friction
-			ContactFriction( timeStep );
+			if ( mass >= 1.0 ) // grayman #3452
+			{
+				ContactFriction( timeStep );
+			}
+			else
+			{
+				SmallMassContactFriction( timeStep );
+			}
 		}
 	}
 
