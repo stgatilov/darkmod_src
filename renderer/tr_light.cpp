@@ -715,11 +715,11 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 		w = *ow;
 
 		// now check the winding against each of the frustum planes
-		//for ( j = 0; j < 5; j++ ) {
-		//	if ( !w.ClipInPlace( -tr.viewDef->frustum[j] ) ) {
-		//		break;
-		//	}
-		//}
+		for ( int j = 0; j < 5; j++ ) {
+			if ( !w.ClipInPlace( -tr.viewDef->frustum[j] ) ) {
+				break;
+			}
+		}
 
 		// project these points to the screen and add to bounds
 		for ( int j = 0 ; j < w.GetNumPoints(); j++ ) {
