@@ -714,7 +714,7 @@ search paths.
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
 	char *s, *base = NULL;
-
+     
 	// skip a drive letter?
 
 	// search for anything with "base" in it
@@ -732,11 +732,17 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
         lowerPath.ToLower();
     }
 
+    // we need take the basepath and strip off all but the last directory so that
+    // it can be used as a reference point. this should allow users to install TDM
+    // in any directory they wish
+    idStr dynbase = fs_basepath.GetString();
+    dynbase.StripPath();
+
     static const char * gamePath = NULL;
     for ( int gpath = 0; gpath < GPATH_COUNT; gpath++) {
         switch (gpath) {
             case 0: gamePath = BASE_GAMEDIR; break; // taaaki - seems to be some issues with removing this - need to look into it further
-            case 1: gamePath = BASE_TDM; break;
+            case 1: gamePath = dynbase.c_str(); break; // base the tdm directory off the bin path instead of hardcoding it
             case 2: gamePath = fs_mod.GetString(); break;
             case 3: gamePath = fs_currentfm.GetString(); break; // taaaki - may need to check this if my assumptions are incorrect
             default: gamePath = NULL; break;
