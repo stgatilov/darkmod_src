@@ -723,15 +723,6 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	// which won't match any of our drive letter based search paths
 	bool ignoreWarning = false;
 
-    // taaaki: on the fence about doing this - it goes against the the fact that the
-    //         filesystem was designed for case sensitive directory names.
-    //         see comments regarding fs_caseSensitiveOS at beginning of this file
-    // if the OS is case insensitive, convert the OSPath to lowercase
-    idStr lowerPath = OSPath;
-    if ( cvarSystem->GetCVarBool( "fs_caseSensitiveOS" ) == false ) {
-        lowerPath.ToLower();
-    }
-
     // we need take the basepath and strip off all but the last directory so that
     // it can be used as a reference point. this should allow users to install TDM
     // in any directory they wish
@@ -749,10 +740,10 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
         }
 
         if ( base == NULL && gamePath && strlen( gamePath ) ) {
-            base = (char *)strstr( lowerPath.c_str(), gamePath );
+            base = (char *)strstr( OSPath, gamePath );
             while ( base ) {
 				char c1 = '\0', c2;
-				if ( base > lowerPath.c_str() ) {
+				if ( base > OSPath ) {
 					c1 = *(base - 1);
 				}
 				c2 = *( base + strlen( gamePath ) );
@@ -772,14 +763,14 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 		if ( s ) {
 			strcpy( relativePath, s + 1 );
 			if ( fs_debug.GetInteger() > 1 ) {
-				common->Printf( "idFileSystem::OSPathToRelativePath: %s becomes %s\n", lowerPath.c_str(), relativePath );
+				common->Printf( "idFileSystem::OSPathToRelativePath: %s becomes %s\n", OSPath, relativePath );
 			}
 			return relativePath;
 		}
 	}
 
 	if ( !ignoreWarning ) {
-		common->Warning( "idFileSystem::OSPathToRelativePath failed on %s", lowerPath.c_str() );
+		common->Warning( "idFileSystem::OSPathToRelativePath failed on %s", OSPath );
 	}
 
 	strcpy( relativePath, "" );
