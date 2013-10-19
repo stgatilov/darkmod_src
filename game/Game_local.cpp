@@ -955,6 +955,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	// grayman #3108 - contributed by 7318
 	savegame.WriteBool( globalPortalSky );
+	savegame.WriteInt( portalSkyScale ); // grayman #3582
 	savegame.WriteInt( currentPortalSkyType );
 	savegame.WriteVec3( playerOldEyePos );
 	savegame.WriteVec3( portalSkyGlobalOrigin );
@@ -2062,6 +2063,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	// grayman #3108 - contributed by 7318
 	savegame.ReadBool( globalPortalSky );
+	savegame.ReadInt( portalSkyScale ); // grayman #3582
 	savegame.ReadInt( currentPortalSkyType );
 	savegame.ReadVec3( playerOldEyePos );
 	savegame.ReadVec3( portalSkyGlobalOrigin );
