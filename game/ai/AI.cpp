@@ -10365,7 +10365,6 @@ float idAI::GetMaximumObservationDistance(idEntity* entity) const
 	assert(entity != NULL); // don't accept NULL input
 
 	float lightQuotient = entity->GetLightQuotient();
-	
 	return lightQuotient * cv_ai_sight_scale.GetFloat() * GetAcuity("vis");
 }
 
@@ -10465,11 +10464,9 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 			// Not visible, entity is hidden in darkness
 			return true;
 		}
-		else
-		{
-			// Visible, visual stim above threshold
-			return false;
-		}
+
+		// Visible, visual stim above threshold
+		return false;
 	}
 	else // Not the player
 	{
@@ -10497,17 +10494,15 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 
 			return true; // hidden by darkness
 		}
-		else
-		{
-			// Draw debug graphic?
-			if (cv_ai_visdist_show.GetFloat() > 1.0f)
-			{
-				// We can see to target
-				gameRenderWorld->DebugArrow(colorGreen, observeFrom, midPoint, 2, cv_ai_visdist_show.GetInteger());
-			}
 
-			return false; // not hidden by darkness
+		// Draw debug graphic?
+		if (cv_ai_visdist_show.GetFloat() > 1.0f)
+		{
+			// We can see to target
+			gameRenderWorld->DebugArrow(colorGreen, observeFrom, midPoint, 2, cv_ai_visdist_show.GetInteger());
 		}
+
+		return false; // not hidden by darkness
 	}
 }
 

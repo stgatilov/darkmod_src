@@ -84,7 +84,10 @@ EIntersection IntersectLinesegmentEllipsoid(const idVec3 LineSegment[LSG_COUNT],
 EIntersection IntersectLineEllipsoid(const idVec3 Line[LSG_COUNT], const idVec3 Ellipsoid[ELL_COUNT], idVec3 Intersect[2]);
 EIntersection IntersectRayEllipsoid(const idVec3 Ray[LSG_COUNT], const idVec3 Ellipsoid[ELL_COUNT], idVec3 Intersect[2], bool Inside[LSG_COUNT]);
 
+EIntersection IntersectLinesegmentLightEllipsoid(const idVec3 LineSegment[LSG_COUNT], const idVec3 Ellipsoid[ELL_COUNT], idVec3 Intersect[2], bool Inside[LSG_COUNT]); // grayman #3584
+
 EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT], idVec3 rkCone[ELC_COUNT], idVec3 akPoint[2], bool Stump);
+EIntersection IntersectLineLightCone(const idVec3 rkLine[LSG_COUNT], idVec3 rkCone[ELC_COUNT], idVec3 akPoint[2], bool inside[2]); // grayman #3584
 bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Triangle[3], idVec3 &Intersect, float &t);
 
 void R_SetLightFrustum(const idPlane lightProject[4], idPlane frustum[6]);

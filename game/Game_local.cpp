@@ -501,6 +501,11 @@ void idGameLocal::Init( void ) {
 
 	LoadLightMaterial("materials/lights.mtr", &g_Global.m_LightMaterial);
 
+	// grayman #3584 - load light textures found in other files
+	LoadLightMaterial("materials/tdm_light_textures.mtr",    &g_Global.m_LightMaterial);
+	LoadLightMaterial("materials/tdm_ai_steambots.mtr",      &g_Global.m_LightMaterial);
+	LoadLightMaterial("materials/tdm_lights_d3_leftover.mtr",&g_Global.m_LightMaterial);
+
 	m_MissionData = CMissionDataPtr(new CMissionData);
 	m_CampaignStats = CampaignStatsPtr(new CampaignStats);
 	m_RelationsManager = CRelationsPtr(new CRelations);

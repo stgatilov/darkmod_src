@@ -342,9 +342,9 @@ ID_INLINE int idPlane::Side( const idVec3 &v, const float epsilon ) const {
 ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end, float *fract ) const{
 	float d1, d2, fraction;
 
-	// This code is a copy of the lineintersection code from Id. Because of a bug
-	// Because of a bug in the calcualtion it doesn't always correctly report the intersection. Until 
-	// it is confirmed that it can be fixed in the plane.h file, without braking any existing code that
+	// This code is a copy of the lineintersection code from Id.
+	// Because of a bug in the calculation it doesn't always correctly report the intersection. Until 
+	// it is confirmed that it can be fixed in the plane.h file, without breaking any existing code that
 	// might rely on the current behaviour I keep this code here as a copy.
 	// Update: According to a mail from Brian (id) he says that the code is correct and is based on
 	// a slightly different assumption. I don't think so, because the exact same code doesn't work in 
@@ -352,18 +352,23 @@ ID_INLINE bool idPlane::LineIntersection( const idVec3 &start, const idVec3 &end
 	// d1 = Normal() * start + d;
 	d1 = -(Normal() * start + d);
 	d2 = Normal() * end + d;
-	if ( d1 == d2 ) {
+	if ( d1 == d2 )
+	{
 		return false;
 	}
-	if ( d1 > 0.0f && d2 > 0.0f ) {
+	if ( d1 > 0.0f && d2 > 0.0f )
+	{
 		return false;
 	}
-	if ( d1 < 0.0f && d2 < 0.0f ) {
+	if ( d1 < 0.0f && d2 < 0.0f )
+	{
 		return false;
 	}
 	fraction = ( d1 / ( d1 - d2 ) );
-	if(fract != NULL)
+	if (fract != NULL)
+	{
 		*fract = fraction;
+	}
 
 	return ( fraction >= 0.0f && fraction <= 1.0f );
 }

@@ -449,12 +449,14 @@ void idLight::Spawn( void )
 	// set the number of light levels
 	spawnArgs.GetInt( "levels", "1", levels );
 	currentLevel = levels;
-	if ( levels <= 0 ) {
+	if ( levels <= 0 )
+	{
 		gameLocal.Error( "Invalid light level set on entity #%d(%s)", entityNumber, name.c_str() );
 	}
 
 	// make sure the demonic shader is cached
-	if ( spawnArgs.GetString( "mat_demonic", NULL, &demonic_shader ) ) {
+	if ( spawnArgs.GetString( "mat_demonic", NULL, &demonic_shader ) )
+	{
 		declManager->FindType( DECL_MATERIAL, demonic_shader );
 	}
 
@@ -472,7 +474,8 @@ void idLight::Spawn( void )
 	// but there may still be a chance to get it wrong if the game moves
 	// a light before the first present, and doesn't clear the prelight
 	renderLight.prelightModel = 0;
-	if ( name[ 0 ] ) {
+	if ( name[ 0 ] )
+	{
 		// this will return 0 if not found
 		renderLight.prelightModel = renderModelManager->CheckModel( va( "_prelight_%s", name.c_str() ) );
 	}
@@ -494,8 +497,8 @@ void idLight::Spawn( void )
 
 	fadeFrom.Set( 1, 1, 1, 1 );
 	fadeTo.Set( 1, 1, 1, 1 );
-	fadeStart			= 0;
-	fadeEnd				= 0;
+	fadeStart = 0;
+	fadeEnd = 0;
 
 	// load visual and collision models
 	LoadModels();
@@ -504,9 +507,11 @@ void idLight::Spawn( void )
 
 	UpdateVisuals();
 
-	if(renderLight.pointLight == true)
+	if ( renderLight.pointLight == true )
+	{
 		m_MaxLightRadius = renderLight.lightRadius.Length();
-	else
+	}
+	else // projected light
 	{
 		idVec3 pos = GetPhysics()->GetOrigin();
 		idVec3 max = renderLight.target + renderLight.right + renderLight.up;
@@ -516,13 +521,15 @@ void idLight::Spawn( void )
 
 	m_MaterialName = NULL;
 	spawnArgs.GetString( "texture", "lights/squarelight1", &m_MaterialName);
-	if(m_MaterialName != NULL)
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %s\r", m_MaterialName);
+	if ( m_MaterialName != NULL )
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has a texture (m_MaterialName): %s\r", m_MaterialName);
+	}
 
 	idImage *pImage;
-	if(renderLight.shader != NULL && (pImage = renderLight.shader->LightFalloffImage()) != NULL)
+	if ( ( renderLight.shader != NULL ) && ( (pImage = renderLight.shader->LightFalloffImage()) != NULL ) )
 	{
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has an image: %08lX\r", pImage);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light has a falloff image: %08lX\r", pImage);
 	}
 
 	// grayman #2603 - set up flames for vertical check
@@ -1714,9 +1721,9 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 	const unsigned char *img = NULL;
 	const unsigned char *fot = NULL;
 
-	if(m_LightMaterial == NULL)
+	if (m_LightMaterial == NULL)
 	{
-		if((m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL)
+		if ( (m_LightMaterial = g_Global.GetMaterial(m_MaterialName)) != NULL )
 		{
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Material found for [%s]\r", name.c_str());
 			fot = m_LightMaterial->GetFallOffTexture(fw, fh, fbpp);
@@ -1738,7 +1745,7 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 
 	// If we have neither falloff texture nor a projection image, we do a 
 	// simple linear falloff
-	if(fot == NULL && img == NULL)
+	if ( ( fot == NULL ) && ( img == NULL ) )
 	{
 		// TODO: Light falloff calculation
 //#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
@@ -1748,29 +1755,33 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 //#pragma message(DARKMOD_NOTE "------------------------------------------------idLight::GetDistanceColor")
 		fColVal = (fColVal / m_MaxLightRadius) * (m_MaxLightRadius - fDistance);
 		fImgVal = 1;
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("No textures defined using distance: [%f]\r", fDistance);
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("No textures defined, using distance method: [%f]\r", fDistance);
 	}
 	else
 	{
 		// If we have a falloff texture ...
-		if(fot != NULL)
+		if ( fot != NULL )
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), fw, fh, fbpp);
 			fColVal = fColVal * (fot[i] * DARKMOD_LG_SCALE);
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Falloff: Index: %u   Value: %u [%f]\r", i, (int)fot[i], (float)(fot[i] * DARKMOD_LG_SCALE));
 		}
 		else
+		{
 			fColVal = 1;
+		}
 
 		// ... or a projection image.
-		if(img != NULL)
+		if ( img != NULL )
 		{
 			i = GetTextureIndex((float)fabs(fx), (float)fabs(fy), iw, ih, ibpp);
 			fImgVal = img[i] * DARKMOD_LG_SCALE;
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Map: Index: %u   Value: %u [%f]\r", i, (int)img[i], (float)(img[i] * DARKMOD_LG_SCALE));
 		}
 		else
+		{
 			fImgVal = 1;
+		}
 	}
 
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Final ColVal: %f   ImgVal: %f\r", fColVal, fImgVal);
@@ -1800,7 +1811,6 @@ bool idLight::GetLightCone(idVec3 &Origin, idVec3 &Target, idVec3 &Right, idVec3
 	Target = renderLight.target;
 	Right = renderLight.right;
 	Up = renderLight.up;
-
 	Start = renderLight.start;
 	End = renderLight.end;
 

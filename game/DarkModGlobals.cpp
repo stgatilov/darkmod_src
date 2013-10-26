@@ -423,16 +423,16 @@ CLightMaterial *CGlobal::GetMaterial(idStr const &mn)
 	int i, n;
 
 	n = m_LightMaterial.Num();
-	for(i = 0; i < n; i++)
+	for ( i = 0 ; i < n ; i++ )
 	{
-		if(m_LightMaterial[i]->m_MaterialName.Icmp(mn) == 0)
+		if (m_LightMaterial[i]->m_MaterialName.Icmp(mn) == 0)
 		{
 			rc = m_LightMaterial[i];
 			break;
 		}
 	}
 
-	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("GetFallOffTexture returns: [%s] for [%s]\r", (rc == NULL) ? "(null)" : rc->m_MaterialName.c_str(), mn.c_str());
+	DM_LOG(LC_SYSTEM, LT_INFO)LOGSTRING("CGlobal::GetMaterial returns: [%s] for [%s]\r", (rc == NULL) ? "(null)" : rc->m_MaterialName.c_str(), mn.c_str());
 	return rc;
 }
 
