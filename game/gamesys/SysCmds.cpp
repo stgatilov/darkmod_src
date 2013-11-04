@@ -3695,8 +3695,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "testBlend",				idTestModel::TestBlend_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"tests animation blending" );
 	cmdSystem->AddCommand( "reloadScript",			Cmd_ReloadScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"reloads scripts" );
 
-	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_RENDERER,	"Updates lookup textures" );
-	cmdSystem->AddCommand( "tdm_lod_bias_changed",		Cmd_LODBiasChanged_f,			CMD_FL_RENDERER,	"Updates entity visibility according to tdm_lod_bias." );
+	cmdSystem->AddCommand( "tdm_updateCookedMathData",	Cmd_updateCookedMathData_f,		CMD_FL_GAME,	"Updates lookup textures" );
+	cmdSystem->AddCommand( "tdm_lod_bias_changed",		Cmd_LODBiasChanged_f,			CMD_FL_GAME,	"Updates entity visibility according to tdm_lod_bias." );
 
 	cmdSystem->AddCommand( "script",				Cmd_Script_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"executes a line of script" );
 	cmdSystem->AddCommand( "listCollisionModels",	Cmd_ListCollisionModels_f,	CMD_FL_GAME,				"lists collision models" );

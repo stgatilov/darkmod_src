@@ -362,12 +362,7 @@ void idCmdSystemLocal::AddCommand( const char *cmdName, cmdFunction_t function, 
 	for ( cmd = commands; cmd; cmd = cmd->next ) {
 		if ( idStr::Cmp( cmdName, cmd->name ) == 0 ) {
 			if ( function != cmd->function ) {
-                // taaaki: super cludge fix for video settings freeze before 2.00 release
-                if ( idStr::Cmp( cmdName, "tdm_updateCookedMathData" ) == 0 || idStr::Cmp( cmdName, "tdm_lod_bias_changed" ) == 0 ) {
-                    cmd->function = function;
-                } else {
-				    common->Printf( "idCmdSystemLocal::AddCommand: %s already defined\n", cmdName );
-                }
+			    common->Printf( "idCmdSystemLocal::AddCommand: %s already defined\n", cmdName );
 			}
 			return;
 		}
