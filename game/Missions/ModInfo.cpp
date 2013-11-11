@@ -301,6 +301,9 @@ bool CModInfo::LoadMetaData()
 
 		image = pathToFMPackage + splashImageName;
 	}
+    
+	// gnartsch: Check for local localization pack
+	isL10NpackInstalled = (fileSystem->FindFile(pathToFMPackage + modName + "_l10n.pk4") == FIND_YES);
 
 	return true;
 }

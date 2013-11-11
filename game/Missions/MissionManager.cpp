@@ -1393,6 +1393,7 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 		mission.version = node.attribute("version").as_int();
 		mission.isUpdate = false;
+        mission.needsL10NpackDownload = false; // gnartsch
 
 		if (idStr::Cmp(mission.modName.c_str(), fs_currentfm) == 0)
 		{
@@ -1424,7 +1425,12 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 
 				if (existingVersion >= mission.version)
 				{
-					continue; // Our version is up to date
+					// gnartsch : Skip to next mission only in case the localization pack 
+                    //            for the current mission had been downloaded already as well
+					if (missionInfo->isL10NpackInstalled) 
+                    {
+						continue; // Our version is up to date
+					}
 				}
 				else
 				{
@@ -1433,33 +1439,46 @@ void CMissionManager::LoadModListFromXml(const XmlDocumentPtr& doc)
 			}
 		}
 
-		// Mission download links
-		pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
-
-		for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
+		// gnartsch : Process mission download locations only if the mission itself is not 
+        //            present or not up to date, otherwise skip to the localization pack
+		if (!missionExists || mission.isUpdate) 
 		{
-			pugi::xml_node locNode = loc->node();
+            // Mission download links
+		    pugi::xpath_node_set downloadLocations = node.select_nodes("downloadLocation");
 
-			// Only accept English downloadlinks
-			if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
+		    for (pugi::xpath_node_set::const_iterator loc = downloadLocations.begin(); loc != downloadLocations.end(); ++loc)	
+		    {
+			    pugi::xml_node locNode = loc->node();
 
-			// Tels: #3419: Randomize the order of download URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			mission.missionUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.missionUrls.Num() + 2 ) );
-		}
+			    // Only accept English downloadlinks
+			    if (idStr::Icmp(locNode.attribute("language").value(), "english") != 0) continue;
+
+			    // Tels: #3419: Randomize the order of download URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
+			    mission.missionUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.missionUrls.Num() + 2 ) );
+		    }
+        }
 
 		// Localisation packs
-		pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
-
-		for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
+        // gnartsch: Process only if mission is either present locally or at least a download link for the mission is available.
+        if (missionExists || mission.missionUrls.Num() > 0)
 		{
-			pugi::xml_node locNode = loc->node();
+		    pugi::xpath_node_set l10PackNodes = node.select_nodes("localisationPack");
 
-			// Tels: #3419: Randomize the order of l10n URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
-			mission.l10nPackUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.l10nPackUrls.Num() + 2 ) );
-		}
+		    for (pugi::xpath_node_set::const_iterator loc = l10PackNodes.begin(); loc != l10PackNodes.end(); ++loc)	
+		    {
+			    pugi::xml_node locNode = loc->node();
+
+			    // Tels: #3419: Randomize the order of l10n URLs by inserting at a random place (+2 to avoid the first URL always being placed last)
+			    mission.l10nPackUrls.Insert(locNode.attribute("url").value(), gameLocal.random.RandomInt( mission.l10nPackUrls.Num() + 2 ) );
+
+                // gnartsch: Found a localization pack url for download
+				mission.needsL10NpackDownload = true;
+		    }
+        }
 
 		// Only add missions with valid locations
-		if (mission.missionUrls.Num() > 0)
+		// gnartsch: add the mission in case localization pack needs to be downloaded
+		if (mission.missionUrls.Num() > 0 || mission.l10nPackUrls.Num() > 0)
 		{
 			// Copy-construct the local mission struct into the heap-allocated one
 			_downloadableMods.Append(new DownloadableMod(mission));

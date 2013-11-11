@@ -433,10 +433,16 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING(" URL: '%s'", mod.missionUrls[u].c_str());
 		}
 
-		// Check for valid PK4 files after download
 		CDownloadPtr download(new CDownload(mod.missionUrls, missionPath, true));
+        // gnartsch: In case only the language pack needs to be downloaded, do not add the mission itself to the download list.
+		//           In that case we did not add any urls for the mission itself anyway.
+        int id = -1;
+		if (mod.missionUrls.Num() > 0)
+        {
+        	// Check for valid PK4 files after download
+			id = gameLocal.m_DownloadManager->AddDownload(download);
+		}
 
-		int id = gameLocal.m_DownloadManager->AddDownload(download);
 		int l10nId = -1;
 
 		// Check if there is a Localisation pack available
@@ -457,7 +463,13 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 			l10nId = gameLocal.m_DownloadManager->AddDownload(l10nDownload);
 
 			// Relate these two downloads, so that they might be handled as pair
-			download->SetRelatedDownloadId(l10nId);
+			// gnartsch: In case only the language pack needs to be downloaded, we can ignore the mission itself
+			if (id > 0) {
+				download->SetRelatedDownloadId(l10nId);
+			} else {
+				id = l10nId;
+				l10nId = -1;
+			}
 		}
 
 		// Store these IDs for later reference
@@ -532,6 +544,12 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 			if (mods[modIndex]->isUpdate)
 			{
 				title += "*";
+				updateInList = true;
+			}
+            // gnartsch: check if a localization pack needs to be downloaded
+			else if (mods[modIndex]->needsL10NpackDownload && mods[modIndex]->l10nPackUrls.Num() > 0)
+			{
+				title += "#";
 				updateInList = true;
 			}
 
@@ -732,6 +750,8 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 			break;
 		case CDownload::SUCCESS:
 			{
+                // gnartsch
+				bool l10nPackDownloaded = false;
 				// In case of success, check l10n download status
 				if (i->second.l10nPackDownloadId != -1)
 				{
@@ -754,16 +774,22 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 					{
 						// both successfully downloaded
 						successfulDownloads++;
+                        // gnartsch
+						l10nPackDownloaded = true;
 					}
 				}
-				else // regular download without l10n
+				else // regular download without l10n ... or l10n download only (gnartsch)
 				{
 					successfulDownloads++;
+                    // gnartsch: Consider Localization pack having been dealt with as well
+					l10nPackDownloaded = true;
 				}
 
 				// Save the mission version into the MissionDB for later use
 				CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
 				missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
+                // gnartsch: Mark l10n pack as present, so that the mission may disappear from the list of 'Available Downloads'
+				missionInfo->isL10NpackInstalled = l10nPackDownloaded;
 			}
 			break;
 		};

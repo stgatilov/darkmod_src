@@ -61,6 +61,9 @@ public:
 	int requiredMajor;
 	int requiredMinor;
 
+	// gnartsch: flag for local presence of a localization pack 
+	bool isL10NpackInstalled;
+
 	CModInfo(const idStr& modName_, const CModInfoDeclPtr& detailsDecl) :
 		_decl(detailsDecl),
 		_declDirty(false),

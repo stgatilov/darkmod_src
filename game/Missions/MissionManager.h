@@ -101,6 +101,9 @@ struct DownloadableMod
 	int		version;		// version number, initial release carries version 1
 	bool	isUpdate;		// whether this mission is an update of one already installed
 
+    // gnartsch:			// whether the localization pack is availlable and needs to be downloaded
+	bool	needsL10NpackDownload;
+
 	// The list of mission download URLs
 	idStringList missionUrls;
 
@@ -126,6 +129,7 @@ struct DownloadableMod
 		type(Single),
 		version(1),
 		isUpdate(false),
+        needsL10NpackDownload(false),	// gnartsch
 		detailsLoaded(false)
 	{}
 
