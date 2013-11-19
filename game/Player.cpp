@@ -7600,7 +7600,12 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 
 	// grayman #2816 - calculate damage differently if hit by a moveable
 	float f = 1.0f;
-	if ( inflictor->IsType(idMoveable::Type) ) // Moveable
+	// grayman #3583 - melee weapons are a special case
+	if (inflictor->spawnArgs.GetBool( "is_weapon_melee",0 ))
+	{
+		damageDef->GetInt( "damage", "20", damage );
+	}
+	else if ( inflictor->IsType(idMoveable::Type) ) // Moveable
 	{
 		float mass = inflictor->spawnArgs.GetFloat("mass","1");
 		f = mass/5.0f;
@@ -7614,7 +7619,7 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 			damage = static_cast<int>(damageDef->GetInt("damage"));
 		}
 	}
-	else // Melee or not a Moveable
+	else // not a Melee weapon or Moveable
 	{
 		damageDef->GetInt( "damage", "20", damage );
 	}
