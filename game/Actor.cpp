@@ -5191,6 +5191,16 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	idPhysics& physics = *GetPhysics(); // shortcut
+
+	idVec3 curVelocity = physics.GetLinearVelocity();
+
+	// grayman #3608 - if the current speed is more than the saved (previous frame) speed,
+	// you're not slowing down (crashing), you're speeding up, so there's no need to check for damage.
+
+	if ( curVelocity.LengthSqr() >= savedVelocity.LengthSqr() )
+	{
+		return result;
+	}
 	
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound won't be played otherwise
@@ -5207,43 +5217,71 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	const idVec3& vGravNorm = physics.GetGravityNormal();
-	idVec3 curVelocity = physics.GetLinearVelocity();
 
 	// grayman #0578 - velocity for the purposes of this method needs to be the
 	// relative velocity of the actor to the entity he's landing on.
 
-	idVec3 landedOnVelocity(0,0,0);
-	for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
+	// grayman #3608 - There are two cases:
+	//
+	// 1 - you're falling
+	//
+	// Your velocity will have become very small as you come
+	// to a stop. Determining damage will need to factor in the velocity of the object
+	// you're landing on. I.e. you're at velocity 0, but the object you landed on
+	// is traveling downward at some speed. You're not really going to maintain a
+	// velocity of 0 because as the object falls, you'll follow it. But for now, your
+	// velocity is 0. Your change in velocity from the previous frame will be:
+	//
+	// relative velocity = old velocity - current velocity - object velocity
+	//
+	// 2 - you're being pushed by something underneath you
+	//
+	// In this case, your velocity is rising. If it starts to fall from some large
+	// number, and you're still in contact with the pushing object, your change in
+	// velocity from the previous frame will be:
+	//
+	// relative velocity = old velocity - current velocity
+	//
+
+	idVec3 landedOnVelocity(0,0,0); // the velocity of any object you're on
+
+	if ( savedOrigin.z > physics.GetOrigin().z ) // only consider the speed of the object you're landing on if you're falling
 	{
-		const contactInfo_t &contact = physics.GetContact(i);
-		if ( contact.entityNum == ENTITYNUM_WORLD )
+		for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
 		{
-			// we assume the world does not move
+			const contactInfo_t &contact = physics.GetContact(i);
+			if ( contact.entityNum == ENTITYNUM_WORLD )
+			{
+				// we assume the world does not move
+				break;
+			}
+			idEntity* ent = gameLocal.entities[contact.entityNum];
+			if ( !ent )
+			{
+				continue;
+			}
+
+			// grayman #3370 - for some reason, moveables can attain high,
+			// short-lived velocities. Since the fix to #0578 was meant
+			// for jumping onto moving elevators (movers), we'll ignore
+			// moveables, which tend to be smaller items that get kicked around
+
+			// Tels: That would mean you could not jump on a stack of crates traveling
+			//	 on a large elavator, though?
+
+			// grayman: Yes, that's right. TDM rules forbid the stacking of crates on a large fast elevator.
+
+			if ( ent->IsType(idMoveable::Type) )
+			{
+				continue;
+			}
+
+			landedOnVelocity = ent->GetPhysics()->GetLinearVelocity();
 			break;
 		}
-		idEntity* ent = gameLocal.entities[contact.entityNum];
-		if ( !ent )
-		{
-			continue;
-		}
-
-		// grayman #3370 - for some reason, moveables can attain high,
-		// short-lived velocities. Since the fix to #0578 was meant
-		// for jumping onto moving elevators (movers), we'll ignore
-		// moveables, which tend to be smaller items that get kicked around
-
-		// Tels: That would mean you could not jump on a stack of crates traveling
-		//	 on a large elavator, though?
-		if ( ent->IsType(idMoveable::Type) )
-		{
-			continue;
-		}
-
-		landedOnVelocity = ent->GetPhysics()->GetLinearVelocity();
-		break;
 	}
 
-	curVelocity = curVelocity + landedOnVelocity; // relative velocity
+	curVelocity = curVelocity + landedOnVelocity; // velocity relative to the object you're on, if falling
 
 	// The current speed parallel to gravity
 	idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
@@ -5299,7 +5337,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	// Even though the ( curGravVelocity.LengthFast() < 1 ) check appears below
 	// to not be necessary, I'm leaving it in in case someone in the future
 	// wants to distinguish between flat and sloped landings.
-
+	
 	if ( ( curGravVelocity.LengthFast() < 1 ) && ( deltaVecVert*vGravNorm > 100 ) )
 	{
 		result.hasLanded = true; // flat landing
