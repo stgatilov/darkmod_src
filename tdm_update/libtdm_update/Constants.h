@@ -22,7 +22,7 @@
 namespace tdm
 {
 
-const char* const LIBTDM_UPDATE_VERSION = "0.61";
+const char* const LIBTDM_UPDATE_VERSION = "0.62";
 
 const char* const LIBTDM_UPDATE_PLATFORM = 
 #ifdef WIN32
@@ -37,7 +37,11 @@ const char* const LIBTDM_UPDATE_PLATFORM =
 ;
 
 const char* const TDM_MIRRORS_FILE = "tdm_mirrors.txt";
-const char* const TDM_MIRRORS_SERVER = "http://www.thedarkmod.com/update/";
+const char* const TDM_MIRRORS_SERVERS[] = { 
+	"http://mirrors.thedarkmod.com/",
+	"http://www.thedarkmod.com/update/",
+	""
+};
 
 // The file containing the version information of the most up-to-date package
 const char* const TDM_CRC_INFO_FILE = "crc_info.txt";

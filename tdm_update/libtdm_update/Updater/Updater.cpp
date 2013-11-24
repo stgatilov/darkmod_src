@@ -98,29 +98,51 @@ bool Updater::MirrorsNeedUpdate()
 
 void Updater::UpdateMirrors()
 {
-	std::string mirrorsUrl = TDM_MIRRORS_SERVER;
-	mirrorsUrl += TDM_MIRRORS_FILE;
+	// greebo: Fetch the tdm_mirrors.txt file from various sources defined in Constants.h
+	fs::path actualMirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
+	fs::path tmpMirrorPath = GetTargetPath() / (std::string(TDM_MIRRORS_FILE) + ".tmp");
 
-//	TraceLog::Write(LOG_VERBOSE, " Downloading mirror list from %s...", mirrorsUrl.c_str() ); // grayman - NG: too many args
-	TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Downloading mirror list from %s...") % mirrorsUrl).str()); // grayman - fixed
+	// Remove any remains from the last attempt
+	File::Remove(tmpMirrorPath);
 
-	fs::path mirrorPath = GetTargetPath() / TDM_MIRRORS_FILE;
-
-	HttpRequestPtr request = _conn->CreateRequest(mirrorsUrl, mirrorPath.string());
-
-	request->Perform();
-
-	if (request->GetStatus() == HttpRequest::OK)
+	for (const char* const* mirror = TDM_MIRRORS_SERVERS; *mirror != NULL && strlen(*mirror); mirror++)
 	{
-		TraceLog::Write(LOG_VERBOSE, "Done. ");
+		std::string fullLocation = std::string(*mirror) + TDM_MIRRORS_FILE;
 
-		// Load the mirrors from the file
-		LoadMirrors();
+		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Download from mirror list location %s...") % fullLocation).str()); // grayman - fixed
+
+		HttpRequestPtr request = _conn->CreateRequest(fullLocation, tmpMirrorPath.string());
+
+		request->Perform();
+
+		if (request->GetStatus() != HttpRequest::OK)
+		{
+			TraceLog::Error("Mirrors download failed for URL " + fullLocation + ": " + request->GetErrorMessage());
+			continue;
+		}
+
+		// Check if the file is OK
+		IniFilePtr mirrorsIni = IniFile::ConstructFromFile(tmpMirrorPath);
+
+		// Interpret the info and build the mirror list
+		MirrorList tempMirrors(*mirrorsIni);
+
+		if (tempMirrors.empty())
+		{
+			TraceLog::Error("Got an invalid INI file from URL " + fullLocation + ": " + request->GetErrorMessage());
+			continue;
+		}
+
+		TraceLog::WriteLine(LOG_VERBOSE, "Done, got " + boost::lexical_cast<std::string>(tempMirrors.size()) + " mirrors.");
+
+		// Move the file over the actual one, we know it's good
+		File::Remove(actualMirrorPath);
+		File::Move(tmpMirrorPath, actualMirrorPath);
+		break;
 	}
-	else
-	{
-		TraceLog::Error("Mirrors download failed: " + request->GetErrorMessage());
-	}
+
+	// Load the mirrors from the file
+	LoadMirrors();
 }
 
 void Updater::LoadMirrors()
