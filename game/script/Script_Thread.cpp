@@ -1182,6 +1182,7 @@ idThread::Event_PrintLn
 */
 void idThread::Event_PrintLn( const char *text ) {
 	gameLocal.Printf( "%s\n", text );
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING( "%s\r", text ); // grayman - uncomment when debugging scripts
 }
 
 /*

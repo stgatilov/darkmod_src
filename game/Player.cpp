@@ -9710,7 +9710,8 @@ void idPlayer::InventoryUseKeyRelease(int holdTime)
 	if (!AddGrabberEntityToInventory())
 	{
 		// Check if there is a valid item selected
-		if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+
+		if ( ( it != NULL ) && ( it->GetType() != CInventoryItem::IT_DUMMY ) )
 		{
 			UseInventoryItem(EReleased, it, holdTime, false);
 		}
@@ -9722,7 +9723,7 @@ void idPlayer::UseInventoryItem()
 	// If the grabber item can be equipped/dequipped, use item does this
 	if ( gameLocal.m_Grabber->GetSelected() || gameLocal.m_Grabber->GetEquipped() )
 	{
-		if( gameLocal.m_Grabber->ToggleEquip() )
+		if ( gameLocal.m_Grabber->ToggleEquip() )
 		{
 			return;
 		}
@@ -9734,7 +9735,7 @@ void idPlayer::UseInventoryItem()
 	const CInventoryCursorPtr& crsr = InventoryCursor();
 	CInventoryItemPtr it = crsr->GetCurrentItem();
 
-	if (it != NULL && it->GetType() != CInventoryItem::IT_DUMMY)
+	if ( ( it != NULL ) && ( it->GetType() != CInventoryItem::IT_DUMMY ) )
 	{
 		bool couldBeUsed = UseInventoryItem(EPressed, it, 0, false); // false => not a frob action
 
@@ -9742,6 +9743,17 @@ void idPlayer::UseInventoryItem()
 		if (cv_tdm_inv_use_visual_feedback.GetBool())
 		{
 			m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
+		}
+	}
+	else if ( ( it != NULL ) && ( it->GetType() == CInventoryItem::IT_DUMMY ) )
+	{
+		// grayman #3586 - When no inventory item is showing, 'it' is non-null,
+		// and it->GetType() is equal to IT_DUMMY. If a readable gui is currently displayed
+		// we need to ask for it to be closed.
+		if ( m_immobilization.GetInt("readable") )
+		{
+			// Pass the "inventoryUseItem" event to the GUIs
+			m_overlays.broadcastNamedEvent("inventoryUseItem"); // this sets up the closure of the readable
 		}
 	}
 }
@@ -9755,13 +9767,22 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 	}
 
 	// Check if we're allowed to use items at all
-	if (GetImmobilization() & EIM_ITEM_USE) return false;
+	if (GetImmobilization() & EIM_ITEM_USE)
+	{
+		return false;
+	}
 
 	// Sanity check
-	if (item == NULL) return false;
+	if (item == NULL)
+	{
+		return false;
+	}
 
 	idEntity* ent = item->GetItemEntity();
-	if (ent == NULL) return false;
+	if (ent == NULL)
+	{
+		return false;
+	}
 
 	idEntity* highlightedEntity = m_FrobEntity.GetEntity();
 
