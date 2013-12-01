@@ -965,19 +965,30 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 
 	qglReadBuffer( GL_BACK );
 
-	// include extra space for OpenGL padding to word boundaries
-	int	c = ( rc->width + 3 ) * rc->height;
-	byte *data = (byte *)R_StaticAlloc( c * 3 );
+	// calculate pitch of buffer that will be returned by qglReadPixels()
+	int alignment;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+
+	int pitch = rc->width * 4 + alignment - 1;
+	pitch = pitch - pitch % alignment;
+
+	byte *data = (byte *)R_StaticAlloc( pitch * rc->height );
 	
-	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, data ); 
+	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data );
 
-	byte *data2 = (byte *)R_StaticAlloc( c * 4 );
+	byte *data2 = (byte *)R_StaticAlloc( rc->width * rc->height * 4 );
 
-	for ( int i = 0 ; i < c ; i++ ) {
-		data2[ i * 4 ] = data[ i * 3 ];
-		data2[ i * 4 + 1 ] = data[ i * 3 + 1 ];
-		data2[ i * 4 + 2 ] = data[ i * 3 + 2 ];
-		data2[ i * 4 + 3 ] = 0xff;
+	for ( int y = 0 ; y < rc->height ; y++ ) {
+		for ( int x = 0 ; x < rc->width ; x++ ) {
+			int idx = y * pitch + x * 4;
+			int idx2 = (y * rc->width + x) * 4;
+
+			data2[ idx2 + 0 ] = data[ idx + 0 ];
+			data2[ idx2 + 1 ] = data[ idx + 1 ];
+			data2[ idx2 + 2 ] = data[ idx + 2 ];
+			data2[ idx2 + 3 ] = 0xff;
+		}
 	}
 
 	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
