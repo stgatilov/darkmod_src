@@ -103,6 +103,15 @@ void CHttpRequest::InitRequest()
     // #3418: since we're distributing a statically linked libcurl/openssl combo for Windows, we need to provide the ca bundle
     idStr capath = g_Global.GetDarkmodPath().c_str();
     capath.AppendPath("cacert.pem");
+    idFile* catest = fileSystem->OpenExplicitFileRead(capath.c_str());
+    if (catest == NULL)
+    {
+        gameLocal.Warning("HTTPS downloads: 'cacert.pem' missing from Darkmod folder. HTTPS downloads will fail.");
+    }
+    else
+    {
+        delete catest;
+    }
     curl_easy_setopt(_handle, CURLOPT_CAINFO, capath.c_str());
 #endif
 
