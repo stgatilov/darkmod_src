@@ -562,7 +562,6 @@
     <ClInclude Include="sys\win32\wglext.h">
       <Filter>Sys</Filter>
     </ClInclude>
-    <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1827,7 +1826,6 @@
     <ResourceCompile Include="sys\win32\rc\SoundEditor.rc">
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\PDAEditor.rc" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuildStep Include="tools\edit_public.h">
