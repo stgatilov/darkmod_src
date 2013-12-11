@@ -26,6 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #ifdef WIN32
 	#include <io.h>	// for _read
+    #include <sys/utime.h> // for _utime
 #else
 	#if !__MACH__ && __MWERKS__
 		#include <types.h>
@@ -35,6 +36,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 		#include <sys/stat.h>
 	#endif
 	#include <unistd.h>
+    #include <utime.h> // for utime
 #endif
 
 #if ID_ENABLE_CURL
@@ -3230,8 +3232,10 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 
 #ifdef WIN32
     #define GAMEEXT "DLL"
+    struct _utimbuf newTimes;
 #else
     #define GAMEEXT "SO"
+    struct utimbuf newTimes;
 #endif
 
 	sys->DLL_GetFileName( name, dllName, MAX_OSPATH );
@@ -3286,7 +3290,24 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 			CopyFile( dllFileInPak, dllPath );
 
 			CloseFile( dllFileInPak );
-                 
+            
+            // the file modification time needs to be set to that of the file in the pk4 otherwise the modification time is
+            // set to when the file was extracted. this causes issues when new gamedll updates are downloaded since there is
+            // a possibility that an old dll will appear to be newer than the updated dll in the new pk4 file
+            
+            newTimes.actime = time(NULL);     // set atime to current time
+            newTimes.modtime = timePak;       // set mtime to the file time in the pk4
+            
+#ifdef WIN32            
+            if ( _utime( dllPath.c_str(), &newTimes ) < 0 ) {
+#else
+            if ( utime( dllPath.c_str(), &newTimes ) < 0 ) {
+#endif
+                common->Warning( "gamex86 - Update of file modification time failed. This may cause issues following a TDM update." );
+            } else {
+                common->Printf( "gamex86 - Correction of file modification time successful\n" );
+            }
+
 			dllFile = OpenFileReadFlags( dllName, FSFLAG_SEARCH_DIRS );
 
 			if ( !dllFile ) {
