@@ -1599,8 +1599,9 @@ void Updater::PostUpdateCleanup()
 	std::string tdmDLLName = "gamex86.so";
 	std::string tdmUpdateName = "_tdm_update.linux";
 #endif
-
-	File::Remove(GetTargetPath() / tdmDLLName);
+    
+    // disable the removal of the game dll to test changes to FindDLL related to issue #3224
+	//File::Remove(GetTargetPath() / tdmDLLName); 
 	File::Remove(GetTargetPath() / tdmUpdateName);
 }
 
