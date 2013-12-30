@@ -1600,8 +1600,8 @@ void Updater::PostUpdateCleanup()
 	std::string tdmUpdateName = "_tdm_update.linux";
 #endif
     
-    // disable the removal of the game dll to test changes to FindDLL related to issue #3224
-	//File::Remove(GetTargetPath() / tdmDLLName); 
+    // disable the removal of the game dll to test changes to FindDLL related to issue #3224 --> reverted
+	File::Remove(GetTargetPath() / tdmDLLName); 
 	File::Remove(GetTargetPath() / tdmUpdateName);
 }
 
