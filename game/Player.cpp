@@ -79,7 +79,7 @@ const idEventDef EV_Player_GetMove( "getMove", EventArgs(), 'v',
 const idEventDef EV_Player_GetViewAngles( "getViewAngles", EventArgs(), 'v', "Returns the player view angles.");
 const idEventDef EV_Player_SetViewAngles( "setViewAngles", EventArgs('v',"angles",""), EV_RETURNS_VOID, 
 	"Sets the player view angles, e.g. make the player facing this direction.\n" \
-	"0 90 0 is east (along the X axis in DR), 0 0 0 north (along the Y axis in DR)\n" \
+	"0 0 0 is east (along the X axis in DR), 0 90 0 north (along the Y axis in DR)\n" \
 	"0 180 0 west, 0 270 0 south.");
 
 const idEventDef EV_Player_GetMouseGesture( "getMouseGesture", EventArgs(), 'd', 
