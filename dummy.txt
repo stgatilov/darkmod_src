@@ -1,2 +1,3 @@
 hats
 socks
+gloves
