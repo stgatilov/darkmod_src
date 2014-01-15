@@ -1,3 +1,4 @@
 hats
 socks
 gloves
+beanie
