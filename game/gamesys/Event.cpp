@@ -641,7 +641,7 @@ idEvent::Save
 void idEvent::Save( idSaveGame *savefile ) {
 	char *str;
 	int i;
-	size_t size;
+	size_t size = 0; // grayman #3649 - initialize
 	idEvent	*event;
 	byte *dataPtr;
 	bool validTrace;
@@ -689,6 +689,11 @@ void idEvent::Save( idSaveGame *savefile ) {
 						}
 					}
 					break;
+				case D_EVENT_STRING : // grayman #3649 - wasn't being handled
+					size += MAX_STRING_LEN;
+					str = reinterpret_cast<char *>( dataPtr );
+					savefile->Write( str, MAX_STRING_LEN );
+					break;
 				default:
 					break;
 			}
@@ -705,7 +710,7 @@ idEvent::Restore
 */
 void idEvent::Restore( idRestoreGame *savefile ) {
 	char    *str;
-	int		num, i, j, size, argsize = 0;
+	int		num, i, j, size = 0, argsize = 0; // grayman #3649 - initialize 'size'
 	idStr	name;
 	byte *dataPtr;
 	idEvent	*event;
@@ -779,6 +784,11 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 								savefile->Read( str, MAX_STRING_LEN );
 							}
 						}
+						break;
+					case D_EVENT_STRING : // grayman #3649 - wasn't being handled
+						size += MAX_STRING_LEN;
+						str = reinterpret_cast<char *>( dataPtr );
+						savefile->Read( str, MAX_STRING_LEN );
 						break;
 					default:
 						break;
