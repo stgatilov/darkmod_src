@@ -57,6 +57,14 @@ bool CAbsenceMarker::initAbsenceReference(idEntity* owner, idBounds& startBounds
 	// Fill with spawnargs of referenced entity
 	referenced_spawnArgs = owner->spawnArgs;
 
+	// grayman #3663 - pay attention to solid/non-solid spawnarg
+
+	bool solid = spawnArgs.GetBool( "solid" );
+	if ( !solid )
+	{
+		GetPhysics()->SetContents(0);
+	}
+
 	// Move to position where missing entity should have been
 	// angua: place marker at the center of the original bounds
 	idVec3 markerOrg = startBounds.GetCenter();
