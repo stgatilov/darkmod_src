@@ -37,6 +37,7 @@ class PathTask :
 protected:
 	idEntityPtr<idPathCorner> _path;
 	float _accuracy;
+	bool _activateTargets; // grayman #3670
 
 	PathTask();
 

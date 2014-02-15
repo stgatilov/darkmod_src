@@ -69,7 +69,8 @@ bool PathShowTask::Perform(Subsystem& subsystem)
 
 	if (!owner->IsHidden())
 	{
-		// Trigger path targets, now that we've reached the corner
+		// Trigger path targets, now that we've shown the owner
+		// grayman #3670 - this activates owner targets, not path targets
 		owner->ActivateTargets(owner);
 
 		// NextPath();

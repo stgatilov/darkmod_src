@@ -57,17 +57,18 @@ bool PathWaitForTriggerTask::Perform(Subsystem& subsystem)
 {
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path WaitForTrigger Task performing.\r");
 
-	idPathCorner* path = _path.GetEntity();
+	//idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
 
 	// This task may not be performed with empty entity pointers
-	assert(path != NULL && owner != NULL);
+	assert( owner != NULL );
 
 	if (owner->AI_ACTIVATED)
 	{
 		owner->AI_ACTIVATED = false;
 
-		// Trigger path targets, now that we've reached the corner
+		// Trigger path targets, now that the owner has been activated
+		// grayman #3670 - this activates owner targets, not path targets
 		owner->ActivateTargets(owner);
 
 		// NextPath();

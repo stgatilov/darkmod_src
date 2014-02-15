@@ -66,6 +66,7 @@ void PathTask::Save(idSaveGame* savefile) const
 
 	_path.Save(savefile);
 	savefile->WriteFloat(_accuracy);
+	savefile->WriteBool(_activateTargets); // grayman #3670
 }
 
 void PathTask::Restore(idRestoreGame* savefile)
@@ -74,6 +75,7 @@ void PathTask::Restore(idRestoreGame* savefile)
 
 	_path.Restore(savefile);
 	savefile->ReadFloat(_accuracy);
+	savefile->ReadBool(_activateTargets); // grayman #3670
 }
 
 

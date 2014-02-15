@@ -59,6 +59,7 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		gameLocal.Warning("path_anim entity %s without 'anim' spawnarg found.",path->name.c_str());
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 
 	int blendIn = path->spawnArgs.GetInt("blend_in");
@@ -117,13 +118,13 @@ bool PathCycleAnimTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with an empty owner pointer
 	assert(owner != NULL);
 
-
 	// Exit when the waittime is over
 	if (_waitEndTime >= 0 && gameLocal.time >= _waitEndTime)
 	{
 		return true;
 	}
-	else if (owner->AI_ACTIVATED)
+
+	if (owner->AI_ACTIVATED)
 	{
 		// no wait time is set
 		// AI has been triggered, end this task
@@ -132,9 +133,7 @@ bool PathCycleAnimTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-
 	return false;
-
 }
 
 // Save/Restore methods

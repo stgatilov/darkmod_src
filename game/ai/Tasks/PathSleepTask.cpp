@@ -80,6 +80,12 @@ bool PathSleepTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
+		// grayman #3670 - fire targets
+		idPathCorner* path = _path.GetEntity();
+
+		// This task may not be performed with an empty path pointer
+		assert( path != NULL );
+		path->ActivateTargets(owner);
 		return true;
 	}
 	return false;

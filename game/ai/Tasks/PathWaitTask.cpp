@@ -77,8 +77,11 @@ bool PathWaitTask::Perform(Subsystem& subsystem)
 
 	if (gameLocal.time >= _endtime)
 	{
-		// Trigger path targets, now that we've reached the corner
+		// Trigger path targets, now that we're done waiting
+		// grayman #3670 - need to keep the owner->Activate() calls to not break
+		// existing maps, but the intent was path->Activate().
 		owner->ActivateTargets(owner);
+		path->ActivateTargets(owner);
 
 		// NextPath();
 

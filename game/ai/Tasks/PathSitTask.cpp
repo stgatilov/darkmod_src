@@ -84,12 +84,13 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_SIT_UP_ANGLE = owner->GetCurrentYaw();
 
 	owner->AI_SIT_DOWN_ANGLE = idMath::AngleNormalize180(owner->AI_SIT_DOWN_ANGLE);
-
 	
 	if (owner->GetMoveType() != MOVETYPE_SIT)
 	{
 		owner->SitDown();
 	}
+
+	_sittingAnimDone = false; // grayman #3670
 }
 
 bool PathSitTask::Perform(Subsystem& subsystem)
@@ -99,15 +100,33 @@ bool PathSitTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 
 	// This task may not be performed with an empty owner pointer
-	assert(owner != NULL);
+	assert( owner != NULL );
 
+	// grayman #3670 - wait for the sitting down (and possibly turning
+	// after) to finish, in case there's a target that needs to be activated
+
+	idStr waitState(owner->WaitState()); // grayman #3670
+	if ( !_sittingAnimDone && ( ( waitState == "sit_down" ) || ( owner->AI_SIT_DOWN_ANGLE != owner->GetCurrentYaw() ) ) )
+	{
+		return false;
+	}
+
+	if ( !_sittingAnimDone )
+	{
+		_sittingAnimDone = true;
+		idPathCorner* path = _path.GetEntity(); // grayman #3670
+
+		// This task may not be performed with an empty path pointer
+		assert( path != NULL );
+		path->ActivateTargets(owner);
+	}
 
 	if (_waitEndTime >= 0)
 	{
-		if(gameLocal.time >= _waitEndTime)
+		if (gameLocal.time >= _waitEndTime)
 		{
 			// Exit when the waitstate is not "get up" anymore
-			idStr waitState(owner->WaitState());
+			//idStr waitState(owner->WaitState());
 			if (waitState != "get_up")
 			{
 				if (owner->GetMoveType() == MOVETYPE_SIT)
@@ -135,6 +154,7 @@ void PathSitTask::Save(idSaveGame* savefile) const
 	PathTask::Save(savefile);
 
 	savefile->WriteInt(_waitEndTime);
+	savefile->WriteBool(_sittingAnimDone); // grayman #3670
 }
 
 void PathSitTask::Restore(idRestoreGame* savefile)
@@ -142,6 +162,7 @@ void PathSitTask::Restore(idRestoreGame* savefile)
 	PathTask::Restore(savefile);
 
 	savefile->ReadInt(_waitEndTime);
+	savefile->ReadBool(_sittingAnimDone); // grayman #3670
 }
 
 PathSitTaskPtr PathSitTask::CreateInstance()

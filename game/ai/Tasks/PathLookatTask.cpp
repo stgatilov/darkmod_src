@@ -96,17 +96,15 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 		{
 			owner->AI_ACTIVATED = false;
 
-			// Trigger next path target(s)
+			// Trigger path target(s)
+			// grayman #3670 - this activates owner targets, not path targets
 			owner->ActivateTargets(owner);
 
 			// NextPath();
 			
 			return true; // finish this task
 		}
-		else
-		{
-			return false;
-		}
+		return false;
 	}
 	else
 	{
@@ -117,7 +115,8 @@ bool PathLookatTask::Perform(Subsystem& subsystem)
 	// Debug
 	// gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), focusEnt->GetPhysics()->GetOrigin(), 10, 10000);
 
-	// Trigger next path target(s)
+	// Trigger path target(s)
+	// grayman #3670 - this activates owner targets, not path targets
 	owner->ActivateTargets(owner);
 
 	// Store a new path entity into the AI's mind

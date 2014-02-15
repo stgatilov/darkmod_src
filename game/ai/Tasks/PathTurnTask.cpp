@@ -33,10 +33,13 @@ PathTurnTask::PathTurnTask() :
 	PathTask()
 {}
 
-PathTurnTask::PathTurnTask(idPathCorner* path) :
+// grayman #3670 - add 'activateTargets' so we can control when targets
+// are activated at the end of the turn.
+PathTurnTask::PathTurnTask(idPathCorner* path, bool activateTargets) :
 	PathTask(path)
 {
 	_path = path;
+	_activateTargets = activateTargets;
 }
 
 // Get the name of this task
@@ -70,8 +73,14 @@ bool PathTurnTask::Perform(Subsystem& subsystem)
 	// Move on to next target when turning is done
 	if (owner->FacingIdeal())
 	{
-		// Trigger path targets, now that we've reached the corner
-		owner->ActivateTargets(owner);
+		if (_activateTargets) // grayman #3670
+		{
+			// Trigger path targets, now that we've finished turning
+			// grayman #3670 - need to keep the owner->Activate() calls to not break
+			// existing maps, but the intent was path->Activate().
+			owner->ActivateTargets(owner);
+			path->ActivateTargets(owner);
+		}
 		
 		// NextPath();
 

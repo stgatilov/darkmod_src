@@ -36,6 +36,7 @@ class PathSitTask :
 {
 private:
 	int _waitEndTime;
+	bool _sittingAnimDone; // grayman #3670
 
 	// Private constructor
 	PathSitTask();

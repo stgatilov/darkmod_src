@@ -102,7 +102,11 @@ bool PathInteractTask::Perform(Subsystem& subsystem)
 
 void PathInteractTask::OnFinish(idAI* owner)
 {
-	// Trigger next path target(s)
+	// This task may not be performed with empty entity pointers
+	assert( owner != NULL );
+
+	// Trigger path target(s)
+	// grayman #3670 - this activates owner targets, not path targets
 	owner->ActivateTargets(owner);
 
 	// NextPath();

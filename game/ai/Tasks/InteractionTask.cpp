@@ -56,6 +56,7 @@ void InteractionTask::Init(idAI* owner, Subsystem& subsystem)
 	if (_interactEnt == NULL) 
 	{
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 	
 	float moveToPositionTolerance = _interactEnt->spawnArgs.GetFloat("move_to_position_tolerance", "-1");
@@ -65,6 +66,7 @@ void InteractionTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// No path to that entity!
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 
 	_interactEnt->GetUserManager().AddUser(owner);

@@ -63,6 +63,7 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s cannot resolve a NULL blocking entity.\r", owner->name.c_str());
 		owner->PushMove(); // grayman #2706 - save movement state, because it gets popped in OnFinish()
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 
 	// Get the direction we're pushing against

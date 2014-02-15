@@ -59,6 +59,7 @@ void PlayAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		gameLocal.Warning("%s cannot start PlayAnimationTask with empty animation name.",owner->name.c_str());
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 
 	StartAnim(owner);

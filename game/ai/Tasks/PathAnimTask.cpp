@@ -60,6 +60,7 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		gameLocal.Warning("path_anim entity %s without 'anim' spawnarg found.",path->name.c_str());
 		subsystem.FinishTask();
+		return; // grayman #3670
 	}
 
 	int blendIn = path->spawnArgs.GetInt("blend_in");
@@ -92,6 +93,15 @@ void PathAnimTask::OnFinish(idAI* owner)
 	owner->SetWaitState("");
 
 	owner->GetMind()->GetMemory().playIdleAnimations = true;
+
+	// grayman #3670 - Trigger path targets, now that the anim is done
+
+	idPathCorner* path = _path.GetEntity();
+
+	// This task may not be performed with empty entity pointers
+	assert( path != NULL );
+
+	path->ActivateTargets(owner);
 }
 
 bool PathAnimTask::Perform(Subsystem& subsystem)

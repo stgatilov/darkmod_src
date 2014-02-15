@@ -112,7 +112,10 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			if (owner->ReachedPos(path->GetPhysics()->GetOrigin(), MOVE_TO_POSITION))
 			{
 				// Trigger path targets, now that we've reached the corner
+				// grayman #3670 - need to keep the owner->Activate() calls to not break
+				// existing maps, but the intent was path->Activate().
 				owner->ActivateTargets(owner);
+				path->ActivateTargets(owner);
 
 				// NextPath();
 
@@ -189,7 +192,10 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 						if (turnNow)
 						{
 							// Trigger path targets, now that we've almost reached the corner
+							// grayman #3670 - need to keep the owner->Activate() calls to not break
+							// existing maps, but the intent was path->Activate().
 							owner->ActivateTargets(owner);
+							path->ActivateTargets(owner);
 
 							// NextPath();
 

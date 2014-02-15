@@ -38,7 +38,7 @@ private:
 	PathTurnTask();
 
 public:
-	PathTurnTask(idPathCorner* path);
+	PathTurnTask(idPathCorner* path, bool activateTargets); // grayman #3670
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;

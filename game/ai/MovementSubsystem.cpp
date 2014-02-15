@@ -322,10 +322,37 @@ void MovementSubsystem::StartPathTask()
 	// Get the classname, this determines the child routine we're spawning.
 	idStr classname = path->spawnArgs.GetString("classname");
 
+	// grayman #3670 - here's where we branch off processing based on path node type
+	// the path nodes that trigger their targets are:
+	// path_corner - triggers when node is reached
+	// path_turn - triggers when turn is done
+	// path_wait - triggers when wait is over
+	// path_sit - triggers when sitting anim is done, including any final turn
+	// path_sleep - triggers when lying down anim is done
+
 	// Depending on the classname we spawn one of the various Path*Tasks
 	if (classname == "path_corner")
 	{
 		tasks.push_back(TaskPtr(new PathCornerTask(path)));
+	}
+	else if (classname == "path_turn")
+	{
+		tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,true))); // grayman #3670
+	}
+	else if (classname == "path_wait")
+	{
+		if (path->spawnArgs.FindKey("angle") != NULL)
+		{
+			// We have an angle key set, push a PathTurnTask on top of the anim task
+			tasks.push_back(TaskPtr(new PathWaitTask(path)));
+			// The "task" variable will be pushed later on in this code
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,false))); // grayman #3670
+		}
+		else 
+		{
+			// No "angle" key set, just schedule the wait task
+			tasks.push_back(PathWaitTaskPtr(new PathWaitTask(path)));
+		}
 	}
 	else if (classname == "path_anim")
 	{
@@ -334,7 +361,7 @@ void MovementSubsystem::StartPathTask()
 			// We have an angle key set, push a PathTurnTask on top of the anim task
 			tasks.push_back(TaskPtr(new PathAnimTask(path)));
 			// The "task" variable will be pushed later on in this code
-			tasks.push_back(TaskPtr(new PathTurnTask(path)));
+			tasks.push_back(TaskPtr(new PathTurnTask(path,false))); // grayman #3670
 		}
 		else 
 		{
@@ -349,7 +376,7 @@ void MovementSubsystem::StartPathTask()
 			// We have an angle key set, push a PathTurnTask on top of the anim task
 			tasks.push_back(TaskPtr(new PathCycleAnimTask(path)));
 			// The "task" variable will be pushed later on in this code
-			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,false))); // grayman #3670
 		}
 		else 
 		{
@@ -364,7 +391,7 @@ void MovementSubsystem::StartPathTask()
 			// We have an angle key set, push a PathTurnTask on top of the anim task
 			tasks.push_back(TaskPtr(new PathSitTask(path)));
 			// The "task" variable will be pushed later on in this code
-			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
+			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,false))); // grayman #3670
 		}
 		else 
 		{
@@ -372,40 +399,29 @@ void MovementSubsystem::StartPathTask()
 			tasks.push_back(PathSitTaskPtr(new PathSitTask(path)));
 		}
 	}
-
 	else if (classname == "path_sleep")
 	{
-		if (path->spawnArgs.FindKey("angle") != NULL)
-		{
-			// We have an angle key set, push a PathTurnTask on top of the sleep task
-			tasks.push_back(TaskPtr(new PathSleepTask(path)));
-			// The "task" variable will be pushed later on in this code
-			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
-		}
-		else 
-		{
-			// No "angle" key set, just schedule the sleep task
-			tasks.push_back(PathSleepTaskPtr(new PathSleepTask(path)));
-		}
-	}
+		// grayman #3670 - Because of the way patrolling is designed,
+		// it's possible that we can process a path_sleep twice in a row.
+		// This happens because when we fall asleep, we start the idle sleep
+		// task, which executes a StartPatrol(), which leads us back here
+		// with the same path_sleep node.
+		// So, if we're already asleep, don't process a path_sleep.
 
-	else if (classname == "path_turn")
-	{
-		tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
-	}
-	else if (classname == "path_wait")
-	{
-		if (path->spawnArgs.FindKey("angle") != NULL)
+		if ( _owner.GetEntity()->GetMoveType() != MOVETYPE_SLEEP )
 		{
-			// We have an angle key set, push a PathTurnTask on top of the anim task
-			tasks.push_back(TaskPtr(new PathWaitTask(path)));
-			// The "task" variable will be pushed later on in this code
-			tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path)));
-		}
-		else 
-		{
-			// No "angle" key set, just schedule the wait task
-			tasks.push_back(PathWaitTaskPtr(new PathWaitTask(path)));
+			if (path->spawnArgs.FindKey("angle") != NULL)
+			{
+				// We have an angle key set, push a PathTurnTask on top of the sleep task
+				tasks.push_back(TaskPtr(new PathSleepTask(path)));
+				// The "task" variable will be pushed later on in this code
+				tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,false))); // grayman #3670
+			}
+			else 
+			{
+				// No "angle" key set, just schedule the sleep task
+				tasks.push_back(PathSleepTaskPtr(new PathSleepTask(path)));
+			}
 		}
 	}
 	else if (classname == "path_waitfortrigger")
