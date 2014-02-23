@@ -521,6 +521,8 @@ void SwitchOnLightState::Init(idAI* owner)
 			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
 
 			owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
+
+			IgnoreSiblingLights(owner,light); // grayman #3509 - ignore stims from other child lights of the same light holder
 		}
 
 		light->IgnoreResponse(ST_VISUAL, owner);

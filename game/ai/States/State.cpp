@@ -3420,6 +3420,43 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 	return true; // I'm not carrying a torch, or I am and it's still on
 }
 
+// grayman #3509 - An AI has barked about a light being off. To cut down on similar barks
+// about other lights belonging to the same light holder, put the AI on
+// the stim ignore lists of the other lights.
+
+void State::IgnoreSiblingLights(idAI* owner, idLight* light)
+{
+	// Find parent of light.
+	idEntity *bindMaster = light->GetBindMaster();
+	idEntity *parent = NULL;
+	while ( bindMaster != NULL )
+	{
+		parent = bindMaster;
+		bindMaster = parent->GetBindMaster();
+	}
+
+	// If we found a parent, ignore all child lights of that parent that aren't our light
+	if ( parent )
+	{
+		idList<idEntity *> children;
+		parent->GetTeamChildren(&children); // gets all children
+		for ( int i = 0 ; i < children.Num() ; i++ )
+		{
+			idEntity *child = children[i];
+			if ( ( child == NULL ) || ( child == light ) )
+			{
+				continue;
+			}
+
+			if ( child->IsType(idLight::Type) )
+			{
+				child->IgnoreResponse(ST_VISUAL, owner);
+			}
+		}
+	}
+}
+
+
 void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 {
 	// grayman #2603 - a number of changes were made in this method
@@ -3559,6 +3596,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 
 			owner->Event_LookAtEntity(stimSource,2.0f); // grayman #3506 - look at the light
+
+			IgnoreSiblingLights(owner,light); // grayman #3509 - ignore stims from other child lights of the same light holder
 		}
 		return;
 	}
@@ -3704,6 +3743,8 @@ void State::OnVisualStimLightSource(idEntity* stimSource, idAI* owner)
 			//gameLocal.Printf("That light should be on! But I won't relight it now.\n");
 
 			owner->Event_LookAtEntity(stimSource,2.0f); // grayman #3506 - look at the light
+
+			IgnoreSiblingLights(owner,light); // grayman #3509 - ignore stims from other child lights of the same light holder
 		}
 	}
 }

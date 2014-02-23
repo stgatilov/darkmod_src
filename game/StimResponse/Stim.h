@@ -77,9 +77,9 @@ protected:
 public:
 	/**
 	 * This is the list of all responses that should be ignored for this stim.
-	 * This is required for stims, which are having a livespan during which they
+	 * This is required for stims, which have a lifespan during which they
 	 * can fire. Each response would fire on each frame as long as the stim is
-	 * enabled. This is not really usefull in most cases, so we can add a response,
+	 * enabled. This is not really useful in most cases, so we can add a response,
 	 * which already has fired, to the ignorelist. Until the response is removed
 	 * it will no longer fire.
 	 */

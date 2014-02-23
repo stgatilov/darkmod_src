@@ -745,8 +745,8 @@ void idLight::GetRadius( idVec3 &out ) const {
 idLight::On
 ================
 */
-void idLight::On( void ) {
-
+void idLight::On( void )
+{
 	currentLevel = levels;
 	// offset the start time of the shader to sync it to the game time
 	renderLight.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
@@ -1946,6 +1946,39 @@ idEntity* idLight::GetSwitch(idAI* user)
 void idLight::SetBeingRelit(bool relighting)
 {
 	beingRelit = relighting;
+
+	// grayman #3509 - if this light is part of a team that includes a
+	// light holder and other lights, each team member that's a light
+	// needs to have this flag set the same way.
+
+	// Find topmost parent of light.
+	idEntity *bindMaster = GetBindMaster();
+	idEntity *parent = NULL;
+	while ( bindMaster != NULL )
+	{
+		parent = bindMaster;
+		bindMaster = parent->GetBindMaster();
+	}
+
+	// If we found a parent, mark all child lights of that parent as being relit
+	if ( parent )
+	{
+		idList<idEntity *> children;
+		parent->GetTeamChildren(&children); // gets all children
+		for ( int i = 0 ; i < children.Num() ; i++ )
+		{
+			idEntity *child = children[i];
+			if ( ( child == NULL ) || ( child == this ) ) // NULLs don't count, and we already marked ourselves
+			{
+				continue;
+			}
+
+			if ( child->IsType(idLight::Type) )
+			{
+				static_cast<idLight*>(child)->beingRelit = relighting;
+			}
+		}
+	}
 }
 
 // grayman #2603 - Is an AI in the process or relighting this light?

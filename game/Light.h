@@ -242,7 +242,6 @@ private:
 	int				count;
 	int				triggercount;
 	idEntity *		lightParent;
-	bool			beingRelit;					// grayman #2603 - true if being relit
 	idList< idEntityPtr<idEntity> > switchList;	// grayman #2603 - list of my switches
 	float			chanceNegativeBark;			// grayman #2603 - chance of negative barks ("light's out" and "won't relight")
 	int				whenTurnedOff;				// grayman #2603 - when this light was turned off
@@ -359,12 +358,13 @@ public:
 	 */
 	float			m_MaxLightRadius;
 
+	bool			beingRelit;					// grayman #2603 - true if being relit
+
 	/*!
 	* Darkmod LAS
 	* The area the light is in, assigned by The Dark Mod Lighting Awareness System (LAS)
 	*/
 	int LASAreaIndex;
-
 };
 
 #endif /* !__GAME_LIGHT_H__ */
