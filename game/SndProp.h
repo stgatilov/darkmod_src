@@ -186,7 +186,7 @@ protected:
 	* Returns true if the expansion died out naturally rather than being stopped
 	*	by a computation limit.
 	**/
-	bool ExpandWave(float volInit, idVec3 origin);
+	bool ExpandWave(float volInit, idVec3 origin, float minAudThresh);
 
 	/**
 	* Faster and less accurate wavefront expansion algorithm.
@@ -199,8 +199,8 @@ protected:
 	* If MaxDist is set to -1, no distance limit is applied.
 	* If MaxFloods is set to -1, the global maximum flood limit is used.
 	**/
-	bool ExpandWaveFast( float volInit, idVec3 origin, 
-						 float MaxDist = -1, int MaxFloods = -1 );
+	/*bool ExpandWaveFast( float volInit, idVec3 origin, 
+						 float MaxDist = -1, int MaxFloods = -1 );*/ // grayman - not used
 	
 	/**
 	* Process the populated areas after a sound propagation event.
@@ -215,6 +215,8 @@ protected:
 	**/
 	void ProcessAI( idAI* ai, idVec3 origin, SSprParms *propParms );
 
+	bool Intersection(const idVec3& p1, const idVec3& p2, const idVec3& w1, const idVec3& w2, idVec3& ip, float& scale); // grayman #3660
+
 	/**
 	* Copy parms from loader object, and also initialize several member vars
 	**/
@@ -228,6 +230,8 @@ protected:
 	void DetailedMin( idAI* AI, SSprParms *propParms, 
 					  SPortEvent *pPortEv, int AIArea, float volInit );
 
+	idVec3 SurfPoint( idVec3 p1, idVec3 p2, SsndPortal *portal ); // grayman #3660
+
 	/**
 	* Takes point 1, point 2, a winding, and the center point of the winding
 	* Returns the point on the winding surface that is closest
@@ -238,8 +242,14 @@ protected:
 	*	along the outer boundary of the surface.
 	*
 	* Assumes a rectangular portal with 4 winding points.
+	*
+	* grayman #3660 - That assumption can cause big problems because
+	* portals aren't necessarily rectangle and many times will have more
+	* than 4 winding points.
+	*
+	* Therefore, this method has been replaced.
 	**/
-	idVec3 OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVec3 WCenter );
+	//idVec3 OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVec3 WCenter );
 
 	/**
 	* Draws debug lines between a list of points.  Used for soundprop debugging

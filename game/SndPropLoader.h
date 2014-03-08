@@ -65,7 +65,7 @@ public:
 	float DoorExpand;
 
 	/**************
-	* The following settings effect both gameplay and compiling:
+	* The following settings affect both gameplay and compiling:
 	* They are not set const so they may be changed dynamically,
 	* but keep in mind the compiled soundprop file for the map
 	* will NOT change until recompiled.
@@ -216,7 +216,7 @@ typedef struct SsndArea_s
 
 	int					numPortals;	// number of portals in this area
 	
-	idVec3				center; // approximate center of the area
+	idVec3				center; // approximate center of the area // grayman #3660 - misleading, not necessarily true, and buggy in revs < 2.02
 	
 	SsndPortal_s		*portals;	// array containing the portals of this area
 

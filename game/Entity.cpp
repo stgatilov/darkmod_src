@@ -3555,6 +3555,8 @@ float idEntity::GetLightQuotient()
 
 		// Get the bounds and move it upwards a tiny bit
 		idBounds bounds = physics->GetAbsBounds() + physics->GetGravityNormal() * 0.1f; // Tweak to stay out of floors
+		//gameRenderWorld->DebugBox(colorRed, idBox(bounds), 50000);
+		//gameRenderWorld->DebugLine(colorGreen, bounds[0], bounds[1], 50000);
 
 		// A single point doesn't work with ellipse intersection
 		bounds.ExpandSelf(0.1f); 
@@ -4431,8 +4433,22 @@ Quit:
 		// add the input volume modifier
 		volMod += VolModIn;
 
+		// grayman #3660 - voices should originate at the head and not at the feet
+
+		idVec3 origin;
+		if ( IsType(idAI::Type) &&
+			 ((gName == "tell") || (gName == "yell") || (gName == "warn")))
+		{
+			origin = static_cast<idAI*>(this)->GetEyePosition();
+		}
+		else
+		{
+			origin = GetPhysics()->GetOrigin();
+		}
+
 		gameLocal.m_sndProp->Propagate( volMod, durMod, gName, 
-										GetPhysics()->GetOrigin(), 
+										origin, 
+										//GetPhysics()->GetOrigin(), 
 										this, NULL, msgTag ); // grayman #3355
 	}
 

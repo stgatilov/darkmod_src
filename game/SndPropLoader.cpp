@@ -231,7 +231,7 @@ void CsndPropBase::GlobalsFromDef( void )
 
 	m_SndGlobals.MaxPaths = def->GetInt("maxpaths", "3");
 	m_SndGlobals.DoorExpand = def->GetFloat("doorexpand", "1.0");
-	m_SndGlobals.Falloff_Outd = def->GetFloat("falloff_outd", "10.0");
+	m_SndGlobals.Falloff_Outd = def->GetFloat("falloff_outd", "10.0"); // grayman - if implemented, this should be smaller than Falloff_Ind
 	m_SndGlobals.Falloff_Ind = def->GetFloat("falloff_ind", "9.0");
 	m_SndGlobals.kappa0 = def->GetFloat("kappa_dbm", "0.015");
 
@@ -539,13 +539,15 @@ void CsndPropLoader::ParseAreaPropEnt ( idDict args )
 
 	VolOffset = args.GetString("sound_vol_offset", "0.0");
 
-	if(!( VolOffset.IsNumeric() ))
+	if (!( VolOffset.IsNumeric() ))
 	{
 		VolMod = 0.0;
 		DM_LOG(LC_SOUND, LT_WARNING)LOGSTRING("Warning: Non-numeric volume offset value on area data entity: %s.  Default value assumed\r", args.GetString("name") );
 	}
 	else
+	{
 		VolMod = atof(VolOffset);
+	}
 
 	// multiply Loss Mult by default attenuation constant
 	propEntry.LossMult = lossMult * m_SndGlobals.kappa0;
@@ -622,15 +624,15 @@ void CsndPropLoader::CreateAreasData ( void )
 
 	numAreas = gameRenderWorld->NumAreas();
 	numPortals = gameRenderWorld->NumPortals();
-	pCenters.Zero();
+	//pCenters.Zero(); // grayman #3660 - move down, gets initialized for each area
 
-	if( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
+	if ( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
 	{
 		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when allocating array of %d Areas\r", m_numAreas);
 			goto Quit;
 	}
 
-	if( (m_PortData = new SPortData[m_numPortals]) == NULL )
+	if ( (m_PortData = new SPortData[m_numPortals]) == NULL )
 	{
 		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when allocating array of %d portals\r", m_numPortals);
 			goto Quit;
@@ -649,6 +651,7 @@ void CsndPropLoader::CreateAreasData ( void )
 	
 	for ( i = 0 ; i < m_numAreas ; i++ ) 
 	{
+		pCenters.Zero(); // grayman #3660 - must be initialized for each area
 		area = &m_sndAreas[i];
 		area->LossMult = 1.0;
 		np = gameRenderWorld->NumPortalsInArea(i);
@@ -656,12 +659,12 @@ void CsndPropLoader::CreateAreasData ( void )
 
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Number of Portals in Area %d = %d\r", i, np);
 
-		if( (area->portals = new SsndPortal[np]) == NULL )
+		if ( (area->portals = new SsndPortal[np]) == NULL )
 		{
 			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when building portals array for Area %d\r", i);
 			goto Quit;
 		}
-		for ( j = 0; j < np; j++ ) 
+		for ( j = 0 ; j < np ; j++ ) 
 		{
 			portalTmp = gameRenderWorld->GetPortal(i,j);
 			
@@ -679,25 +682,33 @@ void CsndPropLoader::CreateAreasData ( void )
 			SPortData *pPortData = &m_PortData[ portalTmp.portalHandle - 1 ];
 			
 			// make sure we don't overwrite the data from the area on the other side
-			if(pPortData->Areas[0] == -1 )
+			if (pPortData->Areas[0] == -1 )
+			{
 				PortIndex = 0;
+			}
 			else
+			{
 				PortIndex = 1;
+			}
 
 			pPortData->Areas[ PortIndex ] = i;
 			pPortData->LocalIndex[ PortIndex ] = j;
 		}
 		
 		// average the portal center coordinates to obtain the area center
+
+		// grayman #3660 - The term "area center" is misleading. It means
+		// "the average center of all the centers of the area's portals".
+		// This may or may not be near the geographic center of the sound area.
 		if ( np )
 		{
 			area->center = pCenters / np;
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Area %d has approximate center %s\r", i, area->center.ToString() );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Area %d has approximate average portal center %s\r", i, area->center.ToString() );
 		}
 	}
 
 	// Apply special area Properties
-	for(k = 0; k < m_AreaProps.Num(); k++)
+	for (k = 0 ; k < m_AreaProps.Num() ; k++ )
 	{
 		anum = m_AreaProps[k].area;
 		m_sndAreas[anum].LossMult = m_AreaProps[k].LossMult;
@@ -748,6 +759,7 @@ void CsndPropLoader::WritePortLosses( void )
 			for( col=(row + 1); col < numPorts; col++ )
 			{
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Setting loss for portal %d to portal %d in area %d\r", row, col, area );
+				// grayman #3660 - "lossval" is the distance in meters from one portal to another in this area
 				lossval = CalcPortDist( area, row, col );
 
 				m_sndAreas[area].portalDists->Set( row, col, lossval );
@@ -929,7 +941,33 @@ void CsndPropLoader::FillLocationData( void )
 			continue;
 		}
 
-		pAreaProp->LossMult = pLocEnt->m_SndLossMult;
+		// grayman #3660
+		// This line:
+		// pAreaProp->LossMult = pLocEnt->m_SndLossMult;
+		// was wrong in that LossMult is supposed to be m_SndLossMult * kappa0.  This bug caused attenuation
+		// to be 66.67x larger when calculating sound loss in maps that use location entities. Propagated sounds
+		// weren't carrying as far as they should.  This was an old bug, affecting every release up to and including 2.01.
+		// To solve this, include the missing multiplication by kappa0.
+		// However, this is a major change in sound propagation, and missions released on 2.01 and earlier will
+		// not benefit from this fix, since it will be in 2.02. As a workaround hack, we tell mappers working on new missions to set the
+		// "sound_loss_mult" spawnarg on their location entities to "0.014", then look for that here. If we see it,
+		// don't multiply by kappa0, since the mapper has already handled that manually. If we see anything else (probably the
+		// default value of "1.00") then do the multiplication. This way, new missions that come out before 2.02 can benefit
+		// from the bug discovery, and when 2.02 comes out, the missions don't need to be updated. All missions released after 2.02
+		// can leave out the hack setting of "sound_loss_mult" to "0.014".
+		// ("0.014" is chosen because it's close to 0.015, and players won't notice the difference in attenuation.)
+		float sound_loss_mult = pLocEnt->m_SndLossMult;
+		if ( !(abs(sound_loss_mult - 0.014f) < 0.0001)  ) // because we shouldn't trust floating point equality checks
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("'%s' has sound_loss_mult %f, multiplying by %f\r", pLocEnt->GetName(), sound_loss_mult, m_SndGlobals.kappa0);
+			sound_loss_mult *= m_SndGlobals.kappa0;
+		}
+		else
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("'%s' has sound_loss_mult %f, NOT multiplying by %f\r", pLocEnt->GetName(), sound_loss_mult, m_SndGlobals.kappa0);
+		}
+		pAreaProp->LossMult = sound_loss_mult;
+
 		pAreaProp->VolMod = pLocEnt->m_SndVolMod;
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found location data for area %d, entering lossmult %f, volmod %f\r", i, pAreaProp->LossMult, pAreaProp->VolMod );
 	}

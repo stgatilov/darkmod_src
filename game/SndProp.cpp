@@ -66,14 +66,17 @@ const float s_METERS_TO_DOOM = (1.0f/DOOM_TO_METERS);	// meters to doom
 const int s_MAX_FLOODNODES = 200;
 
 /**
-* Volume ( SPL [dB] ) threshold after which the sound stops propagating
+* Volume ( SPL [dB] ) threshold below which the sound stops propagating
 * 
 * Should correspond to the absolute lowest volume we want AI to be
 * able to detect
 *
 * TODO: Read this from soundprop def file!
+*
+* grayman #3660 - use the lowest threshold of the AI that are being
+* considered during wave expansion, rather than s_MIN_AUD_THRESH
 **/
-const float s_MIN_AUD_THRESH = 15;
+//const float s_MIN_AUD_THRESH = 15;
 
 /**
 * Max number of expansion nodes within which to use detailed path minimization
@@ -82,14 +85,12 @@ const float s_MIN_AUD_THRESH = 15;
 *
 * TODO: Read this from soundprop def file!
 **/
-const float s_MAX_DETAILNODES = 3;
-
+const float s_MAX_DETAILNODES = 6; // grayman #3660 - was 3, so double it
 
 /**
 * 1/log(10), useful for change of base between log and log10
 **/
 const float s_invLog10 = 0.434294482f;
-
 
 /**************************************************
 * BEGIN CsndProp Implementation
@@ -298,6 +299,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 		//TODO : Need better default behavior for bad file, this isn't going to work
 		defaultArea.area = 0;
 		defaultArea.LossMult = 1.0 * m_SndGlobals.kappa0;
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("initializing default LossMult to %f\r",defaultArea.LossMult);
 		defaultArea.VolMod = 0.0;
 		defaultArea.DataEntered = false;
 
@@ -340,8 +342,10 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 		m_sndAreas[i].center = in->m_sndAreas[i].center;
 
 		m_sndAreas[i].portals = new SsndPortal[ tempint ];
-		for( int k=0; k < tempint; k++ )
+		for ( int k = 0 ; k < tempint ; k++ )
+		{
 			m_sndAreas[i].portals[k] = in->m_sndAreas[i].portals[k];
+		}
 
 		m_sndAreas[i].portalDists = new CMatRUT<float>;
 
@@ -357,7 +361,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	}
 
 	// copy the portal data array, element by element
-	for( int k = 0 ; k < m_numPortals ; k++ )
+	for ( int k = 0 ; k < m_numPortals ; k++ )
 	{
 		m_PortData[k].lossAI = in->m_PortData[k].lossAI; // grayman #3042
 		m_PortData[k].lossPlayer = in->m_PortData[k].lossPlayer; // grayman #3042
@@ -371,14 +375,14 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	m_AreaPropsG = in->m_AreaPropsG;
 
 	// initialize Event Areas
-	if( (m_EventAreas = new SEventArea[m_numAreas]) == NULL )
+	if ( (m_EventAreas = new SEventArea[m_numAreas]) == NULL )
 	{
 		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing m_EventAreas\r");
 		goto Quit;
 	}
 
 	// initialize Populated Areas
-	if( (m_PopAreas = new SPopArea[m_numAreas]) == NULL )
+	if ( (m_PopAreas = new SPopArea[m_numAreas]) == NULL )
 	{
 		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing m_PopAreas\r");
 		goto Quit;
@@ -386,13 +390,13 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 
 	// Initialize the timestamp in Populated Areas
 
-	for ( int k=0; k<m_numAreas; k++ )
+	for ( int k = 0 ; k < m_numAreas ; k++ )
 	{
 		m_PopAreas[k].addedTime = 0;
 	}
 	
 	// initialize portal loss arrays within Event Areas
-	for( int j=0; j<m_numAreas; j++ )
+	for ( int j = 0 ; j < m_numAreas ; j++ )
 	{
 		pEvArea = &m_EventAreas[j];
 
@@ -400,15 +404,14 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 
 		numPorts = m_sndAreas[j].numPortals;
 
-		if( (pEvArea->PortalDat = new SPortEvent[ numPorts ])
-			== NULL )
+		if ( (pEvArea->PortalDat = new SPortEvent[ numPorts ]) == NULL )
 		{
 			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing portal data array for area %d in m_EventAreas\r", j);
 			goto Quit;
 		}
 
 		// point the event portals to the m_sndAreas portals
-		for( int l=0; l<numPorts; l++ )
+		for ( int l = 0 ; l < numPorts ; l++ )
 		{
 			SPortEvent *pEvPtr = &pEvArea->PortalDat[l];
 			pEvPtr->ThisPort = &m_sndAreas[j].portals[l];
@@ -421,7 +424,7 @@ Quit:
 }
 
 // NOTE: Propagate does not call CheckSound.  CheckSound should be called before
-//	calling Propagate, in order to make sure the sound exists somewhere.
+// calling Propagate, in order to make sure the sound exists somewhere.
 
 void CsndProp::Propagate 
 	( float volMod, float durMod, const idStr& sndName,
@@ -431,7 +434,7 @@ void CsndProp::Propagate
 
 {
 	bool bValidTeam(false),
-		bExpandFinished(false);
+		 bExpandFinished(false);
 	int			mteam;
 	float		range;
 	
@@ -450,12 +453,6 @@ void CsndProp::Propagate
 	}
 
 	m_TimeStampProp = gameLocal.time;
-
-	if ( cv_spr_debug.GetBool() )
-	{
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \r", maker->name.c_str(), sndName.c_str(), volMod, durMod );
-		gameLocal.Printf("PROPAGATING: From entity %s, sound \"%s\", volume modifier %f, duration modifier %f \n", maker->name.c_str(), sndName.c_str(), volMod, durMod );
-	}
 
 	// clear the old populated areas list
 	m_PopAreasInd.Clear();
@@ -482,12 +479,18 @@ void CsndProp::Propagate
 
 	float vol0 = parms->GetFloat("vol","0") + volMod;
 
+	if ( cv_spr_debug.GetBool() )
+	{
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PROPAGATING: From entity %s, sound \"%s\", origin [%s], initial volume %f, volume modifier %f, duration modifier %f \r", maker->name.c_str(), sndName.c_str(), origin.ToString(), vol0, volMod, durMod );
+		gameLocal.Printf("PROPAGATING: From entity %s, sound \"%s\", origin [%s], initial volume %f, volume modifier %f, duration modifier %f \n", maker->name.c_str(), sndName.c_str(), origin.ToString(), vol0, volMod, durMod );
+	}
+
 	// add the area-specific volMod, if we're in an area
 	int areaNum = gameRenderWorld->PointInArea(origin);
 	vol0 += (areaNum >= 0) ? m_AreaPropsG[areaNum].VolMod : 0;
 
 	// Adjust the volume by some amount that is a cvar for now for tweaking
-	// later we will put a permananet value in the def for globals->Vol
+	// later we will put a permanent value in the def for globals->Vol
 	vol0 += cv_ai_sndvol.GetFloat();
 
 	if ( cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type) )
@@ -548,12 +551,15 @@ void CsndProp::Propagate
 	{
 		gameLocal.Printf("Found %d valid AIs to propagate to\n", validTypeEnts.Num() );
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found %d valid AIs to propagate to\r", validTypeEnts.Num() );
+
 		timer_Prop.Stop(); // grayman - only time things if the debug cvar is set
 		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished finding all AI entities, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
 		timer_Prop.Start();
 	}
 
 	// cull the list by testing distance and valid team flag
+
+	float minAudThresh = idMath::INFINITY; // grayman #3660 - track smallest audio min threshold
 
 	for ( int i = 0 ; i < validTypeEnts.Num() ; i++ )
 	{
@@ -563,22 +569,39 @@ void CsndProp::Propagate
 		testAI = static_cast<idAI *>( validTypeEnts[i] );
 
 		// do not propagate to dead or unconscious AI
-		if ( ( testAI->health <= 0 ) || testAI->IsKnockedOut() )
+		// grayman #3660 - do not propagate to AI that are "deaf" this frame
+		if ( ( testAI->health <= 0 ) ||
+			 testAI->IsKnockedOut()	 ||
+			 ( testAI->GetAcuity("aud") <= 0 ) ||
+			 !testAI->m_allowAudioAlerts )
 		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s will not hear this sound\r", testAI->name.c_str());
 			continue;
 		}
-		
-		if ( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
+
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s might hear this sound\r", testAI->name.c_str());
+						
+		// grayman #3660 - the volume to test is a sphere, so let's change the bounds test to a distance test
+
+		float AIDist2Origin = (testAI->GetEyePosition() - origin).LengthFast();
+		if ( AIDist2Origin >= range )
+		//if ( !bounds.ContainsPoint( testAI->GetEyePosition() ) ) 
 		{
 			if ( cv_spr_debug.GetBool() )
 			{
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is not within propagation cutoff range %f\r", testAI->name.c_str(), range );
-				gameLocal.Printf("AI %s is not within propagation cutoff range %0.2f\n", testAI->name.c_str(), range );
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is %f from origin, not within propagation cutoff range %f\r", testAI->name.c_str(), AIDist2Origin, range );
+				gameLocal.Printf("AI %s is %f from origin, not within propagation cutoff range %f\n", testAI->name.c_str(), AIDist2Origin, range );
 			}
 			continue;
 		}
 
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is within propagation cutoff range %f\r", testAI->name.c_str(), range );
+		if ( cv_spr_debug.GetBool() )
+		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s is %f from origin, within propagation cutoff range %f\r", testAI->name.c_str(), AIDist2Origin, range );
+			gameLocal.Printf("AI %s is %f from origin, within propagation cutoff range %f\n", testAI->name.c_str(), AIDist2Origin, range );
+		}
+
+		// Check team membership. Some teams will not respond to sounds made by other teams.
 
 		if ( mteam == -1 )
 		{
@@ -586,7 +609,8 @@ void CsndProp::Propagate
 			bValidTeam = true;
 			if ( cv_spr_debug.GetBool() )
 			{
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound was propagated from inanimate object: Alerts all teams\r" );
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound was propagated from an inanimate object: Alerts all teams\r");
+				gameLocal.Printf("Sound was propagated from an inanimate object: Alerts all teams\n");
 			}
 		}
 		else if ( testAI == maker ) // grayman #3140 - makers don't ping themselves
@@ -611,7 +635,8 @@ void CsndProp::Propagate
 				bValidTeam = true;
 				if ( cv_spr_debug.GetBool() )
 				{
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s has a valid team for soundprop\r", testAI->name.c_str() );
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s has a valid team for soundprop\r", testAI->name.c_str());
+					gameLocal.Printf("AI %s has a valid team for soundprop\n", testAI->name.c_str());
 				}
 			}
 		}
@@ -622,15 +647,25 @@ void CsndProp::Propagate
 		{
 			if ( cv_spr_debug.GetBool() )
 			{
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found a valid propagation target: %s\r", testAI->name.c_str() );
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Found a valid propagation target: %s\r", testAI->name.c_str());
+				gameLocal.Printf("Found a valid propagation target: %s\n", testAI->name.c_str());
 			}
 			validEnts.Append( validTypeEnts[i] );
+
+			// grayman #3660 - track lowest minimum audio threshold for the AI in this set
+
+			float at = testAI->m_AudThreshold;
+			if ( at < minAudThresh )
+			{
+				minAudThresh = at;
+			}
 			continue;
 		}
 
 		if ( cv_spr_debug.GetBool() )
 		{
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s either doesn't have a valid team for propagation, or is the maker\r", testAI->name.c_str() );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s either doesn't have a valid team for propagation, or is the maker\r", testAI->name.c_str());
+			gameLocal.Printf("AI %s either doesn't have a valid team for propagation, or is the maker\n", testAI->name.c_str());
 		}
 	}
 
@@ -731,7 +766,14 @@ void CsndProp::Propagate
 		timer_Prop.Start();
 	}
 
-	bExpandFinished = ExpandWave( vol0, origin );
+	bExpandFinished = ExpandWave( vol0, origin, minAudThresh ); // grayman #3660
+
+	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
+	{
+		timer_Prop.Stop();
+		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: Finished wave expansion, comptime = %lf [ms]\r", timer_Prop.Milliseconds() );
+		timer_Prop.Start();
+	}
 
 	//TODO: If bExpandFinished == false, either fake propagation or
 	// delay further expansion until later frame
@@ -741,13 +783,6 @@ void CsndProp::Propagate
 	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion done, processing AI\r" );
-
-	if ( cv_spr_debug.GetBool() ) // grayman - only time things if the debug cvar is set
-	{
-		timer_Prop.Stop();
-		DM_LOG(LC_SOUND, LT_INFO)LOGSTRING("Timer: COMPTIME = %lf [ms]\r", timer_Prop.Milliseconds() );
-		timer_Prop.Start();
-	}
 
 	ProcessPopulated( vol0, origin, &propParms );
 
@@ -802,7 +837,7 @@ void CsndProp::SetupParms( const idDict *parms, SSprParms *propParms, USprFlags 
 	
 	if ( cv_spr_debug.GetBool() )
 	{
-		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Finished transfering sound prop parms\r");
+		DM_LOG(LC_SOUND,LT_DEBUG)LOGSTRING("Finished transferring sound prop parms\r");
 	}
 }
 
@@ -836,7 +871,7 @@ Quit:
 	return returnval;
 }
 
-bool CsndProp::ExpandWave(float volInit, idVec3 origin)
+bool CsndProp::ExpandWave(float volInit, idVec3 origin, float minAudThresh) // grayman #3660
 {
 	bool				returnval;
 	int					//popIndex(-1),
@@ -851,12 +886,13 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting wavefront expansion\r" );
 
 	// clear the visited settings on m_EventAreas from previous propagations
-	for(int i=0; i < m_numAreas; i++)
+	for ( int i = 0 ; i < m_numAreas ; i++ )
+	{
 		m_EventAreas[i].bVisited = false;
+	}
 
 	NextAreas.Clear();
 	AddedAreas.Clear();
-
 	
 	// ======================== Handle the initial area =========================
 
@@ -864,7 +900,7 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 
 	int initArea = gameRenderWorld->PointInArea( origin );
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound origin is in portal area: %d\r", initArea );
-	if( initArea == -1 )
+	if ( initArea == -1 )
 	{
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Sound origin is outside the map, aborting propagation.\r" );
 		return false;
@@ -874,15 +910,42 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 
 	// Update m_PopAreas to show that the area has been visited
 	m_PopAreas[ initArea ].bVisited = true;
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing initial area, area %d is marked 'visited'\r",initArea);
 
 	// array index pointers to save on calculation
 	SsndArea *pSndAreas = &m_sndAreas[ initArea ];
 	SEventArea *pEventAreas = &m_EventAreas[ initArea ];
 
 	// calculate initial portal losses from the sound origin point
-	for( int i2=0; i2 < pSndAreas->numPortals; i2++)
+	for ( int i2 = 0 ; i2 < pSndAreas->numPortals ; i2++ )
 	{
-		idVec3 portalCoord = pSndAreas->portals[i2].center;
+		// grayman #3660 - using the portal center can throw the loss
+		// results way off when a mission uses large portals. Instead of
+		// using the center, use an orthogonal projection of the origin onto the plane
+		// of the portal, then pull the projection onto the portal if it's not already there.
+		const idWinding *wind = pSndAreas->portals[i2].winding;
+		idPlane WPlane;
+		wind->GetPlane(WPlane);
+		float scale;
+		WPlane.RayIntersection( origin, WPlane.Normal(), scale );
+		idVec3 portalCoord = origin + scale*WPlane.Normal();
+		if ( !wind->PointInside( WPlane.Normal(), portalCoord, 0.1f ))
+		{
+			// Not inside winding, so pull the point to the portal.
+			if (scale < 0.0f)
+			{
+				portalCoord -= 0.1f*WPlane.Normal();
+			}
+			else
+			{
+				portalCoord += 0.1f*WPlane.Normal();
+			}
+			portalCoord = SurfPoint( origin, portalCoord, &(pSndAreas->portals[i2]));
+		}
+
+		// old way
+		//idVec3 portalCoord = pSndAreas->portals[i2].center;
+
 		tempDist = (origin - portalCoord).LengthFast() * s_DOOM_TO_METERS;
 
 		// calculate and set initial portal losses
@@ -895,20 +958,20 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 		tempLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
 
 		pPortEv = &pEventAreas->PortalDat[i2];
-
 		pPortEv->Loss = tempLoss;
 		pPortEv->Dist = tempDist;
 		pPortEv->Att = tempAtt;
 		pPortEv->Floods = 1;
 		pPortEv->PrevPort = NULL;
 
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Loss at portal %d is %f [dB]\r", i2, tempLoss);
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist at portal %d is %f [m]\r", i2, tempDist);
-
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Loss tempLoss at portal %d is %f [dB]\r", i2, tempLoss);
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist tempDist at portal %d is %f [m], %f [D3]\r", i2, tempDist, tempDist/s_DOOM_TO_METERS);
 
 		// add the portal destination to flooding queue if the sound has
-		//	not dropped below threshold at the portal
-		if( (volInit - tempLoss) > s_MIN_AUD_THRESH )
+		// not dropped below threshold at the portal
+		// grayman #3660 - use the recorded minimum audio threshold for the AI being checked
+		if ( (volInit - tempLoss) > minAudThresh )
+		//if ( (volInit - tempLoss) > s_MIN_AUD_THRESH )
 		{
 			tempQEntry.area = pSndAreas->portals[i2].to;
 			tempQEntry.curDist = tempDist;
@@ -918,25 +981,27 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 			tempQEntry.PrevPort = NULL;
 
 			NextAreas.Append( tempQEntry );
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Wavefront intensity still above threshold at portal %d\r", i2);
 		}
 		else
+		{
 			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Wavefront intensity dropped below threshold at portal %d\r", i2);
+		}
 	}
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting main loop\r" );
 	
-	
-// done with initial area, begin main loop
+	// done with initial area, begin main loop
 
-	while( NextAreas.Num() > 0 && nodes < s_MAX_FLOODNODES )
+	while ( ( NextAreas.Num() > 0 ) && ( nodes < s_MAX_FLOODNODES ) )
 	{
 		floods++;
 
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion loop, iteration %d\r", floods);
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Expansion loop, iteration (floods) = %d\r", floods);
 
 		AddedAreas.Clear();
 
-		for(int j=0; j < NextAreas.Num(); j++)
+		for ( int j = 0 ; j < NextAreas.Num() ; j++ )
 		{
 			nodes++;
 
@@ -953,10 +1018,14 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 			int portHandle = NextAreas[j].portalH;
 
 			SPortData *pPortData = &m_PortData[ portHandle - 1 ];
-			if( pPortData->Areas[0] == area )
+			if ( pPortData->Areas[0] == area )
+			{
 				LocalPort = pPortData->LocalIndex[0];
+			}
 			else
+			{
 				LocalPort = pPortData->LocalIndex[1];
+			}
 			
 			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Identified local portal index %d\r", LocalPort );
 
@@ -969,10 +1038,9 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 			pPortEv->Floods = floods - 1;
 			pPortEv->PrevPort = NextAreas[j].PrevPort;
 
-
 			// Updated the Populated Areas to show that it's been visited
 			// Only do this for populated areas that matter (ie, they've been updated
-			//	on this propagation
+			// on this propagation)
 			
 			if ( pPopArea->addedTime == m_TimeStampProp )
 			{
@@ -982,11 +1050,13 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 			}
 
 			// Flood to portals in this area
-			for( int i=0; i < pSndAreas->numPortals; i++)
+			for ( int i = 0 ; i < pSndAreas->numPortals ; i++ )
 			{
 				// do not flood back thru same portal we came in
-				if( LocalPort == i)
+				if ( LocalPort == i)
+				{
 					continue;
+				}
 
 				// set up the portal event pointer
 				pPortEv = &pEventAreas->PortalDat[i];
@@ -1000,7 +1070,7 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 
 				tempAtt = NextAreas[j].curAtt;
 				tempAtt += AddedDist * m_AreaPropsG[ area ].LossMult;
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total distance now %f\r", tempDist );
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Total distance now %f [m], %f [D3]\r", tempDist, tempDist/s_DOOM_TO_METERS );
 				
 				// add any specific loss on the portal
 				tempAtt += m_PortData[ pSndAreas->portals[i].handle - 1 ].lossAI;
@@ -1009,23 +1079,25 @@ bool CsndProp::ExpandWave(float volInit, idVec3 origin)
 
 				// check if we've visited the area, and do not add destination area 
 				//	if loss is greater this time
-				if( pEventAreas->bVisited 
-					&& tempLoss >= pPortEv->Loss )
+				if ( pEventAreas->bVisited && ( tempLoss >= pPortEv->Loss ) )
 				{
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Cancelling flood thru portal %d in previously visited area %d\r", i, area);
 					continue;
 				}
 
-				if( ( volInit - tempLoss ) < s_MIN_AUD_THRESH )
+				// grayman #3660 - use the recorded minimum audio threshold for the AI being checked
+				if ( (volInit - tempLoss) < minAudThresh )
+				//if ( ( volInit - tempLoss ) < s_MIN_AUD_THRESH )
 				{
 					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Wavefront intensity dropped below abs min audibility at portal %d in area %d\r", i, area);
 					continue;
 				}
 
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Wavefront intensity still above abs min audibility at portal %d in area %d\r", i, area);
+
 				// path has been determined to be minimal loss, above cutoff intensity
 				// store the loss value
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Further expansion valid thru portal %d in area %d\r", i, area);
 				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Set loss at portal %d to %f [dB]\r", i, tempLoss);
 				
 				pPortEv->Loss = tempLoss;
@@ -1071,7 +1143,7 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 	
 	int initArea = gameRenderWorld->PointInArea( origin );
 
-	for( int i=0; i < m_PopAreasInd.Num(); i++ )
+	for ( int i = 0; i < m_PopAreasInd.Num() ; i++ )
 	{
 		int area = m_PopAreasInd[i];
 
@@ -1080,14 +1152,14 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing pop. area %d\r", area);
 		
 		// Special case: AI area = initial area - no portal flooded in on in this case
-		if( area == initArea )
+		if ( area == initArea )
 		{
-			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Special case: AI in initial area %d\r", area);
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI are in the initial area %d\r", area);
 
 			propParms->bSameArea = true;
 			propParms->direction = origin;
 
-			for ( int j=0 ; j < pPopArea->AIContents.Num() ; j++ )
+			for ( int j = 0 ; j < pPopArea->AIContents.Num() ; j++ )
 			{
 				idAI* ai = pPopArea->AIContents[j].GetEntity();
 				
@@ -1096,7 +1168,10 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 					continue;
 				}
 
-				// grayman #3424 - don't react if you made the propagated sound
+				// grayman #3424 - Don't react if you made the propagated sound.
+				// This only needs to be checked when the sound origin and the
+				// AI are in the same area.
+
 				if (ai == propParms->maker)
 				{
 					continue;
@@ -1108,13 +1183,13 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 
 				propParms->propVol = volInit - tempLoss;
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing AI %s in (source area) area %d\r", ai->name.c_str(), area);
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist to AI: %f [m], Propagated volume found to be %f [dB]\r", tempDist, propParms->propVol);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Processing AI %s in initial area %d\r", ai->name.c_str(), area);
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Dist to AI: %f [m], %f [D3], Propagated volume %f [dB]\r", tempDist, tempDist/s_DOOM_TO_METERS, propParms->propVol);
 				
 				ProcessAI( ai, origin, propParms );
 
 				// draw debug lines if show soundprop cvar is set
-				if( cv_spr_show.GetBool() )
+				if ( cv_spr_show.GetBool() )
 				{
 					showPoints.Clear();
 					showPoints.Append( ai->GetEyePosition() );
@@ -1126,14 +1201,15 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 		// Normal propagation to a surrounding area
 		else if ( pPopArea->bVisited == true )
 		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Area %d was visited by the wave, so process its %d AI\r", area, pPopArea->AIContents.Num());
 			propParms->bSameArea = false;
 
 			// figure out the least loss portal
 			// May be different for each AI (esp. in large rooms)
 			// TODO OPTIMIZATION: Don't do this extra loop for each AI if 
-			//		we only visited one portal in the area
+			// we only visited one portal in the area
 
-			for( int aiNum = 0; aiNum < pPopArea->AIContents.Num(); aiNum++ )
+			for ( int aiNum = 0 ; aiNum < pPopArea->AIContents.Num() ; aiNum++ )
 			{
 				idAI* ai = pPopArea->AIContents[ aiNum ].GetEntity();
 
@@ -1147,35 +1223,70 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 
 				LeastLoss = idMath::INFINITY;
 
-				for(int k=0; k < pPopArea->VisitedPorts.Num(); k++ )
+				// grayman #3660 - Determine which of the portals in the
+				// receiving AI's area represents the least volume loss for the sound wave.
+
+				showPoints.Clear();
+
+				for ( int k = 0 ; k < pPopArea->VisitedPorts.Num() ; k++ )
 				{	
 					portNum = pPopArea->VisitedPorts[ k ];
 					pPortEv = &m_EventAreas[area].PortalDat[ portNum ];
 
-					//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Calculating loss from portal %d, DEBUG k=%d, portsnum = %d\r", portNum, k, m_PopAreas[i].VisitedPorts.Num());
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Calculating loss from portal %d, k = %d, portsnum = %d\r", portNum, k, m_PopAreas[i].VisitedPorts.Num());
 
-					testLoc = m_sndAreas[area].portals[portNum].center;
+					// grayman #3660 - using the portal center can throw the loss
+					// results way off when a mission uses large portals. Instead of
+					// using the center, use a projection of the origin onto the plane
+					// of the portal, then pull the projection onto the portal.
+
+					const idWinding *wind = m_sndAreas[area].portals[portNum].winding;
+					idPlane WPlane;
+					wind->GetPlane(WPlane);
+					float scale;
+					WPlane.RayIntersection( origin, WPlane.Normal(), scale );
+					testLoc = origin + scale*WPlane.Normal();
+
+					if ( !wind->PointInside( WPlane.Normal(), testLoc, 0.1f ))
+					{
+						// Not inside winding, so pull the point to the portal.
+						if (scale < 0.0f)
+						{
+							testLoc -= 0.1f*WPlane.Normal();
+						}
+						else
+						{
+							testLoc += 0.1f*WPlane.Normal();
+						}
+						testLoc = SurfPoint( ai->GetEyePosition(), testLoc, &(m_sndAreas[area].portals[portNum]));
+					}
+
+					// old way
+					//testLoc = m_sndAreas[area].portals[portNum].center;
+
+					showPoints.Append(testLoc);
 
 					tempDist = (testLoc - ai->GetEyePosition()).LengthFast() * s_DOOM_TO_METERS;
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI Calc: Distance to AI = %f [m]\r", tempDist);
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Distance to AI = %f [m], %f [D3]\r", tempDist, tempDist/s_DOOM_TO_METERS);
 
 					tempAtt = tempDist * m_AreaPropsG[ area ].LossMult;
 					tempDist += pPortEv->Dist;
 					tempAtt += pPortEv->Att;
 
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI Calc: Portal %d has total Dist = %f [m]\r", portNum, tempDist);
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Portal %d has total Dist = %f [m], %f [D3]\r", portNum, tempDist, tempDist/s_DOOM_TO_METERS);
 
 					// add loss from portal to AI to total loss at portal
 					TestLoss = m_SndGlobals.Falloff_Ind * s_invLog10*idMath::Log16(tempDist) + tempAtt + 8;
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI Calc: Portal %d has total Loss = %f [dB]\r", portNum, TestLoss);
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Portal %d has total Loss = %f [dB]\r", portNum, TestLoss);
 
-					if( TestLoss < LeastLoss )
+					if ( TestLoss < LeastLoss )
 					{
 						LeastLoss = TestLoss;
 						LoudPort = portNum;
 					}
 				}
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Portal %d has least loss %f [dB]\r", LoudPort, LeastLoss );
+
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Portal %d has least loss %f [dB] for AI %s. This is used if path minimization isn't available\r", LoudPort, LeastLoss, ai->name.c_str());
 
 				pPortEv = &m_EventAreas[area].PortalDat[ LoudPort ];
 				propParms->floods = pPortEv->Floods;
@@ -1183,36 +1294,50 @@ void CsndProp::ProcessPopulated( float volInit, idVec3 origin, SSprParms *propPa
 				// Detailed Path Minimization: 
 
 				// check if AI is within the flood range for detailed path minimization	
-				if( pPortEv->Floods <= s_MAX_DETAILNODES )
+				if ( pPortEv->Floods <= s_MAX_DETAILNODES )
 				{
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting detailed path minimization for portal  %d\r", LoudPort );
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Starting detailed path minimization for portal %d\r", LoudPort );
 					propParms->bDetailedPath = true;
 
 					// call detailed path minimization, which writes results to propParms
 					DetailedMin( ai, propParms, pPortEv, area, volInit ); 
 
-					// message the AI
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated volume found to be %f\r", propParms->propVol);
-					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d\r", ai->name.c_str(), area);
+					// tell the AI the sound has reached it
+					DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d with optimized volume %f [dB]\r", ai->name.c_str(), area, propParms->propVol);
 					
 					ProcessAI( ai, origin, propParms );
-					
 					continue;
 				}
+
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("AI %s not within the flood range for detailed path minimization\r", ai->name.c_str());
+
+				// Since path minimization is not available to this AI, use what we have so far,
+				// which is an estimate of what the sound loss might be through the portals on this path.
+				// Unfortunately, the estimate uses the centers of the portals, rather than the edges, which
+				// are used by the minimization code.
 
 				propParms->bDetailedPath = false;
 				propParms->direction = m_sndAreas[area].portals[ LoudPort ].center;
 				propParms->propVol = volInit - LeastLoss;
 
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Propagated volume found to be %f\r", propParms->propVol);
+				// tell the AI the sound has reached it
+				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Messaging AI %s in area %d with estimated volume %f [dB]\r", ai->name.c_str(), area, propParms->propVol);
 				
-				DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Let AI %s in area %d process the sound\r", ai->name.c_str(), area);
 				ProcessAI( ai, origin, propParms );
+
+				// draw debug lines if show soundprop cvar is set
+				if ( cv_spr_show.GetBool() )
+				{
+					showPoints.Insert(ai->GetEyePosition(), 0);
+					showPoints.Append(propParms->origin);
+					DrawLines(showPoints);
+				}
 			}
 		}
 		// Propagation was stopped before this area was reached
 		else if ( pPopArea->bVisited == false )
 		{
+			DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Area %d wasn't visited by the wave\r", area );
 			// Do nothing for now
 			// TODO: Keep track of these areas for delayed calculation?
 		}
@@ -1245,7 +1370,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 											  propParms->name.c_str(), ai->name.c_str(), origin.ToString(), propParms->propVol, propParms->direction.ToString() );
 	}
 
-	if( cv_spr_show.GetBool() )
+	if ( cv_spr_show.GetBool() )
 	{
 		gameRenderWorld->DrawText( va("Volume: %.2f", propParms->propVol), 
 			(ai->GetEyePosition() - ai->GetPhysics()->GetGravityNormal() * 65.0f), 0.25f, 
@@ -1266,6 +1391,24 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 		// the AI hears the sound
 		ai->HearSound( propParms, noise, origin );
 	}
+}
+
+// grayman #3660 - intersection of two 3d line segments
+// This is not currently used, but I didn't want to delete the algorithm.
+
+bool CsndProp::Intersection(const idVec3& p1, const idVec3& p2, const idVec3& w1, const idVec3& w2, idVec3& ip, float& scale)
+{
+	idVec3 da = w2 - w1; 
+	idVec3 db = p2 - p1;
+    idVec3 dc = p1 - w1;
+	idVec3 dd = da.Cross(db);
+
+	float epsilon = 0.001f; // handle floating-point inaccuracy
+	scale = (dc.Cross(db)*dd) / dd.LengthSqr();
+	ip = w1 + scale*da;
+
+	// Return 'true' if ip lies on p1->p2, otherwise return 'false'.
+	return ( (scale >= -epsilon) && (scale <= 1.0 + epsilon) );
 }
 
 /**
@@ -1289,6 +1432,8 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 * 
 * 6. Return this point in world coordinates, we're done.
 **/
+
+/* grayman #3660 - no longer used
 idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVec3 WCenter )
 {
 	idVec3 line, u1, u2, v1, v2, edge, isect, lineSect;
@@ -1393,6 +1538,91 @@ idVec3 CsndProp::OptSurfPoint( idVec3 p1, idVec3 p2, const idWinding& wind, idVe
 Quit:
 	return returnVec;
 }
+*/
+
+// grayman #3660 - an algorithm that's more like "pulling a thread tight through the portals"
+
+idVec3 CsndProp::SurfPoint( idVec3 p1, idVec3 p2, SsndPortal *portal )
+{
+	idBounds bounds;
+	portal->winding->GetBounds(bounds);
+	idVec3 windingMins = bounds[0];
+	idVec3 windingMaxs = bounds[1];
+	idVec3 point;
+
+	if ( p2.x <= windingMins.x )
+	{
+		point.x = windingMins.x;
+	}
+	else if ( p2.x >= windingMaxs.x )
+	{
+		point.x = windingMaxs.x;
+	}
+	else
+	{
+		if ( p1.x <= windingMins.x )
+		{
+			point.x = windingMins.x;
+		}
+		else if ( p1.x >= windingMaxs.x )
+		{
+			point.x = windingMaxs.x;
+		}
+		else
+		{
+			point.x = (p1.x + p2.x)/2;
+		}
+	}
+
+	if ( p2.y <= windingMins.y )
+	{
+		point.y = windingMins.y;
+	}
+	else if ( p2.y >= windingMaxs.y )
+	{
+		point.y = windingMaxs.y;
+	}
+	else
+	{
+		if ( p1.y <= windingMins.y )
+		{
+			point.y = windingMins.y;
+		}
+		else if ( p1.y >= windingMaxs.y )
+		{
+			point.y = windingMaxs.y;
+		}
+		else
+		{
+			point.y = (p1.y + p2.y)/2;
+		}
+	}
+
+	if ( p2.z <= windingMins.z )
+	{
+		point.z = windingMins.z;
+	}
+	else if ( p2.z >= windingMaxs.z )
+	{
+		point.z = windingMaxs.z;
+	}
+	else
+	{
+		if ( p1.z <= windingMins.z )
+		{
+			point.z = windingMins.z;
+		}
+		else if ( p1.z >= windingMaxs.z )
+		{
+			point.z = windingMaxs.z;
+		}
+		else
+		{
+			point.z = (p1.z + p2.z)/2;
+		}
+	}
+	return point;
+}
 
 void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv, int AIArea, float volInit )
 {
@@ -1402,7 +1632,7 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 	int					floods, curArea;
 	float				tempAtt, tempDist, totAtt, totDist, totLoss;
 	SPortEvent			*pPortTest;
-	SsndPortal			*pPort2nd;
+//	SsndPortal			*pPort2nd;
 
 	floods = pPortEv->Floods;
 	pPortTest = pPortEv;
@@ -1410,18 +1640,40 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 	AIpos = AI->GetEyePosition();
 	p1 = AIpos;
 
-
 	// first iteration, populate pathPoints going "backwards" from target to source
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Path min: Performing first iteration for %d floods\r", floods );
+	p2 = propParms->origin;
 	
-	for( int i = 0; i < floods; i++ )
+	for ( int i = 0 ; i < floods ; i++ )
 	{
-		if( pPortEv->ThisPort == NULL)
+		if ( pPortEv->ThisPort == NULL)
+		{
 			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("ERROR: pPortEv->ThisPort is NULL\r" );
+		}
 
-		// calculate optimum point for this leg of the path
-		point = OptSurfPoint( p1, propParms->origin, *pPortTest->ThisPort->winding, 
-							  pPortTest->ThisPort->center );
+		SsndPortal *thisPort = pPortTest->ThisPort;
+
+		// Want to find a point on the portal closest to this line:
+		idVec3 line = p2 - p1;
+
+		const idWinding *wind = thisPort->winding;
+		idPlane WPlane;
+		wind->GetPlane(WPlane);
+
+		line.NormalizeFast();
+
+		// find ray intersection point, in terms of p1 + (p2-p1)*Scale
+		float Scale;
+		WPlane.RayIntersection( p1, line, Scale );
+
+		point = p1 + Scale * line;
+
+		// grayman #3660 - determine if the point is inside the winding
+
+		if ( !wind->PointInside( WPlane.Normal(), point, 0.1f ))
+		{
+			// Not inside winding, so pull the point to the portal.
+			point = SurfPoint( p1, p2, thisPort );
+		}
 
 		pathPoints.Append(point);
 		PortPtrs.Append(pPortTest);
@@ -1430,16 +1682,14 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 		pPortTest = pPortTest->PrevPort;
 	}
 
-	// check if we have enough floods to perform the 2nd iteration
-	if( (floods - 2) < 0 )
-	{
-		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Path min: Skipping second iteration, not enough portals\r" );
-		goto Quit;
-	}
+	/* grayman #3660 - the second iteration might not be needed when using the
+	// new algorithm. Keep checking the first and second iteration results. If
+	// they continue to remain close, comment out the second iteration run and
+	// save some time.
 
 	// second iteration, going forwards from source to target
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Path min: Performing second iteration\r" );
 
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Path min: Performing second iteration\r" );
 
 	p1 = propParms->origin;
 
@@ -1463,19 +1713,22 @@ void CsndProp::DetailedMin( idAI* AI, SSprParms *propParms, SPortEvent *pPortEv,
 		p1 = point;
 	}
 
-Quit:
+Quit:*/
 
-// Now go through and calculate the new loss
+	// Now go through and calculate the new loss
 
-	// get loss to 1st point on the path
+	// get loss to 1st portal on the path
 	totDist = (AIpos - pathPoints[0]).LengthFast() * s_DOOM_TO_METERS;
-	curArea = PortPtrs[0]->ThisPort->to;
+	curArea = PortPtrs[0]->ThisPort->from; // grayman #3660
+	//curArea = PortPtrs[0]->ThisPort->to;
 	totAtt = totDist * m_AreaPropsG[ curArea ].LossMult;
 
-	totAtt += PortPtrs[0]->Att;
+	//totAtt += PortPtrs[0]->Att; // grayman #3660 - this doesn't look right, skip it, otherwise it gets double-counted
+
+	totAtt += m_PortData[PortPtrs[0]->ThisPort->handle - 1].lossAI; // grayman #3660 - add AI loss
 
 	// add the rest of the loss from the path points
-	for( int j = 0; j < (floods - 1); j++ )
+	for ( int j = 0 ; j < (floods - 1) ; j++ )
 	{
 		tempDist = (pathPoints[j+1] - pathPoints[j]).LengthFast() * s_DOOM_TO_METERS;
 		curArea = PortPtrs[j]->ThisPort->to;
@@ -1484,7 +1737,9 @@ Quit:
 		totDist += tempDist;
 		totAtt += tempAtt;
 
-		totAtt += PortPtrs[j + 1]->Att;
+		//totAtt += PortPtrs[j + 1]->Att; // grayman #3660 - this double-counts the attenuation
+
+		totAtt += m_PortData[PortPtrs[j + 1]->ThisPort->handle - 1].lossAI; // grayman #3660 - add AI loss
 	}
 
 	// add the loss from the final path point to the source
@@ -1502,24 +1757,24 @@ Quit:
 	propParms->propVol = volInit - totLoss;
 
 	// draw debug lines if show soundprop cvar is set
-	if( cv_spr_show.GetBool() )
+	if ( cv_spr_show.GetBool() )
 	{
 		pathPoints.Insert(AIpos, 0);
 		pathPoints.Append(propParms->origin);
 		DrawLines(pathPoints);
 	}
-
-	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Detailed path minimization for AI %s finished\r", AI->name.c_str() );
-
-	return;
 }
 
 void CsndProp::DrawLines(idList<idVec3>& pointlist)
 {
-	for (int i = 0; i < (pointlist.Num() - 1); i++)
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("The sound travels through these points:\r");
+	idVec4 color(gameLocal.random.RandomFloat(),gameLocal.random.RandomFloat(),gameLocal.random.RandomFloat(),0.0f);
+	for ( int i = 0 ; i < (pointlist.Num() - 1) ; i++ )
 	{
-		gameRenderWorld->DebugLine( colorGreen, pointlist[i], pointlist[i+1], 3000);
+		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("   [%s]\r", pointlist[i].ToString());
+		gameRenderWorld->DebugLine( color, pointlist[i], pointlist[i+1], 3000);
 	}
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("   [%s]\r", pointlist[pointlist.Num() - 1].ToString());
 }
 
 void CsndProp::SetPortalAILoss( int handle, float value ) // grayman #3042 - specific to AI
@@ -1538,6 +1793,7 @@ void CsndProp::SetPortalPlayerLoss( int handle, float value ) // grayman #3042 -
 	m_TimeStampPortLoss = gameLocal.time;
 }
 
+/* grayman - not used
 bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, float MaxDist, int MaxFloods )
 {
 	bool				bDistLimit(false);
@@ -1747,3 +2003,5 @@ bool CsndProp::ExpandWaveFast( float volInit, idVec3 origin, float MaxDist, int 
 	// return true if the expansion died out naturally rather than being stopped
 	return !NextAreas.Num();
 }
+
+*/
