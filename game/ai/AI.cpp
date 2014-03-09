@@ -6511,6 +6511,8 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 			}
 		}
 	}
+
+	GetMemory().playerResponsible = bPlayerResponsible; // grayman #3679
 	
 	// Update TDM objective system
 	gameLocal.m_MissionData->MissionEvent( COMP_KILL, this, attacker, bPlayerResponsible );
@@ -9450,6 +9452,17 @@ bool idAI::AlertIndexIncreased()
 	return (AI_AlertIndex > m_prevAlertIndex);
 }
 
+void idAI::Event_GetAttacker()	// grayman #3679
+{
+	idThread::ReturnEntity(GetMemory().attacker.GetEntity());
+}
+
+void idAI::Event_IsPlayerResponsibleForDeath() // grayman #3679
+{
+	idThread::ReturnInt(GetMemory().playerResponsible);
+}
+
+
 // grayman #3552 - get original acuity w/o applying factors like drunkeness
 
 float idAI::GetBaseAcuity(const char *type) const
@@ -10109,11 +10122,8 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		if ( IsFriend(responsibleActor) )
 		{
-			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
-			{
-				// angua: We've found a friend that is dead or unconscious
-				mind->GetState()->OnActorEncounter(tactEnt, this);
-			}
+			// angua: We've found a friend that is dead or unconscious
+			mind->GetState()->OnActorEncounter(tactEnt, this);
 		}
 
 		if ( !IsEnemy(responsibleActor) ) 

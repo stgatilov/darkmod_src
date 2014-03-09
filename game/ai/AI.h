@@ -182,6 +182,9 @@ extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
 extern const idEventDef AI_AlertAI; // grayman #3356
 
+extern const idEventDef AI_GetAttacker; // grayman #3679
+extern const idEventDef AI_IsPlayerResponsibleForDeath; // grayman #3679
+
 class idPathCorner;
 
 typedef struct particleEmitter_s {
@@ -2289,6 +2292,10 @@ public:
 	void Event_DelayedVisualStim(idEntity* stimSource); // grayman #2924
 
 	void Event_AlertAI(const char *type, float amount, idActor* actor); // grayman #3356 & #3258
+
+	void Event_GetAttacker();	// grayman #3679
+	void Event_IsPlayerResponsibleForDeath(); // grayman #3679
+
 
 #ifdef TIMING_BUILD
 private:

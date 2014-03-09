@@ -96,8 +96,11 @@ Memory::Memory(idAI* owningAI) :
 	resolvingMovementBlock(false),
 	closeSuspiciousDoor(false), // grayman #1327
 	issueMoveToPositionTask(false), // grayman #3052
-	currentSearchEventID(-1) // grayman #3424
-{}
+	currentSearchEventID(-1), // grayman #3424
+	playerResponsible(false)  // grayman #3679 - is the player responsible for the attack?
+{
+	attacker = NULL; // grayman #3679 - who attacked me
+}
 
 // Save/Restore routines
 void Memory::Save(idSaveGame* savefile) const
@@ -213,6 +216,9 @@ void Memory::Save(idSaveGame* savefile) const
 	// end of #2866 changes
 
 	savefile->WriteInt(currentSearchEventID); // grayman #3424
+
+	attacker.Save(savefile); // grayman #3679
+	savefile->WriteBool(playerResponsible); // grayman #3679
 
 	savefile->WriteBool(issueMoveToPositionTask); // grayman #3052
 }
@@ -366,6 +372,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	// end of #2866 changes
 
 	savefile->ReadInt(currentSearchEventID); // grayman #3424
+
+	attacker.Restore(savefile); // grayman #3679
+	savefile->ReadBool(playerResponsible); // grayman #3679
 
 	savefile->ReadBool(issueMoveToPositionTask); // grayman #3052
 }

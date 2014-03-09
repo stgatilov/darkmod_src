@@ -3354,6 +3354,13 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		attacker = gameLocal.world;
 	}
 
+	// grayman #3679 - if I'm an AI, remember who attacked me (could be used by death scripts)
+
+	if ( IsType(idAI::Type) )
+	{
+		static_cast<idAI*>(this)->GetMemory().attacker = attacker;
+	}
+
 	// Try to find the damage entityDef
 	const idDict* damageDef = gameLocal.FindEntityDefDict( damageDefName, true ); // grayman #3391 - don't create a default 'damageDef'
 																				// We want 'false' here, but FindEntityDefDict()

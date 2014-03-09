@@ -254,7 +254,7 @@ const idEventDef AI_PlayAndLipSync( "playAndLipSync", EventArgs('s', "soundName"
 	"The lipsync animation should just be a simple non-loopable animation\n" \
 	"of the mouth opening in a linear fashion. The code will select individual\n" \
 	"frames from this to construct a simple lipsyncing effect which is in\n" \
-	"time with the sound.\n" \
+	"time with the sound.\n"
 	"\n" \
 	"Returns the length of the played sound in seconds.");
 
@@ -451,6 +451,10 @@ const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "st
 const idEventDef AI_AlertAI( "alertAI", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 //const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 
+const idEventDef AI_GetAttacker( "getAttacker", EventArgs(), 'e', "Returns the attacking entity"); // grayman #3679
+const idEventDef AI_IsPlayerResponsibleForDeath( "isPlayerResponsibleForDeath", EventArgs(), 'd', 
+	"Returns true if the player was responsible for the AI's caller's death."); // grayman #3679
+
 /*
 * This is the AI event table class for a generic NPC actor.
 *
@@ -644,6 +648,9 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
 	EVENT ( AI_DelayedVisualStim,				idAI::Event_DelayedVisualStim) // grayman #2924
 	EVENT ( AI_AlertAI,							idAI::Event_AlertAI)		// grayman #3356
+
+	EVENT ( AI_GetAttacker,						idAI::Event_GetAttacker)	// grayman #3679
+	EVENT ( AI_IsPlayerResponsibleForDeath,		idAI::Event_IsPlayerResponsibleForDeath) // grayman #3679
 
 END_CLASS
 

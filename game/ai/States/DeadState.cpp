@@ -96,7 +96,10 @@ void DeadState::Init(idAI* owner)
 	}
 
 	// Run a death script, if applicable
-	// TODO: We should figure out who is responsible for the death and pass it along to the script
+	// grayman #3679: death scripts can now retrieve who is responsible for the death
+	// Use:
+	// entity attacker = ai->getAttacker(); // returns attacking entity (could be player or something else)
+	// float playerResponsible = ai->getPlayerResponsibleForDeath(); // returns 1 if true, 0 if false
 	idStr deathScript;
 	if (owner->spawnArgs.GetString("death_script", "", deathScript))
 	{
