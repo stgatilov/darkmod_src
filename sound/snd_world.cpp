@@ -896,12 +896,16 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 
 		idVec3 tlen = source - soundOrigin;
 		float tlenLength = tlen.LengthFast();
-		SoundChainResults *res = new SoundChainResults;
+		SoundChainResults *res = new SoundChainResults();
 
 		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer, source, def, res ) ) // grayman #3042
 		{
 			chainResults.Append(res);
-		}
+		} 
+        else 
+        {
+            delete res; // SoundChainResults for this iteration no longer required, so free it
+        }
 	}
 
 	if ( chainResults.Num() > 0 ) // were there any usable results?
@@ -990,6 +994,9 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 				aveSpatialOrigin = scr->spatializedOrigin; // use the spatial origin for this chain path
 			}
 		}
+
+        // we're done with the SoundChainResults, so remove them from the heap
+        chainResults.DeleteContents(true);
 
 		results->spatializedOrigin = aveSpatialOrigin;
 		results->distance = aveDist;
