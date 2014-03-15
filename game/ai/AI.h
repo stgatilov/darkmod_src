@@ -178,6 +178,8 @@ extern const idEventDef AI_OnUnconsciousPersonEncounter; // grayman #3317
 
 extern const idEventDef AI_AllowGreetings; // grayman #3338
 
+extern const idEventDef AI_NoisemakerDone; // grayman #3681
+
 extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
 extern const idEventDef AI_AlertAI; // grayman #3356
@@ -1178,6 +1180,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * grayman #2603: list of doused lights seen
 	 */
 	idList< idEntityPtr<idEntity> >		m_dousedLightsSeen;
+
+	/**
+	 * grayman #3681: list of noisemakers heard
+	 */
+	idList< idEntityPtr<idEntity> >		m_noisemakersHeard;
 
 	/**
 	 * angua: is set true while the AI is handling an elevator.
@@ -2296,6 +2303,7 @@ public:
 	void Event_GetAttacker();	// grayman #3679
 	void Event_IsPlayerResponsibleForDeath(); // grayman #3679
 
+	void Event_NoisemakerDone(idEntity* maker); // grayman #3681
 
 #ifdef TIMING_BUILD
 private:

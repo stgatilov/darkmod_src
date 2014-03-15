@@ -1013,9 +1013,16 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	// grayman #2603
 	savefile->WriteInt( m_dousedLightsSeen.Num() );
-	for (int i = 0 ; i < m_dousedLightsSeen.Num() ; i++ )
+	for ( int i = 0 ; i < m_dousedLightsSeen.Num() ; i++ )
 	{
 		m_dousedLightsSeen[i].Save(savefile);
+	}
+
+	// grayman #3681
+	savefile->WriteInt( m_noisemakersHeard.Num() );
+	for ( int i = 0 ; i < m_noisemakersHeard.Num() ; i++ )
+	{
+		m_noisemakersHeard[i].Save(savefile);
 	}
 
 	int size = unlockableDoors.size();
@@ -1473,9 +1480,18 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	m_dousedLightsSeen.Clear();
 	savefile->ReadInt( num );
 	m_dousedLightsSeen.SetNum( num );
-	for (int i = 0; i < num; i++)
+	for ( int i = 0 ; i < num ; i++ )
 	{
 		m_dousedLightsSeen[i].Restore(savefile);
+	}
+
+	// grayman #3681
+	m_noisemakersHeard.Clear();
+	savefile->ReadInt( num );
+	m_noisemakersHeard.SetNum( num );
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		m_noisemakersHeard[i].Restore(savefile);
 	}
 
 	int size;
@@ -1995,6 +2011,7 @@ void idAI::Spawn( void )
 	m_RestoreMove = false;		// grayman #2706
 	m_LatchedSearch = false;	// grayman #2603
 	m_dousedLightsSeen.Clear();	// grayman #2603
+	m_noisemakersHeard.Clear(); // grayman #3681
 
 	m_HandlingElevator = false;
 	m_CanSetupDoor = true;		// grayman #3029
@@ -9073,12 +9090,49 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 	}
 
 	// don't alert the AI if they're deaf, or this is not a strong enough
-	//	alert to overwrite another alert this frame
+	// alert to overwrite another alert this frame
+
 	// grayman #3424 - audio alerts shouldn't be allowed in the delays between
 	// methods like OnDeadPersonEncounter() and Post_OnDeadPersonEnvounter() because
 	// they can mess with what's happening in those methods.
+
 	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) && m_allowAudioAlerts )
 	{
+		// grayman #3681 - Since noisemakers can emit several instances of
+		// the same sound, we want AI to only react to the first instance.
+		// If they react to each instance of the sound, their alert level
+		// rises too quickly.
+
+		if (propParms->maker->IsType(idMoveable::Type)) // noisemakers are moveables
+		{
+			idEntity *maker = propParms->maker;
+			if (idStr(maker->GetName()).IcmpPrefix("idMoveable_atdm:ammo_noisemaker") == 0)
+			{
+				// Have I already heard this noisemaker?
+
+				idEntityPtr<idEntity> makerPtr;
+				makerPtr = maker;
+				if (m_noisemakersHeard.Find(makerPtr) != NULL)
+				{
+					return; // already heard this noisemaker
+				}
+
+				// place this noisemaker on the list of noisemakers I've heard.
+
+				m_noisemakersHeard.Append(makerPtr);
+
+				// Create an event to remove this noisemaker from
+				// the list after a certain amount of time has elapsed.
+				// This keeps the list as short as possible over time.
+
+				float duration = maker->spawnArgs.GetFloat("active_duration","17");
+				if (duration > 0)
+				{
+					PostEventSec(&AI_NoisemakerDone,duration,maker);
+				}
+			}
+		}
+
 		AI_HEARDSOUND = true;
 
 		// grayman #3413 - use sound origin as alert origin if it can be reached.
@@ -9290,8 +9344,6 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
-
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING( "AI ALERT: %s alerted by alert type \"%s\", amount %f. Total alert level now: %f\r", name.c_str(), type, amount, (float) AI_AlertLevel );
 
 	if( cv_ai_debug.GetBool() )
 	{

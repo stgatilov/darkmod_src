@@ -446,6 +446,8 @@ const idEventDef AI_OnUnconsciousPersonEncounter( "<onUnconsciousPersonEncounter
 
 const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3338
 
+const idEventDef AI_NoisemakerDone( "<noisemakerDone>", EventArgs('e', "maker", "the noisemaker"), EV_RETURNS_VOID, "internal" ); // grayman #3681
+
 const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
 const idEventDef AI_AlertAI( "alertAI", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
@@ -651,6 +653,7 @@ CLASS_DECLARATION( idActor, idAI )
 
 	EVENT ( AI_GetAttacker,						idAI::Event_GetAttacker)	// grayman #3679
 	EVENT ( AI_IsPlayerResponsibleForDeath,		idAI::Event_IsPlayerResponsibleForDeath) // grayman #3679
+	EVENT ( AI_NoisemakerDone,					idAI::Event_NoisemakerDone) // grayman #3681
 
 END_CLASS
 
@@ -3687,6 +3690,17 @@ void idAI::Event_DelayedVisualStim(idEntity* stimSource)
 		mind->GetState()->DelayedVisualStim(stimSource, this);
 	}
 }
+
+// grayman #3681
+
+void idAI::Event_NoisemakerDone(idEntity* maker)
+{
+	idEntityPtr<idEntity> makerPtr;
+	makerPtr = maker;
+	m_noisemakersHeard.Remove(makerPtr);
+}
+
+
 
 
 
