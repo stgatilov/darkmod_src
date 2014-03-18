@@ -679,6 +679,9 @@ public:
 	// grayman #3424 - The list of suspicious events
 	idList<SuspiciousEvent> m_suspiciousEvents;
 
+	// grayman #3584 - The list of ambient lights
+	idList<idEntityPtr<idLight>> m_ambientLights;
+
 	// tels: a list of all speaker entities with s_music set, these are affected by s_vol_music:
 	idList<int>				musicSpeakers;
 

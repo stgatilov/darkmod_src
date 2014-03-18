@@ -3559,11 +3559,54 @@ float idEntity::GetLightQuotient()
 		//gameRenderWorld->DebugLine(colorGreen, bounds[0], bounds[1], 50000);
 
 		// A single point doesn't work with ellipse intersection
-		bounds.ExpandSelf(0.1f); 
+		bounds.ExpandSelf(0.1f);
 
-		// Update the cache
-		m_LightQuotientLastEvalTime = gameLocal.time;
-		m_LightQuotient = LAS.queryLightingAlongLine(bounds[0], bounds[1], this, true);
+		// grayman #3584 - For fallen AI, their bounding box can extend below the floor.
+		// If it does, it doesn't represent the body properly. Let's
+		// bring it up so it rests on the floor.
+
+		if ( IsType(idAI::Type) && ( ( health <= 0) || static_cast<idAI*>(this)->IsKnockedOut() ) )
+		{
+			idVec3 startPoint = bounds[0]; // this includes the min z position
+			startPoint.z = bounds[1].z; // assume high point is above the floor
+			idVec3 endPoint = startPoint;
+			endPoint.z -= 100;
+	
+			// trace down to find the floor
+
+			trace_t result;
+			if (gameLocal.clip.TracePoint(result, startPoint, endPoint, MASK_OPAQUE, this))
+			{
+				// found the floor
+		
+				if ( result.endpos.z > bounds[0].z )
+				{
+					bounds[0].z = result.endpos.z + 0.25;// move the target point to just above the floor
+				}
+			}
+
+			// grayman #3584 - rotate the bounding box to align with the object's orientation
+
+			float ht = bounds[1].z - bounds[0].z;
+			idVec3 size = GetPhysics()->GetBounds().GetSize();
+			idBox box(vec3_zero, idVec3(ht/2.0f,size.y/2.0f,size.z/2.0f), GetPhysics()->GetAxis().ToAngles().ToMat3());
+			box.TranslateSelf(bounds.GetCenter());
+
+			// Update the cache
+			m_LightQuotientLastEvalTime = gameLocal.time;
+
+			// grayman #3584 - we want to alter the illumination line per light, based on the
+			// line's orientation to the light. Since we don't want to affect other uses of queryLightingAlongLine(),
+			// let's create a variation of that routine and use it here.
+
+			m_LightQuotient = LAS.queryLightingAlongBestLine(box, this, true);
+		}
+		else
+		{
+			// Update the cache
+			m_LightQuotientLastEvalTime = gameLocal.time;
+			m_LightQuotient = LAS.queryLightingAlongLine(bounds[0], bounds[1], this, true);
+		}
 	}
 
 	// Return the cached result
@@ -12113,7 +12156,7 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 		idVec3 light_origin = light->GetLightOrigin();
 		if ( areaNum == gameRenderWorld->PointInArea( light_origin ) ) {
 			light->GetColor( local_light );
-			// multiple the light color by the radius to get a fake "light energy":
+			// multiply the light color by the radius to get a fake "light energy":
 			light->GetRadius( local_light_radius );
 			// fireplace: 180+180+120/3 => 160 / 800 => 0.2
 			// candle:    130+130+120/3 => 123 / 800 => 0.15
@@ -12123,7 +12166,7 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 				(local_light_radius.x + 
 				 local_light_radius.y + 
 				 local_light_radius.z) / 2400;
-			// dimish light with distance?
+			// diminish light with distance?
 			if (lightFalloff > 0)
 			{
 				// compute distance
@@ -12158,7 +12201,8 @@ void idEntity::Event_GetLightInPVS( const float lightFalloff, const float lightD
 	idThread::ReturnVector( sum );
 }
 
-bool idEntity::canSeeEntity(idEntity* target, const int useLighting) {
+bool idEntity::canSeeEntity(idEntity* target, const int useLighting)
+{
 	// The target point is the origin of the other entity.
 	idVec3 toPos = target->GetPhysics()->GetOrigin();
 
@@ -12166,17 +12210,24 @@ bool idEntity::canSeeEntity(idEntity* target, const int useLighting) {
 	// Perform a trace from the own origin to the target entity's origin
 	gameLocal.clip.TracePoint( tr, GetPhysics()->GetOrigin(), toPos, MASK_OPAQUE, this );
 
-	if (tr.fraction >= 1.0f || gameLocal.GetTraceEntity(tr) == target) {
+	if ( ( tr.fraction >= 1.0f ) || ( gameLocal.GetTraceEntity(tr) == target ) )
+	{
 		// Trace test passed, entity is visible
 
-		if (useLighting) {
+		if (useLighting)
+		{
+			/* grayman #3584 - GetLightQuotient() now does the following code:
+
 			idBounds entityBounds = target->GetPhysics()->GetAbsBounds();
 			entityBounds.ExpandSelf (0.1f); // A single point doesn't work with ellipse intersection
 
 			idVec3 bottomPoint = entityBounds[0];
 			idVec3 topPoint = entityBounds[1];
-
+			entity->GetLightQuotient()
 			float lightQuotient = LAS.queryLightingAlongLine (bottomPoint, topPoint, this, true);
+			*/
+
+			float lightQuotient = target->GetLightQuotient();
 
 			// Return TRUE if the lighting exceeds the threshold.
 			return (lightQuotient >= VISIBILTIY_LIGHTING_THRESHOLD);
@@ -12185,9 +12236,8 @@ bool idEntity::canSeeEntity(idEntity* target, const int useLighting) {
 		// No lighting to consider, return true
 		return true;
 	}
-	else {
-		return false;
-	}
+
+	return false;
 }
 
 void idEntity::Event_CanSeeEntity(idEntity* target, int useLighting)

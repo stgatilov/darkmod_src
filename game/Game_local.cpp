@@ -409,6 +409,8 @@ void idGameLocal::Clear( void )
 	musicSpeakers.Clear();
 
 	m_suspiciousEvents.Clear(); // grayman #3424
+
+	m_ambientLights.Clear();	// grayman #3584
 }
 
 /*
@@ -888,7 +890,15 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteVec3(se.location);
 		se.entity.Save(&savegame);
 	}
-	
+
+	// grayman #3584
+
+	savegame.WriteInt( m_ambientLights.Num() );
+	for ( int i = 0 ; i < m_ambientLights.Num() ; i++ )
+	{
+		m_ambientLights[i].Save(&savegame);
+	}
+		
 	savegame.WriteInt(spawnedAI.Num());
 	for (idAI* ai = spawnedAI.Next(); ai != NULL; ai = ai->aiNode.Next()) {
 		savegame.WriteObject(ai);
@@ -1985,6 +1995,15 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		savegame.ReadVec3(m_suspiciousEvents[i].location);
 		m_suspiciousEvents[i].entity.Restore(&savegame);
 	}
+
+	m_ambientLights.Clear();
+	savegame.ReadInt( num );
+	m_ambientLights.SetNum( num );
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		m_ambientLights[i].Restore(&savegame);
+	}
+
 
 	savegame.ReadInt( num );
 	for( i = 0; i < num; i++ )
@@ -5332,41 +5351,77 @@ int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> 
 idGameLocal::GetAmbientIllumination
 
 grayman #3132 - returns the ambient illumination at a point
+grayman #3584 - rewritten
 =============
 */
 
 float idGameLocal::GetAmbientIllumination( const idVec3 point ) const
 {
-	float illumination = 0;
-	bool locationAmbient = false;
+	idVec3 colorSum(0,0,0);
+	idLight* mainAmbientLight = gameLocal.FindMainAmbientLight(false);
 
-	// If there's a location entity with "ambient_light" defined,
-	// use that color.
+	// If the point is in a location that defines "ambient_light",
+	// use that color. That color is applied to the main ambient light,
+	// which has a boundary. If the point is inside the boundary, the
+	// location's color is applied. If the point is outside the
+	// boundary, then neither the location color nor the main ambient
+	// light's color contributes any illumination.
 
-	idLocationEntity* location = gameLocal.LocationForPoint(point);
-	if ( location != NULL )
+	if ( mainAmbientLight != NULL )
 	{
-		idVec3 color;
-		location->spawnArgs.GetVector( "ambient_light", "0 0 0", color );
-		if ( color != vec3_zero )
+		// is the test point inside the ambient light's volume?
+
+		if ( mainAmbientLight->GetBounds().ContainsPoint(point) )
 		{
-			illumination = (color.x * DARKMOD_LG_RED + color.y * DARKMOD_LG_GREEN + color.z * DARKMOD_LG_BLUE);
-			locationAmbient = true;
+			idLocationEntity* location = gameLocal.LocationForPoint(point);
+			if ( location != NULL )
+			{
+				// Use the location entity's ambient_light setting, since that
+				// is what the main ambient light would be set to in this location.
+
+				idVec3 color;
+				location->spawnArgs.GetVector( "ambient_light", "0 0 0", color );
+				colorSum += color;
+			}
+			else
+			{
+				// This point is not inside a location, so the current value
+				// of the main ambient would be used at this point.
+
+				colorSum += mainAmbientLight->GetBaseColor();
+			}
 		}
 	}
 
-	// If there's no location entity, or there is and it has no
-	// "ambient_light" spawnarg, use the color of the main ambient light.
+	// Any ambient illumination just contributed from a location entity replaces
+	// only the value of the ambient_world light (or whatever light is playing
+	// that role). There might be other ambient lights inside the location, and
+	// they need to be considered.
 
-	if ( !locationAmbient )
+	// Check the list of ambient lights to
+	// see which are contributing light at this point. Ignore the main ambient light
+	// because it's already made a contribution, either via the location color or
+	// the color of the light itself. (Location color works by setting the main ambient's
+	// color to the location's ambient color.)
+
+	// For now, we'll assume that ambient lights apply a uniform illumination
+	// througout their boundary. This isn't correct for lights that use a
+	// falloff texture, but atm we don't have access to the falloff textures.
+	// For simplicity, we'll assume uniform illumination.
+
+	for ( int i = 0 ; i < m_ambientLights.Num() ; i++ )
 	{
-		idLight* ambientLight = gameLocal.FindMainAmbientLight(false);
-		if ( ambientLight != NULL )
+		idLight *light = m_ambientLights[i].GetEntity();
+		if ( ( light != NULL ) && ( light != mainAmbientLight ) )
 		{
-			idVec3 color = ambientLight->GetBaseColor();
-			illumination = (color.x * DARKMOD_LG_RED + color.y * DARKMOD_LG_GREEN + color.z * DARKMOD_LG_BLUE);
+			if ( light->GetBounds().Translate(light->GetPhysics()->GetOrigin()).ContainsPoint(point) )
+			{
+				colorSum += light->GetBaseColor(); // gets the current light color
+			}
 		}
 	}
+
+	float illumination = (colorSum.x * DARKMOD_LG_RED + colorSum.y * DARKMOD_LG_GREEN + colorSum.z * DARKMOD_LG_BLUE);
 
 	return illumination;
 }
@@ -7450,7 +7505,8 @@ Dark Mod:
 idGameLocal::FindMainAmbientLight
 Author: J.C.Denton 
 Usage:	Finds main ambient light by the name "ambient_world". 
-		If it can't be found, finds ambient light with largest radius and rename it to ambient_world before returning pointer to it. 
+		If it can't be found, finds ambient light with largest radius and rename it to ambient_world before returning pointer to it.
+		grayman - The renaming isn't done. The found light's name is saved as the main ambient light.
 ===================
 */
 
@@ -7473,39 +7529,33 @@ idLight* idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fals
 	{
 		return static_cast<idLight *>( pEntMainAmbientLight );
 	}
-	else if ( !a_bCreateNewIfNotFound )
+
+	if ( !a_bCreateNewIfNotFound )
 	{
 		return NULL;
 	}
 
-	gameLocal.Printf( "Ambient light by name of 'ambient_world' not found, attempting to create a new one. \n"); 
+	gameLocal.Printf("Ambient light 'ambient_world' not found, attempting to create a new one.\n"); 
 
 	idLight *pLightEntMainAmbient = NULL;
 	float fMaxRadius = 0.0f;
 
-	for ( int i = 0 ; i < MAX_GENTITIES ; i++)
+	// Find the ambient light with greatest radius.
+	// grayman #3584 - use the list of ambient lights
+
+	for ( i = 0 ; i < m_ambientLights.Num() ; i++ )
 	{
-		// Find the ambient light with greatest radius.
-		if ( NULL != entities[i] && entities[i]->IsType(idLight::Type) )
+		idLight *plight = m_ambientLights[i].GetEntity();
+		if ( plight != NULL )
 		{
 			idVec3 vec3LightRadius; 
-			idLight *pLight =  static_cast<idLight *>( entities[i] );
-// 			gameLocal.Printf( "Light found %i \n", j++ ); 
-
-			if (!pLight->IsAmbient())
-			{
-				continue;
-			}
-
-			pLight->GetRadius( vec3LightRadius );
-
-			float fRadius = vec3LightRadius.Length();
-			//gameLocal.Printf( "The Light is ambient, max radius: %f current radius: %f  \n", fMaxRadius, fRadius ); 
+			plight->GetRadius( vec3LightRadius );
+			float fRadius = vec3LightRadius.LengthFast();
 
 			if ( fRadius > fMaxRadius )
 			{
 				fMaxRadius = fRadius;
-				pLightEntMainAmbient = pLight;
+				pLightEntMainAmbient = plight;
 			}
 		}
 	}
@@ -7513,7 +7563,7 @@ idLight* idGameLocal::FindMainAmbientLight( bool a_bCreateNewIfNotFound /*= fals
 	if ( pLightEntMainAmbient )
 	{
 		m_strMainAmbientLightName = pLightEntMainAmbient->GetName();
-		gameLocal.Printf( "Found light %s and now is set as the main ambient light. \n", m_strMainAmbientLightName.c_str() ); 
+		gameLocal.Printf( "Found light '%s' and it's now set as the main ambient light.\n", m_strMainAmbientLightName.c_str() ); 
 	}
 
 	return pLightEntMainAmbient;

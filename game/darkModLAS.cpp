@@ -269,9 +269,16 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore, idLig
 			break;
 		}
 
-		 // grayman #2902 - prevent infinite loops where we get stuck inside the intersection of 2 entities
+		// grayman #2902 - prevent infinite loops where we get stuck inside the intersection of 2 entities
 
 		if ( trace.fraction < VECTOR_EPSILON )
+		{
+			break;
+		}
+
+		// grayman #3584 - end the trace if we hit the world
+
+		if ( trace.c.entityNum == ENTITYNUM_WORLD )
 		{
 			break;
 		}
@@ -279,6 +286,7 @@ bool darkModLAS::traceLightPath( idVec3 from, idVec3 to, idEntity* ignore, idLig
 		// End the trace if the entity hit casts shadows and is not part of the light's lightholder
 
 		idEntity* entHit = gameLocal.entities[trace.c.entityNum];
+
 		if ( entHit->CastsShadows() )
 		{
 			// grayman #3584 - continue the trace if we hit the light or an entity that is part of the light's lightholder
@@ -411,7 +419,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 
 			// grayman #3584 - IntersectLineEllipsoid() provides no information on whether
 			// the line segment ends are inside or outside the ellipsoid. Let's use
-			// IntersectLinesegmentEllipsoid() to get that information.
+			// IntersectLinesegmentLightEllipsoid() to get that information.
 
 			inter = IntersectLinesegmentLightEllipsoid(	vTargetSeg, vLightCone, vResult, inside	);
 			//inter = IntersectLineEllipsoid(	vTargetSeg, vLightCone, vResult	);
@@ -738,6 +746,420 @@ void darkModLAS::accumulateEffectOfLightsInArea
 	}
 }
 
+void darkModLAS::accumulateEffectOfLightsInArea2 
+( 
+	float& inout_totalIllumination,
+	int areaIndex, 
+	idBox box,
+	idEntity* p_ignoredEntity,
+	bool b_useShadows
+)
+{
+	/*
+	* Note most of this code is adopted from SparHawk's lightgem alpha code.
+	* And then heavily modified by grayman.
+	*/
+
+	assert( ( areaIndex >= 0 ) && ( areaIndex < m_numAreas ) );
+	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
+
+	// grayman #3132 - factor in the ambient light, if any
+
+	inout_totalIllumination += gameLocal.GetAmbientIllumination(box.GetCenter());
+	
+	idVec3 verts[8];
+	box.GetVerts(verts);
+
+	// Iterate lights in this area
+	while (p_cursor != NULL)
+	{
+		// Get the light to be tested
+		darkModLightRecord_t* p_LASLight = p_cursor->Owner();
+
+		if (p_LASLight == NULL)
+		{
+			// Log error
+			DM_LOG(LC_LIGHT, LT_ERROR)LOGSTRING("LASLight record in area %d is NULL.\r", areaIndex);
+
+			// Return what we have so far
+			return;
+		}
+
+		idLight* light = p_LASLight->p_idLight;
+
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
+		(
+			"accumulateEffectOfLightsInArea2 (area = %d): accounting for light '%s'.\r", 
+			areaIndex,
+			light->name.c_str()
+		);
+
+		// grayman #2853 - If the light's OFF, ignore it.
+		// grayman #3584 - Also ignore if it's an ambient light. Illumination
+		// has already been collected from ambient lights.
+
+		if ( ( light->GetLightLevel() == 0 ) || light->IsAmbient() )
+		{
+			// Iterate to next light in area
+			p_cursor = p_cursor->NextNode();
+			continue;
+		}
+
+		// What follows in the rest of this method is mostly Sparkhawk's lightgem code.
+		// grayman #3584 - Though by this point, it probably no longer looks like that
+		// code, given the number of things that needed to be fixed.
+
+		idVec3 vLightCone[ELC_COUNT]; // Holds data on the light shape (point ellipsoid or projected cone).
+		idVec3 vLight; // The real origin of the light (origin + offset).
+		EIntersection inter;
+		idVec3 vResult[2]; // If there's an intersection, [0] holds one point, [1] holds a second
+		bool inside[LSG_COUNT]; // inside[0] is true if testPoint1 is inside the light volume, inside[1] ditto for testPoint2
+		bool b_excludeLight = false;
+		idVec3 p1, p2, p3; // test points for testing visibility to light source
+		idVec3 p_illumination; // point where we determine illumination
+
+		if ( light->IsPointlight() )
+		{
+			light->GetLightCone
+			(
+				vLightCone[ELL_ORIGIN], 
+				vLightCone[ELA_AXIS], 
+				vLightCone[ELA_CENTER]
+			);
+			vLight = vLightCone[ELL_ORIGIN] + vLightCone[ELA_CENTER];
+		}
+		else // projected light
+		{
+			light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
+			vLight = vLightCone[ELC_ORIGIN]; // grayman #3524
+		}
+
+		// Set up target segment: Origin and Delta
+		idVec3 vTargetSeg[LSG_COUNT];
+
+		// grayman #3584 - for each corner of the bounding box, determine which 2
+		// are closest to the light center. Use those 2 corners as the ends of the
+		// line segment to be tested.
+
+		idVec3 testPoint1, testPoint2, tempPoint, p;
+		float shortestDistanceSqr(idMath::INFINITY);
+		float nextShortestDistanceSqr(idMath::INFINITY);
+		float d1, d2;
+
+		for ( int i = 0 ; i < 8 ; i++)
+		{
+			p = verts[i];
+			d1 = (p - vLight).LengthSqr();
+			if ( d1 < shortestDistanceSqr )
+			{
+				d2 = shortestDistanceSqr;
+				tempPoint = testPoint1;
+				testPoint1 = p;
+				shortestDistanceSqr = d1;
+				if ( d2 < nextShortestDistanceSqr )
+				{
+					testPoint2 = tempPoint;
+					nextShortestDistanceSqr = d2;
+				}
+			}
+			else if ( d1 < nextShortestDistanceSqr )
+			{
+				testPoint2 = p;
+				nextShortestDistanceSqr = d1;
+			}
+		}
+
+		// testPoint1 -> testPoint2 is the boundary edge closest to the light center
+
+		vTargetSeg[0] = testPoint1;
+		vTargetSeg[1] = testPoint2 - testPoint1;
+
+		if (cv_las_showtraces.GetBool())
+		{
+			gameRenderWorld->DebugArrow(colorBlue, testPoint1, testPoint2, 2, 1000);
+		}
+
+		if ( light->IsPointlight() )
+		{
+			// If this is a centerlight we have to move the origin from the original origin to where the
+			// center of the light is supposed to be.
+			// Centerlight means that the center of the ellipsoid is not the same as the origin. It has to
+			// be adjusted because if it casts shadows we have to trace to it, and in this case the light
+			// might be inside geometry and would be reported as not being visible even though it casts
+			// a visible light outside the geometry it is embedded in. If it is not a centerlight and has
+			// cast shadows enabled, it wouldn't cast any light at all in such a case because it would
+			// be blocked by the geometry.
+
+			// grayman #3584 - IntersectLineEllipsoid() provides no information on whether
+			// the line segment ends are inside or outside the ellipsoid. Let's use
+			// IntersectLinesegmentLightEllipsoid() to get that information.
+
+			inter = IntersectLinesegmentLightEllipsoid(	vTargetSeg, vLightCone, vResult, inside	);
+
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLinesegmentLightEllipsoid() returned %u\r", inter);
+		}
+		else // projected light
+		{
+			inter = IntersectLineLightCone(vTargetSeg, vLightCone, vResult, inside);
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("IntersectLineLightCone returned %u\r", inter);
+		}
+
+		// The line intersection returns one of four states. Either the line is entirely inside
+		// the light cone (inter = INTERSECT_NONE), it's passing through the lightcone (inter = INTERSECT_FULL), the line
+		// is not passing through which means that the test line is fully outside (inter = INTERSECT_OUTSIDE), or the line
+		// is touching the cone in exactly one point (inter = INTERSECT_PARTIAL).
+
+		if ( inter == INTERSECT_OUTSIDE ) // grayman #3584 - exclude the uninteresting case
+		{
+			b_excludeLight = true;
+		}
+		else
+		{
+			// grayman #3584 - the two points chosen for raytracing should be inside the light cone.
+			// There are a few cases:
+
+			// 1 - INTERSECT_NONE - Both ends of the line segment (testPoint1 and testPoint2) are inside the
+			//     light cone, and should be tested for both visibility and illumination.
+			//     Determine a third point, testPoint3, which is the midpoint between them.
+			//
+			//     a - If testPoint1 is visible from the light origin, use testPoint3 to determine illumination.
+			//     b - If testPoint1 is not visible, move on to testPoint2. If testPoint2
+			//         is visible from the light origin, use testPoint3 to determine illumination.
+			//     c - If neither testPoint1 or testPoint2 is visible, move on to testPoint3.
+			//         If testPoint3 is visible from the light origin, use it to determine illumination.
+			//     d - If none of these points is visible from the light origin, exclude the light.
+			//
+			// 2 - INTERSECT_PARTIAL - One end of the line segment (either testPoint1 or testPoint2) is inside the
+			//     light cone, and the second point is the point of intersection with the line cone
+			//     that lies on the line segment. Make the third point, testPoint3, the midpoint between the
+			//     first two.
+			//
+			//     a - Let p1 be whichever of testPoint1 and testPoint2 is inside the light cone. It it's
+			//         visible from the light origin, use it to determine illumination.
+			//     b - If 'a' fails, move on to the point of intersection. If it's visible from the light
+			//         origin, use testPoint3 to determine illumination.
+			//     c - If 'b' fails, move on to testPoint3. If testPoint3 is visible from the light origin, use it
+			//         to determine illumination.
+			//     d - If none of these points is visible from the light origin, exclude the light.
+			//
+			// 3 - INTERSECT_FULL - Both ends of the line segment lie outside the light cone. Treat the first intersection
+			//     point as testPoint1, the second intersection point as testPoint2, and the midpoint
+			//     between them as testPoint3.
+			//
+			//     a - If testPoint1 is visible from the light origin, use testPoint3 to determine illumination.
+			//     b - If testPoint1 is not visible, move on to testPoint2. If testPoint2
+			//         is visible from the light origin, use testPoint3 to determine illumination.
+			//     c - If neither testPoint1 or testPoint2 is visible, move on to testPoint3.
+			//         If testPoint3 is visible from the light origin, use it to determine illumination.
+			//     d - If none of these points is visible from the light origin, exclude the light.
+			//
+
+			if (b_useShadows && light->CastsShadow()) 
+			{
+				// grayman #2853 - If the trace hits something before completing, that thing has to be checked to see if
+				// it casts shadows. If it doesn't, then it has to be ignored and the trace must be run again from the struck
+				// point to the end. This has to be done iteratively, since there might be several non-shadow-casting entities
+				// in the way. For example, a candleflame in a candle in a chandelier, and the latter two are marked with 'noshadows'.
+				// Light holders must also be taken into account, since the holder entity in DR can be marked 'noshadows', which
+				// also applies to the candle holding the flame.
+
+				bool lightReaches;
+
+				if ( inter == INTERSECT_NONE ) // the line segment is entirely inside the light volume
+				{
+					p3 = (testPoint1 + testPoint2)/2.0f;
+					lightReaches = traceLightPath( testPoint1, vLight, p_ignoredEntity, light );
+					if ( !lightReaches )
+					{
+						lightReaches = traceLightPath( testPoint2, vLight, p_ignoredEntity, light );
+						if ( !lightReaches )
+						{
+							lightReaches = traceLightPath( p3, vLight, p_ignoredEntity, light );
+						}
+					}
+					p_illumination = p3;
+				}
+				else if ( ( inter == INTERSECT_PARTIAL ) && ( inside[0] || inside[1] ) ) // one line end inside, one outside
+				{
+					// either testPoint1 or testPoint2 is inside the ellipsoid
+					if ( inside[0] )
+					{
+						p1 = testPoint1;
+					}
+					else
+					{
+						p1 = testPoint2;
+					}
+
+					p2 = vResult[0]; // the single point of intersection
+					p3 = (p1 + p2)/2.0f;
+					lightReaches = traceLightPath( p1, vLight, p_ignoredEntity, light );
+					if ( lightReaches )
+					{
+						p_illumination = p1;
+					}
+					else
+					{
+						p_illumination = p3;
+						lightReaches = traceLightPath( p2, vLight, p_ignoredEntity, light );
+						if ( !lightReaches )
+						{
+							lightReaches = traceLightPath( p3, vLight, p_ignoredEntity, light );
+						}
+					}
+				}
+				else if ( inter == INTERSECT_PARTIAL ) // both line ends outside, line touches volume at one intersection point
+				{
+					// Since the only point we can test is at the edge of the light volume,
+					// we can safely assume the illumination there is zero. No need to test
+					// LOS to the light origin or determine brightness.
+					lightReaches = false;
+				}
+				else // INTERSECT_FULL
+				{
+					p1 = vResult[0]; // the first point of intersection
+					p2 = vResult[1]; // the second point of intersection
+					p3 = (p1 + p2)/2.0f;
+					p_illumination = p3;
+					lightReaches = traceLightPath( p1, vLight, p_ignoredEntity, light );
+					if ( !lightReaches )
+					{
+						lightReaches = traceLightPath( p2, vLight, p_ignoredEntity, light );
+						if ( !lightReaches )
+						{
+							lightReaches = traceLightPath( p3, vLight, p_ignoredEntity, light );
+						}
+					}
+				}
+				
+				b_excludeLight = !lightReaches;
+			}
+			else // no shadows, so assume visibility between the light origin and the point of illumination
+			{
+				if ( inter == INTERSECT_NONE ) // the line segment is entirely inside the light volume
+				{
+					p_illumination = (testPoint1 + testPoint2)/2.0f;
+				}
+				else if ( ( inter == INTERSECT_PARTIAL ) && ( inside[0] || inside[1] ) ) // one line end inside, one outside
+				{
+					// either testPoint1 or testPoint2 is inside the ellipsoid
+					if ( inside[0] )
+					{
+						p_illumination = testPoint1;
+					}
+					else
+					{
+						p_illumination = testPoint2;
+					}
+				}
+				else if ( inter == INTERSECT_PARTIAL ) // both line ends outside, line touches volume at one intersection point
+				{
+					b_excludeLight = true; // not interested in this case, since illumination is zero at the volume edges
+				}
+				else // INTERSECT_FULL
+				{
+					p_illumination = (vResult[0] + vResult[1])/2.0f; // halfway between the points of intersection
+				}
+			}
+		}
+
+		// Process light if not excluded
+		if (!b_excludeLight)
+		{
+			// Compute illumination value
+			// We want the illumination at p_illumination.
+
+			float fx, fy;
+
+			if ( light->IsPointlight() )
+			{
+				fx = p_illumination.x - vLight.x;
+				fy = p_illumination.y - vLight.y;
+
+				// ELA_AXIS contains the radii [x,y,z]
+			}
+			else // projected light
+			{
+				// p_illumination needs to be relative to the vector
+				// from the light origin to the light target. Since the
+				// original code assumed that vector pointed down along
+				// the z axis, we'll rotate the target vector to that axis
+				// and apply the same rotation to p_illumination so it stays
+				// relative.
+
+				// Re-get the light cone parameters, some of which were clobbered in IntersectLineLightCone().
+				light->GetLightCone(vLightCone[ELC_ORIGIN], vLightCone[ELA_TARGET], vLightCone[ELA_RIGHT], vLightCone[ELA_UP], vLightCone[ELA_START], vLightCone[ELA_END]);
+				idVec3 target = vLightCone[ELA_TARGET]; // direction of light cone, already relative to vLight
+
+				// TODO: need to map p_illumination[x,y] to p_illumination[right,up]
+				// then right is the new x and up is the new y
+
+				if ( ( target.x == 0 ) && ( target.y == 0 ) ) // transform only if 'target' is not already on the z axis
+				{
+					fx = p_illumination.x - vLight.x;
+					fy = p_illumination.y - vLight.y;
+				}
+				else
+				{
+					idVec3 p = p_illumination - vLight; // p is now p_illumination relative to the light origin
+
+					// Matrices and steps are from http://inside.mines.edu/fs_home/gmurray/ArbitraryAxisRotation/
+
+					// rotate 'target' to XY plane
+					idVec2 target2 = target.ToVec2();
+					float d = target2.LengthFast();
+					float a = target.x/d;
+					float b = target.y/d;
+					idMat4 T1( idVec4(  a, b, 0, 0 ),
+							   idVec4( -b, a, 0, 0 ),
+							   idVec4(  0, 0, 1, 0 ),
+							   idVec4(  0, 0, 0, 1 ) );
+					idVec3 target_xy = T1*target; // the 'target' vector rotated to the XY plane
+
+					// rotate 'target_xy' to the Z axis
+					float c = target.LengthFast();
+					float e = target.z/c;
+					float f = d/c;
+					idMat4 T2( idVec4(  e, 0, -f, 0 ),
+							   idVec4(  0, 1,  0, 0 ),
+							   idVec4(  f, 0,  e, 0 ),
+							   idVec4(  0, 0,  0, 1 ) );
+					idVec3 target_z = -(T2*target_xy);
+
+					// apply T1 and T2 to p
+					idVec3 p_z = -(T2*(T1*p));
+					fx = p_z.x;
+					fy = p_z.y;
+				}
+			}
+
+			inout_totalIllumination += light->GetDistanceColor(	(p_illumination - vLight).LengthFast(),fx,fy );
+			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
+			(
+				"%s in x/y: %f/%f   Distance: %f/%f   Brightness: %f\r",
+				light->name.c_str(), 
+				fx, 
+				fy, 
+				(p_illumination - vLight).LengthFast(), 
+				light->m_MaxLightRadius,
+				inout_totalIllumination
+			);
+		}
+
+		// If total illumination is 1.0 or greater, we are done
+		if (inout_totalIllumination >= 1.0f)
+		{
+			// Exit early as it's really really bright as is
+			p_cursor = NULL;
+		}
+		else
+		{
+			// Iterate to next light in area
+			p_cursor = p_cursor->NextNode();
+		}
+	}
+}
+
 //----------------------------------------------------------------------------
 
 /*!
@@ -860,8 +1282,6 @@ void darkModLAS::addLight (idLight* p_idLight)
 
 	// Note the area we just added the light to
 	p_idLight->LASAreaIndex = containingAreaIndex;
-
-
 }
 
 
@@ -1085,7 +1505,6 @@ void darkModLAS::updateLASState()
 
 	// Done
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("LAS update frame %d complete\r", m_updateFrameIndex);
-
 }
 
 
@@ -1164,11 +1583,11 @@ float darkModLAS::queryLightingAlongLine
 		mins.z = testPoint2.z;
 		maxes.z = testPoint1.z;
 	}
-	
+
 	idBounds testBounds (mins, maxes);
 
 	// Run a local PVS query to determine which other areas are visible (and hence could
-	// have lights shing on the target area)
+	// have lights shining on the target area)
 	int pvsTestAreaIndices[idEntity::MAX_PVS_AREAS];
 	int numPVSTestAreas = gameLocal.pvs.GetPVSAreas
 	(
@@ -1215,6 +1634,92 @@ float darkModLAS::queryLightingAlongLine
 		testPoint2.ToString(),
 		totalIllumination
 	);
+
+	// Return total illumination value to the caller
+	return totalIllumination;
+}
+
+// grayman #3584 - new version of queryLightingAlongLine() to pick the best
+// line inside the object's representative box, where 'best' means 'lies closest
+// to light center'. While the same line might not be chosen by all lights,
+// it's probably okay to assume that lights illuminating different portions of
+// the same object should yield the same result as lights illuminating the
+// same portion.
+
+float darkModLAS::queryLightingAlongBestLine
+(
+		idBox box,
+		idEntity* p_ignoreEntity,
+		bool b_useShadows
+)
+{
+	START_SCOPED_TIMING(queryLightingAlongLineTimer, scopedQueryLightingAlongLineTimer);
+
+	if (p_ignoreEntity != NULL)
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
+		(
+			"queryLightingAlongBestLine inside [%s], IgnoredEntity = '%s', UseShadows = %d'\r", 
+			box.ToString(),
+			p_ignoreEntity->name.c_str(),
+			b_useShadows
+		);
+	}
+	else
+	{
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
+		(
+			"queryLightingAlongBestLine inside [%s], UseShadows = %d'\r", 
+			box.ToString(),
+			b_useShadows
+		);
+	}
+
+	// Total illumination starts at 0
+	float totalIllumination = 0.0f;
+
+	// Run a local PVS query to determine which other areas are visible (and hence could
+	// have lights shining on the target area)
+	int pvsTestAreaIndices[idEntity::MAX_PVS_AREAS];
+	idBounds bounds = p_ignoreEntity->GetPhysics()->GetAbsBounds();
+	int numPVSTestAreas = gameLocal.pvs.GetPVSAreas
+	(
+		bounds,
+		pvsTestAreaIndices,
+		idEntity::MAX_PVS_AREAS
+	);
+
+	// Set up the graph
+	pvsHandle_t h_lightPVS = gameLocal.pvs.SetupCurrentPVS
+	(
+		pvsTestAreaIndices, 
+		numPVSTestAreas
+	);
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING
+	(
+		"queryLightingAlongLine: PVS test results in %d PVS areas\r", 
+		numPVSTestAreas
+	);
+
+	// Check all the lights in the PVS areas and factor them in
+	for ( int pvsTestResultIndex = 0 ; pvsTestResultIndex < numPVSTestAreas ; pvsTestResultIndex++ )
+	{
+		// Add the effect of lights in this visible area to the effect at the point
+		accumulateEffectOfLightsInArea2 
+		(
+			totalIllumination,
+			pvsTestAreaIndices[pvsTestResultIndex],
+			box,
+			p_ignoreEntity,
+			b_useShadows
+		);
+	}
+
+	// Done with PVS test
+	gameLocal.pvs.FreeCurrentPVS( h_lightPVS );
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("queryLightingAlongBestLine - result is %.2f\r",totalIllumination);
 
 	// Return total illumination value to the caller
 	return totalIllumination;

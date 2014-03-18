@@ -246,7 +246,6 @@ idLight::idLight()
 	Darkmod LAS
 	*/
 	LASAreaIndex = -1;
-
 }
 
 /*
@@ -276,6 +275,15 @@ idLight::~idLight()
 	if (player != NULL)
 	{
 		player->RemoveLight(this);
+	}
+
+	// grayman #3584 - if ambient, remove from ambient list
+
+	if (IsAmbient())
+	{
+		idEntityPtr<idLight> lightPtr;
+		lightPtr = this;
+		gameLocal.m_ambientLights.Remove(lightPtr);
 	}
 }
 
@@ -560,14 +568,22 @@ void idLight::Spawn( void )
 
 	PostEventMS(&EV_Light_AddToLAS, 40);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("this: %08lX [%s]   noShadows: %u   noSpecular: %u   pointLight: %u     parallel: %u\r",
+	// grayman #3584
+	if (IsAmbient())
+	{
+		idEntityPtr<idLight> lightPtr;
+		lightPtr = this;
+		gameLocal.m_ambientLights.Append(lightPtr); // add this light to the list of ambient lights
+	}
+
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Spawning light: %08lX [%s] | noShadows: %u | noSpecular: %u | pointLight: %u | parallel: %u\r",
 		this, name.c_str(),
 		renderLight.noShadows,
 		renderLight.noSpecular,
 		renderLight.pointLight,
 		renderLight.parallel);
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Red: %f    Green: %f    Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Red: %f | Green: %f | Blue: %f\r", baseColor.x, baseColor.y, baseColor.z);
 
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Origin", GetPhysics()->GetOrigin());
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Radius", renderLight.lightRadius);
@@ -854,12 +870,12 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 	GetColor( fadeFrom );
 	// Tels: we already have the same color we should become, so we can skip this
 	if (fadeFrom == to)
-		{
+	{
 		return;
-		}
+	}
 	// Tels: If the fade time is shorter than 1/60 (e.g. one frame), just set the color directly
 	if (fadeTime < 0.0167f)
-		{
+	{
 		if (to == colorBlack)
 		{
 			// The fade does not happen (time too short), so Off() would not be called so do it now (#2440)
@@ -871,7 +887,7 @@ void idLight::Fade( const idVec4 &to, float fadeTime ) {
 			SetColor(to);
 		}
 		return;
-		}
+	}
 	fadeTo = to;
 	fadeStart = gameLocal.time;
 	fadeEnd = gameLocal.time + SEC2MS( fadeTime );
@@ -902,7 +918,8 @@ void idLight::FadeOut( float time ) {
 idLight::FadeIn
 ================
 */
-void idLight::FadeIn( float time ) {
+void idLight::FadeIn( float time )
+{
 	idVec3 color;
 	idVec4 color4;
 
@@ -911,6 +928,7 @@ void idLight::FadeIn( float time ) {
 	spawnArgs.GetVector( "_color", "1 1 1", color );
 	color4.Set( color.x, color.y, color.z, 1.0f );
 	Fade( color4, time );
+	On(); // grayman #3584 - turn light on, otherwise skin won't change and renderer won't paint the light volume
 }
 
 /*
@@ -1105,15 +1123,20 @@ idLight::Think
 void idLight::Think( void ) {
 	idVec4 color;
 
-	if ( thinkFlags & TH_THINK ) {
-		if ( fadeEnd > 0 ) {
-			if ( gameLocal.time < fadeEnd ) {
+	if ( thinkFlags & TH_THINK )
+	{
+		if ( fadeEnd > 0 )
+		{
+			if ( gameLocal.time < fadeEnd )
+			{
 				color.Lerp( fadeFrom, fadeTo, ( float )( gameLocal.time - fadeStart ) / ( float )( fadeEnd - fadeStart ) );
-			} else {
+			}
+			else
+			{
 				color = fadeTo;
 				fadeEnd = 0;
 				// Tels: Fix issues like 2440: FadeOff() does not switch the light to the off state
-				if (color[0] == 0 && color[1] == 0 && color[2] == 0)
+				if ( ( color[0] == 0 ) && ( color[1] == 0 ) && ( color[2] == 0 ) )
 				{
 					// avoid the sound stopping, because this might be snd_extinguished
 					Off( false );
@@ -1713,7 +1736,6 @@ int idLight::GetTextureIndex(float x, float y, int w, int h, int bpp)
 	return rc;
 }
 
-
 float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 {
 	float fColVal(0), fImgVal(0);
@@ -1736,8 +1758,10 @@ float idLight::GetDistanceColor(float fDistance, float fx, float fy)
 		img = m_LightMaterial->GetImage(iw, ih, ibpp);
 	}
 
+	// baseColor gives the current color (intensity)
+
 	fColVal = (baseColor.x * DARKMOD_LG_RED + baseColor.y * DARKMOD_LG_GREEN + baseColor.z * DARKMOD_LG_BLUE);
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Pointlight: %u   Red: %f/%f    Green: %f/%f    Blue: %f/%f   ColVal: %f\r", renderLight.pointLight,
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Pointlight: %u  Red: %f/%f  Green: %f/%f  Blue: %f/%f  fColVal: %f\r", renderLight.pointLight,
 		baseColor.x, baseColor.x * DARKMOD_LG_RED,
 		baseColor.y, baseColor.y * DARKMOD_LG_GREEN,
 		baseColor.z, baseColor.z * DARKMOD_LG_BLUE,

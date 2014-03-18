@@ -98,11 +98,11 @@ protected:
    * This method is used to add up all the light intensities contributed from
    * a specific region apon the line between the two test points.
    *
-   * @param areaIndex index of the area within the Area System who's lights should
+   * @param areaIndex index of the area within the Area System whose lights should
    *     be accumulated
-   * @param testPoint1 first point along the line who's lighting is being tested
-   * @param testPoint2 second point along the line who's lighting is being tested
-   * @param p_ignoreEntity An entity who's occlusion of a light should not be considered
+   * @param testPoint1 first point along the line whose lighting is being tested
+   * @param testPoint2 second point along the line whose lighting is being tested
+   * @param p_ignoreEntity An entity whose occlusion of a light should not be considered
    * @param b_useShadows if true, then shadow volumes are considered
    * @returns the total intensity on the point from lights in the test area
    */
@@ -112,6 +112,26 @@ protected:
 		int areaIndex, 
 		idVec3 testPoint1,
 		idVec3 testPoint2,
+		idEntity* p_ignoreEntity,
+		bool b_useShadows
+	);
+
+   /*!
+   * This method is used to add up all the light intensities contributed from
+   * a specific region apon the line between the two test points.
+   *
+   * @param areaIndex index of the area within the Area System whose lights should
+   *     be accumulated
+   * @param box boundary of volume being tested
+   * @param p_ignoreEntity An entity whose occlusion of a light should not be considered
+   * @param b_useShadows if true, then shadow volumes are considered
+   * @returns the total intensity on the point from lights in the test area
+   */
+   void accumulateEffectOfLightsInArea2 
+	( 
+		float& inout_totalIllumination,
+		int areaIndex, 
+		idBox box,
 		idEntity* p_ignoreEntity,
 		bool b_useShadows
 	);
@@ -172,11 +192,11 @@ public:
    * This would  determine a light intensity rating by summing the intensities of the lights
    * able to shine on the line.
    *
-   * @param areaIndex index of the area within the Area System who's lights should
+   * @param areaIndex index of the area within the Area System whose lights should
    *     be accumulated
-   * @param testPoint1 first point along the line who's lighting is being tested
-   * @param testPoint2 second point along the line who's lighting is being tested
-   * @param p_ignoreEntity An entity who's occlusion of a light should not be considered
+   * @param testPoint1 first point along the line whose lighting is being tested
+   * @param testPoint2 second point along the line whose lighting is being tested
+   * @param p_ignoreEntity An entity whose occlusion of a light should not be considered
    * @param b_useShadows if true, then shadow volumes are considered
    * @returns the total intensity on the point from lights in the test area
    */
@@ -184,6 +204,25 @@ public:
    (
 		idVec3 testPoint1,
 		idVec3 testPoint2,
+		idEntity* p_ignoreEntity,
+		bool b_useShadows
+   );
+
+   /*!
+   * This would  determine a light intensity rating by summing the intensities of the lights
+   * able to shine on the best line inside a bounding box, where best is 'the closest line
+   * to the light center'.
+   *
+   * @param areaIndex index of the area within the Area System whose lights should
+   *     be accumulated
+   * @param box of potential test lines
+   * @param p_ignoreEntity An entity whose occlusion of a light should not be considered
+   * @param b_useShadows if true, then shadow volumes are considered
+   * @returns the total intensity on the bounding box from lights in the test area
+   */
+   float queryLightingAlongBestLine
+   (
+		idBox box,
 		idEntity* p_ignoreEntity,
 		bool b_useShadows
    );

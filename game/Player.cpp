@@ -2951,7 +2951,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 	m_fBlendColVal = Lerp( m_fBlendColVal, (float)m_LightgemValue, (gameLocal.time - gameLocal.previousTime)/(1000.0f * fFadeDelay ) );
 	// J.C.Denton End
 
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r\r", m_LightgemValue, hud);
+	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Setting Lightgemvalue: %u on hud: %08lX\r", m_LightgemValue, hud);
 	hud->SetStateFloat("lightgem_val", m_fBlendColVal );
 }
 

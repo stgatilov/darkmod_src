@@ -52,6 +52,39 @@ EIntersection IntersectLinesegmentLightEllipsoid(const idVec3 Segment[LSG_COUNT]
 	bInside[0] = false;
 	bInside[1] = false;
 
+	// grayman #3584 - test to see if either or both points are inside the ellipsoid
+	// first point
+
+	float rX = (Segment[LSG_ORIGIN].x - EllOrigin.x)/Ellipsoid[ELA_AXIS].x;
+	float rY = (Segment[LSG_ORIGIN].y - EllOrigin.y)/Ellipsoid[ELA_AXIS].y;
+	float rZ = (Segment[LSG_ORIGIN].z - EllOrigin.z)/Ellipsoid[ELA_AXIS].z;
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rX = %f/%f = %f, rX^2 = %f\r",Segment[LSG_ORIGIN].x - EllOrigin.x,Ellipsoid[ELA_AXIS].x,rX,rX*rX);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rY = %f/%f = %f, rY^2 = %f\r",Segment[LSG_ORIGIN].y - EllOrigin.y,Ellipsoid[ELA_AXIS].y,rY,rY*rY);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rZ = %f/%f = %f, rZ^2 = %f\r",Segment[LSG_ORIGIN].z - EllOrigin.z,Ellipsoid[ELA_AXIS].z,rZ,rZ*rZ);
+	if ( (rX*rX + rY*rY + rZ*rZ) <= 1 )
+	{
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("P1 [%s] is on/inside ellipsoid\r",Segment[LSG_ORIGIN].ToString());
+	}
+	else
+	{
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("P1 [%s] is outside ellipsoid\r",Segment[LSG_ORIGIN].ToString());
+	}
+	// second point
+	rX = (Segment[LSG_ORIGIN].x + Segment[LSG_DIRECTION].x - EllOrigin.x)/Ellipsoid[ELA_AXIS].x;
+	rY = (Segment[LSG_ORIGIN].y + Segment[LSG_DIRECTION].y - EllOrigin.y)/Ellipsoid[ELA_AXIS].y;
+	rZ = (Segment[LSG_ORIGIN].z + Segment[LSG_DIRECTION].z - EllOrigin.z)/Ellipsoid[ELA_AXIS].z;
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rX = %f/%f = %f, rX^2 = %f\r",Segment[LSG_ORIGIN].x + Segment[LSG_DIRECTION].x - EllOrigin.x,Ellipsoid[ELA_AXIS].x,rX,rX*rX);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rY = %f/%f = %f, rY^2 = %f\r",Segment[LSG_ORIGIN].y + Segment[LSG_DIRECTION].y - EllOrigin.y,Ellipsoid[ELA_AXIS].y,rY,rY*rY);
+	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("rZ = %f/%f = %f, rZ^2 = %f\r",Segment[LSG_ORIGIN].z + Segment[LSG_DIRECTION].z - EllOrigin.z,Ellipsoid[ELA_AXIS].z,rZ,rZ*rZ);
+	if ( (rX*rX + rY*rY + rZ*rZ) <= 1 )
+	{
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("P2 [%s] is on/inside ellipsoid\r",(Segment[LSG_ORIGIN]+ Segment[LSG_DIRECTION]).ToString());
+	}
+	else
+	{
+		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("P2 [%s] is outside ellipsoid\r",(Segment[LSG_ORIGIN]+ Segment[LSG_DIRECTION]).ToString());
+	}
+
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "LineSegStart", Segment[LSG_ORIGIN]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "LineSegDirection", Segment[LSG_DIRECTION]);
 	DM_LOGVECTOR3(LC_MATH, LT_DEBUG, "EllOrigin", Ellipsoid[ELL_ORIGIN]);
