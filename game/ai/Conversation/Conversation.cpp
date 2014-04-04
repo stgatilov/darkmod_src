@@ -117,16 +117,24 @@ bool Conversation::CheckConditions()
 		}
 
 		// greebo: Let's see if the AI has already an active conversation state
+		// grayman #3559 - use simpler method of checking
+		if (ai->m_InConversation)
+		{
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is already in another conversation!\r", ai->name.c_str());
+			return false;
+		}
+/* previous code
 		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
 		ConversationStatePtr convState = 
-			boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+				boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
 		if (convState != NULL)
 		{
 			// AI is already involved in another conversation
-			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is already in another conversation!.\r", ai->name.c_str());
+			DM_LOG(LC_CONVERSATION, LT_DEBUG)LOGSTRING("Actor %s is already in another conversation!\r", ai->name.c_str());
 			return false;
 		}
+ */
 	}
 
 	// All actors alive and kicking
@@ -139,13 +147,17 @@ bool Conversation::CheckConditions()
 void Conversation::Start()
 {
 	// Switch all participating AI to conversation state
-	for (int i = 0; i < _actors.Num(); i++)
+	for ( int i = 0 ; i < _actors.Num() ; i++ )
 	{
 		idAI* ai = GetActor(i);
 
-		if (ai == NULL) continue;
+		if (ai == NULL)
+		{
+			continue;
+		}
 		
 		ai->SwitchToConversationState(_name);
+		ai->m_InConversation = true; // grayman #3559
 	}
 
 	_playCount++;
@@ -154,7 +166,7 @@ void Conversation::Start()
 	_currentCommand = 0;
 
 	// Reset the command execution status to ready
-	for (int i = 0; i < _commands.Num(); i++)
+	for ( int i = 0 ; i < _commands.Num() ; i++ )
 	{
 		_commands[i]->SetState(ConversationCommand::EReadyForExecution);
 	}
@@ -162,14 +174,17 @@ void Conversation::Start()
 
 void Conversation::End()
 {
-	// Switch all participating AI to conversation state
-	for (int i = 0; i < _actors.Num(); i++)
+	// Switch all participating AI out of conversation state
+	for ( int i = 0 ; i < _actors.Num() ; i++ )
 	{
 		idAI* ai = GetActor(i);
 
-		if (ai == NULL) continue;
+		if (ai == NULL)
+		{
+			continue;
+		}
 
-		// Let's see if the AI can handle this conversation command
+		// Let's see if the AI is currently in a conversation.
 		ConversationStatePtr convState = 
 			boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
@@ -177,6 +192,7 @@ void Conversation::End()
 		{
 			// End the conversation state
 			ai->GetMind()->EndState();
+			ai->m_InConversation = false; // grayman #3559
 		}
 	}
 }

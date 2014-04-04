@@ -51,6 +51,8 @@ private:
 public:
 	Mind(idAI* owner);
 
+	void PrintStateQueue(idStr string); // grayman #3559 - print the states currently in the state queue
+
 	/**
 	 * greebo: This should be called each frame to let the AI
 	 *         think. This distributes the call to the various

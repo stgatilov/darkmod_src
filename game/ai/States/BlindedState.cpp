@@ -57,9 +57,7 @@ void BlindedState::Init(idAI* owner)
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "blinded");
 
 	Memory& memory = owner->GetMemory();
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - abort a rope examination
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 

@@ -87,6 +87,9 @@ public:
 	// Returns the current conversation command execution state
 	ConversationState::ExecutionState GetExecutionState();
 
+	// This is called when a State is destroyed
+	virtual void Cleanup(idAI* owner); // grayman #3559
+
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
@@ -110,6 +113,8 @@ private:
 	void DrawDebugOutput(idAI* owner);
 
 	void OnActorEncounter(idEntity* stimSource, idAI* owner);
+
+	void Wrapup(idAI* owner);
 };
 typedef boost::shared_ptr<ConversationState> ConversationStatePtr;
 

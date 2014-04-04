@@ -508,6 +508,8 @@ void MovementSubsystem::StartPathTask()
 
 void MovementSubsystem::ClearTasks()
 {
+	_owner.GetEntity()->m_DoorQueued = false; // grayman #3647
+	_owner.GetEntity()->m_ElevatorQueued = false; // grayman #3647
 	Subsystem::ClearTasks();
 	_patrolling = false;
 }
@@ -563,7 +565,7 @@ bool MovementSubsystem::AttemptToExtricate()
 	return false;
 }
 
-float MovementSubsystem::GetPrevTraveled()
+idVec3 MovementSubsystem::GetPrevTraveled(bool includeVertical) // grayman #3647
 {
 	int i = _curHistoryIndex - 2;
 	if (i < 0)
@@ -578,10 +580,12 @@ float MovementSubsystem::GetPrevTraveled()
 	const idVec3& originI = _originHistory[i];
 	const idVec3& originJ = _originHistory[j];
 	idVec3 vecTraveled = originJ - originI;
-	vecTraveled.z = 0.0; // ignore vertical component
-	float traveledPrev = vecTraveled.LengthFast();
-	traveledPrev /= (_frameHistory[j] - _frameHistory[i]); // normalize to a per-frame value
-	return traveledPrev;
+	if (!includeVertical) // grayman #3647
+	{
+		vecTraveled.z = 0.0; // ignore vertical component
+	}
+	vecTraveled /= (_frameHistory[j] - _frameHistory[i]); // normalize to a per-frame value
+	return vecTraveled;
 }
 
 void MovementSubsystem::CheckBlocked(idAI* owner)
@@ -824,6 +828,7 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 		}
 		owner->m_HandlingDoor = false;
 		owner->GetMemory().stopHandlingDoor = false; // grayman #2816
+		owner->GetMemory().latchPickedPocket = false; // grayman #3559
 		if (owner->m_RestoreMove) // AI run toward where they saw you last. Don't save that location when handling doors.
 		{
 			SetBlockedState(EResolvingBlock); // preset this so PopMove() calling RestoreMove() doesn't start handling another door 

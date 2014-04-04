@@ -622,6 +622,7 @@
     <ClCompile Include="game\ai\Tasks\PathSetMovetypeTask.cpp">
       <Filter>AI\Tasks</Filter>
     </ClCompile>
+    <ClCompile Include="game\ai\States\PocketPickedState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1206,6 +1207,7 @@
     <ClInclude Include="game\ai\Tasks\PathSetMovetypeTask.h">
       <Filter>AI\Tasks</Filter>
     </ClInclude>
+    <ClInclude Include="game\ai\States\PocketPickedState.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />

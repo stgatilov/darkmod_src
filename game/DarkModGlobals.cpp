@@ -394,6 +394,7 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 	CheckLogClass(iniFile, "LogClass_MAINMENU", LC_MAINMENU);
 	CheckLogClass(iniFile, "LogClass_LOCKPICK", LC_LOCKPICK);
 	CheckLogClass(iniFile, "LogClass_AAS", LC_AAS); // grayman
+	CheckLogClass(iniFile, "LogClass_STATE", LC_STATE); // grayman
 	// Tels: LogClass_INIT and LogClass_FORCE are always on
 }
 

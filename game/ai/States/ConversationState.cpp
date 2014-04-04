@@ -59,6 +59,19 @@ const idStr& ConversationState::GetName() const
 	return _name;
 }
 
+void ConversationState::Cleanup(idAI* owner) // grayman #3559
+{
+	owner->m_InConversation = false;
+}
+
+// Wrap up and end state
+
+void ConversationState::Wrapup(idAI* owner)
+{
+	Cleanup(owner);
+	owner->GetMind()->EndState();
+}
+
 bool ConversationState::CheckAlertLevel(idAI* owner)
 {
 	// Alert index is too high for index > ERelaxed
@@ -100,7 +113,8 @@ void ConversationState::Init(idAI* owner)
 	// Check dialogue prerequisites
 	if (!CheckConversationPrerequisites())
 	{
-		owner->GetMind()->EndState();
+		Wrapup(owner); // grayman #3559
+		//owner->GetMind()->EndState();
 		return;
 	}
 
@@ -109,14 +123,13 @@ void ConversationState::Init(idAI* owner)
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 	owner->StopMove(MOVE_STATUS_DONE);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	ConversationPtr conversation = gameLocal.m_ConversationSystem->GetConversation(_conversation);
 	if (conversation == NULL)
 	{
-		owner->GetMind()->EndState();
+		Wrapup(owner); // grayman #3559
+		//owner->GetMind()->EndState();
 		return;
 	}
 

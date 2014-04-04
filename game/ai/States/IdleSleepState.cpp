@@ -26,8 +26,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "IdleState.h"
 #include "AlertIdleState.h"
 #include "../Memory.h"
-#include "../Tasks/RandomHeadturnTask.h"
-#include "../Tasks/AnimalPatrolTask.h"
+//#include "../Tasks/RandomHeadturnTask.h"
+//#include "../Tasks/AnimalPatrolTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
 #include "../Tasks/MoveToPositionTask.h"
@@ -38,7 +38,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 namespace ai
 {
-
 
 // Get the name of this state
 const idStr& IdleSleepState::GetName() const
@@ -113,7 +112,6 @@ void IdleSleepState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
-
 }
 
 // Gets called each time the mind is thinking

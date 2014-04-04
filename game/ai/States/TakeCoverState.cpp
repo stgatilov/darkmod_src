@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/MoveToPositionTask.h"
-#include "../Tasks/RandomHeadturnTask.h"
+//#include "../Tasks/RandomHeadturnTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "StayInCoverState.h"
 #include "../Library.h"
@@ -61,9 +61,7 @@ void TakeCoverState::Init(idAI* owner)
 	// The movement subsystem should wait half a second and then run to Cover position, 
 	// wait there for some time and then emerge to have a look.
 	owner->StopMove(MOVE_STATUS_DONE);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 	owner->movementSubsystem->ClearTasks();
 	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(500)));
 	owner->movementSubsystem->QueueTask(MoveToCoverTask::CreateInstance());

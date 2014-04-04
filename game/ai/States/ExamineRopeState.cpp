@@ -49,12 +49,20 @@ const idStr& ExamineRopeState::GetName() const
 	return _name;
 }
 
+// grayman #3559 - make part of WrapUp() visible to outside world
+
+void ExamineRopeState::Cleanup(idAI* owner)
+{
+	owner->m_ExaminingRope = false;
+	owner->GetMemory().stopExaminingRope = false;
+	owner->GetMemory().latchPickedPocket = false; // grayman #3559
+}
+
 // Wrap up and end state
 
 void ExamineRopeState::Wrapup(idAI* owner)
 {
-	owner->m_ExaminingRope = false;
-	owner->GetMemory().stopExaminingRope = false;
+	Cleanup(owner);
 	owner->GetMind()->EndState();
 }
 
@@ -72,6 +80,18 @@ void ExamineRopeState::Init(idAI* owner)
 	{
 		Wrapup(owner);
 		return;
+	}
+
+	// stop if something more important has happened
+	if (owner->GetMemory().stopExaminingRope)
+	{
+		Wrapup(owner);
+		return;
+	}
+
+	if (owner->m_ReactingToPickedPocket) // grayman #3559
+	{
+		owner->GetMemory().stopReactingToPickedPocket = true;
 	}
 
 	idVec3 goalDirection;
@@ -258,11 +278,15 @@ void ExamineRopeState::Think(idAI* owner)
 			}
 			break;
 		case EStateApproaching: // Walking toward the rope
-			if (owner->AI_MOVE_DONE)
+			if (!owner->m_ReactingToPickedPocket) // grayman #3559
 			{
-				owner->TurnToward(_point);
-				_examineRopeState = EStateTurningToward;
-				_waitEndTime = gameLocal.time + 750; // allow time for turn to complete
+				if (owner->AI_MOVE_DONE)
+				{
+					owner->TurnToward(_point);
+					memory.latchPickedPocket = true; // grayman #3559 - delay any picked pocket reaction
+					_examineRopeState = EStateTurningToward;
+					_waitEndTime = gameLocal.time + 750; // allow time for turn to complete
+				}
 			}
 			break;
 		case EStateTurningToward:
@@ -296,6 +320,14 @@ void ExamineRopeState::Think(idAI* owner)
 				if (owner->m_LatchedSearch)
 				{
 					owner->m_LatchedSearch = false;
+
+					// A rope discovery raises the alert level to a max
+					// of thresh_4-0.1. So if the alert level is still below
+					// thresh_4, set up the search parameters for a new search.
+					// If the alert level is thresh_4 or more, you're in
+					// Agitated Searching, which means something else happened
+					// to put you there, and you already have search parameters.
+
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = _examineSpot;

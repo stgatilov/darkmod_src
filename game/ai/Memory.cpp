@@ -30,7 +30,7 @@ namespace ai
 
 Memory::Memory(idAI* owningAI) :
 	owner(owningAI),
-	lastAlertRiseTime(-1),
+	lastAlertRiseTime(-10000),
 	deadTimeAfterAlertRise(300),
 	lastPatrolChatTime(-1),
 	lastTimeFriendlyAISeen(-10000), // grayman #3472 - must be less than -5000
@@ -63,6 +63,9 @@ Memory::Memory(idAI* owningAI) :
 	stopRelight(false),			// grayman #2603
 	stopExaminingRope(false),	// grayman #2872
 	stopReactingToHit(false),	// grayman #2816
+	stopReactingToPickedPocket(false), // grayman #3559
+	latchPickedPocket(false),	// grayman #3559
+	insideAlertWindow(false),	// grayman #3559
 	stopHandlingDoor(false),	// grayman #2816
 	stopHandlingElevator(false),// grayman #2816
 	nextTime2GenRandomSpot(0),	// grayman #2422
@@ -144,6 +147,9 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stopRelight);			// grayman #2603
 	savefile->WriteBool(stopExaminingRope);		// grayman #2872
 	savefile->WriteBool(stopReactingToHit);		// grayman #2816
+	savefile->WriteBool(stopReactingToPickedPocket); // grayman #3559
+	savefile->WriteBool(latchPickedPocket);		// grayman #3559
+	savefile->WriteBool(insideAlertWindow);		// grayman #3559
 	savefile->WriteBool(stopHandlingDoor);		// grayman #2816
 	savefile->WriteBool(stopHandlingElevator);	// grayman #2816
 	savefile->WriteInt(nextTime2GenRandomSpot);	// grayman #2422
@@ -264,6 +270,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(stopRelight);			// grayman #2603
 	savefile->ReadBool(stopExaminingRope);		// grayman #2872
 	savefile->ReadBool(stopReactingToHit);		// grayman #2816
+	savefile->ReadBool(stopReactingToPickedPocket); // grayman #3559
+	savefile->ReadBool(latchPickedPocket);		// grayman #3559
+	savefile->ReadBool(insideAlertWindow);		// grayman #3559
 	savefile->ReadBool(stopHandlingDoor);		// grayman #2816
 	savefile->ReadBool(stopHandlingElevator);	// grayman #2816
 	savefile->ReadInt(nextTime2GenRandomSpot);	// grayman #2422
@@ -423,6 +432,29 @@ Memory::GreetingInfo& Memory::GetGreetingInfo(idActor* actor)
 	}
 
 	return i->second;
+}
+
+void Memory::StopReacting()
+{
+	if (owner->m_RelightingLight)
+	{
+		stopRelight = true; // grayman #2603 - abort a relight in progress
+	}
+
+	if (owner->m_ExaminingRope)
+	{
+		stopExaminingRope = true; // grayman #2872 - abort a rope examination
+	}
+
+	if (owner->m_ReactingToHit)
+	{
+		stopReactingToHit = true; // grayman #2816
+	}
+
+	if (owner->m_ReactingToPickedPocket)
+	{
+		stopReactingToPickedPocket = true; // grayman #3559
+	}
 }
 
 } // namespace ai

@@ -154,6 +154,8 @@ public:
 
 	virtual void ForgetSittingSleeping() {}; // grayman #3154
 
+	virtual void Cleanup(idAI *owner) {}; // grayman #3559
+
 protected:
 	/**
 	 * greebo: Gets called by OnTactileAlert when the offending entity is 

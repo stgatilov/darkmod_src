@@ -182,6 +182,9 @@ extern const idEventDef AI_NoisemakerDone; // grayman #3681
 
 extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
+extern const idEventDef AI_PickedPocketSetup1; // grayman #3559
+extern const idEventDef AI_PickedPocketSetup2; // grayman #3559
+
 extern const idEventDef AI_AlertAI; // grayman #3356
 
 extern const idEventDef AI_GetAttacker; // grayman #3679
@@ -1166,6 +1169,22 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	bool					m_HandlingDoor;
 
+	 
+	/**
+	 * grayman #3647 - is set true if a door handling task has been queued but not yet started
+	 */
+	bool					m_DoorQueued;
+	
+ 	/**
+	 * grayman #3647 - is set true if an elevator handling task has been queued but not yet started
+	 */
+	bool					m_ElevatorQueued;
+
+	/**
+	 * grayman #3559 - is set true if the AI is in a conversation
+	 */
+	bool					m_InConversation;
+
 	/**
 	 * grayman #2706: is set true when the move prior to door handling is saved
 	 */
@@ -1211,6 +1230,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * grayman #2603: is set true while the AI is dropping a torch.
 	 */
 	bool					m_DroppingTorch;
+
+	/**
+	 * grayman #3559: is set true while the AI is reacting to having something stolen from him.
+	 */
+	bool					m_ReactingToPickedPocket;
 
 	/**
 	* Head center offset in head joint coordinates, relative to head joint
@@ -1426,6 +1450,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// grayman #2603 - am I carrying a torch?
 	idEntity*				GetTorch();
 
+	// grayman #3559 - am I carrying a lantern?
+	idEntity*				GetLantern();
+
 	bool					IsSearching(); // grayman #2603
 
 	virtual void			Hide( void );
@@ -1501,6 +1528,17 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* Can the AI greet someone?
 	**/
 	bool					CanGreet(); // grayman #3338
+
+	/**
+	* grayman #3559 - react to having had something stolen
+	**/
+	void					PocketPicked();
+
+	/**
+	* grayman #3559 - setup methods for picking a pocket
+	**/
+	void					Event_PickedPocketSetup1();
+	void					Event_PickedPocketSetup2();
 
 	/**
 	* Tells the AI to go unconscious.  Called by TestKnockoutBlow if successful,
@@ -1731,6 +1769,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	// greebo: These two Push/Pop commands can be used to save the current move state in a stack and restore it later on
 	void					PushMove();
 	void					PopMove();
+
+	void					PopMoveNoRestoreMove(); // grayman #3647
 
 	// Local helper function, will restore the current movestate from the given saved one
 	void					RestoreMove(const idMoveState& saved);

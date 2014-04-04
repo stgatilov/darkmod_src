@@ -192,9 +192,7 @@ void SuspiciousState::Init(idAI* owner)
 	
 	owner->movementSubsystem->ClearTasks();
 	owner->StopMove(MOVE_STATUS_DONE);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// do various things if alert level is ascending
 
@@ -250,6 +248,35 @@ void SuspiciousState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
+
+	// grayman #3559 - If we're to look at an
+	// alert spot because there was an alert, do that.
+	// Otherwise, do random head turning unless you're
+	// in a conversation.
+
+	if (!owner->m_lookAtAlertSpot && !owner->m_InConversation)
+	{
+		// grayman #3559 - If we're staring at a wall, turn around.
+
+		// Trace forward to see if you're close to a wall.
+
+		idVec3 p1 = owner->GetEyePosition();
+		idVec3 forward = owner->viewAxis.ToAngles().ToForward();
+		forward.z = 0; // look horizontally
+		forward.NormalizeFast();
+		idVec3 p2 = p1 + 64*forward;
+
+		trace_t result;
+		if ( gameLocal.clip.TracePoint(result, p1, p2, MASK_OPAQUE, owner) )
+		{
+			// Hit something, so turn around.
+			owner->TurnToward(owner->GetCurrentYaw() + 180);
+		}
+
+		// The sensory system does random head turning
+		owner->senseSubsystem->ClearTasks();
+		owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
+	}
 }
 
 // Gets called each time the mind is thinking
@@ -261,9 +288,10 @@ void SuspiciousState::Think(idAI* owner)
 	{
 		return;
 	}
-	
-	// grayman #3520 - look at alert spots
-	if ( owner->m_lookAtAlertSpot )
+
+	// grayman #3520 - look at an alert spot
+	// grayman #3559 - unless you're in a conversation
+	if (owner->m_lookAtAlertSpot && !owner->m_InConversation)
 	{
 		owner->m_lookAtAlertSpot = false;
 		idVec3 alertSpot = owner->m_lookAtPos;

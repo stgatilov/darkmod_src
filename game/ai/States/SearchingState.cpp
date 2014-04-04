@@ -402,9 +402,7 @@ void SearchingState::Think(idAI* owner)
 				{
 					// Stop moving, the algorithm will choose another spot the next round
 					owner->StopMove(MOVE_STATUS_DONE);
-					memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-					memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-					memory.stopReactingToHit = true; // grayman #2816
+					memory.StopReacting(); // grayman #3559
 
 					// grayman #2422 - at least turn toward and look at the last invalid point some of the time
 					// grayman #3492 - do it every time
@@ -429,9 +427,7 @@ void SearchingState::Think(idAI* owner)
 
 			// Stop moving, the algorithm will choose another spot the next round
 			owner->StopMove(MOVE_STATUS_DONE);
-			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-			memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-			memory.stopReactingToHit = true; // grayman #2816
+			memory.StopReacting(); // grayman #3559
 		}
 		else
 		{
@@ -486,9 +482,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 
 	// Stop moving
 	owner->StopMove(MOVE_STATUS_DONE);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 

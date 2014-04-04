@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../StimResponse/StimResponse.h"
-#include "../Tasks/RandomHeadturnTask.h"
+//#include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/RandomTurningTask.h"
 
 namespace ai
@@ -54,10 +54,27 @@ const idStr& SwitchOnLightState::GetName() const
 	return _name;
 }
 
+// grayman #3559 - make part of WrapUp() visible to outside world
+
+void SwitchOnLightState::Cleanup(idAI* owner)
+{
+	idLight* light = _light.GetEntity();
+	if ( light != NULL )
+	{
+		light->SetBeingRelit(false);
+	}
+	owner->m_RelightingLight = false;
+	owner->GetMemory().stopRelight = false;
+	owner->GetMemory().latchPickedPocket = false; // grayman #3559
+}
+
 // grayman #2603 - Wrap up and end state
 
-void SwitchOnLightState::Wrapup(idAI* owner, idLight* light, bool ignore)
+void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 {
+	idLight* light = _light.GetEntity();
+	assert(light);
+
 	if (ignore)
 	{
 		light->IgnoreResponse(ST_VISUAL,owner); // ignore until the light changes state again
@@ -66,9 +83,7 @@ void SwitchOnLightState::Wrapup(idAI* owner, idLight* light, bool ignore)
 	{
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
-
-	light->SetBeingRelit(false);
-	owner->m_RelightingLight = false;
+	Cleanup(owner);
 	owner->GetMind()->EndState();
 }
 
@@ -299,6 +314,7 @@ void SwitchOnLightState::Init(idAI* owner)
 	// don't initiate a relight if something more important has happened
 	if (memory.stopRelight)
 	{
+		Wrapup(owner,/*light,*/false); // don't ignore light
 		return;
 	}
 
@@ -316,7 +332,7 @@ void SwitchOnLightState::Init(idAI* owner)
 
 	if (lightOn)
 	{
-		Wrapup(owner,light,true);		// ignore light
+		Wrapup(owner,/*light,*/true); // ignore light
 		return;
 	}
 
@@ -574,7 +590,7 @@ void SwitchOnLightState::Init(idAI* owner)
 		owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 	}
 	
-	Wrapup(owner,light,false);		// don't ignoreLight
+	Wrapup(owner,/*light,*/false);		// don't ignoreLight
 }
 
 // Gets called each time the mind is thinking
@@ -608,7 +624,7 @@ void SwitchOnLightState::Think(idAI* owner)
 	if ( owner->GetMemory().stopRelight && ( idStr(owner->WaitState()) != "relight" ) )
 	{
 		ignoreLight = lightOn;
-		Wrapup(owner,light,ignoreLight);
+		Wrapup(owner,/*light,*/ignoreLight);
 		return;
 	}
 
@@ -616,7 +632,7 @@ void SwitchOnLightState::Think(idAI* owner)
 	if (owner->AI_AlertLevel >= owner->thresh_5) // finished if alert level is too high
 	{
 		ignoreLight = false;
-		Wrapup(owner,light,ignoreLight);
+		Wrapup(owner,/*light,*/ignoreLight);
 		return;
 	}
 
@@ -629,7 +645,7 @@ void SwitchOnLightState::Think(idAI* owner)
 		case EStateApproaching:
 		case EStateTurningToward:
 			ignoreLight = true;
-			Wrapup(owner,light,ignoreLight);
+			Wrapup(owner,/*light,*/ignoreLight);
 			return;
 		case EStateRelight:
 		case EStatePause:
@@ -665,6 +681,11 @@ void SwitchOnLightState::Think(idAI* owner)
 			break;
 		case EStateApproaching:
 			{
+				if (owner->m_ReactingToPickedPocket) // grayman #3559
+				{
+					break;
+				}
+
 				// Still walking toward the goal (switch or flame)
 
 				idVec3 size(16, 16, 82);
@@ -692,6 +713,7 @@ void SwitchOnLightState::Think(idAI* owner)
 						owner->TurnToward(goalOrigin);
 						_relightState = EStateTurningToward;
 						_waitEndTime = gameLocal.time + 750; // allow time for turn to complete
+						memory.latchPickedPocket = true; // grayman #3559 - delay any picked pocket reaction
 					}
 					else // too far away
 					{
@@ -707,7 +729,7 @@ void SwitchOnLightState::Think(idAI* owner)
 
 						// TODO: Try moving closer?
 						ignoreLight = false;
-						Wrapup(owner,light,ignoreLight);
+						Wrapup(owner,/*light,*/ignoreLight);
 						return;
 					}
 				}
@@ -803,7 +825,13 @@ void SwitchOnLightState::Think(idAI* owner)
 					}
 					
 					owner->m_LatchedSearch = false;
-					if (owner->AI_AlertLevel < owner->thresh_4)
+
+					// A doused light might raise the alert level to a max
+					// of mid Agitated Searching. If the alert level rises
+					// above thresh_3, set up the search parameters for a new search.
+
+					if (owner->AI_AlertLevel >= owner->thresh_3)
+					//if (owner->AI_AlertLevel < owner->thresh_4)
 					{
 						memory.alertPos = light->GetPhysics()->GetOrigin();
 						memory.alertClass = EAlertVisual_4; // grayman #3498 - was _2
@@ -824,9 +852,9 @@ void SwitchOnLightState::Think(idAI* owner)
 					}
 				}
 
-				ignoreLight = false;
 				light->SetChanceNegativeBark(1.0); // reset
-				Wrapup(owner,light,ignoreLight);
+				ignoreLight = false;
+				Wrapup(owner,/*light,*/ignoreLight);
 				return;
 			}
 			break;

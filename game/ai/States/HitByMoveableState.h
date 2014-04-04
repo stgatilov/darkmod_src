@@ -64,25 +64,23 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
 
-	virtual void Wrapup(idAI* owner);
-
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
 
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	// Look at top of rope
-	void StartExaminingTop(idAI* owner);
-
-	// Look at bottom of rope
-	void StartExaminingBottom(idAI* owner);
+	// This is called when a State is destroyed
+	virtual void Cleanup(idAI* owner); // grayman #3559
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	static StatePtr CreateInstance();
+
+private:
+	void Wrapup(idAI* owner);
 };
 
 } // namespace ai

@@ -437,7 +437,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			{
 				if (owner->movementSubsystem->IsWaitingSolid())
 				{
-					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled();
+					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled(false).LengthFast(); // grayman #3647 // grayman #3647
 					if (traveledPrev < 0.1) // grayman #2345
 					{
 						BecomeNonSolid(owner);
@@ -465,7 +465,7 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #23
 
 	// If you're not getting anywhere, try extricating yourself.
 
-	if (owner->movementSubsystem->GetPrevTraveled() < 0.1)
+	if (owner->movementSubsystem->GetPrevTraveled(false).LengthFast() < 0.1) // grayman #3647
 	{
 		// grayman #3119 - if searching, and you're going nowhere,
 		// restart the search, in the hope that you'll be sent

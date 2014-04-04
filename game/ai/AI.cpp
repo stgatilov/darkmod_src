@@ -37,7 +37,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "States/SearchingState.h"
 #include "States/AgitatedSearchingState.h"
 #include "States/CombatState.h"
+#include "States/PocketPickedState.h"
 #include "Tasks/SingleBarkTask.h"
+#include "Tasks/HandleDoorTask.h" // grayman #3647
+#include "Tasks/HandleElevatorTask.h" // grayman #3647
 #include "Conversation/ConversationSystem.h"
 #include "../Relations.h"
 #include "../Objectives/MissionData.h"
@@ -91,6 +94,9 @@ const float s_DOOM_TO_METERS = 0.0254f;
 
 // TDM: Maximum flee distance for any AI
 const float MAX_FLEE_DISTANCE = 10000.0f;
+
+#define INITIAL_PICKPOCKET_DELAY  2000 // how long to initially wait before proceeding (ms)
+#define LATCHED_PICKPOCKET_DELAY 60000 // how long to wait before seeing if a latch has been removed (ms)
 
 class CRelations;
 class CsndProp;
@@ -1004,12 +1010,16 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_bCanOperateDoors);
 	savefile->WriteBool(m_HandlingDoor);
 	savefile->WriteBool(m_HandlingElevator);
+	savefile->WriteBool(m_DoorQueued);		// grayman #3647
+	savefile->WriteBool(m_ElevatorQueued);	// grayman #3647
 	savefile->WriteBool(m_CanSetupDoor);	// grayman #3029
 	savefile->WriteBool(m_RelightingLight);	// grayman #2603
 	savefile->WriteBool(m_ExaminingRope);	// grayman #2872
 	savefile->WriteBool(m_DroppingTorch);	// grayman #2603
 	savefile->WriteBool(m_RestoreMove);		// grayman #2706
 	savefile->WriteBool(m_LatchedSearch);	// grayman #2603
+	savefile->WriteBool(m_ReactingToPickedPocket); // grayman #3559
+	savefile->WriteBool(m_InConversation);	// grayman #3559
 
 	// grayman #2603
 	savefile->WriteInt( m_dousedLightsSeen.Num() );
@@ -1469,12 +1479,16 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_bCanOperateDoors);
 	savefile->ReadBool(m_HandlingDoor);
 	savefile->ReadBool(m_HandlingElevator);
+	savefile->ReadBool(m_DoorQueued);		// grayman #3647
+	savefile->ReadBool(m_ElevatorQueued);	// grayman #3647
 	savefile->ReadBool(m_CanSetupDoor);		// grayman #3029
 	savefile->ReadBool(m_RelightingLight);	// grayman #2603
 	savefile->ReadBool(m_ExaminingRope);	// grayman #2872
 	savefile->ReadBool(m_DroppingTorch);	// grayman #2603
 	savefile->ReadBool(m_RestoreMove);		// grayman #2706
 	savefile->ReadBool(m_LatchedSearch);	// grayman #2603
+	savefile->ReadBool(m_ReactingToPickedPocket); // grayman #3559
+	savefile->ReadBool(m_InConversation);	// grayman #3559
 
 	// grayman #2603
 	m_dousedLightsSeen.Clear();
@@ -1674,7 +1688,7 @@ void idAI::Spawn( void )
 	backboneStates[ai::ERelaxed]			= spawnArgs.GetString("state_name_0", STATE_IDLE);
 	backboneStates[ai::EObservant]			= spawnArgs.GetString("state_name_1", STATE_OBSERVANT);
 	backboneStates[ai::ESuspicious]			= spawnArgs.GetString("state_name_2", STATE_SUSPICIOUS);
-	backboneStates[ai::ESearching]		= spawnArgs.GetString("state_name_3", STATE_SEARCHING);
+	backboneStates[ai::ESearching]			= spawnArgs.GetString("state_name_3", STATE_SEARCHING);
 	backboneStates[ai::EAgitatedSearching]	= spawnArgs.GetString("state_name_4", STATE_AGITATED_SEARCHING);
 	backboneStates[ai::ECombat]				= spawnArgs.GetString("state_name_5", STATE_COMBAT);
 	
@@ -2008,6 +2022,8 @@ void idAI::Spawn( void )
 
 	m_bCanOperateDoors = spawnArgs.GetBool("canOperateDoors", "0");
 	m_HandlingDoor = false;
+	m_DoorQueued = false;		// grayman #3647
+	m_ElevatorQueued = false;	// grayman #3647
 	m_RestoreMove = false;		// grayman #2706
 	m_LatchedSearch = false;	// grayman #2603
 	m_dousedLightsSeen.Clear();	// grayman #2603
@@ -2018,6 +2034,8 @@ void idAI::Spawn( void )
 	m_RelightingLight = false;	// grayman #2603
 	m_ExaminingRope = false;	// grayman #2872
 	m_DroppingTorch = false;	// grayman #2603
+	m_ReactingToPickedPocket = false; // grayman #3559
+	m_InConversation = false;	// grayman #3559
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
@@ -3068,8 +3086,10 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 idAI::PathToGoal
 =====================
 */
-bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const {
-	if ( !aas ) {
+bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const
+{
+	if ( !aas )
+	{
 		return false;
 	}
 
@@ -3077,13 +3097,15 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 
 	idVec3 org = origin;
 	aas->PushPointIntoAreaNum( areaNum, org );
-	if ( !areaNum ) {
+	if ( !areaNum )
+	{
 		return false;
 	}
 
 	idVec3 goal = goalOrigin;
 	aas->PushPointIntoAreaNum( goalAreaNum, goal );
-	if ( !goalAreaNum ) {
+	if ( !goalAreaNum )
+	{
 		return false;
 	}
 
@@ -3095,7 +3117,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 
 	idBounds bounds = GetPhysics()->GetBounds();
 
-// angua: don't do this check when flying
+	// angua: don't do this check when flying
 	if (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance) && GetMoveType() != MOVETYPE_FLY) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
 	{
 		goalAreaNum = 0;
@@ -3104,9 +3126,12 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	
 	bool returnval;
 	gameLocal.m_AreaManager.DisableForbiddenAreas(this);
-	if ( move.moveType == MOVETYPE_FLY ) {
+	if ( move.moveType == MOVETYPE_FLY )
+	{
 		returnval = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
-	} else {
+	}
+	else
+	{
 		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
 	}
 	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
@@ -3139,19 +3164,22 @@ This is feakin' slow, so it's not good to do it too many times per frame.  It al
 are from the goal, so try to break the goals up into shorter distances.
 =====================
 */
-float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
+float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
+{
 	int			fromArea;
 	int			toArea;
 	float		dist;
 	idVec2		delta;
 	aasPath_t	path;
 
-	if ( !aas ) {
+	if ( !aas )
+	{
 		// no aas, so just take the straight line distance
 		delta = end.ToVec2() - start.ToVec2();
 		dist = delta.LengthFast();
 
-		if ( ai_debugMove.GetBool() ) {
+		if ( ai_debugMove.GetBool() )
+		{
 			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
@@ -3162,17 +3190,20 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
 	fromArea = PointReachableAreaNum( start );
 	toArea = PointReachableAreaNum( end );
 
-	if ( !fromArea || !toArea ) {
+	if ( !fromArea || !toArea )
+	{
 		// can't seem to get there
 		return -1;
 	}
 
-	if ( fromArea == toArea ) {
+	if ( fromArea == toArea )
+	{
 		// same area, so just take the straight line distance
 		delta = end.ToVec2() - start.ToVec2();
 		dist = delta.LengthFast();
 
-		if ( ai_debugMove.GetBool() ) {
+		if ( ai_debugMove.GetBool() )
+		{
 			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
@@ -3182,14 +3213,19 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
 
 	idReachability *reach;
 	int travelTime;
-	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach, NULL, this ) ) {
+	if ( !aas->RouteToGoalArea( fromArea, start, toArea, travelFlags, travelTime, &reach, NULL, this ) )
+	{
 		return -1;
 	}
 
-	if ( ai_debugMove.GetBool() ) {
-		if ( move.moveType == MOVETYPE_FLY ) {
+	if ( ai_debugMove.GetBool() )
+	{
+		if ( move.moveType == MOVETYPE_FLY )
+		{
 			aas->ShowFlyPath( start, toArea, end );
-		} else {
+		}
+		else
+		{
 			aas->ShowWalkPath( start, toArea, end );
 		}
 	}
@@ -3202,7 +3238,8 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )  {
 idAI::StopMove
 =====================
 */
-void idAI::StopMove( moveStatus_t status ) {
+void idAI::StopMove( moveStatus_t status )
+{
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
 	m_pathRank			= 1000; // grayman #2345
@@ -3242,9 +3279,11 @@ idAI::FaceEnemy
 Continually face the enemy's last known position.  MoveDone is always true in this case.
 =====================
 */
-bool idAI::FaceEnemy( void ) {
+bool idAI::FaceEnemy( void )
+{
 	idActor *enemyEnt = enemy.GetEntity();
-	if ( !enemyEnt ) {
+	if ( !enemyEnt )
+	{
 		StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 		return false;
 	}
@@ -3272,8 +3311,10 @@ idAI::FaceEntity
 Continually face the entity position.  MoveDone is always true in this case.
 =====================
 */
-bool idAI::FaceEntity( idEntity *ent ) {
-	if ( !ent ) {
+bool idAI::FaceEntity( idEntity *ent )
+{
+	if ( !ent )
+	{
 		StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 		return false;
 	}
@@ -5352,6 +5393,33 @@ idEntity* idAI::GetTorch()
 
 /*
 =====================
+idAI::GetLantern - Is the AI carrying a lantern? (grayman #3559) 
+=====================
+*/
+
+idEntity* idAI::GetLantern()
+{
+	idEntity* ent = GetAttachmentByPosition("hand_l");
+	if (ent && ent->spawnArgs.GetBool("is_lantern","0"))
+	{
+		return ent; // found a lantern
+	}
+
+	// Lanterns are carried in the left hand. If a lantern for
+	// the right hand, plus accompanying animations, is ever
+	// created, uncomment the following section.
+/*
+	ent = GetAttachmentByPosition("hand_r");
+	if (ent && ent->spawnArgs.GetBool("is_lantern","0"))
+	{
+		return ent; // found a is_lantern
+	}
+ */
+
+	return NULL; // no luck
+}
+/*
+=====================
 idAI::DeadMove
 =====================
 */
@@ -6441,9 +6509,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	RemoveAttachments();
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
-	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
-	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
-	GetMemory().stopReactingToHit = true; // grayman #2816
+	GetMemory().StopReacting(); // grayman #3559
 
 	ClearEnemy();
 	AI_DEAD	= true;
@@ -6546,6 +6612,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	m_lipSyncActive = false;
 
 	DropBlood(inflictor);
+
+	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
+	m_dousedLightsSeen.Clear();
+
+	// grayman - print data re: being Killed
+	gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -7583,9 +7655,7 @@ bool idAI::SetEnemy(idActor* newEnemy)
 
 		ai::Memory& memory = GetMemory();
 		memory.lastTimeEnemySeen = gameLocal.time;
-		memory.stopRelight = true; // grayman #2603
-		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
-		memory.stopReactingToHit = true; // grayman #2816
+		memory.StopReacting(); // grayman #3559
 	}
 
 	return true; // a valid enemy
@@ -11101,9 +11171,7 @@ void idAI::Knockout( idEntity* inflictor )
 	RemoveAttachments();
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
-	GetMemory().stopRelight = true; // grayman #2603 - abort a relight in progress
-	GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
-	GetMemory().stopReactingToHit = true; // grayman #2816
+	GetMemory().StopReacting(); // grayman #3559
 
 	ClearEnemy();
 
@@ -11134,6 +11202,9 @@ void idAI::Knockout( idEntity* inflictor )
 
 	// greebo: Stop lipsyncing now
 	m_lipSyncActive = false;
+
+	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
+	m_dousedLightsSeen.Clear();
 }
 
 void idAI::PostKnockOut()
@@ -12307,6 +12378,18 @@ void idAI::PopMove()
 	moveStack.pop_back(); // Remove the last element
 }
 
+// grayman #3647 - same as PopMove() but w/o the RestoreMove()
+
+void idAI::PopMoveNoRestoreMove()
+{
+	if (moveStack.empty())
+	{
+		return; // nothing to pop from
+	}
+	
+	moveStack.pop_back(); // Remove the last element
+}
+
 void idAI::RestoreMove(const idMoveState& saved)
 {
 	idVec3 goalPos;
@@ -12555,6 +12638,10 @@ bool idAI::SwitchToConversationState(const idStr& conversationName)
 
 	// Switch to this state
 	GetMind()->PushState(state);
+
+	// grayman #3559 - stop dealing with a picked pocket
+
+	GetMemory().stopReactingToPickedPocket = true;
 
 	return true;
 }
@@ -12806,14 +12893,153 @@ bool idAI::CanGreet() // grayman #3338
 	}
 
 	// grayman #3448 - no greeting if involved in a conversation
-
-	ai::ConversationStatePtr convState = boost::dynamic_pointer_cast<ai::ConversationState>(GetMind()->GetState());
-
+	// grayman #3559 - use simpler method
+/*	ai::ConversationStatePtr convState = boost::dynamic_pointer_cast<ai::ConversationState>(GetMind()->GetState());
 	if (convState != NULL)
+	{
+		return false;
+	}
+ */
+
+	if (m_InConversation)
 	{
 		return false;
 	}
 
 	return true;
 }
+
+void idAI::PocketPicked() // grayman #3559
+{
+	if ( spawnArgs.GetFloat("chanceNoticePickedPocket") == 0.0f )
+	{
+		return;
+	}
+
+	// Post the event to do the next processing step. A picked pocket reaction
+	// initially waits 2s to determine if an alert occurred near the
+	// picked pocket event.
+	PostEventMS(&AI_PickedPocketSetup1,INITIAL_PICKPOCKET_DELAY);
+}
+
+void idAI::Event_PickedPocketSetup1() // grayman #3559
+{
+	// React immediately if some other alert occurred recently, otherwise
+	// pause before reacting.
+
+	int delay;
+	if ( GetMemory().lastAlertRiseTime + ALERT_WINDOW <= gameLocal.time )
+	{
+		// The alert window has expired. React after a certain time period if you
+		// pass the random chance check.
+
+		if ( gameLocal.random.RandomFloat() > spawnArgs.GetFloat("chanceNoticePickedPocket") )
+		{
+			return;
+		}
+
+		float minDelay = spawnArgs.GetFloat("pickpocket_delay_min","10000");
+		float maxDelay = spawnArgs.GetFloat("pickpocket_delay_max","120000");
+		delay = minDelay + gameLocal.random.RandomFloat()*(maxDelay - minDelay);
+		GetMemory().insideAlertWindow = false;
+	}
+	else
+	{
+		// We're inside the alert window. React immediately
+		// and every time, regardless of 'chanceNoticePickedPocket' setting. If that
+		// setting is "0.0", it was caught earlier, and we won't be here.
+		delay = 0;
+		GetMemory().insideAlertWindow = true;
+	}
+
+	// Post the event to do the next processing step after 'delay' has finished.
+	PostEventMS(&AI_PickedPocketSetup2,delay);
+}
+
+void idAI::Event_PickedPocketSetup2() // grayman #3559
+{
+	// All delays are exhausted. It's time to react.
+
+	// Check the conditions that would cause you to abort the reaction.
+
+	ai::Memory& memory = GetMemory();
+
+	if ( AI_DEAD || // stop reacting if dead
+		 AI_KNOCKEDOUT || // or unconscious
+		 (AI_AlertIndex >= ai::ESearching) || // stop if alert level is too high
+		 m_InConversation || // in a conversation
+		 !memory.fleeingDone || // fleeing
+		 m_ReactingToHit ) // already reacting to having been hit by something
+	{
+		memory.latchPickedPocket = false;
+		memory.insideAlertWindow = false;
+		return;
+	}
+
+	// Check the conditions that would cause you to delay the reaction.
+
+	moveType_t moveType = GetMoveType();
+	if (!memory.latchPickedPocket)
+	{
+		if ( (moveType == MOVETYPE_SLEEP) ||	// asleep
+			 (moveType == MOVETYPE_SIT_DOWN) || // or in the act of sitting down
+			 (moveType == MOVETYPE_LAY_DOWN) || // or in the act of lying down to sleep
+			 (moveType == MOVETYPE_GET_UP) ||   // or getting up from sitting
+			 (moveType == MOVETYPE_GET_UP_FROM_LYING) ) // or getting up from lying down
+		{
+			memory.latchPickedPocket = true;
+		}
+	}
+
+	if (!memory.latchPickedPocket)
+	{
+		// Delay the reaction if you're handling a door or elevator and you're too far into
+		// that task to have the reaction not interfere with what you're doing.
+		// If doing one of those tasks, and you're not too far along, abort the task and proceed with the
+		// reaction. Aborting the task allows other AI to proceed if they're handling the same
+		// door or elevator.
+
+		const ai::SubsystemPtr& subsys = movementSubsystem;
+		ai::TaskPtr task = subsys->GetCurrentTask();
+
+		if ( task != NULL )
+		{
+			if ( ( m_HandlingDoor && ( boost::dynamic_pointer_cast<ai::HandleDoorTask>(task) != NULL ) ) ||
+				 ( m_HandlingElevator && ( boost::dynamic_pointer_cast<ai::HandleElevatorTask>(task) != NULL ) ) )
+			{
+				if (task->CanAbort())
+				{
+					// Abort the task and let the picked pocket reaction occur now.
+					// Once the reaction is finished, the aborted task will probably
+					// be reinstated, because both tasks involve trying to go somewhere,
+					// and the AI will still want to do that.
+
+					subsys->FinishTask();
+				}
+				else // Can't abort the task, so delay the picked pocket reaction for a while and try again later.
+				{
+					memory.latchPickedPocket = true;
+				}
+			}
+		}
+	}
+
+	// Delay the reaction if another activity wants to complete first.
+
+	if (memory.latchPickedPocket)
+	{
+		// Try again after a delay
+		// Post the event to do the next processing step after delay has finished.
+		PostEventMS(&AI_PickedPocketSetup2,LATCHED_PICKPOCKET_DELAY);
+		return;
+	}
+
+	// React now.
+
+	memory.stopReactingToPickedPocket = false;
+	GetMind()->PushState(ai::StatePtr(new ai::PocketPickedState));
+}
+
+
+
 

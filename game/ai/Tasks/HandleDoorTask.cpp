@@ -47,6 +47,8 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	owner->m_DoorQueued = false; // grayman #3647
+
 	Memory& memory = owner->GetMemory();
 
 	_retryCount = 0;
@@ -477,6 +479,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// door is open and not (yet) in the way
 
+						// grayman #3647 - give him a place to go
+						if (!owner->MoveToPosition(_backPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+						{
+							// TODO: position not reachable, need a better one
+						}
 						_doorHandlingState = EStateApproachingDoor; // grayman #2345 - you should pause if necessary
 						return false;
 					}
@@ -530,6 +537,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							{
 								// door is not in the way and open
 
+								// grayman #3647 - give him a place to go
+								if (!owner->MoveToPosition(_backPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
+								{
+									// TODO: position not reachable, need a better one
+								}
 								_doorHandlingState = EStateApproachingDoor; // grayman #2345 - you should pause if necessary
 								return false;
 							}
@@ -894,6 +906,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 						_doorHandlingState = EStateStartOpen;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
+						memory.latchPickedPocket = true; // grayman #3559 - delay any picked pocket reaction
 					}
 				}
 			}
@@ -922,6 +935,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 						_doorHandlingState = EStateStartOpen;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
+						memory.latchPickedPocket = true; // grayman #3559 - delay any picked pocket reaction
 					}
 				}
 				else
@@ -2274,12 +2288,12 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 	if (owner->m_HandlingDoor)
 	{
+		owner->m_HandlingDoor = false; // grayman #3647 - has to be done BEFORE the PopMove()
 		if (owner->m_RestoreMove) // grayman #2690/#2712 - AI run toward where they saw you last. Don't save that location when handling doors.
 		{
 			owner->PopMove();
 		}
-
-		owner->m_HandlingDoor = false;
+		//owner->m_HandlingDoor = false; // grayman #3647 - has to be done BEFORE the PopMove()
 	}
 
 	_doorInTheWay = false;
@@ -2348,8 +2362,10 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 	_leaveDoor = -1; // reset timeout for leaving the door
 	_doorHandlingState = EStateNone;
-	owner->m_canResolveBlock = true; // grayman #2345
-	memory.stopHandlingDoor = false; // grayman #2816
+	owner->m_canResolveBlock = true;  // grayman #2345
+	memory.stopHandlingDoor = false;  // grayman #2816
+	memory.latchPickedPocket = false; // grayman #3559 - free to react to a picked pocket
+	owner->m_DoorQueued = false;	  // grayman #3647
 }
 
 bool HandleDoorTask::CanAbort() // grayman #2706

@@ -10624,8 +10624,6 @@ void idPlayer::PerformFrobCheck()
 			 && !ent->IsHidden() && ( traceDist < ent->m_FrobDistance )
 			 && ( ent != gameLocal.m_Grabber->GetSelected() ) )
 		{
-			DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("     Entity %s was within frobdistance\r", ent->name.c_str());
-
 			// Mark as frobbed for this frame
 			ent->SetFrobbed(true);
 

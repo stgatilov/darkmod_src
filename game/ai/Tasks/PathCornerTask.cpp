@@ -25,6 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Memory.h"
 #include "PathCornerTask.h"
 #include "../Library.h"
+#include "../../MultiStateMover.h" // grayman #3647
 
 namespace ai
 {
@@ -32,6 +33,7 @@ namespace ai
 PathCornerTask::PathCornerTask() :
 	PathTask(),
 	_moveInitiated(false),
+	_movePaused(false), // grayman #3647
 	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	_lastFrameNum(-1),
 	_usePathPrediction(false)
@@ -40,6 +42,7 @@ PathCornerTask::PathCornerTask() :
 PathCornerTask::PathCornerTask(idPathCorner* path) :
 	PathTask(path),
 	_moveInitiated(false),
+	_movePaused(false), // grayman #3647
 	_lastPosition(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 	_lastFrameNum(-1),
 	_usePathPrediction(false)
@@ -222,7 +225,8 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 		if (owner->AI_DEST_UNREACHABLE)
 		{
 			// Unreachable, fall back to PatrolTask
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination is unreachable, skipping.\r");
+			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination is unreachable, ending PathCornerTask.\r");
+			idVec3 prevMove = owner->movementSubsystem->GetPrevTraveled(true); // grayman #3647
 
 			// NextPath();
 			return true; // finish this task
@@ -230,12 +234,62 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 
 		// Move...
 	}
+	else if (_movePaused)// grayman #3647
+	{
+		// wait for vertical movement to stop
+		idVec3 prevMove = owner->movementSubsystem->GetPrevTraveled(true); // grayman #3647
+		if (prevMove.z == 0.0)
+		{
+			_movePaused = false; // turn this off and try again
+		}
+	}
 	else
 	{
-		// moveToEntity() not yet called, do it now
+		// MoveToPosition() not yet called, do it now
 		owner->StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-		owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
-		_moveInitiated = true;
+
+		// grayman #3647 - test return value of MoveToPosition(). This is the point
+		// where we first know that a destination is unreachable. In the case of being
+		// caught on an elevator between floors, no starting AAS area is available, so
+		// we have to figure out how to detect that situation and deal with it. If the
+		// elevator is moving, we should wait for it to reach the next floor.
+		// If the elevator isn't moving, we might have to force the AI to get it started
+		// again w/o using pathfinding. Currently, there is no elevator task running.
+		if (owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy))
+		{
+			_moveInitiated = true;
+		}
+		else
+		{
+			idVec3 prevMove = owner->movementSubsystem->GetPrevTraveled(true); // grayman #3647
+			if (prevMove.z != 0.0)
+			{
+				// Vertical movement suggests being on an elevator. Trace down and see
+				// if you hit one.
+				idVec3 startPoint = owner->GetPhysics()->GetOrigin();
+				idVec3 bottomPoint = startPoint;
+				bottomPoint.z -= 10;
+
+				trace_t result;
+				if ( gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, owner) )
+				{
+					// Found something ...
+
+					idEntity* ent = gameLocal.entities[result.c.entityNum];
+					if (ent->IsType(CMultiStateMover::Type))
+					{
+						// ... and it's an elevator. Pause the task until vertical movement
+						// stops. You should then be at an elevator station with an AAS area.
+
+						_movePaused = true;
+					}
+				}
+			}
+			else // no vertical movement
+			{
+				_moveInitiated = true; // Continue previous bad behavior
+			}
+		}
 	}
 
 	return false; // not finished yet
@@ -248,6 +302,7 @@ void PathCornerTask::Save(idSaveGame* savefile) const
 	PathTask::Save(savefile);
 
 	savefile->WriteBool(_moveInitiated);
+	savefile->WriteBool(_movePaused); // grayman #3647
 	savefile->WriteVec3(_lastPosition);
 	savefile->WriteInt(_lastFrameNum);
 	savefile->WriteBool(_usePathPrediction);
@@ -258,6 +313,7 @@ void PathCornerTask::Restore(idRestoreGame* savefile)
 	PathTask::Restore(savefile);
 
 	savefile->ReadBool(_moveInitiated);
+	savefile->ReadBool(_movePaused); // grayman #3647
 	savefile->ReadVec3(_lastPosition);
 	savefile->ReadInt(_lastFrameNum);
 	savefile->ReadBool(_usePathPrediction);

@@ -334,6 +334,15 @@ public:
 	// grayman #2816 - abort looking at a moveable that hit you
 	bool stopReactingToHit;
 
+	// grayman #3559 - abort your reaction to having something stolen from you
+	bool stopReactingToPickedPocket;
+
+	// grayman #3559 - latch a picked pocket reaction until done with what you're doing
+	bool latchPickedPocket;
+
+	// grayman #3559 - whether a picked pocket was near an alert
+	bool insideAlertWindow;
+
 	// grayman #2816 - abort door handling
 	bool stopHandlingDoor;
 
@@ -530,6 +539,9 @@ public:
 
 	// Returns the greeting info structure for the given actor
 	GreetingInfo& GetGreetingInfo(idActor* actor);
+
+	// grayman #3559 - stops state reactions
+	void StopReacting();
 };
 
 } // namespace ai

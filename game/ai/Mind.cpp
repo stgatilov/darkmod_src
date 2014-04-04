@@ -45,15 +45,34 @@ Mind::Mind(idAI* owner) :
 	_owner = owner;
 }
 
+void Mind::PrintStateQueue(idStr string)
+{
+	DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("_stateQueue after %s:\r", string.c_str());
+	DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("%s",_stateQueue.DebuggingInfo().c_str());
+}
+
 void Mind::Think()
 {
-	// Clear the recyclebin, it might hold a finished state from the last frame
-	_recycleBin = StatePtr();
-
 	// greebo: We do not check for NULL pointers in the owner at this point, 
 	// as this method is called by the owner itself, it _has_ to exist.
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// Clear the recycle bin, it might hold a finished state from the last frame.
+
+	// grayman #3559 - When clearing a state, it's possible that the state
+	// didn't run its "finish" code if it was killed by switching to another
+	// state. We need to clean up certain states to
+	// make sure there are no lingering settings.
+	// State.h has a virtual Cleanup() method, which can be overridden
+	// by each State to do the cleanup.
+
+	if ( _recycleBin != NULL )
+	{
+		_recycleBin->Cleanup(owner);
+	}
+
+	_recycleBin = StatePtr();
 
 	if (_stateQueue.empty())
 	{
@@ -68,7 +87,6 @@ void Mind::Think()
 
 	// Thinking
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Mind is thinking... %s\r", owner->name.c_str());
-
 
 	// Should we switch states (i.e. initialise a new one)?
 	if (_switchState)
@@ -88,7 +106,7 @@ void Mind::Think()
 
 	// Try to perform the subsystem tasks, skipping inactive subsystems
 	// Maximum number of tries is SubsystemCount.
-	for (int i = 0; i < static_cast<int>(SubsystemCount); i++)
+	for ( int i = 0 ; i < static_cast<int>(SubsystemCount) ; i++ )
 	{
 		// Increase the iterator and wrap around, if necessary
 		_subsystemIterator = static_cast<SubsystemId>(
@@ -129,6 +147,7 @@ void Mind::PushState(const StatePtr& state)
 
 	// Trigger a stateswitch next round
 	_switchState = true;
+	//PrintStateQueue("push");
 }
 
 bool Mind::EndState()
@@ -142,6 +161,7 @@ bool Mind::EndState()
 
 		// Remove the current state from the queue
 		_stateQueue.pop_front();
+		//PrintStateQueue("pop");
 
 		// Trigger a stateswitch next round in any case
 		_switchState = true;
@@ -175,6 +195,7 @@ void Mind::SwitchState(const idStr& stateName)
 		_recycleBin = _stateQueue.front();
 		// Remove the first element from the queue
 		_stateQueue.pop_front();
+		//PrintStateQueue("pop");
 	}
 
 	// Add the new task
@@ -190,6 +211,7 @@ void Mind::SwitchState(const StatePtr& state)
 		_recycleBin = _stateQueue.front();
 		// Remove the first element from the queue
 		_stateQueue.pop_front();
+		//PrintStateQueue("pop");
 	}
 
 	// Add the new task
@@ -199,11 +221,21 @@ void Mind::SwitchState(const StatePtr& state)
 
 void Mind::ClearStates()
 {
+	idAI* owner = _owner.GetEntity();
+	assert(owner);
+
+	// grayman #3559 - when clearing states, we need to clean up any variable settings
+	// that are dealt with when a State ends normally
+
+	for ( StateQueue::const_iterator i = _stateQueue.begin(); i != _stateQueue.end() ; ++i )
+	{
+		(*i)->Cleanup(owner);
+	}
+
+	/* grayman #3559 - the following code is now handled by the new code added above
 	// grayman #2603 - before clearing the states, check if the AI was relighting
 	// a light. That light has to be marked as no longer being relit.
 
-	idAI* owner = _owner.GetEntity();
-	assert(owner);
 	if (owner->m_RelightingLight)
 	{
 		Memory& memory = owner->GetMemory();
@@ -212,7 +244,8 @@ void Mind::ClearStates()
 		{
 			light->SetBeingRelit(false); // this light is no longer being relit
 		}
-	}
+		owner->m_RelightingLight = false;
+	}*/
 
 	_switchState = true;
 	_stateQueue.clear();

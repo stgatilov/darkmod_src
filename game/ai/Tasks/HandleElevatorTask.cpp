@@ -66,6 +66,8 @@ void HandleElevatorTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
+	owner->m_ElevatorQueued = false; // grayman #3647
+
 	// grayman #3029 - when using an elevator, PushMove() once so you can
 	// pop the move to get off the elevator. Then PushMove() a second time
 	// so you can pop the move once you're off the elevator. This is
@@ -699,7 +701,8 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 	// C won't push his fetch button, and B won't have a problem. This can make AI wait a bit
 	// longer at times for the elevator, but it's better than having AI start to step onto
 	// an elevator, just to have to turn around and awkwardly step off the elevator as it
-	// begins to move.
+	// begins to move. Or, worse yet, get stuck on the elevator edge and bump into the
+	// architecture, causing the elevator to stop moving and get stuck.
 
 	ReorderQueue(elevator->GetUserManager(),elevator->GetPhysics()->GetOrigin());
 
@@ -709,15 +712,22 @@ void HandleElevatorTask::OnFinish(idAI* owner)
 		owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 
 		// Restore the movestate we had before starting this task
-		owner->PopMove();
+		// grayman #3647 - don't instigate an actual move from this one;
+		// we're just getting it out of the way so we can get at the
+		// final one a few lines below.
+		// owner->PopMove();
+		owner->PopMoveNoRestoreMove();
 	}
 
 	owner->m_HandlingElevator = false;
 	owner->m_CanSetupDoor = true; // grayman #3029
 	owner->GetMemory().stopHandlingElevator = false; // grayman #2816
+	owner->m_ElevatorQueued = false; // grayman #3647
 
 	// grayman #3029 - restore from the first push, regardless of success or failure
 	owner->PopMove();
+
+	owner->GetMemory().latchPickedPocket = false; // grayman #3559 - free to react to a picked pocket
 }
 
 bool HandleElevatorTask::MoveToPositionEntity(idAI* owner, CMultiStateMoverPosition* pos)

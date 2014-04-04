@@ -11,51 +11,45 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
+ $Revision: 5121 $ (Revision of last commit) 
+ $Date: 2011-12-11 14:12:26 -0500 (Sun, 11 Dec 2011) $ (Date of last commit)
+ $Author: greebo $ (Author of last commit)
  
 ******************************************************************************/
 
-#ifndef __AI_EXAMINE_ROPE_H__
-#define __AI_EXAMINE_ROPE_H__
+#ifndef __AI_POCKET_PICKED_H__
+#define __AI_POCKET_PICKED_H__
 
 #include "State.h"
 
 namespace ai
 {
 
-#define STATE_EXAMINE_ROPE "ExamineRope"
+#define STATE_POCKET_PICKED "PocketPicked"
 
-class ExamineRopeState :
+#define ALERT_WINDOW 4000  // how far back to look for the previous alert
+#define LOOK_TIME_MIN 3000 // minimum time to look behind
+#define LOOK_TIME_MAX 5000 // maximum time to look behind
+
+class PocketPickedState :
 	public State
 {
 private:
-	// Default constructor
-	ExamineRopeState();
+	int _waitEndTime;  // time to wait before proceeding with a state
 
-	idEntityPtr<idAFEntity_Generic> _rope;
-	idVec3 _point; // the interesting point on the rope
-
-	// time to wait before proceeding with a state
-	int _waitEndTime;
-
-	idVec3 _examineSpot;	// where to stand to examine the rope
-
-	enum EExamineRopeState
+	enum EPocketPickedState
 	{
-		EStateSitting,
-		EStateStarting,
-		EStateApproaching,
-		EStateTurningToward,
-		EStateExamineTop,
-		EStateExamineBottom,
-		EStateFinal
-	} _examineRopeState;
+		EStateReact,
+		EStateStopping,
+		EStateStartAnim,
+		EStatePlayAnim,
+		EStateTurnToward,
+		EStateLookAt
+	} _pocketPickedState;
 
 public:
-	// Constructor using rope and examination point as input
-	ExamineRopeState(idAFEntity_Generic* rope, idVec3 point);
+	// Default constructor
+	PocketPickedState();
 
 	// Get the name of this state
 	virtual const idStr& GetName() const;
@@ -76,15 +70,9 @@ public:
 	static StatePtr CreateInstance();
 
 private:
-	// Look at top of rope
-	void StartExaminingTop(idAI* owner);
-
-	// Look at bottom of rope
-	void StartExaminingBottom(idAI* owner);
-
 	void Wrapup(idAI* owner);
 };
 
 } // namespace ai
 
-#endif /* __AI_EXAMINE_ROPE_H__ */
+#endif /* __AI_POCKET_PICKED_H__ */

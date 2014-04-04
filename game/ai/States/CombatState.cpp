@@ -25,7 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "CombatState.h"
 #include "../Memory.h"
 #include "../../AIComm_Message.h"
-#include "../Tasks/RandomHeadturnTask.h"
+//#include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/ChaseEnemyTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/MeleeCombatTask.h"
@@ -437,9 +437,7 @@ void CombatState::Think(idAI* owner)
 			return;
 		}
 
-		memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-		memory.stopExaminingRope = true; // grayman #2872 - stop examining a rope
-		memory.stopReactingToHit = true; // grayman #2816
+		memory.StopReacting(); // grayman #3559
 
 		_combatSubState = EStateDoOnce;
 		break;

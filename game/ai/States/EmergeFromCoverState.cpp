@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/MoveToPositionTask.h"
-#include "../Tasks/RandomHeadturnTask.h"
+//#include "../Tasks/RandomHeadturnTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "../Library.h"
 

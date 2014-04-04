@@ -183,7 +183,8 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'" />
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)lib\$(PlatformShortName);$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">$(SolutionDir)..\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">$(SolutionDir)..\darkmod\</OutDir>
+    <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent />
@@ -204,6 +205,10 @@
       <AdditionalDependencies>libcmtd.lib;ZipLoader.lib;DevIL.lib;libpng.lib;libjpeg.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;ws2_32.lib;libeay32.lib;ssleay32.lib;libcurl.lib</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <PreBuildEvent />
@@ -336,6 +341,7 @@
     <ClCompile Include="game\ai\States\LostTrackOfEnemyState.cpp" />
     <ClCompile Include="game\ai\States\ObservantState.cpp" />
     <ClCompile Include="game\ai\States\PainState.cpp" />
+    <ClCompile Include="game\ai\States\PocketPickedState.cpp" />
     <ClCompile Include="game\ai\States\SearchingState.cpp" />
     <ClCompile Include="game\ai\States\State.cpp" />
     <ClCompile Include="game\ai\States\StayInCoverState.cpp" />
@@ -603,6 +609,7 @@
     <ClInclude Include="game\ai\States\LostTrackOfEnemyState.h" />
     <ClInclude Include="game\ai\States\ObservantState.h" />
     <ClInclude Include="game\ai\States\PainState.h" />
+    <ClInclude Include="game\ai\States\PocketPickedState.h" />
     <ClInclude Include="game\ai\States\SearchingState.h" />
     <ClInclude Include="game\ai\States\State.h" />
     <ClInclude Include="game\ai\States\StayInCoverState.h" />

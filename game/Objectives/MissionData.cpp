@@ -1685,13 +1685,15 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	if( bPickedUp && ent != NULL && ent->GetBindMaster() )
 	{
 		idEntity *bm = ent->GetBindMaster();
-		if( bm->IsType( idActor::Type )
-			&& bm->health > 0
-			&& !static_cast<idActor *>(bm)->IsKnockedOut()
-			)
+		if ( bm->IsType( idAI::Type ) &&
+			 ( bm->health > 0 ) &&
+			 !static_cast<idAI *>(bm)->IsKnockedOut() )
 		{
 			// Player is always responsible for a pickpocket
 			MissionEvent( COMP_PICKPOCKET, &Parms, true );
+
+			// grayman #3559 - The victim should react.
+			static_cast<idAI *>(bm)->PocketPicked(); // react to losing something
 		}
 	}
 }

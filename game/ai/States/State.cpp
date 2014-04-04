@@ -705,14 +705,29 @@ void State::OnVisualStim(idEntity* stimSource)
 			return;
 		}
 
+		// grayman #3559 - don't react if currently dealing with a picked pocket
+
+		if (owner->m_ReactingToPickedPocket)
+		{
+			return;
+		}
+
 		// grayman #2603 - Let's see if the AI is involved in a conversation.
 		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
+		// grayman #3559 - use a simpler method that doesn't care where the conversation is in the state queue
+		if (owner->m_InConversation)
+		{
+			return; // we're in a conversation, so delay processing the rest of the relight
+		}
+
+		/* old way
 		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(owner->GetMind()->GetState());
 
 		if (convState != NULL)
 		{
 			return; // we're in a conversation, so delay processing the rest of the relight
 		}
+		*/
 
 		// Before we check the odds of noticing this stim, see if it belongs
 		// to our doused torch. Noticing that should not be subject to
@@ -1196,9 +1211,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_WEAPON;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-	memory.stopRelight = true; // grayman #2603
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
@@ -1293,9 +1306,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_SUSPICIOUS;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-	memory.stopRelight = true;
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Raise alert level
 	if ( owner->AI_AlertLevel < owner->thresh_4 - 0.1f )
@@ -1354,7 +1365,7 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_ROPE;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-	memory.stopRelight = true;
+	memory.StopReacting(); // grayman #3559
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
@@ -1389,6 +1400,8 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	{
 		gameLocal.Printf("%d: %s hit by moveable, barks 'snd_notice_generic'\n",gameLocal.time,owner->GetName());
 	}
+
+	owner->GetMemory().stopReactingToPickedPocket = true; // grayman #3559 - stop dealing with a picked pocket
 
 	owner->GetMemory().hitByThisMoveable = tactEnt;
 	owner->GetMind()->SwitchState(StatePtr(new HitByMoveableState())); // react to getting hit
@@ -1891,9 +1904,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 					if ( !soundName.IsEmpty() ) // grayman #2903
 					{
 						owner->StopMove(MOVE_STATUS_DONE);
-						memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-						memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-						memory.stopReactingToHit = true; // grayman #2816
+						memory.StopReacting(); // grayman #3559
 
 						memory.alertPos = otherMemory.alertPos;
 						memory.currentSearchEventID = eventID; // grayman #3424
@@ -2633,9 +2644,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 
 	memory.posEvidenceIntruders = person->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-	memory.stopRelight = true; // grayman #2603
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// grayman #3424 - log this event and bark if it's new
 	if ( !alreadyKnow )
@@ -2833,9 +2842,7 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 
-	memory.stopRelight = true; // grayman #2603
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Determine what to say
 	// grayman #3317 - say nothing if you're a witness
@@ -2995,7 +3002,9 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	}
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Alerting AI %s due to projectile.\r", owner->name.c_str());
-	
+
+	owner->GetMemory().stopReactingToPickedPocket = true; // grayman #3559 - stop dealing with a picked pocket
+
 	// grayman #3140 - If a civilian or not armed, you only got here because
 	// damage was taken. PainState will set up fleeing, and we don't want
 	// you searching, so there's nothing remaining for you to do here.
@@ -3203,9 +3212,7 @@ void State::OnMovementBlocked(idAI* owner)
 			// Stop moving, the searching state will choose another spot soon
 			master->StopMove(MOVE_STATUS_DONE);
 			Memory& memory = master->GetMemory();
-			memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-			memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-			memory.stopReactingToHit = true; // grayman #2816
+			memory.StopReacting(); // grayman #3559
 			master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
 			return;
 		}
@@ -3307,9 +3314,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_BLOOD;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-	memory.stopRelight = true; // grayman #2603
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
@@ -3839,9 +3844,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 	memory.posMissingItem = stimSource->GetPhysics()->GetOrigin(); // grayman #2903
 
-	memory.stopRelight = true; // grayman #2603
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// grayman #3424 - log this event if it's new
 	if ( !alreadyKnow )
@@ -3884,9 +3887,7 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->TurnToward(stimSource->GetPhysics()->GetOrigin());
 	owner->Event_LookAtEntity(stimSource, 1);
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Speak a reaction
 	memory.lastTimeVisualStimBark = gameLocal.time;
@@ -4704,9 +4705,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				}
 
 				owner->StopMove(MOVE_STATUS_DONE);
-				memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-				memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-				memory.stopReactingToHit = true; // grayman #2816
+				memory.StopReacting(); // grayman #3559
 
 				memory.alertPos = issuerMemory.alertPos;
 				memory.alertClass = EAlertNone;
@@ -4820,22 +4819,41 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			return; // ignore this door
 		}
 
-		// grayman #3029 - all clear to handle the door, but if you're handling
+		// grayman #3029 - All clear to handle the door, but if you're handling
 		// an elevator, you have to terminate that first.
 
-		if (owner->m_HandlingElevator)
-		{
-			const SubsystemPtr& subsys = owner->movementSubsystem;
-			TaskPtr task = subsys->GetCurrentTask();
+		// grayman #3647 - An elevator task has either run its initialization code
+		// (m_HandlingElevator = true), or it hasn't (m_ElevatorQueued = true).
+		// If the former, the SwitchTask() will take care of running the elevator
+		// tasks's OnFinish() method. If the latter, SwitchTask() won't bother with that.
 
-			if (boost::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL)
+		const SubsystemPtr& subsys = owner->movementSubsystem;
+		TaskPtr task = subsys->GetCurrentTask();
+
+		bool useSwitchTask = false;
+		if (boost::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL)
+		{
+			// The current task at the front of the queue (running or not)
+			// is an elevator task.
+
+			useSwitchTask = true;
+
+			if (owner->m_ElevatorQueued)
 			{
-				subsys->FinishTask();
+				owner->m_ElevatorQueued = false; // it's about to be dequeued
 			}
 		}
 
 		memory.doorRelated.currentDoor = frobDoor;
-		owner->movementSubsystem->PushTask(HandleDoorTask::CreateInstance());
+		owner->m_DoorQueued = true; // grayman #3647
+		if (useSwitchTask)
+		{
+			owner->movementSubsystem->SwitchTask(HandleDoorTask::CreateInstance());
+		}
+		else // no elevator task was present
+		{
+			owner->movementSubsystem->PushTask(HandleDoorTask::CreateInstance());
+		}
 	}
 	else // currentDoor exists
 	{
@@ -4903,15 +4921,20 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 	}
 
 	// grayman #3050 - can't handle a new elevator if you're currently using a door or an elevator or you can't use elevators
+	// grayman #3647 - also if an elevator or door handling task has been queued, but hasn't started yet
 
-	if ( owner->m_HandlingDoor || owner->m_HandlingElevator || !owner->CanUseElevators())
+	if ( owner->m_HandlingDoor ||
+		 owner->m_HandlingElevator ||
+		 !owner->CanUseElevators() ||
+		 owner->m_DoorQueued ||
+		 owner->m_ElevatorQueued )
 	{
 		return;
 	}
 
-	// Prevent more ElevatorTasks from being pushed
 //	owner->m_HandlingElevator = true; // grayman #3029 - this is too early; moved to Init of task
 	owner->m_CanSetupDoor = true; // grayman #3029
+	owner->m_ElevatorQueued = true;
 	owner->movementSubsystem->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 }
 

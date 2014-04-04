@@ -100,6 +100,7 @@ typedef enum {
 	LC_CONVERSATION,	// conversation/dialogue stuff
 	LC_MAINMENU,		// main menu logging
 	LC_AAS,				// grayman - AAS area logging
+	LC_STATE,			// grayman #3559 - State logging
 	LC_COUNT
 } LC_LogClass;
 

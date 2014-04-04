@@ -88,7 +88,7 @@ public:
 
 	/**
 	 * greebo: Sets the new task of this subsystem.
-	 * This new state REPLACES the currently active one.
+	 * This new task REPLACES the currently active one.
 	 */
 	virtual void SwitchTask(const TaskPtr& newTask);
 

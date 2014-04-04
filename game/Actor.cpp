@@ -5376,7 +5376,9 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		//gameRenderWorld->DrawText(idStr(deltaVert), GetPhysics()->GetOrigin(), 0.15, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 50000);
 
 		//gameRenderWorld->DrawText(idStr(damage), GetPhysics()->GetOrigin(), 0.15, colorRed, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 5000);
-		gameLocal.Printf("Damage dealt: %d\n", damage);
+
+		// grayman - print data re: being damaged
+		gameLocal.Printf("'%s' dealt %d landing damage at [%s]\n", GetName(),damage,GetPhysics()->GetOrigin().ToString());
 
 		pain_debounce_time = gameLocal.time + pain_delay + 1;  // ignore pain since we'll play our landing anim
 

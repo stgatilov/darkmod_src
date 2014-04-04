@@ -123,7 +123,7 @@ public:
 
 	idVec3 GetLastMove();	// grayman #2356
 
-	float GetPrevTraveled(); // grayman #2345
+	idVec3 GetPrevTraveled(bool includeVertical); // grayman #2345 // grayman #3647
 
 	/**
 	 * grayman #2345 - Called when the AI tries to extricate itself from a stuck position

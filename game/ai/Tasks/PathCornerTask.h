@@ -41,6 +41,7 @@ class PathCornerTask :
 {
 private:
 	bool _moveInitiated;
+	bool _movePaused; // grayman #3647
 
 	// Position last time this task was executed, used for path prediction
 	idVec3 _lastPosition;

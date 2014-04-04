@@ -54,8 +54,6 @@ private:
 		EStateFinal
 	} _relightState;
 
-	bool CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos); // grayman #2603
-
 public:
 	// Constructor using light source as input parameter
 	SwitchOnLightState(idLight* light);
@@ -63,25 +61,31 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
 
-	virtual void Wrapup(idAI* owner, idLight* light, bool ignore); // grayman #2603
-
-	virtual float GetMaxReach(idAI* owner, idEntity* torch, idStr lightType); // grayman #2603
-	virtual bool GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &target); // grayman #2603
-
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
 
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	// Start switching on (stop move, start anim)
-	void StartSwitchOn(idAI* owner, idLight* light);
-
+	// This is called when a State is destroyed
+	virtual void Cleanup(idAI* owner); // grayman #3559
+	
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 
 	static StatePtr CreateInstance();
+
+private:
+	float GetMaxReach(idAI* owner, idEntity* torch, idStr lightType); // grayman #2603
+
+	bool GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &target); // grayman #2603
+
+	bool CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos); // grayman #2603
+
+	void StartSwitchOn(idAI* owner, idLight* light); // Start switching on (stop move, start anim)
+
+	void Wrapup(idAI* owner, /*idLight* light,*/ bool ignore); // grayman #2603
 };
 
 } // namespace ai

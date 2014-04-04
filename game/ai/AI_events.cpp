@@ -450,6 +450,9 @@ const idEventDef AI_NoisemakerDone( "<noisemakerDone>", EventArgs('e', "maker", 
 
 const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
+const idEventDef AI_PickedPocketSetup1( "<pickedPocketSetup1>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3559
+const idEventDef AI_PickedPocketSetup2( "<pickedPocketSetup2>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3559
+
 const idEventDef AI_AlertAI( "alertAI", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 //const idEventDef AI_AlertAI( "<alertAI>", EventArgs('s', "type", "alert type", 'f', "amount", "alert amount", 'e', "actor", "actor causing alert"), EV_RETURNS_VOID, "internal" ); // grayman #3356 & #3258
 
@@ -649,6 +652,8 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_OnUnconsciousPersonEncounter,	idAI::Event_OnUnconsciousPersonEncounter) // grayman #3317
 	EVENT ( AI_AllowGreetings,					idAI::Event_AllowGreetings) // grayman #3338
 	EVENT ( AI_DelayedVisualStim,				idAI::Event_DelayedVisualStim) // grayman #2924
+	EVENT ( AI_PickedPocketSetup1,				idAI::Event_PickedPocketSetup1) // grayman #3559
+	EVENT ( AI_PickedPocketSetup2,				idAI::Event_PickedPocketSetup2) // grayman #3559
 	EVENT ( AI_AlertAI,							idAI::Event_AlertAI)		// grayman #3356
 
 	EVENT ( AI_GetAttacker,						idAI::Event_GetAttacker)	// grayman #3679
@@ -3630,9 +3635,8 @@ void idAI::Event_DropTorch() // grayman #2603
 			origin.z -= 20;
 			ent->GetPhysics()->SetOrigin( origin );
 
-			ent->m_droppedByAI = true; // grayman #1330
-			GetMemory().stopRelight = true; // in case a relight was in progress - try again later w/o torch
-			GetMemory().stopExaminingRope = true; // grayman #2872 - stop examining a rope
+			ent->m_droppedByAI = true;  // grayman #1330
+			GetMemory().StopReacting(); // grayman #3559
 			m_DroppingTorch = false;
 
 			// grayman #3075 - set m_SetInMotionByActor here
@@ -3699,6 +3703,8 @@ void idAI::Event_NoisemakerDone(idEntity* maker)
 	makerPtr = maker;
 	m_noisemakersHeard.Remove(makerPtr);
 }
+
+
 
 
 

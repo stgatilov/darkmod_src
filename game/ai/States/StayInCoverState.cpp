@@ -59,9 +59,7 @@ void StayInCoverState::Init(idAI* owner)
 	// The movement subsystem should do nothing.
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->movementSubsystem->ClearTasks();
-	memory.stopRelight = true; // grayman #2603 - abort a relight in progress
-	memory.stopExaminingRope = true; // grayman #2872 - stop examining rope
-	memory.stopReactingToHit = true; // grayman #2816
+	memory.StopReacting(); // grayman #3559
 
 	// Calculate the time we should stay in cover
 	int coverDelayMin = SEC2MS(owner->spawnArgs.GetFloat("emerge_from_cover_delay_min"));

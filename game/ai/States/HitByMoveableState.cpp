@@ -38,13 +38,20 @@ const idStr& HitByMoveableState::GetName() const
 	return _name;
 }
 
-// Wrap up and end state
+// grayman #3559 - make part of WrapUp() visible to outside world
 
-void HitByMoveableState::Wrapup(idAI* owner)
+void HitByMoveableState::Cleanup(idAI* owner)
 {
 	owner->GetMemory().hitByThisMoveable = NULL;
 	owner->m_ReactingToHit = false;
 	owner->GetMemory().stopReactingToHit = false;
+}
+
+// Wrap up and end state
+
+void HitByMoveableState::Wrapup(idAI* owner)
+{
+	Cleanup(owner);
 	owner->GetMind()->EndState();
 }
 
@@ -64,6 +71,13 @@ void HitByMoveableState::Init(idAI* owner)
 
 	// grayman #3424 - don't process if dead or unconscious
 	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
+	{
+		Wrapup(owner);
+		return;
+	}
+
+	// stop if something more important has happened
+	if (owner->GetMemory().stopReactingToHit)
 	{
 		Wrapup(owner);
 		return;
@@ -100,16 +114,11 @@ void HitByMoveableState::Init(idAI* owner)
 	_lookAtDuration   = owner->spawnArgs.GetFloat("hitByMoveableLookAtTime","2.0");   // how long to look at what hit you
 	_lookBackDuration = owner->spawnArgs.GetFloat("hitByMoveableLookBackTime","2.0"); // how long to look back at where the object came from
 
-	// TODO: Do we need to abort door or elevator handling here?
-	// How about relighting?
-	// How about examining a rope?
-
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 
 	owner->StopMove(MOVE_STATUS_DONE);
-	owner->GetMemory().stopRelight = true;
-	owner->GetMemory().stopExaminingRope = true;
+	owner->GetMemory().StopReacting();
 	owner->GetMemory().stopReactingToHit = false;
 
 	// if AI is sitting or sleeping, he has to stand before looking around
