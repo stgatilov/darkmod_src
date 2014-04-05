@@ -9173,32 +9173,19 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// If they react to each instance of the sound, their alert level
 		// rises too quickly.
 
-		if (propParms->maker->IsType(idMoveable::Type)) // noisemakers are moveables
+		idEntityPtr<idEntity> makerPtr;
+		makerPtr = NULL;
+		idEntity *maker = propParms->maker;
+		if (maker->IsType(idMoveable::Type)) // noisemakers are moveables
 		{
-			idEntity *maker = propParms->maker;
 			if (idStr(maker->GetName()).IcmpPrefix("idMoveable_atdm:ammo_noisemaker") == 0)
 			{
 				// Have I already heard this noisemaker?
 
-				idEntityPtr<idEntity> makerPtr;
 				makerPtr = maker;
 				if (m_noisemakersHeard.Find(makerPtr) != NULL)
 				{
 					return; // already heard this noisemaker
-				}
-
-				// place this noisemaker on the list of noisemakers I've heard.
-
-				m_noisemakersHeard.Append(makerPtr);
-
-				// Create an event to remove this noisemaker from
-				// the list after a certain amount of time has elapsed.
-				// This keeps the list as short as possible over time.
-
-				float duration = maker->spawnArgs.GetFloat("active_duration","17");
-				if (duration > 0)
-				{
-					PostEventSec(&AI_NoisemakerDone,duration,maker);
 				}
 			}
 		}
@@ -9266,6 +9253,32 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			// greebo: Notify the currently active state
 			mind->GetState()->OnAudioAlert();
 
+			// Decide if you need to remember a noisemaker
+
+			if ( makerPtr.GetEntity() != NULL ) // only non-null if a noisemaker
+			{
+				// Only remember a noisemaker if it puts you into Searching mode or higher
+				bool rememberNoisemaker = false;
+				if ( AI_AlertLevel + psychLoud >= thresh_3 )
+				{
+					rememberNoisemaker = true;
+				}
+
+				if ( rememberNoisemaker)
+				{
+					// place this noisemaker on the list of noisemakers I've heard.
+
+					m_noisemakersHeard.Append(makerPtr);
+
+					// Create an event to remove this noisemaker from
+					// the list after a certain amount of time has elapsed.
+					// This keeps the list as short as possible over time.
+
+					float duration = maker->spawnArgs.GetFloat("active_duration","17");
+					PostEventSec(&AI_NoisemakerDone,duration,maker);
+				}
+			}
+
 			// grayman #3009 - pass the alert position so the AI can look at it
 			PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
 		}
@@ -9324,7 +9337,7 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 
 void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // grayman #3258
 {
-	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s AlertAI called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL");
+	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL");
 
 	if (m_bIgnoreAlerts)
 	{
@@ -9415,7 +9428,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	float newAlertLevel = AI_AlertLevel + alertInc;
 	SetAlertLevel(newAlertLevel);
 
-	if( cv_ai_debug.GetBool() )
+	if ( cv_ai_debug.GetBool() )
 	{
 		gameLocal.Printf("[TDM AI] ALERT: %s alerted by alert type \"%s\", base amount %f. Total alert level now: %f\n", name.c_str(), type, amount, (float) AI_AlertLevel );
 	}
