@@ -88,9 +88,12 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	if (owner->GetMoveType() != MOVETYPE_SIT)
 	{
 		owner->SitDown();
+		_sittingAnimDone = false; // grayman #3670
 	}
-
-	_sittingAnimDone = false; // grayman #3670
+	else // grayman #3528 - already sitting
+	{
+		_sittingAnimDone = true; // grayman #3670
+	}
 }
 
 bool PathSitTask::Perform(Subsystem& subsystem)

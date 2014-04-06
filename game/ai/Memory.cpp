@@ -100,7 +100,8 @@ Memory::Memory(idAI* owningAI) :
 	closeSuspiciousDoor(false), // grayman #1327
 	issueMoveToPositionTask(false), // grayman #3052
 	currentSearchEventID(-1), // grayman #3424
-	playerResponsible(false)  // grayman #3679 - is the player responsible for the attack?
+	playerResponsible(false),  // grayman #3679 - is the player responsible for the attack?
+	stayPut(false) // grayman #3528
 {
 	attacker = NULL; // grayman #3679 - who attacked me
 }
@@ -135,6 +136,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
 	savefile->WriteBool(prevSawEvidence); // grayman #3424
+	savefile->WriteBool(stayPut); // grayman #3528
 	savefile->WriteVec3(alertPos);
 	
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert
@@ -258,6 +260,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
 	savefile->ReadBool(prevSawEvidence); // grayman #3424
+	savefile->ReadBool(stayPut); // grayman #3528
 	savefile->ReadVec3(alertPos);
 
 	// grayman #2903 - for saving position where AI encounter an alert, and a timestamp for that alert

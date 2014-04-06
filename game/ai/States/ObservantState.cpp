@@ -62,6 +62,14 @@ bool ObservantState::CheckAlertLevel(idAI* owner)
 
 		owner->GetMind()->EndState();
 		owner->GetMemory().alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3438
+
+		// grayman #3528 - if sitting or sleeping, no need to restart patrolling
+		moveType_t moveType = owner->GetMoveType();
+		if ( ( moveType == MOVETYPE_SIT ) || ( moveType == MOVETYPE_SLEEP ) )
+		{
+			owner->GetMemory().stayPut = true;
+		}
+
 		return false;
 	}
 	

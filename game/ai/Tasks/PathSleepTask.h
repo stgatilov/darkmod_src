@@ -49,6 +49,8 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
+	virtual void OnFinish(idAI* owner); // grayman #3528
+
 	// Creates a new Instance of this task
 	static PathSleepTaskPtr CreateInstance();
 

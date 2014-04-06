@@ -73,8 +73,6 @@ MovementSubsystem::MovementSubsystem(SubsystemId subsystemId, idAI* owner) :
 
 	_originHistory.SetNum(HISTORY_SIZE);
 	_frameHistory.SetNum(HISTORY_SIZE); // grayman #2345
-
-
 }
 
 // Called regularly by the Mind to run the currently assigned routine.
@@ -293,7 +291,7 @@ void MovementSubsystem::NextPath()
     // The pre-selected "next path" is now our current one
     idPathCorner* currentPath = memory.nextPath.GetEntity();
 
-    memory.currentPath = currentPath;
+	memory.currentPath = currentPath;
 
     // Now pre-select a new (random) path entity for the next round
     // this information is important for the PathCornerTask to decide which action to take on exit

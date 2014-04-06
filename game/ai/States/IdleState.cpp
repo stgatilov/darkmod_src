@@ -244,7 +244,16 @@ void IdleState::InitialiseMovement(idAI* owner)
 
 	if (owner->spawnArgs.GetBool("patrol", "1")) // grayman #2683 - only start patrol if you're supposed to 
 	{
-		owner->movementSubsystem->StartPatrol();
+		// grayman #3528 - if you need to stay where you are, don't start patrolling yet
+
+		if (memory.stayPut)
+		{
+			memory.stayPut = false; // reset
+		}
+		else
+		{
+			owner->movementSubsystem->StartPatrol();
+		}
 	}
 
 	// Check if the owner has patrol routes set

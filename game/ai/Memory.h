@@ -300,6 +300,9 @@ public:
 	// grayman #3424 - did the AI see evidence the previous think frame?
 	bool prevSawEvidence;
 
+	// grayman #3528 - TRUE if sitting or sleeping when dropping out of Observant
+	bool stayPut;
+
 	// position of alert causing stimulus
 	idVec3 alertPos;
 
