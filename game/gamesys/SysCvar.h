@@ -340,6 +340,13 @@ extern idCVar cv_ai_vision_forgiving;
 extern idCVar cv_ai_vision_challenging;
 extern idCVar cv_ai_vision_hardcore;
 
+// grayman #3682 - AI Hearing
+extern idCVar cv_ai_hearing;
+extern idCVar cv_ai_hearing_nearly_deaf;
+extern idCVar cv_ai_hearing_forgiving;
+extern idCVar cv_ai_hearing_challenging;
+extern idCVar cv_ai_hearing_hardcore;
+
 extern idCVar cv_door_auto_open_on_unlock;
 
 extern idCVar cv_dm_distance;

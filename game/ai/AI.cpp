@@ -9622,6 +9622,38 @@ float idAI::GetBaseAcuity(const char *type) const
 		returnval = m_Acuities[ind];
 	}
 
+	// grayman #3682
+	if ( idStr(type) == "aud" )
+	{
+		// Use the 'AI Hearing' choice on the gameplay menu
+		// 0 = nearly deaf
+		// 1 = forgiving
+		// 2 = challenging
+		// 3 = hardcore
+
+		int hearingLevel = cv_ai_hearing.GetInteger(); // returns a number representing 'AI Hearing'
+		float hearingFactor;
+
+		switch (hearingLevel)
+		{
+		case 0:
+			hearingFactor = cv_ai_hearing_nearly_deaf.GetFloat();
+			break;
+		case 1:
+			hearingFactor = cv_ai_hearing_forgiving.GetFloat();
+			break;
+		default:
+		case 2:
+			hearingFactor = cv_ai_hearing_challenging.GetFloat();
+			break;
+		case 3:
+			hearingFactor = cv_ai_hearing_hardcore.GetFloat();
+			break;
+		}
+
+		returnval *= hearingFactor;
+	}
+	
 	return returnval;
 }
 

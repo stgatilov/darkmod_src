@@ -4296,6 +4296,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		// grayman #3492 - AI Vision
 		setting = cv_ai_vision.GetInteger(); // returns one a number from 0 -> 3
 		gui->SetStateInt("ai_vision",setting);
+
+		// grayman #3682 - AI Hearing
+		setting = cv_ai_hearing.GetInteger(); // returns one a number from 0 -> 3
+		gui->SetStateInt("ai_hearing",setting);
 	}
 	else if (cmd == "updateaivision") // grayman #3492 - AI vision
 	{
@@ -4308,6 +4312,19 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		else
 		{
 			gameLocal.Warning("Unknown value for AI Vision encountered!");
+		}
+	}
+	else if (cmd == "updateaihearing") // grayman #3682 - AI hearing
+	{
+		// AI Hearing setting changed, update CVARs
+		int setting = gui->GetStateInt("ai_hearing", "-1");
+		if ( ( setting >= 0 ) && ( setting <= 3 ) )
+		{
+			cv_ai_hearing.SetInteger(setting);
+		}
+		else
+		{
+			gameLocal.Warning("Unknown value for AI Hearing encountered!");
 		}
 	}
 	else if (cmd == "updatemeleedifficulty")
