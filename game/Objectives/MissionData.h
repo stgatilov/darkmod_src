@@ -220,6 +220,7 @@ public:
 	* The AlertLevel must be specified if you are getting alert stats, but otherwise
 	* is optional.
 	**/
+	SStat* GetStat( EComponentType CompType, int AlertLevel = 0 );
 	int GetStatByTeam( EComponentType CompType, int index, int AlertLevel = 0 );
 	int GetStatByType( EComponentType CompType, int index, int AlertLevel = 0 );
 	int GetStatByInnocence( EComponentType CompType, int index, int AlertLevel = 0 );
@@ -229,9 +230,53 @@ public:
 	**/
 	int GetStatOverall( EComponentType CompType, int AlertLevel = 0 );
 	int GetStatAirborne( EComponentType CompType, int AlertLevel = 0);
-	int GetDamageDealt( void );
-	int GetDamageReceived( void );
+	unsigned int GetTotalGamePlayTime();
+	int GetDamageDealt();
+	int GetDamageReceived();
 	int GetHealthReceived();
+	int GetPocketsPicked();
+	int GetFoundLoot();
+	int GetMissionLoot();
+	int GetTotalTimePlayerSeen();
+	int GetNumberTimesPlayerSeen();
+	int GetNumberTimesAISuspicious();
+	int GetNumberTimesAISearched();
+	float GetSightingScore();
+	float GetStealthScore();
+
+	idStr GetDifficultyName(int level); // grayman #3292
+
+	/**
+	* Setters for the mission stats.
+	**/
+	void IncrementPlayerSeen(); // grayman #2887
+	void Add2TimePlayerSeen( int amount ); // grayman #2887
+
+	void SetDifficultyNames(idStr _difficultyNames[]); // grayman #3292
+
+	/**
+	* Called when the player takes damage.  Used for damage stats
+	**/
+	void PlayerDamaged( int DamageAmount );
+
+	/**
+	* Called when the player damages AI.  Used for damage stats.
+	**/
+	void AIDamagedByPlayer( int DamageAmount );
+
+	/**
+	 * greebo: Gets called if the player gets healed by something
+	 */
+	void HealthReceivedByPlayer(int amount);
+
+	void ChangeFoundLoot(LootType lootType, int amount);
+
+	/**
+	 * greebo: This adds a given amount of loot to the total amount available in the mission.
+	 * The total loot value is interesting at the end of the mission where the player wants to
+	 * see how much loot he/she missed.
+	 */
+	void AddMissionLoot(LootType lootType, int amount);
 
 	// Callback functions:
 
@@ -304,21 +349,6 @@ public:
 	void FillParmsData( idEntity *ent, SObjEntParms *parms );
 	
 	/**
-	* Called when the player takes damage.  Used for damage stats
-	**/
-	void PlayerDamaged( int DamageAmount );
-
-	/**
-	* Called when the player damages AI.  Used for damage stats.
-	**/
-	void AIDamagedByPlayer( int DamageAmount );
-
-	/**
-	 * greebo: Gets called if the player gets healed by something
-	 */
-	void HealthReceivedByPlayer(int amount);
-
-	/**
 	* Called by the inventory when a player picks up or drops an item.
 	*
 	* Entity is the ent being picked up, bPicked up is true if picked up, false if dropped
@@ -341,22 +371,6 @@ public:
 	**/
 	void AlertCallback(idEntity *Alerted, idEntity *Alerter, int AlertVal);
 
-	int GetFoundLoot();
-	void ChangeFoundLoot(LootType lootType, int amount);
-
-	/**
-	 * greebo: This adds a given amount of loot to the total amount available in the mission.
-	 * The total loot value is interesting at the end of the mission where the player wants to
-	 * see how much loot he/she missed.
-	 */
-	void AddMissionLoot(LootType lootType, int amount);
-
-	void IncrementPlayerSeen(); // grayman #2887
-	void Add2TimePlayerSeen( int amount ); // grayman #2887
-
-	void SetDifficultyNames(idStr _difficultyNames[]); // grayman #3292
-	idStr GetDifficultyName(int level); // grayman #3292
-	
 	/**
 	* Parse the objective data on an entity and add it to the objectives system
 	* Called by CTarget_AddObjectives

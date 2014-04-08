@@ -195,7 +195,10 @@ private:
 	
 	void						Event_CanPlant( const idVec3 &traceStart, const idVec3 &traceEnd, idEntity *ignore, idEntity *vine ); // grayman #2787
 	void						Event_GetMainAmbientLight();	// grayman #3132
+
 	void						Event_GetDifficultyLevel();	// tels    #3271
+	void						Event_GetDifficultyName( int level );                   // SteveL #3304: Add 2 scriptevents
+	void						Event_GetMissionStatistic( const char* statisticName ); //               from Zbyl
 
 public:							
 								CLASS_PROTOTYPE( idThread );

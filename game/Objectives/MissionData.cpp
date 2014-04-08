@@ -901,77 +901,96 @@ void CMissionData::Event_MissionEnd()
 
 // ============================== Stats =================================
 
-int CMissionData::GetStatOverall( EComponentType CompType, int AlertLevel )
+// SteveL #3304: Solution by Zbyl. Adding GetStat() function to support new
+//               scriptevents, and converting existing accessors to use it too
+SStat* CMissionData::GetStat( EComponentType CompType, int AlertLevel )
 {
-	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
+	if( CompType < 0 || CompType >= MAX_AICOMP )
 	{
-		return 0;
+		return NULL;
+	}
+
+	if( AlertLevel < 0 || AlertLevel >= MAX_ALERTLEVELS )
+	{
+		return NULL;
 	}
 
 	if( CompType == COMP_ALERT )
 	{
-		return m_Stats.AIAlerts[ AlertLevel ].Overall;
+		return &m_Stats.AIAlerts[ AlertLevel ];
 	}
 
-	// else
-	return m_Stats.AIStats[ CompType ].Overall;
+	return &m_Stats.AIStats[ CompType ];
+}
+
+int CMissionData::GetStatOverall( EComponentType CompType, int AlertLevel )
+{
+	SStat* pStat = GetStat( CompType, AlertLevel );
+	if( pStat == NULL )
+	{
+		return 0;
+	}
+
+	return pStat->Overall;
 }
 
 int CMissionData::GetStatByTeam( EComponentType CompType, int index, int AlertLevel )
 {
-	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
+	SStat* pStat = GetStat( CompType, AlertLevel );
+	if( pStat == NULL )
 	{
 		return 0;
 	}
 
-	if( CompType == COMP_ALERT )
+	if( index < 0 || index >= MAX_TEAMS )
 	{
-		return m_Stats.AIAlerts[ AlertLevel ].ByTeam[index];
+		return 0;
 	}
-	// else
-	return m_Stats.AIStats[ CompType ].ByTeam[index];
+
+	return pStat->ByTeam[index];
 }
 
 int CMissionData::GetStatByType( EComponentType CompType, int index, int AlertLevel )
 {
-	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
+	SStat* pStat = GetStat( CompType, AlertLevel );
+	if( pStat == NULL )
 	{
 		return 0;
 	}
-	if( CompType == COMP_ALERT )
+
+	if( index < 0 || index >= MAX_TYPES )
 	{
-		return m_Stats.AIAlerts[ AlertLevel ].ByType[index];
+		return 0;
 	}
-	// else
-	return m_Stats.AIStats[ CompType ].ByType[index];
+
+	return pStat->ByType[index];
 }
 
 int CMissionData::GetStatByInnocence( EComponentType CompType, int index, int AlertLevel )
 {
-	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
+	SStat* pStat = GetStat( CompType, AlertLevel );
+	if( pStat == NULL )
 	{
 		return 0;
 	}
-	if( CompType == COMP_ALERT )
+
+	if( index < 0 || index > 1 )
 	{
-		return m_Stats.AIAlerts[ AlertLevel ].ByInnocence[index];
+		return 0;
 	}
-	// else
-	return m_Stats.AIStats[ CompType ].ByInnocence[index];
+
+	return pStat->ByInnocence[index];
 }
 
 int CMissionData::GetStatAirborne( EComponentType CompType, int AlertLevel )
 {
-	if( AlertLevel < 0 || AlertLevel > MAX_ALERTLEVELS )
+	SStat* pStat = GetStat( CompType, AlertLevel );
+	if( pStat == NULL )
 	{
 		return 0;
 	}
-	if( CompType == COMP_ALERT )
-	{
-		return m_Stats.AIAlerts[ AlertLevel ].WhileAirborne;
-	}
-	//else
-	return m_Stats.AIStats[ CompType ].WhileAirborne;
+
+	return pStat->WhileAirborne;
 }
 
 void CMissionData::AIDamagedByPlayer( int DamageAmount )
@@ -984,12 +1003,17 @@ void CMissionData::PlayerDamaged( int DamageAmount )
 	m_Stats.DamageReceived += DamageAmount;
 }
 
-int CMissionData::GetDamageDealt( void )
+unsigned int CMissionData::GetTotalGamePlayTime() // SteveL #3304, courtesy Zbyl.
+{
+	return m_Stats.TotalGamePlayTime;
+}
+
+int CMissionData::GetDamageDealt()
 {
 	return m_Stats.DamageDealt;
 }
 
-int CMissionData::GetDamageReceived( void )
+int CMissionData::GetDamageReceived()
 {
 	return m_Stats.DamageReceived;
 }
@@ -997,6 +1021,11 @@ int CMissionData::GetDamageReceived( void )
 int CMissionData::GetHealthReceived()
 {
 	return m_Stats.HealthReceived;
+}
+
+int CMissionData::GetPocketsPicked() // SteveL #3304, courtesy Zbyl
+{
+	return m_Stats.PocketsPicked;
 }
 
 void CMissionData::HealthReceivedByPlayer(int amount)
@@ -1726,6 +1755,61 @@ int CMissionData::GetFoundLoot()
 	return m_Stats.GetFoundLootValue();
 }
 
+// SteveL #3304: Adding Zbyl's new accessors
+int CMissionData::GetMissionLoot()
+{
+	return m_Stats.GetTotalLootInMission();
+}
+
+int CMissionData::GetTotalTimePlayerSeen()
+{
+	return m_Stats.totalTimePlayerSeen;
+}
+
+int CMissionData::GetNumberTimesPlayerSeen()
+{
+	return m_Stats.numberTimesPlayerSeen;
+}
+
+int CMissionData::GetNumberTimesAISuspicious()
+{
+	return m_Stats.AIAlerts[ai::EObservant].Overall + m_Stats.AIAlerts[ai::ESuspicious].Overall;
+}
+
+int CMissionData::GetNumberTimesAISearched()
+{
+	return m_Stats.AIAlerts[ai::ESearching].Overall + m_Stats.AIAlerts[ai::EAgitatedSearching].Overall;
+}
+
+// SteveL #3304: Zbyl's patch. Moving this logic from UpdateStatisticsGUI() so it can be reused for new scriptevents
+float CMissionData::GetSightingScore()
+{
+	int busted = GetNumberTimesPlayerSeen();	// how many times AI saw the player
+	float sightingScore = 5*busted; // alertLevel = 5
+	return sightingScore;
+}
+
+// SteveL #3304: ditto
+float CMissionData::GetStealthScore()
+{
+	float stealthScore = 0;
+
+	for (int i = ai::ESuspicious; i < ai::ECombat; i++) // Adds up alerts from levels 2-4; if you want all alerts, use "1 < ai::EAlertStateNum"
+	{
+		/*key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
+		value = idStr(m_Stats.MaxAlertIndices[i]);
+		gui->SetStateString(prefix + idStr(index++), key + divider + value);*/
+
+		// Increase the stealth factor based on the number of alerted AI (m_Stats.AIAlerts[i].Overall) weighted with the seriousness
+		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
+	}
+
+	float sightingScore = GetSightingScore();
+	stealthScore += sightingScore;
+
+	return stealthScore;
+}
+
 void CMissionData::ChangeFoundLoot(LootType lootType, int amount)
 {
 	m_Stats.FoundLoot[lootType] += amount;
@@ -2400,7 +2484,6 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr key("");
 	idStr value("");
 	idStr sightingBust("");
-	idStr sightingScore("");
 	idStr space(" ");
 
 	// The listdef item (name + _) prefix
@@ -2409,96 +2492,81 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr divider(": ");
 
 	key = common->Translate( "#str_02208" );	// Time
-	value = idStr(GamePlayTimer::TimeToStr(m_Stats.TotalGamePlayTime));
+	value = idStr(GamePlayTimer::TimeToStr(GetTotalGamePlayTime()));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	key = common->Translate( "#str_02209" );	// Damage Dealt
-	value = idStr(m_Stats.DamageDealt) + space + common->Translate( "#str_02210" ) + divider + idStr(m_Stats.DamageReceived);	// and received
+	value = idStr(GetDamageDealt()) + space + common->Translate( "#str_02210" ) + divider + idStr(GetDamageReceived());	// and received
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	/*key = "Damage Received"; 
-	value = idStr(m_Stats.DamageReceived);
+	value = idStr(GetDamageReceived());
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);*/
 
 	key = common->Translate( "#str_02211" );	// Health Restored
-	value = idStr(m_Stats.HealthReceived);
+	value = idStr(GetHealthReceived());
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	key = common->Translate( "#str_02212" );	// Pockets Picked 
-	value = idStr(m_Stats.PocketsPicked);
+	value = idStr(GetPocketsPicked());
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02213" );	// Loot Acquired
-	value = idStr(m_Stats.GetFoundLootValue()) + common->Translate( "#str_02214" ) + m_Stats.GetTotalLootInMission();
+	value = idStr(GetFoundLoot()) + common->Translate( "#str_02214" ) + GetMissionLoot();
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line
 
 	key = common->Translate( "#str_02215" );	// Killed by the Player
-	value = idStr(m_Stats.AIStats[COMP_KILL].Overall);
+	value = idStr(GetStatOverall(COMP_KILL));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02216" );	// KOed by the Player
-	value = idStr(m_Stats.AIStats[COMP_KO].Overall);
+	value = idStr(GetStatOverall(COMP_KO));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	key = common->Translate( "#str_02217" );	// Bodies found
-	value = idStr(m_Stats.AIStats[COMP_AI_FIND_BODY].Overall);
+	value = idStr(GetStatOverall(COMP_AI_FIND_BODY));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
 	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
 
 	gui->SetStateString(prefix + idStr(index++), common->Translate( "#str_02218" ) ); 	// Alerts:
 	
-	float stealthScore = 0;
+	float sightingScore = GetSightingScore();   // SteveL #3304:
+	float stealthScore = GetStealthScore();     //    Zbyl patch
 
-	for (int i = 2; i < 5; i++) // Adds up alerts from levels 2-4; if you want all alerts, use "1 < ai::EAlertStateNum"
-	{
-		/*key = idStr("AI alerted to level '") + ai::AlertStateNames[i] + "'";
-		value = idStr(m_Stats.MaxAlertIndices[i]);
-		gui->SetStateString(prefix + idStr(index++), key + divider + value);*/
-
-		// Increase the stealth factor based on the number of alerted AI (m_Stats.AIAlerts[i].Overall) weighted with the seriousness
-		stealthScore += ( i - 1 ) * m_Stats.AIAlerts[i].Overall;
-	}
-	
 	// grayman #2887 - new way of dealing with number of times the player's been seen
 
-	int timeSeen = m_Stats.totalTimePlayerSeen;	// the amount of time the player was seen
-	int busted = m_Stats.numberTimesPlayerSeen;	// how many times AI saw the player
+	int timeSeen = GetTotalTimePlayerSeen();	// the amount of time the player was seen
+	int busted = GetNumberTimesPlayerSeen();	// how many times AI saw the player
 
 	int secondsSeen = timeSeen/1000; // drop fractional seconds
 	int hoursSeen = secondsSeen/(60*60);
 	int minutesSeen = (secondsSeen - hoursSeen*60*60) / 60;
 	secondsSeen = secondsSeen - hoursSeen*60*60 - minutesSeen*60;
-
-	if ( busted > 0 )
+	
+	// SteveL #3304: Refactored in Zbyl patch
+	if ( busted == 0 )  
 	{
-		int add2Score = 5*busted; // alertLevel = 5
-		stealthScore += add2Score;
-		sightingScore = idStr(add2Score);
-		idStr times;
-		if ( busted == 1 )
-		{
-			sightingBust = va( common->Translate( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
-		}
-		else
-		{
-			sightingBust = va( common->Translate( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
-		}
+		sightingBust = common->Translate( "#str_02221" );	// 0 Sightings.
+	}
+	else if ( busted == 1 )
+	{
+		sightingBust = va( common->Translate( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
 	}
 	else
 	{
-		sightingBust = common->Translate( "#str_02221" );	// 0 Sightings.
-		sightingScore = "0";
+		sightingBust = va( common->Translate( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
 	}
 
-	value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + space + common->Translate("#str_02223") + ", " +			// Suspicious
-		idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + space + common->Translate("#str_02224") + ", " + sightingBust;	// Searches
+	value = idStr(GetNumberTimesAISuspicious()) + space + common->Translate("#str_02223") + ", " +			// Suspicious
+		idStr(GetNumberTimesAISearched()) + space + common->Translate("#str_02224") + ", " +				// Searches
+		sightingBust;
 	gui->SetStateString(prefix + idStr(index++), value);
 	
 	key = common->Translate( "#str_02225" );	// Stealth Score
@@ -2507,7 +2575,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	key = common->Translate( "#str_02226" );	// Difficulty Level
-	value = gameLocal.m_MissionData->GetDifficultyName(difficultyLevel); // grayman #3292 - get from mission stats, not from difficulty manager
+	value = GetDifficultyName(difficultyLevel); // grayman #3292 - get from mission stats, not from difficulty manager
 	gui->SetStateString(prefix + idStr(index), key + divider + value);
 	
 	/*key = "Frames";
@@ -2531,19 +2599,19 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	key = idStr("0");
 	gui->SetStateString(prefix + idStr(index++), key);
 
-	key = idStr(m_Stats.AIAlerts[2].Overall);  
+	key = idStr(GetStatOverall(COMP_ALERT, ai::ESuspicious));
 	gui->SetStateString(prefix + idStr(index++), key);
 		
-	key = idStr(m_Stats.AIAlerts[3].Overall * 2);  
+	key = idStr(GetStatOverall(COMP_ALERT, ai::ESearching) * 2);
 	gui->SetStateString(prefix + idStr(index++), key);
 
-	key = idStr(m_Stats.AIAlerts[4].Overall * 3);  
+	key = idStr(GetStatOverall(COMP_ALERT, ai::EAgitatedSearching) * 3);
 	gui->SetStateString(prefix + idStr(index++), key);
 	
-	key = sightingScore;  
+	key = idStr(sightingScore);
 	gui->SetStateString(prefix + idStr(index++), key);
 	
-	key = idStr(stealthScore);  
+	key = idStr(stealthScore);
 	gui->SetStateString(prefix + idStr(index++), key);
 	
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
@@ -2571,16 +2639,16 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	gui->SetStateString(prefix + idStr(index++), " "); // Empty line
 
 	idStr alert = idStr( common->Translate( "#str_02234" ) );	// Alert
-	key = alert + " 1." + space + idStr(m_Stats.AIAlerts[1].Overall) + " * 0:";   
+	key = alert + " 1." + space + idStr(GetStatOverall(COMP_ALERT, ai::EObservant)) + " * 0:";
 	gui->SetStateString(prefix + idStr(index++), key);
 	
-	key = alert + " 2." + space + idStr(m_Stats.AIAlerts[2].Overall) + " * 1:";
+	key = alert + " 2." + space + idStr(GetStatOverall(COMP_ALERT, ai::ESuspicious)) + " * 1:";
 	gui->SetStateString(prefix + idStr(index++), key);
 
-	key = alert + " 3." + space + idStr(m_Stats.AIAlerts[3].Overall) + " * 2:";
+	key = alert + " 3." + space + idStr(GetStatOverall(COMP_ALERT, ai::ESearching)) + " * 2:";
 	gui->SetStateString(prefix + idStr(index++), key);
 
-	key = alert + " 4." + space + idStr(m_Stats.AIAlerts[4].Overall) + " * 3:";
+	key = alert + " 4." + space + idStr(GetStatOverall(COMP_ALERT, ai::EAgitatedSearching)) + " * 3:";
 	gui->SetStateString(prefix + idStr(index++), key);
 	
 	key = alert + " 5." + space + idStr(busted) + " * 5:";
@@ -2588,10 +2656,6 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	key = common->Translate( "#str_02235" );			// Stealth Score Total
 	gui->SetStateString(prefix + idStr(index++), key + divider);
-	
-	//key = "Alerts";
-	//value = idStr(m_Stats.AIAlerts[1].Overall + m_Stats.AIAlerts[2].Overall) + " Minor, " + idStr(m_Stats.AIAlerts[3].Overall + m_Stats.AIAlerts[4].Overall) + " Searches, " + idStr(m_Stats.AIAlerts[5].Overall) + " Sightings";
-	//gui->SetStateString(prefix + idStr(index++), key + divider + value);	
 	
 }
 

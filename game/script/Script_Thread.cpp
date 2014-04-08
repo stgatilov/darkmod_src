@@ -227,6 +227,28 @@ const idEventDef EV_GetMainAmbientLight("getMainAmbientLight", EventArgs(), 'e',
 
 // tels #3271 - get the difficulty level during this mission
 const idEventDef EV_GetDifficultyLevel("getDifficultyLevel", EventArgs(), 'd', "Returns 0 (Easy), 1 (Medium) or 2 (Hard), depending on the difficulty level of the current mission.");
+// SteveL #3304 - 2 scripting events to get mission statistics by Zbyl
+const idEventDef EV_GetDifficultyName("getDifficultyName", EventArgs('d', "difficultyLevel", "0 (Easy), 1 (Medium), 2 (Hard)"), 's', "Returns the (translated) name of the difficulty level passed as the argument.");
+const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "statisticName",
+	":Can be one of (case insensitive):\n"
+	"\tgamePlayTime: gameplay time in seconds\n"
+	"\tdamageDealt: damage dealt to enemies\n"
+	"\tdamageReceived: damage received by player\n"
+	"\thealthReceived: health received by player\n"
+	"\tpocketsPicked: pockets picked by player\n"
+	"\tfoundLoot: loot found by player\n"
+	"\tmissionLoot: total loot available in mission\n"
+	"\ttotalTimePlayerSeen: total time the player was seen by enemies in seconds\n"
+	"\tnumberTimesPlayerSeen: number of times player was seen by enemies\n"
+	"\tnumberTimesAISuspicious: number of times AI was 'observant' or 'suspicious'\n"
+	"\tnumberTimesAISearched: number of times AI was 'investigating' or 'searching'\n"
+	"\tsightingScore: sighting score (number of times player was seen * weight)\n"
+	"\tstealthScore: stealth score (sighting score + alerts * weights)\n"
+	"\tkilledByPlayer: number of enemies killed by player\n"
+	"\tknockedOutByPlayer: number of enemies knocked out by player\n"
+	"\tbodiesFound: number of bodies found by enemies"
+	), 'f', "Returns current mission statistic.");
+
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -343,7 +365,10 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_CanPlant,	 			idThread::Event_CanPlant )	// grayman #2787
 
 	EVENT( EV_GetMainAmbientLight,			idThread::Event_GetMainAmbientLight )	// grayman #3132
+
 	EVENT( EV_GetDifficultyLevel,			idThread::Event_GetDifficultyLevel )	// tels	   #3271
+	EVENT( EV_GetDifficultyName,			idThread::Event_GetDifficultyName )		// SteveL #3304: 2 scriptevents
+	EVENT( EV_GetMissionStatistic,			idThread::Event_GetMissionStatistic )	//               from Zbyl
 
 	END_CLASS
 
@@ -2243,4 +2268,136 @@ void idThread::Event_GetDifficultyLevel()
 {
 	int level = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	idThread::ReturnInt(level);
+}
+
+// SteveL #3304: 2 new scriptevents from Zbyl
+void idThread::Event_GetDifficultyName( int level )
+{
+	if ( level < 0 || level >= DIFFICULTY_COUNT )
+	{
+		gameLocal.Warning("Invalid difficulty level passed to getDifficultyName(): %d", level);
+		idThread::ReturnString("");
+		return;
+	}
+
+	idStr difficultyName = gameLocal.m_DifficultyManager.GetDifficultyName(level);
+	idThread::ReturnString(difficultyName);
+}
+
+void idThread::Event_GetMissionStatistic( const char* statisticName )
+{
+	if (idStr::Icmp("gamePlayTime", statisticName) == 0)
+	{
+		unsigned int time = gameLocal.m_GamePlayTimer.GetTimeInSeconds();
+		idThread::ReturnFloat(time);
+		return;
+	}
+
+	if (idStr::Icmp("damageDealt", statisticName) == 0)
+	{
+		int damageDealt = gameLocal.m_MissionData->GetDamageDealt();
+		idThread::ReturnFloat(damageDealt);
+		return;
+	}
+
+	if (idStr::Icmp("damageReceived", statisticName) == 0)
+	{
+		int damageReceived = gameLocal.m_MissionData->GetDamageReceived();
+		idThread::ReturnFloat(damageReceived);
+		return;
+	}
+
+	if (idStr::Icmp("healthReceived", statisticName) == 0)
+	{
+		int healthReceived = gameLocal.m_MissionData->GetHealthReceived();
+		idThread::ReturnFloat(healthReceived);
+		return;
+	}
+
+	if (idStr::Icmp("pocketsPicked", statisticName) == 0)
+	{
+		int pocketsPicked = gameLocal.m_MissionData->GetPocketsPicked();
+		idThread::ReturnFloat(pocketsPicked);
+		return;
+	}
+
+	if (idStr::Icmp("foundLoot", statisticName) == 0)
+	{
+		int foundLoot = gameLocal.m_MissionData->GetFoundLoot();
+		idThread::ReturnFloat(foundLoot);
+		return;
+	}
+
+	if (idStr::Icmp("missionLoot", statisticName) == 0)
+	{
+		int missionLoot = gameLocal.m_MissionData->GetMissionLoot();
+		idThread::ReturnFloat(missionLoot);
+		return;
+	}
+
+	if (idStr::Icmp("totalTimePlayerSeen", statisticName) == 0)
+	{
+		int timeSeen = gameLocal.m_MissionData->GetTotalTimePlayerSeen();
+		idThread::ReturnFloat(timeSeen / 1000.0); // convert to seconds
+		return;
+	}
+
+	if (idStr::Icmp("numberTimesPlayerSeen", statisticName) == 0)
+	{
+		int timesSeen = gameLocal.m_MissionData->GetNumberTimesPlayerSeen();
+		idThread::ReturnFloat(timesSeen);
+		return;
+	}
+
+	if (idStr::Icmp("numberTimesAISuspicious", statisticName) == 0)
+	{
+		int timesSuspicious = gameLocal.m_MissionData->GetNumberTimesAISuspicious();
+		idThread::ReturnFloat(timesSuspicious);
+		return;
+	}
+
+	if (idStr::Icmp("numberTimesAISearched", statisticName) == 0)
+	{
+		int timesSearched = gameLocal.m_MissionData->GetNumberTimesAISearched();
+		idThread::ReturnFloat(timesSearched);
+		return;
+	}
+
+	if (idStr::Icmp("sightingScore", statisticName) == 0)
+	{
+		float sightingScore = gameLocal.m_MissionData->GetSightingScore();
+		idThread::ReturnFloat(sightingScore);
+		return;
+	}
+
+	if (idStr::Icmp("stealthScore", statisticName) == 0)
+	{
+		float stealthScore = gameLocal.m_MissionData->GetStealthScore();
+		idThread::ReturnFloat(stealthScore);
+		return;
+	}
+
+	if (idStr::Icmp("killedByPlayer", statisticName) == 0)
+	{
+		int killed = gameLocal.m_MissionData->GetStatOverall(COMP_KILL);
+		idThread::ReturnFloat(killed);
+		return;
+	}
+
+	if (idStr::Icmp("knockedOutByPlayer", statisticName) == 0)
+	{
+		int knockedOut = gameLocal.m_MissionData->GetStatOverall(COMP_KO);
+		idThread::ReturnFloat(knockedOut);
+		return;
+	}
+
+	if (idStr::Icmp("bodiesFound", statisticName) == 0)
+	{
+		int bodiesFound = gameLocal.m_MissionData->GetStatOverall(COMP_AI_FIND_BODY);
+		idThread::ReturnFloat(bodiesFound);
+		return;
+	}
+
+	gameLocal.Warning("Invalid statistic name passed to getMissionStatistic(): %s", statisticName);
+	idThread::ReturnFloat(0.0f);
 }
