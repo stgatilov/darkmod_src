@@ -153,51 +153,63 @@ bool SwitchOnLightState::GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, 
 	trans.NormalizeFast();
 
 	const idVec3& switchOrigin = mySwitch->GetPhysics()->GetOrigin();
-
-	goal = switchOrigin - _standOff * trans;
-
-	// Is there a path to the target?
-
 	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
 	int areaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
-	int goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
-	aasPath_t path;
 
-	if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // first attempt
+	// grayman #3648 - the following code has a problem sometimes finding
+	// the AAS area of the goal spot when it's up by the switch. Push the
+	// goal spot down to the floor and then try to find the AAS area.
+	//
+	// There needs to be LOS from the switch to the goal point. This should
+	// prevent AI from operating a switch through a wall.
+
+	trace_t result;
+
+	bool pointFound = false;
+	for ( int i = 0 ; i < 4, !pointFound ; i++ )
 	{
-		// not reachable, try alternate target positions at the sides and behind the switch
-
-		trans *= -1;
-		goal = switchOrigin - _standOff * trans;
-		goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
-
-		if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // second attemp
+		switch (i)
 		{
+		case 0:
+			break;
+		case 1:
+		case 3:
+			trans *= -1;
+			break;
+		case 2:
 			const idVec3& gravity = owner->GetPhysics()->GetGravityNormal();
 			trans = trans.Cross(gravity);
-			goal = switchOrigin - _standOff * trans;
-			goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
+			break;
+		}
 
-			if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // third attempt
+		goal = switchOrigin - _standOff * trans;
+		if (!gameLocal.clip.TracePoint(result, switchOrigin, goal, MASK_OPAQUE, mySwitch))
+		{
+			// The switch can "see" the goal point.
+			// Is there a path to the target?
+
+			idVec3 bottomPoint = goal;
+			bottomPoint.z -= 256;
+			gameLocal.clip.TracePoint(result, goal, bottomPoint, MASK_OPAQUE, NULL); // trace down
+
+			// Find the AAS area for the spot the trace hit (assume it's the floor)
+
+			int goalAreaNum = owner->PointReachableAreaNum(result.endpos, 1.0f);
+			aasPath_t path;
+
+			if (owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, result.endpos, owner))
 			{
-				trans *= -1;
-				goal = switchOrigin - _standOff * trans;
-				goalAreaNum = owner->PointReachableAreaNum(goal, 1.0f);
-
-				if (!owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, goal, owner)) // fourth attempt
-				{
-					return false;
-				}
+				// success
+				pointFound = true;
 			}
 		}
 	}
 
-	// Find the floor at this point
+	if (!pointFound)
+	{
+		return false;
+	}
 
-	idVec3 bottomPoint = goal;
-	bottomPoint.z -= 256;
-	trace_t result;
-	gameLocal.clip.TracePoint(result, goal, bottomPoint, MASK_OPAQUE, NULL); // trace down
 	float height = switchOrigin.z - result.endpos.z;
 
 	// adjust _standOff based on height of switch off the floor
