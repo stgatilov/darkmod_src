@@ -81,6 +81,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	{
 		// Alert index is too high, switch to the higher State
 		owner->Event_CloseHidingSpotSearch();
+		owner->GetMemory().combatState = -1; // grayman #3507
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
 		return false;
 	}
@@ -93,6 +94,63 @@ void AgitatedSearchingState::CalculateAlertDecreaseRate(idAI* owner)
 {
 	float alertTime = owner->atime4 + owner->atime4_fuzzyness * (gameLocal.random.RandomFloat() - 0.5);
 	_alertLevelDecreaseRate = (owner->thresh_5 - owner->thresh_4) / alertTime;
+}
+
+// grayman #3507
+
+void AgitatedSearchingState::DrawWeapon(idAI* owner)
+{
+	// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
+	// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
+	// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
+	// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
+
+	// grayman #3549 - force a melee draw if the alert is near and we have a melee weapon
+
+	idVec3 alertSpot = owner->GetMemory().alertPos;
+	idVec3 ownerSpot = owner->GetPhysics()->GetOrigin();
+	alertSpot.z = ownerSpot.z; // ignore vertical delta
+	float dist2Alert = (alertSpot - ownerSpot).LengthFast();
+	bool inMeleeRange = ( dist2Alert <= 3*owner->GetMeleeRange());
+	bool hasMeleeWeapon2Draw = ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0");
+	bool hasRangedWeapon2Draw = ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0");
+	bool drawMeleeWeapon = false;
+	bool drawRangedWeapon = false;
+
+	_drawEndTime = gameLocal.time;
+	if (inMeleeRange)
+	{
+		if (hasMeleeWeapon2Draw)
+		{
+			drawMeleeWeapon = true;
+		}
+		else if (hasRangedWeapon2Draw)
+		{
+			drawRangedWeapon = true;
+		}
+	}
+	else // not inside melee range
+	{
+		if ( hasRangedWeapon2Draw )
+		{
+			drawRangedWeapon = true;
+		}
+		else if ( hasMeleeWeapon2Draw )
+		{
+			drawMeleeWeapon = true;
+		}
+	}
+
+	if (drawMeleeWeapon)
+	{
+		owner->DrawWeapon(COMBAT_MELEE);
+		_drawEndTime += MAX_DRAW_DURATION;// grayman #3563 - safety net when drawing a weapon
+	}
+	else if (drawRangedWeapon)
+	{
+		owner->DrawWeapon(COMBAT_RANGED);
+		_drawEndTime += MAX_DRAW_DURATION;// grayman #3563 - safety net when drawing a weapon
+	}
 }
 
 void AgitatedSearchingState::Init(idAI* owner)
@@ -193,34 +251,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 		);
 	}
 	
-	// grayman #3331 - draw your ranged weapon if you have one, otherwise draw your melee weapon.
-	// Note that either weapon could be drawn, but if we default to melee, AI with ranged and
-	// melee weapons will draw their melee weapon, and we'll never see ranged weapons get drawn.
-	// Odds are that the enemy is nowhere nearby anyway, since we're just searching.
-
-	// grayman #3549 - force a melee draw if the alert is near and we have a melee weapon
-
-	idVec3 alertSpot = memory.alertPos;
-	idVec3 ownerSpot = owner->GetPhysics()->GetOrigin();
-	alertSpot.z = ownerSpot.z; // ignore vertical delta
-	float dist2Alert = (alertSpot - ownerSpot).LengthFast();
-	bool inMeleeRange = ( dist2Alert <= 3*owner->GetMeleeRange());
-
-	_drawEndTime = gameLocal.time;
-	if ( inMeleeRange && ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
-	{
-		owner->DrawWeapon(COMBAT_MELEE);
-
-		// grayman #3563 - safety net when drawing a weapon
-		_drawEndTime += MAX_DRAW_DURATION;
-	}
-	else if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
-	{
-		owner->DrawWeapon(COMBAT_RANGED);
-
-		// grayman #3563 - safety net when drawing a weapon
-		_drawEndTime += MAX_DRAW_DURATION;
-	}
+	DrawWeapon(owner); // grayman #3507
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
@@ -272,20 +303,7 @@ void AgitatedSearchingState::Think(idAI* owner)
 		if ( !owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED) )
 		{
 			_drawEndTime = gameLocal.time;
-			if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
-			{
-				owner->DrawWeapon(COMBAT_RANGED);
-
-				// grayman #3563 - safety net when drawing a weapon
-				_drawEndTime += MAX_DRAW_DURATION;
-			}
-			else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
-			{
-				owner->DrawWeapon(COMBAT_MELEE);
-
-				// grayman #3563 - safety net when drawing a weapon
-				_drawEndTime += MAX_DRAW_DURATION;
-			}
+			DrawWeapon(owner); // grayman #3507
 		}
 	}
 }

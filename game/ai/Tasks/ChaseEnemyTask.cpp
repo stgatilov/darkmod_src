@@ -141,46 +141,18 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 		// Enemy position itself is not reachable, try to find a position within melee range around the enemy
 		if (_reachEnemyCheck < 4)
 		{
-			idVec3 enemyDirection = owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin();
-			enemyDirection.z = 0;
-
-			// test direction rotates 90° each time the check is performed
-			enemyDirection.NormalizeFast();
-			float angle = _reachEnemyCheck * 90;
-			float sinAngle = idMath::Sin(angle);
-			float cosAngle = idMath::Cos(angle);
-			idVec3 targetDirection = enemyDirection;
-			targetDirection.x = enemyDirection.x * cosAngle + enemyDirection.y * sinAngle;
-			targetDirection.y = enemyDirection.y * cosAngle + enemyDirection.x * sinAngle;
-
-			idVec3 targetPoint = enemy->GetPhysics()->GetOrigin() 
-					+ (targetDirection * owner->GetMeleeRange());
-
-			// grayman #3331 - move 10 unit adjustment to here from below
-			idVec3 forward = owner->viewAxis.ToAngles().ToForward();
-			targetPoint -= 10 * forward;
-
-			idVec3 bottomPoint = targetPoint;
-			bottomPoint.z -= 70;
-			
-			trace_t result;
-			if (gameLocal.clip.TracePoint(result, targetPoint, bottomPoint, MASK_OPAQUE, NULL))
+			// grayman #3507 - new way
+			idVec3 targetPoint; 
+			if (owner->FindAttackPosition(_reachEnemyCheck, enemy, targetPoint, COMBAT_MELEE))
 			{
-				targetPoint.z = result.endpos.z + 1;
-
-				// grayman #3331 - these 2 lines were in the wrong place, and could push targetPoint out into space.
-				// Moved above, before the trace, where the space below would be detected, making the point unreachable.
-//				idVec3 forward = owner->viewAxis.ToAngles().ToForward();
-//				targetPoint -= 10 * forward;
-
 				if (!owner->MoveToPosition(targetPoint))
 				{
-					_reachEnemyCheck ++;
+					_reachEnemyCheck++;
 				}
 			}
 			else
 			{
-				_reachEnemyCheck ++;
+				_reachEnemyCheck++;
 			}
 		}
 		else
@@ -235,7 +207,8 @@ bool ChaseEnemyTask::Perform(Subsystem& subsystem)
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Destination unreachable!\r");
 		//gameLocal.Printf("Destination unreachable... \n");
-		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
+		owner->GetMind()->PushState(STATE_UNREACHABLE_TARGET); // grayman #3507 - push instead of switch
+		//owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 		return true;
 	}
 

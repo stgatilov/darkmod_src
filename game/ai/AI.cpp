@@ -3702,6 +3702,80 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 	return true;
 }
 
+
+/*
+=============================
+idAI::FindAttackPosition
+=============================
+*/
+
+// grayman #3507 - This checks for a reachable position within combat range
+
+bool idAI::FindAttackPosition(int pass, idActor* enemy, idVec3& targetPoint, ECombatType type)
+{
+	if (enemy == NULL)
+	{
+		return false;
+	}
+
+	int areaNum = PointReachableAreaNum(GetPhysics()->GetOrigin(), 1.0f);
+
+	if ((type == COMBAT_MELEE) || ((type == COMBAT_NONE) && (GetNumMeleeWeapons() > 0) ) )
+	{
+		idVec3 attackPos = enemy->GetPhysics()->GetOrigin();
+		float offset = melee_range + 10;
+		switch (pass)
+		{
+		case 0:
+			attackPos.x += offset;
+			break;
+		case 1:
+			attackPos.y += offset;
+			break;
+		case 2:
+			attackPos.x -= offset;
+			break;
+		case 3:
+			attackPos.y -= offset;
+			break;
+		}
+
+		idVec3 bottomPoint = attackPos;
+		bottomPoint.z -= 70;
+	
+		trace_t result;
+		if (gameLocal.clip.TracePoint(result, attackPos, bottomPoint, MASK_OPAQUE, NULL))
+		{
+			attackPos.z = result.endpos.z + 1;
+			int targetAreaNum = PointReachableAreaNum(attackPos, 1.0f);
+			aasPath_t path;
+
+			if (PathToGoal(path, areaNum, GetPhysics()->GetOrigin(), targetAreaNum, attackPos, this))
+			{
+				targetPoint = attackPos;
+				return true;
+			}
+		}
+	}
+
+	if ( (type == COMBAT_RANGED) || ( (type == COMBAT_NONE) && ( GetNumRangedWeapons() > 0 ) ) )
+	{
+		aasGoal_t goal = GetPositionWithinRange(enemy->GetEyePosition());
+		if (goal.areaNum != -1)
+		{
+			// Found a suitable attack position, can we get there?
+			aasPath_t path;
+			if (PathToGoal(path, areaNum, GetPhysics()->GetOrigin(), goal.areaNum, goal.origin, this))
+			{
+				targetPoint = goal.origin;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 /*
 =====================
 idAI::GetPositionWithinRange
@@ -4111,7 +4185,7 @@ bool idAI::LookForCover(aasGoal_t& hideGoal,idEntity *hideFromEnt, const idVec3 
 	obstacle.absBounds = hideFromEnt->GetPhysics()->GetAbsBounds();
 
 	idAASFindCover findCover( this, hideFromEnt, hideFromPos );
-	return aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, spawnArgs.GetInt("taking_cover_max_cost") );
+	return aas->FindNearestGoal( hideGoal, areaNum, org, hideFromPos, travelFlags, &obstacle, 1, findCover, 2*spawnArgs.GetInt("taking_cover_max_cost") );
 }
 
 /*
@@ -7087,7 +7161,7 @@ void idAI::SetEnemyPosition()
 		{
 			// We have a valid enemy area number
 
-			// Get the own origin and area number
+			// Get own origin and area number
 			const idVec3 &org = physicsObj.GetOrigin();
 			areaNum = PointReachableAreaNum(org);
 
@@ -7190,27 +7264,37 @@ bool idAI::EntityInAttackCone(idEntity* ent)
 
 bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 {
-	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0) 
+	if ( (entity == NULL) || entity->IsKnockedOut() || (entity->health <= 0) )
+	{
 		return false;
+	}
 
 	if (combatType == COMBAT_MELEE)
 	{
 		return TestMelee();
 	}
-	else if (combatType == COMBAT_RANGED)
+
+	if (combatType == COMBAT_RANGED)
 	{
 		return TestRanged();
 	}
-	else
+
+	// COMBAT_NONE
+
+	// grayman #3507 - allow for having both ranged and melee weapons
+
+	if (GetNumRangedWeapons() > 0)
 	{
-		if (GetNumRangedWeapons() > 0)
+		bool result = TestRanged();
+		if (result)
 		{
-			return TestRanged();
+			return true;
 		}
-		else if (GetNumMeleeWeapons() > 0)
-		{
-			return TestMelee();
-		}
+	}
+
+	if (GetNumMeleeWeapons() > 0)
+	{
+		return TestMelee();
 	}
 
 	return false;
@@ -7218,28 +7302,29 @@ bool idAI::CanHitEntity(idActor* entity, ECombatType combatType)
 
 bool idAI::WillBeAbleToHitEntity(idActor* entity, ECombatType combatType)
 {
-	if (entity == NULL || entity->IsKnockedOut() || entity->health <= 0) 
+	if ( (entity == NULL) || entity->IsKnockedOut() || (entity->health <= 0) )
+	{
 		return false;
+	}
 
 	if (combatType == COMBAT_MELEE)
 	{
 		return TestMeleeFuture();
 	}
-	else if (combatType == COMBAT_RANGED)
+
+	if (combatType == COMBAT_RANGED)
 	{
 		// not supported for ranged combat
 		return false;
 	}
-	else
+
+	// COMBAT_NONE
+
+	// grayman #3507 - allow for having both ranged and melee weapons
+
+	if (GetNumMeleeWeapons() > 0)
 	{
-		if (GetNumRangedWeapons() > 0)
-		{
-			return false;
-		}
-		else if (GetNumMeleeWeapons() > 0)
-		{
-			return TestMeleeFuture();
-		}
+		return TestMeleeFuture();
 	}
 
 	return false;
@@ -7638,11 +7723,12 @@ bool idAI::SetEnemy(idActor* newEnemy)
 		// lastVisibleReachableEnemyPosition is set in ANY CASE by this method
 		SetEnemyPosition();
 
-		// greebo: This looks suspicious. It overwrites REACHABLE and
+		// greebo: This looks suspicious. It overwrites REACHABLE
 		// and VISIBLEREACHABLE with VISIBLE enemy position,
 		// regardless of what happened before. WTF? TODO
-		lastReachableEnemyPos = lastVisibleEnemyPos;
-		lastVisibleReachableEnemyPos = lastReachableEnemyPos;
+		// grayman #3507 - let's assume SetEnemyPosition() did the right thing
+		//lastReachableEnemyPos = lastVisibleEnemyPos;
+		//lastVisibleReachableEnemyPos = lastReachableEnemyPos;
 
 		// Get the area number of the enemy
 		enemyAreaNum = PointReachableAreaNum(lastReachableEnemyPos, 1.0f);

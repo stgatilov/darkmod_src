@@ -489,6 +489,8 @@ public:
 	idEntityPtr<idEntity> attacker;	// grayman #3679 - who attacked me
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?
 
+	int combatState;				// grayman #3507 - use when returning to Combat
+
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;
 	// This maps AAS area numbers to door info structures

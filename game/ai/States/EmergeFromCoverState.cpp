@@ -70,6 +70,14 @@ void EmergeFromCoverState::Think(idAI* owner)
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
+	// grayman #3507 - if alerted, drop back to Combat
+	if (owner->AI_ALERTED && owner->AI_ENEMY_VISIBLE)
+	{
+		// terminate State when the AI is alerted
+		owner->GetMind()->EndState();
+		return;
+	}
+
 	if (owner->AI_MOVE_DONE 
 		&& !owner->AI_DEST_UNREACHABLE 
 		&& (owner->GetPhysics()->GetOrigin() - memory.positionBeforeTakingCover).LengthFast() < 50)

@@ -32,6 +32,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "LostTrackOfEnemyState.h"
 #include "EmergeFromCoverState.h"
 #include "../Library.h"
+#include "UnreachableTargetState.h"
 
 namespace ai
 {
@@ -83,10 +84,58 @@ void StayInCoverState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void StayInCoverState::Think(idAI* owner)
 {
-	if ((owner->AI_ENEMY_VISIBLE || owner->AI_TACTALERT) && owner->GetMind()->PerformCombatCheck())
+	// grayman #3507 - still have an enemy?
+	idActor* enemy = owner->GetEnemy();
+	if ( enemy == NULL )
 	{
-		// Get back to combat if we are done moving to cover and encounter the enemy
+		owner->GetMind()->SwitchState(STATE_LOST_TRACK_OF_ENEMY);
+		return;
+	}
+
+	// grayman #3507 - is enemy dead or unconscious?
+	if ( enemy->AI_DEAD || enemy->IsKnockedOut() )
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("StayInCoverState::Think (%s) enemy dead or unconscious, come out of hiding\r",owner->GetName());
 		owner->GetMind()->EndState();
+		return;
+	}
+
+	// grayman #3507 - return to Combat if bumped by an enemy
+
+	bool combatCheck = owner->GetMind()->PerformCombatCheck();
+	if ( owner->AI_TACTALERT )
+	{
+		if ( owner->GetTactEnt() == enemy )
+		{
+			// Get back to combat if we are done moving to cover and encounter the enemy
+			owner->GetMind()->EndState();
+			return;
+		}
+	}
+
+	// grayman #3507 - try a simple path to the enemy
+
+	if ( owner->AI_ENEMY_VISIBLE && combatCheck )
+	{
+		// grayman #3507 - Can I reach the enemy?
+
+		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin();
+		int enemyAreaNum = owner->PointReachableAreaNum(enemyOrigin, 1.0f);
+
+		if (enemyAreaNum > 0)
+		{
+			idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+			int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+			aasPath_t path;
+
+			if (owner->PathToGoal(path, ownerAreaNum, ownerOrigin, enemyAreaNum, enemyOrigin, owner))
+			{
+				// Get back to combat if we can reach the enemy
+				owner->GetMind()->EndState();
+				return;
+			}
+		}
+		owner->GetMind()->SwitchState(STATE_UNREACHABLE_TARGET);
 		return;
 	}
 

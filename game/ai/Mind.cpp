@@ -373,9 +373,10 @@ bool Mind::PerformCombatCheck()
 		memory.alertType = EAlertTypeEnemy;
 		idActor* enemy = owner->GetEnemy();
 
-		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemy->GetPhysics()->GetOrigin(), NULL ); // grayman #3424  
-		memory.lastEnemyPos = enemy->GetPhysics()->GetOrigin();
-		memory.posEnemySeen = enemy->GetPhysics()->GetOrigin();	// grayman #2903
+		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
+		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, NULL ); // grayman #3424  
+		memory.lastEnemyPos = enemyOrigin;
+		memory.posEnemySeen = enemyOrigin;	// grayman #2903
 		
 		return true; // entered combat mode
 	}

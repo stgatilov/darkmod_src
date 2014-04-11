@@ -117,7 +117,7 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 		// try to find an attack position using the AAS system
 		if ( ( waitState != "ranged_attack" ) && (!_hasGoal || owner->AI_MOVE_DONE) )
 		{
-			// Can't reach the last visible enemy position,find another position within range
+			// Can't reach the last visible enemy position, so find another position within range
 			aasGoal_t goal = owner->GetPositionWithinRange(enemy->GetEyePosition());
 			if (goal.areaNum != -1)
 			{

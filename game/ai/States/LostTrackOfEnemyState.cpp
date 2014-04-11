@@ -69,7 +69,20 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	}
 
 	// Setup the search parameters
-	memory.alertPos = owner->lastVisibleReachableEnemyPos;
+
+	// grayman #3507 - if there's no 'lastVisibleReachableEnemyPos',
+	// use 'lastVisibleEnemyPos' instead
+
+	idVec3 v3Zero;
+	v3Zero.Zero();
+	if (owner->lastVisibleReachableEnemyPos != v3Zero)
+	{
+		memory.alertPos = owner->lastVisibleReachableEnemyPos;
+	}
+	else
+	{
+		memory.alertPos = owner->lastVisibleEnemyPos;
+	}
 	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 	memory.alertSearchExclusionVolume.Zero();

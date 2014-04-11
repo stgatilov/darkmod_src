@@ -79,6 +79,8 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task.\r");
 		subsystem.FinishTask();
 	}
+
+	//_exitTime = 0; // grayman #3507
 }
 
 bool InvestigateSpotTask::Perform(Subsystem& subsystem)

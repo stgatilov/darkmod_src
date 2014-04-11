@@ -184,6 +184,18 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	// grayman #3507 - if we were already in combat, and had to pause to
+	// deal with an unreachable enemy, and have now come back, our
+	// previous state is stored in memory. Use that to skip over the
+	// initialization that normally happens when we come up from Agitated Searching.
+
+	if ( owner->GetMemory().combatState != -1 )
+	{
+		_combatType = COMBAT_NONE;
+		_combatSubState = EStateCheckWeaponState;
+		return;
+	}
+
 	if ( ( owner->GetMoveType() == MOVETYPE_SIT ) || ( owner->GetMoveType() == MOVETYPE_SLEEP) )
 	{
 		owner->GetUp();
@@ -321,6 +333,8 @@ void CombatState::Think(idAI* owner)
 //		owner->GetMind()->EndState(); // grayman #3182 - already done in CheckAlertLevel()
 		return;
 	}
+
+	owner->GetMemory().combatState = (int)_combatSubState; // grayman #3507
 
 	// grayman #3331 - make sure you're still fighting the same enemy.
 	// grayman #3355 - fight the closest enemy

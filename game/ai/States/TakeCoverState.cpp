@@ -73,7 +73,7 @@ void TakeCoverState::Init(idAI* owner)
 	// The sensory system 
 	owner->senseSubsystem->ClearTasks();
 
-	// No action
+	// No action (in case you were throwing rocks)
 	owner->actionSubsystem->ClearTasks();
 }
 
@@ -86,6 +86,7 @@ void TakeCoverState::Think(idAI* owner)
 		// then come out and move back to where we were standing before taking cover
 		owner->AI_RUN = false;
 		owner->TurnToward(owner->lastVisibleEnemyPos);
+		
 		owner->GetMind()->SwitchState(STATE_STAY_IN_COVER);
 	}
 	else if (owner->AI_DEST_UNREACHABLE)

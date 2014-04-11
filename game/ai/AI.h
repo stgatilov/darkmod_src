@@ -1728,6 +1728,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 * grayman #3317 - can also flee a murder or KO, w/o having an enemy
 	 */
 	bool					Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, int distanceOption); // grayman #3317
+	bool					FindAttackPosition(int pass, idActor* enemy, idVec3& targetPoint, ECombatType type); // grayman #3507
 	aasGoal_t				GetPositionWithinRange(const idVec3& targetPos);
 	idVec3					GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne);
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );

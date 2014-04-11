@@ -52,10 +52,12 @@ public:
 	static StatePtr CreateInstance();
 
 protected:
-	// Override base class method
+	// "virtual" means override base class method
 	virtual bool CheckAlertLevel(idAI* owner);
 
 	virtual void CalculateAlertDecreaseRate(idAI* owner);
+
+	void DrawWeapon(idAI* owner); // grayman #3507
 };
 
 } // namespace ai
