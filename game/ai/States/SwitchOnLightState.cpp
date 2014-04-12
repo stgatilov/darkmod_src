@@ -546,7 +546,7 @@ void SwitchOnLightState::Init(idAI* owner)
 				bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 			}
 			CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
+			owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,100+(int)(gameLocal.random.RandomFloat()*1900),false))); // grayman #3182
 
 			owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 
@@ -597,7 +597,7 @@ void SwitchOnLightState::Init(idAI* owner)
 			bark = (lightType == AIUSE_LIGHTTYPE_TORCH) ? "snd_foundTorchOut" : "snd_foundLightsOff";
 		}
 		CommMessagePtr message; // no message, but the argument is needed so the start delay can be included
-		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,2000,false))); // grayman #3182
+		owner->GetSubsystem(SubsysCommunication)->PushTask(TaskPtr(new SingleBarkTask(bark,message,100+(int)(gameLocal.random.RandomFloat()*1900),false))); // grayman #3182
 
 		owner->Event_LookAtEntity(light,2.0f); // grayman #3506 - look at the light
 	}
