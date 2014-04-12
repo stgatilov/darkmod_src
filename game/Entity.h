@@ -1226,7 +1226,8 @@ public:
 	bool					CheckResponseIgnore(const StimType type, const idEntity* fromEntity) const; // grayman #2872
 	idLocationEntity*		GetLocation( void ) const;	// grayman #3013
 	bool					CastsShadows( void ) const;	// grayman #3047
-	
+	void					CheckCollision(idEntity* collidedWith); // grayman #3516
+
 	/**
 	 * This triggers a stand-alone response (without an actual Stim) on this entity.
 	 *

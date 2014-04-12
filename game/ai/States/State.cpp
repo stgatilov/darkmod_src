@@ -1396,6 +1396,11 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
 	}
 
+	// grayman #3516 - If the moveable is being carried by the player,
+	// drop it from the player's hands.
+
+	tactEnt->CheckCollision(owner);
+
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s hit by moveable, barks 'snd_notice_generic'\n",gameLocal.time,owner->GetName());

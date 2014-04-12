@@ -55,6 +55,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../PositionWithinRangeFinder.h"
 #include "../TimerManager.h"
 #include "../ProjectileResult.h" // grayman #2872
+#include "../Grabber.h"
 
 // For handling the opening of doors and other binary Frob movers
 #include "../BinaryFrobMover.h"
@@ -10930,62 +10931,76 @@ void idAI::CheckTactile()
 	// grayman #2345 - changed to handle the waiting, non-solid state for AI
 
 	bool bumped = false;
-	idEntity* blockingEnt = NULL;
-	if (!AI_KNOCKEDOUT && !AI_DEAD && (AI_AlertLevel < thresh_5) && !movementSubsystem->IsWaitingNonSolid()) // no bump if I'm waiting
+	idEntity* blockingEnt = physicsObj.GetSlideMoveEntity(); // grayman #3516 - always remember this
+	if ( blockingEnt == NULL )
 	{
-		blockingEnt = physicsObj.GetSlideMoveEntity();
-		if (blockingEnt) // grayman #2345 - note what we bumped into
+		return;
+	}
+
+	if ( !AI_KNOCKEDOUT &&
+		 !AI_DEAD &&
+		 (AI_AlertLevel < thresh_5) &&
+		 !movementSubsystem->IsWaitingNonSolid() ) // no bump if I'm waiting
+	{
+		if ( blockingEnt != gameLocal.world ) // ignore bumping into the world
 		{
-			if (blockingEnt->name != "world") // ignore bumping into the world
-			{
-				m_tactileEntity = blockingEnt;
+			m_tactileEntity = blockingEnt;
 				
-				if ( blockingEnt->IsType(idAI::Type) )
+			if ( blockingEnt->IsType(idAI::Type) )
+			{
+				idAI* blockingAI = static_cast<idAI*>(blockingEnt);
+
+				// grayman #2903 - if both AI are examining a rope, it's possible that
+				// they're both trying to reach the same examination spot. If one is not
+				// moving, he's examining, so the other has to stop where he is. This
+				// prevents the one standing from turning non-solid and allowing the other
+				// to merge with him. Looks bad.
+
+				if ( m_ExaminingRope && blockingAI->m_ExaminingRope )
 				{
-					idAI* blockingAI = static_cast<idAI*>(blockingEnt);
-
-					// grayman #2903 - if both AI are examining a rope, it's possible that
-					// they're both trying to reach the same examination spot. If one is not
-					// moving, he's examining, so the other has to stop where he is. This
-					// prevents the one standing from turning non-solid and allowing the other
-					// to merge with him. Looks bad.
-
-					if ( m_ExaminingRope && blockingAI->m_ExaminingRope )
+					if ( AI_FORWARD && !blockingAI->AI_FORWARD )
 					{
-						if ( AI_FORWARD && !blockingAI->AI_FORWARD )
-						{
-							StopMove(MOVE_STATUS_DONE);
-						}
-						else if ( !AI_FORWARD && blockingAI->AI_FORWARD )
-						{
-							blockingAI->StopMove(MOVE_STATUS_DONE);
-						}
+						StopMove(MOVE_STATUS_DONE);
+					}
+					else if ( !AI_FORWARD && blockingAI->AI_FORWARD )
+					{
+						blockingAI->StopMove(MOVE_STATUS_DONE);
 					}
 				}
 			}
 		}
+	}
 
-		if (blockingEnt && blockingEnt->IsType(idPlayer::Type)) // player has no movement subsystem
+	if (blockingEnt->IsType(idPlayer::Type)) // player has no movement subsystem
+	{
+		// aesthetics: Don't react to dead player?
+		if (blockingEnt->health > 0)
 		{
-			// aesthetics: Don't react to dead player?
-			if (blockingEnt->health > 0)
-			{
-				bumped = true;
-			}
+			bumped = true;
 		}
-		else if (blockingEnt && blockingEnt->IsType(idActor::Type))
+	}
+	else if (blockingEnt->IsType(idActor::Type))
+	{
+		idAI *e = static_cast<idAI*>(blockingEnt);
+		if (e && !e->movementSubsystem->IsWaitingNonSolid()) // no bump if other entity is waiting
 		{
-			idAI *e = static_cast<idAI*>(blockingEnt);
-			if (e && !e->movementSubsystem->IsWaitingNonSolid()) // no bump if other entity is waiting
-			{
-				bumped = true;
-			}
+			bumped = true;
 		}
 	}
 
 	if (bumped)
 	{
 		HadTactile(static_cast<idActor*>(blockingEnt));
+	}
+	else
+	{
+		// grayman #3516 - If the blocking object is being carried by the player,
+		// drop it from the player's hands.
+
+		if ( blockingEnt != gameLocal.world )
+		{
+			blockingEnt->CheckCollision(this);
+		}
 	}
 }
 

@@ -1733,6 +1733,13 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 		{
 			current.atRest = gameLocal.time;
 		}
+
+		// grayman #3516
+		idEntity* ent = gameLocal.entities[collision.c.entityNum];
+		if (ent && ( ent != gameLocal.world ) )
+		{
+			self->CheckCollision(ent);
+		}
 	}
 
 	// update the position of the clip model

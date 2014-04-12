@@ -13033,4 +13033,89 @@ bool idEntity::CastsShadows() const
 	return !renderEntity.noShadow;
 }
 
+// grayman #3516 - I collided with something.
+// Am I in the grabber, and did I collide with an AI?
+// If so, the grabber should drop me.
+
+void idEntity::CheckCollision(idEntity* collidedWith)
+{
+	if (collidedWith == NULL)
+	{
+		return; // can't work with a NULL
+	}
+
+	if (collidedWith == gameLocal.world)
+	{
+		return; // hitting the world doesn't cause a drop
+	}
+
+	if (this == gameLocal.world)
+	{
+		return; // world will never be in the grabber
+	}
+
+	CGrabber* grabber = gameLocal.m_Grabber;
+	idEntity* entHeld = grabber->GetSelected();
+	if (entHeld == NULL)
+	{
+		return; // not holding anything
+	}
+
+	bool hitAI = collidedWith->IsType(idAI::Type);
+
+	if (!hitAI)
+	{
+		// We're interested in the parent of whatever team collidedWith is a part of, if any.
+
+		idEntity *collidedWithParent = collidedWith;
+		idEntity *bindMaster = collidedWithParent->GetBindMaster();
+		while ( bindMaster != NULL )
+		{
+			collidedWithParent = bindMaster;
+			bindMaster = collidedWithParent->GetBindMaster();
+		}
+		hitAI = collidedWithParent->IsType(idAI::Type);
+	}
+
+	if (!hitAI)
+	{
+		return; // only interested if we hit an AI
+	}
+
+	// Are we, or someone on our team, being held by the grabber?
+
+	// Simple check first ...
+	if (entHeld == this)
+	{
+		grabber->StopDrag();
+		return;
+	}
+
+	// Check everyone on my team.
+
+	idEntity *bindMaster = GetBindMaster();
+	idEntity *parent = NULL;
+	while ( bindMaster != NULL )
+	{
+		parent = bindMaster;
+		bindMaster = parent->GetBindMaster();
+	}
+
+	// If we found a parent, am I on the list of all children?
+	if (parent)
+	{
+		idList<idEntity *> children;
+		parent->GetTeamChildren(&children); // gets all children
+		for ( int i = 0 ; i < children.Num() ; i++ )
+		{
+			idEntity *child = children[i];
+			if ( child == this )
+			{
+				grabber->StopDrag();
+				return;
+			}
+		}
+	}
+}
+
 
