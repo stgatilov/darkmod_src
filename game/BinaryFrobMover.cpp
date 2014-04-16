@@ -917,7 +917,7 @@ int CBinaryFrobMover::GetMoveTime()
 	return move_time;
 }
 
-float CBinaryFrobMover::GetMoveTimeFraction()
+float CBinaryFrobMover::GetMoveTimeRotationFraction() // grayman #3711
 {
 	// Get the current angles
 	const idAngles& curAngles = physicsObj.GetLocalAngles();
@@ -943,6 +943,39 @@ float CBinaryFrobMover::GetMoveTimeFraction()
 	if (fullRotation[index] < idMath::FLT_EPSILON) return 1;
 
 	float fraction = delta[index]/fullRotation[index];
+
+	return fraction;
+}
+
+float CBinaryFrobMover::GetMoveTimeTranslationFraction() // grayman #3711
+{
+	// Get the current origin
+	const idVec3& curOrigin = physicsObj.GetOrigin();
+
+	// Calculate the delta
+	idVec3 delta = dest_position - curOrigin;
+	delta[0] = idMath::Fabs(delta[0]);
+	delta[1] = idMath::Fabs(delta[1]);
+	delta[2] = idMath::Fabs(delta[2]);
+
+	// greebo: Note that we don't need to compare against zero angles here, because
+	// this code won't be called in this case (see idMover::BeginRotation).
+
+	idVec3 fullTranslation = m_OpenOrigin - m_ClosedOrigin;
+	fullTranslation[0] = idMath::Fabs(fullTranslation[0]);
+	fullTranslation[1] = idMath::Fabs(fullTranslation[1]);
+	fullTranslation[2] = idMath::Fabs(fullTranslation[2]);
+
+	// Get the maximum translation component
+	int index = (delta[0] > delta[1]) ? 0 : 1;
+	index = (delta[2] > delta[index]) ? 2 : index;
+
+	if (fullTranslation[index] < idMath::FLT_EPSILON)
+	{
+		return 1;
+	}
+
+	float fraction = delta[index]/fullTranslation[index];
 
 	return fraction;
 }

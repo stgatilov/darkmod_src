@@ -362,10 +362,11 @@ protected:
 
 	/**
 	 * greebo: Overrides the base class method to calculate the move_time fraction
-	 *         according to the current rotation state. This is needed to let doors
+	 *         according to the current rotation and translation states. This is needed to let doors
 	 *         open/close in the right speed after they've been interrupted.
 	 */
-	virtual float			GetMoveTimeFraction();
+	virtual float			GetMoveTimeRotationFraction(); // grayman #3711
+	virtual float			GetMoveTimeTranslationFraction(); // grayman #3711
 
 	/**
 	* By default, a BinaryFrobMover toggles its state when triggered

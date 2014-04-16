@@ -144,7 +144,12 @@ protected:
 	 *
 	 * Note: This is an internal function used by BeginRotation() only
 	 */
-	virtual float			GetMoveTimeFraction();
+	virtual float			GetMoveTimeRotationFraction(); // grayman #3711
+
+	/**
+	 * grayman #3711 - Need a version of GetMoveTimeRotationFraction() for translation
+	 */
+	virtual float			GetMoveTimeTranslationFraction();
 
 	moveState_t				move;
 

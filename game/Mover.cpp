@@ -753,42 +753,52 @@ void idMover::BeginMove( idThread *thread ) {
 	physicsObj.GetLocalOrigin( org );
 
 	move_delta = dest_position - org;
-	if ( move_delta.Compare( vec3_zero ) ) {
+	if ( move_delta.Compare( vec3_zero ) )
+	{
 		DoneMoving();
 		return;
 	}
 
+	// grayman #3711 - Calculate the moveTime fraction according to the current rotation state
+	// this is overridden by BinaryFrobMovers to achieve a flexible rotation move time.
+	float moveTimeFraction = GetMoveTimeTranslationFraction();
+
+	int moveTime = static_cast<int>(move_time*moveTimeFraction);
+
 	// scale times up to whole physics frames
 	at = idPhysics::SnapTimeToPhysicsFrame( acceltime );
-	move_time += at - acceltime;
+	moveTime += at - acceltime;
 	acceltime = at;
 	dt = idPhysics::SnapTimeToPhysicsFrame( deceltime );
-	move_time += dt - deceltime;
+	moveTime += dt - deceltime;
 	deceltime = dt;
 
 	// if we're moving at a specific speed, we need to calculate the move time
-	if ( move_speed ) {
+	if ( move_speed )
+	{
 		dist = move_delta.Length();
 
 		totalacceltime = acceltime + deceltime;
 
 		// calculate the distance we'll move during acceleration and deceleration
 		acceldist = totalacceltime * 0.5f * 0.001f * move_speed;
-		if ( acceldist >= dist ) {
+		if ( acceldist >= dist )
+		{
 			// going too slow for this distance to move at a constant speed
-			move_time = totalacceltime;
-		} else {
+			moveTime = totalacceltime;
+		} else
+		{
 			// calculate move time taking acceleration into account
-			move_time = static_cast<int>(totalacceltime + 1000.0f * ( dist - acceldist ) / move_speed);
+			moveTime = static_cast<int>(totalacceltime + 1000.0f * ( dist - acceldist ) / move_speed);
 		}
 	}
 
 	// scale time up to a whole physics frames
-	move_time = idPhysics::SnapTimeToPhysicsFrame( move_time );
+	moveTime = idPhysics::SnapTimeToPhysicsFrame( moveTime );
 
 	if ( acceltime ) {
 		stage = ACCELERATION_STAGE;
-	} else if ( move_time <= deceltime ) {
+	} else if ( moveTime <= deceltime ) {
 		stage = DECELERATION_STAGE;
 	} else {
 		stage = LINEAR_STAGE;
@@ -797,18 +807,18 @@ void idMover::BeginMove( idThread *thread ) {
 	at = acceltime;
 	dt = deceltime;
 
-	if ( at + dt > move_time ) {
+	if ( at + dt > moveTime ) {
 		// there's no real correct way to handle this, so we just scale
 		// the times to fit into the move time in the same proportions
-		at = idPhysics::SnapTimeToPhysicsFrame( at * move_time / ( at + dt ) );
-		dt = move_time - at;
+		at = idPhysics::SnapTimeToPhysicsFrame( at * moveTime / ( at + dt ) );
+		dt = moveTime - at;
 	}
 
-	move_delta = move_delta * ( 1000.0f / ( (float) move_time - ( at + dt ) * 0.5f ) );
+	move_delta = move_delta * ( 1000.0f / ( (float) moveTime - ( at + dt ) * 0.5f ) );
 
 	move.stage			= stage;
 	move.acceleration	= at;
-	move.movetime		= move_time - at - dt;
+	move.movetime		= moveTime - at - dt;
 	move.deceleration	= dt;
 	move.dir			= move_delta;
 
@@ -938,7 +948,12 @@ void idMover::Event_UpdateRotation( void ) {
 	}
 }
 
-float idMover::GetMoveTimeFraction()
+float idMover::GetMoveTimeRotationFraction() // grayman #3711
+{
+	return 1.0f;
+}
+
+float idMover::GetMoveTimeTranslationFraction() // grayman #3711
 {
 	return 1.0f;
 }
@@ -979,7 +994,7 @@ void idMover::BeginRotation( idThread *thread, bool stopwhendone ) {
 
 	// greebo: Calculate the moveTime fraction according to the current rotation state
 	// this is overridden by BinaryFrobMovers to achieve a flexible rotation move time.
-	float moveTimeFraction = GetMoveTimeFraction();
+	float moveTimeFraction = GetMoveTimeRotationFraction(); // grayman #3711
 
 	moveTime = static_cast<int>(moveTime*moveTimeFraction);
 
