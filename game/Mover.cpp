@@ -1681,6 +1681,17 @@ bool idMover::IsBlocked( void )
 	return (trace != NULL);
 }
 
+/*
+================
+idMover::SetCanPushPlayer
+================
+*/
+bool idMover::SetCanPushPlayer( bool newSetting )
+{
+	// flag has opposite meaning to parameter. NOT the param and return value.
+	return !(physicsObj.pushFlagOverride( PUSHFL_NOPLAYER, !newSetting ));
+}
+
 
 /*
 ===============================================================================

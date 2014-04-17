@@ -1208,3 +1208,18 @@ void idPhysics_Parametric::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		clipModel->Link( gameLocal.clip, self, 0, current.origin, current.axis );
 	}
 }
+
+/*
+================
+idPhysics_Parametric::pushFlagOverride
+================
+*/
+bool idPhysics_Parametric::pushFlagOverride( int flag, bool forcedValue )
+{
+	bool oldValue = (pushFlags & flag) != 0;
+	if (forcedValue != oldValue)
+	{
+		pushFlags ^= flag;
+	}
+	return oldValue;
+}

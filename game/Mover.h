@@ -63,6 +63,8 @@ public:
 		return &physicsObj;
 	}
 
+	// SteveL #3712
+	bool					SetCanPushPlayer( bool newSetting ); // return old setting
 
 protected:
 	typedef enum {

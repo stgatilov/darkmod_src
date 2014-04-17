@@ -145,6 +145,8 @@ public:	// common physics interface
 	void					WriteToSnapshot( idBitMsgDelta &msg ) const;
 	void					ReadFromSnapshot( const idBitMsgDelta &msg );
 
+	// SteveL #3712
+	bool					pushFlagOverride( int flag, bool forcedValue ); // return old state of flag
 private:
 	// parametric physics state
 	parametricPState_t		current;
