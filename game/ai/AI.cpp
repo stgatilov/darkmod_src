@@ -12067,8 +12067,11 @@ void idAI::DropOnRagdoll( void )
 		ent->m_droppedByAI = true; // grayman #1330
 
 		// grayman #3075 - set m_SetInMotionByActor
-		ent->m_SetInMotionByActor = NULL;
-		ent->m_MovedByActor = NULL;
+		// grayman #3602 - set in motion by dropper
+		ent->m_SetInMotionByActor = this;
+		ent->m_MovedByActor = this;
+		//ent->m_SetInMotionByActor = NULL;
+		//ent->m_MovedByActor = NULL;
 	}
 
 	// also perform some of these same operations on attachments to our head,
