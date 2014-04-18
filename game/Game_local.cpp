@@ -3843,9 +3843,16 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		m_GUICommandArgs = 0;
 
 		// "log" and "notime" take one argument
-		if ( cmd == "log" || cmd == "notime") { m_GUICommandArgs = 1; }
+		if ( cmd == "log" || cmd == "notime")
+		{
+			m_GUICommandArgs = 1;
+		}
+
 		// this takes one argument
-		if ( cmd == "setlang") { m_GUICommandArgs = 1; }
+		if ( cmd == "setlang")
+		{
+			m_GUICommandArgs = 1;
+		}
 
 		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
 		{

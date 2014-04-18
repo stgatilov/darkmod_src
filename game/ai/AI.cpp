@@ -12474,31 +12474,39 @@ bool idAI::CanUnlock(CBinaryFrobMover *frobMover)
 	return false;
 }
 
-bool idAI::ShouldCloseDoor(CBinaryFrobMover *frobMover)
+bool idAI::ShouldCloseDoor(CFrobDoor *door, bool lockDoor) // grayman #3523
 {
-	if (frobMover->spawnArgs.GetBool("ai_should_not_close", "0"))
+	if (door->spawnArgs.GetBool("ai_should_not_close", "0"))
 	{
-		// this door should not be closed
-		return false;
-	}
-	if (AI_AlertLevel >= thresh_5)
-	{
-		// don't close doors during combat
-		return false;
-	}
-	if (frobMover->spawnArgs.GetBool("shouldBeClosed", "0"))
-	{
-		// this door should really be closed
-		return true;
-	}
-	if (IsSearching()) // grayman #2603
-	{
-		// don't close other doors while searching
-		return false;
+		return false; // this door should not be closed
 	}
 
-	// in all other cases, close the door
-	return true;
+	if (AI_AlertLevel >= thresh_5)
+	{
+		return false; // don't close doors during combat
+	}
+
+	if (door->spawnArgs.GetBool("shouldBeClosed", "0"))
+	{
+		return true; // this door should be closed
+	}
+
+	if (IsSearching()) // grayman #2603
+	{
+		return false; // don't close doors while searching
+	}
+
+	if (lockDoor)
+	{
+		return true; // this door should be closed so it can be relocked
+	}
+
+	if (door->spawnArgs.GetBool("canRemainOpen", "0"))
+	{
+		return false; // prefer that it stay open
+	}
+	
+	return true; // in all other cases, close the door
 }
 
 void idAI::PushMove()

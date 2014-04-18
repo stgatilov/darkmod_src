@@ -52,30 +52,41 @@ private:
 	idEntityPtr<idEntity> _frontPosEnt;
 	idEntityPtr<idEntity> _backPosEnt;
 
-	enum EDoorHandlingState {
+	enum EDoorHandlingState
+	{
 		EStateNone,
 		EStateApproachingDoor,
 		EStateMovingToSafePos, // grayman #2345
 		EStateMovingToFrontPos,
+		EStateRetryInterruptedOpen1, // grayman #3523
+		EStateRetryInterruptedOpen2, // grayman #3523
+		EStateRetryInterruptedOpen3, // grayman #3523
 		EStateWaitBeforeOpen,
 		EStateStartOpen,
 		EStateOpeningDoor,
 		EStateMovingToMidPos, // grayman #2345
 		EStateMovingToBackPos,
+		EStateRetryInterruptedClose1, // grayman #3523
+		EStateRetryInterruptedClose2, // grayman #3523
+		EStateRetryInterruptedClose3, // grayman #3523
 		EStateWaitBeforeClose,
 		EStateStartClose,
 		EStateClosingDoor
 	} _doorHandlingState;
 
-	int _waitEndTime;
-	bool _wasLocked;
-	bool _doorInTheWay;
-	int _retryCount;
-	int _leaveQueue;		// grayman #2345
-	int _leaveDoor;			// grayman #2700
-	bool _triedFitting;		// grayman #2345
-	bool _canHandleDoor;	// grayman #2712
-	bool _doorShouldBeClosed; // grayman #2866
+	int		_waitEndTime;
+	bool	_wasLocked;
+	bool	_doorInTheWay;
+	int		_retryCount;
+	int		_leaveQueue;			// grayman #2345
+	int		_leaveDoor;				// grayman #2700
+	bool	_triedFitting;			// grayman #2345
+	bool	_canHandleDoor;			// grayman #2712
+	bool	_doorShouldBeClosed;	// grayman #2866
+	int		_blockedDoorCount;		// grayman #3523
+	bool	_pushingPlayer;			// grayman #3523 - true if door is set to push player
+	bool	_previousPushingPlayer;	// grayman #3523 - previous push setting
+
 public:
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -94,6 +105,8 @@ public:
 	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away); // grayman #2345/#2712
 
 	void MoveToSafePosition(CFrobDoor* door); // grayman #3390
+
+	bool AssessStoppedDoor(CFrobDoor* door); // grayman #3523
 
 	void PickWhere2Go(CFrobDoor* door); // grayman #2345
 

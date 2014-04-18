@@ -2018,7 +2018,7 @@ public:
 	bool					CanUnlock(CBinaryFrobMover *frobMover);
 
 	// angua: this checks whether the AI should close the door after passing through
-	bool					ShouldCloseDoor(CBinaryFrobMover *frobMover);
+	bool					ShouldCloseDoor(CFrobDoor *frobMover, bool wasLocked); // grayman #3523
 
 	// greebo: Contains all the checks for CVAR-dependent debug info
 	void					ShowDebugInfo();
