@@ -230,6 +230,7 @@ ai/States/KnockedOutState.cpp \
 ai/States/LostTrackOfEnemyState.cpp \
 ai/States/ObservantState.cpp \
 ai/States/PainState.cpp \
+ai/States/PocketPickedState.cpp \
 ai/States/SearchingState.cpp \
 ai/States/State.cpp \
 ai/States/StayInCoverState.cpp \

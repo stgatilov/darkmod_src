@@ -24,7 +24,7 @@
 
 #include "Objective.h" // for objective state enum
 #include "../Inventory/LootType.h" // for loot type enum
-#include "../AI/Memory.h" // for alert state enum // SteveL #3304
+#include "../ai/Memory.h" // for alert state enum // SteveL #3304
 
 // Maximum array sizes:
 #define MAX_TEAMS 64
