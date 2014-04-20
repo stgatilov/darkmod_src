@@ -56,7 +56,7 @@ public:
 	/**
 	 * greebo: This should be called each frame to let the AI
 	 *         think. This distributes the call to the various
-	 *         subsystem's Think() methods, maybe in and interleaved way.
+	 *         subsystem's Think() methods, maybe in an interleaved way.
 	 */
 	virtual void Think();
 
@@ -84,16 +84,22 @@ public:
 	virtual void SwitchState(const StatePtr& state);
 
 	/**
-	 * greebo: Removes all States from the Queue and falls back to the default State (Idle).
+	 * greebo: Removes all States from the Queue.
 	 */
 	virtual void ClearStates();
 
 	/**
 	 * greebo: Returns TRUE if no states are in the StateQueue
 	 */
-	virtual bool IsEmpty() {
+	virtual bool IsEmpty()
+	{
 		return _stateQueue.empty();
 	}
+
+	/**
+	 * grayman #3714 - Initialize the state queue
+	 */
+	virtual void InitStateQueue();
 
 	/**
 	 * Returns the reference to the current state (can be NULL).

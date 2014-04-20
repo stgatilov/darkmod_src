@@ -2100,6 +2100,8 @@ void idAI::Spawn( void )
 	m_pathRank = rank; // grayman #2345 - rank for path-finding
 
 	m_bCanBeGassed = !(spawnArgs.GetBool( "gas_immune", "0" )); // grayman #2468
+	
+	mind->InitStateQueue(); // grayman #3714 - initialize the state queue
 }
 
 void idAI::InitProjectileInfo()
@@ -2376,7 +2378,8 @@ void idAI::Think( void )
 		if (num_cinematics > 0)
 		{
 			// Active cinematics
-			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) ) {
+			if ( !IsHidden() && torsoAnim.AnimDone( 0 ) )
+			{
 				PlayCinematic();
 			}
 			RunPhysics();
@@ -10376,8 +10379,14 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		if ( IsFriend(responsibleActor) )
 		{
-			// angua: We've found a friend that is dead or unconscious
-			mind->GetState()->OnActorEncounter(tactEnt, this);
+			// grayman #3714 - this check for health and consciousness was removed
+			// for issue #3679, but I don't remember doing it. Will need to make
+			// sure #3679 doesn't start failing now that I've put the check back.
+			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
+			{
+				// angua: We've found a friend that is dead or unconscious
+				mind->GetState()->OnActorEncounter(tactEnt, this);
+			}
 		}
 
 		if ( !IsEnemy(responsibleActor) ) 
@@ -10926,7 +10935,7 @@ Modified 5/25/06 , removed trace computation, found better way of checking
 */
 void idAI::CheckTactile()
 {
-	// Only check tactile alerts if we aren't Dead, KO or already engaged in combat.
+	// Only check tactile alerts if we aren't Dead, KO'ed or already engaged in combat.
 
 	// grayman #2345 - changed to handle the waiting, non-solid state for AI
 

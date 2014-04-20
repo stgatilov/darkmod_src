@@ -47,7 +47,7 @@ Mind::Mind(idAI* owner) :
 
 void Mind::PrintStateQueue(idStr string)
 {
-	DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("_stateQueue after %s:\r", string.c_str());
+	DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("%s's _stateQueue after %s:\r", _owner.GetEntity()->GetName(),string.c_str());
 	DM_LOG(LC_STATE, LT_DEBUG)LOGSTRING("%s",_stateQueue.DebuggingInfo().c_str());
 }
 
@@ -218,6 +218,16 @@ void Mind::SwitchState(const StatePtr& state)
 	PushState(state);
 }
 
+// grayman #3714 - Initialize the state queue
+
+void Mind::InitStateQueue()
+{
+	if (_stateQueue.empty())
+	{
+		// We start with the idle state
+		PushState(STATE_DEFAULT);
+	}
+}
 
 void Mind::ClearStates()
 {
