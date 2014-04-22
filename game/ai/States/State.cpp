@@ -4780,7 +4780,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 
 	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
 	float ownerZ = owner->GetPhysics()->GetOrigin().z;
-	if ((frobDoorBounds[0].z > (ownerZ + 70)) || (frobDoorBounds[1].z < (ownerZ - 30)))
+	if ((frobDoorBounds[0].z > (ownerZ + 83)) || (frobDoorBounds[1].z < (ownerZ - 30)))
 	{
 		return;
 	}
