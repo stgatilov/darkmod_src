@@ -56,6 +56,19 @@ if g_os == 'MacOSX':
 		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libsvn_fs-1.dylib'),
 		File('/Developer/SDKs/MacOSX10.6.sdk/usr/lib/libapr-1.dylib'),
 	])
+elif g_os == 'FreeBSD':
+	# use distro installed libs - easier and safer to use 
+	# shared libs for SSL
+	local_env.Append(LIBS = [
+		'ssl', 
+		'crypto',
+		File('/usr/local/lib/libboost_filesystem.a'),
+		File('/usr/local/lib/libboost_program_options.a'),
+		File('/usr/local/lib/libboost_thread.a'),
+		File('/usr/local/lib/libboost_regex.a'),
+		File('/usr/local/lib/libboost_system.a'),
+		File('/usr/local/lib/libcurl.a')
+	])
 else:
 	# Linux
 	if LINUX_TARGET_ARCH == 'i386':
@@ -85,6 +98,8 @@ executable_name = 'tdm_package'
 
 if g_os == 'MacOSX':
 	executable_name = executable_name + '.macosx'
+elif g_os == 'FreeBSD':
+	executable_name = executable_name + '.fbsd'
 else:
 	if LINUX_TARGET_ARCH == 'i386':
 		executable_name = executable_name + '.linux'
