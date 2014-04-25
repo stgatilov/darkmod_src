@@ -11644,6 +11644,7 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 	int gold, jewelry, goods;
 	int total = Inventory()->GetLoot(gold, jewelry, goods);
 	bool gained = (amount >= 0);
+	bool validLootType = TRUE; // SteveL #3719. gnartsch's patch.
 
 	switch(lootType)
 	{
@@ -11670,13 +11671,14 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 
 		default:
 			rc = 0;
+			validLootType = FALSE;
 		break;
 	}
 
 	// Set the new values
 	Inventory()->SetLoot(gold, jewelry, goods);
 
-	if (rc != 0)
+	if (validLootType == TRUE) // #3719
 	{
 		gameLocal.m_MissionData->InventoryCallback(NULL, groupname, groupTotal, total, gained);  
 		gameLocal.m_MissionData->ChangeFoundLoot(static_cast<LootType>(lootType), amount);
