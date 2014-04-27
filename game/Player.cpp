@@ -4626,7 +4626,7 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 
 	// grayman #3485 - new way to decide whether the player has landed, for footstep playing 
-	if (result.hasLanded && ( savedVelocity.z < -200) ) // SteveL #3716: reduced threshold -300 -> -200
+	if (result.hasLanded && ( savedVelocity.z < -300) )
 	{
 		hasLanded = true;
 		PlayFootStepSound();
