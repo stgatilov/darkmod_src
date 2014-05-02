@@ -2698,6 +2698,15 @@ bool idPhysics_Player::IsCrouching( void ) const {
 	return ( ( current.movementFlags & PMF_DUCKED ) != 0 );
 }
 
+/*
+================
+idPhysics_Player::GetLastJumpTime
+================
+*/
+int	idPhysics_Player::GetLastJumpTime() const {
+	return lastJumpTime;
+}
+
 idEntity* idPhysics_Player::GetRopeEntity()
 {
 	return (m_bOnRope) ? m_RopeEntity.GetEntity() : NULL;

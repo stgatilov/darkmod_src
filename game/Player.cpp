@@ -4625,8 +4625,12 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 
+	// SteveL #3716: Fix bunny hopping exploit. Jumps lasting longer than 1 second don't need 
+	// to be detected, since their landing velocity will be well above the 300 threshold anyway.
+	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < 1000;
+
 	// grayman #3485 - new way to decide whether the player has landed, for footstep playing 
-	if (result.hasLanded && ( savedVelocity.z < -300) )
+	if ( result.hasLanded && ( savedVelocity.z < -300 || isJumping ) )
 	{
 		hasLanded = true;
 		PlayFootStepSound();

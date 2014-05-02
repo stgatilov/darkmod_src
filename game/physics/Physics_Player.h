@@ -131,6 +131,7 @@ public:
 	bool					HasSteppedUp( void ) const;
 	float					GetStepUp( void ) const;
 	bool					IsCrouching( void ) const;
+	int						GetLastJumpTime() const; // SteveL #3716
 
 	/**
 	* Returns the reference entity velocity.  Nonzero only when the
