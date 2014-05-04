@@ -891,6 +891,7 @@ void Packager::CreateCrcInfoFile()
 	iniFile->SetValue("Maintenance", "tdm_textures08.pk4", "remove");
 	iniFile->SetValue("Maintenance", "tdm_textures09.pk4", "remove");
 	iniFile->SetValue("Maintenance", "tdm_textures10.pk4", "remove");
+    iniFile->SetValue("Maintenance", "cacert.pem", "remove");
 
 	// Save
 	iniFile->ExportToFile(destPath, header);

@@ -93,10 +93,8 @@ void HttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
 	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
 
-#ifdef WIN32
     // taaaki: don't validate certs for HTTPS since we don't have the CA cert bundle yet (not ideal, but yeah)
     curl_easy_setopt(_handle, CURLOPT_SSL_VERIFYHOST,                0);
-#endif
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())

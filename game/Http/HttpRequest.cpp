@@ -99,21 +99,19 @@ void CHttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
 	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
 
-#ifdef WIN32
-    // #3418: since we're distributing a statically linked libcurl/openssl combo for Windows, we need to provide the ca bundle
+    // #3418: we need to provide the ca bundle
     idStr capath = g_Global.GetDarkmodPath().c_str();
-    capath.AppendPath("cacert.pem");
+    capath.AppendPath("ca-bundle.crt");
     idFile* catest = fileSystem->OpenExplicitFileRead(capath.c_str());
     if (catest == NULL)
     {
-        gameLocal.Warning("HTTPS downloads: 'cacert.pem' missing from Darkmod folder. HTTPS downloads will fail.");
+        gameLocal.Warning("HTTPS downloads: 'ca-bundle.crt' missing from Darkmod folder. HTTPS downloads will fail.");
     }
     else
     {
         delete catest;
     }
     curl_easy_setopt(_handle, CURLOPT_CAINFO, capath.c_str());
-#endif
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
