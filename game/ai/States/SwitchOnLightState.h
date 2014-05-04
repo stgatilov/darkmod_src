@@ -79,7 +79,7 @@ public:
 private:
 	float GetMaxReach(idAI* owner, idEntity* torch, idStr lightType); // grayman #2603
 
-	bool GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &target); // grayman #2603
+	//bool GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &target); // grayman #2603
 
 	bool CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos); // grayman #2603
 

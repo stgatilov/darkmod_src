@@ -34,6 +34,16 @@ class CFrobDoorHandle;
 #define MIN_CLICK_NUM			5
 #define MAX_CLICK_NUM			10
 
+// grayman #3643 - indices into door-handling position array
+#define NUM_DOOR_POSITIONS 3 // Front, Back, and Mid door-handling positions
+#define DOOR_POS_FRONT  0
+#define DOOR_POS_BACK   1
+#define DOOR_POS_MID    2
+#define DOOR_SIDES      2 // Front side, back side
+#define DOOR_SIDE_FRONT 0
+#define DOOR_SIDE_BACK  1
+#define AI_SIZE			32
+
 /**
  * CFrobDoor is a replacement for idDoor. The reason for this replacement is
  * because idDoor is derived from idMover_binary and can only slide from one
@@ -70,7 +80,7 @@ public:
 	virtual void			OpenDoor(bool Master);		
 
 	virtual void			Lock(bool Master);
-	virtual void			Unlock(bool Master);
+	virtual bool			Unlock(bool Master); // grayman #3643
 
 	CFrobDoorHandle*		GetDoorhandle();
 	// Adds a door handle to this door. A door can have multiple handles
@@ -130,6 +140,43 @@ public:
 	bool					GetWasFoundLocked() const;		// grayman #3104
 	bool					GetDoorHandlingEntities(idAI* owner, idList< idEntityPtr<idEntity> > &list); // grayman #2866
 	void					SetLossBase( float lossAI, float lossPlayer ); // grayman #3042
+//	bool					GetDoorControllers( idAI* owner, idList< idEntityPtr<idEntity> > &list ); // grayman #3643
+
+	// grayman #3643 - add a controller to the controller list
+	void					AddController(idEntity* newController);
+
+	// grayman #3643 - add a door_handling_position to the door handle position list
+	void					AddDHPosition(idEntity* newDHPosition);
+
+	// grayman #3643 - register door opening data for each side of the door
+	void					GetDoorHandlingPositions();
+
+	// grayman #3643 - xfer the door's locking situation to the controllers
+	void					SetControllerLocks();
+
+	// grayman #3643 - find the mid position for door handling
+	void					GetMidPos(float rotationAngle);
+
+	// grayman #3643 - find positions for rotating door handling
+	void					GetForwardPos();
+	void					GetBehindPos();
+
+	// grayman #3643 - retrieve a particular door position
+	idVec3					GetDoorPosition(int side, int position)
+							{ return m_doorPositions[side][position];}
+
+	// grayman #3643 - retrieve a particular door controller
+	idEntityPtr<idEntity>	GetDoorController(int side);
+
+	// grayman #3643 - retrieve a particular door handle position
+	idEntityPtr<idEntity>	GetDoorHandlePosition(int side);
+
+	// grayman #3643 - lock and unlock all door controllers
+	void					LockControllers(bool bMaster);
+	bool					UnlockControllers(bool bMaster);
+
+	// grayman #3643 - IsLocked() now has to deal with testing door controllers if used
+	bool					IsLocked();
 
 protected:
 
@@ -143,6 +190,8 @@ protected:
 	 * the entities are loaded, should be done here.
 	 */
 	virtual void			PostSpawn();
+
+	void					Event_PostPostSpawn(); // grayman #3643
 
 	// angua: flag the AAS area the door is located in with the travel flag TFL_DOOR
 	virtual void			SetDoorTravelFlag();
@@ -172,7 +221,7 @@ protected:
 
 	// Specialise the CBinaryFrobMover::OnLock() and OnUnlock() methods to update the peers
 	virtual void			OnLock(bool bMaster);
-	virtual void			OnUnlock(bool bMaster);
+	virtual bool			OnUnlock(bool bMaster); // grayman #3643
 
 	// Specialise the OnStartOpen/OnStartClose event to send the call to the open peers
 	virtual void			OnStartOpen(bool wasClosed, bool bMaster);
@@ -217,8 +266,6 @@ protected:
 	// This is called periodically, to handle a pending close request (used for locking doors after closing)
 	void					Event_HandleLockRequest();
 
-	void					Event_ClearPlayerImmobilization(idEntity* player);
-
 protected:
 
 	/**
@@ -244,7 +291,7 @@ protected:
 	idEntityPtr<CFrobDoor>		m_DoubleDoor;
 
 	/**
-	 * Handles that are associated with this door.
+	 * Handles associated with this door.
 	 */
 	idList< idEntityPtr<CFrobDoorHandle> >	m_Doorhandles;
 
@@ -266,6 +313,26 @@ protected:
 	* door, but not closing it when the door is closed.
 	**/
 	bool						m_isTransparent;
+
+	/**
+	* grayman #3643 - holds door-handling positions, 3 for each of 2 sides
+	**/
+	idVec3						m_doorPositions[DOOR_SIDES][NUM_DOOR_POSITIONS];
+
+	/**
+	* grayman #3643 - holds door controllers
+	**/
+	idList< idEntityPtr<idEntity> > m_controllers;
+
+	/**
+	* grayman #3643 - holds door handle positions
+	**/
+	idList< idEntityPtr<idEntity> > m_doorHandlingPositions;
+
+	/**
+	* grayman #3643 - true if the door rotates, false if it slides
+	**/
+	bool						m_rotates;
 };
 
 #endif /* FROBDOOR_H */

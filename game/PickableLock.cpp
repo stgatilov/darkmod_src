@@ -242,6 +242,11 @@ void PickableLock::OnLockpickPinSuccess()
 
 		PropPickSound("snd_lockpick_lock_picked", PICKED);
 		
+		/*TODO: both EV_TDM_Lock_StatusUpdate and EV_TDM_Lock_OnLockPicked
+		  are missing from the BinaryFrobMover. The methods they map to need to be moved from CFrobDoor
+		  to CBinaryFrobMover as virtuals
+		  Why does this work on mines?*/
+
 		// Move the handle back to its original position
 		m_Owner->ProcessEvent(&EV_TDM_Lock_StatusUpdate);
 

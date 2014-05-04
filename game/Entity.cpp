@@ -53,6 +53,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
+const idEventDef EV_PostPostSpawn( "<postpostspawn>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3643
 const idEventDef EV_FindTargets( "<findTargets>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_Touch( "<touch>", EventArgs('e', "", "", 't', "", ""), EV_RETURNS_VOID, "internal" );
 
@@ -6883,7 +6884,10 @@ void idEntity::ActivateTargets( idEntity *activator ) const
 	{
 		idEntity* ent = targets[i].GetEntity();
 
-		if (ent == NULL) continue;
+		if (ent == NULL)
+		{
+			continue;
+		}
 
 		// gameLocal.Printf( "Activating entity '%s' (from %s)", name.c_str(), activator == NULL ? "" : activator->GetName() );
 		
@@ -9730,12 +9734,17 @@ void idEntity::AttackAction(idPlayer* player)
 
 bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
 {
-	if (item == NULL) return false;
+	if (item == NULL)
+	{
+		return false;
+	}
 
 	// Redirect the call to the master if we have one
 	idEntity* master = GetFrobMaster();
-	if( master != NULL )
+	if ( master != NULL )
+	{
 		return  master->CanBeUsedBy(item, isFrobUse);
+	}
 
 	// No frob master set
 	// Check entity name (if exists), inv_name, inv_category, and classname
@@ -9743,13 +9752,16 @@ bool idEntity::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 	bool bMatchCategory( false ), bMatchClassname( false );
 
 	idEntity* ent = item->GetItemEntity();
-	if( ent != NULL )
+	if ( ent != NULL )
 	{
 		bMatchName = ( m_UsedByName.FindIndex(ent->name) != -1 );
 		bMatchClassname = ( m_UsedByClassname.FindIndex(ent->GetEntityDefName()) != -1 );
 	}
-	if( bMatchName || bMatchClassname )
+
+	if ( bMatchName || bMatchClassname )
+	{
 		return true;
+	}
 
 	bMatchInvName = ( m_UsedByInvName.FindIndex(item->GetName()) != -1 );
 	bMatchCategory = ( m_UsedByCategory.FindIndex(item->Category()->GetName()) != -1 );
@@ -9796,14 +9808,16 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	idEntity* master = GetFrobMaster();
 
 	if (master != NULL)
+	{
 		return master->UseBy(impulseState, item);
+	}
 
 	// no master, continue...
 	// Ishtvan: Call used_by script.  First check for scripts with the specific name/inv_name/classname/category/
 	// only call the most-specific script
 	idStrList suffixes;
 	idEntity *ent = item->GetItemEntity();
-	if( ent != NULL )
+	if ( ent != NULL )
 	{
 		suffixes.Append( ent->name );
 		suffixes.Append( ent->GetEntityDefName() );
@@ -9814,11 +9828,11 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 	idThread* thread = NULL;
 	bool bFoundKey = false;
-	for( int i=0; i < suffixes.Num(); i++ )
+	for ( int i = 0 ; i < suffixes.Num() ; i++ )
 	{
 		idStr scriptName = "used_action_script_" + suffixes[i];
 		const idKeyValue *kv = spawnArgs.FindKey( scriptName.c_str() );
-		if( kv != NULL && kv->GetValue().Length() > 0 )
+		if ( kv != NULL && kv->GetValue().Length() > 0 )
 		{
 			thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 			bFoundKey = true;
@@ -9827,10 +9841,10 @@ bool idEntity::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 	}
 	
 	// if we didn't find a specific suffix, use "used_action_script" by itself
-	if( !bFoundKey )
+	if ( !bFoundKey )
 	{
 		const idKeyValue *kv = spawnArgs.FindKey( "used_action_script" );
-		if( kv != NULL && kv->GetValue().Length() > 0 )
+		if ( kv != NULL && kv->GetValue().Length() > 0 )
 		{
 			thread = CallScriptFunctionArgs(kv->GetValue().c_str(), true, 0, "e", this);
 		}

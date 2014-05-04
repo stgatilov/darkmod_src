@@ -69,6 +69,7 @@ static const int DELAY_DORMANT_TIME = 3000;
 static const float VISIBILTIY_LIGHTING_THRESHOLD = 0.2f; 
 
 extern const idEventDef EV_PostSpawn;
+extern const idEventDef EV_PostPostSpawn; // grayman #3643
 extern const idEventDef EV_FindTargets;
 extern const idEventDef EV_RemoveTarget;
 extern const idEventDef EV_AddTarget;

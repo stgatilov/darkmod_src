@@ -67,14 +67,8 @@ const float MIN_BOB_SPEED = 5.0f;
 const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
-// grayman #3485 - additional volume reduction when falling when crouched
-const float FALL_CROUCH_VOL_ADJUST = -7.0f;
-
-// SteveL #3716 - play a footstep sound at full volume despite player being crouched if the player actively 
-// jumped less than JUMP_DETECTION_TIME milliseconds ago. Fix for bunny hopping #3716. Needs to be set high 
-// enough that jumps lasting longer than this will always produce a sound anyway due to z-velocity.
-const int JUMP_DETECTION_TIME = 1000;
-
+// grayman #3485 - additional volume reduction when falling/jumping when crouched
+const float FALL_JUMP_CROUCH_VOL_ADJUST = -7.0f;
 
 const idEventDef EV_Player_GetButtons( "getButtons", EventArgs(), 'd', "Returns the button state from the current user command." );
 
@@ -4631,10 +4625,8 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
 
-	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
-
 	// grayman #3485 - new way to decide whether the player has landed, for footstep playing 
-	if ( result.hasLanded && ( savedVelocity.z < -300 || isJumping ) )
+	if (result.hasLanded && ( savedVelocity.z < -300) )
 	{
 		hasLanded = true;
 		PlayFootStepSound();
@@ -9796,7 +9788,7 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 
 	bool itemIsUsable = ent->spawnArgs.GetBool("usable");
 	
-	if (highlightedEntity != NULL && itemIsUsable && highlightedEntity->CanBeUsedBy(item, isFrobUse))
+	if ( (highlightedEntity != NULL) && itemIsUsable && highlightedEntity->CanBeUsedBy(item, isFrobUse))
 	{
 		// Pass the use call
 		if (highlightedEntity->UseBy(impulseState, item))
@@ -10938,11 +10930,10 @@ void idPlayer::PlayFootStepSound()
 	// start footstep sound based on material type
 	const idMaterial* material = GetPhysics()->GetContact( 0 ).material;
 
-	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
 	float crouchVolAdjust = 0.0f; // grayman #3485 - volume adjustment for landing when crouched
-	if ( hasLanded && AI_CROUCH && !isJumping )
+	if ( hasLanded && AI_CROUCH )
 	{
-		crouchVolAdjust = FALL_CROUCH_VOL_ADJUST;
+		crouchVolAdjust = FALL_JUMP_CROUCH_VOL_ADJUST;
 	}
 
 	if ( material != NULL ) 
@@ -11117,7 +11108,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	}
 
 	// if we only allow "simple" frob actions and this isn't one, play forbidden sound
-	if( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
+	if ( (GetImmobilization() & EIM_FROB_COMPLEX) && !target->m_bFrobSimple )
 	{
 		// TODO: Rename this "uh-uh" sound to something more general?
 		StartSound( "snd_drop_item_failed", SND_CHANNEL_ITEM, 0, false, NULL );	
@@ -11142,13 +11133,13 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		CInventoryItemPtr item = InventoryCursor()->GetCurrentItem();
 
 		// Only allow items with UseOnFrob == TRUE to be used when frobbing
-		if (item != NULL && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item, true))
+		if ( (item != NULL) && item->UseOnFrob() && highlightedEntity->CanBeUsedBy(item, true))
 		{
 			// Try to use the item
 			bool couldBeUsed = UseInventoryItem(impulseState, item, gameLocal.msec, true); // true => is frob action
 
 			// Give optional visual feedback on the KeyDown event
-			if (impulseState == EPressed && cv_tdm_inv_use_visual_feedback.GetBool())
+			if ( (impulseState == EPressed) && cv_tdm_inv_use_visual_feedback.GetBool())
 			{
 				m_overlays.broadcastNamedEvent(couldBeUsed ? "onInvPositiveFeedback" : "onInvNegativeFeedback");
 			}
@@ -11158,8 +11149,10 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 	}
 
 	// If FrobUsedOnlyByInv mode is active, we can only perform use_on_frob actions, so skip all the rest
-	if( m_bFrobOnlyUsedByInv )
+	if ( m_bFrobOnlyUsedByInv )
+	{
 		return;
+	}
 
 	// Inventory item could not be used with the highlighted entity, proceed with ordinary frob action
 
@@ -11180,7 +11173,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 		CInventoryItemPtr addedItem = AddToInventory(target);
 
 		// Check if the frobbed entity is the one currently highlighted by the player
-		if (addedItem != NULL && highlightedEntity == target) 
+		if ( (addedItem != NULL) && (highlightedEntity == target) ) 
 		{
 			// Item has been added to the inventory, clear the entity pointer
 			m_FrobEntity = NULL;
@@ -11194,15 +11187,19 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 			target->IsType(idMoveableItem::Type) || target->IsType(idAFAttachment::Type))
 		{
 			// allow override of default grabbing behavior
-			if( !target->spawnArgs.GetBool("grabable","1") )
+			if ( !target->spawnArgs.GetBool("grabable","1") )
+			{
 				return;
+			}
 
 			// Do not pick up live, conscious AI
-			if( target->IsType( idAI::Type ) )
+			if ( target->IsType( idAI::Type ) )
 			{
 				idAI *AItarget = static_cast<idAI *>(target);
-				if( AItarget->health > 0 && !AItarget->IsKnockedOut() )
+				if ( (AItarget->health > 0) && !AItarget->IsKnockedOut() )
+				{
 					return;
+				}
 			}
 
 			gameLocal.m_Grabber->Update( this );
@@ -11220,7 +11217,7 @@ void idPlayer::PerformFrob()
 
 	// if the grabber is currently holding something and frob is pressed,
 	// release it.  Do not frob anything new since you're holding an item.
-	if( gameLocal.m_Grabber->GetSelected() )
+	if ( gameLocal.m_Grabber->GetSelected() )
 	{
 		gameLocal.m_Grabber->Update( this );
 		return;
@@ -11236,14 +11233,19 @@ void idPlayer::PerformFrob()
 void idPlayer::PerformFrobKeyRepeat(int holdTime)
 {
 	// Ignore frobs if player-frobbing is immobilized.
-	if ( GetImmobilization() & EIM_FROB ) return;
+	if ( GetImmobilization() & EIM_FROB )
+	{
+		return;
+	}
 
 	// Get the currently frobbed entity
 	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
-	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )
+	if ( m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL ))
+	{
 		m_FrobPressedTarget.GetEntity()->FrobHeld( true, false, holdTime );
+	}
 
 	// Relay the function to the specialised method
 	PerformFrob(ERepeat, frob);
@@ -11252,20 +11254,26 @@ void idPlayer::PerformFrobKeyRepeat(int holdTime)
 void idPlayer::PerformFrobKeyRelease(int holdTime)
 {
 	// Ignore frobs if player-frobbing is immobilized.
-	if ( GetImmobilization() & EIM_FROB ) return;
+	if ( GetImmobilization() & EIM_FROB )
+	{
+		return;
+	}
 
 	// Get the currently frobbed entity
 	idEntity* frob = m_FrobEntity.GetEntity();
 
 	// use the original target until frob is released and pressed again
-	if( m_FrobPressedTarget.IsValid() && m_FrobPressedTarget.GetEntity() != NULL )
+	if ( m_FrobPressedTarget.IsValid() && (m_FrobPressedTarget.GetEntity() != NULL) )
+	{
 		m_FrobPressedTarget.GetEntity()->FrobReleased( true, false, holdTime );
+	}
 
 	// Relay the function to the specialised method
 	PerformFrob(EReleased, frob);
 }
 
-void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount) {
+void idPlayer::setHealthPoolTimeInterval(int newTimeInterval, float factor, int stepAmount)
+{
 	healthPoolTimeInterval = newTimeInterval;
 	healthPoolTimeIntervalFactor = factor;
 	healthPoolStepAmount = stepAmount;

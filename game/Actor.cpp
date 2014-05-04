@@ -2168,6 +2168,12 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	// use its eye position, its origin and its shoulders
 	if (ent->IsType(idActor::Type)) 
 	{
+		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
+		if (ent->fl.notarget)
+		{
+			return false;
+		}
+
 		idActor* actor = static_cast<idActor*>(ent);
 		idVec3 entityEyePos = actor->GetEyePosition();
 

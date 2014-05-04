@@ -35,7 +35,7 @@ namespace ai
 								// position instead of the default 32x32 ('-1').
 								// grayman #2706 - returned to default value of -1. Tighter than this
 								// might cause problems.
-#define HANDLE_DOOR_ACCURACY_RUNNING 24 // grayman #3317 - less accuracy when moving faster
+#define HANDLE_DOOR_ACCURACY_RUNNING 24  // grayman #3317 - less accuracy when moving faster
 
 class HandleDoorTask;
 typedef boost::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
@@ -49,14 +49,18 @@ private:
 	idVec3 _midPos;		// grayman #2345
 	idVec3 _safePos;	// grayman #2345
 
-	idEntityPtr<idEntity> _frontPosEnt;
-	idEntityPtr<idEntity> _backPosEnt;
+	idEntityPtr<idEntity> _frontPosEnt; // front door controller
+	idEntityPtr<idEntity> _backPosEnt;  // back door controller
+
+	idEntityPtr<idEntity> _frontDHPosition; // front door handle position
+	idEntityPtr<idEntity> _backDHPosition;  // back door handle position
 
 	enum EDoorHandlingState
 	{
 		EStateNone,
 		EStateApproachingDoor,
-		EStateMovingToSafePos, // grayman #2345
+		EStateMovingToSafePos1, // grayman #2345
+		EStateMovingToSafePos2, // grayman #3643
 		EStateMovingToFrontPos,
 		EStateRetryInterruptedOpen1, // grayman #3523
 		EStateRetryInterruptedOpen2, // grayman #3523
@@ -82,10 +86,12 @@ private:
 	int		_leaveDoor;				// grayman #2700
 	bool	_triedFitting;			// grayman #2345
 	bool	_canHandleDoor;			// grayman #2712
-	bool	_doorShouldBeClosed;	// grayman #2866
+	bool	_closeFromSameSide;	// grayman #2866
 	int		_blockedDoorCount;		// grayman #3523
 	bool	_pushingPlayer;			// grayman #3523 - true if door is set to push player
 	bool	_previousPushingPlayer;	// grayman #3523 - previous push setting
+	bool	_rotates;				// grayman #3643 - true if this is a rotating door (false == sliding door)
+	int		_doorSide;				// grayman #3643 - which side of door are we on? (0 or 1)
 
 public:
 	// Get the name of this task
@@ -100,22 +106,11 @@ public:
 
 	virtual bool CanAbort(); // grayman #2706
 
-	idVec3 GetAwayPos(idAI* owner, CFrobDoor* frobDoor);
-	idVec3 GetTowardPos(idAI* owner, CFrobDoor* frobDoor);
-	idVec3 GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away); // grayman #2345/#2712
-
 	void MoveToSafePosition(CFrobDoor* door); // grayman #3390
-
-	bool AssessStoppedDoor(CFrobDoor* door); // grayman #3523
 
 	void PickWhere2Go(CFrobDoor* door); // grayman #2345
 
-	void GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor);
-
 	void DoorInTheWay(idAI* owner, CFrobDoor* frobDoor);
-
-	// this checks if the gap is large enough to fit through partially openend doors (blocked, interrupted)
-	bool FitsThrough();
 
 	// these checks whether the AI is allowed to open/close/unlock/lock the door from this side
 	bool AllowedToOpen(idAI* owner);
@@ -129,7 +124,7 @@ public:
 	// open door routine (checks if the door is locked and starts to open it when possible)
 	bool OpenDoor();
 
-	void ResetDoor(idAI* owner, CFrobDoor* newDoor);
+	void CloseDoor(idAI* owner, CFrobDoor* frobDoor, idEntity* controller); // grayman #3643
 
 	void DrawDebugOutput(idAI* owner);
 
@@ -142,10 +137,15 @@ public:
 private:
 	// Finds an entity which can operate the door in question (a lever, forex)
 	// If multiple controllers are available, the nearest one is chosen
-	idEntity* GetRemoteControlEntityForDoor();
 
+	// this checks if the gap is large enough to fit through partially openend doors (blocked, interrupted)
+	bool FitsThrough();
+
+	void ResetDoor(idAI* owner, CFrobDoor* newDoor);
 	void AddUser(idAI* owner, CFrobDoor* frobDoor); // grayman #2345
-
+	bool AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker); // grayman #3523
+	void Turn(idVec3 pos, CFrobDoor* door, idEntity* controller); // grayman #3643
+	void InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool susDoorCloseFromSameSide); // grayman #3643
 };
 
 } // namespace ai

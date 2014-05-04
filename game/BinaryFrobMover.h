@@ -79,10 +79,15 @@ public:
 	virtual void			Open(bool Master);
 	virtual void			Close(bool Master);
 	virtual void			Lock(bool Master);
-	virtual void			Unlock(bool Master);
+	virtual bool			Unlock(bool Master); // grayman #3643
 
 	virtual void			ToggleOpen();
 	virtual void			ToggleLock();
+	virtual bool			CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse); // grayman #3643
+	virtual bool			UseBy(EImpulseState impulseState, const CInventoryItemPtr& item); // grayman #3643
+	virtual void			Event_ClearPlayerImmobilization(idEntity* player); // grayman #3643
+	virtual void			Event_Lock_StatusUpdate(); // grayman #3643
+	virtual void			Event_Lock_OnLockPicked(); // grayman #3643
 
 	// Performs a "delayed" lock, closes the mover and tries to lock it afterwards
 	virtual void			CloseAndLock();
@@ -193,6 +198,11 @@ public:
 
 	idVec3 GetCurrentPos();
 
+	ID_INLINE const idVec3& GetTranslation() const
+	{
+		return m_Translation;
+	}
+
 	/** 
 	 * greebo: Sets the position of this frobmover based on 
 	 * the given float, which should be in the range [0..1].
@@ -252,6 +262,22 @@ public:
 	 *
 	 */
 	int GetMoveStartTime();
+
+	/**
+	 * grayman #3643 - Tells the AI where to stand when using the button or switch.
+	 *
+	 */
+	bool GetSwitchGoal(idVec3 &goal, float &standOff, int relightHeightLow);
+	//bool GetSwitchGoal(idAI* owner, idVec3 &goal, float &standOff, int relightHeightLow);
+
+	/**
+	 * grayman #3643 - Fetch the lock.
+	 *
+	 */
+	PickableLock* GetLock()
+	{
+		return m_Lock;
+	};
 
 protected:
 
@@ -343,7 +369,7 @@ protected:
 	/**
 	 * greebo: Is called when the mover has just been unlocked.
 	 */
-	virtual void OnUnlock(bool bMaster);
+	virtual bool OnUnlock(bool bMaster); // grayman #3643
 
 	// =========================================================
 

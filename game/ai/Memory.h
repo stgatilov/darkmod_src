@@ -480,6 +480,7 @@ public:
 	bool closeSuspiciousDoor;		// need to close a suspicious door
 	bool doorSwingsToward;			// does the door swing toward me?
 	bool closeFromAwayPos;			// do we close a suspicious door from the near side or far side? 
+	int susDoorCloseFromThisSide;			// grayman #3643 - door side we're on when spotting it
 	bool susDoorSameAsCurrentDoor;	// the door you're handling sends you a visual stim
 	float savedAlertLevelDecreaseRate; // used w/door handling in Observant state
 	// end of #2866 changes

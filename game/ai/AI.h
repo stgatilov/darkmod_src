@@ -2032,14 +2032,18 @@ public:
 	int						GetDelayedStimExpiration(idEntityPtr<idEntity> stimPtr);
 
 	// grayman #3075 - set and get an AI's blood marker
-
 	void					SetBlood(idEntity *marker);
 	idEntity*				GetBlood(void) const;
 
 	// grayman #2816 - get last enemy killed
-
 	void					SetLastKilled(idEntity *killed);
 		
+	// grayman #3643 - setup a suspicious door
+	void					SetUpSuspiciousDoor(CFrobDoor* door);
+
+	// grayman #3643 - get which side of a door we're on
+	int						GetDoorSide(CFrobDoor* frobDoor);
+
 	//
 	// ai/ai_events.cpp
 	//

@@ -7363,7 +7363,7 @@ bool idAI::CanBeHitByEntity(idActor* entity, ECombatType combatType)
 		float enemyReach = entity->melee_range;
 
 		// generic factor to increase the enemy's threat range (accounts for sudden, quick advances)
-		// (TODO: Make spawnwarg?)
+		// (TODO: Make spawnarg?)
 		float threatFactor = 1.5f; 
 		// velocity-based factor to increase the enemy's threat range
 		float velFactor;
@@ -12867,7 +12867,6 @@ void idAI::GetUp()
 	}
 }
 
-
 void idAI::LayDown()
 {
 	if (GetMoveType() != MOVETYPE_ANIM)
@@ -12897,13 +12896,12 @@ void idAI::LayDown()
 	SetAcuity("vis", 0);
 
 	// Reduce hearing and tactile acuity by 50%
-	// TODO: use spawn args
+	// TODO: use spawnargs
 	SetAcuity("aud", GetBaseAcuity("aud") * 0.5); // grayman #3552
 	SetAcuity("tact", GetBaseAcuity("tact") * 0.5); // grayman #3552
 	//SetAcuity("aud", GetAcuity("aud") * 0.5);
 	//SetAcuity("tact", GetAcuity("tact") * 0.5);
 }
-
 
 float idAI::StealthDamageMult()
 {
@@ -13206,6 +13204,66 @@ void idAI::Event_PickedPocketSetup2() // grayman #3559
 	GetMind()->PushState(ai::StatePtr(new ai::PocketPickedState));
 }
 
+// grayman #3643
 
+void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
+{
+	// This is a door that's supposed to be closed.
+	// Search for a while. Remember the door so you can close it later. 
 
+	ai::Memory& memory = GetMemory();
+	memory.closeMe = door;
+	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
+	memory.susDoorCloseFromThisSide = this->GetDoorSide(door); // which side of the door we're on
 
+	door->SetSearching(this); // keeps other AI from joining in the search
+
+	// Raise alert level
+
+	// One more piece of evidence of something out of place
+	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_DOOR;
+	memory.posEvidenceIntruders = GetPhysics()->GetOrigin(); // grayman #2903
+	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
+
+	if ( AI_AlertLevel < ( thresh_4 - 0.1f ) )
+	{
+		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
+		memory.alertClass = ai::EAlertVisual_2; // grayman #2603
+		memory.alertType = ai::EAlertTypeDoor;
+		
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		AI_VISALERT = false;
+		memory.visualAlert = false; // grayman #2422
+		memory.mandatory = false;	// grayman #3331
+
+		SetAlertLevel(thresh_4 - 0.1f);
+	}
+
+	// Do new reaction to stimulus
+
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.alertedDueToCommunication = false;
+}
+
+int idAI::GetDoorSide(CFrobDoor* frobDoor)
+{
+	int doorSide = 0;
+	// determine which side of the door we're on
+	idVec3 mid0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_MID);
+	idVec3 mid1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_MID);
+	idVec3 ownerOrig = GetPhysics()->GetOrigin();
+	if ( (mid0 - ownerOrig).LengthSqr() > (mid1 - ownerOrig).LengthSqr() )
+	{
+		doorSide = DOOR_SIDE_FRONT;
+	}
+	else
+	{
+		doorSide = DOOR_SIDE_BACK;
+	}
+
+	return doorSide;
+}

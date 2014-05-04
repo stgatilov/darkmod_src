@@ -64,13 +64,8 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 
 		Memory& memory = owner->GetMemory();
 		CFrobDoor* door = memory.closeMe.GetEntity();
-		if ( door != NULL )
+		if ( ( door != NULL ) && ( door->GetUserManager().GetNumUsers() == 0 ) )
 		{
-			if ( door->GetUserManager().GetNumUsers() > 0 )
-			{
-				return false; // others are queued up to use the door, so quit
-			}
-
 			// grayman #3104 - if I'm handling a door now, I won't be able to initiate
 			// handling of the suspicious door in order to close it. So I'll forget about
 			// doing that, and let the suspicious door stim me again. Perhaps I'll see it
@@ -86,50 +81,6 @@ bool SuspiciousState::CheckAlertLevel(idAI* owner)
 					door->SetSearching(NULL);
 					door->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 					return false;
-				}
-			}
-
-			memory.closeFromAwayPos = false; // close from the side the door swings toward
-			if ( memory.susDoorSameAsCurrentDoor )
-			{
-				if ( memory.doorSwingsToward )
-				{
-					memory.closeFromAwayPos = true; // close from the side the door swings away from
-				}
-			}
-			else
-			{
-				if ( !memory.doorSwingsToward )
-				{
-					memory.closeFromAwayPos = true; // close from the side the door swings away from
-				}
-			}
-
-			// grayman #2866 - check for custom door handling positions
-
-			idEntityPtr<idEntity> frontPos;
-			idEntityPtr<idEntity> backPos;
-
-			idList< idEntityPtr<idEntity> > list;
-
-			if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
-			{
-				frontPos = list[0];
-				backPos = list[1];
-				memory.closeFromAwayPos = false;
-				if ( memory.backPos == backPos ) // on same side of door that we were when we spotted the suspicious door?
-				{
-					if ( memory.susDoorSameAsCurrentDoor )
-					{
-						memory.closeFromAwayPos = true; // grayman #2866
-					}
-				}
-				else // on different side of door than when we spotted the suspicious door
-				{
-					if ( !memory.susDoorSameAsCurrentDoor )
-					{
-						memory.closeFromAwayPos = true;
-					}
 				}
 			}
 

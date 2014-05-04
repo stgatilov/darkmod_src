@@ -62,14 +62,15 @@ const idEventDef EV_TDM_Door_ClearPlayerImmobilization("_EV_TDM_Door_ClearPlayer
 	EventArgs('e', "", ""), EV_RETURNS_VOID, "internal"); // allows player to handle weapons again
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobDoor )
-	EVENT( EV_TDM_Door_OpenDoor,			CFrobDoor::Event_OpenDoor)
-	EVENT( EV_TDM_FrobMover_HandleLockRequest,	CFrobDoor::Event_HandleLockRequest ) // overrides binaryfrobmover's request
-	EVENT( EV_TDM_Door_GetDoorhandle,		CFrobDoor::Event_GetDoorhandle)
+	EVENT( EV_TDM_Door_OpenDoor,					CFrobDoor::Event_OpenDoor)
+	EVENT( EV_TDM_FrobMover_HandleLockRequest,		CFrobDoor::Event_HandleLockRequest ) // overrides binaryfrobmover's request
+	EVENT( EV_TDM_Door_GetDoorhandle,				CFrobDoor::Event_GetDoorhandle)
 
 	// Needed for PickableLock: Update Handle position on lockpick status update
-	EVENT( EV_TDM_Lock_StatusUpdate,	CFrobDoor::Event_Lock_StatusUpdate)
-	EVENT( EV_TDM_Lock_OnLockPicked,	CFrobDoor::Event_Lock_OnLockPicked)
+	EVENT( EV_TDM_Lock_StatusUpdate,				CFrobDoor::Event_Lock_StatusUpdate)
+	EVENT( EV_TDM_Lock_OnLockPicked,				CFrobDoor::Event_Lock_OnLockPicked)
 	EVENT( EV_TDM_Door_ClearPlayerImmobilization,	CFrobDoor::Event_ClearPlayerImmobilization )
+	EVENT( EV_PostPostSpawn,						CFrobDoor::Event_PostPostSpawn ) // grayman #3643
 END_CLASS
 
 CFrobDoor::CFrobDoor()
@@ -83,8 +84,10 @@ CFrobDoor::CFrobDoor()
 	m_lossOpen = 0;
 	m_lossDoubleOpen = 0;
 	m_lossClosed = 0;
-	m_lossBaseAI = 0;		// AI sound loss provided by other entities, i.e. location separator
-	m_lossBasePlayer = 0;	// Player sound loss provided by other entities, i.e. location separator
+	m_lossBaseAI = 0;			// AI sound loss provided by other entities, i.e. location separator
+	m_lossBasePlayer = 0;		// Player sound loss provided by other entities, i.e. location separator
+	m_controllers.Clear();	// grayman #3643 - list of my controllers
+	m_doorHandlingPositions.Clear(); // grayman #3643 - list of my door handling positions
 }
 
 CFrobDoor::~CFrobDoor()
@@ -124,6 +127,30 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteFloat(m_lossBasePlayer);
 
 	savefile->WriteBool(m_isTransparent);	// grayman #3042
+	savefile->WriteBool(m_rotates);			// grayman #3643
+
+	// grayman #3643 - door-handling positions
+	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
+	{
+		for ( int j = 0 ; j < NUM_DOOR_POSITIONS ; j++ )
+		{
+			savefile->WriteVec3(m_doorPositions[i][j]);
+		}
+	}
+
+	// grayman #3643 - list of door controllers
+	savefile->WriteInt(m_controllers.Num());
+	for ( int i = 0 ; i < m_controllers.Num() ; i++ )
+	{
+		m_controllers[i].Save(savefile);
+	}
+
+	// grayman #3643 - list of door handling positions
+	savefile->WriteInt(m_doorHandlingPositions.Num());
+	for ( int i = 0 ; i < m_doorHandlingPositions.Num() ; i++ )
+	{
+		m_doorHandlingPositions[i].Save(savefile);
+	}
 }
 
 void CFrobDoor::Restore( idRestoreGame *savefile )
@@ -161,7 +188,35 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_lossBaseAI);
 	savefile->ReadFloat(m_lossBasePlayer);
 
-	savefile->ReadBool(m_isTransparent);		// grayman #3042
+	savefile->ReadBool(m_isTransparent); // grayman #3042
+	savefile->ReadBool(m_rotates);		 // grayman #3643
+
+	// grayman #3643 - door-handling positions
+	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
+	{
+		for ( int j = 0 ; j < NUM_DOOR_POSITIONS ; j++ )
+		{
+			savefile->ReadVec3(m_doorPositions[i][j]);
+		}
+	}
+
+	// grayman #3643 - list of door controllers
+	m_controllers.Clear();
+	savefile->ReadInt(num);
+	m_controllers.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		m_controllers[i].Restore(savefile);
+	}
+
+	// grayman #3643 - list of door handling positions
+	m_doorHandlingPositions.Clear();
+	savefile->ReadInt(num);
+	m_doorHandlingPositions.SetNum(num);
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		m_doorHandlingPositions[i].Restore(savefile);
+	}
 
 	SetDoorTravelFlag();
 
@@ -185,7 +240,7 @@ void CFrobDoor::PostSpawn()
 	m_lossDoubleOpen = spawnArgs.GetFloat("loss_double_open", "1.0");
 	m_lossClosed = spawnArgs.GetFloat("loss_closed", "10.0");
 
-	// grayman #3042 - does this door contain a transparent texture?
+	// grayman #3042 - does this door contain a transparent texture, or have openings?
 	m_isTransparent = spawnArgs.GetBool("transparent","0");
 
 	// Wait until here for the first update of sound loss, in case a double door is open
@@ -199,7 +254,7 @@ void CFrobDoor::PostSpawn()
 
 	// Open the portal if either of the doors is open
 	CFrobDoor* doubleDoor = m_DoubleDoor.GetEntity();
-	if (m_Open || (doubleDoor != NULL && doubleDoor->IsOpen()))
+	if (m_Open || ((doubleDoor != NULL) && doubleDoor->IsOpen()))
 	{
 		OpenPortal();
 	}
@@ -218,6 +273,35 @@ void CFrobDoor::PostSpawn()
 		AddLockPeer(kv->GetValue());
 	}
 
+	// grayman #3643 - Search for all spawnargs matching "door_controller" and add the entities to our controller list
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("door_controller"); kv != NULL; kv = spawnArgs.MatchPrefix("door_controller", kv))
+	{
+		idStr str = kv->GetValue();
+		idEntity* doorController = gameLocal.FindEntity(str);
+
+		if ( (doorController != NULL) && doorController->IsType(CBinaryFrobMover::Type) )
+		{
+			AddController(doorController);
+		}
+	}
+		
+	// grayman #3643 - Search for all spawnargs matching "door_handle_position" and add the entities to our door handle position list
+	for (const idKeyValue* kv = spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = spawnArgs.MatchPrefix("door_handle_position", kv))
+	{
+		idStr str = kv->GetValue();
+		idEntity* dhp = gameLocal.FindEntity(str);
+
+		if (dhp)
+		{
+			const char *classname;
+			dhp->spawnArgs.GetString("classname", NULL, &classname);
+			if (idStr::Cmp(classname, "atdm:door_handling_position") == 0)
+			{
+				AddDHPosition(dhp);
+			}
+		}
+	}
+		
 	idStr doorHandleName = spawnArgs.GetString("door_handle", "");
 	if (!doorHandleName.IsEmpty())
 	{
@@ -254,6 +338,18 @@ void CFrobDoor::PostSpawn()
 	}
 
 	SetDoorTravelFlag();
+
+	// grayman #3643 - Wait a bit before setting the door handling
+	// positions, to allow time for any controller list to be built
+	// after the controllers have spawned
+
+	PostEventMS( &EV_PostPostSpawn, 2 );
+}
+
+void CFrobDoor::Event_PostPostSpawn()
+{
+	GetDoorHandlingPositions(); // grayman #3643
+	SetControllerLocks();
 }
 
 void CFrobDoor::SetDoorTravelFlag()
@@ -319,22 +415,26 @@ void CFrobDoor::OnLock(bool bMaster)
 	}
 }
 
-void CFrobDoor::Unlock(bool bMaster)
+// grayman #3643 - return 'true' if unlock automatically opens the door, 'false' if not
+bool CFrobDoor::Unlock(bool bMaster)
 {
 	// Pass the call to the base class, the OnUnlock() event will be fired 
 	// if the locking process is allowed
-	CBinaryFrobMover::Unlock(bMaster);
+	return (CBinaryFrobMover::Unlock(bMaster));
 }
 
-void CFrobDoor::OnUnlock(bool bMaster)
+// grayman #3643 - report back whether OnUnlock() automatically opens the door
+bool CFrobDoor::OnUnlock(bool bMaster)
 {
 	// Call the base class first
-	CBinaryFrobMover::OnUnlock(bMaster);
+	bool result = CBinaryFrobMover::OnUnlock(bMaster);
 
 	if (bMaster) 
 	{
 		UnlockPeers();
 	}
+
+	return result;
 }
 
 void CFrobDoor::Open(bool bMaster)
@@ -347,7 +447,10 @@ void CFrobDoor::Open(bool bMaster)
 		for (int i = 0; i < m_Doorhandles.Num(); i++)
 		{
 			CFrobDoorHandle* handle = m_Doorhandles[i].GetEntity();
-			if (handle == NULL) continue;
+			if (handle == NULL)
+			{
+				continue;
+			}
 
 			handle->Tap();
 		}
@@ -432,7 +535,10 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 		return true;
 	}
 
-	if (item == NULL) return false;
+	if (item == NULL)
+	{
+		return false;
+	}
 
 	assert(item->Category() != NULL);
 
@@ -462,7 +568,10 @@ bool CFrobDoor::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse)
 
 bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 {
-	if (item == NULL) return false;
+	if (item == NULL)
+	{
+		return false;
+	}
 
 	// Pass the call on to the master, if we have one
 	if (GetFrobMaster() != NULL) 
@@ -474,12 +583,15 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 
 	// Retrieve the entity behind that item and reject NULL entities
 	idEntity* itemEntity = item->GetItemEntity();
-	if (itemEntity == NULL) return false;
+	if (itemEntity == NULL)
+	{
+		return false;
+	}
 
 	// Get the name of this inventory category
 	const idStr& itemName = item->Category()->GetName();
 	
-	if (itemName == "#str_02392" && impulseState == EPressed )				// Keys
+	if (itemName == "#str_02392" && impulseState == EPressed ) // Keys
 	{
 		// Keys can be used on button PRESS event, let's see if the key matches
 		if (m_UsedByName.FindIndex(itemEntity->name) != -1)
@@ -504,7 +616,7 @@ bool CFrobDoor::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
 			return false;
 		}
 	}
-	else if (itemName == "#str_02389" )										// Lockpicks
+	else if (itemName == "#str_02389" ) // Lockpicks
 	{
 		if (!m_Lock->IsPickable())
 		{
@@ -1246,6 +1358,7 @@ void CFrobDoor::Event_HandleLockRequest()
 	}
 }
 
+/* grayman #3643 - moved to CBinaryFrobMover
 void CFrobDoor::Event_ClearPlayerImmobilization(idEntity* player)
 {
 	if (!player->IsType(idPlayer::Type)) return;
@@ -1253,7 +1366,7 @@ void CFrobDoor::Event_ClearPlayerImmobilization(idEntity* player)
 	// Release the immobilization imposed on the player by Lockpicking
 	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
 }
-
+*/
 
 // grayman #2859
 
@@ -1348,6 +1461,62 @@ bool CFrobDoor::GetDoorHandlingEntities( idAI* owner, idList< idEntityPtr<idEnti
 	return positionsFound;
 }
 
+// grayman #3643 - Returns a two-element list with the front controller
+// as the first element and the back controller as the second.
+/*
+bool CFrobDoor::GetDoorControllers( idAI* owner, idList< idEntityPtr<idEntity> > &list )
+{
+	idEntity* frontEnt = NULL;
+	idEntity* backEnt = NULL;
+	bool controllersFound = false;
+	list.Clear();
+
+	idVec3 frobDoorOrg = GetPhysics()->GetOrigin();
+	idVec3 ownerOrg = owner->GetPhysics()->GetOrigin();
+	idVec3 gravity = gameLocal.GetGravity();
+	const idVec3& closedPos = frobDoorOrg + GetClosedPos();
+
+	idVec3 dir = closedPos - frobDoorOrg;
+	dir.z = 0;
+	idVec3 ownerDir = ownerOrg - frobDoorOrg;
+	ownerDir.z = 0;
+	idVec3 doorNormal = dir.Cross(gravity);
+	float ownerTest = doorNormal * ownerDir;
+
+	// check for controllers
+	for ( int i = 0 ; i < m_controllers.Num() ; i++ )
+	{
+		idEntity* e = m_controllers[i].GetEntity();
+		if (e)
+		{
+			idVec3 org = e->GetPhysics()->GetOrigin();
+			idVec3 dir = org - frobDoorOrg;
+			org.z = 0;
+			float test = doorNormal * dir;
+
+			if (test * ownerTest > 0)
+			{
+				frontEnt = e; // door handling controller on front side of the door
+			}
+			else
+			{
+				backEnt = e; // door handling controller on back side of the door
+			}
+			controllersFound = true;
+		}
+	}
+
+	if ( controllersFound )
+	{
+		idEntityPtr<idEntity> &entityPtr1 = list.Alloc();
+		entityPtr1 = frontEnt;
+		idEntityPtr<idEntity> &entityPtr2 = list.Alloc();
+		entityPtr2 = backEnt;
+	}
+
+	return controllersFound;
+}
+*/
 // grayman #3042 - need to think while moving
 
 void CFrobDoor::Think( void )
@@ -1359,4 +1528,616 @@ void CFrobDoor::Think( void )
 		UpdateSoundLoss();
 	}
 }
+
+// grayman #3643 - keep a list of controllers for this door
+void CFrobDoor::AddController(idEntity* newController)
+{
+	idEntityPtr<idEntity> controllerPtr;
+	controllerPtr = newController;
+	if ( m_controllers.FindIndex( controllerPtr ) < 0 ) // don't add if already there
+	{
+		m_controllers.Append(controllerPtr);
+	}
+}
+
+// grayman #3643 - keep a list of door handling positions for this door
+void CFrobDoor::AddDHPosition(idEntity* newDHPosition)
+{
+	idEntityPtr<idEntity> dhpPtr;
+	dhpPtr = newDHPosition;
+	m_doorHandlingPositions.Append(dhpPtr);
+}
+
+// grayman #3643 - find the mid position for door handling
+
+void CFrobDoor::GetMidPos(float rotationAngle)
+{
+	idVec3 midPos;
+
+	if (rotationAngle != 0)
+	{
+		// rotating door
+		const idVec3& frobDoorOrg = GetPhysics()->GetOrigin();
+		const idVec3& closedPos = frobDoorOrg + GetClosedPos();
+
+		idVec3 dir = closedPos - frobDoorOrg;
+		dir.z = 0;
+		float doorWidth = dir.LengthFast();
+		idVec3 dirNorm = dir;
+		dirNorm.NormalizeFast();
+
+		idVec3 openDirNorm = m_OpenDir;
+		openDirNorm.z = 0;
+		openDirNorm.NormalizeFast();
+
+		idVec3 parallelMidOffset = dirNorm;
+		parallelMidOffset *= doorWidth/2; // grayman #2712 - align with center of closed door position
+
+		idVec3 normalMidOffset = openDirNorm;
+		idBounds frobDoorBounds = GetPhysics()->GetAbsBounds();
+		float size = AI_SIZE/2;
+
+		// front
+		idVec3 frontMidOffset = normalMidOffset*1.25*doorWidth; // grayman #2712 - when the door swings away from you, clear it before ending the task
+		midPos = closedPos - parallelMidOffset + frontMidOffset;
+		midPos.z = frobDoorBounds[0].z + 1;
+		m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID] = midPos;
+
+		// back
+		idVec3 backMidOffset = -size * 3.0 * normalMidOffset; // don't have to go so far when the door swings toward you
+		midPos = closedPos - parallelMidOffset + backMidOffset;
+		midPos.z = frobDoorBounds[0].z + 1;
+		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID] = midPos;
+	}
+	else // sliding door
+	{
+		idVec3 openDir = GetTranslation();
+		idBox doorBox = GetClosedBox();
+		idVec3 center = doorBox.GetCenter();
+		idVec3 extents = doorBox.GetExtents();
+		idVec3 min = center - extents;
+		idVec3 max = center + extents;
+		if ( extents.x > extents.y )
+		{
+			max.y = min.y;
+		}
+		else
+		{
+			max.x = min.x;
+		}
+		idVec3 doorFace = max - min;
+		idVec3 normal = doorFace.Cross(openDir);
+		normal.NormalizeFast();
+
+		// front
+		
+		midPos = center + 40*normal;
+		midPos.z = min.z + 1;
+		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID] = midPos;
+		
+		// back
+		
+		midPos = center - 40*normal;
+		midPos.z = min.z + 1;
+		m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID] = midPos;
+	}
+}
+
+// grayman #3643 - register door opening data for each side of the door
+void CFrobDoor::GetDoorHandlingPositions()
+{
+	// No need to establish door handling positions if the door can't
+	// be used by AI.
+
+	// Can't pass through doors that don't rotate on the z-axis.
+
+	idVec3 rotationAxis = GetRotationAxis();
+	if ((rotationAxis.z == 0) && ((rotationAxis.x != 0) || (rotationAxis.y != 0)))
+	{
+		return;
+	}
+
+	// Since door handling positions are only for the use of AI, if there
+	// are no AI in the map (yet), there's no AAS file, so trying to set up
+	// door handling positions will fail. To let mappers create maps with no
+	// AI in them, test for AAS, and skip this method if none is available.
+
+	idAAS *aas = gameLocal.GetAAS("aas32");
+	if (aas == NULL)
+	{
+		return;
+	}
+
+	// There are 2 conditions that dictate how the positions are determined:
+	//
+	// 1 - the door rotates or slides
+	// 2 - the door is activated by frobbing, and/or controllers (switches/buttons), and/or door handling positions
+
+	// A door has two sides. We keep data per side. For a rotating door,
+	// side 0 is the direction the door moves, and side 1 is the other side.
+
+	//determine which is side 0
+
+	idAngles rotate = spawnArgs.GetAngles("rotate", "0 90 0");
+	m_rotates = ( (rotate.yaw != 0) || (rotate.pitch != 0) || (rotate.roll != 0) );
+
+	idEntity* frontPosEnt = NULL;
+	idEntity* backPosEnt = NULL;
+
+	idEntity* frontController = NULL;
+	idEntity* backController = NULL;
+
+	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
+	{
+		for ( int j = 0 ; j < NUM_DOOR_POSITIONS ; j++ )
+		{
+			m_doorPositions[i][j].Zero();
+		}
+	}
+
+	// Default: in case door is controlled by frobbing
+
+	if (m_rotates)
+	{
+		GetForwardPos();
+		GetBehindPos();
+		GetMidPos(rotate.yaw);
+	}
+	else // slides
+	{
+		GetMidPos(0);
+		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT] = m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID];
+		m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_BACK]   = m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID];
+		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK]  = m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID];
+		m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT]  = m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID];
+	}
+
+	// If door handling positions exist, they override the default frobbing positions
+
+	if (m_doorHandlingPositions.Num() > 0)
+	{
+		for ( int i = 0 ; i < m_doorHandlingPositions.Num() ; i++) // for doors that use door handling positions
+		{
+			// determine which side of the door the entity sits on
+			idEntity* e = m_doorHandlingPositions[i].GetEntity();
+			if (e)
+			{
+				bool isInFront = false;
+				if (m_rotates)
+				{
+					idVec3 v = e->GetPhysics()->GetOrigin() - GetClosedBox().GetCenter();
+					float dot = v * m_OpenDir;
+					if (dot > 0)
+					{
+						isInFront = true;
+					}
+				}
+				else // sliding door
+				{
+					float dist2frontfront = (e->GetPhysics()->GetOrigin() - m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT]).LengthFast();
+					float dist2backfront  = (e->GetPhysics()->GetOrigin() - m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT]).LengthFast();
+					if (dist2frontfront < dist2backfront)
+					{
+						isInFront = true;
+					}
+				}
+
+				if (isInFront)
+				{
+					if (frontPosEnt == NULL)
+					{
+						frontPosEnt = e;
+					}
+				}
+				else if (backPosEnt == NULL)
+				{
+					backPosEnt = e;
+				}
+			}
+
+			if (frontPosEnt && backPosEnt)
+			{
+				break;
+			}
+		}
+
+		idVec3 goal;
+		if ( frontPosEnt != NULL )
+		{
+			goal = frontPosEnt->GetPhysics()->GetOrigin();
+			m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT] = goal;
+			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_BACK]   = goal;
+		}
+
+		if ( backPosEnt != NULL )
+		{
+			goal = backPosEnt->GetPhysics()->GetOrigin();
+			m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK] = goal;
+			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT] = goal;
+		}
+		// clear the door handle positions list and store our found
+		// entities in slots 0 and 1. It's possible
+		// that one or the other might be NULL (doesn't exist),
+		// but not both.
+
+		m_doorHandlingPositions.Clear();
+		idEntityPtr<idEntity> ptr0;
+		idEntityPtr<idEntity> ptr1;
+		ptr0 = frontPosEnt;
+		ptr1 = backPosEnt;
+		m_doorHandlingPositions.Append(ptr0); // side 0 entity
+		m_doorHandlingPositions.Append(ptr1); // side 1 entity
+	}
+	
+	// If door controllers exist, they override the default frobbing and door handling positions
+
+	if (m_controllers.Num() > 0) // Is the door controlled by buttons/switches/levers?
+	{
+		for ( int i = 0 ; i < m_controllers.Num() ; i++)
+		{
+			// determine which side of the door the entity sits on
+			idEntity* e = m_controllers[i].GetEntity();
+			if (e)
+			{
+				bool isInFront = false;
+				if (m_rotates)
+				{
+					idVec3 v = e->GetPhysics()->GetOrigin() - GetClosedBox().GetCenter();
+					float dot = v * m_OpenDir;
+					if (dot > 0)
+					{
+						isInFront = true;
+					}
+				}
+				else // sliding door
+				{
+					float dist2frontfront = (e->GetPhysics()->GetOrigin() - m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT]).LengthFast();
+					float dist2backfront  = (e->GetPhysics()->GetOrigin() - m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT]).LengthFast();
+					if (dist2frontfront < dist2backfront)
+					{
+						isInFront = true;
+					}
+				}
+
+				if (isInFront)
+				{
+					if (frontController == NULL)
+					{
+						frontController = e;
+					}
+				}
+				else if (backController == NULL)
+				{
+					backController = e;
+				}
+			}
+
+			if (frontController && backController)
+			{
+				break;
+			}
+		}
+
+		float standOff; // not used
+		idVec3 goal;
+
+		if ( frontController != NULL )
+		{
+			static_cast<CBinaryFrobMover*>(frontController)->GetSwitchGoal(goal,standOff,0);
+			m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT] = goal;
+			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_BACK]   = goal;
+		}
+
+		if ( backController != NULL )
+		{
+			static_cast<CBinaryFrobMover*>(backController)->GetSwitchGoal(goal,standOff,0);
+			m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK] = goal;
+			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT] = goal;
+		}
+
+		// clear the controller list and store our found
+		// controllers in slots 0 and 1. It's possible
+		// that one or the other might be NULL (doesn't exist),
+		// but not both.
+
+		m_controllers.Clear();
+		idEntityPtr<idEntity> ptr0;
+		idEntityPtr<idEntity> ptr1;
+		ptr0 = frontController;
+		ptr1 = backController;
+		m_controllers.Append(ptr0); // side 0 controller
+		m_controllers.Append(ptr1); // side 1 controller
+	}
+}
+
+// grayman #3643 - xfer the door's locking situation to the controllers
+void CFrobDoor::SetControllerLocks()
+{
+	int num = m_controllers.Num();
+	if (num > 0)
+	{
+		for ( int i = 0 ; i < num ; i++ )
+		{
+			idEntity* e = m_controllers[i].GetEntity();
+			if (e && e->IsType(CBinaryFrobMover::Type))
+			{
+				PickableLock* controllerLock = static_cast<CBinaryFrobMover*>(e)->GetLock();
+				// Read the door's spawnargs to get the lock settings
+				controllerLock->InitFromSpawnargs(spawnArgs);
+
+				// Set the controller's lockpick type from the door's
+				idStr pick = spawnArgs.GetString("lock_picktype");
+				e->spawnArgs.Set("lock_picktype",pick.c_str());
+
+				// Set the controller's used_by list from the door's
+				for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))
+				{
+					// argh, backwards compatibility, must keep old used_by format for used_by_name
+					// explicitly ignore stuff with other prefixes
+					idStr kn = kv->GetKey();
+					if ( !kn.IcmpPrefix("used_by_inv_name") || !kn.IcmpPrefix("used_by_category") || !kn.IcmpPrefix("used_by_classname") )
+					{
+						continue;
+					}
+
+					// Add each entity name to the controller's list
+					e->m_UsedByName.AddUnique(kv->GetValue());
+				}
+			}
+		}
+
+		Event_SetKey("open_on_unlock", "0"); // tell door not to open on unlock
+		Unlock(true);
+	}
+}
+
+void CFrobDoor::GetForwardPos()
+{
+	const idVec3& frobDoorOrg = GetPhysics()->GetOrigin();
+	const idVec3& closedPos = frobDoorOrg + GetClosedPos();
+
+	idBounds frobDoorBounds = GetPhysics()->GetAbsBounds();
+
+	float size = AI_SIZE/2;
+
+	idVec3 dir = closedPos - frobDoorOrg;
+	dir.z = 0;
+	idVec3 dirNorm = dir;
+	dirNorm.NormalizeFast();
+
+	idVec3 openDirNorm = m_OpenDir;
+	openDirNorm.z = 0;
+	openDirNorm.NormalizeFast();
+
+	idVec3 parallelAwayOffset = dirNorm * size * 1.4f;
+	idVec3 normalAwayOffset = openDirNorm * size * 2.5;
+
+	idVec3 awayPos = closedPos - parallelAwayOffset - normalAwayOffset;
+	awayPos.z = frobDoorBounds[0].z + 5;
+	m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK] = awayPos;
+	m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT] = awayPos;
+}
+
+void CFrobDoor::GetBehindPos()
+{
+	// calculate where to stand when the door swings towards us
+	const idVec3& frobDoorOrg = GetPhysics()->GetOrigin();
+	const idVec3& openDir = GetOpenDir();
+	const idVec3& closedPos = frobDoorOrg + GetClosedPos();
+
+	idBounds frobDoorBounds = GetPhysics()->GetAbsBounds();
+
+	idBounds bounds(idVec3( -16, -16, 0 ),idVec3( 16, 16, 68 )); // idActor bounds
+	float size = bounds[1][0];
+	idTraceModel trm(bounds);
+	idClipModel clip(trm);
+
+	idVec3 dir = closedPos - frobDoorOrg;
+	dir.z = 0;
+	idVec3 dirNorm = dir;
+	dirNorm.NormalizeFast();
+	float dist = dir.LengthFast();
+	
+	idVec3 openDirNorm = openDir;
+	openDirNorm.z = 0;
+	openDirNorm.NormalizeFast();
+
+	// next to the door
+	idVec3 parallelTowardOffset = dirNorm;
+	parallelTowardOffset *= dist + size * 2;
+
+	idVec3 normalTowardOffset = openDirNorm;
+	normalTowardOffset *= size * 2;
+
+	idVec3 towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
+	towardPos.z = frobDoorBounds[0].z + 5;
+
+	// GetBehindPos() spends time checking fit because the AI stands
+	// to one side on this side of the door, and furniture, etc. might
+	// get in the way. GetForwardPos() doesn't have that problem.
+
+	// check if we can stand at this position
+	int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, NULL);
+
+	idAAS *aas = gameLocal.GetAAS("aas32");
+
+	int areaNum = aas->PointAreaNum(towardPos);
+
+	if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
+	{
+		// this position is either blocked, in the void or can't be used since the door has open peers
+		// try at 45° swinging angle
+		parallelTowardOffset = dirNorm;
+
+		normalTowardOffset = openDirNorm;
+
+		towardPos = parallelTowardOffset + normalTowardOffset;
+		towardPos.NormalizeFast();
+		towardPos *= (dist + size * 2);
+		towardPos += frobDoorOrg;
+		towardPos.z = frobDoorBounds[0].z + 5;
+
+		contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, NULL);
+
+		areaNum = aas->PointAreaNum(towardPos);
+
+		if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
+		{
+			// not useable, try in front of the door far enough away
+			parallelTowardOffset = dirNorm * size * 1.2f;
+
+			normalTowardOffset = openDirNorm;
+			normalTowardOffset *= dist + 2.5f * size;
+
+			towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
+			towardPos.z = frobDoorBounds[0].z + 5;
+
+			contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, NULL);
+
+			areaNum = aas->PointAreaNum(towardPos);
+
+			if ( contents || (areaNum == 0) )
+			{
+				// TODO: no suitable position found
+			}
+		}
+	}
+	m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT] = towardPos;
+	m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_BACK]   = towardPos;
+}
+
+// grayman #3643 - retrieve a particular door controller
+idEntityPtr<idEntity> CFrobDoor::GetDoorController(int side)
+{
+	idEntityPtr<idEntity> ePtr;
+	ePtr = NULL;
+	int num = m_controllers.Num();
+
+	switch (side)
+	{
+	case DOOR_SIDE_FRONT:
+		if (num >= 1)
+		{
+			ePtr = m_controllers[DOOR_SIDE_FRONT];
+		}
+		break;
+	case DOOR_SIDE_BACK:
+		if (num == 2)
+		{
+			ePtr = m_controllers[DOOR_SIDE_BACK];
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ePtr;
+}
+
+// grayman #3643 - retrieve a particular door handle position
+idEntityPtr<idEntity> CFrobDoor::GetDoorHandlePosition(int side)
+{
+	idEntityPtr<idEntity> ePtr;
+	ePtr = NULL;
+	int num = m_doorHandlingPositions.Num();
+
+	switch (side)
+	{
+	case DOOR_SIDE_FRONT:
+		if (num >= 1)
+		{
+			ePtr = m_doorHandlingPositions[DOOR_SIDE_FRONT];
+		}
+		break;
+	case DOOR_SIDE_BACK:
+		if (num == 2)
+		{
+			ePtr = m_doorHandlingPositions[DOOR_SIDE_BACK];
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ePtr;
+}
+
+void CFrobDoor::LockControllers(bool bMaster) // grayman #3643
+{
+	for ( int i = 0 ; i < m_controllers.Num() ; i++ )
+	{
+		idEntity* e = m_controllers[i].GetEntity();
+		if (e)
+		{
+			static_cast<CBinaryFrobMover*>(e)->Lock(bMaster);
+		}
+	}
+}
+
+bool CFrobDoor::UnlockControllers(bool bMaster) // grayman #3643
+{
+	// On the first unlock, capture whether that unlock is going
+	// to do an automatic open of the door. On a subsequent
+	// unlock of the other controller, temporarily turn off the
+	// spawnarg that tells it to automatically open the door, since
+	// we've already done so.
+
+	bool result = true;
+	bool capturedResult = false;
+	for ( int i = 0 ; i < m_controllers.Num() ; i++ )
+	{
+		idEntity* e = m_controllers[i].GetEntity();
+		if (e)
+		{
+			if (!capturedResult)
+			{
+				result = static_cast<CBinaryFrobMover*>(e)->Unlock(bMaster);
+				capturedResult = true;
+			}
+			else
+			{
+				bool openOnUnlock = e->spawnArgs.GetBool("open_on_unlock");
+				e->Event_SetKey("open_on_unlock", "0"); // tell controller not to open on unlock
+				static_cast<CBinaryFrobMover*>(e)->Unlock(bMaster);
+				if (openOnUnlock)
+				{
+					e->Event_SetKey("open_on_unlock", "1"); // reset spawnarg
+				}
+			}
+		}
+	}
+	return result;
+}
+
+// grayman #3643
+bool CFrobDoor::IsLocked()
+{
+	bool isLocked = false;
+
+	if (m_controllers.Num() > 0 )
+	{
+		for ( int i = 0 ; i < m_controllers.Num() ; i++ )
+		{
+			idEntity* e = m_controllers[i].GetEntity();
+			if (e && e->IsType(CBinaryFrobMover::Type))
+			{
+				CBinaryFrobMover* controller = static_cast<CBinaryFrobMover*>(e);
+				if (controller->IsLocked())
+				{
+					isLocked = true;
+					break;
+				}
+			}
+		}
+	}
+	else // no controllers, so check the door
+	{
+		isLocked = m_Lock->IsLocked();
+	}
+
+	return isLocked;
+}
+
+
+
 

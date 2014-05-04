@@ -50,6 +50,46 @@ const idStr& HandleDoorTask::GetName() const
 	return _name;
 }
 
+void HandleDoorTask::InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool susDoorCloseFromSameSide)
+{
+	// determine which side of the door we're on
+	_doorSide = owner->GetDoorSide(frobDoor);
+
+	// if susDoorCloseFromSameSide is TRUE, flip the side
+
+	if (susDoorCloseFromSameSide)
+	{
+		if (_doorSide == DOOR_SIDE_FRONT)
+		{
+			_doorSide = DOOR_SIDE_BACK;
+		}
+		else
+		{
+			_doorSide = DOOR_SIDE_FRONT;
+		}
+	}
+
+	if (_doorSide == DOOR_SIDE_FRONT)
+	{
+		_frontPosEnt = frobDoor->GetDoorController(DOOR_SIDE_FRONT);
+		_backPosEnt = frobDoor->GetDoorController(DOOR_SIDE_BACK);
+		_frontDHPosition = frobDoor->GetDoorHandlePosition(DOOR_SIDE_FRONT);
+		_backDHPosition = frobDoor->GetDoorHandlePosition(DOOR_SIDE_BACK);
+	}
+	else
+	{
+		_frontPosEnt = frobDoor->GetDoorController(DOOR_SIDE_BACK);
+		_backPosEnt = frobDoor->GetDoorController(DOOR_SIDE_FRONT);
+		_frontDHPosition = frobDoor->GetDoorHandlePosition(DOOR_SIDE_BACK);
+		_backDHPosition = frobDoor->GetDoorHandlePosition(DOOR_SIDE_FRONT);
+	}
+
+	// set door positions
+	_frontPos = frobDoor->GetDoorPosition(_doorSide,DOOR_POS_FRONT);
+	_backPos = frobDoor->GetDoorPosition(_doorSide,DOOR_POS_BACK);
+	_midPos = frobDoor->GetDoorPosition(_doorSide,DOOR_POS_MID);
+}
+
 void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Init the base class
@@ -74,6 +114,9 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask(); // grayman #2345 - can't perform the task if there's no door
 		return;
 	}
+
+	idAngles rotate = frobDoor->spawnArgs.GetAngles("rotate", "0 90 0"); // grayman #3643
+	_rotates = ( (rotate.yaw != 0) || (rotate.pitch != 0) || (rotate.roll != 0) );
 
 	if (!owner->m_bCanOperateDoors)
 	{
@@ -118,7 +161,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	CFrobDoor* closeMe = memory.closeMe.GetEntity();
 
-	_doorShouldBeClosed = false;
+	_closeFromSameSide = false;
 	if ( memory.closeSuspiciousDoor )
 	{
 		if ( closeMe == frobDoor )
@@ -132,7 +175,16 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 				subsystem.FinishTask(); // quit the task
 				return;
 			}
-			_doorShouldBeClosed = true;
+
+			if (memory.susDoorCloseFromThisSide == owner->GetDoorSide(frobDoor))
+			{
+				_closeFromSameSide = true; // close the door w/o going through it
+			}
+
+			if (memory.susDoorSameAsCurrentDoor) // grayman #3643
+			{
+				_closeFromSameSide = !_closeFromSameSide;
+			}
 		}
 	}
 
@@ -149,7 +201,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_wasLocked = false;
 
-	if (frobDoor->IsLocked())
+	if (frobDoor->IsLocked()) // checks controllers if used, door if not
 	{
 		// check if we have already tried the door
         idAAS*  aas = owner->GetAAS();
@@ -176,15 +228,17 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_doorInTheWay = false;
 
-	GetDoorHandlingPositions(owner, frobDoor);
+	InitDoorPositions(owner, frobDoor, _closeFromSameSide);
 
-	if ( _doorShouldBeClosed ) // grayman #2866
+	if ( _closeFromSameSide ) // grayman #2866
 	{
-		_doorHandlingState = EStateMovingToBackPos;
+		// close the door w/o going through it
+		// InitDoorPositions() set up the door positions to make this happen
+		_doorHandlingState = EStateMovingToBackPos; 
 	}
 	else
 	{
-		_doorHandlingState = EStateNone;
+		_doorHandlingState = EStateNone; // treat the door normally: go through it, then close it
 	}
 }
 
@@ -200,7 +254,7 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 
 	int numUsers = door->GetUserManager().GetNumUsers();
 
-	if ( _doorShouldBeClosed ) // grayman #3104 - if in this state, continue to head for _backPos
+	if ( _closeFromSameSide ) // grayman #3104 - if in this state, continue to head for _backPos
 	{
 		useMid = false; // use _backPos
 	}
@@ -219,7 +273,7 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	else if (numUsers < 2)
 	{
 		bool shouldBeLocked = (_wasLocked || door->GetWasFoundLocked() || door->spawnArgs.GetBool("should_always_be_locked", "0")); // grayman #3523
-		if (AllowedToClose(owner) && (_doorInTheWay || owner->ShouldCloseDoor(door, shouldBeLocked) || _doorShouldBeClosed )) // grayman #2866
+		if (AllowedToClose(owner) && (_doorInTheWay || owner->ShouldCloseDoor(door, shouldBeLocked) || owner->GetMemory().closeSuspiciousDoor)) // grayman #2866
 		{
 			useMid = false; // use _backPos
 		}
@@ -249,29 +303,30 @@ void HandleDoorTask::MoveToSafePosition(CFrobDoor* door)
 	dir2AI.z = 0;
 	dir2AI.NormalizeFast();
 	_safePos = centerPos + 1.5*NEAR_DOOR_DISTANCE*dir2AI;
-
-	if (!owner->MoveToPosition(_safePos,HANDLE_DOOR_ACCURACY))
-	{
-		// TODO: position not reachable, need a better one
-	}
-	_doorHandlingState = EStateMovingToSafePos;
+	owner->StopMove(MOVE_STATUS_DONE); // grayman #3643
+	owner->TurnToward(_safePos); // grayman #3643
+	_waitEndTime = gameLocal.time + 2000;
+	_doorHandlingState = EStateMovingToSafePos1;
 }
 
 // grayman #3523 - Determine whether an interrupted door
 // is something to be concerned about. Also set up
 // trying to push the player out of the way.
 
-bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door)
+bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 {
 	idAI* owner = _owner.GetEntity();
 
 	assert( ( door != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
-	Memory& memory = owner->GetMemory();
-
 	// Bark about it.
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1")));
+
+	if (ownerIsBlocker)
+	{
+		return false;
+	}
 	
 	_blockedDoorCount++;
 
@@ -293,8 +348,7 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door)
 		// why the door is blocked), so let's set that flag to TRUE,
 		// remember what the previous setting was, and remember that
 		// we're doing this, so we can reset the flag when done.
-		// These variables are cleared when the open succeeds, as well
-		// as in the OnFinish() method.
+		// These variables are cleared when the open succeeds.
 		if (!_pushingPlayer)
 		{
 			_pushingPlayer = true; // trying to push the player
@@ -307,56 +361,32 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door)
 
 	// Search for a while. Remember the door so you can close it later. 
 
-	memory.closeMe = door;
-	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
-
-	// Check if the door swings toward or away from us. We'll use this
-	// to determine whether we have to walk through the door before finally
-	// closing it.
-
-	memory.doorSwingsToward = (door->GetOpenDir() * (owner->GetPhysics()->GetOrigin() - door->GetPhysics()->GetOrigin()) > 0);
-
-	// Handle sliding doors.
-
-	idList< idEntityPtr<idEntity> > list;
-	if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
-	{
-		memory.frontPos = list[0];
-		memory.backPos = list[1];
-	}
-
-	door->SetSearching(owner); // keeps other AI from joining in the search
-
-	// Raise alert level
-
-	// One more piece of evidence of something out of place
-	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_DOOR;
-	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
-	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-
-	if ( owner->AI_AlertLevel < ( owner->thresh_4 - 0.1f ) )
-	{
-		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
-		memory.alertClass = EAlertVisual_2; // grayman #2603
-		memory.alertType = EAlertTypeDoor;
-		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-
-		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
-	}
-
-	// Do new reaction to stimulus
-
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.alertedDueToCommunication = false;
+	owner->SetUpSuspiciousDoor(door); // grayman #3643
 	return true;
+}
+
+// grayman #3643 - AI turns toward different positions
+// just prior to frobbing a door or control switch
+void HandleDoorTask::Turn(idVec3 pos, CFrobDoor* door, idEntity* controller)
+{
+	idVec3 targetPos;
+
+	if (controller) // door controlled by switches
+	{
+		targetPos = controller->GetPhysics()->GetOrigin();
+	}
+	else // frob door directly
+	{
+		if (_rotates)
+		{
+			targetPos = pos;
+		}
+		else // sliding door
+		{
+			targetPos = door->GetClosedBox().GetCenter();
+		}
+	}
+	_owner.GetEntity()->TurnToward(targetPos);
 }
 
 bool HandleDoorTask::Perform(Subsystem& subsystem)
@@ -391,7 +421,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		// handle it, and I don't fit through the opening, add the door's area #
 		// to my list of forbidden areas.
 
-		if ( !_doorShouldBeClosed ) // grayman #2866
+		if ( !memory.closeSuspiciousDoor ) // grayman #2866
 		{
 			if (!_canHandleDoor && !FitsThrough()) // grayman #2712
 			{
@@ -433,7 +463,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
 	const idVec3& centerPos = frobDoor->GetClosedBox().GetCenter(); // grayman #1327
 	const idVec3& currentPos = frobDoor->GetCurrentPos(); // grayman #3523
-	// gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
+	//gameRenderWorld->DebugArrow(colorCyan, currentPos, currentPos + idVec3(0, 0, 20), 2, 1000);
 
 	// if our current door is part of a double door, this is the other part.
 	CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
@@ -487,15 +517,18 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
-					idEntity* controller = GetRemoteControlEntityForDoor();
+					/*idEntity* controller = GetRemoteControlEntityForDoor();
 
 					if ( ( controller != NULL ) && ( masterUser == owner ) && ( controller->GetUserManager().GetNumUsers() == 0 ) )
 					{
 						// We have an entity to control this door, interact with it
-						owner->StopMove(MOVE_STATUS_DONE);
 						subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+
+						// After the InteractionTask completes, control will return
+						// to HandleDoorTask::Init().
+
 						return false;
-					}
+					}*/
 				}
 
 				// grayman #3317 - use less position accuracy when running
@@ -542,7 +575,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else
 					{
-						idEntity* controller = GetRemoteControlEntityForDoor();
+						/*idEntity* controller = GetRemoteControlEntityForDoor();
 
 						if (controller != NULL)
 						{	 
@@ -550,9 +583,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							{
 								// We have an entity to control this door, interact with it
 								subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
+
+								// After the InteractionTask completes, control will return
+								// to HandleDoorTask::Init().
+
 								return false;
 							}
-						}
+						}*/
 
 						// grayman #3317 - use less position accuracy when running
 						if (!owner->MoveToPosition(_frontPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY))
@@ -590,7 +627,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					dir.z = 0;
 					float dist2Door = dir.LengthFast();
 
-					if ((product > 0.3f) || (dist2Door > QUEUE_DISTANCE))
+					if (!_rotates || (product > 0.3f) || (dist2Door > QUEUE_DISTANCE)) // grayman #3643 - no need to check sliding doors
 					{
 						// door is open and not (yet) in the way
 
@@ -676,7 +713,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (dist <= QUEUE_DISTANCE) // grayman #2345 - this was the next layer up
 					{
-						GetDoorHandlingPositions(owner, frobDoor);
 						if (_doorInTheWay)
 						{	
 							DoorInTheWay(owner, frobDoor);
@@ -719,6 +755,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							{
 								_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
 							}
+							owner->TurnToward(centerPos); // grayman #3643
 						}
 					}
 				}
@@ -809,7 +846,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							break;
 						}
 
-						GetDoorHandlingPositions(owner, frobDoor);
 						if (_doorInTheWay)
 						{	
 							DoorInTheWay(owner, frobDoor);
@@ -818,11 +854,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						else
 						{
 							PickWhere2Go(frobDoor); // grayman #3317 - go through an already-opened door, don't bother with _frontPos
-//							if (!owner->MoveToPosition(_frontPos,HANDLE_DOOR_ACCURACY)) // grayman #2345 - need more accurate AI positioning
-//							{
-//								// TODO: position not reachable, need a better one
-//							}
-//							_doorHandlingState = EStateMovingToFrontPos;
 						}
 					}
 					else if (dist <= NEAR_DOOR_DISTANCE) // grayman #1327 - too close to door when you're not the master
@@ -833,6 +864,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else if (owner->GetMoveStatus() != MOVE_STATUS_WAITING)
 					{
 						owner->StopMove(MOVE_STATUS_WAITING);
+						owner->TurnToward(centerPos); // grayman #3643
 						if (queuePos > 0)
 						{
 							_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
@@ -851,42 +883,43 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 			}
 			break;
-		case EStateMovingToSafePos:
-			if (!frobDoor->IsOpen()) // closed
+		case EStateMovingToSafePos1:
 			{
-				if ( owner->AI_MOVE_DONE || owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #3004 - leave this state if you're not moving
+				// don't care whether door is open or closed in this state
+				float yawDiff = idMath::AngleNormalize180(owner->GetCurrentYaw() - owner->GetIdealYaw()); // how close are you to your ideal yaw?
+				if ( ( idMath::Fabs( yawDiff ) < 0.1f ) || ( gameLocal.time >= _waitEndTime ) )
 				{
-					owner->StopMove(MOVE_STATUS_WAITING);
-					owner->TurnToward(centerPos); // grayman #1327
-					if (queuePos > 0)
+					// turn done, move!
+					if (!owner->MoveToPosition(_safePos,HANDLE_DOOR_ACCURACY))
 					{
-						_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
+						// TODO: position not reachable, need a better one
 					}
-					_doorHandlingState = EStateApproachingDoor;
+					_doorHandlingState = EStateMovingToSafePos2;
+					_waitEndTime = gameLocal.time;
 				}
 			}
-			else // open
+			break;
+		case EStateMovingToSafePos2:
+			// don't care whether door is open or closed in this state
+			if (owner->AI_MOVE_DONE || owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #3004 - leave this state if you're not moving
 			{
-				if (owner->AI_MOVE_DONE || owner->ReachedPos(_safePos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #3004 - leave this state if you're not moving
+				owner->StopMove(MOVE_STATUS_WAITING);
+				owner->TurnToward(centerPos); // grayman #1327
+
+				// grayman #3390 - you've moved away from the door. If someone
+				// else is closer than you, and you're the master, give up that role
+				if ( masterUser == owner )
 				{
-					owner->StopMove(MOVE_STATUS_WAITING);
-					owner->TurnToward(centerPos); // grayman #1327
-
-					// grayman #3390 - you've moved away from the door. If someone
-					// else is closer than you, and you're the master, give up that role
-					if ( masterUser == owner )
-					{
-						frobDoor->GetUserManager().ResetMaster(frobDoor); // redefine which AI is the master
-						masterUser = frobDoor->GetUserManager().GetMasterUser();
-						queuePos = frobDoor->GetUserManager().GetIndex(owner);
-					}
-
-					if (queuePos > 0) // not the master
-					{
-						_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
-					}
-					_doorHandlingState = EStateApproachingDoor;
+					frobDoor->GetUserManager().ResetMaster(frobDoor); // redefine which AI is the master
+					masterUser = frobDoor->GetUserManager().GetMasterUser();
+					queuePos = frobDoor->GetUserManager().GetIndex(owner);
 				}
+
+				if (queuePos > 0) // not the master
+				{
+					_leaveQueue = gameLocal.time + (1 + gameLocal.random.RandomFloat()/2.0)*QUEUE_TIMEOUT; // set queue timeout
+				}
+				_doorHandlingState = EStateApproachingDoor;
 			}
 			break;
 		case EStateMovingToFrontPos:
@@ -913,7 +946,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					// reached front position
 					owner->StopMove(MOVE_STATUS_DONE);
-					owner->TurnToward(closedPos);
+					Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
 					_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 					_doorHandlingState = EStateWaitBeforeOpen;
 					break;
@@ -963,7 +996,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// reached front position, or close enough
 						owner->StopMove(MOVE_STATUS_DONE);
-						owner->TurnToward(currentPos);
+						Turn(currentPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
 						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 						_doorHandlingState = EStateWaitBeforeOpen;
 					}
@@ -999,7 +1032,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			if (!frobDoor->IsOpen()) // closed
 			{
 				// already closed, no need for a retry open
-				owner->TurnToward(closedPos);
+				Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
 				_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 				_doorHandlingState = EStateWaitBeforeOpen;
 				_retryCount++; // might come back here, so keep track of visit count
@@ -1018,7 +1051,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			if (!frobDoor->IsOpen()) // closed
 			{
 				// already closed, no need for a retry open
-				owner->TurnToward(closedPos);
+				Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
 				_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 				_doorHandlingState = EStateWaitBeforeOpen;
 				_retryCount++; // might come back here, so keep track of visit count
@@ -1027,8 +1060,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				if (gameLocal.time >= _waitEndTime)
 				{
-					frobDoor->SetLastUsedBy(owner); // grayman #2859
-					frobDoor->Close(true);
+					CloseDoor(owner,frobDoor,_frontPosEnt.GetEntity());
 					_waitEndTime = gameLocal.time + 2000;
 					_doorHandlingState = EStateRetryInterruptedOpen3;
 				}
@@ -1037,7 +1069,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		case EStateRetryInterruptedOpen3: // grayman #3523
 			if (!frobDoor->IsOpen()) // closed
 			{
-				owner->TurnToward(closedPos);
+				Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
 				_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 				_doorHandlingState = EStateWaitBeforeOpen;
 				_retryCount++; // might come back here, so keep track of visit count
@@ -1064,7 +1096,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		case EStateWaitBeforeOpen:
 			if (!frobDoor->IsOpen()) // closed
 			{
-				if (doubleDoor != NULL && doubleDoor->IsOpen())
+				if ( (doubleDoor != NULL) && doubleDoor->IsOpen() )
 				{
 					// the other part of the double door is already open
 					// no need to open this one
@@ -1108,10 +1140,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else if (gameLocal.time >= _waitEndTime)
 					// grayman #720 - need the AI to reach for the door
 					{
-						// if (!OpenDoor())
-						// {
-						//		return true;
-						// }
 						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 						_doorHandlingState = EStateStartOpen;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
@@ -1215,7 +1243,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				// the door isn't changing state, so it must truly be closed
 
-				if (doubleDoor != NULL && doubleDoor->IsOpen())
+				if ( (doubleDoor != NULL) && doubleDoor->IsOpen())
 				{
 					// the other part of the double door is already open
 					// no need to open this one
@@ -1230,8 +1258,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 
 				// try again
+				
 				owner->StopMove(MOVE_STATUS_DONE);
-				owner->TurnToward(closedPos);
+				Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
+
 				if (masterUser == owner)
 				{
 					frobDoor->SetWasFoundLocked(frobDoor->IsLocked()); // grayman #3104
@@ -1262,13 +1292,27 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						{
 							// we are blocking the door
 							// check whether we should open or close it
-							idVec3 forward = owner->viewAxis.ToAngles().ToForward(); // grayman #2345 - use viewaxis, not getaxis()
-							idVec3 doorDir = frobDoor->GetOpenDir() * frobDoor->GetPhysics()->GetAxis();
 
-							if (forward * doorDir < 0)
+							// grayman #3643 - handle sliding door
+							bool openDoor = true; // assume a sliding door, which you always want to re-open
+
+							if (_rotates)
 							{
-								// We are facing the opposite of the opening direction of the door.
-								// Close it, exit the task, and try again.
+								// door rotates
+								idVec3 forward = owner->viewAxis.ToAngles().ToForward(); // grayman #2345 - use viewaxis, not getaxis()
+								idVec3 doorDir = frobDoor->GetOpenDir() * frobDoor->GetPhysics()->GetAxis();
+
+								if (forward * doorDir < 0)
+								{
+									// We are facing the opposite of the opening direction of the door.
+									// Close it, exit the task, and try again.
+									openDoor = false;
+								}
+							}
+
+							if (!openDoor)
+							{
+								// Close it and try opening again.
 								owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 								_doorHandlingState = EStateStartClose;
 								_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
@@ -1278,7 +1322,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								// we are facing the opening direction of the door
 								// open it
 								owner->StopMove(MOVE_STATUS_DONE);
-								owner->TurnToward(closedPos);
+								Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
+
 								if (masterUser == owner)
 								{
 									if (!OpenDoor())
@@ -1299,15 +1344,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 						if (masterUser == owner)
 						{
-							if (AssessStoppedDoor(frobDoor))
+							if (AssessStoppedDoor(frobDoor,(frobDoor->GetLastBlockingEnt() == owner)))
 							{
 								return true; // alerted, and will be searching
 							}
 
 							// try closing the door and opening it again
-							owner->TurnToward(currentPos);
-							_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
-							_doorHandlingState = EStateRetryInterruptedOpen1;
+							
+							if (_frontPosEnt.GetEntity())
+							{
+								// Using a controller. Go use it.
+								_doorHandlingState = EStateApproachingDoor;
+							}
+							else
+							{
+								// Deal with the door directly, w/o going anywhere.
+								Turn(currentPos,frobDoor,NULL); // grayman #3643
+								_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
+								_doorHandlingState = EStateRetryInterruptedOpen1;
+							}
 						}
 					}
 				}
@@ -1336,15 +1391,23 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// you don't fit through the opening
 
-						if (AssessStoppedDoor(frobDoor))
+						if (AssessStoppedDoor(frobDoor,(frobDoor->GetLastBlockingEnt() == owner)))
 						{
 							return true; // alerted, and will be searching
 						}
 
-						// try closing the door and opening it again
-						owner->TurnToward(currentPos);
-						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
-						_doorHandlingState = EStateRetryInterruptedOpen1;
+						if (_frontPosEnt.GetEntity())
+						{
+							// Using a controller. Go use it.
+							_doorHandlingState = EStateApproachingDoor;
+						}
+						else
+						{
+							// Deal with the door directly, w/o going anywhere.
+							Turn(currentPos,frobDoor,NULL); // grayman #3643
+							_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
+							_doorHandlingState = EStateRetryInterruptedOpen1;
+						}
 					}
 				}
 				// when door is fully open, let's get moving
@@ -1399,7 +1462,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							owner->StopMove(MOVE_STATUS_DONE);
 							if (masterUser == owner)
 							{
-								owner->TurnToward(closedPos);
+								Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
+
 								if (!OpenDoor())
 								{
 									return true;
@@ -1491,10 +1555,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 						// we are blocking the door
 
-						if ( !_doorShouldBeClosed ) // grayman #2866
+						if ( !memory.closeSuspiciousDoor ) // grayman #2866
 						{
 							owner->StopMove(MOVE_STATUS_DONE);
-							owner->TurnToward(closedPos);
+							Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
+
 							if (masterUser == owner)
 							{
 								if (!OpenDoor())
@@ -1511,7 +1576,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
-					if ( !_doorShouldBeClosed ) // grayman #2866
+					if ( !memory.closeSuspiciousDoor ) // grayman #2866
 					{
 						if (frobDoor->WasInterrupted() && !FitsThrough())
 						{
@@ -1519,7 +1584,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							//return true;
 
 							// grayman #3390 - instead of leaving the queue, stay in it
-							// and move away, to a safe distance. Relinquish your master
+							// and move away to a safe distance. Relinquish your master
 							// position if you're the master.
 
 							MoveToSafePosition(frobDoor); // grayman #3390
@@ -1542,20 +1607,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						if (numUsers < 2)
 						{
 							bool shouldBeLocked = (_wasLocked || frobDoor->GetWasFoundLocked() || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")); // grayman #3523
-							if (_doorInTheWay || owner->ShouldCloseDoor(frobDoor,shouldBeLocked) || _doorShouldBeClosed ) // grayman #2866
+							if (_doorInTheWay || owner->ShouldCloseDoor(frobDoor,shouldBeLocked) || memory.closeSuspiciousDoor ) // grayman #2866
 							{
-								idEntity* controller = GetRemoteControlEntityForDoor();
-
-								if (controller != NULL && controller->GetUserManager().GetNumUsers() == 0)
-								{
-									// We have an entity to control this door, interact with it
-									subsystem.PushTask(TaskPtr(new InteractionTask(controller)));
-									return false;
-								}
-
 								// close the door
 								owner->StopMove(MOVE_STATUS_DONE);
-								owner->TurnToward(openPos);
+								Turn(openPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
+
 								_waitEndTime = gameLocal.time + 650;
 
 								// grayman #3523 - clean up any requests we made to
@@ -1586,6 +1643,38 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				else // grayman #2712
 				{
 					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to _backPos
+
+					// grayman #3643 - if you've changed state, you might
+					// have an opportunity to leave the door
+
+					if (_doorHandlingState == EStateMovingToMidPos)
+					{
+						// You've been called off of shutting the door, and told
+						// to head for _midPos. But if you're past the door already
+						// just exit the task and move on.
+
+						// Compare the door side you're on now with the side you started with.
+
+						idVec3 mid0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_MID);
+						idVec3 mid1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_MID);
+						idVec3 ownerOrig = owner->GetPhysics()->GetOrigin();
+						int currentDoorSide;
+
+						if ( (mid0 - ownerOrig).LengthSqr() > (mid1 - ownerOrig).LengthSqr() )
+						{
+							currentDoorSide = DOOR_SIDE_FRONT;
+						}
+						else
+						{
+							currentDoorSide = DOOR_SIDE_BACK;
+						}
+
+						if (_doorSide != currentDoorSide)
+						{
+							// you're past the door, so you can leave
+							return true;
+						}
+					}
 				}
 			}
 			break;
@@ -1619,8 +1708,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				if (gameLocal.time >= _waitEndTime)
 				{
-					frobDoor->SetLastUsedBy(owner); // grayman #2859
-					frobDoor->Open(true);
+					OpenDoor();
 					_waitEndTime = gameLocal.time + 2000;
 					_doorHandlingState = EStateRetryInterruptedClose3;
 				}
@@ -1648,9 +1736,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// Door was trying to open, and it stopped.
 						// Try opening it again.
-						owner->TurnToward(currentPos);
+						Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
+
 						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
-						_doorHandlingState = EStateRetryInterruptedOpen1;
+						_doorHandlingState = EStateRetryInterruptedClose2;
 					}
 				}
 			}
@@ -1676,6 +1765,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					if (masterUser == owner)
 					{
 						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						owner->SetWaitState("use_righthand"); // grayman #3643
 						_doorHandlingState = EStateStartClose;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 					}
@@ -1704,13 +1794,19 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if ( ( gameLocal.time >= _waitEndTime ) && ( ( numUsers < 2 ) || _doorInTheWay))
 				{
-					frobDoor->SetLastUsedBy(owner); // grayman #2859
-					frobDoor->Close(true);
+					CloseDoor(owner,frobDoor,_backPosEnt.GetEntity());
 					_doorHandlingState = EStateClosingDoor;
 				}
 				else if ( ( numUsers > 1 ) && !_doorInTheWay)
 				{
-					return true;
+					// grayman #3643 - wait for the raised hand anim to finish,
+					// to keep the AI from turning and walking away with his
+					// hand still raised, which doesn't look good
+
+					if (idStr(owner->WaitState()) != "use_righthand")
+					{
+						return true;
+					}
 				}
 			}
 			break;
@@ -1719,19 +1815,22 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				// we have moved through the door and closed it
 
-				// grayman #2862 - locking the door doesn't care how many users remain on the queue
-
-/*				if (numUsers > 1)
-				{
-					return true;
-				}
- */
 				// If the door should ALWAYS be locked or it was locked before => lock it
 				// but only if the owner is able to unlock it in the first place
 				if (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
 					(_wasLocked || frobDoor->GetWasFoundLocked() || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0"))) // grayman #3104
 				{
-					frobDoor->Lock(false); // lock the door
+					// If the door uses controllers, the lock is kept on
+					// them, not on the door
+					if ( (frobDoor->GetDoorController(DOOR_SIDE_FRONT).GetEntity() != NULL) ||
+						 (frobDoor->GetDoorController(DOOR_SIDE_BACK).GetEntity()  != NULL) )
+					{
+						frobDoor->LockControllers(false); // lock all controllers
+					}
+					else // lock door directly
+					{
+						frobDoor->Lock(false); // lock the door
+					}
 				}
 
 				if (doubleDoor != NULL)
@@ -1754,7 +1853,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						if (owner->CanUnlock(doubleDoor) && AllowedToLock(owner) &&
 							(_wasLocked || doubleDoor->GetWasFoundLocked() || doubleDoor->spawnArgs.GetBool("should_always_be_locked", "0"))) // grayman #3104
 						{
-							doubleDoor->Lock(false); // lock the second door
+							// If the door uses controllers, the lock is kept on
+							// them, not on the door
+							if ( (doubleDoor->GetDoorController(DOOR_SIDE_FRONT).GetEntity() != NULL) ||
+								 (doubleDoor->GetDoorController(DOOR_SIDE_BACK).GetEntity()  != NULL) )
+							{
+								doubleDoor->LockControllers(false); // lock all controllers
+							}
+							else // lock door directly
+							{
+								doubleDoor->Lock(false); // lock the seconddoor
+							}
 						}
 					}
 				}
@@ -1799,13 +1908,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 					// Should owner become concerned that the door was interrupted?
 
-					if (AssessStoppedDoor(frobDoor))
+					if (AssessStoppedDoor(frobDoor,(frobDoor->GetLastBlockingEnt() == owner)))
 					{
 						return true; // alerted, and will be searching
 					}
 
 					// try opening the door and closing it again
-					owner->TurnToward(currentPos);
+					Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
 					_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
 					_doorHandlingState = EStateRetryInterruptedClose1;
 				}
@@ -1838,345 +1947,99 @@ void HandleDoorTask::ResetDoor(idAI* owner, CFrobDoor* newDoor)
 
 	// reset the active door to this door					
 	memory.doorRelated.currentDoor = newDoor;
-	// recalculate standing positions
-	const idVec3& frobDoorOrg = newDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = newDoor->GetOpenDir();
-	idVec3 awayPos = GetAwayPos(owner, newDoor);
-	idVec3 towardPos = GetTowardPos(owner, newDoor);
 
-	if (_doorHandlingState == EStateWaitBeforeClose
-		|| _doorHandlingState == EStateStartClose
-		|| _doorHandlingState == EStateClosingDoor)
+	idAngles rotate = newDoor->spawnArgs.GetAngles("rotate", "0 90 0"); // grayman #3643
+	_rotates = ( (rotate.yaw != 0) || (rotate.pitch != 0) || (rotate.roll != 0) );
+
+	InitDoorPositions(owner, newDoor, false);
+
+	if (_doorHandlingState >= EStateRetryInterruptedClose1) // grayman #3643 - all states from here on
 	{
-		// we have already walked through, so we are standing on the side of the backpos
-		if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-		{
-			// Door swings away from us
-			_frontPos = awayPos;
-			_backPos = towardPos;
-			_midPos = GetMidPos(owner, newDoor, false); // grayman #2345/#2712
-		}
-		else
-		{
-			// Door swings toward us
-			_frontPos = towardPos;
-			_backPos = awayPos;
-			_midPos = GetMidPos(owner, newDoor, true); // grayman #2345/#2712
-		}
-	}
-	else
-	{
-		if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-		{
-			_frontPos = towardPos;
-			_backPos = awayPos;
-		}
-		else
-		{
-			_frontPos = awayPos;
-			_backPos = towardPos;
-		}
-	}
+		// we have already walked through, so we are standing on the back side,
+		// so swap positions
 
-	// check for custom door handling positions
-	for (const idKeyValue* kv = newDoor->spawnArgs.MatchPrefix("door_handle_position"); kv != NULL; kv = newDoor->spawnArgs.MatchPrefix("door_handle_position", kv))
-	{
-		idStr posStr = kv->GetValue();
-		idEntity* doorHandlingPosition = gameLocal.FindEntity(posStr);
+		idVec3 tempPos = _frontPos;
+		_frontPos = _backPos;
+		_backPos = tempPos;
+		_midPos = _backPos; // don't think this gets used when already beyond the door
 
-		if (doorHandlingPosition)
-		{
-			idVec3 posOrg = doorHandlingPosition->GetPhysics()->GetOrigin();
-			idVec3 posDir = posOrg - frobDoorOrg;
+		idEntityPtr<idEntity> tempEntityPtr;
+		tempEntityPtr = _frontPosEnt; // front door controller
+		_frontPosEnt = _backPosEnt;  // back door controller
+		_backPosEnt = tempEntityPtr;
 
-			if (_doorHandlingState == EStateWaitBeforeClose
-				|| _doorHandlingState == EStateStartClose
-				|| _doorHandlingState == EStateClosingDoor)
-			{
-				// we have already walked through, so we are standing on the side of the backpos
-				if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-				{
-					// found door handling position behind the door
-					_backPos = posOrg;
-					_midPos = posOrg; // grayman #2345
-					_backPosEnt = doorHandlingPosition;
-				}
-				else
-				{
-					// found door handling position in front of the door
-					_frontPos = posOrg;
-					_frontPosEnt = doorHandlingPosition;
-
-				}
-			}
-			else
-			{
-				if (posDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-				{
-					// found door handling position in front of the door
-					_frontPos = posOrg;
-					_frontPosEnt = doorHandlingPosition;
-				}
-				else
-				{
-					// found door handling position behind the door
-					_backPos = posOrg;
-					_midPos = posOrg; // grayman #2345
-					_backPosEnt = doorHandlingPosition;
-				}
-			}
-		}
+		tempEntityPtr = _frontDHPosition; // front door controller
+		_frontDHPosition = _backDHPosition; // front door handle position
+		_backDHPosition = tempEntityPtr;  // back door handle position
 	}
 }
 
-idVec3 HandleDoorTask::GetAwayPos(idAI* owner, CFrobDoor* frobDoor)
-{
-	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = frobDoor->GetOpenDir();
-	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
-
-	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
-
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-
-	float size = bounds[1][0];
-
-	idVec3 dir = closedPos - frobDoorOrg;
-	dir.z = 0;
-	idVec3 dirNorm = dir;
-	dirNorm.NormalizeFast();
-	//float dist = dir.LengthFast();
-
-	idVec3 openDirNorm = openDir;
-	openDirNorm.z = 0;
-	openDirNorm.NormalizeFast();
-
-	idVec3 parallelAwayOffset = dirNorm;
-	parallelAwayOffset *= size * 1.4f;
-
-	idVec3 normalAwayOffset = openDirNorm;
-	normalAwayOffset *= size * 2.5;
-
-	idVec3 awayPos = closedPos - parallelAwayOffset - normalAwayOffset;
-	awayPos.z = frobDoorBounds[0].z + 5;
-
-	return awayPos;
-}
-
-// grayman #2345/#2712 - new method to find the mid position
-
-idVec3 HandleDoorTask::GetMidPos(idAI* owner, CFrobDoor* frobDoor, bool away)
-{
-	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = frobDoor->GetOpenDir();
-	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
-
-	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float size = bounds[1][0];
-	idVec3 dir = closedPos - frobDoorOrg;
-	dir.z = 0;
-	float doorWidth = dir.LengthFast();
-	idVec3 dirNorm = dir;
-	dirNorm.NormalizeFast();
-
-	idVec3 openDirNorm = openDir;
-	openDirNorm.z = 0;
-	openDirNorm.NormalizeFast();
-
-	idVec3 parallelMidOffset = dirNorm;
-	parallelMidOffset *= doorWidth/2; // grayman #2712 - align with center of closed door position
-
-	idVec3 normalMidOffset = openDirNorm;
-
-	if (away)
-	{
-		normalMidOffset *= 1.25*doorWidth; // grayman #2712 - when the door swings away from you, clear it before ending the task
-	}
-	else
-	{
-		normalMidOffset *= -size * 3.0; // don't have to go so far when the door swings toward you
-	}
-
-	idVec3 midPos = closedPos - parallelMidOffset + normalMidOffset;
-	midPos.z = frobDoorBounds[0].z + 5;
-
-	return midPos;
-}
-
-idVec3 HandleDoorTask::GetTowardPos(idAI* owner, CFrobDoor* frobDoor)
-{
-	// calculate where to stand when the door swings towards us
-	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = frobDoor->GetOpenDir();
-	//const idVec3& openPos = frobDoorOrg + frobDoor->GetOpenPos();
-	const idVec3& closedPos = frobDoorOrg + frobDoor->GetClosedPos();
-
-	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
-
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float size = bounds[1][0];
-	idTraceModel trm(bounds);
-	idClipModel clip(trm);
-
-	idVec3 dir = closedPos - frobDoorOrg;
-	dir.z = 0;
-	idVec3 dirNorm = dir;
-	dirNorm.NormalizeFast();
-	float dist = dir.LengthFast();
-	
-	idVec3 openDirNorm = openDir;
-	openDirNorm.z = 0;
-	openDirNorm.NormalizeFast();
-
-	// next to the door
-	idVec3 parallelTowardOffset = dirNorm;
-	parallelTowardOffset *= dist + size * 2;
-
-	idVec3 normalTowardOffset = openDirNorm;
-	normalTowardOffset *= size * 2;
-
-	idVec3 towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
-	towardPos.z = frobDoorBounds[0].z + 5;
-
-	// check if we can stand at this position
-	int contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
-
-	int areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
-
-	if (contents || areaNum == 0 || frobDoor->GetOpenPeersNum() > 0)
-	{
-		if (cv_ai_door_show.GetBool())
-		{
-			gameRenderWorld->DebugBounds(colorRed, bounds, towardPos, 10000);
-		}
-
-		// this position is either blocked, in the void or can't be used since the door has open peers
-		// try at 45° swinging angle
-		parallelTowardOffset = dirNorm;
-
-		normalTowardOffset = openDirNorm;
-
-		towardPos = parallelTowardOffset + normalTowardOffset;
-		towardPos.NormalizeFast();
-		towardPos *= (dist + size * 2);
-		towardPos += frobDoorOrg;
-		towardPos.z = frobDoorBounds[0].z + 5;
-
-		contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
-
-		areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
-
-		if (contents || areaNum == 0 || frobDoor->GetOpenPeersNum() > 0)
-		{
-			if (cv_ai_door_show.GetBool())
-			{
-				gameRenderWorld->DebugBounds(colorRed, bounds, towardPos, 10000);
-			}
-
-			// not useable, try in front of the door far enough away
-			parallelTowardOffset = dirNorm * size * 1.2f;
-
-			normalTowardOffset = openDirNorm;
-			normalTowardOffset *= dist + 2.5f * size;
-
-			towardPos = frobDoorOrg + parallelTowardOffset + normalTowardOffset;
-			towardPos.z = frobDoorBounds[0].z + 5;
-
-			contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, owner);
-
-			areaNum = owner->GetAAS()->PointReachableAreaNum(towardPos, owner->GetPhysics()->GetBounds(), AREA_REACHABLE_WALK);
-
-			if (contents || areaNum == 0)
-			{
-				// TODO: no suitable position found
-				if (cv_ai_door_show.GetBool())
-				{
-					gameRenderWorld->DebugBounds(colorGreen, bounds, towardPos, 10000);
-				}
-			}
-			else if (cv_ai_door_show.GetBool())
-			{
-				gameRenderWorld->DebugBounds(colorGreen, bounds, towardPos, 10000);
-			}
-		}
-		else if (cv_ai_door_show.GetBool())
-		{
-			gameRenderWorld->DebugBounds(colorGreen, bounds, towardPos, 10000);
-		}
-	}
-	else if (cv_ai_door_show.GetBool())
-	{
-		 gameRenderWorld->DebugBounds(colorGreen, bounds, towardPos, 10000);
-	}
-	return towardPos;
-}
-
-// grayman #720 - the previous FitsThrough() tried to fit an AI through at an angle
-// which required taking wall thickness into account, but it didn't. This caused
-// false positives which led to AI getting stuck trying to get through a door they
-// were told they could fit through.
-
-/*
-bool HandleDoorTask::FitsThrough()
-{
-	// this calculates the gap (depending on the size of the door and the opening angle)
-	// and checks if it is large enough for the AI to fit through it.
-	idAI* owner = _owner.GetEntity();
-	Memory& memory = owner->GetMemory();
-	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
-
-	idAngles tempAngle;
-	idPhysics_Parametric* physics = frobDoor->GetMoverPhysics();
-	physics->GetLocalAngles( tempAngle );
-
-	const idVec3& closedPos = frobDoor->GetClosedPos();
-	idVec3 dir = closedPos;
-	dir.z = 0;
-	float dist = dir.LengthFast();
-
-	idAngles alpha = frobDoor->GetClosedAngles() - tempAngle;
-	float absAlpha = idMath::Fabs(alpha.yaw);
-	float sinAlpha = idMath::Sin(DEG2RAD(absAlpha * 0.5f));
-	float delta = idMath::Fabs(2 * dist * sinAlpha);
-
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float size = 2 * SQUARE_ROOT_OF_2 * bounds[1][0] + 10;
-
-	return (delta >= size);
-}
-*/
-
-// grayman #720 - this replacement FitsThrough() tries to fit the AI through
+// grayman #720 - FitsThrough() tries to fit the AI through
 // from a head-on direction, which doesn't care about wall thickness. Doors
 // need to be more open for the AI to fit through, but it no longer gives
 // false positives.
 
 bool HandleDoorTask::FitsThrough()
 {
-	// this calculates the gap (depending on the size of the door and the opening angle)
+	// This calculates the gap left by a partially open door
 	// and checks if it is large enough for the AI to fit through it.
+
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
-	idAngles tempAngle;
-	idPhysics_Parametric* physics = frobDoor->GetMoverPhysics();
-	physics->GetLocalAngles(tempAngle);
-
-	const idVec3& closedPos = frobDoor->GetClosedPos();
-	idVec3 dir = closedPos;
-	dir.z = 0;
-	float dist = dir.LengthFast();
-
-	idAngles alpha = frobDoor->GetClosedAngles() - tempAngle;
-	float absAlpha = idMath::Fabs(alpha.yaw);
-	float delta = dist*(1.0 - idMath::Fabs(idMath::Cos(DEG2RAD(absAlpha))));
-
 	idBounds bounds = owner->GetPhysics()->GetBounds();
 	float size = 2*bounds[1][0] + 8;
 
-	return (delta >= size);
+	if (_rotates)
+	{
+		idAngles tempAngle;
+		idPhysics_Parametric* physics = frobDoor->GetMoverPhysics();
+		physics->GetLocalAngles(tempAngle);
+
+		const idVec3& closedPos = frobDoor->GetClosedPos();
+		idVec3 dir = closedPos;
+		dir.z = 0;
+		float dist = dir.LengthFast();
+
+		idAngles alpha = frobDoor->GetClosedAngles() - tempAngle;
+		float absAlpha = idMath::Fabs(alpha.yaw);
+		float delta = dist*(1.0 - idMath::Fabs(idMath::Cos(DEG2RAD(absAlpha))));
+
+		return (delta >= size);
+	}
+
+	// grayman #3643 - sliding door
+
+	idVec3 origin = frobDoor->GetMoverPhysics()->GetOrigin(); // where origin is now
+	idVec3 closedOrigin = frobDoor->GetClosedOrigin(); // where origin is when door is closed
+	idVec3 delta = closedOrigin - origin;
+	delta.x = idMath::Fabs(delta.x);
+	delta.y = idMath::Fabs(delta.y);
+	delta.z = idMath::Fabs(delta.z);
+	if ( delta.x > 0 )
+	{
+		if (delta.x >= size)
+		{
+			return true; // assume vertical fit
+		}
+	}
+	else if (delta.y > 0)
+	{
+		if (delta.y >= size) // assume vertical fit
+		{
+			return true;
+		}
+	}
+	else if (delta.z > 0)
+	{
+		if (delta.z >= 96) // 96 = AI height
+		{
+			return true; // assume horizontal fit
+		}
+	}
+
+	return false;
 }
 
 bool HandleDoorTask::OpenDoor()
@@ -2190,141 +2053,143 @@ bool HandleDoorTask::OpenDoor()
 	doorInfo.lastTimeSeen = gameLocal.time;
 	doorInfo.lastTimeTriedToOpen = gameLocal.time;
 	doorInfo.wasLocked = frobDoor->IsLocked();
+	bool shouldOpenDoor = false; // grayman #3643
+	bool doorWasLocked = false; // grayman #3643
 
-	if (frobDoor->IsLocked())
+	idEntityPtr<idEntity> controllerPtr; // door controller
+	controllerPtr = frobDoor->GetDoorController(_doorSide);
+
+	if (controllerPtr.GetEntity() == NULL) // grayman #3643
 	{
-		if (!owner->CanUnlock(frobDoor) || !AllowedToUnlock(owner))
+		// dealing directly with the door
+
+		if (frobDoor->IsLocked())
 		{
-			// Door is locked and we cannot unlock it
-			// Check if we can open the other part of a double door
-			CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
-			if ( ( doubleDoor != NULL ) && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
+			doorWasLocked = true; // grayman #3643
+			if (!owner->CanUnlock(frobDoor) || !AllowedToUnlock(owner))
 			{
-				ResetDoor(owner, doubleDoor);
-				if (AllowedToUnlock(owner))
+				// Door is locked and we cannot unlock it
+				// Check if we can open the other part of a double door
+				CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
+				if ( ( doubleDoor != NULL ) && (!doubleDoor->IsLocked() || owner->CanUnlock(doubleDoor)))
 				{
-					_doorHandlingState = EStateMovingToFrontPos;
-					return true;
-				}
-				else
-				{
+					ResetDoor(owner, doubleDoor);
+					if (AllowedToUnlock(owner))
+					{
+						_doorHandlingState = EStateMovingToFrontPos;
+						return true;
+					}
+
 					return false;
 				}
-			}
-			owner->StopMove(MOVE_STATUS_DONE);
-			// Rattle the door once
-			frobDoor->Open(true);
+
+				owner->StopMove(MOVE_STATUS_DONE);
+				// Rattle the door once
+				frobDoor->Open(true);
 				
-			// add AAS area number of the door to forbidden areas
-			AddToForbiddenAreas(owner, frobDoor);
-			return false;
+				// add AAS area number of the door to forbidden areas
+				AddToForbiddenAreas(owner, frobDoor);
+				return false;
+			}
+
+			// unlock the door directly
+			shouldOpenDoor = frobDoor->Unlock(true); // grayman #3643
+			doorInfo.wasLocked = frobDoor->IsLocked(); // for use by subsequent AI until the door is closed
 		}
-		else
+	}
+	else // dealing with a controller
+	{
+		CBinaryFrobMover* controller = static_cast<CBinaryFrobMover*>(controllerPtr.GetEntity());
+		if (controller->IsLocked())
 		{
-			frobDoor->Unlock(true);
-			doorInfo.wasLocked = frobDoor->IsLocked();
+			doorWasLocked = true; // grayman #3643
+			if (!owner->CanUnlock(frobDoor) || !AllowedToUnlock(owner))
+			{
+				owner->StopMove(MOVE_STATUS_DONE);
+				// Can't unlock the controller, but rattle it once
+				controller->Open(true);
+				
+				// add AAS area number of the door to forbidden areas
+				AddToForbiddenAreas(owner, frobDoor);
+				return false;
+			}
+			else
+			{
+				// Unlock the controllers. The first one to unlock will open the door.
+				shouldOpenDoor = frobDoor->UnlockControllers(true);
+				doorInfo.wasLocked = frobDoor->IsLocked(); // for use by subsequent AI until the door is closed
+			}
 		}
 	}
 
 	frobDoor->SetLastUsedBy(owner); // grayman #2859
 	owner->StopMove(MOVE_STATUS_DONE);
-	frobDoor->Open(true);
+
+	// grayman #3643 - If the door was locked and the Unlock() above automatically
+	// opened the door, the door will be opened when the unlocking sound is finished.
+	// If that's what's happening, we can't issue an Open() request here, because it would cause the
+	// door to start moving now, and the delayed ToggleOpen() queued by the Unlock() would
+	// toggle the door to a stop, causing AI to believe the door movement was interrupted.
+
+	// This wasn't a problem before 2.02 because when the door was interrupted, the AI
+	// immediately issued another Open() request. The interruption was not visible to the
+	// player because the door was only stopped for a max of 4 frames. In 2.02, we want the
+	// AI to pay attention to interruptions, so they can't issue another Open() request
+	// immediately. In this case, the player would see the door stop for no apparent reason.
+
+	// So we register whether Unlock() set up a delayed ToggleOpen() request, and if so, we don't do it here.
+
+	// This only applies to doors that don't use controllers. A door that uses controllers
+	// should have the lock set on them, not on the door, since the controller is where
+	// you want the player to use his key.
+
+	if (!doorWasLocked || shouldOpenDoor)
+	{
+		// Either the door was not locked or it was but the Unlock() didn't automatically open it.
+		// In either case, open the door here.
+		if (controllerPtr.GetEntity() == NULL) // grayman #3643
+		{
+			frobDoor->Open(true);
+		}
+		else // use controller to open the door
+		{
+			// Trigger the frob action script
+			controllerPtr.GetEntity()->FrobAction(true);
+		}
+	}
+	else
+	{
+		// Door was locked and the unlock set up a delayed ToggleOpen() request,
+		// so you don't need to do it here.
+	}
+
 	_doorHandlingState = EStateOpeningDoor;
 	_waitEndTime = gameLocal.time + 1000; // grayman #2862 - a short wait to allow the door to begin opening
-
 	return true;
 }
 
+// grayman #3643 - Close door with a controller if requested,
+// otherwise just ask the door to close. Locking is not handled until
+// the door shuts, so we don't have to deal with it here.
 
-void HandleDoorTask::GetDoorHandlingPositions(idAI* owner, CFrobDoor* frobDoor)
+void HandleDoorTask::CloseDoor(idAI* owner, CFrobDoor* frobDoor, idEntity* controller)
 {
-	const idVec3& frobDoorOrg = frobDoor->GetPhysics()->GetOrigin();
-	const idVec3& openDir = frobDoor->GetOpenDir();
-
-	// calculate where to stand when the door swings away from us
-	idVec3 awayPos = GetAwayPos(owner, frobDoor);
-	// calculate where to stand when the door swings towards us
-	idVec3 towardPos =  GetTowardPos(owner, frobDoor);
-
-	Memory& memory = owner->GetMemory();
-
-	if ( _doorShouldBeClosed ) // grayman #2866 - suspicious door
+	frobDoor->SetLastUsedBy(owner); // grayman #2859
+	if (controller == NULL) // grayman #3643
 	{
-		if ( memory.closeFromAwayPos )
-		{
-			_backPos = awayPos;
-		}
-		else
-		{
-			_backPos = towardPos;
-		}
-
-		// grayman #3104 - also need mid position
-
-		_midPos = this->GetMidPos(owner,frobDoor,true);
+		frobDoor->Close(true);
 	}
-	else // normal door
+	else // door controlled by switches
 	{
-		// check if the door swings towards or away from us
-		if (openDir * (owner->GetPhysics()->GetOrigin() - frobDoorOrg) > 0)
-		{
-			// Door opens towards us
-
-			_frontPos = towardPos;
-			_backPos = awayPos;
-			_midPos = GetMidPos(owner, frobDoor, false); // grayman #2345
-		}
-		else
-		{
-			// Door opens away from us
-
-			_frontPos = awayPos;
-			_backPos = towardPos;
-			_midPos = GetMidPos(owner, frobDoor, true); // grayman #2345
-		}
-	}
-
-	_frontPosEnt = NULL;
-	_backPosEnt = NULL;
-
-	// check for custom door handling positions
-
-	idList< idEntityPtr<idEntity> > list;
-	if ( frobDoor->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
-	{
-		_frontPosEnt = list[0];
-		_backPosEnt = list[1];
-		if ( _doorShouldBeClosed ) // this is a suspicious door that needs closing
-		{
-			if ( _backPosEnt.GetEntity() != NULL )
-			{
-				if ( !memory.closeFromAwayPos )
-				{
-					_backPosEnt = _frontPosEnt;
-				}
-
-				_backPos = _backPosEnt.GetEntity()->GetPhysics()->GetOrigin();
-			}
-		}
-		else // this is a normal door
-		{
-			if ( _frontPosEnt.GetEntity() != NULL )
-			{
-				_frontPos = _frontPosEnt.GetEntity()->GetPhysics()->GetOrigin();
-			}
-
-			if ( _backPosEnt.GetEntity() != NULL )
-			{
-				_backPos = _backPosEnt.GetEntity()->GetPhysics()->GetOrigin();
-				_midPos = _backPos;
-			}
-		}
+		// Trigger the frob action script
+		controller->FrobAction(true);
 	}
 }
 
-
 void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 {
+	// grayman #3643 - TODO: Handle sliding door
+
 	_doorInTheWay = true;
 	// check if the door swings towards or away from us
 	const idVec3& openDir = frobDoor->GetOpenDir();
@@ -2363,7 +2228,7 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 			normalOffset.NormalizeFast();
 			normalOffset *= 1.5f * size;
 
-			if ( _doorShouldBeClosed ) // grayman #2866
+			if ( _closeFromSameSide ) // grayman #2866
 			{
 				_backPos = frobDoorOrg + parallelOffset - normalOffset;
 			}
@@ -2373,7 +2238,7 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 			}
 		}
 		
-		if ( _doorShouldBeClosed ) // grayman #2866
+		if ( _closeFromSameSide ) // grayman #2866
 		{
 			owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY); // grayman #2345 - need more accurate AI positioning
 		}
@@ -2391,9 +2256,9 @@ void HandleDoorTask::DoorInTheWay(idAI* owner, CFrobDoor* frobDoor)
 
 bool HandleDoorTask::AllowedToOpen(idAI* owner)
 {
-	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+	idEntity* frontDHPosition = _frontDHPosition.GetEntity();
 
-	if (frontPosEntity && frontPosEntity->spawnArgs.GetBool("ai_no_open"))
+	if (frontDHPosition && frontDHPosition->spawnArgs.GetBool("ai_no_open"))
 	{
 		// AI is not allowed to open the door from this side
 		return false;
@@ -2403,9 +2268,9 @@ bool HandleDoorTask::AllowedToOpen(idAI* owner)
 
 bool HandleDoorTask::AllowedToClose(idAI* owner)
 {
-	idEntity* backPosEntity = _backPosEnt.GetEntity();
+	idEntity* backDHPosition = _backDHPosition.GetEntity();
 
-	if (backPosEntity && backPosEntity->spawnArgs.GetBool("ai_no_close"))
+	if (backDHPosition && backDHPosition->spawnArgs.GetBool("ai_no_close"))
 	{
 		// AI is not allowed to close the door from this side
 		return false;
@@ -2415,9 +2280,9 @@ bool HandleDoorTask::AllowedToClose(idAI* owner)
 
 bool HandleDoorTask::AllowedToUnlock(idAI* owner)
 {
-	idEntity* frontPosEntity = _frontPosEnt.GetEntity();
+	idEntity* frontDHPosition = _frontDHPosition.GetEntity();
 
-	if (frontPosEntity && frontPosEntity->spawnArgs.GetBool("ai_no_unlock"))
+	if (frontDHPosition && frontDHPosition->spawnArgs.GetBool("ai_no_unlock"))
 	{
 		// AI is not allowed to unlock the door from this side
 		return false;
@@ -2427,9 +2292,9 @@ bool HandleDoorTask::AllowedToUnlock(idAI* owner)
 
 bool HandleDoorTask::AllowedToLock(idAI* owner)
 {
-	idEntity* backPosEntity = _backPosEnt.GetEntity();
+	idEntity* backDHPosition = _backDHPosition.GetEntity();
 
-	if (backPosEntity && backPosEntity->spawnArgs.GetBool("ai_no_lock"))
+	if (backDHPosition && backDHPosition->spawnArgs.GetBool("ai_no_lock"))
 	{
 		// AI is not allowed to lock the door from this side
 		return false;
@@ -2459,41 +2324,6 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 			memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		}
 	}
-}
-
-idEntity* HandleDoorTask::GetRemoteControlEntityForDoor()
-{
-	idAI* owner = _owner.GetEntity();
-	Memory& memory = owner->GetMemory();
-
-	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
-
-	idEntity* bestController = NULL;
-
-	for (const idKeyValue* kv = frobDoor->spawnArgs.MatchPrefix("door_controller");
-		 kv != NULL; kv = frobDoor->spawnArgs.MatchPrefix("door_controller", kv))
-	{
-		// Find the entity with the given name
-		idEntity* controller = gameLocal.FindEntity(kv->GetValue());
-
-		if (controller == NULL) continue;
-
-		if (bestController != NULL)
-		{
-			// We have a previously checked controller, check if this one is better
-			float dist = (controller->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthSqr();
-			float bestDist = (bestController->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthSqr();
-
-			if (bestDist < dist)
-			{
-				continue; // no change, this one is a poorer choice
-			}
-		}
-		
-		bestController = controller;
-	}
-
-	return bestController;
 }
 
 // grayman - for debugging door queues
@@ -2566,7 +2396,7 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 					{
 						frobDoor->GetUserManager().InsertUserAtIndex(newUser,i);
 						
-						// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
+						//PrintDoorQ(frobDoor); // grayman - for debugging door queues
 
 						return;
 					}
@@ -2577,7 +2407,7 @@ void HandleDoorTask::AddUser(idAI* newUser, CFrobDoor* frobDoor)
 
 	frobDoor->GetUserManager().AppendUser(newUser);
 
-	// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
+	//PrintDoorQ(frobDoor); // grayman - for debugging door queues
 }
 
 void HandleDoorTask::OnFinish(idAI* owner)
@@ -2622,7 +2452,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 			frobDoor->SetWasFoundLocked(frobDoor->IsLocked()); // will only be true if the door is closed and locked
 		}
 
-		// PrintDoorQ( frobDoor ); // grayman - for debugging door queues
+		//PrintDoorQ(frobDoor); // grayman - for debugging door queues
 
 		CFrobDoor* doubleDoor = frobDoor->GetDoubleDoor();
 		if (doubleDoor != NULL)
@@ -2654,7 +2484,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	{
 		memory.closeMe = NULL;
 		memory.closeSuspiciousDoor = false;
-		_doorShouldBeClosed = false;
+		_closeFromSameSide = false;
 		frobDoor->SetSearching(NULL);
 		idAngles doorRotation = frobDoor->spawnArgs.GetAngles("rotate","0 90 0");
 		float angleAdjustment = 90;
@@ -2667,8 +2497,8 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		frobDoor->AllowResponse(ST_VISUAL,owner); // grayman #3104 - respond again to this visual stim, in case the door was never closed
 	}
 
-	_leaveDoor = -1; // reset timeout for leaving the door
-	_doorHandlingState = EStateNone;
+	//_leaveDoor = -1; // reset timeout for leaving the door
+	//_doorHandlingState = EStateNone;
 	owner->m_canResolveBlock = true;  // grayman #2345
 	memory.stopHandlingDoor = false;  // grayman #2816
 	memory.latchPickedPocket = false; // grayman #3559 - free to react to a picked pocket
@@ -2677,11 +2507,17 @@ void HandleDoorTask::OnFinish(idAI* owner)
 
 bool HandleDoorTask::CanAbort() // grayman #2706
 {
-	return ( _doorHandlingState <= EStateMovingToSafePos );
+	return ( _doorHandlingState <= EStateMovingToSafePos2 );
 }
 
 void HandleDoorTask::DrawDebugOutput(idAI* owner)
 {
+	CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
+	if (frobDoor != NULL)
+	{
+		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 70);
+	}
+
 	gameRenderWorld->DebugArrow(colorCyan, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
 	gameRenderWorld->DrawText("front", 
 		(_frontPos + idVec3(0, 0, 30)), 
@@ -2716,7 +2552,6 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 	idStr position = "";
 	if (owner->m_HandlingDoor)
 	{
-		CFrobDoor* frobDoor = owner->GetMemory().doorRelated.currentDoor.GetEntity();
 		if (frobDoor != NULL)
 		{
 			idStr doorName = frobDoor->name;
@@ -2742,8 +2577,11 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 		case EStateApproachingDoor:
 			str = "EStateApproachingDoor";
 			break;
-		case EStateMovingToSafePos: // grayman #2345
-			str = "EStateMovingToSafePos";
+		case EStateMovingToSafePos1: // grayman #2345
+			str = "EStateMovingToSafePos1";
+			break;
+		case EStateMovingToSafePos2: // grayman #3643
+			str = "EStateMovingToSafePos2";
 			break;
 		case EStateMovingToFrontPos:
 			str = "EStateMovingToFrontPos";
@@ -2800,22 +2638,25 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
 		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
 
-	Memory& memory = owner->GetMemory();
-	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
-	idActor* masterUser = frobDoor->GetUserManager().GetMasterUser();
-
-	if (owner == masterUser)
+	//Memory& memory = owner->GetMemory();
+	//CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
+	if (frobDoor != NULL)
 	{
-		gameRenderWorld->DrawText("Master", 
-			(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
-			0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
-	}
-	else
-	{
-		gameRenderWorld->DrawText("Slave", 
-			(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
-			0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		idActor* masterUser = frobDoor->GetUserManager().GetMasterUser();
 
+		if (owner == masterUser)
+		{
+			gameRenderWorld->DrawText("Master", 
+				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
+				0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		}
+		else
+		{
+			gameRenderWorld->DrawText("Slave", 
+				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
+				0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+
+		}
 	}
 }
 
@@ -2836,10 +2677,12 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteInt(_leaveDoor);			// grayman #2700
 	savefile->WriteBool(_triedFitting);		// grayman #2345
 	savefile->WriteBool(_canHandleDoor);	// grayman #2712
-	savefile->WriteBool(_doorShouldBeClosed); // grayman #2866
+	savefile->WriteBool(_closeFromSameSide); // grayman #2866
 	savefile->WriteInt(_blockedDoorCount);	// grayman #3523
 	savefile->WriteBool(_pushingPlayer);	// grayman #3523
 	savefile->WriteBool(_previousPushingPlayer); // grayman #3523
+	savefile->WriteBool(_rotates);			// grayman #3643
+	savefile->WriteInt(_doorSide);			// grayman #3643
 
 	_frontPosEnt.Save(savefile);
 	_backPosEnt.Save(savefile);
@@ -2864,10 +2707,12 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(_leaveDoor);		// grayman #2700
 	savefile->ReadBool(_triedFitting);	// grayman #2345
 	savefile->ReadBool(_canHandleDoor);	// grayman #2712
-	savefile->ReadBool(_doorShouldBeClosed); // grayman #2866
+	savefile->ReadBool(_closeFromSameSide); // grayman #2866
 	savefile->ReadInt(_blockedDoorCount);	 // grayman #3523
 	savefile->ReadBool(_pushingPlayer);		 // grayman #3523
 	savefile->ReadBool(_previousPushingPlayer); // grayman #3523
+	savefile->ReadBool(_rotates);			// grayman #3643
+	savefile->ReadInt(_doorSide);			// grayman #3643
 
 	_frontPosEnt.Restore(savefile);
 	_backPosEnt.Restore(savefile);

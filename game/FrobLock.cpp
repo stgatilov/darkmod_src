@@ -365,11 +365,14 @@ void CFrobLock::ToggleOpenTargets()
 	else
 	{
 		// Actually open any targetted frobmovers
-		for (int i = 0; i < targets.Num(); i++)
+		for ( int i = 0 ; i < targets.Num() ; i++ )
 		{
 			idEntity* target = targets[i].GetEntity();
 
-			if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+			if ( (target == NULL) || !target->IsType(CBinaryFrobMover::Type))
+			{
+				continue;
+			}
 
 			static_cast<CBinaryFrobMover*>(target)->ToggleOpen();
 		}
@@ -431,11 +434,14 @@ void CFrobLock::LockTargets()
 void CFrobLock::UnlockTargets()
 {
 	// Unlock any targetted frobmovers
-	for (int i = 0; i < targets.Num(); i++)
+	for ( int i = 0 ; i < targets.Num() ; i++ )
 	{
 		idEntity* target = targets[i].GetEntity();
 
-		if (target == NULL || !target->IsType(CBinaryFrobMover::Type)) continue;
+		if ( (target == NULL) || !target->IsType(CBinaryFrobMover::Type))
+		{
+			continue;
+		}
 
 		static_cast<CBinaryFrobMover*>(target)->Unlock();
 	}

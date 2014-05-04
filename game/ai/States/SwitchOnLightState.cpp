@@ -109,124 +109,6 @@ float SwitchOnLightState::GetMaxReach(idAI* owner, idEntity* torch, idStr lightT
 	return forward;
 }
 
-// grayman #2603 - a copy of HandleElevatorTask::MoveToButton() modified for our purposes
-
-bool SwitchOnLightState::GetSwitchGoal(idAI* owner, CBinaryFrobMover* mySwitch, idVec3 &goal)
-{
-	idBounds bounds = owner->GetPhysics()->GetBounds();
-	float size = idMath::Fabs(bounds[0][1]);
-	_standOff = 2*size; // offset larger than the owner's size
-
-	// This switch could be a button that translates horizontally or vertically,
-	// or a lever that rotates.
-
-	// Start with the assumption that it's a horizontally-translating button.
-	// That should cover the majority of cases.
-
-	idVec3 trans = mySwitch->spawnArgs.GetVector("translate", "0 0 0");
-	if (trans.z != 0) // vertical movement?
-	{
-		idVec3 switchSize = mySwitch->GetPhysics()->GetBounds().GetSize();
-		if (switchSize.y > switchSize.x)
-		{
-			trans = idVec3(1,0,0);
-		}
-		else
-		{
-			trans = idVec3(0,1,0);
-		}
-	}
-	else if (trans.LengthFast() == 0)
-	{
-		// rotating switch
-
-		idVec3 switchSize = mySwitch->GetPhysics()->GetBounds().GetSize();
-		if (switchSize.x > switchSize.y)
-		{
-			trans = idVec3(1,0,0);
-		}
-		else
-		{
-			trans = idVec3(0,1,0);
-		}
-	}
-	trans.NormalizeFast();
-
-	const idVec3& switchOrigin = mySwitch->GetPhysics()->GetOrigin();
-	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
-	int areaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
-
-	// grayman #3648 - the following code has a problem sometimes finding
-	// the AAS area of the goal spot when it's up by the switch. Push the
-	// goal spot down to the floor and then try to find the AAS area.
-	//
-	// There needs to be LOS from the switch to the goal point. This should
-	// prevent AI from operating a switch through a wall.
-
-	trace_t result;
-
-	bool pointFound = false;
-	for ( int i = 0 ; i < 4, !pointFound ; i++ )
-	{
-		switch (i)
-		{
-		case 0:
-			break;
-		case 1:
-		case 3:
-			trans *= -1;
-			break;
-		case 2:
-			const idVec3& gravity = owner->GetPhysics()->GetGravityNormal();
-			trans = trans.Cross(gravity);
-			break;
-		}
-
-		goal = switchOrigin - _standOff * trans;
-		if (!gameLocal.clip.TracePoint(result, switchOrigin, goal, MASK_OPAQUE, mySwitch))
-		{
-			// The switch can "see" the goal point.
-			// Is there a path to the target?
-
-			idVec3 bottomPoint = goal;
-			bottomPoint.z -= 256;
-			gameLocal.clip.TracePoint(result, goal, bottomPoint, MASK_OPAQUE, NULL); // trace down
-
-			// Find the AAS area for the spot the trace hit (assume it's the floor)
-
-			int goalAreaNum = owner->PointReachableAreaNum(result.endpos, 1.0f);
-			aasPath_t path;
-
-			if (owner->PathToGoal(path, areaNum, ownerOrigin, goalAreaNum, result.endpos, owner))
-			{
-				// success
-				pointFound = true;
-			}
-		}
-	}
-
-	if (!pointFound)
-	{
-		return false;
-	}
-
-	float height = switchOrigin.z - result.endpos.z;
-
-	// adjust _standOff based on height of switch off the floor
-
-	if (height < RELIGHT_HEIGHT_LOW) // low
-	{
-		// Adjust standoff and set new goal. Assume path to goal is still good.
-
-		_standOff += 16; // farther from goal
-		goal = switchOrigin - _standOff * trans;
-	}
-
-	goal.z = result.endpos.z; // where we hit
-	goal.z++; // move up slightly
-	return true;
-}
-
 // grayman #2603 - check for relight positions
 
 bool SwitchOnLightState::CheckRelightPosition(idLight* light, idAI* owner, idVec3& pos)
@@ -381,7 +263,7 @@ void SwitchOnLightState::Init(idAI* owner)
 		// Find a spot to stand while activating it.
 
 		CBinaryFrobMover* switchMover = static_cast<CBinaryFrobMover*>(mySwitch);
-		pathToGoal = GetSwitchGoal(owner,switchMover,finalTargetPoint);
+		pathToGoal = switchMover->GetSwitchGoal(finalTargetPoint,_standOff,RELIGHT_HEIGHT_LOW); // grayman #3643
 	}
 	else if (CheckRelightPosition(light,owner,finalTargetPoint)) // No switch. Does the light have a relight_position?
 	{

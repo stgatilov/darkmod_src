@@ -1216,7 +1216,6 @@ void idMover::Event_MoveDir( float angle, float distance ) {
 	physicsObj.GetLocalOrigin( org );
 	VectorForDir( angle, dir );
 	dest_position = org + dir * distance;
-
 	BeginMove( idThread::CurrentThread() );
 }
 

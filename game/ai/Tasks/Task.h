@@ -47,9 +47,17 @@ protected:
 	// true if this task has been initialised
 	bool _initialised;
 
+	// grayman #3643 - true if this task has finished,
+	// which is important to know because w/o it, the
+	// OnFinish() method can be run twice if a task
+	// finishes normally, and then is finished while
+	// in the recycle bin
+	bool _finished;
+
 	// Protected constructor, only subclasses may call this
 	Task() :
-		_initialised(false)
+		_initialised(false),
+		_finished(false)
 	{}
 
 public:
@@ -74,7 +82,7 @@ public:
 	 *         or forcedly (by being removed from the queue / cleartasks / etc.)
 	 *         This gives the task the opportunity to react/cleanup.
 	 *
-	 * Note: OnFinish MUST NOT alter the Subsystem, only perform cleanup taks
+	 * Note: OnFinish MUST NOT alter the Subsystem, only perform cleanup tasks
 	 *       affecting the Task itself or the owning AI.
 	 */
 	virtual void OnFinish(idAI* owner)
@@ -85,17 +93,31 @@ public:
 	{
 		_owner.Save(savefile);
 		savefile->WriteBool(_initialised);
+		savefile->WriteBool(_finished); // grayman #3643
 	}
 
 	virtual void Restore(idRestoreGame* savefile)
 	{
 		_owner.Restore(savefile);
 		savefile->ReadBool(_initialised);
+		savefile->ReadBool(_finished); // grayman #3643
 	}
 
 	virtual bool IsInitialised()
 	{
 		return _initialised;
+	}
+
+	// grayman #3643
+	virtual bool IsFinished()
+	{
+		return _finished;
+	}
+
+	// grayman #3643
+	virtual void SetFinished()
+	{
+		_finished = true;
 	}
 
 	// grayman #2706 - can we abort this task? override in task instances

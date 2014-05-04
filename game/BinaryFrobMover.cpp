@@ -51,6 +51,9 @@ const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", EventArgs(), 'f',
 const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", EventArgs(), 'f', "Returns true (nonzero) if the mover is currently locked." );
 const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", EventArgs(), 'f', "Returns true (nonzero) if this frobmover is pickable." );
 const idEventDef EV_TDM_FrobMover_HandleLockRequest( "_handleLockRequest", EventArgs(), EV_RETURNS_VOID, "internal"); // used for periodic checks to lock the door once it is fully closed
+const idEventDef EV_TDM_FrobMover_ClearPlayerImmobilization("_EV_TDM_FrobMover_ClearPlayerImmobilization", 
+	EventArgs('e', "", ""), EV_RETURNS_VOID, "internal"); // grayman #3643 - allows player to handle weapons again
+
 
 CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_PostSpawn,					CBinaryFrobMover::Event_PostSpawn )
@@ -65,6 +68,9 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_FrobMover_IsPickable,		CBinaryFrobMover::Event_IsPickable)
 	EVENT( EV_Activate,						CBinaryFrobMover::Event_Activate)
 	EVENT( EV_TDM_FrobMover_HandleLockRequest,	CBinaryFrobMover::Event_HandleLockRequest)
+	EVENT( EV_TDM_FrobMover_ClearPlayerImmobilization,	CBinaryFrobMover::Event_ClearPlayerImmobilization ) // grayman #3643
+	EVENT( EV_TDM_Lock_StatusUpdate,		CBinaryFrobMover::Event_Lock_StatusUpdate) // grayman #3643
+	EVENT( EV_TDM_Lock_OnLockPicked,		CBinaryFrobMover::Event_Lock_OnLockPicked) // grayman #3643
 END_CLASS
 
 CBinaryFrobMover::CBinaryFrobMover()
@@ -442,8 +448,10 @@ void CBinaryFrobMover::PostSpawn()
 
 	// grayman #2603 - Process targets. For those that are lights, add yourself
 	// to their switch list.
+	// grayman #3643 - For those that are doors, add yourself to
+	// their controller list.
 
-	for (int i = 0 ; i < targets.Num() ; i++ )
+	for ( int i = 0 ; i < targets.Num() ; i++ )
 	{
 		idEntity* e = targets[i].GetEntity();
 		if (e)
@@ -452,6 +460,11 @@ void CBinaryFrobMover::PostSpawn()
 			{
 				idLight* light = static_cast<idLight*>(e);
 				light->AddSwitch(this);
+			}
+			else if (e->IsType(CFrobDoor::Type))
+			{
+				CFrobDoor* door = static_cast<CFrobDoor*>(e);
+				door->AddController(this);
 			}
 		}
 	}
@@ -519,12 +532,13 @@ void CBinaryFrobMover::TellRegisteredUsers()
 	m_registeredAI.Clear(); // served its purpose, clear for next batch
 }
 
-void CBinaryFrobMover::Unlock(bool bMaster)
+// grayman #3643 - return 'true' if the caller should open the door, 'false' if not
+bool CBinaryFrobMover::Unlock(bool bMaster)
 {
 	if (!PreUnlock(bMaster)) {
 		// PreUnlock returned FALSE, cancel the operation
 		DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover prevented from being unlocked\r", name.c_str());
-		return;
+		return false; // grayman #3643
 	}
 	
 	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("[%s] FrobMover is unlocked\r", name.c_str());
@@ -533,9 +547,10 @@ void CBinaryFrobMover::Unlock(bool bMaster)
 	CallStateScript();
 
 	// Fire the event for the subclasses
-	OnUnlock(bMaster);
+	bool shouldOpenDoor = !OnUnlock(bMaster); // grayman #3643
 
 	TellRegisteredUsers(); // grayman #1145 - remove this door's area number from each registered AI's forbidden area list
+	return shouldOpenDoor;
 }
 
 void CBinaryFrobMover::ToggleLock()
@@ -674,6 +689,146 @@ void CBinaryFrobMover::Close(bool bMaster)
 
 	// Set the "intention" flag so that we're opening next time, even if we didn't move
 	m_bIntentOpen = true;
+}
+
+// grayman #3643 - Allow keys and lockpicks to be used on buttons/levers (door controllers)
+
+bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr& item)
+{
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	// Pass the call on to the master, if we have one
+	if (GetFrobMaster() != NULL) 
+	{
+		return GetFrobMaster()->UseBy(impulseState, item);
+	}
+
+	assert(item->Category() != NULL);
+
+	// Retrieve the entity behind that item and reject NULL entities
+	idEntity* itemEntity = item->GetItemEntity();
+	if (itemEntity == NULL)
+	{
+		return false;
+	}
+
+	// Get the name of this inventory category
+	const idStr& itemName = item->Category()->GetName();
+	
+	if (itemName == "#str_02392" && impulseState == EPressed ) // Keys
+	{
+		// Keys can be used on button PRESS event, let's see if the key matches
+		if (m_UsedByName.FindIndex(itemEntity->name) != -1)
+		{
+			// If we're locked or closed, just toggle the lock. 
+			if (IsLocked() || IsAtClosedPosition())
+			{
+				ToggleLock();
+			}
+			// If we're open, set a lock request and start closing.
+			else
+			{
+				// Close the door and set the lock request to true
+				CloseAndLock();
+			}
+
+			return true;
+		}
+		else
+		{
+			FrobMoverStartSound("snd_wrong_key");
+			return false;
+		}
+	}
+	else if (itemName == "#str_02389" ) // Lockpicks
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
+			return false;
+		}
+
+		// Lockpicks are different, we need to look at the button state
+		// First we check if this item is a lockpick. It has to be of the toolclass lockpick
+		// and the type must be set.
+		idStr str = itemEntity->spawnArgs.GetString("lockpick_type", "");
+
+		if (str.Length() == 1)
+		{
+			// greebo: Check if the item owner is a player, and if yes, 
+			// update the immobilization flags.
+			idEntity* itemOwner = item->GetOwner();
+
+			if (itemOwner->IsType(idPlayer::Type))
+			{
+				idPlayer* playerOwner = static_cast<idPlayer*>(itemOwner);
+				playerOwner->SetImmobilization("Lockpicking", EIM_ATTACK);
+
+				// Schedule an event 1/3 sec. from now, to enable weapons again after this time
+				CancelEvents(&EV_TDM_FrobMover_ClearPlayerImmobilization);
+				PostEventMS(&EV_TDM_FrobMover_ClearPlayerImmobilization, 300, playerOwner);
+			}
+
+			// Pass the call to the lockpick routine
+			return m_Lock->ProcessLockpickImpulse(impulseState, static_cast<int>(str[0]));
+		}
+		else
+		{
+			gameLocal.Warning("Wrong 'type' spawnarg for lockpicking on item %s, must be a single character.", itemEntity->name.c_str());
+			return false;
+		}
+	}
+
+	// grayman #3643 - if you get here, pass to the default method
+	return idEntity::UseBy(impulseState, item);
+}
+
+// grayman #3643 - Allow keys and lockpicks to be used on buttons/levers (door controllers)
+
+bool CBinaryFrobMover::CanBeUsedBy(const CInventoryItemPtr& item, const bool isFrobUse) 
+{
+	// First, check if the frob master can be used
+	// If this doesn't succeed, perform additional checks
+	idEntity* master = GetFrobMaster();
+	if ( master != NULL && master->CanBeUsedBy(item, isFrobUse) )
+	{
+		return true;
+	}
+
+	if (item == NULL)
+	{
+		return false;
+	}
+
+	assert(item->Category() != NULL);
+
+	// FIXME: Move this to idEntity to some sort of "usable_by_inv_category" list?
+	const idStr& itemName = item->Category()->GetName();
+	if (itemName == "#str_02392" ) // Keys
+	{
+		// Keys can always be used on doors
+		// Exception: for "frob use" this only applies when the door is locked
+		return (isFrobUse) ? IsLocked() : true;
+	}
+	else if (itemName == "#str_02389" ) // Lockpicks
+	{
+		if (!m_Lock->IsPickable())
+		{
+			// Lock is not pickable
+			DM_LOG(LC_LOCKPICK, LT_DEBUG)LOGSTRING("FrobDoor %s is not pickable\r", name.c_str());
+			return false;
+		}
+
+		// Lockpicks behave similar to keys
+		return (isFrobUse) ? IsLocked() : true;
+	}
+
+	// grayman #3643 - if you get here, pass to the default method
+	return idEntity::CanBeUsedBy(item, isFrobUse);
 }
 
 void CBinaryFrobMover::ToggleOpen()
@@ -949,6 +1104,13 @@ float CBinaryFrobMover::GetMoveTimeRotationFraction() // grayman #3711
 
 float CBinaryFrobMover::GetMoveTimeTranslationFraction() // grayman #3711
 {
+	// grayman #3643 - this is only useful for doors
+
+	if (!IsType(CFrobDoor::Type))
+	{
+		return 1.0f;
+	}
+
 	// Get the current origin
 	const idVec3& curOrigin = physicsObj.GetOrigin();
 
@@ -957,9 +1119,6 @@ float CBinaryFrobMover::GetMoveTimeTranslationFraction() // grayman #3711
 	delta[0] = idMath::Fabs(delta[0]);
 	delta[1] = idMath::Fabs(delta[1]);
 	delta[2] = idMath::Fabs(delta[2]);
-
-	// greebo: Note that we don't need to compare against zero angles here, because
-	// this code won't be called in this case (see idMover::BeginRotation).
 
 	idVec3 fullTranslation = m_OpenOrigin - m_ClosedOrigin;
 	fullTranslation[0] = idMath::Fabs(fullTranslation[0]);
@@ -1175,8 +1334,11 @@ void CBinaryFrobMover::OnLock(bool bMaster)
 	m_Lock->OnLock();
 }
 
-void CBinaryFrobMover::OnUnlock(bool bMaster)
+// grayman #3643 - report back whether OnUnlock() automatically opens the door
+bool CBinaryFrobMover::OnUnlock(bool bMaster)
 {
+	bool doorOpened = false;
+
 	m_Lock->OnUnlock();
 
 	int soundLength = FrobMoverStartSound("snd_unlock");
@@ -1184,6 +1346,12 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 	// angua: only open the master
 	// only if the other part is an openpeer it will be opened by ToggleOpen
 	// otherwise it will stay closed
+
+	/*  grayman #3643 - Here is the bug. The door has begun to move before the unlocking sound
+		completes. When the sound completes, it toggles the door, expecting
+		that to cause the open to begin. Since the door is already moving,
+		this causes the door to stop moving, and think it's been interruped.
+	*/
 	if (cv_door_auto_open_on_unlock.GetBool() && bMaster)
 	{
 		// The configuration says: open the mover when it's unlocked, but let's check the mapper's settings
@@ -1194,8 +1362,11 @@ void CBinaryFrobMover::OnUnlock(bool bMaster)
 		{
 			// No spawnarg set or opening is allowed, just open the mover after a short delay
 			PostEventMS(&EV_TDM_FrobMover_ToggleOpen, soundLength);
+			doorOpened = true; // grayman #3643
 		}
 	}
+
+	return doorOpened; // grayman #3643
 }
 
 int CBinaryFrobMover::FrobMoverStartSound(const char* soundName)
@@ -1426,3 +1597,142 @@ idVec3 CBinaryFrobMover::GetClosedOrigin()
 {
 	return m_ClosedOrigin;
 }
+
+// grayman #3643 - a copy of HandleElevatorTask::MoveToButton() modified for our purposes.
+// Tells the AI where to stand when using the button or switch.
+
+bool CBinaryFrobMover::GetSwitchGoal(idVec3 &goal, float &standOff, int relightHeightLow)
+{
+	standOff = AI_SIZE; // offset larger than the owner's size
+
+	// This switch could be a button that translates horizontally or vertically,
+	// or a lever that rotates.
+
+	// Start with the assumption that it's a horizontally-translating button.
+	// That should cover the majority of cases.
+
+	idVec3 trans = spawnArgs.GetVector("translate", "0 0 0");
+	if (trans.z != 0) // vertical movement?
+	{
+		idVec3 switchSize = GetPhysics()->GetBounds().GetSize();
+		if (switchSize.y > switchSize.x)
+		{
+			trans = idVec3(1,0,0);
+		}
+		else
+		{
+			trans = idVec3(0,1,0);
+		}
+	}
+	else if (trans.LengthFast() == 0)
+	{
+		// rotating switch
+
+		idVec3 switchSize = GetPhysics()->GetBounds().GetSize();
+		if (switchSize.x > switchSize.y)
+		{
+			trans = idVec3(1,0,0);
+		}
+		else
+		{
+			trans = idVec3(0,1,0);
+		}
+	}
+	trans.NormalizeFast();
+
+	const idVec3& switchOrigin = GetPhysics()->GetOrigin();
+
+	// grayman #3648 - the following code has a problem sometimes finding
+	// the AAS area of the goal spot when it's up by the switch. Push the
+	// goal spot down to the floor and then try to find the AAS area.
+	//
+	// There needs to be LOS from the switch to the goal point. This should
+	// prevent AI from operating a switch through a wall.
+
+	trace_t result;
+
+	bool pointFound = false;
+	for ( int i = 0 ; i < 4, !pointFound ; i++ )
+	{
+		switch (i)
+		{
+		case 0:
+			break;
+		case 1:
+		case 3:
+			trans *= -1;
+			break;
+		case 2:
+			//const idVec3& gravity = owner->GetPhysics()->GetGravityNormal();
+			const idVec3& gravity = this->GetPhysics()->GetGravityNormal(); // can we get gravity from the switch?
+			trans = trans.Cross(gravity);
+			break;
+		}
+
+		goal = switchOrigin - standOff * trans;
+		if (!gameLocal.clip.TracePoint(result, switchOrigin, goal, MASK_OPAQUE, this))
+		{
+			// The switch can "see" the goal point.
+
+			idVec3 bottomPoint = goal;
+			bottomPoint.z -= 256;
+			gameLocal.clip.TracePoint(result, goal, bottomPoint, MASK_OPAQUE, NULL); // trace down
+
+			// success
+			pointFound = true;
+		}
+	}
+
+	if (!pointFound)
+	{
+		return false;
+	}
+
+	// If this switch controls a light that's being relit,
+	// relightHeightLow will be > 0.
+
+	if ( relightHeightLow > 0 )
+	{
+		float height = switchOrigin.z - result.endpos.z;
+
+		// adjust standOff based on height of switch off the floor
+
+		if (height < relightHeightLow) // low
+		{
+			// Adjust standoff and set new goal. Assume path to goal is still good.
+
+			standOff += 16; // farther from goal
+			goal = switchOrigin - standOff * trans;
+		}
+	}
+
+	goal.z = result.endpos.z; // where we hit
+	goal.z++; // move up slightly
+	return true;
+}
+
+// grayman #3643 - copied from CFrobDoor
+void CBinaryFrobMover::Event_ClearPlayerImmobilization(idEntity* player)
+{
+	if (!player->IsType(idPlayer::Type))
+	{
+		return;
+	}
+
+	// Release the immobilization imposed on the player by Lockpicking
+	static_cast<idPlayer*>(player)->SetImmobilization("Lockpicking", 0);
+}
+
+// grayman #3643 - copied from CFrobDoor
+void CBinaryFrobMover::Event_Lock_StatusUpdate()
+{
+}
+
+// grayman #3643 - copied from CFrobDoor
+void CBinaryFrobMover::Event_Lock_OnLockPicked()
+{
+	// "Lock is picked" signal, unlock in master mode
+	Unlock(true);
+}
+
+

@@ -144,7 +144,12 @@ bool Subsystem::FinishTask()
 
 		if (task->IsInitialised())
 		{
-			task->OnFinish(owner);
+			// grayman #3643 - don't run the OnFinish methods more than once
+			if (!task->IsFinished())
+			{
+				task->OnFinish(owner);
+				task->SetFinished();
+			}
 		}
 
 		// Issue the "TaskFinished" signal to the MindState
@@ -180,7 +185,12 @@ void Subsystem::SwitchTask(const TaskPtr& newTask)
 
 		if (task->IsInitialised())
 		{
-			task->OnFinish(_owner.GetEntity());
+			// grayman #3643 - don't run the OnFinish methods more than once
+			if (!task->IsFinished())
+			{
+				task->OnFinish(_owner.GetEntity());
+				task->SetFinished();
+			}
 		}
 	}
 
@@ -225,7 +235,12 @@ void Subsystem::ClearTasks()
 
 			if (task.IsInitialised())
 			{
-				task.OnFinish(_owner.GetEntity());
+				// grayman #3643 - don't run the OnFinish methods more than once
+				if (!task.IsFinished())
+				{
+					task.OnFinish(_owner.GetEntity());
+					task.SetFinished();
+				}
 			}
 		}
 	}

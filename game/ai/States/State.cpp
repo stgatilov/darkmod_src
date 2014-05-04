@@ -4108,56 +4108,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	// This is a door that's supposed to be closed.
 	// Search for a while. Remember the door so you can close it later. 
 
-	memory.closeMe = door;
-	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
-
-	// grayman #2866 - Check if the door swings toward or away from us. We'll use this
-	// to determine whether we have to walk through the door before finally
-	// closing it.
-
-	memory.doorSwingsToward = (door->GetOpenDir() * (owner->GetPhysics()->GetOrigin() - door->GetPhysics()->GetOrigin()) > 0);
-
-	// grayman #2866 - Handle sliding doors.
-
-	idList< idEntityPtr<idEntity> > list;
-	if ( door->GetDoorHandlingEntities( owner, list ) ) // for doors that use door handling positions
-	{
-		memory.frontPos = list[0];
-		memory.backPos = list[1];
-	}
-
-	door->SetSearching(owner); // keeps other AI from joining in the search
-
-	// Raise alert level
-
-	// One more piece of evidence of something out of place
-	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_DOOR;
-	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
-	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-
-	if ( owner->AI_AlertLevel < ( owner->thresh_4 - 0.1f ) )
-	{
-		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
-//		memory.alertPos = stimSource->GetPhysics()->GetOrigin(); // grayman #2866 - old way, which doesn't work well with sliding doors
-		memory.alertClass = EAlertVisual_2; // grayman #2603
-		memory.alertType = EAlertTypeDoor;
-		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-
-		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
-	}
-
-	// Do new reaction to stimulus
-
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.alertedDueToCommunication = false;
+	owner->SetUpSuspiciousDoor(door); // grayman #3643
 }
 
 void State::OnAICommMessage(CommMessage& message, float psychLoud)
@@ -4777,10 +4728,13 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	}
 
 	// grayman #2716 - if the door is too high above or too far below, ignore it
+	// grayman #3643 - use the door's closed position, not its current position
 
-	idBounds frobDoorBounds = frobDoor->GetPhysics()->GetAbsBounds();
+	idBox doorBox = frobDoor->GetClosedBox(); // where the door is when it's closed
+	float centerZ = doorBox.GetCenter().z;
+	float halfHeight = doorBox.GetExtents().z;
 	float ownerZ = owner->GetPhysics()->GetOrigin().z;
-	if ((frobDoorBounds[0].z > (ownerZ + 83)) || (frobDoorBounds[1].z < (ownerZ - 30)))
+	if (((centerZ - halfHeight) > (ownerZ + 83)) || ((centerZ + halfHeight) < (ownerZ - 30)))
 	{
 		return;
 	}
@@ -4797,11 +4751,6 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		{
 			return; // we have no LOS yet
 		}
-	}
-
-	if (cv_ai_door_show.GetBool()) 
-	{
-		gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), frobDoor->GetPhysics()->GetOrigin(), 1, 16);
 	}
 
 	// check if we already have a door to handle

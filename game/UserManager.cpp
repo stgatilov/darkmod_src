@@ -134,12 +134,16 @@ int UserManager::GetIndex(idActor* actor) // grayman #2345
 // so he has to be moved to the top of the user list. This cuts down on
 // confusion around doors.
 
+// TODO: Runners might need to go before walkers, regardless of distance from door.
+// TODO: The rank of the AI might need to be considered, with nobles preceeding beggars.
+
 void UserManager::ResetMaster(CFrobDoor* frobDoor)
 {
 	int numUsers = GetNumUsers();
 	if (numUsers > 1)
 	{
-		idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
+		idVec3 doorCenter = frobDoor->GetClosedBox().GetCenter(); // grayman #3643 - use center of door, not origin
+		//idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
 		idActor* closestUser = NULL;	// the user closest to the door
 		int masterIndex = 0;			// index of closest user
 		float minDistance = 100000;		// minimum distance of all users
@@ -148,7 +152,7 @@ void UserManager::ResetMaster(CFrobDoor* frobDoor)
 			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
 			if (user != NULL)
 			{
-				float distance = (user->GetPhysics()->GetOrigin() - doorOrigin).LengthFast();
+				float distance = (user->GetPhysics()->GetOrigin() - doorCenter).LengthFast();
 				if (distance < minDistance)
 				{
 					masterIndex = i;
