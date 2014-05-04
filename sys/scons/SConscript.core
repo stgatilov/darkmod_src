@@ -313,7 +313,7 @@ else:
 	sound_env.Append( CPPDEFINES = 'NO_ALSA' )
 sound_lib = sound_env.StaticLibrary( 'sound', sound_list )
 
-local_env.Append( LIBS = [ 'pthread', 'dl', 'rt', 'png', 'curl' ] ) # greebo: Added librt and libpng, taaaki: libcurl shared lib instead of static
+local_env.Append( LIBS = [ 'pthread', 'dl', 'rt', 'png' ] ) # greebo: Added librt and libpng
 if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
@@ -324,6 +324,8 @@ local_env.Append(LIBS = [
 	# Uncomment these if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
 	#File('/usr/lib32/libjpeg.so'),
 	#File('/usr/lib32/libpng.so'),
+	File('#/linux/openssl/libssl.a'),
+	File('#/linux/openssl/libcrypto.a'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
 	File('#/linux/boost/lib/libboost_system.a'),
 	File('#/linux/boost/lib/libboost_thread.a'),
