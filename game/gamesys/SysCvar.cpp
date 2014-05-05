@@ -145,10 +145,10 @@ idCVar cv_tdm_proxy("tdm_proxy", "", CVAR_ARCHIVE, "The proxy to use when connec
 idCVar cv_tdm_proxy_user("tdm_proxy_user", "", CVAR_ARCHIVE, "The proxy user to use when connecting to the internet via proxy." );
 idCVar cv_tdm_proxy_pass("tdm_proxy_pass", "", CVAR_ARCHIVE, "The proxy password to use when connecting to the internet via proxy." );
 idCVar cv_tdm_allow_http_access("tdm_allow_http_access",		"1",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "If true (nonzero), TDM is allowed to send HTTP request to the TDM servers to check for updates, missions, etc. Setting this to false disables all web functionality." );
-idCVar cv_tdm_mission_list_urls("tdm_mission_list_urls",	"http://www.thedarkmod.com/missiondb/get_available_missions.php;http://www.thedarkmod.com/missiondb/available_missions.xml", CVAR_GAME, "The URLs to check for the mission list XML." );
-idCVar cv_tdm_mission_details_url("tdm_mission_details_url", "http://www.thedarkmod.com/missiondb/get_mission_details.php?id=%d", CVAR_GAME, "The URLs to check for the mission details XML." );
-idCVar cv_tdm_mission_screenshot_url("tdm_mission_screenshot_url", "http://www.thedarkmod.com/%s", CVAR_GAME, "The URL template to download the mission screenshots." );
-idCVar cv_tdm_version_check_url("tdm_version_check_url", "http://www.thedarkmod.com/update/tdm_version.xml", CVAR_GAME, "The URL to check for the current TDM version." );
+idCVar cv_tdm_mission_list_urls("tdm_mission_list_urls",	"http://missions.thedarkmod.com/get_available_missions.php;http://missions.thedarkmod.com/available_missions.xml", CVAR_GAME, "The URLs to check for the mission list XML." );
+idCVar cv_tdm_mission_details_url("tdm_mission_details_url", "http://missions.thedarkmod.com/get_mission_details.php?id=%d", CVAR_GAME, "The URLs to check for the mission details XML." );
+idCVar cv_tdm_mission_screenshot_url("tdm_mission_screenshot_url", "http://missions.thedarkmod.com/%s", CVAR_GAME, "The URL template to download the mission screenshots." );
+idCVar cv_tdm_version_check_url("tdm_version_check_url", "http://update.thedarkmod.com/tdm_version.xml", CVAR_GAME, "The URL to check for the current TDM version." );
 
 /**
 * DarkMod DEBUG related CVARs
