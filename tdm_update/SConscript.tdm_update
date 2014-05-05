@@ -61,8 +61,8 @@ else:
 		File('#/../linux/boost/lib/libboost_thread.a'),
 		File('#/../linux/boost/lib/libboost_regex.a'),
 		File('#/../linux/boost/lib/libboost_system.a'),
-		File('#/../linux/openssl/libcrypto.a'),
 		File('#/../linux/openssl/libssl.a'),
+		File('#/../linux/openssl/libcrypto.a'),
 		File('#/../linux/libcurl/libcurl.a'),
 	])
 
