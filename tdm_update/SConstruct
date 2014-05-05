@@ -217,7 +217,7 @@ GLOBALS = 'g_env g_os OPTCPPFLAGS minizip_list libtdm_update_list'
 
 Export( 'GLOBALS ' + GLOBALS )
 
-BuildDir( g_build, '.', duplicate = 0 )
+VariantDir( g_build, '.', duplicate = 0 )
 
 Export( 'GLOBALS ' + GLOBALS )
 
