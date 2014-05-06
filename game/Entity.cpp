@@ -11658,7 +11658,7 @@ int idEntity::ChangeLootAmount(int lootType, int amount)
 	int gold, jewelry, goods;
 	int total = Inventory()->GetLoot(gold, jewelry, goods);
 	bool gained = (amount >= 0);
-    bool validLootType = false; // SteveL #3719. gnartsch's patch.
+    bool validLootType = true; // SteveL #3719. gnartsch's patch.
 
 	switch(lootType)
 	{
