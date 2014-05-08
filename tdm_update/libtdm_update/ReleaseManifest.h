@@ -195,12 +195,12 @@ public:
 
 		for (const_iterator i = begin(); i != end(); ++i)
 		{
-			manifest << "./" << i->sourceFile;
+			manifest << "./" << i->sourceFile.string();
 
 			// Do we have a redirection?
 			if (i->destFile != i->sourceFile)
 			{
-				manifest << " => ./" << i->destFile;
+				manifest << " => ./" << i->destFile.string();
 			}
 
 			manifest << std::endl;
