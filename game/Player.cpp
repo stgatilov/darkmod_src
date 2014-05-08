@@ -67,8 +67,13 @@ const float MIN_BOB_SPEED = 5.0f;
 const int SHOULDER_IMMOBILIZATIONS = EIM_CLIMB | EIM_ITEM_SELECT | EIM_WEAPON_SELECT | EIM_ATTACK | EIM_ITEM_USE | EIM_MANTLE | EIM_FROB_COMPLEX;
 const float SHOULDER_JUMP_HINDERANCE = 0.25f;
 
-// grayman #3485 - additional volume reduction when falling/jumping when crouched
-const float FALL_JUMP_CROUCH_VOL_ADJUST = -7.0f;
+// grayman #3485 - additional volume reduction when falling when crouched
+const float FALL_CROUCH_VOL_ADJUST = -7.0f;
+
+// SteveL #3716 - play a footstep sound at full volume despite player being crouched if the player actively 
+// jumped less than JUMP_DETECTION_TIME milliseconds ago. Fix for bunny hopping #3716. Needs to be set high 
+// enough that jumps lasting longer than this will always produce a sound anyway due to z-velocity.
+const int JUMP_DETECTION_TIME = 1000;
 
 const idEventDef EV_Player_GetButtons( "getButtons", EventArgs(), 'd', "Returns the button state from the current user command." );
 
@@ -4624,9 +4629,10 @@ void idPlayer::CrashLand( const idVec3 &savedOrigin, const idVec3 &savedVelocity
 	AI_HARDLANDING = false;
 
 	CrashLandResult result = idActor::CrashLand( physicsObj, savedOrigin, savedVelocity );
+	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
 
 	// grayman #3485 - new way to decide whether the player has landed, for footstep playing 
-	if (result.hasLanded && ( savedVelocity.z < -300) )
+	if (result.hasLanded && (savedVelocity.z < -300 || isJumping))
 	{
 		hasLanded = true;
 		PlayFootStepSound();
@@ -10930,10 +10936,11 @@ void idPlayer::PlayFootStepSound()
 	// start footstep sound based on material type
 	const idMaterial* material = GetPhysics()->GetContact( 0 ).material;
 
+	bool isJumping = (gameLocal.time - physicsObj.GetLastJumpTime()) < JUMP_DETECTION_TIME; // SteveL #3716
 	float crouchVolAdjust = 0.0f; // grayman #3485 - volume adjustment for landing when crouched
-	if ( hasLanded && AI_CROUCH )
+	if (hasLanded && AI_CROUCH && !isJumping)
 	{
-		crouchVolAdjust = FALL_JUMP_CROUCH_VOL_ADJUST;
+		crouchVolAdjust = FALL_CROUCH_VOL_ADJUST;
 	}
 
 	if ( material != NULL ) 
