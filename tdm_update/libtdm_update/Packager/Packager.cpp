@@ -721,7 +721,7 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 
 	// Make sure all folders exist
 	fs::path pk4Folder = pk4Path;
-	pk4Folder.remove_leaf().remove_leaf();
+	pk4Folder.remove_leaf();
 
 	if (!fs::exists(pk4Folder))
 	{
