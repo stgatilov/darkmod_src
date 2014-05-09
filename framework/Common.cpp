@@ -941,42 +941,43 @@ void idCommonLocal::InitGameArguments() {
 		fsGameBaseDefined = true;
 	}
 
-    // taaaki - at the very least, check if the specified fan mission 
+    // look for fms folder
+    idStrList fmList;
+    idStr fmPath = darkmodPath;
+
+    Sys_ListFiles( fmPath.c_str(), "/", fmList );
+    fmPath.AppendPath("fms");
+
+    if ( fmList.FindIndex( "fms" ) < 0 ) {
+        // didn't find the fms folder
+        // do we create one? I don't see why not
+        Sys_Mkdir( fmPath.c_str() );
+        fsGameDefined = false;
+        common->Warning("Fan missions directory does not exist");
+    }
+
+    // at the very least, check if the specified fan mission 
     // folder exists in <fs_mod>/fms/
     if ( fsGameDefined ) {
-        idStrList fmList;
-        idStr fmPath = darkmodPath;
         idStr curFm = idStr( cvarSystem->GetCVarString("fs_currentfm") );
-
         Sys_ListFiles( fmPath.c_str(), "/", fmList );
-        fmPath.AppendPath("fms");
 
-        if ( fmList.FindIndex( "fms" ) < 0 ) {
-            // didn't find the fms folder
-            // taaaki - do we create one? I don't see why not
-            Sys_Mkdir( fmPath.c_str() );
+        // check if the currently selected fm folder exists
+        if ( fmList.FindIndex( curFm ) < 0 ) {
             fsGameDefined = false;
-            common->Warning("Fan missions directory does not exist");
+            common->Warning("Fan missions path does not exist for installed fm: %s", curFm.c_str());
         } else {
-            Sys_ListFiles( fmPath.c_str(), "/", fmList );
+            idStrList pk4List, mapList;
+            fmPath.AppendPath(curFm);
+            Sys_ListFiles( fmPath.c_str(), ".pk4", pk4List );
 
-            // check if the currently selected fm folder exists
-            if ( fmList.FindIndex( curFm ) < 0 ) {
+            fmPath.AppendPath("maps");
+            Sys_ListFiles( fmPath.c_str(), ".map", mapList );
+
+            if ( pk4List.Num() == 0 && mapList.Num() == 0 ) {
+                // fanmission folder exists, but didn't find a pk4 or map file
                 fsGameDefined = false;
-                common->Warning("Fan missions path does not exist for installed fm: %s", curFm.c_str());
-            } else {
-                idStrList pk4List, mapList;
-                fmPath.AppendPath(curFm);
-                Sys_ListFiles( fmPath.c_str(), ".pk4", pk4List );
-
-                fmPath.AppendPath("maps");
-                Sys_ListFiles( fmPath.c_str(), ".map", mapList );
-
-                if ( pk4List.Num() == 0 && mapList.Num() == 0 ) {
-                    // fanmission folder exists, but didn't find a pk4 or map file
-                    fsGameDefined = false;
-                    common->Warning("Fan mission map does not exist for installed fm: %s", curFm.c_str());
-                }
+                common->Warning("Fan mission map does not exist for installed fm: %s", curFm.c_str());
             }
         }
     }
