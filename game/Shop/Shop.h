@@ -124,6 +124,9 @@ public:
 	// true if there are no items for sale
 	bool GetNothingForSale();
 
+	// grayman #3723 - tell us if there's a shop
+	bool ShopExists() { return !_skipShop; };
+
 private:
 	// read from defs and map to initialze the shop
 	void LoadShopItemDefinitions();

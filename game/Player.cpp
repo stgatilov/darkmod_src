@@ -1556,7 +1556,7 @@ void idPlayer::SetupInventory()
 	// in the weapon slot AND in the inventory at the same time.
 	crsr->AddCategoryIgnored(TDM_PLAYER_WEAPON_CATEGORY);
 
-	// The player always gets a dummyentry (so the player can have an empty space if he 
+	// The player always gets a dummy entry (so the player can have an empty space if he 
 	// chooses to not see the inventory all the time.
 	CInventoryItemPtr it(new CInventoryItem(this));
 	it->SetName(TDM_DUMMY_ITEM);
@@ -1635,6 +1635,9 @@ void idPlayer::SetupInventory()
 
 	// Carry over persistent items from the previous map
 	AddPersistentInventoryItems();
+
+	// grayman #3723 - we no longer need the shop, so clear it
+	gameLocal.m_Shop->Clear();
 }
 
 void idPlayer::AddPersistentInventoryItems()
