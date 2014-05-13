@@ -80,7 +80,7 @@ void CInventory::CopyTo(CInventory& targetInventory)
 		{
 			const CInventoryItemPtr& item = category->GetItem(itemIdx);
 
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Copying item %s to inventory.\r", item->GetName().c_str());
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Copying item %s to inventory.\r", common->Translate(item->GetName().c_str()));
 
 			// Add this item to the target inventory
 			targetInventory.PutItem(item, item->Category()->GetName());
@@ -94,11 +94,11 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 	CInventoryCategoryPtr weaponCategory = GetCategory(TDM_PLAYER_WEAPON_CATEGORY);
 
 	// Cycle through all categories to add them
-	for (int c = 0; c < sourceInventory.GetNumCategories(); ++c)
+	for ( int c = 0 ; c < sourceInventory.GetNumCategories() ; ++c )
 	{
 		const CInventoryCategoryPtr& category = sourceInventory.GetCategory(c);
 
-		for (int itemIdx = 0; itemIdx < category->GetNumItems(); ++itemIdx)
+		for ( int itemIdx = 0 ; itemIdx < category->GetNumItems() ; ++itemIdx )
 		{
 			const CInventoryItemPtr& item = category->GetItem(itemIdx);
 
@@ -106,7 +106,7 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
 					"Item %s is not marked as persistent, won't add to player inventory.\r",
-					item->GetName().c_str());
+					common->Translate(item->GetName().c_str()));
 
 				continue; // not marked as persistent
 			}
@@ -118,16 +118,23 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 			{
 				CShopItemPtr shopItem = gameLocal.m_Shop->FindShopItemDefByClassName(itemDict->GetString("classname"));
 
-				if (shopItem != NULL && CShop::GetQuantityForItem(item) > 0)
+				if ( (shopItem != NULL) && (CShop::GetQuantityForItem(item) > 0) )
 				{
-					DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
-						"Item %s would be handled by the shop, won't add that to player inventory.\r",
-						item->GetName().c_str());
-					continue;
+					// grayman #3723 - if there's no shop in this mission,
+					// then we can't rely on it to process this inventory item.
+
+					if ( gameLocal.m_Shop->ShopExists() )
+					{
+						DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
+								"Item %s would be handled by the shop, won't add that to player inventory.\r",
+								common->Translate(item->GetName().c_str()));
+						continue;
+					}
 				}
 			}
 
-			// Is set to true if we should add this item. For weapon items with ammo this will be set to false to prevent double-additions
+			// Is set to true if we should add this item.
+			// For weapon items with ammo this will be set to false to prevent double-additions
 			bool addItem = true;
 
 			// Handle weapons separately, otherwise we might end up with duplicate weapon items
@@ -136,11 +143,14 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 			if (weaponItem && weaponCategory)
 			{
 				// Weapon items need special consideration. For arrow-based weapons try to merge the ammo.
-				for (int w = 0; w < weaponCategory->GetNumItems(); ++w)
+				for ( int w = 0 ; w < weaponCategory->GetNumItems() ; ++w )
 				{
 					CInventoryWeaponItemPtr thisWeapon = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
 
-					if (!thisWeapon) continue;
+					if (!thisWeapon)
+					{
+						continue;
+					}
 
 					if (thisWeapon->GetWeaponName() == weaponItem->GetWeaponName())
 					{
@@ -179,7 +189,7 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 			{
 				DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING(
 					"Adding persistent item %s to player inventory, quantity: %d.\r",
-					item->GetName().c_str(), item->GetPersistentCount());
+					common->Translate(item->GetName().c_str()), item->GetPersistentCount());
 
 				item->SetOwner(newOwner);
 
@@ -211,7 +221,7 @@ void CInventory::SaveItemEntities(bool persistentOnly)
 				continue; // skip non-persistent items
 			}
 
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Saving item entity of item %s.\r", item->GetName().c_str());
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Saving item entity of item %s.\r", common->Translate(item->GetName().c_str()));
 
 			item->SaveItemEntityDict();
 		}
@@ -228,7 +238,7 @@ void CInventory::RestoreItemEntities(const idVec3& entPosition)
 		{
 			const CInventoryItemPtr& item = category->GetItem(itemIdx);
 
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item entity of item %s.\r", item->GetName().c_str());
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Restoring item entity of item %s, with name '%s'.\r", common->Translate(item->GetName().c_str()),item->GetItemEntity() ? item->GetItemEntity()->GetName():"NULL");
 
 			item->RestoreItemEntityFromDict(entPosition);
 		}
@@ -651,7 +661,7 @@ CInventoryItemPtr CInventory::PutItem(idEntity *ent, idEntity *owner)
 
 		if (item != NULL)
 		{
-			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", name.c_str(), category.c_str());
+			DM_LOG(LC_INVENTORY, LT_DEBUG)LOGSTRING("Adding new inventory item %s to category %s...\r", common->Translate(name.c_str()), common->Translate(category.c_str()));
 			// Put the item into its category
 			PutItem(item, category);
 

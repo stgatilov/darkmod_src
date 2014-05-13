@@ -281,6 +281,30 @@ void CInventoryItem::RestoreItemEntityFromDict(const idVec3& entPosition)
 	// We have an item dictionary, let's respawn our entity
 	idEntity* ent;
 	
+	// grayman #3723 - When restoring items this way, it's possible
+	// that the name of the object we're about to restore is the same
+	// as an object in the map. If so, change the name of the restored object.
+
+	idStr		error;
+	const char  *name;
+
+	if ( (*m_ItemDict).GetString( "name", "", &name ) )
+	{
+		sprintf( error, " on '%s'", name);
+	}
+
+	// check if this name is already in use
+
+	if (gameLocal.FindEntity(name))
+	{
+		gameLocal.Warning("Multiple entities named '%s'", name);
+		DM_LOG(LC_INIT, LT_INIT)LOGSTRING("WARNING - Multiple entities named '%s'\r", name);
+
+		// Rename with a unique name.
+
+		(*m_ItemDict).Set("name",va("%s_%d",name,gameLocal.random.RandomInt(1000)));
+	}
+
 	if (!gameLocal.SpawnEntityDef(*m_ItemDict, &ent))
 	{
 		DM_LOG(LC_INVENTORY, LT_ERROR)LOGSTRING("Can't respawn inventory item entity '%s'!\r", m_ItemDict->GetString("name"));

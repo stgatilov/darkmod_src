@@ -371,7 +371,7 @@ void CShop::LoadShopItemDefinitions()
 			for (const idKeyValue* kv = dict.MatchPrefix("itemClassname"); kv != NULL; 
 				 kv = dict.MatchPrefix("itemClassname", kv))
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Adding class %s to shopitem %s\r", kv->GetValue().c_str(), displayName);
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Adding class %s to shopitem %s\r", kv->GetValue().c_str(), common->Translate(displayName));
 				theItem->AddClassname(kv->GetValue());
 			}
 			
