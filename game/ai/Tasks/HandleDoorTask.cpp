@@ -323,13 +323,13 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1")));
 
+	_blockedDoorCount++; // grayman #3726 - keep track, even if owner is blocker
+
 	if (ownerIsBlocker)
 	{
 		return false;
 	}
 	
-	_blockedDoorCount++;
-
 	// The first interruptions only elicit a bark from the AI.
 
 	if (_blockedDoorCount < PUSH_PLAYER_ON_THIS_ATTEMPT)
@@ -1744,6 +1744,62 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 			}
 			break;
+		case EStateRetryInterruptedClose4: // grayman #3726
+			// If here, you need to open the door and walk away.
+
+			if (!frobDoor->IsOpen()) // closed
+			{
+				// already closed, no need for a retry open
+				_doorHandlingState = EStateClosingDoor;
+			}
+			else // open
+			{
+				if (gameLocal.time >= _waitEndTime)
+				{
+					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					_doorHandlingState = EStateRetryInterruptedClose5;
+					_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
+				}
+			}
+			break;
+		case EStateRetryInterruptedClose5: // grayman #3726
+
+			// If here, you need to fully open a partially open door and then walk away.
+
+			if (!frobDoor->IsOpen()) // closed
+			{
+				_doorHandlingState = EStateClosingDoor; // already closed, no need to open it
+			}
+			else // open
+			{
+				if (gameLocal.time >= _waitEndTime)
+				{
+					OpenDoor();
+					_waitEndTime = gameLocal.time + 2000;
+					_doorHandlingState = EStateRetryInterruptedClose6;
+				}
+			}
+			break;
+		case EStateRetryInterruptedClose6: // grayman #3726
+			if (!frobDoor->IsOpen()) // closed
+			{
+				_doorHandlingState = EStateClosingDoor; // already closed, no need to close it
+			}
+			else // open
+			{
+				if (frobDoor->IsAtOpenPosition())
+				{
+					// fully open, now walk away
+					return true;
+				}
+
+				if (gameLocal.time >= _waitEndTime)
+				{
+					// door isn't fully open, so give up
+					return true;
+				}
+			}
+			break;
 		case EStateWaitBeforeClose:
 			if (!frobDoor->IsOpen()) // closed
 			{
@@ -1913,10 +1969,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true; // alerted, and will be searching
 					}
 
-					// try opening the door and closing it again
-					Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
-					_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
-					_doorHandlingState = EStateRetryInterruptedClose1;
+					// grayman #3726 - if you've tried opening and closing enough
+					// times, and you still can't close it, leave it open and walk away
+
+					if (_blockedDoorCount < (PUSH_PLAYER_ON_THIS_ATTEMPT + 1) )
+					{
+						// try opening the door and closing it again
+						Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
+						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
+						_doorHandlingState = EStateRetryInterruptedClose1;
+					}
+					else
+					{
+						// try opening the door
+						_doorHandlingState = EStateRetryInterruptedClose4;
+					}
 				}
 			}
 			break;
@@ -2618,6 +2685,15 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			break;
 		case EStateRetryInterruptedClose3: // grayman #3523
 			str = "EStateRetryInterruptedClose3";
+			break;
+		case EStateRetryInterruptedClose4: // grayman #3726
+			str = "EStateRetryInterruptedClose4";
+			break;
+		case EStateRetryInterruptedClose5: // grayman #3726
+			str = "EStateRetryInterruptedClose5";
+			break;
+		case EStateRetryInterruptedClose6: // grayman #3726
+			str = "EStateRetryInterruptedClose6";
 			break;
 		case EStateWaitBeforeClose:
 			str = "EStateWaitBeforeClose";
