@@ -1652,7 +1652,7 @@ bool CBinaryFrobMover::GetSwitchGoal(idVec3 &goal, float &standOff, int relightH
 	trace_t result;
 
 	bool pointFound = false;
-	for ( int i = 0 ; i < 4, !pointFound ; i++ )
+	for ( int i = 0 ; i < 4 ; i++ )
 	{
 		switch (i)
 		{
@@ -1680,6 +1680,7 @@ bool CBinaryFrobMover::GetSwitchGoal(idVec3 &goal, float &standOff, int relightH
 
 			// success
 			pointFound = true;
+			break;
 		}
 	}
 
