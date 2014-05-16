@@ -1633,7 +1633,7 @@ idBounds idLight::GetBounds()
 	{
 		b = idBounds( -renderLight.lightRadius, renderLight.lightRadius );
 	} else {
-		gameLocal.Warning("idLight::GetBounds() not correctly implemented for projected lights.");
+		//gameLocal.Warning("idLight::GetBounds() not correctly implemented for projected lights.");
 		// Fake a set of bounds. This might work ok for squarish spotlights with no start/stop specified.
 		// FIXME: These bounds are incorrect.
 		b.Zero();
