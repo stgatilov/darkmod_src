@@ -43,6 +43,10 @@ namespace ai
 										// let the door push the player after this attempt.
 #define TURN_TOWARD_DELAY 750	// how long to wait for a turn to complete
 
+#define CONTROLLER_HEIGHT_HIGH 66
+#define CONTROLLER_HEIGHT_LOW  30
+#define CONTROLLERMAX_HEIGHT  100 // AI can't reach a controller higher than this
+
 // Get the name of this task
 const idStr& HandleDoorTask::GetName() const
 {
@@ -323,13 +327,13 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert1")));
 
+	_blockedDoorCount++; // grayman #3726 - keep track, even if owner is blocker
+
 	if (ownerIsBlocker)
 	{
 		return false;
 	}
 	
-	_blockedDoorCount++;
-
 	// The first interruptions only elicit a bark from the AI.
 
 	if (_blockedDoorCount < PUSH_PLAYER_ON_THIS_ATTEMPT)
@@ -387,6 +391,39 @@ void HandleDoorTask::Turn(idVec3 pos, CFrobDoor* door, idEntity* controller)
 		}
 	}
 	_owner.GetEntity()->TurnToward(targetPos);
+}
+
+void HandleDoorTask::StartHandAnim(idAI* owner, idEntity* controller)
+{
+	if (controller == NULL)
+	{
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+		owner->SetWaitState("use_righthand"); // grayman #3643
+		return;
+	}
+
+	// Controllers can be high off the floor, door-handle high, or low to the floor.
+
+	idStr torsoAnimation = "";
+	float controllerHeight = controller->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
+
+	torsoAnimation = "Torso_Relight_Electric"; // borrowing the electric light relight anims
+	
+	if (controllerHeight > CONTROLLER_HEIGHT_HIGH) // high?
+	{
+		torsoAnimation.Append("_High"); // reach up toward the controller
+	}
+	else if (controllerHeight < CONTROLLER_HEIGHT_LOW) // low?
+	{
+		torsoAnimation.Append("_Low"); // reach down toward the controller
+	}
+	else // medium
+	{
+		torsoAnimation.Append("_Med"); // reach out toward the controller
+	}
+
+	owner->SetAnimState(ANIMCHANNEL_TORSO, torsoAnimation.c_str(), 4); // this plays the legs anim also
+	owner->SetWaitState("use_righthand"); // grayman #3643
 }
 
 bool HandleDoorTask::Perform(Subsystem& subsystem)
@@ -711,6 +748,17 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				float dist = dir.LengthFast();
 				if (masterUser == owner)
 				{
+					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
+						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
+					{
+						// reached front position
+						owner->StopMove(MOVE_STATUS_DONE);
+						Turn(closedPos,frobDoor,_frontPosEnt.GetEntity()); // grayman #3643
+						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
+						_doorHandlingState = EStateWaitBeforeOpen;
+						break;
+					}
+
 					if (dist <= QUEUE_DISTANCE) // grayman #2345 - this was the next layer up
 					{
 						if (_doorInTheWay)
@@ -1041,7 +1089,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				if (gameLocal.time >= _waitEndTime)
 				{
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					StartHandAnim(owner, _frontPosEnt.GetEntity()); // grayman #3643
+					//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 					_doorHandlingState = EStateRetryInterruptedOpen2;
 					_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 				}
@@ -1114,7 +1163,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (masterUser == owner)
 					{
-						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						StartHandAnim(owner, _frontPosEnt.GetEntity()); // grayman #3643
+						//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 
 						_doorHandlingState = EStateStartOpen;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
@@ -1140,7 +1190,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					else if (gameLocal.time >= _waitEndTime)
 					// grayman #720 - need the AI to reach for the door
 					{
-						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						StartHandAnim(owner, _frontPosEnt.GetEntity()); // grayman #3643
+						//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 						_doorHandlingState = EStateStartOpen;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 						memory.latchPickedPocket = true; // grayman #3559 - delay any picked pocket reaction
@@ -1313,7 +1364,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 							if (!openDoor)
 							{
 								// Close it and try opening again.
-								owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+								StartHandAnim(owner, _backPosEnt.GetEntity()); // grayman #3643
+								//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 								_doorHandlingState = EStateStartClose;
 								_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 							}
@@ -1690,7 +1742,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			{
 				if (gameLocal.time >= _waitEndTime)
 				{
-					owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					StartHandAnim(owner, _backPosEnt.GetEntity()); // grayman #3643
+					//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
 					_doorHandlingState = EStateRetryInterruptedClose2;
 					_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 				}
@@ -1744,6 +1797,63 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 			}
 			break;
+		case EStateRetryInterruptedClose4: // grayman #3726
+			// If here, you need to open the door and walk away.
+
+			if (!frobDoor->IsOpen()) // closed
+			{
+				// already closed, no need for a retry open
+				_doorHandlingState = EStateClosingDoor;
+			}
+			else // open
+			{
+				if (gameLocal.time >= _waitEndTime)
+				{
+					StartHandAnim(owner, _backPosEnt.GetEntity()); // grayman #3643
+					//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+					_doorHandlingState = EStateRetryInterruptedClose5;
+					_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
+				}
+			}
+			break;
+		case EStateRetryInterruptedClose5: // grayman #3726
+
+			// If here, you need to fully open a partially open door and then walk away.
+
+			if (!frobDoor->IsOpen()) // closed
+			{
+				_doorHandlingState = EStateClosingDoor; // already closed, no need to open it
+			}
+			else // open
+			{
+				if (gameLocal.time >= _waitEndTime)
+				{
+					OpenDoor();
+					_waitEndTime = gameLocal.time + 2000;
+					_doorHandlingState = EStateRetryInterruptedClose6;
+				}
+			}
+			break;
+		case EStateRetryInterruptedClose6: // grayman #3726
+			if (!frobDoor->IsOpen()) // closed
+			{
+				_doorHandlingState = EStateClosingDoor; // already closed, no need to close it
+			}
+			else // open
+			{
+				if (frobDoor->IsAtOpenPosition())
+				{
+					// fully open, now walk away
+					return true;
+				}
+
+				if (gameLocal.time >= _waitEndTime)
+				{
+					// door isn't fully open, so give up
+					return true;
+				}
+			}
+			break;
 		case EStateWaitBeforeClose:
 			if (!frobDoor->IsOpen()) // closed
 			{
@@ -1764,8 +1874,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (masterUser == owner)
 					{
-						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
-						owner->SetWaitState("use_righthand"); // grayman #3643
+						StartHandAnim(owner, _backPosEnt.GetEntity()); // grayman #3643
+						//owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Use_righthand", 4);
+						//owner->SetWaitState("use_righthand"); // grayman #3643
 						_doorHandlingState = EStateStartClose;
 						_waitEndTime = gameLocal.time + owner->spawnArgs.GetInt("door_open_delay_on_use_anim", "500");
 					}
@@ -1913,10 +2024,21 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true; // alerted, and will be searching
 					}
 
-					// try opening the door and closing it again
-					Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
-					_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
-					_doorHandlingState = EStateRetryInterruptedClose1;
+					// grayman #3726 - if you've tried opening and closing enough
+					// times, and you still can't close it, leave it open and walk away
+
+					if (_blockedDoorCount < (PUSH_PLAYER_ON_THIS_ATTEMPT + 1) )
+					{
+						// try opening the door and closing it again
+						Turn(currentPos,frobDoor,_backPosEnt.GetEntity()); // grayman #3643
+						_waitEndTime = gameLocal.time + TURN_TOWARD_DELAY;
+						_doorHandlingState = EStateRetryInterruptedClose1;
+					}
+					else
+					{
+						// try opening the door
+						_doorHandlingState = EStateRetryInterruptedClose4;
+					}
 				}
 			}
 			break;
@@ -2618,6 +2740,15 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 			break;
 		case EStateRetryInterruptedClose3: // grayman #3523
 			str = "EStateRetryInterruptedClose3";
+			break;
+		case EStateRetryInterruptedClose4: // grayman #3726
+			str = "EStateRetryInterruptedClose4";
+			break;
+		case EStateRetryInterruptedClose5: // grayman #3726
+			str = "EStateRetryInterruptedClose5";
+			break;
+		case EStateRetryInterruptedClose6: // grayman #3726
+			str = "EStateRetryInterruptedClose6";
 			break;
 		case EStateWaitBeforeClose:
 			str = "EStateWaitBeforeClose";

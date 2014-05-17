@@ -73,6 +73,9 @@ private:
 		EStateRetryInterruptedClose1, // grayman #3523
 		EStateRetryInterruptedClose2, // grayman #3523
 		EStateRetryInterruptedClose3, // grayman #3523
+		EStateRetryInterruptedClose4, // grayman #3726
+		EStateRetryInterruptedClose5, // grayman #3726
+		EStateRetryInterruptedClose6, // grayman #3726
 		EStateWaitBeforeClose,
 		EStateStartClose,
 		EStateClosingDoor
@@ -86,7 +89,7 @@ private:
 	int		_leaveDoor;				// grayman #2700
 	bool	_triedFitting;			// grayman #2345
 	bool	_canHandleDoor;			// grayman #2712
-	bool	_closeFromSameSide;	// grayman #2866
+	bool	_closeFromSameSide;		// grayman #2866
 	int		_blockedDoorCount;		// grayman #3523
 	bool	_pushingPlayer;			// grayman #3523 - true if door is set to push player
 	bool	_previousPushingPlayer;	// grayman #3523 - previous push setting
@@ -112,7 +115,7 @@ public:
 
 	void DoorInTheWay(idAI* owner, CFrobDoor* frobDoor);
 
-	// these checks whether the AI is allowed to open/close/unlock/lock the door from this side
+	// these check whether the AI is allowed to open/close/unlock/lock the door from this side
 	bool AllowedToOpen(idAI* owner);
 	bool AllowedToClose(idAI* owner);
 	bool AllowedToUnlock(idAI* owner);
@@ -135,9 +138,6 @@ public:
 	static HandleDoorTaskPtr CreateInstance();
 
 private:
-	// Finds an entity which can operate the door in question (a lever, forex)
-	// If multiple controllers are available, the nearest one is chosen
-
 	// this checks if the gap is large enough to fit through partially openend doors (blocked, interrupted)
 	bool FitsThrough();
 
@@ -146,6 +146,7 @@ private:
 	bool AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker); // grayman #3523
 	void Turn(idVec3 pos, CFrobDoor* door, idEntity* controller); // grayman #3643
 	void InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool susDoorCloseFromSameSide); // grayman #3643
+	void StartHandAnim(idAI* owner, idEntity* controller); // grayman #3643
 };
 
 } // namespace ai
