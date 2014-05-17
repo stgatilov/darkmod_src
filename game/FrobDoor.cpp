@@ -1696,7 +1696,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 
 	if (m_doorHandlingPositions.Num() > 0)
 	{
-		for ( int i = 0 ; i < m_doorHandlingPositions.Num() ; i++) // for doors that use door handling positions
+		for ( int i = 0 ; i < m_doorHandlingPositions.Num() ; i++ ) // for doors that use door handling positions
 		{
 			// determine which side of the door the entity sits on
 			idEntity* e = m_doorHandlingPositions[i].GetEntity();
@@ -1755,7 +1755,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 			m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK] = goal;
 			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT] = goal;
 		}
-		// clear the door handle positions list and store our found
+		// Clear the door handle positions list and store our found
 		// entities in slots 0 and 1. It's possible
 		// that one or the other might be NULL (doesn't exist),
 		// but not both.
@@ -1773,6 +1773,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 
 	if (m_controllers.Num() > 0) // Is the door controlled by buttons/switches/levers?
 	{
+		idVec3 doorCenter = GetClosedBox().GetCenter(); // grayman #3643
 		for ( int i = 0 ; i < m_controllers.Num() ; i++)
 		{
 			// determine which side of the door the entity sits on
@@ -1782,7 +1783,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 				bool isInFront = false;
 				if (m_rotates)
 				{
-					idVec3 v = e->GetPhysics()->GetOrigin() - GetClosedBox().GetCenter();
+					idVec3 v = e->GetPhysics()->GetOrigin() - doorCenter;
 					float dot = v * m_OpenDir;
 					if (dot > 0)
 					{
@@ -1835,7 +1836,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 			m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_FRONT] = goal;
 		}
 
-		// clear the controller list and store our found
+		// Clear the controller list and store our found
 		// controllers in slots 0 and 1. It's possible
 		// that one or the other might be NULL (doesn't exist),
 		// but not both.

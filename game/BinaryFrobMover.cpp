@@ -433,6 +433,23 @@ void CBinaryFrobMover::PostSpawn()
 	idVec3 rotationAxis = rot.GetVec();
 	idVec3 normal = rotationAxis.Cross(m_ClosedPos);
 
+	// grayman #3643 - normal should represent the door face, not a line
+	// from the origin to the door closed position. Deal with normals that
+	// are slightly off. Don't touch normals that have components that are
+	// less than a multiple of 10 of each other. Ignore the z component.
+	// This correction is important for thick doors that use controllers,
+	// otherwise the door math thinks the controllers are both on the same
+	// side of the door.
+
+	if ( (normal.y != 0 ) && (abs(normal.x / normal.y) > 10.0f))
+	{
+		normal.y = 0;
+	}
+	else if ( (normal.x != 0) && (abs(normal.y / normal.x) > 10.0f))
+	{
+		normal.x = 0;
+	}
+
 	m_OpenDir = (m_OpenPos * normal) * normal;
 	m_OpenDir.Normalize();
 	// gameRenderWorld->DebugArrow(colorBlue, GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin() + 20 * m_OpenDir, 2, 200000);
