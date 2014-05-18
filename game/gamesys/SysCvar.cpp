@@ -756,7 +756,7 @@ idCVar r_postprocess_bloomKernelSize		( "r_postprocess_bloomKernelSize",		"2",		
 // sikk---> PostProcess Effects
 idCVar r_useSoftShadows(			"r_useSoftShadows",				"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_BOOL,	"Enable Soft Shadows postprocessing effect" );
 idCVar r_softShadowsBlurFilter(		"r_softShadowsBlurFilter",		"3",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Blur method used for the shadow mask:\n0 = No Filter\n1 = Box Filter\n2 = Poisson Filter\n3 = Gaussian Filter" );
-idCVar r_softShadowsBlurScale(		"r_softShadowsBlurScale",		"8.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Sample offset scale for the blur filter" );
+idCVar r_softShadowsBlurScale(		"r_softShadowsBlurScale",		"1.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Sample offset scale for the blur filter" );
 idCVar r_softShadowsBlurEpsilon(	"r_softShadowsBlurEpsilon",		"4.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the blur depth difference factor for the blur filter" );
 
 idCVar r_useEdgeAA(					"r_useEdgeAA",					"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Enable edge anti-aliasing: 0 = RGB edge AA; 1 = FXAA" );
@@ -805,9 +805,9 @@ idCVar r_ssilBlurEpsilon(			"r_ssilBlurEpsilon",			"4",		CVAR_GAME | CVAR_NOCHEA
 
 idCVar r_useSSAO(					"r_useSSAO",					"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_BOOL,	"Enable Screen-Space Ambient Occlusion postprocessing effect" );
 idCVar r_ssaoMethod(				"r_ssaoMethod",					"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the ssao method:\n0 = Crytek\n1 = HDAO\n2 = ABAO\n3 = PBAO\n4 = HBAO (low)\n5 = HBAO (medium)\n6 = HBAO (high)\n7 = Ray Marching\n8 = Volumetric Obscurance" );
-idCVar r_ssaoRadius(				"r_ssaoRadius",					"16",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the sample radius for ssao" );
+idCVar r_ssaoRadius(				"r_ssaoRadius",					"8",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the sample radius for ssao" );
 idCVar r_ssaoBias(					"r_ssaoBias",					"0.075",	CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the angle bias for ssao (darkening factor for Crytek's)" );
-idCVar r_ssaoAmount(				"r_ssaoAmount",					"1.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the contribution factor for ssao" );
+idCVar r_ssaoAmount(				"r_ssaoAmount",					"0.75",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the contribution factor for ssao" );
 idCVar r_ssaoBlurMethod(			"r_ssaoBlurMethod",				"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Blur method used for the ssao buffer:\n0 = Crytek\n1 = Box\n2 = Gaussian\n3 = Bilateral" );
 idCVar r_ssaoBlurScale(				"r_ssaoBlurScale",				"1.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the blur scale for the ssao buffer" );
 idCVar r_ssaoBlurQuality(			"r_ssaoBlurQuality",			"1",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the blur quality for the ssao buffer" );
