@@ -39,6 +39,10 @@ idSmokeParticles::idSmokeParticles( void ) {
 	freeSmokes = NULL;
 	numActiveSmokes = 0;
 	currentParticleTime = -1;
+	// sikk---> Depth Render
+		renderEntity.suppressSurfaceInViewID = -8;
+		renderEntity.noShadow = true;
+// <---sikk
 }
 
 /*

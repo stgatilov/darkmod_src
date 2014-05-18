@@ -1818,6 +1818,7 @@ void idFuncSmoke::Spawn( void ) {
 		restart = true;
 	}
 	GetPhysics()->SetContents( 0 );
+	
 }
 
 /*

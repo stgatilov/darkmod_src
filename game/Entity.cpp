@@ -1717,6 +1717,12 @@ void idEntity::LoadModels()
 
 	if ( !model.IsEmpty() ) {
 		SetModel( model );
+		if (model.Find(".prt")>=0)
+		{
+			// sikk---> Depth Render
+			renderEntity.suppressSurfaceInViewID = -8;
+			// <---sikk
+		}
 	}
 
 	// was a brokenModel requested?

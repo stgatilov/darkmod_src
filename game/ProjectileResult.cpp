@@ -87,6 +87,11 @@ CProjectileResult::CProjectileResult( void )
 	m_Collision.endAxis.Zero();
 	m_Collision.c.point.Zero();
 	m_Collision.c.normal.Set( 0, 0, 1 );
+
+	// sikk---> Depth Render
+	renderEntity.suppressSurfaceInViewID = -8;
+	renderEntity.noShadow = true;
+	// <---sikk
 }
 
 CProjectileResult::~CProjectileResult(void)
@@ -111,6 +116,11 @@ void CProjectileResult::Init
 	bool bCollisionBased(false);
 	idVec3 stimBounds[2];
 	idVec3 stimVelocity;
+
+	// sikk---> Depth Render
+	renderEntity.suppressSurfaceInViewID = -8;
+	renderEntity.noShadow = true;
+	// <---sikk
 
 	// copy in the data
 	m_Collision = collision;
