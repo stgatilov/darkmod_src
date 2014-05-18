@@ -657,6 +657,9 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
+	idList<int>				currentLights;			// sikk - Soft Shadows PostProcess
+	bool					ambientOn;
+
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 

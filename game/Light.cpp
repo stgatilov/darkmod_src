@@ -433,6 +433,13 @@ void idLight::Restore( idRestoreGame *savefile ) {
 
 	// Re-acquire light material, now that the material name is known
 	m_LightMaterial = g_Global.GetMaterial(m_MaterialName);
+
+// sikk---> Soft Shadows PostProcess
+	// only put lights that cast shadows into the list
+	if ( spawnArgs.GetInt( "noshadows" ) == 0 ) {
+		gameLocal.currentLights.Append( entityNumber );
+	}
+// <---sikk
 }
 
 /*
@@ -474,6 +481,7 @@ void idLight::Spawn( void )
 	// also put the light texture on the model, so light flares
 	// can get the current intensity of the light
 	renderEntity.referenceShader = renderLight.shader;
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 
 	lightDefHandle = -1;		// no static version yet
 
@@ -512,6 +520,13 @@ void idLight::Spawn( void )
 	LoadModels();
 
 	PostEventMS( &EV_PostSpawn, 0 );
+
+// sikk---> Soft Shadows PostProcess
+	// only put lights that cast shadows into the list
+	if ( spawnArgs.GetInt( "noshadows" ) == 0) {
+		gameLocal.currentLights.Append( entityNumber );
+	}
+// <---sikk
 
 	UpdateVisuals();
 
@@ -593,6 +608,8 @@ void idLight::Spawn( void )
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Up", renderLight.up);
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "Start", renderLight.start);
 	DM_LOGVECTOR3(LC_LIGHT, LT_DEBUG, "End", renderLight.end);
+
+
 }
 
 /*
@@ -770,7 +787,7 @@ void idLight::On( void )
 		StartSoundShader( refSound.shader, SND_CHANNEL_ANY, 0, false, NULL );
 		soundWasPlaying = false;
 	}
-
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 	const function_t* func = scriptObject.GetFunction("LightsOn");
 	if (func == NULL)
 	{
@@ -1024,7 +1041,7 @@ DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s] Radius ( %0.3f / %0.3f 
 		renderLight.lightRadius[1],		// y
 		renderLight.lightRadius[2]);	// z
 */
-
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 	// let the renderer apply it to the world
 	if ( ( lightDefHandle != -1 ) ) {
 		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
@@ -1043,7 +1060,7 @@ void idLight::PresentModelDefChange( void ) {
 	if ( !renderEntity.hModel || IsHidden() ) {
 		return;
 	}
-
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 	// add to refresh list
 	if ( modelDefHandle == -1 ) {
 		modelDefHandle = gameRenderWorld->AddEntityDef( &renderEntity );
@@ -1062,7 +1079,7 @@ void idLight::Present( void ) {
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;
 	}
-
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 	// Clear the bounds, so idLight::PresentRenderTrigger() has a way to know
 	// if idEntity::PresentRenderTrigger() added anything.
 	m_renderTrigger.bounds.Clear();
@@ -1122,7 +1139,7 @@ idLight::Think
 */
 void idLight::Think( void ) {
 	idVec4 color;
-
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 	if ( thinkFlags & TH_THINK )
 	{
 		if ( fadeEnd > 0 )
@@ -2164,4 +2181,18 @@ bool idLight::GetStartedOff() // grayman #2905 - was the light out at spawn time
 }
 
 
-
+// sikk---> Soft Shadows PostProcess
+/*
+================
+idLight::UpdateShadowState
+================
+*/
+void idLight::UpdateShadowState( void ) {
+	// let the renderer apply it to the world
+	if ( ( lightDefHandle != -1 ) ) {
+		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
+	} else {
+		lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
+	}
+}
+// <---sikk

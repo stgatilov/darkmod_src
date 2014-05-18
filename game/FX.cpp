@@ -395,7 +395,7 @@ void idEntityFx::Run( int time ) {
 			useAction = &actions[fxaction.sibling];
 		}
 		assert( useAction );
-
+		useAction->renderEntity.suppressSurfaceInViewID = -8;	// sikk - depth render
 		switch( fxaction.type ) {
 			case FX_ATTACHLIGHT:
 			case FX_LIGHT: {
@@ -497,6 +497,9 @@ void idEntityFx::Run( int time ) {
 					useAction->renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( time );
 					useAction->renderEntity.shaderParms[3] = 1.0f;
 					useAction->renderEntity.shaderParms[5] = 0.0f;
+
+					
+
 					if ( useAction->renderEntity.hModel ) {
 						useAction->renderEntity.bounds = useAction->renderEntity.hModel->Bounds( &useAction->renderEntity );
 					}
@@ -581,6 +584,9 @@ void idEntityFx::Spawn( void ) {
 			PostEventMS( &EV_Activate, 0, this );
 		}
 	}
+
+	// We don't want particles in depth render.
+	renderEntity.suppressSurfaceInViewID = -8;	// sikk - Depth Render
 }
 
 /*

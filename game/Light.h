@@ -230,6 +230,11 @@ public:
 
 	bool GetStartedOff();
 
+// sikk---> Soft Shadows PostProcess
+	renderLight_t*	GetRenderLight( void ) { return &renderLight; };
+	void			UpdateShadowState( void );
+// <---sikk
+
 private:
 	renderLight_t	renderLight;				// light presented to the renderer
 	idVec3			localLightOrigin;			// light origin relative to the physics origin

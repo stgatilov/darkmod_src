@@ -194,7 +194,7 @@ float LightGem::Calculate(idPlayer *player)
 	if ( player->GetModelDefHandle() == -1 ) {
 		return 0.0f;
 	}
-
+	
 	{ // Get position for lg
 		idEntity* lg = m_LightgemSurface.GetEntity();
 		renderEntity_t* prent = lg->GetRenderEntity();
@@ -292,7 +292,7 @@ float LightGem::Calculate(idPlayer *player)
 
 		// Render up and down alternately 
 		m_Lightgem_rv.viewaxis.TransposeSelf();
-
+		
 		// If the hud is enabled we either process all of them in case it is set to 0,
 		// then we don't care which one is actually displayed (most likely the last or
 		// the first one), or we only show the one that should be shown.
@@ -302,10 +302,10 @@ float LightGem::Calculate(idPlayer *player)
 			// The result is an image that is split in four triangles with an angle of 
 			// 45 degree, thus the square shape.
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_RenderScene );
-
+			
 			gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
 			gameRenderWorld->RenderScene(&m_Lightgem_rv);
-
+			
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_RenderScene );
 
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );

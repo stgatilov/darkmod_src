@@ -50,6 +50,7 @@ idFuncEmitter::idFuncEmitter
 ===============
 */
 idFuncEmitter::idFuncEmitter( void ) {
+	
 	hidden = false;
 	m_LODHandle = 0;
 
@@ -145,6 +146,7 @@ idFuncEmitter::Present
 */
 void idFuncEmitter::Present( void ) 
 {
+	
 	if( m_bFrobable )
 	{
 		UpdateFrobState();
@@ -164,6 +166,7 @@ void idFuncEmitter::Present( void )
 	renderEntity.hModel = renderModelManager->FindModel( spawnArgs.GetString("model") );
 
 	renderEntity.bodyId = 0;
+	
 	// make each of them have a unique timeoffset, so they do not appear to be in sync
 	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time - gameLocal.random.RandomInt( 32767 ) );
 
@@ -234,7 +237,7 @@ void idFuncEmitter::Spawn( void ) {
 	} else {
 		hidden = false;
 	}
-
+	
 	// check if we have additional models
    	kv = spawnArgs.MatchPrefix( "model", NULL );
 	int model = 0;
