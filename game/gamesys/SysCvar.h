@@ -764,4 +764,6 @@ extern idCVar	r_filmgrainStrength;
 
 extern idCVar	r_useVignetting;
 // <---sikk
+extern idCVar	noshadows;
+extern idCVar	noshadowDistance;
 #endif /* !__SYS_CVAR_H__ */

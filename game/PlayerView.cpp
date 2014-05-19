@@ -570,20 +570,30 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		gameLocal.playerOldEyePos = currentEyePos;
 	}
 // sikk---> Soft Shadows PostProcess 
-	if ( r_useSoftShadows.GetBool() && !g_skipViewEffects.GetBool() ) {
-		playerPVS = gameLocal.pvs.SetupCurrentPVS( player->GetPVSAreas(), player->GetNumPVSAreas() );
-		idLight* ambient_light = gameLocal.FindMainAmbientLight(true);
-		ToggleShadows( false );
-		idVec3 color = ambient_light->spawnArgs.GetVector("_color");
-		ambient_light->SetColor(color.x, color.y, color.z);
-		gameRenderWorld->RenderScene( &hackedView );
-		renderSystem->CaptureRenderToImage( "_ssRender" );
-		ToggleShadows( true );
-		color*= 2.0f;
-		ambient_light->SetColor(color.x, color.y, color.z);
-		gameLocal.pvs.FreeCurrentPVS( playerPVS );
+	if (!noshadows.GetBool())
+	{
+		if ( r_useSoftShadows.GetBool() && !g_skipViewEffects.GetBool()) {
+			playerPVS = gameLocal.pvs.SetupCurrentPVS( player->GetPVSAreas(), player->GetNumPVSAreas() );
+			idLight* ambient_light = gameLocal.FindMainAmbientLight(true);
+			ToggleShadows( false );
+			idVec3 color = ambient_light->spawnArgs.GetVector("_color");
+			ambient_light->SetColor(color.x, color.y, color.z);
+			gameRenderWorld->RenderScene( &hackedView );
+			renderSystem->CaptureRenderToImage( "_ssRender" );
+			ToggleShadows( true );
+			color*= 2.0f;
+			ambient_light->SetColor(color.x, color.y, color.z);
+			gameLocal.pvs.FreeCurrentPVS( playerPVS );
+		}
+		else
+		{
+			ToggleShadows(false);
+		}
 	}
-	
+	else
+	{
+		ToggleShadows(true);
+	}
 	
 // <---sikk
 	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
@@ -859,7 +869,7 @@ idPlayerView::RenderPlayerView
 void idPlayerView::RenderPlayerView( idUserInterface *hud )
 {
 	const renderView_t *view = player->GetRenderView();
-
+	isRendering = true;
 	if(g_skipViewEffects.GetBool())
 	{
 		SingleView( hud, view );
@@ -889,9 +899,12 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			}
 		}
 		//}
-		DoPostFX();	// sikk
-		
-		ToggleShadows( false ); //Obsttorte
+		if (!noshadows.GetBool())
+		{
+			DoPostFX();	// sikk
+			isRendering = false;
+			ToggleShadows( false ); //Obsttorte
+		}
 		// Bloom related - J.C.Denton
 		/* Update  post-process */
 		this->m_postProcessManager.Update();
@@ -1455,8 +1468,8 @@ idPlayerView::ToggleShadows
 void idPlayerView::ToggleShadows( bool noShadows ) {
 	idEntity   *ent;
 	idLight	   *light;
-	
-	
+	float dist;
+
 	for ( int i = 0; i < gameLocal.currentLights.Num(); i++ ) {
 		if ( gameLocal.entities[ gameLocal.currentLights[ i ] ] == NULL ) {
 			gameLocal.currentLights.RemoveIndex( i );
@@ -1465,7 +1478,8 @@ void idPlayerView::ToggleShadows( bool noShadows ) {
 		{
 			ent = gameLocal.entities[ gameLocal.currentLights[ i ] ];
 			light = static_cast<idLight*>( ent );
-			light->GetRenderLight()->noShadows = noShadows;
+			dist = (gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin()).LengthFast();
+			light->GetRenderLight()->noShadows = noShadows || (isRendering && noshadowDistance.GetFloat()>0 && (dist>noshadowDistance.GetFloat()));
 				light->UpdateShadowState();
 			
 			
@@ -1785,6 +1799,8 @@ void idPlayerView::PostFX_SSIL() {
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssilMaterial );
 		renderSystem->CaptureRenderToImage( "_ssil" );
 	}
+	// Obsttorte: fix for flickering
+	renderSystem->CaptureRenderToImage("_ssil_old");
 	renderSystem->UnCrop();
 
 	// blend scene with ssil buffer

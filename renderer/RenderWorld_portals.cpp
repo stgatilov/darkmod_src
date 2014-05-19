@@ -23,7 +23,6 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
-
 /*
 
 
@@ -589,10 +588,10 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 	idBounds			b;
 
 	area = &portalAreas[ areaNum ];
-
+	
 	for ( ref = area->entityRefs.areaNext ; ref != &area->entityRefs ; ref = ref->areaNext ) {
 		entity = ref->entity;
-
+		
 		// debug tool to allow viewing of only one entity at a time
 		if ( r_singleEntity.GetInteger() >= 0 && r_singleEntity.GetInteger() != entity->index ) {
 			continue;
@@ -601,6 +600,7 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		// remove decals that are completely faded away
 		R_FreeEntityDefFadedDecals( entity, tr.viewDef->renderView.time );
 
+		
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
 			if ( entity->parms.suppressSurfaceInViewID
@@ -611,6 +611,7 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 					&& entity->parms.allowSurfaceInViewID != tr.viewDef->renderView.viewID ) {
 				continue;
 			}
+						 
 		}
 
 		// cull reference bounds

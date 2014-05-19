@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>__DOOM__;GAME_DLL;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__DOOM__;GAME_DLL;CURL_STATICLIB;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

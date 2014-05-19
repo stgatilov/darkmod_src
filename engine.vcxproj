@@ -197,6 +197,8 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)lib\$(PlatformShortName);$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..</OutDir>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">K:\MS DircetX SDK\Include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">K:\MS DircetX SDK\Lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">
     <Link>
@@ -284,6 +286,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">

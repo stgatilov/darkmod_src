@@ -185,6 +185,7 @@
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(DXSDK_DIR)lib\$(PlatformShortName);$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Without MFC|Win32'">$(SolutionDir)..\darkmod\</OutDir>
     <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">false</PostBuildEventUseInBuild>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">K:\MS DircetX SDK\Include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent />
@@ -293,6 +294,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_game.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <PreprocessorDefinitions>_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

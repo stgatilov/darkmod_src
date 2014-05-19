@@ -957,6 +957,7 @@ idEntity::idEntity()
 	fl.neverDormant	= true;			// most entities never go dormant
 
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
+	memset( &renderLight, 0, sizeof(renderLight));
 	modelDefHandle	= -1;
 	memset( &refSound, 0, sizeof( refSound ) );
 
@@ -1723,6 +1724,7 @@ void idEntity::LoadModels()
 			renderEntity.suppressSurfaceInViewID = -8;
 			// <---sikk
 		}
+		
 	}
 
 	// was a brokenModel requested?
@@ -2754,6 +2756,7 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 		}
 		// level 0 is the default
 		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
+		renderLight.noShadows = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
 
 		// switched LOD
 		return true;

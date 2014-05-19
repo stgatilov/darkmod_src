@@ -261,6 +261,7 @@ private:
 	pvsHandle_t			playerPVS;				// Holds player's current pvs (for soft shadows)
 	bool				bSoftShadows;			// a soft shadows toggle used so ResetShadows() is only run once when r_useSoftShadows = 0
 // <---sikk
+	bool				isRendering;
 };
 
 #endif /* !__GAME_PLAYERVIEW_H__ */

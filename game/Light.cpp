@@ -35,6 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
+
 const idEventDef EV_Light_SetShader( "setShader", EventArgs('s', "shader", ""), EV_RETURNS_VOID, "Sets the shader to be used for the light.");
 const idEventDef EV_Light_GetLightParm( "getLightParm", EventArgs('d', "parmNum", ""), 'f', "Gets a shader parameter." );
 const idEventDef EV_Light_SetLightParm( "setLightParm", EventArgs('d', "parmNum", "", 'f', "value", ""), EV_RETURNS_VOID, "Sets a shader parameter.");
@@ -1244,7 +1245,7 @@ void idLight::Think( void ) {
 			}
 		}
 	}
-
+	
 	RunPhysics();
 	Present();
 }
