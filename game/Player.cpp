@@ -1651,9 +1651,6 @@ void idPlayer::SetupInventory()
 
 	// Carry over persistent items from the previous map
 	AddPersistentInventoryItems();
-
-	// grayman #3723 - we no longer need the shop, so clear it
-	gameLocal.m_Shop->Clear();
 }
 
 void idPlayer::AddPersistentInventoryItems()

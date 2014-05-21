@@ -36,6 +36,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "CampaignStatistics.h"
 #include "ObjectiveLocation.h"
 #include "ObjectiveCondition.h"
+#include "../Shop/Shop.h" // grayman #3731
 
 /**
 * Add in new specification types here.  Must be in exact same order as
@@ -850,6 +851,11 @@ void CMissionData::Event_MissionComplete()
 		// Notify the mission database
 		gameLocal.m_MissionManager->OnMissionComplete();
 	}
+	
+	// grayman #3723 - we no longer need the shop, so clear it
+	// grayman #3731 - do this at mission end, not when done with shop,
+	// because a Restart will want to use the shop again
+	gameLocal.m_Shop->Clear();
 }
 
 void CMissionData::Event_MissionFailed( void )
