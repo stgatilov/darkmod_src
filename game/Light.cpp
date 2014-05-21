@@ -2191,7 +2191,8 @@ idLight::UpdateShadowState
 void idLight::UpdateShadowState( void ) {
 	// let the renderer apply it to the world
 	if ( ( lightDefHandle != -1 ) ) {
-		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight );
+		gameRenderWorld->UpdateLightDef( lightDefHandle, &renderLight ); 
+	
 	} else {
 		lightDefHandle = gameRenderWorld->AddLightDef( &renderLight );
 	}

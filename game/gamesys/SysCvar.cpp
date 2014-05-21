@@ -800,7 +800,7 @@ idCVar r_ssilRadius(				"r_ssilRadius",					"128",		CVAR_GAME | CVAR_NOCHEAT | C
 idCVar r_ssilAmount(				"r_ssilAmount",					"2.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the contribution factor for ssil" );
 idCVar r_ssilBlurMethod(			"r_ssilBlurMethod",				"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Blur method used for the ssil buffer:\n0 = Gaussian\n1 = Bilateral" );
 idCVar r_ssilBlurScale(				"r_ssilBlurScale",				"1.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the blur scale for the ssil buffer" );
-idCVar r_ssilBlurQuality(			"r_ssilBlurQuality",			"4",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the blur quality for the ssil buffer" );
+idCVar r_ssilBlurQuality(			"r_ssilBlurQuality",			"1",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the blur quality for the ssil buffer" );
 idCVar r_ssilBlurEpsilon(			"r_ssilBlurEpsilon",			"4",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_INTEGER,	"Set the blur depth difference factor for the ssil buffer" );
 
 idCVar r_useSSAO(					"r_useSSAO",					"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_BOOL,	"Enable Screen-Space Ambient Occlusion postprocessing effect" );

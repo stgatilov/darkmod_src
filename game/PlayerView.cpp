@@ -111,7 +111,8 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	fxManager->Initialize( this );
 	}
 	*/
-
+	interleaved_dist_check_period=15;
+	lastNoShadows = false;
 	ClearEffects();
 
 	// JC: Just set the flag so that we know that the update is needed.
@@ -1279,12 +1280,12 @@ void idPlayerView::DoPostFX() {
 		PostFX_SoftShadows();
 	else if ( bSoftShadows )
 		ResetShadows();
+	
+	//if ( r_useEdgeAA.GetBool() )
+	//	PostFX_EdgeAA();
 
-	if ( r_useEdgeAA.GetBool() )
-		PostFX_EdgeAA();
-
-	if ( r_useCelShading.GetBool() )
-		PostFX_CelShading();
+	//if ( r_useCelShading.GetBool() )
+	//	PostFX_CelShading();
 
 	if ( r_useSSIL.GetBool() )
 		PostFX_SSIL();
@@ -1292,10 +1293,10 @@ void idPlayerView::DoPostFX() {
 	if ( r_useSSAO.GetBool() )
 		PostFX_SSAO();
 
-	if ( r_useSunShafts.GetBool() )
-		PostFX_SunShafts();
+	//if ( r_useSunShafts.GetBool() )
+	//	PostFX_SunShafts();
 
-	if ( r_useHDR.GetBool() ) {
+	/*if ( r_useHDR.GetBool() ) {
 		cvarSystem->SetCVarBool( "r_testARBProgram", true );
 		PostFX_HDR();
 	} else {
@@ -1325,7 +1326,7 @@ void idPlayerView::DoPostFX() {
 
 	if ( r_useFilmgrain.GetBool() )
 		PostFX_Filmgrain();
-
+		*/
 	// test a single material drawn over everything
 	if ( g_testPostProcess.GetString()[0] && !player->spectating ) {
 		const idMaterial *mtr = declManager->FindMaterial( g_testPostProcess.GetString(), false );
@@ -1439,7 +1440,7 @@ void idPlayerView::PostFX_SoftShadows() {
 	renderSystem->CaptureRenderToImage( "_currentRender" );
 
 	RenderDepth( false );
-
+	
 	// create shadow mask texture
 	renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 0.0f );
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, softShadowsMaterial );
@@ -1469,19 +1470,33 @@ void idPlayerView::ToggleShadows( bool noShadows ) {
 	idEntity   *ent;
 	idLight	   *light;
 	float dist;
-
+	bool shadowsOff;
+	if (lastNoShadows == noShadows) return;	// Nothing to do
+	lastNoShadows = noShadows;
 	for ( int i = 0; i < gameLocal.currentLights.Num(); i++ ) {
 		if ( gameLocal.entities[ gameLocal.currentLights[ i ] ] == NULL ) {
 			gameLocal.currentLights.RemoveIndex( i );
 		} 
-		else 
+		else
 		{
 			ent = gameLocal.entities[ gameLocal.currentLights[ i ] ];
 			light = static_cast<idLight*>( ent );
-			dist = (gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin()).LengthFast();
-			light->GetRenderLight()->noShadows = noShadows || (isRendering && noshadowDistance.GetFloat()>0 && (dist>noshadowDistance.GetFloat()));
+			interleaved_dist_check_period--;
+			if (noshadowDistance.GetFloat()>0 && interleaved_dist_check_period<=0)
+			{
+				dist = (gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin()).LengthFast();
+				shadowsOff = noShadows || (isRendering &&  (dist>noshadowDistance.GetFloat()));
+				interleaved_dist_check_period=15;
+			}
+			else
+			{
+				shadowsOff = noShadows;
+			}
+			if (light->GetRenderLight()->noShadows != shadowsOff)
+			{			
+				light->GetRenderLight()->noShadows = shadowsOff;
 				light->UpdateShadowState();
-			
+			}
 			
 		}
 	}

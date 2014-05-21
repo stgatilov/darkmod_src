@@ -82,7 +82,7 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 	renderEntity_t	renderEntity;
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
 	renderEntity.axis = mat3_identity;
-	renderEntity.suppressSurfaceInViewID = -8; // sikk
+	//renderEntity.suppressSurfaceInViewID = -8; // sikk
 
 	renderView_t	renderView;
 	memset( &renderView, 0, sizeof( renderView ) );

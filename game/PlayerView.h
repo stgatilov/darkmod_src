@@ -262,6 +262,8 @@ private:
 	bool				bSoftShadows;			// a soft shadows toggle used so ResetShadows() is only run once when r_useSoftShadows = 0
 // <---sikk
 	bool				isRendering;
+	int					interleaved_dist_check_period;
+	bool				lastNoShadows;
 };
 
 #endif /* !__GAME_PLAYERVIEW_H__ */
