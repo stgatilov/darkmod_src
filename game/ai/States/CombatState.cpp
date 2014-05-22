@@ -425,6 +425,31 @@ void CombatState::Think(idAI* owner)
 		idEntity* tactEnt = owner->GetTactEnt();
 		if ( ( tactEnt == NULL ) || !tactEnt->IsType(idActor::Type) || ( tactEnt != enemy ) || !owner->AI_TACTALERT ) 
 		{
+			// Check the candidate's visibility.
+
+			// grayman #3705 - change the way the player's visibility is checked,
+			// so it more closely matches how the player is spotted before the
+			// AI enters combat.
+
+			bool fail;
+			if (enemy->IsType(idPlayer::Type))
+			{
+				fail = (owner->GetVisibility(enemy) == 0.0f);
+			}
+			else // enemy is another AI
+			{
+				fail = !owner->CanSee(enemy, true);
+			}
+
+			if (fail)
+			{
+				owner->ClearEnemy();
+				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+				owner->GetMind()->EndState();
+				return;
+			}
+
+			/* old way
 			if ( !owner->CanSee(enemy, true) )
 			{
 				owner->ClearEnemy();
@@ -432,6 +457,7 @@ void CombatState::Think(idAI* owner)
 				owner->GetMind()->EndState();
 				return;
 			}
+			*/
 		}
 
 		owner->m_ignorePlayer = false; // grayman #3063 - clear flag that prevents mission statistics on player sightings
