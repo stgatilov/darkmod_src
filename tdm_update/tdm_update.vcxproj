@@ -69,7 +69,7 @@
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libeay32.lib;ssleay32.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libpolarssl.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)ConsoleUpdater/tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -95,7 +95,7 @@
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libeay32.lib;ssleay32.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libpolarssl.lib;libtdm_update.lib;libcurl.lib;ZipLoader.lib;WS2_32.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)ConsoleUpdater/tdm_update.exe</OutputFile>
       <AdditionalLibraryDirectories>$(SolutionDir)/Build/lib/$(Configuration);$(SolutionDir)/../win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>

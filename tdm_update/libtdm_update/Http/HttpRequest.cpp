@@ -93,8 +93,10 @@ void HttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
 	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
 
-    // taaaki: don't validate certs for HTTPS since we don't have the CA cert bundle yet (not ideal, but yeah)
+    // taaaki: don't validate certs for HTTPS since we don't have the CA cert bundle yet (not ideal, but yeah, we'll get there)
+    // TODO: fix this by finding a clean and foolproof way of bundling the ca-bundle.crt file (maybe store as resource?)
     curl_easy_setopt(_handle, CURLOPT_SSL_VERIFYHOST,                0);
+    curl_easy_setopt(_handle, CURLOPT_SSL_VERIFYPEER,                0);
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
