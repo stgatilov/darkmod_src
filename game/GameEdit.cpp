@@ -147,6 +147,7 @@ idDragEntity::StopDrag
 ==============
 */
 void idDragEntity::StopDrag( void ) {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CGrabber::StopDrag\r"); // grayman debug
 	dragEnt = NULL;
 	if ( cursor ) {
 		cursor->BecomeInactive( TH_THINK );

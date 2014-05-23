@@ -558,6 +558,7 @@ Quit:
 
 void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CGrabber::StartDrag\r"); // grayman debug
 	idVec3 viewPoint, origin, COM, COMWorld, delta2;
 	idEntity *FrobEnt;
 	idMat3 viewAxis, axis;
@@ -574,15 +575,17 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	if ( !newEnt ) 
 	{
 		FrobEnt = player->m_FrobEntity.GetEntity();
-		if( !FrobEnt )
+		if ( !FrobEnt )
+		{
 			return;
+		}
 
 		newEnt = FrobEnt;
 
 		trace = player->m_FrobTrace;
 		
 		// If the ent was not hit directly and is an AF, we must fill in the joint and body ID
-		if( trace.c.entityNum != FrobEnt->entityNumber && FrobEnt->IsType(idAFEntity_Base::Type) )
+		if ( (trace.c.entityNum != FrobEnt->entityNumber) && FrobEnt->IsType(idAFEntity_Base::Type) )
 		{
 			static_cast<idPhysics_AF *>(FrobEnt->GetPhysics())->NearestBodyOrig( trace.c.point, &trace.c.id );
 		}
@@ -593,16 +596,37 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 		trace.c.id = bodyID;
 	}
 
+	bool isHead = false;
 	if ( newEnt->GetBindMaster() ) 
 	{
-		if ( newEnt->GetBindJoint() ) 
+		// grayman #3631 - If the ent is a head, assign it an invalid joint number.
+		// When the frobbed entity is change to the bindMaster body, this assignment
+		// causes the grabber to manipulate the body via the head.
+		idEntity* bindMaster = newEnt->GetBindMaster();
+		if (bindMaster->IsType(idActor::Type))
 		{
-		trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
-		} else 
-		{
-			trace.c.id = newEnt->GetBindBody();
+			idActor* actor = static_cast<idActor*>(bindMaster);
+			idAFAttachment* head = actor->GetHead();
+			if (head == newEnt)
+			{
+				isHead = true;
+				trace.c.id = 2; // a particular invalid joint number
+				newEnt = bindMaster; // move to the body
+			}
 		}
-		newEnt = newEnt->GetBindMaster();			
+	
+		if (!isHead)
+		{
+			if ( newEnt->GetBindJoint() ) 
+			{
+				trace.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( newEnt->GetBindJoint() );
+			}
+			else 
+			{
+				trace.c.id = newEnt->GetBindBody();
+			}
+			newEnt = bindMaster;			
+		}
 	}
 
 	if ( newEnt->IsType( idAFEntity_Base::Type ) && static_cast<idAFEntity_Base *>(newEnt)->IsActiveAF() ) 
@@ -619,40 +643,46 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 		if ( trace.c.id < 0 ) 
 		{
 			newJoint = CLIPMODEL_ID_TO_JOINT_HANDLE( trace.c.id );
-		} else 
+		}
+		else 
 		{
 			newJoint = INVALID_JOINT;
 		}
-	} else 
+	}
+	else 
 	{
-			newJoint = INVALID_JOINT;
-			newEnt = NULL;
+		newJoint = INVALID_JOINT;
+		newEnt = NULL;
 	}
 	
 	// If the new entity still wasn't set at this point, it was a frobbed
 	// ent but was found to be invalid.
 
-	if ( !newEnt ) 
+	if ( !newEnt )
+	{
 		return;
+	}
 	
-// Set up the distance and orientation and stuff
+	// Set up the distance and orientation and stuff
 
 	// get the center of mass
 	idPhysics *phys = newEnt->GetPhysics();
 	idClipModel *clipModel;
 
-	clipModel = phys->GetClipModel( m_id );
-	if( clipModel && clipModel->IsTraceModel() )
+	clipModel = phys->GetClipModel( trace.c.id ); // grayman #3631 new way (was (m_id))
+	if ( clipModel && clipModel->IsTraceModel() )
 	{
 		float mass;
 		idMat3 inertiaTensor;
 		clipModel->GetMassProperties( 1.0f, mass, COM, inertiaTensor );
-	} else 
+	}
+	else 
 	{
 		// don't drag it if its clipmodel is not a trace model
 		return;
 	}
-	COMWorld = phys->GetOrigin( m_id ) + COM * phys->GetAxis( m_id );
+
+	COMWorld = phys->GetOrigin( trace.c.id ) + COM * phys->GetAxis( trace.c.id ); // grayman #3631 new way (was (m_id))
 
 	m_dragEnt = newEnt;
 	m_joint = newJoint;
@@ -664,8 +694,10 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// find the nearest distance and set it to that
 	m_MinHeldDist = int(newEnt->spawnArgs.GetFloat("hold_distance_min", "-1" ));
-	if( m_MinHeldDist < 0 )
+	if ( m_MinHeldDist < 0 )
+	{
 		m_MinHeldDist = int(MIN_HELD_DISTANCE);
+	}
 	m_vOffset = newEnt->spawnArgs.GetVector( "hold_offset" );
 
 	delta2 = COMWorld - viewPoint;
@@ -674,7 +706,7 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 
 	// prevent collision with player
 	AddToClipList( newEnt );
-	if( HasClippedEntity() ) 
+	if ( HasClippedEntity() ) 
 	{
 		PostEventMS( &EV_Grabber_CheckClipList, CHECK_CLIP_LIST_INTERVAL );
 	}
@@ -683,13 +715,15 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	// center of mass instead of its origin
 	m_rotationAxis = -1;
 
-	if( newEnt->IsType(idAFEntity_Base::Type)
+	if ( newEnt->IsType(idAFEntity_Base::Type)
 		&& static_cast<idAFEntity_Base *>(newEnt)->m_bDragAFDamping == true )
 	{
 		m_drag.Init( cv_drag_damping_AF.GetFloat() );
 	}
 	else
+	{
 		m_drag.Init( cv_drag_damping.GetFloat() );
+	}
 
 	m_drag.SetPhysics( phys, m_id, m_LocalEntPoint );
 	m_drag.SetRefEnt( player );
