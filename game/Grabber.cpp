@@ -558,7 +558,6 @@ Quit:
 
 void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CGrabber::StartDrag\r"); // grayman debug
 	idVec3 viewPoint, origin, COM, COMWorld, delta2;
 	idEntity *FrobEnt;
 	idMat3 viewAxis, axis;

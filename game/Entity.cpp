@@ -9596,26 +9596,12 @@ void idEntity::UpdateFrobState()
 	}
 
 	// greebo: Allow the grabbed entity to stay highlighted
-	// grayman debug - highlight the head of a grabbed body if it's separate
+	// grayman #3631 - highlight the head of a grabbed body if it's separate
 	if (cv_dragged_item_highlight.GetBool())
 	{
 		if (gameLocal.m_Grabber->GetSelected() == this)
 		{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::UpdateFrobState 1 (%s): turning highlighting on\r", GetName()); // grayman debug
 			SetFrobHighlightState(true);
-
-/*			// If 'this' is a body, turn highlighting on for an attached head
-			if (IsType(idActor::Type))
-			{
-				idActor* actor = static_cast<idActor*>(this);
-				idAFAttachment* head = actor->GetHead();
-				if (head)
-				{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::UpdateFrobState 2 (%s): turning highlighting on\r", head->GetName()); // grayman debug
-					head->SetFrobHighlightState(true);
-				}
-			}*/
-
 			return;
 		}
 
@@ -9633,7 +9619,6 @@ void idEntity::UpdateFrobState()
 				idAFAttachment* head = actor->GetHead();
 				if (head == this)
 				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::UpdateFrobState 3 (%s): turning highlighting on\r", GetName()); // grayman debug
 					SetFrobHighlightState(true);
 					return;
 				}
@@ -9647,7 +9632,6 @@ void idEntity::UpdateFrobState()
 		// or any of its peers. Check if we need to change our state.
 		if (m_bFrobHighlightState)
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::UpdateFrobState 4 (%s): turning highlighting off\r", GetName()); // grayman debug
 			// stop highlight
 			SetFrobHighlightState(false);
 		}
@@ -9660,7 +9644,6 @@ void idEntity::UpdateFrobState()
 	m_bFrobbed = false;
 
 	// Change the highlight state to TRUE
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::UpdateFrobState 5 (%s): turning highlighting on\r", GetName()); // grayman debug
 	SetFrobHighlightState(true);
 }
 
@@ -9947,7 +9930,6 @@ void idEntity::SetFrobable( const bool bVal )
 	if( !bVal )
 	{
 		SetFrobbed(false);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::SetFrobable (%s): turning highlighting off\r", GetName()); // grayman debug
 		SetFrobHighlightState(false);
 		if( m_FrobBox )
 			m_FrobBox->SetContents(0);
@@ -11291,7 +11273,6 @@ void idEntity::Event_IsHilighted( void )
 
 void idEntity::Event_FrobHilight( bool bVal )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idEntity::Event_FrobHilight (%s): turning highlighting %s\r", GetName(),bVal ? "on" : "off"); // grayman debug
 	SetFrobHighlightState( bVal );
 }
 
