@@ -9587,13 +9587,37 @@ void idEntity::UpdateFrobState()
 	}
 
 	// greebo: Allow the grabbed entity to stay highlighted
-	if (cv_dragged_item_highlight.GetBool() && gameLocal.m_Grabber->GetSelected() == this)
+	// grayman #3631 - highlight the head of a grabbed body if it's separate
+	if (cv_dragged_item_highlight.GetBool())
 	{
-		SetFrobHighlightState(true);
-		return;
+		if (gameLocal.m_Grabber->GetSelected() == this)
+		{
+			SetFrobHighlightState(true);
+			return;
+		}
+
+		// Any selection of the head is xferred to the body, so for a highlighted
+		// body in the grabber, the body is always the entity being grabbed, and
+		// the head never is. So if this is a head, and the body is being grabbed,
+		// we want to highlight the head here.
+
+		idEntity* bindMaster = GetBindMaster();
+		if (bindMaster && bindMaster->IsType(idActor::Type))
+		{
+			idActor* actor = static_cast<idActor*>(bindMaster);
+			if (gameLocal.m_Grabber->GetSelected() == actor)
+			{
+				idAFAttachment* head = actor->GetHead();
+				if (head == this)
+				{
+					SetFrobHighlightState(true);
+					return;
+				}
+			}
+		}
 	}
 
-	if( !m_bFrobbed )	
+	if ( !m_bFrobbed )	
 	{
 		// The m_bFrobbed variable is FALSE, hence the player is not looking at this entity
 		// or any of its peers. Check if we need to change our state.
@@ -9624,7 +9648,7 @@ void idEntity::SetFrobHighlightState(const bool newState)
 	// Update the boolean, the UpdateFrobDisplay() routine will pick it up
 	m_bFrobHighlightState = newState;
 
-	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s] is highlighted\r", name.c_str());
+	DM_LOG(LC_FROBBING, LT_DEBUG)LOGSTRING("Entity [%s]: highlighting is turned %s\r", name.c_str(),newState ? "on" : "off");
 }
 
 void idEntity::UpdateFrobDisplay()

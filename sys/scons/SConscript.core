@@ -324,8 +324,7 @@ local_env.Append(LIBS = [
 	# Uncomment these if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
 	#File('/usr/lib32/libjpeg.so'),
 	#File('/usr/lib32/libpng.so'),
-	File('#/linux/openssl/libssl.a'),
-	File('#/linux/openssl/libcrypto.a'),
+	File('#/linux/polarssl/libpolarssl.a'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
 	File('#/linux/boost/lib/libboost_system.a'),
 	File('#/linux/boost/lib/libboost_thread.a'),
