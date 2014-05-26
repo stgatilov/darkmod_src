@@ -327,7 +327,20 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 
 	// greebo: Use boost::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
-    // TODO: taaaki - implement error checking - i.e. check if fms folder exists, etc.
+    if (!fs::is_directory(fmPath)) 
+    {
+        DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmPath.string().c_str());
+        if (boost::filesystem::create_directory(fmPath)) 
+        {
+            gameLocal.Warning("FM root folder does not exist, but one was created.\rYou can download missions using the in-game mission downloader.\r");
+        } 
+        else 
+        {
+            gameLocal.Error("FM root folder does not exist: %s. Unable to create it automatically.\rRun tdm_update in order to restore it.\r", fmPath.string().c_str());
+            return moveList;
+        }
+    }
+
 	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
 		if (fs::is_directory(*i)) continue;
@@ -454,6 +467,20 @@ void CMissionManager::GenerateModList()
 	fs::path fmPath = darkmodPath / cv_tdm_fm_path.GetString();
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for mods in FM folder: %s\r", fmPath.string().c_str());
+
+    if (!fs::is_directory(fmPath)) 
+    {
+        DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmPath.string().c_str());
+        if (boost::filesystem::create_directory(fmPath)) 
+        {
+            gameLocal.Warning("FM root folder does not exist, but one was created.\rYou can download missions using the in-game mission downloader.\r");
+        } 
+        else 
+        {
+            gameLocal.Error("FM root folder does not exist: %s. Unable to create it automatically.\rRun tdm_update in order to restore it.\r", fmPath.string().c_str());
+            return;
+        }
+    }
 
 	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
 	{
