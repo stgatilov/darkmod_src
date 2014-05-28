@@ -1705,8 +1705,10 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 {
 	SObjEntParms Parms;
 
-	if( ent )
+	if (ent)
+	{
 		FillParmsData( ent, &Parms );
+	}
 
 	Parms.group = ItemName;
 	Parms.value = value;
@@ -1717,7 +1719,7 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("Inventory Callback: Overall loot value %d\r", OverallVal );
 	
 	// Also call the pickocket event if stolen from living AI
-	if( bPickedUp && ent != NULL && ent->GetBindMaster() )
+	if ( bPickedUp && ( ent != NULL ) && ent->GetBindMaster() )
 	{
 		idEntity *bm = ent->GetBindMaster();
 		if ( bm->IsType( idAI::Type ) &&
@@ -1728,7 +1730,11 @@ void CMissionData::InventoryCallback(idEntity *ent, idStr ItemName, int value, i
 			MissionEvent( COMP_PICKPOCKET, &Parms, true );
 
 			// grayman #3559 - The victim should react.
-			static_cast<idAI *>(bm)->PocketPicked(); // react to losing something
+			// grayman #3738 - but not to all objects
+			if (ent->spawnArgs.GetBool("notice_when_stolen","1"))
+			{
+				static_cast<idAI *>(bm)->PocketPicked(); // react to losing something
+			}
 		}
 	}
 }
