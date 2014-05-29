@@ -13102,8 +13102,8 @@ void idAI::Event_PickedPocketSetup1() // grayman #3559
 			return;
 		}
 
-		float minDelay = spawnArgs.GetFloat("pickpocket_delay_min","10000");
-		float maxDelay = spawnArgs.GetFloat("pickpocket_delay_max","120000");
+		float minDelay = spawnArgs.GetFloat("pickpocket_delay_min","5000");
+		float maxDelay = spawnArgs.GetFloat("pickpocket_delay_max","25000");
 		delay = minDelay + gameLocal.random.RandomFloat()*(maxDelay - minDelay);
 		GetMemory().insideAlertWindow = false;
 	}
