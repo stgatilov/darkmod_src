@@ -182,7 +182,7 @@ const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", EventArgs('
 
 
 // NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
-const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", EventArgs('d', "ObjNum", "Starts counting at 1", 'd', "State", "Starts counting at 1"), EV_RETURNS_VOID, 
+const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", EventArgs('d', "ObjNum", "Starts counting at 1", 'd', "State", ""), EV_RETURNS_VOID, 
 		"Used to set the state of objectives from the script.\n" \
 		"For example, use this to invalidate an objective when something happens in your mission.\n" \
 		"The first argument is the numerical index of the objective (taking 'user' objective indices, starting at 1).\n" \
