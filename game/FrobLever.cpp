@@ -28,7 +28,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FrobButton.h"
 
 const idEventDef EV_TDM_Lever_Switch( "Switch", EventArgs('d', "newState", ""), 
-	EV_RETURNS_VOID, "Set the new lever state to the argument (0 = off)" );
+	EV_RETURNS_VOID, "Move the lever to the on or off position (0 = off)." );
 
 CLASS_DECLARATION( CBinaryFrobMover, CFrobLever )
 	EVENT( EV_TDM_Operate,				CFrobLever::Event_Operate)

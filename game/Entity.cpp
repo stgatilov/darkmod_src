@@ -70,7 +70,7 @@ const idEventDef EV_ActivateTargets( "activateTargets", EventArgs('e', "activato
 const idEventDef EV_AddTarget( "addTarget", EventArgs('e', "target", "the entity to add as target"), EV_RETURNS_VOID, "Add a target to this entity.");
 const idEventDef EV_RemoveTarget( "removeTarget", EventArgs('e', "target", "the entity to remove from the targets"), EV_RETURNS_VOID, "Remove a target from this entity." );
 const idEventDef EV_NumTargets( "numTargets", EventArgs(), 'f', "Returns the number of entities this entity has targeted." );
-const idEventDef EV_GetTarget( "getTarget", EventArgs('f', "num", "The target number."), 'e', "Returns the requested target entity." );
+const idEventDef EV_GetTarget( "getTarget", EventArgs('f', "num", "The target number. Starts at 0."), 'e', "Returns the requested target entity." );
 const idEventDef EV_RandomTarget( "randomTarget", EventArgs('s', "ignoreName", "the name of an entity to ignore"), 'e', 
 	"Returns a random targeted entity. Pass in an entity name to skip that entity." );
 
@@ -169,15 +169,16 @@ const idEventDef EV_SetSoundVolume( "setSoundVolume", EventArgs('f', "newLevel",
 const idEventDef EV_GetSoundVolume( "getSoundVolume", EventArgs('s', "soundName", "the name of the sound"), 'f', "Get the volume of the sound to play."); // grayman #3395
 
 const idEventDef EV_GetNextKey( "getNextKey", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', 
-	"searches for the name of a spawn arg that matches the prefix.  for example,\n" \
+	"Searches for the name of a spawn arg that matches the prefix.  For example,\n" \
 	"passing in \"attack_target\" matches \"attack_target1\", \"attack_targetx\", \"attack_target_enemy\", \n" \
 	"etc. The returned string is the name of the key which can then be passed into\n" \
 	"functions like getKey() to lookup the value of that spawn arg.  This\n" \
 	"is useful for when you have multiple values to look up, like when you\n" \
 	"target multiple objects.  To find the next matching key, pass in the previous\n" \
 	"result and the next key returned will be the first one that matches after\n" \
-	"the previous result.  pass in "" to get the first match.  returns "" when no \n" \
-	"more keys match.  Note to coders: this is the same as MatchPrefix in the game code.");
+	"the previous result. Pass in \"\" to get the first match. Passing in a\n" \
+	"non-existent key is the same as passing in \"\". Returns \"\" when no \n" \
+	"more keys match.");
 
 const idEventDef EV_SetKey( "setKey", EventArgs('s', "key", "the spawnarg to set", 's', "value", "the value to store"), EV_RETURNS_VOID, 
 	"Sets a key on this entity's spawn args. Note that most spawn args are evaluated when\n" \
@@ -314,12 +315,13 @@ const idEventDef EV_LoadExternalData( "loadExternalData", EventArgs('s', "declFi
 //===============================================================
 //                   TDM Inventory
 //===============================================================
-const idEventDef EV_GetLootAmount("getLootAmount", EventArgs('d', "type", ""), 'd', 
+const idEventDef EV_GetLootAmount("getLootAmount", EventArgs('d', "type", "one of: LOOT_GOLD, LOOT_GOODS, LOOT_JEWELRY, LOOT_TOTAL"), 'd', 
 	"Returns the amount of loot for the given type (e.g. LOOT_GOODS). Pass LOOT_TOTAL\n" \
 	"to return the sum of all loot types.");
-const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "type", "", 'd', "amount", ""), 'd', 
-	"Changes the loot amount of the given Type (e.g. GOODS) by <amount>\n" \
-	"The new value of the changed type is returned (e.g. the new GOODS value if this has been changed).\n" \
+const idEventDef EV_ChangeLootAmount("changeLootAmount", EventArgs('d', "type", "one of: LOOT_GOLD, LOOT_GOODS, LOOT_JEWELRY", 'd', "amount", "can be negative"), 'd', 
+	"Changes the loot amount of the given Type (e.g. GOODS) by <amount>. \n" \
+	"The mission statisic for loot found gets changed too. \n"
+	"The new value of the changed type is returned (e.g. the new GOODS value if this has been changed). \n" \
 	"Note: The LOOT_TOTAL type can't be changed and 0 is returned.");
 
 const idEventDef EV_AddInvItem("addInvItem", EventArgs('e', "inv_item", ""), EV_RETURNS_VOID, 

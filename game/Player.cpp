@@ -156,11 +156,13 @@ const idEventDef EV_Player_SetTurnHinderance( "setTurnHinderance",
 			EV_RETURNS_VOID, "Set the hinderance on the view turning from a source");
 	
 const idEventDef EV_Player_GetTurnHinderance( "getTurnHinderance", EventArgs('s', "source", ""), 'v', "* Get the hinderance on the view turning from a source");
-const idEventDef EV_Player_GetNextTurnHinderance( "getNextTurnHinderance", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 's', "Get the next hinderance on the view turning from a source");
+const idEventDef EV_Player_GetNextTurnHinderance( "getNextTurnHinderance", EventArgs('s', "prefix", "", 's', "lastMatch", ""), 
+												  's', "Get the next hinderance on the view turning from a source");
 
 
 const idEventDef EV_Player_SetGui( "setGui", EventArgs('d', "handle", "", 's', "guiFile", ""), EV_RETURNS_VOID, "Loads a new file into an existing GUI." );
-const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", EventArgs(), 'd', "Gets the default inventory overlay for the player. All other entities will return an invalid value.");
+const idEventDef EV_Player_GetInventoryOverlay( "getInventoryOverlay", EventArgs(), 'd', "Gets the default inventory overlay for the player. " \
+	"All other entities will return an invalid value.");
 
 const idEventDef EV_Player_PlayStartSound( "playStartSound", EventArgs(), EV_RETURNS_VOID, "");
 const idEventDef EV_Player_MissionFailed("missionFailed", EventArgs(), EV_RETURNS_VOID, "");
@@ -170,34 +172,35 @@ const idEventDef EV_Player_DeathMenu("deathMenu", EventArgs(), EV_RETURNS_VOID, 
 
 const idEventDef EV_Player_HoldEntity( "holdEntity", EventArgs('E', "entity", ""), 'f', 
 		"Forces the player to hold an entity (e.g. puts it into the grabber).\n" \
-		"Drops whatever is in the player's hands if $null is passed to it.\n" \
+		"Drops whatever is in the player's hands if $null_entity is passed to it.\n" \
 		"Returns 1 if successful, 0 if not.");
 
-const idEventDef EV_Player_HeldEntity( "heldEntity", EventArgs(), 'E', "Returns the entity currently being held, or $null if the player's hands are empty.");
+const idEventDef EV_Player_HeldEntity( "heldEntity", EventArgs(), 'E', "Returns the entity currently being held, or $null_entity if the player's hands are empty.");
 
 const idEventDef EV_Player_RopeRemovalCleanup( "ropeRemovalCleanup", EventArgs('e', "ropeEnt", ""), EV_RETURNS_VOID, 
 		"Called when rope arrow ropes are removed, removes stale pointers on the player object.");
 
 
 // NOTE: The following all take the "user" objective indices, starting at 1 instead of 0
-const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", EventArgs('d', "ObjNum", "", 'd', "State", ""), EV_RETURNS_VOID, 
+const idEventDef EV_Player_SetObjectiveState( "setObjectiveState", EventArgs('d', "ObjNum", "Starts counting at 1", 'd', "State", "Starts counting at 1"), EV_RETURNS_VOID, 
 		"Used to set the state of objectives from the script.\n" \
 		"For example, use this to invalidate an objective when something happens in your mission.\n" \
 		"The first argument is the numerical index of the objective (taking 'user' objective indices, starting at 1).\n" \
 		"Choose from the following for the second argument: OBJ_INCOMPLETE, OBJ_COMPLETE, OBJ_INVALID, OBJ_FAILED.\n" \
 		"Use this on $player1 like $player1.setObjectiveState(1, OBJ_COMPLETE);" );
 
-const idEventDef EV_Player_GetObjectiveState( "getObjectiveState", EventArgs('d', "ObjNum", ""), 'd', 
-		"returns the current state of the objective with the number ObjNum (taking 'user' objective indices, starting at 1 instead of 0)\n" \
+const idEventDef EV_Player_GetObjectiveState( "getObjectiveState", EventArgs('d', "ObjNum", "Starts counting at 1"), 'd', 
+		"Returns the current state of the objective with the number ObjNum. \n" \
 		"State is one of the following: OBJ_INCOMPLETE = 0, OBJ_COMPLETE = 1, OBJ_INVALID = 2, OBJ_FAILED = 3");
 
 const idEventDef EV_Player_SetObjectiveComp( "setObjectiveComp", 
-		EventArgs(	'd', "ObjNum", "objective number (taking 'user' objective indices, starting at 1)", 
-					'd', "CompNum", "component number", 
+		EventArgs(	'd', "ObjNum", "objective number. Starts counting at 1", 
+					'd', "CompNum", "component number. Starts counting at 1", 
 					'd', "state", "1 or 0 for true or false"), 
 		EV_RETURNS_VOID, "Used to set the state of custom objective components");
 
-const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", EventArgs('d', "ObjNum", "", 'd', "CompNum", ""), 'd', "Used to get the state of custom objective components");
+const idEventDef EV_Player_GetObjectiveComp( "getObjectiveComp", EventArgs('d', "ObjNum", "Starts counting at 1", 'd', "CompNum", "Starts counting at 1"),
+											 'd', "Used to get the state of custom objective components");
 
 const idEventDef EV_Player_ObjectiveUnlatch( "objectiveUnlatch", EventArgs('d', "ObjNum", ""), EV_RETURNS_VOID, "Unlatch an irreversible objective that has latched into a state");
 const idEventDef EV_Player_ObjectiveCompUnlatch( "objectiveCompUnlatch", EventArgs('d', "ObjNum", "", 'd', "CompNum", ""), EV_RETURNS_VOID, 
@@ -214,7 +217,7 @@ const idEventDef EV_Player_SetObjectiveEnabling( "setObjectiveEnabling",
 		"Set an objective's enabling objectives (objectives that must be completed before that objective may be completed).");
 
 // Tels: Modify the displayed text for an objective. Can also be a string template like #str_20000 (#3217)
-const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", EventArgs('d', "ObjNum", "", 's', "newText", ""), EV_RETURNS_VOID, 
+const idEventDef EV_Player_SetObjectiveText( "setObjectiveText", EventArgs('d', "ObjNum", "Starts counting at 1", 's', "newText", ""), EV_RETURNS_VOID, 
 		"Modify the displayed text for an objective. Can also be a string template like #str_20000");
 
 
@@ -262,7 +265,7 @@ const idEventDef EV_Player_PauseGame("pauseGame", EventArgs(), EV_RETURNS_VOID,
 const idEventDef EV_Player_UnpauseGame("unpauseGame", EventArgs(), EV_RETURNS_VOID, 
 		"Unpauses the game. Most scripts are not executed during g_stopTime == true and won't get into the position of calling this.");
 
-const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_Player_StartGamePlayTimer("startGamePlayTimer", EventArgs(), EV_RETURNS_VOID, "Resets the game play timer to zero and (re)starts it.");
 
 const idEventDef EV_CheckAAS("checkAAS", EventArgs(), EV_RETURNS_VOID, "");
 
