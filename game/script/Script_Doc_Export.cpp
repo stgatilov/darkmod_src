@@ -325,13 +325,14 @@ void ScriptEventDocGeneratorMediaWiki::WriteDoc(idFile& out)
 	Writeln(out, "{{tdm-scripting-reference-intro}}");
 
 	// Table of contents, but don't show level 4 headlines
-	Writeln(out, "<div class=\"toclimit-3\">");
+	Writeln(out, "<div class=\"toclimit-4\">"); // SteveL #3740
 	Writeln(out, "__TOC__");
 	Writeln(out, "</div>");
 
 	Writeln(out, "= TDM Script Event Reference =");
 	Writeln(out, "");
-	Writeln(out, "== Alphabetic List ==");
+	Writeln(out, "== All Events ==");
+	Writeln(out, "=== Alphabetic List ==="); // #3740 Two headers are required here for the toclimit to work. We can't skip a heading level.
 
 	typedef std::vector<const idEventDef*> EventList;
 	typedef std::map<idTypeInfo*, EventList> SpawnclassEventMap;

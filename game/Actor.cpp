@@ -399,7 +399,7 @@ const char *idActor::MeleeTypeNames[ NUM_MELEE_TYPES ] = {
 
 const idEventDef AI_EnableEyeFocus( "enableEyeFocus", EventArgs(), EV_RETURNS_VOID, "Enables eye focus.");
 const idEventDef AI_DisableEyeFocus( "disableEyeFocus", EventArgs(), EV_RETURNS_VOID, "Disables eye focus.");
-const idEventDef EV_Footstep( "footstep", EventArgs(), EV_RETURNS_VOID, "");
+const idEventDef EV_Footstep( "footstep", EventArgs(), EV_RETURNS_VOID, "Plays footstep sound.");
 const idEventDef EV_FootstepLeft( "leftFoot", EventArgs(), EV_RETURNS_VOID, "Changes to left foot and plays footstep sound.");
 const idEventDef EV_FootstepRight( "rightFoot", EventArgs(), EV_RETURNS_VOID, "Changes to right foot and plays footstep sound.");
 const idEventDef EV_EnableWalkIK( "EnableWalkIK", EventArgs(), EV_RETURNS_VOID, "enables walk IK");
@@ -495,15 +495,15 @@ const idEventDef AI_ReAttachToCoords( "reAttachToCoords",
 	EV_RETURNS_VOID, 
 	"Reattach an existing attachment");
 const idEventDef AI_DropAttachment( "dropAttachment", EventArgs('s', "attName", ""), EV_RETURNS_VOID, "Drop the attachment for the given attachment name.");
-const idEventDef AI_ShowAttachment( "showAttachment", EventArgs('s', "attName", "", 'd', "show", "true shows attachment, false hides it."),
+const idEventDef AI_ShowAttachment( "showAttachment", EventArgs('s', "attName", "", 'd', "show", "1 shows attachment, 0 hides it."),
 	EV_RETURNS_VOID, "Show or hide an attachment.");
-const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", EventArgs('d', "index", ""), EV_RETURNS_VOID, "Drop the attachment for the given index.");
-const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", EventArgs('d', "index", "starts at 0.", 'd', "show", "true shows attachment, false hides it."), EV_RETURNS_VOID, "Show or hide an attachment by array index.");
+const idEventDef AI_DropAttachmentInd( "dropAttachmentInd", EventArgs('d', "index", "starts at 0"), EV_RETURNS_VOID, "Drop the attachment for the given index.");
+const idEventDef AI_ShowAttachmentInd( "showAttachmentInd", EventArgs('d', "index", "starts at 0", 'd', "show", "1 shows attachment, 0 hides it."), EV_RETURNS_VOID, "Show or hide an attachment by array index.");
 const idEventDef AI_GetAttachment( "getAttachment", EventArgs('s', "attName", ""), 'e', 
 	"Get the attached entity with the given attachment name\n" \
 	"Will be NULL if the name is invalid or if the entity no longer exists");
-const idEventDef AI_GetAttachmentInd( "getAttachmentInd", EventArgs('d', "index", ""), 'e', 
-	"Get the attached entity at the given index\n" \
+const idEventDef AI_GetAttachmentInd( "getAttachmentInd", EventArgs('d', "index", "starts at 0"), 'e', 
+	"Get the attached entity at the given index.\n" \
 	"Will be NULL if the index is invalid or the entity no longer exists");
 const idEventDef AI_GetNumAttachments( "getNumAttachments", EventArgs(), 'd', 
 	"Return the number of attachments on an AI.\n" \

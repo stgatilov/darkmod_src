@@ -23,6 +23,7 @@
 #include "math/Math.h" // OrbWeaver: Max() macro
 
 #include <cstdlib>
+#include <cstddef> // for NULL
 
 /*
 ===============================================================================
@@ -627,7 +628,8 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Free( type *ptr ) {
 
 	numFrees++;
 
-	if ( ptr == NULL ) {
+    // temp fix for linux segfault on exit - underlying cause still undetermined
+    if ( ptr == NULL || numUsedBlocks == 0 ) {
 		return;
 	}
 

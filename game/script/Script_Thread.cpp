@@ -230,7 +230,7 @@ const idEventDef EV_GetDifficultyLevel("getDifficultyLevel", EventArgs(), 'd', "
 // SteveL #3304 - 2 scripting events to get mission statistics by Zbyl
 const idEventDef EV_GetDifficultyName("getDifficultyName", EventArgs('d', "difficultyLevel", "0 (Easy), 1 (Medium), 2 (Hard)"), 's', "Returns the (translated) name of the difficulty level passed as the argument.");
 const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "statisticName",
-	":Can be one of (case insensitive):\n"
+	"Can be one of (case insensitive):\n"
 	"\tgamePlayTime: gameplay time in seconds\n"
 	"\tdamageDealt: damage dealt to enemies\n"
 	"\tdamageReceived: damage received by player\n"
@@ -238,15 +238,15 @@ const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "s
 	"\tpocketsPicked: pockets picked by player\n"
 	"\tfoundLoot: loot found by player\n"
 	"\tmissionLoot: total loot available in mission\n"
-	"\ttotalTimePlayerSeen: total time the player was seen by enemies in seconds\n"
+	"\ttotalTimePlayerSeen: total time the player was seen by enemies in seconds. Updates only when AI lose sight of player\n"
 	"\tnumberTimesPlayerSeen: number of times player was seen by enemies\n"
-	"\tnumberTimesAISuspicious: number of times AI was 'observant' or 'suspicious'\n"
-	"\tnumberTimesAISearched: number of times AI was 'investigating' or 'searching'\n"
+	"\tnumberTimesAISuspicious: number of times AI was 'observant' or 'suspicious'. A single AI passing through both alert levels will add 2 to the score.\n"
+	"\tnumberTimesAISearched: number of times AI was 'investigating' or 'searching'. A single AI passing through both alert levels will add 2 to the score.\n"
 	"\tsightingScore: sighting score (number of times player was seen * weight)\n"
 	"\tstealthScore: stealth score (sighting score + alerts * weights)\n"
 	"\tkilledByPlayer: number of enemies killed by player\n"
 	"\tknockedOutByPlayer: number of enemies knocked out by player\n"
-	"\tbodiesFound: number of bodies found by enemies"
+	"\tbodiesFound: number of times enemies have spotted a body\n"
 	), 'f', "Returns current mission statistic.");
 
 

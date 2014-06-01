@@ -272,9 +272,10 @@ const idEventDef AI_GetRelationEnt( "getRelationEnt", EventArgs('E', "ent", ""),
 const idEventDef AI_SetAlertLevel( "setAlertLevel", EventArgs('f', "newLevel", ""), EV_RETURNS_VOID, 
 	"Set the alert level (AI_AlertLevel). This should always be called instead of setting AI_AlertLevel directly.");
 const idEventDef AI_Alert( "alert", EventArgs('s', "type", "", 'f', "val", ""), EV_RETURNS_VOID, "ai generalized alerts");
-const idEventDef AI_VisScan( "visScan", EventArgs(), 'e', "ai visibility ");
+const idEventDef AI_VisScan("visScan", EventArgs(), 'e', "Checks for enemies or player in the AI's FOV, using light level and " \
+	"distance. For now the check is only done on the player. \nReturns a reference to the sighted actor.");
 const idEventDef AI_GetSndDir( "getSndDir", EventArgs(), 'v', "ai hearing of sound ");
-const idEventDef AI_GetVisDir( "getVisDir", EventArgs(), 'v', "ai visibility ");
+const idEventDef AI_GetVisDir( "getVisDir", EventArgs(), 'v', "Returns position of the last visual alert.");
 const idEventDef AI_GetTactEnt( "getTactEnt", EventArgs(), 'e', "ai sense of touch");
 const idEventDef AI_SetAcuity( "setAcuity", EventArgs('s', "type", "", 'f', "val", ""), EV_RETURNS_VOID, "ai generalized alerts");
 const idEventDef AI_GetAcuity( "getAcuity", EventArgs('s', "type", ""), 'f', "ai generalized alerts");
