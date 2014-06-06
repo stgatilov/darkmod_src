@@ -1630,17 +1630,25 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if ( !memory.closeSuspiciousDoor ) // grayman #2866
 					{
-						if (frobDoor->WasInterrupted() && !FitsThrough())
+						if (frobDoor->WasInterrupted())
 						{
-							// end this task, it will be reinitialized when needed
-							//return true;
+							// grayman #3745
+							float dist2FrontPosSqr = (ownerOrigin - _frontPos).LengthSqr();
+							float dist2BackPosSqr = (ownerOrigin - _backPos).LengthSqr();
+							bool onFrontSide = (dist2BackPosSqr > dist2FrontPosSqr);
 
-							// grayman #3390 - instead of leaving the queue, stay in it
-							// and move away to a safe distance. Relinquish your master
-							// position if you're the master.
+							if (onFrontSide && !FitsThrough())
+							{
+								// end this task, it will be reinitialized when needed
+								//return true;
 
-							MoveToSafePosition(frobDoor); // grayman #3390
-							break;
+								// grayman #3390 - instead of leaving the queue, stay in it
+								// and move away to a safe distance. Relinquish your master
+								// position if you're the master.
+
+								MoveToSafePosition(frobDoor); // grayman #3390
+								break;
+							}
 						}
 					}
 				}
