@@ -296,10 +296,10 @@ idCVar cv_ai_vision_hardcore(			"tdm_ai_vision_hardcore", "1.5", CVAR_GAME | CVA
 
 // grayman #3682 - AI Hearing
 idCVar cv_ai_hearing(					"tdm_ai_hearing", "2", CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "AI Hearing as set by the menu");
-idCVar cv_ai_hearing_nearly_deaf(		"tdm_ai_hearing_nearly_deaf", "0.6", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Nearly Deaf', set by the menu");
+idCVar cv_ai_hearing_nearly_deaf(		"tdm_ai_hearing_nearly_deaf", "0.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Nearly Deaf', set by the menu");
 idCVar cv_ai_hearing_forgiving(			"tdm_ai_hearing_forgiving", "0.8", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Forgiving', set by the menu");
 idCVar cv_ai_hearing_challenging(		"tdm_ai_hearing_challenging", "1.0", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Challenging', set by the menu");
-idCVar cv_ai_hearing_hardcore(			"tdm_ai_hearing_hardcore", "1.2", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Hardcore', set by the menu");
+idCVar cv_ai_hearing_hardcore(			"tdm_ai_hearing_hardcore", "1.4", CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "AI Hearing 'Hardcore', set by the menu");
 
 idCVar cv_phys_show_momentum(			"tdm_phys_show_momentum", "0", CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set this to 1 (=TRUE) to draw the linear impulse of (some) entities." );
 
