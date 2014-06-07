@@ -35,7 +35,7 @@ namespace ai
 #define DOOR_TIMEOUT 20000		// milliseconds (grayman #2700 - max time to execute a move to mid pos or back pos)
 #define QUEUE_DISTANCE 150		// grayman #2345 - distance from door where incoming AI pause
 #define NEAR_DOOR_DISTANCE 72	// grayman #2345 - less than this and you're close to the door
-#define CAN_LEAVE_DOOR_FRACTION 0.2f	// grayman #3523 - AI can leave door handling when closing
+#define CAN_LEAVE_DOOR_FRACTION 0.1f	// grayman #3523 - AI can leave door handling when closing
 										// door that doesn't need locking reaches this fraction open.
 										// If a closing door is interrupted, ignore it if fraction
 										// open is below this. Become interested if at or above.
@@ -2003,7 +2003,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// Can't walk away if you're supposed to lock the door, because that
 				// only happens when the door is closed.
 
-				if ( frobDoor->GetFractionalPosition() < CAN_LEAVE_DOOR_FRACTION )
+				bool doorAlmostClosed = ( frobDoor->GetFractionalPosition() < CAN_LEAVE_DOOR_FRACTION );
+				if ( doorAlmostClosed )
 				{
 					bool wait2LockDoor = ( (owner->CanUnlock(frobDoor) && AllowedToLock(owner) &&
 											(_wasLocked || frobDoor->GetWasFoundLocked() || frobDoor->spawnArgs.GetBool("should_always_be_locked", "0")))); // grayman #3104
@@ -2021,6 +2022,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
+					// Ignore block if door is almost closed, regardless
+					// of whether it has to be relocked or not
+
+					if ( doorAlmostClosed )
+					{
+						return true; // leave door early
+					}
+
 					// grayman #3523 - This is where the door is stopped as the AI is closing it.
 					// The door is closing toward the AI or away from the AI, and the player blocks it
 					// or frobs it.
