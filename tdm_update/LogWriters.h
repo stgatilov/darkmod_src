@@ -20,11 +20,19 @@
 #pragma once
 
 #include <string>
+#include <stdexcept>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
 namespace tdm
 {
+
+class FileOpenException : 
+    public std::runtime_error 
+{
+public:
+    FileOpenException() : std::runtime_error("File open failure") { }
+};
 
 class FileLogWriter :
 	public tdm::ILogWriter
@@ -36,8 +44,13 @@ private:
 
 public:
 	FileLogWriter(const std::string& path) :
-		_logFile(fopen(path.c_str(), "w"))
+		_logFile(NULL)
 	{
+		_logFile = fopen(path.c_str(), "w");
+		if (_logFile == NULL) {
+			throw FileOpenException();
+		}
+
 		time_t rawtime;
 		time(&rawtime);
 

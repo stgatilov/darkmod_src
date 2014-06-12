@@ -39,7 +39,19 @@ using namespace updater;
 int main(int argc, char* argv[])
 {
 	// Start logging
-	RegisterLogWriters();
+	try {
+		RegisterLogWriters();
+	} 
+	catch (FileOpenException &e) {
+		// basic error-checking - most common cause of failure at this point is a read-only directory or log file.
+		// if other issues are detected by the users, this will have to be expanded to cater for other types of errors
+		std::cerr << "TDM Updater Error:" << std::endl
+				  << "Unable to open log file and start updater." << std::endl << std::endl << "Please ensure that the current directory is not set to 'Read-only'. " 
+				  << "If tdm_update.log already exists, please ensure that it is not 'Read-only'. On Windows, this may also be caused by the write protections "
+				  << "placed on the contents of the 'Program Files' and 'Program Files (x86)' directories." << std::endl;
+
+        return EXIT_FAILURE;
+	}
 
 	TraceLog::WriteLine(LOG_STANDARD, 
 		(boost::format("TDM Updater v%s (c) 2009-2013 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
