@@ -57,7 +57,17 @@ using namespace tdm;
 BOOL UpdaterApplication::InitInstance()
 {
 	// Start logging
-	RegisterLogWriters();
+	try {
+		RegisterLogWriters();
+	} 
+	catch (FileOpenException &e) {
+		// basic error-checking - most common cause of failure at this point is a read-only directory or log file.
+		// if other issues are detected by the users, this will have to be expanded to cater for other types of errors
+		AfxMessageBox(L"TDM Updater Error:\nUnable to open log file and start updater. Please ensure that the current directory is not set to 'Read-only'.\n\n"
+					  L"If tdm_update.log already exists, please ensure that it is not 'Read-only'. This may also be caused by the write protections "
+					  L"placed on the contents of the 'Program Files' and 'Program Files (x86)' directories.", MB_OK | MB_ICONSTOP);
+		return EXIT_FAILURE;
+	}
 
 	TraceLog::WriteLine(LOG_STANDARD, 
 		(boost::format("TDM Updater v%s (c) 2009-2013 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());

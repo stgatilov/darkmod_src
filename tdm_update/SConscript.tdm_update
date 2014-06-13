@@ -63,6 +63,7 @@ else:
 		File('#/../linux/boost/lib/libboost_system.a'),
 		File('#/../linux/libcurl/libcurl.a'),
 		File('#/../linux/polarssl/libpolarssl.a'),
+		'rt',
 	])
 
 minizip_list = SConscript( './SConscript.minizip' )
