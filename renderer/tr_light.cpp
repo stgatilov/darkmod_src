@@ -19,6 +19,9 @@
 
 #include "precompiled_engine.h"
 #pragma hdrstop
+// omp stage locks for interactions
+static omp_lock_t stage1Lock;
+static omp_lock_t stage2Lock;
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
@@ -1403,122 +1406,209 @@ idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) {
 
 	return R_ScreenRectFromViewFrustumBounds( bounds );
 }
+    /*
+    ===================
+    R_AddModelSurfaces
 
-/*
-===================
-R_AddModelSurfaces
+    Here is where dynamic models actually get instantiated, and necessary
+    interactions get created.  This is all done on a sort-by-model basis
+    to keep source data in cache (most likely L2) as any interactions and
+    shadows are generated, since dynamic models will typically be lit by
+    two or more lights.
 
-Here is where dynamic models actually get instantiated, and necessary
-interactions get created.  This is all done on a sort-by-model basis
-to keep source data in cache (most likely L2) as any interactions and
-shadows are generated, since dynamic models will typically be lit by
-two or more lights.
-===================
-*/
-void R_AddModelSurfaces( void ) {
-	viewEntity_t		*vEntity;
-	idInteraction		*inter, *next;
-	idRenderModel		*model;
+    Revelator changed to a defered model,
+    was actually from an openmp optimization tutorial for linux,
+    but the openmp optimizer calls dont work on windows because they used posix threads,
+    (might work if we port this to mingw64).
+    ===================
+    */
+    void R_AddModelSurfaces( void )
+    {
+    #define MAX_INTER 1000
+       viewEntity_t      *vEntity;
+       idRenderModel      *model;
+       idInteraction      *inter, *next;
+       idInteraction      *interactions[MAX_INTER];
+       idRenderModel      *createInteractionModel[MAX_INTER];
+       idRenderModel      *interactionModelPtr[MAX_INTER];
+       idScreenRect      shadowScissor[MAX_INTER];
+       bool            interactionPhase2[MAX_INTER];
+       int               createInteractionId[MAX_INTER];
+       int               nInteractions = 0;
+       int               nCreateInteractions = 0;
+       
+       // clear the ambient surface list
+       tr.viewDef->numDrawSurfs = 0;
+       tr.viewDef->maxDrawSurfs = 0;   // will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+       
+       // go through each entity that is either visible to the view, or to
+       // any light that intersects the view (for shadows)
+       for( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next )
+       {
+          if( r_useEntityScissors.GetBool() )
+          {
+             // calculate the screen area covered by the entity
+             idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
+             
+             // intersect with the portal crossing scissor rectangle
+             vEntity->scissorRect.Intersect( scissorRect );
+             
+             if( r_showEntityScissors.GetBool() )
+             {
+                R_ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
+             }
+          }
+          float   oldFloatTime;
+          int      oldTime;
+          
+          game->SelectTimeGroup( vEntity->entityDef->parms.timeGroup );
+          
+          if( vEntity->entityDef->parms.timeGroup )
+          {
+             oldFloatTime = tr.viewDef->floatTime;
+             oldTime = tr.viewDef->renderView.time;
+             
+             tr.viewDef->floatTime = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup ) * 0.001;
+             tr.viewDef->renderView.time = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup );
+          }
+          
+          if( tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 1 )
+          {
+             if( vEntity->entityDef->parms.timeGroup )
+             {
+                tr.viewDef->floatTime = oldFloatTime;
+                tr.viewDef->renderView.time = oldTime;
+             }
+             continue;
+          }
+          else if( !tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 2 )
+          {
+             if( vEntity->entityDef->parms.timeGroup )
+             {
+                tr.viewDef->floatTime = oldFloatTime;
+                tr.viewDef->renderView.time = oldTime;
+             }
+             continue;
+          }
+          
+          // add the ambient surface if it has a visible rectangle
+          if( !vEntity->scissorRect.IsEmpty() )
+          {
+             model = R_EntityDefDynamicModel( vEntity->entityDef );
+             
+             if( model == NULL || model->NumSurfaces() <= 0 )
+             {
+                if( vEntity->entityDef->parms.timeGroup )
+                {
+                   tr.viewDef->floatTime = oldFloatTime;
+                   tr.viewDef->renderView.time = oldTime;
+                }
+                continue;
+             }
+             R_AddAmbientDrawsurfs( vEntity );
+             tr.pc.c_visibleViewEntities++;
+          }
+          else
+          {
+             tr.pc.c_shadowViewEntities++;
+          }
+          
+          // for all the entity / light interactions on this entity, add them to the view
+          if( tr.viewDef->isXraySubview )
+          {
+             if( vEntity->entityDef->parms.xrayIndex == 2 )
+             {
+                for( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next )
+                {
+                   next = inter->entityNext;
+                   
+                   if ( inter->lightDef->viewCount != tr.viewCount )
+                   {
+                      continue;
+                   }
+                   interactions[nInteractions++] = inter;
+                   assert(nInteractions <= MAX_INTER);
+                }
+             }
+          }
+          else
+          {
+             // all empty interactions are at the end of the list so once the
+             // first is encountered all the remaining interactions are empty
+             for( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next )
+             {
+                next = inter->entityNext;
+                
+                // skip any lights that aren't currently visible
+                // this is run after any lights that are turned off have already
+                // been removed from the viewLights list, and had their viewCount cleared
+                if ( inter->lightDef->viewCount != tr.viewCount )
+                {
+                   continue;
+                }
+                interactions[nInteractions++] = inter;
+                assert(nInteractions <= MAX_INTER);
+             }
+          }
+          
+          if( vEntity->entityDef->parms.timeGroup )
+          {
+             tr.viewDef->floatTime = oldFloatTime;
+             tr.viewDef->renderView.time = oldTime;
+          }
+       }
+       int   i, j;
+	   // defer the interactions to here
+   omp_init_lock(&stage1Lock);
+   #pragma omp parallel for default(shared) schedule(dynamic)
+   {
+      while (!omp_test_lock(&stage1Lock))
+      {
+         common->Warning("Could not get lock for stage1 interactions\n");
+         continue;
+      }
 
-	// clear the ambient surface list
-	tr.viewDef->numDrawSurfs = 0;
-	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+      for (i = 0; i < nInteractions; i++)
+      {
+         interactionPhase2[i] = interactions[i]->AddActiveInteraction(true, &shadowScissor[i], &interactionModelPtr[i]);
 
-	// go through each entity that is either visible to the view, or to
-	// any light that intersects the view (for shadows)
-	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+         if (interactionModelPtr[i])
+         {
+            createInteractionId[nCreateInteractions] = i;
+            createInteractionModel[nCreateInteractions] = interactionModelPtr[i];
+            nCreateInteractions++;
+         }
+      }
+      omp_unset_lock(&stage1Lock);
+   }
+   omp_destroy_lock(&stage1Lock);
 
-		if ( r_useEntityScissors.GetBool() ) {
-			// calculate the screen area covered by the entity
-			idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
-			// intersect with the portal crossing scissor rectangle
-			vEntity->scissorRect.Intersect( scissorRect );
+   // next interaction table
+   omp_init_lock(&stage2Lock);
+   #pragma omp parallel for shared(interactions,createInteractionId,createInteractionModel) schedule(dynamic)
+   {
+      while (!omp_test_lock(&stage2Lock))
+      {
+         common->Warning("Could not get lock for stage2 interactions\n");
+         continue;
+      }
 
-			if ( r_showEntityScissors.GetBool() ) {
-				R_ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
-			}
-		}
+      for (j = 0; j < nCreateInteractions; j++)
+      {
+         interactions[createInteractionId[j]]->CreateInteraction(createInteractionModel[j]);
+      }
 
-		float oldFloatTime;
-		int oldTime;
-
-		game->SelectTimeGroup( vEntity->entityDef->parms.timeGroup );
-
-		if ( vEntity->entityDef->parms.timeGroup ) {
-			oldFloatTime = tr.viewDef->floatTime;
-			oldTime = tr.viewDef->renderView.time;
-
-			tr.viewDef->floatTime = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup ) * 0.001;
-			tr.viewDef->renderView.time = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup );
-		}
-
-		if ( tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 1 ) {
-			if ( vEntity->entityDef->parms.timeGroup ) {
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
-			}
-			continue;
-		} else if ( !tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 2 ) {
-			if ( vEntity->entityDef->parms.timeGroup ) {
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
-			}
-			continue;
-		}
-
-		// add the ambient surface if it has a visible rectangle
-		if ( !vEntity->scissorRect.IsEmpty() ) {
-			model = R_EntityDefDynamicModel( vEntity->entityDef );
-			if ( model == NULL || model->NumSurfaces() <= 0 ) {
-				if ( vEntity->entityDef->parms.timeGroup ) {
-					tr.viewDef->floatTime = oldFloatTime;
-					tr.viewDef->renderView.time = oldTime;
-				}
-				continue;
-			}
-
-			R_AddAmbientDrawsurfs( vEntity );
-			tr.pc.c_visibleViewEntities++;
-		} else {
-			tr.pc.c_shadowViewEntities++;
-		}
-
-		//
-		// for all the entity / light interactions on this entity, add them to the view
-		//
-		if ( tr.viewDef->isXraySubview ) {
-			if ( vEntity->entityDef->parms.xrayIndex == 2 ) {
-				for ( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
-					next = inter->entityNext;
-					if ( inter->lightDef->viewCount != tr.viewCount ) {
-						continue;
-					}
-					inter->AddActiveInteraction();
-				}
-			}
-		} else {
-			// all empty interactions are at the end of the list so once the
-			// first is encountered all the remaining interactions are empty
-			for ( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
-				next = inter->entityNext;
-
-				// skip any lights that aren't currently visible
-				// this is run after any lights that are turned off have already
-				// been removed from the viewLights list, and had their viewCount cleared
-				if ( inter->lightDef->viewCount != tr.viewCount ) {
-					continue;
-				}
-				inter->AddActiveInteraction();
-			}
-		}
-
-		if ( vEntity->entityDef->parms.timeGroup ) {
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
-		}
-
-	}
-}
+      for (i = 0; i < nInteractions; i++)
+      {
+         if (interactionPhase2[i])
+         {
+            interactions[i]->AddActiveInteraction(false, &shadowScissor[i], &interactionModelPtr[i]);
+         }
+      }
+      omp_unset_lock(&stage2Lock);
+   }
+   omp_destroy_lock(&stage2Lock);
+    }
 
 /*
 =====================

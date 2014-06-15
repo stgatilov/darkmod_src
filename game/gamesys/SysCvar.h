@@ -763,6 +763,7 @@ extern idCVar	r_filmgrainScale;
 extern idCVar	r_filmgrainStrength;
 
 extern idCVar	r_useVignetting;
+
 // <---sikk
 extern idCVar	noshadows;
 extern idCVar	noshadowDistance;

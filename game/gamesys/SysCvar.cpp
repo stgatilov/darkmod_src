@@ -865,6 +865,7 @@ idCVar r_filmgrainScale(			"r_filmgrainScale",				"1.0",		CVAR_GAME | CVAR_NOCHE
 idCVar r_filmgrainStrength(			"r_filmgrainStrength",			"1.0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT,	"Set the grain strength. Value range: 0.0 - 1.0" );
 
 idCVar r_useVignetting(				"r_useVignetting",				"0",		CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_BOOL,	"Enable vignetting postprocessing effect" );
+
 // <---sikk
 idCVar	noshadows(					"noshadows",	"0",	CVAR_GAME | CVAR_NOCHEAT | CVAR_BOOL, "Disables shadow-casting of lights for performance testing");
 idCVar	noshadowDistance(			"noshadowDistance", "0", CVAR_GAME | CVAR_NOCHEAT | CVAR_ARCHIVE | CVAR_FLOAT, "Distance after which shadow-casting gets disabled");
