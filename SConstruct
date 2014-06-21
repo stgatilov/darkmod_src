@@ -15,7 +15,7 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH' ]
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP' ]
 
 # global build mode ------------------------------
 
@@ -72,6 +72,9 @@ SILENT ( default 0, saved )
 
 NO_GCH (default 0)
 	Don't use precompiled headers when building.
+    
+OPENMP (default 0)
+	Enable OpenMP builds.
 """
 
 if ( not g_sdk ):
@@ -184,6 +187,7 @@ BUILD_GAMEPAK = '0'
 BASEFLAGS = ''
 SILENT = '0'
 NO_GCH = '0'
+OPENMP = '0'
 
 # end default settings ---------------------------
 
@@ -295,6 +299,11 @@ if ( g_os == 'Linux' ):
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
+    
+	if ( OPENMP != '0' ):
+		# openmp support for changes made to the renderer
+		BASECPPFLAGS.append( '-fopenmp' )
+		BASELINKFLAGS.append( '-fopenmp' )
 
 if ( g_sdk or SDK != '0' ):
 	BASECPPFLAGS.append( '-D_D3SDK' )
