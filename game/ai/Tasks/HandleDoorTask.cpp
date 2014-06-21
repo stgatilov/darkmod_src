@@ -1922,7 +1922,8 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					// to keep the AI from turning and walking away with his
 					// hand still raised, which doesn't look good
 
-					if (idStr(owner->WaitState()) != "use_righthand")
+					if ( (idStr(owner->WaitState()) != "use_righthand") &&
+						 (idStr(owner->WaitState()) != "relight") )
 					{
 						return true;
 					}
