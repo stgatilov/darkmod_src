@@ -483,7 +483,7 @@ void CBinaryFrobMover::PostSpawn()
 				// The door needs to accommodate an AI walking through it
 				// to have this switch treated as a door controller.
 				idVec3 size = e->GetPhysics()->GetAbsBounds().GetSize();
-				if ( (size.z >= 80) && ((size.x > 32) || (size.y > 32)) )
+				if ( (size.z >= 88) && ((size.x > 32) || (size.y > 32)) )
 				{
 					CFrobDoor* door = static_cast<CFrobDoor*>(e); // grayman debug
 					door->AddController(this); // grayman debug
