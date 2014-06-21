@@ -19,9 +19,6 @@
 
 #include "precompiled_engine.h"
 #pragma hdrstop
-// omp stage locks for interactions
-static omp_lock_t stage1Lock;
-static omp_lock_t stage2Lock;
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
@@ -1539,48 +1536,26 @@ void R_AddModelSurfaces( void ) {
 
 	int   i, j;
 	// defer the interactions to here
-	omp_init_lock(&stage1Lock);
-	#pragma omp parallel for default(shared) schedule(dynamic)
-	{
-		while (!omp_test_lock(&stage1Lock)) {
-			common->Warning("Could not get lock for stage1 interactions\n");
-			continue;
-		}
+	for (i = 0; i < nInteractions; i++) {
+		interactionPhase2[i] = interactions[i]->AddActiveInteraction(true, &shadowScissor[i], &interactionModelPtr[i]);
 
-		for (i = 0; i < nInteractions; i++) {
-			interactionPhase2[i] = interactions[i]->AddActiveInteraction(true, &shadowScissor[i], &interactionModelPtr[i]);
-
-			if (interactionModelPtr[i]) {
-				createInteractionId[nCreateInteractions] = i;
-				createInteractionModel[nCreateInteractions] = interactionModelPtr[i];
-				nCreateInteractions++;
-			}
+		if (interactionModelPtr[i]) {
+			createInteractionId[nCreateInteractions] = i;
+			createInteractionModel[nCreateInteractions] = interactionModelPtr[i];
+			nCreateInteractions++;
 		}
-		omp_unset_lock(&stage1Lock);
 	}
-	omp_destroy_lock(&stage1Lock);
 
 	// next interaction table
-	omp_init_lock(&stage2Lock);
-	#pragma omp parallel for shared(interactions,createInteractionId,createInteractionModel) schedule(dynamic)
-	{
-		while (!omp_test_lock(&stage2Lock)) {
-			common->Warning("Could not get lock for stage2 interactions\n");
-			continue;
-		}
-
-		for (j = 0; j < nCreateInteractions; j++) {
-			interactions[createInteractionId[j]]->CreateInteraction(createInteractionModel[j]);
-		}
-
-		for (i = 0; i < nInteractions; i++) {
-			if (interactionPhase2[i]) {
-				interactions[i]->AddActiveInteraction(false, &shadowScissor[i], &interactionModelPtr[i]);
-			}
-		}
-		omp_unset_lock(&stage2Lock);
+	for (j = 0; j < nCreateInteractions; j++) {
+		interactions[createInteractionId[j]]->CreateInteraction(createInteractionModel[j]);
 	}
-	omp_destroy_lock(&stage2Lock);
+
+	for (i = 0; i < nInteractions; i++) {
+		if (interactionPhase2[i]) {
+			interactions[i]->AddActiveInteraction(false, &shadowScissor[i], &interactionModelPtr[i]);
+		}
+	}
 }
 
 /*
