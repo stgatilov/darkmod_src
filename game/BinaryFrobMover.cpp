@@ -485,8 +485,8 @@ void CBinaryFrobMover::PostSpawn()
 				idVec3 size = e->GetPhysics()->GetAbsBounds().GetSize();
 				if ( (size.z >= 87) && ((size.x > 32) || (size.y > 32)) )
 				{
-					CFrobDoor* door = static_cast<CFrobDoor*>(e); // grayman debug
-					door->AddController(this); // grayman debug
+					CFrobDoor* door = static_cast<CFrobDoor*>(e);
+					door->AddController(this);
 				}
 			}
 		}
