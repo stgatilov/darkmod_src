@@ -38,8 +38,8 @@ tdmEAS::tdmEAS(idAASLocal* aas) :
 void tdmEAS::Clear()
 {
 	_elevators.Clear();
-	_clusterInfo.clear();;
-	_elevatorStations.clear();;
+	_clusterInfo.clear();
+	_elevatorStations.clear();
 }
 
 void tdmEAS::AddElevator(CMultiStateMover* mover)
@@ -315,6 +315,8 @@ void tdmEAS::SetupRoutesBetweenClusters()
 			_routingIterations = 0;
 			FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
 		}
+
+		common->PacifierUpdate(LOAD_KEY_ROUTING_INTERIM,(int)startCluster + 1); // grayman #3763
 	}
 }
 

@@ -102,6 +102,24 @@ struct MemInfo_t {
 	int				soundAssetsTotal;
 };
 
+// grayman #3763 - loading bar progress at key points,
+// used by both the engine and the dll
+
+typedef enum
+{
+	LOAD_KEY_START = 1,
+	LOAD_KEY_COLLISION_START,
+	LOAD_KEY_COLLISION_DONE,
+	LOAD_KEY_SPAWN_ENTITIES_START,
+	LOAD_KEY_SPAWN_ENTITIES_INTERIM,
+	LOAD_KEY_ROUTING_START,
+	LOAD_KEY_ROUTING_INTERIM,
+	LOAD_KEY_ROUTING_DONE,
+	LOAD_KEY_IMAGES_START,
+	LOAD_KEY_IMAGES_INTERIM,
+	LOAD_KEY_DONE
+}loadkey_t;
+
 class I18N;
 
 class idCommon {
@@ -181,6 +199,8 @@ public:
 
 								// Removes all queued warnings.
 	virtual void				ClearWarnings( const char *reason ) = 0;
+
+	virtual void				PacifierUpdate(loadkey_t key, int count) = 0; // grayman #3763
 
 								// Issues a C++ throw. Normal errors just abort to the game loop,
 								// which is appropriate for media or dynamic logic errors.

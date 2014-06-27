@@ -220,6 +220,8 @@ void TestGameAPI( void ) {
 	testExport = *GetGameAPI( &testImport );
 }
 
+#define LOAD_KEY_ENTITY_GRANULARITY 10 // grayman #3763
+
 /*
 ===========
 idGameLocal::idGameLocal
@@ -279,6 +281,8 @@ void idGameLocal::Clear( void )
 	m_TriggerFinalSave = false;
 
 	m_StartPosition = ""; // grayman #2933
+
+	m_time2Start = false; // grayman #3763
 
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
@@ -1115,6 +1119,16 @@ void idGameLocal::SetPersistentPlayerInfo( int clientNum, const idDict &playerIn
 }
 
 /*
+===========
+idGameLocal::SetTime2Start
+============
+*/
+void idGameLocal::SetTime2Start() // grayman #3763
+{
+	m_time2Start = true;
+}
+
+/*
 ============
 idGameLocal::Printf
 ============
@@ -1350,6 +1364,8 @@ Initializes all map variables common to both save games and spawned games.
 void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	int i;
 	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0);
+
+	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
 	// clear the sound system
 	gameSoundWorld->ClearAllSoundEmitters();
@@ -2518,7 +2534,7 @@ idGameLocal::CacheDictionaryMedia
 
 This is called after parsing an EntityDef and for each entity spawnArgs before
 merging the entitydef.  It could be done post-merge, but that would
-avoid the fast pre-cache check associated with each entityDef
+avoid the fast pre-cache check associated with each entityDef.
 ===================
 */
 void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
@@ -2538,7 +2554,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "model" );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
-			declManager->MediaPrint( "Precaching model %s\n", kv->GetValue().c_str() );
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching model %s\n", kv->GetValue().c_str() );
 			// precache model/animations
 			if ( declManager->FindType( DECL_MODELDEF, kv->GetValue(), false ) == NULL ) {
 				// precache the render model
@@ -2554,12 +2570,14 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 
 	kv = dict->FindKey( "s_shader" );
 	if ( kv && kv->GetValue().Length() ) {
+		declManager->MediaPrint( "CacheDictionaryMedia - Precaching s_shader %s\n", kv->GetValue().c_str() );
 		declManager->FindType( DECL_SOUND, kv->GetValue() );
 	}
 
 	kv = dict->MatchPrefix( "snd", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching snd %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_SOUND, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "snd", kv );
@@ -2574,7 +2592,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 				|| !idStr::Icmp( kv->GetKey(), "gui_inventory" ) ) {
 				// unfortunate flag names, they aren't actually a gui
 			} else {
-				declManager->MediaPrint( "Precaching gui %s\n", kv->GetValue().c_str() );
+				declManager->MediaPrint( "CacheDictionaryMedia - Precaching gui %s\n", kv->GetValue().c_str() );
 				idUserInterface *gui = uiManager->Alloc();
 				if ( gui ) {
 					gui->InitFromFile( kv->GetValue() );
@@ -2587,6 +2605,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 
 	kv = dict->FindKey( "texture" );
 	if ( kv && kv->GetValue().Length() ) {
+		declManager->MediaPrint( "CacheDictionaryMedia - Precaching texture %s\n", kv->GetValue().c_str() );
 		declManager->FindType( DECL_MATERIAL, kv->GetValue() );
 		declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 	}
@@ -2594,6 +2613,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "mtr", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching mtr %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
 			declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
 		}
@@ -2604,6 +2624,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "inv_icon", NULL );
 	while ( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching inv_icon %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "inv_icon", kv );
@@ -2612,6 +2633,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "fx", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching fx %s\n", kv->GetValue().c_str() );
 			declManager->MediaPrint( "Precaching fx %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_FX, kv->GetValue() );
 		}
@@ -2621,6 +2643,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "smoke", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching smoke %s\n", kv->GetValue().c_str() );
 			idStr prtName = kv->GetValue();
 			int dash = prtName.Find('-');
 			if ( dash > 0 ) {
@@ -2634,7 +2657,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "skin", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
-			declManager->MediaPrint( "Precaching skin %s\n", kv->GetValue().c_str() );
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching skin %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_SKIN, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "skin", kv );
@@ -2643,6 +2666,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "def", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching def %s\n", kv->GetValue().c_str() );
 			FindEntityDef( kv->GetValue().c_str(), false );
 		}
 		kv = dict->MatchPrefix( "def", kv );
@@ -2651,6 +2675,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 	kv = dict->MatchPrefix( "xdata", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheDictionaryMedia - Precaching xdata %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_XDATA, kv->GetValue().c_str(), false );
 		}
 		kv = dict->MatchPrefix( "xdata", kv );
@@ -3081,7 +3106,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// set the user commands for this frame
 		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
 
-		if (player->WaitUntilReady())
+		if ( m_time2Start && player->WaitUntilReady() ) // grayman #3763
 		{
 			// Player got ready this frame, start timer
 			m_GamePlayTimer.Start();
@@ -3859,10 +3884,10 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 			m_GUICommandArgs = 1;
 		}
 
-		if ( cmd != "log" && cmd != "mainmenu_heartbeat")
-		{
-//			Printf("Seen command '%s' ('%s'), takes %i args.\n", menuCommand, cmd.c_str(), m_GUICommandArgs );
-		}
+		//if ( cmd != "log" && cmd != "mainmenu_heartbeat")
+		//{
+			//Printf("Seen command '%s' ('%s'), takes %i args.\n", menuCommand, cmd.c_str(), m_GUICommandArgs );
+		//}
 	}
 	else
 	{
@@ -3870,7 +3895,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		if ( menuCommand[0] != ';' || menuCommand[1] != 0x0 )
 		{
 			m_GUICommandStack.Alloc() = menuCommand;
-//			Printf("  Seen argument '%s' for '%s'\n", menuCommand, m_GUICommandStack[0].c_str() );
+			//Printf("  Seen argument '%s' for '%s'\n", menuCommand, m_GUICommandStack[0].c_str() );
 		}
 		else
 		{
@@ -3886,7 +3911,7 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		}
 	}
 
-	// Printf(" have %i vs wanted %i\n", numArgs, m_GUICommandArgs);
+//	 Printf(" have %i vs wanted %i\n", numArgs, m_GUICommandArgs);
 	// do we have already as much arguments as we want?
 	if (numArgs < m_GUICommandArgs)
 	{
@@ -3898,12 +3923,15 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	const idStr& cmd = m_GUICommandStack[0];
 
 	// seen the command and its arguments, now handle it
-/*	if ( ( cmd != "mainmenu_heartbeat" ) && ( cmd != "briefingvideoheartbeat" ) && ( cmd != "log" ) )
+
+	/*
+	if ( ( cmd != "mainmenu_heartbeat" ) && ( cmd != "briefingvideoheartbeat" ) && ( cmd != "log" ) )
 	{
 		// debug output, but ignore the frequent ones
 		Printf("MainMenu cmd: %s (%i args)\n", cmd.c_str(), numArgs);
 	}
- */
+	*/
+
 	// Watch out for objectives GUI-related commands
 	// TODO: Handle here commands with arguments, too.
 	m_MissionData->HandleMainMenuCommands(cmd, gui);
@@ -4913,13 +4941,31 @@ void idGameLocal::SetupEAS()
 	}
 
 	// All elevators registered, compile the routing information
+
+	// grayman #3763 - calculate the total cluster count for all aas areas.
+
+	int clusterCount = 0;
 	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
 	{
 		idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
-		if (aas == NULL) continue;
-
-		aas->CompileEAS();
+		if (aas != NULL)
+		{
+			clusterCount += aas->GetClusterSize();
+		}
 	}
+
+	common->PacifierUpdate(LOAD_KEY_ROUTING_START,clusterCount); // grayman #3763
+
+	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
+	{
+		idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
+		if (aas != NULL)
+		{
+			aas->CompileEAS(); // will also update the Loading Bar
+		}
+	}
+
+	common->PacifierUpdate(LOAD_KEY_ROUTING_DONE,0); // grayman #3763
 }
 
 /*
@@ -5207,7 +5253,8 @@ idGameLocal::SpawnMapEntities
 Parses textual entity definitions out of an entstring and spawns gentities.
 ==============
 */
-void idGameLocal::SpawnMapEntities( void ) {
+void idGameLocal::SpawnMapEntities( void )
+{
 	int			i;
 	int			num;
 	int			inhibit;
@@ -5215,9 +5262,8 @@ void idGameLocal::SpawnMapEntities( void ) {
 	int			numEntities;
 	idDict		args;
 
-	Printf( "Spawning entities\n" );
-
-	if ( mapFile == NULL ) {
+	if ( mapFile == NULL )
+	{
 		Printf("No mapfile present\n");
 		return;
 	}
@@ -5227,16 +5273,20 @@ void idGameLocal::SpawnMapEntities( void ) {
 	m_lightGem.SpawnLightGemEntity( mapFile );
 
 	numEntities = mapFile->GetNumEntities();
-	if ( numEntities == 0 ) {
+	if ( numEntities == 0 )
+	{
 		Error( "...no entities" );
 	}
+
+	Printf("Spawning entities\n");
 
 	// the worldspawn is a special that performs any global setup
 	// needed by a level
 	mapEnt = mapFile->GetEntity( 0 );
 	args = mapEnt->epairs;
 	args.SetInt( "spawn_entnum", ENTITYNUM_WORLD );
-	if ( !SpawnEntityDef( args ) || !entities[ ENTITYNUM_WORLD ] || !entities[ ENTITYNUM_WORLD ]->IsType( idWorldspawn::Type ) ) {
+	if ( !SpawnEntityDef( args ) || !entities[ ENTITYNUM_WORLD ] || !entities[ ENTITYNUM_WORLD ]->IsType( idWorldspawn::Type ) )
+	{
 		Error( "Problem spawning world entity" );
 	}
 
@@ -5246,7 +5296,10 @@ void idGameLocal::SpawnMapEntities( void ) {
 	// Clear out the campaign info cache
 	campaignInfoEntities.Clear();
 
-	for ( i = 1 ; i < numEntities ; i++ ) {
+	common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_START,numEntities/LOAD_KEY_ENTITY_GRANULARITY); // grayman #3763
+
+	for ( i = 1 ; i < numEntities ; i++ )
+	{
 		mapEnt = mapFile->GetEntity( i );
 		args = mapEnt->epairs;
 
@@ -5273,14 +5326,22 @@ void idGameLocal::SpawnMapEntities( void ) {
 
 			SpawnEntityDef(args);
 			num++;
-		} else {
+		}
+		else
+		{
 			inhibit++;
+		}
+
+		// grayman #3763 - update the loading bar every LOAD_KEY_ENTITY_GRANULARITY spawned entities
+		if ( (i % LOAD_KEY_ENTITY_GRANULARITY) == 0)
+		{
+			common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_INTERIM,i);
 		}
 	}
 
 	m_lightGem.InitializeLightGemEntity();
 
-	Printf( "...%i entities spawned, %i inhibited\n\n", num, inhibit );
+	Printf( "... %i entities spawned, %i inhibited\n\n", num, inhibit );
 	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("... %i entities spawned, %i inhibited\r", num, inhibit);
 }
 

@@ -3326,6 +3326,7 @@ void idCollisionModelManagerLocal::BuildModels( const idMapFile *mapFile ) {
 	common->Printf( "%6i models\n", numModels );
 	PrintModelInfo( &model );
 	common->Printf( "%.0f msec to load collision data.\n", timer.Milliseconds() );
+	common->PacifierUpdate(LOAD_KEY_COLLISION_DONE,0); // grayman #3763
 }
 
 
@@ -3339,6 +3340,8 @@ void idCollisionModelManagerLocal::LoadMap( const idMapFile *mapFile ) {
 	if ( mapFile == NULL ) {
 		common->Error( "idCollisionModelManagerLocal::LoadMap: NULL mapFile" );
 	}
+
+	common->PacifierUpdate(LOAD_KEY_COLLISION_START,0); // grayman #3763
 
 	// check whether we can keep the current collision map based on the mapName and mapFileTime
 	if ( loaded ) {

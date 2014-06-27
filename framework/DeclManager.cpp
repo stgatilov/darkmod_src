@@ -1446,12 +1446,16 @@ idDeclManagerLocal::MediaPrint
 This is just used to nicely indent media caching prints
 ===================
 */
-void idDeclManagerLocal::MediaPrint( const char *fmt, ... ) {
-	if ( !decl_show.GetInteger() ) {
+void idDeclManagerLocal::MediaPrint( const char *fmt, ... )
+{
+	if ( !decl_show.GetInteger() )
+	{
 		return;
 	}
-	for ( int i = 0 ; i < indent ; i++ ) {
-		common->Printf( "    " );
+	idStr prefix = ""; // grayman #3763 - accommodate timestamp prefixes
+	for ( int i = 0 ; i < indent ; i++ )
+	{
+		prefix += "\t";
 	}
 	va_list		argptr;
 	char		buffer[1024];
@@ -1460,7 +1464,7 @@ void idDeclManagerLocal::MediaPrint( const char *fmt, ... ) {
 	va_end (argptr);
 	buffer[sizeof(buffer)-1] = '\0';
 
-	common->Printf( "%s", buffer );
+	common->Printf( "%s%s", prefix.c_str(),buffer );
 }
 
 /*

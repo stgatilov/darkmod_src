@@ -105,6 +105,9 @@ public:
 	// The session calls this right before a new level is loaded.
 	virtual void				SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo ) = 0;
 
+	// The session calls this to allow painting of the "Mission Loaded / Press Attack" gui
+	virtual void				SetTime2Start() = 0; // grayman #3763
+
 	// Loads a map and spawns all the entities.
 	virtual void				InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed ) = 0;
 

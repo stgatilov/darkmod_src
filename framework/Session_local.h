@@ -85,7 +85,7 @@ public:
 
 	virtual void		UpdateScreen( bool outOfSequence = true );
 
-	virtual void		PacifierUpdate();
+	virtual void		PacifierUpdate(loadkey_t key, int count); // grayman #3763
 
 	virtual void		Frame();
 
@@ -160,7 +160,11 @@ public:
 
 	bool				insideExecuteMapChange;	// draw loading screen and update
 												// screen on prints
-	int					bytesNeededForMapLoad;	// 
+	//int				bytesNeededForMapLoad;	// grayman #3763 - no longer used
+
+	float				pct;					// grayman #3763 - used by PacifierUpdate()
+	float				pct_delta;				// grayman #3763 - used by PacifierUpdate()
+	int					loadDoneTime;			// grayman #3763 - used by PacifierUpdate()
 
 	// we don't want to redraw the loading screen for every single
 	// console print that happens
@@ -272,7 +276,7 @@ public:
 
 	void				TestGUI( const char *name );
 
-	int					GetBytesNeededForMapLoad( const char *mapName );
+//	int					GetBytesNeededForMapLoad( const char *mapName ); // #3763 debug - no longer used
 	void				SetBytesNeededForMapLoad( const char *mapName, int bytesNeeded );
 
 	void				ExecuteMapChange( bool noFadeWipe = false );

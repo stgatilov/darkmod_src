@@ -516,3 +516,5 @@ private:			// collision map data
 
 // for debugging
 extern idCVar cm_debugCollision;
+
+

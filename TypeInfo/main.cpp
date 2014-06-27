@@ -72,6 +72,7 @@ public:
 	virtual void			DWarning( const char *fmt, ...) { /*STDIO_PRINT( "WARNING: ", "\n" );*/ }
 	virtual void			PrintWarnings( void ) {}
 	virtual void			ClearWarnings( const char *reason ) {}
+	virtual void			PacifierUpdate( loadkey_t key, int count ) {} // grayman #3763
 	virtual void			Error( const char *fmt, ... ) { STDIO_PRINT( "ERROR: ", "\n" ); exit(0); }
 	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit(0); }
 	virtual const char *		Translate(const char* msg) { return NULL; }

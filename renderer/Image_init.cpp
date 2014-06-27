@@ -33,6 +33,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #define QUADRATIC_HEIGHT	4
 #define BORDER_CLAMP_SIZE	32
 
+#define LOAD_KEY_IMAGE_GRANULARITY 10 // grayman #3763
+
 const char *imageFilter[] = {
 	"GL_LINEAR_MIPMAP_NEAREST",
 	"GL_LINEAR_MIPMAP_LINEAR",
@@ -1355,6 +1357,7 @@ idImage *idImageManager::AllocImage( const char *name ) {
 	idImage *image = new idImage;
 
 	images.Append( image );
+	common->Printf("AllocImage added image '%s'\n",name);
 
 	const int hash = idStr( name ).FileNameHash();
 
@@ -1370,7 +1373,7 @@ idImage *idImageManager::AllocImage( const char *name ) {
 ==================
 ImageFromFunction
 
-Images that are procedurally generated are allways specified
+Images that are procedurally generated are always specified
 with a callback which must work at any time, allowing the OpenGL
 system to be completely regenerated if needed.
 ==================
@@ -1972,11 +1975,13 @@ blocking load on demand
 preload low mip levels, background load remainder on demand
 ====================
 */
-void idImageManager::EndLevelLoad() {
+void idImageManager::EndLevelLoad()
+{
 	const int start = Sys_Milliseconds();
 	insideLevelLoad = false;
 
-	if ( idAsyncNetwork::serverDedicated.GetInteger() ) {
+	if ( idAsyncNetwork::serverDedicated.GetInteger() )
+	{
 		return;
 	}
 
@@ -1987,36 +1992,57 @@ void idImageManager::EndLevelLoad() {
 	int	loadCount = 0;
 
 	// purge the ones we don't need
-	for ( int i = 0 ; i < images.Num() ; i++ ) {
+	for ( int i = 0 ; i < images.Num() ; i++ )
+	{
 		idImage	*image = images[ i ];
-		if ( image->generatorFunction ) {
+		if ( image->generatorFunction )
+		{
 			continue;
-		} else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad ) {
-//			common->Printf( "Purging %s\n", image->imgName.c_str() );
+		}
+		else if ( !image->levelLoadReferenced && !image->referencedOutsideLevelLoad )
+		{
+			//common->Printf( "Purging %s\n", image->imgName.c_str() );
 			purgeCount++;
 			image->PurgeImage();
-		} else if ( image->texnum != idImage::TEXTURE_NOT_LOADED ) {
-//			common->Printf( "Keeping %s\n", image->imgName.c_str() );
+		}
+		else if ( image->texnum != idImage::TEXTURE_NOT_LOADED )
+		{
+			//common->Printf( "Keeping %s\n", image->imgName.c_str() );
 			keepCount++;
 		}
 	}
 
+	common->PacifierUpdate(LOAD_KEY_IMAGES_START,images.Num()/LOAD_KEY_IMAGE_GRANULARITY); // grayman #3763
+
 	// load the ones we do need, if we are preloading
-	for ( int i = 0 ; i < images.Num() ; i++ ) {
+	for ( int i = 0 ; i < images.Num() ; i++ )
+	{
 		idImage	*image = images[ i ];
-		if ( image->generatorFunction ) {
+		if ( image->generatorFunction )
+		{
 			continue;
 		}
 
-		if ( image->levelLoadReferenced && image->texnum == idImage::TEXTURE_NOT_LOADED && !image->partialImage ) {
-//			common->Printf( "Loading %s\n", image->imgName.c_str() );
+		if ( image->levelLoadReferenced && (image->texnum == idImage::TEXTURE_NOT_LOADED) && !image->partialImage )
+		{
+			//common->Printf( "Loading image %d: %s\n",i,image->imgName.c_str() );
 			loadCount++;
 			image->ActuallyLoadImage( true, false );
 
-			if ( ( loadCount & 15 ) == 0 ) {
+			/* grayman #3763 - old way
+			if ( ( loadCount & 15 ) == 0 )
+			{
 				session->PacifierUpdate();
 			}
+			*/
 		}
+
+		// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
+		if ( (i % LOAD_KEY_IMAGE_GRANULARITY) == 0)
+		{
+			common->PacifierUpdate(LOAD_KEY_IMAGES_INTERIM,i);
+		}
+
 	}
 
 	const int end = Sys_Milliseconds();
@@ -2024,6 +2050,7 @@ void idImageManager::EndLevelLoad() {
 	common->Printf( "%5i kept from previous\n", keepCount );
 	common->Printf( "%5i new loaded\n", loadCount );
 	common->Printf( "all images loaded in %5.1f seconds\n", ( end - start ) * 0.001f );
+	common->PacifierUpdate(LOAD_KEY_DONE,0); // grayman #3763
 	common->Printf( "----------------------------------------\n" );
 }
 

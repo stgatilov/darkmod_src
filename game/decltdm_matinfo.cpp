@@ -148,12 +148,12 @@ void tdmDeclTDM_MatInfo::precacheMap( idMapFile *map ) {
 				int s;
 				for ( s = 0 ; s < numSides ; s++ ) {
 					idMapBrushSide *side = brush->GetSide(s);
-					declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", side->GetMaterial() );
+					declManager->MediaPrint( "Precaching brush TDM_MatInfo %s\n", side->GetMaterial() );
 					declManager->FindType( DECL_TDM_MATINFO, side->GetMaterial() );
 				}
 			} else if ( prim->GetType() == idMapPrimitive::TYPE_PATCH ) {
 				idMapPatch *patch = dynamic_cast<idMapPatch*>(prim);
-				declManager->MediaPrint( "Precaching TDM_MatInfo %s\n", patch->GetMaterial() );
+				declManager->MediaPrint( "Precaching patch TDM_MatInfo %s\n", patch->GetMaterial() );
 				declManager->FindType( DECL_TDM_MATINFO, patch->GetMaterial() );
 			} else {
 				gameLocal.Warning( "tdmDeclTDM_MatInfo(): unknown primitive type: %d", prim->GetType() );

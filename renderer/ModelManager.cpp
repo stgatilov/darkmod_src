@@ -545,9 +545,11 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 			loadCount++;
 			model->LoadModel();
 
+			/* grayman #3763 - obsolete
 			if ( ( loadCount & 15 ) == 0 ) {
 				session->PacifierUpdate();
 			}
+			*/
 		}
 	}
 

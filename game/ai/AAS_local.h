@@ -165,6 +165,11 @@ public:
 	virtual void AddElevator(CMultiStateMover* mover);
 
 	/**
+	 * grayman #3763 - retrieve cluster size
+	 */
+	virtual int GetClusterSize();
+
+	/**
 	 * greebo: Assembles the elevator routing information.
 	 */
 	virtual void CompileEAS();

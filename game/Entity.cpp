@@ -6900,7 +6900,7 @@ void idEntity::ActivateTargets( idEntity *activator ) const
 			continue;
 		}
 
-		// gameLocal.Printf( "Activating entity '%s' (from %s)", name.c_str(), activator == NULL ? "" : activator->GetName() );
+		// gameLocal.Printf("Activating entity '%s' (from '%s')\n", ent->GetName(), activator == NULL ? "NULL" : activator->GetName());
 		
 		// Call the virtual function
 		ent->Activate(activator);

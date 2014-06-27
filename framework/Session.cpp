@@ -46,6 +46,17 @@ const int PREVIEW_Y = 31;
 const int PREVIEW_WIDTH = 398;
 const int PREVIEW_HEIGHT = 298;
 
+// grayman #3763 - loading bar progress at key points
+
+const float LOAD_KEY_START_PROGRESS = 0.02f;
+const float LOAD_KEY_COLLISION_START_PROGRESS = 0.03f;
+const float LOAD_KEY_COLLISION_DONE_PROGRESS = 0.04f;
+const float LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS = 0.05f;
+const float LOAD_KEY_ROUTING_START_PROGRESS = 0.36f;
+const float LOAD_KEY_ROUTING_DONE_PROGRESS = 0.43f;
+const float LOAD_KEY_IMAGES_START_PROGRESS = 0.45f;
+const float LOAD_KEY_DONE_PROGRESS = 1.00f;
+
 void RandomizeStack( void ) {
 	// attempt to force uninitialized stack memory bugs
 	int		bytes = 4000000;
@@ -243,7 +254,7 @@ void idSessionLocal::Clear() {
 	guiMsgRestore = NULL;
 	msgIgnoreButtons = false;
 
-	bytesNeededForMapLoad = 0;
+	//bytesNeededForMapLoad = 0; // grayman #3763 - no longer used
 
 #if ID_CONSOLE_LOCK
 	emptyDrawCount = 0;
@@ -1318,6 +1329,7 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 idSessionLocal::GetBytesNeededForMapLoad
 ===============
 */
+/* grayman #3763 - no longer used
 int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName ) {
 	const idDecl *mapDecl = declManager->FindType( DECL_MAPDEF, mapName, false );
 	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( mapDecl );
@@ -1331,6 +1343,7 @@ int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName ) {
 		}
 	}
 }
+*/
 
 /*
 ===============
@@ -1440,6 +1453,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	// and draw the loading gui instead of game draws
 	insideExecuteMapChange = true;
 
+	/* grayman #3763 - no longer used
 	// if this works out we will probably want all the sizes in a def file although this solution will 
 	// work for new maps etc. after the first load. we can also drop the sizes into the default.cfg
 	fileSystem->ResetReadCount();
@@ -1448,6 +1462,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	} else {
 		bytesNeededForMapLoad = 30 * 1024 * 1024;
 	}
+	*/
 
 	ClearWipe();
 
@@ -1536,7 +1551,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 
 	common->PrintWarnings();
 
-	if ( guiLoading && bytesNeededForMapLoad ) {
+	if ( guiLoading /*&& bytesNeededForMapLoad*/ ) {
 		float pct = guiLoading->State().GetFloat( "map_loading" );
 		if ( pct < 0.0f ) {
 			pct = 0.0f;
@@ -2122,30 +2137,137 @@ void idSessionLocal::DrawCmdGraph() {
 idSessionLocal::PacifierUpdate
 ===============
 */
-void idSessionLocal::PacifierUpdate() {
-	if ( !insideExecuteMapChange ) {
+void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
+{
+	/* 'count' is used as follows:
+	  
+	   - for key points, it is either '0' (not used), or the
+	     total number of expected interim 'sub-key' points, which
+	     is used to determine the incremental amount to be added to
+	     the loading percentage as each 'sub-key' point is reported.
+	  
+	   - for 'sub-key' points, it is the number of objects processed,
+	     but it's not used
+	*/
+
+	if ( !insideExecuteMapChange )
+	{
 		return;
 	}
 
 	// never do pacifier screen updates while inside the
 	// drawing code, or we can have various recursive problems
-	if ( insideUpdateScreen ) {
+	if ( insideUpdateScreen )
+	{
 		return;
 	}
 
-	int	time = eventLoop->Milliseconds();
+	if ( guiLoading /*&& bytesNeededForMapLoad*/ )
+	{
+		// grayman #3763 - new way
+		// 'bytesNeededForMapLoad' is a constant,
+		// so it can't reflect the varying amounts of data needed
+		// to load a map. Small maps will be more accurate, and
+		// large maps will be way off the mark, relegating most of
+		// the map load to the time after map_loading == 100%. The
+		// only accurate way to display the loading bar is to know
+		// ahead of time how many bytes will need to be read, but
+		// we can't know that until after the first time the map is loaded.
+		//
+		// Replaced with a method that determines average "% complete"
+		// settings at key loading points, and
+		// bump the loading bar to those settings as the load progresses.
+		//
+		// Leave a short time (~5s) after 100% is reached so that the loading
+		// messages that replace the bar can be displayed for a short time.
+		// This is done by reducing the number of textures that need to be
+		// loaded, which increases the amount of progress shown as each is
+		// loaded. Once pct reaches 1.00, the loading bar shows 100% and
+		// switches what's painted based on what the map author has the
+		// gui doing. Meanwhile, the extra textures continue to load in the
+		// background until all are loaded. At that point, it's only a few
+		// ms before the "Mission Loaded / Press Attack" screen is painted
+		// and the player can start the mission.
 
-	if ( time - lastPacifierTime < 100 ) {
-		return;
-	}
-	lastPacifierTime = time;
+		int	time = eventLoop->Milliseconds();
 
-	if ( guiLoading && bytesNeededForMapLoad ) {
-		float n = fileSystem->GetReadCount();
-		float pct = ( n / bytesNeededForMapLoad );
-		// pct = idMath::ClampFloat( 0.0f, 100.0f, pct );
+		switch (key)
+		{
+		case LOAD_KEY_START: // Start loading map
+			pct = LOAD_KEY_START_PROGRESS;
+			loadDoneTime = 0;
+			break;
+		case LOAD_KEY_COLLISION_START: // Start loading collision data
+			pct = LOAD_KEY_COLLISION_START_PROGRESS;
+			break;
+		case LOAD_KEY_COLLISION_DONE: // Collision data loaded, start spawning player
+			pct = LOAD_KEY_COLLISION_DONE_PROGRESS;
+			break;
+		case LOAD_KEY_SPAWN_ENTITIES_START: // Player spawned, start spawning entities
+			pct = LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS;
+			pct_delta = (LOAD_KEY_ROUTING_START_PROGRESS - LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS)/(float)count;
+			break;
+		case LOAD_KEY_SPAWN_ENTITIES_INTERIM: // spawning entities (finer granularity)
+			pct += pct_delta;
+			if ( time - lastPacifierTime < 500 )
+			{
+				return;
+			}
+			break;
+		case LOAD_KEY_ROUTING_START: // entities spawned, start compiling routing data
+			pct = LOAD_KEY_ROUTING_START_PROGRESS;
+			pct_delta = (LOAD_KEY_ROUTING_DONE_PROGRESS - LOAD_KEY_ROUTING_START_PROGRESS)/(float)count;
+			break;
+		case LOAD_KEY_ROUTING_INTERIM: // compiling routing data (finer granularity)
+			pct += pct_delta;
+			if ( time - lastPacifierTime < 500 )
+			{
+				return;
+			}
+			break;
+		case LOAD_KEY_ROUTING_DONE: // routing data compiled, spawn player
+			pct = LOAD_KEY_ROUTING_DONE_PROGRESS;
+			break;
+		case LOAD_KEY_IMAGES_START: // player spawned, start loading textures
+			pct = LOAD_KEY_IMAGES_START_PROGRESS;
+			
+			// the -35 below guarantees there will be
+			// some time between the loading bar
+			// hitting 100% and the "Mission Loaded / Press Attack" screen
+			pct_delta = (LOAD_KEY_DONE_PROGRESS - LOAD_KEY_IMAGES_START_PROGRESS)/(float)(count-35);
+			break;
+		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
+			pct += pct_delta;
+			if ( (pct >= 1.00f) && (loadDoneTime == 0))
+			{
+				// 5s delay between load bar at 100% and Mission Start gui display
+				loadDoneTime = timeGetTime() + 5000;
+			}
+			if ( time - lastPacifierTime < 500 )
+			{
+				return;
+			}
+			break;
+		case LOAD_KEY_DONE: // textures loaded, mission done loading
+			// send the loading gui the final pct
+			break;
+		default:
+			break;
+		}
+
+		lastPacifierTime = time;
+
 		guiLoading->SetStateFloat( "map_loading", pct );
 		guiLoading->StateChanged( com_frameTime );
+		// end of new way
+
+		/* grayman #3763 - old way
+		float n = fileSystem->GetReadCount();
+		float pct = ( n / bytesNeededForMapLoad );
+		guiLoading->SetStateFloat( "map_loading", pct );
+		guiLoading->StateChanged( com_frameTime );
+		// end of old way
+		*/
 	}
 
 	Sys_GenerateEvents();
@@ -2348,7 +2470,7 @@ void idSessionLocal::Frame() {
 		latchedTicNumber = com_ticNumber;
 	}
 
-	// se how many tics we should have before continuing
+	// see how many tics we should have before continuing
 	int	minTic = latchedTicNumber + 1;
 	if ( com_minTics.GetInteger() > 1 ) {
 		minTic = lastGameTic + com_minTics.GetInteger();
@@ -2534,6 +2656,13 @@ void idSessionLocal::RunGameTic() {
 			cmd = usercmdGen->GetDirectUsercmd();
 		}
 		lastGameTic++;
+	}
+
+	// grayman #3763 - allow "Mission Start" gui if the mission uses it
+	if ( ( loadDoneTime > 0 ) && ( timeGetTime() > loadDoneTime ) )
+	{
+		game->SetTime2Start();
+		loadDoneTime = 0;
 	}
 
 	// run the game logic every player move

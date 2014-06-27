@@ -2205,6 +2205,7 @@ void idRenderSystemLocal::EndLevelLoad( void ) {
 	if ( r_forceLoadImages.GetBool() ) {
 		RB_ShowImages();
 	}
+	common->Printf( "----------------------------------------\n" );
 }
 
 /*

@@ -1690,6 +1690,11 @@ void idAASLocal::AddElevator(CMultiStateMover* mover)
 	elevatorSystem->AddElevator(mover);
 }
 
+int idAASLocal::GetClusterSize()
+{
+	return file->GetNumClusters();
+}
+
 void idAASLocal::CompileEAS()
 {
 	elevatorSystem->Compile();

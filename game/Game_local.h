@@ -694,6 +694,11 @@ public:
 	// grayman #2933 - store the start position selected during the mission briefing, if any
 	const char *			m_StartPosition;
 
+	// grayman #3763 - true when the Mission Start gui can be displayed, or the mission started,
+	// based on when the Loading Bar reaches 100%
+	bool					m_time2Start;
+
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -709,6 +714,7 @@ public:
 
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
+	virtual void			SetTime2Start(); // grayman #3763
 	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed );
 	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );
 	virtual void			SaveGame( idFile *saveGameFile );
@@ -747,6 +753,7 @@ public:
 	virtual void			SwitchTeam( int clientNum, int team );
 
 	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
+
 
 	// ---------------------- Public idGameLocal Interface -------------------
 
@@ -1051,7 +1058,7 @@ private:
 	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
-	
+
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger
 	{
@@ -1079,6 +1086,7 @@ private:
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
 	bool					InhibitEntitySpawn( idDict &spawnArgs );
+
 							// spawn entities from the map file
 	void					SpawnMapEntities( void );
 							// commons used by init, shutdown, and restart
