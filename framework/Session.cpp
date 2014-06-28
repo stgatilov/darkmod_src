@@ -2241,7 +2241,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			if ( (pct >= 1.00f) && (loadDoneTime == 0))
 			{
 				// 5s delay between load bar at 100% and Mission Start gui display
-				loadDoneTime = timeGetTime() + 5000;
+				loadDoneTime = Sys_Milliseconds() + 5000;
 			}
 			if ( time - lastPacifierTime < 500 )
 			{
@@ -2659,7 +2659,7 @@ void idSessionLocal::RunGameTic() {
 	}
 
 	// grayman #3763 - allow "Mission Start" gui if the mission uses it
-	if ( ( loadDoneTime > 0 ) && ( timeGetTime() > loadDoneTime ) )
+	if ( ( loadDoneTime > 0 ) && ( Sys_Milliseconds() > loadDoneTime ) )
 	{
 		game->SetTime2Start();
 		loadDoneTime = 0;
