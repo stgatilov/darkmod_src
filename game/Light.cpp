@@ -242,6 +242,7 @@ idLight::idLight()
 	soundWasPlaying		= false;
 	m_MaxLightRadius	= 0.0f;
 	m_LightMaterial		= NULL;
+	m_BlendlightTexture = NULL; // SteveL #3752
 
 	/*!
 	Darkmod LAS
@@ -347,6 +348,8 @@ void idLight::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat(m_MaxLightRadius);
 	savefile->WriteInt(LASAreaIndex);
 
+	savefile->WriteMaterial(m_BlendlightTexture); // #3752
+
 	// Don't save m_LightMaterial
 }
 
@@ -424,6 +427,8 @@ void idLight::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat(m_MaxLightRadius);
 	savefile->ReadInt(LASAreaIndex);
+
+	savefile->ReadMaterial(m_BlendlightTexture); // #3752
 
 	lightDefHandle = -1;
 
@@ -825,6 +830,14 @@ void idLight::On( void )
 		spawnArgs.Set( "skin", skinName );
 	}
  */	
+	
+	// SteveL #3752: blend lights need their shader restoring to turn "on"
+	if ( m_BlendlightTexture != NULL )
+	{
+		SetShader( m_BlendlightTexture->GetName() );
+		m_BlendlightTexture = NULL;
+	}
+
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }
@@ -876,6 +889,16 @@ void idLight::Off( const bool stopSound )
 		spawnArgs.Set( "skin", skinName );
 	}
  */	
+
+	// SteveL #3752: blend lights need their shader removing to turn "off"
+	if (IsBlend())
+	{
+		// Remember that this happened and what the shader was, as 
+		// IsBlend() will be false after resetting shader.
+		m_BlendlightTexture = renderLight.shader;
+		SetShader("");
+	}
+
 	SetLightLevel();
 	BecomeActive( TH_UPDATEVISUALS );
 }

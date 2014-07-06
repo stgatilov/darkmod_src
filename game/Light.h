@@ -356,6 +356,14 @@ private:
 	 */
 	CLightMaterial	*m_LightMaterial;
 
+	/**
+	* SteveL #3752: Allow blend lights to be toggled by remembering the material for
+	* replacement later. Do not re-use m_MaterialName because (1) it might be changed so
+	* that it updates when SetShader() is called, which would break it for this purpose,
+	* and (2) m_MaterialName is not restored from save games.
+	*/
+	const idMaterial *m_BlendlightTexture;
+
 public:
 
 	/**
