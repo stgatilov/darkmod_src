@@ -288,6 +288,7 @@ void CModMenu::DisplayBriefingPage(idUserInterface* gui)
 	gui->SetStateString("BriefingText", briefing);
 	gui->SetStateBool("ScrollDownVisible", scrollDown);
 	gui->SetStateBool("ScrollUpVisible", scrollUp);
+		gameLocal.Printf("##### Display Briefing Page #####\n"); // grayman debug
 }
 
 void CModMenu::UpdateGUI(idUserInterface* gui)

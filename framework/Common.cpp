@@ -92,9 +92,9 @@ idCVar com_showMemoryUsage( "com_showMemoryUsage", "0", CVAR_BOOL|CVAR_SYSTEM|CV
 idCVar com_showAsyncStats( "com_showAsyncStats", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show async network stats" );
 idCVar com_showSoundDecoders( "com_showSoundDecoders", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show sound decoders" );
 
-idCVar com_timestampPrints( "com_timestampPrints", "0", CVAR_SYSTEM, "print time with each console print, 1 = sec, 2 = msec", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar com_timestampPrints( "com_timestampPrints", "2", CVAR_SYSTEM, "print time with each console print, 1 = sec, 2 = msec", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> ); // grayman debug - reset to 0 when done
 idCVar com_timescale( "timescale", "1", CVAR_SYSTEM | CVAR_FLOAT, "scales the time", 0.1f, 10.0f );
-idCVar com_logFile( "logFile", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "1 = buffer log, 2 = flush after each print", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar com_logFile( "logFile", "1", CVAR_SYSTEM | CVAR_NOCHEAT, "1 = buffer log, 2 = flush after each print", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> ); // grayman debug - reset to 0 when done
 idCVar com_logFileName( "logFileName", "qconsole.log", CVAR_SYSTEM | CVAR_NOCHEAT, "name of log file, if empty, qconsole.log will be used" );
 idCVar com_makingBuild( "com_makingBuild", "0", CVAR_BOOL | CVAR_SYSTEM, "1 when making a build" );
 idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "update the load size after loading a map" );
@@ -155,6 +155,8 @@ public:
 	virtual void				DWarning( const char *fmt, ...) id_attribute((format(printf,2,3)));
 	virtual void				PrintWarnings( void );
 	virtual void				ClearWarnings( const char *reason );
+	virtual void				PreprocessImageBegin( void ); // grayman debug
+	virtual void				PreloadImages( void ); // grayman debug
 	virtual void				PacifierUpdate( loadkey_t key, int count ); // grayman #3763
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3)));
@@ -611,6 +613,26 @@ void idCommonLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 	session->PacifierUpdate(key, count);
 }
 
+/*
+==================
+idCommonLocal::PreprocessImageBegin
+==================
+*/
+void idCommonLocal::PreprocessImageBegin() // grayman debug
+{
+	declManager->BeginLevelLoad();
+	globalImages->BeginLevelLoad();
+}
+
+/*
+==================
+idCommonLocal::PreloadImages
+==================
+*/
+void idCommonLocal::PreloadImages() // grayman debug
+{
+	globalImages->EndLevelLoad();
+}
 
 /*
 ==================

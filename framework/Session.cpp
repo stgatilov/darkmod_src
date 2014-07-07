@@ -48,6 +48,9 @@ const int PREVIEW_HEIGHT = 298;
 
 // grayman #3763 - loading bar progress at key points
 
+
+
+/* use these when images are loaded after entities are spawned
 const float LOAD_KEY_START_PROGRESS = 0.02f;
 const float LOAD_KEY_COLLISION_START_PROGRESS = 0.03f;
 const float LOAD_KEY_COLLISION_DONE_PROGRESS = 0.04f;
@@ -55,6 +58,17 @@ const float LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS = 0.05f;
 const float LOAD_KEY_ROUTING_START_PROGRESS = 0.36f;
 const float LOAD_KEY_ROUTING_DONE_PROGRESS = 0.43f;
 const float LOAD_KEY_IMAGES_START_PROGRESS = 0.45f;
+const float LOAD_KEY_DONE_PROGRESS = 1.00f;
+*/
+
+// use these when images are preprocessed during the briefing
+const float LOAD_KEY_START_PROGRESS = 0.05f;
+const float LOAD_KEY_COLLISION_START_PROGRESS = 0.07f;
+const float LOAD_KEY_COLLISION_DONE_PROGRESS = 0.09f;
+const float LOAD_KEY_SPAWN_ENTITIES_START_PROGRESS = 0.12f;
+const float LOAD_KEY_ROUTING_START_PROGRESS = 0.84f;
+const float LOAD_KEY_ROUTING_DONE_PROGRESS = 1.00f;
+//const float LOAD_KEY_IMAGES_START_PROGRESS = 0.45f;
 const float LOAD_KEY_DONE_PROGRESS = 1.00f;
 
 void RandomizeStack( void ) {
@@ -1438,7 +1452,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 
 	// note which media we are going to need to load
 	if ( !reloadingSameMap ) {
-		declManager->BeginLevelLoad();
+		//declManager->BeginLevelLoad(); // grayman debug
 		renderSystem->BeginLevelLoad();
 		soundSystem->BeginLevelLoad();
 	}
@@ -1483,6 +1497,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	
 	int start = Sys_Milliseconds();
 
+	common->Printf("##### Map Initialization #####\n"); // grayman debug
 	common->Printf( "--------- Map Initialization ---------\n" );
 	common->Printf( "Map: %s\n", mapString.c_str() );
 
@@ -2228,7 +2243,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 		case LOAD_KEY_ROUTING_DONE: // routing data compiled, spawn player
 			pct = LOAD_KEY_ROUTING_DONE_PROGRESS;
 			break;
-		case LOAD_KEY_IMAGES_START: // player spawned, start loading textures
+/*		case LOAD_KEY_IMAGES_START: // player spawned, start loading textures
 			pct = LOAD_KEY_IMAGES_START_PROGRESS;
 			
 			// the -35 below guarantees there will be
@@ -2238,21 +2253,30 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 			break;
 		case LOAD_KEY_IMAGES_INTERIM: // loading textures (finer granularity)
 			pct += pct_delta;
-			if ( (pct >= 1.00f) && (loadDoneTime == 0))
-			{
+			//if ( (pct >= 1.00f) && (loadDoneTime == 0))
+			//{
 				// 5s delay between load bar at 100% and Mission Start gui display
-				loadDoneTime = Sys_Milliseconds() + 5000;
-			}
+				//loadDoneTime = timeGetTime() + 5000;
+			//}
 			if ( time - lastPacifierTime < 500 )
 			{
 				return;
 			}
-			break;
+			break;*/
 		case LOAD_KEY_DONE: // textures loaded, mission done loading
 			// send the loading gui the final pct
 			break;
 		default:
 			break;
+		}
+
+		// grayman debug - this was up in LOAD_KEY_IMAGES_INTERIM,
+		// but when we preload the images during the briefing, we
+		// want to have it here instead
+		if ( (pct >= 1.00f) && (loadDoneTime == 0))
+		{
+			// 5s delay between load bar at 100% and Mission Start gui display
+			loadDoneTime = timeGetTime() + 5000;
 		}
 
 		lastPacifierTime = time;
@@ -2261,7 +2285,7 @@ void idSessionLocal::PacifierUpdate(loadkey_t key, int count) // grayman #3763
 		guiLoading->StateChanged( com_frameTime );
 		// end of new way
 
-		/* grayman #3763 - old way
+		/* grayman debug - old way
 		float n = fileSystem->GetReadCount();
 		float pct = ( n / bytesNeededForMapLoad );
 		guiLoading->SetStateFloat( "map_loading", pct );

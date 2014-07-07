@@ -464,7 +464,7 @@ idCVar ui_spectate(					"ui_spectate",		si_spectateArgs[ 0 ],	CVAR_GAME | CVAR_U
 idCVar ui_chat(						"ui_chat",					"0",			CVAR_GAME | CVAR_USERINFO | CVAR_BOOL | CVAR_ROM | CVAR_CHEAT, "player is chatting" );
 
 // change anytime vars
-idCVar developer(					"developer",				"0",			CVAR_GAME | CVAR_BOOL, "" );
+idCVar developer(					"developer",				"1",			CVAR_GAME | CVAR_BOOL, "" ); // grayman debug - change back to '0' when done
 
 idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Aspect ratio of view, determines the ratio between FOV for x and y. Only used if r_fovRatio is 0:\n0 = 4:3\n1 = 16:9\n2 = 16:10\n3 = 5:4\n16:9 TV", 0, 4 );
 

@@ -113,11 +113,14 @@ void CMissionData::Clear( void )
 
 	m_PlayerTeam = 0;
 
+	// grayman debug - don't clear an existing m_mapFile
+	/*
 	if (m_mapFile != NULL)
 	{
 		delete m_mapFile;
 		m_mapFile = NULL;
 	}
+	*/
 }
 
 void CMissionData::Save(idSaveGame* savefile) const
@@ -2370,6 +2373,7 @@ void CMissionData::HandleMainMenuCommands(const idStr& cmd, idUserInterface* gui
 	}
 	else if (cmd == "objective_open_request")
 	{
+		gameLocal.Printf("##### Opening Objectives & Difficulty Screen #####\n"); // grayman debug
 		gui->HandleNamedEvent("GetObjectivesInfo");
 
 		// Let the GUI know which map to load

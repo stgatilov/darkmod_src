@@ -1615,7 +1615,7 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 		R_LoadImageProgram( imgName, &pic, &width, &height, &timestamp, &depth );
 
 		if ( pic == NULL ) {
-			common->Warning( "Couldn't load image: %s", imgName.c_str() );
+			//common->Warning( "Couldn't load image: %s", imgName.c_str() ); // grayman debug - uncomment when done
 			MakeDefault();
 			return;
 		}

@@ -1352,6 +1352,7 @@ bool idPlayer::WaitUntilReady()
 			ready = true;
 			return ready; // done
 		}
+		gameLocal.Printf("Paint Ready GUI\n"); // grayman debug
 	}
 
 	idUserInterface* gui = GetOverlay(m_WaitUntilReadyGuiHandle);

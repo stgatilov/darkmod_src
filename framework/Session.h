@@ -70,8 +70,9 @@ public:
 	// output, the mouse cursor will be released if running windowed.
 	virtual void	UpdateScreen( bool outOfSequence = true ) = 0;
 
-	// Called when it's time to update the Loading Bar progress.
-	virtual void	PacifierUpdate(loadkey_t key, int count) = 0; // grayman #3763
+	// Called when console prints happen, allowing the loading screen
+	// to redraw if enough time has passed.
+	virtual void	PacifierUpdate(loadkey_t key, int count) = 0; // grayman debug
 
 	// Called every frame, possibly spinning in place if we are
 	// above maxFps, or we haven't advanced at least one demo frame.

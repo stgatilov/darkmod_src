@@ -294,6 +294,7 @@
       <PreprocessorDefinitions>NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

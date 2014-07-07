@@ -19,6 +19,8 @@
 
 #include "precompiled_engine.h"
 #pragma hdrstop
+#include <boost/thread.hpp> // grayman debug
+#include <boost/lexical_cast.hpp> // grayman debug
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
@@ -236,7 +238,7 @@ private:
 	static void					TouchDecl_f( const idCmdArgs &args );
 };
 
-idCVar idDeclManagerLocal::decl_show( "decl_show", "0", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+idCVar idDeclManagerLocal::decl_show( "decl_show", "1", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> ); // grayman debug - return to '0' when done
 
 idDeclManagerLocal	declManagerLocal;
 idDeclManager *		declManager = &declManagerLocal;
@@ -1452,7 +1454,7 @@ void idDeclManagerLocal::MediaPrint( const char *fmt, ... )
 	{
 		return;
 	}
-	idStr prefix = ""; // grayman #3763 - accommodate timestamp prefixes
+	idStr prefix = ""; // grayman debug - accommodate timestamp prefixes
 	for ( int i = 0 ; i < indent ; i++ )
 	{
 		prefix += "\t";
@@ -1464,7 +1466,9 @@ void idDeclManagerLocal::MediaPrint( const char *fmt, ... )
 	va_end (argptr);
 	buffer[sizeof(buffer)-1] = '\0';
 
-	common->Printf( "%s%s", prefix.c_str(),buffer );
+	std::string btidstring = boost::lexical_cast<std::string>(boost::this_thread::get_id()); // get thread id
+
+	common->Printf( "%s: %s%s", btidstring.c_str(),prefix.c_str(),buffer );
 }
 
 /*
@@ -2144,8 +2148,6 @@ void idDeclLocal::ParseLocal( void ) {
 
 	// always free data before parsing
 	self->FreeData();
-
-	declManagerLocal.MediaPrint( "parsing %s %s\n", declManagerLocal.declTypes[type]->typeName.c_str(), name.c_str() );
 
 	// if no text source try to generate default text
 	if ( textSource == NULL ) {

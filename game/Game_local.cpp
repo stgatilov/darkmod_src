@@ -284,6 +284,8 @@ void idGameLocal::Clear( void )
 
 	m_time2Start = false; // grayman #3763
 
+	m_texturesLoaded = false; // grayman debug
+
 	m_GUICommandStack.Clear();
 	m_GUICommandArgs = 0;
 
@@ -1365,6 +1367,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	int i;
 	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0);
 
+	common->Printf( "##### Start loading map LOAD_KEY_START #####\n"); // grayman debug
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
 	// clear the sound system
@@ -1386,7 +1389,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 			mapFile = NULL;
 			Error( "Couldn't load %s", mapName );
 		}
-		tdmDeclTDM_MatInfo::precacheMap( mapFile );
+		//tdmDeclTDM_MatInfo::precacheMap( mapFile ); // grayman debug - moved to idGameLocal::LoadImages()
 	}
 	mapFileName = mapFile->GetName();
 
@@ -1471,11 +1474,13 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	currentLights.Clear();	// sikk - Soft Shadows PostProcess
 
+	common->Printf("##### Load AAS #####\n"); // grayman debug
 	// load navigation system for all the different monster sizes
 	for( i = 0; i < aasNames.Num(); i++ ) {
 		aasList[ i ]->Init( idStr( mapFileName ).SetFileExtension( aasNames[ i ] ).c_str(), mapFile->GetGeometryCRC() );
 	}
 
+	common->Printf("##### AAS Loaded #####\n"); // grayman debug
 	/*!
 	* The Dark Mod LAS: Init the Light Awareness System
 	* This must occur AFTER the AAS list is loaded
@@ -2530,6 +2535,127 @@ void idGameLocal::GetShakeSounds( const idDict *dict ) {
 
 /*
 ===================
+idGameLocal::CacheImages
+===================
+*/
+void idGameLocal::CacheImages( idDict *dict )
+{
+	const idKeyValue *kv;
+
+	if ( dict == NULL )
+	{
+		return;
+	}
+
+	kv = dict->MatchPrefix( "model" );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheImages - Precaching model %s\n", kv->GetValue().c_str() );
+			// precache models
+			if ( declManager->FindType( DECL_MODELDEF, kv->GetValue(), false ) == NULL ) {
+				// load any tdm_matinfo decls for materials referenced by the model
+				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( kv->GetValue() ) );
+			}
+		}
+		kv = dict->MatchPrefix( "model", kv );
+	}
+/*
+	kv = dict->FindKey( "s_shader" );
+	if ( kv && kv->GetValue().Length() ) {
+		declManager->FindType( DECL_SOUND, kv->GetValue() );
+	}
+*/
+/*
+	kv = dict->MatchPrefix( "snd", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->FindType( DECL_SOUND, kv->GetValue() );
+		}
+		kv = dict->MatchPrefix( "snd", kv );
+	}
+*/
+/*
+	kv = dict->MatchPrefix( "gui", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			if ( !idStr::Icmp( kv->GetKey(), "gui_noninteractive" )
+				|| !idStr::Icmpn( kv->GetKey(), "gui_parm", 8 )	
+				|| !idStr::Icmp( kv->GetKey(), "gui_inventory" ) ) {
+				// unfortunate flag names, they aren't actually a gui
+			} else {
+				declManager->MediaPrint( "Precaching gui %s\n", kv->GetValue().c_str() );
+				idUserInterface *gui = uiManager->Alloc();
+				if ( gui ) {
+					gui->InitFromFile( kv->GetValue() );
+					uiManager->DeAlloc( gui );
+				}
+			}
+		}
+		kv = dict->MatchPrefix( "gui", kv );
+	}
+*/
+	kv = dict->FindKey( "texture" );
+	if ( kv && kv->GetValue().Length() ) {
+		declManager->MediaPrint( "CacheImages - Precaching texture %s\n", kv->GetValue().c_str() );
+		declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+		declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
+	}
+
+	kv = dict->MatchPrefix( "mtr", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheImages - Precaching mtr %s\n", kv->GetValue().c_str() );
+			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+			declManager->FindType( DECL_TDM_MATINFO, kv->GetValue() );
+		}
+		kv = dict->MatchPrefix( "mtr", kv );
+	}
+
+	// handles hud icons
+	kv = dict->MatchPrefix( "inv_icon", NULL );
+	while ( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "CacheImages - Precaching inv_icon %s\n", kv->GetValue().c_str() );
+			declManager->FindType( DECL_MATERIAL, kv->GetValue() );
+		}
+		kv = dict->MatchPrefix( "inv_icon", kv );
+	}
+/*
+	kv = dict->MatchPrefix( "fx", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "Precaching fx %s\n", kv->GetValue().c_str() );
+			declManager->FindType( DECL_FX, kv->GetValue() );
+		}
+		kv = dict->MatchPrefix( "fx", kv );
+	}
+*/
+/*	kv = dict->MatchPrefix( "smoke", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			idStr prtName = kv->GetValue();
+			int dash = prtName.Find('-');
+			if ( dash > 0 ) {
+				prtName = prtName.Left( dash );
+			}
+			declManager->FindType( DECL_PARTICLE, prtName );
+		}
+		kv = dict->MatchPrefix( "smoke", kv );
+	}
+*/
+/*	kv = dict->MatchPrefix( "skin", NULL );
+	while( kv ) {
+		if ( kv->GetValue().Length() ) {
+			declManager->MediaPrint( "Precaching skin %s\n", kv->GetValue().c_str() );
+			declManager->FindType( DECL_SKIN, kv->GetValue() );
+		}
+		kv = dict->MatchPrefix( "skin", kv );
+	}
+*/
+}
+
+/*
+===================
 idGameLocal::CacheDictionaryMedia
 
 This is called after parsing an EntityDef and for each entity spawnArgs before
@@ -2562,7 +2688,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 				// precache .cm files only
 				collisionModelManager->LoadModel( kv->GetValue(), true );
 				// load any tdm_matinfo decls for materials referenced by the model
-				tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( kv->GetValue() ) );
+				//tdmDeclTDM_MatInfo::precacheModel( renderModelManager->FindModel( kv->GetValue() ) ); // grayman debug - already done
 			}
 		}
 		kv = dict->MatchPrefix( "model", kv );
@@ -2602,7 +2728,7 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		}
 		kv = dict->MatchPrefix( "gui", kv );
 	}
-
+/* grayman debug - already done
 	kv = dict->FindKey( "texture" );
 	if ( kv && kv->GetValue().Length() ) {
 		declManager->MediaPrint( "CacheDictionaryMedia - Precaching texture %s\n", kv->GetValue().c_str() );
@@ -2629,12 +2755,11 @@ void idGameLocal::CacheDictionaryMedia( const idDict *dict ) {
 		}
 		kv = dict->MatchPrefix( "inv_icon", kv );
 	}
-
+*/
 	kv = dict->MatchPrefix( "fx", NULL );
 	while( kv ) {
 		if ( kv->GetValue().Length() ) {
 			declManager->MediaPrint( "CacheDictionaryMedia - Precaching fx %s\n", kv->GetValue().c_str() );
-			declManager->MediaPrint( "Precaching fx %s\n", kv->GetValue().c_str() );
 			declManager->FindType( DECL_FX, kv->GetValue() );
 		}
 		kv = dict->MatchPrefix( "fx", kv );
@@ -3106,7 +3231,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		// set the user commands for this frame
 		memcpy(usercmds, clientCmds, numClients * sizeof(usercmds[0]));
 
-		if ( m_time2Start && player->WaitUntilReady() ) // grayman #3763
+		if ( m_texturesLoaded && m_time2Start && player->WaitUntilReady() ) // grayman debug
 		{
 			// Player got ready this frame, start timer
 			m_GamePlayTimer.Start();
@@ -3797,6 +3922,37 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);
 }
 
+// grayman debug - thread for loading images
+
+void idGameLocal::LoadImages()
+{
+	// Get the starting map file name
+	const idStr& curStartingMap = m_MissionManager->GetCurrentStartingMap();
+
+	if (curStartingMap.Length() == 0)
+	{
+		return;
+	}
+
+	m_texturesLoaded = false;
+
+	idStr filename = va("maps/%s", curStartingMap.c_str());
+
+	// Load the map from the missiondata class
+	idMapFile* file = m_MissionData->LoadMap(filename);
+
+	tdmDeclTDM_MatInfo::precacheMap( file );
+
+	// Go through entities, looking for images.
+
+	PreprocessEntities(file);
+
+	// Load images
+	common->PreloadImages(); // grayman debug
+
+	m_texturesLoaded = true;
+}
+
 /*
 ================
 idGameLocal::HandleMainMenuCommands
@@ -3923,14 +4079,11 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 	const idStr& cmd = m_GUICommandStack[0];
 
 	// seen the command and its arguments, now handle it
-
-	/*
-	if ( ( cmd != "mainmenu_heartbeat" ) && ( cmd != "briefingvideoheartbeat" ) && ( cmd != "log" ) )
+	if ( ( cmd != "mainmenu_heartbeat" ) && ( cmd != "briefingvideoheartbeat" ) && ( cmd != "log" ) ) // grayman debug - comment when done
 	{
 		// debug output, but ignore the frequent ones
 		Printf("MainMenu cmd: %s (%i args)\n", cmd.c_str(), numArgs);
 	}
-	*/
 
 	// Watch out for objectives GUI-related commands
 	// TODO: Handle here commands with arguments, too.
@@ -4441,6 +4594,8 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("CurrentMission", 1);
 
 		ClearPersistentInfo();
+		gameLocal.Printf("##### Briefing Video Started #####\n"); // grayman debug
+		_thread = ThreadPtr(new boost::thread(boost::bind(&idGameLocal::LoadImages, this))); // grayman debug
 	}
 	else if (cmd == "setlang")
 	{
@@ -4954,17 +5109,20 @@ void idGameLocal::SetupEAS()
 		}
 	}
 
+	gameLocal.Printf("##### Compile routing information LOAD_KEY_ROUTING_START #####\n"); // grayman debug
 	common->PacifierUpdate(LOAD_KEY_ROUTING_START,clusterCount); // grayman #3763
 
 	for (int aasNum = 0; aasNum < NumAAS(); aasNum++)
 	{
 		idAASLocal* aas = dynamic_cast<idAASLocal*>(GetAAS(aasNum));
-		if (aas != NULL)
+		if (aas == NULL)
 		{
-			aas->CompileEAS(); // will also update the Loading Bar
+			continue;
 		}
-	}
 
+		aas->CompileEAS();
+	}
+	gameLocal.Printf("##### Routing information compiled LOAD_KEY_ROUTING_DONE #####\n"); // grayman debug
 	common->PacifierUpdate(LOAD_KEY_ROUTING_DONE,0); // grayman #3763
 }
 
@@ -5247,6 +5405,46 @@ void idGameLocal::PrepareForMissionEnd()
 }
 
 /*
+===============
+idGameLocal::PreprocessEntities
+===============
+*/
+void idGameLocal::PreprocessEntities( idMapFile* file )
+{
+	int			i;
+	idMapEntity	*mapEnt;
+	int			numEntities;
+	idDict		args;
+
+	numEntities = file->GetNumEntities();
+	if ( numEntities == 0 )
+	{
+		Error( "...no entities" );
+	}
+
+	Printf("PreprocessEntities: Preprocessing %d entities\n", numEntities); // grayman debug
+
+	common->PreprocessImageBegin();
+
+	mapEnt = file->GetEntity( 0 );
+	args = mapEnt->epairs;
+	args.SetInt( "spawn_entnum", ENTITYNUM_WORLD );
+	CacheImages( &args );
+
+	for ( i = 1 ; i < numEntities ; i++ )
+	{
+		mapEnt = file->GetEntity( i );
+		if (mapEnt != NULL)
+		{
+			args = mapEnt->epairs;
+
+			// find images specified in the map entity
+			CacheImages(&args);
+		}
+	}
+}
+
+/*
 ==============
 idGameLocal::SpawnMapEntities
 
@@ -5278,6 +5476,7 @@ void idGameLocal::SpawnMapEntities( void )
 		Error( "...no entities" );
 	}
 
+	Printf( "##### Spawning %d entities LOAD_KEY_SPAWN_ENTITIES_START #####\n", numEntities); // grayman debug
 	Printf("Spawning entities\n");
 
 	// the worldspawn is a special that performs any global setup
@@ -5296,7 +5495,7 @@ void idGameLocal::SpawnMapEntities( void )
 	// Clear out the campaign info cache
 	campaignInfoEntities.Clear();
 
-	common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_START,numEntities/LOAD_KEY_ENTITY_GRANULARITY); // grayman #3763
+	common->PacifierUpdate(LOAD_KEY_SPAWN_ENTITIES_START,numEntities/10); // grayman debug
 
 	for ( i = 1 ; i < numEntities ; i++ )
 	{

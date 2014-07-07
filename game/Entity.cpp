@@ -1183,18 +1183,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// if interval not set, use twice per second
 	m_LOD->DistCheckInterval = ((d == 0) ? 500 : d);
 
-	// SteveL #3744
-	// If there are no LOD skin spawnargs set at all, then prevent LOD changing skins with a special
-	// m_SkinLODCur value of -1
-	if (dict->MatchPrefix("skin_lod_") == NULL)
-	{
-		m_SkinLODCur = -1;
-	}
-	else
-	{
-		m_SkinLODCur = 0;
-	}
-
+	m_SkinLODCur = 0;
 	m_ModelLODCur = 0;
 	m_LODLevel = 0;
 
@@ -2758,23 +2747,18 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 				}
 			}
 
-		
-		if (m_SkinLODCur != -1 && m_SkinLODCur != m_LODLevel) // SteveL #3744
+		if ( m_SkinLODCur != m_LODLevel)
 		{
-			const idDeclSkin *skinD = declManager->FindSkin(m_LOD->SkinLOD[m_LODLevel]);
+			const idDeclSkin *skinD = declManager->FindSkin( m_LOD->SkinLOD[m_LODLevel] );
 			if (skinD)
 			{
-				SetSkin(skinD);
+				SetSkin( skinD );
 			}
 			m_SkinLODCur = m_LODLevel;
 		}
-
-		if (m_LOD->noshadowsLOD != 0) // SteveL #3744
-		{
-			renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
-			renderLight.noShadows = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
-		}
-		
+		// level 0 is the default
+		renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
+		renderLight.noShadows = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
 
 		// switched LOD
 		return true;

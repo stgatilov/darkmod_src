@@ -2191,7 +2191,7 @@ idRenderSystemLocal::BeginLevelLoad
 */
 void idRenderSystemLocal::BeginLevelLoad( void ) {
 	renderModelManager->BeginLevelLoad();
-	globalImages->BeginLevelLoad();
+	//globalImages->BeginLevelLoad(); // grayman debug - already done during Preprocessing
 }
 
 /*
@@ -2201,10 +2201,12 @@ idRenderSystemLocal::EndLevelLoad
 */
 void idRenderSystemLocal::EndLevelLoad( void ) {
 	renderModelManager->EndLevelLoad();
-	globalImages->EndLevelLoad();
+	//globalImages->EndLevelLoad(); // grayman debug
 	if ( r_forceLoadImages.GetBool() ) {
 		RB_ShowImages();
 	}
+	common->Printf( "##### Done loading LOAD_KEY_DONE #####\n"); // grayman debug
+	common->PacifierUpdate(LOAD_KEY_DONE,0); // grayman debug
 	common->Printf( "----------------------------------------\n" );
 }
 

@@ -1357,7 +1357,6 @@ idImage *idImageManager::AllocImage( const char *name ) {
 	idImage *image = new idImage;
 
 	images.Append( image );
-	common->Printf("AllocImage added image '%s'\n",name);
 
 	const int hash = idStr( name ).FileNameHash();
 
@@ -2012,8 +2011,10 @@ void idImageManager::EndLevelLoad()
 		}
 	}
 
-	common->PacifierUpdate(LOAD_KEY_IMAGES_START,images.Num()/LOAD_KEY_IMAGE_GRANULARITY); // grayman #3763
 
+	//common->PacifierUpdate(LOAD_KEY_IMAGES_START,images.Num()/10); // grayman #3763
+	common->Printf( "##### Start loading %d needed images LOAD_KEY_IMAGES_START #####\n",images.Num()); // grayman debug
+	const int mid = Sys_Milliseconds(); // grayman debug
 	// load the ones we do need, if we are preloading
 	for ( int i = 0 ; i < images.Num() ; i++ )
 	{
@@ -2038,11 +2039,10 @@ void idImageManager::EndLevelLoad()
 		}
 
 		// grayman #3763 - update the loading bar every LOAD_KEY_IMAGE_GRANULARITY images
-		if ( (i % LOAD_KEY_IMAGE_GRANULARITY) == 0)
+		/*if ( (i % LOAD_KEY_IMAGE_GRANULARITY) == 0)
 		{
 			common->PacifierUpdate(LOAD_KEY_IMAGES_INTERIM,i);
-		}
-
+		}*/
 	}
 
 	const int end = Sys_Milliseconds();
@@ -2050,8 +2050,9 @@ void idImageManager::EndLevelLoad()
 	common->Printf( "%5i kept from previous\n", keepCount );
 	common->Printf( "%5i new loaded\n", loadCount );
 	common->Printf( "all images loaded in %5.1f seconds\n", ( end - start ) * 0.001f );
-	common->PacifierUpdate(LOAD_KEY_DONE,0); // grayman #3763
-	common->Printf( "----------------------------------------\n" );
+	common->Printf( "##### Done loading images #####\n"); // grayman debug
+	//common->PacifierUpdate(LOAD_KEY_DONE,0); // grayman #3763
+	//common->Printf( "----------------------------------------\n" );
 }
 
 /*

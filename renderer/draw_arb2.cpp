@@ -380,8 +380,6 @@ void R_LoadARBProgram( int progIndex ) {
 		return;
 	}
 
-	common->Printf( "%s", fullPath.c_str() );
-
 	// copy to stack memory and free
 	buffer = (char *)_alloca( strlen( fileBuffer ) + 1 );
 	strcpy( buffer, fileBuffer );

@@ -26,6 +26,8 @@
 #include "../framework/UsercmdGen.h"
 #endif
 
+#include <boost/thread.hpp> // grayman debug
+
 // enables water physics
 #define MOD_WATERPHYSICS
 
@@ -699,6 +701,14 @@ public:
 	bool					m_time2Start;
 
 
+	
+	// grayman debug - true when the background load of textures is complete
+	bool					m_texturesLoaded;
+
+	boost::mutex			mutex; // grayman debug
+
+
+
 	// ---------------------- Public idGame Interface -------------------
 
 							idGameLocal();
@@ -719,6 +729,7 @@ public:
 	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );
 	virtual void			SaveGame( idFile *saveGameFile );
 	virtual void			MapShutdown( void );
+	virtual void			CacheImages( idDict *dict ); // grayman debug
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
@@ -753,6 +764,8 @@ public:
 	virtual void			SwitchTeam( int clientNum, int team );
 
 	virtual bool			DownloadRequest( const char *IP, const char *guid, const char *paks, char urls[ MAX_STRING_CHARS ] );
+
+	virtual void			LoadImages(); // grayman debug
 
 
 	// ---------------------- Public idGameLocal Interface -------------------
@@ -1059,6 +1072,10 @@ private:
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
 
+	// grayman debug - test thread
+	typedef boost::shared_ptr<boost::thread> ThreadPtr;
+	ThreadPtr _thread;
+	
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger
 	{
@@ -1086,6 +1103,9 @@ private:
 	void					Clear( void );
 							// returns true if the entity shouldn't be spawned at all in this game type or difficulty level
 	bool					InhibitEntitySpawn( idDict &spawnArgs );
+
+							// grayman debug - preprocess entities to build the image list
+	void					PreprocessEntities( idMapFile* file );
 
 							// spawn entities from the map file
 	void					SpawnMapEntities( void );

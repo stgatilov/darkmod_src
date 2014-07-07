@@ -736,6 +736,7 @@ void CMissionManager::InitStartingMap()
 		// Tels: Avoid that startingmap containing a line-feed leads to errors
 		_curStartingMap.StripWhitespace();
 		fileSystem->FreeFile(reinterpret_cast<void*>(buffer));
+		gameLocal.Printf("CMissionManager::InitStartingMap() - we have a startingmap ('%s')\n",_curStartingMap.c_str()); // grayman debug
 	}
 	else
 	{

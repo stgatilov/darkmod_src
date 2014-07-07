@@ -202,6 +202,11 @@ public:
 
 	virtual void				PacifierUpdate(loadkey_t key, int count) = 0; // grayman #3763
 
+	virtual void				PreprocessImageBegin( void ) = 0; // grayman debug
+
+	virtual void				PreloadImages( void ) = 0; // grayman debug
+
+
 								// Issues a C++ throw. Normal errors just abort to the game loop,
 								// which is appropriate for media or dynamic logic errors.
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;

@@ -183,6 +183,7 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui)
 
 		// init and update the shop GUI
 		DisplayShop(gui);
+		gameLocal.Printf("Display Shop ...\n"); // grayman debug
 
 		// refresh the display so items are greyed out
 		gui->HandleNamedEvent("UpdateItemColours");
@@ -232,6 +233,7 @@ void CShop::HandleCommands(const char *menuCommand, idUserInterface *gui)
 	{
 		// The player is done shopping, now set up the starting equipment
 		CopyPurchasedIntoStartingEquipment();
+		gameLocal.Printf("Exit Shop ...\n"); // grayman debug
 	}
 }
 
