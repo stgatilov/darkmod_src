@@ -2324,8 +2324,14 @@ void idAI::Think( void )
 	}
 			
 	// save old origin and velocity for crashlanding
-	idVec3 oldOrigin = physicsObj.GetOrigin();
-	idVec3 oldVelocity = physicsObj.GetLinearVelocity();
+	// grayman #3699 - the physics object for an AI will change
+	// from idPhysics_Monster to idPhysics_AF if the AI becomes
+	// a ragdoll, so we need to use the current physics object
+
+	idVec3 oldOrigin = GetPhysics()->GetOrigin();
+	idVec3 oldVelocity = GetPhysics()->GetLinearVelocity();
+	//idVec3 oldOrigin = physicsObj.GetOrigin();
+	//idVec3 oldVelocity = physicsObj.GetLinearVelocity();
 
 	// grayman #3424 - clear pain flag
 	GetMemory().painStatePushedThisFrame = false;
@@ -6607,9 +6613,11 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	Unbind();
 
-	idStr deathSound = MouthIsUnderwater() ? "snd_death_liquid" : "snd_death";
-
-	StartSound( deathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
+	if (!AI_KNOCKEDOUT) // grayman #3699 - no death sound if you were KO'ed
+	{
+		idStr deathSound = MouthIsUnderwater() ? "snd_death_liquid" : "snd_death";
+		StartSound( deathSound.c_str(), SND_CHANNEL_VOICE, 0, false, NULL );
+	}
 
 	// Go to ragdoll mode immediately, if we don't have a death anim
 	// If death anims are enabled, we need to wait with going to ragdoll until PostKilled()
@@ -6695,7 +6703,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	m_dousedLightsSeen.Clear();
 
 	// grayman - print data re: being Killed
-	//gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
+	gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -11280,6 +11288,12 @@ void idAI::Event_Gas_Knockout( idEntity* inflictor )
 	}
 }
 
+void idAI::Fall_Knockout( idEntity* inflictor ) // grayman #3699
+{
+	m_koState = KO_FALL; // grayman #2604
+	Knockout( inflictor );
+}
+
 /*
 =====================
 idAI::Knockout
@@ -11394,6 +11408,7 @@ void idAI::PostKnockOut()
 			StartSound( "snd_airGasp", SND_CHANNEL_VOICE, 0, false, NULL );
 			break;
 		case KO_NOT:
+		case KO_FALL: // grayman #3699
 		default:
 			break;
 		}
@@ -11736,6 +11751,13 @@ void idAI::UpdateAir()
 
 	if (MouthIsUnderwater())
 	{
+		// grayman #3774 - keep track of responsibility for being underwater
+		// and potentially running out of air and dying
+		if (m_DroppedInLiquidByActor.GetEntity() == NULL)
+		{
+			m_DroppedInLiquidByActor = m_SetInMotionByActor.GetEntity();
+		}
+
 		// don't let KO'd AI hold their breath
 		if (AI_KNOCKEDOUT)
 		{
@@ -11760,7 +11782,8 @@ void idAI::UpdateAir()
 		m_AirTics = 0;
 
 		// do the damage, damage_noair is already defined for the player
-		Damage(NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0);
+		// grayman #3774 - note if anyone was responsible for putting this AI in the water
+		Damage(NULL, m_DroppedInLiquidByActor.GetEntity(), vec3_origin, "damage_noair", 1.0f, 0);
 	}
 
 	// set the timer for next air check

@@ -74,8 +74,11 @@ void KnockedOutState::Init(idAI* owner)
 	// Don't do anything else, the KO animation will finish in a few frames
 	// and the AI is done afterwards.
 */
-	owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_KO", 0);
-	owner->SetWaitState(ANIMCHANNEL_HEAD, "knock_out");
+	if (owner->m_koState != KO_FALL) // grayman #3699 - skip animations for a falling KO
+	{
+		owner->SetAnimState(ANIMCHANNEL_HEAD, "Head_KO", 0);
+		owner->SetWaitState(ANIMCHANNEL_HEAD, "knock_out");
+	}
 
 	// Tels: #3297 Run a KO FX
 	idStr koFX;
@@ -118,10 +121,10 @@ void KnockedOutState::Init(idAI* owner)
 void KnockedOutState::Think(idAI* owner)
 {
 	// wait until the animations are finished, then enter the knockout state
-	if (_waitingForKnockout 
-		&&	idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "knock_out"
-		&&	idStr(owner->WaitState(ANIMCHANNEL_LEGS)) != "knock_out"
-		&&	idStr(owner->WaitState(ANIMCHANNEL_HEAD)) != "knock_out") 
+	if (   _waitingForKnockout 
+		&& idStr(owner->WaitState(ANIMCHANNEL_HEAD)) != "knock_out"
+		&& idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "knock_out"
+		&& idStr(owner->WaitState(ANIMCHANNEL_LEGS)) != "knock_out")
 	{
 		owner->PostKnockOut();
 		_waitingForKnockout = false;

@@ -821,6 +821,8 @@ void idActor::Spawn( void )
 	spawnArgs.GetFloat( "collision_damage_threshold_hard", "25", m_damage_thresh_hard ); // greebo: dealing 50+ hit points is considered "hard"
 	spawnArgs.GetFloat( "collision_damage_threshold_min", "5", m_damage_thresh_min ); // falling ~12 ft, g = 1066
 
+	m_savedVelocity = vec3_zero; // grayman #3699
+
 	spawnArgs.GetFloat( "collision_delta_scale",  "1.0", m_delta_scale );
 	spawnArgs.GetInt( "rank", "0", rank );
 	spawnArgs.GetInt( "type", "0", m_AItype );
@@ -1345,6 +1347,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteFloat( m_damage_thresh_hard );
 	savefile->WriteFloat( m_delta_scale );
 	savefile->WriteFloat( m_damage_thresh_min );
+	savefile->WriteVec3(m_savedVelocity); // grayman #3699
 
 	idToken token;
 
@@ -1579,6 +1582,7 @@ void idActor::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( m_damage_thresh_hard );
 	savefile->ReadFloat( m_delta_scale );
 	savefile->ReadFloat( m_damage_thresh_min );
+	savefile->ReadVec3(m_savedVelocity); // grayman #3699
 
 	idStr statename;
 
@@ -5183,12 +5187,10 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity )
 	return index;
 }
 
-
-
 /****************************************************************************************
 	=====================
 	idActor::CrashLand
-	handle collision(Falling) damage to AI/Players
+	handle collision (Falling) damage to AI/Players
 	Added by Richard Day
 	=====================
 ****************************************************************************************/
@@ -5207,18 +5209,83 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 
 	idVec3 curVelocity = physics.GetLinearVelocity();
 
-	// grayman #3608 - if the current speed is more than the saved (previous frame) speed,
-	// you're not slowing down (crashing), you're speeding up, so there's no need to check for damage.
+	// grayman #3699 - ragdolls and actors fall differently, so they require
+	// different math to determine whether they've landed, and how much
+	// damage they should accrue. So we'll differentiate between them in certain
+	// code sections. isRagDoll will be true if the AI is a ragdoll using ragdoll physics.
 
-	if ( curVelocity.LengthSqr() >= savedVelocity.LengthSqr() )
+	bool isRagDoll = physics.IsType(idPhysics_AF::Type);
+
+	// grayman #3699 - Test AI changing to ragdoll when falling, which gives a more
+	// realistic fall. Just KO the AI, since he can't come back from being a ragdoll.
+	if (IsType(idAI::Type) && !isRagDoll)
 	{
-		return result;
+		// When an AI in freefall falls ~20 units, he's traveling
+		// a vertical downward speed of ~200, so that's where we'll
+		// see what awaits him below. If he's going to fall > 200 units,
+		// we can change him to a ragdoll now. If not, we'll leave him alone.
+		if ((curVelocity.z < -200.0f))
+		{
+			// trace down
+			trace_t result;
+			idVec3 startPoint = physics.GetOrigin();
+			idVec3 bottomPoint = startPoint;
+			bottomPoint.z -= 200;
+			if ( !gameLocal.clip.TracePoint(result, startPoint, bottomPoint, MASK_OPAQUE, this) )
+			{
+				// no floor soon, so knock him out
+				static_cast<idAI*>(this)->Fall_Knockout( m_SetInMotionByActor.GetEntity() );
+				isRagDoll = TRUE; // immediate change, for the rest of this method
+			}
+		}
 	}
-	
+
+	// grayman #3699 - Various comparisons of current velocity with previous velocity
+
+	float angleChange = 0.0f;
+
+	if (isRagDoll)
+	{
+		// determine the angle between the current velocity and some previous saved velocity
+
+		idVec3 cv = curVelocity;
+		cv.NormalizeFast();
+		idVec3 v = (m_savedVelocity == vec3_zero) ? savedVelocity : m_savedVelocity;
+		bool sameDirection = (curVelocity * v >= 0);
+		v.NormalizeFast();
+		angleChange = idMath::ACos(cv * v);
+
+		if (!sameDirection)
+		{
+			angleChange = 180.0f - angleChange;
+		}
+
+		if ( (curVelocity.LengthSqr() >= savedVelocity.LengthSqr()) && sameDirection )
+		{
+			// speeding up in the same direction, no crashing
+			m_savedVelocity = vec3_zero;
+			return result;
+		}
+
+		if (m_savedVelocity == vec3_zero)
+		{
+			// only save this once per crash
+			m_savedVelocity = savedVelocity;
+		}
+	}
+	else // idPhysics_Actor
+	{
+		if ( curVelocity.LengthSqr() >= savedVelocity.LengthSqr() )
+		{
+			return result;
+		}
+	}
+
 	// no falling damage if touching a nodamage surface
 	// We do this here since the sound won't be played otherwise
 	// as we do no damage if this is true.
-	for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
+	int numContacts = physics.GetNumContacts();
+	for ( int i = 0 ; i < numContacts ; i++ )
 	{
 		const contactInfo_t &contact = physics.GetContact( i );
 		if ( contact.material->GetSurfaceFlags() & SURF_NODAMAGE )
@@ -5260,7 +5327,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 
 	if ( savedOrigin.z > physics.GetOrigin().z ) // only consider the speed of the object you're landing on if you're falling
 	{
-		for ( int i = 0 ; i < physics.GetNumContacts() ; i++ )
+		for ( int i = 0 ; i < numContacts ; i++ )
 		{
 			const contactInfo_t &contact = physics.GetContact(i);
 			if ( contact.entityNum == ENTITYNUM_WORLD )
@@ -5300,7 +5367,15 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	idVec3 curGravVelocity = (curVelocity*vGravNorm) * vGravNorm;
 
 	// Get the vdelta (how much the velocity has changed in this frame)
-	idVec3 deltaVec = (savedVelocity - curVelocity);
+	idVec3 deltaVec;
+	if (isRagDoll) // grayman #3699
+	{
+		deltaVec = (m_savedVelocity - curVelocity);
+	}
+	else // idPhysics_Actor
+	{
+		deltaVec = (savedVelocity - curVelocity);
+	}
 
 	// greebo: Get the vertical portion of the velocity 
 	idVec3 deltaVecVert = (deltaVec * vGravNorm) * vGravNorm;
@@ -5317,26 +5392,59 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	// damage scale per actor
 	delta *= m_delta_scale;
 
-	// greebo: Check if we are still using actor physics, we might already be in ragdoll mode
-	if (physics.IsType(idPhysics_Actor::Type))
+	// grayman #3699 - physicsObj is the wrong physics to query when a ragdoll.
+	// It's correct when using actor physics. The problem is that ragdoll physics
+	// has no GetWaterLevel(). You'll have to write one.
+	waterLevel_t waterLevel = WATERLEVEL_NONE;
+	if (isRagDoll)
 	{
-		waterLevel_t waterLevel = static_cast<idPhysics_Actor&>(physics).GetWaterLevel();
-
-		// reduce falling damage if there is standing water
-		switch (waterLevel)
+		idBounds abb = physics.GetAbsBounds();
+		// check at bottom of bounding box
+		idVec3 point = abb[0];
+		point.z++;
+		int contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, this );
+		if ( contents & MASK_WATER )
 		{
-			case WATERLEVEL_NONE:
-				break;
-			case WATERLEVEL_FEET:	delta *= 0.8f;	// -20% for shallow water
-				break; 
-			case WATERLEVEL_WAIST:	delta *= 0.5f;	// -50% for medium water
-				break; 
-			case WATERLEVEL_HEAD:	delta *= 0.25f;	// -75% for deep water
-				break;
-			default: 
-				break;
-		};
+			waterLevel = WATERLEVEL_FEET;
+
+			// check at center
+			point = abb.GetCenter();
+			contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, this );
+			if ( contents & MASK_WATER )
+			{
+				waterLevel = WATERLEVEL_WAIST;
+
+				// check at top
+				point = abb[1];
+				point.z--;
+				contents = gameLocal.clip.Contents( point, NULL, mat3_identity, -1, this );
+				if ( contents & MASK_WATER )
+				{
+					waterLevel = WATERLEVEL_HEAD;
+				}
+			}
+		}
 	}
+	else // idPhysics_Actor
+	{
+		waterLevel = static_cast<idPhysics_Actor&>(physics).GetWaterLevel();
+	}
+
+	// reduce falling damage if there is standing water
+	// TODO: ragdolls don't keep track of their water level
+	switch (waterLevel)
+	{
+		case WATERLEVEL_NONE:
+			break;
+		case WATERLEVEL_FEET:	delta *= 0.8f;	// -20% for shallow water
+			break; 
+		case WATERLEVEL_WAIST:	delta *= 0.5f;	// -50% for medium water
+			break; 
+		case WATERLEVEL_HEAD:	delta *= 0.25f;	// -75% for deep water
+			break;
+		default: 
+			break;
+	};
 
 	// We've been moving downwards with a certain velocity, set the flag 
 
@@ -5350,17 +5458,42 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	// Even though the ( curGravVelocity.LengthFast() < 1 ) check appears below
 	// to not be necessary, I'm leaving it in in case someone in the future
 	// wants to distinguish between flat and sloped landings.
-	
-	if ( ( curGravVelocity.LengthFast() < 1 ) && ( deltaVecVert*vGravNorm > 100 ) )
-	{
-		result.hasLanded = true; // flat landing
-	}
 
-	if ( !result.hasLanded && ( deltaVecVert*vGravNorm > 100 ) )
+	// For the purpose of establishing 'hasLanded', we compare the velocity
+	// frame-to-frame
+
+	if (isRagDoll) // grayman #3699
 	{
-		result.hasLanded = true; // sloped landing, because there's still some vertical velocity,
-								 // but the change in velocity is large enough to indicate
-								 // having landed
+		if ( waterLevel != WATERLEVEL_NONE )
+		{
+			result.hasLanded = true; // crashed into water
+		}
+
+		if (!result.hasLanded && (angleChange > 10) && (numContacts > 0) )
+		{
+			result.hasLanded = true; // crashed into a solid, changing your velocity
+		}
+	
+		if (!result.hasLanded) // no damage until you land
+		{
+			return result;
+		}
+
+		m_savedVelocity = vec3_zero;
+	}
+	else // idPhysics_Actor
+	{
+		if ( ( curGravVelocity.LengthFast() < 1 ) && ( deltaVecVert*vGravNorm > 100 ) )
+		{
+			result.hasLanded = true; // flat landing
+		}
+
+		if ( !result.hasLanded && ( deltaVecVert*vGravNorm > 100 ) )
+		{
+			result.hasLanded = true; // sloped landing, because there's still some vertical velocity,
+									 // but the change in velocity is large enough to indicate
+									 // having landed
+		}
 	}
 
 	if (delta < 390000)
@@ -5395,13 +5528,13 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		{
 			// greebo: the damage_fall_hard entityDef has a damage value of 1, which is scaled by the calculated damage integer
 			StartSound("snd_damage_land_hard", SND_CHANNEL_VOICE, 0, false, NULL);
-			Damage(NULL, NULL, vGravNorm, "damage_fall_hard", damage, 0);
+			Damage(NULL, m_SetInMotionByActor.GetEntity(), vGravNorm, "damage_fall_hard", damage, 0); // grayman #3699
 		}
 		else
 		{
 			// We are below the "hard" threshold, just deal the "soft" damage
 			StartSound("snd_damage_land_soft", SND_CHANNEL_VOICE, 0, false, NULL);
-			Damage(NULL, NULL, vGravNorm, "damage_fall_soft", damage, 0);
+			Damage(NULL, m_SetInMotionByActor.GetEntity(), vGravNorm, "damage_fall_soft", damage, 0); // grayman #3699
 		}
 	}
 

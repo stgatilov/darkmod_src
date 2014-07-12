@@ -76,6 +76,7 @@ typedef enum { // grayman #2604 - how the AI was knocked out
 	KO_NOT, // default - not KO'ed
 	KO_BLACKJACK,
 	KO_GAS,
+	KO_FALL,	// grayman #3699
 	NUM_KO_STATES
 } koState_t;
 
@@ -581,7 +582,7 @@ public:
 	*	Called from Think with saved origin and velocity from before moving
 	*   
 	****************************************************************************************/
-	void CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity );
+	//void CrashLand( const idVec3 &oldOrigin, const idVec3 &oldVelocity ); // grayman #3699
 
 	/**
 	* greebo: Accessor methods for the airTicks member variable. 
@@ -1554,6 +1555,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* @inflictor: This is the entity causing the knockout, can be NULL for "unknown originator".
 	**/
 	void					Event_Gas_Knockout( idEntity* inflictor );
+
+	void					Fall_Knockout( idEntity* inflictor ); // grayman #3699
 
 	/**
 	* Tells the AI to go unconscious.

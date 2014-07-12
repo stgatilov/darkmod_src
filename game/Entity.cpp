@@ -972,6 +972,7 @@ idEntity::idEntity()
 
 	m_SetInMotionByActor = NULL;
 	m_MovedByActor = NULL;
+	m_DroppedInLiquidByActor = NULL; // grayman #3774
 	m_bFrobable = false;
 	m_bFrobSimple = false;
 	m_FrobDistance = 0;
@@ -2027,6 +2028,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	m_SetInMotionByActor.Save(savefile);
 	m_MovedByActor.Save(savefile);
+	m_DroppedInLiquidByActor.Save(savefile); // grayman #3774
 
 	savefile->WriteBool(m_bFrobbed);
 	savefile->WriteBool(m_bFrobHighlightState);
@@ -2270,6 +2272,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_SetInMotionByActor.Restore(savefile);
 	m_MovedByActor.Restore(savefile);
+	m_DroppedInLiquidByActor.Restore(savefile); // grayman #3774
 
 	savefile->ReadBool(m_bFrobbed);
 	savefile->ReadBool(m_bFrobHighlightState);

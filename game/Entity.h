@@ -385,6 +385,12 @@ public:
 	**/
 	idEntityPtr<idActor>	m_MovedByActor;
 
+	/**
+	* grayman #3774 - Actor who last moved this item when it entered a liquid.
+	* Always NULL for non-physical items.
+	**/
+	idEntityPtr<idActor>	m_DroppedInLiquidByActor;
+
 	// The light quotient for this entity, calculated by the LAS
 	float					m_LightQuotient;
 	// The last time the above value has been calculated
