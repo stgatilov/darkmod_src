@@ -5393,8 +5393,8 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	delta *= m_delta_scale;
 
 	// grayman #3699 - physicsObj is the wrong physics to query when a ragdoll.
-	// It's correct when using actor physics. The problem is that ragdoll physics
-	// has no GetWaterLevel(). You'll have to write one.
+	// It's correct when using actor physics. Ragdoll physics
+	// has no GetWaterLevel(), so the following code provides one.
 	waterLevel_t waterLevel = WATERLEVEL_NONE;
 	if (isRagDoll)
 	{
@@ -5431,7 +5431,6 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 	}
 
 	// reduce falling damage if there is standing water
-	// TODO: ragdolls don't keep track of their water level
 	switch (waterLevel)
 	{
 		case WATERLEVEL_NONE:
