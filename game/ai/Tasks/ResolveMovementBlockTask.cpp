@@ -66,11 +66,26 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 		return; // grayman #3670
 	}
 
+	// grayman #3725 - no task if _blockingEnt is an AI and is too far away
+	if (_blockingEnt->IsType(idAI::Type))
+	{
+		idVec3 dist = _blockingEnt->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+		if (dist.LengthSqr() > Square(60))
+		{
+			owner->PushMove();
+			subsystem.FinishTask();
+			return;
+		}
+	}
+
 	// Get the direction we're pushing against
 	_initialAngles = owner->viewAxis.ToAngles();
 
 	// Set the TTL for this task
 	_endTime = gameLocal.time + 20000; // 20 seconds
+
+	// grayman #3725
+	_turning = FALSE;
 
 	// Save the movement state
 	owner->PushMove();
@@ -381,14 +396,37 @@ void ResolveMovementBlockTask::BecomeNonSolid(idAI* owner) // grayman #2345
 
 bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 {
-	if (owner->AI_MOVE_DONE && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
-	{
-		idVec3 ownerRight, ownerForward;
-		_initialAngles.ToVectors(&ownerForward, &ownerRight);
-		owner->StopMove(MOVE_STATUS_WAITING);
-		owner->TurnToward(owner->GetPhysics()->GetOrigin() - ownerRight);
+	idVec3 right, forward;
 
-		if (owner->FacingIdeal() && _preTaskContents == -1)
+	if (owner->AI_MOVE_DONE && !_turning && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
+	{
+		// grayman #3725 - turn perpendicular to the direction
+		// _blockingEnt is looking
+		idAngles angles;
+		if (_blockingEnt->IsType(idAI::Type))
+		{
+			angles = static_cast<idAI*>(_blockingEnt)->viewAxis.ToAngles();
+		}
+		else
+		{
+			angles = _initialAngles;
+		}
+		angles.ToVectors(&forward, &right);
+		owner->StopMove(MOVE_STATUS_WAITING);
+		owner->TurnToward(owner->GetPhysics()->GetOrigin() + right);
+		_turning = TRUE; // grayman #3725
+	}
+
+	if (_turning) // grayman #3725
+	{
+		if (!owner->FacingIdeal())
+		{
+			return false;
+		}
+
+		_turning = FALSE;
+
+		if (_preTaskContents == -1)
 		{
 			// grayman #2345 - don't become non-solid if your alert index is > ERelaxed. This is because
 			// AI tend to bunch together when agitated, and it doesn't look good if one goes non-solid
@@ -416,7 +454,55 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 		if (dist.LengthSqr() > Square(60))
 		{
 			// other AI has passed by, end the task
-			return true;
+
+			// Be sure no one else is touching you when you want to return to being solid.
+			// If there is, remain non-solid and let them pass by before you return to solid.
+			// (This might not matter, but let's be safe.)
+
+			idClipModel *clipModels[ MAX_GENTITIES ];
+			idPhysics *phys = owner->GetPhysics();
+			int num = gameLocal.clip.ClipModelsTouchingBounds( phys->GetAbsBounds(), phys->GetClipMask(), clipModels, MAX_GENTITIES );
+			bool foundNeighbor = false;
+			for ( int i = 0 ; i < num ; i++ )
+			{
+				idClipModel *cm = clipModels[ i ];
+
+				// don't check render entities
+				if ( cm->IsRenderModel() )
+				{
+					continue;
+				}
+
+				idEntity *hit = cm->GetEntity();
+				if ( hit == owner )
+				{
+					continue;
+				}
+
+				if ( !phys->ClipContents( cm ) )
+				{
+					continue;
+				}
+
+				// touching
+				if ( hit->IsType( idActor::Type ) )
+				{
+					_blockingEnt = hit;
+					foundNeighbor = true;
+					break;
+				}
+			}
+
+			if (!foundNeighbor)
+			{
+				// grayman #3725 - Return to your initial facing angle. This will
+				// only matter if you were initially standing. If you were moving,
+				// ending this task will return you to that, overriding this turn.
+
+				_initialAngles.ToVectors(&forward, &right);
+				owner->TurnToward(owner->GetPhysics()->GetOrigin() + forward);
+				return true;
+			}
 		}
 		
 		if (_blockingEnt->IsType(idAI::Type))
@@ -427,6 +513,9 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			idAI *_blockingEntAI = static_cast<idAI*>(_blockingEnt);
 			if (_blockingEntAI && !_blockingEntAI->AI_FORWARD)
 			{
+				// grayman #3725 - turn back to your initial facing angle
+				_initialAngles.ToVectors(&forward, &right);
+				owner->TurnToward(owner->GetPhysics()->GetOrigin() + forward);
 				return true; // end the task
 			}
 
@@ -437,7 +526,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			{
 				if (owner->movementSubsystem->IsWaitingSolid())
 				{
-					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled(false).LengthFast(); // grayman #3647 // grayman #3647
+					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled(false).LengthFast(); // grayman #3647
 					if (traveledPrev < 0.1) // grayman #2345
 					{
 						BecomeNonSolid(owner);
@@ -516,6 +605,7 @@ void ResolveMovementBlockTask::Save(idSaveGame* savefile) const
 	savefile->WriteObject(_blockingEnt);
 	savefile->WriteAngles(_initialAngles);
 	savefile->WriteInt(_preTaskContents);
+	savefile->WriteBool(_turning); // grayman #3725
 	savefile->WriteInt(_endTime);
 }
 
@@ -526,6 +616,7 @@ void ResolveMovementBlockTask::Restore(idRestoreGame* savefile)
 	savefile->ReadObject(reinterpret_cast<idClass*&>(_blockingEnt));
 	savefile->ReadAngles(_initialAngles);
 	savefile->ReadInt(_preTaskContents);
+	savefile->ReadBool(_turning); // grayman #3725
 	savefile->ReadInt(_endTime);
 }
 

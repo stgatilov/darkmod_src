@@ -44,6 +44,8 @@ private:
 
 	int _preTaskContents;
 
+	bool _turning; // grayman #3725
+
 	int _endTime;
 
 	// Default constructor

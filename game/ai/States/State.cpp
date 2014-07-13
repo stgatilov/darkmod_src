@@ -3214,12 +3214,22 @@ void State::OnMovementBlocked(idAI* owner)
 				 master->IsSearching() &&
 				 ( master->AI_AlertIndex < ECombat ) ) // grayman #3070 - don't stop master if he's in combat
 		{
-			// Stop moving, the searching state will choose another spot soon
-			master->StopMove(MOVE_STATUS_DONE);
-			Memory& memory = master->GetMemory();
-			memory.StopReacting(); // grayman #3559
-			master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
-			return;
+			// grayman #3725 - searchers should be allowed to pass, as long as
+			// their destination is at least 70 away, to keep them from stopping
+			// so near the slave that--if the slave is non-solid--they won't share
+			// the same space when they stop moving.
+			idVec3 dest = master->GetMoveDest();
+			idVec3 masterOrigin = master->GetPhysics()->GetOrigin();
+			dest.z = masterOrigin.z; // ignore vertical delta
+			if ( (masterOrigin - dest).LengthSqr() < Square(70))
+			{
+				// Stop moving, the searching state will choose another spot soon
+				master->StopMove(MOVE_STATUS_DONE);
+				Memory& memory = master->GetMemory();
+				memory.StopReacting(); // grayman #3559
+				master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
+				return;
+			}
 		}
 		else
 		{
@@ -3243,10 +3253,14 @@ void State::OnMovementBlocked(idAI* owner)
 				std::swap(master, slave);
 			}
 
+			/* grayman #3725 - no need for this last swap, because it can
+			   lead to confusion if we ask the master and slave to both
+			   resolve the same block
 			if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
 			{
 				std::swap(master, slave);
 			}
+			*/
 		}
 
 		// Tell the slave to get out of the way.
