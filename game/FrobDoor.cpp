@@ -86,8 +86,9 @@ CFrobDoor::CFrobDoor()
 	m_lossClosed = 0;
 	m_lossBaseAI = 0;			// AI sound loss provided by other entities, i.e. location separator
 	m_lossBasePlayer = 0;		// Player sound loss provided by other entities, i.e. location separator
-	m_controllers.Clear();	// grayman #3643 - list of my controllers
+	m_controllers.Clear();		// grayman #3643 - list of my controllers
 	m_doorHandlingPositions.Clear(); // grayman #3643 - list of my door handling positions
+	m_AIPushingDoor = false;	// grayman #3748
 }
 
 CFrobDoor::~CFrobDoor()
@@ -128,6 +129,9 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 
 	savefile->WriteBool(m_isTransparent);	// grayman #3042
 	savefile->WriteBool(m_rotates);			// grayman #3643
+	savefile->WriteBool(m_previouslyPushingPlayer); // grayman #3748
+	savefile->WriteBool(m_previouslyFrobable); // grayman #3748
+	savefile->WriteBool(m_AIPushingDoor);	// grayman #3748
 
 	// grayman #3643 - door-handling positions
 	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
@@ -188,8 +192,11 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadFloat(m_lossBaseAI);
 	savefile->ReadFloat(m_lossBasePlayer);
 
-	savefile->ReadBool(m_isTransparent); // grayman #3042
-	savefile->ReadBool(m_rotates);		 // grayman #3643
+	savefile->ReadBool(m_isTransparent);	// grayman #3042
+	savefile->ReadBool(m_rotates);			// grayman #3643
+	savefile->ReadBool(m_previouslyPushingPlayer); // grayman #3748
+	savefile->ReadBool(m_previouslyFrobable); // grayman #3748
+	savefile->ReadBool(m_AIPushingDoor);	// grayman #3748
 
 	// grayman #3643 - door-handling positions
 	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
@@ -2138,6 +2145,29 @@ bool CFrobDoor::IsLocked()
 
 	return isLocked;
 }
+
+// grayman #3748
+void CFrobDoor::PushPlayer()
+{
+	m_previouslyFrobable = m_bFrobable; // save so you can restore it later
+	SetFrobable(false); // don't set m_bFrobable directly
+	m_previouslyPushingPlayer = SetCanPushPlayer(true); // returns previous value for later restore
+	m_AIPushingDoor = true;
+}
+
+// grayman #3748
+void CFrobDoor::StopPushingPlayer()
+{
+	if (m_AIPushingDoor)
+	{
+		m_AIPushingDoor = false;
+		SetCanPushPlayer(m_previouslyPushingPlayer);
+		SetFrobable(m_previouslyFrobable); // don't set m_bFrobable directly
+	}
+}
+
+
+
 
 
 

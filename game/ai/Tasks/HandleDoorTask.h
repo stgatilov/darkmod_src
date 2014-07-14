@@ -92,7 +92,6 @@ private:
 	bool	_closeFromSameSide;		// grayman #2866
 	int		_blockedDoorCount;		// grayman #3523
 	bool	_pushingPlayer;			// grayman #3523 - true if door is set to push player
-	bool	_previousPushingPlayer;	// grayman #3523 - previous push setting
 	bool	_rotates;				// grayman #3643 - true if this is a rotating door (false == sliding door)
 	int		_doorSide;				// grayman #3643 - which side of door are we on? (0 or 1)
 

@@ -110,7 +110,6 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	_canHandleDoor = true;	// grayman #2712
 	_blockedDoorCount = 0;	// grayman #3523
 	_pushingPlayer = false;	// grayman #3523 - true if door is set to push player
-	_previousPushingPlayer = false;	// grayman #3523 - previous push setting
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -353,10 +352,13 @@ bool HandleDoorTask::AssessStoppedDoor(CFrobDoor* door, bool ownerIsBlocker)
 		// remember what the previous setting was, and remember that
 		// we're doing this, so we can reset the flag when done.
 		// These variables are cleared when the open succeeds.
+
+		// grayman #3748 - disable frobbing on the door during this
+
 		if (!_pushingPlayer)
 		{
 			_pushingPlayer = true; // trying to push the player
-			_previousPushingPlayer = door->SetCanPushPlayer(true);
+			door->PushPlayer();
 		}
 		return false;
 	}
@@ -1676,13 +1678,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								_waitEndTime = gameLocal.time + 650;
 
 								// grayman #3523 - clean up any requests we made to
-								// push the player while the door was opening
+								// push the player while the door was moving
 
 								_blockedDoorCount = 0;	// grayman #3523
 								if (_pushingPlayer)
 								{
 									_pushingPlayer = false;
-									frobDoor->SetCanPushPlayer(_previousPushingPlayer);
+									frobDoor->StopPushingPlayer();
 								}
 
 								_doorHandlingState = EStateWaitBeforeClose;
@@ -2609,12 +2611,12 @@ void HandleDoorTask::OnFinish(idAI* owner)
 		}
 		memory.lastDoorHandled = frobDoor; // grayman #2712
 
-		// grayman #3523 - clean up any requests we made to
-		// push the player while the door was moving
-
+		// grayman #3748 - If the AI was pushing a door, the door
+		// was not frobable, and it was pushing the player out of
+		// the way if he was blocking it. It's time to reset the door.
 		if (_pushingPlayer)
 		{
-			frobDoor->SetCanPushPlayer(_previousPushingPlayer);
+			frobDoor->StopPushingPlayer();
 		}
 	}
 
@@ -2829,7 +2831,6 @@ void HandleDoorTask::Save(idSaveGame* savefile) const
 	savefile->WriteBool(_closeFromSameSide); // grayman #2866
 	savefile->WriteInt(_blockedDoorCount);	// grayman #3523
 	savefile->WriteBool(_pushingPlayer);	// grayman #3523
-	savefile->WriteBool(_previousPushingPlayer); // grayman #3523
 	savefile->WriteBool(_rotates);			// grayman #3643
 	savefile->WriteInt(_doorSide);			// grayman #3643
 
@@ -2857,9 +2858,8 @@ void HandleDoorTask::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(_triedFitting);	// grayman #2345
 	savefile->ReadBool(_canHandleDoor);	// grayman #2712
 	savefile->ReadBool(_closeFromSameSide); // grayman #2866
-	savefile->ReadInt(_blockedDoorCount);	 // grayman #3523
-	savefile->ReadBool(_pushingPlayer);		 // grayman #3523
-	savefile->ReadBool(_previousPushingPlayer); // grayman #3523
+	savefile->ReadInt(_blockedDoorCount);	// grayman #3523
+	savefile->ReadBool(_pushingPlayer);		// grayman #3523
 	savefile->ReadBool(_rotates);			// grayman #3643
 	savefile->ReadInt(_doorSide);			// grayman #3643
 

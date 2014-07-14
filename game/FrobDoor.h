@@ -178,6 +178,9 @@ public:
 	// grayman #3643 - IsLocked() now has to deal with testing door controllers if used
 	bool					IsLocked();
 
+	void					PushPlayer(); // grayman #3748
+	void					StopPushingPlayer(); // grayman #3748
+
 protected:
 
 	// Returns the handle nearest to the given position
@@ -333,6 +336,21 @@ protected:
 	* grayman #3643 - true if the door rotates, false if it slides
 	**/
 	bool						m_rotates;
+
+	/**
+	* grayman #3748 - previous push setting
+	**/
+	bool						m_previouslyPushingPlayer;
+
+	/**
+	* grayman #3748 - previous frob setting
+	**/
+	bool						m_previouslyFrobable;
+
+	/**
+	* grayman #3748 - AI is pushing the door
+	**/
+	bool						m_AIPushingDoor;
 };
 
 #endif /* FROBDOOR_H */
