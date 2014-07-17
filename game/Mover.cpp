@@ -216,6 +216,7 @@ void idMover::Save( idSaveGame *savefile ) const
 
 	savefile->WriteFloat( move_speed );
 	savefile->WriteInt( move_time );
+	savefile->WriteInt( prevMoveTime ); // grayman #3755
 	savefile->WriteInt( deceltime );
 	savefile->WriteInt( acceltime );
 	savefile->WriteBool( stopRotation );
@@ -284,6 +285,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat( move_speed );
 	savefile->ReadInt( move_time );
+	savefile->ReadInt( prevMoveTime ); // grayman #3755
 	savefile->ReadInt( deceltime );
 	savefile->ReadInt( acceltime );
 	savefile->ReadBool( stopRotation );
@@ -364,6 +366,7 @@ void idMover::Spawn( void )
 	deceltime		= static_cast<int>(1000.0f * spawnArgs.GetFloat( "decel_time", "0" ));
 	move_time		= static_cast<int>(1000.0f * spawnArgs.GetFloat( "move_time", "1" ));	// safe default value
 	move_speed		= spawnArgs.GetFloat( "move_speed", "0" );
+	prevMoveTime	= move_time; // grayman #3755
 
 	spawnArgs.GetFloat( "damage" , "0", damage );
 
@@ -655,6 +658,12 @@ void idMover::DoneMoving( void ) {
 	move_thread = 0;
 
 	StopSound( SND_CHANNEL_BODY, false );
+
+	// grayman #3755 - if this is a door, stop any hard pushing an AI might have done
+	if (IsType(CFrobDoor::Type))
+	{
+		static_cast<CFrobDoor*>(this)->StopPushingDoorHard();
+	}
 }
 
 /*

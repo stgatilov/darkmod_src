@@ -457,6 +457,8 @@ protected:
 	 */
 	bool						m_StoppedDueToBlock;
 
+	int							m_nextBounceTime; // grayman #3755
+
 	idEntityPtr<idEntity>		m_LastBlockingEnt;
 
 	/**

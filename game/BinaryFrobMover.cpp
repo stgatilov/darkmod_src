@@ -83,6 +83,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_bInterruptable = true;
 	m_bInterrupted = false;
 	m_StoppedDueToBlock = false;
+	m_nextBounceTime = 0; // grayman #3755
 	m_LastBlockingEnt = NULL;
 	m_bIntentOpen = false;
 	m_StateChange = false;
@@ -139,6 +140,7 @@ void CBinaryFrobMover::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_bInterruptable);
 	savefile->WriteBool(m_bInterrupted);
 	savefile->WriteBool(m_StoppedDueToBlock);
+	savefile->WriteInt(m_nextBounceTime); // grayman #3755
 
 	m_LastBlockingEnt.Save(savefile);
 	
@@ -197,6 +199,7 @@ void CBinaryFrobMover::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_bInterruptable);
 	savefile->ReadBool(m_bInterrupted);
 	savefile->ReadBool(m_StoppedDueToBlock);
+	savefile->ReadInt(m_nextBounceTime); // grayman #3755
 
 	m_LastBlockingEnt.Restore(savefile);
 	
@@ -984,13 +987,30 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 {
 	m_LastBlockingEnt = blockingEntity;
 	// greebo: If we're blocked by something, check if we should stop moving
-	if (m_stopWhenBlocked)
+
+	if (( gameLocal.time >= m_nextBounceTime ) && m_stopWhenBlocked)
 	{
 		m_bInterrupted = true;
 		m_StoppedDueToBlock = true;
 
 		Event_StopRotating();
 		Event_StopMoving();
+
+		// grayman #3755 - bounce off humanoid AI?
+		if ( blockingEntity->IsType(idAI::Type) && IsType(CFrobDoor::Type) )
+		{
+			if (blockingEntity->GetPhysics()->GetMass() > 5)
+			{
+				m_nextBounceTime = gameLocal.time + 1000; // next time you can bounce
+
+				static_cast<CFrobDoor*>(this)->PushDoorHard();
+
+				StartMoving(true); // reverse direction
+
+				// Set the "intention" flag to its opposite
+				m_bIntentOpen = !m_bIntentOpen;
+			}
+		}
 	}
 
 	// Clear the close request flag

@@ -1067,6 +1067,12 @@ int idPush::DiscardEntities( idEntity *entityList[], int numEntities, int flags,
 			}
 		}
 
+		// grayman #3755 - don't push AI who are pushing this door
+		if ( check->IsType( idAI::Type ) && pusher->IsType(CFrobDoor::Type) && static_cast<CFrobDoor*>(pusher)->IsPushingHard() )
+		{
+			continue;
+		}
+
 		// keep entity in list
 		entityList[ num++ ] = entityList[i];
 	}

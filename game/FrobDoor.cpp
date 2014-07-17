@@ -1630,6 +1630,20 @@ void CFrobDoor::GetMidPos(float rotationAngle)
 	}
 }
 
+// grayman #3755 - Find the side markers for door handling.
+// This has to follow a call to GetMidPos().
+
+void CFrobDoor::GetSideMarkers()
+{
+	idVec3 center = GetClosedBox().GetCenter();
+	idVec3 midFront = m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID];
+	center.z = midFront.z;
+	idVec3 center2midFront = midFront - center;
+	center2midFront.Normalize();
+	m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_SIDEMARKER] = center - 100*center2midFront;
+	m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_SIDEMARKER]  = center + 100*center2midFront;
+}
+
 // grayman #3643 - register door opening data for each side of the door
 void CFrobDoor::GetDoorHandlingPositions()
 {
@@ -1663,7 +1677,7 @@ void CFrobDoor::GetDoorHandlingPositions()
 	// A door has two sides. We keep data per side. For a rotating door,
 	// side 0 is the direction the door moves, and side 1 is the other side.
 
-	//determine which is side 0
+	// determine which is side 0
 
 	idAngles rotate = spawnArgs.GetAngles("rotate", "0 90 0");
 	m_rotates = ( (rotate.yaw != 0) || (rotate.pitch != 0) || (rotate.roll != 0) );
@@ -1689,10 +1703,12 @@ void CFrobDoor::GetDoorHandlingPositions()
 		GetForwardPos();
 		GetBehindPos();
 		GetMidPos(rotate.yaw);
+		GetSideMarkers();
 	}
 	else // slides
 	{
 		GetMidPos(0);
+		GetSideMarkers();
 		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_FRONT] = m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID];
 		m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_BACK]   = m_doorPositions[DOOR_SIDE_BACK][DOOR_POS_MID];
 		m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_BACK]  = m_doorPositions[DOOR_SIDE_FRONT][DOOR_POS_MID];
@@ -2147,25 +2163,36 @@ bool CFrobDoor::IsLocked()
 }
 
 // grayman #3748
-void CFrobDoor::PushPlayer()
+void CFrobDoor::PushDoorHard()
 {
-	m_previouslyFrobable = m_bFrobable; // save so you can restore it later
-	SetFrobable(false); // don't set m_bFrobable directly
-	m_previouslyPushingPlayer = SetCanPushPlayer(true); // returns previous value for later restore
-	m_AIPushingDoor = true;
+	if (!m_AIPushingDoor)
+	{
+		m_AIPushingDoor = true;
+		m_previouslyFrobable = m_bFrobable; // save so you can restore it later
+		SetFrobable(false); // don't set m_bFrobable directly
+		m_previouslyPushingPlayer = SetCanPushPlayer(true); // returns previous value for later restore
+		prevMoveTime = GetMoveTime();
+		Event_SetMoveTime((float)prevMoveTime/2000.0f); // double door speed
+	}
 }
 
 // grayman #3748
-void CFrobDoor::StopPushingPlayer()
+void CFrobDoor::StopPushingDoorHard()
 {
 	if (m_AIPushingDoor)
 	{
 		m_AIPushingDoor = false;
 		SetCanPushPlayer(m_previouslyPushingPlayer);
 		SetFrobable(m_previouslyFrobable); // don't set m_bFrobable directly
+		Event_SetMoveTime((float)prevMoveTime/1000.0f); // reset door speed
 	}
 }
 
+// grayman #3755
+bool CFrobDoor::IsPushingHard()
+{
+	return m_AIPushingDoor;
+}
 
 
 

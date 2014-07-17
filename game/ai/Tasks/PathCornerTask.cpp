@@ -125,13 +125,13 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 				// Move is done, fall back to PatrolTask
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("Move is done.\r");
 
-				// grayman #2712 - clear REUSE timeout on the last door used
+				// grayman #3755 - reset time this door can be used again
 
 				Memory& memory = owner->GetMemory();
 				CFrobDoor* frobDoor = memory.lastDoorHandled.GetEntity();
 				if (frobDoor != NULL)
 				{
-					memory.GetDoorInfo(frobDoor).lastTimeUsed = -1; // reset timeout
+					memory.GetDoorInfo(frobDoor).timeCanUseAgain = gameLocal.time; // grayman #3755 - reset timeout
 				}
 
 				return true; // finish this task

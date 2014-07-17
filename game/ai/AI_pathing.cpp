@@ -55,7 +55,6 @@ const int 	MAX_AAS_WALL_EDGES			= 256;
 const int 	MAX_OBSTACLES				= 256;
 const int	MAX_PATH_NODES				= 256;
 const int 	MAX_OBSTACLE_PATH			= 64;
-const int	REUSE_DOOR_DELAY			= 3000; // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
 
 typedef struct obstacle_s {
 	idVec2				bounds[2];
@@ -373,8 +372,8 @@ bool GetFirstBlockingObstacle(const idPhysics *physics, const obstacle_t *obstac
 					if (blockingScale < blockingScaleDoor)
 					{
 						CFrobDoor *frobDoor = static_cast<CFrobDoor*>(e);
-						int lastTimeUsed = selfAI->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-						if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + REUSE_DOOR_DELAY))
+						int timeCanUseAgain = selfAI->GetMemory().GetDoorInfo(frobDoor).timeCanUseAgain; // grayman #3755
+						if (gameLocal.time < timeCanUseAgain) // grayman #3755
 						{
 							continue; // ignore this door
 						}

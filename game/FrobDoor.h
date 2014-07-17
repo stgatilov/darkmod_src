@@ -35,10 +35,12 @@ class CFrobDoorHandle;
 #define MAX_CLICK_NUM			10
 
 // grayman #3643 - indices into door-handling position array
-#define NUM_DOOR_POSITIONS 3 // Front, Back, and Mid door-handling positions
+#define NUM_DOOR_POSITIONS 4 // Front, Back, Mid door-handling positions, and side marker
 #define DOOR_POS_FRONT  0
 #define DOOR_POS_BACK   1
 #define DOOR_POS_MID    2
+#define DOOR_POS_SIDEMARKER 3
+
 #define DOOR_SIDES      2 // Front side, back side
 #define DOOR_SIDE_FRONT 0
 #define DOOR_SIDE_BACK  1
@@ -157,6 +159,9 @@ public:
 	// grayman #3643 - find the mid position for door handling
 	void					GetMidPos(float rotationAngle);
 
+	// grayman #3755 - find the side markers for door handling
+	void					GetSideMarkers();
+
 	// grayman #3643 - find positions for rotating door handling
 	void					GetForwardPos();
 	void					GetBehindPos();
@@ -178,8 +183,9 @@ public:
 	// grayman #3643 - IsLocked() now has to deal with testing door controllers if used
 	bool					IsLocked();
 
-	void					PushPlayer(); // grayman #3748
-	void					StopPushingPlayer(); // grayman #3748
+	void					PushDoorHard();		 // grayman #3748
+	void					StopPushingDoorHard(); // grayman #3748
+	bool					IsPushingHard();	 // grayman #3755
 
 protected:
 

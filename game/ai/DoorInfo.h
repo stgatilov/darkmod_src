@@ -31,10 +31,10 @@ struct DoorInfo
 	int areaNum;
 
 	// When this door was seen the last time (-1 == never)
-	int lastTimeSeen;
+	//int lastTimeSeen; // grayman #3755 - not used
 
-	// When this door was used the last time (-1 == never)
-	int lastTimeUsed; // grayman #2345
+	// When this door can be used again by the same AI
+	int timeCanUseAgain; // grayman #2345 grayman #3755
 
 	// The last time this door was attempted to be opened (-1 == never)
 	int lastTimeTriedToOpen;

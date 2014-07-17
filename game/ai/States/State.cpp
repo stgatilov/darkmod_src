@@ -1077,7 +1077,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		// Update the info structure for this door
 		DoorInfo& doorInfo = memory.GetDoorInfo(door);
 
-		doorInfo.lastTimeSeen = gameLocal.time;
+		//doorInfo.lastTimeSeen = gameLocal.time; // grayman #3755 - not used
 		doorInfo.wasOpen = door->IsOpen();
 
 		// greebo: If the door is open, remove the corresponding area from the "forbidden" list
@@ -4780,9 +4780,10 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		}
 
 		// grayman #2345 - don't handle this door if we just finished handling it, unless alerted.
+		// grayman #3755 - change "last time used" to "next time we can use this door"
 
-		int lastTimeUsed = owner->GetMemory().GetDoorInfo(frobDoor).lastTimeUsed;
-		if ((lastTimeUsed > -1) && (gameLocal.time < lastTimeUsed + 3000)) // grayman #2712 - delay time should match REUSE_DOOR_DELAY
+		int timeCanUseAgain = owner->GetMemory().GetDoorInfo(frobDoor).timeCanUseAgain;
+		if ((timeCanUseAgain > -1) && (gameLocal.time < timeCanUseAgain))
 		{
 			return; // ignore this door
 		}

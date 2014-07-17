@@ -4660,7 +4660,8 @@ bool idAI::GetMovePos(idVec3 &seekPos)
 				// angua: check whether there is a door in the path
 				if (path.firstDoor != NULL)
 				{
-					const idVec3& doorOrg = path.firstDoor->GetPhysics()->GetOrigin();
+					const idVec3& doorOrg = path.firstDoor->GetClosedBox().GetCenter(); // grayman #3755 - use door center, not origin
+					//const idVec3& doorOrg = path.firstDoor->GetPhysics()->GetOrigin();
 					const idVec3& org = GetPhysics()->GetOrigin();
 					idVec3 dir = doorOrg - org;
 					dir.z = 0;
@@ -13276,10 +13277,10 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor)
 {
 	int doorSide = 0;
 	// determine which side of the door we're on
-	idVec3 mid0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_MID);
-	idVec3 mid1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_MID);
+	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER);
+	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_SIDEMARKER);
 	idVec3 ownerOrig = GetPhysics()->GetOrigin();
-	if ( (mid0 - ownerOrig).LengthSqr() > (mid1 - ownerOrig).LengthSqr() )
+	if ( (sm0 - ownerOrig).LengthSqr() < (sm1 - ownerOrig).LengthSqr() )
 	{
 		doorSide = DOOR_SIDE_FRONT;
 	}

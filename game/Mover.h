@@ -166,6 +166,7 @@ protected:
 	idVec3					move_delta;
 	float					move_speed;
 	int						move_time;
+	int						prevMoveTime; // grayman #3755 - previous move_time
 	int						deceltime;
 	int						acceltime;
 	bool					stopRotation;

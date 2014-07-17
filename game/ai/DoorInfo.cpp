@@ -29,8 +29,8 @@ namespace ai
 
 DoorInfo::DoorInfo() :
 	areaNum(-1),
-	lastTimeSeen(-1),
-	lastTimeUsed(-1), // grayman #2345
+	//lastTimeSeen(-1), // grayman #3755 - not used
+	timeCanUseAgain(0), // grayman #2345, grayman #3755
 	lastTimeTriedToOpen(-1),
 	wasOpen(false),
 	wasLocked(false),
@@ -40,23 +40,23 @@ DoorInfo::DoorInfo() :
 void DoorInfo::Save(idSaveGame* savefile) const
 {
 	savefile->WriteInt(areaNum);
-	savefile->WriteInt(lastTimeSeen);
+	//savefile->WriteInt(lastTimeSeen); // grayman #3755 - not used
 	savefile->WriteInt(lastTimeTriedToOpen);
 	savefile->WriteBool(wasOpen);
 	savefile->WriteBool(wasLocked);
 	savefile->WriteBool(wasBlocked);
-	savefile->WriteInt(lastTimeUsed); // grayman #2345
+	savefile->WriteInt(timeCanUseAgain); // grayman #2345 grayman #3755
 }
 
 void DoorInfo::Restore(idRestoreGame* savefile)
 {
 	savefile->ReadInt(areaNum);
-	savefile->ReadInt(lastTimeSeen);
+	//savefile->ReadInt(lastTimeSeen); // grayman #3755 - not used
 	savefile->ReadInt(lastTimeTriedToOpen);
 	savefile->ReadBool(wasOpen);
 	savefile->ReadBool(wasLocked);
 	savefile->ReadBool(wasBlocked);
-	savefile->ReadInt(lastTimeUsed); // grayman #2345
+	savefile->ReadInt(timeCanUseAgain); // grayman #2345 grayman #3755
 }
 
 } // namespace ai

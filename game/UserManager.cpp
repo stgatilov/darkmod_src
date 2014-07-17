@@ -142,6 +142,7 @@ void UserManager::ResetMaster(CFrobDoor* frobDoor)
 	int numUsers = GetNumUsers();
 	if (numUsers > 1)
 	{
+		// grayman #3755 - the first pass is to establish order based on proximity to the door
 		idVec3 doorCenter = frobDoor->GetClosedBox().GetCenter(); // grayman #3643 - use center of door, not origin
 		//idVec3 doorOrigin = frobDoor->GetPhysics()->GetOrigin();
 		idActor* closestUser = NULL;	// the user closest to the door
@@ -166,6 +167,29 @@ void UserManager::ResetMaster(CFrobDoor* frobDoor)
 		{
 			RemoveUser(closestUser);			// remove AI from current spot
 			InsertUserAtIndex(closestUser,0);	// and put him at the top
+		}
+
+		// grayman #3755 - the second pass is to establish order based on who's running.
+		idActor* runner = NULL;	// the user running to the door
+		masterIndex = 0;		// index of running user
+		for (int i = 0 ; i < numUsers ; i++)
+		{
+			idActor* user = frobDoor->GetUserManager().GetUserAtIndex(i);
+			if (user != NULL)
+			{
+				if (static_cast<idAI*>(user)->AI_RUN)
+				{
+					masterIndex = i;
+					runner = user;
+					break;
+				}
+			}
+		}
+
+		if (masterIndex > 0) // only rearrange the queue if someone other than the current master is running
+		{
+			RemoveUser(runner);			 // remove AI from current spot
+			InsertUserAtIndex(runner,0); // and put him at the top
 		}
 	}
 }
