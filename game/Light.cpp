@@ -1339,7 +1339,7 @@ void idLight::Event_SetShader( const char *shadername ) {
 
 /*
 ================
-idLight::Event_SetShader
+idLight::Event_GetShader
 ================
 */
 void idLight::Event_GetShader( ) {
