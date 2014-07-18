@@ -36,7 +36,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 */
 
 
-const idEventDef EV_Light_SetShader( "setShader", EventArgs('s', "shader", ""), EV_RETURNS_VOID, "Sets the shader to be used for the light.");
+const idEventDef EV_Light_SetShader( "setShader", EventArgs( 's', "shader", "" ), EV_RETURNS_VOID, "Sets the shader to be used for the light." );
+const idEventDef EV_Light_GetShader( "getShader", EventArgs(), 's', "Gets the shader name used by the light." ); // #3765
 const idEventDef EV_Light_GetLightParm( "getLightParm", EventArgs('d', "parmNum", ""), 'f', "Gets a shader parameter." );
 const idEventDef EV_Light_SetLightParm( "setLightParm", EventArgs('d', "parmNum", "", 'f', "value", ""), EV_RETURNS_VOID, "Sets a shader parameter.");
 const idEventDef EV_Light_SetLightParms( "setLightParms", 
@@ -86,6 +87,7 @@ CLASS_DECLARATION( idEntity, idLight )
 	EVENT( EV_Light_FadeToLight,	idLight::Event_FadeToLight )
 	EVENT( EV_Smoking,				idLight::Event_Smoking )		// grayman #2603
 	EVENT( EV_SetStartedOff,		idLight::Event_SetStartedOff )	// grayman #2905
+	EVENT( EV_Light_GetShader,		idLight::Event_GetShader )		// SteveL  #3765
 END_CLASS
 
 
@@ -1333,6 +1335,15 @@ idLight::Event_SetShader
 */
 void idLight::Event_SetShader( const char *shadername ) {
 	SetShader( shadername );
+}
+
+/*
+================
+idLight::Event_SetShader
+================
+*/
+void idLight::Event_GetShader( ) {
+	idThread::ReturnString( renderLight.shader->GetName() );
 }
 
 /*

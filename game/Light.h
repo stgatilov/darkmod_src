@@ -288,6 +288,7 @@ private:
 	void			PresentModelDefChange( void );
 
 	void			Event_SetShader( const char *shadername );
+	void			Event_GetShader( void );	// Added in #3765
 	void			Event_GetLightParm( int parmnum );
 	void			Event_SetLightParm( int parmnum, float value );
 	void			Event_SetLightParms( float parm0, float parm1, float parm2, float parm3 );
