@@ -506,7 +506,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner)
 		memory.hidingSpotInvestigationInProgress = true;
 
 		// Reset the flags
-		memory.stimulusLocationItselfShouldBeSearched = false;
+		//memory.stimulusLocationItselfShouldBeSearched = false; // grayman #3756 - reset in InvestigateSpotTask()
 		memory.investigateStimulusLocationClosely = false;
 	}
 	else

@@ -2301,7 +2301,7 @@ bool HandleDoorTask::OpenDoor()
 		if (controllerPtr.GetEntity() == NULL) // grayman #3643
 		{
 			// grayman #3755 - if in a hurry, bang the door open
-			if ( !frobDoor->IsPushingHard() && (owner->AI_AlertIndex >= ESearching) || owner->AI_RUN )
+			if ( !frobDoor->IsPushingHard() && ( owner->IsSearching() || owner->AI_RUN ) )
 			{
 				frobDoor->PushDoorHard();
 			}

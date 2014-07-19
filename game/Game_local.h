@@ -188,6 +188,8 @@ const int MAX_ENTITY_STATE_SIZE		= 512;
 const int ENTITY_PVS_SIZE			= ((MAX_GENTITIES+31)>>5);
 const int NUM_RENDER_PORTAL_BITS	= idMath::BitsForInteger( PS_BLOCK_ALL );
 
+const float SMALL_AI_MASS		= 5.0f; // grayman #3756
+
 typedef struct entityState_s {
 	int						entityNumber;
 	idBitMsg				state;

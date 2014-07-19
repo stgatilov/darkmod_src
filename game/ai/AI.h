@@ -181,6 +181,8 @@ extern const idEventDef AI_AllowGreetings; // grayman #3338
 
 extern const idEventDef AI_NoisemakerDone; // grayman #3681
 
+extern const idEventDef AI_OnHitByDoor; // grayman #3756
+
 extern const idEventDef AI_DelayedVisualStim; // grayman #2924
 
 extern const idEventDef AI_PickedPocketSetup1; // grayman #3559
@@ -2352,6 +2354,9 @@ public:
 	void Event_IsPlayerResponsibleForDeath(); // grayman #3679
 
 	void Event_NoisemakerDone(idEntity* maker); // grayman #3681
+
+	void Event_HitByDoor(idEntity* door); // grayman #3756
+
 
 #ifdef TIMING_BUILD
 private:

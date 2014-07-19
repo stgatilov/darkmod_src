@@ -999,16 +999,34 @@ void CBinaryFrobMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 		// grayman #3755 - bounce off humanoid AI?
 		if ( blockingEntity->IsType(idAI::Type) && IsType(CFrobDoor::Type) )
 		{
-			if (blockingEntity->GetPhysics()->GetMass() > 5)
+			if (blockingEntity->GetPhysics()->GetMass() > SMALL_AI_MASS)
 			{
 				m_nextBounceTime = gameLocal.time + 1000; // next time you can bounce
 
-				static_cast<CFrobDoor*>(this)->PushDoorHard();
+				idAI* beAI = static_cast<idAI*>(blockingEntity);
+				// grayman #3756 - if AI is moving, the door bounces off him
+				if ( beAI->AI_FORWARD )
+				{
+					static_cast<CFrobDoor*>(this)->PushDoorHard();
 
-				StartMoving(true); // reverse direction
+					StartMoving(true); // reverse direction
 
-				// Set the "intention" flag to its opposite
-				m_bIntentOpen = !m_bIntentOpen;
+					// Set the "intention" flag to its opposite
+					m_bIntentOpen = !m_bIntentOpen;
+				}
+
+				// grayman #3756 - Alert the AI that a door hit him. We're going
+				// to treat this as a suspicious door, so make sure there's a record
+				// of who set it in motion.
+				idEntity* lastUsedBy = static_cast<CFrobDoor*>(this)->GetLastUsedBy();
+				if (lastUsedBy == NULL)
+				{
+					// _Someone_ set the door in motion, so if lastUsedBy is NULL,
+					// it had to be the player.
+					lastUsedBy = gameLocal.GetLocalPlayer();
+				}
+				m_SetInMotionByActor = static_cast<idActor*>(lastUsedBy);
+				beAI->TactileAlert(this);
 			}
 		}
 	}

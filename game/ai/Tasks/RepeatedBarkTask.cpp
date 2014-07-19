@@ -85,7 +85,11 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 		_prevBarkDone = true;
 	}
 
-	if (gameLocal.time >= _nextBarkTime)
+	// grayman #3756 - prevent a repeated bark from aborting a recent
+	// non-repeated bark (most likely one issued when rising to a new alert level)
+
+	if ( (gameLocal.time >= _nextBarkTime) &&
+		 (gameLocal.time >= (owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS)))
 	{
 		// The time has come, bark now
 

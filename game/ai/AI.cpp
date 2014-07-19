@@ -532,7 +532,7 @@ idAI::idAI()
 	m_canResolveBlock	= true;	 // grayman #2345
 	m_leftQueue			= false; // grayman #2345
 	m_performRelight	= false; // grayman #2603
-	m_ReactingToHit	= false; // grayman #2816
+	m_ReactingToHit		= false; // grayman #2816
 	m_bloodMarker		= NULL;  // grayman #3075
 	m_lastKilled		= NULL;	 // grayman #2816
 	m_justKilledSomeone = false; // grayman #2816
@@ -10431,6 +10431,33 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 		return; // process moveable hit next time around
 	}
 
+	// grayman #3756 - Do we need to react to getting hit by a door?
+
+	if ( tactEnt->IsType(CFrobDoor::Type) )
+	{
+		// If handling a door, ignore getting hit by one. We don't need
+		// the reaction to getting hit by a door screwing with the
+		// door handling task.
+
+		if (m_HandlingDoor)
+		{
+			return;
+		}
+
+		// Getting hit by a door overrides your reaction to other events.
+
+		GetMemory().StopReacting();
+
+		// React to the door hitting you.
+
+		// Look toward the door center for a moment before turning toward the door.
+
+		float duration = 1.5f;
+		Event_LookAtPosition(static_cast<CBinaryFrobMover*>(tactEnt)->GetClosedBox().GetCenter(),duration);
+		PostEventSec(&AI_OnHitByDoor,duration,tactEnt);
+		return;
+	}
+
 	// grayman #2816 - if this is the last AI you killed, ignore it
 	if ( tactEnt->IsType(idAI::Type) && ( tactEnt == m_lastKilled ) )
 	{
@@ -10864,7 +10891,7 @@ void idAI::HadTactile( idActor *actor )
 		// which is not what you'd expect to see.
 
 		float actorMass = actor->GetPhysics()->GetMass();
-		if ((actorMass <= 5.0) && (physicsObj.GetMass() > 5.0))
+		if ((actorMass <= SMALL_AI_MASS) && (physicsObj.GetMass() > SMALL_AI_MASS))
 		{
 			if (gameLocal.time >= actor->m_nextKickTime) // but only if not recently kicked
 			{
@@ -10875,7 +10902,7 @@ void idAI::HadTactile( idActor *actor )
 		}
 	}
 
-	// alert both AI if they bump into eachother
+	// alert both AI if they bump into each other
 	if( actor->IsEnemy(this)
 		&& actor->IsType(idAI::Type) )
 	{
@@ -13238,7 +13265,8 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	ai::Memory& memory = GetMemory();
 	memory.closeMe = door;
 	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
-	memory.susDoorCloseFromThisSide = this->GetDoorSide(door); // which side of the door we're on
+	int doorSide = GetDoorSide(door); // grayman #3756
+	memory.susDoorCloseFromThisSide = doorSide; // which side of the door we're on
 
 	door->SetSearching(this); // keeps other AI from joining in the search
 
@@ -13251,7 +13279,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 
 	if ( AI_AlertLevel < ( thresh_4 - 0.1f ) )
 	{
-		memory.alertPos = door->GetClosedBox().GetCenter(); // grayman #2866 - search at center of door; needed to correctly search sliding doors
+		memory.alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
 		memory.alertClass = ai::EAlertVisual_2; // grayman #2603
 		memory.alertType = ai::EAlertTypeDoor;
 		
@@ -13264,7 +13292,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 		memory.visualAlert = false; // grayman #2422
 		memory.mandatory = false;	// grayman #3331
 
-		SetAlertLevel(thresh_4 - 0.1f);
+		SetAlertLevel(thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman #3756 - shorten search time
 	}
 
 	// Do new reaction to stimulus

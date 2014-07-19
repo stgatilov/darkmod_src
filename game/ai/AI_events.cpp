@@ -449,6 +449,8 @@ const idEventDef AI_AllowGreetings( "<allowGreetings>", EventArgs(), EV_RETURNS_
 
 const idEventDef AI_NoisemakerDone( "<noisemakerDone>", EventArgs('e', "maker", "the noisemaker"), EV_RETURNS_VOID, "internal" ); // grayman #3681
 
+const idEventDef AI_OnHitByDoor( "<onhitbydoor>", EventArgs('e', "door", "the door"), EV_RETURNS_VOID, "internal" ); // grayman #3756
+
 const idEventDef AI_DelayedVisualStim( "<delayedVisualStim>", EventArgs('e', "stimSource", ""), EV_RETURNS_VOID, "internal" ); // grayman #2924
 
 const idEventDef AI_PickedPocketSetup1( "<pickedPocketSetup1>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3559
@@ -660,6 +662,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT ( AI_GetAttacker,						idAI::Event_GetAttacker)	// grayman #3679
 	EVENT ( AI_IsPlayerResponsibleForDeath,		idAI::Event_IsPlayerResponsibleForDeath) // grayman #3679
 	EVENT ( AI_NoisemakerDone,					idAI::Event_NoisemakerDone) // grayman #3681
+	EVENT ( AI_OnHitByDoor,						idAI::Event_HitByDoor) // grayman #3681
 
 END_CLASS
 
@@ -3440,8 +3443,6 @@ void idAI::Event_ResortHidingSpots
 
 void idAI::Event_GetNumHidingSpots ()
 {
-
-
 	// Get the number of hiding spots
 	int numSpots = m_hidingSpots.getNumSpots();
 
@@ -3704,6 +3705,16 @@ void idAI::Event_NoisemakerDone(idEntity* maker)
 	makerPtr = maker;
 	m_noisemakersHeard.Remove(makerPtr);
 }
+
+// grayman #3756
+
+void idAI::Event_HitByDoor(idEntity* door)
+{
+	// Treat the door as a suspicious door.
+
+	mind->GetState()->OnVisualStimDoor(door,this);
+}
+
 
 
 

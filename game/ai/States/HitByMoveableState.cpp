@@ -270,7 +270,7 @@ void HitByMoveableState::Think(idAI* owner)
 
 					idActor *candidateActor = static_cast<idActor *>(candidate);
 
-					if ( candidateActor->GetPhysics()->GetMass() <= 5.0 ) // skip actors with small mass (rats, spiders)
+					if ( candidateActor->GetPhysics()->GetMass() <= SMALL_AI_MASS ) // skip actors with small mass (rats, spiders)
 					{
 						continue;
 					}

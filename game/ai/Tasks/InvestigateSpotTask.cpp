@@ -153,7 +153,13 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		// search spot. This caused sudden jerks if he's closer than that at the start of the
 		// move. To prevent that, check if he's close and--if so--don't start the move.
 
-		if (!_investigateClosely && (direction.LengthFast() < INVESTIGATE_SPOT_STOP_DIST))
+		// grayman #3756 - If the stimulus location should be walked to,
+		// as in the case of a suspicious door, don't check whether you're
+		// close enough to just look at the spot. Go there.
+
+		if (!owner->GetMemory().stimulusLocationItselfShouldBeSearched && // grayman #3756
+			!_investigateClosely &&
+			(direction.LengthFast() < INVESTIGATE_SPOT_STOP_DIST))
 		{
 			// Wait a bit
 			_exitTime = static_cast<int>(
@@ -165,6 +171,8 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 			return false; // grayman #2422
 		}
+
+		owner->GetMemory().stimulusLocationItselfShouldBeSearched = false; // grayman #3756
 
 		// Let's move
 

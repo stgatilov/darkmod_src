@@ -1392,19 +1392,17 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	// Vocalize that something hit me, but only if I'm not in combat mode, and I'm not in pain this frame
 	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) && !owner->AI_PAIN )
 	{
-		//gameLocal.Printf("Something hit me!\n");
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s hit by moveable, barks 'snd_notice_generic'\n",gameLocal.time,owner->GetName());
+		}
 	}
 
 	// grayman #3516 - If the moveable is being carried by the player,
 	// drop it from the player's hands.
 
 	tactEnt->CheckCollision(owner);
-
-	if (cv_ai_debug_transition_barks.GetBool())
-	{
-		gameLocal.Printf("%d: %s hit by moveable, barks 'snd_notice_generic'\n",gameLocal.time,owner->GetName());
-	}
 
 	owner->GetMemory().stopReactingToPickedPocket = true; // grayman #3559 - stop dealing with a picked pocket
 
@@ -3201,9 +3199,9 @@ void State::OnMovementBlocked(idAI* owner)
 		// grayman #2728 - check mass; this overrides all other master/slave checks
 
 		float masterMass = master->GetPhysics()->GetMass();
-		if ((masterMass <= 5.0) || (slave->GetPhysics()->GetMass() <= 5.0))
+		if ((masterMass <= SMALL_AI_MASS) || (slave->GetPhysics()->GetMass() <= SMALL_AI_MASS))
 		{
-			if (masterMass <= 5.0)
+			if (masterMass <= SMALL_AI_MASS)
 			{
 				// The master can't have small mass unless the slave does also
 				std::swap(master, slave);
@@ -4009,14 +4007,21 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 {
 	assert( ( stimSource != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
-	// At this point, we're dealing with an open door that should be closed.
-	// Open doors that don't need to be closed have been weeded out.
+	// At this point, we're either dealing with an open door that should be closed,
+	// or a door that hit us. In the case of a suspicious door, open doors that
+	// don't need to be closed have been weeded out.
 
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* door = static_cast<CFrobDoor*>(stimSource);
 
+	bool suspiciousDoor = door->spawnArgs.GetBool("shouldBeClosed", "0"); // grayman #3756
+
 	// grayman #2924 - enable the response
-	stimSource->AllowResponse(ST_VISUAL, owner);
+	// grayman #3756 - but only for a suspicious door
+	if (suspiciousDoor)
+	{
+		stimSource->AllowResponse(ST_VISUAL, owner);
+	}
 
 	// grayman #2859 - Check who last used the door.
 
@@ -4040,7 +4045,10 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 			// he's probably handling the door now, since stims begin arriving when
 			// the door is opened. Do nothing.
 
-			stimSource->IgnoreResponse(ST_VISUAL, owner);
+			if (suspiciousDoor)
+			{
+				stimSource->IgnoreResponse(ST_VISUAL, owner);
+			}
 			return; // someone I can see opened the door, so all is well
 		}
 
@@ -4061,7 +4069,10 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	if ( SomeoneNearDoor(owner, door) )
 	{
-		stimSource->IgnoreResponse(ST_VISUAL, owner);
+		if (suspiciousDoor)
+		{
+			stimSource->IgnoreResponse(ST_VISUAL, owner);
+		}
 		return; // I see someone near the door who might have opened it, so all is well
 	}
 
@@ -4111,14 +4122,18 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 
 	// grayman #2866 - NOW I can ignore future stims and process this one.
 	
-	stimSource->IgnoreResponse(ST_VISUAL, owner);
+	if (suspiciousDoor)
+	{
+		stimSource->IgnoreResponse(ST_VISUAL, owner);
+	}
 
 	// Vocalize that I see something out of place
 
 	memory.lastTimeVisualStimBark = gameLocal.time;
-	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundOpenDoor")));
-	//gameLocal.Printf("%s: That door (%s) isn't supposed to be open!\n",owner->name.c_str(),door->name.c_str());
-	
+	memory.lastTimeAlertBark = gameLocal.time; // grayman #3756 - rising alert bark shouldn't cut off the following bark
+	idStr soundName = suspiciousDoor ? "snd_foundOpenDoor" : "snd_somethingSuspicious"; // grayman #3756
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+
 	// This is a door that's supposed to be closed.
 	// Search for a while. Remember the door so you can close it later. 
 

@@ -5830,7 +5830,7 @@ bool idEntity::RunPhysics( void ) {
 			}
 		}
 
-		// greebo: Apply the "reactio" to the team master
+		// greebo: Apply the "reaction" to the team master
 		if (physics->IsType(idPhysics_RigidBody::Type))
 		{
 			idPhysics_RigidBody* rigidBodyPhysics = static_cast<idPhysics_RigidBody*>(physics);

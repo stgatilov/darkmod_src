@@ -784,6 +784,16 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 			return PUSH_BLOCKED;
 		}
 
+		// grayman #3756 - check for collision with large AI
+		if ( check->IsType(idAI::Type) && ( check->GetPhysics()->GetMass() > SMALL_AI_MASS ) )
+		{
+			// We are colliding with a large AI and are not allowed to push it, return BLOCKED
+			results.c.normal = -results.c.normal;
+			results.c.dist = -results.c.dist;
+
+			return PUSH_BLOCKED;
+		}
+
 		// get point to rotate bbox around back to axial
 		rotationPoint = results.c.point;
 		// angle along which the entity will be pushed
