@@ -1343,7 +1343,12 @@ idLight::Event_GetShader
 ================
 */
 void idLight::Event_GetShader( ) {
-	idThread::ReturnString( renderLight.shader->GetName() );
+	const char * shaderName = renderLight.shader->GetName();
+	if ( idStr::Cmp( shaderName, "_emptyname" ) == 0 )
+	{
+		shaderName = "";
+	}
+	idThread::ReturnString( shaderName );
 }
 
 /*
