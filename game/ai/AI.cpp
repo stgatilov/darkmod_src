@@ -10417,16 +10417,21 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt->IsType(idMoveable::Type) )
 	{
-		if ( !m_ReactingToHit )
-		{
-			// Wait a bit to turn toward and look at what hit you.
-			// Then turn back in the direction the object came from.
+		// Ignore the moveable if you have an enemy.
 
-			mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
-		}
-		else if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
+		if ( GetEnemy() == NULL )
 		{
-			GetMemory().stopReactingToHit = true; // stop the current reaction
+			if ( !m_ReactingToHit )
+			{
+				// Wait a bit to turn toward and look at what hit you.
+				// Then turn back in the direction the object came from.
+
+				mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
+			}
+			else if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
+			{
+				GetMemory().stopReactingToHit = true; // stop the current reaction
+			}
 		}
 		return; // process moveable hit next time around
 	}
@@ -10435,26 +10440,31 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt->IsType(CFrobDoor::Type) )
 	{
-		// If handling a door, ignore getting hit by one. We don't need
-		// the reaction to getting hit by a door screwing with the
-		// door handling task.
+		// Ignore the door if you have an enemy.
 
-		if (m_HandlingDoor)
+		if ( GetEnemy() == NULL )
 		{
-			return;
+			// If handling a door, ignore getting hit by one. We don't need
+			// the reaction to getting hit by a door screwing with the
+			// door handling task.
+
+			if (m_HandlingDoor)
+			{
+				return;
+			}
+
+			// Getting hit by a door overrides your reaction to other events.
+
+			GetMemory().StopReacting();
+
+			// React to the door hitting you.
+
+			// Look toward the door center for a moment before turning toward the door.
+
+			float duration = 1.5f;
+			Event_LookAtPosition(static_cast<CBinaryFrobMover*>(tactEnt)->GetClosedBox().GetCenter(),duration);
+			PostEventSec(&AI_OnHitByDoor,duration,tactEnt);
 		}
-
-		// Getting hit by a door overrides your reaction to other events.
-
-		GetMemory().StopReacting();
-
-		// React to the door hitting you.
-
-		// Look toward the door center for a moment before turning toward the door.
-
-		float duration = 1.5f;
-		Event_LookAtPosition(static_cast<CBinaryFrobMover*>(tactEnt)->GetClosedBox().GetCenter(),duration);
-		PostEventSec(&AI_OnHitByDoor,duration,tactEnt);
 		return;
 	}
 
