@@ -175,7 +175,7 @@ protected:
 	virtual void UpdateAlertLevel();
 
 	// Get the sound shader name for owner, when greeting otherAI
-	virtual idStr GetGreetingSound(idAI* owner, idAI* otherAI);
+	virtual idStr GetGreetingSound(idActor* owner, idActor* otherAI); // grayman #3576
 
 	// Get the sound shader name for owner, when responding to a greeting from otherAI
 	virtual idStr GetGreetingResponseSound(idAI* owner, idAI* otherAI);

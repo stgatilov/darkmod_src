@@ -1688,7 +1688,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 						// Check the next time we can greet the player
 						if ( gameLocal.time >= info.nextGreetingTime ) // grayman #3415
 						{
-							soundName = "snd_greeting_generic";
+							soundName = GetGreetingSound(owner, player); // grayman #3576
+							//soundName = "snd_greeting_generic";
 							int delay = ( MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
 							info.nextGreetingTime = gameLocal.time + delay;
 
@@ -2111,8 +2112,8 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 										// A special GreetingBarkTask is handling this
 
 										// Get the sound and queue the task
-										idStr greetSound = GetGreetingSound(owner, otherAI);
-										owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, otherAI, true)));
+										idStr greetSound = GetGreetingSound(owner, other); // grayman #3576
+										owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new GreetingBarkTask(greetSound, other, true))); // grayman #3576
 									}
 								}
 							}
@@ -2200,16 +2201,16 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 	}
 }
 
-idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
+idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3576
 {
 	idStr soundName;
 
 	// Get the types of the two persons.
 	idStr ownPersonType(owner->spawnArgs.GetString(PERSONTYPE_KEY));
-	idStr otherPersonType(otherAI->spawnArgs.GetString(PERSONTYPE_KEY));
+	idStr otherPersonType(otherActor->spawnArgs.GetString(PERSONTYPE_KEY));
 
 	// Get the other person's gender in case it's needed.
-	idStr otherPersonGender = otherAI->spawnArgs.GetString(PERSONGENDER_KEY);
+	idStr otherPersonGender = otherActor->spawnArgs.GetString(PERSONGENDER_KEY);
 
 	// Start with barks to specific character types, used regardless of who it comes from.
 	
@@ -2251,7 +2252,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 			soundName = "snd_greeting_beggar";
 		}
 	}
-	else if (otherPersonType == PERSONTYPE_CITYWATCH) // grayman #3457 - Is the other AI a citywatch, and owner is not?
+	else if (otherPersonType == PERSONTYPE_CITYWATCH) // grayman #3457 - Is the other Actor a citywatch, and owner is not?
 	{
 		if (ownPersonType != PERSONTYPE_CITYWATCH)
 		{
@@ -2266,7 +2267,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 	{
 		// Handle a noble or a high ranking person (or an average person speaking to _really_ low-ranking person)
 		// greeting others. These are "snooty" greetings.
-		if ( (ownPersonType == PERSONTYPE_NOBLE) || (owner->spawnArgs.GetInt("rank", "0") > (otherAI->spawnArgs.GetInt("rank", "0") + 1) ) ) // grayman #3457
+		if ( (ownPersonType == PERSONTYPE_NOBLE) || (owner->spawnArgs.GetInt("rank", "0") > (otherActor->spawnArgs.GetInt("rank", "0") + 1) ) ) // grayman #3457
 		{
 			// nobles use generic greeting for other nobles
 			if (otherPersonType == PERSONTYPE_NOBLE)
@@ -2283,7 +2284,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 					soundName = "snd_greeting_noble_to_guard";
 				}
 			}
-			else // the other AI is a civilian
+			else // the other Actor is a civilian
 			{
 				if (owner->spawnArgs.FindKey( "snd_greeting_noble_to_civilian") != NULL)
 				{
@@ -2295,7 +2296,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 
 	if (soundName.IsEmpty())
 	{
-        // Is this AI a guard or a Builder (Builders speak to guards as equals)?
+        // Is this Actor a guard or a Builder (Builders speak to guards as equals)?
 		if ( (ownPersonType == PERSONTYPE_PROGUARD) || (ownPersonType == PERSONTYPE_CITYWATCH) || (ownPersonType == PERSONTYPE_BUILDER) ) // grayman #3457
 		{
 			if (otherPersonType == PERSONTYPE_NOBLE)
@@ -2334,7 +2335,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 					soundName = "snd_greeting_guard";
 				}
 			}
-			else // the other AI is a generic character
+			else // the other Actor is a generic character
 			{
 				if (otherPersonGender == PERSONGENDER_FEMALE)
 				{
@@ -2377,7 +2378,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 
 	if (soundName.IsEmpty())
 	{
-		// This AI is not a guard, builder, noble, or high-ranking character.
+		// This Actor is not a guard, builder, noble, or high-ranking character.
 		// PROBLEM: A greeting Priest can make it to here, and he's a high-ranking character.
 
 		if (otherPersonType == PERSONTYPE_NOBLE)
@@ -2416,7 +2417,7 @@ idStr State::GetGreetingSound(idAI* owner, idAI* otherAI)
 				soundName = "snd_greeting_guard";
 			}
 		}
-		else // the other AI is a generic character too
+		else // the other Actor is a generic character too
 		{
 			if (otherPersonGender == PERSONGENDER_FEMALE)
 			{
