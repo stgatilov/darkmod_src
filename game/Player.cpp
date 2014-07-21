@@ -5456,6 +5456,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 		ClientSendEvent( EVENT_IMPULSE, &msg );
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("impulse = %d\r",impulse); // grayman debug
 	if ( impulse >= IMPULSE_0 && impulse <= IMPULSE_12 ) 
 	{
 		// Prevent the player from choosing to switch weapons.
@@ -5675,10 +5676,20 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_41:		// TDM Use/Frob
 		{
-			// Register the button for tracking
-			m_ButtonStateTracker.StartTracking(impulse);
-			// Perform the frob
-			PerformFrob();
+			// grayman #3746 - If a readable gui is currently displayed
+			// we need to ask for it to be closed.
+			if ( m_immobilization.GetInt("readable") )
+			{
+				// Pass the "inventoryDropItem" event to the GUIs
+				m_overlays.broadcastNamedEvent("inventoryDropItem");
+			}
+			else
+			{
+				// Register the button for tracking
+				m_ButtonStateTracker.StartTracking(impulse);
+				// Perform the frob
+				PerformFrob();
+			}
 		}
 		break;
 
@@ -5812,6 +5823,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 		case IMPULSE_52:	// Inventory drop item
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("inventoryDropItem 2\r"); // grayman debug
 			// Pass the "inventoryDropItem" event to the GUIs
 			m_overlays.broadcastNamedEvent("inventoryDropItem");
 
@@ -9788,6 +9800,7 @@ void idPlayer::UseInventoryItem()
 		// we need to ask for it to be closed.
 		if ( m_immobilization.GetInt("readable") )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("inventoryUseItem 1\r"); // grayman debug
 			// Pass the "inventoryUseItem" event to the GUIs
 			m_overlays.broadcastNamedEvent("inventoryUseItem"); // this sets up the closure of the readable
 		}
@@ -9798,6 +9811,7 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 {
 	if (impulseState == EPressed)
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("inventoryUseItem 2\r"); // grayman debug
 		// Pass the "inventoryUseItem" event to the GUIs
 		m_overlays.broadcastNamedEvent("inventoryUseItem");
 	}
@@ -9983,6 +9997,7 @@ void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
 	// Set the "dirty" flag, the HUD needs a redraw
 	inventoryHUDNeedsUpdate = true;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("inventorySelectionChange\r"); // grayman debug
 	// Notify the GUIs about the change event
 	m_overlays.broadcastNamedEvent("inventorySelectionChange");
 
