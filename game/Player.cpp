@@ -3583,8 +3583,19 @@ bool idPlayer::SelectWeapon( int num, bool force )
 		return false;
 	}
 
-	// Check if we want to toggle the current weapon item (requested index == current index)
 	CInventoryWeaponItemPtr item = GetCurrentWeaponItem();
+
+	// grayman #3747 - if the current and desired indices are zero,
+	// bring back the previous weapon if it's non-zero
+	if ( (num == 0) && (item->GetWeaponIndex() == 0) )
+	{
+		if (previousWeapon > 0)
+		{
+			num = previousWeapon;
+		}
+	}
+
+	// Check if we want to toggle the current weapon item (requested index == current index)
 
 	if (item != NULL && item->GetWeaponIndex() == num && item->IsToggleable()) {
 		// Requested toggleable weapon is already active, hide it (switch to unarmed)
