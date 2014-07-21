@@ -51,6 +51,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // constant to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
 #define NOLOD -100000
 
+#define FIRST_FRAME_SOUND_PROP_ALLOWED 60 // grayman #3768 - no sound propagation before this frame
+
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_PostPostSpawn( "<postpostspawn>", EventArgs(), EV_RETURNS_VOID, "internal" ); // grayman #3643
@@ -4411,7 +4413,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 
 	// grayman #3393 - don't propagate sounds in early frames,
 	// because some AI might not yet be set up to hear them
-	if ( gameLocal.framenum < 10 )
+	if ( gameLocal.framenum < FIRST_FRAME_SOUND_PROP_ALLOWED )
 	{
 		return;
 	}
@@ -4577,6 +4579,12 @@ idEntity::PropSoundDirect
 
 void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn, int msgTag ) // grayman #3355
 {
+	// grayman #3768 - don't propagate sounds in the early frames
+	if (gameLocal.framenum < FIRST_FRAME_SOUND_PROP_ALLOWED)
+	{
+		return;
+	}
+
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("PropSoundDirect: Attempting to propagate sound \"%s\" Forcelocal = %d\r", sndName, (int) bForceLocal );
 	
 	// Cut off the "snd_" prefix from the incoming sound name
