@@ -357,6 +357,18 @@ protected:
 	* grayman #3748 - AI is pushing the door
 	**/
 	bool						m_AIPushingDoor;
+
+	/**
+	* grayman #3755 - Variable, depending on door size, to be
+	* used for the speed rate changes when an AI is in a hurry.
+	* Determined only once, at spawn time.
+	*
+	* = 2.0 when door face area is <= 7168
+	* = 1.0 when door face area is >= 10752
+	* between 1.0 and 2.0 on a sliding scale between 7168 and 10752
+	*
+	**/
+	float						m_speedFactor;
 };
 
 #endif /* FROBDOOR_H */

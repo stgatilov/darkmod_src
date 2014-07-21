@@ -167,6 +167,7 @@ protected:
 	float					move_speed;
 	int						move_time;
 	int						prevMoveTime; // grayman #3755 - previous move_time
+	float					prevTransSpeed; // grayman #3755
 	int						deceltime;
 	int						acceltime;
 	bool					stopRotation;

@@ -43,6 +43,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #define EXTRA_PLAYER_LOSS 9.0f // grayman #3042
 #define FRACTION_OPEN_FOR_MAX_VOL 0.50f // grayman #3042 - fraction open at which max
 										// sound volume comes through an opening door
+#define DOOR_SPEED_RATE_INCREASE_MIN 7168.0f  // grayman #3755
+#define DOOR_SPEED_RATE_INCREASE_MAX 10752.0f // grayman #3755
+
 
 //===============================================================================
 //CFrobDoor
@@ -132,6 +135,7 @@ void CFrobDoor::Save(idSaveGame *savefile) const
 	savefile->WriteBool(m_previouslyPushingPlayer); // grayman #3748
 	savefile->WriteBool(m_previouslyFrobable); // grayman #3748
 	savefile->WriteBool(m_AIPushingDoor);	// grayman #3748
+	savefile->WriteFloat(m_speedFactor);	// grayman #3755
 
 	// grayman #3643 - door-handling positions
 	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
@@ -197,6 +201,7 @@ void CFrobDoor::Restore( idRestoreGame *savefile )
 	savefile->ReadBool(m_previouslyPushingPlayer); // grayman #3748
 	savefile->ReadBool(m_previouslyFrobable); // grayman #3748
 	savefile->ReadBool(m_AIPushingDoor);	// grayman #3748
+	savefile->ReadFloat(m_speedFactor);		// grayman #3755
 
 	// grayman #3643 - door-handling positions
 	for ( int i = 0 ; i < DOOR_SIDES ; i++ )
@@ -345,6 +350,25 @@ void CFrobDoor::PostSpawn()
 	}
 
 	SetDoorTravelFlag();
+
+	// grayman #3755 - set move speed factor for AI in a hurry
+
+	idBox closedBox = GetClosedBox();
+	idVec3 extents = closedBox.GetExtents();
+	float area;
+	area = (2*extents.z) * (2*((extents.x > extents.y) ? extents.x : extents.y));
+	if (area <= DOOR_SPEED_RATE_INCREASE_MIN)
+	{
+		m_speedFactor = 2.0f;
+	}
+	else if (area >= DOOR_SPEED_RATE_INCREASE_MAX)
+	{
+		m_speedFactor = 1.0f;
+	}
+	else
+	{
+		m_speedFactor = 1.0f + (DOOR_SPEED_RATE_INCREASE_MAX - area)/(DOOR_SPEED_RATE_INCREASE_MAX - DOOR_SPEED_RATE_INCREASE_MIN);
+	}
 
 	// grayman #3643 - Wait a bit before setting the door handling
 	// positions, to allow time for any controller list to be built
@@ -1985,7 +2009,8 @@ void CFrobDoor::GetBehindPos()
 
 	idAAS *aas = gameLocal.GetAAS("aas32");
 
-	int areaNum = aas->PointAreaNum(towardPos);
+	int areaNum = aas->PointReachableAreaNum(towardPos, bounds, AREA_REACHABLE_WALK); // grayman #3788
+	//int areaNum = aas->PointAreaNum(towardPos);
 
 	if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
 	{
@@ -2003,7 +2028,8 @@ void CFrobDoor::GetBehindPos()
 
 		contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, NULL);
 
-		areaNum = aas->PointAreaNum(towardPos);
+		areaNum = aas->PointReachableAreaNum(towardPos, bounds, AREA_REACHABLE_WALK); // grayman #3788
+		//areaNum = aas->PointAreaNum(towardPos);
 
 		if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
 		{
@@ -2018,7 +2044,8 @@ void CFrobDoor::GetBehindPos()
 
 			contents = gameLocal.clip.Contents(towardPos, &clip, mat3_identity, CONTENTS_SOLID, NULL);
 
-			areaNum = aas->PointAreaNum(towardPos);
+			areaNum = aas->PointReachableAreaNum(towardPos, bounds, AREA_REACHABLE_WALK); // grayman #3788
+			//areaNum = aas->PointAreaNum(towardPos);
 
 			if ( contents || (areaNum == 0) )
 			{
@@ -2171,8 +2198,18 @@ void CFrobDoor::PushDoorHard()
 		m_previouslyFrobable = m_bFrobable; // save so you can restore it later
 		SetFrobable(false); // don't set m_bFrobable directly
 		m_previouslyPushingPlayer = SetCanPushPlayer(true); // returns previous value for later restore
-		prevMoveTime = GetMoveTime();
-		Event_SetMoveTime((float)prevMoveTime/2000.0f); // double door speed
+		prevTransSpeed = GetTransSpeed();
+		if (prevTransSpeed > 0) // grayman #3755
+		{
+			// use trans speed
+			SetTransSpeed(m_speedFactor*prevTransSpeed); // increase door speed
+		}
+		else
+		{
+			// use move time
+			prevMoveTime = GetMoveTime();
+			Event_SetMoveTime(((float)prevMoveTime)/(m_speedFactor*1000.0f)); // cut move time
+		}
 	}
 }
 
@@ -2184,7 +2221,16 @@ void CFrobDoor::StopPushingDoorHard()
 		m_AIPushingDoor = false;
 		SetCanPushPlayer(m_previouslyPushingPlayer);
 		SetFrobable(m_previouslyFrobable); // don't set m_bFrobable directly
-		Event_SetMoveTime((float)prevMoveTime/1000.0f); // reset door speed
+		if (prevTransSpeed > 0) // grayman #3755
+		{
+			// reset previous move speed
+			SetTransSpeed(prevTransSpeed);
+		}
+		else
+		{
+			// reset door move time 
+			Event_SetMoveTime(((float)prevMoveTime)/1000.0f);
+		}
 	}
 }
 

@@ -1133,6 +1133,18 @@ int CBinaryFrobMover::GetMoveTime()
 	return move_time;
 }
 
+// grayman #3755
+void CBinaryFrobMover::SetTransSpeed(float speed)
+{
+	m_TransSpeed = speed;
+}
+
+// grayman #3755
+float CBinaryFrobMover::GetTransSpeed()
+{
+	return m_TransSpeed;
+}
+
 float CBinaryFrobMover::GetMoveTimeRotationFraction() // grayman #3711
 {
 	// Get the current angles

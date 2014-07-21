@@ -217,6 +217,7 @@ void idMover::Save( idSaveGame *savefile ) const
 	savefile->WriteFloat( move_speed );
 	savefile->WriteInt( move_time );
 	savefile->WriteInt( prevMoveTime ); // grayman #3755
+	savefile->WriteFloat( prevTransSpeed ); // grayman #3755
 	savefile->WriteInt( deceltime );
 	savefile->WriteInt( acceltime );
 	savefile->WriteBool( stopRotation );
@@ -286,6 +287,7 @@ void idMover::Restore( idRestoreGame *savefile ) {
 	savefile->ReadFloat( move_speed );
 	savefile->ReadInt( move_time );
 	savefile->ReadInt( prevMoveTime ); // grayman #3755
+	savefile->ReadFloat( prevTransSpeed ); // grayman #3755
 	savefile->ReadInt( deceltime );
 	savefile->ReadInt( acceltime );
 	savefile->ReadBool( stopRotation );
@@ -1138,7 +1140,7 @@ idMover::Event_SetMoveTime
 */
 void idMover::Event_SetMoveTime( float time ) {
 	if ( time <= 0 ) {
-		gameLocal.Error( "Cannot set time less than or equal to 0." );
+		gameLocal.Error( "idMover::Event_SetMoveTime - '%s' - Cannot set time less than or equal to 0.",GetName());
 	}
 
 	move_speed = 0;

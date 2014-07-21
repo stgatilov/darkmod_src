@@ -258,6 +258,18 @@ public:
 	int GetMoveTime();
 
 	/**
+	 * grayman #3755 - set the translation speed
+	 *
+	 */
+	void SetTransSpeed(float speed);
+
+	/**
+	 * grayman #3755 - retrieve the translation speed
+	 *
+	 */
+	float GetTransSpeed();
+
+	/**
 	 * grayman #3462 - retrieve the time when the mover started to open
 	 *
 	 */
