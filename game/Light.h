@@ -233,7 +233,6 @@ public:
 // sikk---> Soft Shadows PostProcess
 	renderLight_t*	GetRenderLight( void ) { return &renderLight; };
 	void			UpdateShadowState( void );
-	bool			skipShadows;
 // <---sikk
 
 private:

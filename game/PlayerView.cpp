@@ -915,6 +915,7 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 
 	player->DrawHUD(hud);
 
+
 	// TDM Ambient Method checking. By Dram
 	// Modified by JC Denton
 	if ( cv_ambient_method.IsModified() ) // If the ambient method option has changed
@@ -1286,8 +1287,8 @@ void idPlayerView::DoPostFX() {
 	//if ( r_useCelShading.GetBool() )
 	//	PostFX_CelShading();
 
-	//if ( r_useSSIL.GetBool() )
-		//PostFX_SSIL();
+	if ( r_useSSIL.GetBool() )
+		PostFX_SSIL();
 
 	if ( r_useSSAO.GetBool() )
 		PostFX_SSAO();
@@ -1461,53 +1462,17 @@ void idPlayerView::PostFX_SoftShadows() {
 }
 
 /*
-===================
-idPlayerView::PostFX_SSAO
-===================
-*/
-void idPlayerView::PostFX_SSAO() {
-	int	nWidth	= renderSystem->GetScreenWidth() / 2.0f;
-	int	nHeight	= renderSystem->GetScreenHeight() / 2.0f;
-
-	renderSystem->CaptureRenderToImage( "_currentRender" );
-
-	RenderDepth( true );
-
-	renderSystem->CropRenderSize( nWidth, nHeight, true );
-	
-	// sample occlusion using our depth buffer
-	renderSystem->SetColor4( r_ssaoRadius.GetFloat(), r_ssaoBias.GetFloat(), r_ssaoAmount.GetFloat(), ( r_ssaoMethod.GetFloat() < 0.0f ? 0.0f : r_ssaoMethod.GetFloat() ) );
-	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
-	renderSystem->CaptureRenderToImage( "_ssao" );
-	// blur ssao buffer
-	for ( int i = 0; i < r_ssaoBlurQuality.GetInteger(); i++ ) {
-		renderSystem->SetColor4( r_ssaoBlurScale.GetFloat(), 0.0f, r_ssaoBlurEpsilon.GetFloat(), -( r_ssaoBlurMethod.GetFloat() + 1.0f ) );
-		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
-		renderSystem->CaptureRenderToImage( "_ssao" );
-		if ( r_ssaoBlurMethod.GetInteger() >= 2 ) {
-			renderSystem->SetColor4( 0.0f, r_ssaoBlurScale.GetFloat(), r_ssaoBlurEpsilon.GetFloat(), -( r_ssaoBlurMethod.GetFloat() + 1.0f ) );
-			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
-			renderSystem->CaptureRenderToImage( "_ssao" );
-		}
-	}
-	renderSystem->UnCrop();
-
-	// modulate scene with ssao buffer
-	renderSystem->SetColor4( r_ssaoBlendPower.GetFloat(), r_ssaoBlendScale.GetFloat(), 1.0f, -5.0f );
-	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
-}
-
-/*
 ===============
 idPlayerView::ToggleShadows
 ===============
 */
-
-
 void idPlayerView::ToggleShadows( bool noShadows ) {
 	idEntity   *ent;
 	idLight	   *light;
 	float dist;
+	bool shadowsOff;
+	if (lastNoShadows == noShadows) return;	// Nothing to do
+	lastNoShadows = noShadows;
 	for ( int i = 0; i < gameLocal.currentLights.Num(); i++ ) {
 		if ( gameLocal.entities[ gameLocal.currentLights[ i ] ] == NULL ) {
 			gameLocal.currentLights.RemoveIndex( i );
@@ -1516,20 +1481,22 @@ void idPlayerView::ToggleShadows( bool noShadows ) {
 		{
 			ent = gameLocal.entities[ gameLocal.currentLights[ i ] ];
 			light = static_cast<idLight*>( ent );
-			if (noshadowDistance.GetFloat()>0)
+			interleaved_dist_check_period--;
+			if (noshadowDistance.GetFloat()>0 && interleaved_dist_check_period<=0)
 			{
-				dist = (gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin()).LengthSqr();
-				light->skipShadows = dist>noshadowDistance.GetFloat();
-				
+				dist = (gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin() - light->GetPhysics()->GetOrigin()).LengthFast();
+				shadowsOff = noShadows || (isRendering &&  (dist>noshadowDistance.GetFloat()));
+				interleaved_dist_check_period=15;
 			}
-			else // if (!noshadowDistance.GetFloat())
+			else
 			{
-				light->skipShadows = false;
+				shadowsOff = noShadows;
 			}
-						
-				light->GetRenderLight()->noShadows = noShadows || (light->skipShadows && isRendering);
+			if (light->GetRenderLight()->noShadows != shadowsOff)
+			{			
+				light->GetRenderLight()->noShadows = shadowsOff;
 				light->UpdateShadowState();
-			
+			}
 			
 		}
 	}
@@ -1856,6 +1823,42 @@ void idPlayerView::PostFX_SSIL() {
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssilMaterial );
 }
 
+/*
+===================
+idPlayerView::PostFX_SSAO
+===================
+*/
+void idPlayerView::PostFX_SSAO() {
+	int	nWidth	= renderSystem->GetScreenWidth() / 2.0f;
+	int	nHeight	= renderSystem->GetScreenHeight() / 2.0f;
+
+	renderSystem->CaptureRenderToImage( "_currentRender" );
+
+	RenderDepth( true );
+
+	renderSystem->CropRenderSize( nWidth, nHeight, true );
+	
+	// sample occlusion using our depth buffer
+	renderSystem->SetColor4( r_ssaoRadius.GetFloat(), r_ssaoBias.GetFloat(), r_ssaoAmount.GetFloat(), ( r_ssaoMethod.GetFloat() < 0.0f ? 0.0f : r_ssaoMethod.GetFloat() ) );
+	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
+	renderSystem->CaptureRenderToImage( "_ssao" );
+	// blur ssao buffer
+	for ( int i = 0; i < r_ssaoBlurQuality.GetInteger(); i++ ) {
+		renderSystem->SetColor4( r_ssaoBlurScale.GetFloat(), 0.0f, r_ssaoBlurEpsilon.GetFloat(), -( r_ssaoBlurMethod.GetFloat() + 1.0f ) );
+		renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
+		renderSystem->CaptureRenderToImage( "_ssao" );
+		if ( r_ssaoBlurMethod.GetInteger() >= 2 ) {
+			renderSystem->SetColor4( 0.0f, r_ssaoBlurScale.GetFloat(), r_ssaoBlurEpsilon.GetFloat(), -( r_ssaoBlurMethod.GetFloat() + 1.0f ) );
+			renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
+			renderSystem->CaptureRenderToImage( "_ssao" );
+		}
+	}
+	renderSystem->UnCrop();
+
+	// modulate scene with ssao buffer
+	renderSystem->SetColor4( r_ssaoBlendPower.GetFloat(), r_ssaoBlendScale.GetFloat(), 1.0f, -5.0f );
+	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, ssaoMaterial );
+}
 
 /*
 ===================

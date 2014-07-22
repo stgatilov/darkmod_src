@@ -534,7 +534,6 @@ void idLight::Spawn( void )
 	if ( spawnArgs.GetInt( "noshadows" ) == 0) {
 		gameLocal.currentLights.Append( entityNumber );
 	}
-	skipShadows = false;
 // <---sikk
 
 	UpdateVisuals();

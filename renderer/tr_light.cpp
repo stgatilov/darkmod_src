@@ -1413,26 +1413,12 @@ interactions get created.  This is all done on a sort-by-model basis
 to keep source data in cache (most likely L2) as any interactions and
 shadows are generated, since dynamic models will typically be lit by
 two or more lights.
-
-Revelator changed to a defered model,
-was actually from an openmp optimization tutorial for linux,
-but the openmp optimizer calls dont work on windows because they used posix threads,
-(might work if we port this to mingw64).
 ===================
 */
 void R_AddModelSurfaces( void ) {
-#define MAX_INTER 1000
-	viewEntity_t        *vEntity;
-	idRenderModel       *model;
-	idInteraction       *inter, *next;
-	idInteraction       *interactions[MAX_INTER];
-	idRenderModel       *createInteractionModel[MAX_INTER];
-	idRenderModel       *interactionModelPtr[MAX_INTER];
-	idScreenRect        shadowScissor[MAX_INTER];
-	bool                interactionPhase2[MAX_INTER];
-	int                 createInteractionId[MAX_INTER];
-	int                 nInteractions = 0;
-	int                 nCreateInteractions = 0;
+	viewEntity_t		*vEntity;
+	idInteraction		*inter, *next;
+	idRenderModel		*model;
 
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
@@ -1453,8 +1439,8 @@ void R_AddModelSurfaces( void ) {
 			}
 		}
 
-		float   oldFloatTime;
-		int     oldTime;
+		float oldFloatTime;
+		int oldTime;
 
 		game->SelectTimeGroup( vEntity->entityDef->parms.timeGroup );
 
@@ -1507,8 +1493,7 @@ void R_AddModelSurfaces( void ) {
 					if ( inter->lightDef->viewCount != tr.viewCount ) {
 						continue;
 					}
-					interactions[nInteractions++] = inter;
-					assert(nInteractions <= MAX_INTER);
+					inter->AddActiveInteraction();
 				}
 			}
 		} else {
@@ -1523,8 +1508,7 @@ void R_AddModelSurfaces( void ) {
 				if ( inter->lightDef->viewCount != tr.viewCount ) {
 					continue;
 				}
-				interactions[nInteractions++] = inter;
-				assert(nInteractions <= MAX_INTER);
+				inter->AddActiveInteraction();
 			}
 		}
 
@@ -1532,29 +1516,7 @@ void R_AddModelSurfaces( void ) {
 			tr.viewDef->floatTime = oldFloatTime;
 			tr.viewDef->renderView.time = oldTime;
 		}
-	}
 
-	int   i, j;
-	// defer the interactions to here
-	for (i = 0; i < nInteractions; i++) {
-		interactionPhase2[i] = interactions[i]->AddActiveInteraction(true, &shadowScissor[i], &interactionModelPtr[i]);
-
-		if (interactionModelPtr[i]) {
-			createInteractionId[nCreateInteractions] = i;
-			createInteractionModel[nCreateInteractions] = interactionModelPtr[i];
-			nCreateInteractions++;
-		}
-	}
-
-	// next interaction table
-	for (j = 0; j < nCreateInteractions; j++) {
-		interactions[createInteractionId[j]]->CreateInteraction(createInteractionModel[j]);
-	}
-
-	for (i = 0; i < nInteractions; i++) {
-		if (interactionPhase2[i]) {
-			interactions[i]->AddActiveInteraction(false, &shadowScissor[i], &interactionModelPtr[i]);
-		}
 	}
 }
 
