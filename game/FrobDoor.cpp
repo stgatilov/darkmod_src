@@ -2034,7 +2034,8 @@ void CFrobDoor::GetBehindPos()
 		if ( contents || (areaNum == 0) || (GetOpenPeersNum() > 0) )
 		{
 			// not useable, try in front of the door far enough away
-			parallelTowardOffset = dirNorm * size * 1.2f;
+			parallelTowardOffset = dirNorm * (dist/2.0f); // grayman #3786
+			//parallelTowardOffset = dirNorm * size * 1.2f;
 
 			normalTowardOffset = openDirNorm;
 			normalTowardOffset *= dist + 2.5f * size;

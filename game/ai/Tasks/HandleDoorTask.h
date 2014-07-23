@@ -30,11 +30,12 @@ namespace ai
 // Define the name of this task
 #define TASK_HANDLE_DOOR "HandleDoor"
 
-#define HANDLE_DOOR_ACCURACY -1	// grayman #2345 - More accuracy when reaching position to work w/door.
+#define HANDLE_DOOR_ACCURACY 12	// grayman #2345 - More accuracy when reaching position to work w/door.
 								// '8' says to use a 16x16 bounding box to see if you've reached a goal
 								// position instead of the default 32x32 ('-1').
 								// grayman #2706 - returned to default value of -1. Tighter than this
 								// might cause problems.
+								// grayman #3786 - -1 leads to swinging doors bumping AI. Try 12.
 #define HANDLE_DOOR_ACCURACY_RUNNING 24  // grayman #3317 - less accuracy when moving faster
 
 class HandleDoorTask;

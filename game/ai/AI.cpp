@@ -5314,11 +5314,13 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	else
 	{
 		// We found a path around obstacles
+
+		/* grayman #3786
 		if (path.doorObstacle != NULL) // grayman #2712 - do we have to handle a door?
 		{
 			// We have a frobmover in our way, raise a signal to the current state
 			mind->GetState()->OnFrobDoorEncounter(path.doorObstacle);
-		}
+		}*/
 
 		// still check for the seekPosObstacle
 		if (path.seekPosObstacle)
@@ -9228,6 +9230,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		return;
 	}
 
+	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
 	// looking up a selectivity spawnarg on the AI to
