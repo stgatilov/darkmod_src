@@ -1171,8 +1171,10 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 
 	float fHideDistance = dict->GetFloat( "hide_distance", "0.0" );
 
+	bool lod_disabled = dict->GetBool( "no_lod" ); // SteveL #3796: allow mappers to disable LOD explicitly on an entity
+
 	// a quick check for LOD, to avoid looking at all lod_x_distance spawnargs:
-	if (d == 0 && fHideDistance < 0.1f)
+	if ( lod_disabled || ( d == 0 && fHideDistance < 0.1f ) )
 	{
 		// no LOD wanted
 		m_DistCheckTimeStamp = NOLOD;
