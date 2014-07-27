@@ -1869,7 +1869,7 @@ void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
 
 			if ( ( objId > 0 ) && ( compId > 0) )
 			{
-				gameLocal.m_MissionData->SetComponentState_Ext(objId, compId, state);
+				gameLocal.m_MissionData->SetComponentState(objId - 1, compId - 1, state); // SteveL #3741: decrement indexes
 				success = true;
 			}
 		}

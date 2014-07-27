@@ -1101,6 +1101,10 @@ void CMissionData::FillParmsData( idEntity *ent, SObjEntParms *parms )
 	}
 }
 
+
+/* SteveL #3741: Eliminate SetComponentState_Ext to align SetComponentState with all other 
+				 objective-related functions. Bounds check moved to CMissionData::SetComponentState.
+
 void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState )
 {
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("SetComponentState: Called for obj %d, comp %d, state %d. \r", ObjIndex, CompIndex, (int) bState );
@@ -1123,9 +1127,23 @@ void CMissionData::SetComponentState_Ext( int ObjIndex, int CompIndex, bool bSta
 	// call internal SetComponentState
 	SetComponentState( ObjIndex, CompIndex, bState );
 }
+*/
 
 void CMissionData::SetComponentState(int ObjIndex, int CompIndex, bool bState)
 {
+	if ( ObjIndex >= m_Objectives.Num() || ObjIndex < 0 )
+	{
+		DM_LOG( LC_OBJECTIVES, LT_WARNING )LOGSTRING( "SetComponentState: Objective num %d out of bounds. \r", ( ObjIndex + 1 ) );
+		gameLocal.Printf( "WARNING: Objective System: SetComponentState: Objective num %d out of bounds. \n", ( ObjIndex + 1 ) );
+		return;
+	}
+	if ( CompIndex >= m_Objectives[ObjIndex].m_Components.Num() || CompIndex < 0 )
+	{
+		DM_LOG( LC_OBJECTIVES, LT_WARNING )LOGSTRING( "SetComponentState: Component num %d out of bounds for objective %d. \r", ( CompIndex + 1 ), ( ObjIndex + 1 ) );
+		gameLocal.Printf( "WARNING: Objective System: SetComponentState: Component num %d out of bounds for objective %d. \n", ( CompIndex + 1 ), ( ObjIndex + 1 ) );
+		return;
+	}
+	
 	CObjectiveComponent& comp = m_Objectives[ObjIndex].m_Components[CompIndex];
 
 	if( comp.SetState(bState) )
@@ -1261,7 +1279,7 @@ void CMissionData::UnlatchObjectiveComp(int ObjIndex, int CompIndex )
 
 void CMissionData::SetObjectiveVisibility(int objIndex, bool visible, bool fireEvents)
 {
-	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	if (objIndex >= m_Objectives.Num() || objIndex < 0)
 	{
 		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveVisibility: Invalid objective index: %d\r", objIndex);
 		return;
@@ -1284,7 +1302,7 @@ void CMissionData::SetObjectiveVisibility(int objIndex, bool visible, bool fireE
 
 void CMissionData::SetObjectiveMandatory(int objIndex, bool mandatory)
 {
-	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	if (objIndex >= m_Objectives.Num() || objIndex < 0)
 	{
 		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveMandatory: Invalid objective index: %d\r", objIndex);
 		return;
@@ -1295,7 +1313,7 @@ void CMissionData::SetObjectiveMandatory(int objIndex, bool mandatory)
 
 void CMissionData::SetObjectiveOngoing(int objIndex, bool ongoing)
 {
-	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	if (objIndex >= m_Objectives.Num() || objIndex < 0)
 	{
 		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveOngoing: Invalid objective index: %d\r", objIndex);
 		return;
@@ -1306,7 +1324,7 @@ void CMissionData::SetObjectiveOngoing(int objIndex, bool ongoing)
 
 void CMissionData::SetObjectiveText(int objIndex, const char *descr)
 {
-	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	if (objIndex >= m_Objectives.Num() || objIndex < 0)
 	{
 		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetObjectiveText: Invalid objective index: %d\r", objIndex);
 		return;
@@ -1323,7 +1341,7 @@ void CMissionData::SetObjectiveText(int objIndex, const char *descr)
 
 void CMissionData::SetEnablingObjectives(int objIndex, const idStr& enablingStr)
 {
-	if (objIndex > m_Objectives.Num() || objIndex < 0)
+	if (objIndex >= m_Objectives.Num() || objIndex < 0)
 	{
 		DM_LOG(LC_OBJECTIVES, LT_ERROR)LOGSTRING("SetEnablingObjectives: Invalid objective index: %d\r", objIndex);
 		return;

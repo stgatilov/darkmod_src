@@ -10491,7 +10491,7 @@ void idPlayer::Event_GetObjectiveState( int ObjIndex )
 
 void idPlayer::Event_SetObjectiveComp( int ObjIndex, int CompIndex, int bState )
 {
-	gameLocal.m_MissionData->SetComponentState_Ext( ObjIndex, CompIndex, (bState != 0) );
+	gameLocal.m_MissionData->SetComponentState( ObjIndex - 1, CompIndex - 1, (bState != 0) );
 }
 
 void idPlayer::Event_GetObjectiveComp( int ObjIndex, int CompIndex )
@@ -10513,22 +10513,22 @@ void idPlayer::Event_ObjectiveComponentUnlatch( int ObjIndex, int CompIndex )
 
 void idPlayer::Event_SetObjectiveVisible( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->SetObjectiveVisibility(ObjIndex, bVal);
+	gameLocal.m_MissionData->SetObjectiveVisibility(ObjIndex - 1, bVal);
 }
 
 void idPlayer::Event_SetObjectiveOptional( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->SetObjectiveMandatory(ObjIndex, !bVal); // negate the incoming bool
+	gameLocal.m_MissionData->SetObjectiveMandatory(ObjIndex - 1, !bVal); // negate the incoming bool
 }
 
 void idPlayer::Event_SetObjectiveOngoing( int ObjIndex, bool bVal )
 {
-	gameLocal.m_MissionData->SetObjectiveOngoing(ObjIndex, bVal);
+	gameLocal.m_MissionData->SetObjectiveOngoing(ObjIndex - 1, bVal);
 }
 
 void idPlayer::Event_SetObjectiveEnabling( int ObjIndex, const char *strIn )
 {
-	gameLocal.m_MissionData->SetEnablingObjectives(ObjIndex, strIn);
+	gameLocal.m_MissionData->SetEnablingObjectives(ObjIndex - 1, strIn);
 }
 
 void idPlayer::Event_SetObjectiveText( int ObjIndex, const char *descr )

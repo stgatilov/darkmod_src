@@ -164,12 +164,31 @@ public:
 	bool GetComponentState( int ObjIndex, int CompIndex );
 
 	/**
+	* SteveL #3741. Eliminate SetComponentState_Ext to align SetComponentState with all 
+	* other objective-related functions.
+	* 
 	* Sets a given component state.  
 	* Externally called version: Checks and reports index validity
 	* Uses "user" index (starts at 1 instead of 0)
 	* Calls internal SetComponentState.
+	*
+	* void SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState );
 	**/
-	void SetComponentState_Ext( int ObjIndex, int CompIndex, bool bState );
+
+	/**
+	* Sets a given component state.
+	* Internally used version: Doesn't check/report index validity
+	* Uses "internal" index (starts at 0 instead of 1)
+	*
+	* SteveL #3741: Moved SetComponentState from protected area to align with 
+	* other objective functions, and to allow elimination of SetComponentState_Ext.
+	**/
+	void SetComponentState( int ObjIndex, int CompIndex, bool bState );
+
+	/**
+	* Set component state when indexed by a pointer to a component
+	**/
+	void SetComponentState( CObjectiveComponent *pComp, bool bState );
 
 	/**
 	* Unlatch an irreversible objective (used by scripting)
@@ -460,18 +479,6 @@ protected:
 	 * team of the player, hence this function is used to let the missiondata know.
 	 */
 	void SetPlayerTeam(int team);
-
-	/**
-	* Sets a given component state.  
-	* Internally used version: Doesn't check/report index validity
-	* Uses "internal" index (starts at 0 instead of 1)
-	**/
-	void SetComponentState( int ObjIndex, int CompIndex, bool bState );
-
-	/**
-	* Set component state when indexed by a pointer to a component
-	**/
-	void SetComponentState( CObjectiveComponent *pComp, bool bState );
 
 	/**
 	* Do the numerical comparison
