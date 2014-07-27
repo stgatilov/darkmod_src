@@ -177,8 +177,6 @@ public:
 
 	/**
 	* Sets a given component state.
-	* Internally used version: Doesn't check/report index validity
-	* Uses "internal" index (starts at 0 instead of 1)
 	*
 	* SteveL #3741: Moved SetComponentState from protected area to align with 
 	* other objective functions, and to allow elimination of SetComponentState_Ext.
