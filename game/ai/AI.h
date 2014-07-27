@@ -1954,6 +1954,9 @@ private:
 
 	void					RemoveProjectile( void );
 
+	
+	virtual void			SwapLODModel( const char *modelname ); // SteveL #3770
+
 public:
 	idProjectile*			LaunchProjectile( const char *jointname, idEntity *target, bool clampToAttackCone );
 	virtual void			DamageFeedback( idEntity *victim, idEntity *inflictor, int &damage );
@@ -2056,6 +2059,7 @@ public:
 	// that might not be available at spawn time.
 	void					Event_PostSpawn();
 	void					Event_Activate( idEntity *activator );
+
 
 /*****
 * DarkMod: Event_Touch was modified to issue a tactile alert.

@@ -227,6 +227,8 @@ typedef struct SAttachPosition_s
 class idEntity : public idClass {
 public:
 	static const int		MAX_PVS_AREAS = 4;
+	static const int		NOLOD = -100000;		// used to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
+													// SteveL #3770: Moved from a #define in Entity.cpp as many classes now need to use it
 
 	int						entityNumber;			// index into the entity list
 	int						entityDefNumber;		// index into the entity def list
@@ -526,7 +528,14 @@ public:
 	// alpha value, then do the right things like Hide/Show, SetAlpha, switch models/skin etc.
 	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,
 	// so the lode can pre-compute the distance.
-	virtual	bool			SwitchLOD( const lod_data_t *m_LOD, const float deltaSq );
+	// SteveL #3770: Params removed. They are now determined in SwitchLOD itself to avoid code repetition
+	// as multiple classes now use LOD.
+	virtual	bool			SwitchLOD();
+	
+	// SteveL #3770: Handle changes of model due to LOD in a separate virtual function so that 
+	// SwitchLOD() can be used by all, while applying different methods for different animated classes.
+	// All class-specific LOD logic goes in here.
+	virtual void			SwapLODModel( const char *modelname );
 
 	bool					CheckDormant( void );	//!< dormant == on the active list, but out of PVS
 	virtual	void			DormantBegin( void );	//!< called when entity becomes dormant
@@ -1801,6 +1810,7 @@ public:
 
 	virtual idAnimator *	GetAnimator( void );
 	virtual void			SetModel( const char *modelname );
+	virtual void			SwapLODModel( const char *modelname ); // SteveL #3770
 
 	bool					GetJointWorldTransform( jointHandle_t jointHandle, int currentTime, idVec3 &offset, idMat3 &axis );
 	bool					GetJointTransformForAnim( jointHandle_t jointHandle, int animNum, int currentTime, idVec3 &offset, idMat3 &axis ) const;

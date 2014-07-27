@@ -2546,6 +2546,12 @@ void idAI::Think( void )
 		UpdateAnimation();
 	}
 	UpdateParticles();
+
+	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD ) // SteveL #3770
+	{
+		SwitchLOD();
+	}
+
 	if (!cv_ai_opt_nopresent.GetBool())
 	{
 		Present();
@@ -8158,6 +8164,41 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 	lastAttackTime = gameLocal.time;
 
 	return lastProjectile;
+}
+
+/*
+================
+idAI::SwapLODModel
+
+Swap the AI model for LOD, preserving current current animations where possible using the idAnimatedEntity method.
+AI scripts could be broken if ongoing torso and leg animations were lost, so check for suitable replacements before
+making the switch.
+================
+*/
+void idAI::SwapLODModel( const char *modelname )
+{
+	const idDeclModelDef *newmodel = static_cast<const idDeclModelDef *>(declManager->FindType( DECL_MODELDEF, modelname, false ));
+	if ( !newmodel ) {
+		gameLocal.Warning( "LOD switch failed for %s. New model %s not found", GetName(), modelname );
+		return;
+	}
+
+	const char *torsoanim = animator.CurrentAnim( ANIMCHANNEL_TORSO )->AnimName();
+	if ( strlen(torsoanim) > 0 && !newmodel->HasAnim( torsoanim ) )
+	{
+		gameLocal.Warning( "LOD switch failed for %s. New model %s doesn't support torso anim %s", GetName(), modelname, torsoanim );
+		return;
+	}
+
+	const char *legsanim = animator.CurrentAnim( ANIMCHANNEL_LEGS )->AnimName();
+	if ( strlen( legsanim ) > 0 && !newmodel->HasAnim( legsanim ) )
+	{
+		gameLocal.Warning( "LOD switch failed for %s. New model %s doesn't support legs anim %s", GetName(), modelname, legsanim );
+		return;
+	}
+
+	// Ok to proceed
+	idAnimatedEntity::SwapLODModel( modelname );
 }
 
 /*

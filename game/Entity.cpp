@@ -48,9 +48,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // TDM uses entity shaderparm 11 to control frob highlight state
 #define FROB_SHADERPARM 11
 
-// constant to disable LOD temp. Must be smaller than 1000 * (distcheckperiod + 2)
-#define NOLOD -100000
-
 #define FIRST_FRAME_SOUND_PROP_ALLOWED 60 // grayman #3768 - no sound propagation before this frame
 
 // overridable events
@@ -2703,8 +2700,28 @@ float idEntity::ThinkAboutLOD( const lod_data_t *m_LOD, const float deltaSq )
    
    Call ThinkAboutLOD, then do the nec. things like calling Hide()/Show(), SetAlpha() etc.
 */
-bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
+bool idEntity::SwitchLOD()
 {
+	// SteveL #3770: Moved the following if block and the derivation of deltaSq from idEntity::Think as it would 
+	// have had to be repeated in many places. Left behind only a check that LOD is enabled before calling SwitchLOD
+	const lod_data_t *m_LOD = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
+	float deltaSq = -1;
+	if ( m_LOD )
+	{
+		// If this entity has LOD, let it think about it:
+		// Distance dependence checks
+		if ( (m_LOD->DistCheckInterval > 0)
+			&& ((gameLocal.time - m_DistCheckTimeStamp) > m_LOD->DistCheckInterval) )
+		{
+			m_DistCheckTimeStamp = gameLocal.time;
+			deltaSq = GetLODDistance( m_LOD, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() );
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	if (!m_LOD)
 	{
 		gameLocal.Error("SwitchLOD() with NULL called.\n");
@@ -2751,7 +2768,7 @@ bool idEntity::SwitchLOD( const lod_data_t *m_LOD, const float deltaSq )
 				// setting a new model:
 				if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
 				{
-					SetModel( m_LOD->ModelLOD[m_LODLevel] );
+					SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
 				}
 				m_ModelLODCur = m_LODLevel;
 				// Fix 1.04 blinking bug:
@@ -2849,6 +2866,20 @@ float idEntity::GetLODDistance( const lod_data_t *m_LOD, const idVec3 &playerOri
 	return deltaSq;
 }
 
+
+/*
+================
+idEntity::SwapLODModel
+
+Virtual function overriden with more complex methods by animated entities.
+================
+*/
+void idEntity::SwapLODModel( const char *modelname )
+{
+	SetModel( modelname );
+}
+
+
 /*
 ================
 idEntity::Think
@@ -2864,28 +2895,11 @@ void idEntity::Think( void )
 		m_FrobBox->Link( gameLocal.clip, this, 0, GetPhysics()->GetOrigin(), GetPhysics()->GetAxis() );
 	}
 
-	if (m_LODHandle && m_DistCheckTimeStamp > NOLOD)
-	{
-		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
-
-		if (lod)
-		{
-			// If this entity has LOD, let it think about it:
-
-			// Distance dependence checks
-			if ( ( lod->DistCheckInterval > 0)
-				  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
-			{
-				m_DistCheckTimeStamp = gameLocal.time;
-
-//			gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
-//					GetName(), m_LOD, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
-
-			SwitchLOD( lod, 
-				GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
-			}
-		}
+	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD ) // SteveL #3770. Moved much of the logic to SwitchLOD as 
+	{												   // the invocation will need to be repeated in many places
+		SwitchLOD();
 	}
+
 	Present();
 }
 
@@ -8639,6 +8653,12 @@ idAnimatedEntity::Think
 */
 void idAnimatedEntity::Think( void ) {
 	RunPhysics();
+	
+	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD ) // SteveL #3770. idAnimatedEntities use LOD
+	{												   
+		SwitchLOD();
+	}
+
 	UpdateAnimation();
 	Present();
 	UpdateDamageEffects();
@@ -8721,6 +8741,56 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
 
 	UpdateVisuals();
+}
+
+/*
+================
+idAnimatedEntity::SwapLODModel
+
+For LOD. Save current animation state, then swap out the model. If the new model has animations with the same
+names as ongoing ones, then start them up at the same-numbered frame, but without blending. If the new animation
+is identical, no blending is needed of course. [SteveL #3770]
+================
+*/
+void idAnimatedEntity::SwapLODModel( const char *modelname )
+{
+	// Copy anim data from current anim on each channel
+	idAnimBlend				 oldAnims[ ANIM_NumAnimChannels ];
+
+	for ( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; ++i )
+	{
+		oldAnims[i] = *(animator.CurrentAnim( i ));
+	}
+
+	// Set new model and clear all animations
+	SetModel( modelname );
+
+	if ( !animator.ModelDef() )
+	{
+		return; // early exit if new model not animated
+	}
+
+	// Reinstate current anims where we have replacement anims available.
+	for ( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; ++i )
+	{
+		const idAnim *oldAnim = oldAnims[i].Anim();
+		if ( oldAnim )
+		{
+			int newAnimNum = animator.ModelDef()->GetAnim( oldAnim->FullName() );
+			if ( !newAnimNum )
+			{
+				newAnimNum = animator.ModelDef()->GetAnim( oldAnim->Name() );
+			}
+			if ( newAnimNum ) 
+			{
+				int cycle = oldAnims[i].GetCycleCount();
+				int starttime = oldAnims[i].GetStartTime();
+				animator.PlayAnim( i, newAnimNum, gameLocal.time, 0 );
+				animator.CurrentAnim( i )->SetCycleCount( cycle );
+				animator.CurrentAnim( i )->SetStartTime( starttime );
+			}
+		}
+	}
 }
 
 /*

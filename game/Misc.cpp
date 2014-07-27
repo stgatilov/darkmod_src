@@ -1045,7 +1045,6 @@ idAnimated::idAnimated() {
 	activator = NULL;
 	current_anim_index = 0;
 	num_anims = 0;
-
 }
 
 /*
@@ -1199,6 +1198,79 @@ bool idAnimated::GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis ) {
 	animator.GetJointTransform( soundJoint, gameLocal.time, origin, axis );
 	axis = renderEntity.axis;
 	return true;
+}
+
+/*
+===============
+idAnimated::Think
+===============
+*/
+void idAnimated::Think( void )
+{
+	// SteveL #3770: Allow idAnimateds to use LOD and support switching between a non-animated model and an animated one.
+	idAFEntity_Gibbable::Think();
+
+	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD )
+	{
+		SwitchLOD();
+	}
+}
+
+/*
+===============
+idAnimated::SwapLODModel
+===============
+*/
+void idAnimated::SwapLODModel( const char *modelname )
+{
+	// idAnimateds are the only class allowed to simply still their md5mesh as a LOD 
+	// optimization, which they do by setting "model_lod_N" to the special value "be_still".
+	// They can also swap in another animated model, or a static FS model.
+	bool stopAnims = ( idStr::Icmp( modelname, "be_still" ) == 0 );
+
+	if ( stopAnims )
+	{
+		animator.Clear( ANIMCHANNEL_ALL, gameLocal.time, FRAME2MS( blendFrames ) );
+	}
+	else if ( animator.ModelDef() && idStr::Cmp( modelname, animator.ModelDef()->GetName() ) == 0 )
+	{
+		// We already have the right model, so we don't need to switch
+	}
+	else
+	{
+		idAnimatedEntity::SwapLODModel( modelname );
+	}
+
+	if ( !stopAnims )
+	{
+		// If switching back to an animated model from a non-moving one, we can't rely on anims being 
+		// preserved through the switch like other idAnimatedEntities can. So restart our anims here. 
+		// Only restart the start_anim -- leave triggered anims to whatever scripts or setup controls them.
+
+		bool newModelIsAnimated = animator.ModelDef() ? true : false;
+		bool currentlyMoving = animator.IsAnimating( gameLocal.time );
+		bool usingOtherAnim = ( anim > 0 );
+
+		if ( newModelIsAnimated && !currentlyMoving && !usingOtherAnim )
+		{
+			idStr startAnimname;
+			if ( spawnArgs.GetString( "start_anim", "", startAnimname ) )
+			{
+				int startAnimnum = animator.GetAnim( startAnimname );
+				if ( startAnimnum )
+				{
+					animator.CycleAnim( ANIMCHANNEL_ALL, startAnimnum, gameLocal.time, 0 );
+				}
+			}
+		}
+		else if ( newModelIsAnimated && !currentlyMoving && usingOtherAnim )
+		{
+			// If we get to this point, we have a new animated mesh that doesn't support any ongoing
+			// animation and that isn't using its start animation. It won't be visible uness we set up its joints 
+			// to the first frame of the animation, so do that
+			animator.SetFrame( ANIMCHANNEL_ALL, anim, 1, gameLocal.time, 0 );
+		}
+	}
 }
 
 /*
@@ -1860,23 +1932,9 @@ void idFuncSmoke::Think( void ) {
 		}
 	}
 
-	if (m_LODHandle)
-	{
-		// If this entity has LOD, let it think about it:
-		// Distance dependence checks
-		const lod_data_t *lod = gameLocal.m_ModelGenerator->GetLODDataPtr( m_LODHandle );
-		if (lod)
-		{
-			if ( ( lod->DistCheckInterval > 0) 
-			  && ( (gameLocal.time - m_DistCheckTimeStamp) > lod->DistCheckInterval ) )
-			{
-				m_DistCheckTimeStamp = gameLocal.time;
-//				gameLocal.Warning("%s: Think called with m_LOD %p, %i, interval %i, origin %s",
-//						GetName(), lod, m_DistCheckTimeStamp, m_LOD->DistCheckInterval, GetPhysics()->GetOrigin().ToString() );
-				SwitchLOD( lod, 
-					GetLODDistance( lod, gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin(), GetPhysics()->GetOrigin(), renderEntity.bounds.GetSize(), cv_lod_bias.GetFloat() ) );
-			}
-		}
+	if ( m_LODHandle && m_DistCheckTimeStamp > NOLOD ) // SteveL #3770. use the new method of calling SwitchLOD 
+	{												   
+		SwitchLOD();
 	}
 }
 

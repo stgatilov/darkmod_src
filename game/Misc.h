@@ -280,6 +280,9 @@ public:
 	bool					StartRagdoll( void );
 	virtual bool			GetPhysicsToSoundTransform( idVec3 &origin, idMat3 &axis );
 
+	virtual void			Think( void );								//	\ SteveL #3770: to enable LOD
+	virtual void			SwapLODModel( const char *modelname );		//	/	
+	
 private:
 	int						num_anims;
 	int						current_anim_index;
