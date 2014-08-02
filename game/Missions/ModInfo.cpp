@@ -255,13 +255,25 @@ bool CModInfo::LoadMetaData()
 	int descPos = modFileContent.Find("Description:", false);
 	int authorPos = modFileContent.Find("Author:", false);
 	int versionPos = modFileContent.Find("Required TDM Version:", false);
+	int missionTitlesPos = modFileContent.Find("Mission 1 Title:", false); // grayman #3733
 
 	int len = modFileContent.Length();
 
 	if (titlePos >= 0)
 	{
-		displayName = idStr(modFileContent, titlePos, (descPos != -1) ? descPos : len);
+		displayName = idStr(modFileContent, titlePos, (missionTitlesPos != -1) ? missionTitlesPos : (descPos != -1) ? descPos : len); // grayman #3733
+		//displayName = idStr(modFileContent, titlePos, (descPos != -1) ? descPos : len);
 		Strip("Title:", displayName);
+	}
+
+	_missionTitles.Clear();
+	_missionTitles.Append(displayName); // [0] is the display name
+
+	// grayman #3733 - read mission titles if they exist
+	idStr missionTitles = idStr(modFileContent, missionTitlesPos, (descPos != -1) ? descPos : len);
+	if (missionTitlesPos >= 0)
+	{
+		GetMissionTitles(missionTitles); // fills in _missionTitles
 	}
 
 	if (descPos >= 0)
@@ -311,4 +323,39 @@ bool CModInfo::LoadMetaData()
 void CModInfo::Strip( const char *fieldname, idStr &input) {
 	input.StripLeadingOnce(fieldname);
 	input.StripWhitespace();
+}
+
+// grayman #3733 - read mission titles, if this is a campaign
+
+void CModInfo::GetMissionTitles(idStr missionTitles)
+{
+	if (modName.IsEmpty())
+	{
+		return;
+	}
+
+	int startIndex = 0;
+	idStr start = "Mission 1 Title: ";
+	idStr end   = "Mission 2 Title: ";
+	int endIndex = missionTitles.Find(end.c_str(), true); // grayman #3733
+	bool finished = false;
+	for ( int i = 1 ; ; i++ )
+	{
+		idStr title = idStr(missionTitles, startIndex, endIndex); // grayman #3733
+		Strip(start.c_str(), title);
+		_missionTitles.Append(title);
+		start = end;
+		startIndex = endIndex;
+		if (finished)
+		{
+			break;
+		}
+		end = va("Mission %d Title: ",i+2);
+		endIndex = missionTitles.Find(end.c_str(), true, startIndex); // grayman #3733
+		if (endIndex < 0)
+		{
+			endIndex = missionTitles.Length();
+			finished = true;
+		}
+	}
 }

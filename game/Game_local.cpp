@@ -4405,6 +4405,63 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateString( "tdm_lang", common->GetI18N()->GetCurrentLanguage().c_str() );
 		idStr gui_lang = "lang_"; gui_lang += common->GetI18N()->GetCurrentLanguage().c_str();
 		gui->SetStateInt( gui_lang, 1 );
+		idStr modName = m_MissionManager->GetCurrentModName();
+		CModInfoPtr info = m_MissionManager->GetModInfo(modName);
+
+		// grayman #3733 - provide campaign and mission titles to the main menu
+		if (info->_missionTitles.Num() > 1)
+		{
+			idStr campaignTitle = info->_missionTitles[0];
+			campaignTitle += ":";
+			idStr campaignMissionTitle = info->_missionTitles[m_MissionManager->GetCurrentMissionIndex() + 1];
+			gui->SetStateString("CampaignTitleText",common->Translate(campaignTitle.c_str())); // grayman #3733
+			gui->SetStateString("CampaignMissionTitleText",common->Translate(campaignMissionTitle.c_str())); // grayman #3733
+		}
+		else if (info->_missionTitles.Num() == 1)
+		{
+			idStr missionTitle = info->_missionTitles[0];
+			gui->SetStateString("MissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
+		}
+	}
+	else if (cmd == "mainmenuingame_init") // grayman #3733
+	{
+		idStr modName = m_MissionManager->GetCurrentModName();
+		CModInfoPtr info = m_MissionManager->GetModInfo(modName);
+
+		// grayman #3733 - provide campaign and mission titles to the main in-game menu
+		if (info->_missionTitles.Num() > 1)
+		{
+			idStr campaignTitle = info->_missionTitles[0];
+			campaignTitle += ":";
+			idStr campaignMissionTitle = info->_missionTitles[m_MissionManager->GetCurrentMissionIndex() + 1];
+			gui->SetStateString("MMIGCampaignTitleText",common->Translate(campaignTitle.c_str())); // grayman #3733
+			gui->SetStateString("MMIGCampaignMissionTitleText",common->Translate(campaignMissionTitle.c_str())); // grayman #3733
+		}
+		else if (info->_missionTitles.Num() == 1)
+		{
+			idStr missionTitle = info->_missionTitles[0];
+			gui->SetStateString("MMIGMissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
+		}
+	}
+	else if (cmd == "loadsavemenu_init") // grayman #3733
+	{
+		idStr modName = m_MissionManager->GetCurrentModName();
+		CModInfoPtr info = m_MissionManager->GetModInfo(modName);
+
+		// grayman #3733 - provide campaign and mission titles to the load/save menu
+		if (info->_missionTitles.Num() > 1)
+		{
+			idStr campaignTitle = info->_missionTitles[0];
+			campaignTitle += ":";
+			idStr campaignMissionTitle = info->_missionTitles[m_MissionManager->GetCurrentMissionIndex() + 1];
+			gui->SetStateString("LSCampaignTitleText",common->Translate(campaignTitle.c_str())); // grayman #3733
+			gui->SetStateString("LSCampaignMissionTitleText",common->Translate(campaignMissionTitle.c_str())); // grayman #3733
+		}
+		else if (info->_missionTitles.Num() == 1)
+		{
+			idStr missionTitle = info->_missionTitles[0];
+			gui->SetStateString("LSMissionTitleText",common->Translate(missionTitle.c_str())); // grayman #3733
+		}
 	}
 	else if (cmd == "check_tdm_version")
 	{

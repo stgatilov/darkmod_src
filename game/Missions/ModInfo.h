@@ -56,6 +56,8 @@ public:
 	idStr author;			// author(s)
 	idStr image;			// splash image
 
+	idList<idStr> _missionTitles; // grayman #3733 - (Campaign) mission titles
+
 	// Required TDM version
 	idStr requiredVersionStr;
 	int requiredMajor;
@@ -118,6 +120,8 @@ public:
 	// Load stuff from darkmod.txt, returns FALSE if the file couldn't be read
 	bool	LoadMetaData();
 
+	// grayman #3733
+	void	GetMissionTitles(idStr missionTitles);
 };
 typedef boost::shared_ptr<CModInfo> CModInfoPtr;
 

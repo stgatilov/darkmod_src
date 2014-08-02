@@ -498,7 +498,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			// ignore myself, my enemy, and dead bodies
 			// TDM: Also ignore ALL enemies
 			// grayman #2728 - also ignore small AI
-			if	((obPhys == physics) || (obEnt == ignore) || (obEnt->health <= 0) || self->IsEnemy(obEnt) || (obPhys->GetMass() <= 5.0))
+			if	((obPhys == physics) || (obEnt == ignore) || (obEnt->health <= 0) || self->IsEnemy(obEnt) || (obPhys->GetMass() <= SMALL_AI_MASS))
 			{
 				continue;
 			}
