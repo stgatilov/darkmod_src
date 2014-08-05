@@ -200,7 +200,7 @@ private:
 	void						Event_GetDifficultyName( int level );                   // SteveL #3304: Add 2 scriptevents
 	void						Event_GetMissionStatistic( const char* statisticName ); //               from Zbyl
 
-	void						Event_GetNextEntity( const char* key, const char* value, const idEntity* ent );	// SteveL #3802
+	void						Event_GetNextEntity( const char* key, const char* value, const idEntity* lastMatch );	// SteveL #3802
 
 public:							
 								CLASS_PROTOTYPE( idThread );
