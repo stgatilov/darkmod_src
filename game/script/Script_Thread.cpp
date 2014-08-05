@@ -249,6 +249,14 @@ const idEventDef EV_GetMissionStatistic("getMissionStatistic", EventArgs('s', "s
 	"\tbodiesFound: number of times enemies have spotted a body\n"
 	), 'f', "Returns current mission statistic.");
 
+// SteveL #3802 -- Allow scripts to discover entties in the map
+const idEventDef EV_GetNextEntity( "getNextEntity",
+	EventArgs(
+	's', "key", "Optional string: prefix for spawnarg key match. E.g. \"target\" will match \"target\", \"target1\" etc.",
+	's', "value", "Optional string: spawnarg value to match. Can be used independently of ''key''. If ''key'' is not set, all spawnargs will be checked for the value.",
+	'E', "lastMatch", "Last match: search will start after this entity. Use $null_entity or pass an uninitialized entity variable to start a new search." ),
+	'e',
+	"Discover all entities in the map. Returns $null_entity when no more found.");
 
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
@@ -369,6 +377,8 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_GetDifficultyLevel,			idThread::Event_GetDifficultyLevel )	// tels	   #3271
 	EVENT( EV_GetDifficultyName,			idThread::Event_GetDifficultyName )		// SteveL #3304: 2 scriptevents
 	EVENT( EV_GetMissionStatistic,			idThread::Event_GetMissionStatistic )	//               from Zbyl
+
+	EVENT( EV_GetNextEntity,				idThread::Event_GetNextEntity )	// SteveL #3802
 
 	END_CLASS
 
@@ -2400,4 +2410,49 @@ void idThread::Event_GetMissionStatistic( const char* statisticName )
 
 	gameLocal.Warning("Invalid statistic name passed to getMissionStatistic(): %s", statisticName);
 	idThread::ReturnFloat(0.0f);
+}
+
+// SteveL #3802
+void idThread::Event_GetNextEntity( const char* key, const char* value, const idEntity* lastMatch )
+{
+	bool noKeyFilter	=	( *key   == '\0' );
+	bool noValueFilter	=	( *value == '\0' );
+	
+	// Step 1: Work out where to start in the gameLocal.entities index
+	int i = lastMatch ? lastMatch->entityNumber + 1 : 0;
+
+	// Step 2: Advance i to the next matching entity
+	for ( ; i < MAX_GENTITIES ; ++i )
+	{
+		idEntity* ent = gameLocal.entities[i];
+		
+		if ( !ent )
+		{
+			continue;	// skip past nulls in the index
+		}
+		else if ( noKeyFilter && noValueFilter )
+		{
+			break;		// any entity will do
+		}
+		
+		// Search spawnargs for a matching value. If key is empty, all keys will be tested.
+		bool foundMatch = false;
+		const idKeyValue* kv = NULL;
+		while ( (kv = ent->spawnArgs.MatchPrefix(key, kv)) != NULL )
+		{
+			if ( noValueFilter || kv->GetValue() == value )
+			{
+				foundMatch = true;
+				break;
+			}
+		}
+
+		if ( foundMatch )
+		{
+			break;
+		}
+	}
+
+	// Step 3: Return a value
+	idThread::ReturnEntity( i < MAX_GENTITIES ? gameLocal.entities[i] : NULL );
 }
