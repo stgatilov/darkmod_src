@@ -1101,8 +1101,8 @@ void idProjectile::Event_ActivateProjectile()
 		// Set up our PickableLock instance
 
 		m_Lock = static_cast<PickableLock*>( PickableLock::CreateInstance() );
+		m_Lock->SetOwner( this ); // grayman #3803 - must be done before InitFromSpawnargs()
 		m_Lock->InitFromSpawnargs( spawnArgs ); // Load the spawnargs for the lock
-		m_Lock->SetOwner( this );
 		m_Lock->SetLocked( true );
 
 		BecomeActive( TH_ARMED ); // guarantee continued thinking
