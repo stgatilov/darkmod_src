@@ -591,6 +591,7 @@ public:
 	jointHandle_t				GetFirstChild( const char *name ) const;
 
 	idRenderModel				*SetModel( const char *modelname );
+	idRenderModel				*SwapLODModel( const char *modelname ); // SteveL #3770
 	idRenderModel				*ModelHandle( void ) const;
 	const idDeclModelDef		*ModelDef( void ) const;
 

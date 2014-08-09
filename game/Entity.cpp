@@ -4072,7 +4072,6 @@ bool idEntity::ModelCallback( renderEntity_s *renderEntity, const renderView_t *
 	if ( !ent ) {
 		gameLocal.Error( "idEntity::ModelCallback: callback with NULL game entity" );
 	}
-
 	return ent->UpdateRenderEntity( renderEntity, renderView );
 }
 
@@ -8660,6 +8659,7 @@ void idAnimatedEntity::Think( void ) {
 	}
 
 	UpdateAnimation();
+
 	Present();
 	UpdateDamageEffects();
 }
@@ -8747,27 +8747,42 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 ================
 idAnimatedEntity::SwapLODModel
 
-For LOD. Save current animation state, then swap out the model. If the new model has animations with the same
-names as ongoing ones, then start them up at the same-numbered frame, but without blending. If the new animation
-is identical, no blending is needed of course. [SteveL #3770]
+For LOD. Save current animation state, then swap out the model, maintaining joint data if possible. If 
+the new model has animations with the same names as ongoing ones, then start them up at the same-numbered 
+frame, but without blending. If the new animation is identical, no blending is needed of course. 
+[SteveL #3770]
 ================
 */
 void idAnimatedEntity::SwapLODModel( const char *modelname )
 {
 	// Copy anim data from current anim on each channel
-	idAnimBlend				 oldAnims[ ANIM_NumAnimChannels ];
+	idAnimBlend	oldAnims[ ANIM_NumAnimChannels ]; // auto-initializes its members
 
-	for ( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; ++i )
+	if ( animator.ModelDef() ) // if current model is animated
 	{
-		oldAnims[i] = *(animator.CurrentAnim( i ));
+		for ( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; ++i )
+		{
+			oldAnims[i] = *( animator.CurrentAnim( i ) );
+		}
 	}
 
-	// Set new model and clear all animations
-	SetModel( modelname );
-
-	if ( !animator.ModelDef() )
+	// Set new model, which will clear all animations
+	FreeModelDef();
+	renderEntity.hModel = animator.SwapLODModel( modelname );
+	if ( !renderEntity.hModel )
 	{
-		return; // early exit if new model not animated
+		// Can't do a swap that maintains joint data. So fall back to a full SetModel.
+		idAnimatedEntity::SetModel( modelname );
+		// NB this allows a non-animated replacement model, so check before going on to restore anims
+		if ( !animator.ModelDef() )
+		{
+			return;
+		}
+	}
+
+	if ( !renderEntity.customSkin ) 
+	{
+		renderEntity.customSkin = animator.ModelDef()->GetDefaultSkin();
 	}
 
 	// Reinstate current anims where we have replacement anims available.
@@ -8788,9 +8803,12 @@ void idAnimatedEntity::SwapLODModel( const char *modelname )
 				animator.PlayAnim( i, newAnimNum, gameLocal.time, 0 );
 				animator.CurrentAnim( i )->SetCycleCount( cycle );
 				animator.CurrentAnim( i )->SetStartTime( starttime );
+				BecomeActive( TH_ANIMATE ); // This gets disabled by the model swap
 			}
 		}
 	}
+
+	UpdateVisuals();
 }
 
 /*

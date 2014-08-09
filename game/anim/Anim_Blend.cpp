@@ -4218,6 +4218,65 @@ idRenderModel *idAnimator::SetModel( const char *modelname ) {
 
 /*
 =====================
+idAnimator::SwapLODModel
+
+Allow a model switch for LOD without destroying joint data, if the two models have compatible joints.
+=====================
+*/
+idRenderModel* idAnimator::SwapLODModel( const char *modelname ) {
+
+	// If we're just clearing the model, of if our current model isn't animated, don't use this method
+	if ( !modelname || !*modelname || !modelDef ) 
+	{
+		return NULL;
+	}
+
+	const idDeclModelDef *newmodel = static_cast<const idDeclModelDef *>( declManager->FindType( DECL_MODELDEF, modelname, false ) );
+	if ( !newmodel || !newmodel->ModelHandle() ) 
+	{
+		return NULL;
+	}
+
+	// Check joints match. Number, name, order, and hierarchy.
+	if ( newmodel->NumJoints() != modelDef->NumJoints() )
+	{
+		return NULL;
+	}
+
+	const idMD5Joint *oldjoint = modelDef->ModelHandle()->GetJoints();
+	const idMD5Joint *newjoint = newmodel->ModelHandle()->GetJoints();
+	idStr oldparent, newparent;
+
+	for ( int i = 0; i < newmodel->NumJoints(); ++i, ++oldjoint, ++newjoint )
+	{
+		if ( idStr::Icmp( newjoint->name, oldjoint->name ) )
+		{
+			return NULL;
+		}
+		oldparent = oldjoint->parent ? oldjoint->parent->name : "";
+		newparent = newjoint->parent ? newjoint->parent->name : "";
+		if ( idStr::Icmp( oldparent, newparent ) )
+		{
+			return NULL;
+		}
+	}
+
+	// OK to proceed
+	modelDef = newmodel;
+	// make sure model hasn't been purged
+	modelDef->Touch();
+
+	// set the modelDef on all channels
+	for ( int i = ANIMCHANNEL_ALL; i < ANIM_NumAnimChannels; i++ ) {
+		for ( int j = 0; j < ANIM_MaxAnimsPerChannel; j++ ) {
+			channels[i][j].Reset( modelDef );
+		}
+	}
+
+	return modelDef->ModelHandle();
+}
+/*
+=====================
 idAnimator::Size
 =====================
 */
