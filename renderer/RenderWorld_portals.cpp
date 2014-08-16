@@ -191,13 +191,19 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// if we are very close to the portal surface, don't bother clipping
 		// it, which tends to give epsilon problems that make the area vanish
 		if ( d < 1.0f ) {
-
-			// go through this portal
-			newStack = *ps;
-			newStack.p = p;
-			newStack.next = ps;
-			FloodViewThroughArea_r( origin, p->intoArea, &newStack );
-			continue;
+			// SteveL #3815: check the view origin is really in front of the portal
+			idBounds pBounds; // uninitialized
+			p->w->GetBounds( pBounds );
+			pBounds.ExpandSelf( 1.0f );
+			if ( pBounds.ContainsPoint(origin) )
+			{
+				// go through this portal
+				newStack = *ps;
+				newStack.p = p;
+				newStack.next = ps;
+				FloodViewThroughArea_r( origin, p->intoArea, &newStack );
+				continue;
+			}
 		}
 
 		// clip the portal winding to all of the planes
