@@ -318,6 +318,9 @@ const idEventDef EV_Player_GetGrabbed("getGrabbed", EventArgs(), 'e',
 		"Returns the currently entity in the players hands. Returns $null_entity if the player has nothing in his hands\n" \
 		"Dragging or shouldering a body counts as grabbing it. See also getDragged(), getShouldered(), getFrobbed().");
 
+//Obsttorte
+const idEventDef EV_SAVEGAME("saveGame",EventArgs('s', "filename",""),EV_RETURNS_VOID,"");
+
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
 	EVENT( EV_Player_GetMove,				idPlayer::Event_GetMove )
@@ -6137,24 +6140,26 @@ void idPlayer::UpdateMouseGesture( void )
 	{
 		if( motion.y < 0 )
 			CurrentDir = MOUSEDIR_UP;
-		else
+		else if (motion.y > 0)
 			CurrentDir = MOUSEDIR_DOWN;
-
+		else
+			CurrentDir = MOUSEDIR_NONE;
 		mag = idMath::Fabs( motion.y );
 	}
 	else if ( test == MOUSETEST_LEFTRIGHT )
 	{
 		if( motion.x > 0 )
 			CurrentDir = MOUSEDIR_RIGHT;
-		else
+		else if (motion.x < 0)
 			CurrentDir = MOUSEDIR_LEFT;
-
+		else
+			CurrentDir = MOUSEDIR_NONE;
 		mag = idMath::Fabs( motion.x );
 	}
 	else if( test == MOUSETEST_4DIR )
 	{
 		// up/down motion dominant
-		if( idMath::Fabs(motion.y) > idMath::Fabs(motion.x) )
+		if( idMath::Fabs(motion.y) > idMath::Fabs(motion.x) ) // Note: This implies that y!=0
 		{
 			if( motion.y < 0 )
 				CurrentDir = MOUSEDIR_UP;
@@ -6164,12 +6169,14 @@ void idPlayer::UpdateMouseGesture( void )
 			mag = idMath::Fabs( motion.y );			
 		}
 		// side/side dominant (default left for zero input)
-		else
+		else 
 		{
 			if( motion.x > 0 )
 				CurrentDir = MOUSEDIR_RIGHT;
-			else
+			else if (motion.x < 0)
 				CurrentDir = MOUSEDIR_LEFT;
+			else
+				CurrentDir = MOUSEDIR_NONE;
 
 			mag = idMath::Fabs( motion.x );
 		}
@@ -6193,7 +6200,7 @@ void idPlayer::UpdateMouseGesture( void )
 		dirs.Append(idMath::Fabs(DiagVec.y));
 
 		mag = 0.0f;
-		int MaxAxis = 1; // default to left if we have zero motion
+		int MaxAxis = -1; 
 
 		for( int i=0; i < 4; i++ )
 		{
@@ -6229,12 +6236,17 @@ void idPlayer::UpdateMouseGesture( void )
 				CurrentDir = MOUSEDIR_DOWN_RIGHT;
 		}
 		// upper right/lower left
-		else
+		else if (MaxAxis == 3)
 		{
 			if( DiagVec.y < 0 )
 				CurrentDir = MOUSEDIR_DOWN_LEFT;
 			else
 				CurrentDir = MOUSEDIR_UP_RIGHT;
+		}
+		// zero motion
+		else
+		{
+			CurrentDir = MOUSEDIR_NONE;
 		}
 	}
 
