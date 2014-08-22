@@ -7420,7 +7420,7 @@ void idPlayer::Think( void )
 	}
 
 	// determine if portal sky is in pvs
-	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetPhysics()->GetOrigin() );
+	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( gameLocal.GetPlayerPVS(), GetEyePosition() ); // SteveL #3819. Pass eye pos instead of origin
 }
 
 /*
