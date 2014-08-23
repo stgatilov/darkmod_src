@@ -9010,7 +9010,7 @@ void idPlayer::ClientPredictionThink( void ) {
 
 	pvsHandle_t	clientPVS = gameLocal.pvs.SetupCurrentPVS( GetPVSAreas(), GetNumPVSAreas() );
 
-	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( clientPVS, GetPhysics()->GetOrigin() );
+	gameLocal.portalSkyActive = gameLocal.pvs.CheckAreasForPortalSky( clientPVS, GetEyePosition() ); // SteveL #3819. Pass eye pos instead of origin
 
 	gameLocal.pvs.FreeCurrentPVS( clientPVS );
 
