@@ -422,6 +422,7 @@ void idGameLocal::Clear( void )
 
 }
 
+// grayman #3807
 int idGameLocal::DetermineSpyglassOverlay()
 {
 	int result = 0;
