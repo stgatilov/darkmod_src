@@ -7817,6 +7817,9 @@ void idGameLocal::OnReloadImages()
 
 void idGameLocal::OnVidRestart()
 {
+	// grayman #3807 - set spyglass overlay per aspect ratio
+	m_spyglassOverlay = DetermineSpyglassOverlay();
+
 	idPlayer* player = GetLocalPlayer();
 
 	if (player != NULL)
