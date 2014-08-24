@@ -432,26 +432,31 @@ int idGameLocal::DetermineSpyglassOverlay()
 
 	if (ratio_fov > 0.01)
 	{
-		if (ratio_fov < 1.291667)
+		// There are four overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9.
+		// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.777778.
+		// To match an overlay to a given 'ratio_fov', we'll assume that halfway between two
+		// ratios, we'll switch from the lower aspect ratio to the higher.
+
+		if (ratio_fov < (1.25 + (1.333333 - 1.25)/2))
 		{
-			result = 1;
+			result = 1; // 5:4
 		}
-		else if (ratio_fov < 1.466667)
+		else if (ratio_fov < (1.333333 + (1.6 - 1.333333)/2))
 		{
-			result = 0;
+			result = 0; // 4:3
 		}
-		else if (ratio_fov < 1.688889)
+		else if (ratio_fov < (1.6 + (1.777778 - 1.6)/2))
 		{
-			result = 3;
+			result = 3; // 16:10
 		}
 		else
 		{
-			result = 2;
+			result = 2; // 16:9 & 16:9 TV
 		}
 	}
 	else
 	{
-		// old code, use r_aspectRatio
+		// use r_aspectRatio
 		switch( r_aspectRatio.GetInteger() )
 		{
 		default:
