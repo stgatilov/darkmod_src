@@ -318,6 +318,10 @@ const idEventDef EV_Player_GetGrabbed("getGrabbed", EventArgs(), 'e',
 		"Returns the currently entity in the players hands. Returns $null_entity if the player has nothing in his hands\n" \
 		"Dragging or shouldering a body counts as grabbing it. See also getDragged(), getShouldered(), getFrobbed().");
 
+// grayman #3807
+const idEventDef EV_Player_SetSpyglassOverlayBackground("setSpyglassOverlayBackground", EventArgs(), EV_RETURNS_VOID, 
+		"Sets the background overlay for the spyglass, depending on aspect ratio.");
+
 //Obsttorte
 const idEventDef EV_SAVEGAME("saveGame",EventArgs('s', "filename",""),EV_RETURNS_VOID,"");
 
@@ -412,6 +416,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 
 	EVENT( EV_ProcessInterMissionTriggers,	idPlayer::Event_ProcessInterMissionTriggers )
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
+	EVENT( EV_Player_SetSpyglassOverlayBackground, idPlayer::Event_SetSpyglassOverlayBackground ) // grayman #3807
 
 END_CLASS
 
@@ -11671,6 +11676,27 @@ void idPlayer::Event_CheckAAS()
 		{
 			SendHUDMessage("Warning: " + aasNames[i] + " is out of date!");
 		}
+	}
+}
+
+// grayman #3807 - called immediately after creating the spyglass overlay gui
+void idPlayer::Event_SetSpyglassOverlayBackground()
+{
+	switch (gameLocal.GetSpyglassOverlay())
+	{
+	default:
+	case 0:
+		m_overlays.broadcastNamedEvent("initBackground_4x3");
+		break;
+	case 1:
+		m_overlays.broadcastNamedEvent("initBackground_5x4");
+		break;
+	case 2:
+		m_overlays.broadcastNamedEvent("initBackground_16x9");
+		break;
+	case 3:
+		m_overlays.broadcastNamedEvent("initBackground_16x10");
+		break;
 	}
 }
 

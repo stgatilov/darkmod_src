@@ -1388,6 +1388,8 @@ private:
 	// Checks the AAS status and displays the HUD warning
 	void					Event_CheckAAS();
 
+	void					Event_SetSpyglassOverlayBackground(); // grayman #3807
+
 	// Changes the projectile def name of the given weapon inventory item
 	void					Event_ChangeWeaponProjectile(const char* weaponName, const char* projectileDefName);
 	void					Event_ResetWeaponProjectile(const char* weaponName);

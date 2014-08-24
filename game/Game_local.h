@@ -724,6 +724,8 @@ public:
 	virtual void			CacheDictionaryMedia( const idDict *dict );
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
+	virtual int				GetSpyglassOverlay(); // grayman #3807
+	virtual int				DetermineSpyglassOverlay(); // grayman #3807
 
 	/**
 	* TDM: Pause/Unpause game
@@ -1060,6 +1062,8 @@ private:
 	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
+
+	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger

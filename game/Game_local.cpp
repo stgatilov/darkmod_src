@@ -319,6 +319,8 @@ void idGameLocal::Clear( void )
 
 	m_uniqueMessageTag = 0; // grayman #3355
 
+	m_spyglassOverlay = 0; // grayman #3807 - no need to save/restore
+
 	m_InterMissionTriggers.Clear();
 	
 	serverInfo.Clear();
@@ -418,6 +420,57 @@ void idGameLocal::Clear( void )
 
 	currentLights.Clear();	// sikk - Soft Shadows PostProcess
 
+}
+
+int idGameLocal::DetermineSpyglassOverlay()
+{
+	int result = 0;
+
+	// if r_fovRatio != 0, use it directly:
+	float ratio_fov = cv_r_fovRatio.GetFloat();
+
+	if (ratio_fov > 0.01)
+	{
+		if (ratio_fov < 1.291667)
+		{
+			result = 1;
+		}
+		else if (ratio_fov < 1.466667)
+		{
+			result = 0;
+		}
+		else if (ratio_fov < 1.688889)
+		{
+			result = 3;
+		}
+		else
+		{
+			result = 2;
+		}
+	}
+	else
+	{
+		// old code, use r_aspectRatio
+		switch( r_aspectRatio.GetInteger() )
+		{
+		default:
+		case 0: // 4:3
+			result = 0;
+			break;
+		case 1: // 16:9
+		case 4: // TV 16:9
+			result = 2;
+			break;
+		case 2: // 16:10
+			result = 3;
+			break;
+		case 3: // 5:4
+			result = 1;
+			break;
+		}
+	}
+
+	return result;
 }
 
 /*
@@ -563,6 +616,9 @@ void idGameLocal::Init( void ) {
 	{
 		m_HttpConnection = CHttpConnectionPtr(new CHttpConnection);
 	}
+
+	// grayman #3807 - set spyglass overlay per aspect ratio
+	m_spyglassOverlay = DetermineSpyglassOverlay();
 }
 
 const idStr& idGameLocal::GetMapFileName() const
@@ -3425,8 +3481,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 
 	if (ratio_fov > 0.01)
 	{
-			ratio_x = ratio_fov;
-			ratio_y = 1.0f;
+		ratio_x = ratio_fov;
+		ratio_y = 1.0f;
 	}
 	else
 	{
@@ -7811,6 +7867,13 @@ int idGameLocal::GetNextMessageTag()
 {
 	m_uniqueMessageTag++;
 	return ( m_uniqueMessageTag );
+}
+
+// grayman #3807
+
+int idGameLocal::GetSpyglassOverlay()
+{
+	return m_spyglassOverlay;
 }
 
 // grayman #3424
