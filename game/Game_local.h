@@ -717,6 +717,12 @@ public:
 	virtual const idDict &	GetPersistentPlayerInfo( int clientNum );
 	virtual void			SetPersistentPlayerInfo( int clientNum, const idDict &playerInfo );
 	virtual void			SetTime2Start(); // grayman #3763
+	// Obsttorte
+	virtual idStr			triggeredSave();
+	virtual void			incrementSaveCount();
+	virtual bool			savegamesDisallowed();
+	virtual bool			quicksavesDisallowed();
+	// <--- end
 	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed );
 	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );
 	virtual void			SaveGame( idFile *saveGameFile );

@@ -64,6 +64,10 @@ extern const idEventDef EV_Player_GetShouldered;
 extern const idEventDef EV_Player_GetDragged;
 extern const idEventDef EV_Player_GetGrabbed;
 
+//Obsttorte:
+extern const idEventDef EV_SAVEGAME;
+extern const idEventDef EV_setSavePermissions;
+
 const float THIRD_PERSON_FOCUS_DISTANCE	= 512.0f;
 const int	LAND_DEFLECT_TIME = 150;
 const int	LAND_RETURN_TIME = 300;
@@ -303,6 +307,7 @@ public:
 	idScriptBool			AI_LEAN_RIGHT;
 	idScriptBool			AI_LEAN_FORWARD;
 
+
 	/**
 	* Ishtvan: Set to true for the duration of the frame if the AI takes damage
 	* (more reliable than AI_PAIN)
@@ -477,6 +482,8 @@ public:
 	// grayman #3424 - keep track of intruder evidence when meeting friends
 	int						timeEvidenceIntruders;
 
+	// Obsttorte: 
+	int						savePermissions;
 public:
 	CLASS_PROTOTYPE( idPlayer );
 
@@ -1417,6 +1424,13 @@ private:
 	// Call gameLocal.ProcessInterMissionTriggers
 	void					Event_ProcessInterMissionTriggers();
 
+	// Obsttorte: event to save the game
+	void					Event_saveGame(idStr name);
+
+
+	void					Event_setSavePermissions(int sp);
+
+	
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {

@@ -37,6 +37,9 @@ idCVar	idSessionLocal::com_aviDemoTics( "com_aviDemoTics", "2", CVAR_SYSTEM | CV
 idCVar	idSessionLocal::com_wipeSeconds( "com_wipeSeconds", "1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_ROM, "" );
 
+//Obsttorte
+idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "");
+
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
 
@@ -1697,13 +1700,15 @@ void idSessionLocal::ScrubSaveGameFileName( idStr &saveFileName ) const {
 idSessionLocal::SaveGame
 ===============
 */
-bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
+bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipCheck ) {
 #ifdef	ID_DEDICATED
 	common->Printf( "Dedicated servers cannot save games.\n" );
 	return false;
 #else
 	int i;
 	idStr gameFile, previewFile, descriptionFile, mapName;
+
+	gameFile = saveName; // Obsttorte: moved upwards as needed earlier
 
 	if ( !mapSpawned ) {
 		common->Printf( "Not playing a game.\n" );
@@ -1721,7 +1726,19 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 		common->Printf( "You must be alive to save the game\n" );
 		return false;
 	}
-
+	if (!skipCheck)
+	{
+		if (game->savegamesDisallowed())
+		{
+			common->Printf("Manual saving is disabled!\n");
+			return false;
+		}
+		if (game->quicksavesDisallowed() && gameFile == "Quicksave")
+		{
+			common->Printf("Quicksaves disabled!\n");
+			return false;
+		}
+	}
 	if ( Sys_GetDriveFreeSpace( cvarSystem->GetCVarString( "fs_savepath" ) ) < 25 ) {
 		// "Not eough space" and "Unable to save"
 		MessageBox( MSG_OK, common->Translate ( "#str_02014" ), common->Translate ( "#str_02013" ), true );
@@ -1735,8 +1752,8 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 		soundSystem->SetPlayingSoundWorld( NULL );
 	}
 
-	// setup up filenames and paths
-	gameFile = saveName;
+	// setup up paths
+	
 	ScrubSaveGameFileName( gameFile );
 
 	gameFile = "savegames/" + gameFile;
@@ -1758,6 +1775,10 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 		}
 		return false;
 	}
+
+	// Obsttorte increment the savegame counter
+	
+	game->incrementSaveCount();
 
 	// Write SaveGame Header: 
 	// Game Name / Version / Map Name / Persistant Player Info
@@ -2663,6 +2684,23 @@ void idSessionLocal::RunGameTic() {
 	{
 		game->SetTime2Start();
 		loadDoneTime = 0;
+	}
+	
+	// Obsttorte - check if we should save the game
+
+	idStr saveGameName = game->triggeredSave();
+	if (!saveGameName.IsEmpty())
+	{
+		if (cvarSystem->GetCVarBool("tdm_nosave"))
+		{
+			cvarSystem->SetCVarBool("tdm_nosave",false);
+			SaveGame(saveGameName.c_str());
+			cvarSystem->SetCVarBool("tdm_nosave",true);
+		}
+		else
+		{
+			SaveGame(saveGameName.c_str(), false, true);
+		}
 	}
 
 	// run the game logic every player move

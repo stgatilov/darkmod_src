@@ -1143,7 +1143,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 	for( i = 0; i < cmds; i++ ) {
 		savegame.WriteString( m_GUICommandStack[i] );
 	}
-
+	
 	// greebo: Close the savegame, this will invoke a recursive Save on all registered objects
 	savegame.Close();
 
@@ -1189,6 +1189,53 @@ void idGameLocal::SetTime2Start() // grayman #3763
 {
 	m_time2Start = true;
 }
+
+/*
+===========
+idGameLocal::triggeredSave
+===========
+*/
+
+idStr idGameLocal::triggeredSave()
+{
+	idStr sgn = cvarSystem->GetCVarString("saveGameName");
+	cvarSystem->SetCVarString("saveGameName","");
+	return sgn;	
+}
+
+/*
+=============
+idGameLocal::incrementSaveCount
+=============
+*/
+
+void idGameLocal::incrementSaveCount()
+{
+	m_MissionData->incrementSavegameCounter();
+}
+
+/*
+=========
+idGameLocal::saveGamesDisallowed
+=========
+*/
+bool idGameLocal::savegamesDisallowed()
+{
+	idPlayer* player = GetLocalPlayer();
+	return player->savePermissions == 2;
+}
+
+/*
+=========
+idGameLocal::quicksavesDisallowed
+=========
+*/
+bool idGameLocal::quicksavesDisallowed()
+{
+	idPlayer* player = GetLocalPlayer();
+	return player->savePermissions == 1;
+}
+
 
 /*
 ============

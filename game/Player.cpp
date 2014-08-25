@@ -324,6 +324,7 @@ const idEventDef EV_Player_SetSpyglassOverlayBackground("setSpyglassOverlayBackg
 
 //Obsttorte
 const idEventDef EV_SAVEGAME("saveGame",EventArgs('s', "filename",""),EV_RETURNS_VOID,"");
+const idEventDef EV_setSavePermissions("setSavePermissions",EventArgs('d',"permission", "0"), EV_RETURNS_VOID,"");
 
 CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_GetButtons,			idPlayer::Event_GetButtons )
@@ -418,6 +419,9 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_CheckAAS,						idPlayer::Event_CheckAAS )
 	EVENT( EV_Player_SetSpyglassOverlayBackground, idPlayer::Event_SetSpyglassOverlayBackground ) // grayman #3807
 
+	// Obsttorte: script function to save the game
+	EVENT( EV_SAVEGAME,						idPlayer::Event_saveGame )
+	EVENT( EV_setSavePermissions,			idPlayer::Event_setSavePermissions )
 END_CLASS
 
 const int MAX_RESPAWN_TIME = 10000;
@@ -985,6 +989,9 @@ void idPlayer::Init( void ) {
 	}
 
 	cvarSystem->SetCVarBool( "ui_chat", false );
+	
+	
+	savePermissions = 0;
 }
 
 /*
@@ -1172,6 +1179,7 @@ void idPlayer::Spawn( void )
 
 	// greebo: Initialise the default fov.
 	zoomFov.Init(gameLocal.time, 0, g_fov.GetFloat(), g_fov.GetFloat());
+
 
 	// Post an event to read the LG modifier from the worldspawn entity
 	PostEventMS(&EV_ReadLightgemModifierFromWorldspawn, 0);
@@ -1978,6 +1986,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_LightgemInterleave);
 	savefile->WriteBool(ignoreWeaponAttack);   // grayman #597
 	savefile->WriteInt(timeEvidenceIntruders); // grayman #3424
+	savefile->WriteInt(savePermissions);
 
 	if(hud)
 	{
@@ -2326,7 +2335,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_LightgemInterleave);
 	savefile->ReadBool(ignoreWeaponAttack);   // grayman #597
 	savefile->ReadInt(timeEvidenceIntruders); // grayman #3424
-
+	savefile->ReadInt(savePermissions);
 	// create combat collision hull for exact collision detection
 	SetCombatModel();
 
@@ -11806,6 +11815,17 @@ void idPlayer::Event_ProcessInterMissionTriggers()
 	gameLocal.ProcessInterMissionTriggers();
 }
 
+// Obsttorte: Event to save the game
+
+void idPlayer::Event_saveGame(idStr name)
+{
+	cvarSystem->SetCVarString("saveGameName",name);
+}
+
+void idPlayer::Event_setSavePermissions(int sp)
+{
+	savePermissions=sp;
+}
 bool idPlayer::CanGreet() // grayman #3338
 {
 	// Player can always respond to a greeting, but he never says anything

@@ -67,6 +67,7 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 	blackMaterial			= declManager->FindMaterial( "_black" );
 	whiteMaterial			= declManager->FindMaterial( "_white" );
 	currentRenderMaterial	= declManager->FindMaterial( "_currentRender" );
+	currentNSRenderMaterial   = declManager->FindMaterial("_nsRender");
 	scratchMaterial			= declManager->FindMaterial( "_scratch" );
 	depthMaterial			= declManager->FindMaterial( "render/depth" );
 	normalsMaterial			= declManager->FindMaterial( "render/normals" );
@@ -571,30 +572,30 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		gameLocal.playerOldEyePos = currentEyePos;
 	}
 // sikk---> Soft Shadows PostProcess 
-	if (!noshadows.GetBool())
-	{
+	
 		if ( r_useSoftShadows.GetBool() && !g_skipViewEffects.GetBool()) {
 			playerPVS = gameLocal.pvs.SetupCurrentPVS( player->GetPVSAreas(), player->GetNumPVSAreas() );
 			idLight* ambient_light = gameLocal.FindMainAmbientLight(true);
-			ToggleShadows( false );
+			//ToggleShadows( false );
+			//renderSystem->setDrawShadows(true);
+			hackedView.noshadows=false;
+			//common->Warning("%s", renderSystem->getDrawShadows() ? "true" : "false");
 			idVec3 color = ambient_light->spawnArgs.GetVector("_color");
-			ambient_light->SetColor(color.x, color.y, color.z);
+			ambient_light->SetColor(color.x, color.y, color.z);		
 			gameRenderWorld->RenderScene( &hackedView );
-			renderSystem->CaptureRenderToImage( "_ssRender" );
-			ToggleShadows( true );
+			
+			renderSystem->CaptureRenderToImage( "_ssRender" );	
+			
+			hackedView.noshadows=true;
+			//ToggleShadows( true );
+			//renderSystem->setDrawShadows(false);
+			//common->Warning("%s", renderSystem->getDrawShadows() ? "true" : "false");
 			color*= 2.0f;
 			ambient_light->SetColor(color.x, color.y, color.z);
 			gameLocal.pvs.FreeCurrentPVS( playerPVS );
+
 		}
-		else
-		{
-			ToggleShadows(false);
-		}
-	}
-	else
-	{
-		ToggleShadows(true);
-	}
+	
 	
 // <---sikk
 	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
@@ -900,12 +901,12 @@ void idPlayerView::RenderPlayerView( idUserInterface *hud )
 			}
 		}
 		//}
-		if (!noshadows.GetBool())
-		{
+		//if (!noshadows.GetBool())
+		//{
 			DoPostFX();	// sikk
-			isRendering = false;
-			ToggleShadows( false ); //Obsttorte
-		}
+			//isRendering = false;
+			//ToggleShadows( false ); //Obsttorte
+		//}
 		// Bloom related - J.C.Denton
 		/* Update  post-process */
 		this->m_postProcessManager.Update();
@@ -1115,7 +1116,7 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 void idPlayerView::dnPostProcessManager::Update( void )
 {
 	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
-
+	fBloomImageDownScale=1;
 	if( r_postprocess_bloomKernelSize.IsModified() )
 	{
 		gameLocal.Printf(" Bloom Kernel size is set to: %s \n", fBloomImageDownScale == 2.0f ? "Large": "Small" );

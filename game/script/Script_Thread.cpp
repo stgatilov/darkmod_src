@@ -2407,7 +2407,12 @@ void idThread::Event_GetMissionStatistic( const char* statisticName )
 		idThread::ReturnFloat(bodiesFound);
 		return;
 	}
-
+	if (idStr::Icmp("totalSaves", statisticName) == 0)
+	{
+		int totalSaves = gameLocal.m_MissionData->getTotalSaves();
+		idThread::ReturnFloat(totalSaves);
+		return;
+	}
 	gameLocal.Warning("Invalid statistic name passed to getMissionStatistic(): %s", statisticName);
 	idThread::ReturnFloat(0.0f);
 }

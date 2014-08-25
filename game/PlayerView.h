@@ -221,6 +221,7 @@ private:
 	const idMaterial *	blackMaterial;			// Black material (for general use) 
 	const idMaterial *	whiteMaterial;			// White material (for general use) 
 	const idMaterial *	currentRenderMaterial;	// Current Render material (for general use) 
+	const idMaterial *  currentNSRenderMaterial;
 	const idMaterial *	scratchMaterial;		// Scratch material (for general use) 
 	const idMaterial *	depthMaterial;			// Depth material (for general use) 
 	const idMaterial *	normalsMaterial;		// View Space Normals material (for general use) 
@@ -253,6 +254,8 @@ private:
 	const idMaterial *	tunnel2Material;		// health tunnel vision for Health Management System (Health Regen)
 	const idMaterial *	adrenalineMaterial;		// Adrenaline Vision material
 	const idMaterial *	explosionFXMaterial;	// Explosion FX material
+
+	
 
 	idAngles			prevViewAngles;			// Holds previous frame's player view angles
 	int					prevTime;				// Holds previous frame's time

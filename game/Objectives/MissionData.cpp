@@ -2606,8 +2606,14 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	key = common->Translate( "#str_02226" );	// Difficulty Level
 	value = GetDifficultyName(difficultyLevel); // grayman #3292 - get from mission stats, not from difficulty manager
-	gui->SetStateString(prefix + idStr(index), key + divider + value);
+	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 	
+	
+	// Obsttorte: Times saved
+	key = common->Translate( "#str_09000" );	// Times saved
+	value = idStr(m_Stats.totalSaveCount-1);	// -1 due to final save
+	gui->SetStateString(prefix+idStr(index++), key+divider+value);
+
 	/*key = "Frames";
 	value = idStr(gameLocal.framenum);
 	gui->SetStateString(prefix + idStr(index++), key + "\t" + value);
@@ -2731,3 +2737,13 @@ idStr CMissionData::GetDifficultyName(int level)
 	return common->Translate( diffDef->dict.GetString(va("diff%ddefault", level), "") );
 }
 
+// Obsttorte
+
+void CMissionData::incrementSavegameCounter()
+{
+	m_Stats.totalSaveCount++;
+}
+int CMissionData::getTotalSaves()
+{
+	return m_Stats.totalSaveCount;
+}

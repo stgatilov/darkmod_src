@@ -470,6 +470,10 @@ public:
 	// greebo: This is the general mission end event, regardless whether failed or completed.
 	void Event_MissionEnd();
 
+	// Obsttorte: Increment save game counter for end mission screen
+	void incrementSavegameCounter();
+	int getTotalSaves();
+
 protected:
 	/**
 	 * greebo: Tells the missiondata class to remember playerteam. As mission statistics

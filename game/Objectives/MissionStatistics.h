@@ -83,6 +83,10 @@ public:
 	int numberTimesPlayerSeen;
 	int totalTimePlayerSeen;
 
+	// Obsttorte - Total save count
+
+	int totalSaveCount;
+
 	// grayman #3292 - since the map-defined difficulty names get wiped at map
 	// shutdown, and that happens before the statistics screen is displayed,
 	// the difficulty names need to be stored where the statistics screen can

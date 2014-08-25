@@ -77,6 +77,7 @@ void MissionStatistics::Clear()
 	{
 		_difficultyNames[i] = "";
 	}
+	totalSaveCount = 0;
 }
 
 void MissionStatistics::Save(idSaveGame* savefile) const
@@ -144,6 +145,7 @@ void MissionStatistics::Save(idSaveGame* savefile) const
 	{
 		savefile->WriteString(_difficultyNames[i]);
 	}
+	savefile->WriteInt(totalSaveCount);	// Obsttorte
 }
 
 void MissionStatistics::Restore(idRestoreGame* savefile)
@@ -219,6 +221,7 @@ void MissionStatistics::Restore(idRestoreGame* savefile)
 	{
 		savefile->ReadString(_difficultyNames[i]);
 	}
+	savefile->ReadInt(totalSaveCount);
 }
 
 EObjCompletionState MissionStatistics::GetObjectiveState(int objNum) const

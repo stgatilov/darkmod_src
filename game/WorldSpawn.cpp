@@ -94,7 +94,6 @@ void idWorldspawn::Spawn( void ) {
 		thread->DelayedStart( 0 );
 		kv = spawnArgs.MatchPrefix( "call", kv );
 	}
-
 	// activate worldspawn's targets when it spawns
 	PostEventMS( &EV_ActivateTargets, 0, this );
 }
