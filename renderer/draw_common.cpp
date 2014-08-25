@@ -980,6 +980,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
+					
 		}
 		backEnd.currentRenderCopied = true;
 	}
@@ -1014,6 +1015,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
+		
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
@@ -1775,14 +1777,25 @@ void	RB_STD_DrawView( void ) {
 	// fill the depth buffer and clear color buffer to black except on
 	// subviews
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
-
+	globalImages->BindNull();
 	// main light renderer
 	switch( tr.backEndRenderer ) {
 	case BE_ARB:
 		RB_ARB_DrawInteractions();
 		break;
-	case BE_ARB2:
-		RB_ARB2_DrawInteractions();
+	case BE_ARB2:	
+		/*
+		RB_ARB2_DrawInteractions(false);
+		
+		globalImages->currentNoShadowImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
+				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
+		
+		
+		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+		*/
+		
+		RB_ARB2_DrawInteractions(backEnd.viewDef->renderView.noshadows);
 		break;
 	case BE_NV20:
 		RB_NV20_DrawInteractions();

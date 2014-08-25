@@ -215,6 +215,7 @@ typedef struct renderView_s {
 	int						time;
 	float					shaderParms[MAX_GLOBAL_SHADER_PARMS];		// can be used in any way by shader
 	const idMaterial		*globalMaterial;							// used to override everything draw
+	bool					noshadows;
 } renderView_t;
 
 

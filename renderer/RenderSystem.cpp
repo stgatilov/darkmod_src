@@ -1069,3 +1069,22 @@ bool idRenderSystemLocal::UploadImage( const char *imageName, const byte *data, 
 	image->SetImageFilterAndRepeat();
 	return true;
 }
+
+/*
+===========
+idRenderSystemLocal::setDrawShadows
+===========
+*/
+void idRenderSystemLocal::setDrawShadows(bool ds)
+{
+	drawShadows = ds;
+}
+/*
+==========
+idRenderSystemLocal::getDrawShadows
+==========
+*/
+bool idRenderSystemLocal::getDrawShadows()
+{
+	return drawShadows;
+}

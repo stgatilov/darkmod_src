@@ -141,7 +141,7 @@ class idRenderWorld;
 
 class idRenderSystem {
 public:
-
+	bool					drawShadows;	// Obsttorte
 	virtual					~idRenderSystem() {}
 
 	// set up cvars and basic data structures, but don't
@@ -253,6 +253,9 @@ public:
 	// texture filter / mipmapping / repeat won't be modified by the upload
 	// returns false if the image wasn't found
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height ) = 0;
+
+	virtual void			setDrawShadows(bool ds) = 0;
+	virtual bool			getDrawShadows() = 0;
 };
 
 extern idRenderSystem *			renderSystem;

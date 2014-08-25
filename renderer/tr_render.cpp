@@ -233,11 +233,11 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		} else {
 			return;
 		}
-
+		
 		if ( drawSurf->space->weaponDepthHack ) {
 			RB_EnterWeaponDepthHack();
 		}
-
+		
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
