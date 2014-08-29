@@ -2017,9 +2017,7 @@ public:
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
 	
-	/** Call the script function DrawWeapon (in a new thread) if it exists */
-	void					DrawWeapon(ECombatType type); // grayman #3331
-	/** Call the script function SheathWeapon (in a new thread) if it exists */
+	bool					DrawWeapon(ECombatType type); // grayman #3331 // grayman #3775
 	void					SheathWeapon();
 
 	// angua: this is used to check whether the AI is able to unlock a specific door

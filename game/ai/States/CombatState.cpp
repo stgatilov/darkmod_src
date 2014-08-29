@@ -710,21 +710,33 @@ void CombatState::Think(idAI* owner)
 			// beyond melee range
 			if ( !owner->GetAttackFlag(COMBAT_RANGED) && _rangedPossible )
 			{
-				owner->DrawWeapon(COMBAT_RANGED);
-				drawingWeapon = true;
+				drawingWeapon = owner->DrawWeapon(COMBAT_RANGED); // grayman #3775
+				if (!drawingWeapon) // grayman #3775
+				{
+					break; // need to leave early and come back here again
+				}
+				//drawingWeapon = true;
 			}
 			else // no ranged weapon
 			{
-				owner->DrawWeapon(COMBAT_MELEE);
-				drawingWeapon = true;
+				drawingWeapon = owner->DrawWeapon(COMBAT_MELEE); // grayman #3775
+				if (!drawingWeapon) // grayman #3775
+				{
+					break; // need to leave early and come back here again
+				}
+				//drawingWeapon = true;
 			}
 		}
 		else // in melee range
 		{
 			if ( _meleePossible && !owner->GetAttackFlag(COMBAT_MELEE) )
 			{
-				owner->DrawWeapon(COMBAT_MELEE);
-				drawingWeapon = true;
+				drawingWeapon = owner->DrawWeapon(COMBAT_MELEE); // grayman #3775
+				if (!drawingWeapon) // grayman #3775
+				{
+					break; // need to leave early and come back here again
+				}
+				//drawingWeapon = true;
 			}
 		}
 

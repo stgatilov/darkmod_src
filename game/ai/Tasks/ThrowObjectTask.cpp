@@ -64,6 +64,12 @@ bool ThrowObjectTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	// grayman #3775 - no need to throw if you're drawing a weapon
+	if (idStr(owner->WaitState()) == "draw")
+	{
+		return true;
+	}
+
 	if (owner->AI_ENEMY_VISIBLE)
 	{
 		// Turn to the player

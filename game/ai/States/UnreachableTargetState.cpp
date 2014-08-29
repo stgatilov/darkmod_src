@@ -259,27 +259,7 @@ void UnreachableTargetState::Think(idAI* owner)
 
 	owner->TurnToward(enemy->GetPhysics()->GetOrigin());
 	
-	// Throw rock if you can.
-	// If you had to get closer first, the throw is handled here.
-	// If you didn't have to get closer, the throw was handled in Init().
-
-	if (owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0") &&
-			_moveRequired && (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE))
-	{
-		// We are finished moving closer
-		// Start throwing now
-		_moveRequired = false;
-
-		// greebo: Sheathe weapon before starting to throw // FIXME: put weapon to left hand?
-		// grayman: No, don't switch weapon to left hand, because we have no animations to do
-		// so, and the code everywhere assumes weapons are in the right hand.
-		owner->SheathWeapon();
-
-		owner->FaceEnemy();
-		owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
-		// grayman #3507 - randomize wait time
-		_takeCoverTime = gameLocal.time + 2000 + gameLocal.random.RandomFloat()*2000; // wait 2-4 seconds
-	}
+	// grayman #3775 - test reachability before deciding to throw an object
 
 	// This checks if the enemy is reachable again so we can go into combat state
 	if (owner->enemyReachable || owner->TestMelee() || memory.canHitEnemy)
@@ -303,6 +283,53 @@ void UnreachableTargetState::Think(idAI* owner)
 		owner->GetMind()->EndState();
 		return;
 	}
+
+	// Throw rock if you can.
+	// If you had to get closer first, the throw is handled here.
+	// If you didn't have to get closer, the throw was handled in Init().
+
+	if (owner->spawnArgs.GetBool("outofreach_projectile_enabled", "0") &&
+			_moveRequired && (owner->AI_MOVE_DONE || owner->AI_DEST_UNREACHABLE))
+	{
+		// We are finished moving closer
+		// Start throwing now
+		_moveRequired = false;
+
+		// greebo: Sheathe weapon before starting to throw // FIXME: put weapon to left hand?
+		// grayman: No, don't switch weapon to left hand, because we have no animations to do
+		// so, and the code everywhere assumes weapons are in the right hand.
+		owner->SheathWeapon();
+
+		owner->FaceEnemy();
+		owner->actionSubsystem->PushTask(ThrowObjectTask::CreateInstance());
+		// grayman #3507 - randomize wait time
+		_takeCoverTime = gameLocal.time + 2000 + gameLocal.random.RandomFloat()*2000; // wait 2-4 seconds
+	}
+
+	/* grayman #3775 - moved up
+	// This checks if the enemy is reachable again so we can go into combat state
+	if (owner->enemyReachable || owner->TestMelee() || memory.canHitEnemy)
+	{
+		if (owner->GetMind()->PerformCombatCheck())
+		{
+			owner->GetMind()->EndState();
+			return;
+		}
+	}
+
+	// This checks for a reachable position within combat range
+
+	// grayman #3507 - new way
+
+	// FindAttackPosition() handles both melee and ranged attacks
+
+	idVec3 targetPoint;
+	if (owner->FindAttackPosition(_reachEnemyCheck, enemy, targetPoint, COMBAT_NONE))
+	{
+		owner->GetMind()->EndState();
+		return;
+	}
+	*/
 
 	_reachEnemyCheck++;
 	_reachEnemyCheck %= 4;

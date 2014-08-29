@@ -11953,7 +11953,7 @@ void idAI::StopLipSync()
 ===================== Sheathing/drawing weapons =====================
 */
 
-void idAI::DrawWeapon(ECombatType type) 
+bool idAI::DrawWeapon(ECombatType type) // grayman #3775
 {
 	/*const function_t* func = scriptObject.GetFunction("DrawWeapon");
 	if (func) {
@@ -11970,14 +11970,21 @@ void idAI::DrawWeapon(ECombatType type)
 
 	if ( ( numMeleeWeapons == 0 ) && ( numRangedWeapons == 0 ) )
 	{
-		return; // nothing to do
+		return false; // nothing to do // grayman #3775
 	}
 
 	// grayman #3492 - don't draw a weapon if you're already in the act of drawing one
 
 	if ( idStr(WaitState()) == "draw" )
 	{
-		return;
+		return false; // grayman #3775
+	}
+
+	// grayman #3775 - don't draw a weapon if you're throwing something
+
+	if ( idStr(WaitState()) == "throw" )
+	{
+		return false; // grayman #3775
 	}
 
 	// grayman #3331 - draw the requested weapon
@@ -12008,6 +12015,7 @@ void idAI::DrawWeapon(ECombatType type)
 		SetAnimState(ANIMCHANNEL_TORSO, "Torso_DrawRangedWeapon", 4);
 	}
 	SetWaitState("draw"); // grayman #3355
+	return true; // grayman #3775
 }
 
 void idAI::SheathWeapon() 
