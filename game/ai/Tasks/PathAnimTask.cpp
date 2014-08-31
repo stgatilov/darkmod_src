@@ -65,17 +65,14 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 
 	int blendIn = path->spawnArgs.GetInt("blend_in");
 	
-	// Play the anim on the TORSO channel (will override the LEGS channel)
-	owner->Event_PlayAnim(ANIMCHANNEL_TORSO, animName);
-	owner->Event_PlayAnim(ANIMCHANNEL_LEGS, animName);
+	// Custom AnimState scripts should start the anim themselves, so pass it as a key -- SteveL #3800
+	owner->spawnArgs.Set( "customAnim_requested_anim", animName );
+	owner->spawnArgs.Set( "customAnim_cycle", "0" );
 
-	// greebo: Be sure to sync the anim channels, otherwise we get duplicate frame commands
-	owner->Event_SyncAnimChannels(ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, 0);
-	
-	// Set the name of the state script
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomAnim", blendIn);
-	
+	owner->SetAnimState( ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn );
+	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_CustomAnim", blendIn );
+	owner->PostEventMS( &AI_SyncAnimChannels, 16, ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, (float)blendIn );
+
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
 	owner->SetWaitState("customAnim");

@@ -512,6 +512,7 @@ public:
 	int							PlayLength( void ) const;
 	void						AllowMovement( bool allow );
 	void						AllowFrameCommands( bool allow );
+	bool						FrameCommandsAllowed( void ) const; // SteveL #3800
 	const idAnim				*Anim( void ) const;
 	int							AnimNum( void ) const;
 	/**

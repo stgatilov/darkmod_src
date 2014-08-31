@@ -2400,6 +2400,16 @@ void idAnimBlend::AllowFrameCommands( bool allow ) {
 
 /*
 =====================
+idAnimBlend::FrameCommandsAllowed
+=====================
+*/
+bool idAnimBlend::FrameCommandsAllowed( void ) const
+{
+	return allowFrameCommands;
+}
+
+/*
+=====================
 idAnimBlend::Pause
 =====================
 */

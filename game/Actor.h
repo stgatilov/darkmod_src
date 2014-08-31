@@ -162,6 +162,8 @@ extern const idEventDef AI_MeleeNameForNum;
 extern const idEventDef AI_ShowAttachment;
 extern const idEventDef AI_ShowAttachmentInd;
 
+extern const idEventDef AI_SyncAnimChannels; // SteveL #3800
+
 class idDeclParticle;
 
 class idAnimState {
