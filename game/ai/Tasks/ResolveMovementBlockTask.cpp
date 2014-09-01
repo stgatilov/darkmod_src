@@ -85,7 +85,7 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	_endTime = gameLocal.time + 20000; // 20 seconds
 
 	// grayman #3725
-	_turning = FALSE;
+	_turning = false;
 
 	// Save the movement state
 	owner->PushMove();
@@ -414,7 +414,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 		angles.ToVectors(&forward, &right);
 		owner->StopMove(MOVE_STATUS_WAITING);
 		owner->TurnToward(owner->GetPhysics()->GetOrigin() + right);
-		_turning = TRUE; // grayman #3725
+		_turning = true; // grayman #3725
 	}
 
 	if (_turning) // grayman #3725
@@ -424,7 +424,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			return false;
 		}
 
-		_turning = FALSE;
+		_turning = false;
 
 		if (_preTaskContents == -1)
 		{

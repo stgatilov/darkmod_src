@@ -461,7 +461,7 @@ public:
 	* Acuity type is a char, from the same list as alert types.
 	* That list is defined in DarkModGlobals.cpp.
 	**/
-	float idAI::GetBaseAcuity(const char *type) const; // grayman #3552
+	float GetBaseAcuity(const char *type) const; // grayman #3552
 
 	/**
 	* Returns the float val of the specific AI's acuity, accounting for

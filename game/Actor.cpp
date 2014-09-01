@@ -5235,7 +5235,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 			{
 				// no floor soon, so knock him out
 				static_cast<idAI*>(this)->Fall_Knockout( m_SetInMotionByActor.GetEntity() );
-				isRagDoll = TRUE; // immediate change, for the rest of this method
+				isRagDoll = true; // immediate change, for the rest of this method
 			}
 		}
 	}

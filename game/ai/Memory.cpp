@@ -97,12 +97,12 @@ Memory::Memory(idAI* owningAI) :
 	fleeingDone(true),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
-	closeSuspiciousDoor(false), // grayman #1327
 	issueMoveToPositionTask(false), // grayman #3052
+	closeSuspiciousDoor(false), // grayman #1327
 	currentSearchEventID(-1), // grayman #3424
 	playerResponsible(false),  // grayman #3679 - is the player responsible for the attack?
-	combatState(-1), /// grayman #3507
 	stayPut(false), // grayman #3528
+	combatState(-1), /// grayman #3507
 	susDoorSameAsCurrentDoor(false) // grayman #3643
 {
 	attacker = NULL; // grayman #3679 - who attacked me
