@@ -520,6 +520,7 @@ public:
 	**/
 	void						Pause( bool bPause );
 	bool						IsPaused( void );
+	void						CopyStateData( const idAnimBlend& other ); // for LOD swaps during an animation -- SteveL #3834
 };
 
 /*

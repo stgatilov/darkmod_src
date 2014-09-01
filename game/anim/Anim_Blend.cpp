@@ -2410,6 +2410,24 @@ bool idAnimBlend::FrameCommandsAllowed( void ) const
 
 /*
 =====================
+idAnimBlend::CopyStateData
+
+For use after a LOD switch. Restore certain flags from the old anim such as
+whether frame commands are allowed.
+=====================
+*/
+void idAnimBlend::CopyStateData( const idAnimBlend& other )
+{
+	this->allowMove = other.allowMove;
+	this->allowFrameCommands = other.allowFrameCommands;
+	this->m_bPaused = other.m_bPaused;
+	this->m_PausedEndtime = other.m_PausedEndtime;
+	this->m_PausedCycle = other.m_PausedCycle;
+	this->m_PausedTime = other.m_PausedTime;
+}
+
+/*
+=====================
 idAnimBlend::Pause
 =====================
 */

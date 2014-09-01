@@ -8803,7 +8803,7 @@ void idAnimatedEntity::SwapLODModel( const char *modelname )
 				animator.PlayAnim( i, newAnimNum, gameLocal.time, 0 );
 				animator.CurrentAnim( i )->SetCycleCount( cycle );
 				animator.CurrentAnim( i )->SetStartTime( starttime );
-				animator.CurrentAnim( i )->AllowFrameCommands( oldAnims[i].FrameCommandsAllowed() ); // #3800
+				animator.CurrentAnim( i )->CopyStateData( oldAnims[i] ); // #3800 #3834
 				BecomeActive( TH_ANIMATE ); // This gets disabled by the model swap
 			}
 		}
