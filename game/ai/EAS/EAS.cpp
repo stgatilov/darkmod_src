@@ -894,6 +894,39 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	return result;
 }
 
+// grayman #3548
+CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float maxVertDist)
+{
+	CMultiStateMover* elevator = NULL;
+	for ( int j = 0 ; (j < _elevators.Num()) && (elevator == NULL) ; j++ )
+	{
+		CMultiStateMover* ent = _elevators[ j ].GetEntity();
+		if (ent)
+		{
+			const idList<MoverPositionInfo>& positionList = ent->GetPositionInfoList();
+
+			for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
+			{
+				CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+		
+				idVec3 entOrigin = positionEnt->GetPhysics()->GetOrigin();
+				float dist = (pos - entOrigin).LengthFast();
+				if (dist < maxDist)
+				{
+					float vertDist = idMath::Abs(pos.z - entOrigin.z);
+					if (vertDist < maxVertDist)
+					{
+						elevator = ent;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	return elevator;
+}
+
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)
 {

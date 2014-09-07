@@ -167,6 +167,50 @@ bool CRelations::IsNeutral( int i, int j)
 	return (GetRelNum(i, j) == 0);
 }
 
+bool CRelations::CheckForHostileAI(idVec3 point, int team) // grayman #3548
+{
+	// Determine if any AI are armed and hostile in
+	// point's neighborhood.
+
+	bool hostile = false;
+
+	idClipModel *clipModels[ MAX_GENTITIES ];
+	idBounds neighborhood(idVec3(point.x-256,point.y-256,point.z),
+						  idVec3(point.x+256,point.y+256,point.z+128));
+
+	int num = gameLocal.clip.ClipModelsTouchingBounds( neighborhood, MASK_MONSTERSOLID, clipModels, MAX_GENTITIES );
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		idClipModel *cm = clipModels[i];
+
+		// don't check render entities
+		if ( cm->IsRenderModel() )
+		{
+			continue;
+		}
+
+		idEntity *ent = cm->GetEntity();
+
+		// is this an AI?
+		if (ent && ent->IsType(idAI::Type))
+		{
+			// is the AI armed?
+			idAI* ai = static_cast<idAI*>(ent);
+			if ( ( ai->GetNumMeleeWeapons() > 0 ) || ( ai->GetNumRangedWeapons() > 0 ) )
+			{
+				// is the AI hostile to the given team?
+				if (IsEnemy(ai->team, team))
+				{
+					hostile = true;
+					break;
+				}
+			}
+		}
+	}
+
+	return hostile; // return true = hostiles found; return false = no hostiles found
+}
+
 CRelations::SEntryData CRelations::ParseEntryData(const idKeyValue* kv)
 {
 	const idStr& tempKey = kv->GetKey();

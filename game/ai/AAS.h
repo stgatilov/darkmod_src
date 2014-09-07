@@ -183,7 +183,7 @@ public:
 	 * @returns: TRUE if a walk path could be found, FALSE otherwise.
 	 */
 	// Creates a walk path towards the goal.
-	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) = 0;
+	virtual bool				WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, int &travelTime, idActor* actor ) = 0; // grayman #3548
 
 								/** 
 								 * Returns true if one can walk along a straight line from the origin to the goal origin.

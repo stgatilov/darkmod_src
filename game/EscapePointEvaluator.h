@@ -87,6 +87,15 @@ protected:
 	 *          TRUE if the search can continue.
 	 */
 	bool	PerformDistanceCheck(EscapePoint& escapePoint);
+
+	/** grayman #3548
+	 * Performs a neighborhood check at the flee point, looking at
+	 * the relationship of the fleeing AI with the AI in the neighborhood.
+	 *
+	 * @returns FALSE if the search is finished (no hostiles) or 
+	 *          TRUE if the search can continue.
+	 */
+	bool	PerformRelationshipCheck(EscapePoint& escapePoint, int team);
 };
 typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 
@@ -102,6 +111,9 @@ typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 class AnyEscapePointFinder :
 	public EscapePointEvaluator
 {
+	// The team of the fleeing AI, which is evaluated against the
+	// teams of the AI near the flee point.
+	int _team;
 public:
 	AnyEscapePointFinder(const EscapeConditions& conditions);
 
@@ -114,6 +126,9 @@ public:
 class GuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
+	// The team of the fleeing AI, which is evaluated against the
+	// teams of the AI near the flee point.
+	int _team;
 public:
 	GuardedEscapePointFinder(const EscapeConditions& conditions);
 
@@ -130,7 +145,7 @@ class FriendlyEscapePointFinder :
 	public EscapePointEvaluator
 {
 	// The team of the fleeing AI, which is evaluated against the
-	// team of the escape point.
+	// team of the escape point and the teams of the AI near the flee point.
 	int _team;
 
 public:
@@ -149,7 +164,7 @@ class FriendlyGuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
 	// The team of the fleeing AI, which is evaluated against the
-	// team of the escape point.
+	// team of the escape point and the teams of the AI near the flee point.
 	int _team;
 
 public:

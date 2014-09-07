@@ -185,7 +185,7 @@ public:
 	/**
 	 * greebo: Retrieve an escape goal for the given escape conditions.
 	 */
-	EscapeGoal GetEscapeGoal(const EscapeConditions& conditions);
+	EscapeGoal GetEscapeGoal(EscapeConditions& conditions);
 
 	// Accessor to the singleton instance of this class
 	static CEscapePointManager* Instance();

@@ -317,6 +317,16 @@ void State::OnTactileAlert(idEntity* tactEnt)
 				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
 				owner->AI_TACTALERT = false;
 			}
+			else if (!owner->AI_FORWARD) // grayman #3548
+			{
+				// standing still, so turn toward what hit you
+				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
+				owner->AI_TACTALERT = false;
+			}
+			else
+			{
+				// just keep running
+			}
 		}
 	}
 }
@@ -4258,6 +4268,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					break;
 				}
 
+				// grayman #3548 - Can't help if I'm unarmed
+				if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
+				{
+					break;
+				}
+
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
 					// Bark
@@ -4277,6 +4293,11 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					// set up search
 					// grayman #3009 - pass the alert position so the AI can look at it
 					owner->PreAlertAI("aud", psychLoud, memory.alertPos); // grayman #3356
+
+					// grayman #3548 - even though my alert level went up
+					// by 'psychLoud', we need to guarantee that I'll start
+					// the search right away by setting my alert level right below combat threshold
+					owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 
 					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
@@ -4391,6 +4412,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					// We got alerted by a communication message
 					memory.alertedDueToCommunication = true;
 						
+					// grayman #3548 - Can't help if I'm unarmed
+					if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
+					{
+						break;
+					}
+
 					//gameLocal.Printf("They're my friend, I'll attack it too!\n");
 					memory.alertPos = directObjectLocation;
 				}
@@ -4438,6 +4465,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::AttackOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: AttackOrder_CommType\r");
+			// grayman #3548 - Can't attack if I'm unarmed
+			if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
+			{
+				break;
+			}
+
 			// Set this as our enemy and enter combat
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
@@ -4633,6 +4666,14 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	// grayman #3438 - don't respond if I just finished searching
 	if ( !owner->IsSearching() && ( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) )
 	{
+		return;
+	}
+
+	// grayman #3548 - don't respond if fleeing
+	idStr myState = owner->GetMind()->GetState()->GetName();
+	if ( ( myState == "Flee" ) || ( myState == "FleeDone" ) )
+	{
+		//gameLocal.Printf("I'm fleeing, so I can't help!\n");
 		return;
 	}
 

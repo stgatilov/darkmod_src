@@ -287,8 +287,8 @@ idAASLocal::WalkPathToGoal
   FIXME: don't stop optimizing on first failure ?
 ============
 */
-bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) {
-
+bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, int &travelTime, idActor* actor ) // grayman #3548
+{
 	// Set the default values
 
 	path.type = PATHTYPE_WALK;
@@ -298,6 +298,7 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	path.reachability = NULL;
 	path.elevatorRoute = eas::RouteInfoPtr();
 	path.firstDoor = NULL;
+	travelTime = 0; // grayman #3548
 
 	if ( ( file == NULL ) || ( areaNum == goalAreaNum ) )
 	{
@@ -335,6 +336,7 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 		path.moveGoal = elevatorPath.moveGoal;
 		path.moveAreaNum = elevatorPath.moveAreaNum;
 		path.elevatorRoute = elevatorPath.elevatorRoute;
+		travelTime = elevatorTravelTime; // grayman #3548
 
 		return true; // found an elevator to use
 	}
@@ -349,7 +351,8 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 	int curAreaNum = areaNum;
 	idReachability* reach(NULL);
 	idVec3 endPos;
-	int travelTime, endAreaNum;
+	//int travelTime; // grayman #3548
+	int endAreaNum;
 
 	for ( int i = 0 ; i < maxWalkPathIterations ; i++ )
 	{

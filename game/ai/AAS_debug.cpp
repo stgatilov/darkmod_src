@@ -282,7 +282,8 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 		org = reach->end;
 	}
 
-	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR, NULL ) ) {
+	if ( WalkPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_AIR, travelTime, NULL ) ) // grayman #3548
+	{
 		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 1, 10000 );
 	}
 }
@@ -416,7 +417,10 @@ bool idAASLocal::PullPlayer( const idVec3 &origin, int toAreaNum ) {
 	if ( player->GetPhysics()->GetAbsBounds().Expand( 8 ).ContainsPoint( areaCenter ) ) {
 		return false;
 	}
-	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR, NULL ) ) {
+
+	int travelTime; // grayman #3548
+	if ( WalkPathToGoal( path, areaNum, origin, toAreaNum, areaCenter, TFL_WALK|TFL_AIR, travelTime, NULL ) ) // grayman #3548
+	{
 		dir = path.moveGoal - origin;
 		dir[2] *= 0.5f;
 		dir.Normalize();

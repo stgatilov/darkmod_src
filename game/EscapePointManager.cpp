@@ -229,7 +229,7 @@ EscapePoint* CEscapePointManager::GetEscapePoint(int id)
 	return _aasEscapePointIndex[id];
 }
 
-EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions)
+EscapeGoal CEscapePointManager::GetEscapeGoal(EscapeConditions& conditions)
 {
 	assert(conditions.aas != NULL);
 	// The AAS pointer has to be known
@@ -253,17 +253,25 @@ EscapeGoal CEscapePointManager::GetEscapeGoal(const EscapeConditions& conditions
 		goal.distance = -1;
 		return goal;
 	}
-	else if (escapePoints.Num() == 1) 
+
+	if (escapePoints.Num() == 1) 
 	{
+		// grayman #3548 - Don't just return the only escape point.
+		// Let the evaluator check for hostile AI in the escape point's neighborhood.
+		// Dispense with the guarded and friendly checks.
+		conditions.algorithm = FIND_ANY;
+
+		/*
 		// Only one point available, return that one
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Only one escape point available, returning this one: %d.\r", escapePoints[0].id);
 
 		goal.escapePointId = escapePoints[0].id;
 		goal.distance = (conditions.self.GetEntity()->GetPhysics()->GetOrigin() - escapePoints[0].origin).LengthFast();
 		return goal;
+		*/
 	}
 
-	// At this point we have more than 1 escape point, run the evaluation
+	// Run the evaluation
 
 	// The evaluator pointer
 	EscapePointEvaluatorPtr evaluator;

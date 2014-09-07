@@ -100,6 +100,9 @@ public:
 	void Restore(idRestoreGame* savefile);
 
 	void DrawRoute(int startArea, int goalArea);
+
+	// grayman #3548 - find closest elevator
+	CMultiStateMover* GetNearbyElevator(idVec3 pos, float maxDist, float maxVertDist);
 	
 	// grayman - for debugging cluster data
 //	void PrintClusterInfo();

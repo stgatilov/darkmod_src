@@ -23,6 +23,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "EscapePointEvaluator.h"
 #include "EscapePointManager.h"
+#include "AI/AAS_local.h"
 
 EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
@@ -44,11 +45,23 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	int travelTime;
 	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
 
+	// grayman #3548 - shouldn't we also allow travel by elevator?
+	idAI* ai = _conditions.self.GetEntity();
+	if (ai && ai->CanUseElevators())
+	{
+		travelFlags |= TFL_ELEVATOR;
+	}
+
 	// Calculate the traveltime
-	idReachability* reach;
+	//idReachability* reach;
 
 	// grayman #3100 - factor in whether the point is reachable, don't just look at distance
-	bool canReachPoint = _conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, NULL, _conditions.self.GetEntity());
+	// grayman #3548 - path check must include elevators. Use WalkPathToGoal() for that, because
+	// RouteToGoalArea() only checks walking.
+
+	aasPath_t path;
+	bool canReachPoint = _conditions.aas->WalkPathToGoal( path, _startAreaNum, _conditions.fromPosition, escapePoint.areaNum, escapePoint.origin, travelFlags, travelTime, ai );
+	//bool canReachPoint = _conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, NULL, ai);
 
 	if ( !canReachPoint )
 	{
@@ -74,16 +87,28 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	return true;
 }
 
+bool EscapePointEvaluator::PerformRelationshipCheck(EscapePoint& escapePoint, int team) // grayman #3548
+{
+	return gameLocal.m_RelationsManager->CheckForHostileAI(escapePoint.origin, team);
+}
+
+
 /**
  * AnyEscapePointFinder
  */
 AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator(conditions)
+	EscapePointEvaluator(conditions),
+	_team(conditions.self.GetEntity()->team)
 {}
 
 bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
-	// Just pass the call to the base class
+	// grayman #3548 - add relationship check for hostiles at the escape point
+	if ( PerformRelationshipCheck(escapePoint,_team) )
+	{
+		return true; // hostiles present, so keep looking
+	}
+
 	return PerformDistanceCheck(escapePoint);
 }
 
@@ -91,7 +116,8 @@ bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  * GuardedEscapePointFinder
  */
 GuardedEscapePointFinder::GuardedEscapePointFinder(const EscapeConditions& conditions) :
-	EscapePointEvaluator(conditions)
+	EscapePointEvaluator(conditions),
+	_team(conditions.self.GetEntity()->team)
 {}
 
 bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
@@ -101,6 +127,12 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not guarded, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not guarded.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3548 - add relationship check for hostiles at the escape point
+	if ( PerformRelationshipCheck(escapePoint,_team) )
+	{
+		return true; // hostiles present, so keep looking
 	}
 
 	return PerformDistanceCheck(escapePoint);
@@ -118,9 +150,15 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
 	if (!gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
 	{
-		// Not guarded, continue the search
+		// Not friendly, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not friendly.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3548 - add relationship check for hostiles at the escape point
+	if ( PerformRelationshipCheck(escapePoint,_team) )
+	{
+		return true; // hostiles present, so keep looking
 	}
 
 	return PerformDistanceCheck(escapePoint);
@@ -138,9 +176,15 @@ bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
 	if (!escapePoint.isGuarded || !gameLocal.m_RelationsManager->IsFriend(escapePoint.team, _team))
 	{
-		// Not guarded, continue the search
+		// Not guarded or not friendly, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is either not friendly or not guarded.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3548 - add relationship check for hostiles at the escape point
+	if ( PerformRelationshipCheck(escapePoint,_team) )
+	{
+		return true; // hostiles present, so keep looking
 	}
 
 	return PerformDistanceCheck(escapePoint);

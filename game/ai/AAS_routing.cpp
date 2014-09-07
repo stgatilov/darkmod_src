@@ -35,7 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #define MAX_ROUTING_CACHE_MEMORY	(2*1024*1024)
 
-#define LEDGE_TRAVELTIME_PANALTY	250
+#define LEDGE_TRAVELTIME_PENALTY	250
 
 /*
 ============
@@ -853,7 +853,7 @@ void idAASLocal::UpdateAreaRoutingCache( idRoutingCache *areaCache ) const {
 				if ( badTravelFlags & TFL_FLY ) {
 					// avoid areas near ledges
 					if ( file->GetArea( nextAreaNum ).flags & AREA_LEDGE ) {
-						nextUpdate->tmpTravelTime += LEDGE_TRAVELTIME_PANALTY;
+						nextUpdate->tmpTravelTime += LEDGE_TRAVELTIME_PENALTY;
 					}
 				}
 
@@ -1422,7 +1422,7 @@ bool idAASLocal::FindNearestGoal( aasGoal_t &goal, int areaNum, const idVec3 ori
 			if ( badTravelFlags & TFL_FLY ) {
 				// avoid areas near ledges
 				if ( file->GetArea( nextAreaNum ).flags & AREA_LEDGE ) {
-					nextUpdate->tmpTravelTime += LEDGE_TRAVELTIME_PANALTY;
+					nextUpdate->tmpTravelTime += LEDGE_TRAVELTIME_PENALTY;
 				}
 			}
 

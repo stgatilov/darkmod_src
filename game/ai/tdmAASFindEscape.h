@@ -35,7 +35,8 @@ public:
 		const idVec3& threatPosition, 
 		const idVec3& selfPosition, 
 		float minDistToThreat,
-		float minDistToSelf
+		float minDistToSelf,
+		int   team // grayman #3548
 	);
 
 	virtual bool		TestArea(const idAAS *aas, int areaNum);
@@ -48,6 +49,7 @@ private:
 	idVec3				_selfPosition;
 	float				_minDistThreatSqr;
 	float				_minDistSelfSqr;
+	int					_team; // grayman #3548
 
 	aasGoal_t			_goal;
 	float				_bestDistSqr;

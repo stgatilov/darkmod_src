@@ -28,12 +28,14 @@ tdmAASFindEscape::tdmAASFindEscape(
 	const idVec3& threatPosition, 
 	const idVec3& selfPosition, 
 	float minDistToThreat,
-	float minDistToSelf
+	float minDistToSelf,
+	int	  team // grayman #3548
 ) :
 	_threatPosition(threatPosition),
 	_selfPosition(selfPosition),
 	_minDistThreatSqr(minDistToThreat*minDistToThreat),
 	_minDistSelfSqr(minDistToSelf*minDistToSelf),
+	_team(team), // grayman #3548
 	_bestDistSqr(0)
 {
 	_goal.areaNum = -1;
@@ -62,17 +64,21 @@ bool tdmAASFindEscape::TestArea(const idAAS *aas, int areaNum)
 		distThreatSqr >= _minDistThreatSqr && 
 		distSelfSqr >= _minDistSelfSqr)
 	{
-		// We've got a new best candidate, which is farther away than the previous candidate
-		_bestDistSqr = distThreatSqr;
-
-		// Fill the goal with the new values
-		_goal.areaNum = areaNum;
-		_goal.origin = areaCenter;
-
-		// There's a 10% chance that the search is truncated here.
-		if (gameLocal.random.RandomFloat() < 0.1f)
+		// grayman #3548 - check area for hostiles
+		if (!gameLocal.m_RelationsManager->CheckForHostileAI(areaCenter, _team))
 		{
-			return true;
+			// We've got a new best candidate, which is farther away than the previous candidate
+			_bestDistSqr = distThreatSqr;
+
+			// Fill the goal with the new values
+			_goal.areaNum = areaNum;
+			_goal.origin = areaCenter;
+
+			// There's a 10% chance that the search is truncated here.
+			if (gameLocal.random.RandomFloat() < 0.1f)
+			{
+				return true;
+			}
 		}
 	}
 

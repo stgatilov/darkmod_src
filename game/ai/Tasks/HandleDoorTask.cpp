@@ -433,7 +433,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 {
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s\r",owner->name.c_str());
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s, state = %d\r",owner->name.c_str(),(int)_doorHandlingState);
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -2571,6 +2571,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
+	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask finished - %s\r",owner->name.c_str());
 	if (owner->m_HandlingDoor)
 	{
 		owner->m_HandlingDoor = false; // grayman #3647 - has to be done BEFORE the PopMove()

@@ -150,6 +150,11 @@ void FleeState::Think(idAI* owner)
 			owner->GetMind()->SwitchState(STATE_FLEE_DONE);
 		}
 	}
+	else // grayman #3548
+	{
+		// Let the AI check its senses
+		owner->PerformVisualScan();
+	}
 }
 
 void FleeState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)

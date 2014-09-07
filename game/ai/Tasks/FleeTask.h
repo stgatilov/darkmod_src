@@ -29,6 +29,11 @@ namespace ai
 // Define the name of this task
 #define TASK_FLEE "FleeTask"
 
+// grayman #3548 - distance values
+#define FLEE_DIST_MAX	1000 // stop fleeing when at least this far away from the threat
+#define FLEE_DIST_MIN	 300 // initial distance to put between you and the threat
+#define FLEE_DIST_DELTA	 300 // incremental distance to put between you and the threat
+
 class FleeTask;
 typedef boost::shared_ptr<FleeTask> FleeTaskPtr;
 
@@ -40,6 +45,8 @@ class FleeTask :
 	int _failureCount;
 	int _fleeStartTime;
 	EscapeDistanceOption _distOpt;
+	int _currentDistanceGoal; // grayman #3548
+	bool _haveTurnedBack; // grayman #3548
 
 	FleeTask();
 public:
@@ -50,6 +57,8 @@ public:
 	virtual void Init(idAI* owner, Subsystem& subsystem);
 
 	virtual bool Perform(Subsystem& subsystem);
+
+	virtual void OnFinish(idAI* owner); // grayman #3548
 
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

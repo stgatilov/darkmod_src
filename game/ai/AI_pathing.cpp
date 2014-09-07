@@ -493,12 +493,25 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 		{
 			idActor* obEntActor = static_cast<idActor*>(obEnt); // grayman #2345
 			actorFound = true; // grayman #2345
+
+			// grayman #3548 - am I an AI? (prolly a stupid question)
+			bool fleeing = false;
+			if (self->IsType(idAI::Type))
+			{
+				fleeing = !static_cast<idAI*>(self)->GetMemory().fleeingDone;
+			}
+
 			idPhysics* obPhys = obEnt->GetPhysics();
 
 			// ignore myself, my enemy, and dead bodies
 			// TDM: Also ignore ALL enemies
 			// grayman #2728 - also ignore small AI
-			if	((obPhys == physics) || (obEnt == ignore) || (obEnt->health <= 0) || self->IsEnemy(obEnt) || (obPhys->GetMass() <= SMALL_AI_MASS))
+			// grayman #3548 - don't ignore enemies if fleeing
+			if	((obPhys == physics)	||
+				 (obEnt == ignore)		||
+				 (obEnt->health <= 0)	||
+				 (self->IsEnemy(obEnt) && !fleeing) ||
+				 (obPhys->GetMass() <= SMALL_AI_MASS) )
 			{
 				continue;
 			}

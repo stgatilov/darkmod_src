@@ -133,6 +133,8 @@ public:
 	**/
 	bool IsNeutral( int i, int j);
 
+	bool CheckForHostileAI(idVec3 point, int team); // grayman #3548
+
 	/**
 	* Fill the relationship matrix from the def file for the map
 	* returns FALSE if there was a problem loading

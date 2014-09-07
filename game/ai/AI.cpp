@@ -64,6 +64,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "tdmAASFindEscape.h"
 #include "AreaManager.h"
 
+#include "EAS/EAS.h" // grayman #3548
+#include "EAS/ElevatorStationInfo.h" // grayman #3548
+
 #include <boost/lexical_cast.hpp>
 
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
@@ -3148,7 +3151,8 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	}
 	else
 	{
-		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor );
+		int travelTime; // grayman #3548
+		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, travelTime, actor ); // grayman #3548
 	}
 	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
 
@@ -3618,7 +3622,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 	}
 
 	// The current AI origin
-	const idVec3& org = physicsObj.GetOrigin();
+	idVec3 org = physicsObj.GetOrigin();
 
 	// These two will hold the travel destination info
 	idVec3 moveDest;
@@ -3671,13 +3675,18 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 
 		int	areaNum = PointReachableAreaNum(org);
 		idVec3 pos;
-		aasObstacle_t obstacle;
-		int numObstacles;
+
+		// grayman #3548 - Considering the player as an obstacle can cause the AI to get
+		// stuck in place if the player bumped him and was standing near him.
+		// FindNearestGoal() won't let the flee path intersect the player's expanded boundary,
+		// so many checks were failing because the candidate flee path began inside the expanded boundary.
+		//aasObstacle_t obstacle;
+		//int numObstacles;
 
 		if ( entityToFleeFrom != NULL ) // grayman #3317
 		{
 			// consider the entity the monster is getting close to as an obstacle
-			obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds();
+			//obstacle.absBounds = entityToFleeFrom->GetPhysics()->GetAbsBounds(); // grayman #3548
 
 			if ( entityToFleeFrom == enemy.GetEntity() )
 			{
@@ -3688,18 +3697,63 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 				pos = entityToFleeFrom->GetPhysics()->GetOrigin();
 			}
 
-			numObstacles = 1;
+			//numObstacles = 1; // grayman #3548
 		}
 		else // fleeing from an event (i.e. murder)
 		{
 			pos = GetMemory().posEvidenceIntruders;
-			numObstacles = 0;
+			//numObstacles = 0; // grayman #3548
 		}
 
-		// Setup the evaluator class
-		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100);
+		// grayman #3548 - are any elevators nearby? If so, the fleeing AI
+		// would probably use it to escape. Find the elevator, pick the
+		// elevator station that's farthest from the event, and pretend both
+		// the event and the AI are standing at that station. FindNearestGoal(),
+		// which only deals with walking reachabilities, should then look for
+		// a goal that's on the floor of that station.
+
+		if (canUseElevators)
+		{
+			eas::tdmEAS* elevatorSystem = GetAAS()->GetEAS();
+			CMultiStateMover* elevator = elevatorSystem->GetNearbyElevator(org, 500, 128);
+
+			if (elevator)
+			{
+				// which elevator station is the farthest from 'pos'?
+				// go to that station, and use its origin as a replacement for 'pos' and 'org'
+				idVec3 bestElevatorPos;
+				float bestElevatorPosDist = 0;
+				const idList<MoverPositionInfo>& positionList = elevator->GetPositionInfoList();
+
+				for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
+				{
+					CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+		
+					if (positionEnt)
+					{
+						float thisDist = (pos - positionEnt->GetPhysics()->GetOrigin()).LengthFast();
+						if (thisDist > bestElevatorPosDist)
+						{
+							bestElevatorPos = positionEnt->GetPhysics()->GetOrigin();
+							bestElevatorPosDist = thisDist;
+							int stationIndex = elevatorSystem->GetElevatorStationIndex(positionEnt);
+							eas::ElevatorStationInfoPtr stationInfo = elevatorSystem->GetElevatorStationInfo(stationIndex);
+							areaNum = stationInfo->areaNum;
+						}
+					}
+				}
+
+				// pretend the AI and the position he's fleeing from
+				// are in the same location, at an elevator station
+				org = pos = bestElevatorPos;
+			}
+		}
+
+		// Set up the evaluator class
+		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100, team); // grayman #3548
 		aasGoal_t dummy;
-		aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, &obstacle, numObstacles, findEscapeArea); // grayman #3317
+		aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, NULL, 0, findEscapeArea); // grayman #3317 // grayman #3548
+		//aas->FindNearestGoal(dummy, areaNum, org, pos, travelFlags, &obstacle, numObstacles, findEscapeArea); // grayman #3317
 
 		aasGoal_t& goal = findEscapeArea.GetEscapeGoal();
 
@@ -4329,6 +4383,12 @@ void idAI::SetMoveType( int moveType ) {
 		travelFlags = TFL_WALK|TFL_AIR|TFL_FLY|TFL_DOOR;
 	} else {
 		travelFlags = TFL_WALK|TFL_AIR|TFL_DOOR;
+	}
+
+	// grayman #3548 - what about elevators?
+	if (canUseElevators)
+	{
+		travelFlags |= TFL_ELEVATOR;
 	}
 }
 
@@ -5263,7 +5323,8 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 	obstaclePath_t	path;
 
 	AI_OBSTACLE_IN_PATH = false;
-	bool foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path, this );
+	bool foundPath = FindPathAroundObstacles( &physicsObj, aas, NULL, origin, goalPos, path, this ); // grayman #3548
+	//bool foundPath = FindPathAroundObstacles( &physicsObj, aas, enemy.GetEntity(), origin, goalPos, path, this );
 
 	if ( ai_showObstacleAvoidance.GetBool())
 	{

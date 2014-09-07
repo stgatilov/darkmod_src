@@ -697,7 +697,7 @@ idCVar g_flushSave(					"g_flushSave",				"0",			CVAR_GAME | CVAR_BOOL, "1 = don
 
 idCVar g_rotoscope(					"g_rotoscope",				"0",			CVAR_GAME | CVAR_BOOL, "Noir cartoon-like rendering" );
 
-idCVar aas_test(					"aas_test",					"0",			CVAR_GAME | CVAR_INTEGER, "" );
+idCVar aas_test(					"aas_test",					"0",			CVAR_GAME | CVAR_INTEGER, "" ); // "2" - show aas32
 idCVar aas_showAreas(				"aas_showAreas",			"0",			CVAR_GAME | CVAR_BOOL, "" );
 idCVar aas_showPath(				"aas_showPath",				"0",			CVAR_GAME | CVAR_INTEGER, "" );
 idCVar aas_showFlyPath(				"aas_showFlyPath",			"0",			CVAR_GAME | CVAR_INTEGER, "" );

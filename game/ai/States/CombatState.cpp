@@ -391,7 +391,8 @@ void CombatState::Think(idAI* owner)
 	if ( inMeleeRange && !_meleePossible ) // grayman #3355 - can't fight up close
 	{
 		owner->fleeingEvent = false; // grayman #3356
-		owner->emitFleeBarks = false; // grayman #3474
+		// grayman #3548 - allow flee bark if unarmed
+		owner->emitFleeBarks = !_rangedPossible;
 		owner->GetMind()->SwitchState(STATE_FLEE);
 		return;
 	}
