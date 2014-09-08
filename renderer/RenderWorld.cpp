@@ -621,7 +621,8 @@ void idRenderWorldLocal::ProjectOverlay( qhandle_t entityHandle, const idPlane l
 	if ( !def->overlay ) {
 		def->overlay = idRenderModelOverlay::Alloc();
 	}
-	def->overlay->CreateOverlay( model, localTextureAxis, material );
+
+	def->overlay->CreateOverlay( model, localTextureAxis, material, refEnt->customSkin, refEnt->customShader ); // Skin params added -- SteveL #3844
 }
 
 /*

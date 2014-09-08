@@ -92,9 +92,12 @@ idRenderModelOverlay::CreateOverlay
 This projects on both front and back sides to avoid seams
 The material should be clamped, because entire triangles are added, some of which
 may extend well past the 0.0 to 1.0 texture range
+
 =====================
 */
-void idRenderModelOverlay::CreateOverlay( const idRenderModel *model, const idPlane localTextureAxis[2], const idMaterial *mtr ) {
+void idRenderModelOverlay::CreateOverlay( const idRenderModel *model, const idPlane localTextureAxis[2], const idMaterial *mtr,
+										  const idDeclSkin *customSkin, const idMaterial *customShader) // Skin params added -- SteveL #3844
+{
 	int i, maxVerts, maxIndexes, surfNum;
 
 	// count up the maximum possible vertices and indexes per surface
@@ -123,8 +126,10 @@ void idRenderModelOverlay::CreateOverlay( const idRenderModel *model, const idPl
 			continue;
 		}
 
+		const idMaterial* shader = R_RemapShaderBySkin( surf->shader, customSkin, customShader ); // SteveL #3844
+		
 		// some surfaces can explicitly disallow overlays
-		if ( !surf->shader->AllowOverlays() ) {
+		if ( !shader->AllowOverlays() ) {
 			continue;
 		}
 

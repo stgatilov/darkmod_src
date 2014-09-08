@@ -64,7 +64,8 @@ public:
 	// light interaction shaders. Materials for overlays should always
 	// be clamped, because the projected texcoords can run well off the
 	// texture since no new clip vertexes are generated.
-	void						CreateOverlay( const idRenderModel *model, const idPlane localTextureAxis[2], const idMaterial *material );
+	void						CreateOverlay( const idRenderModel *model, const idPlane localTextureAxis[2], const idMaterial *material,
+											   const idDeclSkin *customSkin, const idMaterial *customShader); // Skin params added -- SteveL #3844
 
 	// Creates new model surfaces for baseModel, which should be a static instantiation of a dynamic model.
 	void						AddOverlaySurfacesToModel( idRenderModel *baseModel );
