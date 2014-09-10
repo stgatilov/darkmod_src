@@ -345,10 +345,12 @@ void darkModLAS::accumulateEffectOfLightsInArea
 	assert( ( areaIndex >= 0 ) && ( areaIndex < m_numAreas ) );
 	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
 
+	/* grayman #3843 - OOOPS! This is getting added once for up to 4 area passes.
+	// Moved upward before the looping starts.
 	// grayman #3132 - factor in the ambient light, if any
 
 	inout_totalIllumination += gameLocal.GetAmbientIllumination(testPoint1);
-	
+	*/
 	// Iterate lights in this area
 	while (p_cursor != NULL)
 	{
@@ -763,9 +765,12 @@ void darkModLAS::accumulateEffectOfLightsInArea2
 	assert( ( areaIndex >= 0 ) && ( areaIndex < m_numAreas ) );
 	idLinkList<darkModLightRecord_t>* p_cursor = m_pp_areaLightLists[areaIndex];
 
+	/* grayman #3843 - OOOPS! This is getting added once for up to 4 area passes.
+	// Moved upward before the looping starts.
 	// grayman #3132 - factor in the ambient light, if any
 
 	inout_totalIllumination += gameLocal.GetAmbientIllumination(box.GetCenter());
+	*/
 	
 	idVec3 verts[8];
 	box.GetVerts(verts);
@@ -1230,8 +1235,19 @@ void darkModLAS::initialize()
 
 void darkModLAS::addLight (idLight* p_idLight)
 {
+	// grayman #3843 - you can't use the light's origin by itself
+	// if there's a meaningful light_center
+
 	// Get the light position
-	idVec3 lightPos(p_idLight->GetPhysics()->GetOrigin());
+	//idVec3 lightPos(p_idLight->GetPhysics()->GetOrigin());
+	idVec3 lightPos;
+	idVec3 lightAxis;
+	idVec3 lightCenter;
+
+	// fill in the light data
+	p_idLight->GetLightCone(lightPos, lightAxis, lightCenter);
+
+	lightPos += lightCenter; // true origin of light
 
 	// Determine the index of the area containing this light
 	int containingAreaIndex = gameRenderWorld->PointInArea (lightPos);
@@ -1259,7 +1275,7 @@ void darkModLAS::addLight (idLight* p_idLight)
 		p_node->SetOwner (p_record);
 		p_node->AddToEnd (*(m_pp_areaLightLists[containingAreaIndex]));
 
-		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was added to area %d at end of list, area now has %d lights\r", p_idLight->name.c_str(), containingAreaIndex, m_pp_areaLightLists[containingAreaIndex]->Num());
+		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was added to area %d at end of list\r", p_idLight->name.c_str(), containingAreaIndex);
 	}
 	else
 	{
@@ -1277,7 +1293,6 @@ void darkModLAS::addLight (idLight* p_idLight)
 		}
 
 		DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Light '%s' was added to area %d as first in list\r", p_idLight->name.c_str(), containingAreaIndex);
-
 	}
 
 	// Note the area we just added the light to
@@ -1464,8 +1479,18 @@ void darkModLAS::updateLASState()
 			// Have we updated this light yet?
 			if (p_LASLight->lastFrameUpdated != m_updateFrameIndex)
 			{
+
+				// grayman #3843 - apply the light_center value
 				// Get the light position
-				idVec3 lightPos(p_LASLight->p_idLight->GetPhysics()->GetOrigin());
+				//idVec3 lightPos(p_LASLight->p_idLight->GetPhysics()->GetOrigin());
+				idVec3 lightPos;
+				idVec3 lightAxis;
+				idVec3 lightCenter;
+
+				// fill in the light data
+				p_LASLight->p_idLight->GetLightCone(lightPos, lightAxis, lightCenter);
+
+				lightPos += lightCenter; // true origin of light
 	
 				// Check to see if it has moved
 				if (p_LASLight->lastWorldPos != lightPos)
@@ -1609,6 +1634,10 @@ float darkModLAS::queryLightingAlongLine
 		numPVSTestAreas
 	);
 
+	// grayman #3843 - start with the ambient light, if any
+
+	totalIllumination = gameLocal.GetAmbientIllumination(testPoint1);
+	
 	// Check all the lights in the PVS areas and factor them in
 	for ( int pvsTestResultIndex = 0 ; pvsTestResultIndex < numPVSTestAreas ; pvsTestResultIndex++ )
 	{
@@ -1702,6 +1731,10 @@ float darkModLAS::queryLightingAlongBestLine
 		numPVSTestAreas
 	);
 
+	// grayman #3843 - start with the ambient light, if any
+
+	totalIllumination += gameLocal.GetAmbientIllumination(box.GetCenter());
+	
 	// Check all the lights in the PVS areas and factor them in
 	for ( int pvsTestResultIndex = 0 ; pvsTestResultIndex < numPVSTestAreas ; pvsTestResultIndex++ )
 	{
