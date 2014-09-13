@@ -23,7 +23,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "EscapePointEvaluator.h"
 #include "EscapePointManager.h"
-#include "AI/AAS_local.h"
+#include "ai/AAS_local.h"
 
 EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 	_conditions(conditions),
