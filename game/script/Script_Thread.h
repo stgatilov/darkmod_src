@@ -133,6 +133,12 @@ private:
 	void 						Event_StrRight( const char *string, int num );
 	void 						Event_StrSkip( const char *string, int num );
 	void 						Event_StrMid( const char *string, int start, int num );
+	// Tels #3854: Replace the given string with "". Example: StrRemove("abba","bb") results in "aa".
+	void 						Event_StrRemove( const char *string, const char *remove );	
+	// Tels #3854: Replace the given string with X. Example: StrReplace("abba","bb","cc") results in "acca"
+	void 						Event_StrReplace( const char *string, const char *remove, const char *replace );
+	// Tels #3854: Return the position of the substring, or -1 if not found
+	void 						Event_StrFind( const char *string, const char *find, const int mcasesensitive, const int mstart, const int mend );
 	void						Event_StrToFloat( const char *string );
 	void						Event_StrToInt( const char *string );
 	void						Event_RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignore, const char *damageDefName, float dmgPower );
@@ -280,8 +286,8 @@ public:
 	static void					EndMultiFrameEvent( idEntity *ent, const idEventDef *event );
 
 	static void					ReturnString( const char *text );
-	static void					ReturnFloat( float value );
-	static void					ReturnInt( int value );
+	static void					ReturnFloat( const float value );
+	static void					ReturnInt( const int value );
 	static void					ReturnVector( idVec3 const &vec );
 	static void					ReturnEntity( idEntity *ent );
 };

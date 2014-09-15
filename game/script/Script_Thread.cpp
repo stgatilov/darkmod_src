@@ -141,8 +141,11 @@ const idEventDef EV_Thread_StrLeft( "strLeft", EventArgs('s', "text", "", 'd', "
 const idEventDef EV_Thread_StrRight( "strRight", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns a string composed of the last num characters" );
 const idEventDef EV_Thread_StrSkip( "strSkip", EventArgs('s', "text", "", 'd', "num", ""), 's', "Returns the string following the first num characters" );
 const idEventDef EV_Thread_StrMid( "strMid", EventArgs('s', "text", "", 'd', "start", "", 'd', "num", ""), 's', "Returns a string composed of the characters from start to start + num" );
+const idEventDef EV_Thread_StrRemove( "strRemove", EventArgs('s', "text", "", 's', "remove", ""), 's', "Replace all occurances of the given substring with \"\". Example: StrRemove(\"abba\",\"bb\") results in \"aa\"."); // Tels #3854
+const idEventDef EV_Thread_StrReplace( "strReplace", EventArgs('s', "text", "", 's', "remove", "", 's', "replace",""), 's', "Replace all occurances of the given string with the replacement string. Example: StrRemove(\"abba\",\"bb\",\"ccc\") results in \"accca\"."); // Tels #3854
+const idEventDef EV_Thread_StrFind( "strFind", EventArgs('s', "text", "", 's', "find", "", 'd', "casesensitive","0", 'd',"start","0", 'd',"end","-1" ), 'd', "Return the position of the given substring, counting from 0, or -1 if not found."); // Tels #3854
 const idEventDef EV_Thread_StrToFloat( "strToFloat", EventArgs('s', "text", ""), 'f', "Returns the numeric value of the given string." );
-const idEventDef EV_Thread_StrToInt( "strToInt", EventArgs('s', "text", ""), 'f', "Returns the integer value of the given string." );
+const idEventDef EV_Thread_StrToInt( "strToInt", EventArgs('s', "text", ""), 'd', "Returns the integer value of the given string." );
 const idEventDef EV_Thread_RadiusDamage( "radiusDamage", 
 	EventArgs('v', "origin", "",
 			  'E', "inflictor", "the entity causing the damage",
@@ -333,8 +336,11 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_StrRight,				idThread::Event_StrRight )
 	EVENT( EV_Thread_StrSkip,				idThread::Event_StrSkip )
 	EVENT( EV_Thread_StrMid,				idThread::Event_StrMid )
+	EVENT( EV_Thread_StrRemove,				idThread::Event_StrRemove )
+	EVENT( EV_Thread_StrReplace,			idThread::Event_StrReplace )
+	EVENT( EV_Thread_StrFind,				idThread::Event_StrFind )
 	EVENT( EV_Thread_StrToFloat,			idThread::Event_StrToFloat )
-	EVENT( EV_Thread_StrToInt,			idThread::Event_StrToInt )
+	EVENT( EV_Thread_StrToInt,				idThread::Event_StrToInt )
 	EVENT( EV_Thread_RadiusDamage,			idThread::Event_RadiusDamage )
 	EVENT( EV_Thread_IsClient,				idThread::Event_IsClient )
 	EVENT( EV_Thread_IsMultiplayer,			idThread::Event_IsMultiplayer )
@@ -1017,7 +1023,7 @@ void idThread::ReturnString( const char *text ) {
 idThread::ReturnFloat
 ================
 */
-void idThread::ReturnFloat( float value ) {
+void idThread::ReturnFloat( const float value ) {
 	gameLocal.program.ReturnFloat( value );
 }
 
@@ -1026,7 +1032,7 @@ void idThread::ReturnFloat( float value ) {
 idThread::ReturnInt
 ================
 */
-void idThread::ReturnInt( int value ) {
+void idThread::ReturnInt( const int value ) {
 	// true integers aren't supported in the compiler,
 	// so int values are stored as floats
 	gameLocal.program.ReturnFloat( value );
@@ -1967,6 +1973,78 @@ void idThread::Event_StrMid( const char *string, int start, int num ) {
 
 	idStr result( string, start, start + num );
 	idThread::ReturnString( result );
+}
+
+/*
+================
+idThread::Event_StrRemove
+================
+*/
+void idThread::Event_StrRemove( const char *string, const char *remove ) {
+	int slen;
+	int rlen;
+
+	slen = strlen( string );
+	rlen = strlen( remove );
+	// nothing to replace (slen==0), remove longer than input string, or remove empty?
+	if ( slen < rlen || rlen == 0 ) {
+		ReturnString( string );
+		return;
+	}
+
+	idStr result( string );
+	result.Remove(remove);
+
+	ReturnString( result );
+}
+
+/*
+================
+idThread::Event_StrReplace
+================
+*/
+void idThread::Event_StrReplace( const char *string, const char *remove, const char *replace ) {
+	int slen;
+	int rlen;
+
+	slen = strlen( string );
+	rlen = strlen( remove );
+	// nothing to replace (slen==0), remove longer than input string, or remove empty?
+	if ( slen < rlen || rlen == 0 ) {
+		ReturnString( string );
+		return;
+	}
+
+	idStr result( string );
+	result.Replace(remove, replace);
+
+	ReturnString( result );
+}
+
+/*
+================
+idThread::Event_StrFind
+================
+*/
+void idThread::Event_StrFind( const char *string, const char *find, const int mcasesensitive, const int mstart, const int mend ) {
+	const int slen = strlen( string );
+	const int flen = strlen( find );
+
+	// avoid FindText() calling strlen again
+	// mend == -1 => go to the end
+	// mend >= string length => go to the end
+	// mend  < string length => go to mend
+	const int end = (mend < 0 || mend > slen) ? slen : mend;
+
+	// nothing to find, or find > input?
+	if ( slen < flen || flen == 0 ) {
+		ReturnInt( -1 );
+		return;
+	}
+
+	int rc = idStr::FindText( string, find, (mcasesensitive != 0) ? true : false, (mstart > 0) ? mstart : 0, end );
+
+	ReturnInt( rc );
 }
 
 /*
