@@ -123,6 +123,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		// grayman #2345 - no idle animations while handling a door and not waiting
 		// in a door queue, since they can interfere with reaching for the door handle
 
+		// SteveL #3182 - no idles if the AI wants to turn: check FacingIdeal too
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations && 
 			!owner->AI_RUN &&
@@ -132,7 +133,9 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			moveType != MOVETYPE_GET_UP &&
 			moveType != MOVETYPE_GET_UP_FROM_LYING &&
 			!drowning &&
-			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)))
+			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
+			owner->FacingIdeal() //~SteveL #3182
+		   )
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && (moveType != MOVETYPE_SIT))
