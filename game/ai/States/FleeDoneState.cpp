@@ -84,11 +84,20 @@ void FleeDoneState::Init(idAI* owner)
 	owner->senseSubsystem->PushTask(RandomHeadturnTask::CreateInstance());
 }
 
+void FleeDoneState::WrapUp(idAI* owner)
+{
+	owner->movementSubsystem->ClearTasks();
+	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
+	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+	owner->SetTurnRate(_oldTurnRate);
+}
+
 // Gets called each time the mind is thinking
 void FleeDoneState::Think(idAI* owner)
 {
 	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT ) // grayman #3317 - quit if KO'ed or dead
 	{
+		WrapUp(owner);
 		owner->GetMind()->EndState();
 		return;
 	}
@@ -99,12 +108,7 @@ void FleeDoneState::Think(idAI* owner)
 	if (!CheckAlertLevel(owner)) 
 	{
 		// terminate FleeDoneState when time is over
-/*		grayman #3182 - already done by CheckAlertLevel()
-		owner->movementSubsystem->ClearTasks();
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
-		owner->SetTurnRate(_oldTurnRate);
- */
+		WrapUp(owner);
 		owner->GetMind()->EndState();
 		return;
 	}
@@ -114,10 +118,7 @@ void FleeDoneState::Think(idAI* owner)
 	if (owner->AI_ALERTED)
 	{
 		// terminate FleeDoneState when the AI is alerted
-		owner->movementSubsystem->ClearTasks();
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
-		owner->SetTurnRate(_oldTurnRate);
+		WrapUp(owner);
 
 		owner->GetMind()->EndState();
 		return; // grayman #3474
@@ -126,6 +127,7 @@ void FleeDoneState::Think(idAI* owner)
 	if ( !owner->emitFleeBarks ) // grayman #3474
 	{
 		// not crying for help, time to end this state
+		WrapUp(owner);
 		owner->GetMind()->EndState();
 		return;
 	}
@@ -223,17 +225,24 @@ bool FleeDoneState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex < ESearching)
 	{
 		// Alert index is too low for this state, fall back
-		owner->movementSubsystem->ClearTasks();
-		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
-		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
-		owner->SetTurnRate(_oldTurnRate);
-
+		WrapUp(owner);
 		return false;
 	}
 	
 	// Alert Index is matching, return OK
 	return true;
 }
+
+// grayman #3848 - set of ignored events
+void FleeDoneState::OnVisualStimWeapon(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource ) {}
+void FleeDoneState::OnVisualStimBlood(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimLightSource(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnVisualStimDoor(idEntity* stimSource, idAI* owner) {}
+void FleeDoneState::OnHitByMoveable(idAI* owner, idEntity* tactEnt) {}
 
 // Save/Restore methods
 void FleeDoneState::Save(idSaveGame* savefile) const

@@ -751,6 +751,8 @@ idActor::idActor( void ) {
 
 	m_warningEvents.Clear(); // grayman #3424
 
+	m_victorHasKnealt = false; // grayman #3848
+
 	m_Attachments.SetGranularity( 1 );
 
 	enemyNode.SetOwner( this );
@@ -1276,6 +1278,10 @@ void idActor::Save( idSaveGame *savefile ) const {
 		m_warningEvents[i].entity.Save(savefile);
 	}
 
+	savefile->WriteBool(m_victorHasKnealt); // grayman #3848
+
+	m_killedBy.Save(savefile); // grayman #3848
+
 	savefile->WriteFloat( m_fovDotHoriz );
 	savefile->WriteFloat( m_fovDotVert );
 	savefile->WriteVec3( eyeOffset );
@@ -1506,6 +1512,10 @@ void idActor::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(m_warningEvents[i].eventID);
 		m_warningEvents[i].entity.Restore(savefile);
 	}
+
+	savefile->ReadBool(m_victorHasKnealt); // grayman #3848
+
+	m_killedBy.Restore(savefile); // grayman #3848
 
 	savefile->ReadFloat( m_fovDotHoriz );
 	savefile->ReadFloat( m_fovDotVert );

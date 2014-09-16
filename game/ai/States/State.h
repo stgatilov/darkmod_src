@@ -82,7 +82,7 @@ public:
 	/**
 	 * greebo: Gets called when the AI is alerted by a suspicious sound.
 	 */
-	virtual void OnAudioAlert();
+	virtual bool OnAudioAlert();
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CommMessage& message, float psychLoud);

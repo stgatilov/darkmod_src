@@ -7938,10 +7938,13 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
 
+	// grayman #3848 - must use separate booleans
+	bool locationMatch = false;
+	bool entityMatch   = true;
+
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
-		bool found = false;
 		if ( se.type == type ) // type of event
 		{
 			// check location
@@ -7950,7 +7953,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 			{
 				if ( location.Compare(se.location))
 				{
-					found = true;
+					locationMatch = true;
 				}
 			}
 
@@ -7958,14 +7961,14 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			if ( entity != NULL )
 			{
-				if ( se.entity.GetEntity() == entity )
+				if ( se.entity.GetEntity() != entity )
 				{
-					found = true;
+					entityMatch = false;
 				}
 			}
 		}
 
-		if ( found )
+		if ( locationMatch && entityMatch )
 		{
 			return i;
 		}

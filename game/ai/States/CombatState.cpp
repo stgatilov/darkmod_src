@@ -43,6 +43,7 @@ namespace ai
 {
 
 const float s_DOOM_TO_METERS = 0.0254f; // grayman #3063
+const float MAX_TRAVEL_DISTANCE_WALKING = 300; // grayman #3848
 
 // Get the name of this state
 const idStr& CombatState::GetName() const
@@ -80,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-void CombatState::OnAudioAlert()
+bool CombatState::OnAudioAlert()
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -108,6 +109,7 @@ void CombatState::OnAudioAlert()
 		owner->lastReachableEnemyPos = memory.alertPos;
 		// gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 2, 1000);
 	}
+	return true;
 }
 
 void CombatState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
@@ -170,6 +172,8 @@ void CombatState::Init(idAI* owner)
 	// Set end time to something invalid
 	_endTime = -1;
 
+	_endgame = false; // grayman #3848
+
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatState initialised.\r");
 	assert(owner);
 
@@ -215,6 +219,7 @@ void CombatState::Init(idAI* owner)
 		// Reset anims
 		owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 		owner->StopAnim(ANIMCHANNEL_LEGS, 0);
+		owner->SetWaitState(""); // grayman #3848
 	}
 
 	// grayman #3472 - kill the repeated bark task
@@ -316,17 +321,6 @@ void CombatState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void CombatState::Think(idAI* owner)
 {
-	// Do we have an expiry date?
-	if (_endTime > 0)
-	{
-		if (gameLocal.time >= _endTime)
-		{
-			owner->GetMind()->EndState();
-		}
-
-		return;
-	}
-
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
@@ -337,27 +331,223 @@ void CombatState::Think(idAI* owner)
 	owner->GetMemory().combatState = (int)_combatSubState; // grayman #3507
 
 	// grayman #3331 - make sure you're still fighting the same enemy.
-	// grayman #3355 - fight the closest enemy
 	idActor* enemy = _enemy.GetEntity();
 	idActor* newEnemy = owner->GetEnemy();
 
-	if ( enemy )
+	if (!_endgame)
 	{
-		if ( newEnemy && ( newEnemy != enemy ) )
+		if ( enemy )
 		{
-			idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
-			float dist2EnemySqr = ( enemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
-			float dist2NewEnemySqr = ( newEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
-			if ( dist2NewEnemySqr < dist2EnemySqr )
+			if ( newEnemy && ( newEnemy != enemy ) )
 			{
-				owner->GetMind()->EndState();
-				return; // state has ended
+				// grayman #3355 - fight the closest enemy
+				idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+				float dist2EnemySqr = ( enemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+				float dist2NewEnemySqr = ( newEnemy->GetPhysics()->GetOrigin() - ownerOrigin ).LengthSqr();
+				if ( dist2NewEnemySqr < dist2EnemySqr )
+				{
+					owner->GetMind()->EndState();
+					return; // state has ended
+				}
 			}
 		}
+		else
+		{
+			enemy = newEnemy;
+		}
 	}
-	else
+	else // in endgame
 	{
-		enemy = newEnemy;
+		if (newEnemy)
+		{
+			// abandon the endgame and fight your new enemy
+			owner->GetMind()->EndState();
+			return;
+		}
+	}
+
+	// grayman #3848 - are we in the endgame of combat, where we've
+	// killed the enemy and are performing a few final tasks?
+
+	if (_endgame)
+	{
+		idActor* victim = owner->m_lastKilled.GetEntity();
+		switch(_combatSubState)
+		{
+		case EStateVictor1:
+			if (gameLocal.time >= _endTime)
+			{
+				_combatSubState = EStateVictor2;
+			}
+			break;
+		case EStateVictor2:
+			{
+			// Bark your victory!
+
+			// only allow the killer to bark
+
+			idStr bark = "";
+			idStr enemyAiUse = victim->spawnArgs.GetString("AIUse");
+			bool monster = ( ( enemyAiUse == AIUSE_MONSTER ) || ( enemyAiUse == AIUSE_UNDEAD ) );
+
+			if (owner == victim->m_killedBy.GetEntity())
+			{
+				// different barks for human and non-human enemies
+
+				if ( monster )
+				{
+					bark = "snd_killed_monster";
+				}
+				else
+				{
+					bark = "snd_killed_enemy";
+				}
+			}
+
+			if (!bark.IsEmpty())
+			{
+				int length = owner->PlayAndLipSync(bark, "talk1", 0);
+				_endTime = gameLocal.time + length; // ignored in EStateVictor3 and used in EStateVictor8
+			}
+
+			if ( monster )
+			{
+				_combatSubState = EStateVictor8; // don't walk to monsters
+			}
+			else
+			{
+				_combatSubState = EStateVictor3; // walk to humans
+			}
+
+			break;
+			}
+		case EStateVictor3:
+			{
+			_destination = victim->GetPhysics()->GetOrigin();
+			idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+			idVec3 vec2Victim = _destination - ownerOrigin;
+			float dist2Victim = vec2Victim.LengthFast();
+			if (dist2Victim > 64)
+			{
+				// Can we walk to the victim?
+				// Don't step up to the very spot, to prevent the AI
+				// from kneeling into bloodspots or corpses
+				idVec3 dir = -vec2Victim;
+				dir.z = 0; // remove vertical component
+				dir.NormalizeFast();
+
+				// 32 units before the actual spot
+				_destination += dir * 32;
+				bool canWalkTo = owner->MoveToPosition(_destination);
+				if (canWalkTo)
+				{
+					float travelDist = owner->TravelDistance(ownerOrigin, _destination);
+					float actualDist = (ownerOrigin - _destination).LengthFast();
+					if ( actualDist > travelDist )
+					{
+						travelDist = actualDist;
+					}
+
+					if ( travelDist <= MAX_TRAVEL_DISTANCE_WALKING ) // close enough to walk?
+					{
+						owner->AI_RUN = false;
+					}
+					else // we're far away, so run
+					{
+						owner->AI_RUN = true;
+					}
+					_combatSubState = EStateVictor4;
+				}
+				else
+				{
+					_combatSubState = EStateVictor9;
+				}
+			}
+			else
+			{
+				_combatSubState = EStateVictor5;
+			}
+			break;
+			}
+		case EStateVictor4:
+			if (owner->ReachedPos(_destination, MOVE_TO_POSITION)) // grayman #3848
+			{
+				// Re-check where the body is. It might have been sliding down some
+				// steps and is in a different place than _destination.
+
+				float dist2Victim = (victim->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+				if (dist2Victim > 64)
+				{
+					_combatSubState = EStateVictor3; // too far away, so get closer
+				}
+				else
+				{
+					_combatSubState = EStateVictor5; // close enough
+				}
+			}
+			else if (owner->MoveDone())
+			{
+				_combatSubState = EStateVictor9;
+			}
+			break;
+		case EStateVictor5:
+			{
+			idVec3 bodyCenter = victim->GetPhysics()->GetAbsBounds().GetCenter();
+			owner->TurnToward(bodyCenter);
+			_endTime = gameLocal.time + 750; // allow time for turn to complete
+			_combatSubState = EStateVictor6;
+			break;
+			}
+		case EStateVictor6:
+			if (gameLocal.time >= _endTime)
+			{
+				idVec3 bodyCenter = victim->GetPhysics()->GetAbsBounds().GetCenter();
+				owner->Event_LookAtPosition(bodyCenter, 2.0f);
+				// There's a 50% chance of kneeling and kneel only if no one else has knealt
+				if ( (gameLocal.random.RandomFloat() < 0.5) && !victim->m_victorHasKnealt)
+				{
+					// Check the position of the body, is it closer to the eyes than to the feet?
+					// If it's lower than the eye position, kneel down and investigate
+					idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+					idVec3 eyePos = owner->GetEyePosition();
+					if ((bodyCenter - ownerOrigin).LengthSqr() < (bodyCenter - eyePos).LengthSqr())
+					{
+						// Close to the feet, kneel down and investigate closely
+						owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_KneelDown", 6);
+						owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_KneelDown", 6);
+						owner->SetWaitState("kneel_down"); // grayman #3563
+						victim->m_victorHasKnealt = true;
+						_combatSubState = EStateVictor7;
+					}
+					else
+					{
+						_combatSubState = EStateVictor9;
+					}
+				}
+				else
+				{
+					_combatSubState = EStateVictor9;
+				}
+			}
+			break;
+		case EStateVictor7:
+			if (idStr(owner->WaitState()) != "kneel_down")
+			{
+				_combatSubState = EStateVictor9;
+			}
+			break;
+		case EStateVictor8:
+			if (gameLocal.time >= _endTime)
+			{
+				_combatSubState = EStateVictor9;
+			}
+			break;
+		case EStateVictor9:
+			owner->SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
+			owner->GetMind()->EndState(); // end combat state
+			break;
+		}
+		return;
 	}
 
 	if (!CheckEnemyStatus(enemy, owner))
@@ -391,6 +581,7 @@ void CombatState::Think(idAI* owner)
 	if ( inMeleeRange && !_meleePossible ) // grayman #3355 - can't fight up close
 	{
 		owner->fleeingEvent = false; // grayman #3356
+		owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
 		// grayman #3548 - allow flee bark if unarmed
 		owner->emitFleeBarks = !_rangedPossible;
 		owner->GetMind()->SwitchState(STATE_FLEE);
@@ -465,14 +656,13 @@ void CombatState::Think(idAI* owner)
 
 		// The AI has processed his reaction, and needs to move into combat, or flee.
 
-		_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
+		//_criticalHealth = owner->spawnArgs.GetInt("health_critical", "0");
 
 		// greebo: Check for weapons and flee if ...
-		if ( ( !_meleePossible && !_rangedPossible )		 || // ... I'm unarmed
-			 ( owner->spawnArgs.GetBool("is_civilian", "0")) || // ... I'm a civilian, and don't fight
-			 ( owner->health < _criticalHealth ) )			    // grayman #3140 ... I'm very damaged and can't afford to engage in combat
+		if ( owner->IsAfraid()) // grayman #3848
 		{
 			owner->fleeingEvent = false; // grayman #3356
+			owner->fleeingFrom = enemy->GetPhysics()->GetOrigin();
 			owner->emitFleeBarks = true; // grayman #3474
 			owner->GetMind()->SwitchState(STATE_FLEE);
 			return;
@@ -897,14 +1087,29 @@ void CombatState::Think(idAI* owner)
 			}
 		}
 
-		// Flee if you're damaged and the current melee action is finished
-		if ( ( owner->health < _criticalHealth ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) )
+		// Flee if you're damaged and the current action is finished
+		// grayman #3848 - allow archers to flee
+		if (owner->health < owner->spawnArgs.GetInt("health_critical", "0") )
 		{
-			DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
-			owner->fleeingEvent = false; // grayman #3182
-			owner->emitFleeBarks = true; // grayman #3474
-			owner->GetMind()->SwitchState(STATE_FLEE);
-			return;
+			bool flee = false;
+			if (( _combatType == COMBAT_MELEE ) && ( owner->m_MeleeStatus.m_ActionState == MELEEACTION_READY ) ) // not swinging weapon
+			{
+				flee = true;
+			}
+			else if (( _combatType == COMBAT_RANGED ) && ( idStr(owner->WaitState()) != "ranged_attack")) // not shooting a missile
+			{
+				flee = true;
+			}
+
+			if (flee)
+			{
+				DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
+				owner->fleeingEvent = false; // grayman #3182
+				owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
+				owner->emitFleeBarks = true; // grayman #3474
+				owner->GetMind()->SwitchState(STATE_FLEE);
+				return;
+			}
 		}
 
 		_combatSubState = EStateCheckWeaponState;
@@ -934,19 +1139,22 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 		owner->ClearEnemy();
 		owner->StopMove(MOVE_STATUS_DONE);
 
-		// Stop doing melee fighting
+		// Stop fighting
 		owner->actionSubsystem->ClearTasks();
 
 		// TODO: Check if more enemies are in range
-		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.9);
+
+		// grayman #3848 - don't bring the alert level down yet
+		//owner->SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.9);
 
 		// grayman #3473 - stop looking at the spot you were looking at when you killed the enemy
 		owner->SetFocusTime(gameLocal.time);
 
+		/* grayman #3848 - moved into the endgame code
 		// grayman #2816 - need to delay the victory bark, because it's
 		// being emitted too soon. Can't simply put a delay on SingleBarkTask()
 		// because the AI clears his communication tasks when he drops back into
-		// Suspicious mode, which wipes out the victory bark.
+		// Observant mode, which wipes out the victory bark.
 		// We need to post an event for later and emit the bark then.
 
 		// new way
@@ -964,6 +1172,7 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 			bark = "snd_killed_enemy";
 		}
 		owner->PostEventMS(&AI_Bark,ENEMY_DEAD_BARK_DELAY,bark);
+		*/
 
 /* old way
 		// Emit the killed enemy bark
@@ -971,10 +1180,11 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
 		);
  */
-		// Set the expiration date of this state
-		_endTime = gameLocal.time + 3000;
+		_endgame = true; // grayman #3848
+		_endTime = gameLocal.time + 1500 + gameLocal.random.RandomInt(1500);
+		_combatSubState = EStateVictor1;
 
-		return false;
+		return true; // enemy is dead, but there's still more to do
 	}
 
 	if (!owner->IsEnemy(enemy))
@@ -1006,12 +1216,14 @@ void CombatState::Save(idSaveGame* savefile) const
 {
 	State::Save(savefile);
 
-	savefile->WriteInt(_criticalHealth);
+	//savefile->WriteInt(_criticalHealth);
 	savefile->WriteBool(_meleePossible);
 	savefile->WriteBool(_rangedPossible);
 	savefile->WriteInt(static_cast<int>(_combatType));
 	_enemy.Save(savefile);
 	savefile->WriteInt(_endTime);
+	savefile->WriteBool(_endgame);			// grayman #3848
+	savefile->WriteVec3(_destination);		// grayman #3848
 	savefile->WriteInt(static_cast<int>(_combatSubState)); // grayman #3063
 	savefile->WriteInt(_reactionEndTime); // grayman #3063
 	savefile->WriteInt(_waitEndTime);	  // grayman #3331
@@ -1027,7 +1239,7 @@ void CombatState::Restore(idRestoreGame* savefile)
 {
 	State::Restore(savefile);
 
-	savefile->ReadInt(_criticalHealth);
+	//savefile->ReadInt(_criticalHealth);
 	savefile->ReadBool(_meleePossible);
 	savefile->ReadBool(_rangedPossible);
 
@@ -1037,6 +1249,8 @@ void CombatState::Restore(idRestoreGame* savefile)
 
 	_enemy.Restore(savefile);
 	savefile->ReadInt(_endTime);
+	savefile->ReadBool(_endgame); // grayman #3848
+	savefile->ReadVec3(_destination); // grayman #3848
 
 	// grayman #3063
 	savefile->ReadInt(temp);

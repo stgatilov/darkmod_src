@@ -157,10 +157,17 @@ void FleeState::Think(idAI* owner)
 	}
 }
 
-void FleeState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead)
-{
-	// Ignore failed knockout attempts in flee mode
-}
+// grayman #3848 - set of ignored events
+void FleeState::OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead) {}
+void FleeState::OnVisualStimWeapon(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource ) {}
+void FleeState::OnVisualStimBlood(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimLightSource(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnVisualStimDoor(idEntity* stimSource, idAI* owner) {}
+void FleeState::OnHitByMoveable(idAI* owner, idEntity* tactEnt) {}
 
 StatePtr FleeState::CreateInstance()
 {

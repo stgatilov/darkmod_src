@@ -56,7 +56,7 @@ static const char *gSpecTypeName[SPEC_COUNT] =
 };
 
 // TODO: Move to config file or player spawnargs
-const int s_FAILURE_FADE_TIME = 3000;
+const int s_FAILURE_FADE_TIME = 6000; // grayman #3848 - was 3000
 
 CMissionData::CMissionData() :
 	m_MissionDataLoadedIntoGUI(false),

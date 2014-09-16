@@ -188,6 +188,7 @@ const char* const AlertStateNames[EAlertStateNum] =
 };
 
 #define MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS 15000 // milliseconds
+#define MINIMUM_SECONDS_BEFORE_CORPSE_BARK 5000 // milliseconds grayman #3848
 #define MINIMUM_TIME_BETWEEN_WARNINGS (3*60) // grayman #3424 - seconds
 #define VARIABLE_TIME_BETWEEN_WARNINGS 60 // grayman #3424 - seconds
 #define DELAY_BETWEEN_WARNING_FAILURES 3 // grayman #3424 - seconds

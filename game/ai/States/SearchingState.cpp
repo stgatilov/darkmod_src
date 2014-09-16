@@ -32,6 +32,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "AgitatedSearchingState.h"
 #include "../../AbsenceMarker.h"
 #include "../../AIComm_Message.h"
+#include "FleeState.h" // grayman #3317
 
 namespace ai
 {
@@ -735,10 +736,13 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	return true;
 }
 
-void SearchingState::OnAudioAlert()
+bool SearchingState::OnAudioAlert()
 {
-	// First, call the base class
-	State::OnAudioAlert();
+	// Firt, call the base class
+	if (!State::OnAudioAlert())
+	{
+		return true;
+	}
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -794,6 +798,7 @@ void SearchingState::OnAudioAlert()
 			//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.alertPos, 1, 2000);
 		}
 	}
+	return true;
 }
 
 StatePtr SearchingState::CreateInstance()

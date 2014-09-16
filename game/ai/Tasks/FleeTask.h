@@ -31,7 +31,8 @@ namespace ai
 
 // grayman #3548 - distance values
 #define FLEE_DIST_MAX	1000 // stop fleeing when at least this far away from the threat
-#define FLEE_DIST_MIN	 300 // initial distance to put between you and the threat
+#define FLEE_DIST_MIN_MELEE	 300 // initial distance to put between you and a melee threat
+#define FLEE_DIST_MIN_RANGED 500 // initial distance to put between you and a ranged threat
 #define FLEE_DIST_DELTA	 300 // incremental distance to put between you and the threat
 
 class FleeTask;

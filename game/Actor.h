@@ -427,6 +427,16 @@ public:
 	idList<bool>			m_haveSearchedEventID; // grayman #3424
 
 	/**
+	* grayman #3848 - true when a combat victor has knealt by my body
+	**/
+	bool					m_victorHasKnealt;
+
+	/**
+	* grayman #3848 - who killed us
+	**/
+	idEntityPtr<idEntity>	m_killedBy;
+
+	/**
 	* grayman #3424 - List of warnings this actor has either given or received.
 	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
 	**/

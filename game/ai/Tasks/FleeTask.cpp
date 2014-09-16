@@ -25,6 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FleeTask.h"
 #include "../Memory.h"
 #include "../Library.h"
+#include "../States/TakeCoverState.h"
 
 namespace ai
 {
@@ -50,7 +51,16 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 
 	_enemy = owner->GetEnemy();
 
-	_currentDistanceGoal = FLEE_DIST_MIN; // grayman #3548
+	// grayman #3848 - set flee distance based on attack type
+	if (_enemy.GetEntity() && _enemy.GetEntity()->GetAttackFlag(COMBAT_RANGED))
+	{
+		_currentDistanceGoal = FLEE_DIST_MIN_RANGED;
+	}
+	else
+	{
+		_currentDistanceGoal = FLEE_DIST_MIN_MELEE;
+	}
+
 	_haveTurnedBack = false;  // grayman #3548
 
 	owner->AI_MOVE_DONE = false;
@@ -89,7 +99,9 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	// grayman #3548 - when your move is done, turn to face where you came from
 	if (owner->AI_MOVE_DONE && !_haveTurnedBack)
 	{
-		owner->TurnToward(owner->GetCurrentYaw() + 180);
+		// grayman #3848 - turn back
+
+		owner->TurnToward(owner->fleeingFrom);
 		_haveTurnedBack = true;
 	}
 
@@ -117,8 +129,8 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			//owner->fleeingEvent = false; // grayman #3548
 			if (!_haveTurnedBack) // grayman #3548
 			{
-				// Turn around to look back to where we came from
-				owner->TurnToward(owner->GetCurrentYaw() + 180);
+				// Turn around
+				owner->TurnToward(owner->fleeingFrom);
 			}
 			return true;
 		}
@@ -150,7 +162,17 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			// continue fleeing
 
 			_failureCount = 0;
-			_currentDistanceGoal = FLEE_DIST_MIN; // grayman #3548
+
+			// grayman #3848 - set flee distance based on attack type
+			if (_enemy.GetEntity() && _enemy.GetEntity()->GetAttackFlag(COMBAT_RANGED))
+			{
+				_currentDistanceGoal = FLEE_DIST_MIN_RANGED;
+			}
+			else
+			{
+				_currentDistanceGoal = FLEE_DIST_MIN_MELEE;
+			}
+
 			if (_distOpt == DIST_NEAREST)
 			{
 				// Find fleepoint far away
@@ -170,7 +192,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			if (!_haveTurnedBack) // grayman #3548
 			{
 				// Turn around to look back to where we came from
-				owner->TurnToward(owner->GetCurrentYaw() + 180);
+				owner->TurnToward(owner->fleeingFrom);
 			}
 			return true;
 		}
@@ -281,6 +303,23 @@ bool FleeTask::Perform(Subsystem& subsystem)
 					{
 						// No point could be found.
 						_failureCount++;
+
+						// grayman #3848 - try taking cover
+						if (_failureCount >= 5)
+						{
+							if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
+							{
+								aasGoal_t hideGoal;
+								bool takingCoverPossible = owner->LookForCover(hideGoal, enemy, enemy->GetEyePosition());
+								if (takingCoverPossible)
+								{
+									owner->MoveToPosition(hideGoal.origin);
+									//owner->GetMind()->SwitchState(STATE_TAKE_COVER);
+									success = true;
+									_haveTurnedBack = false;
+								}
+							}
+						}
 					}
 					else // grayman #3548
 					{
@@ -289,7 +328,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 						idVec3 owner2goal = goal - ownerLoc;
 						float owner2goalDist = owner2goal.LengthFast();
 						_currentDistanceGoal = owner2goalDist;
-
 						idVec3 owner2threat = threatLoc - ownerLoc; 
 						float owner2threatDist = owner2threat.LengthFast();
 
@@ -305,7 +343,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 							owner->StopMove(MOVE_STATUS_DONE);
 							_failureCount++;
 						}
-						else if ( ( owner2threatDist >= FLEE_DIST_MIN ) && ( owner2goal * owner2threat > 0.965926 ))
+						else if ( ( owner2threatDist >= FLEE_DIST_MIN_MELEE ) && ( owner2goal * owner2threat > 0.965926 ))
 						{
 							// don't pass close to the enemy when fleeing,
 							// unless they're getting too close,

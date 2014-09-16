@@ -82,8 +82,18 @@ void AlertIdleState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_min", "40"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("alert_idle_bark_interval_max", "120"));
 
+	// grayman #3848
+	idStr bark = "";
+	if (owner->m_lastKilled.GetEntity() != NULL)
+	{
+		bark = "snd_alert_idle_victor";
+	}
+	else
+	{
+		bark = "snd_alert_idle";
+	}
 	owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_alert_idle", idleBarkIntervalMin, idleBarkIntervalMax))
+			CommunicationTaskPtr(new RepeatedBarkTask(bark, idleBarkIntervalMin, idleBarkIntervalMax))
 		);
 
 	// Initialise the animation state

@@ -34,7 +34,7 @@ class CombatState :
 protected:
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
-	int _criticalHealth;
+	//int _criticalHealth;
 	bool _meleePossible;
 	bool _rangedPossible;
 	bool _unarmedMelee;		// grayman #3331
@@ -44,9 +44,10 @@ protected:
 
 	ECombatType _combatType;
 
-	// When end time is set, the state is just waiting to be finished
-	// and is not performing any routines anymore
 	int _endTime;
+
+	bool _endgame; // grayman #3848
+	idVec3 _destination; // grayman #3848
 
 	int _reactionEndTime; // grayman #3063
 
@@ -70,7 +71,18 @@ protected:
 		EStateSheathingWeapon,
 		EStateDrawWeapon,
 		EStateDrawingWeapon,
-		EStateCombatAndChecks
+		EStateCombatAndChecks,
+
+		// grayman #3848
+		EStateVictor1,
+		EStateVictor2,
+		EStateVictor3,
+		EStateVictor4,
+		EStateVictor5,
+		EStateVictor6,
+		EStateVictor7,
+		EStateVictor8,
+		EStateVictor9
 	} _combatSubState;
 
 public:
@@ -86,7 +98,7 @@ public:
 	// Override the alert functions
 	virtual void OnTactileAlert(idEntity* tactEnt);
 	virtual void OnVisualAlert(idActor* enemy);
-	virtual void OnAudioAlert();
+	virtual bool OnAudioAlert();
 
 	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);

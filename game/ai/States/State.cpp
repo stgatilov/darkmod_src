@@ -293,7 +293,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 			{
 				owner->Event_SetEnemy(tactEnt);
 				memory.alertType = EAlertTypeEnemy;
-				eventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman #3424  
+				eventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), tactEnt ); // grayman #3424 // grayman #3848 
 			}
 			else
 			{
@@ -367,34 +367,41 @@ void State::OnProjectileHit(idProjectile* projectile)
 }
 */
 
-void State::OnAudioAlert()
+bool State::OnAudioAlert()
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
-		return;
+		return false;
 	}
 
 	Memory& memory = owner->GetMemory();
 
-	// grayman #3424 - If alertClass is not EAlertNone,
-	// don't change it to EAlertAudio. Doing so causes
-	// the wrong rampdown bark when the AI comes out of a search near
-	// something more important, like a dead body.
+	// grayman #3848 - If you've been up to Combat mode this trip,
+	// and you're a civilian or unarmed or your health is below
+	// your critical health, this noise is going to scare you
+	// and cause you to flee. This can happen if you fled an
+	// archer and he keeps plastering the walls near you with arrows.
+	// It doesn't look right to go off searching for the source of
+	// the noise when you should already know you're getting shot at.
 
-	// grayman #3472 - rampdown bark changes make this check moot
+	if ( (owner->m_recentHighestAlertLevel >= owner->thresh_5) && owner->IsAfraid() )
+	{
+		owner->fleeingEvent = true; // grayman #3356
+		owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
+		owner->emitFleeBarks = true; // grayman #3474
+		owner->GetMind()->SwitchState(STATE_FLEE);
+		return false;
+	}
 
-//	if ( memory.alertClass == EAlertNone )
-//	{
-		memory.alertClass = EAlertAudio;
-		memory.alertType = EAlertTypeSuspicious;
-		if (cv_ai_debug_transition_barks.GetBool())
-		{
-			gameLocal.Printf("%d: %s hears something and sets EAlertAudio\n",gameLocal.time,owner->GetName());
-		}
-//	}
+	memory.alertClass = EAlertAudio;
+	memory.alertType = EAlertTypeSuspicious;
+	if (cv_ai_debug_transition_barks.GetBool())
+	{
+		gameLocal.Printf("%d: %s hears something and sets EAlertAudio\n",gameLocal.time,owner->GetName());
+	}
 
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
@@ -466,6 +473,8 @@ void State::OnAudioAlert()
 	owner->AI_HEARDSOUND = false;
 	
 	memory.stimulusLocationItselfShouldBeSearched = true;
+
+	return true;
 }
 
 // grayman #3431 - check whether we're blinded by a blind stim
@@ -1260,6 +1269,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 		return;
 	}
 
+	
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
@@ -1587,7 +1597,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 				owner->SetAlertLevel(owner->thresh_5*2);
 				memory.alertClass = EAlertVisual_1;
 				memory.alertType = EAlertTypeEnemy;
-				owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman #3424  
+				owner->LogSuspiciousEvent( E_EventTypeEnemy, other->GetPhysics()->GetOrigin(), other ); // grayman #3424 // grayman #3848
 			}
 
 			// An enemy should not be ignored in the future - grayman #2423 - moved out of above test so all enemies are remembered
@@ -1624,13 +1634,24 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							if ( owner->m_suspiciousEventIDs.Num() > 0 ) // Have I seen anything suspicious worth warning about?
 							{
 								// Should I warn about an enemy?
+
 								int eventID = ProcessWarning(owner,player,E_EventTypeEnemy,WARN_DIST_ENEMY_SEEN); // grayman #3424
 								if (eventID >= 0)
 								{
 									player->AddSuspiciousEvent(eventID);    // player now knows about this event
 									owner->AddWarningEvent(player,eventID); // log that a warning passed between us
 									player->AddWarningEvent(owner,eventID); // log that a warning passed between us
-									soundName = "snd_warnSawEnemy";
+
+									// grayman #3848 - I have a warning! Did I kill the enemy in that warning?
+									SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
+									if (!(owner->m_lastKilled.GetEntity() && (owner->m_lastKilled.GetEntity() == se.entity.GetEntity())))
+									{
+										soundName = "snd_warnSawEnemy";
+									}
+									else
+									{
+										soundName = "snd_warnSawEvidence";
+									}
 								}
 							
 								if ( soundName.IsEmpty() )
@@ -1809,7 +1830,19 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								}
 								owner->AddWarningEvent(otherAI,eventID); // log that a warning passed between us
 								otherAI->AddWarningEvent(owner,eventID); // log that a warning passed between us
-								soundName = "snd_warnSawEnemy";
+
+								// grayman #3848 - Different barks depending on whether he killed
+								// someone or not.
+
+								SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
+								if (!(otherAI->m_lastKilled.GetEntity() && (otherAI->m_lastKilled.GetEntity() == se.entity.GetEntity())))
+								{
+									soundName = "snd_warnSawEnemy";
+								}
+								else
+								{
+									soundName = "snd_warnSawEvidence";
+								}
 							}
 						}
 					}
@@ -1996,10 +2029,14 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 								int eventID = ProcessWarning( owner,other,E_EventTypeEnemy,WARN_DIST_ENEMY_SEEN );
 								if ( eventID >= 0 )
 								{
+									// grayman #3848 - The warning will be different depending on
+									// whether I killed someone or not.
+
+									SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
 									// Check message queue to see if I've already sent this type of message
 									// and it hasn't yet been received. Also check the other direction, from 'other' to me.
 									if ( !owner->CheckOutgoingMessages( CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, other ) &&
-										 !static_cast<idAI*>(other)->CheckOutgoingMessages( CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, owner ) )
+											!static_cast<idAI*>(other)->CheckOutgoingMessages( CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, owner ) )
 									{
 										message = CommMessagePtr(new CommMessage(
 											CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType, 
@@ -2008,7 +2045,15 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 											owner->GetPhysics()->GetOrigin(),
 											eventID // grayman #3424
 										));
-										soundName = "snd_warnSawEnemy";
+
+										if (!(owner->m_lastKilled.GetEntity() && (owner->m_lastKilled.GetEntity() == se.entity.GetEntity())))
+										{
+											soundName = "snd_warnSawEnemy";
+										}
+										else
+										{
+											soundName = "snd_warnSawEvidence";
+										}
 									}
 								}
 
@@ -2671,7 +2716,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		if ( !ISawItHappen )
 		{
 			// Speak a reaction
-			if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
+			if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BEFORE_CORPSE_BARK) // grayman #3848 - bark sooner
 			{
 				idStr soundName;
 				idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
@@ -2760,6 +2805,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
+		owner->fleeingFrom = person->GetPhysics()->GetOrigin(); // grayman #3848
 		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 	}
@@ -2920,6 +2966,7 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the KO, not fleeing an enemy
+		owner->fleeingFrom = person->GetPhysics()->GetOrigin(); // grayman #3848
 		owner->emitFleeBarks = true; // grayman #3474
 		owner->GetMind()->SwitchState(STATE_FLEE);
 	}
@@ -2958,8 +3005,9 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		return;
 	}
 
-	bool isAfraid = ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0 ) ) ||
-						owner->spawnArgs.GetBool("is_civilian", "0") );
+	bool isAfraid = owner->IsAfraid(); // grayman #3848
+
+	Memory& memory = owner->GetMemory();
 
 	// grayman #3331 - If you're a civilian, or you're unarmed, flee!
 	// But only if no damage was done. When damaged, the flee is handled
@@ -2989,9 +3037,14 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 				gameLocal.Printf("%d: %s hit by an arrow, barks 'snd_taking_fire'\n",gameLocal.time,owner->GetName());
 			}
 
-			owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
-			owner->emitFleeBarks = true; // grayman #3474
-			owner->GetMind()->SwitchState(STATE_FLEE);
+			// grayman #3848 - only start fleeing if you're not already fleeing
+			if (memory.fleeingDone)
+			{
+				owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
+				owner->fleeingFrom = owner->GetPhysics()->GetOrigin(); // grayman #3848
+				owner->emitFleeBarks = true; // grayman #3474
+				owner->GetMind()->SwitchState(STATE_FLEE);
+			}
 			return;
 		}
 	}
@@ -3061,58 +3114,61 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	// At this point, you're armed and not a civilian, and either damage was taken, or it wasn't.
 	// Set up a search.
 
-	if ( owner->AI_AlertLevel < owner->thresh_5 ) // grayman #3331 - ignore only if in combat
+	if ( owner->AI_AlertLevel < owner->thresh_5 ) // grayman #3331 - no search if in combat
 	{
-		Memory& memory = owner->GetMemory();
-
-		// greebo: Set the alert position not directly to the attacker's origin, but let the AI 
-		// search in the right direction
-
-		const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
-
-		idVec3 attackerDir(0,0,0);
-		float distance = 0;
-		
-		if (attacker != NULL)
+		if ( memory.fleeingDone ) // grayman #3848 - no search if fleeing
 		{
-			attackerDir = attacker->GetPhysics()->GetOrigin() - ownerOrigin;
-			distance = attackerDir.NormalizeFast();
-		}
+			//Memory& memory = owner->GetMemory();
 
-		// Start searching halfway between us and the attacker
+			// greebo: Set the alert position not directly to the attacker's origin, but let the AI 
+			// search in the right direction
 
-		memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
+			const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
 
-		// grayman #3331 - trace down until you hit something
-		idVec3 bottomPoint = memory.alertPos;
-		bottomPoint.z -= 1000;
-
-		trace_t result;
-		if ( gameLocal.clip.TracePoint(result, memory.alertPos, bottomPoint, MASK_OPAQUE, NULL) )
-		{
-			// Found the floor.
-			memory.alertPos.z = result.endpos.z + 1; // move the target point to just above the floor
-		}
-
-		memory.alertClass = EAlertTactile;
-		memory.alertType = alertType;
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
+			idVec3 attackerDir(0,0,0);
+			float distance = 0;
 		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = TACTILE_ALERT_RADIUS;
-		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
-		memory.alertSearchExclusionVolume.Zero();
+			if (attacker != NULL)
+			{
+				attackerDir = attacker->GetPhysics()->GetOrigin() - ownerOrigin;
+				distance = attackerDir.NormalizeFast();
+			}
 
-		memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
-		memory.investigateStimulusLocationClosely = false;
-		memory.restartSearchForHidingSpots = true; // grayman #3331
-		owner->AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422			
-		memory.mandatory = true; // grayman #3331
+			// Start searching halfway between us and the attacker
+
+			memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
+
+			// grayman #3331 - trace down until you hit something
+			idVec3 bottomPoint = memory.alertPos;
+			bottomPoint.z -= 1000;
+
+			trace_t result;
+			if ( gameLocal.clip.TracePoint(result, memory.alertPos, bottomPoint, MASK_OPAQUE, NULL) )
+			{
+				// Found the floor.
+				memory.alertPos.z = result.endpos.z + 1; // move the target point to just above the floor
+			}
+
+			memory.alertClass = EAlertTactile;
+			memory.alertType = alertType;
+			memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
 		
-		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+			// Do search as if there is an enemy that has escaped
+			memory.alertRadius = TACTILE_ALERT_RADIUS;
+			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
+			memory.alertSearchExclusionVolume.Zero();
 
-		owner->TurnToward(memory.alertPos); // grayman #3331
+			memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
+			memory.investigateStimulusLocationClosely = false;
+			memory.restartSearchForHidingSpots = true; // grayman #3331
+			owner->AI_VISALERT = false;
+			memory.visualAlert = false; // grayman #2422			
+			memory.mandatory = true; // grayman #3331
+		
+			owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+			owner->TurnToward(memory.alertPos); // grayman #3331
+		}
 	}
 }
 
@@ -4617,12 +4673,14 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				memory.timeEvidenceIntruders = gameLocal.time;
 				owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
 			}
+
 			if (issuingEntity->IsType(idActor::Type))
 			{
 				idActor* issuer = static_cast<idActor*>(issuingEntity);
 				owner->AddWarningEvent(issuer,message.m_eventID); // log that a warning passed between us
 				issuer->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
 			}
+
 			memory.alertedDueToCommunication = true; // grayman #2920
 
 			if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
@@ -4630,9 +4688,9 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				owner->SetAlertLevel(owner->thresh_2*0.5f);
 			}
 
-			// grayman #2920 - issue a delayed warning response
+			// grayman #2920 - issue a warning response
+
 			owner->Bark("snd_warn_response");
-			//owner->PostEventMS(&AI_Bark,WARNING_RESPONSE_DELAY,"snd_warn_response");
 			break;
 			}
 	} // switch

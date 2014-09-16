@@ -42,6 +42,17 @@ public:
 
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
 
+	// grayman #3848 - reactions when fleeing
+	virtual void OnVisualStimWeapon(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimSuspicious(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStimSource );
+	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimLightSource(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimMissingItem(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner);
+	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
+	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt);
+
 	static StatePtr CreateInstance();
 };
 

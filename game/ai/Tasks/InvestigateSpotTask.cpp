@@ -106,6 +106,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Reset anims
 			owner->StopAnim(ANIMCHANNEL_TORSO, 0);
 			owner->StopAnim(ANIMCHANNEL_LEGS, 0);
+			owner->SetWaitState(""); // grayman #3848
 		}
 		return true;
 	}

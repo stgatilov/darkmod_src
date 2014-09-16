@@ -825,6 +825,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(lastTimePlayerLost);		// grayman #2887
 
 	savefile->WriteBool(fleeingEvent);			// grayman #3317
+	savefile->WriteVec3(fleeingFrom);			// grayman #3848
 	savefile->WriteBool(emitFleeBarks);			// grayman #3474
 
 	savefile->WriteAngles( eyeMin );
@@ -837,7 +838,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( focusAlignTime );
 	savefile->WriteObject(m_tactileEntity);		// grayman #2345
 	savefile->WriteObject(m_bloodMarker);		// grayman #3075
-	savefile->WriteObject(m_lastKilled);		// grayman #2816
+	m_lastKilled.Save(savefile);				// grayman #2816
 	savefile->WriteBool(m_justKilledSomeone);	// grayman #2816
 	savefile->WriteBool(m_canResolveBlock);		// grayman #2345
 	savefile->WriteBool(m_leftQueue);			// grayman #2345
@@ -1270,6 +1271,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lastTimePlayerLost);	// grayman #2887
 
 	savefile->ReadBool(fleeingEvent);		// grayman #3317
+	savefile->ReadVec3(fleeingFrom);		// grayman #3848
 	savefile->ReadBool(emitFleeBarks);		// grayman #3474
 
 	savefile->ReadAngles( eyeMin );
@@ -1282,7 +1284,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( focusAlignTime );
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_tactileEntity)); // grayman #2345
 	savefile->ReadObject(reinterpret_cast<idClass*&>(m_bloodMarker));	// grayman #3075
-	savefile->ReadObject(reinterpret_cast<idClass*&>(m_lastKilled));	// grayman #2816
+	m_lastKilled.Restore(savefile); // grayman #2816
 	savefile->ReadBool(m_justKilledSomeone); // grayman #2816
 	savefile->ReadBool(m_canResolveBlock);	 // grayman #2345
 	savefile->ReadBool(m_leftQueue);		 // grayman #2345
@@ -3772,6 +3774,29 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 	return true;
 }
 
+bool idAI::IsAfraid() // grayman #3848
+{
+	// unarmed?
+	if ( ( GetNumMeleeWeapons() == 0 ) && ( GetNumRangedWeapons() == 0 ) )
+	{
+		return true;
+	}
+
+	// non-fighting civilian?
+	if ( spawnArgs.GetBool("is_civilian", "0") )
+	{
+		return true;
+	}
+
+	// low health?
+	if ( health < spawnArgs.GetInt("health_critical", "0") )
+	{
+		return true;
+	}
+
+	return false;
+}
+
 
 /*
 =============================
@@ -5116,12 +5141,6 @@ void idAI::Turn(const idVec3& pivotOffset) {
 		animflags = torsoAnim.GetAnimFlags();
 	}
 	if ( animflags.ai_no_turn ) {
-		return;
-	}
-
-	// Delay turning for custom idle anims --SteveL #3806
-	if ( WaitState() && ( idStr(WaitState()) == "idle" || idStr(WaitState()) == "idle_no_voice" ) )
-	{
 		return;
 	}
 
@@ -6777,6 +6796,9 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
 	m_dousedLightsSeen.Clear();
+
+	// grayman #3848 - note who killed you
+	m_killedBy = attacker;
 
 	// grayman - print data re: being Killed
 	gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
@@ -9458,10 +9480,10 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
 		if ( !soundMaker || // alert if unknown
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
 		{
 			// greebo: Notify the currently active state
-			mind->GetState()->OnAudioAlert();
+			bool shouldAlert = mind->GetState()->OnAudioAlert();
 
 			// Decide if you need to remember a noisemaker
 
@@ -9490,7 +9512,11 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			}
 
 			// grayman #3009 - pass the alert position so the AI can look at it
-			PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
+			// grayman #3848 - but not if you've already been told to flee
+			if (shouldAlert)
+			{
+				PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
+			}
 		}
 		
 		// Retrieve the messages from the other AI, if there are any
@@ -9570,7 +9596,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// grayman #2816 - don't respond to sounds made by someone you last killed
 
-	if ( actor && ( actor == m_lastKilled ) )
+	if ( actor && ( actor == m_lastKilled.GetEntity() ) )
 	{
 		return;
 	}
@@ -10580,7 +10606,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	}
 
 	// grayman #2816 - if this is the last AI you killed, ignore it
-	if ( tactEnt->IsType(idAI::Type) && ( tactEnt == m_lastKilled ) )
+	if ( tactEnt->IsType(idAI::Type) && ( tactEnt == m_lastKilled.GetEntity() ) )
 	{
 		return;
 	}
@@ -12958,7 +12984,7 @@ idEntity* idAI::GetBlood(void) const
 
 // grayman #2816 - remember who you killed, for barking and tactile alert events
 
-void idAI::SetLastKilled(idEntity *killed)
+void idAI::SetLastKilled(idActor *killed)
 {
 	m_lastKilled = killed;
 	m_justKilledSomeone = true; // used to skip regular rampdown bark in favor of a "killed" bark

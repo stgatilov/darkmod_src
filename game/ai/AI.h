@@ -848,6 +848,9 @@ public: // greebo: Made these public
 
 	bool					fleeingEvent;
 
+	// grayman #3848 - where you're fleeing from
+	idVec3					fleeingFrom;
+
 	// grayman #3474 - if this is TRUE, emit fleeing barks, otherwise don't
 
 	bool					emitFleeBarks;
@@ -1312,7 +1315,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_performRelight;		// grayman #2603 - set to TRUE by a script function when it's time to relight a light
 	idEntity* m_bloodMarker;	// grayman #3075
 	bool m_ReactingToHit;		// grayman #2816 - reaction after being hit by something
-	idEntity* m_lastKilled;		// grayman #2816 - the last enemy we killed
+	idEntityPtr<idActor> m_lastKilled; // grayman #2816 - the last enemy we killed
 	bool m_justKilledSomeone;	// grayman #2816 - remember just killing someone so correct bark is emitted when alert level comes down
 	bool m_deckedByPlayer;		// grayman #3314 - TRUE if the player killed or KO'ed me (for mission statistics "bodies found")
 	bool m_allowAudioAlerts;	// grayman #3424 - latch to prevent audio alert processing
@@ -1739,6 +1742,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
+	bool					IsAfraid( void ); // grayman #3848
 
 	// Override idActor::OnElevator. See idActor class for documentation.
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
@@ -2042,7 +2046,7 @@ public:
 	idEntity*				GetBlood(void) const;
 
 	// grayman #2816 - get last enemy killed
-	void					SetLastKilled(idEntity *killed);
+	void					SetLastKilled(idActor *killed);
 		
 	// grayman #3643 - setup a suspicious door
 	void					SetUpSuspiciousDoor(CFrobDoor* door);
