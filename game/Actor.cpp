@@ -1687,17 +1687,17 @@ int	idActor::GetDefaultSurfaceType( void ) const {
 idActor::ProjectOverlay
 ================
 */
-void idActor::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material ) {
+void idActor::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save ) {
 	idEntity *ent;
 	idEntity *next;
 
-	idEntity::ProjectOverlay( origin, dir, size, material );
+	idEntity::ProjectOverlay( origin, dir, size, material, save );
 
 	for( ent = GetNextTeamEntity(); ent != NULL; ent = next ) {
 		next = ent->GetNextTeamEntity();
 		if ( ent->GetBindMaster() == this ) {
 			if ( ent->fl.takedamage && ent->spawnArgs.GetBool( "bleed" ) ) {
-				ent->ProjectOverlay( origin, dir, size, material );
+				ent->ProjectOverlay( origin, dir, size, material, save );
 			}
 		}
 	}

@@ -1013,6 +1013,9 @@ idEntity::idEntity()
 
 	// grayman #597 - for hiding arrows when nocked to the bow
 	m_HideUntilTime = 0;
+
+	// SteveL #3817. Make decals and overlays persistant.
+	needsDecalRestore = false;
 }
 
 /*
@@ -2171,6 +2174,21 @@ void idEntity::Save( idSaveGame *savefile ) const
 	// grayman #2787
 	savefile->WriteVec3( m_VinePlantLoc );
 	savefile->WriteVec3( m_VinePlantNormal );
+
+	// SteveL #3817: make decals persistent
+	savefile->WriteInt( decals_list.size() );
+	for ( std::list<SDecalInfo>::const_iterator i = decals_list.begin(); i != decals_list.end(); ++i )
+	{
+		savefile->WriteString( i->decal );
+		savefile->WriteVec3( i->origin );
+		savefile->WriteVec3( i->dir );
+		savefile->WriteFloat( i->size );
+		savefile->WriteJoint( i->overlay_joint );
+		savefile->WriteInt( i->decal_starttime );
+		savefile->WriteFloat( i->decal_depth );
+		savefile->WriteBool( i->decal_parallel );
+		savefile->WriteFloat( i->decal_angle );
+	}
 }
 
 /*
@@ -2460,6 +2478,24 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3( m_VinePlantLoc );
 	savefile->ReadVec3( m_VinePlantNormal );
 
+	// SteveL #3817: make decals persistent
+	int decalscount;
+	savefile->ReadInt( decalscount );
+	for ( int i = 0; i < decalscount; ++i )
+	{
+		SDecalInfo di;
+		savefile->ReadString( di.decal );
+		savefile->ReadVec3( di.origin );
+		savefile->ReadVec3( di.dir );
+		savefile->ReadFloat( di.size );
+		savefile->ReadJoint( di.overlay_joint );
+		savefile->ReadInt( di.decal_starttime );
+		savefile->ReadFloat( di.decal_depth );
+		savefile->ReadBool( di.decal_parallel );
+		savefile->ReadFloat( di.decal_angle );
+		decals_list.push_back( di );
+	}
+	needsDecalRestore = ( decalscount > 0 );
 
 	// Tels #2417: after Restore call RestoreScriptObject() of the scriptObject so the
 	// script object can restore f.i. sounds:
@@ -2877,6 +2913,7 @@ Virtual function overriden with more complex methods by animated entities.
 void idEntity::SwapLODModel( const char *modelname )
 {
 	SetModel( modelname );
+	RestoreDecals();	// #3817
 }
 
 
@@ -2901,6 +2938,12 @@ void idEntity::Think( void )
 	}
 
 	Present();
+
+	if ( needsDecalRestore ) // #3817
+	{
+		ReapplyDecals();
+		needsDecalRestore = false;
+	}
 }
 
 /*
@@ -3568,6 +3611,7 @@ void idEntity::Show( void )
 			m_FrobBox->SetContents( CONTENTS_FROBABLE );
 		}
 		UpdateVisuals();
+		RestoreDecals();	// #3817
 
 		// show our bind-children
 		idEntity *ent;
@@ -3906,7 +3950,7 @@ bool idEntity::PhysicsTeamInPVS( pvsHandle_t pvsHandle ) {
 idEntity::ProjectOverlay
 ==============
 */
-void idEntity::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material ) {
+void idEntity::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save ) {
 	float s, c;
 	idMat3 axis, axistemp;
 	idVec3 localOrigin, localAxis[2];
@@ -3923,6 +3967,12 @@ void idEntity::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float si
 	}
 
 	idMath::SinCos16( gameLocal.random.RandomFloat() * idMath::TWO_PI, s, c );
+
+	// Store overlay info for restoration, before 'size' gets modified. -- SteveL #3817
+	if (save)
+	{
+		SaveOverlayInfo( origin, dir, size, material );
+	}
 
 	axis[2] = -dir;
 	axis[2].NormalVectors( axistemp[0], axistemp[1] );
@@ -3950,6 +4000,116 @@ void idEntity::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float si
 
 	// make sure non-animating models update their overlay
 	UpdateVisuals();
+}
+
+/*
+================
+idEntity::RestoreDecals
+
+Reapply decals and overlays after LOD switch / hiding / save game loading.
+This is the public method called by external code. It sets a flag which'll be used 
+on the next Think(), after the model gets Presented to the renderer. SteveL #3817
+================
+*/
+void idEntity::RestoreDecals()
+{
+	needsDecalRestore = true;
+	BecomeActive( TH_UPDATEVISUALS );
+}
+
+/*
+================
+idEntity::ReapplyDecals
+
+Reapply decals and overlays after LOD switch / hiding / save game loading.
+================
+*/
+void idEntity::ReapplyDecals()
+{
+	// #3817: Overridden by idStaticEntity and idAnimatedEntity
+}
+
+/*
+================
+idEntity::SaveOverlayInfo
+
+Store info about an overlay on an animated mesh so that it can be replaced later.
+Find the closest joint and store the positioning detail relative to that joint. This tactic 
+prevents blood sliding round a moving mesh (esp. head and neck) during LOD transitions. SteveL #3817
+================
+*/
+void idEntity::SaveOverlayInfo( const idVec3& impact_origin, const idVec3& impact_dir, const float size, const char* decal )
+{
+	if ( !IsType( idAnimatedEntity::Type ) || !GetRenderEntity()->hModel )
+	{
+		assert( false ); // won't happen in current code, but someone 
+		return;			 // might screw up later and we're about to cast
+	}
+
+	// Retrieve joint data
+	idAnimatedEntity* self = static_cast<idAnimatedEntity*>( this );
+	idJointMat* joints;
+	int numjoints;
+	self->GetAnimator()->GetJoints( &numjoints, &joints );
+	const idMD5Joint* bones = self->GetRenderEntity()->hModel->GetJoints();
+	
+	// Find the nearest joint to the impact
+	float near_dist = FLT_MAX;
+	const char* near_name = NULL;
+	for ( int i = 0; i < numjoints; ++i, ++joints, ++bones )
+	{
+		const idVec3 joint_world_origin = renderEntity.origin + joints->ToVec3() * renderEntity.axis;
+		const float dist = ( impact_origin - joint_world_origin ).Length();
+		if ( dist < near_dist )
+		{
+			near_dist = dist;
+			near_name = bones->name.c_str();
+		}
+	}
+	assert( near_dist < FLT_MAX );
+	const jointHandle_t near_handle = self->GetAnimator()->GetJointHandle( near_name );
+
+	// Calculate position and impact direction of the overlay relative to chosen joint
+	const idJointMat* near_joint = &renderEntity.joints[near_handle];
+	const idMat3 jointaxis = near_joint->ToMat3() * renderEntity.axis;
+	const idVec3 jointorigin = renderEntity.origin + near_joint->ToVec3() * renderEntity.axis;
+	const idVec3 localImpactOrg = ( impact_origin - jointorigin ) * jointaxis.Transpose();
+	const idVec3 localImpactDir = impact_dir * jointaxis.Transpose();
+
+	// Store the information
+	SDecalInfo di;
+	di.overlay_joint = near_handle;
+	di.dir = localImpactDir;
+	di.origin = localImpactOrg;
+	di.size = size;
+	di.decal = decal;
+	di.decal_depth = 0.0f;		// not used for animated overlays
+	di.decal_parallel = false;	// not used for animated overlays
+	di.decal_angle = 0.0f;		// not used for animated overlays
+	di.decal_starttime = 0;		// not used for animated overlays
+	decals_list.push_back( di );
+}
+
+/*
+================
+idStaticEntity::SaveDecalInfo
+
+For restoration after a LOD switch. -- SteveL #3817
+================
+*/
+void idEntity::SaveDecalInfo( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle )
+{
+	SDecalInfo di;
+	di.decal_angle = angle;
+	di.decal = material;
+	di.decal_depth = depth;
+	di.dir = dir;
+	di.overlay_joint = INVALID_JOINT; // only needed for animated overlays
+	di.origin = origin;
+	di.decal_parallel = parallel;
+	di.size = size;
+	di.decal_starttime = gameLocal.time;
+	decals_list.push_back( di );
 }
 
 /*
@@ -8661,6 +8821,11 @@ void idAnimatedEntity::Think( void ) {
 	UpdateAnimation();
 
 	Present();
+	if ( needsDecalRestore ) // #3817
+	{
+		ReapplyDecals();
+		needsDecalRestore = false;
+	}
 	UpdateDamageEffects();
 }
 
@@ -8741,6 +8906,7 @@ void idAnimatedEntity::SetModel( const char *modelname ) {
 	animator.GetBounds( gameLocal.time, renderEntity.bounds );
 
 	UpdateVisuals();
+	RestoreDecals(); // #3817
 }
 
 /*
@@ -8810,7 +8976,39 @@ void idAnimatedEntity::SwapLODModel( const char *modelname )
 	}
 
 	UpdateVisuals();
+	Present();
+	ReapplyDecals();			// #3817
+	needsDecalRestore = false;	// #3817
 }
+
+/*
+=====================
+idAnimatedEntity::ReapplyDecals
+
+Reapply overlays after LOD switch, hiding, shouldering, save game loading. #3817
+=====================
+*/
+void idAnimatedEntity::ReapplyDecals()
+{
+	gameRenderWorld->RemoveDecals( modelDefHandle );
+
+	for ( std::list<SDecalInfo>::const_iterator di = decals_list.begin(); di != decals_list.end(); ++di )
+	{
+		const jointHandle_t jnt = di->overlay_joint;
+		if ( jnt != INVALID_JOINT )
+		{
+			// Calculate world coords for the overlay based on current joint position
+			const idVec3 joint_origin = renderEntity.origin + renderEntity.joints[jnt].ToVec3() * renderEntity.axis;
+			const idMat3 joint_axis = renderEntity.joints[jnt].ToMat3() * renderEntity.axis;
+			const idVec3 splat_origin = joint_origin + di->origin * joint_axis;
+			const idVec3 splat_direction = di->dir * joint_axis;
+			// Call the idEntity function, bypassing overrides, because the overrides propagate the overlay to bindsiblings
+			idEntity::ProjectOverlay( splat_origin, splat_direction, di->size, di->decal, false );
+		}
+	}
+}
+
+
 
 /*
 =====================

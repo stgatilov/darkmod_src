@@ -134,7 +134,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			moveType != MOVETYPE_GET_UP_FROM_LYING &&
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
-			owner->FacingIdeal() //~SteveL #3182
+			owner->FacingIdeal()
 		   )
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on

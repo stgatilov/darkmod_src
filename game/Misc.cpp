@@ -1275,6 +1275,36 @@ void idAnimated::SwapLODModel( const char *modelname )
 
 /*
 ================
+idStaticEntity::ReapplyDecals
+
+Replace decals on func statics after a LOD switch or savegame load -- SteveL #3817
+================
+*/
+void idStaticEntity::ReapplyDecals()
+{
+	gameRenderWorld->RemoveDecals( modelDefHandle );
+	std::list<SDecalInfo>::const_iterator di = decals_list.begin();
+
+	while ( di != decals_list.end() )
+	{
+		const idMaterial* material = declManager->FindMaterial( di->decal, false );
+		if ( material && di->overlay_joint == INVALID_JOINT ) // Otherwise, this isn't a valid static decal.
+		{
+			int duration = material->GetDecalInfo().stayTime + material->GetDecalInfo().fadeTime;
+			if ( di->decal_starttime + duration < gameLocal.time )
+			{
+				// Decal is already timed out. Delete it and move on.
+				di = decals_list.erase( di );
+				continue;
+			}
+			gameLocal.ProjectDecal( di->origin, di->dir, di->decal_depth, di->decal_parallel, di->size, di->decal, di->decal_angle, this, false, di->decal_starttime );
+		}
+		++di;
+	}
+}
+
+/*
+================
 idAnimated::StartRagdoll
 ================
 */
@@ -1664,10 +1694,10 @@ void idStaticEntity::Spawn( void ) {
 	}
 
 	if (ParseLODSpawnargs( &spawnArgs, gameLocal.random.RandomFloat() ) )
-		{
+	{
 		// Have to start thinking if we're distance dependent
 		BecomeActive( TH_THINK );
-		}
+	}
 }
 
 /*

@@ -6139,11 +6139,23 @@ void idGameLocal::RadiusPushClipModel( const idVec3 &origin, const float push, c
 idGameLocal::ProjectDecal
 ===============
 */
-void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle ) {
+void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, 
+								const char *material, float angle, idEntity* target, bool save, int starttime ) 
+{
 	float s, c;
 	idMat3 axis, axistemp;
 	idFixedWinding winding;
 	idVec3 windingOrigin, projectionOrigin;
+
+	if ( starttime == -1 )
+	{
+		starttime = time; // Optional param defaults to -1 => gameLocal.time -- SteveL #3817
+	}
+
+	if ( target && save )
+	{
+		target->SaveDecalInfo( origin, dir, depth, parallel, size, material, angle ); // Save for reapplication after LOD switches -- SteveL #3817
+	}
 
 	static idVec3 decalWinding[4] = {
 		idVec3(  1.0f,  1.0f, 0.0f ),
@@ -6180,7 +6192,7 @@ void idGameLocal::ProjectDecal( const idVec3 &origin, const idVec3 &dir, float d
 	winding += idVec5( windingOrigin + ( axis * decalWinding[1] ) * size, idVec2( 0, 1 ) );
 	winding += idVec5( windingOrigin + ( axis * decalWinding[2] ) * size, idVec2( 0, 0 ) );
 	winding += idVec5( windingOrigin + ( axis * decalWinding[3] ) * size, idVec2( 1, 0 ) );
-	gameRenderWorld->ProjectDecalOntoWorld( winding, projectionOrigin, parallel, depth * 0.5f, declManager->FindMaterial( material ), time );
+	gameRenderWorld->ProjectDecalOntoWorld( winding, projectionOrigin, parallel, depth * 0.5f, declManager->FindMaterial( material ), starttime );
 }
 
 /*

@@ -328,6 +328,8 @@ public:
 	void				Fade( const idVec4 &to, float fadeTime );
 	virtual void		Think( void );
 
+	virtual void		ReapplyDecals(); // #3817
+
 	virtual void		WriteToSnapshot( idBitMsgDelta &msg ) const;
 	virtual void		ReadFromSnapshot( const idBitMsgDelta &msg );
 

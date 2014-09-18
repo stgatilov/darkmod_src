@@ -493,7 +493,7 @@ public:
 
 	virtual void			Hide( void );
 	virtual void			Show( void );
-	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
+	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save = true );
 
 	virtual void			LinkCombat( void );
 	virtual void			UnlinkCombat( void );

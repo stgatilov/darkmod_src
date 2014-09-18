@@ -959,7 +959,8 @@ void idProjectile::DefaultDamageEffect( idEntity *soundEnt, const idDict &projec
 	}
 
 	if ( *decal != '\0' ) {
-		gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, projectileDef.GetFloat( "decal_size", "6.0" ), decal );
+		gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, projectileDef.GetFloat( "decal_size", "6.0" ), decal,
+								0.0f, gameLocal.entities[collision.c.entityNum], true); // last 2 params (target entity and save=true) added #3817 for persistent decals -- SteveL
 	}
 }
 

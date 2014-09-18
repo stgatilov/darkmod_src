@@ -859,7 +859,8 @@ public:
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
-	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material, float angle = 0 );
+	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
+										  float angle = 0, idEntity* target = NULL, bool save = false, int starttime = -1 ); // target, save, startime added #3817 -- SteveL
 	void					BloodSplat( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
 
 	void					CallFrameCommand( idEntity *ent, const function_t *frameCommand );

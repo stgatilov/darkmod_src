@@ -997,8 +997,12 @@ void idAFEntity_Base::Think( void )
 	{
 		Present();
 		LinkCombat();
+		if ( needsDecalRestore ) // #3817
+		{
+			ReapplyDecals();
+			needsDecalRestore = false;
+		}
 	}
-
 // TDM: Anim/AF physics mods, generalized behavior that originally was just on AI
 
 	// Update the AF bodies for the anim if we are set to do that
@@ -2468,12 +2472,12 @@ void idAFEntity_WithAttachedHead::Show( void ) {
 idAFEntity_WithAttachedHead::ProjectOverlay
 ================
 */
-void idAFEntity_WithAttachedHead::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material ) {
+void idAFEntity_WithAttachedHead::ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save ) {
 
-	idEntity::ProjectOverlay( origin, dir, size, material );
+	idEntity::ProjectOverlay( origin, dir, size, material, save );
 
 	if ( head.GetEntity() ) {
-		head.GetEntity()->ProjectOverlay( origin, dir, size, material );
+		head.GetEntity()->ProjectOverlay( origin, dir, size, material, save );
 	}
 }
 

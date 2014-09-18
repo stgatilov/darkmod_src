@@ -223,6 +223,24 @@ typedef struct SAttachPosition_s
 	void			Restore( idRestoreGame *savefile );
 } SAttachPosition;
 
+/**
+* Struct for keeping track of decals and overlays applied, so they
+* can be retained through LOD / hiding / savegames. -- SteveL #3817
+**/
+ typedef struct SDecalInfo {
+	idStr					decal;
+	idVec3					origin;			// For static models, world coords. For animated entities, relative to joint origin and axis
+	idVec3					dir;			// Direction of impact, relative to world or joint same as origin
+	float					size;
+	// overlays only (for animated meshes) 
+	jointHandle_t			overlay_joint;
+	// decals only (for func statics, world)
+	int						decal_starttime;
+	float					decal_depth;
+	bool					decal_parallel;
+	float					decal_angle;
+} SDecalInfo;
+
 
 class idEntity : public idClass {
 public:
@@ -588,7 +606,6 @@ public:
 
 	void					UpdateModel( void );
 	void					UpdateModelTransform( void );
-	virtual void			ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material );
 	int						GetNumPVSAreas( void );
 	const int *				GetPVSAreas( void );
 	void					ClearPVSAreas( void );
@@ -1521,6 +1538,24 @@ private:
 	int					previousVoiceIndex;		// index of most recent voice sound requested (1->N, where there are N sounds in the shader)
 	idSoundShader *		previousBodyShader;		// shader for the most recent body request (safe because shader pointers are constant, being decls)
 	int					previousBodyIndex;		// index of most recent body sound requested (1->N, where there are N sounds in the shader)
+
+	/**
+	* Methods for attaching decals to the entity's model. 
+	* And for replacing them after LOD swaps, hiding, shouldering, loading. -- SteveL #3817
+	**/
+public:
+	virtual void		ProjectOverlay( const idVec3 &origin, const idVec3 &dir, float size, const char *material, bool save = true );
+	void				RestoreDecals();	// Deferred action, done at end of Think() after model has been Presented
+	void				SaveDecalInfo( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, 
+									   const char *decal, float angle = 0.0f ); // Applied by gameLocal, so needs to be public
+protected:
+	std::list<SDecalInfo>	decals_list;
+	bool				needsDecalRestore;
+	virtual void		ReapplyDecals();			  // Internal method, called at end of Think() or after LOD switch during Think()
+private:
+	void				SaveOverlayInfo( const idVec3& origin, const idVec3& dir, float size, const char* decal ); // Overlays are applied by an idEntity method so this can be private.
+
+
 private:
 	void				FixupLocalizedStrings();
 
@@ -1880,6 +1915,13 @@ protected:
 	* Calls GetJointWorldTransform on idAnimated entities.
 	**/
 	virtual void GetAttachingTransform( jointHandle_t jointHandle, idVec3 &offset, idMat3 &axis );
+
+
+	/**
+	* Replace decal overlays after LOD switch, hiding, shouldering, save game loading. SteveL #3817
+	**/
+protected:
+	virtual void ReapplyDecals();			  // Internal method, called at end of Think() 
 
 protected:
 	idAnimator				animator;

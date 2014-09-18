@@ -2560,7 +2560,13 @@ void idAI::Think( void )
 	if (!cv_ai_opt_nopresent.GetBool())
 	{
 		Present();
+		if ( needsDecalRestore ) // #3817
+		{
+			ReapplyDecals();
+			needsDecalRestore = false;
+		}
 	}
+
 	UpdateDamageEffects();
 	LinkCombat();
 
