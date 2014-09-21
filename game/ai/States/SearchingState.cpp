@@ -736,10 +736,10 @@ bool SearchingState::ChooseNextHidingSpotToSearch(idAI* owner)
 	return true;
 }
 
-bool SearchingState::OnAudioAlert()
+bool SearchingState::OnAudioAlert(idStr soundName) // grayman #3847
 {
 	// Firt, call the base class
-	if (!State::OnAudioAlert())
+	if (!State::OnAudioAlert(soundName)) // grayman #3847
 	{
 		return true;
 	}

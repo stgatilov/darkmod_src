@@ -81,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-bool CombatState::OnAudioAlert()
+bool CombatState::OnAudioAlert(idStr soundName) // grayman #3847
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -360,6 +360,16 @@ void CombatState::Think(idAI* owner)
 	{
 		if (newEnemy)
 		{
+			// grayman #3847 - if kneeling, abort the kneel anim
+
+			if ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) == "kneel_down" )
+			{
+				// Reset anims
+				owner->StopAnim(ANIMCHANNEL_TORSO, 0);
+				owner->StopAnim(ANIMCHANNEL_LEGS, 0);
+				owner->SetWaitState(""); // grayman #3848
+			}
+
 			// abandon the endgame and fight your new enemy
 			owner->GetMind()->EndState();
 			return;
@@ -582,9 +592,13 @@ void CombatState::Think(idAI* owner)
 	{
 		owner->fleeingEvent = false; // grayman #3356
 		owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
+		owner->fleeingFromPerson = enemy; // grayman #3847
 		// grayman #3548 - allow flee bark if unarmed
 		owner->emitFleeBarks = !_rangedPossible;
-		owner->GetMind()->SwitchState(STATE_FLEE);
+		if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+		{
+			owner->GetMind()->SwitchState(STATE_FLEE);
+		}
 		return;
 	}
 
@@ -663,8 +677,12 @@ void CombatState::Think(idAI* owner)
 		{
 			owner->fleeingEvent = false; // grayman #3356
 			owner->fleeingFrom = enemy->GetPhysics()->GetOrigin();
+			owner->fleeingFromPerson = enemy; // grayman #3847
 			owner->emitFleeBarks = true; // grayman #3474
-			owner->GetMind()->SwitchState(STATE_FLEE);
+			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			{
+				owner->GetMind()->SwitchState(STATE_FLEE);
+			}
 			return;
 		}
 
@@ -1106,8 +1124,12 @@ void CombatState::Think(idAI* owner)
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("I'm badly hurt, I'm afraid, and am fleeing!\r");
 				owner->fleeingEvent = false; // grayman #3182
 				owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
+				owner->fleeingFromPerson = enemy; // grayman #3847
 				owner->emitFleeBarks = true; // grayman #3474
-				owner->GetMind()->SwitchState(STATE_FLEE);
+				if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+				{
+					owner->GetMind()->SwitchState(STATE_FLEE);
+				}
 				return;
 			}
 		}

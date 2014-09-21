@@ -92,17 +92,35 @@ bool EscapePointEvaluator::PerformRelationshipCheck(EscapePoint& escapePoint, in
 	return gameLocal.m_RelationsManager->CheckForHostileAI(escapePoint.origin, team);
 }
 
+// grayman #3847 - Check the distance from the goal (escapePoint)
+// to the threat. We don't want to send the AI to a goal that's
+// near the threat. If the goal is far from the threat, return 'false'. If the
+// goal is too near the threat, return 'true'. ('true' means the escape point
+// isn't good, and we have to keep looking. 'false' means the escape point is good.)
+
+bool EscapePointEvaluator::PerformProximityToThreatCheck(EscapePoint& escapePoint, idVec3 threatLoc)
+{
+	return ((escapePoint.origin - threatLoc).LengthFast() < 300);
+}
+
 
 /**
  * AnyEscapePointFinder
  */
 AnyEscapePointFinder::AnyEscapePointFinder(const EscapeConditions& conditions) :
 	EscapePointEvaluator(conditions),
-	_team(conditions.self.GetEntity()->team)
+	_team(conditions.self.GetEntity()->team),
+	_threatLocation(conditions.threatPosition) // grayman #3847
 {}
 
 bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 {
+	// grayman #3847 - add check for whether the point being fled from is too close
+	if ( PerformProximityToThreatCheck(escapePoint,_threatLocation)) // grayman #3847
+	{
+		return true; // too close to threat, so keep looking
+	}
+
 	// grayman #3548 - add relationship check for hostiles at the escape point
 	if ( PerformRelationshipCheck(escapePoint,_team) )
 	{
@@ -117,7 +135,8 @@ bool AnyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  */
 GuardedEscapePointFinder::GuardedEscapePointFinder(const EscapeConditions& conditions) :
 	EscapePointEvaluator(conditions),
-	_team(conditions.self.GetEntity()->team)
+	_team(conditions.self.GetEntity()->team),
+	_threatLocation(conditions.threatPosition) // grayman #3847
 {}
 
 bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
@@ -127,6 +146,12 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not guarded, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not guarded.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3847 - add check for whether the point being fled from is too close
+	if ( PerformProximityToThreatCheck(escapePoint,_threatLocation)) // grayman #3847
+	{
+		return true; // too close to threat, so keep looking
 	}
 
 	// grayman #3548 - add relationship check for hostiles at the escape point
@@ -143,7 +168,8 @@ bool GuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  */
 FriendlyEscapePointFinder::FriendlyEscapePointFinder(const EscapeConditions& conditions) :
 	EscapePointEvaluator(conditions),
-	_team(conditions.self.GetEntity()->team)
+	_team(conditions.self.GetEntity()->team),
+	_threatLocation(conditions.threatPosition) // grayman #3847
 {}
 
 bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
@@ -153,6 +179,12 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not friendly, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is not friendly.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3847 - add check for whether the point being fled from is too close
+	if ( PerformProximityToThreatCheck(escapePoint,_threatLocation)) // grayman #3847
+	{
+		return true; // too close to threat, so keep looking
 	}
 
 	// grayman #3548 - add relationship check for hostiles at the escape point
@@ -169,7 +201,8 @@ bool FriendlyEscapePointFinder::Evaluate(EscapePoint& escapePoint)
  */
 FriendlyGuardedEscapePointFinder::FriendlyGuardedEscapePointFinder(const EscapeConditions& conditions) :
 	EscapePointEvaluator(conditions),
-	_team(conditions.self.GetEntity()->team)
+	_team(conditions.self.GetEntity()->team),
+	_threatLocation(conditions.threatPosition) // grayman #3847
 {}
 
 bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
@@ -179,6 +212,12 @@ bool FriendlyGuardedEscapePointFinder::Evaluate(EscapePoint& escapePoint)
 		// Not guarded or not friendly, continue the search
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Escape point %d is either not friendly or not guarded.\r", escapePoint.id);
 		return true;
+	}
+
+	// grayman #3847 - add check for whether the point being fled from is too close
+	if ( PerformProximityToThreatCheck(escapePoint,_threatLocation)) // grayman #3847
+	{
+		return true; // too close to threat, so keep looking
 	}
 
 	// grayman #3548 - add relationship check for hostiles at the escape point

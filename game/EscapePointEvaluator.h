@@ -96,6 +96,14 @@ protected:
 	 *          TRUE if the search can continue.
 	 */
 	bool	PerformRelationshipCheck(EscapePoint& escapePoint, int team);
+
+	/** grayman #3847
+	 * Checks the distance from the flee point to the threat location.
+	 *
+	 * @returns FALSE if the search is finished (far from threat) or 
+	 *          TRUE if the search can continue.
+	 */
+	bool	PerformProximityToThreatCheck(EscapePoint& escapePoint, idVec3 _threatLocation);
 };
 typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 
@@ -114,6 +122,7 @@ class AnyEscapePointFinder :
 	// The team of the fleeing AI, which is evaluated against the
 	// teams of the AI near the flee point.
 	int _team;
+	idVec3 _threatLocation; // grayman #3847
 public:
 	AnyEscapePointFinder(const EscapeConditions& conditions);
 
@@ -129,6 +138,7 @@ class GuardedEscapePointFinder :
 	// The team of the fleeing AI, which is evaluated against the
 	// teams of the AI near the flee point.
 	int _team;
+	idVec3 _threatLocation; // grayman #3847
 public:
 	GuardedEscapePointFinder(const EscapeConditions& conditions);
 
@@ -147,7 +157,7 @@ class FriendlyEscapePointFinder :
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point and the teams of the AI near the flee point.
 	int _team;
-
+	idVec3 _threatLocation; // grayman #3847
 public:
 	FriendlyEscapePointFinder(const EscapeConditions& conditions);
 
@@ -166,7 +176,7 @@ class FriendlyGuardedEscapePointFinder :
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point and the teams of the AI near the flee point.
 	int _team;
-
+	idVec3 _threatLocation; // grayman #3847
 public:
 	FriendlyGuardedEscapePointFinder(const EscapeConditions& conditions);
 

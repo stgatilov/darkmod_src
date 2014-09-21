@@ -49,10 +49,10 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	Task::Init(owner, subsystem);
 
-	_enemy = owner->GetEnemy();
+	_enemy = owner->fleeingFromPerson.GetEntity(); // grayman #3847
 
 	// grayman #3848 - set flee distance based on attack type
-	if (_enemy.GetEntity() && _enemy.GetEntity()->GetAttackFlag(COMBAT_RANGED))
+	if (_enemy.GetEntity() && ( _enemy.GetEntity()->GetNumRangedWeapons() > 0))
 	{
 		_currentDistanceGoal = FLEE_DIST_MIN_RANGED;
 	}
@@ -67,11 +67,13 @@ void FleeTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->AI_RUN = true;
 }
 
+
 bool FleeTask::Perform(Subsystem& subsystem)
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 	Memory& memory = owner->GetMemory();
+	_enemy = owner->fleeingFromPerson.GetEntity(); // grayman #3847
 	idActor* enemy = _enemy.GetEntity();
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("%s Flee Task performing.\r",owner->name.c_str());
@@ -85,23 +87,31 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	// if the enemy we're fleeing from dies, enemy gets set to NULL
-	if ( enemy == NULL )
-	{
-		// grayman #3317 - if we're not fleeing an event, we can quit fleeing
-		if ( !owner->fleeingEvent )
-		{
-			//memory.fleeingDone = true; // grayman #3548
-			return true;
-		}
-	}
+	// grayman #3847 - if you're still running, but near your destination, and the enemy is
+	// close on your tail, you don't want to stop at the destination. You
+	// want to calculate the next point to run to while you're still running.
+
+	bool keepGoing = (
+		!owner->fleeingEvent && // you're not fleeing an event
+		(owner->GetMoveStatus() == MOVE_STATUS_MOVING) && // still running
+		((owner->GetPhysics()->GetOrigin() - owner->GetMoveDest()).LengthSqr() < 10000) && // w/in 100 of goal
+		(enemy && (owner->GetPhysics()->GetOrigin() - enemy->GetPhysics()->GetOrigin()).LengthSqr() < FLEE_DIST_MIN_MELEE*FLEE_DIST_MIN_MELEE) // enemy is too close
+		);
 
 	// grayman #3548 - when your move is done, turn to face where you came from
 	if (owner->AI_MOVE_DONE && !_haveTurnedBack)
 	{
 		// grayman #3848 - turn back
+		// grayman #3847 - face enemy if you have one, even if you can't see him
 
-		owner->TurnToward(owner->fleeingFrom);
+		if (enemy)
+		{
+			owner->TurnToward(enemy->GetPhysics()->GetOrigin());
+		}
+		else
+		{
+			owner->TurnToward(owner->fleeingFrom);
+		}
 		_haveTurnedBack = true;
 	}
 
@@ -115,9 +125,13 @@ bool FleeTask::Perform(Subsystem& subsystem)
 
 	if ( ( _failureCount > 5 ) || 
 		 ( owner->AI_MOVE_DONE && !owner->AI_DEST_UNREACHABLE && !owner->m_HandlingDoor && !owner->m_HandlingElevator ) ||
-		 ( gameLocal.time > _fleeStartTime + maxFleeTime ) )
+		 ( gameLocal.time > _fleeStartTime + maxFleeTime ) || 
+		 keepGoing)	// grayman #3847 - you're close to your destination, still moving, and the enemy is also close
 	{
-		owner->StopMove(MOVE_STATUS_DONE);
+		if (!keepGoing) // don't stop if you're supposed to keep going
+		{
+			owner->StopMove(MOVE_STATUS_DONE);
+		}
 
 		// Done fleeing?
 
@@ -125,8 +139,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 
 		if ( owner->fleeingEvent )
 		{
-			//memory.fleeingDone = true; // grayman #3548
-			//owner->fleeingEvent = false; // grayman #3548
 			if (!_haveTurnedBack) // grayman #3548
 			{
 				// Turn around
@@ -136,7 +148,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		}
 
 		// check if we can see the enemy
-		if (owner->AI_ENEMY_VISIBLE)
+		if ( (enemy && owner->AI_ENEMY_VISIBLE)) // grayman #3847
 		{
 			// grayman #3355 - we might have fled because we were too close to the
 			// enemy, and don't have a melee weapon. Check if we're far
@@ -144,27 +156,26 @@ bool FleeTask::Perform(Subsystem& subsystem)
 			// our health is low or we're a civilian. The combat code will sort it out.
 
 			// grayman #3548 - refactored
-			if ( owner->GetNumRangedWeapons() > 0 )
+			// grayman #3847 - don't stop and turn back if afraid
+			if (( owner->GetNumRangedWeapons() > 0 ) && !owner->IsAfraid())
 			{
 				float dist2Enemy = ( enemy->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
 				if ( dist2Enemy > ( 3 * owner->GetMeleeRange() ) )
 				{
-					//memory.fleeingDone = true; // grayman #3548
-					//owner->fleeingEvent = false; // grayman #3548
-
 					// Turn toward enemy. Note that this is different
 					// than just turning to look back the way you came.
 					owner->TurnToward(enemy->GetPhysics()->GetOrigin());
 					return true;
 				}
 			}
+		}
 
+		if ( keepGoing || (enemy && owner->AI_ENEMY_VISIBLE)) // grayman #3847
+		{
 			// continue fleeing
 
-			_failureCount = 0;
-
 			// grayman #3848 - set flee distance based on attack type
-			if (_enemy.GetEntity() && _enemy.GetEntity()->GetAttackFlag(COMBAT_RANGED))
+			if (_enemy.GetEntity() && ( _enemy.GetEntity()->GetNumRangedWeapons() > 0))
 			{
 				_currentDistanceGoal = FLEE_DIST_MIN_RANGED;
 			}
@@ -184,21 +195,32 @@ bool FleeTask::Perform(Subsystem& subsystem)
 				_escapeSearchLevel--;
 			}
 		}
-		else
-		{
-			//memory.fleeingDone = true; // grayman #3548
-			//owner->fleeingEvent = false; // grayman #3548
 
+		if ( !keepGoing && enemy && !owner->AI_ENEMY_VISIBLE) // grayman #3847
+		{
 			if (!_haveTurnedBack) // grayman #3548
 			{
 				// Turn around to look back to where we came from
-				owner->TurnToward(owner->fleeingFrom);
+				owner->TurnToward(enemy->GetPhysics()->GetOrigin());
+				//owner->TurnToward(owner->fleeingFrom);
 			}
 			return true;
 		}
 	}
+
+	idVec3 ownerLoc = owner->GetPhysics()->GetOrigin();
+	idVec3 threatLoc;
+	if ( enemy != NULL )
+	{
+		threatLoc = enemy->GetPhysics()->GetOrigin();
+	}
+	else // otherwise use distance to the event we're fleeing
+	{
+		threatLoc = owner->fleeingFrom; // grayman #3847
+	}
+	float threatDistance = (ownerLoc - threatLoc).LengthFast();
 	
-	if (owner->GetMoveStatus() != MOVE_STATUS_MOVING)
+	if (keepGoing || (owner->GetMoveStatus() != MOVE_STATUS_MOVING))
 	{
 		// If the AI is not running yet, start fleeing
 		owner->AI_RUN = true;
@@ -271,24 +293,10 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		else // _escapeSearchLevel == 1
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Searchlevel = 1\r");
-
-			idVec3 ownerLoc = owner->GetPhysics()->GetOrigin();
-			idVec3 threatLoc;
-			// Get the distance to the enemy if we're fleeing one
-			if ( enemy != NULL )
-			{
-				threatLoc = enemy->GetPhysics()->GetOrigin();
-			}
-			else // otherwise use distance to the event we're fleeing
-			{
-				threatLoc = memory.posEvidenceIntruders;
-			}
-			float threatDistance = (ownerLoc - threatLoc).LengthFast();
-
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Threat is %f away\r", threatDistance);
 			if ( threatDistance < FLEE_DIST_MAX ) // grayman #3548
 			{
-				if ( threatDistance < _currentDistanceGoal ) // grayman #3548
+				if ( ( threatDistance < _currentDistanceGoal ) || ( enemy && (enemy->GetNumRangedWeapons() > 0) ) ) // grayman #3548
 				{
 					DM_LOG(LC_AI, LT_INFO)LOGSTRING("OMG, Panic mode, gotta run now!\r");
 					// Increase the fleeRadius (the nearer the threat, the more)
@@ -304,8 +312,8 @@ bool FleeTask::Perform(Subsystem& subsystem)
 						// No point could be found.
 						_failureCount++;
 
-						// grayman #3848 - try taking cover
-						if (_failureCount >= 5)
+						// grayman #3848 - try taking cover if you're fleeing an enemy
+						if ((_failureCount >= 5) && enemy)
 						{
 							if (owner->spawnArgs.GetBool("taking_cover_enabled","0"))
 							{
@@ -314,7 +322,6 @@ bool FleeTask::Perform(Subsystem& subsystem)
 								if (takingCoverPossible)
 								{
 									owner->MoveToPosition(hideGoal.origin);
-									//owner->GetMind()->SwitchState(STATE_TAKE_COVER);
 									success = true;
 									_haveTurnedBack = false;
 								}
@@ -341,6 +348,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 							// don't move closer to the enemy,
 							// so let's kill the move to the found point
 							owner->StopMove(MOVE_STATUS_DONE);
+							owner->AI_MOVE_DONE = false;
 							_failureCount++;
 						}
 						else if ( ( owner2threatDist >= FLEE_DIST_MIN_MELEE ) && ( owner2goal * owner2threat > 0.965926 ))
@@ -349,6 +357,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 							// unless they're getting too close,
 							// so let's kill the move to the found point
 							owner->StopMove(MOVE_STATUS_DONE);
+							owner->AI_MOVE_DONE = false;
 							_failureCount++;
 						}
 						else
@@ -364,6 +373,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 				// Fleeing is done for now. We'll hang around to see if the
 				// enemy comes after us, which will mean we have to flee again.
 				owner->StopMove(MOVE_STATUS_DONE);
+				owner->AI_MOVE_DONE = false;
 			}
 		}
 
@@ -375,6 +385,11 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		{
 			memory.stopHandlingDoor = true;
 		}
+
+		if (success)
+		{
+			_failureCount = 0;
+		}
 	}
 
 	return false; // not finished yet
@@ -385,6 +400,7 @@ void FleeTask::OnFinish(idAI* owner) // grayman #3548
 	Memory& memory = owner->GetMemory();
 	memory.fleeingDone = true;
 	owner->fleeingEvent = false;
+	owner->fleeingFromPerson = NULL; // grayman #3847
 }
 
 void FleeTask::Save(idSaveGame* savefile) const

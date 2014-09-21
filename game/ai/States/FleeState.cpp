@@ -59,10 +59,15 @@ void FleeState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.StopReacting(); // grayman #3559
 
-	if (owner->GetEnemy())
+	if (owner->fleeingFromPerson.GetEntity()) // grayman #3847
 	{
-		owner->FaceEnemy();
+		owner->TurnToward(owner->fleeingFromPerson.GetEntity()->GetPhysics()->GetOrigin());
 	}
+
+	//if (owner->GetEnemy())
+	//{
+	//	owner->FaceEnemy();
+	//}
 
 	owner->movementSubsystem->ClearTasks();
 	owner->movementSubsystem->PushTask(TaskPtr(new WaitTask(1000)));

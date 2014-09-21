@@ -827,6 +827,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(fleeingEvent);			// grayman #3317
 	savefile->WriteVec3(fleeingFrom);			// grayman #3848
 	savefile->WriteBool(emitFleeBarks);			// grayman #3474
+	fleeingFromPerson.Save(savefile);			// grayman #3847
 
 	savefile->WriteAngles( eyeMin );
 	savefile->WriteAngles( eyeMax );
@@ -1273,6 +1274,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(fleeingEvent);		// grayman #3317
 	savefile->ReadVec3(fleeingFrom);		// grayman #3848
 	savefile->ReadBool(emitFleeBarks);		// grayman #3474
+	fleeingFromPerson.Restore(savefile);	// grayman #3847
 
 	savefile->ReadAngles( eyeMin );
 	savefile->ReadAngles( eyeMax );
@@ -3645,7 +3647,8 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 		
 		conditions.fromEntity = entityToFleeFrom;
 
-		// grayman #3317 - need threat position if fleeing an event
+		conditions.threatPosition = fleeingFrom; // grayman #3847
+		/* grayman #3317 - need threat position if fleeing an event
 		if ( fleeingEvent )
 		{
 			conditions.threatPosition = GetMemory().posEvidenceIntruders;
@@ -3654,6 +3657,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 		{
 			conditions.threatPosition.Zero();
 		}
+		*/
 
 		conditions.aas = aas;
 		conditions.fromPosition = org;
@@ -3709,7 +3713,8 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 		}
 		else // fleeing from an event (i.e. murder)
 		{
-			pos = GetMemory().posEvidenceIntruders;
+			pos = fleeingFrom; // grayman #3847
+			//pos = GetMemory().posEvidenceIntruders;
 			//numObstacles = 0; // grayman #3548
 		}
 
@@ -8251,6 +8256,7 @@ idProjectile *idAI::LaunchProjectile( const char *jointname, idEntity *target, b
 		
 		lastProjectile = activeProjectile.projEnt.GetEntity();
 		lastProjectile->Launch( muzzle, dir, vec3_origin );
+
 		activeProjectile.projEnt = NULL;
 	}
 
@@ -9485,11 +9491,12 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman #2816 - no alert if it was made by someone we killed
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
-		if ( !soundMaker || // alert if unknown
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) ) // alert if enemy and not the last we killed and not in notarget mode
+		if ( !soundMaker || // alert if unknown sound maker
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
+			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			// greebo: Notify the currently active state
-			bool shouldAlert = mind->GetState()->OnAudioAlert();
+			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name); // grayman #3847
 
 			// Decide if you need to remember a noisemaker
 

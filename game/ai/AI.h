@@ -851,6 +851,9 @@ public: // greebo: Made these public
 	// grayman #3848 - where you're fleeing from
 	idVec3					fleeingFrom;
 
+	// grayman #3847 - who you're fleeing from
+	idEntityPtr<idActor>	fleeingFromPerson;
+
 	// grayman #3474 - if this is TRUE, emit fleeing barks, otherwise don't
 
 	bool					emitFleeBarks;

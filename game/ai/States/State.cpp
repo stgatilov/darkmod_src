@@ -367,7 +367,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 }
 */
 
-bool State::OnAudioAlert()
+bool State::OnAudioAlert(idStr soundName) // grayman #3847
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -379,23 +379,6 @@ bool State::OnAudioAlert()
 
 	Memory& memory = owner->GetMemory();
 
-	// grayman #3848 - If you've been up to Combat mode this trip,
-	// and you're a civilian or unarmed or your health is below
-	// your critical health, this noise is going to scare you
-	// and cause you to flee. This can happen if you fled an
-	// archer and he keeps plastering the walls near you with arrows.
-	// It doesn't look right to go off searching for the source of
-	// the noise when you should already know you're getting shot at.
-
-	if ( (owner->m_recentHighestAlertLevel >= owner->thresh_5) && owner->IsAfraid() )
-	{
-		owner->fleeingEvent = true; // grayman #3356
-		owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
-		owner->emitFleeBarks = true; // grayman #3474
-		owner->GetMind()->SwitchState(STATE_FLEE);
-		return false;
-	}
-
 	memory.alertClass = EAlertAudio;
 	memory.alertType = EAlertTypeSuspicious;
 	if (cv_ai_debug_transition_barks.GetBool())
@@ -405,6 +388,30 @@ bool State::OnAudioAlert()
 
 	memory.alertPos = owner->GetSndDir();
 	memory.lastAudioAlertTime = gameLocal.time;
+
+	// grayman #3848 - If this noise is an arrow hitting or breaking, and
+	// you're afraid (unarmed, civilian, or low health), you shouldn't search.
+	// If it's close by, you should flee if you aren't already.
+
+	if ( owner->IsAfraid() && ((soundName == "arrow_broad_hit") || (soundName == "arrow_broad_break")))
+	{
+		if ((memory.alertPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 300)
+		{
+			// if already fleeing, these settings will get
+			// picked up and used. if not already fleeing,
+			// the new flee task will use them
+			owner->fleeingEvent = true; // grayman #3356
+			owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
+			owner->fleeingFromPerson = NULL; // grayman #3847
+			owner->emitFleeBarks = true; // grayman #3474
+			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			{
+				owner->GetMind()->SwitchState(STATE_FLEE);
+			}
+		}
+		return false; // false = don't search
+	}
+
 	memory.mandatory = false; // grayman #3331
 
 	// Search within radius of stimulus that is 1/3 the distance from the
@@ -1268,7 +1275,6 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 		stimSource->AllowResponse(ST_VISUAL, owner); // grayman #2924
 		return;
 	}
-
 	
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
@@ -1303,6 +1309,20 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 				return; // ignore the arrow
 			}
 			bindMaster = bindMaster->GetBindMaster();
+		}
+
+		// grayman #3847 - ignore any arrow you shot yourself
+		idActor* whoShotThis = stimSource->m_MovedByActor.GetEntity();
+		if (whoShotThis == owner)
+		{
+			return;
+		}
+
+		// grayman #3847 - ignore any arrow shot by someone you killed
+		idActor* lastKilled = owner->m_lastKilled.GetEntity();
+		if (lastKilled && (whoShotThis == lastKilled))
+		{
+			return;
 		}
 	}
 
@@ -2806,8 +2826,12 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
 		owner->fleeingFrom = person->GetPhysics()->GetOrigin(); // grayman #3848
+		owner->fleeingFromPerson = NULL; // grayman #3847
 		owner->emitFleeBarks = true; // grayman #3474
-		owner->GetMind()->SwitchState(STATE_FLEE);
+		if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+		{
+			owner->GetMind()->SwitchState(STATE_FLEE);
+		}
 	}
 }
 
@@ -2967,8 +2991,12 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the KO, not fleeing an enemy
 		owner->fleeingFrom = person->GetPhysics()->GetOrigin(); // grayman #3848
+		owner->fleeingFromPerson = NULL; // grayman #3847
 		owner->emitFleeBarks = true; // grayman #3474
-		owner->GetMind()->SwitchState(STATE_FLEE);
+		if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+		{
+			owner->GetMind()->SwitchState(STATE_FLEE);
+		}
 	}
 }
 
@@ -3040,10 +3068,22 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			// grayman #3848 - only start fleeing if you're not already fleeing
 			if (memory.fleeingDone)
 			{
-				owner->fleeingEvent = true; // I'm fleeing because I was hit, not fleeing an enemy
+				if ( owner->AI_AlertLevel >= owner->thresh_5 ) // grayman #3847
+				{
+					owner->fleeingEvent = false; // I'm fleeing an enemy
+					owner->fleeingFromPerson = owner->GetEnemy(); // grayman #3847
+				}
+				else
+				{
+					owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
+					owner->fleeingFromPerson = NULL; // grayman #3847
+				}
 				owner->fleeingFrom = owner->GetPhysics()->GetOrigin(); // grayman #3848
 				owner->emitFleeBarks = true; // grayman #3474
-				owner->GetMind()->SwitchState(STATE_FLEE);
+				if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+				{
+					owner->GetMind()->SwitchState(STATE_FLEE);
+				}
 			}
 			return;
 		}

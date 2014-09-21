@@ -143,12 +143,24 @@ void PainState::Think(idAI* owner)
 			}
 		}
 
-		if ( willFlee ) // grayman #3331 - civilians and unarmed AI should flee
+		if ( willFlee && memory.fleeingDone) // grayman #3331 - civilians and unarmed AI should flee // grayman #3847 - already fleeing?
 		{
-			owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
+			if ( owner->AI_AlertLevel >= owner->thresh_5 ) // grayman #3847
+			{
+				owner->fleeingEvent = false; // I'm fleeing an enemy
+				owner->fleeingFromPerson = owner->GetEnemy(); // grayman #3847
+			}
+			else
+			{
+				owner->fleeingEvent = true; // I'm fleeing the scene, not fleeing an enemy
+				owner->fleeingFromPerson = NULL; // grayman #3847
+			}
 			owner->fleeingFrom = owner->GetPhysics()->GetOrigin(); // grayman #3848
 			owner->emitFleeBarks = true; // grayman #3474
-			owner->GetMind()->SwitchState(STATE_FLEE);
+			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			{
+				owner->GetMind()->SwitchState(STATE_FLEE);
+			}
 			return;
 		}
 

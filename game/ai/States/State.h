@@ -82,7 +82,7 @@ public:
 	/**
 	 * greebo: Gets called when the AI is alerted by a suspicious sound.
 	 */
-	virtual bool OnAudioAlert();
+	virtual bool OnAudioAlert(idStr soundName); // grayman #3847
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CommMessage& message, float psychLoud);
