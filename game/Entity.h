@@ -84,6 +84,7 @@ extern const idEventDef EV_SetShaderParm;
 extern const idEventDef EV_SetOwner;
 extern const idEventDef EV_GetAngles;
 extern const idEventDef EV_SetAngles;
+extern const idEventDef EV_ApplyImpulse;
 extern const idEventDef EV_SetLinearVelocity;
 extern const idEventDef EV_SetAngularVelocity;
 extern const idEventDef EV_SetSkin;
@@ -544,8 +545,8 @@ public:
 
 	// Tels: If LOD is enabled on this entity, call ThinkAboutLOD, computing new LOD level and new
 	// alpha value, then do the right things like Hide/Show, SetAlpha, switch models/skin etc.
-	// We pass in a pointer to the data (so the LODE can use shared data) as well as the distance,
-	// so the lode can pre-compute the distance.
+	// We pass in a pointer to the data (so LOD can use shared data) as well as the distance,
+	// so the distance can be pre-computed.
 	// SteveL #3770: Params removed. They are now determined in SwitchLOD itself to avoid code repetition
 	// as multiple classes now use LOD.
 	virtual	bool			SwitchLOD();
@@ -1622,6 +1623,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_GetLinearVelocity( void );
 	void					Event_SetAngularVelocity( const idVec3 &velocity );
 	void					Event_GetAngularVelocity( void );
+	void					Event_ApplyImpulse( idEntity *ent, const int id, const idVec3 &point, const idVec3 &impulse );
 
 	void					Event_SetContents(const int contents);
 	void					Event_GetContents();

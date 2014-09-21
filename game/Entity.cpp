@@ -125,6 +125,14 @@ const idEventDef EV_SetAngularVelocity( "setAngularVelocity", EventArgs('v', "ve
 	"direction of this vector defines the axis of rotation and the magnitude\n" \
 	"defines the rate of rotation about the axis in radians per second.");
 
+// tels #2897
+const idEventDef EV_ApplyImpulse( "applyImpulse", EventArgs(
+	'e', "source", "Pass $null_entity or the entity that applies the impulse", 
+	'd', "bodyid", "For articulated figures, ID of the body, 0 for the first (main) body. Otherwise use 0.", 
+	'v',"point", "Point on the body where the impulse is applied to",
+	'v',"impulse","Vector of the impulse"
+	), EV_RETURNS_VOID, "Applies an impulse to the entity. Example: entity.applyImpulse($player1, 0, entity.getOrigin(), '0 0 2');" ); 
+
 // greebo: Accessor events for the clipmask/contents flags
 const idEventDef EV_SetContents( "setContents", EventArgs('f', "contents", ""), EV_RETURNS_VOID, "Sets the contents of the physics object.");
 const idEventDef EV_GetContents( "getContents", EventArgs(), 'f', "Returns the contents of the physics object." );
@@ -538,6 +546,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetLinearVelocity,	idEntity::Event_SetLinearVelocity )
 	EVENT( EV_GetAngularVelocity,	idEntity::Event_GetAngularVelocity )
 	EVENT( EV_SetAngularVelocity,	idEntity::Event_SetAngularVelocity )
+	EVENT( EV_ApplyImpulse,			idEntity::Event_ApplyImpulse )
 
 	EVENT( EV_SetContents,			idEntity::Event_SetContents )
 	EVENT( EV_GetContents,			idEntity::Event_GetContents )
@@ -7860,6 +7869,17 @@ idEntity::Event_GetAngularVelocity
 */
 void idEntity::Event_GetAngularVelocity( void ) {
 	idThread::ReturnVector( GetPhysics()->GetAngularVelocity() );
+}
+
+/*
+================
+idEntity::Event_ApplyImpulse
+
+Tels #2897
+================
+*/
+void idEntity::Event_ApplyImpulse( idEntity *ent, const int id, const idVec3 &point, const idVec3 &impulse ) {
+		ApplyImpulse( ent, id, point, impulse );
 }
 
 /*
