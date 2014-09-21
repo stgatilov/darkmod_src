@@ -87,6 +87,12 @@ bool FleeTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	// grayman #3847 - if your enemy is dead or KO'ed, you can quit looking for somewhere to flee to
+	if (enemy && (enemy->AI_DEAD || enemy->IsKnockedOut()))
+	{
+		return true;
+	}
+
 	// grayman #3847 - if you're still running, but near your destination, and the enemy is
 	// close on your tail, you don't want to stop at the destination. You
 	// want to calculate the next point to run to while you're still running.
