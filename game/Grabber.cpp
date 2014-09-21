@@ -303,22 +303,27 @@ void CGrabber::StopDrag( void )
 	// is, so I'm going to put it here. If someone knows how to do this better, please
 	// move this code where it belongs.
 
+	// grayman #3858 - treat a dropped moveable prop torch the same way
+
 	idEntity* draggedEntity = m_dragEnt.GetEntity();
-	if ( ( draggedEntity != NULL ) && draggedEntity->spawnArgs.GetBool("is_lantern","0") )
+	if ( draggedEntity != NULL )
 	{
-		// Get the delay in milliseconds
-		int delay = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay", "4"));
-		if ( delay < 0 )
+		if ( draggedEntity->spawnArgs.GetBool("is_lantern","0") || draggedEntity->spawnArgs.GetBool("is_torch","0") )
 		{
-			delay = 0;
+			// Get the delay in milliseconds
+			int delay = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay", "4"));
+			if ( delay < 0 )
+			{
+				delay = 0;
+			}
+
+			// add a random amount for variability
+			int random = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay_random", "0"));
+			delay += random * gameLocal.random.RandomFloat();
+
+			// Schedule the extinguish event
+			draggedEntity->PostEventMS(&EV_ExtinguishLights, delay);
 		}
-
-		// add a random amount for variability
-		int random = SEC2MS(draggedEntity->spawnArgs.GetInt("extinguish_on_drop_delay_random", "0"));
-		delay += random * gameLocal.random.RandomFloat();
-
-		// Schedule the extinguish event
-		draggedEntity->PostEventMS(&EV_ExtinguishLights, delay);
 	}
 
 	m_dragEnt = NULL;
