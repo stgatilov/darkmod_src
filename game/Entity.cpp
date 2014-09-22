@@ -4101,7 +4101,7 @@ void idEntity::SaveOverlayInfo( const idVec3& impact_origin, const idVec3& impac
 
 /*
 ================
-idStaticEntity::SaveDecalInfo
+idEntity::SaveDecalInfo
 
 For restoration after a LOD switch. -- SteveL #3817
 ================
