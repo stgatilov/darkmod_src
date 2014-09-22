@@ -9010,6 +9010,11 @@ Reapply overlays after LOD switch, hiding, shouldering, save game loading. #3817
 */
 void idAnimatedEntity::ReapplyDecals()
 {
+	if ( modelDefHandle == -1 )
+	{
+		return;	// Can happen if model gets hidden again immediately after being shown. CGrabber::FitsInWorld does this.
+	}
+
 	gameRenderWorld->RemoveDecals( modelDefHandle );
 
 	for ( std::list<SDecalInfo>::const_iterator di = decals_list.begin(); di != decals_list.end(); ++di )

@@ -1282,6 +1282,11 @@ Replace decals on func statics after a LOD switch or savegame load -- SteveL #38
 */
 void idStaticEntity::ReapplyDecals()
 {
+	if ( modelDefHandle == -1 )
+	{
+		return;	// Might happen if model gets hidden again immediately after being shown, before the next Think().
+	}
+
 	gameRenderWorld->RemoveDecals( modelDefHandle );
 	std::list<SDecalInfo>::const_iterator di = decals_list.begin();
 
