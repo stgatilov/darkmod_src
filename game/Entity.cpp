@@ -8935,8 +8935,7 @@ idAnimatedEntity::SwapLODModel
 
 For LOD. Save current animation state, then swap out the model, maintaining joint data if possible. If 
 the new model has animations with the same names as ongoing ones, then start them up at the same-numbered 
-frame, but without blending. If the new animation is identical, no blending is needed of course. 
-[SteveL #3770]
+frame, but without blending. If the new animation is identical, no blending is needed of course. -- SteveL #3770
 ================
 */
 void idAnimatedEntity::SwapLODModel( const char *modelname )
@@ -8954,11 +8953,13 @@ void idAnimatedEntity::SwapLODModel( const char *modelname )
 
 	// Set new model, which will clear all animations
 	FreeModelDef();
+	needsDecalRestore = true;		// #3817
 	renderEntity.hModel = animator.SwapLODModel( modelname );
 	if ( !renderEntity.hModel )
 	{
-		// Can't do a swap that maintains joint data. So fall back to a full SetModel.
+		// Can't do a swap that maintains joint data. So fall back to a full SetModel and don't attempt to restore decals.
 		idAnimatedEntity::SetModel( modelname );
+		needsDecalRestore = false;
 		// NB this allows a non-animated replacement model, so check before going on to restore anims
 		if ( !animator.ModelDef() )
 		{
@@ -8997,8 +8998,11 @@ void idAnimatedEntity::SwapLODModel( const char *modelname )
 
 	UpdateVisuals();
 	Present();
-	ReapplyDecals();			// #3817
-	needsDecalRestore = false;	// #3817
+	if ( needsDecalRestore )		// #3817
+	{
+		ReapplyDecals();
+		needsDecalRestore = false;
+	}
 }
 
 /*
