@@ -449,12 +449,16 @@ public:
 	// we have a problem with hiding spot searches not returning
 	int hidingSpotThinkFrameCount;
 
-	int firstChosenHidingSpotIndex;
-	int currentChosenHidingSpotIndex;
-	idVec3 chosenHidingSpot;
+	//int firstChosenHidingSpotIndex;   // grayman debug
+	//int currentChosenHidingSpotIndex; // grayman debug
+	//idVec3 chosenHidingSpot; // grayman debug
 
 	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
 	bool hidingSpotInvestigationInProgress;
+
+	// grayman debug - true if the AI is currently guarding a location while
+	// participating in a search
+	bool guardingInProgress;
 
 	// True if fleeing is done, false if fleeing is in progress
 	bool fleeingDone;

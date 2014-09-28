@@ -240,6 +240,7 @@ void State::OnVisualAlert(idActor* enemy)
 
 			// Restart the search, in case we're already searching
 			memory.restartSearchForHidingSpots = true;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualAlert - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
 		}
 	} // Not too close to last stimulus or is visual stimulus
 }
@@ -4553,7 +4554,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			{
 				// Set alert pos to the position we were ordered to search
 				memory.alertPos = directObjectLocation;
-				memory.chosenHidingSpot = directObjectLocation;
+				//memory.chosenHidingSpot = directObjectLocation; // grayman debug
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 				memory.visualAlert = false; // grayman #2422
 				memory.mandatory = false;	// grayman #3331
@@ -4805,11 +4806,16 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// grayman #3424 - if we're to process this request, we shouldn't compare our alert level to what we're inheriting
 		if ( /*( otherAlertLevel > owner->AI_AlertLevel ) && */( otherAlertLevel >= owner->thresh_3 ) )
 		{
-			// Get some search points from them.
-			int numSpots = owner->GetSomeOfOtherEntitiesHidingSpotList(issuingEntity);
+			// grayman debug - Leave any current search
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
 
-			if (numSpots > 0)
+			// grayman debug - Join the other's search
+
+			if (gameLocal.m_searchManager->JoinSearch(issuingAI->m_searchID,owner)) // Sets up an assignment for owner
 			{
+				// grayman debug - the receiver has been added to the issuer's search,
+				// and has been given an assignment
+
 				// What is the distance to the friend?  If it is greater than a certain amount, shout intention
 				// to come help
 				float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
@@ -4858,7 +4864,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 			}
 			else
 			{
-				//gameLocal.Printf("Hmpfh, no spots to help them with\n");
+				//gameLocal.Printf("Hmpfh, can't help them\n");
 			}
 			
 			return;

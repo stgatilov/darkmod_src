@@ -560,9 +560,12 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #23
 		// restart the search, in the hope that you'll be sent
 		// somewhere new
 
+		// grayman debug - TODO: do we want to restart the search, or just leave the search and rejoin?
+
 		if ( owner->IsSearching() )
 		{
 			owner->GetMemory().restartSearchForHidingSpots = true;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("ResolveMovementBlockTask::PerformBlockingStatic - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),owner->GetMemory().restartSearchForHidingSpots); // grayman debug
 		}
 		else
 		{

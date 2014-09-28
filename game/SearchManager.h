@@ -1,0 +1,176 @@
+/*****************************************************************************
+                    The Dark Mod GPL Source Code
+ 
+ This file is part of the The Dark Mod Source Code, originally based 
+ on the Doom 3 GPL Source Code as published in 2011.
+ 
+ The Dark Mod Source Code is free software: you can redistribute it 
+ and/or modify it under the terms of the GNU General Public License as 
+ published by the Free Software Foundation, either version 3 of the License, 
+ or (at your option) any later version. For details, see LICENSE.TXT.
+ 
+ Project: The Dark Mod (http://www.thedarkmod.com/)
+ 
+ $Revision: 6097 $ (Revision of last commit) 
+ $Date: 2014-09-07 14:53:08 -0400 (Sun, 07 Sep 2014) $ (Date of last commit)
+ $Author: grayman $ (Author of last commit)
+ 
+******************************************************************************/
+/******************************************************************************
+*
+* DESCRIPTION: CSearchManager is a "search manager" that manages one or more AI
+* in their effort to search suspicious events. Rather than have each AI manage
+* its own search independently of other searching AI, the search manager assigns
+* search areas and roles to all participating AI.
+*
+*******************************************************************************/
+
+#ifndef __SEARCH_MANAGER_H__
+#define __SEARCH_MANAGER_H__
+
+#include "darkmodHidingSpotTree.h"
+
+class idAI;
+
+// Searcher roles that AI can be assigned
+typedef enum
+{
+	E_ROLE_NONE,
+	E_ROLE_SEARCHER,
+	E_ROLE_GUARD
+} smRole_t;
+
+// An Assignment is an assignment given to an AI. The assignment includes a set
+// of hiding spots, a matching list of randomized indexes that are used to
+// access the hiding spot set, the last spot assigned (represented by the
+// index into the randomized indexes).
+struct Assignment
+{
+	idVec3					_origin;		// center of search area, location of alert stimulus, spot to guard
+	float					_innerRadius;	// inner radius of search boundary
+	float					_outerRadius;	// outer radius of search boundary
+	idAI*					_searcher;		// AI searcher assigned to this area
+	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _randomHidingSpotIndexes
+	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, etc.)
+};
+
+// A Search is a collection of assignments stemming from a single event.
+struct Search
+{
+	int						_searchID;					// unique id for each search
+	int						_hidingSpotSearchHandle;	// handle for referencing the search
+	idVec3					_origin;					// center of search area, location of alert stimulus
+	idBounds				_limits;					// boundary of the search
+	idBounds				_exclusion_limits;			// exclusion boundary of the search
+	CDarkmodHidingSpotTree	_hidingSpots;				// The hiding spots for this search
+	bool					_hidingSpotsReady;			// false = still building the hiding spot list; true = list complete
+	std::vector<int>		_randomHidingSpotIndexes;	// An array of random numbers serving as indices into the hiding spot list
+	idList<Assignment>		_assignments;				// a list of assignments for this search
+};
+
+class CSearchManager
+{
+	idList<Search>  _searches;      // A list of all active searches in the mission
+	int				uniqueSearchID; // the next unique id to assign to a new search
+
+public:
+	CSearchManager();  // Constructor
+	~CSearchManager(); // Destructor
+
+	void Clear();
+
+	void RandomizeHidingSpotList(Search* search);
+
+	//idVec3 GetOrigin(int searchID); // Return current search origin
+
+	int StartNewHidingSpotSearch(idAI* ai); // returns searchID for the AI to use
+
+	bool GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
+
+	void RestartHidingSpotSearch(int searchID, idAI* ai); // Close and destroy the current search and start a new search
+
+	void PerformHidingSpotSearch(int searchID, idAI* ai); // Continue searching
+
+	Search* GetSearch(int searchID); // returns a pointer to the requested search
+
+	int GetNumHidingSpots(Search *search); // returns the number of hiding spots
+
+	smRole_t GetRole(int searchID, idAI* ai); // find your search role
+
+	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
+
+	/*!
+	* This method finds hiding spots in the bounds given by two vectors, and also excludes
+	* any points contained within a different pair of vectors.
+	*
+	* The first paramter is a vector which gives the location of the
+	* eye from which hiding is desired.
+	*
+	* The second vector gives the minimums in each dimension for the
+	* search space.  
+	*
+	* The third and fourth vectors give the min and max bounds within which spots should be tested
+	*
+	* The fifth and sixth vectors give the min and max bounds of an area where
+	*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
+	*	(producing a dead zone where points are not tested)
+	*
+	* The seventh parameter gives the bit flags of the types of hiding spots
+	* for which the search should look.
+	*
+	* The eighth parameter indicates an entity that should be ignored in
+	* the visual occlusion checks.  This is usually the searcher itself but
+	* can be NULL.
+	*
+	* This method will only start the search, if it returns 1, you should call
+	* continueSearchForHidingSpots every frame to do more processing until that function
+	* returns 0.
+	*
+	* The return value is a 0 for failure, 1 for success.
+	*/
+	int StartSearchForHidingSpotsWithExclusionArea
+	(
+		Search *search,
+		const idVec3& hideFromLocation,
+		int hidingSpotTypesAllowed,
+		idAI* p_ignoreAI
+	);
+
+	/*
+	* This method continues searching for hiding spots. It will only find so many before
+	* returning so as not to cause long delays.  Detected spots are added to the currently
+	* building hiding spot list.
+	*
+	* The return value is 0 if the end of the search was reached, or 1 if there
+	* is more processing to do (call this method again next AI frame)
+	*
+	*/
+	int ContinueSearchForHidingSpots(int searchID, idAI* ai);
+
+	bool JoinSearch(int searchID, idAI* searcher); // adds searcher to search
+
+	void LeaveSearch(int searchID, idAI* ai); // searcher leaves a search
+
+	void AdjustSearchLimits(idBounds& bounds); // grayman #2422 - fit the search to the architecture of the area being searched
+
+	//TaskPtr& task GetAssignment(int searcherID); // runs an assigned task
+
+	void destroyCurrentHidingSpotSearch(Search* search);
+
+	void Save( idSaveGame *savefile ) const;
+
+	void Restore( idRestoreGame *savefile );
+
+	//void DebugPrint(Search* search); // Print the current hiding spots and assignments
+
+	void DebugPrintSearch(Search* search); // Print the contents of a search
+
+	void DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
+
+	void PrintMe(int n, idAI* owner); // grayman debug - delete when done
+
+	// Accessor to the singleton instance of this class
+	static CSearchManager* Instance();
+};
+
+#endif // __SEARCH_MANAGER_H__

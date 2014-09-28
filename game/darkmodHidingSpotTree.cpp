@@ -371,7 +371,6 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 		return false;
 	}
 
-
 	// Update best spot quality in area
 	if (quality > p_areaNode->bestSpotQuality)
 	{
@@ -413,8 +412,6 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 				break;
 			}
 		}
-
-
 	}
 
 	// Test if it is redundant
@@ -961,6 +958,11 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds - p_areaCursor = %x\r",p_areaCursor); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             id = %d\r",p_areaCursor->id); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   aasAreaIndex = %d\r",p_areaCursor->aasAreaIndex); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          count = %d\r",p_areaCursor->count); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    spots.Num() = %d\r",p_areaCursor->spots.Num()); // grayman debug
 		// Check if we can just skip this entire area
 		if (spotDelta >= p_areaCursor->spots.Num())
 		{
@@ -1039,7 +1041,7 @@ bool CDarkmodHidingSpotTree::copy(CDarkmodHidingSpotTree* p_out_otherTree)
 }
 
 //-------------------------------------------------------------------------
-
+/* grayman debug
 bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& out_otherTree)
 {
 	unsigned int numPointsMoved = 0;
@@ -1154,7 +1156,7 @@ bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& 
 	// Done
 	return true;
 }
-
+*/
 //------------------------------------------------------------------------------------------
 
 bool CDarkmodHidingSpotTree::sortForNewCenter(idVec3 center, float searchRadius)

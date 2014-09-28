@@ -121,12 +121,15 @@ void gameError( const char *fmt, ... );
 
 #include "Objectives/EMissionResult.h"
 #include "DifficultyManager.h"
+
 #include "ai/AreaManager.h"
 #include "GamePlayTimer.h"
 #include "ModelGenerator.h"
 #include "ImageMapManager.h"
 #include "LightController.h"
 #include "ModMenu.h"
+
+#include "SearchManager.h" // grayman debug
 
 #include <boost/shared_ptr.hpp>
 
@@ -182,6 +185,8 @@ typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
 
 class CShop;
 typedef boost::shared_ptr<CShop> CShopPtr;
+
+class CSearchManager; // grayman debug
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -599,6 +604,9 @@ public:
 	 *         of all the tdmPathFlee entities.
 	 */
 	CEscapePointManager*	m_EscapePointManager;
+
+	// grayman debug - Search Manager
+	CSearchManager*			m_searchManager;
 
 	/**
 	 * greebo: This timer keeps track of the actual gameplay time.

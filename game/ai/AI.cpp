@@ -541,6 +541,7 @@ idAI::idAI()
 	m_justKilledSomeone = false; // grayman #2816
 	m_deckedByPlayer	= false; // grayman #3314
 	m_allowAudioAlerts  = true;  // grayman #3424
+	m_searchID			= -1;	 // grayman debug
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -564,11 +565,6 @@ idAI::idAI()
 	m_oldVisualAcuity = 0.0f;
 	m_sleepFloorZ = 0;  // grayman #2416
 	m_getupEndTime = 0; // grayman #2416
-
-	/**
-	* Darkmod: No hiding spot search by default
-	*/
-	m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
 	m_bCanDrown = true;
 	m_AirCheckTimer = 0;
@@ -649,11 +645,6 @@ idAI::~idAI()
 		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
 		worldMuzzleFlashHandle = -1;
 	}
-
-	/**
-	* Darkmod: Get rid of current hiding spot search if there is one.
-	*/
-	destroyCurrentHidingSpotSearch();
 
 	aiNode.Remove();
 
@@ -847,6 +838,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_ReactingToHit);		// grayman #2816
 	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
 	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
+	savefile->WriteInt(m_searchID);				// grayman debug
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -899,9 +891,6 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool( GetPhysics() == static_cast<const idPhysics *>(&physicsObj) );
 
 	savefile->WriteFloat(m_VisDistMax);
-
-	savefile->WriteInt(m_HidingSpotSearchHandle);
-	m_hidingSpots.Save(savefile);
 
 	// grayman #3424
 	int num = m_randomHidingSpotIndexes.size();
@@ -1294,6 +1283,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_ReactingToHit);	 // grayman #2816
 	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
 	savefile->ReadBool(m_allowAudioAlerts);	 // grayman #3424
+	savefile->ReadInt(m_searchID);			 // grayman debug
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -1355,9 +1345,6 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadFloat(m_VisDistMax);
-
-	savefile->ReadInt(m_HidingSpotSearchHandle);
-	m_hidingSpots.Restore(savefile);
 
 	// grayman #3424
 	savefile->ReadInt(num);
@@ -3190,7 +3177,7 @@ idAI::TravelDistance
 
 Returns the approximate travel distance from one position to the goal, or if no AAS, the straight line distance.
 
-This is feakin' slow, so it's not good to do it too many times per frame.  It also is slower the further you
+This is freakin' slow, so it's not good to do it too many times per frame.  It also is slower the farther you
 are from the goal, so try to break the goals up into shorter distances.
 =====================
 */
@@ -4202,6 +4189,7 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s going to [%s]\r",GetName(),pos.ToString()); // grayman debug
 	// Clear the "blocked" flag in the movement subsystem
 	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
@@ -9372,6 +9360,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s loudness %f\r",GetName(),propParms->loudness); // grayman debug
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
@@ -12310,350 +12299,10 @@ void idAI::DropOnRagdoll( void )
 	}
 }
 
-// grayman #2422 - adjust search limits to better fit the vertical
-// space in which the alert occurred
-
-void idAI::AdjustSearchLimits(idBounds& bounds)
-{
-	// trace down
-
-	idBounds newBounds = bounds;
-
-	idVec3 start = bounds.GetCenter();
-	idVec3 end = start;
-	end.z -= 300;
-
-	trace_t result;
-	idEntity *ignore = NULL;
-	while ( true )
-	{
-		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
-		if ( result.fraction == 1.0f )
-		{
-			break;
-		}
-
-		if ( result.fraction < VECTOR_EPSILON )
-		{
-			newBounds[0][2] = result.endpos.z; // move the lower bounds
-			break;
-		}
-
-		// End the trace if we hit the world
-
-		idEntity* entHit = gameLocal.entities[result.c.entityNum];
-
-		if ( entHit == gameLocal.world )
-		{
-			newBounds[0][2] = result.endpos.z; // move the lower bounds
-			break;
-		}
-
-		// Continue the trace from the struck point
-
-		start = result.endpos;
-		ignore = entHit; // for the next leg, ignore the entity we struck
-	}
-
-	// trace up
-
-	end = start;
-	end.z += 300;
-	ignore = NULL;
-	while ( true )
-	{
-		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
-		if ( result.fraction == 1.0f )
-		{
-			break;
-		}
-
-		if ( result.fraction < VECTOR_EPSILON )
-		{
-			if ( newBounds[1][2] > result.endpos.z )
-			{
-				newBounds[1][2] = result.endpos.z; // move the upper bounds down
-			}
-			break;
-		}
-
-		// End the trace if we hit the world
-
-		idEntity* entHit = gameLocal.entities[result.c.entityNum];
-
-		if ( entHit == gameLocal.world )
-		{
-			if ( newBounds[1][2] > result.endpos.z )
-			{
-				newBounds[1][2] = result.endpos.z; // move the upper bounds down
-			}
-			break;
-		}
-
-		// Continue the trace from the struck point
-
-		start = result.endpos;
-		ignore = entHit; // for the next leg, ignore the entity we struck
-	}
-
-	bounds = newBounds.ExpandSelf(2.0); // grayman #3424 - expand a bit to catch floors
-}
-
-
-int idAI::StartSearchForHidingSpotsWithExclusionArea
-(
-	const idVec3& hideFromLocation,
-	const idVec3& minBounds, 
-	const idVec3& maxBounds, 
-	const idVec3& exclusionMinBounds, 
-	const idVec3& exclusionMaxBounds, 
-	int hidingSpotTypesAllowed, 
-	idEntity* p_ignoreEntity
-)
-{
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("StartSearchForHidingSpotsWithExclusionArea called - %s\r",name.c_str());
-
-	// Destroy any current search
-	destroyCurrentHidingSpotSearch();
-
-	// Make caller's search bounds
-	idBounds searchBounds (minBounds, maxBounds);
-	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
-
-	// grayman #2422 - to prevent AI from going upstairs or downstairs
-	// to search spots over/under where they should be searching,
-	// limit the search to the floor where the alert occurred.
-
-	AdjustSearchLimits(searchBounds);
-	m_searchLimits = searchBounds;
-
-	// greebo: Remember the initial alert position
-	ai::Memory& memory = GetMemory();
-	memory.alertSearchCenter = memory.alertPos;
-
-	// Get aas
-	if (aas != NULL)
-	{
-		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Making finder\r");
-		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
-		(
-			hideFromLocation, 
-			aas, 
-			HIDING_OBJECT_HEIGHT,
-			searchBounds,
-			searchExclusionBounds,
-			hidingSpotTypesAllowed,
-			p_ignoreEntity,
-			gameLocal.framenum,
-			b_searchCompleted
-		);
-
-		// Wait at least one frame for other AIs to indicate they want to share
-		// this search. Return result indicating search is not done yet.
-		return 1;
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
-	
-		// Search is done since there is no search
-		return 0;
-	}
-}
-
 bool idAI::IsSearching() // grayman #2603
 {
 	return (AI_AlertLevel >= thresh_3); // note that this also returns TRUE if in combat mode
 }
-
-int idAI::ContinueSearchForHidingSpots()
-{
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
-
-	// Get hiding spot search instance from handle
-	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
-	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
-	{
-		p_hidingSpotFinder = CHidingSpotSearchCollection::Instance().getSearchByHandle(
-			m_HidingSpotSearchHandle
-		);
-	}
-
-	// Make sure search still around
-	if (p_hidingSpotFinder == NULL)
-	{
-		// No hiding spot search to continue
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No current hiding spot search to continue\r");
-		return 0;
-	}
-	else
-	{
-		// Call finder method to continue search
-		bool moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
-		(
-			p_hidingSpotFinder->hidingSpotList,
-			cv_ai_max_hiding_spot_tests_per_frame.GetInteger(),
-			gameLocal.framenum
-		);
-
-		// Return result
-		if (moreProcessingToDo)
-		{
-			return 1;
-		}
-
-		// No more processing to do at this point
-		
-		unsigned int refCount;
-
-		// Get finder we just referenced
-		CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = 
-			CHidingSpotSearchCollection::Instance().getSearchAndReferenceCountByHandle 
-			(
-				m_HidingSpotSearchHandle,
-				refCount
-			);
-
-		m_hidingSpots.clear();
-		// greebo: Now retrieve our share from the completed hiding spot search.
-		// For example, if two other AI are referencing this hiding spot finder, this AI draws a third.
-		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
-
-		// Done with search object, dereference so other AIs know how many
-		// AIs will still be retrieving points from the search
-		CHidingSpotSearchCollection::Instance().dereference (m_HidingSpotSearchHandle);
-		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-		// DEBUGGING
-		if (cv_ai_search_show.GetInteger() >= 1.0)
-		{
-			// Clear the debug draw list and then fill with our results
-			p_hidingSpotFinder->debugClearHidingSpotDrawList();
-			p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-			p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
-		}
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search completed\r");
-		return 0;
-	}
-}
-
-idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
-{
-	idVec3 outLocation(0,0,0);
-
-	int numSpots = m_hidingSpots.getNumSpots();
-
-	// In bounds?
-	if ( ( hidingSpotIndex >= 0 ) && ( hidingSpotIndex < numSpots) )
-	{
-		idBounds areaNodeBounds;
-		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
-		if (p_spot != NULL)
-		{
-			// grayman #2422 - to keep AI from searching the floor above
-			// or below, only return hiding spots that are inside the
-			// requested search volume. Ideally, if we decide this point is outside those
-			// limits, we would move to the next spot on the list, but list index
-			// management is done outside this routine, and we can't tinker
-			// with it here. If the point is NG, return (INFINITY,INFINITY,INFINITY).
-			// That will be checked elsewhere and cause this search to terminate and
-			// possibly start a new one.
-
-			if ( m_searchLimits.ContainsPoint(p_spot->goal.origin) )
-			{
-				outLocation = p_spot->goal.origin; // point is good
-			}
-		}
-
-		if (cv_ai_search_show.GetInteger() >= 1.0)
-		{
-			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
-			idVec3 arrowLength (0.0, 0.0, 50.0);
-
-			// Debug draw the point to be searched
-			gameRenderWorld->DebugArrow
-			(
-				markerColor,
-				outLocation + arrowLength,
-				outLocation,
-				2,
-				cv_ai_search_show.GetInteger()
-			);
-
-			// Debug draw the bounds of the area node containing the hiding spot point
-			// This may be smaller than the containing AAS area due to octant subdivision.
-			gameRenderWorld->DebugBounds
-			(
-				markerColor,
-				areaNodeBounds,
-				vec3_origin,
-				cv_ai_search_show.GetInteger()
-			);
-		}
-    }
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
-	}
-
-	// grayman #2422 - this routine might return (0,0,0), but we don't
-	// want AI traveling there. Change to something that's considered invalid.
-
-	if ( outLocation.Compare(idVec3(0,0,0)) )
-	{
-		outLocation = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-	}
-
-	// Return the location
-	return outLocation;
-}
-
-int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
-{
-	// Test parameters
-	if (p_ownerOfSearch == NULL) 
-	{
-		return 0;
-	}
-
-	// The other entity must be an AI
-	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
-	if (p_otherAI == NULL)
-	{
-		// Not an AI
-		return 0;
-	}
-
-	CDarkmodHidingSpotTree& p_othersTree = p_otherAI->m_hidingSpots;
-	if (p_othersTree.getNumSpots() <= 1)
-	{
-		// No points
-		return 0;
-	}
-
-	// We must clear our current hiding spot search
-	destroyCurrentHidingSpotSearch();
-
-	// Move points from their tree to ours
-	p_othersTree.getOneNth(2, m_hidingSpots);
-
-	// grayman #3424 - when grabbing hiding spots from someone else, both
-	// parties need to act like they're just starting the search. Otherwise,
-	// if the party who lost spots is already searching, he'll think he's
-	// still got the original number, which can lead to problems. This
-	// won't lead to the other party repeating every spot he's already
-	// searched, since spot selection is now randomized.
-
-	GetMemory().firstChosenHidingSpotIndex = -1;
-	p_otherAI->GetMemory().firstChosenHidingSpotIndex = -1;
-
-	// Done
-	return m_hidingSpots.getNumSpots();
-}
-
 
 float idAI::GetArmReachLength()
 {

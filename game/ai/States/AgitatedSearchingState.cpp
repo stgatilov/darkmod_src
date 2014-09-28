@@ -80,7 +80,8 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > EAgitatedSearching)
 	{
 		// Alert index is too high, switch to the higher State
-		owner->Event_CloseHidingSpotSearch();
+		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug - leave an ongoing search
+		//owner->Event_CloseHidingSpotSearch();
 		owner->GetMemory().combatState = -1; // grayman #3507
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
 		return false;
@@ -158,6 +159,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
 	State::Init(owner);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s wants to start agitated searching\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
@@ -181,8 +183,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 		owner->GetUp();
 	}
 
-	// Setup a new hiding spot search
-	StartNewHidingSpotSearch(owner);
+	// Set up a new hiding spot search
+	StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
 
 	// kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182

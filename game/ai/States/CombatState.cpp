@@ -451,21 +451,8 @@ void CombatState::Think(idAI* owner)
 				bool canWalkTo = owner->MoveToPosition(_destination);
 				if (canWalkTo)
 				{
-					float travelDist = owner->TravelDistance(ownerOrigin, _destination);
 					float actualDist = (ownerOrigin - _destination).LengthFast();
-					if ( actualDist > travelDist )
-					{
-						travelDist = actualDist;
-					}
-
-					if ( travelDist <= MAX_TRAVEL_DISTANCE_WALKING ) // close enough to walk?
-					{
-						owner->AI_RUN = false;
-					}
-					else // we're far away, so run
-					{
-						owner->AI_RUN = true;
-					}
+					owner->AI_RUN = ( actualDist > MAX_TRAVEL_DISTANCE_WALKING ); // close enough to walk?
 					_combatSubState = EStateVictor4;
 				}
 				else

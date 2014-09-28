@@ -75,17 +75,6 @@ protected:
 	 * This method is used to start a new hiding spot search. Any existing search in progress is replaced.
 	 */
 	virtual void StartNewHidingSpotSearch(idAI* owner);
-
-	// This is called each frame to complete a multiframe hiding spot search
-	virtual void PerformHidingSpotSearch(idAI* owner);
-
-	// Gets called when a new hiding spot should be acquired for searching.
-	// Stores the result in the AI's Memory (hiding spot indices)
-	// return TRUE when a hiding spot is available, FALSE if not.
-	virtual bool ChooseNextHidingSpotToSearch(idAI* owner);
-
-	// Randomizes the hiding spot list before any spots are chosen from it.
-	void RandomizeHidingSpotList(idAI* owner); // grayman #3424
 };
 
 } // namespace ai

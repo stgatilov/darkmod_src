@@ -312,6 +312,8 @@ void idGameLocal::Clear( void )
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_EscapePointManager->Clear();
 
+	m_searchManager = CSearchManager::Instance(); // grayman debug
+	
 	m_Interleave = 0;
 
 	m_lightGem.Clear();
@@ -1122,6 +1124,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	m_EscapePointManager->Save(&savegame);
+
+	m_searchManager->Save(&savegame); // grayman debug
 
 	// greebo: Save the maximum frob distance
 	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
@@ -2314,6 +2318,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	m_EscapePointManager->Restore(&savegame);
+
+	m_searchManager->Restore(&savegame); // grayman debug
 
 	// greebo: Restore the maximum frob distance
 	savegame.ReadFloat(g_Global.m_MaxFrobDistance);

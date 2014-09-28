@@ -1066,6 +1066,9 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 			2,
 			viewLifetime
 		);
+
+		// grayman debug - print the spotIndex above the arrow
+		gameRenderWorld->DrawText(va("%d",spotIndex),DebugDrawList[spotIndex].goal.origin + markerArrowLength + idVec3(0,0,10),0.125f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 120000);
 	}
 }
 
@@ -1191,12 +1194,18 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	int frameNumber
 )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots ...\r"); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   numPointsToTestThisPass = %d\r",numPointsToTestThisPass); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               frameNumber = %d\r",frameNumber); // grayman debug
+
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Finder:continueSearchForHidingSpots called, last frame processed = %d, this frame = %d\r", lastProcessingFrameNumber, frameNumber);
 
 	bool searchCompleted = isSearchCompleted();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("           searchCompleted = %d\r",searchCompleted); // grayman debug
 	if (searchCompleted || frameNumber == lastProcessingFrameNumber) 
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   Search is completed or we already searched this frame\r"); // grayman debug
 		// Search is completed or we already searched this frame.
 		return !searchCompleted; // return TRUE if we have still points to process
 	}
@@ -1212,12 +1221,14 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	// Call the interior function
 	if (!findMoreHidingSpots(inout_hidingSpots,	numPointsToTestThisPass, numPointsTestedThisPass))
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   subdividing the tree, num of points in tree = %d\r",inout_hidingSpots.getNumSpots()); // grayman debug
 		// Sub divide the tree
 		inout_hidingSpots.subDivideAreas(NUM_POINTS_PER_AREA_FOR_SUBDIVISION);
 		return false;
 	}
 	else
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   more spots to test, num of points in tree = %d\r",inout_hidingSpots.getNumSpots()); // grayman debug
 		// More spots to test
 		return true;
 	}
