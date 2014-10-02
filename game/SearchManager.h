@@ -31,13 +31,15 @@
 #include "darkmodHidingSpotTree.h"
 
 class idAI;
+class idAASLocal;
 
 // Searcher roles that AI can be assigned
 typedef enum
 {
-	E_ROLE_NONE,
-	E_ROLE_SEARCHER,
-	E_ROLE_GUARD
+	E_ROLE_NONE,		// no role
+	E_ROLE_SEARCHER,	// actively searches, using a set of hiding spots
+	E_ROLE_GUARD,		// stands at a location away from the search, using a set of guard spots
+	E_ROLE_OBSERVER		// stands at the perimeter of the search, observing
 } smRole_t;
 
 // An Assignment is an assignment given to an AI. The assignment includes a set
@@ -54,18 +56,22 @@ struct Assignment
 	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, etc.)
 };
 
-// A Search is a collection of assignments stemming from a single event.
+// A Search is a set of hiding spots and a collection of AI assignments stemming from a single event.
 struct Search
 {
-	int						_searchID;					// unique id for each search
+	int						_searchID;					// unique id for each search (starts at 0 and increments up)
 	int						_hidingSpotSearchHandle;	// handle for referencing the search
 	idVec3					_origin;					// center of search area, location of alert stimulus
 	idBounds				_limits;					// boundary of the search
 	idBounds				_exclusion_limits;			// exclusion boundary of the search
+	float					_outerRadius;				// outer radius of search boundary
 	CDarkmodHidingSpotTree	_hidingSpots;				// The hiding spots for this search
 	bool					_hidingSpotsReady;			// false = still building the hiding spot list; true = list complete
 	std::vector<int>		_randomHidingSpotIndexes;	// An array of random numbers serving as indices into the hiding spot list
+	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,a] where a = yaw angle to face
+	bool					_guardSpotsReady;			// false = guard spot list not complete yet; true = list complete
 	idList<Assignment>		_assignments;				// a list of assignments for this search
+	int						_searcherCount;				// number of searchers (not assignments, because some of those might be deactivated) 
 };
 
 class CSearchManager
@@ -93,9 +99,9 @@ public:
 
 	Search* GetSearch(int searchID); // returns a pointer to the requested search
 
-	int GetNumHidingSpots(Search *search); // returns the number of hiding spots
+	//int GetNumHidingSpots(Search *search); // returns the number of hiding spots
 
-	smRole_t GetRole(int searchID, idAI* ai); // find your search role
+	//smRole_t GetRole(int searchID, idAI* ai); // find your search role
 
 	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
@@ -156,6 +162,8 @@ public:
 	//TaskPtr& task GetAssignment(int searcherID); // runs an assigned task
 
 	void destroyCurrentHidingSpotSearch(Search* search);
+
+	void CreateListOfGuardSpots(Search* search, idAI* ai);
 
 	void Save( idSaveGame *savefile ) const;
 

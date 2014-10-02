@@ -2798,15 +2798,20 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		{
 			// Restart the search, in case we're already searching
 			memory.restartSearchForHidingSpots = true;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter 1 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
 		}
 		else
 		{
 			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3492
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter %s newAlertDeltaFromLastOneSearched = [%s]\r",owner->GetName(),newAlertDeltaFromLastOneSearched.ToString()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter %s newAlertDeltaFromLastOneSearched.LengthSqr() = %f\r",owner->GetName(),newAlertDeltaFromLastOneSearched.LengthSqr()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter %s memory.alertSearchVolume.LengthSqr() = %f\r",owner->GetName(),memory.alertSearchVolume.LengthSqr()); // grayman debug
 	
 			if ( newAlertDeltaFromLastOneSearched.LengthSqr() > memory.alertSearchVolume.LengthSqr() )
 			{
 				// Restart the search, in case we're already searching
 				memory.restartSearchForHidingSpots = true;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter 2 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
 			}
 		}
 
@@ -2815,7 +2820,8 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
 
 		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
-		memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
+		memory.stimulusLocationItselfShouldBeSearched = true; // grayman debug
+		//memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
 		memory.alertedDueToCommunication = false;
 	}
 					
@@ -2981,7 +2987,8 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
 
 	memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
-	memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
+	memory.stimulusLocationItselfShouldBeSearched = true;
+	//memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
 	memory.alertedDueToCommunication = false;
 		
 	// Callback for objectives
@@ -3059,6 +3066,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 				0
 			));
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s issue a SearchOrder_CommType request to anyone\r",owner->GetName()); // grayman debug
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
 
 			if (cv_ai_debug_transition_barks.GetBool())
@@ -3202,6 +3210,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
 			memory.investigateStimulusLocationClosely = false;
 			memory.restartSearchForHidingSpots = true; // grayman #3331
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
 			owner->AI_VISALERT = false;
 			memory.visualAlert = false; // grayman #2422			
 			memory.mandatory = true; // grayman #3331
@@ -4348,6 +4357,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::RequestForHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForHelp_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a RequestForHelp_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (owner->IsFriend(issuingEntity))
 			{
 				// Do we already have a target we are dealing with?
@@ -4371,6 +4381,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					break;
 				}
 
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s directObjectEntity = %s\r",owner->GetName(),directObjectEntity ? directObjectEntity->GetName():"NULL"); // grayman debug
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
 					// Bark
@@ -4413,6 +4424,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::RequestForMissileHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMissileHelp_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a RequestForMissileHelp_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Respond if they are a friend and we have a ranged weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumRangedWeapons() > 0)
 			{
@@ -4446,6 +4458,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::RequestForMeleeHelp_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForMeleeHelp_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a RequestForMeleeHelp_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Respond if they are a friend and we have a melee weapon
 			if (owner->IsFriend(issuingEntity) && owner->GetNumMeleeWeapons() > 0)
 			{
@@ -4483,10 +4496,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::DetectedSomethingSuspicious_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a DetectedSomethingSuspicious_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			OnMessageDetectedSomethingSuspicious(message);
 			break;
 		case CommMessage::DetectedEnemy_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedEnemy_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a DetectedEnemy_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			//gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
 	
 			if (owner->GetEnemy() != NULL)
@@ -4529,6 +4544,11 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::GuardLocationOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardLocationOrder_CommType\r");
+			// grayman debug - TODO: Create a "guard location" bark and have the first
+			// active searcher in a search send this message to a specific AI when the
+			// AI joins the search as a guard. Not as an observer. Add code here to provide
+			// a response. Going to the location is already handled by the Search Manager.
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a GuardLocationOrder_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard a location!\n");
@@ -4536,6 +4556,13 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::GuardEntityOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardEntityOrder_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a GuardEntityOrder_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
+			// grayman debug - TODO: Create a "guard entity" bark and have the first
+			// active searcher in a search send this message to a specific AI when the
+			// AI joins the search as a guard and is assigned a spot near an entity that
+			// generates an absence marker when it's stolen. Maybe we can determine the
+			// place to stand based on the architecture around the item w/o needing a
+			// mapper-supplied guard entity.
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				gameLocal.Printf("But I don't know how to guard an entity!\n");
@@ -4550,6 +4577,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::SearchOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: SearchOrder_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a SearchOrder_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (recipientEntity == owner && owner->IsFriend(issuingEntity))
 			{
 				// Set alert pos to the position we were ordered to search
@@ -4589,6 +4617,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::ConveyWarning_EvidenceOfIntruders_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_EvidenceOfIntruders_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (issuingEntity->IsType(idAI::Type))
 			{
 				idAI* issuer = static_cast<idAI*>(issuingEntity);
@@ -4626,6 +4655,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 		case CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
 			{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_ItemsHaveBeenStolen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
 			{
@@ -4662,6 +4692,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 		case CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType: // grayman #1327
 			{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_CorpseHasBeenSeen_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_CorpseHasBeenSeen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
 			// Did I already know about this event?
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
@@ -4699,6 +4730,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 		case CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType:
 			{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_EnemiesHaveBeenSeen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if ( !owner->FindSuspiciousEvent(message.m_eventID) )
 			{
@@ -4806,65 +4838,69 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// grayman #3424 - if we're to process this request, we shouldn't compare our alert level to what we're inheriting
 		if ( /*( otherAlertLevel > owner->AI_AlertLevel ) && */( otherAlertLevel >= owner->thresh_3 ) )
 		{
-			// grayman debug - Leave any current search
-			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
-
-			// grayman debug - Join the other's search
-
-			if (gameLocal.m_searchManager->JoinSearch(issuingAI->m_searchID,owner)) // Sets up an assignment for owner
+			// grayman debug - only join their search if you're not already part of it
+			if (owner->m_searchID != issuingAI->m_searchID)
 			{
-				// grayman debug - the receiver has been added to the issuer's search,
-				// and has been given an assignment
+				// grayman debug - Leave any current search
+				gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
 
-				// What is the distance to the friend?  If it is greater than a certain amount, shout intention
-				// to come help
-				float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
-				if (distanceToIssuer > MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
+				// grayman debug - Join the other's search
+
+				if (gameLocal.m_searchManager->JoinSearch(issuingAI->m_searchID,owner)) // Sets up an assignment for owner
 				{
-					// Bark
-					// angua: this one was getting quite annoying if you hear it all the time
-					// grayman #3424 - reinstating it, since there are a few new checks to keep
-					// AI from joining so frequently; - return comments if still annoying
-					owner->GetSubsystem(SubsysCommunication)->PushTask(
-						SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
-				}
- 			
-				// grayman #3438 - only reset my alert level if I'm currently not searching
-				if ( owner->AI_AlertLevel < owner->thresh_3 )
-				{
-					owner->SetAlertLevel(otherAlertLevel);
-				}
+					// grayman debug - the receiver has been added to the issuer's search,
+					// and has been given an assignment
 
-				owner->StopMove(MOVE_STATUS_DONE);
-				memory.StopReacting(); // grayman #3559
-
-				memory.alertPos = issuerMemory.alertPos;
-				memory.alertClass = EAlertNone;
-				memory.alertType = EAlertTypeSuspicious;
-				
-				memory.alertRadius = issuerMemory.alertRadius;
-				memory.alertSearchVolume = issuerMemory.alertSearchVolume; 
-				memory.alertSearchExclusionVolume.Zero();
-
-				memory.alertedDueToCommunication = true;
-				memory.visualAlert = false; // grayman #2422
-				memory.mandatory = false;	// grayman #3331
-
-				// grayman #3438
-				if ( message.m_eventID >= 0 )
-				{
-					if ( !owner->FindSuspiciousEvent(message.m_eventID) )
+					// What is the distance to the friend?  If it is greater than a certain amount, shout intention
+					// to come help
+					float distanceToIssuer = (issuingEntity->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin()).LengthFast();
+					if (distanceToIssuer > MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE)
 					{
-						owner->AddSuspiciousEvent(message.m_eventID);
+						// Bark
+						// angua: this one was getting quite annoying if you hear it all the time
+						// grayman #3424 - reinstating it, since there are a few new checks to keep
+						// AI from joining so frequently; - return comments if still annoying
+						owner->GetSubsystem(SubsysCommunication)->PushTask(
+							SingleBarkTaskPtr(new SingleBarkTask("snd_assistFriend")));
 					}
-					owner->AddWarningEvent(issuingAI,message.m_eventID); // log that a warning passed between us
-					issuingAI->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
-					memory.currentSearchEventID = message.m_eventID; // grayman #3424
+ 			
+					// grayman #3438 - only reset my alert level if I'm currently not searching
+					if ( owner->AI_AlertLevel < owner->thresh_3 )
+					{
+						owner->SetAlertLevel(otherAlertLevel);
+					}
+
+					owner->StopMove(MOVE_STATUS_DONE);
+					memory.StopReacting(); // grayman #3559
+
+					memory.alertPos = issuerMemory.alertPos;
+					memory.alertClass = EAlertNone;
+					memory.alertType = EAlertTypeSuspicious;
+				
+					memory.alertRadius = issuerMemory.alertRadius;
+					memory.alertSearchVolume = issuerMemory.alertSearchVolume; 
+					memory.alertSearchExclusionVolume.Zero();
+
+					memory.alertedDueToCommunication = true;
+					memory.visualAlert = false; // grayman #2422
+					memory.mandatory = false;	// grayman #3331
+
+					// grayman #3438
+					if ( message.m_eventID >= 0 )
+					{
+						if ( !owner->FindSuspiciousEvent(message.m_eventID) )
+						{
+							owner->AddSuspiciousEvent(message.m_eventID);
+						}
+						owner->AddWarningEvent(issuingAI,message.m_eventID); // log that a warning passed between us
+						issuingAI->AddWarningEvent(owner,message.m_eventID); // log that a warning passed between us
+						memory.currentSearchEventID = message.m_eventID; // grayman #3424
+					}
 				}
-			}
-			else
-			{
-				//gameLocal.Printf("Hmpfh, can't help them\n");
+				else
+				{
+					//gameLocal.Printf("Hmpfh, can't help them\n");
+				}
 			}
 			
 			return;

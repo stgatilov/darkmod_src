@@ -95,6 +95,7 @@ Memory::Memory(idAI* owningAI) :
 	//chosenHidingSpot(0,0,0), // grayman debug
 	hidingSpotInvestigationInProgress(false),
 	guardingInProgress(false), // grayman debug
+	guardingAngle(0.0f), // grayman debug
 	fleeingDone(true),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
@@ -185,6 +186,7 @@ void Memory::Save(idSaveGame* savefile) const
 	//savefile->WriteVec3(chosenHidingSpot); // grayman debug
 	savefile->WriteBool(hidingSpotInvestigationInProgress);
 	savefile->WriteBool(guardingInProgress); // grayman debug
+	savefile->WriteFloat(guardingAngle); // grayman debug
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
@@ -322,6 +324,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	//savefile->ReadVec3(chosenHidingSpot); // grayman debug
 	savefile->ReadBool(hidingSpotInvestigationInProgress);
 	savefile->ReadBool(guardingInProgress); // grayman debug
+	savefile->ReadFloat(guardingAngle); // grayman debug
 	savefile->ReadBool(fleeingDone);
 	savefile->ReadVec3(positionBeforeTakingCover);
 	savefile->ReadBool(resolvingMovementBlock);

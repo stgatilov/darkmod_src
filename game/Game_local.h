@@ -608,6 +608,8 @@ public:
 	// grayman debug - Search Manager
 	CSearchManager*			m_searchManager;
 
+	void					GetPortals(Search* search, idAI* ai); // grayman debug
+
 	/**
 	 * greebo: This timer keeps track of the actual gameplay time.
 	 */

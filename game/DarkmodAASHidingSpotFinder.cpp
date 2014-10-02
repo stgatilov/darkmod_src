@@ -331,6 +331,7 @@ bool CDarkmodAASHidingSpotFinder::findMoreHidingSpots
 	int& inout_numPointsTestedThisPass
 )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::findMoreHidingSpots searchState = %d.\r", searchState); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Find more hiding spots called, searchState = %d.\r", searchState);
 
 	// The number of areas we tested in this pass.
@@ -408,6 +409,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 			// Combine redundant hiding spots
 			CombineRedundantHidingSpots ( inout_hidingSpots, HIDING_SPOT_COMBINATION_DISTANCE);
 			searchState = EDone;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testNewPVSArea searchState set to %d\r", searchState); // grayman debug
 
 			return false;
 		}
@@ -434,6 +436,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 
 				// Now searching AAS areas in non-visible PVS area
 				searchState = EIteratingNonVisibleAASAreas;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testNewPVSArea searchState set to %d\r", searchState); // grayman debug
 			}
 			else
 			{
@@ -453,6 +456,7 @@ bool CDarkmodAASHidingSpotFinder::testNewPVSArea
 
 			// Now searching AAS areas in visible PVS area
 			searchState = EIteratingVisibleAASAreas;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testNewPVSArea searchState set to %d\r", searchState); // grayman debug
 		}
 	}
 
@@ -564,6 +568,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 
 	// On to next PVS area
 	searchState = ENewPVSArea;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 	// Potentially more PVS areas to search
 	return true;
@@ -605,6 +610,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 				
 				// We are now searching for hiding spots inside a visible AAS area
 				searchState = ESubdivideVisibleAASArea;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 				// There is more to do
 				return true;
@@ -633,6 +639,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 
 	// On to next PVS area
 	searchState = ENewPVSArea;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 	// Potentially more PVS areas to search
 	return true;
@@ -786,6 +793,7 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 
 	// Go back to iterating the list of AAS areas in this visible PVS area
 	searchState = EIteratingVisibleAASAreas;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea searchState set to %d\r", searchState); // grayman debug
 
 	// There may be more searching to do
 	return true;
@@ -1150,6 +1158,7 @@ bool CDarkmodAASHidingSpotFinder::startHidingSpotSearch
 
 	// Set search state
 	searchState = EBuildingPVSList;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::startHidingSpotSearch searchState set to %d\r", searchState); // grayman debug
 
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
@@ -1169,6 +1178,7 @@ bool CDarkmodAASHidingSpotFinder::startHidingSpotSearch
 	
 	// Iterating PVS areas
 	searchState = ENewPVSArea;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::startHidingSpotSearch searchState set to %d\r", searchState); // grayman debug
 
 	// Call the interior function
 	if (!findMoreHidingSpots(out_hidingSpots, numPointsToTestThisPass, numPointsTestedThisPass))

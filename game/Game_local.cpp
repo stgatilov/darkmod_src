@@ -5140,6 +5140,20 @@ void idGameLocal::SetupEAS()
 	common->PacifierUpdate(LOAD_KEY_ROUTING_DONE,0); // grayman #3763
 }
 
+
+// grayman debug
+void idGameLocal::GetPortals(Search* search, idAI* ai)
+{
+	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
+	int areaNum = ai->PointReachableAreaNum(search->_origin);
+	//int areaNum = gameRenderWorld->PointInArea(search->_origin);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals search->_origin = [%s]\r",search->_origin.ToString()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals areaNum = %d\r",areaNum); // grayman debug
+	int clusterNum = aasLocal->GetClusterNum(areaNum);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals area %d is in cluster %d\r",areaNum,clusterNum); // grayman debug
+	aasLocal->GetPortals(clusterNum,search->_guardSpots);
+}
+
 /*
 ==================
 idGameLocal::CheatsOk

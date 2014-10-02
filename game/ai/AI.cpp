@@ -11984,6 +11984,7 @@ void idAI::setAirTicks(int airTicks) {
 */
 int idAI::PlayAndLipSync(const char *soundName, const char *animName, int msgTag) // grayman #3355
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PlayAndLipSync - %s barks '%s'\r",GetName(),soundName); // grayman debug
 	// Play sound
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration, 0, msgTag ); // grayman #3355

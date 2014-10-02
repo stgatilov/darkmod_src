@@ -456,9 +456,15 @@ public:
 	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
 	bool hidingSpotInvestigationInProgress;
 
+	// grayman debug - when to stop milling about
+	int stopMillingTime;
+
 	// grayman debug - true if the AI is currently guarding a location while
 	// participating in a search
 	bool guardingInProgress;
+
+	// grayman debug - when guarding a spot, face this angle (yaw)
+	float guardingAngle;
 
 	// True if fleeing is done, false if fleeing is in progress
 	bool fleeingDone;

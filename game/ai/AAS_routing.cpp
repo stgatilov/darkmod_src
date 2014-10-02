@@ -1695,6 +1695,23 @@ int idAASLocal::GetClusterSize()
 	return file->GetNumClusters();
 }
 
+// grayman debug
+void idAASLocal::GetPortals(int clusterNum, idList<idVec4> &portalList)
+{
+	const aasCluster_t* cluster = &file->GetCluster(clusterNum);
+	int numPortals = cluster->numPortals;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are %d portals\r",numPortals); // grayman debug
+	for (int i = 0 ; i < numPortals ; i++)
+	{
+		int portalNum = file->GetPortalIndex(cluster->firstPortal + i);
+		const aasPortal_t* portal = &file->GetPortal(portalNum);
+		idVec3 center = AreaCenter(portal->areaNum);
+		idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
+		portalList.Append(spot);
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal %d's area is %d, with center [%s]\r",i,portal->areaNum,spot.ToString()); // grayman debug
+	}
+}
+
 void idAASLocal::CompileEAS()
 {
 	elevatorSystem->Compile();

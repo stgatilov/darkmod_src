@@ -681,6 +681,13 @@ void CombatState::Think(idAI* owner)
 
 	case EStateDoOnce:
 		{
+
+		// grayman debug - If participating in a search, leave the search
+		if (owner->m_searchID >= 0)
+		{
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+		}
+
 		// Check for sitting or sleeping
 
 		moveType_t moveType = owner->GetMoveType();

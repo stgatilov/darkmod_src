@@ -34,6 +34,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../AbsenceMarker.h"
 #include "../../AIComm_Message.h"
 #include "FleeState.h" // grayman #3317
+#include "SearchManager.h" // grayman debug
 
 namespace ai
 {
@@ -279,7 +280,7 @@ void SearchingState::Think(idAI* owner)
 	// grayman #3063 - move up so it gets done each time,
 	// regardless of what state the hiding spot search is in.
 	// Let the AI check its senses
-	//owner->PerformVisualScan(); // grayman debug - uncomment soon
+	owner->PerformVisualScan();
 
 	if (owner->GetMoveType() == MOVETYPE_SIT 
 		|| owner->GetMoveType() == MOVETYPE_SLEEP
@@ -292,10 +293,21 @@ void SearchingState::Think(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
+	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
+	if (memory.restartSearchForHidingSpots)
+	{
+		// We should restart the search (probably due to a new incoming stimulus)
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling StartNewHidingSpotSearch() to restart a search\r",owner->GetName()); // grayman debug
+		// Set up a new hiding spot search
+		StartNewHidingSpotSearch(owner); // grayman debug - AI will leave an existing search and get a new assignment for the new search
+		return;
+	}
+
 	// grayman #3520 - look at alert spots
 	if ( owner->m_lookAtAlertSpot )
 	{
-		owner->m_lookAtAlertSpot = false;
+		owner->m_lookAtAlertSpot = false; // only set up one look
 		idVec3 alertSpot = owner->m_lookAtPos;
 		if ( alertSpot.x != idMath::INFINITY ) // grayman #3438
 		{
@@ -313,56 +325,35 @@ void SearchingState::Think(idAI* owner)
 		owner->m_lookAtPos = idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY);
 	}
 
-	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
-	if (memory.restartSearchForHidingSpots)
-	{
-		// We should restart the search (probably due to a new incoming stimulus)
+	// grayman debug - What is my role? If I'm a guard, I should go guard a spot.
+	// If a searcher, continuously ask for a new hiding spot to investigate.
+	// If an observer, I should go stand at the perimeter of the search.
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling StartNewHidingSpotSearch() to restart a search\r",owner->GetName()); // grayman debug
-		// Set up a new hiding spot search
-		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
-		return;
-	}
+	Search *search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+	Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
 
-	// Do we have an ongoing hiding spot search?
-	if (!memory.hidingSpotSearchDone)
-	{
-		// Let the hiding spot search do its task
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to assign a spot\r",owner->GetName()); // grayman debug
-		gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
-		return;
-	}
-
-	// Is a hiding spot investigation in progress by this AI (InvestigateSpotTask())?
-	if (memory.hidingSpotInvestigationInProgress)
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hiding spot investigation underway\r",owner->GetName()); // grayman debug
-		// Do nothing here. Wait for the InvestigateSpot task to complete
-		return;
-	}
-
-	// Is a guard spot task in progress by this AI (GuardSpotTask())?
-	if (memory.guardingInProgress)
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot task underway\r",owner->GetName()); // grayman debug
-		// Do nothing here. Wait for the GuardSpot task to complete
-		return;
-	}
-
-	// Hiding spot list is complete, but we don't have an assignment yet.
-	// Get something to do based on our assignment.
-
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s start your assignment\r",owner->GetName()); // grayman debug
-
-	// What is my role? If I'm a guard, I should do one thing. If a searcher, ask for another hiding spot to go to.
-
-	Assignment* assignment = gameLocal.m_searchManager->GetAssignment(gameLocal.m_searchManager->GetSearch(owner->m_searchID),owner);
-
-	if (assignment)
+	if (search && assignment)
 	{
 		smRole_t role = assignment->_searcherRole;
+
 		if (role == E_ROLE_SEARCHER)
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher\r",owner->GetName()); // grayman debug
+			// Do we have an ongoing hiding spot search?
+			if (!memory.hidingSpotSearchDone)
+			{
+				// Let the hiding spot search do its task
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to assign a spot\r",owner->GetName()); // grayman debug
+				gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
+				return;
+			}
+
+			// Is a spot investigation in progress?
+			if (memory.hidingSpotInvestigationInProgress)
+			{
+				return;
+			}
+
 			// Have we run out of hiding spots?
 
 			if (memory.noMoreHidingSpots) 
@@ -449,7 +440,7 @@ void SearchingState::Think(idAI* owner)
 				}
 			}
 			// We should have more hiding spots, try to get the next one
-			else if (!gameLocal.m_searchManager->GetNextHidingSpot(gameLocal.m_searchManager->GetSearch(owner->m_searchID),owner,memory.currentSearchSpot)) // grayman debug
+			else if (!gameLocal.m_searchManager->GetNextHidingSpot(search,owner,memory.currentSearchSpot)) // grayman debug
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s no more hiding spots to search, stop moving\r",owner->GetName()); // grayman debug
 				// No more hiding spots to search
@@ -466,7 +457,7 @@ void SearchingState::Think(idAI* owner)
 
 				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
-				// Delegate the spot investigation to a new task, this will take the correct action.
+				// Delegate the spot investigation to a new task, which will send the searcher to investigate the new spot.
 				owner->actionSubsystem->PushTask(InvestigateSpotTask::CreateInstance());
 
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 2 - %s hidingSpotInvestigationInProgress set to true\r",owner->GetName()); // grayman debug
@@ -476,11 +467,140 @@ void SearchingState::Think(idAI* owner)
 		}
 		else if (role == E_ROLE_GUARD)
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is a guard\r",owner->GetName()); // grayman debug
+
+			// Is a guard spot task in progress by this AI (GuardSpotTask())?
+			if (memory.guardingInProgress)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot task underway\r",owner->GetName()); // grayman debug
+				// Do nothing here. Wait for the GuardSpot task to complete
+				return;
+			}
+
 			// Pick a spot to guard
 
-			// TODO: Pick a real spot. For now, force a spot that fits bug3857b's architecture
-			memory.currentSearchSpot = idVec3(384,0,-127); // spot to guard
-			owner->actionSubsystem->PushTask(TaskPtr(GuardSpotTask::CreateInstance()));
+			if (search->_guardSpotsReady)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot list is ready\r",owner->GetName()); // grayman debug
+				// Pick a spot.
+
+				// For guard spots, don't worry about LOS from the spot to the
+				// search origin. This collection of spots is points that the
+				// mapper has chosen (by using guard entities), or points that
+				// are at the area's portals. Observation points, however, are
+				// chosen randomly, and can very well end up on the other side
+				// of walls, outside the search area.
+
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s there are %d guard spots\r",owner->GetName(),search->_guardSpots.Num()); // grayman debug
+				for (int i = 0 ; i < search->_guardSpots.Num() ; i++)
+				{
+					idVec3 spot = search->_guardSpots[i].ToVec3();
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s spot %d is [%s]\r",owner->GetName(),i,spot.ToString()); // grayman debug
+					if (spot.x == idMath::INFINITY) // spot already taken?
+					{
+						continue;
+					}
+
+					memory.currentSearchSpot = spot; // spot to guard
+					memory.guardingAngle = search->_guardSpots[i].w; // angle to face when guard spot is reached
+					memory.guardingInProgress = true;
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (guard) pushing the guard spot task\r",owner->GetName()); // grayman debug
+					owner->actionSubsystem->PushTask(TaskPtr(GuardSpotTask::CreateInstance()));
+
+					search->_guardSpots[i].x = idMath::INFINITY; // mark the spot as taken
+					break;
+				}
+
+				// If you get here w/o having been assigned a spot, there aren't enough
+				// spots to go around. Become an observer, which will be noted the next
+				// time through here.
+				if (!memory.guardingInProgress)
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s tried to be a guard, but had to become an observer\r",owner->GetName()); // grayman debug
+					assignment->_searcherRole = E_ROLE_OBSERVER;
+				}
+			}
+			else // need to build a list of spots
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s create a list of guard spots\r",owner->GetName()); // grayman debug
+				// Should be able to do this in one frame, since we're looking
+				// for exits from the AAS Cluster, and there shouldn't be too
+				// many of them.
+
+				gameLocal.m_searchManager->CreateListOfGuardSpots(search,owner);
+			}
+		}
+		else if (role == E_ROLE_OBSERVER)
+		{
+			// As a civilian, you can search, but if the search assignments are
+			// used up, you can't be a guard, because they should be armed. What
+			// you can do is stand around at the perimeter of the search and watch for a while.
+			// Of course, if the alert event was bad enough to send you fleeing, you won't
+			// be around anyway.
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an observer\r",owner->GetName()); // grayman debug
+
+			// We'll treat this as if you're guarding a spot, but the spots will be chosen
+			// randomly around the perimeter of the search.
+
+			// Is a guard spot task in progress by this AI (GuardSpotTask())?
+			if (memory.guardingInProgress)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot task underway\r",owner->GetName()); // grayman debug
+				// Do nothing here. Wait for the GuardSpot task to complete
+				return;
+			}
+
+			// Pick a spot.
+
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s find a random perimeter spot\r",owner->GetName()); // grayman debug
+
+			// What is the radius of the perimeter? Though we're not actively searching,
+			// the radius is included in our assignment.
+
+			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+			float radius = assignment->_outerRadius;
+			idVec3 dir = idAngles( 0, gameLocal.random.RandomInt(360), 0 ).ToForward();
+			dir.NormalizeFast();
+			idVec3 spot = search->_origin + radius*dir;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s radius = %f\r",owner->GetName(),radius); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s spot = [%s]\r",owner->GetName(),spot.ToString()); // grayman debug
+
+			// You must be able to see the search origin from this location.
+			// This keeps locations from being chosen in other rooms.
+
+			// Find the floor first.
+
+			idVec3 start = spot;
+			idVec3 end = spot;
+			end.z -= 300;
+			trace_t result;
+			if ( gameLocal.clip.TracePoint(result, start, end, MASK_OPAQUE, NULL) )
+			{
+				// found floor; is there LOS from the search origin to an eye above the spot?
+				spot = result.endpos;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s floor beneath spot is [%s]\r",owner->GetName(),spot.ToString()); // grayman debug
+				idVec3 eyePos = spot + idVec3(0,0,77.0f); // assume eye is 77 above feet
+				if ( !gameLocal.clip.TracePoint(result, search->_origin, eyePos, MASK_OPAQUE, NULL) )
+				{
+					// the trace completed, so LOS exists
+					memory.currentSearchSpot = spot; // spot to observe from
+					memory.guardingAngle = idMath::INFINITY; // face search origin when spot is reached
+					memory.guardingInProgress = true;
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) pushing the guard spot task\r",owner->GetName()); // grayman debug
+					owner->actionSubsystem->PushTask(TaskPtr(GuardSpotTask::CreateInstance()));
+				}
+				else
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) guard spot has no LOS to origin, try again later\r",owner->GetName()); // grayman debug
+				}
+			}
+			else // grayman debug
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) guard spot has no floor beneath it, try again later\r",owner->GetName()); // grayman debug
+			}
+
+			// If the task finds that you can't walk to the spot, you'll come around
+			// and select another random spot the next time.
 		}
 	}
 }
@@ -556,6 +676,11 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 {
 	int newSearchID = gameLocal.m_searchManager->StartNewHidingSpotSearch(owner);
 
+	if (newSearchID == owner->m_searchID)
+	{
+		return; // already assigned to this search
+	}
+
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s starting a new search with id %d\r",owner->GetName(),newSearchID); // grayman debug
 
 	// Clear ai flags
@@ -577,6 +702,7 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 
 	memory.lastAlertPosSearched = memory.alertPos; // grayman #3492
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s lastAlertPosSearched = [%s]\r",owner->GetName(),memory.lastAlertPosSearched.ToString()); // grayman debug
 
 	// greebo: Remember the initial alert position
 	memory.alertSearchCenter = memory.alertPos;

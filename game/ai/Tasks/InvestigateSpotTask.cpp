@@ -73,6 +73,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
+		memory.hidingSpotInvestigationInProgress = true; // grayman debug
 	}
 	else
 	{
@@ -90,6 +91,17 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// grayman debug - quit if incapable of continuing
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return true;
+	}
+
+	if (!owner->GetMemory().hidingSpotInvestigationInProgress) // grayman debug
+	{
+		return true; // told to cancel this task
+	}
 
 	// grayman #3075 - if we've entered combat mode, we want to
 	// end this task. But first, if we're kneeling, kill the

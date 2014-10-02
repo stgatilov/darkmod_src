@@ -59,6 +59,12 @@ void FleeState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.StopReacting(); // grayman #3559
 
+	// grayman debug- If participating in a search, leave the search
+	if (owner->m_searchID >= 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+	}
+
 	if (owner->fleeingFromPerson.GetEntity()) // grayman #3847
 	{
 		owner->TurnToward(owner->fleeingFromPerson.GetEntity()->GetPhysics()->GetOrigin());

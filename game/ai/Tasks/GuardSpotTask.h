@@ -53,6 +53,15 @@ class GuardSpotTask :
 	// Whether this task has told the AI to actually move to the spot
 	bool _moveInitiated;
 
+	// Whether the guard has arrived at the guard spot
+	bool _moveCompleted;
+
+	// The next time the guard should turn
+	int _nextTurnTime;
+
+	// Direction you face when you arrive at the spot
+	float _baseYaw;
+
 	// Private default constructor
 	GuardSpotTask();
 public:
