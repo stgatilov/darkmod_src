@@ -187,7 +187,7 @@ public:
 	void					StopAnim( int frames );
 	void					PlayAnim( int anim );
 	void					PauseAnim( int channel, bool bPause );
-	bool					AnimIsPaused( int anim );
+	bool					AnimIsPaused( int channel );
 	void					CycleAnim( int anim );
 	void					BecomeIdle( void );
 	bool					UpdateState( void );
