@@ -26,6 +26,7 @@
 #ifdef __linux__
 #include "../../sys/sys_public.h"
 #include <cassert>
+#include <float.h> // for FLT_MIN and FLT_MAX #3867
 #endif
 
 #ifdef MACOS_X
