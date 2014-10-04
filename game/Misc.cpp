@@ -1288,7 +1288,7 @@ void idStaticEntity::ReapplyDecals()
 	}
 
 	gameRenderWorld->RemoveDecals( modelDefHandle );
-	std::list<SDecalInfo>::const_iterator di = decals_list.begin();
+	std::list<SDecalInfo>::iterator di = decals_list.begin();
 
 	while ( di != decals_list.end() )
 	{
