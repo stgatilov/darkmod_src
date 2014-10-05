@@ -138,6 +138,7 @@ enum EAlertType
 	EAlertTypeSuspicious,
 	EAlertTypeEnemy,
 	EAlertTypeWeapon,
+	EAlertTypeBlinded, // grayman debug
 	EAlertTypeDeadPerson,
 	EAlertTypeUnconsciousPerson,
 	EAlertTypeBlood,
@@ -462,6 +463,13 @@ public:
 	// grayman debug - true if the AI is currently guarding a location while
 	// participating in a search
 	bool guardingInProgress;
+
+	// grayman debug - true if the AI is currently milling about the alert spot
+	bool millingInProgress;
+
+	// grayman debug - true if the AI should mill about the alert spot
+	// before running to a guard or observation spot
+	bool shouldMill;
 
 	// grayman debug - when guarding a spot, face this angle (yaw)
 	float guardingAngle;

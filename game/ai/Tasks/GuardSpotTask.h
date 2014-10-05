@@ -44,17 +44,23 @@ typedef boost::shared_ptr<GuardSpotTask> GuardSpotTaskPtr;
 class GuardSpotTask :
 	public Task
 {
+private:
+
+	enum EGuardSpotState
+	{
+		EStateSetup,
+		EStateMoving,
+		EStateStanding
+	} _guardSpotState;
+
 	// The spot to guard
 	idVec3 _guardSpot;
 
 	// The time this task may exit
 	int _exitTime;
 
-	// Whether this task has told the AI to actually move to the spot
-	bool _moveInitiated;
-
-	// Whether the guard has arrived at the guard spot
-	bool _moveCompleted;
+	// Is milling is the only thing we'll be doing?
+	bool _millingOnly;
 
 	// The next time the guard should turn
 	int _nextTurnTime;

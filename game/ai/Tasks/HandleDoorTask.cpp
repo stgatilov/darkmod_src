@@ -2472,13 +2472,15 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		// grayman #1327 - terminate a hiding spot search if one is going on. The AI
 		// tried to get through this door to get to a spot, but since he can't reach
 		// it, he should get another spot.
-		// grayman debug - also terminate a search if guarding a spot for that search
+		// grayman debug - also terminate a search if guarding a spot for that search,
+		// or milling about at the start of a search
 
 		Memory& memory = owner->GetMemory();
-		if ( memory.hidingSpotInvestigationInProgress || memory.guardingInProgress) // grayman debug
+		if ( memory.hidingSpotInvestigationInProgress || memory.guardingInProgress || memory.millingInProgress ) // grayman debug
 		{
 			memory.hidingSpotInvestigationInProgress = false;
 			memory.guardingInProgress = false;
+			memory.millingInProgress = false;
 			memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		}
 	}

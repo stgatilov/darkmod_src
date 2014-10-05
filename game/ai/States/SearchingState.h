@@ -59,6 +59,8 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
+	bool FindRadialSpot(idVec3 origin, float radius, idVec3 &spot); // grayman debug
+
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 

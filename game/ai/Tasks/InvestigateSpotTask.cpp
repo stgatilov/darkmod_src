@@ -68,7 +68,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Stop previous moves
 	//owner->StopMove(MOVE_STATUS_DONE);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init AAA - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Set the goal position
@@ -80,6 +80,26 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 		// Invalid hiding spot, terminate task
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task.\r");
 		subsystem.FinishTask();
+	}
+
+	// grayman debug - Only the first searcher in a search is allowed to investigate
+	// the spot closely. Am I it?
+
+	if (_investigateClosely)
+	{
+		Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+		if (search)
+		{
+			if (search->_searcherCount > 0)
+			{
+				Assignment *assignment = &search->_assignments[0]; // first AI assigned to the search
+				if (assignment->_searcher != owner)
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s not allowed to kneel at alert spot\r",owner->GetName()); // grayman debug
+					_investigateClosely = false;
+				}
+			}
+		}
 	}
 
 	//_exitTime = 0; // grayman #3507
@@ -126,12 +146,12 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
-		if (gameLocal.time > _exitTime) // grayman debug
+		if (gameLocal.time >= _exitTime) // grayman debug - delete when done
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
 		}
 		// Return TRUE if the time is over, else FALSE (continue)
-		return (gameLocal.time > _exitTime);
+		return (gameLocal.time >= _exitTime);
 	}
 
 	// No exit time set, continue with ordinary process
@@ -193,6 +213,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		}
 
 		owner->GetMemory().stimulusLocationItselfShouldBeSearched = false; // grayman #3756
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s stimulusLocationItselfShouldBeSearched = 0\r",owner->GetName()); // grayman debug
 
 		// Let's move
 
@@ -277,7 +298,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			_moveInitiated = true;
 			float actualDist = (ownerOrigin - _searchSpot).LengthFast();
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s actualDist = %f\r",owner->GetName(),actualDist); // grayman debug
-			owner->AI_RUN = ( actualDist > MAX_TRAVEL_DISTANCE_WALKING ); // close enough to walk?
+			owner->AI_RUN = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
 		}
 
 		return false;
@@ -292,7 +313,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s reached hiding spot\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform AAA - %s reached hiding spot\r",owner->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		// grayman #2928 - don't kneel down if you're too far from the original stim
@@ -432,7 +453,7 @@ void InvestigateSpotTask::SetInvestigateClosely(bool closely)
 
 void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish - %s hidingSpotInvestigationInProgress set to false\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish AAA - %s hidingSpotInvestigationInProgress set to false\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished investigating the spot, set the
 	// boolean back to false, so that the next spot can be chosen
 	owner->GetMemory().hidingSpotInvestigationInProgress = false;

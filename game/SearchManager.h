@@ -51,9 +51,9 @@ struct Assignment
 	idVec3					_origin;		// center of search area, location of alert stimulus, spot to guard
 	float					_innerRadius;	// inner radius of search boundary
 	float					_outerRadius;	// outer radius of search boundary
-	idAI*					_searcher;		// AI searcher assigned to this area
+	idAI*					_searcher;		// AI assigned
 	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _randomHidingSpotIndexes
-	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, etc.)
+	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, observer)
 };
 
 // A Search is a set of hiding spots and a collection of AI assignments stemming from a single event.
@@ -70,9 +70,38 @@ struct Search
 	std::vector<int>		_randomHidingSpotIndexes;	// An array of random numbers serving as indices into the hiding spot list
 	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,a] where a = yaw angle to face
 	bool					_guardSpotsReady;			// false = guard spot list not complete yet; true = list complete
+	int						_assignmentFlags;			// flags that describe available assignments
 	idList<Assignment>		_assignments;				// a list of assignments for this search
 	int						_searcherCount;				// number of searchers (not assignments, because some of those might be deactivated) 
 };
+
+// search flags
+typedef enum
+{
+	SEARCH_SEARCHER_MILL	= BIT(0),	// searchers mill before searching
+	SEARCH_SEARCH			= BIT(1),	// assign searchers
+	SEARCH_GUARD_MILL		= BIT(2),	// guards mill before guarding
+	SEARCH_GUARD			= BIT(3),	// assign guards
+	SEARCH_OBSERVER_MILL	= BIT(4),	// observers mill before observing
+	SEARCH_OBSERVE			= BIT(5)	// assign observers
+} searchFlags_t;
+
+#define SEARCH_NOTHING			(0)  // no searchers, no guards, no observers
+#define SEARCH_EVERYTHING		(-1) // searchers, guards, and observers, and everyone mills about at first
+#define SEARCH_SUSPICIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeSuspicious
+#define SEARCH_ENEMY			(SEARCH_NOTHING) // EAlertTypeEnemy
+#define SEARCH_WEAPON			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon
+#define SEARCH_BLINDED			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // EAlertTypeBlinded
+#define SEARCH_DEAD				(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeDeadPerson
+#define SEARCH_UNCONSCIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeUnconsciousPerson
+#define SEARCH_BLOOD			(SEARCH_EVERYTHING) // EAlertTypeBlood
+#define SEARCH_LIGHT			(SEARCH_SEARCH) // EAlertTypeLightSource
+#define SEARCH_MISSING			(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_GUARD|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // EAlertTypeMissingItem
+#define SEARCH_BROKEN			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeBrokenItem
+#define SEARCH_DOOR				(SEARCH_SEARCH) // EAlertTypeDoor
+#define SEARCH_SUSPICIOUSITEM	(SEARCH_EVERYTHING) // EAlertTypeSuspiciousItem
+#define SEARCH_ROPE				(SEARCH_EVERYTHING) // EAlertTypeRope
+#define SEARCH_PROJECTILE		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeHitByProjectile
 
 class CSearchManager
 {

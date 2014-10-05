@@ -25,10 +25,12 @@ static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-
 #include "SearchManager.h"
 #include "Game_local.h"
 #include "Misc.h"
+#include "ai/Memory.h"
 
 #define SEARCH_RADIUS_FACTOR 0.707107f	  // sqrt(0.5)
 #define SEARCH_RADIUS_ONE_SEARCHER 126.0f // If xy radius of entire search is less than this, only allow one searcher
 #define SEARCH_MAX_GUARD_SPOT_DISTANCE 500.0f // don't consider guard spot entities beyond this distance from search origin
+#define SEARCH_MIN_OBS_DISTANCE 200.0f // minimum observation distance
 
 // Constructor
 CSearchManager::CSearchManager()
@@ -49,7 +51,11 @@ void CSearchManager::Clear()
 	{
 		Search *search = &_searches[i];
 		destroyCurrentHidingSpotSearch(search);
+		search->_assignments.Clear();
 	}
+
+	_searches.Clear();
+	uniqueSearchID = 0;
 }
 
 int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
@@ -126,6 +132,54 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 		search->_guardSpotsReady = false; // whether the list of guard spots is ready for use or not
 		search->_searcherCount = 0; // number of searchers
 
+		// Determine the possible search assignments based on alert type
+
+		switch(memory.alertType)
+		{
+		case ai::EAlertTypeSuspicious:
+			search->_assignmentFlags = SEARCH_SUSPICIOUS;
+			break;
+		case ai::EAlertTypeEnemy:
+			search->_assignmentFlags = SEARCH_ENEMY;
+			break;
+		case ai::EAlertTypeWeapon:
+			search->_assignmentFlags = SEARCH_WEAPON;
+			break;
+		case ai::EAlertTypeBlinded:
+			search->_assignmentFlags = SEARCH_BLINDED;
+			break;
+		case ai::EAlertTypeDeadPerson:
+			search->_assignmentFlags = SEARCH_DEAD;
+			break;
+		case ai::EAlertTypeUnconsciousPerson:
+			search->_assignmentFlags = SEARCH_UNCONSCIOUS;
+			break;
+		case ai::EAlertTypeBlood:
+			search->_assignmentFlags = SEARCH_BLOOD;
+			break;
+		case ai::EAlertTypeLightSource:
+			search->_assignmentFlags = SEARCH_LIGHT;
+			break;
+		case ai::EAlertTypeMissingItem:
+			search->_assignmentFlags = SEARCH_MISSING;
+			break;
+		case ai::EAlertTypeBrokenItem:
+			search->_assignmentFlags = SEARCH_BROKEN;
+			break;
+		case ai::EAlertTypeDoor:
+			search->_assignmentFlags = SEARCH_DOOR;
+			break;
+		case ai::EAlertTypeSuspiciousItem:
+			search->_assignmentFlags = SEARCH_SUSPICIOUSITEM;
+			break;
+		case ai::EAlertTypeRope:
+			search->_assignmentFlags = SEARCH_ROPE;
+			break;
+		case ai::EAlertTypeHitByProjectile:
+			search->_assignmentFlags = SEARCH_PROJECTILE;
+			break;
+		}
+
 		DebugPrintSearch(search); // grayman debug - comment when done
 
 		// Add search to list
@@ -176,6 +230,8 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
 		search->_randomHidingSpotIndexes.push_back(i);
 	}
 
+	// TODO: should we shuffle or not? If not, we don't need _randomHidingSpotIndexes
+	/*
     // Shuffle those integers by randomly exchanging pairs.
     for ( int i = 0 ; i < (numSpots-1) ; i++ )
 	{
@@ -183,7 +239,7 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
         int temp = search->_randomHidingSpotIndexes[i];
 		search->_randomHidingSpotIndexes[i] = search->_randomHidingSpotIndexes[r];
 		search->_randomHidingSpotIndexes[r] = temp;
-    }
+    }*/
 }
 
 Search* CSearchManager::GetSearch(int searchID) // returns a pointer to the requested search
@@ -488,45 +544,52 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	float outerRadius = 0;
 	idBounds searchBounds;
 	idBounds searchExclusionBounds;
-	smRole_t searcherRole = E_ROLE_NONE; // default
+	smRole_t searcherRole = E_ROLE_NONE; // no assignment yet
 
 	// Active searchers are allowed to be armed or unarmed/civilian.
 
-	if (numAssignments == 0)
-	{
-		// A single AI gets to search the entire search area.
+	// Does this search require active searchers?
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s first ai to join this search\r",ai->GetName()); // grayman debug
-		innerRadius = 0;
-		idVec3 searchSize = search->_limits.GetSize();
-		float xRad = searchSize.x/2.0f;
-		float yRad = searchSize.y/2.0f;
-		outerRadius = idMath::Sqrt(xRad*xRad + yRad*yRad);
-		search->_outerRadius = outerRadius; // record this in the search data
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for first AI = %f\r",ai->GetName(),idMath::PI*outerRadius*outerRadius); // grayman debug
-		searcherRole = E_ROLE_SEARCHER;
-	}
-	else if (numAssignments == 1)
+	if (search->_assignmentFlags & (SEARCH_SEARCHER_MILL|SEARCH_SEARCH))
 	{
-		if (search->_outerRadius <= SEARCH_RADIUS_ONE_SEARCHER)
-		{
-			// there isn't enough search area to have more than one searcher
-		}
-		else
-		{
-			// Divide the search area in half between the two searchers.
-			// The first AI searches the inner half of the overall area, and
-			// the second AI searches the outer half. If one or the other
-			// leaves the search, the search area of the remaining AI
-			// remains the same.
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s need a searcher\r",ai->GetName()); // grayman debug
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s second ai to join this search\r",ai->GetName()); // grayman debug
-			outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
-			innerRadius = outerRadius*SEARCH_RADIUS_FACTOR; // splits the overall search area in half
-			search->_assignments[0]._outerRadius = innerRadius; // pull back first AI's search area
+		if (numAssignments == 0)
+		{
+			// A single AI gets to search the entire search area.
+
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s first ai to join this search\r",ai->GetName()); // grayman debug
+			innerRadius = 0;
+			idVec3 searchSize = search->_limits.GetSize();
+			float xRad = searchSize.x/2.0f;
+			float yRad = searchSize.y/2.0f;
+			outerRadius = idMath::Sqrt(xRad*xRad + yRad*yRad);
+			search->_outerRadius = outerRadius;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for first AI = %f\r",ai->GetName(),idMath::PI*outerRadius*outerRadius); // grayman debug
 			searcherRole = E_ROLE_SEARCHER;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for first AI  = %f\r",ai->GetName(),idMath::PI*innerRadius*innerRadius); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for second AI = %f\r",ai->GetName(),idMath::PI*outerRadius*outerRadius - idMath::PI*innerRadius*innerRadius); // grayman debug
+		}
+		else if (numAssignments == 1)
+		{
+			if (search->_outerRadius <= SEARCH_RADIUS_ONE_SEARCHER)
+			{
+				// there isn't enough search area to have more than one searcher
+			}
+			else
+			{
+				// Divide the search area in half between the two searchers.
+				// The first AI searches the inner half of the overall area, and
+				// the second AI searches the outer half. If one or the other
+				// leaves the search, the search area of the remaining AI
+				// remains the same.
+
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s second ai to join this search\r",ai->GetName()); // grayman debug
+				outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
+				innerRadius = outerRadius*SEARCH_RADIUS_FACTOR; // splits the overall search area in half
+				search->_assignments[0]._outerRadius = innerRadius; // pull back first AI's search area
+				searcherRole = E_ROLE_SEARCHER;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for first AI  = %f\r",ai->GetName(),idMath::PI*innerRadius*innerRadius); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search area for second AI = %f\r",ai->GetName(),idMath::PI*outerRadius*outerRadius - idMath::PI*innerRadius*innerRadius); // grayman debug
+			}
 		}
 	}
 
@@ -539,20 +602,48 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		// spots available. If SearchingState finds there are none, it
 		// will change your role to an observer.
 
+		idVec3 searchSize = search->_limits.GetSize();
+		float xRad = searchSize.x/2.0f;
+		float yRad = searchSize.y/2.0f;
+
+		// outerRadius defines the search perimeter, where observers will stand
+		outerRadius = min(SEARCH_MIN_OBS_DISTANCE,max(xRad,yRad)); // at least SEARCH_MIN_OBS_DISTANCE; at most the max of the xy radii
+		innerRadius = 0; // no active searching
 		if (!ai->IsAfraid()) // armed AI becomes a guard
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s joining this search as a guard\r",ai->GetName()); // grayman debug
-			searcherRole = E_ROLE_GUARD;
-			innerRadius = 0; // no active searching
-			outerRadius = search->_outerRadius; // defines the search perimeter, where observers will stand, in case this guard becomes an observer
+			// Do we need guards for this search?
+
+			if (search->_assignmentFlags & (SEARCH_GUARD_MILL|SEARCH_GUARD))
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s joining this search as a guard\r",ai->GetName()); // grayman debug
+				searcherRole = E_ROLE_GUARD;
+			}
 		}
-		else // everyone else is unfit to guard a spot and is relegated to observing
+
+		if (searcherRole == E_ROLE_NONE)
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s joining this search as a civilian observer\r",ai->GetName()); // grayman debug
-			searcherRole = E_ROLE_OBSERVER;
-			innerRadius = 0; // no active searching
-			outerRadius = search->_outerRadius; // defines the search perimeter, where observers will stand
+			// Everyone else is unfit to guard a spot and is relegated to observing.
+			// Do we need observers for this search?
+			if (search->_assignmentFlags & (SEARCH_OBSERVER_MILL|SEARCH_OBSERVE))
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s joining this search as a civilian observer\r",ai->GetName()); // grayman debug
+				searcherRole = E_ROLE_OBSERVER;
+			}
 		}
+	}
+
+	if (searcherRole == E_ROLE_NONE)
+	{
+		// Can't join this search. Sorry.
+		return false;
+	}
+
+	// Leave your current search, if there is one.
+
+	if (ai->m_searchID >= 0)
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s leaving old search with id %d, calling LeaveSearch()\r",ai->GetName(),ai->m_searchID); // grayman debug
+		gameLocal.m_searchManager->LeaveSearch(ai->m_searchID,ai);
 	}
 
 	// Create new assignment
@@ -580,6 +671,73 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s lastAlertPosSearched = [%s]\r",ai->GetName(),memory.lastAlertPosSearched.ToString()); // grayman debug
 	memory.alertSearchCenter = search->_origin;
 	memory.alertPos = search->_origin;
+
+	// Four activities are available:
+	// 1 - actively search
+	// 2 - mill about the search origin
+	// 3 - guard at portals or mapper-designated locations (via guard entities)
+	// 4 - observe from a safe distance at the perimeter of the search area
+
+	// In the following chart, which shows what AI should do when they join a search:
+	// "armed" = armed and good health and not a civilian
+	// "unarmed" = unarmed and/or poor health and/or a civilian
+
+	// Alert type					| Event						| Active searchers		| Guards					| Observers
+	// -----------------------------------------------------------------------------------------------------------------------
+	// EAlertTypeHitByProjectile	| Hit By Arrow				| if unarmed, flee, otherwise:
+	//															| search				| go to guard spot			| go to observation spot
+	// EAlertTypeEnemy				| Enemy, Tactile by Enemy	| armed: enter combat / unarmed: flee
+	// EAlertTypeWeapon				| Sword, Blackjack, bow		| mill, search			| mill						| mill
+	// EAlertTypeBlinded			| Blinded					| 1 AI: searches		|							|
+	//								|							| >1 AI: mill, search	| mill						| mill, go to observation spot
+	// EAlertTypeDeadPerson			| Dead Person				| search				| go to guard spot			| armed: go to observation spot / unarmed: flee
+	// EAlertTypeUnconsciousPerson	| Unconscious Person		| search				| go to guard spot			| armed: go to observation spot / unarmed: flee
+	// EAlertTypeRope				| Rope						| mill, search			| mill, go to guard spot	| mill, go to observation spot
+	// EAlertTypeSuspiciousItem		|							| mill, search			| mill, go to guard spot	| mill, go to observation spot
+	// EAlertTypeBlood				| Blood						| mill, search			| mill, go to guard spot	| mill, go to observation spot
+	// EAlertTypeBrokenItem			| Broken Item				| mill, search			| mill						| mill
+	// EAlertTypeMissingItem		| Missing Item				| search				| mill, go to guard spot	| mill, go to observation spot			
+	// EAlertTypeDoor				| Door						| 1 AI searches			| n/a						| n/a
+	// EAlertTypeLightSource		| Light Source				| 1 AI searches			| n/a						| n/a
+	// EAlertTypeSuspicious			| Hit By Moveable			| 1 AI searches			| n/a						| n/a
+	//								| Flying arrow or fireball	| 1 AI searches			| n/a						| n/a
+	//								| Picked Pocket				| n/a					| n/a						| n/a
+	//								| Audio						| 1 AI: searches		|							|
+	//								|							| >1 AI: mill, search	| mill						| mill, go to observation spot
+
+	// The assignment flags for the search tell us whether we should mill about or not
+	// before executing our roles.
+
+	memory.shouldMill = false;
+	if (searcherRole == E_ROLE_SEARCHER)
+	{
+		if (search->_assignmentFlags & SEARCH_SEARCHER_MILL)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s searcher, will mill about\r",ai->GetName()); // grayman debug
+			memory.shouldMill = true;
+		}
+	}
+	else if (searcherRole == E_ROLE_GUARD)
+	{
+		if (search->_assignmentFlags & SEARCH_GUARD_MILL)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s guard, will mill about\r",ai->GetName()); // grayman debug
+			memory.shouldMill = true;
+		}
+	}
+	else // observer
+	{
+		if (search->_assignmentFlags & SEARCH_OBSERVER_MILL)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s observer, will mill about\r",ai->GetName()); // grayman debug
+			memory.shouldMill = true;
+		}
+	}
+
+	if (!memory.shouldMill)
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s will not mill about\r",ai->GetName()); // grayman debug
+	}
 
 	return true;
 }
@@ -637,10 +795,11 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 	// for that search
 
 	ai::Memory& memory = ai->GetMemory();
-	if (memory.hidingSpotInvestigationInProgress || memory.guardingInProgress)
+	if (memory.hidingSpotInvestigationInProgress || memory.guardingInProgress || memory.millingInProgress)
 	{
 		memory.hidingSpotInvestigationInProgress = false;
 		memory.guardingInProgress = false;
+		memory.millingInProgress = false;
 		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		ai->actionSubsystem->ClearTasks();
 	}
@@ -858,6 +1017,8 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 
 void CSearchManager::Save(idSaveGame* savefile) const
 {
+	savefile->WriteInt(uniqueSearchID);
+
 	// save searches
 	int numSearches = _searches.Num();
 	savefile->WriteInt(numSearches);
@@ -886,6 +1047,9 @@ void CSearchManager::Save(idSaveGame* savefile) const
 			savefile->WriteVec4(search->_guardSpots[j]);
 		}
 
+		savefile->WriteBool(search->_guardSpotsReady);
+		savefile->WriteInt(search->_assignmentFlags);
+
 		// save assignments
 		num = search->_assignments.Num();
 		savefile->WriteInt(num);
@@ -907,6 +1071,8 @@ void CSearchManager::Save(idSaveGame* savefile) const
 
 void CSearchManager::Restore(idRestoreGame* savefile)
 {
+	savefile->ReadInt(uniqueSearchID);
+
 	// restore searches
 	_searches.Clear();
 	int numSearches;
@@ -941,6 +1107,9 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		{
 			savefile->ReadVec4(search._guardSpots[j]);
 		}
+
+		savefile->ReadBool(search._guardSpotsReady);
+		savefile->ReadInt(search._assignmentFlags);
 
 		// restore assignments
 		search._assignments.Clear();

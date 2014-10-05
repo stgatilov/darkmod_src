@@ -183,8 +183,11 @@ void AgitatedSearchingState::Init(idAI* owner)
 		owner->GetUp();
 	}
 
-	// Set up a new hiding spot search
-	StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
+	// Set up a new hiding spot search if not already assigned to one
+	if (owner->m_searchID < 0)
+	{
+		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
+	}
 
 	// kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182

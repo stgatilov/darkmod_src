@@ -557,7 +557,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS; // grayman #3431
 	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; // grayman #3431
 	memory.alertSearchExclusionVolume.Zero(); // grayman #3431
-	memory.alertType = EAlertTypeWeapon;
+	memory.alertType = EAlertTypeBlinded; // grayman debug
 	memory.visualAlert = false; // grayman #2422
 	memory.mandatory = true;	// grayman #3331
 
@@ -2820,6 +2820,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
 
 		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s stimulusLocationItselfShouldBeSearched = 1\r",owner->GetName()); // grayman debug
 		memory.stimulusLocationItselfShouldBeSearched = true; // grayman debug
 		//memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
 		memory.alertedDueToCommunication = false;
@@ -4794,6 +4795,8 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s IsSearching() = %d\r",owner->GetName(),owner->IsSearching()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s m_recentHighestAlertLevel >= thresh_3 = %d\r",owner->GetName(),owner->IsSearching(),owner->m_recentHighestAlertLevel >= owner->thresh_3); // grayman debug
 	// grayman #3438 - don't respond if I just finished searching
 	if ( !owner->IsSearching() && ( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) )
 	{
@@ -4818,12 +4821,14 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// as is done when new alerts arrive
 		if ( !ShouldProcessAlert(ieAlertType))
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s shouldn't process this alert\r",owner->GetName()); // grayman debug
 			return;
 		}
 
 		// grayman #3438 - If I already searched this event, I won't search it again.
 		if ( ( message.m_eventID >= 0 ) && owner->HasSearchedEvent(message.m_eventID) )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s sorry, already searched this event\r",owner->GetName()); // grayman debug
 			return;
 		}
 
@@ -4838,16 +4843,17 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// grayman #3424 - if we're to process this request, we shouldn't compare our alert level to what we're inheriting
 		if ( /*( otherAlertLevel > owner->AI_AlertLevel ) && */( otherAlertLevel >= owner->thresh_3 ) )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s owner->m_searchID = %d, issuingAI->m_searchID = %d\r",owner->GetName(),owner->m_searchID,issuingAI->m_searchID); // grayman debug
 			// grayman debug - only join their search if you're not already part of it
 			if (owner->m_searchID != issuingAI->m_searchID)
 			{
-				// grayman debug - Leave any current search
-				gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s leaving my search, joining the other search\r",owner->GetName()); // grayman debug
 
-				// grayman debug - Join the other's search
+				// grayman debug - Try to join the other's search
 
 				if (gameLocal.m_searchManager->JoinSearch(issuingAI->m_searchID,owner)) // Sets up an assignment for owner
 				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s got my assignment\r",owner->GetName()); // grayman debug
 					// grayman debug - the receiver has been added to the issuer's search,
 					// and has been given an assignment
 
@@ -4899,6 +4905,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				}
 				else
 				{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s sorry, can't help\r",owner->GetName()); // grayman debug
 					//gameLocal.Printf("Hmpfh, can't help them\n");
 				}
 			}

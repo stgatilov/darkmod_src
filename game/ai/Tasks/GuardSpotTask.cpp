@@ -32,12 +32,11 @@ namespace ai
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 const float MAX_YAW = 45; // max yaw (+/-) from original yaw for idle turning
-const int TURN_DELAY = 8000;
+const int TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
 const int TURN_DELAY_DELTA = 4000;
+const int MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
 
 GuardSpotTask::GuardSpotTask() :
-	_moveInitiated(false),
-	_moveCompleted(false),
 	_nextTurnTime(0)
 {}
 
@@ -57,17 +56,54 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	Memory& memory = owner->GetMemory();
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to guard memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
-	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
-	{
-		// Set the goal position
-		SetNewGoal(memory.currentSearchSpot);
-		memory.guardingInProgress = true;
-	}
-	else
+	if (memory.currentSearchSpot == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Invalid spot, terminate task
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task.\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s memory.currentSearchSpot not set to something valid, terminating task.\r",owner->GetName()); // grayman debug
 		subsystem.FinishTask();
+		return;
+	}
+
+	// Set the goal position
+	SetNewGoal(memory.currentSearchSpot);
+	_guardSpotState = EStateSetup;
+
+	// Milling?
+	if (owner->GetMemory().millingInProgress)
+	{
+		// Is there any activity after milling is over?
+		// If so, we want a short _exitTime so we can make the run
+		// before we drop out of searching mode. If no, we can continue
+		// milling until we drop out.
+
+		Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+		Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+
+		if (assignment)
+		{
+			_millingOnly = true;
+			if (assignment->_searcherRole == E_ROLE_SEARCHER)
+			{
+				if (search->_assignmentFlags & SEARCH_SEARCH)
+				{
+					_millingOnly = false;
+				}
+			}
+			else if (assignment->_searcherRole == E_ROLE_GUARD)
+			{
+				if (search->_assignmentFlags & SEARCH_GUARD)
+				{
+					_millingOnly = false;
+				}
+			}
+			else // observer
+			{
+				if (search->_assignmentFlags & SEARCH_OBSERVE)
+				{
+					_millingOnly = false;
+				}
+			}
+		}
 	}
 }
 
@@ -82,11 +118,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
 		return true;
-	}
-
-	if (!owner->GetMemory().guardingInProgress)
-	{
-		return true; // told to terminate the task
 	}
 
 	// if we've entered combat mode, we want to
@@ -106,12 +137,12 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
-		if (gameLocal.time > _exitTime) // grayman debug
+		if (gameLocal.time >= _exitTime) // grayman debug
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
 		}
 		// Return TRUE if the time is over, else FALSE (continue)
-		return (gameLocal.time > _exitTime);
+		return (gameLocal.time >= _exitTime);
 	}
 
 	// No exit time set, or it hasn't expired, so continue with ordinary process
@@ -129,127 +160,172 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		return false;
 	}
 	
-	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin(); // grayman #3492
-
-	if (!_moveInitiated)
+	switch (_guardSpotState)
 	{
-		idVec3 destPos = _guardSpot;
+	case EStateSetup:
+		{
+			idVec3 destPos = _guardSpot;
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move not started yet to [%s]\r",owner->GetName(),destPos.ToString()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move not started yet to [%s]\r",owner->GetName(),destPos.ToString()); // grayman debug
 
-		// Let's move
+			// Let's move
 
-		// If the AI is searching and not handling a door or handling
-		// an elevator or resolving a block: If the spot PointReachableAreaNum()/PushPointIntoAreaNum()
-		// wants to move us to is outside the vertical boundaries of the
-		// search volume, consider the point bad.
+			// If the AI is searching and not handling a door or handling
+			// an elevator or resolving a block: If the spot PointReachableAreaNum()/PushPointIntoAreaNum()
+			// wants to move us to is outside the vertical boundaries of the
+			// search volume, consider the point bad.
 		
-		bool pointValid = true;
-		idVec3 goal = destPos;
-		int toAreaNum = owner->PointReachableAreaNum( goal );
-		if ( toAreaNum == 0 )
-		{
-			pointValid = false;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s pointValid = false because toAreaNum = 0\r",owner->GetName()); // grayman debug
-		}
-		else
-		{
-			owner->GetAAS()->PushPointIntoAreaNum( toAreaNum, goal ); // if this point is outside this area, it will be moved to one of the area's edges
-		}
-
-		if ( pointValid )
-		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
-			pointValid = owner->MoveToPosition(goal);
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s pointValid = %s after MoveToPosition()\r",owner->GetName(),pointValid ? "true":"false"); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s moveStatus = %d after MoveToPosition()\r",owner->GetName(),(int)owner->GetMoveStatus()); // grayman debug
-		}
-
-		if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
-		{
-			// Guard spot not reachable, terminate task in the next round
-			_exitTime = gameLocal.time;
-		}
-		else
-		{
-			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
-			// greebo: This is taxing and can be replaced by a simpler distance check 
-			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
-
-			// grayman #2422 - not the player = walk, player & combat = run, everything else = run
-			// Also, travelDist is inaccurate when an AAS area is large, so compare
-			// it to the actual distance and use the larger of the two.
-
-			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), _searchSpot, 1, MS2SEC(_exitTime - gameLocal.time + 100));
-			_moveInitiated = true;
-			float actualDist = (ownerOrigin - _guardSpot).LengthFast();
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s actualDist = %f\r",owner->GetName(),actualDist); // grayman debug
-			owner->AI_RUN = ( actualDist > MAX_TRAVEL_DISTANCE_WALKING ); // close enough to walk?
-		}
-
-		return false;
-	}
-
-	// Moving. Have we arrived?
-
-	if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s guard spot unreachable\r",owner->GetName()); // grayman debug
-		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Guard spot unreachable.\r", _guardSpot);
-		return true;
-	}
-
-	if (!_moveCompleted)
-	{
-		if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
-		{
-			if (owner->ReachedPos(_guardSpot, MOVE_TO_POSITION))
+			bool pointValid = true;
+			idVec3 goal = destPos;
+			int toAreaNum = owner->PointReachableAreaNum( goal );
+			if ( toAreaNum == 0 )
 			{
-				// We've successfully reached the guard spot
-
-				_moveCompleted = true;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s reached guard spot\r",owner->GetName()); // grayman debug
-				DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Guard spot investigated: \r", _guardSpot);
-
-				// If a facing angle is specified, turn to that angle.
-				// If no facing angle is specified, turn toward the origin of the search
-
-				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
-
-				if (search)
-				{
-					if ( owner->GetMemory().guardingAngle == idMath::INFINITY)
-					{
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward search origin [%s]\r",owner->GetName(),search->_origin.ToString()); // grayman debug
-						owner->TurnToward(search->_origin);
-					}
-					else
-					{
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward yaw %f\r",owner->GetName(),owner->GetMemory().guardingAngle); // grayman debug
-						owner->TurnToward(owner->GetMemory().guardingAngle);
-					}
-
-					_baseYaw = owner->GetIdealYaw();
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _baseYaw %f\r",owner->GetName(),_baseYaw); // grayman debug
-					_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
-				}
+				pointValid = false;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s pointValid = false because toAreaNum = 0\r",owner->GetName()); // grayman debug
 			}
 			else
 			{
-				_moveInitiated = false; // try again
+				owner->GetAAS()->PushPointIntoAreaNum( toAreaNum, goal ); // if this point is outside this area, it will be moved to one of the area's edges
 			}
 
-			// Wait until we exit SearchingState
+			if ( pointValid )
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
+				pointValid = owner->MoveToPosition(goal);
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s pointValid = %s after MoveToPosition()\r",owner->GetName(),pointValid ? "true":"false"); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s moveStatus = %d after MoveToPosition()\r",owner->GetName(),(int)owner->GetMoveStatus()); // grayman debug
+			}
+
+			if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
+			{
+				// Guard spot not reachable, terminate task
+				return true;
+			}
+
+			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
+
+			float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s actualDist = %f\r",owner->GetName(),actualDist); // grayman debug
+			bool shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
+			owner->AI_RUN = false;
+			if (shouldRun)
+			{
+				owner->AI_RUN = true;
+			}
+			else if (owner->m_searchID >= 0)
+			{
+				// When searching, and assigned guard or observer roles, AI should run.
+				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+				Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+				if (search && assignment)
+				{
+					if (((assignment->_searcherRole == E_ROLE_GUARD) && (search->_assignmentFlags & SEARCH_GUARD)) ||
+						((assignment->_searcherRole == E_ROLE_OBSERVER) && (search->_assignmentFlags & SEARCH_OBSERVE)))
+					{
+						owner->AI_RUN = true;
+					}
+				}
+			}
+
+			_guardSpotState = EStateMoving;
+			break;
 		}
-	}
-	else // move completed
-	{
-		if ( (_nextTurnTime > 0) && (gameLocal.time >= _nextTurnTime) )
+	case EStateMoving:
 		{
-			// turn randomly in place
-			float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
-			owner->TurnToward(newYaw);
-			_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
+			// Moving. Have we arrived?
+
+			if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s guard spot unreachable\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Guard spot unreachable.\r", _guardSpot);
+				return true;
+			}	
+
+			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
+			{
+				if (owner->ReachedPos(_guardSpot, MOVE_TO_POSITION))
+				{
+					// We've successfully reached the spot
+
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s reached spot\r",owner->GetName()); // grayman debug
+
+					// If a facing angle is specified, turn to that angle.
+					// If no facing angle is specified, turn toward the origin of the search
+
+					Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+
+					if (search)
+					{
+						if ( owner->GetMemory().guardingAngle == idMath::INFINITY)
+						{
+							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward search origin [%s]\r",owner->GetName(),search->_origin.ToString()); // grayman debug
+							owner->TurnToward(search->_origin);
+						}
+						else
+						{
+							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward yaw %f\r",owner->GetName(),owner->GetMemory().guardingAngle); // grayman debug
+							owner->TurnToward(owner->GetMemory().guardingAngle);
+						}
+
+						_baseYaw = owner->GetIdealYaw();
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _baseYaw %f\r",owner->GetName(),_baseYaw); // grayman debug
+
+						// Milling?
+						if (owner->GetMemory().millingInProgress)
+						{
+							if (!_millingOnly)
+							{
+								// leave milling early, so we can get to the following activity
+								_exitTime = gameLocal.time + MILLING_DELAY + gameLocal.random.RandomInt(MILLING_DELAY);
+								_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+							}
+							else
+							{
+								// we can hang around until we drop out of searching mode
+								_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
+							}
+						}
+						else // guarding or observing
+						{
+							_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
+						}
+					}
+					_guardSpotState = EStateStanding;
+				}
+				else
+				{
+					_guardSpotState = EStateSetup; // try again
+				}
+			}
+			break;
+		}
+	case EStateStanding:
+		{
+			if ( (_nextTurnTime > 0) && (gameLocal.time >= _nextTurnTime) )
+			{
+				// turn randomly in place
+				float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s execute random yaw turn of %d degrees\r",owner->GetName(),newYaw - _baseYaw); // grayman debug
+				owner->TurnToward(newYaw);
+
+				// Milling?
+				if (owner->GetMemory().millingInProgress)
+				{
+					if (!_millingOnly)
+					{
+						_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+					}
+					else
+					{
+						_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
+					}
+				}
+				else
+				{
+					_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
+				}
+			}
+			break;
 		}
 	}
 
@@ -324,7 +400,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 		idVec3 dir = gameLocal.m_searchManager->GetSearch(owner->m_searchID)->_origin - frontPos;
 		dir.Normalize();
-		frontPos += 32*dir;
+		frontPos += 50*dir;
 
 		_guardSpot = frontPos;
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
@@ -336,8 +412,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
 	}
 
-	// Reset the "move started" flag
-	_moveInitiated = false;
+	_guardSpotState = EStateSetup;
 
 	// Set the exit time back to negative default, so that the AI starts walking again
 	_exitTime = -1;
@@ -349,6 +424,7 @@ void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 	// The action subsystem has finished guarding the spot, so set the
 	// boolean back to false
 	owner->GetMemory().guardingInProgress = false;
+	owner->GetMemory().millingInProgress = false;
 }
 
 void GuardSpotTask::Save(idSaveGame* savefile) const
@@ -356,11 +432,11 @@ void GuardSpotTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	savefile->WriteInt(_exitTime);
+	savefile->WriteInt(static_cast<int>(_guardSpotState));
 	savefile->WriteVec3(_guardSpot);
-	savefile->WriteBool(_moveInitiated);
-	savefile->WriteBool(_moveCompleted);
 	savefile->WriteInt(_nextTurnTime);
 	savefile->WriteFloat(_baseYaw);
+	savefile->WriteBool(_millingOnly);
 }
 
 void GuardSpotTask::Restore(idRestoreGame* savefile)
@@ -368,11 +444,15 @@ void GuardSpotTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	savefile->ReadInt(_exitTime);
+
+	int temp;
+	savefile->ReadInt(temp);
+	_guardSpotState = static_cast<EGuardSpotState>(temp);
+
 	savefile->ReadVec3(_guardSpot);
-	savefile->ReadBool(_moveInitiated);
-	savefile->ReadBool(_moveCompleted);
 	savefile->ReadInt(_nextTurnTime);
 	savefile->ReadFloat(_baseYaw);
+	savefile->ReadBool(_millingOnly);
 }
 
 GuardSpotTaskPtr GuardSpotTask::CreateInstance()

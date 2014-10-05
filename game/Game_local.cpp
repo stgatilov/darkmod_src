@@ -232,7 +232,8 @@ idGameLocal::idGameLocal() :
 	briefingVideoInfoLoaded(false),
 	curBriefingVideoPart(-1),
 	m_MissionResult(MISSION_NOTEVENSTARTED),
-	m_HighestSRId(0)
+	m_HighestSRId(0),
+	m_searchManager(NULL) // grayman debug
 {
 	Clear();
 }
@@ -312,7 +313,11 @@ void idGameLocal::Clear( void )
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_EscapePointManager->Clear();
 
-	m_searchManager = CSearchManager::Instance(); // grayman debug
+	if (m_searchManager == NULL) // grayman debug
+	{
+		m_searchManager = CSearchManager::Instance();
+	}
+	m_searchManager->Clear();
 	
 	m_Interleave = 0;
 
