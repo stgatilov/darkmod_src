@@ -742,16 +742,21 @@ bool SearchingState::OnAudioAlert(idStr soundName) // grayman #3847
 void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 {
 	int newSearchID = gameLocal.m_searchManager->StartNewHidingSpotSearch(owner);
-	if (newSearchID == owner->m_searchID)
+	bool assigned = (newSearchID == owner->m_searchID);
+
+	if (!assigned)
+	{
+		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s joining new search, calling JoinSearch()\r",owner->GetName()); // grayman debug
+	}
+	else // grayman debug
 	{
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s already assigned to search %d\r",owner->GetName(),newSearchID); // grayman debug
-		return; // already assigned to this search
 	}
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s starting a new search with id %d\r",owner->GetName(),newSearchID); // grayman debug
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s joining new search, calling JoinSearch()\r",owner->GetName()); // grayman debug
-	if (gameLocal.m_searchManager->JoinSearch(newSearchID,owner)) // gives the ai his assignment
+	if (assigned)
 	{
 		// Clear ai flags
 		ai::Memory& memory = owner->GetMemory();

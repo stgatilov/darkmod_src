@@ -622,10 +622,12 @@
     <ClCompile Include="game\ai\Tasks\PathSetMovetypeTask.cpp">
       <Filter>AI\Tasks</Filter>
     </ClCompile>
-    <ClCompile Include="game\ai\States\PocketPickedState.cpp" />
     <ClCompile Include="game\SearchManager.cpp" />
     <ClCompile Include="game\ai\Tasks\GuardSpotTask.cpp">
       <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\States\PocketPickedState.cpp">
+      <Filter>AI\States</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1211,10 +1213,12 @@
     <ClInclude Include="game\ai\Tasks\PathSetMovetypeTask.h">
       <Filter>AI\Tasks</Filter>
     </ClInclude>
-    <ClInclude Include="game\ai\States\PocketPickedState.h" />
     <ClInclude Include="game\SearchManager.h" />
     <ClInclude Include="game\ai\Tasks\GuardSpotTask.h">
       <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\States\PocketPickedState.h">
+      <Filter>AI\States</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

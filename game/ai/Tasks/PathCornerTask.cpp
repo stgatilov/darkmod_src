@@ -79,10 +79,10 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathCornerTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
-
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("PathCornerTask::Perform - %s ...\r",owner->GetName()); // grayman debug
 
 	// This task may not be performed with empty entity pointers
 	assert(path != NULL && owner != NULL);

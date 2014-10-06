@@ -178,6 +178,9 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 		case ai::EAlertTypeHitByProjectile:
 			search->_assignmentFlags = SEARCH_PROJECTILE;
 			break;
+		default: // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - memory.alertType '%d' has no SEARCH flags\r",(int)memory.alertType); // grayman debug
+			break;
 		}
 
 		DebugPrintSearch(search); // grayman debug - comment when done
