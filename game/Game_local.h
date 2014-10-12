@@ -423,7 +423,16 @@ enum EventType
 	E_EventTypeEnemy = 0,	// enemy is seen ("snd_warnSawEnemy")
 							// enemy tried to KO me ("snd_warnSawEnemy")
 	E_EventTypeDeadPerson,	// found a corpse ("snd_warnFoundCorpse")
-	E_EventTypeMissingItem	// noticed something was stolen ("snd_warnMissingItem")
+	E_EventTypeMissingItem,	// noticed something was stolen ("snd_warnMissingItem")
+
+	// grayman debug - add specific 'evidence of intruder' events to keep
+	// AI from being asked back onto searches they've already participated in
+	E_EventTypeUnconsciousPerson,
+
+	// grayman debug - Add event type for unknown event. This might occur
+	// if an AI has risen into searching or agitated searching because of
+	// an accumulation of suspicious events
+	E_EventTypeMisc
 };
 
 // Hold information about a suspicious event (corpse, unconscious person, missing item, etc.)

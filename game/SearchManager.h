@@ -49,8 +49,8 @@ typedef enum
 struct Assignment
 {
 	idVec3					_origin;		// center of search area, location of alert stimulus, spot to guard
-	float					_innerRadius;	// inner radius of search boundary
 	float					_outerRadius;	// outer radius of search boundary
+	idBounds				_limits;		// boundary of the search
 	idAI*					_searcher;		// AI assigned
 	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _randomHidingSpotIndexes
 	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, observer)
@@ -70,9 +70,10 @@ struct Search
 	std::vector<int>		_randomHidingSpotIndexes;	// An array of random numbers serving as indices into the hiding spot list
 	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,a] where a = yaw angle to face
 	bool					_guardSpotsReady;			// false = guard spot list not complete yet; true = list complete
-	int						_assignmentFlags;			// flags that describe available assignments
+	unsigned int			_assignmentFlags;			// flags that describe available assignments
 	idList<Assignment>		_assignments;				// a list of assignments for this search
-	int						_searcherCount;				// number of searchers (not assignments, because some of those might be deactivated) 
+	int						_searcherCount;				// number of searchers (not assignments, because some of those might be deactivated)
+	int						_eventID;					// the ID of the event this search belongs to
 };
 
 // search flags
@@ -87,7 +88,7 @@ typedef enum
 } searchFlags_t;
 
 #define SEARCH_NOTHING			(0)  // no searchers, no guards, no observers
-#define SEARCH_EVERYTHING		(-1) // searchers, guards, and observers, and everyone mills about at first
+#define SEARCH_EVERYTHING		(0xffffffff) // searchers, guards, and observers, and everyone mills about at first
 #define SEARCH_SUSPICIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeSuspicious
 #define SEARCH_ENEMY			(SEARCH_NOTHING) // EAlertTypeEnemy
 #define SEARCH_WEAPON			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon
@@ -96,6 +97,7 @@ typedef enum
 #define SEARCH_UNCONSCIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeUnconsciousPerson
 #define SEARCH_BLOOD			(SEARCH_EVERYTHING) // EAlertTypeBlood
 #define SEARCH_LIGHT			(SEARCH_SEARCH) // EAlertTypeLightSource
+#define SEARCH_FAILED_KO		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeFailedKO
 #define SEARCH_MISSING			(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_GUARD|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // EAlertTypeMissingItem
 #define SEARCH_BROKEN			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeBrokenItem
 #define SEARCH_DOOR				(SEARCH_SEARCH) // EAlertTypeDoor
@@ -116,8 +118,6 @@ public:
 
 	void RandomizeHidingSpotList(Search* search);
 
-	//idVec3 GetOrigin(int searchID); // Return current search origin
-
 	int StartNewHidingSpotSearch(idAI* ai); // returns searchID for the AI to use
 
 	bool GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
@@ -127,10 +127,6 @@ public:
 	void PerformHidingSpotSearch(int searchID, idAI* ai); // Continue searching
 
 	Search* GetSearch(int searchID); // returns a pointer to the requested search
-
-	//int GetNumHidingSpots(Search *search); // returns the number of hiding spots
-
-	//smRole_t GetRole(int searchID, idAI* ai); // find your search role
 
 	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
@@ -188,8 +184,6 @@ public:
 
 	void AdjustSearchLimits(idBounds& bounds); // grayman #2422 - fit the search to the architecture of the area being searched
 
-	//TaskPtr& task GetAssignment(int searcherID); // runs an assigned task
-
 	void destroyCurrentHidingSpotSearch(Search* search);
 
 	void CreateListOfGuardSpots(Search* search, idAI* ai);
@@ -204,7 +198,7 @@ public:
 
 	void DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
 
-	void PrintMe(int n, idAI* owner); // grayman debug - delete when done
+	//void PrintMe(int n, idAI* owner); // grayman debug - delete when done
 
 	// Accessor to the singleton instance of this class
 	static CSearchManager* Instance();

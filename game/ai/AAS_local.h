@@ -172,7 +172,7 @@ public:
 	/**
 	 * grayman debug - retrieve a list of a cluster's portals
 	 */
-	virtual void GetPortals(int clusterNum, idList<idVec4> &portalList);
+	virtual void GetPortals(int clusterNum, idList<idVec4> &portalList, idBounds searchLimits);
 
 	/**
 	 * greebo: Assembles the elevator routing information.

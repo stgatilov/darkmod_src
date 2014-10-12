@@ -183,6 +183,7 @@ struct CommMessage
 		ConveyWarning_ItemsHaveBeenStolen_CommType,
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
 		ConveyWarning_CorpseHasBeenSeen_CommType, // grayman #1327
+		ConveyWarning_UnconsciousPersonHasBeenSeen_CommType, // grayman debug
 
 		NumCommTypes, // invalid type
 	};

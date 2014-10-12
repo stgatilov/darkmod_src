@@ -113,6 +113,7 @@ void FleeState::Init(idAI* owner)
 		}
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
+		gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{

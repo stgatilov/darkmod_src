@@ -34,7 +34,8 @@ const int INVESTIGATE_SPOT_TIME_REMOTE = 2000; // ms (grayman #2640 - change fro
 const int INVESTIGATE_SPOT_TIME_STANDARD = 300; // ms
 const int INVESTIGATE_SPOT_TIME_CLOSELY = 2500; // ms
 
-const int INVESTIGATE_SPOT_STOP_DIST = 100; // grayman #2640 - even if you can see the spot, keep moving if farther away than this
+const int INVESTIGATE_SPOT_STOP_DIST = 32; // grayman debug - even if you can see the spot, keep moving if farther away than this
+//const int INVESTIGATE_SPOT_STOP_DIST = 100; // grayman #2640 - even if you can see the spot, keep moving if farther away than this
 const int INVESTIGATE_SPOT_MIN_DIST  =  20;
 const int INVESTIGATE_SPOT_CLOSELY_MAX_DIST = 100; // grayman #2928
 
@@ -123,6 +124,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		return true; // told to cancel this task
 	}
 
+	gameRenderWorld->DebugLine( colorGreen, owner->GetEyePosition(), owner->GetMemory().currentSearchSpot, 50); // grayman debug
 	// grayman #3075 - if we've entered combat mode, we want to
 	// end this task. But first, if we're kneeling, kill the
 	// kneeling animation
@@ -207,7 +209,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s move not started yet, look at [%s]\r",owner->GetName(),_searchSpot.ToString()); // grayman debug
 			// Look at the point to investigate
-			owner->Event_LookAtPosition(_searchSpot, MS2SEC(_exitTime - gameLocal.time + 100));
+			owner->Event_LookAtPosition(_searchSpot + idVec3(0,0,60), MS2SEC(_exitTime - gameLocal.time + 100)); // grayman debug - look at a point off the floor
 
 			return false; // grayman #2422
 		}

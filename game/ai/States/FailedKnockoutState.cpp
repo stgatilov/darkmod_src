@@ -111,12 +111,18 @@ void FailedKnockoutState::Think(idAI* owner)
 
 		// Alert this AI
 		memory.alertClass = EAlertTactile;
-		memory.alertType = EAlertTypeEnemy;
+		memory.alertType = EAlertTypeFailedKO; // grayman debug
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Think 1 - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, owner->GetPhysics()->GetOrigin().ToString()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman #3424
 	
 		// Set the alert position 50 units in the attacking direction
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+
+		// grayman debug - expand the search area
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
 
 		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_FAILED_KO;
 		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903

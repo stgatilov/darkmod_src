@@ -1719,6 +1719,7 @@ void idAI::Spawn( void )
 	// busy searching because of one of them and a new stimulus arrives.
 	alertTypeWeight[ai::EAlertTypeHitByProjectile]		= 40; // grayman #3331
 	alertTypeWeight[ai::EAlertTypeEnemy]				= 40;
+	alertTypeWeight[ai::EAlertTypeFailedKO]				= 40;
 	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 40;
 	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
 
@@ -4189,7 +4190,7 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s going to [%s]\r",GetName(),pos.ToString()); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s going to [%s]\r",GetName(),pos.ToString()); // grayman debug
 	// Clear the "blocked" flag in the movement subsystem
 	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
@@ -6688,6 +6689,13 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Killed - %s killed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
+	// grayman debug - leave an ongoing search
+	if (m_searchID >= 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+	}
 
 	ClearEnemy();
 	AI_DEAD	= true;
@@ -9360,7 +9368,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s loudness %f\r",GetName(),propParms->loudness); // grayman debug
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
@@ -9478,8 +9485,10 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman #3394 - it could also have been made by a body hitting the floor,
 		// and that body might be a friend
 		// grayman #2816 - no alert if it was made by someone we killed
+		// grayman debug - no alert if it was made by a dead or KO'ed body that was kicked by another AI
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s heard sound '%s' and soundMaker = '%s'\r",GetName(),propParms->name.c_str(),soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
 		if ( !soundMaker || // alert if unknown sound maker
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
@@ -9576,6 +9585,7 @@ void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // grayman #3258
 {
 	DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL");
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s called with type %s, amount %f, and actor %s\r",name.c_str(),type,amount,actor ? actor->name.c_str():"NULL"); // grayman debug
 
 	if (m_bIgnoreAlerts)
 	{
@@ -11518,6 +11528,13 @@ void idAI::Knockout( idEntity* inflictor )
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Knockout - %s KO'ed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
+	// grayman debug - leave an ongoing search
+	if (m_searchID >= 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+	}
 
 	ClearEnemy();
 

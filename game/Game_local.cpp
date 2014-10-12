@@ -5156,7 +5156,7 @@ void idGameLocal::GetPortals(Search* search, idAI* ai)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals areaNum = %d\r",areaNum); // grayman debug
 	int clusterNum = aasLocal->GetClusterNum(areaNum);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals area %d is in cluster %d\r",areaNum,clusterNum); // grayman debug
-	aasLocal->GetPortals(clusterNum,search->_guardSpots);
+	aasLocal->GetPortals(clusterNum,search->_guardSpots,search->_limits);
 }
 
 /*
@@ -7975,23 +7975,21 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
 
-	// grayman #3848 - must use separate booleans
-	bool locationMatch = false;
-	bool entityMatch   = true;
-
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
+
 		if ( se.type == type ) // type of event
 		{
+			// grayman #3848 - must use separate booleans
+			bool locationMatch = true;
+			bool entityMatch   = true;
+
 			// check location
 
 			if ( !location.Compare(idVec3(0,0,0)))
 			{
-				if ( location.Compare(se.location))
-				{
-					locationMatch = true;
-				}
+				locationMatch = location.Compare(se.location);
 			}
 
 			// check entity
@@ -8003,13 +8001,15 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 					entityMatch = false;
 				}
 			}
-		}
 
-		if ( locationMatch && entityMatch )
-		{
-			return i;
+			if ( locationMatch && entityMatch )
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found event %d (%d,[%s],'%s')\r",i,(int)type, location.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
+				return i;
+			}
 		}
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find event (%d,[%s],'%s')\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
 	return -1;
 }
 
@@ -8024,15 +8024,28 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	{
 		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity() );
 	}
+	else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman debug
+	{
+		index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity() );
+	}
 	else if ( se.type == E_EventTypeMissingItem )
 	{
 		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, NULL );
+	}
+	else if ( se.type == E_EventTypeMisc ) // grayman debug
+	{
+		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, NULL );
 	}
 
 	if ( index < 0 )
 	{
 		gameLocal.m_suspiciousEvents.Append(se); // log this new event
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - logging event %d (%d,[%s],'%s')\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
+	}
+	else // grayman debug
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - not logging event %d (%d,[%s],'%s') - already logged\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
 	}
 
 	return index;

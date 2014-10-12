@@ -1158,7 +1158,6 @@ bool CDarkmodAASHidingSpotFinder::startHidingSpotSearch
 
 	// Set search state
 	searchState = EBuildingPVSList;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::startHidingSpotSearch searchState set to %d\r", searchState); // grayman debug
 
 	// Ensure the PVS to AAS table is initialized
 	// If already initialized, this returns right away.
@@ -1178,7 +1177,6 @@ bool CDarkmodAASHidingSpotFinder::startHidingSpotSearch
 	
 	// Iterating PVS areas
 	searchState = ENewPVSArea;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::startHidingSpotSearch searchState set to %d\r", searchState); // grayman debug
 
 	// Call the interior function
 	if (!findMoreHidingSpots(out_hidingSpots, numPointsToTestThisPass, numPointsTestedThisPass))

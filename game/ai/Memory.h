@@ -137,6 +137,7 @@ enum EAlertType
 	EAlertTypeNone,
 	EAlertTypeSuspicious,
 	EAlertTypeEnemy,
+	EAlertTypeFailedKO, // grayman debug
 	EAlertTypeWeapon,
 	EAlertTypeBlinded, // grayman debug
 	EAlertTypeDeadPerson,
@@ -176,6 +177,18 @@ enum EPainCause
 	EPC_Fall,
 	EPC_Moveable,
 	EPC_Num
+};
+
+// grayman debug - repeated bark states when in Agitated Searching
+enum ERepeatedBarkState
+{
+	ERBS_NULL,							// state not determined yet
+	ERBS_SEARCHER_SINGLE_NO_EVIDENCE,	// single searcher, hasn't seen any evidence of intruders
+	ERBS_SEARCHER_MULTIPLE_NO_EVIDENCE,	// multiple searchers, hasn't seen any evidence of intruders
+	ERBS_SEARCHER_SINGLE_EVIDENCE,		// single searcher, has seen evidence of intruders
+	ERBS_SEARCHER_MULTIPLE_EVIDENCE,	// multiple searchers, has seen evidence of intruders
+	ERBS_GUARD_OBSERVER,				// a guard or observer, has or hasn't seen evidence of intruders
+	ERBS_NUM
 };
 
 const char* const AlertStateNames[EAlertStateNum] = 
@@ -300,7 +313,7 @@ public:
 	bool deadPeopleHaveBeenFound;
 
 	// grayman #3424 - did the AI see evidence the previous think frame?
-	bool prevSawEvidence;
+	//bool prevSawEvidence; // grayman debug
 
 	// grayman #3528 - TRUE if sitting or sleeping when dropping out of Observant
 	bool stayPut;
@@ -326,6 +339,8 @@ public:
 	int timeEvidenceIntruders;
 
 	idEntityPtr<idEntity> corpseFound; // grayman #3424
+
+	idEntityPtr<idEntity> unconsciousPersonFound; // grayman debug
 
 	// grayman #2422 - alert level is rising by checking player visibility
 	bool visualAlert;
@@ -473,6 +488,8 @@ public:
 
 	// grayman debug - when guarding a spot, face this angle (yaw)
 	float guardingAngle;
+
+	ERepeatedBarkState repeatedBarkState; // grayman debug
 
 	// True if fleeing is done, false if fleeing is in progress
 	bool fleeingDone;

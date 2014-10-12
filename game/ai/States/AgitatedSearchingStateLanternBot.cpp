@@ -56,6 +56,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Init - %s wants to start agitated searching\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingStateLanternBot initialised.\r");
 	assert(owner);
 
@@ -77,7 +78,8 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 
 	// This will hold the message to be delivered with the inaudible bark
 	CommMessagePtr message(new CommMessage(
-		CommMessage::DetectedEnemy_CommType, 
+		CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
+		//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
 		owner, NULL,// from this AI to anyone 
 		NULL,
 		_curAlertPos,
@@ -104,6 +106,7 @@ void AgitatedSearchingStateLanternBot::OnMovementBlocked(idAI* owner)
 // Gets called each time the mind is thinking
 void AgitatedSearchingStateLanternBot::Think(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level

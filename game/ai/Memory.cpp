@@ -98,6 +98,7 @@ Memory::Memory(idAI* owningAI) :
 	millingInProgress(false), // grayman debug
 	shouldMill(false), // grayman debug
 	guardingAngle(0.0f), // grayman debug
+	repeatedBarkState(ERBS_NULL), // grayman debug
 	fleeingDone(true),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
@@ -141,7 +142,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(itemsHaveBeenBroken);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
-	savefile->WriteBool(prevSawEvidence); // grayman #3424
+	//savefile->WriteBool(prevSawEvidence); // grayman #3424 // grayman debug
 	savefile->WriteBool(stayPut); // grayman #3528
 	savefile->WriteVec3(alertPos);
 	
@@ -191,12 +192,14 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(millingInProgress); // grayman debug
 	savefile->WriteBool(shouldMill); // grayman debug
 	savefile->WriteFloat(guardingAngle); // grayman debug
+	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman debug
 	savefile->WriteBool(fleeingDone);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
 	lastDoorHandled.Save(savefile);   // grayman #2712
 	hitByThisMoveable.Save(savefile); // grayman #2816
 	corpseFound.Save(savefile);		  // grayman #3424
+	unconsciousPersonFound.Save(savefile); // grayman debug
 	relightLight.Save(savefile);	  // grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
 
@@ -272,7 +275,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(itemsHaveBeenBroken);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
-	savefile->ReadBool(prevSawEvidence); // grayman #3424
+	//savefile->ReadBool(prevSawEvidence); // grayman #3424 // grayman debug
 	savefile->ReadBool(stayPut); // grayman #3528
 	savefile->ReadVec3(alertPos);
 
@@ -331,12 +334,17 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(millingInProgress); // grayman debug
 	savefile->ReadBool(shouldMill); // grayman debug
 	savefile->ReadFloat(guardingAngle); // grayman debug
+
+	savefile->ReadInt(temp);
+	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman debug
+
 	savefile->ReadBool(fleeingDone);
 	savefile->ReadVec3(positionBeforeTakingCover);
 	savefile->ReadBool(resolvingMovementBlock);
 	lastDoorHandled.Restore(savefile);	 // grayman #2712
 	hitByThisMoveable.Restore(savefile); // grayman #2816
 	corpseFound.Restore(savefile);		 // grayman #3424
+	unconsciousPersonFound.Restore(savefile); // grayman debug
 	relightLight.Restore(savefile);		 // grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
 

@@ -958,11 +958,6 @@ darkModHidingSpot* CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds
 	// Iterate to correct point
 	while (p_areaCursor != NULL)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodHidingSpotTree::getNthSpotWithAreaNodeBounds - p_areaCursor = %x\r",p_areaCursor); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             id = %d\r",p_areaCursor->id); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   aasAreaIndex = %d\r",p_areaCursor->aasAreaIndex); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          count = %d\r",p_areaCursor->count); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    spots.Num() = %d\r",p_areaCursor->spots.Num()); // grayman debug
 		// Check if we can just skip this entire area
 		if (spotDelta >= p_areaCursor->spots.Num())
 		{

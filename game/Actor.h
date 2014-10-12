@@ -600,7 +600,7 @@ public:
 	* Suspicious events
 	* grayman #3424
 	**/
-	bool					FindSuspiciousEvent( int eventID );
+	bool					KnowsAboutSuspiciousEvent( int eventID );
 	bool					AddSuspiciousEvent( int eventID );
 	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ); 
 	void					AddWarningEvent( idEntity* other, int eventID );

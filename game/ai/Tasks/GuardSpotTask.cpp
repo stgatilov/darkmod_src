@@ -26,6 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id: GuardSpotTask.cpp 6105 2014-
 #include "WaitTask.h"
 #include "../Memory.h"
 #include "../Library.h"
+#include "SingleBarkTask.h"
 
 namespace ai
 {
@@ -35,6 +36,7 @@ const float MAX_YAW = 45; // max yaw (+/-) from original yaw for idle turning
 const int TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
 const int TURN_DELAY_DELTA = 4000;
 const int MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
+const float CLOSE_ENOUGH = 48.0f; // have reached point if this close
 
 GuardSpotTask::GuardSpotTask() :
 	_nextTurnTime(0)
@@ -140,9 +142,54 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		if (gameLocal.time >= _exitTime) // grayman debug
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
+
+			// If milling, and you'll be running to a guard or observation
+			// spot once milling ends, have the guards talk to each other.
+			// One of the active searchers should bark a "get to your post"
+			// command to this AI, who should respond.
+			if (owner->GetMemory().millingInProgress)
+			{
+				if (!_millingOnly)
+				{
+					// Have a searcher bark an order at owner if owner is a guard.
+					// Searchers won't bark an order to observers.
+
+					Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+					Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+					if (assignment && (assignment->_searcherRole == E_ROLE_GUARD))
+					{
+						assignment = &search->_assignments[0];
+						idAI *searcher = assignment->_searcher;
+						if (searcher == NULL)
+						{
+							// First searcher has left the search. Try the second.
+							assignment = &search->_assignments[1];
+							searcher = assignment->_searcher;
+							if (searcher == NULL)
+							{
+								return true;
+							}
+						}
+
+						CommMessagePtr message = CommMessagePtr(new CommMessage(
+							CommMessage::GuardLocationOrder_CommType, 
+							searcher, owner, // from searcher to owner
+							NULL,
+							vec3_zero,
+							0 // grayman #3438
+						));
+
+						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
+					}
+				}
+
+				return true;
+			}
+
+			// 
 		}
-		// Return TRUE if the time is over, else FALSE (continue)
-		return (gameLocal.time >= _exitTime);
+
+		return false;
 	}
 
 	// No exit time set, or it hasn't expired, so continue with ordinary process
@@ -191,7 +238,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			if ( pointValid )
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
-				pointValid = owner->MoveToPosition(goal);
+				pointValid = owner->MoveToPosition(goal,CLOSE_ENOUGH); // allow for someone else standing on it
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s pointValid = %s after MoveToPosition()\r",owner->GetName(),pointValid ? "true":"false"); // grayman debug
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s moveStatus = %d after MoveToPosition()\r",owner->GetName(),(int)owner->GetMoveStatus()); // grayman debug
 			}
@@ -237,13 +284,16 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s guard spot unreachable\r",owner->GetName()); // grayman debug
-				DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Guard spot unreachable.\r", _guardSpot);
 				return true;
 			}	
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
-				if (owner->ReachedPos(_guardSpot, MOVE_TO_POSITION))
+				// We might have stopped some distance
+				// from the goal. If so, try again.
+				idVec3 origin = owner->GetPhysics()->GetOrigin();
+				if ((abs(origin.x - _guardSpot.x) <= CLOSE_ENOUGH) &&
+					(abs(origin.y - _guardSpot.y) <= CLOSE_ENOUGH))
 				{
 					// We've successfully reached the spot
 
@@ -305,7 +355,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				// turn randomly in place
 				float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s execute random yaw turn of %d degrees\r",owner->GetName(),newYaw - _baseYaw); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s execute random yaw turn of %f degrees\r",owner->GetName(),newYaw - _baseYaw); // grayman debug
 				owner->TurnToward(newYaw);
 
 				// Milling?

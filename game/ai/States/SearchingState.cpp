@@ -152,7 +152,7 @@ void SearchingState::Init(idAI* owner)
 		{
 			idStr bark;
 
-			if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || (memory.alertType == EAlertTypeEnemy)))
+			if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || ( memory.alertType == EAlertTypeEnemy ) || ( memory.alertType == EAlertTypeFailedKO ) ) )
 			{
 				bool friendsNear = ( (MS2SEC(gameLocal.time - memory.lastTimeFriendlyAISeen)) <= MAX_FRIEND_SIGHTING_SECONDS_FOR_ACCOMPANIED_ALERT_BARK );
 				if ( (memory.alertClass == EAlertVisual_1) ||
@@ -209,7 +209,7 @@ void SearchingState::Init(idAI* owner)
 			}
 		}
 	}
-	else if (memory.alertType == EAlertTypeEnemy)
+	else if ( (memory.alertType == EAlertTypeEnemy) || (memory.alertType == EAlertTypeFailedKO))
 	{
 		// reduce the alert type, so we can react to other alert types (such as a dead person)
 		memory.alertType = EAlertTypeSuspicious;
@@ -221,6 +221,11 @@ void SearchingState::Init(idAI* owner)
 	{
 		owner->commSubsystem->AddSilence(5000 + gameLocal.random.RandomInt(3000)); // grayman #3424
 
+		// grayman debug - "snd_state3" repeated barks are not intended to
+		// alert nearby friends. Just send along a blank message.
+		CommMessagePtr message;
+
+		/*
 		// This will hold the message to be delivered with the bark
 		CommMessagePtr message(new CommMessage(
 			CommMessage::DetectedEnemy_CommType, 
@@ -229,7 +234,9 @@ void SearchingState::Init(idAI* owner)
 			idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
 			0
 		));
+		*/
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s setting up 'snd_state3' repeated barks - no response expected\r",owner->GetName()); // grayman debug
 		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new RepeatedBarkTask("snd_state3", minTime, maxTime, message)));
@@ -279,6 +286,7 @@ void SearchingState::Think(idAI* owner)
 		return;
 	}
 
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	// grayman #3063 - move up so it gets done each time,
 	// regardless of what state the hiding spot search is in.
 	// Let the AI check its senses
@@ -444,6 +452,7 @@ void SearchingState::Think(idAI* owner)
 						owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
 						//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), memory.currentSearchSpot, 1, 500);
 
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s inspecting random hiding spot [%s]\r",owner->GetName(),p.ToString()); // grayman debug
 						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 1 - %s hidingSpotInvestigationInProgress set to true\r",owner->GetName()); // grayman debug
 						// Set the flag to TRUE, so that the sensory scan can be performed
 						memory.hidingSpotInvestigationInProgress = true;
@@ -451,14 +460,12 @@ void SearchingState::Think(idAI* owner)
 
 					if ( !validPoint ) // no valid random point found
 					{
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s unable to find a random hiding spot after 6 tries\r",owner->GetName()); // grayman debug
 						// Stop moving, the algorithm will choose another spot the next round
 						owner->StopMove(MOVE_STATUS_DONE);
 						memory.StopReacting(); // grayman #3559
 
 						// grayman #2422 - at least turn toward and look at the last invalid point some of the time
-						// grayman #3492 - do it every time
-						//if ( gameLocal.random.RandomFloat() < 0.5 )
-						//{
 						p.z += 60; // look up a bit, to simulate searching for the player's head
 						if (!owner->CheckFOV(p))
 						{
@@ -466,7 +473,6 @@ void SearchingState::Think(idAI* owner)
 						}
 						owner->Event_LookAtPosition(p,MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
 						//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
-						//}
 					}
 				}
 			}
@@ -503,12 +509,10 @@ void SearchingState::Think(idAI* owner)
 
 		if ((search->_assignmentFlags & SEARCH_GUARD) && (role == E_ROLE_GUARD))
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is a guard\r",owner->GetName()); // grayman debug
-
 			// Is a guard spot task in progress by this AI (GuardSpotTask())?
 			if (memory.guardingInProgress)
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot task underway\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (guard) guard spot task underway\r",owner->GetName()); // grayman debug
 				// Do nothing here. Wait for the GuardSpot task to complete
 				return;
 			}
@@ -580,7 +584,6 @@ void SearchingState::Think(idAI* owner)
 			// you can do is stand around at the perimeter of the search and watch for a while.
 			// Of course, if the alert event was bad enough to send you fleeing, you won't
 			// be around anyway.
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an observer\r",owner->GetName()); // grayman debug
 
 			// We'll treat this as if you're guarding a spot, but the spots will be chosen
 			// randomly around the perimeter of the search.
@@ -588,7 +591,7 @@ void SearchingState::Think(idAI* owner)
 			// Is a guard spot task in progress by this AI (GuardSpotTask())?
 			if (memory.guardingInProgress)
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s guard spot task underway\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) guard spot task underway\r",owner->GetName()); // grayman debug
 				// Do nothing here. Wait for the GuardSpot task to complete
 				return;
 			}
@@ -602,6 +605,7 @@ void SearchingState::Think(idAI* owner)
 
 			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
 			float radius = assignment->_outerRadius;
+			radius += 32.0f; // given the accuracy of the Guard Spot Task (64.0f), tighten up the perimeter slightly
 			idVec3 spot;
 			if (FindRadialSpot(search->_origin, radius, spot)) // grayman debug
 			{
@@ -746,8 +750,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 
 	if (!assigned)
 	{
-		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s joining new search, calling JoinSearch()\r",owner->GetName()); // grayman debug
+		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
 	}
 	else // grayman debug
 	{

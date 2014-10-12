@@ -384,6 +384,7 @@ bool Mind::PerformCombatCheck()
 		idActor* enemy = owner->GetEnemy();
 
 		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Mind::PerformCombatCheck 4 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, enemyOrigin.ToString(),enemy ? enemy->GetName() : "NULL"); // grayman debug
 		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy ); // grayman #3424 // grayman #3848
 		memory.lastEnemyPos = enemyOrigin;
 		memory.posEnemySeen = enemyOrigin;	// grayman #2903

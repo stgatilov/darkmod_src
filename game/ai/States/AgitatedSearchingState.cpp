@@ -154,6 +154,118 @@ void AgitatedSearchingState::DrawWeapon(idAI* owner)
 	}
 }
 
+// grayman debug - different search roles and whether the AI has
+// seen evidence or not are used to determine the correct agitated
+// search bark. Since searchers can join and leave a search dynamically
+// and evidence can be seen for the first time during a search, we need
+// to determine whether the bark needs to be changed each time
+// Agitated Searching thinks.
+
+void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
+{
+	Memory& memory = owner->GetMemory();
+	ERepeatedBarkState newRepeatedBarkState = ERBS_NULL;
+
+	Search *search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+	if (search) // should always be non-NULL
+	{
+		Assignment *assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+		int searcherCount = search->_searcherCount;
+		idStr soundName;
+
+		if (owner->HasSeenEvidence())
+		{
+			if (assignment && (assignment->_searcherRole == E_ROLE_SEARCHER))
+			{
+				if (searcherCount > 1)
+				{
+					newRepeatedBarkState = ERBS_SEARCHER_MULTIPLE_EVIDENCE;
+				}
+				else
+				{
+					newRepeatedBarkState = ERBS_SEARCHER_SINGLE_EVIDENCE;
+				}
+			}
+			else
+			{
+				newRepeatedBarkState = ERBS_GUARD_OBSERVER;
+			}
+		}
+		else // has not seen evidence
+		{
+			if (assignment && (assignment->_searcherRole == E_ROLE_SEARCHER))
+			{
+				if (searcherCount > 1)
+				{
+					newRepeatedBarkState = ERBS_SEARCHER_MULTIPLE_NO_EVIDENCE;
+				}
+				else
+				{
+					newRepeatedBarkState = ERBS_SEARCHER_SINGLE_NO_EVIDENCE;
+				}
+			}
+			else
+			{
+				newRepeatedBarkState = ERBS_GUARD_OBSERVER;
+			}
+		}
+	}
+
+	if (memory.repeatedBarkState != newRepeatedBarkState)
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
+		memory.repeatedBarkState = newRepeatedBarkState;
+
+		bool sendSuspiciousMessage = true; // whether to send a 'something is suspicious' message or not
+
+		owner->commSubsystem->ClearTasks(); // kill any previous repeated bark task; we'll be starting a new one
+
+		idStr soundName;
+		switch (newRepeatedBarkState)
+		{
+		case ERBS_SEARCHER_SINGLE_NO_EVIDENCE:
+			soundName = "snd_state4SeenNoEvidence"; // what to say when you're by yourself and you've seen no evidence
+			break;
+		case ERBS_SEARCHER_MULTIPLE_NO_EVIDENCE:
+			soundName = "snd_state4SeenNoEvidence_c"; // what to say when friends are helping you search and you've seen no evidence
+			break;
+		case ERBS_SEARCHER_SINGLE_EVIDENCE:
+			soundName = "snd_state4SeenEvidence"; // what to say when you're by yourself and you've seen evidence
+			break;
+		case ERBS_SEARCHER_MULTIPLE_EVIDENCE:
+			soundName = "snd_state4SeenEvidence_c"; // what to say when friends are helping you search and you've seen evidence
+			break;
+		default:
+		case ERBS_NULL:
+		case ERBS_GUARD_OBSERVER:
+			soundName = "snd_state3"; // guards and observers say this, regardless of whether they've seen evidence or not
+
+			// grayman debug - "snd_state3" repeated barks are not intended to
+			// alert nearby friends. Just send along a blank message.
+			sendSuspiciousMessage = false;
+			break;
+		}
+
+		CommMessagePtr message;
+
+		if (sendSuspiciousMessage)
+		{
+			message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedSomethingSuspicious_CommType, 
+			owner, NULL, // from this AI to anyone
+			NULL,
+			memory.alertPos,
+			memory.currentSearchEventID // grayman #3438
+		));
+		}
+
+		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
+		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
+
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new RepeatedBarkTask(soundName, minTime, maxTime, message)));
+	}
+}
+
 void AgitatedSearchingState::Init(idAI* owner)
 {
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
@@ -191,21 +303,14 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	// kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
-
-	CommMessagePtr message = CommMessagePtr(new CommMessage(
-		CommMessage::DetectedSomethingSuspicious_CommType, 
-		owner, NULL, // from this AI to anyone
-		NULL,
-		memory.alertPos,
-		memory.currentSearchEventID // grayman #3438
-	));
+	memory.repeatedBarkState = ERBS_NULL; // grayman debug
 
 	if (owner->AlertIndexIncreased())
 	{
 		// grayman #3496 - enough time passed since last alert bark?
 		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 		{
-			if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) ) )
+			if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) || ( memory.alertType == EAlertTypeFailedKO ) ) )
 			{
 				idStr soundName = "";
 				if (owner->HasSeenEvidence())
@@ -216,6 +321,14 @@ void AgitatedSearchingState::Init(idAI* owner)
 				{
 					soundName = "snd_alert4NoEvidence";
 				}
+
+				CommMessagePtr message = CommMessagePtr(new CommMessage(
+					CommMessage::DetectedSomethingSuspicious_CommType, 
+					owner, NULL, // from this AI to anyone
+					NULL,
+					memory.alertPos,
+					memory.currentSearchEventID // grayman #3438
+				));
 
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
 
@@ -238,23 +351,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	owner->commSubsystem->AddSilence(5000 + gameLocal.random.RandomInt(3000)); // grayman #3424
 
-	int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
-	int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
-
-	if (owner->HasSeenEvidence())
-	{
-		memory.prevSawEvidence = true; // grayman #3424
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime, message))
-		);
-	}
-	else
-	{
-		memory.prevSawEvidence = false; // grayman #3424
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenNoEvidence", minTime, maxTime, message))
-		);
-	}
+	SetRepeatedBark(owner); // grayman debug
 	
 	DrawWeapon(owner); // grayman #3507
 
@@ -265,40 +362,10 @@ void AgitatedSearchingState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	SearchingState::Think(owner);
 
-	// grayman #3424 - If we saw evidence (for the first time) between the previous think frame and now,
-	// we need to change the repeated bark.
-
-	Memory& memory = owner->GetMemory();
-
-	if (memory.prevSawEvidence)
-	{
-		// no change needed
-	}
-	else if (owner->HasSeenEvidence())
-	{
-		memory.prevSawEvidence = true;
-
-		// Switch repeated bark
-
-		owner->commSubsystem->ClearTasks();
-
-		CommMessagePtr message = CommMessagePtr(new CommMessage(
-			CommMessage::DetectedSomethingSuspicious_CommType, 
-			owner, NULL, // from this AI to anyone
-			NULL,
-			memory.alertPos,
-			memory.currentSearchEventID // grayman #3438
-		));
-
-		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
-		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
-
-		owner->commSubsystem->AddCommTask(
-			CommunicationTaskPtr(new RepeatedBarkTask("snd_state4SeenEvidence", minTime, maxTime, message))
-		);
-	}
+	SetRepeatedBark(owner); // grayman debug - in case the bark has to change
 
 	// grayman #3563 - check safety net for drawing a weapon
 	if ( gameLocal.time >= _drawEndTime )

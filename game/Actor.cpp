@@ -4062,7 +4062,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		gameLocal.Printf("Frame: %d - playing anim %s (%s)\n", gameLocal.framenum, animname, name.c_str());
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - playing anim %s (%s)\r", gameLocal.framenum, animname, name.c_str());
 	}
-	
+
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
 		
@@ -5083,25 +5083,38 @@ idAFAttachment* idActor::GetHead() // grayman #1104
 // grayman #3424
 void idActor::MarkEventAsSearched( int eventID )
 {
-	if ( eventID >= 0 )
+	if ( eventID < 0 )
 	{
-		// Do I know about this event?
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s trying to mark illegal event %d as 'searched'\r",GetName(),eventID); // grayman debug
+		return;
+	}
 
-		for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	// Do I know about this event?
+
+	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	{
+		if ( m_suspiciousEventIDs[i] == eventID )
 		{
-			if ( m_suspiciousEventIDs[i] == eventID )
-			{
-				// I know about it. Mark it 'searched'.
-				m_haveSearchedEventID[i] = true;
-				return;
-			}
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s already knows about event %d, and is marking it 'searched'\r",GetName(),eventID); // grayman debug
+			// I know about it. Mark it 'searched'.
+			m_haveSearchedEventID[i] = true;
+			return;
 		}
 	}
+
+	// Didn't already know about this event. Since I'm
+	// marking it as searched, go ahead and add it to
+	// my list of known events.
+
+	m_suspiciousEventIDs.Append(eventID);
+	m_haveSearchedEventID.Append(true);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s needed to add event %d before marking it searched\r",GetName(),eventID); // grayman debug
 }
 
 // grayman #3424
 bool idActor::HasSearchedEvent( int eventID )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s checking eventID %d\r",GetName(),eventID); // grayman debug
 	if ( eventID < 0 )
 	{
 		return false;
@@ -5115,9 +5128,19 @@ bool idActor::HasSearchedEvent( int eventID )
 		{
 			// I know about it. Have I already searched it?
 
+			if (m_haveSearchedEventID[i]) // grayman debug
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s knows about event %d, and has searched it\r",GetName(),eventID); // grayman debug
+			}
+			else
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s knows about event %d, but hasn't searched it\r",GetName(),eventID); // grayman debug
+			}
+
 			return m_haveSearchedEventID[i];
 		}
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s doesn't know about event %d, and hasn't searched it\r",GetName(),eventID); // grayman debug
 	return false;
 }
 
@@ -5129,14 +5152,16 @@ bool idActor::HasBeenWarned( idActor* other, int eventID )
 	{
 		if ( ( m_warningEvents[i].eventID == eventID ) && ( m_warningEvents[i].entity.GetEntity() == other ) )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasBeenWarned - %s has been warned by %s about event %d\r",GetName(),other->GetName(),eventID); // grayman debug
 			return true;
 		}
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasBeenWarned - %s hasn't been warned by %s about event %d\r",GetName(),other->GetName(),eventID); // grayman debug
 	return false; // No warning on file
 }
 
-bool idActor::FindSuspiciousEvent( int eventID ) // grayman #3424
+bool idActor::KnowsAboutSuspiciousEvent( int eventID ) // grayman #3424
 {
 	if ( eventID < 0 )
 	{
@@ -5147,9 +5172,11 @@ bool idActor::FindSuspiciousEvent( int eventID ) // grayman #3424
 	{
 		if ( m_suspiciousEventIDs[i] == eventID )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s knows about event %d\r",GetName(),eventID); // grayman debug
 			return true;
 		}
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s doesn't know about event %d\r",GetName(),eventID); // grayman debug
 	return false;
 }
 
@@ -5160,14 +5187,15 @@ bool idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
 		return false;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::AddSuspiciousEvent - %s is adding event %d\r",GetName(),eventID); // grayman debug
 	// If I already know about this event, no need to add it.
-	if ( FindSuspiciousEvent( eventID ) )
+	if ( KnowsAboutSuspiciousEvent( eventID ) )
 	{
 		return false;
 	}
 
 	m_suspiciousEventIDs.Append(eventID);
-	m_haveSearchedEventID.Append(false); // grayman dedug 2
+	m_haveSearchedEventID.Append(false); // grayman #3424
 	return true;
 }
 
@@ -5181,6 +5209,7 @@ void idActor::AddWarningEvent( idEntity* other, int eventID)
 	we.eventID = eventID;
 
 	m_warningEvents.Append(we);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::AddWarningEvent - %s is being warned by %s about event %d\r",GetName(),other->GetName(),eventID); // grayman debug
 }
 
 // grayman #3424 - log a suspicious event
@@ -5192,6 +5221,7 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity )
 	se.location = loc;
 	se.entity = entity;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::LogSuspiciousEvent - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",GetName(),(int)type, loc.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
 	int index = gameLocal.LogSuspiciousEvent(se);
 	AddSuspiciousEvent(index); // I know about this event
 	return index;

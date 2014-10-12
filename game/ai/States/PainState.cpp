@@ -73,7 +73,8 @@ void PainState::Init(idAI* owner)
 
 		// Do a single bark and assemble an AI message
 		CommMessagePtr message = CommMessagePtr(new CommMessage(
-			CommMessage::DetectedEnemy_CommType, 
+			CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
+			//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
 			owner, NULL, // from this AI to anyone
 			NULL,
 			memory.alertPos,

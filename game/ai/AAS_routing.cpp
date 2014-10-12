@@ -1696,7 +1696,7 @@ int idAASLocal::GetClusterSize()
 }
 
 // grayman debug
-void idAASLocal::GetPortals(int clusterNum, idList<idVec4> &portalList)
+void idAASLocal::GetPortals(int clusterNum, idList<idVec4> &portalList, idBounds searchLimits)
 {
 	const aasCluster_t* cluster = &file->GetCluster(clusterNum);
 	int numPortals = cluster->numPortals;
@@ -1706,6 +1706,13 @@ void idAASLocal::GetPortals(int clusterNum, idList<idVec4> &portalList)
 		int portalNum = file->GetPortalIndex(cluster->firstPortal + i);
 		const aasPortal_t* portal = &file->GetPortal(portalNum);
 		idVec3 center = AreaCenter(portal->areaNum);
+
+		if (searchLimits.ContainsPoint(center))
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal is inside the limits [%s]\r",searchLimits.ToString()); // grayman debug
+			continue;
+		}
+
 		idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
 		portalList.Append(spot);
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal %d's area is %d, with center [%s]\r",i,portal->areaNum,spot.ToString()); // grayman debug

@@ -66,6 +66,8 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Now read the anims for sitting AI
 	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
 
+	// grayman debug TODO: read the idle anims to be used when searching and standing around milling/guarding/observing
+
 	if (_idleAnimationInterval > 0 && 
 		(_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() > 0 || _idleAnimationsSitting.Num() > 0))
 	{
@@ -140,6 +142,8 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && (moveType != MOVETYPE_SIT))
 			{
+				// grayman debug TODO: add check here to see if the AI is in a mill/guard/observe standing position during a search.
+				// if so, play something other than _idleAnimations
 				// AI is not walking or sitting, play animations affecting all channels
 				AttemptToPlayAnim(owner, _idleAnimations, false);
 			}
