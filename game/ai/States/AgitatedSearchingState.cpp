@@ -45,6 +45,7 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -262,6 +263,7 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s RepeatedBarkTask('%s')\r",owner->GetName(),soundName.c_str()); // grayman debug
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new RepeatedBarkTask(soundName, minTime, maxTime, message)));
 	}
 }
@@ -301,6 +303,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s clear the comm subsystem (single and repeated barks)\r",owner->GetName()); // grayman debug
 	// kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 	memory.repeatedBarkState = ERBS_NULL; // grayman debug
@@ -310,9 +313,9 @@ void AgitatedSearchingState::Init(idAI* owner)
 		// grayman #3496 - enough time passed since last alert bark?
 		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 		{
+			idStr soundName = "";
 			if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) || ( memory.alertType == EAlertTypeFailedKO ) ) )
 			{
-				idStr soundName = "";
 				if (owner->HasSeenEvidence())
 				{
 					soundName = "snd_alert4";
@@ -330,6 +333,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 					memory.currentSearchEventID // grayman #3438
 				));
 
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s SingleBarkTask('%s')\r",owner->GetName(),soundName.c_str()); // grayman debug
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
 
 				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
@@ -337,6 +341,19 @@ void AgitatedSearchingState::Init(idAI* owner)
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
 					gameLocal.Printf("%d: %s rises to Agitated Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+				}
+			}
+			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
+			{
+				soundName = "snd_helpSearch";
+
+				// Allocate a SingleBarkTask, set the sound and enqueue it
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
 				}
 			}
 		}

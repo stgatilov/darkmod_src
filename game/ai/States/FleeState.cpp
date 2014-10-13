@@ -92,7 +92,7 @@ void FleeState::Init(idAI* owner)
 			owner, NULL, // from this AI to anyone 
 			NULL,
 			memory.alertPos,
-			0
+			memory.currentSearchEventID // grayman debug (was '0')
 		));
 
 		// grayman #3317 - Use a different initial flee bark

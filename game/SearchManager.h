@@ -128,6 +128,10 @@ public:
 
 	Search* GetSearch(int searchID); // returns a pointer to the requested search
 
+	Search* GetSearchWithEventID(int eventID, idAI* ai); // returns a pointer to the requested search
+
+	Search* GetSearchAtLocation(idVec3 location, idAI* ai); // returns a pointer to the requested search
+
 	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
 	/*!

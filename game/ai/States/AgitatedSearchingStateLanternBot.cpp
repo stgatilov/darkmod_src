@@ -61,7 +61,10 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	assert(owner);
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	if (!CheckAlertLevel(owner))
+	{
+		return;
+	}
 
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
@@ -76,6 +79,8 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Move to a position where we can light up the alert position from
 	MoveTowardAlertPos(owner);
 
+	owner->GetMemory().currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL ); // grayman debug
+
 	// This will hold the message to be delivered with the inaudible bark
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
@@ -83,7 +88,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 		owner, NULL,// from this AI to anyone 
 		NULL,
 		_curAlertPos,
-		0
+		owner->GetMemory().currentSearchEventID // grayman debug (was '0')
 	));
 
 	// The communication system plays starting bark

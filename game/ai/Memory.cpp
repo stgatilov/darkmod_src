@@ -58,6 +58,7 @@ Memory::Memory(idAI* owningAI) :
 	posMissingItem(0,0,0),
 	posEvidenceIntruders(0,0,0),
 	mandatory(false),			// grayman #3331
+	respondingToSomethingSuspiciousMsg(false), // grayman debug
 	timeEvidenceIntruders(0),
 	visualAlert(false),			// grayman #2422
 	stopRelight(false),			// grayman #2603
@@ -151,6 +152,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(posMissingItem);
 	savefile->WriteVec3(posEvidenceIntruders);
 	savefile->WriteBool(mandatory);				// grayman #3331
+	savefile->WriteBool(respondingToSomethingSuspiciousMsg); // grayman debug
 	savefile->WriteInt(timeEvidenceIntruders);
 	savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
@@ -284,6 +286,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(posMissingItem);
 	savefile->ReadVec3(posEvidenceIntruders);
 	savefile->ReadBool(mandatory);				// grayman #3331
+	savefile->ReadBool(respondingToSomethingSuspiciousMsg); // grayman debug
 	savefile->ReadInt(timeEvidenceIntruders);
 	savefile->ReadBool(visualAlert);			// grayman #2422
 	savefile->ReadBool(stopRelight);			// grayman #2603

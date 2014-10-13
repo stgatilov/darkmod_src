@@ -220,6 +220,7 @@ void Subsystem::QueueTask(const TaskPtr& task)
 
 void Subsystem::ClearTasks()
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Subsystem::ClearTasks ...\r"); // grayman debug
 	if (!_taskQueue.empty())
 	{
 		// Call the OnFinish event of the task after adding it to the bin
@@ -233,6 +234,7 @@ void Subsystem::ClearTasks()
 		{
 			Task& task = *(*i);
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   clearing '%s'\r",task.GetName().c_str()); // grayman debug
 			if (task.IsInitialised())
 			{
 				// grayman #3643 - don't run the OnFinish methods more than once

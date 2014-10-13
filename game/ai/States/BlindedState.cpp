@@ -43,6 +43,7 @@ void BlindedState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Init %s blinded ...\r",owner->GetName()); // grayman debug
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
@@ -64,7 +65,7 @@ void BlindedState::Init(idAI* owner)
 		owner, NULL, // from this AI to anyone 
 		NULL,
 		memory.alertPos,
-		0
+		memory.currentSearchEventID // grayman debug (was '0')
 	));
 
 	owner->commSubsystem->AddCommTask(
@@ -112,6 +113,7 @@ void BlindedState::Think(idAI* owner)
 		owner->SetAcuity("vis", _oldVisAcuity);
 		owner->SetAcuity("aud", _oldAudAcuity); // Smoke #2829
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Think %s no longer blind\r",owner->GetName()); // grayman debug
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431

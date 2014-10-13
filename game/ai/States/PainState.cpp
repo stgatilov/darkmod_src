@@ -78,7 +78,7 @@ void PainState::Init(idAI* owner)
 			owner, NULL, // from this AI to anyone
 			NULL,
 			memory.alertPos,
-			0
+			memory.currentSearchEventID // grayman debug (was '0')
 		));
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message)));
@@ -133,7 +133,7 @@ void PainState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
-				0
+				memory.currentSearchEventID // grayman debug (was '0')
 			));
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));

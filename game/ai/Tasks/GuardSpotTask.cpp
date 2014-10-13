@@ -141,7 +141,9 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	{
 		if (gameLocal.time >= _exitTime) // grayman debug
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _exitTime is up, quitting %s\r", // grayman debug
+				owner->GetName(),
+				owner->GetMemory().millingInProgress ? "milling" : "guarding/observing"); // grayman debug
 
 			// If milling, and you'll be running to a guard or observation
 			// spot once milling ends, have the guards talk to each other.
@@ -151,6 +153,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				if (!_millingOnly)
 				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s done milling, issue giveOrder bark?\r",owner->GetName()); // grayman debug
 					// Have a searcher bark an order at owner if owner is a guard.
 					// Searchers won't bark an order to observers.
 
@@ -162,11 +165,13 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 						idAI *searcher = assignment->_searcher;
 						if (searcher == NULL)
 						{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s first searcher has left the search\r",owner->GetName()); // grayman debug
 							// First searcher has left the search. Try the second.
 							assignment = &search->_assignments[1];
 							searcher = assignment->_searcher;
 							if (searcher == NULL)
 							{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s second searcher has left the search, so no giveOrder bark coming\r",owner->GetName()); // grayman debug
 								return true;
 							}
 						}
@@ -179,14 +184,13 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							0 // grayman #3438
 						));
 
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s barks giveOrder to %s\r",searcher->GetName(),owner->GetName()); // grayman debug
 						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
 					}
 				}
 
 				return true;
 			}
-
-			// 
 		}
 
 		return false;

@@ -335,6 +335,9 @@ public:
 	// grayman #3331 - force a hiding spot search (don't rely just on the alert index changing)
 	bool mandatory;
 
+	// grayman debug - whether we're responding to a DetectedSomethingSuspicious_CommType message or not
+	bool respondingToSomethingSuspiciousMsg;
+
 	// grayman #2903 - timestamps of alerts that can lead to warnings between AI
 	int timeEvidenceIntruders;
 

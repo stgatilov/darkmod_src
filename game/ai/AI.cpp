@@ -9453,12 +9453,15 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be left over from a previous sound this frame
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s heard sound '%s'\r",GetName(),propParms->name.c_str()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    maker = '%s'\r",propParms->maker->GetName()); // grayman debug
 		if (propParms->maker->IsType(idActor::Type))
 		{
 			// grayman #3394 - maker might have made the sound, but was
 			// he put in motion by the player?
 
 			idActor* setInMotionBy = propParms->maker->m_SetInMotionByActor.GetEntity();
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    setInMotionBy = '%s'\r",setInMotionBy ? setInMotionBy->GetName() : "NULL"); // grayman debug
 			if ( setInMotionBy != NULL )
 			{
 				m_AlertedByActor = setInMotionBy;
@@ -9488,9 +9491,10 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman debug - no alert if it was made by a dead or KO'ed body that was kicked by another AI
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s heard sound '%s' and soundMaker = '%s'\r",GetName(),propParms->name.c_str(),soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    soundMaker = '%s'\r",soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
 		if ( !soundMaker || // alert if unknown sound maker
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
+			// grayman debug - when done, uncomment the notarget reference in the next line
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) /*&& !soundMaker->fl.notarget*/ ) || // alert if enemy and not the last we killed and not in notarget mode
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			// greebo: Notify the currently active state

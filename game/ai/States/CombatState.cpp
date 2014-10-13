@@ -728,7 +728,7 @@ void CombatState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				enemy,
 				memory.lastEnemyPos,
-				0
+				-1
 			));
 		}
 

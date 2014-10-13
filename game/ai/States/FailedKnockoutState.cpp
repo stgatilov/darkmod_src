@@ -85,7 +85,7 @@ void FailedKnockoutState::Init(idAI* owner)
 		owner, NULL, // from this AI to anyone
 		_attacker,
 		memory.alertPos,
-		0
+		-1
 	));
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));

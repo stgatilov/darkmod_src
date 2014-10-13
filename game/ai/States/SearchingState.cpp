@@ -50,6 +50,7 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::CheckAlertLevel - %s ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -200,6 +201,19 @@ void SearchingState::Init(idAI* owner)
 					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
 				}
 			}
+			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
+			{
+				bark = "snd_helpSearch";
+
+				// Allocate a SingleBarkTask, set the sound and enqueue it
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
+
+				if (cv_ai_debug_transition_barks.GetBool())
+				{
+					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+				}
+			}
 		}
 		else
 		{
@@ -232,7 +246,7 @@ void SearchingState::Init(idAI* owner)
 			owner, NULL,// from this AI to anyone 
 			NULL,
 			idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY),
-			0
+			-1
 		));
 		*/
 
@@ -286,9 +300,6 @@ void SearchingState::Think(idAI* owner)
 		return;
 	}
 
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
-	// grayman #3063 - move up so it gets done each time,
-	// regardless of what state the hiding spot search is in.
 	// Let the AI check its senses
 	owner->PerformVisualScan();
 
@@ -344,6 +355,19 @@ void SearchingState::Think(idAI* owner)
 
 	if (search && assignment)
 	{
+		// Prepare the hiding spots if they're going to be needed.
+
+		if (search->_assignmentFlags & SEARCH_SEARCH)
+		{
+			// Do we have an ongoing hiding spot search?
+			if (!memory.hidingSpotSearchDone)
+			{
+				// Let the hiding spot search do its task
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to build the list of hiding spots\r",owner->GetName()); // grayman debug
+				gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
+			}
+		}
+
 		// If the search calls for it, send the AI to mill about the alert spot.
 
 		if (memory.millingInProgress)
@@ -382,8 +406,8 @@ void SearchingState::Think(idAI* owner)
 			if (!memory.hidingSpotSearchDone)
 			{
 				// Let the hiding spot search do its task
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to assign a spot\r",owner->GetName()); // grayman debug
-				gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
+				//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to assign a spot\r",owner->GetName()); // grayman debug
+				//gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
 				return;
 			}
 
