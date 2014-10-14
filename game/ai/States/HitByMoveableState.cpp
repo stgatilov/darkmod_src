@@ -347,6 +347,7 @@ void HitByMoveableState::Think(idAI* owner)
 					memory.alertType = EAlertTypeSuspicious;
 					memory.alertClass = EAlertTactile;
 					memory.alertPos = ownerOrg;
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s hit %s, setting alertPos to [%s]\r",responsible->GetName(),owner->GetName(),memory.alertPos.ToString()); // grayman debug
 					memory.alertRadius = TACTILE_ALERT_RADIUS;
 					memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
 					memory.alertSearchExclusionVolume.Zero();

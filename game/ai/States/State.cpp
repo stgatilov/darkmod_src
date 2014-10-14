@@ -308,6 +308,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 			{
 				memory.alertClass = EAlertTactile;
 				memory.alertPos = owner->GetPhysics()->GetOrigin();
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnTactileAlert - %s hit %s, setting alertPos to [%s]\r",tactEnt->GetName(),owner->GetName(),memory.alertPos.ToString()); // grayman debug
 				memory.currentSearchEventID = eventID; // grayman #3424
 				memory.alertRadius = TACTILE_ALERT_RADIUS;
 				memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
@@ -370,7 +371,7 @@ void State::OnProjectileHit(idProjectile* projectile)
 }
 */
 
-bool State::OnAudioAlert(idStr soundName) // grayman #3847
+bool State::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman #3847 // grayman debug
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -390,6 +391,7 @@ bool State::OnAudioAlert(idStr soundName) // grayman #3847
 	}
 
 	memory.alertPos = owner->GetSndDir();
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 1 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 	memory.lastAudioAlertTime = gameLocal.time;
 
 	// grayman #3848 - If this noise is an arrow hitting or breaking, and
@@ -423,49 +425,58 @@ bool State::OnAudioAlert(idStr soundName) // grayman #3847
 
 	// greebo: Apply a certain fuzziness to the audio alert position
 	// 200 units distance corresponds to 50 units fuzziness in X/Y direction
-	idVec3 start = memory.alertPos; // grayman #2422
 
-	memory.alertPos += idVec3(
-		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
-		(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
-		0 // no fuzziness in z-direction
-	) * distanceToStim / 400.0f;
+	// grayman debug - Don't apply fuzziness unless it's requested. (If the emitter is a noisemaker,
+	// fuzziness can cause several searches to be conducted for the same arrow.)
 
-	// grayman #2422 - to avoid moving the alert point into the void, or into
-	// the room next door, trace from the original point to the fuzzy point. If you encounter
-	// the world, move the fuzzy point there.
-
-	trace_t result;
-	idEntity *ignore = NULL;
-	while ( true )
+	if (addFuzziness)
 	{
-		gameLocal.clip.TracePoint( result, start, memory.alertPos, MASK_OPAQUE, ignore );
-		if ( result.fraction == 1.0f )
+		idVec3 start = memory.alertPos; // grayman #2422
+
+		memory.alertPos += idVec3(
+			(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+			(gameLocal.random.RandomFloat() - 0.5f)*AUDIO_ALERT_FUZZINESS,
+			0 // no fuzziness in z-direction
+		) * distanceToStim / 400.0f;
+
+		// grayman #2422 - to avoid moving the alert point into the void, or into
+		// the room next door, trace from the original point to the fuzzy point. If you encounter
+		// the world, move the fuzzy point there.
+
+		trace_t result;
+		idEntity *ignore = NULL;
+		while ( true )
 		{
-			break; // reached memory.alertPos, so no need to change it
+			gameLocal.clip.TracePoint( result, start, memory.alertPos, MASK_OPAQUE, ignore );
+			if ( result.fraction == 1.0f )
+			{
+				break; // reached memory.alertPos, so no need to change it
+			}
+
+			if ( result.fraction < VECTOR_EPSILON )
+			{
+				// no movement on this leg of the trace, so move memory.alertPos to the struck point 
+				memory.alertPos = result.endpos; // move the alert point
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 2 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
+				break;
+			}
+
+			// End the trace if we hit the world
+
+			idEntity* entHit = gameLocal.entities[result.c.entityNum];
+
+			if ( entHit == gameLocal.world )
+			{
+				memory.alertPos = result.endpos; // move the alert point
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 3 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
+				break;
+			}
+
+			// Continue the trace from the struck point
+
+			start = result.endpos;
+			ignore = entHit; // for the next leg, ignore the entity we struck
 		}
-
-		if ( result.fraction < VECTOR_EPSILON )
-		{
-			// no movement on this leg of the trace, so move memory.alertPos to the struck point 
-			memory.alertPos = result.endpos; // move the alert point
-			break;
-		}
-
-		// End the trace if we hit the world
-
-		idEntity* entHit = gameLocal.entities[result.c.entityNum];
-
-		if ( entHit == gameLocal.world )
-		{
-			memory.alertPos = result.endpos; // move the alert point
-			break;
-		}
-
-		// Continue the trace from the struck point
-
-		start = result.endpos;
-		ignore = entHit; // for the next leg, ignore the entity we struck
 	}
 
 	float searchVolModifier = distanceToStim / 600.0f;
@@ -1156,6 +1167,7 @@ void State::DelayedVisualStim(idEntity* stimSource, idAI* owner)
 	owner->m_allowAudioAlerts = true; // grayman #3424
 
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("State::DelayedVisualStim - %s stimmed by '%s' with aiUse = '%s'\r",owner->GetName(),stimSource->GetName(),aiUse.c_str()); // grayman debug
 
 	if (aiUse == AIUSE_WEAPON)
 	{
@@ -1250,6 +1262,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimWeapon - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 	memory.alertClass = EAlertVisual_2; // grayman #2603
 	memory.alertType = EAlertTypeWeapon;
 
@@ -1359,6 +1372,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	}
 	
 	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimSuspicious - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 	memory.alertClass = EAlertVisual_2;
 	memory.alertType = EAlertTypeSuspiciousItem;
 
@@ -1490,9 +1504,9 @@ int State::ProcessWarning( idActor* owner, idActor* other, EventType type, const
 	// are this event type. If there's one I haven't told 'other' about yet, see if we're
 	// close enough to the event site to tell him.
 
-	for ( int i = 0 ; i < owner->m_suspiciousEventIDs.Num() ; i++ )
+	for ( int i = 0 ; i < owner->m_knownSuspiciousEvents.Num() ; i++ )
 	{
-		int eventID = owner->m_suspiciousEventIDs[i];
+		int eventID = owner->m_knownSuspiciousEvents[i].eventID;
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
 		if ( se.type == type ) // type of event
 		{
@@ -1656,7 +1670,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 
 						if ( gameLocal.time >= info.nextWarningTime )
 						{
-							if ( owner->m_suspiciousEventIDs.Num() > 0 ) // Have I seen anything suspicious worth warning about?
+							if ( owner->m_knownSuspiciousEvents.Num() > 0 ) // Have I seen anything suspicious worth warning about?
 							{
 								// Should I warn about an enemy?
 
@@ -2029,6 +2043,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 						memory.StopReacting(); // grayman #3559
 
 						memory.alertPos = otherMemory.alertPos;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 						memory.currentSearchEventID = eventID; // grayman #3424
 						memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
 						memory.alertType = otherMemory.alertType;
@@ -2098,7 +2113,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							// because they see each other using visual stims, which fire on
 							// average every 2.5 seconds, which provides a built-in delay.
 
-							if ( owner->m_suspiciousEventIDs.Num() > 0 ) // Have I seen anything suspicious worth warning about?
+							if ( owner->m_knownSuspiciousEvents.Num() > 0 ) // Have I seen anything suspicious worth warning about?
 							{
 								// Should I warn about seeing an enemy?
 
@@ -2128,6 +2143,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 										}
 										else
 										{
+											DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 1 - %s barking 'snd_warnSawEvidence' to %s\r",owner->GetName(),other->GetName()); // grayman debug
 											soundName = "snd_warnSawEvidence";
 										}
 									}
@@ -2177,6 +2193,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 												owner->GetPhysics()->GetOrigin(),
 												eventID // grayman #3424
 											));
+											DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 2 - %s barking 'snd_warnSawEvidence' to %s\r",owner->GetName(),other->GetName()); // grayman debug
 											soundName = "snd_warnSawEvidence";
 										}
 									}
@@ -2232,6 +2249,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 														owner->GetPhysics()->GetOrigin(),
 														-1 // grayman #3424
 													));
+													DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 3 - %s barking 'snd_warnSawEvidence' to %s\r",owner->GetName(),other->GetName()); // grayman debug
 													soundName = "snd_warnSawEvidence";
 												}
 											}
@@ -4516,6 +4534,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				if (owner->GetEnemy() == NULL)
 				{
 					memory.alertPos = directObjectLocation;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 1 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 					// no enemy set or enemy not found yet
 					// set up search
 					// grayman #3009 - pass the alert position so the AI can look at it
@@ -4704,6 +4723,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			{
 				// Set alert pos to the position we were ordered to search
 				memory.alertPos = directObjectLocation;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 2 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 				//memory.chosenHidingSpot = directObjectLocation; // grayman debug
 				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 				memory.visualAlert = false; // grayman #2422
@@ -5017,6 +5037,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 				memory.StopReacting(); // grayman #3559
 
 				memory.alertPos = issuerMemory.alertPos;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 				memory.alertClass = EAlertNone;
 				memory.alertType = ieAlertType; // grayman debug - match alert types
 				

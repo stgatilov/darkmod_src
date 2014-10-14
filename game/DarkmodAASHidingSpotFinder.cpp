@@ -1198,9 +1198,9 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	int frameNumber
 )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots ...\r"); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   numPointsToTestThisPass = %d\r",numPointsToTestThisPass); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               frameNumber = %d\r",frameNumber); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots ...\r"); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   numPointsToTestThisPass = %d\r",numPointsToTestThisPass); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               frameNumber = %d\r",frameNumber); // grayman debug
 
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Finder:continueSearchForHidingSpots called, last frame processed = %d, this frame = %d\r", lastProcessingFrameNumber, frameNumber);
 

@@ -9368,6 +9368,9 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		return;
 	}
 
+	idVec3 effectiveOrigin = origin; // grayman debug
+	bool addFuzziness = true; // grayman debug - whether to add small amount of randomness to the sound origin or not
+
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
@@ -9427,6 +9430,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				{
 					return; // already heard this noisemaker
 				}
+
+				// grayman debug - use the original origin of the noisemaker so that
+				// searches can happen in the same area, even if the
+				// noisemaker moves around
+
+				maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", effectiveOrigin );
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s noisemaker origin is [%s]\r",GetName(),effectiveOrigin.ToString()); // grayman debug
+				addFuzziness = false; // don't add small amount of randomness to the sound location
 			}
 		}
 
@@ -9437,13 +9448,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		idVec3 myOrigin = GetPhysics()->GetOrigin();
 		int areaNum = PointReachableAreaNum(myOrigin, 1.0f);
-		int soundAreaNum = PointReachableAreaNum(origin, 1.0f);
+		int soundAreaNum = PointReachableAreaNum(effectiveOrigin, 1.0f);
 		aasPath_t path;
 		idVec3 goal;
 
-		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, origin, this) )
+		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, effectiveOrigin, this) )
 		{
-			m_SoundDir = origin; // use real sound origin
+			m_SoundDir = effectiveOrigin; // use real sound origin
 		}
 		else
 		{
@@ -9498,7 +9509,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			// greebo: Notify the currently active state
-			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name); // grayman #3847
+			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name,addFuzziness); // grayman #3847 // grayman debug
 
 			// Decide if you need to remember a noisemaker
 
@@ -9678,6 +9689,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s calling SetAlertLevel(%f)\r",GetName(),newAlertLevel); // grayman debug
 	SetAlertLevel(newAlertLevel);
 
 	if ( cv_ai_debug.GetBool() )
@@ -13138,6 +13150,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 
 	memory.stimulusLocationItselfShouldBeSearched = true;
 	memory.alertedDueToCommunication = false;
+	memory.investigateStimulusLocationClosely = false; // grayman debug
 }
 
 int idAI::GetDoorSide(CFrobDoor* frobDoor)

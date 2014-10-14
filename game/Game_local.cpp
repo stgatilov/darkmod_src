@@ -8041,7 +8041,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	{
 		gameLocal.m_suspiciousEvents.Append(se); // log this new event
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - logging event %d (%d,[%s],'%s')\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - logging new event %d (%d,[%s],'%s')\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
 	}
 	else // grayman debug
 	{

@@ -89,6 +89,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	memory.alertedDueToCommunication = false;
 	memory.stimulusLocationItselfShouldBeSearched = true;
+	memory.investigateStimulusLocationClosely = false; // grayman debug
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 	owner->ClearEnemy();

@@ -151,7 +151,7 @@ void SearchingState::Init(idAI* owner)
 		// grayman #3496 - enough time passed since last alert bark?
 		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
 		{
-			idStr bark;
+			idStr soundName;
 
 			if ((memory.alertedDueToCommunication == false) && ((memory.alertType == EAlertTypeSuspicious) || ( memory.alertType == EAlertTypeEnemy ) || ( memory.alertType == EAlertTypeFailedKO ) ) )
 			{
@@ -163,55 +163,55 @@ void SearchingState::Init(idAI* owner)
 				{
 					if ( friendsNear )
 					{
-						bark = "snd_alert3sc";
+						soundName = "snd_alert3sc";
 					}
 					else
 					{
-						bark = "snd_alert3s";
+						soundName = "snd_alert3s";
 					}
 				}
 				else if (memory.alertClass == EAlertAudio)
 				{
 					if ( friendsNear )
 					{
-						bark = "snd_alert3hc";
+						soundName = "snd_alert3hc";
 					}
 					else
 					{
-						bark = "snd_alert3h";
+						soundName = "snd_alert3h";
 					}
 				}
 				else if ( friendsNear )
 				{
-					bark = "snd_alert3c";
+					soundName = "snd_alert3c";
 				}
 				else
 				{
-					bark = "snd_alert3";
+					soundName = "snd_alert3";
 				}
 
 				// Allocate a SingleBarkTask, set the sound and enqueue it
 
-				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
 
 				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
 
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
 				}
 			}
 			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
 			{
-				bark = "snd_helpSearch";
+				soundName = "snd_helpSearch";
 
 				// Allocate a SingleBarkTask, set the sound and enqueue it
-				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(bark)));
+				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
 				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
 
 				if (cv_ai_debug_transition_barks.GetBool())
 				{
-					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),bark.c_str());
+					gameLocal.Printf("%d: %s rises to Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
 				}
 			}
 		}
@@ -688,10 +688,10 @@ bool SearchingState::FindRadialSpot(idVec3 origin, float radius, idVec3 &spot)
 	return false;
 }
 
-bool SearchingState::OnAudioAlert(idStr soundName) // grayman #3847
+bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman #3847 // grayman debug
 {
-	// Firt, call the base class
-	if (!State::OnAudioAlert(soundName)) // grayman #3847
+	// First, call the base class
+	if (!State::OnAudioAlert(soundName,addFuzziness)) // grayman #3847
 	{
 		return true;
 	}

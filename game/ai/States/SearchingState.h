@@ -65,7 +65,7 @@ public:
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
-	virtual bool OnAudioAlert(idStr soundName); // grayman #3847
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness); // grayman #3847 // grayman debug
 
 	static StatePtr CreateInstance();
 

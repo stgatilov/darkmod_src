@@ -81,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-bool CombatState::OnAudioAlert(idStr soundName) // grayman #3847
+bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman #3847 // grayman debug
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
