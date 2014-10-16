@@ -1696,26 +1696,46 @@ int idAASLocal::GetClusterSize()
 }
 
 // grayman debug
-void idAASLocal::GetPortals(int clusterNum, idList<idVec4> &portalList, idBounds searchLimits)
+void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits)
 {
-	const aasCluster_t* cluster = &file->GetCluster(clusterNum);
-	int numPortals = cluster->numPortals;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are %d portals\r",numPortals); // grayman debug
-	for (int i = 0 ; i < numPortals ; i++)
+	int clusterNum = GetClusterNum(areaNum);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAASLocal::GetPortals area %d is in cluster %d\r",areaNum,clusterNum); // grayman debug
+	if (clusterNum > 0)
 	{
-		int portalNum = file->GetPortalIndex(cluster->firstPortal + i);
-		const aasPortal_t* portal = &file->GetPortal(portalNum);
-		idVec3 center = AreaCenter(portal->areaNum);
+		const aasCluster_t* cluster = &file->GetCluster(clusterNum);
+		int numPortals = cluster->numPortals;
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are %d portals\r",numPortals); // grayman debug
+		for (int i = 0 ; i < numPortals ; i++)
+		{
+			int portalNum = file->GetPortalIndex(cluster->firstPortal + i);
+			const aasPortal_t* portal = &file->GetPortal(portalNum);
+			idVec3 center = AreaCenter(portal->areaNum);
+
+			if (searchLimits.ContainsPoint(center))
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal is inside the limits [%s]\r",searchLimits.ToString()); // grayman debug
+				continue;
+			}
+
+			idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
+			portalList.Append(spot);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal %d's area is %d, with center [%s]\r",i,portal->areaNum,spot.ToString()); // grayman debug
+		}
+	}
+	else // areaNum is inside a portal, so we only have one portal center to add to the list
+	{
+		idVec3 center = AreaCenter(areaNum);
 
 		if (searchLimits.ContainsPoint(center))
 		{
+			// ignore this portal
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal is inside the limits [%s]\r",searchLimits.ToString()); // grayman debug
-			continue;
+			return;
 		}
 
 		idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
 		portalList.Append(spot);
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal %d's area is %d, with center [%s]\r",i,portal->areaNum,spot.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   area is %d, with center [%s]\r",areaNum,spot.ToString()); // grayman debug
 	}
 }
 

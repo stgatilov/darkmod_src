@@ -45,7 +45,6 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -214,7 +213,7 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 
 	if (memory.repeatedBarkState != newRepeatedBarkState)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
+		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
 		memory.repeatedBarkState = newRepeatedBarkState;
 
 		bool sendSuspiciousMessage = true; // whether to send a 'something is suspicious' message or not
@@ -273,13 +272,14 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s wants to start agitated searching\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
 	// Ensure we are in the correct alert level
 	if ( !CheckAlertLevel(owner) )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s leaving SearchingState\r",owner->GetName()); // grayman debug
 		return;
 	}
 
@@ -300,7 +300,11 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Set up a new hiding spot search if not already assigned to one
 	if (owner->m_searchID < 0)
 	{
-		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
+		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
+		{
+			owner->SetAlertLevel(owner->thresh_3 - 0.1);
+			return;
+		}
 	}
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s clear the comm subsystem (single and repeated barks)\r",owner->GetName()); // grayman debug

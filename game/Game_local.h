@@ -429,6 +429,10 @@ enum EventType
 	// AI from being asked back onto searches they've already participated in
 	E_EventTypeUnconsciousPerson,
 
+	// grayman debug - noisemakers are troublesome because they can cause
+	// several unique searches to be generated
+	E_EventTypeNoisemaker,
+
 	// grayman debug - Add event type for unknown event. This might occur
 	// if an AI has risen into searching or agitated searching because of
 	// an accumulation of suspicious events

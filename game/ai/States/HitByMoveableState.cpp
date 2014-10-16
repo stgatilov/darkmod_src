@@ -351,13 +351,15 @@ void HitByMoveableState::Think(idAI* owner)
 					memory.alertRadius = TACTILE_ALERT_RADIUS;
 					memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
 					memory.alertSearchExclusionVolume.Zero();
-					memory.visualAlert = false;
+					//memory.visualAlert = false;
+
+					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, ownerOrg, NULL ); // grayman debug
 
 					// If we got this far, we give the alert
 					// Set the alert amount to the according tactile alert value
 					float amount = cv_ai_tactalert.GetFloat();
 
-					// NOTE: Latest tactile alert always overrides other alerts
+					// NOTE: Latest tactile alert always overides other alerts
 					owner->m_TactAlertEnt = tactEnt;
 					owner->m_AlertedByActor = responsible;
 

@@ -2285,6 +2285,7 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Think - %s ... alert level = %f\r",GetName(),(float)this->AI_AlertLevel); // grayman debug
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
 	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
@@ -6556,6 +6557,7 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					SetEnemy(static_cast<idActor*>(attacker));
 					AI_VISALERT = false;
 				
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s calling SetAlertLevel(%f)\r",GetName(),thresh_5*2); // grayman debug
 					SetAlertLevel(thresh_5*2);
 					GetMemory().alertClass = ai::EAlertNone;
 					GetMemory().alertType = ai::EAlertTypeEnemy;
@@ -9370,6 +9372,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 	idVec3 effectiveOrigin = origin; // grayman debug
 	bool addFuzziness = true; // grayman debug - whether to add small amount of randomness to the sound origin or not
+	bool noisemaker = false;  // grayman debug - if this sound was made by a noisemaker arrow
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
@@ -9431,11 +9434,25 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 					return; // already heard this noisemaker
 				}
 
+				noisemaker = true;
+
 				// grayman debug - use the original origin of the noisemaker so that
 				// searches can happen in the same area, even if the
 				// noisemaker moves around
 
 				maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", effectiveOrigin );
+
+				// trace down until you hit something
+				idVec3 bottomPoint = effectiveOrigin;
+				bottomPoint.z -= 1000;
+
+				trace_t result;
+				if ( gameLocal.clip.TracePoint(result, effectiveOrigin, bottomPoint, MASK_OPAQUE, NULL) )
+				{
+					// Found the floor.
+					effectiveOrigin.z = result.endpos.z + 1; // move the target point to just above the floor
+				}
+
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s noisemaker origin is [%s]\r",GetName(),effectiveOrigin.ToString()); // grayman debug
 				addFuzziness = false; // don't add small amount of randomness to the sound location
 			}
@@ -9509,11 +9526,11 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			// greebo: Notify the currently active state
-			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name,addFuzziness); // grayman #3847 // grayman debug
+			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name,addFuzziness,maker); // grayman #3847 // grayman debug
 
 			// Decide if you need to remember a noisemaker
 
-			if ( makerPtr.GetEntity() != NULL ) // only non-null if a noisemaker
+			if (noisemaker)
 			{
 				// Only remember a noisemaker if it puts you into Searching mode or higher
 				bool rememberNoisemaker = false;
@@ -9539,6 +9556,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 			// grayman #3009 - pass the alert position so the AI can look at it
 			// grayman #3848 - but not if you've already been told to flee
+
 			if (shouldAlert)
 			{
 				PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
@@ -9580,6 +9598,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 {
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idAI::PreAlertAI - %s called with type %s, amount %f, and lookAt [%s]\r",name.c_str(),type,amount,lookAt.ToString()); // grayman debug
 	// grayman #3424 - don't process if dead or unconscious
 
 	if ( AI_DEAD || AI_KNOCKEDOUT )
@@ -9613,11 +9632,9 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 	}
 
 	// Ignore actors in notarget mode
-//	idActor* actor = m_AlertedByActor.GetEntity();
 
 	if ( actor && actor->fl.notarget)
 	{
-		// Actor is set to notarget, quit
 		return;
 	}
 
@@ -9658,6 +9675,8 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 			m_AlertGraceCount++;
 
 			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
+			// grayman debug - if you're here, AI_VISALERT is FALSE
+			/*
 			if (AI_VISALERT)
 			{
 				// greebo: Let the alert grace count increase by 12.5% of the current lightgem value
@@ -9667,7 +9686,8 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 					idPlayer* player = static_cast<idPlayer*>(actor);
 					m_AlertGraceCount += static_cast<int>(idMath::Rint(player->GetCurrentLightgemValue() * 0.125f));
 				}
-			}
+			}*/
+
 			return;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: Alert %f above threshold %f, grace count has reached its limit, grace period has expired\r", alertInc, m_AlertGraceThresh);
@@ -10661,6 +10681,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		lookAtPos = tactEnt->GetPhysics()->GetOrigin();
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling PreAlertAI()\r",GetName()); // grayman debug
 	PreAlertAI("tact", amount, lookAtPos); // grayman #3356
 
 	// Notify the currently active state
@@ -13140,10 +13161,14 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 		memory.alertSearchExclusionVolume.Zero();
 		
 		AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422
+		//memory.visualAlert = false; // grayman #2422
 		memory.mandatory = false;	// grayman #3331
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetUpSuspiciousDoor - %s calling SetAlertLevel(%f)\r",GetName(),thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman debug
 		SetAlertLevel(thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman #3756 - shorten search time
+
+		// Log the event
+		memory.currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 	}
 
 	// Do new reaction to stimulus

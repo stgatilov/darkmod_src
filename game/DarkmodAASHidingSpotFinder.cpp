@@ -564,7 +564,6 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea
 
 	// On to next PVS area
 	searchState = ENewPVSArea;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InNonVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 	// Potentially more PVS areas to search
 	return true;
@@ -606,7 +605,6 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 				
 				// We are now searching for hiding spots inside a visible AAS area
 				searchState = ESubdivideVisibleAASArea;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 				// There is more to do
 				return true;
@@ -635,7 +633,6 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 
 	// On to next PVS area
 	searchState = ENewPVSArea;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea searchState set to %d\r", searchState); // grayman debug
 
 	// Potentially more PVS areas to search
 	return true;
@@ -789,7 +786,6 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 
 	// Go back to iterating the list of AAS areas in this visible PVS area
 	searchState = EIteratingVisibleAASAreas;
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea searchState set to %d\r", searchState); // grayman debug
 
 	// There may be more searching to do
 	return true;
@@ -1198,10 +1194,6 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	int frameNumber
 )
 {
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots ...\r"); // grayman debug
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   numPointsToTestThisPass = %d\r",numPointsToTestThisPass); // grayman debug
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               frameNumber = %d\r",frameNumber); // grayman debug
-
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Finder:continueSearchForHidingSpots called, last frame processed = %d, this frame = %d\r", lastProcessingFrameNumber, frameNumber);
 
 	bool searchCompleted = isSearchCompleted();
@@ -1225,14 +1217,12 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 	// Call the interior function
 	if (!findMoreHidingSpots(inout_hidingSpots,	numPointsToTestThisPass, numPointsTestedThisPass))
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   subdividing the tree, num of points in tree = %d\r",inout_hidingSpots.getNumSpots()); // grayman debug
 		// Sub divide the tree
 		inout_hidingSpots.subDivideAreas(NUM_POINTS_PER_AREA_FOR_SUBDIVISION);
 		return false;
 	}
 	else
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   more spots to test, num of points in tree = %d\r",inout_hidingSpots.getNumSpots()); // grayman debug
 		// More spots to test
 		return true;
 	}

@@ -71,6 +71,15 @@ void PainState::Init(idAI* owner)
 	{
 		memory.alertPos = owner->GetPhysics()->GetOrigin();
 
+		// grayman debug - Ask others to join your existing search
+		// by yelling out. If not searching, create a new event
+		// and attempt to rally others to you.
+
+		if (owner->m_searchID < 0)
+		{
+			memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeEnemy,memory.alertPos,NULL);
+		}
+
 		// Do a single bark and assemble an AI message
 		CommMessagePtr message = CommMessagePtr(new CommMessage(
 			CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response

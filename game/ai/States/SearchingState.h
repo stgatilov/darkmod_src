@@ -65,7 +65,7 @@ public:
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
-	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness); // grayman #3847 // grayman debug
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman debug
 
 	static StatePtr CreateInstance();
 
@@ -76,7 +76,7 @@ protected:
 	/**
 	 * This method is used to start a new hiding spot search. Any existing search in progress is replaced.
 	 */
-	virtual void StartNewHidingSpotSearch(idAI* owner);
+	virtual bool StartNewHidingSpotSearch(idAI* owner);
 };
 
 } // namespace ai

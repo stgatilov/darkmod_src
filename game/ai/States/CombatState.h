@@ -98,7 +98,7 @@ public:
 	// Override the alert functions
 	virtual void OnTactileAlert(idEntity* tactEnt);
 	virtual void OnVisualAlert(idActor* enemy);
-	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness); // grayman #3847 // grayman debug
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman debug
 
 	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);

@@ -340,7 +340,7 @@ void ExamineRopeState::Think(idAI* owner)
 						memory.alertSearchExclusionVolume.Zero();
 						
 						owner->AI_VISALERT = false;
-						memory.visualAlert = false; // grayman #2422
+						//memory.visualAlert = false; // grayman #2422
 						memory.mandatory = false;	// grayman #3331
 						
 						// Do new reaction to stimulus
@@ -351,6 +351,9 @@ void ExamineRopeState::Think(idAI* owner)
 						float ropeDist = rope->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
 						memory.investigateStimulusLocationClosely = ( abs(ropeDist) <= 20 );
 						memory.alertedDueToCommunication = false;
+
+						// Log the event
+						memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 					}
 				}
 

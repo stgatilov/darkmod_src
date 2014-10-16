@@ -115,6 +115,7 @@ void SuspiciousState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SuspiciousState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SuspiciousState initialised.\r");
 	assert(owner);
 
@@ -195,6 +196,10 @@ void SuspiciousState::Init(idAI* owner)
 		{
 			memory.alertedDueToCommunication = false; // reset
 		}
+	}
+	else // grayman debug
+	{
+		memory.currentSearchEventID = -1;
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

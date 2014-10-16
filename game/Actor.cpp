@@ -3309,8 +3309,7 @@ collision	trace info for the collision that caused the damage.  Defaults to NULL
 
 inflictor, attacker, dir, and point can be NULL for environmental effects
 
-Bleeding wounds and surface overlays are applied in the collision code that
-calls Damage()
+Bleeding wounds and surface overlays are applied in the collision code that calls Damage()
 ============
 */
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -3561,6 +3560,14 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		} 
 		else
 		{
+			// grayman debug - note this event
+
+			if (IsType(idAI::Type))
+			{
+				idAI* ai = static_cast<idAI*>(this);
+				ai->GetMemory().currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, GetPhysics()->GetOrigin(), NULL );
+			}
+
 			Pain( inflictor, attacker, damage, dir, location, damageDef );
 
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel

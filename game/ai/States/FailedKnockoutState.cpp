@@ -129,7 +129,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.alertedDueToCommunication = false;
 		memory.StopReacting(); // grayman #3559
-		memory.visualAlert = false; // grayman #2422
+		//memory.visualAlert = false; // grayman #2422
 		memory.mandatory = true;	// grayman #3331
 
 		// Alert the AI

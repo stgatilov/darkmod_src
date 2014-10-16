@@ -5154,9 +5154,8 @@ void idGameLocal::GetPortals(Search* search, idAI* ai)
 	//int areaNum = gameRenderWorld->PointInArea(search->_origin);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals search->_origin = [%s]\r",search->_origin.ToString()); // grayman debug
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals areaNum = %d\r",areaNum); // grayman debug
-	int clusterNum = aasLocal->GetClusterNum(areaNum);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals area %d is in cluster %d\r",areaNum,clusterNum); // grayman debug
-	aasLocal->GetPortals(clusterNum,search->_guardSpots,search->_limits);
+	//int clusterNum = aasLocal->GetClusterNum(areaNum);
+	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits);
 }
 
 /*
@@ -8016,6 +8015,9 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )   
 {
 	int index = -1;
+
+	// See if this event has already been logged
+
 	if ( se.type == E_EventTypeEnemy )
 	{
 		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL );
@@ -8036,6 +8038,10 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	{
 		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, NULL );
 	}
+	else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
+	{
+		index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL );
+	}
 
 	if ( index < 0 )
 	{
@@ -8048,6 +8054,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - not logging event %d (%d,[%s],'%s') - already logged\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - %d suspicious events have been logged\r",gameLocal.m_suspiciousEvents.Num()); // grayman debug
 	return index;
 }
 

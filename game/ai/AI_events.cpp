@@ -3166,11 +3166,13 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_SetAlertLevel - %s calling SetAlertLevel(%f)\r",GetName(),newAlertLevel); // grayman debug
 	SetAlertLevel(newAlertLevel);
 }
 
 void idAI::Event_Alert( const char *type, float amount )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_Alert - %s calling PreAlertAI()\r",GetName()); // grayman debug
 	PreAlertAI( type, amount, idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY) ); // grayman #3356, grayman #3492
 }
 

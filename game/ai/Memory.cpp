@@ -60,7 +60,7 @@ Memory::Memory(idAI* owningAI) :
 	mandatory(false),			// grayman #3331
 	respondingToSomethingSuspiciousMsg(false), // grayman debug
 	timeEvidenceIntruders(0),
-	visualAlert(false),			// grayman #2422
+	//visualAlert(false),			// grayman #2422
 	stopRelight(false),			// grayman #2603
 	stopExaminingRope(false),	// grayman #2872
 	stopReactingToHit(false),	// grayman #2816
@@ -154,7 +154,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(mandatory);				// grayman #3331
 	savefile->WriteBool(respondingToSomethingSuspiciousMsg); // grayman debug
 	savefile->WriteInt(timeEvidenceIntruders);
-	savefile->WriteBool(visualAlert);			// grayman #2422
+	//savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
 	savefile->WriteBool(stopExaminingRope);		// grayman #2872
 	savefile->WriteBool(stopReactingToHit);		// grayman #2816
@@ -288,7 +288,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(mandatory);				// grayman #3331
 	savefile->ReadBool(respondingToSomethingSuspiciousMsg); // grayman debug
 	savefile->ReadInt(timeEvidenceIntruders);
-	savefile->ReadBool(visualAlert);			// grayman #2422
+	//savefile->ReadBool(visualAlert);			// grayman #2422
 	savefile->ReadBool(stopRelight);			// grayman #2603
 	savefile->ReadBool(stopExaminingRope);		// grayman #2872
 	savefile->ReadBool(stopReactingToHit);		// grayman #2816

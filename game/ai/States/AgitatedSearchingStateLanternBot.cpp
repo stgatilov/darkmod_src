@@ -56,7 +56,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Init - %s wants to start agitated searching\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingStateLanternBot initialised.\r");
 	assert(owner);
 

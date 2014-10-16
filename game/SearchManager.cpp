@@ -74,16 +74,16 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 
 	// See if there's a search underway for the provided memory.currentSearchEventID
 
-	if (memory.currentSearchEventID >= 0)
-	{
-		search = GetSearchWithEventID(memory.currentSearchEventID,ai);
-	}
-
+	search = GetSearchWithEventID(memory.currentSearchEventID,ai);
 	if (search)
 	{
 		searchID = search->_searchID;
 	}
-	else
+
+	// If there's no existing search that ai can join based on event id,
+	// see if there's one at or near the search location.
+
+	if (searchID < 0)
 	{
 		search = GetSearchAtLocation(searchPoint,ai);
 		if (search)
@@ -92,128 +92,126 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 		}
 	}
 
-	if (search)
+	// If we found an existing search, we don't need to start
+	// a new one. Just copy some data from the existing search
+	// to the ai's memory.
+
+	if (searchID >= 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s joining search %d, which is already underway\r",ai->GetName(),search->_searchID); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s found search %d, which is already underway\r",ai->GetName(),search->_searchID); // grayman debug
 
 		// reset ai's data
 		memory.alertPos = search->_origin;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s setting alertPos to [%s]\r",ai->GetName(),memory.alertPos.ToString()); // grayman debug
 		memory.alertSearchVolume = search->_limits.GetSize()/2.0f;
 		memory.alertSearchExclusionVolume = search->_exclusion_limits.GetSize()/2.0f;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s resetting alertPos = [%s], alertSearchVolume = [%s], searchExclusionVolume = [%s]\r",ai->GetName(),memory.alertPos.ToString(), memory.alertSearchVolume.ToString(), memory.alertSearchExclusionVolume.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   resetting alertPos = [%s], alertSearchVolume = [%s], searchExclusionVolume = [%s]\r",memory.alertPos.ToString(), memory.alertSearchVolume.ToString(), memory.alertSearchExclusionVolume.ToString()); // grayman debug
+		return searchID;
 	}
 
-	if (search == NULL)
+	if (searchPoint.Compare(idVec3(0,0,0)) || searchPoint.Compare(idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY)))
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s no existing search, create a new one\r",ai->GetName()); // grayman debug
-		// no existing search, so start a new one
-
-		idVec3 minBounds(memory.alertPos - searchVolume);
-		idVec3 maxBounds(memory.alertPos + searchVolume);
-
-		idVec3 minExclusionBounds(memory.alertPos - searchExclusionVolume);
-		idVec3 maxExclusionBounds(memory.alertPos + searchExclusionVolume);
-
-		idBounds searchBounds = idBounds(minBounds,maxBounds);
-		idBounds searchExclusionBounds = idBounds(minExclusionBounds,maxExclusionBounds);
-	
-		// grayman #2422 - to prevent AI from going upstairs or downstairs
-		// to search spots over/under where they should be searching,
-		// limit the search to the floor where the alert occurred.
-
-		AdjustSearchLimits(searchBounds);
-
-		Search newSearch;
-
-		search = &newSearch;
-
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s searchBounds adjusted to [%s]\r",ai->GetName(),searchBounds.ToString()); // grayman debug
-		search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-		search->_searchID = uniqueSearchID++;
-		search->_origin = searchPoint;  // center of search area, location of alert stimulus
-		search->_limits = searchBounds; // boundary of the search
-		search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
-		search->_hidingSpots.clear(); // The hiding spots for this search
-		search->_hidingSpotsReady = false; // whether the hiding spot list is complete or still being built
-		search->_guardSpots.Clear(); // spots to send guards to
-		search->_guardSpotsReady = false; // whether the list of guard spots is ready for use or not
-		search->_searcherCount = 0; // number of searchers
-		if (memory.currentSearchEventID < 0)
-		{
-			// log a new event
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",ai->GetName(),(int)E_EventTypeMisc, search->_origin.ToString()); // grayman debug
-			search->_eventID = ai->LogSuspiciousEvent( E_EventTypeMisc, search->_origin, NULL );
-		}
-		else
-		{
-			search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
-		}
-
-		// Determine the possible search assignments based on alert type
-
-		switch(memory.alertType)
-		{
-		case ai::EAlertTypeSuspicious:
-			search->_assignmentFlags = SEARCH_SUSPICIOUS;
-			break;
-		case ai::EAlertTypeEnemy:
-			search->_assignmentFlags = SEARCH_ENEMY;
-			break;
-		case ai::EAlertTypeFailedKO:
-			search->_assignmentFlags = SEARCH_FAILED_KO;
-			break;
-		case ai::EAlertTypeWeapon:
-			search->_assignmentFlags = SEARCH_WEAPON;
-			break;
-		case ai::EAlertTypeBlinded:
-			search->_assignmentFlags = SEARCH_BLINDED;
-			break;
-		case ai::EAlertTypeDeadPerson:
-			search->_assignmentFlags = SEARCH_DEAD;
-			break;
-		case ai::EAlertTypeUnconsciousPerson:
-			search->_assignmentFlags = SEARCH_UNCONSCIOUS;
-			break;
-		case ai::EAlertTypeBlood:
-			search->_assignmentFlags = SEARCH_BLOOD;
-			break;
-		case ai::EAlertTypeLightSource:
-			search->_assignmentFlags = SEARCH_LIGHT;
-			break;
-		case ai::EAlertTypeMissingItem:
-			search->_assignmentFlags = SEARCH_MISSING;
-			break;
-		case ai::EAlertTypeBrokenItem:
-			search->_assignmentFlags = SEARCH_BROKEN;
-			break;
-		case ai::EAlertTypeDoor:
-			search->_assignmentFlags = SEARCH_DOOR;
-			break;
-		case ai::EAlertTypeSuspiciousItem:
-			search->_assignmentFlags = SEARCH_SUSPICIOUSITEM;
-			break;
-		case ai::EAlertTypeRope:
-			search->_assignmentFlags = SEARCH_ROPE;
-			break;
-		case ai::EAlertTypeHitByProjectile:
-			search->_assignmentFlags = SEARCH_PROJECTILE;
-			break;
-		default: // grayman debug
-			search->_assignmentFlags = SEARCH_NOTHING;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - memory.alertType '%d' has no SEARCH flags\r",(int)memory.alertType); // grayman debug
-			break;
-		}
-
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - search->_assignmentFlags = %x\r",search->_assignmentFlags); // grayman debug
-		DebugPrintSearch(search); // grayman debug - comment when done
-
-		// Add search to list
-		_searches.Append(*search);
-		searchID = search->_searchID;
+		// No data to start a search, so drop back to Suspicious
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s can't start searching: no eventID, no location match, no alertPos\r",ai->GetName()); // grayman debug
+		ai->SetAlertLevel(ai->thresh_3 - 0.1);
+		return -1;
 	}
 
-	return searchID;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s no existing search, create a new one\r",ai->GetName()); // grayman debug
+	// no existing search, so start a new one
+
+	idVec3 minBounds(memory.alertPos - searchVolume);
+	idVec3 maxBounds(memory.alertPos + searchVolume);
+
+	idVec3 minExclusionBounds(memory.alertPos - searchExclusionVolume);
+	idVec3 maxExclusionBounds(memory.alertPos + searchExclusionVolume);
+
+	idBounds searchBounds = idBounds(minBounds,maxBounds);
+	idBounds searchExclusionBounds = idBounds(minExclusionBounds,maxExclusionBounds);
+	
+	// grayman #2422 - to prevent AI from going upstairs or downstairs
+	// to search spots over/under where they should be searching,
+	// limit the search to the floor where the alert occurred.
+
+	AdjustSearchLimits(searchBounds);
+
+	Search newSearch;
+
+	search = &newSearch;
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s searchBounds adjusted to [%s]\r",ai->GetName(),searchBounds.ToString()); // grayman debug
+	search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
+	search->_searchID = uniqueSearchID++;
+	search->_origin = searchPoint;  // center of search area, location of alert stimulus
+	search->_limits = searchBounds; // boundary of the search
+	search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
+	search->_hidingSpots.clear(); // The hiding spots for this search
+	search->_hidingSpotsReady = false; // whether the hiding spot list is complete or still being built
+	search->_guardSpots.Clear(); // spots to send guards to
+	search->_guardSpotsReady = false; // whether the list of guard spots is ready for use or not
+	search->_searcherCount = 0; // number of searchers
+
+	switch(memory.alertType)
+	{
+	case ai::EAlertTypeSuspicious:
+		search->_assignmentFlags = SEARCH_SUSPICIOUS;
+		break;
+	case ai::EAlertTypeEnemy:
+		search->_assignmentFlags = SEARCH_ENEMY;
+		break;
+	case ai::EAlertTypeFailedKO:
+		search->_assignmentFlags = SEARCH_FAILED_KO;
+		break;
+	case ai::EAlertTypeWeapon:
+		search->_assignmentFlags = SEARCH_WEAPON;
+		break;
+	case ai::EAlertTypeBlinded:
+		search->_assignmentFlags = SEARCH_BLINDED;
+		break;
+	case ai::EAlertTypeDeadPerson:
+		search->_assignmentFlags = SEARCH_DEAD;
+		break;
+	case ai::EAlertTypeUnconsciousPerson:
+		search->_assignmentFlags = SEARCH_UNCONSCIOUS;
+		break;
+	case ai::EAlertTypeBlood:
+		search->_assignmentFlags = SEARCH_BLOOD;
+		break;
+	case ai::EAlertTypeLightSource:
+		search->_assignmentFlags = SEARCH_LIGHT;
+		break;
+	case ai::EAlertTypeMissingItem:
+		search->_assignmentFlags = SEARCH_MISSING;
+		break;
+	case ai::EAlertTypeBrokenItem:
+		search->_assignmentFlags = SEARCH_BROKEN;
+		break;
+	case ai::EAlertTypeDoor:
+		search->_assignmentFlags = SEARCH_DOOR;
+		break;
+	case ai::EAlertTypeSuspiciousItem:
+		search->_assignmentFlags = SEARCH_SUSPICIOUSITEM;
+		break;
+	case ai::EAlertTypeRope:
+		search->_assignmentFlags = SEARCH_ROPE;
+		break;
+	case ai::EAlertTypeHitByProjectile:
+		search->_assignmentFlags = SEARCH_PROJECTILE;
+		break;
+	default: // grayman debug
+		search->_assignmentFlags = SEARCH_NOTHING;
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - memory.alertType '%d' has no SEARCH flags\r",(int)memory.alertType); // grayman debug
+		break;
+	}
+
+	search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - search->_assignmentFlags = %x\r",search->_assignmentFlags); // grayman debug
+	DebugPrintSearch(search); // grayman debug - comment when done
+
+	// Add search to list
+	_searches.Append(*search);
+
+	return search->_searchID;
 }
 
 void CSearchManager::PerformHidingSpotSearch(int searchID, idAI* ai)
@@ -247,7 +245,7 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
 	}
 
 	int numSpots = search->_hidingSpots.getNumSpots();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::RandomizeHidingSpotList - randomize the indices for %d spots\r",numSpots); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::RandomizeHidingSpotList - randomize the indices for %d spots\r",numSpots); // grayman debug
 	search->_randomHidingSpotIndexes.clear(); // clear any existing array elements
 
 	// Fill the array with integers from 0 to numSpots-1.
@@ -513,6 +511,7 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 
 		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s copying finished tree to search->_hidingSpots\r",ai->GetName()); // grayman debug
 		p_hidingSpotFinder->hidingSpotList.copy(&search->_hidingSpots);
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s there are %d hiding spots\r",ai->GetName(),search->_hidingSpots.getNumSpots()); // grayman debug
 		//p_hidingSpotFinder->hidingSpotList.getOneNth(refCount,search->_hidingSpots);
 		search->_hidingSpotsReady = true; // the hiding spot list is complete
 
@@ -736,6 +735,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	memory.alertPos = search->_origin;
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s setting alertPos to [%s]\r",ai->GetName(),memory.alertPos.ToString()); // grayman debug
 	memory.currentSearchEventID = search->_eventID;
+	ai->AddSuspiciousEvent(search->_eventID);
 
 	// Four activities are available:
 	// 1 - actively search

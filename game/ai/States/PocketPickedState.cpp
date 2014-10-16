@@ -153,11 +153,14 @@ void PocketPickedState::Think(idAI* owner)
 					memory.alertSearchVolume = AUDIO_SEARCH_VOLUME;
 					memory.alertSearchExclusionVolume.Zero();
 					owner->AI_VISALERT = false;
-					memory.visualAlert = false;
+					//memory.visualAlert = false;
 					memory.mandatory = false;
 					memory.stimulusLocationItselfShouldBeSearched = true;
 					memory.investigateStimulusLocationClosely = false;
 					memory.alertedDueToCommunication = false;
+
+					// Log the event
+					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 				}
 			}
 

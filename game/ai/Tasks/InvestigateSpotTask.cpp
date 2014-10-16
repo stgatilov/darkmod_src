@@ -69,7 +69,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Stop previous moves
 	//owner->StopMove(MOVE_STATUS_DONE);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init AAA - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Set the goal position
@@ -96,7 +96,6 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 				Assignment *assignment = &search->_assignments[0]; // first AI assigned to the search
 				if (assignment->_searcher != owner)
 				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s not allowed to kneel at alert spot\r",owner->GetName()); // grayman debug
 					_investigateClosely = false;
 				}
 			}
@@ -260,8 +259,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
 			pointValid = owner->MoveToPosition(goal);
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s pointValid = %s after MoveToPosition()\r",owner->GetName(),pointValid ? "true":"false"); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s moveStatus = %d after MoveToPosition()\r",owner->GetName(),(int)owner->GetMoveStatus()); // grayman debug
 		}
 
 		if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
@@ -315,7 +312,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform AAA - %s reached hiding spot\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s reached hiding spot\r",owner->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		// grayman #2928 - don't kneel down if you're too far from the original stim
@@ -455,7 +452,7 @@ void InvestigateSpotTask::SetInvestigateClosely(bool closely)
 
 void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish AAA - %s hidingSpotInvestigationInProgress set to false\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish - %s hidingSpotInvestigationInProgress set to false\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished investigating the spot, set the
 	// boolean back to false, so that the next spot can be chosen
 	owner->GetMemory().hidingSpotInvestigationInProgress = false;

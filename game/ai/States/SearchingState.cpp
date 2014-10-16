@@ -50,7 +50,6 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::CheckAlertLevel - %s ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -106,7 +105,7 @@ void SearchingState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s wants to start searching\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SearchingState initialised.\r");
 	assert(owner);
 
@@ -132,8 +131,13 @@ void SearchingState::Init(idAI* owner)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s AlertIndexIncreased() = %d\r",owner->GetName(),owner->AlertIndexIncreased()); // grayman debug
 	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
+		// Leave an existing search
+		if (owner->m_searchID >= 0)
+		{
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+		}
+
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s calling StartNewHidingSpotSearch()\r",owner->GetName()); // grayman debug
-		// Setup a new hiding spot search
 		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
 	}
 	else // grayman debug
@@ -225,6 +229,7 @@ void SearchingState::Init(idAI* owner)
 	}
 	else if ( (memory.alertType == EAlertTypeEnemy) || (memory.alertType == EAlertTypeFailedKO))
 	{
+		// descending alert level
 		// reduce the alert type, so we can react to other alert types (such as a dead person)
 		memory.alertType = EAlertTypeSuspicious;
 	}
@@ -297,6 +302,7 @@ void SearchingState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s leaving SearchingState\r",owner->GetName()); // grayman debug
 		return;
 	}
 
@@ -363,7 +369,6 @@ void SearchingState::Think(idAI* owner)
 			if (!memory.hidingSpotSearchDone)
 			{
 				// Let the hiding spot search do its task
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to build the list of hiding spots\r",owner->GetName()); // grayman debug
 				gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
 			}
 		}
@@ -406,7 +411,6 @@ void SearchingState::Think(idAI* owner)
 			if (!memory.hidingSpotSearchDone)
 			{
 				// Let the hiding spot search do its task
-				//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling PerformHidingSpotSearch() to assign a spot\r",owner->GetName()); // grayman debug
 				//gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
 				return;
 			}
@@ -437,6 +441,7 @@ void SearchingState::Think(idAI* owner)
 				
 					//gameRenderWorld->DebugBox(colorWhite, idBox(owner->m_searchLimits), MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s generate random hiding spot to search\r",owner->GetName()); // grayman debug
 					bool validPoint = false;
 					for ( int i = 0 ; i < 6 ; i++ )
 					{
@@ -444,6 +449,7 @@ void SearchingState::Think(idAI* owner)
 						p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x/2;
 						p.y += gameLocal.random.RandomFloat()*(searchSize.y) - searchSize.y/2;
 						p.z += gameLocal.random.RandomFloat()*(searchSize.z) - searchSize.z/2;
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   [%s]\r",p.ToString()); // grayman debug
 						//p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
 						areaNum = owner->PointReachableAreaNum( p );
 						if ( areaNum == 0 )
@@ -688,10 +694,10 @@ bool SearchingState::FindRadialSpot(idVec3 origin, float radius, idVec3 &spot)
 	return false;
 }
 
-bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman #3847 // grayman debug
+bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman debug
 {
 	// First, call the base class
-	if (!State::OnAudioAlert(soundName,addFuzziness)) // grayman #3847
+	if (!State::OnAudioAlert(soundName,addFuzziness, maker)) // grayman #3847
 	{
 		return true;
 	}
@@ -767,9 +773,14 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman
 	return true;
 }
 
-void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
+bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 {
 	int newSearchID = gameLocal.m_searchManager->StartNewHidingSpotSearch(owner);
+	if (newSearchID < 0)
+	{
+		return false;
+	}
+
 	bool assigned = (newSearchID == owner->m_searchID);
 
 	if (!assigned)
@@ -858,6 +869,8 @@ void SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 			memory.hidingSpotSearchDone = true;
 		}
 	}
+
+	return true;
 }
 
 StatePtr SearchingState::CreateInstance()

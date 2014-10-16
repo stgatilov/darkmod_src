@@ -243,8 +243,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
 				pointValid = owner->MoveToPosition(goal,CLOSE_ENOUGH); // allow for someone else standing on it
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s pointValid = %s after MoveToPosition()\r",owner->GetName(),pointValid ? "true":"false"); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s moveStatus = %d after MoveToPosition()\r",owner->GetName(),(int)owner->GetMoveStatus()); // grayman debug
 			}
 
 			if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
@@ -359,7 +357,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				// turn randomly in place
 				float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s execute random yaw turn of %f degrees\r",owner->GetName(),newYaw - _baseYaw); // grayman debug
 				owner->TurnToward(newYaw);
 
 				// Milling?
@@ -418,10 +415,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		int clipmask = owner->GetPhysics()->GetClipMask();
 		idClipModel *clipModel;
 		idClipModel *clipModelList[MAX_GENTITIES];
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s clipBounds = [%s]\r",owner->GetName(),clipBounds.ToString()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s clipmask = %x\r",owner->GetName(),clipmask); // grayman debug
 		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList, MAX_GENTITIES );
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s numListedClipModels = %d\r",owner->GetName(),numListedClipModels); // grayman debug
 		for ( int i = 0 ; i < numListedClipModels ; i++ )
 		{
 			clipModel = clipModelList[i];
@@ -444,8 +438,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	if (door)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s found door '%s'\r",owner->GetName(),door->GetName()); // grayman debug
-
 		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door),DOOR_POS_FRONT);
 
 		// Can't stand at the front position, because you'll be in the way
@@ -457,13 +449,12 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		frontPos += 50*dir;
 
 		_guardSpot = frontPos;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (door) _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
 	}
 	else
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s no door\r",owner->GetName()); // grayman debug
 		_guardSpot = newPos;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (no door) _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
 	}
 
 	_guardSpotState = EStateSetup;

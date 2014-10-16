@@ -81,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness) // grayman #3847 // grayman debug
+bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman debug
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -159,7 +159,7 @@ void CombatState::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 
 		// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 		owner->ClearEnemy();
-		memory.visualAlert = false; // grayman #2422
+		//memory.visualAlert = false; // grayman #2422
 		memory.mandatory = true;	// grayman #3331
 	}
 }
@@ -638,6 +638,23 @@ void CombatState::Think(idAI* owner)
 			{
 				owner->ClearEnemy();
 				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+
+				// grayman debug - dropping to agitated searching, so we need search parameters
+
+				memory.alertClass = EAlertVisual_1;
+				memory.alertType = EAlertTypeEnemy; // grayman debug
+				memory.alertPos = owner->GetPhysics()->GetOrigin();
+				memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+				memory.alertSearchExclusionVolume.Zero();
+				memory.alertedDueToCommunication = false;
+				memory.stimulusLocationItselfShouldBeSearched = true;
+				memory.investigateStimulusLocationClosely = false; // grayman debug
+				memory.mandatory = false; // grayman debug
+
+				// Log the event
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+
 				owner->GetMind()->EndState();
 				return;
 			}

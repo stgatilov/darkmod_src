@@ -346,7 +346,8 @@ public:
 	idEntityPtr<idEntity> unconsciousPersonFound; // grayman debug
 
 	// grayman #2422 - alert level is rising by checking player visibility
-	bool visualAlert;
+	// grayman debug - no longer used
+	//bool visualAlert;
 
 	// grayman #2603 - abort an ongoing light relight?
 	bool stopRelight;

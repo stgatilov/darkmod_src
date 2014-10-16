@@ -93,8 +93,11 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 	owner->ClearEnemy();
-	memory.visualAlert = false; // grayman #2422
+	//memory.visualAlert = false; // grayman #2422
 	memory.mandatory = true;	// grayman #3331
+
+	// Log the event
+	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
 
 	// Enqueue a lost track of enemy bark
 	owner->commSubsystem->AddCommTask(
