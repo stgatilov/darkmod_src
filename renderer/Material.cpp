@@ -1416,7 +1416,11 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		else if ( !token.Icmp( "maskDepth" ) ) {
 			ss->drawStateBits |= GLS_DEPTHMASK;
 			continue;
-		}		
+		}
+		else if ( !token.Icmp( "ignoreDepth" ) ) {		// Added in #3877. For use by soft particles #3878
+			ss->drawStateBits |= GLS_DEPTHFUNC_ALWAYS;
+			continue;
+		}
 		else if ( !token.Icmp( "alphaTest" ) ) {
 			ss->hasAlphaTest = true;
 			ss->alphaTestRegister = ParseExpression( src );

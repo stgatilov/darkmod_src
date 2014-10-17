@@ -172,7 +172,8 @@ public:
 
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
-	void		CopyDepthbuffer( int x, int y, int width, int height );
+	void		CopyDepthbuffer( int x, int y, int width, int height, bool useOversizedBuffer );
+
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -408,6 +409,9 @@ public:
 	idImage *			specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
 	idImage *			borderClampImage;			// white inside, black outside
 	idImage *			currentNoShadowImage;		// Obsttorte: For soft shadows
+
+	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
+
 	//--------------------------------------------------------
 	
 	idImage *			AllocImage( const char *name );

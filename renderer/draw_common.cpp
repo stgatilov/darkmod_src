@@ -543,13 +543,23 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
+	// Make the early depth pass available to shaders. #3877
+	if (	backEnd.viewDef->renderView.viewID >= 0  // Suppress for lightgem rendering passes
+		 && !r_skipDepthCapture.GetBool() )
+	{
+		globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
+														  backEnd.viewDef->viewport.y1,
+														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
+														  backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, 
+														  true );
+	}
+
 	if ( backEnd.viewDef->numClipPlanes ) {
 		GL_SelectTexture( 1 );
 		globalImages->BindNull();
 		qglDisable( GL_TEXTURE_GEN_S );
 		GL_SelectTexture( 0 );
 	}
-
 }
 
 /*
@@ -767,6 +777,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			continue;
 		}
 
+
 		// see if we are a new-style stage
 		newShaderStage_t *newStage = pStage->newStage;
 		if ( newStage ) {
@@ -794,7 +805,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglEnableClientState( GL_NORMAL_ARRAY );
 
 			GL_State( pStage->drawStateBits );
-			
+
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 
@@ -970,7 +981,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS ) {
+	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS ) {  
 		if ( r_skipPostProcess.GetBool() ) {
 			return 0;
 		}

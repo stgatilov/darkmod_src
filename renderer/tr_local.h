@@ -916,6 +916,7 @@ extern idCVar r_skipSpecular;			// use black for specular
 extern idCVar r_skipDiffuse;			// use black for diffuse
 extern idCVar r_skipOverlays;			// skip overlay surfaces
 extern idCVar r_skipROQ;
+extern idCVar r_skipDepthCapture;		// skip capture of early depth pass. revelator + SteveL #3877
 
 extern idCVar r_ignoreGLErrors;
 
