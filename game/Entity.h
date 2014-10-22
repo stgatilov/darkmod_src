@@ -288,6 +288,7 @@ public:
 		bool				isDormant			:1;	// if true the entity is dormant
 		bool				hasAwakened			:1;	// before a monster has been awakened the first time, use full PVS for dormant instead of area-connected
 		bool				networkSync			:1; // if true the entity is synchronized over the network
+		bool				invisible			:1;	// if true this entity can be heard, but not seen
 	} fl;
 
 	/**

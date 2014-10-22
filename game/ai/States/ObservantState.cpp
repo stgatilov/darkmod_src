@@ -127,8 +127,10 @@ void ObservantState::Init(idAI* owner)
 	{
 		if (owner->AlertIndexIncreased())
 		{
-			// grayman #3496 - enough time passed since last alert bark?
-			if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+			// grayman #3496 - Enough time passed since last alert bark?
+			// grayman debug - Enough time passed since last visual stim bark?
+			if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+				 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 			{
 				if ( !memory.alertedDueToCommunication && ( memory.alertClass != EAlertVisual_4 ) ) // grayman #2920, grayman #3498
 				{

@@ -155,12 +155,12 @@ void CombatState::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 		// Blind me!
 		State::OnBlindStim(stimSource, skipVisibilityCheck);
 
-		Memory& memory = owner->GetMemory();
+		//Memory& memory = owner->GetMemory();
 
 		// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 		owner->ClearEnemy();
 		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = true;	// grayman #3331
+		//memory.mandatory = true;	// grayman #3331 // grayman debug - now handled by STATE_BLIND
 	}
 }
 
@@ -188,12 +188,14 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	Memory& memory = owner->GetMemory();
+
 	// grayman #3507 - if we were already in combat, and had to pause to
 	// deal with an unreachable enemy, and have now come back, our
 	// previous state is stored in memory. Use that to skip over the
 	// initialization that normally happens when we come up from Agitated Searching.
 
-	if ( owner->GetMemory().combatState != -1 )
+	if ( memory.combatState != -1 )
 	{
 		_combatType = COMBAT_NONE;
 		_combatSubState = EStateCheckWeaponState;
@@ -225,20 +227,21 @@ void CombatState::Init(idAI* owner)
 	// grayman #3472 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
-	// grayman #3496
-	// Enough time passed since last alert bark?
+	// grayman #3496 - Enough time passed since last alert bark?
+	// grayman debug - Enough time passed since last visual stim bark?
 
-	if ( gameLocal.time >= owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+	if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+		 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 	{
 		// grayman #3496 - But only bark if you haven't recently spent time in Agitated Search.
 
-		if ( !owner->GetMemory().agitatedSearched )
+		if ( !memory.agitatedSearched )
 		{
 			// The communication system plays reaction bark
 			CommMessagePtr message;
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert5", message)));
 
-			owner->GetMemory().lastTimeAlertBark = gameLocal.time; // grayman #3496
+			memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
@@ -1244,6 +1247,8 @@ void CombatState::DelayedVisualStim(idEntity* stimSource, idAI* owner)
 {
 	stimSource->AllowResponse(ST_VISUAL, owner); // see it again later
 }
+
+void CombatState::OnVisualStimBlood(idEntity* stimSource, idAI* owner) {}
 
 void CombatState::Save(idSaveGame* savefile) const
 {

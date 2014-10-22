@@ -146,21 +146,8 @@ void PocketPickedState::Think(idAI* owner)
 
 				if ( owner->AI_AlertIndex >= ESearching )
 				{
-					memory.alertPos = owner->GetPhysics()->GetOrigin();
-					memory.alertClass = EAlertTactile;
-					memory.alertType = EAlertTypeSuspiciousItem;
-					memory.alertRadius = AUDIO_ALERT_RADIUS;
-					memory.alertSearchVolume = AUDIO_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-					owner->AI_VISALERT = false;
-					//memory.visualAlert = false;
-					memory.mandatory = false;
-					memory.stimulusLocationItselfShouldBeSearched = true;
-					memory.investigateStimulusLocationClosely = false;
-					memory.alertedDueToCommunication = false;
-
-					// Log the event
-					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+					// grayman debug - experiment moving all alert setup into one method
+					SetUpSearchData(EAlertTypeSuspiciousItem, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 				}
 			}
 

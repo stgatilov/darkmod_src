@@ -194,21 +194,10 @@ void State::OnVisualAlert(idActor* enemy)
 		return;
 	}
 
+	// grayman debug - experiment moving all alert setup into one method
+	SetUpSearchData(EAlertTypeSuspiciousVisual, owner->GetVisDir(), NULL, false, 0); // grayman debug
+
 	Memory& memory = owner->GetMemory();
-	memory.alertClass = EAlertVisual_1;
-	memory.alertType = EAlertTypeSuspicious;
-	//idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075, grayman #3492
-	memory.alertPos = owner->GetVisDir();
-	memory.alertRadius = VISUAL_ALERT_RADIUS;
-	memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
-	memory.alertSearchExclusionVolume.Zero();
-	memory.mandatory = false; // grayman #3331
-	// Visual stimuli are locatable enough that we should
-	// search the exact stim location first
-	memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3492 - moved up from below
-	
-	// set the flag back (greebo: Is this still necessary?)
-	owner->AI_VISALERT = false;
 
 	// Is this alert far enough away from the last one we reacted to to
 	// consider it a new alert? Visual alerts are highly compelling and
@@ -229,10 +218,9 @@ void State::OnVisualAlert(idActor* enemy)
 		}
 		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-		//memory.visualAlert = true; // grayman #2422
 		
 		// Do new reaction to stimulus
-		memory.alertedDueToCommunication = false;
+		//memory.alertedDueToCommunication = false; // grayman debug - done by SetUpSearchData() above
 		// end of section moved up
 
 		if (owner->IsSearching()) // grayman #2603
@@ -294,82 +282,41 @@ void State::OnTactileAlert(idEntity* tactEnt)
 			if ( isEnemy )
 			{
 				owner->Event_SetEnemy(tactEnt);
-				memory.alertType = EAlertTypeEnemy;
+				// grayman debug - experiment moving all alert setup into one method
+				SetUpSearchData(EAlertTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnTactileAlert 2 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, owner->GetPhysics()->GetOrigin().ToString(),tactEnt ? tactEnt->GetName() : "NULL"); // grayman debug
 				eventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), tactEnt ); // grayman #3424 // grayman #3848 
 			}
 			else
 			{
-				memory.alertType = EAlertTypeSuspicious;
+				// grayman debug - experiment moving all alert setup into one method
+				SetUpSearchData(EAlertTypeSuspicious, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 			}
 
 			// grayman #3331 - if fleeing, do none of this
 			if ( owner->GetMind()->GetState()->GetName() != "Flee" )
 			{
-				memory.alertClass = EAlertTactile;
-				memory.alertPos = owner->GetPhysics()->GetOrigin();
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnTactileAlert - %s hit %s, setting alertPos to [%s]\r",tactEnt->GetName(),owner->GetName(),memory.alertPos.ToString()); // grayman debug
 				memory.currentSearchEventID = eventID; // grayman #3424
-				memory.alertRadius = TACTILE_ALERT_RADIUS;
-				memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
-				memory.alertSearchExclusionVolume.Zero();
-				//memory.visualAlert = false; // grayman #2422
-				memory.mandatory = true;	// grayman #3331
+				owner->AddSuspiciousEvent(eventID);
 
 				// grayman #2816 - turn toward what hit you, not toward your origin
 
 				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
-				owner->AI_TACTALERT = false;
 			}
 			else if (!owner->AI_FORWARD) // grayman #3548
 			{
-				// standing still, so turn toward what hit you
+				// In flee mode, but standing still, so turn toward what hit you.
+				// No need to set up a search.
 				owner->TurnToward(tactEnt->GetPhysics()->GetOrigin());
 				owner->AI_TACTALERT = false;
 			}
 			else
 			{
-				// just keep running
+				// just keep fleeing
 			}
 		}
 	}
 }
-
-/* grayman #3140 - no longer used
-void State::OnProjectileHit(idProjectile* projectile)
-{
-	idAI* owner = _owner.GetEntity();
-
-	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
-	{
-		return;
-	}
-
-	if (owner->AI_AlertLevel <= (owner->thresh_5 - 0.1f))
-	{
-		// Set the alert level right below combat threshold
-		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
-
-		// The owner will start to search, set up the parameters
-		Memory& memory = owner->GetMemory();
-
-		memory.alertClass = EAlertTactile;
-		memory.alertType = EAlertTypeDamage;
-
-		idVec3 projVel = projectile->GetPhysics()->GetLinearVelocity();
-		projVel.NormalizeFast();
-
-		memory.alertPos = owner->GetPhysics()->GetOrigin() - projVel * 300;
-		memory.alertPos.x += 200 * gameLocal.random.RandomFloat() - 100;
-		memory.alertPos.y += 200 * gameLocal.random.RandomFloat() - 100;
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-		memory.alertSearchExclusionVolume.Zero();
-		//memory.visualAlert = false;
-		memory.mandatory = true; // grayman #3331
-	}
-}
-*/
 
 bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman debug
 {
@@ -382,6 +329,11 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 	}
 
 	Memory& memory = owner->GetMemory();
+
+	// grayman debug - All other alerts use SetUpSearchData() to handle
+	// setting up the alert variables, but audio is much more
+	// complex and doesn't lend itself to SetUpSearchData()'s design.
+	// So we'll leave this one to set itself up.
 
 	memory.alertClass = EAlertAudio;
 	memory.alertType = EAlertTypeSuspicious;
@@ -423,6 +375,7 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 	// observer to the point at the time heard
 	float distanceToStim = (owner->GetPhysics()->GetOrigin() - memory.alertPos).LengthFast();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 1b - %s alertPos = [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 	// greebo: Apply a certain fuzziness to the audio alert position
 	// 200 units distance corresponds to 50 units fuzziness in X/Y direction
 
@@ -439,6 +392,7 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 			0 // no fuzziness in z-direction
 		) * distanceToStim / 400.0f;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 1c - %s alertPos = [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
 		// grayman #2422 - to avoid moving the alert point into the void, or into
 		// the room next door, trace from the original point to the fuzzy point. If you encounter
 		// the world, move the fuzzy point there.
@@ -488,13 +442,12 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 	memory.alertRadius = AUDIO_ALERT_RADIUS;
 	memory.alertSearchVolume = AUDIO_SEARCH_VOLUME * searchVolModifier;
 	memory.alertSearchExclusionVolume.Zero();
-	//memory.visualAlert = false; // grayman #2422
 	
 	// Reset the flag (greebo: is this still necessary?)
 	owner->AI_HEARDSOUND = false;
 	
 	memory.stimulusLocationItselfShouldBeSearched = true;
-
+	/*
 	// Log the event
 
 	if (maker->IsType(idMoveable::Type) && (idStr(maker->GetName()).IcmpPrefix("idMoveable_atdm:ammo_noisemaker") == 0)) // noisemakers are moveables
@@ -503,13 +456,15 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 		maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
 
 		// don't provide the noisemaker itself as the entity parameter because that might go away
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 4 - %s calling LogSuspiciousEvent()\r",owner->GetName()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL ); // grayman debug
 	}
 	else
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 5 - %s calling LogSuspiciousEvent()\r",owner->GetName()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 	}
-
+	*/
 	return true;
 }
 
@@ -569,26 +524,7 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 {
 	idAI* owner = _owner.GetEntity();
 
-	// Don't react if we are already blind
-	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT || owner->GetAcuity("vis") == 0)
-	{
-		return;
-	}
-
 	// greebo: We don't check for alert type weights here, flashbombs are "top priority"
-
-	Memory& memory = owner->GetMemory();
-
-	memory.alertClass = EAlertVisual_1;
-	memory.alertedDueToCommunication = false;
-	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS; // grayman #3431
-	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; // grayman #3431
-	memory.alertSearchExclusionVolume.Zero(); // grayman #3431
-	memory.alertType = EAlertTypeBlinded; // grayman debug
-	//memory.visualAlert = false; // grayman #2422
-	memory.mandatory = true;	// grayman #3331
-	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL ); // grayman debug
 
 	if ( CanBeBlinded(stimSource, skipVisibilityCheck) )
 	{
@@ -598,6 +534,8 @@ void State::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 		{
 			owner->GetMind()->PushState(STATE_LOST_TRACK_OF_ENEMY);
 		}
+
+		owner->GetMemory().alertPos = stimSource->GetPhysics()->GetOrigin(); // for STATE_BLINDED to use
 
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("AI blinded by flash, switching to BlindedState.\r");
 		owner->GetMind()->PushState(STATE_BLINDED);
@@ -1270,34 +1208,8 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 	memory.StopReacting(); // grayman #3559
 
-	// Raise alert level
-	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimWeapon - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_4 - 0.1f); // grayman debug
-		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
-	}
-	
-	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimWeapon - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-	memory.alertClass = EAlertVisual_2; // grayman #2603
-	memory.alertType = EAlertTypeWeapon;
-
-	// Do search as if there is an enemy that has escaped
-	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-	memory.alertSearchExclusionVolume.Zero();
-	
-	owner->AI_VISALERT = false;
-	//memory.visualAlert = false; // grayman #2422
-	memory.mandatory = false;	// grayman #3331
-	
-	// Do new reaction to stimulus
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.investigateStimulusLocationClosely = true; // deep investigation
-	memory.alertedDueToCommunication = false;
-
-	// Log the event
-	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+	// grayman debug - experiment moving all alert setup into one method
+	SetUpSearchData(EAlertTypeWeapon, stimSource->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 }
 
 // grayman #1327 - modified copy of OnVisualStimWeapon()
@@ -1384,34 +1296,8 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 	memory.StopReacting(); // grayman #3559
 
-	// Raise alert level
-	if ( owner->AI_AlertLevel < owner->thresh_4 - 0.1f )
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimSuspicious - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_4 - 0.1f); // grayman debug
-		owner->SetAlertLevel(owner->thresh_4 - 0.1f);
-	}
-	
-	memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimSuspicious - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-	memory.alertClass = EAlertVisual_2;
-	memory.alertType = EAlertTypeSuspiciousItem;
-
-	// Do search as if there is an enemy that has escaped
-	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-	memory.alertSearchExclusionVolume.Zero();
-	
-	owner->AI_VISALERT = false;
-	//memory.visualAlert = false; // grayman #2422
-	memory.mandatory = false;	// grayman #3331
-	
-	// Do new reaction to stimulus
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.investigateStimulusLocationClosely = true; // deep investigation
-	memory.alertedDueToCommunication = false;
-
-	// Log the event
-	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+	// grayman debug - experiment moving all alert setup into one method
+	SetUpSearchData(EAlertTypeWeapon, stimSource->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 }
 
 // grayman #2872 - modified copy of OnVisualStimSuspicious()
@@ -1654,13 +1540,11 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 				// Living enemy
 				//gameLocal.Printf("I see a living enemy!\n");
 				owner->SetEnemy(other);
-				owner->AI_VISALERT = true;
-				
-				owner->SetAlertLevel(owner->thresh_5*2);
-				memory.alertClass = EAlertVisual_1;
-				memory.alertType = EAlertTypeEnemy;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 3 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, owner->GetPhysics()->GetOrigin().ToString(),other ? other->GetName() : "NULL"); // grayman debug
-				owner->LogSuspiciousEvent( E_EventTypeEnemy, other->GetPhysics()->GetOrigin(), other ); // grayman #3424 // grayman #3848
+
+				// grayman debug - even though you know where your enemy is, set up
+				// search data as if you didn't, since it includes
+				// some data you're going to need
+				SetUpSearchData(EAlertTypeFoundEnemy, other->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 			}
 
 			// An enemy should not be ignored in the future - grayman #2423 - moved out of above test so all enemies are remembered
@@ -2087,7 +1971,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							
 								if ( !owner->HasSearchedEvent(eventID) ) // grayman #3424
 								{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 5 - %s calling SetAlertLevel(%f)\r",owner->GetName(),otherAI->AI_AlertLevel * 0.7f); // grayman debug
+									DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter 5 - %s calling SetAlertLevel(%f)\r",owner->GetName(),otherAI->AI_AlertLevel * 0.7f); // grayman debug
 									owner->SetAlertLevel(otherAI->AI_AlertLevel * 0.7f); // inherit a reduced alert level
 									need2Search = true;
 
@@ -2121,18 +2005,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 							owner->StopMove(MOVE_STATUS_DONE);
 							memory.StopReacting(); // grayman #3559
 
-							// alert level has already been set
-							memory.alertPos = otherMemory.alertPos;
-							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnActorEncounter - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-							memory.currentSearchEventID = eventID; // grayman #3424
-							memory.alertClass = otherMemory.alertClass; // grayman #2603 - inherit the other's alert info
-							memory.alertType = otherMemory.alertType;
-							//memory.visualAlert = otherMemory.visualAlert; // grayman #2422
-							memory.mandatory = false; // grayman #3331
-							memory.alertRadius = otherMemory.alertRadius;
-							memory.alertSearchVolume = otherMemory.alertSearchVolume; 
-							memory.alertSearchExclusionVolume.Zero();
-							memory.alertedDueToCommunication = learnedViaComm; // grayman #3424
+							SetUpSearchData(EAlertTypeEncounter, otherMemory.alertPos, otherAI, learnedViaComm, eventID); // grayman debug
 						}
 					}
 
@@ -2834,6 +2707,11 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	memory.alertClass = EAlertVisual_1; // grayman #3424, grayman #3472 - was _3, which is no longer needed
 	memory.alertType = EAlertTypeDeadPerson;
 
+	// The dead person is a friend or a neutral, so this is suspicious
+
+	memory.deadPeopleHaveBeenFound = true;
+	memory.corpseFound = person; // grayman #3424
+	
 	// grayman #3317 - We want a random delay at this point, so we'll
 	// post an event to handle the reaction. Control will go over to AI_events.cpp
 	// to handle the event, and immediately call Post_OnDeadPersonEncounter() below.
@@ -2852,6 +2730,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 {
 	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s ...\r",owner->GetName()); // grayman debug
 	owner->m_allowAudioAlerts = true; // grayman #3424
 
 	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
@@ -2862,11 +2741,13 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 	bool fleeing = false; // TRUE = I'm going to flee, FALSE = I'm not going to flee
 	bool ISawItHappen = ( gameLocal.time < ( person->m_timeFellDown + DISCOVERY_TIME_LIMIT ) );
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s ISawItHappen = %d\r",owner->GetName(),ISawItHappen); // grayman debug
 	// If I'm a civilan, or unarmed, I'll flee
 	if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
 	{
 		fleeing = true;
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s fleeing = %d\r",owner->GetName(),fleeing); // grayman debug
 
 	// If I'm not already planning to flee, react 50% of the time if this is a neutral and I didn't see it happen.
 
@@ -2892,130 +2773,94 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		alreadyKnow = owner->KnowsAboutSuspiciousEvent(eventID);
 		alreadySearched = owner->HasSearchedEvent(eventID);
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s eventID = %d\r",owner->GetName(),eventID); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s alreadyKnow = %d\r",owner->GetName(),alreadyKnow); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s alreadySearched = %d\r",owner->GetName(),alreadySearched); // grayman debug
 
-	// The dead person is a friend or a neutral, so this is suspicious
-
-	//gameLocal.Printf("I see a dead person!\n");
-	memory.deadPeopleHaveBeenFound = true;
+	// grayman debug - If I've already searched this event, I'll ignore this encounter.
+	// This would happen if I stood observing a search, abandoned the search, walked
+	// around a corner, and encountered the dead body itself. That shouldn't set me off.
+	// I shouldn't flee, either.
+	if (alreadySearched)
+	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s alreadySearched, so do nothing\r",owner->GetName()); // grayman debug
+		// continue with what you were doing
+		return;
+	}
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s found a dead person, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
-	memory.corpseFound = person; // grayman #3424
-	
-	if ( !alreadyKnow )
-	{
-		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE; // Three more pieces of evidence of something out of place: A dead body is a REALLY bad thing
-	}
-
-	memory.alertPos = person->GetPhysics()->GetOrigin(); // grayman debug - moved up from below
 	memory.posEvidenceIntruders = person->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 	memory.StopReacting(); // grayman #3559
 
-	// grayman #3424 - log this event and bark if it's new
-	if ( eventID < 0 )
+	if (!alreadyKnow)
 	{
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeDeadPerson, person->GetPhysics()->GetOrigin(), person ); // grayman #3424  
-
-		// Determine what to say
-		// grayman #3317 - say nothing if you're a witness ( ISawItHappen is TRUE )
-
-		if ( !ISawItHappen )
+		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE; // Three more pieces of evidence of something out of place: A dead body is a REALLY bad thing
+	
+		// grayman #3424 - log this event and bark if it's new
+		if ( eventID < 0 )
 		{
-			// Speak a reaction
-			if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BEFORE_CORPSE_BARK) // grayman #3848 - bark sooner
+			eventID = owner->LogSuspiciousEvent( E_EventTypeDeadPerson, person->GetPhysics()->GetOrigin(), person ); // grayman #3424  
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s logged new event %d\r",owner->GetName(),eventID); // grayman debug
+
+			// Determine what to say
+			// grayman #3317 - say nothing if you're a witness ( ISawItHappen is TRUE )
+
+			if ( !ISawItHappen )
 			{
-				idStr soundName;
-				idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
+				// Speak a reaction
+				if ( ( gameLocal.time - memory.lastTimeVisualStimBark ) >= MINIMUM_SECONDS_BEFORE_CORPSE_BARK) // grayman #3848 - bark sooner
+				{
+					idStr soundName;
+					idStr personGender = person->spawnArgs.GetString(PERSONGENDER_KEY);
 
-				if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
-				{
-					soundName = "snd_foundComradeBody";
-				}
-				else if (personGender == PERSONGENDER_FEMALE)
-				{
-					soundName = "snd_foundDeadFemale";
-				}
-				else
-				{
-					soundName = "snd_foundDeadMale";
-				}
-				memory.lastTimeVisualStimBark = gameLocal.time;
-				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+					if (idStr(person->spawnArgs.GetString(PERSONTYPE_KEY)) == owner->spawnArgs.GetString(PERSONTYPE_KEY))
+					{
+						soundName = "snd_foundComradeBody";
+					}
+					else if (personGender == PERSONGENDER_FEMALE)
+					{
+						soundName = "snd_foundDeadFemale";
+					}
+					else
+					{
+						soundName = "snd_foundDeadMale";
+					}
+					memory.lastTimeVisualStimBark = gameLocal.time;
+					owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
 
-				if (cv_ai_debug_transition_barks.GetBool())
-				{
-					gameLocal.Printf("%d: %s found a dead body, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+					if (cv_ai_debug_transition_barks.GetBool())
+					{
+						gameLocal.Printf("%d: %s found a dead body, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
+					}
 				}
 			}
 		}
 	}
-
+					
 	// Raise alert level if planning to search
 	// grayman #3424 - for other events, the following section might not
 	// be allowed, to reduce the amount of searching that happens. For the
 	// case of a dead body, however, it seems appropriate to let the
 	// search and alert level rise to occur.
-	if ( !alreadySearched && ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) ) )
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s AI_AlertLevel = %f\r",owner->GetName(),(float)owner->AI_AlertLevel); // grayman debug
+	if ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) )
 	{
-		//idVec3 lastAlertPosSearched = memory.alertPos; // grayman #3075, grayman #3492
-		//memory.alertPos = person->GetPhysics()->GetOrigin();
-		//memory.currentSearchEventID = eventID; // grayman #3424
-		//memory.alertClass = EAlertVisual_3; // grayman #3424 - move before the delay
-		//memory.alertType = EAlertTypeDeadPerson; // grayman #3424 - move before the delay
-			
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-			
-		owner->AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
+		// grayman debug - experiment moving all alert setup into one method
 
-		owner->SetAlertLevel(owner->thresh_5 + 0.1);
-
-		// grayman #3075
-		// Is this alert far enough away from the last one we reacted to to
-		// consider it a new alert and restart the search?
-
-		// If last alert position searched is [0,0,0], restart
-		if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) ) // grayman #3492
-		{
-			// Restart the search, in case we're already searching
-			memory.restartSearchForHidingSpots = true;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter 1 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
-		}
-		else
-		{
-			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3492
-	
-			if ( newAlertDeltaFromLastOneSearched.LengthSqr() > memory.alertSearchVolume.LengthSqr() )
-			{
-				// Restart the search, in case we're already searching
-				memory.restartSearchForHidingSpots = true;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter 2 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
-			}
-		}
-
-		// grayman #3317 - No close search if death just happened. Otherwise, there's a chance
-
-		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
-
-		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s stimulusLocationItselfShouldBeSearched = 1\r",owner->GetName()); // grayman debug
-		memory.stimulusLocationItselfShouldBeSearched = true; // grayman debug
-		//memory.stimulusLocationItselfShouldBeSearched = shouldKneel;
-		memory.alertedDueToCommunication = false;
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s calling SetUpSearchData()\r",owner->GetName()); // grayman debug
+		SetUpSearchData(EAlertTypeDeadPerson, person->GetPhysics()->GetOrigin(), person, alreadyKnow, eventID); // grayman debug
 	}
-					
+
 	// Callback for objectives
 	owner->FoundBody(person);
 
-	// Flee if you planned to, and you aren't already fleeing
+	// Flee if you plan to, and you aren't already fleeing
 	if ( fleeing && (owner->GetMind()->GetState()->GetName() != "Flee" ) )
 	{
 		owner->fleeingEvent = true; // I'm fleeing the scene of the murder, not fleeing an enemy
@@ -3026,6 +2871,9 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		{
 			owner->GetMind()->SwitchState(STATE_FLEE);
 		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s fleeing with alert level %f, currentSearchEventID %d\r",owner->GetName(),(float)owner->AI_AlertLevel,memory.currentSearchEventID); // grayman debug
+		return;
 	}
 }
 
@@ -3061,6 +2909,11 @@ bool State::OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	memory.alertClass = EAlertVisual_1; // grayman #3424, grayman #3472 - was _3, which is no longer needed
 	memory.alertType = EAlertTypeUnconsciousPerson;
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnUnconsciousPersonEncounter - %s memory.alertType set to %d\r",owner->GetName(),(int)memory.alertType); // grayman debug
+
+	// The person is a friend or a neutral, so this is suspicious
+
+	memory.unconsciousPeopleHaveBeenFound = true;
+	memory.unconsciousPersonFound = person;
 
 	// grayman #3317 - We want a random delay at this point, so we'll
 	// post an event to handle the reaction. Control will go over to AI_events.cpp
@@ -3115,25 +2968,22 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 	// from our list, see if we know about this.
 
 	bool alreadyKnow = false;
+	bool alreadySearched = false;
 	int eventID = gameLocal.FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), person );
 	if ( eventID >= 0 )
 	{
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnUnconsciousPersonEncounter - %s calling FindSuspiciousEvent()\r",owner->GetName()); // grayman debug
 		alreadyKnow = owner->KnowsAboutSuspiciousEvent(eventID);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnUnconsciousPersonEncounter - %s alreadyKnow = %d\r",owner->GetName(),alreadyKnow); // grayman debug
+		alreadySearched = owner->HasSearchedEvent(eventID);
 	}
 
-	// The person is a friend or a neutral, so this is suspicious
-
 	Memory& memory = owner->GetMemory();
-	memory.unconsciousPeopleHaveBeenFound = true;
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s found an unconscious person, will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
-
-	memory.unconsciousPersonFound = person;
 
 	if ( !alreadyKnow )
 	{
@@ -3185,35 +3035,16 @@ void State::Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner)
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnUnconsciousPersonEncounter - %s already know about event (%d,[%s],'%s'), so I won't log it\r",owner->GetName(),(int)E_EventTypeUnconsciousPerson, person->GetPhysics()->GetOrigin().ToString(), person->GetName()); // grayman debug
 	}
 
-	// Raise alert level?
-	if ( !alreadyKnow && ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) ) )
-	{
-		memory.alertPos = person->GetPhysics()->GetOrigin();
-		memory.currentSearchEventID = eventID; // grayman #3424
-			
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-			
-		owner->AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-			
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnUnconsciousPersonEncounter - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 + 0.1f); // grayman debug
-		owner->SetAlertLevel(owner->thresh_5 + 0.1f);
-	}
-					
-	if (!alreadyKnow)
-	{
-		// grayman #3317 - No close search if KO just happened. Otherwise, there's a chance
+	// grayman debug - experiment moving all alert setup into one method
 
-		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
-		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
-		memory.stimulusLocationItselfShouldBeSearched = true;
-		memory.alertedDueToCommunication = false;
+	if ( !alreadySearched )
+	{
+		if ( owner->AI_AlertLevel < ( owner->thresh_5 + 0.1f ) )
+		{
+			SetUpSearchData(EAlertTypeUnconsciousPerson, person->GetPhysics()->GetOrigin(), person, alreadySearched, eventID); // grayman debug
+		}
 	}
-		
+
 	// Callback for objectives
 	owner->FoundBody(person);
 
@@ -3326,15 +3157,15 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	// this is where we have to alert the AI, regardless of whether he was
 	// damaged or not.
 
-	EAlertType alertType;
+	// EAlertType alertType;
 
 	// grayman #3331 - someone just hit you with a projectile. Unless you're
 	// already in combat mode, you should react to this regardless of what
 	// else you're doing.
 
-	alertType = EAlertTypeHitByProjectile; // grayman #3331
+	//alertType = EAlertTypeHitByProjectile; // grayman #3331
 
-	if ( !ShouldProcessAlert( alertType ) )
+	if ( !ShouldProcessAlert( EAlertTypeHitByProjectile ) )
 	{
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Ignoring projectile hit.\r");
 		return;
@@ -3392,56 +3223,8 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 	{
 		if ( memory.fleeingDone ) // grayman #3848 - no search if fleeing
 		{
-			//Memory& memory = owner->GetMemory();
-
-			// greebo: Set the alert position not directly to the attacker's origin, but let the AI 
-			// search in the right direction
-
-			const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
-
-			idVec3 attackerDir(0,0,0);
-			float distance = 0;
-		
-			if (attacker != NULL)
-			{
-				attackerDir = attacker->GetPhysics()->GetOrigin() - ownerOrigin;
-				distance = attackerDir.NormalizeFast();
-			}
-
-			// Start searching halfway between us and the attacker
-
-			memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
-
-			// grayman #3331 - trace down until you hit something
-			idVec3 bottomPoint = memory.alertPos;
-			bottomPoint.z -= 1000;
-
-			trace_t result;
-			if ( gameLocal.clip.TracePoint(result, memory.alertPos, bottomPoint, MASK_OPAQUE, NULL) )
-			{
-				// Found the floor.
-				memory.alertPos.z = result.endpos.z + 1; // move the target point to just above the floor
-			}
-
-			memory.alertClass = EAlertTactile;
-			memory.alertType = alertType;
-			memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
-		
-			// Do search as if there is an enemy that has escaped
-			memory.alertRadius = TACTILE_ALERT_RADIUS;
-			memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
-			memory.alertSearchExclusionVolume.Zero();
-
-			memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
-			memory.investigateStimulusLocationClosely = false;
-			memory.restartSearchForHidingSpots = true; // grayman #3331
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
-			owner->AI_VISALERT = false;
-			//memory.visualAlert = false; // grayman #2422			
-			memory.mandatory = true; // grayman #3331
-		
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 - 0.1f); // grayman debug
-			owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+			// grayman debug - experiment moving all alert setup into one method
+			SetUpSearchData(EAlertTypeHitByProjectile, memory.alertPos, NULL, false, 0); // grayman debug
 
 			owner->TurnToward(memory.alertPos); // grayman #3331
 		}
@@ -3679,30 +3462,9 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 	{
-		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual_1;
-		memory.alertType = EAlertTypeBlood;
-		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		owner->AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimBlood - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 - 0.1f); // grayman debug
-		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
-
-		// Log the event
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		// grayman debug - experiment moving all alert setup into one method
+		SetUpSearchData(EAlertTypeBlood, stimSource->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 	}
-				
-	// Do new reaction to stimulus
-	memory.investigateStimulusLocationClosely = true; // deep investigation
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.alertedDueToCommunication = false;
 }
 
 /*
@@ -4219,22 +3981,11 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	// Raise alert level if you didn't already know about this
 	if ( !alreadyKnow && ( owner->AI_AlertLevel < alert ) )
 	{
-		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual_1;
-		memory.alertType = EAlertTypeMissingItem;
+		// grayman debug - experiment moving all alert setup into one method
+		SetUpSearchData(EAlertTypeMissingItem, stimSource->GetPhysics()->GetOrigin(), NULL, false, alert); // grayman debug
+
 		memory.currentSearchEventID = eventID; // grayman #3424
-		
-		// Prepare search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		owner->AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-		
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimMissingItem - %s calling SetAlertLevel(%f)\r",owner->GetName(),alert); // grayman debug
-		owner->SetAlertLevel(alert);
+		owner->AddSuspiciousEvent(eventID);
 	}
 }
 
@@ -4277,23 +4028,8 @@ void State::OnVisualStimBrokenItem(idEntity* stimSource, idAI* owner)
 	// Raise alert level
 	if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
 	{
-		memory.alertPos = stimSource->GetPhysics()->GetOrigin();
-		memory.alertClass = EAlertVisual_2; // grayman #2603
-		memory.alertType = EAlertTypeBrokenItem;
-		
-		// Prepare search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		owner->AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-		
-		owner->SetAlertLevel(owner->thresh_5 - 0.1);
-
-		// Log the event
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		// grayman debug - experiment moving all alert setup into one method
+		SetUpSearchData(EAlertTypeBrokenItem, stimSource->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 	}
 }
 
@@ -4615,6 +4351,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					break;
 				}
 
+				// grayman debug - Can't help if I'm already searching
+				if ( owner->IsSearching())
+				{
+					break;
+				}
+
 		gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s directObjectEntity = %s\r",owner->GetName(),directObjectEntity ? directObjectEntity->GetName():"NULL"); // grayman debug
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
@@ -4631,37 +4373,16 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 				if (owner->GetEnemy() == NULL)
 				{
-					memory.alertPos = directObjectLocation;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 1 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-					// no enemy set or enemy not found yet
-					// set up search
 					// grayman #3009 - pass the alert position so the AI can look at it
-					owner->PreAlertAI("aud", psychLoud, memory.alertPos); // grayman #3356
+					owner->PreAlertAI("aud", psychLoud, directObjectLocation); // grayman #3356
 
-					// grayman #3548 - even though my alert level went up
-					// by 'psychLoud', we need to guarantee that I'll start
-					// the search right away by setting my alert level right below combat threshold
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 - 0.1f); // grayman debug
-					owner->SetAlertLevel(owner->thresh_5 - 0.1f);
-
-					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-					//memory.visualAlert = false; // grayman #2422
-					memory.mandatory = false;	// grayman #3331
-					memory.alertClass = static_cast<idAI*>(issuingEntity)->GetMemory().alertClass;
-					memory.alertType = static_cast<idAI*>(issuingEntity)->GetMemory().alertType; // grayman debug
-
-					memory.alertedDueToCommunication = true;
-					memory.stimulusLocationItselfShouldBeSearched = true;
-					memory.currentSearchEventID = message.m_eventID; // grayman debug
-					owner->AddSuspiciousEvent(message.m_eventID);
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s currentSearchEventID set to %d for RequestForHelp_CommType\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
+					// no enemy set or enemy not found yet
+					SetUpSearchData(EAlertTypeRequestForHelp, directObjectLocation, issuingEntity, false, message.m_eventID); // grayman debug
 				}
 			}
 			else if (owner->AI_AlertLevel < owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f)
 			{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f); // grayman debug
 				owner->SetAlertLevel(owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f);
 			}
 			break;
@@ -4740,6 +4461,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			//gameLocal.Printf("I don't know how to bring light!\n");
 			break;
 		case CommMessage::DetectedSomethingSuspicious_CommType:
+			// This message accompanies the repeated agitated searching barks.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a DetectedSomethingSuspicious_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			OnMessageDetectedSomethingSuspicious(message);
@@ -4765,33 +4487,11 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				float newAlertLevel = (owner->thresh_4 + owner->thresh_5) * 0.5f;
 
 				// greebo: Only set the alert level if it is greater than our own
-				if (owner->AI_AlertLevel < newAlertLevel && 
+				if ( ( owner->AI_AlertLevel < newAlertLevel ) && 
 					owner->IsFriend(issuingEntity) && 
 					owner->IsEnemy(directObjectEntity))
 				{
-					// Set the alert level between 4 and 5.
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 5 - %s calling SetAlertLevel(%f)\r",owner->GetName(),(owner->thresh_4 + owner->thresh_5)*0.5f); // grayman debug
-					owner->SetAlertLevel((owner->thresh_4 + owner->thresh_5)*0.5f);
-					
-					// We got alerted by a communication message
-					memory.alertedDueToCommunication = true;
-						
-					//gameLocal.Printf("They're my friend, I'll attack it too!\n");
-					memory.alertClass = static_cast<idAI*>(issuingEntity)->GetMemory().alertClass;
-					memory.alertType = static_cast<idAI*>(issuingEntity)->GetMemory().alertType; // grayman debug
-					memory.alertPos = directObjectLocation;
-
-					// grayman debug - supply the remaining search parameters
-					memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-					memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-					memory.stimulusLocationItselfShouldBeSearched = true;
-					memory.investigateStimulusLocationClosely = false; // grayman debug
-					//memory.visualAlert = false; // grayman #2422
-					memory.mandatory = true;	// grayman #3331
-
-					// Log the event
-					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+					SetUpSearchData(EAlertTypeDetectedEnemy, directObjectLocation, issuingEntity, false, 0); // grayman debug
 				}
 			}
 			break;
@@ -4840,25 +4540,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a SearchOrder_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (/*recipientEntity == owner && */owner->IsFriend(issuingEntity)) // grayman debug - already checked
 			{
-				// Set alert pos to the position we were ordered to search
-				memory.alertPos = directObjectLocation;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 2 - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 6 - %s calling SetAlertLevel(%f)\r",owner->GetName(),(owner->thresh_3 + owner->thresh_4)*0.5f); // grayman debug
-				//memory.chosenHidingSpot = directObjectLocation; // grayman debug
-				owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
-				//memory.visualAlert = false; // grayman #2422
-				memory.mandatory = false;	// grayman #3331
-
-				// grayman debug - supply the remaining search parameters
-				memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-				memory.alertSearchExclusionVolume.Zero();
-				memory.stimulusLocationItselfShouldBeSearched = true;
-				memory.investigateStimulusLocationClosely = false; // grayman debug
-				memory.alertedDueToCommunication = true;
-
-				// Log the event
-				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+				SetUpSearchData(EAlertTypeSearchOrder, directObjectLocation, issuingEntity, false, 0); // grayman debug
 			}
 			break;
 		case CommMessage::AttackOrder_CommType:
@@ -5104,12 +4786,11 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	}
 
 	Memory& memory = owner->GetMemory();
-
-	//gameLocal.Printf("Somebody else noticed something suspicious...\n");
+	memory.respondingToSomethingSuspiciousMsg = false; // grayman debug
 
 	if (owner->GetEnemy() != NULL)
 	{
-		//gameLocal.Printf ("I'm too busy with my own target!");
+		// I'm too busy with my own target!
 		return;
 	}
 
@@ -5125,13 +4806,36 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 	idStr myState = owner->GetMind()->GetState()->GetName();
 	if ( ( myState == "Flee" ) || ( myState == "FleeDone" ) )
 	{
-		//gameLocal.Printf("I'm fleeing, so I can't help!\n");
+		// I'm fleeing, so I can't help!
 		return;
 	}
 
 	if (owner->IsFriend(issuingEntity))
 	{
 		idAI* issuingAI = static_cast<idAI*>(issuingEntity);
+
+		// It takes a couple seconds for an agitated bark to reach
+		// an AI and be recognized for what it is. If the sender
+		// drops out of the search by the time the message is
+		// received, you can ignore it. A searcher still barks
+		// agitated barks as he descends from agitated searching
+		// down through searching, until he drops into suspicious
+		// mode, at which time he stops these barks and leaves the search.
+
+		if (issuingAI->m_searchID < 0)
+		{
+			// you've left your search, so I'm not joining it
+			return;
+		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s owner->m_searchID = %d, issuingAI->m_searchID = %d\r",owner->GetName(),owner->m_searchID,issuingAI->m_searchID); // grayman debug
+		// grayman debug - don't join their search if you're already part of it
+		if (owner->m_searchID == issuingAI->m_searchID)
+		{
+			// I'm already part of that search!
+			return;
+		}
+
 		Memory& issuerMemory = issuingAI->GetMemory();
 		EAlertType ieAlertType = issuerMemory.alertType;
 
@@ -5139,6 +4843,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// as is done when new alerts arrive
 		if ( !ShouldProcessAlert(ieAlertType))
 		{
+			// Your alert type isn't more important than my current alert type!
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s shouldn't process this alert\r",owner->GetName()); // grayman debug
 			return;
 		}
@@ -5148,6 +4853,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// grayman #3438 - If I already searched this event, I won't search it again.
 		if ( ( eventID >= 0 ) && owner->HasSearchedEvent(eventID) )
 		{
+			// I already searched this event!
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s sorry, already searched event %d\r",owner->GetName(),eventID); // grayman debug
 			return;
 		}
@@ -5155,55 +4861,37 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// Inherit the alert level of the other AI, but attenuate it a bit
 		float otherAlertLevel = issuingAI->AI_AlertLevel * 0.7f;
 
-		if ( otherAlertLevel >= owner->thresh_3 )
+		if ( otherAlertLevel < owner->thresh_3 )
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s owner->m_searchID = %d, issuingAI->m_searchID = %d\r",owner->GetName(),owner->m_searchID,issuingAI->m_searchID); // grayman debug
-			// grayman debug - only join their search if you're not already part of it
-			if (owner->m_searchID != issuingAI->m_searchID)
-			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s I plan to join the other search\r",owner->GetName()); // grayman debug
-
-				gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
-
-				// grayman #3438 - only reset my alert level if I'm currently not searching
-				if ( owner->AI_AlertLevel < owner->thresh_3 )
-				{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),otherAlertLevel); // grayman debug
-					owner->SetAlertLevel(otherAlertLevel);
-				}
-
-				owner->StopMove(MOVE_STATUS_DONE);
-				memory.StopReacting(); // grayman #3559
-
-				memory.alertPos = issuerMemory.alertPos;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s setting alertPos to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
-				memory.alertClass = EAlertNone;
-				memory.alertType = ieAlertType; // grayman debug - match alert types
-				
-				memory.alertRadius = issuerMemory.alertRadius;
-				memory.alertSearchVolume = issuerMemory.alertSearchVolume; 
-				memory.alertSearchExclusionVolume.Zero();
-
-				memory.alertedDueToCommunication = true;
-				//memory.visualAlert = false; // grayman #2422
-				memory.mandatory = false;	// grayman #3331
-				memory.respondingToSomethingSuspiciousMsg = true; // grayman debug
-
-				assert (eventID >= 0); // grayman debug - should always be true
-
-				// grayman #3438
-				if ( eventID >= 0 )
-				{
-					owner->AddSuspiciousEvent(eventID);
-					memory.currentSearchEventID = eventID; // grayman #3424
-				}
-			}
-			
+			// no reason to start searching if the inherited alert
+			// level isn't high enough to warrant a search
 			return;
 		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s I plan to join the other search\r",owner->GetName()); // grayman debug
+
+		gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
+
+		// grayman #3438 - only reset my alert level if I'm currently not searching
+		if ( owner->AI_AlertLevel < owner->thresh_3 )
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),otherAlertLevel); // grayman debug
+			owner->SetAlertLevel(otherAlertLevel);
+		}
+
+		owner->StopMove(MOVE_STATUS_DONE);
+		memory.StopReacting(); // grayman #3559
+
+		SetUpSearchData(EAlertTypeSomethingSuspicious, issuerMemory.alertPos, issuingAI, false, eventID); // grayman debug
+		memory.respondingToSomethingSuspiciousMsg = true; // grayman debug
+		memory.restartSearchForHidingSpots = true;
+		return;
 	}
-	else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
+
+	if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 	{
+		// raises my level of concern, but they're not a friend,
+		// so I won't raise it much
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_2*0.5f); // grayman debug
 		owner->SetAlertLevel(owner->thresh_2*0.5f);
 	}
@@ -5401,4 +5089,677 @@ void State::NeedToUseElevator(const eas::RouteInfoPtr& routeInfo)
 	owner->movementSubsystem->PushTask(TaskPtr(new HandleElevatorTask(routeInfo)));
 }
 
-} // namespace ai
+// grayman debug - Some of these settings might not get used now that we're
+// employing a search manager. The search manager will decide who does what.
+// For example, if the following code decides the AI should kneel, and the AI
+// is assigned an observer role, he won't be kneeling.
+
+// The parameters 'entity', 'flag', and 'value' are interpreted
+// in different ways by the case statements below.
+
+void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool flag, float value)
+{
+	idAI* owner = _owner.GetEntity();
+	assert(owner != NULL);
+
+	Memory& memory = owner->GetMemory();
+
+	switch (type)
+	{
+	case EAlertTypeNone:
+		// No alerts use this value
+		break;
+	case EAlertTypeSuspiciousVisual:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeSuspicious;
+		memory.alertPos = pos;
+
+		memory.alertRadius = VISUAL_ALERT_RADIUS;
+		memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		// Visual stimuli are locatable enough that we should
+		// search the exact stim location first
+		memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3492 - moved up from below
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = false;
+	
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false; // grayman debug
+		memory.mandatory = false; // grayman #3331
+
+		// The alert level is set elsewhere
+		break;
+	case EAlertTypeSuspicious:
+		{
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeSuspicious;
+		memory.alertPos = pos;
+
+		memory.alertRadius = TACTILE_ALERT_RADIUS;
+		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false; // grayman debug
+		owner->AI_TACTALERT = false; // grayman debug
+		memory.mandatory = true;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = false;
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = false;
+
+		// Set the alert amount to the according tactile alert value
+		float amount = cv_ai_tactalert.GetFloat();
+		amount *= owner->GetAcuity("tact");
+		// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
+		idActor* responsible = static_cast<idActor*>(entity);
+		owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
+
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		}
+		break;
+	case EAlertTypeEnemy:
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeEnemy;
+		memory.alertPos = pos;
+
+		memory.alertRadius = TACTILE_ALERT_RADIUS;
+		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;  // grayman debug
+		owner->AI_TACTALERT = false; // grayman debug
+		memory.mandatory = true;	 // grayman #3331
+
+		memory.alertedDueToCommunication = false;
+
+		// Setting the alert level is done in the calling method
+
+		// Logging the suspicious event is done in the calling method
+		break;
+	case EAlertTypeFailedKO:
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeFailedKO; // grayman debug
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;  // grayman debug
+		owner->AI_TACTALERT = false; // grayman debug
+		memory.mandatory = true;	 // grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = false;
+
+		// grayman #3009 - Pass the alert position so the AI can look at it.
+		// PreAlertAI() will call Event_AlertAI() the next frame to set the alert level.
+		owner->PreAlertAI("tact", owner->thresh_5*2, memory.alertPos); // grayman #3356
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString()); // grayman debug
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
+		break;
+	case EAlertTypeWeapon:
+		memory.alertClass = EAlertVisual_2; // grayman #2603
+		memory.alertType = EAlertTypeWeapon;
+		memory.alertPos = pos;
+
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+	
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+	
+		// Do new reaction to stimulus
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = true; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		// Raise alert level
+		if (owner->AI_AlertLevel < owner->thresh_4 - 0.1f)
+		{
+			owner->SetAlertLevel(owner->thresh_4 - 0.1f);
+		}
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeBlinded:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeBlinded; // grayman debug
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS; // grayman #3431
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; // grayman #3431
+		memory.alertSearchExclusionVolume.Zero(); // grayman #3431
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = true; // grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = false;
+
+		// Set alert level a little bit below combat
+		if (owner->AI_AlertLevel < owner->thresh_5 - 0.1)
+		{
+			owner->SetAlertLevel(owner->thresh_5 - 0.1);
+		}
+
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeFoundEnemy:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeEnemy;
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = true;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = true; // grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = false;
+
+		owner->SetAlertLevel(owner->thresh_5*2);
+				
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeLostTrackOfEnemy:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeEnemy;
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = true; // grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = false;
+
+		owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeDeadPerson:
+		{
+		// memory.alertClass set previously
+		// memory.alertType set previously
+		memory.alertPos = pos;
+
+		idAI* person = static_cast<idAI*>(entity);
+
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+			
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		// grayman #3075
+		// Is this alert far enough away from the last one we reacted to to
+		// consider it a new alert and restart the search?
+
+		// If last alert position searched is [0,0,0], restart
+		if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) ) // grayman #3492
+		{
+			// Restart the search, in case we're already searching
+			memory.restartSearchForHidingSpots = true;
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 1 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
+		}
+		else
+		{
+			idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3492
+	
+			if ( newAlertDeltaFromLastOneSearched.LengthSqr() > memory.alertSearchVolume.LengthSqr() )
+			{
+				// Restart the search, in case we're already searching
+				memory.restartSearchForHidingSpots = true;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 2 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
+			}
+		}
+
+		// grayman #3317 - No close search if death just happened. Otherwise, there's a chance
+
+		bool ISawItHappen = ( gameLocal.time < ( person->m_timeFellDown + DISCOVERY_TIME_LIMIT ) );
+		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s stimulusLocationItselfShouldBeSearched = 1\r",owner->GetName()); // grayman debug
+		memory.stimulusLocationItselfShouldBeSearched = true; // grayman debug
+		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		owner->SetAlertLevel(owner->thresh_5 + 0.1);
+
+		int eventID = value;
+		memory.currentSearchEventID = eventID; // grayman #3424
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s setting currentSearchEventID to %d\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
+		owner->AddSuspiciousEvent(eventID);
+		}
+		break;
+	case EAlertTypeUnconsciousPerson:
+		{
+		idAI* person = static_cast<idAI*>(entity);
+
+		// memory.alertClass set previously
+		// memory.alertType set previously
+		memory.alertPos = pos;
+			
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+			
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false; // grayman #3331
+			
+		// grayman #3317 - No close search if KO just happened. Otherwise, there's a chance
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		bool ISawItHappen = ( gameLocal.time < ( person->m_timeFellDown + DISCOVERY_TIME_LIMIT ) );
+		bool shouldKneel = ( !ISawItHappen && ( gameLocal.random.RandomFloat() < 0.5f ) );
+		memory.investigateStimulusLocationClosely = shouldKneel; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 + 0.1f); // grayman debug
+		owner->SetAlertLevel(owner->thresh_5 + 0.1f);
+					
+		int eventID = value;
+		memory.currentSearchEventID = eventID; // grayman #3424
+		owner->AddSuspiciousEvent(eventID);
+		}
+		break;
+	case EAlertTypeBlood:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeBlood;
+		memory.alertPos = pos;
+		
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = true; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeLightSource:
+		memory.alertClass = EAlertVisual_4; // grayman #3498 - was _2
+		memory.alertType = EAlertTypeLightSource;
+		memory.alertPos = pos;
+						
+		// Prepare search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+							
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false; // grayman #3331
+
+		// Do new reaction to stimulus after relighting
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		// alert level is set in the calling method
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeMissingItem:
+		memory.alertClass = EAlertVisual_1;
+		memory.alertType = EAlertTypeMissingItem;
+		memory.alertPos = pos;
+		
+		// Prepare search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false; // grayman #3331
+		
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s calling SetAlertLevel(%f)\r",owner->GetName(),value); // grayman debug
+		owner->SetAlertLevel(value);
+
+		// memory.currentSearchEventID is set in the calling method
+		break;
+	case EAlertTypeBrokenItem:
+		memory.alertClass = EAlertVisual_2; // grayman #2603
+		memory.alertType = EAlertTypeBrokenItem;
+		memory.alertPos = pos;
+		
+		// Prepare search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false; // grayman #3331
+		
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // deep investigation
+		memory.alertedDueToCommunication = false;
+
+		owner->SetAlertLevel(owner->thresh_5 - 0.1);
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeDoor:
+		memory.alertClass = EAlertVisual_2; // grayman #2603
+		memory.alertType = EAlertTypeDoor;
+		memory.alertPos = pos; // grayman #3756
+		
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+		
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = false;
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s calling SetAlertLevel(%f)\r",owner->GetName(),value); // grayman debug
+		owner->SetAlertLevel(value); // grayman #3756 - shorten search time
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeSuspiciousItem:
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeSuspiciousItem;
+		memory.alertPos = pos;
+
+		memory.alertRadius = AUDIO_ALERT_RADIUS;
+		memory.alertSearchVolume = AUDIO_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = false;
+
+		// the alert level has already been set by the calling method
+
+		// Log the event
+		// grayman debug - TODO: no need for anyone to join a pickpocket search,
+		// so do we need an event? Keep others from joining this search.
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		break;
+	case EAlertTypeRope:
+		{
+		memory.alertClass = EAlertVisual_4; // grayman #3498 (was _2)
+		memory.alertType = EAlertTypeSuspiciousItem;
+		memory.alertPos = pos;
+
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
+		memory.alertSearchExclusionVolume.Zero();
+						
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+						
+		// Do new reaction to stimulus
+		memory.stimulusLocationItselfShouldBeSearched = true;
+
+		// If the rope origin is close to your feet, do a close investigation
+
+		float ropeDist = entity->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
+		memory.investigateStimulusLocationClosely = ( abs(ropeDist) <= 20 );
+		memory.alertedDueToCommunication = false;
+
+		// alert level was pre-set
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		}
+		break;
+	case EAlertTypeHitByProjectile:
+		{
+		memory.alertClass = EAlertTactile;
+		memory.alertType = EAlertTypeHitByProjectile;
+		
+		const idVec3& ownerOrigin = owner->GetPhysics()->GetOrigin();
+
+		idVec3 attackerDir(0,0,0);
+		float distance = 0;
+		
+		idEntity *attacker = entity;
+
+		if (attacker != NULL)
+		{
+			attackerDir = attacker->GetPhysics()->GetOrigin() - ownerOrigin;
+			distance = attackerDir.NormalizeFast();
+		}
+
+		// Start searching halfway between us and the attacker
+
+		memory.alertPos = ownerOrigin + attackerDir * distance * 0.5f;
+
+		// grayman #3331 - trace down until you hit something
+		idVec3 bottomPoint = memory.alertPos;
+		bottomPoint.z -= 1000;
+
+		trace_t result;
+		if ( gameLocal.clip.TracePoint(result, memory.alertPos, bottomPoint, MASK_OPAQUE, NULL) )
+		{
+			// Found the floor.
+			memory.alertPos.z = result.endpos.z + 1; // move the target point to just above the floor
+		}
+
+		// Do search as if there is an enemy that has escaped
+		memory.alertRadius = TACTILE_ALERT_RADIUS;
+		memory.alertSearchVolume = TACTILE_SEARCH_VOLUME*2; 
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = true; // grayman #3331
+		
+		memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3331 - start search at alertPos
+		memory.investigateStimulusLocationClosely = false;
+		memory.restartSearchForHidingSpots = true; // grayman #3331
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
+		memory.alertedDueToCommunication = false;
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 - 0.1f); // grayman debug
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
+		}
+		break;
+	case EAlertTypeEncounter:
+		{
+		idAI* otherAI = static_cast<idAI*>(entity);
+		Memory& otherMemory = otherAI->GetMemory();
+
+		// grayman #2603 - inherit the other's alert info
+		memory.alertClass = otherMemory.alertClass;
+		memory.alertType = otherMemory.alertType;
+		memory.alertPos = pos;
+
+		memory.alertRadius = otherMemory.alertRadius;
+		memory.alertSearchVolume = otherMemory.alertSearchVolume; 
+		memory.alertSearchExclusionVolume = otherMemory.alertSearchExclusionVolume;
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false; // grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = false;
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = flag; // grayman #3424
+
+		// alert level has already been set
+
+		int eventID = value;
+		memory.currentSearchEventID = eventID; // grayman #3424
+		owner->AddSuspiciousEvent(eventID);
+		}
+		break;
+	case EAlertTypeRequestForHelp:
+		{
+		idAI* issuingEntity = static_cast<idAI*>(entity);
+
+		memory.alertClass = issuingEntity->GetMemory().alertClass;
+		memory.alertType = issuingEntity->GetMemory().alertType; // grayman debug
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false;
+		memory.alertedDueToCommunication = true;
+
+		// grayman #3548 - even though my alert level was set up by the calling method
+		// to go up by 'psychLoud', we need to guarantee that I'll start
+		// the search right away by setting my alert level just below combat threshold
+		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
+
+		int eventID = value;
+		memory.currentSearchEventID = eventID; // grayman debug
+		owner->AddSuspiciousEvent(eventID);
+		}
+		break;
+	case EAlertTypeDetectedEnemy:
+		{
+		idAI* issuingEntity = static_cast<idAI*>(entity);
+		memory.alertClass = issuingEntity->GetMemory().alertClass;
+		memory.alertType = issuingEntity->GetMemory().alertType; // grayman debug
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = true;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = true;
+						
+		// Set the alert level between 4 and 5.
+		owner->SetAlertLevel((owner->thresh_4 + owner->thresh_5)*0.5f);
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+		}
+		break;
+	case EAlertTypeSearchOrder:
+		// grayman debug - is this necessary? Isn't SearchOrder just a bark
+		// that accompanies an AI moving to his assigned post? It should be
+		// given as soon as the lead searcher sees the arriving AI and knows
+		// he's going to join the search.
+		{
+		idAI* issuingEntity = static_cast<idAI*>(entity);
+
+		memory.alertClass = issuingEntity->GetMemory().alertClass;
+		memory.alertType = issuingEntity->GetMemory().alertType; // grayman debug
+		memory.alertPos = pos;
+
+		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = true;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = true;
+
+		owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
+
+		// Log the event
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		}
+		break;
+	case EAlertTypeSomethingSuspicious:
+		{
+		idAI* issuingEntity = static_cast<idAI*>(entity);
+		Memory& issuerMemory = issuingEntity->GetMemory();
+
+		memory.alertClass = EAlertNone;
+		memory.alertType = issuerMemory.alertType; // grayman debug
+		memory.alertPos = pos;
+				
+		memory.alertRadius = issuerMemory.alertRadius;
+		memory.alertSearchVolume = issuerMemory.alertSearchVolume; 
+		memory.alertSearchExclusionVolume.Zero();
+
+		owner->AI_VISALERT = false;
+		owner->AI_TACTALERT = false;
+		memory.mandatory = false;	// grayman #3331
+
+		memory.stimulusLocationItselfShouldBeSearched = false;
+		memory.investigateStimulusLocationClosely = false; // grayman debug
+		memory.alertedDueToCommunication = true;
+
+		// alert level is set by the calling method
+
+		int eventID = value;
+
+		// grayman #3438
+		memory.currentSearchEventID = eventID; // grayman #3424
+		owner->AddSuspiciousEvent(eventID);
+		}
+		break;
+	};
+}
+
+}// namespace ai

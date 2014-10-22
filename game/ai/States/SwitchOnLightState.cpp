@@ -703,50 +703,31 @@ void SwitchOnLightState::Think(idAI* owner)
 
 				if (owner->m_LatchedSearch)
 				{
+					owner->m_LatchedSearch = false;
+
 					// grayman #3438 - move raising alert level to here
 					// Raise alert level if we already have some evidence of intruders
 
 					if ((owner->AI_AlertLevel < owner->thresh_3) && 
 						(memory.enemiesHaveBeenSeen || (memory.countEvidenceOfIntruders >= MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)))
 					{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SwitchOnLightState::Think 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_3 - 0.1 + (owner->thresh_4 - owner->thresh_3) * 0.2 * (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)); // grayman debug
 						owner->SetAlertLevel(owner->thresh_3 - 0.1 + (owner->thresh_4 - owner->thresh_3) * 0.2
 							* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)); // grayman #2603 - subtract a tenth
 
-						if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
+						if (owner->AI_AlertLevel > (owner->thresh_5 + owner->thresh_4) * 0.5)
 						{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SwitchOnLightState::Think 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),(owner->thresh_5 + owner->thresh_4) * 0.45); // grayman debug
-							owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
+							owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
 						}
 					}
 					
-					owner->m_LatchedSearch = false;
-
 					// A doused light might raise the alert level to a max
 					// of mid Agitated Searching. If the alert level rises
 					// above thresh_3, set up the search parameters for a new search.
 
 					if (owner->AI_AlertLevel >= owner->thresh_3)
 					{
-						memory.alertPos = light->GetPhysics()->GetOrigin();
-						memory.alertClass = EAlertVisual_4; // grayman #3498 - was _2
-						memory.alertType = EAlertTypeLightSource;
-						
-						// Prepare search as if there is an enemy that has escaped
-						memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-						memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-						memory.alertSearchExclusionVolume.Zero();
-							
-						owner->AI_VISALERT = false;
-						//memory.visualAlert = false; // grayman #2422			
-
-						// Do new reaction to stimulus after relighting
-						memory.stimulusLocationItselfShouldBeSearched = true;
-						memory.alertedDueToCommunication = false;
-						memory.mandatory = false; // grayman #3331
-
-						// Log the event
-						memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+						// grayman debug - experiment moving all alert setup into one method
+						SetUpSearchData(EAlertTypeLightSource, light->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 					}
 				}
 

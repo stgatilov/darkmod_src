@@ -82,12 +82,6 @@ void BlindedState::Init(idAI* owner)
 
 	_endTime = gameLocal.time + static_cast<int>(duration);
 
-	// Set alert level a little bit below combat
-	if (owner->AI_AlertLevel < owner->thresh_5 - 1)
-	{
-		owner->SetAlertLevel(owner->thresh_5 - 1);
-	}
-
 	_oldVisAcuity = owner->GetBaseAcuity("vis"); // grayman #3552
 //	_oldVisAcuity = owner->GetAcuity("vis");
 	owner->SetAcuity("vis", 0);
@@ -113,7 +107,17 @@ void BlindedState::Think(idAI* owner)
 		owner->SetAcuity("vis", _oldVisAcuity);
 		owner->SetAcuity("aud", _oldAudAcuity); // Smoke #2829
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Think %s no longer blind\r",owner->GetName()); // grayman debug
+		// Set up a search if you have no enemy. If you have an enemy,
+		// the queued Lost Track of Enemy state will set up a search
+		// of its own.
+
+		if ( !owner->GetEnemy() )
+		{
+			// grayman debug - experiment moving all alert setup into one method
+			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman debug
+		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Think %s no longer blind\r",owner->GetName()); // grayman debug
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431
@@ -123,7 +127,7 @@ void BlindedState::Think(idAI* owner)
 		{
 			// Stare at the ground in front of you, as if you're trying to get your sight back
 
-			idVec3 vec = owner->viewAxis.ToAngles().ToForward()*24;
+			idVec3 vec = owner->viewAxis.ToAngles().ToForward()*48;
 			vec.z = 0;
 			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + vec;
 			owner->Event_LookAtPosition(lookAtMe, MS2SEC(duration));

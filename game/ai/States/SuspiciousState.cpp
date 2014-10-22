@@ -154,8 +154,10 @@ void SuspiciousState::Init(idAI* owner)
 		{
 			if ( memory.alertClass != EAlertVisual_4) // grayman #3498
 			{
-				// grayman #3496 - enough time passed since last alert bark?
-				if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+				// grayman #3496 - Enough time passed since last alert bark?
+				// grayman debug - Enough time passed since last visual stim bark?
+				if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+					 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 				{
 					// barking
 					idStr bark;

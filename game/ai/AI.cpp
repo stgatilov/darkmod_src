@@ -1737,6 +1737,7 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeDoor]					= 20;
 	alertTypeWeight[ai::EAlertTypeLightSource]			= 10;
 	alertTypeWeight[ai::EAlertTypeSuspicious]			= 5;
+	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		= 5; // grayman debug
 	alertTypeWeight[ai::EAlertTypeNone]					= 0;
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
@@ -2285,7 +2286,7 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Think - %s ... alert level = %f\r",GetName(),(float)this->AI_AlertLevel); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Think - %s ... alert level = %f [%s]\r",GetName(),(float)this->AI_AlertLevel,physicsObj.GetOrigin().ToString()); // grayman debug
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
 	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
@@ -9520,11 +9521,15 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    soundMaker = '%s'\r",soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    IsEnemy(soundMaker) = %d\r",IsEnemy(soundMaker)); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    soundMaker != m_lastKilled.GetEntity() = %d\r",soundMaker != m_lastKilled.GetEntity()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    IsAfraid() = %d\r",IsAfraid()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    idStr::FindText(propParms->name,'arrow') = %d\r",idStr::FindText(propParms->name,"arrow") == 0); // grayman debug
 		if ( !soundMaker || // alert if unknown sound maker
-			// grayman debug - when done, uncomment the notarget reference in the next line
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) /*&& !soundMaker->fl.notarget*/ ) || // alert if enemy and not the last we killed and not in notarget mode
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    calling OnAudioAlert()\r"); // grayman debug
 			// greebo: Notify the currently active state
 			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name,addFuzziness,maker); // grayman #3847 // grayman debug
 
@@ -9533,13 +9538,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			if (noisemaker)
 			{
 				// Only remember a noisemaker if it puts you into Searching mode or higher
-				bool rememberNoisemaker = false;
 				if ( AI_AlertLevel + psychLoud >= thresh_3 )
-				{
-					rememberNoisemaker = true;
-				}
-
-				if ( rememberNoisemaker)
 				{
 					// place this noisemaker on the list of noisemakers I've heard.
 
@@ -9556,11 +9555,36 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 			// grayman #3009 - pass the alert position so the AI can look at it
 			// grayman #3848 - but not if you've already been told to flee
-
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    shouldAlert = %d\r",shouldAlert); // grayman debug
 			if (shouldAlert)
 			{
+				// sets alert level
 				PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
+
+				// Log the event if alert level will be high enough to search.
+				// There's a delay between PreAlertAI() and Event_AlertAI(), and
+				// the latter sets the new alert level, so at this point, the
+				// alert level doesn't include 'psychLoud'.
+
+				if ( AI_AlertLevel + psychLoud >= thresh_3 )
+				{
+					if (maker->IsType(idMoveable::Type) && (idStr(maker->GetName()).IcmpPrefix("idMoveable_atdm:ammo_noisemaker") == 0)) // noisemakers are moveables
+					{
+						idVec3 initialNoiseOrigin;
+						maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
+
+						// don't provide the noisemaker itself as the entity parameter because that might go away
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 4 - %s calling LogSuspiciousEvent()\r",GetName()); // grayman debug
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL ); // grayman debug
+					}
+					else
+					{
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 5 - %s calling LogSuspiciousEvent()\r",GetName()); // grayman debug
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, GetMemory().alertPos, NULL ); // grayman debug
+					}
+				}
 			}
+
 		}
 		
 		// Retrieve the messages from the other AI, if there are any
@@ -10049,9 +10073,8 @@ void idAI::PerformVisualScan(float timecheck)
 	}
 
 	idActor* player = gameLocal.GetLocalPlayer();
-	if (m_bIgnoreAlerts || player->fl.notarget)
+	if (m_bIgnoreAlerts || player->fl.notarget || player->fl.invisible) // grayman debug - added 'invisible'
 	{
-		// notarget
 		return;
 	}
 
@@ -10743,9 +10766,9 @@ idActor *idAI::FindEnemy(bool useFOV)
 	{
 		idEntity* ent = gameLocal.entities[i];
 
-		if (ent == NULL || ent->fl.notarget || !ent->IsType(idActor::Type))
+		if ( (ent == NULL) || ent->fl.notarget || ent->fl.invisible || !ent->IsType(idActor::Type)) // grayman debug - added 'invisible'
 		{
-			// NULL, notarget or non-Actor, continue
+			// NULL, notarget or non-Actor or invisible, continue
 			continue;
 		}
 
@@ -12589,7 +12612,35 @@ void idAI::ShowDebugInfo()
 
 	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
 	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		// grayman debug - add debugging info for coordinated searches
+		if ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching))
+		{
+			Search* search = gameLocal.m_searchManager->GetSearch(m_searchID);
+			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,this);
+			smRole_t r = E_ROLE_NONE;
+			idStr role = "none";
+			if (assignment)
+			{
+				r = assignment->_searcherRole;
+				if (r == E_ROLE_SEARCHER)
+				{
+					role = "searcher";
+				}
+				else if (r == E_ROLE_GUARD)
+				{
+					role = "guard";
+				}
+				else if (r == E_ROLE_OBSERVER)
+				{
+					role = "observer";
+				}
+			}
+			gameRenderWorld->DrawText( va("Alert: %f; Index: %d; Role: %s", (float) AI_AlertLevel, (int)AI_AlertIndex, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		}
+		else
+		{
+			gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		}
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
 		{
 			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
@@ -13151,31 +13202,10 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 
 	if ( AI_AlertLevel < ( thresh_4 - 0.1f ) )
 	{
-		memory.alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
-		memory.alertClass = ai::EAlertVisual_2; // grayman #2603
-		memory.alertType = ai::EAlertTypeDoor;
-		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		AI_VISALERT = false;
-		//memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetUpSuspiciousDoor - %s calling SetAlertLevel(%f)\r",GetName(),thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman debug
-		SetAlertLevel(thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman #3756 - shorten search time
-
-		// Log the event
-		memory.currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		// grayman debug - experiment moving all alert setup into one method
+		idVec3 alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
+		mind->GetState()->SetUpSearchData(ai::EAlertTypeDoor, alertPos, NULL, false, thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman debug
 	}
-
-	// Do new reaction to stimulus
-
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.alertedDueToCommunication = false;
-	memory.investigateStimulusLocationClosely = false; // grayman debug
 }
 
 int idAI::GetDoorSide(CFrobDoor* frobDoor)

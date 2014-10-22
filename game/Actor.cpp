@@ -2168,7 +2168,8 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	if (ent->IsType(idActor::Type)) 
 	{
 		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
-		if (ent->fl.notarget)
+		// grayman debug - or if marked 'invisible'
+		if ((ent->fl.notarget) || (ent->fl.invisible))
 		{
 			return false;
 		}

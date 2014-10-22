@@ -142,6 +142,7 @@ void PainState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
+				// grayman debug - TODO: i don't see where the event id was set
 				memory.currentSearchEventID // grayman debug (was '0')
 			));
 

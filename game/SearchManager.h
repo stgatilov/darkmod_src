@@ -89,7 +89,6 @@ typedef enum
 
 #define SEARCH_NOTHING			(0)  // no searchers, no guards, no observers
 #define SEARCH_EVERYTHING		(0xffffffff) // searchers, guards, and observers, and everyone mills about at first
-//#define SEARCH_SUSPICIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeSuspicious
 #define SEARCH_SUSPICIOUS		(SEARCH_EVERYTHING) // EAlertTypeSuspicious
 #define SEARCH_ENEMY			(SEARCH_NOTHING) // EAlertTypeEnemy
 #define SEARCH_WEAPON			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon

@@ -136,6 +136,7 @@ enum EAlertType
 {
 	EAlertTypeNone,
 	EAlertTypeSuspicious,
+	EAlertTypeSuspiciousVisual, // grayman debug
 	EAlertTypeEnemy,
 	EAlertTypeFailedKO, // grayman debug
 	EAlertTypeWeapon,
@@ -147,10 +148,16 @@ enum EAlertType
 	EAlertTypeMissingItem,
 	EAlertTypeBrokenItem,
 	EAlertTypeDoor,
-	//EAlertTypeDamage,
 	EAlertTypeSuspiciousItem,	// grayman #1327
 	EAlertTypeRope,				// grayman #2872
 	EAlertTypeHitByProjectile,	// grayman #3331
+	EAlertTypeFoundEnemy,		// grayman debug
+	EAlertTypeLostTrackOfEnemy, // grayman debug
+	EAlertTypeEncounter,		// grayman debug
+	EAlertTypeRequestForHelp,	// grayman debug
+	EAlertTypeSearchOrder,		// grayman debug
+	EAlertTypeDetectedEnemy,	// grayman debug
+	EAlertTypeSomethingSuspicious, // grayman debug
 	EAlertTypeCount
 };
 
@@ -221,7 +228,7 @@ const char* const AlertStateNames[EAlertStateNum] =
 // grayman #2603 - how long to wait until barking again about a light that's out (ms)
 #define REBARK_DELAY 15000
 
-// grayman #3496 - how long to wait after an alert bark before issuing the next alert bark (ms)
+// grayman #3496 - how long to wait after an alert bark or visual stim bark before issuing the next alert bark (ms)
 #define MIN_TIME_BETWEEN_ALERT_BARKS 3000
 
 const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 4*60; // grayman #3415 - 4 minutes 

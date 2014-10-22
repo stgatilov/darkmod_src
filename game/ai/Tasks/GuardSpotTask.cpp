@@ -57,7 +57,6 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get a shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to guard memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Invalid spot, terminate task
@@ -73,6 +72,7 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Milling?
 	if (owner->GetMemory().millingInProgress)
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to mill about memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		// Is there any activity after milling is over?
 		// If so, we want a short _exitTime so we can make the run
 		// before we drop out of searching mode. If no, we can continue
@@ -107,12 +107,14 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 			}
 		}
 	}
+	else
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to guard or observe from memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
+	}
 }
 
 bool GuardSpotTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("GuardSpotTask performing.\r");
-
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
@@ -122,6 +124,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _guardSpotState = %d\r",owner->GetName(),(int)_guardSpotState); // grayman debug
 	// if we've entered combat mode, we want to
 	// end this task.
 
@@ -465,9 +468,9 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::OnFinish - %s guardingInProgress set to false\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::OnFinish - %s guardingInProgress and millingInProgress set to false\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished guarding the spot, so set the
-	// boolean back to false
+	// booleans back to false
 	owner->GetMemory().guardingInProgress = false;
 	owner->GetMemory().millingInProgress = false;
 }

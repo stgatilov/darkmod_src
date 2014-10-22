@@ -88,9 +88,11 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 
 	// grayman #3756 - prevent a repeated bark from aborting a recent
 	// non-repeated bark (most likely one issued when rising to a new alert level)
+	// grayman debug - Enough time passed since last visual stim bark?
 
-	if ( (gameLocal.time >= _nextBarkTime) &&
-		 (gameLocal.time >= (owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS)))
+	if ( ( gameLocal.time >= _nextBarkTime ) &&
+		 ( gameLocal.time >= owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+		 ( gameLocal.time >= owner->GetMemory().lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 	{
 		// The time has come, bark now
 

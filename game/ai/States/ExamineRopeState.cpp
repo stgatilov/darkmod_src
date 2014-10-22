@@ -330,30 +330,8 @@ void ExamineRopeState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
-						memory.alertPos = _examineSpot;
-						memory.alertClass = EAlertVisual_4; // grayman #3498 (was _2)
-						memory.alertType = EAlertTypeSuspiciousItem;
-
-						// Do search as if there is an enemy that has escaped
-						memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-						memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-						memory.alertSearchExclusionVolume.Zero();
-						
-						owner->AI_VISALERT = false;
-						//memory.visualAlert = false; // grayman #2422
-						memory.mandatory = false;	// grayman #3331
-						
-						// Do new reaction to stimulus
-						memory.stimulusLocationItselfShouldBeSearched = true;
-
-						// If the rope origin is close to your feet, do a close investigation
-
-						float ropeDist = rope->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
-						memory.investigateStimulusLocationClosely = ( abs(ropeDist) <= 20 );
-						memory.alertedDueToCommunication = false;
-
-						// Log the event
-						memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+						// grayman debug - experiment moving all alert setup into one method
+						SetUpSearchData(EAlertTypeRope, _examineSpot, rope, false, 0); // grayman debug
 					}
 				}
 

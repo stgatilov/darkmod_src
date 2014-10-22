@@ -433,7 +433,7 @@ enum EventType
 	// several unique searches to be generated
 	E_EventTypeNoisemaker,
 
-	// grayman debug - Add event type for unknown event. This might occur
+	// grayman debug - Add event type for an unimportant event. This might occur
 	// if an AI has risen into searching or agitated searching because of
 	// an accumulation of suspicious events
 	E_EventTypeMisc

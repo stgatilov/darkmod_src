@@ -343,30 +343,13 @@ void HitByMoveableState::Think(idAI* owner)
 
 				if ( owner->IsEnemy(responsible) )
 				{
-					Memory& memory = owner->GetMemory();
-					memory.alertType = EAlertTypeSuspicious;
-					memory.alertClass = EAlertTactile;
-					memory.alertPos = ownerOrg;
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s hit %s, setting alertPos to [%s]\r",responsible->GetName(),owner->GetName(),memory.alertPos.ToString()); // grayman debug
-					memory.alertRadius = TACTILE_ALERT_RADIUS;
-					memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-					//memory.visualAlert = false;
-
-					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, ownerOrg, NULL ); // grayman debug
-
-					// If we got this far, we give the alert
-					// Set the alert amount to the according tactile alert value
-					float amount = cv_ai_tactalert.GetFloat();
-
 					// NOTE: Latest tactile alert always overides other alerts
 					owner->m_TactAlertEnt = tactEnt;
 					owner->m_AlertedByActor = responsible;
 
-					amount *= owner->GetAcuity("tact");
-					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
-					owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
-
+					// grayman debug - experiment moving all alert setup into one method
+					SetUpSearchData(EAlertTypeSuspicious, ownerOrg, responsible, false, 0); // grayman debug
+		
 					// Set last visual contact location to this location as that is used in case
 					// the target gets away.
 					owner->m_LastSight = ownerOrg;
@@ -376,9 +359,6 @@ void HitByMoveableState::Think(idAI* owner)
 					{
 						owner->lastVisibleEnemyPos = ownerOrg;
 					}
-
-					owner->AI_TACTALERT = true;
-					memory.mandatory = true; // grayman #3331
 				}
 
 				Wrapup(owner);

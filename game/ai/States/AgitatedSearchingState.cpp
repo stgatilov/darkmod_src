@@ -213,7 +213,7 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 
 	if (memory.repeatedBarkState != newRepeatedBarkState)
 	{
-		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
 		memory.repeatedBarkState = newRepeatedBarkState;
 
 		bool sendSuspiciousMessage = true; // whether to send a 'something is suspicious' message or not
@@ -247,6 +247,8 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 		}
 
 		CommMessagePtr message;
+
+		assert (memory.currentSearchEventID >= 0); // grayman debug - should always be true
 
 		if (sendSuspiciousMessage)
 		{
@@ -308,14 +310,16 @@ void AgitatedSearchingState::Init(idAI* owner)
 	}
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s clear the comm subsystem (single and repeated barks)\r",owner->GetName()); // grayman debug
-	// kill the repeated bark task
+	// kill the repeated and single bark tasks
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 	memory.repeatedBarkState = ERBS_NULL; // grayman debug
 
 	if (owner->AlertIndexIncreased())
 	{
 		// grayman #3496 - enough time passed since last alert bark?
-		if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+		// grayman debug - enough time passed since last visual stim bark?
+		if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+			 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 		{
 			idStr soundName = "";
 			if ( ( memory.alertedDueToCommunication == false ) && ( ( memory.alertType == EAlertTypeSuspicious ) || ( memory.alertType == EAlertTypeEnemy ) || ( memory.alertType == EAlertTypeFailedKO ) ) )
@@ -328,6 +332,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 				{
 					soundName = "snd_alert4NoEvidence";
 				}
+
+				assert (memory.currentSearchEventID >= 0); // grayman debug - should always be true
 
 				CommMessagePtr message = CommMessagePtr(new CommMessage(
 					CommMessage::DetectedSomethingSuspicious_CommType, 

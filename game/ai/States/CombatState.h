@@ -110,6 +110,7 @@ public:
 	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck); // grayman #3431
+	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner); // grayman debug
 	
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;
