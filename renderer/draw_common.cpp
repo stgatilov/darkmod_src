@@ -501,6 +501,8 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 }
 
+void RB_SetProgramEnvironment( const idImage* referenceImage ); // Defined in the shader passes section next, now re-used for depth capture in #3877
+
 /*
 =====================
 RB_STD_FillDepthBuffer
@@ -552,6 +554,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 														  backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, 
 														  true );
+		RB_SetProgramEnvironment( globalImages->currentDepthImage );
 	}
 
 	if ( backEnd.viewDef->numClipPlanes ) {
@@ -577,7 +580,8 @@ RB_SetProgramEnvironment
 Sets variables that can be used by all vertex programs
 ==================
 */
-void RB_SetProgramEnvironment( void ) {
+void RB_SetProgramEnvironment( const idImage* referenceImage ) // Parameter added in #3877 so depth capture can use this function too
+{
 	float	parm[4];
 	int		pot;
 
@@ -586,6 +590,9 @@ void RB_SetProgramEnvironment( void ) {
 	}
 
 #if 0
+	// #3877: NOTE: if this code ever gets reactivated, references to globalImages->currentRenderImage  
+	//              should be updated to use the parameter instead.
+	//
 	// screen power of two correction factor, one pixel in so we don't get a bilerp
 	// of an uncopied pixel
 	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
@@ -611,11 +618,11 @@ void RB_SetProgramEnvironment( void ) {
 	// screen power of two correction factor, assuming the copy to _currentRender
 	// also copied an extra row and column for the bilerp
 	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
-	pot = globalImages->currentRenderImage->uploadWidth;
+	pot = referenceImage->uploadWidth;
 	parm[0] = (float)w / pot;
 
 	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
-	pot = globalImages->currentRenderImage->uploadHeight;
+	pot = referenceImage->uploadHeight;
 	parm[1] = (float)h / pot;
 
 	parm[2] = 0;
@@ -631,6 +638,18 @@ void RB_SetProgramEnvironment( void ) {
 	parm[2] = 0;
 	parm[3] = 1;
 	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 1, parm );
+
+	// #3877: Allow shaders to access depth buffer. 
+	// NB The post-process shaders using _currentRender use the above environmental
+	//    constants 0 and 1 to convert screen coords to texture coords. But there's a simpler
+	//	  way to do it using the reciprocal of the texture size only. Use this method for depth capture,
+	//	  choosing (unused) slot 4, as depth capture will be used for all drawing stages including
+	//	  light interactions which use slots 0..3
+	parm[0] = 1.0f / referenceImage->uploadWidth;
+	parm[1] = 1.0f / referenceImage->uploadHeight;
+	parm[2] = 0;
+	parm[3] = 1;
+	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 4, parm );
 
 	//
 	// set eye position in global space
@@ -1002,7 +1021,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_SelectTexture( 0 );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	RB_SetProgramEnvironment();
+	RB_SetProgramEnvironment( globalImages->currentRenderImage );
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
 	// because we want to defer the matrix load because many
