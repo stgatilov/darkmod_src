@@ -4202,6 +4202,8 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
+	move.accuracy = accuracy; // grayman #3882
+
 	// Clear the "blocked" flag in the movement subsystem
 	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
