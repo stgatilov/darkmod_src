@@ -52,7 +52,7 @@ struct Assignment
 	float					_outerRadius;	// outer radius of search boundary
 	idBounds				_limits;		// boundary of the search
 	idAI*					_searcher;		// AI assigned
-	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _randomHidingSpotIndexes
+	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _hidingSpotIndexes
 	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, observer)
 };
 
@@ -60,6 +60,7 @@ struct Assignment
 struct Search
 {
 	int						_searchID;					// unique id for each search (starts at 0 and increments up)
+	int						_eventID;					// the ID of the event this search belongs to
 	int						_hidingSpotSearchHandle;	// handle for referencing the search
 	idVec3					_origin;					// center of search area, location of alert stimulus
 	idBounds				_limits;					// boundary of the search
@@ -67,13 +68,30 @@ struct Search
 	float					_outerRadius;				// outer radius of search boundary
 	CDarkmodHidingSpotTree	_hidingSpots;				// The hiding spots for this search
 	bool					_hidingSpotsReady;			// false = still building the hiding spot list; true = list complete
-	std::vector<int>		_randomHidingSpotIndexes;	// An array of random numbers serving as indices into the hiding spot list
-	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,a] where a = yaw angle to face
+
+	std::vector<int>		_hidingSpotIndexes;			// An array of numbers (>= 0) serving as indices into the hiding spot list.
+														// i.e. A value of "5" says to obtain the 5th spot in the hiding spot tree.
+														// The tree itself can't be simply accessed by index, so _hidingSpotIndexes
+														// allows us a simple method of keeping track of the last requested spot.
+														// When a good spot is obtained from the hiding spot list, the matching index
+														// in _hidingSpotIndexes is set to "-1", indicating that that spot has been
+														// used. This is useful when several AI searchers are sharing the list and we
+														// want to assign them to unique spots. Prior to 2.02, the contents of
+														// _hidingSpotIndexes was randomized, to provide random access to the hiding
+														// spots, but starting with 2.03, we'll be accessing them in the order they're
+														// provided in the hiding spot tree. The tree is sorted to place higher quality
+														// spots at the front, where quality is a guesstimate of where the player
+														// might be hiding.
+
+	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,w] where w = yaw angle to face
 	bool					_guardSpotsReady;			// false = guard spot list not complete yet; true = list complete
-	unsigned int			_assignmentFlags;			// flags that describe available assignments
-	idList<Assignment>		_assignments;				// a list of assignments for this search
-	int						_searcherCount;				// number of searchers (not assignments, because some of those might be deactivated)
-	int						_eventID;					// the ID of the event this search belongs to
+	unsigned int			_assignmentFlags;			// bitwise flags that describe available assignments
+	idList<Assignment>		_assignments;				// A list of assignments for this search. The list grows as AI join the search.
+														// The list doesn't shrink when an AI leaves the search; the assignment is simply
+														// marked as 'deactivated' by setting assignment._searcher to NULL. The list is
+														// cleared (returning memory) when the search struct is destroyed.
+	int						_searcherCount;				// Number of searchers (not assignments, because some of those might be deactivated).
+														// When this number drops to 0, the search struct is destroyed.
 };
 
 // search flags
@@ -107,8 +125,14 @@ typedef enum
 
 class CSearchManager
 {
+#if 1
 	idList<Search>  _searches;      // A list of all active searches in the mission
+#else
+	idList<Search*>  _searches;     // A list of all active searches in the mission
+#endif
 	int				uniqueSearchID; // the next unique id to assign to a new search
+	int				searchCount;	// The current number of active searches. When it returns
+									// to 0, _searches gets cleared.
 
 public:
 	CSearchManager();  // Constructor
@@ -128,9 +152,9 @@ public:
 
 	Search* GetSearch(int searchID); // returns a pointer to the requested search
 
-	Search* GetSearchWithEventID(int eventID, idAI* ai); // returns a pointer to the requested search
+	Search* GetSearchWithEventID(int eventID); // returns a pointer to the requested search
 
-	Search* GetSearchAtLocation(idVec3 location, idAI* ai); // returns a pointer to the requested search
+	Search* GetSearchAtLocation(idVec3 location); // returns a pointer to the requested search
 
 	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 

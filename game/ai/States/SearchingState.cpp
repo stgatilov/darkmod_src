@@ -50,6 +50,7 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -132,10 +133,10 @@ void SearchingState::Init(idAI* owner)
 	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
 		// Leave an existing search
-		if (owner->m_searchID >= 0)
-		{
-			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
-		}
+		//if (owner->m_searchID >= 0)
+		//{
+			//gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+		//}
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s calling StartNewHidingSpotSearch()\r",owner->GetName()); // grayman debug
 		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
@@ -288,7 +289,15 @@ void SearchingState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s leaving SearchingState\r",owner->GetName()); // grayman debug
+		// grayman debug - since AgitatedSearchingState::Think calls SearchingState::Think,
+		// when the former calls CheckAlertLevel(), it calls the AgitatedSearchingState version.
+		// If that returns a value of 'false', it comes into this block of code. If we simply
+		// return from here to ASS::Think(), which doesn't check for true/false, we'd continue
+		// on with whatever code follows the CheckAlertLevel() call. We don't want that to
+		// happen, so we'll make SearchingState::Think return the true/false to AgitatedSearchingState::Think,
+		// and let that method immediately bail out when it receives a 'false' result.
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s leaving SearchingState or Agitated Searching State\r",owner->GetName()); // grayman debug
+		owner->GetMind()->EndState(); // grayman debug
 		return;
 	}
 
@@ -870,8 +879,6 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 		memory.hidingSpotTestStarted = true;
 
 		Search *search = gameLocal.m_searchManager->GetSearch(newSearchID);
-
-		// ERROR: search->assignments has been cleared when we get here
 
 		// Start search
 		// TODO: Is the eye position necessary? Since the hiding spot list can be

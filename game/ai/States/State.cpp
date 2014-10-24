@@ -204,11 +204,18 @@ void State::OnVisualAlert(idActor* enemy)
 	// are always considered new
 	idVec3 newAlertDeltaFromLastOneSearched(memory.alertPos - memory.lastAlertPosSearched); // grayman #3075, grayman #3492
 	float alertDeltaLengthSqr = newAlertDeltaFromLastOneSearched.LengthSqr();
-	
+
+	// Is this alert pushing us up out of Suspicious into Searching?
+	// It is if we don't have a current lastAlertPosSearched, and we're
+	// searching. If true, log a new suspicious event so we can acquire
+	// a currentSearchEventID. We'll need that to set up the search.
+	if (memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) && owner->IsSearching()) // grayman debug
+	{
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetVisDir(), NULL ); // grayman debug
+	}
+
 	if ( memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) || (alertDeltaLengthSqr > memory.alertSearchVolume.LengthSqr() ) ) // grayman #3075
 	{
-		// grayman #3492 - moved up from below
-
 		// grayman #3515 - only bump the evidence count if you're in Searching or higher,
 		// and you haven't already bumped the count for a player sighting
 		if ( ( owner->AI_AlertIndex >= ESearching ) && !memory.mightHaveSeenPlayer )
@@ -216,16 +223,19 @@ void State::OnVisualAlert(idActor* enemy)
 			memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_VIS_ALERT;
 			memory.mightHaveSeenPlayer = true;
 		}
-		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
+		memory.posEvidenceIntruders = owner->GetVisDir(); // grayman #2903
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		
 		// Do new reaction to stimulus
 		//memory.alertedDueToCommunication = false; // grayman debug - done by SetUpSearchData() above
-		// end of section moved up
 
 		if (owner->IsSearching()) // grayman #2603
 		{
 			// We are in searching mode or we are switching to it, handle this new incoming alert
+
+			// Visual stimuli are locatable enough that we should
+			// search the exact stim location first
+			memory.stimulusLocationItselfShouldBeSearched = true;
 
 			// Restart the search, in case we're already searching
 			memory.restartSearchForHidingSpots = true;
@@ -285,7 +295,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 				// grayman debug - experiment moving all alert setup into one method
 				SetUpSearchData(EAlertTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnTactileAlert 2 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, owner->GetPhysics()->GetOrigin().ToString(),tactEnt ? tactEnt->GetName() : "NULL"); // grayman debug
-				eventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), tactEnt ); // grayman #3424 // grayman #3848 
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), tactEnt ); // grayman #3424 // grayman #3848 
 			}
 			else
 			{
@@ -5118,9 +5128,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		memory.alertSearchVolume = VISUAL_SEARCH_VOLUME;
 		memory.alertSearchExclusionVolume.Zero();
 
-		// Visual stimuli are locatable enough that we should
-		// search the exact stim location first
-		memory.stimulusLocationItselfShouldBeSearched = true; // grayman #3492 - moved up from below
+		memory.stimulusLocationItselfShouldBeSearched = false; // will be set to true if needed, in the calling method
 		memory.investigateStimulusLocationClosely = false;
 		memory.alertedDueToCommunication = false;
 	

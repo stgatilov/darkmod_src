@@ -5088,6 +5088,7 @@ void idActor::MarkEventAsSearched( int eventID )
 	{
 		if ( m_knownSuspiciousEvents[i].eventID == eventID )
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s marking event %d as searched\r",GetName(),eventID); // grayman debug
 			// I know about it. Mark it 'searched'.
 			m_knownSuspiciousEvents[i].searched = true;
 			return;
@@ -5169,11 +5170,11 @@ bool idActor::KnowsAboutSuspiciousEvent( int eventID ) // grayman #3424
 	{
 		if ( m_knownSuspiciousEvents[i].eventID == eventID )
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s knows about event %d\r",GetName(),eventID); // grayman debug
+//			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s knows about event %d\r",GetName(),eventID); // grayman debug
 			return true;
 		}
 	}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s doesn't know about event %d\r",GetName(),eventID); // grayman debug
+//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::KnowsAboutSuspiciousEvent - %s doesn't know about event %d\r",GetName(),eventID); // grayman debug
 	return false;
 }
 

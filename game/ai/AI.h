@@ -1045,7 +1045,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	//CDarkmodHidingSpotTree	m_hidingSpots; // grayman debug
 
 	// An array of random numbers serving as indexes into the hiding spot list.
-	std::vector< int >		m_randomHidingSpotIndexes;
+	//std::vector< int >		m_randomHidingSpotIndexes; // grayman debug
 
 	/**
 	* Used for drowning

@@ -892,6 +892,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteFloat(m_VisDistMax);
 
+	/* grayman debug
 	// grayman #3424
 	int num = m_randomHidingSpotIndexes.size();
 	savefile->WriteInt(num);
@@ -899,6 +900,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteInt(m_randomHidingSpotIndexes[i]);
 	}
+	*/
 
 	savefile->WriteInt(m_AirCheckTimer);
 	savefile->WriteBool(m_bCanDrown);
@@ -1346,6 +1348,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat(m_VisDistMax);
 
+	/* grayman debug
 	// grayman #3424
 	savefile->ReadInt(num);
 	m_randomHidingSpotIndexes.clear();
@@ -1355,6 +1358,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(n);
 		m_randomHidingSpotIndexes.push_back(n);
 	}
+	*/
 
 	savefile->ReadInt(m_AirCheckTimer);
 	savefile->ReadBool(m_bCanDrown);

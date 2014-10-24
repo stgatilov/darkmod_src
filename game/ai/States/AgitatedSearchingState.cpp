@@ -45,6 +45,7 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -84,6 +85,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 		//owner->Event_CloseHidingSpotSearch();
 		owner->GetMemory().combatState = -1; // grayman #3507
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
+		movingUpToCombat = true;
 		return false;
 	}
 
@@ -278,6 +280,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
+	movingUpToCombat = false;
+
 	// Ensure we are in the correct alert level
 	if ( !CheckAlertLevel(owner) )
 	{
@@ -391,6 +395,12 @@ void AgitatedSearchingState::Think(idAI* owner)
 {
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	SearchingState::Think(owner);
+
+	if (movingUpToCombat) // grayman debug
+	{
+		movingUpToCombat = false;
+		return;
+	}
 
 	SetRepeatedBark(owner); // grayman debug - in case the bark has to change
 
