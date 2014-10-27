@@ -60,7 +60,7 @@ void FleeState::Init(idAI* owner)
 	memory.StopReacting(); // grayman #3559
 
 	// grayman debug- If participating in a search, leave the search
-	if (owner->m_searchID >= 0)
+	if (owner->m_searchID > 0)
 	{
 		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
 	}

@@ -75,6 +75,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
 		memory.hidingSpotInvestigationInProgress = true; // grayman debug
+		memory.stopHidingSpotInvestigation = false;
 	}
 	else
 	{
@@ -118,7 +119,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	if (!owner->GetMemory().hidingSpotInvestigationInProgress) // grayman debug
+	if (!owner->GetMemory().stopHidingSpotInvestigation) // grayman debug
 	{
 		return true; // told to cancel this task
 	}
@@ -247,7 +248,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				!owner->movementSubsystem->IsResolvingBlock() &&
 				( owner->AI_AlertIndex < ECombat ) ) // grayman #3070 - point is valid if in combat mode
 			{
-				if ( !owner->m_searchLimits.ContainsPoint(goal) )
+				if ( !assignment->_limits.ContainsPoint(goal) )
 				{
 					pointValid =  false;
 				}

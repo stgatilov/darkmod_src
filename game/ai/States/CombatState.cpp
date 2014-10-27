@@ -61,6 +61,7 @@ bool CombatState::CheckAlertLevel(idAI* owner)
 
 	if (owner->AI_AlertIndex < ECombat)
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::CheckAlertLevel - %s falling out of Combat state\r",owner->GetName()); // grayman debug
 		// Alert index is too low for this state, fall back
 		owner->GetMemory().alertClass = EAlertNone; // grayman #3182 - no alert idle state rampdown bark
 		owner->GetMind()->EndState();
@@ -174,6 +175,7 @@ void CombatState::Init(idAI* owner)
 
 	_endgame = false; // grayman #3848
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("CombatState initialised.\r");
 	assert(owner);
 
@@ -656,7 +658,8 @@ void CombatState::Think(idAI* owner)
 				memory.mandatory = false; // grayman debug
 
 				// Log the event
-				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString(), enemy ? enemy->GetName() : "NULL"); // grayman debug
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy ); // grayman debug
 
 				owner->GetMind()->EndState();
 				return;

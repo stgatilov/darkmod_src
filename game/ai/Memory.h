@@ -155,7 +155,7 @@ enum EAlertType
 	EAlertTypeLostTrackOfEnemy, // grayman debug
 	EAlertTypeEncounter,		// grayman debug
 	EAlertTypeRequestForHelp,	// grayman debug
-	EAlertTypeSearchOrder,		// grayman debug
+	//EAlertTypeSearchOrder,		// grayman debug
 	EAlertTypeDetectedEnemy,	// grayman debug
 	EAlertTypeSomethingSuspicious, // grayman debug
 	EAlertTypeCount
@@ -483,15 +483,17 @@ public:
 	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
 	bool hidingSpotInvestigationInProgress;
 
-	// grayman debug - when to stop milling about
-	int stopMillingTime;
-
-	// grayman debug - true if the AI is currently guarding a location while
+	// grayman debug - true if the AI is currently guarding or observing a location while
 	// participating in a search
 	bool guardingInProgress;
 
 	// grayman debug - true if the AI is currently milling about the alert spot
 	bool millingInProgress;
+
+	// grayman debug - true if the AI needs to stop doing one of the above tasks
+	bool stopHidingSpotInvestigation;
+	bool stopGuarding;
+	bool stopMilling;
 
 	// grayman debug - true if the AI should mill about the alert spot
 	// before running to a guard or observation spot
@@ -538,6 +540,7 @@ public:
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?
 
 	int combatState;				// grayman #3507 - use when returning to Combat
+	bool movingUpToCombat;			// grayman debug
 
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;

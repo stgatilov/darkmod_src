@@ -313,11 +313,8 @@ void idGameLocal::Clear( void )
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_EscapePointManager->Clear();
 
-	if (m_searchManager == NULL) // grayman debug
-	{
-		m_searchManager = CSearchManager::Instance();
-	}
-	m_searchManager->Clear();
+	m_searchManager = CSearchManager::Instance(); // grayman debug
+	m_searchManager->Clear(); // grayman debug
 	
 	m_Interleave = 0;
 
@@ -1622,6 +1619,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	m_strMainAmbientLightName = "ambient_world"; // Default name for main ambient light. J.C.Denton.
 
+	m_suspiciousEvents.Clear(); // grayman #3424
+	m_ambientLights.Clear();	// grayman #3584
+	m_searchManager->Clear(); // grayman debug
 }
 
 /*

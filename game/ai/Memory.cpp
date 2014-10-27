@@ -97,6 +97,9 @@ Memory::Memory(idAI* owningAI) :
 	hidingSpotInvestigationInProgress(false),
 	guardingInProgress(false), // grayman debug
 	millingInProgress(false), // grayman debug
+	stopHidingSpotInvestigation(false), // grayman debug
+	stopGuarding(false), // grayman debug
+	stopMilling(false), // grayman debug
 	shouldMill(false), // grayman debug
 	guardingAngle(0.0f), // grayman debug
 	repeatedBarkState(ERBS_NULL), // grayman debug
@@ -108,7 +111,8 @@ Memory::Memory(idAI* owningAI) :
 	currentSearchEventID(-1), // grayman #3424
 	playerResponsible(false),  // grayman #3679 - is the player responsible for the attack?
 	stayPut(false), // grayman #3528
-	combatState(-1), /// grayman #3507
+	combatState(-1), // grayman #3507
+	movingUpToCombat(false), // grayman debug
 	susDoorSameAsCurrentDoor(false) // grayman #3643
 {
 	attacker = NULL; // grayman #3679 - who attacked me
@@ -192,6 +196,9 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(hidingSpotInvestigationInProgress);
 	savefile->WriteBool(guardingInProgress); // grayman debug
 	savefile->WriteBool(millingInProgress); // grayman debug
+	savefile->WriteBool(stopHidingSpotInvestigation); // grayman debug
+	savefile->WriteBool(stopGuarding); // grayman debug
+	savefile->WriteBool(stopMilling); // grayman debug
 	savefile->WriteBool(shouldMill); // grayman debug
 	savefile->WriteFloat(guardingAngle); // grayman debug
 	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman debug
@@ -243,9 +250,8 @@ void Memory::Save(idSaveGame* savefile) const
 
 	attacker.Save(savefile); // grayman #3679
 	savefile->WriteBool(playerResponsible); // grayman #3679
-
 	savefile->WriteInt(combatState); // grayman #3507
-
+	savefile->WriteBool(movingUpToCombat); // grayman debug
 	savefile->WriteBool(issueMoveToPositionTask); // grayman #3052
 }
 
@@ -335,6 +341,9 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(hidingSpotInvestigationInProgress);
 	savefile->ReadBool(guardingInProgress); // grayman debug
 	savefile->ReadBool(millingInProgress); // grayman debug
+	savefile->ReadBool(stopHidingSpotInvestigation); // grayman debug
+	savefile->ReadBool(stopGuarding); // grayman debug
+	savefile->ReadBool(stopMilling); // grayman debug
 	savefile->ReadBool(shouldMill); // grayman debug
 	savefile->ReadFloat(guardingAngle); // grayman debug
 
@@ -416,9 +425,8 @@ void Memory::Restore(idRestoreGame* savefile)
 
 	attacker.Restore(savefile); // grayman #3679
 	savefile->ReadBool(playerResponsible); // grayman #3679
-
 	savefile->ReadInt(combatState); // grayman #3507
-
+	savefile->ReadBool(movingUpToCombat); // grayman debug
 	savefile->ReadBool(issueMoveToPositionTask); // grayman #3052
 }
 

@@ -81,11 +81,15 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > EAgitatedSearching)
 	{
 		// Alert index is too high, switch to the higher State
-		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug - leave an ongoing search
+		if (owner->m_searchID >= 0)
+		{
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug - leave an ongoing search
+		}
+
 		//owner->Event_CloseHidingSpotSearch();
 		owner->GetMemory().combatState = -1; // grayman #3507
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
-		movingUpToCombat = true;
+		owner->GetMemory().movingUpToCombat = true;
 		return false;
 	}
 
@@ -280,7 +284,10 @@ void AgitatedSearchingState::Init(idAI* owner)
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
-	movingUpToCombat = false;
+	// Shortcut reference
+	Memory& memory = owner->GetMemory();
+
+	memory.movingUpToCombat = false;
 
 	// Ensure we are in the correct alert level
 	if ( !CheckAlertLevel(owner) )
@@ -288,9 +295,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s leaving SearchingState\r",owner->GetName()); // grayman debug
 		return;
 	}
-
-	// Shortcut reference
-	Memory& memory = owner->GetMemory();
 
 	// grayman #3496 - note that we spent time in Agitated Search
 
@@ -308,7 +312,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	{
 		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
 		{
-			owner->SetAlertLevel(owner->thresh_3 - 0.1);
+			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
 			return;
 		}
 	}
@@ -396,9 +400,14 @@ void AgitatedSearchingState::Think(idAI* owner)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	SearchingState::Think(owner);
 
-	if (movingUpToCombat) // grayman debug
+	// grayman debug - AgitatedSearchingState::CheckAlertLevel() is called
+	// from SearchingState::Think(), and if that determines we're moving
+	// up to Combat State, we don't want to set repeated barks or check
+	// for a drawn weapon. AgitatedSearchingState::CheckAlertLevel() sets
+	// movingUpToCombat to true if this is the case.
+	if (owner->GetMemory().movingUpToCombat) // grayman debug
 	{
-		movingUpToCombat = false;
+		owner->GetMemory().movingUpToCombat = false; // reset
 		return;
 	}
 

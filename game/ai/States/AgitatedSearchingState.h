@@ -43,8 +43,6 @@ public:
 	// Get the name of this state
 	virtual const idStr& GetName() const;
 
-	bool movingUpToCombat; // grayman debug - a flag for when we leave Agitated Searching for Combat
-
 	// This is called when the state is first attached to the AI's Mind.
 	virtual void Init(idAI* owner);
 

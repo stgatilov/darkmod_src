@@ -77,6 +77,7 @@ void PainState::Init(idAI* owner)
 
 		if (owner->m_searchID < 0)
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("PainState::Init - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString()); // grayman debug
 			memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeEnemy,memory.alertPos,NULL);
 		}
 

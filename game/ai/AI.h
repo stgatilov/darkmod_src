@@ -1152,7 +1152,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* grayman #2422 - search volume when searching
 	 **/
 	 
-	idBounds				m_searchLimits;
+	//idBounds				m_searchLimits; // grayman debug - no longer used; limits are kept in the search assignment
 	
 	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.

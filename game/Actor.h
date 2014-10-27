@@ -425,11 +425,6 @@ public:
 	idVec3					m_EyeOffset; // grayman #3525
 
 	/**
-	* grayman debug - List of suspicious events this actor knows about.
-	**/
-	idList<KnownSuspiciousEvent>	m_KnownSuspiciousEvents;
-	
-	/**
 	* grayman #3848 - true when a combat victor has knealt by my body
 	**/
 	bool					m_victorHasKnealt;

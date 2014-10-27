@@ -211,6 +211,7 @@ void State::OnVisualAlert(idActor* enemy)
 	// a currentSearchEventID. We'll need that to set up the search.
 	if (memory.lastAlertPosSearched.Compare(idVec3(0,0,0)) && owner->IsSearching()) // grayman debug
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualAlert - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeMisc, owner->GetVisDir().ToString()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetVisDir(), NULL ); // grayman debug
 	}
 
@@ -466,12 +467,10 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 		maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
 
 		// don't provide the noisemaker itself as the entity parameter because that might go away
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 4 - %s calling LogSuspiciousEvent()\r",owner->GetName()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL ); // grayman debug
 	}
 	else
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 5 - %s calling LogSuspiciousEvent()\r",owner->GetName()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 	}
 	*/
@@ -1554,7 +1553,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 				// grayman debug - even though you know where your enemy is, set up
 				// search data as if you didn't, since it includes
 				// some data you're going to need
-				SetUpSearchData(EAlertTypeFoundEnemy, other->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
+				SetUpSearchData(EAlertTypeFoundEnemy, other->GetPhysics()->GetOrigin(), other, false, 0); // grayman debug
 			}
 
 			// An enemy should not be ignored in the future - grayman #2423 - moved out of above test so all enemies are remembered
@@ -2814,6 +2813,7 @@ void State::Post_OnDeadPersonEncounter(idActor* person, idAI* owner)
 		// grayman #3424 - log this event and bark if it's new
 		if ( eventID < 0 )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeDeadPerson, person->GetPhysics()->GetOrigin().ToString(),person->GetName()); // grayman debug
 			eventID = owner->LogSuspiciousEvent( E_EventTypeDeadPerson, person->GetPhysics()->GetOrigin(), person ); // grayman #3424  
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::Post_OnDeadPersonEncounter - %s logged new event %d\r",owner->GetName(),eventID); // grayman debug
 
@@ -3109,6 +3109,9 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 	Memory& memory = owner->GetMemory();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, owner->GetPhysics()->GetOrigin().ToString(),"NULL"); // grayman debug
+	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman debug  
+
 	// grayman #3331 - If you're a civilian, or you're unarmed, flee!
 	// But only if no damage was done. When damaged, the flee is handled
 	// by PainState, because we have to wait for the pain animation
@@ -3123,14 +3126,14 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			CommMessagePtr message;
 	
 			message = CommMessagePtr(new CommMessage(
-				CommMessage::SearchOrder_CommType, 
+				CommMessage::DetectedEnemy_CommType, // grayman debug 
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
-				-1
+				memory.currentSearchEventID // grayman debug
 			));
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s issue a SearchOrder_CommType request to anyone\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnProjectileHit - %s issue a DetectedEnemy_CommType request to anyone\r",owner->GetName()); // grayman debug
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
 
 			if (cv_ai_debug_transition_barks.GetBool())
@@ -3185,8 +3188,6 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 
 	owner->GetMemory().stopReactingToPickedPocket = true; // grayman #3559 - stop dealing with a picked pocket
 
-	memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman debug  
-
 	// grayman #3140 - If a civilian or not armed, you only got here because
 	// damage was taken. PainState will set up fleeing, and we don't want
 	// you searching, so there's nothing remaining for you to do here.
@@ -3211,7 +3212,7 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		CommMessagePtr message;
 	
 		message = CommMessagePtr(new CommMessage(
-			CommMessage::SearchOrder_CommType, 
+			CommMessage::DetectedEnemy_CommType, // grayman debug
 			owner, NULL, // from this AI to anyone 
 			NULL,
 			owner->GetPhysics()->GetOrigin(),
@@ -3985,6 +3986,7 @@ void State::OnVisualStimMissingItem(idEntity* stimSource, idAI* owner)
 	// grayman #3424 - log this event if it's new
 	if ( !alreadyKnow )
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimMissingItem - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMissingItem, stimSource->GetPhysics()->GetOrigin().ToString(),"NULL"); // grayman debug
 		eventID = owner->LogSuspiciousEvent( E_EventTypeMissingItem, stimSource->GetPhysics()->GetOrigin(), NULL ); // grayman #3424  
 	}
 
@@ -4336,6 +4338,9 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 			break;
 		case CommMessage::RequestForHelp_CommType:
+			// This communication is a bark from an AI to whoever's listening;
+			// a yell that something bad has happened (blinded, fleeing, pain).
+			// The listener's alert level will be set just below Combat mode.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForHelp_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a RequestForHelp_CommType from %s for event %d\r",owner->GetName(),issuingEntity->GetName(),message.m_eventID); // grayman debug
 			if (owner->IsFriend(issuingEntity))
@@ -4358,6 +4363,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// grayman #3548 - Can't help if I'm unarmed
 				if ( ( ( owner->GetNumMeleeWeapons() == 0 ) && ( owner->GetNumRangedWeapons() == 0) ) || owner->spawnArgs.GetBool("is_civilian") )
 				{
+					// TODO: Should hearing this call for help cause me to flee?
 					break;
 				}
 
@@ -4367,7 +4373,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					break;
 				}
 
-		gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
+				gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s directObjectEntity = %s\r",owner->GetName(),directObjectEntity ? directObjectEntity->GetName():"NULL"); // grayman debug
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
@@ -4471,12 +4477,15 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			//gameLocal.Printf("I don't know how to bring light!\n");
 			break;
 		case CommMessage::DetectedSomethingSuspicious_CommType:
-			// This message accompanies the repeated agitated searching barks.
+			// This happens when an AI hears the repeated bark of another AI
+			// that's searching in Agitated Search mode.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedSomethingSuspicious_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a DetectedSomethingSuspicious_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			OnMessageDetectedSomethingSuspicious(message);
 			break;
 		case CommMessage::DetectedEnemy_CommType:
+			// This communication type means the issuer thinks there's
+			// an enemy nearby (Failed KO, spotted an enemy).
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: DetectedEnemy_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a DetectedEnemy_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			//gameLocal.Printf("Somebody spotted an enemy... (%s)\n", directObjectEntity->name.c_str());
@@ -4545,14 +4554,14 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				gameLocal.Printf("But I don't know how to switch my patrol route!\n");
 			}
 			break;
-		case CommMessage::SearchOrder_CommType:
+/*		case CommMessage::SearchOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: SearchOrder_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a SearchOrder_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
-			if (/*recipientEntity == owner && */owner->IsFriend(issuingEntity)) // grayman debug - already checked
+			if (owner->IsFriend(issuingEntity))
 			{
 				SetUpSearchData(EAlertTypeSearchOrder, directObjectLocation, issuingEntity, false, 0); // grayman debug
 			}
-			break;
+			break;*/
 		case CommMessage::AttackOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: AttackOrder_CommType\r");
 			// grayman #3548 - Can't attack if I'm unarmed
@@ -4583,6 +4592,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GetOutOfTheWayOrder_CommType\r");
 			break;
 		case CommMessage::ConveyWarning_EvidenceOfIntruders_CommType:
+			// This communication is a warning from one AI to another as they
+			// see each other. Neither is involved in an active search, and
+			// this warning is not meant to raise the receiver's alert level
+			// by much.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_EvidenceOfIntruders_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_EvidenceOfIntruders_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			if (issuingEntity->IsType(idAI::Type))
@@ -4621,6 +4634,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			break;
 		case CommMessage::ConveyWarning_ItemsHaveBeenStolen_CommType:
 			{
+			// This communication is a warning from one AI to another as they
+			// see each other. Neither is involved in an active search, and
+			// this warning is not meant to raise the receiver's alert level
+			// by much.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_ItemsHaveBeenStolen_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_ItemsHaveBeenStolen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
@@ -4648,7 +4665,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 			if (owner->AI_AlertLevel < owner->thresh_2*0.5f )
 			{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 10 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5*2); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage 10 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5*2); // grayman debug
 				owner->SetAlertLevel( owner->thresh_2*0.5f );
 			}
 
@@ -4659,6 +4676,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 		case CommMessage::ConveyWarning_CorpseHasBeenSeen_CommType: // grayman #1327
 			{
+			// This communication is a warning from one AI to another as they
+			// see each other. Neither is involved in an active search, and
+			// this warning is not meant to raise the receiver's alert level
+			// by much.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_CorpseHasBeenSeen_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_CorpseHasBeenSeen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
@@ -4698,6 +4719,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 		case CommMessage::ConveyWarning_UnconsciousPersonHasBeenSeen_CommType: // grayman debug
 			{
+			// This communication is a warning from one AI to another as they
+			// see each other. Neither is involved in an active search, and
+			// this warning is not meant to raise the receiver's alert level
+			// by much.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: ConveyWarning_UnconsciousPersonHasBeenSeen_CommType\r");
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_UnconsciousPersonHasBeenSeen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
@@ -4742,6 +4767,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			}
 		case CommMessage::ConveyWarning_EnemiesHaveBeenSeen_CommType:
 			{
+			// This communication is a warning from one AI to another as they
+			// see each other. Neither is involved in an active search, and
+			// this warning is not meant to raise the receiver's alert level
+			// by much.
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s receives a ConveyWarning_EnemiesHaveBeenSeen_CommType from %s\r",owner->GetName(),issuingEntity->GetName()); // grayman debug
 			// Note: We deliberately don't care if the issuer is a friend or not
 			if ( !owner->KnowsAboutSuspiciousEvent(message.m_eventID) )
@@ -4784,6 +4813,9 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 {
+	// This happens when an AI hears the repeated bark of another AI
+	// that's searching.
+
 	idEntity* issuingEntity = message.m_p_issuingEntity.GetEntity();
 	idVec3 directObjectLocation = message.m_directObjectLocation;
 
@@ -4804,14 +4836,6 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s IsSearching() = %d\r",owner->GetName(),owner->IsSearching()); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s m_recentHighestAlertLevel >= thresh_3 = %d\r",owner->GetName(),owner->IsSearching(),owner->m_recentHighestAlertLevel >= owner->thresh_3); // grayman debug
-	// grayman #3438 - don't respond if I just finished searching
-	if ( !owner->IsSearching() && ( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) )
-	{
-		return;
-	}
-
 	// grayman #3548 - don't respond if fleeing
 	idStr myState = owner->GetMind()->GetState()->GetName();
 	if ( ( myState == "Flee" ) || ( myState == "FleeDone" ) )
@@ -4819,6 +4843,9 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// I'm fleeing, so I can't help!
 		return;
 	}
+
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s IsSearching() = %d\r",owner->GetName(),owner->IsSearching()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s m_recentHighestAlertLevel >= thresh_3 = %d\r",owner->GetName(),owner->IsSearching(),owner->m_recentHighestAlertLevel >= owner->thresh_3); // grayman debug
 
 	if (owner->IsFriend(issuingEntity))
 	{
@@ -4828,13 +4855,13 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// an AI and be recognized for what it is. If the sender
 		// drops out of the search by the time the message is
 		// received, you can ignore it. A searcher still barks
-		// agitated barks as he descends from agitated searching
-		// down through searching, until he drops into suspicious
+		// agitated barks as he descends from Agitated Searching
+		// down through Searching, until he drops into Suspicious
 		// mode, at which time he stops these barks and leaves the search.
 
 		if (issuingAI->m_searchID < 0)
 		{
-			// you've left your search, so I'm not joining it
+			// you've left your search, so I'm not joining it, and won't take on any added alert level
 			return;
 		}
 
@@ -4842,7 +4869,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// grayman debug - don't join their search if you're already part of it
 		if (owner->m_searchID == issuingAI->m_searchID)
 		{
-			// I'm already part of that search!
+			// I'm already part of that search, and won't take on any added alert level
 			return;
 		}
 
@@ -4853,42 +4880,94 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 		// as is done when new alerts arrive
 		if ( !ShouldProcessAlert(ieAlertType))
 		{
-			// Your alert type isn't more important than my current alert type!
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s shouldn't process this alert\r",owner->GetName()); // grayman debug
+			// Your alert type isn't more important than my current alert type, and I won't take on any added alert level
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s my alert priority is higher than yours, so I won't help\r",owner->GetName()); // grayman debug
 			return;
+		}
+
+		// grayman debug - At this point, it's possible that you will join their search,
+		// raise your own alert level a bit w/o joining their search, or not join their
+		// search and won't take on any added alert level.
+
+		bool join = true; // let's assume you'll join
+		bool accept = true; // let's assume you'll accept some added alert level
+
+		// grayman #3438 - don't join if I just finished searching
+		if ( !owner->IsSearching() && ( owner->m_recentHighestAlertLevel >= owner->thresh_3 ) )
+		{
+			join = false; // won't join, but might accept some added alert level below thresh_3
+			//return;
+		}
+
+		// Determine what my new alert level might be.
+
+		// Inherit the alert level of the other AI, but attenuate it a bit
+		//float otherAlertLevel = issuingAI->AI_AlertLevel * 0.7f; // grayman debug - it used to be as simple as this
+
+		Search *search = gameLocal.m_searchManager->GetSearch(issuingAI->m_searchID);
+		float referenceAlertLevel = search->_referenceAlertLevel;
+
+		float newAlertLevel;
+		if (search->_searcherCount == 1) // we'd be the 2nd to join this search
+		{
+			newAlertLevel = referenceAlertLevel*(1.00f - gameLocal.random.RandomFloat()*0.05f); // inherit 95-100%
+		}
+		else // everyone else gets something a bit lower, between 70-100% of the friend's current alert level
+		{
+			newAlertLevel = issuingAI->AI_AlertLevel * (1.00f - gameLocal.random.RandomFloat()*0.30f);
+		}
+
+		if (newAlertLevel > owner->AI_AlertLevel)
+		{
+			if ( newAlertLevel > owner->thresh_3 )
+			{
+				// accept and join don't need to change
+			}
+			else
+			{
+				accept = true;
+				join = false;
+			}
+		}
+		else
+		{
+			accept = false;
+
+			if ( newAlertLevel > owner->thresh_3 )
+			{
+				// join stays as is
+			}
+			else
+			{
+				join = false;
+			}
 		}
 
 		int eventID = message.m_eventID;
 
-		// grayman #3438 - If I already searched this event, I won't search it again.
-		if ( ( eventID >= 0 ) && owner->HasSearchedEvent(eventID) )
+		if ( ( eventID >= 0 ) && owner->HasSearchedEvent(eventID) ) // I already searched this event!
 		{
-			// I already searched this event!
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s sorry, already searched event %d\r",owner->GetName(),eventID); // grayman debug
+			join = false;
+		}
+
+		if (accept)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),newAlertLevel); // grayman debug
+			owner->SetAlertLevel(newAlertLevel);
+		}
+
+		if (!join)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s sorry, can't join for one of several reasons\r",owner->GetName()); // grayman debug
 			return;
 		}
 
-		// Inherit the alert level of the other AI, but attenuate it a bit
-		float otherAlertLevel = issuingAI->AI_AlertLevel * 0.7f;
-
-		if ( otherAlertLevel < owner->thresh_3 )
-		{
-			// no reason to start searching if the inherited alert
-			// level isn't high enough to warrant a search
-			return;
-		}
+		// set up to join their search
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious - %s I plan to join the other search\r",owner->GetName()); // grayman debug
 
 		gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
-
-		// grayman #3438 - only reset my alert level if I'm currently not searching
-		if ( owner->AI_AlertLevel < owner->thresh_3 )
-		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 1 - %s calling SetAlertLevel(%f)\r",owner->GetName(),otherAlertLevel); // grayman debug
-			owner->SetAlertLevel(otherAlertLevel);
-		}
-
+		
 		owner->StopMove(MOVE_STATUS_DONE);
 		memory.StopReacting(); // grayman #3559
 
@@ -4900,7 +4979,7 @@ void State::OnMessageDetectedSomethingSuspicious(CommMessage& message)
 
 	if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 	{
-		// raises my level of concern, but they're not a friend,
+		// raises my alert level, but they're not a friend,
 		// so I won't raise it much
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnMessageDetectedSomethingSuspicious 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_2*0.5f); // grayman debug
 		owner->SetAlertLevel(owner->thresh_2*0.5f);
@@ -5163,6 +5242,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		idActor* responsible = static_cast<idActor*>(entity);
 		owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 1 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		}
 		break;
@@ -5206,7 +5286,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		// PreAlertAI() will call Event_AlertAI() the next frame to set the alert level.
 		owner->PreAlertAI("tact", owner->thresh_5*2, memory.alertPos); // grayman #3356
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 2 - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString()); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
 		break;
 	case EAlertTypeWeapon:
@@ -5235,6 +5315,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 3 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeBlinded:
@@ -5260,6 +5341,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 			owner->SetAlertLevel(owner->thresh_5 - 0.1);
 		}
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 4 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeFoundEnemy:
@@ -5282,7 +5364,8 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel(owner->thresh_5*2);
 				
 		// Log the event
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 5 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, entity ); // grayman debug
 		break;
 	case EAlertTypeLostTrackOfEnemy:
 		memory.alertClass = EAlertVisual_1;
@@ -5304,6 +5387,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 6 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeDeadPerson:
@@ -5418,6 +5502,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 7 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeLightSource:
@@ -5442,6 +5527,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		// alert level is set in the calling method
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 8 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeMissingItem:
@@ -5488,6 +5574,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel(owner->thresh_5 - 0.1);
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 9 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeDoor:
@@ -5512,6 +5599,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel(value); // grayman #3756 - shorten search time
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 10 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeSuspiciousItem:
@@ -5536,6 +5624,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		// Log the event
 		// grayman debug - TODO: no need for anyone to join a pickpocket search,
 		// so do we need an event? Keep others from joining this search.
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 11 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		break;
 	case EAlertTypeRope:
@@ -5565,6 +5654,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		// alert level was pre-set
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 12 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		}
 		break;
@@ -5619,6 +5709,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 2 - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_5 - 0.1f); // grayman debug
 		owner->SetAlertLevel(owner->thresh_5 - 0.1f);
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 13 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman #3424
 		}
 		break;
@@ -5653,6 +5744,9 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		break;
 	case EAlertTypeRequestForHelp:
 		{
+		// This communication is a bark from an AI to whoever's listening;
+		// a yell that something bad has happened (blinded, fleeing, pain).
+		// The listener's alert level will be set just below Combat mode.
 		idAI* issuingEntity = static_cast<idAI*>(entity);
 
 		memory.alertClass = issuingEntity->GetMemory().alertClass;
@@ -5682,6 +5776,8 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 		break;
 	case EAlertTypeDetectedEnemy:
+		// This communication type means the issuer thinks there's
+		// an enemy nearby (Failed KO, spotted an enemy).
 		{
 		idAI* issuingEntity = static_cast<idAI*>(entity);
 		memory.alertClass = issuingEntity->GetMemory().alertClass;
@@ -5704,10 +5800,11 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel((owner->thresh_4 + owner->thresh_5)*0.5f);
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 14 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, NULL ); // grayman debug
 		}
 		break;
-	case EAlertTypeSearchOrder:
+/*	case EAlertTypeSearchOrder:
 		// grayman debug - is this necessary? Isn't SearchOrder just a bark
 		// that accompanies an AI moving to his assigned post? It should be
 		// given as soon as the lead searcher sees the arriving AI and knows
@@ -5734,11 +5831,14 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel((owner->thresh_3 + owner->thresh_4)*0.5f);
 
 		// Log the event
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 15 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 		}
-		break;
+		break;*/
 	case EAlertTypeSomethingSuspicious:
 		{
+		// This happens when an AI hears the repeated bark of another AI
+		// that's searching in Agitated Search mode.
 		idAI* issuingEntity = static_cast<idAI*>(entity);
 		Memory& issuerMemory = issuingEntity->GetMemory();
 

@@ -933,7 +933,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_earlyThinkCounter);	// grayman #2654
 	savefile->WriteBool(m_bCanExtricate);		// grayman #2603
 	savefile->WriteBool( m_ignorePlayer );		// grayman #3063
-	savefile->WriteBounds(m_searchLimits);		// grayman #2422
+	//savefile->WriteBounds(m_searchLimits);		// grayman #2422 // grayman debug
 	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1149,6 +1149,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadInt(num);
+
 	projectileInfo.SetNum(num);
 
 	for (i = 0; i < projectileInfo.Num(); ++i)
@@ -1398,7 +1399,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
 	savefile->ReadBool(m_ignorePlayer);		// grayman #3063
-	savefile->ReadBounds(m_searchLimits);	// grayman #2422
+	//savefile->ReadBounds(m_searchLimits);	// grayman #2422 // grayman debug
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -4196,7 +4197,8 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s going to [%s]\r",GetName(),pos.ToString()); // grayman debug
+	move.accuracy = accuracy; // grayman #3882
+
 	// Clear the "blocked" flag in the movement subsystem
 	movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked);
 
@@ -7688,8 +7690,7 @@ void idAI::UpdateEnemyPosition()
 		}
 		enemyDetectable = true;
 	}
-
-	else	// enemy is not visible
+	else // enemy is not visible
 	{
 		// Enemy can't be seen (obscured or hidden in darkness)
 		if (cv_ai_show_enemy_visibility.GetBool())
@@ -9578,12 +9579,12 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 						maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
 
 						// don't provide the noisemaker itself as the entity parameter because that might go away
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 4 - %s calling LogSuspiciousEvent()\r",GetName()); // grayman debug
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 4 - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",GetName(),(int)E_EventTypeNoisemaker, initialNoiseOrigin.ToString()); // grayman debug
 						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL ); // grayman debug
 					}
 					else
 					{
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 5 - %s calling LogSuspiciousEvent()\r",GetName()); // grayman debug
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAudioAlert 5 - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",GetName(),(int)E_EventTypeMisc, GetMemory().alertPos.ToString()); // grayman debug
 						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, GetMemory().alertPos, NULL ); // grayman debug
 					}
 				}

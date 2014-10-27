@@ -70,9 +70,9 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	_guardSpotState = EStateSetup;
 
 	// Milling?
-	if (owner->GetMemory().millingInProgress)
+	if (memory.millingInProgress)
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to mill about memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to mill about memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		// Is there any activity after milling is over?
 		// If so, we want a short _exitTime so we can make the run
 		// before we drop out of searching mode. If no, we can continue
@@ -106,10 +106,12 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 				}
 			}
 		}
+		memory.stopMilling = false; // grayman debug
 	}
 	else
 	{
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to guard or observe from memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
+		memory.stopGuarding = false; // grayman debug
 	}
 }
 
@@ -122,6 +124,16 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
 		return true;
+	}
+
+	if (owner->GetMemory().millingInProgress && owner->GetMemory().stopMilling) // grayman debug
+	{
+		return true; // told to cancel this task
+	}
+
+	if (owner->GetMemory().guardingInProgress && owner->GetMemory().stopGuarding) // grayman debug
+	{
+		return true; // told to cancel this task
 	}
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _guardSpotState = %d\r",owner->GetName(),(int)_guardSpotState); // grayman debug

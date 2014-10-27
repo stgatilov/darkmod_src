@@ -66,6 +66,7 @@ struct Search
 	idBounds				_limits;					// boundary of the search
 	idBounds				_exclusion_limits;			// exclusion boundary of the search
 	float					_outerRadius;				// outer radius of search boundary
+	float					_referenceAlertLevel;		// used when allocating alert levels to AI responding to help requests
 	CDarkmodHidingSpotTree	_hidingSpots;				// The hiding spots for this search
 	bool					_hidingSpotsReady;			// false = still building the hiding spot list; true = list complete
 
@@ -86,12 +87,12 @@ struct Search
 	idList<idVec4>			_guardSpots;				// The spots where guards should be sent [x,y,z,w] where w = yaw angle to face
 	bool					_guardSpotsReady;			// false = guard spot list not complete yet; true = list complete
 	unsigned int			_assignmentFlags;			// bitwise flags that describe available assignments
+	int						_searcherCount;				// Number of searchers (not assignments, because some of those might be deactivated).
+														// When this number drops to 0, the search struct is destroyed.
 	idList<Assignment>		_assignments;				// A list of assignments for this search. The list grows as AI join the search.
 														// The list doesn't shrink when an AI leaves the search; the assignment is simply
 														// marked as 'deactivated' by setting assignment._searcher to NULL. The list is
 														// cleared (returning memory) when the search struct is destroyed.
-	int						_searcherCount;				// Number of searchers (not assignments, because some of those might be deactivated).
-														// When this number drops to 0, the search struct is destroyed.
 };
 
 // search flags
@@ -108,7 +109,7 @@ typedef enum
 #define SEARCH_NOTHING			(0)  // no searchers, no guards, no observers
 #define SEARCH_EVERYTHING		(0xffffffff) // searchers, guards, and observers, and everyone mills about at first
 #define SEARCH_SUSPICIOUS		(SEARCH_EVERYTHING) // EAlertTypeSuspicious
-#define SEARCH_ENEMY			(SEARCH_NOTHING) // EAlertTypeEnemy
+#define SEARCH_ENEMY			(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeEnemy
 #define SEARCH_WEAPON			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon
 #define SEARCH_BLINDED			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // EAlertTypeBlinded
 #define SEARCH_DEAD				(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeDeadPerson
@@ -125,11 +126,7 @@ typedef enum
 
 class CSearchManager
 {
-#if 1
 	idList<Search>  _searches;      // A list of all active searches in the mission
-#else
-	idList<Search*>  _searches;     // A list of all active searches in the mission
-#endif
 	int				uniqueSearchID; // the next unique id to assign to a new search
 	int				searchCount;	// The current number of active searches. When it returns
 									// to 0, _searches gets cleared.
@@ -216,11 +213,11 @@ public:
 
 	void CreateListOfGuardSpots(Search* search, idAI* ai);
 
-	void Save( idSaveGame *savefile ) const;
+	void Save( idSaveGame *savefile );
 
 	void Restore( idRestoreGame *savefile );
 
-	//void DebugPrint(Search* search); // Print the current hiding spots and assignments
+	void DebugPrint(Search* search); // Print the current hiding spots and assignments
 
 	void DebugPrintSearch(Search* search); // Print the contents of a search
 

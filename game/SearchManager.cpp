@@ -35,7 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-
 // Constructor
 CSearchManager::CSearchManager()
 {
-	uniqueSearchID = 0; // the next unique id to assign to a new search
+	uniqueSearchID = 1; // the next unique id to assign to a new search
 	searchCount = 0;
 }
 
@@ -46,19 +46,17 @@ CSearchManager::~CSearchManager()
 
 void CSearchManager::Clear()
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::Clear\r"); // grayman debug
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-#if 1
 		Search *search = &_searches[i];
-#else
-		Search *search = _searches[i];
-#endif
 		destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
 		search->_assignments.Clear();
 	}
 
 	_searches.Clear();
-	uniqueSearchID = 0;
+	searchCount = 0;
+	uniqueSearchID = 1;
 }
 
 int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
@@ -76,13 +74,14 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 		// the AI's alert level is going up due to incremental player sightings.
 		// To get the AI interested in a specific location and to start a search,
 		// we'll log a new suspicious event.
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s calling LogSuspiciousEvent(%d,[%s],NULL)\r",ai->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString()); // grayman debug
 		memory.currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
 	}
 
 	if ( ai->HasSearchedEvent(memory.currentSearchEventID) )
 	{
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s has already searched event %d, abort request\r",ai->GetName(),memory.currentSearchEventID); // grayman debug
-		return -1;
+		return -1; // has already searched this event, abort request
 	}
 
 	int searchID = -1;
@@ -102,10 +101,10 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	idVec3 searchExclusionVolume = memory.alertSearchExclusionVolume;
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s searchPoint = [%s], searchVolume = [%s], searchExclusionVolume = [%s]\r",ai->GetName(),searchPoint.ToString(), searchVolume.ToString(), searchExclusionVolume.ToString()); // grayman debug
 
-	// clear progress flags
-	memory.hidingSpotInvestigationInProgress = false;
-	memory.guardingInProgress = false;
-	memory.millingInProgress = false;
+	// kill any investigation/guard/milling/observing tasks
+	memory.stopHidingSpotInvestigation = true;
+	memory.stopGuarding = true;
+	memory.stopMilling = true;
 
 	// If there's no existing search that ai can join based on event id,
 	// see if there's one at or near the search location.
@@ -127,7 +126,7 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 
 	if (searchID >= 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s found search %d, which is already underway\r",ai->GetName(),search->_searchID); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s found searchID %d, which is already underway\r",ai->GetName(),search->_searchID); // grayman debug
 
 		// reset ai's data
 		memory.alertPos = search->_origin;
@@ -148,12 +147,6 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s no existing search, create a new one\r",ai->GetName()); // grayman debug
 	// no existing search, so start a new one
 
-	// TODO: Can we Log a suspicious event here, and is there enough data to do so?
-	// We need:
-	// event type
-	// location (usually memory.alertPos)
-	// any entity involved (like a corpse)
-
 	idVec3 minBounds(memory.alertPos - searchVolume);
 	idVec3 maxBounds(memory.alertPos + searchVolume);
 
@@ -170,20 +163,18 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	AdjustSearchLimits(searchBounds);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s searchBounds adjusted to [%s]\r",ai->GetName(),searchBounds.ToString()); // grayman debug
 
-#if 1
 	Search newSearch;
 	search = &newSearch;
-#else
-	Search* search = new Search;
-#endif
 
 	search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 	search->_searchID = uniqueSearchID++;
-	searchCount++;
+	searchCount++; // goes up and down as searches are created and destroyed
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s searchCount increased to %d\r",ai->GetName(),searchCount); // grayman debug
 	search->_origin = searchPoint;  // center of search area, location of alert stimulus
 	search->_limits = searchBounds; // boundary of the search
 	search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
+	search->_outerRadius = 0.0f; // outer radius of search boundary
+	search->_referenceAlertLevel = ai->AI_AlertLevel; // used when allocating alert levels to AI responding to help requests
 	search->_hidingSpots.clear(); // The hiding spots for this search
 	search->_hidingSpotsReady = false; // whether the hiding spot list is complete or still being built
 	search->_guardSpots.Clear(); // spots to send guards to
@@ -239,6 +230,7 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 		search->_assignmentFlags = SEARCH_PROJECTILE;
 		break;
 	default: // grayman debug
+	case ai::EAlertTypeNone:
 		search->_assignmentFlags = SEARCH_NOTHING;
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - memory.alertType '%d' has no SEARCH flags\r",(int)memory.alertType); // grayman debug
 		break;
@@ -250,11 +242,8 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	DebugPrintSearch(search); // grayman debug - comment when done
 
 	// Add search to list
-#if 1
+
 	_searches.Append(*search);
-#else
-	_searches.Append(search);
-#endif
 
 	return search->_searchID;
 }
@@ -269,7 +258,7 @@ void CSearchManager::PerformHidingSpotSearch(int searchID, idAI* ai)
 
 	if (gameLocal.m_searchManager->ContinueSearchForHidingSpots(searchID,ai) == 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search completed\r",ai->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search completed for searchID %d\r",ai->GetName(),searchID); // grayman debug
 		// search completed
 		memory.hidingSpotSearchDone = true;
 
@@ -278,7 +267,7 @@ void CSearchManager::PerformHidingSpotSearch(int searchID, idAI* ai)
 	}
 	else // grayman debug
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search NOT completed\r",ai->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search NOT completed yet for searchID %d\r",ai->GetName(),searchID); // grayman debug
 	}
 }
 
@@ -320,12 +309,8 @@ Search* CSearchManager::GetSearch(int searchID) // returns a pointer to the requ
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-#if 1
 		Search *search = &_searches[i];
-#else
-		Search *search = _searches[i];
-#endif
-		if ( ( search->_searchID >= 0 ) && ( search->_searchID == searchID) )
+		if ( ( search->_searchID > 0 ) && ( search->_searchID == searchID) )
 		{
 			return search;
 		}
@@ -343,12 +328,8 @@ Search* CSearchManager::GetSearchWithEventID(int eventID)
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-#if 1
 		Search *search = &_searches[i];
-#else
-		Search *search = _searches[i];
-#endif
-		if ( ( search->_searchID >= 0 ) && ( search->_eventID == eventID) )
+		if ( ( search->_searchID > 0 ) && ( search->_eventID == eventID) )
 		{
 			return search;
 		}
@@ -361,12 +342,8 @@ Search* CSearchManager::GetSearchAtLocation(idVec3 location) // returns a pointe
 {
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-#if 1
 		Search *search = &_searches[i];
-#else
-		Search *search = _searches[i];
-#endif
-		if ( ( search->_searchID >= 0 ) && ( (search->_origin - location).LengthSqr() < 10000) )
+		if ( ( search->_searchID > 0 ) && ( (search->_origin - location).LengthSqr() < 10000) )
 		{
 			// This search is close to where the AI wants to start
 			// searching, so we could assign him to this existing
@@ -381,7 +358,7 @@ Search* CSearchManager::GetSearchAtLocation(idVec3 location) // returns a pointe
 
 Assignment* CSearchManager::GetAssignment(Search* search, idAI* ai) // get ai's assignment for a given search
 {
-//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetAssignment - seeking assignment for '%s' in search %d\r",ai ? ai->GetName():"NULL",search ? search->_searchID : -1); // grayman debug
+//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetAssignment - seeking assignment for '%s' in searchID %d\r",ai ? ai->GetName():"NULL",search ? search->_searchID : -1); // grayman debug
 	if ((search == NULL) || (ai == NULL))
 	{
 		return NULL;
@@ -409,7 +386,7 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 		return false; // invalid search
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s asking for the next hiding spot\r",ai->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s asking for the next hiding spot for searchID %d\r",ai->GetName(),search->_searchID); // grayman debug
 
 	CDarkmodHidingSpotTree *tree = &search->_hidingSpots; // The hiding spots for this search
 	int numSpots = tree->getNumSpots();
@@ -567,7 +544,7 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 		// randomize the indices into the hiding spot list
 		RandomizeHidingSpotList(search);
 
-		//DebugPrint(search); // grayman debug - comment when done
+		DebugPrint(search); // grayman debug - comment when done
 
 		// Done with search object, dereference so other AIs know how many
 		// AIs will still be retrieving points from the search
@@ -751,7 +728,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	if (ai->m_searchID >= 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s leaving old search with id %d, calling LeaveSearch()\r",ai->GetName(),ai->m_searchID); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s leaving old searchID %d, calling LeaveSearch()\r",ai->GetName(),ai->m_searchID); // grayman debug
 		LeaveSearch(ai->m_searchID,ai);
 	}
 
@@ -770,13 +747,13 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	DebugPrintAssignment(assignment); // grayman debug - comment when done
 
 	search->_assignments.Append(*assignment); // add this new assignment to the search
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search id %d (event %d) now has %d assignments\r",ai->GetName(),search->_searchID,search->_eventID,search->_assignments.Num()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s searchID %d (event %d) now has %d assignments\r",ai->GetName(),search->_searchID,search->_eventID,search->_assignments.Num()); // grayman debug
 
 	search->_searcherCount++; // number of searchers (includes active searchers, guards, and observers)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s _searcherCount increased to %d\r",ai->GetName(),search->_searcherCount); // grayman debug
 
 	ai->m_searchID = searchID;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s has joined search %d\r",ai->GetName(),ai->m_searchID); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s has joined searchID %d\r",ai->GetName(),ai->m_searchID); // grayman debug
 
 	ai::Memory& memory = ai->GetMemory();
 	memory.lastAlertPosSearched = search->_origin;
@@ -909,7 +886,7 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::LeaveSearch - %s _searcherCount = %d\r",ai->GetName(),search->_searcherCount); // grayman debug
 	if (search->_searcherCount == 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::LeaveSearch - %s no searchers left, destroying search %d\r",ai->GetName(),search->_searchID); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::LeaveSearch - %s no searchers left, destroying searchID %d\r",ai->GetName(),search->_searchID); // grayman debug
 		destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
 		search->_assignments.Clear();
 		search->_searchID = -1;
@@ -929,9 +906,9 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 
 	ai::Memory& memory = ai->GetMemory();
 	ai->m_searchID = -1; // leave the search
-	memory.hidingSpotInvestigationInProgress = false;
-	memory.guardingInProgress = false;
-	memory.millingInProgress = false;
+	memory.stopHidingSpotInvestigation = true;
+	memory.stopGuarding = true;
+	memory.stopMilling = true;
 	memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	// greebo: Clear the initial alert position
 	memory.alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
@@ -1158,65 +1135,66 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 	search->_guardSpotsReady = true;
 }
 
-void CSearchManager::Save(idSaveGame* savefile) const
+void CSearchManager::Save(idSaveGame* savefile)
 {
 	savefile->WriteInt(uniqueSearchID);
 	savefile->WriteInt(searchCount);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::Save - searches at save\r"); // grayman debug
 	// save searches
 	int numSearches = _searches.Num();
 	savefile->WriteInt(numSearches);
 	for (int i = 0 ; i < numSearches ; i++)
 	{
-#if 1
-		const Search *search = &_searches[i];
-#else
-		const Search *search = _searches[i];
-#endif
+		Search& search = _searches[i];
 
-		savefile->WriteInt(search->_searchID);
-		savefile->WriteInt(search->_eventID);
-		savefile->WriteInt(search->_hidingSpotSearchHandle);
-		savefile->WriteVec3(search->_origin);
-		savefile->WriteBounds(search->_limits);
-		savefile->WriteBounds(search->_exclusion_limits);
-		savefile->WriteFloat(search->_outerRadius);
-		search->_hidingSpots.Save(savefile);
-		savefile->WriteBool(search->_hidingSpotsReady);
+		savefile->WriteInt(search._searchID);
+		savefile->WriteInt(search._eventID);
+		savefile->WriteInt(search._hidingSpotSearchHandle);
+		savefile->WriteVec3(search._origin);
+		savefile->WriteBounds(search._limits);
+		savefile->WriteBounds(search._exclusion_limits);
+		savefile->WriteFloat(search._outerRadius);
+		savefile->WriteFloat(search._referenceAlertLevel);
+		search._hidingSpots.Save(savefile);
+		savefile->WriteBool(search._hidingSpotsReady);
 
-		int num = search->_hidingSpotIndexes.size();
+		int num = search._hidingSpotIndexes.size();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			savefile->WriteInt(search->_hidingSpotIndexes[j]);
+			savefile->WriteInt(search._hidingSpotIndexes[j]);
 		}
 
-		num = search->_guardSpots.Num();
+		num = search._guardSpots.Num();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			savefile->WriteVec4(search->_guardSpots[j]);
+			savefile->WriteVec4(search._guardSpots[j]);
 		}
 
-		savefile->WriteBool(search->_guardSpotsReady);
-		savefile->WriteUnsignedInt(search->_assignmentFlags);
+		savefile->WriteBool(search._guardSpotsReady);
+		savefile->WriteUnsignedInt(search._assignmentFlags);
+		savefile->WriteInt(search._searcherCount);
 
 		// save assignments
-		num = search->_assignments.Num();
+		num = search._assignments.Num();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			const Assignment *assignment = &search->_assignments[j];
+			Assignment& assignment = search._assignments[j];
 
-			savefile->WriteVec3(assignment->_origin);
-			savefile->WriteFloat(assignment->_outerRadius);
-			savefile->WriteBounds(assignment->_limits);
-			savefile->WriteObject(assignment->_searcher);
-			savefile->WriteInt(assignment->_lastSpotAssigned);
-			savefile->WriteInt(static_cast<int>(assignment->_searcherRole));
+			savefile->WriteVec3(assignment._origin);
+			savefile->WriteFloat(assignment._outerRadius);
+			savefile->WriteBounds(assignment._limits);
+			savefile->WriteObject(assignment._searcher);
+			savefile->WriteInt(assignment._lastSpotAssigned);
+			savefile->WriteInt(static_cast<int>(assignment._searcherRole));
+
+			DebugPrintAssignment(&assignment); // grayman debug
 		}
 
-		savefile->WriteInt(search->_searcherCount);
+		DebugPrintSearch(&search); // grayman debug
 	}
 }
 
@@ -1225,6 +1203,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(uniqueSearchID);
 	savefile->ReadInt(searchCount);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::Restore - searches after restore\r"); // grayman debug
 	// restore searches
 	_searches.Clear();
 	int numSearches;
@@ -1232,11 +1211,8 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 	_searches.SetNum(numSearches);
 	for (int i = 0 ; i < numSearches ; i++)
 	{
-#if 1
-		Search search;
-#else
-		Search *search = new Search;
-#endif
+//		Search search;
+		Search& search = _searches[i];
 
 		savefile->ReadInt(search._searchID);
 		savefile->ReadInt(search._eventID);
@@ -1245,6 +1221,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		savefile->ReadBounds(search._limits);
 		savefile->ReadBounds(search._exclusion_limits);
 		savefile->ReadFloat(search._outerRadius);
+		savefile->ReadFloat(search._referenceAlertLevel);
 		search._hidingSpots.Restore(savefile);
 		savefile->ReadBool(search._hidingSpotsReady);
 		int num;
@@ -1267,6 +1244,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 
 		savefile->ReadBool(search._guardSpotsReady);
 		savefile->ReadUnsignedInt(search._assignmentFlags);
+		savefile->ReadInt(search._searcherCount);
 
 		// restore assignments
 		search._assignments.Clear();
@@ -1274,7 +1252,9 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		search._assignments.SetNum(num);
 		for (int j = 0 ; j < num ; j++)
 		{
-			Assignment assignment;
+			//Assignment assignment;
+
+			Assignment& assignment = search._assignments[j];
 
 			savefile->ReadVec3(assignment._origin);
 			savefile->ReadFloat(assignment._outerRadius);
@@ -1286,16 +1266,17 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 			savefile->ReadInt(n);
 			assignment._searcherRole = static_cast<smRole_t>(n);
 
-			search._assignments.Append(assignment);
+			//search._assignments.Append(assignment);
+			DebugPrintAssignment(&assignment); // grayman debug
 		}
 
-		savefile->ReadInt(search._searcherCount);
-
-		_searches.Append(search);
+		DebugPrintSearch(&search); // grayman debug
+		DebugPrint(&search); // grayman debug
+		//_searches.Append(search);
 	}
 }
 
-/*
+
 // prints hiding spots
 void CSearchManager::DebugPrint(Search* search)
 {
@@ -1313,7 +1294,7 @@ void CSearchManager::DebugPrint(Search* search)
 		}
 	}
 }
-*/
+
 
 // prints search contents
 void CSearchManager::DebugPrintSearch(Search* search)
@@ -1325,6 +1306,8 @@ void CSearchManager::DebugPrintSearch(Search* search)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _origin = [%s]\r",search->_origin.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _limits = [%s]\r",search->_limits.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      _exclusion_limits = [%s]\r",search->_exclusion_limits.ToString());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("           _outerRadius = %f\r",search->_outerRadius);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   _referenceAlertLevel = %f\r",search->_referenceAlertLevel);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     no of hiding spots = %d\r",search->_hidingSpots.getNumSpots());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      no of guard spots = %d\r",search->_guardSpots.Num());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      no of assignments = %d\r",search->_assignments.Num());
@@ -1352,7 +1335,7 @@ void CSearchManager::DebugPrintAssignment(Assignment* assignment)
 
 void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::destroyCurrentHidingSpotSearch for search %d\r",search->_searchID); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::destroyCurrentHidingSpotSearch for searchID %d\r",search->_searchID); // grayman debug
 	// Destroy the list of hiding spots
 
 	// Check to see if there is one

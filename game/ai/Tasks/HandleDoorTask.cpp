@@ -2478,9 +2478,9 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		Memory& memory = owner->GetMemory();
 		if ( memory.hidingSpotInvestigationInProgress || memory.guardingInProgress || memory.millingInProgress ) // grayman debug
 		{
-			memory.hidingSpotInvestigationInProgress = false;
-			memory.guardingInProgress = false;
-			memory.millingInProgress = false;
+			memory.stopHidingSpotInvestigation = true;
+			memory.stopGuarding = true;
+			memory.stopMilling = true;
 			memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 		}
 	}

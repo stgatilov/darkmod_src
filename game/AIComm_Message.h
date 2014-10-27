@@ -158,7 +158,7 @@ struct CommMessage
 		* directObjectLocation: The point near which the
 		* search should be conducted.
 		*/
-		SearchOrder_CommType,
+		//SearchOrder_CommType, // grayman debug
 
 		/*
 		* An order to attack a certain entity
