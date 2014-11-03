@@ -59,6 +59,7 @@ void FailedKnockoutState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Failed KO counts as attack
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init - %s setting hasBeenAttackedByEnemy to TRUE\r",owner->GetName()); // grayman debug
 	memory.hasBeenAttackedByEnemy = true;
 
 	if (cv_ai_debug_transition_barks.GetBool())
@@ -114,7 +115,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.StopReacting(); // grayman #3559
 
-		// grayman debug - experiment moving all alert setup into one method
+		// grayman debug - move alert setup into one method
 		// Set the alert position 50 units in the attacking direction
 		SetUpSearchData(EAlertTypeFailedKO, owner->GetPhysics()->GetOrigin() - _attackDirection * 50, NULL, false, 0); // grayman debug
 

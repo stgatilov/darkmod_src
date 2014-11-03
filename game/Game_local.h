@@ -129,8 +129,6 @@ void gameError( const char *fmt, ... );
 #include "LightController.h"
 #include "ModMenu.h"
 
-#include "SearchManager.h" // grayman debug
-
 #include <boost/shared_ptr.hpp>
 
 #ifdef __linux__
@@ -292,6 +290,7 @@ enum {
 // end 7318
 
 
+
 /**
 * Sound prop. flags are used by many classes (Actor, soundprop, entity, etc)
 * Therefore they are global.
@@ -420,7 +419,7 @@ private:
 
 enum EventType
 {
-	E_EventTypeEnemy = 0,	// enemy is seen ("snd_warnSawEnemy")
+	E_EventTypeEnemy = 1,	// enemy is seen ("snd_warnSawEnemy")
 							// enemy tried to KO me ("snd_warnSawEnemy")
 	E_EventTypeDeadPerson,	// found a corpse ("snd_warnFoundCorpse")
 	E_EventTypeMissingItem,	// noticed something was stolen ("snd_warnMissingItem")
@@ -436,7 +435,12 @@ enum EventType
 	// grayman debug - Add event type for an unimportant event. This might occur
 	// if an AI has risen into searching or agitated searching because of
 	// an accumulation of suspicious events
-	E_EventTypeMisc
+	E_EventTypeMisc,
+
+	// grayman debug - Add event type for sound, specifically to pick up the
+	// timestamp for an event. Since a sound's location can be different for
+	// different AI, we want to fold those multiple events into one.
+	E_EventTypeSound
 };
 
 // Hold information about a suspicious event (corpse, unconscious person, missing item, etc.)
@@ -445,7 +449,10 @@ struct SuspiciousEvent
 	EventType type;					// type of event
 	idVec3 location;				// location
 	idEntityPtr<idEntity> entity;	// entity, if relevant
+	int time;						// grayman debug - when
 };
+
+#include "SearchManager.h" // grayman debug - must follow the definition of "EventType"
 
 class idDeclEntityDef;
 
@@ -1035,8 +1042,8 @@ public:
 
 	int						GetNextMessageTag(); // grayman #3355
 
-	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity ); // grayman #3424
-	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424  
+	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ); // grayman #3424
+	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424
 	
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;

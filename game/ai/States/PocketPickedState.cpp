@@ -146,7 +146,7 @@ void PocketPickedState::Think(idAI* owner)
 
 				if ( owner->AI_AlertIndex >= ESearching )
 				{
-					// grayman debug - experiment moving all alert setup into one method
+					// grayman debug - move alert setup into one method
 					SetUpSearchData(EAlertTypeSuspiciousItem, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 				}
 			}

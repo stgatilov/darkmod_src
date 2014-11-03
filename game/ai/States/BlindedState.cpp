@@ -113,7 +113,7 @@ void BlindedState::Think(idAI* owner)
 
 		if ( !owner->GetEnemy() )
 		{
-			// grayman debug - experiment moving all alert setup into one method
+			// grayman debug - move alert setup into one method
 			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman debug
 		}
 

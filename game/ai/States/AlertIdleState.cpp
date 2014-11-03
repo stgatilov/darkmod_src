@@ -71,6 +71,8 @@ void AlertIdleState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AlertIdleState::Init - %s - alertType set to EAlertTypeNone\r",owner->GetName()); // grayman debug
+	memory.prevAlertType = EAlertTypeNone; // grayman debug
 	memory.alertPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3413
 
 	memory.agitatedSearched = false; // grayman #3496

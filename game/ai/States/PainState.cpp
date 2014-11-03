@@ -75,7 +75,7 @@ void PainState::Init(idAI* owner)
 		// by yelling out. If not searching, create a new event
 		// and attempt to rally others to you.
 
-		if (owner->m_searchID < 0)
+		if (owner->m_searchID <= 0)
 		{
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("PainState::Init - %s calling LogSuspiciousEvent(%d,[%s],'NULL')\r",owner->GetName(),(int)E_EventTypeEnemy, memory.alertPos.ToString()); // grayman debug
 			memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeEnemy,memory.alertPos,NULL);

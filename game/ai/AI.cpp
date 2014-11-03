@@ -6440,7 +6440,7 @@ int idAI::ReactionTo( const idEntity *ent )
 	// actors will always fight if their teams are enemies
 	if ( IsEnemy(actor) )
 	{
-		if ( actor->fl.notarget )
+		if ( ( actor->fl.notarget ) || ( actor->fl.invisible ) ) // grayman debug
 		{
 			// don't attack on sight when attacker is notargeted
 			return ATTACK_ON_DAMAGE | ATTACK_ON_ACTIVATE;
@@ -6567,7 +6567,9 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s calling SetAlertLevel(%f)\r",GetName(),thresh_5*2); // grayman debug
 					SetAlertLevel(thresh_5*2);
 					GetMemory().alertClass = ai::EAlertNone;
+					GetMemory().prevAlertType = GetMemory().alertType; // grayman debug
 					GetMemory().alertType = ai::EAlertTypeEnemy;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s - alertType set to %d\r",GetName(),(int)GetMemory().alertType); // grayman debug
 				}
 			}
 		}
@@ -6701,7 +6703,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Killed - %s killed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
 	// grayman debug - leave an ongoing search
-	if (m_searchID >= 0)
+	if (m_searchID > 0)
 	{
 		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
 	}
@@ -6846,8 +6848,9 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 		GetMind()->GetState()->OnProjectileHit(static_cast<idProjectile*>(inflictor), attacker, damageTaken);
 	}
 
-	if ( ( attacker != NULL ) && IsEnemy(attacker) )
+	if ( ( attacker != NULL ) && IsEnemy(attacker) && CanSee(attacker,true) ) // grayman debug - only conclude enemy if you can see him
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Damage - %s setting hasBeenAttackedByEnemy to TRUE (damageTaken = %d)\r",GetName(),preHitHealth - health); // grayman debug
 		GetMemory().hasBeenAttackedByEnemy = true;
 
 		if (cv_ai_debug_transition_barks.GetBool())
@@ -9488,14 +9491,14 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		m_AlertedByActor = NULL; // grayman #2907 - needs to be cleared, otherwise it can be left over from a previous sound this frame
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s heard sound '%s'\r",GetName(),propParms->name.c_str()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    maker = '%s'\r",propParms->maker->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                           maker = '%s'\r",propParms->maker->GetName()); // grayman debug
 		if (propParms->maker->IsType(idActor::Type))
 		{
 			// grayman #3394 - maker might have made the sound, but was
 			// he put in motion by the player?
 
 			idActor* setInMotionBy = propParms->maker->m_SetInMotionByActor.GetEntity();
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    setInMotionBy = '%s'\r",setInMotionBy ? setInMotionBy->GetName() : "NULL"); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                           setInMotionBy = '%s'\r",setInMotionBy ? setInMotionBy->GetName() : "NULL"); // grayman debug
 			if ( setInMotionBy != NULL )
 			{
 				m_AlertedByActor = setInMotionBy;
@@ -9525,13 +9528,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman debug - no alert if it was made by a dead or KO'ed body that was kicked by another AI
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    soundMaker = '%s'\r",soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    IsEnemy(soundMaker) = %d\r",IsEnemy(soundMaker)); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    soundMaker != m_lastKilled.GetEntity() = %d\r",soundMaker != m_lastKilled.GetEntity()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    IsAfraid() = %d\r",IsAfraid()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    idStr::FindText(propParms->name,'arrow') = %d\r",idStr::FindText(propParms->name,"arrow") == 0); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                               psychLoud = %f\r",psychLoud); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                              soundMaker = '%s'\r",soundMaker ? soundMaker->GetName() : "NULL"); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                     IsEnemy(soundMaker) = %d\r",IsEnemy(soundMaker)); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("  soundMaker != m_lastKilled.GetEntity() = %d\r",soundMaker != m_lastKilled.GetEntity()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                              IsAfraid() = %d\r",IsAfraid()); // grayman debug
 		if ( !soundMaker || // alert if unknown sound maker
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget && !soundMaker->fl.inaudible ) || // alert if enemy and not the last we killed and not in notarget mode
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    calling OnAudioAlert()\r"); // grayman debug
@@ -9589,7 +9592,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 					}
 				}
 			}
-
 		}
 		
 		// Retrieve the messages from the other AI, if there are any
@@ -9660,18 +9662,16 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 		return;
 	}
 
-	// Ignore actors in notarget mode
-
-	if ( actor && actor->fl.notarget)
+	// Ignore actors for various reasons
+	if (actor)
 	{
-		return;
-	}
-
-	// grayman #2816 - don't respond to sounds made by someone you last killed
-
-	if ( actor && ( actor == m_lastKilled.GetEntity() ) )
-	{
-		return;
+		if ( actor->fl.notarget ||
+			 ( (idStr(type) == "vis") && actor->fl.invisible) || // grayman debug
+			 ( (idStr(type) == "aud") && actor->fl.inaudible) || // grayman debug
+			 ( actor == m_lastKilled.GetEntity() ) ) // grayman #2816 - don't respond to alerts made by someone you last killed
+		{
+			return;
+		}
 	}
 
 	m_AlertedByActor = actor; // grayman #3258
@@ -10804,8 +10804,10 @@ idActor* idAI::FindEnemyAI(bool useFOV)
 	float bestDist = idMath::INFINITY;
 	idActor* bestEnemy = NULL;
 
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || !ent->IsType( idActor::Type ) ) {
+	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
+	{
+		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || ent->fl.invisible || !ent->IsType( idActor::Type ) ) // grayman debug - also use 'invisible'
+		{
 			continue;
 		}
 
@@ -11277,6 +11279,13 @@ bool idAI::HasSeenEvidence() const
 {
 	ai::Memory& memory = GetMemory();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HasSeenEvidence - %s ...\r",GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             enemiesHaveBeenSeen = %d\r",memory.enemiesHaveBeenSeen); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          hasBeenAttackedByEnemy = %d\r",memory.hasBeenAttackedByEnemy); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             itemsHaveBeenStolen = %d\r",memory.itemsHaveBeenStolen); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             itemsHaveBeenBroken = %d\r",memory.itemsHaveBeenBroken); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("  unconsciousPeopleHaveBeenFound = %d\r",memory.unconsciousPeopleHaveBeenFound); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("         deadPeopleHaveBeenFound = %d\r",memory.deadPeopleHaveBeenFound); // grayman debug
 	return memory.enemiesHaveBeenSeen
 		|| memory.hasBeenAttackedByEnemy
 		|| memory.itemsHaveBeenStolen
@@ -11596,7 +11605,7 @@ void idAI::Knockout( idEntity* inflictor )
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Knockout - %s KO'ed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
 	// grayman debug - leave an ongoing search
-	if (m_searchID >= 0)
+	if (m_searchID > 0)
 	{
 		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
 	}
@@ -12617,8 +12626,9 @@ void idAI::ShowDebugInfo()
 
 	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
 	{
+		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		// grayman debug - add debugging info for coordinated searches
-		if ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching))
+		if (( m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)) )
 		{
 			Search* search = gameLocal.m_searchManager->GetSearch(m_searchID);
 			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,this);
@@ -12640,12 +12650,9 @@ void idAI::ShowDebugInfo()
 					role = "observer";
 				}
 			}
-			gameRenderWorld->DrawText( va("Alert: %f; Index: %d; Role: %s", (float) AI_AlertLevel, (int)AI_AlertIndex, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			gameRenderWorld->DrawText( va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 		}
-		else
-		{
-			gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-		}
+
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
 		{
 			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
@@ -13190,6 +13197,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	// This is a door that's supposed to be closed.
 	// Search for a while. Remember the door so you can close it later. 
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetUpSuspiciousDoor - %s - setting up a suspicious door search\r",GetName()); // grayman debug
 	ai::Memory& memory = GetMemory();
 	memory.closeMe = door;
 	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
@@ -13207,9 +13215,9 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 
 	if ( AI_AlertLevel < ( thresh_4 - 0.1f ) )
 	{
-		// grayman debug - experiment moving all alert setup into one method
+		// grayman debug - move alert setup into one method
 		idVec3 alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
-		mind->GetState()->SetUpSearchData(ai::EAlertTypeDoor, alertPos, NULL, false, thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman debug
+		mind->GetState()->SetUpSearchData(ai::EAlertTypeDoor, alertPos, door, false, thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman debug
 	}
 }
 

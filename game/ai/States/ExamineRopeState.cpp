@@ -330,7 +330,7 @@ void ExamineRopeState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
-						// grayman debug - experiment moving all alert setup into one method
+						// grayman debug - move alert setup into one method
 						SetUpSearchData(EAlertTypeRope, _examineSpot, rope, false, 0); // grayman debug
 					}
 				}

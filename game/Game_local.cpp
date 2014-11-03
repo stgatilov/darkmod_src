@@ -962,6 +962,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteInt(static_cast<int>(se.type));
 		savegame.WriteVec3(se.location);
 		se.entity.Save(&savegame);
+		savegame.WriteInt(se.time); // grayman debug
 	}
 
 	// grayman #3584
@@ -2133,6 +2134,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		m_suspiciousEvents[i].type = static_cast<EventType>(type);
 		savegame.ReadVec3(m_suspiciousEvents[i].location);
 		m_suspiciousEvents[i].entity.Restore(&savegame);
+		savegame.ReadInt(m_suspiciousEvents[i].time); // grayman debug
 	}
 
 	m_ambientLights.Clear();
@@ -7970,7 +7972,7 @@ int idGameLocal::GetSpyglassOverlay()
 
 // grayman #3424
 
-int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity )
+int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ) // grayman debug
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
 
@@ -7983,10 +7985,11 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 			// grayman #3848 - must use separate booleans
 			bool locationMatch = true;
 			bool entityMatch   = true;
+			bool timeMatch	   = true; // grayman debug
 
 			// check location
 
-			if ( !location.Compare(idVec3(0,0,0)))
+			if ( !location.Compare(idVec3(0,0,0)) )
 			{
 				// Allow for some variance in location. Two events of
 				// the same type that are near each other should be
@@ -8006,14 +8009,23 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				}
 			}
 
-			if ( locationMatch && entityMatch )
+			// grayman debug - check timestamp
+
+			if ( time > 0 )
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found event %d (%d,[%s],'%s')\r",i,(int)type, location.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
+				// time must match exactly
+
+				timeMatch = ( time == se.time);
+			}
+
+			if ( locationMatch && entityMatch && timeMatch ) // grayman debug
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found event %d (%d,[%s],'%s',%d)\r",i,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL", se.time); // grayman debug
 				return i;
 			}
 		}
 	}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find event (%d,[%s],'%s')\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find event (%d,[%s],'%s',%d)\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL", time); // grayman debug
 	return -1;
 }
 
@@ -8025,27 +8037,31 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 
 	if ( se.type == E_EventTypeEnemy )
 	{
-		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL );
+		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL, 0 );
 	}
 	else if ( se.type == E_EventTypeDeadPerson )
 	{
-		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity() );
+		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
 	}
 	else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman debug
 	{
-		index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity() );
+		index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
 	}
 	else if ( se.type == E_EventTypeMissingItem )
 	{
-		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, NULL );
+		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, se.entity.GetEntity(), 0 );
 	}
 	else if ( se.type == E_EventTypeMisc ) // grayman debug
 	{
-		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, NULL );
+		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, NULL, se.time );
 	}
 	else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
 	{
-		index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL );
+		index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
+	}
+	else if ( se.type == E_EventTypeSound ) // grayman debug
+	{
+		index = FindSuspiciousEvent( E_EventTypeSound, idVec3(0,0,0), NULL, se.time );
 	}
 
 	if ( index < 0 )

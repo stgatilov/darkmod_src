@@ -1711,6 +1711,7 @@ void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds se
 			const aasPortal_t* portal = &file->GetPortal(portalNum);
 			idVec3 center = AreaCenter(portal->areaNum);
 
+			// To reduce congestion, ignore any spots that are inside the search area.
 			if (searchLimits.ContainsPoint(center))
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   portal is inside the limits [%s]\r",searchLimits.ToString()); // grayman debug

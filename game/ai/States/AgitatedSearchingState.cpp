@@ -45,7 +45,7 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -81,7 +81,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	if (owner->AI_AlertIndex > EAgitatedSearching)
 	{
 		// Alert index is too high, switch to the higher State
-		if (owner->m_searchID >= 0)
+		if (owner->m_searchID > 0)
 		{
 			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug - leave an ongoing search
 		}
@@ -308,7 +308,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	}
 
 	// Set up a new hiding spot search if not already assigned to one
-	if (owner->m_searchID < 0)
+	if (owner->m_searchID <= 0)
 	{
 		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
 		{
@@ -364,9 +364,11 @@ void AgitatedSearchingState::Init(idAI* owner)
 			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
 			{
 				soundName = "snd_helpSearch";
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s will bark '%s'\r",owner->GetName(),soundName.c_str()); // grayman debug
 
 				// Allocate a SingleBarkTask, set the sound and enqueue it
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
+
 				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
 
 				if (cv_ai_debug_transition_barks.GetBool())

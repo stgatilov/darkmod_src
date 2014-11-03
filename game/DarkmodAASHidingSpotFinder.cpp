@@ -1198,7 +1198,6 @@ bool CDarkmodAASHidingSpotFinder::continueSearchForHidingSpots
 
 	bool searchCompleted = isSearchCompleted();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("           searchCompleted = %d\r",searchCompleted); // grayman debug
 	if (searchCompleted || frameNumber == lastProcessingFrameNumber) 
 	{
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   Search is completed or we already searched this frame\r"); // grayman debug

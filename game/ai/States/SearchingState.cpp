@@ -50,7 +50,7 @@ const idStr& SearchingState::GetName() const
 
 bool SearchingState::CheckAlertLevel(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
+	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -61,7 +61,7 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 		owner->GetMemory().agitatedSearched = false; // grayman #3496 - clear this if descending
 		
 		// Alert index is too low for this state, fall back
-		if (owner->m_searchID >= 0) // grayman debug
+		if (owner->m_searchID > 0) // grayman debug
 		{
 			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug
 		}
@@ -205,6 +205,7 @@ void SearchingState::Init(idAI* owner)
 			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
 			{
 				soundName = "snd_helpSearch";
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s will bark '%s'\r",owner->GetName(),soundName.c_str()); // grayman debug
 
 				// Allocate a SingleBarkTask, set the sound and enqueue it
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));
@@ -228,6 +229,8 @@ void SearchingState::Init(idAI* owner)
 	{
 		// descending alert level
 		// reduce the alert type, so we can react to other alert types (such as a dead person)
+		memory.prevAlertType = memory.alertType; // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s - alertType set to EAlertTypeSuspicious\r",owner->GetName()); // grayman debug
 		memory.alertType = EAlertTypeSuspicious;
 	}
 	
@@ -309,15 +312,21 @@ void SearchingState::Think(idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
-	// grayman #3200 - if asked to restart the hiding spot search, don't continue with the current hiding spot search
+	// grayman #3200 - if asked to restart the hiding spot search,
+	// and you can successfully join a new search, don't continue
+	// with the current hiding spot search
 	if (memory.restartSearchForHidingSpots)
 	{
+		memory.restartSearchForHidingSpots = false;
+
 		// We should restart the search (probably due to a new incoming stimulus)
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s calling StartNewHidingSpotSearch() to restart a search\r",owner->GetName()); // grayman debug
 		// Set up a new hiding spot search
-		StartNewHidingSpotSearch(owner); // grayman debug - AI will leave an existing search and get a new assignment for the new search
-		return;
+		if (StartNewHidingSpotSearch(owner)) // grayman debug - AI will leave an existing search and get a new assignment for the new search
+		{
+			return;
+		}
 	}
 
 	// grayman #3520 - look at alert spots
@@ -360,7 +369,7 @@ void SearchingState::Think(idAI* owner)
 
 	if (assignment) // grayman debug
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s found my assignment\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s found my assignment, and my role is %d\r",owner->GetName(),(int)assignment->_searcherRole); // grayman debug
 	}
 	else
 	{
@@ -376,7 +385,7 @@ void SearchingState::Think(idAI* owner)
 			// Do we have an ongoing hiding spot search?
 			if (!memory.hidingSpotSearchDone)
 			{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hiding spot search not done yet, call PerformHidingSpotSearch()\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hiding spot search not done yet, call PerformHidingSpotSearch()\r",owner->GetName()); // grayman debug
 				// Let the hiding spot search do its task
 				gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
 			}
@@ -386,8 +395,11 @@ void SearchingState::Think(idAI* owner)
 
 		if (memory.millingInProgress)
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s GuardSpotTask(milling) in progress\r",owner->GetName()); // grayman debug
 			return;
 		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s GuardSpotTask(milling) not in progress\r",owner->GetName()); // grayman debug
 
 		smRole_t role = assignment->_searcherRole;
 
@@ -420,7 +432,7 @@ void SearchingState::Think(idAI* owner)
 			if (!memory.hidingSpotSearchDone)
 			{
 				// hiding spot search not done yet, but don't call PerformHidingSpotSearch() here
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hiding spot search not done yet, but don't call PerformHidingSpotSearch() here\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hiding spot search not done yet, but don't call PerformHidingSpotSearch() here\r",owner->GetName()); // grayman debug
 				// Let the hiding spot search do its task
 				//gameLocal.m_searchManager->PerformHidingSpotSearch(owner->m_searchID,owner); // grayman debug
 				return;
@@ -429,9 +441,11 @@ void SearchingState::Think(idAI* owner)
 			// Is a spot investigation in progress?
 			if (memory.hidingSpotInvestigationInProgress)
 			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s InvestigateSpotTask() in progress\r",owner->GetName()); // grayman debug
 				return;
 			}
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s InvestigateSpotTask() not in progress\r",owner->GetName()); // grayman debug
 			// Have we run out of hiding spots?
 
 			if (memory.noMoreHidingSpots) 
@@ -740,6 +754,7 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* 
 			if (guardSpotTask != NULL)
 			{
 				// Redirect the owner to a new position
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::OnAudioAlert - %s calling guardSpotTask->SetNewGoal()\r",owner->GetName()); // grayman debug
 				guardSpotTask->SetNewGoal(memory.alertPos);
 				memory.restartSearchForHidingSpots = true; // grayman #3200
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::OnAudioAlert 1 - %s memory.restartSearchForHidingSpots set to %d\r",owner->GetName(),memory.restartSearchForHidingSpots); // grayman debug
@@ -804,7 +819,7 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 
 	if (!assigned)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s joining new search, calling JoinSearch()\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s calling JoinSearch(%d)\r",owner->GetName(),newSearchID); // grayman debug
 		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
 	}
 	else // grayman debug

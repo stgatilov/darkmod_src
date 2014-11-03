@@ -90,6 +90,10 @@ namespace ai
 #define TACTILE_ALERT_RADIUS 10.0f
 #define TACTILE_SEARCH_VOLUME idVec3(100,100,100) // grayman #2816 - was (40,40,40) which makes them stand still
 
+// grayman debug - Considered cause radius around a "hit by moveable" event
+#define TACTILE_ALERT_HIT_BY_MOVEABLE_RADIUS 100.0f
+#define TACTILE_HIT_BY_MOVEABLE_SEARCH_VOLUME idVec3(150,150,100)
+
 // Considered cause radius around a visual event
 #define VISUAL_ALERT_RADIUS 25.0f
 #define VISUAL_SEARCH_VOLUME idVec3(100,100,100)
@@ -158,6 +162,7 @@ enum EAlertType
 	//EAlertTypeSearchOrder,		// grayman debug
 	EAlertTypeDetectedEnemy,	// grayman debug
 	EAlertTypeSomethingSuspicious, // grayman debug
+	EAlertTypeHitByMoveable,	// grayman debug - was EAlertTypeSuspicious
 	EAlertTypeCount
 };
 
@@ -391,6 +396,9 @@ public:
 
 	// Source of the alert (enemy, weapon, blood, dead person, etc.)
 	EAlertType alertType;
+
+	// grayman debug - capture the previous alert type for certain situations
+	EAlertType prevAlertType;
 
 	// radius of alert causing stimulus (depends on the type and distance)
 	float alertRadius;

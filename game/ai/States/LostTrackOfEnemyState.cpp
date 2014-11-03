@@ -82,7 +82,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 		memory.alertPos = owner->lastVisibleEnemyPos;
 	}
 
-	// grayman debug - experiment moving all alert setup into one method
+	// grayman debug - move alert setup into one method
 	SetUpSearchData(EAlertTypeLostTrackOfEnemy, memory.alertPos, NULL, false, 0); // grayman debug
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".

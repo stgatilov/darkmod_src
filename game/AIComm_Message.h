@@ -182,8 +182,14 @@ struct CommMessage
 		ConveyWarning_EvidenceOfIntruders_CommType,
 		ConveyWarning_ItemsHaveBeenStolen_CommType,
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
+
 		ConveyWarning_CorpseHasBeenSeen_CommType, // grayman #1327
 		ConveyWarning_UnconsciousPersonHasBeenSeen_CommType, // grayman debug
+
+		// grayman debug - initial discoveries must be responded to
+		RaiseTheAlarm_ItemsHaveBeenStolen_CommType,
+		RaiseTheAlarm_CorpseHasBeenSeen_CommType,
+		RaiseTheAlarm_UnconsciousPersonHasBeenSeen_CommType,
 
 		NumCommTypes, // invalid type
 	};

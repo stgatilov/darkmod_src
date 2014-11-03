@@ -29,6 +29,7 @@
 #define __SEARCH_MANAGER_H__
 
 #include "darkmodHidingSpotTree.h"
+//#include "Game_local.h"
 
 class idAI;
 class idAASLocal;
@@ -123,6 +124,7 @@ typedef enum
 #define SEARCH_SUSPICIOUSITEM	(SEARCH_EVERYTHING) // EAlertTypeSuspiciousItem
 #define SEARCH_ROPE				(SEARCH_EVERYTHING) // EAlertTypeRope
 #define SEARCH_PROJECTILE		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeHitByProjectile
+#define SEARCH_MOVEABLE			(SEARCH_SEARCH) // EAlertTypeHitByMoveable
 
 class CSearchManager
 {
@@ -135,25 +137,27 @@ public:
 	CSearchManager();  // Constructor
 	~CSearchManager(); // Destructor
 
-	void Clear();
+	void		Clear();
 
-	void RandomizeHidingSpotList(Search* search);
+	Search*		CreateSearch(idAI* ai);
 
-	int StartNewHidingSpotSearch(idAI* ai); // returns searchID for the AI to use
+	void		RandomizeHidingSpotList(Search* search);
 
-	bool GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
+	int			StartNewHidingSpotSearch(idAI* ai); // returns searchID for the AI to use
 
-	void RestartHidingSpotSearch(int searchID, idAI* ai); // Close and destroy the current search and start a new search
+	bool		GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
 
-	void PerformHidingSpotSearch(int searchID, idAI* ai); // Continue searching
+	//void		RestartHidingSpotSearch(int searchID, idAI* ai); // Close and destroy the current search and start a new search
 
-	Search* GetSearch(int searchID); // returns a pointer to the requested search
+	void		PerformHidingSpotSearch(int searchID, idAI* ai); // Continue searching
 
-	Search* GetSearchWithEventID(int eventID); // returns a pointer to the requested search
+	Search*		GetSearch(int searchID); // returns a pointer to the requested search
 
-	Search* GetSearchAtLocation(idVec3 location); // returns a pointer to the requested search
+	Search*		GetSearchWithEventID(int eventID); // returns a pointer to the requested search
 
-	Assignment* GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
+	Search*		GetSearchAtLocation(EventType eventType, idVec3 location); // returns a pointer to the requested search
+
+	Assignment*	GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
 	/*!
 	* This method finds hiding spots in the bounds given by two vectors, and also excludes
@@ -184,13 +188,13 @@ public:
 	*
 	* The return value is a 0 for failure, 1 for success.
 	*/
-	int StartSearchForHidingSpotsWithExclusionArea
-	(
-		Search *search,
-		const idVec3& hideFromLocation,
-		int hidingSpotTypesAllowed,
-		idAI* p_ignoreAI
-	);
+	int			StartSearchForHidingSpotsWithExclusionArea
+				(
+				Search *search,
+				const idVec3& hideFromLocation,
+				int hidingSpotTypesAllowed,
+				idAI* p_ignoreAI
+				);
 
 	/*
 	* This method continues searching for hiding spots. It will only find so many before
@@ -201,32 +205,32 @@ public:
 	* is more processing to do (call this method again next AI frame)
 	*
 	*/
-	int ContinueSearchForHidingSpots(int searchID, idAI* ai);
+	int			ContinueSearchForHidingSpots(int searchID, idAI* ai);
 
-	bool JoinSearch(int searchID, idAI* searcher); // adds searcher to search
+	bool		JoinSearch(int searchID, idAI* searcher); // adds searcher to search
 
-	void LeaveSearch(int searchID, idAI* ai); // searcher leaves a search
+	void		LeaveSearch(int searchID, idAI* ai); // searcher leaves a search
 
-	void AdjustSearchLimits(idBounds& bounds); // grayman #2422 - fit the search to the architecture of the area being searched
+	void		AdjustSearchLimits(idBounds& bounds); // grayman #2422 - fit the search to the architecture of the area being searched
 
-	void destroyCurrentHidingSpotSearch(Search* search);
+	void		destroyCurrentHidingSpotSearch(Search* search);
 
-	void CreateListOfGuardSpots(Search* search, idAI* ai);
+	void		CreateListOfGuardSpots(Search* search, idAI* ai);
 
-	void Save( idSaveGame *savefile );
+	void		Save( idSaveGame *savefile );
 
-	void Restore( idRestoreGame *savefile );
+	void		Restore( idRestoreGame *savefile );
 
-	void DebugPrint(Search* search); // Print the current hiding spots and assignments
+	void		DebugPrint(Search* search); // Print the current hiding spots and assignments
 
-	void DebugPrintSearch(Search* search); // Print the contents of a search
+	void		DebugPrintSearch(Search* search); // Print the contents of a search
 
-	void DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
+	void		DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
 
-	//void PrintMe(int n, idAI* owner); // grayman debug - delete when done
+	//void		PrintMe(int n, idAI* owner); // grayman debug - delete when done
 
 	// Accessor to the singleton instance of this class
-	static CSearchManager* Instance();
+	static		CSearchManager* Instance();
 };
 
 #endif // __SEARCH_MANAGER_H__

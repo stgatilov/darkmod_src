@@ -69,6 +69,7 @@ void HitByMoveableState::Init(idAI* owner)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Init - %s hit by %s\r",owner->GetName(),tactEnt->GetName()); // grayman debug
 	// grayman #3424 - don't process if dead or unconscious
 	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
 	{
@@ -110,6 +111,9 @@ void HitByMoveableState::Init(idAI* owner)
 	_pos = owner->GetEyePosition() + dir*HIT_DIST; // where to look when turning back
 
 	_responsibleActor = tactEnt->m_SetInMotionByActor;	// who threw it
+
+	tactEnt->m_SetInMotionByActor = owner; // grayman debug - since it bounced off me, reset this
+	tactEnt->m_MovedByActor = owner; // grayman debug - since it bounced off me, reset this
 
 	_lookAtDuration   = owner->spawnArgs.GetFloat("hitByMoveableLookAtTime","2.0");   // how long to look at what hit you
 	_lookBackDuration = owner->spawnArgs.GetFloat("hitByMoveableLookBackTime","2.0"); // how long to look back at where the object came from
@@ -168,6 +172,7 @@ void HitByMoveableState::Think(idAI* owner)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s state = %d\r",owner->GetName(),(int)_hitByMoveableState); // grayman debug
 	switch (_hitByMoveableState)
 	{
 		case EStateSittingSleeping:
@@ -347,8 +352,23 @@ void HitByMoveableState::Think(idAI* owner)
 					owner->m_TactAlertEnt = tactEnt;
 					owner->m_AlertedByActor = responsible;
 
-					// grayman debug - experiment moving all alert setup into one method
-					SetUpSearchData(EAlertTypeSuspicious, ownerOrg, responsible, false, 0); // grayman debug
+					// grayman debug - set the alert amount to some value in Searching mode
+					float newAlertLevel = owner->thresh_3 + (owner->thresh_4 - 0.1 - owner->thresh_3)*owner->GetAcuity("tact");
+					float alertIncrement = newAlertLevel - owner->AI_AlertLevel;
+
+					// Check if current alert level is higher than new alert level.
+
+					if (alertIncrement < 0)
+					{
+						alertIncrement = 0;
+					}
+
+					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
+					owner->PreAlertAI("tact", alertIncrement, responsible->GetEyePosition()); // grayman #3356
+
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s calling SetUpSearchData()\r",owner->GetName()); // grayman debug
+					// grayman debug - move alert setup into one method
+					SetUpSearchData(EAlertTypeHitByMoveable, ownerOrg, NULL, false, 0); // grayman debug
 		
 					// Set last visual contact location to this location as that is used in case
 					// the target gets away.

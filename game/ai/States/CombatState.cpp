@@ -647,7 +647,9 @@ void CombatState::Think(idAI* owner)
 				// grayman debug - dropping to agitated searching, so we need search parameters
 
 				memory.alertClass = EAlertVisual_1;
+				memory.prevAlertType = memory.alertType; // grayman debug
 				memory.alertType = EAlertTypeEnemy; // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - alertType set to EAlertTypeEnemy\r",owner->GetName()); // grayman debug
 				memory.alertPos = owner->GetPhysics()->GetOrigin();
 				memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
@@ -706,7 +708,7 @@ void CombatState::Think(idAI* owner)
 		{
 
 		// grayman debug - If participating in a search, leave the search
-		if (owner->m_searchID >= 0)
+		if (owner->m_searchID > 0)
 		{
 			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
 		}

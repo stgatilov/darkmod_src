@@ -376,8 +376,10 @@ bool Mind::PerformCombatCheck()
 			gameLocal.Printf("%d: %s sees an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName());
 		}
 
+		memory.prevAlertType = memory.alertType; // grayman debug
 		memory.alertType = EAlertTypeEnemy;
 		idActor* enemy = owner->GetEnemy();
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s - alertType set to EAlertTypeEnemy\r",owner->GetName()); // grayman debug
 
 		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Mind::PerformCombatCheck 4 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, enemyOrigin.ToString(),enemy ? enemy->GetName() : "NULL"); // grayman debug

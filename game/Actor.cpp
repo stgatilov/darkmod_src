@@ -5082,6 +5082,20 @@ void idActor::MarkEventAsSearched( int eventID )
 		return;
 	}
 
+	SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
+
+	// grayman debug - if this is a dead person event, an unconscious
+	// person event, or a missing item event, I should ignore the
+	// appropriate stim in the future
+
+	if ( ( se.type == E_EventTypeDeadPerson ) ||
+		 ( se.type == E_EventTypeUnconsciousPerson ) ||
+		 ( se.type == E_EventTypeMissingItem ) )
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s will in the future ignore stimSource causing event %d\r",GetName(),eventID); // grayman debug
+		se.entity.GetEntity()->IgnoreResponse(ST_VISUAL, this);
+	}
+
 	// grayman debug - Do I know about this event?
 
 	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
@@ -5110,9 +5124,9 @@ void idActor::MarkEventAsSearched( int eventID )
 // grayman #3424
 bool idActor::HasSearchedEvent( int eventID )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s checking eventID %d\r",GetName(),eventID); // grayman debug
 	if ( eventID < 0 )
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s asked to check illegal eventID %d\r",GetName(),eventID); // grayman debug
 		return false;
 	}
 
@@ -5142,7 +5156,8 @@ bool idActor::HasSearchedEvent( int eventID )
 
 bool idActor::HasBeenWarned( idActor* other, int eventID )
 {
-	// Go through my list of warnings and see if I've already been warned.
+	// Go through my list of warnings and see if I've already been warned
+	// by 'other' about this event.
 
 	for ( int i = 0 ; i < m_warningEvents.Num() ; i++ )
 	{
@@ -5185,13 +5200,13 @@ void idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::AddSuspiciousEvent - %s is adding event %d\r",GetName(),eventID); // grayman debug
 	// If I already know about this event, no need to add it.
 	if ( KnowsAboutSuspiciousEvent( eventID ) )
 	{
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::AddSuspiciousEvent - %s is adding event %d\r",GetName(),eventID); // grayman debug
 	// grayman debug
 	KnownSuspiciousEvent kse;
 	kse.eventID = eventID;
@@ -5200,16 +5215,33 @@ void idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
 }
 
 // grayman #3424 - Add a warning event. This represents a warning
-// having passed from 'other' to 'this'.
+// having passed from 'other' to 'this'. Since we don't want 'this'
+// warning 'other' about the same event in the future, log a
+// "reverse warning".
 
-void idActor::AddWarningEvent( idEntity* other, int eventID)
+void idActor::AddWarningEvent( idActor* other, int eventID)
 {
+	// No need to do this if it's already been done.
+
+	if (HasBeenWarned(other,eventID))
+	{
+		return;
+	}
+
 	WarningEvent we;
 	we.entity = other;
 	we.eventID = eventID;
 
 	m_warningEvents.Append(we);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::AddWarningEvent - %s warns %s about event %d\r",other->GetName(),GetName(),eventID); // grayman debug
+
+	// Back at ya
+
+	WarningEvent we2;
+	we2.entity = this;
+	we2.eventID = eventID;
+
+	other->m_warningEvents.Append(we2);
 }
 
 // grayman #3424 - log a suspicious event
@@ -5220,8 +5252,9 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity )
 	se.type = type;
 	se.location = loc;
 	se.entity = entity;
+	se.time = gameLocal.time; // grayman debug
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::LogSuspiciousEvent - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",GetName(),(int)type, loc.ToString(), entity ? entity->GetName() : "NULL"); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::LogSuspiciousEvent - %s calling LogSuspiciousEvent(%d,[%s],'%s',%d)\r",GetName(),(int)type, loc.ToString(), entity ? entity->GetName() : "NULL",gameLocal.time); // grayman debug
 	int index = gameLocal.LogSuspiciousEvent(se);
 	AddSuspiciousEvent(index); // I know about this event
 	return index;

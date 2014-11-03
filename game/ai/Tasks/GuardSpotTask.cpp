@@ -57,6 +57,7 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get a shortcut reference
 	Memory& memory = owner->GetMemory();
 
+	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Invalid spot, terminate task
@@ -66,6 +67,7 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	// Set the goal position
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s calling guardSpotTask->SetNewGoal()\r",owner->GetName()); // grayman debug
 	SetNewGoal(memory.currentSearchSpot);
 	_guardSpotState = EStateSetup;
 
@@ -276,7 +278,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				owner->AI_RUN = true;
 			}
-			else if (owner->m_searchID >= 0)
+			else if (owner->m_searchID > 0)
 			{
 				// When searching, and assigned guard or observer roles, AI should run.
 				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
@@ -306,12 +308,13 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
+				// The following can cause jitter near the goal.
 				// We might have stopped some distance
 				// from the goal. If so, try again.
-				idVec3 origin = owner->GetPhysics()->GetOrigin();
-				if ((abs(origin.x - _guardSpot.x) <= CLOSE_ENOUGH) &&
-					(abs(origin.y - _guardSpot.y) <= CLOSE_ENOUGH))
-				{
+				//idVec3 origin = owner->GetPhysics()->GetOrigin();
+				//if ((abs(origin.x - _guardSpot.x) <= CLOSE_ENOUGH) &&
+				//	(abs(origin.y - _guardSpot.y) <= CLOSE_ENOUGH))
+				//{
 					// We've successfully reached the spot
 
 					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s reached spot\r",owner->GetName()); // grayman debug
@@ -358,11 +361,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 						}
 					}
 					_guardSpotState = EStateStanding;
-				}
-				else
-				{
-					_guardSpotState = EStateSetup; // try again
-				}
+				//}
+				//else
+				//{
+				//	_guardSpotState = EStateSetup; // try again
+				//}
 			}
 			break;
 		}

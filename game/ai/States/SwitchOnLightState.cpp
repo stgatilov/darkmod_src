@@ -726,7 +726,7 @@ void SwitchOnLightState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel >= owner->thresh_3)
 					{
-						// grayman debug - experiment moving all alert setup into one method
+						// grayman debug - move alert setup into one method
 						SetUpSearchData(EAlertTypeLightSource, light->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
 					}
 				}

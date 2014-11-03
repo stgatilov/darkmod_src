@@ -607,7 +607,7 @@ public:
 	bool					KnowsAboutSuspiciousEvent( int eventID );
 	void					AddSuspiciousEvent( int eventID );
 	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ); 
-	void					AddWarningEvent( idEntity* other, int eventID );
+	void					AddWarningEvent( idActor* other, int eventID );
 	bool					HasBeenWarned( idActor* other, int eventID );
 	bool					HasSearchedEvent( int eventID );
 	void					MarkEventAsSearched( int eventID );

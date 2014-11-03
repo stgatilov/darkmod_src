@@ -507,7 +507,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			// TDM: Also ignore ALL enemies
 			// grayman #2728 - also ignore small AI
 			// grayman #3548 - don't ignore enemies if fleeing
-			if	((obPhys == physics)	||
+			if	(/*(obPhys == physics)	||*/ // grayman debug - already done above
 				 (obEnt == ignore)		||
 				 (obEnt->health <= 0)	||
 				 (self->IsEnemy(obEnt) && !fleeing) ||
