@@ -609,7 +609,7 @@ void SearchingState::Think(idAI* owner)
 					memory.guardingAngle = search->_guardSpots[i].w; // angle to face when guard spot is reached
 					memory.guardingInProgress = true;
 					memory.millingInProgress = false;
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (guard) pushing the guard spot task\r",owner->GetName()); // grayman debug
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (guarding) pushing the guard spot task\r",owner->GetName()); // grayman debug
 					owner->actionSubsystem->PushTask(TaskPtr(GuardSpotTask::CreateInstance()));
 
 					search->_guardSpots[i].x = idMath::INFINITY; // mark the spot as taken
@@ -677,12 +677,12 @@ void SearchingState::Think(idAI* owner)
 				memory.guardingAngle = idMath::INFINITY; // face search origin when spot is reached
 				memory.guardingInProgress = true;
 				memory.millingInProgress = false;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) pushing the guard spot task\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observing) pushing the guard spot task\r",owner->GetName()); // grayman debug
 				owner->actionSubsystem->PushTask(TaskPtr(GuardSpotTask::CreateInstance()));
 			}
 			else // grayman debug
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observer) guard spot is NG, try again later\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s (observing) guard spot is NG, try again later\r",owner->GetName()); // grayman debug
 			}
 
 			// If the task finds that you can't walk to the spot, you'll come around
