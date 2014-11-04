@@ -59,7 +59,6 @@ void FailedKnockoutState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	// Failed KO counts as attack
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init - %s setting hasBeenAttackedByEnemy to TRUE\r",owner->GetName()); // grayman debug
 	memory.hasBeenAttackedByEnemy = true;
 
 	if (cv_ai_debug_transition_barks.GetBool())

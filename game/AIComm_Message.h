@@ -152,14 +152,6 @@ struct CommMessage
 		*/
 		PatrolOrder_CommType,
 
-		/*!
-		* An order to search near a certain location
-		*
-		* directObjectLocation: The point near which the
-		* search should be conducted.
-		*/
-		//SearchOrder_CommType, // grayman debug
-
 		/*
 		* An order to attack a certain entity
 		*

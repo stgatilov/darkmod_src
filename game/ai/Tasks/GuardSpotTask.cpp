@@ -27,16 +27,18 @@ static bool versioned = RegisterVersionedFile("$Id: GuardSpotTask.cpp 6105 2014-
 #include "../Memory.h"
 #include "../Library.h"
 #include "SingleBarkTask.h"
+#include "IdleAnimationTask.h"
 
 namespace ai
 {
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 const float MAX_YAW = 45; // max yaw (+/-) from original yaw for idle turning
-const int TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
-const int TURN_DELAY_DELTA = 4000;
-const int MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
-const float CLOSE_ENOUGH = 48.0f; // have reached point if this close
+const int   TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
+const int   TURN_DELAY_DELTA = 4000;
+const int   MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
+const float CLOSE_ENOUGH = 48.0f; // try to get this close to goal
+const float TRY_AGAIN_DISTANCE = 100.0f; // have reached point if this close when stopped
 
 GuardSpotTask::GuardSpotTask() :
 	_nextTurnTime(0)
@@ -57,11 +59,9 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get a shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
 		// Invalid spot, terminate task
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s memory.currentSearchSpot not set to something valid, terminating task.\r",owner->GetName()); // grayman debug
 		subsystem.FinishTask();
 		return;
 	}
@@ -74,7 +74,6 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Milling?
 	if (memory.millingInProgress)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to mill about memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		// Is there any activity after milling is over?
 		// If so, we want a short _exitTime so we can make the run
 		// before we drop out of searching mode. If no, we can continue
@@ -112,7 +111,6 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 	else
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s being sent to guard or observe from memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		memory.stopGuarding = false; // grayman debug
 	}
 }
@@ -122,6 +120,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s ...\r",owner->GetName()); // grayman debug
 	// quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
@@ -138,7 +137,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		return true; // told to cancel this task
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _guardSpotState = %d\r",owner->GetName(),(int)_guardSpotState); // grayman debug
 	// if we've entered combat mode, we want to
 	// end this task.
 
@@ -170,7 +168,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				if (!_millingOnly)
 				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s done milling, issue giveOrder bark?\r",owner->GetName()); // grayman debug
 					// Have a searcher bark an order at owner if owner is a guard.
 					// Searchers won't bark an order to observers.
 
@@ -182,13 +179,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 						idAI *searcher = assignment->_searcher;
 						if (searcher == NULL)
 						{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s first searcher has left the search\r",owner->GetName()); // grayman debug
 							// First searcher has left the search. Try the second.
 							assignment = &search->_assignments[1];
 							searcher = assignment->_searcher;
 							if (searcher == NULL)
 							{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s second searcher has left the search, so no giveOrder bark coming\r",owner->GetName()); // grayman debug
 								return true;
 							}
 						}
@@ -201,7 +196,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							0 // grayman #3438
 						));
 
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s barks giveOrder to %s\r",searcher->GetName(),owner->GetName()); // grayman debug
 						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
 					}
 				}
@@ -234,8 +228,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		{
 			idVec3 destPos = _guardSpot;
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move not started yet to [%s]\r",owner->GetName(),destPos.ToString()); // grayman debug
-
 			// Let's move
 
 			// If the AI is searching and not handling a door or handling
@@ -249,7 +241,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			if ( toAreaNum == 0 )
 			{
 				pointValid = false;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s pointValid = false because toAreaNum = 0\r",owner->GetName()); // grayman debug
 			}
 			else
 			{
@@ -258,7 +249,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			if ( pointValid )
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
 				pointValid = owner->MoveToPosition(goal,CLOSE_ENOUGH); // allow for someone else standing on it
 			}
 
@@ -271,7 +261,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
 
 			float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s actualDist = %f\r",owner->GetName(),actualDist); // grayman debug
 			bool shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
 			owner->AI_RUN = false;
 			if (shouldRun)
@@ -302,22 +291,19 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s guard spot unreachable\r",owner->GetName()); // grayman debug
 				return true;
 			}	
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
-				// The following can cause jitter near the goal.
+				// TODO: The following can cause jitter near the goal.
 				// We might have stopped some distance
 				// from the goal. If so, try again.
-				//idVec3 origin = owner->GetPhysics()->GetOrigin();
-				//if ((abs(origin.x - _guardSpot.x) <= CLOSE_ENOUGH) &&
-				//	(abs(origin.y - _guardSpot.y) <= CLOSE_ENOUGH))
-				//{
+				idVec3 origin = owner->GetPhysics()->GetOrigin();
+				if ((abs(origin.x - _guardSpot.x) <= TRY_AGAIN_DISTANCE) &&
+					(abs(origin.y - _guardSpot.y) <= TRY_AGAIN_DISTANCE))
+				{
 					// We've successfully reached the spot
-
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s reached spot\r",owner->GetName()); // grayman debug
 
 					// If a facing angle is specified, turn to that angle.
 					// If no facing angle is specified, turn toward the origin of the search
@@ -328,17 +314,16 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 					{
 						if ( owner->GetMemory().guardingAngle == idMath::INFINITY)
 						{
-							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward search origin [%s]\r",owner->GetName(),search->_origin.ToString()); // grayman debug
-							owner->TurnToward(search->_origin);
+							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward origin\r",owner->GetName()); // grayman debug
+							owner->TurnToward(search->_origin); // grayman debug
 						}
 						else
 						{
-							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward yaw %f\r",owner->GetName(),owner->GetMemory().guardingAngle); // grayman debug
+							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward guardingAngle\r",owner->GetName()); // grayman debug
 							owner->TurnToward(owner->GetMemory().guardingAngle);
 						}
 
 						_baseYaw = owner->GetIdealYaw();
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _baseYaw %f\r",owner->GetName(),_baseYaw); // grayman debug
 
 						// Milling?
 						if (owner->GetMemory().millingInProgress)
@@ -360,19 +345,29 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
 						}
 					}
-					_guardSpotState = EStateStanding;
-				//}
-				//else
-				//{
-				//	_guardSpotState = EStateSetup; // try again
-				//}
+					_guardSpotState = EStateStartIdleSearchAnims;
+				}
+				else
+				{
+					_guardSpotState = EStateSetup; // try again
+				}
 			}
 			break;
 		}
+	case EStateStartIdleSearchAnims:
+		if (!owner->GetMemory().millingInProgress)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s start playing idle search anims\r",owner->GetName()); // grayman debug
+			// The action subsystem plays the idle search anims
+			owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+		}
+		_guardSpotState = EStateStanding;
+		break;
 	case EStateStanding:
 		{
 			if ( (_nextTurnTime > 0) && (gameLocal.time >= _nextTurnTime) )
 			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward random yaw\r",owner->GetName()); // grayman debug
 				// turn randomly in place
 				float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
 				owner->TurnToward(newYaw);
@@ -483,7 +478,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::OnFinish - %s guardingInProgress and millingInProgress set to false\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished guarding the spot, so set the
 	// booleans back to false
 	owner->GetMemory().guardingInProgress = false;

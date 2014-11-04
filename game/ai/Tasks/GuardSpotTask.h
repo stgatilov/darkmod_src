@@ -50,6 +50,7 @@ private:
 	{
 		EStateSetup,
 		EStateMoving,
+		EStateStartIdleSearchAnims,
 		EStateStanding
 	} _guardSpotState;
 

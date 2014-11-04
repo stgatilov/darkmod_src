@@ -554,7 +554,6 @@ bool MovementSubsystem::AttemptToExtricate()
 
 		if (result.fraction >= 1.0f) // didn't hit anything, so quit looking
 		{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_MoveToPosition - %s calling MoveToPosition([%s])\r",owner->GetName(),moveTo.ToString()); // grayman debug
 			owner->MoveToPosition(moveTo);
 			owner->RestoreAttachmentContents(); // Put back attachments
 			return true;

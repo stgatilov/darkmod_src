@@ -2662,7 +2662,6 @@ void HandleDoorTask::OnFinish(idAI* owner)
 			angleAdjustment = doorRotation.yaw;
 		}
 		owner->TurnToward(owner->GetCurrentYaw() - angleAdjustment); // turn away from the door
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::OnFinish - %s calling SetAlertLevel(%f)\r",owner->GetName(),(owner->thresh_1 + owner->thresh_2 ) / 2.0f); // grayman debug
 		owner->SetAlertLevel( ( owner->thresh_1 + owner->thresh_2 ) / 2.0f); // alert level is just below thresh_2 at this point, so this drops it down halfway to thresh_1
 		frobDoor->AllowResponse(ST_VISUAL,owner); // grayman #3104 - respond again to this visual stim, in case the door was never closed
 	}

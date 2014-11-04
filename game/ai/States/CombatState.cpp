@@ -649,7 +649,6 @@ void CombatState::Think(idAI* owner)
 				memory.alertClass = EAlertVisual_1;
 				memory.prevAlertType = memory.alertType; // grayman debug
 				memory.alertType = EAlertTypeEnemy; // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - alertType set to EAlertTypeEnemy\r",owner->GetName()); // grayman debug
 				memory.alertPos = owner->GetPhysics()->GetOrigin();
 				memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;

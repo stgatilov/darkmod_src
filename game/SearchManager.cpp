@@ -46,7 +46,6 @@ CSearchManager::~CSearchManager()
 
 void CSearchManager::Clear()
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::Clear\r"); // grayman debug
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
 		Search *search = &_searches[i];
@@ -88,7 +87,6 @@ Search* CSearchManager::CreateSearch(idAI* ai)
 	search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 	search->_searchID = uniqueSearchID++;
 	searchCount++; // goes up and down as searches are created and destroyed
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateSearch - %s searchCount increased to %d\r",ai->GetName(),searchCount); // grayman debug
 	search->_origin = searchPoint;  // center of search area, location of alert stimulus
 	search->_limits = searchBounds; // boundary of the search
 	search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
@@ -151,23 +149,23 @@ Search* CSearchManager::CreateSearch(idAI* ai)
 	case ai::EAlertTypeHitByMoveable:
 		search->_assignmentFlags = SEARCH_MOVEABLE;
 		break;
+	case ai::EAlertTypePickedPocket:
+		search->_assignmentFlags = SEARCH_PICKED_POCKET;
+		break;
 	default: // grayman debug
 	case ai::EAlertTypeNone:
 		search->_assignmentFlags = SEARCH_NOTHING;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateSearch - memory.alertType '%d' has no SEARCH flags\r",(int)memory.alertType); // grayman debug
 		break;
 	}
 
 	search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateSearch - search->_assignmentFlags = %x\r",search->_assignmentFlags); // grayman debug
 	DebugPrintSearch(search); // grayman debug - comment when done
 
 	// Add search to list
 
 	_searches.Append(*search);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateSearch - created search %d\r",search->_searchID); // grayman debug
 	return search;
 }
 
@@ -192,14 +190,17 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 
 	if ( ai->HasSearchedEvent(memory.currentSearchEventID) )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s has already searched event %d, abort request\r",ai->GetName(),memory.currentSearchEventID); // grayman debug
 		return -1; // has already searched this event, abort request
 	}
 
 	int searchID = -1;
 
 	// See if there's a search underway for the provided memory.currentSearchEventID
-
+	// grayman debug - TODO: there still might be a problem here.multiple events in close proximity
+	// will cause multiple searches in the same area. Example; Gassing N AI with one arrow should
+	// cause 1 search, not N. The only saving grace is that as each KO'ed body stims an AI, the
+	// AI will leave his previous search and create a search for the new KO'ed body, so maybe
+	// this isn't a big problem.
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::StartNewHidingSpotSearch - %s calling GetSearchWithEventID(%d)\r",ai->GetName(),memory.currentSearchEventID); // grayman debug
 	Search *search = GetSearchWithEventID(memory.currentSearchEventID);
 	if (search)
@@ -281,16 +282,11 @@ void CSearchManager::PerformHidingSpotSearch(int searchID, idAI* ai)
 
 	if (gameLocal.m_searchManager->ContinueSearchForHidingSpots(searchID,ai) == 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search completed for searchID %d\r",ai->GetName(),searchID); // grayman debug
 		// search completed
 		memory.hidingSpotSearchDone = true;
 
 		// Hiding spot test is done
 		memory.hidingSpotTestStarted = false;
-	}
-	else // grayman debug
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s hiding spot search NOT completed yet for searchID %d\r",ai->GetName(),searchID); // grayman debug
 	}
 }
 
@@ -302,7 +298,6 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
 	}
 
 	int numSpots = search->_hidingSpots.getNumSpots();
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::RandomizeHidingSpotList - randomize the indices for %d spots\r",numSpots); // grayman debug
 	search->_hidingSpotIndexes.clear(); // clear any existing array elements
 
 	// Fill the array with integers from 0 to numSpots-1.
@@ -311,16 +306,8 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
 		search->_hidingSpotIndexes.push_back(i);
 	}
 
-	// TODO: should we shuffle or not? If not, we don't need _hidingSpotIndexes
-	/*
-    // Shuffle those integers by randomly exchanging pairs.
-    for ( int i = 0 ; i < (numSpots-1) ; i++ )
-	{
-        int r = i + gameLocal.random.RandomInt(numSpots - i); // Random remaining position.
-        int temp = search->_hidingSpotIndexes[i];
-		search->_hidingSpotIndexes[i] = search->_hidingSpotIndexes[r];
-		search->_hidingSpotIndexes[r] = temp;
-    }*/
+	// grayman debug - stop randomizing spot selection, and rely on
+	// the quality work done during list creation to move the searchers about
 }
 
 Search* CSearchManager::GetSearch(int searchID) // returns a pointer to the requested search
@@ -387,24 +374,19 @@ Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location) // 
 
 Assignment* CSearchManager::GetAssignment(Search* search, idAI* ai) // get ai's assignment for a given search
 {
-//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetAssignment - seeking assignment for '%s' in searchID %d\r",ai ? ai->GetName():"NULL",search ? search->_searchID : -1); // grayman debug
 	if ((search == NULL) || (ai == NULL))
 	{
 		return NULL;
 	}
 
-//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s this search has %d assignments\r",ai->GetName(),search->_assignments.Num()); // grayman debug
 	for (int i = 0 ; i < search->_assignments.Num() ; i++)
 	{
-//		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s examining assignment %d, assigned to '%s'\r",ai->GetName(),i,search->_assignments[i]._searcher ? search->_assignments[i]._searcher->GetName():"NULL"); // grayman debug
 		if (search->_assignments[i]._searcher == ai)
 		{
-//			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s success!\r",ai->GetName()); // grayman debug
 			return &search->_assignments[i];
 		}
 	}
 
-//	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s failure!\r",ai->GetName()); // grayman debug
 	return NULL; // couldn't find an assignment for this ai for this search
 }
 
@@ -415,11 +397,8 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 		return false; // invalid search
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s asking for the next hiding spot for searchID %d\r",ai->GetName(),search->_searchID); // grayman debug
-
 	CDarkmodHidingSpotTree *tree = &search->_hidingSpots; // The hiding spots for this search
 	int numSpots = tree->getNumSpots();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s numSpots = %d\r",ai->GetName(),numSpots); // grayman debug
 
 	Assignment* assignment = GetAssignment(search,ai);
 
@@ -430,7 +409,6 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 
 	int index = assignment->_lastSpotAssigned; // the most recent spot assigned to this searcher; index into _hidingSpotIndexes
 	index++;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s requested hiding spot index is %d\r",ai->GetName(),index); // grayman debug
 
 	if (index >= numSpots)
 	{
@@ -445,7 +423,6 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 		int treeIndex = search->_hidingSpotIndexes[i];
 		assignment->_lastSpotAssigned = i;
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s i = %d, treeIndex = %d\r",ai->GetName(),i,treeIndex); // grayman debug
 		if ( treeIndex == -1 )
 		{
 			continue; // skip bad or used spots
@@ -458,47 +435,38 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 
 		if (hidingSpot != NULL)
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s hidingSpot = [%s]\r",ai->GetName(),hidingSpot->goal.origin.ToString()); // grayman debug
 			// grayman #2422 - this routine might return (0,0,0), but we don't
 			// want AI traveling there.
 
 			if ( !hidingSpot->goal.origin.Compare(idVec3(0,0,0)) )
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s not [0,0,0], so let's check validity ...\r",ai->GetName()); // grayman debug
 				// grayman #2422 - to keep AI from searching the floor above
 				// or below, only return hiding spots that are inside the
 				// requested search volume.
 
 				nextSpot = hidingSpot->goal.origin; // point is good so far
 
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %s so far, [%s] is good\r",ai->GetName(),nextSpot.ToString()); // grayman debug
-
 				if (assignment->_limits.ContainsPoint(nextSpot))
 				{
 					search->_hidingSpotIndexes[i] = -1; // don't assign this good spot again
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s given hiding spot [%s]\r",ai->GetName(),nextSpot.ToString()); // grayman debug
 					return true;
 				}
 
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s hidingSpot is outside the search area, so it's NG\r",ai->GetName()); // grayman debug
 				return false; // didn't find one this time, maybe next time we'll find one
 			}
 			else
 			{
 				// hidingSpot is [0,0,0], so it's NG
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s hidingSpot is [0,0,0], so it's NG\r",ai->GetName()); // grayman debug
 				search->_hidingSpotIndexes[i] = -1; // no one should use this spot
 			}
 		}
 		else
 		{
 			// hidingSpot is NULL, so it's NG
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s hidingSpot is NULL, so it's NG\r",ai->GetName()); // grayman debug
 			search->_hidingSpotIndexes[i] = -1; // no one should use this spot
 		}
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::GetNextHidingSpot - %s couldn't find a valid hiding spot\r",ai->GetName()); // grayman debug
 	return false; // can't find a good spot
 }
 
@@ -513,7 +481,6 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 
 	// Get hiding spot search instance from handle
 	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s search->_hidingSpotSearchHandle = %d\r",ai->GetName(),search->_hidingSpotSearchHandle); // grayman debug
 	if (search->_hidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
 	{
 		p_hidingSpotFinder = CHidingSpotSearchCollection::Instance().getSearchByHandle(
@@ -525,12 +492,10 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 	if (p_hidingSpotFinder == NULL)
 	{
 		// No hiding spot search to continue
-		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s No current hiding spot search to continue\r",ai->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No current hiding spot search to continue\r");
 		return 0;
 	}
 
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s Call finder method to continue search\r",ai->GetName()); // grayman debug
 	// Call finder method to continue search
 	bool moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
 	(
@@ -546,12 +511,10 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 		return 1;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s no more processing to do\r",ai->GetName()); // grayman debug
 	// No more processing to do at this point
 
 	if (!search->_hidingSpotsReady)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s hiding spots aren't ready\r",ai->GetName()); // grayman debug
 		unsigned int refCount;
 
 		// Get finder we just referenced
@@ -563,23 +526,19 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 
 		search->_hidingSpots.clear();
 
-		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s copying finished tree to search->_hidingSpots\r",ai->GetName()); // grayman debug
 		p_hidingSpotFinder->hidingSpotList.copy(&search->_hidingSpots);
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::PerformHidingSpotSearch - %s there are %d hiding spots\r",ai->GetName(),search->_hidingSpots.getNumSpots()); // grayman debug
-		//p_hidingSpotFinder->hidingSpotList.getOneNth(refCount,search->_hidingSpots);
+		//p_hidingSpotFinder->hidingSpotList.getOneNth(refCount,search->_hidingSpots); // grayman debug - don't do this any more
 		search->_hidingSpotsReady = true; // the hiding spot list is complete
 
-		//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s hiding spots ready\r",ai->GetName()); // grayman debug
 		// randomize the indices into the hiding spot list
+		// grayman debug - no longer randomizes, but the list is useful for marking
+		// spots that have been searched or which are NG to anyone
 		RandomizeHidingSpotList(search);
 
 		DebugPrint(search); // grayman debug - comment when done
 
 		// Done with search object, dereference so other AIs know how many
 		// AIs will still be retrieving points from the search
-		// TODO: understand what this means. With the new design of a central
-		// search manager, there should no longer be any splitting of the
-		// list of hiding spots
 		CHidingSpotSearchCollection::Instance().dereference (search->_hidingSpotSearchHandle);
 		search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
@@ -592,7 +551,6 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 			p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
 		}
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search completed\r");
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ContinueSearchForHidingSpots - %s Hiding spot search completed\r",ai->GetName()); // grayman debug
 	}
 
 	return 0;
@@ -603,7 +561,6 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	Search *search = GetSearch(searchID);
 	if (search == NULL)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s couldn't find search for searchID %d\r",ai->GetName(),searchID); // grayman debug
 		return false;
 	}
 
@@ -625,6 +582,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	int numAssignments = search->_assignments.Num();
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s this search has %d current assignments\r",ai->GetName(),numAssignments); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s and %d current searchers\r",ai->GetName(),search->_searcherCount); // grayman debug
 
 	int takeAssignmentIndex = -1; // if taking over an abandoned assignment, fill in this index
 
@@ -710,12 +668,9 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 				// Searching or Agitated Searching state in the same frame. Since the AI joining this search is not necessarily
 				// the result of being requested to, or responding to a call for help, it isn't really needed.
 				//ai->Bark("snd_helpSearch"); // Bark that you're joining the search
-
-				//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search size for first AI  = [%s]\r",ai->GetName(),searchBounds1.GetSize().ToString()); // grayman debug
-				//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s search size for second AI = [%s]\r",ai->GetName(),searchBounds2.GetSize().ToString()); // grayman debug
 			}
 		}
-		else if (numAssignments == 2)
+		else if (numAssignments >= 2)
 		{
 			// Is the first assignment slot available?
 			if (search->_assignments[0]._searcher == NULL)
@@ -804,6 +759,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	if ( takeAssignmentIndex >= 0 )
 	{
 		assignment = &search->_assignments[takeAssignmentIndex];
+		assignment->_searcher = ai; // reactivate the deactivated assignment
 	}
 	else
 	{
@@ -835,46 +791,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s lastAlertPosSearched = [%s]\r",ai->GetName(),memory.lastAlertPosSearched.ToString()); // grayman debug
 	memory.alertSearchCenter = search->_origin;
 	memory.alertPos = search->_origin;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s setting alertPos to [%s]\r",ai->GetName(),memory.alertPos.ToString()); // grayman debug
 	memory.currentSearchEventID = search->_eventID;
 	ai->AddSuspiciousEvent(search->_eventID);
-
-	// Four activities are available:
-	// 1 - actively search
-	// 2 - mill about the search origin
-	// 3 - guard at portals or mapper-designated locations (via guard entities)
-	// 4 - observe from a safe distance at the perimeter of the search area
-
-	// In the following chart, which shows what AI should do when they join a search:
-	// "armed" = armed and good health and not a civilian
-	// "unarmed" = unarmed and/or poor health and/or a civilian
-
-	// Alert type					| Event						| Active searchers		| Guards					| Observers
-	// -----------------------------------------------------------------------------------------------------------------------
-	// EAlertTypeHitByProjectile	| Hit By Arrow				| if unarmed, flee, otherwise:
-	//															| search				| go to guard spot			| go to observation spot
-	// EAlertTypeEnemy				| Enemy, Tactile by Enemy	| armed: enter combat / unarmed: flee
-	// EAlertTypeFailedKO			| Failed KO					| armed: enter combat / unarmed: flee
-	// EAlertTypeWeapon				| Sword, Blackjack, bow		| mill, search			| mill						| mill
-	// EAlertTypeBlinded			| Blinded					| 1 AI: searches		|							|
-	//								|							| >1 AI: mill, search	| mill						| mill, go to observation spot
-	// EAlertTypeDeadPerson			| Dead Person				| search				| go to guard spot			| armed: go to observation spot / unarmed: flee
-	// EAlertTypeUnconsciousPerson	| Unconscious Person		| search				| go to guard spot			| armed: go to observation spot / unarmed: flee
-	// EAlertTypeRope				| Rope						| mill, search			| mill, go to guard spot	| mill, go to observation spot
-	// EAlertTypeSuspiciousItem		|							| mill, search			| mill, go to guard spot	| mill, go to observation spot
-	// EAlertTypeBlood				| Blood						| mill, search			| mill, go to guard spot	| mill, go to observation spot
-	// EAlertTypeBrokenItem			| Broken Item				| mill, search			| mill						| mill
-	// EAlertTypeMissingItem		| Missing Item				| search				| mill, go to guard spot	| mill, go to observation spot			
-	// EAlertTypeDoor				| Door						| 1 AI searches			| n/a						| n/a
-	// EAlertTypeLightSource		| Light Source				| 1 AI searches			| n/a						| n/a
-	// EAlertTypeSuspicious			| Hit By Moveable			| 1 AI searches			| n/a						| n/a
-	//								| Flying arrow or fireball	| 1 AI searches			| n/a						| n/a
-	//								| Picked Pocket				| n/a					| n/a						| n/a
-	//								| Audio						| 1 AI: searches		|							|
-	//								|							| >1 AI: mill, search	| mill						| mill, go to observation spot
-
-	// The assignment flags for the search tell us whether we should mill about or not
-	// before executing our roles.
 
 	memory.shouldMill = false;
 	if (searcherRole == E_ROLE_SEARCHER)
@@ -1237,12 +1155,10 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 
 		if (search->_limits.ContainsPoint(ent->GetPhysics()->GetOrigin()))
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateListOfGuardSpots - guard entity '%s' is inside the limits [%s]\r",ent->GetName(),search->_limits.ToString()); // grayman debug
 			continue;
 		}
 
 		tdmPathGuard* guardEntity = static_cast<tdmPathGuard*>( ent );
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateListOfGuardSpots - found guard entity '%s'\r",guardEntity->GetName()); // grayman debug
 		float dist = (search->_origin - guardEntity->GetPhysics()->GetOrigin()).LengthFast();
 		if (dist < SEARCH_MAX_GUARD_SPOT_DISTANCE)
 		{
@@ -1268,7 +1184,6 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 			tdmPathGuard* ent = guardEntities[i];
 			idVec3 entOrigin = ent->GetPhysics()->GetOrigin();
 			search->_guardSpots.Append(idVec4(entOrigin.x,entOrigin.y,entOrigin.z,ent->m_angle));
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::CreateListOfGuardSpots - added guard entity data, priority = %d\r",ent->m_priority); // grayman debug
 		}
 	}
 

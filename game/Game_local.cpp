@@ -5153,10 +5153,6 @@ void idGameLocal::GetPortals(Search* search, idAI* ai)
 {
 	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
 	int areaNum = ai->PointReachableAreaNum(search->_origin);
-	//int areaNum = gameRenderWorld->PointInArea(search->_origin);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals search->_origin = [%s]\r",search->_origin.ToString()); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::GetPortals areaNum = %d\r",areaNum); // grayman debug
-	//int clusterNum = aasLocal->GetClusterNum(areaNum);
 	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits);
 }
 
@@ -8020,12 +8016,10 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			if ( locationMatch && entityMatch && timeMatch ) // grayman debug
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found event %d (%d,[%s],'%s',%d)\r",i,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL", se.time); // grayman debug
 				return i;
 			}
 		}
 	}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find event (%d,[%s],'%s',%d)\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL", time); // grayman debug
 	return -1;
 }
 
@@ -8068,11 +8062,6 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	{
 		gameLocal.m_suspiciousEvents.Append(se); // log this new event
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - logging new event %d (%d,[%s],'%s')\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
-	}
-	else // grayman debug
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - not logging event %d (%d,[%s],'%s') - already logged\r",index,(int)se.type, se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL"); // grayman debug
 	}
 
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - %d suspicious events have been logged\r",gameLocal.m_suspiciousEvents.Num()); // grayman debug

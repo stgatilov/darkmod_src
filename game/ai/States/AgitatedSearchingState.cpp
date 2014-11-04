@@ -45,7 +45,6 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
-	//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::CheckAlertLevel - %s checking ...\r",owner->GetName()); // grayman debug
 	if (!owner->m_canSearch) // grayman #3069 - AI that can't search shouldn't be here
 	{
 		owner->SetAlertLevel(owner->thresh_3 - 0.1);
@@ -219,7 +218,6 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 
 	if (memory.repeatedBarkState != newRepeatedBarkState)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s changing repeatedBarkState from %d to %d\r",owner->GetName(),(int)memory.repeatedBarkState,(int)newRepeatedBarkState); // grayman debug
 		memory.repeatedBarkState = newRepeatedBarkState;
 
 		bool sendSuspiciousMessage = true; // whether to send a 'something is suspicious' message or not
@@ -270,7 +268,6 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 		int minTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_min", "10"));
 		int maxTime = SEC2MS(owner->spawnArgs.GetFloat("searchbark_delay_max", "15"));
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::SetRepeatedBark - %s RepeatedBarkTask('%s')\r",owner->GetName(),soundName.c_str()); // grayman debug
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new RepeatedBarkTask(soundName, minTime, maxTime, message)));
 	}
 }
@@ -317,7 +314,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 		}
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s clear the comm subsystem (single and repeated barks)\r",owner->GetName()); // grayman debug
 	// kill the repeated and single bark tasks
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 	memory.repeatedBarkState = ERBS_NULL; // grayman debug
@@ -351,7 +347,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 					memory.currentSearchEventID // grayman #3438
 				));
 
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s SingleBarkTask('%s')\r",owner->GetName(),soundName.c_str()); // grayman debug
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName,message)));
 
 				memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
@@ -364,7 +359,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
 			{
 				soundName = "snd_helpSearch";
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s will bark '%s'\r",owner->GetName(),soundName.c_str()); // grayman debug
 
 				// Allocate a SingleBarkTask, set the sound and enqueue it
 				owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(soundName)));

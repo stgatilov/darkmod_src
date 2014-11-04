@@ -69,7 +69,6 @@ void HitByMoveableState::Init(idAI* owner)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Init - %s hit by %s\r",owner->GetName(),tactEnt->GetName()); // grayman debug
 	// grayman #3424 - don't process if dead or unconscious
 	if ( owner->AI_DEAD || owner->AI_KNOCKEDOUT )
 	{
@@ -172,7 +171,6 @@ void HitByMoveableState::Think(idAI* owner)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s state = %d\r",owner->GetName(),(int)_hitByMoveableState); // grayman debug
 	switch (_hitByMoveableState)
 	{
 		case EStateSittingSleeping:
@@ -366,7 +364,6 @@ void HitByMoveableState::Think(idAI* owner)
 					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
 					owner->PreAlertAI("tact", alertIncrement, responsible->GetEyePosition()); // grayman #3356
 
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s calling SetUpSearchData()\r",owner->GetName()); // grayman debug
 					// grayman debug - move alert setup into one method
 					SetUpSearchData(EAlertTypeHitByMoveable, ownerOrg, NULL, false, 0); // grayman debug
 		

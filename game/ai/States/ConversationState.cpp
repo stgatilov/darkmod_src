@@ -100,7 +100,6 @@ void ConversationState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("ConversationState::Init - %s - alertType set to EAlertTypeNone\r",owner->GetName()); // grayman debug
 	memory.prevAlertType = EAlertTypeNone; // grayman debug
 
 	_alertLevelDecreaseRate = 0.01f;

@@ -46,7 +46,6 @@ const idStr& WaitTask::GetName() const
 
 void WaitTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("WaitTask::Init - %s about to wait %d\r",owner->GetName(),_waitTime); // grayman debug
 	// Just init the base class
 	Task::Init(owner, subsystem);
 

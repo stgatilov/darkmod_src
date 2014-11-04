@@ -69,10 +69,8 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Stop previous moves
 	//owner->StopMove(MOVE_STATUS_DONE);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s being sent to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s goal is valid\r",owner->GetName()); // grayman debug
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
 		memory.hidingSpotInvestigationInProgress = true; // grayman debug
@@ -80,7 +78,6 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 	else
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s goal is invalid, terminating task\r",owner->GetName()); // grayman debug
 		// Invalid hiding spot, terminate task
 		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task\r");
 		subsystem.FinishTask();
@@ -179,7 +176,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	{
 		idVec3 destPos = _searchSpot;
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s move not started yet to [%s]\r",owner->GetName(),destPos.ToString()); // grayman debug
 		// greebo: For close investigation, don't step up to the very spot, to prevent the AI
 		// from kneeling into bloodspots or corpses
 		idVec3 direction = ownerOrigin - _searchSpot;
@@ -209,7 +205,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 			);
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s move not started yet, look at [%s]\r",owner->GetName(),_searchSpot.ToString()); // grayman debug
 			// Look at the point to investigate
 			owner->Event_LookAtPosition(_searchSpot + idVec3(0,0,60), MS2SEC(_exitTime - gameLocal.time + 100)); // grayman debug - look at a point off the floor
 
@@ -217,7 +212,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		}
 
 		owner->GetMemory().stimulusLocationItselfShouldBeSearched = false; // grayman #3756
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s stimulusLocationItselfShouldBeSearched reset to 0\r",owner->GetName()); // grayman debug
 
 		// Let's move
 
@@ -240,7 +234,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		if ( toAreaNum == 0 )
 		{
 			pointValid = false;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s pointValid = false because toAreaNum = 0\r",owner->GetName()); // grayman debug
 		}
 		else
 		{
@@ -260,7 +253,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		if ( pointValid )
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s move to [%s]\r",owner->GetName(),goal.ToString()); // grayman debug
 			pointValid = owner->MoveToPosition(goal);
 		}
 
@@ -282,7 +274,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				owner->TurnToward(p);
 			}
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s point [%s] invalid or unreachable, look at the spot\r",owner->GetName(),p.ToString()); // grayman debug
 			owner->Event_LookAtPosition(p, MS2SEC(_exitTime - gameLocal.time + 100));
 			//gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), p, 1, MS2SEC(_exitTime - gameLocal.time + 100));
 		}
@@ -299,7 +290,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), _searchSpot, 1, MS2SEC(_exitTime - gameLocal.time + 100));
 			_moveInitiated = true;
 			float actualDist = (ownerOrigin - _searchSpot).LengthFast();
-			//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s actualDist = %f, destination = [%s]\r",owner->GetName(),actualDist,_searchSpot.ToString()); // grayman debug
 			owner->AI_RUN = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
 		}
 
@@ -308,14 +298,12 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s Hiding spot unreachable\r",owner->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot unreachable.\r", _searchSpot);
 		return true;
 	}
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s reached hiding spot\r",owner->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		// grayman #2928 - don't kneel down if you're too far from the original stim
@@ -364,8 +352,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		if (!_investigateClosely)
 		{
 			float distToSpot = (_searchSpot - ownerOrigin).LengthFast();
-			//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s not investigating closely, now %f away from dest\r",owner->GetName(),distToSpot); // grayman debug
-			if (owner->CanSeePositionExt(_searchSpot, true, false)) // grayman debug - ignore lighting - TODO: does this keep him away from dark spots?
+			if (owner->CanSeePositionExt(_searchSpot, true, true))
 			{
 				if (distToSpot < INVESTIGATE_SPOT_STOP_DIST) 
 				{
@@ -380,7 +367,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 		if (stopping)
 		{
-			//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s Stop, I can see the point now, will watch it for a while\r",owner->GetName()); // grayman debug
 			DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Stop, I can see the point now...\r", _searchSpot);
 
 			// Stop moving, we can see the point
@@ -406,11 +392,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			_exitTime = static_cast<int>(
 				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 			);
-			//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s I'll wait for %d msec\r",owner->GetName(),_exitTime - gameLocal.time); // grayman debug
-		}
-		else // grayman debug
-		{
-			//DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s not close enough to stop, must keep going\r",owner->GetName()); // grayman debug
 		}
 	}
 
@@ -463,7 +444,6 @@ void InvestigateSpotTask::SetInvestigateClosely(bool closely)
 
 void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish - %s hidingSpotInvestigationInProgress set to false\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished investigating the spot, set the
 	// boolean back to false, so that the next spot can be chosen
 	owner->GetMemory().hidingSpotInvestigationInProgress = false;

@@ -159,10 +159,10 @@ enum EAlertType
 	EAlertTypeLostTrackOfEnemy, // grayman debug
 	EAlertTypeEncounter,		// grayman debug
 	EAlertTypeRequestForHelp,	// grayman debug
-	//EAlertTypeSearchOrder,		// grayman debug
 	EAlertTypeDetectedEnemy,	// grayman debug
 	EAlertTypeSomethingSuspicious, // grayman debug
 	EAlertTypeHitByMoveable,	// grayman debug - was EAlertTypeSuspicious
+	EAlertTypePickedPocket,		// grayman debug
 	EAlertTypeCount
 };
 

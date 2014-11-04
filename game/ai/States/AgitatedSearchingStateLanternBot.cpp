@@ -56,7 +56,6 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingStateLanternBot initialised.\r");
 	assert(owner);
 
@@ -111,7 +110,6 @@ void AgitatedSearchingStateLanternBot::OnMovementBlocked(idAI* owner)
 // Gets called each time the mind is thinking
 void AgitatedSearchingStateLanternBot::Think(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingStateLanternBot::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level

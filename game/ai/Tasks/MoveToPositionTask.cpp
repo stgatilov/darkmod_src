@@ -86,7 +86,6 @@ bool MoveToPositionTask::Perform(Subsystem& subsystem)
 	if (_prevTargetPosition != _targetPosition)
 	{
 		// Yes, move towards this new position
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("MoveToPositionTask::Perform - %s calling MoveToPosition([%s])\r",owner->GetName(),_targetPosition.ToString()); // grayman debug
 		if (!owner->MoveToPosition(_targetPosition, _accuracy))
 		{
 			// Destination unreachable, end task

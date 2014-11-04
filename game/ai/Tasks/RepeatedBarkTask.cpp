@@ -54,7 +54,6 @@ const idStr& RepeatedBarkTask::GetName() const
 
 void RepeatedBarkTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("RepeatedBarkTask::Init - %s setting up to bark '%s'\r",owner->GetName(),_soundName.c_str()); // grayman debug
 	// Init the base class
 	CommunicationTask::Init(owner, subsystem);
 
