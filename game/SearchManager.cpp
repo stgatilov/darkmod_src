@@ -928,10 +928,22 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 	}
 	else
 	{
-		// if the abandoned assignment was for an active searcher,
-		// backfill with someone else if available
+		// If the abandoned assignment was for an active searcher,
+		// backfill with someone else if available. Only backfill if
+		// there are no active searchers, otherwise things start to
+		// get a bit chaotic.
 
-		if (role == E_ROLE_SEARCHER)
+		int activeSearcherCount = 0;
+		for ( int j = 0 ; j < 2 ; j++ ) // max of 2 active searchers
+		{
+			Assignment *assignment1 = &search->_assignments[j];
+			if (assignment1->_searcher != NULL)
+			{
+				activeSearcherCount++;
+			}
+		}
+
+		if ( ( role == E_ROLE_SEARCHER ) && ( activeSearcherCount == 0 ) )
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::LeaveSearch - searchID %d, lost a searcher from assignment %d\r",search->_searchID,indexToAssign); // grayman debug
 			for (int i = 0 ; i < numAssignments ; i++)
@@ -976,7 +988,7 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 	// greebo: Clear the initial alert position
 	memory.alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	memory.currentSearchEventID = -1;
-	ai->actionSubsystem->ClearTasks();
+	ai->movementSubsystem->ClearTasks(); // clears investigate spot task or guard spot task
 	ai->m_searchID = -1; // leave the search
 }
 

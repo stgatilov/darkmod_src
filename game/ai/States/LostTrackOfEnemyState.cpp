@@ -25,6 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "LostTrackOfEnemyState.h"
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "../Library.h"
 
 namespace ai
@@ -102,6 +103,8 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

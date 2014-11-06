@@ -3122,7 +3122,8 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 			CommMessagePtr message;
 	
 			message = CommMessagePtr(new CommMessage(
-				CommMessage::DetectedEnemy_CommType, // grayman debug 
+				CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
+				//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
@@ -3206,7 +3207,8 @@ void State::OnProjectileHit(idProjectile* projectile, idEntity* attacker, int da
 		CommMessagePtr message;
 	
 		message = CommMessagePtr(new CommMessage(
-			CommMessage::DetectedEnemy_CommType, // grayman debug
+			CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
+			//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
 			owner, NULL, // from this AI to anyone 
 			NULL,
 			owner->GetPhysics()->GetOrigin(),

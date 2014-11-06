@@ -25,10 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ExamineRopeState.h"
 //#include "../Memory.h"
 #include "../Tasks/MoveToPositionTask.h"
-//#include "../Tasks/SingleBarkTask.h"
-//#include "../../StimResponse/StimResponse.h"
-//#include "../Tasks/RandomHeadturnTask.h"
-//#include "../Tasks/RandomTurningTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 
 namespace ai
 {
@@ -63,6 +60,9 @@ void ExamineRopeState::Cleanup(idAI* owner)
 void ExamineRopeState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

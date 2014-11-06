@@ -39,8 +39,6 @@ class IdleAnimationTask :
 	idStringList _idleAnimations;
 	idStringList _idleAnimationsTorso;
 	idStringList _idleAnimationsSitting;
-	idStringList _idleSearchAnimations; // grayman debug - anims to run when guarding or observing
-										// during a search
 
 	int _idleAnimationInterval;
 

@@ -27,6 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "SearchingState.h"
 #include "../Library.h"
 
@@ -134,6 +135,9 @@ void SuspiciousState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+	
 	// grayman #3438 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks();
 
@@ -227,6 +231,8 @@ void SuspiciousState::Init(idAI* owner)
 		trace_t result;
 		if ( gameLocal.clip.TracePoint(result, p1, p2, MASK_OPAQUE, owner) )
 		{
+			// grayman debug - test to make sure we hit the world, and not just another AI?
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SuspiciousState::Init - %s staring at %s, turning around\r",owner->GetName(),gameLocal.entities[result.c.entityNum]->GetName()); // grayman debug
 			// Hit something, so turn around.
 			owner->TurnToward(owner->GetCurrentYaw() + 180);
 		}

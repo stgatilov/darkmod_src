@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id: HitByMoveableState.cpp 5363 
 
 #include "../Tasks/SingleBarkTask.h"
 #include "HitByMoveableState.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 
 namespace ai
 {
@@ -52,6 +53,8 @@ void HitByMoveableState::Cleanup(idAI* owner)
 void HitByMoveableState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "BlindedState.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -116,6 +117,8 @@ void BlindedState::Think(idAI* owner)
 			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman debug
 		}
 
+		// grayman debug - allow "idle search/suspicious animations"
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431

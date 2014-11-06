@@ -52,31 +52,32 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
+	// grayman debug - verify that this task should be running:
+	// yes if in states 0,2,3,4
+	// no if in states 1,5
+
+	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	{
+		subsystem.FinishTask();
+	}
+
 	// Read the animation set and interval from the owner's spawnarg
 	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
 
 	_idleAnimationInterval = 10000; // grayman debug - delete when done; just wanted to reduce the wait
 
-	// grayman debug - can now do idle search anims
-	if (owner->IsSearching())
+	// grayman debug - can now do idle search/suspicious anims while in states 2, 3, or 4
+	if ( (owner->AI_AlertLevel >= owner->thresh_2) && (owner->AI_AlertLevel < owner->thresh_5) )
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Searching\r",owner->GetName()); // grayman debug
-		// grayman debug - read the idle anims to be used when searching and standing around guarding/observing
-		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_searching"), _idleSearchAnimations);
-	
-		if ( (_idleAnimationInterval > 0) && (_idleSearchAnimations.Num() > 0) )
-		{
-			_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
-		}
-		else
-		{
-			// No idle animation interval set or no animations, finish this task
-			subsystem.FinishTask();
-		}
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Suspicious or Searching\r",owner->GetName()); // grayman debug
+		// grayman debug - Read the idle anims to be used when suspicious or searching.
+		// These won't be run when the AI is actively searching (moving around), but
+		// will be run when they're guarding or observing.
+		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_searching"), _idleAnimations);
 	}
-	else // when idle
+	else // when idle in state 0
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Idle\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Idle\r",owner->GetName()); // grayman debug
 		// Read the general-purpose animations first
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations"), _idleAnimations);
 	
@@ -85,17 +86,17 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// Now read the anims for sitting AI
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
+	}
 
-		if ( (_idleAnimationInterval > 0) && 
-			 ( (_idleAnimations.Num() > 0) || (_idleAnimationsTorso.Num() > 0) || (_idleAnimationsSitting.Num() > 0) ))
-		{
-			_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
-		}
-		else
-		{
-			// No idle animation interval set or no animations, finish this task
-			subsystem.FinishTask();
-		}
+	if ( (_idleAnimationInterval > 0) && 
+			( (_idleAnimations.Num() > 0) || (_idleAnimationsTorso.Num() > 0) || (_idleAnimationsSitting.Num() > 0) ))
+	{
+		_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
+	}
+	else
+	{
+		// No idle animation interval set or no animations, finish this task
+		subsystem.FinishTask();
 	}
 }
 
@@ -124,6 +125,15 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
+	// grayman debug - verify that this task should be running:
+	// yes if in states 0,2,3,4
+	// no if in states 1,5
+
+	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	{
+		return true;
+	}
+
 	Memory& memory = owner->GetMemory();
 
 	if (gameLocal.time > _nextAnimationTime)
@@ -139,46 +149,39 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		}
 
 		// angua: don't play idle animations while sitting / lying down or getting up
-		// TODO: Disable the playIdleAnimation flag rather than catch all those cases
-
-		// grayman: changed repeated instances of owner->GetMoveType() to one instance
 
 		// grayman #2345 - no idle animations while handling a door and not waiting
 		// in a door queue, since they can interfere with reaching for the door handle
 
 		// SteveL #3182 - no idles if the AI wants to turn: check FacingIdeal too
+
+		// grayman debug - Don't play if the AI is an active searcher (it's okay if
+		// he's a guard or observer participating in a search.
+
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations && 
 			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman debug - AI_RUN might be left over after coming to a full stop
-			moveType != MOVETYPE_SIT_DOWN &&
-			moveType != MOVETYPE_LAY_DOWN &&
-			moveType != MOVETYPE_SLEEP &&
-			moveType != MOVETYPE_GET_UP &&
-			moveType != MOVETYPE_GET_UP_FROM_LYING &&
+
+			// grayman debug - playIdleAnimations is set to false during the following move types
+			//moveType != MOVETYPE_SIT_DOWN &&
+			//moveType != MOVETYPE_LAY_DOWN &&
+			//moveType != MOVETYPE_SLEEP &&
+			//moveType != MOVETYPE_GET_UP &&
+			//moveType != MOVETYPE_GET_UP_FROM_LYING &&
+
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
-			owner->FacingIdeal()
-		   )
+			owner->FacingIdeal() &&
+			!owner->GetMemory().hidingSpotInvestigationInProgress )
 		{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s allowed to play anim\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s allowed to play anim\r",owner->GetName()); // grayman debug
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && (moveType != MOVETYPE_SIT))
 			{
-				// grayman debug - if the AI is in a guard/observe standing position during a search.
-				// play _idleSearchAnimations
+				// AI is not walking or sitting, play animations affecting all channels
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s ... 1\r",owner->GetName()); // grayman debug
-				if (owner->IsSearching())
-				{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s ... 2\r",owner->GetName()); // grayman debug
-					AttemptToPlayAnim(owner, _idleSearchAnimations, false);
-				}
-				else
-				{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s ... 3\r",owner->GetName()); // grayman debug
-					// AI is not walking or sitting, play animations affecting all channels
-					AttemptToPlayAnim(owner, _idleAnimations, false);
-				}
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s play idle search anim\r",owner->GetName()); // grayman debug
+				AttemptToPlayAnim(owner, _idleAnimations, false);
 			}
 			else if (moveType == MOVETYPE_SIT)
 			{
@@ -196,11 +199,6 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Perform - %s not allowed to play anim, and here's why:\r",owner->GetName()); // grayman debug
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                    memory.playIdleAnimations = %d\r",memory.playIdleAnimations); // grayman debug
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                          owner->AI_RUN && owner->AI_FORWARD) = %d\r",!(owner->AI_RUN && owner->AI_FORWARD)); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                moveType != MOVETYPE_SIT_DOWN = %d\r",moveType != MOVETYPE_SIT_DOWN); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                moveType != MOVETYPE_LAY_DOWN = %d\r",moveType != MOVETYPE_LAY_DOWN); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                   moveType != MOVETYPE_SLEEP = %d\r",moveType != MOVETYPE_SLEEP); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                  moveType != MOVETYPE_GET_UP = %d\r",moveType != MOVETYPE_GET_UP); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                       moveType != MOVETYPE_GET_UP_FROM_LYING = %d\r",moveType != MOVETYPE_GET_UP_FROM_LYING); // grayman debug
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                                    !drowning = %d\r",!drowning); // grayman debug
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("  (!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) = %d\r",(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING))); // grayman debug
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                                                         owner->FacingIdeal() = %d\r",owner->FacingIdeal()); // grayman debug
@@ -398,14 +396,6 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 		savefile->WriteString(_idleAnimationsSitting[i].c_str());
 	}
 
-	// grayman debug
-	savefile->WriteInt(_idleSearchAnimations.Num());
-	for (int i = 0; i < _idleSearchAnimations.Num(); i++)
-	{
-		savefile->WriteString(_idleSearchAnimations[i].c_str());
-	}
-
-
 	savefile->WriteInt(_lastIdleAnim);
 }
 
@@ -435,14 +425,6 @@ void IdleAnimationTask::Restore(idRestoreGame* savefile)
 	for (int i = 0; i < num; i++)
 	{
 		savefile->ReadString(_idleAnimationsSitting[i]);
-	}
-
-	// grayman debug
-	savefile->ReadInt(num);
-	_idleSearchAnimations.SetNum(num);
-	for (int i = 0; i < num; i++)
-	{
-		savefile->ReadString(_idleSearchAnimations[i]);
 	}
 
 	savefile->ReadInt(_lastIdleAnim);

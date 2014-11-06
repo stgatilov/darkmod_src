@@ -28,6 +28,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
 #include "../Tasks/WaitTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "CombatState.h"
 #include "../Library.h"
 #include "../../AbsenceMarker.h"
@@ -388,6 +389,10 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
+
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking

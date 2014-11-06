@@ -27,6 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 //#include "../Tasks/RandomHeadturnTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "../Library.h"
@@ -55,6 +56,8 @@ void EmergeFromCoverState::Init(idAI* owner)
 	// Fill the subsystems with their tasks
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 
 	owner->movementSubsystem->ClearTasks();
 	owner->movementSubsystem->QueueTask(

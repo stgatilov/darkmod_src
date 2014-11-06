@@ -133,7 +133,17 @@ void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 	delta.z = 0; // ignore vertical component
 	delta.Normalize(); // set length = 1
 
-	idVec3 blockingForward = _blockingEnt->GetPhysics()->GetAxis().ToAngles().ToForward();
+	// grayman debug - use correct forward angle for actors
+	idVec3 blockingForward;
+	if (_blockingEnt->IsType(idActor::Type))
+	{
+		
+		blockingForward = static_cast<idActor*>(_blockingEnt)->viewAxis.ToAngles().ToForward();
+	}
+	else
+	{
+		blockingForward = _blockingEnt->GetPhysics()->GetAxis().ToAngles().ToForward();
+	}
 
 	float cx = blockingOrigin.x + blockingForward.x;
 	float cy = blockingOrigin.y + blockingForward.y;

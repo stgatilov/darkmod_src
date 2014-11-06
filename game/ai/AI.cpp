@@ -4442,6 +4442,9 @@ void idAI::SetMoveType( int moveType ) {
 
 void idAI::SetMoveType( idStr moveType ) 
 {
+	ai::Memory& memory = GetMemory(); // grayman debug
+	memory.playIdleAnimations = true;
+
 	if (moveType.Icmp("MOVETYPE_DEAD") == 0)
 	{
 		SetMoveType(MOVETYPE_DEAD);
@@ -4469,22 +4472,27 @@ void idAI::SetMoveType( idStr moveType )
 	else if (moveType.Icmp("MOVETYPE_SIT_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_SIT_DOWN);
+		memory.playIdleAnimations = false; // grayman debug
 	}
 	else if (moveType.Icmp("MOVETYPE_SLEEP") == 0)
 	{
 		SetMoveType(MOVETYPE_SLEEP);
+		memory.playIdleAnimations = false; // grayman debug
 	}
 	else if (moveType.Icmp("MOVETYPE_LAY_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_LAY_DOWN);
+		memory.playIdleAnimations = false; // grayman debug
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
+		memory.playIdleAnimations = false; // grayman debug
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP_FROM_LYING") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
+		memory.playIdleAnimations = false; // grayman debug
 	}
 	else
 	{
@@ -5153,7 +5161,6 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	float turnAmount;
 	animFlags_t animflags;
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Turn - %s turning\r",GetName()); // grayman debug
 	if ( !turnRate ) {
 		return;
 	}
@@ -5167,6 +5174,14 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	if ( animflags.ai_no_turn ) {
 		return;
 	}
+
+	// grayman debug - determine yaw delta, if any
+	float yawDelta = idMath::AngleNormalize180(GetCurrentYaw() - GetIdealYaw());
+	if ( idMath::Fabs( yawDelta ) > 0.1f )
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Turn - %s turning toward ideal yaw %f, yawDelta = %f\r",GetName(),GetIdealYaw(),yawDelta); // grayman debug
+	}
+	// grayman debug - end
 
 	idVec3 startPos = viewAxis * pivotOffset;
 
@@ -12817,6 +12832,7 @@ void idAI::SitDown()
 	}
 	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
+	GetMemory().playIdleAnimations = false; // grayman debug
 }
 
 void idAI::GetUp()
@@ -12827,11 +12843,13 @@ void idAI::GetUp()
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
+		GetMemory().playIdleAnimations = false; // grayman debug
 	}
 	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // grayman #3290 - corrected logic
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
+		GetMemory().playIdleAnimations = false; // grayman debug
 		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
 
 		// Reset visual, hearing and tactile acuity
@@ -12854,6 +12872,7 @@ void idAI::LayDown()
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
+	GetMemory().playIdleAnimations = false; // grayman debug
 
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
@@ -13075,7 +13094,7 @@ void idAI::Event_PickedPocketSetup1() // grayman #3559
 
 		if ( gameLocal.random.RandomFloat() > spawnArgs.GetFloat("chanceNoticePickedPocket") )
 		{
-			return;
+			//return; // grayman debug - forced reaction; uncomment when done
 		}
 
 		float minDelay = spawnArgs.GetFloat("pickpocket_delay_min","5000");

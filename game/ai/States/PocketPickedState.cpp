@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id: PocketPickedState.cpp 5363 2012-04-01 18:08:35Z grayman $");
 
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "PocketPickedState.h"
 #include "ConversationState.h" // grayman #3559
 
@@ -52,6 +53,8 @@ void PocketPickedState::Cleanup(idAI* owner)
 void PocketPickedState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
@@ -124,31 +127,6 @@ void PocketPickedState::Think(idAI* owner)
 				memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_SUSPICIOUS;
 				memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin();
 				memory.timeEvidenceIntruders = gameLocal.time;
-			}
-
-			// Increase the alert level?
-			float alertInc = owner->spawnArgs.GetFloat("pickpocket_alert","0");
-			if (alertInc > 0.0f)
-			{
-				// Set the new alert level, but cap it just under Combat.
-				// If the new alert level pushes the AI up into
-				// Searching or Agitated Searching, the Picked Pocket State will end.
-
-				float newAlertLevel = owner->AI_AlertLevel + alertInc;
-				if ( newAlertLevel >= owner->thresh_5 )
-				{
-					newAlertLevel = owner->thresh_5 - 0.1;
-				}
-				owner->SetAlertLevel(newAlertLevel);
-
-				// If the alert level is now in Searching or Agitated Searching,
-				// create a search area.
-
-				if ( owner->AI_AlertIndex >= ESearching )
-				{
-					// grayman debug - move alert setup into one method
-					SetUpSearchData(EAlertTypePickedPocket, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
-				}
 			}
 
 			_pocketPickedState = EStateStopping;
@@ -229,6 +207,31 @@ void PocketPickedState::Think(idAI* owner)
 			if (gameLocal.time >= _waitEndTime)
 			{
 				// Done looking, end this state
+
+				// Increase the alert level?
+				float alertInc = owner->spawnArgs.GetFloat("pickpocket_alert","0");
+				if (alertInc > 0.0f)
+				{
+					// Set the new alert level, but cap it just under Combat.
+					// If the new alert level pushes the AI up into
+					// Searching or Agitated Searching, the Picked Pocket State will end.
+
+					float newAlertLevel = owner->AI_AlertLevel + alertInc;
+					if ( newAlertLevel >= owner->thresh_5 )
+					{
+						newAlertLevel = owner->thresh_5 - 0.1;
+					}
+					owner->SetAlertLevel(newAlertLevel);
+
+					// If the alert level is now in Searching or Agitated Searching,
+					// create a search area.
+
+					if ( owner->AI_AlertIndex >= ESearching )
+					{
+						// grayman debug - move alert setup into one method
+						SetUpSearchData(EAlertTypePickedPocket, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
+					}
+				}
 				Wrapup(owner);
 				return;
 			}

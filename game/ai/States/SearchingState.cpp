@@ -28,6 +28,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/GuardSpotTask.h" // grayman debug
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/RepeatedBarkTask.h" // grayman #3472
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "../Library.h"
 #include "IdleState.h"
 #include "AgitatedSearchingState.h"
@@ -265,6 +266,10 @@ void SearchingState::Init(idAI* owner)
 		// Let the AI update their weapons (make them solid)
 		owner->UpdateAttachmentContents(true);
 	}
+
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking
@@ -800,7 +805,7 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 
 		// Clear all the ongoing tasks
 		owner->senseSubsystem->ClearTasks();
-		owner->actionSubsystem->ClearTasks();
+		//owner->actionSubsystem->ClearTasks(); // grayman debug
 		owner->movementSubsystem->ClearTasks();
 
 		// Stop moving

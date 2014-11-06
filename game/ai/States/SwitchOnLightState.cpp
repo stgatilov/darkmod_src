@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../StimResponse/StimResponse.h"
-//#include "../Tasks/RandomHeadturnTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman debug
 #include "../Tasks/RandomTurningTask.h"
 
 namespace ai
@@ -84,6 +84,8 @@ void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
 	Cleanup(owner);
+	// grayman debug - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

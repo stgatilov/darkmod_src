@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id: GuardSpotTask.cpp 6105 2014-
 #include "../Memory.h"
 #include "../Library.h"
 #include "SingleBarkTask.h"
-#include "IdleAnimationTask.h"
+//#include "IdleAnimationTask.h"
 
 namespace ai
 {
@@ -345,7 +345,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
 						}
 					}
-					_guardSpotState = EStateStartIdleSearchAnims;
+					_guardSpotState = EStateStanding;
 				}
 				else
 				{
@@ -354,7 +354,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			}
 			break;
 		}
-	case EStateStartIdleSearchAnims:
+/*	case EStateStartIdleSearchAnims:
 		if (!owner->GetMemory().millingInProgress)
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s start playing idle search anims\r",owner->GetName()); // grayman debug
@@ -363,6 +363,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		}
 		_guardSpotState = EStateStanding;
 		break;
+		*/
 	case EStateStanding:
 		{
 			if ( (_nextTurnTime > 0) && (gameLocal.time >= _nextTurnTime) )
@@ -410,47 +411,40 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	CFrobDoor *door = NULL;
 
-	Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
-	Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
+	// Determine if this spot is in or near a door
+	idBounds clipBounds = idBounds(newPos);
+	clipBounds.ExpandSelf(32.0f);
 
-	if ( assignment && (assignment->_searcherRole == E_ROLE_GUARD) )
+	// newPos might be sitting on the floor. If it is, we don't
+	// want to expand downward and pick up a door on the floor below.
+	// Set the .z values accordingly.
+
+	clipBounds[0].z = newPos.z;
+	int clipmask = owner->GetPhysics()->GetClipMask();
+	idClipModel *clipModel;
+	idClipModel *clipModelList[MAX_GENTITIES];
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList, MAX_GENTITIES );
+	for ( int i = 0 ; i < numListedClipModels ; i++ )
 	{
-		// Determine if this spot is in or near a door
-		idBounds clipBounds = idBounds(newPos);
-		clipBounds.ExpandSelf(32.0f);
+		clipModel = clipModelList[i];
+		idEntity* ent = clipModel->GetEntity();
 
-		// newPos might be sitting on the floor. If it is, we don't
-		// want to expand downward and pick up a door on the floor below.
-		// Set the .z values accordingly.
-
-		clipBounds[0].z = newPos.z;
-		clipBounds[1].z += -32.0f + 8;
-		int clipmask = owner->GetPhysics()->GetClipMask();
-		idClipModel *clipModel;
-		idClipModel *clipModelList[MAX_GENTITIES];
-		int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( clipBounds, clipmask, clipModelList, MAX_GENTITIES );
-		for ( int i = 0 ; i < numListedClipModels ; i++ )
+		if (ent == NULL)
 		{
-			clipModel = clipModelList[i];
-			idEntity* ent = clipModel->GetEntity();
+			continue;
+		}
 
-			if (ent == NULL)
-			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s ent == NULL\r",owner->GetName()); // grayman debug
-				continue;
-			}
-
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s obEnt = '%s'\r",owner->GetName(),ent->GetName()); // grayman debug
-			if (ent->IsType(CFrobDoor::Type))
-			{
-				door = static_cast<CFrobDoor*>(ent);
-				break;
-			}
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s obEnt = '%s'\r",owner->GetName(),ent->GetName()); // grayman debug
+		if (ent->IsType(CFrobDoor::Type))
+		{
+			door = static_cast<CFrobDoor*>(ent);
+			break;
 		}
 	}
 
 	if (door)
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s need to move away from door '%s'\r",owner->GetName(),door->GetName()); // grayman debug
 		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door),DOOR_POS_FRONT);
 
 		// Can't stand at the front position, because you'll be in the way
