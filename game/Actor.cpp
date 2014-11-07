@@ -5084,15 +5084,20 @@ void idActor::MarkEventAsSearched( int eventID )
 
 	SuspiciousEvent se = gameLocal.m_suspiciousEvents[eventID];
 
-	// grayman debug - if this is a dead person event, an unconscious
+	// grayman debug - If this is a dead person event, an unconscious
 	// person event, or a missing item event, I should ignore the
-	// appropriate stim in the future
+	// appropriate stim in the future. That's the most efficient way of
+	// keeping me from opening up another search on the entity associated
+	// with this event.
 
 	if ( ( se.type == E_EventTypeDeadPerson ) ||
 		 ( se.type == E_EventTypeUnconsciousPerson ) ||
 		 ( se.type == E_EventTypeMissingItem ) )
 	{
-		se.entity.GetEntity()->IgnoreResponse(ST_VISUAL, this);
+		if (se.entity.GetEntity())
+		{
+			se.entity.GetEntity()->IgnoreResponse(ST_VISUAL, this);
+		}
 	}
 
 	// grayman debug - Do I know about this event?

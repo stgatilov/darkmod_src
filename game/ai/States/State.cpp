@@ -1168,6 +1168,13 @@ bool State::ShouldProcessAlert(EAlertType newAlertType)
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
+
+	// grayman debug - getting more of the same can be ignored
+	// TODO: Is this true for sound alerts?
+	if (memory.alertType == newAlertType)
+	{
+		return false;
+	}
 	
 	if (owner->alertTypeWeight[memory.alertType] <= owner->alertTypeWeight[newAlertType])
 	{
@@ -1371,9 +1378,11 @@ void State::OnVisualStimRope( idEntity* stimSource, idAI* owner, idVec3 ropeStim
 
 void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnHitByMoveable - %s ...\r",owner->GetName()); // grayman debug
 	// Vocalize that something hit me, but only if I'm not in combat mode, and I'm not in pain this frame
 	if ( ( owner->AI_AlertLevel < owner->thresh_5 ) && !owner->AI_PAIN )
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnHitByMoveable - %s barking\r",owner->GetName()); // grayman debug
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_notice_generic")));
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
@@ -1389,6 +1398,7 @@ void State::OnHitByMoveable(idAI* owner, idEntity* tactEnt)
 	owner->GetMemory().stopReactingToPickedPocket = true; // grayman #3559 - stop dealing with a picked pocket
 
 	owner->GetMemory().hitByThisMoveable = tactEnt;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnHitByMoveable - %s switching to HitByMoveableState()\r",owner->GetName()); // grayman debug
 	owner->GetMind()->SwitchState(StatePtr(new HitByMoveableState())); // react to getting hit
 }
 
@@ -2640,7 +2650,7 @@ bool State::OnDeadPersonEncounter(idActor* person, idAI* owner)
 	assert( ( person != NULL ) && ( owner != NULL ) ); // must be fulfilled
 	
 	// grayman #3075 - Ignore any blood markers spilled by this body if they're nearby
-
+	// Since the discovery of blood 
 	if ( person->IsType(idAI::Type) )
 	{
 		idAI* personAI = static_cast<idAI*>(person);
@@ -3416,6 +3426,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 
 	Memory& memory = owner->GetMemory();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimBlood - %s stimmed by blood %s\r",owner->GetName(),stimSource->GetName()); // grayman debug
 	// Ignore from now on
 //	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
@@ -3445,11 +3456,14 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 		if ( owner->CanSeeExt(bleeder,true,( bloodDistSqr > Square(BLOOD2BLEEDER_MIN_DIST) )) )
 		{
 			// grayman #3317 - The body will be found separately, so don't process the blood marker
+			// grayman debug - Create an event for the blood, for future reference.
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnVisualStimBlood - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, stimSource->GetPhysics()->GetOrigin().ToString(),stimSource->GetName()); // grayman debug
+			owner->LogSuspiciousEvent( E_EventTypeMisc, stimSource->GetPhysics()->GetOrigin(), stimSource ); // grayman debug
 			return;
 		}
 	}
 
-	// Vocalize that see something out of place
+	// Vocalize that we see something out of place
 	memory.lastTimeVisualStimBark = gameLocal.time;
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_foundBlood")));
 	
@@ -3470,7 +3484,7 @@ void State::OnVisualStimBlood(idEntity* stimSource, idAI* owner)
 	if (owner->AI_AlertLevel < owner->thresh_5 - 0.1f)
 	{
 		// grayman debug - move alert setup into one method
-		SetUpSearchData(EAlertTypeBlood, stimSource->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
+		SetUpSearchData(EAlertTypeBlood, stimSource->GetPhysics()->GetOrigin(), stimSource, false, 0); // grayman debug
 	}
 }
 
@@ -5905,7 +5919,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 
 		// Log the event
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData 7 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeMisc, memory.alertPos.ToString(),entity ? entity->GetName():"NULL"); // grayman debug
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, entity ); // grayman debug
 		break;
 	case EAlertTypeLightSource: // FOUND A DOUSED LIGHT
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s FOUND A DOUSED LIGHT **********\r",owner->GetName()); // grayman debug

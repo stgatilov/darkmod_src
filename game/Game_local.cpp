@@ -7976,8 +7976,10 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking logged event with type %d\r", (int)se.type); // grayman debug
 		if ( se.type == type ) // type of event
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - type matched requested type\r"); // grayman debug
 			// grayman #3848 - must use separate booleans
 			bool locationMatch = true;
 			bool entityMatch   = true;
@@ -7985,6 +7987,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			// check location
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking location\r"); // grayman debug
 			if ( !location.Compare(idVec3(0,0,0)) )
 			{
 				// Allow for some variance in location. Two events of
@@ -7995,6 +7998,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				locationMatch = (distSqr <= 10000); // 100*100
 			}
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking entity\r"); // grayman debug
 			// check entity
 
 			if ( entity != NULL )
@@ -8005,6 +8009,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				}
 			}
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking timestamp\r"); // grayman debug
 			// grayman debug - check timestamp
 
 			if ( time > 0 )
@@ -8014,12 +8019,15 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				timeMatch = ( time == se.time);
 			}
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - locationMatch = %d, entityMatch = %d, timeMatch = %d\r",locationMatch,entityMatch,timeMatch); // grayman debug
 			if ( locationMatch && entityMatch && timeMatch ) // grayman debug
 			{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found matching event\r"); // grayman debug
 				return i;
 			}
 		}
 	}
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find a matching event\r"); // grayman debug
 	return -1;
 }
 
@@ -8047,7 +8055,8 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	}
 	else if ( se.type == E_EventTypeMisc ) // grayman debug
 	{
-		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, NULL, se.time );
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - calling FindSuspiciousEvent(E_EventTypeMisc,[%s],'%s',%d)\r", se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL",se.time); // grayman debug
+		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
 	}
 	else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
 	{

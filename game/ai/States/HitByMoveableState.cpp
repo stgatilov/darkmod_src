@@ -114,9 +114,6 @@ void HitByMoveableState::Init(idAI* owner)
 
 	_responsibleActor = tactEnt->m_SetInMotionByActor;	// who threw it
 
-	tactEnt->m_SetInMotionByActor = owner; // grayman debug - since it bounced off me, reset this
-	tactEnt->m_MovedByActor = owner; // grayman debug - since it bounced off me, reset this
-
 	_lookAtDuration   = owner->spawnArgs.GetFloat("hitByMoveableLookAtTime","2.0");   // how long to look at what hit you
 	_lookBackDuration = owner->spawnArgs.GetFloat("hitByMoveableLookBackTime","2.0"); // how long to look back at where the object came from
 

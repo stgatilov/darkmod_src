@@ -1193,6 +1193,7 @@ void CGrabber::Throw( int HeldTime )
 		// scale the offset by the mass, so lightweight objects don't spin too much
 		TumbleVec *= (mass / 2.0);
 		ent->ApplyImpulse( m_player.GetEntity(), m_id, ThrowPoint + TumbleVec, ImpulseVec );
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CGrabber::Throw - player throws '%s'\r",ent->GetName()); // grayman debug
 		ent->m_SetInMotionByActor = m_player.GetEntity();
 		ent->m_MovedByActor =  m_player.GetEntity();
 	}

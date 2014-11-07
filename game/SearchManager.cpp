@@ -815,7 +815,6 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	{
 		if (search->_assignmentFlags & SEARCH_OBSERVER_MILL)
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s observer, will mill about\r",ai->GetName()); // grayman debug
 			memory.shouldMill = true;
 		}
 	}
@@ -837,9 +836,38 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		ai->AddWarningEvent(searcher,search->_eventID);
 	}
 
-	if (!memory.shouldMill) // grayman debug
+	// If this search involves a dead body, and that body has spilled blood
+	// associated with it, look for the blood's event and mark yourself as
+	// knowing about it and searched it.
+
+	SuspiciousEvent se = gameLocal.m_suspiciousEvents[search->_eventID];
+	if (se.type == E_EventTypeDeadPerson)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s will not mill about\r",ai->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s this is a dead body search\r",ai->GetName()); // grayman debug
+		idEntity* body = se.entity.GetEntity();
+		if (body)
+		{
+			idEntity* blood = static_cast<idAI*>(body)->GetBlood();
+			if (blood)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s which has a blood spill\r",ai->GetName()); // grayman debug
+				int eventID = gameLocal.FindSuspiciousEvent( E_EventTypeMisc, idVec3(0,0,0), blood, 0 );
+				if (eventID < 0)
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    calling LogSuspiciousEvent() to note the blood spill ('%s')\r",blood->GetName()); // grayman debug
+					eventID = ai->LogSuspiciousEvent( E_EventTypeMisc, blood->GetPhysics()->GetOrigin(),blood ); // grayman debug
+				}
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    marking the blood spill event as searched\r"); // grayman debug
+				ai->MarkEventAsSearched(eventID); // will add an event if ai doesn't already know about it
+				blood->IgnoreResponse(ST_VISUAL, ai); // blood won't stim this AI in the future
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    the blood spill eventID = %d\r",eventID); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    the blood spill won't stim me in the future\r"); // grayman debug
+			}
+			else // grayman debug
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s which has no blood spill\r",ai->GetName()); // grayman debug
+			}
+		}
 	}
 
 	return true;

@@ -33,7 +33,7 @@ namespace ai
 {
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
-const float MAX_YAW = 45; // max yaw (+/-) from original yaw for idle turning
+const float MAX_YAW = 90; // max yaw (+/-) from original yaw for idle turning
 const int   TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
 const int   TURN_DELAY_DELTA = 4000;
 const int   MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
@@ -294,14 +294,14 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 				return true;
 			}	
 
+			idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
 			if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 			{
 				// TODO: The following can cause jitter near the goal.
 				// We might have stopped some distance
 				// from the goal. If so, try again.
-				idVec3 origin = owner->GetPhysics()->GetOrigin();
-				if ((abs(origin.x - _guardSpot.x) <= TRY_AGAIN_DISTANCE) &&
-					(abs(origin.y - _guardSpot.y) <= TRY_AGAIN_DISTANCE))
+				if ((abs(ownerOrigin.x - _guardSpot.x) <= TRY_AGAIN_DISTANCE) &&
+					(abs(ownerOrigin.y - _guardSpot.y) <= TRY_AGAIN_DISTANCE))
 				{
 					// We've successfully reached the spot
 
@@ -352,6 +352,18 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 					_guardSpotState = EStateSetup; // try again
 				}
 			}
+			else
+			{
+				// check for closeness to goal to keep from running in circles around the spot
+				float distToSpot = (_guardSpot - ownerOrigin).LengthFast();
+				if (distToSpot <= CLOSE_ENOUGH)
+				{
+					// Stop moving, we're close enough
+					owner->StopMove(MOVE_STATUS_DONE);
+				}
+				// stay in this state
+			}
+
 			break;
 		}
 /*	case EStateStartIdleSearchAnims:
@@ -370,7 +382,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward random yaw\r",owner->GetName()); // grayman debug
 				// turn randomly in place
-				float newYaw = _baseYaw + 2.0f*MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f);
+				float newYaw = _baseYaw + MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f); // +- MAX_YAW/2 degrees
 				owner->TurnToward(newYaw);
 
 				// Milling?

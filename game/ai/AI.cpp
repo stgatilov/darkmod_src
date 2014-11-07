@@ -2913,6 +2913,7 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 			{
 				obEnt->m_SetInMotionByActor = this;
 				obEnt->m_MovedByActor = this;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::KickObstacles - %s set m_SetInMotionByActor to '%s'\r",GetName(),obEnt->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 			}
 		}
 	}
@@ -2932,6 +2933,7 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 		{
 			alwaysKick->m_SetInMotionByActor = this;
 			alwaysKick->m_MovedByActor = this;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::KickObstacles - %s set m_SetInMotionByActor to '%s'\r",GetName(),alwaysKick->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 		}
 	}
 }
@@ -5174,14 +5176,6 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	if ( animflags.ai_no_turn ) {
 		return;
 	}
-
-	// grayman debug - determine yaw delta, if any
-	float yawDelta = idMath::AngleNormalize180(GetCurrentYaw() - GetIdealYaw());
-	if ( idMath::Fabs( yawDelta ) > 0.1f )
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Turn - %s turning toward ideal yaw %f, yawDelta = %f\r",GetName(),GetIdealYaw(),yawDelta); // grayman debug
-	}
-	// grayman debug - end
 
 	idVec3 startPos = viewAxis * pivotOffset;
 
@@ -8750,6 +8744,7 @@ void idAI::PushWithAF( void ) {
 				{
 					ent->m_SetInMotionByActor = this;
 					ent->m_MovedByActor = this;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PushWithAF - %s set m_SetInMotionByActor to '%s'\r",GetName(),ent->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 				}
 			}
 		}
@@ -10515,11 +10510,13 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt == NULL )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s is ignoring 'NULL'\r",GetName()); // grayman debug
 		return;
 	}
 
 	if ( CheckTactileIgnore(tactEnt) )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s is ignoring '%s'\r",GetName(),tactEnt->GetName()); // grayman debug
 		return;
 	}
 
@@ -10575,6 +10572,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( responsibleActor == NULL )
 	{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s responsibleActor is NULL, so ignore this time\r",GetName()); // grayman debug
 		return;
 	}
 
@@ -10598,6 +10596,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_droppedByAI )
 		{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s - '%s' was m_droppedByAI, so ignore from now on\r",GetName(),tactEnt->GetName()); // grayman debug
 			TactileIgnore(tactEnt);
 			return;
 		}
@@ -10606,6 +10605,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_SetInMotionByActor.GetEntity() == this )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s put '%s' in motion, so ignore from now on\r",GetName(),tactEnt->GetName()); // grayman debug
 			TactileIgnore(tactEnt);
 			return;
 		}
@@ -10645,6 +10645,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		// Ignore the moveable if you have an enemy.
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s hit by moveable %s\r",GetName(),tactEnt->GetName()); // grayman debug
 		if ( GetEnemy() == NULL )
 		{
 			if ( !m_ReactingToHit )
@@ -10652,6 +10653,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 				// Wait a bit to turn toward and look at what hit you.
 				// Then turn back in the direction the object came from.
 
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling OnHitByMoveable()\r",GetName()); // grayman debug
 				mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
 			}
 			else if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
@@ -12383,6 +12385,7 @@ void idAI::DropOnRagdoll( void )
 		// grayman #3602 - set in motion by dropper
 		ent->m_SetInMotionByActor = this;
 		ent->m_MovedByActor = this;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::DropOnRagdoll - %s set m_SetInMotionByActor to '%s'\r",GetName(),ent->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 		//ent->m_SetInMotionByActor = NULL;
 		//ent->m_MovedByActor = NULL;
 	}

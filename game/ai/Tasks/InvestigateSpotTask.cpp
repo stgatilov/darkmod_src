@@ -375,11 +375,13 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// grayman #3492 - Look at a random point that may be anywhere
 			// between the search point and a point 1/2 the AI's height
 			// above his eye level.
+			// grayman debug - now that AI are allowed closer to the search spot,
+			// they shouldn't look so high up
 
 			idVec3 p = _searchSpot;
-			float height = owner->GetPhysics()->GetBounds().GetSize().z;
+			//float height = owner->GetPhysics()->GetBounds().GetSize().z;
 			float bottom = p.z;
-			float top = owner->GetEyePosition().z + height/2.0f;
+			float top = owner->GetEyePosition().z + 20;
 			float dist = top - bottom;
 			dist *= gameLocal.random.RandomFloat();
 			p.z += dist;
