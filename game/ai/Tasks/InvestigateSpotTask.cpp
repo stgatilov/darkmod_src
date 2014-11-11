@@ -73,6 +73,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s wants to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		memory.hidingSpotInvestigationInProgress = true; // grayman debug
 		memory.stopHidingSpotInvestigation = false;
 	}
@@ -123,7 +124,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		return true; // told to cancel this task
 	}
 
-	gameRenderWorld->DebugLine( colorGreen, owner->GetEyePosition(), owner->GetMemory().currentSearchSpot, 50); // grayman debug
+	//gameRenderWorld->DebugLine( colorGreen, owner->GetEyePosition(), owner->GetMemory().currentSearchSpot, 50); // grayman debug
 	// grayman #3075 - if we've entered combat mode, we want to
 	// end this task. But first, if we're kneeling, kill the
 	// kneeling animation
@@ -147,6 +148,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s looking at spot, waiting to exit\r",owner->GetName()); // grayman debug
 		if (gameLocal.time >= _exitTime) // grayman debug - delete when done
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
@@ -231,8 +233,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		bool pointValid = true;
 		idVec3 goal = destPos;
 		int toAreaNum = owner->PointReachableAreaNum( goal );
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s toAreaNum = %d\r",owner->GetName(),toAreaNum); // grayman debug
 		if ( toAreaNum == 0 )
 		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s point is not valid\r",owner->GetName()); // grayman debug
 			pointValid = false;
 		}
 		else

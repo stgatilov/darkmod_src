@@ -234,7 +234,7 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	// If there's no existing search that ai can join based on event id,
 	// see if there's one at or near the search location using the correct event type.
 
-	EventType eventType = gameLocal.m_suspiciousEvents[memory.currentSearchEventID].type;
+	EventType eventType = gameLocal.FindSuspiciousEvent(memory.currentSearchEventID)->type;
 
 	if (searchID <= 0)
 	{
@@ -357,7 +357,7 @@ Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location) // 
 		Search *search = &_searches[i];
 		if ( search->_searchID > 0 )
 		{
-			EventType eventType = gameLocal.m_suspiciousEvents[search->_eventID].type;
+			EventType eventType = gameLocal.FindSuspiciousEvent(search->_eventID)->type;
 			if ( ( eventType == type ) && ( (search->_origin - location).LengthSqr() < 16384 ) )
 			{
 				// This search is close to where the AI wants to start
@@ -840,11 +840,11 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	// associated with it, look for the blood's event and mark yourself as
 	// knowing about it and searched it.
 
-	SuspiciousEvent se = gameLocal.m_suspiciousEvents[search->_eventID];
-	if (se.type == E_EventTypeDeadPerson)
+	SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(search->_eventID);
+	if (se->type == E_EventTypeDeadPerson)
 	{
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s this is a dead body search\r",ai->GetName()); // grayman debug
-		idEntity* body = se.entity.GetEntity();
+		idEntity* body = se->entity.GetEntity();
 		if (body)
 		{
 			idEntity* blood = static_cast<idAI*>(body)->GetBlood();
@@ -1399,7 +1399,7 @@ void CSearchManager::DebugPrintSearch(Search* search)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("============== Search ==============\r");
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("_hidingSpotSearchHandle = %d\r",search->_hidingSpotSearchHandle);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("              _searchID = %d\r",search->_searchID);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               _eventID = %d (type %d)\r",search->_eventID,(int)gameLocal.m_suspiciousEvents[search->_eventID].type);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               _eventID = %d (type %d)\r",search->_eventID,(int)gameLocal.FindSuspiciousEvent(search->_eventID)->type);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _origin = [%s]\r",search->_origin.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _limits = [%s]\r",search->_limits.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      _exclusion_limits = [%s]\r",search->_exclusion_limits.ToString());

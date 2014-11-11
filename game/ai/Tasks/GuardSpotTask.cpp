@@ -152,6 +152,8 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
+	//gameRenderWorld->DebugLine( colorPink, owner->GetEyePosition(), _guardSpot, 50); // grayman debug
+
 	if (_exitTime > 0)
 	{
 		if (gameLocal.time >= _exitTime) // grayman debug

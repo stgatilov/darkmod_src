@@ -556,6 +556,7 @@ bool idPhysics_RigidBody::CollisionImpulse( const trace_t &collision, idVec3 &im
 		current.i.angularMomentum *= 0.5f;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idPhysics_RigidBody::CollisionImpulse - %s collided with %s\r",self->GetName(),ent->GetName()); // grayman debug
 	// callback to self to let the entity know about the collision
 	return self->Collide( collision, velocity );
 }

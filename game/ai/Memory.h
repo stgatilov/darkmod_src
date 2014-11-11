@@ -512,8 +512,8 @@ public:
 
 	ERepeatedBarkState repeatedBarkState; // grayman debug
 
-	// True if fleeing is done, false if fleeing is in progress
-	bool fleeingDone;
+	// True if fleeing
+	bool fleeing;
 
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	idVec3 positionBeforeTakingCover;

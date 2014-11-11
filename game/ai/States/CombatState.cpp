@@ -587,7 +587,7 @@ void CombatState::Think(idAI* owner)
 		owner->fleeingFromPerson = enemy; // grayman #3847
 		// grayman #3548 - allow flee bark if unarmed
 		owner->emitFleeBarks = !_rangedPossible;
-		if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+		if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 		{
 			owner->GetMind()->SwitchState(STATE_FLEE);
 		}
@@ -690,7 +690,7 @@ void CombatState::Think(idAI* owner)
 			owner->fleeingFrom = enemy->GetPhysics()->GetOrigin();
 			owner->fleeingFromPerson = enemy; // grayman #3847
 			owner->emitFleeBarks = true; // grayman #3474
-			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 			{
 				owner->GetMind()->SwitchState(STATE_FLEE);
 			}
@@ -1144,7 +1144,7 @@ void CombatState::Think(idAI* owner)
 				owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
 				owner->fleeingFromPerson = enemy; // grayman #3847
 				owner->emitFleeBarks = true; // grayman #3474
-				if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+				if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 				{
 					owner->GetMind()->SwitchState(STATE_FLEE);
 				}

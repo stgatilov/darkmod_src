@@ -51,7 +51,7 @@ void FleeState::Init(idAI* owner)
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
-	memory.fleeingDone = false;
+	memory.fleeing = true;
 
 	// Fill the subsystems with their tasks
 
@@ -113,7 +113,7 @@ void FleeState::Init(idAI* owner)
 		}
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
-		gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
+		//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
@@ -152,7 +152,7 @@ void FleeState::Think(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	if (memory.fleeingDone)
+	if (!memory.fleeing)
 	{
 		owner->ClearEnemy();
 		owner->fleeingEvent = false; // grayman #3317

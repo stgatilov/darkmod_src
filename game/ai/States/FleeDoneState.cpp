@@ -161,7 +161,7 @@ void FleeDoneState::Think(idAI* owner)
 			)); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
-		gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), static_cast<idAI*>(friendlyAI)->GetEyePosition(), 2, 1000); // grayman debug
+		//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), static_cast<idAI*>(friendlyAI)->GetEyePosition(), 2, 1000); // grayman debug
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
@@ -211,7 +211,7 @@ void FleeDoneState::OnActorEncounter(idEntity* stimSource, idAI* owner)
 			)); 
 
 			CommunicationTaskPtr barkTask(new SingleBarkTask("snd_flee", message));
-		gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), static_cast<idAI*>(other)->GetEyePosition(), 2, 1000); // grayman debug
+		//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), static_cast<idAI*>(other)->GetEyePosition(), 2, 1000); // grayman debug
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{

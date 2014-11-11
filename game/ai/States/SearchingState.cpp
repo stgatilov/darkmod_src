@@ -562,7 +562,7 @@ void SearchingState::Think(idAI* owner)
 				// Pick a spot.
 
 				// For guard spots, don't worry about LOS from the spot to the
-				// search origin. This collection of spots is points that the
+				// search origin. This collection of spots is a set of points that the
 				// mapper has chosen (by using guard entities), or points that
 				// are at the area's portals. Observation points, however, are
 				// chosen randomly, and can very well end up on the other side

@@ -5643,6 +5643,7 @@ bool idPhysics_AF::CollisionImpulse( float timeStep, idAFBody *body, trace_t &co
 	// apply impact to other entity
 	ent->ApplyImpulse( self, collision.c.id, collision.c.point, -impulse );
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idPhysics_AF::CollisionImpulse - %s collided with %s\r",self->GetName(),ent->GetName()); // grayman debug
 	// callback to self to let the entity know about the impact
 	return self->Collide( collision, velocity );
 }

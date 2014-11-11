@@ -290,7 +290,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if ( !CheckAlertLevel(owner) )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s leaving SearchingState\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s leaving AgitatedSearchingState\r",owner->GetName()); // grayman debug
 		return;
 	}
 

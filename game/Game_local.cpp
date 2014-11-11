@@ -6022,6 +6022,9 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	if ( push ) {
 		RadiusPush( origin, radius, push * dmgPower, attacker, ignorePush, attackerPushScale, false );
 	}
+
+	// grayman debug - douse nearby lights
+	RadiusDouse( origin, radius );
 }
 
 /*
@@ -6045,13 +6048,6 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 
 	// get all clip models touching the bounds
 	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-	if ( inflictor && inflictor->IsType( idAFAttachment::Type ) ) {
-		inflictor = static_cast<const idAFAttachment*>(inflictor)->GetBody();
-	}
-	if ( ignore && ignore->IsType( idAFAttachment::Type ) ) {
-		ignore = static_cast<const idAFAttachment*>(ignore)->GetBody();
-	}
 
 	// apply impact to all the clip models through their associated physics objects
 	for ( i = 0; i < numListedClipModels; i++ ) {
@@ -6095,6 +6091,86 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 			clipModel->GetEntity()->ApplyImpulse( world, clipModel->GetId(), clipModel->GetOrigin(), scale * push * dir );
 		} else {
 			RadiusPushClipModel( origin, scale * push, clipModel );
+		}
+	}
+}
+
+// grayman debug - douse nearby flame lights
+
+void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
+{
+	idEntity *ent;
+	idEntity *entityList[MAX_GENTITIES];
+	int		  numListedEntities;
+
+	idBounds bounds = idBounds(origin).Expand(radius);
+
+	// get all entities touching the bounds
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+
+	// douse all flames that have a LOS from them to the origin
+	for ( int i = 0 ; i < numListedEntities ; i++ )
+	{
+		ent = entityList[i];
+
+		if (ent && ent->IsType(idLight::Type))
+		{
+			idStr lightType = ent->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+
+			// douse only flames and gas lamps
+			if ((lightType == AIUSE_LIGHTTYPE_TORCH) || (lightType == AIUSE_LIGHTTYPE_GASLAMP))
+			{
+				idLight* light = static_cast<idLight*>(ent);
+
+				// ignore blend and fog lights
+
+				if (light->IsBlend() || light->IsFog())
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light '%s' is a blend or fog light, and should be ignored\r",light->GetName()); // grayman debug
+					continue;
+				}
+
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light '%s' has radius %f\r",light->GetName(),light->GetRadius().LengthFast()); // grayman debug
+
+				// Only douse lit lights
+
+				if (light->GetLightLevel() > 0)
+				{
+					// Find the bindMaster for lights with light holders. Only go
+					// up one level in the family chain, since we're only interested
+					// in ignoring the entity the light is bound to, if anything.
+
+					idEntity* ignoreMe = light;
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - setting ignoreMe to light '%s'\r",ignoreMe->GetName()); // grayman debug
+					idEntity* bindMaster = light->GetBindMaster();
+					if (bindMaster)
+					{
+						ignoreMe = bindMaster;
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - setting ignoreMe to light's bindMaster '%s'\r",ignoreMe->GetName()); // grayman debug
+					}
+
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - ignoreMe = '%s'\r",ignoreMe->GetName()); // grayman debug
+					// test LOS between origin of force and light origin
+
+					// Light center is not just the light origin. There's an offset called "light_center", and there's orientation.
+					idVec3 trueOrigin = light->GetPhysics()->GetOrigin() + light->GetPhysics()->GetAxis()*light->GetRenderLight()->lightCenter;
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - tracing from [%s] to [%s]\r",origin.ToString(),trueOrigin.ToString()); // grayman debug
+					trace_t result;
+					if ( clip.TracePoint(result, origin, trueOrigin, MASK_OPAQUE, ignoreMe) )
+					{
+						// didn't trace all the way to the point, so there's no LOS
+						idEntity* e = entities[result.c.entityNum];
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - no douse; stopped short by '%s'\r",e ? e->GetName():"NULL"); // grayman debug
+					}
+					else
+					{
+						// LOS exists
+
+						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light doused\r"); // grayman debug
+						light->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", light);
+					}
+				}
+			}
 		}
 	}
 }
@@ -7964,6 +8040,17 @@ int idGameLocal::GetNextMessageTag()
 int idGameLocal::GetSpyglassOverlay()
 {
 	return m_spyglassOverlay;
+}
+
+// grayman debug
+SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman debug
+{
+	if ( eventID < 0 )
+	{
+		return NULL;
+	}
+
+	return &m_suspiciousEvents[eventID];
 }
 
 // grayman #3424

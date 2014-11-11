@@ -361,6 +361,7 @@ void HitByMoveableState::Think(idAI* owner)
 						alertIncrement = 0;
 					}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HitByMoveableState::Think - %s calling PreAlertAI(%f)\r",GetName(),alertIncrement); // grayman debug
 					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
 					owner->PreAlertAI("tact", alertIncrement, responsible->GetEyePosition()); // grayman #3356
 

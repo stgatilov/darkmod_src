@@ -3165,6 +3165,7 @@ void idAI::Event_SetAudThresh( float val )
 
 void idAI::Event_SetAlertLevel( float newAlertLevel)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_SetAlertLevel - %s calling SetAlertLevel(%f)\r",GetName(),newAlertLevel); // grayman debug
 	SetAlertLevel(newAlertLevel);
 }
 

@@ -66,6 +66,7 @@ void FailedKnockoutState::Init(idAI* owner)
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init - %s play animation\r",owner->GetName()); // grayman debug
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
@@ -78,6 +79,9 @@ void FailedKnockoutState::Init(idAI* owner)
 	
 	// Set the alert position 50 units in the attacking direction
 	memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init - %s set alert position to [%s]\r",owner->GetName(),memory.alertPos.ToString()); // grayman debug
+
+	owner->StopMove(MOVE_STATUS_DONE); // grayman debug
 
 	// Do a single bark and assemble an AI message
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
@@ -90,6 +94,7 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init - %s bark\r",owner->GetName()); // grayman debug
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
@@ -104,9 +109,11 @@ void FailedKnockoutState::Think(idAI* owner)
 		return; // wait...
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Think - %s _allowEndTime is over\r",owner->GetName()); // grayman debug
 	if ( ( gameLocal.time >= _stateEndTime ) || 
 		 ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "failed_ko" ) )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Think - %s anim is finished = call SetUpSearchData()\r",owner->GetName()); // grayman debug
 		Memory& memory = owner->GetMemory();
 
 		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_FAILED_KO;
@@ -115,8 +122,7 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.StopReacting(); // grayman #3559
 
 		// grayman debug - move alert setup into one method
-		// Set the alert position 50 units in the attacking direction
-		SetUpSearchData(EAlertTypeFailedKO, owner->GetPhysics()->GetOrigin() - _attackDirection * 50, NULL, false, 0); // grayman debug
+		SetUpSearchData(EAlertTypeFailedKO, memory.alertPos, NULL, false, 0); // grayman debug
 
 		// End this state
 		owner->GetMind()->EndState();

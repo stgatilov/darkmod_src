@@ -110,7 +110,7 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 			{
 				msgTag = gameLocal.GetNextMessageTag(); // grayman #3355
 				owner->AddMessage(_message,msgTag);
-		gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
+		//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
 			}
 
 			owner->GetMind()->GetMemory().currentlyBarking = true; // grayman #3182 - idle anims cannot start

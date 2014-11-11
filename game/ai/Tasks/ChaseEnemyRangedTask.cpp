@@ -55,8 +55,10 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	Memory& memory = owner->GetMemory();
+
 	// grayman #3331 - if fleeing, stop chasing the enemy
-	if ( owner->GetMind()->GetState()->GetName() == "Flee" )
+	if (memory.fleeing)
 	{
 		return true;
 	}
@@ -73,8 +75,6 @@ bool ChaseEnemyRangedTask::Perform(Subsystem& subsystem)
 	{
 		return true;
 	}
-
-	Memory& memory = owner->GetMemory();
 
 	idStr waitState(owner->WaitState());
 

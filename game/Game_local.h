@@ -711,9 +711,6 @@ public:
 	int						GetCurrentPortalSkyType(); // 0 = classic, 1 = global, 2 = local
 	// end 7318
 
-	// grayman #3424 - The list of suspicious events
-	idList<SuspiciousEvent> m_suspiciousEvents;
-
 	// grayman #3584 - The list of ambient lights
     idList< idEntityPtr<idLight> > m_ambientLights;
 
@@ -887,6 +884,7 @@ public:
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
+	void					RadiusDouse( const idVec3 &origin, const float radius ); // grayman debug
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
 	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
@@ -1043,6 +1041,7 @@ public:
 	int						GetNextMessageTag(); // grayman #3355
 
 	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ); // grayman #3424
+	SuspiciousEvent*		FindSuspiciousEvent( int eventID ); // grayman debug
 	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424
 	
 private:
@@ -1057,6 +1056,9 @@ private:
 	int						mapSpawnCount;			// it's handy to know which entities are part of the map
 
 	idLocationEntity **		locationEntities;		// for location names, etc
+
+	// grayman #3424 - The list of suspicious events
+	idList<SuspiciousEvent> m_suspiciousEvents;
 
 	idCamera *				camera;
 	const idMaterial *		globalMaterial;			// for overriding everything

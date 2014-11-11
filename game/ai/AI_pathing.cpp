@@ -498,7 +498,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			bool fleeing = false;
 			if (self->IsType(idAI::Type))
 			{
-				fleeing = !static_cast<idAI*>(self)->GetMemory().fleeingDone;
+				fleeing = static_cast<idAI*>(self)->GetMemory().fleeing;
 			}
 
 			idPhysics* obPhys = obEnt->GetPhysics();

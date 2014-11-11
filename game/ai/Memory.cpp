@@ -104,7 +104,7 @@ Memory::Memory(idAI* owningAI) :
 	shouldMill(false), // grayman debug
 	guardingAngle(0.0f), // grayman debug
 	repeatedBarkState(ERBS_NULL), // grayman debug
-	fleeingDone(true),
+	fleeing(false),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
 	issueMoveToPositionTask(false), // grayman #3052
@@ -204,7 +204,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(shouldMill); // grayman debug
 	savefile->WriteFloat(guardingAngle); // grayman debug
 	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman debug
-	savefile->WriteBool(fleeingDone);
+	savefile->WriteBool(fleeing);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
 	lastDoorHandled.Save(savefile);   // grayman #2712
@@ -355,7 +355,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman debug
 
-	savefile->ReadBool(fleeingDone);
+	savefile->ReadBool(fleeing);
 	savefile->ReadVec3(positionBeforeTakingCover);
 	savefile->ReadBool(resolvingMovementBlock);
 	lastDoorHandled.Restore(savefile);	 // grayman #2712

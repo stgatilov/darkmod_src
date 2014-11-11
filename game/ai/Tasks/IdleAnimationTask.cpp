@@ -349,8 +349,10 @@ bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s ...\r",owner->GetName()); // grayman debug
-	if (!owner->AI_KNOCKEDOUT && owner->health > 0)
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s WaitState = '%s'\r",owner->GetName(),owner->WaitState()); // grayman debug
+	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman debug - let running anim finish
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s returning to idle state anims\r",owner->GetName()); // grayman debug
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
 		owner->SetWaitState("");

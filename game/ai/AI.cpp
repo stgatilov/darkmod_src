@@ -6491,6 +6491,7 @@ idAI::Pain
 */
 bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s calling idActor::Pain()\r",GetName()); // grayman debug
 	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location, damageDef );
 	AI_DAMAGE = true;
 
@@ -6501,9 +6502,11 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 
 	if ( !AI_PAIN )
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s AI_PAIN = false, quitting\r",GetName()); // grayman debug
 		return false;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s AI_PAIN = true, continuing\r",GetName()); // grayman debug
 	// ignore damage from self
 	if ( attacker != this )
 	{
@@ -6551,6 +6554,7 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					memory.causeOfPain = ai::EPC_Drown;
 				}
 			}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s pushing PainState()\r",GetName()); // grayman debug
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 			memory.painStatePushedThisFrame = true;
 		}
@@ -6589,7 +6593,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					SetEnemy(static_cast<idActor*>(attacker));
 					AI_VISALERT = false;
 				
-					SetAlertLevel(thresh_5*2);
+					SetAlertLevel(thresh_5 - 0.1); // grayman debug - reduce alert level to just under Combat
+					//SetAlertLevel(thresh_5*2);
 					GetMemory().alertClass = ai::EAlertNone;
 					GetMemory().prevAlertType = GetMemory().alertType; // grayman debug
 					GetMemory().alertType = ai::EAlertTypeEnemy;
@@ -6849,6 +6854,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 	const char *damageDefName, const float damageScale, const int location,
 	trace_t *collision)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Damage - %s calling idActor::Damage()\r",GetName()); // grayman debug
 	// Save the current health, to see afterwards how much damage we've been taking
 	int preHitHealth = health;
 
@@ -9640,6 +9646,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PreAlertAI - %s amount = %f)\r",GetName(),amount); // grayman debug
 	// grayman #3424 - don't process if dead or unconscious
 
 	if ( AI_DEAD || AI_KNOCKEDOUT )
@@ -9747,6 +9754,7 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s calling SetAlertLevel(%f)\r",GetName(),newAlertLevel); // grayman debug
 	SetAlertLevel(newAlertLevel);
 
 	if ( cv_ai_debug.GetBool() )
@@ -9780,6 +9788,7 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetAlertLevel - %s newAlertLevel = %f\r",GetName(),newAlertLevel); // grayman debug
 	float currentAlertLevel = AI_AlertLevel; // grayman #3424
 
 	// grayman #3069 - clamp the alert level to just under ESearching
@@ -10503,6 +10512,7 @@ float idAI::GetCalibratedLightgemValue() const
 
 void idAI::TactileAlert(idEntity* tactEnt, float amount)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s alerted by '%s' with amount = %f\r",GetName(),tactEnt ? tactEnt->GetName() : "NULL",amount); // grayman debug
 	if (AI_DEAD || AI_KNOCKEDOUT || m_bIgnoreAlerts)
 	{
 		return;
@@ -10612,6 +10622,8 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	}
 	else // actors
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s ran into '%s'\r",GetName(),tactEnt->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s responsibleActor = '%s'\r",GetName(),responsibleActor ? responsibleActor->GetName():"NULL"); // grayman debug
 		if ( IsFriend(responsibleActor) )
 		{
 			// grayman #3714 - this check for health and consciousness was removed
@@ -10619,6 +10631,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			// sure #3679 doesn't start failing now that I've put the check back.
 			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
 			{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s ran into '%s', who is dead or unconscious\r",GetName(),tactEnt->GetName()); // grayman debug
 				// angua: We've found a friend that is dead or unconscious
 				mind->GetState()->OnActorEncounter(tactEnt, this);
 			}
@@ -10705,11 +10718,18 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	// Set the alert amount according to the tactile alert value
 	if ( amount == -1 )
 	{
-		amount = cv_ai_tactalert.GetFloat();
+		if ( tactEnt->IsType(idActor::Type) ) // grayman debug - only use this if you touched an actor
+		{
+			amount = cv_ai_tactalert.GetFloat();
+		}
+		else
+		{
+			amount = 0;
+		}
 	}
 
 	// If we got this far, we give the alert
-	// NOTE: Latest tactile alert always overrides other alerts
+	// NOTE: Latest tactile alert always overides other alerts
 	m_TactAlertEnt = tactEnt;
 	m_AlertedByActor = responsibleActor;
 
@@ -10724,6 +10744,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		lookAtPos = tactEnt->GetPhysics()->GetOrigin();
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling PreAlertAI()\r",GetName()); // grayman debug
 	PreAlertAI("tact", amount, lookAtPos); // grayman #3356
 
 	// Notify the currently active state
@@ -11120,6 +11141,7 @@ void idAI::HadTactile( idActor *actor )
 	if( !actor )
 		goto Quit;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HadTactile - %s collided with %s\r",GetName(),actor->GetName()); // grayman debug
 	if( IsEnemy( actor) )
 		TactileAlert( actor );
 	else
@@ -13047,7 +13069,7 @@ bool idAI::CanGreet() // grayman #3338
 	if ( ( greetingState == ECannotGreet )    || // can never greet
 		 ( greetingState == ECannotGreetYet ) || // not allowed to greet yet
 		 ( AI_AlertIndex >= ai::EObservant)	  || // too alert
-		 ( mind->GetState()->GetName() == "Flee" ) || // grayman #3140 - no greeting if fleeing
+		 ( GetMemory().fleeing ) || // grayman #3140 - no greeting if fleeing
 		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") )  || // visible melee weapon drawn
 		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) )  // visible ranged weapon drawn
 	{
@@ -13130,7 +13152,7 @@ void idAI::Event_PickedPocketSetup2() // grayman #3559
 		 AI_KNOCKEDOUT || // or unconscious
 		 (AI_AlertIndex >= ai::ESearching) || // stop if alert level is too high
 		 m_InConversation || // in a conversation
-		 !memory.fleeingDone || // fleeing
+		 memory.fleeing || // fleeing
 		 m_ReactingToHit ) // already reacting to having been hit by something
 	{
 		memory.latchPickedPocket = false;
