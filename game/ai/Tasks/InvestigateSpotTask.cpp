@@ -73,14 +73,12 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s wants to investigate memory.currentSearchSpot = [%s]\r",owner->GetName(),memory.currentSearchSpot.ToString()); // grayman debug
 		memory.hidingSpotInvestigationInProgress = true; // grayman debug
 		memory.stopHidingSpotInvestigation = false;
 	}
 	else
 	{
 		// Invalid hiding spot, terminate task
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task\r");
 		subsystem.FinishTask();
 	}
 
@@ -148,11 +146,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s looking at spot, waiting to exit\r",owner->GetName()); // grayman debug
-		if (gameLocal.time >= _exitTime) // grayman debug - delete when done
-		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s _exitTime is up, quitting\r",owner->GetName()); // grayman debug
-		}
 		// Return TRUE if the time is over, else FALSE (continue)
 		return (gameLocal.time >= _exitTime);
 	}
@@ -233,10 +226,8 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		bool pointValid = true;
 		idVec3 goal = destPos;
 		int toAreaNum = owner->PointReachableAreaNum( goal );
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s toAreaNum = %d\r",owner->GetName(),toAreaNum); // grayman debug
 		if ( toAreaNum == 0 )
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s point is not valid\r",owner->GetName()); // grayman debug
 			pointValid = false;
 		}
 		else

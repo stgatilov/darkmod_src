@@ -41,7 +41,8 @@ const float CLOSE_ENOUGH = 48.0f; // try to get this close to goal
 const float TRY_AGAIN_DISTANCE = 100.0f; // have reached point if this close when stopped
 
 GuardSpotTask::GuardSpotTask() :
-	_nextTurnTime(0)
+	_nextTurnTime(0),
+	_exitTime(0)
 {}
 
 // Get the name of this task
@@ -59,7 +60,7 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	// Get a shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	if (memory.currentSearchSpot == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
+	if (memory.currentSearchSpot.x == idMath::INFINITY)
 	{
 		// Invalid spot, terminate task
 		subsystem.FinishTask();
@@ -67,7 +68,6 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	}
 
 	// Set the goal position
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s calling guardSpotTask->SetNewGoal()\r",owner->GetName()); // grayman debug
 	SetNewGoal(memory.currentSearchSpot);
 	_guardSpotState = EStateSetup;
 
@@ -120,19 +120,20 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s ...\r",owner->GetName()); // grayman debug
 	// quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
 		return true;
 	}
 
-	if (owner->GetMemory().millingInProgress && owner->GetMemory().stopMilling) // grayman debug
+	Memory& memory = owner->GetMemory();
+
+	if (memory.millingInProgress && memory.stopMilling) // grayman debug
 	{
 		return true; // told to cancel this task
 	}
 
-	if (owner->GetMemory().guardingInProgress && owner->GetMemory().stopGuarding) // grayman debug
+	if (memory.guardingInProgress && memory.stopGuarding) // grayman debug
 	{
 		return true; // told to cancel this task
 	}
@@ -158,15 +159,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	{
 		if (gameLocal.time >= _exitTime) // grayman debug
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s _exitTime is up, quitting %s\r", // grayman debug
-				owner->GetName(),
-				owner->GetMemory().millingInProgress ? "milling" : "guarding/observing"); // grayman debug
-
 			// If milling, and you'll be running to a guard or observation
 			// spot once milling ends, have the guards talk to each other.
 			// One of the active searchers should bark a "get to your post"
 			// command to this AI, who should respond.
-			if (owner->GetMemory().millingInProgress)
+			if (memory.millingInProgress)
 			{
 				if (!_millingOnly)
 				{
@@ -201,12 +198,10 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
 					}
 				}
-
-				return true;
 			}
-		}
 
-		return false;
+			return true;
+		}
 	}
 
 	// No exit time set, or it hasn't expired, so continue with ordinary process
@@ -314,25 +309,23 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 					if (search)
 					{
-						if ( owner->GetMemory().guardingAngle == idMath::INFINITY)
+						if ( memory.guardingAngle == idMath::INFINITY)
 						{
-							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward origin\r",owner->GetName()); // grayman debug
 							owner->TurnToward(search->_origin); // grayman debug
 						}
 						else
 						{
-							DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward guardingAngle\r",owner->GetName()); // grayman debug
 							owner->TurnToward(owner->GetMemory().guardingAngle);
 						}
 
 						_baseYaw = owner->GetIdealYaw();
 
 						// Milling?
-						if (owner->GetMemory().millingInProgress)
+						if (memory.millingInProgress)
 						{
 							if (!_millingOnly)
 							{
-								// leave milling early, so we can get to the following activity
+								// leave milling early, so we can get to the following activity (searching/guarding/observing)
 								_exitTime = gameLocal.time + MILLING_DELAY + gameLocal.random.RandomInt(MILLING_DELAY);
 								_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
 							}
@@ -368,27 +361,16 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			break;
 		}
-/*	case EStateStartIdleSearchAnims:
-		if (!owner->GetMemory().millingInProgress)
-		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s start playing idle search anims\r",owner->GetName()); // grayman debug
-			// The action subsystem plays the idle search anims
-			owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
-		}
-		_guardSpotState = EStateStanding;
-		break;
-		*/
 	case EStateStanding:
 		{
 			if ( (_nextTurnTime > 0) && (gameLocal.time >= _nextTurnTime) )
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s turning toward random yaw\r",owner->GetName()); // grayman debug
 				// turn randomly in place
 				float newYaw = _baseYaw + MAX_YAW*(gameLocal.random.RandomFloat() - 0.5f); // +- MAX_YAW/2 degrees
 				owner->TurnToward(newYaw);
 
 				// Milling?
-				if (owner->GetMemory().millingInProgress)
+				if (memory.millingInProgress)
 				{
 					if (!_millingOnly)
 					{
@@ -419,7 +401,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s newPos = [%s]\r",owner->GetName(),newPos.ToString()); // grayman debug
 	// If newPos is in a portal, there might be a door there. We only care
 	// about finding doors if owner is a guard.
 
@@ -448,7 +429,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 			continue;
 		}
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s obEnt = '%s'\r",owner->GetName(),ent->GetName()); // grayman debug
 		if (ent->IsType(CFrobDoor::Type))
 		{
 			door = static_cast<CFrobDoor*>(ent);
@@ -458,7 +438,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	if (door)
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s need to move away from door '%s'\r",owner->GetName(),door->GetName()); // grayman debug
 		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door),DOOR_POS_FRONT);
 
 		// Can't stand at the front position, because you'll be in the way
@@ -470,12 +449,10 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		frontPos += 50*dir;
 
 		_guardSpot = frontPos;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (door) _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
 	}
 	else
 	{
 		_guardSpot = newPos;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (no door) _guardSpot = [%s]\r",owner->GetName(),_guardSpot.ToString()); // grayman debug
 	}
 
 	_guardSpotState = EStateSetup;

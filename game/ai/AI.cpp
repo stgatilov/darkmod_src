@@ -2303,7 +2303,6 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Think - %s ... alert level = %f [%s]\r",GetName(),(float)this->AI_AlertLevel,physicsObj.GetOrigin().ToString()); // grayman debug
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
 	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
@@ -2913,7 +2912,6 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 			{
 				obEnt->m_SetInMotionByActor = this;
 				obEnt->m_MovedByActor = this;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::KickObstacles - %s set m_SetInMotionByActor to '%s'\r",GetName(),obEnt->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 			}
 		}
 	}
@@ -2933,7 +2931,6 @@ void idAI::KickObstacles( const idVec3 &dir, float force, idEntity *alwaysKick )
 		{
 			alwaysKick->m_SetInMotionByActor = this;
 			alwaysKick->m_MovedByActor = this;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::KickObstacles - %s set m_SetInMotionByActor to '%s'\r",GetName(),alwaysKick->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 		}
 	}
 }
@@ -6491,7 +6488,6 @@ idAI::Pain
 */
 bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location, const idDict* damageDef )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s calling idActor::Pain()\r",GetName()); // grayman debug
 	AI_PAIN = idActor::Pain( inflictor, attacker, damage, dir, location, damageDef );
 	AI_DAMAGE = true;
 
@@ -6502,11 +6498,9 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 
 	if ( !AI_PAIN )
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s AI_PAIN = false, quitting\r",GetName()); // grayman debug
 		return false;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s AI_PAIN = true, continuing\r",GetName()); // grayman debug
 	// ignore damage from self
 	if ( attacker != this )
 	{
@@ -6554,7 +6548,6 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					memory.causeOfPain = ai::EPC_Drown;
 				}
 			}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Pain - %s pushing PainState()\r",GetName()); // grayman debug
 			GetMind()->PushState(ai::StatePtr(new ai::PainState));
 			memory.painStatePushedThisFrame = true;
 		}
@@ -6596,7 +6589,6 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					SetAlertLevel(thresh_5 - 0.1); // grayman debug - reduce alert level to just under Combat
 					//SetAlertLevel(thresh_5*2);
 					GetMemory().alertClass = ai::EAlertNone;
-					GetMemory().prevAlertType = GetMemory().alertType; // grayman debug
 					GetMemory().alertType = ai::EAlertTypeEnemy;
 				}
 			}
@@ -6729,7 +6721,6 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Killed - %s killed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
 	// grayman debug - leave an ongoing search
 	if (m_searchID > 0)
 	{
@@ -6854,7 +6845,6 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 	const char *damageDefName, const float damageScale, const int location,
 	trace_t *collision)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Damage - %s calling idActor::Damage()\r",GetName()); // grayman debug
 	// Save the current health, to see afterwards how much damage we've been taking
 	int preHitHealth = health;
 
@@ -8750,7 +8740,6 @@ void idAI::PushWithAF( void ) {
 				{
 					ent->m_SetInMotionByActor = this;
 					ent->m_MovedByActor = this;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PushWithAF - %s set m_SetInMotionByActor to '%s'\r",GetName(),ent->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 				}
 			}
 		}
@@ -9491,7 +9480,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 					effectiveOrigin.z = result.endpos.z + 1; // move the target point to just above the floor
 				}
 
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s noisemaker origin is [%s]\r",GetName(),effectiveOrigin.ToString()); // grayman debug
 				addFuzziness = false; // don't add small amount of randomness to the sound location
 			}
 		}
@@ -9646,7 +9634,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 void idAI::PreAlertAI(const char *type, float amount, idVec3 lookAt)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PreAlertAI - %s amount = %f)\r",GetName(),amount); // grayman debug
 	// grayman #3424 - don't process if dead or unconscious
 
 	if ( AI_DEAD || AI_KNOCKEDOUT )
@@ -9754,7 +9741,6 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// The grace check has failed, increase the AI_AlertLevel float by the increase amount
 	float newAlertLevel = AI_AlertLevel + alertInc;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_AlertAI - %s calling SetAlertLevel(%f)\r",GetName(),newAlertLevel); // grayman debug
 	SetAlertLevel(newAlertLevel);
 
 	if ( cv_ai_debug.GetBool() )
@@ -9788,7 +9774,6 @@ void idAI::SetAlertLevel(float newAlertLevel)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetAlertLevel - %s newAlertLevel = %f\r",GetName(),newAlertLevel); // grayman debug
 	float currentAlertLevel = AI_AlertLevel; // grayman #3424
 
 	// grayman #3069 - clamp the alert level to just under ESearching
@@ -10512,7 +10497,6 @@ float idAI::GetCalibratedLightgemValue() const
 
 void idAI::TactileAlert(idEntity* tactEnt, float amount)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s alerted by '%s' with amount = %f\r",GetName(),tactEnt ? tactEnt->GetName() : "NULL",amount); // grayman debug
 	if (AI_DEAD || AI_KNOCKEDOUT || m_bIgnoreAlerts)
 	{
 		return;
@@ -10520,13 +10504,11 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt == NULL )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s is ignoring 'NULL'\r",GetName()); // grayman debug
 		return;
 	}
 
 	if ( CheckTactileIgnore(tactEnt) )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s is ignoring '%s'\r",GetName(),tactEnt->GetName()); // grayman debug
 		return;
 	}
 
@@ -10582,7 +10564,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( responsibleActor == NULL )
 	{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s responsibleActor is NULL, so ignore this time\r",GetName()); // grayman debug
 		return;
 	}
 
@@ -10606,7 +10587,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_droppedByAI )
 		{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s - '%s' was m_droppedByAI, so ignore from now on\r",GetName(),tactEnt->GetName()); // grayman debug
 			TactileIgnore(tactEnt);
 			return;
 		}
@@ -10615,15 +10595,12 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_SetInMotionByActor.GetEntity() == this )
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s put '%s' in motion, so ignore from now on\r",GetName(),tactEnt->GetName()); // grayman debug
 			TactileIgnore(tactEnt);
 			return;
 		}
 	}
 	else // actors
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s ran into '%s'\r",GetName(),tactEnt->GetName()); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s responsibleActor = '%s'\r",GetName(),responsibleActor ? responsibleActor->GetName():"NULL"); // grayman debug
 		if ( IsFriend(responsibleActor) )
 		{
 			// grayman #3714 - this check for health and consciousness was removed
@@ -10631,7 +10608,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			// sure #3679 doesn't start failing now that I've put the check back.
 			if ( ( responsibleActor->health <= 0 ) || responsibleActor->IsKnockedOut() )
 			{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s ran into '%s', who is dead or unconscious\r",GetName(),tactEnt->GetName()); // grayman debug
 				// angua: We've found a friend that is dead or unconscious
 				mind->GetState()->OnActorEncounter(tactEnt, this);
 			}
@@ -10658,7 +10634,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		// Ignore the moveable if you have an enemy.
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s hit by moveable %s\r",GetName(),tactEnt->GetName()); // grayman debug
 		if ( GetEnemy() == NULL )
 		{
 			if ( !m_ReactingToHit )
@@ -10666,7 +10641,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 				// Wait a bit to turn toward and look at what hit you.
 				// Then turn back in the direction the object came from.
 
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling OnHitByMoveable()\r",GetName()); // grayman debug
 				mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
 			}
 			else if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
@@ -10744,7 +10718,6 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		lookAtPos = tactEnt->GetPhysics()->GetOrigin();
 	}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling PreAlertAI()\r",GetName()); // grayman debug
 	PreAlertAI("tact", amount, lookAtPos); // grayman #3356
 
 	// Notify the currently active state
@@ -11141,7 +11114,6 @@ void idAI::HadTactile( idActor *actor )
 	if( !actor )
 		goto Quit;
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HadTactile - %s collided with %s\r",GetName(),actor->GetName()); // grayman debug
 	if( IsEnemy( actor) )
 		TactileAlert( actor );
 	else
@@ -11324,8 +11296,48 @@ bool idAI::HasSeenEvidence() const
 		|| spawnArgs.GetBool("alert_idle", "0");
 }
 
+void idAI::HasEvidence( EventType type )
+{
+	ai::Memory& memory = GetMemory();
+	bool printMsg = cv_ai_debug_transition_barks.GetBool();
+
+	switch(type)
+	{
+	case E_EventTypeEnemy:
+		memory.enemiesHaveBeenSeen = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that enemies have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeDeadPerson:
+		memory.deadPeopleHaveBeenFound = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that dead people have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeUnconsciousPerson:
+		memory.unconsciousPeopleHaveBeenFound = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that unconscious people have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeMissingItem:
+		memory.itemsHaveBeenStolen = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that an item has been stolen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /**
-* ========================== BEGIN  TDM KNOCKOUT CODE =============================
+* ========================== BEGIN TDM KNOCKOUT CODE =============================
 **/
 
 /*
@@ -11632,7 +11644,6 @@ void idAI::Knockout( idEntity* inflictor )
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Knockout - %s KO'ed, m_searchID = %d\r",GetName(),m_searchID); // grayman debug
 	// grayman debug - leave an ongoing search
 	if (m_searchID > 0)
 	{
@@ -12407,7 +12418,6 @@ void idAI::DropOnRagdoll( void )
 		// grayman #3602 - set in motion by dropper
 		ent->m_SetInMotionByActor = this;
 		ent->m_MovedByActor = this;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::DropOnRagdoll - %s set m_SetInMotionByActor to '%s'\r",GetName(),ent->m_SetInMotionByActor.GetEntity()->GetName()); // grayman debug
 		//ent->m_SetInMotionByActor = NULL;
 		//ent->m_MovedByActor = NULL;
 	}
@@ -12743,7 +12753,6 @@ const idStr& idAI::GetNextIdleAnim() const
 
 void idAI::SetNextIdleAnim(const idStr& nextIdleAnim)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::SetNextIdleAnim - %s ... playing idle anim '%s'\r",GetName(),nextIdleAnim.c_str()); // grayman debug
 	m_NextIdleAnim = nextIdleAnim;
 }
 

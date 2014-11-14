@@ -71,7 +71,6 @@ void IdleSleepState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
-	memory.prevAlertType = EAlertTypeNone; // grayman debug
 
 	if (owner->HasSeenEvidence() && !owner->spawnArgs.GetBool("disable_alert_idle", "0"))
 	{

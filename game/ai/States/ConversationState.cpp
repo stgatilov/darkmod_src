@@ -100,7 +100,6 @@ void ConversationState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.alertClass = EAlertNone;
 	memory.alertType = EAlertTypeNone;
-	memory.prevAlertType = EAlertTypeNone; // grayman debug
 
 	_alertLevelDecreaseRate = 0.01f;
 

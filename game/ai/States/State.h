@@ -92,6 +92,16 @@ public:
 
 	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
 
+	// grayman debug
+	void SetAISearchData(
+		EAlertClass alertClass,
+		EAlertType alertType,
+		idVec3 pos,
+		idVec3 searchVolume,
+		idVec3 exclusionVolume,
+		int alertFlags
+	);
+
 	virtual void SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool flag, float value); // grayman debug
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);

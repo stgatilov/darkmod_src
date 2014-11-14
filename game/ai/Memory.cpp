@@ -72,8 +72,7 @@ Memory::Memory(idAI* owningAI) :
 	nextTime2GenRandomSpot(0),	// grayman #2422
 	alertClass(EAlertNone),
 	alertType(EAlertTypeNone),
-	prevAlertType(EAlertTypeNone), // grayman debug
-	alertRadius(-1),
+	//alertRadius(-1), // grayman debug - no longer used
 	lastAudioAlertTime(-1),
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
@@ -173,8 +172,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(static_cast<int>(causeOfPain)); // grayman #3140
 	savefile->WriteBool(painStatePushedThisFrame); // grayman #3424
 	savefile->WriteInt(static_cast<int>(alertType));
-	savefile->WriteInt(static_cast<int>(prevAlertType)); // grayman debug
-	savefile->WriteFloat(alertRadius);
+	//savefile->WriteFloat(alertRadius); // grayman debug - no longer used
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 	savefile->WriteBool(investigateStimulusLocationClosely);
 	savefile->WriteBool(alertedDueToCommunication);
@@ -319,10 +317,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	alertType = static_cast<EAlertType>(temp);
 
-	savefile->ReadInt(temp);
-	prevAlertType = static_cast<EAlertType>(temp); // grayman debug
-
-	savefile->ReadFloat(alertRadius);
+	//savefile->ReadFloat(alertRadius); // grayman debug - no longer used
 	savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 	savefile->ReadBool(investigateStimulusLocationClosely);
 	savefile->ReadBool(alertedDueToCommunication);

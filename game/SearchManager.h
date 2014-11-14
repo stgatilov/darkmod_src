@@ -221,14 +221,11 @@ public:
 	void		Save( idSaveGame *savefile );
 
 	void		Restore( idRestoreGame *savefile );
-
+/*
 	void		DebugPrint(Search* search); // Print the current hiding spots and assignments
-
 	void		DebugPrintSearch(Search* search); // Print the contents of a search
-
 	void		DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
-
-	//void		PrintMe(int n, idAI* owner); // grayman debug - delete when done
+*/
 
 	// Accessor to the singleton instance of this class
 	static		CSearchManager* Instance();

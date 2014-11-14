@@ -214,7 +214,6 @@ void UnreachableTargetState::Think(idAI* owner)
 		owner->SetLastKilled(enemy);
 		owner->ClearEnemy();
 		owner->StopMove(MOVE_STATUS_DONE);
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("UnreachableTargetState::Think - %s calling SetAlertLevel(%f)\r",owner->GetName(),owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.5); // grayman debug
 		owner->SetAlertLevel(owner->thresh_2 + (owner->thresh_3 - owner->thresh_2) * 0.5);
 		
 		// grayman #3473 - stop looking at the spot you were looking at when you killed the enemy

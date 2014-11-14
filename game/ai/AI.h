@@ -1801,6 +1801,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool HasSeenEvidence() const;
 
 	/**
+	 * grayman debug - register that evidence has been seen that
+	 * causes the AI to use Alert Idle instead of Idle
+	 */
+	void HasEvidence( EventType type );
+
+	/**
 	* Draw the debug cone representing valid knockout area
 	* Called every frame when cvar cv_ai_ko_show is set to true.
 	**/

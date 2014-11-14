@@ -278,7 +278,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Init base class first (note: we're not calling SearchingState::Init() on purpose here)
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("AgitatedSearchingState initialised.\r");
 	assert(owner);
 
@@ -290,7 +289,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Ensure we are in the correct alert level
 	if ( !CheckAlertLevel(owner) )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s leaving AgitatedSearchingState\r",owner->GetName()); // grayman debug
 		return;
 	}
 
@@ -398,7 +396,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void AgitatedSearchingState::Think(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Think - %s thinking ...\r",owner->GetName()); // grayman debug
 	SearchingState::Think(owner);
 
 	// grayman debug - AgitatedSearchingState::CheckAlertLevel() is called

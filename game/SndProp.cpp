@@ -1399,10 +1399,6 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 			// the AI hears the sound
 			ai->HearSound( propParms, noise, origin );
 		}
-		else // grayman debug
-		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CsndProp::ProcessAI - %s sound too close to process\r",ai->GetName()); // grayman debug
-		}
 	}
 }
 

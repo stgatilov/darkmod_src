@@ -87,27 +87,24 @@ namespace ai
 #define MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE 200
 
 // Considered cause radius around a tactile event
-#define TACTILE_ALERT_RADIUS 10.0f
-#define TACTILE_SEARCH_VOLUME idVec3(100,100,100) // grayman #2816 - was (40,40,40) which makes them stand still
-
-// grayman debug - Considered cause radius around a "hit by moveable" event
-#define TACTILE_ALERT_HIT_BY_MOVEABLE_RADIUS 100.0f
-#define TACTILE_HIT_BY_MOVEABLE_SEARCH_VOLUME idVec3(150,150,100)
+//#define TACTILE_ALERT_RADIUS 10.0f // grayman debug - no longer used
+#define TACTILE_SEARCH_VOLUME idVec3(150,150,100) // grayman #2816 - was (40,40,40) which makes them stand still
 
 // Considered cause radius around a visual event
-#define VISUAL_ALERT_RADIUS 25.0f
+//#define VISUAL_ALERT_RADIUS 25.0f // grayman debug - no longer used
 #define VISUAL_SEARCH_VOLUME idVec3(100,100,100)
 
 // Considered cause radius around an audio event
-#define AUDIO_ALERT_RADIUS 50.0f
+//#define AUDIO_ALERT_RADIUS 50.0f // grayman debug - no longer used
 #define AUDIO_ALERT_FUZZINESS 100.0f
 #define AUDIO_SEARCH_VOLUME idVec3(300,300,200)
 
 #define ENEMY_DEAD_BARK_DELAY 1500	// grayman #2816
 
 // Area searched around last sighting after losing an enemy
-#define LOST_ENEMY_ALERT_RADIUS 200.0
-#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
+//#define LOST_ENEMY_ALERT_RADIUS 200.0 // grayman debug - no longer used
+#define LOST_ENEMY_SEARCH_VOLUME idVec3(300, 300, 100) // grayman debug - was (200,200,100)
+//#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
 
 // grayman #3424 - increase in evidence count per event type
 #define EVIDENCE_COUNT_INCREASE_ENEMY        3 // grayman #3515 - was 1
@@ -397,11 +394,8 @@ public:
 	// Source of the alert (enemy, weapon, blood, dead person, etc.)
 	EAlertType alertType;
 
-	// grayman debug - capture the previous alert type for certain situations
-	EAlertType prevAlertType;
-
 	// radius of alert causing stimulus (depends on the type and distance)
-	float alertRadius;
+	//float alertRadius; // grayman debug - no longer used
 
 	// The last time we had an incoming audio alert
 	int lastAudioAlertTime;

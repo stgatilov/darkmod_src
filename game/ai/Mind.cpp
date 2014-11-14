@@ -369,19 +369,12 @@ bool Mind::PerformCombatCheck()
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("COMBAT NOW!\r");
 		
 		// Spotted an enemy
-		memory.enemiesHaveBeenSeen = true;
+		owner->HasEvidence(E_EventTypeEnemy);
 
-		if (cv_ai_debug_transition_barks.GetBool())
-		{
-			gameLocal.Printf("%d: %s sees an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName());
-		}
-
-		memory.prevAlertType = memory.alertType; // grayman debug
 		memory.alertType = EAlertTypeEnemy;
 		idActor* enemy = owner->GetEnemy();
 
 		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Mind::PerformCombatCheck 4 - %s calling LogSuspiciousEvent(%d,[%s],'%s')\r",owner->GetName(),(int)E_EventTypeEnemy, enemyOrigin.ToString(),enemy ? enemy->GetName() : "NULL"); // grayman debug
 		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy ); // grayman #3424 // grayman #3848
 		memory.lastEnemyPos = enemyOrigin;
 		memory.posEnemySeen = enemyOrigin;	// grayman #2903

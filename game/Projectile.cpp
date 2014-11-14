@@ -744,7 +744,6 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		if( ent->IsType( idAI::Type ) )
 		{
 			idAI *alertee = static_cast<idAI *>(ent);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idProjectile::Collide - %s collided with %s\r",alertee->GetName(),GetName()); // grayman debug
 			alertee->TactileAlert( this );
 		}
 	}
@@ -881,7 +880,6 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 
 			if ( damageInflicted ) // grayman #2906 - only run the damage code if there's damage
 			{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_SetAlertLevel - %s calling Damage()\r",ent->GetName()); // grayman debug
 				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			}
 			ignore = ent;
@@ -907,9 +905,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		}
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_SetAlertLevel - calling Explode()\r",ent->GetName()); // grayman debug
 	Explode( collision, ignore );
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_SetAlertLevel - back from Explode()\r",ent->GetName()); // grayman debug
 
 	return true;
 }

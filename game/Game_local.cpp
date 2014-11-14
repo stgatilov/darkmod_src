@@ -6126,11 +6126,8 @@ void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 
 				if (light->IsBlend() || light->IsFog())
 				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light '%s' is a blend or fog light, and should be ignored\r",light->GetName()); // grayman debug
 					continue;
 				}
-
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light '%s' has radius %f\r",light->GetName(),light->GetRadius().LengthFast()); // grayman debug
 
 				// Only douse lit lights
 
@@ -6141,32 +6138,26 @@ void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 					// in ignoring the entity the light is bound to, if anything.
 
 					idEntity* ignoreMe = light;
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - setting ignoreMe to light '%s'\r",ignoreMe->GetName()); // grayman debug
 					idEntity* bindMaster = light->GetBindMaster();
 					if (bindMaster)
 					{
 						ignoreMe = bindMaster;
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - setting ignoreMe to light's bindMaster '%s'\r",ignoreMe->GetName()); // grayman debug
 					}
 
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - ignoreMe = '%s'\r",ignoreMe->GetName()); // grayman debug
 					// test LOS between origin of force and light origin
 
 					// Light center is not just the light origin. There's an offset called "light_center", and there's orientation.
 					idVec3 trueOrigin = light->GetPhysics()->GetOrigin() + light->GetPhysics()->GetAxis()*light->GetRenderLight()->lightCenter;
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - tracing from [%s] to [%s]\r",origin.ToString(),trueOrigin.ToString()); // grayman debug
 					trace_t result;
 					if ( clip.TracePoint(result, origin, trueOrigin, MASK_OPAQUE, ignoreMe) )
 					{
 						// didn't trace all the way to the point, so there's no LOS
 						idEntity* e = entities[result.c.entityNum];
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - no douse; stopped short by '%s'\r",e ? e->GetName():"NULL"); // grayman debug
 					}
 					else
 					{
 						// LOS exists
 
-						DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::RadiusDouse - light doused\r"); // grayman debug
 						light->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", light);
 					}
 				}
@@ -8063,10 +8054,8 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking logged event with type %d\r", (int)se.type); // grayman debug
 		if ( se.type == type ) // type of event
 		{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - type matched requested type\r"); // grayman debug
 			// grayman #3848 - must use separate booleans
 			bool locationMatch = true;
 			bool entityMatch   = true;
@@ -8074,7 +8063,6 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			// check location
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking location\r"); // grayman debug
 			if ( !location.Compare(idVec3(0,0,0)) )
 			{
 				// Allow for some variance in location. Two events of
@@ -8085,7 +8073,6 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				locationMatch = (distSqr <= 10000); // 100*100
 			}
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking entity\r"); // grayman debug
 			// check entity
 
 			if ( entity != NULL )
@@ -8096,7 +8083,6 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				}
 			}
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - checking timestamp\r"); // grayman debug
 			// grayman debug - check timestamp
 
 			if ( time > 0 )
@@ -8106,15 +8092,12 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				timeMatch = ( time == se.time);
 			}
 
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - locationMatch = %d, entityMatch = %d, timeMatch = %d\r",locationMatch,entityMatch,timeMatch); // grayman debug
 			if ( locationMatch && entityMatch && timeMatch ) // grayman debug
 			{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - found matching event\r"); // grayman debug
 				return i;
 			}
 		}
 	}
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent - couldn't find a matching event\r"); // grayman debug
 	return -1;
 }
 
@@ -8142,7 +8125,6 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 	}
 	else if ( se.type == E_EventTypeMisc ) // grayman debug
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - calling FindSuspiciousEvent(E_EventTypeMisc,[%s],'%s',%d)\r", se.location.ToString(), se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL",se.time); // grayman debug
 		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
 	}
 	else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
@@ -8160,7 +8142,6 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::LogSuspiciousEvent - %d suspicious events have been logged\r",gameLocal.m_suspiciousEvents.Num()); // grayman debug
 	return index;
 }
 

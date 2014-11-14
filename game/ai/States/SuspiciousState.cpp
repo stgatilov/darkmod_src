@@ -116,7 +116,6 @@ void SuspiciousState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SuspiciousState::Init - %s ...\r",owner->GetName()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("SuspiciousState initialised.\r");
 	assert(owner);
 
@@ -232,7 +231,6 @@ void SuspiciousState::Init(idAI* owner)
 		if ( gameLocal.clip.TracePoint(result, p1, p2, MASK_OPAQUE, owner) )
 		{
 			// grayman debug - test to make sure we hit the world, and not just another AI?
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SuspiciousState::Init - %s staring at %s, turning around\r",owner->GetName(),gameLocal.entities[result.c.entityNum]->GetName()); // grayman debug
 			// Hit something, so turn around.
 			owner->TurnToward(owner->GetCurrentYaw() + 180);
 		}

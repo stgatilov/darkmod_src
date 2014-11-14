@@ -3317,7 +3317,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 					  const char *damageDefName, const float damageScale, const int location,
 					  trace_t *collision ) 
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s inflictor = '%s', attacker = '%s'\r",GetName(),inflictor ? inflictor->GetName():"NULL", attacker ? attacker->GetName():"NULL"); // grayman debug
 	if (collision != NULL)
 	{
 		int bodID = BodyForClipModelId( collision->c.id );
@@ -3392,7 +3391,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		hitByMoveable = true;
 	}
 	
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s hitByMelee = %d, hitByMoveable = %d\r",GetName(),hitByMelee, hitByMoveable); // grayman debug
 	int damage;
 
 	// grayman #2816 - scale damage?
@@ -3421,7 +3419,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	// apply stealth damage multiplier - only active for derived AI class
 	damage *= StealthDamageMult();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s damage = %d\r",GetName(),damage); // grayman debug
 	// inform the attacker that they hit someone
 	attacker->DamageFeedback( this, inflictor, damage );
 
@@ -3539,7 +3536,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 
 		health -= damage; // ouch!!
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s received damage = %d\r",GetName(),damage); // grayman debug
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("Actor %s received damage %d at joint %d, corresponding to damage group %s\r", name.c_str(), damage, (int) location, GetDamageGroup(location) );
 		if ( ( lowHealthThreshold != -1 ) && ( health <= lowHealthThreshold ) )
 		{
@@ -3570,11 +3566,9 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 			if (IsType(idAI::Type))
 			{
 				idAI* ai = static_cast<idAI*>(this);
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s calling LogSuspiciousEvent(%d,[%s],NULL)\r",GetName(),(int)E_EventTypeMisc, GetPhysics()->GetOrigin().ToString()); // grayman debug
 				ai->GetMemory().currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, GetPhysics()->GetOrigin(), NULL );
 			}
 			*/
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Damage - %s calling Pain()\r",GetName()); // grayman debug
 			Pain( inflictor, attacker, damage, dir, location, damageDef );
 
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
@@ -3636,7 +3630,6 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 		return false;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain - %s inflictor = '%s', attacker = '%s'\r",GetName(),inflictor ? inflictor->GetName() : "NULL",attacker ? attacker->GetName() : "NULL"); // grayman debug
 	// grayman #2816 - no pain sounds or animation if knocked out
 
 	if ( IsKnockedOut() )
@@ -3647,7 +3640,6 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	// don't play pain sounds more than necessary
 	pain_debounce_time = gameLocal.time + pain_delay;
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain - %s play pain sound\r",GetName()); // grayman debug
 	if (damageDef != NULL && damageDef->FindKey("snd_damage") != NULL)
 	{
 		// The damage def defines a special damage sound, use that one
@@ -3671,13 +3663,11 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	}
 
 	if ( !allowPain || ( gameLocal.time < painTime ) ) {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain 1 - %s don't play a pain anim\r",GetName()); // grayman debug
 		// don't play a pain anim
 		return false;
 	}
 
 	if ( pain_threshold && ( damage < pain_threshold ) ) {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain 2 - %s don't play a pain anim\r",GetName()); // grayman debug
 		return false;
 	}
 
@@ -3716,7 +3706,6 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 		painAnim = "pain";
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain - %s define the pain anim '%s', to be played by PainState()\r",GetName(),painAnim.c_str()); // grayman debug
 	if ( g_debugDamage.GetBool() ) {
 		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ), 
 			damageGroup.c_str(), painAnim.c_str() );
@@ -5089,7 +5078,6 @@ void idActor::MarkEventAsSearched( int eventID )
 {
 	if ( eventID < 0 )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s trying to mark illegal event %d as 'searched'\r",GetName(),eventID); // grayman debug
 		return;
 	}
 
@@ -5104,30 +5092,10 @@ void idActor::MarkEventAsSearched( int eventID )
 	SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(eventID);
 	if (se->entity.GetEntity())
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::MarkEventAsSearched - %s turning off visual stim from %s\r",GetName(),se->entity.GetEntity()->GetName()); // grayman debug
 		se->entity.GetEntity()->IgnoreResponse(ST_VISUAL, this);
 
 		// mark the flags that HasSeenEvidence() uses
-
-		ai::Memory& memory = static_cast<idAI*>(this)->GetMemory();
-
-		switch(se->type)
-		{
-		case E_EventTypeEnemy:
-			memory.enemiesHaveBeenSeen = true;
-			break;
-		case E_EventTypeDeadPerson:
-			memory.deadPeopleHaveBeenFound = true;
-			break;
-		case E_EventTypeUnconsciousPerson:
-			memory.unconsciousPeopleHaveBeenFound = true;
-			break;
-		case E_EventTypeMissingItem:
-			memory.itemsHaveBeenStolen = true;
-			break;
-		default:
-			break;
-		}
+		static_cast<idAI*>(this)->HasEvidence(se->type);
 	}
 
 	// grayman debug - Do I know about this event?
@@ -5143,7 +5111,7 @@ void idActor::MarkEventAsSearched( int eventID )
 	}
 
 	// Didn't already know about this event. Since I'm
-	// marking it as searched, go ahead and add it to
+	// marking it as searched, add it to
 	// my list of known events.
 
 	// grayman debug
@@ -5158,7 +5126,6 @@ bool idActor::HasSearchedEvent( int eventID )
 {
 	if ( eventID < 0 )
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::HasSearchedEvent - %s asked to check illegal eventID %d\r",GetName(),eventID); // grayman debug
 		return false;
 	}
 
@@ -5269,7 +5236,6 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity )
 	se.entity = entity;
 	se.time = gameLocal.time; // grayman debug
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::LogSuspiciousEvent - %s calling LogSuspiciousEvent(%d,[%s],'%s',%d)\r",GetName(),(int)type, loc.ToString(), entity ? entity->GetName() : "NULL",gameLocal.time); // grayman debug
 	int index = gameLocal.LogSuspiciousEvent(se);
 	AddSuspiciousEvent(index); // I know about this event
 	return index;

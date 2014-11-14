@@ -61,23 +61,24 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 	}
 
-	// Read the animation set and interval from the owner's spawnarg
-	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
-
-	_idleAnimationInterval = 10000; // grayman debug - delete when done; just wanted to reduce the wait
+	// grayman debug - clear lists, just to be sure
+	_idleAnimations.Clear();
+	_idleAnimationsTorso.Clear();
+	_idleAnimationsSitting.Clear();
 
 	// grayman debug - can now do idle search/suspicious anims while in states 2, 3, or 4
 	if ( (owner->AI_AlertLevel >= owner->thresh_2) && (owner->AI_AlertLevel < owner->thresh_5) )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Suspicious or Searching\r",owner->GetName()); // grayman debug
 		// grayman debug - Read the idle anims to be used when suspicious or searching.
 		// These won't be run when the AI is actively searching (moving around), but
 		// will be run when they're guarding or observing.
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_searching"), _idleAnimations);
+
+		// Read the animation interval from the owner's spawnarg
+		_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_search_animations_interval", "-1"));
 	}
 	else // when idle in state 0
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::Init - %s ... Idle\r",owner->GetName()); // grayman debug
 		// Read the general-purpose animations first
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations"), _idleAnimations);
 	
@@ -86,6 +87,9 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 
 		// Now read the anims for sitting AI
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
+
+		// Read the animation interval from the owner's spawnarg
+		_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
 	}
 
 	if ( (_idleAnimationInterval > 0) && 
@@ -348,11 +352,8 @@ bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
 
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s ...\r",owner->GetName()); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s WaitState = '%s'\r",owner->GetName(),owner->WaitState()); // grayman debug
 	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman debug - let running anim finish
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("IdleAnimationTask::OnFinish - %s returning to idle state anims\r",owner->GetName()); // grayman debug
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
 		owner->SetWaitState("");
