@@ -313,6 +313,8 @@ typedef struct viewLight_s {
 	// allowing us to skip drawing the projected caps of shadows if we can't see the face
 	int						viewSeesShadowPlaneBits;
 
+	bool					noFogBoundary;				// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
+
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
 	idPlane					fogPlane;					// fog plane for backend fog volume rendering

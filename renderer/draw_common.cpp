@@ -1561,9 +1561,12 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 		return;
 	}
 	memset( &ds, 0, sizeof( ds ) );
-	ds.space = &backEnd.viewDef->worldSpace;
-	ds.geo = frustumTris;
-	ds.scissorRect = backEnd.viewDef->scissor;
+	if ( !backEnd.vLight->noFogBoundary ) // No need to create the drawsurf if we're not fogging the bounding box -- #3664
+	{
+		ds.space = &backEnd.viewDef->worldSpace;
+		ds.geo = frustumTris;
+		ds.scissorRect = backEnd.viewDef->scissor;
+	}
 
 	// find the current color and density of the fog
 	lightShader = backEnd.vLight->lightShader;
@@ -1641,9 +1644,12 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 
 	// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
 	// of depthfunc_equal
-	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
-	GL_Cull( CT_BACK_SIDED );
-	RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+	if ( !backEnd.vLight->noFogBoundary ) // Let mappers suppress fogging the bounding box -- SteveL #3664
+	{
+		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
+		GL_Cull( CT_BACK_SIDED );
+		RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
+	}
 	GL_Cull( CT_FRONT_SIDED );
 
 	GL_SelectTexture( 1 );

@@ -485,6 +485,7 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->falloffImage = light->falloffImage;
 	vLight->lightShader = light->lightShader;
 	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
+	vLight->noFogBoundary = light->parms.noFogBoundary; // #3664
 
 	// link the view light
 	vLight->next = tr.viewDef->viewLights;

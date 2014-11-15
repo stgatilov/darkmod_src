@@ -193,6 +193,9 @@ typedef struct renderLight_s {
 	const idMaterial *		shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
 	idSoundEmitter *		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
+
+	bool					noFogBoundary;		// Stops fogs drawing and fogging their bounding boxes -- SteveL #3664
+
 } renderLight_t;
 
 
