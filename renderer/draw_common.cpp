@@ -1642,10 +1642,10 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
 	RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BasicFog );
 
-	// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
-	// of depthfunc_equal
 	if ( !backEnd.vLight->noFogBoundary ) // Let mappers suppress fogging the bounding box -- SteveL #3664
 	{
+		// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
+		// of depthfunc_equal
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
 		GL_Cull( CT_BACK_SIDED );
 		RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
