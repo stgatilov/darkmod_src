@@ -145,8 +145,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			}
 			else if (moveType == MOVETYPE_SIT)
 			{
-				// AI is sitting, only use sitting animations on torso channel
-				AttemptToPlayAnim(owner, _idleAnimationsSitting, true); // TORSO only
+				AttemptToPlayAnim(owner, _idleAnimationsSitting, false); // Changed in #3914 to play on legs too instead of torso only
 			}
 			else
 			{
