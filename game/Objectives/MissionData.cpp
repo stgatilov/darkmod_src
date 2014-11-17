@@ -2610,7 +2610,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	
 	
 	// Obsttorte: Times saved
-	key = common->Translate( "#str_09000" );	// Times saved
+	key = common->Translate( "#str_02915" );	// Times saved
 	value = idStr(m_Stats.totalSaveCount-1);	// -1 due to final save
 	gui->SetStateString(prefix+idStr(index++), key+divider+value);
 
