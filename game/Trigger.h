@@ -270,6 +270,13 @@ public:
 	void				TouchEntities( void );
 
 private:
+	// Trigger touch improvements #3823, courtesy Tels
+	float				wait;
+	float				random;
+	float				delay;
+	float				random_delay;
+	int					nextTriggerTime;
+
 	idClipModel *		clipModel;
 
 	void				Event_Trigger( idEntity *activator );

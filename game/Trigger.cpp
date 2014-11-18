@@ -179,7 +179,7 @@ void idTrigger::Restore( idRestoreGame *savefile ) {
 	if ( funcname.Length() ) {
 		scriptFunction = gameLocal.program.FindFunction( funcname );
 		if ( scriptFunction == NULL ) {
-			gameLocal.Warning( "idTrigger_Multi '%s' at (%s) calls unknown function '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), funcname.c_str() );
+			gameLocal.Warning( "idTrigger '%s' at (%s) calls unknown function '%s'", name.c_str(), GetPhysics()->GetOrigin().ToString(0), funcname.c_str() );
 		}
 	} else {
 		scriptFunction = NULL;
@@ -264,7 +264,7 @@ idTrigger_Multi::idTrigger_Multi( void ) {
 	random = 0.0f;
 	delay = 0.0f;
 	random_delay = 0.0f;
-	nextTriggerTime = 0;
+	nextTriggerTime = 32;
 	removeItem = 0;
 	touchClient = false;
 	touchOther = false;
@@ -327,7 +327,7 @@ void idTrigger_Multi::Spawn( void ) {
 	spawnArgs.GetFloat( "random", "0", random );
 	spawnArgs.GetFloat( "delay", "0", delay );
 	spawnArgs.GetFloat( "random_delay", "0", random_delay );
-	
+
 	if ( random && ( random >= wait ) && ( wait >= 0 ) ) {
 		random = wait - 1;
 		gameLocal.Warning( "idTrigger_Multi '%s' at (%s) has random >= wait", name.c_str(), GetPhysics()->GetOrigin().ToString(0) );
@@ -357,7 +357,7 @@ void idTrigger_Multi::Spawn( void ) {
 		touchOther = false;
 	}
 
-	nextTriggerTime = 0;
+	nextTriggerTime = 32;
 
 	if ( spawnArgs.GetBool( "flashlight_trigger" ) ) {
 		GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );
@@ -402,6 +402,7 @@ void idTrigger_Multi::TriggerAction( idEntity *activator ) {
 	if ( wait >= 0 ) {
 		nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
 	} else {
+		// if wait is < 0, the trigger will trigger only once, then remove itself from the game
 		// we can't just remove (this) here, because this is a touch function
 		// called while looping through area links...
 		nextTriggerTime = gameLocal.time + 1;
@@ -1094,6 +1095,12 @@ idTrigger_Touch::idTrigger_Touch
 */
 idTrigger_Touch::idTrigger_Touch( void ) {
 	clipModel = NULL;
+	// Trigger touch improvements #3823, courtesy Tels
+	wait = 0.0f;
+	random = 0.0f;
+	delay = 0.0f;
+	random_delay = 0.0f;
+	nextTriggerTime = 32;
 }
 
 /*
@@ -1111,6 +1118,27 @@ void idTrigger_Touch::Spawn( void ) {
 	if ( spawnArgs.GetBool( "start_on" ) ) {
 		BecomeActive( TH_THINK );
 	}
+
+	// Tels #3823: default to 0 to emulate 2.02 (can probably be set safely to 0.16 to trigger every 10 frame)
+	spawnArgs.GetFloat( "wait", "0", wait );
+	spawnArgs.GetFloat( "random", "0", random );
+	spawnArgs.GetFloat( "delay", "0", delay );
+	spawnArgs.GetFloat( "random_delay", "0", random_delay );
+	
+	if ( random && ( random >= wait ) && ( wait >= 0 ) ) {
+		random = wait - 1;
+		gameLocal.Warning( "idTrigger_Touch '%s' at (%s) has random >= wait", name.c_str(), GetPhysics()->GetOrigin().ToString(0) );
+	}
+
+	if ( random_delay && ( random_delay >= delay ) && ( delay >= 0 ) ) {
+		random_delay = delay - 1;
+		gameLocal.Warning( "idTrigger_Touch '%s' at (%s) has random_delay >= delay", name.c_str(), GetPhysics()->GetOrigin().ToString(0) );
+	}
+
+	// Tels: Trigger should not fire during the first or second frame, otherwise they
+	//	 can trigger entities where the script object is not yet initialized,
+	//	 which will lead to endless loops or other inconsistencies.
+	nextTriggerTime = 32;
 }
 
 /*
@@ -1120,6 +1148,11 @@ idTrigger_Touch::Save
 */
 void idTrigger_Touch::Save( idSaveGame *savefile ) {
 	savefile->WriteClipModel( clipModel );
+	savefile->WriteFloat( wait );
+	savefile->WriteFloat( random );
+	savefile->WriteFloat( delay );
+	savefile->WriteFloat( random_delay );
+	savefile->WriteInt( nextTriggerTime );
 }
 
 /*
@@ -1129,6 +1162,11 @@ idTrigger_Touch::Restore
 */
 void idTrigger_Touch::Restore( idRestoreGame *savefile ) {
 	savefile->ReadClipModel( clipModel );
+	savefile->ReadFloat( wait );
+	savefile->ReadFloat( random );
+	savefile->ReadFloat( delay );
+	savefile->ReadFloat( random_delay );
+	savefile->ReadInt( nextTriggerTime );
 }
 
 /*
@@ -1140,10 +1178,33 @@ void idTrigger_Touch::TouchEntities( void ) {
 	int numClipModels, i;
 	idBounds bounds;
 	idClipModel *cm, *clipModelList[ MAX_GENTITIES ];
+	// Tels #3823: default is to call function(entity)
+	bool pass_self = false;
+	bool pass_activator = true;
+	int numParams = 1;
+	bool triggered = false;		// if wait < 0: only remove ourselves after we where triggered
 
 	if ( clipModel == NULL)
 	{
 		return;
+	}
+
+	if ( nextTriggerTime > gameLocal.time ) {
+		// can't retrigger until the wait is over
+		return;
+	}
+
+	pass_self	= spawnArgs.GetBool  ( "pass_self", "0");
+	pass_activator	= spawnArgs.GetBool  ( "pass_activator", "1");
+	if (pass_self && pass_activator) { numParams = 2; }
+
+	if ( scriptFunction != NULL) {
+		if ( scriptFunction->type->NumParameters() != numParams ) {
+			gameLocal.Error( "Function '%s' has the wrong number of parameters for function call from '%s'", scriptFunction->Name(), name.c_str() );
+		}
+//		if ( !ent->scriptObject.GetTypeDef()->Inherits( func->type->GetParmType( 0 ) ) ) {
+//			gameLocal.Error( "Function '%s' on entity '%s' is the wrong type for function call from '%s'", funcName, ent->name.c_str(), name.c_str() );
+//		}
 	}
 
 	bounds.FromTransformedBounds( clipModel->GetBounds(), clipModel->GetOrigin(), clipModel->GetAxis() );
@@ -1167,13 +1228,58 @@ void idTrigger_Touch::TouchEntities( void ) {
 			continue;
 		}
 
+		// Tels: TODO: implement "activate_targets" "1" and "0", and if 0, skip the next step
 		ActivateTargets( entity );
+		triggered = true;
 
 		if (scriptFunction != NULL)
 		{
 			idThread *thread = new idThread();
-			thread->CallFunction( entity, scriptFunction, false );
-			thread->DelayedStart( 0 );
+
+			/*
+			Tels #3823: implement "pass_self" and "pass_activator"
+			If "pass_self" is true, the first argument of the called function is the
+			trigger entity. So you know which trigger was touched.
+
+			If "pass_activator" is true, the first argument of the called function
+			is the entity that touched the trigger. This is the default.
+
+			If "pass_self" and "pass_activator" are true, then the order of arguments 
+			is first "trigger", then as second argument "activator" (entity).
+
+			Note that the method you want to call needs to have exactly the number
+			of arguments, e.g. 0 (pass_self and pass_activator false), 1 (pass_self
+			or pass_activator true) or 2 (both are true).
+			===============================================================================
+			*/
+
+			// TODO: support "event" (this code here always calls a global function)
+
+			DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Starting call from trigger %s for target #%i\r", name.c_str(), i);
+			if (pass_self && !pass_activator) {
+				thread->CallFunctionArgs( scriptFunction, false, "e", this );
+			}
+			if (!pass_self && pass_activator) {
+				thread->CallFunction( entity, scriptFunction, false );
+			}
+			if (pass_self && pass_activator) {
+				thread->CallFunctionArgs( scriptFunction, false, "ee", this, entity );
+			}
+			thread->DelayedStart( SEC2MS( delay + random_delay * gameLocal.random.CRandomFloat() ) );
+		}
+	}
+
+	if ( wait > 0 ) {
+		nextTriggerTime = gameLocal.time + SEC2MS( wait + random * gameLocal.random.CRandomFloat() );
+	}
+	// if wait is 0, the trigger will trigger each frame, but avoid triggering twice in the same frame
+	else {
+		nextTriggerTime = gameLocal.time + 1;
+		// if wait is < 0, the trigger will trigger only once, then remove itself from the game
+		// we can't just remove (this) here, because this is a touch function
+		// called while looping through area links...
+		if (wait < 0 && triggered) {
+			PostEventMS( &EV_Remove, 0 );
 		}
 	}
 }
