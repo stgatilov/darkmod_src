@@ -542,7 +542,7 @@ public:
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?
 
 	int combatState;				// grayman #3507 - use when returning to Combat
-	bool movingUpToCombat;			// grayman debug
+	bool leaveAlertState;			// grayman debug
 
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;

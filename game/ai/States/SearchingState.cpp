@@ -129,7 +129,12 @@ void SearchingState::Init(idAI* owner)
 
 	if ( owner->AlertIndexIncreased() || memory.mandatory ) // grayman #3331
 	{
-		StartNewHidingSpotSearch(owner); // grayman debug - AI gets his assignment
+		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
+		{
+			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
+			owner->GetMind()->EndState();
+			return;
+		}
 	}
 
 	if ( owner->AlertIndexIncreased() )
@@ -216,7 +221,7 @@ void SearchingState::Init(idAI* owner)
 			}
 		}
 	}
-	else if ( (memory.alertType == EAlertTypeEnemy) || (memory.alertType == EAlertTypeFailedKO))
+	else if ((memory.alertType == EAlertTypeEnemy) || (memory.alertType == EAlertTypeFailedKO))
 	{
 		// descending alert level
 		// reduce the alert type, so we can react to other alert types (such as a dead person)
@@ -277,14 +282,6 @@ void SearchingState::Think(idAI* owner)
 	// Ensure we are in the correct alert level
 	if (!CheckAlertLevel(owner))
 	{
-		// grayman debug - since AgitatedSearchingState::Think calls SearchingState::Think,
-		// when the former calls CheckAlertLevel(), it calls the AgitatedSearchingState version.
-		// If that returns a value of 'false', it comes into this block of code. If we simply
-		// return from here to ASS::Think(), which doesn't check for true/false, we'd continue
-		// on with whatever code follows the CheckAlertLevel() call. We don't want that to
-		// happen, so we'll make SearchingState::Think return the true/false to AgitatedSearchingState::Think,
-		// and let that method immediately bail out when it receives a 'false' result.
-		owner->GetMind()->EndState(); // grayman debug
 		return;
 	}
 
@@ -348,6 +345,57 @@ void SearchingState::Think(idAI* owner)
 
 	if (search && assignment)
 	{
+		// grayman debug - delete when done
+		idVec4 color(1,1,1,1);
+		switch (search->_searchID)
+		{
+		case -1:
+			color = colorWhite;
+			break;
+		case 0:
+			color = colorRed;
+			break;
+		case 1:
+			color = colorGreen;
+			break;
+		case 2:
+			color = colorBlue;
+			break;
+		case 3:
+			color = colorYellow;
+			break;
+		case 4:
+			color = colorMagenta;
+			break;
+		case 5:
+			color = colorCyan;
+			break;
+		case 6:
+			color = colorOrange;
+			break;
+		case 7:
+			color = colorPurple;
+			break;
+		case 8:
+			color = colorPink;
+			break;
+		case 9:
+			color = colorBrown;
+			break;
+		case 10:
+			color = colorLtGrey;
+			break;
+		case 11:
+			color = colorMdGrey;
+			break;
+		default:
+		case 12:
+			color = colorDkGrey;
+			break;
+		}
+		gameRenderWorld->DebugLine(color,owner->GetPhysics()->GetOrigin(),search->_origin,60);
+		// grayman debug - end
+
 		// Prepare the hiding spots if they're going to be needed.
 
 		if (search->_assignmentFlags & SEARCH_SEARCH)
@@ -734,7 +782,7 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* 
 
 bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 {
-	int newSearchID = gameLocal.m_searchManager->StartNewHidingSpotSearch(owner);
+	int newSearchID = gameLocal.m_searchManager->ObtainSearchID(owner);
 	if (newSearchID < 0)
 	{
 		return false;
@@ -747,78 +795,80 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
 	}
 
-	if (assigned)
+	if (!assigned)
 	{
-		// Clear ai flags
-		ai::Memory& memory = owner->GetMemory();
-		memory.restartSearchForHidingSpots = false;
-		memory.noMoreHidingSpots = false;
-		memory.mandatory = false; // grayman #3331
+		return false;
+	}
 
-		// Clear all the ongoing tasks
-		owner->senseSubsystem->ClearTasks();
-		//owner->actionSubsystem->ClearTasks(); // grayman debug
-		owner->movementSubsystem->ClearTasks();
+	// Clear ai flags
+	ai::Memory& memory = owner->GetMemory();
+	memory.restartSearchForHidingSpots = false;
+	memory.noMoreHidingSpots = false;
+	memory.mandatory = false; // grayman #3331
 
-		// Stop moving
-		owner->StopMove(MOVE_STATUS_DONE);
-		memory.StopReacting(); // grayman #3559
+	// Clear all the ongoing tasks
+	owner->senseSubsystem->ClearTasks();
+	//owner->actionSubsystem->ClearTasks(); // grayman debug
+	owner->movementSubsystem->ClearTasks();
 
-		owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
+	// Stop moving
+	owner->StopMove(MOVE_STATUS_DONE);
+	memory.StopReacting(); // grayman #3559
 
-		memory.lastAlertPosSearched = memory.alertPos; // grayman #3492
+	owner->MarkEventAsSearched(memory.currentSearchEventID); // grayman #3424
 
-		// greebo: Remember the initial alert position
-		memory.alertSearchCenter = memory.alertPos;
+	memory.lastAlertPosSearched = memory.alertPos; // grayman #3492
 
-		// If we are supposed to search the stimulus location do that instead 
-		// of just standing around while the search completes
-		if (memory.stimulusLocationItselfShouldBeSearched)
-		{
-			// The InvestigateSpotTask will take this point as first hiding spot
-			// It's okay for the AI to move toward the alert position, even if he's
-			// later assigned to be a guard.
-			memory.currentSearchSpot = memory.alertPos;
+	// greebo: Remember the initial alert position
+	memory.alertSearchCenter = memory.alertPos;
 
-			// Delegate the spot investigation to a new task, this will take the correct action.
-			// grayman debug - switch from action to movement
-			owner->movementSubsystem->PushTask(
-				TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
-			);
-			//owner->actionSubsystem->PushTask(
-			//	TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
-			//);
+	// If we are supposed to search the stimulus location do that instead 
+	// of just standing around while the search completes
+	if (memory.stimulusLocationItselfShouldBeSearched)
+	{
+		// The InvestigateSpotTask will take this point as first hiding spot
+		// It's okay for the AI to move toward the alert position, even if he's
+		// later assigned to be a guard.
+		memory.currentSearchSpot = memory.alertPos;
 
-			// Prevent overwriting this hiding spot in the upcoming Think() call
-			memory.hidingSpotInvestigationInProgress = true;
+		// Delegate the spot investigation to a new task, this will take the correct action.
+		// grayman debug - switch from action to movement
+		owner->movementSubsystem->PushTask(
+			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
+		);
+		//owner->actionSubsystem->PushTask(
+		//	TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
+		//);
 
-			// Reset flag
-			memory.investigateStimulusLocationClosely = false;
-		}
-		else
-		{
-			// AI is not moving, wait for spot search to complete
-			memory.hidingSpotInvestigationInProgress = false;
-			memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-		}
+		// Prevent overwriting this hiding spot in the upcoming Think() call
+		memory.hidingSpotInvestigationInProgress = true;
 
-		// Hiding spot test now started
-		memory.hidingSpotSearchDone = false;
-		memory.hidingSpotTestStarted = true;
+		// Reset flag
+		memory.investigateStimulusLocationClosely = false;
+	}
+	else
+	{
+		// AI is not moving, wait for spot search to complete
+		memory.hidingSpotInvestigationInProgress = false;
+		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+	}
 
-		Search *search = gameLocal.m_searchManager->GetSearch(newSearchID);
+	// Hiding spot test now started
+	memory.hidingSpotSearchDone = false;
+	memory.hidingSpotTestStarted = true;
 
-		// Start search
-		// TODO: Is the eye position necessary? Since the hiding spot list can be
-		// used by several AI, why is the first AI's eye position relevant
-		// to the other AIs' eye positions?
-		int res = gameLocal.m_searchManager->StartSearchForHidingSpotsWithExclusionArea(search,owner->GetEyePosition(),255, owner);
+	Search *search = gameLocal.m_searchManager->GetSearch(newSearchID);
 
-		if (res == 0)
-		{
-			// Search completed on first round
-			memory.hidingSpotSearchDone = true;
-		}
+	// Start search
+	// TODO: Is the eye position necessary? Since the hiding spot list can be
+	// used by several AI, why is the first AI's eye position relevant
+	// to the other AIs' eye positions?
+	int res = gameLocal.m_searchManager->StartSearchForHidingSpotsWithExclusionArea(search,owner->GetEyePosition(),255, owner);
+
+	if (res == 0)
+	{
+		// Search completed on first round
+		memory.hidingSpotSearchDone = true;
 	}
 
 	return true;

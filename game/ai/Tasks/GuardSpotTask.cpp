@@ -153,8 +153,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 	
-	//gameRenderWorld->DebugLine( colorPink, owner->GetEyePosition(), _guardSpot, 50); // grayman debug
-
 	if (_exitTime > 0)
 	{
 		if (gameLocal.time >= _exitTime) // grayman debug
@@ -192,7 +190,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							searcher, owner, // from searcher to owner
 							NULL,
 							vec3_zero,
-							0 // grayman #3438
+							-1 // grayman #3438
 						));
 
 						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
@@ -340,6 +338,23 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
 						}
 					}
+
+					if (owner->HasSeenEvidence())
+					{
+						// Draw weapon, if we haven't already
+						if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
+						{
+							if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
+							{
+								owner->DrawWeapon(COMBAT_RANGED);
+							}
+							else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
+							{
+								owner->DrawWeapon(COMBAT_MELEE);
+							}
+						}
+					}
+
 					_guardSpotState = EStateStanding;
 				}
 				else

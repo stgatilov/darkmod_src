@@ -610,6 +610,7 @@ public:
 	void					AddWarningEvent( idActor* other, int eventID );
 	bool					HasBeenWarned( idActor* other, int eventID );
 	bool					HasSearchedEvent( int eventID );
+	bool					HasSearchedEvent( int eventID, EventType type, idVec3 location ); // grayman debug - TODO: apply where applicable
 	void					MarkEventAsSearched( int eventID );
 
 	/**

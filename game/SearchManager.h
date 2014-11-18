@@ -129,10 +129,8 @@ typedef enum
 
 class CSearchManager
 {
-	idList<Search>  _searches;      // A list of all active searches in the mission
-	int				uniqueSearchID; // the next unique id to assign to a new search
-	int				searchCount;	// The current number of active searches. When it returns
-									// to 0, _searches gets cleared.
+	idList<Search*> _searches;       // A list of all active searches in the mission
+	int				_uniqueSearchID; // the next unique id to assign to a new search
 
 public:
 	CSearchManager();  // Constructor
@@ -140,11 +138,11 @@ public:
 
 	void		Clear();
 
-	Search*		CreateSearch(idAI* ai);
+	Search*		StartNewSearch(idAI* ai);
 
 	void		RandomizeHidingSpotList(Search* search);
 
-	int			StartNewHidingSpotSearch(idAI* ai); // returns searchID for the AI to use
+	int			ObtainSearchID(idAI* ai); // returns searchID for the AI to use
 
 	bool		GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
 
@@ -160,6 +158,7 @@ public:
 
 	Assignment*	GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
+	Search*		CreateSearch(int searchID); // grayman debug   
 	/*!
 	* This method finds hiding spots in the bounds given by two vectors, and also excludes
 	* any points contained within a different pair of vectors.
@@ -221,11 +220,11 @@ public:
 	void		Save( idSaveGame *savefile );
 
 	void		Restore( idRestoreGame *savefile );
-/*
-	void		DebugPrint(Search* search); // Print the current hiding spots and assignments
-	void		DebugPrintSearch(Search* search); // Print the contents of a search
-	void		DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
-*/
+
+//	void		DebugPrint(Search* search); // Print the current hiding spots and assignments
+//	void		DebugPrintSearch(Search* search); // Print the contents of a search
+//	void		DebugPrintAssignment(Assignment* assignment); // Print the contents of a search
+
 
 	// Accessor to the singleton instance of this class
 	static		CSearchManager* Instance();

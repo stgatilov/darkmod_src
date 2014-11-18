@@ -35,8 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-
 // Constructor
 CSearchManager::CSearchManager()
 {
-	uniqueSearchID = 1; // the next unique id to assign to a new search
-	searchCount = 0;
+	_uniqueSearchID = 1; // the next unique id to assign to a new search
 }
 
 CSearchManager::~CSearchManager()
@@ -48,17 +47,18 @@ void CSearchManager::Clear()
 {
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-		Search *search = &_searches[i];
+		Search *search = _searches[i];
 		destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
 		search->_assignments.Clear();
+		delete _searches[i];
+		_searches[i] = NULL;
 	}
 
 	_searches.Clear();
-	searchCount = 0;
-	uniqueSearchID = 1;
+	_uniqueSearchID = 1;
 }
 
-Search* CSearchManager::CreateSearch(idAI* ai)
+Search* CSearchManager::StartNewSearch(idAI* ai)
 {
 	ai::Memory& memory = ai->GetMemory();
 
@@ -81,12 +81,9 @@ Search* CSearchManager::CreateSearch(idAI* ai)
 
 	AdjustSearchLimits(searchBounds);
 
-	Search newSearch;
-	Search *search = &newSearch;
+	Search* search = CreateSearch(_uniqueSearchID++);
 
 	search->_hidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-	search->_searchID = uniqueSearchID++;
-	searchCount++; // goes up and down as searches are created and destroyed
 	search->_origin = searchPoint;  // center of search area, location of alert stimulus
 	search->_limits = searchBounds; // boundary of the search
 	search->_exclusion_limits = searchExclusionBounds; // exclusion boundary of the search
@@ -159,17 +156,16 @@ Search* CSearchManager::CreateSearch(idAI* ai)
 	}
 
 	search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
-
 	//DebugPrintSearch(search);
 
 	// Add search to list
 
-	_searches.Append(*search);
+	//_searches.Append(*search);
 
 	return search;
 }
 
-int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
+int CSearchManager::ObtainSearchID(idAI* ai)
 {
 	// The AI wants to start a new hiding spot search.
 
@@ -193,7 +189,7 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 
 	int searchID = -1;
 
-	// See if there's a search underway for the provided memory.currentSearchEventID
+	// See if there's a search underway for the provided memory.currentSearchEventID.
 	// grayman debug - TODO: there still might be a problem here. Multiple events in close proximity
 	// will cause multiple searches in the same area. Example: Gassing N AI with one arrow should
 	// cause 1 search, not N. The only saving grace is that as each KO'ed body stims an AI, the
@@ -204,41 +200,43 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 	{
 		searchID = search->_searchID;
 	}
-
-	idVec3 searchPoint = memory.alertPos;
-
-	if (searchID <= 0)
+	else // no search yet
 	{
-		if (searchPoint.Compare(idVec3(0,0,0)) || searchPoint.Compare(idVec3(idMath::INFINITY,idMath::INFINITY,idMath::INFINITY)))
+		// See if there's a search at or near the search location using the correct event type.
+
+		idVec3 searchPoint = memory.alertPos;
+		bool searchPointIsValid = (!searchPoint.Compare(idVec3(0,0,0)) && (searchPoint.x != idMath::INFINITY));
+		SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(memory.currentSearchEventID);
+		if ((se == NULL) || !searchPointIsValid)
 		{
-			// No data to start a search, so drop back to Suspicious
+			// Drop the ai's alert level
 			ai->SetAlertLevel(ai->thresh_3 - 0.1);
+			memory.currentSearchEventID = -1;
 			return -1;
 		}
+
+		EventType eventType = se->type;
+		search = GetSearchAtLocation(eventType,searchPoint);
+		if (search)
+		{
+			if ( ai->HasSearchedEvent(search->_eventID) )
+			{
+				return -1; // has already searched this event, abort request
+			}
+			searchID = search->_searchID;
+		}
 	}
+
+	// We either have an existing search to join, or none, which means we have to create a new one.
 
 	// kill any investigation/guard/milling/observing tasks
 	memory.stopHidingSpotInvestigation = true;
 	memory.stopGuarding = true;
 	memory.stopMilling = true;
 
-	// If there's no existing search that ai can join based on event id,
-	// see if there's one at or near the search location using the correct event type.
-
-	EventType eventType = gameLocal.FindSuspiciousEvent(memory.currentSearchEventID)->type;
-
-	if (searchID <= 0)
-	{
-		search = GetSearchAtLocation(eventType,searchPoint);
-		if (search)
-		{
-			searchID = search->_searchID;
-		}
-	}
-
 	// If we found an existing search, we don't need to start
 	// a new one. Just copy some data from the existing search
-	// to the ai's memory.
+	// to the ai's memory, and we'll join the search momentarily.
 
 	if (searchID > 0)
 	{
@@ -252,7 +250,7 @@ int CSearchManager::StartNewHidingSpotSearch(idAI* ai)
 
 	// no existing search, so start a new one
 
-	search = CreateSearch(ai);
+	search = StartNewSearch(ai);
 
 	return search->_searchID;
 }
@@ -304,7 +302,7 @@ Search* CSearchManager::GetSearch(int searchID) // returns a pointer to the requ
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-		Search *search = &_searches[i];
+		Search *search = _searches[i];
 		if ( ( search->_searchID > 0 ) && ( search->_searchID == searchID) )
 		{
 			return search;
@@ -323,7 +321,7 @@ Search* CSearchManager::GetSearchWithEventID(int eventID)
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-		Search *search = &_searches[i];
+		Search *search = _searches[i];
 		if ( ( search->_searchID > 0 ) && ( search->_eventID == eventID) )
 		{
 			return search;
@@ -339,7 +337,7 @@ Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location) // 
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
-		Search *search = &_searches[i];
+		Search *search = _searches[i];
 		if ( search->_searchID > 0 )
 		{
 			EventType eventType = gameLocal.FindSuspiciousEvent(search->_eventID)->type;
@@ -831,8 +829,8 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		return;
 	}
 
-	smRole_t role = E_ROLE_NONE;
-	int indexToAssign = -1;
+	smRole_t vacatedRole = E_ROLE_NONE;
+	int vacatedIndex = -1;
 
 	bool assignmentFound = false;
 	for (int i = 0 ; i < numAssignments ; i++)
@@ -841,8 +839,8 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		if (assignment->_searcher == ai)
 		{
 			assignmentFound = true;
-			role = assignment->_searcherRole; // remember this if we need to backfill below
-			indexToAssign = i; // remember this if we need to backfill below
+			vacatedRole = assignment->_searcherRole; // remember this if we need to backfill below
+			vacatedIndex = i; // remember this if we need to backfill below
 			assignment->_searcher = NULL; // deactivate the assignment
 			search->_searcherCount--;
 			break;
@@ -854,27 +852,21 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		return;
 	}
 
-	// If there are no searchers remaining in this search, destroy it
+	// If there are no searchers remaining in this search, recycle it
 
 	if (search->_searcherCount == 0)
 	{
 		destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
 		search->_assignments.Clear();
 		search->_searchID = -1;
-
-		searchCount--;
-		if (searchCount <= 0)
-		{
-			_searches.Clear();
-			search = NULL;
-		}
 	}
 	else
 	{
 		// If the abandoned assignment was for an active searcher,
 		// backfill with someone else if available. Only backfill if
 		// there are no active searchers, otherwise things start to
-		// get a bit chaotic.
+		// get a bit chaotic. Only backfill with searchers whose
+		// alert level is above thresh_3.
 
 		int activeSearcherCount = 0;
 		for ( int j = 0 ; j < 2 ; j++ ) // max of 2 active searchers
@@ -886,7 +878,7 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 			}
 		}
 
-		if ( ( role == E_ROLE_SEARCHER ) && ( activeSearcherCount == 0 ) )
+		if ( ( vacatedRole == E_ROLE_SEARCHER ) && ( activeSearcherCount == 0 ) )
 		{
 			for (int i = 0 ; i < numAssignments ; i++)
 			{
@@ -897,21 +889,22 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 					// only backfill with guards and observers
 					if ( (assignment->_searcherRole == E_ROLE_GUARD) || (assignment->_searcherRole == E_ROLE_OBSERVER) )
 					{
-						search->_assignments[indexToAssign]._searcher = searcher; // reactivate the deactivated assignment
-						assignment->_searcher = NULL; // deactivate the old assignment
-
-						ai::Memory& memory = searcher->GetMemory();
-						if (search->_assignmentFlags & SEARCH_SEARCHER_MILL)
+						// only backfill with someone whose alert level is Searching or Agitated Searching
+						if (searcher->AI_AlertLevel >= searcher->thresh_3)
 						{
-							memory.shouldMill = true;
+							search->_assignments[vacatedIndex]._searcher = searcher; // reactivate the deactivated assignment
+							assignment->_searcher = NULL; // deactivate the old assignment
+
+							ai::Memory& memory = searcher->GetMemory();
+							memory.shouldMill = false; // don't bother milling
+
+							// stop whatever they were doing
+							memory.stopHidingSpotInvestigation = true;
+							memory.stopGuarding = true;
+							memory.stopMilling = true;
+
+							break;
 						}
-
-						// stop whatever they were doing
-						memory.stopHidingSpotInvestigation = true;
-						memory.stopGuarding = true;
-						memory.stopMilling = true;
-
-						break;
 					}
 				}
 			}
@@ -1147,51 +1140,50 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 
 void CSearchManager::Save(idSaveGame* savefile)
 {
-	savefile->WriteInt(uniqueSearchID);
-	savefile->WriteInt(searchCount);
+	savefile->WriteInt(_uniqueSearchID);
 
 	// save searches
 	int numSearches = _searches.Num();
 	savefile->WriteInt(numSearches);
 	for (int i = 0 ; i < numSearches ; i++)
 	{
-		Search& search = _searches[i];
+		Search* search = _searches[i];
 
-		savefile->WriteInt(search._searchID);
-		savefile->WriteInt(search._eventID);
-		savefile->WriteInt(search._hidingSpotSearchHandle);
-		savefile->WriteVec3(search._origin);
-		savefile->WriteBounds(search._limits);
-		savefile->WriteBounds(search._exclusion_limits);
-		savefile->WriteFloat(search._outerRadius);
-		savefile->WriteFloat(search._referenceAlertLevel);
-		search._hidingSpots.Save(savefile);
-		savefile->WriteBool(search._hidingSpotsReady);
+		savefile->WriteInt(search->_searchID);
+		savefile->WriteInt(search->_eventID);
+		savefile->WriteInt(search->_hidingSpotSearchHandle);
+		savefile->WriteVec3(search->_origin);
+		savefile->WriteBounds(search->_limits);
+		savefile->WriteBounds(search->_exclusion_limits);
+		savefile->WriteFloat(search->_outerRadius);
+		savefile->WriteFloat(search->_referenceAlertLevel);
+		search->_hidingSpots.Save(savefile);
+		savefile->WriteBool(search->_hidingSpotsReady);
 
-		int num = search._hidingSpotIndexes.size();
+		int num = search->_hidingSpotIndexes.size();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			savefile->WriteInt(search._hidingSpotIndexes[j]);
+			savefile->WriteInt(search->_hidingSpotIndexes[j]);
 		}
 
-		num = search._guardSpots.Num();
+		num = search->_guardSpots.Num();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			savefile->WriteVec4(search._guardSpots[j]);
+			savefile->WriteVec4(search->_guardSpots[j]);
 		}
 
-		savefile->WriteBool(search._guardSpotsReady);
-		savefile->WriteUnsignedInt(search._assignmentFlags);
-		savefile->WriteInt(search._searcherCount);
+		savefile->WriteBool(search->_guardSpotsReady);
+		savefile->WriteUnsignedInt(search->_assignmentFlags);
+		savefile->WriteInt(search->_searcherCount);
 
 		// save assignments
-		num = search._assignments.Num();
+		num = search->_assignments.Num();
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			Assignment& assignment = search._assignments[j];
+			Assignment& assignment = search->_assignments[j];
 
 			savefile->WriteVec3(assignment._origin);
 			savefile->WriteFloat(assignment._outerRadius);
@@ -1203,63 +1195,60 @@ void CSearchManager::Save(idSaveGame* savefile)
 			//DebugPrintAssignment(&assignment);
 		}
 
-		//DebugPrintSearch(&search);
+		//DebugPrintSearch(search);
 	}
 }
 
 void CSearchManager::Restore(idRestoreGame* savefile)
 {
-	savefile->ReadInt(uniqueSearchID);
-	savefile->ReadInt(searchCount);
+	savefile->ReadInt(_uniqueSearchID);
 
-	// restore searches
 	_searches.Clear();
 	int numSearches;
 	savefile->ReadInt(numSearches);
-	_searches.SetNum(numSearches);
 	for (int i = 0 ; i < numSearches ; i++)
 	{
-		Search& search = _searches[i];
+		Search* search = new Search;
 
-		savefile->ReadInt(search._searchID);
-		savefile->ReadInt(search._eventID);
-		savefile->ReadInt(search._hidingSpotSearchHandle);
-		savefile->ReadVec3(search._origin);
-		savefile->ReadBounds(search._limits);
-		savefile->ReadBounds(search._exclusion_limits);
-		savefile->ReadFloat(search._outerRadius);
-		savefile->ReadFloat(search._referenceAlertLevel);
-		search._hidingSpots.Restore(savefile);
-		savefile->ReadBool(search._hidingSpotsReady);
+		savefile->ReadInt(search->_searchID);
+		savefile->ReadInt(search->_eventID);
+		savefile->ReadInt(search->_hidingSpotSearchHandle);
+		savefile->ReadVec3(search->_origin);
+		savefile->ReadBounds(search->_limits);
+		savefile->ReadBounds(search->_exclusion_limits);
+		savefile->ReadFloat(search->_outerRadius);
+		savefile->ReadFloat(search->_referenceAlertLevel);
+		search->_hidingSpots.Restore(savefile);
+		savefile->ReadBool(search->_hidingSpotsReady);
 		int num;
 		savefile->ReadInt(num);
-		search._hidingSpotIndexes.clear();
+		search->_hidingSpotIndexes.clear();
 		for ( int j = 0 ; j < num ; j++ )
 		{
 			int n;
 			savefile->ReadInt(n);
-			search._hidingSpotIndexes.push_back(n);
+			search->_hidingSpotIndexes.push_back(n);
 		}
 
 		savefile->ReadInt(num);
-		search._guardSpots.SetGranularity(1);
-		search._guardSpots.SetNum(num);
+		search->_guardSpots.SetGranularity(1);
+		search->_guardSpots.SetNum(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{
-			savefile->ReadVec4(search._guardSpots[j]);
+			savefile->ReadVec4(search->_guardSpots[j]);
 		}
 
-		savefile->ReadBool(search._guardSpotsReady);
-		savefile->ReadUnsignedInt(search._assignmentFlags);
-		savefile->ReadInt(search._searcherCount);
+		savefile->ReadBool(search->_guardSpotsReady);
+		savefile->ReadUnsignedInt(search->_assignmentFlags);
+		savefile->ReadInt(search->_searcherCount);
 
 		// restore assignments
-		search._assignments.Clear();
+		search->_assignments.Clear();
 		savefile->ReadInt(num);
-		search._assignments.SetNum(num);
+		search->_assignments.SetNum(num);
 		for (int j = 0 ; j < num ; j++)
 		{
-			Assignment& assignment = search._assignments[j];
+			Assignment& assignment = search->_assignments[j];
 
 			savefile->ReadVec3(assignment._origin);
 			savefile->ReadFloat(assignment._outerRadius);
@@ -1274,17 +1263,18 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 			//DebugPrintAssignment(&assignment);
 		}
 
-		//DebugPrintSearch(&search);
-		//DebugPrint(&search);
+		_searches.Append(search);
+
+		//DebugPrintSearch(search);
+		//DebugPrint(search);
 	}
 }
-
 /*
 // prints hiding spots
 void CSearchManager::DebugPrint(Search* search)
 {
 	int numSpots = search->_hidingSpots.getNumSpots();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Search has %d hiding spots\r",numSpots); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Search %d has %d hiding spots\r",search->_searchID,numSpots); // grayman debug
 	for ( int i = 0 ; i < numSpots ; i++ )
 	{
 		idVec3 p;
@@ -1304,7 +1294,8 @@ void CSearchManager::DebugPrintSearch(Search* search)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("============== Search ==============\r");
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("_hidingSpotSearchHandle = %d\r",search->_hidingSpotSearchHandle);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("              _searchID = %d\r",search->_searchID);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               _eventID = %d (type %d)\r",search->_eventID,(int)gameLocal.FindSuspiciousEvent(search->_eventID)->type);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               _eventID = %d\r",search->_eventID);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("             event type = %d\r",(int)gameLocal.FindSuspiciousEvent(search->_eventID)->type);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _origin = [%s]\r",search->_origin.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("                _limits = [%s]\r",search->_limits.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      _exclusion_limits = [%s]\r",search->_exclusion_limits.ToString());
@@ -1350,6 +1341,34 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 
 	// No hiding spots
 	search->_hidingSpots.clear();
+}
+
+
+// grayman debug - Are there any searches on the search list that can be recycled?
+// If so, recycle one. Otherwise, create a new one.
+
+Search* CSearchManager::CreateSearch(int searchID)   
+{
+	Search *search = NULL;
+
+	for ( int i = 0 ; i < _searches.Num() ; i++ )
+	{
+		Search *candidateSearch = _searches[i];
+		if (candidateSearch->_searchID == -1)
+		{
+			search = candidateSearch;
+			break;
+		}
+	}
+
+	if (search == NULL)
+	{
+		search = new Search;
+		_searches.Append(search);
+	}
+
+	search->_searchID = searchID;
+	return search;
 }
 
 CSearchManager* CSearchManager::Instance()

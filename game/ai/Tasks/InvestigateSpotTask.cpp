@@ -101,6 +101,22 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 		}
 	}
 
+	if (owner->HasSeenEvidence())
+	{
+		// Draw weapon, if we haven't already
+		if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
+		{
+			if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
+			{
+				owner->DrawWeapon(COMBAT_RANGED);
+			}
+			else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
+			{
+				owner->DrawWeapon(COMBAT_MELEE);
+			}
+		}
+	}
+
 	//_exitTime = 0; // grayman #3507
 }
 
@@ -122,7 +138,6 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		return true; // told to cancel this task
 	}
 
-	//gameRenderWorld->DebugLine( colorGreen, owner->GetEyePosition(), owner->GetMemory().currentSearchSpot, 50); // grayman debug
 	// grayman #3075 - if we've entered combat mode, we want to
 	// end this task. But first, if we're kneeling, kill the
 	// kneeling animation

@@ -6149,15 +6149,9 @@ void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 					// Light center is not just the light origin. There's an offset called "light_center", and there's orientation.
 					idVec3 trueOrigin = light->GetPhysics()->GetOrigin() + light->GetPhysics()->GetAxis()*light->GetRenderLight()->lightCenter;
 					trace_t result;
-					if ( clip.TracePoint(result, origin, trueOrigin, MASK_OPAQUE, ignoreMe) )
+					if ( !clip.TracePoint(result, origin, trueOrigin, MASK_OPAQUE, ignoreMe) )
 					{
-						// didn't trace all the way to the point, so there's no LOS
-						idEntity* e = entities[result.c.entityNum];
-					}
-					else
-					{
-						// LOS exists
-
+						// trace completed, so LOS exists
 						light->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", light);
 					}
 				}
@@ -8070,7 +8064,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				// considered the same event.
 
 				float distSqr = (se.location - location).LengthSqr();
-				locationMatch = (distSqr <= 10000); // 100*100
+				locationMatch = (distSqr <= 90000); // 300*300
 			}
 
 			// check entity
@@ -8100,6 +8094,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	}
 	return -1;
 }
+
 
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )   
 {
@@ -8144,5 +8139,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 
 	return index;
 }
+
+
 
 

@@ -5139,6 +5139,50 @@ bool idActor::HasSearchedEvent( int eventID )
 			return m_knownSuspiciousEvents[i].searched;
 		}
 	}
+
+	return false;
+}
+
+// grayman debug
+bool idActor::HasSearchedEvent( int eventID, EventType type, idVec3 location ) // grayman debug - TODO: apply where applicable
+{
+	if ( eventID < 0 )
+	{
+		return false;
+	}
+
+	// Do I know about this event?
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
+	{
+		if ( m_knownSuspiciousEvents[i].eventID == eventID )
+		{
+			// I know about it. Have I already searched it?
+			if (m_knownSuspiciousEvents[i].searched)
+			{
+				return true;
+			}
+			break;
+		}
+	}
+
+	// Have I searched a similar event in the same location?
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
+	{
+		if (m_knownSuspiciousEvents[i].searched)
+		{
+			SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(m_knownSuspiciousEvents[i].eventID);
+			if (se->type == type)
+			{
+				if ((se->location - location).LengthSqr() <= 90000) // 300*300
+				{
+					return true;
+				}
+			}
+		}
+	}
+
 	return false;
 }
 
