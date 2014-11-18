@@ -262,6 +262,12 @@ static bool	R_ClipTriangleToLight( const idVec3 &a, const idVec3 &b, const idVec
 	return true;
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+// greebo: switch off function inlining for this file in VC++ 2013 release builds
+// Function inlining seems to cause lighting bugs (triangles are drawn very dark or black)
+#pragma optimize("t", off)
+#endif
+
 /*
 ====================
 R_CreateLightTris
@@ -424,6 +430,11 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 
 	return newTri;
 }
+
+#if defined(_MSC_VER) && _MSC_VER >= 1800 && !defined(DEBUG)
+// greebo: switch on function inlining again
+#pragma optimize("t", on)
+#endif
 
 /*
 ===============
