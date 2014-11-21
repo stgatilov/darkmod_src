@@ -37,7 +37,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "FleeState.h" // grayman #3317
 #include "SearchManager.h" // grayman debug
 
-#define MILL_RADIUS 100.0f // grayman debug
+#define MILL_RADIUS 150.0f // grayman debug
 
 namespace ai
 {
@@ -345,7 +345,7 @@ void SearchingState::Think(idAI* owner)
 
 	if (search && assignment)
 	{
-		// grayman debug - delete when done
+/*		// grayman debug - delete when done
 		idVec4 color(1,1,1,1);
 		switch (search->_searchID)
 		{
@@ -395,7 +395,7 @@ void SearchingState::Think(idAI* owner)
 		}
 		gameRenderWorld->DebugLine(color,owner->GetPhysics()->GetOrigin(),search->_origin,60);
 		// grayman debug - end
-
+*/
 		// Prepare the hiding spots if they're going to be needed.
 
 		if (search->_assignmentFlags & SEARCH_SEARCH)
@@ -583,9 +583,7 @@ void SearchingState::Think(idAI* owner)
 				// For guard spots, don't worry about LOS from the spot to the
 				// search origin. This collection of spots is a set of points that the
 				// mapper has chosen (by using guard entities), or points that
-				// are at the area's portals. Observation points, however, are
-				// chosen randomly, and can very well end up on the other side
-				// of walls, outside the search area.
+				// are at the area's portals.
 
 				for (int i = 0 ; i < search->_guardSpots.Num() ; i++)
 				{
@@ -607,7 +605,7 @@ void SearchingState::Think(idAI* owner)
 				}
 
 				// If you get here w/o having been assigned a spot, there aren't enough
-				// spots to go around. Become an observer, which will be noted the next
+				// spots to go around. Become an observer, and get your spot the next
 				// time through here.
 				if (!memory.guardingInProgress)
 				{
@@ -617,8 +615,8 @@ void SearchingState::Think(idAI* owner)
 			else // need to build a list of spots
 			{
 				// Should be able to do this in one frame, since we're looking
-				// for exits from the AAS Cluster, and there shouldn't be too
-				// many of them.
+				// for exits from the AAS Cluster, and special mapper-defined
+				// locations, and there shouldn't be too many of them.
 
 				gameLocal.m_searchManager->CreateListOfGuardSpots(search,owner);
 			}
@@ -649,13 +647,15 @@ void SearchingState::Think(idAI* owner)
 			// Pick a spot.
 
 			// What is the radius of the perimeter? Though we're not actively searching,
-			// the radius is included in our assignment.
+			// the radius is included in our assignment. Pick a spot that's between you and
+			// the search origin, so you don't have to run through the search area to get
+			// to your spot.
 
 			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
 			float radius = assignment->_outerRadius;
 			radius += 32.0f; // given the accuracy of the Guard Spot Task (64.0f), tighten up the perimeter slightly
 			idVec3 spot;
-			if (FindRadialSpot(search->_origin, radius, spot)) // grayman debug
+			if (FindRadialSpot(owner->GetPhysics()->GetOrigin(), search->_origin, radius, spot)) // grayman debug
 			{
 				// the spot is good
 				memory.currentSearchSpot = spot; // spot to observe from
@@ -672,28 +672,62 @@ void SearchingState::Think(idAI* owner)
 	}
 }
 
-bool SearchingState::FindRadialSpot(idVec3 origin, float radius, idVec3 &spot)
+bool SearchingState::FindRadialSpot(idVec3 aiOrigin, idVec3 searchOrigin, float radius, idVec3 &spot)
 {
-	idVec3 dir = idAngles( 0, gameLocal.random.RandomInt(360), 0 ).ToForward();
-	dir.NormalizeFast();
-	spot = origin + radius*dir;
+	// Take 5 attempts at finding a spot that doesn't require
+	// having to run through the search area to get to it.
+
+	idVec3 candidateSpot;
+	bool spotGood = false;
+	float distAI2SearchOriginSqr = (searchOrigin - aiOrigin).LengthSqr();
+	idVec3 dir;
+
+	for ( int i = 0 ; i < 5 ; i++ )
+	{
+		dir = idAngles( 0, gameLocal.random.RandomInt(360), 0 ).ToForward();
+		dir.NormalizeFast();
+		candidateSpot = searchOrigin + radius*dir;
+
+		float distAI2CandidateSqr = (candidateSpot - aiOrigin).LengthSqr();
+
+		// The spot is good if:
+		// 1 - the ai is inside the search radius
+		// or
+		// 2 - the ai is farther from the search origin than from the spot
+
+		if ((distAI2CandidateSqr < distAI2SearchOriginSqr) || ((searchOrigin - aiOrigin).LengthFast() < radius))
+		{
+			spotGood = true;
+			break;
+		}
+	}
+
+	if (!spotGood)
+	{
+		// Give up and take anything.
+
+		dir = idAngles( 0, gameLocal.random.RandomInt(360), 0 ).ToForward();
+		dir.NormalizeFast();
+		candidateSpot = searchOrigin + radius*dir;
+	}
 
 	// You must be able to see the search origin from this location.
 	// This keeps locations from being chosen in other rooms.
 
 	// Find the floor first.
 
-	idVec3 start = spot;
-	idVec3 end = spot;
+	idVec3 start = candidateSpot;
+	idVec3 end = candidateSpot;
 	end.z -= 300;
 	trace_t result;
 	if ( gameLocal.clip.TracePoint(result, start, end, MASK_OPAQUE, NULL) )
 	{
-		// found floor; is there LOS from the search origin to an eye above the spot?
-		spot = result.endpos;
-		idVec3 eyePos = spot + idVec3(0,0,77.0f); // assume eye is 77 above feet
-		if ( !gameLocal.clip.TracePoint(result, origin, eyePos, MASK_OPAQUE, NULL) )
+		// found floor; is there LOS from an eye above the spot to the search origin?
+		candidateSpot = result.endpos;
+		idVec3 eyePos = candidateSpot + idVec3(0,0,77.0f); // assume eye is 77 above feet
+		if ( !gameLocal.clip.TracePoint(result, searchOrigin, eyePos, MASK_OPAQUE, NULL) )
 		{
+			spot = candidateSpot;
 			return true;
 		}
 

@@ -158,10 +158,6 @@ Search* CSearchManager::StartNewSearch(idAI* ai)
 	search->_eventID = memory.currentSearchEventID; // the ID of the suspicious event that caused this search
 	//DebugPrintSearch(search);
 
-	// Add search to list
-
-	//_searches.Append(*search);
-
 	return search;
 }
 
@@ -517,7 +513,7 @@ int CSearchManager::ContinueSearchForHidingSpots(int searchID, idAI* ai)
 		// spots that have been searched or which are NG to anyone
 		RandomizeHidingSpotList(search);
 
-		//DebugPrint(search);
+		//DebugPrintHidingSpots(search);
 
 		// Done with search object, dereference so other AIs know how many
 		// AIs will still be retrieving points from the search
@@ -1266,12 +1262,12 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		_searches.Append(search);
 
 		//DebugPrintSearch(search);
-		//DebugPrint(search);
+		//DebugPrintHidingSpots(search);
 	}
 }
 /*
 // prints hiding spots
-void CSearchManager::DebugPrint(Search* search)
+void CSearchManager::DebugPrintHidingSpots(Search* search)
 {
 	int numSpots = search->_hidingSpots.getNumSpots();
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Search %d has %d hiding spots\r",search->_searchID,numSpots); // grayman debug

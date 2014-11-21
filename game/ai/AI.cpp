@@ -13281,3 +13281,4 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor)
 
 	return doorSide;
 }
+

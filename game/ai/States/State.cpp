@@ -575,6 +575,13 @@ void State::OnVisualStim(idEntity* stimSource)
 		return;
 	}
 
+	// grayman debug - If I'm in the middle of certain other animations, do nothing
+
+	if (!idStr(owner->WaitState()).IsEmpty())
+	{
+		return;
+	}
+
 	// Get AI use of the stim
 	idStr aiUse = stimSource->spawnArgs.GetString("AIUse");
 
@@ -3479,11 +3486,6 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 				{
 					// drop the torch (torch is detached by a frame command in the animation)
 
-					// grayman #3075 - no longer needed
-//					torchLight->spawnArgs.Set("shouldBeOn", "0");	// don't relight
-//					torch->spawnArgs.Set("shouldBeOn", "0");		// insurance
-//					torchLight->SetStimEnabled(ST_VISUAL,false);	// turn off visual stim; no one cares
-
 					// use one animation if alert level is 4, another if not
 
 					idStr animName = "drop_torch";
@@ -3495,16 +3497,6 @@ bool State::CheckTorch(idAI* owner, idLight* light)
 					owner->m_DroppingTorch = true;
 				}
 
-				// grayman #3077 - aborting a relight this way kills the
-				// PlayAnimationTask() request, causing the AI to never drop
-				// his torch
-
-/*				// If you're in the middle of lighting a light, stop
-				if (owner->m_RelightingLight)
-				{
-					owner->GetMemory().stopRelight = true;
-				}
-*/
 				return false; // My torch is out, so don't start a relight
 			}
 		}
@@ -5762,9 +5754,9 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 		}
 		break;
-	case EAlertTypeHitByProjectile: // WAS HIT BY AN ARROW
+	case EAlertTypeHitByProjectile: // WAS HIT BY AN ARROW OR AN EXPLOSION
 		{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY AN ARROW **********\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY AN ARROW OR AN EXPLOSION **********\r",owner->GetName()); // grayman debug
 		if (owner->IsSearching())
 		{
 			memory.restartSearchForHidingSpots = true;
