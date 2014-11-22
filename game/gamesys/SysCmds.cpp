@@ -520,7 +520,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 
 /*
 ===================
-Cmd_EntityList_f
+Cmd_EntityCount_f
 ===================
 */
 void Cmd_EntityCount_f( const idCmdArgs &args )
