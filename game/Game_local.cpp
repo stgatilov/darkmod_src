@@ -3402,6 +3402,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			// Process the active AI conversations
 			m_ConversationSystem->ProcessConversations();
 
+			// grayman debug - Process the active searches
+			m_searchManager->ProcessSearches();
+
 			// free the player pvs
 			FreePlayerPVS();
 

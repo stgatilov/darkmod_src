@@ -54,6 +54,7 @@ const idStr& GuardSpotTask::GetName() const
 
 void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s ...\r",owner->GetName()); // grayman debug
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
@@ -120,6 +121,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s ...\r",owner->GetName()); // grayman debug
 	// quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
@@ -128,6 +130,10 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    millingInProgress = %d\r",memory.millingInProgress); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          stopMilling = %d\r",memory.stopMilling); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   guardingInProgress = %d\r",memory.guardingInProgress); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("         stopGuarding = %d\r",memory.stopGuarding); // grayman debug
 	if (memory.millingInProgress && memory.stopMilling) // grayman debug
 	{
 		return true; // told to cancel this task
@@ -478,6 +484,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::OnFinish - %s ...\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished guarding the spot, so set the
 	// booleans back to false
 	owner->GetMemory().guardingInProgress = false;

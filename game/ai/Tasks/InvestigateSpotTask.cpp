@@ -60,6 +60,7 @@ const idStr& InvestigateSpotTask::GetName() const
 
 void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s ...\r",owner->GetName()); // grayman debug
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
@@ -71,6 +72,7 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (memory.currentSearchSpot != idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Init - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
 		memory.hidingSpotInvestigationInProgress = true; // grayman debug
@@ -127,6 +129,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s ...\r",owner->GetName()); // grayman debug
 	// grayman debug - quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
@@ -456,6 +459,7 @@ void InvestigateSpotTask::SetInvestigateClosely(bool closely)
 
 void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::OnFinish - %s ...\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished investigating the spot, set the
 	// boolean back to false, so that the next spot can be chosen
 	owner->GetMemory().hidingSpotInvestigationInProgress = false;

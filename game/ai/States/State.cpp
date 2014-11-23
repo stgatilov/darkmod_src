@@ -293,6 +293,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 			{
 				if (isEnemy)
 				{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnTactileAlert - %s calling SetUpSearchData(EAlertTypeEnemy)\r",owner->GetName()); // grayman debug
 					owner->Event_SetEnemy(tactEnt);
 					// grayman debug - move alert setup into one method
 					SetUpSearchData(EAlertTypeEnemy, owner->GetPhysics()->GetOrigin(), tactEnt, false, 0); // grayman debug
@@ -4445,7 +4446,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					owner->IsFriend(issuingEntity) && 
 					owner->IsEnemy(directObjectEntity))
 				{
-					SetUpSearchData(EAlertTypeDetectedEnemy, directObjectLocation, issuingEntity, false, 0); // grayman debug
+					SetUpSearchData(EAlertTypeDetectedEnemy, directObjectLocation, issuingEntity, false, static_cast<idAI*>(issuingEntity)->GetMemory().currentSearchEventID); // grayman debug
 				}
 			}
 			break;
@@ -5476,7 +5477,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		// Setting the alert level is done in the calling method
 
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, pos, entity ); // grayman #3424 // grayman #3848 
-
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s currentSearchEventID = %d\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
 		break;
 	case EAlertTypeFailedKO: // EXPERIENCED A FAILED KO
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s EXPERIENCED A FAILED KO **********\r",owner->GetName()); // grayman debug
@@ -5492,6 +5493,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->PreAlertAI("tact", owner->thresh_5*2, pos);
 
 		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, pos, NULL );
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::SetUpSearchData - %s currentSearchEventID = %d\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
 		break;
 	case EAlertTypeSuspiciousItem: // SAW AN ARROW OR A FIREBALL
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s SAW AN ARROW OR A FIREBALL **********\r",owner->GetName()); // grayman debug
@@ -5863,7 +5865,12 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		owner->SetAlertLevel((owner->thresh_4 + owner->thresh_5)*0.5f);
 
 		// Log the event
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, pos, NULL );
+		//memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, pos, NULL );
+
+		// value = eventID
+
+		memory.currentSearchEventID = value;
+		owner->AddSuspiciousEvent(value);
 		}
 		break;
 	case EAlertTypeSomethingSuspicious: // HEARD SOMEONE'S AGITATED SEARCHING BARK AND WILL HELP

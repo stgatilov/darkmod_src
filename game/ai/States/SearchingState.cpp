@@ -115,6 +115,7 @@ void SearchingState::Init(idAI* owner)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s\r",owner->GetName()); // grayman debug
 	if (owner->GetMoveType() == MOVETYPE_SIT || owner->GetMoveType() == MOVETYPE_SLEEP)
 	{
 		owner->GetUp();
@@ -398,6 +399,7 @@ void SearchingState::Think(idAI* owner)
 */
 		// Prepare the hiding spots if they're going to be needed.
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s - my role is %d\r",owner->GetName(),(int)assignment->_searcherRole); // grayman debug
 		if (search->_assignmentFlags & SEARCH_SEARCH)
 		{
 			// Do we have an ongoing hiding spot search?
@@ -412,6 +414,7 @@ void SearchingState::Think(idAI* owner)
 
 		if (memory.millingInProgress)
 		{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s milling in progress, exit\r",owner->GetName()); // grayman debug
 			return;
 		}
 
@@ -419,6 +422,7 @@ void SearchingState::Think(idAI* owner)
 
 		if (memory.shouldMill)
 		{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s should mill\r",owner->GetName()); // grayman debug
 			idVec3 spot;
 			idVec3 dir = owner->GetPhysics()->GetOrigin() - search->_origin;
 			dir.z = 0;
@@ -451,13 +455,16 @@ void SearchingState::Think(idAI* owner)
 			// Is a spot investigation in progress?
 			if (memory.hidingSpotInvestigationInProgress)
 			{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and is currently searching a spot\r",owner->GetName()); // grayman debug
 				return;
 			}
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and needs a spot to search\r",owner->GetName()); // grayman debug
 			// Have we run out of hiding spots?
 
 			if (memory.noMoreHidingSpots) 
 			{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and has run out of hiding spots\r",owner->GetName()); // grayman debug
 				if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
 				{
 					memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3);
@@ -515,6 +522,7 @@ void SearchingState::Think(idAI* owner)
 						//owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
 						//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), memory.currentSearchSpot, 1, 500);
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 1 - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
 						// Set the flag to TRUE, so that the sensory scan can be performed
 						memory.hidingSpotInvestigationInProgress = true;
 					}
@@ -539,6 +547,7 @@ void SearchingState::Think(idAI* owner)
 			// We should have more hiding spots, try to get the next one
 			else if (!gameLocal.m_searchManager->GetNextHidingSpot(search,owner,memory.currentSearchSpot)) // grayman debug
 			{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, but can't get a hiding spot\r",owner->GetName()); // grayman debug
 				// No more hiding spots to search
 				DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots!\r");
 
@@ -548,6 +557,7 @@ void SearchingState::Think(idAI* owner)
 			}
 			else
 			{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, will search the next hiding spot\r",owner->GetName()); // grayman debug
 				// GetNextHidingSpot() returned TRUE, so we have memory.currentSearchSpot set
 
 				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
@@ -556,6 +566,7 @@ void SearchingState::Think(idAI* owner)
 				owner->movementSubsystem->PushTask(InvestigateSpotTask::CreateInstance()); // grayman debug - switch from action to movement
 				//owner->actionSubsystem->PushTask(InvestigateSpotTask::CreateInstance());
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 2 - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
 				// Prevent falling into the same hole twice
 				memory.hidingSpotInvestigationInProgress = true;
 			}
@@ -874,6 +885,7 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 		//	TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
 		//);
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s StartNewHidingSpotSearch set to TRUE\r",owner->GetName()); // grayman debug
 		// Prevent overwriting this hiding spot in the upcoming Think() call
 		memory.hidingSpotInvestigationInProgress = true;
 

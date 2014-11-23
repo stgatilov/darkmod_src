@@ -2842,6 +2842,7 @@ idActor::SetAnimState
 void idActor::SetAnimState( int channel, const char *statename, int blendFrames ) {
 	const function_t *func;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::SetAnimState %s - play animation '%s'\r",GetName(),statename); // grayman debug
 	// greebo: Try to lookup the script function of this animstate
 	func = scriptObject.GetFunction( statename );
 	if ( !func ) {
@@ -3383,12 +3384,14 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	float mass = 1.0f;
 	if ( inflictor->IsType(CMeleeWeapon::Type) && ( attacker != gameLocal.world ) && ( inflictor->GetBindMaster() != NULL ) )
 	{
+		DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by melee weapon\r", GetName() ); // grayman debug
 		hitByMelee = true;
 	}
 	else if ( inflictor->IsType(idMoveable::Type) )
 	{
 		mass = inflictor->spawnArgs.GetFloat("mass","1");
 		hitByMoveable = true;
+		DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by moveable\r", GetName() ); // grayman debug
 	}
 	
 	int damage;
@@ -3426,6 +3429,8 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	bool bKO = damageDef->GetBool( "knockout" );
 	bool bKOPowerBlow = damageDef->GetBool( "knockout_power" );
 
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s -          bKO = %d\r", GetName(),bKO); // grayman debug
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - bKOPowerBlow = %d\r", GetName(),bKOPowerBlow); // grayman debug
 	if ( ( bKO || bKOPowerBlow ) && collision )
 	{
 		// Objects with enough mass and traveling fast enough will force a KO.
@@ -3506,6 +3511,7 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		}
 		else if ( hitByMelee && !inflictor->m_droppedByAI ) // grayman #2816
 		{
+	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by melee weapon, calling TestKnockoutBloe()\r", GetName()); // grayman debug
 			if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
 			{
 				// For now, first KO blow does no health damage
@@ -3705,6 +3711,7 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	if ( !painAnim.Length() ) {
 		painAnim = "pain";
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain - %s - set up pain anim '%s'\r",GetName(),painAnim.c_str()); // grayman debug
 
 	if ( g_debugDamage.GetBool() ) {
 		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ), 
@@ -4015,6 +4022,7 @@ idActor::Event_GetPainAnim
 =====================
 */
 void idActor::Event_GetPainAnim( void ) {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Event_GetPainAnim %s - play pain animation\r",GetName()); // grayman debug
 	if ( !painAnim.Length() ) {
 		idThread::ReturnString( "pain" );
 	} else {

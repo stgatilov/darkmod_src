@@ -3276,6 +3276,7 @@ idAI::StopMove
 */
 void idAI::StopMove( moveStatus_t status )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::StopMove - %s\r",GetName()); // grayman debug
 	// Note: you might be tempted to set AI_RUN to false here,
 	// but AI_RUN needs to persist when stopping at a point
 	// where the AI is just going to start moving again.
@@ -3385,6 +3386,7 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 		return true;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::DirectMoveToPosition - %s\r",GetName()); // grayman debug
 	move.moveDest		= pos;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_TO_POSITION_DIRECT;
@@ -3445,6 +3447,7 @@ bool idAI::MoveToEnemy( void ) {
 	aasPath_t	path;
 	idActor		*enemyEnt = enemy.GetEntity();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToEnemy - %s\r",GetName()); // grayman debug
 	if ( !enemyEnt ) {
 		StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 		return false;
@@ -3519,6 +3522,7 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	aasPath_t	path;
 	idVec3		pos;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToEntity - %s\r",GetName()); // grayman debug
 	if ( !ent ) {
 		StopMove( MOVE_STATUS_DEST_NOT_FOUND );
 		return false;
@@ -4087,6 +4091,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	idBounds		bounds;
 	idVec3			pos;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveOutOfRange - %s\r",GetName()); // grayman debug
 	if ( !aas || !ent ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
@@ -4148,6 +4153,7 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 	idBounds		bounds;
 	idVec3			pos;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToAttackPosition - %s\r",GetName()); // grayman debug
 	if ( !aas || !ent ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
@@ -4211,6 +4217,7 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s\r",GetName()); // grayman debug
 	move.accuracy = accuracy; // grayman #3882
 
 	// Clear the "blocked" flag in the movement subsystem
@@ -4313,6 +4320,7 @@ idAI::MoveToCover
 bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 	//common->Printf("MoveToCover called... ");
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToCover - %s\r",GetName()); // grayman debug
 	aasGoal_t hideGoal;
 
 	if ( !aas || !hideFromEnt ) {
@@ -4392,6 +4400,7 @@ idAI::WanderAround
 bool idAI::WanderAround( void ) {
 	StopMove( MOVE_STATUS_DONE );
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::WanderAround - %s\r",GetName()); // grayman debug
 	move.moveDest = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
 	if ( !NewWanderDir( move.moveDest ) ) {
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
@@ -4587,6 +4596,7 @@ idAI::MoveAlongVector
 */
 bool idAI::MoveAlongVector( float yaw ) 
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveAlongVector - %s\r",GetName()); // grayman debug
 	StopMove( MOVE_STATUS_DONE );
 	move.moveDir = idAngles( 0, yaw, 0 ).ToForward();
 	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
@@ -10571,6 +10581,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( !tactEnt->IsType(idActor::Type) )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s - tactEnt = '%s' is a non-actor\r",GetName(),tactEnt->GetName()); // grayman debug
 		// non-actors
 
 		// Since kicking objects is handled elsewhere, this is
@@ -10601,6 +10612,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	}
 	else // actors
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s - tactEnt = '%s' is an actor\r",GetName(),tactEnt->GetName()); // grayman debug
 		if ( IsFriend(responsibleActor) )
 		{
 			// grayman #3714 - this check for health and consciousness was removed
@@ -10618,6 +10630,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 			return; // not an enemy, no alert
 		}
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s touched by %s\r",GetName(),responsibleActor->GetName()); // grayman debug
 		// greebo: We touched an enemy, check if it's an unconscious body or corpse
 		if (tactEnt->IsType(idAI::Type) && 
 			(static_cast<idAI*>(tactEnt)->AI_DEAD || static_cast<idAI*>(tactEnt)->AI_KNOCKEDOUT))
@@ -10641,6 +10654,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 				// Wait a bit to turn toward and look at what hit you.
 				// Then turn back in the direction the object came from.
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling OnHitByMoveable()\r",GetName()); // grayman debug
 				mind->GetState()->OnHitByMoveable(this, tactEnt); // sets m_ReactingToHit to TRUE
 			}
 			else if ( GetMemory().hitByThisMoveable.GetEntity() != tactEnt ) // hit by something different?
@@ -10718,8 +10732,10 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	{
 		lookAtPos = tactEnt->GetPhysics()->GetOrigin();
 	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling PreAlertAI(tact,%f)\r",GetName(),amount); // grayman debug
 	PreAlertAI("tact", amount, lookAtPos); // grayman #3356
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TactileAlert - %s calling OnTactileAlert()\r",GetName(),amount); // grayman debug
 	// Notify the currently active state
 	mind->GetState()->OnTactileAlert(tactEnt);
 
@@ -11366,6 +11382,7 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	const char* locationName = GetDamageGroup( location );
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::TestKnockoutBlow - %s hit with KO object in joint %d corresponding to damage group %s\r", name.c_str(), location, locationName); // grayman debug
 
 	// check if we're hitting the right zone (usually the head)
 	if ( idStr::Cmp(locationName, m_KoZone) != 0 )

@@ -217,6 +217,8 @@ public:
 
 	void		CreateListOfGuardSpots(Search* search, idAI* ai);
 
+	void		ProcessSearches();
+
 	void		Save( idSaveGame *savefile );
 
 	void		Restore( idRestoreGame *savefile );

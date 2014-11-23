@@ -797,6 +797,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		}
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s has joined searchID %d with role %d\r",ai->GetName(),ai->m_searchID,(int)searcherRole); // grayman debug
 	// grayman debug - "snd_helpSearch" will get overidden by the rising alert bark when entering
 	// Searching or Agitated Searching state in the same frame. Since the AI joining this search is not necessarily
 	// the result of being requested to, or responding to a call for help, it isn't really needed.
@@ -848,7 +849,7 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		return;
 	}
 
-	// If there are no searchers remaining in this search, recycle it
+/*	// If there are no searchers remaining in this search, recycle it
 
 	if (search->_searcherCount == 0)
 	{
@@ -862,51 +863,55 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		// backfill with someone else if available. Only backfill if
 		// there are no active searchers, otherwise things start to
 		// get a bit chaotic. Only backfill with searchers whose
-		// alert level is above thresh_3.
+		// alert level is above thresh_3. 
 
-		int activeSearcherCount = 0;
-		for ( int j = 0 ; j < 2 ; j++ ) // max of 2 active searchers
+		if ( vacatedRole == E_ROLE_SEARCHER )
 		{
-			Assignment *assignment1 = &search->_assignments[j];
-			if (assignment1->_searcher != NULL)
+			bool activeSearcherFound = false;
+			for ( int i = 0 ; i < 2 ; i++ ) // max of 2 active searchers
 			{
-				activeSearcherCount++;
-			}
-		}
-
-		if ( ( vacatedRole == E_ROLE_SEARCHER ) && ( activeSearcherCount == 0 ) )
-		{
-			for (int i = 0 ; i < numAssignments ; i++)
-			{
-				Assignment *assignment = &search->_assignments[i];
-				idAI* searcher = assignment->_searcher;
-				if (searcher != NULL)
+				Assignment *assignment1 = &search->_assignments[i];
+				if (assignment1->_searcher != NULL)
 				{
-					// only backfill with guards and observers
-					if ( (assignment->_searcherRole == E_ROLE_GUARD) || (assignment->_searcherRole == E_ROLE_OBSERVER) )
+					activeSearcherFound = true;
+					break;
+				}
+			}
+
+			if ( !activeSearcherFound )
+			{
+				for ( int i = 2 ; i < numAssignments ; i++ )
+				{
+					Assignment *assignment = &search->_assignments[i];
+					idAI* searcher = assignment->_searcher;
+					if (searcher != NULL)
 					{
-						// only backfill with someone whose alert level is Searching or Agitated Searching
-						if (searcher->AI_AlertLevel >= searcher->thresh_3)
+						// only backfill with guards and observers who are armed
+						if ( (assignment->_searcherRole == E_ROLE_GUARD) || (assignment->_searcherRole == E_ROLE_OBSERVER) )
 						{
-							search->_assignments[vacatedIndex]._searcher = searcher; // reactivate the deactivated assignment
-							assignment->_searcher = NULL; // deactivate the old assignment
+							// only backfill with someone whose alert level is Searching or Agitated Searching
+							if (searcher->AI_AlertLevel >= searcher->thresh_3)
+							{
+								search->_assignments[vacatedIndex]._searcher = searcher; // reactivate the deactivated assignment
+								assignment->_searcher = NULL; // deactivate the old assignment
 
-							ai::Memory& memory = searcher->GetMemory();
-							memory.shouldMill = false; // don't bother milling
+								ai::Memory& memory = searcher->GetMemory();
+								memory.shouldMill = false; // don't bother milling
 
-							// stop whatever they were doing
-							memory.stopHidingSpotInvestigation = true;
-							memory.stopGuarding = true;
-							memory.stopMilling = true;
+								// stop whatever they were doing
+								memory.stopHidingSpotInvestigation = true;
+								memory.stopGuarding = true;
+								memory.stopMilling = true;
 
-							break;
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-
+*/
 	// Now that you've left the search, stop whatever task you were doing
 	// for that search
 
@@ -1339,11 +1344,236 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 	search->_hidingSpots.clear();
 }
 
+// The Search Manager's "Think" method.
+
+void CSearchManager::ProcessSearches()
+{
+	for ( int i = 0 ; i < _searches.Num() ; i++ )
+	{
+		Search *search = _searches[i];
+
+		// Is this an ongoing search?
+		if (search->_searchID == -1)
+		{
+			continue; // no, so skip it
+		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ProcessSearches - Processing searchID %d\r",search->_searchID); // grayman debug
+		// If there are no searchers remaining in this search, recycle it
+
+		int searcherCount = search->_searcherCount;
+
+		if (searcherCount == 0)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   recycling search\r"); // grayman debug
+			destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
+			search->_assignments.Clear();
+			search->_searchID = -1; // mark it for recycling
+			continue;
+		}
+
+		// grayman debug - delete when done
+		for ( int j = 0 ; j < search->_assignments.Num() ; j++ )
+		{
+			Assignment *assignment = &search->_assignments[j];
+			if (assignment->_searcher != NULL)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   '%s' has role %d and rank %d\r",assignment->_searcher->GetName(),(int)assignment->_searcherRole,assignment->_searcher->rank); // grayman debug
+			}
+		}
+		// grayman debug - end
+
+		// There is at least one searcher.
+
+		// Are there no active searchers? If so,
+		// backfill with someone else if available. Only backfill if
+		// there are no active searchers, otherwise things start to
+		// get a bit chaotic. Only backfill with searchers whose
+		// alert level is above thresh_3.
+
+		bool atLeastOneSearcher = false;
+		for ( int j = 0 ; j < 2 ; j++ )
+		{
+			Assignment *assignment = &search->_assignments[j];
+			if (assignment->_searcher != NULL)
+			{
+				atLeastOneSearcher = true;
+				break;
+			}
+		}
+
+		// Are there no searchers?
+		if (!atLeastOneSearcher)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are no active searchers\r"); // grayman debug
+			// No active searchers. Is there someone who can step
+			// up and backfill as an active searcher?
+
+			int assignmentCount = search->_assignments.Num();
+
+			if (assignmentCount >= 3)
+			{
+				// Are there any observer candidates who can backfill?
+				// Pick the one with the lowest rank.
+				idAI* bestCandidate = NULL;
+				Assignment *bestAssignment = NULL;
+				int lowestRank = 1000;
+				for ( int j = 2 ; j < assignmentCount ; j++ )
+				{
+					Assignment *assignment = &search->_assignments[j];
+					idAI* searcher = assignment->_searcher;
+					if ((searcher != NULL) &&
+						(assignment->_searcherRole == E_ROLE_OBSERVER) &&
+						(searcher->rank < lowestRank) &&
+						(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+					{
+						bestCandidate = searcher;
+						bestAssignment = assignment;
+						lowestRank = searcher->rank;
+					}
+				}
+
+				// If we don't have an observer candidate,
+				// are there any guard candidates who can backfill?
+				// Pick the one with the lowest rank.
+				if (bestCandidate == NULL)
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are no observers who can backfill\r"); // grayman debug
+					for ( int j = 2 ; j < assignmentCount ; j++ )
+					{
+						Assignment *assignment = &search->_assignments[j];
+						idAI* searcher = assignment->_searcher;
+						if ((searcher != NULL) &&
+							(assignment->_searcherRole == E_ROLE_GUARD) &&
+							(searcher->rank < lowestRank) &&
+							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+						{
+							bestCandidate = searcher;
+							bestAssignment = assignment;
+							lowestRank = searcher->rank;
+						}
+					}
+				}
+
+				// do we have a candidate for backilling?
+
+				if (bestCandidate)
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   someone can backfill\r"); // grayman debug
+					search->_assignments[0]._searcher = bestCandidate; // reactivate the first assignment
+					bestAssignment->_searcher = NULL; // deactivate the old assignment
+
+					ai::Memory& memory = bestCandidate->GetMemory();
+					memory.shouldMill = false; // don't bother milling
+
+					// stop whatever they were doing
+					memory.stopHidingSpotInvestigation = true;
+					memory.stopGuarding = true;
+					memory.stopMilling = true;
+
+					// they'll be given a hiding spot search the next time they think
+				}
+				else // grayman debug
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are no guards who can backfill\r"); // grayman debug
+				}
+			}
+			else // grayman debug
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are no active searchers, but also no guards or observers\r"); // grayman debug
+			}
+
+			continue;
+		}
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there is at least 1 active searcher\r"); // grayman debug
+
+		// If a higher-ranking AI is actively searching, and
+		// there's a lower-ranking AI either guarding or observing,
+		// they should swap places. This is to keep the higher-ranking
+		// AI out of harm's way should an enemy be found by a searcher.
+
+		// Find the highest rank of the two possible active searchers.
+		// There have to be at least 2 searchers and 3 assignments to
+		// do any swapping.
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   should we swap for that active searcher based on rank?\r"); // grayman debug
+		int assignmentCount = search->_assignments.Num();
+		if ( ( searcherCount >= 2 ) && ( assignmentCount >= 3) )
+		{
+			// Who is the highest ranking active searcher and lowest ranking guard or observer?
+
+			int highestActiveSearcherRank = -1;
+			int higherRankingSearcherAssignmentIndex = 0;
+			int lowestGuardOrObserverRank = 1000;
+			int lowestGuardOrObserverAssignmentIndex = 0;
+			for ( int j = 0 ; j < assignmentCount ; j++ )
+			{
+				Assignment *assignment = &search->_assignments[j];
+				if (j < 2) // active searchers
+				{
+					if (assignment->_searcher != NULL)
+					{
+						if (assignment->_searcher->rank > highestActiveSearcherRank)
+						{
+							higherRankingSearcherAssignmentIndex = j;
+							highestActiveSearcherRank = assignment->_searcher->rank;
+						}
+					}
+				}
+				else // guards and observers
+				{
+					if (assignment->_searcher != NULL)
+					{
+						if (assignment->_searcher->rank < lowestGuardOrObserverRank)
+						{
+							lowestGuardOrObserverAssignmentIndex = j;
+							lowestGuardOrObserverRank = assignment->_searcher->rank;
+						}
+					}
+				}
+			}
+
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   highestActiveSearcherRank = %d lowestGuardOrObserverRank = %d\r",highestActiveSearcherRank,lowestGuardOrObserverRank); // grayman debug
+			// Compare ranks
+
+			if (highestActiveSearcherRank > lowestGuardOrObserverRank)
+			{
+				// swap assignments
+				Assignment *assignment1 = &search->_assignments[higherRankingSearcherAssignmentIndex];
+				Assignment *assignment2 = &search->_assignments[lowestGuardOrObserverAssignmentIndex];
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   swapping active searcher '%s' with searcher '%s'\r",assignment1->_searcher->GetName(),assignment2->_searcher->GetName()); // grayman debug
+				idAI* tempSearcher = assignment2->_searcher;
+				assignment2->_searcher = assignment1->_searcher;
+				assignment1->_searcher = tempSearcher;
+
+				ai::Memory& memory = assignment1->_searcher->GetMemory();
+				memory.shouldMill = false; // don't bother milling
+
+				// stop whatever they were doing
+				memory.stopHidingSpotInvestigation = true;
+				memory.stopGuarding = true;
+				memory.stopMilling = true;
+
+				memory = assignment2->_searcher->GetMemory();
+				memory.shouldMill = false; // don't bother milling
+
+				// stop whatever they were doing
+				memory.stopHidingSpotInvestigation = true;
+				memory.stopGuarding = true;
+				memory.stopMilling = true;
+
+				// they'll be given their new spots the next time they think
+			}
+		}
+	}
+}
+
 
 // grayman debug - Are there any searches on the search list that can be recycled?
 // If so, recycle one. Otherwise, create a new one.
 
-Search* CSearchManager::CreateSearch(int searchID)   
+Search* CSearchManager::CreateSearch(int searchID)
 {
 	Search *search = NULL;
 

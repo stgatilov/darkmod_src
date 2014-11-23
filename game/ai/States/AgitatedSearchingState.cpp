@@ -301,6 +301,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 		return;
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s\r",owner->GetName()); // grayman debug
 	// grayman #3496 - note that we spent time in Agitated Search
 
 	memory.agitatedSearched = true;

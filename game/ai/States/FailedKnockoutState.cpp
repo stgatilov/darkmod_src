@@ -66,6 +66,7 @@ void FailedKnockoutState::Init(idAI* owner)
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init %s - play animation\r",owner->GetName()); // grayman debug
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
@@ -77,11 +78,10 @@ void FailedKnockoutState::Init(idAI* owner)
 	_stateEndTime = gameLocal.time + 3000;
 	
 	// Set the alert position 50 units in the attacking direction
-	memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+	//memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-	owner->StopMove(MOVE_STATUS_DONE); // grayman debug
-
-	// Do a single bark and assemble an AI message
+	// grayman debug - moved into Think()
+/*	// Do a single bark and assemble an AI message
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL, // from this AI to anyone
@@ -96,11 +96,13 @@ void FailedKnockoutState::Init(idAI* owner)
 	{
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
 	}
+	*/
 }
 
 // Gets called each time the mind is thinking
 void FailedKnockoutState::Think(idAI* owner)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Think - %s - waitState = '%s'\r",owner->GetName(),owner->WaitState(ANIMCHANNEL_TORSO)); // grayman debug
 	if (gameLocal.time < _allowEndTime)
 	{
 		return; // wait...
@@ -116,9 +118,30 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.StopReacting(); // grayman #3559
 
+		// grayman debug - alert and bark moved down from Init()
+
+		// Set the alert position 50 units in the attacking direction
+		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+
 		// grayman debug - move alert setup into one method
 		SetUpSearchData(EAlertTypeFailedKO, memory.alertPos, NULL, false, 0); // grayman debug
 
+		// Do a single bark and assemble an AI message
+		CommMessagePtr message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedEnemy_CommType, 
+			owner, NULL, // from this AI to anyone
+			_attacker,
+			memory.alertPos,
+			memory.currentSearchEventID
+		));
+
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
+		}
+	
 		// End this state
 		owner->GetMind()->EndState();
 	}
