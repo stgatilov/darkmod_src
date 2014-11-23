@@ -1190,6 +1190,31 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 		return 0;
 	}
 
+	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
+	// without updating any LOD models #3912
+	{
+		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString( "classname" ), false );
+		bool model_overriden = false, lod_model_overridden = false;
+		if ( idStr::Icmp( dict->GetString( "model" ), entDef->GetString( "model" ) ) )
+		{
+			model_overriden = true;
+		}
+		const idKeyValue* kv = NULL;
+		while ( ( kv = dict->MatchPrefix( "model_lod_", kv ) ) != NULL )
+		{
+			if ( idStr::Icmp( kv->GetValue(), entDef->GetString( kv->GetKey() ) ) )
+			{
+				lod_model_overridden = true;
+			}
+		}
+		if ( model_overriden && !lod_model_overridden )
+		{
+			// Suppress LOD
+			m_DistCheckTimeStamp = NOLOD;
+			return 0;
+		}
+	}
+
 	// distance dependent LOD from this point on:
 	// allocate new memory
 	m_LOD = new lod_data_t;
