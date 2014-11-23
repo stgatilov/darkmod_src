@@ -53,7 +53,7 @@ public:
 	virtual void				Print() const;
 	virtual void				List() const;
 	virtual int					Memory() const;
-	virtual ID_TIME_T				Timestamp() const;
+	virtual ID_TIME_T			Timestamp() const;
 	virtual int					NumSurfaces() const;
 	virtual int					NumBaseSurfaces() const;
 	virtual const modelSurface_t *Surface( int surfaceNum ) const;
@@ -110,7 +110,7 @@ protected:
 	bool						fastLoad;				// don't generate tangents and shadow data
 	bool						reloadable;				// if not, reloadModels won't check timestamp
 	bool						levelLoadReferenced;	// for determining if it needs to be freed
-	ID_TIME_T						timeStamp;
+	ID_TIME_T					timeStamp;
 
 	static idCVar				r_mergeModelSurfaces;	// combine model surfaces with the same material
 	static idCVar				r_slopVertex;			// merge xyz coordinates this far apart
@@ -286,9 +286,15 @@ public:
 	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
 	virtual float				DepthHack() const;
 	virtual int					Memory() const;
+	
+public:																	
+	float						SofteningRadius( const int stage ) const;	// #3878 soft particles
+private:
+	virtual void				SetSofteningRadii();
 
 private:
 	const idDeclParticle *		particleSystem;
+	idList<float>				softeningRadii;
 };
 
 /*

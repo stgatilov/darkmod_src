@@ -23,6 +23,12 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
+#include "Model_local.h" // Added in #3878 (soft particles) to allow r_AddAmbientDrawSurfs to access info about particles to 
+						 // pass to the backend without bloating the modelSurface_t struct used everywhere. That struct is the only
+						 // output of ALL dynamic model updates, and it's a POD (non-initialized), so adding the info to it would 
+						 // mean initializing it, or adding code to every single dynamic model update function. Model_local.h 
+						 // has no #defines and adds no includes of its own, and tr_light.cpp already has sight of DeclParticle.h 
+						 // so I reckon this extra dependency is lightweight and justified. -- SteveL #3878
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
@@ -651,6 +657,7 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->dsFlags = 0;
+	drawSurf->particle_radius = 0.0f; // #3878
 
 	if ( viewInsideShadow ) {
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
@@ -1146,7 +1153,8 @@ R_AddDrawSurf
 =================
 */
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor ) {
+					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius )
+{
 	drawSurf_t		*drawSurf;
 	const float		*shaderParms;
 	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
@@ -1158,7 +1166,17 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = shader->GetSort() + tr.sortOffset;
-	drawSurf->dsFlags = 0;
+	
+	if ( soft_particle_radius != -1.0f )	// #3878
+	{
+		drawSurf->dsFlags = DSF_SOFT_PARTICLE;
+		drawSurf->particle_radius = soft_particle_radius;
+	} 
+	else
+	{
+		drawSurf->dsFlags = 0;
+		drawSurf->particle_radius = 0.0f;
+	}
 
 	// bumping this offset each time causes surfaces with equal sort orders to still
 	// deterministically draw in the order they are added
@@ -1376,8 +1394,19 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 				vertexCache.Touch( tri->indexCache );
 			}
 
+			// check whether the surface wants to be drawn as a soft particle -- SteveL #3878
+			float particle_radius = -1.0f; // Default = disallow softening, but allow modelDepthHack if specified in the decl.
+			if ( r_useSoftParticles.GetBool() && tr.viewDef->renderView.viewID >= 0 ) // Skip for lightgem passes
+			{
+				const idRenderModelPrt* prt = dynamic_cast<const idRenderModelPrt*>( def->parms.hModel );
+				if ( prt )
+				{
+					particle_radius = prt->SofteningRadius( surf->id );
+				}
+			}
+
 			// add the surface for drawing
-			R_AddDrawSurf( tri, vEntity, &vEntity->entityDef->parms, shader, vEntity->scissorRect );
+			R_AddDrawSurf( tri, vEntity, &vEntity->entityDef->parms, shader, vEntity->scissorRect, particle_radius );
 
 			// ambientViewCount is used to allow light interactions to be rejected
 			// if the ambient surface isn't visible at all

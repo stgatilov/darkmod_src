@@ -22,6 +22,7 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#include <algorithm>
 #include "tr_local.h"
 #include "Model_local.h"
 
@@ -44,6 +45,7 @@ idRenderModelPrt::InitFromFile
 void idRenderModelPrt::InitFromFile( const char *fileName ) {
 	name = fileName;
 	particleSystem = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, fileName ) );
+	SetSofteningRadii();  // # 3878
 }
 
 /*
@@ -267,3 +269,65 @@ int idRenderModelPrt::Memory() const {
 
 	return total;
 }
+
+/*
+====================
+idRenderModelPrt::SetSofteningRadii
+
+Calculate "depth" of each particle stage that represents a 3d volume, so the particle can
+be allowed to overdraw solid geometry by the right amount, and the particle "thickness" (visibility) 
+can be adjusted by how much of it is visible in front of the background surface.
+
+"depth" is by default 0.8 of the particle radius, and particles less than 2 units in size won't be softened. 
+The particles that represent 3d volumes are the view-aligned ones. Others have depth set to 0.
+
+Cache these values rather than calculate them for each stage every frame.
+Added for soft particles -- SteveL #3878.
+====================
+*/
+void idRenderModelPrt::SetSofteningRadii()
+{
+	softeningRadii.AssureSize( particleSystem->stages.Num() );
+	
+	for ( int i = 0; i < particleSystem->stages.Num(); ++i )
+	{
+		const idParticleStage* ps = particleSystem->stages[i];
+		if ( ps->softeningRadius > -2.0f )	// User has specified a setting
+		{
+			softeningRadii[i] = ps->softeningRadius;
+		}
+		else if ( ps->orientation == POR_VIEW ) // Only view-aligned particle stages qualify for softening
+		{
+			float diameter = ( std::max )( ps->size.from, ps->size.to );
+			float scale = ( std::max )( ps->aspect.from, ps->aspect.to );
+			diameter *= ( std::max )( scale, 1.0f ); // aspect applies to 1 axis only. If it's < 1, the other axis will still be at scale 1
+			if ( diameter > 2.0f )	// Particle is big enough to soften
+			{
+				softeningRadii[i] = diameter * 0.8f / 2.0f;
+			}
+			else // Particle is small. Disable both softening and modelDepthHack
+			{
+				softeningRadii[i] = 0.0f;
+			}
+		}
+		else // Particle isn't view-aligned, and no user setting. Don't change anything.
+		{
+			softeningRadii[i] = -1;
+		}
+	}
+}
+
+/*
+====================
+idRenderModelPrt::SofteningRadius
+
+Return the max radius of the individual quads that make up this stage.
+Added for soft particles #3878.
+====================
+*/
+float idRenderModelPrt::SofteningRadius( const int stage ) const {
+	assert( particleSystem );
+	assert( stage > -1 && stage < softeningRadii.Num() );
+	return softeningRadii[stage];
+}
+

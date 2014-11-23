@@ -98,9 +98,11 @@ SURFACES
 // with multiple shaders when skinned, or, possibly with multiple
 // lights, although currently each lighting interaction creates
 // unique srfTriangles_t
-
 // drawSurf_t are always allocated and freed every frame, they are never cached
+// drawSurf_t are initialized manually, so check all places they're created if adding a member.
+
 static const int	DSF_VIEW_INSIDE_SHADOW	= 1;
+static const int	DSF_SOFT_PARTICLE		= 2; // #3878
 
 typedef struct drawSurf_s {
 	const srfTriangles_t	*geo;
@@ -112,7 +114,8 @@ typedef struct drawSurf_s {
 	idScreenRect			scissorRect;	// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
 	struct vertCache_s		*dynamicTexCoords;	// float * in vertex cache memory
-	// specular directions for non vertex program cards, skybox texcoords, etc
+	                                            // specular directions for non vertex program cards, skybox texcoords, etc
+	float					particle_radius;	// The radius of individual quads for soft particles #3878
 } drawSurf_t;
 
 
@@ -351,7 +354,8 @@ typedef struct viewEntity_s {
 	idScreenRect		scissorRect;
 
 	bool				weaponDepthHack;
-	float				modelDepthHack;
+	float				modelDepthHack;		  // Used by particles only. Causes the particle to be drawn in front of intersecting 
+											  // geometry by up to modelDepthhack units, to remove some ugly intersections.
 
 	float				modelMatrix[16];		// local coords to global coords
 	float				modelViewMatrix[16];	// local coords to eye coords
@@ -919,6 +923,7 @@ extern idCVar r_skipDiffuse;			// use black for diffuse
 extern idCVar r_skipOverlays;			// skip overlay surfaces
 extern idCVar r_skipROQ;
 extern idCVar r_skipDepthCapture;		// skip capture of early depth pass. revelator + SteveL #3877
+extern idCVar r_useSoftParticles;		// SteveL #3878
 
 extern idCVar r_ignoreGLErrors;
 
@@ -1191,7 +1196,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def );
 viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor );
+					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = 0.0f ); // soft particles in #3878
 
 void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, 
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
@@ -1347,6 +1352,9 @@ typedef enum {
 	FPROG_TEST_DIRECT,
 	VPROG_INTERACTION_DIRECT,
 	FPROG_INTERACTION_DIRECT,
+	// SteveL #3878: soft particles
+	VPROG_SOFT_PARTICLE,
+	FPROG_SOFT_PARTICLE,
 	//
 	PROG_USER
 } program_t;
