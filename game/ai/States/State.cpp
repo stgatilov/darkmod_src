@@ -577,7 +577,6 @@ void State::OnVisualStim(idEntity* stimSource)
 	}
 
 	// grayman debug - If I'm in the middle of certain other animations, do nothing
-
 	if (!idStr(owner->WaitState()).IsEmpty())
 	{
 		return;

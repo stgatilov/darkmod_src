@@ -878,11 +878,14 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 				}
 			}
 
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idProjectile::Collide - %s collided with %s\r",GetName(),ent->GetName()); // grayman debug
 			if ( damageInflicted ) // grayman #2906 - only run the damage code if there's damage
 			{
 				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			}
-			else // grayman debug
+/*			else // grayman debug - this causes moss blobs to alert AI, which they shouldn't
+				 // you need a solution that filters out the objects you want a reaction from
+				 // from those you don't
 			{
 				// even if there's no damage, there _should_ be a reaction to getting hit,
 				// if the projectile hit an AI
@@ -893,7 +896,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 					static_cast<idAI*>(ent)->GetMind()->GetState()->OnProjectileHit(this, owner.GetEntity(), 0);
 				}
 			}
-
+*/
 			ignore = ent;
 		}
 	}

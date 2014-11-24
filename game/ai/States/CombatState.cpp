@@ -382,9 +382,11 @@ void CombatState::Think(idAI* owner)
 	// grayman #3848 - are we in the endgame of combat, where we've
 	// killed the enemy and are performing a few final tasks?
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - _endgame = %d\r",owner->GetName(),_endgame); // grayman debug
 	if (_endgame)
 	{
 		idActor* victim = owner->m_lastKilled.GetEntity();
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - _combatSubState = %d, victim = '%s'\r",owner->GetName(),(int)_combatSubState,victim ? victim->GetName():"NULL"); // grayman debug
 		switch(_combatSubState)
 		{
 		case EStateVictor1:
@@ -405,6 +407,7 @@ void CombatState::Think(idAI* owner)
 
 			if (owner == victim->m_killedBy.GetEntity())
 			{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - bark victory!\r",owner->GetName()); // grayman debug
 				// different barks for human and non-human enemies
 
 				if ( monster )
@@ -1216,6 +1219,7 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
 		);
  */
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::CheckEnemyStatus - %s - setting _endgame to true\r",owner->GetName()); // grayman debug
 		_endgame = true; // grayman #3848
 		_endTime = gameLocal.time + 1500 + gameLocal.random.RandomInt(1500);
 		_combatSubState = EStateVictor1;

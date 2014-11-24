@@ -7592,6 +7592,9 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 		LookAtKiller( inflictor, attacker );
 	}
 
+	// grayman #3848 - note who killed you
+	m_killedBy = attacker;
+
 	if ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) {
 		idPlayer *killer = NULL;
 		// no gibbing in MP. Event_Gib will early out in MP

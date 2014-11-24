@@ -75,12 +75,14 @@ void FailedKnockoutState::Init(idAI* owner)
 	_allowEndTime = gameLocal.time + 800;
 
 	// Set end time
-	_stateEndTime = gameLocal.time + 3000;
+	_stateEndTime = gameLocal.time + 1000; // grayman debug - was 3000, but the failed_ko anim
+											// is being aborted. If it runs, it only takes a second
 	
 	// Set the alert position 50 units in the attacking direction
 	//memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-	// grayman debug - moved into Think()
+	// grayman debug - moved into Think(). If we do this here, the pain
+	// bark gets aborted by this bark.
 /*	// Do a single bark and assemble an AI message
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
 		CommMessage::DetectedEnemy_CommType, 

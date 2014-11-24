@@ -194,6 +194,7 @@ idAnimState::StopAnim
 =====================
 */
 void idAnimState::StopAnim( int frames ) {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAnimState::StopAnim\r"); // grayman debug
 	animBlendFrames = 0;
 	animator->Clear( channel, gameLocal.time, FRAME2MS( frames ) );
 }
