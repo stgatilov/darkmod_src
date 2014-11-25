@@ -5377,9 +5377,29 @@ idGameLocal::InhibitEntitySpawn
 ================
 */
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
+	bool inhibit_spawn = false;
+
+	if ( spawnArgs.GetBool("inline") && idStr("func_static") == spawnArgs.GetString("classname") ) // #3933 prevent inlined FS from spawning
+	{
+		inhibit_spawn = true;
+	}
 	
-	// Consult the difficulty manager, whether this entity should be prevented from being spawned.
-	return m_DifficultyManager.InhibitEntitySpawn(spawnArgs);
+	if ( m_DifficultyManager.InhibitEntitySpawn(spawnArgs) )
+	{
+		inhibit_spawn = true;
+	}
+
+	// Tels: #3223: See if this entity should spawn this time
+	// Moved from DifficultyManager.cpp in #3933
+	float random_remove = spawnArgs.GetFloat( "random_remove", "1.1" );
+	float random_value = gameLocal.random.RandomFloat();
+	if ( random_remove < random_value )
+	{
+		inhibit_spawn = true;
+		DM_LOG( LC_ENTITY, LT_INFO )LOGSTRING( "Removing entity %s due to random_remove %f < %f.\r", spawnArgs.GetString( "name" ), random_remove, random_value );
+	}
+
+	return inhibit_spawn;
 }
 
 /*
