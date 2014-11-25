@@ -1431,7 +1431,6 @@ idAI::Event_MoveToPosition
 */
 void idAI::Event_MoveToPosition( const idVec3 &pos ) {
 	StopMove( MOVE_STATUS_DONE );
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::Event_MoveToPosition - %s - calling MoveToPosition()\r",GetName()); // grayman debug
 	MoveToPosition( pos );
 }
 

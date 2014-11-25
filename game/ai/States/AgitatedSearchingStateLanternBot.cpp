@@ -78,7 +78,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Move to a position where we can light up the alert position from
 	MoveTowardAlertPos(owner);
 
-	owner->GetMemory().currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL ); // grayman debug
+	owner->GetMemory().currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL, true ); // grayman debug
 
 	// This will hold the message to be delivered with the inaudible bark
 	CommMessagePtr message(new CommMessage(

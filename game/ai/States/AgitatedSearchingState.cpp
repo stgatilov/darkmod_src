@@ -165,7 +165,7 @@ void AgitatedSearchingState::DrawWeapon(idAI* owner)
 	else if (drawRangedWeapon)
 	{
 		owner->DrawWeapon(COMBAT_RANGED);
-		_drawEndTime += MAX_DRAW_DURATION;// grayman #3563 - safety net when drawing a weapon
+		_drawEndTime += MAX_DRAW_DURATION; // grayman #3563 - safety net when drawing a weapon
 	}
 }
 
@@ -262,8 +262,6 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 
 		CommMessagePtr message;
 
-		assert (memory.currentSearchEventID >= 0); // grayman debug - should always be true
-
 		if (sendSuspiciousMessage)
 		{
 			message = CommMessagePtr(new CommMessage(
@@ -318,6 +316,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 	{
 		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s - no search! resetting alert level to just under searching\r",owner->GetName()); // grayman debug
 			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
 			owner->GetMind()->EndState();
 			return;

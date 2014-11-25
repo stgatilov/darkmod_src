@@ -132,6 +132,7 @@ void SearchingState::Init(idAI* owner)
 	{
 		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Init - %s - no search! resetting alert level to just under searching\r",owner->GetName()); // grayman debug
 			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
 			owner->GetMind()->EndState();
 			return;
@@ -422,7 +423,7 @@ void SearchingState::Think(idAI* owner)
 
 		if (memory.shouldMill)
 		{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s should mill\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s should mill\r",owner->GetName()); // grayman debug
 			idVec3 spot;
 			idVec3 dir = owner->GetPhysics()->GetOrigin() - search->_origin;
 			dir.z = 0;
@@ -455,11 +456,11 @@ void SearchingState::Think(idAI* owner)
 			// Is a spot investigation in progress?
 			if (memory.hidingSpotInvestigationInProgress)
 			{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and is currently searching a spot\r",owner->GetName()); // grayman debug
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and is currently searching a spot [%s]\r",owner->GetName(),owner->GetMemory().currentSearchSpot.ToString()); // grayman debug
 				return;
 			}
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and needs a spot to search\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s is an active searcher, and needs a spot to search\r",owner->GetName()); // grayman debug
 			// Have we run out of hiding spots?
 
 			if (memory.noMoreHidingSpots) 
@@ -518,8 +519,8 @@ void SearchingState::Think(idAI* owner)
 
 						memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeHitByProjectile ) );
 
-						owner->movementSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance())); // grayman debug - switch from action to movement
-						//owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
+						//owner->movementSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance())); // grayman debug - switch from action to movement
+						owner->actionSubsystem->PushTask(TaskPtr(InvestigateSpotTask::CreateInstance()));
 						//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), memory.currentSearchSpot, 1, 500);
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 1 - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
@@ -563,8 +564,8 @@ void SearchingState::Think(idAI* owner)
 				//gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 2000);
 
 				// Delegate the spot investigation to a new task, which will send the searcher to investigate the new spot.
-				owner->movementSubsystem->PushTask(InvestigateSpotTask::CreateInstance()); // grayman debug - switch from action to movement
-				//owner->actionSubsystem->PushTask(InvestigateSpotTask::CreateInstance());
+				//owner->movementSubsystem->PushTask(InvestigateSpotTask::CreateInstance()); // grayman debug - switch from action to movement
+				owner->actionSubsystem->PushTask(InvestigateSpotTask::CreateInstance());
 
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think 2 - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
 				// Prevent falling into the same hole twice
@@ -827,7 +828,9 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* 
 
 bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s ...\r",owner->GetName()); // grayman debug
 	int newSearchID = gameLocal.m_searchManager->ObtainSearchID(owner);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s newSearchID = %d\r",owner->GetName(),newSearchID); // grayman debug
 	if (newSearchID < 0)
 	{
 		return false;
@@ -837,11 +840,13 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 
 	if (!assigned)
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s calling JoinSearch()\r",owner->GetName()); // grayman debug
 		assigned = gameLocal.m_searchManager->JoinSearch(newSearchID,owner); // gives the ai his assignment
 	}
 
 	if (!assigned)
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s not assigned to a search\r",owner->GetName()); // grayman debug
 		return false;
 	}
 
@@ -878,14 +883,10 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 
 		// Delegate the spot investigation to a new task, this will take the correct action.
 		// grayman debug - switch from action to movement
-		owner->movementSubsystem->PushTask(
-			TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
-		);
-		//owner->actionSubsystem->PushTask(
-		//	TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely))
-		//);
+		//owner->movementSubsystem->PushTask(TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely)));
+		owner->actionSubsystem->PushTask(TaskPtr(new InvestigateSpotTask(memory.investigateStimulusLocationClosely)));
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s StartNewHidingSpotSearch set to TRUE\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::Think - %s hidingSpotInvestigationInProgress set to TRUE\r",owner->GetName()); // grayman debug
 		// Prevent overwriting this hiding spot in the upcoming Think() call
 		memory.hidingSpotInvestigationInProgress = true;
 
@@ -894,6 +895,7 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman debug
 	}
 	else
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("SearchingState::StartNewHidingSpotSearch - %s hidingSpotInvestigationInProgress set to FALSE\r",owner->GetName()); // grayman debug
 		// AI is not moving, wait for spot search to complete
 		memory.hidingSpotInvestigationInProgress = false;
 		memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);

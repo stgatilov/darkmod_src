@@ -2843,7 +2843,6 @@ idActor::SetAnimState
 void idActor::SetAnimState( int channel, const char *statename, int blendFrames ) {
 	const function_t *func;
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::SetAnimState %s - play animation '%s'\r",GetName(),statename); // grayman debug
 	// greebo: Try to lookup the script function of this animstate
 	func = scriptObject.GetFunction( statename );
 	if ( !func ) {
@@ -5281,7 +5280,7 @@ void idActor::AddWarningEvent( idActor* other, int eventID)
 
 // grayman #3424 - log a suspicious event
 
-int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ) 
+int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ) // grayman debug
 {
 	SuspiciousEvent se;
 	se.type = type;
@@ -5289,7 +5288,7 @@ int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity )
 	se.entity = entity;
 	se.time = gameLocal.time; // grayman debug
 
-	int index = gameLocal.LogSuspiciousEvent(se);
+	int index = gameLocal.LogSuspiciousEvent(se,forceLog);
 	AddSuspiciousEvent(index); // I know about this event
 	return index;
 }

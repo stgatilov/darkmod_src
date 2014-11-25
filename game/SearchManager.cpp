@@ -175,7 +175,7 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		// the AI's alert level is going up due to incremental player sightings.
 		// To get the AI interested in a specific location and to start a search,
 		// we'll log a new suspicious event.
-		memory.currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL ); // grayman debug
+		memory.currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL, false ); // grayman debug
 	}
 
 	if ( ai->HasSearchedEvent(memory.currentSearchEventID) )
@@ -205,6 +205,7 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(memory.currentSearchEventID);
 		if ((se == NULL) || !searchPointIsValid)
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ObtainSearchID - %s - no search! resetting alert level to just under searching\r",ai->GetName()); // grayman debug
 			// Drop the ai's alert level
 			ai->SetAlertLevel(ai->thresh_3 - 0.1);
 			memory.currentSearchEventID = -1;
@@ -285,7 +286,7 @@ void CSearchManager::RandomizeHidingSpotList(Search* search)
 		search->_hidingSpotIndexes.push_back(i);
 	}
 
-	// grayman debug - stop randomizing spot selection, and rely on
+	// grayman debug - no longer randomize spot selection, and rely on
 	// the quality work done during list creation to move the searchers about
 }
 
@@ -789,7 +790,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 				int eventID = gameLocal.FindSuspiciousEvent( E_EventTypeMisc, idVec3(0,0,0), blood, 0 );
 				if (eventID < 0)
 				{
-					eventID = ai->LogSuspiciousEvent( E_EventTypeMisc, blood->GetPhysics()->GetOrigin(), blood ); // grayman debug
+					eventID = ai->LogSuspiciousEvent( E_EventTypeMisc, blood->GetPhysics()->GetOrigin(), blood, false ); // grayman debug
 				}
 				ai->MarkEventAsSearched(eventID); // will add an event if ai doesn't already know about it
 				blood->IgnoreResponse(ST_VISUAL, ai); // blood won't stim this AI in the future
@@ -809,7 +810,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 // Searcher leaves the search. The searcher's assignment
 // isn't deleted, though, in case others join the search before
 // it ends, and we want to know what previous searchers were assigned.
-// If the last searcher leaves a search, the search is destroyed.
+// If the last searcher leaves a search, the search is destroyed
+// when SearchManager->ProcessSearches() is run.
 
 void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 {
@@ -849,82 +851,26 @@ void CSearchManager::LeaveSearch(int searchID, idAI* ai)
 		return;
 	}
 
-/*	// If there are no searchers remaining in this search, recycle it
-
-	if (search->_searcherCount == 0)
-	{
-		destroyCurrentHidingSpotSearch(search); // Destroy the list of hiding spots
-		search->_assignments.Clear();
-		search->_searchID = -1;
-	}
-	else
-	{
-		// If the abandoned assignment was for an active searcher,
-		// backfill with someone else if available. Only backfill if
-		// there are no active searchers, otherwise things start to
-		// get a bit chaotic. Only backfill with searchers whose
-		// alert level is above thresh_3. 
-
-		if ( vacatedRole == E_ROLE_SEARCHER )
-		{
-			bool activeSearcherFound = false;
-			for ( int i = 0 ; i < 2 ; i++ ) // max of 2 active searchers
-			{
-				Assignment *assignment1 = &search->_assignments[i];
-				if (assignment1->_searcher != NULL)
-				{
-					activeSearcherFound = true;
-					break;
-				}
-			}
-
-			if ( !activeSearcherFound )
-			{
-				for ( int i = 2 ; i < numAssignments ; i++ )
-				{
-					Assignment *assignment = &search->_assignments[i];
-					idAI* searcher = assignment->_searcher;
-					if (searcher != NULL)
-					{
-						// only backfill with guards and observers who are armed
-						if ( (assignment->_searcherRole == E_ROLE_GUARD) || (assignment->_searcherRole == E_ROLE_OBSERVER) )
-						{
-							// only backfill with someone whose alert level is Searching or Agitated Searching
-							if (searcher->AI_AlertLevel >= searcher->thresh_3)
-							{
-								search->_assignments[vacatedIndex]._searcher = searcher; // reactivate the deactivated assignment
-								assignment->_searcher = NULL; // deactivate the old assignment
-
-								ai::Memory& memory = searcher->GetMemory();
-								memory.shouldMill = false; // don't bother milling
-
-								// stop whatever they were doing
-								memory.stopHidingSpotInvestigation = true;
-								memory.stopGuarding = true;
-								memory.stopMilling = true;
-
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-*/
 	// Now that you've left the search, stop whatever task you were doing
 	// for that search
 
 	ai::Memory& memory = ai->GetMemory();
-	memory.stopHidingSpotInvestigation = true;
-	memory.stopGuarding = true;
-	memory.stopMilling = true;
 	memory.currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	// greebo: Clear the initial alert position
 	memory.alertSearchCenter = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 	memory.currentSearchEventID = -1;
+
 	ai->movementSubsystem->ClearTasks(); // clears investigate spot task or guard spot task
+	memory.stopHidingSpotInvestigation = true;
+	memory.stopGuarding = true;
+	memory.stopMilling = true;
+	memory.shouldMill = false;
+	memory.hidingSpotInvestigationInProgress = false;
+	memory.guardingInProgress = false;
+	memory.millingInProgress = false;
+
 	ai->m_searchID = -1; // leave the search
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::LeaveSearch - %s has left searchID %d\r",ai->GetName(),searchID); // grayman debug
 }
 
 // grayman #2422 - adjust search limits to better fit the vertical
@@ -1348,17 +1294,37 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 
 void CSearchManager::ProcessSearches()
 {
+	// If the player is dead, all searchers should leave their searches.
+	idPlayer* player = gameLocal.GetLocalPlayer();
+
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
 	{
 		Search *search = _searches[i];
+		int searchID = search->_searchID;
 
 		// Is this an ongoing search?
-		if (search->_searchID == -1)
+		if (searchID == -1)
 		{
 			continue; // no, so skip it
 		}
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ProcessSearches - Processing searchID %d\r",search->_searchID); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::ProcessSearches - Processing searchID %d\r",searchID); // grayman debug
+
+		// If the player is dead, all searchers should leave their searches.
+		if (player->health <= 0)
+		{
+			for ( int j = 0 ; j < search->_assignments.Num() ; j++ )
+			{
+				Assignment *assignment = &search->_assignments[j];
+				idAI* searcher = assignment->_searcher;
+				if (searcher != NULL)
+				{
+					LeaveSearch(searchID,searcher);
+					searcher->SetAlertLevel(searcher->thresh_3 - 0.1f);
+				}
+			}
+		}
+
 		// If there are no searchers remaining in this search, recycle it
 
 		int searcherCount = search->_searcherCount;
@@ -1372,6 +1338,8 @@ void CSearchManager::ProcessSearches()
 			continue;
 		}
 
+		// There is at least one searcher.
+
 		// grayman debug - delete when done
 		for ( int j = 0 ; j < search->_assignments.Num() ; j++ )
 		{
@@ -1382,8 +1350,6 @@ void CSearchManager::ProcessSearches()
 			}
 		}
 		// grayman debug - end
-
-		// There is at least one searcher.
 
 		// Are there no active searchers? If so,
 		// backfill with someone else if available. Only backfill if
@@ -1402,7 +1368,7 @@ void CSearchManager::ProcessSearches()
 			}
 		}
 
-		// Are there no searchers?
+		// Are there no active searchers?
 		if (!atLeastOneSearcher)
 		{
 			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   there are no active searchers\r"); // grayman debug
@@ -1455,7 +1421,7 @@ void CSearchManager::ProcessSearches()
 					}
 				}
 
-				// do we have a candidate for backilling?
+				// do we have a candidate for backfilling?
 
 				if (bestCandidate)
 				{
@@ -1539,31 +1505,19 @@ void CSearchManager::ProcessSearches()
 
 			if (highestActiveSearcherRank > lowestGuardOrObserverRank)
 			{
-				// swap assignments
 				Assignment *assignment1 = &search->_assignments[higherRankingSearcherAssignmentIndex];
 				Assignment *assignment2 = &search->_assignments[lowestGuardOrObserverAssignmentIndex];
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   swapping active searcher '%s' with searcher '%s'\r",assignment1->_searcher->GetName(),assignment2->_searcher->GetName()); // grayman debug
-				idAI* tempSearcher = assignment2->_searcher;
-				assignment2->_searcher = assignment1->_searcher;
-				assignment1->_searcher = tempSearcher;
+				idAI* searcher1 = assignment1->_searcher;
+				idAI* searcher2 = assignment2->_searcher;
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   swapping active searcher '%s' with searcher '%s'\r",searcher1->GetName(),searcher2->GetName()); // grayman debug
 
-				ai::Memory& memory = assignment1->_searcher->GetMemory();
-				memory.shouldMill = false; // don't bother milling
+				LeaveSearch(searchID,searcher2);
+				LeaveSearch(searchID,searcher1);
+				JoinSearch(searchID,searcher2);
+				JoinSearch(searchID,searcher1);
 
-				// stop whatever they were doing
-				memory.stopHidingSpotInvestigation = true;
-				memory.stopGuarding = true;
-				memory.stopMilling = true;
-
-				memory = assignment2->_searcher->GetMemory();
-				memory.shouldMill = false; // don't bother milling
-
-				// stop whatever they were doing
-				memory.stopHidingSpotInvestigation = true;
-				memory.stopGuarding = true;
-				memory.stopMilling = true;
-
-				// they'll be given their new spots the next time they think
+				searcher1->GetMemory().shouldMill = false; // don't bother milling
+				searcher2->GetMemory().shouldMill = false;
 			}
 		}
 	}

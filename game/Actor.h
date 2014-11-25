@@ -606,7 +606,7 @@ public:
 	**/
 	bool					KnowsAboutSuspiciousEvent( int eventID );
 	void					AddSuspiciousEvent( int eventID );
-	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ); 
+	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ); // grayman debug 
 	void					AddWarningEvent( idActor* other, int eventID );
 	bool					HasBeenWarned( idActor* other, int eventID );
 	bool					HasSearchedEvent( int eventID );

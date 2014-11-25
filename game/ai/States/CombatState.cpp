@@ -659,7 +659,7 @@ void CombatState::Think(idAI* owner)
 				memory.mandatory = false; // grayman debug
 
 				// Log the event
-				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy ); // grayman debug
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy, true ); // grayman debug
 
 				owner->GetMind()->EndState();
 				return;
@@ -751,7 +751,7 @@ void CombatState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				enemy,
 				memory.lastEnemyPos,
-				-1
+				memory.currentSearchEventID // grayman debug
 			));
 		}
 

@@ -43,6 +43,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("LostTrackOfEnemyState::Init - %s alert level = %f\r",owner->GetName(),(float)owner->AI_AlertLevel); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("LostTrackOfEnemyState initialised.\r");
 	assert(owner);
 

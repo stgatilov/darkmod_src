@@ -98,6 +98,7 @@ void HandleDoorTask::InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool su
 
 void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::Init %s\r",owner->name.c_str()); // grayman debug
 	// Init the base class
 	Task::Init(owner, subsystem);
 
@@ -434,6 +435,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s, state = %d\r",owner->name.c_str(),(int)_doorHandlingState);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::Perform %s, state = %d\r",owner->name.c_str(),(int)_doorHandlingState); // grayman debug
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -2575,6 +2577,7 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::OnFinish %s\r",owner->name.c_str()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask finished - %s\r",owner->name.c_str());
 	if (owner->m_HandlingDoor)
 	{

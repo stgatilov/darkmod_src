@@ -136,7 +136,6 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 			}
 			else
 			{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("PathCornerTask::Perform 1 - %s - calling MoveToPosition()\r",owner->GetName()); // grayman debug
 				owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy);
 			}
 		}
@@ -254,7 +253,6 @@ bool PathCornerTask::Perform(Subsystem& subsystem)
 		// elevator is moving, we should wait for it to reach the next floor.
 		// If the elevator isn't moving, we might have to force the AI to get it started
 		// again w/o using pathfinding. Currently, there is no elevator task running.
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("PathCornerTask::Perform 2 - %s - calling MoveToPosition()\r",owner->GetName()); // grayman debug
 		if (owner->MoveToPosition(path->GetPhysics()->GetOrigin(), _accuracy))
 		{
 			_moveInitiated = true;

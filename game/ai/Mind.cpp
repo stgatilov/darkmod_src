@@ -375,7 +375,7 @@ bool Mind::PerformCombatCheck()
 		idActor* enemy = owner->GetEnemy();
 
 		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
-		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy ); // grayman #3424 // grayman #3848
+		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy, true ); // grayman #3424 // grayman #3848
 		memory.lastEnemyPos = enemyOrigin;
 		memory.posEnemySeen = enemyOrigin;	// grayman #2903
 		

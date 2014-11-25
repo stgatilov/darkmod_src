@@ -8047,6 +8047,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent(%d,[%s],'%s',%d)\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL", time); // grayman debug
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
@@ -8099,46 +8100,49 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 }
 
 
-int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )   
+int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman debug   
 {
 	int index = -1;
 
 	// See if this event has already been logged
 
-	if ( se.type == E_EventTypeEnemy )
+	if (!forceLog)
 	{
-		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL, 0 );
-	}
-	else if ( se.type == E_EventTypeDeadPerson )
-	{
-		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
-	}
-	else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman debug
-	{
-		index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
-	}
-	else if ( se.type == E_EventTypeMissingItem )
-	{
-		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, se.entity.GetEntity(), 0 );
-	}
-	else if ( se.type == E_EventTypeMisc ) // grayman debug
-	{
-		index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
-	}
-	else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
-	{
-		index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
-	}
-	else if ( se.type == E_EventTypeSound ) // grayman debug
-	{
-		index = FindSuspiciousEvent( E_EventTypeSound, idVec3(0,0,0), NULL, se.time );
+		if ( se.type == E_EventTypeEnemy )
+		{
+			index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL, 0 );
+		}
+		else if ( se.type == E_EventTypeDeadPerson )
+		{
+			index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman debug
+		{
+			index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeMissingItem )
+		{
+			index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeMisc ) // grayman debug
+		{
+			index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
+		}
+		else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
+		{
+			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
+		}
+		else if ( se.type == E_EventTypeSound ) // grayman debug
+		{
+			index = FindSuspiciousEvent( E_EventTypeSound, idVec3(0,0,0), NULL, se.time );
+		}
 	}
 
 	if ( index < 0 )
 	{
 		gameLocal.m_suspiciousEvents.Append(se); // log this new event
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Logging Suspicious Event %d (%d,[%s],'%s',%d)\r",index,(int)se.type,se.location.ToString(),se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL",se.time); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Logging New Suspicious Event %d (%d,[%s],'%s',%d)\r",index,(int)se.type,se.location.ToString(),se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL",se.time); // grayman debug
 	}
 
 	return index;

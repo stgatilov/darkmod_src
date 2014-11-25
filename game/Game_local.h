@@ -1042,7 +1042,7 @@ public:
 
 	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ); // grayman #3424
 	SuspiciousEvent*		FindSuspiciousEvent( int eventID ); // grayman debug
-	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424
+	int						LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ); // grayman #3424 grayman debug
 	
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;

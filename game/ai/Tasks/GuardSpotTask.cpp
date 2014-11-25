@@ -304,6 +304,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 				if ((abs(ownerOrigin.x - _guardSpot.x) <= TRY_AGAIN_DISTANCE) &&
 					(abs(ownerOrigin.y - _guardSpot.y) <= TRY_AGAIN_DISTANCE))
 				{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s we've stopped at the spot - ownerOrigin = [%s], _guardSpot = [%s]\r",owner->GetName(),ownerOrigin.ToString(),_guardSpot.ToString()); // grayman debug
 					// We've successfully reached the spot
 
 					// If a facing angle is specified, turn to that angle.
@@ -372,8 +373,15 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				// check for closeness to goal to keep from running in circles around the spot
 				float distToSpot = (_guardSpot - ownerOrigin).LengthFast();
+				if (distToSpot < 100) // grayman debug
+				{
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) ownerOrigin = [%s], _guardSpot = [%s]\r",owner->GetName(),ownerOrigin.ToString(),_guardSpot.ToString()); // grayman debug
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) distToSpot = %f\r",owner->GetName(),distToSpot); // grayman debug
+					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) yaw = %f\r",owner->GetName(),owner->GetCurrentYaw()); // grayman debug
+				}
 				if (distToSpot <= CLOSE_ENOUGH)
 				{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) STOP MOVING\r",owner->GetName()); // grayman debug
 					// Stop moving, we're close enough
 					owner->StopMove(MOVE_STATUS_DONE);
 				}
@@ -422,20 +430,23 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		return;
 	}
 
-	// If newPos is in a portal, there might be a door there. We only care
-	// about finding doors if owner is a guard.
+	// If newPos is in a portal, there might be a door there.
 
 	CFrobDoor *door = NULL;
 
 	// Determine if this spot is in or near a door
 	idBounds clipBounds = idBounds(newPos);
-	clipBounds.ExpandSelf(32.0f);
+	clipBounds.ExpandSelf(64.0f);
 
 	// newPos might be sitting on the floor. If it is, we don't
 	// want to expand downward and pick up a door on the floor below.
+	// We also want to make sure the clipBounds is high enough to
+	// catch doors that slide up.
 	// Set the .z values accordingly.
 
 	clipBounds[0].z = newPos.z;
+	clipBounds[1].z = newPos.z + 128;
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (searching for door) clipBounds = [%s]\r",owner->GetName(),clipBounds.ToString()); // grayman debug
 	int clipmask = owner->GetPhysics()->GetClipMask();
 	idClipModel *clipModel;
 	idClipModel *clipModelList[MAX_GENTITIES];
@@ -453,6 +464,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		if (ent->IsType(CFrobDoor::Type))
 		{
 			door = static_cast<CFrobDoor*>(ent);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s found door '%s'\r",owner->GetName(),door->GetName()); // grayman debug
 			break;
 		}
 	}
@@ -469,10 +481,12 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		dir.Normalize();
 		frontPos += 50*dir;
 
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s door found, changing spot from [%s] to [%s]\r",owner->GetName(),newPos.ToString(),frontPos.ToString()); // grayman debug
 		_guardSpot = frontPos;
 	}
 	else
 	{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s no door found\r",owner->GetName()); // grayman debug
 		_guardSpot = newPos;
 	}
 

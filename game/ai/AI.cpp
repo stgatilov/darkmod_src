@@ -3276,7 +3276,6 @@ idAI::StopMove
 */
 void idAI::StopMove( moveStatus_t status )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::StopMove - %s\r",GetName()); // grayman debug
 	// Note: you might be tempted to set AI_RUN to false here,
 	// but AI_RUN needs to persist when stopping at a point
 	// where the AI is just going to start moving again.
@@ -4217,7 +4216,6 @@ idAI::MoveToPosition
 
 bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::MoveToPosition - %s\r",GetName()); // grayman debug
 	move.accuracy = accuracy; // grayman #3882
 
 	// Clear the "blocked" flag in the movement subsystem
@@ -9599,11 +9597,11 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 						maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
 
 						// don't provide the noisemaker itself as the entity parameter because that might go away
-						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL ); // grayman debug
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL, true ); // grayman debug
 					}
 					else
 					{
-						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, GetMemory().alertPos, NULL ); // grayman debug
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, GetMemory().alertPos, NULL, true ); // grayman debug
 					}
 				}
 			}
