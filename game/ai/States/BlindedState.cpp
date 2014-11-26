@@ -60,6 +60,9 @@ void BlindedState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.StopReacting(); // grayman #3559
 
+	memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeMisc, memory.alertPos, NULL, true); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Init - %s memory.currentSearchEventID = %d\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
+
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
@@ -68,17 +71,15 @@ void BlindedState::Init(idAI* owner)
 		memory.currentSearchEventID // grayman debug (was '0')
 	));
 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message)));
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s is blinded, barks 'snd_blinded'\n",gameLocal.time,owner->GetName());
 	}
 
-	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "4")) + 
-		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "2"));
+	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "8")) + 
+		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "4"));
 
 	_endTime = gameLocal.time + static_cast<int>(duration);
 
@@ -101,6 +102,7 @@ void BlindedState::Think(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 
+		owner->SetWaitState("");
 		owner->SetWaitState(ANIMCHANNEL_TORSO, "");
 		owner->SetWaitState(ANIMCHANNEL_LEGS, "");
 
@@ -118,7 +120,7 @@ void BlindedState::Think(idAI* owner)
 		}
 
 		// grayman debug - allow "idle search/suspicious animations"
-		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance()); // POSSIBLE PROBLEM
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431
@@ -126,11 +128,12 @@ void BlindedState::Think(idAI* owner)
 		int duration = _endTime - gameLocal.time;
 		if ( duration > 0 )
 		{
-			// Stare at the ground in front of you, as if you're trying to get your sight back
+			// Stare at the ground in front of you while waiting to get your sight back
 
-			idVec3 vec = owner->viewAxis.ToAngles().ToForward()*48;
+			idVec3 vec = owner->viewAxis.ToAngles().ToForward();
 			vec.z = 0;
-			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + vec;
+			vec.NormalizeFast();
+			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + 48*vec;
 			owner->Event_LookAtPosition(lookAtMe, MS2SEC(duration));
 			_staring = true;
 		}

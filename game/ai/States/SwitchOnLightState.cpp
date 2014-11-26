@@ -648,6 +648,7 @@ void SwitchOnLightState::Think(idAI* owner)
 			}
 			break;
 		case EStateRelight:
+			owner->TurnToward(_goalEnt->GetPhysics()->GetOrigin()); // grayman debug - maintain direction
 			if (owner->m_performRelight)
 			{
 				// Time to relight the light.

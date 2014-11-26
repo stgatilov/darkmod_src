@@ -34,8 +34,8 @@ const int INVESTIGATE_SPOT_TIME_REMOTE = 2000; // ms (grayman #2640 - change fro
 const int INVESTIGATE_SPOT_TIME_STANDARD = 300; // ms
 const int INVESTIGATE_SPOT_TIME_CLOSELY = 2500; // ms
 
-const int INVESTIGATE_SPOT_STOP_DIST = 32; // grayman debug - even if you can see the spot, keep moving if farther away than this
-//const int INVESTIGATE_SPOT_STOP_DIST = 100; // grayman #2640 - even if you can see the spot, keep moving if farther away than this
+//const int INVESTIGATE_SPOT_STOP_DIST = 32; // grayman debug - even if you can see the spot, keep moving if farther away than this
+const int INVESTIGATE_SPOT_STOP_DIST = 100; // grayman #2640 - even if you can see the spot, keep moving if farther away than this
 const int INVESTIGATE_SPOT_MIN_DIST  =  20;
 const int INVESTIGATE_SPOT_CLOSELY_MAX_DIST = 100; // grayman #2928
 
@@ -319,7 +319,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	if (owner->GetMoveStatus() == MOVE_STATUS_DONE)
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s reached my spot!\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s reached my spot!\r",owner->GetName()); // grayman debug
 		DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Hiding spot investigated: \r", _searchSpot);
 
 		// grayman #2928 - don't kneel down if you're too far from the original stim
@@ -360,13 +360,13 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	}
 	else
 	{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s still walking to my spot!\r",owner->GetName()); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s still walking to my spot!\r",owner->GetName()); // grayman debug
 		// Can we already see the point? Only stop moving when the spot shouldn't be investigated closely
 		// angua: added distance check to avoid running in circles if the point is too close to a wall.
 		// grayman #2640 - keep moving if you're > INVESTIGATE_SPOT_STOP_DIST from a point you can see
 
 		bool stopping = false;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s _investigateClosely = %d\r",owner->GetName(),_investigateClosely); // grayman debug
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("InvestigateSpotTask::Perform - %s _investigateClosely = %d\r",owner->GetName(),_investigateClosely); // grayman debug
 		if (!_investigateClosely)
 		{
 			float distToSpot = (_searchSpot - ownerOrigin).LengthFast();

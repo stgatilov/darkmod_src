@@ -121,7 +121,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s ...\r",owner->GetName()); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s at [%s], and %s\r",owner->GetName(),owner->GetPhysics()->GetOrigin().ToString(),owner->AI_FORWARD ? "moving" : "standing still"); // grayman debug
 	// quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{

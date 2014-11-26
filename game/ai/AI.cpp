@@ -9400,6 +9400,7 @@ bool idAI::CheckHearing( SSprParms *propParms )
 
 void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 {
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s heard sound '%s'\r",GetName(),propParms->name.c_str()); // grayman debug
 	if (m_bIgnoreAlerts)
 	{
 		return;
@@ -9449,6 +9450,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 	if ( ( GetAcuity("aud") > 0 ) && ( psychLoud > m_AlertLevelThisFrame ) && m_allowAudioAlerts )
 	{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 1\r",GetName()); // grayman debug
 		// grayman #3681 - Since noisemakers can emit several instances of
 		// the same sound, we want AI to only react to the first instance.
 		// If they react to each instance of the sound, their alert level
@@ -9494,6 +9496,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		AI_HEARDSOUND = true;
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 2\r",GetName()); // grayman debug
 		// grayman #3413 - use sound origin as alert origin if it can be reached.
 		// If not, use the apparent sound origin, which might be in a portal.
 
@@ -9517,6 +9520,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		if (propParms->maker->IsType(idActor::Type))
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 3\r",GetName()); // grayman debug
 			// grayman #3394 - maker might have made the sound, but was
 			// he put in motion by the player?
 
@@ -9549,6 +9553,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman #2816 - no alert if it was made by someone we killed
 		// grayman debug - no alert if it was made by a dead or KO'ed body that was kicked by another AI
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 4\r",GetName()); // grayman debug
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
 		if ( !soundMaker || // alert if unknown sound maker
 			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget && !soundMaker->fl.inaudible ) || // alert if enemy and not the last we killed and not in notarget mode
@@ -9581,6 +9586,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			// grayman #3848 - but not if you've already been told to flee
 			if (shouldAlert)
 			{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 5\r",GetName()); // grayman debug
 				// sets alert level
 				PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
 
@@ -9601,28 +9607,34 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 					}
 					else
 					{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 6\r",GetName()); // grayman debug
 						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeMisc, GetMemory().alertPos, NULL, true ); // grayman debug
 					}
 				}
 			}
 		}
 		
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 7\r",GetName()); // grayman debug
 		// Retrieve the messages from the other AI, if there are any
 		if (propParms->makerAI != NULL)
 		{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 8\r",GetName()); // grayman debug
 			for ( int i = 0 ; i < propParms->makerAI->m_Messages.Num() ; i++ )
 			{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 9\r",GetName()); // grayman debug
 				// grayman #3355 - Only pass messages that have a zero message tag, or a
 				// message tag that matches the sound's.
 				ai::CommMessagePtr message = propParms->makerAI->m_Messages[i];
 				if ( ( message->m_msgTag == 0 ) || ( message->m_msgTag == propParms->messageTag ) )
 				{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 10\r",GetName()); // grayman debug
 					mind->GetState()->OnAICommMessage(*message, psychLoud);
 //					mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
 				}
 			}
 		}
 
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::HearSound - %s 11\r",GetName()); // grayman debug
 		if ( cv_spr_show.GetBool() )
 		{
 			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 

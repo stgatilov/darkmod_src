@@ -798,7 +798,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		}
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s has joined searchID %d with role %d\r",ai->GetName(),ai->m_searchID,(int)searcherRole); // grayman debug
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CSearchManager::JoinSearch - %s has joined searchID %d (event %d) with role %d\r",ai->GetName(),ai->m_searchID,memory.currentSearchEventID,(int)searcherRole); // grayman debug
 	// grayman debug - "snd_helpSearch" will get overidden by the rising alert bark when entering
 	// Searching or Agitated Searching state in the same frame. Since the AI joining this search is not necessarily
 	// the result of being requested to, or responding to a call for help, it isn't really needed.

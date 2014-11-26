@@ -4286,6 +4286,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			// a yell that something bad has happened (blinded, fleeing, pain).
 			// The listener's alert level will be set just below Combat mode.
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RequestForHelp_CommType\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s heard RequestForHelp_CommType\r",owner->GetName()); // grayman debug
 			if (owner->IsFriend(issuingEntity))
 			{
 				// Do we already have a target we are dealing with?
@@ -4316,6 +4317,15 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				//	break;
 				//}
 
+				SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
+				if (se == NULL)
+				{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s sorry, couldn't find the event for this\r",owner->GetName()); // grayman debug
+					break;
+				}
+
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s found the event for this\r",owner->GetName()); // grayman debug
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s directObjectEntity = '%s'\r",owner->GetName(),directObjectEntity ? directObjectEntity->GetName() : "NULL"); // grayman debug
 				//gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), static_cast<idAI*>(issuingEntity)->GetEyePosition(), 2, 1000); // grayman debug
 				if (directObjectEntity && directObjectEntity->IsType(idActor::Type))
 				{
@@ -4331,11 +4341,12 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 
 				if (owner->GetEnemy() == NULL)
 				{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("State::OnAICommMessage - %s no enemy, but participate in search\r",owner->GetName()); // grayman debug
 					// grayman #3009 - pass the alert position so the AI can look at it
 					owner->PreAlertAI("aud", psychLoud, directObjectLocation); // grayman #3356
 
 					// no enemy set or enemy not found yet
-					SetUpSearchData(EAlertTypeRequestForHelp, directObjectLocation, issuingEntity, false, message.m_eventID); // grayman debug
+					SetUpSearchData(EAlertTypeRequestForHelp, se->location, issuingEntity, false, message.m_eventID); // grayman debug
 				}
 			}
 			else if (owner->AI_AlertLevel < owner->thresh_1 + (owner->thresh_2 - owner->thresh_1) * 0.5f)
@@ -4765,13 +4776,19 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RaiseTheAlarm_CorpseHasBeenSeen_CommType\r");
 			if (owner->IsFriend(issuingEntity))
 			{
+				SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
+				if (se == NULL)
+				{
+					break;
+				}
+
 				if ( !owner->KnowsAboutSuspiciousEvent(message.m_eventID) )
 				{
-					memory.corpseFound = gameLocal.FindSuspiciousEvent(message.m_eventID)->entity; // grayman #3424
+					memory.corpseFound = se->entity; // grayman #3424
 					owner->HasEvidence(E_EventTypeDeadPerson);
 					owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
 					memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_CORPSE; // grayman #2903
-					memory.posEvidenceIntruders = gameLocal.FindSuspiciousEvent(message.m_eventID)->location; // grayman #2903
+					memory.posEvidenceIntruders = se->location; // grayman #2903
 					memory.timeEvidenceIntruders = gameLocal.time;
 				}
 
@@ -4805,21 +4822,16 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// back and research the same area. The barking AI simply found the event
 				// for the first time himself.
 
-				if (message.m_eventID >= 0)
+				if (owner->HasSearchedEvent(message.m_eventID, se->type, se->location))
 				{
-					SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
-
-					if (owner->HasSearchedEvent(message.m_eventID, se->type, se->location))
-					{
-						break;
-					}
+					break;
 				}
 
 				memory.alertedDueToCommunication = true; // grayman #2920
 				memory.alertClass = EAlertVisual_1;
 				memory.alertType = EAlertTypeDeadPerson;
 				bool ISawItHappen = false;
-				SetUpSearchData(EAlertTypeDeadPerson, directObjectLocation, issuingEntity, ISawItHappen, message.m_eventID); // grayman debug
+				SetUpSearchData(EAlertTypeDeadPerson, se->location, issuingEntity, ISawItHappen, message.m_eventID); // grayman debug
 			}
 			else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
 			{
@@ -4834,9 +4846,14 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: RaiseTheAlarm_UnconsciousPersonHasBeenSeen_CommType\r");
 			if (owner->IsFriend(issuingEntity))
 			{
+				SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
+				if (se == NULL)
+				{
+					break;
+				}
+
 				if ( !owner->KnowsAboutSuspiciousEvent(message.m_eventID) )
 				{
-					SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
 					owner->HasEvidence(E_EventTypeUnconsciousPerson);
 					memory.unconsciousPersonFound = se->entity; // grayman #3424
 					owner->AddSuspiciousEvent(message.m_eventID); // grayman #3424 - I now know about this suspicious event
@@ -4875,14 +4892,9 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 				// back and research the same area. The barking AI simply found the event
 				// for the first time himself.
 
-				if (message.m_eventID >= 0)
+				if (owner->HasSearchedEvent(message.m_eventID, se->type, se->location))
 				{
-					SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(message.m_eventID);
-
-					if (owner->HasSearchedEvent(message.m_eventID, se->type, se->location))
-					{
-						break;
-					}
+					break;
 				}
 
 				memory.alertedDueToCommunication = true; // grayman #2920
@@ -4900,7 +4912,7 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 					memory.alertClass = EAlertVisual_1; // grayman #3424, grayman #3472 - was _3, which is no longer needed
 					memory.alertType = EAlertTypeUnconsciousPerson;
 					bool ISawItHappen = false;
-					SetUpSearchData(EAlertTypeUnconsciousPerson, directObjectLocation, issuingEntity, ISawItHappen, message.m_eventID); // grayman debug
+					SetUpSearchData(EAlertTypeUnconsciousPerson, se->location, issuingEntity, ISawItHappen, message.m_eventID); // grayman debug
 				}
 			}
 			else if (owner->AI_AlertLevel < owner->thresh_2*0.5f)
@@ -5549,7 +5561,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 			owner->SetAlertLevel(owner->thresh_5 - 0.1);
 		}
 
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, pos, NULL, true );
+		//memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, pos, NULL, true );
 		break;
 	case EAlertTypeFoundEnemy: // SAW AN ENEMY
 		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("********** %s SAW AN ENEMY **********\r",owner->GetName()); // grayman debug

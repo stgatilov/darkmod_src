@@ -272,8 +272,8 @@ void SearchingState::Init(idAI* owner)
 	}
 
 	// grayman debug - allow "idle search/suspicious animations"
-	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+	//owner->actionSubsystem->ClearTasks(); // EXPERIMENT
+	//owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance()); // EXPERIMENT
 }
 
 // Gets called each time the mind is thinking
