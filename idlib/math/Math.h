@@ -392,7 +392,7 @@ ID_INLINE double idMath::Cos64( float a ) {
 }
 
 ID_INLINE void idMath::SinCos( float a, float &s, float &c ) {
-#ifdef _WIN32
+#if defined(_MSC_VER) && defined(_M_IX86)
 	_asm {
 		fld		a
 		fsincos
@@ -445,7 +445,7 @@ ID_INLINE void idMath::SinCos16( float a, float &s, float &c ) {
 }
 
 ID_INLINE void idMath::SinCos64( float a, double &s, double &c ) {
-#ifdef _WIN32
+#if defined(_MSC_VER) && defined(_M_IX86)
 	_asm {
 		fld		a
 		fsincos
@@ -803,7 +803,7 @@ ID_INLINE int idMath::Ftoi( float f ) {
 }
 
 ID_INLINE int idMath::FtoiFast( float f ) {
-#ifdef _WIN32
+#if defined(_MSC_VER) && defined(_M_IX86)
 	int i;
 	__asm fld		f
 	__asm fistp		i		// use default rouding mode (round nearest)
@@ -835,7 +835,7 @@ ID_INLINE unsigned int idMath::Ftol( float f ) {
 }
 
 ID_INLINE unsigned int idMath::FtolFast( float f ) {
-#ifdef _WIN32
+#if defined(_MSC_VER) && defined(_M_IX86)
 	// FIXME: this overflows on 31bits still .. same as FtoiFast
 	unsigned int i;
 	__asm fld		f
