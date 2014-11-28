@@ -25,6 +25,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
+#define FILESIZE_fontInfo_t (20548)
+
 #ifdef BUILD_FREETYPE
 #include "../ft2/fterrors.h"
 #include "../ft2/ftsystem.h"
@@ -326,7 +328,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		idStr::Copynz( outFont->name, name, sizeof( outFont->name ) );
 
 		len = fileSystem->ReadFile( name, NULL, &ftime );
-		if ( len != sizeof( fontInfo_t ) ) {
+		if ( len != FILESIZE_fontInfo_t ) {
 			// Couldn't find the font file, so look for other sizes
 			pointSize = 0;
 			for (int i = 0; i < replacementCount; i++) {
@@ -520,6 +522,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 	memcpy( &registeredFont[registeredFontCount++], &font, sizeof( fontInfo_t ) );
 
 	if ( r_saveFontData->integer ) { 
+        common->Warning( "FIXME: font saving doesnt respect alignment!" );
 		fileSystem->WriteFile( va( "fonts/fontImage_%i.dat", pointSize), &font, sizeof( fontInfo_t ) );
 	}
 
