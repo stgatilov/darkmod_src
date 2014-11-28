@@ -22,6 +22,7 @@
 
 #include <cmath>
 #include <limits> // before FLT_EPSILON is #undefined
+#include <boost/numeric/ublas/matrix.hpp> // before FLT_EPSILON is #undefined
 
 #ifdef __linux__
 #include "../../sys/sys_public.h"

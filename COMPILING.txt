@@ -1,6 +1,6 @@
 To read the most recent compilation guide, please visit:
 
-http://modetwo.net/darkmod/wiki/index.php?title=The_Dark_Mod_-_Compilation_Guide
+http://wiki.thedarkmod.com/index.php?title=The_Dark_Mod_-_Compilation_Guide
 
 See also the README.linux file for further info about how to compile the code for Linux.
 
