@@ -119,15 +119,15 @@ void idEventDef::Construct()
 		{
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
-			argsize += sizeof( float );
+            argsize += sizeof(intptr_t);
 			break;
 
 		case D_EVENT_INTEGER :
-			argsize += sizeof( int );
+            argsize += sizeof(intptr_t);
 			break;
 
 		case D_EVENT_VECTOR :
-			argsize += sizeof( idVec3 );
+            argsize += E_EVENT_SIZEOF_VEC;
 			break;
 
 		case D_EVENT_STRING :
