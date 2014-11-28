@@ -40,7 +40,7 @@
 #define ALIGN16( x )					__declspec(align(16)) x
 #define PACKED
 
-#define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
@@ -75,7 +75,7 @@
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
@@ -94,11 +94,16 @@
 // Linux
 #ifdef __linux__
 
+#define BUILD_OS_ID					2
+
 #ifdef __i386__
 	#define	BUILD_STRING				"linux-x86"
-	#define BUILD_OS_ID					2
 	#define CPUSTRING					"x86"
 	#define CPU_EASYARGS				1
+#elif defined(__x86_64__)
+	#define	BUILD_STRING				"linux-x86_64"
+	#define CPUSTRING					"x86_64"
+	#define CPU_EASYARGS				0
 #elif defined(__ppc__)
 	#define	BUILD_STRING				"linux-ppc"
 	#define CPUSTRING					"ppc"
@@ -106,7 +111,7 @@
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define ALIGN16( x )					x
 #define PACKED							__attribute__((packed))
@@ -127,7 +132,7 @@
 #ifdef __GNUC__
 #define id_attribute(x) __attribute__(x)
 #else
-#define id_attribute(x)  
+#define id_attribute(x)
 #endif
 
 typedef enum {
@@ -311,7 +316,7 @@ void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
 void			Sys_ClearEvents( void );
 
-// input is tied to windows, so it needs to be started up and shut down whenever 
+// input is tied to windows, so it needs to be started up and shut down whenever
 // the main window is recreated
 void			Sys_InitInput( void );
 void			Sys_ShutdownInput( void );
@@ -479,7 +484,7 @@ void				Sys_DestroyThread( xthreadInfo& info ); // sets threadHandle back to 0
 // find the name of the calling thread
 // if index != NULL, set the index in g_threads array (use -1 for "main" thread)
 const char *		Sys_GetThreadName( int *index = 0 );
- 
+
 const int MAX_CRITICAL_SECTIONS		= 4;
 
 enum {
