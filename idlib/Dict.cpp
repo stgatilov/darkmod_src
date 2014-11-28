@@ -249,7 +249,7 @@ idDict::Checksum
 ================
 */
 int	idDict::Checksum( void ) const {
-	unsigned long ret;
+	unsigned int ret;
 
 	idList<idKeyValue> sorted = args;
 	sorted.Sort( KeyCompare );
