@@ -1703,8 +1703,8 @@ void idWindow::PostParse() {
 idWindow::GetWinVarOffset
 ================
 */
-int idWindow::GetWinVarOffset( idWinVar *wv, drawWin_t* owner) {
-	int ret = -1;
+intptr_t idWindow::GetWinVarOffset(idWinVar *wv, drawWin_t* owner) {
+    intptr_t ret = -1;
 
 	if ( wv == &rect ) {
 		ret = (int)&( ( idWindow * ) 0 )->rect;
@@ -2719,7 +2719,7 @@ idWindow::EmitOp
 ================
 */
 
-int idWindow::EmitOp( int a, int b, wexpOpType_t opType, wexpOp_t **opp ) {
+intptr_t idWindow::EmitOp(intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t **opp) {
 	wexpOp_t *op;
 /*
 	// optimize away identity operations
@@ -2770,8 +2770,8 @@ int idWindow::EmitOp( int a, int b, wexpOpType_t opType, wexpOp_t **opp ) {
 idWindow::ParseEmitOp
 ================
 */
-int idWindow::ParseEmitOp( idParser *src, int a, wexpOpType_t opType, int priority, wexpOp_t **opp ) {
-	int b = ParseExpressionPriority( src, priority );
+intptr_t idWindow::ParseEmitOp(idParser *src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t **opp) {
+    intptr_t b = ParseExpressionPriority(src, priority);
 	return EmitOp( a, b, opType, opp );  
 }
 
@@ -2783,9 +2783,9 @@ idWindow::ParseTerm
 Returns a register index
 =================
 */
-int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
+intptr_t idWindow::ParseTerm(idParser *src, idWinVar *var, intptr_t component) {
 	idToken token;
-	int		a, b;
+    intptr_t		a, b;
 
 	src->ReadToken( &token );
 
@@ -2828,7 +2828,7 @@ int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
 		var = GetWinVarByName(token, true);
 	}
 	if (var) {
-		a = (int)var;
+        a = (intptr_t)var;
 		//assert(dynamic_cast<idWinVec4*>(var));
 		var->Init(token, this);
 		b = component;
@@ -2858,7 +2858,7 @@ int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
 		// ugly but used for post parsing to fixup named vars
 		char *p = new char[token.Length()+1];
 		strcpy(p, token);
-		a = (int)p;
+        a = (intptr_t)p;
 		b = -2;
 		return EmitOp(a, b, WOP_TYPE_VAR);
 	}
@@ -2873,9 +2873,9 @@ Returns a register index
 =================
 */
 #define	TOP_PRIORITY 4
-int idWindow::ParseExpressionPriority( idParser *src, int priority, idWinVar *var, int component ) {
+intptr_t idWindow::ParseExpressionPriority(idParser *src, int priority, idWinVar *var, intptr_t component) {
 	idToken token;
-	int		a;
+    intptr_t		a;
 
 	if ( priority == 0 ) {
 		return ParseTerm( src, var, component );
@@ -2930,7 +2930,7 @@ int idWindow::ParseExpressionPriority( idParser *src, int priority, idWinVar *va
 	}
 	if ( priority == 4 && token == "?" ) {
 		wexpOp_t *oop = NULL;
-		int o = ParseEmitOp( src, a, WOP_TYPE_COND, priority, &oop );
+        intptr_t o = ParseEmitOp(src, a, WOP_TYPE_COND, priority, &oop);
 		if ( !src->ReadToken( &token ) ) {
 			return o;
 		}
@@ -2956,7 +2956,7 @@ idWindow::ParseExpression
 Returns a register index
 ================
 */
-int idWindow::ParseExpression(idParser *src, idWinVar *var, int component) {
+intptr_t idWindow::ParseExpression(idParser *src, idWinVar *var, intptr_t component) {
 	return ParseExpressionPriority( src, TOP_PRIORITY, var );
 }
 
@@ -3820,7 +3820,7 @@ void idWindow::FixupParms() {
 			const char *p = (const char*)(ops[i].a);
 			idWinVar *var = GetWinVarByName(p, true);
 			delete []p;
-			ops[i].a = (int)var;
+            ops[i].a = (intptr_t)var;
 			ops[i].b = -1;
 		}
 	}
