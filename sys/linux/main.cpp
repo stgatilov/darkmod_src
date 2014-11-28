@@ -50,7 +50,7 @@ void Sys_InitScanTable( void ) {
 Sys_AsyncThread
 =================
 */
-void Sys_AsyncThread( void ) {
+THREAD_RETURN_TYPE Sys_AsyncThread(void*) {
 	int now;
 	int next;
 	int	want_sleep;
@@ -101,6 +101,8 @@ void Sys_AsyncThread( void ) {
 		// thread exit
 		pthread_testcancel();
 	}
+
+    return (THREAD_RETURN_TYPE)0;
 }
 
 /*
