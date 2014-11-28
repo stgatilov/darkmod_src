@@ -216,7 +216,7 @@ private:
 	idStrList					warningList;
 	idStrList					errorList;
 
-	int							gameDLL;
+    uintptr_t					gameDLL;
 
 #ifdef ID_WRITE_VERSION
 	idCompressor *				config_compressor;

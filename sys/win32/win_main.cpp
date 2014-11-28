@@ -739,7 +739,7 @@ namespace
 Sys_DLL_Load
 =====================
 */
-int Sys_DLL_Load( const char *dllName ) {
+uintptr_t Sys_DLL_Load(const char *dllName) {
 	HINSTANCE	libHandle;
 	libHandle = LoadLibrary( dllName );
 	if ( libHandle ) {
@@ -756,7 +756,7 @@ int Sys_DLL_Load( const char *dllName ) {
 			return 0;
 		}
 	}
-	return (int)libHandle;
+    return (uintptr_t)libHandle;
 }
 
 /*
@@ -764,7 +764,7 @@ int Sys_DLL_Load( const char *dllName ) {
 Sys_DLL_GetProcAddress
 =====================
 */
-void *Sys_DLL_GetProcAddress( int dllHandle, const char *procName ) {
+void *Sys_DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) {
 	return GetProcAddress( (HINSTANCE)dllHandle, procName ); 
 }
 
@@ -773,7 +773,7 @@ void *Sys_DLL_GetProcAddress( int dllHandle, const char *procName ) {
 Sys_DLL_Unload
 =====================
 */
-void Sys_DLL_Unload( int dllHandle ) {
+void Sys_DLL_Unload(uintptr_t dllHandle) {
 	if ( !dllHandle ) {
 		return;
 	}
