@@ -443,13 +443,8 @@ int CPUCount( int &logicalNum, int &physicalNum )
 		
 		hCurrentProcessHandle = GetCurrentProcess();
 
-#if defined(_WIN64)
         DWORD_PTR  dwProcessAffinity;
         DWORD_PTR  dwSystemAffinity;
-#else
-        DWORD  dwSystemAffinity;
-        DWORD  dwProcessAffinity;
-#endif
 		GetProcessAffinityMask( hCurrentProcessHandle, &dwProcessAffinity, &dwSystemAffinity );
 
 		// Check if available process affinity mask is equal to the
