@@ -50,7 +50,11 @@
 
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
+#ifdef _WIN64
+#define THREAD_RETURN_TYPE unsigned long
+#else
 #define THREAD_RETURN_TYPE unsigned int
+#endif
 
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
 #define ID_LITTLE_ENDIAN			1
@@ -501,7 +505,7 @@ typedef enum {
 typedef struct {
 	const char *	name;
 	intptr_t		threadHandle;
-	size_t			threadId;
+    unsigned long	threadId;
 } xthreadInfo;
 
 const int MAX_THREADS				= 10;
