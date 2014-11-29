@@ -24,7 +24,6 @@
 #ifdef _WIN32
 #include "AL/al.h"
 #include "AL/alc.h"
-#include "../sys/win32/idal.h"
 // broken OpenAL SDK ?
 #define ID_ALCHAR (ALubyte *)
 #elif defined( MACOS_X )
