@@ -112,6 +112,29 @@ static inline int vorbis_ftoi(double f){  /* yes, double!  Otherwise,
 
 typedef ogg_int16_t vorbis_fpu_control;
 
+// Special case for x64 builds
+#if defined (_WIN64)
+
+// greebo: It seems VC++ 2012 math.h already provides lrint
+#if _MSC_VER >= 1800
+#include <math.h>
+
+static __inline int vorbis_ftoi(double f){
+    return lrint(f);
+}
+#else
+// Only for SSE2 or x64
+#include <emmintrin.h>
+
+// greebo: VC++ x64 doesn't support inline assembly, we have to use x64 intrinsics instead
+static __inline int vorbis_ftoi(double f)
+{
+    return _mm_cvtsd_si32(_mm_load_sd(&f));
+}
+#endif
+
+#else // regular 32 bit Windows
+
 static __inline int vorbis_ftoi(double f){
 	int i;
 	__asm{
@@ -120,6 +143,8 @@ static __inline int vorbis_ftoi(double f){
 	}
 	return i;
 }
+
+#endif
 
 static __inline void vorbis_fpu_setround(vorbis_fpu_control *fpu){
 }
