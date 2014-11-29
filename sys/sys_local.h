@@ -42,8 +42,6 @@ public:
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
 
-	virtual void			FPU_EnableExceptions( int exceptions );
-
 	virtual void			GetCallStack( address_t *callStack, const int callStackSize );
 	virtual const char *	GetCallStackStr( const address_t *callStack, const int callStackSize );
 	virtual const char *	GetCallStackCurStr( int depth );

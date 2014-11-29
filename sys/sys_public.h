@@ -188,15 +188,6 @@ typedef enum {
 } cpuid_t;
 
 typedef enum {
-	FPU_EXCEPTION_INVALID_OPERATION		= 1,
-	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 2,
-	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 4,
-	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 8,
-	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 16,
-	FPU_EXCEPTION_INEXACT_RESULT		= 32
-} fpuExceptions_t;
-
-typedef enum {
 	FPU_ROUNDING_TO_NEAREST				= 0,
 	FPU_ROUNDING_DOWN					= 1,
 	FPU_ROUNDING_UP						= 2,
@@ -289,9 +280,6 @@ const char *	Sys_GetProcessorString( void );
 
 // returns the FPU state as a string
 const char *	Sys_FPU_GetState( void );
-
-// enables the given FPU exceptions
-void			Sys_FPU_EnableExceptions( int exceptions );
 
 // sets the FPU precision to double
 void			Sys_FPU_SetPrecision();

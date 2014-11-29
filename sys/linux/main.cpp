@@ -265,14 +265,6 @@ const char *Sys_GetProcessorString( void ) {
 
 /*
 ===============
-Sys_FPU_EnableExceptions
-===============
-*/
-void Sys_FPU_EnableExceptions( int exceptions ) {
-}
-
-/*
-===============
 Sys_FPE_handler
 ===============
 */
