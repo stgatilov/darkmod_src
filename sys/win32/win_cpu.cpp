@@ -428,8 +428,6 @@ int CPUCount( int &logicalNum, int &physicalNum )
 
 	if ( logicalNum >= 1 ) {	// > 1 doesn't mean HT is enabled in the BIOS
 		HANDLE hCurrentProcessHandle;
-		DWORD  dwProcessAffinity;
-		DWORD  dwSystemAffinity;
 		DWORD  dwAffinityMask;
 
 		// Calculate the appropriate  shifts and mask based on the 
@@ -444,6 +442,14 @@ int CPUCount( int &logicalNum, int &physicalNum )
 		}
 		
 		hCurrentProcessHandle = GetCurrentProcess();
+
+#if defined(_WIN64)
+        DWORD_PTR  dwProcessAffinity;
+        DWORD_PTR  dwSystemAffinity;
+#else
+        DWORD  dwSystemAffinity;
+        DWORD  dwProcessAffinity;
+#endif
 		GetProcessAffinityMask( hCurrentProcessHandle, &dwProcessAffinity, &dwSystemAffinity );
 
 		// Check if available process affinity mask is equal to the
