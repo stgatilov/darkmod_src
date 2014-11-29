@@ -700,7 +700,7 @@ BOOL DialogAFBody::OnInitDialog()  {
 DialogAFBody::OnToolHitTest
 ================
 */
-int DialogAFBody::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
+INT_PTR DialogAFBody::OnToolHitTest(CPoint point, TOOLINFO* pTI) const {
 	CDialog::OnToolHitTest( point, pTI );
 	return DefaultOnToolHitTest( toolTips, this, point, pTI );
 }

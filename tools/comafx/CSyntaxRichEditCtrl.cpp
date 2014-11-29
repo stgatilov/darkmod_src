@@ -1354,7 +1354,7 @@ void CSyntaxRichEditCtrl::GoToLine( int line ) {
 CSyntaxRichEditCtrl::OnToolHitTest
 ================
 */
-int CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
+INT_PTR CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
 	CRichEditCtrl::OnToolHitTest( point, pTI );
 
     pTI->hwnd = GetSafeHwnd();

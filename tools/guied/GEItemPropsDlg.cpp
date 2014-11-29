@@ -699,7 +699,7 @@ INT_PTR CALLBACK ModifyItemKeyDlg_WndProc ( HWND hwnd, UINT msg, WPARAM wParam, 
 				SetWindowText ( hwnd, "New Item Key" );
 			}
 			
-			SetWindowLong ( hwnd, GWL_USERDATA, lParam );
+			SetWindowLongPtr ( hwnd, GWLP_USERDATA, lParam );
 			return FALSE;
 		}
 	
@@ -711,7 +711,7 @@ INT_PTR CALLBACK ModifyItemKeyDlg_WndProc ( HWND hwnd, UINT msg, WPARAM wParam, 
 					char key[1024];
 					char value[1024];
 					
-					const idKeyValue* keyValue = (const idKeyValue*) GetWindowLong ( hwnd, GWL_USERDATA );
+					const idKeyValue* keyValue = (const idKeyValue*) GetWindowLongPtr ( hwnd, GWLP_USERDATA );
 					
 					GetWindowText ( GetDlgItem ( hwnd, IDC_GUIED_ITEMKEY ), key, 1024 );
 					GetWindowText ( GetDlgItem ( hwnd, IDC_GUIED_ITEMVALUE ), value, 1024 );

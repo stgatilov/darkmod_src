@@ -67,7 +67,7 @@ protected:
 public:
 
 	virtual BOOL OnInitDialog();
-	virtual int OnToolHitTest(CPoint point, TOOLINFO* pTI) const;
+	virtual INT_PTR OnToolHitTest(CPoint point, TOOLINFO* pTI) const;
 	void AddClassNames();
 	void UpdateEntitySel(eclass_t *ent);
 	void SetKeyValPairs( bool updateAnims = true );
@@ -151,7 +151,7 @@ public:
 	afx_msg void OnLbnDblclkListVars();
 	void OnNMReleasedcaptureSlider1(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnCbnAnimationChange ();
-	void OnTimer(UINT nIDEvent);
+	void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonParticle();
 	afx_msg void OnBnClickedButtonSkin();
 	afx_msg void OnBnClickedButtonCurve();
