@@ -80,3 +80,7 @@
 #		define ID_OPENAL 0
 #	endif
 #endif
+
+#ifndef ID_OPENAL_EAX
+#	define ID_OPENAL_EAX 0
+#endif

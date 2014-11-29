@@ -829,6 +829,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 					int eax = soundSystem->IsEAXAvailable();
 					switch ( eax ) {
 					case 2:
+                        cvarSystem->SetCVarBool("s_useOpenAL", false);
 						// OpenAL subsystem load failed
 						MessageBox( MSG_OK, common->Translate( "#str_07238" ), common->Translate( "#str_07231" ), true );
 						break;

@@ -72,6 +72,7 @@ idEFXFile::ReadEffect
 ===============
 */
 bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
+#if ID_OPENAL_EAX
 	idToken name, token;
 	
 	if ( !src.ReadToken( &token ) )
@@ -176,6 +177,7 @@ bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
 		// other effect (not supported at the moment)
 		src.Error( "idEFXFile::ReadEffect: Unknown effect definition" );
 	}
+#endif
 
 	return false;
 }
