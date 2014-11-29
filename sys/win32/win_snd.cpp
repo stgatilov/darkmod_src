@@ -29,7 +29,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../sound/snd_local.h"
 #include "win_local.h"
 
-#include "../../openal/idal.cpp"
+#include "idal.cpp"
 
 #define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=NULL; } }
 #define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=NULL; } }
