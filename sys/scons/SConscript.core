@@ -253,7 +253,9 @@ if ( local_dedicated == 0 ):
 		linux/input.cpp \
 		linux/libXNVCtrl/NVCtrl.c'
 else:
-	sys_string += ' linux/dedicated.cpp'
+	sys_string += ' \
+        linux/dedicated.cpp \
+        stub/openal_stub.cpp'
 
 sys_list = scons_utils.BuildList( 'sys', sys_string )
 
