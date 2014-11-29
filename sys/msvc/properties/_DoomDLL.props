@@ -8,14 +8,14 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>sound/vorbis/include;$(SolutionDir)framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/include/openal;sound/vorbis/include;$(SolutionDir)framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__DOOM__;__DOOM_DLL__;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>PolarSSL.lib;libcurl.lib;dbghelp.lib;dinput8.lib;dsound.lib;dxguid.lib;DxErr.lib;eaxguid.lib;glu32.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;opengl32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>PolarSSL.lib;libcurl.lib;dbghelp.lib;dinput8.lib;dsound.lib;dxguid.lib;DxErr.lib;glu32.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;opengl32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>openal\lib;sys\win32\dongle;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalManifestDependencies>%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
       <SubSystem>Windows</SubSystem>
