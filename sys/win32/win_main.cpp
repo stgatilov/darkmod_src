@@ -28,7 +28,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <direct.h>
 #include <io.h>
 #include <conio.h>
-#include <mapi.h>
 #include <ShellAPI.h>
 
 #ifndef __MRC__
@@ -1257,136 +1256,7 @@ void Win_Frame( void ) {
 	}
 }
 
-extern "C" { void _chkstk( int size ); };
-void clrstk( void );
-
-/*
-====================
-TestChkStk
-====================
-*/
-void TestChkStk( void ) {
-	int		buffer[0x1000];
-
-	buffer[0] = 1;
-}
-
-/*
-====================
-HackChkStk
-====================
-*/
-void HackChkStk( void ) {
-	DWORD	old;
-	VirtualProtect( _chkstk, 6, PAGE_EXECUTE_READWRITE, &old );
-	*(byte *)_chkstk = 0xe9;
-	*(int *)((int)_chkstk+1) = (int)clrstk - (int)_chkstk - 5;
-
-	TestChkStk();
-}
-
-/*
-====================
-GetExceptionCodeInfo
-====================
-*/
-const char *GetExceptionCodeInfo( UINT code ) {
-	switch( code ) {
-		case EXCEPTION_ACCESS_VIOLATION: return "The thread tried to read from or write to a virtual address for which it does not have the appropriate access.";
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking.";
-		case EXCEPTION_BREAKPOINT: return "A breakpoint was encountered.";
-		case EXCEPTION_DATATYPE_MISALIGNMENT: return "The thread tried to read or write data that is misaligned on hardware that does not provide alignment. For example, 16-bit values must be aligned on 2-byte boundaries; 32-bit values on 4-byte boundaries, and so on.";
-		case EXCEPTION_FLT_DENORMAL_OPERAND: return "One of the operands in a floating-point operation is denormal. A denormal value is one that is too small to represent as a standard floating-point value.";
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "The thread tried to divide a floating-point value by a floating-point divisor of zero.";
-		case EXCEPTION_FLT_INEXACT_RESULT: return "The result of a floating-point operation cannot be represented exactly as a decimal fraction.";
-		case EXCEPTION_FLT_INVALID_OPERATION: return "This exception represents any floating-point exception not included in this list.";
-		case EXCEPTION_FLT_OVERFLOW: return "The exponent of a floating-point operation is greater than the magnitude allowed by the corresponding type.";
-		case EXCEPTION_FLT_STACK_CHECK: return "The stack overflowed or underflowed as the result of a floating-point operation.";
-		case EXCEPTION_FLT_UNDERFLOW: return "The exponent of a floating-point operation is less than the magnitude allowed by the corresponding type.";
-		case EXCEPTION_ILLEGAL_INSTRUCTION: return "The thread tried to execute an invalid instruction.";
-		case EXCEPTION_IN_PAGE_ERROR: return "The thread tried to access a page that was not present, and the system was unable to load the page. For example, this exception might occur if a network connection is lost while running a program over the network.";
-		case EXCEPTION_INT_DIVIDE_BY_ZERO: return "The thread tried to divide an integer value by an integer divisor of zero.";
-		case EXCEPTION_INT_OVERFLOW: return "The result of an integer operation caused a carry out of the most significant bit of the result.";
-		case EXCEPTION_INVALID_DISPOSITION: return "An exception handler returned an invalid disposition to the exception dispatcher. Programmers using a high-level language such as C should never encounter this exception.";
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "The thread tried to continue execution after a noncontinuable exception occurred.";
-		case EXCEPTION_PRIV_INSTRUCTION: return "The thread tried to execute an instruction whose operation is not allowed in the current machine mode.";
-		case EXCEPTION_SINGLE_STEP: return "A trace trap or other single-instruction mechanism signaled that one instruction has been executed.";
-		case EXCEPTION_STACK_OVERFLOW: return "The thread used up its stack.";
-		default: return "Unknown exception";
-	}
-}
-
 int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse );
-
-/*
-====================
-_except_handler
-====================
-*/
-EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *ExceptionRecord, void * EstablisherFrame,
-												struct _CONTEXT *ContextRecord, void * DispatcherContext ) {
-
-	static char msg[ 8192 ];
-	char FPUFlags[2048];
-
-	Sys_FPU_PrintStateFlags( FPUFlags, ContextRecord->FloatSave.ControlWord,
-										ContextRecord->FloatSave.StatusWord,
-										ContextRecord->FloatSave.TagWord,
-										ContextRecord->FloatSave.ErrorOffset,
-										ContextRecord->FloatSave.ErrorSelector,
-										ContextRecord->FloatSave.DataOffset,
-										ContextRecord->FloatSave.DataSelector );
-
-
-	sprintf( msg, 
-		"Please describe what you were doing when TDM crashed!\n"
-			"\n"
-			"-= FATAL EXCEPTION =-\n"
-			"\n"
-			"%s\n"
-			"\n"
-			"0x%x at address 0x%08x\n"
-			"\n"
-			"%s\n"
-			"\n"
-			"EAX = 0x%08x EBX = 0x%08x\n"
-			"ECX = 0x%08x EDX = 0x%08x\n"
-			"ESI = 0x%08x EDI = 0x%08x\n"
-			"EIP = 0x%08x ESP = 0x%08x\n"
-			"EBP = 0x%08x EFL = 0x%08x\n"
-			"\n"
-			"CS = 0x%04x\n"
-			"SS = 0x%04x\n"
-			"DS = 0x%04x\n"
-			"ES = 0x%04x\n"
-			"FS = 0x%04x\n"
-			"GS = 0x%04x\n"
-			"\n"
-			"%s\n",
-			com_version.GetString(),
-			ExceptionRecord->ExceptionCode,
-			ExceptionRecord->ExceptionAddress,
-			GetExceptionCodeInfo( ExceptionRecord->ExceptionCode ),
-			ContextRecord->Eax, ContextRecord->Ebx,
-			ContextRecord->Ecx, ContextRecord->Edx,
-			ContextRecord->Esi, ContextRecord->Edi,
-			ContextRecord->Eip, ContextRecord->Esp,
-			ContextRecord->Ebp, ContextRecord->EFlags,
-			ContextRecord->SegCs,
-			ContextRecord->SegSs,
-			ContextRecord->SegDs,
-			ContextRecord->SegEs,
-			ContextRecord->SegFs,
-			ContextRecord->SegGs,
-			FPUFlags
-		);
-
-	//EmailCrashReport( msg );
-	common->FatalError( msg );
-
-    // Tell the OS to restart the faulting instruction
-    return ExceptionContinueExecution;
-}
 
 #define TEST_FPU_EXCEPTIONS	/*	FPU_EXCEPTION_INVALID_OPERATION |		*/	\
 							/*	FPU_EXCEPTION_DENORMALIZED_OPERAND |	*/	\
@@ -1406,16 +1276,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	const HCURSOR hcurSave = ::SetCursor( LoadCursor( 0, IDC_WAIT ) );
 
 	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-
-#if 0
-    DWORD handler = (DWORD)_except_handler;
-    __asm
-    {                           // Build EXCEPTION_REGISTRATION record:
-        push    handler         // Address of handler function
-        push    FS:[0]          // Address of previous handler
-        mov     FS:[0],ESP      // Install new EXECEPTION_REGISTRATION
-    }
-#endif
 
 	win32.hInstance = hInstance;
 	idStr::Copynz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
