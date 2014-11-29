@@ -32,7 +32,12 @@
 // Win32
 #if defined(WIN32) || defined(_WIN32)
 
+#ifdef _WIN64
+#define	BUILD_STRING					"win-x64"
+#else
 #define	BUILD_STRING					"win-x86"
+#endif
+
 #define BUILD_OS_ID						0
 #define	CPUSTRING						"x86"
 #define CPU_EASYARGS					1
