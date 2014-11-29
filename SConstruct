@@ -13,7 +13,7 @@ conf_filename='site.conf'
 # choose configuration variables which should be saved between runs
 # ( we handle all those as strings )
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
-	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
+	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'OPENAL', 'ALSA',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
 	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP' ]
 
@@ -120,6 +120,9 @@ ID_MCHECK (default 2)
 	note that Doom has it's own block allocator/checking
 	this should not be considered a replacement, but an additional tool
 
+OPENAL (default 1)
+	enable OpenAL sound backend support
+
 ALSA (default 1)
 	enable ALSA sound backend support
 	
@@ -178,6 +181,7 @@ LIBC_MALLOC = '1'
 ID_NOLANADDRESS = '0'
 ID_MCHECK = '2'
 BUILD_ROOT = 'build'
+OPENAL = '1'
 ALSA = '1'
 SETUP = '0'
 SDK = '0'
@@ -514,7 +518,7 @@ curl_lib = []
 # if idlib should produce PIC objects ( depending on core or game inclusion )
 local_idlibpic = 0
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK OPENAL ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH'
 
 # end general configuration ----------------------
 

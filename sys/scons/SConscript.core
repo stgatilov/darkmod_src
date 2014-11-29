@@ -254,8 +254,7 @@ if ( local_dedicated == 0 ):
 		linux/libXNVCtrl/NVCtrl.c'
 else:
 	sys_string += ' \
-        linux/dedicated.cpp \
-        stub/openal_stub.cpp'
+        linux/dedicated.cpp'
 
 sys_list = scons_utils.BuildList( 'sys', sys_string )
 
@@ -286,9 +285,10 @@ if NO_GCH == '0':
 	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
 
 if ( local_dedicated == 1 ):
-	local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
-	# don't enable alsa for a dedicated server binary
-	ALSA = '0'
+    local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
+    # don't enable openal or alsa for a dedicated server binary
+    OPENAL = '0'
+    ALSA = '0'
 
 if ( local_gamedll == 1 ):
 	local_env.Append( CPPDEFINES = [ '__DOOM_DLL__' ] )
@@ -308,6 +308,10 @@ sound_env.Append( CPPPATH = '/usr/local/lib/oss/include' )
 # store a local copy of the include headers as well for holy build
 sound_env.Append( CPPPATH = '../linux/oss/include' )
 sound_list = [ '../linux/sound.cpp' ]
+if ( OPENAL != '1' ):
+	sound_env.Append( CPPDEFINES = 'ID_OPENAL=0' )
+	sound_list.append( '../../sys/stub/openal_stub.cpp' )
+
 if ( ALSA != '0' ):
 	sound_list.append( '../../sys/linux/sound_alsa.cpp' )
 else:
@@ -318,7 +322,9 @@ local_env.Append( LIBS = [ 'pthread', 'dl', 'rt', 'png' ] ) # greebo: Added libr
 if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-#	local_env.Append( LIBS = [ 'openal' ] )
+
+if ( OPENAL == '1' ):
+    local_env.Append( LIBS = [ 'openal' ] )
 
 # greebo: Add boost and image libraries
 local_env.Append(LIBS = [

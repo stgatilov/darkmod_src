@@ -385,7 +385,12 @@ void idAudioHardwareOSS::Write( bool flushing ) {
  Sys_LoadOpenAL
  -===============
  */
-bool Sys_LoadOpenAL( void ) {
-	return false;
+bool Sys_LoadOpenAL( void )
+{
+#if ID_OPENAL
+    return true;
+#else
+    return false;
+#endif
 }
 
