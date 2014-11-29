@@ -406,7 +406,8 @@ CPUCount
 #define HT_SUPPORTED_NOT_ENABLED	3
 #define HT_CANNOT_DETECT			4
 
-int CPUCount( int &logicalNum, int &physicalNum ) {
+int CPUCount( int &logicalNum, int &physicalNum )
+{
 	int statusFlag;
 	SYSTEM_INFO info;
 
@@ -700,25 +701,61 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 	return length;
 }
 
+// Only do this in 32 bit builds
+#if defined(_MSC_VER) && !defined(_WIN64)
+
+#define MXCSR_DAZ	(1 << 6)
+#define MXCSR_FTZ	(1 << 15)
+
+#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+
+static void EnableMXCSRFlag(int flag, bool enable, const char *name)
+{
+    int sse_mode;
+
+    STREFLOP_STMXCSR(sse_mode);
+
+    if (enable && (sse_mode & flag) == flag) {
+        common->Printf("%s mode is already enabled\n", name);
+        return;
+    }
+
+    if (!enable && (sse_mode & flag) == 0) {
+        common->Printf("%s mode is already disabled\n", name);
+        return;
+    }
+
+    if (enable) {
+        common->Printf("enabling %s mode\n", name);
+        sse_mode |= flag;
+    }
+    else {
+        common->Printf("disabling %s mode\n", name);
+        sse_mode &= ~flag;
+    }
+
+    STREFLOP_LDMXCSR(sse_mode);
+}
+#endif
+
 /*
 ================
 Sys_FPU_SetDAZ
 ================
 */
-void Sys_FPU_SetDAZ( bool enable ) {
-	DWORD dwData;
+void Sys_FPU_SetDAZ(bool enable) 
+{
+#if defined(_MSC_VER) && !defined(_WIN64)
+    if (!HasDAZ()) {
+        common->Printf("this CPU doesn't support Denormals-Are-Zero\n");
+        return;
+    }
 
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 6
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<6)	// clear DAX bit
-		or		eax, ecx		// set the DAZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
+    EnableMXCSRFlag(MXCSR_DAZ, enable, "Denormals-Are-Zero");
+#endif
 }
 
 /*
@@ -726,20 +763,11 @@ void Sys_FPU_SetDAZ( bool enable ) {
 Sys_FPU_SetFTZ
 ================
 */
-void Sys_FPU_SetFTZ( bool enable ) {
-	DWORD dwData;
-
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 15
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<15)	// clear FTZ bit
-		or		eax, ecx		// set the FTZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
+void Sys_FPU_SetFTZ(bool enable)
+{
+#if defined(_MSC_VER) && !defined(_WIN64)
+    EnableMXCSRFlag(MXCSR_FTZ, enable, "Flush-To-Zero");
+#endif
 }
 
 /*
