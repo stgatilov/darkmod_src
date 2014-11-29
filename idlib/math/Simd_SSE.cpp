@@ -32,12 +32,12 @@
 //===============================================================
 
 #define DRAWVERT_SIZE				60
-#define DRAWVERT_XYZ_OFFSET			(ptrdiff_t(src) - ptrdiff_t(&src->xyz))
-#define DRAWVERT_ST_OFFSET			(ptrdiff_t(src) - ptrdiff_t(&src->st))
-#define DRAWVERT_NORMAL_OFFSET		(ptrdiff_t(src) - ptrdiff_t(&src->normal))
-#define DRAWVERT_TANGENT0_OFFSET	(ptrdiff_t(src) - ptrdiff_t(&src->tangents[0]))
-#define DRAWVERT_TANGENT1_OFFSET	(ptrdiff_t(src) - ptrdiff_t(&src->tangents[1]))
-#define DRAWVERT_COLOR_OFFSET		(ptrdiff_t(src) - ptrdiff_t(&src->color))
+#define DRAWVERT_XYZ_OFFSET			(0*4)
+#define DRAWVERT_ST_OFFSET			(3*4)
+#define DRAWVERT_NORMAL_OFFSET		(5*4)
+#define DRAWVERT_TANGENT0_OFFSET	(8*4)
+#define DRAWVERT_TANGENT1_OFFSET	(11*4)
+#define DRAWVERT_COLOR_OFFSET		(14*4)
 
 #if defined(MACOS_X) && defined(__i386__)
 
@@ -83,7 +83,8 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVe
 	char *dst_p = (char *) dst;                             // dst_p = ecx
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
-	
+    assert( ptrdiff_t(&src->xyz) - ptrdiff_t(src) == DRAWVERT_XYZ_OFFSET );
+
 	/*
 		and			eax, ~3
 		movss		xmm4, [edi+0]
@@ -245,6 +246,7 @@ idSIMD_SSE::MinMax
 void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
+    assert( ptrdiff_t(&src->xyz) - ptrdiff_t(src) == DRAWVERT_XYZ_OFFSET );
 
 	__m128 xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
 	char *indexes_p;
