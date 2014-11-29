@@ -75,10 +75,14 @@ static	HANDLE		hTimer;
 Sys_Createthread
 ==================
 */
-void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count ) {
+void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count )
+{
+    // greebo: Somehow the x86 compiler won't eat the xthread_t even though the signature has the same return and argument types.
+    // so let's do a nasty reinterpret_cast<>
+
 	HANDLE temp = CreateThread(	NULL,	// LPSECURITY_ATTRIBUTES lpsa,
 									0,		// DWORD cbStack,
-									function,	// LPTHREAD_START_ROUTINE lpStartAddr,
+                                    reinterpret_cast<LPTHREAD_START_ROUTINE>(function),	// LPTHREAD_START_ROUTINE lpStartAddr,
 									parms,	// LPVOID lpvThreadParm,
 									0,		//   DWORD fdwCreate,
 									&info.threadId);
@@ -88,7 +92,7 @@ void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priorit
 	} else if (priority == THREAD_ABOVE_NORMAL ) {
 		SetThreadPriority( (HANDLE)info.threadHandle, THREAD_PRIORITY_ABOVE_NORMAL );
 	}
-	info.name = name;
+    info.name = name;
 	if ( *thread_count < MAX_THREADS ) {
 		threads[(*thread_count)++] = &info;
 	} else {
