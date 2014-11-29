@@ -4,7 +4,7 @@
 #ifndef __EFXLIBH
 #define __EFXLIBH
 
-#include "eax4.h"
+#include "../openal/include/eax4.h"
 
 
 

@@ -36,7 +36,7 @@
 #include <AL/alc.h>
 #define ID_ALCHAR
 #endif
-#include "../openal/include/efxlib.h"
+#include "efxlib.h"
 
 // demo sound commands
 typedef enum {
