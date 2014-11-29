@@ -40,11 +40,6 @@ public:
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
 
-	virtual void			GetCallStack( address_t *callStack, const int callStackSize );
-	virtual const char *	GetCallStackStr( const address_t *callStack, const int callStackSize );
-	virtual const char *	GetCallStackCurStr( int depth );
-	virtual void			ShutdownSymbols( void );
-
 	virtual bool			LockMemory( void *ptr, int bytes );
 	virtual bool			UnlockMemory( void *ptr, int bytes );
 

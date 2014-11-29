@@ -298,7 +298,7 @@ void idHeap::Free( void *p ) {
 			break;
 		}
 		default: {
-			idLib::common->FatalError( "idHeap::Free: invalid memory block (%s)", idLib::sys->GetCallStackCurStr( 4 ) );
+			idLib::common->FatalError( "idHeap::Free: invalid memory block" );
 			break;
 		}
 	}
@@ -377,7 +377,7 @@ dword idHeap::Msize( void *p ) {
 			return ((idHeap::page_s*)(*((intptr_t *)(((byte *)p) - ALIGN_SIZE( LARGE_HEADER_SIZE )))))->dataSize - ALIGN_SIZE( LARGE_HEADER_SIZE );
 		}
 		default: {
-			idLib::common->FatalError( "idHeap::Msize: invalid memory block (%s)", idLib::sys->GetCallStackCurStr( 4 ) );
+			idLib::common->FatalError( "idHeap::Msize: invalid memory block" );
 			return 0;
 		}
 	}
@@ -1223,15 +1223,12 @@ void Mem_EnableLeakTest( const char *name ) {
 #undef		Mem_Alloc16
 #undef		Mem_Free16
 
-#define MAX_CALLSTACK_DEPTH		6
-
 // size of this struct must be a multiple of 16 bytes
 typedef struct debugMemory_s {
 	const char *			fileName;
 	int						lineNumber;
 	int						frameNumber;
 	int						size;
-	address_t				callStack[MAX_CALLSTACK_DEPTH];
 	struct debugMemory_s *	prev;
 	struct debugMemory_s *	next;
 } debugMemory_t;
@@ -1303,14 +1300,12 @@ void Mem_Dump( const char *fileName ) {
 		}
 		dump[i] = '\0';
 		if ( ( b->size >> 10 ) != 0 ) {
-			fprintf( f, "size: %6d KB: %s, line: %d [%s], call stack: %s\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump, idLib::sys->GetCallStackStr( b->callStack, MAX_CALLSTACK_DEPTH ) );
+			fprintf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 		else {
-			fprintf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump, idLib::sys->GetCallStackStr( b->callStack, MAX_CALLSTACK_DEPTH ) );
+			fprintf( f, "size: %7d B: %s, line: %d [%s]\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 	}
-
-	idLib::sys->ShutdownSymbols();
 
 	fprintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
 	fprintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
@@ -1345,7 +1340,6 @@ typedef struct allocInfo_s {
 	int						lineNumber;
 	int						size;
 	int						numAllocs;
-	address_t				callStack[MAX_CALLSTACK_DEPTH];
 	struct allocInfo_s *	next;
 } allocInfo_t;
 
@@ -1353,10 +1347,9 @@ typedef enum {
 	MEMSORT_SIZE,
 	MEMSORT_LOCATION,
 	MEMSORT_NUMALLOCS,
-	MEMSORT_CALLSTACK
 } memorySortType_t;
 
-void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sortCallStack, int numFrames ) {
+void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int numFrames ) {
 	int numBlocks, totalSize, r, j;
 	debugMemory_t *b;
 	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted, *nextSorted;
@@ -1380,14 +1373,6 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sor
 			if ( a->lineNumber != b->lineNumber ) {
 				continue;
 			}
-			for ( j = 0; j < MAX_CALLSTACK_DEPTH; j++ ) {
-				if ( a->callStack[j] != b->callStack[j] ) {
-					break;
-				}
-			}
-			if ( j < MAX_CALLSTACK_DEPTH ) {
-				continue;
-			}
 			if ( idStr::Cmp( a->fileName, b->fileName ) != 0 ) {
 				continue;
 			}
@@ -1403,9 +1388,6 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sor
 			a->lineNumber = b->lineNumber;
 			a->size = b->size;
 			a->numAllocs = 1;
-			for ( j = 0; j < MAX_CALLSTACK_DEPTH; j++ ) {
-				a->callStack[j] = b->callStack[j];
-			}
 			a->next = allocInfo;
 			allocInfo = a;
 		}
@@ -1448,16 +1430,6 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sor
 				}
 				break;
 			}
-			// sort on call stack
-			case MEMSORT_CALLSTACK: {
-				for ( nextSorted = sortedAllocInfo; nextSorted; nextSorted = nextSorted->next ) {
-					if ( a->callStack[sortCallStack] < nextSorted->callStack[sortCallStack] ) {
-						break;
-					}
-					prevSorted = nextSorted;
-				}
-				break;
-			}
 		}
 		if ( !prevSorted ) {
 			a->next = sortedAllocInfo;
@@ -1477,13 +1449,11 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int sor
 	// write list to file
 	for ( a = sortedAllocInfo; a; a = nexta ) {
 		nexta = a->next;
-		fprintf( f, "size: %6d KB, allocs: %5d: %s, line: %d, call stack: %s\r\n",
+		fprintf( f, "size: %6d KB, allocs: %5d: %s, line: %d\r\n",
 					(a->size >> 10), a->numAllocs, Mem_CleanupFileName(a->fileName),
-							a->lineNumber, idLib::sys->GetCallStackStr( a->callStack, MAX_CALLSTACK_DEPTH ) );
+							a->lineNumber );
 		::free( a );
 	}
-
-	idLib::sys->ShutdownSymbols();
 
 	fprintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
 	fprintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
@@ -1500,7 +1470,7 @@ void Mem_DumpCompressed_f( const idCmdArgs &args ) {
 	int argNum;
 	const char *arg, *fileName;
 	memorySortType_t memSort = MEMSORT_LOCATION;
-	int sortCallStack = 0, numFrames = 0;
+	int numFrames = 0;
 
 	// get cmd-line options
 	argNum = 1;
@@ -1513,15 +1483,6 @@ void Mem_DumpCompressed_f( const idCmdArgs &args ) {
 			memSort = MEMSORT_LOCATION;
 		} else if ( idStr::Icmp( arg, "a" ) == 0 ) {
 			memSort = MEMSORT_NUMALLOCS;
-		} else if ( idStr::Icmp( arg, "cs1" ) == 0 ) {
-			memSort = MEMSORT_CALLSTACK;
-			sortCallStack = 2;
-		} else if ( idStr::Icmp( arg, "cs2" ) == 0 ) {
-			memSort = MEMSORT_CALLSTACK;
-			sortCallStack = 1;
-		} else if ( idStr::Icmp( arg, "cs3" ) == 0 ) {
-			memSort = MEMSORT_CALLSTACK;
-			sortCallStack = 0;
 		} else if ( arg[0] == 'f' ) {
 			numFrames = atoi( arg + 1 );
 		} else {
@@ -1545,7 +1506,7 @@ void Mem_DumpCompressed_f( const idCmdArgs &args ) {
 	} else {
 		fileName = arg;
 	}
-	Mem_DumpCompressed( fileName, memSort, sortCallStack, numFrames );
+	Mem_DumpCompressed( fileName, memSort, numFrames );
 }
 
 /*
@@ -1589,7 +1550,6 @@ void *Mem_AllocDebugMemory( const int size, const char *fileName, const int line
 		mem_debugMemory->prev = m;
 	}
 	mem_debugMemory = m;
-	idLib::sys->GetCallStack( m->callStack, MAX_CALLSTACK_DEPTH );
 
 	return ( ( (byte *) p ) + sizeof( debugMemory_t ) );
 }
@@ -1618,7 +1578,7 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const int lineNumber, c
 	m = (debugMemory_t *) ( ( (byte *) p ) - sizeof( debugMemory_t ) );
 
 	if ( m->size < 0 ) {
-		idLib::common->FatalError( "memory freed twice, first from %s, now from %s", idLib::sys->GetCallStackStr( m->callStack, MAX_CALLSTACK_DEPTH ), idLib::sys->GetCallStackCurStr( MAX_CALLSTACK_DEPTH ) );
+		idLib::common->FatalError( "memory freed twice" );
 	}
 
 	Mem_UpdateFreeStats( m->size );
@@ -1637,7 +1597,6 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const int lineNumber, c
 	m->lineNumber = lineNumber;
 	m->frameNumber = idLib::frameNumber;
 	m->size = -m->size;
-	idLib::sys->GetCallStack( m->callStack, MAX_CALLSTACK_DEPTH );
 
 	if ( align16 ) {
 		mem_heap->Free16( m );
@@ -1741,9 +1700,8 @@ Mem_Shutdown
 void Mem_Shutdown( void ) {
 
 	if ( mem_leakName[0] != '\0' ) {
-		Mem_DumpCompressed( va( "%s_leak_size.txt", mem_leakName ), MEMSORT_SIZE, 0, 0 );
-		Mem_DumpCompressed( va( "%s_leak_location.txt", mem_leakName ), MEMSORT_LOCATION, 0, 0 );
-		Mem_DumpCompressed( va( "%s_leak_cs1.txt", mem_leakName ), MEMSORT_CALLSTACK, 2, 0 );
+		Mem_DumpCompressed( va( "%s_leak_size.txt", mem_leakName ), MEMSORT_SIZE, 0 );
+		Mem_DumpCompressed( va( "%s_leak_location.txt", mem_leakName ), MEMSORT_LOCATION, 0 );
 	}
 
 	idHeap *m = mem_heap;
