@@ -16,7 +16,7 @@
       <AdditionalIncludeDirectories>$(SolutionDir)/include;$(SolutionDir)/include/devil;$(SolutionDir)/include/libjpeg;$(SolutionDir)/win32/devil;$(SolutionDir)/idlib;$(WindowsSDK_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(WindowsSDK_LibraryPath_x86);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DevIL.lib;libpng.lib;libjpeg.lib;ZipLoader.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>

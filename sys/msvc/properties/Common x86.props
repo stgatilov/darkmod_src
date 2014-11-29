@@ -8,7 +8,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)/win32/lib</AdditionalLibraryDirectories>
     </Lib>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)/win32/lib;$(SolutionDir)/win32/devil/lib;$(SolutionDir)/win32/libjpeg/lib;$(SolutionDir)/win32/libpng/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)/win32/lib;$(SolutionDir)/win32/devil/lib;$(SolutionDir)/win32/libjpeg/lib;$(SolutionDir)/win32/libpng/lib;$(WindowsSDK_LibraryPath_x86);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
