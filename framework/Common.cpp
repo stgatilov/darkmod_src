@@ -2454,12 +2454,6 @@ void idCommonLocal::Frame( void ) {
 
 		// set idLib frame number for frame based memory dumps
 		idLib::frameNumber = com_frameNumber;
-
-		// the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
-		if ( !Sys_FPU_StackIsEmpty() ) {
-			Printf( Sys_FPU_GetState() );
-			FatalError( "idCommon::Frame: the FPU stack is not empty at the end of the frame\n" );
-		}
 	}
 
 	catch( idException & ) {

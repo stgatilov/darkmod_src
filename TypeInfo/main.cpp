@@ -221,8 +221,6 @@ double			idSysLocal::GetClockTicks( void ) { return 0.0; }
 double			idSysLocal::ClockTicksPerSecond( void ) { return 1.0; }
 cpuid_t			idSysLocal::GetProcessorId( void ) { return (cpuid_t)0; }
 const char *	idSysLocal::GetProcessorString( void ) { return ""; }
-const char *	idSysLocal::FPU_GetState( void ) { return ""; }
-bool			idSysLocal::FPU_StackIsEmpty( void ) { return true; }
 void			idSysLocal::FPU_SetFTZ( bool enable ) {}
 void			idSysLocal::FPU_SetDAZ( bool enable ) {}
 

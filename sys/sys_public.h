@@ -278,9 +278,6 @@ double			Sys_ClockTicksPerSecond( void );
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
 
-// returns the FPU state as a string
-const char *	Sys_FPU_GetState( void );
-
 // sets the FPU precision to double
 void			Sys_FPU_SetPrecision();
 
@@ -533,8 +530,6 @@ public:
 	virtual double			ClockTicksPerSecond( void ) = 0;
 	virtual cpuid_t			GetProcessorId( void ) = 0;
 	virtual const char *	GetProcessorString( void ) = 0;
-	virtual const char *	FPU_GetState( void ) = 0;
-	virtual bool			FPU_StackIsEmpty( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
 

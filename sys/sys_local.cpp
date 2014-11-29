@@ -56,14 +56,6 @@ const char *idSysLocal::GetProcessorString( void ) {
 	return Sys_GetProcessorString();
 }
 
-const char *idSysLocal::FPU_GetState( void ) {
-	return Sys_FPU_GetState();
-}
-
-bool idSysLocal::FPU_StackIsEmpty( void ) {
-	return Sys_FPU_StackIsEmpty();
-}
-
 void idSysLocal::FPU_SetFTZ( bool enable ) {
 	Sys_FPU_SetFTZ( enable );
 }

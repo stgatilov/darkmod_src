@@ -480,15 +480,7 @@ void Sys_FlushCacheMemory(void *base, int bytes)
 //  Sys_Printf("Sys_FlushCacheMemory stub\n");
 }
 
-bool Sys_FPU_StackIsEmpty( void ) {
-	return true;
-}
-
 void Sys_FPU_ClearStack( void ) {
-}
-
-const char *Sys_FPU_GetState( void ) {
-	return "";
 }
 
 void Sys_FPU_SetPrecision() {
