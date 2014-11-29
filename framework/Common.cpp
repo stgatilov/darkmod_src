@@ -2800,6 +2800,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 			Sys_Quit();
 		}
 
+        // set fpu double extended precision
+        Sys_FPU_SetPrecision();
+
 		// initialize processor specific SIMD implementation
 		InitSIMD();
 

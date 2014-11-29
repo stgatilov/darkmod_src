@@ -22,8 +22,12 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#include <float.h>
 #include "win_local.h"
 
+#if defined(_MSC_VER) && defined(_WIN64)
+#include <immintrin.h>
+#endif
 
 /*
 ==============================================================
@@ -45,6 +49,12 @@ double Sys_GetClockTicks( void ) {
 
 	QueryPerformanceCounter( &li );
 	return = (double ) li.LowPart + (double) 0xFFFFFFFF * li.HighPart;
+
+#elif defined (_MSC_VER) && defined(_WIN64)
+
+    // greebo: Use the intrinsic provided by the VC++ compiler in x64
+    unsigned __int64 ticks = __rdtsc();
+    return static_cast<double>(ticks);
 
 #else
 
@@ -122,8 +132,13 @@ double Sys_ClockTicksPerSecond( void ) {
 HasCPUID
 ================
 */
-static bool HasCPUID( void ) {
-	__asm 
+static bool HasCPUID( void )
+{
+#if defined(_MSC_VER) && defined(_WIN64)
+    // Yes, we just have it, we're not compiling on 486-compatible hardware
+    return true;
+#else
+    __asm 
 	{
 		pushfd						// save eflags
 		pop		eax
@@ -152,6 +167,7 @@ err:
 	return false;
 good:
 	return true;
+#endif
 }
 
 #define _REG_EAX		0
@@ -164,7 +180,19 @@ good:
 CPUID
 ================
 */
-static void CPUID( int func, unsigned regs[4] ) {
+static void CPUID( int func, unsigned regs[4] )
+{
+#if defined (_MSC_VER) && defined(_WIN64)
+    // greebo: Use intrinsics on x64 in VC++
+    int values[4];
+
+    __cpuid(values, func);
+
+    regs[_REG_EAX] = values[0];
+    regs[_REG_EBX] = values[1];
+    regs[_REG_ECX] = values[2];
+    regs[_REG_EDX] = values[3];
+#else
 	unsigned regEAX, regEBX, regECX, regEDX;
 
 	__asm pusha
@@ -181,6 +209,7 @@ static void CPUID( int func, unsigned regs[4] ) {
 	regs[_REG_EBX] = regEBX;
 	regs[_REG_ECX] = regECX;
 	regs[_REG_EDX] = regEDX;
+#endif
 }
 
 
@@ -336,14 +365,13 @@ LogicalProcPerPhysicalProc
 #define NUM_LOGICAL_BITS   0x00FF0000     // EBX[23:16] Bit 16-23 in ebx contains the number of logical
                                           // processors per physical processor when execute cpuid with 
                                           // eax set to 1
-static unsigned char LogicalProcPerPhysicalProc( void ) {
-	unsigned int regebx = 0;
-	__asm {
-		mov eax, 1
-		cpuid
-		mov regebx, ebx
-	}
-	return (unsigned char) ((regebx & NUM_LOGICAL_BITS) >> 16);
+static unsigned char LogicalProcPerPhysicalProc( void )
+{
+    unsigned regs[4];
+
+    CPUID(1, regs);
+
+	return (unsigned char) ((regs[_REG_EBX] & NUM_LOGICAL_BITS) >> 16);
 }
 
 /*
@@ -354,14 +382,13 @@ GetAPIC_ID
 #define INITIAL_APIC_ID_BITS  0xFF000000  // EBX[31:24] Bits 24-31 (8 bits) return the 8-bit unique 
                                           // initial APIC ID for the processor this code is running on.
                                           // Default value = 0xff if HT is not supported
-static unsigned char GetAPIC_ID( void ) {
-	unsigned int regebx = 0;
-	__asm {
-		mov eax, 1
-		cpuid
-		mov regebx, ebx
-	}
-	return (unsigned char) ((regebx & INITIAL_APIC_ID_BITS) >> 24);
+static unsigned char GetAPIC_ID( void )
+{
+    unsigned regs[4];
+
+    CPUID(1, regs);
+
+    return (unsigned char)((regs[_REG_EBX] & INITIAL_APIC_ID_BITS) >> 24);
 }
 
 /*
@@ -494,7 +521,8 @@ static bool HasHTT( void ) {
 HasHTT
 ================
 */
-static bool HasDAZ( void ) {
+static bool HasDAZ( void )
+{
 	__declspec(align(16)) unsigned char FXSaveArea[512];
 	unsigned char *FXArea = FXSaveArea;
 	DWORD dwMask = 0;
@@ -510,10 +538,14 @@ static bool HasDAZ( void ) {
 
 	memset( FXArea, 0, sizeof( FXSaveArea ) );
 
+#if defined(_MSC_VER) && defined(_WIN64)
+    _fxsave(FXArea);
+#else
 	__asm {
 		mov		eax, FXArea
 		FXSAVE	[eax]
 	}
+#endif
 
 	dwMask = *(DWORD *)&FXArea[28];						// Read the MXCSR Mask
 	return ( ( dwMask & ( 1 << 6 ) ) == ( 1 << 6 ) );	// Return if the DAZ bit is set
@@ -670,48 +702,6 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 
 /*
 ===============
-Sys_FPU_StackIsEmpty
-===============
-*/
-bool Sys_FPU_StackIsEmpty( void ) {
-	__asm {
-		mov			eax, statePtr
-		fnstenv		[eax]
-		mov			eax, [eax+8]
-		xor			eax, 0xFFFFFFFF
-		and			eax, 0x0000FFFF
-		jz			empty
-	}
-	return false;
-empty:
-	return true;
-}
-
-/*
-===============
-Sys_FPU_ClearStack
-===============
-*/
-void Sys_FPU_ClearStack( void ) {
-	__asm {
-		mov			eax, statePtr
-		fnstenv		[eax]
-		mov			eax, [eax+8]
-		xor			eax, 0xFFFFFFFF
-		mov			edx, (3<<14)
-	emptyStack:
-		mov			ecx, eax
-		and			ecx, edx
-		jz			done
-		fstp		st
-		shr			edx, 2
-		jmp			emptyStack
-	done:
-	}
-}
-
-/*
-===============
 Sys_FPU_GetState
 
   gets the FPU state without changing the state
@@ -837,50 +827,6 @@ void Sys_FPU_EnableExceptions( int exceptions ) {
 }
 
 /*
-===============
-Sys_FPU_SetPrecision
-===============
-*/
-void Sys_FPU_SetPrecision( int precision ) {
-	short precisionBitTable[4] = { 0, 1, 3, 0 };
-	short precisionBits = precisionBitTable[precision & 3] << 8;
-	short precisionMask = ~( ( 1 << 9 ) | ( 1 << 8 ) );
-
-	__asm {
-		mov			eax, statePtr
-		mov			cx, precisionBits
-		fnstcw		word ptr [eax]
-		mov			bx, word ptr [eax]
-		and			bx, precisionMask
-		or			bx, cx
-		mov			word ptr [eax], bx
-		fldcw		word ptr [eax]
-	}
-}
-
-/*
-================
-Sys_FPU_SetRounding
-================
-*/
-void Sys_FPU_SetRounding( int rounding ) {
-	short roundingBitTable[4] = { 0, 1, 2, 3 };
-	short roundingBits = roundingBitTable[rounding & 3] << 10;
-	short roundingMask = ~( ( 1 << 11 ) | ( 1 << 10 ) );
-
-	__asm {
-		mov			eax, statePtr
-		mov			cx, roundingBits
-		fnstcw		word ptr [eax]
-		mov			bx, word ptr [eax]
-		and			bx, roundingMask
-		or			bx, cx
-		mov			word ptr [eax], bx
-		fldcw		word ptr [eax]
-	}
-}
-
-/*
 ================
 Sys_FPU_SetDAZ
 ================
@@ -920,4 +866,15 @@ void Sys_FPU_SetFTZ( bool enable ) {
 		mov		dwData, eax
 		LDMXCSR	dword ptr dwData
 	}
+}
+
+/*
+===============
+Sys_FPU_SetPrecision
+===============
+*/
+void Sys_FPU_SetPrecision() {
+#if defined(_MSC_VER) && defined(_M_IX86)
+    _controlfp(_PC_64, _MCW_PC);
+#endif
 }
