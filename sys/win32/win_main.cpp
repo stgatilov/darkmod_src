@@ -56,7 +56,6 @@ idCVar Win32Vars_t::win_outputDebugString( "win_outputDebugString", "0", CVAR_SY
 idCVar Win32Vars_t::win_outputEditString( "win_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar Win32Vars_t::win_viewlog( "win_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
 idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
-idCVar Win32Vars_t::win_allowMultipleInstances( "win_allowMultipleInstances", "0", CVAR_SYSTEM | CVAR_BOOL, "allow multiple instances running concurrently" );
 
 Win32Vars_t	win32;
 
@@ -1023,25 +1022,6 @@ void Sys_StartAsyncThread( void ) {
 	if ( !threadInfo.threadHandle ) {
 		common->Error( "Sys_StartAsyncThread: failed" );
 	}
-}
-
-/*
-================
-Sys_AlreadyRunning
-
-returns true if there is a copy of TDM running already
-================
-*/
-bool Sys_AlreadyRunning( void ) {
-#ifndef DEBUG
-	if ( !win32.win_allowMultipleInstances.GetBool() ) {
-		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "TDM" );
-		if ( ::GetLastError() == ERROR_ALREADY_EXISTS || ::GetLastError() == ERROR_ACCESS_DENIED ) {
-			return true;
-		}
-	}
-#endif
-	return false;
 }
 
 /*
