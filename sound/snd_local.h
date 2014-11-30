@@ -21,23 +21,12 @@
 #define __SND_LOCAL_H__
 
 // you need the OpenAL headers for build, even if AL is not enabled - http://www.openal.org/
-#ifdef _WIN32
-#include "AL/al.h"
-#include "AL/alc.h"
-#include "AL/alext.h"
-// broken OpenAL SDK ?
-#define ID_ALCHAR (ALubyte *)
-#elif defined( MACOS_X )
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#include <OpenAL/alext.h>
-#define ID_ALCHAR
-#else         
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
-#define ID_ALCHAR
-#endif
+
+#include "../framework/UsercmdGen.h"
+#include "sound.h"
 #include "efxlib.h"
 
 // demo sound commands
