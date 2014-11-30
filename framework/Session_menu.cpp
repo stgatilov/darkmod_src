@@ -828,11 +828,6 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				if ( cvarSystem->GetCVarBool( "s_useEAXReverb" ) ) {
 					int eax = soundSystem->IsEAXAvailable();
 					switch ( eax ) {
-					case 2:
-                        cvarSystem->SetCVarBool("s_useOpenAL", false);
-						// OpenAL subsystem load failed
-						MessageBox( MSG_OK, common->Translate( "#str_07238" ), common->Translate( "#str_07231" ), true );
-						break;
 					case 1:
 						// when you restart
 						MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );

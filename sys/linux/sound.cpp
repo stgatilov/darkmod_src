@@ -379,18 +379,3 @@ void idAudioHardwareOSS::Write( bool flushing ) {
 	}
 	m_writeChunks -= Min( m_writeChunks, m_freeWriteChunks );
 }
-
-/*
- ===============
- Sys_LoadOpenAL
- -===============
- */
-bool Sys_LoadOpenAL( void )
-{
-#if ID_OPENAL
-    return true;
-#else
-    return false;
-#endif
-}
-
