@@ -302,7 +302,7 @@ int idFile::WriteFloatString( const char *fmt, ... ) {
  */
 int idFile::ReadInt( int &value ) {
 	const int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
+	value = LittleInt(value);
 
 	return result;
 }
@@ -314,7 +314,7 @@ int idFile::ReadInt( int &value ) {
  */
 int idFile::ReadUnsignedInt( unsigned int &value ) {
 	const int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
+	value = LittleInt(value);
 
 	return result;
 }
@@ -471,7 +471,7 @@ int idFile::ReadMat3( idMat3 &mat ) {
  =================
  */
 int idFile::WriteInt( const int value ) {
-	const int v = LittleLong(value);
+	const int v = LittleInt(value);
 
 	return Write( &v, sizeof( v ) );
 }
@@ -482,7 +482,7 @@ int idFile::WriteInt( const int value ) {
  =================
  */
 int idFile::WriteUnsignedInt( const unsigned int value ) {
-	const unsigned int v = LittleLong(value);
+	const unsigned int v = LittleInt(value);
 
 	return Write( &v, sizeof( v ) );
 }

@@ -490,7 +490,7 @@ int		BigLong( int l ) {
 #endif
 }
 
-int		LittleLong( int l ) {
+int		LittleInt( int l ) {
 #if defined(ID_LITTLE_ENDIAN)
 	return l;
 #elif defined(ID_BIG_ENDIAN)

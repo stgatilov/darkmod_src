@@ -581,7 +581,7 @@ idDict::WriteToFileHandle
 */
 void idDict::WriteToFileHandle( idFile *f ) const {
 
-	int c = LittleLong( args.Num() );
+	int c = LittleInt( args.Num() );
 
 	f->Write( &c, sizeof( c ) );
 
@@ -626,7 +626,7 @@ void idDict::ReadFromFileHandle( idFile *f ) {
 	Clear();
 
 	f->Read( &c, sizeof( c ) );
-	c = LittleLong( c );
+	c = LittleInt( c );
 	for ( int i = 0; i < c; i++ ) {
 		key = ReadString( f );
 		val = ReadString( f );

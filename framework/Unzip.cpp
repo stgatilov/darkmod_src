@@ -1135,7 +1135,7 @@ static int unzlocal_getLong (FILE *fin, uLong *pX)
 
 	fread( &v, sizeof(v), 1, fin );
 
-	*pX = LittleLong( v);
+	*pX = LittleInt( v);
 	return UNZ_OK;
 
 /*
