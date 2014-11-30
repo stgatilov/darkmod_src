@@ -715,7 +715,7 @@ search paths.
 #define GPATH_COUNT 4
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
-	char *s, *base = NULL;
+	const char *s, *base = NULL;
      
 	// skip a drive letter?
 
@@ -742,7 +742,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
         }
 
         if ( base == NULL && gamePath && strlen( gamePath ) ) {
-            base = (char *)strstr( OSPath, gamePath );
+            base = strstr( OSPath, gamePath );
             while ( base ) {
 				char c1 = '\0', c2;
 				if ( base > OSPath ) {
