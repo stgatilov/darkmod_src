@@ -23,7 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id: PocketPickedState.cpp 5363 2012-04-01 18:08:35Z grayman $");
 
 #include "../Tasks/SingleBarkTask.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "PocketPickedState.h"
 #include "ConversationState.h" // grayman #3559
 
@@ -53,7 +53,8 @@ void PocketPickedState::Cleanup(idAI* owner)
 void PocketPickedState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
-	// grayman debug - allow "idle search/suspicious animations"
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
 	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
@@ -228,8 +229,8 @@ void PocketPickedState::Think(idAI* owner)
 
 					if ( owner->AI_AlertIndex >= ESearching )
 					{
-						// grayman debug - move alert setup into one method
-						SetUpSearchData(EAlertTypePickedPocket, owner->GetPhysics()->GetOrigin(), NULL, false, 0); // grayman debug
+						// grayman #3857 - move alert setup into one method
+						SetUpSearchData(EAlertTypePickedPocket, owner->GetPhysics()->GetOrigin(), NULL, false, 0);
 					}
 				}
 				Wrapup(owner);

@@ -1143,7 +1143,6 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	idVec3 impulse(vec3_zero);
 	idStr hitSound, sndName, surfType;
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CMeleeWeapon::MeleeCollision - %s struck %s\r",GetName(),other ? other->GetName() : "NULL"); // grayman debug
 	DamageDefName = spawnArgs.GetString( va("def_damage_%s", m_ActionName.c_str()) );
 	DmgDef = gameLocal.FindEntityDefDict( DamageDefName, false );
 
@@ -1229,7 +1228,6 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 
 	if ( other->fl.takedamage )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CMeleeWeapon::MeleeCollision - %s receiving damage\r",other->GetName()); // grayman debug
 		DM_LOG(LC_WEAPON,LT_DEBUG)LOGSTRING("MeleeWeapon: Applying damage at clipmodel id %d, joint handle %d\r", tr->c.id, location );
 		// TODO: Damage scaling - on the weapon * melee proficiency on the actor
 		other->Damage
@@ -1244,7 +1242,6 @@ void CMeleeWeapon::MeleeCollision( idEntity *other, idVec3 dir, trace_t *tr, int
 	if( other->IsType(idAI::Type) )
 	{
 		idAI *otherAI = static_cast<idAI *>(other);
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CMeleeWeapon::MeleeCollision - %s calling TactileAlert()\r",otherAI->GetName()); // grayman debug
 		otherAI->TactileAlert( GetOwner(), 100 );
 
 		// being hit always causes flat-footedness

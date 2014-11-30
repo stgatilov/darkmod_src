@@ -53,7 +53,7 @@ void PainState::Init(idAI* owner)
 		return;
 	}
 
-	owner->StopMove(MOVE_STATUS_DONE); // grayman debug
+	owner->StopMove(MOVE_STATUS_DONE); // grayman #3857
 
 	Memory& memory = owner->GetMemory();
 
@@ -74,7 +74,7 @@ void PainState::Init(idAI* owner)
 	{
 		memory.alertPos = owner->GetPhysics()->GetOrigin();
 
-		// grayman debug - Ask others to join your existing search
+		// grayman #3857 - Ask others to join your existing search
 		// by yelling out. If not searching, create a new event
 		// and attempt to rally others to you.
 		// problem: the "ouch" bark is issued elsewhere. "ouch"
@@ -88,12 +88,12 @@ void PainState::Init(idAI* owner)
 
 		// Do a single bark and assemble an AI message
 		CommMessagePtr message = CommMessagePtr(new CommMessage(
-			CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
-			//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
+			CommMessage::RequestForHelp_CommType, // grayman #3857 - asking for a response
+			//CommMessage::DetectedEnemy_CommType,  // grayman #3857 - this does nothing when no entity (parameter 4) is provided
 			owner, NULL, // from this AI to anyone
 			NULL,
 			memory.alertPos,
-			memory.currentSearchEventID // grayman debug (was '0')
+			memory.currentSearchEventID // grayman #3857 (was '0')
 		));
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message)));
@@ -149,8 +149,7 @@ void PainState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
-				// grayman debug - TODO: i don't see where the event id was set
-				memory.currentSearchEventID // grayman debug (was '0')
+				memory.currentSearchEventID // grayman #3857 (was '0')
 			));
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));

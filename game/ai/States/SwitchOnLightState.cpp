@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../StimResponse/StimResponse.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Tasks/RandomTurningTask.h"
 
 namespace ai
@@ -84,7 +84,8 @@ void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
 	Cleanup(owner);
-	// grayman debug - allow "idle search/suspicious animations"
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
 	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
@@ -648,7 +649,7 @@ void SwitchOnLightState::Think(idAI* owner)
 			}
 			break;
 		case EStateRelight:
-			owner->TurnToward(_goalEnt->GetPhysics()->GetOrigin()); // grayman debug - maintain direction
+			owner->TurnToward(_goalEnt->GetPhysics()->GetOrigin()); // grayman #3857 - maintain direction
 			if (owner->m_performRelight)
 			{
 				// Time to relight the light.
@@ -729,8 +730,8 @@ void SwitchOnLightState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel >= owner->thresh_3)
 					{
-						// grayman debug - move alert setup into one method
-						SetUpSearchData(EAlertTypeLightSource, light->GetPhysics()->GetOrigin(), light, false, 0); // grayman debug
+						// grayman #3857 - move alert setup into one method
+						SetUpSearchData(EAlertTypeLightSource, light->GetPhysics()->GetOrigin(), light, false, 0);
 					}
 				}
 

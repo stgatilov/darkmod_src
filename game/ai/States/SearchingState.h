@@ -59,13 +59,13 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
-	bool FindRadialSpot(idVec3 aiOrigin, idVec3 origin, float radius, idVec3 &spot); // grayman debug
+	bool FindRadialSpot(idVec3 aiOrigin, idVec3 origin, float radius, idVec3 &spot); // grayman #3857
 
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
-	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman debug
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
 
 	static StatePtr CreateInstance();
 

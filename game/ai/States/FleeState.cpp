@@ -59,7 +59,7 @@ void FleeState::Init(idAI* owner)
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.StopReacting(); // grayman #3559
 
-	// grayman debug- If participating in a search, leave the search
+	// grayman #3857- If participating in a search, leave the search
 	if (owner->m_searchID > 0)
 	{
 		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
@@ -92,7 +92,7 @@ void FleeState::Init(idAI* owner)
 			owner, NULL, // from this AI to anyone 
 			NULL,
 			memory.alertPos,
-			memory.currentSearchEventID // grayman debug (was '0')
+			memory.currentSearchEventID // grayman #3857 (was '0')
 		));
 
 		// grayman #3317 - Use a different initial flee bark
@@ -113,7 +113,6 @@ void FleeState::Init(idAI* owner)
 		}
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask(singleBark,message)));
-		//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
 
 		if (cv_ai_debug_transition_barks.GetBool())
 		{
@@ -131,6 +130,8 @@ void FleeState::Init(idAI* owner)
 
 	// No action
 	owner->actionSubsystem->ClearTasks();
+
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	// Play the surprised animation
 	// grayman #2416 - don't play if sitting or sleeping

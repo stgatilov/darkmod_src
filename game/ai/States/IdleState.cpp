@@ -71,6 +71,12 @@ void IdleState::Init(idAI* owner)
 	_startSleeping = owner->spawnArgs.GetBool("sleeping", "0");
 	_startSitting = owner->spawnArgs.GetBool("sitting", "0");
 	
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
+
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
+	memory.currentSearchEventID = -1; // grayman #3857
+
 	if (owner->HasSeenEvidence() && ( owner->spawnArgs.GetBool("disable_alert_idle", "0") == false) )
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);
@@ -84,9 +90,6 @@ void IdleState::Init(idAI* owner)
 	{
 		return;
 	}
-
-	// Memory shortcut
-	Memory& memory = owner->GetMemory();
 
 	// Initialise the animation state
 	if (_startSitting && memory.idlePosition == idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY))
@@ -282,12 +285,8 @@ void IdleState::InitialiseCommunication(idAI* owner)
 {
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
-	Memory& memory = owner->GetMemory(); // grayman #2603 - only allow rampdown barks if the AI was searching
-
 	if (owner->m_recentHighestAlertLevel >= owner->thresh_3)
 	{
-		memory.currentSearchEventID = -1; // grayman #3424
-
 		// grayman #3338 - Delay greetings if coming off a search.
 		// Divide the max alert level achieved so far in half, and
 		// delay for that number of minutes.

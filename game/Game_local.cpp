@@ -233,7 +233,7 @@ idGameLocal::idGameLocal() :
 	curBriefingVideoPart(-1),
 	m_MissionResult(MISSION_NOTEVENSTARTED),
 	m_HighestSRId(0),
-	m_searchManager(NULL) // grayman debug
+	m_searchManager(NULL) // grayman #3857
 {
 	Clear();
 }
@@ -313,8 +313,8 @@ void idGameLocal::Clear( void )
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_EscapePointManager->Clear();
 
-	m_searchManager = CSearchManager::Instance(); // grayman debug
-	m_searchManager->Clear(); // grayman debug
+	m_searchManager = CSearchManager::Instance(); // grayman #3857
+	m_searchManager->Clear(); // grayman #3857
 	
 	m_Interleave = 0;
 
@@ -962,7 +962,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteInt(static_cast<int>(se.type));
 		savegame.WriteVec3(se.location);
 		se.entity.Save(&savegame);
-		savegame.WriteInt(se.time); // grayman debug
+		savegame.WriteInt(se.time); // grayman #3857
 	}
 
 	// grayman #3584
@@ -1128,7 +1128,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 
 	m_EscapePointManager->Save(&savegame);
 
-	m_searchManager->Save(&savegame); // grayman debug
+	m_searchManager->Save(&savegame); // grayman #3857
 
 	// greebo: Save the maximum frob distance
 	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
@@ -1622,7 +1622,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	m_suspiciousEvents.Clear(); // grayman #3424
 	m_ambientLights.Clear();	// grayman #3584
-	m_searchManager->Clear(); // grayman debug
+	m_searchManager->Clear(); // grayman #3857
 }
 
 /*
@@ -2134,7 +2134,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		m_suspiciousEvents[i].type = static_cast<EventType>(type);
 		savegame.ReadVec3(m_suspiciousEvents[i].location);
 		m_suspiciousEvents[i].entity.Restore(&savegame);
-		savegame.ReadInt(m_suspiciousEvents[i].time); // grayman debug
+		savegame.ReadInt(m_suspiciousEvents[i].time); // grayman #3857
 	}
 
 	m_ambientLights.Clear();
@@ -2326,7 +2326,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 
 	m_EscapePointManager->Restore(&savegame);
 
-	m_searchManager->Restore(&savegame); // grayman debug
+	m_searchManager->Restore(&savegame); // grayman #3857
 
 	// greebo: Restore the maximum frob distance
 	savegame.ReadFloat(g_Global.m_MaxFrobDistance);
@@ -3402,7 +3402,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			// Process the active AI conversations
 			m_ConversationSystem->ProcessConversations();
 
-			// grayman debug - Process the active searches
+			// grayman #3857 - Process the active searches
 			m_searchManager->ProcessSearches();
 
 			// free the player pvs
@@ -5151,7 +5151,7 @@ void idGameLocal::SetupEAS()
 }
 
 
-// grayman debug
+// grayman #3857
 void idGameLocal::GetPortals(Search* search, idAI* ai)
 {
 	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
@@ -6026,7 +6026,7 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 		RadiusPush( origin, radius, push * dmgPower, attacker, ignorePush, attackerPushScale, false );
 	}
 
-	// grayman debug - douse nearby lights
+	// grayman #3857 - douse nearby lights
 	RadiusDouse( origin, radius );
 }
 
@@ -6098,7 +6098,7 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 	}
 }
 
-// grayman debug - douse nearby flame lights
+// grayman #3857 - douse nearby flame lights
 
 void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 {
@@ -8030,8 +8030,8 @@ int idGameLocal::GetSpyglassOverlay()
 	return m_spyglassOverlay;
 }
 
-// grayman debug
-SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman debug
+// grayman #3857
+SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman #3857
 {
 	if ( eventID < 0 )
 	{
@@ -8043,11 +8043,10 @@ SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman debu
 
 // grayman #3424
 
-int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ) // grayman debug
+int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ) // grayman #3857
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idGameLocal::FindSuspiciousEvent(%d,[%s],'%s',%d)\r",(int)type, location.ToString(), entity ? entity->GetName() : "NULL", time); // grayman debug
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
@@ -8057,7 +8056,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 			// grayman #3848 - must use separate booleans
 			bool locationMatch = true;
 			bool entityMatch   = true;
-			bool timeMatch	   = true; // grayman debug
+			bool timeMatch	   = true; // grayman #3857
 
 			// check location
 
@@ -8081,7 +8080,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				}
 			}
 
-			// grayman debug - check timestamp
+			// grayman #3857 - check timestamp
 
 			if ( time > 0 )
 			{
@@ -8090,7 +8089,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 				timeMatch = ( time == se.time);
 			}
 
-			if ( locationMatch && entityMatch && timeMatch ) // grayman debug
+			if ( locationMatch && entityMatch && timeMatch ) // grayman #3857
 			{
 				return i;
 			}
@@ -8100,7 +8099,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 }
 
 
-int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman debug   
+int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   
 {
 	int index = -1;
 
@@ -8116,7 +8115,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // gray
 		{
 			index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
 		}
-		else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman debug
+		else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman #3857
 		{
 			index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
 		}
@@ -8124,15 +8123,15 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // gray
 		{
 			index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, se.entity.GetEntity(), 0 );
 		}
-		else if ( se.type == E_EventTypeMisc ) // grayman debug
+		else if ( se.type == E_EventTypeMisc ) // grayman #3857
 		{
 			index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
 		}
-		else if ( se.type == E_EventTypeNoisemaker ) // grayman debug
+		else if ( se.type == E_EventTypeNoisemaker ) // grayman #3857
 		{
-			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
+			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, se.time );
 		}
-		else if ( se.type == E_EventTypeSound ) // grayman debug
+		else if ( se.type == E_EventTypeSound ) // grayman #3857
 		{
 			index = FindSuspiciousEvent( E_EventTypeSound, idVec3(0,0,0), NULL, se.time );
 		}
@@ -8142,7 +8141,6 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // gray
 	{
 		gameLocal.m_suspiciousEvents.Append(se); // log this new event
 		index = gameLocal.m_suspiciousEvents.Num() - 1;
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Logging New Suspicious Event %d (%d,[%s],'%s',%d)\r",index,(int)se.type,se.location.ToString(),se.entity.GetEntity() ? se.entity.GetEntity()->GetName() : "NULL",se.time); // grayman debug
 	}
 
 	return index;

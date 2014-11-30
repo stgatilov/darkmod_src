@@ -54,7 +54,6 @@ const idStr& GuardSpotTask::GetName() const
 
 void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Init - %s ...\r",owner->GetName()); // grayman debug
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
@@ -108,11 +107,11 @@ void GuardSpotTask::Init(idAI* owner, Subsystem& subsystem)
 				}
 			}
 		}
-		memory.stopMilling = false; // grayman debug
+		memory.stopMilling = false;
 	}
 	else
 	{
-		memory.stopGuarding = false; // grayman debug
+		memory.stopGuarding = false;
 	}
 }
 
@@ -121,7 +120,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s at [%s], and %s\r",owner->GetName(),owner->GetPhysics()->GetOrigin().ToString(),owner->AI_FORWARD ? "moving" : "standing still"); // grayman debug
 	// quit if incapable of continuing
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
@@ -130,16 +128,12 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 	Memory& memory = owner->GetMemory();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    millingInProgress = %d\r",memory.millingInProgress); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          stopMilling = %d\r",memory.stopMilling); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   guardingInProgress = %d\r",memory.guardingInProgress); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("         stopGuarding = %d\r",memory.stopGuarding); // grayman debug
-	if (memory.millingInProgress && memory.stopMilling) // grayman debug
+	if (memory.millingInProgress && memory.stopMilling)
 	{
 		return true; // told to cancel this task
 	}
 
-	if (memory.guardingInProgress && memory.stopGuarding) // grayman debug
+	if (memory.guardingInProgress && memory.stopGuarding)
 	{
 		return true; // told to cancel this task
 	}
@@ -161,7 +155,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
-		if (gameLocal.time >= _exitTime) // grayman debug
+		if (gameLocal.time >= _exitTime)
 		{
 			// If milling, and you'll be running to a guard or observation
 			// spot once milling ends, have the guards talk to each other.
@@ -304,7 +298,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 				if ((abs(ownerOrigin.x - _guardSpot.x) <= TRY_AGAIN_DISTANCE) &&
 					(abs(ownerOrigin.y - _guardSpot.y) <= TRY_AGAIN_DISTANCE))
 				{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s we've stopped at the spot - ownerOrigin = [%s], _guardSpot = [%s]\r",owner->GetName(),ownerOrigin.ToString(),_guardSpot.ToString()); // grayman debug
 					// We've successfully reached the spot
 
 					// If a facing angle is specified, turn to that angle.
@@ -316,7 +309,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 					{
 						if ( memory.guardingAngle == idMath::INFINITY)
 						{
-							owner->TurnToward(search->_origin); // grayman debug
+							owner->TurnToward(search->_origin);
 						}
 						else
 						{
@@ -373,15 +366,8 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			{
 				// check for closeness to goal to keep from running in circles around the spot
 				float distToSpot = (_guardSpot - ownerOrigin).LengthFast();
-				if (distToSpot < 100) // grayman debug
-				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) ownerOrigin = [%s], _guardSpot = [%s]\r",owner->GetName(),ownerOrigin.ToString(),_guardSpot.ToString()); // grayman debug
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) distToSpot = %f\r",owner->GetName(),distToSpot); // grayman debug
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) yaw = %f\r",owner->GetName(),owner->GetCurrentYaw()); // grayman debug
-				}
 				if (distToSpot <= CLOSE_ENOUGH)
 				{
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::Perform - %s (circling?) STOP MOVING\r",owner->GetName()); // grayman debug
 					// Stop moving, we're close enough
 					owner->StopMove(MOVE_STATUS_DONE);
 				}
@@ -446,7 +432,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	clipBounds[0].z = newPos.z;
 	clipBounds[1].z = newPos.z + 128;
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s (searching for door) clipBounds = [%s]\r",owner->GetName(),clipBounds.ToString()); // grayman debug
 	int clipmask = owner->GetPhysics()->GetClipMask();
 	idClipModel *clipModel;
 	idClipModel *clipModelList[MAX_GENTITIES];
@@ -464,7 +449,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		if (ent->IsType(CFrobDoor::Type))
 		{
 			door = static_cast<CFrobDoor*>(ent);
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s found door '%s'\r",owner->GetName(),door->GetName()); // grayman debug
 			break;
 		}
 	}
@@ -481,12 +465,10 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 		dir.Normalize();
 		frontPos += 50*dir;
 
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s door found, changing spot from [%s] to [%s]\r",owner->GetName(),newPos.ToString(),frontPos.ToString()); // grayman debug
 		_guardSpot = frontPos;
 	}
 	else
 	{
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::SetNewGoal - %s no door found\r",owner->GetName()); // grayman debug
 		_guardSpot = newPos;
 	}
 
@@ -498,7 +480,6 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("GuardSpotTask::OnFinish - %s ...\r",owner->GetName()); // grayman debug
 	// The action subsystem has finished guarding the spot, so set the
 	// booleans back to false
 	owner->GetMemory().guardingInProgress = false;

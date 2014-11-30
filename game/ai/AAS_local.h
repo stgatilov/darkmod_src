@@ -170,7 +170,7 @@ public:
 	virtual int GetClusterSize();
 
 	/**
-	 * grayman debug - retrieve a list of portals around areaNum
+	 * grayman #3857 - retrieve a list of portals around areaNum
 	 */
 	virtual void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits);
 

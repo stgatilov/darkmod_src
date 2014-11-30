@@ -98,7 +98,6 @@ void HandleDoorTask::InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool su
 
 void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::Init %s\r",owner->name.c_str()); // grayman debug
 	// Init the base class
 	Task::Init(owner, subsystem);
 
@@ -435,7 +434,6 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 	Memory& memory = owner->GetMemory();
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask performing by %s, state = %d\r",owner->name.c_str(),(int)_doorHandlingState);
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::Perform %s, state = %d\r",owner->name.c_str(),(int)_doorHandlingState); // grayman debug
 
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 	if (frobDoor == NULL)
@@ -2474,11 +2472,11 @@ void HandleDoorTask::AddToForbiddenAreas(idAI* owner, CFrobDoor* frobDoor)
 		// grayman #1327 - terminate a hiding spot search if one is going on. The AI
 		// tried to get through this door to get to a spot, but since he can't reach
 		// it, he should get another spot.
-		// grayman debug - also terminate a search if guarding a spot for that search,
+		// grayman #3857 - also terminate a search if guarding a spot for that search,
 		// or milling about at the start of a search
 
 		Memory& memory = owner->GetMemory();
-		if ( memory.hidingSpotInvestigationInProgress || memory.guardingInProgress || memory.millingInProgress ) // grayman debug
+		if ( memory.hidingSpotInvestigationInProgress || memory.guardingInProgress || memory.millingInProgress ) // grayman #3857
 		{
 			memory.stopHidingSpotInvestigation = true;
 			memory.stopGuarding = true;
@@ -2577,7 +2575,6 @@ void HandleDoorTask::OnFinish(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("HandleDoorTask::OnFinish %s\r",owner->name.c_str()); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("HandleDoorTask finished - %s\r",owner->name.c_str());
 	if (owner->m_HandlingDoor)
 	{

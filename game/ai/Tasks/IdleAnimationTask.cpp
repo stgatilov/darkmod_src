@@ -52,7 +52,7 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	// grayman debug - verify that this task should be running:
+	// grayman #3857 - verify that this task should be running:
 	// yes if in states 0,2,3,4
 	// no if in states 1,5
 
@@ -61,15 +61,15 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 		subsystem.FinishTask();
 	}
 
-	// grayman debug - clear lists, just to be sure
+	// grayman #3857 - clear lists, just to be sure
 	_idleAnimations.Clear();
 	_idleAnimationsTorso.Clear();
 	_idleAnimationsSitting.Clear();
 
-	// grayman debug - can now do idle search/suspicious anims while in states 2, 3, or 4
+	// grayman #3857 - can now do idle search/suspicious anims while in states 2, 3, or 4
 	if ( (owner->AI_AlertLevel >= owner->thresh_2) && (owner->AI_AlertLevel < owner->thresh_5) )
 	{
-		// grayman debug - Read the idle anims to be used when suspicious or searching.
+		// grayman #3857 - Read the idle anims to be used when suspicious or searching.
 		// These won't be run when the AI is actively searching (moving around), but
 		// will be run when they're guarding or observing.
 		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_searching"), _idleAnimations);
@@ -128,7 +128,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
-	// grayman debug - verify that this task should be running:
+	// grayman #3857 - verify that this task should be running:
 	// yes if in states 0,2,3,4
 	// no if in states 1,5
 
@@ -157,14 +157,15 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 		// SteveL #3182 - no idles if the AI wants to turn: check FacingIdeal too
 
-		// grayman debug - Don't play if the AI is an active searcher (it's okay if
-		// he's a guard or observer participating in a search.
+		// grayman #3857 - Don't play if the AI is an active searcher (it's okay if
+		// he's a guard or observer participating in a search. Test this by seeing if
+		// a hiding spot investigation is in progress.
 
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations && 
-			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman debug - AI_RUN might be left over after coming to a full stop
+			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman #3857 - AI_RUN might be left over after coming to a full stop
 
-			// grayman debug - playIdleAnimations is set to false during the following move types
+			// grayman #3857 - playIdleAnimations is now set to false during the following move types
 			//moveType != MOVETYPE_SIT_DOWN &&
 			//moveType != MOVETYPE_LAY_DOWN &&
 			//moveType != MOVETYPE_SLEEP &&
@@ -352,7 +353,7 @@ bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
 
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
-	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman debug - let running anim finish
+	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman #3857 - let running anim finish
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);

@@ -382,7 +382,6 @@ idMoveable::Collide
 
 bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity ) 
 {
-	idEntity* e = gameLocal.entities[collision.c.entityNum]; // grayman debug - delete when done
 	// greebo: Check whether we are colliding with the nearly exact same point again
 	bool sameCollisionAgain = (lastCollision.fraction != -1 && lastCollision.c.point.Compare(collision.c.point, 0.05f));
 

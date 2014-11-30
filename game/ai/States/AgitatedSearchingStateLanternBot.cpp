@@ -69,6 +69,7 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 	owner->commSubsystem->ClearTasks(); // grayman #3182
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
@@ -78,16 +79,16 @@ void AgitatedSearchingStateLanternBot::Init(idAI* owner)
 	// Move to a position where we can light up the alert position from
 	MoveTowardAlertPos(owner);
 
-	owner->GetMemory().currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL, true ); // grayman debug
+	owner->GetMemory().currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, owner->GetPhysics()->GetOrigin(), NULL, true ); // grayman #3857
 
 	// This will hold the message to be delivered with the inaudible bark
 	CommMessagePtr message(new CommMessage(
-		CommMessage::RequestForHelp_CommType, // grayman debug - asking for a response
-		//CommMessage::DetectedEnemy_CommType,  // grayman debug - this does nothing when no entity (parameter 4) is provided
+		CommMessage::RequestForHelp_CommType, // grayman #3857 - asking for a response
+		//CommMessage::DetectedEnemy_CommType,  // grayman #3857 - this does nothing when no entity (parameter 4) is provided
 		owner, NULL,// from this AI to anyone 
 		NULL,
 		_curAlertPos,
-		owner->GetMemory().currentSearchEventID // grayman debug (was '0')
+		owner->GetMemory().currentSearchEventID // grayman #3857 (was '0')
 	));
 
 	// The communication system plays starting bark

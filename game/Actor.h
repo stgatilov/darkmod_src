@@ -243,7 +243,7 @@ struct WarningEvent
 	idEntityPtr<idEntity> entity;	// giver if you received this; receiver if you sent it
 };
 
-// grayman debug - Hold information about a suspicious event and whether you searched it
+// grayman #3857 - Hold information about a suspicious event and whether you searched it
 struct KnownSuspiciousEvent
 {
 	int eventID;	// id of the suspicious event
@@ -441,7 +441,7 @@ public:
 	idList<WarningEvent>	m_warningEvents;
 
 	/**
-	* grayman debug - List of suspicious events this actor knows about, and
+	* grayman #3857 - List of suspicious events this actor knows about, and
 	* whether he's searched them or not.
 	**/
 	idList<KnownSuspiciousEvent>	m_knownSuspiciousEvents;
@@ -606,11 +606,11 @@ public:
 	**/
 	bool					KnowsAboutSuspiciousEvent( int eventID );
 	void					AddSuspiciousEvent( int eventID );
-	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ); // grayman debug 
+	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ); // grayman #3857 
 	void					AddWarningEvent( idActor* other, int eventID );
 	bool					HasBeenWarned( idActor* other, int eventID );
 	bool					HasSearchedEvent( int eventID );
-	bool					HasSearchedEvent( int eventID, EventType type, idVec3 location ); // grayman debug - TODO: apply where applicable
+	bool					HasSearchedEvent( int eventID, EventType type, idVec3 location ); // grayman #3857 - TODO: apply where applicable
 	void					MarkEventAsSearched( int eventID );
 
 	/**

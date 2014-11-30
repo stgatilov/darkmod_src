@@ -25,7 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ExamineRopeState.h"
 //#include "../Memory.h"
 #include "../Tasks/MoveToPositionTask.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 
 namespace ai
 {
@@ -60,7 +60,7 @@ void ExamineRopeState::Cleanup(idAI* owner)
 void ExamineRopeState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
-	// grayman debug - allow "idle search/suspicious animations"
+	// grayman #3857 - allow "idle search/suspicious animations"
 	owner->actionSubsystem->ClearTasks();
 	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
@@ -88,6 +88,8 @@ void ExamineRopeState::Init(idAI* owner)
 		Wrapup(owner);
 		return;
 	}
+
+	owner->actionSubsystem->ClearTasks(); // grayman #3857
 
 	if (owner->m_ReactingToPickedPocket) // grayman #3559
 	{
@@ -330,8 +332,8 @@ void ExamineRopeState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
-						// grayman debug - move alert setup into one method
-						SetUpSearchData(EAlertTypeRope, _examineSpot, rope, false, 0); // grayman debug
+						// grayman #3857 - move alert setup into one method
+						SetUpSearchData(EAlertTypeRope, _examineSpot, rope, false, 0); // grayman #3857
 					}
 				}
 

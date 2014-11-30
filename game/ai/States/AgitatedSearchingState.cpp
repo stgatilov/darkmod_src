@@ -28,7 +28,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/SingleBarkTask.h"
 #include "../Tasks/RepeatedBarkTask.h"
 #include "../Tasks/WaitTask.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "CombatState.h"
 #include "../Library.h"
 #include "../../AbsenceMarker.h"
@@ -46,7 +46,7 @@ const idStr& AgitatedSearchingState::GetName() const
 
 bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 {
-	// grayman debug - AgitatedSearchingState::Think() doesn't call this
+	// grayman #3857 - AgitatedSearchingState::Think() doesn't call this
 	// method directly. It calls SearchingState::Think(), and that calls
 	// this method. Use memory.leaveAlertState to tell ASS::T() whether it
 	// should quit when SS::T() returns to it.
@@ -60,7 +60,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	{
 		// Alert index is too low for this state, fall back
 		owner->GetMind()->EndState();
-		owner->GetMemory().leaveAlertState = true; // grayman debug
+		owner->GetMemory().leaveAlertState = true; // grayman #3857
 		return false;
 	}
 
@@ -75,14 +75,14 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	{
 		owner->GetUp(); // it's okay to call this multiple times
 		owner->GetMind()->EndState();
-		owner->GetMemory().leaveAlertState = true; // grayman debug
+		owner->GetMemory().leaveAlertState = true; // grayman #3857
 		return false;
 	}
 
 	if ( ( moveType == MOVETYPE_GET_UP ) ||	( moveType == MOVETYPE_GET_UP_FROM_LYING ) )
 	{
 		owner->GetMind()->EndState();
-		owner->GetMemory().leaveAlertState = true; // grayman debug
+		owner->GetMemory().leaveAlertState = true; // grayman #3857
 		return false;
 	}
 
@@ -91,17 +91,17 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 		// Alert index is too high, switch to the higher State
 		if (owner->m_searchID > 0)
 		{
-			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman debug - leave an ongoing search
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman #3857 - leave an ongoing search
 		}
 
 		//owner->Event_CloseHidingSpotSearch();
 		owner->GetMemory().combatState = -1; // grayman #3507
 		owner->GetMind()->PushState(owner->backboneStates[ECombat]);
-		owner->GetMemory().leaveAlertState = true; // grayman debug
+		owner->GetMemory().leaveAlertState = true; // grayman #3857
 		return false;
 	}
 
-	owner->GetMemory().leaveAlertState = false; // grayman debug
+	owner->GetMemory().leaveAlertState = false; // grayman #3857
 	// Alert Index is matching, return OK
 	return true;
 }
@@ -169,7 +169,7 @@ void AgitatedSearchingState::DrawWeapon(idAI* owner)
 	}
 }
 
-// grayman debug - different search roles and whether the AI has
+// grayman #3857 - different search roles and whether the AI has
 // seen evidence or not are used to determine the correct agitated
 // search bark. Since searchers can join and leave a search dynamically
 // and evidence can be seen for the first time during a search, we need
@@ -254,7 +254,7 @@ void AgitatedSearchingState::SetRepeatedBark(idAI* owner)
 		case ERBS_GUARD_OBSERVER:
 			soundName = "snd_state3"; // guards and observers say this, regardless of whether they've seen evidence or not
 
-			// grayman debug - "snd_state3" repeated barks are not intended to
+			// grayman #3857 - "snd_state3" repeated barks are not intended to
 			// alert nearby friends. Just send along a blank message.
 			sendSuspiciousMessage = false;
 			break;
@@ -299,7 +299,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 		return;
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s\r",owner->GetName()); // grayman debug
 	// grayman #3496 - note that we spent time in Agitated Search
 
 	memory.agitatedSearched = true;
@@ -314,9 +313,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Set up a new hiding spot search if not already assigned to one
 	if (owner->m_searchID <= 0)
 	{
-		if (!StartNewHidingSpotSearch(owner)) // grayman debug - AI gets his assignment
+		if (!StartNewHidingSpotSearch(owner)) // grayman #3857 - AI gets his assignment
 		{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("AgitatedSearchingState::Init - %s - no search! resetting alert level to just under searching\r",owner->GetName()); // grayman debug
 			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
 			owner->GetMind()->EndState();
 			return;
@@ -325,12 +323,12 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	// kill the repeated and single bark tasks
 	owner->commSubsystem->ClearTasks(); // grayman #3182
-	memory.repeatedBarkState = ERBS_NULL; // grayman debug
+	memory.repeatedBarkState = ERBS_NULL; // grayman #3857
 
 	if (owner->AlertIndexIncreased())
 	{
 		// grayman #3496 - enough time passed since last alert bark?
-		// grayman debug - enough time passed since last visual stim bark?
+		// grayman #3857 - enough time passed since last visual stim bark?
 		if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
 			 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 		{
@@ -345,8 +343,6 @@ void AgitatedSearchingState::Init(idAI* owner)
 				{
 					soundName = "snd_alert4NoEvidence";
 				}
-
-				assert (memory.currentSearchEventID >= 0); // grayman debug - should always be true
 
 				CommMessagePtr message = CommMessagePtr(new CommMessage(
 					CommMessage::DetectedSomethingSuspicious_CommType, 
@@ -365,7 +361,7 @@ void AgitatedSearchingState::Init(idAI* owner)
 					gameLocal.Printf("%d: %s rises to Agitated Searching state, barks '%s'\n",gameLocal.time,owner->GetName(),soundName.c_str());
 				}
 			}
-			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman debug
+			else if ( memory.respondingToSomethingSuspiciousMsg ) // grayman #3857
 			{
 				soundName = "snd_helpSearch";
 
@@ -391,16 +387,16 @@ void AgitatedSearchingState::Init(idAI* owner)
 
 	owner->commSubsystem->AddSilence(5000 + gameLocal.random.RandomInt(3000)); // grayman #3424
 
-	SetRepeatedBark(owner); // grayman debug
+	SetRepeatedBark(owner); // grayman #3857
 	
 	DrawWeapon(owner); // grayman #3507
 
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
 
-	// grayman debug - allow "idle search/suspicious animations"
-	//owner->actionSubsystem->ClearTasks(); // EXPERIMENT
-	//owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance()); // EXPERIMENT
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking
@@ -408,17 +404,17 @@ void AgitatedSearchingState::Think(idAI* owner)
 {
 	SearchingState::Think(owner);
 
-	// grayman debug - AgitatedSearchingState::CheckAlertLevel() is called
+	// grayman #3857 - AgitatedSearchingState::CheckAlertLevel() is called
 	// from SearchingState::Think(), and if that determines we're in the wrong
 	// state, we don't want to set repeated barks or check
 	// for a drawn weapon. AgitatedSearchingState::CheckAlertLevel() sets
 	// leaveAlertState to true if this is the case.
-	if (owner->GetMemory().leaveAlertState) // grayman debug
+	if (owner->GetMemory().leaveAlertState) // grayman #3857
 	{
 		return;
 	}
 
-	SetRepeatedBark(owner); // grayman debug - in case the bark has to change
+	SetRepeatedBark(owner); // grayman #3857 - in case the bark has to change
 
 	// grayman #3563 - check safety net for drawing a weapon
 	if ( gameLocal.time >= _drawEndTime )

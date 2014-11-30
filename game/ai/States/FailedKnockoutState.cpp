@@ -66,7 +66,6 @@ void FailedKnockoutState::Init(idAI* owner)
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Init %s - play animation\r",owner->GetName()); // grayman debug
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
@@ -75,13 +74,13 @@ void FailedKnockoutState::Init(idAI* owner)
 	_allowEndTime = gameLocal.time + 800;
 
 	// Set end time
-	_stateEndTime = gameLocal.time + 1000; // grayman debug - was 3000, but the failed_ko anim
+	_stateEndTime = gameLocal.time + 1000; // grayman #3857 - was 3000, but the failed_ko anim
 											// is being aborted. If it runs, it only takes a second
 	
 	// Set the alert position 50 units in the attacking direction
 	//memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-	// grayman debug - moved into Think(). If we do this here, the pain
+	// grayman #3857 - moved into Think(). If we do this here, the pain
 	// bark gets aborted by this bark.
 /*	// Do a single bark and assemble an AI message
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
@@ -104,7 +103,6 @@ void FailedKnockoutState::Init(idAI* owner)
 // Gets called each time the mind is thinking
 void FailedKnockoutState::Think(idAI* owner)
 {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("FailedKnockoutState::Think - %s - waitState = '%s'\r",owner->GetName(),owner->WaitState(ANIMCHANNEL_TORSO)); // grayman debug
 	if (gameLocal.time < _allowEndTime)
 	{
 		return; // wait...
@@ -120,13 +118,13 @@ void FailedKnockoutState::Think(idAI* owner)
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
 		memory.StopReacting(); // grayman #3559
 
-		// grayman debug - alert and bark moved down from Init()
+		// grayman #3857 - alert and bark moved down from Init()
 
 		// Set the alert position 50 units in the attacking direction
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-		// grayman debug - move alert setup into one method
-		SetUpSearchData(EAlertTypeFailedKO, memory.alertPos, NULL, false, 0); // grayman debug
+		// grayman #3857 - move alert setup into one method
+		SetUpSearchData(EAlertTypeFailedKO, memory.alertPos, NULL, false, 0);
 
 		// Do a single bark and assemble an AI message
 		CommMessagePtr message = CommMessagePtr(new CommMessage(

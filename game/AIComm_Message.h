@@ -176,9 +176,9 @@ struct CommMessage
 		ConveyWarning_EnemiesHaveBeenSeen_CommType,
 
 		ConveyWarning_CorpseHasBeenSeen_CommType, // grayman #1327
-		ConveyWarning_UnconsciousPersonHasBeenSeen_CommType, // grayman debug
+		ConveyWarning_UnconsciousPersonHasBeenSeen_CommType, // grayman #3857
 
-		// grayman debug - initial discoveries must be responded to
+		// grayman #3857 - initial discoveries must be responded to
 		RaiseTheAlarm_ItemsHaveBeenStolen_CommType,
 		RaiseTheAlarm_CorpseHasBeenSeen_CommType,
 		RaiseTheAlarm_UnconsciousPersonHasBeenSeen_CommType,

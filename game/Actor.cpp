@@ -194,7 +194,6 @@ idAnimState::StopAnim
 =====================
 */
 void idAnimState::StopAnim( int frames ) {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAnimState::StopAnim\r"); // grayman debug
 	animBlendFrames = 0;
 	animator->Clear( channel, gameLocal.time, FRAME2MS( frames ) );
 }
@@ -746,7 +745,7 @@ idActor::idActor( void ) {
 
 	m_EyeOffset			= vec3_zero; // grayman #3525
 
-	m_knownSuspiciousEvents.Clear(); // grayman debug
+	m_knownSuspiciousEvents.Clear(); // grayman #3857
 
 	m_warningEvents.Clear(); // grayman #3424
 
@@ -1255,7 +1254,7 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( m_MouthOffset );	// grayman #1104
 	savefile->WriteVec3( m_EyeOffset );	// grayman #3525
 
-	// grayman debug
+	// grayman #3857
 
 	savefile->WriteInt(m_knownSuspiciousEvents.Num());
 	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
@@ -2169,7 +2168,7 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	if (ent->IsType(idActor::Type)) 
 	{
 		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
-		// grayman debug - or if marked 'invisible'
+		// grayman #3857 - or if marked 'invisible'
 		if ((ent->fl.notarget) || (ent->fl.invisible))
 		{
 			return false;
@@ -3384,14 +3383,12 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	float mass = 1.0f;
 	if ( inflictor->IsType(CMeleeWeapon::Type) && ( attacker != gameLocal.world ) && ( inflictor->GetBindMaster() != NULL ) )
 	{
-		DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by melee weapon\r", GetName() ); // grayman debug
 		hitByMelee = true;
 	}
 	else if ( inflictor->IsType(idMoveable::Type) )
 	{
 		mass = inflictor->spawnArgs.GetFloat("mass","1");
 		hitByMoveable = true;
-		DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by moveable\r", GetName() ); // grayman debug
 	}
 	
 	int damage;
@@ -3429,8 +3426,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 	bool bKO = damageDef->GetBool( "knockout" );
 	bool bKOPowerBlow = damageDef->GetBool( "knockout_power" );
 
-	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s -          bKO = %d\r", GetName(),bKO); // grayman debug
-	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - bKOPowerBlow = %d\r", GetName(),bKOPowerBlow); // grayman debug
 	if ( ( bKO || bKOPowerBlow ) && collision )
 	{
 		// Objects with enough mass and traveling fast enough will force a KO.
@@ -3511,7 +3506,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		}
 		else if ( hitByMelee && !inflictor->m_droppedByAI ) // grayman #2816
 		{
-	DM_LOG(LC_AAS,LT_DEBUG)LOGSTRING("idActor::Damage - %s - hit by melee weapon, calling TestKnockoutBloe()\r", GetName()); // grayman debug
 			if ( TestKnockoutBlow( attacker, dir, collision, location, bKOPowerBlow ) )
 			{
 				// For now, first KO blow does no health damage
@@ -3567,14 +3561,6 @@ void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir
 		} 
 		else
 		{
-			// grayman debug - note this event
-			/* TODO: a suspicious event is registered elsewhere for this event
-			if (IsType(idAI::Type))
-			{
-				idAI* ai = static_cast<idAI*>(this);
-				ai->GetMemory().currentSearchEventID = ai->LogSuspiciousEvent( E_EventTypeMisc, GetPhysics()->GetOrigin(), NULL );
-			}
-			*/
 			Pain( inflictor, attacker, damage, dir, location, damageDef );
 
 			// FIX: if drowning, stop pain SFX and play drown SFX on voice channel
@@ -3711,7 +3697,6 @@ bool idActor::Pain( idEntity *inflictor, idEntity *attacker, int damage, const i
 	if ( !painAnim.Length() ) {
 		painAnim = "pain";
 	}
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Pain - %s - set up pain anim '%s'\r",GetName(),painAnim.c_str()); // grayman debug
 
 	if ( g_debugDamage.GetBool() ) {
 		gameLocal.Printf( "Damage: joint: '%s', zone '%s', anim '%s'\n", animator.GetJointName( ( jointHandle_t )location ), 
@@ -4022,7 +4007,6 @@ idActor::Event_GetPainAnim
 =====================
 */
 void idActor::Event_GetPainAnim( void ) {
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idActor::Event_GetPainAnim %s - play pain animation\r",GetName()); // grayman debug
 	if ( !painAnim.Length() ) {
 		idThread::ReturnString( "pain" );
 	} else {
@@ -5106,7 +5090,7 @@ void idActor::MarkEventAsSearched( int eventID )
 		static_cast<idAI*>(this)->HasEvidence(se->type);
 	}
 
-	// grayman debug - Do I know about this event?
+	// grayman #3857 - Do I know about this event?
 
 	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
 	{
@@ -5122,7 +5106,7 @@ void idActor::MarkEventAsSearched( int eventID )
 	// marking it as searched, add it to
 	// my list of known events.
 
-	// grayman debug
+	// grayman #3857
 	KnownSuspiciousEvent kse;
 	kse.eventID = eventID;
 	kse.searched = true;
@@ -5151,8 +5135,8 @@ bool idActor::HasSearchedEvent( int eventID )
 	return false;
 }
 
-// grayman debug
-bool idActor::HasSearchedEvent( int eventID, EventType type, idVec3 location ) // grayman debug - TODO: apply where applicable
+// grayman #3857
+bool idActor::HasSearchedEvent( int eventID, EventType type, idVec3 location ) // grayman #3857 - TODO: apply where applicable
 {
 	if ( eventID < 0 )
 	{
@@ -5217,7 +5201,7 @@ bool idActor::KnowsAboutSuspiciousEvent( int eventID ) // grayman #3424
 		return false;
 	}
 
-	// grayman debug
+	// grayman #3857
 
 	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
 	{
@@ -5242,7 +5226,7 @@ void idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
 		return;
 	}
 
-	// grayman debug
+	// grayman #3857
 	KnownSuspiciousEvent kse;
 	kse.eventID = eventID;
 	kse.searched = false;
@@ -5280,13 +5264,13 @@ void idActor::AddWarningEvent( idActor* other, int eventID)
 
 // grayman #3424 - log a suspicious event
 
-int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ) // grayman debug
+int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ) // grayman #3857
 {
 	SuspiciousEvent se;
 	se.type = type;
 	se.location = loc;
 	se.entity = entity;
-	se.time = gameLocal.time; // grayman debug
+	se.time = gameLocal.time; // grayman #3857
 
 	int index = gameLocal.LogSuspiciousEvent(se,forceLog);
 	AddSuspiciousEvent(index); // I know about this event

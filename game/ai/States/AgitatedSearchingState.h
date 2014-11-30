@@ -59,7 +59,7 @@ protected:
 
 	void DrawWeapon(idAI* owner); // grayman #3507
 
-	void SetRepeatedBark(idAI* owner); // grayman debug
+	void SetRepeatedBark(idAI* owner); // grayman #3857
 };
 
 } // namespace ai

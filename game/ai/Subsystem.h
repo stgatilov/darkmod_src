@@ -34,6 +34,7 @@ enum SubsystemId {
 	SubsysMovement,
 	SubsysCommunication,
 	SubsysAction,
+	SubsysSearch, // grayman #3857
 	SubsystemCount,
 };
 

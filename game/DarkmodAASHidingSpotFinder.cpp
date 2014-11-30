@@ -1067,7 +1067,7 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 			viewLifetime
 		);
 
-		// grayman debug - print the spotIndex above the arrow
+		// grayman #3857 - print the spotIndex above the arrow
 		gameRenderWorld->DrawText(va("%d",spotIndex),DebugDrawList[spotIndex].goal.origin + markerArrowLength + idVec3(0,0,10),0.125f, colorWhite, gameLocal.GetLocalPlayer()->viewAxis, 1, 120000);
 	}
 }

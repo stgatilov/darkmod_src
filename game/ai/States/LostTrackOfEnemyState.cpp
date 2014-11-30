@@ -25,7 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "LostTrackOfEnemyState.h"
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Library.h"
 
 namespace ai
@@ -43,7 +43,6 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	// Init base class first
 	State::Init(owner);
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("LostTrackOfEnemyState::Init - %s alert level = %f\r",owner->GetName(),(float)owner->AI_AlertLevel); // grayman debug
 	DM_LOG(LC_AI, LT_INFO)LOGSTRING("LostTrackOfEnemyState initialised.\r");
 	assert(owner);
 
@@ -84,8 +83,8 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 		memory.alertPos = owner->lastVisibleEnemyPos;
 	}
 
-	// grayman debug - move alert setup into one method
-	SetUpSearchData(EAlertTypeLostTrackOfEnemy, memory.alertPos, NULL, false, 0); // grayman debug
+	// grayman #3857 - move alert setup into one method
+	SetUpSearchData(EAlertTypeLostTrackOfEnemy, memory.alertPos, NULL, false, 0);
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 	owner->ClearEnemy();
@@ -104,7 +103,7 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 
-	// grayman debug - allow "idle search/suspicious animations"
+	// grayman #3857 - allow "idle search/suspicious animations"
 	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }

@@ -87,7 +87,7 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 
 	// grayman #3756 - prevent a repeated bark from aborting a recent
 	// non-repeated bark (most likely one issued when rising to a new alert level)
-	// grayman debug - Enough time passed since last visual stim bark?
+	// grayman #3857 - Enough time passed since last visual stim bark?
 
 	if ( ( gameLocal.time >= _nextBarkTime ) &&
 		 ( gameLocal.time >= owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
@@ -110,7 +110,6 @@ bool RepeatedBarkTask::Perform(Subsystem& subsystem)
 			{
 				msgTag = gameLocal.GetNextMessageTag(); // grayman #3355
 				owner->AddMessage(_message,msgTag);
-		//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), owner->GetEyePosition() + idVec3(0,0,25), 2, 1000); // grayman debug
 			}
 
 			owner->GetMind()->GetMemory().currentlyBarking = true; // grayman #3182 - idle anims cannot start

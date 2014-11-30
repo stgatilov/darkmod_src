@@ -1042,10 +1042,10 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* The spots resulting from the current search or gotten from
 	* another AI.
 	*/
-	//CDarkmodHidingSpotTree	m_hidingSpots; // grayman debug
+	//CDarkmodHidingSpotTree	m_hidingSpots; // grayman #3857
 
 	// An array of random numbers serving as indexes into the hiding spot list.
-	//std::vector< int >		m_randomHidingSpotIndexes; // grayman debug
+	//std::vector< int >		m_randomHidingSpotIndexes; // grayman #3857
 
 	/**
 	* Used for drowning
@@ -1152,7 +1152,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* grayman #2422 - search volume when searching
 	 **/
 	 
-	//idBounds				m_searchLimits; // grayman debug - no longer used; limits are kept in the search assignment
+	//idBounds				m_searchLimits; // grayman #3857 - no longer used; limits are kept in the search assignment
 	
 	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
@@ -1309,7 +1309,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_deckedByPlayer;		// grayman #3314 - TRUE if the player killed or KO'ed me (for mission statistics "bodies found")
 	bool m_allowAudioAlerts;	// grayman #3424 - latch to prevent audio alert processing
 
-	// grayman debug - search manager
+	// grayman #3857 - search manager
 	int m_searchID;				// which search he's assigned to; index into the Search Manager's list of active searches
 
 	// The mind of this AI
@@ -1320,6 +1320,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	ai::MovementSubsystemPtr movementSubsystem;
 	ai::SubsystemPtr actionSubsystem;
 	ai::CommunicationSubsystemPtr commSubsystem;
+	ai::SubsystemPtr searchSubsystem; // grayman #3857
 
 	// greebo: The names of the backbone states, one for each alert state
 	// e.g. ECombat => "Combat"
@@ -1801,7 +1802,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool HasSeenEvidence() const;
 
 	/**
-	 * grayman debug - register that evidence has been seen that
+	 * grayman #3857 - register that evidence has been seen that
 	 * causes the AI to use Alert Idle instead of Idle
 	 */
 	void HasEvidence( EventType type );

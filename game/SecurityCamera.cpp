@@ -297,7 +297,7 @@ bool idSecurityCamera::CanSeePlayer( void ) {
 	for ( i = 0; i < gameLocal.numClients; i++ ) {
 		ent = static_cast<idPlayer*>(gameLocal.entities[ i ]);
 
-		if ( !ent || ent->fl.notarget || ent->fl.invisible ) // grayman debug - added 'invisible'
+		if ( !ent || ent->fl.notarget || ent->fl.invisible ) // grayman #3857 - added 'invisible'
 		{
 			continue;
 		}

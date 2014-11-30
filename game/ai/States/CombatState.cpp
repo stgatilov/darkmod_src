@@ -81,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman debug
+bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman #3857
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -160,7 +160,7 @@ void CombatState::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 		// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 		owner->ClearEnemy();
 		//memory.visualAlert = false; // grayman #2422
-		//memory.mandatory = true;	// grayman #3331 // grayman debug - now handled by STATE_BLIND
+		//memory.mandatory = true;	// grayman #3331 // grayman #3857 - now handled by STATE_BLIND
 	}
 }
 
@@ -228,7 +228,7 @@ void CombatState::Init(idAI* owner)
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
 	// grayman #3496 - Enough time passed since last alert bark?
-	// grayman debug - Enough time passed since last visual stim bark?
+	// grayman #3857 - Enough time passed since last visual stim bark?
 
 	if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
 		 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
@@ -382,11 +382,9 @@ void CombatState::Think(idAI* owner)
 	// grayman #3848 - are we in the endgame of combat, where we've
 	// killed the enemy and are performing a few final tasks?
 
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - _endgame = %d\r",owner->GetName(),_endgame); // grayman debug
 	if (_endgame)
 	{
 		idActor* victim = owner->m_lastKilled.GetEntity();
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - _combatSubState = %d, victim = '%s'\r",owner->GetName(),(int)_combatSubState,victim ? victim->GetName():"NULL"); // grayman debug
 		switch(_combatSubState)
 		{
 		case EStateVictor1:
@@ -407,7 +405,6 @@ void CombatState::Think(idAI* owner)
 
 			if (owner == victim->m_killedBy.GetEntity())
 			{
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::Think - %s - bark victory!\r",owner->GetName()); // grayman debug
 				// different barks for human and non-human enemies
 
 				if ( monster )
@@ -645,21 +642,21 @@ void CombatState::Think(idAI* owner)
 				owner->ClearEnemy();
 				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
 
-				// grayman debug - dropping to agitated searching, so we need search parameters
+				// grayman #3857 - dropping to agitated searching, so we need search parameters
 
 				memory.alertClass = EAlertVisual_1;
-				memory.alertType = EAlertTypeEnemy; // grayman debug
+				memory.alertType = EAlertTypeEnemy; // grayman #3857
 				memory.alertPos = owner->GetPhysics()->GetOrigin();
 				//memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
 				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
 				memory.alertSearchExclusionVolume.Zero();
 				memory.alertedDueToCommunication = false;
 				memory.stimulusLocationItselfShouldBeSearched = true;
-				memory.investigateStimulusLocationClosely = false; // grayman debug
-				memory.mandatory = false; // grayman debug
+				memory.investigateStimulusLocationClosely = false; // grayman #3857
+				memory.mandatory = false; // grayman #3857
 
 				// Log the event
-				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy, true ); // grayman debug
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy, true ); // grayman #3857
 
 				owner->GetMind()->EndState();
 				return;
@@ -705,7 +702,7 @@ void CombatState::Think(idAI* owner)
 	case EStateDoOnce:
 		{
 
-		// grayman debug - If participating in a search, leave the search
+		// grayman #3857 - If participating in a search, leave the search
 		if (owner->m_searchID > 0)
 		{
 			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
@@ -737,6 +734,7 @@ void CombatState::Think(idAI* owner)
 		owner->movementSubsystem->ClearTasks();
 		owner->senseSubsystem->ClearTasks();
 		owner->actionSubsystem->ClearTasks();
+		owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 		// Bark
 
@@ -751,7 +749,7 @@ void CombatState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				enemy,
 				memory.lastEnemyPos,
-				memory.currentSearchEventID // grayman debug
+				memory.currentSearchEventID // grayman #3857
 			));
 		}
 
@@ -1219,7 +1217,6 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 			CommunicationTaskPtr(new SingleBarkTask("snd_killed_enemy"))
 		);
  */
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("CombatState::CheckEnemyStatus - %s - setting _endgame to true\r",owner->GetName()); // grayman debug
 		_endgame = true; // grayman #3848
 		_endTime = gameLocal.time + 1500 + gameLocal.random.RandomInt(1500);
 		_combatSubState = EStateVictor1;
@@ -1238,6 +1235,7 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 		owner->movementSubsystem->ClearTasks();
 		owner->senseSubsystem->ClearTasks();
 		owner->actionSubsystem->ClearTasks();
+		owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 		return false;
 	}

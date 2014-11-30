@@ -158,7 +158,7 @@ public:
 
 	Assignment*	GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
-	Search*		CreateSearch(int searchID); // grayman debug   
+	Search*		CreateSearch(int searchID); // grayman #3857   
 	/*!
 	* This method finds hiding spots in the bounds given by two vectors, and also excludes
 	* any points contained within a different pair of vectors.

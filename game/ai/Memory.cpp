@@ -58,7 +58,7 @@ Memory::Memory(idAI* owningAI) :
 	posMissingItem(0,0,0),
 	posEvidenceIntruders(0,0,0),
 	mandatory(false),			// grayman #3331
-	respondingToSomethingSuspiciousMsg(false), // grayman debug
+	respondingToSomethingSuspiciousMsg(false), // grayman #3857
 	timeEvidenceIntruders(0),
 	//visualAlert(false),			// grayman #2422
 	stopRelight(false),			// grayman #2603
@@ -72,7 +72,7 @@ Memory::Memory(idAI* owningAI) :
 	nextTime2GenRandomSpot(0),	// grayman #2422
 	alertClass(EAlertNone),
 	alertType(EAlertTypeNone),
-	//alertRadius(-1), // grayman debug - no longer used
+	//alertRadius(-1), // grayman #3857 - no longer used
 	lastAudioAlertTime(-1),
 	stimulusLocationItselfShouldBeSearched(false),
 	investigateStimulusLocationClosely(false),
@@ -91,18 +91,18 @@ Memory::Memory(idAI* owningAI) :
 	noMoreHidingSpots(false),
 	restartSearchForHidingSpots(false),
 	hidingSpotThinkFrameCount(0),
-	//firstChosenHidingSpotIndex(0),   // grayman debug
-	//currentChosenHidingSpotIndex(0), // grayman debug
-	//chosenHidingSpot(0,0,0), // grayman debug
+	//firstChosenHidingSpotIndex(0),   // grayman #3857
+	//currentChosenHidingSpotIndex(0), // grayman #3857
+	//chosenHidingSpot(0,0,0), // grayman #3857
 	hidingSpotInvestigationInProgress(false),
-	guardingInProgress(false), // grayman debug
-	millingInProgress(false), // grayman debug
-	stopHidingSpotInvestigation(false), // grayman debug
-	stopGuarding(false), // grayman debug
-	stopMilling(false), // grayman debug
-	shouldMill(false), // grayman debug
-	guardingAngle(0.0f), // grayman debug
-	repeatedBarkState(ERBS_NULL), // grayman debug
+	guardingInProgress(false), // grayman #3857
+	millingInProgress(false), // grayman #3857
+	stopHidingSpotInvestigation(false), // grayman #3857
+	stopGuarding(false), // grayman #3857
+	stopMilling(false), // grayman #3857
+	shouldMill(false), // grayman #3857
+	guardingAngle(0.0f), // grayman #3857
+	repeatedBarkState(ERBS_NULL), // grayman #3857
 	fleeing(false),
 	positionBeforeTakingCover(0,0,0),
 	resolvingMovementBlock(false),
@@ -112,7 +112,7 @@ Memory::Memory(idAI* owningAI) :
 	playerResponsible(false),  // grayman #3679 - is the player responsible for the attack?
 	stayPut(false), // grayman #3528
 	combatState(-1), // grayman #3507
-	leaveAlertState(false), // grayman debug
+	leaveAlertState(false), // grayman #3857
 	susDoorSameAsCurrentDoor(false) // grayman #3643
 {
 	attacker = NULL; // grayman #3679 - who attacked me
@@ -147,7 +147,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(itemsHaveBeenBroken);
 	savefile->WriteBool(unconsciousPeopleHaveBeenFound);
 	savefile->WriteBool(deadPeopleHaveBeenFound);
-	//savefile->WriteBool(prevSawEvidence); // grayman #3424 // grayman debug
+	//savefile->WriteBool(prevSawEvidence); // grayman #3424 // grayman #3857
 	savefile->WriteBool(stayPut); // grayman #3528
 	savefile->WriteVec3(alertPos);
 	
@@ -156,7 +156,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteVec3(posMissingItem);
 	savefile->WriteVec3(posEvidenceIntruders);
 	savefile->WriteBool(mandatory);				// grayman #3331
-	savefile->WriteBool(respondingToSomethingSuspiciousMsg); // grayman debug
+	savefile->WriteBool(respondingToSomethingSuspiciousMsg); // grayman #3857
 	savefile->WriteInt(timeEvidenceIntruders);
 	//savefile->WriteBool(visualAlert);			// grayman #2422
 	savefile->WriteBool(stopRelight);			// grayman #2603
@@ -172,7 +172,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteInt(static_cast<int>(causeOfPain)); // grayman #3140
 	savefile->WriteBool(painStatePushedThisFrame); // grayman #3424
 	savefile->WriteInt(static_cast<int>(alertType));
-	//savefile->WriteFloat(alertRadius); // grayman debug - no longer used
+	//savefile->WriteFloat(alertRadius); // grayman #3857 - no longer used
 	savefile->WriteBool(stimulusLocationItselfShouldBeSearched);
 	savefile->WriteBool(investigateStimulusLocationClosely);
 	savefile->WriteBool(alertedDueToCommunication);
@@ -190,25 +190,25 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(noMoreHidingSpots);
 	savefile->WriteBool(restartSearchForHidingSpots);
 	savefile->WriteInt(hidingSpotThinkFrameCount);
-	//savefile->WriteInt(firstChosenHidingSpotIndex);   // grayman debug
-	//savefile->WriteInt(currentChosenHidingSpotIndex); // grayman debug
-	//savefile->WriteVec3(chosenHidingSpot); // grayman debug
+	//savefile->WriteInt(firstChosenHidingSpotIndex);   // grayman #3857
+	//savefile->WriteInt(currentChosenHidingSpotIndex); // grayman #3857
+	//savefile->WriteVec3(chosenHidingSpot); // grayman #3857
 	savefile->WriteBool(hidingSpotInvestigationInProgress);
-	savefile->WriteBool(guardingInProgress); // grayman debug
-	savefile->WriteBool(millingInProgress); // grayman debug
-	savefile->WriteBool(stopHidingSpotInvestigation); // grayman debug
-	savefile->WriteBool(stopGuarding); // grayman debug
-	savefile->WriteBool(stopMilling); // grayman debug
-	savefile->WriteBool(shouldMill); // grayman debug
-	savefile->WriteFloat(guardingAngle); // grayman debug
-	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman debug
+	savefile->WriteBool(guardingInProgress); // grayman #3857
+	savefile->WriteBool(millingInProgress); // grayman #3857
+	savefile->WriteBool(stopHidingSpotInvestigation); // grayman #3857
+	savefile->WriteBool(stopGuarding); // grayman #3857
+	savefile->WriteBool(stopMilling); // grayman #3857
+	savefile->WriteBool(shouldMill); // grayman #3857
+	savefile->WriteFloat(guardingAngle); // grayman #3857
+	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman #3857
 	savefile->WriteBool(fleeing);
 	savefile->WriteVec3(positionBeforeTakingCover);
 	savefile->WriteBool(resolvingMovementBlock);
 	lastDoorHandled.Save(savefile);   // grayman #2712
 	hitByThisMoveable.Save(savefile); // grayman #2816
 	corpseFound.Save(savefile);		  // grayman #3424
-	unconsciousPersonFound.Save(savefile); // grayman debug
+	unconsciousPersonFound.Save(savefile); // grayman #3857
 	relightLight.Save(savefile);	  // grayman #2603
 	savefile->WriteInt(nextTimeLightStimBark);	// grayman #2603
 
@@ -251,7 +251,7 @@ void Memory::Save(idSaveGame* savefile) const
 	attacker.Save(savefile); // grayman #3679
 	savefile->WriteBool(playerResponsible); // grayman #3679
 	savefile->WriteInt(combatState); // grayman #3507
-	savefile->WriteBool(leaveAlertState); // grayman debug
+	savefile->WriteBool(leaveAlertState); // grayman #3857
 	savefile->WriteBool(issueMoveToPositionTask); // grayman #3052
 }
 
@@ -283,7 +283,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(itemsHaveBeenBroken);
 	savefile->ReadBool(unconsciousPeopleHaveBeenFound);
 	savefile->ReadBool(deadPeopleHaveBeenFound);
-	//savefile->ReadBool(prevSawEvidence); // grayman #3424 // grayman debug
+	//savefile->ReadBool(prevSawEvidence); // grayman #3424 // grayman #3857
 	savefile->ReadBool(stayPut); // grayman #3528
 	savefile->ReadVec3(alertPos);
 
@@ -292,7 +292,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadVec3(posMissingItem);
 	savefile->ReadVec3(posEvidenceIntruders);
 	savefile->ReadBool(mandatory);				// grayman #3331
-	savefile->ReadBool(respondingToSomethingSuspiciousMsg); // grayman debug
+	savefile->ReadBool(respondingToSomethingSuspiciousMsg); // grayman #3857
 	savefile->ReadInt(timeEvidenceIntruders);
 	//savefile->ReadBool(visualAlert);			// grayman #2422
 	savefile->ReadBool(stopRelight);			// grayman #2603
@@ -317,7 +317,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadInt(temp);
 	alertType = static_cast<EAlertType>(temp);
 
-	//savefile->ReadFloat(alertRadius); // grayman debug - no longer used
+	//savefile->ReadFloat(alertRadius); // grayman #3857 - no longer used
 	savefile->ReadBool(stimulusLocationItselfShouldBeSearched);
 	savefile->ReadBool(investigateStimulusLocationClosely);
 	savefile->ReadBool(alertedDueToCommunication);
@@ -335,20 +335,20 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(noMoreHidingSpots);
 	savefile->ReadBool(restartSearchForHidingSpots);
 	savefile->ReadInt(hidingSpotThinkFrameCount);
-	//savefile->ReadInt(firstChosenHidingSpotIndex);   // grayman debug
-	//savefile->ReadInt(currentChosenHidingSpotIndex); // grayman debug
-	//savefile->ReadVec3(chosenHidingSpot); // grayman debug
+	//savefile->ReadInt(firstChosenHidingSpotIndex);   // grayman #3857
+	//savefile->ReadInt(currentChosenHidingSpotIndex); // grayman #3857
+	//savefile->ReadVec3(chosenHidingSpot); // grayman #3857
 	savefile->ReadBool(hidingSpotInvestigationInProgress);
-	savefile->ReadBool(guardingInProgress); // grayman debug
-	savefile->ReadBool(millingInProgress); // grayman debug
-	savefile->ReadBool(stopHidingSpotInvestigation); // grayman debug
-	savefile->ReadBool(stopGuarding); // grayman debug
-	savefile->ReadBool(stopMilling); // grayman debug
-	savefile->ReadBool(shouldMill); // grayman debug
-	savefile->ReadFloat(guardingAngle); // grayman debug
+	savefile->ReadBool(guardingInProgress); // grayman #3857
+	savefile->ReadBool(millingInProgress); // grayman #3857
+	savefile->ReadBool(stopHidingSpotInvestigation); // grayman #3857
+	savefile->ReadBool(stopGuarding); // grayman #3857
+	savefile->ReadBool(stopMilling); // grayman #3857
+	savefile->ReadBool(shouldMill); // grayman #3857
+	savefile->ReadFloat(guardingAngle); // grayman #3857
 
 	savefile->ReadInt(temp);
-	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman debug
+	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman #3857
 
 	savefile->ReadBool(fleeing);
 	savefile->ReadVec3(positionBeforeTakingCover);
@@ -356,7 +356,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	lastDoorHandled.Restore(savefile);	 // grayman #2712
 	hitByThisMoveable.Restore(savefile); // grayman #2816
 	corpseFound.Restore(savefile);		 // grayman #3424
-	unconsciousPersonFound.Restore(savefile); // grayman debug
+	unconsciousPersonFound.Restore(savefile); // grayman #3857
 	relightLight.Restore(savefile);		 // grayman #2603
 	savefile->ReadInt(nextTimeLightStimBark);	// grayman #2603
 
@@ -426,7 +426,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	attacker.Restore(savefile); // grayman #3679
 	savefile->ReadBool(playerResponsible); // grayman #3679
 	savefile->ReadInt(combatState); // grayman #3507
-	savefile->ReadBool(leaveAlertState); // grayman debug
+	savefile->ReadBool(leaveAlertState); // grayman #3857
 	savefile->ReadBool(issueMoveToPositionTask); // grayman #3052
 }
 

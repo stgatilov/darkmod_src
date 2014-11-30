@@ -1388,7 +1388,7 @@ void CsndProp::ProcessAI(idAI* ai, idVec3 origin, SSprParms *propParms)
 		// noiseVol = GetEnvNoise( &propParms, origin, AI->GetEyePosition() );
 		float noise = 0;
 
-		// grayman debug - If the sound originates inside the
+		// grayman #3857 - If the sound originates inside the
 		// AI's bounding box, it was most likely created by
 		// something hitting them, and some other code is going
 		// to handle the reaction to that collision event.

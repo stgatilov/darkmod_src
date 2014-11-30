@@ -1036,7 +1036,7 @@ bool CDarkmodHidingSpotTree::copy(CDarkmodHidingSpotTree* p_out_otherTree)
 }
 
 //-------------------------------------------------------------------------
-/* grayman debug
+/* grayman #3857
 bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& out_otherTree)
 {
 	unsigned int numPointsMoved = 0;

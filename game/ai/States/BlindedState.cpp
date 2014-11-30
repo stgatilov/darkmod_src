@@ -24,7 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "BlindedState.h"
 #include "../Tasks/SingleBarkTask.h"
-#include "../Tasks/IdleAnimationTask.h" // grayman debug
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -47,6 +47,7 @@ void BlindedState::Init(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
@@ -60,15 +61,14 @@ void BlindedState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.StopReacting(); // grayman #3559
 
-	memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeMisc, memory.alertPos, NULL, true); // grayman debug
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("BlindedState::Init - %s memory.currentSearchEventID = %d\r",owner->GetName(),memory.currentSearchEventID); // grayman debug
+	memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeMisc, memory.alertPos, NULL, true); // grayman #3857
 
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		NULL,
 		memory.alertPos,
-		memory.currentSearchEventID // grayman debug (was '0')
+		memory.currentSearchEventID // grayman #3857 (was '0')
 	));
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message)));
@@ -115,12 +115,12 @@ void BlindedState::Think(idAI* owner)
 
 		if ( !owner->GetEnemy() )
 		{
-			// grayman debug - move alert setup into one method
-			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman debug
+			// grayman #3857 - move alert setup into one method
+			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman #3857
 		}
 
-		// grayman debug - allow "idle search/suspicious animations"
-		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance()); // POSSIBLE PROBLEM
+		// grayman #3857 - allow "idle search/suspicious animations"
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431

@@ -1695,7 +1695,7 @@ int idAASLocal::GetClusterSize()
 	return file->GetNumClusters();
 }
 
-// grayman debug
+// grayman #3857
 void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits)
 {
 	int clusterNum = GetClusterNum(areaNum);
