@@ -555,6 +555,7 @@
     <ClInclude Include="renderer\simplex.h" />
     <ClInclude Include="renderer\tr_local.h" />
     <ClInclude Include="renderer\VertexCache.h" />
+    <ClInclude Include="sound\efxlib.h" />
     <ClInclude Include="sound\snd_local.h" />
     <ClInclude Include="sound\sound.h" />
     <ClInclude Include="sound\OggVorbis\vorbissrc\backends.h" />
@@ -3822,7 +3823,6 @@
     <ClCompile Include="ui\Winvar.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="openal\idal.py" />
     <None Include="sound\OggVorbis\vorbissrc\lookups.pl" />
     <None Include="sys\win32\rc\res\BEVEL.BMP" />
     <None Include="sys\win32\rc\res\BITMAP2.BMP" />

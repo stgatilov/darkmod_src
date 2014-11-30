@@ -563,6 +563,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
+    <ClInclude Include="sound\efxlib.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1591,9 +1594,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="openal\idal.py">
-      <Filter>Sound</Filter>
-    </None>
     <None Include="sound\OggVorbis\vorbissrc\lookups.pl">
       <Filter>Sound\vorbissrc</Filter>
     </None>
