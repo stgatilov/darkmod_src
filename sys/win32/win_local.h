@@ -80,6 +80,10 @@ void	IN_Frame( void );
 
 int		IN_DIMapKey( int key );
 
+
+// window procedure
+LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 void Conbuf_AppendText( const char *msg );
 
 typedef struct {
