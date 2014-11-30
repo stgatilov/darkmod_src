@@ -5,7 +5,17 @@
 #include "../idlib/Str.h"
 #include "../idlib/Lexer.h"
 #include "../idlib/Heap.h"
+#include "../framework/Common.h"
 #include "sound.h"
+
+
+#define EFX_VERBOSE 0
+
+#if EFX_VERBOSE
+#define EFXprintf(...) do { common->Printf(__VA_ARGS__); } while (false)
+#else
+#define EFXprintf(...) do { } while (false)
+#endif
 
 struct idSoundEffect {
     idSoundEffect();
