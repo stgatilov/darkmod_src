@@ -24,8 +24,11 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "snd_local.h"
 #include "../idlib/math/Math.h"
 
-static inline ALdouble mB_to_gain(ALdouble millibels) {
-    return idMath::Pow(10.0, millibels / 2000.0);
+#define mB_to_gain(millibels, property) \
+	_mB_to_gain(millibels,AL_EAXREVERB_MIN_ ## property, AL_EAXREVERB_MAX_ ## property)
+
+static inline ALfloat _mB_to_gain(ALfloat millibels, ALfloat min, ALfloat max) {
+    return idMath::ClampFloat(min, max, idMath::Pow(10.0f, millibels / 2000.0f));
 }
 
 idSoundEffect::idSoundEffect() :
@@ -194,11 +197,11 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 		} else if ( token == "environment diffusion" ) {
 			efxf(AL_EAXREVERB_DIFFUSION, src.ParseFloat());
 		} else if ( token == "room" ) {
-			efxf(AL_EAXREVERB_GAIN, mB_to_gain(src.ParseInt()));
+			efxf(AL_EAXREVERB_GAIN, mB_to_gain(src.ParseInt(), GAIN));
 		} else if ( token == "room hf" ) {
-			efxf(AL_EAXREVERB_GAINHF, mB_to_gain(src.ParseInt()));
+			efxf(AL_EAXREVERB_GAINHF, mB_to_gain(src.ParseInt(), GAINHF));
 		} else if ( token == "room lf" ) {
-			efxf(AL_EAXREVERB_GAINLF, mB_to_gain(src.ParseInt()));
+			efxf(AL_EAXREVERB_GAINLF, mB_to_gain(src.ParseInt(), GAINLF));
 		} else if ( token == "decay time" ) {
 			efxf(AL_EAXREVERB_DECAY_TIME, src.ParseFloat());
 		} else if ( token == "decay hf ratio" ) {
@@ -206,13 +209,13 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 		} else if ( token == "decay lf ratio" ) {
 			efxf(AL_EAXREVERB_DECAY_LFRATIO, src.ParseFloat());
 		} else if ( token == "reflections" ) {
-			efxf(AL_EAXREVERB_REFLECTIONS_GAIN, mB_to_gain(src.ParseInt()));
+			efxf(AL_EAXREVERB_REFLECTIONS_GAIN, mB_to_gain(src.ParseInt(), REFLECTIONS_GAIN));
 		} else if ( token == "reflections delay" ) {
 			efxf(AL_EAXREVERB_REFLECTIONS_DELAY, src.ParseFloat());
 		} else if ( token == "reflections pan" ) {
 			efxfv(AL_EAXREVERB_REFLECTIONS_PAN, src.ParseFloat(), src.ParseFloat(), src.ParseFloat());
 		} else if ( token == "reverb" ) {
-			efxf(AL_EAXREVERB_LATE_REVERB_GAIN, mB_to_gain(src.ParseInt()));
+			efxf(AL_EAXREVERB_LATE_REVERB_GAIN, mB_to_gain(src.ParseInt(), LATE_REVERB_GAIN));
 		} else if ( token == "reverb delay" ) {
 			efxf(AL_EAXREVERB_LATE_REVERB_DELAY, src.ParseFloat());
 		} else if ( token == "reverb pan" ) {
@@ -226,7 +229,7 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 		} else if ( token == "modulation depth" ) {
 			efxf(AL_EAXREVERB_MODULATION_DEPTH, src.ParseFloat());
 		} else if ( token == "air absorption hf" ) {
-			efxf(AL_EAXREVERB_AIR_ABSORPTION_GAINHF, mB_to_gain(src.ParseFloat()));
+			efxf(AL_EAXREVERB_AIR_ABSORPTION_GAINHF, mB_to_gain(src.ParseFloat(), AIR_ABSORPTION_GAINHF));
 		} else if ( token == "hf reference" ) {
 			efxf(AL_EAXREVERB_HFREFERENCE, src.ParseFloat());
 		} else if ( token == "lf reference" ) {
