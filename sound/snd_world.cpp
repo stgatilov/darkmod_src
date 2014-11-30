@@ -474,7 +474,6 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
         }
     }
 #endif
-	}
 
 	// debugging option to mute all but a single soundEmitter
 	if ( idSoundSystemLocal::s_singleEmitter.GetInteger() > 0 && idSoundSystemLocal::s_singleEmitter.GetInteger() < emitters.Num() ) {
@@ -1867,7 +1866,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	// allocate and initialize hardware source
 	// 
-	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) {
+	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED )
 	{
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );
