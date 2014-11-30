@@ -656,7 +656,7 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 	gameLocal.pvs.WritePVS( pvsHandle, msg );
 #endif
 	for ( i = 0; i < ENTITY_PVS_SIZE; i++ ) {
-		msg.WriteDeltaLong( clientPVS[clientNum][i], snapshot->pvs[i] );
+		msg.WriteDeltaInt( clientPVS[clientNum][i], snapshot->pvs[i] );
 	}
 
 	// free the PVS
@@ -1152,7 +1152,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 	gameLocal.pvs.ReadPVS( pvsHandle, msg );
 #endif
 	for ( i = 0; i < ENTITY_PVS_SIZE; i++ ) {
-		snapshot->pvs[i] = msg.ReadDeltaLong( clientPVS[clientNum][i] );
+		snapshot->pvs[i] = msg.ReadDeltaInt( clientPVS[clientNum][i] );
 	}
 
 	// add entities in the PVS that haven't changed since the last applied snapshot
