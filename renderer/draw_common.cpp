@@ -929,7 +929,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 
 			// Set up parameters for fragment program
 			
-			// program.env[5] is the particle radius, given as { radius, 1/(faderange), 1/radius }
+			// program.env[5] contains the particle radius, given as { radius, 1/(faderange), 1/radius } plus a vertex coloring flag
 			float fadeRange;
 			// fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
 			// blends (light glares), because additive effects work differently. Fog is half as apparent when a wall
@@ -943,12 +943,14 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			{
 				fadeRange = surf->particle_radius;
 			}
-
+			// The final parameter is a flag that gets set to 1 if the material doesn't use vertex coloring. NB lack of 
+			// vertex color is an error in particle materials, as it's how the particle system controls fade and color,
+			// but it's included to make sure no existing maps look different with soft particles applied. 
 			float parm[4] = {
 				surf->particle_radius,
 				1.0f / ( fadeRange ),
 				1.0f / surf->particle_radius,
-				0.0f
+				pStage->vertexColor == SVC_IGNORE ? 1.0f : 0.0f
 			};
 			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, parm );
 
