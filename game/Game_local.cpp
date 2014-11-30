@@ -5360,7 +5360,7 @@ bool idGameLocal::SpawnEntityDef( const idDict &args, idEntity **ent, bool setDe
 			Warning( "Could not spawn '%s'.  Script function '%s' not found%s.", classname, spawn, error.c_str() );
 			return false;
 		}
-		idThread *thread = new idThread( func );
+		idThread *thread = new idThread(func);
 		thread->DelayedStart( 0 );
 		return true;
 	}

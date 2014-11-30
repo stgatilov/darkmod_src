@@ -384,6 +384,15 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			continue;
 		}
 
+		// grayman debug - ignore blend and fog lights
+
+		if (light->IsBlend() || light->IsFog())
+		{
+			// Iterate to next light in area
+			p_cursor = p_cursor->NextNode();
+			continue;
+		}
+
 		/*!
 		// What follows in the rest of this method is mostly Sparkhawk's lightgem code.
 		// grayman #3584 - though by this point, it probably no longer looks like that
@@ -809,6 +818,17 @@ void darkModLAS::accumulateEffectOfLightsInArea2
 			p_cursor = p_cursor->NextNode();
 			continue;
 		}
+
+		// grayman debug - ignore blend and fog lights
+
+		if (light->IsBlend() || light->IsFog())
+		{
+			// Iterate to next light in area
+			p_cursor = p_cursor->NextNode();
+			continue;
+		}
+
+
 
 		// What follows in the rest of this method is mostly Sparkhawk's lightgem code.
 		// grayman #3584 - Though by this point, it probably no longer looks like that
