@@ -9279,7 +9279,7 @@ idPlayer::ReadPlayerStateFromSnapshot
 */
 void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
 	bobCycle = msg.ReadByte();
-	stepUpTime = msg.ReadLong();
+	stepUpTime = msg.ReadInt();
 	stepUpDelta = msg.ReadFloat();
 }
 

@@ -1188,8 +1188,8 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 		return;
 	}
 
-	acknowledgeSequence = msg.ReadLong();
-	clientGameInitId = msg.ReadLong();
+	acknowledgeSequence = msg.ReadInt();
+	clientGameInitId = msg.ReadInt();
 
 	// while loading a map the client may send empty messages to keep the connection alive
 	if ( clientGameInitId == GAME_INIT_ID_MAP_LOAD ) {
@@ -1214,7 +1214,7 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 		return;
 	}
 
-	client.acknowledgeSnapshotSequence = msg.ReadLong();
+	client.acknowledgeSnapshotSequence = msg.ReadInt();
 
 	if ( client.clientState == SCS_CONNECTED ) {
 
@@ -1256,7 +1256,7 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 			break;
 		}
 		case CLIENT_UNRELIABLE_MESSAGE_PINGRESPONSE: {
-			client.clientPing = realTime - msg.ReadLong();
+			client.clientPing = realTime - msg.ReadInt();
 			break;
 		}
 		case CLIENT_UNRELIABLE_MESSAGE_USERCMD: {
@@ -1264,7 +1264,7 @@ void idAsyncServer::ProcessUnreliableClientMessage( int clientNum, const idBitMs
 			client.clientPrediction = msg.ReadShort();
 
 			// read user commands
-			clientGameFrame = msg.ReadLong();
+			clientGameFrame = msg.ReadInt();
 			numUsercmds = msg.ReadByte();
 			for ( last = NULL, i = clientGameFrame - numUsercmds + 1; i <= clientGameFrame; i++ ) {
 				index = i & ( MAX_USERCMD_BACKUP - 1 );
@@ -1432,7 +1432,7 @@ void idAsyncServer::ProcessChallengeMessage( const netadr_t from, const idBitMsg
 	idBitMsg	outMsg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
-	clientId = msg.ReadLong();
+	clientId = msg.ReadInt();
 
 	oldest = 0;
 	oldestTime = 0x7fffffff;
@@ -1548,7 +1548,7 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 	char		password[ 17 ];
 	int			i, ichallenge, islot, OS, numClients;
 
-	protocol = msg.ReadLong();
+	protocol = msg.ReadInt();
 	OS = msg.ReadShort();
 
 	// check the protocol version
@@ -1558,10 +1558,10 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 		return;
 	}
 
-	clientDataChecksum = msg.ReadLong();
-	challenge = msg.ReadLong();
+	clientDataChecksum = msg.ReadInt();
+	challenge = msg.ReadInt();
 	clientId = msg.ReadShort();
-	clientRate = msg.ReadLong();
+	clientRate = msg.ReadInt();
 
 	// check the client data
 	if ( clientDataChecksum != serverDataChecksum ) {
@@ -1743,7 +1743,7 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 	// pak checksums, in a 0-terminated list
 	numChecksums = 0;
 	do {
-		i = msg.ReadLong( );
+		i = msg.ReadInt( );
 		checksums[ numChecksums++ ] = i;
 		// just to make sure a broken client doesn't crash us
 		if ( numChecksums >= MAX_PURE_PAKS ) {
@@ -1755,7 +1755,7 @@ bool idAsyncServer::VerifyChecksumMessage( int clientNum, const netadr_t *from, 
 	numChecksums--;
 
 	// code pak checksum
-	gamePakChecksum = msg.ReadLong( );
+	gamePakChecksum = msg.ReadInt( );
 	// TODO: Check
 	assert( serverChecksums[ 0 ] );
 
@@ -1849,7 +1849,7 @@ void idAsyncServer::ProcessGetInfoMessage( const netadr_t from, const idBitMsg &
 
 	common->DPrintf( "Sending info response to %s\n", Sys_NetAdrToString( from ) );
 
-	challenge = msg.ReadLong();
+	challenge = msg.ReadInt();
 
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
@@ -2459,16 +2459,16 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 	int			dlRequest;
 	int			voidSlots = 0;				// to count and verbose the right number of paks requested for downloads
 
-	challenge = msg.ReadLong();
+	challenge = msg.ReadInt();
 	clientId = msg.ReadShort();
-	dlRequest = msg.ReadLong();
+	dlRequest = msg.ReadInt();
 
 	if ( ( iclient = ValidateChallenge( from, challenge, clientId ) ) == -1 ) {
 		return;
 	}
 	
 	// the first token of the pak names list passed to the game will be empty if no game pak is requested
-	dlGamePak = msg.ReadLong();
+	dlGamePak = msg.ReadInt();
 	if ( dlGamePak ) {
 		if ( !( dlSize[ 0 ] = fileSystem->ValidateDownloadPakForChecksum( dlGamePak, pakbuf, true ) ) ) {
 			common->Warning( "client requested unknown game pak 0x%x", dlGamePak );
@@ -2483,7 +2483,7 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 	numPaks = 1;
 
 	// read the checksums, build path names and pass that to the game code
-	dlPakChecksum = msg.ReadLong();
+	dlPakChecksum = msg.ReadInt();
 	while ( dlPakChecksum ) {
 		if ( !( dlSize[ numPaks ] = fileSystem->ValidateDownloadPakForChecksum( dlPakChecksum, pakbuf, false ) ) ) {
 			// we pass an empty token to the game so our list doesn't get offset
@@ -2493,7 +2493,7 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 		}
 		pakNames.Append( pakbuf );
 		numPaks++;
-		dlPakChecksum = msg.ReadLong();
+		dlPakChecksum = msg.ReadInt();
 	}
 
 	for ( i = 0; i < pakNames.Num(); i++ ) {
