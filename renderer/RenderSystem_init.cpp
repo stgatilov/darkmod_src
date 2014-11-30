@@ -1156,7 +1156,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 				tr.primaryWorld->RenderScene( ref );
 				tr.EndFrame( NULL, NULL );
 			} else {
-				session->UpdateScreen();
+				session->UpdateScreen(false);
 			}
 
 			int w = ( xo + oldWidth > width )   ? (width - xo)  : oldWidth;
