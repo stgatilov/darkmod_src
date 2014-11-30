@@ -578,7 +578,7 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile( const char *name, con
 		return false;
 	}
 
-	crc = token.GetUnsignedLongValue();
+    crc = token.GetUnsignedIntValue();
 	if ( mapFileCRC && crc != mapFileCRC ) {
 		common->Printf( "%s is out of date\n", fileName.c_str() );
 		delete src;
