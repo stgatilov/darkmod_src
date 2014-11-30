@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToPositionTask.h"
 #include "../Tasks/SingleBarkTask.h"
 #include "../../StimResponse/StimResponse.h"
-//#include "../Tasks/RandomHeadturnTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Tasks/RandomTurningTask.h"
 
 namespace ai
@@ -84,6 +84,9 @@ void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
 	Cleanup(owner);
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
@@ -646,6 +649,7 @@ void SwitchOnLightState::Think(idAI* owner)
 			}
 			break;
 		case EStateRelight:
+			owner->TurnToward(_goalEnt->GetPhysics()->GetOrigin()); // grayman #3857 - maintain direction
 			if (owner->m_performRelight)
 			{
 				// Time to relight the light.
@@ -703,6 +707,8 @@ void SwitchOnLightState::Think(idAI* owner)
 
 				if (owner->m_LatchedSearch)
 				{
+					owner->m_LatchedSearch = false;
+
 					// grayman #3438 - move raising alert level to here
 					// Raise alert level if we already have some evidence of intruders
 
@@ -712,37 +718,20 @@ void SwitchOnLightState::Think(idAI* owner)
 						owner->SetAlertLevel(owner->thresh_3 - 0.1 + (owner->thresh_4 - owner->thresh_3) * 0.2
 							* (memory.countEvidenceOfIntruders - MIN_EVIDENCE_OF_INTRUDERS_TO_SEARCH_ON_LIGHT_OFF)); // grayman #2603 - subtract a tenth
 
-						if (owner->AI_AlertLevel >= (owner->thresh_5 + owner->thresh_4) * 0.5)
+						if (owner->AI_AlertLevel > (owner->thresh_5 + owner->thresh_4) * 0.5)
 						{
-							owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.45);
+							owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
 						}
 					}
 					
-					owner->m_LatchedSearch = false;
-
 					// A doused light might raise the alert level to a max
 					// of mid Agitated Searching. If the alert level rises
 					// above thresh_3, set up the search parameters for a new search.
 
 					if (owner->AI_AlertLevel >= owner->thresh_3)
-					//if (owner->AI_AlertLevel < owner->thresh_4)
 					{
-						memory.alertPos = light->GetPhysics()->GetOrigin();
-						memory.alertClass = EAlertVisual_4; // grayman #3498 - was _2
-						memory.alertType = EAlertTypeLightSource;
-						
-						// Prepare search as if there is an enemy that has escaped
-						memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-						memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-						memory.alertSearchExclusionVolume.Zero();
-							
-						owner->AI_VISALERT = false;
-						memory.visualAlert = false; // grayman #2422			
-
-						// Do new reaction to stimulus after relighting
-						memory.stimulusLocationItselfShouldBeSearched = true;
-						memory.alertedDueToCommunication = false;
-						memory.mandatory = false; // grayman #3331
+						// grayman #3857 - move alert setup into one method
+						SetUpSearchData(EAlertTypeLightSource, light->GetPhysics()->GetOrigin(), light, false, 0);
 					}
 				}
 

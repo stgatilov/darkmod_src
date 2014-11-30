@@ -75,6 +75,9 @@ void TakeCoverState::Init(idAI* owner)
 
 	// No action (in case you were throwing rocks)
 	owner->actionSubsystem->ClearTasks();
+
+	// grayman #3857 - Stop searching
+	owner->searchSubsystem->ClearTasks();
 }
 
 // Gets called each time the mind is thinking

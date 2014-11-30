@@ -52,22 +52,48 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	//Memory& memory = owner->GetMemory();
+	// grayman #3857 - verify that this task should be running:
+	// yes if in states 0,2,3,4
+	// no if in states 1,5
 
-	// Read the animation set and interval from the owner's spawnarg
-	_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
+	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	{
+		subsystem.FinishTask();
+	}
 
-	// Read the general-purpose animations first
-	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations"), _idleAnimations);
+	// grayman #3857 - clear lists, just to be sure
+	_idleAnimations.Clear();
+	_idleAnimationsTorso.Clear();
+	_idleAnimationsSitting.Clear();
+
+	// grayman #3857 - can now do idle search/suspicious anims while in states 2, 3, or 4
+	if ( (owner->AI_AlertLevel >= owner->thresh_2) && (owner->AI_AlertLevel < owner->thresh_5) )
+	{
+		// grayman #3857 - Read the idle anims to be used when suspicious or searching.
+		// These won't be run when the AI is actively searching (moving around), but
+		// will be run when they're guarding or observing.
+		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_searching"), _idleAnimations);
+
+		// Read the animation interval from the owner's spawnarg
+		_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_search_animations_interval", "-1"));
+	}
+	else // when idle in state 0
+	{
+		// Read the general-purpose animations first
+		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations"), _idleAnimations);
 	
-	// Now read the anims for the torso only
-	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_torso"), _idleAnimationsTorso);
+		// Now read the anims for the torso only
+		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_torso"), _idleAnimationsTorso);
 
-	// Now read the anims for sitting AI
-	ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
+		// Now read the anims for sitting AI
+		ParseAnimsToList(owner->spawnArgs.GetString("idle_animations_sitting"), _idleAnimationsSitting);
 
-	if (_idleAnimationInterval > 0 && 
-		(_idleAnimations.Num() > 0 || _idleAnimationsTorso.Num() > 0 || _idleAnimationsSitting.Num() > 0))
+		// Read the animation interval from the owner's spawnarg
+		_idleAnimationInterval = SEC2MS(owner->spawnArgs.GetInt("idle_animations_interval", "-1"));
+	}
+
+	if ( (_idleAnimationInterval > 0) && 
+			( (_idleAnimations.Num() > 0) || (_idleAnimationsTorso.Num() > 0) || (_idleAnimationsSitting.Num() > 0) ))
 	{
 		_nextAnimationTime = static_cast<int>(gameLocal.time + gameLocal.random.RandomFloat()*_idleAnimationInterval);
 	}
@@ -102,6 +128,15 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	// This task may not be performed with empty entity pointers
 	assert(owner != NULL);
 
+	// grayman #3857 - verify that this task should be running:
+	// yes if in states 0,2,3,4
+	// no if in states 1,5
+
+	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	{
+		return true;
+	}
+
 	Memory& memory = owner->GetMemory();
 
 	if (gameLocal.time > _nextAnimationTime)
@@ -116,31 +151,37 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		}
 
 		// angua: don't play idle animations while sitting / lying down or getting up
-		// TODO: Disable the playIdleAnimation flag rather than catch all those cases
-
-		// grayman: changed repeated instances of owner->GetMoveType() to one instance
 
 		// grayman #2345 - no idle animations while handling a door and not waiting
 		// in a door queue, since they can interfere with reaching for the door handle
 
 		// SteveL #3182 - no idles if the AI wants to turn: check FacingIdeal too
+
+		// grayman #3857 - Don't play if the AI is an active searcher (it's okay if
+		// he's a guard or observer participating in a search. Test this by seeing if
+		// a hiding spot investigation is in progress.
+
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations && 
-			!owner->AI_RUN &&
-			moveType != MOVETYPE_SIT_DOWN &&
-			moveType != MOVETYPE_LAY_DOWN &&
-			moveType != MOVETYPE_SLEEP &&
-			moveType != MOVETYPE_GET_UP &&
-			moveType != MOVETYPE_GET_UP_FROM_LYING &&
+			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman #3857 - AI_RUN might be left over after coming to a full stop
+
+			// grayman #3857 - playIdleAnimations is now set to false during the following move types
+			//moveType != MOVETYPE_SIT_DOWN &&
+			//moveType != MOVETYPE_LAY_DOWN &&
+			//moveType != MOVETYPE_SLEEP &&
+			//moveType != MOVETYPE_GET_UP &&
+			//moveType != MOVETYPE_GET_UP_FROM_LYING &&
+
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
-			owner->FacingIdeal()
-		   )
+			owner->FacingIdeal() &&
+			!owner->GetMemory().hidingSpotInvestigationInProgress )
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
 			if (!owner->AI_FORWARD && (moveType != MOVETYPE_SIT))
 			{
 				// AI is not walking or sitting, play animations affecting all channels
+
 				AttemptToPlayAnim(owner, _idleAnimations, false);
 			}
 			else if (moveType == MOVETYPE_SIT)
@@ -311,7 +352,7 @@ bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
 
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
-	if (!owner->AI_KNOCKEDOUT && owner->health > 0)
+	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman #3857 - let running anim finish
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);
@@ -344,7 +385,6 @@ void IdleAnimationTask::Save(idSaveGame* savefile) const
 		savefile->WriteString(_idleAnimationsSitting[i].c_str());
 	}
 
-
 	savefile->WriteInt(_lastIdleAnim);
 }
 
@@ -375,7 +415,6 @@ void IdleAnimationTask::Restore(idRestoreGame* savefile)
 	{
 		savefile->ReadString(_idleAnimationsSitting[i]);
 	}
-
 
 	savefile->ReadInt(_lastIdleAnim);
 }

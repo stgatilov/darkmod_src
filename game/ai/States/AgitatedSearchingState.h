@@ -58,6 +58,8 @@ protected:
 	virtual void CalculateAlertDecreaseRate(idAI* owner);
 
 	void DrawWeapon(idAI* owner); // grayman #3507
+
+	void SetRepeatedBark(idAI* owner); // grayman #3857
 };
 
 } // namespace ai

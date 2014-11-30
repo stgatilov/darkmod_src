@@ -39,7 +39,7 @@ class HitByMoveableState :
 	public State
 {
 private:
-	idVec3 _pos;							// a position to look back at
+	idVec3 _pos;				// a position to look back at
 	idEntityPtr<idActor> _responsibleActor;	// who threw the object
 
 	int _waitEndTime;			// time to wait before proceeding with a state

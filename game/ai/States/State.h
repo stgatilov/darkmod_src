@@ -82,7 +82,7 @@ public:
 	/**
 	 * greebo: Gets called when the AI is alerted by a suspicious sound.
 	 */
-	virtual bool OnAudioAlert(idStr soundName); // grayman #3847
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
 
 	// Handles incoming messages from other AI
 	virtual void OnAICommMessage(CommMessage& message, float psychLoud);
@@ -91,6 +91,18 @@ public:
 	virtual void OnFrobDoorEncounter(CFrobDoor* frobDoor);
 
 	virtual void NeedToUseElevator(const eas::RouteInfoPtr& routeInfo);
+
+	// grayman #3857
+	void SetAISearchData(
+		EAlertClass alertClass,
+		EAlertType alertType,
+		idVec3 pos,
+		idVec3 searchVolume,
+		idVec3 exclusionVolume,
+		int alertFlags
+	);
+
+	virtual void SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool flag, float value); // grayman #3857
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck);
 

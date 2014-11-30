@@ -133,7 +133,16 @@ void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 	delta.z = 0; // ignore vertical component
 	delta.Normalize(); // set length = 1
 
-	idVec3 blockingForward = _blockingEnt->GetPhysics()->GetAxis().ToAngles().ToForward();
+	// grayman #3857 - use correct forward angle for actors
+	idVec3 blockingForward;
+	if (_blockingEnt->IsType(idActor::Type))
+	{
+		blockingForward = static_cast<idActor*>(_blockingEnt)->viewAxis.ToAngles().ToForward();
+	}
+	else
+	{
+		blockingForward = _blockingEnt->GetPhysics()->GetAxis().ToAngles().ToForward();
+	}
 
 	float cx = blockingOrigin.x + blockingForward.x;
 	float cy = blockingOrigin.y + blockingForward.y;
@@ -559,6 +568,8 @@ bool ResolveMovementBlockTask::PerformBlockingStatic(idAI* owner) // grayman #23
 		// grayman #3119 - if searching, and you're going nowhere,
 		// restart the search, in the hope that you'll be sent
 		// somewhere new
+
+		// grayman #3857 - TODO: do we want to restart the search, or just leave the search and rejoin?
 
 		if ( owner->IsSearching() )
 		{

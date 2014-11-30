@@ -148,15 +148,6 @@ extern const idEventDef AI_ReEvaluateArea;
 // Darkmod: Glass Houses events
 extern const idEventDef AI_SpawnThrowableProjectile;
 
-// DarkMod hiding spot finding events
-extern const idEventDef AI_StartSearchForHidingSpots;
-extern const idEventDef AI_ContinueSearchForHidingSpots;
-extern const idEventDef AI_CloseHidingSpotSearch;
-extern const idEventDef AI_GetNumHidingSpots;
-extern const idEventDef AI_GetNthHidingSpotLocation;
-extern const idEventDef AI_GetNthHidingSpotType;
-extern const idEventDef AI_GetSomeOfOtherEntitiesHidingSpotList;
-
 // Darkmod AI additions
 extern const idEventDef AI_GetVariableFromOtherAI;
 extern const idEventDef AI_GetAlertLevelOfOtherAI;
@@ -1048,18 +1039,13 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	ai::MessageList			m_Messages;
 
 	/**
-	* The current mod hiding spot search of this AI, usually -1
-	*/
-	int						m_HidingSpotSearchHandle;
-
-	/**
 	* The spots resulting from the current search or gotten from
 	* another AI.
 	*/
-	CDarkmodHidingSpotTree	m_hidingSpots;
+	//CDarkmodHidingSpotTree	m_hidingSpots; // grayman #3857
 
 	// An array of random numbers serving as indexes into the hiding spot list.
-	std::vector< int >		m_randomHidingSpotIndexes;
+	//std::vector< int >		m_randomHidingSpotIndexes; // grayman #3857
 
 	/**
 	* Used for drowning
@@ -1166,7 +1152,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* grayman #2422 - search volume when searching
 	 **/
 	 
-	idBounds				m_searchLimits;
+	//idBounds				m_searchLimits; // grayman #3857 - no longer used; limits are kept in the search assignment
 	
 	/**
 	 * greebo: Is set to TRUE if the AI is able to open/close doors at all.
@@ -1323,6 +1309,9 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool m_deckedByPlayer;		// grayman #3314 - TRUE if the player killed or KO'ed me (for mission statistics "bodies found")
 	bool m_allowAudioAlerts;	// grayman #3424 - latch to prevent audio alert processing
 
+	// grayman #3857 - search manager
+	int m_searchID;				// which search he's assigned to; index into the Search Manager's list of active searches
+
 	// The mind of this AI
 	ai::MindPtr mind;
 
@@ -1331,89 +1320,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	ai::MovementSubsystemPtr movementSubsystem;
 	ai::SubsystemPtr actionSubsystem;
 	ai::CommunicationSubsystemPtr commSubsystem;
+	ai::SubsystemPtr searchSubsystem; // grayman #3857
 
 	// greebo: The names of the backbone states, one for each alert state
 	// e.g. ECombat => "Combat"
 	typedef std::map<ai::EAlertState, idStr> BackboneStateMap;
 	BackboneStateMap backboneStates;
-
-	/**
-	* This internal method destroys the current hiding spot search
-	* if it is not null.
-	*/
-	void destroyCurrentHidingSpotSearch();
-
-	/*!
-	* This method finds hiding spots in the bounds given by two vectors, and also excludes
-	* any points contained within a different pair of vectors.
-	*
-	* The first paramter is a vector which gives the location of the
-	* eye from which hiding is desired.
-	*
-	* The second vector gives the minimums in each dimension for the
-	* search space.  
-	*
-	* The third and fourth vectors give the min and max bounds within which spots should be tested
-	*
-	* The fifth and sixth vectors give the min and max bounds of an area where
-	*	spots should NOT be tested. This overrides the third and fourth parameters where they overlap
-	*	(producing a dead zone where points are not tested)
-	*
-	* The seventh parameter gives the bit flags of the types of hiding spots
-	* for which the search should look.
-	*
-	* The eighth parameter indicates an entity that should be ignored in
-	* the visual occlusion checks.  This is usually the searcher itself but
-	* can be NULL.
-	*
-	* This method will only start the search, if it returns 1, you should call
-	* continueSearchForHidingSpots every frame to do more processing until that function
-	* returns 0.
-	*
-	* The return value is a 0 for failure, 1 for success.
-	*/
-	int StartSearchForHidingSpotsWithExclusionArea
-	(
-		const idVec3& hideFromLocation,
-		const idVec3& minBounds, 
-		const idVec3& maxBounds, 
-		const idVec3& exclusionMinBounds, 
-		const idVec3& exclusionMaxBounds, 
-		int hidingSpotTypesAllowed, 
-		idEntity* p_ignoreEntity
-	);
-
-	void AdjustSearchLimits(idBounds& bounds); // grayman #2422
-
-	/*
-	* This method continues searching for hiding spots. It will only find so many before
-	* returning so as not to cause long delays.  Detected spots are added to the currently
-	* building hiding spot list.
-	*
-	* The return value is 0 if the end of the search was reached, or 1 if there
-	* is more processing to do (call this method again next AI frame)
-	*
-	*/
-	int ContinueSearchForHidingSpots();
-
-	/*!
-	* This method returns the Nth hiding spot location. 
-	* Param is 0-based hiding spot index.
-	*/
-	idVec3 GetNthHidingSpotLocation(int hidingSpotIndex);
-
-	/*!
-	* This event splits off half of the hiding spot list of another entity
-	* and sets our hiding spot list to the "taken" points.
-	*
-	* As such, it is useful for getting hiding spots from a seraching AI that this
-	* AI is trying to assist.
-	*
-	* @param p_otherEntity The other entity who's hiding spots we are taking
-	* 
-	* @return The number of points in the list gotten
-	*/
-	int GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch);
 
 	void					SetAAS( void );
 	virtual	void			DormantBegin( void );	// called when entity becomes dormant
@@ -1890,6 +1802,12 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool HasSeenEvidence() const;
 
 	/**
+	 * grayman #3857 - register that evidence has been seen that
+	 * causes the AI to use Alert Idle instead of Idle
+	 */
+	void HasEvidence( EventType type );
+
+	/**
 	* Draw the debug cone representing valid knockout area
 	* Called every frame when cvar cv_ai_ko_show is set to true.
 	**/
@@ -2260,19 +2178,7 @@ public:
 	**/
 	void Event_SetAlertGracePeriod( float frac, float duration, int count );
 
-    /**
-	* Script frontend for DarkMod hiding spot detection functions
-	**/
-	void Event_StartSearchForHidingSpots (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
-	void Event_StartSearchForHidingSpotsWithExclusionArea (const idVec3& hideFromLocation, const idVec3 &minBounds, const idVec3 &maxBounds, const idVec3 &exclusionMinBounds, const idVec3 &exclusionMaxBounds, int hidingSpotTypesAllowed, idEntity* p_ignoreEntity); 
-	void Event_ContinueSearchForHidingSpots(); 
-	void Event_CloseHidingSpotSearch ();
-	void Event_ResortHidingSpots ( const idVec3& searchCenter, const idVec3& searchRadius);
-	void Event_GetNumHidingSpots ();
-	void Event_GetNthHidingSpotLocation (int hidingSpotIndex);
-	void Event_GetNthHidingSpotType (int hidingSpotIndex);
 	void Event_GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne );
-	void Event_GetSomeOfOtherEntitiesHidingSpotList (idEntity* p_ownerOfSearch);
 
 	/**
 	* Gets the alert number of an entity that is another AI.

@@ -541,6 +541,7 @@ idAI::idAI()
 	m_justKilledSomeone = false; // grayman #2816
 	m_deckedByPlayer	= false; // grayman #3314
 	m_allowAudioAlerts  = true;  // grayman #3424
+	m_searchID			= -1;	 // grayman #3857
 
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
@@ -564,11 +565,6 @@ idAI::idAI()
 	m_oldVisualAcuity = 0.0f;
 	m_sleepFloorZ = 0;  // grayman #2416
 	m_getupEndTime = 0; // grayman #2416
-
-	/**
-	* Darkmod: No hiding spot search by default
-	*/
-	m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
 
 	m_bCanDrown = true;
 	m_AirCheckTimer = 0;
@@ -649,11 +645,6 @@ idAI::~idAI()
 		gameRenderWorld->FreeLightDef( worldMuzzleFlashHandle );
 		worldMuzzleFlashHandle = -1;
 	}
-
-	/**
-	* Darkmod: Get rid of current hiding spot search if there is one.
-	*/
-	destroyCurrentHidingSpotSearch();
 
 	aiNode.Remove();
 
@@ -847,6 +838,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_ReactingToHit);		// grayman #2816
 	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
 	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
+	savefile->WriteInt(m_searchID);				// grayman #3857
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -900,9 +892,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteFloat(m_VisDistMax);
 
-	savefile->WriteInt(m_HidingSpotSearchHandle);
-	m_hidingSpots.Save(savefile);
-
+	/* grayman #3857
 	// grayman #3424
 	int num = m_randomHidingSpotIndexes.size();
 	savefile->WriteInt(num);
@@ -910,6 +900,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteInt(m_randomHidingSpotIndexes[i]);
 	}
+	*/
 
 	savefile->WriteInt(m_AirCheckTimer);
 	savefile->WriteBool(m_bCanDrown);
@@ -942,7 +933,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_earlyThinkCounter);	// grayman #2654
 	savefile->WriteBool(m_bCanExtricate);		// grayman #2603
 	savefile->WriteBool( m_ignorePlayer );		// grayman #3063
-	savefile->WriteBounds(m_searchLimits);		// grayman #2422
+	//savefile->WriteBounds(m_searchLimits);		// grayman #2422 // grayman #3857
 	
 	savefile->WriteFloat(thresh_1);
 	savefile->WriteFloat(thresh_2);
@@ -1061,6 +1052,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	movementSubsystem->Save(savefile);
 	commSubsystem->Save(savefile);
 	actionSubsystem->Save(savefile);
+	searchSubsystem->Save(savefile); // grayman #3857
 
 	SAVE_TIMER_HANDLE(aiThinkTimer, savefile);
 	SAVE_TIMER_HANDLE(aiMindTimer, savefile);
@@ -1158,6 +1150,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	}
 
 	savefile->ReadInt(num);
+
 	projectileInfo.SetNum(num);
 
 	for (i = 0; i < projectileInfo.Num(); ++i)
@@ -1294,6 +1287,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_ReactingToHit);	 // grayman #2816
 	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
 	savefile->ReadBool(m_allowAudioAlerts);	 // grayman #3424
+	savefile->ReadInt(m_searchID);			 // grayman #3857
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -1356,9 +1350,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadFloat(m_VisDistMax);
 
-	savefile->ReadInt(m_HidingSpotSearchHandle);
-	m_hidingSpots.Restore(savefile);
-
+	/* grayman #3857
 	// grayman #3424
 	savefile->ReadInt(num);
 	m_randomHidingSpotIndexes.clear();
@@ -1368,6 +1360,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(n);
 		m_randomHidingSpotIndexes.push_back(n);
 	}
+	*/
 
 	savefile->ReadInt(m_AirCheckTimer);
 	savefile->ReadBool(m_bCanDrown);
@@ -1407,7 +1400,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_earlyThinkCounter); // grayman #2654
 	savefile->ReadBool(m_bCanExtricate);	// grayman #2603
 	savefile->ReadBool(m_ignorePlayer);		// grayman #3063
-	savefile->ReadBounds(m_searchLimits);	// grayman #2422
+	//savefile->ReadBounds(m_searchLimits);	// grayman #2422 // grayman #3857
 
 	savefile->ReadFloat(thresh_1);
 	savefile->ReadFloat(thresh_2);
@@ -1543,11 +1536,13 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	senseSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this));
 	commSubsystem = ai::CommunicationSubsystemPtr(new ai::CommunicationSubsystem(ai::SubsysCommunication, this));
 	actionSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this));
+	searchSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSearch, this)); // grayman #3857
 
 	senseSubsystem->Restore(savefile);
 	movementSubsystem->Restore(savefile);
 	commSubsystem->Restore(savefile);
 	actionSubsystem->Restore(savefile);
+	searchSubsystem->Restore(savefile); // grayman #3857
 
 	SetCombatModel();
 	LinkCombat();
@@ -1589,6 +1584,8 @@ ai::Subsystem* idAI::GetSubsystem(ai::SubsystemId id)
 		return commSubsystem.get();
 	case ai::SubsysAction:
 		return actionSubsystem.get();
+	case ai::SubsysSearch: // grayman #3857
+		return searchSubsystem.get();
 	default:
 		gameLocal.Error("Request for unknown subsystem %d", static_cast<int>(id));
 		return NULL;
@@ -1620,6 +1617,7 @@ void idAI::Spawn( void )
 	senseSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSenses, this));
 	commSubsystem = ai::CommunicationSubsystemPtr(new ai::CommunicationSubsystem(ai::SubsysCommunication, this));
 	actionSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysAction, this));
+	searchSubsystem = ai::SubsystemPtr(new ai::Subsystem(ai::SubsysSearch, this)); // grayman #3857
 
 	if ( !g_monsters.GetBool() ) {
 		PostEventMS( &EV_Remove, 0 );
@@ -1727,11 +1725,12 @@ void idAI::Spawn( void )
 	m_headTurnMaxDuration = SEC2MS(headTurnSec);
 
 	// grayman #3424 - Several alert types need to have the same weight,
-	// so that a new instance of any of them will override the previous instance
+	// so that a new instance of any of them will overide the previous instance
 	// of any of them. Otherwise we have precedence problems when an AI is
 	// busy searching because of one of them and a new stimulus arrives.
 	alertTypeWeight[ai::EAlertTypeHitByProjectile]		= 40; // grayman #3331
-	alertTypeWeight[ai::EAlertTypeEnemy]				= 40;
+	alertTypeWeight[ai::EAlertTypeEnemy]				= 40; // also covers EAlertTypeFoundEnemy, EAlertTypeLostTrackOfEnemy
+	alertTypeWeight[ai::EAlertTypeFailedKO]				= 40;
 	alertTypeWeight[ai::EAlertTypeDeadPerson]			= 40;
 	alertTypeWeight[ai::EAlertTypeUnconsciousPerson]	= 40;
 
@@ -1740,6 +1739,7 @@ void idAI::Spawn( void )
 	//alertTypeWeight[ai::EAlertTypeDamage]				= 45;
 	//alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
 
+	alertTypeWeight[ai::EAlertTypeBlinded]				= 36; // grayman #3857
 	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
 	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872
 	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327
@@ -1748,8 +1748,20 @@ void idAI::Spawn( void )
 	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
 	alertTypeWeight[ai::EAlertTypeDoor]					= 20;
 	alertTypeWeight[ai::EAlertTypeLightSource]			= 10;
-	alertTypeWeight[ai::EAlertTypeSuspicious]			= 5;
-	alertTypeWeight[ai::EAlertTypeNone]					= 0;
+	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		=  8; // grayman #3857
+	alertTypeWeight[ai::EAlertTypeHitByMoveable]		=  7;
+	alertTypeWeight[ai::EAlertTypePickedPocket]			=  6; // grayman #3857
+	alertTypeWeight[ai::EAlertTypeSuspicious]			=  5;
+	alertTypeWeight[ai::EAlertTypeNone]					=  0;
+
+	// grayman #3857 - the following alert types are used to differentiate
+	// alert type and search processing, but aren't used explicitly to test
+	// alert weighting, and won't appear in the alertTypeWeight[] vector:
+
+	// EAlertTypeEncounter
+	// EAlertTypeRequestForHelp
+	// EAlertTypeDetectedEnemy
+	// EAlertTypeSomethingSuspicious
 
 	// DarkMod: Get the movement type audible volumes from the spawnargs
 	spawnArgs.GetFloat( "stepvol_walk",			"0",		m_stepvol_walk );
@@ -3190,7 +3202,7 @@ idAI::TravelDistance
 
 Returns the approximate travel distance from one position to the goal, or if no AAS, the straight line distance.
 
-This is feakin' slow, so it's not good to do it too many times per frame.  It also is slower the further you
+This is freakin' slow, so it's not good to do it too many times per frame.  It also is slower the farther you
 are from the goal, so try to break the goals up into shorter distances.
 =====================
 */
@@ -3270,6 +3282,9 @@ idAI::StopMove
 */
 void idAI::StopMove( moveStatus_t status )
 {
+	// Note: you might be tempted to set AI_RUN to false here,
+	// but AI_RUN needs to persist when stopping at a point
+	// where the AI is just going to start moving again.
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
 	m_pathRank			= 1000; // grayman #2345
@@ -4432,6 +4447,9 @@ void idAI::SetMoveType( int moveType ) {
 
 void idAI::SetMoveType( idStr moveType ) 
 {
+	ai::Memory& memory = GetMemory(); // grayman #3857
+	memory.playIdleAnimations = true;
+
 	if (moveType.Icmp("MOVETYPE_DEAD") == 0)
 	{
 		SetMoveType(MOVETYPE_DEAD);
@@ -4459,22 +4477,27 @@ void idAI::SetMoveType( idStr moveType )
 	else if (moveType.Icmp("MOVETYPE_SIT_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_SIT_DOWN);
+		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_SLEEP") == 0)
 	{
 		SetMoveType(MOVETYPE_SLEEP);
+		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_LAY_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_LAY_DOWN);
+		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
+		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP_FROM_LYING") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
+		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else
 	{
@@ -6445,7 +6468,7 @@ int idAI::ReactionTo( const idEntity *ent )
 	// actors will always fight if their teams are enemies
 	if ( IsEnemy(actor) )
 	{
-		if ( actor->fl.notarget )
+		if ( ( actor->fl.notarget ) || ( actor->fl.invisible ) ) // grayman #3857
 		{
 			// don't attack on sight when attacker is notargeted
 			return ATTACK_ON_DAMAGE | ATTACK_ON_ACTIVATE;
@@ -6569,7 +6592,8 @@ bool idAI::Pain( idEntity *inflictor, idEntity *attacker, int damage, const idVe
 					SetEnemy(static_cast<idActor*>(attacker));
 					AI_VISALERT = false;
 				
-					SetAlertLevel(thresh_5*2);
+					SetAlertLevel(thresh_5 - 0.1); // grayman #3857 - reduce alert level to just under Combat
+					//SetAlertLevel(thresh_5*2);
 					GetMemory().alertClass = ai::EAlertNone;
 					GetMemory().alertType = ai::EAlertTypeEnemy;
 				}
@@ -6703,6 +6727,12 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
 
+	// grayman #3857 - leave an ongoing search
+	if (m_searchID > 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+	}
+
 	ClearEnemy();
 	AI_DEAD	= true;
 
@@ -6814,7 +6844,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	m_killedBy = attacker;
 
 	// grayman - print data re: being Killed
-	gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
+	//gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -6843,7 +6873,7 @@ void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir,
 		GetMind()->GetState()->OnProjectileHit(static_cast<idProjectile*>(inflictor), attacker, damageTaken);
 	}
 
-	if ( ( attacker != NULL ) && IsEnemy(attacker) )
+	if ( ( attacker != NULL ) && IsEnemy(attacker) && CanSee(attacker,true) ) // grayman #3857 - only conclude enemy if you can see him
 	{
 		GetMemory().hasBeenAttackedByEnemy = true;
 
@@ -7687,8 +7717,7 @@ void idAI::UpdateEnemyPosition()
 		}
 		enemyDetectable = true;
 	}
-
-	else	// enemy is not visible
+	else // enemy is not visible
 	{
 		// Enemy can't be seen (obscured or hidden in darkness)
 		if (cv_ai_show_enemy_visibility.GetBool())
@@ -9374,6 +9403,10 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		return;
 	}
 
+	idVec3 effectiveOrigin = origin; // grayman #3857
+	bool addFuzziness = true; // grayman #3857 - whether to add small amount of randomness to the sound origin or not
+	bool noisemaker = false;  // grayman #3857 - if this sound was made by a noisemaker arrow
+
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("CheckHearing to AI %s, loudness %f, threshold %f\r",name.c_str(),propParms->loudness,m_AudThreshold );
 	// TODO:
 	// Modify loudness by propVol/noise ratio,
@@ -9433,6 +9466,27 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				{
 					return; // already heard this noisemaker
 				}
+
+				noisemaker = true;
+
+				// grayman #3857 - use the original origin of the noisemaker so that
+				// searches can happen in the same area, even if the
+				// noisemaker moves around
+
+				maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", effectiveOrigin );
+
+				// trace down until you hit something
+				idVec3 bottomPoint = effectiveOrigin;
+				bottomPoint.z -= 1000;
+
+				trace_t result;
+				if ( gameLocal.clip.TracePoint(result, effectiveOrigin, bottomPoint, MASK_OPAQUE, NULL) )
+				{
+					// Found the floor.
+					effectiveOrigin.z = result.endpos.z + 1; // move the target point to just above the floor
+				}
+
+				addFuzziness = false; // don't add small amount of randomness to the sound location
 			}
 		}
 
@@ -9443,13 +9497,13 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 
 		idVec3 myOrigin = GetPhysics()->GetOrigin();
 		int areaNum = PointReachableAreaNum(myOrigin, 1.0f);
-		int soundAreaNum = PointReachableAreaNum(origin, 1.0f);
+		int soundAreaNum = PointReachableAreaNum(effectiveOrigin, 1.0f);
 		aasPath_t path;
 		idVec3 goal;
 
-		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, origin, this) )
+		if ( PathToGoal(path, areaNum, myOrigin, soundAreaNum, effectiveOrigin, this) )
 		{
-			m_SoundDir = origin; // use real sound origin
+			m_SoundDir = effectiveOrigin; // use real sound origin
 		}
 		else
 		{
@@ -9491,27 +9545,22 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		// grayman #3394 - it could also have been made by a body hitting the floor,
 		// and that body might be a friend
 		// grayman #2816 - no alert if it was made by someone we killed
+		// grayman #3857 - no alert if it was made by a dead or KO'ed body that was kicked by another AI
 
 		idActor *soundMaker = m_AlertedByActor.GetEntity();
 		if ( !soundMaker || // alert if unknown sound maker
-			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget ) || // alert if enemy and not the last we killed and not in notarget mode
+			 ( IsEnemy(soundMaker) && ( soundMaker != m_lastKilled.GetEntity() ) && !soundMaker->fl.notarget && !soundMaker->fl.inaudible ) || // alert if enemy and not the last we killed and not in notarget mode
 			 ( IsAfraid() && ((propParms->name == "arrow_broad_hit") || (propParms->name == "arrow_broad_break")))) // alert if this is a scary arrow sound
 		{
 			// greebo: Notify the currently active state
-			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name); // grayman #3847
+			bool shouldAlert = mind->GetState()->OnAudioAlert(propParms->name,addFuzziness,maker); // grayman #3847 // grayman #3857
 
 			// Decide if you need to remember a noisemaker
 
-			if ( makerPtr.GetEntity() != NULL ) // only non-null if a noisemaker
+			if (noisemaker)
 			{
 				// Only remember a noisemaker if it puts you into Searching mode or higher
-				bool rememberNoisemaker = false;
 				if ( AI_AlertLevel + psychLoud >= thresh_3 )
-				{
-					rememberNoisemaker = true;
-				}
-
-				if ( rememberNoisemaker)
 				{
 					// place this noisemaker on the list of noisemakers I've heard.
 
@@ -9530,7 +9579,29 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 			// grayman #3848 - but not if you've already been told to flee
 			if (shouldAlert)
 			{
+				// sets alert level
 				PreAlertAI( "aud", psychLoud, GetMemory().alertPos ); // grayman #3356
+
+				// Log the event if alert level will be high enough to search.
+				// There's a delay between PreAlertAI() and Event_AlertAI(), and
+				// the latter sets the new alert level, so at this point, the
+				// alert level doesn't include 'psychLoud'.
+
+				if ( AI_AlertLevel + psychLoud >= thresh_3 )
+				{
+					if (maker->IsType(idMoveable::Type) && (idStr(maker->GetName()).IcmpPrefix("idMoveable_atdm:ammo_noisemaker") == 0)) // noisemakers are moveables
+					{
+						idVec3 initialNoiseOrigin;
+						maker->spawnArgs.GetVector( "firstOrigin", "0 0 0", initialNoiseOrigin );
+
+						// don't provide the noisemaker itself as the entity parameter because that might go away
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeNoisemaker, initialNoiseOrigin, NULL, false ); // grayman #3857
+					}
+					else
+					{
+						GetMemory().currentSearchEventID = LogSuspiciousEvent( E_EventTypeSound, GetMemory().alertPos, NULL, false ); // grayman #3857
+					}
+				}
 			}
 		}
 		
@@ -9545,7 +9616,6 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 				if ( ( message->m_msgTag == 0 ) || ( message->m_msgTag == propParms->messageTag ) )
 				{
 					mind->GetState()->OnAICommMessage(*message, psychLoud);
-//					mind->GetState()->OnAICommMessage(*propParms->makerAI->m_Messages[i], psychLoud);
 				}
 			}
 		}
@@ -9600,20 +9670,16 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 		return;
 	}
 
-	// Ignore actors in notarget mode
-//	idActor* actor = m_AlertedByActor.GetEntity();
-
-	if ( actor && actor->fl.notarget)
+	// Ignore actors for various reasons
+	if (actor)
 	{
-		// Actor is set to notarget, quit
-		return;
-	}
-
-	// grayman #2816 - don't respond to sounds made by someone you last killed
-
-	if ( actor && ( actor == m_lastKilled.GetEntity() ) )
-	{
-		return;
+		if ( actor->fl.notarget ||
+			 ( (idStr(type) == "vis") && actor->fl.invisible) || // grayman #3857
+			 ( (idStr(type) == "aud") && actor->fl.inaudible) || // grayman #3857
+			 ( actor == m_lastKilled.GetEntity() ) ) // grayman #2816 - don't respond to alerts made by someone you last killed
+		{
+			return;
+		}
 	}
 
 	m_AlertedByActor = actor; // grayman #3258
@@ -9646,6 +9712,8 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 			m_AlertGraceCount++;
 
 			// Quick hack: Large lightgem values and visual alerts override the grace period count faster
+			// grayman #3857 - if you're here, AI_VISALERT is FALSE
+			/*
 			if (AI_VISALERT)
 			{
 				// greebo: Let the alert grace count increase by 12.5% of the current lightgem value
@@ -9655,7 +9723,8 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 					idPlayer* player = static_cast<idPlayer*>(actor);
 					m_AlertGraceCount += static_cast<int>(idMath::Rint(player->GetCurrentLightgemValue() * 0.125f));
 				}
-			}
+			}*/
+
 			return;
 		}
 		DM_LOG(LC_AI,LT_DEBUG)LOGSTRING("AI ALERT: Alert %f above threshold %f, grace count has reached its limit, grace period has expired\r", alertInc, m_AlertGraceThresh);
@@ -10016,9 +10085,8 @@ void idAI::PerformVisualScan(float timecheck)
 	}
 
 	idActor* player = gameLocal.GetLocalPlayer();
-	if (m_bIgnoreAlerts || player->fl.notarget)
+	if (m_bIgnoreAlerts || player->fl.notarget || player->fl.invisible) // grayman #3857 - added 'invisible'
 	{
-		// notarget
 		return;
 	}
 
@@ -10629,11 +10697,18 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 	// Set the alert amount according to the tactile alert value
 	if ( amount == -1 )
 	{
-		amount = cv_ai_tactalert.GetFloat();
+		if ( tactEnt->IsType(idActor::Type) ) // grayman #3857 - only use this if you touched an actor
+		{
+			amount = cv_ai_tactalert.GetFloat();
+		}
+		else
+		{
+			amount = 0;
+		}
 	}
 
 	// If we got this far, we give the alert
-	// NOTE: Latest tactile alert always overrides other alerts
+	// NOTE: Latest tactile alert always overides other alerts
 	m_TactAlertEnt = tactEnt;
 	m_AlertedByActor = responsibleActor;
 
@@ -10709,9 +10784,9 @@ idActor *idAI::FindEnemy(bool useFOV)
 	{
 		idEntity* ent = gameLocal.entities[i];
 
-		if (ent == NULL || ent->fl.notarget || !ent->IsType(idActor::Type))
+		if ( (ent == NULL) || ent->fl.notarget || ent->fl.invisible || !ent->IsType(idActor::Type)) // grayman #3857 - added 'invisible'
 		{
-			// NULL, notarget or non-Actor, continue
+			// NULL, notarget or non-Actor or invisible, continue
 			continue;
 		}
 
@@ -10742,8 +10817,10 @@ idActor* idAI::FindEnemyAI(bool useFOV)
 	float bestDist = idMath::INFINITY;
 	idActor* bestEnemy = NULL;
 
-	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() ) {
-		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || !ent->IsType( idActor::Type ) ) {
+	for (idEntity* ent = gameLocal.activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
+	{
+		if ( ent->fl.hidden || ent->fl.isDormant || ent->fl.notarget || ent->fl.invisible || !ent->IsType( idActor::Type ) ) // grayman #3857 - also use 'invisible'
+		{
 			continue;
 		}
 
@@ -11224,8 +11301,48 @@ bool idAI::HasSeenEvidence() const
 		|| spawnArgs.GetBool("alert_idle", "0");
 }
 
+void idAI::HasEvidence( EventType type )
+{
+	ai::Memory& memory = GetMemory();
+	bool printMsg = cv_ai_debug_transition_barks.GetBool();
+
+	switch(type)
+	{
+	case E_EventTypeEnemy:
+		memory.enemiesHaveBeenSeen = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that enemies have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeDeadPerson:
+		memory.deadPeopleHaveBeenFound = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that dead people have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeUnconsciousPerson:
+		memory.unconsciousPeopleHaveBeenFound = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that unconscious people have been seen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	case E_EventTypeMissingItem:
+		memory.itemsHaveBeenStolen = true;
+		if (printMsg)
+		{
+			gameLocal.Printf("%d: %s is aware that an item has been stolen, will use Alert Idle\n",gameLocal.time,GetName());
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 /**
-* ========================== BEGIN  TDM KNOCKOUT CODE =============================
+* ========================== BEGIN TDM KNOCKOUT CODE =============================
 **/
 
 /*
@@ -11531,6 +11648,12 @@ void idAI::Knockout( idEntity* inflictor )
 	RemoveProjectile();
 	StopMove( MOVE_STATUS_DONE );
 	GetMemory().StopReacting(); // grayman #3559
+
+	// grayman #3857 - leave an ongoing search
+	if (m_searchID > 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+	}
 
 	ClearEnemy();
 
@@ -12312,350 +12435,10 @@ void idAI::DropOnRagdoll( void )
 	}
 }
 
-// grayman #2422 - adjust search limits to better fit the vertical
-// space in which the alert occurred
-
-void idAI::AdjustSearchLimits(idBounds& bounds)
-{
-	// trace down
-
-	idBounds newBounds = bounds;
-
-	idVec3 start = bounds.GetCenter();
-	idVec3 end = start;
-	end.z -= 300;
-
-	trace_t result;
-	idEntity *ignore = NULL;
-	while ( true )
-	{
-		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
-		if ( result.fraction == 1.0f )
-		{
-			break;
-		}
-
-		if ( result.fraction < VECTOR_EPSILON )
-		{
-			newBounds[0][2] = result.endpos.z; // move the lower bounds
-			break;
-		}
-
-		// End the trace if we hit the world
-
-		idEntity* entHit = gameLocal.entities[result.c.entityNum];
-
-		if ( entHit == gameLocal.world )
-		{
-			newBounds[0][2] = result.endpos.z; // move the lower bounds
-			break;
-		}
-
-		// Continue the trace from the struck point
-
-		start = result.endpos;
-		ignore = entHit; // for the next leg, ignore the entity we struck
-	}
-
-	// trace up
-
-	end = start;
-	end.z += 300;
-	ignore = NULL;
-	while ( true )
-	{
-		gameLocal.clip.TracePoint( result, start, end, MASK_OPAQUE, ignore );
-		if ( result.fraction == 1.0f )
-		{
-			break;
-		}
-
-		if ( result.fraction < VECTOR_EPSILON )
-		{
-			if ( newBounds[1][2] > result.endpos.z )
-			{
-				newBounds[1][2] = result.endpos.z; // move the upper bounds down
-			}
-			break;
-		}
-
-		// End the trace if we hit the world
-
-		idEntity* entHit = gameLocal.entities[result.c.entityNum];
-
-		if ( entHit == gameLocal.world )
-		{
-			if ( newBounds[1][2] > result.endpos.z )
-			{
-				newBounds[1][2] = result.endpos.z; // move the upper bounds down
-			}
-			break;
-		}
-
-		// Continue the trace from the struck point
-
-		start = result.endpos;
-		ignore = entHit; // for the next leg, ignore the entity we struck
-	}
-
-	bounds = newBounds.ExpandSelf(2.0); // grayman #3424 - expand a bit to catch floors
-}
-
-
-int idAI::StartSearchForHidingSpotsWithExclusionArea
-(
-	const idVec3& hideFromLocation,
-	const idVec3& minBounds, 
-	const idVec3& maxBounds, 
-	const idVec3& exclusionMinBounds, 
-	const idVec3& exclusionMaxBounds, 
-	int hidingSpotTypesAllowed, 
-	idEntity* p_ignoreEntity
-)
-{
-	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("StartSearchForHidingSpotsWithExclusionArea called - %s\r",name.c_str());
-
-	// Destroy any current search
-	destroyCurrentHidingSpotSearch();
-
-	// Make caller's search bounds
-	idBounds searchBounds (minBounds, maxBounds);
-	idBounds searchExclusionBounds (exclusionMinBounds, exclusionMaxBounds);
-
-	// grayman #2422 - to prevent AI from going upstairs or downstairs
-	// to search spots over/under where they should be searching,
-	// limit the search to the floor where the alert occurred.
-
-	AdjustSearchLimits(searchBounds);
-	m_searchLimits = searchBounds;
-
-	// greebo: Remember the initial alert position
-	ai::Memory& memory = GetMemory();
-	memory.alertSearchCenter = memory.alertPos;
-
-	// Get aas
-	if (aas != NULL)
-	{
-		// Allocate object that handles the search
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Making finder\r");
-		bool b_searchCompleted = false;
-		m_HidingSpotSearchHandle = CHidingSpotSearchCollection::Instance().getOrCreateSearch
-		(
-			hideFromLocation, 
-			aas, 
-			HIDING_OBJECT_HEIGHT,
-			searchBounds,
-			searchExclusionBounds,
-			hidingSpotTypesAllowed,
-			p_ignoreEntity,
-			gameLocal.framenum,
-			b_searchCompleted
-		);
-
-		// Wait at least one frame for other AIs to indicate they want to share
-		// this search. Return result indicating search is not done yet.
-		return 1;
-	}
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Cannot perform Event_StartSearchForHidingSpotsWithExclusionArea if no AAS is set for the AI\r");
-	
-		// Search is done since there is no search
-		return 0;
-	}
-}
-
 bool idAI::IsSearching() // grayman #2603
 {
 	return (AI_AlertLevel >= thresh_3); // note that this also returns TRUE if in combat mode
 }
-
-int idAI::ContinueSearchForHidingSpots()
-{
-	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("ContinueSearchForHidingSpots called.\r");
-
-	// Get hiding spot search instance from handle
-	CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = NULL;
-	if (m_HidingSpotSearchHandle != NULL_HIDING_SPOT_SEARCH_HANDLE)
-	{
-		p_hidingSpotFinder = CHidingSpotSearchCollection::Instance().getSearchByHandle(
-			m_HidingSpotSearchHandle
-		);
-	}
-
-	// Make sure search still around
-	if (p_hidingSpotFinder == NULL)
-	{
-		// No hiding spot search to continue
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("No current hiding spot search to continue\r");
-		return 0;
-	}
-	else
-	{
-		// Call finder method to continue search
-		bool moreProcessingToDo = p_hidingSpotFinder->continueSearchForHidingSpots
-		(
-			p_hidingSpotFinder->hidingSpotList,
-			cv_ai_max_hiding_spot_tests_per_frame.GetInteger(),
-			gameLocal.framenum
-		);
-
-		// Return result
-		if (moreProcessingToDo)
-		{
-			return 1;
-		}
-
-		// No more processing to do at this point
-		
-		unsigned int refCount;
-
-		// Get finder we just referenced
-		CDarkmodAASHidingSpotFinder* p_hidingSpotFinder = 
-			CHidingSpotSearchCollection::Instance().getSearchAndReferenceCountByHandle 
-			(
-				m_HidingSpotSearchHandle,
-				refCount
-			);
-
-		m_hidingSpots.clear();
-		// greebo: Now retrieve our share from the completed hiding spot search.
-		// For example, if two other AI are referencing this hiding spot finder, this AI draws a third.
-		p_hidingSpotFinder->hidingSpotList.getOneNth(refCount, m_hidingSpots);
-
-		// Done with search object, dereference so other AIs know how many
-		// AIs will still be retrieving points from the search
-		CHidingSpotSearchCollection::Instance().dereference (m_HidingSpotSearchHandle);
-		m_HidingSpotSearchHandle = NULL_HIDING_SPOT_SEARCH_HANDLE;
-
-		// DEBUGGING
-		if (cv_ai_search_show.GetInteger() >= 1.0)
-		{
-			// Clear the debug draw list and then fill with our results
-			p_hidingSpotFinder->debugClearHidingSpotDrawList();
-			p_hidingSpotFinder->debugAppendHidingSpotsToDraw (m_hidingSpots);
-			p_hidingSpotFinder->debugDrawHidingSpots (cv_ai_search_show.GetInteger());
-		}
-
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Hiding spot search completed\r");
-		return 0;
-	}
-}
-
-idVec3 idAI::GetNthHidingSpotLocation(int hidingSpotIndex)
-{
-	idVec3 outLocation(0,0,0);
-
-	int numSpots = m_hidingSpots.getNumSpots();
-
-	// In bounds?
-	if ( ( hidingSpotIndex >= 0 ) && ( hidingSpotIndex < numSpots) )
-	{
-		idBounds areaNodeBounds;
-		darkModHidingSpot* p_spot = m_hidingSpots.getNthSpotWithAreaNodeBounds(hidingSpotIndex, areaNodeBounds);
-		if (p_spot != NULL)
-		{
-			// grayman #2422 - to keep AI from searching the floor above
-			// or below, only return hiding spots that are inside the
-			// requested search volume. Ideally, if we decide this point is outside those
-			// limits, we would move to the next spot on the list, but list index
-			// management is done outside this routine, and we can't tinker
-			// with it here. If the point is NG, return (INFINITY,INFINITY,INFINITY).
-			// That will be checked elsewhere and cause this search to terminate and
-			// possibly start a new one.
-
-			if ( m_searchLimits.ContainsPoint(p_spot->goal.origin) )
-			{
-				outLocation = p_spot->goal.origin; // point is good
-			}
-		}
-
-		if (cv_ai_search_show.GetInteger() >= 1.0)
-		{
-			idVec4 markerColor (1.0, 1.0, 1.0, 1.0);
-			idVec3 arrowLength (0.0, 0.0, 50.0);
-
-			// Debug draw the point to be searched
-			gameRenderWorld->DebugArrow
-			(
-				markerColor,
-				outLocation + arrowLength,
-				outLocation,
-				2,
-				cv_ai_search_show.GetInteger()
-			);
-
-			// Debug draw the bounds of the area node containing the hiding spot point
-			// This may be smaller than the containing AAS area due to octant subdivision.
-			gameRenderWorld->DebugBounds
-			(
-				markerColor,
-				areaNodeBounds,
-				vec3_origin,
-				cv_ai_search_show.GetInteger()
-			);
-		}
-    }
-	else
-	{
-		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("Index %d is out of bounds, there are %d hiding spots\r", hidingSpotIndex, numSpots);
-	}
-
-	// grayman #2422 - this routine might return (0,0,0), but we don't
-	// want AI traveling there. Change to something that's considered invalid.
-
-	if ( outLocation.Compare(idVec3(0,0,0)) )
-	{
-		outLocation = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
-	}
-
-	// Return the location
-	return outLocation;
-}
-
-int idAI::GetSomeOfOtherEntitiesHidingSpotList(idEntity* p_ownerOfSearch)
-{
-	// Test parameters
-	if (p_ownerOfSearch == NULL) 
-	{
-		return 0;
-	}
-
-	// The other entity must be an AI
-	idAI* p_otherAI = dynamic_cast<idAI*>(p_ownerOfSearch);
-	if (p_otherAI == NULL)
-	{
-		// Not an AI
-		return 0;
-	}
-
-	CDarkmodHidingSpotTree& p_othersTree = p_otherAI->m_hidingSpots;
-	if (p_othersTree.getNumSpots() <= 1)
-	{
-		// No points
-		return 0;
-	}
-
-	// We must clear our current hiding spot search
-	destroyCurrentHidingSpotSearch();
-
-	// Move points from their tree to ours
-	p_othersTree.getOneNth(2, m_hidingSpots);
-
-	// grayman #3424 - when grabbing hiding spots from someone else, both
-	// parties need to act like they're just starting the search. Otherwise,
-	// if the party who lost spots is already searching, he'll think he's
-	// still got the original number, which can lead to problems. This
-	// won't lead to the other party repeating every spot he's already
-	// searched, since spot selection is now randomized.
-
-	GetMemory().firstChosenHidingSpotIndex = -1;
-	p_otherAI->GetMemory().firstChosenHidingSpotIndex = -1;
-
-	// Done
-	return m_hidingSpots.getNumSpots();
-}
-
 
 float idAI::GetArmReachLength()
 {
@@ -12881,13 +12664,40 @@ void idAI::ShowDebugInfo()
 		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
+		if (GetSubsystem(ai::SubsysSearch)->IsEnabled()) str += "Search: " + GetSubsystem(ai::SubsysSearch)->GetDebugInfo() + "\n"; // grayman #3857
 
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*35.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
 	}
 
 	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
 	{
 		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		// grayman #3857 - add debugging info for coordinated searches
+		if (( m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)) )
+		{
+			Search* search = gameLocal.m_searchManager->GetSearch(m_searchID);
+			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,this);
+			smRole_t r = E_ROLE_NONE;
+			idStr role = "none";
+			if (assignment)
+			{
+				r = assignment->_searcherRole;
+				if (r == E_ROLE_SEARCHER)
+				{
+					role = "searcher";
+				}
+				else if (r == E_ROLE_GUARD)
+				{
+					role = "guard";
+				}
+				else if (r == E_ROLE_OBSERVER)
+				{
+					role = "observer";
+				}
+			}
+			gameRenderWorld->DrawText( va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		}
+
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
 		{
 			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
@@ -13062,6 +12872,7 @@ void idAI::SitDown()
 	}
 	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
+	GetMemory().playIdleAnimations = false; // grayman #3857
 }
 
 void idAI::GetUp()
@@ -13072,11 +12883,13 @@ void idAI::GetUp()
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
+		GetMemory().playIdleAnimations = false; // grayman #3857
 	}
 	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // grayman #3290 - corrected logic
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
+		GetMemory().playIdleAnimations = false; // grayman #3857
 		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
 
 		// Reset visual, hearing and tactile acuity
@@ -13099,6 +12912,7 @@ void idAI::LayDown()
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
+	GetMemory().playIdleAnimations = false; // grayman #3857
 
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
@@ -13270,7 +13084,7 @@ bool idAI::CanGreet() // grayman #3338
 	if ( ( greetingState == ECannotGreet )    || // can never greet
 		 ( greetingState == ECannotGreetYet ) || // not allowed to greet yet
 		 ( AI_AlertIndex >= ai::EObservant)	  || // too alert
-		 ( mind->GetState()->GetName() == "Flee" ) || // grayman #3140 - no greeting if fleeing
+		 ( GetMemory().fleeing ) || // grayman #3140 - no greeting if fleeing
 		 ( GetAttackFlag(COMBAT_MELEE)  && !spawnArgs.GetBool("unarmed_melee","0") )  || // visible melee weapon drawn
 		 ( GetAttackFlag(COMBAT_RANGED) && !spawnArgs.GetBool("unarmed_ranged","0") ) )  // visible ranged weapon drawn
 	{
@@ -13353,7 +13167,7 @@ void idAI::Event_PickedPocketSetup2() // grayman #3559
 		 AI_KNOCKEDOUT || // or unconscious
 		 (AI_AlertIndex >= ai::ESearching) || // stop if alert level is too high
 		 m_InConversation || // in a conversation
-		 !memory.fleeingDone || // fleeing
+		 memory.fleeing || // fleeing
 		 m_ReactingToHit ) // already reacting to having been hit by something
 	{
 		memory.latchPickedPocket = false;
@@ -13449,26 +13263,10 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 
 	if ( AI_AlertLevel < ( thresh_4 - 0.1f ) )
 	{
-		memory.alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
-		memory.alertClass = ai::EAlertVisual_2; // grayman #2603
-		memory.alertType = ai::EAlertTypeDoor;
-		
-		// Do search as if there is an enemy that has escaped
-		memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-		memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-		memory.alertSearchExclusionVolume.Zero();
-		
-		AI_VISALERT = false;
-		memory.visualAlert = false; // grayman #2422
-		memory.mandatory = false;	// grayman #3331
-
-		SetAlertLevel(thresh_3 + (thresh_4 - thresh_3)/2.0f); // grayman #3756 - shorten search time
+		// grayman #3857 - move alert setup into one method
+		idVec3 alertPos = door->GetDoorPosition(doorSide == DOOR_SIDE_FRONT ? DOOR_SIDE_BACK : DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER); // grayman #3756
+		mind->GetState()->SetUpSearchData(ai::EAlertTypeDoor, alertPos, door, false, thresh_3 + (thresh_4 - thresh_3)/2.0f);
 	}
-
-	// Do new reaction to stimulus
-
-	memory.stimulusLocationItselfShouldBeSearched = true;
-	memory.alertedDueToCommunication = false;
 }
 
 int idAI::GetDoorSide(CFrobDoor* frobDoor)
@@ -13489,3 +13287,4 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor)
 
 	return doorSide;
 }
+

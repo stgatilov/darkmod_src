@@ -25,10 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ExamineRopeState.h"
 //#include "../Memory.h"
 #include "../Tasks/MoveToPositionTask.h"
-//#include "../Tasks/SingleBarkTask.h"
-//#include "../../StimResponse/StimResponse.h"
-//#include "../Tasks/RandomHeadturnTask.h"
-//#include "../Tasks/RandomTurningTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 
 namespace ai
 {
@@ -63,6 +60,9 @@ void ExamineRopeState::Cleanup(idAI* owner)
 void ExamineRopeState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
@@ -88,6 +88,8 @@ void ExamineRopeState::Init(idAI* owner)
 		Wrapup(owner);
 		return;
 	}
+
+	owner->actionSubsystem->ClearTasks(); // grayman #3857
 
 	if (owner->m_ReactingToPickedPocket) // grayman #3559
 	{
@@ -330,27 +332,8 @@ void ExamineRopeState::Think(idAI* owner)
 
 					if (owner->AI_AlertLevel < owner->thresh_4)
 					{
-						memory.alertPos = _examineSpot;
-						memory.alertClass = EAlertVisual_4; // grayman #3498 (was _2)
-						memory.alertType = EAlertTypeSuspiciousItem;
-
-						// Do search as if there is an enemy that has escaped
-						memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-						memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME; 
-						memory.alertSearchExclusionVolume.Zero();
-						
-						owner->AI_VISALERT = false;
-						memory.visualAlert = false; // grayman #2422
-						memory.mandatory = false;	// grayman #3331
-						
-						// Do new reaction to stimulus
-						memory.stimulusLocationItselfShouldBeSearched = true;
-
-						// If the rope origin is close to your feet, do a close investigation
-
-						float ropeDist = rope->GetPhysics()->GetOrigin().z - owner->GetPhysics()->GetOrigin().z;
-						memory.investigateStimulusLocationClosely = ( abs(ropeDist) <= 20 );
-						memory.alertedDueToCommunication = false;
+						// grayman #3857 - move alert setup into one method
+						SetUpSearchData(EAlertTypeRope, _examineSpot, rope, false, 0); // grayman #3857
 					}
 				}
 

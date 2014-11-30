@@ -59,11 +59,13 @@ public:
 	// Gets called each time the mind is thinking
 	virtual void Think(idAI* owner);
 
+	bool FindRadialSpot(idVec3 aiOrigin, idVec3 origin, float radius, idVec3 &spot); // grayman #3857
+
 	// Incoming events issued by the Subsystems
 	virtual void OnSubsystemTaskFinished(idAI* owner, SubsystemId subSystem);
 
 	// greebo: Gets called when the AI is alerted by a suspicious sound (override)
-	virtual bool OnAudioAlert(idStr soundName); // grayman #3847
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
 
 	static StatePtr CreateInstance();
 
@@ -74,18 +76,7 @@ protected:
 	/**
 	 * This method is used to start a new hiding spot search. Any existing search in progress is replaced.
 	 */
-	virtual void StartNewHidingSpotSearch(idAI* owner);
-
-	// This is called each frame to complete a multiframe hiding spot search
-	virtual void PerformHidingSpotSearch(idAI* owner);
-
-	// Gets called when a new hiding spot should be acquired for searching.
-	// Stores the result in the AI's Memory (hiding spot indices)
-	// return TRUE when a hiding spot is available, FALSE if not.
-	virtual bool ChooseNextHidingSpotToSearch(idAI* owner);
-
-	// Randomizes the hiding spot list before any spots are chosen from it.
-	void RandomizeHidingSpotList(idAI* owner); // grayman #3424
+	virtual bool StartNewHidingSpotSearch(idAI* owner);
 };
 
 } // namespace ai

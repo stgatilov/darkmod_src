@@ -53,6 +53,7 @@ void DeadState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 	owner->commSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	// Reset anims
 	owner->StopAnim(ANIMCHANNEL_TORSO, 0);

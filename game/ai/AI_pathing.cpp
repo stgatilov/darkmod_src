@@ -498,7 +498,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			bool fleeing = false;
 			if (self->IsType(idAI::Type))
 			{
-				fleeing = !static_cast<idAI*>(self)->GetMemory().fleeingDone;
+				fleeing = static_cast<idAI*>(self)->GetMemory().fleeing;
 			}
 
 			idPhysics* obPhys = obEnt->GetPhysics();
@@ -507,7 +507,7 @@ int GetObstacles( const idPhysics *physics, const idAAS *aas, const idEntity *ig
 			// TDM: Also ignore ALL enemies
 			// grayman #2728 - also ignore small AI
 			// grayman #3548 - don't ignore enemies if fleeing
-			if	((obPhys == physics)	||
+			if	(/*(obPhys == physics)	||*/ // grayman #3857 - already done above
 				 (obEnt == ignore)		||
 				 (obEnt->health <= 0)	||
 				 (self->IsEnemy(obEnt) && !fleeing) ||

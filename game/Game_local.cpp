@@ -232,7 +232,8 @@ idGameLocal::idGameLocal() :
 	briefingVideoInfoLoaded(false),
 	curBriefingVideoPart(-1),
 	m_MissionResult(MISSION_NOTEVENSTARTED),
-	m_HighestSRId(0)
+	m_HighestSRId(0),
+	m_searchManager(NULL) // grayman #3857
 {
 	Clear();
 }
@@ -312,6 +313,9 @@ void idGameLocal::Clear( void )
 	m_EscapePointManager = CEscapePointManager::Instance();
 	m_EscapePointManager->Clear();
 
+	m_searchManager = CSearchManager::Instance(); // grayman #3857
+	m_searchManager->Clear(); // grayman #3857
+	
 	m_Interleave = 0;
 
 	m_lightGem.Clear();
@@ -958,6 +962,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		savegame.WriteInt(static_cast<int>(se.type));
 		savegame.WriteVec3(se.location);
 		se.entity.Save(&savegame);
+		savegame.WriteInt(se.time); // grayman #3857
 	}
 
 	// grayman #3584
@@ -1122,6 +1127,8 @@ void idGameLocal::SaveGame( idFile *f ) {
 	}
 
 	m_EscapePointManager->Save(&savegame);
+
+	m_searchManager->Save(&savegame); // grayman #3857
 
 	// greebo: Save the maximum frob distance
 	savegame.WriteFloat(g_Global.m_MaxFrobDistance);
@@ -1613,6 +1620,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	m_strMainAmbientLightName = "ambient_world"; // Default name for main ambient light. J.C.Denton.
 
+	m_suspiciousEvents.Clear(); // grayman #3424
+	m_ambientLights.Clear();	// grayman #3584
+	m_searchManager->Clear(); // grayman #3857
 }
 
 /*
@@ -2124,6 +2134,7 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 		m_suspiciousEvents[i].type = static_cast<EventType>(type);
 		savegame.ReadVec3(m_suspiciousEvents[i].location);
 		m_suspiciousEvents[i].entity.Restore(&savegame);
+		savegame.ReadInt(m_suspiciousEvents[i].time); // grayman #3857
 	}
 
 	m_ambientLights.Clear();
@@ -2314,6 +2325,8 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 
 	m_EscapePointManager->Restore(&savegame);
+
+	m_searchManager->Restore(&savegame); // grayman #3857
 
 	// greebo: Restore the maximum frob distance
 	savegame.ReadFloat(g_Global.m_MaxFrobDistance);
@@ -3388,6 +3401,9 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 
 			// Process the active AI conversations
 			m_ConversationSystem->ProcessConversations();
+
+			// grayman #3857 - Process the active searches
+			m_searchManager->ProcessSearches();
 
 			// free the player pvs
 			FreePlayerPVS();
@@ -5134,6 +5150,15 @@ void idGameLocal::SetupEAS()
 	common->PacifierUpdate(LOAD_KEY_ROUTING_DONE,0); // grayman #3763
 }
 
+
+// grayman #3857
+void idGameLocal::GetPortals(Search* search, idAI* ai)
+{
+	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
+	int areaNum = ai->PointReachableAreaNum(search->_origin);
+	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits);
+}
+
 /*
 ==================
 idGameLocal::CheatsOk
@@ -6020,6 +6045,9 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	if ( push ) {
 		RadiusPush( origin, radius, push * dmgPower, attacker, ignorePush, attackerPushScale, false );
 	}
+
+	// grayman #3857 - douse nearby lights
+	RadiusDouse( origin, radius );
 }
 
 /*
@@ -6043,13 +6071,6 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 
 	// get all clip models touching the bounds
 	numListedClipModels = clip.ClipModelsTouchingBounds( bounds, -1, clipModelList, MAX_GENTITIES );
-
-	if ( inflictor && inflictor->IsType( idAFAttachment::Type ) ) {
-		inflictor = static_cast<const idAFAttachment*>(inflictor)->GetBody();
-	}
-	if ( ignore && ignore->IsType( idAFAttachment::Type ) ) {
-		ignore = static_cast<const idAFAttachment*>(ignore)->GetBody();
-	}
 
 	// apply impact to all the clip models through their associated physics objects
 	for ( i = 0; i < numListedClipModels; i++ ) {
@@ -6093,6 +6114,71 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 			clipModel->GetEntity()->ApplyImpulse( world, clipModel->GetId(), clipModel->GetOrigin(), scale * push * dir );
 		} else {
 			RadiusPushClipModel( origin, scale * push, clipModel );
+		}
+	}
+}
+
+// grayman #3857 - douse nearby flame lights
+
+void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
+{
+	idEntity *ent;
+	idEntity *entityList[MAX_GENTITIES];
+	int		  numListedEntities;
+
+	idBounds bounds = idBounds(origin).Expand(radius);
+
+	// get all entities touching the bounds
+	numListedEntities = clip.EntitiesTouchingBounds( bounds, -1, entityList, MAX_GENTITIES );
+
+	// douse all flames that have a LOS from them to the origin
+	for ( int i = 0 ; i < numListedEntities ; i++ )
+	{
+		ent = entityList[i];
+
+		if (ent && ent->IsType(idLight::Type))
+		{
+			idStr lightType = ent->spawnArgs.GetString(AIUSE_LIGHTTYPE_KEY);
+
+			// douse only flames and gas lamps
+			if ((lightType == AIUSE_LIGHTTYPE_TORCH) || (lightType == AIUSE_LIGHTTYPE_GASLAMP))
+			{
+				idLight* light = static_cast<idLight*>(ent);
+
+				// ignore blend and fog lights
+
+				if (light->IsBlend() || light->IsFog())
+				{
+					continue;
+				}
+
+				// Only douse lit lights
+
+				if (light->GetLightLevel() > 0)
+				{
+					// Find the bindMaster for lights with light holders. Only go
+					// up one level in the family chain, since we're only interested
+					// in ignoring the entity the light is bound to, if anything.
+
+					idEntity* ignoreMe = light;
+					idEntity* bindMaster = light->GetBindMaster();
+					if (bindMaster)
+					{
+						ignoreMe = bindMaster;
+					}
+
+					// test LOS between origin of force and light origin
+
+					// Light center is not just the light origin. There's an offset called "light_center", and there's orientation.
+					idVec3 trueOrigin = light->GetPhysics()->GetOrigin() + light->GetPhysics()->GetAxis()*light->GetRenderLight()->lightCenter;
+					trace_t result;
+					if ( !clip.TracePoint(result, origin, trueOrigin, MASK_OPAQUE, ignoreMe) )
+					{
+						// trace completed, so LOS exists
+						light->CallScriptFunctionArgs("frob_extinguish", true, 0, "e", light);
+					}
+				}
+			}
 		}
 	}
 }
@@ -7964,29 +8050,44 @@ int idGameLocal::GetSpyglassOverlay()
 	return m_spyglassOverlay;
 }
 
+// grayman #3857
+SuspiciousEvent* idGameLocal::FindSuspiciousEvent( int eventID ) // grayman #3857
+{
+	if ( eventID < 0 )
+	{
+		return NULL;
+	}
+
+	return &m_suspiciousEvents[eventID];
+}
+
 // grayman #3424
 
-int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity )
+int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ) // grayman #3857
 {
 	idEntityPtr<idEntity> _entity;	// entity, if relevant
-
-	// grayman #3848 - must use separate booleans
-	bool locationMatch = false;
-	bool entityMatch   = true;
 
 	for ( int i = 0 ; i < gameLocal.m_suspiciousEvents.Num() ; i++ )
 	{
 		SuspiciousEvent se = gameLocal.m_suspiciousEvents[i];
+
 		if ( se.type == type ) // type of event
 		{
+			// grayman #3848 - must use separate booleans
+			bool locationMatch = true;
+			bool entityMatch   = true;
+			bool timeMatch	   = true; // grayman #3857
+
 			// check location
 
-			if ( !location.Compare(idVec3(0,0,0)))
+			if ( !location.Compare(idVec3(0,0,0)) )
 			{
-				if ( location.Compare(se.location))
-				{
-					locationMatch = true;
-				}
+				// Allow for some variance in location. Two events of
+				// the same type that are near each other should be
+				// considered the same event.
+
+				float distSqr = (se.location - location).LengthSqr();
+				locationMatch = (distSqr <= 90000); // 300*300
 			}
 
 			// check entity
@@ -7998,30 +8099,62 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 					entityMatch = false;
 				}
 			}
-		}
 
-		if ( locationMatch && entityMatch )
-		{
-			return i;
+			// grayman #3857 - check timestamp
+
+			if ( time > 0 )
+			{
+				// time must match exactly
+
+				timeMatch = ( time == se.time);
+			}
+
+			if ( locationMatch && entityMatch && timeMatch ) // grayman #3857
+			{
+				return i;
+			}
 		}
 	}
 	return -1;
 }
 
-int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )   
+
+int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   
 {
 	int index = -1;
-	if ( se.type == E_EventTypeEnemy )
+
+	// See if this event has already been logged
+
+	if (!forceLog)
 	{
-		index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL );
-	}
-	else if ( se.type == E_EventTypeDeadPerson )
-	{
-		index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity() );
-	}
-	else if ( se.type == E_EventTypeMissingItem )
-	{
-		index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, NULL );
+		if ( se.type == E_EventTypeEnemy )
+		{
+			index = FindSuspiciousEvent( E_EventTypeEnemy, se.location, NULL, 0 );
+		}
+		else if ( se.type == E_EventTypeDeadPerson )
+		{
+			index = FindSuspiciousEvent( E_EventTypeDeadPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeUnconsciousPerson ) // grayman #3857
+		{
+			index = FindSuspiciousEvent( E_EventTypeUnconsciousPerson, idVec3(0,0,0), se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeMissingItem )
+		{
+			index = FindSuspiciousEvent( E_EventTypeMissingItem, se.location, se.entity.GetEntity(), 0 );
+		}
+		else if ( se.type == E_EventTypeMisc ) // grayman #3857
+		{
+			index = FindSuspiciousEvent( E_EventTypeMisc, se.location, se.entity.GetEntity(), se.time );
+		}
+		else if ( se.type == E_EventTypeNoisemaker ) // grayman #3857
+		{
+			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, se.time );
+		}
+		else if ( se.type == E_EventTypeSound ) // grayman #3857
+		{
+			index = FindSuspiciousEvent( E_EventTypeSound, idVec3(0,0,0), NULL, se.time );
+		}
 	}
 
 	if ( index < 0 )
@@ -8032,5 +8165,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se )
 
 	return index;
 }
+
+
 
 

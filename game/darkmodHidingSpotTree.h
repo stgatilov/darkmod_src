@@ -322,7 +322,7 @@ public:
 	*	will be moved.  The tree is cleared before any areas or spots are moved
 	*	to it.
 	*/
-	bool getOneNth(unsigned int N, CDarkmodHidingSpotTree& out_otherTree);
+	//bool getOneNth(unsigned int N, CDarkmodHidingSpotTree& out_otherTree); // grayman #3857
 
 	/*!
 	* This copies this tree into another tree.

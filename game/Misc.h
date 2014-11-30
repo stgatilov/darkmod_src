@@ -152,6 +152,31 @@ public:
 /*
 ===============================================================================
 
+  Path entities for AI to guard during a search.
+
+===============================================================================
+*/
+class tdmPathGuard : public idEntity
+{
+public:
+	CLASS_PROTOTYPE( tdmPathGuard );
+
+	virtual			~tdmPathGuard();
+
+	int				m_priority; // 1 = lowest
+	float			m_angle;	// yaw to face
+
+	void			Spawn( void );
+
+	void			Save( idSaveGame *savefile ) const;
+	void			Restore( idRestoreGame *savefile );
+
+	static void		DrawDebugInfo( void );
+};
+
+/*
+===============================================================================
+
   Object that fires targets and changes shader parms when damaged.
 
 ===============================================================================

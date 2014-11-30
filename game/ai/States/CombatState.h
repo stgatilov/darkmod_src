@@ -98,7 +98,7 @@ public:
 	// Override the alert functions
 	virtual void OnTactileAlert(idEntity* tactEnt);
 	virtual void OnVisualAlert(idActor* enemy);
-	virtual bool OnAudioAlert(idStr soundName); // grayman #3847
+	virtual bool OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker); // grayman #3847 // grayman #3857
 
 	virtual void OnActorEncounter(idEntity* stimSource, idAI* owner);
 	virtual void OnFailedKnockoutBlow(idEntity* attacker, const idVec3& direction, bool hitHead);
@@ -110,6 +110,7 @@ public:
 	virtual void Post_OnUnconsciousPersonEncounter(idActor* person, idAI* owner);
 
 	virtual void OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck); // grayman #3431
+	virtual void OnVisualStimBlood(idEntity* stimSource, idAI* owner); // grayman #3857
 	
 	// Save/Restore methods
 	virtual void Save(idSaveGame* savefile) const;

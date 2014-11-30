@@ -623,6 +623,10 @@
       <Filter>AI\Tasks</Filter>
     </ClCompile>
     <ClCompile Include="game\ai\States\PocketPickedState.cpp" />
+    <ClCompile Include="game\ai\Tasks\GuardSpotTask.cpp">
+      <Filter>AI\Tasks</Filter>
+    </ClCompile>
+    <ClCompile Include="game\SearchManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game\ai\Tasks\ChaseEnemyRangedTask.h">
@@ -1208,6 +1212,10 @@
       <Filter>AI\Tasks</Filter>
     </ClInclude>
     <ClInclude Include="game\ai\States\PocketPickedState.h" />
+    <ClInclude Include="game\ai\Tasks\GuardSpotTask.h">
+      <Filter>AI\Tasks</Filter>
+    </ClInclude>
+    <ClInclude Include="game\SearchManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />

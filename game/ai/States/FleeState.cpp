@@ -51,13 +51,19 @@ void FleeState::Init(idAI* owner)
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
-	memory.fleeingDone = false;
+	memory.fleeing = true;
 
 	// Fill the subsystems with their tasks
 
 	// The movement subsystem should wait half a second before starting to run
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.StopReacting(); // grayman #3559
+
+	// grayman #3857- If participating in a search, leave the search
+	if (owner->m_searchID > 0)
+	{
+		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+	}
 
 	if (owner->fleeingFromPerson.GetEntity()) // grayman #3847
 	{
@@ -86,7 +92,7 @@ void FleeState::Init(idAI* owner)
 			owner, NULL, // from this AI to anyone 
 			NULL,
 			memory.alertPos,
-			0
+			memory.currentSearchEventID // grayman #3857 (was '0')
 		));
 
 		// grayman #3317 - Use a different initial flee bark
@@ -125,6 +131,8 @@ void FleeState::Init(idAI* owner)
 	// No action
 	owner->actionSubsystem->ClearTasks();
 
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
+
 	// Play the surprised animation
 	// grayman #2416 - don't play if sitting or sleeping
 	moveType_t moveType = owner->GetMoveType();
@@ -145,7 +153,7 @@ void FleeState::Think(idAI* owner)
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
 
-	if (memory.fleeingDone)
+	if (!memory.fleeing)
 	{
 		owner->ClearEnemy();
 		owner->fleeingEvent = false; // grayman #3317

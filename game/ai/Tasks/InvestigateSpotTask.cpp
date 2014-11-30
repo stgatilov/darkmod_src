@@ -72,12 +72,48 @@ void InvestigateSpotTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		// Set the goal position
 		SetNewGoal(memory.currentSearchSpot);
+		memory.hidingSpotInvestigationInProgress = true; // grayman #3857
+		memory.stopHidingSpotInvestigation = false;
 	}
 	else
 	{
 		// Invalid hiding spot, terminate task
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("memory.currentSearchSpot not set to something valid, terminating task.\r");
 		subsystem.FinishTask();
+	}
+
+	// grayman #3857 - Only the first searcher in a search is allowed to investigate
+	// the spot closely. Am I it?
+
+	if (_investigateClosely)
+	{
+		Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+		if (search)
+		{
+			if (search->_searcherCount > 0)
+			{
+				Assignment *assignment = &search->_assignments[0]; // first AI assigned to the search
+				if (assignment->_searcher != owner)
+				{
+					_investigateClosely = false;
+				}
+			}
+		}
+	}
+
+	if (owner->HasSeenEvidence())
+	{
+		// Draw weapon, if we haven't already
+		if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
+		{
+			if ( ( owner->GetNumRangedWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_ranged","0") )
+			{
+				owner->DrawWeapon(COMBAT_RANGED);
+			}
+			else if ( ( owner->GetNumMeleeWeapons() > 0 ) && !owner->spawnArgs.GetBool("unarmed_melee","0") )
+			{
+				owner->DrawWeapon(COMBAT_MELEE);
+			}
+		}
 	}
 
 	//_exitTime = 0; // grayman #3507
@@ -89,6 +125,17 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
+
+	// grayman #3857 - quit if incapable of continuing
+	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
+	{
+		return true;
+	}
+
+	if (owner->GetMemory().stopHidingSpotInvestigation) // grayman #3857
+	{
+		return true; // told to cancel this task
+	}
 
 	// grayman #3075 - if we've entered combat mode, we want to
 	// end this task. But first, if we're kneeling, kill the
@@ -114,7 +161,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 	if (_exitTime > 0)
 	{
 		// Return TRUE if the time is over, else FALSE (continue)
-		return (gameLocal.time > _exitTime);
+		return (gameLocal.time >= _exitTime);
 	}
 
 	// No exit time set, continue with ordinary process
@@ -168,7 +215,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			);
 
 			// Look at the point to investigate
-			owner->Event_LookAtPosition(_searchSpot, MS2SEC(_exitTime - gameLocal.time + 100));
+			owner->Event_LookAtPosition(_searchSpot + idVec3(0,0,60), MS2SEC(_exitTime - gameLocal.time + 100)); // grayman #3857 - look at a point off the floor
 
 			return false; // grayman #2422
 		}
@@ -195,21 +242,22 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		int toAreaNum = owner->PointReachableAreaNum( goal );
 		if ( toAreaNum == 0 )
 		{
-			pointValid =  false;
+			pointValid = false;
 		}
 		else
 		{
 			owner->GetAAS()->PushPointIntoAreaNum( toAreaNum, goal ); // if this point is outside this area, it will be moved to one of the area's edges
-		
+			/* grayman #3857 - ContainsPoint() already tested before this task was given the point
 			if ( owner->IsSearching() &&
 				!owner->movementSubsystem->IsResolvingBlock() &&
 				( owner->AI_AlertIndex < ECombat ) ) // grayman #3070 - point is valid if in combat mode
 			{
-				if ( !owner->m_searchLimits.ContainsPoint(goal) )
+				if ( !assignment->_limits.ContainsPoint(goal) )
 				{
 					pointValid =  false;
 				}
 			}
+			*/
 		}
 
 		if ( pointValid )
@@ -250,28 +298,8 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 
 			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), _searchSpot, 1, MS2SEC(_exitTime - gameLocal.time + 100));
 			_moveInitiated = true;
-			float travelDist = owner->TravelDistance(ownerOrigin, _searchSpot);
 			float actualDist = (ownerOrigin - _searchSpot).LengthFast();
-			if ( actualDist > travelDist )
-			{
-				travelDist = actualDist;
-			}
-
-			if ( travelDist <= MAX_TRAVEL_DISTANCE_WALKING ) // close enough to walk?
-			{
-				owner->AI_RUN = false;
-			}
-			// grayman #3492
-			//else if ( owner->GetMemory().visualAlert ) // spotted the player by testing his visibility?
-			//{
-			//	owner->AI_RUN = false; // when AI's alert index enters Combat mode, that code will get him running
-			//}
-			else // searching for some other reason, and we're far away, so run
-			{
-				owner->AI_RUN = true;
-			}
-
-			//owner->AI_RUN = (travelDist > MAX_TRAVEL_DISTANCE_WALKING); // grayman #2422 - old way
+			owner->AI_RUN = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
 		}
 
 		return false;
@@ -345,6 +373,7 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				stopping = true;
 			}
 		}
+
 		if (stopping)
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGVECTOR("Stop, I can see the point now...\r", _searchSpot);
@@ -355,11 +384,13 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// grayman #3492 - Look at a random point that may be anywhere
 			// between the search point and a point 1/2 the AI's height
 			// above his eye level.
+			// grayman #3857 - now that AI are allowed closer to the search spot,
+			// they shouldn't look so high up
 
 			idVec3 p = _searchSpot;
-			float height = owner->GetPhysics()->GetBounds().GetSize().z;
+			//float height = owner->GetPhysics()->GetBounds().GetSize().z;
 			float bottom = p.z;
-			float top = owner->GetEyePosition().z + height/2.0f;
+			float top = owner->GetEyePosition().z + 20;
 			float dist = top - bottom;
 			dist *= gameLocal.random.RandomFloat();
 			p.z += dist;
@@ -373,6 +404,8 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 				gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()) // grayman #2640
 			);
 		}
+
+		// continue walking
 	}
 
 	return false; // not finished yet

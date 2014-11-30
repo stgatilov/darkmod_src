@@ -882,6 +882,20 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			{
 				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			}
+/*			else // grayman #3857 - this causes moss blobs to alert AI, which they shouldn't
+				 // you need a solution that filters out the objects you want a reaction from
+				 // from those you don't
+			{
+				// even if there's no damage, there _should_ be a reaction to getting hit,
+				// if the projectile hit an AI
+
+				if (ent->IsType(idAI::Type))
+				{
+					// Send a signal to the current state that we've been hit by something
+					static_cast<idAI*>(ent)->GetMind()->GetState()->OnProjectileHit(this, owner.GetEntity(), 0);
+				}
+			}
+*/
 			ignore = ent;
 		}
 	}

@@ -27,6 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Tasks/MoveToCoverTask.h"
 #include "../Tasks/WaitTask.h"
 #include "../Tasks/MoveToPositionTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 //#include "../Tasks/RandomHeadturnTask.h"
 #include "LostTrackOfEnemyState.h"
 #include "../Library.h"
@@ -54,12 +55,12 @@ void EmergeFromCoverState::Init(idAI* owner)
 	
 	// Fill the subsystems with their tasks
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
+	// grayman #3857 - allow "idle search/suspicious animations"
 	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 
 	owner->movementSubsystem->ClearTasks();
-	owner->movementSubsystem->QueueTask(
-		TaskPtr(new MoveToPositionTask(memory.positionBeforeTakingCover))
-	);
+	owner->movementSubsystem->QueueTask(TaskPtr(new MoveToPositionTask(memory.positionBeforeTakingCover)));
 }
 
 // Gets called each time the mind is thinking

@@ -847,6 +847,70 @@ void Cmd_Notarget_f( const idCmdArgs &args ) {
 
 }
 
+// grayman #3857
+/*
+==================
+Cmd_Invisible_f
+
+Sets client to invisible
+
+argv(0) invisible
+==================
+*/
+void Cmd_Invisible_f( const idCmdArgs &args )
+{
+	idPlayer *player;
+
+	player = gameLocal.GetLocalPlayer();
+	if ( !player || !gameLocal.CheatsOk() )
+	{
+		return;
+	}
+
+	if ( player->fl.invisible )
+	{
+		player->fl.invisible = false;
+		gameLocal.Printf( "invisible OFF\n" );
+	}
+	else
+	{
+		player->fl.invisible = true;
+		gameLocal.Printf( "invisible ON\n" );
+	}
+}
+
+// grayman #3857
+/*
+==================
+Cmd_Inaudible_f
+
+Sets client to inaudible
+
+argv(0) inaudible
+==================
+*/
+void Cmd_Inaudible_f( const idCmdArgs &args )
+{
+	idPlayer *player;
+
+	player = gameLocal.GetLocalPlayer();
+	if ( !player || !gameLocal.CheatsOk() )
+	{
+		return;
+	}
+
+	if ( player->fl.inaudible )
+	{
+		player->fl.inaudible = false;
+		gameLocal.Printf( "inaudible OFF\n" );
+	}
+	else
+	{
+		player->fl.inaudible = true;
+		gameLocal.Printf( "inaudible ON\n" );
+	}
+}
+
 /*
 ==================
 Cmd_Noclip_f
@@ -3681,7 +3745,9 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "give",					Cmd_Give_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"gives one or more items" );
 	cmdSystem->AddCommand( "centerview",			Cmd_CenterView_f,			CMD_FL_GAME,				"centers the view" );
 	cmdSystem->AddCommand( "god",					Cmd_God_f,					CMD_FL_GAME|CMD_FL_CHEAT,	"enables god mode" );
-	cmdSystem->AddCommand( "notarget",				Cmd_Notarget_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"disables the player as a target" );
+	cmdSystem->AddCommand( "notarget",				Cmd_Notarget_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"disables the player as a target; can't be seen and can't be heard" );
+	cmdSystem->AddCommand( "invisible",				Cmd_Invisible_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"makes the player invisible; he can't be seen" );  // grayman #3857
+	cmdSystem->AddCommand( "inaudible",				Cmd_Inaudible_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"makes the player inaudible; he can't be heard" ); // grayman #3857
 	cmdSystem->AddCommand( "noclip",				Cmd_Noclip_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"disables collision detection for the player" );
 	cmdSystem->AddCommand( "kill",					Cmd_Kill_f,					CMD_FL_GAME,				"kills the player" );
 	cmdSystem->AddCommand( "where",					Cmd_GetViewpos_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"prints the current view position" );

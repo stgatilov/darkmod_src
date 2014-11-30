@@ -25,6 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "LostTrackOfEnemyState.h"
 #include "../Memory.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Library.h"
 
 namespace ai
@@ -47,8 +48,6 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 
 	// Shortcut reference
 	Memory& memory = owner->GetMemory();
-
-	owner->SetAlertLevel((owner->thresh_5 + owner->thresh_4) * 0.5);
 
 	// Draw weapon, if we haven't already
 	if (!owner->GetAttackFlag(COMBAT_MELEE) && !owner->GetAttackFlag(COMBAT_RANGED))
@@ -83,17 +82,12 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	{
 		memory.alertPos = owner->lastVisibleEnemyPos;
 	}
-	memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
-	memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
-	memory.alertSearchExclusionVolume.Zero();
 
-	memory.alertedDueToCommunication = false;
-	memory.stimulusLocationItselfShouldBeSearched = true;
+	// grayman #3857 - move alert setup into one method
+	SetUpSearchData(EAlertTypeLostTrackOfEnemy, memory.alertPos, NULL, false, 0);
 
 	// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 	owner->ClearEnemy();
-	memory.visualAlert = false; // grayman #2422
-	memory.mandatory = true;	// grayman #3331
 
 	// Enqueue a lost track of enemy bark
 	owner->commSubsystem->AddCommTask(
@@ -109,13 +103,14 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
 // Gets called each time the mind is thinking
 void LostTrackOfEnemyState::Think(idAI* owner)
 {
-
 }
 
 StatePtr LostTrackOfEnemyState::CreateInstance()

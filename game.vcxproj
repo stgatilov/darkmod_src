@@ -397,6 +397,7 @@
     <ClCompile Include="game\ai\Tasks\FleeTask.cpp" />
     <ClCompile Include="game\ai\Tasks\FollowActorTask.cpp" />
     <ClCompile Include="game\ai\Tasks\GreetingBarkTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\GuardSpotTask.cpp" />
     <ClCompile Include="game\ai\Tasks\HandleDoorTask.cpp" />
     <ClCompile Include="game\ai\Tasks\HandleElevatorTask.cpp" />
     <ClCompile Include="game\ai\Tasks\IdleAnimationTask.cpp" />
@@ -577,6 +578,7 @@
     <ClCompile Include="game\script\Script_Interpreter.cpp" />
     <ClCompile Include="game\script\Script_Program.cpp" />
     <ClCompile Include="game\script\Script_Thread.cpp" />
+    <ClCompile Include="game\SearchManager.cpp" />
     <ClCompile Include="game\SecurityCamera.cpp" />
     <ClCompile Include="game\SEED.cpp" />
     <ClCompile Include="game\Shop\LootRuleSet.cpp" />
@@ -665,6 +667,7 @@
     <ClInclude Include="game\ai\Tasks\FleeTask.h" />
     <ClInclude Include="game\ai\Tasks\FollowActorTask.h" />
     <ClInclude Include="game\ai\Tasks\GreetingBarkTask.h" />
+    <ClInclude Include="game\ai\Tasks\GuardSpotTask.h" />
     <ClInclude Include="game\ai\Tasks\HandleDoorTask.h" />
     <ClInclude Include="game\ai\Tasks\HandleElevatorTask.h" />
     <ClInclude Include="game\ai\Tasks\IdleAnimationTask.h" />
@@ -831,6 +834,7 @@
     <ClInclude Include="game\script\Script_Interpreter.h" />
     <ClInclude Include="game\script\Script_Program.h" />
     <ClInclude Include="game\script\Script_Thread.h" />
+    <ClInclude Include="game\SearchManager.h" />
     <ClInclude Include="game\SecurityCamera.h" />
     <ClInclude Include="game\SEED.h" />
     <ClInclude Include="game\Shop\LootRuleSet.h" />

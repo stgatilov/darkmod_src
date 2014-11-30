@@ -79,8 +79,6 @@ void PathCornerTask::Init(idAI* owner, Subsystem& subsystem)
 
 bool PathCornerTask::Perform(Subsystem& subsystem)
 {
-	DM_LOG(LC_AI, LT_INFO)LOGSTRING("Path Corner Task performing.\r");
-
 	idPathCorner* path = _path.GetEntity();
 	idAI* owner = _owner.GetEntity();
 

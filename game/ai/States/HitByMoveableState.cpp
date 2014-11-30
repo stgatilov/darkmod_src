@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id: HitByMoveableState.cpp 5363 
 
 #include "../Tasks/SingleBarkTask.h"
 #include "HitByMoveableState.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 
 namespace ai
 {
@@ -52,6 +53,9 @@ void HitByMoveableState::Cleanup(idAI* owner)
 void HitByMoveableState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
+	// grayman #3857 - allow "idle search/suspicious animations"
+	owner->actionSubsystem->ClearTasks();
+	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
@@ -116,6 +120,7 @@ void HitByMoveableState::Init(idAI* owner)
 
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	owner->StopMove(MOVE_STATUS_DONE);
 	owner->GetMemory().StopReacting();
@@ -343,27 +348,27 @@ void HitByMoveableState::Think(idAI* owner)
 
 				if ( owner->IsEnemy(responsible) )
 				{
-					Memory& memory = owner->GetMemory();
-					memory.alertType = EAlertTypeSuspicious;
-					memory.alertClass = EAlertTactile;
-					memory.alertPos = ownerOrg;
-					memory.alertRadius = TACTILE_ALERT_RADIUS;
-					memory.alertSearchVolume = TACTILE_SEARCH_VOLUME;
-					memory.alertSearchExclusionVolume.Zero();
-					memory.visualAlert = false;
-
-					// If we got this far, we give the alert
-					// Set the alert amount to the according tactile alert value
-					float amount = cv_ai_tactalert.GetFloat();
-
-					// NOTE: Latest tactile alert always overrides other alerts
+					// NOTE: Latest tactile alert always overides other alerts
 					owner->m_TactAlertEnt = tactEnt;
 					owner->m_AlertedByActor = responsible;
 
-					amount *= owner->GetAcuity("tact");
-					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
-					owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
+					// grayman #3857 - set the alert amount to some value in Searching mode
+					float newAlertLevel = owner->thresh_3 + (owner->thresh_4 - 0.1 - owner->thresh_3)*owner->GetAcuity("tact");
+					float alertIncrement = newAlertLevel - owner->AI_AlertLevel;
 
+					// Check if current alert level is higher than new alert level.
+
+					if (alertIncrement < 0)
+					{
+						alertIncrement = 0;
+					}
+
+					// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
+					owner->PreAlertAI("tact", alertIncrement, responsible->GetEyePosition()); // grayman #3356
+
+					// grayman #3857 - move alert setup into one method
+					SetUpSearchData(EAlertTypeHitByMoveable, _pos, NULL, false, 0);
+		
 					// Set last visual contact location to this location as that is used in case
 					// the target gets away.
 					owner->m_LastSight = ownerOrg;
@@ -373,9 +378,6 @@ void HitByMoveableState::Think(idAI* owner)
 					{
 						owner->lastVisibleEnemyPos = ownerOrg;
 					}
-
-					owner->AI_TACTALERT = true;
-					memory.mandatory = true; // grayman #3331
 				}
 
 				Wrapup(owner);

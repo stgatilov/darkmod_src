@@ -11121,13 +11121,13 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 	va_list argptr;
 
 	const function_t *pScriptFkt = scriptObject.GetFunction(fkt);
-	if(pScriptFkt == NULL)
+	if (pScriptFkt == NULL)
 	{
 		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global namespace.\r", fkt);
 		pScriptFkt = gameLocal.program.FindFunction(fkt);
 	}
 
-	if(pScriptFkt)
+	if (pScriptFkt)
 	{
 		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction '%s'\r", fkt);
 		pThread = new idThread(pScriptFkt);
@@ -11137,7 +11137,9 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 		pThread->DelayedStart(delay);
 	}
 	else
+	{
 		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Scriptfunction not found! [%s]\r", fkt);
+	}
 
 	return pThread;
 }
