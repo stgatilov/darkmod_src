@@ -1478,12 +1478,7 @@ void idMultiplayerGame::UpdateMainGui( void ) {
 		mainGui->SetStateString( keyval->GetKey(), keyval->GetValue() );
 	}
 	mainGui->StateChanged( gameLocal.time );
-#if defined( __linux__ )
-	// replacing the oh-so-useful s_reverse with sound backend prompt
-	mainGui->SetStateString( "driver_prompt", "1" );
-#else
 	mainGui->SetStateString( "driver_prompt", "0" );
-#endif
 }
 
 /*

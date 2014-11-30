@@ -303,11 +303,7 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 	// Mods Menu
 	SetModsMenuGuiVars();
 
-#if defined( __linux__ )
-	guiMainMenu->SetStateString( "driver_prompt", "1" );
-#else
 	guiMainMenu->SetStateString( "driver_prompt", "0" );
-#endif
 
 	SetPbMenuGuiVars();
 }
