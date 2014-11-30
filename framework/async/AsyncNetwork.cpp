@@ -192,7 +192,7 @@ void idAsyncNetwork::WriteUserCmdDelta( idBitMsg &msg, const usercmd_t &cmd, con
 		return;
 	}
 
-	msg.WriteLong( cmd.gameTime );
+	msg.WriteInt( cmd.gameTime );
 	msg.WriteByte( cmd.buttons );
     msg.WriteShort( cmd.mx );
 	msg.WriteShort( cmd.my );
