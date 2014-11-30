@@ -480,7 +480,7 @@ short	LittleShort( short l ) {
 #endif
 }
 
-int		BigLong( int l ) {
+int		BigInt( int l ) {
 #if defined(ID_LITTLE_ENDIAN)
 	return LongSwap(l);
 #elif defined(ID_BIG_ENDIAN)
