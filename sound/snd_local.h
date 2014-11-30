@@ -606,6 +606,7 @@ public:
 	idStr					listenerAreaName;
     ALuint					listenerEffect;
     ALuint					listenerSlot;
+    ALuint					listenerFilter;
 
 	int						gameMsec;
 	int						game44kHz;
@@ -742,6 +743,11 @@ public:
     LPALEFFECTI				alEffecti;
     LPALEFFECTF				alEffectf;
     LPALEFFECTFV			alEffectfv;
+    LPALGENFILTERS			alGenFilters;
+    LPALDELETEFILTERS		alDeleteFilters;
+    LPALISFILTER			alIsFilter;
+    LPALFILTERI				alFilteri;
+    LPALFILTERF				alFilterf;
     LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
     LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
     LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
