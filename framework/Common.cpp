@@ -2827,6 +2827,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// greebo: Keep the console lines around, we need it when reloading the engine
 		//ClearCommandLine();
 
+        // load the persistent console history
+        console->LoadHistory();
+
 		com_fullyInitialized = true;
 	}
 
@@ -2847,6 +2850,9 @@ void idCommonLocal::Shutdown( void ) {
 
 	idAsyncNetwork::server.Kill();
 	idAsyncNetwork::client.Shutdown();
+
+    // save persistent console history
+    console->SaveHistory();
 
 	// game specific shut down
 	ShutdownGame( false );

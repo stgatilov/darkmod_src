@@ -77,6 +77,9 @@ private:
 	void				SetDisplayFraction( float frac );
 	void				UpdateDisplayFraction( void );
 
+    virtual void		SaveHistory();
+    virtual void		LoadHistory();
+
 	//============================
 
 	bool				keyCatching;
@@ -482,6 +485,40 @@ void idConsoleLocal::Dump( const char *fileName ) {
 	}
 
 	fileSystem->CloseFile( f );
+}
+
+void idConsoleLocal::SaveHistory()
+{
+    idFile *f = fileSystem->OpenFileWrite("consolehistory.dat");
+    for (int i = 0; i < COMMAND_HISTORY; ++i) {
+        // make sure the history is in the right order
+        int line = (nextHistoryLine + i) % COMMAND_HISTORY;
+        const char *s = historyEditLines[line].GetBuffer();
+        if (s && s[0]) {
+            f->WriteString(s);
+        }
+    }
+    fileSystem->CloseFile(f);
+}
+
+void idConsoleLocal::LoadHistory()
+{
+    idFile *f = fileSystem->OpenFileRead("consolehistory.dat");
+    if (f == NULL) // file doesn't exist
+        return;
+
+    historyLine = 0;
+    idStr tmp;
+    for (int i = 0; i < COMMAND_HISTORY; ++i) {
+        if (f->Tell() >= f->Length()) {
+            break; // EOF is reached
+        }
+        f->ReadString(tmp);
+        historyEditLines[i].SetBuffer(tmp.c_str());
+        ++historyLine;
+    }
+    nextHistoryLine = historyLine;
+    fileSystem->CloseFile(f);
 }
 
 /*
