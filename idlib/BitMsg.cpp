@@ -272,10 +272,10 @@ void idBitMsg::WriteDeltaShortCounter( int oldValue, int newValue ) {
 
 /*
 ================
-idBitMsg::WriteDeltaLongCounter
+idBitMsg::WriteDeltaIntCounter
 ================
 */
-void idBitMsg::WriteDeltaLongCounter( int oldValue, int newValue ) {
+void idBitMsg::WriteDeltaIntCounter( int oldValue, int newValue ) {
 	int i, x;
 
 	x = oldValue ^ newValue;
@@ -527,10 +527,10 @@ int idBitMsg::ReadDeltaShortCounter( int oldValue ) const {
 
 /*
 ================
-idBitMsg::ReadDeltaLongCounter
+idBitMsg::ReadDeltaIntCounter
 ================
 */
-int idBitMsg::ReadDeltaLongCounter( int oldValue ) const {
+int idBitMsg::ReadDeltaIntCounter( int oldValue ) const {
 	int i, newValue;
 
 	i = ReadBits( 5 );
@@ -878,16 +878,16 @@ void idBitMsgDelta::WriteDeltaShortCounter( int oldValue, int newValue ) {
 
 /*
 ================
-idBitMsgDelta::WriteDeltaLongCounter
+idBitMsgDelta::WriteDeltaIntCounter
 ================
 */
-void idBitMsgDelta::WriteDeltaLongCounter( int oldValue, int newValue ) {
+void idBitMsgDelta::WriteDeltaIntCounter( int oldValue, int newValue ) {
 	if ( newBase ) {
 		newBase->WriteBits( newValue, 32 );
 	}
 
 	if ( !base ) {
-		writeDelta->WriteDeltaLongCounter( oldValue, newValue );
+		writeDelta->WriteDeltaIntCounter( oldValue, newValue );
 		changed = true;
 	} else {
 		int baseValue = base->ReadBits( 32 );
@@ -895,7 +895,7 @@ void idBitMsgDelta::WriteDeltaLongCounter( int oldValue, int newValue ) {
 			writeDelta->WriteBits( 0, 1 );
 		} else {
 			writeDelta->WriteBits( 1, 1 );
-			writeDelta->WriteDeltaLongCounter( oldValue, newValue );
+			writeDelta->WriteDeltaIntCounter( oldValue, newValue );
 			changed = true;
 		}
 	}
@@ -1032,21 +1032,21 @@ int idBitMsgDelta::ReadDeltaShortCounter( int oldValue ) const {
 
 /*
 ================
-idBitMsgDelta::ReadDeltaLongCounter
+idBitMsgDelta::ReadDeltaIntCounter
 ================
 */
-int idBitMsgDelta::ReadDeltaLongCounter( int oldValue ) const {
+int idBitMsgDelta::ReadDeltaIntCounter( int oldValue ) const {
 	int value;
 
 	if ( !base ) {
-		value = readDelta->ReadDeltaLongCounter( oldValue );
+		value = readDelta->ReadDeltaIntCounter( oldValue );
 		changed = true;
 	} else {
 		int baseValue = base->ReadBits( 32 );
 		if ( !readDelta || readDelta->ReadBits( 1 ) == 0 ) {
 			value = baseValue;
 		} else {
-			value = readDelta->ReadDeltaLongCounter( oldValue );
+			value = readDelta->ReadDeltaIntCounter( oldValue );
 			changed = true;
 		}
 	}

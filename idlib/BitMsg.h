@@ -89,7 +89,7 @@ public:
 	void			WriteDeltaFloat( float oldValue, float newValue, int exponentBits, int mantissaBits );
 	void			WriteDeltaByteCounter( int oldValue, int newValue );
 	void			WriteDeltaShortCounter( int oldValue, int newValue );
-	void			WriteDeltaLongCounter( int oldValue, int newValue );
+	void			WriteDeltaIntCounter( int oldValue, int newValue );
 	bool			WriteDeltaDict( const idDict &dict, const idDict *base );
 
 	void			BeginReading( void ) const;				// begin reading.
@@ -118,7 +118,7 @@ public:
 	float			ReadDeltaFloat( float oldValue, int exponentBits, int mantissaBits ) const;
 	int				ReadDeltaByteCounter( int oldValue ) const;
 	int				ReadDeltaShortCounter( int oldValue ) const;
-	int				ReadDeltaLongCounter( int oldValue ) const;
+	int				ReadDeltaIntCounter( int oldValue ) const;
 	bool			ReadDeltaDict( idDict &dict, const idDict *base ) const;
 
 	static int		DirToBits( const idVec3 &dir, int numBits );
@@ -459,7 +459,7 @@ public:
 	void			WriteDeltaFloat( float oldValue, float newValue, int exponentBits, int mantissaBits );
 	void			WriteDeltaByteCounter( int oldValue, int newValue );
 	void			WriteDeltaShortCounter( int oldValue, int newValue );
-	void			WriteDeltaLongCounter( int oldValue, int newValue );
+	void			WriteDeltaIntCounter( int oldValue, int newValue );
 
 	int				ReadBits( int numBits ) const;
 	int				ReadChar( void ) const;
@@ -484,7 +484,7 @@ public:
 	float			ReadDeltaFloat( float oldValue, int exponentBits, int mantissaBits ) const;
 	int				ReadDeltaByteCounter( int oldValue ) const;
 	int				ReadDeltaShortCounter( int oldValue ) const;
-	int				ReadDeltaLongCounter( int oldValue ) const;
+	int				ReadDeltaIntCounter( int oldValue ) const;
 
 private:
 	const idBitMsg *base;			// base
