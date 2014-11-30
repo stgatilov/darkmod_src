@@ -492,28 +492,6 @@ void idSoundSample::Load( void ) {
                 common->Error("idSoundCache: error loading data into OpenAL hardware buffer");
             }
             else {
-                // Compute amplitude block size
-                int blockSize = 512 * objectInfo.nSamplesPerSec / 44100;
-
-                // Allocate amplitude data array
-                amplitudeData = (byte *)soundCacheAllocator.Alloc((objectSize / blockSize + 1) * 2 * sizeof(short));
-
-                // Creating array of min/max amplitude pairs per blockSize samples
-                int i;
-                for (i = 0; i < objectSize; i += blockSize) {
-                    short min = 32767;
-                    short max = -32768;
-
-                    int j;
-                    for (j = 0; j < Min(objectSize - i, blockSize); j++) {
-                        min = ((short *)nonCacheData)[i + j] < min ? ((short *)nonCacheData)[i + j] : min;
-                        max = ((short *)nonCacheData)[i + j] > max ? ((short *)nonCacheData)[i + j] : max;
-                    }
-
-                    ((short *)amplitudeData)[(i / blockSize) * 2] = min;
-                    ((short *)amplitudeData)[(i / blockSize) * 2 + 1] = max;
-                }
-
                 hardwareBuffer = true;
             }
         }
@@ -568,28 +546,6 @@ void idSoundSample::Load( void ) {
 					if ( alError != AL_NO_ERROR )
 						common->Error( "idSoundCache Load OGG: error %i loading data into OpenAL hardware buffer", alError );
 					else {
-						// Compute amplitude block size
-						int blockSize = 512 * objectInfo.nSamplesPerSec / 44100 ;
-
-						// Allocate amplitude data array
-						amplitudeData = (byte *)soundCacheAllocator.Alloc( ( objectSize / blockSize + 1 ) * 2 * sizeof( short ) );
-
-						// Creating array of min/max amplitude pairs per blockSize samples
-						int i;
-						for ( i = 0; i < objectSize; i+=blockSize ) {
-							short min = 32767;
-							short max = -32768;
-							
-							int j;
-							for ( j = 0; j < Min( objectSize - i, blockSize ); j++ ) {
-								min = ((short *)destData)[ i + j ] < min ? ((short *)destData)[ i + j ] : min;
-								max = ((short *)destData)[ i + j ] > max ? ((short *)destData)[ i + j ] : max;
-							}
-
-							((short *)amplitudeData)[ ( i / blockSize ) * 2     ] = min;
-							((short *)amplitudeData)[ ( i / blockSize ) * 2 + 1 ] = max;
-						}
-						
 						hardwareBuffer = true;
 					}
 
@@ -597,12 +553,6 @@ void idSoundSample::Load( void ) {
 					idSampleDecoder::Free( decoder );
 				}
 			}
-		}
-
-		// Free memory if sample was loaded into hardware
-		if ( hardwareBuffer ) {
-			soundCacheAllocator.Free( nonCacheData );
-			nonCacheData = NULL;
 		}
 	}
 
