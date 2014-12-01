@@ -384,7 +384,7 @@ void darkModLAS::accumulateEffectOfLightsInArea
 			continue;
 		}
 
-		// grayman debug - ignore blend and fog lights
+		// grayman #3902 - ignore blend and fog lights
 
 		if (light->IsBlend() || light->IsFog())
 		{
@@ -819,7 +819,7 @@ void darkModLAS::accumulateEffectOfLightsInArea2
 			continue;
 		}
 
-		// grayman debug - ignore blend and fog lights
+		// grayman #3902 - ignore blend and fog lights
 
 		if (light->IsBlend() || light->IsFog())
 		{
