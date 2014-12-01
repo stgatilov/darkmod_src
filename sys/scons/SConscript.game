@@ -306,8 +306,6 @@ local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
 local_env.Append( LINKFLAGS = [ '-lrt', '-lpng' ] )
 
 local_env.Append(LIBS = [
-	# Uncomment this if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
-	#File('/usr/lib32/libpng.so'),
 	File('#/linux/libcurl/libcurl.a'),
 	File('#/linux/polarssl/libpolarssl.a'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
@@ -315,18 +313,19 @@ local_env.Append(LIBS = [
 	File('#/linux/boost/lib/libboost_thread.a')
 ])
 
-if NO_GCH == '0':
+#if NO_GCH == '0':
 	# greebo: Set up our precompiled header
-	GCH_CPPFLAGS = local_env['CPPFLAGS']
-	GCH_CPPFLAGS += ['-fPIC']
+	#GCH_CPPFLAGS = local_env['CPPFLAGS']
+	#GCH_CPPFLAGS += ['-fPIC']
 
-	local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
+	#local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
 
 # greebo: Use custom compiled devIL and libjpeg in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
 libjpeg_list = SConscript( '../../sys/scons/SConscript.libjpeg' )
+libpng_list = SConscript( '../../sys/scons/SConscript.libpng' )
 
-full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list
+full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list + libpng_list
 
 ret = local_env.SharedLibrary('game', full_list )
 

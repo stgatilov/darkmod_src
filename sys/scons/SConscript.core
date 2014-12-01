@@ -305,7 +305,7 @@ local_env.Append( LIBS = [ 'pthread', 'dl', 'rt', 'png' ] ) # greebo: Added libr
 if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-    local_env.Append( LIBS = [ 'openal' ] )
+	local_env.Append( LIBS = [ 'openal' ] )
 
 # greebo: Add boost and image libraries
 local_env.Append(LIBS = [
