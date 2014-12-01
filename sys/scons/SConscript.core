@@ -280,10 +280,10 @@ local_env = g_env.Clone()
 local_env.Prepend(CPPPATH = '#framework')
 g_env_noopt.Prepend(CPPPATH = '#framework')
 
-if NO_GCH == '0':
-	# greebo: Set up the precompiled headers for the engine project
-	local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
-	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
+#if NO_GCH == '0':
+#	# greebo: Set up the precompiled headers for the engine project
+#	local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
+#	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
 
 if ( local_dedicated == 1 ):
     local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
@@ -301,7 +301,7 @@ ogg_env = local_env.Clone()
 ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
 
-local_env.Append( LIBS = [ 'pthread', 'dl', 'rt', 'png' ] ) # greebo: Added librt and libpng
+local_env.Append( LIBS = [ 'pthread', 'dl', 'rt' ] ) # greebo: Added librt
 if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
@@ -309,9 +309,6 @@ if ( local_dedicated == 0 ):
 
 # greebo: Add boost and image libraries
 local_env.Append(LIBS = [
-	# Uncomment these if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
-	#File('/usr/lib32/libjpeg.so'),
-	#File('/usr/lib32/libpng.so'),
 	File('#/linux/polarssl/libpolarssl.a'),
 	File('#/linux/boost/lib/libboost_filesystem.a'),
 	File('#/linux/boost/lib/libboost_system.a'),
@@ -328,6 +325,8 @@ source_list += curl_lib
 # greebo: Use custom compiled devIL and libjpeg (since the engine requires 4 bytes per pixel format) in Linux
 source_list += SConscript( '../../sys/scons/SConscript.devil' )
 source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
+source_list += SConscript( '../../sys/scons/SConscript.libpng' )
+source_list += SConscript( '../../sys/scons/SConscript.ziploader' )
 
 source_list += g_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
 
