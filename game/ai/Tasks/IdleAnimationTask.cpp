@@ -162,16 +162,13 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 		// a hiding spot investigation is in progress.
 
 		moveType_t moveType = owner->GetMoveType();
-		if (memory.playIdleAnimations && 
+		if (memory.playIdleAnimations &&
 			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman #3857 - AI_RUN might be left over after coming to a full stop
-
-			// grayman #3857 - playIdleAnimations is now set to false during the following move types
-			//moveType != MOVETYPE_SIT_DOWN &&
-			//moveType != MOVETYPE_LAY_DOWN &&
-			//moveType != MOVETYPE_SLEEP &&
-			//moveType != MOVETYPE_GET_UP &&
-			//moveType != MOVETYPE_GET_UP_FROM_LYING &&
-
+			moveType != MOVETYPE_SIT_DOWN &&
+			moveType != MOVETYPE_LAY_DOWN &&
+			moveType != MOVETYPE_SLEEP &&
+			moveType != MOVETYPE_GET_UP &&
+			moveType != MOVETYPE_GET_UP_FROM_LYING &&
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
 			owner->FacingIdeal() &&

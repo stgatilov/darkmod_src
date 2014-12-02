@@ -4447,9 +4447,6 @@ void idAI::SetMoveType( int moveType ) {
 
 void idAI::SetMoveType( idStr moveType ) 
 {
-	ai::Memory& memory = GetMemory(); // grayman #3857
-	memory.playIdleAnimations = true;
-
 	if (moveType.Icmp("MOVETYPE_DEAD") == 0)
 	{
 		SetMoveType(MOVETYPE_DEAD);
@@ -4477,27 +4474,22 @@ void idAI::SetMoveType( idStr moveType )
 	else if (moveType.Icmp("MOVETYPE_SIT_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_SIT_DOWN);
-		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_SLEEP") == 0)
 	{
 		SetMoveType(MOVETYPE_SLEEP);
-		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_LAY_DOWN") == 0)
 	{
 		SetMoveType(MOVETYPE_LAY_DOWN);
-		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
-		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP_FROM_LYING") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
-		memory.playIdleAnimations = false; // grayman #3857
 	}
 	else
 	{
@@ -12872,7 +12864,6 @@ void idAI::SitDown()
 	}
 	SetMoveType(MOVETYPE_SIT_DOWN);
 	SetWaitState("sit_down");
-	GetMemory().playIdleAnimations = false; // grayman #3857
 }
 
 void idAI::GetUp()
@@ -12883,13 +12874,11 @@ void idAI::GetUp()
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
-		GetMemory().playIdleAnimations = false; // grayman #3857
 	}
 	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // grayman #3290 - corrected logic
 	{
 		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
 		SetWaitState("get_up_from_lying_down");
-		GetMemory().playIdleAnimations = false; // grayman #3857
 		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
 
 		// Reset visual, hearing and tactile acuity
@@ -12912,7 +12901,6 @@ void idAI::LayDown()
 
 	SetMoveType(MOVETYPE_LAY_DOWN);
 	SetWaitState("lay_down");
-	GetMemory().playIdleAnimations = false; // grayman #3857
 
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
