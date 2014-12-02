@@ -21,7 +21,9 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
+#ifdef __linux__
+#include <cpuid.h>
+#endif
 
 #include "Simd_Generic.h"
 #include "Simd_MMX.h"
@@ -65,18 +67,10 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	*/
 #ifdef __linux__
 	int cores = 0;
-	dword a,c,d, result;
+	unsigned int a,b,c,d, result;
 
-	/* Check for AMD or Intel first */
-	__asm__ __volatile__ (
-		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
-		"	movl	$0, %%eax;"			// CPUID with EAX = 0
-		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
-		"	movl	%%ebx, %%eax;"		// EAX => EBX
-		"	popl	%%ebx;"				// Restore EBX
-		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
-      		:							// no inputs
-		: );							// clobbers no additional registers (except EAX, ECX and EDX)
+	// greebo: Use the cpuid function as provided by gcc
+	__get_cpuid (0, &a, &b, &c, &d);
 
 	//idLib::common->Printf( "cpuid result is a=%x, c=%x, d=%x\n", a,c,d );
 
@@ -93,15 +87,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 		result = CPUID_INTEL;
 		}
 	
-	__asm__ __volatile__ (
-		"	pushl	%%ebx;"				// Save ebx (needed for PIC (position independend code)
-		"	movl	$1, %%eax;"			// CPUID with EAX = 1
-		"	cpuid;"						// Returns data into eax, ebx, ecx, edx
-		"	movl	%%ebx, %%eax;"		// Put EBX value into EAX (so we can return it)
-		"	popl	%%ebx;"				// Restore ebx
-		: "=d" (d), "=c" (c), "=a" (a)	// EDX => d, ECX => c, EAX => a
-      		:							// no inputs
-		: );							// clobbers no extra registers beside the outputs
+	__get_cpuid (1, &a, &b, &c, &d);
 
 	// This can only be checked on AMD CPUs
 	if ( (result & CPUID_AMD) && (d & 0x10000000l) )		// >> 31 does not work here
