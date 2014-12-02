@@ -15,7 +15,8 @@ conf_filename='site.conf'
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
 	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP' ]
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP',
+	'TARGET_ARCH' ]
 
 # global build mode ------------------------------
 
@@ -75,6 +76,10 @@ NO_GCH (default 0)
     
 OPENMP (default 0)
 	Enable OpenMP builds.
+
+TARGET_ARCH (default: "x86")
+	Build for either x86 or x64 architecture.
+
 """
 
 if ( not g_sdk ):
@@ -192,6 +197,7 @@ BASEFLAGS = ''
 SILENT = '0'
 NO_GCH = '0'
 OPENMP = '0'
+TARGET_ARCH = 'x86'
 
 # end default settings ---------------------------
 
@@ -301,8 +307,12 @@ if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
-	BASECPPFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x86' ):
+		BASECPPFLAGS.append( '-m32' )
+		BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x64' ):
+		BASECPPFLAGS.append( '-m64' )
+		BASELINKFLAGS.append( '-m64' )
     
 	if ( OPENMP != '0' ):
 		# openmp support for changes made to the renderer
@@ -334,9 +344,11 @@ elif ( BUILD == 'release' ):
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
 	# greebo: Took out -Winline, this is spamming real hard
-	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
+	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
+	if ( TARGET_ARCH == 'x86' ):
+		OPTCPPFLAGS.append( '-march=pentium3' );
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -415,7 +427,7 @@ curl_lib = []
 # if idlib should produce PIC objects ( depending on core or game inclusion )
 local_idlibpic = 0
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK OPENAL ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK OPENAL ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH TARGET_ARCH'
 
 # end general configuration ----------------------
 

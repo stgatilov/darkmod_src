@@ -304,13 +304,23 @@ local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
 # Link the runtime statically
 local_env.Append( LINKFLAGS = [ '-lrt' ] )
 
-local_env.Append(LIBS = [
-	File('#/linux/libcurl/libcurl.a'),
-	File('#/linux/polarssl/libpolarssl.a'),
-	File('#/linux/boost/lib/libboost_filesystem.a'),
-	File('#/linux/boost/lib/libboost_system.a'),
-	File('#/linux/boost/lib/libboost_thread.a')
-])
+if (TARGET_ARCH == 'x86'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/libcurl.a'),
+		File('#/linux/polarssl/libpolarssl.a'),
+		File('#/linux/boost/lib/libboost_filesystem.a'),
+		File('#/linux/boost/lib/libboost_system.a'),
+		File('#/linux/boost/lib/libboost_thread.a')
+	])
+if (TARGET_ARCH == 'x64'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/libcurl.a'),
+		File('#/linux/polarssl/libpolarssl.a'),
+		#File('#/linux/boost/lib64/libboost_filesystem.a'),
+		File('#/linux/boost/lib64/libboost_system.a'),
+		File('#/linux/boost/lib64/libboost_thread.a')
+	])
+
 
 #if NO_GCH == '0':
 	# greebo: Set up our precompiled header
