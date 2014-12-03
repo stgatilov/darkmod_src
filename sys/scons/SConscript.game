@@ -299,7 +299,7 @@ local_env = g_game_env.Clone()
 local_env.Prepend(CPPPATH = '#/game')
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
+local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch', '-fPIC' ] )
 
 # Link the runtime statically
 local_env.Append( LINKFLAGS = [ '-lrt' ] )
@@ -314,13 +314,12 @@ if (TARGET_ARCH == 'x86'):
 	])
 if (TARGET_ARCH == 'x64'):
 	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/polarssl/libpolarssl.a'),
-		#File('#/linux/boost/lib64/libboost_filesystem.a'),
+		File('#/linux/libcurl/lib64/libcurl.a'),
+		File('#/linux/polarssl/lib64/libpolarssl.a'),
+		File('#/linux/boost/lib64/libboost_filesystem.a'),
 		File('#/linux/boost/lib64/libboost_system.a'),
 		File('#/linux/boost/lib64/libboost_thread.a')
 	])
-
 
 #if NO_GCH == '0':
 	# greebo: Set up our precompiled header

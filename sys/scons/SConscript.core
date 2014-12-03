@@ -308,13 +308,22 @@ if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'openal' ] )
 
 # greebo: Add boost and image libraries
-local_env.Append(LIBS = [
-	File('#/linux/polarssl/libpolarssl.a'),
-	File('#/linux/boost/lib/libboost_filesystem.a'),
-	File('#/linux/boost/lib/libboost_system.a'),
-	File('#/linux/boost/lib/libboost_thread.a'),
-	File('#/linux/boost/lib/libboost_regex.a')
-])
+if (TARGET_ARCH == 'x86'):
+	local_env.Append(LIBS = [
+		File('#/linux/polarssl/libpolarssl.a'),
+		File('#/linux/boost/lib/libboost_filesystem.a'),
+		File('#/linux/boost/lib/libboost_system.a'),
+		File('#/linux/boost/lib/libboost_thread.a'),
+		File('#/linux/boost/lib/libboost_regex.a')
+	])
+if (TARGET_ARCH == 'x64'):
+	local_env.Append(LIBS = [
+		File('#/linux/polarssl/lib64/libpolarssl.a'),
+		File('#/linux/boost/lib64/libboost_filesystem.a'),
+		File('#/linux/boost/lib64/libboost_system.a'),
+		File('#/linux/boost/lib64/libboost_thread.a'),
+		File('#/linux/boost/lib64/libboost_regex.a')
+	])
 
 source_list = core_list
 source_list += idlib_objects
