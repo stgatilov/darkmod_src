@@ -1191,7 +1191,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					if (!AllowedToOpen(owner))
 					{
-						if (frobDoor->IsBlocked() || 
+						if (frobDoor->IsBlocked() ||
 							frobDoor->WasInterrupted() || 
 							frobDoor->WasStoppedDueToBlock())
 						{
@@ -1256,7 +1256,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 			}
 			else // open
 			{
-				if (frobDoor->IsBlocked() || 
+				if (frobDoor->IsBlocked() ||
 					frobDoor->WasInterrupted() || 
 					frobDoor->WasStoppedDueToBlock())
 				{
@@ -1369,7 +1369,9 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 								{
 									// We are facing the opposite of the opening direction of the door.
 									// Close it, exit the task, and try again.
-									openDoor = false;
+
+									//openDoor = false; // grayman #3949
+									return true;		// grayman #3949
 								}
 							}
 
