@@ -88,7 +88,12 @@ void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLe
 #ifdef _WIN32
 	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
 #elif defined( __linux__ )
-	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".so", baseName );
+#if defined (__x86_64__)
+	// greebo: Right now for testing, the game DLL for x64 is named the same (can be changed soon)
+	idStr::snPrintf( dllName, maxLength, "%sx86.so", baseName );
+#else
+	idStr::snPrintf( dllName, maxLength, "%sx86.so", baseName );
+#endif
 #elif defined( MACOS_X )
 	idStr::snPrintf( dllName, maxLength, "%s" ".dylib", baseName );
 #else

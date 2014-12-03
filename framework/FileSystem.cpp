@@ -3247,6 +3247,9 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	dllPath = Sys_EXEPath( );
 	dllPath.StripFilename( );
 	dllPath.AppendPath( dllName );
+	
+	common->Printf("Searching for DLL in %s", dllPath.c_str());
+
 	dllFile = OpenExplicitFileRead( dllPath );
 
     if ( !serverPaks.Num() ) {
