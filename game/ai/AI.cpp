@@ -5171,6 +5171,11 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	if ( animflags.ai_no_turn ) {
 		return;
 	}
+	// Delay turning for custom idle anims --SteveL #3806
+	if ( WaitState() && ( idStr( WaitState() ) == "idle" || idStr( WaitState() ) == "idle_no_voice" ) )
+	{
+		return;
+	}
 
 	idVec3 startPos = viewAxis * pivotOffset;
 
