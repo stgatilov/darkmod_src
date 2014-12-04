@@ -339,7 +339,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 				// common->Printf( "Not found, trying to load font %s size %i (i=%i)\n", name, replacement, i );
 
 				len = fileSystem->ReadFile( name, NULL, &ftime );
-				if (len == sizeof( fontInfo_t )) {
+                if (len == FILESIZE_fontInfo_t) {
 					common->Printf( "Font %s in size %i not found, using size %i instead.\n", fontName, sizes[fontCount], replacement );
 					pointSize = replacement;
 					// end loop
