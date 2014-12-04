@@ -52,7 +52,11 @@ public:
 	virtual	void		Print( const char *text );
 	virtual	void		Draw( bool forceFullScreen );
 
-	void				Dump( const char *toFile );
+	// #3947: Add an optional "unwrap" keyword to Dump() that causes full lines to be continued by
+	// the succeeding line without a line break. It's not possible to recover where the original line 
+	// breaks were from the console text, but this optional keyword will fix the problem of file paths 
+	// being broken up in the output.  
+	void				Dump( const char *toFile, const bool unwrap );
 	void				Clear();
 
 	//============================
@@ -320,17 +324,34 @@ Con_Dump_f
 ==============
 */
 static void Con_Dump_f( const idCmdArgs &args ) {
-	if ( args.Argc() != 2 ) {
-		common->Printf( "usage: conDump <filename>\n" );
+	// #3947: added the "unwrap" logic. See declaration of idConsoleLocal::Dump. 
+	bool badargs = false, unwrap = false;
+	const int argc = args.Argc();
+	if ( argc < 2 || argc > 3 ) {
+		badargs = true;
+	}
+
+	if ( !badargs && argc == 3) {
+		if ( idStr::Icmp( args.Argv( 1 ), "unwrap" ) == 0 ) {
+			unwrap = true;
+		} else {
+			badargs = true;
+		}
+	}
+
+	if ( badargs ) 
+	{
+		common->Printf( "usage: conDump [unwrap] <filename>\n\nunwrap prevents line breaks being added "
+			"to the dump for full lines in the\nconsole. Fix for long file paths being broken up in the output.\n" );
 		return;
 	}
 
-	idStr fileName = args.Argv(1);
+	idStr fileName = args.Argv( argc - 1 );
 	fileName.DefaultFileExtension(".txt");
 
 	common->Printf( "Dumped console text to %s.\n", fileName.c_str() );
 
-	localConsole.Dump( fileName.c_str() );
+	localConsole.Dump( fileName.c_str(), unwrap );
 }
 
 /*
@@ -433,7 +454,7 @@ idConsoleLocal::Dump
 Save the console contents out to a file
 ================
 */
-void idConsoleLocal::Dump( const char *fileName ) {
+void idConsoleLocal::Dump( const char *fileName, const bool unwrap ) {
 	int		l, x, i;
 	short	*line;
 	idFile	*f;
@@ -475,9 +496,15 @@ void idConsoleLocal::Dump( const char *fileName ) {
 				break;
 			}
 		}
-		buffer[x+1] = '\r';
-		buffer[x+2] = '\n';
-		buffer[x+3] = 0;
+		if ( unwrap && x == LINE_WIDTH - 1 ) {
+			// # 3947: We don't add a line break for a full line, but clip off any trailing line break left 
+			// over from previous line writes.
+			buffer[x+1] = 0;
+		} else {
+			buffer[x+1] = '\r';
+			buffer[x+2] = '\n';
+			buffer[x+3] = 0;
+		}
 		f->Write( buffer, strlen( buffer ) );
 	}
 
