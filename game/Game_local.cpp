@@ -511,9 +511,10 @@ void idGameLocal::Init( void ) {
 #endif
 
 	Printf( "--------- Initializing Game ----------\n" );
-	Printf( "%s %d.%02d, code revision %d\n", 
+	Printf( "%s %d.%02d, %s, code revision %d\n", 
 		GAME_VERSION, 
 		TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
+        BUILD_STRING,
 		RevisionTracker::Instance().GetHighestRevision() 
 	);
 	Printf( "Build date: %s\n", __DATE__ );
