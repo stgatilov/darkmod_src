@@ -26,7 +26,7 @@ void SCR_DrawTextLeftAlign ( int &y, const char *text, ... ) id_attribute((forma
 void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
 
 
-#define CONSOLE_POOL			(524288/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
+#define CONSOLE_POOL			(2097152/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
 #define	LINE_WIDTH				(SCREEN_WIDTH / SMALLCHAR_WIDTH -1) // if there are more chars than space to display, they will not wrap
 #define	TOTAL_LINES				(CONSOLE_POOL / LINE_WIDTH) // number of lines in the console buffer
 #define	CON_TEXTSIZE			(TOTAL_LINES * LINE_WIDTH)
