@@ -34,12 +34,14 @@
 
 #ifdef _WIN64
 #define	BUILD_STRING					"win-x64"
+#define	CPUSTRING						"x64"
 #else
 #define	BUILD_STRING					"win-x86"
+#define	CPUSTRING						"x86"
 #endif
 
 #define BUILD_OS_ID						0
-#define	CPUSTRING						"x86"
+
 #define CPU_EASYARGS					1
 
 #define ALIGN16( x )					__declspec(align(16)) x

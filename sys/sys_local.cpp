@@ -86,7 +86,8 @@ void idSysLocal::DLL_Unload(uintptr_t dllHandle) {
 
 void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
 #ifdef _WIN32
-	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
+    // e.g. gamex64.dll
+    idStr::snPrintf(dllName, maxLength, "%s%s.dll", baseName, CPUSTRING);
 #elif defined( __linux__ )
 #if defined (__x86_64__)
 	// greebo: Right now for testing, the game DLL for x64 is named the same (can be changed soon)
