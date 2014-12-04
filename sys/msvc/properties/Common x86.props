@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <OpenALSoftDLLPath>Win32\bin\soft_oal.dll</OpenALSoftDLLPath>
+    <TdmExecutableName>TheDarkMod</TdmExecutableName>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>
@@ -17,6 +18,9 @@
   <ItemGroup>
     <BuildMacro Include="OpenALSoftDLLPath">
       <Value>$(OpenALSoftDLLPath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="TdmExecutableName">
+      <Value>$(TdmExecutableName)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
