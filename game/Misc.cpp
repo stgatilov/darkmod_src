@@ -510,6 +510,66 @@ void tdmPathFlee::Spawn( void ) {
 /*
 ===============================================================================
 
+tdmPathGuard
+
+===============================================================================
+*/
+
+CLASS_DECLARATION( idEntity, tdmPathGuard )
+END_CLASS
+
+tdmPathGuard::~tdmPathGuard()
+{
+}
+
+/*
+=====================
+tdmPathGuard::Spawn
+=====================
+*/
+void tdmPathGuard::Spawn( void )
+{
+	m_priority = spawnArgs.GetInt("priority", "1");
+
+	// If the "angle" spawnarg is present, it's the angle the guard
+	// should turn toward when he reaches the guard spot. If the
+	// spawnarg isn't present, the default is to turn toward the
+	// origin of the search.
+	if (spawnArgs.FindKey("angle") != NULL)
+	{
+		m_angle = spawnArgs.GetFloat("angle");
+	}
+	else
+	{
+		m_angle = idMath::INFINITY;
+	}
+}
+
+/*
+================
+tdmPathGuard::Save
+================
+*/
+void tdmPathGuard::Save( idSaveGame *savefile ) const
+{
+	savefile->WriteInt( m_priority );
+	savefile->WriteFloat( m_angle );
+}
+
+/*
+================
+tdmPathGuard::Restore
+================
+*/
+void tdmPathGuard::Restore( idRestoreGame *savefile )
+{
+	savefile->ReadInt( m_priority );
+	savefile->ReadFloat( m_angle );
+}
+
+/*
+===============================================================================
+
   idDamagable
 	
 ===============================================================================

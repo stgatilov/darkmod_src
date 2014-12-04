@@ -48,10 +48,12 @@ void PainState::Init(idAI* owner)
 
 	// grayman #3424 - if already playing a pain anim, skip this one
 
-	if ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) == "pain" )
+	if ( idStr(owner->WaitState()) == "pain" )
 	{
 		return;
 	}
+
+	owner->StopMove(MOVE_STATUS_DONE); // grayman #3857
 
 	Memory& memory = owner->GetMemory();
 
@@ -59,6 +61,7 @@ void PainState::Init(idAI* owner)
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Pain", 4);
 	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Pain", 4);
 
+	owner->SetWaitState("pain");
 	owner->SetWaitState(ANIMCHANNEL_TORSO, "pain");
 	owner->SetWaitState(ANIMCHANNEL_LEGS, "pain");
 
@@ -71,13 +74,26 @@ void PainState::Init(idAI* owner)
 	{
 		memory.alertPos = owner->GetPhysics()->GetOrigin();
 
+		// grayman #3857 - Ask others to join your existing search
+		// by yelling out. If not searching, create a new event
+		// and attempt to rally others to you.
+		// problem: the "ouch" bark is issued elsewhere. "ouch"
+		// barks in and of themselves shouldn't be broadcast to bring others to you.
+		// other barks in other areas of the code should handle that.
+		/*
+		if (owner->m_searchID <= 0)
+		{
+			memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeEnemy,memory.alertPos,NULL);
+		}
+
 		// Do a single bark and assemble an AI message
 		CommMessagePtr message = CommMessagePtr(new CommMessage(
-			CommMessage::DetectedEnemy_CommType, 
+			CommMessage::RequestForHelp_CommType, // grayman #3857 - asking for a response
+			//CommMessage::DetectedEnemy_CommType,  // grayman #3857 - this does nothing when no entity (parameter 4) is provided
 			owner, NULL, // from this AI to anyone
 			NULL,
 			memory.alertPos,
-			0
+			memory.currentSearchEventID // grayman #3857 (was '0')
 		));
 
 		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_pain_large", message)));
@@ -86,6 +102,7 @@ void PainState::Init(idAI* owner)
 		{
 			gameLocal.Printf("%d: %s is hurt, barks 'snd_pain_large'\n",gameLocal.time,owner->GetName());
 		}
+		*/
 	}
 }
 
@@ -93,7 +110,7 @@ void PainState::Init(idAI* owner)
 void PainState::Think(idAI* owner)
 {
 	if ( ( gameLocal.time >= _stateEndTime ) || 
-		 ( idStr(owner->WaitState(ANIMCHANNEL_TORSO)) != "pain" ) ) 
+		 ( idStr(owner->WaitState()) != "pain" ) ) 
 	{
 		bool willBark = ( owner->AI_AlertLevel < owner->thresh_5 ); // don't bark a response if in combat
 
@@ -132,7 +149,7 @@ void PainState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				NULL,
 				owner->GetPhysics()->GetOrigin(),
-				0
+				memory.currentSearchEventID // grayman #3857 (was '0')
 			));
 
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_taking_fire", message)));
@@ -143,7 +160,7 @@ void PainState::Think(idAI* owner)
 			}
 		}
 
-		if ( willFlee && memory.fleeingDone) // grayman #3331 - civilians and unarmed AI should flee // grayman #3847 - already fleeing?
+		if ( willFlee && !memory.fleeing) // grayman #3331 - civilians and unarmed AI should flee // grayman #3847 - already fleeing?
 		{
 			if ( owner->AI_AlertLevel >= owner->thresh_5 ) // grayman #3847
 			{
@@ -157,7 +174,7 @@ void PainState::Think(idAI* owner)
 			}
 			owner->fleeingFrom = owner->GetPhysics()->GetOrigin(); // grayman #3848
 			owner->emitFleeBarks = true; // grayman #3474
-			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 			{
 				owner->GetMind()->SwitchState(STATE_FLEE);
 			}

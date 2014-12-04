@@ -11121,13 +11121,13 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 	va_list argptr;
 
 	const function_t *pScriptFkt = scriptObject.GetFunction(fkt);
-	if(pScriptFkt == NULL)
+	if (pScriptFkt == NULL)
 	{
 		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Action: %s not found in local space, checking for global namespace.\r", fkt);
 		pScriptFkt = gameLocal.program.FindFunction(fkt);
 	}
 
-	if(pScriptFkt)
+	if (pScriptFkt)
 	{
 		DM_LOG(LC_MISC, LT_DEBUG)LOGSTRING("Running scriptfunction '%s'\r", fkt);
 		pThread = new idThread(pScriptFkt);
@@ -11137,7 +11137,9 @@ idThread *idEntity::CallScriptFunctionArgs(const char *fkt, bool ClearStack, int
 		pThread->DelayedStart(delay);
 	}
 	else
+	{
 		DM_LOG(LC_MISC, LT_ERROR)LOGSTRING("Scriptfunction not found! [%s]\r", fkt);
+	}
 
 	return pThread;
 }
@@ -11239,6 +11241,7 @@ Quit:
 }
 
 // grayman #2624 - check whether dropped attachment should become frobable or should be extinguished
+// grayman #3852 - check whether the attachment should be removed from the game
 
 void idEntity::CheckAfterDetach( idEntity *ent )
 {
@@ -11247,10 +11250,18 @@ void idEntity::CheckAfterDetach( idEntity *ent )
 		return;
 	}
 
-	bool bSetFrob = ent->spawnArgs.GetBool( "drop_set_frobable", "0" );
+	// grayman #3852
+	bool bDestroy = ent->spawnArgs.GetBool("destroy_on_detach", "0");
+	if (bDestroy)
+	{
+		ent->PostEventMS(&EV_SafeRemove, 0);
+		return; // no point in checking the other flags
+	}
+
+	bool bSetFrob = ent->spawnArgs.GetBool("drop_set_frobable", "0");
 	bool bExtinguish = ent->spawnArgs.GetBool("extinguish_on_drop", "0");
 
-	if ( bSetFrob )
+	if (bSetFrob)
 	{
 		ent->m_bFrobable = true;
 	}

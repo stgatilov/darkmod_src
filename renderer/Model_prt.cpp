@@ -118,14 +118,8 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 			continue;
 		}
 
-		idRandom steppingRandom, steppingRandom2;
-
 		const int stageAge = g.renderView->time + (renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] - stage->timeOffset) * 1000;
 		const int stageCycle = stageAge / stage->cycleMsec;
-
-		// some particles will be in this cycle, some will be in the previous cycle
-		steppingRandom.SetSeed ( (( stageCycle << 10 )     & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
-		steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
 
 		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
 
@@ -181,15 +175,16 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 				g.age = g.frac * stage->particleLife;
 			}
 
+			// #3161: "Bouncing" smoke. Move the random number seeding here from the "stage" section above, and use the particle's quad index 
+			// in the seed, and use particleCycle number instead of stageCycle number, so that each particle quad gets its own sequence. 
+			// This means (1) we don't need two separate sequences to handle particle quads from two different cycles any more, and 
+			// (2) particle quads won't inherit the random numbers of their dead predecessors any more, which is what caused the "bouncing" illusion.
+			idRandom steppingRandom;
+			const int quadSeed = ( ( ( ( index + particleCycle ) << 5 ) + index ) << 5 ) & idRandom::MAX_RAND;
+			steppingRandom.SetSeed( quadSeed  ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND ) );
 			// bump the random
 			steppingRandom.RandomInt();
-			steppingRandom2.RandomInt();
-
-			if ( particleCycle == stageCycle ) {
-				g.random = steppingRandom;
-			} else {
-				g.random = steppingRandom2;
-			}
+			g.random = steppingRandom;
 
 			// this is needed so aimed particles can calculate origins at different times
 			g.originalRandom = g.random;

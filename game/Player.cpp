@@ -4844,7 +4844,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 	}
 	viewBobAngles.pitch += delta;
 	delta = bobfracsin * pm_bobroll.GetFloat() * speed;
-	if ( physicsObj.IsCrouching() ) {
+	if (physicsObj.IsCrouching()) {
 		delta *= 3;		// crouching accentuates roll
 	}
 	if ( bobFoot & 1 ) {

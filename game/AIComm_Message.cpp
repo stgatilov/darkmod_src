@@ -96,7 +96,7 @@ CommMessage::CommMessage()
 	m_p_recipientEntity = NULL;
 	m_msgTag = 0; // grayman #3355
 	m_p_directObjectEntity = NULL;
-	m_eventID = 0; // grayman #3424
+	m_eventID = -1; // grayman #3424
 	m_directObjectLocation.Zero();
 	m_positionOfIssuance.Zero();
 }

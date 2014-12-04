@@ -293,10 +293,6 @@ bool Mind::SetTarget()
 
 		target = static_cast<idActor*>(tactEnt);
 		
-		/** 
-		* If the entity that bumped the AI is an inanimate object, isEnemy will return 0,
-		* so the AI will not try to attack an inanimate object.
-		**/
 		if (owner->IsEnemy(target))
 		{
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Set tactile alert enemy to entity %s\r", target->name.c_str());
@@ -310,7 +306,7 @@ bool Mind::SetTarget()
 		}
 		else
 		{
-			// They bumped into a non entity, so they should ignore it and not set an
+			// They bumped into a non enemy, so they should ignore it and not set an
 			// alert from it.
 			// set the bool back (man, this is annoying)
 			owner->AI_TACTALERT = false;
@@ -373,18 +369,13 @@ bool Mind::PerformCombatCheck()
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("COMBAT NOW!\r");
 		
 		// Spotted an enemy
-		memory.enemiesHaveBeenSeen = true;
-
-		if (cv_ai_debug_transition_barks.GetBool())
-		{
-			gameLocal.Printf("%d: %s sees an enemy, will use Alert Idle\n",gameLocal.time,owner->GetName());
-		}
+		owner->HasEvidence(E_EventTypeEnemy);
 
 		memory.alertType = EAlertTypeEnemy;
 		idActor* enemy = owner->GetEnemy();
 
 		idVec3 enemyOrigin = enemy->GetPhysics()->GetOrigin(); // grayman #3507
-		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy ); // grayman #3424 // grayman #3848
+		owner->LogSuspiciousEvent( E_EventTypeEnemy, enemyOrigin, enemy, true ); // grayman #3424 // grayman #3848
 		memory.lastEnemyPos = enemyOrigin;
 		memory.posEnemySeen = enemyOrigin;	// grayman #2903
 		

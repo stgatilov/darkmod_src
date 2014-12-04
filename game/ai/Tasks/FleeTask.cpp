@@ -83,7 +83,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	if (owner->AI_DEAD || owner->AI_KNOCKEDOUT)
 	{
 		//owner->fleeingEvent = false; // grayman #3317 // grayman #3548
-		//memory.fleeingDone = true; // grayman #3548
+		//memory.fleeing = false; // grayman #3548
 		return true;
 	}
 
@@ -404,7 +404,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 void FleeTask::OnFinish(idAI* owner) // grayman #3548
 {
 	Memory& memory = owner->GetMemory();
-	memory.fleeingDone = true;
+	memory.fleeing = false;
 	owner->fleeingEvent = false;
 	owner->fleeingFromPerson = NULL; // grayman #3847
 }

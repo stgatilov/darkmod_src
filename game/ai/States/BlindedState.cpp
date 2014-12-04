@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "BlindedState.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "../Memory.h"
 #include "../Library.h"
 
@@ -46,6 +47,7 @@ void BlindedState::Init(idAI* owner)
 	owner->movementSubsystem->ClearTasks();
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	owner->StopMove(MOVE_STATUS_DONE);
 
@@ -59,33 +61,27 @@ void BlindedState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 	memory.StopReacting(); // grayman #3559
 
+	memory.currentSearchEventID = owner->LogSuspiciousEvent(E_EventTypeMisc, memory.alertPos, NULL, true); // grayman #3857
+
 	CommMessagePtr message(new CommMessage(
 		CommMessage::RequestForHelp_CommType, 
 		owner, NULL, // from this AI to anyone 
 		NULL,
 		memory.alertPos,
-		0
+		memory.currentSearchEventID // grayman #3857 (was '0')
 	));
 
-	owner->commSubsystem->AddCommTask(
-		CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message))
-	);
+	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_blinded", message)));
 
 	if (cv_ai_debug_transition_barks.GetBool())
 	{
 		gameLocal.Printf("%d: %s is blinded, barks 'snd_blinded'\n",gameLocal.time,owner->GetName());
 	}
 
-	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "4")) + 
-		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "2"));
+	float duration = SEC2MS(owner->spawnArgs.GetFloat("blind_time", "8")) + 
+		(gameLocal.random.RandomFloat() - 0.5f) * 2 * SEC2MS(owner->spawnArgs.GetFloat("blind_time_fuzziness", "4"));
 
 	_endTime = gameLocal.time + static_cast<int>(duration);
-
-	// Set alert level a little bit below combat
-	if (owner->AI_AlertLevel < owner->thresh_5 - 1)
-	{
-		owner->SetAlertLevel(owner->thresh_5 - 1);
-	}
 
 	_oldVisAcuity = owner->GetBaseAcuity("vis"); // grayman #3552
 //	_oldVisAcuity = owner->GetAcuity("vis");
@@ -106,12 +102,25 @@ void BlindedState::Think(idAI* owner)
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 4);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 
+		owner->SetWaitState("");
 		owner->SetWaitState(ANIMCHANNEL_TORSO, "");
 		owner->SetWaitState(ANIMCHANNEL_LEGS, "");
 
 		owner->SetAcuity("vis", _oldVisAcuity);
 		owner->SetAcuity("aud", _oldAudAcuity); // Smoke #2829
 
+		// Set up a search if you have no enemy. If you have an enemy,
+		// the queued Lost Track of Enemy state will set up a search
+		// of its own.
+
+		if ( !owner->GetEnemy() )
+		{
+			// grayman #3857 - move alert setup into one method
+			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman #3857
+		}
+
+		// grayman #3857 - allow "idle search/suspicious animations"
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431
@@ -119,11 +128,12 @@ void BlindedState::Think(idAI* owner)
 		int duration = _endTime - gameLocal.time;
 		if ( duration > 0 )
 		{
-			// Stare at the ground in front of you, as if you're trying to get your sight back
+			// Stare at the ground in front of you while waiting to get your sight back
 
-			idVec3 vec = owner->viewAxis.ToAngles().ToForward()*24;
+			idVec3 vec = owner->viewAxis.ToAngles().ToForward();
 			vec.z = 0;
-			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + vec;
+			vec.NormalizeFast();
+			idVec3 lookAtMe = owner->GetPhysics()->GetOrigin() + 48*vec;
 			owner->Event_LookAtPosition(lookAtMe, MS2SEC(duration));
 			_staring = true;
 		}

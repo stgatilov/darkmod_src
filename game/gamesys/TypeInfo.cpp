@@ -1024,6 +1024,8 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 		Write( varName, varType, scope, prefix, ".isDormant", flags->isDormant ? "true" : "false", NULL, 0 );
 		Write( varName, varType, scope, prefix, ".hasAwakened", flags->hasAwakened ? "true" : "false", NULL, 0 );
 		Write( varName, varType, scope, prefix, ".networkSync", flags->networkSync ? "true" : "false", NULL, 0 );
+		Write( varName, varType, scope, prefix, ".invisible", flags->invisible ? "true" : "false", NULL, 0 ); // grayman #3857
+		Write( varName, varType, scope, prefix, ".inaudible", flags->inaudible ? "true" : "false", NULL, 0 ); // grayman #3857
 		typeSize = sizeof( idEntity::entityFlags_s );
 
 	} else if ( token == "idScriptBool" ) {

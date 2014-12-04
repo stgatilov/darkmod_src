@@ -745,9 +745,7 @@ idActor::idActor( void ) {
 
 	m_EyeOffset			= vec3_zero; // grayman #3525
 
-	m_suspiciousEventIDs.Clear(); // grayman #3424
-
-	m_haveSearchedEventID.Clear(); // grayman #3424
+	m_knownSuspiciousEvents.Clear(); // grayman #3857
 
 	m_warningEvents.Clear(); // grayman #3424
 
@@ -1256,18 +1254,13 @@ void idActor::Save( idSaveGame *savefile ) const {
 	savefile->WriteVec3( m_MouthOffset );	// grayman #1104
 	savefile->WriteVec3( m_EyeOffset );	// grayman #3525
 
-	// grayman #3424
-	savefile->WriteInt(m_suspiciousEventIDs.Num());
-	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
-	{
-		savefile->WriteInt(m_suspiciousEventIDs[i]);
-	}
+	// grayman #3857
 
-	// grayman #3424
-	savefile->WriteInt(m_haveSearchedEventID.Num());
-	for ( int i = 0 ; i < m_haveSearchedEventID.Num() ; i++ )
+	savefile->WriteInt(m_knownSuspiciousEvents.Num());
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
 	{
-		savefile->WriteBool(m_haveSearchedEventID[i]);
+		savefile->WriteInt(m_knownSuspiciousEvents[i].eventID);
+		savefile->WriteBool(m_knownSuspiciousEvents[i].searched);
 	}
 
 	// grayman #3424
@@ -1487,20 +1480,12 @@ void idActor::Restore( idRestoreGame *savefile ) {
 
 	// grayman #3424
 	savefile->ReadInt(num);
-	m_suspiciousEventIDs.Clear();
-	m_suspiciousEventIDs.SetNum(num);
+	m_knownSuspiciousEvents.Clear();
+	m_knownSuspiciousEvents.SetNum(num);
 	for ( int i = 0 ; i < num ; i++ )
 	{
-		savefile->ReadInt(m_suspiciousEventIDs[i]);
-	}
-
-	// grayman #3424
-	savefile->ReadInt(num);
-	m_haveSearchedEventID.Clear();
-	m_haveSearchedEventID.SetNum(num);
-	for ( int i = 0 ; i < num ; i++ )
-	{
-		savefile->ReadBool(m_haveSearchedEventID[i]);
+		savefile->ReadInt(m_knownSuspiciousEvents[i].eventID);
+		savefile->ReadBool(m_knownSuspiciousEvents[i].searched);
 	}
 
 	// grayman #3424
@@ -2183,7 +2168,8 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	if (ent->IsType(idActor::Type)) 
 	{
 		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
-		if (ent->fl.notarget)
+		// grayman #3857 - or if marked 'invisible'
+		if ((ent->fl.notarget) || (ent->fl.invisible))
 		{
 			return false;
 		}
@@ -3324,8 +3310,7 @@ collision	trace info for the collision that caused the damage.  Defaults to NULL
 
 inflictor, attacker, dir, and point can be NULL for environmental effects
 
-Bleeding wounds and surface overlays are applied in the collision code that
-calls Damage()
+Bleeding wounds and surface overlays are applied in the collision code that calls Damage()
 ============
 */
 void idActor::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -4062,7 +4047,7 @@ void idActor::Event_PlayAnim( int channel, const char *animname ) {
 		gameLocal.Printf("Frame: %d - playing anim %s (%s)\n", gameLocal.framenum, animname, name.c_str());
 		DM_LOG(LC_AI, LT_INFO)LOGSTRING("Frame: %d - playing anim %s (%s)\r", gameLocal.framenum, animname, name.c_str());
 	}
-	
+
 	anim = GetAnim( channel, animname );
 	if ( !anim ) {
 		
@@ -5083,20 +5068,49 @@ idAFAttachment* idActor::GetHead() // grayman #1104
 // grayman #3424
 void idActor::MarkEventAsSearched( int eventID )
 {
-	if ( eventID >= 0 )
+	if ( eventID < 0 )
 	{
-		// Do I know about this event?
+		return;
+	}
 
-		for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	// If this event involves an entity that visually stims AI to get their
+	// attention, we have to turn the stim off so that the AI doesn't
+	// end up searching the same thing twice. (I.e. join a search as an
+	// observer for a corpse, leave the search, then "see" the corpse
+	// for yourself, starting up a new search.) There's no need to check
+	// whether the entity has a visual stim; the IgnoreResponse() method
+	// handles that case.
+
+	SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(eventID);
+	if (se->entity.GetEntity())
+	{
+		se->entity.GetEntity()->IgnoreResponse(ST_VISUAL, this);
+
+		// mark the flags that HasSeenEvidence() uses
+		static_cast<idAI*>(this)->HasEvidence(se->type);
+	}
+
+	// grayman #3857 - Do I know about this event?
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
+	{
+		if ( m_knownSuspiciousEvents[i].eventID == eventID )
 		{
-			if ( m_suspiciousEventIDs[i] == eventID )
-			{
-				// I know about it. Mark it 'searched'.
-				m_haveSearchedEventID[i] = true;
-				return;
-			}
+			// I know about it. Mark it 'searched'.
+			m_knownSuspiciousEvents[i].searched = true;
+			return;
 		}
 	}
+
+	// Didn't already know about this event. Since I'm
+	// marking it as searched, add it to
+	// my list of known events.
+
+	// grayman #3857
+	KnownSuspiciousEvent kse;
+	kse.eventID = eventID;
+	kse.searched = true;
+	m_knownSuspiciousEvents.Append(kse);
 }
 
 // grayman #3424
@@ -5109,21 +5123,65 @@ bool idActor::HasSearchedEvent( int eventID )
 
 	// Do I know about this event?
 
-	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
 	{
-		if ( m_suspiciousEventIDs[i] == eventID )
+		if ( m_knownSuspiciousEvents[i].eventID == eventID )
 		{
 			// I know about it. Have I already searched it?
-
-			return m_haveSearchedEventID[i];
+			return m_knownSuspiciousEvents[i].searched;
 		}
 	}
+
+	return false;
+}
+
+// grayman #3857
+bool idActor::HasSearchedEvent( int eventID, EventType type, idVec3 location ) // grayman #3857 - TODO: apply where applicable
+{
+	if ( eventID < 0 )
+	{
+		return false;
+	}
+
+	// Do I know about this event?
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
+	{
+		if ( m_knownSuspiciousEvents[i].eventID == eventID )
+		{
+			// I know about it. Have I already searched it?
+			if (m_knownSuspiciousEvents[i].searched)
+			{
+				return true;
+			}
+			break;
+		}
+	}
+
+	// Have I searched a similar event in the same location?
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
+	{
+		if (m_knownSuspiciousEvents[i].searched)
+		{
+			SuspiciousEvent* se = gameLocal.FindSuspiciousEvent(m_knownSuspiciousEvents[i].eventID);
+			if (se->type == type)
+			{
+				if ((se->location - location).LengthSqr() <= 90000) // 300*300
+				{
+					return true;
+				}
+			}
+		}
+	}
+
 	return false;
 }
 
 bool idActor::HasBeenWarned( idActor* other, int eventID )
 {
-	// Go through my list of warnings and see if I've already been warned.
+	// Go through my list of warnings and see if I've already been warned
+	// by 'other' about this event.
 
 	for ( int i = 0 ; i < m_warningEvents.Num() ; i++ )
 	{
@@ -5136,16 +5194,18 @@ bool idActor::HasBeenWarned( idActor* other, int eventID )
 	return false; // No warning on file
 }
 
-bool idActor::FindSuspiciousEvent( int eventID ) // grayman #3424
+bool idActor::KnowsAboutSuspiciousEvent( int eventID ) // grayman #3424
 {
 	if ( eventID < 0 )
 	{
 		return false;
 	}
 
-	for ( int i = 0 ; i < m_suspiciousEventIDs.Num() ; i++ )
+	// grayman #3857
+
+	for ( int i = 0 ; i < m_knownSuspiciousEvents.Num() ; i++ )
 	{
-		if ( m_suspiciousEventIDs[i] == eventID )
+		if ( m_knownSuspiciousEvents[i].eventID == eventID )
 		{
 			return true;
 		}
@@ -5153,46 +5213,66 @@ bool idActor::FindSuspiciousEvent( int eventID ) // grayman #3424
 	return false;
 }
 
-bool idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
+void idActor::AddSuspiciousEvent( int eventID ) // grayman #3424
 {
 	if ( eventID < 0 )
 	{
-		return false;
+		return;
 	}
 
 	// If I already know about this event, no need to add it.
-	if ( FindSuspiciousEvent( eventID ) )
+	if ( KnowsAboutSuspiciousEvent( eventID ) )
 	{
-		return false;
+		return;
 	}
 
-	m_suspiciousEventIDs.Append(eventID);
-	m_haveSearchedEventID.Append(false); // grayman dedug 2
-	return true;
+	// grayman #3857
+	KnownSuspiciousEvent kse;
+	kse.eventID = eventID;
+	kse.searched = false;
+	m_knownSuspiciousEvents.Append(kse);
 }
 
 // grayman #3424 - Add a warning event. This represents a warning
-// having passed between 'this' and 'other'.
+// having passed from 'other' to 'this'. Since we don't want 'this'
+// warning 'other' about the same event in the future, log a
+// "reverse warning".
 
-void idActor::AddWarningEvent( idEntity* other, int eventID)
+void idActor::AddWarningEvent( idActor* other, int eventID)
 {
+	// No need to do this if it's already been done.
+
+	if (HasBeenWarned(other,eventID))
+	{
+		return;
+	}
+
 	WarningEvent we;
 	we.entity = other;
 	we.eventID = eventID;
 
 	m_warningEvents.Append(we);
+
+	// Back at ya
+
+	WarningEvent we2;
+	we2.entity = this;
+	we2.eventID = eventID;
+
+	other->m_warningEvents.Append(we2);
 }
 
 // grayman #3424 - log a suspicious event
 
-int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ) 
+int idActor::LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ) // grayman #3857
 {
 	SuspiciousEvent se;
 	se.type = type;
 	se.location = loc;
 	se.entity = entity;
+	se.time = gameLocal.time; // grayman #3857
 
-	int index = gameLocal.LogSuspiciousEvent(se);
+	int index = gameLocal.LogSuspiciousEvent(se,forceLog);
 	AddSuspiciousEvent(index); // I know about this event
 	return index;
 }

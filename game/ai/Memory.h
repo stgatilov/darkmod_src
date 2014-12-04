@@ -87,23 +87,24 @@ namespace ai
 #define MIN_DISTANCE_TO_ISSUER_TO_SHOUT_COMING_TO_ASSISTANCE 200
 
 // Considered cause radius around a tactile event
-#define TACTILE_ALERT_RADIUS 10.0f
-#define TACTILE_SEARCH_VOLUME idVec3(100,100,100) // grayman #2816 - was (40,40,40) which makes them stand still
+//#define TACTILE_ALERT_RADIUS 10.0f // grayman #3857 - no longer used
+#define TACTILE_SEARCH_VOLUME idVec3(150,150,100) // grayman #2816 - was (40,40,40) which makes them stand still
 
 // Considered cause radius around a visual event
-#define VISUAL_ALERT_RADIUS 25.0f
+//#define VISUAL_ALERT_RADIUS 25.0f // grayman #3857 - no longer used
 #define VISUAL_SEARCH_VOLUME idVec3(100,100,100)
 
 // Considered cause radius around an audio event
-#define AUDIO_ALERT_RADIUS 50.0f
+//#define AUDIO_ALERT_RADIUS 50.0f // grayman #3857 - no longer used
 #define AUDIO_ALERT_FUZZINESS 100.0f
 #define AUDIO_SEARCH_VOLUME idVec3(300,300,200)
 
 #define ENEMY_DEAD_BARK_DELAY 1500	// grayman #2816
 
 // Area searched around last sighting after losing an enemy
-#define LOST_ENEMY_ALERT_RADIUS 200.0
-#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
+//#define LOST_ENEMY_ALERT_RADIUS 200.0 // grayman #3857 - no longer used
+#define LOST_ENEMY_SEARCH_VOLUME idVec3(300, 300, 100) // grayman #3857 - was (200,200,100)
+//#define LOST_ENEMY_SEARCH_VOLUME idVec3(200, 200, 100) // grayman #2603 - was (200,200,200)
 
 // grayman #3424 - increase in evidence count per event type
 #define EVIDENCE_COUNT_INCREASE_ENEMY        3 // grayman #3515 - was 1
@@ -136,8 +137,11 @@ enum EAlertType
 {
 	EAlertTypeNone,
 	EAlertTypeSuspicious,
+	EAlertTypeSuspiciousVisual, // grayman #3857
 	EAlertTypeEnemy,
+	EAlertTypeFailedKO, // grayman #3857
 	EAlertTypeWeapon,
+	EAlertTypeBlinded, // grayman #3857
 	EAlertTypeDeadPerson,
 	EAlertTypeUnconsciousPerson,
 	EAlertTypeBlood,
@@ -145,10 +149,17 @@ enum EAlertType
 	EAlertTypeMissingItem,
 	EAlertTypeBrokenItem,
 	EAlertTypeDoor,
-	//EAlertTypeDamage,
 	EAlertTypeSuspiciousItem,	// grayman #1327
 	EAlertTypeRope,				// grayman #2872
 	EAlertTypeHitByProjectile,	// grayman #3331
+	EAlertTypeFoundEnemy,		// grayman #3857
+	EAlertTypeLostTrackOfEnemy, // grayman #3857
+	EAlertTypeEncounter,		// grayman #3857
+	EAlertTypeRequestForHelp,	// grayman #3857
+	EAlertTypeDetectedEnemy,	// grayman #3857
+	EAlertTypeSomethingSuspicious, // grayman #3857
+	EAlertTypeHitByMoveable,	// grayman #3857 - was EAlertTypeSuspicious
+	EAlertTypePickedPocket,		// grayman #3857
 	EAlertTypeCount
 };
 
@@ -175,6 +186,18 @@ enum EPainCause
 	EPC_Fall,
 	EPC_Moveable,
 	EPC_Num
+};
+
+// grayman #3857 - repeated bark states when in Agitated Searching
+enum ERepeatedBarkState
+{
+	ERBS_NULL,							// state not determined yet
+	ERBS_SEARCHER_SINGLE_NO_EVIDENCE,	// single searcher, hasn't seen any evidence of intruders
+	ERBS_SEARCHER_MULTIPLE_NO_EVIDENCE,	// multiple searchers, hasn't seen any evidence of intruders
+	ERBS_SEARCHER_SINGLE_EVIDENCE,		// single searcher, has seen evidence of intruders
+	ERBS_SEARCHER_MULTIPLE_EVIDENCE,	// multiple searchers, has seen evidence of intruders
+	ERBS_GUARD_OBSERVER,				// a guard or observer, has or hasn't seen evidence of intruders
+	ERBS_NUM
 };
 
 const char* const AlertStateNames[EAlertStateNum] = 
@@ -207,7 +230,7 @@ const char* const AlertStateNames[EAlertStateNum] =
 // grayman #2603 - how long to wait until barking again about a light that's out (ms)
 #define REBARK_DELAY 15000
 
-// grayman #3496 - how long to wait after an alert bark before issuing the next alert bark (ms)
+// grayman #3496 - how long to wait after an alert bark or visual stim bark before issuing the next alert bark (ms)
 #define MIN_TIME_BETWEEN_ALERT_BARKS 3000
 
 const int MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR = 4*60; // grayman #3415 - 4 minutes 
@@ -299,7 +322,7 @@ public:
 	bool deadPeopleHaveBeenFound;
 
 	// grayman #3424 - did the AI see evidence the previous think frame?
-	bool prevSawEvidence;
+	//bool prevSawEvidence; // grayman #3857
 
 	// grayman #3528 - TRUE if sitting or sleeping when dropping out of Observant
 	bool stayPut;
@@ -321,13 +344,19 @@ public:
 	// grayman #3331 - force a hiding spot search (don't rely just on the alert index changing)
 	bool mandatory;
 
+	// grayman #3857 - whether we're responding to a DetectedSomethingSuspicious_CommType message or not
+	bool respondingToSomethingSuspiciousMsg;
+
 	// grayman #2903 - timestamps of alerts that can lead to warnings between AI
 	int timeEvidenceIntruders;
 
 	idEntityPtr<idEntity> corpseFound; // grayman #3424
 
+	idEntityPtr<idEntity> unconsciousPersonFound; // grayman #3857
+
 	// grayman #2422 - alert level is rising by checking player visibility
-	bool visualAlert;
+	// grayman #3857 - no longer used
+	//bool visualAlert;
 
 	// grayman #2603 - abort an ongoing light relight?
 	bool stopRelight;
@@ -366,7 +395,7 @@ public:
 	EAlertType alertType;
 
 	// radius of alert causing stimulus (depends on the type and distance)
-	float alertRadius;
+	//float alertRadius; // grayman #3857 - no longer used
 
 	// The last time we had an incoming audio alert
 	int lastAudioAlertTime;
@@ -449,15 +478,36 @@ public:
 	// we have a problem with hiding spot searches not returning
 	int hidingSpotThinkFrameCount;
 
-	int firstChosenHidingSpotIndex;
-	int currentChosenHidingSpotIndex;
-	idVec3 chosenHidingSpot;
+	//int firstChosenHidingSpotIndex;   // grayman #3857
+	//int currentChosenHidingSpotIndex; // grayman #3857
+	//idVec3 chosenHidingSpot; // grayman #3857
 
 	// True if the AI is currently investigating a hiding spot (walking to it, for instance).
 	bool hidingSpotInvestigationInProgress;
 
-	// True if fleeing is done, false if fleeing is in progress
-	bool fleeingDone;
+	// grayman #3857 - true if the AI is currently guarding or observing a location while
+	// participating in a search
+	bool guardingInProgress;
+
+	// grayman #3857 - true if the AI is currently milling about the alert spot
+	bool millingInProgress;
+
+	// grayman #3857 - true if the AI needs to stop doing one of the above tasks
+	bool stopHidingSpotInvestigation;
+	bool stopGuarding;
+	bool stopMilling;
+
+	// grayman #3857 - true if the AI should mill about the alert spot
+	// before running to a guard or observation spot
+	bool shouldMill;
+
+	// grayman #3857 - when guarding a spot, face this angle (yaw)
+	float guardingAngle;
+
+	ERepeatedBarkState repeatedBarkState; // grayman #3857
+
+	// True if fleeing
+	bool fleeing;
 
 	// angua: The last position of the AI before it takes cover, so it can return to it later.
 	idVec3 positionBeforeTakingCover;
@@ -492,6 +542,7 @@ public:
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?
 
 	int combatState;				// grayman #3507 - use when returning to Combat
+	bool leaveAlertState;			// grayman #3857
 
 	// Maps doors to info structures
 	typedef std::map<CFrobDoor*, DoorInfoPtr> DoorInfoMap;

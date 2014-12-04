@@ -81,7 +81,7 @@ void CombatState::OnVisualAlert(idActor* enemy)
 	// do nothing as of now, we are already in combat mode
 }
 
-bool CombatState::OnAudioAlert(idStr soundName) // grayman #3847
+bool CombatState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) // grayman #3847 // grayman #3857
 {
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
@@ -155,12 +155,12 @@ void CombatState::OnBlindStim(idEntity* stimSource, bool skipVisibilityCheck)
 		// Blind me!
 		State::OnBlindStim(stimSource, skipVisibilityCheck);
 
-		Memory& memory = owner->GetMemory();
+		//Memory& memory = owner->GetMemory();
 
 		// Forget about the enemy, prevent UpdateEnemyPosition from "cheating".
 		owner->ClearEnemy();
-		memory.visualAlert = false; // grayman #2422
-		memory.mandatory = true;	// grayman #3331
+		//memory.visualAlert = false; // grayman #2422
+		//memory.mandatory = true;	// grayman #3331 // grayman #3857 - now handled by STATE_BLIND
 	}
 }
 
@@ -188,12 +188,14 @@ void CombatState::Init(idAI* owner)
 		return;
 	}
 
+	Memory& memory = owner->GetMemory();
+
 	// grayman #3507 - if we were already in combat, and had to pause to
 	// deal with an unreachable enemy, and have now come back, our
 	// previous state is stored in memory. Use that to skip over the
 	// initialization that normally happens when we come up from Agitated Searching.
 
-	if ( owner->GetMemory().combatState != -1 )
+	if ( memory.combatState != -1 )
 	{
 		_combatType = COMBAT_NONE;
 		_combatSubState = EStateCheckWeaponState;
@@ -225,20 +227,21 @@ void CombatState::Init(idAI* owner)
 	// grayman #3472 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks(); // grayman #3182
 
-	// grayman #3496
-	// Enough time passed since last alert bark?
+	// grayman #3496 - Enough time passed since last alert bark?
+	// grayman #3857 - Enough time passed since last visual stim bark?
 
-	if ( gameLocal.time >= owner->GetMemory().lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+	if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+		 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 	{
 		// grayman #3496 - But only bark if you haven't recently spent time in Agitated Search.
 
-		if ( !owner->GetMemory().agitatedSearched )
+		if ( !memory.agitatedSearched )
 		{
 			// The communication system plays reaction bark
 			CommMessagePtr message;
 			owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_alert5", message)));
 
-			owner->GetMemory().lastTimeAlertBark = gameLocal.time; // grayman #3496
+			memory.lastTimeAlertBark = gameLocal.time; // grayman #3496
 
 			if (cv_ai_debug_transition_barks.GetBool())
 			{
@@ -451,21 +454,8 @@ void CombatState::Think(idAI* owner)
 				bool canWalkTo = owner->MoveToPosition(_destination);
 				if (canWalkTo)
 				{
-					float travelDist = owner->TravelDistance(ownerOrigin, _destination);
 					float actualDist = (ownerOrigin - _destination).LengthFast();
-					if ( actualDist > travelDist )
-					{
-						travelDist = actualDist;
-					}
-
-					if ( travelDist <= MAX_TRAVEL_DISTANCE_WALKING ) // close enough to walk?
-					{
-						owner->AI_RUN = false;
-					}
-					else // we're far away, so run
-					{
-						owner->AI_RUN = true;
-					}
+					owner->AI_RUN = ( actualDist > MAX_TRAVEL_DISTANCE_WALKING ); // close enough to walk?
 					_combatSubState = EStateVictor4;
 				}
 				else
@@ -595,7 +585,7 @@ void CombatState::Think(idAI* owner)
 		owner->fleeingFromPerson = enemy; // grayman #3847
 		// grayman #3548 - allow flee bark if unarmed
 		owner->emitFleeBarks = !_rangedPossible;
-		if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+		if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 		{
 			owner->GetMind()->SwitchState(STATE_FLEE);
 		}
@@ -651,6 +641,23 @@ void CombatState::Think(idAI* owner)
 			{
 				owner->ClearEnemy();
 				owner->SetAlertLevel(owner->thresh_5 - 0.1); // reset alert level just under Combat
+
+				// grayman #3857 - dropping to agitated searching, so we need search parameters
+
+				memory.alertClass = EAlertVisual_1;
+				memory.alertType = EAlertTypeEnemy; // grayman #3857
+				memory.alertPos = owner->GetPhysics()->GetOrigin();
+				//memory.alertRadius = LOST_ENEMY_ALERT_RADIUS;
+				memory.alertSearchVolume = LOST_ENEMY_SEARCH_VOLUME;
+				memory.alertSearchExclusionVolume.Zero();
+				memory.alertedDueToCommunication = false;
+				memory.stimulusLocationItselfShouldBeSearched = true;
+				memory.investigateStimulusLocationClosely = false; // grayman #3857
+				memory.mandatory = false; // grayman #3857
+
+				// Log the event
+				memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, memory.alertPos, enemy, true ); // grayman #3857
+
 				owner->GetMind()->EndState();
 				return;
 			}
@@ -679,7 +686,7 @@ void CombatState::Think(idAI* owner)
 			owner->fleeingFrom = enemy->GetPhysics()->GetOrigin();
 			owner->fleeingFromPerson = enemy; // grayman #3847
 			owner->emitFleeBarks = true; // grayman #3474
-			if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+			if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 			{
 				owner->GetMind()->SwitchState(STATE_FLEE);
 			}
@@ -694,6 +701,13 @@ void CombatState::Think(idAI* owner)
 
 	case EStateDoOnce:
 		{
+
+		// grayman #3857 - If participating in a search, leave the search
+		if (owner->m_searchID > 0)
+		{
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+		}
+
 		// Check for sitting or sleeping
 
 		moveType_t moveType = owner->GetMoveType();
@@ -720,6 +734,7 @@ void CombatState::Think(idAI* owner)
 		owner->movementSubsystem->ClearTasks();
 		owner->senseSubsystem->ClearTasks();
 		owner->actionSubsystem->ClearTasks();
+		owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 		// Bark
 
@@ -734,7 +749,7 @@ void CombatState::Think(idAI* owner)
 				owner, NULL, // from this AI to anyone 
 				enemy,
 				memory.lastEnemyPos,
-				0
+				memory.currentSearchEventID // grayman #3857
 			));
 		}
 
@@ -1126,7 +1141,7 @@ void CombatState::Think(idAI* owner)
 				owner->fleeingFrom = enemy->GetPhysics()->GetOrigin(); // grayman #3848
 				owner->fleeingFromPerson = enemy; // grayman #3847
 				owner->emitFleeBarks = true; // grayman #3474
-				if (memory.fleeingDone) // grayman #3847 - only flee if not already fleeing
+				if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
 				{
 					owner->GetMind()->SwitchState(STATE_FLEE);
 				}
@@ -1220,6 +1235,7 @@ bool CombatState::CheckEnemyStatus(idActor* enemy, idAI* owner)
 		owner->movementSubsystem->ClearTasks();
 		owner->senseSubsystem->ClearTasks();
 		owner->actionSubsystem->ClearTasks();
+		owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 		return false;
 	}
@@ -1233,6 +1249,8 @@ void CombatState::DelayedVisualStim(idEntity* stimSource, idAI* owner)
 {
 	stimSource->AllowResponse(ST_VISUAL, owner); // see it again later
 }
+
+void CombatState::OnVisualStimBlood(idEntity* stimSource, idAI* owner) {}
 
 void CombatState::Save(idSaveGame* savefile) const
 {

@@ -170,6 +170,11 @@ public:
 	virtual int GetClusterSize();
 
 	/**
+	 * grayman #3857 - retrieve a list of portals around areaNum
+	 */
+	virtual void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits);
+
+	/**
 	 * greebo: Assembles the elevator routing information.
 	 */
 	virtual void CompileEAS();

@@ -27,6 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../AIComm_Message.h"
 #include "../Tasks/RandomHeadturnTask.h"
 #include "../Tasks/SingleBarkTask.h"
+#include "../Tasks/IdleAnimationTask.h" // grayman #3857
 #include "SearchingState.h"
 #include "../Library.h"
 
@@ -131,8 +132,15 @@ void SuspiciousState::Init(idAI* owner)
 	Memory& memory = owner->GetMemory();
 
 	owner->senseSubsystem->ClearTasks();
-	owner->actionSubsystem->ClearTasks();
 
+	// grayman #3857 - if rising into Suspicious, switch idle animations
+	if ( owner->AlertIndexIncreased() )
+	{
+		// grayman #3857 - allow "idle search/suspicious animations"
+		owner->actionSubsystem->ClearTasks();
+		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+	}
+	
 	// grayman #3438 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks();
 
@@ -153,8 +161,10 @@ void SuspiciousState::Init(idAI* owner)
 		{
 			if ( memory.alertClass != EAlertVisual_4) // grayman #3498
 			{
-				// grayman #3496 - enough time passed since last alert bark?
-				if ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS )
+				// grayman #3496 - Enough time passed since last alert bark?
+				// grayman #3857 - Enough time passed since last visual stim bark?
+				if ( ( gameLocal.time >= memory.lastTimeAlertBark + MIN_TIME_BETWEEN_ALERT_BARKS ) &&
+					 ( gameLocal.time >= memory.lastTimeVisualStimBark + MIN_TIME_BETWEEN_ALERT_BARKS ) )
 				{
 					// barking
 					idStr bark;
@@ -196,6 +206,11 @@ void SuspiciousState::Init(idAI* owner)
 			memory.alertedDueToCommunication = false; // reset
 		}
 	}
+	else // grayman #3857 - descending
+	{
+		owner->searchSubsystem->ClearTasks();
+		memory.currentSearchEventID = -1;
+	}
 
 	// Let the AI update their weapons (make them nonsolid)
 	owner->UpdateAttachmentContents(false);
@@ -220,6 +235,7 @@ void SuspiciousState::Init(idAI* owner)
 		trace_t result;
 		if ( gameLocal.clip.TracePoint(result, p1, p2, MASK_OPAQUE, owner) )
 		{
+			// grayman #3857 - TODO: test to make sure we hit the world, and not just another AI?
 			// Hit something, so turn around.
 			owner->TurnToward(owner->GetCurrentYaw() + 180);
 		}

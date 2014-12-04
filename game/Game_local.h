@@ -121,6 +121,7 @@ void gameError( const char *fmt, ... );
 
 #include "Objectives/EMissionResult.h"
 #include "DifficultyManager.h"
+
 #include "ai/AreaManager.h"
 #include "GamePlayTimer.h"
 #include "ModelGenerator.h"
@@ -182,6 +183,8 @@ typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
 
 class CShop;
 typedef boost::shared_ptr<CShop> CShopPtr;
+
+class CSearchManager; // grayman #3857
 
 const int MAX_GAME_MESSAGE_SIZE		= 8192;
 const int MAX_ENTITY_STATE_SIZE		= 512;
@@ -285,6 +288,7 @@ enum {
 	PORTALSKY_LOCAL = 2,			// following portal sky from a spot
 };
 // end 7318
+
 
 
 /**
@@ -415,10 +419,28 @@ private:
 
 enum EventType
 {
-	E_EventTypeEnemy = 0,	// enemy is seen ("snd_warnSawEnemy")
+	E_EventTypeEnemy = 1,	// enemy is seen ("snd_warnSawEnemy")
 							// enemy tried to KO me ("snd_warnSawEnemy")
 	E_EventTypeDeadPerson,	// found a corpse ("snd_warnFoundCorpse")
-	E_EventTypeMissingItem	// noticed something was stolen ("snd_warnMissingItem")
+	E_EventTypeMissingItem,	// noticed something was stolen ("snd_warnMissingItem")
+
+	// grayman #3857 - add specific 'evidence of intruder' events to keep
+	// AI from being asked back onto searches they've already participated in
+	E_EventTypeUnconsciousPerson,
+
+	// grayman #3857 - noisemakers are troublesome because they can cause
+	// several unique searches to be generated
+	E_EventTypeNoisemaker,
+
+	// grayman #3857 - Add event type for an unimportant event. This might occur
+	// if an AI has risen into searching or agitated searching because of
+	// an accumulation of suspicious events
+	E_EventTypeMisc,
+
+	// grayman #3857 - Add event type for sound, specifically to pick up the
+	// timestamp for an event. Since a sound's location can be different for
+	// different AI, we want to fold those multiple events into one.
+	E_EventTypeSound
 };
 
 // Hold information about a suspicious event (corpse, unconscious person, missing item, etc.)
@@ -427,7 +449,10 @@ struct SuspiciousEvent
 	EventType type;					// type of event
 	idVec3 location;				// location
 	idEntityPtr<idEntity> entity;	// entity, if relevant
+	int time;						// grayman #3857 - when
 };
+
+#include "SearchManager.h" // grayman #3857 - must follow the definition of "EventType"
 
 class idDeclEntityDef;
 
@@ -600,6 +625,11 @@ public:
 	 */
 	CEscapePointManager*	m_EscapePointManager;
 
+	// grayman #3857 - Search Manager
+	CSearchManager*			m_searchManager;
+
+	void					GetPortals(Search* search, idAI* ai); // grayman #3857
+
 	/**
 	 * greebo: This timer keeps track of the actual gameplay time.
 	 */
@@ -680,9 +710,6 @@ public:
 	void					SetCurrentPortalSkyType(int type); // 0 = classic, 1 = global, 2 = local
 	int						GetCurrentPortalSkyType(); // 0 = classic, 1 = global, 2 = local
 	// end 7318
-
-	// grayman #3424 - The list of suspicious events
-	idList<SuspiciousEvent> m_suspiciousEvents;
 
 	// grayman #3584 - The list of ambient lights
     idList< idEntityPtr<idLight> > m_ambientLights;
@@ -857,6 +884,7 @@ public:
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
+	void					RadiusDouse( const idVec3 &origin, const float radius ); // grayman #3857
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
 	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
@@ -1012,8 +1040,9 @@ public:
 
 	int						GetNextMessageTag(); // grayman #3355
 
-	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity ); // grayman #3424
-	int						LogSuspiciousEvent( SuspiciousEvent se ); // grayman #3424  
+	int						FindSuspiciousEvent( EventType type, idVec3 location, idEntity* entity, int time ); // grayman #3424
+	SuspiciousEvent*		FindSuspiciousEvent( int eventID ); // grayman #3857
+	int						LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ); // grayman #3424 grayman #3857
 	
 private:
 	const static int		INITIAL_SPAWN_COUNT = 1;
@@ -1027,6 +1056,9 @@ private:
 	int						mapSpawnCount;			// it's handy to know which entities are part of the map
 
 	idLocationEntity **		locationEntities;		// for location names, etc
+
+	// grayman #3424 - The list of suspicious events
+	idList<SuspiciousEvent> m_suspiciousEvents;
 
 	idCamera *				camera;
 	const idMaterial *		globalMaterial;			// for overriding everything

@@ -243,6 +243,12 @@ struct WarningEvent
 	idEntityPtr<idEntity> entity;	// giver if you received this; receiver if you sent it
 };
 
+// grayman #3857 - Hold information about a suspicious event and whether you searched it
+struct KnownSuspiciousEvent
+{
+	int eventID;	// id of the suspicious event
+	bool searched;	// whether you have searched it
+};
 
 #define TDM_HEAD_ENTITYDEF "atdm:ai_head_base"
 
@@ -419,14 +425,6 @@ public:
 	idVec3					m_EyeOffset; // grayman #3525
 
 	/**
-	* grayman #3424 - List of suspicious event ids this actor knows about.
-	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
-	**/
-	idList<int>				m_suspiciousEventIDs;
-	
-	idList<bool>			m_haveSearchedEventID; // grayman #3424
-
-	/**
 	* grayman #3848 - true when a combat victor has knealt by my body
 	**/
 	bool					m_victorHasKnealt;
@@ -441,6 +439,12 @@ public:
 	* Use the id as in index into gameLocal.m_suspiciousEvents, which is a list.
 	**/
 	idList<WarningEvent>	m_warningEvents;
+
+	/**
+	* grayman #3857 - List of suspicious events this actor knows about, and
+	* whether he's searched them or not.
+	**/
+	idList<KnownSuspiciousEvent>	m_knownSuspiciousEvents;
 
 public:
 							idActor( void );
@@ -600,12 +604,13 @@ public:
 	* Suspicious events
 	* grayman #3424
 	**/
-	bool					FindSuspiciousEvent( int eventID );
-	bool					AddSuspiciousEvent( int eventID );
-	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity ); 
-	void					AddWarningEvent( idEntity* other, int eventID );
+	bool					KnowsAboutSuspiciousEvent( int eventID );
+	void					AddSuspiciousEvent( int eventID );
+	int						LogSuspiciousEvent( EventType type, idVec3 loc, idEntity* entity, bool forceLog ); // grayman #3857 
+	void					AddWarningEvent( idActor* other, int eventID );
 	bool					HasBeenWarned( idActor* other, int eventID );
 	bool					HasSearchedEvent( int eventID );
+	bool					HasSearchedEvent( int eventID, EventType type, idVec3 location ); // grayman #3857 - TODO: apply where applicable
 	void					MarkEventAsSearched( int eventID );
 
 	/**

@@ -50,6 +50,7 @@ void KnockedOutState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->actionSubsystem->ClearTasks();
 	owner->commSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
 
 	_waitingForKnockout = true;
 

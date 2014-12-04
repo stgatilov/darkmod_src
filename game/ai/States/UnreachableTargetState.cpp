@@ -94,7 +94,7 @@ void UnreachableTargetState::Init(idAI* owner)
 		owner, NULL, // from this AI to anyone 
 		enemy,
 		memory.lastEnemyPos,
-		0
+		-1
 	));
 
 	// grayman #3343 - accommodate different barks for human and non-human enemies

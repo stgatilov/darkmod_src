@@ -122,6 +122,8 @@ void ConversationState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 	owner->GetSubsystem(SubsysCommunication)->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
+	owner->searchSubsystem->ClearTasks(); // grayman #3857
+
 	owner->StopMove(MOVE_STATUS_DONE);
 	memory.StopReacting(); // grayman #3559
 
@@ -376,9 +378,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		int blendFrames = (command.GetNumArguments() >= 2) ? atoi(command.GetArgument(1)) : DEFAULT_BLEND_FRAMES;
 
 		// Tell the animation subsystem to play the anim
-		owner->actionSubsystem->PushTask(
-			TaskPtr(new PlayAnimationTask(animName, blendFrames))
-		);
+		owner->actionSubsystem->PushTask(TaskPtr(new PlayAnimationTask(animName, blendFrames)));
 
 		int length = (owner->GetAnimator() != NULL) ? 
 			owner->GetAnimator()->AnimLength(owner->GetAnimator()->GetAnim(animName)) : FALLBACK_ANIM_LENGTH;
@@ -395,9 +395,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		int blendFrames = (command.GetNumArguments() >= 2) ? atoi(command.GetArgument(1)) : DEFAULT_BLEND_FRAMES;
 
 		// Tell the animation subsystem to play the anim
-		owner->actionSubsystem->PushTask(
-			TaskPtr(new PlayAnimationTask(animName, blendFrames, true)) // true == playCycle
-		);
+		owner->actionSubsystem->PushTask(TaskPtr(new PlayAnimationTask(animName, blendFrames, true))); // true == playCycle
 
 		// For PlayCycle, "wait until finished" doesn't make sense, as it lasts forever
 		_state = EReady;
@@ -554,9 +552,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		if (ent != NULL)
 		{
 			// Tell the action subsystem to do its job
-			owner->actionSubsystem->PushTask(
-				TaskPtr(new InteractionTask(ent))
-			);
+			owner->actionSubsystem->PushTask(TaskPtr(new InteractionTask(ent)));
 
 			// Check if we should wait until the command is finished and set the _state accordingly
 			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;
@@ -575,9 +571,7 @@ void ConversationState::StartCommand(ConversationCommand& command, Conversation&
 		if (!scriptFunction.IsEmpty())
 		{
 			// Tell the action subsystem to do its job
-			owner->actionSubsystem->PushTask(
-				TaskPtr(new ScriptTask(scriptFunction))
-			);
+			owner->actionSubsystem->PushTask(TaskPtr(new ScriptTask(scriptFunction)));
 
 			// Check if we should wait until the command is finished and set the _state accordingly
 			_state = (command.WaitUntilFinished()) ? EBusy : EExecuting;

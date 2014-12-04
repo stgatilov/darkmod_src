@@ -74,18 +74,21 @@ void FailedKnockoutState::Init(idAI* owner)
 	_allowEndTime = gameLocal.time + 800;
 
 	// Set end time
-	_stateEndTime = gameLocal.time + 3000;
+	_stateEndTime = gameLocal.time + 1000; // grayman #3857 - was 3000, but the failed_ko anim
+											// is being aborted. If it runs, it only takes a second
 	
 	// Set the alert position 50 units in the attacking direction
-	memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+	//memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
-	// Do a single bark and assemble an AI message
+	// grayman #3857 - moved into Think(). If we do this here, the pain
+	// bark gets aborted by this bark.
+/*	// Do a single bark and assemble an AI message
 	CommMessagePtr message = CommMessagePtr(new CommMessage(
 		CommMessage::DetectedEnemy_CommType, 
 		owner, NULL, // from this AI to anyone
 		_attacker,
 		memory.alertPos,
-		0
+		-1
 	));
 
 	owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));
@@ -94,6 +97,7 @@ void FailedKnockoutState::Init(idAI* owner)
 	{
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
 	}
+	*/
 }
 
 // Gets called each time the mind is thinking
@@ -109,27 +113,35 @@ void FailedKnockoutState::Think(idAI* owner)
 	{
 		Memory& memory = owner->GetMemory();
 
-		// Alert this AI
-		memory.alertClass = EAlertTactile;
-		memory.alertType = EAlertTypeEnemy;
-
-		memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeEnemy, owner->GetPhysics()->GetOrigin(), NULL ); // grayman #3424
-	
-		// Set the alert position 50 units in the attacking direction
-		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
-
 		memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_FAILED_KO;
 		memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 		memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
-		memory.alertedDueToCommunication = false;
 		memory.StopReacting(); // grayman #3559
-		memory.visualAlert = false; // grayman #2422
-		memory.mandatory = true;	// grayman #3331
 
-		// Alert the AI
-		// grayman #3009 - pass the alert position so the AI can look at it
-		owner->PreAlertAI("tact", owner->thresh_5*2, memory.alertPos); // grayman #3356
+		// grayman #3857 - alert and bark moved down from Init()
 
+		// Set the alert position 50 units in the attacking direction
+		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
+
+		// grayman #3857 - move alert setup into one method
+		SetUpSearchData(EAlertTypeFailedKO, memory.alertPos, NULL, false, 0);
+
+		// Do a single bark and assemble an AI message
+		CommMessagePtr message = CommMessagePtr(new CommMessage(
+			CommMessage::DetectedEnemy_CommType, 
+			owner, NULL, // from this AI to anyone
+			_attacker,
+			memory.alertPos,
+			memory.currentSearchEventID
+		));
+
+		owner->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_failed_knockout", message)));
+
+		if (cv_ai_debug_transition_barks.GetBool())
+		{
+			gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), barks 'snd_failed_knockout'\n",gameLocal.time,owner->GetName());
+		}
+	
 		// End this state
 		owner->GetMind()->EndState();
 	}

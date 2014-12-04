@@ -1695,6 +1695,45 @@ int idAASLocal::GetClusterSize()
 	return file->GetNumClusters();
 }
 
+// grayman #3857
+void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits)
+{
+	int clusterNum = GetClusterNum(areaNum);
+	if (clusterNum > 0)
+	{
+		const aasCluster_t* cluster = &file->GetCluster(clusterNum);
+		int numPortals = cluster->numPortals;
+		for (int i = 0 ; i < numPortals ; i++)
+		{
+			int portalNum = file->GetPortalIndex(cluster->firstPortal + i);
+			const aasPortal_t* portal = &file->GetPortal(portalNum);
+			idVec3 center = AreaCenter(portal->areaNum);
+
+			// To reduce congestion, ignore any spots that are inside the search area.
+			if (searchLimits.ContainsPoint(center))
+			{
+				continue;
+			}
+
+			idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
+			portalList.Append(spot);
+		}
+	}
+	else // areaNum is inside a portal, so we only have one portal center to add to the list
+	{
+		idVec3 center = AreaCenter(areaNum);
+
+		if (searchLimits.ContainsPoint(center))
+		{
+			// ignore this portal
+			return;
+		}
+
+		idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
+		portalList.Append(spot);
+	}
+}
+
 void idAASLocal::CompileEAS()
 {
 	elevatorSystem->Compile();

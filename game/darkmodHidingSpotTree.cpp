@@ -371,7 +371,6 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 		return false;
 	}
 
-
 	// Update best spot quality in area
 	if (quality > p_areaNode->bestSpotQuality)
 	{
@@ -413,8 +412,6 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 				break;
 			}
 		}
-
-
 	}
 
 	// Test if it is redundant
@@ -1039,7 +1036,7 @@ bool CDarkmodHidingSpotTree::copy(CDarkmodHidingSpotTree* p_out_otherTree)
 }
 
 //-------------------------------------------------------------------------
-
+/* grayman #3857
 bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& out_otherTree)
 {
 	unsigned int numPointsMoved = 0;
@@ -1154,7 +1151,7 @@ bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& 
 	// Done
 	return true;
 }
-
+*/
 //------------------------------------------------------------------------------------------
 
 bool CDarkmodHidingSpotTree::sortForNewCenter(idVec3 center, float searchRadius)
