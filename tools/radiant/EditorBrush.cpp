@@ -638,10 +638,10 @@ void DrawBrushEntityName(brush_t *b) {
 
 	if (g_qeglobals.d_savedinfo.show_names && scale >= 1.0f) {
 		name = ValueForKey(b->owner, "name");
-		int nameLen = strlen(name);
+        int nameLen = static_cast<int>(strlen(name));
 		if ( nameLen == 0 ) {
 			name = ValueForKey(b->owner, "classname");
-			nameLen = strlen(name);
+            nameLen = static_cast<int>(strlen(name));
 		}
 		if ( nameLen > 0 ) {
 			idVec3 origin = b->owner->origin;
@@ -2323,7 +2323,7 @@ Brush_MemorySize
 */
 int Brush_MemorySize( brush_t *b ) {
 	face_t	*f;
-	int		size = 0;
+	size_t		size = 0;
 	if ( b->pPatch ) {
 		size += Patch_MemorySize( b->pPatch );
 	}
@@ -2333,7 +2333,7 @@ int Brush_MemorySize( brush_t *b ) {
 	}
 
 	size += sizeof( brush_t ) + b->epairs.Size();
-	return size;
+    return static_cast<int>(size);
 }
 
 /*

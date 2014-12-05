@@ -351,14 +351,14 @@ void Entity_Free( entity_t *e ) {
 int Entity_MemorySize( entity_t *e ) 
 {
 	brush_t		*b;
-	int			size;
+	size_t			size;
 
 	size = sizeof( entity_t ) + e->epairs.Size();
 	for( b = e->brushes.onext; b != &e->brushes; b = b->onext )
 	{
 		size += Brush_MemorySize( b );
 }
-	return( size );
+    return static_cast<int>(size);
 }
 
 /*
@@ -509,7 +509,7 @@ void Entity_UpdateCurveData( entity_t *ent ) {
 idCurve<idVec3> *Entity_MakeCurve( entity_t *ent ) {
 	const idKeyValue *kv = ent->epairs.MatchPrefix( CURVE_TAG );
 	if ( kv ) {
-		idStr str = kv->GetKey().Right( kv->GetKey().Length() - strlen( CURVE_TAG ) );
+        idStr str = kv->GetKey().Right(kv->GetKey().Length() - static_cast<int>(strlen(CURVE_TAG)));
 		if ( str.Icmp( "CatmullRomSpline" ) == 0 ) {
 			return new idCurve_CatmullRomSpline<idVec3>();
 		} else if ( str.Icmp( "Nurbs" ) == 0 ) {
@@ -575,7 +575,7 @@ entity_t *Entity_PostParse(entity_t *ent, brush_t *pList) {
 		if (strlen(cp2)) {
 			char buff[1024];
 			strcpy(buff, cp2);
-			int len = strlen(buff);
+			size_t len = strlen(buff);
 			while ((isdigit(buff[len-1]) || buff[len-1] == '_') && len > 0) {
 				buff[len-1] = '\0';
 				len--;

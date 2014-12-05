@@ -554,7 +554,7 @@ void WINAPI Select_SetTexture(texdef_t *texdef,brushprimit_texdef_t	*brushprimit
 				Brush_SetTexture(b, texdef, brushprimit_texdef, bFitScale);
 				Undo_EndBrush(b);
 			} else if (b->owner->eclass->nShowFlags & ECLASS_LIGHT) {
-				if ( idStr::Cmpn(texdef->name, "lights/", strlen("lights/")) == 0 ) {
+                if (idStr::Cmpn(texdef->name, "lights/", static_cast<int>(strlen("lights/"))) == 0) {
 					SetKeyValue(b->owner, "texture", texdef->name);
 					g_Inspectors->UpdateEntitySel(b->owner->eclass);
 					UpdateLightInspector();
@@ -2068,7 +2068,7 @@ void Select_UpdateTextureName(const char *name) {
 				Brush_SetTextureName(b, name);
 				Undo_EndBrush(b);
 			} else if (b->owner->eclass->nShowFlags & ECLASS_LIGHT) {
-				if ( idStr::Cmpn(name, "lights/", strlen("lights/")) == 0 ) {
+                if (idStr::Cmpn(name, "lights/", static_cast<int>(strlen("lights/"))) == 0) {
 					SetKeyValue(b->owner, "texture", name);
 					g_Inspectors->UpdateEntitySel(b->owner->eclass);
 					UpdateLightInspector();

@@ -283,7 +283,7 @@ void CDialogTextures::OnLoad() {
 	Texture_HideAll();
 	HTREEITEM item = m_treeTextures.GetSelectedItem();
 	idStr name = buildItemName( item, TypeNames[TEXTURES] );
-	if ( !name.Cmpn( TypeNames[MATERIALS], strlen( TypeNames[MATERIALS] ) ) ) {
+	if ( !name.Cmpn( TypeNames[MATERIALS], static_cast<int>(strlen( TypeNames[MATERIALS] ) ) ) ) {
 		name = buildItemName( item, TypeNames[MATERIALS] );
 	}
 	loadTree( item, name, &dlg );

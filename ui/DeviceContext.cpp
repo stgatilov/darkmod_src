@@ -669,7 +669,7 @@ int idDeviceContext::DrawText(float x, float y, float scale, idVec4 color, const
 		const unsigned char	*s = (const unsigned char*)text;
 		renderSystem->SetColor(color);
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
-		len = strlen(text);
+        len = static_cast<int>(strlen(text));
 		if (limit > 0 && len > limit) {
 			len = limit;
 		}
@@ -789,7 +789,7 @@ int idDeviceContext::TextHeight(const char *text, float scale, int limit) {
 	useScale = scale * font->glyphScale;
 	max = 0;
 	if (text) {
-		len = strlen(text);
+        len = static_cast<int>(strlen(text));
 		if (limit > 0 && len > limit) {
 			len = limit;
 		}

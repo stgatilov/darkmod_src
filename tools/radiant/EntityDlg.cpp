@@ -280,7 +280,7 @@ const char *CEntityDlg::TranslateString(const char *buf) {
 	int			i, l;
 	char		*out;
 
-	l = strlen(buf);
+    l = static_cast<int>(strlen(buf));
 	out = buf2;
 	for (i = 0; i < l; i++) {
 		if (buf[i] == '\n') {

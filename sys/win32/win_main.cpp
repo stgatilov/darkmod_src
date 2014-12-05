@@ -195,12 +195,12 @@ void Sys_TriggerEvent( int index ) {
 #ifdef DEBUG
 
 
-static unsigned int debug_total_alloc = 0;
-static unsigned int debug_total_alloc_count = 0;
-static unsigned int debug_current_alloc = 0;
-static unsigned int debug_current_alloc_count = 0;
-static unsigned int debug_frame_alloc = 0;
-static unsigned int debug_frame_alloc_count = 0;
+static size_t debug_total_alloc = 0;
+static size_t debug_total_alloc_count = 0;
+static size_t debug_current_alloc = 0;
+static size_t debug_current_alloc_count = 0;
+static size_t debug_frame_alloc = 0;
+static size_t debug_frame_alloc_count = 0;
 
 idCVar sys_showMallocs( "sys_showMallocs", "0", CVAR_SYSTEM, "" );
 
@@ -902,7 +902,7 @@ void Sys_GenerateEvents( void ) {
 		char	*b;
 		int		len;
 
-		len = strlen( s ) + 1;
+        len = static_cast<int>(strlen(s) + 1);
 		b = (char *)Mem_Alloc( len );
 		strcpy( b, s );
 		Sys_QueEvent( 0, SE_CONSOLE, 0, 0, len, b );

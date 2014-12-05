@@ -931,18 +931,18 @@ idRenderModelMD5::Memory
 ===================
 */
 int	idRenderModelMD5::Memory() const {
-	size_t		total, i;
+	size_t		total;
 
 	total = sizeof( *this );
 	total += joints.MemoryUsed() + defaultPose.MemoryUsed() + meshes.MemoryUsed();
 
 	// count up strings
-	for ( i = 0; i < joints.Num(); i++ ) {
+	for (int i = 0; i < joints.Num(); i++ ) {
 		total += joints[i].name.DynamicMemoryUsed();
 	}
 
 	// count up meshes
-	for ( i = 0 ; i < meshes.Num() ; i++ ) {
+	for (int i = 0 ; i < meshes.Num() ; i++ ) {
 		const idMD5Mesh *mesh = &meshes[i];
 
 		total += mesh->texCoords.MemoryUsed() + mesh->numWeights * ( sizeof( mesh->scaledWeights[0] ) + sizeof( mesh->weightIndex[0] ) * 2 );

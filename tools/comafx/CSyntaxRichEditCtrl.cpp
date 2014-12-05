@@ -1821,7 +1821,7 @@ void CSyntaxRichEditCtrl::OnProtected( NMHDR *pNMHDR, LRESULT *pResult ) {
 		}
 		case WM_SETTEXT: {
 			updateRange.cpMin = pEP->chrg.cpMin;
-			updateRange.cpMax = pEP->chrg.cpMin + strlen( (LPCTSTR) pEP->lParam );
+			updateRange.cpMax = pEP->chrg.cpMin + static_cast<LONG>(strlen( (LPCTSTR) pEP->lParam ));
 			break;
 		}
 		case WM_CUT: {

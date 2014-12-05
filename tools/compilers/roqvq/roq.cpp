@@ -353,7 +353,7 @@ static int hackSize;
 void roq::JPEGTermDestination (j_compress_ptr cinfo) {
   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
   size_t datacount = dest->size - dest->pub.free_in_buffer;
-  hackSize = datacount;
+  hackSize = static_cast<int>(datacount);
 }
 
 
