@@ -1328,7 +1328,7 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 		return 0;
 	}
 
-	pathLength = strlen( relativePath );
+    pathLength = static_cast<int>(strlen(relativePath));
 	if ( pathLength ) {
 		pathLength++;	// for the trailing '/'
 	}
@@ -1894,7 +1894,7 @@ void idFileSystemLocal::TouchFileList_f( const idCmdArgs &args ) {
 	const char *buffer = NULL;
 	idParser src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 	if ( fileSystem->ReadFile( args.Argv( 1 ), ( void** )&buffer, NULL ) && buffer ) {
-		src.LoadMemory( buffer, strlen( buffer ), args.Argv( 1 ) );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), args.Argv(1));
 		if ( src.IsLoaded() ) {
 			idToken token;
 			while( src.ReadToken( &token ) ) {
@@ -2492,7 +2492,7 @@ idFileSystemLocal::FileAllowedFromDir
 */
 bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 
-	const unsigned int l = strlen( path );
+    const unsigned int l = static_cast<unsigned int>(strlen(path));
 
 	if  (  !strcmp( path + l - 4, ".cfg" )		// for config files
 		|| !strcmp( path + l - 4, ".dat" )		// for journal files
@@ -2954,7 +2954,7 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 		return size * nmemb;
 	}
 #ifdef _WIN32
-		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, size * nmemb );
+		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, static_cast<unsigned int>(size * nmemb) );
 #else
 		return fwrite( ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
 #endif

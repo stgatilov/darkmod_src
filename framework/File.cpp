@@ -248,22 +248,28 @@ void idFile::Rewind( void ) {
 idFile::Printf
 =================
 */
-int idFile::Printf( const char *fmt, ... ) {
-	char buf[MAX_PRINT_MSG_SIZE];
-	va_list argptr;
+int idFile::Printf(const char *fmt, ...) {
+    char buf[MAX_PRINT_MSG_SIZE];
+    va_list argptr;
 
-	va_start( argptr, fmt );
-	const int length = idStr::vsnPrintf( buf, MAX_PRINT_MSG_SIZE-1, fmt, argptr );
-	va_end( argptr );
+    va_start(argptr, fmt);
 
 #ifdef WIN32
-	// so notepad formats the lines correctly
-  	idStr	work( buf );
- 	work.Replace( "\n", "\r\n" );
-  
-  	return Write( work.c_str(), work.Length() );
+    // Write to the buffer and replace the newlines in Windows
+    idStr::vsnPrintf(buf, MAX_PRINT_MSG_SIZE - 1, fmt, argptr);
+    va_end(argptr);
+
+    // so notepad formats the lines correctly
+    idStr	work( buf );
+    work.Replace( "\n", "\r\n" );
+
+    return Write(work.c_str(), work.Length());
 #else
-	return Write( buf, length );
+    // No need to replace newlines in platforms other than Windows
+    const int length = idStr::vsnPrintf(buf, MAX_PRINT_MSG_SIZE - 1, fmt, argptr);
+    va_end(argptr);
+
+    return Write(buf, length);
 #endif
 }
 
@@ -555,7 +561,7 @@ int idFile::WriteBool( const bool value ) {
  =================
  */
 int idFile::WriteString( const char *value ) {
-	const int len = strlen( value );
+	const int len = static_cast<int>(strlen( value ));
 	WriteInt( len );
 
     return Write( value, len );
@@ -1087,7 +1093,7 @@ int idFile_Permanent::Read( void *buffer, int len ) {
 	int tries = 0;
 	while( remaining ) {
 		block = remaining;
-		read = fread( buf, 1, block, o );
+		read = static_cast<int>(fread( buf, 1, block, o ));
 		if ( read == 0 ) {
 			// we might have been trying to read from a CD, which
 			// sometimes returns a 0 read on windows
@@ -1138,7 +1144,7 @@ int idFile_Permanent::Write( const void *buffer, int len ) {
 	int tries = 0;
 	while( remaining ) {
 		block = remaining;
-		written = fwrite( buf, 1, block, o );
+		written = static_cast<int>(fwrite( buf, 1, block, o ));
 		if ( written == 0 ) {
 			if ( !tries ) {
 				tries = 1;

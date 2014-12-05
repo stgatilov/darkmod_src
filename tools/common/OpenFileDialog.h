@@ -87,7 +87,7 @@ ID_INLINE void rvOpenFileDialog::SetOKTitle ( const char* title )
 
 ID_INLINE void rvOpenFileDialog::SetInitialPath ( const char* path )
 {
-	if ( !idStr::Cmpn( mLookin, path, strlen( path ) ) )
+    if (!idStr::Cmpn(mLookin, path, static_cast<int>(strlen(path))))
 	{
 		return;
 	}

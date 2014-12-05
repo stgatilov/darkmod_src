@@ -1113,7 +1113,7 @@ void CSyntaxRichEditCtrl::ToolTipShow( int charIndex, const char *string ) {
 	funcParmToolTipStart = charIndex;
 	funcParmToolTip.SetWindowText( string );
 	p1 = funcParmToolTip.PosFromChar( 0 );
-	p2 = funcParmToolTip.PosFromChar( strlen( string ) - 1 );
+    p2 = funcParmToolTip.PosFromChar(static_cast<UINT>(strlen(string)) - 1);
 	point = PosFromChar( charIndex );
 	GetClientRect( rect );
 	if ( point.y < rect.bottom - FUNCPARMTOOLTIP_OFFSET - FUNCPARMTOOLTIP_HEIGHT ) {

@@ -196,7 +196,7 @@ int SCR_DrawFPS( int y ) {
 
 	s = va( "%ifps", fps );
 
-	renderSystem->DrawBigStringExt( SCREEN_WIDTH - (strlen( s )*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
+    renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
 
 	return (y + BIGCHAR_HEIGHT + 4);
 }
@@ -481,7 +481,7 @@ void idConsoleLocal::Dump( const char *fileName ) {
 		buffer[x+1] = '\r';
 		buffer[x+2] = '\n';
 		buffer[x+3] = 0;
-		f->Write( buffer, strlen( buffer ) );
+        f->Write(buffer, static_cast<int>(strlen(buffer)));
 	}
 
 	fileSystem->CloseFile( f );
@@ -966,7 +966,7 @@ void idConsoleLocal::DrawInput() {
 	const int y = vislines - ( SMALLCHAR_HEIGHT * 2 );
 
 	if ( consoleField.GetAutoCompleteLength() != 0 ) {
-		const int autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
+        const int autoCompleteLength = static_cast<int>(strlen(consoleField.GetBuffer())) - consoleField.GetAutoCompleteLength();
 
 		if ( autoCompleteLength > 0 ) {
 			renderSystem->SetColor4( 0.8f, 0.2f, 0.2f, 0.45f );

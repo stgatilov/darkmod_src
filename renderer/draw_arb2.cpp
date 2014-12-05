@@ -452,7 +452,7 @@ void R_LoadARBProgram( int progIndex ) {
 	//qglGetError();
 
 	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
-		strlen( start ), (unsigned char *)start );
+                        static_cast<GLsizei>(strlen(start)), (unsigned char *)start);
 
 // this is pretty important for quick shader debugging, better have it in always
 //#ifdef _DEBUG

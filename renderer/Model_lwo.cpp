@@ -1352,11 +1352,10 @@ char *sgetS0( unsigned char **bp )
 {
    char *s;
    unsigned char *buf = *bp;
-   int len;
-
+   
    if ( flen == FLEN_ERROR ) return NULL;
 
-   len = strlen( (const char*)buf ) + 1;
+   int len = static_cast<int>(strlen((const char*)buf)) + 1;
    if ( len == 1 ) {
 	  flen += 2;
 	  *bp += 2;
@@ -2697,7 +2696,7 @@ int lwResolvePolySurfaces( lwPolygonList *polygon, lwTagList *tlist,
 	  if ( !s[ index ] ) {
 		 s[ index ] = lwDefaultSurface();
 		 if ( !s[ index ] ) return 0;
-		 s[ index ]->name = (char*)Mem_ClearedAlloc( strlen( tlist->tag[ index ] ) + 1 );
+         s[index]->name = (char*)Mem_ClearedAlloc(static_cast<int>(strlen(tlist->tag[index])) + 1);
 		 if ( !s[ index ]->name ) return 0;
 		 strcpy( s[ index ]->name, tlist->tag[ index ] );
 		 lwListAdd( (void**)surf, s[ index ] );
@@ -2809,7 +2808,7 @@ int lwGetTags( idFile *fp, int cksize, lwTagList *tlist )
 	ntags = 0;
 	bp = buf;
 	while ( bp < buf + cksize ) {
-		len = strlen( bp ) + 1;
+        len = static_cast<int>(strlen(bp)) + 1;
 		len += len & 1;
 		bp += len;
 		++ntags;

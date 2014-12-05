@@ -298,7 +298,7 @@ BOOL CALLBACK EnumWindowsProc( HWND hwnd, LPARAM lParam ) {
 	char buff[1024];
 
 	::GetWindowText( hwnd, buff, sizeof( buff ) );
-	if ( idStr::Icmpn( buff, EDITOR_WINDOWTEXT, strlen( EDITOR_WINDOWTEXT ) ) == 0 ) {
+    if (idStr::Icmpn(buff, EDITOR_WINDOWTEXT, static_cast<int>(strlen(EDITOR_WINDOWTEXT))) == 0) {
 		com_hwndMsg = hwnd;
 		return FALSE;
 	}
@@ -366,7 +366,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			t /= 1000;
 		}
 		sprintf( msg, "[%i]", t );
-		timeLength = strlen( msg );
+        timeLength = static_cast<int>(strlen(msg));
 	} else {
 		timeLength = 0;
 	}
@@ -437,7 +437,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			Printf( "log file '%s' opened on %s\n", fileName, asctime( newtime ) );
 		}
 		if ( logFile ) {
-			logFile->Write( msg, strlen( msg ) );
+            logFile->Write(msg, static_cast<int>(strlen(msg)));
 			logFile->Flush();	// ForceFlush doesn't help a whole lot
 		}
 	}
@@ -1683,7 +1683,7 @@ void idCommonLocal::LocalizeMapData( const char *fileName, idLangDict &langDict 
 	common->SetRefreshOnPrint( true );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			common->Printf( "Processing %s\n", fileName );
 			idStr mapFileName;
@@ -1730,7 +1730,7 @@ void idCommonLocal::LocalizeGui( const char *fileName, idLangDict &langDict ) {
 	char nl = 'n';
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idFile *outFile = fileSystem->OpenFileWrite( fileName ); 
 			common->Printf( "Processing %s\n", fileName );
@@ -1819,7 +1819,7 @@ void LoadMapLocalizeData(ListHash& listHash) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idStr classname;
 			idToken token;
@@ -1853,7 +1853,7 @@ void LoadGuiParmExcludeList(idStrList& list) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idStr classname;
 			idToken token;
@@ -2385,7 +2385,7 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	if ( !( msg && *msg ) ) {
 		return;
 	}
-	int len = strlen( msg );
+    int len = static_cast<int>(strlen(msg));
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, declManager->FindMaterial( "splashScreen" ) );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );

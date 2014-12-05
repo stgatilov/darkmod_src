@@ -101,7 +101,7 @@ idRenderModelStatic::Memory
 ==============
 */
 int idRenderModelStatic::Memory() const {
-	int	totalBytes = 0;
+	size_t	totalBytes = 0;
 
 	totalBytes += sizeof( *this );
 	totalBytes += name.DynamicMemoryUsed();
@@ -119,7 +119,7 @@ int idRenderModelStatic::Memory() const {
 		totalBytes += R_TriSurfMemory( surf->geometry );
 	}
 
-	return totalBytes;
+    return static_cast<int>(totalBytes);
 }
 
 /*

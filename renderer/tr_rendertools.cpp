@@ -1715,7 +1715,7 @@ float RB_DrawTextLength( const char *text, float scale, int len ) {
 
 	if ( text && *text ) {
 		if ( !len ) {
-			len = strlen(text);
+            len = static_cast<int>(strlen(text));
 		}
 		for ( i = 0; i < len; i++ ) {
 			charIndex = text[i] - 32;
@@ -1766,7 +1766,7 @@ static void RB_DrawText( const char *text, const idVec3 &origin, float scale, co
 			line = 0;
 		}
 
-		len = strlen( text );
+        len = static_cast<int>(strlen(text));
 		for ( i = 0; i < len; i++ ) {
 
 			if ( i == 0 || text[i] == '\n' ) {

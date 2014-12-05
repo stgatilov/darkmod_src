@@ -931,7 +931,7 @@ idRenderModelMD5::Memory
 ===================
 */
 int	idRenderModelMD5::Memory() const {
-	int		total, i;
+	size_t		total, i;
 
 	total = sizeof( *this );
 	total += joints.MemoryUsed() + defaultPose.MemoryUsed() + meshes.MemoryUsed();
@@ -951,5 +951,5 @@ int	idRenderModelMD5::Memory() const {
 		total += sizeof( mesh->deformInfo );
 		total += R_DeformInfoMemoryUsed( mesh->deformInfo );
 	}
-	return total;
+    return static_cast<int>(total);
 }
