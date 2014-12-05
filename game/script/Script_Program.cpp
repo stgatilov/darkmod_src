@@ -770,7 +770,7 @@ void idVarDef::PrintInfo( idFile *file, int instructionPointer ) const {
 			switch( etype ) {
 			case ev_string :
 				file->Printf( "\"" );
-				len = strlen( value.stringPtr );
+                len = static_cast<int>(strlen(value.stringPtr));
 				ch = value.stringPtr;
 				for( i = 0; i < len; i++, ch++ ) {
 					if ( idStr::CharIsPrintable( *ch ) ) {
@@ -965,7 +965,7 @@ bool idScriptObject::SetType( const char *typeName ) {
 
 		// allocate the memory
 		size = type->Size();
-		data = ( byte * )Mem_Alloc( size );
+        data = (byte *)Mem_Alloc(static_cast<int>(size));
 	}
 
 	// init object memory
@@ -1734,7 +1734,7 @@ Called after all files are compiled to check for errors
 ==============
 */
 void idProgram::FinishCompilation( void ) {
-	int	i;
+	unsigned int	i;
 
 	top_functions	= functions.Num();
 	top_statements	= statements.Num();
@@ -1758,11 +1758,11 @@ called after all files are compiled to report memory usage.
 ==============
 */
 void idProgram::CompileStats( void ) {
-	int	memused;
-	int	memallocated;
-	int	numdefs;
-	int	stringspace;
-	int funcMem;
+	unsigned long	memused;
+	unsigned long	memallocated;
+	unsigned long	numdefs;
+	unsigned long	stringspace;
+	unsigned long   funcMem;
 	int	i;
 
 	gameLocal.Printf( "---------- Compile stats ----------\n" );
@@ -1773,7 +1773,7 @@ void idProgram::CompileStats( void ) {
 		gameLocal.DPrintf( "   %s\n", fileList[ i ].c_str() );
 		stringspace += fileList[ i ].Allocated();
 	}
-	stringspace += fileList.Size();
+    stringspace += static_cast<unsigned long>(fileList.Size());
 
 	numdefs = varDefs.Num();
 	memused = varDefs.Num() * sizeof( idVarDef );
@@ -1781,29 +1781,29 @@ void idProgram::CompileStats( void ) {
 	memused += stringspace;
 
 	for( i = 0; i < types.Num(); i++ ) {
-		memused += types[ i ]->Allocated();
+		memused += static_cast<unsigned long>(types[ i ]->Allocated());
 	}
 
-	funcMem = functions.MemoryUsed();
+    funcMem = static_cast<unsigned long>(functions.MemoryUsed());
 	for( i = 0; i < functions.Num(); i++ ) {
-		funcMem += functions[ i ].Allocated();
+        funcMem += static_cast<unsigned long>(functions[i].Allocated());
 	}
 
 	memallocated = funcMem + memused + sizeof( idProgram );
 
-	memused += statements.MemoryUsed();
-	memused += functions.MemoryUsed();	// name and filename of functions are shared, so no need to include them
+    memused += static_cast<unsigned long>(statements.MemoryUsed());
+    memused += static_cast<unsigned long>(functions.MemoryUsed());	// name and filename of functions are shared, so no need to include them
 	memused += sizeof( variables );
 
 	gameLocal.Printf( "\nMemory usage:\n" );
-	gameLocal.Printf( "     Strings: %d, %d bytes\n", fileList.Num(), stringspace );
-	gameLocal.Printf( "  Statements: %d, %d bytes\n", statements.Num(), statements.MemoryUsed() );
-	gameLocal.Printf( "   Functions: %d, %d bytes\n", functions.Num(), funcMem );
-	gameLocal.Printf( "   Variables: %d bytes\n", numVariables );
-	gameLocal.Printf( "    Mem used: %d bytes\n", memused );
-	gameLocal.Printf( " Static data: %d bytes\n", sizeof( idProgram ) );
-	gameLocal.Printf( "   Allocated: %d bytes\n", memallocated );
-	gameLocal.Printf( " Thread size: %d bytes\n\n", sizeof( idThread ) );
+	gameLocal.Printf( "     Strings: %d, %lu bytes\n", fileList.Num(), stringspace );
+	gameLocal.Printf( "  Statements: %d, %lu bytes\n", statements.Num(), static_cast<unsigned long>(statements.MemoryUsed()) );
+	gameLocal.Printf( "   Functions: %d, %lu bytes\n", functions.Num(), funcMem );
+	gameLocal.Printf( "   Variables: %lu bytes\n", numVariables );
+	gameLocal.Printf( "    Mem used: %lu bytes\n", memused );
+	gameLocal.Printf( " Static data: %lu bytes\n", static_cast<unsigned long>(sizeof( idProgram )) );
+	gameLocal.Printf( "   Allocated: %lu bytes\n", memallocated );
+    gameLocal.Printf(" Thread size: %lu bytes\n\n", static_cast<unsigned long>(sizeof(idThread)));
 }
 
 /*
@@ -1958,7 +1958,7 @@ void idProgram::RegisterScriptEvents()
 		}
 
 		const char* argFormat = eventDef->GetArgFormat();
-		int numArgs = strlen(argFormat);
+		int numArgs = static_cast<int>(strlen(argFormat));
 		bool argumentsValid = true;
 
 		// Check if any of the argument types is invalid before allocating anything
@@ -2053,7 +2053,7 @@ void idProgram::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( -1 );
 
 	savefile->WriteInt( numVariables );
-	for ( i = variableDefaults.Num(); i < numVariables; i++ ) {
+	for (unsigned int i = variableDefaults.Num(); i < numVariables; i++ ) {
 		savefile->WriteByte( variables[i] );
 	}
 
@@ -2190,7 +2190,7 @@ void idProgram::Restart( void ) {
 	
 	// reset the variables to their default values
 	numVariables = variableDefaults.Num();
-	for( i = 0; i < numVariables; i++ ) {
+	for(unsigned int i = 0; i < numVariables; i++ ) {
 		variables[ i ] = variableDefaults[ i ];
 	}
 }

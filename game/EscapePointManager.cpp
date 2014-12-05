@@ -78,7 +78,7 @@ void CEscapePointManager::Save(idSaveGame *savefile) const
 	}
 
 	// The number of AAS escape point maps
-	savefile->WriteInt(_aasEscapePoints.size());
+    savefile->WriteInt(static_cast<int>(_aasEscapePoints.size()));
 		
 	for (AASEscapePointMap::const_iterator it = _aasEscapePoints.begin();
 		 it != _aasEscapePoints.end();

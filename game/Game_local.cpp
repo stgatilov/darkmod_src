@@ -5592,7 +5592,7 @@ int idGameLocal::GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >
 
 	list.Clear();
 
-	refLength = strlen( ref );
+	refLength = static_cast<int>(strlen( ref ));
 	num = args.GetNumKeyVals();
 	for( i = 0; i < num; i++ ) {
 
@@ -5621,7 +5621,7 @@ int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> 
 	const idKeyValue *arg;
 	idEntity *ent;
 
-	refLength = strlen(ref);
+    refLength = static_cast<int>(strlen(ref));
 	num = args.GetNumKeyVals();
 	for (i = 0 ; i < num ; i++)
 	{

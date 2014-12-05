@@ -29,7 +29,7 @@ namespace ai
 
 void AreaManager::Save(idSaveGame* savefile) const
 {
-	int size = _forbiddenAreas.size();
+	int size = static_cast<int>(_forbiddenAreas.size());
 	savefile->WriteInt(size);
 	for (ForbiddenAreasMap::const_iterator i = _forbiddenAreas.begin(); i != _forbiddenAreas.end(); ++i)
 	{

@@ -220,6 +220,9 @@ private:
 	std::string _lastSection;
 	std::string _lastKey;
 
+    // To avoid a compiler warning, just define an inaccessible assignment operator
+    IniParser& operator=(const IniParser& other);
+
 public:
 	IniParser(IniFile& self) :
 		_self(self)

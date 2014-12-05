@@ -192,9 +192,8 @@ void idSaveGame::WriteSignedChar( const signed char value ) {
 }
 
 void idSaveGame::WriteString( const char *string ) {
-	int len;
-
-	len = strlen( string );
+	
+    int len = static_cast<int>(strlen(string));
 	WriteInt( len );
     Write( string, len );
 }

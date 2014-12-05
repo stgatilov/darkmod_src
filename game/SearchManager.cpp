@@ -1104,7 +1104,7 @@ void CSearchManager::Save(idSaveGame* savefile)
 		search->_hidingSpots.Save(savefile);
 		savefile->WriteBool(search->_hidingSpotsReady);
 
-		int num = search->_hidingSpotIndexes.size();
+        int num = static_cast<int>(search->_hidingSpotIndexes.size());
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{

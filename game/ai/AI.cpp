@@ -1032,14 +1032,14 @@ void idAI::Save( idSaveGame *savefile ) const {
 		m_noisemakersHeard[i].Save(savefile);
 	}
 
-	int size = unlockableDoors.size();
+    int size = static_cast<int>(unlockableDoors.size());
 	savefile->WriteInt(size);
 	for (FrobMoverList::const_iterator i = unlockableDoors.begin(); i != unlockableDoors.end(); ++i)
 	{
 		savefile->WriteObject(*i);
 	}
 
-	savefile->WriteInt(tactileIgnoreEntities.size());
+    savefile->WriteInt(static_cast<int>(tactileIgnoreEntities.size()));
 
 	for (TactileIgnoreList::const_iterator i = tactileIgnoreEntities.begin(); i != tactileIgnoreEntities.end(); ++i)
 	{

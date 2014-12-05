@@ -93,7 +93,7 @@ void idEventDef::Construct()
 		this->formatspec = "";
 	}
 	
-	numargs = strlen( formatspec );
+    numargs = static_cast<int>(strlen(formatspec));
 	assert( numargs <= D_EVENT_MAXARGS );
 	if ( numargs > D_EVENT_MAXARGS ) {
 		eventError = true;
@@ -113,7 +113,7 @@ void idEventDef::Construct()
 
 	for( i = 0; i < numargs; i++ )
 	{
-		argOffset[ i ] = argsize;
+        argOffset[i] = static_cast<int>(argsize);
 
 		switch( formatspec[ i ] )
 		{
@@ -286,7 +286,7 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 
 	size = evdef->GetArgSize();
 	if ( size ) {
-		ev->data = eventDataAllocator.Alloc( size );
+        ev->data = eventDataAllocator.Alloc(static_cast<int>(size));
 		memset( ev->data, 0, size );
 	} else {
 		ev->data = NULL;
@@ -647,7 +647,7 @@ void idEvent::Save( idSaveGame *savefile ) {
 		savefile->WriteString( event->eventdef->GetName() );
 		savefile->WriteString( event->typeinfo->classname );
 		savefile->WriteObject( event->object );
-		savefile->WriteInt( event->eventdef->GetArgSize() );
+        savefile->WriteInt(static_cast<int>(event->eventdef->GetArgSize()));
 		format = event->eventdef->GetArgFormat();
 		for ( i = 0, size = 0; i < event->eventdef->GetNumArgs(); ++i) {
 			dataPtr = &event->data[ event->eventdef->GetArgOffset( i ) ];

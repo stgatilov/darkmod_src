@@ -432,7 +432,7 @@ const lod_data_t* CModelGenerator::GetLODDataPtr( const lod_handle handle ) cons
 */
 void CModelGenerator::Print( void ) const {
 
-	long memory = m_LODList.MemoryUsed();
+    long memory = static_cast<long>(m_LODList.MemoryUsed());
 	long memory_saved = 0;
     long users = 0;
 
