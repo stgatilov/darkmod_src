@@ -1162,7 +1162,7 @@ Mem_CopyString
 char *Mem_CopyString( const char *in ) {
 	char	*out;
 
-	out = (char *)Mem_Alloc( strlen(in) + 1 );
+    out = (char *)Mem_Alloc(static_cast<int>(strlen(in) + 1));
 	strcpy( out, in );
 	return out;
 }

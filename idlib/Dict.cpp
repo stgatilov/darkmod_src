@@ -454,7 +454,7 @@ static void WriteString( const char *s, idFile *f ) {
 		idLib::common->Error( "idDict::WriteToFileHandle: bad string" );
 	}
 
-	f->Write( s, strlen(s) + 1 );
+    f->Write(s, static_cast<int>(strlen(s) + 1));
 }
 
 /*
@@ -536,7 +536,7 @@ const idKeyValue *idDict::MatchPrefix( const char *prefix, const idKeyValue *las
 
 	assert( prefix );
 
-	const int len = strlen( prefix );
+    const int len = static_cast<int>(strlen(prefix));
 	int start = -1;
 
 	if ( lastMatch ) {

@@ -225,7 +225,7 @@ define_t *idParser::CopyDefine( define_t *define ) {
 	define_t *newdefine;
 	idToken *token, *newtoken, *lasttoken;
 
-	newdefine = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(define->name) + 1);
+    newdefine = (define_t *)Mem_Alloc(static_cast<int>(sizeof(define_t) + strlen(define->name) + 1));
 	//copy the define name
 	newdefine->name = (char *) newdefine + sizeof(define_t);
 	strcpy(newdefine->name, define->name);
@@ -287,7 +287,7 @@ define_t *idParser::DefineFromString( const char *string ) {
 	idParser src;
 	define_t *def;
 
-	if ( !src.LoadMemory(string, strlen(string), "*defineString") ) {
+    if (!src.LoadMemory(string, static_cast<int>(strlen(string)), "*defineString")) {
 		return NULL;
 	}
 	// create a define from the source
@@ -628,7 +628,7 @@ void idParser::AddBuiltinDefines( void ) {
 	};
 
 	for (i = 0; builtin[i].string; i++) {
-		define = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(builtin[i].string) + 1);
+        define = (define_t *)Mem_Alloc(static_cast<int>(sizeof(define_t) + strlen(builtin[i].string) + 1));
 		define->name = (char *) define + sizeof(define_t);
 		strcpy(define->name, builtin[i].string);
 		define->flags = DEFINE_FIXED;
@@ -2937,7 +2937,7 @@ void idParser::GetStringFromMarker( idStr& out, bool clean ) {
 	
 	// If cleaning then reparse
 	if ( clean ) {	
-		idParser temp( marker_p, strlen( marker_p ), "temp", flags );
+        idParser temp(marker_p, static_cast<int>(strlen(marker_p)), "temp", flags);
 		idToken token;
 		while ( temp.ReadToken ( &token ) ) {
 			out += token;
