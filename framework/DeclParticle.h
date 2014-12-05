@@ -140,6 +140,7 @@ public:
 	idParticleParm			speed;
 	float					gravity;				// can be negative to float up
 	bool					worldGravity;			// apply gravity in world space
+	bool					worldAxis;				// apply offset in world space -- SteveL #3950
 	bool					randomDistribution;		// randomly orient the quad on emission ( defaults to true ) 
 	bool					entityColor;			// force color from render entity ( fadeColor is still valid )
 	

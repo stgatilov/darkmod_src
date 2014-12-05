@@ -399,6 +399,10 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 			stage->gravity = src.ParseFloat();
 			continue;
 		}
+		if ( !token.Icmp( "WorldAxis" ) ) {		// #3950
+			stage->worldAxis = true;
+			continue;
+		}
 		if ( !token.Icmp( "softeningRadius" ) ) {
 			stage->softeningRadius = src.ParseFloat();
 			continue;
@@ -705,6 +709,7 @@ idParticleStage::idParticleStage( void ) {
 	// idParticleParm		speed;
 	gravity = 0.0f;
 	worldGravity = false;
+	worldAxis = false;
 	customPathType = PPATH_STANDARD;
 	customPathParms[0] = customPathParms[1] = customPathParms[2] = customPathParms[3] = 0.0f;
 	customPathParms[4] = customPathParms[5] = customPathParms[6] = customPathParms[7] = 0.0f;
@@ -764,6 +769,7 @@ void idParticleStage::Default() {
 	speed.table = NULL;
 	gravity = 1.0f;
 	worldGravity = false;
+	worldAxis = false;
 	customPathType = PPATH_STANDARD;
 	customPathParms[0] = 0.0f;
 	customPathParms[1] = 0.0f;
@@ -1010,7 +1016,8 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 	origin += g->origin;
 
 	// add gravity after adjusting for axis
-	if ( worldGravity ) {
+	if ( worldGravity )
+	{
 		idVec3 gra( 0, 0, -gravity );
 		gra *= g->renderEnt->axis.Transpose();
 		origin += gra * g->age * g->age;

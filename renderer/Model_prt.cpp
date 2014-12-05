@@ -123,6 +123,15 @@ idRenderModel *idRenderModelPrt::InstantiateDynamicModel( const struct renderEnt
 
 		const int	count = stage->totalParticles * stage->NumQuadsPerParticle();
 
+		if ( stage->worldAxis ) // SteveL #3950 -- allow particles to use world axis for their offset and travel direction
+		{
+			g.axis = g.renderEnt->axis.Transpose();
+		}
+		else
+		{
+			g.axis.Identity();	// Use emitter's axis
+		}
+
 		int surfaceNum = 0;
 		modelSurface_t *surf;
 
