@@ -5158,23 +5158,29 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	float turnAmount;
 	animFlags_t animflags;
 
-	if ( !turnRate ) {
+	if (!turnRate) {
 		return;
 	}
 
 	// check if the animator has marked this anim as non-turning
-	if ( !legsAnim.Disabled() && !legsAnim.AnimDone( 0 ) ) {
+	if (!legsAnim.Disabled() && !legsAnim.AnimDone(0)) {
 		animflags = legsAnim.GetAnimFlags();
-	} else {
+	}
+	else {
 		animflags = torsoAnim.GetAnimFlags();
 	}
-	if ( animflags.ai_no_turn ) {
+	if (animflags.ai_no_turn) {
 		return;
 	}
+
 	// Delay turning for custom idle anims --SteveL #3806
-	if ( WaitState() && ( idStr( WaitState() ) == "idle" || idStr( WaitState() ) == "idle_no_voice" ) )
+	// grayman - but not when moving, because we can't miss our turns
+	if (!AI_FORWARD)
 	{
-		return;
+		if ( WaitState() && ( idStr( WaitState() ) == "idle" || idStr( WaitState() ) == "idle_no_voice" ) )
+		{
+			return;
+		}
 	}
 
 	idVec3 startPos = viewAxis * pivotOffset;
