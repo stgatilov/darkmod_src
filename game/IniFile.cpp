@@ -28,9 +28,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <fstream>
 #include <sstream>
 
-#include <boost/program_options/detail/convert.hpp>
-#include <boost/program_options/detail/config_file.hpp>
-
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/spirit/include/classic.hpp>
