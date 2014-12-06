@@ -230,10 +230,7 @@ public:
 
 	bool GetStartedOff();
 
-// sikk---> Soft Shadows PostProcess
-	renderLight_t*	GetRenderLight( void ) { return &renderLight; };
-	void			UpdateShadowState( void );
-// <---sikk
+	renderLight_t*	GetRenderLight( void ) { return &renderLight; }
 
 private:
 	renderLight_t	renderLight;				// light presented to the renderer

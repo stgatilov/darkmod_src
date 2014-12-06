@@ -1393,7 +1393,6 @@ protected:
 
 protected:
 	renderEntity_t			renderEntity;				//!< used to present a model to the renderer
-	renderLight_t			renderLight;
 	int						modelDefHandle;				//!< handle to static renderer model
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero

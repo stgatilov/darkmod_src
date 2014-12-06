@@ -422,8 +422,6 @@ void idGameLocal::Clear( void )
 
 	m_ambientLights.Clear();	// grayman #3584
 
-	currentLights.Clear();	// sikk - Soft Shadows PostProcess
-
 }
 
 // grayman #3807
@@ -1584,8 +1582,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	playerPVS.i = -1;
 	playerConnectedAreas.i = -1;
-
-	currentLights.Clear();	// sikk - Soft Shadows PostProcess
 
 	// load navigation system for all the different monster sizes
 	for( i = 0; i < aasNames.Num(); i++ ) {

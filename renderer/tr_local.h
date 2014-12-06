@@ -663,8 +663,6 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-
-	bool				drawShadows;		// Obsttorte 
 } backEndState_t;
 
 
@@ -735,9 +733,6 @@ public:
 	virtual void			UnCrop();
 	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
-
-	virtual void			setDrawShadows(bool ds);
-	virtual bool			getDrawShadows();
 
 public:
 	// internal functions
@@ -813,7 +808,6 @@ public:
 	class idGuiModel *		demoGuiModel;
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
-	bool					drawShadows;		// Obsttorte
 };
 
 extern backEndState_t		backEnd;
@@ -1323,7 +1317,7 @@ void	R_NV20_Init( void );
 void	RB_NV20_DrawInteractions( void );
 
 void	R_ARB2_Init( void );
-void	RB_ARB2_DrawInteractions( bool noshadows );
+void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 

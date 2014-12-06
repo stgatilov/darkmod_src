@@ -1740,11 +1740,6 @@ void idStaticEntity::Spawn( void ) {
 
 		// we want the parametric particles out of sync with each other
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = gameLocal.random.RandomInt( 32767 );
-
-// sikk---> Depth Render
-		renderEntity.suppressSurfaceInViewID = -8;
-		renderEntity.noShadow = 1;
-// <---sikk
 	}
 
 	fadeFrom.Set( 1, 1, 1, 1 );

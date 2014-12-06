@@ -134,7 +134,7 @@ public:
 	idStr				GetAutoSaveName( const char *mapName ) const;
 
 	bool				LoadGame(const char *saveName);
-	bool				SaveGame(const char *saveName, bool autosave = false, bool skipCheck = false);
+	bool				SaveGame(const char *saveName, bool autosave = false);
 
 	//=====================================
 
@@ -152,9 +152,6 @@ public:
 	static idCVar		com_guid;
 
 	static idCVar		gui_configServerRate;
-
-	//Obsttorte: cvar for disabling manual saves
-	static idCVar		saveGameName;
 
 	int					timeHitch;
 

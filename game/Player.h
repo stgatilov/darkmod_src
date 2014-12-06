@@ -973,16 +973,6 @@ public:
 	**/
 	idLocationEntity *GetLocation( void );
 
-// sikk---> Depth Render
-	void					ToggleSuppression( bool bSuppress );
-	bool					bViewModelsModified;
-// <---sikk
-	// sikk---> Depth of Field PostProcess
-	//int						GetTalkCursor( void ) { return talkCursor; };	// used to check if character has focus
-	bool					bIsZoomed;
-	float					focusDistance;
-// <---sikk
-
 protected:
 	/**
 	* greebo: This creates all the default inventory items and adds the weapons.

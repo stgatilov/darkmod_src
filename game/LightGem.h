@@ -99,7 +99,6 @@ public:
 
 private:
 	void AnalyzeRenderImage	( );
-	void ToggleShadows(bool noShadows);
 };
 
 #endif // __LIGHTGEM_H__

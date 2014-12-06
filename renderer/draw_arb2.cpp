@@ -240,7 +240,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 RB_ARB2_DrawInteractions
 ==================
 */
-void RB_ARB2_DrawInteractions( bool noshadows ) {
+void RB_ARB2_DrawInteractions( void ) {
 	viewLight_t		*vLight;
 	const idMaterial	*lightShader;
 
@@ -286,31 +286,15 @@ void RB_ARB2_DrawInteractions( bool noshadows ) {
 		}
 		
 		if ( r_useShadowVertexProgram.GetBool() ) {
-			
-			//common->Warning("%s", renderSystem->getDrawShadows() ? "true" : "false");
-			if (noshadows)
-			{
-				qglEnable( GL_VERTEX_PROGRAM_ARB );
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
-				RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
-				qglEnable( GL_VERTEX_PROGRAM_ARB );
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
-				RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
-				qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
-				
-			}
-			else
-			{
-				qglEnable( GL_VERTEX_PROGRAM_ARB );
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
-				RB_StencilShadowPass( vLight->globalShadows );
-				RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
-				qglEnable( GL_VERTEX_PROGRAM_ARB );
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
-				RB_StencilShadowPass( vLight->localShadows );
-				RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
-				qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
-			}
+			qglEnable( GL_VERTEX_PROGRAM_ARB );
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
+			RB_StencilShadowPass( vLight->globalShadows );
+			RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
+			qglEnable( GL_VERTEX_PROGRAM_ARB );
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
+			RB_StencilShadowPass( vLight->localShadows );
+			RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
+			qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
 		} else {
 			RB_StencilShadowPass( vLight->globalShadows );
 			RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
