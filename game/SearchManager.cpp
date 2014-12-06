@@ -660,7 +660,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		float yRad = searchSize.y/2.0f;
 
 		// outerRadius defines the search perimeter, where observers will stand
-		outerRadius = max(SEARCH_MIN_OBS_DISTANCE,idMath::Sqrt(xRad*xRad + yRad*yRad));
+		outerRadius = Max(SEARCH_MIN_OBS_DISTANCE,idMath::Sqrt(xRad*xRad + yRad*yRad));
 		innerRadius = 0; // no active searching
 		if (!ai->IsAfraid()) // armed AI becomes a guard
 		{
