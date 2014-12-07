@@ -309,16 +309,14 @@ if (TARGET_ARCH == 'x86'):
 		File('#/linux/libcurl/libcurl.a'),
 		File('#/linux/polarssl/libpolarssl.a'),
 		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a'),
-		File('#/linux/boost/lib/libboost_thread.a')
+		File('#/linux/boost/lib/libboost_system.a')
 	])
 if (TARGET_ARCH == 'x64'):
 	local_env.Append(LIBS = [
 		File('#/linux/libcurl/lib64/libcurl.a'),
 		File('#/linux/polarssl/lib64/libpolarssl.a'),
 		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a'),
-		File('#/linux/boost/lib64/libboost_thread.a')
+		File('#/linux/boost/lib64/libboost_system.a')
 	])
 
 #if NO_GCH == '0':

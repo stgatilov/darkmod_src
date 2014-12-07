@@ -302,6 +302,8 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 BASECPPFLAGS.append( '-fmessage-length=0' )
 # gcc 4.0
 BASECPPFLAGS.append( '-fpermissive' )
+# C++11 features
+BASECPPFLAGS.append( '-std=c++11' )
 
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
