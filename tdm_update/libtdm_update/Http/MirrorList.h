@@ -24,7 +24,7 @@
 
 #include <map>
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/lexical_cast.hpp>
+#include <string>
 #include <boost/algorithm/string/erase.hpp> // grayman #3208
 
 namespace tdm
@@ -94,10 +94,10 @@ public:
 			push_back(Mirror(
 				sectionName.substr(7), // displayname
 				iniFile.GetValue(sectionName, "url"),
-				boost::lexical_cast<float>(iniFile.GetValue(sectionName, "weight"))
+                std::stof(iniFile.GetValue(sectionName, "weight"))
 			));
 		}
-		catch (boost::bad_lexical_cast&)
+		catch (std::invalid_argument&)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Invalid weight on mirror " + sectionName);
 		}

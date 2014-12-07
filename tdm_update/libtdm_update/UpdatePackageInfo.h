@@ -63,7 +63,7 @@ public:
 
 			package.filename = iniFile.GetValue(sectionName, "package");
 			package.crc = CRC::ParseFromString(iniFile.GetValue(sectionName, "crc"));
-			package.filesize = boost::lexical_cast<std::size_t>(iniFile.GetValue(sectionName, "filesize"));
+            package.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(sectionName, "filesize")));
 			package.fromVersion = fromVersion;
 			package.toVersion = toVersion;
 

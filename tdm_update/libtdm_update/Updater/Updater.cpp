@@ -134,7 +134,7 @@ void Updater::UpdateMirrors()
 			continue;
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, "Done, got " + boost::lexical_cast<std::string>(tempMirrors.size()) + " mirrors.");
+		TraceLog::WriteLine(LOG_VERBOSE, "Done, got " + std::to_string(tempMirrors.size()) + " mirrors.");
 
 		// Move the file over the actual one, we know it's good
 		File::Remove(actualMirrorPath);
@@ -156,7 +156,7 @@ void Updater::LoadMirrors()
 	// Interpret the info and build the mirror list
 	_mirrors = MirrorList(*mirrorsIni);
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Found " + boost::lexical_cast<std::string>(_mirrors.size()) + " mirrors.");
+	TraceLog::WriteLine(LOG_VERBOSE, "Found " + std::to_string(_mirrors.size()) + " mirrors.");
 }
 
 std::size_t Updater::GetNumMirrors()

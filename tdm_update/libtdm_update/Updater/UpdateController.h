@@ -25,7 +25,6 @@
 #include "UpdaterOptions.h"
 #include "../ExceptionSafeThread.h"
 #include "../TraceLog.h"
-#include <boost/lexical_cast.hpp>
 #include "ProgressHandler.h"
 
 namespace tdm

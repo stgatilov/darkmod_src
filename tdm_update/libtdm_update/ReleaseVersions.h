@@ -55,7 +55,7 @@ public:
 			ReleaseFile file(filename);
 
 			file.crc = CRC::ParseFromString(iniFile.GetValue(sectionName, "crc"));
-			file.filesize = boost::lexical_cast<std::size_t>(iniFile.GetValue(sectionName, "filesize"));
+            file.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(sectionName, "filesize")));
 			file.localChangesAllowed = iniFile.GetValue(sectionName, "allow_local_modifications") == "1";
 
 			TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Found version %s file: %s with checksum %x") %

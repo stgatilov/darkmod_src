@@ -91,7 +91,7 @@ std::string MirrorDownload::GetCurrentMirrorName()
 
 void MirrorDownload::InitRandomizer()
 {
-    _rand.seed(std::chrono::system_clock::now().time_since_epoch().count());
+    _rand.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 }
 
 } // namespace

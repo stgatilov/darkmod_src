@@ -359,7 +359,7 @@ void Packager::CreateVersionInformation()
 		if (File::IsPK4(f->second.file))
 		{
 			versionInfo->SetValue(section, "crc", CRC::ToString(f->second.crc));
-			versionInfo->SetValue(section, "filesize", boost::lexical_cast<std::string>(f->second.filesize));
+			versionInfo->SetValue(section, "filesize", std::to_string(f->second.filesize));
 		}
 		// Traverse ZIP file members (the actual ZIP files will be ignored when checking the local version)
 		else if (File::IsZip(f->second.file))
@@ -369,7 +369,7 @@ void Packager::CreateVersionInformation()
 				std::string memberSection = (boost::format("Version%s File %s") % _options.Get("baseversion") % m->file.string()).str();
 
 				versionInfo->SetValue(memberSection, "crc", CRC::ToString(m->crc));
-				versionInfo->SetValue(memberSection, "filesize", boost::lexical_cast<std::string>(m->filesize));
+				versionInfo->SetValue(memberSection, "filesize", std::to_string(m->filesize));
 
 				if (noCrcFiles.find(boost::algorithm::to_lower_copy(m->file.string())) != noCrcFiles.end())
 				{
@@ -444,7 +444,7 @@ void Packager::RegisterUpdatePackage(const fs::path& packagePath)
 
 	// Store the information
 	targetFile->SetValue(section, "package", path.leaf().string());
-	targetFile->SetValue(section, "filesize", boost::lexical_cast<std::string>(fs::file_size(path)));
+	targetFile->SetValue(section, "filesize", std::to_string(fs::file_size(path)));
 	targetFile->SetValue(section, "crc", CRC::ToString(CRC::GetCrcForFile(path)));
 
 	TraceLog::WriteLine(LOG_STANDARD, "Saving INI file: " + targetPath.string());
@@ -861,7 +861,7 @@ void Packager::CreateCrcInfoFile()
 		std::string section = (boost::format("File %s") % i->second.file.string()).str();
 
 		iniFile->SetValue(section, "crc", CRC::ToString(i->second.crc));
-		iniFile->SetValue(section, "size", boost::lexical_cast<std::string>(i->second.filesize));
+		iniFile->SetValue(section, "size", std::to_string(i->second.filesize));
 
 		// Add ZIP file members, if applicable
 		// [Member tdm_shared_stuff.zip:AUTHORS.txt]
@@ -872,7 +872,7 @@ void Packager::CreateCrcInfoFile()
 				section = (boost::format("Member %s:%s") % i->second.file.string() % m->file.string()).str();
 
 				iniFile->SetValue(section, "crc", CRC::ToString(m->crc));
-				iniFile->SetValue(section, "size", boost::lexical_cast<std::string>(m->filesize));
+				iniFile->SetValue(section, "size", std::to_string(m->filesize));
 			}
 		}
 	}

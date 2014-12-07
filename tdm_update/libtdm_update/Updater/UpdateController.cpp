@@ -166,7 +166,7 @@ void UpdateController::StartStepThread(UpdateStep step)
 
 void UpdateController::PerformStep(UpdateStep step)
 {
-	TraceLog::WriteLine(LOG_VERBOSE, "Step thread started: " + boost::lexical_cast<std::string>(step));
+	TraceLog::WriteLine(LOG_VERBOSE, "Step thread started: " + std::to_string(step));
 
 	_view.OnStartStep(step);
 
@@ -273,7 +273,7 @@ void UpdateController::OnFinishStep(UpdateStep step)
 {
 	assert(_workerThread != NULL); // Need an alive thread object
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Step thread finished: " + boost::lexical_cast<std::string>(step));
+	TraceLog::WriteLine(LOG_VERBOSE, "Step thread finished: " + std::to_string(step));
 
 	if (_workerThread->failed())
 	{
