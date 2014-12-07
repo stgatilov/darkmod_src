@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include <boost/regex.hpp>
+#include <regex>
 #include "ReleaseFileset.h"
 #include "IniFile.h"
 
@@ -40,12 +40,12 @@ public:
 	void VisitSection(const IniFile& iniFile, const std::string& sectionName)
 	{
 		// Get the info from the section header
-		boost::regex expr("^Version([\\.0-9]+) File (.*)$",
-						  boost::regex::perl|boost::regex::icase);
+		std::regex expr("^Version([\\.0-9]+) File (.*)$",
+						  std::regex::ECMAScript|std::regex::icase);
 
-		boost::smatch matches;
+		std::smatch matches;
 		
-		if (boost::regex_match(sectionName, matches, expr))
+		if (std::regex_match(sectionName, matches, expr))
 		{
 			std::string version = matches[1].str();
 			std::string filename = matches[2].str();

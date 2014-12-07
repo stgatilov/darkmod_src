@@ -24,7 +24,7 @@
 
 #include "TraceLog.h"
 
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/algorithm/string/trim.hpp>
 
 namespace tdm
@@ -46,7 +46,7 @@ struct PackageInstruction
 	std::string value;
 
 	// The pre-compiled regex
-	boost::regex regex;
+	std::regex regex;
 
 	// Default constructor
 	PackageInstruction() :
@@ -56,7 +56,7 @@ struct PackageInstruction
 	PackageInstruction(Type type_, const std::string& value_) :
 		type(type_),
 		value(value_),
-		regex(value, boost::regex::perl)
+		regex(value, std::regex::ECMAScript)
 	{}
 };
 
@@ -85,7 +85,7 @@ public:
 			if (i->type != PackageInstruction::Exclude) continue;
 
 			// Found an exclusion instruction, check the regexp
-			if (boost::regex_search(relativePath, i->regex))
+			if (std::regex_search(relativePath, i->regex))
 			{
 				TraceLog::WriteLine(LOG_VERBOSE, 
 					(boost::format("[PackageInstructions]: Relative path %s excluded by regex %s") % relativePath % i->value).str());

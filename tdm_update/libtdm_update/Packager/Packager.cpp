@@ -657,7 +657,7 @@ void Packager::SortFilesIntoPk4s()
 			// Does this filename match any of the patterns of this PK4 file?
 			for (Patterns::const_iterator p = m->second.begin(); p != m->second.end(); ++p)
 			{
-				if (boost::regex_search(i->destFile.string(), *p))
+				if (std::regex_search(i->destFile.string(), *p))
 				{
 					// Match
 					ManifestFiles& files = _package.insert(Package::value_type(m->first, ManifestFiles())).first->second;
