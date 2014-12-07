@@ -3226,7 +3226,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	char			dllName[MAX_OSPATH];
 	idStr			dllPath;
 	int				dllHash;
-	pack_t			*inPak;
+	pack_t			*inPak = NULL;
 	pack_t			*pak;
     time_t          timePak = 0, timeDll = 0;
 
