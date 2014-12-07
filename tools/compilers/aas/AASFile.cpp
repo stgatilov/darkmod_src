@@ -1122,7 +1122,7 @@ bool idAASFileLocal::Load( const idStr &fileName, const unsigned int mapFileCRC 
 
 	c = token.GetUnsignedLongValue();
 	if ( mapFileCRC && c != mapFileCRC ) {
-		common->Warning( "AAS file '%s' is out of date (mapFileCRC %lu vs. token CRC %lu)", name.c_str(), mapFileCRC, c );
+		common->Warning( "AAS file '%s' is out of date (mapFileCRC %u vs. token CRC %u)", name.c_str(), mapFileCRC, c );
 		return false;
 	}
 

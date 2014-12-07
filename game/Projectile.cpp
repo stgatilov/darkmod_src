@@ -46,7 +46,7 @@ const idEventDef EV_Explode( "<explode>", EventArgs(), EV_RETURNS_VOID, "interna
 const idEventDef EV_Fizzle( "<fizzle>", EventArgs(), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_RadiusDamage( "<radiusdmg>", EventArgs('e', "", ""), EV_RETURNS_VOID, "internal" );
 const idEventDef EV_GetProjectileState( "getProjectileState", EventArgs(), 'd', 
-	"Gets the current state of the projectile. States are defined in doom_defs.script" );
+	"Gets the current state of the projectile. States are defined in tdm_defs.script" );
 // greebo: The launch method (takes 3 vectors as arguments)
 const idEventDef EV_Launch("launch", 
 	EventArgs('v', "start", "", 'v', "dir", "", 'v', "velocity", ""), EV_RETURNS_VOID, 

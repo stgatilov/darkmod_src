@@ -144,7 +144,7 @@ enum EImpulseState {
 
 //
 // Signals
-// make sure to change script/doom_defs.script if you add any, or change their order
+// make sure to change script/tdm_defs.script if you add any, or change their order
 //
 typedef enum {
 	SIG_TOUCH,				// object was touched
