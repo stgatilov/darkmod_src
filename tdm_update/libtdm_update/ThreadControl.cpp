@@ -21,14 +21,14 @@ $Author$ (Author of last commit)
 namespace tdm
 {
 
-ThreadControl::ThreadIdHashSet ThreadControl::_interruptedThreadIds;
+ThreadControl::ThreadIdSet ThreadControl::_interruptedThreadIds;
 std::mutex ThreadControl::_interruptionSetMutex;
 
 bool ThreadControl::ThreadHasBeenInterrupted(const std::thread::id& id)
 {
     std::lock_guard<std::mutex> lockGuard(_interruptionSetMutex);
 
-    return _interruptedThreadIds.find(id.hash()) != _interruptedThreadIds.end();
+    return _interruptedThreadIds.find(id) != _interruptedThreadIds.end();
 }
 
 void ThreadControl::InterruptThread(const std::thread::id& id)
@@ -36,14 +36,14 @@ void ThreadControl::InterruptThread(const std::thread::id& id)
     std::lock_guard<std::mutex> lockGuard(_interruptionSetMutex);
 
     // Attempt to insert irrespective of whether it's already in the set
-    _interruptedThreadIds.insert(id.hash());
+    _interruptedThreadIds.insert(id);
 }
 
 void ThreadControl::InterruptionPoint()
 {
     std::lock_guard<std::mutex> lockGuard(_interruptionSetMutex);
 
-    if (_interruptedThreadIds.find(std::this_thread::get_id().hash()) != _interruptedThreadIds.end())
+    if (_interruptedThreadIds.find(std::this_thread::get_id()) != _interruptedThreadIds.end())
     {
         throw ThreadInterruptedException();
     }

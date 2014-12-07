@@ -35,8 +35,8 @@ class ThreadControl
 {
 private:
     // The set of thread ID hashes which have been interrupted
-    typedef std::set<std::size_t> ThreadIdHashSet;
-    static ThreadIdHashSet _interruptedThreadIds;
+    typedef std::set<std::thread::id> ThreadIdSet;
+    static ThreadIdSet _interruptedThreadIds;
 
     // The mutex which needs to be locked before the set can be accessed
     static std::mutex _interruptionSetMutex;
