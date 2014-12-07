@@ -26,6 +26,7 @@
 #include "../Constants.h"
 #include "../File.h"
 #include "../Util.h"
+#include "../ThreadControl.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -891,7 +892,7 @@ void Updater::PerformSingleMirroredDownload(const DownloadPtr& download)
 
 	while (_downloadManager->HasPendingDownloads())
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		_downloadManager->ProcessDownloads();
 
@@ -899,7 +900,7 @@ void Updater::PerformSingleMirroredDownload(const DownloadPtr& download)
 
 		for (int i = 0; i < 50; ++i)
 		{
-			boost::this_thread::interruption_point();
+			ThreadControl::InterruptionPoint();
 			Util::Wait(10);
 		}
 	}
@@ -1022,7 +1023,7 @@ void Updater::CheckLocalFiles()
 
 bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& releaseFile)
 {
-	boost::this_thread::interruption_point();
+	ThreadControl::InterruptionPoint();
 
 	fs::path localFile = installPath / releaseFile.file;
 
@@ -1079,7 +1080,7 @@ void Updater::PrepareUpdateStep()
 	// Create a download for each of the files
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		// Create a mirrored download
 		DownloadPtr download(new MirrorDownload(_conn, _mirrors, i->second.file.string(), targetPath / i->second.file));
@@ -1105,7 +1106,7 @@ void Updater::PerformUpdateStep()
 	while (_downloadManager->HasPendingDownloads())
 	{
 		// For catching terminations
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		_downloadManager->ProcessDownloads();
 
@@ -1134,7 +1135,7 @@ void Updater::PerformUpdateStep()
 	// Check if any ZIP files have been downloaded, these need to be extracted
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		DownloadPtr download = _downloadManager->GetDownload(i->second.downloadId);
 
@@ -1161,7 +1162,7 @@ void Updater::NotifyFullUpdateProgress()
 
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		if (i->second.downloadId == -1)
 		{

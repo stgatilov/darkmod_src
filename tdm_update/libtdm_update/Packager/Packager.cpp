@@ -23,8 +23,6 @@
 #include "../Util.h"
 #include "../ExceptionSafeThread.h"
 
-#include <boost/thread.hpp>
-
 namespace tdm
 {
 
@@ -776,7 +774,7 @@ void Packager::CreatePackage()
 {
 	// Create worker threads to compress stuff into the target PK4s
 
-	unsigned numHardwareThreads = boost::thread::hardware_concurrency();
+	unsigned int numHardwareThreads = std::thread::hardware_concurrency();
 
 	if (numHardwareThreads == 0 || _options.IsSet("use-singlethread-compression")) 
 	{

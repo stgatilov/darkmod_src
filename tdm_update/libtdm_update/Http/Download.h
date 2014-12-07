@@ -22,8 +22,8 @@
 #include "HttpConnection.h"
 #include "HttpRequest.h"
 #include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
+#include <thread>
 
 namespace fs = boost::filesystem;
 
@@ -81,7 +81,7 @@ protected:
 	// The corresponding HTTP request
 	HttpRequestPtr _request;
 
-	typedef boost::shared_ptr<boost::thread> ThreadPtr;
+	typedef boost::shared_ptr<std::thread> ThreadPtr;
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;

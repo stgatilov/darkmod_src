@@ -21,7 +21,7 @@
 
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
+#include <mutex>
 
 namespace tdm
 {
@@ -46,7 +46,7 @@ private:
 	std::size_t _bytesDownloaded;
 
 	// The mutex for managing access to the counter above
-	boost::mutex _bytesDownloadedMutex;
+	std::mutex _bytesDownloadedMutex;
 
 public:
 	HttpConnection();
