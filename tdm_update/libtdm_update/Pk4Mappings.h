@@ -24,7 +24,7 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/spirit/include/classic.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/regex.hpp>
 
 namespace bs = boost::spirit::classic;

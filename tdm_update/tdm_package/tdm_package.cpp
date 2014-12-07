@@ -28,7 +28,7 @@
 #include "Packager/PackagerOptions.h"
 #include "Util.h"
 
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/format.hpp>
 #include <svn_version.h>
 

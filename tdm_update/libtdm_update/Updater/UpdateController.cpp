@@ -160,8 +160,8 @@ void UpdateController::StartStepThread(UpdateStep step)
 
 	// Construct a new thread and start working
 	_workerThread.reset(new ExceptionSafeThread(
-		boost::bind(&UpdateController::PerformStep, this, step),
-		boost::bind(&UpdateController::OnFinishStep, this, step)));
+		std::bind(&UpdateController::PerformStep, this, step),
+		std::bind(&UpdateController::OnFinishStep, this, step)));
 }
 
 void UpdateController::PerformStep(UpdateStep step)

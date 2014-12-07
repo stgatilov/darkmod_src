@@ -26,7 +26,7 @@
 #include "../Util.h"
 #include "../Constants.h"
 
-#include <boost/bind.hpp>
+#include <functional>
 
 namespace fs = boost::filesystem;
 
@@ -100,7 +100,7 @@ void Download::Start()
 	TraceLog::WriteLine(LOG_VERBOSE, "Downloading to temporary file " + _tempFilename.string());
 
 	_status = IN_PROGRESS;
-	_thread = ThreadPtr(new std::thread(boost::bind(&Download::Perform, this)));
+	_thread = ThreadPtr(new std::thread(std::bind(&Download::Perform, this)));
 }
 
 void Download::Stop()

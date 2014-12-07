@@ -28,7 +28,6 @@
 #include "LogWriters.h"
 #include "Util.h"
 
-#include <boost/bind.hpp>
 #include <boost/format.hpp>
 
 #include "ConsoleUpdater.h"

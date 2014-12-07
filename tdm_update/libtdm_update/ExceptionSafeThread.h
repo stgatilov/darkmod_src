@@ -20,7 +20,6 @@
 #pragma once
 
 #include <thread>
-#include <boost/bind.hpp>
 #include <functional>
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -67,7 +66,7 @@ private:
 public:
     ExceptionSafeThread(const std::function<void()>& function) :
 		_function(function),
-		_thread(new std::thread(boost::bind(&ExceptionSafeThread::ThreadStart, this))),
+		_thread(new std::thread(std::bind(&ExceptionSafeThread::ThreadStart, this))),
 		_interrupted(false),
 		_done(false)
 	{}
@@ -75,7 +74,7 @@ public:
 	// Construct this thread with a callback which will be invoked when the thread is done (failure or not)
     ExceptionSafeThread(const std::function<void()>& function, const std::function<void()>& callbackOnFinish) :
 		_function(function),
-		_thread(new std::thread(boost::bind(&ExceptionSafeThread::ThreadStart, this))),
+        _thread(new std::thread(std::bind(&ExceptionSafeThread::ThreadStart, this))),
 		_interrupted(false),
 		_done(false),
 		_onFinish(callbackOnFinish)
