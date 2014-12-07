@@ -337,9 +337,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">
@@ -354,9 +354,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
@@ -370,9 +370,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
@@ -387,9 +387,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -404,9 +404,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -422,11 +422,11 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
@@ -440,9 +440,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|x64'">
@@ -457,9 +457,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
@@ -473,9 +473,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|x64'">
@@ -490,9 +490,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
@@ -506,9 +506,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|x64'">
@@ -523,9 +523,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -539,9 +539,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -556,9 +556,9 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)OpenAL32.dll
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir)OpenAL32.dll /Y</Command>
-      <Message>Copies the soft_oal.dll for Windows to the output folder, renamed as OpenAL32.dll (yes, this is working)</Message>
+      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
+@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
