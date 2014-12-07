@@ -11,16 +11,16 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 6105 $ (Revision of last commit) 
- $Date: 2014-09-16 10:01:26 -0400 (Tue, 16 Sep 2014) $ (Date of last commit)
- $Author: grayman $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id: GuardSpotTask.cpp 6105 2014-09-16 14:01:26Z grayman $");
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "GuardSpotTask.h"
 #include "WaitTask.h"
