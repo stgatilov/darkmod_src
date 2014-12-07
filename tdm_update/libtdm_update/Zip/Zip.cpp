@@ -433,9 +433,9 @@ ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string
 	return output;
 }
 
-boost::uint32_t ZipFileRead::GetCumulativeCrc()
+uint32_t ZipFileRead::GetCumulativeCrc()
 {
-	boost::uint32_t overallCRC = 0;
+	uint32_t overallCRC = 0;
 
 	int result = unzGoToFirstFile(_handle);
 

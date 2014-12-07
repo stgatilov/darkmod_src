@@ -23,9 +23,8 @@
 #include <list>
 #include <vector>
 #include <time.h>
+#include <cstdint>
 #include <memory>
-#include <boost/shared_array.hpp>
-#include <boost/cstdint.hpp>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
@@ -68,7 +67,7 @@ public:
 	struct MemberInfo
 	{
 		std::string filename;
-		boost::uint32_t crc;
+		uint32_t crc;
 		std::size_t uncompressedSize;
 		std::size_t compressedSize;
 	};
@@ -147,7 +146,7 @@ public:
 	 * @returns: the cumulative CRC.
 	 * @throws: std::runtime_error on any failures.
 	 */
-	boost::uint32_t GetCumulativeCrc();
+	uint32_t GetCumulativeCrc();
 };
 typedef std::shared_ptr<ZipFileRead> ZipFileReadPtr;
 

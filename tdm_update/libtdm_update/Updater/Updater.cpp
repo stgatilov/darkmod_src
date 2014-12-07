@@ -244,6 +244,8 @@ void Updater::DetermineLocalVersion()
 
 		for (ReleaseFileSet::const_iterator f = set.begin(); f != set.end(); ++f)
 		{
+            ThreadControl::InterruptionPoint();
+
 			NotifyFileProgress(f->second.file, CurFileInfo::Check, static_cast<double>(curItem) / totalItems);
 
 			curItem++;
@@ -280,7 +282,7 @@ void Updater::DetermineLocalVersion()
 			}
 
 			// Calculate the CRC of this file
-			boost::uint32_t crc = CRC::GetCrcForFile(candidate);
+			uint32_t crc = CRC::GetCrcForFile(candidate);
 
 			if (crc != f->second.crc)
 			{
@@ -534,7 +536,7 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 	}
 
 	// Calculate the CRC of this file
-	boost::uint32_t crc = CRC::GetCrcForFile(package);
+	uint32_t crc = CRC::GetCrcForFile(package);
 
 	if (crc != info.crc)
 	{
@@ -668,7 +670,7 @@ void Updater::PerformDifferentialUpdateStep()
 		// Double-check the PK4 checksum before doing the merge
 		try
 		{
-			boost::uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
+			uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
 
 			if (crc == diff.checksumBefore)
 			{
@@ -739,7 +741,7 @@ void Updater::PerformDifferentialUpdateStep()
 		targetPk4.reset();
 
 		// Calculate CRC after patching
-		boost::uint32_t crcAfter = CRC::GetCrcForFile(targetPk4Path);
+		uint32_t crcAfter = CRC::GetCrcForFile(targetPk4Path);
 
 		if (crcAfter != diff.checksumAfter)
 		{
@@ -873,7 +875,7 @@ void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
 	PerformSingleMirroredDownload(download);
 }
 
-void Updater::PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc)
+void Updater::PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, uint32_t requiredCrc)
 {
 	DownloadPtr download = PrepareMirroredDownload(remoteFile);
 
@@ -1048,7 +1050,7 @@ bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& rel
 		}
 
 		// Size is matching, check CRC
-		boost::uint32_t existingCrc = CRC::GetCrcForFile(localFile);
+		uint32_t existingCrc = CRC::GetCrcForFile(localFile);
 
 		if (existingCrc == releaseFile.crc)
 		{

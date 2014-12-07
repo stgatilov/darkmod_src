@@ -37,7 +37,7 @@ struct ReleaseFile
 	boost::filesystem::path file;
 
 	// CRC32 checksum
-	boost::uint32_t	crc;
+	uint32_t	crc;
 
 	// The file size in bytes
 	std::size_t	filesize;
@@ -65,7 +65,7 @@ struct ReleaseFile
 		downloadId(-1)
 	{}
 
-	ReleaseFile(const boost::filesystem::path& pathToFile, boost::uint32_t crc_) :
+	ReleaseFile(const boost::filesystem::path& pathToFile, uint32_t crc_) :
 		isArchive(false),
 		file(pathToFile),
 		crc(crc_),

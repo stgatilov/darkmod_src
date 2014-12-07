@@ -331,7 +331,7 @@ private:
 	void PerformSingleMirroredDownload(const std::string& remoteFile);
 
 	// Downloads a file from a random mirror to the target folder, checking required size and CRC after download
-	void PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc);
+	void PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, uint32_t requiredCrc);
 
 	// Starts the download and waits for completion
 	void PerformSingleMirroredDownload(const DownloadPtr& download);

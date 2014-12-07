@@ -125,7 +125,7 @@ public:
 	void EnableFilesizeCheck(bool enable);
 
 	// Set the required CRC for this download
-	void SetRequiredCrc(boost::uint32_t requiredCrc);
+	void SetRequiredCrc(uint32_t requiredCrc);
 
 	// Set the required filesize for this download
 	void SetRequiredFilesize(std::size_t requiredSize);
