@@ -131,7 +131,7 @@ public:
 		// called on finishing the single-file
 		virtual void OnDownloadFinish() = 0;
 	};
-	typedef boost::shared_ptr<DownloadProgress> DownloadProgressPtr;
+	typedef std::shared_ptr<DownloadProgress> DownloadProgressPtr;
 
 	// An object to get notified in regular intervals about the file operations
 	class FileOperationProgress
@@ -141,7 +141,7 @@ public:
 
 		virtual void OnFileOperationFinish() = 0;
 	};
-	typedef boost::shared_ptr<FileOperationProgress> FileOperationProgressPtr;
+	typedef std::shared_ptr<FileOperationProgress> FileOperationProgressPtr;
 
 private:
 	const UpdaterOptions& _options;

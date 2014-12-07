@@ -1215,7 +1215,7 @@ void Updater::NotifyDownloadProgress()
 		info.downloadSpeed = curDownload->GetDownloadSpeed();
 		info.downloadedBytes = curDownload->GetDownloadedBytes();
 
-		MirrorDownloadPtr mirrorDownload = boost::dynamic_pointer_cast<MirrorDownload>(curDownload);
+		MirrorDownloadPtr mirrorDownload = std::dynamic_pointer_cast<MirrorDownload>(curDownload);
 
 		if (mirrorDownload != NULL)
 		{

@@ -26,7 +26,6 @@
 #include "../ExceptionSafeThread.h"
 #include "../TraceLog.h"
 #include <boost/lexical_cast.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include "ProgressHandler.h"
 
 namespace tdm
@@ -144,7 +143,7 @@ private:
 	// Returns true if we are allowed to proceed to the given step
 	bool IsAllowedToContinueTo(UpdateStep step);
 };
-typedef boost::shared_ptr<UpdateController> UpdateControllerPtr;
+typedef std::shared_ptr<UpdateController> UpdateControllerPtr;
 
 } // namespace
 

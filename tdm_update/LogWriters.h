@@ -21,7 +21,7 @@
 
 #include <string>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <mutex>
 
 namespace tdm
@@ -101,8 +101,8 @@ public:
 
 void RegisterLogWriters()
 {
-	boost::shared_ptr<tdm::FileLogWriter> logWriter(new tdm::FileLogWriter("tdm_update.log"));
-	boost::shared_ptr<tdm::ConsoleLogWriter> consoleWriter(new tdm::ConsoleLogWriter);
+	std::shared_ptr<tdm::FileLogWriter> logWriter(new tdm::FileLogWriter("tdm_update.log"));
+	std::shared_ptr<tdm::ConsoleLogWriter> consoleWriter(new tdm::ConsoleLogWriter);
 
 	tdm::TraceLog::Instance().Register(logWriter);
 	tdm::TraceLog::Instance().Register(consoleWriter);

@@ -23,7 +23,7 @@
 #include <list>
 #include <vector>
 #include <time.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/shared_array.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/filesystem.hpp>
@@ -63,7 +63,7 @@ public:
 		std::vector<char>			comment;
 		std::vector<unsigned char>	localExtraField;
 	};
-	typedef boost::shared_ptr<CompressedFile> CompressedFilePtr;
+	typedef std::shared_ptr<CompressedFile> CompressedFilePtr;
 
 	struct MemberInfo
 	{
@@ -149,7 +149,7 @@ public:
 	 */
 	boost::uint32_t GetCumulativeCrc();
 };
-typedef boost::shared_ptr<ZipFileRead> ZipFileReadPtr;
+typedef std::shared_ptr<ZipFileRead> ZipFileReadPtr;
 
 /**
  * A class wrapping around a minizip file handle, for storing data
@@ -196,7 +196,7 @@ public:
 	 */
 	bool CopyFileFromZip(const ZipFileReadPtr& fromZip, const std::string& fromPath, const std::string& toPath);
 };
-typedef boost::shared_ptr<ZipFileWrite> ZipFileWritePtr;
+typedef std::shared_ptr<ZipFileWrite> ZipFileWritePtr;
 
 /**
  * greebo: This service class can be used to load and inspect zip files and

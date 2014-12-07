@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
@@ -28,7 +28,7 @@ namespace tdm
 {
 
 class SvnClient;
-typedef boost::shared_ptr<SvnClient> SvnClientPtr;
+typedef std::shared_ptr<SvnClient> SvnClientPtr;
 
 /**
  * An object providing a few SVN client methods.

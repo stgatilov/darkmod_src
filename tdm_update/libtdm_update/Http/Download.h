@@ -21,7 +21,7 @@
 
 #include "HttpConnection.h"
 #include "HttpRequest.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/filesystem.hpp>
 #include <thread>
 
@@ -81,7 +81,7 @@ protected:
 	// The corresponding HTTP request
 	HttpRequestPtr _request;
 
-	typedef boost::shared_ptr<std::thread> ThreadPtr;
+	typedef std::shared_ptr<std::thread> ThreadPtr;
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;
@@ -158,6 +158,6 @@ protected:
 	// Check method
 	bool CheckIntegrity();
 };
-typedef boost::shared_ptr<Download> DownloadPtr;
+typedef std::shared_ptr<Download> DownloadPtr;
 
 }

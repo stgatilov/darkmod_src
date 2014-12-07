@@ -21,7 +21,7 @@
 
 #include <fstream>
 #include <vector>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 typedef void CURL;
 
@@ -114,6 +114,6 @@ private:
 
 	void UpdateProgress();
 };
-typedef boost::shared_ptr<HttpRequest> HttpRequestPtr;
+typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 
 }

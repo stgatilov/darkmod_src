@@ -63,6 +63,6 @@ public:
 	// Called by the Updater
 	static void InitRandomizer();
 };
-typedef boost::shared_ptr<MirrorDownload> MirrorDownloadPtr;
+typedef std::shared_ptr<MirrorDownload> MirrorDownloadPtr;
 
 } // namespace

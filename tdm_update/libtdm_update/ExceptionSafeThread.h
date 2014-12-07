@@ -22,7 +22,7 @@
 #include <thread>
 #include <functional>
 #include <string>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include "ThreadControl.h"
 
 namespace tdm
@@ -52,7 +52,7 @@ private:
 	std::function<void()> _function;
 
 	// The actual thread
-	boost::shared_ptr<std::thread> _thread;
+	std::shared_ptr<std::thread> _thread;
 
 	// The error message which is filled when exceptions are thrown within the thread
 	std::string _errMsg;
@@ -177,6 +177,6 @@ private:
 		}
 	}
 };
-typedef boost::shared_ptr<ExceptionSafeThread> ExceptionSafeThreadPtr;
+typedef std::shared_ptr<ExceptionSafeThread> ExceptionSafeThreadPtr;
 
 } // namespace

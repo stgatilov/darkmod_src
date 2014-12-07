@@ -21,7 +21,7 @@
 
 #include <string>
 #include <set>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace tdm
 {
@@ -51,7 +51,7 @@ public:
 	 */
 	virtual void WriteLog(LogClass lc, const std::string& str) = 0;
 };
-typedef boost::shared_ptr<ILogWriter> ILogWriterPtr;
+typedef std::shared_ptr<ILogWriter> ILogWriterPtr;
 
 /**
  * The tracelog singleton class. Register any LogWriters here, to have

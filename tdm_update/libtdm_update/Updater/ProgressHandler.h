@@ -134,7 +134,7 @@ private:
 		};
 	}
 };
-typedef boost::shared_ptr<ProgressHandler> ProgressHandlerPtr;
+typedef std::shared_ptr<ProgressHandler> ProgressHandlerPtr;
 
 } // namespace
 
