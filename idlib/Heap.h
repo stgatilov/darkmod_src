@@ -210,7 +210,10 @@ type *idBlockAlloc<type,blockSize>::Alloc( void ) {
 
 template<class type, int blockSize>
 void idBlockAlloc<type,blockSize>::Free( type *t ) {
-	element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (int) &((element_t *)0)->t ) );
+	// old code 
+	// element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (int) &((element_t *)0)->t ) );
+	// Code ported from dhewm3, this does not fire the fpermissive warning in gcc
+	element_t *element = (element_t *)( intptr_t(t) - sizeof(intptr_t) );
 	element->next = free;
 	free = element;
 	active--;

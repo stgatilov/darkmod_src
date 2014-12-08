@@ -300,8 +300,6 @@ BASECPPFLAGS.append( '-Wno-unknown-pragmas' )
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
-# gcc 4.0
-BASECPPFLAGS.append( '-fpermissive' )
 # C++11 features
 BASECPPFLAGS.append( '-std=c++11' )
 
