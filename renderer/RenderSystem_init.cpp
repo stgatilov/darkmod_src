@@ -1575,7 +1575,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	const char	*baseName;
 	renderView_t	ref;
 	viewDef_t	primary;
-	//int		downSample;
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;
@@ -1586,7 +1585,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	}
 	baseName = args.Argv( 1 );
 
-	//downSample = 0;
 	if ( args.Argc() == 3 ) {
 		outSize = atoi( args.Argv( 2 ) );
 	} else {

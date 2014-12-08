@@ -1760,7 +1760,6 @@ called after all files are compiled to report memory usage.
 void idProgram::CompileStats( void ) {
 	unsigned long	memused;
 	unsigned long	memallocated;
-	unsigned long	numdefs;
 	unsigned long	stringspace;
 	unsigned long   funcMem;
 	int	i;
@@ -1775,7 +1774,6 @@ void idProgram::CompileStats( void ) {
 	}
     stringspace += static_cast<unsigned long>(fileList.Size());
 
-	numdefs = varDefs.Num();
 	memused = varDefs.Num() * sizeof( idVarDef );
 	memused += types.Num() * sizeof( idTypeDef );
 	memused += stringspace;

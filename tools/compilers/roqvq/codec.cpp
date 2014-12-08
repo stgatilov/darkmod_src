@@ -106,7 +106,7 @@ void codec::Sort( float *list, int *intIndex, int numElements )
 	
 void codec::Segment( int *alist, float *flist, int numElements, float rmse)
 {
-	int x, y, yy, xx, numc, onf, index, temp, best, a0, a1, a2, a3, bpp, i, len;
+	int x, y, yy, xx, numc, onf, index, temp, best, bpp, i, len;
 	byte	find[16], *lineout, *cbook, *src, *dst;
 	float	fy, fcr, fcb;
 	idFile *fpcb;
@@ -115,7 +115,6 @@ void codec::Segment( int *alist, float *flist, int numElements, float rmse)
 	float y0,y1,y2,y3,cr,cb;
 
 	doopen = false;
-	a0 = a1 = a2 = a3 = 0;
 
 	sprintf( tempcb, "%s.cb", theRoQ->CurrentFilename());
 	sprintf( temptb, "%s.tb", theRoQ->CurrentFilename());
@@ -701,9 +700,8 @@ int		i, best, bpp;
 void codec::VqData2( byte *cel, quadcel *pquad )
 {
 byte	tempImage[16], tempOut[64];
-int		i, j, best,x,y,xx,yy,bpp;
+int		i, j, best,x,y,xx,yy;
 
-	if (dimension4 == 64) bpp = 4; else bpp = 3;
 	j = 1;
 	for(yy=0;yy<4;yy+=2) {
 	for(xx=0;xx<4;xx+=2) {
@@ -781,7 +779,7 @@ int i,j,snr;
 void codec::FvqData( byte *bitmap, int size, int realx, int realy,  quadcel *pquad, bool clamp)
 {
 	int x, y, xLen, yLen, mblur0, ripl, bpp, fabort, temp1;
-	int lowX, lowY, onx, ony, sX, sY, depthx, depthy, breakHigh;
+	int lowX, lowY, sX, sY, depthx, depthy, breakHigh;
 	float lowestSNR, fmblur0;
 	byte *scale1;
 	byte *bitma2;
@@ -801,9 +799,6 @@ void codec::FvqData( byte *bitmap, int size, int realx, int realy,  quadcel *pqu
 		return;
 	}
 
-	ony = realy - (realy & 0xfff0);
-	onx = realx - (realx & 0xfff0);
-	
 	xLen = previousImage[0]->pixelsWide();
 	yLen = previousImage[0]->pixelsHigh();
 	ripl = xLen-size;
@@ -1010,15 +1005,15 @@ double totalbits;
 int codec::AddQuad( quadcel *pquad, int lownum )
 {
 int i, nx, nsize;
-float newsnr, cmul;
+float newsnr;
 byte *idataA, *idataB;
 
 	if (lownum != -1) {
 		
 		if (pquad[lownum].size == 8) {
-			nx = 1; nsize = 4; cmul = 1;
+			nx = 1; nsize = 4;
 		} else {
-			nx = 5; nsize = 8; cmul = 4;
+			nx = 5; nsize = 8;
 		}	
 		newsnr = 0;
 		idataA = (byte *)Mem_Alloc(8*8*4);
@@ -1083,7 +1078,7 @@ int codec::MotMeanY( void )
 void codec::SparseEncode( void )
 {
 int i, j, osize, fsize, num[DEAD+1], *ilist, onf, ong, wtype, temp;
-float *flist, sRMSE, numredo;
+float *flist, sRMSE;
 byte *idataA, *idataB;
 
 	osize = 8;
@@ -1186,7 +1181,6 @@ byte *idataA, *idataB;
 	*/
 	common->Printf("sparseEncode: dx/dy mean is %d,%d\n", dxMean, dyMean);
 
-	numredo = 0;
 	detail = false;
 	if (codebookmade && whichFrame>4) fsize -= 256;
 	temp = 0;

@@ -242,7 +242,6 @@ RB_ARB2_DrawInteractions
 */
 void RB_ARB2_DrawInteractions( bool noshadows ) {
 	viewLight_t		*vLight;
-	const idMaterial	*lightShader;
 
 	GL_SelectTexture( 0 );
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -265,8 +264,6 @@ void RB_ARB2_DrawInteractions( bool noshadows ) {
 			&& !vLight->translucentInteractions ) {
 			continue;
 		}
-
-		lightShader = vLight->lightShader;
 
 		// clear the stencil buffer if needed
 		if ( vLight->globalShadows || vLight->localShadows ) {

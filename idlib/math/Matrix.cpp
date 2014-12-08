@@ -5387,7 +5387,7 @@ idMatX::Cholesky_UpdateRowColumn
 bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	int i, j;
 	double sum;
-	float *original, *y;
+	float *original;
 	idVecX addSub;
 
 	assert( numRows == numColumns );
@@ -5416,7 +5416,7 @@ bool idMatX::Cholesky_UpdateRowColumn( const idVecX &v, int r ) {
 	} else {
 
 		original = (float *) _alloca16( numColumns * sizeof( float ) );
-		y = (float *) _alloca16( numColumns * sizeof( float ) );
+		//y = (float *) _alloca16( numColumns * sizeof( float ) );
 
 		// calculate original row/column of matrix
 		for ( i = 0; i < numRows; i++ ) {

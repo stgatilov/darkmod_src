@@ -34,7 +34,7 @@ void roqParam::InitFromFile( const char *fileName )
 {
 	idParser *src;
 	idToken token;
-	int i, readarg;
+	int readarg;
 
 
 	src = new idParser( fileName, LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
@@ -150,7 +150,6 @@ void roqParam::InitFromFile( const char *fileName )
 		if (token.Icmp( "filename") == 0) {
 			src->ReadToken( &token );
 			outputFilename = token;
-            i = static_cast<int>(strlen(outputFilename));
 //			common->Printf("  + output file is %s\n", outputFilename );
 			readarg++;
 			continue;
