@@ -1573,8 +1573,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 	idStr		fullname;
 	const char	*baseName;
-	renderView_t	ref;
-	viewDef_t	primary;
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;

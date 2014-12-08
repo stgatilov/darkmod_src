@@ -3212,7 +3212,6 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 	int			toArea;
 	float		dist;
 	idVec2		delta;
-	aasPath_t	path;
 
 	if ( !aas )
 	{

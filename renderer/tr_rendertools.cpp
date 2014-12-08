@@ -726,7 +726,6 @@ Debugging tool
 =====================
 */
 static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	modelTrace_t mt;
 	idVec3 end;
 
 	if ( !r_showTris.GetInteger() ) {

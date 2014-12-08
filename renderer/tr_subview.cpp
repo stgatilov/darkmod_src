@@ -259,7 +259,6 @@ R_XrayViewBySurface
 */
 static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	viewDef_t		*parms;
-	orientation_t	surface, camera;
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
