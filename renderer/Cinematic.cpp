@@ -1414,9 +1414,8 @@ skip_input_data (j_decompress_ptr cinfo, long num_bytes)
  */
 
 static void
-term_source (j_decompress_ptr cinfo)
+term_source (j_decompress_ptr /*cinfo*/)
 {
-	cinfo = cinfo;
   /* no work necessary here */
 }
 
