@@ -1010,9 +1010,15 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 		origin += offset;
 	}
 
-	// adjust for the per-particle smoke offset
-	origin *= g->axis;
-	origin += g->origin;
+	if ( worldAxis ) // SteveL #3950 -- allow particles to use world axis for their offset and travel direction
+	{
+		origin *= g->renderEnt->axis.Transpose();
+	}
+	else
+	{
+		origin *= g->axis; // adjust for any per-particle offset
+	}
+	origin += g->origin;   // adjust for any per-particle offset
 
 	// add gravity after adjusting for axis
 	if ( worldGravity )

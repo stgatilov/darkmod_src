@@ -261,6 +261,22 @@ const idEventDef EV_GetNextEntity( "getNextEntity",
 	'e',
 	"Discover all entities in the map. Returns $null_entity when no more found.");
 
+// SteveL #3962 -- Allow scripts to use the World particle system
+const idEventDef EV_EmitParticle( "emitParticle",
+	EventArgs(  's', "particle",  "String: name of particle effect.",
+				'f', "startTime", "Game seconds since map start: use sys.getTime() for the first call unless you want to "
+								  "back-date the particle so that it starts part way through its cycle.",
+				'f', "diversity", "Randomizer value between 0 and 1. All particles with the same diversity will have the same "
+								  "path and rotation. Use sys.random(1) for a random path.",
+				'v', "origin",	  "Origin of the particle effect.",
+				'v', "angle",	  "Axis for the particle effect. Use $<entityname>.getAngles() to align the particle to an "
+								  "entity. use '0 0 0' for an upright (world-aligned) particle effect."),
+	'f',
+	"Start a particle effect in the world without using an entity emitter. Will emit one quad per particle stage when first called with "
+	"sys.getTime() as the start time. Designed to be called once per frame with the same startTime each call to achieve a normal particle "
+	"effect, or on demand with sys.getTime() as the startTime for finer grained control, 1 quad at a time. Returns True (1) if there are "
+	"more particles to be emitted from the stage, False (0) if the stage has released all its quads.");
+
 CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_Thread_Execute,				idThread::Event_Execute )
 	EVENT( EV_Thread_TerminateThread,		idThread::Event_TerminateThread )
@@ -385,7 +401,7 @@ CLASS_DECLARATION( idClass, idThread )
 	EVENT( EV_GetMissionStatistic,			idThread::Event_GetMissionStatistic )	//               from Zbyl
 
 	EVENT( EV_GetNextEntity,				idThread::Event_GetNextEntity )	// SteveL #3802
-
+	EVENT( EV_EmitParticle,  				idThread::Event_EmitParticle )  // SteveL #3962
 	END_CLASS
 
 idThread			*idThread::currentThread = NULL;
@@ -2538,4 +2554,13 @@ void idThread::Event_GetNextEntity( const char* key, const char* value, const id
 
 	// Step 3: Return a value
 	idThread::ReturnEntity( i < MAX_GENTITIES ? gameLocal.entities[i] : NULL );
+}
+
+// Allow scripts to use the World particle system -- SteveL #3962
+void idThread::Event_EmitParticle( const char* particle, float startTime, float diversity, const idVec3& origin, const idVec3& angle )
+{
+	const idMat3 axis = idAngles(angle).ToMat3();
+	const idDeclParticle* ptcl = static_cast<const idDeclParticle *>( declManager->FindType( DECL_PARTICLE, particle ) );
+	const bool emitted = gameLocal.smokeParticles->EmitSmoke( ptcl, startTime*1000, diversity, origin, axis );
+	idThread::ReturnFloat( emitted? 1.0f : 0.0f );
 }
