@@ -2286,7 +2286,7 @@ void idRenderModelStatic::WriteToDemoFile( class idDemoFile *f ) {
 idRenderModelStatic::IsLoaded
 ================
 */
-bool idRenderModelStatic::IsLoaded( void ) {
+bool idRenderModelStatic::IsLoaded( void ) const {
 	return !purged;
 }
 
