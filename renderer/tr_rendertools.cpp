@@ -1215,6 +1215,7 @@ RB_ShowNormals
 Debugging tool
 =====================
 */
+#if 0
 static void RB_AltShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	int			i, j, k;
 	drawSurf_t	*drawSurf;
@@ -1282,7 +1283,7 @@ static void RB_AltShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_DEPTH_TEST );
 	qglEnable( GL_STENCIL_TEST );
 }
-
+#endif
 
 
 /*

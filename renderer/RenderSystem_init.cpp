@@ -1741,7 +1741,7 @@ void R_SetColorMappings( void ) {
 GfxInfo_f
 ================
 */
-void GfxInfo_f( const idCmdArgs &args ) {
+static void GfxInfo_f( const idCmdArgs &args ) {
 	const char *fsstrings[] =
 	{
 		"windowed",
