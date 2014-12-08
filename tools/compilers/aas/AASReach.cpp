@@ -279,7 +279,7 @@ idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge
 */
 bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge( int area1num, int area2num ) {
 	int i, j, k, l, edge1Num, edge2Num, areas[10];
-	int floor_bestArea1FloorEdgeNum, floor_bestArea2FloorEdgeNum, floor_foundReach;
+	int floor_bestArea1FloorEdgeNum = 0, floor_bestArea2FloorEdgeNum, floor_foundReach;
 	int water_bestArea1FloorEdgeNum, water_bestArea2FloorEdgeNum, water_foundReach;
 	int side1, faceSide1, floorFace1Num;
 	float dist, dist1, dist2, diff, invGravityDot, orthogonalDot;

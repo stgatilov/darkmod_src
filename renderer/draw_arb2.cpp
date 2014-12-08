@@ -391,7 +391,7 @@ void R_LoadARBProgram( int progIndex ) {
 	fullPath += progs[progIndex].name;
 	char	*fileBuffer;
 	char	*buffer;
-	char	*start, *end;
+	char	*start = NULL, *end;
 
     // load the program even if we don't support it
 	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );

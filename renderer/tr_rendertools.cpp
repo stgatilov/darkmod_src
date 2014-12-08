@@ -1753,7 +1753,7 @@ RB_DrawText
 */
 static void RB_DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align ) {
 	int i, j, len, num, index, charIndex, line;
-	float textLen, spacing;
+	float textLen = 0.0f, spacing;
 	idVec3 org, p1, p2;
 
 	if ( text && *text ) {
