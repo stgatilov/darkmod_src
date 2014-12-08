@@ -117,7 +117,7 @@
 	#define CPU_EASYARGS				1
 #elif defined(__x86_64__)
 	#define	BUILD_STRING				"linux-x86_64"
-	#define CPUSTRING					"x86_64"
+	#define CPUSTRING					"x64"
 	#define CPU_EASYARGS				0
 #elif defined(__ppc__)
 	#define	BUILD_STRING				"linux-ppc"
