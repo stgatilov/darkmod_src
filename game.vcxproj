@@ -769,10 +769,6 @@
     <ClCompile Include="game\pugixml\pugixml.cpp" />
     <ClCompile Include="game\Pvs.cpp" />
     <ClCompile Include="game\PVSToAASMapping.cpp" />
-    <ClCompile Include="game\randomizer\mersenne.cpp" />
-    <ClCompile Include="game\randomizer\mother.cpp" />
-    <ClCompile Include="game\randomizer\ranrotb.cpp" />
-    <ClCompile Include="game\randomizer\ranrotw.cpp" />
     <ClCompile Include="game\RawVector.cpp" />
     <ClCompile Include="game\Relations.cpp" />
     <ClCompile Include="game\script\Script_Compiler.cpp" />
@@ -1026,9 +1022,6 @@
     <ClInclude Include="game\pugixml\pugixml.hpp" />
     <ClInclude Include="game\Pvs.h" />
     <ClInclude Include="game\PVSToAASMapping.h" />
-    <ClInclude Include="game\randomizer\rancombi.h" />
-    <ClInclude Include="game\randomizer\randomc.h" />
-    <ClInclude Include="game\randomizer\_lrotl.h" />
     <ClInclude Include="game\RawVector.h" />
     <ClInclude Include="game\Relations.h" />
     <ClInclude Include="game\script\Script_Compiler.h" />

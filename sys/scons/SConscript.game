@@ -184,11 +184,6 @@ Objectives/ObjectiveCondition.cpp \
 Objectives/ObjectiveLocation.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
-randomizer/mersenne.cpp \
-randomizer/mother.cpp \
-randomizer/ranrotb.cpp \
-randomizer/ranrotw.cpp \
-randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
 Shop/LootRuleSet.cpp \

@@ -51,15 +51,18 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
 
-#include "randomizer/randomc.h"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <chrono>
 #include <iostream>
 
+#ifdef max
+#undef max
+#endif
+
 CGlobal g_Global;
-TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
@@ -350,6 +353,7 @@ void idGameLocal::Clear( void )
 
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
+    randomMt.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 	world = NULL;
 	frameCommandThread = NULL;
 	testmodel = NULL;
@@ -1889,7 +1893,7 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	if (loadingGUI != NULL)
 	{
 		// Use our own randomizer, the gameLocal.random one is not yet initialised
-		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+        loadingGUI->SetStateFloat("random_value", static_cast<float>(randomMt()) / randomMt.max());
 		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 	
