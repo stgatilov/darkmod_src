@@ -507,9 +507,16 @@ if ( TARGET_GAME == '1' ):
 	if ( TARGET_GAME == '1' ):
 		Export( 'GLOBALS ' + GLOBALS )
 		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
-		game_base = InstallAs( '#game%s-base.so' % cpu, game )
+		
+		if ( TARGET_ARCH == 'x64' ):
+			game_name = 'gamex64.so'
+			game_base = InstallAs( ('#%s' % game_name), game )
+		else:
+			game_name = 'gamex86.so'
+			game_base = InstallAs( ('#%s' % game_name), game )
+
 		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#tdm_game02.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
+			Command( '#tdm_game02.pk4', [ game_base, game, game_name ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
 	# NOTE: no D3XP atm. add a TARGET_MONO_D3XP
