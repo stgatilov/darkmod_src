@@ -785,9 +785,12 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 		}
 
 		// grayman #3756 - check for collision with large AI
-		if ( check->IsType(idAI::Type) && ( check->GetPhysics()->GetMass() > SMALL_AI_MASS ) )
+		if ( check->IsType(idAI::Type) && ( check->GetPhysics()->GetMass() > SMALL_AI_MASS ) &&
+			// grayman #3967 - don't let bodies block moving objects
+			!static_cast<idAI*>(check)->AI_DEAD &&
+			!static_cast<idAI*>(check)->AI_KNOCKEDOUT)
 		{
-			// We are colliding with a large AI and are not allowed to push it, return BLOCKED
+			// We are colliding with a large conscious AI and are not allowed to push it, return BLOCKED
 			results.c.normal = -results.c.normal;
 			results.c.dist = -results.c.dist;
 
