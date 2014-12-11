@@ -650,7 +650,7 @@ idMover::DoneMoving
 */
 void idMover::DoneMoving( void ) {
 
-	if ( lastCommand != MOVER_SPLINE ) {
+	if (lastCommand != MOVER_SPLINE) {
 		// set our final position so that we get rid of any numerical inaccuracy
 		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
 	}
@@ -859,11 +859,17 @@ idMover::DoneRotating
 ================
 */
 void idMover::DoneRotating( void ) {
-	lastCommand	= MOVER_NONE;
+	lastCommand = MOVER_NONE;
 	idThread::ObjectMoveDone( rotate_thread, this );
 	rotate_thread = 0;
 
 	StopSound( SND_CHANNEL_BODY, false );
+
+	// grayman #3967 - if this is a door, stop any hard pushing an AI might have done
+	if (IsType(CFrobDoor::Type))
+	{
+		static_cast<CFrobDoor*>(this)->StopPushingDoorHard();
+	}
 }
 
 /*

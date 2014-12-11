@@ -460,6 +460,7 @@ void InvestigateSpotTask::OnFinish(idAI* owner) // grayman #2560
 	// The action subsystem has finished investigating the spot, set the
 	// boolean back to false, so that the next spot can be chosen
 	owner->GetMemory().hidingSpotInvestigationInProgress = false;
+	owner->GetMemory().currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 }
 
 void InvestigateSpotTask::Save(idSaveGame* savefile) const

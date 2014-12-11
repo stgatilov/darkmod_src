@@ -693,7 +693,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	if (ai->m_searchID > 0)
 	{
-		LeaveSearch(ai->m_searchID,ai);
+		LeaveSearch(ai->m_searchID, ai);
 	}
 
 	// Either reuse an existing assignment, or create a new one
@@ -1314,7 +1314,7 @@ void CSearchManager::ProcessSearches()
 				idAI* searcher = assignment->_searcher;
 				if (searcher != NULL)
 				{
-					LeaveSearch(searchID,searcher);
+					LeaveSearch(searchID, searcher);
 					searcher->SetAlertLevel(searcher->thresh_3 - 0.1f);
 				}
 			}
@@ -1488,13 +1488,20 @@ void CSearchManager::ProcessSearches()
 				idAI* searcher1 = assignment1->_searcher;
 				idAI* searcher2 = assignment2->_searcher;
 
-				LeaveSearch(searchID,searcher2);
-				LeaveSearch(searchID,searcher1);
+				ai::Memory& memory1 = searcher1->GetMemory();
+				ai::Memory& memory2 = searcher2->GetMemory();
+
+				bool searcher1shouldMill = memory1.shouldMill || memory1.millingInProgress;
+				bool searcher2shouldMill = memory2.shouldMill || memory2.millingInProgress;
+
+				LeaveSearch(searchID, searcher2);
+				LeaveSearch(searchID, searcher1);
+
 				JoinSearch(searchID,searcher2);
 				JoinSearch(searchID,searcher1);
 
-				searcher1->GetMemory().shouldMill = false; // don't bother milling
-				searcher2->GetMemory().shouldMill = false;
+				memory1.shouldMill = searcher1shouldMill;
+				memory2.shouldMill = searcher2shouldMill;
 			}
 		}
 	}
