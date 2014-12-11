@@ -188,7 +188,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			else
 			{
 				// AI is walking, only use animations for the Torso channel
-				AttemptToPlayAnim(owner, _idleAnimationsTorso, true); // TORSO only
+				AttemptToPlayAnim(owner, _idleAnimationsTorso, true);
 			}
 		}
 		

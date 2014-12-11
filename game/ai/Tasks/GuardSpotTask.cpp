@@ -250,6 +250,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
 			{
 				// Guard spot not reachable, terminate task
+				// If milling, we must try to get another milling spot
+				if (memory.millingInProgress)
+				{
+					memory.shouldMill = true;
+				}
 				return true;
 			}
 
@@ -286,6 +291,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
+				// If milling, we must try to get another milling spot
+				if (memory.millingInProgress)
+				{
+					memory.shouldMill = true;
+				}
 				return true;
 			}	
 
@@ -325,7 +335,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							{
 								// leave milling early, so we can get to the following activity (searching/guarding/observing)
 								_exitTime = gameLocal.time + MILLING_DELAY + gameLocal.random.RandomInt(MILLING_DELAY);
-								_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+								_nextTurnTime = gameLocal.time + (_exitTime - gameLocal.time)/2; // turn halfway through your stay
 							}
 							else
 							{
@@ -389,7 +399,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 				{
 					if (!_millingOnly)
 					{
-						_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+						_nextTurnTime = 0; // no more random turning, because you'll be quitting soon
 					}
 					else
 					{
@@ -480,10 +490,10 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	// The action subsystem has finished guarding the spot, so set the
-	// booleans back to false
+	// The action subsystem has finished guarding the spot, so reset
 	owner->GetMemory().guardingInProgress = false;
 	owner->GetMemory().millingInProgress = false;
+	owner->GetMemory().currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 }
 
 void GuardSpotTask::Save(idSaveGame* savefile) const

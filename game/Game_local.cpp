@@ -8078,12 +8078,22 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			if ( !location.Compare(idVec3(0,0,0)) )
 			{
-				// Allow for some variance in location. Two events of
-				// the same type that are near each other should be
-				// considered the same event.
+				if (se.type == E_EventTypeNoisemaker)
+				{
+					// grayman #3857 - noisemakers must be considered
+					// separate events, so the locations must match
 
-				float distSqr = (se.location - location).LengthSqr();
-				locationMatch = (distSqr <= 90000); // 300*300
+					locationMatch = location.Compare(se.location);
+				}
+				else
+				{
+					// Allow for some variance in location. Two events of
+					// the same type that are near each other should be
+					// considered the same event.
+
+					float distSqr = (se.location - location).LengthSqr();
+					locationMatch = (distSqr <= 90000); // 300*300
+				}
 			}
 
 			// check entity
@@ -8145,7 +8155,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // gray
 		}
 		else if ( se.type == E_EventTypeNoisemaker ) // grayman #3857
 		{
-			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, se.time );
+			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
 		}
 		else if ( se.type == E_EventTypeSound ) // grayman #3857
 		{

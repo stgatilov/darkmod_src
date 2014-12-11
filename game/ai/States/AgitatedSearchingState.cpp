@@ -91,7 +91,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 		// Alert index is too high, switch to the higher State
 		if (owner->m_searchID > 0)
 		{
-			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner); // grayman #3857 - leave an ongoing search
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID, owner); // grayman #3857 - leave an ongoing search
 		}
 
 		//owner->Event_CloseHidingSpotSearch();

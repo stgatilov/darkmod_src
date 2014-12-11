@@ -6733,7 +6733,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// grayman #3857 - leave an ongoing search
 	if (m_searchID > 0)
 	{
-		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+		gameLocal.m_searchManager->LeaveSearch(m_searchID, this);
 	}
 
 	ClearEnemy();

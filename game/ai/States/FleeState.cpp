@@ -62,7 +62,7 @@ void FleeState::Init(idAI* owner)
 	// grayman #3857- If participating in a search, leave the search
 	if (owner->m_searchID > 0)
 	{
-		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+		gameLocal.m_searchManager->LeaveSearch(owner->m_searchID, owner);
 	}
 
 	if (owner->fleeingFromPerson.GetEntity()) // grayman #3847

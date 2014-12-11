@@ -63,7 +63,7 @@ bool SearchingState::CheckAlertLevel(idAI* owner)
 		// Alert index is too low for this state, fall back
 		if (owner->m_searchID > 0) // grayman #3857
 		{
-			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID,owner);
+			gameLocal.m_searchManager->LeaveSearch(owner->m_searchID, owner);
 		}
 
 		//owner->Event_CloseHidingSpotSearch();
@@ -346,16 +346,26 @@ void SearchingState::Think(idAI* owner)
 
 	if (search && assignment)
 	{
-		/* uncomment to more clearly see who's actively searching and who's guarding/observing
-
-		if (assignment->_searcherRole == E_ROLE_SEARCHER)
+		/* uncomment to more clearly see who's actively searching and who's milling/searching/guarding/observing
+		idVec4 color;
+		if (memory.millingInProgress)
 		{
-			gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), memory.currentSearchSpot, 1, 100);
+			color = colorYellow;
 		}
-		else
+		else if (assignment->_searcherRole == E_ROLE_SEARCHER)
 		{
-			gameRenderWorld->DebugArrow(colorBlue, owner->GetEyePosition(), memory.currentSearchSpot, 1, 100);
+			color = colorGreen;
 		}
+		else if (assignment->_searcherRole == E_ROLE_GUARD)
+		{
+			color = colorRed;
+		}
+		else // observer
+		{
+			color = colorBlue;
+		}
+		gameRenderWorld->DebugArrow(color, owner->GetEyePosition(), memory.currentSearchSpot, 1, 100);
+		gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), search->_origin, 1, 100);
 		*/
 
 		// Prepare the hiding spots if they're going to be needed.
@@ -381,19 +391,27 @@ void SearchingState::Think(idAI* owner)
 
 		if (memory.shouldMill)
 		{
-			idVec3 spot;
-			idVec3 dir = owner->GetPhysics()->GetOrigin() - search->_origin;
-			dir.z = 0;
-			dir.NormalizeFast();
-			spot = search->_origin + MILL_RADIUS*dir;
-			memory.millingInProgress = true;
-			memory.guardingInProgress = false;
-			memory.shouldMill = false;
-			memory.currentSearchSpot = spot; // spot to guard
-			memory.guardingAngle = idMath::INFINITY; // face search origin when spot is reached
-			owner->searchSubsystem->SwitchTask(TaskPtr(GuardSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
+			// Before beginning milling, do we need to finish a preliminary spot investigation?
+			// This is typically the spot that brings an AI into the search area.
 
-			return;
+			if (memory.hidingSpotInvestigationInProgress)
+			{
+				return;
+			}
+
+			idVec3 spot;
+			if (FindRadialSpot(owner->GetPhysics()->GetOrigin(), search->_origin, MILL_RADIUS, spot)) // grayman #3857
+			{
+				// the spot is good
+				memory.millingInProgress = true;
+				memory.guardingInProgress = false;
+				memory.shouldMill = false;
+				memory.currentSearchSpot = spot; // spot to guard
+				memory.guardingAngle = idMath::INFINITY; // face search origin when spot is reached
+				owner->searchSubsystem->SwitchTask(TaskPtr(GuardSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
+
+				return;
+			}
 		}
 
 		// Any required milling is finished. Does the search need active searchers?
@@ -419,9 +437,9 @@ void SearchingState::Think(idAI* owner)
 
 			if (memory.noMoreHidingSpots) 
 			{
-				if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
+				if (gameLocal.time >= memory.nextTime2GenRandomSpot)
 				{
-					memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5)/3);
+					memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5) / 3);
 
 					// grayman #2422
 					// Generate a random search point, but make sure it's inside an AAS area
