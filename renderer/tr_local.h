@@ -24,6 +24,9 @@
 #include "MegaTexture.h"
 
 #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
+#define TR_SCREEN_VIEW_ID			 0 // viewIDs of 0 and above are those drawn on sreen. Negative numbers are for special 
+									   // non-visible renders: light gem (TDM), Sikk's depth render (Doom3) etc. The player's view 
+									   // is 1 for single player mode, multiplayer uses 2+.
 
 class idRenderWorldLocal;
 
