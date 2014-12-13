@@ -20,6 +20,7 @@ $Author: greebo $ (Author of last commit)
 #pragma once
 
 #include "Cinematic.h"
+#include <memory>
 
 /**
  * Cinematic driven by the ffmpeg libavcodec library.
@@ -39,4 +40,6 @@ public:
 
 private:
     idStr _path;
+
+    std::shared_ptr<byte>   _rgbaBuffer;
 };

@@ -153,8 +153,7 @@ static int open_codec_context(int *stream_idx, AVFormatContext* fmt_ctx, enum AV
     return 0;
 }
 
-static int decode_packet(AVPacket& avpkt, AVFrame* frame, int *got_frame, int cached, AVCodecContext* video_dec_ctx,
-                         uint8_t* video_dst_data[4], int video_dst_linesize[4])
+static int decode_packet(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int cached, AVCodecContext* video_dec_ctx)
 {
     static int video_frame_count = 0;
     int ret = 0;
@@ -162,17 +161,22 @@ static int decode_packet(AVPacket& avpkt, AVFrame* frame, int *got_frame, int ca
 
     static SwsContext* swsContext = NULL;
 
+    AVFrame* tempFrame = av_frame_alloc();
+    if (!tempFrame)
+    {
+        common->Warning("Could not allocate video frame\n");
+        return -1;
+    }
+
     *got_frame = 0;
 
-#if 0
-    if (pkt.stream_index == video_stream_idx) {
-#endif
     /* decode video frame */
-    ret = avcodec_decode_video2(video_dec_ctx, frame, got_frame, &avpkt);
+    ret = avcodec_decode_video2(video_dec_ctx, tempFrame, got_frame, &avpkt);
 
     if (ret < 0) 
     {
         common->Warning("Error decoding video frame (%d)\n", ret);
+        av_frame_free(&tempFrame);
         return ret;
     }
 
@@ -180,14 +184,14 @@ static int decode_packet(AVPacket& avpkt, AVFrame* frame, int *got_frame, int ca
     {
         common->Printf("video_frame %s n:%d coded_n:%d\n",
                        cached ? "(cached)" : "",
-                       video_frame_count++, frame->coded_picture_number);
-        
+                       video_frame_count++, tempFrame->coded_picture_number);
+#if 0        
         /* copy decoded frame to destination buffer:
         * this is required since rawvideo expects non aligned data */
         av_image_copy(video_dst_data, video_dst_linesize,
-                        (const uint8_t **)(frame->data), frame->linesize,
+                      (const uint8_t **)(tempFrame->data), tempFrame->linesize,
                         video_dec_ctx->pix_fmt, video_dec_ctx->width, video_dec_ctx->height);
-
+#endif
         if (swsContext == NULL)
         {
             swsContext = sws_getContext(video_dec_ctx->width, video_dec_ctx->height,
@@ -197,71 +201,16 @@ static int decode_packet(AVPacket& avpkt, AVFrame* frame, int *got_frame, int ca
                                         SWS_BICUBIC, NULL, NULL, NULL);
         }
 
-        AVFrame* rgbaFrame = av_frame_alloc();
+        int lineWidths[4] = { video_dec_ctx->width * 4, video_dec_ctx->width * 4, video_dec_ctx->width * 4, video_dec_ctx->width * 4 };
 
-        rgbaFrame->format = AV_PIX_FMT_RGBA;
-        rgbaFrame->width = video_dec_ctx->width;
-        rgbaFrame->height = video_dec_ctx->height;
-
-        /* allocate the buffers for the frame data */
-        ret = av_frame_get_buffer(rgbaFrame, 32);
-
-        if (ret < 0)
-        {
-            common->Warning("Could not allocate frame data.\n");
-            return -1;
-        }
-
-        sws_scale(swsContext, (const uint8_t * const *)frame->data, frame->linesize,
-                  0, video_dec_ctx->height, rgbaFrame->data, rgbaFrame->linesize);
+        sws_scale(swsContext, (const uint8_t * const *)tempFrame->data, tempFrame->linesize,
+                  0, video_dec_ctx->height, static_cast<uint8_t* const*>(&targetRGBA), lineWidths);
 
         // Upload to GL
-        R_WriteTGA("testmpeg.tga", rgbaFrame->data[0], video_dec_ctx->width, video_dec_ctx->height);
-
-        av_frame_free(&rgbaFrame);
-
-        /* write to rawvideo file */
-        //fwrite(video_dst_data[0], 1, video_dst_bufsize, video_dst_file);
+        //R_WriteTGA("testmpeg.tga", targetRGBA, video_dec_ctx->width, video_dec_ctx->height);
     }
-#if 0
-    }
-    else if (pkt.stream_index == audio_stream_idx) {
-        /* decode audio frame */
-        ret = avcodec_decode_audio4(audio_dec_ctx, frame, got_frame, &pkt);
-        if (ret < 0) {
-            fprintf(stderr, "Error decoding audio frame (%s)\n", av_err2str(ret));
-            return ret;
-        }
-        /* Some audio decoders decode only part of the packet, and have to be
-        * called again with the remainder of the packet data.
-        * Sample: fate-suite/lossless-audio/luckynight-partial.shn
-        * Also, some decoders might over-read the packet. */
-        decoded = FFMIN(ret, pkt.size);
 
-        if (*got_frame) {
-            size_t unpadded_linesize = frame->nb_samples * av_get_bytes_per_sample(frame->format);
-            printf("audio_frame%s n:%d nb_samples:%d pts:%s\n",
-                   cached ? "(cached)" : "",
-                   audio_frame_count++, frame->nb_samples,
-                   av_ts2timestr(frame->pts, &audio_dec_ctx->time_base));
-
-            /* Write the raw audio data samples of the first plane. This works
-            * fine for packed formats (e.g. AV_SAMPLE_FMT_S16). However,
-            * most audio decoders output planar audio, which uses a separate
-            * plane of audio samples for each channel (e.g. AV_SAMPLE_FMT_S16P).
-            * In other words, this code will write only the first audio channel
-            * in these cases.
-            * You should use libswresample or libavfilter to convert the frame
-            * to packed data. */
-            fwrite(frame->extended_data[0], 1, unpadded_linesize, audio_dst_file);
-        }
-    }
-#endif
-
-    /* If we use the new API with reference counting, we own the data and need
-    * to de-reference it when we don't use it anymore */
-    if (*got_frame /*&& api_mode == API_MODE_NEW_API_REF_COUNT*/)
-        av_frame_unref(frame);
+    av_frame_free(&tempFrame);
 
     return decoded;
 }
@@ -339,15 +288,12 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 
     int video_stream_idx = -1;
     AVCodecContext* video_dec_ctx = NULL;
-    /* allocate image where the decoded image will be put */
-    uint8_t* video_dst_data[4] = { NULL };
-    int video_dst_linesize[4];
 
     if (open_codec_context(&video_stream_idx, avFormat, AVMEDIA_TYPE_VIDEO) >= 0)
     {
         AVStream* video_stream = avFormat->streams[video_stream_idx];
         video_dec_ctx = video_stream->codec;
-
+#if 0
         int ret = av_image_alloc(video_dst_data, video_dst_linesize,
                              video_dec_ctx->width, video_dec_ctx->height,
                              video_dec_ctx->pix_fmt, 1);
@@ -355,22 +301,26 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
             common->Error("Could not allocate raw video buffer\n");
         }
         int video_dst_bufsize = ret;
+#endif
     }
+
+    // Allocate target buffer for RGBA data
+    _rgbaBuffer = std::shared_ptr<byte>(static_cast<byte*>(Mem_Alloc(video_dec_ctx->width * video_dec_ctx->height * 4)), Mem_Free);
 
 #if 0
-    /*FILE* f = fopen(_path.c_str(), "rb");
-    if (!f) {
-        common->Warning("Could not open %s\n", _path.c_str());
-        return data;
-    }*/
-#endif
+    AVFrame* rgbaFrame = av_frame_alloc();
 
-    AVFrame* frame = av_frame_alloc();
-    if (!frame)
+    rgbaFrame->format = AV_PIX_FMT_RGBA;
+    rgbaFrame->width = video_dec_ctx->width;
+    rgbaFrame->height = video_dec_ctx->height;
+
+    // allocate the buffers for the RGBA frame data
+    if (av_frame_get_buffer(rgbaFrame, 32) < 0)
     {
-        common->Warning("Could not allocate video frame\n");
+        common->Warning("Could not allocate frame data.\n");
         return data;
     }
+#endif
 
     int got_frame = 0;
     while (av_read_frame(avFormat, &avpkt) >= 0)
@@ -379,13 +329,22 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 
         do
         {
-            int ret = decode_packet(avpkt, frame, &got_frame, 0, video_dec_ctx, video_dst_data, video_dst_linesize);
+            int ret = decode_packet(avpkt, _rgbaBuffer.get(), &got_frame, 0, video_dec_ctx);
 
             if (ret < 0)
                 break;
 
             avpkt.data += ret;
             avpkt.size -= ret;
+
+            if (got_frame)
+            {
+                data.image = _rgbaBuffer.get();
+                data.imageWidth = video_dec_ctx->width;
+                data.imageHeight = video_dec_ctx->height;
+                data.status = FMV_PLAY;
+                return data;
+            }
         } 
         while (avpkt.size > 0);
 
@@ -397,7 +356,7 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     avpkt.size = 0;
     do 
     {
-        decode_packet(avpkt, frame, &got_frame, 1, video_dec_ctx, video_dst_data, video_dst_linesize);
+        decode_packet(avpkt, _rgbaBuffer.get(), &got_frame, 1, video_dec_ctx);
     } 
     while (got_frame);
 
@@ -444,7 +403,9 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     av_frame_free(&frame);
 #endif
 
-    av_frame_free(&frame);
+#if 0
+    av_frame_free(&rgbaFrame);
+#endif
 
     return data;
 }
