@@ -32,6 +32,7 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libavutil/timestamp.h>
 
 }
 
@@ -47,8 +48,12 @@ idCinematicFFMpeg::idCinematicFFMpeg() :
 idCinematicFFMpeg::~idCinematicFFMpeg()
 {}
 
+//extern void FFMPEG_DecodeDemo();
+
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
+    //FFMPEG_DecodeDemo();
+
     av_log_set_callback(idCinematicFFMpeg::LogCallback);
 
     _path = fileSystem->RelativePathToOSPath(qpath);
@@ -97,22 +102,37 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
     return true;
 }
 
+static idStr FFMPegLog;
+
 void idCinematicFFMpeg::LogCallback(void* avcl, int level, const char *fmt, va_list vl)
 {
-    if (level == AV_LOG_INFO)
+    Sys_EnterCriticalSection(CRITICAL_SECTION_THREE);
+
+    char buf[5000];
+
+    vsprintf(buf, fmt, vl);
+
+    FFMPegLog.Append(buf);
+
+    Sys_LeaveCriticalSection(CRITICAL_SECTION_THREE);
+
+    /*if (level == AV_LOG_INFO)
     {
         common->Printf(fmt, vl);
+        return;
     }
 
     if (level == AV_LOG_WARNING)
     {
         common->Warning(fmt, vl);
+        return;
     }
 
     if (level == AV_LOG_ERROR)
     {
         common->Error(fmt, vl);
-    }
+        return;
+    }*/
 }
 
 int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
@@ -210,6 +230,14 @@ static int decode_packet(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int 
     return decoded;
 }
 
+static const char* AVGetTimeString2(int64_t pts, AVRational* tb)
+{
+    static char timeBuf[5000];
+    av_ts_make_time_string(timeBuf, pts, tb);
+
+    return timeBuf;
+}
+
 cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 {
     if (milliseconds < 0)
@@ -229,6 +257,7 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     }
 #endif
 
+#if 0
     // We need to get the actual time relative to video start
     // _startTime will have been set by a previous ResetTime() call.
     int timeRelativeToStart = milliseconds - _startTime;
@@ -244,37 +273,55 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
         common->Warning("Cannot seek in video stream.");
         return data;
     }
-
-    if (av_read_frame(_formatContext, &_packet) < 0)
-    {
-        common->Warning("Failed to read frame.");
-        return data;
-    }
+#endif
 
     int got_frame = 0;
 
-    do
+    while (av_read_frame(_formatContext, &_packet) >= 0)
     {
-        int ret = decode_packet(_packet, _rgbaBuffer.get(), &got_frame, 0, _videoDecoderContext);
-
-        if (ret < 0)
-            break;
-
-        _packet.data += ret;
-        _packet.size -= ret;
-
-        if (got_frame)
+        if (_packet.stream_index != _videoStreamIndex)
         {
-            data.image = _rgbaBuffer.get();
-            data.imageWidth = _videoDecoderContext->width;
-            data.imageHeight = _videoDecoderContext->height;
-            data.status = FMV_PLAY;
-
             av_free_packet(&_packet);
-            return data;
+            continue;
         }
-    } 
-    while (_packet.size > 0);
+
+        av_log(NULL, AV_LOG_INFO, "Size: %d, PTS: %s, DTS: %s, Duration: %d, Flags: %d\n",
+               _packet.size,
+               AVGetTimeString2(_packet.pts, &_videoDecoderContext->time_base),
+               AVGetTimeString2(_packet.dts, &_videoDecoderContext->time_base),
+               _packet.duration,
+               _packet.flags);
+
+        int run = 0;
+
+        do
+        {
+            run++;
+
+            int ret = decode_packet(_packet, _rgbaBuffer.get(), &got_frame, 0, _videoDecoderContext);
+
+            if (ret < 0)
+                break;
+
+            av_log(NULL, AV_LOG_INFO, "Decode Run #%d, got_frame: %d, returns %d, remaining packet size: %d\n",
+                   run, got_frame, ret, _packet.size - ret);
+
+            _packet.data += ret;
+            _packet.size -= ret;
+
+            if (got_frame)
+            {
+                data.image = _rgbaBuffer.get();
+                data.imageWidth = _videoDecoderContext->width;
+                data.imageHeight = _videoDecoderContext->height;
+                data.status = FMV_PLAY;
+
+                av_free_packet(&_packet);
+                return data;
+            }
+        } 
+        while (_packet.size > 0);
+    }
 
     /* flush cached frames */
     _packet.data = NULL;
