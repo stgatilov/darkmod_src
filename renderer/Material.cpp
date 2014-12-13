@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
+#include "CinematicFFMpeg.h"
 
 /*
 
@@ -1187,7 +1188,25 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ts->cinematic->InitFromFile( token.c_str(), loop );
 			continue;
 		}
-
+        else if (!token.Icmp("videomap_mpeg")) {
+            // note that videomaps will always be in clamp mode, so texture
+            // coordinates had better be in the 0 to 1 range
+            if (!src.ReadToken(&token)) {
+                common->Warning("missing parameter for 'videoMap_mpeg' keyword in material '%s'", GetName());
+                continue;
+            }
+            bool loop = false;
+            if (!token.Icmp("loop")) {
+                loop = true;
+                if (!src.ReadToken(&token)) {
+                    common->Warning("missing parameter for 'videoMap' keyword in material '%s'", GetName());
+                    continue;
+                }
+            }
+            ts->cinematic = new idCinematicFFMpeg();
+            ts->cinematic->InitFromFile(token.c_str(), loop);
+            continue;
+        }
 		else if ( !token.Icmp( "soundmap" ) ) {
 			if ( !src.ReadToken( &token ) ) {
 				common->Warning( "missing parameter for 'soundmap' keyword in material '%s'", GetName() );
