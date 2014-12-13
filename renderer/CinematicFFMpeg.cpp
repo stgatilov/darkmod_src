@@ -32,28 +32,28 @@ extern "C"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#include <libavutil/timestamp.h>
 
 }
 
 idCinematicFFMpeg::idCinematicFFMpeg() :
+    _duration(0),
+    _frameRate(0),
+    _startTime(0),
+    _status(FMV_EOF),
     _formatContext(NULL),
     _videoDecoderContext(NULL),
-    _startTime(0),
-    _status(FMV_EOF)
+    _tempFrame(NULL),
+    _swsContext(NULL)
 {
+    // Make sure all codecs are registered
     av_register_all();
 }
 
 idCinematicFFMpeg::~idCinematicFFMpeg()
 {}
 
-//extern void FFMPEG_DecodeDemo();
-
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
-    //FFMPEG_DecodeDemo();
-
     av_log_set_callback(idCinematicFFMpeg::LogCallback);
 
     _path = fileSystem->RelativePathToOSPath(qpath);
@@ -85,19 +85,37 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
         return false;
     }
 
-    AVStream* video_stream = _formatContext->streams[_videoStreamIndex];
-    _videoDecoderContext = video_stream->codec;
+    AVStream* videoStream = _formatContext->streams[_videoStreamIndex];
+    _videoDecoderContext = videoStream->codec;
     
-    // Allocate target buffer for RGBA data
-    int bufferSize = _videoDecoderContext->width * _videoDecoderContext->height * 4;
+    // Calculate duration in milliseconds and the framerate
+    _duration = static_cast<int>(videoStream->duration * av_q2d(videoStream->time_base) * 1000);
+    _frameRate = static_cast<float>(av_q2d(_videoDecoderContext->framerate));
 
-    _rgbaBuffer = std::shared_ptr<byte>(static_cast<byte*>(Mem_Alloc(bufferSize)), Mem_Free);
+    // Allocate target buffer for RGBA data
+    _bufferSize = _videoDecoderContext->width * _videoDecoderContext->height * 4;
+
+    // Allocate the temporary frame for decoding
+    _tempFrame = av_frame_alloc();
+
+    if (!_tempFrame)
+    {
+        common->Warning("Could not allocate video frame\n");
+        return false;
+    }
 
     av_init_packet(&_packet);
     _packet.data = NULL;
     _packet.size = 0;
 
     _status = FMV_PLAY;
+
+    // Set up the scaling context used to re-encode the images
+    _swsContext = sws_getContext(_videoDecoderContext->width, _videoDecoderContext->height,
+                                 _videoDecoderContext->pix_fmt,
+                                 _videoDecoderContext->width, _videoDecoderContext->height,
+                                 AV_PIX_FMT_RGBA,
+                                 SWS_BICUBIC, NULL, NULL, NULL);
 
     return true;
 }
@@ -115,24 +133,6 @@ void idCinematicFFMpeg::LogCallback(void* avcl, int level, const char *fmt, va_l
     FFMPegLog.Append(buf);
 
     Sys_LeaveCriticalSection(CRITICAL_SECTION_THREE);
-
-    /*if (level == AV_LOG_INFO)
-    {
-        common->Printf(fmt, vl);
-        return;
-    }
-
-    if (level == AV_LOG_WARNING)
-    {
-        common->Warning(fmt, vl);
-        return;
-    }
-
-    if (level == AV_LOG_ERROR)
-    {
-        common->Error(fmt, vl);
-        return;
-    }*/
 }
 
 int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
@@ -171,71 +171,33 @@ int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
     return streamIndex;
 }
 
-static int decode_packet(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int cached, AVCodecContext* video_dec_ctx)
+int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int cached)
 {
-    static int video_frame_count = 0;
-    int ret = 0;
     int decoded = avpkt.size;
-
-    static SwsContext* swsContext = NULL;
-
-    AVFrame* tempFrame = av_frame_alloc();
-    if (!tempFrame)
-    {
-        common->Warning("Could not allocate video frame\n");
-        return -1;
-    }
 
     *got_frame = 0;
 
     /* decode video frame */
-    ret = avcodec_decode_video2(video_dec_ctx, tempFrame, got_frame, &avpkt);
+    int ret = avcodec_decode_video2(_videoDecoderContext, _tempFrame, got_frame, &avpkt);
 
     if (ret < 0) 
     {
         common->Warning("Error decoding video frame (%d)\n", ret);
-        av_frame_free(&tempFrame);
         return ret;
     }
 
     if (*got_frame)
     {
-        common->Printf("video_frame %s n:%d coded_n:%d\n",
-                       cached ? "(cached)" : "",
-                       video_frame_count++, tempFrame->coded_picture_number);
-#if 0        
-        /* copy decoded frame to destination buffer:
-        * this is required since rawvideo expects non aligned data */
-        av_image_copy(video_dst_data, video_dst_linesize,
-                      (const uint8_t **)(tempFrame->data), tempFrame->linesize,
-                        video_dec_ctx->pix_fmt, video_dec_ctx->width, video_dec_ctx->height);
-#endif
-        if (swsContext == NULL)
-        {
-            swsContext = sws_getContext(video_dec_ctx->width, video_dec_ctx->height,
-                                        video_dec_ctx->pix_fmt,
-                                        video_dec_ctx->width, video_dec_ctx->height,
-                                        AV_PIX_FMT_RGBA,
-                                        SWS_BICUBIC, NULL, NULL, NULL);
-        }
+        int lineWidths[4] = { _videoDecoderContext->width * 4, _videoDecoderContext->width * 4, 
+                              _videoDecoderContext->width * 4, _videoDecoderContext->width * 4 };
 
-        int lineWidths[4] = { video_dec_ctx->width * 4, video_dec_ctx->width * 4, video_dec_ctx->width * 4, video_dec_ctx->width * 4 };
-
-        sws_scale(swsContext, (const uint8_t * const *)tempFrame->data, tempFrame->linesize,
-                  0, video_dec_ctx->height, static_cast<uint8_t* const*>(&targetRGBA), lineWidths);
+        // We pass only one RGBA plane to this method even though it's expecting a maximum of 4 (I think)
+        // If this is causing crashes, this might be a reason for it
+        sws_scale(_swsContext, _tempFrame->data, _tempFrame->linesize,
+                  0, _videoDecoderContext->height, static_cast<uint8_t* const*>(&targetRGBA), lineWidths);
     }
 
-    av_frame_free(&tempFrame);
-
     return decoded;
-}
-
-static const char* AVGetTimeString2(int64_t pts, AVRational* tb)
-{
-    static char timeBuf[5000];
-    av_ts_make_time_string(timeBuf, pts, tb);
-
-    return timeBuf;
 }
 
 cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
@@ -248,33 +210,31 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     cinData_t data;
     memset(&data, 0, sizeof(data));
 
-#if 0
-    for (unsigned int i = 0; i < avFormat->nb_streams; ++i)
+    int requestedVideoTime = milliseconds - _startTime;
+
+    /*if (_bufferTimeStamp == requestedVideoTime)
     {
-        AVStream* stream = avFormat->streams[i];		// pointer to a structure describing the stream
-        AVMediaType codecType = stream->codec->codec_type;	// the type of data in this stream, notable values are AVMEDIA_TYPE_VIDEO and AVMEDIA_TYPE_AUDIO
-        AVCodecID codecID = stream->codec->codec_id;		// identifier for the codec
-    }
-#endif
 
-#if 0
-    // We need to get the actual time relative to video start
-    // _startTime will have been set by a previous ResetTime() call.
-    int timeRelativeToStart = milliseconds - _startTime;
+    }*/
 
-    int seekTimeSeconds = timeRelativeToStart / 1000;
-    int64_t seekDest = seekTimeSeconds * AV_TIME_BASE;
+    common->Printf("Reqested Time: %d ms, last buffer time: %d ms\n", requestedVideoTime, _buffer.timeStamp);
 
-    // Flush buffers before seeking
-    avcodec_flush_buffers(_videoDecoderContext);
-
-    if (av_seek_frame(_formatContext, _videoStreamIndex, seekDest, AVSEEK_FLAG_FRAME) < 0)
+    // Load a buffer
+    if (ReadFrame(_buffer))
     {
-        common->Warning("Cannot seek in video stream.");
-        return data;
-    }
-#endif
+        data.image = _buffer.rgbaImage.get();
+        data.imageWidth = _videoDecoderContext->width;
+        data.imageHeight = _videoDecoderContext->height;
+        data.status = FMV_PLAY;
 
+        common->Printf("Requested Time: %d ms, decoded buffer: %d ms\n", requestedVideoTime, _buffer.timeStamp);
+    }
+
+    return data;
+}
+
+bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
+{
     int got_frame = 0;
 
     while (av_read_frame(_formatContext, &_packet) >= 0)
@@ -285,39 +245,29 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
             continue;
         }
 
-        av_log(NULL, AV_LOG_INFO, "Size: %d, PTS: %s, DTS: %s, Duration: %d, Flags: %d\n",
-               _packet.size,
-               AVGetTimeString2(_packet.pts, &_videoDecoderContext->time_base),
-               AVGetTimeString2(_packet.dts, &_videoDecoderContext->time_base),
-               _packet.duration,
-               _packet.flags);
-
-        int run = 0;
-
         do
         {
-            run++;
+            // Ensure that the target buffer has an RGBA plane allocated
+            if (!targetBuffer.rgbaImage)
+            {
+                targetBuffer.rgbaImage = std::shared_ptr<byte>(static_cast<byte*>(Mem_Alloc(_bufferSize)), Mem_Free);
+            }
 
-            int ret = decode_packet(_packet, _rgbaBuffer.get(), &got_frame, 0, _videoDecoderContext);
+            int ret = DecodePacket(_packet, targetBuffer.rgbaImage.get(), &got_frame, 0);
 
             if (ret < 0)
                 break;
-
-            av_log(NULL, AV_LOG_INFO, "Decode Run #%d, got_frame: %d, returns %d, remaining packet size: %d\n",
-                   run, got_frame, ret, _packet.size - ret);
 
             _packet.data += ret;
             _packet.size -= ret;
 
             if (got_frame)
             {
-                data.image = _rgbaBuffer.get();
-                data.imageWidth = _videoDecoderContext->width;
-                data.imageHeight = _videoDecoderContext->height;
-                data.status = FMV_PLAY;
+                // Save the time stamp into the buffer
+                targetBuffer.timeStamp = GetPacketTime();
 
                 av_free_packet(&_packet);
-                return data;
+                return true;
             }
         } 
         while (_packet.size > 0);
@@ -327,39 +277,53 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     _packet.data = NULL;
     _packet.size = 0;
 
-    do 
+    DecodePacket(_packet, targetBuffer.rgbaImage.get(), &got_frame, 1);
+
+    if (got_frame)
     {
-        decode_packet(_packet, _rgbaBuffer.get(), &got_frame, 1, _videoDecoderContext);
+        // Save the time stamp, we might re-use this buffer
+        targetBuffer.timeStamp = GetPacketTime();
+            
+        av_free_packet(&_packet);
+        return true;
+    }
 
-        if (got_frame)
-        {
-            data.image = _rgbaBuffer.get();
-            data.imageWidth = _videoDecoderContext->width;
-            data.imageHeight = _videoDecoderContext->height;
-            data.status = FMV_PLAY;
-
-            break;
-        }
-    } 
-    while (got_frame);
-
+    targetBuffer.timeStamp = -1;
     av_free_packet(&_packet);
+    return false;
+}
 
-    return data;
+int idCinematicFFMpeg::GetPacketTime()
+{
+    double frameTime = _packet.pts * av_q2d(_formatContext->streams[_packet.stream_index]->time_base);
+    return static_cast<int>(frameTime * 1000);
 }
 
 int idCinematicFFMpeg::AnimationLength()
 {
-    if (_formatContext)
-    {
-        return (_formatContext->duration / AV_TIME_BASE) * 1000;
-    }
-
-    return 0;
+    return _duration;
 }
 
 void idCinematicFFMpeg::Close()
 {
+    _buffer.rgbaImage.reset();
+    _buffer.timeStamp = -1;
+
+    _bufferNext.rgbaImage.reset();
+    _bufferNext.timeStamp = -1;
+
+    if (_tempFrame != NULL)
+    {
+        av_frame_free(&_tempFrame);
+        _tempFrame = NULL;
+    }
+
+    if (_swsContext != NULL)
+    {
+        sws_freeContext(_swsContext);
+        _swsContext = NULL;
+    }
+
     if (_videoDecoderContext != NULL)
     {
         avcodec_close(_videoDecoderContext);
@@ -377,4 +341,24 @@ void idCinematicFFMpeg::ResetTime(int time)
 {
     _startTime = (backEnd.viewDef) ? 1000 * backEnd.viewDef->floatTime : -1;
     _status = FMV_PLAY;
+
+#if 0
+    // We need to get the actual time relative to video start
+    // _startTime will have been set by a previous ResetTime() call.
+    int timeRelativeToStart = milliseconds - _startTime;
+
+    double seekTimeSeconds = timeRelativeToStart / 1000;
+    int64_t seekPts = seekTimeSeconds / av_q2d(_formatContext->streams[_videoStreamIndex]->time_base);
+
+    // Flush buffers before seeking
+    avcodec_flush_buffers(_videoDecoderContext);
+
+    common->Printf("Seeking to time: %g secs\n", seekTimeSeconds);
+
+    if (av_seek_frame(_formatContext, _videoStreamIndex, seekPts, AVSEEK_FLAG_ANY) < 0)
+    {
+        common->Warning("Cannot seek in video stream.");
+        return data;
+    }
+#endif
 }
