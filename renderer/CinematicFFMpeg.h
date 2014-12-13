@@ -11,9 +11,9 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 
 Project: The Dark Mod (http://www.thedarkmod.com/)
 
-$Revision: 5122 $ (Revision of last commit)
-$Date: 2011-12-11 20:47:31 +0100 (So, 11 Dez 2011) $ (Date of last commit)
-$Author: greebo $ (Author of last commit)
+$Revision$ (Revision of last commit)
+$Date$ (Date of last commit)
+$Author$ (Author of last commit)
 
 ******************************************************************************/
 
@@ -21,6 +21,14 @@ $Author: greebo $ (Author of last commit)
 
 #include "Cinematic.h"
 #include <memory>
+
+extern "C"
+{
+
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+
+}
 
 /**
  * Cinematic driven by the ffmpeg libavcodec library.
@@ -39,7 +47,24 @@ public:
     virtual void			ResetTime(int time);
 
 private:
+    static void             LogCallback(void* avcl, int level, const char *fmt, va_list vl);
+
+    // Returns the index of the best suitable stream type, requires an open format context
+    int                     FindBestStreamByType(AVMediaType type);
+
     idStr _path;
 
+    // The backend time the video started
+    int						_startTime;
+
+    // The status of this cinematic
+    cinStatus_t				_status;
+
     std::shared_ptr<byte>   _rgbaBuffer;
+
+    AVFormatContext*        _formatContext;
+    AVCodecContext*         _videoDecoderContext;
+    int                     _videoStreamIndex;
+
+    AVPacket                _packet;
 };
