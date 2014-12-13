@@ -264,7 +264,7 @@ idTrigger_Multi::idTrigger_Multi( void ) {
 	random = 0.0f;
 	delay = 0.0f;
 	random_delay = 0.0f;
-	nextTriggerTime = 32;
+	nextTriggerTime = 0;
 	removeItem = 0;
 	touchClient = false;
 	touchOther = false;
@@ -357,7 +357,7 @@ void idTrigger_Multi::Spawn( void ) {
 		touchOther = false;
 	}
 
-	nextTriggerTime = 32;
+	nextTriggerTime = 0;
 
 	if ( spawnArgs.GetBool( "flashlight_trigger" ) ) {
 		GetPhysics()->SetContents( CONTENTS_FLASHLIGHT_TRIGGER );

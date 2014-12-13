@@ -1353,6 +1353,14 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			continue;
 		}
 
+		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
+		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
+		if ( tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID
+			&& ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) )
+		{
+			continue;
+		}
+
 		// debugging tool to make sure we are have the correct pre-calculated bounds
 		if ( r_checkBounds.GetBool() ) {
 			int j, k;
@@ -1493,6 +1501,14 @@ void R_AddModelSurfaces( void ) {
 				tr.viewDef->floatTime = oldFloatTime;
 				tr.viewDef->renderView.time = oldTime;
 			}
+			continue;
+		}
+
+		// Don't let particle entities re-instantiate their dynamic model during non-visible 
+		// views (in TDM, the light gem render) -- SteveL #3970
+		if ( tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID
+			&& dynamic_cast<const idRenderModelPrt*>( vEntity->entityDef->parms.hModel ) != NULL )
+		{
 			continue;
 		}
 

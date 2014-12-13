@@ -546,7 +546,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
-	if (	backEnd.viewDef->renderView.viewID >= 0  // Suppress for lightgem rendering passes
+	if (	backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
 		 && !r_skipDepthCapture.GetBool() )
 	{
 		globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
