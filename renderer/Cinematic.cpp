@@ -22,6 +22,8 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#include "CinematicFFMpeg.h"
+
 #define JPEG_INTERNALS
 extern "C" {
 #include <jpeglib.h>
@@ -190,7 +192,7 @@ idCinematicLocal::Alloc
 ==============
 */
 idCinematic *idCinematic::Alloc() {
-	return new idCinematicLocal;
+    return new idCinematicFFMpeg;
 }
 
 /*
