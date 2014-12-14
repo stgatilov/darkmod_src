@@ -63,6 +63,10 @@ private:
 
 private: // methods
 
+    bool                    OpenAVDecoder();
+
+    void                    CloseAVDecoder();
+
 #if ENABLE_AV_DEBUG_LOGGING
     static void             LogCallback(void* avcl, int level, const char *fmt, va_list vl);
 #endif
@@ -71,7 +75,7 @@ private: // methods
     int                     FindBestStreamByType(AVMediaType type);
 
     // Decodes a single stream packet into the RGBA buffer
-    int                     DecodePacket(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int cached);
+    int                     DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& frameDecoded);
 
     // Load the next frame and save it to the given buffer. Buffer data will be overwritten.
     // Returns true if the buffer was filled, false on failure/EOF.

@@ -59,7 +59,6 @@ class idCinematicFFMpeg::VFSIOContext
 private:
     idFile* _file;
     int _bufferSize;
-    unsigned char* _buffer;
 
     AVIOContext* _context;
 
@@ -70,18 +69,18 @@ private:
 public:
     VFSIOContext(idFile* file) :
         _file(file),
-        _bufferSize(16 * 1024),
-        _buffer(static_cast<unsigned char*>(av_malloc(_bufferSize))),
+        _bufferSize(4096),
         _context(NULL)
     {
-        _context = avio_alloc_context(_buffer, _bufferSize, 0, this,
+        unsigned char* buffer = static_cast<unsigned char*>(av_malloc(_bufferSize));
+        _context = avio_alloc_context(buffer, _bufferSize, 0, this,
                                       &VFSIOContext::read, NULL, &VFSIOContext::seek);
     }
 
     ~VFSIOContext()
     {
+        av_free(_context->buffer);
         av_free(_context);
-        av_free(_buffer);
     }
 
     static int read(void* opaque, unsigned char* buf, int buf_size)
@@ -118,19 +117,24 @@ public:
 
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
-#if ENABLE_AV_DEBUG_LOGGING
-    av_log_set_callback(idCinematicFFMpeg::LogCallback);
-#endif
-
     _path = qpath;
-    
-    _file = fileSystem->OpenFileRead(qpath);
+
+    return OpenAVDecoder();
+}
+
+bool idCinematicFFMpeg::OpenAVDecoder()
+{
+    _file = fileSystem->OpenFileRead(_path.c_str());
 
     if (_file == NULL)
     {
         common->Warning("Couldn't open video file: %s", _path.c_str());
         return false;
     }
+
+#if ENABLE_AV_DEBUG_LOGGING
+    av_log_set_callback(idCinematicFFMpeg::LogCallback);
+#endif
 
     // Use libavformat to detect the video type and stream
     _formatContext = avformat_alloc_context();
@@ -196,6 +200,57 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
     return true;
 }
 
+void idCinematicFFMpeg::CloseAVDecoder()
+{
+    _status = FMV_IDLE;
+
+    // Leave the buffers allocated, but invalidate them
+    _buffer.timeStamp = -1;
+    _bufferNext.timeStamp = -1;
+
+    _duration = 0;
+    _frameRate = 0;
+    _bufferSize = 0;
+
+    if (_tempFrame != NULL)
+    {
+        av_frame_free(&_tempFrame);
+        _tempFrame = NULL;
+    }
+
+    if (_swsContext != NULL)
+    {
+        sws_freeContext(_swsContext);
+        _swsContext = NULL;
+    }
+
+    _videoStreamIndex = -1;
+
+    if (_videoDecoderContext != NULL)
+    {
+        avcodec_close(_videoDecoderContext);
+        _videoDecoderContext = NULL;
+    }
+
+    if (_formatContext != NULL)
+    {
+        avformat_close_input(&_formatContext);
+        _formatContext = NULL;
+    }
+
+    _customIOContext.reset();
+
+#if ENABLE_AV_DEBUG_LOGGING
+    av_log_set_callback(av_log_default_callback);
+#endif
+
+    if (_file != NULL)
+    {
+        fileSystem->CloseFile(_file);
+        _file = NULL;
+    }
+}
+
 #if ENABLE_AV_DEBUG_LOGGING
 static idStr FFMPegLog;
 
@@ -249,14 +304,16 @@ int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
     return streamIndex;
 }
 
-int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, int *got_frame, int cached)
+int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& frameDecoded)
 {
     int decoded = avpkt.size;
 
-    *got_frame = 0;
+    frameDecoded = false;
 
-    /* decode video frame */
-    int ret = avcodec_decode_video2(_videoDecoderContext, _tempFrame, got_frame, &avpkt);
+    // Decode the packet
+    int got_frame = 0;
+
+    int ret = avcodec_decode_video2(_videoDecoderContext, _tempFrame, &got_frame, &avpkt);
 
     if (ret < 0) 
     {
@@ -264,8 +321,10 @@ int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, int *got_
         return ret;
     }
 
-    if (*got_frame)
+    if (got_frame)
     {
+        frameDecoded = true;
+
         int lineWidths[4] = { _videoDecoderContext->width * 4, _videoDecoderContext->width * 4, 
                               _videoDecoderContext->width * 4, _videoDecoderContext->width * 4 };
 
@@ -287,12 +346,14 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 
     int requestedVideoTime = milliseconds - _startTime;
 
+    //common->Printf("Requested %d, start time: %d\n", milliseconds, _startTime);
+
     // Ensure we have at least the first buffer decoded
     if (_buffer.timeStamp == -1)
     {
         if (!ReadFrame(_buffer))
         {
-            //common->Printf("No more frames available.\n");
+            common->Printf("No more frames available.\n");
             return data; // out of frames
         }
     }
@@ -373,7 +434,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
         return false;
     }
 
-    int got_frame = 0;
+    bool frameDecoded = false;
 
     while (av_read_frame(_formatContext, &_packet) >= 0)
     {
@@ -393,7 +454,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
                 targetBuffer.rgbaImage = std::shared_ptr<byte>(static_cast<byte*>(Mem_Alloc(_bufferSize)), Mem_Free);
             }
 
-            int ret = DecodePacket(_packet, targetBuffer.rgbaImage.get(), &got_frame, 0);
+            int ret = DecodePacket(_packet, targetBuffer.rgbaImage.get(), frameDecoded);
 
             if (ret < 0)
                 break;
@@ -401,7 +462,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
             _packet.data += ret;
             _packet.size -= ret;
 
-            if (got_frame)
+            if (frameDecoded)
             {
                 //common->Printf("FRAME: %d\n", GetPacketTime());
 
@@ -419,9 +480,9 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
     _packet.data = NULL;
     _packet.size = 0;
 
-    DecodePacket(_packet, targetBuffer.rgbaImage.get(), &got_frame, 1);
+    DecodePacket(_packet, targetBuffer.rgbaImage.get(), frameDecoded);
 
-    if (got_frame)
+    if (frameDecoded)
     {
         // Save the time stamp, we might re-use this buffer
         targetBuffer.timeStamp = GetPacketTime();
@@ -452,67 +513,34 @@ int idCinematicFFMpeg::AnimationLength()
 
 void idCinematicFFMpeg::Close()
 {
+    CloseAVDecoder();
+
+    // Deallocate the buffers as well
     _buffer.rgbaImage.reset();
-    _buffer.timeStamp = -1;
-
     _bufferNext.rgbaImage.reset();
-    _bufferNext.timeStamp = -1;
-
-    if (_tempFrame != NULL)
-    {
-        av_frame_free(&_tempFrame);
-        _tempFrame = NULL;
-    }
-
-    if (_swsContext != NULL)
-    {
-        sws_freeContext(_swsContext);
-        _swsContext = NULL;
-    }
-
-    if (_videoDecoderContext != NULL)
-    {
-        avcodec_close(_videoDecoderContext);
-        _videoDecoderContext = NULL;
-    }
-
-    if (_formatContext != NULL)
-    {
-        avformat_close_input(&_formatContext);
-        _formatContext = NULL;
-    }
-
-    _customIOContext.reset();
-
-    if (_file != NULL)
-    {
-        fileSystem->CloseFile(_file);
-        _file = NULL;
-    }
 }
 
 void idCinematicFFMpeg::ResetTime(int time)
 {
+    // Even though a time is passed to this function, it seems we're just ditching it
+    // and revert the start time to the reference time in the render backend, since
+    // this backend time is the one that is passed to ImageForTime()
     _startTime = (backEnd.viewDef) ? 1000 * backEnd.viewDef->floatTime : -1;
-    _status = FMV_PLAY;
 
-#if 0
-    // We need to get the actual time relative to video start
-    // _startTime will have been set by a previous ResetTime() call.
-    int timeRelativeToStart = milliseconds - _startTime;
+    common->Printf("Resetting time to %d, startTime is now %d\n", time, _startTime);
 
-    double seekTimeSeconds = timeRelativeToStart / 1000;
-    int64_t seekPts = seekTimeSeconds / av_q2d(_formatContext->streams[_videoStreamIndex]->time_base);
+#if ENABLE_AV_SEEKING
+    if (av_seek_frame(_formatContext, _videoStreamIndex, 0, AVSEEK_FLAG_BYTE) < 0)
+    {
+        common->Warning("Cannot seek in video stream.");
+    }
 
     // Flush buffers before seeking
     avcodec_flush_buffers(_videoDecoderContext);
-
-    common->Printf("Seeking to time: %g secs\n", seekTimeSeconds);
-
-    if (av_seek_frame(_formatContext, _videoStreamIndex, seekPts, AVSEEK_FLAG_ANY) < 0)
-    {
-        common->Warning("Cannot seek in video stream.");
-        return data;
-    }
+#else
+    // Just re-init the whole stuff, don't bother seeking
+    // as it doesn't seem to work reliably with ROQs.
+    CloseAVDecoder();
+    OpenAVDecoder();
 #endif
 }
