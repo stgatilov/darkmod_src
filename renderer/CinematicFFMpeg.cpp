@@ -207,12 +207,6 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     cinData_t data;
     memset(&data, 0, sizeof(data));
 
-    /*if (_status == FMV_EOF)
-    {
-        // out of data
-        return data; 
-    }*/
-
     int requestedVideoTime = milliseconds - _startTime;
 
     // Ensure we have at least the first buffer decoded
@@ -220,7 +214,7 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     {
         if (!ReadFrame(_buffer))
         {
-            common->Printf("No more frames available.\n");
+            //common->Printf("No more frames available.\n");
             return data; // out of frames
         }
     }
@@ -228,7 +222,7 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     // Requests for frames before the buffered ones are not served right now
     if (requestedVideoTime < _buffer.timeStamp)
     {
-        common->Printf("Waiting to get in sync, requested time is too small.\n");
+        //common->Printf("Waiting to get in sync, requested time is too small.\n");
         return data;
     }
 
@@ -239,6 +233,9 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
     {
         ReadFrame(_bufferNext);
     }
+
+    //common->Printf("BEFORE: Reqested Time: %d ms, buf: %d ms, delta: %d, next: %d\n",
+    //               requestedVideoTime, _buffer.timeStamp, requestedVideoTime - _buffer.timeStamp, _bufferNext.timeStamp);
 
     // Keep shifting buffers to the front if they are more suitable
     while (_bufferNext.timeStamp != -1 && requestedVideoTime >= _bufferNext.timeStamp)
@@ -251,19 +248,38 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
         if (!ReadFrame(_bufferNext)) break;
     }
 
-    // At this point the first buffer should be the most suitable one
+    // At this point the first buffer should be aligned to be <= requestedTime
     assert(requestedVideoTime >= _buffer.timeStamp);
 
     if (_buffer.timeStamp != -1)
     {
-        // Return this frame
-        data.image = _buffer.rgbaImage.get();
         data.imageWidth = _videoDecoderContext->width;
         data.imageHeight = _videoDecoderContext->height;
-
         data.status = FMV_PLAY;
 
-        common->Printf("Reqested Time: %d ms, served: %d ms\n", requestedVideoTime, _buffer.timeStamp);
+        // Check which frame is closest to the requested time
+        if (_bufferNext.timeStamp != -1)
+        {
+            int delta = idMath::Abs(requestedVideoTime - _buffer.timeStamp);
+            int deltaNext = idMath::Abs(requestedVideoTime - _bufferNext.timeStamp);
+
+            if (deltaNext < delta)
+            {
+                // Next frame is closer
+                data.image = _bufferNext.rgbaImage.get();
+
+                //common->Printf("SERVENEXT: Reqested Time: %d ms, buf: %d ms, delta: %d, next: %d\n",
+                //               requestedVideoTime, _buffer.timeStamp, requestedVideoTime - _buffer.timeStamp, _bufferNext.timeStamp);
+
+                return data;
+            }
+        }
+
+        // Return this frame
+        data.image = _buffer.rgbaImage.get();
+
+        //common->Printf("SERVE: Reqested Time: %d ms, buf: %d ms, delta: %d, next: %d\n", 
+        //               requestedVideoTime, _buffer.timeStamp, requestedVideoTime - _buffer.timeStamp, _bufferNext.timeStamp);
 
         return data;
     }
@@ -283,6 +299,8 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
     while (av_read_frame(_formatContext, &_packet) >= 0)
     {
+        //common->Printf("Read a packet: %d\n", GetPacketTime());
+
         if (_packet.stream_index != _videoStreamIndex)
         {
             av_free_packet(&_packet);
@@ -307,6 +325,8 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
             if (got_frame)
             {
+                //common->Printf("FRAME: %d\n", GetPacketTime());
+
                 // Save the time stamp into the buffer
                 targetBuffer.timeStamp = GetPacketTime();
 
