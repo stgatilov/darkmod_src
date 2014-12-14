@@ -37,12 +37,18 @@ extern "C"
 }
 
 idCinematicFFMpeg::idCinematicFFMpeg() :
+    _looping(false),
+    _file(NULL),
     _duration(0),
     _frameRate(0),
     _startTime(0),
     _status(FMV_EOF),
+    _bufferSize(0),
     _formatContext(NULL),
     _videoDecoderContext(NULL),
+    _videoStreamIndex(-1),
+    _packetTimeOffset(0),
+    _highestNextPacketTime(-1),
     _tempFrame(NULL),
     _swsContext(NULL)
 {
@@ -118,6 +124,8 @@ public:
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
     _path = qpath;
+    _packetTimeOffset = 0;
+    _looping = looping;
 
     return OpenAVDecoder();
 }
@@ -167,9 +175,18 @@ bool idCinematicFFMpeg::OpenAVDecoder()
 
     AVStream* videoStream = _formatContext->streams[_videoStreamIndex];
     _videoDecoderContext = videoStream->codec;
-    
-    // Calculate duration in milliseconds and the framerate
-    _duration = static_cast<int>(videoStream->duration * av_q2d(videoStream->time_base) * 1000);
+
+    // Some video formats (like the beloved ROQ) don't provider a sane duration value, so let's check
+    if (videoStream->duration != AV_NOPTS_VALUE && videoStream->duration >= 0)
+    {
+        // Calculate duration in milliseconds
+        _duration = static_cast<int>(videoStream->duration * av_q2d(videoStream->time_base) * 1000);
+    }
+    else
+    {
+        _duration = 100000; // use a hardcoded value, just like the good old idCinematicLocal
+    }
+
     _frameRate = static_cast<float>(av_q2d(_videoDecoderContext->framerate));
 
     // Allocate target buffer for RGBA data
@@ -203,10 +220,6 @@ bool idCinematicFFMpeg::OpenAVDecoder()
 void idCinematicFFMpeg::CloseAVDecoder()
 {
     _status = FMV_IDLE;
-
-    // Leave the buffers allocated, but invalidate them
-    _buffer.timeStamp = -1;
-    _bufferNext.timeStamp = -1;
 
     _duration = 0;
     _frameRate = 0;
@@ -429,16 +442,33 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 
 bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 {
+    // Invalidate the buffer whatever comes
+    targetBuffer.timeStamp = -1;
+    targetBuffer.duration = 0;
+
     if (_status == FMV_EOF)
     {
-        return false;
+        if (!_looping)
+        {
+            return false;
+        }
+
+        // Add one full video duration as offset
+        if (_highestNextPacketTime > 0)
+        {
+            _packetTimeOffset += _highestNextPacketTime;
+        }
+
+        // EOF, so let's rewind the whole thing
+        CloseAVDecoder();
+        OpenAVDecoder();
     }
 
     bool frameDecoded = false;
 
     while (av_read_frame(_formatContext, &_packet) >= 0)
     {
-        //common->Printf("Read a packet: %d\n", GetPacketTime());
+        //common->Printf("Read a packet: %d\n", CalculatePacketTime());
 
         if (_packet.stream_index != _videoStreamIndex)
         {
@@ -464,10 +494,11 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
             if (frameDecoded)
             {
-                //common->Printf("FRAME: %d\n", GetPacketTime());
+                //common->Printf("FRAME: %d\n", CalculatePacketTime());
 
                 // Save the time stamp into the buffer
-                targetBuffer.timeStamp = GetPacketTime();
+                targetBuffer.timeStamp = CalculatePacketTime();
+                targetBuffer.duration = _packet.duration * av_q2d(_formatContext->streams[_videoStreamIndex]->time_base) * 1000;
 
                 av_free_packet(&_packet);
                 return true;
@@ -476,7 +507,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
         while (_packet.size > 0);
     }
 
-    /* flush cached frames */
+    // flush cached frames
     _packet.data = NULL;
     _packet.size = 0;
 
@@ -485,13 +516,13 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
     if (frameDecoded)
     {
         // Save the time stamp, we might re-use this buffer
-        targetBuffer.timeStamp = GetPacketTime();
+        targetBuffer.timeStamp = CalculatePacketTime();
+        targetBuffer.duration = _packet.duration * av_q2d(_formatContext->streams[_videoStreamIndex]->time_base) * 1000;
             
         av_free_packet(&_packet);
         return true;
     }
 
-    targetBuffer.timeStamp = -1;
     av_free_packet(&_packet);
 
     // We seem to be out of frames
@@ -500,10 +531,25 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
     return false;
 }
 
-int idCinematicFFMpeg::GetPacketTime()
+int idCinematicFFMpeg::CalculatePacketTime()
 {
-    double frameTime = _packet.pts * av_q2d(_formatContext->streams[_packet.stream_index]->time_base);
-    return static_cast<int>(frameTime * 1000);
+    double timeBase = av_q2d(_formatContext->streams[_videoStreamIndex]->time_base);
+    double frameTime = _packet.pts * timeBase;
+
+    // Calculate the time in msecs
+    int packetTime = static_cast<int>(frameTime * 1000);
+    
+    // Estimate the time of the next packet, even if there would be none
+    int estimatedNextPacketTime = packetTime + (_packet.duration * timeBase * 1000);
+
+    // Keep track of the highest packet time so far
+    if (estimatedNextPacketTime > _highestNextPacketTime)
+    {
+        _highestNextPacketTime = estimatedNextPacketTime;
+    }
+
+    // For looping, we just add an offset to packets such that their time is ever-ascending
+    return packetTime +_packetTimeOffset;
 }
 
 int idCinematicFFMpeg::AnimationLength()
@@ -515,9 +561,8 @@ void idCinematicFFMpeg::Close()
 {
     CloseAVDecoder();
 
-    // Deallocate the buffers as well
-    _buffer.rgbaImage.reset();
-    _bufferNext.rgbaImage.reset();
+    _packetTimeOffset = 0;
+    _highestNextPacketTime = -1;
 }
 
 void idCinematicFFMpeg::ResetTime(int time)
@@ -526,6 +571,10 @@ void idCinematicFFMpeg::ResetTime(int time)
     // and revert the start time to the reference time in the render backend, since
     // this backend time is the one that is passed to ImageForTime()
     _startTime = (backEnd.viewDef) ? 1000 * backEnd.viewDef->floatTime : -1;
+
+    // Reset the loop time offset
+    _packetTimeOffset = 0;
+    _highestNextPacketTime = -1;
 
     common->Printf("Resetting time to %d, startTime is now %d\n", time, _startTime);
 
@@ -542,5 +591,11 @@ void idCinematicFFMpeg::ResetTime(int time)
     // as it doesn't seem to work reliably with ROQs.
     CloseAVDecoder();
     OpenAVDecoder();
+
+    // CloseAVDecoder won't touch the buffers, invalidate them
+    _buffer.timeStamp = -1;
+    _buffer.duration = 0;
+    _bufferNext.timeStamp = -1;
+    _bufferNext.duration = 0;
 #endif
 }

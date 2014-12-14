@@ -54,17 +54,21 @@ private:
     struct FrameBuffer
     {
         int                     timeStamp;     // video time in msecs
+        int                     duration;      // frame duration in msecs
         std::shared_ptr<byte>   rgbaImage;     // byte buffer holding RGBA image
 
         FrameBuffer() :
-            timeStamp(-1)
+            timeStamp(-1),
+            duration(0)
         {}
     };
 
 private: // methods
 
+    // Creates the whole libavcodec contexts, also called when resetting the time
     bool                    OpenAVDecoder();
 
+    // Frees the libavcodec structures, doesn't touch the FrameBuffers
     void                    CloseAVDecoder();
 
 #if ENABLE_AV_DEBUG_LOGGING
@@ -82,12 +86,15 @@ private: // methods
     bool                    ReadFrame(FrameBuffer& targetBuffer);
 
     // Returns the time in msecs of the current _packet
-    int                     GetPacketTime();
+    int                     CalculatePacketTime();
 
 private: // members
 
     // The path of the cinematic (VFS path)
-    idStr _path;
+    idStr                   _path;
+
+    // Whether this cinematic is supposed to loop
+    bool                    _looping;
 
     // The virtual file we're streaming from
     idFile*                 _file;
@@ -118,7 +125,14 @@ private: // members
     AVCodecContext*         _videoDecoderContext;
     int                     _videoStreamIndex;
 
+    // The packet used for decoding decoded 
     AVPacket                _packet;
+
+    // The time offset that is added to packet timestamps, used for looping
+    int                     _packetTimeOffset;
+
+    // The highest calculated packet time (unlooped time)
+    int                     _highestNextPacketTime;
 
     // Frame data in native pixel format
     AVFrame*                _tempFrame;
