@@ -202,39 +202,83 @@ int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, int *got_
 
 cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds)
 {
-    if (milliseconds < 0)
-    {
-        milliseconds = 0;
-    }
+    if (milliseconds < 0) milliseconds = 0;
 
     cinData_t data;
     memset(&data, 0, sizeof(data));
 
-    int requestedVideoTime = milliseconds - _startTime;
-
-    /*if (_bufferTimeStamp == requestedVideoTime)
+    /*if (_status == FMV_EOF)
     {
-
+        // out of data
+        return data; 
     }*/
 
-    common->Printf("Reqested Time: %d ms, last buffer time: %d ms\n", requestedVideoTime, _buffer.timeStamp);
+    int requestedVideoTime = milliseconds - _startTime;
 
-    // Load a buffer
-    if (ReadFrame(_buffer))
+    // Ensure we have at least the first buffer decoded
+    if (_buffer.timeStamp == -1)
     {
+        if (!ReadFrame(_buffer))
+        {
+            common->Printf("No more frames available.\n");
+            return data; // out of frames
+        }
+    }
+
+    // Requests for frames before the buffered ones are not served right now
+    if (requestedVideoTime < _buffer.timeStamp)
+    {
+        common->Printf("Waiting to get in sync, requested time is too small.\n");
+        return data;
+    }
+
+    // Requested video time >= _buffer.timeStamp past this point
+
+    // Also load the second buffer, we need it to check whether it is closer
+    if (_bufferNext.timeStamp == -1)
+    {
+        ReadFrame(_bufferNext);
+    }
+
+    // Keep shifting buffers to the front if they are more suitable
+    while (_bufferNext.timeStamp != -1 && requestedVideoTime >= _bufferNext.timeStamp)
+    {
+        // buffernext will take the place of buffer, which can be discarded
+        _buffer = _bufferNext;
+        _bufferNext.timeStamp = -1;
+
+        // Attempt to load the next buffer
+        if (!ReadFrame(_bufferNext)) break;
+    }
+
+    // At this point the first buffer should be the most suitable one
+    assert(requestedVideoTime >= _buffer.timeStamp);
+
+    if (_buffer.timeStamp != -1)
+    {
+        // Return this frame
         data.image = _buffer.rgbaImage.get();
         data.imageWidth = _videoDecoderContext->width;
         data.imageHeight = _videoDecoderContext->height;
+
         data.status = FMV_PLAY;
 
-        common->Printf("Requested Time: %d ms, decoded buffer: %d ms\n", requestedVideoTime, _buffer.timeStamp);
-    }
+        common->Printf("Reqested Time: %d ms, served: %d ms\n", requestedVideoTime, _buffer.timeStamp);
 
+        return data;
+    }
+     
+    // We don't have a valid _buffer anymore, return an empty frame
     return data;
 }
 
 bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 {
+    if (_status == FMV_EOF)
+    {
+        return false;
+    }
+
     int got_frame = 0;
 
     while (av_read_frame(_formatContext, &_packet) >= 0)
@@ -290,6 +334,10 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
     targetBuffer.timeStamp = -1;
     av_free_packet(&_packet);
+
+    // We seem to be out of frames
+    _status = FMV_EOF;
+
     return false;
 }
 
