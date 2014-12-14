@@ -85,6 +85,12 @@ private: // members
     // The path of the cinematic (VFS path)
     idStr _path;
 
+    // The virtual file we're streaming from
+    idFile*                 _file;
+
+    class VFSIOContext;
+    std::unique_ptr<VFSIOContext>   _customIOContext;
+
     // Duration of this cinematic in msecs
     int                     _duration;
 

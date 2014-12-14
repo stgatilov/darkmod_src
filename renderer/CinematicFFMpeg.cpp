@@ -31,6 +31,7 @@ extern "C"
 
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavformat/avio.h>
 #include <libswscale/swscale.h>
 
 }
@@ -52,19 +53,92 @@ idCinematicFFMpeg::idCinematicFFMpeg() :
 idCinematicFFMpeg::~idCinematicFFMpeg()
 {}
 
+// Custom AVIOContext wrapper to allow loading directly from an idFile
+class idCinematicFFMpeg::VFSIOContext
+{
+private:
+    idFile* _file;
+    int _bufferSize;
+    unsigned char* _buffer;
+
+    AVIOContext* _context;
+
+    // Noncopyable
+    VFSIOContext(const VFSIOContext&);
+    VFSIOContext& operator=(const VFSIOContext&);
+
+public:
+    VFSIOContext(idFile* file) :
+        _file(file),
+        _bufferSize(16 * 1024),
+        _buffer(static_cast<unsigned char*>(av_malloc(_bufferSize))),
+        _context(NULL)
+    {
+        _context = avio_alloc_context(_buffer, _bufferSize, 0, this,
+                                      &VFSIOContext::read, NULL, &VFSIOContext::seek);
+    }
+
+    ~VFSIOContext()
+    {
+        av_free(_context);
+        av_free(_buffer);
+    }
+
+    static int read(void* opaque, unsigned char* buf, int buf_size)
+    {
+        VFSIOContext* self = static_cast<VFSIOContext*>(opaque);
+
+        return self->_file->Read(buf, buf_size);
+    }
+
+    static int64_t seek(void *opaque, int64_t offset, int whence)
+    {
+        VFSIOContext* self = static_cast<VFSIOContext*>(opaque);
+
+        switch (whence)
+        {
+        case AVSEEK_SIZE:
+            return self->_file->Length();
+        case SEEK_SET:
+            return self->_file->Seek(offset, FS_SEEK_SET);
+        case SEEK_CUR:
+            return self->_file->Seek(offset, FS_SEEK_CUR);
+        case SEEK_END:
+            return self->_file->Seek(offset, FS_SEEK_END);
+        default:
+            return AVERROR(EINVAL);
+        };
+    }
+
+    AVIOContext* getContext()
+    {
+        return _context;
+    }
+};
+
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
 #if ENABLE_AV_DEBUG_LOGGING
     av_log_set_callback(idCinematicFFMpeg::LogCallback);
 #endif
 
-    _path = fileSystem->RelativePathToOSPath(qpath);
+    _path = qpath;
+    
+    _file = fileSystem->OpenFileRead(qpath);
 
-    // TESTING
-    _path = "C:\\Games\\Doom3\\darkmod\\video\\trailer.mp4";
+    if (_file == NULL)
+    {
+        common->Warning("Couldn't open video file: %s", _path.c_str());
+        return false;
+    }
 
     // Use libavformat to detect the video type and stream
     _formatContext = avformat_alloc_context();
+
+    // To use the VFS we need to set up a custom AV I/O context
+    _customIOContext.reset(new VFSIOContext(_file));
+
+    _formatContext->pb = _customIOContext->getContext();
 
     if (avformat_open_input(&_formatContext, _path.c_str(), NULL, NULL) < 0)
     {
@@ -406,6 +480,14 @@ void idCinematicFFMpeg::Close()
     {
         avformat_close_input(&_formatContext);
         _formatContext = NULL;
+    }
+
+    _customIOContext.reset();
+
+    if (_file != NULL)
+    {
+        fileSystem->CloseFile(_file);
+        _file = NULL;
     }
 }
 
