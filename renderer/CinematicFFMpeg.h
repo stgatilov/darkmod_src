@@ -31,6 +31,8 @@ extern "C"
 
 }
 
+#define ENABLE_AV_DEBUG_LOGGING 0
+
 /**
  * Cinematic driven by the ffmpeg libavcodec library.
  */
@@ -61,7 +63,9 @@ private:
 
 private: // methods
 
+#if ENABLE_AV_DEBUG_LOGGING
     static void             LogCallback(void* avcl, int level, const char *fmt, va_list vl);
+#endif
 
     // Returns the index of the best suitable stream type, requires an open format context
     int                     FindBestStreamByType(AVMediaType type);

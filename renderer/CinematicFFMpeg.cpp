@@ -54,7 +54,9 @@ idCinematicFFMpeg::~idCinematicFFMpeg()
 
 bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
 {
+#if ENABLE_AV_DEBUG_LOGGING
     av_log_set_callback(idCinematicFFMpeg::LogCallback);
+#endif
 
     _path = fileSystem->RelativePathToOSPath(qpath);
 
@@ -120,6 +122,7 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
     return true;
 }
 
+#if ENABLE_AV_DEBUG_LOGGING
 static idStr FFMPegLog;
 
 void idCinematicFFMpeg::LogCallback(void* avcl, int level, const char *fmt, va_list vl)
@@ -134,6 +137,7 @@ void idCinematicFFMpeg::LogCallback(void* avcl, int level, const char *fmt, va_l
 
     Sys_LeaveCriticalSection(CRITICAL_SECTION_THREE);
 }
+#endif
 
 int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
 {
