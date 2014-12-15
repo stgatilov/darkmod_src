@@ -1087,7 +1087,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
-	if ( !soft_particle && ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) ) {
+	if ( surf->space->weaponDepthHack || ( !soft_particle && surf->space->modelDepthHack != 0.0f ) ) 
+	{
 		RB_LeaveDepthHack();
 	}
 }
