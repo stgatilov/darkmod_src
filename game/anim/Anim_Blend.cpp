@@ -2424,6 +2424,7 @@ void idAnimBlend::CopyStateData( const idAnimBlend& other )
 	this->m_PausedEndtime = other.m_PausedEndtime;
 	this->m_PausedCycle = other.m_PausedCycle;
 	this->m_PausedTime = other.m_PausedTime;
+	this->endtime = other.endtime;
 }
 
 /*
