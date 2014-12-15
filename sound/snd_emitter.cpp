@@ -840,6 +840,10 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		}
 	}
 
+	// greebo: If a sound is started in between BeginLevelLoad() and EndLevelLoad() #3804
+	// the corresponding sample might get purged in EndLevelLoad(), so set the flag to prevent this.
+	chan->leadinSample->levelLoadReferenced = true;
+
 	if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
 		common->Printf( "'%s'\n", chan->leadinSample->name.c_str() );
 	}
