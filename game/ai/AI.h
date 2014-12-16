@@ -1975,6 +1975,9 @@ public:
 	// grayman #3643 - get which side of a door we're on
 	int						GetDoorSide(CFrobDoor* frobDoor);
 
+	// for debugging circling problems
+	//void					PrintGoalData(idVec3 goal, int tag);
+
 	//
 	// ai/ai_events.cpp
 	//

@@ -38,6 +38,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "SearchManager.h" // grayman #3857
 
 #define MILL_RADIUS 150.0f // grayman #3857
+#define MAX_RADIAL_SPOT_ATTEMPTS 20 // grayman #3857
 
 namespace ai
 {
@@ -273,6 +274,8 @@ void SearchingState::Init(idAI* owner)
 	// grayman #3857 - allow "idle search/suspicious animations"
 	owner->actionSubsystem->ClearTasks();
 	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
+
+	memory.consecutiveRadialSpotFailures = 0; // grayman #3857
 }
 
 // Gets called each time the mind is thinking
@@ -400,9 +403,10 @@ void SearchingState::Think(idAI* owner)
 			}
 
 			idVec3 spot;
-			if (FindRadialSpot(owner->GetPhysics()->GetOrigin(), search->_origin, MILL_RADIUS, spot)) // grayman #3857
+			if (FindRadialSpot(owner, search->_origin, MILL_RADIUS, spot)) // grayman #3857
 			{
 				// the spot is good
+				memory.consecutiveRadialSpotFailures = 0; // reset
 				memory.millingInProgress = true;
 				memory.guardingInProgress = false;
 				memory.shouldMill = false;
@@ -411,6 +415,20 @@ void SearchingState::Think(idAI* owner)
 				owner->searchSubsystem->SwitchTask(TaskPtr(GuardSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
 
 				return;
+			}
+
+			// grayman #3857 - couldn't find a spot to mill at; only allow
+			// a certain number of consecutive failures before skipping
+			// milling entirely
+
+			if (++memory.consecutiveRadialSpotFailures >= MAX_RADIAL_SPOT_ATTEMPTS)
+			{
+				memory.consecutiveRadialSpotFailures = 0; // reset
+				memory.shouldMill = false;
+			}
+			else
+			{
+				return; // grayman #3857 - try again next time
 			}
 		}
 
@@ -448,14 +466,15 @@ void SearchingState::Think(idAI* owner)
 					idVec3 p;		// random point
 					int areaNum;	// p's area number
 					idVec3 searchSize = assignment->_limits.GetSize();
-					//idVec3 searchSize = owner->m_searchLimits.GetSize();
 					idVec3 searchCenter = assignment->_limits.GetCenter();
-					//idVec3 searchCenter = owner->m_searchLimits.GetCenter();
 				
 					//gameRenderWorld->DebugBox(colorWhite, idBox(assignment->_limits), MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 
 					bool validPoint = false;
-					for ( int i = 0 ; i < 6 ; i++ )
+					idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+					int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+					aasPath_t path;
+					for (int i = 0; i < 6; i++)
 					{
 						p = searchCenter;
 						p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x/2;
@@ -472,6 +491,11 @@ void SearchingState::Think(idAI* owner)
 						if ( !assignment->_limits.ContainsPoint(p) )
 						{
 							//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+							continue;
+						}
+
+						if (!owner->PathToGoal(path, ownerAreaNum, ownerOrigin, areaNum, p, owner))
+						{
 							continue;
 						}
 
@@ -495,8 +519,7 @@ void SearchingState::Think(idAI* owner)
 						// Set the flag to TRUE, so that the sensory scan can be performed
 						memory.hidingSpotInvestigationInProgress = true;
 					}
-
-					if ( !validPoint ) // no valid random point found
+					else // no valid random point found
 					{
 						// Stop moving, the algorithm will choose another spot the next round
 						owner->StopMove(MOVE_STATUS_DONE);
@@ -508,8 +531,8 @@ void SearchingState::Think(idAI* owner)
 						{
 							owner->TurnToward(p);
 						}
-						owner->Event_LookAtPosition(p,MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
-						//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time + 100));
+						owner->Event_LookAtPosition(p, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+						//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 					}
 				}
 			}
@@ -559,10 +582,26 @@ void SearchingState::Think(idAI* owner)
 				// mapper has chosen (by using guard entities), or points that
 				// are at the area's portals.
 
-				for (int i = 0 ; i < search->_guardSpots.Num() ; i++)
+				idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+				int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+				aasPath_t path;
+				for (int i = 0; i < search->_guardSpots.Num(); i++)
 				{
 					idVec3 spot = search->_guardSpots[i].ToVec3();
 					if (spot.x == idMath::INFINITY) // spot already taken?
+					{
+						continue;
+					}
+
+					// grayman #3857 - can we walk to the spot?
+
+					int toAreaNum = owner->PointReachableAreaNum(spot);
+					if (toAreaNum == 0)
+					{
+						continue;
+					}
+
+					if (!owner->PathToGoal(path, ownerAreaNum, ownerOrigin, toAreaNum, spot, owner))
 					{
 						continue;
 					}
@@ -628,9 +667,10 @@ void SearchingState::Think(idAI* owner)
 			float radius = assignment->_outerRadius;
 			radius += 32.0f; // given the accuracy of the Guard Spot Task (64.0f), tighten up the perimeter slightly
 			idVec3 spot;
-			if (FindRadialSpot(owner->GetPhysics()->GetOrigin(), search->_origin, radius, spot)) // grayman #3857
+			if (FindRadialSpot(owner, search->_origin, radius, spot)) // grayman #3857
 			{
 				// the spot is good
+				memory.consecutiveRadialSpotFailures = 0; // reset
 				memory.currentSearchSpot = spot; // spot to observe from
 				memory.guardingAngle = idMath::INFINITY; // face search origin when spot is reached
 				memory.guardingInProgress = true;
@@ -638,20 +678,49 @@ void SearchingState::Think(idAI* owner)
 				owner->searchSubsystem->SwitchTask(TaskPtr(GuardSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
 			}
 
-			// If the task finds that you can't walk to the spot, you'll come around
-			// and select another random spot the next time.
+			// grayman #3857 - couldn't find a spot to observe from; only allow
+			// a certain number of consecutive failures before skipping
+			// observing entirely
+
+			else if (++memory.consecutiveRadialSpotFailures >= MAX_RADIAL_SPOT_ATTEMPTS)
+			{
+				// There's no place for you in the search.
+				
+				// If, perchance, you have LOS to the search origin, just
+				// stand where you are and face the search origin until your alert level drops.
+				
+				if (owner->CanSeePositionExt(search->_origin, false, false))
+				{
+					// where you are is good
+
+					memory.consecutiveRadialSpotFailures = 0; // reset
+					memory.currentSearchSpot = owner->GetPhysics()->GetOrigin(); // spot to observe from
+					memory.guardingAngle = idMath::INFINITY; // face search origin
+					memory.guardingInProgress = true;
+					memory.millingInProgress = false;
+					owner->searchSubsystem->SwitchTask(TaskPtr(GuardSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
+				}
+				else
+				{
+					// If you don't have LOS, drop your
+					// alert level below searching and continue with whatever
+					// you were doing before.
+					owner->SetAlertLevel(owner->thresh_3 - 0.1);
+				}
+			}
 		}
 	}
 }
 
-bool SearchingState::FindRadialSpot(idVec3 aiOrigin, idVec3 searchOrigin, float radius, idVec3 &spot)
+bool SearchingState::FindRadialSpot(idAI* owner, idVec3 searchOrigin, float radius, idVec3 &spot)
 {
 	// Take 5 attempts at finding a spot that doesn't require
 	// having to run through the search area to get to it.
 
 	idVec3 candidateSpot;
 	bool spotGood = false;
-	float distAI2SearchOriginSqr = (searchOrigin - aiOrigin).LengthSqr();
+	idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+	float distAI2SearchOriginSqr = (searchOrigin - ownerOrigin).LengthSqr();
 	idVec3 dir;
 
 	for ( int i = 0 ; i < 5 ; i++ )
@@ -660,14 +729,14 @@ bool SearchingState::FindRadialSpot(idVec3 aiOrigin, idVec3 searchOrigin, float 
 		dir.NormalizeFast();
 		candidateSpot = searchOrigin + radius*dir;
 
-		float distAI2CandidateSqr = (candidateSpot - aiOrigin).LengthSqr();
+		float distAI2CandidateSqr = (candidateSpot - ownerOrigin).LengthSqr();
 
 		// The spot is good if:
 		// 1 - the ai is inside the search radius
 		// or
 		// 2 - the ai is farther from the search origin than from the spot
 
-		if ((distAI2CandidateSqr < distAI2SearchOriginSqr) || ((searchOrigin - aiOrigin).LengthFast() < radius))
+		if ((distAI2CandidateSqr < distAI2SearchOriginSqr) || ((searchOrigin - ownerOrigin).LengthFast() < radius))
 		{
 			spotGood = true;
 			break;
@@ -700,10 +769,20 @@ bool SearchingState::FindRadialSpot(idVec3 aiOrigin, idVec3 searchOrigin, float 
 		if ( !gameLocal.clip.TracePoint(result, searchOrigin, eyePos, MASK_OPAQUE, NULL) )
 		{
 			spot = candidateSpot;
-			return true;
-		}
 
-		return false;
+			// grayman #3857 - can we walk to the spot?
+
+			int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+			aasPath_t path;
+			int spotAreaNum = owner->PointReachableAreaNum(spot);
+			if (spotAreaNum > 0)
+			{
+				if (owner->PathToGoal(path, ownerAreaNum, ownerOrigin, spotAreaNum, spot, owner))
+				{
+					return true;
+				}
+			}
+		}
 	}
 
 	return false;

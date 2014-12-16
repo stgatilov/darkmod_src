@@ -504,6 +504,9 @@ public:
 	// grayman #3857 - when guarding a spot, face this angle (yaw)
 	float guardingAngle;
 
+	// grayman #3857 - consecutive failed attempts to find a milling or observing spot
+	int consecutiveRadialSpotFailures;
+
 	ERepeatedBarkState repeatedBarkState; // grayman #3857
 
 	// True if fleeing

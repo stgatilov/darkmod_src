@@ -427,8 +427,20 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 
 				if (assignment->_limits.ContainsPoint(nextSpot))
 				{
-					search->_hidingSpotIndexes[i] = -1; // don't assign this good spot again
-					return true;
+					// can we walk to this spot?
+
+					idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+					int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+					aasPath_t path;
+					int nextSpotAreaNum = ai->PointReachableAreaNum(nextSpot);
+					if (nextSpotAreaNum > 0)
+					{
+						if (ai->PathToGoal(path, aiAreaNum, aiOrigin, nextSpotAreaNum, nextSpot, ai))
+						{
+							search->_hidingSpotIndexes[i] = -1; // don't assign this good spot again
+							return true; // calling method will read nextSpot
+						}
+					}
 				}
 
 				return false; // didn't find one this time, maybe next time we'll find one
@@ -542,6 +554,26 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		return false;
 	}
 
+	// this ai can only be an active searcher
+	// if he can walk to the search origin
+
+	int toAreaNum = ai->PointReachableAreaNum(search->_origin);
+	bool canBeActiveSearcher = true;
+	if (toAreaNum > 0)
+	{
+		idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+		int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+		aasPath_t path;
+		if (!ai->PathToGoal(path, aiAreaNum, aiOrigin, toAreaNum, search->_origin, ai))
+		{
+			canBeActiveSearcher = false;
+		}
+	}
+	else
+	{
+		canBeActiveSearcher = false;
+	}
+
 	// How many assignments does this search have?
 
 	// If no one's been assigned yet, the first AI to join will be
@@ -559,6 +591,17 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	int numAssignments = search->_assignments.Num();
 	int takeAssignmentIndex = -1; // if taking over an abandoned assignment, fill in this index
+
+	// If there are 0 or 1 assignment slots for
+	// this search, and you can't be an active searcher, then you
+	// can't join in this frame. Once the number of slots goes above 2,
+	// the active searcher roles are assigned, and you can join as a guard
+	// or an observer.
+	if ((numAssignments < 2) && !canBeActiveSearcher)
+	{
+		// Can't join this search. Sorry.
+		return false;
+	}
 
 	float innerRadius = 0;
 	float outerRadius = 0;
@@ -632,13 +675,13 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		else if (numAssignments >= 2)
 		{
 			// Is the first assignment slot available?
-			if (search->_assignments[0]._searcher == NULL)
+			if ((search->_assignments[0]._searcher == NULL) && canBeActiveSearcher)
 			{
 				takeAssignmentIndex = 0;
 				searcherRole = search->_assignments[0]._searcherRole;
 			}
 			// Is the second assignment slot available?
-			else if (search->_assignments[1]._searcher == NULL)
+			else if ((search->_assignments[1]._searcher == NULL) && canBeActiveSearcher)
 			{
 				takeAssignmentIndex = 1;
 				searcherRole = search->_assignments[1]._searcherRole;
@@ -669,6 +712,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 			if (search->_assignmentFlags & (SEARCH_GUARD_MILL|SEARCH_GUARD))
 			{
 				searcherRole = E_ROLE_GUARD;
+				searchBounds = search->_limits; // set, but not used by a guard
 			}
 		}
 
@@ -679,6 +723,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 			if (search->_assignmentFlags & (SEARCH_OBSERVER_MILL|SEARCH_OBSERVE))
 			{
 				searcherRole = E_ROLE_OBSERVER;
+				searchBounds = search->_limits; // set, but not used by an observer
 			}
 		}
 	}
@@ -1213,6 +1258,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 		//DebugPrintHidingSpots(search);
 	}
 }
+
 /*
 // prints hiding spots
 void CSearchManager::DebugPrintHidingSpots(Search* search)
@@ -1231,7 +1277,9 @@ void CSearchManager::DebugPrintHidingSpots(Search* search)
 		}
 	}
 }
+*/
 
+/*
 // prints search contents
 void CSearchManager::DebugPrintSearch(Search* search)
 {
@@ -1292,6 +1340,7 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 void CSearchManager::ProcessSearches()
 {
 	// If the player is dead, all searchers should leave their searches.
+
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
@@ -1370,14 +1419,22 @@ void CSearchManager::ProcessSearches()
 				{
 					Assignment *assignment = &search->_assignments[j];
 					idAI* searcher = assignment->_searcher;
-					if ((searcher != NULL) &&
-						(assignment->_searcherRole == E_ROLE_OBSERVER) &&
-						(searcher->rank < lowestRank) &&
-						(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+					if (searcher != NULL)
 					{
-						bestCandidate = searcher;
-						bestAssignment = assignment;
-						lowestRank = searcher->rank;
+						// this ai can only be an active searcher
+						// if he can walk to the search origin
+						int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
+						bool canBeActiveSearcher = (toAreaNum != 0);
+
+						if (canBeActiveSearcher &&
+							(assignment->_searcherRole == E_ROLE_OBSERVER) &&
+							(searcher->rank < lowestRank) &&
+							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+						{
+							bestCandidate = searcher;
+							bestAssignment = assignment;
+							lowestRank = searcher->rank;
+						}
 					}
 				}
 
@@ -1390,14 +1447,22 @@ void CSearchManager::ProcessSearches()
 					{
 						Assignment *assignment = &search->_assignments[j];
 						idAI* searcher = assignment->_searcher;
-						if ((searcher != NULL) &&
-							(assignment->_searcherRole == E_ROLE_GUARD) &&
-							(searcher->rank < lowestRank) &&
-							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+						if (searcher != NULL)
 						{
-							bestCandidate = searcher;
-							bestAssignment = assignment;
-							lowestRank = searcher->rank;
+							// this ai can only be an active searcher
+							// if he can walk to the search origin
+							int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
+							bool canBeActiveSearcher = (toAreaNum != 0);
+
+							if (canBeActiveSearcher &&
+								(assignment->_searcherRole == E_ROLE_GUARD) &&
+								(searcher->rank < lowestRank) &&
+								(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+							{
+								bestCandidate = searcher;
+								bestAssignment = assignment;
+								lowestRank = searcher->rank;
+							}
 						}
 					}
 				}
@@ -1472,8 +1537,14 @@ void CSearchManager::ProcessSearches()
 					{
 						if (assignment->_searcher->rank < lowestGuardOrObserverRank)
 						{
-							lowestGuardOrObserverAssignmentIndex = j;
-							lowestGuardOrObserverRank = assignment->_searcher->rank;
+							// this ai can only be an active searcher
+							// if he can walk to the search origin
+							int toAreaNum = assignment->_searcher->PointReachableAreaNum(search->_origin);
+							if (toAreaNum != 0)
+							{
+								lowestGuardOrObserverAssignmentIndex = j;
+								lowestGuardOrObserverRank = assignment->_searcher->rank;
+							}
 						}
 					}
 				}
