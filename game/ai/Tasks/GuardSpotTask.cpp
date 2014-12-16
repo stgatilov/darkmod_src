@@ -375,6 +375,8 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			else
 			{
 				// check for closeness to goal to keep from running in circles around the spot
+				//owner->PrintGoalData(_guardSpot,1);
+
 				float distToSpot = (_guardSpot - ownerOrigin).LengthFast();
 				if (distToSpot <= CLOSE_ENOUGH)
 				{

@@ -105,6 +105,8 @@ bool MoveToPositionTask::Perform(Subsystem& subsystem)
 		}
 		return true;
 	}
+
+	//owner->PrintGoalData(_targetPosition, 7);
 		 
 	return false; // not finished yet
 }

@@ -121,6 +121,8 @@ void FailedKnockoutState::Think(idAI* owner)
 		// grayman #3857 - alert and bark moved down from Init()
 
 		// Set the alert position 50 units in the attacking direction
+		_attackDirection.z = 0; // grayman #3857
+		_attackDirection.NormalizeFast(); // grayman #3857
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
 		// grayman #3857 - move alert setup into one method

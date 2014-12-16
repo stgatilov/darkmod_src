@@ -201,6 +201,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stopMilling); // grayman #3857
 	savefile->WriteBool(shouldMill); // grayman #3857
 	savefile->WriteFloat(guardingAngle); // grayman #3857
+	savefile->WriteInt(consecutiveRadialSpotFailures); // grayman #3857
 	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman #3857
 	savefile->WriteBool(fleeing);
 	savefile->WriteVec3(positionBeforeTakingCover);
@@ -346,6 +347,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(stopMilling); // grayman #3857
 	savefile->ReadBool(shouldMill); // grayman #3857
 	savefile->ReadFloat(guardingAngle); // grayman #3857
+	savefile->ReadInt(consecutiveRadialSpotFailures); // grayman #3857
 
 	savefile->ReadInt(temp);
 	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman #3857

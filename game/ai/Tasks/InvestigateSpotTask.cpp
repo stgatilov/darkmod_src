@@ -247,6 +247,12 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 		else
 		{
 			owner->GetAAS()->PushPointIntoAreaNum( toAreaNum, goal ); // if this point is outside this area, it will be moved to one of the area's edges
+			// double-check reachability
+			toAreaNum = owner->PointReachableAreaNum(goal);
+			if (toAreaNum == 0)
+			{
+				pointValid = false;
+			}
 			/* grayman #3857 - ContainsPoint() already tested before this task was given the point
 			if ( owner->IsSearching() &&
 				!owner->movementSubsystem->IsResolvingBlock() &&
@@ -265,26 +271,31 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			pointValid = owner->MoveToPosition(goal);
 		}
 
-		if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
+		if (!pointValid || (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE))
 		{
-			// Hiding spot not reachable, terminate task in the next round
-			//_exitTime = gameLocal.time;
+			// grayman #3857- don't waste time staring at a spot you can't reach or see, because
+			// if you're not going to be able to reach ANY of the spots assigned to you,
+			// you will spend a lot of time doing nothing.
 
 			// grayman #3492 - look at the spot
 
-			_exitTime = static_cast<int>(
-				gameLocal.time + ((float)(INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat())))/2.0f // grayman #2640
-			);
-
 			idVec3 p = _searchSpot;
 			p.z += 60; // look up a bit, to simulate searching for the player's head
-			if (!owner->CheckFOV(p))
-			{
-				owner->TurnToward(p);
-			}
 
-			owner->Event_LookAtPosition(p, MS2SEC(_exitTime - gameLocal.time + 100));
-			//gameRenderWorld->DebugArrow(colorCyan, owner->GetEyePosition(), p, 1, MS2SEC(_exitTime - gameLocal.time + 100));
+			if (owner->CanSeePositionExt(p, false, false))
+			{
+				_exitTime = static_cast<int>(
+					gameLocal.time + INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat())
+					//gameLocal.time + ((float)(INVESTIGATE_SPOT_TIME_REMOTE*(1 + gameLocal.random.RandomFloat()))) / 2.0f // grayman #2640
+					);
+				owner->TurnToward(p);
+				owner->Event_LookAtPosition(p, MS2SEC(_exitTime - gameLocal.time));
+			}
+			else
+			{
+				// Hiding spot not reachable or visible, so terminate task in the next round
+				_exitTime = gameLocal.time;
+			}
 		}
 		else
 		{

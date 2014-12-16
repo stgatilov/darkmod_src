@@ -771,6 +771,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						break;
 					}
 
+					//owner->PrintGoalData(_frontPos, 8);
 					if (dist <= QUEUE_DISTANCE) // grayman #2345 - this was the next layer up
 					{
 						if (_doorInTheWay)
@@ -981,6 +982,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				_doorHandlingState = EStateApproachingDoor;
 			}
+			else
+			{
+				//owner->PrintGoalData(_safePos, 2);
+			}
 			break;
 		case EStateMovingToFrontPos:
 			if (!frobDoor->IsOpen()) // closed
@@ -1018,6 +1023,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// TODO: position not reachable, need a better one
 					}
+					else
+					{
+						//owner->PrintGoalData(_frontPos, 9);
+					}
+				}
+				else
+				{
+					//owner->PrintGoalData(_frontPos, 3);
 				}
 			}
 			else // open
@@ -1070,6 +1083,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else // can't fit through door, can't open it, see if I need to move out of the way
 					{
+						//owner->PrintGoalData(_frontPos, 4);
 						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
@@ -1572,6 +1586,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
+					//owner->PrintGoalData(_midPos, 5);
 					if (_canHandleDoor) // grayman #2712
 					{
 						PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to midPos
@@ -1715,6 +1730,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else // grayman #2712
 				{
+					//owner->PrintGoalData(_backPos, 6);
 					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to _backPos
 
 					// grayman #3643 - if you've changed state, you might
