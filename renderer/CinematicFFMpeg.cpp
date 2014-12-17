@@ -576,7 +576,7 @@ void idCinematicFFMpeg::ResetTime(int time)
     _packetTimeOffset = 0;
     _highestNextPacketTime = -1;
 
-    common->Printf("Resetting time to %d, startTime is now %d\n", time, _startTime);
+    //common->Printf("Resetting time to %d, startTime is now %d\n", time, _startTime);
 
 #if ENABLE_AV_SEEKING
     if (av_seek_frame(_formatContext, _videoStreamIndex, 0, AVSEEK_FLAG_BYTE) < 0)
