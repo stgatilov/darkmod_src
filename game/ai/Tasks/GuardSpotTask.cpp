@@ -185,15 +185,18 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							}
 						}
 
-						CommMessagePtr message = CommMessagePtr(new CommMessage(
-							CommMessage::GuardLocationOrder_CommType, 
-							searcher, owner, // from searcher to owner
-							NULL,
-							vec3_zero,
-							-1 // grayman #3438
-						));
+						if (searcher != owner)
+						{
+							CommMessagePtr message = CommMessagePtr(new CommMessage(
+								CommMessage::GuardLocationOrder_CommType,
+								searcher, owner, // from searcher to owner
+								NULL,
+								vec3_zero,
+								-1 // grayman #3438
+								));
 
-						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
+							searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder", message)));
+						}
 					}
 				}
 			}
@@ -317,7 +320,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 					if (search)
 					{
-						if ( memory.guardingAngle == idMath::INFINITY)
+						if (memory.guardingAngle == idMath::INFINITY)
 						{
 							owner->TurnToward(search->_origin);
 						}
