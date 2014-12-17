@@ -354,8 +354,8 @@ idAnimState::FinishAction
 */
 void idAnimState::FinishAction(const idStr& actionname)
 {
-	if ( waitState == actionname ) {
-		SetWaitState( "" );
+	if (waitState == actionname) {
+		SetWaitState("");
 	}
 }
 
@@ -4562,8 +4562,9 @@ idActor::Event_FinishAction
 ===============
 */
 void idActor::Event_FinishAction( const char *actionname ) {
+
 	if ( waitState == actionname ) {
-		SetWaitState( "" );
+		SetWaitState("");
 	}
 }
 
