@@ -24,6 +24,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "CinematicFFMpeg.h"
 
+#if ENABLE_LEGACY_ROQ_CODE
+
 #define JPEG_INTERNALS
 extern "C" {
 #include <jpeglib.h>
@@ -140,12 +142,15 @@ static unsigned short *	vq8 = NULL;
 
 //===========================================
 
+#endif
+
 /*
 ==============
 idCinematicLocal::InitCinematic
 ==============
 */
 void idCinematic::InitCinematic( void ) {
+#if ENABLE_LEGACY_ROQ_CODE
 	float t_ub,t_vr,t_ug,t_vg;
     int i;
 
@@ -168,6 +173,7 @@ void idCinematic::InitCinematic( void ) {
 	vq2 = (word *)Mem_Alloc( 256*16*4 * sizeof( word ) );
 	vq4 = (word *)Mem_Alloc( 256*64*4 * sizeof( word ) );
 	vq8 = (word *)Mem_Alloc( 256*256*4 * sizeof( word ) );
+#endif
 }
 
 /*
@@ -176,6 +182,7 @@ idCinematicLocal::ShutdownCinematic
 ==============
 */
 void idCinematic::ShutdownCinematic( void ) {
+#if ENABLE_LEGACY_ROQ_CODE
 	Mem_Free( file );
 	file = NULL;
 	Mem_Free( vq2 );
@@ -184,6 +191,7 @@ void idCinematic::ShutdownCinematic( void ) {
 	vq4 = NULL;
 	Mem_Free( vq8 );
 	vq8 = NULL;
+#endif
 }
 
 /*
@@ -248,6 +256,8 @@ idCinematicLocal::Close
 */
 void idCinematic::Close() {
 }
+
+#if ENABLE_LEGACY_ROQ_CODE
 
 //===========================================
 
@@ -1730,6 +1740,7 @@ void idCinematicLocal::RoQShutdown( void ) {
 }
 
 //===========================================
+#endif
 
 /*
 ==============
