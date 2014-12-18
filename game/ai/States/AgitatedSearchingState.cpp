@@ -394,9 +394,8 @@ void AgitatedSearchingState::Init(idAI* owner)
 	// Let the AI update their weapons (make them solid)
 	owner->UpdateAttachmentContents(true);
 
-	// grayman #3857 - allow "idle search/suspicious animations"
+	// grayman #3857 - no idle search anims in this state
 	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 }
 
 // Gets called each time the mind is thinking

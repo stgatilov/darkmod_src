@@ -84,9 +84,6 @@ void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
 	Cleanup(owner);
-	// grayman #3857 - allow "idle search/suspicious animations"
-	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

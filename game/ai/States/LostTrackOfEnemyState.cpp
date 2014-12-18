@@ -103,8 +103,6 @@ void LostTrackOfEnemyState::Init(idAI* owner)
 	owner->actionSubsystem->ClearTasks();
 	owner->movementSubsystem->ClearTasks();
 
-	// grayman #3857 - allow "idle search/suspicious animations"
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
