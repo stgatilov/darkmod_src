@@ -1052,7 +1052,7 @@ void State::OnVisualStim(idEntity* stimSource)
 
 			// A suspicious door is worth looking at regardless of how long it's been open.
 			// A non-suspicious door is only worth looking at if it's recently been fully opened.
-			// The latter check is needed because door stims occur roughly 1.5 second apart, and if
+			// The latter check is needed because door stims occur roughly 1.5 seconds apart, and if
 			// the first stim arrives when the door is only cracked open, and the second arrives after
 			// the door is fully opened, we could miss the fact that it was just opened.
 
@@ -1158,14 +1158,14 @@ bool State::ShouldProcessAlert(EAlertType newAlertType)
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
-
+	/* grayman - had to subsequently revert this because it kept AI from spotting a new body while investigating a body (for example)
 	// grayman #3857 - getting more of the same can be ignored
 	// TODO: Is this true for sound alerts?
 	if (memory.alertType == newAlertType)
 	{
 		return false;
 	}
-	
+	*/
 	if (owner->alertTypeWeight[memory.alertType] <= owner->alertTypeWeight[newAlertType])
 	{
 		return true;

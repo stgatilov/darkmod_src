@@ -53,9 +53,6 @@ void HitByMoveableState::Cleanup(idAI* owner)
 void HitByMoveableState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
-	// grayman #3857 - allow "idle search/suspicious animations"
-	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 

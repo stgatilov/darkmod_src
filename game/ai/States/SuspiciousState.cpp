@@ -134,12 +134,13 @@ void SuspiciousState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 
 	// grayman #3857 - if rising into Suspicious, switch idle animations
-	if ( owner->AlertIndexIncreased() )
-	{
+	// do this for both rising and falling
+//	if ( owner->AlertIndexIncreased() )
+//	{
 		// grayman #3857 - allow "idle search/suspicious animations"
 		owner->actionSubsystem->ClearTasks();
 		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
-	}
+//	}
 	
 	// grayman #3438 - kill the repeated bark task
 	owner->commSubsystem->ClearTasks();

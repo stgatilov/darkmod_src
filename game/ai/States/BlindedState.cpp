@@ -119,8 +119,6 @@ void BlindedState::Think(idAI* owner)
 			SetUpSearchData(EAlertTypeBlinded, owner->GetMemory().alertPos, NULL, false, 0); // grayman #3857
 		}
 
-		// grayman #3857 - allow "idle search/suspicious animations"
-		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 		owner->GetMind()->EndState();
 	}
 	else if ( !_staring && ( idStr(owner->WaitState()) != "blinded" ) ) // grayman #3431

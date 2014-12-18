@@ -53,10 +53,10 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	// grayman #3857 - verify that this task should be running:
-	// yes if in states 0,2,3,4
-	// no if in states 1,5
+	// yes if in states 0,2,3
+	// no if in states 1,4,5
 
-	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	if ((owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex >= EAgitatedSearching))
 	{
 		subsystem.FinishTask();
 	}
@@ -129,10 +129,10 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	// grayman #3857 - verify that this task should be running:
-	// yes if in states 0,2,3,4
-	// no if in states 1,5
+	// yes if in states 0,2,3
+	// no if in states 1,4,5
 
-	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	if ((owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex >= EAgitatedSearching))
 	{
 		return true;
 	}

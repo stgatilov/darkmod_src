@@ -53,9 +53,6 @@ void PocketPickedState::Cleanup(idAI* owner)
 void PocketPickedState::Wrapup(idAI* owner)
 {
 	Cleanup(owner);
-	// grayman #3857 - allow "idle search/suspicious animations"
-	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
