@@ -1416,8 +1416,6 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 
 void CSearchManager::ProcessSearches()
 {
-	// If the player is dead, all searchers should leave their searches.
-
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
@@ -1459,6 +1457,16 @@ void CSearchManager::ProcessSearches()
 		}
 
 		// There is at least one searcher.
+
+		// If this is a swarm search, no other checks are necessary.
+		// Since all searchers are active searchers, there's no point
+		// trying to backfill the first two slots, or care about the
+		// ranks of the active searchers.
+
+		if (!search->_isCoopSearch)
+		{
+			continue;
+		}
 
 		// Are there no active searchers? If so,
 		// backfill with someone else if available. Only backfill if
