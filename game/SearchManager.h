@@ -62,6 +62,8 @@ struct Search
 {
 	int						_searchID;					// unique id for each search (starts at 0 and increments up)
 	int						_eventID;					// the ID of the event this search belongs to
+	bool					_isCoopSearch;				// true = cooperative search, 2 active searchers
+														// false = swarm search, unlimited searchers
 	int						_hidingSpotSearchHandle;	// handle for referencing the search
 	idVec3					_origin;					// center of search area, location of alert stimulus
 	idBounds				_limits;					// boundary of the search
@@ -126,6 +128,7 @@ typedef enum
 #define SEARCH_ROPE				(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeRope
 #define SEARCH_PROJECTILE		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeHitByProjectile
 #define SEARCH_MOVEABLE			(SEARCH_SEARCH) // EAlertTypeHitByMoveable
+#define SEARCH_SWARM			(SEARCH_SEARCH) // for more than 2 searchers
 
 class CSearchManager
 {
