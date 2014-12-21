@@ -26,6 +26,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "PathWaitTask.h"
 #include "../Library.h"
 
+#define MAXTIME 1000000 // put a limit on what we feed SEC2MS
+
 namespace ai
 {
 
@@ -58,6 +60,11 @@ void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 	if (waitmax > 0)
 	{
 		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+	}
+
+	if (waittime > MAXTIME) // SEC2MS can't handle very large numbers
+	{
+		waittime = MAXTIME;
 	}
 
 	waittime = SEC2MS(waittime);

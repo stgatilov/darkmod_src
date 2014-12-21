@@ -27,6 +27,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "PathTurnTask.h"
 #include "../Library.h"
 
+#define MAXTIME 1000000 // put a limit on what we feed SEC2MS
+
 namespace ai
 {
 
@@ -85,6 +87,11 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	if (waitmax > 0)
 	{
 		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+	}
+
+	if (waittime > MAXTIME) // SEC2MS can't handle very large numbers
+	{
+		waittime = MAXTIME;
 	}
 
 	if (waittime > 0)
