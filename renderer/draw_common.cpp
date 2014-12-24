@@ -649,14 +649,17 @@ void RB_SetProgramEnvironment()
 	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 1, parm );
 
 	// #3877: Allow shaders to access depth buffer. 
-	// See notes in header above for why we want a new parameter.
-	// NB _currentRender uses 2 parameters (0..1 set above) to do the same job that we'll do here
-	// with a single parameter. You don't actually need to know the screen size to map screen coords to 
-	// a texture coordinate: the reciprocal of the texture size is enough. See issue #3883 for more details.
+	// Two useful ratios are packed into this parm: [0] and [1] hold the x,y multipliers you need to map a screen 
+	// coordinate (fragment position) to the depth image: those are simply the reciprocal of the depth 
+	// image size, which has been rounded up to a power of two. Slots [3] and [4] hold the ratio of the depth image
+	// size to the current render image size. These sizes can differ if the game crops the render viewport temporarily 
+	// during post-processing effects. The depth render is smaller during the effect too, but the depth image doesn't 
+	// need to be downsized, whereas the current render image does get downsized when it's captured by the game after 
+	// the skybox render pass. The ratio is needed to map between the two render images.
 	parm[0] = 1.0f / globalImages->currentDepthImage->uploadWidth;
 	parm[1] = 1.0f / globalImages->currentDepthImage->uploadHeight;
-	parm[2] = 0;
-	parm[3] = 1;
+	parm[2] = static_cast<float>(globalImages->currentRenderImage->uploadWidth) / globalImages->currentDepthImage->uploadWidth;
+	parm[3] = static_cast<float>(globalImages->currentRenderImage->uploadHeight) / globalImages->currentDepthImage->uploadHeight;
 	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 4, parm );
 
 	//
