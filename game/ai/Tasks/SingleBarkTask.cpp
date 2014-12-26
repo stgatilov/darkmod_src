@@ -120,19 +120,26 @@ bool SingleBarkTask::Perform(Subsystem& subsystem)
 		owner->GetMind()->GetMemory().currentlyBarking = true; // grayman #3182 - idle anims w/voices cannot start
 															   // until this bark is finished
 		_barkLength = owner->PlayAndLipSync(_soundName, "talk1", msgTag); // grayman #3355
-		
+
+		_barkStartTime = gameLocal.time; // grayman #3857
+		_endTime = _barkStartTime + _barkLength; // grayman #3857
+
 		// Sanity check the returned length
 		if (_barkLength == 0)
 		{
 			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Received 0 sound length when playing %s.\r", _soundName.c_str());
 		}
+
+		return false; // grayman #3857
 	}
 
-	_barkStartTime = gameLocal.time;
-	_endTime = _barkStartTime + _barkLength;
+	// grayman #3857 - moved up
+	//_barkStartTime = gameLocal.time;
+	//_endTime = _barkStartTime + _barkLength;
 
 	// End the task as soon as we've finished playing the sound
-	return !IsBarking();
+	//return !IsBarking();
+	return true; // grayman #3857
 }
 
 void SingleBarkTask::OnFinish(idAI* owner)

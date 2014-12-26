@@ -895,26 +895,34 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglDisableClientState( GL_NORMAL_ARRAY );
 			continue;
 		}
-		else if ( soft_particle && surf->particle_radius > 0.0f && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) )
+		else if ( soft_particle 
+				 && surf->particle_radius > 0.0f 
+				 && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) 
+				 && tr.backEndRenderer == BE_ARB2
+				 && !r_skipNewAmbient.GetBool()
+				)
 		{
 			// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of 
-			// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that any
-			// shader program in a particle stage will be used instead of the particle softener programs about to be
-			// applied in this block. Contains some code repetition from above block, but that's better than intertwining 
-			// the two sections.
-			// Repeated code -->
-			if ( tr.backEndRenderer != BE_ARB2 || r_skipNewAmbient.GetBool() ) {
-				continue;
+			// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
+			// designer has specified their own shader programs, those will be used instead of the soft particle program.
+			if ( pStage->vertexColor == SVC_IGNORE )
+			{
+				// Ignoring vertexColor is not recommended for particles. The particle system uses vertexColor for fading.
+				// However, there are existing particle effects that don't use it, in which case we default to using the 
+				// rgb color modulation specified in the material like the "old stages" do below. 
+				color[0] = regs[pStage->color.registers[0]];
+				color[1] = regs[pStage->color.registers[1]];
+				color[2] = regs[pStage->color.registers[2]];
+				color[3] = regs[pStage->color.registers[3]];
+				qglColor4fv( color );
 			}
-			qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() ); //~Check: do we need these?
-			qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-			qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-			qglEnableClientState( GL_COLOR_ARRAY );
-			qglEnableVertexAttribArrayARB( 9 );
-			qglEnableVertexAttribArrayARB( 10 );
-			qglEnableClientState( GL_NORMAL_ARRAY );
-			// <-- end repeated code
+			else
+			{
+				// A properly set-up particle shader
+				qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+				qglEnableClientState( GL_COLOR_ARRAY );
+			}
+
 			GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS ); // Disable depth clipping. The fragment program will 
 																	  // handle it to allow overdraw.
 
@@ -932,7 +940,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 
 			// Set up parameters for fragment program
 			
-			// program.env[5] contains the particle radius, given as { radius, 1/(faderange), 1/radius } plus a vertex coloring flag
+			// program.env[5] is the particle radius, given as { radius, 1/(faderange), 1/radius }
 			float fadeRange;
 			// fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
 			// blends (light glares), because additive effects work differently. Fog is half as apparent when a wall
@@ -946,14 +954,12 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			{
 				fadeRange = surf->particle_radius;
 			}
-			// The final parameter is a flag that gets set to 1 if the material doesn't use vertex coloring. NB lack of 
-			// vertex color is an error in particle materials, as it's how the particle system controls fade and color,
-			// but it's included to make sure no existing maps look different with soft particles applied. 
+
 			float parm[4] = {
 				surf->particle_radius,
 				1.0f / ( fadeRange ),
 				1.0f / surf->particle_radius,
-				pStage->vertexColor == SVC_IGNORE ? 1.0f : 0.0f
+				0.0f
 			};
 			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, parm );
 
@@ -976,20 +982,18 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			// draw it
 			RB_DrawElementsWithCounters( tri );
 
+			// Clean up GL state
 			GL_SelectTexture( 1 );
 			globalImages->BindNull();
 			GL_SelectTexture( 0 );
 			globalImages->BindNull();
 			
-			// Repeated code -->
 			qglDisable( GL_VERTEX_PROGRAM_ARB );
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 
-			qglDisableClientState( GL_COLOR_ARRAY );
-			qglDisableVertexAttribArrayARB( 9 );
-			qglDisableVertexAttribArrayARB( 10 );
-			qglDisableClientState( GL_NORMAL_ARRAY );
-			// <-- end repeated code
+			if ( pStage->vertexColor != SVC_IGNORE ) {
+				qglDisableClientState( GL_COLOR_ARRAY );
+			}
 			continue;
 		}
 

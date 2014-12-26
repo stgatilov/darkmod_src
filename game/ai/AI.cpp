@@ -566,6 +566,8 @@ idAI::idAI()
 	m_sleepFloorZ = 0;  // grayman #2416
 	m_getupEndTime = 0; // grayman #2416
 
+	m_barkEndTime = 0; // grayman #3857
+
 	m_bCanDrown = true;
 	m_AirCheckTimer = 0;
 	m_AirTics = 0;
@@ -991,6 +993,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_lastThinkTime);
 	savefile->WriteInt(m_nextThinkFrame);
 
+	savefile->WriteString(m_barkName); // grayman #3857
+	savefile->WriteInt(m_barkEndTime); // grayman #3857
+	
 	savefile->WriteBool(m_bPushOffPlayer);
 
 	savefile->WriteBool(m_bCanBeFlatFooted);
@@ -1463,6 +1468,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadInt(m_lastThinkTime);
 	savefile->ReadInt(m_nextThinkFrame);
+
+	savefile->ReadString(m_barkName); // grayman #3857
+	savefile->ReadInt(m_barkEndTime); // grayman #3857
 
 	savefile->ReadBool(m_bPushOffPlayer);
 
@@ -2309,6 +2317,7 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
+	//PrintGoalData(move.moveDest, 10);
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
 	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
@@ -12134,11 +12143,26 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName, int msgTag
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration, 0, msgTag ); // grayman #3355
 
+	if (idStr(soundName) == "snd_giveOrder") // grayman debug
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("snd_giveOrder length = %d\r", duration);
+	}
+
+	// grayman #3857
 	if (cv_ai_bark_show.GetBool())
 	{
-		gameRenderWorld->DrawText( va("%s", soundName), GetEyePosition(), 0.25f, colorBlue, 
+		m_barkName = idStr(soundName);
+		m_barkEndTime = gameLocal.time + duration;
+	}
+
+	// grayman #3857 - moved to idAI::ShowDebugInfo()
+	/*
+	if (cv_ai_bark_show.GetBool())
+	{
+		gameRenderWorld->DrawText(va("%s", soundName), GetPhysics()->GetOrigin() + idVec3(0, 0, 90), 0.25f, colorWhite,
 			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, duration );
 	}
+	*/
 
 	// Do we want to lipsync this sound?
 	StopLipSync(); // Assume not
@@ -12665,28 +12689,28 @@ void idAI::ShowDebugInfo()
 		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
 	}
 
-	if ( cv_ai_task_show.GetBool())
+	if (cv_ai_task_show.GetBool())
 	{
 		idStr str("State: ");
 		str += mind->GetState()->GetName() + "\n";
-		
+
 		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysSearch)->IsEnabled()) str += "Search: " + GetSubsystem(ai::SubsysSearch)->GetDebugInfo() + "\n"; // grayman #3857
 
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
-	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
+	if (cv_ai_alertlevel_show.GetBool() && (health > 0) && !IsKnockedOut())
 	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(va("Alert: %f; Index: %d", (float)AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		// grayman #3857 - add debugging info for coordinated searches
-		if (( m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)) )
+		if ((m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)))
 		{
 			Search* search = gameLocal.m_searchManager->GetSearch(m_searchID);
-			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,this);
+			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search, this);
 			smRole_t r = E_ROLE_NONE;
 			idStr role = "none";
 			if (assignment)
@@ -12705,15 +12729,15 @@ void idAI::ShowDebugInfo()
 					role = "observer";
 				}
 			}
-			gameRenderWorld->DrawText( va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			gameRenderWorld->DrawText(va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		}
 
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
 		{
-			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
-				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time, 
-				m_AlertGraceCount, m_AlertGraceCountLimit), 
-				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			gameRenderWorld->DrawText(va("Grace time: %d; Alert count: %d / %d",
+				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time,
+				m_AlertGraceCount, m_AlertGraceCountLimit),
+				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		}
 	}
 
@@ -12737,7 +12761,7 @@ void idAI::ShowDebugInfo()
 		{
 			debugText += idStr("Waitstate: ") + WaitState();
 		}
-		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
 	if (cv_ai_aasarea_show.GetBool() && aas != NULL)
@@ -12759,6 +12783,13 @@ void idAI::ShowDebugInfo()
 		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
 
 		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
+	}
+
+	// grayman #3857 - show barking info
+	if (cv_ai_bark_show.GetBool() && (gameLocal.time <= m_barkEndTime) && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast() < 1000))
+	{
+		gameRenderWorld->DrawText(va("%s", m_barkName.c_str()), physicsObj.GetOrigin() + idVec3(0, 0, 90), 0.25f, colorWhite,
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 	}
 }
 
