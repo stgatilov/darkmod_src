@@ -1941,6 +1941,10 @@ public:
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
+
+	// grayman #3857 - bark stuff
+	idStr					m_barkName; // The name of the bark
+	int						m_barkEndTime; // When the bark will end
 	
 	bool					DrawWeapon(ECombatType type); // grayman #3331 // grayman #3775
 	void					SheathWeapon();

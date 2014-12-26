@@ -4457,10 +4457,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardLocationOrder_CommType\r");
 			// grayman #3857 - The first active searcher in a search sent this message to
 			// me when I finished milling. Going to the location is already handled by the Search Manager.
-			if (owner->IsFriend(issuingEntity))
-			{
+			//if (owner->IsFriend(issuingEntity)) // grayman #3857 - always respond
+			//{
 				owner->Bark("snd_warn_response");
-			}
+			//}
 			break;
 		case CommMessage::GuardEntityOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardEntityOrder_CommType\r");
