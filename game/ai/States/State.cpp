@@ -300,7 +300,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 				else
 				{
 					// grayman #3857 - move alert setup into one method
-					SetUpSearchData(EAlertTypeSuspicious, owner->GetPhysics()->GetOrigin(), NULL, false, 0);
+					SetUpSearchData(EAlertTypeSuspicious, owner->GetPhysics()->GetOrigin(), tactEnt, false, 0);
 					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL, false ); // grayman #3857
 				}
 
@@ -3288,41 +3288,79 @@ void State::OnMovementBlocked(idAI* owner)
 		// Blocked by other AI
 		idAI* master = owner;
 		idAI* slave = static_cast<idAI*>(ent);
+		bool slaveSelected = false;
 
 		// grayman #2728 - check mass; this overrides all other master/slave checks
 
 		float masterMass = master->GetPhysics()->GetMass();
-		if ((masterMass <= SMALL_AI_MASS) || (slave->GetPhysics()->GetMass() <= SMALL_AI_MASS))
+		float slaveMass = slave->GetPhysics()->GetMass();
+		if ((masterMass <= SMALL_AI_MASS) && (slaveMass > SMALL_AI_MASS))
 		{
-			if (masterMass <= SMALL_AI_MASS)
+			std::swap(master, slave);
+			slaveSelected = true;
+		}
+
+		if (!slaveSelected)
+		{
+			if ((masterMass > SMALL_AI_MASS) && (slaveMass <= SMALL_AI_MASS))
 			{
-				// The master can't have small mass unless the slave does also
-				std::swap(master, slave);
+				slaveSelected = true;
 			}
 		}
-		else if (master->AI_FORWARD && // grayman #2422
-				 !slave->AI_FORWARD &&
-				 master->IsSearching() &&
-				 ( master->AI_AlertIndex < ECombat ) ) // grayman #3070 - don't stop master if he's in combat
+
+		if (!slaveSelected)
 		{
-			// grayman #3725 - searchers should be allowed to pass, as long as
-			// their destination is at least 70 away, to keep them from stopping
-			// so near the slave that--if the slave is non-solid--they won't share
-			// the same space when they stop moving.
-			idVec3 dest = master->GetMoveDest();
-			idVec3 masterOrigin = master->GetPhysics()->GetOrigin();
-			dest.z = masterOrigin.z; // ignore vertical delta
-			if ( (masterOrigin - dest).LengthSqr() < Square(70))
+			if (master->AI_FORWARD && // grayman #2422
+				!slave->AI_FORWARD &&
+				master->IsSearching() &&
+				(master->AI_AlertIndex < ECombat)) // grayman #3070 - don't stop master if he's in combat
 			{
-				// Stop moving, the searching state will choose another spot soon
-				master->StopMove(MOVE_STATUS_DONE);
-				Memory& memory = master->GetMemory();
-				memory.StopReacting(); // grayman #3559
-				master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
-				return;
+				// grayman #3725 - searchers should be allowed to pass, as long as
+				// their destination is at least 70 away, to keep them from stopping
+				// so near the slave that--if the slave is non-solid--they won't share
+				// the same space when they stop moving.
+				idVec3 dest = master->GetMoveDest();
+				idVec3 masterOrigin = master->GetPhysics()->GetOrigin();
+				dest.z = masterOrigin.z; // ignore vertical delta
+				if ((masterOrigin - dest).LengthSqr() < Square(70))
+				{
+					// Stop moving, the searching state will choose another spot soon
+					master->StopMove(MOVE_STATUS_DONE);
+					Memory& memory = master->GetMemory();
+					memory.StopReacting(); // grayman #3559
+					master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
+					return;
+				}
 			}
 		}
-		else
+
+		if (!slaveSelected)
+		{
+			if (slave->AI_FORWARD && // grayman #2422
+				!master->AI_FORWARD &&
+				slave->IsSearching() &&
+				(slave->AI_AlertIndex < ECombat)) // grayman #3070 - don't stop slave if he's in combat
+			{
+				// grayman #3725 - searchers should be allowed to pass, as long as
+				// their destination is at least 70 away, to keep them from stopping
+				// so near the slave that--if the slave is non-solid--they won't share
+				// the same space when they stop moving.
+				idVec3 dest = slave->GetMoveDest();
+				idVec3 slaveOrigin = slave->GetPhysics()->GetOrigin();
+				dest.z = slaveOrigin.z; // ignore vertical delta
+				if ((slaveOrigin - dest).LengthSqr() < Square(70))
+				{
+					// Stop moving, the searching state will choose another spot soon
+					slave->StopMove(MOVE_STATUS_DONE);
+					Memory& memory = slave->GetMemory();
+					memory.StopReacting(); // grayman #3559
+					slave->TurnToward(slave->GetCurrentYaw() + 180); // turn back toward where you came from
+					return;
+				}
+			}
+		}
+
+		if (!slaveSelected)
 		{
 			// grayman #2345 - account for rank when determining who should resolve the block
 
@@ -3343,15 +3381,6 @@ void State::OnMovementBlocked(idAI* owner)
 				// One AI is running, this should be the master
 				std::swap(master, slave);
 			}
-
-			/* grayman #3725 - no need for this last swap, because it can
-			   lead to confusion if we ask the master and slave to both
-			   resolve the same block
-			if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
-			{
-				std::swap(master, slave);
-			}
-			*/
 		}
 
 		// Tell the slave to get out of the way.
@@ -5435,18 +5464,11 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 
 		SetAISearchData(EAlertTactile,EAlertTypeSuspicious,pos,TACTILE_SEARCH_VOLUME,idVec3(0,0,0),ALERT_MANDATORY);
-
-		// Set the alert amount to the tactile alert value
-		float amount = cv_ai_tactalert.GetFloat();
-		amount *= owner->GetAcuity("tact");
-		// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
-		idActor* responsible = static_cast<idActor*>(entity);
-		owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
 		}
 		break;
 	case ai::EAlertTypeHitByMoveable: // WAS HIT BY A MOVEABLE
 		{
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY A MOVEABLE **********\r",owner->GetName());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY A MOVEABLE **********\r", owner->GetName());
 		if (owner->IsSearching())
 		{
 			memory.restartSearchForHidingSpots = true;
@@ -5460,7 +5482,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 		break;
 	case EAlertTypeEnemy: // HAD A TACTILE ALERT FROM AN ENEMY
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s HAD A TACTILE ALERT FROM AN ENEMY **********\r",owner->GetName());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s HAD A TACTILE ALERT FROM AN ENEMY **********\r", owner->GetName());
 		if (owner->IsSearching())
 		{
 			memory.restartSearchForHidingSpots = true;
