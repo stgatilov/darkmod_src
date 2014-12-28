@@ -12143,11 +12143,6 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName, int msgTag
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration, 0, msgTag ); // grayman #3355
 
-	if (idStr(soundName) == "snd_giveOrder") // grayman debug
-	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("snd_giveOrder length = %d\r", duration);
-	}
-
 	// grayman #3857
 	if (cv_ai_bark_show.GetBool())
 	{
