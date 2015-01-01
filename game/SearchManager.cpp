@@ -225,7 +225,8 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		if ((se == NULL) || !searchPointIsValid)
 		{
 			// Drop the ai's alert level
-			ai->SetAlertLevel(ai->thresh_3 - 0.1);
+			// ai->SetAlertLevel(ai->thresh_3 - 0.1); // grayman - DON'T DO THIS because it causes
+													  // the stealth score to rise dramatically during player sightings
 			memory.currentSearchEventID = -1;
 			return -1;
 		}
