@@ -315,9 +315,11 @@ void AgitatedSearchingState::Init(idAI* owner)
 	{
 		if (!StartNewHidingSpotSearch(owner)) // grayman #3857 - AI gets his assignment
 		{
-			owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
-			owner->GetMind()->EndState();
-			return;
+			// grayman - this section can't run because it causes
+			// the stealth score to rise dramatically during player sightings
+			//owner->SetAlertLevel(owner->thresh_3 - 0.1); // failed to create a search, so drop down to Suspicious mode
+			//owner->GetMind()->EndState();
+			//return;
 		}
 	}
 
