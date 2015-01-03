@@ -2329,6 +2329,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE, hud );
 	else
 		gameLocal.Warning( "Unable to relink HUD to overlay system." );
+
+	// grayman #3807 - set spyglass overlay per aspect ratio
+	gameLocal.m_spyglassOverlay = gameLocal.DetermineSpyglassOverlay();
+	Event_SetSpyglassOverlayBackground();
 }
 
 /*

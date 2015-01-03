@@ -724,6 +724,7 @@ public:
 	// based on when the Loading Bar reaches 100%
 	bool					m_time2Start;
 
+	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	// ---------------------- Public idGame Interface -------------------
 
@@ -1098,8 +1099,6 @@ private:
 	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
-
-	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger
