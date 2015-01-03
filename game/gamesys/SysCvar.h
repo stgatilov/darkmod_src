@@ -34,6 +34,7 @@ extern idCVar cv_default_mission_info_file;
 
 extern idCVar cv_ai_sndvol;
 extern idCVar cv_ai_bark_show;
+extern idCVar cv_ai_name_show; // grayman #3857
 extern idCVar cv_ai_bumpobject_impulse;
 extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;
