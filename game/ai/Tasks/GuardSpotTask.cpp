@@ -197,10 +197,6 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							-1 // grayman #3438
 							));
 
-						if (cv_ai_bark_show.GetBool())
-						{
-							gameRenderWorld->DebugArrow(colorPink, searcher->GetEyePosition(), owner->GetEyePosition(), 1, 500); // grayman debug
-						}
 						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder", message)));
 					}
 				}

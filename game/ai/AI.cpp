@@ -3146,15 +3146,15 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	START_SCOPED_TIMING(aiPathToGoalTimer, scopedPathToGoalTimer);
 
 	idVec3 org = origin;
-	aas->PushPointIntoAreaNum( areaNum, org );
-	if ( !areaNum )
+	aas->PushPointIntoAreaNum(areaNum, org);
+	if (!areaNum)
 	{
 		return false;
 	}
 
 	idVec3 goal = goalOrigin;
-	aas->PushPointIntoAreaNum( goalAreaNum, goal );
-	if ( !goalAreaNum )
+	aas->PushPointIntoAreaNum(goalAreaNum, goal);
+	if (!goalAreaNum)
 	{
 		return false;
 	}
@@ -3183,7 +3183,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	else
 	{
 		int travelTime; // grayman #3548
-		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, travelTime, actor ); // grayman #3548
+		returnval = aas->WalkPathToGoal(path, areaNum, org, goalAreaNum, goal, travelFlags, travelTime, actor); // grayman #3548
 	}
 	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
 
@@ -4259,17 +4259,17 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 
 		int areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this ) )
+		if (!PathToGoal(path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this))
 		{
-			StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+			StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			AI_DEST_UNREACHABLE = true;
 			return false;
 		}
 	}
 
-	if ( !move.toAreaNum && !NewWanderDir( org ) )
+	if (!move.toAreaNum && !NewWanderDir(org))
 	{
-		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+		StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
@@ -12784,6 +12784,13 @@ void idAI::ShowDebugInfo()
 	if (cv_ai_bark_show.GetBool() && (gameLocal.time <= m_barkEndTime) && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast() < 1000))
 	{
 		gameRenderWorld->DrawText(va("%s", m_barkName.c_str()), physicsObj.GetOrigin() + idVec3(0, 0, 90), 0.25f, colorWhite,
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+	}
+
+	// grayman #3857 - show AI name
+	if (cv_ai_name_show.GetBool() && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthSqr() < Square(1000)))
+	{
+		gameRenderWorld->DrawText(va("%s", GetName()), physicsObj.GetOrigin() + idVec3(0, 0, 50), 0.25f, colorWhite,
 			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 	}
 }

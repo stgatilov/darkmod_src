@@ -451,7 +451,10 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 			// If there's no room to get around you, become non-solid
 
-			if ((owner->AI_AlertIndex == ERelaxed) && !Room2Pass(owner))
+			// grayman - With coordinated searching, AI are less likely to be bunching up,
+			// so remove the requirement that the AI be in ERelaxed to become non-solid
+
+			if (/*(owner->AI_AlertIndex == ERelaxed) && */!Room2Pass(owner))
 			{
 				BecomeNonSolid(owner);
 			}
