@@ -259,7 +259,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 	if (tactEnt->IsType(idProjectile::Type))
 	{
 		// grayman #3140 - now handled by the path through
-		// idProjectile::Collide()->idAI::Damage()
+		// idProjectile::Collide()
 		//OnProjectileHit(static_cast<idProjectile*>(tactEnt));
 	}
 	else 

@@ -740,10 +740,17 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	if ( ent )
 	{
 		ProcCollisionStims( ent, collision.c.id );
-
-		if( ent->IsType( idAI::Type ) )
+		
+		// grayman debug - account for attachments to an AI
+		idEntity* master = ent->GetBindMaster();
+		if ( !master )
 		{
-			idAI *alertee = static_cast<idAI *>(ent);
+			master = ent;
+		}
+		
+		if ( master->IsType( idAI::Type ) )
+		{
+			idAI *alertee = static_cast<idAI *>(master);
 			alertee->TactileAlert( this );
 		}
 	}
@@ -882,20 +889,28 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			{
 				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			}
-/*			else // grayman #3857 - this causes moss blobs to alert AI, which they shouldn't
-				 // you need a solution that filters out the objects you want a reaction from
-				 // from those you don't
+			else // grayman debug - let AI react to getting hit, even if there's no damage
 			{
-				// even if there's no damage, there _should_ be a reaction to getting hit,
-				// if the projectile hit an AI
-
-				if (ent->IsType(idAI::Type))
+				// Check if the projectile is a moss blob. If it is, the AI
+				// will have no reaction to it.
+				// TODO : a flying mine should cause the same reaction
+				if (idStr::FindText(name.c_str(), "projectile_mossblob") < 0)
 				{
-					// Send a signal to the current state that we've been hit by something
-					static_cast<idAI*>(ent)->GetMind()->GetState()->OnProjectileHit(this, owner.GetEntity(), 0);
+					// grayman debug - account for attachments to an AI
+					idEntity* master = ent->GetBindMaster();
+					if ( !master )
+					{
+						master = ent;
+					}
+
+					if ( master->IsType(idAI::Type) )
+					{
+						// Send a signal to the current state that we've been hit by something
+						static_cast<idAI*>(master)->GetMind()->GetState()->OnProjectileHit(this, owner.GetEntity(), 0);
+					}
 				}
 			}
-*/
+
 			ignore = ent;
 		}
 	}
