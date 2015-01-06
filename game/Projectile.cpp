@@ -741,7 +741,7 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 	{
 		ProcCollisionStims( ent, collision.c.id );
 		
-		// grayman debug - account for attachments to an AI
+		// grayman #4009 - account for attachments to an AI
 		idEntity* master = ent->GetBindMaster();
 		if ( !master )
 		{
@@ -889,14 +889,14 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 			{
 				ent->Damage( this, owner.GetEntity(), dir, damageDefName, damageScale, CLIPMODEL_ID_TO_JOINT_HANDLE( collision.c.id ), const_cast<trace_t *>(&collision) );
 			}
-			else // grayman debug - let AI react to getting hit, even if there's no damage
+			else // grayman #4009 - let AI react to getting hit, even if there's no damage
 			{
 				// Check if the projectile is a moss blob. If it is, the AI
 				// will have no reaction to it.
 				// TODO : a flying mine should cause the same reaction
 				if (idStr::FindText(name.c_str(), "projectile_mossblob") < 0)
 				{
-					// grayman debug - account for attachments to an AI
+					// grayman #4009 - account for attachments to an AI
 					idEntity* master = ent->GetBindMaster();
 					if ( !master )
 					{

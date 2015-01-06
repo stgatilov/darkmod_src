@@ -1185,7 +1185,8 @@ float CBinaryFrobMover::GetMoveTimeTranslationFraction() // grayman #3711
 	}
 
 	// Get the current origin
-	const idVec3& curOrigin = physicsObj.GetOrigin();
+	const idVec3& curOrigin = physicsObj.GetLocalOrigin(); // grayman #4015 - use local origin
+	//const idVec3& curOrigin = physicsObj.GetOrigin();
 
 	// Calculate the delta
 	idVec3 delta = dest_position - curOrigin;
