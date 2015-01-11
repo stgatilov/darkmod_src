@@ -42,9 +42,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 // greebo: Maximum number of AAS areas to test per findMoreHidingSpot call.
 #define MAX_AREAS_PER_PASS 20
 
-// This is the distance inward from an AAS edge to move test points, so that we don't test inside objects or other
-// walls
-#define WALL_MARGIN_SIZE 1.0
+// This is the distance inward from an AAS edge to move test points, so that
+// we don't test inside objects or other walls
+#define WALL_MARGIN_SIZE 1.0f
 
 // Static member for debugging hiding spot results
 idList<darkModHidingSpot> CDarkmodAASHidingSpotFinder::DebugDrawList;
@@ -602,6 +602,7 @@ bool CDarkmodAASHidingSpotFinder::testingAASAreas_InVisiblePVSArea
 				currentGridSearchBoundMaxes = currentGridSearchBounds[1];
 				currentGridSearchPoint = currentGridSearchBoundMins;
 				currentGridSearchPoint.x += WALL_MARGIN_SIZE;
+				currentGridSearchPoint.y += WALL_MARGIN_SIZE; // grayman #4023 - also need to init this properly
 				
 				// We are now searching for hiding spots inside a visible AAS area
 				searchState = ESubdivideVisibleAASArea;
@@ -666,12 +667,32 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Starting hide grid iteration for AAS area %d, point quota = %d\r", currentGridSearchAASAreaNum, numPointsToTestThisPass);
 
 	// Iterate X grid
-	while (currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE + 0.1)
+
+	// grayman #4023 - account for situation where the AAS area is too narrow
+	// in the x direction to allow for even one pass. Reset the x coordinate
+	// to the eastern boundary of the search area, as is done inside the while{} loop.
+	// But don't search at all if this reset x puts the grid line outside
+	// the search area.
+
+	if (currentGridSearchPoint.x > currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE)
 	{
-		while (currentGridSearchPoint.y <= currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE + 0.1)
+		// stay inside search area
+		if ( currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE > currentGridSearchBoundMins.x)
+		{
+			currentGridSearchPoint.x = currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE;
+		}
+		else
+		{
+			// AAS area is too thin to search
+		}
+	}
+
+	while ( currentGridSearchPoint.x <= currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE + 0.1 )
+	{
+		while ( currentGridSearchPoint.y <= currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE + 0.1 )
 		{
 			// See if we have filled our point quota
-			if (inout_numPointsTestedThisPass >= numPointsToTestThisPass)
+			if ( inout_numPointsTestedThisPass >= numPointsToTestThisPass )
 			{
 				// Filled point quota, but we need to keep iterating this grid next time
 				return true;
@@ -683,7 +704,7 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 			darkModHidingSpot hidingSpot;
 
 			// Test if it is inside the exclusion bounds
-			if (searchIgnoreLimits.ContainsPoint(currentGridSearchPoint))
+			if ( searchIgnoreLimits.ContainsPoint(currentGridSearchPoint) )
 			{
 				hidingSpot.quality = -1.0;
 				hidingSpot.hidingSpotTypes = NONE_HIDING_SPOT_TYPE;
@@ -691,9 +712,9 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 			else
 			{
 				// Not inside exclusion bounds, must test it
-				hidingSpot.hidingSpotTypes = TestHidingPoint 
-				(
-					currentGridSearchPoint, 
+				hidingSpot.hidingSpotTypes = TestHidingPoint
+					(
+					currentGridSearchPoint,
 					searchCenter,
 					searchRadius,
 					hidingHeight,
@@ -702,54 +723,69 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 					hidingSpot.lightQuotient,
 					hidingSpot.qualityWithoutDistanceFactor,
 					hidingSpot.quality
-				);
+					);
 			}
 
 			// If there are any hiding qualities, insert a hiding spot
-			if (hidingSpot.hidingSpotTypes != NONE_HIDING_SPOT_TYPE && 
-				hidingSpot.quality > 0.0)
+			if ( hidingSpot.hidingSpotTypes != NONE_HIDING_SPOT_TYPE &&
+				hidingSpot.quality > 0.0 )
 			{
 				// Insert a hiding spot for this test point
 				hidingSpot.goal.areaNum = currentGridSearchAASAreaNum;
 				hidingSpot.goal.origin = currentGridSearchPoint;
 
 				// ensure area index is in hiding spot tree
-				if (p_hidingAreaNode == NULL)
+				if ( p_hidingAreaNode == NULL )
 				{
 					p_hidingAreaNode = inout_hidingSpots.getArea(currentGridSearchAASAreaNum);
 
-					if (p_hidingAreaNode == NULL)
+					if ( p_hidingAreaNode == NULL )
 					{
 						p_hidingAreaNode = inout_hidingSpots.insertArea(currentGridSearchAASAreaNum);
-						if (p_hidingAreaNode == NULL)
+						if ( p_hidingAreaNode == NULL )
 						{
 							return false;
 						}
 					}
 				}
-				
+
 				// Add spot under this index in the hiding spot tree
 				inout_hidingSpots.insertHidingSpot
-				(
-					p_hidingAreaNode, 
-					hidingSpot.goal, 
+					(
+					p_hidingAreaNode,
+					hidingSpot.goal,
 					hidingSpot.hidingSpotTypes,
 					hidingSpot.lightQuotient,
 					hidingSpot.qualityWithoutDistanceFactor,
 					hidingSpot.quality,
 					hidingSpotRedundancyDistance
-				);
+					);
 
 				//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Found hiding spot within AAS area %d at (X:%f, Y:%f, Z:%f) with type bitflags %d, quality %f\r", currentGridSearchAASAreaNum, currentGridSearchPoint.x, currentGridSearchPoint.y, currentGridSearchPoint.z, hidingSpot.hidingSpotTypes, hidingSpot.quality);
 			}
 
 			// One more point tested
-			inout_numPointsTestedThisPass ++;
+			inout_numPointsTestedThisPass++;
 
-			// Increase search coordinate. Ensure we search along bounds, which might be a
-			// wall or other cover providing surface.
-			if ((currentGridSearchPoint.y < currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE ) && 
-				(currentGridSearchPoint.y + hideSearchGridSpacing > currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE))
+			// grayman #4023 - if this pass was along the north boundary, then
+			// it's time to quit the loop
+
+			float diff = currentGridSearchPoint.y - (currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE);
+			if ( diff < 0 )
+			{
+				diff = -diff;
+			}
+
+			if ( diff < VECTOR_EPSILON )
+			{
+				break;
+			}
+
+			// Increase search y coordinate. Ensure we search along bounds, which might be a
+			// wall or other cover-providing surface.
+
+			if ( (currentGridSearchPoint.y < currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE) &&
+				(currentGridSearchPoint.y + hideSearchGridSpacing > currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE) )
 			{
 				currentGridSearchPoint.y = currentGridSearchBoundMaxes.y - WALL_MARGIN_SIZE;
 			}
@@ -759,10 +795,25 @@ bool CDarkmodAASHidingSpotFinder::testingInsideVisibleAASArea
 			}
 		} // Y iteration
 
-		// Increase search coordinate. Ensure we search along bounds, which might be a
-		// wall or other cover providing surface.
-		if ((currentGridSearchPoint.x < currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE) && 
-			(currentGridSearchPoint.x + hideSearchGridSpacing > currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE))
+		// grayman #4023 - if this pass was along the east boundary, then
+		// it's time to quit the loop
+
+		float diff = currentGridSearchPoint.x - (currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE);
+		if ( diff < 0 )
+		{
+			diff = -diff;
+		}
+
+		if ( diff < VECTOR_EPSILON )
+		{
+			break;
+		}
+
+		// Increase search x coordinate. Ensure we search along bounds, which might be a
+		// wall or other cover-providing surface.
+
+		if ( (currentGridSearchPoint.x < currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE) &&
+			(currentGridSearchPoint.x + hideSearchGridSpacing > currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE) )
 		{
 			currentGridSearchPoint.x = currentGridSearchBoundMaxes.x - WALL_MARGIN_SIZE;
 		}

@@ -67,6 +67,10 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">tdm_update</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">tdm_update</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <OutDir>$(SolutionDir)bin\GuiUpdater\</OutDir>
+    <IntDir>$(SolutionDir)Build/$(ProjectName)/$(Configuration)\</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>

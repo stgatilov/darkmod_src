@@ -3425,9 +3425,14 @@ void idAI::Event_NoisemakerDone(idEntity* maker)
 
 void idAI::Event_HitByDoor(idEntity* door)
 {
-	// Treat the door as a suspicious door.
+	float chanceToNotice = spawnArgs.GetFloat("chanceNoticeDoor");
 
-	mind->GetState()->OnVisualStimDoor(door,this);
+	if ( chanceToNotice > 0.0f ) // grayman #4026
+	{
+		// Treat the door as a suspicious door.
+
+		mind->GetState()->OnVisualStimDoor(door, this);
+	}
 }
 
 
