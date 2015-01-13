@@ -13333,7 +13333,7 @@ void idAI::PrintGoalData(idVec3 goal, int tag)
 	idVec3 origin = GetPhysics()->GetOrigin();
 
 	float dist = (goal - origin).LengthFast();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData tag = %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
 }
 */
 

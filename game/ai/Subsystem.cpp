@@ -253,6 +253,66 @@ void Subsystem::ClearTasks()
 	}
 }
 
+/*
+void Subsystem::PrintTaskQueue()
+{
+	int n = 1;
+	for ( TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); ++i )
+	{
+		Task& task = *(*i);
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Subsystem::PrintTaskQueue - (%d) checking task '%s'\r",n,task.GetName().c_str());
+		if ( task.IsInitialised() )
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- initialized\r");
+			if ( task.IsFinished() )
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- finished\r");
+			}
+			else
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- not finished\r");
+			}
+		}
+		else
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- not initialized\r");
+		}
+
+		n++;
+	}
+}
+*/
+
+// grayman #4030
+void Subsystem::FinishDoorHandlingTask(idAI *owner)
+{
+	int n = 1;
+	for ( TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++, n++ )
+	{
+		Task& task = *(*i);
+
+		if ( n == 1 ) // not interested in first task
+		{
+			continue;
+		}
+
+		if ( task.GetName() == "HandleDoor" )
+		{
+			if ( task.IsInitialised() )
+			{
+				if ( !task.IsFinished() )
+				{
+					task.OnFinish(owner);
+					task.SetFinished();
+				}
+			}
+
+			break;
+		}
+	}
+}
+
 // Save/Restore methods
 void Subsystem::Save(idSaveGame* savefile) const
 {

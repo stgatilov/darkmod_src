@@ -5324,21 +5324,37 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			// grayman #3104 - there's a problem when the current door task
 			// has just completed its Perform() step and is about to start
 			// its OnFinish() step. At this point, HandleDoorTask is NOT the
-			// current task. Testing showed it was PathCornerTask, so that snuck
+			// current task. Testing showed it was PathCornerTask or
+			// ChaseEnemyTask, so they snuck
 			// in somehow before the OnFinish() ran for HandleDoorTask. NULLing
 			// currentDoor below doesn't let OnFinish() do everything it needs to.
 
-/*			const SubsystemPtr& subsys = owner->movementSubsystem;
-			TaskPtr task = subsys->GetCurrentTask();
+			// grayman #4030 - find the HandleDoorTask and terminate it if it's the
+			// second task in the queue. If it's the first task, we want to continue
+			// to let it run, and ignore the fact that we encountered it a second time.
 
-			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) == NULL)
+			//owner->movementSubsystem->PrintTaskQueue();
+
+			// If m_DoorQueued is true, a door handling task has been queued for this door,
+			// but has not run Init() yet, so m_HandlingDoor is still false. Once Init()
+			// has run, m_DoorQueued is false and m_HandlingDoor is true.
+
+			if ( owner->m_DoorQueued || owner->m_HandlingDoor )
+			{
+				// Finish the door handling task for the current door if it's
+				// not the current task. It will remain in the queue as a finished task
+				// and will be cleared when it reaches the front of the queue.
+				owner->movementSubsystem->FinishDoorHandlingTask(owner);
+			}
+			else
 			{
 				// angua: current door is set but no door handling task active
 				// door handling task was probably terminated before initialisation
 				// clear current door
-				memory.doorRelated.currentDoor = NULL;
+				//memory.doorRelated.currentDoor = NULL;
 			}
-*/
+
+			//owner->movementSubsystem->PrintTaskQueue();
 		}
 	}
 }
