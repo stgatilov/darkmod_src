@@ -4506,6 +4506,13 @@ void idAI::SetMoveType( idStr moveType )
 	}
 }
 
+// grayman #4039 - need a way to set move accuracy independent
+// of MoveToPosition()
+void idAI::SetMoveAccuracy(float accuracy)
+{
+	move.accuracy = accuracy;
+}
+
 /*
 ================
 idAI::StepDirection
