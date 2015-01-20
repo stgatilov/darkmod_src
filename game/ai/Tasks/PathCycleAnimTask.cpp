@@ -72,8 +72,9 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	
 	// Set the name of the state script
 	owner->SetAnimState( ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn );
-	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_CustomAnim", blendIn );
-	owner->PostEventMS( &AI_SyncAnimChannels, 16, ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, (float)blendIn );
+	owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds. Walking/stepping legs need a bit longer to blend smoothly.
+	owner->PostEventMS( &AI_OverrideAnim, 1, ANIMCHANNEL_LEGS ); // SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomAnim", 
+																 // which invites race conditions and conflicts between game code and scripts.
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
