@@ -4506,6 +4506,13 @@ void idAI::SetMoveType( idStr moveType )
 	}
 }
 
+// grayman #4039 - need a way to set move accuracy independent
+// of MoveToPosition()
+void idAI::SetMoveAccuracy(float accuracy)
+{
+	move.accuracy = accuracy;
+}
+
 /*
 ================
 idAI::StepDirection
@@ -13333,7 +13340,7 @@ void idAI::PrintGoalData(idVec3 goal, int tag)
 	idVec3 origin = GetPhysics()->GetOrigin();
 
 	float dist = (goal - origin).LengthFast();
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData tag = %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
 }
 */
 

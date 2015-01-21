@@ -1545,7 +1545,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					SetMoveType( int moveType );
 	void					SetMoveType( idStr moveType );
 
-
+	void					SetMoveAccuracy(float accuracy); // grayman #4039
 	
 	/**
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration

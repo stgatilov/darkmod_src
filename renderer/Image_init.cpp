@@ -1357,7 +1357,7 @@ idImage *idImageManager::AllocImage( const char *name ) {
 	idImage *image = new idImage;
 
 	images.Append( image );
-	common->Printf("AllocImage added image '%s'\n",name);
+	//common->Printf("AllocImage added image '%s'\n",name);
 
 	const int hash = idStr( name ).FileNameHash();
 

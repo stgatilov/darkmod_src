@@ -643,12 +643,11 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 			// don't consider yourself blocked. You're supposed to be moving, but you probably
 			// haven't started yet because of the animation. This happens often around doors.
 
+			// SteveL #4012: remove the matching check on "Legs_CustomIdleAnim" which is no longer used.
 			idStr torsoString = "Torso_CustomIdleAnim";
-			idStr legsString = "Legs_CustomIdleAnim";
 			torsoCustomIdleAnim = (torsoString.Cmp(owner->GetAnimState(ANIMCHANNEL_TORSO)) == 0);
-			legsCustomIdleAnim = (legsString.Cmp(owner->GetAnimState(ANIMCHANNEL_LEGS)) == 0);
 
-			if (!torsoCustomIdleAnim && !legsCustomIdleAnim)
+			if ( !torsoCustomIdleAnim )
 			{
 				belowThreshold = true;
 
