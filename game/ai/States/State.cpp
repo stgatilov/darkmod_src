@@ -5346,7 +5346,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 				// and will be cleared when it reaches the front of the queue.
 				owner->movementSubsystem->FinishDoorHandlingTask(owner);
 			}
-			else
+			else if ( !owner->m_DoorQueued && !owner->m_HandlingDoor ) // grayman #4053
 			{
 				// angua: current door is set but no door handling task active
 				// door handling task was probably terminated before initialisation
