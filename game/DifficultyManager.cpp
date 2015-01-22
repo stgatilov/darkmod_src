@@ -58,9 +58,16 @@ void DifficultyManager::Init(idMapFile* mapFile)
 	int mapDifficulty;
 	if (spawnArgs.GetInt("difficulty", "0", mapDifficulty))
 	{
-		// We have a difficulty spawnarg set on the map's worldspawn, take it as override value
-		DM_LOG(LC_DIFFICULTY, LT_DEBUG)LOGSTRING("Found overriding difficulty setting on worldspawn entity: %d.\r", mapDifficulty);
-		_difficulty = mapDifficulty;
+		if ( mapDifficulty < 0 || mapDifficulty > 2 ) // #3928: give a sensible error instead of crash if bad value used
+		{
+			gameLocal.Error( "Invalid difficulty setting %d on worldspawn entity, value must be 0, 1 or 2.", mapDifficulty );
+		}
+		else
+		{
+						// We have a difficulty spawnarg set on the map's worldspawn, take it as override value
+			DM_LOG( LC_DIFFICULTY, LT_DEBUG )LOGSTRING( "Found overriding difficulty setting on worldspawn entity: %d.\r", mapDifficulty );
+			_difficulty = mapDifficulty;
+		}
 	}
 
 	// Check for the CVAR, which might override any setting
