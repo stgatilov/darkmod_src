@@ -455,11 +455,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	int currentDoorSide = owner->GetDoorSide(frobDoor); // grayman #4044
+
 	// grayman #3755 - stop door handling if you've run through the doorway
 	// and you have an enemy
 	if ( owner->AI_RUN &&
 		 ( owner->GetEnemy() != NULL ) &&
-		 ( _doorSide != owner->GetDoorSide(frobDoor) ) )
+		 ( _doorSide != currentDoorSide ) )
 	{
 		return true;
 	}
@@ -474,9 +476,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		{
 			if (!_canHandleDoor && !FitsThrough()) // grayman #2712
 			{
-				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-				// add AAS area number of the door to forbidden areas
-				AddToForbiddenAreas(owner, frobDoor);
+				// grayman #4044 - only stop walking if you never
+				// made it through the door
+				if ( _doorSide == currentDoorSide )
+				{
+					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+					// add AAS area number of the door to forbidden areas
+					AddToForbiddenAreas(owner, frobDoor);
+				}
 				return true;
 			}
 		}
@@ -487,9 +494,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		// to my list of forbidden areas.
 		if (!_canHandleDoor) // grayman #2712
 		{
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			// add AAS area number of the door to forbidden areas
-			AddToForbiddenAreas(owner, frobDoor);
+			// grayman #4044 - only stop walking if you never
+			// made it through the door
+			if ( _doorSide == currentDoorSide )
+			{
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+				// add AAS area number of the door to forbidden areas
+				AddToForbiddenAreas(owner, frobDoor);
+			}
 			return true;
 		}
 	}
