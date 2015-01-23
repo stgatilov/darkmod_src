@@ -133,6 +133,12 @@ void State::Init(idAI* owner)
 
 	// Load the value from the spawnargs to avoid looking it up each frame
 	owner->GetMemory().deadTimeAfterAlertRise = owner->spawnArgs.GetInt("alert_decrease_deadtime", "300");
+
+	if ( ai_debugScript.GetInteger() == owner->entityNumber ) // #4057
+	{
+		// we can use GetName() because it returns static constant names
+		gameLocal.Printf( "%d: State::Init new state %s\n", gameLocal.time, GetName().c_str() );  
+	}
 }
 
 bool State::CheckAlertLevel(idAI* owner)
