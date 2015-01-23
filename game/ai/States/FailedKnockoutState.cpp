@@ -68,8 +68,9 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
-	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
-
+	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS); // SteveL #3964
+	owner->SetWaitState("failed_ko"); // #3964: Set overall waitstate not just torso wait state else IdleAnimationTask::OnFinish will cancel it.
+	
 	// 800 msec stun time
 	_allowEndTime = gameLocal.time + 800;
 
