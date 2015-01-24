@@ -343,24 +343,16 @@ idBrittleFracture::RemoveShard
 ================
 */
 void idBrittleFracture::RemoveShard( int index ) {
-//	int i; // grayman - commented to stop compiler complaint
+	// SteveL -- #4061. Removed Tel's performance optimization and restored the original version of 
+	// this function. 
+	int i;
 
 	delete shards[index];
-	shards.RemoveIndex( index, false );	// Tels: false => don't bother to keep shards sorted
-	physicsObj.RemoveIndex( index, false );
+	shards.RemoveIndex( index );
+	physicsObj.RemoveIndex( index );
 
-	// Tels: When we used RemoveIndex(), that might have moved some shards
-	// after index, so we needed to set the correct ID back to the climodel
-	// again. Now the RemoveIndex(index,false) routine will *only* move the
-	// last index back to "index", so this is the only (if it exists) shard
-	// that got moved, so we only need to update it's clipModel ID:
-	/*for ( i = index; i < shards.Num(); i++ ) {
+	for ( i = index; i < shards.Num(); i++ ) {
 		shards[i]->clipModel->SetId( i );
-	}*/
-	// [0,1,2,3,4,5] (remove index == 2) => [ 0,1,5,3,4 ]
-	if (index < shards.Num())
-	{
-		shards[index]->clipModel->SetId( index );
 	}
 }
 
