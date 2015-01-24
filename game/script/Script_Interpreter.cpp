@@ -544,7 +544,20 @@ NOTE: If this is called from within a event called by this interpreter, the func
 ================
 */
 void idInterpreter::EnterObjectFunction( idEntity *self, const function_t *func, bool clearStack ) {
-	if ( clearStack ) {
+	if ( clearStack ) 
+	{
+		// #4057: Let ai_debugScript log scripts being terminated mid-progress (usually by incoming AnimStates)
+		if ( currentFunction && ai_debugScript.GetInteger() == self->entityNumber )
+		{
+			idStr info = va( "%s", currentFunction->Name() );
+			if ( ( instructionPointer >= 0 ) && ( instructionPointer < gameLocal.program.NumStatements() ) )
+			{
+				statement_t &line = gameLocal.program.GetStatement( instructionPointer );
+				info += va( " Line %d", line.linenumber );
+			}
+			gameLocal.Printf( "%d: Script terminated. %s\n", gameLocal.time, info.c_str() );
+		}
+
 		Reset();
 	}
 	if ( popParms ) {

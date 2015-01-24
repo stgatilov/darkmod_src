@@ -133,6 +133,12 @@ void State::Init(idAI* owner)
 
 	// Load the value from the spawnargs to avoid looking it up each frame
 	owner->GetMemory().deadTimeAfterAlertRise = owner->spawnArgs.GetInt("alert_decrease_deadtime", "300");
+
+	if ( ai_debugScript.GetInteger() == owner->entityNumber ) // #4057
+	{
+		// we can use GetName() because it returns static constant names
+		gameLocal.Printf( "%d: State::Init new state %s\n", gameLocal.time, GetName().c_str() );  
+	}
 }
 
 bool State::CheckAlertLevel(idAI* owner)
@@ -354,23 +360,28 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 	// you're afraid (unarmed, civilian, or low health), you shouldn't search.
 	// If it's close by, you should flee if you aren't already.
 
-	if ( owner->IsAfraid() && ((soundName == "arrow_broad_hit") || (soundName == "arrow_broad_break")))
+	// But only if you're awake
+
+	if ( owner->GetMoveType() != MOVETYPE_SLEEP )
 	{
-		if ((memory.alertPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 300)
+		if ( owner->IsAfraid() && ((soundName == "arrow_broad_hit") || (soundName == "arrow_broad_break")) )
 		{
-			// if already fleeing, these settings will get
-			// picked up and used. if not already fleeing,
-			// the new flee task will use them
-			owner->fleeingEvent = true; // grayman #3356
-			owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
-			owner->fleeingFromPerson = NULL; // grayman #3847
-			owner->emitFleeBarks = true; // grayman #3474
-			if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
+			if ( (memory.alertPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 300 )
 			{
-				owner->GetMind()->SwitchState(STATE_FLEE);
+				// if already fleeing, these settings will get
+				// picked up and used. if not already fleeing,
+				// the new flee task will use them
+				owner->fleeingEvent = true; // grayman #3356
+				owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
+				owner->fleeingFromPerson = NULL; // grayman #3847
+				owner->emitFleeBarks = true; // grayman #3474
+				if ( !memory.fleeing ) // grayman #3847 - only flee if not already fleeing
+				{
+					owner->GetMind()->SwitchState(STATE_FLEE);
+				}
 			}
+			return false; // false = don't search
 		}
-		return false; // false = don't search
 	}
 
 	memory.mandatory = false; // grayman #3331
@@ -5346,7 +5357,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 				// and will be cleared when it reaches the front of the queue.
 				owner->movementSubsystem->FinishDoorHandlingTask(owner);
 			}
-			else
+			else if ( !owner->m_DoorQueued && !owner->m_HandlingDoor ) // grayman #4053
 			{
 				// angua: current door is set but no door handling task active
 				// door handling task was probably terminated before initialisation

@@ -173,7 +173,7 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 	idleAnim = false;
 
 	if ( ai_debugScript.GetInteger() == self->entityNumber ) {
-		gameLocal.Printf( "%d: %s: Animstate: %s\n", gameLocal.time, self->name.c_str(), state.c_str() );
+		gameLocal.Printf( "%d: idAnimState::SetState channel %d %s\n", gameLocal.time, channel, state.c_str() ); // #4057
 	}
 }
 
@@ -304,13 +304,19 @@ idAnimator*	idAnimState::GetAnimator()
 idAnimState::Enable
 =====================
 */
-void idAnimState::Enable( int blendFrames ) {
+void idAnimState::Enable( int blendFrames ) 
+{
 	if ( disabled ) {
 		disabled = false;
 		animBlendFrames = blendFrames;
 		lastAnimBlendFrames = blendFrames;
 		if ( state.Length() ) {
 			SetState( state.c_str(), blendFrames );
+		}
+
+		if ( ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+		{
+			gameLocal.Printf( "%d: idAnimState::Enable channel %d\n", gameLocal.time, channel );
 		}
 	}
 }
@@ -320,7 +326,13 @@ void idAnimState::Enable( int blendFrames ) {
 idAnimState::Disable
 =====================
 */
-void idAnimState::Disable( void ) {
+void idAnimState::Disable( void ) 
+{
+	if ( !disabled && ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idAnimState::Disable channel %d\n", gameLocal.time, channel );
+	}
+
 	disabled = true;
 	idleAnim = false;
 }
@@ -366,6 +378,11 @@ idAnimState::SetWaitState
 */
 void idAnimState::SetWaitState( const char *_waitstate )
 {
+	if ( ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idAnimState::SetWaitState channel %d waitState \"%s\" --> \"%s\"\n", gameLocal.time, channel, waitState.c_str(), _waitstate );
+	}
+	
 	waitState = _waitstate;
 }
 
@@ -2979,7 +2996,13 @@ const char *idActor::WaitState( int channel ) const
 idActor::SetWaitState
 =====================
 */
-void idActor::SetWaitState( const char *_waitstate ) {
+void idActor::SetWaitState( const char *_waitstate ) 
+{
+	if ( ai_debugScript.GetInteger() == entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idActor::SetWaitState \"%s\" --> \"%s\"\n", gameLocal.time, waitState.c_str(), _waitstate );
+	}
+
 	waitState = _waitstate;
 }
 

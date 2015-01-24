@@ -81,19 +81,11 @@ void PathSitTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		owner->AI_SIT_DOWN_ANGLE = owner->GetCurrentYaw();
 	}
-	owner->AI_SIT_UP_ANGLE = owner->GetCurrentYaw();
+	owner->AI_SIT_UP_ANGLE = owner->GetCurrentYaw(); // the anim script uses AI_SIT_UP_ANGLE
 
-	owner->AI_SIT_DOWN_ANGLE = idMath::AngleNormalize180(owner->AI_SIT_DOWN_ANGLE);
-	
-	if (owner->GetMoveType() != MOVETYPE_SIT)
-	{
-		owner->SitDown();
-		_sittingAnimDone = false; // grayman #3670
-	}
-	else // grayman #3528 - already sitting
-	{
-		_sittingAnimDone = true; // grayman #3670
-	}
+	owner->AI_SIT_DOWN_ANGLE = idMath::AngleNormalize180(owner->AI_SIT_DOWN_ANGLE); // the anim script uses AI_SIT_DOWN_ANGLE
+
+	_sittingState = EStateSitStart;
 }
 
 bool PathSitTask::Perform(Subsystem& subsystem)
@@ -103,50 +95,70 @@ bool PathSitTask::Perform(Subsystem& subsystem)
 	idAI* owner = _owner.GetEntity();
 
 	// This task may not be performed with an empty owner pointer
-	assert( owner != NULL );
-
-	// grayman #3670 - wait for the sitting down (and possibly turning
-	// after) to finish, in case there's a target that needs to be activated
+	assert(owner != NULL);
 
 	idStr waitState(owner->WaitState()); // grayman #3670
-	if ( !_sittingAnimDone && ( ( waitState == "sit_down" ) || ( owner->AI_SIT_DOWN_ANGLE != owner->GetCurrentYaw() ) ) )
-	{
-		return false;
-	}
 
-	if ( !_sittingAnimDone )
-	{
-		_sittingAnimDone = true;
-		idPathCorner* path = _path.GetEntity(); // grayman #3670
+	// grayman #4054 - rewrite to use machine states
 
-		// This task may not be performed with an empty path pointer
-		assert( path != NULL );
-		path->ActivateTargets(owner);
-	}
-
-	if (_waitEndTime >= 0)
+	switch (_sittingState)
 	{
-		if (gameLocal.time >= _waitEndTime)
+	case EStateSitStart:
+		if (owner->GetMoveType() == MOVETYPE_SIT)
 		{
-			// Exit when the waitstate is not "get up" anymore
-			//idStr waitState(owner->WaitState());
-			if (waitState != "get_up")
-			{
-				if (owner->GetMoveType() == MOVETYPE_SIT)
-				{
-					owner->GetUp();
-				}
-				else
-				{
-					return true;
-				}
-			}
+			// sitting. check sitting angle next
+			_sittingState = EStateTurning;
 		}
-	}
-	else
-	{
-		return true;
-	}
+		else if (owner->GetMoveType() != MOVETYPE_SIT_DOWN)
+		{
+			// sit down
+			owner->SitDown();
+			// we can't move to a separate state to check for
+			// the waitState to change from "sit_down" because
+			// SitDown() might have failed. we have to come
+			// back through here to give it another try.
+		}
+		break;
+	case EStateTurning:
+		// sitting. check sitting angle
+		if ( owner->AI_SIT_DOWN_ANGLE == owner->GetCurrentYaw() )
+		{
+			// sitting and at sitting angle, so fire the targets
+
+			idPathCorner* path = _path.GetEntity(); // grayman #3670
+
+			// This task may not be performed with an empty path pointer
+			assert(path != NULL);
+			path->ActivateTargets(owner);
+
+			if ( _waitEndTime < 0 )
+			{
+				// no end time set, so we're free to leave and not come back
+				return true;
+			}
+
+			_sittingState = EStateWaiting;
+		}
+		break;
+	case EStateWaiting:
+		// there's an end time, let's see if we're there yet
+		if ( gameLocal.time >= _waitEndTime )
+		{
+			// yes, we're past the end time, so let's get up
+			owner->GetUp();
+			_sittingState = EStateGetUp;
+		}
+		break;
+	case EStateGetUp:
+		// The get up script clears the "get_up" waitState
+		// when the get up portion of the anim is finished.
+		if (waitState != "get_up")
+		{
+			// Exit when the waitstate is not "get_up" anymore
+			return true;
+		}
+		break;
+	};
 
 	return false;
 }
@@ -157,7 +169,7 @@ void PathSitTask::Save(idSaveGame* savefile) const
 	PathTask::Save(savefile);
 
 	savefile->WriteInt(_waitEndTime);
-	savefile->WriteBool(_sittingAnimDone); // grayman #3670
+	savefile->WriteInt(static_cast<int>(_sittingState)); // grayman #4054
 }
 
 void PathSitTask::Restore(idRestoreGame* savefile)
@@ -165,7 +177,11 @@ void PathSitTask::Restore(idRestoreGame* savefile)
 	PathTask::Restore(savefile);
 
 	savefile->ReadInt(_waitEndTime);
-	savefile->ReadBool(_sittingAnimDone); // grayman #3670
+
+	// grayman #4054
+	int temp;
+	savefile->ReadInt(temp);
+	_sittingState = static_cast<ESitState>(temp);
 }
 
 PathSitTaskPtr PathSitTask::CreateInstance()
