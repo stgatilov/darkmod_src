@@ -281,6 +281,11 @@ void Subsystem::PrintTaskQueue()
 
 		n++;
 	}
+	
+	if ( n == 1 )
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Subsystem::PrintTaskQueue - no tasks\r");
+	}
 }
 */
 
