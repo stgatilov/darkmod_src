@@ -234,8 +234,9 @@ void IdleAnimationTask::AttemptToPlayAnim(idAI* owner, const idStringList& anims
 		{
 			// SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomIdleAnim", 
 			// which invites race conditions and conflicts between game code and scripts.
+			owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_Idle", 4 ); // Queue up the next state before sync'ing legs to torso
 			owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds.
-			owner->PostEventMS( &AI_OverrideAnim, 1, ANIMCHANNEL_LEGS );
+			owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS );
 		}
 
 		// grayman #3182 - Set one of two different wait states.
