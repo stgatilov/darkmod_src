@@ -4413,26 +4413,29 @@ idActor::Event_OverrideAnim
 ===============
 */
 void idActor::Event_OverrideAnim( int channel ) {
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
+	switch ( channel ) {
+	case ANIMCHANNEL_HEAD:
 		headAnim.Disable();
 		if ( !torsoAnim.IsIdle() ) {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
-		} else {
+		}
+		else {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
 		}
 		break;
 
-	case ANIMCHANNEL_TORSO :
+	case ANIMCHANNEL_TORSO:
 		torsoAnim.Disable();
+		legsAnim.Enable( legsAnim.lastAnimBlendFrames );  // #4063: make sure the channel we are sync'ing to is enabled.
 		SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
 		if ( headAnim.IsIdle() ) {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		}
 		break;
 
-	case ANIMCHANNEL_LEGS :
+	case ANIMCHANNEL_LEGS:
 		legsAnim.Disable();
+		torsoAnim.Enable( torsoAnim.lastAnimBlendFrames ); // #4063: make sure the channel we are sync'ing to is enabled.
 		SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		break;
 
