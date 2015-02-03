@@ -808,9 +808,10 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 	idAI* owner = _owner.GetEntity();
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Asking %s to resolve a block by %s\r", owner->name.c_str(),blockingEnt->name.c_str());
 	
-	if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
+	if (owner->movementSubsystem->IsResolvingBlock() || !owner->m_canResolveBlock) // grayman #2345
+	//if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
 	{
-		return; // Already resolving
+		return; // Already resolving, or can't resolve
 	}
 
 	// grayman #2706 - if handling a door, the door handling task will disappear, so clean up first
@@ -852,6 +853,7 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 		}
 	}
 
+	owner->GetMemory().resolvingMovementBlock = true; // grayman #4077 - need to set this here
 	// Push a resolution task
 	PushTask(TaskPtr(new ResolveMovementBlockTask(blockingEnt)));
 

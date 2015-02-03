@@ -49,6 +49,8 @@ namespace ai
 
 #define REUSE_DOOR_DELAY 100 // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
 
+#define WAIT_FOR_DOOR_TO_START_MOVING 500 // grayman #4077 - when closing a door, check it after this much time has gone by
+
 // Get the name of this task
 const idStr& HandleDoorTask::GetName() const
 {
@@ -1800,8 +1802,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			if (!frobDoor->IsOpen()) // closed
 			{
-				// already closed, no need for a retry open
-				_doorHandlingState = EStateClosingDoor;
+				_doorHandlingState = EStateClosingDoor; // already closed, no need for a retry open
 			}
 			else // open
 			{
@@ -1867,8 +1868,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			if (!frobDoor->IsOpen()) // closed
 			{
-				// already closed, no need for a retry open
-				_doorHandlingState = EStateClosingDoor;
+				_doorHandlingState = EStateClosingDoor; // already closed, no need for a retry open
 			}
 			else // open
 			{
@@ -1972,6 +1972,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					CloseDoor(owner,frobDoor,_backPosEnt.GetEntity());
 					_doorHandlingState = EStateClosingDoor;
+					_waitEndTime = gameLocal.time + WAIT_FOR_DOOR_TO_START_MOVING; // grayman #4077
 				}
 				else if ( ( numUsers > 1 ) && !_doorInTheWay)
 				{
@@ -2114,6 +2115,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// try opening the door
 						_doorHandlingState = EStateRetryInterruptedClose4;
 					}
+				}
+
+				// grayman #4077 - is the door moving yet?
+				if ( ( gameLocal.time >= _waitEndTime ) && !frobDoor->IsMoving() )
+				{
+					_doorHandlingState = EStateWaitBeforeClose;
 				}
 			}
 			break;
