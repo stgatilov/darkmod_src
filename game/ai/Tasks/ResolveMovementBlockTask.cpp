@@ -56,7 +56,8 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	owner->GetMemory().resolvingMovementBlock = true;
+	//owner->GetMemory().resolvingMovementBlock = true; // grayman #4077 - moved to before this task is pushed,
+														// to prevent starting this task twice
 
 	if (_blockingEnt == NULL)
 	{
@@ -95,7 +96,10 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingAI(owner, subsystem);
 	}
-	else if (_blockingEnt->IsType(idStaticEntity::Type))
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	else if ( _blockingEnt->IsType(idStaticEntity::Type) || _blockingEnt->IsType(CFrobDoor::Type) )
 	{
 		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingStatic(owner, subsystem);
@@ -322,7 +326,11 @@ bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
 	{
 		return PerformBlockingAI(owner);
 	}
-	else if (_blockingEnt->IsType(idStaticEntity::Type))
+
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	if (_blockingEnt->IsType(idStaticEntity::Type) || _blockingEnt->IsType(CFrobDoor::Type))
 	{
 		return PerformBlockingStatic(owner);
 	}

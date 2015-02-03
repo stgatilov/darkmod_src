@@ -3291,6 +3291,10 @@ void State::OnMovementBlocked(idAI* owner)
 			{
 				ent = static_cast<idAFAttachment*>(ent2)->GetBody(); // switch to the AI bindMaster's owner
 			}
+			else if (ent2->IsType(CFrobDoor::Type)) // grayman #4077
+			{
+				ent = ent2; // switch to AI bindMaster
+			}
 		}
 	}
 
@@ -3318,6 +3322,41 @@ void State::OnMovementBlocked(idAI* owner)
 				slaveSelected = true;
 			}
 		}
+
+		/* grayman - This might be needed in the future, but there doesn't
+		// appear to be a need for it in 2.03. I added it as a solution to
+		// a treadmilling report when beta testing 2.03, but the treadmilling
+		// was fixed by SteveL's final riverdancing fix, because one of the
+		// AI was riverdancing, stuck in a turn.
+		//
+		// if both AI are moving in the same direction,
+		// set the one behind as the slave, and he should just end up
+		// stopping until the one in front can move away
+
+		if ( !slaveSelected )
+		{
+			if ( master->AI_FORWARD && slave->AI_FORWARD )
+			{
+				const idVec3& masterVel = master->GetPhysics()->GetLinearVelocity();
+				float masterSpeed = masterVel.LengthFast();
+				const idVec3& slaveVel = slave->GetPhysics()->GetLinearVelocity();
+				float slaveSpeed = slaveVel.LengthFast();
+
+				bool sameDirection = (masterVel * slaveVel > 0.0f); // moving in about the same direction?
+
+				if ( sameDirection )
+				{
+					idVec3 slaveToMaster = master->GetPhysics()->GetOrigin() - slave->GetPhysics()->GetOrigin();
+					bool slaveBehind = (slaveToMaster * slaveVel > 0.0f);
+					if (!slaveBehind)
+					{
+						std::swap(master, slave);
+					}
+					slaveSelected = true;
+				}
+			}
+		}
+		*/
 
 		if (!slaveSelected)
 		{
@@ -3398,7 +3437,10 @@ void State::OnMovementBlocked(idAI* owner)
 
 		slave->movementSubsystem->ResolveBlock(master);
 	}
-	else if (ent->IsType(idStaticEntity::Type))
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	else if (ent->IsType(idStaticEntity::Type) || ent->IsType(CFrobDoor::Type))
 	{
 		// Blocked by func_static, these are generally not considered by Obstacle Avoidance code.
 		// grayman #2345 - if the AI is bumping into a func_static, that's included.
