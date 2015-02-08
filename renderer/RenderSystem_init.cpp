@@ -1426,7 +1426,8 @@ envshot <basename>
 Saves out env/<basename>_ft.tga, etc
 ================== 
 */  
-const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+const static char *cubeExtensions[6] = { "_forward.tga", "_left.tga", "_right.tga", "_back.tga", "_down.tga", "_up.tga" }; // names changed for TDM in #4041
 
 void R_EnvShot_f( const idCmdArgs &args ) {
 	idStr		fullname;
@@ -1461,30 +1462,32 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	}
 
 	memset( &axis, 0, sizeof( axis ) );
+	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
+	// forward = east (positive x-axis in DR)
 	axis[0][0][0] = 1;
-	axis[0][1][2] = 1;
-	axis[0][2][1] = 1;
-
-	axis[1][0][0] = -1;
-	axis[1][1][2] = -1;
-	axis[1][2][1] = 1;
-
-	axis[2][0][1] = 1;
-	axis[2][1][0] = -1;
-	axis[2][2][2] = -1;
-
-	axis[3][0][1] = -1;
-	axis[3][1][0] = -1;
+	axis[0][1][1] = 1;
+	axis[0][2][2] = 1;
+	// left = north
+	axis[1][0][1] = 1;
+	axis[1][1][0] = -1;
+	axis[1][2][2] = 1;
+	// right = south
+	axis[2][0][1] = -1;
+	axis[2][1][0] = 1;
+	axis[2][2][2] = 1;
+	// back = west
+	axis[3][0][0] = -1;
+	axis[3][1][1] = -1;
 	axis[3][2][2] = 1;
-
-	axis[4][0][2] = 1;
-	axis[4][1][0] = -1;
-	axis[4][2][1] = 1;
-
-	axis[5][0][2] = -1;
-	axis[5][1][0] = 1;
-	axis[5][2][1] = 1;
-
+	// down, while facing forward
+	axis[4][0][2] = -1;
+	axis[4][1][1] = 1;
+	axis[4][2][0] = 1;
+	// up, while facing forward
+	axis[5][0][2] = 1;
+	axis[5][1][1] = 1;
+	axis[5][2][0] = -1;
+	
 	for ( int i = 0 ; i < 6 ; i++ ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
