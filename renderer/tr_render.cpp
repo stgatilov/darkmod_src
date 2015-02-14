@@ -227,7 +227,10 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		drawSurf = drawSurfs[i];
 
 		// change the matrix if needed
-		// Note (Serp) : this used to be ( drawSurf->space != backEnd.currentSpace) however, since it's always going to be NULL...
+		// Note (Serp) : this used to be ( drawSurf->space != backEnd.currentSpace) however, since it's always going to be NULL... 
+		// Note (SteveL) : FIXME: It *won't* always be NULL, we're in a loop and it gets set at the end. This change might be wiping out 
+		// all (marginal) benefits from sorting DrawSurfs by material, as it'll cause a blocking change in GL state on every draw. However, 
+		// reverting the change causes all static solid surfaces to become invisible. Don't know why.
 		if ( drawSurf->space ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		} else {
