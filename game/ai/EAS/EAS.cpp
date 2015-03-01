@@ -871,19 +871,19 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 #if 0
 		// grayman - for debugging, print the nodes for this route
 		RouteType type = (*route)->routeType;
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
 		RouteNodeList& routeNodes = (*route)->routeNodes;
 
 		for ( RouteNodeList::const_iterator node = routeNodes.begin() ; node != routeNodes.end() ; node++ )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     node:\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     node:\r");
 			ActionType actionType = (*node)->type;
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*node)->toArea);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*node)->toCluster);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*node)->elevator);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*node)->elevatorStation);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*node)->nodeTravelTime);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*node)->toArea);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*node)->toCluster);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*node)->elevator);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*node)->elevatorStation);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*node)->nodeTravelTime);
 		}
 #endif
 		path.elevatorRoute = *route;
