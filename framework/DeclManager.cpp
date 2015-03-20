@@ -673,6 +673,14 @@ int idDeclFile::LoadAndParse() {
 			}
 		}
 
+		// xdata needs to be allowed escape chars in string -- SteveL #4115
+		if ( identifiedType == DECL_XDATA )
+		{
+			src.SetFlags( DECL_LEXER_FLAGS & ~LEXFL_NOSTRINGESCAPECHARS );
+		} else {
+			src.SetFlags( DECL_LEXER_FLAGS );
+		}
+
 		// now parse the name
 		if ( !src.ReadToken( &token ) ) {
 			src.Warning( "Type without definition at end of file" );
