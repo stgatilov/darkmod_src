@@ -140,6 +140,66 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
+/* -----====+++  BEGIN TDM 2.04 Extensions  +++====-----   */
+
+// Frame Buffer Objects
+extern PFNGLISRENDERBUFFERPROC				qglIsRenderbuffer;
+extern PFNGLBINDRENDERBUFFERPROC			qglBindRenderbuffer;
+extern PFNGLDELETERENDERBUFFERSPROC			qglDeleteRenderbuffers;
+extern PFNGLGENRENDERBUFFERSPROC			qglGenRenderbuffers;
+extern PFNGLRENDERBUFFERSTORAGEPROC			qglRenderbufferStorage;
+extern PFNGLGETRENDERBUFFERPARAMETERIVPROC	qglGetRenderbufferParameteriv;
+extern PFNGLISFRAMEBUFFERPROC				qglIsFramebuffer;
+extern PFNGLBINDFRAMEBUFFERPROC				qglBindFramebuffer;
+extern PFNGLDELETEFRAMEBUFFERSPROC			qglDeleteFramebuffers;
+extern PFNGLGENFRAMEBUFFERSPROC				qglGenFramebuffers;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC		qglCheckFramebufferStatus;
+extern PFNGLFRAMEBUFFERTEXTURE1DPROC		qglFramebufferTexture1D;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC		qglFramebufferTexture2D;
+extern PFNGLFRAMEBUFFERTEXTURE3DPROC		qglFramebufferTexture3D;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC		qglFramebufferRenderbuffer;
+extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC qglGetFramebufferAttachmentParameteriv;
+extern PFNGLGENERATEMIPMAPPROC				qglGenerateMipmap;
+extern PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
+extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
+extern PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
+
+// GLSL
+extern PFNGLATTACHSHADERPROC				qglAttachShader;
+extern PFNGLCOMPILESHADERPROC				qglCompileShader;
+extern PFNGLCREATEPROGRAMPROC				qglCreateProgram;
+extern PFNGLCREATESHADERPROC				qglCreateShader;
+extern PFNGLLINKPROGRAMPROC					qglLinkProgram;
+extern PFNGLSHADERSOURCEPROC				qglShaderSource;
+extern PFNGLUSEPROGRAMPROC					qglUseProgram;
+extern PFNGLUNIFORM1FPROC					qglUniform1f;
+extern PFNGLUNIFORM2FPROC					qglUniform2f;
+extern PFNGLUNIFORM3FPROC					qglUniform3f;
+extern PFNGLUNIFORM4FPROC					qglUniform4f;
+extern PFNGLUNIFORM1IPROC					qglUniform1i;
+extern PFNGLUNIFORM2IPROC					qglUniform2i;
+extern PFNGLUNIFORM3IPROC					qglUniform3i;
+extern PFNGLUNIFORM4IPROC					qglUniform4i;
+extern PFNGLUNIFORM1FVPROC					qglUniform1fv;
+extern PFNGLUNIFORM2FVPROC					qglUniform2fv;
+extern PFNGLUNIFORM3FVPROC					qglUniform3fv;
+extern PFNGLUNIFORM4FVPROC					qglUniform4fv;
+extern PFNGLUNIFORM1IVPROC					qglUniform1iv;
+extern PFNGLUNIFORM2IVPROC					qglUniform2iv;
+extern PFNGLUNIFORM3IVPROC					qglUniform3iv;
+extern PFNGLUNIFORM4IVPROC					qglUniform4iv;
+extern PFNGLUNIFORMMATRIX2FVPROC			qglUniformMatrix2fv;
+extern PFNGLUNIFORMMATRIX3FVPROC			qglUniformMatrix3fv;
+extern PFNGLUNIFORMMATRIX4FVPROC			qglUniformMatrix4fv;
+extern PFNGLVALIDATEPROGRAMPROC				qglValidateProgram;
+extern PFNGLGETSHADERIVPROC					qglGetShaderiv;
+extern PFNGLGETATTRIBLOCATIONPROC			qglGetAttribLocation;
+extern PFNGLGETUNIFORMLOCATIONPROC			qglGetUniformLocation;
+extern PFNGLISPROGRAMPROC					qglIsProgram;
+
+
+/* -----====+++   END TDM 2.04 Extensions   +++====-----   */
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*
@@ -487,6 +547,8 @@ extern  void ( APIENTRY * qglVertex4s )(GLshort x, GLshort y, GLshort z, GLshort
 extern  void ( APIENTRY * qglVertex4sv )(const GLshort *v);
 extern  void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 extern  void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
+
+
 
 #if defined( _WIN32 )
 
