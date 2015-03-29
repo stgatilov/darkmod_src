@@ -705,6 +705,52 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 #endif
 }
 
+/*
+==================
+GenerateRenderTarget
+
+Stripped-down version of GenerateImage for generating textures to be used as color render targets.
+No mipmaps, no downsizing.
+Uses existing settings for width, height, intFormat, pixelDataFormat.
+intFormat and pixelDataFormat[0] & [1] correspond to the glTexImage2D parameters internalFormat, format, and type.
+No pixel data will be used to initialise the image, but you still need to specify compatible formats for all 3.
+==================
+*/
+void idImage::GenerateRenderTarget() {
+	PurgeImage();
+
+	filter = TF_LINEAR;
+	allowDownSize = false;
+	repeat = TR_CLAMP_TO_BORDER;
+	depth = TD_HIGH_QUALITY;
+	type = TT_2D;
+
+	// if we don't have a rendering context, just return after we
+	// have filled in the parms.  We must have the values set, or
+	// an image match from a shader before OpenGL starts would miss
+	// the generated texture
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	// make sure it is a power of 2
+	if ( uploadHeight <= 0 || uploadHeight <= 0 || MakePowerOfTwo( uploadWidth ) != uploadWidth || MakePowerOfTwo( uploadHeight ) != uploadHeight ) 
+	{
+		common->Error( "idImage::GenerateRenderTarget: not a power of 2 image" );
+	}
+
+	qglGenTextures( 1, &texnum );
+	Bind();
+	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, uploadWidth, uploadHeight, 0, pixelDataFormat[0], pixelDataFormat[1], NULL );
+	SetImageFilterAndRepeat();
+
+	// see if we messed anything up
+#ifdef _DEBUG
+	GL_CheckErrors();
+#endif
+}
+
+
 
 /*
 ==================
@@ -1561,6 +1607,7 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 	byte	*pic;
 
 	// this is the ONLY place generatorFunction will ever be called
+	// Note from SteveL: Not true. generatorFunction is called during image reloading too.
 	if ( generatorFunction ) {
 		generatorFunction( this );
 		return;

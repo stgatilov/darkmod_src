@@ -342,6 +342,7 @@
     <ClInclude Include="framework\async\NetworkSystem.h" />
     <ClInclude Include="framework\async\ServerScan.h" />
     <ClInclude Include="renderer\Cinematic.h" />
+    <ClInclude Include="renderer\draw_soft_shadows.h" />
     <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\GuiModel.h" />
     <ClInclude Include="renderer\Image.h" />
@@ -1365,6 +1366,7 @@
     <ClCompile Include="renderer\draw_nv10.cpp" />
     <ClCompile Include="renderer\draw_nv20.cpp" />
     <ClCompile Include="renderer\draw_r200.cpp" />
+    <ClCompile Include="renderer\draw_soft_shadows.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />

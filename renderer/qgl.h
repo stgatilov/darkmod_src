@@ -196,7 +196,14 @@ extern PFNGLGETSHADERIVPROC					qglGetShaderiv;
 extern PFNGLGETATTRIBLOCATIONPROC			qglGetAttribLocation;
 extern PFNGLGETUNIFORMLOCATIONPROC			qglGetUniformLocation;
 extern PFNGLISPROGRAMPROC					qglIsProgram;
+extern PFNGLGETSHADERINFOLOGPROC			qglGetShaderInfoLog;
+extern PFNGLDELETEPROGRAMPROC				qglDeleteProgram;
+extern PFNGLDELETESHADERPROC				qglDeleteShader;
+extern PFNGLGETPROGRAMIVPROC				qglGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC			qglGetProgramInfoLog;
 
+// State management
+extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
 /* -----====+++   END TDM 2.04 Extensions   +++====-----   */
 

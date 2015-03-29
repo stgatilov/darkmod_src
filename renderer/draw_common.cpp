@@ -1197,10 +1197,14 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	if ( tr.backEndRendererHasVertexPrograms && r_useShadowVertexProgram.GetBool()
 		&& surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
-
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
+		if ( !backEnd.usingSoftShadows ) //~SS
+		{		
+			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
+		} else {
+			softShadowMgr->SetLightPosition( &localLight );
+		}
 	}
 
 	tri = surf->geo;
@@ -1429,7 +1433,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 
 	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
 
-	globalImages->BindNull();
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	// for visualizing the shadows
@@ -1441,9 +1444,13 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 			// draw as lines, filling the depth buffer
 			GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_POLYMODE_LINE | GLS_DEPTHFUNC_ALWAYS  );
 		}
+	} else if ( backEnd.usingSoftShadows ) {
+		// draw into all channels of a separate buffer
+		GL_State( GLS_DEPTHMASK | GLS_DEPTHFUNC_LESS | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
 	} else {
 		// don't write to the color buffer, just the stencil buffer
 		GL_State( GLS_DEPTHMASK | GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
+		globalImages->BindNull(); //~Moved from top
 	}
 
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
@@ -1904,26 +1911,32 @@ void RB_STD_LightScale( void ) {
 
 //=========================================================================================
 
-//~ START: TEST GLSL EXTENSIONS
-#define GLSL(src)	 "#version 150 core\n" #src 
-#define GLSLold(src) "#version 150 compatibility\n" #src 
-//~ END: TEST GLSL EXTENSIONS
-
 /*
 =============
 RB_STD_DrawView
+
 =============
 */
 void	RB_STD_DrawView( void ) {
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs, processed;
-
 	RB_LogComment( "---------- RB_STD_DrawView ----------\n" );
-
 	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
-
 	drawSurfs = (drawSurf_t **)&backEnd.viewDef->drawSurfs[0];
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
+
+	//~SS
+	if (   r_softShadows.GetFloat() > 0.0
+		&& backEnd.viewDef->viewEntitys 
+		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID 
+		&& r_showShadows.GetInteger() == 0 
+		&& glConfig.glVersion >  3.0 )
+	{
+		backEnd.usingSoftShadows = true;
+		softShadowMgr->NewFrame();
+	} else {
+		backEnd.usingSoftShadows = false;
+	}
 
 	// clear the z buffer, set the projection matrix, etc
 	RB_BeginDrawingView();
@@ -1975,96 +1988,4 @@ void	RB_STD_DrawView( void ) {
 
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
 
-	//~ START: TEST GLSL EXTENSIONS
-	if ( backEnd.viewDef->renderView.viewID == 1 && r_ignore.GetBool() )
-	{
-		// Screen VBO
-		static bool VBO_done = false;
-		static vertCache_t* ScreenQuadVerts;
-		static vertCache_t* ScreenQuadIndexes;
-		if ( !VBO_done || !ScreenQuadVerts || !ScreenQuadVerts->user )
-		{
-			float vertices[] = {
-				-0.5f, 0.5f,
-				0.5f, 0.5f,
-				0.5f, -0.5f,
-				-0.5f, -0.5f
-			};
-			vertexCache.Alloc( &vertices, sizeof( vertices ), &ScreenQuadVerts, false );
-			vertexCache.Touch( ScreenQuadVerts );
-		}
-		if ( !VBO_done || !ScreenQuadIndexes || !ScreenQuadIndexes->user ) // !ScreenQuadIndexes is for vid_restart
-		{																   // !ScreenQuadIndexes->user is for unloaded
-			GLuint indexes[] = {
-				0, 1, 2,
-				2, 3, 0
-			};
-			vertexCache.Alloc( &indexes, sizeof( indexes ), &ScreenQuadIndexes, true );
-			vertexCache.Touch( ScreenQuadIndexes );
-		}
-		VBO_done = true;
-		
-		// Shaders
-		const GLchar* SHD_VERTEX_DEFAULT = GLSL(
-			in      vec2 pos;
-			out     vec2 texcoord;
-			const   vec2 posNormalizer = vec2( 0.5, 0.5 );
-
-			void main()
-			{
-				vec2 npos = ( pos * 2 ) * posNormalizer + posNormalizer;
-				texcoord = npos * vec2( 1.0, 1.0 );
-				gl_Position = vec4( pos, 0.0, 1.0 );
-			}
-		);
-		const GLchar* SHD_FRAGMENT_DEFAULT = GLSL(
-			in vec2 texcoord;
-			uniform sampler2D tex;
-			out	vec4 outColor;
-
-			void main()
-			{
-				vec4 col = texture( tex, texcoord );
-				outColor = col;
-			}
-		);
-		static GLuint vertex_default;
-		static GLuint fragment_default;
-		static GLuint screenquad_copy_shader;
-		static bool progs_setup = false;
-		if ( !progs_setup || !qglIsProgram( screenquad_copy_shader ) ) // !qglIsProgram is for vid_restart
-		{
-			GLint status;
-			vertex_default = qglCreateShader( GL_VERTEX_SHADER );
-			qglShaderSource( vertex_default, 1, &SHD_VERTEX_DEFAULT, NULL );
-			qglCompileShader( vertex_default );
-			qglGetShaderiv( vertex_default, GL_COMPILE_STATUS, &status );
-			assert( status == GL_TRUE );
-			fragment_default = qglCreateShader( GL_FRAGMENT_SHADER );
-			qglShaderSource( fragment_default, 1, &SHD_FRAGMENT_DEFAULT, NULL );
-			qglCompileShader( fragment_default );
-			qglGetShaderiv( vertex_default, GL_COMPILE_STATUS, &status );
-			assert( status == GL_TRUE );
-			screenquad_copy_shader = qglCreateProgram();
-			qglAttachShader( screenquad_copy_shader, vertex_default );
-			qglAttachShader( screenquad_copy_shader, fragment_default );
-			qglLinkProgram( screenquad_copy_shader );
-		}
-		progs_setup = true;
-
-		// Draw Quad
-		GL_SelectTexture( 0 );
-		globalImages->rampImage->Bind();
-		qglUseProgram( screenquad_copy_shader );
-		GLuint posAttrib = qglGetAttribLocation( screenquad_copy_shader, "pos" );
-		qglVertexAttribPointerARB( posAttrib, 2, GL_FLOAT, GL_FALSE, 0, vertexCache.Position( ScreenQuadVerts ) );
-		qglEnableVertexAttribArrayARB( posAttrib );
-		qglUniform1i( qglGetUniformLocation( screenquad_copy_shader, "tex" ), 0 );
-		qglDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, vertexCache.Position( ScreenQuadIndexes ) );
-		// Clean up
-		qglUseProgram( 0 );
-		qglDisableVertexAttribArrayARB( posAttrib );
-		globalImages->BindNull();
-	}
-	//~ END: TEST GLSL EXTENSIONS
 }

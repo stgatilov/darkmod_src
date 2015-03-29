@@ -446,6 +446,10 @@ static void R_AmbientNormalImage( idImage *image ) {
 }
 
 
+static void R_RenderTargetImage( idImage *image ) {
+	image->GenerateRenderTarget();
+}
+
 static void CreateSquareLight( void ) {
 	byte		*buffer;
 	int			dx, dy;
@@ -874,6 +878,7 @@ void R_QuadraticImage( idImage *image ) {
 	image->GenerateImage( (byte *)data, QUADRATIC_WIDTH, QUADRATIC_HEIGHT, 
 		TF_DEFAULT, false, TR_CLAMP, TD_HIGH_QUALITY );
 }
+
 
 //=====================================================================
 
@@ -1414,6 +1419,36 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void (*generatorF
 	}
 
 	return image;
+}
+
+/*
+==================
+RenderTargetImage
+
+Can be called with an existing image name to resize an image or change its format
+==================
+*/
+idImage *idImageManager::RenderTargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType )
+{
+	idImage* img = GetImage(name);
+	bool preExisting = ( img != NULL );
+
+	if ( !img )
+	{
+		img = AllocImage( name );
+		img->generatorFunction = R_RenderTargetImage;
+		img->referencedOutsideLevelLoad = true;
+	}
+
+	img->uploadWidth = width;
+	img->uploadHeight = height;
+	img->internalFormat = internalFormat;
+	img->pixelDataFormat[0] = pixelFormat;
+	img->pixelDataFormat[1] = pixelType;
+	
+	// NB there's no difference between ActuallyLoadImage() and Reload() for generated images. Both just call the generator function.
+	img->ActuallyLoadImage( false, true );
+	return img;
 }
 
 /*

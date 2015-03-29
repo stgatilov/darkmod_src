@@ -563,6 +563,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
+    <ClInclude Include="renderer\draw_soft_shadows.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1591,6 +1594,9 @@
     <ClCompile Include="framework\precompiled_engine.cpp" />
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\draw_soft_shadows.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

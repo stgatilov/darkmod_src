@@ -91,6 +91,8 @@ void RB_SetDefaultGLState( void ) {
 			qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
 		}
 	}
+
+	//~SS: Add default framebuffer and rest
 }
 
 

@@ -61,6 +61,8 @@ idCVar r_useTwoSidedStencil( "r_useTwoSidedStencil", "1", CVAR_RENDERER | CVAR_B
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
+idCVar r_softShadows( "ss", "0", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows. 0 = hard shadows, >0 = light radius"); //~SteveL SS
+
 idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 // Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
 idCVar r_useIndexBuffers( "r_useIndexBuffers", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
@@ -362,6 +364,14 @@ PFNGLGETSHADERIVPROC						qglGetShaderiv;
 PFNGLGETATTRIBLOCATIONPROC					qglGetAttribLocation;
 PFNGLGETUNIFORMLOCATIONPROC					qglGetUniformLocation;
 PFNGLISPROGRAMPROC							qglIsProgram;
+PFNGLGETSHADERINFOLOGPROC					qglGetShaderInfoLog;
+PFNGLDELETEPROGRAMPROC						qglDeleteProgram;
+PFNGLDELETESHADERPROC						qglDeleteShader;
+PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
+PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
+
+// State management
+PFNGLBLENDEQUATIONPROC						qglBlendEquation;
 
 /* -----====+++  END TDM 2.04 Extensions  +++====-----   */
 
@@ -583,10 +593,9 @@ static void R_CheckPortableExtensions( void ) {
  	}
 
 
-	/* -----====+++  BEGIN TDM 2.04 Extensions  +++====-----   */
+	/* -----====+++|  BEGIN TDM 2.04 Extensions  |+++====-----   */
 
-	// separate stencil (part of OpenGL 2.0 spec)
-	if ( glConfig.glVersion >= 3.1 ) {
+	if ( glConfig.glVersion > 3.0 ) {
 
 		// Frame Buffer Objects
 		qglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GLimp_ExtensionPointer( "glIsRenderbuffer" );
@@ -642,9 +651,17 @@ static void R_CheckPortableExtensions( void ) {
 		qglGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glGetAttribLocation" );
 		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
 		qglIsProgram = (PFNGLISPROGRAMPROC)GLimp_ExtensionPointer( "glIsProgram" );
+		qglGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)GLimp_ExtensionPointer( "glGetShaderInfoLog" );
+		qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
+		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
+		qglGetProgramiv = (PFNGLGETPROGRAMIVPROC)GLimp_ExtensionPointer( "glGetProgramiv" );
+		qglGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)GLimp_ExtensionPointer( "glGetProgramInfoLog" );
+
+		// State management
+		qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	}
 
-	/* -----====+++   END TDM 2.04 Extensions   +++====-----   */
+	/* -----====+++|   END TDM 2.04 Extensions   |+++====-----   */
 
 }
 
@@ -1987,6 +2004,8 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 	// this could take a while, so give them the cursor back ASAP
 	Sys_GrabMouseCursor( false );
+
+	softShadowMgr->UnInit();  //~SS
 
 	// dump ambient caches
 	renderModelManager->FreeModelVertexCaches();

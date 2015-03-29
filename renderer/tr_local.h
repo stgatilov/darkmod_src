@@ -637,6 +637,7 @@ typedef struct {
 	int		msec;			// total msec for backend run
 } backEndCounters_t;
 
+
 // all state modified by the back end is separated
 // from the front end state
 typedef struct {
@@ -666,6 +667,9 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
+
+	//~SS
+	bool				usingSoftShadows;
 } backEndState_t;
 
 
@@ -1000,6 +1004,8 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
+
+extern idCVar r_softShadows; //~SS
 
 /*
 ====================================================================
@@ -1705,5 +1711,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 #include "RenderWorld_local.h"
 #include "GuiModel.h"
 #include "VertexCache.h"
+
+#include "draw_soft_shadows.h"				//~SS
+extern SoftShadowManager *  softShadowMgr; 
 
 #endif /* !__TR_LOCAL_H__ */
