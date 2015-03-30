@@ -734,7 +734,7 @@ void idImage::GenerateRenderTarget() {
 	}
 
 	// make sure it is a power of 2
-	if ( uploadHeight <= 0 || uploadHeight <= 0 || MakePowerOfTwo( uploadWidth ) != uploadWidth || MakePowerOfTwo( uploadHeight ) != uploadHeight ) 
+	if ( uploadWidth <= 0 || uploadHeight <= 0 || MakePowerOfTwo( uploadWidth ) != uploadWidth || MakePowerOfTwo( uploadHeight ) != uploadHeight ) 
 	{
 		common->Error( "idImage::GenerateRenderTarget: not a power of 2 image" );
 	}

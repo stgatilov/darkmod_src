@@ -94,6 +94,7 @@ private:
 	GLuint UNF_QUAD_maxTexcoord;
 	GLuint UNF_QUAD_tex;
 	GLuint UNF_QUAD_pos; // Vertex data
+	GLuint UNF_SHADOW_threshold; // debug
 	
 
 	// VBOs for drawing screen quads

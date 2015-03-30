@@ -162,7 +162,7 @@ void SoftShadowManager::ResetLightScissor( const viewLight_t* vLight )
 
 void SoftShadowManager::SetLightPosition( const idVec4* pos)
 {
-	qglUniform4fv( UNF_SHADOW_lightPos, 1, pos->ToFloatPtr() );
+	qglUniform4fv( UNF_SHADOW_lightPos, 1, pos->ToFloatPtr() ); //~TODO: store this and defer upload until use. 
 }
 
 
@@ -193,9 +193,12 @@ void SoftShadowManager::InitShaders()
 		uniform vec4 lightPos;			/* in model space */
 		uniform float lightRadius;		/* size of the light source */
 		uniform float lightReach;		/* max distance that light can hit */
-		out vec4 shadowEdgeViewPos;		/* in view space */
-		out vec4 fragmentViewPos;		/* in view space */
-		out float shadowSpread;
+		out float penumbraSize;
+
+		//debug
+		out float light2edge;
+		out float edge2shadow;
+		
 
 		void main()
 		{
@@ -208,10 +211,14 @@ void SoftShadowManager::InitShaders()
 			}
 			/* Output vertex position */
 			gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0); 
-			/* Output other stuff */
-			shadowEdgeViewPos = gl_ModelViewMatrix * vec4(gl_Vertex.xyz, 1.0); /* the same for w=1 and w=0 verts. */
-			fragmentViewPos = gl_ModelViewMatrix * vec4(position, 1.0);
-			shadowSpread = lightRadius / distance( lightPos.xyz, gl_Vertex.xyz );
+			/* Output penumbra size to be interpolated across the shadow volume. 
+			   0 at the near edge (w=1 vert), max at the far (w=0) vert. */
+			float distFromLight = distance( lightPos.xyz, gl_Vertex.xyz );
+			penumbraSize = ( 1.0 - gl_Vertex.w ) * ( lightReach - distFromLight ) * lightRadius / distFromLight;
+
+			//debug only
+			edge2shadow = ( 1.0 - gl_Vertex.w ) * ( lightReach - distFromLight );
+			light2edge = distFromLight;
 		}
 	);
 
@@ -219,22 +226,25 @@ void SoftShadowManager::InitShaders()
 	   and writes the penumbra size at that point if so. The idea is to produce a line marking the 
 	   centre of each penumbra with size info. */
 	const GLchar* SoftShadowFP = GLSLold(
-		in vec4 shadowEdgeViewPos;
-		in vec4 fragmentViewPos;
-		in float shadowSpread;
+		in float penumbraSize;
 		uniform sampler2D depthtex;
 		uniform vec2 invDepthImageSize;
+		
+		//debug only
+		in float light2edge;
+		in float edge2shadow;
+		uniform float threshold;
 		
 		void main()
 		{
 			/* sample scene depth */
 			vec2 texcoord = gl_FragCoord.xy * invDepthImageSize;
-			float distToEdge = distance( shadowEdgeViewPos, fragmentViewPos );
-			float penumbra_size = distToEdge * shadowSpread;
 			float SceneDepth = texture( depthtex, texcoord ).x;
 			float DepthDiff = abs( SceneDepth - gl_FragCoord.z );
 			float maxDepthDelta = fwidth(SceneDepth) + fwidth(gl_FragCoord.z); // greatest relative depth change between shadow vol and scene
+			float sceneDelta = dFdx(SceneDepth) + dFdy(SceneDepth);
 
+			bool sharpDepthDiscontinuity = fwidth(SceneDepth) > threshold; 
 			// debug
 			// show linear depth of fragment and scene
 			/*float linear_scenedepth = -1.0 / ( ( 2 * SceneDepth - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2] );
@@ -246,16 +256,28 @@ void SoftShadowManager::InitShaders()
 			//{
 			//	gl_FragColor = vec4( 1.0, linear_fragchange / 256.0, 0.0, 1.0 );  // debug
 			//}
-
-			if ( penumbra_size > 0.25 && distToEdge > 1.0 && DepthDiff < maxDepthDelta )
+			float screenCoverage = penumbraSize * gl_FragCoord.w;
+			if ( screenCoverage < 8.0 * invDepthImageSize.x || screenCoverage < 8.0 * invDepthImageSize.y ) 
 			{
-				gl_FragColor = vec4( penumbra_size / 256.0, 0.75, 0.0, 1.0 );  // debug
+				screenCoverage = 0.0;
+			}
+
+			if ( !sharpDepthDiscontinuity && screenCoverage > 0.0 /* && penumbraSize > 0.25 */ && DepthDiff < maxDepthDelta )
+			{
+				//gl_FragColor = vec4( light2edge, edge2shadow, 0.0, 1.0 ); 
+				gl_FragColor = vec4( penumbraSize, 1.0, 0.0, 1.0 ); 
 			} else {
 				gl_FragColor = vec4( 0.0, 0.0, 0.0, 0.0 );
 			}
+
+			// Debug test: color according to dz
+			/*
+			float linear_fragdepth = -1.0 /  ( ( 2 * gl_FragCoord.z - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2] );
+			gl_FragColor = vec4( dFdx(linear_fragdepth), dFdy(linear_fragdepth), 0.0, 0.1 );
+			*/
 		}
 	);
-
+	
 	shaders[shadow_vp] = qglCreateShader( GL_VERTEX_SHADER );
 	qglShaderSource( shaders[shadow_vp], 1, &SoftShadowVP, NULL );
 	qglCompileShader( shaders[shadow_vp] );
@@ -278,6 +300,8 @@ void SoftShadowManager::InitShaders()
 	UNF_SHADOW_lightReach = qglGetUniformLocation( prg_shadow, "lightReach" );
 	UNF_SHADOW_depthtex = qglGetUniformLocation( prg_shadow, "depthtex" );
 	UNF_SHADOW_invDepthImageSize = qglGetUniformLocation( prg_shadow, "invDepthImageSize" );
+	// debug threshold
+	UNF_SHADOW_threshold = qglGetUniformLocation( prg_shadow, "threshold" );
 
 	// Simplest screen quad.
 	const GLchar* ScreenQuadVP = GLSL(
@@ -406,6 +430,8 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 				  1.0 / (float)globalImages->currentDepthImage->uploadWidth, 
 				  1.0 / (float)globalImages->currentDepthImage->uploadHeight );
 	qglUniform1f( UNF_SHADOW_lightReach, 10000.0f ); //~TODO: use correct light size
+	//~debug
+	qglUniform1f( UNF_SHADOW_threshold, /* r_ignore.GetFloat() */ 0.0005 );
 	ResetLightScissor( vLight );
 	//qglBlendEquation( GL_MAX ); //~TODO cvar. This and clear color need to be in sync
 	qglClearColor( 0.0, 0.0, 0.0, 0.0 );
