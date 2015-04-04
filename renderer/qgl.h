@@ -163,6 +163,7 @@ extern PFNGLGENERATEMIPMAPPROC				qglGenerateMipmap;
 extern PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 extern PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
+extern PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
 
 // GLSL
 extern PFNGLATTACHSHADERPROC				qglAttachShader;

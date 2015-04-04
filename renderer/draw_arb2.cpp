@@ -122,16 +122,16 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 /*
 =============
 RB_ARB2_CreateDrawInteractions
-
 =============
 */
-void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
+void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf, const int srcBlendMode )
+{
 	if ( !surf ) {
 		return;
 	}
 
 	// perform setup here that will be constant for all interactions
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
+	GL_State( srcBlendMode | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
 	// bind the vertex program
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
@@ -268,17 +268,12 @@ void RB_ARB2_DrawInteractions( void ) {
 
 		lightShader = vLight->lightShader;
 
-
-		bool softShadowHack = backEnd.usingSoftShadows; 
-		//~SS. softShadowHack only needed briefly while existing code is still being 
-		// used to draw the interactions.. Temp turn it off so normal interaction 
-		// drawing can be used after doing the softShadowMgr off-screen draws. 
 		if ( backEnd.usingSoftShadows && (vLight->globalShadows || vLight->localShadows) ) 
 		{
 			softShadowMgr->DrawInteractions( vLight );
-			backEnd.usingSoftShadows = false; //~SS TEMP
+			softShadowMgr->DrawDebugOutput();
 		} 
-		//else //~SS TEMP -- do the usual interaction drawing with SS off
+		else 
 		{
 			// clear the stencil buffer if needed
 			if ( vLight->globalShadows || vLight->localShadows ) {
@@ -326,12 +321,6 @@ void RB_ARB2_DrawInteractions( void ) {
 		RB_ARB2_CreateDrawInteractions( vLight->translucentInteractions );
 
 		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
-
-		if ( softShadowHack && (vLight->globalShadows || vLight->localShadows) ) //~SS
-		{
-			softShadowMgr->DrawDebugOutput();
-			backEnd.usingSoftShadows = true;
-		}
 	}
 
 	// disable stencil shadow test

@@ -62,6 +62,8 @@ idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
 idCVar r_softShadows( "ss", "0", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows. 0 = hard shadows, >0 = light radius"); //~SteveL SS
+idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "
+																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
 
 idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 // Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
@@ -331,6 +333,7 @@ PFNGLGENERATEMIPMAPPROC					qglGenerateMipmap;
 PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
+PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
 
 // GLSL
 PFNGLATTACHSHADERPROC						qglAttachShader;
@@ -618,6 +621,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBlitFramebuffer" );
 		qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)GLimp_ExtensionPointer( "glRenderbufferStorageMultisample" );
 		qglFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
+		qglDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer( "glDrawBuffers" );	
 
 		// GLSL
 		qglAttachShader = (PFNGLATTACHSHADERPROC)GLimp_ExtensionPointer( "glAttachShader" );

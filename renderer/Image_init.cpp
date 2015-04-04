@@ -446,8 +446,8 @@ static void R_AmbientNormalImage( idImage *image ) {
 }
 
 
-static void R_RenderTargetImage( idImage *image ) {
-	image->GenerateRenderTarget();
+static void R_RendertargetImage( idImage *image ) {
+	image->GenerateRendertarget();
 }
 
 static void CreateSquareLight( void ) {
@@ -1423,20 +1423,20 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void (*generatorF
 
 /*
 ==================
-RenderTargetImage
+RendertargetImage
 
+An image suitable for a render target. No mipmaps, no downsizing. Calling code specifies the internal format. 
 Can be called with an existing image name to resize an image or change its format
 ==================
 */
-idImage *idImageManager::RenderTargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType )
+idImage *idImageManager::RendertargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType )
 {
 	idImage* img = GetImage(name);
-	bool preExisting = ( img != NULL );
 
 	if ( !img )
 	{
 		img = AllocImage( name );
-		img->generatorFunction = R_RenderTargetImage;
+		img->generatorFunction = R_RendertargetImage;
 		img->referencedOutsideLevelLoad = true;
 	}
 

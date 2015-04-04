@@ -1006,6 +1006,7 @@ extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
 
 extern idCVar r_softShadows; //~SS
+extern idCVar r_softShadDebug;
 
 /*
 ====================================================================
@@ -1329,6 +1330,7 @@ void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
+void	RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf, const int srcBlendMode = GLS_SRCBLEND_ONE );
 
 typedef enum {
 	PROG_INVALID,

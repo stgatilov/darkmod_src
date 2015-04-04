@@ -716,14 +716,13 @@ intFormat and pixelDataFormat[0] & [1] correspond to the glTexImage2D parameters
 No pixel data will be used to initialise the image, but you still need to specify compatible formats for all 3.
 ==================
 */
-void idImage::GenerateRenderTarget() {
+void idImage::GenerateRendertarget() {
 	PurgeImage();
 
-	filter = TF_LINEAR;
+	filter = TF_NEAREST;
 	allowDownSize = false;
 	repeat = TR_CLAMP_TO_BORDER;
 	depth = TD_HIGH_QUALITY;
-	type = TT_2D;
 
 	// if we don't have a rendering context, just return after we
 	// have filled in the parms.  We must have the values set, or
@@ -738,6 +737,9 @@ void idImage::GenerateRenderTarget() {
 	{
 		common->Error( "idImage::GenerateRenderTarget: not a power of 2 image" );
 	}
+
+	// Ok to proceed
+	type = TT_2D;
 
 	qglGenTextures( 1, &texnum );
 	Bind();
@@ -883,6 +885,59 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 
 #ifdef _DEBUG
 	// see if we messed anything up
+	GL_CheckErrors();
+#endif
+}
+
+
+void idImage::GenerateDataCubeImage( const GLvoid* data, int width, int height, int dpth, textureRepeat_t repeatParm,
+									 GLuint intFormat, GLuint pixelFormat, GLuint pixelType )
+{
+	PurgeImage();
+
+	filter = TF_NEAREST;
+	allowDownSize = false;
+	repeat = repeatParm;
+	depth = TD_HIGH_QUALITY;
+	type = TT_3D;
+
+	// if we don't have a rendering context, just return after we
+	// have filled in the parms.  We must have the values set, or
+	// an image match from a shader before OpenGL starts would miss
+	// the generated texture
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	// make sure it is a power of 2
+	if ( width <= 0 || height <= 0 || dpth <=0 || 
+		 MakePowerOfTwo( width ) != width || 
+		 MakePowerOfTwo( height ) != height || 
+		 MakePowerOfTwo( dpth ) != dpth ) 
+	{
+		common->Error( "idImage::GenerateDataCubeImage: not a power of 2 image" );
+	}
+
+	// ok to proceed
+	internalFormat = intFormat;
+	type = TT_3D;
+	uploadWidth = width;
+	uploadHeight = height;
+	uploadDepth = dpth;
+	qglGenTextures( 1, &texnum );
+	Bind();
+	qglTexImage3D(GL_TEXTURE_3D, 0, intFormat, width, height, dpth, 0, pixelFormat, pixelType, data );
+	qglTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	qglTexParameterf(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+	const GLuint rpt = repeat == TR_REPEAT ? GL_REPEAT : GL_CLAMP_TO_EDGE;
+	qglTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, rpt );
+	qglTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, rpt );
+	qglTexParameterf( GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, rpt );
+
+
+	// see if we messed anything up
+#ifdef _DEBUG
 	GL_CheckErrors();
 #endif
 }

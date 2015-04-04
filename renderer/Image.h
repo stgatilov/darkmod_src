@@ -169,7 +169,11 @@ public:
 	void		GenerateCubeImage( const byte *pic[6], int size, 
 						textureFilter_t filter, bool allowDownSize, 
 						textureDepth_t depth );
-	void		GenerateRenderTarget(); //~SS
+	void		GenerateRendertarget(); //~SS
+	// added for soft shadows jitter map, but should be generally useful for storing data 
+	// in a 3D texture. No mipmaps, high quality, nearest filtering, user specifies the format.
+	void		GenerateDataCubeImage( const GLvoid* data, int width, int height, int depth, textureRepeat_t repeat,
+									   GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
 
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
@@ -321,7 +325,7 @@ public:
 	idImage *			ImageFromFunction( const char *name, void (*generatorFunction)( idImage *image ));
 
 	// For generating a rendertarget image. Can be called a second time with same name to resize or change format.
-	idImage *			RenderTargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
+	idImage *			RendertargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
 
 	// called once a frame to allow any background loads that have been completed
 	// to turn into textures.

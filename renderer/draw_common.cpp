@@ -1930,7 +1930,7 @@ void	RB_STD_DrawView( void ) {
 		&& backEnd.viewDef->viewEntitys 
 		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID 
 		&& r_showShadows.GetInteger() == 0 
-		&& glConfig.glVersion >  3.0 )
+		&& glConfig.glVersion >  3.0 ) // i.e 3.1 or above, float-safe 
 	{
 		backEnd.usingSoftShadows = true;
 		softShadowMgr->NewFrame();
