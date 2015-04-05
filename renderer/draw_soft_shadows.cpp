@@ -216,16 +216,24 @@ void SoftShadowManager::NewFrame()
     {
         UnInit();
     }
+
 	// This is the main/only initialization path.
     if ( !initialized )
     {
         Init();
     }
+
 	if ( spamConsole )
 	{
-		common->Printf("Soft shadows: %d passes\n", frameDrawCounter ); // reporting prev frame
+		uint total = localShadowDrawCounter + globalShadowDrawCounter;
+		common->Printf("Soft shadows: %d lights, %d soft shadow passes (%d no-self-shadow, %d other)\n", 
+						lightCounter, total, localShadowDrawCounter, globalShadowDrawCounter ); // reporting prev frame
 	}
-	frameDrawCounter = 0;
+
+	localShadowDrawCounter = 0;
+	globalShadowDrawCounter = 0;
+	lightCounter = 0;
+	depthBufferCaptured = false;
 }
 
 
@@ -259,7 +267,11 @@ void SoftShadowManager::InitRenderTargets()
     // Penumbra size maps
     tex[penumbraSize_tx] = globalImages->RendertargetImage("penumbraSize_tx", potWidth, potHeight, GL_RG16F, GL_RGBA, GL_FLOAT );
 
-    // Small-scale penumbra size maps
+    // Color copy of the stencil buffer
+	tex[colorStencil_tx] = globalImages->RendertargetImage("colorStencil_fb", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
+	tex[shadowBlur_tx] = globalImages->RendertargetImage("shadowBlur_tx", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
+
+	// Small-scale penumbra size maps
     const int smallSize[2] = { potWidth / MINISCALE, potHeight / MINISCALE };
     tex[penumbraSpread1_tx] = globalImages->RendertargetImage("penumbraSpread1_tx", smallSize[0], smallSize[1], GL_RG16F, GL_RGBA, GL_FLOAT );
     tex[penumbraSpread2_tx] = globalImages->RendertargetImage("penumbraSpread2_tx", smallSize[0], smallSize[1], GL_RG16F, GL_RGBA, GL_FLOAT );
@@ -268,10 +280,6 @@ void SoftShadowManager::InitRenderTargets()
 	tex[penumbraSpread1_tx]->SetImageFilterAndRepeat();
 	tex[penumbraSpread2_tx]->filter = TF_LINEAR;
 	tex[penumbraSpread2_tx]->SetImageFilterAndRepeat();
-
-	// Color copy of the stencil buffer
-	tex[colorStencil_tx] = globalImages->RendertargetImage("colorStencil_fb", potWidth, potHeight, GL_R8, GL_RGBA, GL_UNSIGNED_BYTE );
-	tex[shadowBlur_tx] = globalImages->RendertargetImage("shadowBlur_tx", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
 
 	// Jitter map. Not strictly speaking a render target, but handy to put it here
 	tex[jitterMap_tx] = globalImages->ImageFromFunction("jitterMap_tx", R_JitterMap);
@@ -285,10 +293,14 @@ void SoftShadowManager::InitShaders()
     // but also outputs penumbra size to a color buffer.
     // Use "old" GLSL compatibility mode so we can access the built-in matrix stack.
     const GLchar* SoftShadowVP = GLSLold(
-        uniform		vec4	lightPos;          /* in model space */
-        uniform		float	lightRadius;      /* size of the light source */
-        uniform		float	lightReach;       /* max distance that light can hit */
-		out			vec2	screenSpaceSize;
+        uniform		vec4	lightPos;			/* in model space */
+        uniform		float	lightRadius;		/* size of the light source */
+        uniform		float	lightReach;			/* max distance that light can hit */
+		uniform		ivec2	screensize;
+		out			vec2	pixelCoverageFor1Unit;
+		out			float	shadowSpread;		
+		out			vec4	shadowEdgeViewPos;  /* in view space */
+		out			vec2	fragmentViewPosXY;	/* in view space */
 
         void main()
         {
@@ -301,12 +313,22 @@ void SoftShadowManager::InitShaders()
             }
             /* Output vertex position */
             gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0); 
-            /* Output penumbra size to be interpolated across the shadow volume. 
-               0 at the near edge (w=1 vert), max at the far (w=0) vert. */
+			/* Output penumbra spread and important coordinates*/
             float distFromLight = distance( lightPos.xyz, gl_Vertex.xyz );
+			/* for attempt #2, instead of screenSpaceSize */
+			shadowSpread = lightRadius / distFromLight; /* same for w=1 and w=0 verts */
+			shadowEdgeViewPos = gl_ModelViewMatrix * vec4(gl_Vertex.xyz, 1.0); /* same for w=1 and w=0 verts. */
+			fragmentViewPosXY = ( gl_ModelViewMatrix * vec4(position, 1.0) ).xy;
+			pixelCoverageFor1Unit = ( gl_ProjectionMatrix * vec4( 1.0, 1.0, -1.0, 1.0 ) ).xy * screensize; // project 1 unit into screen space
+
+			/* Earlier attempt commented out. This calculated the penumbra size in 
+			   screen space along the face of the shadow volume, to save the fragment shader 
+			   doing it by calculating scene depth. Unfortunately it gives weird results where a
+			   shadow volume edge is seen edge-on, which means a huge range of depths covered by one 
+			   fragment. Left in to stop me making the same mistake again.
             float penumbraSize = ( 1.0 - gl_Vertex.w ) * ( lightReach - distFromLight ) * lightRadius / distFromLight;
-			/* Transform into screen space, without perspective divide */
 			screenSpaceSize = ( gl_ProjectionMatrix * vec4( penumbraSize, penumbraSize, -1.0, 1.0 ) ).xy;
+			*/
         }
     );
 
@@ -314,11 +336,12 @@ void SoftShadowManager::InitShaders()
        and writes the penumbra size at that point if so. The idea is to produce a line marking the 
        centre of each penumbra with size info. */
     const GLchar* SoftShadowFP = GLSLold(
-        in float penumbraSize;
-		in vec2	screenSpaceSize;
+		in		vec2	pixelCoverageFor1Unit;	/* Projection in view space of 1-unit penumbra 1 unit away. Needs perspective divide */
+		in		float	shadowSpread;			/* attempt #2: Just output this factor so the frag shader can calc the pen size based on scene depth */
+		in		vec4	shadowEdgeViewPos;		/* also for attempt #2. in view space */
+		in		vec2	fragmentViewPosXY;		/* also for attempt #2 */
         uniform sampler2D depthtex;
         uniform vec2 invDepthImageSize;
-		uniform ivec2 screensize;
         uniform float threshold;
         
         void main()
@@ -338,25 +361,19 @@ void SoftShadowManager::InitShaders()
             float linear_fragchange = -1.0 /  ( ( 2 * fwidth(gl_FragCoord.z) - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2] );
             float linear_depthdiff =  -1.0 /  ( ( 2 * DepthDiff - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2] );
             */
-            //if ( fwidth(gl_FragCoord.z) >= DepthDiff )
-            //{
-            //  gl_FragColor = vec4( 1.0, linear_fragchange / 256.0, 0.0, 1.0 );  // debug
-            //}
-            //ivec2 screenCoverage = ivec2( penumbraSize * 0.5 * gl_FragCoord.w * screensize ); // in pixels
-			ivec2 screenCoverage = ivec2( screenSpaceSize * 0.5 * gl_FragCoord.w * screensize ); // in pixels. 0.5 because NDC coords have range of 2 (-1 to +1)
+			float clampedDepth = min(SceneDepth, 0.99949); // 0.9995 is infinite depth in TDM's proj matrix
+			float invViewDepth = ( 2 * clampedDepth - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2];
+			float viewDepth = 1.0 / invViewDepth;
+			vec4 scenePosition = vec4( fragmentViewPosXY, viewDepth, 1.0 );
+			float pSize = distance( shadowEdgeViewPos, scenePosition ) * shadowSpread;
+			ivec2 pixelCoverage = ivec2( pSize * pixelCoverageFor1Unit * 0.5 * -invViewDepth );
 
-            if ( !sharpDepthDiscontinuity && max(screenCoverage.x, screenCoverage.y) > 1 /* && penumbraSize > 0.25 */ && DepthDiff < maxDepthDelta )
+            if ( !sharpDepthDiscontinuity && max(pixelCoverage.x, pixelCoverage.y) > 1 /* && penumbraSize > 0.25 */ && DepthDiff < maxDepthDelta )
             {
-                gl_FragColor = vec4( screenCoverage.x, 1.0, 0.0, 1.0 ); 
+                gl_FragColor = vec4( pixelCoverage.x, 1.0, 0.0, 1.0 ); 
             } else {
                 gl_FragColor = vec4( 0.0, 0.0, 0.0, 0.0 );
             }
-
-            // Debug test: color according to dz
-            /*
-            float linear_fragdepth = -1.0 /  ( ( 2 * gl_FragCoord.z - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2] );
-            gl_FragColor = vec4( dFdx(linear_fragdepth), dFdy(linear_fragdepth), 0.0, 0.1 );
-            */
         }
     );
     
@@ -559,8 +576,8 @@ void SoftShadowManager::InitShaders()
 			return max(result, vec2(sample.x-amount, sample.y)); // max spread and penumbra ... big, softer penumbrae eat chunks out of smaller ones.
 			//return vec2( max(result.x, sample.x-amount), min(result.y, sample.y) ); // max spread min penumbra size ... causes blotchyness on overlaps
 			//return min(result, vec2(sample.x-amount, sample.y)); // min spread and penumbra ... better, holes are gone, but still quivery and blotchy
-			if (result.x==0) result.x = sample.x; // hack to allow avg
-			if (result.y==0) result.y = sample.y; // hack to allow avg
+			if (result.x==0.0) result.x = sample.x; // hack to allow avg
+			if (result.y==0.0) result.y = sample.y; // hack to allow avg
 			//return vec2( (result.x + sample.x - amount) / 2.0, max(result.y, sample.y) ); // avg spread, max pen ... best yet but quivery still and harder pen still getting softened
 			//return vec2( max(result.x, sample.x - amount), (result.y + sample.y) / 2.0 ); // max spread, avg pen ... better not too quivery but some eating still
 			//return vec2( (result.x + sample.x - amount) / 2.0, min(result.y, sample.y) ); // avg spread, min pen ... unstable 
@@ -760,17 +777,16 @@ void SoftShadowManager::InitFBOs()
     qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[penumbraSize_tx]->texnum, 0 );
     assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
     
-    // FBO for penumbra spreading using a downsized image. 2 textures for ping-ponging
-    qglBindFramebuffer( GL_FRAMEBUFFER, fbo[penumbraSpread_fb] );
-    qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[penumbraSpread1_tx]->texnum, 0 );
-    qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex[penumbraSpread2_tx]->texnum, 0 );
-    assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
-
-
-	// For copying the stencil contents to a color buffer
+    // For copying the stencil contents to a color buffer
     qglBindFramebuffer( GL_FRAMEBUFFER, fbo[colorStencil_fb] );
     qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRbo );
     qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[colorStencil_tx]->texnum, 0 );
+    assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
+
+	// FBO for penumbra spreading using a downsized image. 2 textures for ping-ponging
+    qglBindFramebuffer( GL_FRAMEBUFFER, fbo[penumbraSpread_fb] );
+    qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[penumbraSpread1_tx]->texnum, 0 );
+    qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex[penumbraSpread2_tx]->texnum, 0 );
     assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
 
 	// For the blurred shadow stencil
@@ -816,29 +832,62 @@ void SoftShadowManager::InitVBOs()
 }
 
 
-void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
+void SoftShadowManager::CaptureDepthBuffer()
 {
-    // Draws the interactions for one light
-    // All input textures use active texture slot 0
-    qglDisable( GL_VERTEX_PROGRAM_ARB );
-    qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-	ResetLightScissor( vLight );
-	++frameDrawCounter;
+	/* Get a copy of the depth buffer. We will use the global _currentDepth image as a sampler 
+       for our fragment shaders, but we need a separate active depth buffer for our shadow volume drawing. */
+	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1, 
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1, 
+		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
+		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
+	backEnd.currentScissor = backEnd.viewDef->scissor;
 
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fbo[penumbraSize_fb] );
+    qglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
+    qglBlitFramebuffer( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 
+                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+	depthBufferCaptured = true;
+}
+
+
+void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const drawSurf_s* shadows, const bool clearStencil )
+{
 	static const GLenum targets[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 }; // Used by multiple FBOs
+
+	ResetLightScissor( vLight );
+	
+	/**********
+        Step 0. Early exit if we have no shadows to draw onm this pass
+     **********/
+	if ( !shadows )
+	{
+		if ( clearStencil )
+		{
+			// We still need to clear the penumbra size image for any subsequent shadow passes from this light
+			qglBindFramebuffer( GL_FRAMEBUFFER, fbo[penumbraSize_fb] );
+			assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
+			qglClearColor( 0.0, 0.0, 0.0, 0.0 );
+			qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT );
+			// As well as set up the empty stencil so the whole area is fully lit
+			qglBindFramebuffer(GL_FRAMEBUFFER, 0 );
+			qglClearColor( 0.0, 0.0, 0.0, 1.0 );
+			qglClearStencil( 0 );
+			GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Alpha channel only
+			qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT ); // Stencil still clears to 128
+			// And set the stencil funcs ready for drawing light effects
+			qglStencilFunc( GL_EQUAL, 0, 255 );
+			qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+		}
+		return;
+	}
+
 
 	//~TODO: Activate depth bounds testing for these draws?
 
     /**********
-        Step 1. Get a copy of the depth buffer. We can use the global _currentDepth image as a sampler 
-        for our fragment shaders, but we need a separate active depth buffer for our shadow volume drawing. 
-     **********/
-    qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fbo[penumbraSize_fb] );
-    qglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
-    qglBlitFramebuffer( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 
-                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
-    /**********
-        Step 2. Draw shadows into the stencil using existing technique, but using a new shader that draws 
+        Step 1. Draw shadows into the stencil using existing technique, but using a new shader that draws 
         estimated penumbra size into a color buffer.
      **********/
     qglStencilFunc( GL_ALWAYS, 128, 255 );
@@ -852,23 +901,22 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
                   1.0f / globalImages->currentDepthImage->uploadWidth, 
                   1.0f / globalImages->currentDepthImage->uploadHeight );
     qglUniform1f( UNF_SHADOW_lightReach, 10000.0f ); //~TODO: use correct light size
-    //~debug
-    qglUniform1f( UNF_SHADOW_threshold, 0.1 /*r_ignore.GetFloat()*/ ); // best so far: 0.0005f for scene, 0.2 for shadvol edges (now we have sep cleanup for midair sparklies, was 0.005)
+    qglUniform1f( UNF_SHADOW_threshold, 0.05 /* r_ignore.GetFloat() */ ); // best so far: 0.0005f for scene, 0.05 for shadvoledges
     ResetLightScissor( vLight );
     qglBlendEquation( GL_MAX ); // This and clear color need to be in sync
-    qglClearColor( 0.0, 0.0, 0.0, 0.0 );
-    //glClearColor( 1.0, 1.0, 1.0, 1.0 );
-    qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT );
-	// Use the standard stencil shadow functions to draw the volumes
-    RB_StencilShadowPass( vLight->globalShadows );
-    RB_StencilShadowPass( vLight->localShadows );
+	if ( clearStencil )
+	{
+		qglClearColor( 0.0, 0.0, 0.0, 0.0 );
+		qglClearStencil( 1<<(glConfig.stencilBits-1) );
+		qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT );
+	}
+	// Use the standard stencil shadow function to draw the volumes
+    RB_StencilShadowPass( shadows );
     qglBlendEquation( GL_FUNC_ADD );
     qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    //~TODO: split off rendering pass for non-self-shadow surfaces. For the POC, all shadows hit 
-    // everything. Can maintain 2 stencils and alpha masks
 
 	/**********
-        Step 3. Copy the shadow stencil to a colour sampler. Draw with stencil on and off to save clearing + overwriting.
+        Step 2. Copy the shadow stencil to a colour sampler. Draw with stencil on and off to save clearing + overwriting.
      **********/
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );
 	ResetLightScissor( vLight );
@@ -884,7 +932,7 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 	__opengl_breakpoint
 
     /**********
-        Step 4. Spread the penumbra information to all screen pixels that might be in penumbra.
+        Step 3. Spread the penumbra information to all screen pixels that might be in penumbra.
         Do this at 1/8 size, so we get multiple passes while filling less than a screen's worth of pixels. 
         And there's no need to be super-accurate. We're identifying pixels that need to test whether they 
         are in penumbra, not drawing the penumbra.
@@ -917,7 +965,6 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 		current_pingpong_buffer = tex[penumbraSpread1_tx + target];
 		qglUniform1i ( UNF_SPREAD_amount, (2<<i)/2 );
 		DrawQuad( tex[penumbraSpread1_tx + (1 - target)], UNF_SPREAD_pos ); // Source is the non-target image
-		__opengl_breakpoint
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1, 
@@ -928,7 +975,7 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 
 
 	/**********
-        Step 5. The shadow blur. Write to a texture that'll be applied to the alpha channel of the main color 
+        Step 4. The shadow blur. Write to a texture that'll be applied to the alpha channel of the main color 
 		buffer before light interactions are drawn. It'll also provide the new stencil for light drawing.
      **********/
 	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[shadowBlur_fb] );
@@ -954,34 +1001,55 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 	globalImages->BindNull();
 	__opengl_breakpoint
 
+		
 	/**********
-        Step 6. Copy the resulting alpha mask back to the main color buffer. Create 
+        Step 5. Copy the resulting alpha mask back to the main color buffer. Create 
 		the light interaction stencil at the same time.
      **********/
 	qglBindFramebuffer(GL_FRAMEBUFFER, 0 );
 	ResetLightScissor( vLight );
-	glClearColor( 0.0, 0.0, 0.0, 0.0 );
 	GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Alpha channel only
 	//GL_State( GLS_DEPTHMASK ); // TEST -- Drawe colours too
-	qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT ); // Stencil still clears to 128
+	qglClearStencil( 1 );
+	qglClearColor( 0.0, 0.0, 0.0, 0.0 );
+	qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT ); 
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
-	qglStencilOp( GL_KEEP, GL_KEEP, GL_ZERO );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_ZERO ); // Set stencil to 0 where we draw any alpha value
 	GL_SelectTexture( 0 );
 	qglUseProgram( glslProgs[copyback_pr] );
 	DrawQuad( tex[shadowBlur_tx], UNF_COPYBACK_pos );
 	qglUseProgram( 0 );
 	globalImages->BindNull();
 
-
 	/**********
-		Step 7. Draw light interactions
-	 **********/
+        Step 6. Set the stencil to draw on '0' areas, ready for interaction drawing
+     **********/
 	qglStencilFunc( GL_EQUAL, 0, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	RB_ARB2_CreateDrawInteractions( vLight->localInteractions, GLS_SRCBLEND_DST_ALPHA );
-	RB_ARB2_CreateDrawInteractions( vLight->globalInteractions, GLS_SRCBLEND_DST_ALPHA );
-	glDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
+}
 
+
+void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
+{
+    // Draws the interactions for one light
+    // All input textures use active texture slot 0
+    qglDisable( GL_VERTEX_PROGRAM_ARB );
+    qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+
+	++lightCounter;
+	localShadowDrawCounter += vLight->localShadows ? 1 : 0;
+	globalShadowDrawCounter += vLight->globalShadows ? 1 : 0;
+
+	if ( !depthBufferCaptured )
+	{
+		CaptureDepthBuffer();
+	}
+	
+	MakeShadowStencil( vLight, vLight->globalShadows, true); // Shadows that hit everything. Clear the stencil
+	RB_ARB2_CreateDrawInteractions( vLight->localInteractions, GLS_SRCBLEND_DST_ALPHA ); // no-self-shadow surfaces
+	MakeShadowStencil( vLight, vLight->localShadows, false); // Shadows cast by no-self-shadow surfaces. Don't clear the stencil, add to it.
+	RB_ARB2_CreateDrawInteractions( vLight->globalInteractions, GLS_SRCBLEND_DST_ALPHA );
+	qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
 }
 
 
@@ -1034,17 +1102,18 @@ void SoftShadowManager::DrawQuad( idImage* tx, const GLuint vertexLoc )
 }
 
 
-void SoftShadowManager::DrawDebugOutput()
+void SoftShadowManager::DrawDebugOutput( const viewLight_t* vLight )
 {
 	int level = r_softShadDebug.GetInteger();
 
 	if ( !level )
 	{
+		spamConsole = false;
 		return;
 	}
 
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-	// Leave light scissor in place
+	ResetLightScissor( vLight );
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 	qglUseProgram( glslProgs[quad_pr] );
 	GL_SelectTexture( 0 );
@@ -1064,8 +1133,10 @@ void SoftShadowManager::DrawDebugOutput()
 	if ( level & 8 )
 	{
 		spamConsole = true;
+	} else {
+		spamConsole = false;
 	}
-	qglUseProgram( 0 ); //~Remove
+	qglUseProgram( 0 );
 	__opengl_breakpoint
 }
 

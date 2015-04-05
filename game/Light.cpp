@@ -492,11 +492,14 @@ void idLight::Spawn( void )
 	// but there may still be a chance to get it wrong if the game moves
 	// a light before the first present, and doesn't clear the prelight
 	renderLight.prelightModel = 0;
+	/* //~SteveL soft shadows temp hack: disable prelight volumes and always use dynamic 
+		  shadows. Probably better for perf anyway, though that needs testing 
 	if ( name[ 0 ] )
 	{
 		// this will return 0 if not found
 		renderLight.prelightModel = renderModelManager->CheckModel( va( "_prelight_%s", name.c_str() ) );
 	}
+	*/
 
 	// grayman #2905 - remember if the light started off because it's important during relighting attempts
 

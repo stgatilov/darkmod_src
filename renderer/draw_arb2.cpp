@@ -271,7 +271,7 @@ void RB_ARB2_DrawInteractions( void ) {
 		if ( backEnd.usingSoftShadows && (vLight->globalShadows || vLight->localShadows) ) 
 		{
 			softShadowMgr->DrawInteractions( vLight );
-			softShadowMgr->DrawDebugOutput();
+			softShadowMgr->DrawDebugOutput( vLight );
 		} 
 		else 
 		{

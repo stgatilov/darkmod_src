@@ -38,7 +38,7 @@ public:
 	void		DrawInteractions( const viewLight_t* vLight );
 	void		UnInit();										// Releases all resources
 	
-	void		DrawDebugOutput();
+	void		DrawDebugOutput( const viewLight_t* vLight );
 
 	static const int MINISCALE = 8;								// Scale of image downsampling for the penumbra-spread technique.
 	static const int JITTERMAPSIZE = 64;
@@ -54,6 +54,8 @@ private:
 	idVec2		maxTexcoord( const bool powerOfTwo ) const;
 	void		DrawQuad( idImage* tex, const GLuint vertexLoc );
 	void		ResetLightScissor( const viewLight_t* vLight );
+	void		CaptureDepthBuffer();
+	void		MakeShadowStencil( const viewLight_t* vLight, const drawSurf_s* shadows, const bool clearStencil );
 
 	int			width, height;									// Screen/viewport dimensions
 	int			potWidth, potHeight;							// Enlarged to power-of-two
@@ -61,8 +63,10 @@ private:
 	bool		initialized;
 	idImage*	current_pingpong_buffer;
 	bool		spamConsole;
-	uint		frameDrawCounter;
-
+	uint		localShadowDrawCounter;							// Soft shadow passes for shadows cast by no-self-shadow models
+	uint		globalShadowDrawCounter;						// Soft shadow passes for global shadows, i.e. cast by self-shadowing models
+	uint		lightCounter;
+	bool		depthBufferCaptured;
 
 	/* Resources */	
 	// Frame buffers
