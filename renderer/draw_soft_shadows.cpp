@@ -95,12 +95,12 @@ static void R_JitterMap( idImage* img )
 	// of samples -- smoother than purely random sampling -- without creating banding in 
 	// the penumbrae.
 	// The first 8 samples in each column are the outer ring of the disk. If they all return 
-	// the same value, the fragment shader can skip the remaining samples. *** This is broken in 
+	// the same value, the fragment shader can skip the remaining samples. *** SL: This is broken in 
 	// the gpu gems code. The samples are not ordered in this way. Not yet fixed as we might not 
 	// need the early exit, if the penumbra size estimation is good enough. 
 	// Better explanation at http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter17.html
 	static const long somevalue = 423480826;
-	idRandom2 rand(somevalue);//~TODO: find a better rnd generator
+	idRandom2 rand(somevalue);
 
 	const int size = SoftShadowManager::JITTERMAPSIZE;
 	const int samples_u = 8;
@@ -152,6 +152,13 @@ static void R_JitterMap( idImage* img )
 
 /*  ---+-+-+-+-+-+-+-+|  SOFT SHADOW RESOURCE MANAGER  |+-+-+-+-+-+-+-+---  */
 
+SoftShadowManager::SoftShadowManager() 
+	:initialized(false), 
+	 spamConsole(false) 
+{
+	// Defer real initialisation until the first call to NewFrame(), so 
+	// that we know the GL context is initialised.
+}
 
 void SoftShadowManager::Init()
 {
@@ -194,7 +201,7 @@ void SoftShadowManager::UnInit()
         qglDeleteShader( shaders[i] );
     }
 
-	// Verts might already be on the garbage heap. Check.
+	// Verts might already be on the garbage heap. Check whether user pointer is already null.
 	if ( ScreenQuadVerts->user ) { vertexCache.Free( ScreenQuadVerts ); }
 	if ( ScreenQuadIndexes->user ) { vertexCache.Free( ScreenQuadIndexes ); }
 
@@ -204,14 +211,21 @@ void SoftShadowManager::UnInit()
 
 void SoftShadowManager::NewFrame()
 {
-    if ( initialized && (width != glConfig.vidWidth || height != glConfig.vidHeight) )
+    // Cater for annoying slight window resizing when windows user tabs in and out of game.
+	if ( initialized && (width != glConfig.vidWidth || height != glConfig.vidHeight) )
     {
         UnInit();
     }
+	// This is the main/only initialization path.
     if ( !initialized )
     {
         Init();
     }
+	if ( spamConsole )
+	{
+		common->Printf("Soft shadows: %d passes\n", frameDrawCounter ); // reporting prev frame
+	}
+	frameDrawCounter = 0;
 }
 
 
@@ -808,6 +822,8 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
     // All input textures use active texture slot 0
     qglDisable( GL_VERTEX_PROGRAM_ARB );
     qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+	ResetLightScissor( vLight );
+	++frameDrawCounter;
 
 	static const GLenum targets[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 }; // Used by multiple FBOs
 
@@ -837,7 +853,7 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
                   1.0f / globalImages->currentDepthImage->uploadHeight );
     qglUniform1f( UNF_SHADOW_lightReach, 10000.0f ); //~TODO: use correct light size
     //~debug
-    qglUniform1f( UNF_SHADOW_threshold, 0.2 /*r_ignore.GetFloat()*/ ); // best so far: 0.0005f for scene, 0.2 for shadvol edges (now we have sep cleanup for midair sparklies, was 0.005)
+    qglUniform1f( UNF_SHADOW_threshold, 0.1 /*r_ignore.GetFloat()*/ ); // best so far: 0.0005f for scene, 0.2 for shadvol edges (now we have sep cleanup for midair sparklies, was 0.005)
     ResetLightScissor( vLight );
     qglBlendEquation( GL_MAX ); // This and clear color need to be in sync
     qglClearColor( 0.0, 0.0, 0.0, 0.0 );
@@ -990,7 +1006,7 @@ SoftShadowManager::DrawQuad
 Draw a screen-aligned quad filling the current viewport. Faster than buffer blitting. 
 
 Uses GLSL3 conventions. Shaders and uniforms must be set up first, except the vertex 
-position location in trhe shader. Pass that in. Activate the right texture slot before 
+position location in the shader. Pass that in. Activate the right texture slot before 
 calling too. 
 TODO: GLSL program manager to store uniforms would be good for simplyfying this...
 ==================
@@ -1044,6 +1060,10 @@ void SoftShadowManager::DrawDebugOutput()
 	if ( level & 4 )
 	{
 		DrawQuad( tex[shadowBlur_tx], UNF_QUAD_pos );
+	}
+	if ( level & 8 )
+	{
+		spamConsole = true;
 	}
 	qglUseProgram( 0 ); //~Remove
 	__opengl_breakpoint

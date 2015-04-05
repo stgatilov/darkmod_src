@@ -25,7 +25,7 @@
 
 class SoftShadowManager {
 public:
-	SoftShadowManager() :initialized(false) {}					// Does not init resources, as gl context probably won't be valid yet
+	SoftShadowManager();										// Does not init resources, as gl context probably won't be valid yet
 	~SoftShadowManager() { UnInit(); }
 
 private:
@@ -60,6 +60,8 @@ private:
 	int			smallwidth, smallheight;						// Smaller screensize used by the penumbra-spread technique
 	bool		initialized;
 	idImage*	current_pingpong_buffer;
+	bool		spamConsole;
+	uint		frameDrawCounter;
 
 
 	/* Resources */	

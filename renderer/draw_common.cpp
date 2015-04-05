@@ -1946,8 +1946,9 @@ void	RB_STD_DrawView( void ) {
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
 
-	// fill the depth buffer and clear color buffer to black except on
-	// subviews
+	// fill the depth buffer and clear color buffer to black except on subviews
+	// SteveL: NB color buffer is not Clear()ed, it's just blacked out where depth gets 
+	// written. That's important for caulk sky
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
