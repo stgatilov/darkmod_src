@@ -184,6 +184,11 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	args->GetString( "texture", "lights/squarelight1", &texture );
 	// allow this to be NULL
 	renderLight->shader = declManager->FindMaterial( texture, false );
+
+	if ( !args->GetBool( "lightgem", "1") ) // SteveL #4128
+	{
+		renderLight->suppressLightInViewID = DARKMOD_LG_VIEWID;
+	}
 }
 
 /*
