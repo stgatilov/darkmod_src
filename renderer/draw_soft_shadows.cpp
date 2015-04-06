@@ -522,10 +522,9 @@ void SoftShadowManager::InitShaders()
 			}
 			// MaxPenumbra is a count of pixels. Output remaining amount to spread in x, orig penumbra size in y.
 			// Remaining spread is half pen width, scaled down by the minification factor of 8.
-			float spread = maxPenumbra ? maxPenumbra / 16.0 + 1.0 : 0.0;
+			float spread = maxPenumbra > 0.0 ? maxPenumbra / 16.0 + 1.0 : 0.0;
             oColor = vec4( spread, maxPenumbra, 0.0, 1.0 ); 
 			//oColor = vec4( penumbraTest / 5.0, maxPenumbra, 0.0, 1.0 ); //~DEBUG
-
         }
     );
 
