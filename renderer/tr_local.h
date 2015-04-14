@@ -1171,6 +1171,7 @@ void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPla
 void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z );
 
 void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
+void R_EyeToNormalizedDeviceCoordinates( const idVec3 &eye, idVec3 &ndc );
 
 void R_TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst );
 
