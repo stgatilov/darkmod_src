@@ -110,13 +110,11 @@ public:
 
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 
-
 	virtual void				incrementSaveCount() = 0; 
-
 	virtual bool				savegamesDisallowed() = 0;
-
 	virtual bool				quicksavesDisallowed() = 0;
 	// <-- end
+	virtual bool				PlayerReady() = 0;	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
 
 	// Loads a map and spawns all the entities.
 	virtual void				InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed ) = 0;

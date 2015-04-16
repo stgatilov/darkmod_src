@@ -1241,6 +1241,15 @@ bool idGameLocal::quicksavesDisallowed()
 	return player->savePermissions == 1;
 }
 
+/*
+=========
+idGameLocal::PlayerReady
+=========
+*/
+bool idGameLocal::PlayerReady()
+{
+	return GetLocalPlayer()->IsReady();
+}
 
 /*
 ============
