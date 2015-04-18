@@ -361,34 +361,25 @@ void SoftShadowManager::InitShaders()
 	// Shader to capture surface normals during the early depth pass
 	const GLchar* NormalVP = GLSLold(
 		in		vec3 normal;
-        out     vec3 screenSpaceNormal;
-		
+        out     vec3 viewNormal;
+
 		void main()
         {
-            vec4 pos = gl_ModelViewProjectionMatrix * gl_Vertex;
-			gl_Position = pos;
-			screenSpaceNormal = ( gl_ModelViewProjectionMatrixInverseTranspose * vec4(normal, 0.0) ).xyz; 
-			//~not sure why we don't need the invtrans here but this works that doesn't. invtrans almost always gives b of 0 or 255 and 
-			//~Now not working! statue sternum is r 213=strongly +ve whch doesn't make sense. And b always -ve
-			//WS values look alright
-			//~DEBUG
-			vec4 normalpos = gl_ModelViewProjectionMatrix * ( gl_Vertex + vec4(normalize(normal), 0.0) ); // looks like same result as invtrans
-			screenSpaceNormal = normalpos.xyz - pos.xyz; // /w? made fior weird banding
+			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+			viewNormal = gl_NormalMatrix * normal;
 		}
 	);
 
 	const GLchar* NormalFP = GLSLold(
-		in		vec3 screenSpaceNormal;
+		in		vec3 viewNormal;
 		out     vec4 oColor;
-
-		const vec3 rangeConverter = vec3( 0.5 ); // A mad converts range from -1..+1 to 0..1
+		const	vec3 rangeConverter = vec3( 0.5 ); // A madd converts range from -1..+1 to 0..1
 		
 		void main()
         {
-            // Use the alpha channel to record whether depth hack is in effect, which restricts depth
+			// Use the alpha channel to record whether depth hack is in effect, which restricts depth
 			// range for player weapon. We won't draw soft shadows where depth range has been meddled with.
-			vec3 norm = normalize(screenSpaceNormal) * rangeConverter + rangeConverter;
-			oColor = vec4( norm, gl_DepthRange.diff );
+			oColor = vec4( normalize(viewNormal) * rangeConverter + rangeConverter, gl_DepthRange.diff );
         }
 	);
 
@@ -1153,7 +1144,6 @@ void SoftShadowManager::DepthPass( drawSurf_t **drawSurfs, int numDrawSurfs )
 	qglStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
 	qglUseProgram( glslProgs[normal_pr] );
 	qglEnableVertexAttribArrayARB( UNF_NORM_normal ); // For surface normals
-	__opengl_breakpoint
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	qglDisableVertexAttribArrayARB( UNF_NORM_normal );
