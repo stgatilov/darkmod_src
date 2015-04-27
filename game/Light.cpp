@@ -185,7 +185,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 	// allow this to be NULL
 	renderLight->shader = declManager->FindMaterial( texture, false );
 
-	if ( !args->GetBool( "lightgem", "1") ) // SteveL #4128
+	if ( !args->GetBool( "ai_see", "1") ) // SteveL #4128
 	{
 		renderLight->suppressLightInViewID = DARKMOD_LG_VIEWID;
 	}
@@ -1972,6 +1972,14 @@ bool idLight::IsBlend(void) const
 		return renderLight.shader->IsBlendLight();
 
 	return false; 
+}
+
+// Whether the light affects lightgem and visbility of other objects to AI #4128
+bool idLight::IsSeenByAI( void ) const
+{
+	// For efficiency, re-use the renderLight lightgem flag rather than check the 
+	// "ai_see" spawnarg in an operation that happens very often.
+	return renderLight.suppressLightInViewID != DARKMOD_LG_VIEWID;
 }
 
 // grayman #2603 - keep a list of switches for this light
