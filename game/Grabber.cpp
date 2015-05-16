@@ -128,7 +128,9 @@ void CGrabber::Clear( void )
 
 	m_EquippedEnt = NULL;
 	m_bEquippedEntInWorld = false;
-	m_vEquippedPosition = vec3_zero;
+	m_vEquippedPosition.Zero();
+	m_PreservedPosition.Zero();		// #4149
+	m_StoppingPreserving = false;	// #4149
 	m_EquippedEntContents = 0;
 	m_EquippedEntClipMask = 0;
 
@@ -178,6 +180,8 @@ void CGrabber::Save( idSaveGame *savefile ) const
 	savefile->WriteInt(m_DistanceCount);
 	savefile->WriteInt(m_MaxDistCount);
 	savefile->WriteInt(m_MinHeldDist);
+	savefile->WriteVec3(m_PreservedPosition);  // #4149
+	savefile->WriteBool(m_StoppingPreserving); // #4149
 	savefile->WriteFloat(m_MaxForce);
 	savefile->WriteInt(m_LockedHeldDist);
 	savefile->WriteBool(m_bObjStuck);
@@ -244,6 +248,8 @@ void CGrabber::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(m_DistanceCount);
 	savefile->ReadInt(m_MaxDistCount);
 	savefile->ReadInt(m_MinHeldDist);
+	savefile->ReadVec3(m_PreservedPosition);  // #4149
+	savefile->ReadBool(m_StoppingPreserving); // #4149
 	savefile->ReadFloat(m_MaxForce);
 	savefile->ReadInt(m_LockedHeldDist);
 	savefile->ReadBool(m_bObjStuck);
@@ -294,6 +300,7 @@ void CGrabber::StopDrag( void )
 	m_AFBodyLastZ = 0.0f;
 
 	m_DistanceCount = 0;
+	m_PreservedPosition = vec3_zero; // #4149
 
 	// grayman #2624 - I want to determine if this is a lantern that's being dropped.
 	// If it is, I want to post an event to extinguish it. That event will extinguish it only if it's not
@@ -350,11 +357,11 @@ void CGrabber::StopDrag( void )
 CGrabber::Update
 ==============
 */
-void CGrabber::Update( idPlayer *player, bool hold ) 
+void CGrabber::Update( idPlayer *player, bool hold, bool preservePosition ) 
 {
 	idVec3 viewPoint(vec3_zero), origin(vec3_zero);
 	idVec3 COM(vec3_zero);
-	idVec3 draggedPosition(vec3_zero), vPlayerPoint(vec3_zero);
+	idVec3 draggedPosition(vec3_zero), targetPosition(vec3_zero);
 	idMat3 viewAxis(mat3_identity), axis(mat3_identity);
 	trace_t trace;
 	idAnimator *dragAnimator;
@@ -390,12 +397,17 @@ void CGrabber::Update( idPlayer *player, bool hold )
 
 	// if no entity is currently selected for dragging, start grabbing the frobbed entity
 	if ( !m_dragEnt.GetEntity() ) 
-		StartDrag( player );
+	{
+		StartDrag( player, NULL, 0, preservePosition ); // preservePosition #4919
+	}
 
 	// if there's still not a valid ent, don't do anything
 	drag = m_dragEnt.GetEntity();
 	if ( !drag || !m_dragEnt.IsValid() )
+	{
 		goto Quit;
+
+	}
 
 	// Set actor info on the entity
 	drag->m_SetInMotionByActor = (idActor *) player;
@@ -447,21 +459,39 @@ void CGrabber::Update( idPlayer *player, bool hold )
 		m_DistanceCount = idMath::ClampInt( (m_LockedHeldDist-2), (m_LockedHeldDist+1), m_DistanceCount );
 	}
 
-	vPlayerPoint.x = 1.0f; // (1, 0, 0)
+	targetPosition.x = 1.0f; // (1, 0, 0) Relative to player's view, where x (1) is the direction into the screen
 	distFactor = (float) m_DistanceCount / (float) m_MaxDistCount;
+	targetPosition *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
+	targetPosition += m_vOffset;
 
-	// equipped entities lock in position
-	if( !m_bEquippedEntInWorld )
+	if ( PreservingPosition() )			// #4149
 	{
-		vPlayerPoint *= m_MinHeldDist + (m_dragEnt.GetEntity()->m_FrobDistance - m_MinHeldDist) * distFactor;
-		vPlayerPoint += m_vOffset;
-	}
-	else
+		if ( !m_StoppingPreserving )	// Player hasn't started to manipulate the object, so we keep our position
+		{
+			targetPosition = m_PreservedPosition;
+		}
+		else 								// we converge with the target position
+		{
+			const idVec3 pathToTarget = targetPosition - m_PreservedPosition;
+			if ( pathToTarget.LengthSqr() > 0.25f )				// The numbers don't matter much. We just
+			{													// want a smoother result than insta-snap
+				m_PreservedPosition += pathToTarget * 0.07f;
+				targetPosition = m_PreservedPosition;
+			} else {
+				m_PreservedPosition.Zero();						// PreservingPosition() will now return false
+				m_StoppingPreserving = false;
+				targetPosition = targetPosition;
+			}
+		}
+	} 
+	
+	if ( m_bEquippedEntInWorld ) // equipped entities lock in position
 	{
-		vPlayerPoint = m_vEquippedPosition;
-	}
+		targetPosition = m_vEquippedPosition;
+	} 
 
-	draggedPosition = viewPoint + vPlayerPoint * viewAxis;
+
+	draggedPosition = viewPoint + targetPosition * viewAxis;
 
 // ====================== AF Grounding Testing ===============================
 	// If dragging a body with a certain spawnarg set, you should only be able to pick
@@ -561,7 +591,7 @@ Quit:
 	return;
 }
 
-void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
+void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID, bool preservePosition ) 
 {
 	idVec3 viewPoint, origin, COM, COMWorld, delta2;
 	idEntity *FrobEnt;
@@ -708,6 +738,16 @@ void CGrabber::StartDrag( idPlayer *player, idEntity *newEnt, int bodyID )
 	m_DistanceCount = int(idMath::Floor( m_MaxDistCount * (delta2.Length() - m_MinHeldDist) / (newEnt->m_FrobDistance - m_MinHeldDist ) ));
 	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
 
+	if ( preservePosition ) // #4149
+	{
+		// preservePosition means: Leave a picked-up item where it is until the player
+		// deliberately moves it, instead of snapping it to the nearest DistanceCount.
+		// Do add a tiny amount of height, so items placed exactly on a surface can't sink into it.
+		m_PreservedPosition = ( delta2 + idVec3(0.0f, 0.0f, 0.1f) ) * viewAxis.Transpose();
+	} else {
+		m_PreservedPosition.Zero();
+	}
+
 	// prevent collision with player
 	AddToClipList( newEnt );
 	if ( HasClippedEntity() ) 
@@ -847,6 +887,12 @@ void CGrabber::ManipulateObject( idPlayer *player ) {
 
 		// Calc. desired cumulative rotation
 		m_drag.SetDragAxis( m_drag.GetDragAxis() * DesiredRot.ToMat3() );
+
+		// #4149. Let the item now go to standard hold position, because player is rotating it
+		if ( PreservingPosition() )
+		{
+			m_StoppingPreserving = true;
+		}
 	}
 	else 
 	{
@@ -1227,18 +1273,26 @@ void CGrabber::ClampVelocity(float maxLin, float maxAng, int idVal)
 
 void CGrabber::IncrementDistance( bool bIncrease )
 {
-	int increment = 1;
-	if( !m_dragEnt.GetEntity() || !m_bAllowPlayerTranslation )
-		goto Quit;
+	if ( !m_dragEnt.GetEntity() || !m_bAllowPlayerTranslation )
+	{ 
+		return; 
+	}
 	
-	if( !bIncrease )
-		increment *= -1;
-
-	m_DistanceCount += increment;
+	// #4149. Let the item now go to standard hold position, because player is manipulating it
+	if ( PreservingPosition() ) 
+	{
+		// No more overriding, the distance is changing so it'll snap to position from now on.
+		m_StoppingPreserving = true; 
+		// The m_DistanceCount in this situation will always be <= the original depth of the 
+		// picked-up item. So if the player is pulling the item closer, don't change it the first time.
+		if ( !bIncrease ) 
+		{ 
+			return; 
+		}
+	}
+	
+	m_DistanceCount += bIncrease ? 1 : -1;
 	m_DistanceCount = idMath::ClampInt( 0, m_MaxDistCount, m_DistanceCount );
-
-Quit:
-	return;
 }
 
 bool CGrabber::PutInHands(idEntity *ent, idMat3 axis, int bodyID)

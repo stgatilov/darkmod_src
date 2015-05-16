@@ -11267,7 +11267,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 				}
 			}
 
-			gameLocal.m_Grabber->Update( this );
+			gameLocal.m_Grabber->Update( this, false, true ); // preservePosition = true #4149
 		}
 	}
 }
