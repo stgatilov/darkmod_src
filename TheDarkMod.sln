@@ -1,16 +1,28 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "game.vcxproj", "{49BEC5C6-B964-417A-851E-808886B57430}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49BEC5C6-B964-417A-851E-808886B57400} = {49BEC5C6-B964-417A-851E-808886B57400}
+		{49BEC5C6-B964-417A-851E-808886B57420} = {49BEC5C6-B964-417A-851E-808886B57420}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idLib", "idlib.vcxproj", "{49BEC5C6-B964-417A-851E-808886B57400}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TypeInfo", "typeinfo.vcxproj", "{6EA6406F-3E65-47D9-8246-D6660A81606F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49BEC5C6-B964-417A-851E-808886B57400} = {49BEC5C6-B964-417A-851E-808886B57400}
+		{49BEC5C6-B964-417A-851E-808886B57420} = {49BEC5C6-B964-417A-851E-808886B57420}
+		{49BEC5C6-B964-417A-851E-808886B57430} = {49BEC5C6-B964-417A-851E-808886B57430}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MayaImport", "MayaImport.vcxproj", "{49BEC5C6-B964-417A-851E-808886B574F1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "engine.vcxproj", "{49BEC5C6-B964-417A-851E-808886B57420}"
+	ProjectSection(ProjectDependencies) = postProject
+		{49BEC5C6-B964-417A-851E-808886B57400} = {49BEC5C6-B964-417A-851E-808886B57400}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
