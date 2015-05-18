@@ -4862,6 +4862,12 @@ idEntity::PostBind
 */
 void idEntity::PostBind( void )
 {
+	// #3704: Destroy our frob box if bound to an animated entity.
+	if ( bindMaster->IsType(idAnimatedEntity::Type) && m_FrobBox != NULL )
+	{
+		delete m_FrobBox;
+		m_FrobBox = NULL;
+	}
 }
 
 /*
