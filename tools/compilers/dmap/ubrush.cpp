@@ -435,7 +435,7 @@ void FilterBrushesIntoTree( uEntity_t *e ) {
 	int					r;
 	int					c_unique, c_clusters;
 
-	common->Printf( "----- FilterBrushesIntoTree -----\n");
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- FilterBrushesIntoTree -----\n");
 
 	c_unique = 0;
 	c_clusters = 0;
@@ -450,8 +450,8 @@ void FilterBrushesIntoTree( uEntity_t *e ) {
 		c_clusters += r;
 	}
 
-	common->Printf( "%5i total brushes\n", c_unique );
-	common->Printf( "%5i cluster references\n", c_clusters );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i total brushes\n", c_unique );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i cluster references\n", c_clusters );
 }
 
 

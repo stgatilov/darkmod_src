@@ -49,6 +49,7 @@ public:
 	virtual	bool		Active( void );
 	virtual	void		ClearNotifyLines( void );
 	virtual	void		Close( void );
+	virtual void		Open( const float frac );
 	virtual	void		Print( const char *text );
 	virtual	void		Draw( bool forceFullScreen );
 
@@ -432,6 +433,18 @@ void idConsoleLocal::Close() {
 	displayFrac = 0;	// don't scroll to that point, go immediately
 
 	ClearNotifyLines();
+}
+
+/*
+================
+idConsoleLocal::Open
+================
+*/
+void idConsoleLocal::Open(const float frac) {
+	consoleField.Clear();
+	keyCatching = true;
+	SetDisplayFraction( frac );
+	displayFrac = frac;	// don't scroll to that point, go immediately
 }
 
 /*

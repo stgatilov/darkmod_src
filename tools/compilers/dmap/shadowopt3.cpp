@@ -1212,7 +1212,7 @@ lightShadow_t list is a further culling and optimization of the data.
 */
 srfTriangles_t *CreateLightShadow( optimizeGroup_t *shadowerGroups, const mapLight_t *light ) {;
 
-	common->Printf( "----- CreateLightShadow %p -----\n", light );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- CreateLightShadow %p -----\n", light );
 
 	// optimize all the groups
 	OptimizeGroupList( shadowerGroups );

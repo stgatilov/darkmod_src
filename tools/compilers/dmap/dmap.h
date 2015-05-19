@@ -221,6 +221,13 @@ typedef enum {
 	SO_SIL_OPTIMIZE		// 5
 } shadowOptLevel_t;
 
+// Added in #4123: "Unbind VSync from DMAP". Allow more concise dmap to speed it up.
+typedef enum {
+	VL_CONCISE = 0,			// Suppress most console output, the new default
+	VL_ORIGDEFAULT,			// The default mode pre-TDM 2.04
+	VL_VERBOSE				// The original extra-verbose mode
+} verbosityLevel_t;
+
 typedef struct {
 	// mapFileBase will contain the qpath without any extension: "maps/test_box"
 	char		mapFileBase[1024];
@@ -236,7 +243,7 @@ typedef struct {
 
 	idList<mapLight_t*>	mapLights;
 
-	bool	verbose;
+	verbosityLevel_t	verbose;
 
 	bool	glview;
 	bool	noOptimize;
@@ -263,6 +270,8 @@ extern dmapGlobals_t dmapGlobals;
 
 int FindFloatPlane( const idPlane &plane, bool *fixedDegeneracies = NULL );
 
+void PrintIfVerbosityAtLeast( verbosityLevel_t vl, const char* fmt, ... );	// Added #4123. Filter console output by verbosity level.
+void PrintEntityHeader( verbosityLevel_t vl, const uEntity_t* e );		// Also #4123
 
 //=============================================================================
 

@@ -53,6 +53,7 @@ public:
 
 	// some console commands, like timeDemo, will force the console closed before they start
 	virtual void	Close( void ) = 0;
+	virtual void    Open( const float frac ) = 0; // #4123
 
 	virtual void	Draw( bool forceFullScreen ) = 0;
 	virtual void	Print( const char *text ) = 0;
