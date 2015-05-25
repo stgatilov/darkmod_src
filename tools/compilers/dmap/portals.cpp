@@ -463,7 +463,7 @@ void MakeTreePortals_r (node_t *node)
 	CalcNodeBounds( node );
 
 	if ( node->bounds[0][0] >= node->bounds[1][0]) {
-		common->Warning( "node without a volume" );
+		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "node without a volume" ); // #4123 downgrade from a warning. This is normal operation.
 	}
 
 	for ( i = 0; i < 3; i++ ) {
@@ -490,7 +490,7 @@ MakeTreePortals
 */
 void MakeTreePortals (tree_t *tree)
 {
-	common->Printf( "----- MakeTreePortals -----\n");
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- MakeTreePortals -----\n");
 	MakeHeadnodePortals (tree);
 	MakeTreePortals_r (tree->headnode);
 }
@@ -578,7 +578,7 @@ bool FloodEntities( tree_t *tree ) {
 	node_t *headnode;
 
 	headnode = tree->headnode;
-	common->Printf ("--- FloodEntities ---\n");
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodEntities ---\n");
 	inside = false;
 	tree->outside_node.occupied = 0;
 
@@ -626,29 +626,29 @@ bool FloodEntities( tree_t *tree ) {
 
 		if (tree->outside_node.occupied && !errorShown) {
 			errorShown = true;
-			common->Printf("Leak on entity # %d\n", i);
+			PrintIfVerbosityAtLeast( VL_CONCISE, "Leak on entity # %d\n", i);
 			const char *p;
 
 			mapEnt->epairs.GetString( "classname", "", &p);
-			common->Printf("Entity classname was: %s\n", p);
+			PrintIfVerbosityAtLeast( VL_CONCISE, "Entity classname was: %s\n", p);
 			mapEnt->epairs.GetString( "name", "", &p);
-			common->Printf("Entity name was: %s\n", p);
+			PrintIfVerbosityAtLeast( VL_CONCISE, "Entity name was: %s\n", p);
 			idVec3 origin;
 			if ( mapEnt->epairs.GetVector( "origin", "", origin)) {
-				common->Printf("Entity origin is: %f %f %f\n\n\n", origin.x, origin.y, origin.z);
+				PrintIfVerbosityAtLeast( VL_CONCISE, "Entity origin is: %f %f %f\n\n\n", origin.x, origin.y, origin.z);
 			}
 		}
 	}
 
-	common->Printf("%5i flooded leafs\n", c_floodedleafs );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i flooded leafs\n", c_floodedleafs );
 
 	if (!inside)
 	{
-		common->Printf ("no entities in open -- no filling\n");
+		PrintIfVerbosityAtLeast( VL_CONCISE, "no entities in open -- no filling\n");
 	}
 	else if (tree->outside_node.occupied)
 	{
-		common->Printf ("entity reached from outside -- no filling\n");
+		PrintIfVerbosityAtLeast( VL_CONCISE, "entity reached from outside -- no filling\n");
 	}
 
 	return (bool)(inside && !tree->outside_node.occupied);
@@ -783,7 +783,7 @@ void FindAreas_r( node_t *node ) {
 
 	c_areaFloods = 0;
 	FloodAreas_r (node);
-	common->Printf( "area %i has %i leafs\n", c_areas, c_areaFloods );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "area %i has %i leafs\n", c_areas, c_areaFloods );
 	c_areas++;
 }
 
@@ -915,7 +915,7 @@ Sets e->areas.numAreas
 =============
 */
 void FloodAreas( uEntity_t *e ) {
-	common->Printf ("--- FloodAreas ---\n");
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FloodAreas ---\n");
 
 	// set all areas to -1
 	ClearAreas_r( e->tree->headnode );
@@ -924,7 +924,7 @@ void FloodAreas( uEntity_t *e ) {
 	c_areas = 0;
 	FindAreas_r( e->tree->headnode );
 
-	common->Printf ("%5i areas\n", c_areas);
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i areas\n", c_areas);
 	e->numAreas = c_areas;
 
 	// make sure we got all of them
@@ -984,9 +984,9 @@ void FillOutside( uEntity_t *e ) {
 	c_outside = 0;
 	c_inside = 0;
 	c_solid = 0;
-	common->Printf ("--- FillOutside ---\n");
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FillOutside ---\n" );
 	FillOutside_r( e->tree->headnode );
-	common->Printf ("%5i solid leafs\n", c_solid);
-	common->Printf ("%5i leafs filled\n", c_outside);
-	common->Printf ("%5i inside leafs\n", c_inside);
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i solid leafs\n", c_solid );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i leafs filled\n", c_outside );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i inside leafs\n", c_inside );
 }

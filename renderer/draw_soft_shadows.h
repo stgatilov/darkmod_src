@@ -35,8 +35,6 @@ private:
 public:
 	void		NewFrame();										// Call before use in each new frame. Initializes resources.
 	void		SetLightPosition( const idVec4* pos );
-	void		SetDepthNormalVertexAttribArray( const float* ptr );
-	void		DepthPass( drawSurf_t **drawSurfs, int numDrawSurfs ); // Wraps usual depth pass.
 	void		DrawInteractions( const viewLight_t* vLight );
 	void		UnInit();										// Releases all resources
 	
@@ -51,6 +49,7 @@ private:
 	void		InitShaders();
 	void		InitFBOs();
 	void		InitVBOs();
+	void		CaptureDepthBuffer();
 	GLuint		CreateShader( GLuint type, const GLchar* src );
 	GLuint		CreateShaderProg( GLuint vp, GLuint fp );
 
@@ -63,6 +62,7 @@ private:
 	int			potWidth, potHeight;							// Enlarged to power-of-two
 	int			smallwidth, smallheight;						// Smaller screensize used by the penumbra-spread technique
 	bool		initialized;
+	bool		depthBufferCaptured;							// Set per-frame
 	uint		lastUsedSpreadTarget;
 	bool		spamConsole;
 	uint		localShadowDrawCounter;							// Soft shadow passes for shadows cast by no-self-shadow models
@@ -72,7 +72,6 @@ private:
 	/* Resources */	
 	// Frame buffers
 	enum {
-		normal_fb,
 		penumbraSize_fb,
 		colorStencil_fb,
 		penumbraSpread_fb,
@@ -83,7 +82,6 @@ private:
 
 	// Render targets
 	enum {
-		normal_tx,
 		penumbraSize_tx,
 		colorStencil_tx,
 		penumbraSpread1_tx,
@@ -99,41 +97,34 @@ private:
 	enum {
 		quad_vp,
 		quad_fp,
-		normal_vp,
-		normal_fp,
 		shadow_vp,
 		shadow_fp,
 		mini_vp,
 		mini_fp, 
-		minp_vp,
-		minp_fp,
 		spread_vp,
 		spread_fp,
 		blur_vp,
 		blur_fp,
 		copyback_fp,
-		avg_vp,
-		avg_fp,
+		//avg_vp,
+		//avg_fp,
 		NumShaders
 	};
 	GLuint shaders[NumShaders];
 	enum {
 		quad_pr,
-		normal_pr,
 		stencilShadow_pr,
 		mini_pr,
-		minp_pr,
 		spread_pr,
 		blur_pr,
 		copyback_pr,
-		avg_pr,
+		//avg_pr,
 		NumGLSLPrograms
 	};
 	GLuint glslProgs[NumGLSLPrograms];
 
 	// Uniform / attribute locations
 	GLuint		UNF_QUAD_pos;		// Vertex data
-	GLuint		UNF_NORM_normal;	// Vertex data
 	GLuint		UNF_SHADOW_lightPos;
 	GLuint		UNF_SHADOW_lightRadius;
 	GLuint		UNF_SHADOW_lightReach;

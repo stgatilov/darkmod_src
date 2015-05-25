@@ -668,8 +668,7 @@ typedef struct {
 
 	int					c_copyFrameBuffer;
 
-	//~SS
-	bool				usingSoftShadows;
+	bool				usingSoftShadows; //~SS
 } backEndState_t;
 
 
@@ -1007,6 +1006,7 @@ extern idCVar r_stencilShadowMode;
 
 extern idCVar r_softShadows; //~SS
 extern idCVar r_softShadDebug;
+extern idCVar r_softShadMaxSize;
 
 /*
 ====================================================================

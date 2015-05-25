@@ -742,6 +742,12 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		return false;
 	}
 
+	// SteveL #4148: Also quit if the sound loss through this chain is too great.
+	if ( soundSystemLocal.dB2Scale(def->parms.volume - loss) < SND_EPSILON )
+	{
+		return false;
+	}
+
 	// If we've reached the sound area the listener is in, our journey is over. Place the
 	// results in the "results" object and return to the level above us.
 

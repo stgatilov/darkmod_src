@@ -1096,7 +1096,8 @@ void idEntity::Event_HideByLODBias( void )
 				{
 //					gameLocal.Printf ("%s: Hiding due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
 //							GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
-					Hide();
+					// #4116: Post a Hide() event instead of hiding immediately as this routine is called during spawning
+					PostEventMS( &EV_Hide, 0 );
 					// and make inactive
 					BecomeInactive(TH_PHYSICS|TH_THINK);
 				}
@@ -4861,6 +4862,12 @@ idEntity::PostBind
 */
 void idEntity::PostBind( void )
 {
+	// #3704: Destroy our frob box if bound to an animated entity.
+	if ( bindMaster->IsType(idAnimatedEntity::Type) && m_FrobBox != NULL )
+	{
+		delete m_FrobBox;
+		m_FrobBox = NULL;
+	}
 }
 
 /*

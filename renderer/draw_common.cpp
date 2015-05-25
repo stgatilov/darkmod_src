@@ -421,11 +421,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 
-	if ( backEnd.usingSoftShadows )
-	{
-		softShadowMgr->SetDepthNormalVertexAttribArray( ac->normal.ToFloatPtr() );
-	}
-
 	bool drawSolid = false;
 
 	if ( shader->Coverage() == MC_OPAQUE ) {
@@ -1954,12 +1949,7 @@ void	RB_STD_DrawView( void ) {
 	// fill the depth buffer and clear color buffer to black except on subviews
 	// SteveL: NB color buffer is not Clear()ed, it's just blacked out where depth gets 
 	// written. That's important for caulk sky
-	if ( backEnd.usingSoftShadows )
-	{
-		softShadowMgr->DepthPass( drawSurfs, numDrawSurfs );
-	} else {
-		RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
-	}
+	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
 	switch( tr.backEndRenderer ) {

@@ -183,23 +183,35 @@ void SoftShadowManager::UnInit()
         return;
     }
 
-    qglDeleteFramebuffers( NumFramebuffers, fbo );
-    qglDeleteRenderbuffers( 1, &depthRbo );
+	// Protect against gl context having been abruptly deleted and against 
+	// resources already released by checking stuff exists before we delete it
+
+	if ( qglIsFramebuffer(fbo[0]) )
+	{
+		qglDeleteFramebuffers( NumFramebuffers, fbo );
+		qglDeleteRenderbuffers( 1, &depthRbo );
+	}
 
     for ( int i=0; i<NumTextures; ++i )
     {
         tex[i]->PurgeImage();
     }
     
-    for ( int i=0; i<NumGLSLPrograms; ++i )
-    {
-        qglDeleteProgram( glslProgs[i] );
-    }
+	if ( qglIsProgram(glslProgs[0]) )
+	{
+		for ( int i=0; i<NumGLSLPrograms; ++i )
+		{
+			qglDeleteProgram( glslProgs[i] );
+		}
+	}
 
-    for ( int i=0; i<NumShaders; ++i )
-    {
-        qglDeleteShader( shaders[i] );
-    }
+	if ( qglIsShader(shaders[0]) )
+	{
+		for ( int i=0; i<NumShaders; ++i )
+		{
+			qglDeleteShader( shaders[i] );
+		}
+	}
 
 	// Verts might already be on the garbage heap. Check whether user pointer is already null.
 	if ( ScreenQuadVerts->user ) { vertexCache.Free( ScreenQuadVerts ); }
@@ -211,7 +223,7 @@ void SoftShadowManager::UnInit()
 
 void SoftShadowManager::NewFrame()
 {
-    // Cater for annoying slight window resizing when windows user tabs in and out of game.
+    // Cater for annoying slight window resizing when a Windows user tabs in and out of game.
 	if ( initialized && (width != glConfig.vidWidth || height != glConfig.vidHeight) )
     {
         UnInit();
@@ -233,6 +245,7 @@ void SoftShadowManager::NewFrame()
 	localShadowDrawCounter = 0;
 	globalShadowDrawCounter = 0;
 	lightCounter = 0;
+	depthBufferCaptured = false;
 }
 
 
@@ -257,20 +270,17 @@ void SoftShadowManager::SetLightPosition( const idVec4* pos)
 
 void SoftShadowManager::InitRenderTargets()
 {
-	// Normal map, captured during early depth pass. Drawn into main color buffer so need to use GL_RGBA8
-	tex[normal_tx] = globalImages->RendertargetImage("normal_tx", potWidth, potHeight, GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE );
-	
 	// Depth-Stencil renderbuffer object for use when drawing shadow volumes and interactions
     qglGenRenderbuffers(1, &depthRbo);
     qglBindRenderbuffer( GL_RENDERBUFFER, depthRbo );
     qglRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height );
     qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
-     // Color copy of the stencil buffer
-	tex[colorStencil_tx] = globalImages->RendertargetImage("colorStencil_fb", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
-
-	// Penumbra size map
+    // Penumbra size map
     tex[penumbraSize_tx] = globalImages->RendertargetImage("penumbraSize_tx", potWidth, potHeight, GL_RG16F, GL_RGBA, GL_FLOAT );
+
+	// Color copy of the stencil buffer
+	tex[colorStencil_tx] = globalImages->RendertargetImage("colorStencil_fb", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
 
 	// Small-scale penumbra size maps
     const int smallSize[2] = { potWidth / MINISCALE, potHeight / MINISCALE };
@@ -335,76 +345,21 @@ void SoftShadowManager::InitShaders()
         }
     );
 
-    shaders[quad_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[quad_vp], 1, &ScreenQuadVP, NULL );
-    qglCompileShader( shaders[quad_vp] );
-    assert( ShaderOK( shaders[quad_vp] ) );
+    shaders[quad_vp] = CreateShader( GL_VERTEX_SHADER, ScreenQuadVP );
+    shaders[quad_fp] = CreateShader( GL_FRAGMENT_SHADER, ScreenQuadFP );
+	glslProgs[quad_pr] = CreateShaderProg( shaders[quad_vp], shaders[quad_fp] );
 
-    shaders[quad_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[quad_fp], 1, &ScreenQuadFP, NULL );
-    qglCompileShader( shaders[quad_fp] );
-    assert( ShaderOK( shaders[quad_fp] ) );
-
-    const GLuint prg_quad =  qglCreateProgram();
-    glslProgs[quad_pr] = prg_quad;
-    qglAttachShader( prg_quad, shaders[quad_vp] );
-    qglAttachShader( prg_quad, shaders[quad_fp] );
-    qglLinkProgram( prg_quad );
-    assert( LinkedOK(prg_quad) );
-    UNF_QUAD_pos = qglGetAttribLocation( prg_quad, "pos" );
+    UNF_QUAD_pos = qglGetAttribLocation( glslProgs[quad_pr], "pos" );
     // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_quad );
-    qglUniform2fv( qglGetUniformLocation( prg_quad, "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
-    qglUniform1i ( qglGetUniformLocation( prg_quad, "tex" ), 0 );
+    qglUseProgram( glslProgs[quad_pr] );
+    qglUniform2fv( qglGetUniformLocation( glslProgs[quad_pr], "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
+    qglUniform1i ( qglGetUniformLocation( glslProgs[quad_pr], "tex" ), 0 );
     qglUseProgram( 0 );
-	
-	// Shader to capture surface normals during the early depth pass
-	const GLchar* NormalVP = GLSLold(
-		in		vec3 normal;
-        out     vec3 viewNormal;
-
-		void main()
-        {
-			gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-			viewNormal = gl_NormalMatrix * normal;
-		}
-	);
-
-	const GLchar* NormalFP = GLSLold(
-		in		vec3 viewNormal;
-		out     vec4 oColor;
-		const	vec3 rangeConverter = vec3( 0.5 ); // A madd converts range from -1..+1 to 0..1
-		
-		void main()
-        {
-			// Use the alpha channel to record whether depth hack is in effect, which restricts depth
-			// range for player weapon. We won't draw soft shadows where depth range has been meddled with.
-			oColor = vec4( normalize(viewNormal) * rangeConverter + rangeConverter, gl_DepthRange.diff );
-        }
-	);
-
-	shaders[normal_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[normal_vp], 1, &NormalVP, NULL );
-    qglCompileShader( shaders[normal_vp] );
-    assert( ShaderOK( shaders[normal_vp] ) );
-
-    shaders[normal_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[normal_fp], 1, &NormalFP, NULL );
-    qglCompileShader( shaders[normal_fp] );
-    assert( ShaderOK( shaders[normal_fp] ) );
-
-    const GLuint prg_normal =  qglCreateProgram();
-    glslProgs[normal_pr] = prg_normal;
-    qglAttachShader( prg_normal, shaders[normal_vp] );
-    qglAttachShader( prg_normal, shaders[normal_fp] );
-    qglLinkProgram( prg_normal );
-    assert( LinkedOK(prg_normal) );
-    UNF_NORM_normal = qglGetAttribLocation( prg_normal, "normal" );
 	
 	// Stencil shadow shader program
     // Does the usual job of projecting the shadow volume away from the light,
     // but also outputs penumbra size to a color buffer.
-    // Use "old" GLSL compatibility mode so we can access the built-in matrix stack.
+    // Use "old" GLSL compatibility mode so we can access the built-in matrices.
     const GLchar* SoftShadowVP = GLSLold(
         uniform		vec4	lightPos;			/* in model space */
         uniform		float	lightRadius;		/* size of the light source */
@@ -461,7 +416,7 @@ void SoftShadowManager::InitShaders()
             float sceneDepth = texture( depthtex, texcoord ).x;
             float depthDiff = abs( sceneDepth - gl_FragCoord.z );
             float maxDepthDelta = fwidth(sceneDepth) + fwidth(gl_FragCoord.z); // greatest relative depth change between shadow vol and scene
-			bool sharpDepthDiscontinuity = fwidth(sceneDepth) > 0.0005 || fwidth(gl_FragCoord.z) > threshold;
+			bool sharpDepthDiscontinuity = fwidth(sceneDepth) > 0.0005 || fwidth(gl_FragCoord.z) > 0.05;
 
 			if ( depthDiff < maxDepthDelta && !sharpDepthDiscontinuity )
 			{
@@ -476,9 +431,17 @@ void SoftShadowManager::InitShaders()
 				float invViewDepth = ( 2 * clampedDepth - 1 + gl_ProjectionMatrix[2][2] ) / -gl_ProjectionMatrix[3][2];
 				float viewDepth = 1.0 / invViewDepth;
 				vec4 scenePosition = vec4( fragmentViewPosXY, viewDepth, 1.0 );
-				float pSize = distance( shadowEdgeViewPos, scenePosition ) * shadowSpread;
+				
 				vec2 pixelCoverageFor1Unit = ( gl_ProjectionMatrix * vec4( 1.0, 1.0, -1.0, 1.0 ) ).xy * screenSize * 0.5; //~TODO:Uniform
-				ivec2 pixelCoverage = ivec2( pSize * pixelCoverageFor1Unit * -invViewDepth );
+				pixelCoverageFor1Unit *= -invViewDepth;
+
+				float pSize = distance( shadowEdgeViewPos, scenePosition ) * shadowSpread;
+				
+				// try imposing a max size .. use threshold as max pixels
+				float maxSize = threshold / pixelCoverageFor1Unit.x;
+				pSize = min( pSize, maxSize );
+				
+				ivec2 pixelCoverage = ivec2( pSize * pixelCoverageFor1Unit );
 
 				if ( pSize > 0.1 )
 				{
@@ -590,107 +553,19 @@ void SoftShadowManager::InitShaders()
         }
     );
 
-    shaders[mini_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[mini_vp], 1, &MiniVP, NULL );
-    qglCompileShader( shaders[mini_vp] );
-    assert( ShaderOK( shaders[mini_vp] ) );
-
-    shaders[mini_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[mini_fp], 1, &MiniFP, NULL );
-    qglCompileShader( shaders[mini_fp] );
-    assert( ShaderOK( shaders[mini_fp] ) );
-
-    const GLuint prg_mini =  qglCreateProgram();
-    glslProgs[mini_pr] = prg_mini;
-    qglAttachShader( prg_mini, shaders[mini_vp] );
-    qglAttachShader( prg_mini, shaders[mini_fp] );
-    qglLinkProgram( prg_mini );
-    assert( LinkedOK(prg_mini) );
-    UNF_MINI_pos = qglGetAttribLocation( prg_mini, "pos" );
+    shaders[mini_vp] = CreateShader( GL_VERTEX_SHADER, MiniVP );
+    shaders[mini_fp] = CreateShader( GL_FRAGMENT_SHADER, MiniFP );
+	glslProgs[mini_pr] = CreateShaderProg( shaders[mini_vp], shaders[mini_fp] );
+    UNF_MINI_pos = qglGetAttribLocation( glslProgs[mini_pr], "pos" );
     // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_mini );
-    qglUniform2fv( qglGetUniformLocation( prg_mini, "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
-    qglUniform1i ( qglGetUniformLocation( prg_mini, "penumbraImg" ), 0 );
-	qglUniform1i ( qglGetUniformLocation( prg_mini, "stencilImg" ), 1 );
-    qglUniform2f( qglGetUniformLocation( prg_mini, "invTextureSize" ), 
+    qglUseProgram( glslProgs[mini_pr] );
+    qglUniform2fv( qglGetUniformLocation( glslProgs[mini_pr], "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
+    qglUniform1i ( qglGetUniformLocation( glslProgs[mini_pr], "penumbraImg" ), 0 );
+	qglUniform1i ( qglGetUniformLocation( glslProgs[mini_pr], "stencilImg" ), 1 );
+    qglUniform2f( qglGetUniformLocation( glslProgs[mini_pr], "invTextureSize" ), 
                   1.0f / tex[penumbraSize_tx]->uploadWidth, 
                   1.0f / tex[penumbraSize_tx]->uploadHeight );
     qglUseProgram( 0 );
-
-
-	// A penumbra-minimizing step as a first pass befpore penumbra spreading. Gives each pixel the minimum 
-	// penumbra size of itself and its neighbours. Should help with single-pixel bursts and intersections.
-	const GLchar* minpVP = GLSL(
-		in      vec2 pos;
-		uniform vec2 maxTexcoord;
-        uniform vec2 invTextureSize;
-        out     vec2 texcoord[9];
-        
-        const   vec2 posNormalizer = vec2( 0.5, 0.5 );
-		
-		void main()
-		{
-            vec2 baseTexcoord = ( pos * posNormalizer + posNormalizer ) * maxTexcoord;
-			texcoord[0] = baseTexcoord + invTextureSize * vec2(  0.0,  0.0 ); // out of sequence, but put "own" sample first
-			texcoord[1] = baseTexcoord + invTextureSize * vec2( -1.0, -1.0 );
-			texcoord[2] = baseTexcoord + invTextureSize * vec2(  0.0, -1.0 );
-			texcoord[3] = baseTexcoord + invTextureSize * vec2(  1.0, -1.0 );
-			texcoord[4] = baseTexcoord + invTextureSize * vec2( -1.0,  0.0 );
-			texcoord[5] = baseTexcoord + invTextureSize * vec2(  1.0,  0.0 );
-			texcoord[6] = baseTexcoord + invTextureSize * vec2( -1.0,  1.0 );
-			texcoord[7] = baseTexcoord + invTextureSize * vec2(  0.0,  1.0 );
-			texcoord[8] = baseTexcoord + invTextureSize * vec2(  1.0,  1.0 );
-			gl_Position = vec4( pos, 0.0, 1.0 );
-		}
-	);
-
-	const GLchar* minpFP = GLSL(
-		in vec2 texcoord[9];
-		uniform sampler2D tex;
-		out	vec4 outColor;
-
-		void main()
-		{
-			vec2 smp = texture( tex, texcoord[0] ).xy; // test "own" sample first
-			vec2 result = smp;
-			if ( smp.y > 0.0 )
-			{
-				for ( int i = 1; i < 9; ++i )
-				{
-					smp = texture( tex, texcoord[i] ).xy;
-					if ( smp.y > 0.0 ) { result = min( result, smp ); }
-				}
-			}
-			outColor = vec4( result, 0.0, 0.1 );
-		}
-	);
-
-	shaders[minp_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[minp_vp], 1, &minpVP, NULL );
-    qglCompileShader( shaders[minp_vp] );
-    assert( ShaderOK( shaders[minp_vp] ) );
-
-    shaders[minp_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[minp_fp], 1, &minpFP, NULL );
-    qglCompileShader( shaders[minp_fp] );
-    assert( ShaderOK( shaders[minp_fp] ) );
-
-    const GLuint prg_minp =  qglCreateProgram();
-    glslProgs[minp_pr] = prg_minp;
-    qglAttachShader( prg_minp, shaders[minp_vp] );
-    qglAttachShader( prg_minp, shaders[minp_fp] );
-    qglLinkProgram( prg_minp );
-    assert( LinkedOK(prg_minp) );
-	UNF_MINP_pos = qglGetAttribLocation( prg_minp, "pos" );
-    // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_minp );
-    qglUniform2fv( qglGetUniformLocation( prg_minp, "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
-    qglUniform1i ( qglGetUniformLocation( prg_minp, "tex" ), 0 );
-    qglUniform2f( qglGetUniformLocation( prg_minp, "invTextureSize" ), 
-                  1.0f / tex[penumbraSpread1_tx]->uploadWidth, 
-                  1.0f / tex[penumbraSpread1_tx]->uploadHeight );
-    qglUseProgram( 0 );
-
 
     // The penumbra-spreading shader
     const GLchar* SpreadVP = GLSL(
@@ -757,30 +632,17 @@ void SoftShadowManager::InitShaders()
         }
     );
 
-	shaders[spread_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[spread_vp], 1, &SpreadVP, NULL );
-    qglCompileShader( shaders[spread_vp] );
-    assert( ShaderOK( shaders[spread_vp] ) );
-
-    shaders[spread_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[spread_fp], 1, &SpreadFP, NULL );
-    qglCompileShader( shaders[spread_fp] );
-    assert( ShaderOK( shaders[spread_fp] ) );
-
-    const GLuint prg_spread =  qglCreateProgram();
-    glslProgs[spread_pr] = prg_spread;
-    qglAttachShader( prg_spread, shaders[spread_vp] );
-    qglAttachShader( prg_spread, shaders[spread_fp] );
-    qglLinkProgram( prg_spread );
-    assert( LinkedOK(prg_spread) );
-    UNF_SPREAD_pos = qglGetAttribLocation( prg_spread, "pos" );
-	UNF_SPREAD_amount = qglGetUniformLocation( prg_spread, "amount" );
+	shaders[spread_vp] = CreateShader( GL_VERTEX_SHADER, SpreadVP );
+    shaders[spread_fp] = CreateShader( GL_FRAGMENT_SHADER, SpreadFP );
+	glslProgs[spread_pr] = CreateShaderProg( shaders[spread_vp], shaders[spread_fp] );
+    UNF_SPREAD_pos = qglGetAttribLocation( glslProgs[spread_pr], "pos" );
+	UNF_SPREAD_amount = qglGetUniformLocation( glslProgs[spread_pr], "amount" );
     // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_spread );
-    qglUniform1i ( qglGetUniformLocation( prg_spread, "tex" ), 0 );
+    qglUseProgram( glslProgs[spread_pr] );
+    qglUniform1i ( qglGetUniformLocation( glslProgs[spread_pr], "tex" ), 0 );
     qglUseProgram( 0 );
 
-
+	/*
 	// An averaging blur for the final minified pass. Samples from populated neighbours only, 
 	// ignoring null pixels, so it doesn't spread the pattern or attentuate it at the edges. 
 	// Uses gaussian weightings but normalizes the result for discarded samples.
@@ -890,6 +752,7 @@ void SoftShadowManager::InitShaders()
     qglUseProgram( prg_avg );
     qglUniform1i( qglGetUniformLocation( prg_avg, "tex" ), 0 );
 	qglUseProgram( 0 );
+	*/
 
 	// The shadow blur program
 	const GLchar* BlurVP = GLSL(
@@ -992,37 +855,25 @@ void SoftShadowManager::InitShaders()
         }
     );
 
-	shaders[blur_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[blur_vp], 1, &BlurVP, NULL );
-    qglCompileShader( shaders[blur_vp] );
-    assert( ShaderOK( shaders[blur_vp] ) );
-
-    shaders[blur_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[blur_fp], 1, &BlurFP, NULL );
-    qglCompileShader( shaders[blur_fp] );
-    assert( ShaderOK( shaders[blur_fp] ) );
-
-    const GLuint prg_blur =  qglCreateProgram();
-    glslProgs[blur_pr] = prg_blur;
-    qglAttachShader( prg_blur, shaders[blur_vp] );
-    qglAttachShader( prg_blur, shaders[blur_fp] );
-    qglLinkProgram( prg_blur );
-    assert( LinkedOK(prg_blur) );
-    UNF_BLUR_pos = qglGetAttribLocation( prg_blur, "pos" );
-	UNF_BLUR_projMatrix = qglGetUniformLocation( prg_blur, "projMatrix" );
-	UNF_BLUR_lightScissor = qglGetUniformLocation( prg_blur, "lightScissor" );
+	shaders[blur_vp] = CreateShader( GL_VERTEX_SHADER, BlurVP );
+    shaders[blur_fp] = CreateShader( GL_FRAGMENT_SHADER, BlurFP );
+    glslProgs[blur_pr] = CreateShaderProg( shaders[blur_vp], shaders[blur_fp] );
+    UNF_BLUR_pos = qglGetAttribLocation( glslProgs[blur_pr], "pos" );
+	UNF_BLUR_projMatrix = qglGetUniformLocation( glslProgs[blur_pr], "projMatrix" );
+	UNF_BLUR_lightScissor = qglGetUniformLocation( glslProgs[blur_pr], "lightScissor" );
     // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_blur );
-	qglUniform2fv( qglGetUniformLocation( prg_blur, "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
-    qglUniform1i( qglGetUniformLocation( prg_blur, "penumbraImage" ), 0 );
-	qglUniform1i( qglGetUniformLocation( prg_blur, "depthImage" ), 1 );
-	qglUniform1i( qglGetUniformLocation( prg_blur, "shadowImage" ), 2 );
-	qglUniform1i( qglGetUniformLocation( prg_blur, "jitterImage" ), 3 );
-	qglUniform1f( qglGetUniformLocation( prg_blur, "jitterMapScale" ), 1.0f / JITTERMAPSIZE );
+    qglUseProgram( glslProgs[blur_pr] );
+	qglUniform2fv( qglGetUniformLocation( glslProgs[blur_pr], "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
+    qglUniform1i( qglGetUniformLocation( glslProgs[blur_pr], "penumbraImage" ), 0 );
+	qglUniform1i( qglGetUniformLocation( glslProgs[blur_pr], "depthImage" ), 1 );
+	qglUniform1i( qglGetUniformLocation( glslProgs[blur_pr], "shadowImage" ), 2 );
+	qglUniform1i( qglGetUniformLocation( glslProgs[blur_pr], "jitterImage" ), 3 );
+	qglUniform1f( qglGetUniformLocation( glslProgs[blur_pr], "jitterMapScale" ), 1.0f / JITTERMAPSIZE );
 	idVec3 screenCoverage1Unit;
 	R_EyeToNormalizedDeviceCoordinates( idVec3( 1.0f, 1.0f, -1.0f ), screenCoverage1Unit );
 	// This is coverage for a penumbra seen at 1 unit depth. Needs perspective divide with actual depth in the shader
-    qglUniform2fv( qglGetUniformLocation( prg_blur, "screenCoverage1Unit" ), 1, screenCoverage1Unit.ToFloatPtr() ); 
+    qglUniform2fv( qglGetUniformLocation( glslProgs[blur_pr], "screenCoverage1Unit" ), 1, screenCoverage1Unit.ToFloatPtr() ); 
+	qglUseProgram( 0 );
 
     // Copy the resulting alpha mask back to the main color buffer, and create the
 	// stencil for light interactions at the same time. Re-use the quad VP.
@@ -1041,23 +892,13 @@ void SoftShadowManager::InitShaders()
 		}
 	);
 
-	shaders[copyback_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-	qglShaderSource( shaders[copyback_fp], 1, &CopybackFP, NULL );
-	qglCompileShader( shaders[copyback_fp] );
-	assert( ShaderOK( shaders[copyback_fp] ) );
-
-	GLuint prg_copyback = qglCreateProgram();
-	glslProgs[copyback_pr] = prg_copyback;
-	qglAttachShader( prg_copyback, shaders[quad_vp] );
-	qglAttachShader( prg_copyback, shaders[copyback_fp] );
-	qglLinkProgram( prg_copyback );
-	assert( LinkedOK(prg_copyback) );
-	UNF_COPYBACK_pos = qglGetAttribLocation( prg_copyback, "pos" );
-    qglUseProgram( prg_copyback );
-	qglUniform2fv( qglGetUniformLocation( prg_copyback, "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
-    qglUniform1i( qglGetUniformLocation( prg_copyback, "alphaStencil" ), 0 );
-
-
+	shaders[copyback_fp] = CreateShader( GL_FRAGMENT_SHADER, CopybackFP );
+	glslProgs[copyback_pr] = CreateShaderProg( shaders[quad_vp], shaders[copyback_fp] );
+	UNF_COPYBACK_pos = qglGetAttribLocation( glslProgs[copyback_pr], "pos" );
+    qglUseProgram( glslProgs[copyback_pr] );
+	qglUniform2fv( qglGetUniformLocation( glslProgs[copyback_pr], "maxTexcoord" ), 1, MaxTexcoord(true).ToFloatPtr() );
+    qglUniform1i( qglGetUniformLocation( glslProgs[copyback_pr], "alphaStencil" ), 0 );
+	
 	qglUseProgram( 0 );
 }
 
@@ -1066,13 +907,7 @@ void SoftShadowManager::InitFBOs()
 {
     qglGenFramebuffers( NumFramebuffers, fbo );
 
-	// Normals captured during early depth pass
-	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[normal_fb] );
-	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRbo );
-	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[normal_tx]->texnum, 0 );
-	assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
-
-    // Stencil shadow pass FBO
+	// Stencil shadow pass FBO
     qglBindFramebuffer( GL_FRAMEBUFFER, fbo[penumbraSize_fb] );
     qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRbo );
     qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[penumbraSize_tx]->texnum, 0 );
@@ -1133,45 +968,24 @@ void SoftShadowManager::InitVBOs()
 }
 
 
-void SoftShadowManager::DepthPass( drawSurf_t **drawSurfs, int numDrawSurfs )
+void SoftShadowManager::CaptureDepthBuffer()
 {
-	// Use the usual depth pass code, but capture a surface normal map too, using an ARB fragment shader
-	// Also write to the stencil buffer because we want to blank out the normal colors before we start to
-	// add any light interactions
-	
-	// Stencil has been cleared to 1<<(glConfig.stencilBits-1) (=128) already, and will be set to always pass 
-	// in RB_STD_FillDepthBuffer. Keep a record of where we drew normal colors, so we can black it out afterwards
-	qglStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
-	qglUseProgram( glslProgs[normal_pr] );
-	qglEnableVertexAttribArrayARB( UNF_NORM_normal ); // For surface normals
-	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+	/* Get a copy of the depth buffer. We will use the global _currentDepth image as a sampler 
+       for our fragment shaders, but we need a separate active depth buffer for our shadow volume drawing. */
+	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1, 
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1, 
+		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
+		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
+	backEnd.currentScissor = backEnd.viewDef->scissor;
 
-	qglDisableVertexAttribArrayARB( UNF_NORM_normal );
-	qglUseProgram( 0 );
-
-	// Capture the results.
-	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fbo[normal_fb] );
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fbo[penumbraSize_fb] );
     qglBindFramebuffer( GL_READ_FRAMEBUFFER, 0 );
-    qglBlitFramebuffer( 0, 0, width, height, 0, 0, width, height, GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT, GL_NEAREST );
+    qglBlitFramebuffer( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 
+                        GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
-	// Clear the normals from the main color buffer. Don't bother resetting stencil 
-	// as individual lights will need to clear it anyway.
-	qglStencilFunc( GL_NOTEQUAL, 1<<(glConfig.stencilBits-1), 255 );
-	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	GL_State( GLS_DEPTHMASK | GLS_DEPTHFUNC_ALWAYS );
-	qglUseProgram( glslProgs[quad_pr] );
-	DrawQuad( globalImages->blackImage, UNF_QUAD_pos );
-	qglUseProgram( 0 );
-	__opengl_breakpoint
+	depthBufferCaptured = true;
 }
-
-
-void SoftShadowManager::SetDepthNormalVertexAttribArray( const float* ptr )
-{
-	qglVertexAttribPointerARB( UNF_NORM_normal, 3, GL_FLOAT, false, sizeof( idDrawVert ), ptr );
-}
-
 
 void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const drawSurf_s* shadows, const bool clearStencil )
 {
@@ -1196,7 +1010,7 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 			qglBindFramebuffer(GL_FRAMEBUFFER, 0 );
 			qglClearColor( 0.0, 0.0, 0.0, 1.0 );
 			qglClearStencil( 0 );
-			GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Alpha channel only
+			GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Draw on alpha channel only
 			qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT );
 			// And set the stencil funcs ready for drawing light effects
 			qglStencilFunc( GL_EQUAL, 0, 255 );
@@ -1223,7 +1037,7 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
                   1.0f / globalImages->currentDepthImage->uploadWidth, 
                   1.0f / globalImages->currentDepthImage->uploadHeight );
     qglUniform1f( UNF_SHADOW_lightReach, 10000.0f ); //~TODO: use correct light size
-    qglUniform1f( UNF_SHADOW_threshold, 0.05f /* r_ignore.GetFloat() */ ); // best so far: 0.0005f for scene, 0.05 for shadvoledges
+    qglUniform1f( UNF_SHADOW_threshold, r_softShadMaxSize.GetFloat() ); // Now used for max pen size as screen prop. best so far: 0.0005f for scene, 0.05 for shadvoledges
     ResetLightScissor( vLight );
     qglBlendEquation( GL_MAX ); // This and clear color need to be in sync
 	if ( clearStencil )
@@ -1235,10 +1049,11 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	// Use the standard stencil shadow function to draw the volumes
     RB_StencilShadowPass( shadows );
     qglBlendEquation( GL_FUNC_ADD );
+	__opengl_breakpoint
     qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	/**********
-        Step 2. Copy the shadow stencil to a colour sampler. Draw with stencil on and off to save clearing + overwriting.
+        Step 2. Copy the shadow stencil to a colour sampler. Draw with stencil on and off to save clearing + overwriting. //~TODO: Add depth info
      **********/
 	GL_State( GLS_DEPTHFUNC_ALWAYS | GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );
 	ResetLightScissor( vLight );
@@ -1259,7 +1074,8 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
         And there's no need to be super-accurate. We're identifying pixels that need to test whether they 
         are in penumbra, not drawing the penumbra.
 		During the minification step, clean up any "penumbra lines" that are generated by side-on shadow volume
-		faces and that are not part of an edge, by testing the corners of the sample area against the stencil.
+		faces and that are not part of an edge, by testing the corners of the sample area against the stencil. Only 
+		if the test points contain a mixture of light and shadow will the pixel qualify for penumbra sampling later.
      **********/
     // First downsample the penumbra size texture. Use a bespoke shader to preserve the max 
     // values of any pixels that are merged.
@@ -1292,19 +1108,6 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	uint src = 0;
 	idImage* srcimg = NULL;
 	
-	//*
-	// Minifying operation as pre-pass
-	// Try making penumbra size at each pixel the minimum of its own and its neighbour's values. 
-	// This should cure 1-pixel outliers with extreme pen sizes, and should help with intersections of differently sized penumbrae.
-	qglDrawBuffers( 1, &targets[tgt] );
-	srcimg = tex[penumbraSpread1_tx + src];
-	qglUseProgram( glslProgs[minp_pr] );
-	DrawQuad( srcimg, UNF_MINP_pos ); 
-	lastUsedSpreadTarget = tgt;
-	std::swap( tgt, src );
-	__opengl_breakpoint
-	//*/
-
     // Then run through 6 cycles of spreading. Enough to spread penumbras by 2^6 = 64 pixels on the 
     // minified scale, or 8 * 64 = 512 pixels at full screen res
 	GL_SelectTexture( 0 );
@@ -1318,16 +1121,8 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	}
 	lastUsedSpreadTarget = src;
 	__opengl_breakpoint
-	
-	// Averaging blur as final pass
-	qglDrawBuffers( 1, &targets[tgt] );
-	srcimg = tex[penumbraSpread1_tx + src];
-	qglUseProgram( glslProgs[avg_pr] );
-	DrawQuad( srcimg, UNF_AVG_pos ); 
-	lastUsedSpreadTarget = tgt;
-	__opengl_breakpoint
-	
 
+	// Reset viewport
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1, 
         tr.viewportOffset[1] + backEnd.viewDef->viewport.y1, 
@@ -1342,6 +1137,7 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
      **********/
 	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[shadowBlur_fb] );
 	qglUseProgram( glslProgs[blur_pr] );
+	// We need 2 numbers from the projection matrix to reconstruct real depth from the depth buffer
 	qglUniform2f( UNF_BLUR_projMatrix, backEnd.viewDef->projectionMatrix[10], backEnd.viewDef->projectionMatrix[14] );
 	if ( r_useScissor.GetBool() ) 
 	{
@@ -1351,13 +1147,13 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 					  float(backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x2) / potWidth,
 					  float(backEnd.viewDef->viewport.x1 + backEnd.currentScissor.y2) / potHeight );
 	} else {
-		qglUniform4f( UNF_BLUR_lightScissor, 0.0, 0.0, 1.0, 1.0 );
+		qglUniform4f( UNF_BLUR_lightScissor, 0.0f, 0.0f, 1.0f, 1.0f );
 	}
 	GL_SelectTexture( 0 );
 	srcimg = tex[ penumbraSpread1_tx + lastUsedSpreadTarget ]; 
+	srcimg->Bind();
 	srcimg->filter = TF_LINEAR; // Switch to linear from nearest
 	srcimg->SetImageFilterAndRepeat();
-	srcimg->Bind();
 	GL_SelectTexture( 1 );
 	globalImages->currentDepthImage->Bind();
 	GL_SelectTexture( 2 );
@@ -1385,7 +1181,7 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	qglBindFramebuffer(GL_FRAMEBUFFER, 0 );
 	ResetLightScissor( vLight );
 	GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Alpha channel only
-	//GL_State( GLS_DEPTHMASK ); // TEST -- Drawe colours too
+	//GL_State( GLS_DEPTHMASK ); //~TEST -- Drawe colours too
 	qglClearStencil( 1 );
 	qglClearColor( 0.0, 0.0, 0.0, 0.0 );
 	qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT ); 
@@ -1412,13 +1208,18 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
     qglDisable( GL_VERTEX_PROGRAM_ARB );
     qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 
+	if ( !depthBufferCaptured )
+	{
+		CaptureDepthBuffer();
+	}
+
 	++lightCounter;
 	localShadowDrawCounter += vLight->localShadows ? 1 : 0;
 	globalShadowDrawCounter += vLight->globalShadows ? 1 : 0;
 	
-	MakeShadowStencil( vLight, vLight->globalShadows, true); // Shadows that hit everything. Clear the stencil
+	MakeShadowStencil( vLight, vLight->globalShadows, true); // Shadows that hit everything.
 	RB_ARB2_CreateDrawInteractions( vLight->localInteractions, GLS_SRCBLEND_DST_ALPHA ); // no-self-shadow surfaces
-	MakeShadowStencil( vLight, vLight->localShadows, false); // Shadows cast by no-self-shadow surfaces. Don't clear the stencil, add to it.
+	MakeShadowStencil( vLight, vLight->localShadows, false); // Shadows cast by no-self-shadow surfaces. Doesn't clear the stencil, adds to it.
 	RB_ARB2_CreateDrawInteractions( vLight->globalInteractions, GLS_SRCBLEND_DST_ALPHA );
 	qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
 }
@@ -1426,7 +1227,7 @@ void SoftShadowManager::DrawInteractions( const viewLight_t* vLight )
 
 /*
 ==================
-SoftShadowManager::maxTexcoord
+SoftShadowManager::MaxTexcoord
 
 For drawing quads using textures holding screen images. Locates the texcoord
 of the upper right corner of the screen/game window. 
@@ -1445,7 +1246,7 @@ SoftShadowManager::DrawQuad
 Draw a screen-aligned quad filling the current viewport. Faster than buffer blitting. 
 
 Uses GLSL3 conventions. Shaders and uniforms must be set up first, except the vertex 
-position location in the shader. Pass that in. Activate the right texture slot before 
+position location in the shader. Pass that in. Activate the correct texture slot before 
 calling too. 
 TODO: GLSL program manager to store uniforms would be good for simplyfying this...
 ==================

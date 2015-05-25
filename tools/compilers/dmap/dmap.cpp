@@ -28,6 +28,40 @@ dmapGlobals_t	dmapGlobals;
 
 /*
 ============
+PrintIfVerbosityAtLeast
+
+Added #4123. Filter console output by verbosity level. Not used for errors and warnings.
+============
+*/
+void PrintIfVerbosityAtLeast( verbosityLevel_t vl, const char* fmt, ... )
+{
+	if ( vl <= dmapGlobals.verbose )
+	{
+		va_list argptr;
+		char text[MAX_STRING_CHARS];
+		va_start( argptr, fmt );
+		idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+		va_end( argptr );
+		common->Printf( "%s", text );
+	}
+}
+
+/*
+============
+PrintEntityHeader
+
+Added #4123. Print entity number, class, and name, for leaks and other messages.
+============
+*/
+void PrintEntityHeader( verbosityLevel_t vl, const uEntity_t* e )
+{
+	PrintIfVerbosityAtLeast( vl, "############### entity %i ###############\n", dmapGlobals.entityNum );
+	const idDict* entKeys = &e->mapEntity->epairs;
+	PrintIfVerbosityAtLeast( vl, "-- ( %s: %s )\n", entKeys->GetString("classname"), entKeys->GetString("name") ); 
+}
+
+/*
+============
 ProcessModel
 ============
 */
@@ -52,9 +86,15 @@ bool ProcessModel( uEntity_t *e, bool floodFill ) {
 			// set the outside leafs to opaque
 			FillOutside( e );
 		} else {
-			common->Printf ( "**********************\n" );
+			// We have a leak.
+			if ( dmapGlobals.verbose < VL_ORIGDEFAULT ) // #4123
+			{
+				// We haven't printed which entity we're working on so do it now
+				PrintEntityHeader( VL_CONCISE, e );
+			}
+			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
 			common->Warning( "******* leaked *******" );
-			common->Printf ( "**********************\n" );
+			PrintIfVerbosityAtLeast( VL_CONCISE, "**********************\n" );
 			LeakFile( e->tree );
 			// bail out here.  If someone really wants to
 			// process a map that leaks, they should use
@@ -102,8 +142,9 @@ ProcessModels
 ============
 */
 bool ProcessModels( void ) {
-	bool	oldVerbose;
-	uEntity_t	*entity;
+	verbosityLevel_t	oldVerbose;
+	uEntity_t			*entity;
+	uint				counter = 0;  // 4123
 
 	oldVerbose = dmapGlobals.verbose;
 
@@ -114,7 +155,12 @@ bool ProcessModels( void ) {
 			continue;
 		}
 
-		common->Printf( "############### entity %i ###############\n", dmapGlobals.entityNum );
+		if ( dmapGlobals.entityNum == 0 ) // worldspawn
+		{
+			PrintEntityHeader( VL_CONCISE, entity );
+		} else {
+			PrintEntityHeader( VL_ORIGDEFAULT, entity );
+		}
 
 		// if we leaked, stop without any more processing
 		if ( !ProcessModel( entity, (bool)(dmapGlobals.entityNum == 0 ) ) ) {
@@ -123,13 +169,17 @@ bool ProcessModels( void ) {
 
 		// we usually don't want to see output for submodels unless
 		// something strange is going on
+		// SteveL #4123: This (pre-existing) hack allows highly verbose output for 
+		// worldspawn (entity 0) without getting it for func statics too.
 		if ( !dmapGlobals.verboseentities ) {
-			dmapGlobals.verbose = false;
+			dmapGlobals.verbose = min( dmapGlobals.verbose, VL_ORIGDEFAULT);
 		}
+
+		++counter;
 	}
 
 	dmapGlobals.verbose = oldVerbose;
-
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%d entities containing primitives processed.\n", counter);
 	return true;
 }
 
@@ -146,7 +196,9 @@ void DmapHelp( void ) {
 	"noCurves          = don't process curves\n"
 	"noCM              = don't create collision map\n"
 	"noAAS             = don't create AAS files\n"
-	
+	"v                 = verbose mode (default pre TDM 2.04)"
+	"v2                = very verbose mode"
+	"verboseentities   = very verbose + submodel detail for entities. Requires v2"
 	);
 }
 
@@ -163,7 +215,7 @@ void ResetDmapGlobals( void ) {
 	dmapGlobals.uEntities = NULL;
 	dmapGlobals.entityNum = 0;
 	dmapGlobals.mapLights.Clear();
-	dmapGlobals.verbose = false;
+	dmapGlobals.verbose = VL_CONCISE;
 	dmapGlobals.glview = false;
 	dmapGlobals.noOptimize = false;
 	dmapGlobals.verboseentities = false;
@@ -228,8 +280,11 @@ void Dmap( const idCmdArgs &args ) {
 		if ( !idStr::Icmp( s,"glview" ) ) {
 			dmapGlobals.glview = true;
 		} else if ( !idStr::Icmp( s, "v" ) ) {
-			common->Printf( "verbose = true\n" );
-			dmapGlobals.verbose = true;
+			common->Printf( "verbose = true (original default)\n" );
+			dmapGlobals.verbose = VL_ORIGDEFAULT;
+		} else if ( !idStr::Icmp( s, "v2" ) ) {
+			common->Printf( "verbose = very\n" );
+			dmapGlobals.verbose = VL_VERBOSE;
 		} else if ( !idStr::Icmp( s, "draw" ) ) {
 			common->Printf( "drawflag = true\n" );
 			dmapGlobals.drawflag = true;
@@ -337,18 +392,19 @@ void Dmap( const idCmdArgs &args ) {
 
 	if ( ProcessModels() ) {
 		WriteOutputFile();
+		PrintIfVerbosityAtLeast( VL_CONCISE, "Dmap complete, moving on to collision world and AAS...\n");
 	} else {
 		leaked = true;
 	}
 
 	FreeDMapFile();
 
-	common->Printf( "%i total shadow triangles\n", dmapGlobals.totalShadowTriangles );
-	common->Printf( "%i total shadow verts\n", dmapGlobals.totalShadowVerts );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%i total shadow triangles\n", dmapGlobals.totalShadowTriangles );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%i total shadow verts\n", dmapGlobals.totalShadowVerts );
 
 	end = Sys_Milliseconds();
-	common->Printf( "-----------------------\n" );
-	common->Printf( "%5.0f seconds for dmap\n", ( end - start ) * 0.001f );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "-----------------------\n" );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5.0f seconds for dmap\n", ( end - start ) * 0.001f );
 
 	if ( !leaked ) {
 
@@ -357,6 +413,9 @@ void Dmap( const idCmdArgs &args ) {
 			// make sure the collision model manager is not used by the game
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 
+			// disconnect closes the console. reopen it. #4123
+			console->Open(0.5);
+
 			// create the collision map
 			start = Sys_Milliseconds();
 
@@ -364,8 +423,8 @@ void Dmap( const idCmdArgs &args ) {
 			collisionModelManager->FreeMap();
 
 			end = Sys_Milliseconds();
-			common->Printf( "-------------------------------------\n" );
-			common->Printf( "%5.0f seconds to create collision map\n", ( end - start ) * 0.001f );
+			PrintIfVerbosityAtLeast( VL_CONCISE, "-------------------------------------\n" );
+			PrintIfVerbosityAtLeast( VL_CONCISE, "%5.0f seconds to create collision map\n", ( end - start ) * 0.001f );
 		}
 
 		if ( !noAAS && !region ) {

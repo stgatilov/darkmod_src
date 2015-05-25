@@ -385,8 +385,8 @@ void darkModLAS::accumulateEffectOfLightsInArea
 		}
 
 		// grayman #3902 - ignore blend and fog lights
-
-		if (light->IsBlend() || light->IsFog())
+		// SteveL  #4128 - let mapper use lights that ai can't see.
+		if ( light->IsBlend() || light->IsFog() || !light->IsSeenByAI() )
 		{
 			// Iterate to next light in area
 			p_cursor = p_cursor->NextNode();
@@ -820,8 +820,8 @@ void darkModLAS::accumulateEffectOfLightsInArea2
 		}
 
 		// grayman #3902 - ignore blend and fog lights
-
-		if (light->IsBlend() || light->IsFog())
+		// SteveL  #4128 - let mapper use lights that ai can't see too.
+		if ( light->IsBlend() || light->IsFog() || !light->IsSeenByAI() )
 		{
 			// Iterate to next light in area
 			p_cursor = p_cursor->NextNode();

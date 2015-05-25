@@ -133,8 +133,9 @@ public:
 	inline bool		IsPointlight(void) { return renderLight.pointLight; };
 	bool			CastsShadow(void);
 	bool			IsAmbient(void) const;		// Returns true if this is an ambient light. - J.C.Denton
-	bool			IsFog(void) const;		// Returns true if this is a fog light. - tels
+	bool			IsFog(void) const;			// Returns true if this is a fog light. - tels
 	bool			IsBlend(void) const;		// Returns true if this is a blend light. - tels
+	bool			IsSeenByAI(void) const;		// Whether the light affects lightgem and visbility of other objects to AI #4128
 
 	/**
 	 * GetLightCone returns the lightdata.

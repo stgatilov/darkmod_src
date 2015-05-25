@@ -510,8 +510,8 @@ bool LoadDMapFile( const char *filename ) {
 	int			i;
 	int			size;
 
-	common->Printf( "--- LoadDMapFile ---\n" );
-	common->Printf( "loading %s\n", filename ); 
+	PrintIfVerbosityAtLeast( VL_CONCISE, "--- LoadDMapFile ---\n" );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "loading %s\n", filename ); 
 
 	// load and parse the map file into canonical form
 	dmapGlobals.dmapFile = new idMapFile();
@@ -557,14 +557,15 @@ bool LoadDMapFile( const char *filename ) {
 		}
 	}
 
-	common->Printf( "%5i total world brushes\n", brushes );
-	common->Printf( "%5i total world triSurfs\n", triSurfs );
-	common->Printf( "%5i patches\n", c_numMapPatches );
-	common->Printf( "%5i entities\n", dmapGlobals.num_entities );
-	common->Printf( "%5i planes\n", dmapGlobals.mapPlanes.Num() );
-	common->Printf( "%5i areaportals\n", c_areaportals );
-	common->Printf( "size: %5.0f,%5.0f,%5.0f to %5.0f,%5.0f,%5.0f\n", mapBounds[0][0], mapBounds[0][1],mapBounds[0][2],
-				mapBounds[1][0], mapBounds[1][1], mapBounds[1][2] );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i total world brushes\n", brushes );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i total world triSurfs\n", triSurfs );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i patches\n", c_numMapPatches );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i entities\n", dmapGlobals.num_entities );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i planes\n", dmapGlobals.mapPlanes.Num() );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "%5i areaportals\n", c_areaportals );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "size: %5.0f,%5.0f,%5.0f to %5.0f,%5.0f,%5.0f\n", 
+		mapBounds[0][0], mapBounds[0][1], mapBounds[0][2],
+		mapBounds[1][0], mapBounds[1][1], mapBounds[1][2] );
 
 	return true;
 }

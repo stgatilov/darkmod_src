@@ -747,6 +747,7 @@ public:
 	virtual void			incrementSaveCount();
 	virtual bool			savegamesDisallowed();
 	virtual bool			quicksavesDisallowed();
+	virtual bool			PlayerReady();	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
 	// <--- end
 	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed );
 	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );

@@ -64,6 +64,7 @@ idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER 
 idCVar r_softShadows( "ss", "0", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows. 0 = hard shadows, >0 = light radius"); //~SteveL SS
 idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "
 																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
+idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");
 
 idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 // Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
@@ -125,8 +126,8 @@ idCVar r_useShadowCulling( "r_useShadowCulling", "1", CVAR_RENDERER | CVAR_BOOL,
 idCVar r_useFrustumFarDistance( "r_useFrustumFarDistance", "0", CVAR_RENDERER | CVAR_FLOAT, "if != 0 force the view frustum far distance to this distance" );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
 idCVar r_clear( "r_clear", "2", CVAR_RENDERER, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
-idCVar r_offsetFactor( "r_offsetfactor", "0", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
-idCVar r_offsetUnits( "r_offsetunits", "-600", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
+idCVar r_offsetFactor( "r_offsetfactor", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" );
+idCVar r_offsetUnits( "r_offsetunits", "-600", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" );
 idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVAR_FLOAT, "bias value added to depth test for stencil shadow drawing" );
 idCVar r_shadowPolygonFactor( "r_shadowPolygonFactor", "0", CVAR_RENDERER | CVAR_FLOAT, "scale value for stencil shadow drawing" );
 idCVar r_frontBuffer( "r_frontBuffer", "0", CVAR_RENDERER | CVAR_BOOL, "draw to front buffer for debugging" );
@@ -367,6 +368,7 @@ PFNGLGETSHADERIVPROC						qglGetShaderiv;
 PFNGLGETATTRIBLOCATIONPROC					qglGetAttribLocation;
 PFNGLGETUNIFORMLOCATIONPROC					qglGetUniformLocation;
 PFNGLISPROGRAMPROC							qglIsProgram;
+PFNGLISSHADERPROC							qglIsShader;
 PFNGLGETSHADERINFOLOGPROC					qglGetShaderInfoLog;
 PFNGLDELETEPROGRAMPROC						qglDeleteProgram;
 PFNGLDELETESHADERPROC						qglDeleteShader;
@@ -655,6 +657,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glGetAttribLocation" );
 		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
 		qglIsProgram = (PFNGLISPROGRAMPROC)GLimp_ExtensionPointer( "glIsProgram" );
+		qglIsShader = (PFNGLISSHADERPROC)GLimp_ExtensionPointer( "glIsShader" );
 		qglGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)GLimp_ExtensionPointer( "glGetShaderInfoLog" );
 		qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
 		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );

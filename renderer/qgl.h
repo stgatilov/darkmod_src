@@ -197,6 +197,7 @@ extern PFNGLGETSHADERIVPROC					qglGetShaderiv;
 extern PFNGLGETATTRIBLOCATIONPROC			qglGetAttribLocation;
 extern PFNGLGETUNIFORMLOCATIONPROC			qglGetUniformLocation;
 extern PFNGLISPROGRAMPROC					qglIsProgram;
+extern PFNGLISSHADERPROC					qglIsShader;
 extern PFNGLGETSHADERINFOLOGPROC			qglGetShaderInfoLog;
 extern PFNGLDELETEPROGRAMPROC				qglDeleteProgram;
 extern PFNGLDELETESHADERPROC				qglDeleteShader;

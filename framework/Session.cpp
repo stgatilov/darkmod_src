@@ -1726,6 +1726,12 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		common->Printf( "You must be alive to save the game\n" );
 		return false;
 	}
+
+	if ( !game->PlayerReady() ) {
+		common->Printf( "Can't save until you start the map.\n" );
+		return false;
+	}
+
 	if (!skipCheck)
 	{
 		if (game->savegamesDisallowed())
