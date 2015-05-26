@@ -290,6 +290,9 @@ void SoftShadowManager::InitRenderTargets()
 	// Alpha mask for the light interactions
 	tex[shadowBlur_tx] = globalImages->RendertargetImage("shadowBlur_tx", potWidth, potHeight, GL_R8, GL_RED, GL_UNSIGNED_BYTE );
 
+	//~A texture for debugging. Captures 4 floats
+	tex[debug_tx] = globalImages->RendertargetImage("debug_tx", potWidth, potHeight, GL_RGBA16F, GL_RGBA, GL_FLOAT );
+
 	// Jitter map. Not strictly speaking a render target, but handy to put it here
 	tex[jitterMap_tx] = globalImages->ImageFromFunction("jitterMap_tx", R_JitterMap);
 }
@@ -374,8 +377,8 @@ void SoftShadowManager::InitShaders()
             vec3 position = gl_Vertex.xyz;
             if ( gl_Vertex.w == 0.0 )
             {
-                vec3 shadowDirection = position - lightPos.xyz;
-                position += shadowDirection * ( lightReach / length(shadowDirection) );
+                vec3 shadowDirection = normalize( position - lightPos.xyz );
+                position += shadowDirection * lightReach;
             }
             /* Output vertex position */
             gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1.0); 
@@ -731,26 +734,13 @@ void SoftShadowManager::InitShaders()
 		}
 	);
 
-	shaders[avg_vp] = qglCreateShader( GL_VERTEX_SHADER );
-    qglShaderSource( shaders[avg_vp], 1, &avgVP, NULL );
-    qglCompileShader( shaders[avg_vp] );
-    assert( ShaderOK( shaders[avg_vp] ) );
-
-    shaders[avg_fp] = qglCreateShader( GL_FRAGMENT_SHADER );
-    qglShaderSource( shaders[avg_fp], 1, &avgFP, NULL );
-    qglCompileShader( shaders[avg_fp] );
-    assert( ShaderOK( shaders[avg_fp] ) );
-
-    const GLuint prg_avg =  qglCreateProgram();
-    glslProgs[avg_pr] = prg_avg;
-    qglAttachShader( prg_avg, shaders[avg_vp] );
-    qglAttachShader( prg_avg, shaders[avg_fp] );
-    qglLinkProgram( prg_avg );
-    assert( LinkedOK(prg_avg) );
-	UNF_AVG_pos = qglGetAttribLocation( prg_avg, "pos" );
+	shaders[avg_vp] = CreateShader( GL_VERTEX_SHADER, avgVP );
+    shaders[avg_fp] = CreateShader( GL_FRAGMENT_SHADER, avgFP );
+	glslProgs[avg_pr] = CreateShaderProg( shaders[avg_vp], shaders[avg_fp] );
+	UNF_AVG_pos = qglGetAttribLocation( glslProgs[avg_pr], "pos" );
     // Set uniforms that won't change between initialisations
-    qglUseProgram( prg_avg );
-    qglUniform1i( qglGetUniformLocation( prg_avg, "tex" ), 0 );
+    qglUseProgram( glslProgs[avg_pr] );
+    qglUniform1i( qglGetUniformLocation( glslProgs[avg_pr], "tex" ), 0 );
 	qglUseProgram( 0 );
 	*/
 
@@ -822,23 +812,35 @@ void SoftShadowManager::InitShaders()
         void main()
         {
 			float penumbraSize = texture( penumbraImage, texcoord ).y / 2.0; // Convert from diameter to radius
+			bool neighbourDifferent = fwidth(penumbraSize) > 0.0; // Make sure dF functions are safe to use in next block
 
-			if ( penumbraSize > 0.0 )
+			if ( penumbraSize > 0.0 || neighbourDifferent ) 
 			{
+				// First work out an allowable depth range for taking samples
 				float sceneDepthVal = texture(depthImage, texcoord).r;
 				float invSceneDepth = InvViewDepth( sceneDepthVal );
 				float sceneDepth = 1.0 / invSceneDepth;
 				float minDepth = DepthValue( sceneDepth + penumbraSize ); // NB viewdepths are negative
 				float maxDepth = DepthValue( sceneDepth - penumbraSize );
-				vec2 screenCoverage = penumbraSize * screenCoverage1Unit * 0.5 * -invSceneDepth; // 0.5: Convert NDC range -1 to 1 to screen space 0 to 1
-				
+				// Then calc the size of the sampling ellipse in screen space, taking into 
+				// account penumbra size, distance of the surface, and slope of the surface
+				vec2 oneUnitAtDistance = screenCoverage1Unit * -invSceneDepth;
+				// For the slope adjustment, use Pythagorus' theorem. Where depth diff exceeds penumbra 
+				// size, use any small value that'll resolve to <= 1 pixel
+				float dX = dFdx(sceneDepth); 
+				float dY = dFdy(sceneDepth);
+				float xSizeSquared = max( 0.000000001, penumbraSize * penumbraSize - dX * dX );
+				float ySizeSquared = max( 0.000000001, penumbraSize * penumbraSize - dY * dY );
+				vec2 slopeAdjustedPenumbra = vec2( sqrt(xSizeSquared), sqrt(ySizeSquared) );
+				vec2 ellipseSize = slopeAdjustedPenumbra * oneUnitAtDistance;
+
 				float	shadow = 0.0;
 				vec3	jitterCoord = vec3( gl_FragCoord.xy * jitterMapScale, 0.0 );
 				float	jitterMapZStep = 1.0 / (sampleCount / 2);
 
 				for ( int i = 0; i < sampleCount / 2; ++i, jitterCoord.z += jitterMapZStep )
 				{
-					vec4 offset = texture( jitterImage, jitterCoord ) * vec4( screenCoverage, screenCoverage );
+					vec4 offset = texture( jitterImage, jitterCoord ) * vec4( ellipseSize, ellipseSize );
 					vec2 smpCoord = offset.xy + texcoord;
 					shadow += GetCheckedSample( smpCoord, minDepth, maxDepth );
 					smpCoord = offset.zw + texcoord;
@@ -852,6 +854,8 @@ void SoftShadowManager::InitShaders()
 				// we're not in penumbra. Just use the current shadow result from the stencil
 				oColor = vec4( texture(shadowImage, texcoord).r, 0.0, 0.0, 1.0 );
 			}
+			//~DEBUG
+			//oColor = vec4( penumbraSize * oneUnitAtDistance.y, ellipseSize.y, penumbraSize, 1.0 ) * 1080;// * ivec4(1920, 1080, 1920, 1);
         }
     );
 
@@ -871,6 +875,7 @@ void SoftShadowManager::InitShaders()
 	qglUniform1f( qglGetUniformLocation( glslProgs[blur_pr], "jitterMapScale" ), 1.0f / JITTERMAPSIZE );
 	idVec3 screenCoverage1Unit;
 	R_EyeToNormalizedDeviceCoordinates( idVec3( 1.0f, 1.0f, -1.0f ), screenCoverage1Unit );
+	screenCoverage1Unit /= 2.0; // Convert NDC range -1 to 1 to screen space 0 to 1
 	// This is coverage for a penumbra seen at 1 unit depth. Needs perspective divide with actual depth in the shader
     qglUniform2fv( qglGetUniformLocation( glslProgs[blur_pr], "screenCoverage1Unit" ), 1, screenCoverage1Unit.ToFloatPtr() ); 
 	qglUseProgram( 0 );
@@ -928,6 +933,11 @@ void SoftShadowManager::InitFBOs()
 	// For the blurred shadow stencil
 	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[shadowBlur_fb] );
 	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[shadowBlur_tx]->texnum, 0 );
+	assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
+
+	//~A debugging fb
+	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[debug_fb] );
+	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex[debug_tx]->texnum, 0 );
 	assert( qglCheckFramebufferStatus( GL_FRAMEBUFFER ) == GL_FRAMEBUFFER_COMPLETE );
 
     // Reset to default framebuffer
@@ -1049,7 +1059,6 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	// Use the standard stencil shadow function to draw the volumes
     RB_StencilShadowPass( shadows );
     qglBlendEquation( GL_FUNC_ADD );
-	__opengl_breakpoint
     qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 
 	/**********
@@ -1066,7 +1075,6 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	qglStencilFunc(GL_GEQUAL, 128, 255);
 	DrawQuad( globalImages->whiteImage, UNF_QUAD_pos );
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	__opengl_breakpoint
 
     /**********
         Step 3. Spread the penumbra information to all screen pixels that might be in penumbra.
@@ -1092,7 +1100,6 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
     qglDrawBuffers( 1, &targets[0] );
     DrawQuad( NULL, UNF_MINI_pos );
 	globalImages->BindNull(); // still on texture 1
-	__opengl_breakpoint
 
 	// The minified images get set to use linear samplimg when upsampled. Reset to nearest
 	GL_SelectTexture( 0 );
@@ -1120,7 +1127,16 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 		DrawQuad( srcimg, UNF_SPREAD_pos );
 	}
 	lastUsedSpreadTarget = src;
+	
+	/*
+	// Averaging blur as final pass
+	qglDrawBuffers( 1, &targets[tgt] );
+	srcimg = tex[penumbraSpread1_tx + src];
+	qglUseProgram( glslProgs[avg_pr] );
+	DrawQuad( srcimg, UNF_AVG_pos ); 
+	lastUsedSpreadTarget = tgt;
 	__opengl_breakpoint
+	*/
 
 	// Reset viewport
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -1136,6 +1152,7 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 		buffer before light interactions are drawn. It'll also provide the new stencil for light drawing.
      **********/
 	qglBindFramebuffer( GL_FRAMEBUFFER, fbo[shadowBlur_fb] );
+	//qglBindFramebuffer( GL_FRAMEBUFFER, fbo[debug_fb] ); //~DEBUG
 	qglUseProgram( glslProgs[blur_pr] );
 	// We need 2 numbers from the projection matrix to reconstruct real depth from the depth buffer
 	qglUniform2f( UNF_BLUR_projMatrix, backEnd.viewDef->projectionMatrix[10], backEnd.viewDef->projectionMatrix[14] );
@@ -1152,8 +1169,8 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	GL_SelectTexture( 0 );
 	srcimg = tex[ penumbraSpread1_tx + lastUsedSpreadTarget ]; 
 	srcimg->Bind();
-	srcimg->filter = TF_LINEAR; // Switch to linear from nearest
-	srcimg->SetImageFilterAndRepeat();
+	//srcimg->filter = TF_LINEAR; // Switch to linear from nearest //~Remove for Debugging. Get rid of complementary mode switch if it works.
+	//srcimg->SetImageFilterAndRepeat();
 	GL_SelectTexture( 1 );
 	globalImages->currentDepthImage->Bind();
 	GL_SelectTexture( 2 );
@@ -1181,7 +1198,6 @@ void SoftShadowManager::MakeShadowStencil( const viewLight_t* vLight, const draw
 	qglBindFramebuffer(GL_FRAMEBUFFER, 0 );
 	ResetLightScissor( vLight );
 	GL_State( GLS_COLORMASK | GLS_DEPTHMASK ); // Alpha channel only
-	//GL_State( GLS_DEPTHMASK ); //~TEST -- Drawe colours too
 	qglClearStencil( 1 );
 	qglClearColor( 0.0, 0.0, 0.0, 0.0 );
 	qglClear( GL_STENCIL_BUFFER_BIT|GL_COLOR_BUFFER_BIT ); 

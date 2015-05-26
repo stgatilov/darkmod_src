@@ -1917,7 +1917,8 @@ RB_STD_DrawView
 
 =============
 */
-void	RB_STD_DrawView( void ) {
+void	RB_STD_DrawView( void ) 
+{
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs, processed;
 	RB_LogComment( "---------- RB_STD_DrawView ----------\n" );
@@ -1926,11 +1927,11 @@ void	RB_STD_DrawView( void ) {
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
 
 	//~SS
-	if (   r_softShadows.GetFloat() > 0.0
-		&& backEnd.viewDef->viewEntitys 
-		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID 
-		&& r_showShadows.GetInteger() == 0 
-		&& glConfig.glVersion > 3.0 ) // i.e 3.1 or above, float-safe 
+	if (   r_softShadows.GetFloat() > 0.0f							// soft shadows requested
+		&& backEnd.viewDef->viewEntitys								// a 3d draw, not the menu screen
+		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID	// not a lightgem pass
+		&& r_showShadows.GetInteger() == 0							// not debugging shadow vols
+		&& glConfig.glVersion > 3.0 )								// i.e 3.1 or above, float-safe 
 	{
 		backEnd.usingSoftShadows = true;
 		softShadowMgr->NewFrame();

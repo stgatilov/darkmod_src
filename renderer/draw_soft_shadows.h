@@ -76,6 +76,7 @@ private:
 		colorStencil_fb,
 		penumbraSpread_fb,
 		shadowBlur_fb,
+		debug_fb,
 		NumFramebuffers
 	};
 	GLuint fbo[NumFramebuffers];
@@ -88,6 +89,7 @@ private:
 		penumbraSpread2_tx,
 		shadowBlur_tx,
 		jitterMap_tx,
+		debug_tx, 
 		NumTextures
 	};
 	idImage* tex[NumTextures];
