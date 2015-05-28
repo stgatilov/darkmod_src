@@ -1486,7 +1486,30 @@ Initializes all map variables common to both save games and spawned games.
 */
 void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	int i;
-	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0);
+	// A couple of flags to track whether we are reloading the same map. "bool sameMap" has been around for a while, 
+	// and checks for reloading the currently active map. It'll usually be false, as the map will have been shut 
+	// down even when doing a quick load. "mapFileName" acts as a flag: active vs shut down.
+	// "sameAsPrevMap" checks for a quickload. Added for #2807: Random GUI quotes on loading screen -- SteveL TDM2.04
+	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0); 
+	bool sameAsPrevMap = mapFile && idStr::Icmp(mapFile->GetName(), mapName) == 0;
+
+	// Still with #2807: Random GUI quotes on loading screen. Next code block moved here from 
+	// InitFromNewMap() so that loading of saved games can show tips too.
+	idStr mapNameStr = mapName;
+	mapNameStr.StripLeadingOnce("maps/");
+	mapNameStr.StripFileExtension();
+	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
+	if (loadingGUI != NULL && !sameAsPrevMap ) // We don't have time for text on quick loads
+	{
+		// Use our own randomizer, the gameLocal.random one is not yet initialised
+		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
+	}
+	// Add a new state variable to let map GUIs tell when they are in a quick load. Could be useful
+	// later if we want to update the existing map GUI scripts and let them show quick tips during
+	// quick load. We'd also need to enable the above event (or a new one) when this is set.
+	loadingGUI->SetStateBool( "quickloading", sameAsPrevMap ); 
+
 
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
@@ -1882,19 +1905,6 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	if ( mapFileName.Length() ) {
 		MapShutdown();
-	}
-
-	idStr mapNameStr = mapName;
-	mapNameStr.StripLeadingOnce("maps/");
-	mapNameStr.StripFileExtension();
-
-	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
-
-	if (loadingGUI != NULL)
-	{
-		// Use our own randomizer, the gameLocal.random one is not yet initialised
-		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
-		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 	
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
