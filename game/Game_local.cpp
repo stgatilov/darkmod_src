@@ -1508,7 +1508,11 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	// Add a new state variable to let map GUIs tell when they are in a quick load. Could be useful
 	// later if we want to update the existing map GUI scripts and let them show quick tips during
 	// quick load. We'd also need to enable the above event (or a new one) when this is set.
-	loadingGUI->SetStateBool( "quickloading", sameAsPrevMap ); 
+	// grayman - temp check for null pointer; SteveL needs to provide final solution 
+	if ( loadingGUI != NULL )
+	{
+		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
+	}
 
 
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
@@ -6510,8 +6514,8 @@ void idGameLocal::SpreadLocations() {
 			Error( "idGameLocal::SpreadLocations: areaNum >= gameRenderWorld->NumAreas()" );
 		}
 		if ( locationEntities[areaNum] ) {
-			Warning( "location entity '%s' overlaps '%s'", ent->spawnArgs.GetString( "name" ),
-				locationEntities[areaNum]->spawnArgs.GetString( "name" ) );
+			Warning( "location entity '%s' overlaps '%s' in area %d", ent->spawnArgs.GetString( "name" ),
+				locationEntities[areaNum]->spawnArgs.GetString( "name" ),areaNum );
 			continue;
 		}
 		locationEntities[areaNum] = static_cast<idLocationEntity *>(ent);
