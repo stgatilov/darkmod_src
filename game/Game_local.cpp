@@ -1499,21 +1499,16 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	mapNameStr.StripLeadingOnce("maps/");
 	mapNameStr.StripFileExtension();
 	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
-	if (loadingGUI != NULL && !sameAsPrevMap ) // We don't have time for text on quick loads
+	if (loadingGUI != NULL )
 	{
 		// Use our own randomizer, the gameLocal.random one is not yet initialised
 		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+		// #2807: Allow GUI scripts to distinguish between a quickload and a full load, so 
+		// they can choose to show only short messages. 
+		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
+		// Activate any GUI code that depends on this random value (which includes random text)
 		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
-	// Add a new state variable to let map GUIs tell when they are in a quick load. Could be useful
-	// later if we want to update the existing map GUI scripts and let them show quick tips during
-	// quick load. We'd also need to enable the above event (or a new one) when this is set.
-	// grayman - temp check for null pointer; SteveL needs to provide final solution 
-	if ( loadingGUI != NULL )
-	{
-		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
-	}
-
 
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
