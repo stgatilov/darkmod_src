@@ -201,6 +201,8 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 				newStack = *ps;
 				newStack.p = p;
 				newStack.next = ps;
+				p->doublePortal->viewCount = tr.viewCount; // For r_showPortals. Keep track whether the player's view flows through 
+														   // individual portals, not just whole visleafs.  -- SteveL #4162
 				FloodViewThroughArea_r( origin, p->intoArea, &newStack );
 				continue;
 			}
@@ -225,6 +227,8 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// go through this portal
 		newStack.p = p;
 		newStack.next = ps;
+		p->doublePortal->viewCount = tr.viewCount; // For r_showPortals. Keep track whether the player's view flows through 
+												   // individual portals, not just whole visleafs.  -- SteveL #4162
 
 		// find the screen pixel bounding box of the remaining portal
 		// so we can scissor things outside it
@@ -1043,7 +1047,7 @@ void idRenderWorldLocal::ShowPortals() {
 	portal_t	*p;
 	idWinding	*w;
 
-	// flood out through portals, setting area viewCount
+	// Check viewcount on areas and portals to see which got used this frame.
 	for ( i = 0 ; i < numPortalAreas ; i++ ) {
 		area = &portalAreas[i];
 		if ( area->viewCount != tr.viewCount ) {
@@ -1055,18 +1059,27 @@ void idRenderWorldLocal::ShowPortals() {
 				continue;
 			}
 
-			if ( portalAreas[ p->intoArea ].viewCount != tr.viewCount ) {
+			// Changed to show 3 colours. -- SteveL #4162
+			if ( p->doublePortal->viewCount == tr.viewCount )
+			{
+				// green = we see through this portal
+				qglColor3f( 0, 1, 0 );
+			} 
+			else if ( portalAreas[ p->intoArea ].viewCount == tr.viewCount )
+			{
+				// yellow = we see into this visleaf but not through this portal
+				qglColor3f( 1, 1, 0 );
+			}
+			else
+			{
 				// red = can't see
 				qglColor3f( 1, 0, 0 );
-			} else {
-				// green = see through
-				qglColor3f( 0, 1, 0 );
 			}
+
 
 			qglBegin( GL_LINE_LOOP );
 			for ( j = 0 ; j < w->GetNumPoints() ; j++ ) {
-				qglVertex3fv( (*w)[j].ToFloatPtr() );
-			}
+				qglVertex3fv( (*w)[j].ToFloatPtr() );			}
 			qglEnd();
 		}
 	}
