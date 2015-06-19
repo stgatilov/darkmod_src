@@ -1044,6 +1044,19 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 		}
 	}
 
+	// Generate a random number seed from the surface world position. Original code used SHADERPARM_DIVERSITY (shaderParm5) for this
+	// purpose, which mirrors func_emitters, but weather patches tend to be worldspawn so all share the same shaderparm, and produce
+	// identical particles when side-by-side. The seed needs to be the same every frame for a given emitter to ensure continuity of 
+	// particles from frame to frame, so using the centre of the emitting surface is a good way of randomizing them. -- SteveL #4132
+	float randomizer = renderEntity->shaderParms[SHADERPARM_DIVERSITY];
+
+	if ( randomizer == 0.0f && renderEntity->entityNum == 0 )
+	{
+		const idVec3 centre = srcTri->bounds.GetCenter();
+		randomizer = idMath::Abs( centre.x + centre.y + centre.z ) / 1000.0f;
+		randomizer = randomizer - idMath::Floor(randomizer); 
+	}
+
 	//
 	// create the particles almost exactly the way idRenderModelPrt does
 	//
@@ -1095,8 +1108,8 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 			int	stageCycle = stageAge / stage->cycleMsec;
 
 			// some particles will be in this cycle, some will be in the previous cycle
-			steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );
-			steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );
+			steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( randomizer * idRandom::MAX_RAND )  );
+			steppingRandom2.SetSeed( (( (stageCycle-1) << 10 ) & idRandom::MAX_RAND) ^ (int)( randomizer * idRandom::MAX_RAND )  );
 
 			for ( int index = 0 ; index < totalParticles ; index++ ) {
 				g.index = index;
