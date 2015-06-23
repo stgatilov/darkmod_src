@@ -172,7 +172,7 @@ bool ProcessModels( void ) {
 		// SteveL #4123: This (pre-existing) hack allows highly verbose output for 
 		// worldspawn (entity 0) without getting it for func statics too.
 		if ( !dmapGlobals.verboseentities ) {
-			dmapGlobals.verbose = std::min( dmapGlobals.verbose, VL_ORIGDEFAULT);
+			dmapGlobals.verbose = (std::min)( dmapGlobals.verbose, VL_ORIGDEFAULT);
 		}
 
 		++counter;
