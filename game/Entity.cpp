@@ -1228,16 +1228,20 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	if (dict->MatchPrefix("skin_lod_") == NULL)
 	{
 		m_SkinLODCur = -1;
-	}
-	else
-	{
+	} else {
 		m_SkinLODCur = 0;
 	}
 
 	m_ModelLODCur = 0;
 	m_LODLevel = 0;
 
-	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+	// SteveL #4170: As with skins, disable LOD shadowcasting changes unless the mapper has set a noshadows_lod spawnarg
+	if (dict->MatchPrefix("noshadows_lod_") == NULL)
+	{
+		m_LOD->noshadowsLOD = -1;
+	} else {
+		m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+	}
 
 	// if > 0, if the entity is closer than this, lod_bias will be at minimum 1.0
 	m_LOD->fLODNormalDistance = dict->GetFloat( "lod_normal_distance", "500" );
@@ -1366,8 +1370,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 				if (m_LOD->SkinLOD[i].Length() == 0) { m_LOD->SkinLOD[i] = m_LOD->SkinLOD[0]; }
 
 				// set the right bit for noshadows
-				sprintf(temp, "noshadows_lod_%i", i );
-									  // 1, 2, 4, 8, 16 etc
+				sprintf(temp, "noshadows_lod_%i", i );  // 1, 2, 4, 8, 16 etc
 				m_LOD->noshadowsLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
 
 //				// set the right bit for "standin". "standins" are models that always rotate in
@@ -2821,29 +2824,26 @@ bool idEntity::SwitchLOD()
 
 	if (m_LODLevel != oldLODLevel)
 	{
-//				gameLocal.Printf( "%s LOD level changed from %i to %i\n", GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
+		{
+			// func_statics that have map geometry do not have a model, and their LOD data gets ""
+			// as model name so they can all share the same data. However, we must not use "" when
+			// setting a new model:
+			if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
 			{
-//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
-				// func_statics that have map geometry do not have a model, and their LOD data gets ""
-				// as model name so they can all share the same data. However, we must not use "" when
-				// setting a new model:
-				if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
-				{
-					SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
-				}
-				m_ModelLODCur = m_LODLevel;
-				// Fix 1.04 blinking bug:
-				// if the old LOD level had an offset, we need to revert this.
-				// and if the new one has an offset, we need to add it:
-				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
-				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
-				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
-				{
-					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
-				}
+				SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
 			}
+			m_ModelLODCur = m_LODLevel;
+			// Fix 1.04 blinking bug:
+			// if the old LOD level had an offset, we need to revert this.
+			// and if the new one has an offset, we need to add it:
+			idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+			// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+			if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+			{
+				SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+			}
+		}
 
 		
 		if (m_SkinLODCur != -1 && m_SkinLODCur != m_LODLevel) // SteveL #3744
@@ -2856,7 +2856,7 @@ bool idEntity::SwitchLOD()
 			m_SkinLODCur = m_LODLevel;
 		}
 
-		if (m_LOD->noshadowsLOD != 0) // SteveL #3744
+		if (m_LOD->noshadowsLOD != -1) // SteveL #3744 && #4170
 		{
 			renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
 		}
