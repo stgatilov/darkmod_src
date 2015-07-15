@@ -1136,7 +1136,7 @@ void idBrittleFracture::Fracture_r( idFixedWinding &w ) {
 	clipModel = new idClipModel( trm );
 
 	physicsObj.SetClipModel( clipModel, 1.0f, shards.Num() );
-	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + origin, shards.Num() );
+	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + origin * GetPhysics()->GetAxis(), shards.Num() ); // #4175 SteveL
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), shards.Num() );
 
 	AddShard( clipModel, w );
