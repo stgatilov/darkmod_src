@@ -104,6 +104,8 @@ private:
 	float						friction;
 	float						bouncyness;
 	idStr						fxFracture;
+	float						shardAliveTime;		// Replaced global constants with member 
+	float						shardFadeStart;		// vars so mappers can tweak -- SteveL #4176
 
 	// state
 	idPhysics_StaticMulti		physicsObj;

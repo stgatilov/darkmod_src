@@ -39,8 +39,10 @@ CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_DampenSound, idBrittleFracture::Event_DampenSound )
 END_CLASS
 
-const int SHARD_ALIVE_TIME	= 5000;
+/* Replace these constants with spawnargs -- SteveL #4176 
+const int SHARD_ALIVE_TIME  = 5000;
 const int SHARD_FADE_START	= 2000;
+*/
 
 static const char *brittleFracture_SnapshotName = "_BrittleFracture_Snapshot_";
 
@@ -282,6 +284,8 @@ void idBrittleFracture::Spawn( void ) {
 	linearVelocityScale = spawnArgs.GetFloat( "linearVelocityScale", "0.1" );
 	angularVelocityScale = spawnArgs.GetFloat( "angularVelocityScale", "40" );
 	fxFracture = spawnArgs.GetString( "fx" );
+	shardAliveTime = static_cast<int>( spawnArgs.GetFloat("shardAliveTime", "5.0") * 1000 );
+	shardFadeStart = static_cast<int>( spawnArgs.GetFloat("shardFadeStart", "2.0") * 1000 );
 
 	// get rigid body properties
 	shardMass = spawnArgs.GetFloat( "shardMass", "20" );
@@ -413,9 +417,9 @@ bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const 
 
 		fade = 1.0f;
 		if ( shards[i]->droppedTime >= 0 ) {
-			msec = gameLocal.time - shards[i]->droppedTime - SHARD_FADE_START;
+			msec = gameLocal.time - shards[i]->droppedTime - shardFadeStart;
 			if ( msec > 0 ) {
-				fade = 1.0f - (float) msec / ( SHARD_ALIVE_TIME - SHARD_FADE_START );
+				fade = 1.0f - (float) msec / ( shardAliveTime - shardFadeStart );
 			}
 		}
 		packedColor = PackColor( idVec4( renderEntity->shaderParms[ SHADERPARM_RED ] * fade,
@@ -609,7 +613,7 @@ void idBrittleFracture::Think( void ) {
 	for ( i = 0; i < shards.Num(); i++ ) {
 		droppedTime = shards[i]->droppedTime;
 		if ( droppedTime != -1 ) {
-			if ( gameLocal.time - droppedTime > SHARD_ALIVE_TIME ) {
+			if ( gameLocal.time - droppedTime > shardAliveTime ) {
 				RemoveShard( i );
 				i--;
 			}
@@ -894,7 +898,7 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 		ServerSendEvent( EVENT_SHATTER, &msg, true, -1 );
 	}
 
-	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) 
+	if ( time > ( gameLocal.time - shardAliveTime ) ) 
 	{
 		if( m_bSoundDamped )
 			StartSound( "snd_shatter_damped", SND_CHANNEL_ANY, 0, false, NULL );
