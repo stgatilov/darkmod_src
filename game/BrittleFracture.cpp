@@ -1139,6 +1139,8 @@ void idBrittleFracture::Fracture_r( idFixedWinding &w ) {
 	trm.Shrink( CM_CLIP_EPSILON );
 	clipModel = new idClipModel( trm );
 
+	clipModel->SetMaterial( material ); // #4179 SteveL 
+
 	physicsObj.SetClipModel( clipModel, 1.0f, shards.Num() );
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + origin * GetPhysics()->GetAxis(), shards.Num() ); // #4175 SteveL
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), shards.Num() );
@@ -1165,6 +1167,12 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin(), 0 );
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), 0 );
 
+	/* Note from SteveL working on #4177
+	*  The next line has evidently been changed at some point to carve up only the first surface 
+	*  of the func_fracture instead of doing all the surfaces of a model. The only motive I can see
+	*  for that is that it enables a simple global "material" member property instead of remembering
+	*  materials for individual shards. We might want to change that later.
+	*/
 	for ( i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++ ) {
 		surf = renderModel->Surface( i );
 		material = surf->shader;
