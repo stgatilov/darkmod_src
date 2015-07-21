@@ -65,6 +65,10 @@ public:
 	virtual void				AddForce( idEntity *ent, int id, const idVec3 &point, const idVec3 &force );
 	virtual void				AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName );
 	virtual void				Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location );
+	// SteveL #4180: Let all damage types paint crack decals. Extend idEntity::Damage()
+	virtual void				Damage( idEntity *inflictor, idEntity *attacker, 
+										const idVec3 &dir, const char *damageDefName, 
+										const float damageScale, const int location, trace_t *tr = NULL );
 
 	void						ProjectDecal( const idVec3 &point, const idVec3 &dir, const int time, const char *damageDefName );
 	bool						IsBroken( void ) const;
@@ -119,6 +123,9 @@ private:
 	// for rendering
 	mutable int					lastRenderEntityUpdate;
 	mutable bool				changed;
+
+	// Keep track of when last crack decal was applied, so we don't do it twice in 1 frame -- SteveL #4180
+	int							m_lastCrackFrameNum;
 
 	/**
 	* Contains the visportal handle that the breakable is touching, if portal is present

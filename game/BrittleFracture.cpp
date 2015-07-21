@@ -79,6 +79,8 @@ idBrittleFracture::idBrittleFracture( void ) {
 
 	m_lossBaseAI = 0;		// grayman #3042
 	m_lossBasePlayer = 0;	// grayman #3042
+
+	m_lastCrackFrameNum = 0;	// SteveL #4180
 }
 
 /*
@@ -1078,12 +1080,39 @@ void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int dam
 
 /*
 ================
+idBrittleFracture::Damage
+================
+*/
+void idBrittleFracture::Damage( idEntity *inflictor, idEntity *attacker, 
+								const idVec3 &dir, const char *damageDefName, 
+								const float damageScale, const int location, trace_t *tr )
+{
+	idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+
+	if (tr)
+	{
+		// Velocity is a relatively expensive calculation and isn't used by 
+		// AddDamageEffect so don't bother.
+		AddDamageEffect( *tr, vec3_zero, damageDefName );
+	}
+}
+
+/*
+================
 idBrittleFracture::AddDamageEffect
 ================
 */
 void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
+	// #4180 let any type of damage paint crack decals, not just weapons, by calling this function from
+	// the general Damage() function. Weapons will continue to call this routine independently, so avoid 
+	// duplicating the cracks by keeping track of the frame number and not running twice in 1 frame. 
+	if ( gameLocal.framenum == m_lastCrackFrameNum ) {
+		return;
+	}
+	
 	if ( !disableFracture ) {
 		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
+		m_lastCrackFrameNum = gameLocal.framenum;
 	}
 }
 
