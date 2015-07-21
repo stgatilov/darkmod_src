@@ -912,15 +912,6 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 		Break();
 	}
 
-	// SteveL #4179: Moved the contents change code here from Break()
-	physicsObj.SetContents( CONTENTS_RENDERMODEL );
-	if( m_CustomContents != -1 )
-		physicsObj.SetContents( m_CustomContents );
-	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
-	if( m_StimResponseColl->HasResponse() )
-		physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_RESPONSE );
-	// End of #4179 moved code
-
 	if ( fxFracture.Length() ) {
 		idEntityFx::StartFx( fxFracture, &point, &GetPhysics()->GetAxis(), this, true );
 	}
@@ -1027,16 +1018,11 @@ idBrittleFracture::Break
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
 
-	/* #4178: Thrown objects pass straight through glass at 0 health
-	*  Delay the change in contents until the glass actually shatters.
-	*  Move the following code to Shatter()
-	
-	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_MOVEABLECLIP ); // Add moveables. SteveL #4178
 	
 	// ishtvan: overwrite with custom contents if present
 	if( m_CustomContents != -1 )
 		physicsObj.SetContents( m_CustomContents );
-	*/
 
 	physicsObj.SetContents( physicsObj.GetContents() | CONTENTS_TRIGGER );
 	
