@@ -1079,8 +1079,13 @@ void idBrittleFracture::Damage( idEntity *inflictor, idEntity *attacker,
 	{
 		// Velocity is a relatively expensive calculation and isn't used by 
 		// AddDamageEffect so don't bother.
-		AddDamageEffect( *tr, vec3_zero, damageDefName );
+		const idVec3 no_velocity = vec3_zero;
+		AddDamageEffect( *tr, no_velocity, damageDefName );
 	}
+
+	// Add a Touch event, so that func_fractures can shatter after any damage, if their 
+	// health is now 0. -- SteveL #4181: Allow melee weapons to break glass in 1 hit
+	PostEventMS( &EV_Touch, 0, inflictor, tr );
 }
 
 /*
