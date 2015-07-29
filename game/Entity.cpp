@@ -1193,12 +1193,11 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
 	// without updating any LOD models #3912
 	{
-		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString( "classname" ), false );
-		bool model_overriden = false, lod_model_overridden = false;
-		if ( idStr::Icmp( dict->GetString( "model" ), entDef->GetString( "model" ) ) )
-		{
-			model_overriden = true;
-		}
+		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false );
+		const bool inherited_model = *entDef->GetString("model") != '\0';
+		const bool inherited_lod = entDef->GetFloat("dist_check_period") != 0.0f || entDef->GetFloat("hide_distance") >= 0.1f;
+		const bool model_overriden = idStr::Icmp( dict->GetString("model"), entDef->GetString("model") ) != 0;
+		bool lod_model_overridden = false;
 		const idKeyValue* kv = NULL;
 		while ( ( kv = dict->MatchPrefix( "model_lod_", kv ) ) != NULL )
 		{
@@ -1207,7 +1206,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 				lod_model_overridden = true;
 			}
 		}
-		if ( model_overriden && !lod_model_overridden )
+		if ( inherited_model && inherited_lod && model_overriden && !lod_model_overridden )
 		{
 			// Suppress LOD
 			m_DistCheckTimeStamp = NOLOD;
