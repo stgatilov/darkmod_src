@@ -248,7 +248,8 @@ void PickableLock::OnLockpickPinSuccess()
 		  Why does this work on mines?*/
 
 		// Move the handle back to its original position
-		m_Owner->ProcessEvent(&EV_TDM_Lock_StatusUpdate);
+		m_Owner->PostEventMS(&EV_TDM_Lock_StatusUpdate, 32); // Delay by 2 frames as the event aborts if there's < 2 frame 
+															 // gap since last update. SteveL #4164, diagnosis by Durandall
 
 		// And unlock the entity after a small delay
 		m_Owner->PostEventMS(&EV_TDM_Lock_OnLockPicked, 150);
