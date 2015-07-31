@@ -7048,286 +7048,56 @@ void idPlayer::StartFxOnBone( const char *fx, const char *bone ) {
 	idEntityFx::StartFx( fx, &offset, &axis, this, true );
 }
 
-#define SCREEN_HEIGHT 480
-//#define PRINT_UNDERWATER_DEBUG 1
-
 void idPlayer::UpdateUnderWaterEffects()
 {
-	// grayman #3564 - When the player's eye is above the water surface, but close enough
-	// that the surface texture begins to get clipped by the near Z plane, the player can
-	// see objects underwater that aren't overlayed by the underwater gui texture. Once the
-	// player's eye descends into the water, the entire screen is painted with the underwater
-	// gui texture, but we need to manage the view from the moment the clipping begins until
-	// the eye drops into the water. The same is true when ascending up out of the water.
-
-	// The underwater guis are now using a variable setting instead of the default of '0' for the
-	// y value (where to start painting the gui background vertically, where '0' is
-	// the top of the screen). What we need to do is determine the value of y and
-	// broadcast it to the current underwater gui.
-
-	// Since it's possible that the underwater gui is needed to fill in the clipped gap when the player's eye
-	// isn't underwater, we have to separate the gui overlay painting from the general case where the eye is
-	// underwater. This separates the drawing of the overlay from the other underwater effects, such as
-	// the 'bubble' sound when entering water, the 'gasp' sound when leaving it, and the blue scale that
-	// shows the amount of air the player has left before drowning.
-
-	int y = SCREEN_HEIGHT; // if y >= SCREEN_HEIGHT, no overlay
-	waterLevel_t waterLevel = physicsObj.GetWaterLevel();
-	//idVec3 origin = physicsObj.GetOrigin();
-	//idBounds playerBounds = physicsObj.GetAbsBounds();
-	idPhysics_Liquid* CurWaterEnt = GetPlayerPhysics()->GetWater();
-
-	// grayman #3564 - determine how much of the screen receives the underwater overlay
-
-	if ( waterLevel == WATERLEVEL_WAIST)
-	{
-		if (underWaterEffectsActive)
-		{
-			StopSound( SND_CHANNEL_DEMONIC, false );
-
-			// If we were underwater for more than 4 seconds, play the "take breath" sound
-			if (gameLocal.time > physicsObj.GetSubmerseTime() + 4000)
-			{
-				StartSound( "snd_resurface", SND_CHANNEL_VOICE, 0, false, NULL );
-			}
-
-			underWaterEffectsActive = false;
-		}
-
-		// Our waist is underwater, but our eye isn't (otherwise WATERLEVEL_HEAD
-		// would be the value of waterLevel). Determine whether part of the screen should
-		// be overlayed by the underwater gui as the eye descends toward the water.
-
-		// Trace down and find the water surface for this frame.
-
-		idBounds waterBounds = CurWaterEnt->GetAbsBounds();
-
-		idVec3 eyePos = GetEyePosition();
-		idVec3 startPoint(eyePos.x, eyePos.y, waterBounds[1].z + 5.0f);
-		idVec3 endPoint = startPoint;
-		endPoint.z -= 128;
-		trace_t result;
-		gameLocal.clip.TracePoint(result, startPoint, endPoint, MASK_WATER, this);
-		float waterSurfaceZ = result.endpos.z - 0.25; // 0.25 is determined empirically
-
-		idVec3 playerRight, playerForward;
-		viewAngles.ToVectors(&playerForward, &playerRight);
-
-#ifdef PRINT_UNDERWATER_DEBUG
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idPlayer::UpdateUnderWaterEffects ...\r"); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... waterBounds = [%s]\r", waterBounds.ToString() ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... eyePos = [%s]\r", eyePos.ToString() ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... waterSurfaceZ = %f\r", waterSurfaceZ ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... playerForward = [%s]\r", playerForward.ToString() ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("...   playerRight = [%s]\r", playerRight.ToString() ); // grayman debug
-#endif
-
-		idRotation rotation;
-		float fov_y = renderView->fov_y;
-		rotation.Set( vec3_zero, playerRight, -fov_y/2.0f ); // upper POV ray
-		idVec3 povRayUpper = rotation*playerForward;
-
-		rotation.Set( vec3_zero, playerRight, fov_y/2.0f ); // lower POV ray
-		idVec3 povRayLower = rotation*playerForward;
-
-		// find point on near plane, along player's forward sight vector
-		idVec3 forwardPointOnNearPlane = eyePos + cvarSystem->GetCVarFloat( "r_znear" ) * playerForward;
-
-		idPlane nearPlane; // rendering near plane in front of player's eyes
-		nearPlane.SetNormal( playerForward );
-		nearPlane.FitThroughPoint( forwardPointOnNearPlane );
-
-		idPlane waterSurface; // plane of water surface below the player's eyes
-		waterSurface.SetNormal( idVec3(0, 0, 1) ); // water surface is always horizontal
-		waterSurface.FitThroughPoint( idVec3(eyePos.x,eyePos.y,waterSurfaceZ) );
-
-#ifdef PRINT_UNDERWATER_DEBUG
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... fov_y = %f\r", fov_y ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... povRayUpper = [%s]\r", povRayUpper.ToString() ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... povRayLower = [%s]\r", povRayLower.ToString() ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... distance to near plane = %f\r", cvarSystem->GetCVarFloat( "r_znear" ) ); // grayman debug
-#endif
-		// other interesting points
-
-		float scaleLowerNearPlane,scaleUpperNearPlane;
-
-		// Find intersection of povRayLower and the near plane
-		nearPlane.RayIntersection(eyePos, povRayLower, scaleLowerNearPlane);
-		idVec3 lowerPointOnNearPlane; // where lower POV ray intersects the near plane
-		lowerPointOnNearPlane = eyePos + scaleLowerNearPlane*povRayLower;
-
-#ifdef PRINT_UNDERWATER_DEBUG
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... scaleLowerNearPlane = %f\r", scaleLowerNearPlane ); // grayman debug
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... lowerPointOnNearPlane = [%s]\r", lowerPointOnNearPlane.ToString() ); // grayman debug
-#endif
-
-		// If the near plane doesn't extend down to the water surface, we don't need the overlay
-
-		if ( lowerPointOnNearPlane.z >= waterSurfaceZ )
-		{
-			// leave y set to SCREEN_HEIGHT
-
-#ifdef PRINT_UNDERWATER_DEBUG
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... near plane doesn't extend down to the water surface\r"); // grayman debug
-#endif
-		}
-		else // keep going
-		{
-			// Find intersection of povRayUpper and the near plane
-			nearPlane.RayIntersection(eyePos, povRayUpper, scaleUpperNearPlane);
-			idVec3 upperPointOnNearPlane; // where upper POV ray intersects the near plane
-			upperPointOnNearPlane = eyePos + scaleUpperNearPlane*povRayUpper;
-
-#ifdef PRINT_UNDERWATER_DEBUG
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... scaleUpperNearPlane = %f\r", scaleUpperNearPlane); // grayman debug
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... upperPointOnNearPlane = [%s]\r", upperPointOnNearPlane.ToString()); // grayman debug
-#endif
-
-			// if this point is below the water surface, calculations are done and
-			// the entire screen needs to receive the underwater overlay
-
-			if ( upperPointOnNearPlane.z <= waterSurfaceZ )
-			{
-				y = 0;
-			}
-			else // keep going, find a y value between 0 and SCREEN_HEIGHT
-			{
-
-#ifdef PRINT_UNDERWATER_DEBUG
-				// Find intersection of povRayLower and the water surface
-				float scaleLowerWater;
-				waterSurface.RayIntersection(eyePos, povRayLower, scaleLowerWater);
-				idVec3 lowerPointOnWaterSurface; // where lower POV ray intersects the water surface
-				lowerPointOnWaterSurface = eyePos + scaleLowerWater*povRayLower;
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... scaleLowerWater = %f\r", scaleLowerWater); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... lowerPointOnWaterSurface = [%s]\r", lowerPointOnWaterSurface.ToString()); // grayman debug
-#endif
-
-#ifdef PRINT_UNDERWATER_DEBUG
-				// Find intersection of povRayUpper and the water surface
-				float scaleUpperWater;
-				bool upperPOVIntersectsWaterSurface = waterSurface.RayIntersection(eyePos, povRayUpper, scaleUpperWater);
-				idVec3 upperPointOnWaterSurface; // where upper POV ray intersects the water surface
-				if ( upperPOVIntersectsWaterSurface ) // could be true or false
-				{
-					upperPointOnWaterSurface = eyePos + scaleUpperWater*povRayUpper;
-
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... scaleUpperWater = %f\r", scaleUpperWater); // grayman debug
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... upperPointOnWaterSurface = [%s]\r", upperPointOnWaterSurface.ToString()); // grayman debug
-				}
-				else
-				{
-					DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... povRayUpper doesn't intersect waterSurface\r"); // grayman debug
-				}
-#endif
-
-				// Find intersection of upperPointOnNearPlane to lowerPointOnNearPlane and the water surface
-
-				float scaleRay;
-				idVec3 ray = lowerPointOnNearPlane - upperPointOnNearPlane;
-				waterSurface.RayIntersection(upperPointOnNearPlane, ray, scaleRay);
-				idVec3 pointOnNearPlaneAndWaterSurface = upperPointOnNearPlane + scaleRay*ray;
-
-				float dist = (upperPointOnNearPlane - pointOnNearPlaneAndWaterSurface).LengthFast();
-				float nearPlaneDist = (upperPointOnNearPlane - lowerPointOnNearPlane).LengthFast();
-				float ratio = dist / nearPlaneDist;
-
-#ifdef PRINT_UNDERWATER_DEBUG
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... scaleRay = %f\r", scaleRay); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... pointOnNearPlaneAndWaterSurface = [%s]\r", pointOnNearPlaneAndWaterSurface.ToString()); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... dist = %f\r", dist); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... nearPlaneDist = %f\r", nearPlaneDist); // grayman debug
-				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... ratio = %f\r", ratio); // grayman debug
-#endif
-
-				y = static_cast<int>(ratio * SCREEN_HEIGHT);
-
-				y -= 3; // fudge factor for heat haze effect wriggling the upper edge of the boundary
-						// and revealing a clear image when it shouldn't
-
-				if ( y < 0 )
-				{
-					y = 0; // underwater gui is painted on the entire screen
-				}
-			}
-		}
-	}
-	else if ( waterLevel >= WATERLEVEL_HEAD )
+	if ( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD )
 	{
 		if (!underWaterEffectsActive)
 		{
 			StartSound( "snd_airless", SND_CHANNEL_DEMONIC, 0, false, NULL );
-			underWaterEffectsActive = true;
-		}
 
-		y = 0; // we're underwater, so paint the underwater gui on the entire screen
-	}
-	else // WATERLEVEL_NONE, WATERLEVEL_FEET
-	{
-		if (underWaterEffectsActive)
-		{
-			StopSound( SND_CHANNEL_DEMONIC, false );
-
-			// If we were underwater for more than 4 seconds, play the "take breath" sound
-			if (gameLocal.time > physicsObj.GetSubmerseTime() + 4000)
-			{
-				StartSound( "snd_resurface", SND_CHANNEL_VOICE, 0, false, NULL );
-			}
-
-			underWaterEffectsActive = false;
-		}
-
-		// leave y set to SCREEN_HEIGHT (no underwater gui overlay)
-	}
-
-#ifdef PRINT_UNDERWATER_DEBUG
-	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... y = %d\r", y); // grayman debug
-#endif
-
-	if ( underWaterGUIHandle != -1 )
-	{
-		// gui exists
-		if ( y >= SCREEN_HEIGHT )
-		{
-			DestroyOverlay(underWaterGUIHandle);
-			underWaterGUIHandle = -1;
-		}
-	}
-	else // underwater gui doesn't exist
-	{
-		if ( y < SCREEN_HEIGHT )
-		{
+			// Underwater GUI section, allows custom water guis for each water entity etc - Dram
 			idStr overlay;
-			if ( CurWaterEnt != NULL )
-			{
-				// Get the GUI from the current water entity
+			idPhysics_Liquid* CurWaterEnt = GetPlayerPhysics()->GetWater();
+			if (CurWaterEnt != NULL)
+			{ // Get the GUI from the current water entity
 				idEntity* CurEnt = CurWaterEnt->GetSelf();
-				if ( CurEnt != NULL )
+				if (CurEnt != NULL)
 				{
 					overlay = CurEnt->spawnArgs.GetString("underwater_gui");
 				}
-				gameLocal.Printf("UNDERWATER: After water check overlay is %s\n", overlay.c_str());
+				gameLocal.Printf( "UNDERWATER: After water check overlay is %s\n", overlay.c_str() );
 			}
-			if ( overlay.IsEmpty() ) // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
+			if (overlay.IsEmpty()) // If the overlay string is empty it has failed to find the GUI on the entity, so give warning
 			{
-				gameLocal.Warning("UNDERWATER: water check overlay failed, check key/val pairs");
+				gameLocal.Warning( "UNDERWATER: water check overlay failed, check key/val pairs" );
 			}
 			else
 			{
 				underWaterGUIHandle = CreateOverlay(overlay.c_str(), LAYER_UNDERWATER);
 			}
+			underWaterEffectsActive = true;
 		}
 	}
-
-	if ( underWaterGUIHandle != -1 )
+	else
 	{
+		if (underWaterEffectsActive)
+		{
+			StopSound( SND_CHANNEL_DEMONIC, false );
+			if (underWaterGUIHandle != -1)
+			{
+				DestroyOverlay(underWaterGUIHandle);
+				underWaterGUIHandle = -1;
+			}
 
-#ifdef PRINT_UNDERWATER_DEBUG
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("... broadcasting y (%d) to underwater gui\r", y); // grayman debug
-#endif
+			// If we were underwater for more than 4 seconds, play the "take breath" sound
+			if (gameLocal.time > physicsObj.GetSubmerseTime() + 4000)
+			{
+				StartSound( "snd_resurface", SND_CHANNEL_VOICE, 0, false, NULL );
+			}
 
-		// Broadcast the y overlay starting value
-		m_overlays.setGlobalStateInt("Underwater_gui_Y", y);
+			underWaterEffectsActive = false;
+		}
 	}
 }
 
