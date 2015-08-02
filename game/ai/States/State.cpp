@@ -1864,7 +1864,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 					}
 
 					// grayman #3857 - be specific about unconscious people
-					if ( soundName.IsEmpty() && !need2Search && ( otherMemory.alertType == E_EventTypeUnconsciousPerson ) )
+					if ( soundName.IsEmpty() && !need2Search && ( otherMemory.alertType == EAlertTypeUnconsciousPerson ) ) // grayman #4193
 					{
 						idEntity* body = otherMemory.unconsciousPersonFound.GetEntity();
 						
