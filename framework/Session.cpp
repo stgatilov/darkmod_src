@@ -40,6 +40,9 @@ idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CV
 //Obsttorte
 idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "");
 
+// SteveL #4161: Support > 1 quicksave
+idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, "" );
+
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
 
@@ -1608,13 +1611,103 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 
 /*
 ===============
+GetNextQuicksaveFilename
+
+If all quicksave slots are used, return the oldest filename for overwriting.
+If not all quicksave slots are used, return a new filename. SteveL #4191
+===============
+*/
+const idStr GetNextQuicksaveFilename()
+{
+	// Get the list of existing save games
+	idStrList fileList;
+	idList<fileTIME_T> fileTimes;
+	fileList.Clear();
+	fileTimes.Clear();
+	sessLocal.GetSaveGameList( fileList, fileTimes ); // fileTimes is sorted, most recent first
+
+	// Count the number of quicksaves and remeber the oldest one we saw
+	idStr oldestFile;
+	int quicksaveCounter = 0;
+	idStr quicksaveName = common->Translate( "#str_07178" );
+
+	for ( int i = 0; i < fileList.Num(); i++ )
+	{
+		idStr filename = fileList[fileTimes[i].index];
+		if ( filename.IcmpPrefix(quicksaveName) == 0 )
+		{
+			oldestFile = filename;
+			++quicksaveCounter;
+		}
+	}
+
+	// Choose the save file name
+	idStr result;
+	if ( quicksaveCounter < idSessionLocal::com_numQuickSaves.GetInteger() )
+	{
+		result = FindUnusedFileName( ("savegames/" + quicksaveName + "_%d.save").c_str() );
+		result.StripLeading("savegames/");
+		result.StripTrailing(".save");
+	}
+	else
+	{
+		result = oldestFile;
+	}
+	return result;
+}
+
+/*
+===============
+GetNextQuicksaveFilename
+
+SteveL #4191, support multiple quicksaves
+===============
+*/
+const idStr GetMostRecentQuicksaveFilename()
+{
+	// Get the list of existing save games
+	idStrList fileList;
+	idList<fileTIME_T> fileTimes;
+	fileList.Clear();
+	fileTimes.Clear();
+	sessLocal.GetSaveGameList( fileList, fileTimes ); 
+
+	// fileTimes is sorted, most recent first. Find the first quick save
+	idStr filename;
+	idStr quicksaveName = common->Translate( "#str_07178" );
+	
+	int idx = 0;
+	for ( ; idx < fileList.Num(); idx++ )
+	{
+		filename = fileList[fileTimes[idx].index];
+		if ( filename.IcmpPrefix(quicksaveName) == 0 )
+		{
+			break;
+		}
+	}
+
+	// Choose the save file name
+	idStr result;
+	if ( idx == fileList.Num() )	// No quicksaves
+	{
+		result = quicksaveName;		// Let the user see the same console error as before, can't find quicksave
+	}
+	else
+	{
+		result = filename;
+	}
+	return result;
+}
+
+/*
+===============
 LoadGame_f
 ===============
 */
 void LoadGame_f( const idCmdArgs &args ) {
 	console->Close();
 	if ( args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = common->Translate( "#str_07178" );
+		idStr saveName = GetMostRecentQuicksaveFilename();
 		sessLocal.LoadGame( saveName );
 	} else {
 		sessLocal.LoadGame( args.Argv(1) );
@@ -1628,7 +1721,7 @@ SaveGame_f
 */
 void SaveGame_f( const idCmdArgs &args ) {
 	if ( args.Argc() < 2 || idStr::Icmp( args.Argv(1), "quick" ) == 0 ) {
-		idStr saveName = common->Translate( "#str_07178" );
+		idStr saveName = GetNextQuicksaveFilename();
 		if ( sessLocal.SaveGame( saveName ) ) {
 			common->Printf( "%s\n", saveName.c_str() );
 		}
@@ -1739,7 +1832,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 			common->Printf("Manual saving is disabled!\n");
 			return false;
 		}
-		if (game->quicksavesDisallowed() && gameFile == "Quicksave")
+		if ( game->quicksavesDisallowed() && gameFile.IcmpPrefix(common->Translate("#str_07178")) == 0 ) // SteveL tweaked to use l18n while working on #4191
 		{
 			common->Printf("Quicksaves disabled!\n");
 			return false;
