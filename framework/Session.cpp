@@ -41,7 +41,8 @@ idCVar	idSessionLocal::com_guid( "com_guid", "", CVAR_SYSTEM | CVAR_ARCHIVE | CV
 idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "");
 
 // SteveL #4161: Support > 1 quicksave
-idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, "" );
+idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, 
+	"How many quicksaves to retain. Reducing the number won't delete any that you already have." );
 
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
@@ -1626,7 +1627,7 @@ const idStr GetNextQuicksaveFilename()
 	fileTimes.Clear();
 	sessLocal.GetSaveGameList( fileList, fileTimes ); // fileTimes is sorted, most recent first
 
-	// Count the number of quicksaves and remeber the oldest one we saw
+	// Count the number of quicksaves and remember the oldest one we saw
 	idStr oldestFile;
 	int quicksaveCounter = 0;
 	idStr quicksaveName = common->Translate( "#str_07178" );
@@ -1648,6 +1649,12 @@ const idStr GetNextQuicksaveFilename()
 		result = FindUnusedFileName( ("savegames/" + quicksaveName + "_%d.save").c_str() );
 		result.StripLeading("savegames/");
 		result.StripTrailing(".save");
+	}
+	else if ( oldestFile.IsEmpty() )
+	{
+		// This code will only be reached if the user has set the cvar to 0 or less, and has no
+		// existing quicksaves. Just use the default name and save, since they asked for a quicksave.
+		result = quicksaveName;
 	}
 	else
 	{
