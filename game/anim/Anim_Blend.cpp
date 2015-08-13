@@ -26,6 +26,12 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../DarkModGlobals.h"
 #include "../MeleeWeapon.h"
 #include "../ai/Tasks/SingleBarkTask.h"
+#include "anim/Anim.h"
+#include "ai/AI.h"
+#include "Player.h"
+#include "FX.h"
+#include "Weapon.h"
+
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {
 	"all", "torso", "legs", "head", "eyelids"
@@ -1617,12 +1623,11 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				}
 				case FC_MELEE_ATTACK_START:
 				{
-					const char *WeapName, *AttName;
 					int spcind = command.string->Find(" ");
-					WeapName = command.string->Left( spcind ).c_str();
-					AttName = command.string->Mid( spcind+1, command.string->Length() );
+					idStr WeapName = command.string->Left( spcind );			// Fixed #4199 NagaHuntress
+					const char *AttName = command.string->c_str() + spcind+1;
 					
-					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					idEntity *AttEnt = ent->GetAttachment( WeapName.c_str() );
 					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
 					{
 						idActor *ActOwner;
@@ -1662,12 +1667,11 @@ void idAnim::CallFrameCommands( idEntity *ent, int from, int to, idAnimBlend *ca
 				}
 				case FC_MELEE_PARRY_START:
 				{
-					const char *WeapName, *ParName;
 					int spcind = command.string->Find(" ");
-					WeapName = command.string->Left( spcind ).c_str();
-					ParName = command.string->Mid( spcind+1, command.string->Length() );
+					idStr WeapName = command.string->Left( spcind );
+					const char *ParName = command.string->c_str() + spcind+1;
 					
-					idEntity *AttEnt = ent->GetAttachment( WeapName );
+					idEntity *AttEnt = ent->GetAttachment( WeapName.c_str() );
 					if( AttEnt && AttEnt->IsType(CMeleeWeapon::Type) )
 					{
 						idActor *ActOwner;
