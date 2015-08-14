@@ -26,6 +26,15 @@
 static idCVar s_alsa_pcm( "s_alsa_pcm", "default", CVAR_SYSTEM | CVAR_ARCHIVE, "which alsa pcm device to use. default, hwplug, hw.. see alsa docs" );
 static idCVar s_alsa_lib( "s_alsa_lib", "libasound.so.2", CVAR_SYSTEM | CVAR_ARCHIVE, "alsa client sound library" );
 
+/**
+This idCVar configures how many extra frames of audio data it sends when the alsa driver 
+experiences an underrun. This is more of a work around then a fix, as the root cause of 
+the issue is likely elsewhere. -- NagaHuntress #4191
+ */
+static idCVar s_alsa_underrun_extrafill( "s_alsa_underrun_extrafill", "1024", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_NOCHEAT | CVAR_INTEGER, 
+	"If an underrun error occurs while outputing ausio, it will retry and refill the audio stream with extra data to try and clear the underrun condition. This specifies the number of extra frames.", 
+	0, 8192 );
+
 /*
 ===============
 idAudioHardwareALSA::DLOpen
@@ -297,8 +306,26 @@ void idAudioHardwareALSA::Write( bool flushing ) {
 		return;
 	}
 	// write the max frames you can in one shot - we need to write it all out in Flush() calls before the next Write() happens
-	int pos = (int)m_buffer + ( MIXBUFFER_SAMPLES - m_remainingFrames ) * m_channels * 2;
+	size_t pos = (size_t)m_buffer + ( MIXBUFFER_SAMPLES - m_remainingFrames ) * m_channels * 2;
 	snd_pcm_sframes_t frames = id_snd_pcm_writei( m_pcm_handle, (void*)pos, m_remainingFrames );
+	/*
+	  A kludge to handle buffer underruns (reported as broken pipes). 
+	  To the user this condition manifests as popping or crackling audio.
+	  This will re-ready the sound out and send the pending data twice.
+	  The root cause of this error is likely to lie else where in the audio 
+	  pipeline, but this work around plugs the problem for now. -- NagaHuntress #4191
+	*/
+	if ( frames == -EPIPE ) {
+		snd_pcm_sframes_t nextframes = s_alsa_underrun_extrafill.GetInteger();
+		nextframes = (nextframes < 0) ? 0 : nextframes;
+		nextframes = (m_remainingFrames > nextframes) ? nextframes : m_remainingFrames;
+		Sys_Printf( "snd_pcm_writei() reports broken pipe (underrun) while sending %u frames. Retrying but also sending %u duplicate frames first. Try increasing 's_alsa_underrun_extrafill' if this persists.\n", (unsigned int)m_remainingFrames, (unsigned int)nextframes);
+		id_snd_pcm_prepare( m_pcm_handle );
+		if(nextframes) {
+			frames = id_snd_pcm_writei( m_pcm_handle, (void*)pos, nextframes );
+		}
+		frames = id_snd_pcm_writei( m_pcm_handle, (void*)pos, m_remainingFrames );
+	}
 	if ( frames < 0 ) {
 		if ( frames != -EAGAIN ) {
 			Sys_Printf( "snd_pcm_writei %d frames failed: %s\n", m_remainingFrames, id_snd_strerror( frames ) );
