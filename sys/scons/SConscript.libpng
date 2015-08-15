@@ -1,0 +1,60 @@
+#*****************************************************************************
+#                    The Dark Mod GPL Source Code
+# 
+# This file is part of the The Dark Mod Source Code, originally based 
+# on the Doom 3 GPL Source Code as published in 2011.
+# 
+# The Dark Mod Source Code is free software: you can redistribute it 
+# and/or modify it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation, either version 3 of the License, 
+# or (at your option) any later version. For details, see LICENSE.TXT.
+# 
+# Project: The Dark Mod (http://www.thedarkmod.com/)
+# 
+# $Revision: 5572 $ (Revision of last commit) 
+# $Date: 2012-09-18 01:35:30 +0930 (Tue, 18 Sep 2012) $ (Date of last commit)
+# $Author: greebo $ (Author of last commit)
+# 
+#*****************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+libpng_string = ' \
+	png.c \
+	pngerror.c \
+	pngget.c \
+	pngmem.c \
+	pngpread.c \
+	pngread.c \
+	pngrio.c \
+	pngrtran.c \
+	pngrutil.c \
+	pngset.c \
+	pngtrans.c \
+	pngwio.c \
+	pngwrite.c \
+	pngwtran.c \
+	pngwutil.c'
+
+
+libpng_list = scons_utils.BuildList( '', libpng_string )
+
+# greebo: The source files are located in darkmod_src/lib/libpng, for all platforms
+
+for i in range( len( libpng_list ) ):
+	libpng_list[ i ] = '../../lib/libpng/' + libpng_list[ i ]
+
+local_env = g_env.Clone()
+
+# Use the libpng headers
+local_env.Append(CPPPATH = '#/include/libpng')
+
+ret_list = []
+
+for f in libpng_list:
+	ret_list += local_env.SharedObject( source = f )
+
+Return( 'ret_list' )

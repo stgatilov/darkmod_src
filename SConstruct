@@ -470,6 +470,7 @@ g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/include/zlib')
 g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/include/libjpeg')
+g_base_env.Append(CPPPATH = '#/include/libpng')
 g_base_env.Append(CPPPATH = '#/include/devil')
 g_base_env.Append(CPPPATH = '#/')
 

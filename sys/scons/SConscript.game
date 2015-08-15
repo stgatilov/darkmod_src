@@ -305,7 +305,7 @@ local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
 
 # Link the runtime statically, link statically against libpng.a
 # the corresponding package libpng12-dev must be available on the system
-local_env.Append( LINKFLAGS = [ '-lrt', '-lpng' ] )
+local_env.Append( LINKFLAGS = [ '-lrt' ] ) #, '-lpng'
 
 local_env.Append(LIBS = [
 	# Uncomment this if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
@@ -327,8 +327,9 @@ if NO_GCH == '0':
 # greebo: Use custom compiled devIL and libjpeg in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )
 libjpeg_list = SConscript( '../../sys/scons/SConscript.libjpeg' )
+libpng_list = SConscript( '../../sys/scons/SConscript.libpng' )
 
-full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list
+full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list + libpng_list
 
 ret = local_env.SharedLibrary('game', full_list )
 
