@@ -646,4 +646,22 @@ private:
 	void				Event_Activate( idEntity *activator );
 };
 
+
+/*
+*	CTarget_ItemRemove
+*
+*	SteveL #3784: Do something about func_itemremove
+*/
+
+class CTarget_ItemRemove : public idTarget {
+public:
+	CLASS_PROTOTYPE( CTarget_ItemRemove );
+
+private:
+	void			Event_Activate( idEntity *activator );
+	void			RespawnItem( const char* classname, const char* itemname, const int quantity, const bool ammo );
+	const idVec3	RespawnPosition( const idEntity* refEnt ) { return refEnt->GetPhysics()->GetOrigin() + idVec3(0.0f, 0.0f, 40.0f) * refEnt->GetPhysics()->GetAxis(); }
+};
+
+
 #endif /* !__GAME_TARGET_H__ */

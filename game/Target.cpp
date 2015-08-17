@@ -33,6 +33,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Missions/MissionManager.h"
 #include "ai/Conversation/ConversationSystem.h"
 #include "StimResponse/StimResponseCollection.h"
+#include "Inventory/Inventory.h"  // SteveL #3784
+#include "Inventory/WeaponItem.h" // SteveL #3784
 #include <boost/algorithm/string/split.hpp> // grayman #3554
 #include <boost/algorithm/string/classification.hpp> // grayman #3554
 
@@ -2283,3 +2285,132 @@ void CTarget_SetTeam::Event_Activate(idEntity* activator)
 		}
 	}
 }	
+
+
+/*
+* =============================
+*
+*  CTarget_ItemRemove
+*
+* =============================
+*/
+
+CLASS_DECLARATION( idEntity, CTarget_ItemRemove )
+	EVENT( EV_Activate,	CTarget_ItemRemove::Event_Activate )
+END_CLASS
+
+void CTarget_ItemRemove::RespawnItem( const char* classname, const char* itemname, const int quantity, const bool ammo )
+{
+	const idPlayer* player = gameLocal.GetLocalPlayer();
+	idEntity* ent = NULL;
+	idDict args;
+
+	if ( quantity < 1 )
+	{
+		return;
+	} 
+	else if ( quantity > 1 ) 
+	{
+		const char* amountArg = ammo ? "inv_ammo_amount" : "inv_count";
+		args.SetInt( amountArg, quantity );
+	}
+
+	if ( itemname )
+	{
+		args.Set( "name", itemname );
+	}
+
+	args.Set("classname", classname );
+	args.SetVector("origin", RespawnPosition(player) );
+	args.Set("inv_map_start", "0"); // Don't go straight back into inventory
+	gameLocal.SpawnEntityDef( args, &ent );
+	if ( ent )
+	{
+		ent->PostEventMS( &EV_Activate, 16, player ); // Touch to make it drop
+	}
+}
+
+void CTarget_ItemRemove::Event_Activate(idEntity* activator)
+{
+	const bool	dropInWorld		= spawnArgs.GetBool("drop_in_world", "0");
+	const char* uniqueItem		= spawnArgs.GetString("unique_item", "-");
+	const char* stackableClass	= spawnArgs.GetString("stackable_class", "-");
+	const int	stackableCount	= spawnArgs.GetInt("stackable_count", "0");
+	const char* ammoType		= spawnArgs.GetString("ammo_type", "-");
+	const int	ammoCount		= spawnArgs.GetInt("ammo_count", "0");
+	idPlayer* player = gameLocal.GetLocalPlayer();
+	const CInventoryPtr& inv = player->Inventory();
+
+	// Items not found could well be correct operation for the map, so issue messages instead of warnings.	
+
+	// Unique items
+	if ( uniqueItem && *uniqueItem != '-' )
+	{
+		idEntity* ent = gameLocal.FindEntity( uniqueItem );
+		bool success = false;
+		if ( ent )
+		{
+			const char* classname = ent->spawnArgs.GetString("classname");
+			success = player->ReplaceInventoryItem( ent, NULL ); 
+			if ( success && dropInWorld )
+			{
+				// Unique entities are usually still in the world, just hidden.
+				if ( gameLocal.FindEntity( uniqueItem ) )
+				{
+					ent->SetOrigin( RespawnPosition(player) );
+					ent->PostEventMS( &EV_Activate, 0, player ); // unhides too
+				}
+				else
+				{
+					RespawnItem( classname, uniqueItem, 1, false );
+				}
+			}
+		}
+		if ( !success ) 
+		{
+			gameLocal.Printf( "Couldn't remove entity '%s' specified in 'unique_item' key in entity '%s'\n", uniqueItem, name.c_str() );
+		}
+	}
+
+	// Stackables
+	if ( stackableClass && *stackableClass != '-' )
+	{
+		CInventoryItemPtr item = inv->GetItem( stackableClass );
+		if ( item && item->IsStackable() )
+		{
+			const int n = item->GetCount();
+			const int toRemove = stackableCount <= 0 ? n : (std::min)(n, stackableCount);
+			const char* classname = item->GetItemEntity()->spawnArgs.GetString("classname");
+			item->SetCount( n - toRemove );
+			if ( dropInWorld )
+			{
+				RespawnItem( classname, NULL, toRemove, false );
+			}
+		}
+		else
+		{
+			gameLocal.Printf( "Couldn't remove inv_name '%s' specified in 'stackable_class' key in entity '%s'\n", stackableClass, name.c_str() );
+		}
+	}
+
+	// Ammo
+	if ( ammoType && *ammoType != '-' )
+	{
+		CInventoryWeaponItemPtr weap = player->GetWeaponItem(ammoType);
+		if ( weap )
+		{
+			const int n = weap->GetAmmo();
+			const int toRemove = ammoCount <= 0 ? n : (std::min)(n, ammoCount);
+			const idStr classname = idStr("atdm:ammo_") + ammoType;
+			weap->SetAmmo( n - toRemove );
+			if ( dropInWorld )
+			{
+				RespawnItem( classname.c_str(), NULL, toRemove, true);
+			}
+		}
+		else
+		{
+			gameLocal.Printf( "Couldn't remove ammo '%s' specified in 'ammo_type' key in entity '%s'\n", ammoType, name.c_str() );
+		}
+	}
+}
