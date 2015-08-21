@@ -69,6 +69,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <boost/lexical_cast.hpp>
 
+#include "Tasks/PlayAnimationTask.h" // #3597
+
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
 const int AUD_ALERT_DELAY_MAX = 1500; // grayman #3356 - max amount of time delay (ms) before processing an audio alert
 
@@ -13343,4 +13345,18 @@ void idAI::PrintGoalData(idVec3 goal, int tag)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData tag = %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
 }
 */
+
+/*
+===============
+idAI::Event_PlayCustomAnim	#3597
+===============
+*/
+void idAI::Event_PlayCustomAnim( const char *animName )
+{
+	if ( !AI_DEAD && !AI_KNOCKEDOUT )
+	{
+		actionSubsystem->PushTask(ai::TaskPtr(new ai::PlayAnimationTask( animName, 12 )));
+	}
+}
+
 

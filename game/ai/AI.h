@@ -143,6 +143,7 @@ extern const idEventDef AI_SetAcuity;
 extern const idEventDef AI_SetAudThresh;
 extern const idEventDef AI_ClosestReachableEnemy;
 extern const idEventDef AI_ReEvaluateArea;
+extern const idEventDef AI_PlayCustomAnim;
 
 
 // Darkmod: Glass Houses events
@@ -2279,6 +2280,7 @@ public:
 
 	void Event_HitByDoor(idEntity* door); // grayman #3756
 
+	void Event_PlayCustomAnim( const char* animName ); // SteveL #3597
 
 #ifdef TIMING_BUILD
 private:

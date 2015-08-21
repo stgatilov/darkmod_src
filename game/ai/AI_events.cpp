@@ -262,6 +262,9 @@ const idEventDef AI_PushState("pushState", EventArgs('s', "stateName", ""), EV_R
 const idEventDef AI_SwitchState("switchState", EventArgs('s', "stateName", ""), EV_RETURNS_VOID, "Switches to the state with the given name, current one is ended.");
 const idEventDef AI_EndState("endState", EventArgs(), 'd', "Ends the current state with the given name, returns TRUE if more than one state is remaining.");
 
+const idEventDef AI_PlayCustomAnim( "playCustomAnim", EventArgs('s', "animName", ""), 'd', "Plays the given animation on legs and torso. Returns false if anim doesn't exist."); // #3597
+
+
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", EventArgs('E', "ent", ""), 'd', "no description");
 //const idEventDef AI_IsEnemy( "isEnemy", EventArgs('E', "", ""), 'd', "");
@@ -528,6 +531,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
 	EVENT( AI_ReEvaluateArea,					idAI::Event_ReEvaluateArea )
+	EVENT( AI_PlayCustomAnim,					idAI::Event_PlayCustomAnim )	// #3597
 
 	
 	// greebo: State manipulation interface

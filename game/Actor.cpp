@@ -427,7 +427,8 @@ const idEventDef AI_StopAnim( "stopAnim", EventArgs('d', "channel", "", 'd', "fr
 	EV_RETURNS_VOID, "Stops the animation currently playing on the given channel over the given number of frames.");
 // NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
 // by idWeapon (maybe due to limited polymorphism in scripting?)
-const idEventDef AI_PlayAnim( "playAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Plays the given animation on the given channel.  Returns false if anim doesn't exist.");
+const idEventDef AI_PlayAnim( "playAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Do not use, this is part of TDM's internal mechanics. Use playCustomAnim() on AI."
+	"in scripts instead of this. Plays the given animation on the given channel. Returns false if anim doesn't exist.");
 const idEventDef AI_PauseAnim( "pauseAnim", EventArgs('d', "channel", "", 'd', "bPause", "true = pause, false = unpause"), EV_RETURNS_VOID, 
 	"Pause all animations playing on the given channel.\n" \
 	"NOTE: Can also be used used by idWeapons");
