@@ -698,6 +698,7 @@ void idPlayer::LinkScriptVariables()
 	AI_JUMP.LinkTo(				scriptObject, "AI_JUMP" );
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH" );
 	AI_ONGROUND.LinkTo(			scriptObject, "AI_ONGROUND" );
+	AI_INWATER.LinkTo(			scriptObject, "AI_INWATER" );
 	AI_ONLADDER.LinkTo(			scriptObject, "AI_ONLADDER" );
 	AI_HARDLANDING.LinkTo(		scriptObject, "AI_HARDLANDING" );
 	AI_SOFTLANDING.LinkTo(		scriptObject, "AI_SOFTLANDING" );
@@ -921,6 +922,7 @@ void idPlayer::Init( void ) {
 	AI_DEAD			= false;
 	AI_CROUCH		= false;
 	AI_ONGROUND		= true;
+	AI_INWATER		= WATERLEVEL_NONE;
 	AI_ONLADDER		= false;
 	AI_HARDLANDING	= false;
 	AI_SOFTLANDING	= false;
@@ -6674,11 +6676,13 @@ void idPlayer::Move( void )
 		AI_ONGROUND	= ( influenceActive == INFLUENCE_LEVEL2 );
 		AI_ONLADDER	= false;
 		AI_JUMP		= false;
+		AI_INWATER  = WATERLEVEL_NONE;
 	} else {
 		AI_CROUCH	= physicsObj.IsCrouching();
 		AI_ONGROUND	= physicsObj.HasGroundContacts();
 		AI_ONLADDER	= physicsObj.OnLadder();
 		AI_JUMP		= physicsObj.HasJumped();
+		AI_INWATER  = physicsObj.GetWaterLevel();
 
 		// check if we're standing on top of a monster and give a push if we are
 		idEntity *groundEnt = physicsObj.GetGroundEntity();

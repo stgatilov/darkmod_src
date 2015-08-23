@@ -291,6 +291,9 @@ public:
 	idScriptBool			AI_CROUCH;
 	idScriptBool			AI_ONGROUND;
 	idScriptBool			AI_ONLADDER;
+	// AI_INWATER holds a value from the enum waterLevel_t to say how deep the player is in 
+	// water. Can still be used as a boolean by scripts, because WATERLEVEL_NONE == 0. SteveL #4159
+	idScriptInt				AI_INWATER; 
 	//idScriptBool			AI_DEAD; // is defined on idActor now
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_PAIN;
