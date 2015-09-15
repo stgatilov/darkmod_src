@@ -99,17 +99,28 @@ bool PathSitTask::Perform(Subsystem& subsystem)
 
 	idStr waitState(owner->WaitState()); // grayman #3670
 
+	moveType_t moveType = owner->GetMoveType();
+
+	// grayman #4113 - if we find ourself getting up from sitting because we've been
+	// alerted, we have to kill this task, regardless of which state
+	// we're in
+
+	if ((moveType == MOVETYPE_GET_UP) && (owner->AI_AlertIndex >= ESearching))
+	{
+		return true;
+	}
+
 	// grayman #4054 - rewrite to use machine states
 
 	switch (_sittingState)
 	{
 	case EStateSitStart:
-		if (owner->GetMoveType() == MOVETYPE_SIT)
+		if (moveType == MOVETYPE_SIT)
 		{
 			// sitting. check sitting angle next
 			_sittingState = EStateTurning;
 		}
-		else if (owner->GetMoveType() != MOVETYPE_SIT_DOWN)
+		else if (moveType != MOVETYPE_SIT_DOWN)
 		{
 			// sit down
 			owner->SitDown();
