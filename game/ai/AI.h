@@ -1638,6 +1638,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 
 	// movement control
+	void					SetStartTime(idVec3 pos); // grayman #3993
 	void					StopMove( moveStatus_t status );
 	bool					FaceEnemy( void );
 	bool					FaceEntity( idEntity *ent );

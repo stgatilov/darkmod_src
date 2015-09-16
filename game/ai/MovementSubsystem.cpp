@@ -653,7 +653,11 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 
 				// grayman #2422
 				// if traveledPrev == 0, and you're bumping against something, go straight to EBlocked
-				if ( ( traveledPrev == 0 ) && tactileEntity )
+
+				// grayman #3993 - remove the requirement that traveledPrev be zero here. < 0.1 should 
+				// be considered 'hardly moving'. A running AI stuck against something might be wriggling
+				// about slightly, giving him a tiny bit of movement.
+				if ( /*( traveledPrev == 0 ) && */ tactileEntity )
 				{
 					_state = EPossiblyBlocked;
 					_lastTimeNotBlocked = gameLocal.time - _blockTimeOut; // in EPossiblyBlocked, don't delay

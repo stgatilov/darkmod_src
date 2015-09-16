@@ -3286,6 +3286,17 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 	return travelTime;
 }
 
+void idAI::SetStartTime(idVec3 pos)
+{
+	// grayman #3993 - if the new destination is close to the current
+	// destination, don't reset startTime
+
+	if ( (move.moveDest - pos).LengthFast() > 1.0f )
+	{
+		move.startTime = gameLocal.time;
+	}
+}
+
 /*
 =====================
 idAI::StopMove
@@ -3303,11 +3314,12 @@ void idAI::StopMove( moveStatus_t status )
 	move.moveStatus		= status;
 	move.toAreaNum		= 0;
 	move.goalEntity		= NULL;
-	move.moveDest		= physicsObj.GetOrigin();
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
+	move.moveDest = physicsObj.GetOrigin();
 	AI_DEST_UNREACHABLE	= (status == MOVE_STATUS_DEST_UNREACHABLE);
 	AI_OBSTACLE_IN_PATH = false;
 	AI_BLOCKED			= false;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.duration		= 0;
 	move.range			= 0.0f;
 	move.speed			= 0.0f;
@@ -3346,10 +3358,11 @@ bool idAI::FaceEnemy( void )
 
 	TurnToward( lastVisibleEnemyPos );
 	move.goalEntity		= enemyEnt;
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
 	move.moveDest		= physicsObj.GetOrigin();
 	move.moveCommand	= MOVE_FACE_ENEMY;
 	move.moveStatus		= MOVE_STATUS_WAITING;
-	move.startTime		= gameLocal.time;
+	// move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= true;
@@ -3378,10 +3391,11 @@ bool idAI::FaceEntity( idEntity *ent )
 	idVec3 entityOrg = ent->GetPhysics()->GetOrigin();
 	TurnToward( entityOrg );
 	move.goalEntity		= ent;
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
 	move.moveDest		= physicsObj.GetOrigin();
 	move.moveCommand	= MOVE_FACE_ENTITY;
 	move.moveStatus		= MOVE_STATUS_WAITING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
@@ -3402,11 +3416,12 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 		return true;
 	}
 
+	SetStartTime(pos); // grayman #3993
 	move.moveDest		= pos;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_TO_POSITION_DIRECT;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -3437,11 +3452,17 @@ bool idAI::MoveToEnemyHeight( void ) {
 		return false;
 	}
 
-	move.moveDest.z		= lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+	 // grayman #3993
+	idVec3 pos = move.moveDest;
+	pos.z = lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+	SetStartTime(pos);
+	move.moveDest.z = pos.z;
+	//move.moveDest.z = lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+
 	move.goalEntity		= enemyEnt;
 	move.moveCommand	= MOVE_TO_ENEMYHEIGHT;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -3510,7 +3531,8 @@ bool idAI::MoveToEnemy( void ) {
 
 	if ( move.moveCommand != MOVE_TO_ENEMY ) {
 		move.moveCommand	= MOVE_TO_ENEMY;
-		move.startTime		= gameLocal.time;
+		SetStartTime(pos); // grayman #3993
+		//move.startTime		= gameLocal.time; // grayman #3993
 	}
 
 	move.moveDest		= pos;
@@ -3581,7 +3603,8 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	}
 
 	if ( ( move.moveCommand != MOVE_TO_ENTITY ) || ( move.goalEntity.GetEntity() != ent ) ) {
-		move.startTime		= gameLocal.time;
+		SetStartTime(pos); // grayman debug #3993
+		//move.startTime		= gameLocal.time; // grayman debug #3993
 		move.goalEntity		= ent;
 		move.moveCommand	= MOVE_TO_ENTITY;
 	}
@@ -4136,6 +4159,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 		return true;
 	}
 
+	SetStartTime(goal.origin); // grayman #3993
 	move.moveDest		= goal.origin;
 	move.toAreaNum		= goal.areaNum;
 	move.goalEntity		= ent;
@@ -4143,7 +4167,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.range			= range;
 	move.speed			= fly_speed;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
@@ -4203,13 +4227,14 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 		return false;
 	}
 
+	SetStartTime(goal.origin); // grayman #3993
 	move.moveDest		= goal.origin;
 	move.toAreaNum		= goal.areaNum;
 	move.goalEntity		= ent;
 	move.moveCommand	= MOVE_TO_ATTACK_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.speed			= fly_speed;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.anim			= attack_anim;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4282,11 +4307,12 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 		NeedToUseElevator(path.elevatorRoute);
 	}
 
+	SetStartTime(org); // grayman #3993
+	//move.startTime = gameLocal.time; // grayman #3993
 	move.moveDest		= org;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_TO_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
 	move.accuracy		= accuracy;
 	AI_MOVE_DONE		= false;
@@ -4352,12 +4378,13 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 		return true;
 	}
 
+	SetStartTime(hideGoal.origin); // grayman #3993
 	move.moveDest		= hideGoal.origin;
 	move.toAreaNum		= hideGoal.areaNum;
 	move.goalEntity		= hideFromEnt;
 	move.moveCommand	= MOVE_TO_COVER;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4378,11 +4405,12 @@ idAI::SlideToPosition
 bool idAI::SlideToPosition( const idVec3 &pos, float time ) {
 	StopMove( MOVE_STATUS_DONE );
 
+	SetStartTime(pos); // grayman #3993
 	move.moveDest		= pos;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_SLIDE_TO_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.duration		= idPhysics::SnapTimeToPhysicsFrame( SEC2MS( time ) );
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4409,16 +4437,20 @@ idAI::WanderAround
 bool idAI::WanderAround( void ) {
 	StopMove( MOVE_STATUS_DONE );
 
-	move.moveDest = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
-	if ( !NewWanderDir( move.moveDest ) ) {
+	// grayman #3993
+	idVec3 pos = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
+	if ( !NewWanderDir( pos ) ) {
+		move.moveDest = pos;
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
 
+	SetStartTime(pos); // grayman #3993
+	move.moveDest		= pos;
 	move.moveCommand	= MOVE_WANDER;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4605,11 +4637,15 @@ bool idAI::MoveAlongVector( float yaw )
 {
 	StopMove( MOVE_STATUS_DONE );
 	move.moveDir = idAngles( 0, yaw, 0 ).ToForward();
-	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
+
+	// grayman #3993
+	idVec3 pos = physicsObj.GetOrigin() + move.moveDir * 256.0f;
+	SetStartTime(pos); // grayman #3993
+	move.moveDest = pos;
 
 	move.moveCommand	= MOVE_VECTOR;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; #3993
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;
@@ -11237,6 +11273,8 @@ void idAI::CheckTactile()
 
 	bool bumped = false;
 	idEntity* blockingEnt = physicsObj.GetSlideMoveEntity(); // grayman #3516 - always remember this
+
+	m_tactileEntity = blockingEnt; // grayman #3993
 	if ( blockingEnt == NULL )
 	{
 		return;
@@ -11249,7 +11287,7 @@ void idAI::CheckTactile()
 	{
 		if ( blockingEnt != gameLocal.world ) // ignore bumping into the world
 		{
-			m_tactileEntity = blockingEnt;
+			//m_tactileEntity = blockingEnt; // grayman #3993
 				
 			if ( blockingEnt->IsType(idAI::Type) )
 			{
