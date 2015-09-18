@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Game_local.h"
 #include "../Grabber.h"
+#include "../MeleeWeapon.h" // grayman #3992
 
 CLASS_DECLARATION( idPhysics_Base, idPhysics_RigidBody )
 END_CLASS
@@ -1497,6 +1498,22 @@ void idPhysics_RigidBody::Rest( void )
 	else // grayman #2816
 	{
 		self->m_SetInMotionByActor = NULL;
+	}
+
+	// grayman #3992 - dropped weapons should start their visual stims
+
+	if (self->m_droppedByAI)
+	{
+		if (self->spawnArgs.GetBool("is_weapon_melee") || self->spawnArgs.GetBool("is_weapon_ranged"))
+		{
+			// reset stim only if some distance from last known resting place
+			if ( (self->GetPhysics()->GetOrigin() - self->m_LastRestPos).LengthSqr() > 128 * 128 )
+			{
+				self->m_LastRestPos = self->GetPhysics()->GetOrigin();
+				self->ClearStimIgnoreList(ST_VISUAL);
+				self->EnableStim(ST_VISUAL);
+			}
+		}
 	}
 
 //	self->m_SetInMotionByActor = NULL;

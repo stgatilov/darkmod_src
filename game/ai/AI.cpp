@@ -1750,18 +1750,19 @@ void idAI::Spawn( void )
 	//alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
 
 	alertTypeWeight[ai::EAlertTypeBlinded]				= 36; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
-	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872
-	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327
-	alertTypeWeight[ai::EAlertTypeBlood]				= 30;
-	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26;
-	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
-	alertTypeWeight[ai::EAlertTypeDoor]					= 20;
-	alertTypeWeight[ai::EAlertTypeLightSource]			= 10;
-	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		=  8; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeHitByMoveable]		=  7;
+	//alertTypeWeight[ai::EAlertTypeWeapon]				= 35; // grayman #3992
+	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872 (dangling rope)
+	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327 (stuck arrows or flying fireballs)
+	alertTypeWeight[ai::EAlertTypeBlood]				= 30; // blood marker
+	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26; // shattered glass
+	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25; // stolen loot
+	alertTypeWeight[ai::EAlertTypeWeapon]				= 24; // #3992 debug (dropped melee or ranged weapons)
+	alertTypeWeight[ai::EAlertTypeDoor]					= 20; // door found open should be closed
+	alertTypeWeight[ai::EAlertTypeLightSource]			= 10; // light found off should be on
+	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		=  8; // grayman #3857 (got a glimpse of the player)
+	alertTypeWeight[ai::EAlertTypeHitByMoveable]		=  7; // hit by something
 	alertTypeWeight[ai::EAlertTypePickedPocket]			=  6; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeSuspicious]			=  5;
+	alertTypeWeight[ai::EAlertTypeSuspicious]			=  5; // audio alerts
 	alertTypeWeight[ai::EAlertTypeNone]					=  0;
 
 	// grayman #3857 - the following alert types are used to differentiate
@@ -3603,8 +3604,8 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	}
 
 	if ( ( move.moveCommand != MOVE_TO_ENTITY ) || ( move.goalEntity.GetEntity() != ent ) ) {
-		SetStartTime(pos); // grayman debug #3993
-		//move.startTime		= gameLocal.time; // grayman debug #3993
+		SetStartTime(pos); // grayman #3993
+		//move.startTime		= gameLocal.time; // grayman #3993
 		move.goalEntity		= ent;
 		move.moveCommand	= MOVE_TO_ENTITY;
 	}
@@ -12379,7 +12380,7 @@ void idAI::DropOnRagdoll( void )
 			pWeap->DeactivateParry();
 			pWeap->ClearOwner();
 		}
-		
+
 		// greebo: Check if we should set some attachments to nonsolid
 		// this applies for instance to the builder guard's pauldrons which
 		// cause twitching and self-collisions when going down

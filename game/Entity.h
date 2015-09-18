@@ -471,6 +471,11 @@ public:
 	idVec3					m_VinePlantLoc;
 	idVec3					m_VinePlantNormal;
 
+	/**
+	* Place where the object last came to rest
+	**/
+	idVec3					m_LastRestPos; // grayman #3992
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 

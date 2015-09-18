@@ -1195,6 +1195,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	// We've seen this object, don't respond to it again
 //	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
 
+/*  grayman #3992 - no longer needed
 	if (stimSource->IsType(idWeapon::Type))
 	{
 		// Is it a friendly weapon?  To find out we need to get its owner.
@@ -1206,9 +1207,110 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 			return;
 		}
 	}
+*/
+
+	// grayman #3992 - Don't process a weapon in the grabber
+
+	CGrabber* grabber = gameLocal.m_Grabber;
+	if (grabber)
+	{
+		if (grabber->GetSelected() == stimSource)
+		{
+			// Don't ignore this weapon in the future, in case the player puts it down somewhere.
+
+			stimSource->AllowResponse(ST_VISUAL, owner);
+			return;
+		}
+	}
+
+	// grayman #3992 - If there is a body near the weapon, or another weapon,
+	// don't process the stim. Re-enable it so it can be seen later
+	// in case the other weapons or all the bodies are moved.
+
+	idWeapon *weapon = static_cast<idWeapon*>(stimSource);
+
+	// Create a list of bodies and weapons near this weapon
+
+	idBounds box = idBounds( idVec3( -80.0, -80.0f, -40.0f ), idVec3( 80.0, 80.0f, 88.0f ) );
+	box.TranslateSelf( weapon->GetPhysics()->GetOrigin() );
+	idEntity* ents[MAX_GENTITIES];
+	int num = gameLocal.clip.EntitiesTouchingBounds( box, -1, ents, MAX_GENTITIES );
 	
-	// Vocalize that see something out of place
-	//gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
+	for ( int i = 0 ; i < num ; i++ )
+	{
+		idEntity *candidate = ents[i];
+
+		if ( candidate == NULL ) // just in case
+		{
+			continue;
+		}
+
+		if ( candidate == weapon ) // skip myself
+		{
+			continue;
+		}
+
+		if ( candidate->IsType(idAI::Type) )
+		{
+			// Are there KO'ed or dead AI nearby? If so,
+			// don't process this weapon stim. Let the owner see
+			// the stim again in the future, in case the bodies are
+			// moved or the weapon is moved.
+
+			idAI *ai = static_cast<idAI*>(candidate);
+			if ( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			{
+				// The ai could be on the other side of a wall. Use FOV
+				// and lighting, because a weapon lying near a body that's
+				// in shadows should be investigated.
+				if ( owner->CanSee(ai, true) )
+				{
+					stimSource->AllowResponse(ST_VISUAL, owner);
+					return;
+				}
+			}
+			continue;
+		}
+
+		// Are there other weapons nearby? If so, 
+		// don't process this weapon stim. Re-enable the stim.
+		// Check the candidate's "model" spawnarg because useable
+		// weapons are no different than func_static weapons as far
+		// as AI are concerned.
+
+		idStr model = candidate->spawnArgs.GetString("model");
+		if ( idStr::FindText( model, "/weapons/" ) > 0 )
+		{
+			// Ignore weapons attached to AI
+
+			if ( candidate->GetBindMaster() != NULL )
+			{
+				continue;
+			}
+
+			// The other weapon could be on the other side of a wall.
+			trace_t result;
+			if ( !gameLocal.clip.TracePoint(result, weapon->GetPhysics()->GetOrigin(), candidate->GetPhysics()->GetOrigin(), MASK_OPAQUE, weapon) || gameLocal.GetTraceEntity(result) == candidate )
+			{
+				// trace succeeded or hit the candidate,
+				// so there's nothing between the weapon and the candidate 
+				stimSource->AllowResponse(ST_VISUAL, owner);
+				return;
+			}
+
+			// trace failed, but something in this room might be between the
+			// weapon and the candidate (like a table), so can the owner see the candidate?
+
+			if ( owner->CanSeeExt(candidate, false, false) )
+			{
+				stimSource->AllowResponse(ST_VISUAL, owner);
+				return;
+			}
+		}
+	}
+					
+	// Vocalize that we see something out of place
+
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
@@ -1251,6 +1353,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	// We've seen this object, don't respond to it again
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
+/*  grayman #3992 - not necessary
 	if ( stimSource->IsType(idWeapon::Type) )
 	{
 		// Is it a friendly weapon?  To find out we need to get its owner.
@@ -1261,7 +1364,10 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 			return;
 		}
 	}
-	else if ( stimSource->IsType(CProjectileResult::Type) )
+	else
+ */
+	
+	if ( stimSource->IsType(CProjectileResult::Type) )
 	{
 		// grayman #3075 - If this arrow is bound to a dead body,
 		// ignore it. The dead body will be found separately.
