@@ -29,6 +29,7 @@ idCVar idSoundSystemLocal::s_noSound( "s_noSound", "1", CVAR_SOUND | CVAR_BOOL |
 #else
 idCVar idSoundSystemLocal::s_noSound( "s_noSound", "0", CVAR_SOUND | CVAR_BOOL | CVAR_NOCHEAT, "" );
 #endif
+idCVar idSoundSystemLocal::s_diffractionMax( "s_diffractionMax", "10", CVAR_SOUND | CVAR_FLOAT | CVAR_ARCHIVE, "max vol loss (dB) at 180 degrees diffraction" ); // grayman #4219
 idCVar idSoundSystemLocal::s_quadraticFalloff( "s_quadraticFalloff", "1", CVAR_SOUND | CVAR_BOOL, "" );
 idCVar idSoundSystemLocal::s_drawSounds( "s_drawSounds", "0", CVAR_SOUND | CVAR_INTEGER, "1 = draw audible sounds (within max distance), 2 = draw all", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar idSoundSystemLocal::s_showStartSound( "s_showStartSound", "0", CVAR_SOUND | CVAR_BOOL, "" );

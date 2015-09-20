@@ -622,7 +622,8 @@ public:
 												int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					MixLoop( int current44kHz, int numSpeakers, float *finalMixBuffer );
 	void					AVIUpdate( void );
-	bool					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, idSoundEmitterLocal *def , SoundChainResults *results); // grayman #3042
+	float					GetDiffractionLoss(const idVec3 p1, const idVec3 p2, const idVec3 p3); // grayman #4219
+	bool					ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results); // grayman #3042 // grayman #4219
 	float					FindAmplitude( idSoundEmitterLocal *sound, const int localTime, const idVec3 *listenerPosition, const s_channelType channel, bool shakesOnly );
 
 	//============================================
@@ -782,6 +783,7 @@ public:
 
 
 	static idCVar			s_noSound;
+	static idCVar			s_diffractionMax; // grayman #4219
 	static idCVar			s_quadraticFalloff;
 	static idCVar			s_drawSounds;
 	static idCVar			s_minVolume6;

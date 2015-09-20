@@ -5371,7 +5371,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		idVec3 v = (m_savedVelocity == vec3_zero) ? savedVelocity : m_savedVelocity;
 		bool sameDirection = (curVelocity * v >= 0);
 		v.NormalizeFast();
-		angleChange = idMath::ACos(cv * v);
+		angleChange = RAD2DEG(idMath::ACos(cv * v));
 
 		if (!sameDirection)
 		{
