@@ -198,7 +198,21 @@ void CombatState::Init(idAI* owner)
 	if ( memory.combatState != -1 )
 	{
 		_combatType = COMBAT_NONE;
-		_combatSubState = EStateCheckWeaponState;
+
+		// grayman #4184 - If returning from dealing with an unreachable
+		// enemy, it's possible that we're still sheathing our weapon because
+		// we didn't have time to finish that before leaving the unreachable
+		// enemy state. If so, go to the combat state where we're sheathing
+		// our weapon.
+		if ( idStr(owner->WaitState()) == "sheath" )
+		{
+			_waitEndTime = gameLocal.time + 2000; // safety net
+			_combatSubState = EStateSheathingWeapon;
+		}
+		else
+		{
+			_combatSubState = EStateCheckWeaponState;
+		}
 		return;
 	}
 
