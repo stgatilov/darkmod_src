@@ -165,6 +165,8 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 
 		// grayman #3857 - Don't play if this is an idle search anim and the AI is moving.
 
+		// grayman #4040 - No idle anims if AI_RUN is set and waiting in the door queue.
+
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations &&
 			owner->FacingIdeal() &&
@@ -177,6 +179,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			moveType != MOVETYPE_GET_UP_FROM_LYING &&
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
+			!(owner->AI_RUN && owner->m_HandlingDoor && (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) && // grayman #4040
 			!owner->GetMemory().hidingSpotInvestigationInProgress )
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
