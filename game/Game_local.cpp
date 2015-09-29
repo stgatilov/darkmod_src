@@ -6061,7 +6061,7 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	}
 
 	// grayman #3857 - douse nearby lights
-	RadiusDouse( origin, radius );
+	RadiusDouse( origin, radius, true );
 }
 
 /*
@@ -6134,7 +6134,7 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 
 // grayman #3857 - douse nearby flame lights
 
-void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
+void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg )
 {
 	idEntity *ent;
 	idEntity *entityList[MAX_GENTITIES];
@@ -6162,6 +6162,12 @@ void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 				// ignore blend and fog lights
 
 				if (light->IsBlend() || light->IsFog())
+				{
+					continue;
+				}
+
+				// Make it spawnarg-dependent #4201
+				if ( checkSpawnarg && !light->spawnArgs.GetBool("canBeBlownOut") )
 				{
 					continue;
 				}

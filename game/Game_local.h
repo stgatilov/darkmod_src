@@ -883,7 +883,7 @@ public:
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
-	void					RadiusDouse( const idVec3 &origin, const float radius ); // grayman #3857
+	void					RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg ); // grayman #3857. checkSpawnarg SteveL #4201
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
 	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
