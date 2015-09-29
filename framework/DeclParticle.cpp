@@ -100,10 +100,15 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 		g.random = g.originalRandom = steppingRandom;
 
 		int	maxMsec = stage->particleLife * 1000;
-		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += 16 ) {
 
+		// SteveL #4218: Speed up load time for long-lived particles.
+		// Limit the sampling to 250 spread across the particle's lifetime.
+		const int step_milliseconds = (std::max)(maxMsec / 250, 16); // 16 was the original value, meaning test every frame
+
+		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += step_milliseconds )
+		{
 			// make sure we get the very last tic, which may make up an extreme edge
-			if ( inCycleTime + 16 > maxMsec ) {
+			if ( inCycleTime + step_milliseconds > maxMsec ) {
 				inCycleTime = maxMsec - 1;
 			}
 
