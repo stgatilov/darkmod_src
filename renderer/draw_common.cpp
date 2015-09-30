@@ -735,9 +735,9 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( shader->IsPortalSky() ) {
-		return;
-	}
+	if ( shader->IsPortalSky() ) { // NB TDM portal sky does not use this flag or whatever mechanism 
+		return;					   // it used to support. Our portalSky is drawn in this procedure using
+	}							   // the skybox image captured in _currentRender. -- SteveL working on #4182
 
 	// change the matrix if needed
 	if ( surf->space != backEnd.currentSpace ) {
