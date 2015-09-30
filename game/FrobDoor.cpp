@@ -700,7 +700,7 @@ void CFrobDoor::UpdateSoundLoss()
 	CFrobDoor* doorB = m_DoubleDoor.GetEntity();
 
 	// grayman #3042 - add extra loss to loss_closed on doors, but only for the player,
-	// so bring sound volume across doors back to what the player used to hear
+	// to bring sound volume across doors back to what the player used to hear
 
 	float loss_AI = 0;
 	float loss_Player = 0;
