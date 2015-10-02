@@ -1061,12 +1061,18 @@ void idPlayer::Spawn( void )
 
 	// Remove entity GUIs from our overlay system.
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
+	{
 		m_overlays.destroyOverlay( OVERLAYS_MIN_HANDLE + i );
+	}
 	// Add the HUD.
-	if ( m_overlays.createOverlay( 0, LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE )
+	if ( m_overlays.createOverlay( LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE ) // #4214 fixed parameter
+	{
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE , hud );
+	}
 	else
+	{
 		gameLocal.Warning( "Unable to create overlay for HUD." );
+	}
 
 	SetLastHitTime( 0 );
 
@@ -2903,7 +2909,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		va("Player velocity: %f", physicsObj.GetLinearVelocity().Length()), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));*/
 
 	const char *name;
-	if((name = cv_dm_distance.GetString()) != NULL)
+	if((name = cv_dm_distance.GetString()) != NULL) //~SteveL FIX THIS, it's never false. Empty string is not NULL
 	{
 		idEntity *e;
 
