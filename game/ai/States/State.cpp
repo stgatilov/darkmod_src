@@ -983,6 +983,14 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			return;
 		}
+
+		// If the weapon appears to belong to a nearby KO'ed
+		// or Dead AI, ignore the stim, but keep it alive.
+		if ( Check4NearbyBodies(stimSource, owner) ) // grayman #3992
+		{
+			return;
+		}
+
 		break;
 	case EAIuse_Suspicious: // grayman #1327
 		if (!ShouldProcessAlert(EAlertTypeSuspiciousItem))
@@ -1124,6 +1132,11 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	int delay = VIS_STIM_DELAY_MIN + gameLocal.random.RandomInt(VIS_STIM_DELAY_MAX - VIS_STIM_DELAY_MIN);
 
+	// grayman #3992 - while we're waiting for the stim to be processed,
+	// the AI should look at the stim
+
+	owner->Event_LookAtEntity(stimSource, MS2SEC(delay));
+
 	// Post the event to do the processing
 	owner->PostEventMS( &AI_DelayedVisualStim, delay, stimSource);
 
@@ -1185,41 +1198,24 @@ bool State::ShouldProcessAlert(EAlertType newAlertType)
 	return false;
 }
 
-void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
+// grayman #3992 - ignore the weapon stim if there's a nearby
+// body that owner can see
+
+bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	// We've seen this object, don't respond to it again
-//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
-
-/*  grayman #3992 - no longer needed
-	if (stimSource->IsType(idWeapon::Type))
-	{
-		// Is it a friendly weapon?  To find out we need to get its owner.
-		idActor* objectOwner = static_cast<idWeapon*>(stimSource)->GetOwner();
-		
-		if (owner->IsFriend(objectOwner))
-		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Ignoring visual stim from weapon with friendly owner\r");
-			return;
-		}
-	}
-*/
-
 	// grayman #3992 - Don't process a weapon in the grabber
 
 	CGrabber* grabber = gameLocal.m_Grabber;
-	if (grabber)
+	if ( grabber )
 	{
-		if (grabber->GetSelected() == stimSource)
+		if ( grabber->GetSelected() == stimSource )
 		{
-			// Don't ignore this weapon in the future, in case the player puts it down somewhere.
-
-			stimSource->AllowResponse(ST_VISUAL, owner);
-			return;
+			return true;
 		}
 	}
 
@@ -1231,12 +1227,12 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 
 	// Create a list of bodies and weapons near this weapon
 
-	idBounds box = idBounds( idVec3( -80.0, -80.0f, -40.0f ), idVec3( 80.0, 80.0f, 88.0f ) );
-	box.TranslateSelf( weapon->GetPhysics()->GetOrigin() );
+	idBounds box = idBounds(idVec3(-80.0, -80.0f, -40.0f), idVec3(80.0, 80.0f, 88.0f));
+	box.TranslateSelf(weapon->GetPhysics()->GetOrigin());
 	idEntity* ents[MAX_GENTITIES];
-	int num = gameLocal.clip.EntitiesTouchingBounds( box, -1, ents, MAX_GENTITIES );
-	
-	for ( int i = 0 ; i < num ; i++ )
+	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents, MAX_GENTITIES);
+
+	for ( int i = 0; i < num; i++ )
 	{
 		idEntity *candidate = ents[i];
 
@@ -1252,6 +1248,15 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 
 		if ( candidate->IsType(idAI::Type) )
 		{
+			// Ignore AI that aren't people. Don't want a dead rat masking
+			// the presence of a found weapon.
+
+			idStr AiUse = candidate->spawnArgs.GetString("AIUse");
+			if ( AiUse != AIUSE_PERSON )
+			{
+				continue;
+			}
+
 			// Are there KO'ed or dead AI nearby? If so,
 			// don't process this weapon stim. Let the owner see
 			// the stim again in the future, in case the bodies are
@@ -1265,8 +1270,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 				// in shadows should be investigated.
 				if ( owner->CanSee(ai, true) )
 				{
-					stimSource->AllowResponse(ST_VISUAL, owner);
-					return;
+					return true;
 				}
 			}
 			continue;
@@ -1279,7 +1283,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 		// as AI are concerned.
 
 		idStr model = candidate->spawnArgs.GetString("model");
-		if ( idStr::FindText( model, "/weapons/" ) > 0 )
+		if ( idStr::FindText(model, "/weapons/") > 0 )
 		{
 			// Ignore weapons attached to AI
 
@@ -1294,8 +1298,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 			{
 				// trace succeeded or hit the candidate,
 				// so there's nothing between the weapon and the candidate 
-				stimSource->AllowResponse(ST_VISUAL, owner);
-				return;
+				return true;
 			}
 
 			// trace failed, but something in this room might be between the
@@ -1303,12 +1306,25 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 
 			if ( owner->CanSeeExt(candidate, false, false) )
 			{
-				stimSource->AllowResponse(ST_VISUAL, owner);
-				return;
+				return true;
 			}
 		}
 	}
+
+	// No bodies nearby
+	return false;
+}
+
+// grayman #3992 - This part of the weapon stim processing happens
+// after a small delay, to keep AI from all reacting in the same frame.
 					
+void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
+{
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+
+	// Memory shortcut
+	Memory& memory = owner->GetMemory();
+
 	// Vocalize that we see something out of place
 
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
@@ -1325,7 +1341,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 		}
 	}
 
-	// TWO more piece of evidence of something out of place: A weapon is not a good thing
+	// More evidence of something out of place: A weapon is not a good thing
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_WEAPON;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903

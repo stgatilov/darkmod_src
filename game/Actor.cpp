@@ -2145,18 +2145,120 @@ idActor::CanSee
 */
 bool idActor::CanSee( idEntity *ent, bool useFov ) const
 {
-	// TDM: We need to be able to see lights that are off and hence hidden
-	/*if ( ent->IsHidden() ) 
+	idVec3 origin; // The entity's origin
+	trace_t result; // results of the traces
+	idVec3 eye(GetEyePosition()); // eye position of the AI
+
+	// angua: If the target entity is an idActor,
+	// use its eye position, its origin and its shoulders
+
+	// grayman #3992 - problem: if an AI has been KO'ed or killed,
+	// it's in ragdoll form, and GetViewPos() returns the angle the
+	// AI was facing before it became a ragdoll, which is useless here.
+
+	if (ent->IsType(idActor::Type)) 
 	{
+		// grayman #3643 - shouldn't be able to see the actor if he's marked 'notarget'
+		// grayman #3857 - or if marked 'invisible'
+		if ((ent->fl.notarget) || (ent->fl.invisible))
+		{
+			return false;
+		}
+
+		bool fovEyeOK;
+		bool fovOriginOK;
+		bool fovShoulder1OK;
+		bool fovShoulder2OK;
+
+		idActor* actor = static_cast<idActor*>(ent);
+
+		// Check eyes
+
+		const idVec3& actorEyePos = actor->GetEyePosition();
+		fovEyeOK = useFov ? CheckFOV(actorEyePos) : true;
+		if ( fovEyeOK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, actorEyePos, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to eye trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, actorEyePos, 1, 32);
+				return true;
+			}
+		}
+
+		// Check origin
+
+		const idVec3& actorOrigin = actor->GetPhysics()->GetOrigin();
+		fovOriginOK = useFov ? CheckFOV(actorOrigin) : true;
+
+		if ( fovOriginOK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, actorOrigin, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to origin trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, actorOrigin, 1, 32);
+				return true;
+			}
+		}
+
+		// Check one shoulder
+
+		idVec3 dir;
+		if ( actor->AI_DEAD || actor->IsKnockedOut() )
+		{
+			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+			idVec3 bodyAxis = actorEyePos - actorOrigin;
+			bodyAxis.NormalizeFast();
+			dir = bodyAxis.Cross(gravityDir);
+		}
+		else
+		{
+			idVec3 origin;
+			idMat3 viewaxis;
+			actor->GetViewPos(origin, viewaxis);
+
+			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+			dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
+		}
+
+		float dist = 8;
+
+		const idVec3& shoulder1 = actorOrigin + (actorEyePos - actorOrigin)*0.7f + dir * dist;
+		fovShoulder1OK = useFov ? CheckFOV(shoulder1) : true;
+
+		if ( fovShoulder1OK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, shoulder1, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to shoulder1 trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, shoulder1, 1, 32);
+				return true;
+			}
+		}
+
+		// Check other shoulder
+
+		const idVec3& shoulder2 = actorOrigin + (actorEyePos - actorOrigin)*0.7f - dir * dist;
+		fovShoulder2OK = useFov ? CheckFOV(shoulder2) : true;
+
+		if ( fovShoulder2OK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, shoulder2, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to shoulder2 trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, shoulder2, 1, 32);
+				return true;
+			}
+		}
+
 		return false;
-	}*/
+	}
 
-	// The entity's origin
-
-	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
-
-	idVec3 origin;
-	if ( ent->IsType(CBinaryFrobMover::Type) )
+	if ( ent->IsType(CBinaryFrobMover::Type) )	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
 	{
 		CBinaryFrobMover* door = static_cast<CBinaryFrobMover*>(ent);
 		origin = door->GetClosedOrigin();
@@ -2169,116 +2271,62 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	const idVec3& entityOrigin = origin;
 
 	// Check the field of view if specified
-	if (useFov && !CheckFOV(entityOrigin))
+
+	if ( useFov )
 	{
-		// FOV check failed
-		return false;
-	}
-
-	// This will hold the results of the traces
-	trace_t result;
-
-	// eye position of the AI
-	idVec3 eye(GetEyePosition());
-
-	// angua: If the target entity is an idActor,
-	// use its eye position, its origin and its shoulders
-	if (ent->IsType(idActor::Type)) 
-	{
-		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
-		// grayman #3857 - or if marked 'invisible'
-		if ((ent->fl.notarget) || (ent->fl.invisible))
+		if ( !CheckFOV(entityOrigin) )
 		{
+			// FOV check failed
 			return false;
 		}
+	}
 
-		idActor* actor = static_cast<idActor*>(ent);
-		idVec3 entityEyePos = actor->GetEyePosition();
+	// Use the origin for general entities.
+	// Perform a trace from the eye position to the target entity.
+	// TracePoint will return FALSE, when the trace.result is >= 1
 
-		if (!gameLocal.clip.TracePoint(result, eye, entityEyePos, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == actor) 
+	if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+			gameLocal.GetTraceEntity(result) == ent) 
+	{
+		// Trace succeeded or hit the target entity itself
+		return true;
+	}
+
+	// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
+	// however, it might be embedded in a candle and/or a candle holder.
+	// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
+	// that we can see the light source itself.
+
+	if (ent->IsType(idLight::Type))
+	{
+		idEntity* entHit = gameLocal.GetTraceEntity(result); // grayman #2603
+		idEntity* bindMaster = ent->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
 		{
-			// Eye to eye trace succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityEyePos, 1, 32);
-			return true;
-		}
-
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == actor) 
-		{
-			// Eye to origin trace succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin, 1, 32);
-			return true;
-		}
-
-		idVec3 origin;
-		idMat3 viewaxis;
-		actor->GetViewPos(origin, viewaxis);
-
-		const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-		idVec3 dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
-			
-		float dist = 8;
-
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
-			|| gameLocal.GetTraceEntity(result) == actor
-			|| !gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, MASK_OPAQUE, this) // grayman #3525 - was tracing to same shoulder twice 
-			|| gameLocal.GetTraceEntity(result) == actor)
-		{
-			// Eye to shoulders traces succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, 1, 32);
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, 1, 32);	
-			return true;
+			if ( entHit == bindMaster ) // grayman #2603
+			{
+				return true;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
 		}
 	}
-	// otherwise just use the origin (for general entities).
-	// Perform a trace from the eye position to the target entity
-	// TracePoint will return FALSE, when the trace.result is >= 1
-	else
+	else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
 	{
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == ent) 
-		{
-			// Trace succeeded or hit the target entity itself
-			return true;
-		}
+		// We're trying to see an absence marker and can't. Check for the case where the missing item
+		// was replaced by another item. For example, a lootable painting replaced by an empty frame.
+		// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
 
-		// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
-		// however, it might be embedded in a candle and/or a candle holder.
-		// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
-		// that we can see the light source itself.
-
-		if (ent->IsType(idLight::Type))
+		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
+		const idDict& refSpawnargs = marker->GetRefSpawnargs();
+		idStr replacedByClass = refSpawnargs.GetString("replace");
+		if ( !replacedByClass.IsEmpty() )
 		{
-			idEntity* entHit = gameLocal.GetTraceEntity(result); // grayman #2603
-			idEntity* bindMaster = ent->GetBindMaster();
-			while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
+			idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
+			if ( entHit != NULL )
 			{
-				if ( entHit == bindMaster ) // grayman #2603
+				if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
 				{
-					return true;
-				}
-				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
-			}
-		}
-		else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
-		{
-			// We're trying to see an absence marker and can't. Check for the case where the missing item
-			// was replaced by another item. For example, a lootable painting replaced by an empty frame.
-			// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
-
-			CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
-			const idDict& refSpawnargs = marker->GetRefSpawnargs();
-			idStr replacedByClass = refSpawnargs.GetString("replace");
-			if ( !replacedByClass.IsEmpty() )
-			{
-				idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
-				if ( entHit != NULL )
-				{
-					if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
-					{
-						return true; // we hit the replacement item, which means a successful trace
-					}
+					return true; // we hit the replacement item, which means a successful trace
 				}
 			}
 		}

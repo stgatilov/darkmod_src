@@ -126,6 +126,8 @@ public:
 	virtual void OnVisualStimDoor(idEntity* stimSource, idAI* owner);
 	virtual void OnHitByMoveable(idAI* owner, idEntity* tactEnt); // grayman #2816
 
+	bool Check4NearbyBodies(idEntity* stimSource, idAI* owner); // grayman #3992
+
 	void IgnoreSiblingLights(idAI* owner, idLight* light); // grayman #3509 - ignore stims from other child lights of the same light holder
 
 	// greebo: Gets called by OnActorEncounter on finding a dead body
