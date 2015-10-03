@@ -1312,7 +1312,8 @@ bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 	// This will kick in for doors without any handles, these are playing their
 	// sounds from the nearest point to the player's eyes, mid-bounding-box.
 	const idBounds& bounds = GetPhysics()->GetAbsBounds();
-	idVec3 eyePos = gameLocal.GetLocalPlayer()->GetEyePosition();
+	const idPlayer* player = gameLocal.GetLocalPlayer();
+	idVec3 eyePos = player ? player->GetEyePosition() : vec3_zero; // #4075 Don't try accessing player's eye pos before he spawns
 
 	// greebo: Choose the corner which is nearest to the player's eyeposition
 	origin.x = (idMath::Fabs(bounds[0].x - eyePos.x) < idMath::Fabs(bounds[1].x - eyePos.x)) ? bounds[0].x : bounds[1].x;
