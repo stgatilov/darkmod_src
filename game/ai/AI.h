@@ -849,6 +849,8 @@ public: // greebo: Made these public
 	// grayman #3474 - if this is TRUE, emit fleeing barks, otherwise don't
 
 	bool					emitFleeBarks;
+	
+	idVec3					lastSearchedSpot; // grayman #4220 - most recently searched spot
 
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
@@ -1978,8 +1980,8 @@ public:
 	// grayman #3643 - setup a suspicious door
 	void					SetUpSuspiciousDoor(CFrobDoor* door);
 
-	// grayman #3643 - get which side of a door we're on
-	int						GetDoorSide(CFrobDoor* frobDoor);
+	// grayman #3643 - get which side of a door a point is on
+	int						GetDoorSide(CFrobDoor* frobDoor, idVec3 pos); // grayman #4227
 
 	// for debugging circling problems
 	//void					PrintGoalData(idVec3 goal, int tag);

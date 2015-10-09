@@ -1052,6 +1052,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteObject(*i);
 	}
+	
+	savefile->WriteVec3( lastSearchedSpot ); // grayman #4220
 
 	mind->Save(savefile);
 
@@ -1537,6 +1539,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadObject(reinterpret_cast<idClass *&>(tactEnt));
 		tactileIgnoreEntities.insert(tactEnt);
 	}
+	
+	savefile->ReadVec3( lastSearchedSpot); // grayman #4220
 
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
@@ -3768,6 +3772,9 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 			//numObstacles = 0; // grayman #3548
 		}
 
+		/* grayman #4229 - abandon this section, since I can't get it
+		// to work correctly
+
 		// grayman #3548 - are any elevators nearby? If so, the fleeing AI
 		// would probably use it to escape. Find the elevator, pick the
 		// elevator station that's farthest from the event, and pretend both
@@ -3810,7 +3817,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 				// are in the same location, at an elevator station
 				org = pos = bestElevatorPos;
 			}
-		}
+		}*/
 
 		// Set up the evaluator class
 		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100, team); // grayman #3548
@@ -13336,7 +13343,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	ai::Memory& memory = GetMemory();
 	memory.closeMe = door;
 	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
-	int doorSide = GetDoorSide(door); // grayman #3756
+	int doorSide = GetDoorSide(door,GetPhysics()->GetOrigin()); // grayman #3756 // grayman #4227
 	memory.susDoorCloseFromThisSide = doorSide; // which side of the door we're on
 
 	door->SetSearching(this); // keeps other AI from joining in the search
@@ -13356,14 +13363,14 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	}
 }
 
-int idAI::GetDoorSide(CFrobDoor* frobDoor)
+int idAI::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4227
 {
 	int doorSide = 0;
 	// determine which side of the door we're on
 	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER);
 	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_SIDEMARKER);
-	idVec3 ownerOrig = GetPhysics()->GetOrigin();
-	if ( (sm0 - ownerOrig).LengthSqr() < (sm1 - ownerOrig).LengthSqr() )
+	//idVec3 ownerOrig = GetPhysics()->GetOrigin();
+	if ( (sm0 - pos).LengthSqr() < (sm1 - pos).LengthSqr() )
 	{
 		doorSide = DOOR_SIDE_FRONT;
 	}

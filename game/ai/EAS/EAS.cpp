@@ -565,14 +565,13 @@ void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
 
 ElevatorStationInfoPtr tdmEAS::GetElevatorStationInfo(int index)
 {
-	if (index >= 0 || index < static_cast<int>(_elevatorStations.size())) 
+	if ( (index >= 0) && (index < static_cast<int>(_elevatorStations.size()))) // grayman #4229
+	//if (index >= 0 || index < static_cast<int>(_elevatorStations.size())) // very bad
 	{
 		return _elevatorStations[static_cast<std::size_t>(index)];
 	}
-	else
-	{
-		return ElevatorStationInfoPtr();
-	}
+
+	return ElevatorStationInfoPtr();
 }
 
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
@@ -894,6 +893,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	return result;
 }
 
+/* grayman #4229
 // grayman #3548
 CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float maxVertDist)
 {
@@ -908,7 +908,19 @@ CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float max
 			for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
 			{
 				CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+
+				// grayman #4229 - verify that this position entity belongs to an elevator
+				// that the AI can use (as opposed to, for example, dumbwaiters)
 		
+				int stationIndex = GetElevatorStationIndex(positionEnt);
+
+				// If stationIndex is < 0, the AI can't use the position entity.
+
+				if ( stationIndex < 0 )
+				{
+					continue;
+				}
+
 				idVec3 entOrigin = positionEnt->GetPhysics()->GetOrigin();
 				float dist = (pos - entOrigin).LengthFast();
 				if (dist < maxDist)
@@ -926,7 +938,7 @@ CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float max
 
 	return elevator;
 }
-
+*/
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)
 {

@@ -476,7 +476,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	if (door)
 	{
-		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door),DOOR_POS_FRONT);
+		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door,owner->GetPhysics()->GetOrigin()),DOOR_POS_FRONT); // grayman #4227
 
 		// Can't stand at the front position, because you'll be in the way
 		// of anyone wanting to use the door from this side. Move toward the

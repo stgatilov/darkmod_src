@@ -61,7 +61,7 @@ const idStr& HandleDoorTask::GetName() const
 void HandleDoorTask::InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool susDoorCloseFromSameSide)
 {
 	// determine which side of the door we're on
-	_doorSide = owner->GetDoorSide(frobDoor);
+	_doorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4227
 
 	// if susDoorCloseFromSameSide is TRUE, flip the side
 
@@ -120,6 +120,21 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		subsystem.FinishTask(); // grayman #2345 - can't perform the task if there's no door
 		return;
+	}
+
+	// grayman #4227 - if you're on the same side of this door as your
+	// destination, and you're searching, why go through the door?
+
+	_doorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4227
+
+	if ( owner->IsSearching() )
+	{
+		int pointSide = owner->GetDoorSide(frobDoor, owner->GetMoveDest()); // grayman #4227
+		if ( _doorSide == pointSide )
+		{
+			subsystem.FinishTask();
+			return;
+		}
 	}
 
 	idAngles rotate = frobDoor->spawnArgs.GetAngles("rotate", "0 90 0"); // grayman #3643
@@ -183,7 +198,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 				return;
 			}
 
-			if (memory.susDoorCloseFromThisSide == owner->GetDoorSide(frobDoor))
+			if (memory.susDoorCloseFromThisSide == owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin())) // grayman #4227
 			{
 				_closeFromSameSide = true; // close the door w/o going through it
 			}
@@ -457,7 +472,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
-	int currentDoorSide = owner->GetDoorSide(frobDoor); // grayman #4044
+	int currentDoorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4044 // grayman #4227
 
 	// grayman #3755 - stop door handling if you've run through the doorway
 	// and you have an enemy
