@@ -103,6 +103,9 @@ const idEventDef EV_SetOwner( "setOwner", EventArgs('e', "owner", "the entity wh
 
 const idEventDef EV_SetModel( "setModel", EventArgs('s', "modelName", ""), EV_RETURNS_VOID, "Sets the model this entity uses");
 const idEventDef EV_SetSkin( "setSkin", EventArgs('s', "skinName", ""), EV_RETURNS_VOID, "Sets the skin this entity uses.  Set to \"\" to turn off the skin.");
+const idEventDef EV_ReskinCollisionModel( "reskinCollisionModel", EventArgs(), EV_RETURNS_VOID, 
+	"For use after setSkin() on moveables and static models, if the CM needs to be refreshed to update surface "
+	"properties after a skin change. CM will be regenerated from the original model file with the new skin.");
 
 const idEventDef EV_GetWorldOrigin( "getWorldOrigin", EventArgs(), 'v', "Returns the current world-space position of this entity (regardless of any bind parent)." );
 const idEventDef EV_SetWorldOrigin( "setWorldOrigin", EventArgs('v', "origin", ""), EV_RETURNS_VOID, "Sets the current position of this entity (regardless of any bind parent).");
@@ -521,6 +524,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetOwner,				idEntity::Event_SetOwner )
 	EVENT( EV_SetModel,				idEntity::Event_SetModel )
 	EVENT( EV_SetSkin,				idEntity::Event_SetSkin )
+	EVENT( EV_ReskinCollisionModel,	idEntity::Event_ReskinCollisionModel ) // SteveL #4232
 	EVENT( EV_GetShaderParm,		idEntity::Event_GetShaderParm )
 	EVENT( EV_SetShaderParm,		idEntity::Event_SetShaderParm )
 	EVENT( EV_SetShaderParms,		idEntity::Event_SetShaderParms )
@@ -3515,6 +3519,31 @@ const idDeclSkin *idEntity::GetSkin( void ) const {
 
 /*
 ================
+idEntity::ReskinCollisionModel	// #4232
+================
+*/
+void idEntity::ReskinCollisionModel() 
+{
+	if ( !physics->GetClipModel() ) 
+	{ 
+		return; 
+	}
+
+	const cmHandle_t skinnedCM = idClipModel::CheckModel( renderEntity.hModel->Name(), renderEntity.customSkin );
+
+	if ( skinnedCM < 0 )
+	{
+		return;
+	}
+
+	idClipModel* cm = new idClipModel( renderEntity.hModel->Name(), renderEntity.customSkin );
+	physics->SetClipModel( cm, 1.0f );
+}
+
+
+
+/*
+================
 idEntity::FreeModelDef
 ================
 */
@@ -5840,11 +5869,12 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 		}
 
 		// check if the visual model can be used as collision model
+		// Updated to take account of skins -- SteveL #4232
 		if ( !clipModel ) {
 			temp = spawnArgs.GetString( "model" );
 			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-				if ( idClipModel::CheckModel( temp ) ) {
-					clipModel = new idClipModel( temp );
+				if ( idClipModel::CheckModel( temp, renderEntity.customSkin ) ) {
+					clipModel = new idClipModel( temp, renderEntity.customSkin );
 				}
 			}
 		}
@@ -7645,6 +7675,16 @@ idEntity::Event_SetSkin
 void idEntity::Event_SetSkin( const char *skinname ) {
 	renderEntity.customSkin = declManager->FindSkin( skinname );
 	UpdateVisuals();
+}
+
+/*
+================
+idEntity::Event_ReskinCollisionModel
+================
+*/
+void idEntity::Event_ReskinCollisionModel()
+{
+	ReskinCollisionModel();
 }
 
 /*

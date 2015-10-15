@@ -289,14 +289,14 @@ public:
 	void			FreeMap( void );
 
 	// get clip handle for model
-	cmHandle_t		LoadModel( const char *modelName, const bool precache );
+	cmHandle_t		LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin = NULL ); // skin added #4232 SteveL
 	// sets up a trace model for collision with other trace models
 	cmHandle_t		SetupTrmModel( const idTraceModel &trm, const idMaterial *material );
 	// create trace model from a collision model, returns true if succesfull
 	bool			TrmFromModel( const char *modelName, idTraceModel &trm );
 
 	// name of the model
-	const char *	GetModelName( cmHandle_t model ) const;
+	const char *	GetModelName( cmHandle_t model ) const;  // NB will include ~skin_name if model is skinned #4232 SteveL
 	// bounds of the model
 	bool			GetModelBounds( cmHandle_t model, idBounds &bounds ) const;
 	// all contents flags of brushes and polygons ored together
@@ -459,7 +459,7 @@ private:			// CollisionMap_load.cpp
 	void			BuildModels( const idMapFile *mapFile );
 	cmHandle_t		FindModel( const char *name );
 	cm_model_t *	CollisionModelForMapEntity( const idMapEntity *mapEnt );	// brush/patch model from .map
-	cm_model_t *	LoadRenderModel( const char *fileName );					// ASE/LWO models
+	cm_model_t *	LoadRenderModel( const char *fileName, const idDeclSkin* skin = NULL );	// ASE/LWO models. skin added #4232 SteveL
 	bool			TrmFromModel_r( idTraceModel &trm, cm_node_t *node );
 	bool			TrmFromModel( const cm_model_t *model, idTraceModel &trm );
 
@@ -480,6 +480,8 @@ private:			// CollisionMap_files.cpp
 	void			ParseBrushes( idLexer *src, cm_model_t *model );
 	bool			ParseCollisionModel( idLexer *src );
 	bool			LoadCollisionModelFile( const char *name, const unsigned int mapFileCRC );
+	const idStr			GetSkinnedName	( const char *fileName, const idDeclSkin* skin ) const;		// #4232 SteveL
+	const idMaterial*	GetSkinnedShader( const idMaterial* shader, const idDeclSkin* skin ) const;	// #4232 SteveL
 
 private:			// CollisionMap_debug
 	int				ContentsFromString( const char *string ) const;

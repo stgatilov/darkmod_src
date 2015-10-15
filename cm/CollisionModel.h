@@ -85,14 +85,14 @@ public:
 	virtual void			FreeMap( void ) = 0;
 
 	// Gets the clip handle for a model.
-	virtual cmHandle_t		LoadModel( const char *modelName, const bool precache ) = 0;
+	virtual cmHandle_t		LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin = NULL ) = 0; // skin added #4232 SteveL
 	// Sets up a trace model for collision with other trace models.
 	virtual cmHandle_t		SetupTrmModel( const idTraceModel &trm, const idMaterial *material ) = 0;
 	// Creates a trace model from a collision model, returns true if succesfull.
 	virtual bool			TrmFromModel( const char *modelName, idTraceModel &trm ) = 0;
 
 	// Gets the name of a model.
-	virtual const char *	GetModelName( cmHandle_t model ) const = 0;
+	virtual const char *	GetModelName( cmHandle_t model ) const = 0; // NB will include ~skin_name if model is skinned #4232 SteveL
 	// Gets the bounds of a model.
 	virtual bool			GetModelBounds( cmHandle_t model, idBounds &bounds ) const = 0;
 	// Gets all contents flags of brushes and polygons of a model ored together.

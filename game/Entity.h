@@ -88,6 +88,7 @@ extern const idEventDef EV_ApplyImpulse;
 extern const idEventDef EV_SetLinearVelocity;
 extern const idEventDef EV_SetAngularVelocity;
 extern const idEventDef EV_SetSkin;
+extern const idEventDef EV_ReskinCollisionModel; // #4232
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
@@ -579,6 +580,9 @@ public:
 	virtual void			SetModel( const char *modelname );
 	void					SetSkin( const idDeclSkin *skin );
 	const idDeclSkin *		GetSkin( void ) const;
+	void					ReskinCollisionModel(); // For use after SetSkin on moveables and static models, if the CM needs to be 
+													// refreshed to update surface properties after a skin change. CM will be regenerated 
+													// from the original model file with the new skin. -- SteveL #4232
 	void					SetShaderParm( int parmnum, float value );
 	virtual void			SetColor( const float red, const float green, const float blue );
 	virtual void			SetColor( const idVec3 &color );
@@ -1604,6 +1608,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_SetOwner( idEntity *owner );
 	void					Event_SetModel( const char *modelname );
 	void					Event_SetSkin( const char *skinname );
+	void					Event_ReskinCollisionModel(); // #4232
 	void					Event_GetShaderParm( int parmnum );
 	void					Event_SetShaderParm( int parmnum, float value );
 	void					Event_SetShaderParms( float parm0, float parm1, float parm2, float parm3 );

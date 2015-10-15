@@ -2957,10 +2957,31 @@ void idCollisionModelManagerLocal::FinishModel( cm_model_t *model ) {
 
 /*
 ================
+idCollisionModelManagerLocal::GetSkinnedName // #4232 SteveL
+================
+*/
+const idStr idCollisionModelManagerLocal::GetSkinnedName( const char *fileName, const idDeclSkin* skin ) const
+{
+	return skin ? idStr(fileName) + idStr('~') + skin->GetName() : fileName;
+}
+
+/*
+================
+idCollisionModelManagerLocal::GetSkinnedShader // #4232 SteveL
+================
+*/
+const idMaterial* idCollisionModelManagerLocal::GetSkinnedShader( const idMaterial* shader, const idDeclSkin* skin ) const
+{
+	return skin ? skin->RemapShaderBySkin(shader) : shader;
+}
+
+/*
+================
 idCollisionModelManagerLocal::LoadRenderModel
 ================
 */
-cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName ) {
+cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName, const idDeclSkin* skin ) // skin added #4232 SteveL
+{
 	int i, j;
 	idRenderModel *renderModel;
 	const modelSurface_t *surf;
@@ -2985,7 +3006,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName 
 	renderModel = renderModelManager->FindModel( fileName );
 
 	model = AllocModel();
-	model->name = fileName;
+	model->name = GetSkinnedName( fileName, skin ); // take account of skins -- SteveL #4232
 	node = AllocNode( model, NODE_BLOCK_SIZE_SMALL );
 	node->planeType = -1;
 	model->node = node;
@@ -3000,19 +3021,21 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName 
 	collisionSurface = false;
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
-		if ( surf->shader->GetSurfaceFlags() & SURF_COLLISION ) {
+		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
+		if ( shader->GetSurfaceFlags() & SURF_COLLISION ) {
 			collisionSurface = true;
 		}
 	}
 
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
+		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
 		// if this surface has no contents
-		if ( ! ( surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
+		if ( ! ( shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
 			continue;
 		}
 		// if the model has a collision surface and this surface is not a collision surface
-		if ( collisionSurface && !( surf->shader->GetSurfaceFlags() & SURF_COLLISION ) ) {
+		if ( collisionSurface && !( shader->GetSurfaceFlags() & SURF_COLLISION ) ) {
 			continue;
 		}
 		// get max verts and edges
@@ -3033,12 +3056,13 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName 
 
 	for ( i = 0; i < renderModel->NumSurfaces(); i++ ) {
 		surf = renderModel->Surface( i );
+		const idMaterial* shader = GetSkinnedShader( surf->shader, skin ); // #4232
 		// if this surface has no contents
-		if ( ! ( surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
+		if ( ! ( shader->GetContentFlags() & CONTENTS_REMOVE_UTIL ) ) {
 			continue;
 		}
 		// if the model has a collision surface and this surface is not a collision surface
-		if ( collisionSurface && !( surf->shader->GetSurfaceFlags() & SURF_COLLISION ) ) {
+		if ( collisionSurface && !( shader->GetSurfaceFlags() & SURF_COLLISION ) ) {
 			continue;
 		}
 
@@ -3049,7 +3073,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel( const char *fileName 
 			w += surf->geometry->verts[ surf->geometry->indexes[ j + 0 ] ].xyz;
 			w.GetPlane( plane );
 			plane = -plane;
-			PolygonFromWinding( model, &w, plane, surf->shader, 1 );
+			PolygonFromWinding( model, &w, plane, shader, 1 );
 		}
 	}
 
@@ -3499,11 +3523,13 @@ bool idCollisionModelManagerLocal::GetModelPolygon( cmHandle_t model, int polygo
 idCollisionModelManagerLocal::LoadModel
 ==================
 */
-cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const bool precache ) {
+cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const bool precache, const idDeclSkin* skin ) // skin added #4232 SteveL
+{
 	int handle;
 
-	handle = FindModel( modelName );
-	if ( handle >= 0 ) {
+	handle = FindModel( GetSkinnedName( modelName, skin) );
+	if ( handle >= 0 )
+	{
 		return handle;
 	}
 
@@ -3512,8 +3538,8 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const
 		return 0;
 	}
 
-	// try to load a .cm file
-	if ( LoadCollisionModelFile( modelName, 0 ) ) {
+	// try to load a .cm file, if the model isn't skinned
+	if ( !skin && LoadCollisionModelFile( modelName, 0 ) ) {
 		handle = FindModel( modelName );
 		if ( handle >= 0 ) {
 			return handle;
@@ -3528,7 +3554,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel( const char *modelName, const
 	}
 
 	// try to load a .ASE or .LWO model and convert it to a collision model
-	models[numModels] = LoadRenderModel( modelName );
+	models[numModels] = LoadRenderModel( modelName, skin );
 	if ( models[numModels] != NULL ) {
 		numModels++;
 		return ( numModels - 1 );

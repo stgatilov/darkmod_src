@@ -214,12 +214,22 @@ idClipModel::LoadModel
 ================
 */
 bool idClipModel::LoadModel( const char *name ) {
+	return LoadModel( name, (const idDeclSkin*)NULL );
+}
+
+/*
+================
+idClipModel::LoadModel
+================
+*/
+bool idClipModel::LoadModel( const char *name, const idDeclSkin* skin ) 
+{
 	renderModelHandle = -1;
 	if ( traceModelIndex != -1 ) {
 		FreeTraceModel( traceModelIndex );
 		traceModelIndex = -1;
 	}
-	collisionModelHandle = collisionModelManager->LoadModel( name, false );
+	collisionModelHandle = collisionModelManager->LoadModel( name, false, skin );
 	if ( collisionModelHandle ) {
 		collisionModelManager->GetModelBounds( collisionModelHandle, bounds );
 		collisionModelManager->GetModelContents( collisionModelHandle, contents );
@@ -306,6 +316,17 @@ idClipModel::idClipModel( const char *name ) {
 	Init();
 	LoadModel( name );
 }
+
+/*
+================
+idClipModel::idClipModel
+================
+*/
+idClipModel::idClipModel( const char *name, const idDeclSkin* skin ) {
+	Init();
+	LoadModel( name, skin );
+}
+
 
 /*
 ================
@@ -600,8 +621,9 @@ void idClipModel::Link( idClip &clp, idEntity *ent, int newId, const idVec3 &new
 idClipModel::CheckModel
 ============
 */
-cmHandle_t idClipModel::CheckModel( const char *name ) {
-	return collisionModelManager->LoadModel( name, false );
+cmHandle_t idClipModel::CheckModel( const char *name, const idDeclSkin* skin ) // skin added #4232 SteveL
+{
+	return collisionModelManager->LoadModel( name, false, skin );
 }
 
 
