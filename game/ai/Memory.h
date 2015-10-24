@@ -541,6 +541,8 @@ public:
 
 	int currentSearchEventID;		// grayman #3424 - current suspicious event being searched
 
+	int searchStartTime;			// grayman #4220 - when this AI begins a search
+
 	idEntityPtr<idEntity> attacker;	// grayman #3679 - who attacked me
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?
 

@@ -54,11 +54,18 @@ class InvestigateSpotTask :
 	// usually by playing the kneel_down animation.
 	bool _investigateClosely;
 
-	// Whether this task has told the AI to actually move to the searchspot
-	bool _moveInitiated;
+	// grayman #4220
+	enum EInvestigateState
+	{
+		EStateInit,
+		EStateMovingTo,
+		EStateKneeling,
+		EStateWaiting
+	} _investigatingState;
 
 	// Private default constructor
 	InvestigateSpotTask();
+
 public:
 	// @param: see member _investigateClosely
 	InvestigateSpotTask(bool investigateClosely);

@@ -27,15 +27,20 @@ static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-
 #include "Misc.h"
 #include "ai/Memory.h"
 
-#define SEARCH_RADIUS_FACTOR 0.707107f	  // sqrt(0.5)
+//#define SEARCH_RADIUS_FACTOR 0.707107f	  // sqrt(0.5)
 #define SEARCH_RADIUS_ONE_SEARCHER 126.0f // If xy radius of entire search is less than this, only allow one searcher
 #define SEARCH_MAX_GUARD_SPOT_DISTANCE 500.0f // don't consider guard spot entities beyond this distance from search origin
 #define SEARCH_MIN_OBS_DISTANCE 200.0f // minimum observation distance
+#define MIN_SEARCH_RADIUS 100.0f // grayman #4220 - search type 3: initially trace to this distance, then expand outward
+//#define MAX_SEARCH_RADIUS 600.0f // grayman #4220 - search type 3: expand search radius to this
+#define MAX_SEARCH_TIME 200.0f  // grayman #4220 - search type 4: use type 3 expansion,
+								// but search radius depends on time from search start where we reach max search distance (in seconds)
 
 // Constructor
 CSearchManager::CSearchManager()
 {
 	_uniqueSearchID = 1; // the next unique id to assign to a new search
+	_nextThinkTime = 0; // grayman #4220
 }
 
 CSearchManager::~CSearchManager()
@@ -56,6 +61,7 @@ void CSearchManager::Clear()
 
 	_searches.Clear();
 	_uniqueSearchID = 1;
+	_nextThinkTime = 0; // grayman #4220
 }
 
 Search* CSearchManager::StartNewSearch(idAI* ai)
@@ -200,19 +206,11 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 	// cause 1 search, not N. The only saving grace is that as each KO'ed body stims an AI, the
 	// AI will leave his previous search and create a search for the new KO'ed body, so maybe
 	// this isn't a big problem.
-	Search *search = GetSearchWithEventID(memory.currentSearchEventID);
 	bool canSearchCooperatively = ai->spawnArgs.GetBool("canSearchCooperatively", "1");
+	Search *search = GetSearchWithEventID(memory.currentSearchEventID,canSearchCooperatively); // grayman #4220
 	if (search)
 	{
-		// match the AI's preference with the search type
-		if (search->_isCoopSearch && canSearchCooperatively)
-		{
-			searchID = search->_searchID;
-		}
-		else if (!search->_isCoopSearch && !canSearchCooperatively)
-		{
-			searchID = search->_searchID;
-		}
+		searchID = search->_searchID;
 	}
 
 	if (searchID < 0) // no search yet
@@ -232,7 +230,7 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		}
 
 		EventType eventType = se->type;
-		search = GetSearchAtLocation(eventType,searchPoint);
+		search = GetSearchAtLocation(eventType,searchPoint,canSearchCooperatively); // grayman #4220
 		if (search)
 		{
 			if ( ai->HasSearchedEvent(search->_eventID) )
@@ -240,15 +238,7 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 				return -1; // has already searched this event, abort request
 			}
 
-			// match the AI's preference with the search type
-			if (search->_isCoopSearch && canSearchCooperatively)
-			{
-				searchID = search->_searchID;
-			}
-			else if (!search->_isCoopSearch && !canSearchCooperatively)
-			{
-				searchID = search->_searchID;
-			}
+			searchID = search->_searchID;
 		}
 	}
 
@@ -270,13 +260,13 @@ int CSearchManager::ObtainSearchID(idAI* ai)
 		memory.alertSearchVolume = search->_limits.GetSize()/2.0f;
 		memory.alertSearchExclusionVolume = search->_exclusion_limits.GetSize()/2.0f;
 		memory.currentSearchEventID = search->_eventID;
+		memory.searchStartTime = gameLocal.time; // grayman #4220 - when the search begins
 		return searchID;
 	}
 
 	// no existing search, so start a new one
 
 	search = StartNewSearch(ai);
-
 	return search->_searchID;
 }
 
@@ -337,7 +327,10 @@ Search* CSearchManager::GetSearch(int searchID) // returns a pointer to the requ
 	return NULL;
 }
 
-Search* CSearchManager::GetSearchWithEventID(int eventID)
+// See if there's an existing search for this event, that matches the request
+// for a co-op search or swarm search
+
+Search* CSearchManager::GetSearchWithEventID(int eventID, bool seekCoopSearch) // grayman #4220
 {
 	if (eventID < 0)
 	{
@@ -349,14 +342,17 @@ Search* CSearchManager::GetSearchWithEventID(int eventID)
 		Search *search = _searches[i];
 		if ( ( search->_searchID > 0 ) && ( search->_eventID == eventID) )
 		{
-			return search;
+			if ( (search->_isCoopSearch && seekCoopSearch) || (!search->_isCoopSearch && !seekCoopSearch) ) // grayman #4220
+			{
+				return search;
+			}
 		}
 	}
 
 	return NULL;
 }
 
-Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location) // returns a pointer to the requested search
+Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location, bool seekCoopSearch) // returns a pointer to the requested search
 {
 	// Try to find an event of the given type near the given location.
 
@@ -366,13 +362,18 @@ Search* CSearchManager::GetSearchAtLocation(EventType type, idVec3 location) // 
 		if ( search->_searchID > 0 )
 		{
 			EventType eventType = gameLocal.FindSuspiciousEvent(search->_eventID)->type;
-			if ( ( eventType == type ) && ( (search->_origin - location).LengthSqr() < 16384 ) )
+			if ( (eventType == type) && ((search->_origin - location).LengthSqr() < 16384) )
 			{
 				// This search is close to where the AI wants to start
 				// searching, so we could assign him to this existing
 				// search.
 
-				return search;
+				// grayman #4220 - but only if the co-op or swarm request matches the search type
+
+				if ( (search->_isCoopSearch && seekCoopSearch) || (!search->_isCoopSearch && !seekCoopSearch) )
+				{
+					return search;
+				}
 			}
 		}
 	}
@@ -440,7 +441,6 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 
 		idBounds areaNodeBounds;
 		darkModHidingSpot* hidingSpot = tree->getNthSpotWithAreaNodeBounds(treeIndex, areaNodeBounds);
-
 		if (hidingSpot != NULL)
 		{
 			// grayman #2422 - this routine might return (0,0,0), but we don't
@@ -485,6 +485,221 @@ bool CSearchManager::GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpo
 			// hidingSpot is NULL, so it's NG
 			search->_hidingSpotIndexes[i] = -1; // no one should use this spot
 		}
+	}
+
+	return false; // can't find a good spot
+}
+
+// grayman #4220 - for search types >= 3
+
+bool CSearchManager::GetNextSearchSpot(Search* search, idAI* ai, idVec3& nextSpot)
+{
+	if (search == NULL)
+	{
+		return false; // invalid search
+	}
+
+	Assignment* assignment = GetAssignment(search,ai);
+	if (assignment == NULL)
+	{
+		return false; // no assignment for this AI in this search
+	}
+
+	// find a valid spot
+
+	idVec3 spot;
+	bool spotFound = false;
+	float yaw;
+	idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+	int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+	idVec3 start1 = ai->GetMemory().alertSearchCenter + (ai->GetEyePosition() - aiOrigin); // trace outward from the eye height
+	idVec3 start2 = ai->GetEyePosition(); // trace outward from the eyes
+	idVec3 start = (start1 + start2)/2.0f; // pick a start spot halfway between the two start positions
+	aasPath_t path;
+
+	// Attempt to find a spot. If you fail, you'll be back here
+	// soon enough to try again, but you can't hog the CPU.
+
+	// Use linear equation y = mx + b, where y = distance and x = either alert level or time.
+
+	float m = 0.0f; // slope
+	float b = 0.0f; // y intercept
+	float dist = 0.0f; // trace distance
+
+	if ( cv_ai_search_type.GetInteger() == 3 )
+	{
+		// Search distance is based on current alert level.
+		// As alert level drops, search distance increases.
+		m = (search->_outerRadius - MIN_SEARCH_RADIUS) / (ai->thresh_3 - ai->thresh_5); // slope
+		b = MIN_SEARCH_RADIUS ; // y intercept
+		dist = m*ai->AI_AlertLevel + b; // trace distance
+	}
+	else if ( cv_ai_search_type.GetInteger() >= 4 )
+	{
+		// Search distance is based on how long we've been searching.
+		// As time increases, search distance increases. MAX_SEARCH_TIME is a
+		// SWAG of how long an AI spends searching when starting at alert level thresh_5.
+		m = (search->_outerRadius - MIN_SEARCH_RADIUS) / MAX_SEARCH_TIME; // slope
+		b = MIN_SEARCH_RADIUS; // y intercept
+		dist = m*((float)(gameLocal.time - ai->GetMemory().searchStartTime) / 1000.0f) + b; // trace distance
+	}
+
+	// clip the max dist to travel from alert center
+
+	if ( dist > search->_outerRadius )
+	{
+		dist = search->_outerRadius;
+	}
+
+	float noCloserThan = dist / 2.0f; // used to prevent bunching of search spots
+	if ( noCloserThan > 64.0f )
+	{
+		noCloserThan = 64.0f;
+	}
+	float noCloserThanSqr = noCloserThan*noCloserThan;
+
+	trace_t result;
+		
+	yaw = 360.0*gameLocal.random.RandomFloat();
+	idAngles tryAngles = idAngles(0,yaw,0);
+	tryAngles.Normalize180();
+	idVec3 dir = tryAngles.ToForward();
+	bool checkIllumination = true;
+
+	idVec3 end = start + dist*dir;
+	idVec3 startFloor;
+	idVec3 endFloor;
+	if ( gameLocal.clip.TracePoint(result, start, end, MASK_OPAQUE, ai) )
+	{
+		// Found something.
+
+		// Special case: hitting a door. Act as if the door isn't there.
+
+		idEntity* ent = gameLocal.entities[result.c.entityNum];
+		idStr aiUse = ent->spawnArgs.GetString("AIUse");
+		if ( aiUse == AIUSE_DOOR )
+		{
+			idVec3 startDoor = result.endpos;
+			if ( gameLocal.clip.TracePoint(result, startDoor, end, MASK_OPAQUE, ent) ) // continue, ignoring the door
+			{
+				// Found something; okay to stop at a second door.
+
+				startFloor = result.endpos;
+				startFloor -= 16 * dir; // back up a bit
+			}
+			else
+			{
+				startFloor = end;
+			}
+
+			checkIllumination = false; // skip illumination check, just to get into the next room
+		}
+		else
+		{
+			startFloor = result.endpos;
+			startFloor -= 16 * dir; // back up a bit
+		}
+	}
+	else
+	{
+		// Didn't hit anything. Go out the full distance.
+		startFloor = end;
+	}
+
+	// Trace down to the floor.
+
+	endFloor = startFloor;
+	endFloor.z -= 1000;
+
+	if ( gameLocal.clip.TracePoint(result, startFloor, endFloor, MASK_OPAQUE, NULL) )
+	{
+		spot = result.endpos;
+		spot.z += 1; // move the target point to just above the floor
+
+		// is this spot too close to the previously searched spot?
+
+		bool tooClose = false;
+		if ( ai->lastSearchedSpot.x != idMath::INFINITY )
+		{
+			if ( (spot - ai->lastSearchedSpot).LengthSqr() <= noCloserThanSqr )
+			{
+				tooClose = true;
+			}
+		}
+
+		if ( !tooClose )
+		{
+			// Make sure this spot is in the sector assigned to ai. It
+			// doesn't have to be inside the _limits boundary, but it
+			// should stay to the North/South/East/West of the overall
+			// search area if assigned to one of those sectors.
+			//
+			// If the ai isn't assigned to one of those sectors, he can
+			// skip this check
+
+			int sector = assignment->_sector;
+
+			if ( (sector == 0) || // search the full area
+				((sector == 1) && (spot.y > assignment->_limits[0].y))  || // search the North sector
+				((sector == 2) && (spot.x > assignment->_limits[0].x))  || // search the East sector
+				((sector == 3) && (spot.y <= assignment->_limits[1].y)) || // search the South sector
+				((sector == 4) && (spot.x <= assignment->_limits[1].x)))   // search the West sector
+			{
+				// What is the illumination at this spot?
+
+				float lightQuotient;
+
+				if ( checkIllumination && !search->_isCoopSearch) // grayman #4220 - swarm searchers don't care about this
+				{
+					idVec3 testLineTop = spot;
+					testLineTop.z += HIDING_OBJECT_HEIGHT;
+					lightQuotient = LAS.queryLightingAlongLine(spot, testLineTop, NULL, true);
+				}
+				else
+				{
+					lightQuotient = 0.0f; // not really, but this gets us to the 'can we walk to this spot' check
+				}
+
+				if ( lightQuotient < 0.3f )
+				{
+					// Does this spot sit in an AAS area?
+
+					int spotAreaNum = ai->PointReachableAreaNum(spot);
+					if ( spotAreaNum > 0 )
+					{
+						// can we walk to this spot?
+						if ( ai->PathToGoal(path, aiAreaNum, aiOrigin, spotAreaNum, spot, ai) )
+						{
+							spotFound = true;
+						}
+					}
+
+					if (!spotFound)
+					{
+						// Can't walk there, but can we get to a place that's nearby
+						// where we can see the spot?
+
+						aasGoal_t obsSpot = ai->GetPositionWithinRange(spot);
+						if (obsSpot.areaNum > 0)
+						{
+							// Found an observation position, can we get there?
+							if (ai->PathToGoal(path, aiAreaNum, aiOrigin, obsSpot.areaNum, obsSpot.origin, ai))
+							{
+								spot = obsSpot.origin;
+								spotFound = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( spotFound )
+	{
+		ai->lastSearchedSpot = spot; // save last searched spot
+		nextSpot = spot;
+		return true;
 	}
 
 	return false; // can't find a good spot
@@ -583,24 +798,83 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		return false;
 	}
 
-	// this ai can only be an active searcher
+	// this ai can only join the search
 	// if he can walk to the search origin
+	// grayman #4220 - decided to remove this requirement
+	// for search types >= 4
 
 	int toAreaNum = ai->PointReachableAreaNum(search->_origin);
-	bool canBeActiveSearcher = true;
-	if (toAreaNum > 0)
+	bool canGetThere = true;
+	if ( toAreaNum > 0 )
 	{
 		idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
 		int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
 		aasPath_t path;
-		if (!ai->PathToGoal(path, aiAreaNum, aiOrigin, toAreaNum, search->_origin, ai))
+		if ( !ai->PathToGoal(path, aiAreaNum, aiOrigin, toAreaNum, search->_origin, ai) )
 		{
-			canBeActiveSearcher = false;
+			canGetThere = false;
 		}
 	}
 	else
 	{
-		canBeActiveSearcher = false;
+		canGetThere = false;
+	}
+
+	if (!canGetThere)
+	{
+		if ( cv_ai_search_type.GetInteger() < 4 )
+		{
+			return false;
+		}
+
+		idVec3 observationPos = ai->GetObservationPosition(search->_origin, 1.0f); // use perfect eyesight for this, even if the AI is nearly blind
+
+		// The observation point might be up in the air. Let's see if there's a floor below.
+
+		idVec3 startPoint = observationPos;
+		idVec3 endPoint = startPoint;
+		endPoint.z -= 256;
+	
+		// trace down to find the floor
+
+		canGetThere = true;
+		trace_t result;
+		if ( gameLocal.clip.TracePoint(result, startPoint, endPoint, MASK_OPAQUE, NULL) )
+		{
+			// found the floor
+
+			observationPos = result.endpos;
+
+			int opAreaNum = ai->PointReachableAreaNum(observationPos);
+			if ( opAreaNum > 0 )
+			{
+				idVec3 aiOrigin = ai->GetPhysics()->GetOrigin();
+				int aiAreaNum = ai->PointReachableAreaNum(aiOrigin, 1.0f);
+				aasPath_t path;
+				if ( !ai->PathToGoal(path, aiAreaNum, aiOrigin, opAreaNum, observationPos, ai) )
+				{
+					canGetThere = false;
+				}
+			}
+			else
+			{
+				canGetThere = false;
+			}
+
+			if ( canGetThere )
+			{
+				search->_origin = observationPos;
+			}
+		}
+		else
+		{
+			canGetThere = false;
+		}
+	}
+
+	if ( !canGetThere )
+	{
+		return false;
 	}
 
 /*	A "swarm" search allows unlimited active searchers. AI such as zombies,
@@ -614,7 +888,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		All searchers are given the same search information, so
 		they will share the list of hiding spots. The hiding spots
 		will be assigned individually to each requesting searcher,
-		so that no two searchers with search the same spot.
+		so that no two searchers will search the same spot.
 
 	For cooperative searches:
 
@@ -643,6 +917,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 	bool canSearchCooperatively = ai->spawnArgs.GetBool("canSearchCooperatively", "1");
 	smRole_t searcherRole = E_ROLE_NONE; // no assignment yet
+	int sector = 0; // grayman #4220
 
 	if (search->_isCoopSearch && canSearchCooperatively)
 	{
@@ -651,11 +926,11 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		// can't join in this frame. Once the number of slots goes above 2,
 		// the active searcher roles are assigned, and you can join as a guard
 		// or an observer.
-		if ((numAssignments < 2) && !canBeActiveSearcher)
+		/*if ((numAssignments < 2) !canBeActiveSearcher) // grayman #4220
 		{
 			// Can't join this search. Sorry.
 			return false;
-		}
+		}*/
 
 		// Active searchers are allowed to be armed or unarmed/civilian.
 
@@ -675,6 +950,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 				search->_outerRadius = outerRadius;
 				searchBounds = search->_limits;
 				searcherRole = E_ROLE_SEARCHER;
+				sector = 0; // grayman #4220
 			}
 			else if (numAssignments == 1)
 			{
@@ -690,45 +966,275 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 				}
 				else
 				{
-					// Divide the search area in half between the two searchers.
-					// The first AI searches the inner half of the overall area, and
-					// the second AI searches the outer half. If one or the other
-					// leaves the search, the search area of the remaining AI
-					// remains the same.
-
-					outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
-
-					// Split search area in half.
-
 					idBounds searchBounds1;
 					idBounds searchBounds2;
 					searchBounds1 = searchBounds2 = search->_limits;
 					idVec3 size = searchBounds1.GetSize();
-					if (size.x > size.y)
+
+					if ( cv_ai_search_type.GetInteger() < 4 ) // grayman #4220
 					{
-						searchBounds1[1].x -= size.x / 2.0f;
-						searchBounds2[0].x += size.x / 2.0f;
+						// Divide the search area in half between the two searchers.
+						// The first AI searches the inner half of the overall area, and
+						// the second AI searches the outer half. If one or the other
+						// leaves the search, the search area of the remaining AI
+						// remains the same.
+
+						// Split search area in half.
+
+						if ( size.x > size.y )
+						{
+							searchBounds1[1].x -= size.x / 2.0f;
+							searchBounds2[0].x += size.x / 2.0f;
+						}
+						else
+						{
+							searchBounds1[1].y -= size.y / 2.0f;
+							searchBounds2[0].y += size.y / 2.0f;
+						}
+
+						search->_assignments[0]._limits = searchBounds1;
+						searchBounds = searchBounds2;
+						searcherRole = E_ROLE_SEARCHER;
+						outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
 					}
-					else
+					else // search type >= 4
 					{
-						searchBounds1[1].y -= size.y / 2.0f;
-						searchBounds2[0].y += size.y / 2.0f;
+						// Divide the search area in half between the two searchers.
+						// The search area gets divided into North and South sectors if
+						// the overall area has a longer y dimension than x. It gets
+						// divided into East and West sectors if the overall area has a
+						// longer x dimension than y. The z dimension is ignored. The
+						// first AI searches the N or W sector, and the second AI searches
+						// the S or E sector. 
+						
+						// The search area is resized based on the physical walls around the
+						// search. Traces are sent N, S, E, and W to find the 'world' entity.
+						// Once the new x/y dimensions are known, the dividing line between
+						// sectors runs through the center of the adjusted search area.
+
+						// If one or the other leaves the search, the
+						// search area of the remaining AI remains the same.
+
+						// Split search area in half.
+
+						// Determine the search space x and y dimensions, which depend on
+						// surrounding architecture. Can't simply use search->_limits because
+						// that can extend into neighboring rooms or the void.
+
+						// Trace N.
+
+						float distN = search->_limits.GetSize().y/2.0f;
+						trace_t result;
+						idVec3 start = search->_limits.GetCenter(); // start at center of search area
+						idVec3 end = start;
+						end.y += distN;
+						bool found = false;
+						idEntity* entHit = NULL;
+						while ( !found )
+						{
+							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
+							{
+								// Found something. Is the world?
+
+								entHit = gameLocal.entities[result.c.entityNum];
+
+								if ( entHit == gameLocal.world )
+								{
+									found = true;
+									distN = result.endpos.y - search->_origin.y;
+								}
+								else // not world, keep going
+								{
+									start.y = result.endpos.y;
+								}
+							}
+							else
+							{
+								// reached the max N range
+								found = true;
+							}
+						}
+
+						// Trace S.
+
+						float distS = search->_limits.GetSize().y/2.0f;
+						start = search->_limits.GetCenter(); // start at center of search area
+						end = start;
+						end.y -= distS;
+						found = false;
+						entHit = NULL;
+						while ( !found )
+						{
+							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
+							{
+								// Found something. Is the world?
+
+								entHit = gameLocal.entities[result.c.entityNum];
+
+								if ( entHit == gameLocal.world )
+								{
+									found = true;
+									distS = search->_origin.y - result.endpos.y;
+								}
+								else // not world, keep going
+								{
+									start.y = result.endpos.y;
+								}
+							}
+							else
+							{
+								// reached the max S range
+								found = true;
+							}
+						}
+
+						// Trace E.
+
+						float distE = search->_limits.GetSize().x/2.0f;
+						start = search->_limits.GetCenter(); // start at center of search area
+						end = start;
+						end.x += distE;
+						found = false;
+						entHit = NULL;
+						while ( !found )
+						{
+							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
+							{
+								// Found something. Is the world?
+
+								entHit = gameLocal.entities[result.c.entityNum];
+
+								if ( entHit == gameLocal.world )
+								{
+									found = true;
+									distE = result.endpos.x - search->_origin.x;
+								}
+								else // not world, keep going
+								{
+									start.x = result.endpos.x;
+								}
+							}
+							else
+							{
+								// reached the max E range
+								found = true;
+							}
+						}
+
+						// Trace W.
+
+						float distW = search->_limits.GetSize().x/2.0f;
+						start = search->_limits.GetCenter(); // start at center of search area
+						end = start;
+						end.x -= distW;
+						found = false;
+						entHit = NULL;
+						while ( !found )
+						{
+							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
+							{
+								// Found something. Is the world?
+
+								entHit = gameLocal.entities[result.c.entityNum];
+
+								if ( entHit == gameLocal.world )
+								{
+									found = true;
+									distW = search->_origin.x - result.endpos.x;
+								}
+								else // not world, keep going
+								{
+									start.x = result.endpos.x;
+								}
+							}
+							else
+							{
+								// reached the max W range
+								found = true;
+							}
+						}
+
+						// We now have distN, distS, distE, and distW. Use them to
+						// possibly shrink the search space.
+
+						idBounds searchSpace = search->_limits; // start with this
+						idVec3 searchCenter = searchSpace.GetCenter();
+						searchSpace[0].x = searchCenter.x - distW;
+						searchSpace[0].y = searchCenter.y - distS;
+						searchSpace[1].x = searchCenter.x + distE;
+						searchSpace[1].y = searchCenter.y + distN;
+						idVec3 searchSpaceCenter = searchSpace.GetCenter();
+
+						searchBounds1 = searchBounds2 = searchSpace;
+
+						Assignment *firstSearcherAssignment = &search->_assignments[0];
+
+						if ( (distN + distS) > (distE + distW) )
+						{
+							// Assign sectors North and South. If the first searcher is
+							// north of the new search space center, assign him to the
+							// North sector, otherwise assign him to the South sector.
+							// The second searcher gets the other sector.
+
+							// searchBounds1 becomes the N sector and searchBounds2 becomes the S sector
+							searchBounds1[0].y = searchBounds2[1].y = searchBounds1.GetCenter().y;
+							if ( firstSearcherAssignment->_searcher->GetPhysics()->GetOrigin().y > searchSpaceCenter.y )
+							{
+								firstSearcherAssignment->_sector = 1; // North
+								firstSearcherAssignment->_limits = searchBounds1;
+
+								sector = 3; // South
+								searchBounds = searchBounds2;
+							}
+							else
+							{
+								firstSearcherAssignment->_sector = 3; // South
+								firstSearcherAssignment->_limits = searchBounds2;
+
+								sector = 1; // North
+								searchBounds = searchBounds1;
+							}
+						}
+						else
+						{
+							// Assign sectors East and West.
+
+							// searchBounds1 becomes the W sector and searchBounds2 becomes the E sector
+							searchBounds1[1].x = searchBounds2[0].x = searchBounds1.GetCenter().x;
+
+							if ( firstSearcherAssignment->_searcher->GetPhysics()->GetOrigin().x > searchSpaceCenter.x )
+							{
+								firstSearcherAssignment->_sector = 2; // East
+								firstSearcherAssignment->_limits = searchBounds2;
+
+								sector = 4; // West
+								searchBounds = searchBounds1;
+							}
+							else
+							{
+								firstSearcherAssignment->_sector = 4; // West
+								firstSearcherAssignment->_limits = searchBounds1;
+
+								sector = 2; // East
+								searchBounds = searchBounds2;
+							}
+						}
+
+						searcherRole = E_ROLE_SEARCHER;
+						outerRadius = search->_assignments[0]._outerRadius; // inherit the outer radius from the first searcher
 					}
-					search->_assignments[0]._limits = searchBounds1;
-					searchBounds = searchBounds2;
-					searcherRole = E_ROLE_SEARCHER;
 				}
 			}
 			else if (numAssignments >= 2)
 			{
 				// Is the first assignment slot available?
-				if ((search->_assignments[0]._searcher == NULL) && canBeActiveSearcher)
+				if ((search->_assignments[0]._searcher == NULL)/* && canBeActiveSearcher*/) // grayman #4220
 				{
 					takeAssignmentIndex = 0;
 					searcherRole = search->_assignments[0]._searcherRole;
 				}
 				// Is the second assignment slot available?
-				else if ((search->_assignments[1]._searcher == NULL) && canBeActiveSearcher)
+				else if ((search->_assignments[1]._searcher == NULL) /*&& canBeActiveSearcher*/) // grayman #4220
 				{
 					takeAssignmentIndex = 1;
 					searcherRole = search->_assignments[1]._searcherRole;
@@ -776,11 +1282,11 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 	}
 	else if (!search->_isCoopSearch && !canSearchCooperatively)
 	{
-		if (!canBeActiveSearcher)
+		/*if (!canBeActiveSearcher) // grayman #4220
 		{
 			// Can't join this search. Sorry.
 			return false;
-		}
+		}*/
 
 		// By definition, swarm searchers only involve active
 		// searchers that don't mill first.
@@ -830,19 +1336,40 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 		assignment = &search->_assignments[takeAssignmentIndex];
 		assignment->_searcher = ai; // reactivate the deactivated assignment
 	}
-	else // create new assignment
+	else // either consume an abandoned assignment or create a new one
 	{
-		Assignment newAssignment;
-		assignment = &newAssignment;
+		takeAssignmentIndex = -1;
+		for ( int i = 2 ; i < numAssignments ; i++ )
+		{
+			if (search->_assignments[i]._searcher == NULL)
+			{
+				takeAssignmentIndex = i;
+				break;
+			}
+		}
+
+		if ( takeAssignmentIndex >= 2 )
+		{
+			// recycle an abandoned assignment
+			assignment = &search->_assignments[takeAssignmentIndex];
+		}
+		else
+		{
+			// create a new assignment
+			Assignment newAssignment;
+			assignment = &newAssignment;
+			search->_assignments.Append(*assignment); // add this new assignment to the search
+			assignment = &search->_assignments[numAssignments]; // assignment has become garbage at this point, so
+																// it has to be reset
+		}
 
 		assignment->_origin = search->_origin; // center of search area, location of alert stimulus
 		assignment->_outerRadius = outerRadius;
 		assignment->_limits = searchBounds;
 		assignment->_searcher = ai; // AI who owns this assignment
 		assignment->_lastSpotAssigned = -1; // if actively searching, the most recent spot assigned to a searcher; index into _hidingSpotIndexes
+		assignment->_sector = sector; // grayman #4220
 		assignment->_searcherRole = searcherRole; // the AI's role
-
-		search->_assignments.Append(*assignment); // add this new assignment to the search
 	}
 
 	//DebugPrintAssignment(assignment);
@@ -1205,6 +1732,7 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 void CSearchManager::Save(idSaveGame* savefile)
 {
 	savefile->WriteInt(_uniqueSearchID);
+	savefile->WriteInt(_nextThinkTime); // grayman #4220
 
 	// save searches
 	int numSearches = _searches.Num();
@@ -1255,6 +1783,7 @@ void CSearchManager::Save(idSaveGame* savefile)
 			savefile->WriteBounds(assignment._limits);
 			savefile->WriteObject(assignment._searcher);
 			savefile->WriteInt(assignment._lastSpotAssigned);
+			savefile->WriteInt(assignment._sector); // grayman #4220
 			savefile->WriteInt(static_cast<int>(assignment._searcherRole));
 
 			//DebugPrintAssignment(&assignment);
@@ -1267,6 +1796,7 @@ void CSearchManager::Save(idSaveGame* savefile)
 void CSearchManager::Restore(idRestoreGame* savefile)
 {
 	savefile->ReadInt(_uniqueSearchID);
+	savefile->ReadInt(_nextThinkTime); // grayman #4220
 
 	_searches.Clear();
 	int numSearches;
@@ -1321,6 +1851,7 @@ void CSearchManager::Restore(idRestoreGame* savefile)
 			savefile->ReadBounds(assignment._limits);
 			savefile->ReadObject(reinterpret_cast<idClass*&>(assignment._searcher));
 			savefile->ReadInt(assignment._lastSpotAssigned);
+			savefile->ReadInt(assignment._sector); // grayman #4220
 
 			int n;
 			savefile->ReadInt(n);
@@ -1350,13 +1881,11 @@ void CSearchManager::DebugPrintHidingSpots(Search* search)
 		if (p_spot != NULL)
 		{
 			p = p_spot->goal.origin;
-			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%d: [%s]\r",i,p.ToString()); // spot is good
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%d: [%s], types = %x, light = %f, quality = %f, qwodf = %f\r",i,p.ToString(),p_spot->hidingSpotTypes, p_spot->lightQuotient, p_spot->quality,p_spot->qualityWithoutDistanceFactor); // spot is good
 		}
 	}
 }
-*/
 
-/*
 // prints search contents
 void CSearchManager::DebugPrintSearch(Search* search)
 {
@@ -1389,6 +1918,7 @@ void CSearchManager::DebugPrintAssignment(Assignment* assignment)
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          _limits = [%s]\r",assignment->_limits.ToString());
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("               ai = '%s'\r",assignment->_searcher ? assignment->_searcher->GetName():"NULL");
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("_lastSpotAssigned = %d\r",assignment->_lastSpotAssigned);
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          _sector = %d\r",assignment->_sector);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("    _searcherRole = %d\r",(int)assignment->_searcherRole);
 	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("========================================\r");
 
@@ -1413,10 +1943,194 @@ void CSearchManager::destroyCurrentHidingSpotSearch(Search* search)
 	search->_hidingSpots.clear();
 }
 
+// grayman #4220 - for each active searcher, see if there's an opportunity
+// to swap him for a guard or an observer who's more qualified to handle
+// the search (i.e. lower rand and/or armed)
+void CSearchManager::ConsiderSwitchingSearchers(Search *search, int searcherNum)
+{
+	int assignmentCount = search->_assignments.Num();
+
+	if ( assignmentCount < 3 )
+	{
+		return;
+	}
+
+	if ( (searcherNum < 1) || (searcherNum > 2) )
+	{
+		return;
+	}
+
+	// If a higher-ranking AI is actively searching, and
+	// there's a lower-ranking AI either guarding or observing,
+	// they should swap places. This is to keep the higher-ranking
+	// AI out of harm's way should an enemy be found by a searcher.
+
+	// Find the highest rank of the two possible active searchers.
+	// There have to be at least 2 searchers and 3 assignments to
+	// do any swapping.
+
+	// Observe these rules:
+	//
+	// 1 - if both are armed, the lower ranked should be the active searcher
+	// 2 - if neither is armed, the lower ranked should be the active searcher
+	// 3 - if the higher-ranked active searcher is armed and the lower isn't, don't switch
+	// 4 - if the lower-ranked active searcher is armed and the higher isn't, don't switch
+	// 5 - if the higher-ranked active searcher isn't armed and the lower is, switch
+	// 6 - if the lower-ranked active searcher isn't armed and the higher is, switch
+	// 7 - if they're the same rank, the armed AI should be the active searcher
+
+	Assignment *assignment1 = &search->_assignments[searcherNum - 1];
+
+	if (assignment1->_searcher == NULL)
+	{
+		return; // no one assigned to the requested slot, or there's no one guarding/observing to switch with
+	}
+
+	// Look through the guards and observers for a possible candidate to switch with
+
+	idAI* searcher1 = assignment1->_searcher;
+	int rank1 = searcher1->rank;
+	bool searcher1IsArmed = ((searcher1->GetNumMeleeWeapons() > 0) || (searcher1->GetNumRangedWeapons() > 0));
+
+	for ( int i = 2 ; i < search->_assignments.Num() ; i++ )
+	{
+		Assignment *assignment2 = &search->_assignments[i];
+		idAI* searcher2 = assignment2->_searcher;
+		if ( searcher2 == NULL )
+		{
+			continue;
+		}
+
+		// this ai can only be an active searcher
+		// if he can walk to the search origin
+
+		int toAreaNum = searcher2->PointReachableAreaNum(search->_origin);
+		if ( toAreaNum < 0 )
+		{
+			continue;
+		}
+
+		int rank2 = searcher2->rank;
+		bool searcher2IsArmed = ((searcher2->GetNumMeleeWeapons() > 0) || (searcher2->GetNumRangedWeapons() > 0));
+
+		// Compare ranks and whether they're armed
+
+		bool switchRoles = false;
+
+		if ( rank1 == rank2 )
+		{
+			if (!searcher1IsArmed && searcher2IsArmed) // rule 7
+			{
+				switchRoles = true;
+			}
+		}
+		else if ( rank1 > rank2 )
+		{
+			if ( searcher1IsArmed && searcher2IsArmed ) // rule 1
+			{
+				switchRoles = true;
+			}
+			else if ( !searcher1IsArmed && !searcher2IsArmed ) // rule 2
+			{
+				switchRoles = true;
+			}
+			else if ( searcher1IsArmed && !searcher2IsArmed ) // rule 3
+			{
+				switchRoles = false;
+			}
+			else // !searcher1IsArmed && searcher2IsArmed // rule 5
+			{
+				switchRoles = true;
+			}
+		}
+		else // rank1 < rank2
+		{
+			if ( searcher1IsArmed && searcher2IsArmed ) // rule 1
+			{
+				switchRoles = false;
+			}
+			else if ( !searcher1IsArmed && !searcher2IsArmed ) // rule 2
+			{
+				switchRoles = false;
+			}
+			else if ( searcher1IsArmed && !searcher2IsArmed ) // rule 4
+			{
+				switchRoles = false;
+			}
+			else if ( !searcher1IsArmed && searcher2IsArmed ) // rule 6
+			{
+				switchRoles = true;
+			}
+		}
+
+		if ( switchRoles )
+		{
+			ai::Memory& memory1 = searcher1->GetMemory();
+			ai::Memory& memory2 = searcher2->GetMemory();
+
+			bool searcher1shouldMill = memory1.shouldMill || memory1.millingInProgress;
+			bool searcher2shouldMill = memory2.shouldMill || memory2.millingInProgress;
+
+			int searchID = search->_searchID;
+			LeaveSearch(searchID, searcher2);
+			LeaveSearch(searchID, searcher1);
+
+			JoinSearch(searchID, searcher2);
+			JoinSearch(searchID, searcher1);
+
+			memory1.shouldMill = searcher1shouldMill;
+			memory2.shouldMill = searcher2shouldMill;
+
+			return;
+		}
+
+		// not switching
+	}
+}
+
 // The Search Manager's "Think" method.
 
 void CSearchManager::ProcessSearches()
 {
+	// grayman #4220 - add a delay between 'thinks'
+	if ( gameLocal.time < _nextThinkTime )
+	{
+		return;
+	}
+
+	_nextThinkTime = gameLocal.time + SEARCH_THINK_INTERVAL;
+
+	/* grayman - print search assignments
+	for ( int i = 0; i < _searches.Num(); i++ )
+	{
+		Search *search = _searches[i];
+		int searchID = search->_searchID;
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   Search %d\r",searchID);
+		if (searchID == -1)
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   ... not an ongoing search\r");
+			continue; // so skip it
+		}
+
+		for ( int j = 0 ; j < search->_assignments.Num() ; j++ )
+		{
+			Assignment *assignment = &search->_assignments[j];
+			idAI* searcher = assignment->_searcher;
+			if (searcher != NULL)
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   ... assignment %d: %s is %s\r",j,searcher->GetName(),
+						assignment->_searcherRole == E_ROLE_SEARCHER ? "a searcher" :
+						(assignment->_searcherRole == E_ROLE_GUARD ? "a guard" :
+						(assignment->_searcherRole == E_ROLE_OBSERVER ? "an observer": "no role")));
+			}
+			else
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   ... assignment %d: not assigned\r",j);
+			}
+		}
+	}
+	*/
+
 	idPlayer* player = gameLocal.GetLocalPlayer();
 
 	for ( int i = 0 ; i < _searches.Num() ; i++ )
@@ -1509,13 +2223,20 @@ void CSearchManager::ProcessSearches()
 					{
 						// this ai can only be an active searcher
 						// if he can walk to the search origin
-						int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
-						bool canBeActiveSearcher = (toAreaNum != 0);
+						// grayman #4220 - decided to remove this requirement
+						// for search types >= 4
 
-						if (canBeActiveSearcher &&
+						bool canBeActiveSearcher = true;
+						if ( cv_ai_search_type.GetInteger() < 4 )
+						{
+							int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
+							canBeActiveSearcher = (toAreaNum != 0);
+						}
+
+						if ( canBeActiveSearcher &&
 							(assignment->_searcherRole == E_ROLE_OBSERVER) &&
 							(searcher->rank < lowestRank) &&
-							(searcher->AI_AlertLevel >= searcher->thresh_3)) // must still be searching
+							(searcher->AI_AlertLevel >= searcher->thresh_3) ) // must still be searching
 						{
 							bestCandidate = searcher;
 							bestAssignment = assignment;
@@ -1537,8 +2258,9 @@ void CSearchManager::ProcessSearches()
 						{
 							// this ai can only be an active searcher
 							// if he can walk to the search origin
+							bool canBeActiveSearcher = true;
 							int toAreaNum = searcher->PointReachableAreaNum(search->_origin);
-							bool canBeActiveSearcher = (toAreaNum != 0);
+							canBeActiveSearcher = (toAreaNum != 0);
 
 							if (canBeActiveSearcher &&
 								(assignment->_searcherRole == E_ROLE_GUARD) &&
@@ -1585,82 +2307,12 @@ void CSearchManager::ProcessSearches()
 
 		// there is at least 1 active searcher
 
-		// If a higher-ranking AI is actively searching, and
-		// there's a lower-ranking AI either guarding or observing,
-		// they should swap places. This is to keep the higher-ranking
-		// AI out of harm's way should an enemy be found by a searcher.
+		// grayman #4220 - for each active searcher, see if there's an opportunity
+		// to swap him for a guard or an observer who's more qualified to handle
+		// the search (i.e. lower rand and/or armed)
 
-		// Find the highest rank of the two possible active searchers.
-		// There have to be at least 2 searchers and 3 assignments to
-		// do any swapping.
-
-		int assignmentCount = search->_assignments.Num();
-		if ( ( searcherCount >= 2 ) && ( assignmentCount >= 3) )
-		{
-			// Who is the highest ranking active searcher and lowest ranking guard or observer?
-
-			int highestActiveSearcherRank = -1;
-			int higherRankingSearcherAssignmentIndex = 0;
-			int lowestGuardOrObserverRank = 1000;
-			int lowestGuardOrObserverAssignmentIndex = 0;
-			for ( int j = 0 ; j < assignmentCount ; j++ )
-			{
-				Assignment *assignment = &search->_assignments[j];
-				if (j < 2) // active searchers
-				{
-					if (assignment->_searcher != NULL)
-					{
-						if (assignment->_searcher->rank > highestActiveSearcherRank)
-						{
-							higherRankingSearcherAssignmentIndex = j;
-							highestActiveSearcherRank = assignment->_searcher->rank;
-						}
-					}
-				}
-				else // guards and observers
-				{
-					if (assignment->_searcher != NULL)
-					{
-						if (assignment->_searcher->rank < lowestGuardOrObserverRank)
-						{
-							// this ai can only be an active searcher
-							// if he can walk to the search origin
-							int toAreaNum = assignment->_searcher->PointReachableAreaNum(search->_origin);
-							if (toAreaNum != 0)
-							{
-								lowestGuardOrObserverAssignmentIndex = j;
-								lowestGuardOrObserverRank = assignment->_searcher->rank;
-							}
-						}
-					}
-				}
-			}
-
-			// Compare ranks
-
-			if (highestActiveSearcherRank > lowestGuardOrObserverRank)
-			{
-				Assignment *assignment1 = &search->_assignments[higherRankingSearcherAssignmentIndex];
-				Assignment *assignment2 = &search->_assignments[lowestGuardOrObserverAssignmentIndex];
-				idAI* searcher1 = assignment1->_searcher;
-				idAI* searcher2 = assignment2->_searcher;
-
-				ai::Memory& memory1 = searcher1->GetMemory();
-				ai::Memory& memory2 = searcher2->GetMemory();
-
-				bool searcher1shouldMill = memory1.shouldMill || memory1.millingInProgress;
-				bool searcher2shouldMill = memory2.shouldMill || memory2.millingInProgress;
-
-				LeaveSearch(searchID, searcher2);
-				LeaveSearch(searchID, searcher1);
-
-				JoinSearch(searchID,searcher2);
-				JoinSearch(searchID,searcher1);
-
-				memory1.shouldMill = searcher1shouldMill;
-				memory2.shouldMill = searcher2shouldMill;
-			}
-		}
+		ConsiderSwitchingSearchers(search, 1); // check the first active searcher
+		ConsiderSwitchingSearchers(search, 2); // check the second active searcher
 	}
 }
 

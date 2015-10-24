@@ -1205,9 +1205,6 @@ bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
 
-	// Memory shortcut
-	Memory& memory = owner->GetMemory();
-
 	// grayman #3992 - Don't process a weapon in the grabber
 
 	CGrabber* grabber = gameLocal.m_Grabber;
@@ -1227,7 +1224,7 @@ bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
 
 	// Create a list of bodies and weapons near this weapon
 
-	idBounds box = idBounds(idVec3(-80.0, -80.0f, -40.0f), idVec3(80.0, 80.0f, 88.0f));
+	idBounds box = idBounds(idVec3(-128.0f, -128.0f, -40.0f), idVec3(128.0f, 128.0f, 88.0f));
 	box.TranslateSelf(weapon->GetPhysics()->GetOrigin());
 	idEntity* ents[MAX_GENTITIES];
 	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents, MAX_GENTITIES);
@@ -6089,7 +6086,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 			memory.restartSearchForHidingSpots = true;
 		}
 
-		SetAISearchData(EAlertNone,issuerMemory.alertType,pos,issuerMemory.alertSearchVolume,idVec3(0,0,0),ALERT_BY_COMM);
+		SetAISearchData(EAlertNone,issuerMemory.alertType,pos,issuerMemory.alertSearchVolume,idVec3(0,0,0),ALERT_SEARCH_ALERT_POS|ALERT_BY_COMM); // grayman #4220
 
 		// alert level is set by the calling method
 

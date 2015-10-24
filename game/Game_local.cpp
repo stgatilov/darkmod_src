@@ -1884,6 +1884,9 @@ void idGameLocal::MapPopulate( void ) {
 	// Initialise the escape point manager after all the entities have been spawned.
 	m_EscapePointManager->InitAAS();
 
+	// grayman #4220 - Clear the search manager
+	m_searchManager->Clear();
+
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
 	// before the physics are run so entities can bind correctly

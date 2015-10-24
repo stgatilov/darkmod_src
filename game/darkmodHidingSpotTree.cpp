@@ -443,17 +443,42 @@ bool CDarkmodHidingSpotTree::insertHidingSpot
 
 	// Add some randomness to the order of points in the areas.
 
-	if (spotList.Num() > 0)
+	if ( spotList.Num() > 0 )
 	{
-		// Insert the new spot to a random location in the list
-		// and move the current occupier to the end.
-		int randomLocation = gameLocal.random.RandomInt(spotList.Num());
+		// grayman #4220
 
-		// greebo: Important: Don't do this: spotList.Append( spotList[randomLocation] )!
-		// Copy the old pointer beforehand to avoid references to invalid memory
-		darkModHidingSpot* oldSpot = spotList[randomLocation];
-		spotList.Append( oldSpot );
-		spotList[randomLocation] = p_spot;
+		if ( cv_ai_search_type.GetInteger() == 1 ) // 2.03 - style
+		{
+			// Insert the new spot to a random location in the list
+			// and move the current occupier to the end.
+			int randomLocation = gameLocal.random.RandomInt(spotList.Num());
+
+			// greebo: Important: Don't do this: spotList.Append( spotList[randomLocation] )!
+			// Copy the old pointer beforehand to avoid references to invalid memory
+			darkModHidingSpot* oldSpot = spotList[randomLocation];
+			spotList.Append(oldSpot);
+			spotList[randomLocation] = p_spot;
+		}
+		else
+		{
+			// no randomness; order from best quality to worst quality
+
+			int index = 0;
+			for ( ; index < spotList.Num(); index++ )
+			{
+				if ( p_spot->quality > spotList[index]->quality )
+				{
+					spotList.Insert(p_spot, index);
+					break;
+				}
+			}
+
+			if ( index == spotList.Num() )
+			{
+				// smaller quality than any spots in the list
+				spotList.Append(p_spot);
+			}
+		}
 	}
 	else
 	{
@@ -1244,7 +1269,7 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 	unsigned long numSpots
 )
 {
-	/*// If list is empty or only one node long , we are done
+	/* If list is empty or only one node long , we are done
 	if (inout_p_firstNode == NULL)
 	{
 		return;

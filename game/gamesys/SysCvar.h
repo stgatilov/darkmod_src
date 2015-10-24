@@ -186,6 +186,8 @@ extern idCVar cv_pm_climb_distance;
 */
 extern idCVar cv_ai_search_show;
 
+extern idCVar cv_ai_search_type; // grayman #4220 - control type of search
+
 extern idCVar cv_force_savegame_load;
 extern idCVar cv_savegame_compress;
 

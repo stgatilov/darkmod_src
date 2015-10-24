@@ -211,6 +211,7 @@ void SuspiciousState::Init(idAI* owner)
 	{
 		owner->searchSubsystem->ClearTasks();
 		memory.currentSearchEventID = -1;
+		owner->lastSearchedSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #4220
 	}
 
 	// Let the AI update their weapons (make them nonsolid)

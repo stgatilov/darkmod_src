@@ -54,6 +54,7 @@ struct Assignment
 	idBounds				_limits;		// boundary of the search
 	idAI*					_searcher;		// AI assigned
 	int						_lastSpotAssigned; // the most recent spot assigned to a searcher; index into _hidingSpotIndexes
+	int						_sector;		// which sector you're assigned to (type >=4 searches); 1 = north, 2 = east, 3 = south, 4 = west
 	smRole_t				_searcherRole;	// The role of the AI searcher (searcher, guard, observer)
 };
 
@@ -110,10 +111,10 @@ typedef enum
 } searchFlags_t;
 
 #define SEARCH_NOTHING			(0)  // no searchers, no guards, no observers
-#define SEARCH_EVERYTHING		(0xffffffff) // searchers, guards, and observers, and everyone mills about at first
+#define SEARCH_EVERYTHING		(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_GUARD|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // guards and observers mill about at first // grayman #4220
 #define SEARCH_SUSPICIOUS		(SEARCH_EVERYTHING) // EAlertTypeSuspicious, EAlertTypeSuspiciousVisual
 #define SEARCH_ENEMY			(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeEnemy
-#define SEARCH_WEAPON			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon
+#define SEARCH_WEAPON			(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeWeapon
 #define SEARCH_BLINDED			(SEARCH_SEARCH|SEARCH_OBSERVE) // EAlertTypeBlinded
 #define SEARCH_DEAD				(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeDeadPerson
 #define SEARCH_UNCONSCIOUS		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeUnconsciousPerson
@@ -121,7 +122,7 @@ typedef enum
 #define SEARCH_LIGHT			(SEARCH_SEARCH) // EAlertTypeLightSource
 #define SEARCH_FAILED_KO		(SEARCH_SEARCH) // EAlertTypeFailedKO
 #define SEARCH_MISSING			(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_GUARD|SEARCH_OBSERVER_MILL|SEARCH_OBSERVE) // EAlertTypeMissingItem
-#define SEARCH_BROKEN			(SEARCH_SEARCHER_MILL|SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeBrokenItem
+#define SEARCH_BROKEN			(SEARCH_SEARCH|SEARCH_GUARD_MILL|SEARCH_OBSERVER_MILL) // EAlertTypeBrokenItem
 #define SEARCH_DOOR				(SEARCH_SEARCH) // EAlertTypeDoor
 #define SEARCH_SUSPICIOUSITEM	(SEARCH_EVERYTHING) // EAlertTypeSuspiciousItem
 #define SEARCH_PICKED_POCKET	(SEARCH_SEARCH) // EAlertTypePickedPocket
@@ -129,11 +130,13 @@ typedef enum
 #define SEARCH_PROJECTILE		(SEARCH_SEARCH|SEARCH_GUARD|SEARCH_OBSERVE) // EAlertTypeHitByProjectile
 #define SEARCH_MOVEABLE			(SEARCH_SEARCH) // EAlertTypeHitByMoveable
 #define SEARCH_SWARM			(SEARCH_SEARCH) // for more than 2 searchers
+#define SEARCH_THINK_INTERVAL	2000; // grayman #4220 - how often ProcessSearches() runs (ms) 
 
 class CSearchManager
 {
 	idList<Search*> _searches;       // A list of all active searches in the mission
 	int				_uniqueSearchID; // the next unique id to assign to a new search
+	int				_nextThinkTime;	 // grayman #4220 - the search manager's 'think' process only thinks every N seconds
 
 public:
 	CSearchManager();  // Constructor
@@ -149,15 +152,17 @@ public:
 
 	bool		GetNextHidingSpot(Search* search, idAI* ai, idVec3& nextSpot);
 
+	bool		GetNextSearchSpot(Search* search, idAI* ai, idVec3& nextSpot); // grayman #4220
+
 	//void		RestartHidingSpotSearch(int searchID, idAI* ai); // Close and destroy the current search and start a new search
 
 	void		PerformHidingSpotSearch(int searchID, idAI* ai); // Continue searching
 
 	Search*		GetSearch(int searchID); // returns a pointer to the requested search
 
-	Search*		GetSearchWithEventID(int eventID); // returns a pointer to the requested search
+	Search*		GetSearchWithEventID(int eventID, bool seekCoopSearch); // returns a pointer to the requested search (event and co-op or swarm)
 
-	Search*		GetSearchAtLocation(EventType eventType, idVec3 location); // returns a pointer to the requested search
+	Search*		GetSearchAtLocation(EventType eventType, idVec3 location, bool seekCoopSearch); // returns a pointer to the requested search (event type at location, and co-op or swarm)
 
 	Assignment*	GetAssignment(Search* search, idAI* ai); // get ai's assignment for a given search
 
@@ -218,6 +223,8 @@ public:
 
 	void		destroyCurrentHidingSpotSearch(Search* search);
 
+	void		ConsiderSwitchingSearchers(Search *search, int searcherNum); // grayman #4220
+
 	void		CreateListOfGuardSpots(Search* search, idAI* ai);
 
 	void		ProcessSearches();
@@ -226,9 +233,9 @@ public:
 
 	void		Restore( idRestoreGame *savefile );
 
-//	void		DebugPrintHidingSpots(Search* search); // Print the current hiding spots
+	//void		DebugPrintHidingSpots(Search* search); // Print the current hiding spots/
 	void		DebugPrintSearch(Search* search); // Print the contents of a search
-	void		DebugPrintAssignment(Assignment* assignment); // Print the contents of an assignment
+	//void		DebugPrintAssignment(Assignment* assignment); // Print the contents of an assignment
 
 
 	// Accessor to the singleton instance of this class

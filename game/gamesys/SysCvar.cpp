@@ -92,6 +92,7 @@ idCVar cv_spr_radius_show(			"tdm_showsprop_radius",		"0",			CVAR_GAME | CVAR_AR
 idCVar cv_ko_show(					"tdm_showko",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL,  "If set to true, knockout zones will be shown for debugging." );
 idCVar cv_ai_search_show (			"tdm_ai_search_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing search activity targets will be shown. If < 1.0 then the graphics will not be drawn. For debugging.");
 idCVar cv_ai_visdist_show (			"tdm_ai_visdist_show",		"0.0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "If >= 1.0, this is the number of milliseconds for which a graphic showing vision distance test results.  Green arrows indicate within range, Red indicate out of range, purple indicate gap between range and target. For debugging.");
+idCVar cv_ai_search_type (			"tdm_ai_search_type",		"4",			CVAR_GAME | CVAR_ARCHIVE | CVAR_INTEGER, "Search type: 1 = 2.03. 2 = walk to hiding spots instead of looking. 3 = use random spots instead of grid of hiding spots, use an alert level based expansion of search area. 4 = same as 3, but use a time-based expansion of search area"); // grayman #4220
 
 idCVar cv_ai_opt_disable (			"tdm_ai_opt_disable",		"1",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs not in the Potentially Visible Set will be completely disabled if they have neverdormant set to 0.");
 idCVar cv_ai_opt_noanims (			"tdm_ai_opt_noanims",		"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AIs will not animate.");

@@ -103,7 +103,7 @@ CDarkmodAASHidingSpotFinder::CDarkmodAASHidingSpotFinder
 	h_hideFromPVS.i = -1;
 	h_hideFromPVS.h = 0;
 
-	// Remember the hide form position
+	// Remember the hide from position
 	hideFromPosition = hideFromPos;
 
 	// Get the aas from the LAS

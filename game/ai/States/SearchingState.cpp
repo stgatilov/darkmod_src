@@ -143,6 +143,9 @@ void SearchingState::Init(idAI* owner)
 
 	if ( owner->AlertIndexIncreased() )
 	{
+		// grayman #4220 - clear the most recent searched spot
+		owner->lastSearchedSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
+
 		// grayman #3423 - when the alert level is ascending, kill the repeated bark task
 		owner->commSubsystem->ClearTasks();
 
@@ -369,7 +372,10 @@ void SearchingState::Think(idAI* owner)
 		{
 			color = colorBlue;
 		}
-		gameRenderWorld->DebugArrow(color, owner->GetEyePosition(), memory.currentSearchSpot, 1, 100);
+		if ( memory.currentSearchSpot.x != idMath::INFINITY )
+		{
+			gameRenderWorld->DebugArrow(color, owner->GetEyePosition(), memory.currentSearchSpot, 1, 100);
+		}
 		gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), search->_origin, 1, 100);
 		*/
 
@@ -447,116 +453,157 @@ void SearchingState::Think(idAI* owner)
 				return;
 			}
 
-			// Is a spot investigation in progress?
+			// Is InvestigateSpotTask() running? 
 			if (memory.hidingSpotInvestigationInProgress)
 			{
 				return;
 			}
 
-			// Have we run out of hiding spots?
+			// grayman #4220 - a search type of 1 or 2 uses hiding spots, and
+			// a search type of 3 or greater doesn't
 
-			if (memory.noMoreHidingSpots) 
+			if ( cv_ai_search_type.GetInteger() < 3 )
 			{
-				if (gameLocal.time >= memory.nextTime2GenRandomSpot)
+				// Have we run out of hiding spots?
+
+				if ( memory.noMoreHidingSpots )
 				{
-					memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5) / 3);
-
-					// grayman #2422
-					// Generate a random search point, but make sure it's inside an AAS area
-					// and that it's also inside the search volume.
-
-					idVec3 p;		// random point
-					int areaNum;	// p's area number
-					idVec3 searchSize = assignment->_limits.GetSize();
-					idVec3 searchCenter = assignment->_limits.GetCenter();
-				
-					//gameRenderWorld->DebugBox(colorWhite, idBox(assignment->_limits), MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
-
-					bool validPoint = false;
-					idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
-					int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
-					aasPath_t path;
-					for (int i = 0; i < 6; i++)
+					if ( gameLocal.time >= memory.nextTime2GenRandomSpot )
 					{
-						p = searchCenter;
-						p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x/2;
-						p.y += gameLocal.random.RandomFloat()*(searchSize.y) - searchSize.y/2;
-						p.z += gameLocal.random.RandomFloat()*(searchSize.z) - searchSize.z/2;
-						//p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
-						areaNum = owner->PointReachableAreaNum( p );
-						if ( areaNum == 0 )
+						memory.nextTime2GenRandomSpot = gameLocal.time + DELAY_RANDOM_SPOT_GEN*(1 + (gameLocal.random.RandomFloat() - 0.5) / 3);
+
+						// grayman #2422
+						// Generate a random search point, but make sure it's inside an AAS area
+						// and that it's also inside the search volume.
+
+						idVec3 p;		// random point
+						int areaNum;	// p's area number
+						idVec3 searchSize = assignment->_limits.GetSize();
+						idVec3 searchCenter = assignment->_limits.GetCenter();
+
+						//gameRenderWorld->DebugBox(colorWhite, idBox(assignment->_limits), MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+
+						bool validPoint = false;
+						idVec3 ownerOrigin = owner->GetPhysics()->GetOrigin();
+						int ownerAreaNum = owner->PointReachableAreaNum(ownerOrigin, 1.0f);
+						aasPath_t path;
+						for ( int i = 0; i < 6; i++ )
 						{
-							//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
-							continue;
+							p = searchCenter;
+							p.x += gameLocal.random.RandomFloat()*(searchSize.x) - searchSize.x / 2;
+							p.y += gameLocal.random.RandomFloat()*(searchSize.y) - searchSize.y / 2;
+							p.z += gameLocal.random.RandomFloat()*(searchSize.z) - searchSize.z / 2;
+							//p.z += gameLocal.random.RandomFloat()*(searchSize.z/2) - searchSize.z/4;
+							areaNum = owner->PointReachableAreaNum(p);
+							if ( areaNum == 0 )
+							{
+								//gameRenderWorld->DebugArrow(colorRed, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+								continue;
+							}
+							owner->GetAAS()->PushPointIntoAreaNum(areaNum, p); // if this point is outside this area, it will be moved to one of the area's edges
+							if ( !assignment->_limits.ContainsPoint(p) )
+							{
+								//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+								continue;
+							}
+
+							if ( !owner->PathToGoal(path, ownerAreaNum, ownerOrigin, areaNum, p, owner) )
+							{
+								continue;
+							}
+
+							//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
+							validPoint = true;
+							break;
 						}
-						owner->GetAAS()->PushPointIntoAreaNum( areaNum, p ); // if this point is outside this area, it will be moved to one of the area's edges
-						if ( !assignment->_limits.ContainsPoint(p) )
+
+						if ( validPoint )
 						{
+							// grayman #2422 - the point chosen 
+							memory.currentSearchSpot = p;
+
+							// Choose to investigate spots closely on a random basis
+							// grayman #2801 - and only if you weren't hit by a projectile
+
+							memory.investigateStimulusLocationClosely = ((gameLocal.random.RandomFloat() < 0.3f) && (memory.alertType != EAlertTypeHitByProjectile));
+
+							owner->searchSubsystem->SwitchTask(TaskPtr(InvestigateSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
+
+							// Set the flag to TRUE, so that the sensory scan can be performed
+							memory.hidingSpotInvestigationInProgress = true;
+						}
+						else // no valid random point found
+						{
+							// Stop moving, the algorithm will choose another spot the next round
+							owner->StopMove(MOVE_STATUS_DONE);
+							memory.StopReacting(); // grayman #3559
+
+							// grayman #2422 - at least turn toward and look at the last invalid point some of the time
+							p.z += 60; // look up a bit, to simulate searching for the player's head
+							if ( !owner->CheckFOV(p) )
+							{
+								owner->TurnToward(p);
+							}
+							owner->Event_LookAtPosition(p, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 							//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
-							continue;
 						}
-
-						if (!owner->PathToGoal(path, ownerAreaNum, ownerOrigin, areaNum, p, owner))
-						{
-							continue;
-						}
-
-						//gameRenderWorld->DebugArrow(colorGreen, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
-						validPoint = true;
-						break;
-					}
-
-					if ( validPoint )
-					{
-						// grayman #2422 - the point chosen 
-						memory.currentSearchSpot = p;
-			
-						// Choose to investigate spots closely on a random basis
-						// grayman #2801 - and only if you weren't hit by a projectile
-
-						memory.investigateStimulusLocationClosely = ( ( gameLocal.random.RandomFloat() < 0.3f ) && ( memory.alertType != EAlertTypeHitByProjectile ) );
-
-						owner->searchSubsystem->SwitchTask(TaskPtr(InvestigateSpotTask::CreateInstance())); // grayman #3857 - switch from action to search
-
-						// Set the flag to TRUE, so that the sensory scan can be performed
-						memory.hidingSpotInvestigationInProgress = true;
-					}
-					else // no valid random point found
-					{
-						// Stop moving, the algorithm will choose another spot the next round
-						owner->StopMove(MOVE_STATUS_DONE);
-						memory.StopReacting(); // grayman #3559
-
-						// grayman #2422 - at least turn toward and look at the last invalid point some of the time
-						p.z += 60; // look up a bit, to simulate searching for the player's head
-						if (!owner->CheckFOV(p))
-						{
-							owner->TurnToward(p);
-						}
-						owner->Event_LookAtPosition(p, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
-						//gameRenderWorld->DebugArrow(colorPink, owner->GetEyePosition(), p, 1, MS2SEC(memory.nextTime2GenRandomSpot - gameLocal.time));
 					}
 				}
+				// We should have more hiding spots, try to get the next one
+				else if ( !gameLocal.m_searchManager->GetNextHidingSpot(search, owner, memory.currentSearchSpot) ) // grayman #3857
+				{
+					// No more hiding spots to search
+					DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots!\r");
+
+					// Stop moving, the algorithm will choose another spot the next round
+					owner->StopMove(MOVE_STATUS_DONE);
+					memory.StopReacting(); // grayman #3559
+				}
+				else
+				{
+					// GetNextHidingSpot() returned TRUE, so we have memory.currentSearchSpot set
+
+					// Delegate the spot investigation to a new task, which will send the searcher to investigate the new spot.
+					owner->searchSubsystem->SwitchTask(InvestigateSpotTask::CreateInstance()); // grayman #3857 - switch from action to search
+
+					// Prevent falling into the same hole twice
+					memory.hidingSpotInvestigationInProgress = true;
+				}
 			}
-			// We should have more hiding spots, try to get the next one
-			else if (!gameLocal.m_searchManager->GetNextHidingSpot(search,owner,memory.currentSearchSpot)) // grayman #3857
+			else if ( cv_ai_search_type.GetInteger() >= 3 )
 			{
-				// No more hiding spots to search
-				DM_LOG(LC_AI, LT_INFO)LOGSTRING("No more hiding spots!\r");
+				if ( !gameLocal.m_searchManager->GetNextSearchSpot(search, owner, memory.currentSearchSpot) ) // grayman #4220
+				{
+					// Stop moving, the algorithm will choose another spot the next round
+					owner->StopMove(MOVE_STATUS_DONE);
+					memory.StopReacting(); // grayman #3559
+				}
+				else
+				{
+					// GetNextSearchSpot() returned TRUE, so we have memory.currentSearchSpot set
 
-				// Stop moving, the algorithm will choose another spot the next round
-				owner->StopMove(MOVE_STATUS_DONE);
-				memory.StopReacting(); // grayman #3559
-			}
-			else
-			{
-				// GetNextHidingSpot() returned TRUE, so we have memory.currentSearchSpot set
+					// Delegate the spot investigation to a new task, which will send the searcher to investigate the new spot.
+					owner->searchSubsystem->SwitchTask(InvestigateSpotTask::CreateInstance()); // grayman #3857 - switch from action to search
 
-				// Delegate the spot investigation to a new task, which will send the searcher to investigate the new spot.
-				owner->searchSubsystem->SwitchTask(InvestigateSpotTask::CreateInstance()); // grayman #3857 - switch from action to search
+					// Prevent falling into the same hole twice
+					memory.hidingSpotInvestigationInProgress = true;
+				}
 
-				// Prevent falling into the same hole twice
-				memory.hidingSpotInvestigationInProgress = true;
+				/* grayman - uncomment to see search areas
+				idVec4 color = colorWhite;
+
+				if ( (assignment->_sector == 1) || (assignment->_sector == 4) )
+				{
+					color = colorGreen;
+				}
+				else if ( (assignment->_sector == 2) || (assignment->_sector == 3) )
+				{
+					color = colorBlue;
+				}
+				gameRenderWorld->DebugBox(color, idBox(assignment->_limits), 2000);
+				gameRenderWorld->DrawText(va("%s", owner->GetName()), assignment->_limits.GetCenter(), 0.25f, color,
+					gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 2000);
+				*/
 			}
 
 			return;
@@ -935,11 +982,17 @@ bool SearchingState::StartNewHidingSpotSearch(idAI* owner) // grayman #3857
 
 	Search *search = gameLocal.m_searchManager->GetSearch(newSearchID);
 
-	// Start search
-	// TODO: Is the eye position necessary? Since the hiding spot list can be
-	// used by several AI, why is the first AI's eye position relevant
-	// to the other AIs' eye positions?
-	int res = gameLocal.m_searchManager->StartSearchForHidingSpotsWithExclusionArea(search,owner->GetEyePosition(),255, owner);
+	// grayman #4220 - only deploy a hiding spot search if the search type needs it
+
+	int res = 0;
+	if ( cv_ai_search_type.GetInteger() < 3 )
+	{
+		// Start search
+		// TODO: Is the eye position necessary? Since the hiding spot list can be
+		// used by several AI, why is the first AI's eye position relevant
+		// to the other AIs' eye positions?
+		res = gameLocal.m_searchManager->StartSearchForHidingSpotsWithExclusionArea(search, owner->GetEyePosition(), 255, owner);
+	}
 
 	if (res == 0)
 	{
