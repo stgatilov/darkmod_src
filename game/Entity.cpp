@@ -36,6 +36,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Inventory/Cursor.h"
 #include "AbsenceMarker.h"
 #include "Objectives/MissionData.h"
+#include "Missions/MissionManager.h" // SteveL #4232
 
 /*
 ===============================================================================
@@ -5872,9 +5873,16 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 		// Updated to take account of skins -- SteveL #4232
 		if ( !clipModel ) {
 			temp = spawnArgs.GetString( "model" );
-			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-				if ( idClipModel::CheckModel( temp, renderEntity.customSkin ) ) {
-					clipModel = new idClipModel( temp, renderEntity.customSkin );
+			if ( ( temp != NULL ) && ( *temp != 0 ) ) 
+			{
+				// To protect older maps from unexpected changes, only maps that specify TDM 2.04+ 
+				// will get skinned collision models loaded at map start #4232
+				CModInfoPtr pk4Info = gameLocal.m_MissionManager->GetCurrentModInfo();
+				const bool okToSkinCM = CompareVersion(pk4Info->requiredMajor, pk4Info->requiredMinor, 2, 4) != OLDER;
+				const idDeclSkin* skin = okToSkinCM ? renderEntity.customSkin : NULL;
+
+				if ( idClipModel::CheckModel( temp, skin ) ) {
+					clipModel = new idClipModel( temp, skin );
 				}
 			}
 		}
