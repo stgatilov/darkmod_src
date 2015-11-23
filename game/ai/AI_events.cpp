@@ -30,6 +30,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../AbsenceMarker.h"
 #include "Memory.h"
 #include "States/State.h"
+#include "States/FleeState.h" // grayman #4250
 
 #include <vector>
 #include <string>
@@ -1379,8 +1380,25 @@ idAI::Event_Flee
 */
 void idAI::Event_Flee(idEntity *entityToFleeFrom, int algorithm, int distanceOption)
 {
-	StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-	idThread::ReturnInt(Flee(entityToFleeFrom, false, algorithm, distanceOption)); // grayman #3317
+	// grayman #4250
+	bool success = false;
+
+	if ( (entityToFleeFrom != NULL ) && entityToFleeFrom->IsType(idActor::Type))
+	{
+		fleeingEvent = false; // grayman #3356
+		fleeingFrom = entityToFleeFrom->GetPhysics()->GetOrigin(); // grayman #3848
+		fleeingFromPerson = static_cast<idActor*>(entityToFleeFrom); // grayman #3847
+		emitFleeBarks = true;
+		if ( !GetMemory().fleeing ) // grayman #3847 - only flee if not already fleeing
+		{
+			GetMind()->SwitchState(STATE_FLEE);
+			success = true;
+		}
+	}
+
+	//StopMove(MOVE_STATUS_DEST_NOT_FOUND); // grayman #4250
+	//idThread::ReturnInt(Flee(entityToFleeFrom, false, algorithm, distanceOption)); // grayman #3317 // grayman #4250
+	idThread::ReturnInt(success);
 }
 
 /*
