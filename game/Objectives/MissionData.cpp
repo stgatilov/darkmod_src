@@ -1916,7 +1916,6 @@ bool CMissionData::ParseLogicStr( idStr *input, SBoolParseNode *output )
 
 	// set up outer node:
 	output->Clear();
-	output->PrevNode = NULL;
 	CurrentNode = output;
 
 	DM_LOG(LC_OBJECTIVES,LT_DEBUG)LOGSTRING("[Objective Logic] Parsing string: %s \r", input->c_str() );
