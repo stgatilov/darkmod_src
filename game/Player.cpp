@@ -11819,7 +11819,7 @@ void idPlayer::Event_ProcessInterMissionTriggers()
 
 // Obsttorte: Event to save the game
 
-void idPlayer::Event_saveGame(idStr name)
+void idPlayer::Event_saveGame(const char* name)
 {
 	cvarSystem->SetCVarString("saveGameName",name);
 }

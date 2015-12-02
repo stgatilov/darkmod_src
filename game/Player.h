@@ -1418,7 +1418,7 @@ private:
 	void					Event_ProcessInterMissionTriggers();
 
 	// Obsttorte: event to save the game
-	void					Event_saveGame(idStr name);
+	void					Event_saveGame(const char* name);
 
 
 	void					Event_setSavePermissions(int sp);
