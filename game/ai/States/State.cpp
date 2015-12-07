@@ -5373,8 +5373,11 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 	}
 
 	// grayman #2650 - can we handle doors?
-
-	if (!owner->m_bCanOperateDoors)
+	// grayman #4036 - Let humanoid AI enter the door queue and wait indefinitely
+	//                 for the door to be opened by someone else, rather than
+	//				   have them approach the door and bump up against it or
+	//				   try to go through it when someone else is going through it.
+	if ((!owner->m_bCanOperateDoors) && (owner->GetPhysics()->GetMass() <= SMALL_AI_MASS))
 	{
 		return;
 	}
