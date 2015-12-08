@@ -671,6 +671,12 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 
 idStr CDownloadMenu::GetMissionDownloadProgressString(int modIndex)
 {
+	// Agent Jones #4254
+	if ( _downloads.empty() )
+	{
+		return "";
+	}
+
 	ActiveDownloads::const_iterator it = _downloads.find(modIndex);
 
 	if (it == _downloads.end())
