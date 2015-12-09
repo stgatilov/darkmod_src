@@ -195,11 +195,35 @@ XmlDocumentPtr CHttpRequest::GetResultXml()
 	return doc;
 }
 
+// Agent Jones #3776
+int TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+    bool IsTDMRunning = common->WindowAvailable();
+    
+    if (IsTDMRunning == false)
+	{
+        return 1; // Cancel the request
+    }
+    return 0;
+}
+
 void CHttpRequest::UpdateProgress()
 {
 	double size;
 	double downloaded;
 	CURLcode result = curl_easy_getinfo(_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size);
+
+	// Agent Jones #3776
+#ifdef _WIN32
+	// The default progress meter function is not used here. Disable it.
+	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, FALSE);
+
+	// Progress callback
+	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, TDMHttpProgressFunc);	// Member functions are not recognised by libcurl,
+																				// so I had to create a global function(TDMHttpProgressFunc)
+#endif
+																				
+	// end #3776
 
 	if (result != CURLE_OK) 
 	{
@@ -270,3 +294,5 @@ size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHt
 
 	return static_cast<size_t>(bytesToCopy);
 }
+
+

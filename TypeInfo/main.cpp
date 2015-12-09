@@ -81,6 +81,7 @@ public:
 	virtual const char *		BindingFromKey( const char *key ) { return NULL; }
 	virtual int			ButtonState( int key ) { return 0; }
 	virtual int			KeyState( int key ) { return 0; }
+	virtual bool            WindowAvailable(void) { return true; } // Agent Jones #3776
 };
 
 idCVar com_developer( "developer", "0", CVAR_BOOL|CVAR_SYSTEM, "developer mode" );
