@@ -3309,6 +3309,42 @@ idAI::StopMove
 */
 void idAI::StopMove( moveStatus_t status )
 {
+	// grayman #4238 - are we stopping while clipping into a large AI?
+
+//--------------------------------
+//	if ( gameLocal.framenum > 30 )
+//	{
+		if ( physicsObj.GetNumClipModels() )
+		{
+			idEntity	*hit;
+			idClipModel *cm;
+			idClipModel *clipModels[MAX_GENTITIES];
+
+			int num = gameLocal.clip.ClipModelsTouchingBounds(physicsObj.GetAbsBounds(), physicsObj.GetClipMask(), clipModels, MAX_GENTITIES);
+			for ( int i = 0; i < num; i++ )
+			{
+				cm = clipModels[i];
+				hit = cm->GetEntity();
+				if ( hit && (hit != this) )
+				{
+					if ( hit->IsType(idAI::Type) ) // hit is an AI?
+					{
+						if ( hit->GetPhysics()->GetMass() > SMALL_AI_MASS ) // hit is not a small AI?
+						{
+							idAI *hitAI = static_cast<idAI*>(hit);
+							if ( !hitAI->AI_FORWARD ) // hit is standing still?
+							{
+								hitAI->PushWithAF();
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+//	}
+//----------------------------------
+
 	// Note: you might be tempted to set AI_RUN to false here,
 	// but AI_RUN needs to persist when stopping at a point
 	// where the AI is just going to start moving again.
@@ -12845,7 +12881,8 @@ void idAI::ShowDebugInfo()
 	// grayman #3857 - show AI name
 	if (cv_ai_name_show.GetBool() && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthSqr() < Square(1000)))
 	{
-		gameRenderWorld->DrawText(va("%s", GetName()), physicsObj.GetOrigin() + idVec3(0, 0, 50), 0.25f, colorWhite,
+		idVec4 colour = colorWhite;
+		gameRenderWorld->DrawText(va("%s", GetName()), physicsObj.GetOrigin() + idVec3(0, 0, 50), 0.25f, colour,
 			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 	}
 }
@@ -13380,6 +13417,46 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4227
 	}
 
 	return doorSide;
+}
+
+// grayman #4238 - is point p obstructed by a standing humanoid AI other than yourself?
+
+bool idAI::PointObstructed(idVec3 p)
+{
+	// if an AI is already there, and it's not you, ignore this spot
+
+	idBounds b = idBounds(idVec3(p.x-16.0f, p.y-16.0f, p.z), idVec3(p.x+16.0f, p.y+16.0f, p.z+60.0f));
+	idClipModel *clipModelList[MAX_GENTITIES];
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, MASK_MONSTERSOLID, clipModelList, MAX_GENTITIES );
+	bool obstructed = false;
+	for ( int i = 0 ; i < numListedClipModels ; i++ )
+	{
+		idEntity* candidate = clipModelList[i]->GetEntity();
+		if ( candidate != NULL )
+		{
+			if ( candidate == this )
+			{
+				continue; // can't be obstructed by yourself
+			}
+
+			if ( candidate->IsType(idAI::Type) && (candidate->GetPhysics()->GetMass() > 5) )
+			{
+				idAI *candidateAI = static_cast<idAI*>(candidate);
+				if ( !candidateAI->AI_FORWARD ) // candidate is standing still?
+				{
+					obstructed = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( !obstructed )
+	{
+		return false; // not obstructed
+	}
+
+	return true; // obstructed
 }
 
 /*

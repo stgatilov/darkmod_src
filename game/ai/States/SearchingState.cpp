@@ -789,6 +789,12 @@ bool SearchingState::FindRadialSpot(idAI* owner, idVec3 searchOrigin, float radi
 
 		if ((distAI2CandidateSqr < distAI2SearchOriginSqr) || ((searchOrigin - ownerOrigin).LengthFast() < radius))
 		{
+			// grayman #4238 - is another AI already there?
+			if ( owner->PointObstructed(candidateSpot) )
+			{
+				continue;
+			}
+
 			spotGood = true;
 			break;
 		}
@@ -801,6 +807,12 @@ bool SearchingState::FindRadialSpot(idAI* owner, idVec3 searchOrigin, float radi
 		dir = idAngles( 0, gameLocal.random.RandomInt(360), 0 ).ToForward();
 		dir.NormalizeFast();
 		candidateSpot = searchOrigin + radius*dir;
+
+		// grayman #4238 - is another AI already there?
+		if ( owner->PointObstructed(candidateSpot) )
+		{
+			return false;
+		}
 	}
 
 	// You must be able to see the search origin from this location.
@@ -820,6 +832,12 @@ bool SearchingState::FindRadialSpot(idAI* owner, idVec3 searchOrigin, float radi
 		if ( !gameLocal.clip.TracePoint(result, searchOrigin, eyePos, MASK_OPAQUE, NULL) )
 		{
 			spot = candidateSpot;
+
+			// grayman #4238 - is another AI already there?
+			if ( owner->PointObstructed(candidateSpot) )
+			{
+				return false;
+			}
 
 			// grayman #3857 - can we walk to the spot?
 

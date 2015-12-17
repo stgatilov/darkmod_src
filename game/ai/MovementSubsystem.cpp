@@ -867,8 +867,13 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 
 bool MovementSubsystem::IsResolvingBlock()
 {
-	return _state == EResolvingBlock;
+	return _owner.GetEntity()->GetMemory().resolvingMovementBlock;
 }
+
+/*bool MovementSubsystem::IsResolvingBlock()
+{
+	return _state == EResolvingBlock;
+}*/
 
 idVec3 MovementSubsystem::GetLastMove(void)	// grayman #2356 - used to help determine true falling near func_statics
 {
@@ -992,7 +997,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			break;
 		case EWaitingSolid: // grayman #2345
 			str = "EWaitingSolid";
-			colour = colorWhite;
+			colour = colorPink; // grayman #4238
 			break;
 		case EWaitingNonSolid: // grayman #2345
 			str = "EWaitingNonSolid";

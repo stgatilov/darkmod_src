@@ -1699,7 +1699,12 @@ void CSearchManager::CreateListOfGuardSpots(Search* search, idAI* ai)
 		float dist = (search->_origin - guardEntity->GetPhysics()->GetOrigin()).LengthFast();
 		if (dist < SEARCH_MAX_GUARD_SPOT_DISTANCE)
 		{
-			guardEntities.Append(guardEntity);
+			// grayman #4238 - if an AI is already there, ignore this spot
+
+			if (!ai->PointObstructed(guardEntity->GetPhysics()->GetOrigin()))
+			{
+				guardEntities.Append(guardEntity);
+			}
 		}
 	}
 

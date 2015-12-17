@@ -5173,7 +5173,7 @@ void idGameLocal::GetPortals(Search* search, idAI* ai)
 {
 	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
 	int areaNum = ai->PointReachableAreaNum(search->_origin);
-	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits);
+	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits, ai); // grayman #4238
 }
 
 /*

@@ -34,8 +34,8 @@ namespace ai
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 const float MAX_YAW = 90; // max yaw (+/-) from original yaw for idle turning
-const int   TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
-const int   TURN_DELAY_DELTA = 4000;
+const int   TURN_DELAY = 5000; // will make the guard turn every 5-8 seconds
+const int   TURN_DELAY_DELTA = 3000;
 const int   MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
 const float CLOSE_ENOUGH = 48.0f; // try to get this close to goal
 const float TRY_AGAIN_DISTANCE = 100.0f; // have reached point if this close when stopped
@@ -266,27 +266,36 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			}
 
 			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
+			// grayman #4238 - don't run if in less than Agitated Searching mode
 
-			float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
-			bool shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
-			owner->AI_RUN = false;
+			bool shouldRun = false;
+			if ( owner->AI_AlertIndex >= EAgitatedSearching )
+			{
+				float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
+				shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
+				if ( !shouldRun && (owner->m_searchID > 0) )
+				{
+					// When searching, and assigned guard or observer roles, AI should run.
+					Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+					Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search, owner);
+					if ( search && assignment )
+					{
+						if ( ((assignment->_searcherRole == E_ROLE_GUARD) && (search->_assignmentFlags & SEARCH_GUARD)) ||
+							((assignment->_searcherRole == E_ROLE_OBSERVER) && (search->_assignmentFlags & SEARCH_OBSERVE)) )
+						{
+							shouldRun = true;
+						}
+					}
+				}
+			}
+
 			if (shouldRun)
 			{
 				owner->AI_RUN = true;
 			}
-			else if (owner->m_searchID > 0)
+			else
 			{
-				// When searching, and assigned guard or observer roles, AI should run.
-				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
-				Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
-				if (search && assignment)
-				{
-					if (((assignment->_searcherRole == E_ROLE_GUARD) && (search->_assignmentFlags & SEARCH_GUARD)) ||
-						((assignment->_searcherRole == E_ROLE_OBSERVER) && (search->_assignmentFlags & SEARCH_OBSERVE)))
-					{
-						owner->AI_RUN = true;
-					}
-				}
+				owner->AI_RUN = false;
 			}
 
 			_guardSpotState = EStateMoving;

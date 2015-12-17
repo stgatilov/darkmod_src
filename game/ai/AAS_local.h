@@ -172,7 +172,7 @@ public:
 	/**
 	 * grayman #3857 - retrieve a list of portals around areaNum
 	 */
-	virtual void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits);
+	virtual void GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits, idAI* ai); // grayman #4238
 
 	/**
 	 * greebo: Assembles the elevator routing information.

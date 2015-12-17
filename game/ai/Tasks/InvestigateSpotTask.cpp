@@ -250,10 +250,11 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
 			// greebo: This is taxing and can be replaced by a simpler distance check 
 			// TravelDistance takes about ~0.1 msec on my 2.2 GHz system.
+			// grayman #4238 - don't run if in less than Agitated Searching mode
 
 			//gameRenderWorld->DebugArrow(colorYellow, owner->GetEyePosition(), _searchSpot, 1, MS2SEC(_exitTime - gameLocal.time + 100));
 			float actualDist = (ownerOrigin - _searchSpot).LengthFast();
-			owner->AI_RUN = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
+			owner->AI_RUN = (owner->AI_AlertIndex >= EAgitatedSearching) && (actualDist > MAX_TRAVEL_DISTANCE_WALKING);
 			_investigatingState = EStateMovingTo;
 		}
 		break;
@@ -364,9 +365,10 @@ bool InvestigateSpotTask::Perform(Subsystem& subsystem)
 			else if (!owner->AI_RUN) // if walking, see if you should switch to running
 			{
 				// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
+				// grayman #4238 - don't run if in less than Agitated Searching mode
 
 				float actualDist = (ownerOrigin - _searchSpot).LengthFast();
-				if ( actualDist > MAX_TRAVEL_DISTANCE_WALKING )
+				if ( (owner->AI_AlertIndex >= EAgitatedSearching) && (actualDist > MAX_TRAVEL_DISTANCE_WALKING ))
 				{
 					owner->AI_RUN = true;
 				}
