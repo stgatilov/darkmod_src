@@ -7424,32 +7424,60 @@ idPhysics_AF::AddBody
   as such the first body added will get id zero
 ================
 */
-int idPhysics_AF::AddBody( idAFBody *body ) {
+int idPhysics_AF::AddBody( idAFBody *body )
+{
 	int id = 0;
 
-	if ( !body->clipModel ) {
+	if ( !body->clipModel )
+	{
 		gameLocal.Error( "idPhysics_AF::AddBody: body '%s' has no clip model.", body->name.c_str() );
 	}
 
-	if ( bodies.Find( body ) ) {
+	if ( bodies.Find( body ) )
+	{
 		gameLocal.Error( "idPhysics_AF::AddBody: body '%s' added twice.", body->name.c_str() );
 	}
 
-	if ( GetBody( body->name ) ) {
-		gameLocal.Error( "idPhysics_AF::AddBody: a body with the name '%s' already exists.", body->name.c_str() );
+	/* grayman #3591 - We've only seen this problem with the card players, when the game is saved around
+	the frame when the card player draws a card from his deck. In theory, it could also happen when 
+	any objects are spawned by anim frame commands, i.e. the flint used to relight doused lights. The
+	problem occurs because the list of attached objects is saved during a savegame, but during restore
+	the list isn't recreated until after all objects have been spawned (idAFEntity_Base::RestoreAddedEnts()).
+
+	But when objects are all spawned, each object is allowed to think and update its animation. For some
+	reason, the card player's animation	replays the frame command to get a card and puts that into the
+	attached list. When the delayed list of attached objects is allowed to be re-added to the attached list,
+	the card is already there with the same name, because all of this happens in the same frame. I wasn't
+	able to figure out why the frame command was running twice, but we've had problems with this in the past.
+	So I'm taking the simple way out, which is to delete the object already in the list and append the new
+	one to the list.
+	
+	Change the error message to a warning.
+	*/
+
+	if ( GetBody( body->name ) )
+	{
+		gameLocal.Warning( "idPhysics_AF::AddBody: a body with the name '%s' already exists.", body->name.c_str() );
+		DeleteBody(body->name);
+		//gameLocal.Error( "idPhysics_AF::AddBody: a body with the name '%s' already exists.", body->name.c_str() );
 	}
 
 	id = bodies.Num();
 	body->clipModel->SetId( id );
-	if ( body->linearFriction < 0.0f ) {
+	if ( body->linearFriction < 0.0f )
+	{
 		body->linearFriction = linearFriction;
 		body->angularFriction = angularFriction;
 		body->contactFriction = contactFriction;
 	}
-	if ( body->bouncyness < 0.0f ) {
+
+	if ( body->bouncyness < 0.0f )
+	{
 		body->bouncyness = bouncyness;
 	}
-	if ( !body->fl.clipMaskSet ) {
+
+	if ( !body->fl.clipMaskSet )
+	{
 		body->clipMask = clipMask;
 	}
 
