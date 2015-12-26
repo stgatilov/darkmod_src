@@ -1277,7 +1277,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* in the future and start their melee swing in advance?
 	**/
 	bool					m_bMeleePredictProximity;
-
+	
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
 	float thresh_1, thresh_2, thresh_3, thresh_4, thresh_5;
@@ -1314,6 +1314,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// grayman #3857 - search manager
 	int m_searchID;				// which search he's assigned to; index into the Search Manager's list of active searches
+
+	/**
+	* grayman #4046 - saved _endtime for interrupted path_wait task
+	**/
+	float m_pathWaitTaskEndtime;
 
 	// The mind of this AI
 	ai::MindPtr mind;

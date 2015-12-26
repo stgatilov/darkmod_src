@@ -54,22 +54,33 @@ void PathWaitTask::Init(idAI* owner, Subsystem& subsystem)
 
 	idPathCorner* path = _path.GetEntity();
 
-	float waittime = path->spawnArgs.GetFloat("wait","0");
-	float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
+	// grayman #4046 - If there was some leftover time from the previous
+	// path_wait task, apply that to this path_wait task. Otherwise,
+	// calculate a new wait time.
 
-	if (waitmax > 0)
+	if ( (owner->m_pathWaitTaskEndtime > 0) && (owner->m_pathWaitTaskEndtime > gameLocal.time) )
 	{
-		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+		_endtime = owner->m_pathWaitTaskEndtime;
 	}
-
-	if (waittime > MAXTIME) // SEC2MS can't handle very large numbers
+	else
 	{
-		waittime = MAXTIME;
+		float waittime = path->spawnArgs.GetFloat("wait", "0");
+		float waitmax = path->spawnArgs.GetFloat("wait_max", "0");
+
+		if ( waitmax > 0 )
+		{
+			waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+		}
+
+		if ( waittime > MAXTIME ) // SEC2MS can't handle very large numbers
+		{
+			waittime = MAXTIME;
+		}
+
+		waittime = SEC2MS(waittime);
+
+		_endtime = waittime + gameLocal.time;
 	}
-
-	waittime = SEC2MS(waittime);
-
-	_endtime = waittime + gameLocal.time;
 }
 
 bool PathWaitTask::Perform(Subsystem& subsystem)
@@ -98,6 +109,23 @@ bool PathWaitTask::Perform(Subsystem& subsystem)
 		return true; // finish this task
 	}
 	return false;
+}
+
+void PathWaitTask::OnFinish(idAI* owner)
+{
+	// grayman #4046 - It's possible that this wait task was interrupted early, and
+	// there's a chance it will be restarted when the interruption is over. So that
+	// the restart doesn't try to wait the entire duration over again, let's save
+	// _endtime in the AI, and check that when the AI starts a new path_wait task.
+
+	if ( _endtime > gameLocal.time )
+	{
+		owner->m_pathWaitTaskEndtime = _endtime;
+	}
+	else
+	{
+		owner->m_pathWaitTaskEndtime = 0;
+	}
 }
 
 

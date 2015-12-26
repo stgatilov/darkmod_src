@@ -545,6 +545,8 @@ idAI::idAI()
 	m_allowAudioAlerts  = true;  // grayman #3424
 	m_searchID			= -1;	 // grayman #3857
 
+	m_pathWaitTaskEndtime = 0; // grayman #4046
+
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
 	m_AlertLevelThisFrame = 0.0f;
@@ -843,6 +845,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
 	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
 	savefile->WriteInt(m_searchID);				// grayman #3857
+	savefile->WriteFloat(m_pathWaitTaskEndtime); // grayman #4046
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -1297,6 +1300,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
 	savefile->ReadBool(m_allowAudioAlerts);	 // grayman #3424
 	savefile->ReadInt(m_searchID);			 // grayman #3857
+	savefile->ReadFloat(m_pathWaitTaskEndtime); // grayman #4046
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
