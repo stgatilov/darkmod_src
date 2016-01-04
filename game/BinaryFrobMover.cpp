@@ -744,7 +744,7 @@ bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr
 	// Get the name of this inventory category
 	const idStr& itemName = item->Category()->GetName();
 	
-	if (itemName == "#str_02392" && impulseState == EPressed ) // Keys
+	if ((itemName == "#str_02392") && (impulseState == EPressed )) // Keys
 	{
 		// Keys can be used on button PRESS event, let's see if the key matches
 		if (m_UsedByName.FindIndex(itemEntity->name) != -1)
@@ -768,6 +768,12 @@ bool CBinaryFrobMover::UseBy(EImpulseState impulseState, const CInventoryItemPtr
 			FrobMoverStartSound("snd_wrong_key");
 			return false;
 		}
+	}
+	// grayman #4262 - Handle key repeat and key release. The desired
+	// response was handled by the key press above.
+	else if ((itemName == "#str_02392") && ((impulseState == ERepeat ) || (impulseState == EReleased ))) // Keys
+	{
+		return false;
 	}
 	else if (itemName == "#str_02389" ) // Lockpicks
 	{

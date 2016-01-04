@@ -1918,6 +1918,10 @@ void CFrobDoor::SetControllerLocks()
 				idStr pick = spawnArgs.GetString("lock_picktype");
 				e->spawnArgs.Set("lock_picktype",pick.c_str());
 
+				// grayman #4262 - Set the controller's failed lock sound from the door's
+				idStr wrongKey = spawnArgs.GetString("snd_wrong_key");
+				e->spawnArgs.Set("snd_wrong_key",wrongKey.c_str());
+
 				// Set the controller's used_by list from the door's
 				for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))
 				{

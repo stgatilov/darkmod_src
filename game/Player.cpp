@@ -9870,6 +9870,17 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 			// Item could be used, return TRUE, we're done
 			return true;
 		}
+
+		// grayman #4262 - Item couldn't be used.
+		// If the item is a key, terminate further checking
+
+		// Get the name of this inventory category
+		const idStr& categoryName = item->Category()->GetName();
+	
+		if ( categoryName == "#str_02392" ) // Keys
+		{
+			return false;
+		}
 	}
 
 	// Item could not be used on the highlighted entity, launch the use script
