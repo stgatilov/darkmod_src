@@ -435,7 +435,14 @@ void idClipModel::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( contents );
 	savefile->ReadString( collisionModelName );
 	if ( collisionModelName.Length() ) {
-		collisionModelHandle = collisionModelManager->LoadModel( collisionModelName, false );
+		// Cater for skinned models with name in format "modelName~skinName" #4232
+		const int splitPos = idStr::FindChar(collisionModelName, '~');
+		if ( splitPos != -1 ) {
+			const idDeclSkin* skin = declManager->FindSkin( collisionModelName.c_str() + splitPos + 1, false );
+			collisionModelHandle = collisionModelManager->LoadModel( idStr(collisionModelName.c_str(), 0, splitPos), false, skin );
+		} else {
+			collisionModelHandle = collisionModelManager->LoadModel( collisionModelName, false );
+		}
 	} else {
 		collisionModelHandle = -1;
 	}
