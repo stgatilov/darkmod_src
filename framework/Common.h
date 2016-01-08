@@ -229,7 +229,7 @@ public:
 								// Directly sample a keystate.
 	virtual int					KeyState( int key ) = 0;
 
-	                            // Agent Jones #3776 - Check if we have a game window. If we don't
+	                            // Agent Jones #3766 - Check if we have a game window. If we don't
 								// then the main thread is not running.
     virtual bool                WindowAvailable(void) = 0;
 };
