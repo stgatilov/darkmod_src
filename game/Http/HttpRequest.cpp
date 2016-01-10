@@ -55,11 +55,11 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const 
 {}
 
 // Agent Jones #3766
-int TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+int CHttpRequest::TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
 {
     bool IsTDMRunning = common->WindowAvailable();
     
-    if (IsTDMRunning == false)
+	if (IsTDMRunning == false || static_cast<CHttpRequest*>(clientp)->_cancelFlag)
 	{
         return 1; // Cancel the request
     }
@@ -131,8 +131,9 @@ void CHttpRequest::InitRequest()
 	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, FALSE);
 
 	// Progress callback
-	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, TDMHttpProgressFunc);	// Member functions are not recognised by libcurl,
-																				// so I had to create a global function(TDMHttpProgressFunc)
+	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, CHttpRequest::TDMHttpProgressFunc);
+	curl_easy_setopt(_handle, CURLOPT_XFERINFODATA, this);//this will become the clientp arg in TDMHttpProgressFunc
+																				
 #endif
 	// end #3766
 

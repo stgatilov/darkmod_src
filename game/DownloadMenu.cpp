@@ -242,9 +242,24 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 		if (index >= _selectedMods.Num()) return;
 
+
+		if (gui->GetStateBool("mission_download_in_progress") == 1){//Cancel a download in progress
+			if (gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].missionDownloadId)->GetStatus() == CDownload::DownloadStatus::SUCCESS)
+				return;//this download has been completed, you won't be able to cancel it.
+			if (_downloads[_selectedMods[index]].l10nPackDownloadId != -1){//we were downloading a localization pack
+				CDownloadPtr l10ndownload = gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].l10nPackDownloadId);
+				l10ndownload->Stop(true);
+				gameLocal.m_DownloadManager->RemoveDownload(_downloads[_selectedMods[index]].l10nPackDownloadId);
+				}
+			
+			CDownloadPtr download = gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].missionDownloadId);
+			download->Stop(true);
+			gameLocal.m_DownloadManager->RemoveDownload(_downloads[_selectedMods[index]].missionDownloadId);
+		}
 		_selectedMods.Remove(_selectedMods[index]);
 
 		UpdateGUI(gui);
+		if (_selectedMods.Num()<1 )//last one
 		UpdateDownloadProgress(gui);
 	}
 	else if (cmd == "ondownloadablemissionscrollup")
@@ -731,6 +746,8 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 	int successfulDownloads = 0;
 	int failedDownloads = 0;
 
+	int canceledDownloads = 0; //Agent Jones
+
 	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
@@ -751,81 +768,87 @@ void CDownloadMenu::ShowDownloadResult(idUserInterface* gui)
 		case CDownload::FAILED:
 			failedDownloads++;
 			break;
+		case CDownload::CANCELED:
+			canceledDownloads++;//Agent Jones Test
+			break;
 		case CDownload::IN_PROGRESS:
 			gameLocal.Warning("Some downloads still in progress?");
 			break;
 		case CDownload::SUCCESS:
+		{
+			// gnartsch
+			bool l10nPackDownloaded = false;
+			// In case of success, check l10n download status
+			if (i->second.l10nPackDownloadId != -1)
 			{
-                // gnartsch
-				bool l10nPackDownloaded = false;
-				// In case of success, check l10n download status
-				if (i->second.l10nPackDownloadId != -1)
+				CDownloadPtr l10nDownload = gameLocal.m_DownloadManager->GetDownload(i->second.l10nPackDownloadId);
+
+				CDownload::DownloadStatus l10nStatus = l10nDownload->GetStatus();
+
+				if (l10nStatus == CDownload::NOT_STARTED_YET || l10nStatus == CDownload::IN_PROGRESS)
 				{
-					CDownloadPtr l10nDownload = gameLocal.m_DownloadManager->GetDownload(i->second.l10nPackDownloadId);
-
-					CDownload::DownloadStatus l10nStatus = l10nDownload->GetStatus();
-
-					if (l10nStatus == CDownload::NOT_STARTED_YET || l10nStatus == CDownload::IN_PROGRESS)
-					{
-						gameLocal.Warning("Localisation pack download not started or still in progress?");
-					}
-					else if (l10nStatus == CDownload::FAILED)
-					{
-						gameLocal.Warning("Failed to download localisation pack!");
-
-						// Turn this download into a failed one
-						failedDownloads++;
-					}
-					else if (l10nStatus == CDownload::SUCCESS)
-					{
-						// both successfully downloaded
-						successfulDownloads++;
-                        // gnartsch
-						l10nPackDownloaded = true;
-					}
+					gameLocal.Warning("Localisation pack download not started or still in progress?");
 				}
-				else // regular download without l10n ... or l10n download only (gnartsch)
+				else if (l10nStatus == CDownload::FAILED)
 				{
+					gameLocal.Warning("Failed to download localisation pack!");
+
+					// Turn this download into a failed one
+					failedDownloads++;
+				}
+				else if (l10nStatus == CDownload::SUCCESS)
+				{
+					// both successfully downloaded
 					successfulDownloads++;
-                    // gnartsch: Consider Localization pack having been dealt with as well
+					// gnartsch
 					l10nPackDownloaded = true;
 				}
-
-				// Save the mission version into the MissionDB for later use
-				CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
-				missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
-                // gnartsch: Mark l10n pack as present, so that the mission may disappear from the list of 'Available Downloads'
-				missionInfo->isL10NpackInstalled = l10nPackDownloaded;
 			}
-			break;
+			else // regular download without l10n ... or l10n download only (gnartsch)
+			{
+				successfulDownloads++;
+				// gnartsch: Consider Localization pack having been dealt with as well
+				l10nPackDownloaded = true;
+			}
+
+			// Save the mission version into the MissionDB for later use
+			CModInfoPtr missionInfo = gameLocal.m_MissionManager->GetModInfo(mod.modName);
+			missionInfo->SetKeyValue("downloaded_version", idStr(mod.version).c_str());
+			// gnartsch: Mark l10n pack as present, so that the mission may disappear from the list of 'Available Downloads'
+			missionInfo->isL10NpackInstalled = l10nPackDownloaded;
+		}
+		break;
 		};
 	}
 
 	gameLocal.Printf("Successful downloads: %d\nFailed downloads: %d\n", successfulDownloads, failedDownloads);
-
-	// Display the popup box
-	GuiMessage msg;
+		// Display the popup box
+		GuiMessage msg;
 	msg.type = GuiMessage::MSG_OK;
 	msg.okCmd = "close_msg_box;onDownloadCompleteConfirm";
-	msg.title = common->Translate( "#str_02142" ); // "Mission Download Result"
+	msg.title = common->Translate("#str_02142"); // "Mission Download Result"
 	msg.message = "";
 
 	if (successfulDownloads > 0)
 	{
-		msg.message += va( 
+		msg.message += va(
 			// "%d mission/missions successfully downloaded. You'll find it/them in the 'New Mission' page."
-			GetPlural(successfulDownloads, common->Translate( "#str_02144" ), common->Translate( "#str_02145" ) ),
-			successfulDownloads ); 
+			GetPlural(successfulDownloads, common->Translate("#str_02144"), common->Translate("#str_02145")),
+			successfulDownloads);
 	}
-	
+
 	if (failedDownloads > 0)
 	{
 		// "\n%d mission(s) couldn't be downloaded. Please check your disk space (or maybe some file is write protected) and try again."
-		msg.message += va( common->Translate( "#str_02146" ),
-			failedDownloads ); 
+		msg.message += va(common->Translate("#str_02146"),
+			failedDownloads);
 	}
-
-	gameLocal.AddMainMenuMessage(msg);
+	if (failedDownloads > 0 || successfulDownloads > 0)//Agent Jones Test
+		gameLocal.AddMainMenuMessage(msg);
+	else{
+		//AJ test
+		UpdateGUI(gui);
+	}
 
 	// Remove all downloads
 	for (ActiveDownloads::iterator i = _downloads.begin(); i != _downloads.end(); ++i)
