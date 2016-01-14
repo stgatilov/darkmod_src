@@ -2962,7 +2962,7 @@ idCollisionModelManagerLocal::GetSkinnedName // #4232 SteveL
 */
 const idStr idCollisionModelManagerLocal::GetSkinnedName( const char *fileName, const idDeclSkin* skin ) const
 {
-	return skin ? idStr(fileName) + idStr('~') + skin->GetName() : fileName;
+	return skin ? idStr(fileName) + idStr('\1') + skin->GetName() : fileName;
 }
 
 /*
