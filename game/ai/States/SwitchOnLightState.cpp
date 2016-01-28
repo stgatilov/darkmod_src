@@ -594,7 +594,7 @@ void SwitchOnLightState::Think(idAI* owner)
 				goalDirection.z = 0;
 				float delta = goalDirection.LengthFast();
 
-				if (delta <= _standOff)
+				if ((delta <= _standOff) && (abs(_relightSpot.z - owner->GetPhysics()->GetOrigin().z) < 30)) // grayman #4283
 				{
 					owner->StopMove(MOVE_STATUS_DONE);
 				}
