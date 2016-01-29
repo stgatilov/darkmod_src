@@ -244,7 +244,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 
 
 		if (gui->GetStateBool("mission_download_in_progress") == 1){//Cancel a download in progress
-			if (gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].missionDownloadId)->GetStatus() == CDownload::DownloadStatus::SUCCESS)
+			if (gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].missionDownloadId)->GetStatus() == CDownload::/*DownloadStatus::*/SUCCESS) // grayman - make linux compiler happy
 				return;//this download has been completed, you won't be able to cancel it.
 			if (_downloads[_selectedMods[index]].l10nPackDownloadId != -1){//we were downloading a localization pack
 				CDownloadPtr l10ndownload = gameLocal.m_DownloadManager->GetDownload(_downloads[_selectedMods[index]].l10nPackDownloadId);
