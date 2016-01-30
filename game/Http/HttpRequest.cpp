@@ -126,15 +126,14 @@ void CHttpRequest::InitRequest()
     curl_easy_setopt(_handle, CURLOPT_CAINFO, capath.c_str());
 
 	// Agent Jones #3766
-#ifdef _WIN32
+
 	// The default progress meter function is not used here. Disable it.
-	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, FALSE);
+	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, false);
 
 	// Progress callback
 	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, CHttpRequest::TDMHttpProgressFunc);
 	curl_easy_setopt(_handle, CURLOPT_XFERINFODATA, this);//this will become the clientp arg in TDMHttpProgressFunc
 																				
-#endif
 	// end #3766
 
 	// Get the proxy from the HttpConnection class

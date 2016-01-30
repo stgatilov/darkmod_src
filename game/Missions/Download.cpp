@@ -187,7 +187,7 @@ void CDownload::Perform()
 			}
 			else
 			{
-				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());//Agent Jones todo check out partial download connection failure
+				DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Connection Error (status = %i) for URL '%s'.", _request->GetStatus(), url.c_str());
 			}
 
 			// Proceed to the next URL

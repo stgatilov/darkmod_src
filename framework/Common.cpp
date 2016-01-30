@@ -3088,5 +3088,8 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 // Agent Jones #3766
 bool idCommonLocal::WindowAvailable(void)
 {
-    return Sys_IsWindowVisible();
+#ifdef _WIN32
+	return Sys_IsWindowVisible();
+#endif
+	return true;
 }
