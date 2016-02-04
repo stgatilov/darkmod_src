@@ -377,7 +377,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
-	EVENT( EV_Player_SetObjectiveText,	idPlayer::Event_SetObjectiveText )
+	EVENT( EV_Player_SetObjectiveText,		idPlayer::Event_SetObjectiveText )
 
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
@@ -660,6 +660,7 @@ idPlayer::idPlayer() :
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
 	objectivesOverlay		= -1;
+	inventoryGridOverlay	= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursor				= CInventoryCursorPtr();
 	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
@@ -1450,7 +1451,12 @@ void idPlayer::DestroyObjectivesGUI()
 
 	SetImmobilization("objectivesDisplay", 0);
 
-	DestroyOverlay(objectivesOverlay);
+	// Delay required to prevent weapon attacks. Failure in Weapon_GUI? -- Durandall #4286
+	// DestroyOverlay(objectivesOverlay);
+	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
+	int delay = objGUI->GetStateInt("DestroyDelay");
+	PostEventMS(&EV_DestroyOverlay, delay,  objectivesOverlay);
+
 	objectivesOverlay = -1;
 }
 
@@ -1478,8 +1484,274 @@ void idPlayer::UpdateObjectivesGUI()
 		return;
 	}
 
+	// GUI requested close? -- Durandall #4286
+	int closeGUI = GetGuiInt(objectivesOverlay, "CloseGUI");
+	if (closeGUI)
+	{
+		ToggleObjectivesGUI();
+		return;
+	}
+
 	// Trigger an update for this GUI
 	gameLocal.m_MissionData->UpdateGUIState(objGUI);
+}
+
+void idPlayer::CreateInventoryGridGUI()
+{
+	if (inventoryGridOverlay != -1)
+	{
+		return;
+	}
+	
+	inventoryGridOverlay = CreateOverlay(cv_tdm_invgrid_gui_file.GetString(), LAYER_INVGRID);
+
+	idUserInterface* invgridGUI = GetOverlay(inventoryGridOverlay);
+
+	if (invgridGUI == NULL)
+	{
+		gameLocal.Error("Failed setting up inventory grid GUI: %s", cv_tdm_invgrid_gui_file.GetString());
+		return;
+	}
+
+	invgridGUI->HandleNamedEvent("InitInventoryGridGUI");
+
+	// Set the weapon and inventory immobilisation flags
+	SetImmobilization("inventoryGridDisplay", EIM_WEAPON_SELECT | EIM_ITEM_USE | EIM_ITEM_SELECT | EIM_ITEM_DROP | EIM_FROB | EIM_FROB_COMPLEX | EIM_VIEW_ANGLE);
+
+	// Trigger an update
+	UpdateInventoryGridGUI();
+}
+
+void idPlayer::DestroyInventoryGridGUI()
+{
+	if (inventoryGridOverlay == -1)
+	{
+		return;
+	}
+
+	// User has selected loot?
+	const int selectLoot = GetGuiInt(inventoryGridOverlay, "SelectLoot");
+	if (selectLoot)
+	{
+		CInventoryItemPtr lootItem = Inventory()->GetItem("Loot Info", "Loot");
+		if (lootItem != NULL)
+		{
+			CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+			InventoryCursor()->SetCurrentItem(lootItem);
+			// Trigger an update, passing the previous item along
+			OnInventorySelectionChanged(prev);
+		}
+	}
+	else // User has selected an item.
+	{
+		// Generate a list of all relevant inventory items.
+		idList<CInventoryItemPtr> items;
+		for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+		{
+			CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+			for (int j = 0; j != category->GetNumItems(); ++j)
+			{
+				// Reverse order. New items at the end.
+				CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+				if (item->GetType() == CInventoryItem::IT_ITEM)
+				items.Append(item);
+			}
+		}
+	
+		// Get inventory grid gui vars.
+		const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
+		const int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
+		const int userChoice = GetGuiInt(inventoryGridOverlay, "UserChoice");
+
+		// Set item to user's choice
+		if ( userChoice > -1 && userChoice < pageSize)
+		{
+			const int selectedItem = (pageSize * currentPage) + userChoice;
+			if (selectedItem < items.Num())
+			{
+				CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+				InventoryCursor()->SetCurrentItem(items[selectedItem]);
+				// Trigger an update, passing the previous item along
+				OnInventorySelectionChanged(prev);
+			}
+		}
+	}
+
+	SetImmobilization("inventoryGridDisplay", 0);
+
+	// Delay required to prevent weapon attacks. Failure in Weapon_GUI?
+	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
+	int delay = invgridGUI->GetStateInt("DestroyDelay");
+
+	PostEventMS(&EV_DestroyOverlay, delay,  inventoryGridOverlay);
+
+	inventoryGridOverlay = -1;
+}
+
+void idPlayer::ToggleInventoryGridGUI()
+{
+  if (inventoryGridOverlay == -1)
+  {
+    CreateInventoryGridGUI();
+  }
+  else
+  {
+    DestroyInventoryGridGUI();
+  }
+}
+
+void idPlayer::UpdateInventoryGridGUI()
+{
+	if (inventoryGridOverlay == -1)
+	{ 
+		return; 
+	}
+
+	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
+
+	if (invgridGUI == NULL)
+	{
+		gameLocal.Error("Could not find inventory grid GUI: %s", cv_tdm_invgrid_gui_file.GetString());
+		return;
+	}
+	
+	// GUI requested close?
+	int closeGUI = GetGuiInt(inventoryGridOverlay, "CloseGUI");
+	if (closeGUI)
+	{
+		ToggleInventoryGridGUI();
+		return;
+	}
+
+	// Generate a list of all relevant inventory items.
+	idList<CInventoryItemPtr> items;
+	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+	{
+		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+		for (int j = 0; j != category->GetNumItems(); ++j)
+		{
+			// Reverse order. New items at the end.
+			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+			if (item->GetType() == CInventoryItem::IT_ITEM)
+			{
+				items.Append(item);
+			}
+		}
+	}
+	
+	// Get inventory grid gui vars.
+	const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
+	int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
+	const int pageRequest = GetGuiInt(inventoryGridOverlay, "PageRequest");
+
+	// Handle request for prev/next pages.
+	if (pageRequest == 1 && (items.Num() - 1 >= pageSize * (currentPage + 1)))
+	{
+		++currentPage;
+		SetGuiInt(inventoryGridOverlay, "CurrentPage", currentPage);
+	}
+	else if (pageRequest == -1 && currentPage > 0)
+	{
+		--currentPage;
+		SetGuiInt(inventoryGridOverlay, "CurrentPage", currentPage);
+	}
+	SetGuiInt(inventoryGridOverlay, "PageRequest", 0);
+
+	// Update inventory grid page buttons.
+	if (items.Num() - 1 >= pageSize * (currentPage + 1))
+	{
+		SetGuiInt(inventoryGridOverlay, "NextPageAvail", 1);
+	}
+	else
+	{
+		SetGuiInt(inventoryGridOverlay, "NextPageAvail", 0);
+	}
+
+	if (currentPage > 0)
+	{
+		SetGuiInt(inventoryGridOverlay, "PrevPageAvail", 1);
+	}
+	else
+	{
+		SetGuiInt(inventoryGridOverlay, "PrevPageAvail", 0);
+	}
+	
+	// Update each inventory grid entry for current page.
+	for (int i = 0; i != pageSize; ++i)
+	{
+		idStr prefix = va("GridItem%d", i);
+
+		// Clear entry until we determine if it holds an item.
+		SetGuiInt(inventoryGridOverlay, prefix + "_GroupVisible", 0);
+		SetGuiInt(inventoryGridOverlay, prefix + "_ItemVisible", 0);
+		SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 0 );
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemName", "" );
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", "");
+		SetGuiFloat(inventoryGridOverlay, prefix + "_ItemStackable", 0);
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemGroup", "");
+		SetGuiInt(inventoryGridOverlay, prefix + "_ItemCount", 0);
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemIcon", "");
+
+		// Check inventory bounds.
+		int itemIndex = (pageSize * currentPage) + i;
+		if (itemIndex >= items.Num()) continue;
+
+		// Get item.
+		CInventoryItemPtr item = items[itemIndex];
+
+		// Update grid entry for this item.
+		SetGuiInt(inventoryGridOverlay, prefix + "_GroupVisible", 1);
+		SetGuiInt(inventoryGridOverlay, prefix + "_ItemVisible", 1);
+
+		idStr itemName = common->Translate( item->GetName() );
+
+		// Tels: translated names can have two lines, so tell the GUI about it
+		int newline_index = itemName.Find( '\n' );
+		if (newline_index != -1)
+		{
+		  // two lines
+		  SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 1 );
+		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName", itemName.Left( newline_index) );
+		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", itemName.Mid( newline_index + 1, itemName.Length() - newline_index - 1 ) );
+		}
+		else
+		{
+		  // only one line
+		  SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 0 );
+		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName", itemName );
+		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", "");
+		}
+
+		SetGuiFloat(inventoryGridOverlay, prefix + "_ItemStackable", item->IsStackable() ? 1 : 0);
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemGroup", common->Translate( item->Category()->GetName() ) );
+		SetGuiInt(inventoryGridOverlay, prefix + "_ItemCount", item->GetCount());
+		SetGuiString(inventoryGridOverlay, prefix + "_ItemIcon", item->GetIcon().c_str());
+	}
+
+	// Loot counts.
+	int lootGold = 0;
+	int lootJewels = 0;
+	int lootGoods = 0;
+	int lootTotal = Inventory()->GetLoot(lootGold, lootJewels, lootGoods);
+	SetGuiInt(inventoryGridOverlay, "LootGold", lootGold);
+	SetGuiInt(inventoryGridOverlay, "LootJewels", lootJewels);
+	SetGuiInt(inventoryGridOverlay, "LootGoods", lootGoods);
+	SetGuiInt(inventoryGridOverlay, "LootTotal", lootTotal);
+	
+	// Loot icon.
+	CInventoryItemPtr lootItem = Inventory()->GetItem("Loot Info", "Loot");
+	if (lootItem != NULL)
+	{
+		idStr lootIcon = lootItem->GetIcon();
+		if (lootIcon != "")
+		{
+			SetGuiString(inventoryGridOverlay, "LootIcon", lootIcon);
+			SetGuiInt(inventoryGridOverlay, "LootIconVisible", 1);
+		}
+	}
+
+	// Trigger an update for this GUI
+	invgridGUI->StateChanged(gameLocal.time);
 }
 
 void idPlayer::SetupInventory()
@@ -1944,6 +2216,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_WaitUntilReadyGuiTime);
 
 	savefile->WriteInt(objectivesOverlay);
+	savefile->WriteInt(inventoryGridOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
 	if (m_WeaponCursor != NULL) {
@@ -2280,6 +2553,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_WaitUntilReadyGuiTime);
 
 	savefile->ReadInt(objectivesOverlay);
+	savefile->ReadInt(inventoryGridOverlay);
 
 	bool hasWeaponCursor;
 	savefile->ReadBool(hasWeaponCursor);
@@ -4367,6 +4641,18 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 		return true;
 	}
 
+	if ( token.Icmp( "updateObjectives" ) == 0 ) // Durandall #4286
+	{
+		UpdateObjectivesGUI();
+		return true;
+	}
+
+	if ( token.Icmp( "updateInventoryGrid" ) == 0 ) // Durandall #4286
+	{
+		UpdateInventoryGridGUI();
+		return true;
+	}
+
 	src->UnreadToken( &token );
 	return false;
 }
@@ -5504,6 +5790,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Trigger an objectives GUI update if applicable
 			UpdateObjectivesGUI();
 
+			// Trigger an inventory grid GUI update if applicable #4286
+			UpdateInventoryGridGUI();
+
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
 			{
@@ -5521,11 +5810,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 				gameLocal.m_Grabber->IncrementDistance( !cv_reverse_grab_control.GetBool() );
 			}
 
+			// Pass the "previous weapon" event to the GUIs
+			m_overlays.broadcastNamedEvent("prevWeapon");
+
 			// Trigger an objectives GUI update if applicable
 			UpdateObjectivesGUI();
 
-			// Pass the "previous weapon" event to the GUIs
-			m_overlays.broadcastNamedEvent("prevWeapon");
+			// Trigger an inventory grid GUI update if applicable #4286
+			UpdateInventoryGridGUI();
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -5672,6 +5964,12 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
+		case IMPULSE_30:		// Toggle Inventory Grid GUI #4286
+		{
+			ToggleInventoryGridGUI();
+			break;
+		}
+
 		case IMPULSE_40:		// TDM: grab item with grabber
 		{
 			CGrabber *grabber = gameLocal.m_Grabber;
@@ -5759,6 +6057,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5780,6 +6081,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5799,6 +6103,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevGroup");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5817,6 +6124,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextGroup");
+
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
 
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
@@ -10022,6 +10332,7 @@ void idPlayer::OnInventoryItemChanged()
 	idEntity::OnInventoryItemChanged();
 
 	inventoryHUDNeedsUpdate = true;
+	UpdateInventoryGridGUI();	// #4286
 }
 
 void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
@@ -11181,6 +11492,8 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 		// Fire the script events and update the HUD
 		OnInventorySelectionChanged(prev);
 	}
+
+	UpdateInventoryGridGUI(); // #4286
 
 	return returnValue;
 }

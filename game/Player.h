@@ -876,6 +876,9 @@ public:
 	// Shows/hides the in-game objectives GUI
 	void					ToggleObjectivesGUI();
 
+	// Shows/hides the in-game inventory grid GUI -- Durandall #4286
+	void					ToggleInventoryGridGUI();
+
 	/**
 	* Physically test whether an item would fit in the world when
 	* dropped with its center of mass (not origin!) at the specified point
@@ -955,6 +958,9 @@ public:
 	// Updates the in-game Objectives GUI, if visible (otherwise nothing happens)
 	void			UpdateObjectivesGUI();
 
+	// Updates the in-game Inventory Grid GUI, if visible (otherwise nothing happens) -- Durandall #4286
+	void			UpdateInventoryGridGUI();
+
 	void			PrintDebugHUD();
 
 	// Runs the "Click when ready" GUI, returns TRUE if the player is ready
@@ -987,6 +993,10 @@ protected:
 	// greebo: Methods used to manage the GUI layer for the in-game objectives
 	void CreateObjectivesGUI();
 	void DestroyObjectivesGUI();
+
+	// Methods used to manage the GUI layer for the in-game inventory grid -- Durandall #4286
+	void CreateInventoryGridGUI();
+	void DestroyInventoryGridGUI();
 
 	/**
 	* greebo: Parses the spawnargs for any weapon definitions and adds them
@@ -1051,6 +1061,9 @@ private:
 
 	// The GUI handle used by the in-game objectives display 
 	int						objectivesOverlay;
+
+	// The GUI handle used by the in-game inventory grid display -- Durandall #4286
+	int						inventoryGridOverlay;
 
 	idInterpolate<float>	zoomFov;
 	idInterpolate<float>	centerView;
