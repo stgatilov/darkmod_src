@@ -2309,6 +2309,40 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 			}
 			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
 		}
+
+		// grayman #4290
+
+		// It's possible that the origin of the light is embedded inside
+		// another object, and that the light is a light holder whose origin
+		// is the same as the light's. (Perhaps a chandelier.) Do one last
+		// check at the true source of the light, using the light_center spawnarg.
+
+		idVec3 lightCenter;
+		idLight *light = static_cast<idLight*>(ent);
+		light->spawnArgs.GetVector("light_center", "0 0 0", lightCenter);
+		idVec3 truelight = entityOrigin + lightCenter;
+		if ( lightCenter.LengthFast() > 0.01 )
+		{
+			if (!gameLocal.clip.TracePoint(result, eye, truelight, MASK_OPAQUE, this) || 
+					gameLocal.GetTraceEntity(result) == ent) 
+			{
+				// Trace succeeded
+				return true;
+			}
+		}
+
+		// Check the light's bindMaster again
+
+		entHit = gameLocal.GetTraceEntity(result);
+		bindMaster = ent->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
+		{
+			if ( entHit == bindMaster )
+			{
+				return true;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
 	}
 	else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
 	{
