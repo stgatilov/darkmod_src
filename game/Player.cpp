@@ -1675,34 +1675,30 @@ void idPlayer::UpdateInventoryGridGUI()
 	{
 		SetGuiInt(inventoryGridOverlay, "PrevPageAvail", 0);
 	}
+
+	
+	// Clear entries until we determine if they hold an item.
+	invgridGUI->HandleNamedEvent("clearGrid");
 	
 	// Update each inventory grid entry for current page.
 	for (int i = 0; i != pageSize; ++i)
 	{
-		idStr prefix = va("GridItem%d", i);
-
-		// Clear entry until we determine if it holds an item.
-		SetGuiInt(inventoryGridOverlay, prefix + "_GroupVisible", 0);
-		SetGuiInt(inventoryGridOverlay, prefix + "_ItemVisible", 0);
-		SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 0 );
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemName", "" );
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", "");
-		SetGuiFloat(inventoryGridOverlay, prefix + "_ItemStackable", 0);
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemGroup", "");
-		SetGuiInt(inventoryGridOverlay, prefix + "_ItemCount", 0);
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemIcon", "");
+		idStr ItemNameMultiline = va("GridItem%d_ItemNameMultiline", i);
+		idStr ItemName = va("GridItem%d_ItemName", i);
+		idStr ItemName2 = va("GridItem%d_ItemName_2", i);
+		idStr ItemStackable = va("GridItem%d_ItemStackable", i);
+		idStr ItemGroup = va("GridItem%d_ItemGroup", i);
+		idStr ItemCount = va("GridItem%d_ItemCount", i);
+		idStr ItemIcon = va("GridItem%d_ItemIcon", i);
 
 		// Check inventory bounds.
 		int itemIndex = (pageSize * currentPage) + i;
-		if (itemIndex >= items.Num()) continue;
+		if (itemIndex >= items.Num()) { break; }
 
 		// Get item.
 		CInventoryItemPtr item = items[itemIndex];
 
 		// Update grid entry for this item.
-		SetGuiInt(inventoryGridOverlay, prefix + "_GroupVisible", 1);
-		SetGuiInt(inventoryGridOverlay, prefix + "_ItemVisible", 1);
-
 		idStr itemName = common->Translate( item->GetName() );
 
 		// Tels: translated names can have two lines, so tell the GUI about it
@@ -1710,22 +1706,22 @@ void idPlayer::UpdateInventoryGridGUI()
 		if (newline_index != -1)
 		{
 		  // two lines
-		  SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 1 );
-		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName", itemName.Left( newline_index) );
-		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", itemName.Mid( newline_index + 1, itemName.Length() - newline_index - 1 ) );
+		  SetGuiInt(inventoryGridOverlay, ItemNameMultiline, 1 );
+ 		  SetGuiString(inventoryGridOverlay, ItemName, itemName.Left( newline_index) );
+ 		  SetGuiString(inventoryGridOverlay, ItemName2, itemName.Mid( newline_index + 1, itemName.Length() - newline_index - 1 ) );
 		}
 		else
 		{
 		  // only one line
-		  SetGuiInt(inventoryGridOverlay, prefix + "_ItemNameMultiline", 0 );
-		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName", itemName );
-		  SetGuiString(inventoryGridOverlay, prefix + "_ItemName_2", "");
+		  SetGuiInt(inventoryGridOverlay, ItemNameMultiline, 0 );
+ 		  SetGuiString(inventoryGridOverlay, ItemName, itemName );
+ 		  SetGuiString(inventoryGridOverlay, ItemName2, "");
 		}
 
-		SetGuiFloat(inventoryGridOverlay, prefix + "_ItemStackable", item->IsStackable() ? 1 : 0);
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemGroup", common->Translate( item->Category()->GetName() ) );
-		SetGuiInt(inventoryGridOverlay, prefix + "_ItemCount", item->GetCount());
-		SetGuiString(inventoryGridOverlay, prefix + "_ItemIcon", item->GetIcon().c_str());
+		SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
+ 		SetGuiString(inventoryGridOverlay, ItemGroup, common->Translate( item->Category()->GetName() ) );
+ 		SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
+ 		SetGuiString(inventoryGridOverlay, ItemIcon, item->GetIcon().c_str());
 	}
 
 	// Loot counts.
