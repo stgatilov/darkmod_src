@@ -5421,7 +5421,14 @@ idGameLocal::InhibitEntitySpawn
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	bool inhibit_spawn = false;
 
-	if ( spawnArgs.GetBool("inline") && idStr("func_static") == spawnArgs.GetString("classname") ) // #3933 prevent inlined FS from spawning
+	// #3933 prevent inlined FS from spawning
+	if ( spawnArgs.GetBool("inline") && idStr("func_static") == spawnArgs.GetString("classname") ) 
+	{
+		inhibit_spawn = true;
+	}
+
+	// #4300: Prevent func_groups from attempting to spawn
+	if ( spawnArgs.GetString("classname") == idStr("func_group") )
 	{
 		inhibit_spawn = true;
 	}
