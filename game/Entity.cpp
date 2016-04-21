@@ -1082,8 +1082,8 @@ void idEntity::Event_HideByLODBias( void )
 		// FuncPortals are closed instead of hidden
 		if ( IsType( idFuncPortal::Type ) )
 		{
-			gameLocal.Printf ("%s: Closing portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
-					GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+			//gameLocal.Printf ("%s: Closing portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+			//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
 			static_cast<idFuncPortal *>( this )->ClosePortal();
 		}
 		else
@@ -1114,8 +1114,8 @@ void idEntity::Event_HideByLODBias( void )
 
 	if ( IsType( idFuncPortal::Type ) )
 	{
-		gameLocal.Printf ("%s: Opening portal because lodbias %0.2f is between %0.2f and %0.2f.\n",
-				GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+		//gameLocal.Printf ("%s: Opening portal because lodbias %0.2f is between %0.2f and %0.2f.\n",
+		//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
 		static_cast<idFuncPortal *>( this )->OpenPortal();
 	}
 	else

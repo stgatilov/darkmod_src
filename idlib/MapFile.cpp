@@ -805,7 +805,32 @@ bool idMapFile::Parse( const char *filename, bool ignoreRegion, bool osPath ) {
 			for ( i = 1; i < entities.Num(); i++ ) {
 				mapEnt = entities[i];
 				if ( idStr::Icmp( mapEnt->epairs.GetString( "classname" ), "func_group" ) == 0 ) {
-					entities[0]->primitives.Append( mapEnt->primitives );
+					// SteveL #4300. This was broken. Primitives in entities are written in the map file 
+					// relative to the entity origin not the world origin. This needs correcting for as 
+					// the entities are copied. 
+					// entities[0]->primitives.Append( mapEnt->primitives ); // Old code pre-#4300
+					for ( int x = 0; x < mapEnt->primitives.Num(); ++x )
+					{
+						idMapPrimitive* pr = mapEnt->primitives[x];
+						idVec3 groupOrg = mapEnt->epairs.GetVector("origin");
+						if ( pr->GetType() == idMapPrimitive::TYPE_BRUSH )
+						{
+							idMapBrush* br = static_cast<idMapBrush*>(pr);
+							for ( int y = 0; y < br->GetNumSides(); ++y )
+							{
+								idMapBrushSide* bs = br->GetSide(y);
+								idPlane p = bs->GetPlane();
+								p.SetDist( p.Dist() + groupOrg * p.Normal() );
+								bs->SetPlane(p);
+							}
+						}
+						else if ( pr->GetType() == idMapPrimitive::TYPE_PATCH )
+						{
+							static_cast<idMapPatch*>(pr)->TranslateSelf( groupOrg );
+						}
+						entities[0]->primitives.Append(pr);
+					}
+					// End of #4300
 					mapEnt->primitives.Clear();
 				}
 			}
