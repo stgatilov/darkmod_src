@@ -104,6 +104,8 @@ const float MAX_FLEE_DISTANCE = 10000.0f;
 #define INITIAL_PICKPOCKET_DELAY  2000 // how long to initially wait before proceeding (ms)
 #define LATCHED_PICKPOCKET_DELAY 60000 // how long to wait before seeing if a latch has been removed (ms)
 
+#define MIN_SPEED_TO_NOTICE_MOVEABLE 20 // grayman #4304 - minimum speed to notice getting hit by a moveable
+
 class CRelations;
 class CsndProp;
 class CDarkModPlayer;
@@ -10705,7 +10707,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_SetInMotionByActor.GetEntity() == this )
 		{
-			TactileIgnore(tactEnt);
+			//TactileIgnore(tactEnt); // grayman #4304 - ignore this time, but not forever
 			return;
 		}
 	}
@@ -10742,6 +10744,12 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt->IsType(idMoveable::Type) )
 	{
+		// grayman #4304 - ignore the moveable if it isn't traveling fast enough to notice
+		if ( tactEnt->GetPhysics()->GetLinearVelocity().LengthFast() < MIN_SPEED_TO_NOTICE_MOVEABLE)
+		{
+			return;
+		}
+
 		// Ignore the moveable if you have an enemy.
 
 		if ( GetEnemy() == NULL )

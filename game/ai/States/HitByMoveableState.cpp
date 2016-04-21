@@ -43,9 +43,24 @@ const idStr& HitByMoveableState::GetName() const
 
 void HitByMoveableState::Cleanup(idAI* owner)
 {
+	// grayman #4304 - when finished, change who put the tactEnt in motion. It bounced
+	// off of me, so I'm now responsible. When it comes to rest, these motion settings
+	// will be cleared.
+
+	idEntity* tactEnt = owner->GetMemory().hitByThisMoveable.GetEntity();
+	if ( tactEnt )
+	{
+		tactEnt->m_SetInMotionByActor = owner;
+		tactEnt->m_MovedByActor = owner;
+	}
+
 	owner->GetMemory().hitByThisMoveable = NULL;
 	owner->m_ReactingToHit = false;
 	owner->GetMemory().stopReactingToHit = false;
+
+	// grayman #4304 - restart the search for hiding spots, in case an ongoing
+	// search was interrupted by getting hit by a moveable
+	owner->GetMemory().restartSearchForHidingSpots = true;
 }
 
 // Wrap up and end state
