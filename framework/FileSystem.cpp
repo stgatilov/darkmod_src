@@ -803,14 +803,18 @@ idFileSystemLocal::RemoveFile
 */
 void idFileSystemLocal::RemoveFile( const char *relativePath, const char *gamedir ) {
 	idStr OSPath;
+    int removeResult = -1;
 
 	if ( fs_devpath.GetString()[0] ) {
 		OSPath = BuildOSPath( fs_devpath.GetString(), gamedir ? gamedir : gameFolder.c_str(), relativePath );
-		remove( OSPath );
+        removeResult = remove( OSPath );
 	}
 
-	OSPath = BuildOSPath( fs_modSavePath.GetString(), gamedir ? gamedir : gameFolder.c_str(), relativePath );
-	remove( OSPath );
+    if (removeResult != 0)
+    {
+        OSPath = BuildOSPath(fs_modSavePath.GetString(), gamedir ? gamedir : gameFolder.c_str(), relativePath);
+        remove(OSPath);
+    }
 
 	ClearDirCache();
 }
