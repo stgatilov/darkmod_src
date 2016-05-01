@@ -5372,12 +5372,31 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
-	// grayman #2650 - can we handle doors?
-	// grayman #4036 - Let humanoid AI enter the door queue and wait indefinitely
-	//                 for the door to be opened by someone else, rather than
-	//				   have them approach the door and bump up against it or
-	//				   try to go through it when someone else is going through it.
-	if ((!owner->m_bCanOperateDoors) && (owner->GetPhysics()->GetMass() <= SMALL_AI_MASS))
+	// grayman #4311 - need to revert the previous fix for #4036, which caused
+	// #4311's problem. Revisit this in 2.05 when there's ample time to put in a
+	// fix that handles both problems.
+
+	// grayman #2650 - can we handle doors? Check for rats and spiders first.
+
+	if (owner->GetPhysics()->GetMass() <= SMALL_AI_MASS)
+	{
+		return;
+	}
+
+	// grayman #4311 - ignoring the door at this point allows the fence at the beginning
+	// of ANH to correctly use the cellar door and the sewer door. But we want to allow the
+	// AI to enter the door queue instead, and handle his inability to operate doors in
+	// the door-handling code. This lets him stand off from a door and let another AI 
+	// handle it w/o getting in the way. He can pass through the door later if it's left
+	// open and he can fit through the opening. Perhaps the inability to operate a door
+	// means these situations:
+	//
+	// 1 - can't open a door
+	// 2 - can't close a door
+	// 3 - can't unlock a door
+	// 4 - can't lock a door
+
+	if (!owner->m_bCanOperateDoors)
 	{
 		return;
 	}
