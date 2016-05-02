@@ -233,8 +233,8 @@ public:
 
 	void		Restore( idRestoreGame *savefile );
 
-	//void		DebugPrintHidingSpots(Search* search); // Print the current hiding spots/
-	void		DebugPrintSearch(Search* search); // Print the contents of a search
+	//void		DebugPrintHidingSpots(Search* search); // Print the current hiding spots
+	//void		DebugPrintSearch(Search* search); // Print the contents of a search
 	//void		DebugPrintAssignment(Assignment* assignment); // Print the contents of an assignment
 
 
