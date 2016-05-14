@@ -148,6 +148,14 @@ public:
 	 * @throws: std::runtime_error on any failures.
 	 */
 	boost::uint32_t GetCumulativeCrc();
+
+    /**
+    * Iterates over all archive members and checks for files with dates outside the acceptable range
+    *
+    * @returns: true if bad dates are found, false otherwise
+    * @throws: std::runtime_error on any failures.
+    */
+    bool ContainsBadDate();
 };
 typedef boost::shared_ptr<ZipFileRead> ZipFileReadPtr;
 
@@ -232,6 +240,19 @@ public:
 	 * and leaving those out which should be removed.
 	 */
 	static void RemoveFilesFromArchive(const fs::path& fullPath, const std::set<std::string>& membersToRemove);
+
+    /**
+    * Copy all files from one archive into another (in compressed form) and replace the original file with
+    * the new version of the archive.
+    */
+    static void RecreateArchive(const fs::path& fullPath);
+
+private:
+    /**
+    * Copy all files from one archive into another (in compressed form), leaving out those which should  
+    * be removed. Replace the original file with the new version of the archive.
+    */
+    static void RecreateArchive(const fs::path& fullPath, const std::set<std::string>& membersToRemove);
 };
 
 } // namespace

@@ -94,6 +94,7 @@ struct CurFileInfo
 		Replace,
 		Add,
 		RemoveFilesFromPK4,
+        RegeneratePK4,
 	};
 
 	Operation operation;
@@ -271,6 +272,9 @@ public:
 	// Performs any post-update step actions, if any
 	void CleanupUpdateStep();
 
+    // Checks for bad dates in PK4 files and recreates the PK4 with corrected dates if required
+    void FixPK4Dates();
+
 	std::size_t GetNumFilesToBeUpdated();
 
 	// Returns the number of bytes which need to be downloaded
@@ -343,6 +347,12 @@ private:
 
 	// Prepare the update batch/script file
 	void PrepareUpdateBatchFile(const fs::path& temporaryUpdater);
+
+    // Determine if a PK4 file contains bad dates
+    bool PK4ContainsBadDates(const fs::path& targetFile);
+
+    // Corrects bad dates in a PK4 file
+    void FixPK4Dates(const fs::path& targetFile);
 };
 
 } // namespace
