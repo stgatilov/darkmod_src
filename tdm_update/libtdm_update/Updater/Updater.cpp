@@ -1403,6 +1403,74 @@ void Updater::CleanupUpdateStep()
 	_downloadQueue.clear();
 }
 
+void Updater::FixPK4Dates()
+{
+    // Get the current path
+    fs::path targetPath = GetTargetPath();
+
+    TraceLog::WriteLine(LOG_VERBOSE, "Checking PK4 dates in target folder: " + targetPath.string());
+
+    // Some math for the progress meter
+    std::size_t curOperation = 0;
+    // get the number of PK4 files in the target directory
+    std::size_t totalFileOperations = std::count_if(
+        fs::directory_iterator(targetPath),
+        fs::directory_iterator(),
+        bind(static_cast<bool(*)(const fs::path&)>(File::IsPK4), bind(&fs::directory_entry::path, _1)));
+
+    // Search for and fix bad PK4 dates
+    for (fs::directory_iterator i(targetPath); i != fs::directory_iterator(); ++i)
+    {
+        if (File::IsPK4(i->path()))
+        {
+            TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Checking " + i->path().string());
+
+            curOperation++;
+
+            if (PK4ContainsBadDates(i->path()))
+            {
+                TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Found bad date in " + i->path().string());
+                
+                NotifyFileProgress(i->path(), CurFileInfo::RegeneratePK4, static_cast<double>(curOperation) / totalFileOperations);
+                
+                FixPK4Dates(i->path());
+            }
+        }
+    }
+}
+
+bool Updater::PK4ContainsBadDates(const fs::path& file)
+{
+    bool result = false;
+    
+    // Open the file for reading
+    ZipFileReadPtr zipFile = Zip::OpenFileRead(file);
+
+    if (zipFile == NULL)
+    {
+        TraceLog::WriteLine(LOG_VERBOSE, "[PK4ContainsBadDates] Could not open ZIP file: " + file.string());
+        return false;
+    }
+
+    try
+    {
+        result = zipFile->ContainsBadDate();
+    }
+    catch (std::runtime_error &exc)
+    {
+        TraceLog::WriteLine(LOG_VERBOSE, "[PK4ContainsBadDates] Exception: " + std::string(exc.what()));
+    }
+    
+    return result;
+}
+
+void Updater::FixPK4Dates(const fs::path& file)
+{
+    TraceLog::WriteLine(LOG_VERBOSE, "[FixPK4Dates] Regenerating " + file.string());
+
+    Zip::RecreateArchive(file);
+}
+
 void Updater::AssertMirrorsNotEmpty()
 {
 	if (_mirrors.empty())

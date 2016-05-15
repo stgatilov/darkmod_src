@@ -476,6 +476,46 @@ boost::uint32_t ZipFileRead::GetCumulativeCrc()
 	return overallCRC;
 }
 
+bool ZipFileRead::ContainsBadDate()
+{
+    int result = unzGoToFirstFile(_handle);
+
+    if (result != UNZ_OK)
+    {
+        throw std::runtime_error("[ContainsBadDate]: Cannot go to first file: " + intToStr(result));
+    }
+
+    while (result == UNZ_OK)
+    {
+        // get zipped file info
+        unz_file_info info;
+        result = unzGetCurrentFileInfo(_handle, &info, NULL, 0, NULL, 0, NULL, 0);
+
+        if (result != UNZ_OK)
+        {
+            throw std::runtime_error("[ContainsBadDate]: Cannot get file info: " + intToStr(result));
+        }
+
+        // file modification date sanity checks
+        // - known bad dates include the year 1980 and dates > current dates
+        time_t tnow = time(0);   // get time now
+        tm now = safe_localtime(&tnow);
+
+        if (info.tmu_date.tm_year == 1980 || 
+            info.tmu_date.tm_year > (uInt)(now.tm_year + 1900) ||
+            (info.tmu_date.tm_year == (uInt)(now.tm_year + 1900) && info.tmu_date.tm_mon > (uInt)now.tm_mon) ||
+            (info.tmu_date.tm_year == (uInt)(now.tm_year + 1900) && info.tmu_date.tm_mon == (uInt)now.tm_mon && info.tmu_date.tm_mday > (uInt)now.tm_mday)
+        )
+        {
+            return true;
+        }
+
+        result = unzGoToNextFile(_handle);
+    }
+
+    return false;
+}
+
 // --------------------------------------------------------
 
 ZipFileWrite::ZipFileWrite(zipFile handle) :
@@ -730,15 +770,28 @@ public:
 
 void Zip::RemoveFilesFromArchive(const fs::path& fullPath, const std::set<std::string>& membersToRemove)
 {
-	if (membersToRemove.empty()) return; // quick bail out on empty removal list
+    if (membersToRemove.empty()) return; // quick bail out on empty removal list
 
+    RecreateArchive(fullPath, membersToRemove);
+}
+
+void Zip::RecreateArchive(const fs::path& fullPath)
+{
+    RecreateArchive(fullPath, std::set<std::string>());
+}
+
+void Zip::RecreateArchive(const fs::path& fullPath, const std::set<std::string>& membersToRemove)
+{
 	fs::path temporaryPath = fullPath;
 	//temporaryPath.remove_leaf().remove_leaf(); // grayman #3514 - don't go so far up
 	temporaryPath.remove_leaf();
 	temporaryPath /= TMP_FILE_PREFIX + fullPath.leaf().string();
 
-	TraceLog::WriteLine(LOG_VERBOSE, 
-		(boost::format("Removing %d files from archive %s") % membersToRemove.size() % fullPath.string()).str());
+    if (membersToRemove.size() > 0)
+    {
+        TraceLog::WriteLine(LOG_VERBOSE,
+            (boost::format("Removing %d files from archive %s") % membersToRemove.size() % fullPath.string()).str());
+    }
 
 	{
 		ZipFileReadPtr source = OpenFileRead(fullPath);

@@ -51,6 +51,7 @@ struct ProgressInfo
 		Add,
 		RemoveFilesFromPK4,
 		Unspecified,
+        RegeneratePK4,
 	};
 
 	FileOperationType operationType;

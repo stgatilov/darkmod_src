@@ -70,7 +70,7 @@ BOOL UpdaterApplication::InitInstance()
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, 
-		(boost::format("TDM Updater v%s (c) 2009-2013 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
+        (boost::format("TDM Updater v%s (c) 2009-2016 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	// InitCommonControlsEx() is required on Windows XP if an application

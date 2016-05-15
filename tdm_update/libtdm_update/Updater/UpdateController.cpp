@@ -232,7 +232,7 @@ void UpdateController::PerformStep(UpdateStep step)
 	
 	case DownloadDifferentialUpdate:
 		{
-			DifferentialUpdateInfo info = _updater.GetDifferentialUpdateInfo();
+            DifferentialUpdateInfo info = _updater.GetDifferentialUpdateInfo();
 			_view.OnStartDifferentialUpdate(info);
 
 			// Download the update package, integrate it
@@ -251,12 +251,13 @@ void UpdateController::PerformStep(UpdateStep step)
 		break;
 
 	case DownloadFullUpdate:
-		_updater.PrepareUpdateStep();
+        _updater.PrepareUpdateStep();
 		_updater.PerformUpdateStep();
 		_updater.CleanupUpdateStep();
 		break;
 
 	case PostUpdateCleanup:
+        _updater.FixPK4Dates();
 		_updater.PostUpdateCleanup();
 		break;
 

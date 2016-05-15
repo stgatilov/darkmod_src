@@ -184,172 +184,185 @@ void ConsoleUpdater::OnStartStep(UpdateStep step)
 		TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
 		TraceLog::WriteLine(LOG_STANDARD, " Downloading updates...");
 		break;
+
+    case PostUpdateCleanup:
+        TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
+        TraceLog::WriteLine(LOG_STANDARD, " Performing cleanup steps and correcting bad dates in PK4 files");
+        break;
 	};
 }
 
 void ConsoleUpdater::OnFinishStep(UpdateStep step)
 {
-	switch (step)
-	{
-	case Init:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done.");
-	}
+    switch (step)
+    {
+    case Init:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done.");
+    }
+    break;
+
+    case CleanupPreviousSession:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done.");
+    }
+    break;
+
+    case UpdateMirrors:
+    {
+        // Mirrors
+        bool keepMirrors = _options.IsSet("keep-mirrors");
+
+        if (keepMirrors)
+        {
+            TraceLog::WriteLine(LOG_STANDARD, " Skipped downloading mirrors.");
+        }
+        else
+        {
+            TraceLog::WriteLine(LOG_STANDARD, " Done downloading mirrors.");
+        }
+
+        std::size_t numMirrors = _controller.GetNumMirrors();
+
+        TraceLog::WriteLine(LOG_STANDARD, (boost::format("   Found %d mirror%s.") % numMirrors % (numMirrors == 1 ? "" : "s")).str());
+
+        if (numMirrors == 0)
+        {
+            TraceLog::WriteLine(LOG_STANDARD, " No mirror information available - cannot continue.");
+
+            // Stop right here
+            _controller.Abort();
+        }
+    }
+    break;
+
+    case DownloadCrcs:
+    {
+        //TraceLog::WriteLine(LOG_STANDARD, " Done downloading checksums.");
+    }
+    break;
+
+    case DownloadVersionInfo:
+    {
+        TraceLog::Write(LOG_STANDARD, " Done downloading versions.");
+
+        if (!_controller.GetNewestVersion().empty())
+        {
+            std::string newest = (boost::format(" Newest version is %s.") % _controller.GetNewestVersion()).str();
+            TraceLog::WriteLine(LOG_STANDARD, newest);
+        }
+        else
+        {
+            TraceLog::WriteLine(LOG_STANDARD, "");
+        }
+    }
+    break;
+
+    case DetermineLocalVersion:
+    {
+        TraceLog::Write(LOG_STANDARD, " Done comparing local files: ");
+
+        if (_controller.GetLocalVersion().empty())
+        {
+            TraceLog::WriteLine(LOG_STANDARD, "no luck, PK4 files do not match.");
+        }
+        else
+        {
+            std::string versionFound = (boost::format("local version is %s.") % _controller.GetLocalVersion()).str();
+            TraceLog::WriteLine(LOG_STANDARD, versionFound);
+        }
+    }
+    break;
+
+    case CompareLocalFilesToNewest:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done comparing local files to server definitions.");
+
+        std::string sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDownloadSize());
+        std::size_t numFiles = _controller.GetNumFilesToBeUpdated();
+
+        std::string totalSize = (boost::format("  %d %s to be downloaded (size: %s).") %
+            numFiles % (numFiles == 1 ? "file needs" : "files need") % sizeStr).str();
+
+        // Print a summary
+        if (_controller.NewUpdaterAvailable())
+        {
+            TraceLog::WriteLine(LOG_STANDARD, " A new updater is available: " + totalSize);
+        }
+        else if (_controller.LocalFilesNeedUpdate())
+        {
+            if (_controller.DifferentialUpdateAvailable())
+            {
+                TraceLog::Write(LOG_STANDARD, " A differential update is available.");
+
+                sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDifferentialUpdateSize());
+                totalSize = (boost::format(" Download size: %s") % sizeStr).str();
+            }
+            else
+            {
+                TraceLog::Write(LOG_STANDARD, " Updates are available.");
+            }
+
+            TraceLog::WriteLine(LOG_STANDARD, totalSize);
+        }
+        else
+        {
+            TraceLog::WriteLine(LOG_STANDARD, " Your TDM installation is up to date");
+        }
+    }
+    break;
+
+    case DownloadNewUpdater:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done downloading updater - will restart the application.");
+    }
+    break;
+
+    case DownloadDifferentialUpdate:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done downloading the differential update.");
+    }
+    break;
+
+    case PerformDifferentialUpdate:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done applying the differential update.");
+    }
+    break;
+
+    case DownloadFullUpdate:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done downloading updates.");
+
+        std::string totalBytesStr = (boost::format(" Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller.GetTotalBytesDownloaded())).str();
+        TraceLog::WriteLine(LOG_STANDARD, totalBytesStr);
+    }
+    break;
+
+    case PostUpdateCleanup:
+    {
+        TraceLog::WriteLine(LOG_STANDARD, " Done performing cleanup steps.");
+    }
+    break;
+
+    case Done:
+    {
+        if (!_controller.LocalFilesNeedUpdate())
+        {
+            TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
+            TraceLog::WriteLine(LOG_STANDARD, " Your TDM installation is up to date.");
+        }
+
+        _done = true; // break main loop
+    }
+    break;
+
+    case RestartUpdater:
+    {
+        _done = true; // break main loop
+    }
 	break;
 
-	case CleanupPreviousSession:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done.");
-	}
-	break;
-
-	case UpdateMirrors:
-	{
-		// Mirrors
-		bool keepMirrors = _options.IsSet("keep-mirrors");
-
-		if (keepMirrors)
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " Skipped downloading mirrors.");
-		}
-		else
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " Done downloading mirrors.");
-		}
-
-		std::size_t numMirrors = _controller.GetNumMirrors();
-
-		TraceLog::WriteLine(LOG_STANDARD, (boost::format("   Found %d mirror%s.") % numMirrors % (numMirrors == 1 ? "" : "s")).str());
-
-		if (numMirrors == 0)
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " No mirror information available - cannot continue.");
-
-			// Stop right here
-			_controller.Abort();
-		}
-	}
-	break;
-
-	case DownloadCrcs:
-	{
-		//TraceLog::WriteLine(LOG_STANDARD, " Done downloading checksums.");
-	}
-	break;
-
-	case DownloadVersionInfo:
-	{
-		TraceLog::Write(LOG_STANDARD, " Done downloading versions.");
-
-		if (!_controller.GetNewestVersion().empty())
-		{
-			std::string newest = (boost::format(" Newest version is %s.") % _controller.GetNewestVersion()).str();
-			TraceLog::WriteLine(LOG_STANDARD, newest);
-		}
-		else
-		{
-			TraceLog::WriteLine(LOG_STANDARD, "");
-		}
-	}
-	break;
-
-	case DetermineLocalVersion:
-	{
-		TraceLog::Write(LOG_STANDARD, " Done comparing local files: ");
-
-		if (_controller.GetLocalVersion().empty())
-		{
-			TraceLog::WriteLine(LOG_STANDARD, "no luck, PK4 files do not match.");
-		}
-		else
-		{
-			std::string versionFound = (boost::format("local version is %s.") % _controller.GetLocalVersion()).str();
-			TraceLog::WriteLine(LOG_STANDARD, versionFound);
-		}
-	}
-	break;
-
-	case CompareLocalFilesToNewest:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done comparing local files to server definitions.");
-
-		std::string sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDownloadSize());
-		std::size_t numFiles = _controller.GetNumFilesToBeUpdated();
-
-		std::string totalSize = (boost::format("  %d %s to be downloaded (size: %s).") % 
-								 numFiles % (numFiles == 1 ? "file needs" : "files need") % sizeStr).str();
-
-		// Print a summary
-		if (_controller.NewUpdaterAvailable())
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " A new updater is available: " + totalSize);
-		}
-		else if (_controller.LocalFilesNeedUpdate())
-		{
-			if (_controller.DifferentialUpdateAvailable())
-			{
-				TraceLog::Write(LOG_STANDARD, " A differential update is available.");
-
-				sizeStr = Util::GetHumanReadableBytes(_controller.GetTotalDifferentialUpdateSize());
-				totalSize = (boost::format(" Download size: %s") % sizeStr).str();	
-			}
-			else
-			{
-				TraceLog::Write(LOG_STANDARD, " Updates are available.");
-			}
-
-			TraceLog::WriteLine(LOG_STANDARD, totalSize);
-		}
-		else
-		{
-			TraceLog::WriteLine(LOG_STANDARD, " Your TDM installation is up to date");
-		}
-	}
-	break;
-
-	case DownloadNewUpdater:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done downloading updater - will restart the application.");
-	}
-	break;
-
-	case DownloadDifferentialUpdate:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done downloading the differential update.");
-	}
-	break;
-
-	case PerformDifferentialUpdate:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done applying the differential update.");
-	}
-	break;
-
-	case DownloadFullUpdate:
-	{
-		TraceLog::WriteLine(LOG_STANDARD, " Done downloading updates.");
-
-		std::string totalBytesStr = (boost::format(" Total bytes downloaded: %s") % Util::GetHumanReadableBytes(_controller.GetTotalBytesDownloaded())).str();
-		TraceLog::WriteLine(LOG_STANDARD, totalBytesStr);
-
-		if (!_controller.LocalFilesNeedUpdate())
-		{
-			TraceLog::WriteLine(LOG_STANDARD, "----------------------------------------------------------------------------");
-			TraceLog::WriteLine(LOG_STANDARD, " Your TDM installation is up to date.");
-		}
-	}
-	break;
-
-	case PostUpdateCleanup:
-		break;
-
-	case Done:
-		_done = true; // break main loop
-		break;
-
-	case RestartUpdater:
-		_done = true; // break main loop
-		break;
 	};
 }
 
@@ -474,6 +487,9 @@ void ConsoleUpdater::PrintProgress()
 		case ProgressInfo::RemoveFilesFromPK4: 
 			verb = "Preparing PK4: ";
 			break;
+        case ProgressInfo::RegeneratePK4:
+            verb = "Regenerating PK4: ";
+            break;
 		default: 
 			verb = "File: ";
 		};

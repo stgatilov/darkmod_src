@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	// Start logging
 	RegisterLogWriters();
 
-	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.04 (c) 2012 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
+	TraceLog::WriteLine(LOG_STANDARD, "TDM Packager v0.05 (c) 2016 by greebo & Tels. Part of The Dark Mod (http://www.thedarkmod.com).");
 	TraceLog::WriteLine(LOG_STANDARD, "Linked against libsvn " + std::string(SVN_VER_NUM));
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
