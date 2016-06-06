@@ -2259,7 +2259,7 @@ void idWeapon::PresentWeapon( bool showViewModel )
 		StopSound( SND_CHANNEL_BODY, false );
 	}
 
-	UpdateSound(false); // grayman #4130
+	UpdateSound(); // grayman #4337
 }
 
 /*
