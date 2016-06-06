@@ -3904,7 +3904,7 @@ idEntity::UpdateVisuals
 */
 void idEntity::UpdateVisuals( void ) {
 	UpdateModel();
-	UpdateSound(IsType(CFrobDoor::Type)); // grayman #4130
+	UpdateSound(); // grayman #4337
 }
 
 /*
@@ -4512,7 +4512,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter();
 	}
 			
-	UpdateSound(IsType(CFrobDoor::Type) ); // grayman #4130
+	UpdateSound(); // grayman #4337
 
 	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
 
@@ -4584,28 +4584,23 @@ void idEntity::SetSoundVolume( float volume ) {
 idEntity::UpdateSound
 ================
 */
-void idEntity::UpdateSound( /*void*/ bool isDoor ) { // grayman #4130
-	if ( refSound.referenceSound ) {
+void idEntity::UpdateSound( void ) // grayman #4130
+{
+	if ( refSound.referenceSound )
+	{
 		idVec3 origin;
 		idMat3 axis;
 
-		// grayman #4130 - if the entity is a door, use the closed origin as
-		// the sound origin, not the origin of the door, which can sometimes be
-		// in the void
-		if ( isDoor )
+		// grayman #4337 - The fix to #4130 caused sounds on some doors to
+		// become faint. Need a better solution.
+
+		if ( GetPhysicsToSoundTransform(origin, axis) )
 		{
-			refSound.origin = static_cast<CFrobDoor*>(this)->GetClosedOrigin();
+			refSound.origin = GetPhysics()->GetOrigin() + origin * axis;
 		}
-		else // not a door
+		else
 		{
-			if ( GetPhysicsToSoundTransform(origin, axis) )
-			{
-				refSound.origin = GetPhysics()->GetOrigin() + origin * axis;
-			}
-			else
-			{
-				refSound.origin = GetPhysics()->GetOrigin();
-			}
+			refSound.origin = GetPhysics()->GetOrigin();
 		}
 
 		refSound.referenceSound->UpdateEmitter( refSound.origin, refSound.listenerId, &refSound.parms );

@@ -667,7 +667,9 @@ const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, 
 
 		if ( testPath.HasUpper() ) {
 
-			common->Warning( "Non-portable: path contains uppercase characters: %s", testPath.c_str() );
+			// grayman #4327 - stop console spam when folders
+			// have uppercase letters in them
+			// common->Warning( "Non-portable: path contains uppercase characters: %s", testPath.c_str() );
 
 			// attempt a fixup on the fly
 			if ( fs_caseSensitiveOS.GetBool() ) {
