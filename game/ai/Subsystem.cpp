@@ -293,17 +293,24 @@ void Subsystem::PrintTaskQueue()
 void Subsystem::FinishDoorHandlingTask(idAI *owner)
 {
 	int n = 1;
+	int doorHandlingTaskNumber = 0; // grayman #4342
+
 	for ( TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++, n++ )
 	{
 		Task& task = *(*i);
 
 		if ( n == 1 ) // not interested in first task
 		{
+			if ( task.GetName() == "HandleDoor" ) // grayman #4342
+			{
+				doorHandlingTaskNumber = 1;
+			}
 			continue;
 		}
 
 		if ( task.GetName() == "HandleDoor" )
 		{
+			doorHandlingTaskNumber = n; // grayman #4342
 			if ( task.IsInitialised() )
 			{
 				if ( !task.IsFinished() )
@@ -315,6 +322,12 @@ void Subsystem::FinishDoorHandlingTask(idAI *owner)
 
 			break;
 		}
+	}
+
+	if ( doorHandlingTaskNumber == 0 ) // grayman #4342 - no door handling tasks are queued,
+									   // so clear a mistakenly leftover m_DoorQueued flag
+	{
+		owner->m_DoorQueued = false;
 	}
 }
 
