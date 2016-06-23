@@ -758,6 +758,16 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	inter.localViewOrigin[3] = 1;
 	inter.ambientLight = lightShader->IsAmbientLight();
 
+	// rebb: world-up vector in local coordinates, required for certain effects, currently only for ambient lights. alternatively pass whole modelMatrix and calculate in shader
+	if( lightShader->IsAmbientLight() ) {
+		// remove commented code as needed, just shows what was simplified here
+		//idVec3 upVec( 0.0f, 0.0f, 1.0f );
+		//R_GlobalVectorToLocal( surf->space->modelMatrix, upVec, inter.worldUpLocal.ToVec3() );
+		inter.worldUpLocal.x = surf->space->modelMatrix[2];
+		inter.worldUpLocal.y = surf->space->modelMatrix[6];
+		inter.worldUpLocal.z = surf->space->modelMatrix[10];
+	}
+
 	// the base projections may be modified by texture matrix on light stages
 	idPlane lightProject[4];
 	R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[0], lightProject[0] );

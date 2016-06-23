@@ -449,8 +449,8 @@ typedef struct {
 	idVec4				specularColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
-	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map 
-	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)
+	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
+	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)	
 
 	// these are loaded into the vertex program
 	idVec4				localLightOrigin;
@@ -459,6 +459,7 @@ typedef struct {
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
+	idVec4				worldUpLocal; // rebb: world up vector in local space, required for effects like hemisphere lighting. alternatively always pass model matrix ?
 } drawInteraction_t;
 
 
@@ -1402,7 +1403,8 @@ typedef enum {
 	PP_COLOR_MODULATE,
 	PP_COLOR_ADD,
 
-	PP_LIGHT_FALLOFF_TQ = 20	// only for NV programs
+	PP_LIGHT_FALLOFF_TQ = 20,	// only for NV programs
+	PP_MISC_0 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
 } programParameter_t;
 
 
