@@ -4938,12 +4938,12 @@ idEntity::InitBind
 bool idEntity::InitBind( idEntity *master )
 {
 	if ( master == this ) {
-		gameLocal.Error( "Tried to bind an object to itself." );
+		gameLocal.Error( "Tried to bind '%s' to itself.",GetName());
 		return false;
 	}
 
 	if ( this == gameLocal.world ) {
-		gameLocal.Error( "Tried to bind world to another entity" );
+		gameLocal.Error( "Tried to bind world to '%s'.",master->GetName());
 		return false;
 	}
 

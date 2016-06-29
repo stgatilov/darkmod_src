@@ -11330,10 +11330,14 @@ void idAI::CheckTactile()
 	bool bumped = false;
 	idEntity* blockingEnt = physicsObj.GetSlideMoveEntity(); // grayman #3516 - always remember this
 
-	m_tactileEntity = blockingEnt; // grayman #3993
 	if ( blockingEnt == NULL )
 	{
 		return;
+	}
+
+	if ( blockingEnt != gameLocal.world ) // grayman #4346
+	{
+		m_tactileEntity = blockingEnt;
 	}
 
 	if ( !AI_KNOCKEDOUT &&
@@ -11343,7 +11347,7 @@ void idAI::CheckTactile()
 	{
 		if ( blockingEnt != gameLocal.world ) // ignore bumping into the world
 		{
-			//m_tactileEntity = blockingEnt; // grayman #3993
+			//m_tactileEntity = blockingEnt; // grayman #3993 // grayman #4346
 				
 			if ( blockingEnt->IsType(idAI::Type) )
 			{
