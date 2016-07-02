@@ -58,15 +58,6 @@ void Mind::Think()
 	idAI* owner = _owner.GetEntity();
 	assert(owner != NULL);
 
-	bool archer = (idStr(owner->GetName()) == "CRITIC_ARMED1"); // grayman debug
-	idTimer timer; // grayman debug
-	if ( archer )
-	{
-		timer.Clear(); // grayman debug
-		timer.Start(); // grayman debug
-		gameLocal.Printf("archer start timer\n"); // grayman debug
-	}
-			
 	// Clear the recycle bin, it might hold a finished state from the last frame.
 
 	// grayman #3559 - When clearing a state, it's possible that the state
@@ -83,12 +74,6 @@ void Mind::Think()
 
 	_recycleBin = StatePtr();
 
-		if ( archer ) // grayman debug
-		{
-			timer.Stop();
-			gameLocal.Printf("archer 1 %f\n", timer.Milliseconds()); // grayman debug
-			timer.Start(); // grayman debug
-		}
 	if (_stateQueue.empty())
 	{
 		// We start with the idle state
@@ -98,12 +83,6 @@ void Mind::Think()
 	// At this point, we MUST have a State
 	assert(_stateQueue.size() > 0);
 
-		if ( archer ) // grayman debug
-		{
-			timer.Stop();
-			gameLocal.Printf("archer 2 %f\n", timer.Milliseconds()); // grayman debug
-			timer.Start(); // grayman debug
-		}
 	const StatePtr& state = _stateQueue.front();
 
 	// Thinking
@@ -119,24 +98,12 @@ void Mind::Think()
 		state->Init(owner);
 	}
 
-		if ( archer ) // grayman debug
-		{
-			timer.Stop();
-			gameLocal.Printf("archer 3 just initialized state %s - %f\n", state->GetName().c_str(), timer.Milliseconds()); // grayman debug
-			timer.Start(); // grayman debug
-		}
 	if (!_switchState)
 	{
 		// Let the State do its monitoring task
 		state->Think(owner);
 	}
 
-		if ( archer ) // grayman debug
-		{
-			timer.Stop();
-			gameLocal.Printf("archer 4 state %s just thought - %f\n", state->GetName().c_str(), timer.Milliseconds()); // grayman debug
-			timer.Start(); // grayman debug
-		}
 	// Try to perform the subsystem tasks, skipping inactive subsystems
 	// Maximum number of tries is SubsystemCount.
 	for ( int i = 0 ; i < static_cast<int>(SubsystemCount) ; i++ )
@@ -149,25 +116,9 @@ void Mind::Think()
 		// Subsystems return TRUE when their task was executed
 		if (owner->GetSubsystem(_subsystemIterator)->PerformTask())
 		{
-			if ( archer ) // grayman debug
-			{
-				gameLocal.Printf("archer just performed task %s\n", owner->GetSubsystem(_subsystemIterator)->GetCurrentTaskName().c_str()); // grayman debug
-			}
 			// Task performed, break, iterator will be increased next round
 			break;
 		}
-		if ( archer ) // grayman debug
-		{
-			timer.Stop();
-			gameLocal.Printf("archer %d %f\n", i + 5, timer.Milliseconds()); // grayman debug
-			timer.Start(); // grayman debug
-		}
-	}
-
-	if ( archer ) // grayman debug
-	{
-		timer.Stop(); // grayman debug
-		gameLocal.Printf("archer took %f\n", timer.Milliseconds()); // grayman debug
 	}
 }
 
