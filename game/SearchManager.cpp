@@ -827,7 +827,17 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 			return false;
 		}
 
-		idVec3 observationPos = ai->GetObservationPosition(search->_origin, 1.0f); // use perfect eyesight for this, even if the AI is nearly blind
+		// grayman #4347 - GetObservationPosition() is taking too long
+		// when the AI is far away and the player is
+		// visible, but is standing off the AAS grid. Give GetObservationPosition()
+		// an extra argument that limits the maximum cost that's allowed for
+		// finding an observation position. This is checked against the accumulated
+		// travel time across AAS areas to get somewhere, and if the travel time
+		// exceeds the cost, the search stops.
+
+		idVec3 observationPos = ai->GetObservationPosition( search->_origin,
+															1.0f, // use perfect eyesight for this, even if the AI is nearly blind
+															400); // grayman #4347 - max cost allowed
 
 		// The observation point might be up in the air. Let's see if there's a floor below.
 

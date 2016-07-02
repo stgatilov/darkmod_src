@@ -4014,7 +4014,7 @@ aasGoal_t idAI::GetPositionWithinRange(const idVec3& targetPos)
 idAI::GetObservationPosition
 =====================
 */
-idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
+idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne, const unsigned short maxCost) // grayman #4347
 {
 	int				areaNum;
 	aasObstacle_t	obstacle;
@@ -4059,7 +4059,8 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 		travelFlags, 
 		NULL, 
 		0, 
-		findGoal 
+		findGoal,
+		maxCost
 	) ) 
 	{
 		float bestDistance;
@@ -4138,9 +4139,9 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 				);
 			}
 		}
+
 		return observeFromPos;
 	}
-
 	else
 	{
 		observeFromPos = goal.origin;
@@ -4161,6 +4162,7 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 				cv_ai_search_show.GetInteger()
 			);
 		}
+
 		return observeFromPos;
 	}
 }
@@ -10284,8 +10286,29 @@ void idAI::PerformVisualScan(float timecheck)
 	{
 		// grayman #3063
 		// Allow ramp up to Combat mode if the distance to the player is less than a cutoff distance.
+		// grayman #4348 - Also allow ramp up if the player is unreachable. Otherwise, the AI stand
+		// still some distance away because they can't walk closer to the player.
 
-		if ( ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
+		bool canWalkToPlayer = true;
+		int playerAreaNum = PointReachableAreaNum(m_LastSight);
+		if ( playerAreaNum == 0 )
+		{
+			canWalkToPlayer = false;
+		}
+		else
+		{
+			GetAAS()->PushPointIntoAreaNum(playerAreaNum, m_LastSight); // if this point is outside this area, it will be moved to one of the area's edges
+
+			idVec3 aiOrigin = GetPhysics()->GetOrigin();
+			int aiAreaNum = PointReachableAreaNum(aiOrigin, 1.0f);
+			aasPath_t path;
+			if ( !PathToGoal(path, aiAreaNum, aiOrigin, playerAreaNum, m_LastSight, this) )
+			{
+				canWalkToPlayer = false;
+			}
+		}
+								
+		if ( !canWalkToPlayer || ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
 		{
 			SetEnemy(player);
 			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
@@ -10293,7 +10316,7 @@ void idAI::PerformVisualScan(float timecheck)
 			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
 			// visibility in the mission data
 		}
-		else
+		else // player is too far away, but AI will continue to move because he can walk to the player
 		{
 			newAlertLevel = thresh_5 - 0.1;
 			alertInc = newAlertLevel - AI_AlertLevel;

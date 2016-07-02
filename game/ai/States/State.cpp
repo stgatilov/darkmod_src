@@ -166,6 +166,7 @@ void State::UpdateAlertLevel()
 	{
 		float decrease = _alertLevelDecreaseRate * MS2SEC(thinkDuration);
 		float newAlertLevel = owner->AI_AlertLevel - decrease;
+
 		owner->SetAlertLevel(newAlertLevel);
 	}
 }
