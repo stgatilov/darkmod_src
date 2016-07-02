@@ -1411,7 +1411,7 @@ query that is within MoveToAttackPosition
 */
 void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
 {
-	idVec3 observeFromPos = GetObservationPosition(pointToObserve, visualAcuityZeroToOne);
+	idVec3 observeFromPos = GetObservationPosition(pointToObserve, visualAcuityZeroToOne,0); // grayman #4347
 	idThread::ReturnVector (observeFromPos);
 	return;
 }
