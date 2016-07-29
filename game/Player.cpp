@@ -1498,7 +1498,7 @@ void idPlayer::UpdateObjectivesGUI()
 
 void idPlayer::CreateInventoryGridGUI()
 {
-	if (inventoryGridOverlay != -1)
+	if ((inventoryGridOverlay != -1) || (GetImmobilization() & EIM_ITEM_SELECT)) // grayman #4354
 	{
 		return;
 	}
