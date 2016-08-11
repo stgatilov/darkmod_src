@@ -448,6 +448,11 @@ public:
 	// than the previous one, false otherwise
 	bool AlertIndexIncreased();
 
+	
+	void RegisterAlert(idEntity* alertedBy); // grayman #4002 - register an alert
+	void ProcessAlerts(); // grayman #4002 - process queued alerts
+
+
 	/**
 	* Returns the float val of the specific AI's acuity.
 	* Acuity type is a char, from the same list as alert types.
@@ -1319,6 +1324,27 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* grayman #4046 - saved _endtime for interrupted path_wait task
 	**/
 	float m_pathWaitTaskEndtime;
+
+	/**
+	 * grayman #4002 - Alert time information per entity.
+	 */
+	struct EntityAlert
+	{
+		// The last time an entity raised the alert index
+		int timeAlerted;
+		
+		// The alert index reached
+		int alertIndex;
+
+		// The entity responsible
+		idEntityPtr<idEntity> entityResponsible;
+		//int entityNumber;
+
+		// Alert entry processed?
+		bool processed;
+	};
+
+	idList<EntityAlert> alertQueue; // grayman #4002
 
 	// The mind of this AI
 	ai::MindPtr mind;

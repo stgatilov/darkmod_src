@@ -884,6 +884,9 @@ void CMissionData::Event_MissionEnd()
 	// grayman #2887 - make a final check if any AI have the player in sight.
 	// Wrap up calculation of how long a player has been seen.
 
+	// grayman #4002 - make a final pass through the queued alert events for
+	// each AI to bring stealth score up to date
+
 	for ( int i = 0 ; i < gameLocal.num_entities ; i++ )
 	{
 		idEntity* ent = gameLocal.entities[i];
@@ -901,6 +904,8 @@ void CMissionData::Event_MissionEnd()
 					/*gameLocal.m_MissionData->*/Add2TimePlayerSeen(gameLocal.time - ai->lastTimePlayerSeen);
 				}
 			}
+
+			ai->ProcessAlerts(); // grayman #4002
 		}
 	}
 }
