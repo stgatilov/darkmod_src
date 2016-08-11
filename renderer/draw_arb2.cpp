@@ -140,28 +140,41 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// bind the vertex program
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
-	if( r_dedicatedAmbient.GetBool() ) {
-		if( backEnd.vLight->lightShader->IsAmbientLight() ) {
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
-		} else {
-			if ( r_testARBProgram.GetBool() ) {
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT );
-				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_DIRECT );
-			} else {
-				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION_DIRECT );
-				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION_DIRECT );
+	// nbohr1more #3881: dedicated cubemap lighting
+	
+		if ( backEnd.vLight->lightShader->IsCubicLight() ) 
+			{
+			 qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT );
+			 qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT );
 			}
-		}
-	} else {
-		if ( r_testARBProgram.GetBool() ) {
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST );
-		} else {
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
-		}
-	}
+		    else if( r_dedicatedAmbient.GetBool() ) {
+					if( backEnd.vLight->lightShader->IsAmbientLight() ) 
+						{
+							qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
+							qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
+						} 
+					else if ( r_testARBProgram.GetBool() ) 
+							{
+								qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT );
+								qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_DIRECT );
+							}
+						else 
+							{
+								qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION_DIRECT );
+								qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION_DIRECT );
+							}
+						}
+						
+	        else if ( r_testARBProgram.GetBool() ) 
+					  {
+						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST );
+						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST );
+					  } 
+					else 
+					 {
+						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
+						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
+					 }
 
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
@@ -336,7 +349,7 @@ typedef struct {
 	char			name[64];
 } progDef_t;
 
-#define MAX_GLPROGS			200
+#define MAX_GLPROGS			512
 
 // a single file can have both a vertex program and a fragment program
 static progDef_t	progs[MAX_GLPROGS] = {
@@ -366,6 +379,10 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// SteveL #3878: Particle softening applied by the engine
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_SOFT_PARTICLE, "soft_particle.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_SOFT_PARTICLE, "soft_particle.vfp" },
+	
+	// nbohr1more #3881: cubicLight interactions
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT, "cubic_light.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT, "cubic_light.vfp" },
 
 	// additional programs can be dynamically specified in materials
 };

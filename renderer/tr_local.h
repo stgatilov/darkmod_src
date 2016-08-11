@@ -451,6 +451,7 @@ typedef struct {
 
 	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
 	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)	
+	int					cubicLight;    // nbohr1more #3881: dedicated cubemap light // probably not needed
 
 	// these are loaded into the vertex program
 	idVec4				localLightOrigin;
@@ -1353,6 +1354,9 @@ typedef enum {
 	// SteveL #3878: soft particles
 	VPROG_SOFT_PARTICLE,
 	FPROG_SOFT_PARTICLE,
+	// nbohr1more #3881: cubemap based lighting
+	VPROG_CUBIC_LIGHT,
+	FPROG_CUBIC_LIGHT,
 	//
 	PROG_USER
 } program_t;

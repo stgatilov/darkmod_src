@@ -92,6 +92,7 @@ void idMaterial::CommonInit() {
 	fogLight = false;
 	blendLight = false;
 	ambientLight = false;
+	cubicLight = false;  //nbohr1more #3881: cubemap based lighting
 	noFog = false;
 	hasSubview = false;
 	allowOverlays = true;
@@ -1908,6 +1909,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// ambientLight
 		else if ( !token.Icmp( "ambientLight" ) ) {
 			ambientLight = true;
+			continue;
+		}
+		// nbohr1more #3881: cubicLight 
+		else if ( !token.Icmp( "cubicLight" ) ) {
+			cubicLight = true;
 			continue;
 		}
 		// mirror

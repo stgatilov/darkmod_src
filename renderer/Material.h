@@ -460,6 +460,9 @@ public:
 
 						// an ambient light has non-directional bump mapping and no specular
 	bool				IsAmbientLight() const { return ambientLight; }
+	
+						// nbohr1more #3881: cubemap based lighting
+	bool				IsCubicLight() const { return cubicLight; }
 
 						// implicitly no-shadows lights (ambients, fogs, etc) will never cast shadows
 						// but individual light entities can also override this value
@@ -651,6 +654,7 @@ private:
 	bool				fogLight;
 	bool				blendLight;
 	bool				ambientLight;
+	bool				cubicLight;          // nbohr1more #3881: cubemap based lighting
 	bool				unsmoothedTangents;
 	bool				hasSubview;			// mirror, remote render, etc
 	bool				allowOverlays;
