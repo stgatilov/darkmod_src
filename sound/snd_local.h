@@ -60,6 +60,8 @@ const float SND_EPSILON				= 1.0f / 32768.0f;	// if volume is below this, it wil
 
 const int ROOM_SLICES_IN_BUFFER		= 10;
 
+const float UNDERWATER_VOLUME_LOSS  = 17.0f; // grayman #3556
+
 class idAudioHardware;
 class idAudioBuffer;
 class idWaveFile;

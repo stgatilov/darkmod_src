@@ -8029,6 +8029,13 @@ void idGameLocal::OnVidRestart()
 	}
 }
 
+// grayman #3556 - Engine asks whether player is underwater
+
+bool idGameLocal::PlayerUnderwater()
+{
+	return (static_cast<idPhysics_Actor*>(GetLocalPlayer()->GetPhysics())->GetWaterLevel() == WATERLEVEL_HEAD);
+}
+
 // grayman #3317 - Clear the time a stim last fired from an entity, so that
 // it can be fired immediately instead of waiting for the next time it was
 // scheduled to fire.

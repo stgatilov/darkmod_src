@@ -1035,6 +1035,8 @@ public:
 	void					OnReloadImages();
 	void					OnVidRestart();
 
+	bool					PlayerUnderwater(); // grayman #3556
+
 	void					AllowImmediateStim( idEntity* e, int stimType ); // grayman #3317
 
 	int						GetNextMessageTag(); // grayman #3355

@@ -210,6 +210,9 @@ public:
 
 	// Lets the game know after a "vid_restart" command has been invoked
 	virtual void				OnVidRestart() = 0;
+
+	// grayman #3556 - determine whether the player is underwater
+	virtual bool				PlayerUnderwater() = 0;
 };
 
 extern idGame *					game;

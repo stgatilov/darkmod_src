@@ -941,7 +941,7 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 
 		idVec3 trailingSoundOrigin = soundOrigin;
 
-		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer + angularLoss, source, trailingSoundOrigin, def, res ) ) // grayman #3042
+		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer + angularLoss/* + waterLoss*/, source, trailingSoundOrigin, def, res ) ) // grayman #3042
 		{
 			chainResults.Append(res);
 		} 
@@ -1822,6 +1822,14 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	{
 		volumeDB -= sound->volumeLoss;
 	}
+
+	// grayman #3556 - apply sound loss if the player's ears are underwater
+
+	if (game->PlayerUnderwater())
+	{
+		volumeDB -= UNDERWATER_VOLUME_LOSS;
+	}
+
 	volume = soundSystemLocal.dB2Scale( volumeDB );
 		
 	// global volume scale
