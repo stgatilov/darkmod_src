@@ -2519,6 +2519,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	idStr value("");
 	idStr sightingBust("");
 	idStr space(" ");
+	idStr timeSeenString(" "); // grayman #4363
 
 	// The listdef item (name + _) prefix
 	idStr prefix = va("%s_item_", listDefName.c_str());
@@ -2543,7 +2544,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(GetHealthReceived());
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
-	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
+	//gui->SetStateString(prefix + idStr(index++), " ");	// Empty line // grayman #4363 - remove empty line
 
 	key = common->Translate( "#str_02212" );	// Pockets Picked 
 	value = idStr(GetPocketsPicked());
@@ -2553,7 +2554,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(GetFoundLoot()) + common->Translate( "#str_02214" ) + GetMissionLoot();
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
-	gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line
+	//gui->SetStateString(prefix + idStr(index++), " ");	 // Empty line // grayman #4363 - remove empty line
 
 	key = common->Translate( "#str_02215" );	// Killed by the Player
 	value = idStr(GetStatOverall(COMP_KILL));
@@ -2563,7 +2564,7 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	value = idStr(GetStatOverall(COMP_KO));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
-	key = common->Translate( "#str_02217" );	// Bodies found
+	key = common->Translate( "#str_02217" );	// Bodies found by AI
 	value = idStr(GetStatOverall(COMP_AI_FIND_BODY));
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
@@ -2588,30 +2589,48 @@ void CMissionData::UpdateStatisticsGUI(idUserInterface* gui, const idStr& listDe
 	if ( busted == 0 )  
 	{
 		sightingBust = common->Translate( "#str_02221" );	// 0 Sightings.
+		// timeSeen won't be displayed
 	}
 	else if ( busted == 1 )
 	{
-		sightingBust = va( common->Translate( "#str_02219" ), minutesSeen, secondsSeen);	// 1 Sighting (for Nm Ns).
+		// 1 Sighting
+		sightingBust = va( common->Translate( "#str_02219" )/*, minutesSeen, secondsSeen*/); // grayman #4363
+		timeSeenString = va("%im %is", minutesSeen, secondsSeen); // grayman #4363
 	}
 	else
 	{
-		sightingBust = va( common->Translate( "#str_02220" ), busted, minutesSeen, secondsSeen );	// N Sightings (for Nm Ns).
+		sightingBust = va( common->Translate( "#str_02220" ), busted/*, minutesSeen, secondsSeen*/ ); // N Sightings. // grayman #4363
+		timeSeenString = va("%ih %im %is", hoursSeen, minutesSeen, secondsSeen); // grayman #4363
 	}
 
 	value = idStr(GetNumberTimesAISuspicious()) + space + common->Translate("#str_02223") + ", " +			// Suspicious
 		idStr(GetNumberTimesAISearched()) + space + common->Translate("#str_02224") + ", " +				// Searches
 		sightingBust;
 	gui->SetStateString(prefix + idStr(index++), value);
+
+	// grayman #4363 - add new 'Time Seen' line if busted one or more times
+
+	key = common->Translate( "#str_02519" );	// Time Seen
+	if ( busted > 0 )
+	{
+		gui->SetStateString(prefix + idStr(index++), key + divider + timeSeenString);
+	}
 	
 	key = common->Translate( "#str_02225" );	// Stealth Score
 	value = idStr(stealthScore);
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
 
+	if ( busted == 0 )
+	{
+		gui->SetStateString(prefix + idStr(index++), " ");	// Empty line
+	}
+
+	gui->SetStateString(prefix + idStr(index++), " ");	// Empty line (filler to synch with gui reading)
+
 	int difficultyLevel = gameLocal.m_DifficultyManager.GetDifficultyLevel();
 	key = common->Translate( "#str_02226" );	// Difficulty Level
 	value = GetDifficultyName(difficultyLevel); // grayman #3292 - get from mission stats, not from difficulty manager
 	gui->SetStateString(prefix + idStr(index++), key + divider + value);
-	
 	
 	// Obsttorte: Times saved
 	key = common->Translate( "#str_02915" );	// Times saved
