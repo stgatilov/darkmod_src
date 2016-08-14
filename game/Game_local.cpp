@@ -8033,7 +8033,22 @@ void idGameLocal::OnVidRestart()
 
 bool idGameLocal::PlayerUnderwater()
 {
-	return (static_cast<idPhysics_Actor*>(GetLocalPlayer()->GetPhysics())->GetWaterLevel() == WATERLEVEL_HEAD);
+	bool result = false;
+
+	idPlayer* player = GetLocalPlayer();
+
+	if ( player )
+	{
+		idPhysics* phys = player->GetPhysics();
+
+		if ( phys && phys->IsType(idPhysics_Actor::Type) )
+		{
+			waterLevel_t waterLevel = static_cast<idPhysics_Actor*>(phys)->GetWaterLevel();
+			result = (waterLevel == WATERLEVEL_HEAD);
+		}
+	}
+
+	return result;
 }
 
 // grayman #3317 - Clear the time a stim last fired from an entity, so that
