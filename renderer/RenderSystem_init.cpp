@@ -1417,6 +1417,91 @@ void R_StencilShot( void ) {
 	Mem_Free( byteBuffer );	
 }
 
+// nbohr1more #4041: add envshotGL for cubicLight
+/* 
+================== 
+R_EnvShotGL_f
+
+envshotGL <basename>
+
+(OpenGL orientation) Saves out env/<basename>_ft.tga, etc
+================== 
+*/  
+const static char *GLcubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+
+void R_EnvShotGL_f( const idCmdArgs &args ) {
+	idStr		fullname;
+	const char	*baseName;
+	idMat3		axis[6];
+	renderView_t	ref;
+	viewDef_t	primary;
+	int			blends, size;
+
+	if ( !tr.primaryView ) {
+		common->Printf( "No primary view.\n" );
+		return;
+	}
+	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
+		common->Printf( "USAGE: envshotGL <basename> [size] [blends]\n" );
+		return;
+	}
+
+	primary = *tr.primaryView;
+	baseName = args.Argv( 1 );
+
+	blends = 1;
+	if ( args.Argc() == 4 ) {
+		size = atoi( args.Argv( 2 ) );
+		blends = atoi( args.Argv( 3 ) );
+	} else if ( args.Argc() == 3 ) {
+		size = atoi( args.Argv( 2 ) );
+		blends = 1;
+	} else {
+		size = 256;
+		blends = 1;
+	}
+
+	memset( &axis, 0, sizeof( axis ) );
+	axis[0][0][0] = 1;
+	axis[0][1][2] = 1;
+	axis[0][2][1] = 1;
+
+	axis[1][0][0] = -1;
+	axis[1][1][2] = -1;
+	axis[1][2][1] = 1;
+
+	axis[2][0][1] = 1;
+	axis[2][1][0] = -1;
+	axis[2][2][2] = -1;
+
+	axis[3][0][1] = -1;
+	axis[3][1][0] = -1;
+	axis[3][2][2] = 1;
+
+	axis[4][0][2] = 1;
+	axis[4][1][0] = -1;
+	axis[4][2][1] = 1;
+
+	axis[5][0][2] = -1;
+	axis[5][1][0] = 1;
+	axis[5][2][1] = 1;
+
+	for ( int i = 0 ; i < 6 ; i++ ) {
+		ref = primary.renderView;
+		ref.x = ref.y = 0;
+		ref.fov_x = ref.fov_y = 90;
+		ref.width = glConfig.vidWidth;
+		ref.height = glConfig.vidHeight;
+		ref.viewaxis = axis[i];
+		sprintf( fullname, "env/%s%s", baseName, GLcubeExtensions[i] );
+		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
+	}
+
+	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
+} 
+
+//============================================================================
+
 /* 
 ================== 
 R_EnvShot_f
@@ -2026,6 +2111,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "touchGui", R_TouchGui_f, CMD_FL_RENDERER, "touches a gui" );
 	cmdSystem->AddCommand( "screenshot", R_ScreenShot_f, CMD_FL_RENDERER, "takes a screenshot" );
 	cmdSystem->AddCommand( "envshot", R_EnvShot_f, CMD_FL_RENDERER, "takes an environment shot" );
+	cmdSystem->AddCommand( "envshotGL", R_EnvShotGL_f, CMD_FL_RENDERER, "takes an environment shot in opengl orientation" ); // nbohr1more #4041: add envshotGL for cubicLight
 	cmdSystem->AddCommand( "makeAmbientMap", R_MakeAmbientMap_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "makes an ambient map" );
 	cmdSystem->AddCommand( "benchmark", R_Benchmark_f, CMD_FL_RENDERER, "benchmark" );
 	cmdSystem->AddCommand( "gfxInfo", GfxInfo_f, CMD_FL_RENDERER, "show graphics info" );
