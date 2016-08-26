@@ -64,7 +64,8 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_SPECULAR_MATRIX_T, din->specularMatrix[1].ToFloatPtr() );
 
 	// rebb: pass world-up in local coords to fragment program for ambient lights
-	if( din->ambientLight ) {
+	// nbohr1more #3881: cubemap based lighting (copy rebb's changes for uniformity, may not be required depending on usage and testing )
+	if( din->ambientLight || din->ambientCubicLight) {
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_MISC_0, din->worldUpLocal.ToFloatPtr() );
 	}
 
@@ -142,40 +143,55 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	// rebb: support dedicated ambient - CVar and direct interactions can probably be removed, they're there mainly for performance testing
 	// nbohr1more #3881: dedicated cubemap lighting
 	
-		if ( backEnd.vLight->lightShader->IsCubicLight() ) 
-			{
-			 qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT );
-			 qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT );
-			}
-		    else if( r_dedicatedAmbient.GetBool() ) {
-					if( backEnd.vLight->lightShader->IsAmbientLight() ) 
-						{
-							qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
-							qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
-						} 
-					else if ( r_testARBProgram.GetBool() ) 
+				    if ( backEnd.vLight->lightShader->IsAmbientCubicLight() )
+				{
+					qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
+					qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
+				}
+	// nbohr1more #3881: dedicated cubemap lighting (further changes)
+			else if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+					if ( r_testARBProgram.GetBool() )
+					{
+						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_LIGHT );
+						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_LIGHT );
+					}
+					else
+					{
+						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT );
+						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT );
+					}
+				}
+					
+
+				else if( r_dedicatedAmbient.GetBool() ) {
+						if( backEnd.vLight->lightShader->IsAmbientLight() ) 
+							{
+								qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
+								qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
+							} 
+							else if ( r_testARBProgram.GetBool() ) 
 							{
 								qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT );
 								qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_DIRECT );
 							}
-						else 
+							else 
 							{
 								qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION_DIRECT );
 								qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION_DIRECT );
 							}
 						}
 						
-	        else if ( r_testARBProgram.GetBool() ) 
-					  {
-						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST );
-						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST );
-					  } 
-					else 
-					 {
-						qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
-						qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
-					 }
-
+				else if ( r_testARBProgram.GetBool() ) 
+						{
+							qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST );
+							qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST );
+						} 
+						else 
+						{
+							qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION );
+							qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION );
+						}
+	
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
 
@@ -383,6 +399,12 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// nbohr1more #3881: cubicLight interactions
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT, "cubic_light.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT, "cubic_light.vfp" },
+	
+		// nbohr1more #3881: cubemap based lighting further changes
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_LIGHT, "test_cubic_light.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_LIGHT, "test_cubic_light.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT, "ambient_cubic_light.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT, "ambient_cubic_light.vfp" },
 
 	// additional programs can be dynamically specified in materials
 };
