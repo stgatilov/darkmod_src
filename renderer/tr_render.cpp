@@ -852,6 +852,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
 						break;
 					}
+					// nbohr1more: #4292 nospecular and nodiffuse fix
+					else if ( backEnd.vLight->lightDef->parms.noSpecular ) {
+					    break;
+					}	
 					else if ( inter.specularImage ) {
 						RB_SubmittInteraction( &inter, DrawInteraction );
 					}
