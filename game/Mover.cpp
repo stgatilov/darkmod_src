@@ -179,6 +179,7 @@ idMover::idMover(void)
 	lastCommand = MOVER_NONE;
 	damage = 0.0f;
 	areaPortal = 0;
+	nextBounceTime = 0; // grayman #4370
 	fl.networkSync = true;
 	m_FrobActionScript = "frob_mover";
 }
@@ -229,6 +230,8 @@ void idMover::Save( idSaveGame *savefile ) const
 	if ( areaPortal > 0 ) {
 		savefile->WriteInt( gameRenderWorld->GetPortalState( areaPortal ) );
 	}
+
+	savefile->WriteInt(nextBounceTime); // grayman #4370
 
 	savefile->WriteInt( guiTargets.Num() );
 	for( i = 0; i < guiTargets.Num(); i++ ) {
@@ -301,6 +304,8 @@ void idMover::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( portalState );
 		gameLocal.SetPortalState( areaPortal, portalState );
 	}
+
+	savefile->ReadInt(nextBounceTime); // grayman #4370
 
 	guiTargets.Clear();
 	savefile->ReadInt( num );

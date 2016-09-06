@@ -452,3 +452,65 @@ void CMultiStateMover::Event_Activate(idEntity* activator)
 {
 	Activate(activator);
 }
+
+// grayman #4370
+
+void CMultiStateMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity)
+{
+	// find where the mover is relative to the possible positions, and
+	// reverse the mover if possible
+
+	idVec3 myOrigin = GetPhysics()->GetOrigin();
+	idVec3 moveDir = dest_position - myOrigin; // get this before stopping
+
+	Event_StopMoving();
+
+	if (gameLocal.time >= nextBounceTime)
+	{
+		nextBounceTime = gameLocal.time + 1000; // next time you can bounce or apply damage
+
+		// damage actors if they're still alive
+
+		if ( blockingEntity->IsType(idActor::Type) )
+		{
+			if ( blockingEntity->health > 0 )
+			{
+				// Actor is alive
+
+				idStr damageDefName;
+				if ( blockingEntity->GetPhysics()->GetMass() > SMALL_AI_MASS )
+				{
+					// large actors get a small amount of damage
+					damageDefName = spawnArgs.GetString("def_damage");
+				}
+				else // small actors get crushed
+				{
+					damageDefName = spawnArgs.GetString("def_damage_crush");
+				}
+				blockingEntity->Damage(this, this, vec3_origin, damageDefName, 1.0f, INVALID_JOINT);
+			}
+		}
+
+		// reverse
+
+		const idList<MoverPositionInfo>& positionList = GetPositionInfoList();
+
+		for (int positionIdx = 0 ; positionIdx < positionList.Num() ; positionIdx++)
+		{
+			CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+									
+			idVec3 posOrigin = positionEnt->GetPhysics()->GetOrigin();
+
+			if ((moveDir.z < 0) && ( posOrigin.z > myOrigin.z ))
+			{
+				Activate(positionEnt); // go up if headed down
+				break;
+			}
+			else if ((moveDir.z > 0) && ( posOrigin.z < myOrigin.z ))
+			{
+				Activate(positionEnt); // go down if headed up
+				break;
+			}
+		}
+	}
+}
