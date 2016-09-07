@@ -46,6 +46,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
+#define	FPS_FRAMES	5 // number of frames used to average the FPS display
+
 // amount of health per dose from the health station
 const int HEALTH_PER_DOSE = 10;
 
@@ -9801,6 +9803,38 @@ int idPlayer::ProcessLightgem(bool processing)
 	float fValue = m_fColVal;
 
 	int n = cv_lg_interleave.GetInteger();
+	
+	// nbohr1more #4369 Dynamic Lightgem Interleave
+	
+	int r = Max(1, cv_lg_interleave_min.GetInteger());
+	
+	static unsigned int t, frameTime, index, total, y, previous, previousTimes[FPS_FRAMES];
+	
+	t = gameLocal.time;
+	frameTime = t - previous;
+	previous = t;
+	
+	previousTimes[index % FPS_FRAMES] = frameTime;
+	index++;
+
+	// average multiple frames together to smooth changes out a bit
+	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + previousTimes[3] + previousTimes[4] + 1;
+	y  = (1000 * FPS_FRAMES) / total;
+	
+	// gameLocal.Printf ( " lg_fps %i\n", y );
+
+	 
+	if ( y > r)
+	    {
+	       // gameLocal.Printf ( "Begin Dynamic lg_interleave" );
+		   n = cv_lg_interleave.GetInteger();
+		}
+		 else
+		     {
+	           // gameLocal.Printf ( "Below lg_interleave threshold" );
+		       n = 1;
+			 }
+
 
 	// Skip every nth frame according to the value set in 
 	if (processing && !cv_lg_weak.GetBool() && n > 0)

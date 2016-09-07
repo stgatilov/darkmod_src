@@ -301,6 +301,8 @@ extern idCVar cv_lg_oyoffs;
 extern idCVar cv_lg_ozoffs;
 extern idCVar cv_lg_fov;
 extern idCVar cv_lg_interleave;
+// nbohr1more #4369 Dynamic Lightgem Interleave
+extern idCVar cv_lg_interleave_min;
 extern idCVar cv_lg_hud;
 extern idCVar cv_lg_weak;
 extern idCVar cv_lg_player;
