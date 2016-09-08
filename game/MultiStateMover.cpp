@@ -491,25 +491,28 @@ void CMultiStateMover::OnTeamBlocked(idEntity* blockedEntity, idEntity* blocking
 			}
 		}
 
-		// reverse
+		// reverse if allowed
 
-		const idList<MoverPositionInfo>& positionList = GetPositionInfoList();
-
-		for (int positionIdx = 0 ; positionIdx < positionList.Num() ; positionIdx++)
+		if (spawnArgs.GetBool("allow_reversal","1"))
 		{
-			CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
-									
-			idVec3 posOrigin = positionEnt->GetPhysics()->GetOrigin();
+			const idList<MoverPositionInfo>& positionList = GetPositionInfoList();
 
-			if ((moveDir.z < 0) && ( posOrigin.z > myOrigin.z ))
+			for ( int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++ )
 			{
-				Activate(positionEnt); // go up if headed down
-				break;
-			}
-			else if ((moveDir.z > 0) && ( posOrigin.z < myOrigin.z ))
-			{
-				Activate(positionEnt); // go down if headed up
-				break;
+				CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+
+				idVec3 posOrigin = positionEnt->GetPhysics()->GetOrigin();
+
+				if ( (moveDir.z < 0) && (posOrigin.z > myOrigin.z) )
+				{
+					Activate(positionEnt); // go up if headed down
+					break;
+				}
+				else if ( (moveDir.z > 0) && (posOrigin.z < myOrigin.z) )
+				{
+					Activate(positionEnt); // go down if headed up
+					break;
+				}
 			}
 		}
 	}
