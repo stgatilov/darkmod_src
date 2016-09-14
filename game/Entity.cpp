@@ -9401,7 +9401,7 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	idVec3			origin;
 	idMat3			axis;
 	jointHandle_t	joint;
-	idStr			jointName;
+	idStr			jointName1,jointName2;
 	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
 	idVec3			originOffset, originSubOffset(vec3_zero);
 	idStr			nm;
@@ -9424,15 +9424,15 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 // Old system, will be phased out
 	else
 	{
-		jointName = ent->spawnArgs.GetString( "joint" );
-		joint = animator.GetJointHandle( jointName );
+		jointName1 = ent->spawnArgs.GetString( "joint" );
+		joint = animator.GetJointHandle( jointName1 );
 		if ( joint == INVALID_JOINT ) 
 		{
-			jointName = ent->spawnArgs.GetString("bindToJoint");
-			joint = animator.GetJointHandle( jointName );
+			jointName2 = ent->spawnArgs.GetString("bindToJoint");
+			joint = animator.GetJointHandle( jointName2 );
 			if ( joint == INVALID_JOINT )
 			{
-				gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+				gameLocal.Error( "Neither joint '%s' nor bindToJoint '%s' found for attaching '%s' on '%s'", jointName1.c_str(), jointName2.c_str(),ent->GetClassname(), name.c_str() );
 			}
 		}
 
