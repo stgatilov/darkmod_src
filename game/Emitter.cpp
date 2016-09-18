@@ -146,6 +146,15 @@ idFuncEmitter::Present
 */
 void idFuncEmitter::Present( void ) 
 {
+
+   //nbohr1more: #4372: Allow lod_bias args for func_emitter entities
+   float lodbias = cv_lod_bias.GetFloat();
+	
+	if ( (m_MinLODBias > 0 || m_MaxLODBias < 10) && (lodbias < m_MinLODBias || lodbias > m_MaxLODBias) )
+	   {
+		renderEntity.bounds.Zero();
+		BecomeInactive( TH_UPDATEVISUALS );
+	   } 
 	
 	if( m_bFrobable )
 	{
