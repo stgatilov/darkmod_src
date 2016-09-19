@@ -9818,8 +9818,8 @@ int idPlayer::ProcessLightgem(bool processing)
 	index++;
 
 	// average multiple frames together to smooth changes out a bit
-	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + previousTimes[3] + previousTimes[4] + 1;
-	y  = (1000 * FPS_FRAMES) / total;
+	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + (previousTimes[3] * 2) + ( previousTimes[4] * 3) + 1;
+	y  = (1000 * (FPS_FRAMES + 3) ) / total;
 	
 	// gameLocal.Printf ( " lg_fps %i\n", y );
 
