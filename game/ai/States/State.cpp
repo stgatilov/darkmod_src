@@ -3553,6 +3553,20 @@ void State::OnMovementBlocked(idAI* owner)
 			}
 		}
 
+		// grayman #4384 - if the slave isn't allowed to resolve a block, and he's
+		// handling a door, allow him to resolve the block
+
+		if ( !slave->m_canResolveBlock && slave->m_HandlingDoor)
+		{
+			slave->m_canResolveBlock = true;
+		}
+		// grayman #4384 - if the slave isn't allowed to resolve a block, swap w/master
+		else if ( !slave->m_canResolveBlock )
+		{
+			std::swap(master, slave);
+			slave->m_canResolveBlock = true;
+		}
+
 		// Tell the slave to get out of the way.
 
 		slave->movementSubsystem->ResolveBlock(master);
