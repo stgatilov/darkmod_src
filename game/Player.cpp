@@ -9832,7 +9832,15 @@ int idPlayer::ProcessLightgem(bool processing)
 		 else
 		     {
 	           // gameLocal.Printf ( "Below lg_interleave threshold" );
-		       n = 1;
+			   
+			   if ( n != 0)
+			   {
+		         n = 1;
+			   }
+			   else
+			   {
+			     n = 0;
+			   }
 			 }
 
 
