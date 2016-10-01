@@ -139,6 +139,7 @@ typedef struct renderEntity_s {
 													// the level load is completed.  This is a performance hack
 													// for the gigantic outdoor meshes in the monorail map, so
 													// all the lights in the moving monorail don't touch the meshes
+    bool                    islightgem;             //nbohr1more: #4379 lightgem culling
 
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 													// this automatically implies noShadow

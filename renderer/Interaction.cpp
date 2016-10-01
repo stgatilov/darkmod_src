@@ -896,6 +896,11 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		if ( shader->Spectrum() != lightShader->Spectrum() ) {
 			continue;
 		}
+		
+		// nbohr1more: #4379 lightgem culling
+		if ((!HasShadows() ) && ( !shader->Islightgemsurf() ) && (tr.viewDef->renderView.viewID == -1)) {
+		    continue;
+			} 
 
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() ) {
@@ -1035,9 +1040,15 @@ void idInteraction::AddActiveInteraction( void ) {
 
 	vLight = lightDef->viewLight;
 	vEntity = entityDef->viewEntity;
+	
 
+	// nbohr1more: #4379 lightgem culling
+	if ((!HasShadows() ) && ( !entityDef->parms.islightgem ) && (tr.viewDef->renderView.viewID == -1)) {
+		    return;
+			} 
+	
 	// do not waste time culling the interaction frustum if there will be no shadows
-	if ( !HasShadows() ) {
+	else if ( !HasShadows() ) {
 
 		// use the entity scissor rectangle
 		shadowScissor = vEntity->scissorRect;

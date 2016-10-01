@@ -613,6 +613,10 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
+		    // nbohr1more: #4379 lightgem culling
+		    if ( (!entity->parms.islightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == -1)){
+			    continue;
+			} 
 			if ( entity->parms.suppressSurfaceInViewID
 					&& entity->parms.suppressSurfaceInViewID == tr.viewDef->renderView.viewID ) {
 				continue;
@@ -734,6 +738,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 
 	for ( lref = area->lightRefs.areaNext ; lref != &area->lightRefs ; lref = lref->areaNext ) {
 		light = lref->light;
+		
 
 		// debug tool to allow viewing of only one light at a time
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {

@@ -97,6 +97,7 @@ void idMaterial::CommonInit() {
 	noFog = false;
 	hasSubview = false;
 	allowOverlays = true;
+	islightgemsurf = false; //nbohr1more: #4379 lightgem culling
 	unsmoothedTangents = false;
 	gui = NULL;
 	memset( deformRegisters, 0, sizeof( deformRegisters ) );
@@ -1849,6 +1850,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// overlay / decal suppression
 		else if ( !token.Icmp( "noOverlays" ) ) {
 			allowOverlays = false;
+			continue;
+		}
+		// nbohr1more: #4379 lightgem culling
+		else if ( !token.Icmp( "islightgemsurf" ) ) {
+			islightgemsurf = true;
 			continue;
 		}
 		// moster blood overlay forcing for alpha tested or translucent surfaces
