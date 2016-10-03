@@ -9828,13 +9828,13 @@ int idPlayer::ProcessLightgem(bool processing)
     {	
 	if ( y > r)
 	    {
-	       gameLocal.Printf ( "Begin Dynamic lg_interleave" );
-		   // n = cv_lg_interleave.GetInteger();
+	       // gameLocal.Printf ( "Begin Dynamic lg_interleave" );
+		   n = cv_lg_interleave.GetInteger();
 		}
 		 else
 		 {
-	       gameLocal.Printf ( "Below lg_interleave threshold" );
-		   // n = 1;
+	       // gameLocal.Printf ( "Below lg_interleave threshold" );
+		   n = 1;
 		 }
        }
 
