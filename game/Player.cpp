@@ -9823,26 +9823,20 @@ int idPlayer::ProcessLightgem(bool processing)
 	
 	// gameLocal.Printf ( " lg_fps %i\n", y );
 
-	 
+	
+    if ( cv_lg_interleave.GetInteger() > 0)
+    {	
 	if ( y > r)
 	    {
-	       // gameLocal.Printf ( "Begin Dynamic lg_interleave" );
-		   n = cv_lg_interleave.GetInteger();
+	       gameLocal.Printf ( "Begin Dynamic lg_interleave" );
+		   // n = cv_lg_interleave.GetInteger();
 		}
 		 else
-		     {
-	           // gameLocal.Printf ( "Below lg_interleave threshold" );
-			   
-			   if ( n != 0)
-			   {
-		         n = 1;
-			   }
-			   else
-			   {
-			     n = 0;
-			   }
-			 }
-
+		 {
+	       gameLocal.Printf ( "Below lg_interleave threshold" );
+		   // n = 1;
+		 }
+       }
 
 	// Skip every nth frame according to the value set in 
 	if (processing && !cv_lg_weak.GetBool() && n > 0)
