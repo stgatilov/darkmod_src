@@ -9826,17 +9826,17 @@ int idPlayer::ProcessLightgem(bool processing)
 	
     if ( cv_lg_interleave.GetInteger() > 0)
     {	
-	if ( y > r)
-	    {
-	       // gameLocal.Printf ( "Begin Dynamic lg_interleave" );
-		   n = cv_lg_interleave.GetInteger();
+		if ( static_cast<int>(y) > r) // grayman debug - remove compiler warning
+		{
+			// gameLocal.Printf ( "Begin Dynamic lg_interleave" );
+			n = cv_lg_interleave.GetInteger();
 		}
-		 else
-		 {
-	       // gameLocal.Printf ( "Below lg_interleave threshold" );
-		   n = 1;
-		 }
-       }
+		else
+		{
+			// gameLocal.Printf ( "Below lg_interleave threshold" );
+			n = 1;
+		}
+	}
 
 	// Skip every nth frame according to the value set in 
 	if (processing && !cv_lg_weak.GetBool() && n > 0)
