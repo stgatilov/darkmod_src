@@ -695,11 +695,14 @@ static const int	MAX_RENDER_CROPS = 8;
 ** but may read fields that aren't dynamically modified
 ** by the frontend.
 */
+// #4395 Duzenko lightem pixel pack buffer optimization
 class idRenderSystemLocal : public idRenderSystem {
+private:
+	GLuint pbo;
+
 public:
 	// external functions
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
+	virtual void			Init( void );	virtual void			Shutdown( void );
 	virtual void			InitOpenGL( void );
 	virtual void			ShutdownOpenGL( void );
 	virtual bool			IsOpenGLRunning( void ) const;

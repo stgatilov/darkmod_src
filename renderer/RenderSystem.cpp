@@ -292,7 +292,10 @@ idRenderSystemLocal::idRenderSystemLocal( void ) {
 idRenderSystemLocal::~idRenderSystemLocal
 =============
 */
+
+// #4395: Duzenko lightem pixel pack buffer optimization
 idRenderSystemLocal::~idRenderSystemLocal( void ) {
+	qglDeleteBuffersARB(1, &pbo);
 }
 
 /*
@@ -1011,7 +1014,29 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 
 	qglReadBuffer( GL_BACK );
 
-	qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+// #4395 Duzenko lightem pixel pack buffer optimization
+
+	if (1) {
+		static int nbytes = 64 * 64 * 3;
+		if (!pbo) {
+			qglGenBuffersARB(1, &pbo);
+			qglBindBufferARB(GL_PIXEL_PACK_BUFFER, pbo);
+			qglBufferDataARB(GL_PIXEL_PACK_BUFFER, nbytes, NULL, GL_STREAM_READ);
+			qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
+		}
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, pbo);
+		unsigned char* ptr = (unsigned char*)qglMapBufferARB(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		if (ptr) {
+			memcpy(buffer, ptr, nbytes);
+			qglUnmapBufferARB(GL_PIXEL_PACK_BUFFER);
+		}
+		else {
+			// handle error
+		}
+		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
+	} else
+		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
 }
 
 /*
