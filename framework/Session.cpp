@@ -1631,7 +1631,7 @@ const idStr GetNextQuicksaveFilename()
 	idStr oldestFile;
 	int quicksaveCounter = 0;
 	idStr quicksaveName = common->Translate( "#str_07178" );
-	quicksaveName.Replace( " ", "_" ); // grayman debug
+	quicksaveName.Replace( " ", "_" ); // grayman #4398
 
 	for ( int i = 0; i < fileList.Num(); i++ )
 	{
@@ -1677,7 +1677,7 @@ const idStr GetMostRecentQuicksaveFilename()
 	// fileTimes is sorted, most recent first. Find the first quick save
 	idStr filename;
 	idStr quicksaveName = common->Translate( "#str_07178" );
-	quicksaveName.Replace( " ", "_" ); // grayman debug
+	quicksaveName.Replace( " ", "_" ); // grayman #4398
 	
 	int idx = 0;
 	for ( ; idx < fileList.Num(); idx++ )
@@ -1836,9 +1836,9 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 			return false;
 		}
 
-		// grayman debug - account for multi-word I18N replacements for "Quicksave"
+		// grayman #4398 - account for multi-word I18N replacements for "Quicksave"
 		idStr s = common->Translate("#str_07178");
-		s.Replace( " ", "_" ); // grayman debug
+		s.Replace( " ", "_" );
 
 		if ( game->quicksavesDisallowed() && ( gameFile.IcmpPrefix(s) == 0 ) ) // SteveL tweaked to use l18n while working on #4191
 		{
