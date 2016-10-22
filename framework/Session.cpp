@@ -435,15 +435,20 @@ void idSessionLocal::ShowLoadingGui() {
 	}
 	console->Close();
 
+	// grayman #4399 - duzenko's change to improve load time by 1s. This code runs before
+	// the loading bar begins to climb from 0->100%.
+
+/*
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
 	// Try and prevent the while loop from being skipped over (long hitch on the main thread?)
 	int stop = Sys_Milliseconds() + 1000;
 	int force = 10;
-	while ( Sys_Milliseconds() < stop || force-- > 0 ) {
+	while ( Sys_Milliseconds() < stop || force-- > 0 )
+	{*/
 		com_frameTime = com_ticNumber * USERCMD_MSEC;
 		session->Frame();
 		session->UpdateScreen( false );
-	}
+	//}
 }
 
 
