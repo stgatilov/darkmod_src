@@ -968,7 +968,9 @@ Checks for images with the same hash value and does a better comparison
 void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 	int	count = 0;
 
-	common->Printf( "Images with duplicated contents:\n" );
+	common->Printf("Images with duplicated contents:\n");
+	if (!globalImages->image_blockChecksum.GetBool()) // duzenko #4400
+		common->Printf("Warning: image_blockChecksum set to 0, results invalid.\n");
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		idImage	*image1 = globalImages->images[i];
@@ -986,6 +988,8 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 		int		h1 = 0; int w1 = 0;
 
 		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
+		if (!data1) // duzenko #4400
+			continue;
 
 		for ( int j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
@@ -1013,10 +1017,12 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 
 				R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
 				
-				if ( w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) {
+				if (!data2 || w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) // duzenko #4400
+				{
 					R_StaticFree( data2 );
 					continue;
 				}
+				R_StaticFree(data2); // duzenko #4400
 
 				common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
 				session->UpdateScreen( true );
