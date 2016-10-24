@@ -1031,7 +1031,8 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 			qglUnmapBufferARB(GL_PIXEL_PACK_BUFFER);
 		}
 		else {
-			// handle error
+			// #4395 vid_restart ?
+               pbo = 0;
 		}
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
