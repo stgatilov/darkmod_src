@@ -537,13 +537,19 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// select proper internal format before we resample
 	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth, &isMonochrome );
 
+	const bool automaticMipmaps = true; // duzenko #4401
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
 		// we must copy even if unchanged, because the border zeroing
 		// would otherwise modify const data
-		scaledBuffer = (byte *)R_StaticAlloc( sizeof( unsigned ) * scaled_width * scaled_height );
-		memcpy (scaledBuffer, pic, width*height*4);
-	} else {
+		if (automaticMipmaps) // duzenko #4401
+			scaledBuffer = (byte*) pic;
+		else {
+			scaledBuffer = (byte *) R_StaticAlloc( sizeof(unsigned) * scaled_width * scaled_height );
+			memcpy( scaledBuffer, pic, width*height * 4 );
+		}
+	}
+	else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
 		// scaledBuffer = R_ResampleTexture( pic, width, height, width >>= 1, height >>= 1 );
 		scaledBuffer = R_MipMap( pic, width, height, preserveBorder );
@@ -653,6 +659,8 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		*/
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
 	} else {
+		if (automaticMipmaps && !preserveBorder) // duzenko #4401
+			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	}
 
@@ -661,9 +669,12 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	miplevel = 0;
 	while ( scaled_width > 1 || scaled_height > 1 ) {
+		if (automaticMipmaps && !preserveBorder && internalFormat != GL_COLOR_INDEX8_EXT) // duzenko #4401
+			break;
 		// preserve the border after mip map unless repeating
 		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );
-		R_StaticFree( scaledBuffer );
+		if (pic != scaledBuffer) // duzenko #4401
+			R_StaticFree( scaledBuffer );
 		scaledBuffer = shrunk;
 
 		scaled_width >>= 1;
@@ -693,7 +704,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 	}
 
-	if ( scaledBuffer != 0 ) {
+	if (scaledBuffer != 0 && pic != scaledBuffer) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
 	}
 
