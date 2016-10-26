@@ -659,10 +659,15 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
 	} else {
 		if (automaticMipmaps && !preserveBorder) // duzenko #4401
-			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+			if (!glGenerateMipmap)
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		if (strcmp(glConfig.vendor_string, "Intel"))
-			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
+		if (automaticMipmaps && !preserveBorder) // duzenko #4401
+			if (glGenerateMipmap)
+				glGenerateMipmap(GL_TEXTURE_2D);
+			else
+				if (strcmp(glConfig.vendor_string, "Intel")) // known to crash on Intel
+					glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
 	}
 	
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed

@@ -305,6 +305,9 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 
+// mipmaps
+PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
+
 /*
 =================
 R_CheckExtension
@@ -522,6 +525,7 @@ static void R_CheckPortableExtensions( void ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
 
+	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
 }
 
 
