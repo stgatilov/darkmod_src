@@ -537,12 +537,18 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// select proper internal format before we resample
 	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth, &isMonochrome );
 
-	const bool automaticMipmaps = true; // duzenko #4401
+	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
+	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
+		mipmapMode == 0;
+	else
+		if (mipmapMode == 2 && !glGenerateMipmap)
+			mipmapMode == 1;
+
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
 		// we must copy even if unchanged, because the border zeroing
 		// would otherwise modify const data
-		if (automaticMipmaps) // duzenko #4401
+		if (1) // duzenko #4401
 			scaledBuffer = (byte*) pic;
 		else {
 			scaledBuffer = (byte *) R_StaticAlloc( sizeof(unsigned) * scaled_width * scaled_height );
@@ -658,16 +664,14 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		*/
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
 	} else {
-		if (automaticMipmaps && !preserveBorder) // duzenko #4401
-			if (!glGenerateMipmap)
-				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+		if (mipmapMode == 1) // duzenko #4401
+			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		if (automaticMipmaps && !preserveBorder) // duzenko #4401
-			if (glGenerateMipmap)
-				glGenerateMipmap(GL_TEXTURE_2D);
-			else
-				if (strcmp(glConfig.vendor_string, "Intel")) // known to crash on Intel
-					glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
+		if (mipmapMode == 2) // duzenko #4401
+			glGenerateMipmap(GL_TEXTURE_2D);
+		if (mipmapMode == 1) // duzenko #4401
+			if (strcmp(glConfig.vendor_string, "Intel")) // known to have crashed on Intel
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
 	}
 	
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
@@ -675,7 +679,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	miplevel = 0;
 	while ( scaled_width > 1 || scaled_height > 1 ) {
-		if (automaticMipmaps && !preserveBorder && internalFormat != GL_COLOR_INDEX8_EXT) // duzenko #4401
+		if (mipmapMode > 0) // duzenko #4401
 			break;
 		// preserve the border after mip map unless repeating
 		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );

@@ -385,7 +385,8 @@ public:
 	static idCVar		image_downSizeBumpLimit;	// downsize bump limit
 	static idCVar		image_ignoreHighQuality;	// ignore high quality on materials
 	static idCVar		image_downSizeLimit;		// downsize diffuse limit
-	static idCVar		image_blockChecksum;		// duplicate check // duzenko #4400
+	static idCVar		image_blockChecksum;		// duplicate check 
+	static idCVar		image_mipmapMode;			// 0 - software, 1 = gl 1.4, 2 = gl 3.0
 
 	// built-in images
 	idImage *			defaultImage;
