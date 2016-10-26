@@ -560,6 +560,9 @@
 @copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h" />
