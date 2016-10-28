@@ -23,7 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "win_local.h"
-
+#include "../../renderer/tr_local.h"
 
 #define DINPUT_BUFFERSIZE           256
 
@@ -998,6 +998,8 @@ int Sys_PollMouseInputEvents( void ) {
     if( FAILED(hr) ) {
         return 0;
 	}
+
+	SetCursorPos(win32.win_xpos.GetInteger() + glConfig.vidWidth / 2, win32.win_ypos.GetInteger() + glConfig.vidHeight / 2);
 
 	Sys_QueMouseEvents( dwElements );
 
