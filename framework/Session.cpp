@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
+#include "../renderer/tr_local.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -2540,12 +2541,13 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	// draw everything
 	Draw();
 
-	if ( com_speeds.GetBool() ) {
-		renderSystem->EndFrame( &time_frontend, &time_backend );
+	if (com_speeds.GetBool()) {
+		time_backendLast = backEnd.pc.msecLast;
+		time_frontendLast = tr.pc.frontEndMsecLast;
+		renderSystem->EndFrame(&time_frontend, &time_backend);
 	} else {
 		renderSystem->EndFrame( NULL, NULL );
 	}
-
 	insideUpdateScreen = false;
 }
 

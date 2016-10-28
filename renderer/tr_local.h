@@ -594,6 +594,7 @@ typedef struct {
 	int		c_entityUpdates, c_lightUpdates, c_entityReferences, c_lightReferences;
 	int		c_guiSurfs;
 	int		frontEndMsec;		// sum of time in all RE_RenderScene's in a frame
+	int		frontEndMsecLast;		// time in last RE_RenderScene
 } performanceCounters_t;
 
 
@@ -638,6 +639,7 @@ typedef struct {
 
 	float	maxLightValue;	// for light scale
 	int		msec;			// total msec for backend run
+	int		msecLast;			// last msec for backend run
 } backEndCounters_t;
 
 // all state modified by the back end is separated

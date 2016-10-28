@@ -712,17 +712,6 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
-	// save out timing information
-	if ( frontEndMsec ) {
-		*frontEndMsec = pc.frontEndMsec;
-	}
-	if ( backEndMsec ) {
-		*backEndMsec = backEnd.pc.msec;
-	}
-
-	// print any other statistics and clear all of them
-	R_PerformanceCounters();
-
 	// check for dynamic changes that require some initialization
 	R_CheckCvars();
 
@@ -753,6 +742,16 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		}
 	}
 
+	// save out timing information
+	if (frontEndMsec) {
+		*frontEndMsec = pc.frontEndMsec;
+	}
+	if (backEndMsec) {
+		*backEndMsec = backEnd.pc.msec;
+	}
+
+	// print any other statistics and clear all of them
+	R_PerformanceCounters();
 }
 
 /*

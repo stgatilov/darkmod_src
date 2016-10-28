@@ -108,6 +108,8 @@ int				time_gameFrame;
 int				time_gameDraw;
 int				time_frontend;			// renderSystem frontend time
 int				time_backend;			// renderSystem backend time
+int				time_frontendLast;
+int				time_backendLast;
 
 int				com_frameTime;			// time for the current frame in milliseconds
 int				com_frameNumber;		// variable frame number
@@ -2446,7 +2448,7 @@ void idCommonLocal::Frame( void ) {
 			const int	nowTime = Sys_Milliseconds();
 			const int	com_frameMsec = nowTime - lastTime;
 			lastTime = nowTime;
-			Printf( "frame:%i all:%3i gfr:%3i rf:%3i bk:%3i\n", com_frameNumber, com_frameMsec, time_gameFrame, time_frontend, time_backend );
+			Printf("frame:%i all:%3i gfr:%3i fr:%3i(%d) br:%3i(%d)\n", com_frameNumber, com_frameMsec, time_gameFrame, time_frontend, time_frontendLast, time_backend, time_backendLast);
 			time_gameFrame = 0;
 			time_gameDraw = 0;
 		}	

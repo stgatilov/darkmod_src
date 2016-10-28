@@ -634,7 +634,8 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// stop rendering on this thread
 	backEndFinishTime = Sys_Milliseconds();
-	backEnd.pc.msec = backEndFinishTime - backEndStartTime;
+	backEnd.pc.msecLast = backEndFinishTime - backEndStartTime;
+	backEnd.pc.msec += backEnd.pc.msecLast;
 
 	if ( r_debugRenderToTexture.GetInteger() ) {
 		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, CpyRenders: %i, CpyFrameBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_copyRenders, backEnd.c_copyFrameBuffer );
