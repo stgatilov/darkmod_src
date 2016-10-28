@@ -632,11 +632,11 @@ void WriteOutputFile( void ) {
 	idStr			qpath;
 
 	// write the file
-	common->Printf( "----- WriteOutputFile -----\n" );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "----- WriteOutputFile -----\n" );
 
 	sprintf( qpath, "%s." PROC_FILE_EXT, dmapGlobals.mapFileBase );
 
-	common->Printf( "writing %s\n", qpath.c_str() );
+	PrintIfVerbosityAtLeast( VL_CONCISE, "writing %s\n", qpath.c_str() );
 
 	procFile = fileSystem->OpenFileWrite( qpath, "fs_devpath", "" );
 	if ( !procFile ) {

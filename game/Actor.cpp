@@ -173,7 +173,7 @@ void idAnimState::SetState( const char *statename, int blendFrames ) {
 	idleAnim = false;
 
 	if ( ai_debugScript.GetInteger() == self->entityNumber ) {
-		gameLocal.Printf( "%d: %s: Animstate: %s\n", gameLocal.time, self->name.c_str(), state.c_str() );
+		gameLocal.Printf( "%d: idAnimState::SetState channel %d %s\n", gameLocal.time, channel, state.c_str() ); // #4057
 	}
 }
 
@@ -304,13 +304,19 @@ idAnimator*	idAnimState::GetAnimator()
 idAnimState::Enable
 =====================
 */
-void idAnimState::Enable( int blendFrames ) {
+void idAnimState::Enable( int blendFrames ) 
+{
 	if ( disabled ) {
 		disabled = false;
 		animBlendFrames = blendFrames;
 		lastAnimBlendFrames = blendFrames;
 		if ( state.Length() ) {
 			SetState( state.c_str(), blendFrames );
+		}
+
+		if ( ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+		{
+			gameLocal.Printf( "%d: idAnimState::Enable channel %d\n", gameLocal.time, channel );
 		}
 	}
 }
@@ -320,7 +326,13 @@ void idAnimState::Enable( int blendFrames ) {
 idAnimState::Disable
 =====================
 */
-void idAnimState::Disable( void ) {
+void idAnimState::Disable( void ) 
+{
+	if ( !disabled && ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idAnimState::Disable channel %d\n", gameLocal.time, channel );
+	}
+
 	disabled = true;
 	idleAnim = false;
 }
@@ -354,8 +366,8 @@ idAnimState::FinishAction
 */
 void idAnimState::FinishAction(const idStr& actionname)
 {
-	if ( waitState == actionname ) {
-		SetWaitState( "" );
+	if (waitState == actionname) {
+		SetWaitState("");
 	}
 }
 
@@ -366,6 +378,11 @@ idAnimState::SetWaitState
 */
 void idAnimState::SetWaitState( const char *_waitstate )
 {
+	if ( ai_debugScript.GetInteger() == self->entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idAnimState::SetWaitState channel %d waitState \"%s\" --> \"%s\"\n", gameLocal.time, channel, waitState.c_str(), _waitstate );
+	}
+	
 	waitState = _waitstate;
 }
 
@@ -410,7 +427,8 @@ const idEventDef AI_StopAnim( "stopAnim", EventArgs('d', "channel", "", 'd', "fr
 	EV_RETURNS_VOID, "Stops the animation currently playing on the given channel over the given number of frames.");
 // NOTE: Id defines playanim here, but it is also overloaded in a roundabout way
 // by idWeapon (maybe due to limited polymorphism in scripting?)
-const idEventDef AI_PlayAnim( "playAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Plays the given animation on the given channel.  Returns false if anim doesn't exist.");
+const idEventDef AI_PlayAnim( "playAnim", EventArgs('d', "channel", "", 's', "animName", ""), 'd', "Do not use, this is part of TDM's internal mechanics. Use playCustomAnim() on AI."
+	"in scripts instead of this. Plays the given animation on the given channel. Returns false if anim doesn't exist.");
 const idEventDef AI_PauseAnim( "pauseAnim", EventArgs('d', "channel", "", 'd', "bPause", "true = pause, false = unpause"), EV_RETURNS_VOID, 
 	"Pause all animations playing on the given channel.\n" \
 	"NOTE: Can also be used used by idWeapons");
@@ -2127,18 +2145,120 @@ idActor::CanSee
 */
 bool idActor::CanSee( idEntity *ent, bool useFov ) const
 {
-	// TDM: We need to be able to see lights that are off and hence hidden
-	/*if ( ent->IsHidden() ) 
+	idVec3 origin; // The entity's origin
+	trace_t result; // results of the traces
+	idVec3 eye(GetEyePosition()); // eye position of the AI
+
+	// angua: If the target entity is an idActor,
+	// use its eye position, its origin and its shoulders
+
+	// grayman #3992 - problem: if an AI has been KO'ed or killed,
+	// it's in ragdoll form, and GetViewPos() returns the angle the
+	// AI was facing before it became a ragdoll, which is useless here.
+
+	if (ent->IsType(idActor::Type)) 
 	{
+		// grayman #3643 - shouldn't be able to see the actor if he's marked 'notarget'
+		// grayman #3857 - or if marked 'invisible'
+		if ((ent->fl.notarget) || (ent->fl.invisible))
+		{
+			return false;
+		}
+
+		bool fovEyeOK;
+		bool fovOriginOK;
+		bool fovShoulder1OK;
+		bool fovShoulder2OK;
+
+		idActor* actor = static_cast<idActor*>(ent);
+
+		// Check eyes
+
+		const idVec3& actorEyePos = actor->GetEyePosition();
+		fovEyeOK = useFov ? CheckFOV(actorEyePos) : true;
+		if ( fovEyeOK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, actorEyePos, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to eye trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, actorEyePos, 1, 32);
+				return true;
+			}
+		}
+
+		// Check origin
+
+		const idVec3& actorOrigin = actor->GetPhysics()->GetOrigin();
+		fovOriginOK = useFov ? CheckFOV(actorOrigin) : true;
+
+		if ( fovOriginOK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, actorOrigin, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to origin trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, actorOrigin, 1, 32);
+				return true;
+			}
+		}
+
+		// Check one shoulder
+
+		idVec3 dir;
+		if ( actor->AI_DEAD || actor->IsKnockedOut() )
+		{
+			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+			idVec3 bodyAxis = actorEyePos - actorOrigin;
+			bodyAxis.NormalizeFast();
+			dir = bodyAxis.Cross(gravityDir);
+		}
+		else
+		{
+			idVec3 origin;
+			idMat3 viewaxis;
+			actor->GetViewPos(origin, viewaxis);
+
+			const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
+			dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
+		}
+
+		float dist = 8;
+
+		const idVec3& shoulder1 = actorOrigin + (actorEyePos - actorOrigin)*0.7f + dir * dist;
+		fovShoulder1OK = useFov ? CheckFOV(shoulder1) : true;
+
+		if ( fovShoulder1OK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, shoulder1, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to shoulder1 trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, shoulder1, 1, 32);
+				return true;
+			}
+		}
+
+		// Check other shoulder
+
+		const idVec3& shoulder2 = actorOrigin + (actorEyePos - actorOrigin)*0.7f - dir * dist;
+		fovShoulder2OK = useFov ? CheckFOV(shoulder2) : true;
+
+		if ( fovShoulder2OK )
+		{
+			if ( !gameLocal.clip.TracePoint(result, eye, shoulder2, MASK_OPAQUE, this) ||
+				gameLocal.GetTraceEntity(result) == actor )
+			{
+				// Eye to shoulder2 trace succeeded
+				// gameRenderWorld->DebugArrow(colorGreen,eye, shoulder2, 1, 32);
+				return true;
+			}
+		}
+
 		return false;
-	}*/
+	}
 
-	// The entity's origin
-
-	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
-
-	idVec3 origin;
-	if ( ent->IsType(CBinaryFrobMover::Type) )
+	if ( ent->IsType(CBinaryFrobMover::Type) )	// grayman #2861 - in the case of doors, use the 'closed origin' and not the 'origin'
 	{
 		CBinaryFrobMover* door = static_cast<CBinaryFrobMover*>(ent);
 		origin = door->GetClosedOrigin();
@@ -2151,116 +2271,96 @@ bool idActor::CanSee( idEntity *ent, bool useFov ) const
 	const idVec3& entityOrigin = origin;
 
 	// Check the field of view if specified
-	if (useFov && !CheckFOV(entityOrigin))
+
+	if ( useFov )
 	{
-		// FOV check failed
-		return false;
-	}
-
-	// This will hold the results of the traces
-	trace_t result;
-
-	// eye position of the AI
-	idVec3 eye(GetEyePosition());
-
-	// angua: If the target entity is an idActor,
-	// use its eye position, its origin and its shoulders
-	if (ent->IsType(idActor::Type)) 
-	{
-		// grayman #3643 - shouldn't be able to see ent if he's marked 'notarget'
-		// grayman #3857 - or if marked 'invisible'
-		if ((ent->fl.notarget) || (ent->fl.invisible))
+		if ( !CheckFOV(entityOrigin) )
 		{
+			// FOV check failed
 			return false;
 		}
-
-		idActor* actor = static_cast<idActor*>(ent);
-		idVec3 entityEyePos = actor->GetEyePosition();
-
-		if (!gameLocal.clip.TracePoint(result, eye, entityEyePos, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == actor) 
-		{
-			// Eye to eye trace succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityEyePos, 1, 32);
-			return true;
-		}
-
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == actor) 
-		{
-			// Eye to origin trace succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin, 1, 32);
-			return true;
-		}
-
-		idVec3 origin;
-		idMat3 viewaxis;
-		actor->GetViewPos(origin, viewaxis);
-
-		const idVec3 &gravityDir = GetPhysics()->GetGravityNormal();
-		idVec3 dir = (viewaxis[0] - gravityDir * ( gravityDir * viewaxis[0] )).Cross(gravityDir);
-			
-		float dist = 8;
-
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, MASK_OPAQUE, this) 
-			|| gameLocal.GetTraceEntity(result) == actor
-			|| !gameLocal.clip.TracePoint(result, eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, MASK_OPAQUE, this) // grayman #3525 - was tracing to same shoulder twice 
-			|| gameLocal.GetTraceEntity(result) == actor)
-		{
-			// Eye to shoulders traces succeeded
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f + dir * dist, 1, 32);
-			// gameRenderWorld->DebugArrow(colorGreen,eye, entityOrigin + (entityEyePos - entityOrigin)*0.7f - dir * dist, 1, 32);	
-			return true;
-		}
 	}
-	// otherwise just use the origin (for general entities).
-	// Perform a trace from the eye position to the target entity
+
+	// Use the origin for general entities.
+	// Perform a trace from the eye position to the target entity.
 	// TracePoint will return FALSE, when the trace.result is >= 1
-	else
+
+	if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
+			gameLocal.GetTraceEntity(result) == ent) 
 	{
-		if (!gameLocal.clip.TracePoint(result, eye, entityOrigin, MASK_OPAQUE, this) || 
-			 gameLocal.GetTraceEntity(result) == ent) 
+		// Trace succeeded or hit the target entity itself
+		return true;
+	}
+
+	// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
+	// however, it might be embedded in a candle and/or a candle holder.
+	// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
+	// that we can see the light source itself.
+
+	if (ent->IsType(idLight::Type))
+	{
+		idEntity* entHit = gameLocal.GetTraceEntity(result); // grayman #2603
+		idEntity* bindMaster = ent->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
 		{
-			// Trace succeeded or hit the target entity itself
-			return true;
+			if ( entHit == bindMaster ) // grayman #2603
+			{
+				return true;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
 		}
 
-		// grayman #2603 - We can't see the entity itself. If we're trying to see a light source,
-		// however, it might be embedded in a candle and/or a candle holder.
-		// So we have to look up the chain of bindmasters, and if we can see any of them, we'll take it
-		// that we can see the light source itself.
+		// grayman #4290
 
-		if (ent->IsType(idLight::Type))
+		// It's possible that the origin of the light is embedded inside
+		// another object, and that the light is a light holder whose origin
+		// is the same as the light's. (Perhaps a chandelier.) Do one last
+		// check at the true source of the light, using the light_center spawnarg.
+
+		idVec3 lightCenter;
+		idLight *light = static_cast<idLight*>(ent);
+		light->spawnArgs.GetVector("light_center", "0 0 0", lightCenter);
+		idVec3 truelight = entityOrigin + lightCenter;
+		if ( lightCenter.LengthFast() > 0.01 )
 		{
-			idEntity* entHit = gameLocal.GetTraceEntity(result); // grayman #2603
-			idEntity* bindMaster = ent->GetBindMaster();
-			while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
+			if (!gameLocal.clip.TracePoint(result, eye, truelight, MASK_OPAQUE, this) || 
+					gameLocal.GetTraceEntity(result) == ent) 
 			{
-				if ( entHit == bindMaster ) // grayman #2603
-				{
-					return true;
-				}
-				bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+				// Trace succeeded
+				return true;
 			}
 		}
-		else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
-		{
-			// We're trying to see an absence marker and can't. Check for the case where the missing item
-			// was replaced by another item. For example, a lootable painting replaced by an empty frame.
-			// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
 
-			CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
-			const idDict& refSpawnargs = marker->GetRefSpawnargs();
-			idStr replacedByClass = refSpawnargs.GetString("replace");
-			if ( !replacedByClass.IsEmpty() )
+		// Check the light's bindMaster again
+
+		entHit = gameLocal.GetTraceEntity(result);
+		bindMaster = ent->GetBindMaster();
+		while (bindMaster != NULL) // exit when bindMaster == NULL or we hit one of them
+		{
+			if ( entHit == bindMaster )
 			{
-				idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
-				if ( entHit != NULL )
+				return true;
+			}
+			bindMaster = bindMaster->GetBindMaster(); // go up the hierarchy
+		}
+	}
+	else if ( ent->IsType(CAbsenceMarker::Type) ) // grayman #2860
+	{
+		// We're trying to see an absence marker and can't. Check for the case where the missing item
+		// was replaced by another item. For example, a lootable painting replaced by an empty frame.
+		// If a replacement item is present, is that what the trace hit? If so, the trace was successful.
+
+		CAbsenceMarker* marker = static_cast<CAbsenceMarker*>(ent);
+		const idDict& refSpawnargs = marker->GetRefSpawnargs();
+		idStr replacedByClass = refSpawnargs.GetString("replace");
+		if ( !replacedByClass.IsEmpty() )
+		{
+			idEntity* entHit = gameLocal.GetTraceEntity(result); // the trace hit this
+			if ( entHit != NULL )
+			{
+				if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
 				{
-					if ( idStr::Icmp( entHit->spawnArgs.GetString("classname"),replacedByClass ) == 0 )
-					{
-						return true; // we hit the replacement item, which means a successful trace
-					}
+					return true; // we hit the replacement item, which means a successful trace
 				}
 			}
 		}
@@ -2979,7 +3079,13 @@ const char *idActor::WaitState( int channel ) const
 idActor::SetWaitState
 =====================
 */
-void idActor::SetWaitState( const char *_waitstate ) {
+void idActor::SetWaitState( const char *_waitstate ) 
+{
+	if ( ai_debugScript.GetInteger() == entityNumber ) // #4057
+	{
+		gameLocal.Printf( "%d: idActor::SetWaitState \"%s\" --> \"%s\"\n", gameLocal.time, waitState.c_str(), _waitstate );
+	}
+
 	waitState = _waitstate;
 }
 
@@ -4390,26 +4496,29 @@ idActor::Event_OverrideAnim
 ===============
 */
 void idActor::Event_OverrideAnim( int channel ) {
-	switch( channel ) {
-	case ANIMCHANNEL_HEAD :
+	switch ( channel ) {
+	case ANIMCHANNEL_HEAD:
 		headAnim.Disable();
 		if ( !torsoAnim.IsIdle() ) {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
-		} else {
+		}
+		else {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
 		}
 		break;
 
-	case ANIMCHANNEL_TORSO :
+	case ANIMCHANNEL_TORSO:
 		torsoAnim.Disable();
+		legsAnim.Enable( legsAnim.lastAnimBlendFrames );  // #4063: make sure the channel we are sync'ing to is enabled.
 		SyncAnimChannels( ANIMCHANNEL_TORSO, ANIMCHANNEL_LEGS, legsAnim.lastAnimBlendFrames );
 		if ( headAnim.IsIdle() ) {
 			SyncAnimChannels( ANIMCHANNEL_HEAD, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		}
 		break;
 
-	case ANIMCHANNEL_LEGS :
+	case ANIMCHANNEL_LEGS:
 		legsAnim.Disable();
+		torsoAnim.Enable( torsoAnim.lastAnimBlendFrames ); // #4063: make sure the channel we are sync'ing to is enabled.
 		SyncAnimChannels( ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, torsoAnim.lastAnimBlendFrames );
 		break;
 
@@ -4562,8 +4671,9 @@ idActor::Event_FinishAction
 ===============
 */
 void idActor::Event_FinishAction( const char *actionname ) {
+
 	if ( waitState == actionname ) {
-		SetWaitState( "" );
+		SetWaitState("");
 	}
 }
 
@@ -5343,7 +5453,7 @@ CrashLandResult idActor::CrashLand( const idPhysics_Actor& physicsObj, const idV
 		idVec3 v = (m_savedVelocity == vec3_zero) ? savedVelocity : m_savedVelocity;
 		bool sameDirection = (curVelocity * v >= 0);
 		v.NormalizeFast();
-		angleChange = idMath::ACos(cv * v);
+		angleChange = RAD2DEG(idMath::ACos(cv * v));
 
 		if (!sameDirection)
 		{

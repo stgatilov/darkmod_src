@@ -221,8 +221,8 @@ public:
 	virtual int				GetOSMask( void );
 	virtual int				ReadFile( const char *relativePath, void **buffer, ID_TIME_T *timestamp );
 	virtual void			FreeFile( void *buffer );
-	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL);
-	virtual void			RemoveFile( const char *relativePath );	
+	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
+	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL);
     virtual idFile *		OpenFileReadFlags( const char *relativePath, int searchFlags, pack_t **foundInPak = NULL, const char* gamedir = NULL );
     virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL );
 	virtual idFile *		OpenFileWrite( const char *relativePath, const char *basePath = "fs_modSavePath", const char *gamedir = NULL );
@@ -667,7 +667,9 @@ const char *idFileSystemLocal::BuildOSPath( const char *base, const char *game, 
 
 		if ( testPath.HasUpper() ) {
 
-			common->Warning( "Non-portable: path contains uppercase characters: %s", testPath.c_str() );
+			// grayman #4327 - stop console spam when folders
+			// have uppercase letters in them
+			// common->Warning( "Non-portable: path contains uppercase characters: %s", testPath.c_str() );
 
 			// attempt a fixup on the fly
 			if ( fs_caseSensitiveOS.GetBool() ) {
@@ -786,7 +788,7 @@ idFileSystemLocal::RelativePathToOSPath
 Returns a fully qualified path that can be used with stdio libraries
 =====================
 */
-const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir) {
+const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, const char *basePath, const char *gamedir ) {
 
 	const char *path = cvarSystem->GetCVarString( basePath );
 	if ( !path[0] ) {
@@ -801,16 +803,20 @@ const char *idFileSystemLocal::RelativePathToOSPath( const char *relativePath, c
 idFileSystemLocal::RemoveFile
 =================
 */
-void idFileSystemLocal::RemoveFile( const char *relativePath ) {
+void idFileSystemLocal::RemoveFile( const char *relativePath, const char *gamedir ) {
 	idStr OSPath;
+    int removeResult = -1;
 
 	if ( fs_devpath.GetString()[0] ) {
-		OSPath = BuildOSPath( fs_devpath.GetString(), gameFolder, relativePath );
-		remove( OSPath );
+		OSPath = BuildOSPath( fs_devpath.GetString(), gamedir ? gamedir : gameFolder.c_str(), relativePath );
+        removeResult = remove( OSPath );
 	}
 
-	OSPath = BuildOSPath( fs_modSavePath.GetString(), gameFolder, relativePath );
-	remove( OSPath );
+    if (removeResult != 0)
+    {
+        OSPath = BuildOSPath(fs_modSavePath.GetString(), gamedir ? gamedir : gameFolder.c_str(), relativePath);
+        remove(OSPath);
+    }
 
 	ClearDirCache();
 }

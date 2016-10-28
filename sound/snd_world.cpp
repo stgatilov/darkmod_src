@@ -732,6 +732,18 @@ void idSoundWorldLocal::AVIClose( void ) {
 
 //==============================================================================
 
+float idSoundWorldLocal::GetDiffractionLoss(const idVec3 p1, const idVec3 p2, const idVec3 p3)
+{
+	idVec3 nv = p3 - p2; // vector of forward leg
+	idVec3 pv = p2 - p1; // vector of previous leg
+	nv.NormalizeFast();
+	pv.NormalizeFast();
+	float angle = RAD2DEG(idMath::ACos(nv*pv));
+
+	// Assume an s_diffractionMax loss at an angle of 180, and no loss at an angle of 0
+
+	return (idSoundSystemLocal::s_diffractionMax.GetFloat()*(angle / 180.0f));
+}
 
 /*
 ===================
@@ -750,7 +762,7 @@ set at maxDistance
 */
 static const int MAX_PORTAL_TRACE_DEPTH = 10;
 
-bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, idSoundEmitterLocal *def , SoundChainResults *results) // grayman #3042
+bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTrace_t *prevStack, const int soundArea, const float dist, const float loss, const idVec3& soundOrigin, const idVec3& prevSoundOrigin, idSoundEmitterLocal *def , SoundChainResults *results) // grayman #3042 // grayman #4219
 {
 	if ( dist >= def->distance )
 	{
@@ -768,14 +780,34 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		return false;
 	}
 
+	// SteveL #4148: Also quit if the sound loss through this chain is too great.
+	if ( soundSystemLocal.dB2Scale(def->parms.volume - loss) < SND_EPSILON )
+	{
+		return false;
+	}
+
 	// If we've reached the sound area the listener is in, our journey is over. Place the
 	// results in the "results" object and return to the level above us.
 
+	// grayman #4219 - calculate the sound loss due to the direction change at this portal
+
+	float angularLoss = 0.0f;
+
 	if ( soundArea == listenerArea )
 	{
+		angularLoss = GetDiffractionLoss(prevSoundOrigin, soundOrigin, listenerQU);
+
+		// If this additional loss makes the sound too soft to hear at this portal,
+		// don't return spatialized data.
+
+		if ( soundSystemLocal.dB2Scale(def->parms.volume - loss - angularLoss) < SND_EPSILON )
+		{
+			return false;
+		}
+		
 		results->distance = dist + distToListener; // found the listener, so no need to travel distances beyond this
 		results->spatializedOrigin = soundOrigin;
-		results->loss = loss; // grayman #3042 - total accumulated volume loss across portals
+		results->loss = loss + angularLoss; // grayman #3042 - total accumulated volume loss across portals
 		results->spatialDistance = distToListener;
 		return true;
 	}
@@ -924,7 +956,18 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		float tlenLength = tlen.LengthFast();
 		SoundChainResults *res = new SoundChainResults();
 
-		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer, source, def, res ) ) // grayman #3042
+		// grayman #4219 - determine sound loss due to direction change at the previous portal
+
+		angularLoss = 0.0f;
+
+		if ( !soundOrigin.Compare(prevSoundOrigin,VECTOR_EPSILON) )
+		{
+			angularLoss = GetDiffractionLoss(prevSoundOrigin, soundOrigin, source);
+		}
+
+		idVec3 trailingSoundOrigin = soundOrigin;
+
+		if ( ResolveOrigin( stackDepth+1, &newStack, otherArea, dist+tlenLength, loss + re.lossPlayer + angularLoss/* + waterLoss*/, source, trailingSoundOrigin, def, res ) ) // grayman #3042
 		{
 			chainResults.Append(res);
 		} 
@@ -1809,6 +1852,14 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	{
 		volumeDB -= sound->volumeLoss;
 	}
+
+	// grayman #3556 - apply sound loss if the player's ears are underwater
+
+	if (game->PlayerUnderwater())
+	{
+		volumeDB -= UNDERWATER_VOLUME_LOSS;
+	}
+
 	volume = soundSystemLocal.dB2Scale( volumeDB );
 		
 	// global volume scale

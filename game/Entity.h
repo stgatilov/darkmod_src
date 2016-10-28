@@ -88,6 +88,7 @@ extern const idEventDef EV_ApplyImpulse;
 extern const idEventDef EV_SetLinearVelocity;
 extern const idEventDef EV_SetAngularVelocity;
 extern const idEventDef EV_SetSkin;
+extern const idEventDef EV_ReskinCollisionModel; // #4232
 extern const idEventDef EV_StartSoundShader;
 extern const idEventDef EV_StopSound;
 extern const idEventDef EV_CacheSoundShader;
@@ -144,7 +145,7 @@ enum EImpulseState {
 
 //
 // Signals
-// make sure to change script/doom_defs.script if you add any, or change their order
+// make sure to change script/tdm_defs.script if you add any, or change their order
 //
 typedef enum {
 	SIG_TOUCH,				// object was touched
@@ -471,6 +472,11 @@ public:
 	idVec3					m_VinePlantLoc;
 	idVec3					m_VinePlantNormal;
 
+	/**
+	* Place where the object last came to rest
+	**/
+	idVec3					m_LastRestPos; // grayman #3992
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
@@ -574,6 +580,9 @@ public:
 	virtual void			SetModel( const char *modelname );
 	void					SetSkin( const idDeclSkin *skin );
 	const idDeclSkin *		GetSkin( void ) const;
+	void					ReskinCollisionModel(); // For use after SetSkin on moveables and static models, if the CM needs to be 
+													// refreshed to update surface properties after a skin change. CM will be regenerated 
+													// from the original model file with the new skin. -- SteveL #4232
 	void					SetShaderParm( int parmnum, float value );
 	virtual void			SetColor( const float red, const float green, const float blue );
 	virtual void			SetColor( const idVec3 &color );
@@ -628,7 +637,7 @@ public:
 	bool					StartSoundShader( const idSoundShader *shader, const s_channelType channel, int soundShaderFlags, bool broadcast, int *length);
 	void					StopSound( const s_channelType channel, bool broadcast );	// pass SND_CHANNEL_ANY to stop all sounds
 	void					SetSoundVolume( float volume );
-	void					UpdateSound( void );
+	void					UpdateSound( void ); // grayman #4337
 	int						GetListenerId( void ) const;
 	idSoundEmitter *		GetSoundEmitter( void ) const;
 	void					FreeSoundEmitter( bool immediate );
@@ -1393,7 +1402,6 @@ protected:
 
 protected:
 	renderEntity_t			renderEntity;				//!< used to present a model to the renderer
-	renderLight_t			renderLight;
 	int						modelDefHandle;				//!< handle to static renderer model
 	refSound_t				refSound;					//!< used to present sound to the audio engine
 	idStr					brokenModel;				//!< model set when health drops down to or below zero
@@ -1600,6 +1608,7 @@ public:			// Events should be public, so they can be used from other places as w
 	void					Event_SetOwner( idEntity *owner );
 	void					Event_SetModel( const char *modelname );
 	void					Event_SetSkin( const char *skinname );
+	void					Event_ReskinCollisionModel(); // #4232
 	void					Event_GetShaderParm( int parmnum );
 	void					Event_SetShaderParm( int parmnum, float value );
 	void					Event_SetShaderParms( float parm0, float parm1, float parm2, float parm3 );

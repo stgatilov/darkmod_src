@@ -143,6 +143,7 @@ extern const idEventDef AI_SetAcuity;
 extern const idEventDef AI_SetAudThresh;
 extern const idEventDef AI_ClosestReachableEnemy;
 extern const idEventDef AI_ReEvaluateArea;
+extern const idEventDef AI_PlayCustomAnim;
 
 
 // Darkmod: Glass Houses events
@@ -446,6 +447,11 @@ public:
 	// angua: returns true if the current alert index is higher 
 	// than the previous one, false otherwise
 	bool AlertIndexIncreased();
+
+	
+	void RegisterAlert(idEntity* alertedBy); // grayman #4002 - register an alert
+	void ProcessAlerts(); // grayman #4002 - process queued alerts
+
 
 	/**
 	* Returns the float val of the specific AI's acuity.
@@ -848,6 +854,8 @@ public: // greebo: Made these public
 	// grayman #3474 - if this is TRUE, emit fleeing barks, otherwise don't
 
 	bool					emitFleeBarks;
+	
+	idVec3					lastSearchedSpot; // grayman #4220 - most recently searched spot
 
 public: // greebo: Made these public for now, I didn't want to write an accessor for EVERYTHING
 	// script variables
@@ -1274,7 +1282,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	* in the future and start their melee swing in advance?
 	**/
 	bool					m_bMeleePredictProximity;
-
+	
 	// AI_AlertLevel thresholds for each alert level
 	// Alert levels are: 1=slightly suspicious, 2=aroused, 3=investigating, 4=agitated investigating, 5=hunting
 	float thresh_1, thresh_2, thresh_3, thresh_4, thresh_5;
@@ -1311,6 +1319,32 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 	// grayman #3857 - search manager
 	int m_searchID;				// which search he's assigned to; index into the Search Manager's list of active searches
+
+	/**
+	* grayman #4046 - saved _endtime for interrupted path_wait task
+	**/
+	float m_pathWaitTaskEndtime;
+
+	/**
+	 * grayman #4002 - Alert time information per entity.
+	 */
+	struct EntityAlert
+	{
+		// The last time an entity raised the alert index
+		int timeAlerted;
+		
+		// The alert index reached
+		int alertIndex;
+
+		// The entity responsible
+		idEntityPtr<idEntity> entityResponsible;
+		//int entityNumber;
+
+		// Alert entry processed?
+		bool processed;
+	};
+
+	idList<EntityAlert> alertQueue; // grayman #4002
 
 	// The mind of this AI
 	ai::MindPtr mind;
@@ -1545,7 +1579,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					SetMoveType( int moveType );
 	void					SetMoveType( idStr moveType );
 
-
+	void					SetMoveAccuracy(float accuracy); // grayman #4039
 	
 	/**
 	* This is a virtual override of the idActor method.  It takes lighting levels into consideration
@@ -1637,6 +1671,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 
 
 	// movement control
+	void					SetStartTime(idVec3 pos); // grayman #3993
 	void					StopMove( moveStatus_t status );
 	bool					FaceEnemy( void );
 	bool					FaceEntity( idEntity *ent );
@@ -1653,7 +1688,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	bool					Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, int distanceOption); // grayman #3317
 	bool					FindAttackPosition(int pass, idActor* enemy, idVec3& targetPoint, ECombatType type); // grayman #3507
 	aasGoal_t				GetPositionWithinRange(const idVec3& targetPos);
-	idVec3					GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne);
+	idVec3					GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne, const unsigned short maxCost); // grayman #4347
 	bool					MoveToAttackPosition( idEntity *ent, int attack_anim );
 	bool					MoveToEnemy( void );
 	bool					MoveToEntity( idEntity *ent );
@@ -1941,6 +1976,10 @@ public:
 	bool					m_lipSyncActive; /// True iff we're currently lip syncing
 	int						m_lipSyncAnim; /// The number of the animation that we are lipsyncing to
 	int						m_lipSyncEndTimer; /// Time at which to stop lip syncing
+
+	// grayman #3857 - bark stuff
+	idStr					m_barkName; // The name of the bark
+	int						m_barkEndTime; // When the bark will end
 	
 	bool					DrawWeapon(ECombatType type); // grayman #3331 // grayman #3775
 	void					SheathWeapon();
@@ -1972,8 +2011,15 @@ public:
 	// grayman #3643 - setup a suspicious door
 	void					SetUpSuspiciousDoor(CFrobDoor* door);
 
-	// grayman #3643 - get which side of a door we're on
-	int						GetDoorSide(CFrobDoor* frobDoor);
+	// grayman #3643 - get which side of a door a point is on
+	int						GetDoorSide(CFrobDoor* frobDoor, idVec3 pos); // grayman #4227
+
+	// grayman #4238 - is an AI standing at a point?
+	bool					PointObstructed(idVec3 p);
+
+
+	// for debugging circling problems
+	//void					PrintGoalData(idVec3 goal, int tag);
 
 	//
 	// ai/ai_events.cpp
@@ -2272,6 +2318,7 @@ public:
 
 	void Event_HitByDoor(idEntity* door); // grayman #3756
 
+	void Event_PlayCustomAnim( const char* animName ); // SteveL #3597
 
 #ifdef TIMING_BUILD
 private:

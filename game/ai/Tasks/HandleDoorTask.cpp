@@ -49,6 +49,8 @@ namespace ai
 
 #define REUSE_DOOR_DELAY 100 // grayman #2345 - wait before using a door again. #2706 - lower from 8s to 1s to reduce circling
 
+#define WAIT_FOR_DOOR_TO_START_MOVING 500 // grayman #4077 - when closing a door, check it after this much time has gone by
+
 // Get the name of this task
 const idStr& HandleDoorTask::GetName() const
 {
@@ -59,7 +61,7 @@ const idStr& HandleDoorTask::GetName() const
 void HandleDoorTask::InitDoorPositions(idAI* owner, CFrobDoor* frobDoor, bool susDoorCloseFromSameSide)
 {
 	// determine which side of the door we're on
-	_doorSide = owner->GetDoorSide(frobDoor);
+	_doorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4227
 
 	// if susDoorCloseFromSameSide is TRUE, flip the side
 
@@ -118,6 +120,21 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 	{
 		subsystem.FinishTask(); // grayman #2345 - can't perform the task if there's no door
 		return;
+	}
+
+	// grayman #4227 - if you're on the same side of this door as your
+	// destination, and you're searching, why go through the door?
+
+	_doorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4227
+
+	if ( owner->IsSearching() )
+	{
+		int pointSide = owner->GetDoorSide(frobDoor, owner->GetMoveDest()); // grayman #4227
+		if ( _doorSide == pointSide )
+		{
+			subsystem.FinishTask();
+			return;
+		}
 	}
 
 	idAngles rotate = frobDoor->spawnArgs.GetAngles("rotate", "0 90 0"); // grayman #3643
@@ -181,7 +198,7 @@ void HandleDoorTask::Init(idAI* owner, Subsystem& subsystem)
 				return;
 			}
 
-			if (memory.susDoorCloseFromThisSide == owner->GetDoorSide(frobDoor))
+			if (memory.susDoorCloseFromThisSide == owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin())) // grayman #4227
 			{
 				_closeFromSameSide = true; // close the door w/o going through it
 			}
@@ -288,13 +305,13 @@ void HandleDoorTask::PickWhere2Go(CFrobDoor* door)
 	{
 		if (_doorHandlingState != EStateMovingToMidPos)
 		{
-			owner->MoveToPosition(_midPos,HANDLE_DOOR_ACCURACY);
+			owner->MoveToPosition(_midPos,owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
 			_doorHandlingState = EStateMovingToMidPos;
 		}
 	}
 	else
 	{
-		owner->MoveToPosition(_backPos,HANDLE_DOOR_ACCURACY);
+		owner->MoveToPosition(_backPos, HANDLE_DOOR_ACCURACY); // don't run to backside of door to close it
 		_doorHandlingState = EStateMovingToBackPos;
 	}
 }
@@ -455,11 +472,13 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		return true;
 	}
 
+	int currentDoorSide = owner->GetDoorSide(frobDoor,owner->GetPhysics()->GetOrigin()); // grayman #4044 // grayman #4227
+
 	// grayman #3755 - stop door handling if you've run through the doorway
 	// and you have an enemy
 	if ( owner->AI_RUN &&
 		 ( owner->GetEnemy() != NULL ) &&
-		 ( _doorSide != owner->GetDoorSide(frobDoor) ) )
+		 ( _doorSide != currentDoorSide ) )
 	{
 		return true;
 	}
@@ -474,9 +493,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		{
 			if (!_canHandleDoor && !FitsThrough()) // grayman #2712
 			{
-				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-				// add AAS area number of the door to forbidden areas
-				AddToForbiddenAreas(owner, frobDoor);
+				// grayman #4044 - only stop walking if you never
+				// made it through the door
+				if ( _doorSide == currentDoorSide )
+				{
+					owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+					// add AAS area number of the door to forbidden areas
+					AddToForbiddenAreas(owner, frobDoor);
+				}
 				return true;
 			}
 		}
@@ -487,9 +511,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 		// to my list of forbidden areas.
 		if (!_canHandleDoor) // grayman #2712
 		{
-			owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
-			// add AAS area number of the door to forbidden areas
-			AddToForbiddenAreas(owner, frobDoor);
+			// grayman #4044 - only stop walking if you never
+			// made it through the door
+			if ( _doorSide == currentDoorSide )
+			{
+				owner->StopMove(MOVE_STATUS_DEST_UNREACHABLE);
+				// add AAS area number of the door to forbidden areas
+				AddToForbiddenAreas(owner, frobDoor);
+			}
 			return true;
 		}
 	}
@@ -760,6 +789,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				float dist = dir.LengthFast();
 				if (masterUser == owner)
 				{
+					if ( owner->AI_MOVE_DONE )
+					{
+						owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+					}
 					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
@@ -771,6 +804,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						break;
 					}
 
+					//owner->PrintGoalData(_frontPos, 8);
 					if (dist <= QUEUE_DISTANCE) // grayman #2345 - this was the next layer up
 					{
 						if (_doorInTheWay)
@@ -981,6 +1015,10 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				_doorHandlingState = EStateApproachingDoor;
 			}
+			else
+			{
+				//owner->PrintGoalData(_safePos, 2);
+			}
 			break;
 		case EStateMovingToFrontPos:
 			if (!frobDoor->IsOpen()) // closed
@@ -1001,6 +1039,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					return true;
 				}
 
+				if ( owner->AI_MOVE_DONE )
+				{
+					owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+				}
+
 				if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 					(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 				{
@@ -1018,6 +1061,14 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					{
 						// TODO: position not reachable, need a better one
 					}
+					else
+					{
+						//owner->PrintGoalData(_frontPos, 9);
+					}
+				}
+				else
+				{
+					//owner->PrintGoalData(_frontPos, 3);
 				}
 			}
 			else // open
@@ -1051,6 +1102,11 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						return true;
 					}
 
+					if ( owner->AI_MOVE_DONE )
+					{
+						owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
+					}
+
 					if (owner->ReachedPos(_frontPos, MOVE_TO_POSITION) ||
 						((closedPos - ownerOrigin).LengthFast() < 100)) // grayman #3390 - are we close enough?
 					{
@@ -1070,6 +1126,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 					}
 					else // can't fit through door, can't open it, see if I need to move out of the way
 					{
+						//owner->PrintGoalData(_frontPos, 4);
 						_doorHandlingState = EStateApproachingDoor;
 					}
 				}
@@ -1560,6 +1617,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				// reached mid position?
 				if (owner->AI_MOVE_DONE)
 				{
+					owner->SetMoveAccuracy(owner->AI_RUN ? HANDLE_DOOR_ACCURACY_RUNNING : HANDLE_DOOR_ACCURACY); // grayman #4039
 					if (owner->ReachedPos(_midPos, MOVE_TO_POSITION) || (owner->GetTactileEntity() != NULL)) // grayman #2345
 					{
 						return true;
@@ -1572,6 +1630,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else
 				{
+					//owner->PrintGoalData(_midPos, 5);
 					if (_canHandleDoor) // grayman #2712
 					{
 						PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to midPos
@@ -1669,6 +1728,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 				if (owner->AI_MOVE_DONE)
 				{
+					owner->SetMoveAccuracy(HANDLE_DOOR_ACCURACY); // grayman #4039
 					if (owner->ReachedPos(_backPos, MOVE_TO_POSITION) || // grayman #2345 #2692 - are we close enough to reach around a blocking AI?
 						(tactileEntity && tactileEntity->IsType(idAI::Type) && (closedPos - ownerOrigin).LengthFast() < 100))
 					{
@@ -1715,6 +1775,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				}
 				else // grayman #2712
 				{
+					//owner->PrintGoalData(_backPos, 6);
 					PickWhere2Go(frobDoor); // grayman #2345 - recheck if you should continue to _backPos
 
 					// grayman #3643 - if you've changed state, you might
@@ -1756,8 +1817,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			if (!frobDoor->IsOpen()) // closed
 			{
-				// already closed, no need for a retry open
-				_doorHandlingState = EStateClosingDoor;
+				_doorHandlingState = EStateClosingDoor; // already closed, no need for a retry open
 			}
 			else // open
 			{
@@ -1823,8 +1883,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 
 			if (!frobDoor->IsOpen()) // closed
 			{
-				// already closed, no need for a retry open
-				_doorHandlingState = EStateClosingDoor;
+				_doorHandlingState = EStateClosingDoor; // already closed, no need for a retry open
 			}
 			else // open
 			{
@@ -1928,6 +1987,7 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 				{
 					CloseDoor(owner,frobDoor,_backPosEnt.GetEntity());
 					_doorHandlingState = EStateClosingDoor;
+					_waitEndTime = gameLocal.time + WAIT_FOR_DOOR_TO_START_MOVING; // grayman #4077
 				}
 				else if ( ( numUsers > 1 ) && !_doorInTheWay)
 				{
@@ -2070,6 +2130,12 @@ bool HandleDoorTask::Perform(Subsystem& subsystem)
 						// try opening the door
 						_doorHandlingState = EStateRetryInterruptedClose4;
 					}
+				}
+
+				// grayman #4077 - is the door moving yet?
+				if ( ( gameLocal.time >= _waitEndTime ) && !frobDoor->IsMoving() )
+				{
+					_doorHandlingState = EStateWaitBeforeClose;
 				}
 			}
 			break;

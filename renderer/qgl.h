@@ -140,6 +140,9 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
+// mipmaps
+extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*

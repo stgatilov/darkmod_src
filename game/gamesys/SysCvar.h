@@ -34,6 +34,7 @@ extern idCVar cv_default_mission_info_file;
 
 extern idCVar cv_ai_sndvol;
 extern idCVar cv_ai_bark_show;
+extern idCVar cv_ai_name_show; // grayman #3857
 extern idCVar cv_ai_bumpobject_impulse;
 extern idCVar cv_ai_sight_prob;
 extern idCVar cv_ai_sight_mag;
@@ -185,6 +186,8 @@ extern idCVar cv_pm_climb_distance;
 */
 extern idCVar cv_ai_search_show;
 
+extern idCVar cv_ai_search_type; // grayman #4220 - control type of search
+
 extern idCVar cv_force_savegame_load;
 extern idCVar cv_savegame_compress;
 
@@ -264,6 +267,7 @@ extern idCVar cv_tdm_rope_pull_force_factor;
 
 extern idCVar cv_tdm_obj_gui_file;
 extern idCVar cv_tdm_waituntilready_gui_file;
+extern idCVar cv_tdm_invgrid_gui_file;	// #4286
 
 extern idCVar cv_tdm_hud_opacity;
 extern idCVar cv_tdm_hud_hide_lightgem;
@@ -297,6 +301,8 @@ extern idCVar cv_lg_oyoffs;
 extern idCVar cv_lg_ozoffs;
 extern idCVar cv_lg_fov;
 extern idCVar cv_lg_interleave;
+// nbohr1more #4369 Dynamic Lightgem Interleave
+extern idCVar cv_lg_interleave_min;
 extern idCVar cv_lg_hud;
 extern idCVar cv_lg_weak;
 extern idCVar cv_lg_player;
@@ -650,121 +656,4 @@ extern idCVar r_postprocess_bloomKernelSize;
 extern idCVar r_postprocess_bloomIntensity;
 extern idCVar r_postprocess_desaturation;
 
-
-// sikk---> PostProcess Effects
-extern idCVar	r_useSoftShadows;
-extern idCVar	r_softShadowsBlurFilter;
-extern idCVar	r_softShadowsBlurScale;
-extern idCVar	r_softShadowsBlurEpsilon;
-
-extern idCVar	r_useEdgeAA;
-extern idCVar	r_edgeAASampleScale;
-extern idCVar	r_edgeAAFilterScale;
-
-extern idCVar	r_useHDR;
-extern idCVar	r_hdrToneMapper;
-extern idCVar	r_hdrAdaptationRate;
-extern idCVar	r_hdrMiddleGray;
-extern idCVar	r_hdrWhitePoint;
-extern idCVar	r_hdrBlueShiftFactor;
-extern idCVar	r_hdrDither;
-extern idCVar	r_hdrDitherSize;
-extern idCVar	r_hdrLumThresholdMax;
-extern idCVar	r_hdrLumThresholdMin;
-extern idCVar	r_hdrBloomToneMapper;
-extern idCVar	r_hdrBloomMiddleGray;
-extern idCVar	r_hdrBloomWhitePoint;
-extern idCVar	r_hdrBloomThreshold;
-extern idCVar	r_hdrBloomOffset;
-extern idCVar	r_hdrBloomScale;
-extern idCVar	r_hdrBloomSize;
-extern idCVar	r_hdrFlareGamma;
-extern idCVar	r_hdrFlareScale;
-extern idCVar	r_hdrFlareSize;
-extern idCVar	r_hdrGlareStyle;
-extern idCVar	r_hdrGlareScale;
-extern idCVar	r_hdrGlareSize;
-
-extern idCVar	r_useBloom;
-extern idCVar	r_bloomBufferSize;
-extern idCVar	r_bloomBlurIterations;
-extern idCVar	r_bloomBlurScaleX;
-extern idCVar	r_bloomBlurScaleY;
-extern idCVar	r_bloomScale;
-extern idCVar	r_bloomGamma;
-
-extern idCVar	r_useSSIL;
-extern idCVar	r_ssilRadius;
-extern idCVar	r_ssilAmount;
-extern idCVar	r_ssilBlurMethod;
-extern idCVar	r_ssilBlurScale;
-extern idCVar	r_ssilBlurQuality;
-extern idCVar	r_ssilBlurEpsilon;
-
-extern idCVar	r_useSSAO;
-extern idCVar	r_ssaoMethod;
-extern idCVar	r_ssaoRadius;
-extern idCVar	r_ssaoAmount;
-extern idCVar	r_ssaoBias;
-extern idCVar	r_ssaoBlurMethod;
-extern idCVar	r_ssaoBlurScale;
-extern idCVar	r_ssaoBlurQuality;
-extern idCVar	r_ssaoBlurEpsilon;
-extern idCVar	r_ssaoBlendPower;
-extern idCVar	r_ssaoBlendScale;
-
-extern idCVar	r_useSunShafts;
-extern idCVar	r_sunShaftsSize;
-extern idCVar	r_sunShaftsStrength;
-extern idCVar	r_sunShaftsMaskStrength;
-extern idCVar	r_sunShaftsQuality;
-extern idCVar	r_sunOriginX;
-extern idCVar	r_sunOriginY;
-extern idCVar	r_sunOriginZ;
-extern idCVar	r_useLensFlare;
-extern idCVar	r_lensFlareStrength;
-
-extern idCVar	r_useMotionBlur;
-extern idCVar	r_motionBlurScale;
-extern idCVar	r_motionBlurMaskDistance;
-extern idCVar	r_motionBlurFPSThreshold;
-extern idCVar	r_motionBlurMinThreshold;
-extern idCVar	r_motionBlurMaxThreshold;
-extern idCVar	r_motionBlurFactor;
-extern idCVar	r_motionBlurLerp;
-extern idCVar	r_motionBlurQuality;
-
-extern idCVar	r_useDepthOfField;
-extern idCVar	r_dofBlurScale;
-extern idCVar	r_dofBlurQuality;
-extern idCVar	r_dofNear;
-extern idCVar	r_dofFar;
-extern idCVar	r_dofFocus;
-extern idCVar	r_dofConditionAlways;
-extern idCVar	r_dofConditionCinematic;
-extern idCVar	r_dofConditionGUI;
-extern idCVar	r_dofConditionTalk;
-extern idCVar	r_dofConditionReload;
-extern idCVar	r_dofConditionZoom;
-
-extern idCVar	r_useColorGrading;
-extern idCVar	r_colorGradingParm;
-extern idCVar	r_colorGradingType;
-extern idCVar	r_colorGradingSharpness;
-
-extern idCVar	r_useCelShading;
-extern idCVar	r_celShadingMethod;
-extern idCVar	r_celShadingScale;
-extern idCVar	r_celShadingThreshold;
-
-extern idCVar	r_useFilmgrain;
-extern idCVar	r_filmgrainBlendMode;
-extern idCVar	r_filmgrainScale;
-extern idCVar	r_filmgrainStrength;
-
-extern idCVar	r_useVignetting;
-
-// <---sikk
-extern idCVar	noshadows;
-extern idCVar	noshadowDistance;
 #endif /* !__SYS_CVAR_H__ */

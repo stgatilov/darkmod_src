@@ -175,7 +175,7 @@ protected:
 	idEntityPtr<idEntity>	splineEnt;
 	moverCommand_t			lastCommand;
 	float					damage;
-
+	int						nextBounceTime; // grayman #4370 - next time you can bounce off an AI
 	qhandle_t				areaPortal;		// 0 = no portal
 
 	idList< idEntityPtr<idEntity> >	guiTargets;

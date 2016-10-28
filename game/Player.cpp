@@ -46,6 +46,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 ===============================================================================
 */
 
+#define	FPS_FRAMES	5 // number of frames used to average the FPS display
+
 // amount of health per dose from the health station
 const int HEALTH_PER_DOSE = 10;
 
@@ -377,7 +379,7 @@ CLASS_DECLARATION( idActor, idPlayer )
 	EVENT( EV_Player_SetObjectiveOptional,	idPlayer::Event_SetObjectiveOptional )
 	EVENT( EV_Player_SetObjectiveOngoing,	idPlayer::Event_SetObjectiveOngoing )
 	EVENT( EV_Player_SetObjectiveEnabling,	idPlayer::Event_SetObjectiveEnabling )
-	EVENT( EV_Player_SetObjectiveText,	idPlayer::Event_SetObjectiveText )
+	EVENT( EV_Player_SetObjectiveText,		idPlayer::Event_SetObjectiveText )
 
 	EVENT( EV_Player_GiveHealthPool,		idPlayer::Event_GiveHealthPool )
 	EVENT( EV_Player_WasDamaged,			idPlayer::Event_WasDamaged )
@@ -641,11 +643,6 @@ idPlayer::idPlayer() :
 	isChatting				= false;
 	selfSmooth				= false;
 
-	// sikk---> Depth of Field PostProcess
-	bIsZoomed				= false;
-	focusDistance			= 0.0f;
-	// <---sikk
-
 	m_FrobPressedTarget		= NULL;
 
 	m_FrobEntity = NULL;
@@ -665,6 +662,7 @@ idPlayer::idPlayer() :
 	m_LeanButtonTimeStamp	= 0;
 	m_InventoryOverlay		= -1;
 	objectivesOverlay		= -1;
+	inventoryGridOverlay	= -1;
 	m_WeaponCursor			= CInventoryCursorPtr();
 	m_MapCursor				= CInventoryCursorPtr();
 	m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
@@ -677,8 +675,6 @@ idPlayer::idPlayer() :
 	ignoreWeaponAttack		= false; // grayman #597
 	displayAASAreas			= false; // grayman #3032 - no need to save/restore
 	timeEvidenceIntruders	= 0;	 // grayman #3424
-
-	bViewModelsModified		= false;	// sikk - Depth Render
 
 }
 
@@ -705,6 +701,7 @@ void idPlayer::LinkScriptVariables()
 	AI_JUMP.LinkTo(				scriptObject, "AI_JUMP" );
 	AI_CROUCH.LinkTo(			scriptObject, "AI_CROUCH" );
 	AI_ONGROUND.LinkTo(			scriptObject, "AI_ONGROUND" );
+	AI_INWATER.LinkTo(			scriptObject, "AI_INWATER" );
 	AI_ONLADDER.LinkTo(			scriptObject, "AI_ONLADDER" );
 	AI_HARDLANDING.LinkTo(		scriptObject, "AI_HARDLANDING" );
 	AI_SOFTLANDING.LinkTo(		scriptObject, "AI_SOFTLANDING" );
@@ -806,9 +803,6 @@ void idPlayer::Init( void ) {
 	focusVehicle			= NULL;
 #endif
 
-	bViewModelsModified		= false;	// sikk - Depth Render
-
-
 	// remove any damage effects
 	playerView.ClearEffects();
 
@@ -838,11 +832,6 @@ void idPlayer::Init( void ) {
 	legsYaw = 0.0f;
 	legsForward	= true;
 	oldViewYaw = 0.0f;
-
-	// sikk---> Depth of Field PostProcess
-	bIsZoomed				= false;
-	focusDistance			= 0.0f;
-// <---sikk
 
 	// set the pm_ cvars
 	if ( !gameLocal.isMultiplayer || gameLocal.isServer ) {
@@ -890,7 +879,7 @@ void idPlayer::Init( void ) {
 	}
 
 	if ( cursor ) {
-		//cursor->SetStateInt( "talkcursor", 0 );
+		cursor->SetStateInt( "talkcursor", 0 );
 		cursor->SetStateString( "combatcursor", "1" );
 		cursor->SetStateString( "itemcursor", "0" );
 		cursor->SetStateString( "guicursor", "0" );
@@ -936,6 +925,7 @@ void idPlayer::Init( void ) {
 	AI_DEAD			= false;
 	AI_CROUCH		= false;
 	AI_ONGROUND		= true;
+	AI_INWATER		= WATERLEVEL_NONE;
 	AI_ONLADDER		= false;
 	AI_HARDLANDING	= false;
 	AI_SOFTLANDING	= false;
@@ -1074,12 +1064,18 @@ void idPlayer::Spawn( void )
 
 	// Remove entity GUIs from our overlay system.
 	for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ )
+	{
 		m_overlays.destroyOverlay( OVERLAYS_MIN_HANDLE + i );
+	}
 	// Add the HUD.
-	if ( m_overlays.createOverlay( 0, LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE )
+	if ( m_overlays.createOverlay( LAYER_MAIN_HUD ) >= OVERLAYS_MIN_HANDLE ) // #4214 fixed parameter
+	{
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE , hud );
+	}
 	else
+	{
 		gameLocal.Warning( "Unable to create overlay for HUD." );
+	}
 
 	SetLastHitTime( 0 );
 
@@ -1457,7 +1453,12 @@ void idPlayer::DestroyObjectivesGUI()
 
 	SetImmobilization("objectivesDisplay", 0);
 
-	DestroyOverlay(objectivesOverlay);
+	// Delay required to prevent weapon attacks. Failure in Weapon_GUI? -- Durandall #4286
+	// DestroyOverlay(objectivesOverlay);
+	idUserInterface* objGUI = m_overlays.getGui(objectivesOverlay);
+	int delay = objGUI->GetStateInt("DestroyDelay");
+	PostEventMS(&EV_DestroyOverlay, delay,  objectivesOverlay);
+
 	objectivesOverlay = -1;
 }
 
@@ -1485,8 +1486,270 @@ void idPlayer::UpdateObjectivesGUI()
 		return;
 	}
 
+	// GUI requested close? -- Durandall #4286
+	int closeGUI = GetGuiInt(objectivesOverlay, "CloseGUI");
+	if (closeGUI)
+	{
+		ToggleObjectivesGUI();
+		return;
+	}
+
 	// Trigger an update for this GUI
 	gameLocal.m_MissionData->UpdateGUIState(objGUI);
+}
+
+void idPlayer::CreateInventoryGridGUI()
+{
+	if ((inventoryGridOverlay != -1) || (GetImmobilization() & EIM_ITEM_SELECT)) // grayman #4354
+	{
+		return;
+	}
+	
+	inventoryGridOverlay = CreateOverlay(cv_tdm_invgrid_gui_file.GetString(), LAYER_INVGRID);
+
+	idUserInterface* invgridGUI = GetOverlay(inventoryGridOverlay);
+
+	if (invgridGUI == NULL)
+	{
+		gameLocal.Error("Failed setting up inventory grid GUI: %s", cv_tdm_invgrid_gui_file.GetString());
+		return;
+	}
+
+	invgridGUI->HandleNamedEvent("InitInventoryGridGUI");
+
+	// Set the weapon and inventory immobilisation flags
+	SetImmobilization("inventoryGridDisplay", EIM_WEAPON_SELECT | EIM_ITEM_USE | EIM_ITEM_SELECT | EIM_ITEM_DROP | EIM_FROB | EIM_FROB_COMPLEX | EIM_VIEW_ANGLE);
+
+	// Trigger an update
+	UpdateInventoryGridGUI();
+}
+
+void idPlayer::DestroyInventoryGridGUI()
+{
+	if (inventoryGridOverlay == -1)
+	{
+		return;
+	}
+
+	// User has selected loot?
+	const int selectLoot = GetGuiInt(inventoryGridOverlay, "SelectLoot");
+	if (selectLoot)
+	{
+		CInventoryItemPtr lootItem = Inventory()->GetItem("Loot Info", "Loot");
+		if (lootItem != NULL)
+		{
+			CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+			InventoryCursor()->SetCurrentItem(lootItem);
+			// Trigger an update, passing the previous item along
+			OnInventorySelectionChanged(prev);
+		}
+	}
+	else // User has selected an item.
+	{
+		// Generate a list of all relevant inventory items.
+		idList<CInventoryItemPtr> items;
+		for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+		{
+			CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+			for (int j = 0; j != category->GetNumItems(); ++j)
+			{
+				// Reverse order. New items at the end.
+				CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+				if (item->GetType() == CInventoryItem::IT_ITEM)
+				items.Append(item);
+			}
+		}
+	
+		// Get inventory grid gui vars.
+		const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
+		const int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
+		const int userChoice = GetGuiInt(inventoryGridOverlay, "UserChoice");
+
+		// Set item to user's choice
+		if ( userChoice > -1 && userChoice < pageSize)
+		{
+			const int selectedItem = (pageSize * currentPage) + userChoice;
+			if (selectedItem < items.Num())
+			{
+				CInventoryItemPtr prev = InventoryCursor()->GetCurrentItem();
+				InventoryCursor()->SetCurrentItem(items[selectedItem]);
+				// Trigger an update, passing the previous item along
+				OnInventorySelectionChanged(prev);
+			}
+		}
+	}
+
+	SetImmobilization("inventoryGridDisplay", 0);
+
+	// Delay required to prevent weapon attacks. Failure in Weapon_GUI?
+	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
+	int delay = invgridGUI->GetStateInt("DestroyDelay");
+
+	PostEventMS(&EV_DestroyOverlay, delay,  inventoryGridOverlay);
+
+	inventoryGridOverlay = -1;
+}
+
+void idPlayer::ToggleInventoryGridGUI()
+{
+  if (inventoryGridOverlay == -1)
+  {
+    CreateInventoryGridGUI();
+  }
+  else
+  {
+    DestroyInventoryGridGUI();
+  }
+}
+
+void idPlayer::UpdateInventoryGridGUI()
+{
+	if (inventoryGridOverlay == -1)
+	{ 
+		return; 
+	}
+
+	idUserInterface* invgridGUI = m_overlays.getGui(inventoryGridOverlay);
+
+	if (invgridGUI == NULL)
+	{
+		gameLocal.Error("Could not find inventory grid GUI: %s", cv_tdm_invgrid_gui_file.GetString());
+		return;
+	}
+	
+	// GUI requested close?
+	int closeGUI = GetGuiInt(inventoryGridOverlay, "CloseGUI");
+	if (closeGUI)
+	{
+		ToggleInventoryGridGUI();
+		return;
+	}
+
+	// Generate a list of all relevant inventory items.
+	idList<CInventoryItemPtr> items;
+	for (int i = 0; i != Inventory()->GetNumCategories(); ++i)
+	{
+		CInventoryCategoryPtr category = Inventory()->GetCategory(i);
+		for (int j = 0; j != category->GetNumItems(); ++j)
+		{
+			// Reverse order. New items at the end.
+			CInventoryItemPtr item = category->GetItem((category->GetNumItems() - 1) - j);
+			if (item->GetType() == CInventoryItem::IT_ITEM)
+			{
+				items.Append(item);
+			}
+		}
+	}
+	
+	// Get inventory grid gui vars.
+	const int pageSize = GetGuiInt(inventoryGridOverlay, "PageSize");
+	int currentPage = GetGuiInt(inventoryGridOverlay, "CurrentPage");
+	const int pageRequest = GetGuiInt(inventoryGridOverlay, "PageRequest");
+
+	// Handle request for prev/next pages.
+	if (pageRequest == 1 && (items.Num() - 1 >= pageSize * (currentPage + 1)))
+	{
+		++currentPage;
+		SetGuiInt(inventoryGridOverlay, "CurrentPage", currentPage);
+	}
+	else if (pageRequest == -1 && currentPage > 0)
+	{
+		--currentPage;
+		SetGuiInt(inventoryGridOverlay, "CurrentPage", currentPage);
+	}
+	SetGuiInt(inventoryGridOverlay, "PageRequest", 0);
+
+	// Update inventory grid page buttons.
+	if (items.Num() - 1 >= pageSize * (currentPage + 1))
+	{
+		SetGuiInt(inventoryGridOverlay, "NextPageAvail", 1);
+	}
+	else
+	{
+		SetGuiInt(inventoryGridOverlay, "NextPageAvail", 0);
+	}
+
+	if (currentPage > 0)
+	{
+		SetGuiInt(inventoryGridOverlay, "PrevPageAvail", 1);
+	}
+	else
+	{
+		SetGuiInt(inventoryGridOverlay, "PrevPageAvail", 0);
+	}
+
+	
+	// Clear entries until we determine if they hold an item.
+	invgridGUI->HandleNamedEvent("clearGrid");
+	
+	// Update each inventory grid entry for current page.
+	for (int i = 0; i != pageSize; ++i)
+	{
+		idStr ItemNameMultiline = va("GridItem%d_ItemNameMultiline", i);
+		idStr ItemName = va("GridItem%d_ItemName", i);
+		idStr ItemName2 = va("GridItem%d_ItemName_2", i);
+		idStr ItemStackable = va("GridItem%d_ItemStackable", i);
+		idStr ItemGroup = va("GridItem%d_ItemGroup", i);
+		idStr ItemCount = va("GridItem%d_ItemCount", i);
+		idStr ItemIcon = va("GridItem%d_ItemIcon", i);
+
+		// Check inventory bounds.
+		int itemIndex = (pageSize * currentPage) + i;
+		if (itemIndex >= items.Num()) { break; }
+
+		// Get item.
+		CInventoryItemPtr item = items[itemIndex];
+
+		// Update grid entry for this item.
+		idStr itemName = common->Translate( item->GetName() );
+
+		// Tels: translated names can have two lines, so tell the GUI about it
+		int newline_index = itemName.Find( '\n' );
+		if (newline_index != -1)
+		{
+		  // two lines
+		  SetGuiInt(inventoryGridOverlay, ItemNameMultiline, 1 );
+ 		  SetGuiString(inventoryGridOverlay, ItemName, itemName.Left( newline_index) );
+ 		  SetGuiString(inventoryGridOverlay, ItemName2, itemName.Mid( newline_index + 1, itemName.Length() - newline_index - 1 ) );
+		}
+		else
+		{
+		  // only one line
+		  SetGuiInt(inventoryGridOverlay, ItemNameMultiline, 0 );
+ 		  SetGuiString(inventoryGridOverlay, ItemName, itemName );
+ 		  SetGuiString(inventoryGridOverlay, ItemName2, "");
+		}
+
+		SetGuiFloat(inventoryGridOverlay, ItemStackable, item->IsStackable() ? 1 : 0);
+ 		SetGuiString(inventoryGridOverlay, ItemGroup, common->Translate( item->Category()->GetName() ) );
+ 		SetGuiInt(inventoryGridOverlay, ItemCount, item->GetCount());
+ 		SetGuiString(inventoryGridOverlay, ItemIcon, item->GetIcon().c_str());
+	}
+
+	// Loot counts.
+	int lootGold = 0;
+	int lootJewels = 0;
+	int lootGoods = 0;
+	int lootTotal = Inventory()->GetLoot(lootGold, lootJewels, lootGoods);
+	SetGuiInt(inventoryGridOverlay, "LootGold", lootGold);
+	SetGuiInt(inventoryGridOverlay, "LootJewels", lootJewels);
+	SetGuiInt(inventoryGridOverlay, "LootGoods", lootGoods);
+	SetGuiInt(inventoryGridOverlay, "LootTotal", lootTotal);
+	
+	// Loot icon.
+	CInventoryItemPtr lootItem = Inventory()->GetItem("Loot Info", "Loot");
+	if (lootItem != NULL)
+	{
+		idStr lootIcon = lootItem->GetIcon();
+		if (lootIcon != "")
+		{
+			SetGuiString(inventoryGridOverlay, "LootIcon", lootIcon);
+			SetGuiInt(inventoryGridOverlay, "LootIconVisible", 1);
+		}
+	}
+
+	// Trigger an update for this GUI
+	invgridGUI->StateChanged(gameLocal.time);
 }
 
 void idPlayer::SetupInventory()
@@ -1951,6 +2214,7 @@ void idPlayer::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_WaitUntilReadyGuiTime);
 
 	savefile->WriteInt(objectivesOverlay);
+	savefile->WriteInt(inventoryGridOverlay);
 
 	savefile->WriteBool(m_WeaponCursor != NULL);
 	if (m_WeaponCursor != NULL) {
@@ -2287,6 +2551,7 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_WaitUntilReadyGuiTime);
 
 	savefile->ReadInt(objectivesOverlay);
+	savefile->ReadInt(inventoryGridOverlay);
 
 	bool hasWeaponCursor;
 	savefile->ReadBool(hasWeaponCursor);
@@ -2344,6 +2609,10 @@ void idPlayer::Restore( idRestoreGame *savefile ) {
 		m_overlays.setGui( OVERLAYS_MIN_HANDLE, hud );
 	else
 		gameLocal.Warning( "Unable to relink HUD to overlay system." );
+
+	// grayman #3807 - set spyglass overlay per aspect ratio
+	gameLocal.m_spyglassOverlay = gameLocal.DetermineSpyglassOverlay();
+	Event_SetSpyglassOverlayBackground();
 }
 
 /*
@@ -2912,7 +3181,7 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		va("Player velocity: %f", physicsObj.GetLinearVelocity().Length()), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));*/
 
 	const char *name;
-	if((name = cv_dm_distance.GetString()) != NULL)
+	if((name = cv_dm_distance.GetString()) != NULL) //~SteveL FIX THIS, it's never false. Empty string is not NULL
 	{
 		idEntity *e;
 
@@ -4368,6 +4637,18 @@ bool idPlayer::HandleSingleGuiCommand( idEntity *entityGui, idLexer *src ) {
 		return true;
 	}
 
+	if ( token.Icmp( "updateObjectives" ) == 0 ) // Durandall #4286
+	{
+		UpdateObjectivesGUI();
+		return true;
+	}
+
+	if ( token.Icmp( "updateInventoryGrid" ) == 0 ) // Durandall #4286
+	{
+		UpdateInventoryGridGUI();
+		return true;
+	}
+
 	src->UnreadToken( &token );
 	return false;
 }
@@ -5505,6 +5786,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Trigger an objectives GUI update if applicable
 			UpdateObjectivesGUI();
 
+			// Trigger an inventory grid GUI update if applicable #4286
+			UpdateInventoryGridGUI();
+
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
 			{
@@ -5522,11 +5806,14 @@ void idPlayer::PerformImpulse( int impulse ) {
 				gameLocal.m_Grabber->IncrementDistance( !cv_reverse_grab_control.GetBool() );
 			}
 
+			// Pass the "previous weapon" event to the GUIs
+			m_overlays.broadcastNamedEvent("prevWeapon");
+
 			// Trigger an objectives GUI update if applicable
 			UpdateObjectivesGUI();
 
-			// Pass the "previous weapon" event to the GUIs
-			m_overlays.broadcastNamedEvent("prevWeapon");
+			// Trigger an inventory grid GUI update if applicable #4286
+			UpdateInventoryGridGUI();
 
 			// Prevent the player from choosing to switch weapons.
 			if ( GetImmobilization() & EIM_WEAPON_SELECT ) 
@@ -5673,6 +5960,12 @@ void idPlayer::PerformImpulse( int impulse ) {
 		}
 		break;
 
+		case IMPULSE_30:		// Toggle Inventory Grid GUI #4286
+		{
+			ToggleInventoryGridGUI();
+			break;
+		}
+
 		case IMPULSE_40:		// TDM: grab item with grabber
 		{
 			CGrabber *grabber = gameLocal.m_Grabber;
@@ -5760,6 +6053,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevItem");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5781,6 +6077,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextItem");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5800,6 +6099,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryPrevGroup");
 
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
+
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
 
@@ -5818,6 +6120,9 @@ void idPlayer::PerformImpulse( int impulse ) {
 
 			// Notify the GUIs about the button event
 			m_overlays.broadcastNamedEvent("inventoryNextGroup");
+
+			// Trigger an inventory grid GUI update if applicable
+			UpdateInventoryGridGUI();
 
 			if(GetImmobilization() & EIM_ITEM_SELECT)
 				return;
@@ -6683,11 +6988,13 @@ void idPlayer::Move( void )
 		AI_ONGROUND	= ( influenceActive == INFLUENCE_LEVEL2 );
 		AI_ONLADDER	= false;
 		AI_JUMP		= false;
+		AI_INWATER  = WATERLEVEL_NONE;
 	} else {
 		AI_CROUCH	= physicsObj.IsCrouching();
 		AI_ONGROUND	= physicsObj.HasGroundContacts();
 		AI_ONLADDER	= physicsObj.OnLadder();
 		AI_JUMP		= physicsObj.HasJumped();
+		AI_INWATER  = physicsObj.GetWaterLevel();
 
 		// check if we're standing on top of a monster and give a push if we are
 		idEntity *groundEnt = physicsObj.GetGroundEntity();
@@ -9493,6 +9800,40 @@ int idPlayer::ProcessLightgem(bool processing)
 	float fValue = m_fColVal;
 
 	int n = cv_lg_interleave.GetInteger();
+	
+	// nbohr1more #4369 Dynamic Lightgem Interleave
+	
+	int r = Max(1, cv_lg_interleave_min.GetInteger());
+	
+	static unsigned int t, frameTime, index, total, y, previous, previousTimes[FPS_FRAMES];
+	
+	t = gameLocal.time;
+	frameTime = t - previous;
+	previous = t;
+	
+	previousTimes[index % FPS_FRAMES] = frameTime;
+	index++;
+
+	// average multiple frames together to smooth changes out a bit
+	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + (previousTimes[3] * 2) + ( previousTimes[4] * 3) + 1;
+	y  = (1000 * (FPS_FRAMES + 3) ) / total;
+	
+	// gameLocal.Printf ( " lg_fps %i\n", y );
+
+	
+    if ( cv_lg_interleave.GetInteger() > 0)
+    {	
+		if ( static_cast<int>(y) > r) // grayman debug - remove compiler warning
+		{
+			// gameLocal.Printf ( "Begin Dynamic lg_interleave" );
+			n = cv_lg_interleave.GetInteger();
+		}
+		else
+		{
+			// gameLocal.Printf ( "Below lg_interleave threshold" );
+			n = 1;
+		}
+	}
 
 	// Skip every nth frame according to the value set in 
 	if (processing && !cv_lg_weak.GetBool() && n > 0)
@@ -9868,6 +10209,17 @@ bool idPlayer::UseInventoryItem(EImpulseState impulseState, const CInventoryItem
 			// Item could be used, return TRUE, we're done
 			return true;
 		}
+
+		// grayman #4262 - Item couldn't be used.
+		// If the item is a key, terminate further checking
+
+		// Get the name of this inventory category
+		const idStr& categoryName = item->Category()->GetName();
+	
+		if ( categoryName == "#str_02392" ) // Keys
+		{
+			return false;
+		}
 	}
 
 	// Item could not be used on the highlighted entity, launch the use script
@@ -10009,6 +10361,7 @@ void idPlayer::OnInventoryItemChanged()
 	idEntity::OnInventoryItemChanged();
 
 	inventoryHUDNeedsUpdate = true;
+	UpdateInventoryGridGUI();	// #4286
 }
 
 void idPlayer::OnInventorySelectionChanged(const CInventoryItemPtr& prevItem)
@@ -11169,6 +11522,8 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 		OnInventorySelectionChanged(prev);
 	}
 
+	UpdateInventoryGridGUI(); // #4286
+
 	return returnValue;
 }
 
@@ -11275,7 +11630,7 @@ void idPlayer::PerformFrob(EImpulseState impulseState, idEntity* target)
 				}
 			}
 
-			gameLocal.m_Grabber->Update( this );
+			gameLocal.m_Grabber->Update( this, false, true ); // preservePosition = true #4149
 		}
 	}
 }
@@ -11817,7 +12172,7 @@ void idPlayer::Event_ProcessInterMissionTriggers()
 
 // Obsttorte: Event to save the game
 
-void idPlayer::Event_saveGame(idStr name)
+void idPlayer::Event_saveGame(const char* name)
 {
 	cvarSystem->SetCVarString("saveGameName",name);
 }
@@ -11831,75 +12186,3 @@ bool idPlayer::CanGreet() // grayman #3338
 	// Player can always respond to a greeting, but he never says anything
 	return true;
 }
-// sikk---> Depth Render
-/*
-==================
-idPlayer::ToggleSuppression
-==================
-*/
-void idPlayer::ToggleSuppression( bool bSuppress ) {
-	int headHandle							= head.GetEntity()->GetModelDefHandle();
-	//int weaponHandle						= weapon.GetEntity()->GetModelDefHandle();
-	//int weaponWorldHandle					= weapon.GetEntity()->GetWorldModel()->GetEntity()->GetModelDefHandle();
-	renderEntity_t *headRenderEntity		= head.GetEntity()->GetRenderEntity();
-	//renderEntity_t *weaponRenderEntity		= weapon.GetEntity()->GetRenderEntity();
-	//renderEntity_t *weaponWorldRenderEntity	= weapon.GetEntity()->GetWorldModel()->GetEntity()->GetRenderEntity();
-
-	if ( bSuppress ) {
-		if ( modelDefHandle != -1 ) {
-// sikk---> First Person Body
-			//if ( !g_showFirstPersonBody.GetBool() ) {
-				// suppress body in DoF render view
-				renderEntity.suppressSurfaceInViewID = -8;
-				gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
-			//}
-// <---sikk
-			if ( head.GetEntity() && headHandle != -1 ) {
-				// suppress head in DoF render view
-				headRenderEntity->suppressSurfaceInViewID = -8;
-				gameRenderWorld->UpdateEntityDef( headHandle, headRenderEntity );
-			}
-/*
-			if ( weaponEnabled && weapon.GetEntity() && weaponHandle != -1 ) {
-				// allow weapon view model in DoF render view
-				weaponRenderEntity->allowSurfaceInViewID = -8;
-				gameRenderWorld->UpdateEntityDef( weaponHandle, weaponRenderEntity );
-
-				if ( weaponWorldHandle != -1 ) {
-					// suppress weapon world model in DoF render view
-					weaponWorldRenderEntity->suppressSurfaceInViewID = -8;
-					gameRenderWorld->UpdateEntityDef( weaponWorldHandle, weaponWorldRenderEntity );
-				}
-			}*/
-		}
-
-		bViewModelsModified = true;
-	} else {
-		if ( modelDefHandle != -1 ) {
-			// restore suppression of body
-			renderEntity.suppressSurfaceInViewID = entityNumber + 1;
-			gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
-
-			if ( head.GetEntity() && headHandle != -1 ) {
-				// restore suppression of head
-				headRenderEntity->suppressSurfaceInViewID = entityNumber + 1;
-				gameRenderWorld->UpdateEntityDef( headHandle, headRenderEntity );
-			}
-/*
-			if ( weaponEnabled && weapon.GetEntity() && weaponHandle != -1  ) {
-				// restore allowance of weapon view model
-				weaponRenderEntity->allowSurfaceInViewID = entityNumber + 1;
-				gameRenderWorld->UpdateEntityDef( weaponHandle, weaponRenderEntity );
-				
-				if ( weaponWorldHandle != -1 ) {
-					// restore suppression of weapon world model
-					weaponWorldRenderEntity->suppressSurfaceInViewID = entityNumber + 1;
-					gameRenderWorld->UpdateEntityDef( weaponWorldHandle, weaponWorldRenderEntity );
-				}
-			}*/
-		}
-
-		bViewModelsModified = false;
-	}
-}
-// <---sikk

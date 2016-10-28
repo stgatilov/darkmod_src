@@ -103,6 +103,9 @@ const idEventDef EV_SetOwner( "setOwner", EventArgs('e', "owner", "the entity wh
 
 const idEventDef EV_SetModel( "setModel", EventArgs('s', "modelName", ""), EV_RETURNS_VOID, "Sets the model this entity uses");
 const idEventDef EV_SetSkin( "setSkin", EventArgs('s', "skinName", ""), EV_RETURNS_VOID, "Sets the skin this entity uses.  Set to \"\" to turn off the skin.");
+const idEventDef EV_ReskinCollisionModel( "reskinCollisionModel", EventArgs(), EV_RETURNS_VOID, 
+	"For use after setSkin() on moveables and static models, if the CM needs to be refreshed to update surface "
+	"properties after a skin change. CM will be regenerated from the original model file with the new skin.");
 
 const idEventDef EV_GetWorldOrigin( "getWorldOrigin", EventArgs(), 'v', "Returns the current world-space position of this entity (regardless of any bind parent)." );
 const idEventDef EV_SetWorldOrigin( "setWorldOrigin", EventArgs('v', "origin", ""), EV_RETURNS_VOID, "Sets the current position of this entity (regardless of any bind parent).");
@@ -521,6 +524,7 @@ ABSTRACT_DECLARATION( idClass, idEntity )
 	EVENT( EV_SetOwner,				idEntity::Event_SetOwner )
 	EVENT( EV_SetModel,				idEntity::Event_SetModel )
 	EVENT( EV_SetSkin,				idEntity::Event_SetSkin )
+	EVENT( EV_ReskinCollisionModel,	idEntity::Event_ReskinCollisionModel ) // SteveL #4232
 	EVENT( EV_GetShaderParm,		idEntity::Event_GetShaderParm )
 	EVENT( EV_SetShaderParm,		idEntity::Event_SetShaderParm )
 	EVENT( EV_SetShaderParms,		idEntity::Event_SetShaderParms )
@@ -820,6 +824,9 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 
 	// check noDynamicInteractions flag
 	renderEntity->noDynamicInteractions = args->GetBool( "noDynamicInteractions" );
+	
+	// nbohr1more: #4379 lightgem culling
+	renderEntity->islightgem = args->GetBool( "islightgem" );
 
 	// check noshadows flag
 	renderEntity->noShadow = args->GetBool( "noshadows" );
@@ -967,7 +974,6 @@ idEntity::idEntity()
 	fl.neverDormant	= true;			// most entities never go dormant
 
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
-	memset( &renderLight, 0, sizeof(renderLight));
 	modelDefHandle	= -1;
 	memset( &refSound, 0, sizeof( refSound ) );
 
@@ -1079,8 +1085,8 @@ void idEntity::Event_HideByLODBias( void )
 		// FuncPortals are closed instead of hidden
 		if ( IsType( idFuncPortal::Type ) )
 		{
-			gameLocal.Printf ("%s: Closing portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
-					GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+			//gameLocal.Printf ("%s: Closing portal due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
+			//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
 			static_cast<idFuncPortal *>( this )->ClosePortal();
 		}
 		else
@@ -1097,7 +1103,8 @@ void idEntity::Event_HideByLODBias( void )
 				{
 //					gameLocal.Printf ("%s: Hiding due to lodbias %0.2f not being between %0.2f and %0.2f.\n",
 //							GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
-					Hide();
+					// #4116: Post a Hide() event instead of hiding immediately as this routine is called during spawning
+					PostEventMS( &EV_Hide, 0 );
 					// and make inactive
 					BecomeInactive(TH_PHYSICS|TH_THINK);
 				}
@@ -1110,8 +1117,8 @@ void idEntity::Event_HideByLODBias( void )
 
 	if ( IsType( idFuncPortal::Type ) )
 	{
-		gameLocal.Printf ("%s: Opening portal because lodbias %0.2f is between %0.2f and %0.2f.\n",
-				GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
+		//gameLocal.Printf ("%s: Opening portal because lodbias %0.2f is between %0.2f and %0.2f.\n",
+		//		GetName(), cv_lod_bias.GetFloat(), m_MinLODBias, m_MaxLODBias);
 		static_cast<idFuncPortal *>( this )->OpenPortal();
 	}
 	else
@@ -1193,12 +1200,11 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	// Disable LOD if the LOD settings came with the entity def but the mapper has overridden the model 
 	// without updating any LOD models #3912
 	{
-		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString( "classname" ), false );
-		bool model_overriden = false, lod_model_overridden = false;
-		if ( idStr::Icmp( dict->GetString( "model" ), entDef->GetString( "model" ) ) )
-		{
-			model_overriden = true;
-		}
+		const idDict* entDef = gameLocal.FindEntityDefDict( dict->GetString("classname"), false );
+		const bool inherited_model = *entDef->GetString("model") != '\0';
+		const bool inherited_lod = entDef->GetFloat("dist_check_period") != 0.0f || entDef->GetFloat("hide_distance") >= 0.1f;
+		const bool model_overriden = idStr::Icmp( dict->GetString("model"), entDef->GetString("model") ) != 0;
+		bool lod_model_overridden = false;
 		const idKeyValue* kv = NULL;
 		while ( ( kv = dict->MatchPrefix( "model_lod_", kv ) ) != NULL )
 		{
@@ -1207,7 +1213,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 				lod_model_overridden = true;
 			}
 		}
-		if ( model_overriden && !lod_model_overridden )
+		if ( inherited_model && inherited_lod && model_overriden && !lod_model_overridden )
 		{
 			// Suppress LOD
 			m_DistCheckTimeStamp = NOLOD;
@@ -1228,16 +1234,20 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 	if (dict->MatchPrefix("skin_lod_") == NULL)
 	{
 		m_SkinLODCur = -1;
-	}
-	else
-	{
+	} else {
 		m_SkinLODCur = 0;
 	}
 
 	m_ModelLODCur = 0;
 	m_LODLevel = 0;
 
-	m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+	// SteveL #4170: As with skins, disable LOD shadowcasting changes unless the mapper has set a noshadows_lod spawnarg
+	if (dict->MatchPrefix("noshadows_lod_") == NULL)
+	{
+		m_LOD->noshadowsLOD = -1;
+	} else {
+		m_LOD->noshadowsLOD = dict->GetBool( "noshadows", "0" ) ? 1 : 0;	// the default value for level 0
+	}
 
 	// if > 0, if the entity is closer than this, lod_bias will be at minimum 1.0
 	m_LOD->fLODNormalDistance = dict->GetFloat( "lod_normal_distance", "500" );
@@ -1366,8 +1376,7 @@ lod_handle idEntity::ParseLODSpawnargs( const idDict* dict, const float fRandom)
 				if (m_LOD->SkinLOD[i].Length() == 0) { m_LOD->SkinLOD[i] = m_LOD->SkinLOD[0]; }
 
 				// set the right bit for noshadows
-				sprintf(temp, "noshadows_lod_%i", i );
-									  // 1, 2, 4, 8, 16 etc
+				sprintf(temp, "noshadows_lod_%i", i );  // 1, 2, 4, 8, 16 etc
 				m_LOD->noshadowsLOD |= (dict->GetBool( temp, "0" ) ? 1 : 0) << i;
 
 //				// set the right bit for "standin". "standins" are models that always rotate in
@@ -1638,6 +1647,8 @@ void idEntity::Spawn( void )
 	previousVoiceIndex = 0;		// index of most recent voice sound requested (1->N, where there are N sounds)
 	previousBodyShader = NULL;	// shader for the most recent body sound request
 	previousBodyIndex = 0;		// index of most recent body sound requested (1->N, where there are N sounds)
+
+	m_LastRestPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3992
 }
 
 /*
@@ -1769,14 +1780,7 @@ void idEntity::LoadModels()
 	spawnArgs.GetString( "model", "", model );
 
 	if ( !model.IsEmpty() ) {
-		SetModel( model );
-		if (model.Find(".prt")>=0)
-		{
-			// sikk---> Depth Render
-			renderEntity.suppressSurfaceInViewID = -8;
-			// <---sikk
-		}
-		
+		SetModel( model );		
 	}
 
 	// was a brokenModel requested?
@@ -2209,6 +2213,8 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteVec3( m_VinePlantLoc );
 	savefile->WriteVec3( m_VinePlantNormal );
 
+	savefile->WriteVec3( m_LastRestPos ); // grayman #3992
+
 	// SteveL #3817: make decals persistent
     savefile->WriteInt(static_cast<int>(decals_list.size()));
 	for ( std::list<SDecalInfo>::const_iterator i = decals_list.begin(); i != decals_list.end(); ++i )
@@ -2511,6 +2517,8 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	savefile->ReadVec3( m_VinePlantLoc );
 	savefile->ReadVec3( m_VinePlantNormal );
+
+	savefile->ReadVec3( m_LastRestPos ); // grayman #3992
 
 	// SteveL #3817: make decals persistent
 	int decalscount;
@@ -2828,29 +2836,26 @@ bool idEntity::SwitchLOD()
 
 	if (m_LODLevel != oldLODLevel)
 	{
-//				gameLocal.Printf( "%s LOD level changed from %i to %i\n", GetName(), oldLODLevel, m_LODLevel );
 		if (m_ModelLODCur != m_LODLevel)
+		{
+			// func_statics that have map geometry do not have a model, and their LOD data gets ""
+			// as model name so they can all share the same data. However, we must not use "" when
+			// setting a new model:
+			if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
 			{
-//				gameLocal.Printf( "%s switching to LOD %i (model %s offset %f %f %f)\n",
-//					GetName(), m_LODLevel, m_LOD->ModelLOD[m_LODLevel].c_str(), m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].x, m_LOD->OffsetLOD[m_LODLevel].z );
-				// func_statics that have map geometry do not have a model, and their LOD data gets ""
-				// as model name so they can all share the same data. However, we must not use "" when
-				// setting a new model:
-				if (!m_LOD->ModelLOD[m_LODLevel].IsEmpty())
-				{
-					SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
-				}
-				m_ModelLODCur = m_LODLevel;
-				// Fix 1.04 blinking bug:
-				// if the old LOD level had an offset, we need to revert this.
-				// and if the new one has an offset, we need to add it:
-				idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
-				// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
-				if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
-				{
-					SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
-				}
+				SwapLODModel( m_LOD->ModelLOD[m_LODLevel] );
 			}
+			m_ModelLODCur = m_LODLevel;
+			// Fix 1.04 blinking bug:
+			// if the old LOD level had an offset, we need to revert this.
+			// and if the new one has an offset, we need to add it:
+			idVec3 originShift = m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel];
+			// avoid SetOrigin() if there is no change (it causes a lot of behind-the-scenes calls)
+			if (originShift.x != 0.0f || originShift.y != 0.0f || originShift.z != 0.0f)
+			{
+				SetOrigin( renderEntity.origin - m_LOD->OffsetLOD[oldLODLevel] + m_LOD->OffsetLOD[m_LODLevel] );
+			}
+		}
 
 		
 		if (m_SkinLODCur != -1 && m_SkinLODCur != m_LODLevel) // SteveL #3744
@@ -2863,10 +2868,9 @@ bool idEntity::SwitchLOD()
 			m_SkinLODCur = m_LODLevel;
 		}
 
-		if (m_LOD->noshadowsLOD != 0) // SteveL #3744
+		if (m_LOD->noshadowsLOD != -1) // SteveL #3744 && #4170
 		{
 			renderEntity.noShadow = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
-			renderLight.noShadows = (m_LOD->noshadowsLOD & (1 << m_LODLevel)) > 0 ? 1 : 0;
 		}
 		
 
@@ -3518,6 +3522,31 @@ const idDeclSkin *idEntity::GetSkin( void ) const {
 
 /*
 ================
+idEntity::ReskinCollisionModel	// #4232
+================
+*/
+void idEntity::ReskinCollisionModel() 
+{
+	if ( !physics->GetClipModel() ) 
+	{ 
+		return; 
+	}
+
+	const cmHandle_t skinnedCM = idClipModel::CheckModel( renderEntity.hModel->Name(), renderEntity.customSkin );
+
+	if ( skinnedCM < 0 )
+	{
+		return;
+	}
+
+	idClipModel* cm = new idClipModel( renderEntity.hModel->Name(), renderEntity.customSkin );
+	physics->SetClipModel( cm, 1.0f );
+}
+
+
+
+/*
+================
 idEntity::FreeModelDef
 ================
 */
@@ -3878,7 +3907,7 @@ idEntity::UpdateVisuals
 */
 void idEntity::UpdateVisuals( void ) {
 	UpdateModel();
-	UpdateSound();
+	UpdateSound(); // grayman #4337
 }
 
 /*
@@ -4486,7 +4515,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		refSound.referenceSound = gameSoundWorld->AllocSoundEmitter();
 	}
 			
-	UpdateSound();
+	UpdateSound(); // grayman #4337
 
 	len = refSound.referenceSound->StartSound( shader, channel, diversity, soundShaderFlags );
 
@@ -4558,14 +4587,22 @@ void idEntity::SetSoundVolume( float volume ) {
 idEntity::UpdateSound
 ================
 */
-void idEntity::UpdateSound( void ) {
-	if ( refSound.referenceSound ) {
+void idEntity::UpdateSound( void ) // grayman #4130
+{
+	if ( refSound.referenceSound )
+	{
 		idVec3 origin;
 		idMat3 axis;
 
-		if ( GetPhysicsToSoundTransform( origin, axis ) ) {
+		// grayman #4337 - The fix to #4130 caused sounds on some doors to
+		// become faint. Need a better solution.
+
+		if ( GetPhysicsToSoundTransform(origin, axis) )
+		{
 			refSound.origin = GetPhysics()->GetOrigin() + origin * axis;
-		} else {
+		}
+		else
+		{
 			refSound.origin = GetPhysics()->GetOrigin();
 		}
 
@@ -4870,6 +4907,12 @@ idEntity::PostBind
 */
 void idEntity::PostBind( void )
 {
+	// #3704: Destroy our frob box if bound to an animated entity.
+	if ( bindMaster->IsType(idAnimatedEntity::Type) && m_FrobBox != NULL )
+	{
+		delete m_FrobBox;
+		m_FrobBox = NULL;
+	}
 }
 
 /*
@@ -4898,12 +4941,12 @@ idEntity::InitBind
 bool idEntity::InitBind( idEntity *master )
 {
 	if ( master == this ) {
-		gameLocal.Error( "Tried to bind an object to itself." );
+		gameLocal.Error( "Tried to bind '%s' to itself.",GetName());
 		return false;
 	}
 
 	if ( this == gameLocal.world ) {
-		gameLocal.Error( "Tried to bind world to another entity" );
+		gameLocal.Error( "Tried to bind world to '%s'.",master->GetName());
 		return false;
 	}
 
@@ -5824,11 +5867,12 @@ void idEntity::InitDefaultPhysics( const idVec3 &origin, const idMat3 &axis )
 		}
 
 		// check if the visual model can be used as collision model
+		// Updated to take account of skins -- SteveL #4232
 		if ( !clipModel ) {
 			temp = spawnArgs.GetString( "model" );
 			if ( ( temp != NULL ) && ( *temp != 0 ) ) {
-				if ( idClipModel::CheckModel( temp ) ) {
-					clipModel = new idClipModel( temp );
+				if ( idClipModel::CheckModel( temp, renderEntity.customSkin ) ) {
+					clipModel = new idClipModel( temp, renderEntity.customSkin );
 				}
 			}
 		}
@@ -7632,6 +7676,16 @@ void idEntity::Event_SetSkin( const char *skinname ) {
 
 /*
 ================
+idEntity::Event_ReskinCollisionModel
+================
+*/
+void idEntity::Event_ReskinCollisionModel()
+{
+	ReskinCollisionModel();
+}
+
+/*
+================
 idEntity::Event_GetShaderParm
 ================
 */
@@ -9349,7 +9403,7 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 	idVec3			origin;
 	idMat3			axis;
 	jointHandle_t	joint;
-	idStr			jointName;
+	idStr			jointName1,jointName2;
 	idAngles		angleOffset, angleSubOffset(0.0f,0.0f,0.0f);
 	idVec3			originOffset, originSubOffset(vec3_zero);
 	idStr			nm;
@@ -9372,15 +9426,15 @@ void idAnimatedEntity::Attach( idEntity *ent, const char *PosName, const char *A
 // Old system, will be phased out
 	else
 	{
-		jointName = ent->spawnArgs.GetString( "joint" );
-		joint = animator.GetJointHandle( jointName );
+		jointName1 = ent->spawnArgs.GetString( "joint" );
+		joint = animator.GetJointHandle( jointName1 );
 		if ( joint == INVALID_JOINT ) 
 		{
-			jointName = ent->spawnArgs.GetString("bindToJoint");
-			joint = animator.GetJointHandle( jointName );
+			jointName2 = ent->spawnArgs.GetString("bindToJoint");
+			joint = animator.GetJointHandle( jointName2 );
 			if ( joint == INVALID_JOINT )
 			{
-				gameLocal.Error( "Joint '%s' not found for attaching '%s' on '%s'", jointName.c_str(), ent->GetClassname(), name.c_str() );
+				gameLocal.Error( "Neither joint '%s' nor bindToJoint '%s' found for attaching '%s' on '%s'", jointName1.c_str(), jointName2.c_str(),ent->GetClassname(), name.c_str() );
 			}
 		}
 

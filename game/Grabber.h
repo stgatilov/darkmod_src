@@ -49,7 +49,12 @@ public:
 								~CGrabber( void );
 
 		void					Clear( void );
-		void					Update( idPlayer *player, bool hold = false );
+
+		/**
+		* Update() isn't just the main update loop. It's the point of entry that 
+		* grabs an item that the player has frobbed. preservePosition added SteveL #4149
+		**/
+		void					Update( idPlayer *player, bool hold = false, bool preservePosition = false );
 
 		void					Save( idSaveGame *savefile ) const;
 		void					Restore( idRestoreGame *savefile );
@@ -219,8 +224,11 @@ protected:
 		* Also calls StopDrag to drop the current item before grabbing the new one, 
 		* but we may need to put a time delay between so that we don't have 
 		* Pauli Exclusion issues.
+		*
+		* preservePosition added in #4149. If true, the item won't immediately snap to 
+		* one of the allowable positions calculated from m_DistanceCount. 
 		**/
-		void					StartDrag( idPlayer *player, idEntity *newEnt = NULL, int bodyID = 0 );
+		void					StartDrag( idPlayer *player, idEntity *newEnt = NULL, int bodyID = 0, bool preservePosition = false );
 
 		/**
 		* Set encumbrance on the player as a function of the dragged object's mass
@@ -356,6 +364,21 @@ protected:
 		**/
 		int						m_LockedHeldDist;
 
+		
+		/**		
+		* A fixed, exact, floating point position for the held item, relative to the player's view. 
+		* This is for items that have just been picked up. We don't start to use m_DistanceCount
+		* or apply the min distance until the player actively changes the distance or starts to 
+		* rotate the object. This is to avoid clunking.
+		* m_StoppingPreserving is a flag that lets the object glide smoothly to the target position
+		* by gradually converging m_PreservedPosition with the target central position. 
+		* m_PreservedPosition.x is the distance from the eyes, so will always be > 0 when in use
+		* and we can use it as a flag. SteveL #4149
+		**/
+		idVec3					m_PreservedPosition;
+		bool					m_StoppingPreserving;
+		bool					PreservingPosition() { return m_PreservedPosition.x > 0.0f; }
+		
 		/**
 		* Set to true if the object held by the grabber is "stuck"
 		* Stuck in this context means too far away from the grab point

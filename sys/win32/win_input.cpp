@@ -23,7 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "win_local.h"
-
+#include "../../renderer/tr_local.h"
 
 #define DINPUT_BUFFERSIZE           256
 
@@ -543,8 +543,8 @@ bool IN_InitDIMouse( void ) {
 		return false;
 	}
     
-	// set the cooperativity level.
-	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_EXCLUSIVE | DISCL_FOREGROUND);
+	// set the cooperativity level.							// duzenko #4403
+	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 
 	if (FAILED(hr)) {
 		common->Printf ("mouse: Couldn't set DI coop level\n");
@@ -606,11 +606,12 @@ void IN_ActivateMouse( void ) {
 	// we may fail to reacquire if the window has been recreated
 	hr = win32.g_pMouse->Acquire();
 	if (FAILED(hr)) {
+		common->Printf("win32.g_pMouse->Acquire failed %d\n", hr);
 		return;
 	}
 
-	// set the cooperativity level.
-	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_EXCLUSIVE | DISCL_FOREGROUND);
+	// set the cooperativity level.							// duzenko #4403
+	hr = win32.g_pMouse->SetCooperativeLevel( win32.hWnd, DISCL_NONEXCLUSIVE | DISCL_FOREGROUND);
 }
 
 /*
@@ -997,6 +998,9 @@ int Sys_PollMouseInputEvents( void ) {
     if( FAILED(hr) ) {
         return 0;
 	}
+
+	// duzenko #4403 - prevent cursor from leaving the window
+	SetCursorPos(win32.win_xpos.GetInteger() + glConfig.vidWidth / 2, win32.win_ypos.GetInteger() + glConfig.vidHeight / 2);
 
 	Sys_QueMouseEvents( dwElements );
 

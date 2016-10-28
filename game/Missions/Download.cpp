@@ -50,7 +50,7 @@ CDownload::CDownload(const idStringList& urls, const idStr& destFilename, bool e
 
 CDownload::~CDownload()
 {
-	Stop();
+	Stop(false);
 }
 
 CDownload::DownloadStatus CDownload::GetStatus()
@@ -78,7 +78,7 @@ void CDownload::Start()
 	_thread = ThreadPtr(new std::thread(boost::bind(&CDownload::Perform, this)));
 }
 
-void CDownload::Stop()
+void CDownload::Stop(bool canceled)
 {
 	if (_thread != NULL && _request != NULL)
 	{
@@ -99,6 +99,9 @@ void CDownload::Stop()
 		if (_status != SUCCESS)
 		{
 			_status = FAILED;
+		}
+		if (canceled){
+			_status = CANCELED;
 		}
 
 		// Remove temporary file

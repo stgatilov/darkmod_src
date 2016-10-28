@@ -36,7 +36,15 @@ class PathSitTask :
 {
 private:
 	int _waitEndTime;
-	bool _sittingAnimDone; // grayman #3670
+
+	// grayman #4054
+	enum ESitState
+	{
+		EStateSitStart,
+		EStateTurning,
+		EStateWaiting,
+		EStateGetUp
+	} _sittingState;
 
 	// Private constructor
 	PathSitTask();

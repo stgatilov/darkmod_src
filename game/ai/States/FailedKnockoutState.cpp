@@ -68,8 +68,9 @@ void FailedKnockoutState::Init(idAI* owner)
 
 	// Play the animation
 	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
-	owner->SetWaitState(ANIMCHANNEL_TORSO, "failed_ko");
-
+	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS); // SteveL #3964
+	owner->SetWaitState("failed_ko"); // #3964: Set overall waitstate not just torso wait state else IdleAnimationTask::OnFinish will cancel it.
+	
 	// 800 msec stun time
 	_allowEndTime = gameLocal.time + 800;
 
@@ -121,6 +122,8 @@ void FailedKnockoutState::Think(idAI* owner)
 		// grayman #3857 - alert and bark moved down from Init()
 
 		// Set the alert position 50 units in the attacking direction
+		_attackDirection.z = 0; // grayman #3857
+		_attackDirection.NormalizeFast(); // grayman #3857
 		memory.alertPos = owner->GetPhysics()->GetOrigin() - _attackDirection * 50;
 
 		// grayman #3857 - move alert setup into one method

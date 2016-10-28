@@ -123,6 +123,11 @@ private:
 
 	void Event_Activate(idEntity* activator);
 	void Event_PostSpawn();
+
+	/**
+	 * grayman #4370: "Override" the TeamBlocked event to detect collisions with the player.
+	 */
+	virtual void OnTeamBlocked(idEntity* blockedEntity, idEntity* blockingEntity);
 };
 
 #endif /* _MULTI_STATE_MOVER_H_ */

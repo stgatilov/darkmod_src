@@ -34,11 +34,14 @@
 
 #ifdef MOD_WATERPHYSICS
 typedef enum {					// MOD_WATERPHYSICS
-	WATERLEVEL_NONE,			// MOD_WATERPHYSICS
+	WATERLEVEL_NONE = 0,		// MOD_WATERPHYSICS
 	WATERLEVEL_FEET,			// MOD_WATERPHYSICS
 	WATERLEVEL_WAIST,			// MOD_WATERPHYSICS
 	WATERLEVEL_HEAD				// MOD_WATERPHYSICS
 } waterLevel_t;					// MOD_WATERPHYSICS
+// As of #4159, TDM 2.04, the water levels are used by the player script object too. 
+// Any future changes need to be reflected there. Also added an explicit =0 to
+// WATERLEVEL_NONE above, because scripts will want to use AI_INWATER as a boolean. 
 #endif // MOD_WATERPHYSICS
 
 class idPhysics_Actor : public idPhysics_Base {

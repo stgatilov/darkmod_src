@@ -27,6 +27,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "PathTurnTask.h"
 #include "../Library.h"
 
+#define MAXTIME 1000000 // put a limit on what we feed SEC2MS
+
 namespace ai
 {
 
@@ -70,8 +72,11 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	
 	// Set the name of the state script
 	owner->SetAnimState( ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn );
-	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_CustomAnim", blendIn );
-	owner->PostEventMS( &AI_SyncAnimChannels, 16, ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, (float)blendIn );
+	// SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomAnim", 
+	// which invites race conditions and conflicts between game code and scripts.
+	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_Idle", 4 ); // Queue up the next state before sync'ing legs to torso
+	owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds. Walking/stepping legs need a bit longer to blend smoothly.
+	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS ); 
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.
@@ -85,6 +90,11 @@ void PathCycleAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	if (waitmax > 0)
 	{
 		waittime += (waitmax - waittime) * gameLocal.random.RandomFloat();
+	}
+
+	if (waittime > MAXTIME) // SEC2MS can't handle very large numbers
+	{
+		waittime = MAXTIME;
 	}
 
 	if (waittime > 0)

@@ -537,13 +537,25 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// select proper internal format before we resample
 	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth, &isMonochrome );
 
+	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
+	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
+		mipmapMode == 0;
+	else
+		if (mipmapMode == 2 && !glGenerateMipmap)
+			mipmapMode == 1;
+
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
 		// we must copy even if unchanged, because the border zeroing
 		// would otherwise modify const data
-		scaledBuffer = (byte *)R_StaticAlloc( sizeof( unsigned ) * scaled_width * scaled_height );
-		memcpy (scaledBuffer, pic, width*height*4);
-	} else {
+		if (1) // duzenko #4401
+			scaledBuffer = (byte*) pic;
+		else {
+			scaledBuffer = (byte *) R_StaticAlloc( sizeof(unsigned) * scaled_width * scaled_height );
+			memcpy( scaledBuffer, pic, width*height * 4 );
+		}
+	}
+	else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
 		// scaledBuffer = R_ResampleTexture( pic, width, height, width >>= 1, height >>= 1 );
 		scaledBuffer = R_MipMap( pic, width, height, preserveBorder );
@@ -641,7 +653,6 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// upload the main image level
 	Bind();
 
-
 	if ( internalFormat == GL_COLOR_INDEX8_EXT ) {
 		/*
 		if ( depth == TD_BUMP ) {
@@ -653,17 +664,27 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		*/
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
 	} else {
+		if (mipmapMode == 1) // duzenko #4401
+			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+		if (mipmapMode == 2) // duzenko #4401
+			glGenerateMipmap(GL_TEXTURE_2D);
+		if (mipmapMode == 1) // duzenko #4401
+			if (strcmp(glConfig.vendor_string, "Intel")) // known to have crashed on Intel
+				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
 	}
-
+	
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
 	int		miplevel;
 
 	miplevel = 0;
 	while ( scaled_width > 1 || scaled_height > 1 ) {
+		if (mipmapMode > 0) // duzenko #4401
+			break;
 		// preserve the border after mip map unless repeating
 		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );
-		R_StaticFree( scaledBuffer );
+		if (pic != scaledBuffer) // duzenko #4401
+			R_StaticFree( scaledBuffer );
 		scaledBuffer = shrunk;
 
 		scaled_width >>= 1;
@@ -693,7 +714,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 	}
 
-	if ( scaledBuffer != 0 ) {
+	if (scaledBuffer != 0 && pic != scaledBuffer) { // duzenko #4401
 		R_StaticFree( scaledBuffer );
 	}
 
@@ -1635,7 +1656,8 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 		// build a hash for checking duplicate image files
 		// NOTE: takes about 10% of image load times (SD)
 		// may not be strictly necessary, but some code uses it, so let's leave it in
-		imageHash = MD4_BlockChecksum( pic, width * height * 4 );
+		if (globalImages->image_blockChecksum.GetBool()) // duzenko #4400
+			imageHash = MD4_BlockChecksum( pic, width * height * 4 );
 
 		GenerateImage( pic, width, height, filter, allowDownSize, repeat, depth );
 		timestamp = timestamp;

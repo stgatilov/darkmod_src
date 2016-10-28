@@ -133,6 +133,12 @@ void State::Init(idAI* owner)
 
 	// Load the value from the spawnargs to avoid looking it up each frame
 	owner->GetMemory().deadTimeAfterAlertRise = owner->spawnArgs.GetInt("alert_decrease_deadtime", "300");
+
+	if ( ai_debugScript.GetInteger() == owner->entityNumber ) // #4057
+	{
+		// we can use GetName() because it returns static constant names
+		gameLocal.Printf( "%d: State::Init new state %s\n", gameLocal.time, GetName().c_str() );  
+	}
 }
 
 bool State::CheckAlertLevel(idAI* owner)
@@ -160,6 +166,7 @@ void State::UpdateAlertLevel()
 	{
 		float decrease = _alertLevelDecreaseRate * MS2SEC(thinkDuration);
 		float newAlertLevel = owner->AI_AlertLevel - decrease;
+
 		owner->SetAlertLevel(newAlertLevel);
 	}
 }
@@ -259,7 +266,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 	if (tactEnt->IsType(idProjectile::Type))
 	{
 		// grayman #3140 - now handled by the path through
-		// idProjectile::Collide()->idAI::Damage()
+		// idProjectile::Collide()
 		//OnProjectileHit(static_cast<idProjectile*>(tactEnt));
 	}
 	else 
@@ -300,7 +307,7 @@ void State::OnTactileAlert(idEntity* tactEnt)
 				else
 				{
 					// grayman #3857 - move alert setup into one method
-					SetUpSearchData(EAlertTypeSuspicious, owner->GetPhysics()->GetOrigin(), NULL, false, 0);
+					SetUpSearchData(EAlertTypeSuspicious, owner->GetPhysics()->GetOrigin(), tactEnt, false, 0);
 					memory.currentSearchEventID = owner->LogSuspiciousEvent( E_EventTypeMisc, memory.alertPos, NULL, false ); // grayman #3857
 				}
 
@@ -354,23 +361,28 @@ bool State::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* maker) //
 	// you're afraid (unarmed, civilian, or low health), you shouldn't search.
 	// If it's close by, you should flee if you aren't already.
 
-	if ( owner->IsAfraid() && ((soundName == "arrow_broad_hit") || (soundName == "arrow_broad_break")))
+	// But only if you're awake
+
+	if ( owner->GetMoveType() != MOVETYPE_SLEEP )
 	{
-		if ((memory.alertPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 300)
+		if ( owner->IsAfraid() && ((soundName == "arrow_broad_hit") || (soundName == "arrow_broad_break")) )
 		{
-			// if already fleeing, these settings will get
-			// picked up and used. if not already fleeing,
-			// the new flee task will use them
-			owner->fleeingEvent = true; // grayman #3356
-			owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
-			owner->fleeingFromPerson = NULL; // grayman #3847
-			owner->emitFleeBarks = true; // grayman #3474
-			if (!memory.fleeing) // grayman #3847 - only flee if not already fleeing
+			if ( (memory.alertPos - owner->GetPhysics()->GetOrigin()).LengthFast() < 300 )
 			{
-				owner->GetMind()->SwitchState(STATE_FLEE);
+				// if already fleeing, these settings will get
+				// picked up and used. if not already fleeing,
+				// the new flee task will use them
+				owner->fleeingEvent = true; // grayman #3356
+				owner->fleeingFrom = owner->GetSndDir(); // grayman #3848
+				owner->fleeingFromPerson = NULL; // grayman #3847
+				owner->emitFleeBarks = true; // grayman #3474
+				if ( !memory.fleeing ) // grayman #3847 - only flee if not already fleeing
+				{
+					owner->GetMind()->SwitchState(STATE_FLEE);
+				}
 			}
+			return false; // false = don't search
 		}
-		return false; // false = don't search
 	}
 
 	memory.mandatory = false; // grayman #3331
@@ -972,6 +984,14 @@ void State::OnVisualStim(idEntity* stimSource)
 		{
 			return;
 		}
+
+		// If the weapon appears to belong to a nearby KO'ed
+		// or Dead AI, ignore the stim, but keep it alive.
+		if ( Check4NearbyBodies(stimSource, owner) ) // grayman #3992
+		{
+			return;
+		}
+
 		break;
 	case EAIuse_Suspicious: // grayman #1327
 		if (!ShouldProcessAlert(EAlertTypeSuspiciousItem))
@@ -1052,7 +1072,7 @@ void State::OnVisualStim(idEntity* stimSource)
 
 			// A suspicious door is worth looking at regardless of how long it's been open.
 			// A non-suspicious door is only worth looking at if it's recently been fully opened.
-			// The latter check is needed because door stims occur roughly 1.5 second apart, and if
+			// The latter check is needed because door stims occur roughly 1.5 seconds apart, and if
 			// the first stim arrives when the door is only cracked open, and the second arrives after
 			// the door is fully opened, we could miss the fact that it was just opened.
 
@@ -1113,6 +1133,11 @@ void State::OnVisualStim(idEntity* stimSource)
 
 	int delay = VIS_STIM_DELAY_MIN + gameLocal.random.RandomInt(VIS_STIM_DELAY_MAX - VIS_STIM_DELAY_MIN);
 
+	// grayman #3992 - while we're waiting for the stim to be processed,
+	// the AI should look at the stim
+
+	owner->Event_LookAtEntity(stimSource, MS2SEC(delay));
+
 	// Post the event to do the processing
 	owner->PostEventMS( &AI_DelayedVisualStim, delay, stimSource);
 
@@ -1158,14 +1183,14 @@ bool State::ShouldProcessAlert(EAlertType newAlertType)
 
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
-
+	/* grayman - had to subsequently revert this because it kept AI from spotting a new body while investigating a body (for example)
 	// grayman #3857 - getting more of the same can be ignored
 	// TODO: Is this true for sound alerts?
 	if (memory.alertType == newAlertType)
 	{
 		return false;
 	}
-	
+	*/
 	if (owner->alertTypeWeight[memory.alertType] <= owner->alertTypeWeight[newAlertType])
 	{
 		return true;
@@ -1174,6 +1199,123 @@ bool State::ShouldProcessAlert(EAlertType newAlertType)
 	return false;
 }
 
+// grayman #3992 - ignore the weapon stim if there's a nearby
+// body that owner can see
+
+bool State::Check4NearbyBodies(idEntity* stimSource, idAI* owner)
+{
+	assert(stimSource != NULL && owner != NULL); // must be fulfilled
+
+	// grayman #3992 - Don't process a weapon in the grabber
+
+	CGrabber* grabber = gameLocal.m_Grabber;
+	if ( grabber )
+	{
+		if ( grabber->GetSelected() == stimSource )
+		{
+			return true;
+		}
+	}
+
+	// grayman #3992 - If there is a body near the weapon, or another weapon,
+	// don't process the stim. Re-enable it so it can be seen later
+	// in case the other weapons or all the bodies are moved.
+
+	idWeapon *weapon = static_cast<idWeapon*>(stimSource);
+
+	// Create a list of bodies and weapons near this weapon
+
+	idBounds box = idBounds(idVec3(-128.0f, -128.0f, -40.0f), idVec3(128.0f, 128.0f, 88.0f));
+	box.TranslateSelf(weapon->GetPhysics()->GetOrigin());
+	idEntity* ents[MAX_GENTITIES];
+	int num = gameLocal.clip.EntitiesTouchingBounds(box, -1, ents, MAX_GENTITIES);
+
+	for ( int i = 0; i < num; i++ )
+	{
+		idEntity *candidate = ents[i];
+
+		if ( candidate == NULL ) // just in case
+		{
+			continue;
+		}
+
+		if ( candidate == weapon ) // skip myself
+		{
+			continue;
+		}
+
+		if ( candidate->IsType(idAI::Type) )
+		{
+			// Ignore AI that aren't people. Don't want a dead rat masking
+			// the presence of a found weapon.
+
+			idStr AiUse = candidate->spawnArgs.GetString("AIUse");
+			if ( AiUse != AIUSE_PERSON )
+			{
+				continue;
+			}
+
+			// Are there KO'ed or dead AI nearby? If so,
+			// don't process this weapon stim. Let the owner see
+			// the stim again in the future, in case the bodies are
+			// moved or the weapon is moved.
+
+			idAI *ai = static_cast<idAI*>(candidate);
+			if ( ai->AI_DEAD || ai->AI_KNOCKEDOUT )
+			{
+				// The ai could be on the other side of a wall. Use FOV
+				// and lighting, because a weapon lying near a body that's
+				// in shadows should be investigated.
+				if ( owner->CanSee(ai, true) )
+				{
+					return true;
+				}
+			}
+			continue;
+		}
+
+		// Are there other weapons nearby? If so, 
+		// don't process this weapon stim. Re-enable the stim.
+		// Check the candidate's "model" spawnarg because useable
+		// weapons are no different than func_static weapons as far
+		// as AI are concerned.
+
+		idStr model = candidate->spawnArgs.GetString("model");
+		if ( idStr::FindText(model, "/weapons/") > 0 )
+		{
+			// Ignore weapons attached to AI
+
+			if ( candidate->GetBindMaster() != NULL )
+			{
+				continue;
+			}
+
+			// The other weapon could be on the other side of a wall.
+			trace_t result;
+			if ( !gameLocal.clip.TracePoint(result, weapon->GetPhysics()->GetOrigin(), candidate->GetPhysics()->GetOrigin(), MASK_OPAQUE, weapon) || gameLocal.GetTraceEntity(result) == candidate )
+			{
+				// trace succeeded or hit the candidate,
+				// so there's nothing between the weapon and the candidate 
+				return true;
+			}
+
+			// trace failed, but something in this room might be between the
+			// weapon and the candidate (like a table), so can the owner see the candidate?
+
+			if ( owner->CanSeeExt(candidate, false, false) )
+			{
+				return true;
+			}
+		}
+	}
+
+	// No bodies nearby
+	return false;
+}
+
+// grayman #3992 - This part of the weapon stim processing happens
+// after a small delay, to keep AI from all reacting in the same frame.
+					
 void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 {
 	assert(stimSource != NULL && owner != NULL); // must be fulfilled
@@ -1181,23 +1323,8 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 	// Memory shortcut
 	Memory& memory = owner->GetMemory();
 
-	// We've seen this object, don't respond to it again
-//	stimSource->IgnoreResponse(ST_VISUAL, owner); // grayman #2924 - already done
+	// Vocalize that we see something out of place
 
-	if (stimSource->IsType(idWeapon::Type))
-	{
-		// Is it a friendly weapon?  To find out we need to get its owner.
-		idActor* objectOwner = static_cast<idWeapon*>(stimSource)->GetOwner();
-		
-		if (owner->IsFriend(objectOwner))
-		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Ignoring visual stim from weapon with friendly owner\r");
-			return;
-		}
-	}
-	
-	// Vocalize that see something out of place
-	//gameLocal.Printf("Hmm, that isn't right! A weapon!\n");
 	if (owner->AI_AlertLevel < owner->thresh_5 &&
 		gameLocal.time - memory.lastTimeVisualStimBark >= MINIMUM_SECONDS_BETWEEN_STIMULUS_BARKS)
 	{
@@ -1212,7 +1339,7 @@ void State::OnVisualStimWeapon(idEntity* stimSource, idAI* owner)
 		}
 	}
 
-	// TWO more piece of evidence of something out of place: A weapon is not a good thing
+	// More evidence of something out of place: A weapon is not a good thing
 	memory.countEvidenceOfIntruders += EVIDENCE_COUNT_INCREASE_WEAPON;
 	memory.posEvidenceIntruders = owner->GetPhysics()->GetOrigin(); // grayman #2903
 	memory.timeEvidenceIntruders = gameLocal.time; // grayman #2903
@@ -1240,6 +1367,7 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 	// We've seen this object, don't respond to it again
 	stimSource->IgnoreResponse(ST_VISUAL, owner);
 
+/*  grayman #3992 - not necessary
 	if ( stimSource->IsType(idWeapon::Type) )
 	{
 		// Is it a friendly weapon?  To find out we need to get its owner.
@@ -1250,7 +1378,10 @@ void State::OnVisualStimSuspicious(idEntity* stimSource, idAI* owner)
 			return;
 		}
 	}
-	else if ( stimSource->IsType(CProjectileResult::Type) )
+	else
+ */
+	
+	if ( stimSource->IsType(CProjectileResult::Type) )
 	{
 		// grayman #3075 - If this arrow is bound to a dead body,
 		// ignore it. The dead body will be found separately.
@@ -1853,7 +1984,7 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 					}
 
 					// grayman #3857 - be specific about unconscious people
-					if ( soundName.IsEmpty() && !need2Search && ( otherMemory.alertType == E_EventTypeUnconsciousPerson ) )
+					if ( soundName.IsEmpty() && !need2Search && ( otherMemory.alertType == EAlertTypeUnconsciousPerson ) ) // grayman #4193
 					{
 						idEntity* body = otherMemory.unconsciousPersonFound.GetEntity();
 						
@@ -3280,6 +3411,10 @@ void State::OnMovementBlocked(idAI* owner)
 			{
 				ent = static_cast<idAFAttachment*>(ent2)->GetBody(); // switch to the AI bindMaster's owner
 			}
+			else if (ent2->IsType(CFrobDoor::Type)) // grayman #4077
+			{
+				ent = ent2; // switch to AI bindMaster
+			}
 		}
 	}
 
@@ -3288,41 +3423,114 @@ void State::OnMovementBlocked(idAI* owner)
 		// Blocked by other AI
 		idAI* master = owner;
 		idAI* slave = static_cast<idAI*>(ent);
+		bool slaveSelected = false;
 
 		// grayman #2728 - check mass; this overrides all other master/slave checks
 
 		float masterMass = master->GetPhysics()->GetMass();
-		if ((masterMass <= SMALL_AI_MASS) || (slave->GetPhysics()->GetMass() <= SMALL_AI_MASS))
+		float slaveMass = slave->GetPhysics()->GetMass();
+		if ((masterMass <= SMALL_AI_MASS) && (slaveMass > SMALL_AI_MASS))
 		{
-			if (masterMass <= SMALL_AI_MASS)
+			std::swap(master, slave);
+			slaveSelected = true;
+		}
+
+		if (!slaveSelected)
+		{
+			if ((masterMass > SMALL_AI_MASS) && (slaveMass <= SMALL_AI_MASS))
 			{
-				// The master can't have small mass unless the slave does also
-				std::swap(master, slave);
+				slaveSelected = true;
 			}
 		}
-		else if (master->AI_FORWARD && // grayman #2422
-				 !slave->AI_FORWARD &&
-				 master->IsSearching() &&
-				 ( master->AI_AlertIndex < ECombat ) ) // grayman #3070 - don't stop master if he's in combat
+
+		/* grayman - This might be needed in the future, but there doesn't
+		// appear to be a need for it in 2.03. I added it as a solution to
+		// a treadmilling report when beta testing 2.03, but the treadmilling
+		// was fixed by SteveL's final riverdancing fix, because one of the
+		// AI was riverdancing, stuck in a turn.
+		//
+		// if both AI are moving in the same direction,
+		// set the one behind as the slave, and he should just end up
+		// stopping until the one in front can move away
+
+		if ( !slaveSelected )
 		{
-			// grayman #3725 - searchers should be allowed to pass, as long as
-			// their destination is at least 70 away, to keep them from stopping
-			// so near the slave that--if the slave is non-solid--they won't share
-			// the same space when they stop moving.
-			idVec3 dest = master->GetMoveDest();
-			idVec3 masterOrigin = master->GetPhysics()->GetOrigin();
-			dest.z = masterOrigin.z; // ignore vertical delta
-			if ( (masterOrigin - dest).LengthSqr() < Square(70))
+			if ( master->AI_FORWARD && slave->AI_FORWARD )
 			{
-				// Stop moving, the searching state will choose another spot soon
-				master->StopMove(MOVE_STATUS_DONE);
-				Memory& memory = master->GetMemory();
-				memory.StopReacting(); // grayman #3559
-				master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
-				return;
+				const idVec3& masterVel = master->GetPhysics()->GetLinearVelocity();
+				float masterSpeed = masterVel.LengthFast();
+				const idVec3& slaveVel = slave->GetPhysics()->GetLinearVelocity();
+				float slaveSpeed = slaveVel.LengthFast();
+
+				bool sameDirection = (masterVel * slaveVel > 0.0f); // moving in about the same direction?
+
+				if ( sameDirection )
+				{
+					idVec3 slaveToMaster = master->GetPhysics()->GetOrigin() - slave->GetPhysics()->GetOrigin();
+					bool slaveBehind = (slaveToMaster * slaveVel > 0.0f);
+					if (!slaveBehind)
+					{
+						std::swap(master, slave);
+					}
+					slaveSelected = true;
+				}
 			}
 		}
-		else
+		*/
+
+		if (!slaveSelected)
+		{
+			if (master->AI_FORWARD && // grayman #2422
+				!slave->AI_FORWARD &&
+				master->IsSearching() &&
+				(master->AI_AlertIndex < ECombat)) // grayman #3070 - don't stop master if he's in combat
+			{
+				// grayman #3725 - searchers should be allowed to pass, as long as
+				// their destination is at least 70 away, to keep them from stopping
+				// so near the slave that--if the slave is non-solid--they won't share
+				// the same space when they stop moving.
+				idVec3 dest = master->GetMoveDest();
+				idVec3 masterOrigin = master->GetPhysics()->GetOrigin();
+				dest.z = masterOrigin.z; // ignore vertical delta
+				if ((masterOrigin - dest).LengthSqr() < Square(70))
+				{
+					// Stop moving, the searching state will choose another spot soon
+					master->StopMove(MOVE_STATUS_DONE);
+					Memory& memory = master->GetMemory();
+					memory.StopReacting(); // grayman #3559
+					master->TurnToward(master->GetCurrentYaw() + 180); // turn back toward where you came from
+					return;
+				}
+			}
+		}
+
+		if (!slaveSelected)
+		{
+			if (slave->AI_FORWARD && // grayman #2422
+				!master->AI_FORWARD &&
+				slave->IsSearching() &&
+				(slave->AI_AlertIndex < ECombat)) // grayman #3070 - don't stop slave if he's in combat
+			{
+				// grayman #3725 - searchers should be allowed to pass, as long as
+				// their destination is at least 70 away, to keep them from stopping
+				// so near the slave that--if the slave is non-solid--they won't share
+				// the same space when they stop moving.
+				idVec3 dest = slave->GetMoveDest();
+				idVec3 slaveOrigin = slave->GetPhysics()->GetOrigin();
+				dest.z = slaveOrigin.z; // ignore vertical delta
+				if ((slaveOrigin - dest).LengthSqr() < Square(70))
+				{
+					// Stop moving, the searching state will choose another spot soon
+					slave->StopMove(MOVE_STATUS_DONE);
+					Memory& memory = slave->GetMemory();
+					memory.StopReacting(); // grayman #3559
+					slave->TurnToward(slave->GetCurrentYaw() + 180); // turn back toward where you came from
+					return;
+				}
+			}
+		}
+
+		if (!slaveSelected)
 		{
 			// grayman #2345 - account for rank when determining who should resolve the block
 
@@ -3343,22 +3551,30 @@ void State::OnMovementBlocked(idAI* owner)
 				// One AI is running, this should be the master
 				std::swap(master, slave);
 			}
+		}
 
-			/* grayman #3725 - no need for this last swap, because it can
-			   lead to confusion if we ask the master and slave to both
-			   resolve the same block
-			if (slave->movementSubsystem->IsResolvingBlock() || !slave->m_canResolveBlock) // grayman #2345
-			{
-				std::swap(master, slave);
-			}
-			*/
+		// grayman #4384 - if the slave isn't allowed to resolve a block, and he's
+		// handling a door, allow him to resolve the block
+
+		if ( !slave->m_canResolveBlock && slave->m_HandlingDoor)
+		{
+			slave->m_canResolveBlock = true;
+		}
+		// grayman #4384 - if the slave isn't allowed to resolve a block, swap w/master
+		else if ( !slave->m_canResolveBlock )
+		{
+			std::swap(master, slave);
+			slave->m_canResolveBlock = true;
 		}
 
 		// Tell the slave to get out of the way.
 
 		slave->movementSubsystem->ResolveBlock(master);
 	}
-	else if (ent->IsType(idStaticEntity::Type))
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	else if (ent->IsType(idStaticEntity::Type) || ent->IsType(CFrobDoor::Type))
 	{
 		// Blocked by func_static, these are generally not considered by Obstacle Avoidance code.
 		// grayman #2345 - if the AI is bumping into a func_static, that's included.
@@ -4457,10 +4673,10 @@ void State::OnAICommMessage(CommMessage& message, float psychLoud)
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardLocationOrder_CommType\r");
 			// grayman #3857 - The first active searcher in a search sent this message to
 			// me when I finished milling. Going to the location is already handled by the Search Manager.
-			if (owner->IsFriend(issuingEntity))
-			{
+			//if (owner->IsFriend(issuingEntity)) // grayman #3857 - always respond
+			//{
 				owner->Bark("snd_warn_response");
-			}
+			//}
 			break;
 		case CommMessage::GuardEntityOrder_CommType:
 			DM_LOG(LC_AI, LT_INFO)LOGSTRING("Message Type: GuardEntityOrder_CommType\r");
@@ -5171,7 +5387,29 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		return;
 	}
 
-	// grayman #2650 - can we handle doors?
+	// grayman #4311 - need to revert the previous fix for #4036, which caused
+	// #4311's problem. Revisit this in 2.05 when there's ample time to put in a
+	// fix that handles both problems.
+
+	// grayman #2650 - can we handle doors? Check for rats and spiders first.
+
+	if (owner->GetPhysics()->GetMass() <= SMALL_AI_MASS)
+	{
+		return;
+	}
+
+	// grayman #4311 - ignoring the door at this point allows the fence at the beginning
+	// of ANH to correctly use the cellar door and the sewer door. But we want to allow the
+	// AI to enter the door queue instead, and handle his inability to operate doors in
+	// the door-handling code. This lets him stand off from a door and let another AI 
+	// handle it w/o getting in the way. He can pass through the door later if it's left
+	// open and he can fit through the opening. Perhaps the inability to operate a door
+	// means these situations:
+	//
+	// 1 - can't open a door
+	// 2 - can't close a door
+	// 3 - can't unlock a door
+	// 4 - can't lock a door
 
 	if (!owner->m_bCanOperateDoors)
 	{
@@ -5295,21 +5533,37 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			// grayman #3104 - there's a problem when the current door task
 			// has just completed its Perform() step and is about to start
 			// its OnFinish() step. At this point, HandleDoorTask is NOT the
-			// current task. Testing showed it was PathCornerTask, so that snuck
+			// current task. Testing showed it was PathCornerTask or
+			// ChaseEnemyTask, so they snuck
 			// in somehow before the OnFinish() ran for HandleDoorTask. NULLing
 			// currentDoor below doesn't let OnFinish() do everything it needs to.
 
-/*			const SubsystemPtr& subsys = owner->movementSubsystem;
-			TaskPtr task = subsys->GetCurrentTask();
+			// grayman #4030 - find the HandleDoorTask and terminate it if it's the
+			// second task in the queue. If it's the first task, we want to continue
+			// to let it run, and ignore the fact that we encountered it a second time.
 
-			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) == NULL)
+			//owner->movementSubsystem->PrintTaskQueue();
+
+			// If m_DoorQueued is true, a door handling task has been queued for this door,
+			// but has not run Init() yet, so m_HandlingDoor is still false. Once Init()
+			// has run, m_DoorQueued is false and m_HandlingDoor is true.
+
+			if ( owner->m_DoorQueued || owner->m_HandlingDoor )
+			{
+				// Finish the door handling task for the current door if it's
+				// not the current task. It will remain in the queue as a finished task
+				// and will be cleared when it reaches the front of the queue.
+				owner->movementSubsystem->FinishDoorHandlingTask(owner);
+			}
+			else //if ( !owner->m_DoorQueued && !owner->m_HandlingDoor ) // grayman #4053 - grayman #4137 - no point in checking this
 			{
 				// angua: current door is set but no door handling task active
 				// door handling task was probably terminated before initialisation
 				// clear current door
-				memory.doorRelated.currentDoor = NULL;
+				memory.doorRelated.currentDoor = NULL; // grayman #4137
 			}
-*/
+
+			//owner->movementSubsystem->PrintTaskQueue();
 		}
 	}
 }
@@ -5435,18 +5689,11 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 
 		SetAISearchData(EAlertTactile,EAlertTypeSuspicious,pos,TACTILE_SEARCH_VOLUME,idVec3(0,0,0),ALERT_MANDATORY);
-
-		// Set the alert amount to the tactile alert value
-		float amount = cv_ai_tactalert.GetFloat();
-		amount *= owner->GetAcuity("tact");
-		// grayman #3009 - pass the alert position so the AI can look in the direction of who's responsible
-		idActor* responsible = static_cast<idActor*>(entity);
-		owner->PreAlertAI("tact", amount, responsible->GetEyePosition()); // grayman #3356
 		}
 		break;
 	case ai::EAlertTypeHitByMoveable: // WAS HIT BY A MOVEABLE
 		{
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY A MOVEABLE **********\r",owner->GetName());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s WAS HIT BY A MOVEABLE **********\r", owner->GetName());
 		if (owner->IsSearching())
 		{
 			memory.restartSearchForHidingSpots = true;
@@ -5460,7 +5707,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 		}
 		break;
 	case EAlertTypeEnemy: // HAD A TACTILE ALERT FROM AN ENEMY
-		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s HAD A TACTILE ALERT FROM AN ENEMY **********\r",owner->GetName());
+		//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("********** %s HAD A TACTILE ALERT FROM AN ENEMY **********\r", owner->GetName());
 		if (owner->IsSearching())
 		{
 			memory.restartSearchForHidingSpots = true;
@@ -5876,7 +6123,7 @@ void State::SetUpSearchData(EAlertType type, idVec3 pos, idEntity* entity, bool 
 			memory.restartSearchForHidingSpots = true;
 		}
 
-		SetAISearchData(EAlertNone,issuerMemory.alertType,pos,issuerMemory.alertSearchVolume,idVec3(0,0,0),ALERT_BY_COMM);
+		SetAISearchData(EAlertNone,issuerMemory.alertType,pos,issuerMemory.alertSearchVolume,idVec3(0,0,0),ALERT_SEARCH_ALERT_POS|ALERT_BY_COMM); // grayman #4220
 
 		// alert level is set by the calling method
 

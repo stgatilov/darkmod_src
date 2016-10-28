@@ -163,6 +163,7 @@ extern const idEventDef AI_ShowAttachment;
 extern const idEventDef AI_ShowAttachmentInd;
 
 extern const idEventDef AI_SyncAnimChannels; // SteveL #3800
+extern const idEventDef AI_OverrideAnim; // SteveL #4012: Expose so IdleAnimationTask can use it. 
 
 class idDeclParticle;
 

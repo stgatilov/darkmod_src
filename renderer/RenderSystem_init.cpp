@@ -121,8 +121,8 @@ idCVar r_useShadowCulling( "r_useShadowCulling", "1", CVAR_RENDERER | CVAR_BOOL,
 idCVar r_useFrustumFarDistance( "r_useFrustumFarDistance", "0", CVAR_RENDERER | CVAR_FLOAT, "if != 0 force the view frustum far distance to this distance" );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
 idCVar r_clear( "r_clear", "2", CVAR_RENDERER, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
-idCVar r_offsetFactor( "r_offsetfactor", "0", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
-idCVar r_offsetUnits( "r_offsetunits", "-600", CVAR_RENDERER | CVAR_FLOAT, "polygon offset parameter" );
+idCVar r_offsetFactor( "r_offsetfactor", "-2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
+idCVar r_offsetUnits( "r_offsetunits", "-0.1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
 idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVAR_FLOAT, "bias value added to depth test for stencil shadow drawing" );
 idCVar r_shadowPolygonFactor( "r_shadowPolygonFactor", "0", CVAR_RENDERER | CVAR_FLOAT, "scale value for stencil shadow drawing" );
 idCVar r_frontBuffer( "r_frontBuffer", "0", CVAR_RENDERER | CVAR_BOOL, "draw to front buffer for debugging" );
@@ -157,7 +157,7 @@ idCVar r_orderIndexes( "r_orderIndexes", "1", CVAR_RENDERER | CVAR_BOOL, "perfor
 idCVar r_lightAllBackFaces( "r_lightAllBackFaces", "0", CVAR_RENDERER | CVAR_BOOL, "light all the back faces, even when they would be shadowed" );
 
 // visual debugging info
-idCVar r_showPortals( "r_showPortals", "0", CVAR_RENDERER | CVAR_BOOL, "draw portal outlines in color based on passed / not passed" );
+idCVar r_showPortals( "r_showPortals", "0", CVAR_RENDERER | CVAR_BOOL, "draw portal outlines in color: green = player sees through portal; yellow = not seen through but visleaf is open through another portal; red = portal and visleaf the other side are closed." );
 idCVar r_showUnsmoothedTangents( "r_showUnsmoothedTangents", "0", CVAR_RENDERER | CVAR_BOOL, "if 1, put all nvidia register combiner programming in display lists" );
 idCVar r_showSilhouette( "r_showSilhouette", "0", CVAR_RENDERER | CVAR_BOOL, "highlight edges that are casting shadow planes" );
 idCVar r_showVertexColor( "r_showVertexColor", "0", CVAR_RENDERER | CVAR_BOOL, "draws all triangles with the solid vertex color" );
@@ -304,6 +304,9 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 
 // GL_EXT_depth_bounds_test
 PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
+
+// mipmaps
+PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
 
 /*
 =================
@@ -522,6 +525,7 @@ static void R_CheckPortableExtensions( void ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
 
+	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
 }
 
 
@@ -972,7 +976,9 @@ Checks for images with the same hash value and does a better comparison
 void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 	int	count = 0;
 
-	common->Printf( "Images with duplicated contents:\n" );
+	common->Printf("Images with duplicated contents:\n");
+	if (!globalImages->image_blockChecksum.GetBool()) // duzenko #4400
+		common->Printf("Warning: image_blockChecksum set to 0, results invalid.\n");
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		idImage	*image1 = globalImages->images[i];
@@ -990,6 +996,8 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 		int		h1 = 0; int w1 = 0;
 
 		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
+		if (!data1) // duzenko #4400
+			continue;
 
 		for ( int j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
@@ -1017,10 +1025,12 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 
 				R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
 				
-				if ( w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) {
+				if (!data2 || w1 != w2 || h1 != h2 || memcmp( data1, data2, w1*h1*4 ) ) // duzenko #4400
+				{
 					R_StaticFree( data2 );
 					continue;
 				}
+				R_StaticFree(data2); // duzenko #4400
 
 				common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
 				session->UpdateScreen( true );
@@ -1421,18 +1431,19 @@ void R_StencilShot( void ) {
 	Mem_Free( byteBuffer );	
 }
 
+// nbohr1more #4041: add envshotGL for cubicLight
 /* 
 ================== 
-R_EnvShot_f
+R_EnvShotGL_f
 
-envshot <basename>
+envshotGL <basename>
 
-Saves out env/<basename>_ft.tga, etc
+(OpenGL orientation) Saves out env/<basename>_ft.tga, etc
 ================== 
 */  
-const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+const static char *GLcubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 
-void R_EnvShot_f( const idCmdArgs &args ) {
+void R_EnvShotGL_f( const idCmdArgs &args ) {
 	idStr		fullname;
 	const char	*baseName;
 	idMat3		axis[6];
@@ -1445,7 +1456,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 		return;
 	}
 	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
-		common->Printf( "USAGE: envshot <basename> [size] [blends]\n" );
+		common->Printf( "USAGE: envshotGL <basename> [size] [blends]\n" );
 		return;
 	}
 
@@ -1489,6 +1500,93 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	axis[5][1][0] = 1;
 	axis[5][2][1] = 1;
 
+	for ( int i = 0 ; i < 6 ; i++ ) {
+		ref = primary.renderView;
+		ref.x = ref.y = 0;
+		ref.fov_x = ref.fov_y = 90;
+		ref.width = glConfig.vidWidth;
+		ref.height = glConfig.vidHeight;
+		ref.viewaxis = axis[i];
+		sprintf( fullname, "env/%s%s", baseName, GLcubeExtensions[i] );
+		tr.TakeScreenshot( size, size, fullname, blends, &ref, true );
+	}
+
+	common->Printf( "Wrote %s, etc\n", fullname.c_str() );
+} 
+
+//============================================================================
+
+/* 
+================== 
+R_EnvShot_f
+
+envshot <basename>
+
+Saves out env/<basename>_ft.tga, etc
+================== 
+*/  
+//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
+const static char *cubeExtensions[6] = { "_forward.tga", "_left.tga", "_right.tga", "_back.tga", "_down.tga", "_up.tga" }; // names changed for TDM in #4041
+
+void R_EnvShot_f( const idCmdArgs &args ) {
+	idStr		fullname;
+	const char	*baseName;
+	idMat3		axis[6];
+	renderView_t	ref;
+	viewDef_t	primary;
+	int			blends, size;
+
+	if ( !tr.primaryView ) {
+		common->Printf( "No primary view.\n" );
+		return;
+	}
+	else if ( args.Argc() != 2 && args.Argc() != 3 && args.Argc() != 4 ) {
+		common->Printf( "USAGE: envshot <basename> [size] [blends]\n" );
+		return;
+	}
+
+	primary = *tr.primaryView;
+	baseName = args.Argv( 1 );
+
+	blends = 1;
+	if ( args.Argc() == 4 ) {
+		size = atoi( args.Argv( 2 ) );
+		blends = atoi( args.Argv( 3 ) );
+	} else if ( args.Argc() == 3 ) {
+		size = atoi( args.Argv( 2 ) );
+		blends = 1;
+	} else {
+		size = 256;
+		blends = 1;
+	}
+
+	memset( &axis, 0, sizeof( axis ) );
+	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
+	// forward = east (positive x-axis in DR)
+	axis[0][0][0] = 1;
+	axis[0][1][1] = 1;
+	axis[0][2][2] = 1;
+	// left = north
+	axis[1][0][1] = 1;
+	axis[1][1][0] = -1;
+	axis[1][2][2] = 1;
+	// right = south
+	axis[2][0][1] = -1;
+	axis[2][1][0] = 1;
+	axis[2][2][2] = 1;
+	// back = west
+	axis[3][0][0] = -1;
+	axis[3][1][1] = -1;
+	axis[3][2][2] = 1;
+	// down, while facing forward
+	axis[4][0][2] = -1;
+	axis[4][1][1] = 1;
+	axis[4][2][0] = 1;
+	// up, while facing forward
+	axis[5][0][2] = 1;
+	axis[5][1][1] = 1;
+	axis[5][2][0] = -1;
+	
 	for ( int i = 0 ; i < 6 ; i++ ) {
 		ref = primary.renderView;
 		ref.x = ref.y = 0;
@@ -2021,6 +2119,7 @@ void R_InitCommands( void ) {
 	cmdSystem->AddCommand( "touchGui", R_TouchGui_f, CMD_FL_RENDERER, "touches a gui" );
 	cmdSystem->AddCommand( "screenshot", R_ScreenShot_f, CMD_FL_RENDERER, "takes a screenshot" );
 	cmdSystem->AddCommand( "envshot", R_EnvShot_f, CMD_FL_RENDERER, "takes an environment shot" );
+	cmdSystem->AddCommand( "envshotGL", R_EnvShotGL_f, CMD_FL_RENDERER, "takes an environment shot in opengl orientation" ); // nbohr1more #4041: add envshotGL for cubicLight
 	cmdSystem->AddCommand( "makeAmbientMap", R_MakeAmbientMap_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "makes an ambient map" );
 	cmdSystem->AddCommand( "benchmark", R_Benchmark_f, CMD_FL_RENDERER, "benchmark" );
 	cmdSystem->AddCommand( "gfxInfo", GfxInfo_f, CMD_FL_RENDERER, "show graphics info" );

@@ -62,6 +62,7 @@ UpdaterDialog::UpdaterDialog(const fs::path& executableName,
 	_controller->PauseAt(DownloadNewUpdater);
 	_controller->PauseAt(DownloadDifferentialUpdate);
 	_controller->PauseAt(DownloadFullUpdate);
+
 	_controller->PauseAt(RestartUpdater);
 }
 
@@ -525,6 +526,16 @@ void UpdaterDialog::OnStartStep(UpdateStep step)
 		_step8State.SetWindowText(CString(""));
 		break;
 
+    case PostUpdateCleanup:
+        // Update header title in this step
+        _subTitle.SetWindowText(CString("Performing cleanup steps"));
+
+        _step7Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files..."));
+        _step7State.SetWindowText(CString("--"));
+
+        _step8Text.SetWindowText(CString(""));
+        _step8State.SetWindowText(CString(""));
+        break;
 	};
 }
 
@@ -731,16 +742,23 @@ void UpdaterDialog::OnFinishStep(UpdateStep step)
 	{
 		_step5Text.SetWindowText(CString("Downloading updates... done."));
 		_statusText.SetWindowText(CString("Done downloading update."));
-
-		if (!_controller->LocalFilesNeedUpdate())
-		{
-			_statusText.SetWindowText(CString("Your TDM installation is up to date."));
-		}
 	}
 	break;
 
+    case PostUpdateCleanup:
+    {
+        _step7Text.SetWindowText(CString("Performing cleanup steps and correcting bad dates in PK4 files... done."));
+        _statusText.SetWindowText(CString("Done performing cleanup steps."));
+    }
+    break;
+
 	case Done:
 	{
+        if (!_controller->LocalFilesNeedUpdate())
+        {
+            _statusText.SetWindowText(CString("Your TDM installation is up to date."));
+        }
+
 		// Hide the continue button
 		_continueButton.ShowWindow(FALSE);
 		_abortButton.SetWindowText(CString("Close"));
@@ -904,6 +922,9 @@ void UpdaterDialog::OnProgressChange(const ProgressInfo& info)
 			case ProgressInfo::RemoveFilesFromPK4: 
 				verb = "Removing files from PK4: ";
 				break;
+            case ProgressInfo::RegeneratePK4:
+                verb = "Regenerating PK4: ";
+                break;
 			default: 
 				verb = "Working on file: ";
 			};

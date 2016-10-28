@@ -227,7 +227,8 @@ void idUserInterfaceManagerLocal::FreeListGUI( idListGUI *listgui ) {
 */
 
 idUserInterfaceLocal::idUserInterfaceLocal() {
-	cursorX = cursorY = 0.0;
+	cursorX = 320; // duzenko #4403
+	cursorY = 240;
 	desktop = NULL;
 	loading = false;
 	active = false;

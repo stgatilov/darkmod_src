@@ -227,17 +227,20 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		drawSurf = drawSurfs[i];
 
 		// change the matrix if needed
-		// Note (Serp) : this used to be ( drawSurf->space != backEnd.currentSpace) however, since it's always going to be NULL...
+		// Note (Serp) : this used to be ( drawSurf->space != backEnd.currentSpace) however, since it's always going to be NULL... 
+		// Note (SteveL) : FIXME: It *won't* always be NULL, we're in a loop and it gets set at the end. This change might be wiping out 
+		// all (marginal) benefits from sorting DrawSurfs by material, as it'll cause a blocking change in GL state on every draw. However, 
+		// reverting the change causes all static solid surfaces to become invisible. Don't know why.
 		if ( drawSurf->space ) {
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
 		} else {
 			return;
 		}
-		
+
 		if ( drawSurf->space->weaponDepthHack ) {
 			RB_EnterWeaponDepthHack();
 		}
-		
+
 		if ( drawSurf->space->modelDepthHack != 0.0f ) {
 			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 		}
@@ -753,7 +756,20 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
 	inter.localLightOrigin[3] = 0;
 	inter.localViewOrigin[3] = 1;
+	inter.cubicLight = lightShader->IsCubicLight(); // nbohr1more #3881: cubemap lights
+	inter.ambientCubicLight = lightShader->IsAmbientCubicLight(); // nbohr1more #3881: cubemap lights further changes
 	inter.ambientLight = lightShader->IsAmbientLight();
+
+	// rebb: world-up vector in local coordinates, required for certain effects, currently only for ambient lights. alternatively pass whole modelMatrix and calculate in shader
+	// nbohr1more #3881: cubemap lights further changes
+	if( lightShader->IsAmbientLight() || lightShader->IsAmbientCubicLight() ) {
+		// remove commented code as needed, just shows what was simplified here
+		//idVec3 upVec( 0.0f, 0.0f, 1.0f );
+		//R_GlobalVectorToLocal( surf->space->modelMatrix, upVec, inter.worldUpLocal.ToVec3() );
+		inter.worldUpLocal.x = surf->space->modelMatrix[2];
+		inter.worldUpLocal.y = surf->space->modelMatrix[6];
+		inter.worldUpLocal.z = surf->space->modelMatrix[10];
+	}
 
 	// the base projections may be modified by texture matrix on light stages
 	idPlane lightProject[4];
@@ -836,6 +852,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
 						break;
 					}
+					// nbohr1more: #4292 nospecular and nodiffuse fix
+					else if ( backEnd.vLight->lightDef->parms.noSpecular ) {
+					    break;
+					}	
 					else if ( inter.specularImage ) {
 						RB_SubmittInteraction( &inter, DrawInteraction );
 					}

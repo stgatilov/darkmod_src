@@ -39,8 +39,10 @@ CLASS_DECLARATION( idEntity, idBrittleFracture )
 	EVENT( EV_DampenSound, idBrittleFracture::Event_DampenSound )
 END_CLASS
 
-const int SHARD_ALIVE_TIME	= 5000;
+/* Replace these constants with spawnargs -- SteveL #4176 
+const int SHARD_ALIVE_TIME  = 5000;
 const int SHARD_FADE_START	= 2000;
+*/
 
 static const char *brittleFracture_SnapshotName = "_BrittleFracture_Snapshot_";
 
@@ -77,6 +79,8 @@ idBrittleFracture::idBrittleFracture( void ) {
 
 	m_lossBaseAI = 0;		// grayman #3042
 	m_lossBasePlayer = 0;	// grayman #3042
+
+	m_lastCrackFrameNum = 0;	// SteveL #4180
 }
 
 /*
@@ -282,6 +286,8 @@ void idBrittleFracture::Spawn( void ) {
 	linearVelocityScale = spawnArgs.GetFloat( "linearVelocityScale", "0.1" );
 	angularVelocityScale = spawnArgs.GetFloat( "angularVelocityScale", "40" );
 	fxFracture = spawnArgs.GetString( "fx" );
+	shardAliveTime = static_cast<int>( spawnArgs.GetFloat("shardAliveTime", "5.0") * 1000 );
+	shardFadeStart = static_cast<int>( spawnArgs.GetFloat("shardFadeStart", "2.0") * 1000 );
 
 	// get rigid body properties
 	shardMass = spawnArgs.GetFloat( "shardMass", "20" );
@@ -343,24 +349,16 @@ idBrittleFracture::RemoveShard
 ================
 */
 void idBrittleFracture::RemoveShard( int index ) {
-//	int i; // grayman - commented to stop compiler complaint
+	// SteveL -- #4061. Removed Tel's performance optimization and restored the original version of 
+	// this function. 
+	int i;
 
 	delete shards[index];
-	shards.RemoveIndex( index, false );	// Tels: false => don't bother to keep shards sorted
-	physicsObj.RemoveIndex( index, false );
+	shards.RemoveIndex( index );
+	physicsObj.RemoveIndex( index );
 
-	// Tels: When we used RemoveIndex(), that might have moved some shards
-	// after index, so we needed to set the correct ID back to the climodel
-	// again. Now the RemoveIndex(index,false) routine will *only* move the
-	// last index back to "index", so this is the only (if it exists) shard
-	// that got moved, so we only need to update it's clipModel ID:
-	/*for ( i = index; i < shards.Num(); i++ ) {
+	for ( i = index; i < shards.Num(); i++ ) {
 		shards[i]->clipModel->SetId( i );
-	}*/
-	// [0,1,2,3,4,5] (remove index == 2) => [ 0,1,5,3,4 ]
-	if (index < shards.Num())
-	{
-		shards[index]->clipModel->SetId( index );
 	}
 }
 
@@ -421,9 +419,9 @@ bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const 
 
 		fade = 1.0f;
 		if ( shards[i]->droppedTime >= 0 ) {
-			msec = gameLocal.time - shards[i]->droppedTime - SHARD_FADE_START;
+			msec = gameLocal.time - shards[i]->droppedTime - shardFadeStart;
 			if ( msec > 0 ) {
-				fade = 1.0f - (float) msec / ( SHARD_ALIVE_TIME - SHARD_FADE_START );
+				fade = 1.0f - (float) msec / ( shardAliveTime - shardFadeStart );
 			}
 		}
 		packedColor = PackColor( idVec4( renderEntity->shaderParms[ SHADERPARM_RED ] * fade,
@@ -617,7 +615,7 @@ void idBrittleFracture::Think( void ) {
 	for ( i = 0; i < shards.Num(); i++ ) {
 		droppedTime = shards[i]->droppedTime;
 		if ( droppedTime != -1 ) {
-			if ( gameLocal.time - droppedTime > SHARD_ALIVE_TIME ) {
+			if ( gameLocal.time - droppedTime > shardAliveTime ) {
 				RemoveShard( i );
 				i--;
 			}
@@ -902,7 +900,7 @@ void idBrittleFracture::Shatter( const idVec3 &point, const idVec3 &impulse, con
 		ServerSendEvent( EVENT_SHATTER, &msg, true, -1 );
 	}
 
-	if ( time > ( gameLocal.time - SHARD_ALIVE_TIME ) ) 
+	if ( time > ( gameLocal.time - shardAliveTime ) ) 
 	{
 		if( m_bSoundDamped )
 			StartSound( "snd_shatter_damped", SND_CHANNEL_ANY, 0, false, NULL );
@@ -1019,7 +1017,8 @@ idBrittleFracture::Break
 */
 void idBrittleFracture::Break( void ) {
 	fl.takedamage = false;
-	physicsObj.SetContents( CONTENTS_RENDERMODEL );
+
+	physicsObj.SetContents( CONTENTS_RENDERMODEL | CONTENTS_MOVEABLECLIP ); // Add moveables. SteveL #4178
 	
 	// ishtvan: overwrite with custom contents if present
 	if( m_CustomContents != -1 )
@@ -1067,12 +1066,44 @@ void idBrittleFracture::Killed( idEntity *inflictor, idEntity *attacker, int dam
 
 /*
 ================
+idBrittleFracture::Damage
+================
+*/
+void idBrittleFracture::Damage( idEntity *inflictor, idEntity *attacker, 
+								const idVec3 &dir, const char *damageDefName, 
+								const float damageScale, const int location, trace_t *tr )
+{
+	idEntity::Damage( inflictor, attacker, dir, damageDefName, damageScale, location, tr );
+
+	if (tr)
+	{
+		// Velocity is a relatively expensive calculation and isn't used by 
+		// AddDamageEffect so don't bother.
+		const idVec3 no_velocity = vec3_zero;
+		AddDamageEffect( *tr, no_velocity, damageDefName );
+	}
+
+	// Add a Touch event, so that func_fractures can shatter after any damage, if their 
+	// health is now 0. -- SteveL #4181: Allow melee weapons to break glass in 1 hit
+	PostEventMS( &EV_Touch, 0, inflictor, tr );
+}
+
+/*
+================
 idBrittleFracture::AddDamageEffect
 ================
 */
 void idBrittleFracture::AddDamageEffect( const trace_t &collision, const idVec3 &velocity, const char *damageDefName ) {
+	// #4180 let any type of damage paint crack decals, not just weapons, by calling this function from
+	// the general Damage() function. Weapons will continue to call this routine independently, so avoid 
+	// duplicating the cracks by keeping track of the frame number and not running twice in 1 frame. 
+	if ( gameLocal.framenum == m_lastCrackFrameNum ) {
+		return;
+	}
+	
 	if ( !disableFracture ) {
 		ProjectDecal( collision.c.point, collision.c.normal, gameLocal.time, damageDefName );
+		m_lastCrackFrameNum = gameLocal.framenum;
 	}
 }
 
@@ -1143,8 +1174,10 @@ void idBrittleFracture::Fracture_r( idFixedWinding &w ) {
 	trm.Shrink( CM_CLIP_EPSILON );
 	clipModel = new idClipModel( trm );
 
+	clipModel->SetMaterial( material ); // #4179 SteveL 
+
 	physicsObj.SetClipModel( clipModel, 1.0f, shards.Num() );
-	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + origin, shards.Num() );
+	physicsObj.SetOrigin( GetPhysics()->GetOrigin() + origin * GetPhysics()->GetAxis(), shards.Num() ); // #4175 SteveL
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), shards.Num() );
 
 	AddShard( clipModel, w );
@@ -1169,6 +1202,12 @@ void idBrittleFracture::CreateFractures( const idRenderModel *renderModel ) {
 	physicsObj.SetOrigin( GetPhysics()->GetOrigin(), 0 );
 	physicsObj.SetAxis( GetPhysics()->GetAxis(), 0 );
 
+	/* Note from SteveL working on #4177
+	*  The next line has evidently been changed at some point to carve up only the first surface 
+	*  of the func_fracture instead of doing all the surfaces of a model. The only motive I can see
+	*  for that is that it enables a simple global "material" member property instead of remembering
+	*  materials for individual shards. We might want to change that later.
+	*/
 	for ( i = 0; i < 1 /*renderModel->NumSurfaces()*/; i++ ) {
 		surf = renderModel->Surface( i );
 		material = surf->shader;

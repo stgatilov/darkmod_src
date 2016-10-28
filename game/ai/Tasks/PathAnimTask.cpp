@@ -70,8 +70,11 @@ void PathAnimTask::Init(idAI* owner, Subsystem& subsystem)
 	owner->spawnArgs.Set( "customAnim_cycle", "0" );
 
 	owner->SetAnimState( ANIMCHANNEL_TORSO, "Torso_CustomAnim", blendIn );
-	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_CustomAnim", blendIn );
-	owner->PostEventMS( &AI_SyncAnimChannels, 16, ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, (float)blendIn );
+	// SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomAnim", 
+	// which invites race conditions and conflicts between game code and scripts.
+	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_Idle", 4 ); // Queue up the next state before sync'ing legs to torso
+	owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds.
+	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS ); 
 
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.

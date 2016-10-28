@@ -691,9 +691,6 @@ public:
 	idEntityPtr<idEntity>	lastGUIEnt;				// last entity with a GUI, used by Cmd_NextGUI_f
 	int						lastGUI;				// last GUI on the lastGUIEnt
 
-	idList<int>				currentLights;			// sikk - Soft Shadows PostProcess
-	bool					ambientOn;
-
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
 
@@ -729,6 +726,7 @@ public:
 	// based on when the Loading Bar reaches 100%
 	bool					m_time2Start;
 
+	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	// ---------------------- Public idGame Interface -------------------
 
@@ -751,6 +749,7 @@ public:
 	virtual void			incrementSaveCount();
 	virtual bool			savegamesDisallowed();
 	virtual bool			quicksavesDisallowed();
+	virtual bool			PlayerReady();	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
 	// <--- end
 	virtual void			InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randSeed );
 	virtual bool			InitFromSaveGame( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, idFile *saveGameFile );
@@ -886,7 +885,7 @@ public:
 	void					KillBox( idEntity *ent, bool catch_teleport = false );
 	void					RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEntity *attacker, idEntity *ignoreDamage, idEntity *ignorePush, const char *damageDefName, float dmgPower = 1.0f );
 	void					RadiusPush( const idVec3 &origin, const float radius, const float push, const idEntity *inflictor, const idEntity *ignore, float inflictorScale, const bool quake );
-	void					RadiusDouse( const idVec3 &origin, const float radius ); // grayman #3857
+	void					RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg ); // grayman #3857. checkSpawnarg SteveL #4201
 	void					RadiusPushClipModel( const idVec3 &origin, const float push, const idClipModel *clipModel );
 
 	void					ProjectDecal( const idVec3 &origin, const idVec3 &dir, float depth, bool parallel, float size, const char *material,
@@ -1038,6 +1037,8 @@ public:
 	void					OnReloadImages();
 	void					OnVidRestart();
 
+	bool					PlayerUnderwater(); // grayman #3556
+
 	void					AllowImmediateStim( idEntity* e, int stimType ); // grayman #3317
 
 	int						GetNextMessageTag(); // grayman #3355
@@ -1103,8 +1104,6 @@ private:
 	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
-
-	int						m_spyglassOverlay; // grayman #3807 - no need to save/restore
 
 	// A container for keeping the inter-mission trigger information
 	struct InterMissionTrigger

@@ -24,6 +24,9 @@
 #include "MegaTexture.h"
 
 #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
+#define TR_SCREEN_VIEW_ID			 0 // viewIDs of 0 and above are those drawn on sreen. Negative numbers are for special 
+									   // non-visible renders: light gem (TDM), Sikk's depth render (Doom3) etc. The player's view 
+									   // is 1 for single player mode, multiplayer uses 2+. 0 is for subviews: cameras, reflections etc.
 
 class idRenderWorldLocal;
 
@@ -446,8 +449,10 @@ typedef struct {
 	idVec4				specularColor;	// may have a light color baked into it, will be < tr.backEndRendererMaxLight
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
-	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map 
-	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)
+	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
+	int					ambientCubicLight;    // nbohr1more #3881: dedicated cubemap light further changes
+	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)	
+	int					cubicLight;    // nbohr1more #3881: dedicated cubemap light // probably not needed
 
 	// these are loaded into the vertex program
 	idVec4				localLightOrigin;
@@ -456,6 +461,7 @@ typedef struct {
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
+	idVec4				worldUpLocal; // rebb: world up vector in local space, required for effects like hemisphere lighting. alternatively always pass model matrix ?
 } drawInteraction_t;
 
 
@@ -663,8 +669,6 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-
-	bool				drawShadows;		// Obsttorte 
 } backEndState_t;
 
 
@@ -691,11 +695,14 @@ static const int	MAX_RENDER_CROPS = 8;
 ** but may read fields that aren't dynamically modified
 ** by the frontend.
 */
+// #4395 Duzenko lightem pixel pack buffer optimization
 class idRenderSystemLocal : public idRenderSystem {
+private:
+	GLuint pbo;
+
 public:
 	// external functions
-	virtual void			Init( void );
-	virtual void			Shutdown( void );
+	virtual void			Init( void );	virtual void			Shutdown( void );
 	virtual void			InitOpenGL( void );
 	virtual void			ShutdownOpenGL( void );
 	virtual bool			IsOpenGLRunning( void ) const;
@@ -735,9 +742,6 @@ public:
 	virtual void			UnCrop();
 	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
-
-	virtual void			setDrawShadows(bool ds);
-	virtual bool			getDrawShadows();
 
 public:
 	// internal functions
@@ -813,7 +817,6 @@ public:
 	class idGuiModel *		demoGuiModel;
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
-	bool					drawShadows;		// Obsttorte
 };
 
 extern backEndState_t		backEnd;
@@ -1196,7 +1199,7 @@ viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def );
 viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 
 void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = 0.0f ); // soft particles in #3878
+					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = -1.0f ); // soft particles in #3878
 
 void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, 
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
@@ -1323,7 +1326,7 @@ void	R_NV20_Init( void );
 void	RB_NV20_DrawInteractions( void );
 
 void	R_ARB2_Init( void );
-void	RB_ARB2_DrawInteractions( bool noshadows );
+void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 
@@ -1355,6 +1358,19 @@ typedef enum {
 	// SteveL #3878: soft particles
 	VPROG_SOFT_PARTICLE,
 	FPROG_SOFT_PARTICLE,
+	// nbohr1more #3881: cubemap based lighting
+	VPROG_CUBIC_LIGHT_POINT,
+	FPROG_CUBIC_LIGHT_POINT,
+	VPROG_CUBIC_LIGHT_PROJ,
+	FPROG_CUBIC_LIGHT_PROJ,
+	// nbohr1more #3881: cubemap based lighting further changes
+	VPROG_TEST_CUBIC_POINT,
+	FPROG_TEST_CUBIC_POINT,
+	VPROG_TEST_CUBIC_PROJ,
+	FPROG_TEST_CUBIC_PROJ,
+	//
+	VPROG_AMBIENT_CUBE_LIGHT,
+	FPROG_AMBIENT_CUBE_LIGHT,
 	//
 	PROG_USER
 } program_t;
@@ -1405,7 +1421,8 @@ typedef enum {
 	PP_COLOR_MODULATE,
 	PP_COLOR_ADD,
 
-	PP_LIGHT_FALLOFF_TQ = 20	// only for NV programs
+	PP_LIGHT_FALLOFF_TQ = 20,	// only for NV programs
+	PP_MISC_0 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
 } programParameter_t;
 
 

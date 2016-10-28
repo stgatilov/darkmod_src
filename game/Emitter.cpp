@@ -146,6 +146,15 @@ idFuncEmitter::Present
 */
 void idFuncEmitter::Present( void ) 
 {
+
+   //nbohr1more: #4372: Allow lod_bias args for func_emitter entities
+   float lodbias = cv_lod_bias.GetFloat();
+	
+	if ( (m_MinLODBias > 0 || m_MaxLODBias < 10) && (lodbias < m_MinLODBias || lodbias > m_MaxLODBias) )
+	   {
+		renderEntity.bounds.Zero();
+		BecomeInactive( TH_UPDATEVISUALS );
+	   } 
 	
 	if( m_bFrobable )
 	{
@@ -167,8 +176,8 @@ void idFuncEmitter::Present( void )
 
 	renderEntity.bodyId = 0;
 	
-	// make each of them have a unique timeoffset, so they do not appear to be in sync
-	renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time - gameLocal.random.RandomInt( 32767 ) );
+	// give each instance of the particle effect a unique seed -- SteveL #3945
+	renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
 	if ( renderEntity.hModel ) {
 		renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );
@@ -204,8 +213,8 @@ void idFuncEmitter::Present( void )
 		renderEntity.axis = GetPhysics()->GetAxis();
 		renderEntity.hModel = m_models[i].handle;
 		renderEntity.bodyId = i + 1;
-		// make each of them have a unique timeoffset, so they do not appear to be in sync
-		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time - gameLocal.random.RandomInt( 32767 ) );
+		// give each instance of the particle effect a unique seed
+		renderEntity.shaderParms[ SHADERPARM_DIVERSITY ] = gameLocal.random.CRandomFloat();
 
 		if ( renderEntity.hModel ) {
 			renderEntity.bounds = renderEntity.hModel->Bounds( &renderEntity );

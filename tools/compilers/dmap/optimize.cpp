@@ -578,10 +578,8 @@ static	void AddInteriorEdges( optIsland_t *island ) {
 		}
 	}
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i tested segments\n", numLengths );
-		common->Printf( "%6i added interior edges\n", c_addedEdges );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i tested segments\n", numLengths );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i added interior edges\n", c_addedEdges );
 
 	Mem_Free( lengths );
 }
@@ -637,7 +635,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 	if ( !e2 ) {
 		// this may still happen legally when a tiny triangle is
 		// the only thing in a group
-		common->Printf( "WARNING: vertex with only one edge\n" );
+		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "WARNING: vertex with only one edge\n" );
 		return;
 	}
 
@@ -755,9 +753,7 @@ static	void CombineColinearEdges( optIsland_t *island ) {
 	for ( e = island->edges ; e ; e = e->islandLink ) {
 		c_edges++;
 	}
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i original exterior edges\n", c_edges );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original exterior edges\n", c_edges );
 
 	for ( ov = island->verts ; ov ; ov = ov->islandLink ) {
 		RemoveIfColinear( ov, island );
@@ -767,9 +763,7 @@ static	void CombineColinearEdges( optIsland_t *island ) {
 	for ( e = island->edges ; e ; e = e->islandLink ) {
 		c_edges++;
 	}
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i optimized exterior edges\n", c_edges );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i optimized exterior edges\n", c_edges );
 }
 
 
@@ -904,7 +898,7 @@ static void LinkTriToEdge( optTri_t *optTri, optEdge_t *edge ) {
 		|| ( edge->v1 == optTri->v[1] && edge->v2 == optTri->v[2] )
 		|| ( edge->v1 == optTri->v[2] && edge->v2 == optTri->v[0] ) ) {
 		if ( edge->backTri ) {
-			common->Printf( "Warning: LinkTriToEdge: already in use\n" );
+			PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "Warning: LinkTriToEdge: already in use\n" );
 			return;
 		}
 		edge->backTri = optTri;
@@ -914,7 +908,7 @@ static void LinkTriToEdge( optTri_t *optTri, optEdge_t *edge ) {
 		|| ( edge->v1 == optTri->v[2] && edge->v2 == optTri->v[1] )
 		|| ( edge->v1 == optTri->v[0] && edge->v2 == optTri->v[2] ) ) {
 		if ( edge->frontTri ) {
-			common->Printf( "Warning: LinkTriToEdge: already in use\n" );
+			PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "Warning: LinkTriToEdge: already in use\n" );
 			return;
 		}
 		edge->frontTri = optTri;
@@ -990,7 +984,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 	}
 
 	if ( !opposite ) {
-		common->Printf( "Warning: BuildOptTriangles: couldn't locate opposite\n" );
+		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "Warning: BuildOptTriangles: couldn't locate opposite\n" );
 		return;
 	}
 
@@ -1244,7 +1238,7 @@ static	void	RegenerateTriangles( optIsland_t *island ) {
 		if ( plane.Normal() * dmapGlobals.mapPlanes[ island->group->planeNum ].Normal() <= 0 ) {
 			// this can happen reasonably when a triangle is nearly degenerate in
 			// optimization planar space, and winds up being degenerate in 3D space
-			common->Printf( "WARNING: backwards triangle generated!\n" );
+			PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "WARNING: backwards triangle generated!\n" );
 			// discard it
 			FreeTri( tri );
 			continue;
@@ -1257,9 +1251,7 @@ static	void	RegenerateTriangles( optIsland_t *island ) {
 
 	FreeOptTriangles( island );
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i tris out\n", c_out );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i tris out\n", c_out );
 }
 
 //===========================================================================
@@ -1305,10 +1297,8 @@ static	void RemoveInteriorEdges( optIsland_t *island ) {
 		c_exteriorEdges++;
 	}
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i original interior edges\n", c_interiorEdges );
-		common->Printf( "%6i original exterior edges\n", c_exteriorEdges );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original interior edges\n", c_interiorEdges );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original exterior edges\n", c_exteriorEdges );
 }
 
 //==================================================================================
@@ -1396,7 +1386,7 @@ static void AddOriginalTriangle( optVertex_t *v[3] ) {
 	// if this triangle is backwards (possible with epsilon issues)
 	// ignore it completely
 	if ( !IsTriangleValid( v[0], v[1], v[2] ) ) {
-		common->Printf( "WARNING: backwards triangle in input!\n" );
+		PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "WARNING: backwards triangle in input!\n" );
 		return;
 	}
 
@@ -1439,10 +1429,8 @@ static	void AddOriginalEdges( optimizeGroup_t *opt ) {
 	optVertex_t		*v[3];
 	int				numTris;
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "----\n" );
-		common->Printf( "%6i original tris\n", CountTriList( opt->triList ) );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "----\n" );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original tris\n", CountTriList( opt->triList ) );
 
 	optBounds.Clear();
 
@@ -1637,17 +1625,15 @@ common->Printf( "lines %i (%i to %i) and %i (%i to %i) intersect at old point %i
 		for ( j = i+1 ; j < numOptEdges ; j++ ) {
 			if ( ( optEdges[i].v1 == optEdges[j].v1 && optEdges[i].v2 == optEdges[j].v2 ) 
 				|| ( optEdges[i].v1 == optEdges[j].v2 && optEdges[i].v2 == optEdges[j].v1 ) ) {
-				common->Printf( "duplicated optEdge\n" );
+				PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "duplicated optEdge\n" );
 			}
 		}
 	}
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i original edges\n", numOriginalEdges );
-		common->Printf( "%6i edges after splits\n", numOptEdges );
-		common->Printf( "%6i original vertexes\n", numOriginalVerts );
-		common->Printf( "%6i vertexes after splits\n", numOptVerts );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original edges\n", numOriginalEdges );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i edges after splits\n", numOptEdges );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i original vertexes\n", numOriginalVerts );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i vertexes after splits\n", numOptVerts );
 }
 
 //=================================================================
@@ -1694,10 +1680,8 @@ static void CullUnusedVerts( optIsland_t *island ) {
 		}
 	}
 
-	if ( dmapGlobals.verbose ) {
-		common->Printf( "%6i verts kept\n", c_keep );
-		common->Printf( "%6i verts freed\n", c_free );
-	}
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i verts kept\n", c_keep );
+	PrintIfVerbosityAtLeast( VL_VERBOSE, "%6i verts freed\n", c_free );
 }
 
 
@@ -1978,10 +1962,10 @@ void	OptimizeGroupList( optimizeGroup_t *groupList ) {
 
 	SetGroupTriPlaneNums( groupList );
 
-	common->Printf( "----- OptimizeAreaGroups Results -----\n" );
-	common->Printf( "%6i tris in\n", c_in );
-	common->Printf( "%6i tris after edge removal optimization\n", c_edge );
-	common->Printf( "%6i tris after final t junction fixing\n", c_tjunc2 );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- OptimizeAreaGroups Results -----\n" );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%6i tris in\n", c_in );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%6i tris after edge removal optimization\n", c_edge );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%6i tris after final t junction fixing\n", c_tjunc2 );
 }
 
 
@@ -1993,7 +1977,7 @@ OptimizeEntity
 void	OptimizeEntity( uEntity_t *e ) {
 	int		i;
 
-	common->Printf( "----- OptimizeEntity -----\n" );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "----- OptimizeEntity -----\n" );
 	for ( i = 0 ; i < e->numAreas ; i++ ) {
 		OptimizeGroupList( e->areas[i].groups );
 	}

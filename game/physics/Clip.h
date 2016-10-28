@@ -53,12 +53,14 @@ class idClipModel {
 public:
 							idClipModel( void );
 							explicit idClipModel( const char *name );
+							explicit idClipModel( const char *name, const idDeclSkin* skin ); // #4232 SteveL
 							explicit idClipModel( const idTraceModel &trm );
 							explicit idClipModel( const int renderModelHandle );
 							explicit idClipModel( const idClipModel *model );
 							~idClipModel( void );
 
 	bool					LoadModel( const char *name );
+	bool					LoadModel( const char *name, const idDeclSkin* skin ); // #4232 SteveL
 	void					LoadModel( const idTraceModel &trm );
 	void					LoadModel( const int renderModelHandle );
 
@@ -102,7 +104,7 @@ public:
 	const idTraceModel *	GetTraceModel( void ) const;
 	void					GetMassProperties( const float density, float &mass, idVec3 &centerOfMass, idMat3 &inertiaTensor ) const;
 
-	static cmHandle_t		CheckModel( const char *name );
+	static cmHandle_t		CheckModel( const char *name, const idDeclSkin* skin = NULL ); // skin added #4232 SteveL
 	static void				ClearTraceModelCache( void );
 	static int				TraceModelCacheSize( void );
 

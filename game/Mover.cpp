@@ -179,6 +179,7 @@ idMover::idMover(void)
 	lastCommand = MOVER_NONE;
 	damage = 0.0f;
 	areaPortal = 0;
+	nextBounceTime = 0; // grayman #4370
 	fl.networkSync = true;
 	m_FrobActionScript = "frob_mover";
 }
@@ -229,6 +230,8 @@ void idMover::Save( idSaveGame *savefile ) const
 	if ( areaPortal > 0 ) {
 		savefile->WriteInt( gameRenderWorld->GetPortalState( areaPortal ) );
 	}
+
+	savefile->WriteInt(nextBounceTime); // grayman #4370
 
 	savefile->WriteInt( guiTargets.Num() );
 	for( i = 0; i < guiTargets.Num(); i++ ) {
@@ -301,6 +304,8 @@ void idMover::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt( portalState );
 		gameLocal.SetPortalState( areaPortal, portalState );
 	}
+
+	savefile->ReadInt(nextBounceTime); // grayman #4370
 
 	guiTargets.Clear();
 	savefile->ReadInt( num );
@@ -650,7 +655,7 @@ idMover::DoneMoving
 */
 void idMover::DoneMoving( void ) {
 
-	if ( lastCommand != MOVER_SPLINE ) {
+	if (lastCommand != MOVER_SPLINE) {
 		// set our final position so that we get rid of any numerical inaccuracy
 		physicsObj.SetLinearExtrapolation( EXTRAPOLATION_NONE, 0, 0, dest_position, vec3_origin, vec3_origin );
 	}
@@ -859,11 +864,17 @@ idMover::DoneRotating
 ================
 */
 void idMover::DoneRotating( void ) {
-	lastCommand	= MOVER_NONE;
+	lastCommand = MOVER_NONE;
 	idThread::ObjectMoveDone( rotate_thread, this );
 	rotate_thread = 0;
 
 	StopSound( SND_CHANNEL_BODY, false );
+
+	// grayman #3967 - if this is a door, stop any hard pushing an AI might have done
+	if (IsType(CFrobDoor::Type))
+	{
+		static_cast<CFrobDoor*>(this)->StopPushingDoorHard();
+	}
 }
 
 /*

@@ -53,10 +53,10 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 	Task::Init(owner, subsystem);
 
 	// grayman #3857 - verify that this task should be running:
-	// yes if in states 0,2,3,4
-	// no if in states 1,5
+	// yes if in states 0,2,3
+	// no if in states 1,4,5
 
-	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	if ((owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex >= EAgitatedSearching))
 	{
 		subsystem.FinishTask();
 	}
@@ -129,10 +129,10 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 	assert(owner != NULL);
 
 	// grayman #3857 - verify that this task should be running:
-	// yes if in states 0,2,3,4
-	// no if in states 1,5
+	// yes if in states 0,2,3
+	// no if in states 1,4,5
 
-	if ( (owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex == ECombat) )
+	if ((owner->AI_AlertIndex == EObservant) || (owner->AI_AlertIndex >= EAgitatedSearching))
 	{
 		return true;
 	}
@@ -150,20 +150,28 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			drowning = ai->MouthIsUnderwater();
 		}
 
+		int delay;
+
 		// angua: don't play idle animations while sitting / lying down or getting up
 
 		// grayman #2345 - no idle animations while handling a door and not waiting
 		// in a door queue, since they can interfere with reaching for the door handle
 
-		// SteveL #3182 - no idles if the AI wants to turn: check FacingIdeal too
+		// SteveL #3806 - no idles if the AI wants to turn: check FacingIdeal too
 
 		// grayman #3857 - Don't play if the AI is an active searcher (it's okay if
 		// he's a guard or observer participating in a search. Test this by seeing if
 		// a hiding spot investigation is in progress.
 
+		// grayman #3857 - Don't play if this is an idle search anim and the AI is moving.
+
+		// grayman #4040 - No idle anims if AI_RUN is set and waiting in the door queue.
+
 		moveType_t moveType = owner->GetMoveType();
 		if (memory.playIdleAnimations &&
+			owner->FacingIdeal() &&
 			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman #3857 - AI_RUN might be left over after coming to a full stop
+			!(owner->AI_FORWARD && (owner->AI_AlertIndex >= ESuspicious)) &&  // grayman #3857 - only play idle search anims when standing
 			moveType != MOVETYPE_SIT_DOWN &&
 			moveType != MOVETYPE_LAY_DOWN &&
 			moveType != MOVETYPE_SLEEP &&
@@ -171,7 +179,7 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			moveType != MOVETYPE_GET_UP_FROM_LYING &&
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
-			owner->FacingIdeal() &&
+			!(owner->AI_RUN && owner->m_HandlingDoor && (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) && // grayman #4040
 			!owner->GetMemory().hidingSpotInvestigationInProgress )
 		{
 			// Check if the AI is moving or sitting, this determines which channel we can play on
@@ -188,14 +196,23 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			else
 			{
 				// AI is walking, only use animations for the Torso channel
-				AttemptToPlayAnim(owner, _idleAnimationsTorso, true); // TORSO only
+				AttemptToPlayAnim(owner, _idleAnimationsTorso, true);
 			}
+
+			// grayman #3857 - full delay when playing an anim
+			delay = static_cast<int>(_idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f));
 		}
-		
+		else if (!owner->FacingIdeal() || (owner->AI_FORWARD && (owner->AI_AlertIndex >= ESuspicious)))
+		{
+			// grayman #3857 - shorter delay if not playing an anim for these reasons
+			delay = static_cast<int>(_idleAnimationInterval*(0.2f + gameLocal.random.RandomFloat()*0.1f));
+		}
+		else
+		{
+			delay = static_cast<int>(_idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f));
+		}
 		// Reset the timer
-		_nextAnimationTime = static_cast<int>(
-			gameLocal.time + _idleAnimationInterval*(0.8f + gameLocal.random.RandomFloat()*0.4f)
-		);
+		_nextAnimationTime = gameLocal.time + delay;
 	}
 
 	return false; // not finished yet
@@ -218,7 +235,11 @@ void IdleAnimationTask::AttemptToPlayAnim(idAI* owner, const idStringList& anims
 
 		if (!torsoOnly)
 		{
-			owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_CustomIdleAnim", 4);
+			// SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomIdleAnim", 
+			// which invites race conditions and conflicts between game code and scripts.
+			owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_Idle", 4 ); // Queue up the next state before sync'ing legs to torso
+			owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds.
+			owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS );
 		}
 
 		// grayman #3182 - Set one of two different wait states.
@@ -349,7 +370,7 @@ bool IdleAnimationTask::AnimHasVoiceFlag(idAI* owner, const idStr& animName)
 
 void IdleAnimationTask::OnFinish(idAI* owner)
 {
-	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && ( idStr(owner->WaitState()) == "" ) ) // grayman #3857 - let running anim finish
+	if (!owner->AI_KNOCKEDOUT && (owner->health > 0) && (idStr(owner->WaitState()) == "")) // grayman #3857 - let current anim finish
 	{
 		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Idle", 5);
 		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 5);

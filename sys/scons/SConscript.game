@@ -56,6 +56,7 @@ game_string = ' \
 	Projectile.cpp \
 	Pvs.cpp \
 	SecurityCamera.cpp \
+	SearchManager.cpp \
 	SmokeParticles.cpp \
 	Sound.cpp \
 	Target.cpp \
@@ -243,6 +244,7 @@ ai/Tasks/CommWaitTask.cpp \
 ai/Tasks/FleeTask.cpp \
 ai/Tasks/FollowActorTask.cpp \
 ai/Tasks/GreetingBarkTask.cpp \
+ai/Tasks/GuardSpotTask.cpp \
 ai/Tasks/HandleDoorTask.cpp \
 ai/Tasks/HandleElevatorTask.cpp \
 ai/Tasks/IdleAnimationTask.cpp \
@@ -296,8 +298,7 @@ local_env.Prepend(CPPPATH = '#/game')
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch', '-fPIC' ] )
 
-# Link the runtime statically
-local_env.Append( LINKFLAGS = [ '-lrt' ] )
+
 
 if (TARGET_ARCH == 'x86'):
 	local_env.Append(LIBS = [

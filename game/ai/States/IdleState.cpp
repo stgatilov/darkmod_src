@@ -77,6 +77,9 @@ void IdleState::Init(idAI* owner)
 	owner->searchSubsystem->ClearTasks(); // grayman #3857
 	memory.currentSearchEventID = -1; // grayman #3857
 
+	// grayman #4002 - process the alert queue for alerts that need to be registered with mission stats
+	owner->ProcessAlerts();
+
 	if (owner->HasSeenEvidence() && ( owner->spawnArgs.GetBool("disable_alert_idle", "0") == false) )
 	{
 		owner->GetMind()->SwitchState(STATE_ALERT_IDLE);

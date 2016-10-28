@@ -60,6 +60,8 @@ private:
 	// The time this task may exit
 	int _exitTime;
 
+	int _giveOrderTime; // time to give order to guard, if one is needed
+
 	// Is milling is the only thing we'll be doing?
 	bool _millingOnly;
 

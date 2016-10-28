@@ -643,18 +643,21 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 			// don't consider yourself blocked. You're supposed to be moving, but you probably
 			// haven't started yet because of the animation. This happens often around doors.
 
+			// SteveL #4012: remove the matching check on "Legs_CustomIdleAnim" which is no longer used.
 			idStr torsoString = "Torso_CustomIdleAnim";
-			idStr legsString = "Legs_CustomIdleAnim";
 			torsoCustomIdleAnim = (torsoString.Cmp(owner->GetAnimState(ANIMCHANNEL_TORSO)) == 0);
-			legsCustomIdleAnim = (legsString.Cmp(owner->GetAnimState(ANIMCHANNEL_LEGS)) == 0);
 
-			if (!torsoCustomIdleAnim && !legsCustomIdleAnim)
+			if ( !torsoCustomIdleAnim )
 			{
 				belowThreshold = true;
 
 				// grayman #2422
 				// if traveledPrev == 0, and you're bumping against something, go straight to EBlocked
-				if ( ( traveledPrev == 0 ) && tactileEntity )
+
+				// grayman #3993 - remove the requirement that traveledPrev be zero here. < 0.1 should 
+				// be considered 'hardly moving'. A running AI stuck against something might be wriggling
+				// about slightly, giving him a tiny bit of movement.
+				if ( /*( traveledPrev == 0 ) && */ tactileEntity )
 				{
 					_state = EPossiblyBlocked;
 					_lastTimeNotBlocked = gameLocal.time - _blockTimeOut; // in EPossiblyBlocked, don't delay
@@ -809,9 +812,10 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 	idAI* owner = _owner.GetEntity();
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Asking %s to resolve a block by %s\r", owner->name.c_str(),blockingEnt->name.c_str());
 	
-	if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
+	if (owner->movementSubsystem->IsResolvingBlock() || !owner->m_canResolveBlock) // grayman #2345
+	//if (owner->GetMemory().resolvingMovementBlock || !owner->m_canResolveBlock) // grayman #2345
 	{
-		return; // Already resolving
+		return; // Already resolving, or can't resolve
 	}
 
 	// grayman #2706 - if handling a door, the door handling task will disappear, so clean up first
@@ -853,6 +857,7 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 		}
 	}
 
+	owner->GetMemory().resolvingMovementBlock = true; // grayman #4077 - need to set this here
 	// Push a resolution task
 	PushTask(TaskPtr(new ResolveMovementBlockTask(blockingEnt)));
 
@@ -862,8 +867,13 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 
 bool MovementSubsystem::IsResolvingBlock()
 {
-	return _state == EResolvingBlock;
+	return _owner.GetEntity()->GetMemory().resolvingMovementBlock;
 }
+
+/*bool MovementSubsystem::IsResolvingBlock()
+{
+	return _state == EResolvingBlock;
+}*/
 
 idVec3 MovementSubsystem::GetLastMove(void)	// grayman #2356 - used to help determine true falling near func_statics
 {
@@ -987,7 +997,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 			break;
 		case EWaitingSolid: // grayman #2345
 			str = "EWaitingSolid";
-			colour = colorWhite;
+			colour = colorPink; // grayman #4238
 			break;
 		case EWaitingNonSolid: // grayman #2345
 			str = "EWaitingNonSolid";

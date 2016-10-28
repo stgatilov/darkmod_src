@@ -180,6 +180,7 @@ enum {
 	IMPULSE_27,
 	IMPULSE_28,
 	IMPULSE_29,
+	IMPULSE_30,	// #4286
 	IMPULSE_40 = 40,
 	IMPULSE_41,
 	IMPULSE_42,
@@ -227,6 +228,7 @@ const int IMPULSE_26			= 26;			// <unused>
 const int IMPULSE_27			= 27;			// <unused>
 const int IMPULSE_28			= 28;			// vote yes
 const int IMPULSE_29			= 29;			// vote no
+const int IMPULSE_30			= 30;			// Inventory Grid courtesy Durandall  #4286
 const int IMPULSE_40			= 40;			// use vehicle
 const int IMPULSE_41			= 41;			// TDM Use/Frob key
 const int IMPULSE_42			= 42;			// Inventory prev (unused)

@@ -253,6 +253,84 @@ void Subsystem::ClearTasks()
 	}
 }
 
+/*
+void Subsystem::PrintTaskQueue()
+{
+	int n = 1;
+	for ( TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); ++i )
+	{
+		Task& task = *(*i);
+
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Subsystem::PrintTaskQueue - (%d) checking task '%s'\r",n,task.GetName().c_str());
+		if ( task.IsInitialised() )
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- initialized\r");
+			if ( task.IsFinished() )
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- finished\r");
+			}
+			else
+			{
+				DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- not finished\r");
+			}
+		}
+		else
+		{
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("--- not initialized\r");
+		}
+
+		n++;
+	}
+	
+	if ( n == 1 )
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("Subsystem::PrintTaskQueue - no tasks\r");
+	}
+}
+*/
+
+// grayman #4030
+void Subsystem::FinishDoorHandlingTask(idAI *owner)
+{
+	int n = 1;
+	int doorHandlingTaskNumber = 0; // grayman #4342
+
+	for ( TaskQueue::const_iterator i = _taskQueue.begin(); i != _taskQueue.end(); i++, n++ )
+	{
+		Task& task = *(*i);
+
+		if ( n == 1 ) // not interested in first task
+		{
+			if ( task.GetName() == "HandleDoor" ) // grayman #4342
+			{
+				doorHandlingTaskNumber = 1;
+			}
+			continue;
+		}
+
+		if ( task.GetName() == "HandleDoor" )
+		{
+			doorHandlingTaskNumber = n; // grayman #4342
+			if ( task.IsInitialised() )
+			{
+				if ( !task.IsFinished() )
+				{
+					task.OnFinish(owner);
+					task.SetFinished();
+				}
+			}
+
+			break;
+		}
+	}
+
+	if ( doorHandlingTaskNumber == 0 ) // grayman #4342 - no door handling tasks are queued,
+									   // so clear a mistakenly leftover m_DoorQueued flag
+	{
+		owner->m_DoorQueued = false;
+	}
+}
+
 // Save/Restore methods
 void Subsystem::Save(idSaveGame* savefile) const
 {

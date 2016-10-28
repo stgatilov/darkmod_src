@@ -426,8 +426,6 @@ void idGameLocal::Clear( void )
 
 	m_ambientLights.Clear();	// grayman #3584
 
-	currentLights.Clear();	// sikk - Soft Shadows PostProcess
-
 }
 
 // grayman #3807
@@ -1248,6 +1246,15 @@ bool idGameLocal::quicksavesDisallowed()
 	return player->savePermissions == 1;
 }
 
+/*
+=========
+idGameLocal::PlayerReady
+=========
+*/
+bool idGameLocal::PlayerReady()
+{
+	return GetLocalPlayer()->IsReady();
+}
 
 /*
 ============
@@ -1484,7 +1491,29 @@ Initializes all map variables common to both save games and spawned games.
 */
 void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	int i;
-	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0);
+	// A couple of flags to track whether we are reloading the same map. "bool sameMap" has been around for a while, 
+	// and checks for reloading the currently active map. It'll usually be false, as the map will have been shut 
+	// down even when doing a quick load. "mapFileName" acts as a flag: active vs shut down.
+	// "sameAsPrevMap" checks for a quickload. Added for #2807: Random GUI quotes on loading screen -- SteveL TDM2.04
+	bool sameMap = (mapFile && idStr::Icmp(mapFileName, mapName) == 0); 
+	bool sameAsPrevMap = mapFile && idStr::Icmp(mapFile->GetName(), mapName) == 0;
+
+	// Still with #2807: Random GUI quotes on loading screen. Next code block moved here from 
+	// InitFromNewMap() so that loading of saved games can show tips too.
+	idStr mapNameStr = mapName;
+	mapNameStr.StripLeadingOnce("maps/");
+	mapNameStr.StripFileExtension();
+	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
+	if (loadingGUI != NULL )
+	{
+		// Use our own randomizer, the gameLocal.random one is not yet initialised
+		loadingGUI->SetStateFloat("random_value", static_cast<float>(randomMt()) / randomMt.max());
+		// #2807: Allow GUI scripts to distinguish between a quickload and a full load, so 
+		// they can choose to show only short messages. 
+		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
+		// Activate any GUI code that depends on this random value (which includes random text)
+		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
+	}
 
 	common->PacifierUpdate(LOAD_KEY_START,0); // grayman #3763
 
@@ -1589,8 +1618,6 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 	playerPVS.i = -1;
 	playerConnectedAreas.i = -1;
-
-	currentLights.Clear();	// sikk - Soft Shadows PostProcess
 
 	// load navigation system for all the different monster sizes
 	for( i = 0; i < aasNames.Num(); i++ ) {
@@ -1862,6 +1889,9 @@ void idGameLocal::MapPopulate( void ) {
 	// Initialise the escape point manager after all the entities have been spawned.
 	m_EscapePointManager->InitAAS();
 
+	// grayman #4220 - Clear the search manager
+	m_searchManager->Clear();
+
 	// execute pending events before the very first game frame
 	// this makes sure the map script main() function is called
 	// before the physics are run so entities can bind correctly
@@ -1882,19 +1912,6 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 
 	if ( mapFileName.Length() ) {
 		MapShutdown();
-	}
-
-	idStr mapNameStr = mapName;
-	mapNameStr.StripLeadingOnce("maps/");
-	mapNameStr.StripFileExtension();
-
-	idUserInterface* loadingGUI = uiManager->FindGui(va("guis/map/%s.gui", mapNameStr.c_str()), false, false, false);
-
-	if (loadingGUI != NULL)
-	{
-		// Use our own randomizer, the gameLocal.random one is not yet initialised
-        loadingGUI->SetStateFloat("random_value", static_cast<float>(randomMt()) / randomMt.max());
-		loadingGUI->HandleNamedEvent("OnRandomValueInitialised");
 	}
 	
 	// greebo: Clear the mission data, it might have been filled during the objectives screen display
@@ -5154,7 +5171,7 @@ void idGameLocal::GetPortals(Search* search, idAI* ai)
 {
 	idAASLocal* aasLocal = dynamic_cast<idAASLocal*>(GetAAS("aas32")); // "aas32" is used by humanoids, which are the only searchers/guards
 	int areaNum = ai->PointReachableAreaNum(search->_origin);
-	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits);
+	aasLocal->GetPortals(areaNum,search->_guardSpots,search->_limits, ai); // grayman #4238
 }
 
 /*
@@ -5402,7 +5419,14 @@ idGameLocal::InhibitEntitySpawn
 bool idGameLocal::InhibitEntitySpawn( idDict &spawnArgs ) {
 	bool inhibit_spawn = false;
 
-	if ( spawnArgs.GetBool("inline") && idStr("func_static") == spawnArgs.GetString("classname") ) // #3933 prevent inlined FS from spawning
+	// #3933 prevent inlined FS from spawning
+	if ( spawnArgs.GetBool("inline") && idStr("func_static") == spawnArgs.GetString("classname") ) 
+	{
+		inhibit_spawn = true;
+	}
+
+	// #4300: Prevent func_groups from attempting to spawn
+	if ( spawnArgs.GetString("classname") == idStr("func_group") )
 	{
 		inhibit_spawn = true;
 	}
@@ -6045,7 +6069,7 @@ void idGameLocal::RadiusDamage( const idVec3 &origin, idEntity *inflictor, idEnt
 	}
 
 	// grayman #3857 - douse nearby lights
-	RadiusDouse( origin, radius );
+	RadiusDouse( origin, radius, true );
 }
 
 /*
@@ -6118,7 +6142,7 @@ void idGameLocal::RadiusPush( const idVec3 &origin, const float radius, const fl
 
 // grayman #3857 - douse nearby flame lights
 
-void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
+void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius, const bool checkSpawnarg )
 {
 	idEntity *ent;
 	idEntity *entityList[MAX_GENTITIES];
@@ -6146,6 +6170,12 @@ void idGameLocal::RadiusDouse( const idVec3 &origin, const float radius )
 				// ignore blend and fog lights
 
 				if (light->IsBlend() || light->IsFog())
+				{
+					continue;
+				}
+
+				// Make it spawnarg-dependent #4201
+				if ( checkSpawnarg && !light->spawnArgs.GetBool("canBeBlownOut") )
 				{
 					continue;
 				}
@@ -6493,8 +6523,8 @@ void idGameLocal::SpreadLocations() {
 			Error( "idGameLocal::SpreadLocations: areaNum >= gameRenderWorld->NumAreas()" );
 		}
 		if ( locationEntities[areaNum] ) {
-			Warning( "location entity '%s' overlaps '%s'", ent->spawnArgs.GetString( "name" ),
-				locationEntities[areaNum]->spawnArgs.GetString( "name" ) );
+			Warning( "location entity '%s' overlaps '%s' in area %d", ent->spawnArgs.GetString( "name" ),
+				locationEntities[areaNum]->spawnArgs.GetString( "name" ),areaNum );
 			continue;
 		}
 		locationEntities[areaNum] = static_cast<idLocationEntity *>(ent);
@@ -7997,6 +8027,28 @@ void idGameLocal::OnVidRestart()
 	}
 }
 
+// grayman #3556 - Engine asks whether player is underwater
+
+bool idGameLocal::PlayerUnderwater()
+{
+	bool result = false;
+
+	idPlayer* player = GetLocalPlayer();
+
+	if ( player )
+	{
+		idPhysics* phys = player->GetPhysics();
+
+		if ( phys && phys->IsType(idPhysics_Actor::Type) )
+		{
+			waterLevel_t waterLevel = static_cast<idPhysics_Actor*>(phys)->GetWaterLevel();
+			result = (waterLevel == WATERLEVEL_HEAD);
+		}
+	}
+
+	return result;
+}
+
 // grayman #3317 - Clear the time a stim last fired from an entity, so that
 // it can be fired immediately instead of waiting for the next time it was
 // scheduled to fire.
@@ -8080,12 +8132,22 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 
 			if ( !location.Compare(idVec3(0,0,0)) )
 			{
-				// Allow for some variance in location. Two events of
-				// the same type that are near each other should be
-				// considered the same event.
+				if (se.type == E_EventTypeNoisemaker)
+				{
+					// grayman #3857 - noisemakers must be considered
+					// separate events, so the locations must match
 
-				float distSqr = (se.location - location).LengthSqr();
-				locationMatch = (distSqr <= 90000); // 300*300
+					locationMatch = location.Compare(se.location);
+				}
+				else
+				{
+					// Allow for some variance in location. Two events of
+					// the same type that are near each other should be
+					// considered the same event.
+
+					float distSqr = (se.location - location).LengthSqr();
+					locationMatch = (distSqr <= 90000); // 300*300
+				}
 			}
 
 			// check entity
@@ -8147,7 +8209,7 @@ int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // gray
 		}
 		else if ( se.type == E_EventTypeNoisemaker ) // grayman #3857
 		{
-			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, se.time );
+			index = FindSuspiciousEvent( E_EventTypeNoisemaker, se.location, NULL, 0 );
 		}
 		else if ( se.type == E_EventTypeSound ) // grayman #3857
 		{

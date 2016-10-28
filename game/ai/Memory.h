@@ -504,6 +504,9 @@ public:
 	// grayman #3857 - when guarding a spot, face this angle (yaw)
 	float guardingAngle;
 
+	// grayman #3857 - consecutive failed attempts to find a milling or observing spot
+	int consecutiveRadialSpotFailures;
+
 	ERepeatedBarkState repeatedBarkState; // grayman #3857
 
 	// True if fleeing
@@ -537,6 +540,8 @@ public:
 	// end of #2866 changes
 
 	int currentSearchEventID;		// grayman #3424 - current suspicious event being searched
+
+	int searchStartTime;			// grayman #4220 - when this AI begins a search
 
 	idEntityPtr<idEntity> attacker;	// grayman #3679 - who attacked me
 	bool playerResponsible;			// grayman #3679 - is the player responsible for the attack?

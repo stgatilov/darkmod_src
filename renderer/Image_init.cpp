@@ -72,6 +72,8 @@ idCVar idImageManager::image_downSizeSpecularLimit( "image_downSizeSpecularLimit
 idCVar idImageManager::image_downSizeBumpLimit( "image_downSizeBumpLimit", "128", CVAR_RENDERER | CVAR_ARCHIVE, "controls normal map downsample limit" );
 idCVar idImageManager::image_ignoreHighQuality( "image_ignoreHighQuality", "0", CVAR_RENDERER | CVAR_ARCHIVE, "ignore high quality setting on materials" );
 idCVar idImageManager::image_downSizeLimit( "image_downSizeLimit", "256", CVAR_RENDERER | CVAR_ARCHIVE, "controls diffuse map downsample limit" ); 
+idCVar idImageManager::image_blockChecksum("image_blockChecksum", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Perform MD4 block checksum calculation for later duplicates check"); 
+idCVar idImageManager::image_mipmapMode("image_mipmapMode", "2", CVAR_RENDERER | CVAR_ARCHIVE, "Mipmap generation mode: 0 - software, 1 - GL 1.4, 2 - GL 3.0"); 
 // do this with a pointer, in case we want to make the actual manager
 // a private virtual subclass
 idImageManager	imageManager;
@@ -1363,7 +1365,7 @@ idImage *idImageManager::AllocImage( const char *name ) {
 	idImage *image = new idImage;
 
 	images.Append( image );
-	common->Printf("AllocImage added image '%s'\n",name);
+	//common->Printf("AllocImage added image '%s'\n",name);
 
 	const int hash = idStr( name ).FileNameHash();
 
@@ -1513,6 +1515,65 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 	// this keeps us from having to make a material for each font tga
 	if ( name.Find( "fontImage_") >= 0 ) {
 		allowDownSize = false;
+	}
+	
+	//nbohr1more: 4358 blacklist texture paths to prevent image_downsize from making fonts, guis, and background images blurry
+	
+	else if ( name.Find("fonts/") >= 0) 
+	{
+	allowDownSize = false;   
+	}	
+	else if ( name.Find("guis/assets/") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("postprocess/") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("_cookedMath") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("_currentRender") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("_currentDepth") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("/consolefont") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("/bigchars") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("/entityGui") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("video/") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("fsfx") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if ( name.Find("/AFX") >= 0)
+	{	
+	allowDownSize = false;	  
+	}
+	else if (name.Find("_afxweight") >= 0)
+	{
+	allowDownSize = false;
+	}
+	else if (name.Find("_bloomImage") >= 0)
+	{
+	allowDownSize = false;
 	}
 
 	image->allowDownSize = allowDownSize;
@@ -1923,7 +1984,6 @@ void idImageManager::Init() {
 	accumImage = ImageFromFunction("_accum", R_RGBA8Image );
 	scratchCubeMapImage = ImageFromFunction("_scratchCubeMap", makeNormalizeVectorCubeMap );
 	currentRenderImage = ImageFromFunction("_currentRender", R_RGBA8Image );
-	currentNoShadowImage = ImageFromFunction("_nsRender", R_RGBA8Image);
 	currentDepthImage = ImageFromFunction( "_currentDepth", R_RGBA8Image ); // #3877. Allow shaders to access scene depth
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );

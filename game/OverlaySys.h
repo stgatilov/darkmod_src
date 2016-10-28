@@ -31,6 +31,7 @@ enum
 	LAYER_UNDERWATER = 0,	// Draw the underwater overlay first
 	LAYER_MAIN_HUD = 1,
 	LAYER_INVENTORY = 2,
+ 	LAYER_INVGRID = 3,		// #4286
 	LAYER_OBJECTIVES = 12,
 	LAYER_WAITUNTILREADY = 13,
 };

@@ -130,6 +130,7 @@ private:
 			case CurFileInfo::Replace: return ProgressInfo::Replace;
 			case CurFileInfo::Add: return ProgressInfo::Add;
 			case CurFileInfo::RemoveFilesFromPK4: return ProgressInfo::RemoveFilesFromPK4;
+            case CurFileInfo::RegeneratePK4: return ProgressInfo::RegeneratePK4;
 			default: return ProgressInfo::Unspecified;
 		};
 	}

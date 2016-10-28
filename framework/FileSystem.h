@@ -185,7 +185,7 @@ public:
 							// greebo: By default use the mod save path to write stuff
 	virtual int				WriteFile( const char *relativePath, const void *buffer, int size, const char *basePath = "fs_modSavePath", const char *gamedir = NULL ) = 0;
 							// Removes the given file.
-	virtual void			RemoveFile( const char *relativePath ) = 0;
+	virtual void			RemoveFile( const char *relativePath, const char *gamedir = NULL ) = 0;
 							// Opens a file for reading.
     virtual idFile *		OpenFileRead( const char *relativePath, const char* gamedir = NULL ) = 0;
 							// Opens a file for writing, will create any needed subdirectories.

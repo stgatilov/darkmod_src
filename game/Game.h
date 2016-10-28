@@ -110,13 +110,11 @@ public:
 
 	// Obsttorte
 	virtual idStr				triggeredSave() = 0; 
-
 	virtual void				incrementSaveCount() = 0; 
-
 	virtual bool				savegamesDisallowed() = 0;
-
 	virtual bool				quicksavesDisallowed() = 0;
 	// <-- end
+	virtual bool				PlayerReady() = 0;	// SteveL #4139. Prevent saving before player has clicked "ready" to start the map
 
 	// Loads a map and spawns all the entities.
 	virtual void				InitFromNewMap( const char *mapName, idRenderWorld *renderWorld, idSoundWorld *soundWorld, bool isServer, bool isClient, int randseed ) = 0;
@@ -212,6 +210,9 @@ public:
 
 	// Lets the game know after a "vid_restart" command has been invoked
 	virtual void				OnVidRestart() = 0;
+
+	// grayman #3556 - determine whether the player is underwater
+	virtual bool				PlayerUnderwater() = 0;
 };
 
 extern idGame *					game;

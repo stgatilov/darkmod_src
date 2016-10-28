@@ -102,17 +102,17 @@ bool PlayAnimationTask::Perform(Subsystem& subsystem)
 
 void PlayAnimationTask::StartAnim(idAI* owner)
 {
-	// Synchronise the leg channel
-	// owner->Event_OverrideAnim(ANIMCHANNEL_LEGS); // We now set the AnimState on both channels and then sync -- SteveL #3800
-
 	// Allow AnimState scripts to start the anim themselves by passing it as a key -- SteveL #3800
 	owner->spawnArgs.Set( "customAnim_requested_anim", _animName );
 	owner->spawnArgs.Set( "customAnim_cycle", _playCycle ? "1" : "0" );
 
 	// Set the name of the state script
 	owner->SetAnimState( ANIMCHANNEL_TORSO, "Torso_CustomAnim", _blendFrames );
-	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_CustomAnim", _blendFrames );
-	owner->PostEventMS( &AI_SyncAnimChannels, 16, ANIMCHANNEL_LEGS, ANIMCHANNEL_TORSO, (float)_blendFrames );
+	// SteveL #4012: Use OverrideAnim instead of a matching "Legs_CustomAnim", 
+	// which invites race conditions and conflicts between game code and scripts.
+	owner->SetAnimState( ANIMCHANNEL_LEGS, "Legs_Idle", 4 ); // Queue up the next state before sync'ing legs to torso
+	owner->Event_SetBlendFrames( ANIMCHANNEL_LEGS, 10 ); // ~0.4 seconds.
+	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS ); 
 	
 	// greebo: Set the waitstate, this gets cleared by 
 	// the script function when the animation is done.

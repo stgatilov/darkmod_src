@@ -84,9 +84,6 @@ void SwitchOnLightState::Wrapup(idAI* owner, bool ignore)
 		light->AllowResponse(ST_VISUAL,owner); // respond to the next stim
 	}
 	Cleanup(owner);
-	// grayman #3857 - allow "idle search/suspicious animations"
-	owner->actionSubsystem->ClearTasks();
-	owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
 	owner->GetMind()->EndState();
 }
 
@@ -597,7 +594,7 @@ void SwitchOnLightState::Think(idAI* owner)
 				goalDirection.z = 0;
 				float delta = goalDirection.LengthFast();
 
-				if (delta <= _standOff)
+				if ((delta <= _standOff) && (abs(_relightSpot.z - owner->GetPhysics()->GetOrigin().z) < 30)) // grayman #4283
 				{
 					owner->StopMove(MOVE_STATUS_DONE);
 				}

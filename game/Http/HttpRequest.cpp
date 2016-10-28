@@ -54,6 +54,18 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const 
 	_progress(0)
 {}
 
+// Agent Jones #3766
+int CHttpRequest::TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+{
+    bool IsTDMRunning = common->WindowAvailable();
+    
+	if (IsTDMRunning == false || static_cast<CHttpRequest*>(clientp)->_cancelFlag)
+	{
+        return 1; // Cancel the request
+    }
+    return 0;
+}
+
 void CHttpRequest::InitRequest()
 {
 	// Init the curl session
@@ -112,6 +124,17 @@ void CHttpRequest::InitRequest()
         delete catest;
     }
     curl_easy_setopt(_handle, CURLOPT_CAINFO, capath.c_str());
+
+	// Agent Jones #3766
+
+	// The default progress meter function is not used here. Disable it.
+	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, false);
+
+	// Progress callback
+	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, CHttpRequest::TDMHttpProgressFunc);
+	curl_easy_setopt(_handle, CURLOPT_XFERINFODATA, this);//this will become the clientp arg in TDMHttpProgressFunc
+																				
+	// end #3766
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
@@ -270,3 +293,5 @@ size_t CHttpRequest::WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHt
 
 	return static_cast<size_t>(bytesToCopy);
 }
+
+

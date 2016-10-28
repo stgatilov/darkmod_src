@@ -30,6 +30,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../AbsenceMarker.h"
 #include "Memory.h"
 #include "States/State.h"
+#include "States/FleeState.h" // grayman #4250
 
 #include <vector>
 #include <string>
@@ -261,6 +262,9 @@ const idEventDef AI_PlayAndLipSync( "playAndLipSync", EventArgs('s', "soundName"
 const idEventDef AI_PushState("pushState", EventArgs('s', "stateName", ""), EV_RETURNS_VOID, "Pushes the state with the given name, current one is postponed.");
 const idEventDef AI_SwitchState("switchState", EventArgs('s', "stateName", ""), EV_RETURNS_VOID, "Switches to the state with the given name, current one is ended.");
 const idEventDef AI_EndState("endState", EventArgs(), 'd', "Ends the current state with the given name, returns TRUE if more than one state is remaining.");
+
+const idEventDef AI_PlayCustomAnim( "playCustomAnim", EventArgs('s', "animName", ""), 'd', "Plays the given animation on legs and torso. Returns false if anim doesn't exist."); // #3597
+
 
 // DarkMod AI Relations Events
 const idEventDef AI_GetRelationEnt( "getRelationEnt", EventArgs('E', "ent", ""), 'd', "no description");
@@ -528,6 +532,7 @@ CLASS_DECLARATION( idActor, idAI )
 	EVENT( AI_CanReachEnemy,					idAI::Event_CanReachEnemy )
 	EVENT( AI_GetReachableEntityPosition,		idAI::Event_GetReachableEntityPosition )
 	EVENT( AI_ReEvaluateArea,					idAI::Event_ReEvaluateArea )
+	EVENT( AI_PlayCustomAnim,					idAI::Event_PlayCustomAnim )	// #3597
 
 	
 	// greebo: State manipulation interface
@@ -1375,8 +1380,25 @@ idAI::Event_Flee
 */
 void idAI::Event_Flee(idEntity *entityToFleeFrom, int algorithm, int distanceOption)
 {
-	StopMove(MOVE_STATUS_DEST_NOT_FOUND);
-	idThread::ReturnInt(Flee(entityToFleeFrom, false, algorithm, distanceOption)); // grayman #3317
+	// grayman #4250
+	bool success = false;
+
+	if ( (entityToFleeFrom != NULL ) && entityToFleeFrom->IsType(idActor::Type))
+	{
+		fleeingEvent = false; // grayman #3356
+		fleeingFrom = entityToFleeFrom->GetPhysics()->GetOrigin(); // grayman #3848
+		fleeingFromPerson = static_cast<idActor*>(entityToFleeFrom); // grayman #3847
+		emitFleeBarks = true;
+		if ( !GetMemory().fleeing ) // grayman #3847 - only flee if not already fleeing
+		{
+			GetMind()->SwitchState(STATE_FLEE);
+			success = true;
+		}
+	}
+
+	//StopMove(MOVE_STATUS_DEST_NOT_FOUND); // grayman #4250
+	//idThread::ReturnInt(Flee(entityToFleeFrom, false, algorithm, distanceOption)); // grayman #3317 // grayman #4250
+	idThread::ReturnInt(success);
 }
 
 /*
@@ -1389,7 +1411,7 @@ query that is within MoveToAttackPosition
 */
 void idAI::Event_GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
 {
-	idVec3 observeFromPos = GetObservationPosition(pointToObserve, visualAcuityZeroToOne);
+	idVec3 observeFromPos = GetObservationPosition(pointToObserve, visualAcuityZeroToOne,0); // grayman #4347
 	idThread::ReturnVector (observeFromPos);
 	return;
 }
@@ -3424,9 +3446,14 @@ void idAI::Event_NoisemakerDone(idEntity* maker)
 
 void idAI::Event_HitByDoor(idEntity* door)
 {
-	// Treat the door as a suspicious door.
+	float chanceToNotice = spawnArgs.GetFloat("chanceNoticeDoor");
 
-	mind->GetState()->OnVisualStimDoor(door,this);
+	if ( chanceToNotice > 0.0f ) // grayman #4026
+	{
+		// Treat the door as a suspicious door.
+
+		mind->GetState()->OnVisualStimDoor(door, this);
+	}
 }
 
 

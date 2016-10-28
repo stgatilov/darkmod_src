@@ -46,17 +46,20 @@ const idStr& ResolveMovementBlockTask::GetName() const
 	return _name;
 }
 
+/* grayman #4238 - not used
 bool ResolveMovementBlockTask::IsSolid() // grayman #2345
 {
 	return (_preTaskContents == -1);
 }
+*/
 
 void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	// Just init the base class
 	Task::Init(owner, subsystem);
 
-	owner->GetMemory().resolvingMovementBlock = true;
+	//owner->GetMemory().resolvingMovementBlock = true; // grayman #4077 - moved to before this task is pushed,
+														// to prevent starting this task twice
 
 	if (_blockingEnt == NULL)
 	{
@@ -95,7 +98,10 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve blocking AI: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingAI(owner, subsystem);
 	}
-	else if (_blockingEnt->IsType(idStaticEntity::Type))
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	else if ( _blockingEnt->IsType(idStaticEntity::Type) || _blockingEnt->IsType(CFrobDoor::Type) )
 	{
 		//DM_LOG(LC_AI, LT_WARNING)LOGSTRING("AI %s starting to resolve static blocking entity: %s\r", owner->name.c_str(), _blockingEnt->name.c_str());
 		InitBlockingStatic(owner, subsystem);
@@ -110,6 +116,10 @@ void ResolveMovementBlockTask::Init(idAI* owner, Subsystem& subsystem)
 
 void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 {
+	// grayman #4238 - stepping to the left or right doesn't work, because the block
+	//   is still happening, and the AI is told to stop its move further along in the
+	//   same frame. Leaving it in for now, though.
+
 	// grayman #2345 - The old method was to move 10 units to the right, but that could make things
 	// worse, by pushing you more into the path of your blocker.
 
@@ -162,6 +172,7 @@ void ResolveMovementBlockTask::InitBlockingAI(idAI* owner, Subsystem& subsystem)
 	}
 
 	owner->MoveToPosition(dest, 5);
+	_turning = true; // grayman #4238 - you'll need to turn to walk around the blocking entity
 	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::EResolvingBlock); // grayman #2706 - stay in EResolvingBlock
 }
 
@@ -322,7 +333,11 @@ bool ResolveMovementBlockTask::Perform(Subsystem& subsystem)
 	{
 		return PerformBlockingAI(owner);
 	}
-	else if (_blockingEnt->IsType(idStaticEntity::Type))
+
+	// grayman #4077 - also add a check for a door here, in case the AI is bumping
+	// up against a door that was opened in his face before he could latch onto it
+	// for door handling (St. Lucia)
+	if (_blockingEnt->IsType(idStaticEntity::Type) || _blockingEnt->IsType(CFrobDoor::Type))
 	{
 		return PerformBlockingStatic(owner);
 	}
@@ -386,7 +401,7 @@ bool ResolveMovementBlockTask::Room2Pass(idAI* owner) // grayman #2345
 			result = true;
 		}
 	}
-	
+
 	return result;
 }
 
@@ -407,6 +422,30 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 {
 	idVec3 right, forward;
 
+	idVec3 dist = _blockingEnt->GetPhysics()->GetOrigin() - owner->GetPhysics()->GetOrigin();
+
+	// grayman #4238 - if _blockingEnt is still conscious and is farther
+	// than 60 units away, end the task, regardless of what state you're in
+	idAI* beAI = static_cast<idAI*>(_blockingEnt);
+	if ( (dist.LengthSqr() > Square(60) ) || beAI->AI_DEAD || beAI->AI_KNOCKEDOUT )
+	{
+		// Return to your initial facing angle. This will
+		// only matter if you were initially standing. If you were moving,
+		// ending this task will return you to that, overriding this turn.
+
+		_initialAngles.ToVectors(&forward, &right);
+		owner->TurnToward(owner->GetPhysics()->GetOrigin() + forward);
+		return true;
+	}
+
+	// grayman #3725 - if still walking and not turning, but not getting
+	// anywhere, stop moving, to allow yourself to turn and become non-solid
+	float traveledPrev = owner->movementSubsystem->GetPrevTraveled(false).LengthFast();
+	if (!owner->AI_MOVE_DONE && !_turning && (traveledPrev < 0.1)) // grayman #2345
+	{
+		owner->StopMove(MOVE_STATUS_DONE);
+	}
+	
 	if (owner->AI_MOVE_DONE && !_turning && !owner->movementSubsystem->IsWaiting()) // grayman #2345 - if already waiting, no need to do this section
 	{
 		// grayman #3725 - turn perpendicular to the direction
@@ -414,7 +453,7 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 		idAngles angles;
 		if (_blockingEnt->IsType(idAI::Type))
 		{
-			angles = static_cast<idAI*>(_blockingEnt)->viewAxis.ToAngles();
+			angles = beAI->viewAxis.ToAngles();
 		}
 		else
 		{
@@ -443,7 +482,10 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 
 			// If there's no room to get around you, become non-solid
 
-			if ((owner->AI_AlertIndex == ERelaxed) && !Room2Pass(owner))
+			// grayman - With coordinated searching, AI are less likely to be bunching up,
+			// so remove the requirement that the AI be in ERelaxed to become non-solid
+
+			if (/*(owner->AI_AlertIndex == ERelaxed) && */!Room2Pass(owner))
 			{
 				BecomeNonSolid(owner);
 			}
@@ -514,35 +556,46 @@ bool ResolveMovementBlockTask::PerformBlockingAI(idAI* owner)
 			}
 		}
 		
-		if (_blockingEnt->IsType(idAI::Type))
-		{
+		//if (_blockingEnt->IsType(idAI::Type))
+		//{
 			// grayman #2345 - check to see if the other AI is standing still.
 			// If they are, end the task.
+			// grayman #4238 - only end the task if the blocking entity is at least
+			// 2xsize away.
 
-			idAI *_blockingEntAI = static_cast<idAI*>(_blockingEnt);
-			if (_blockingEntAI && !_blockingEntAI->AI_FORWARD)
+			if (beAI && !beAI->AI_FORWARD)
 			{
-				// grayman #3725 - turn back to your initial facing angle
-				_initialAngles.ToVectors(&forward, &right);
-				owner->TurnToward(owner->GetPhysics()->GetOrigin() + forward);
-				return true; // end the task
+				// Check distance to blocking entity
+				if ( dist.LengthSqr() > Square(32) )
+				{
+					// grayman #3725 - turn back to your initial facing angle
+					_initialAngles.ToVectors(&forward, &right);
+					owner->TurnToward(owner->GetPhysics()->GetOrigin() + forward);
+					return true; // end the task
+				}
+
+				// grayman #4238 - move away from standing blocking entity
+				float needToMove = 33 - dist.LengthFast();
+				dist.NormalizeFast();
+				owner->MoveToPosition(owner->GetPhysics()->GetOrigin() + needToMove*dist);
+				//return true; // grayman #4238 - end the task
 			}
 
 			// If we're EWaitingSolid, change to EWaitingNonSolid if the other AI is barely moving.
 			// grayman #2422 - but not if the other AI is searching
 
-			if ( !_blockingEntAI->IsSearching() )
+			if ( !beAI->IsSearching() )
 			{
 				if (owner->movementSubsystem->IsWaitingSolid())
 				{
-					float traveledPrev = _blockingEntAI->movementSubsystem->GetPrevTraveled(false).LengthFast(); // grayman #3647
+					float traveledPrev = beAI->movementSubsystem->GetPrevTraveled(false).LengthFast(); // grayman #3647
 					if (traveledPrev < 0.1) // grayman #2345
 					{
 						BecomeNonSolid(owner);
 					} 
 				}
 			}
-		}
+		//}
 
 		if (ai_showObstacleAvoidance.GetBool())
 		{
@@ -589,20 +642,21 @@ void ResolveMovementBlockTask::OnFinish(idAI* owner)
 {
 	owner->GetMemory().resolvingMovementBlock = false;
 
-	if (owner->movementSubsystem->IsWaiting()) // grayman #2345
-	{
+	// grayman #4238 - check content instead of waiting state
+	//if (owner->movementSubsystem->IsWaiting()) // grayman #2345
+	//{
 		if (_preTaskContents != -1)
 		{
 			owner->GetPhysics()->SetContents(_preTaskContents);
-			_preTaskContents = -1;
+			//_preTaskContents = -1;
 
 			// Restore attachment contents again
 
 			owner->RestoreAttachmentContents();
 		}
 
-		_blockingEnt = NULL; // forget the other entity
-	}
+		//_blockingEnt = NULL; // forget the other entity
+	//}
 
 	owner->movementSubsystem->SetBlockedState(ai::MovementSubsystem::ENotBlocked); // grayman #2345
 	owner->PopMove();

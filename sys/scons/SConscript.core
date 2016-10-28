@@ -301,10 +301,11 @@ ogg_env = local_env.Clone()
 ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
 
-local_env.Append( LIBS = [ 'pthread', 'dl', 'rt' ] ) # greebo: Added librt
+
 if ( local_dedicated == 0 ):
 	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
-	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
+#	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
+	local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
 	local_env.Append( LIBS = [ 'openal' ] )
 
 # greebo: Add boost and image libraries

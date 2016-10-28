@@ -104,6 +104,10 @@ public:
 	 */
 	virtual void ClearTasks();
 
+	//virtual void PrintTaskQueue();
+
+	virtual void FinishDoorHandlingTask(idAI *owner); // grayman #4030
+
 	// Enables/disables this subsystem
 	virtual void Enable();
 	virtual void Disable();

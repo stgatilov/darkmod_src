@@ -82,7 +82,6 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 	renderEntity_t	renderEntity;
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
 	renderEntity.axis = mat3_identity;
-	//renderEntity.suppressSurfaceInViewID = -8; // sikk
 
 	renderView_t	renderView;
 	memset( &renderView, 0, sizeof( renderView ) );
@@ -101,10 +100,15 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 		g.random = g.originalRandom = steppingRandom;
 
 		int	maxMsec = stage->particleLife * 1000;
-		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += 16 ) {
 
+		// SteveL #4218: Speed up load time for long-lived particles.
+		// Limit the sampling to 250 spread across the particle's lifetime.
+		const int step_milliseconds = (std::max)(maxMsec / 250, 16); // 16 was the original value, meaning test every frame
+
+		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += step_milliseconds )
+		{
 			// make sure we get the very last tic, which may make up an extreme edge
-			if ( inCycleTime + 16 > maxMsec ) {
+			if ( inCycleTime + step_milliseconds > maxMsec ) {
 				inCycleTime = maxMsec - 1;
 			}
 
@@ -397,6 +401,10 @@ idParticleStage *idDeclParticle::ParseParticleStage( idLexer &src ) {
 				src.UnreadToken( &token );
 			}
 			stage->gravity = src.ParseFloat();
+			continue;
+		}
+		if ( !token.Icmp( "WorldAxis" ) ) {		// #3950
+			stage->worldAxis = true;
 			continue;
 		}
 		if ( !token.Icmp( "softeningRadius" ) ) {
@@ -705,6 +713,7 @@ idParticleStage::idParticleStage( void ) {
 	// idParticleParm		speed;
 	gravity = 0.0f;
 	worldGravity = false;
+	worldAxis = false;
 	customPathType = PPATH_STANDARD;
 	customPathParms[0] = customPathParms[1] = customPathParms[2] = customPathParms[3] = 0.0f;
 	customPathParms[4] = customPathParms[5] = customPathParms[6] = customPathParms[7] = 0.0f;
@@ -764,6 +773,7 @@ void idParticleStage::Default() {
 	speed.table = NULL;
 	gravity = 1.0f;
 	worldGravity = false;
+	worldAxis = false;
 	customPathType = PPATH_STANDARD;
 	customPathParms[0] = 0.0f;
 	customPathParms[1] = 0.0f;
@@ -1008,12 +1018,19 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 		origin += offset;
 	}
 
-	// adjust for the per-particle smoke offset
-	origin *= g->axis;
-	origin += g->origin;
+	if ( worldAxis ) // SteveL #3950 -- allow particles to use world axis for their offset and travel direction
+	{
+		origin *= g->renderEnt->axis.Transpose();
+	}
+	else
+	{
+		origin *= g->axis; // adjust for any per-particle offset
+	}
+	origin += g->origin;   // adjust for any per-particle offset
 
 	// add gravity after adjusting for axis
-	if ( worldGravity ) {
+	if ( worldGravity )
+	{
 		idVec3 gra( 0, 0, -gravity );
 		gra *= g->renderEnt->axis.Transpose();
 		origin += gra * g->age * g->age;

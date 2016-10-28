@@ -700,7 +700,7 @@ void CFrobDoor::UpdateSoundLoss()
 	CFrobDoor* doorB = m_DoubleDoor.GetEntity();
 
 	// grayman #3042 - add extra loss to loss_closed on doors, but only for the player,
-	// so bring sound volume across doors back to what the player used to hear
+	// to bring sound volume across doors back to what the player used to hear
 
 	float loss_AI = 0;
 	float loss_Player = 0;
@@ -1312,16 +1312,28 @@ bool CFrobDoor::GetPhysicsToSoundTransform(idVec3 &origin, idMat3 &axis)
 	// This will kick in for doors without any handles, these are playing their
 	// sounds from the nearest point to the player's eyes, mid-bounding-box.
 	const idBounds& bounds = GetPhysics()->GetAbsBounds();
-	idVec3 eyePos = gameLocal.GetLocalPlayer()->GetEyePosition();
 
-	// greebo: Choose the corner which is nearest to the player's eyeposition
-	origin.x = (idMath::Fabs(bounds[0].x - eyePos.x) < idMath::Fabs(bounds[1].x - eyePos.x)) ? bounds[0].x : bounds[1].x;
-	origin.y = (idMath::Fabs(bounds[0].y - eyePos.y) < idMath::Fabs(bounds[1].y - eyePos.y)) ? bounds[0].y : bounds[1].y;
-	origin.z = (bounds[0].z + bounds[1].z) * 0.5f;
+	// grayman #4337 - Using the bounding box might place the "nearest point"
+	// inside the wall surrounding the door. Use a bounding box that's smaller
+	// than the door's. This runs the risk of setting the nearest point on the
+	// wrong side of the visportal, but most doors are 4 units thick, and the door's
+	// bounding box is 1 larger than the door, so most bounding boxes will be
+	// 6 units thick. If most portals are down the middle of the door, shrinking
+	// the bounding box by 1.5 units seems safe.
+
+	const idBounds& smallerBounds = bounds.Expand(-1.5f);
+
+	const idPlayer* player = gameLocal.GetLocalPlayer();
+	idVec3 eyePos = player ? player->GetEyePosition() : vec3_zero; // #4075 Don't try accessing player's eye pos before he spawns
+
+	// greebo: Choose the corner which is nearest to the player's eye position
+	origin.x = (idMath::Fabs(smallerBounds[0].x - eyePos.x) < idMath::Fabs(smallerBounds[1].x - eyePos.x)) ? smallerBounds[0].x : smallerBounds[1].x;
+	origin.y = (idMath::Fabs(smallerBounds[0].y - eyePos.y) < idMath::Fabs(smallerBounds[1].y - eyePos.y)) ? smallerBounds[0].y : smallerBounds[1].y;
+	origin.z = (smallerBounds[0].z + smallerBounds[1].z) * 0.5f;
 
 	axis.Identity();
 
-	// The called expects the origin in local space
+	// The caller expects the origin in local space
 	origin -= GetPhysics()->GetOrigin();
 
 	//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetOrigin() + origin, eyePos, 0, 5000);
@@ -1916,6 +1928,10 @@ void CFrobDoor::SetControllerLocks()
 				// Set the controller's lockpick type from the door's
 				idStr pick = spawnArgs.GetString("lock_picktype");
 				e->spawnArgs.Set("lock_picktype",pick.c_str());
+
+				// grayman #4262 - Set the controller's failed lock sound from the door's
+				idStr wrongKey = spawnArgs.GetString("snd_wrong_key");
+				e->spawnArgs.Set("snd_wrong_key",wrongKey.c_str());
 
 				// Set the controller's used_by list from the door's
 				for (const idKeyValue* kv = spawnArgs.MatchPrefix("used_by"); kv != NULL; kv = spawnArgs.MatchPrefix("used_by", kv))

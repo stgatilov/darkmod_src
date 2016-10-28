@@ -65,6 +65,7 @@ public:
 		IN_PROGRESS,
 		FAILED,
 		SUCCESS,
+		CANCELED,//Agent Jones
 	};
 
 	// Some additional data which can be set by clients
@@ -119,7 +120,7 @@ public:
 	void Start();
 
 	// Cancel the download. If the download has already finished, this does nothing.
-	void Stop();
+	void Stop(bool canceled);
 
 	// Enable the validation of the downloaded file
 	void EnableValidPK4Check(bool enable);

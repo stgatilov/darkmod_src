@@ -159,6 +159,7 @@ public:
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	virtual const char*			Translate( const char* str );
+	virtual bool                WindowAvailable(void); // Agent Jones #3766
 
 	virtual I18N*				GetI18N();
 
@@ -3079,4 +3080,13 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 
 	// shut down the file system
 	fileSystem->Shutdown( reloading );
+}
+
+// Agent Jones #3766
+bool idCommonLocal::WindowAvailable(void)
+{
+#ifdef _WIN32
+	return Sys_IsWindowVisible();
+#endif
+	return true;
 }

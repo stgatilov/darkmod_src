@@ -485,7 +485,7 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 
 	// compute width and height
 	if ( parms.fullScreen ) {
-		exstyle = WS_EX_TOPMOST;
+		exstyle = 0; // WS_EX_TOPMOST;
 		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 
 		x = 0;

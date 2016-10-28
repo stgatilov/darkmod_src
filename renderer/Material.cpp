@@ -93,9 +93,12 @@ void idMaterial::CommonInit() {
 	fogLight = false;
 	blendLight = false;
 	ambientLight = false;
+	ambientCubicLight = false;  //nbohr1more #3881: cubemap based lighting further changes
+	cubicLight = false;  //nbohr1more #3881: cubemap based lighting
 	noFog = false;
 	hasSubview = false;
 	allowOverlays = true;
+	islightgemsurf = false; //nbohr1more: #4379 lightgem culling
 	unsmoothedTangents = false;
 	gui = NULL;
 	memset( deformRegisters, 0, sizeof( deformRegisters ) );
@@ -1849,6 +1852,11 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			allowOverlays = false;
 			continue;
 		}
+		// nbohr1more: #4379 lightgem culling
+		else if ( !token.Icmp( "islightgemsurf" ) ) {
+			islightgemsurf = true;
+			continue;
+		}
 		// moster blood overlay forcing for alpha tested or translucent surfaces
 		else if ( !token.Icmp( "forceOverlays" ) ) {
 			pd->forceOverlays = true;
@@ -1908,6 +1916,16 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		// ambientLight
 		else if ( !token.Icmp( "ambientLight" ) ) {
 			ambientLight = true;
+			continue;
+		}
+		// nbohr1more #3881: cubicLight further changes
+		else if ( !token.Icmp( "ambientCubicLight" ) ) {
+			ambientCubicLight = true;
+			continue;
+		}
+		// nbohr1more #3881: cubicLight 
+		else if ( !token.Icmp( "cubicLight" ) ) {
+			cubicLight = true;
 			continue;
 		}
 		// mirror

@@ -410,21 +410,26 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 	timer_updatemodel.Start();
 #endif
 
-	if (force)
+	// #4168: SEED corrupting the heap
+	// This next bit used to be conditional on the "force" parameter. It forces the allocation of a new hModel and frees 
+	// the entityDef. Not allocating a new hModel was somehow causing heap corruption. Parts of the engine code compare hModel 
+	// pointers and rely on the model being identical if the pointer is the same, e.g. idRenderWorldLocal::UpdateEntityDef 
+	// which compares the old and the new hModel pointers for an entity when deciding whether it can leave decals in place.  
+	if ( true /* force */ )
 	{
 		if (renderEntity.hModel)
 		{
-#ifdef M_DEBUG
-			gameLocal.Printf("StaticMulti %s: Allocating new render model.\n", GetName());
-#endif
 			FreeModelDef();
-			// do not free the rendermodel, somebody else (since the dummy model is used) has a ptr to it
-			// renderModelManager->FreeModel( renderEntity.hModel );
+			// Free the model only if we created it
+			if ( m_bFree_hModel )
+			{
+				renderModelManager->FreeModel( renderEntity.hModel );
+			}
 		}
-		// signal Restore() that it must free the hModel from now on
-		m_bFree_hModel = true;
+		m_bFree_hModel = true; // We are responsible for freeing the hModel from now on
 		renderEntity.hModel = gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m );
 	}
+/* Commented out in #4168, see above
 	else
 	{
 #ifdef M_DEBUG
@@ -437,11 +442,8 @@ bool CStaticMulti::UpdateRenderModel( const bool force )
 		// and now re-use the already existing object
 		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
 	}
+*/
 
-//	for (int ii =0; ii < 100; ii++)
-//	{
-//		gameLocal.m_ModelGenerator->DuplicateLODModels( l, "megamodel", m_Offsets, &origin, m, renderEntity.hModel);
-//	}
 #ifdef M_TIMINGS
 	timer_updatemodel.Stop();
 #endif

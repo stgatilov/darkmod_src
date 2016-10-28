@@ -34,11 +34,12 @@ namespace ai
 
 const float MAX_TRAVEL_DISTANCE_WALKING = 300; // units?
 const float MAX_YAW = 90; // max yaw (+/-) from original yaw for idle turning
-const int   TURN_DELAY = 8000; // will make the guard turn every 8-12 seconds
-const int   TURN_DELAY_DELTA = 4000;
+const int   TURN_DELAY = 5000; // will make the guard turn every 5-8 seconds
+const int   TURN_DELAY_DELTA = 3000;
 const int   MILLING_DELAY = 3500; // will generate milling times between 3.5 and 7 seconds
 const float CLOSE_ENOUGH = 48.0f; // try to get this close to goal
 const float TRY_AGAIN_DISTANCE = 100.0f; // have reached point if this close when stopped
+const int	LENGTH_OF_GIVE_ORDER_BARK = 1500; // estimated duration of 'snd_giveOrder' bark
 
 GuardSpotTask::GuardSpotTask() :
 	_nextTurnTime(0),
@@ -155,49 +156,55 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 	
 	if (_exitTime > 0)
 	{
-		if (gameLocal.time >= _exitTime)
+		if (memory.millingInProgress)
 		{
 			// If milling, and you'll be running to a guard or observation
 			// spot once milling ends, have the guards talk to each other.
 			// One of the active searchers should bark a "get to your post"
 			// command to this AI, who should respond.
-			if (memory.millingInProgress)
-			{
-				if (!_millingOnly)
-				{
-					// Have a searcher bark an order at owner if owner is a guard.
-					// Searchers won't bark an order to observers.
 
-					Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
-					Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
-					if (assignment && (assignment->_searcherRole == E_ROLE_GUARD))
+			if ( gameLocal.time >= _giveOrderTime )
+			{
+				// Have a searcher bark an order at owner if owner is a guard.
+				// Searchers won't bark an order to observers.
+
+				_giveOrderTime = idMath::INFINITY; // you won't need to check this again
+
+				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+				Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search, owner);
+				if (assignment && (assignment->_searcherRole == E_ROLE_GUARD))
+				{
+					assignment = &search->_assignments[0];
+					idAI *searcher = assignment->_searcher;
+					if (searcher == NULL)
 					{
-						assignment = &search->_assignments[0];
-						idAI *searcher = assignment->_searcher;
+						// First searcher has left the search. Try the second.
+						assignment = &search->_assignments[1];
+						searcher = assignment->_searcher;
 						if (searcher == NULL)
 						{
-							// First searcher has left the search. Try the second.
-							assignment = &search->_assignments[1];
-							searcher = assignment->_searcher;
-							if (searcher == NULL)
-							{
-								return true;
-							}
+							return true;
 						}
+					}
 
+					if (searcher != owner)
+					{
 						CommMessagePtr message = CommMessagePtr(new CommMessage(
-							CommMessage::GuardLocationOrder_CommType, 
+							CommMessage::GuardLocationOrder_CommType,
 							searcher, owner, // from searcher to owner
 							NULL,
 							vec3_zero,
 							-1 // grayman #3438
-						));
+							));
 
-						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder",message)));
+						searcher->commSubsystem->AddCommTask(CommunicationTaskPtr(new SingleBarkTask("snd_giveOrder", message)));
 					}
 				}
 			}
+		}
 
+		if (gameLocal.time >= _exitTime)
+		{
 			return true;
 		}
 	}
@@ -250,31 +257,45 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			if ( !pointValid || ( owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE) )
 			{
 				// Guard spot not reachable, terminate task
+				// If milling, we must try to get another milling spot
+				if (memory.millingInProgress)
+				{
+					memory.shouldMill = true;
+				}
 				return true;
 			}
 
 			// Run if the point is more than MAX_TRAVEL_DISTANCE_WALKING
+			// grayman #4238 - don't run if in less than Agitated Searching mode
 
-			float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
-			bool shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
-			owner->AI_RUN = false;
+			bool shouldRun = false;
+			if ( owner->AI_AlertIndex >= EAgitatedSearching )
+			{
+				float actualDist = (owner->GetPhysics()->GetOrigin() - _guardSpot).LengthFast();
+				shouldRun = actualDist > MAX_TRAVEL_DISTANCE_WALKING;
+				if ( !shouldRun && (owner->m_searchID > 0) )
+				{
+					// When searching, and assigned guard or observer roles, AI should run.
+					Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
+					Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search, owner);
+					if ( search && assignment )
+					{
+						if ( ((assignment->_searcherRole == E_ROLE_GUARD) && (search->_assignmentFlags & SEARCH_GUARD)) ||
+							((assignment->_searcherRole == E_ROLE_OBSERVER) && (search->_assignmentFlags & SEARCH_OBSERVE)) )
+						{
+							shouldRun = true;
+						}
+					}
+				}
+			}
+
 			if (shouldRun)
 			{
 				owner->AI_RUN = true;
 			}
-			else if (owner->m_searchID > 0)
+			else
 			{
-				// When searching, and assigned guard or observer roles, AI should run.
-				Search* search = gameLocal.m_searchManager->GetSearch(owner->m_searchID);
-				Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,owner);
-				if (search && assignment)
-				{
-					if (((assignment->_searcherRole == E_ROLE_GUARD) && (search->_assignmentFlags & SEARCH_GUARD)) ||
-						((assignment->_searcherRole == E_ROLE_OBSERVER) && (search->_assignmentFlags & SEARCH_OBSERVE)))
-					{
-						owner->AI_RUN = true;
-					}
-				}
+				owner->AI_RUN = false;
 			}
 
 			_guardSpotState = EStateMoving;
@@ -286,6 +307,11 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 			if (owner->GetMoveStatus() == MOVE_STATUS_DEST_UNREACHABLE)
 			{
+				// If milling, we must try to get another milling spot
+				if (memory.millingInProgress)
+				{
+					memory.shouldMill = true;
+				}
 				return true;
 			}	
 
@@ -307,7 +333,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 
 					if (search)
 					{
-						if ( memory.guardingAngle == idMath::INFINITY)
+						if (memory.guardingAngle == idMath::INFINITY)
 						{
 							owner->TurnToward(search->_origin);
 						}
@@ -325,11 +351,13 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 							{
 								// leave milling early, so we can get to the following activity (searching/guarding/observing)
 								_exitTime = gameLocal.time + MILLING_DELAY + gameLocal.random.RandomInt(MILLING_DELAY);
-								_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+								_giveOrderTime = _exitTime - LENGTH_OF_GIVE_ORDER_BARK; // time when we hear an order to guard
+								_nextTurnTime = gameLocal.time + (_exitTime - gameLocal.time)/2; // turn halfway through your stay
 							}
 							else
 							{
 								// we can hang around until we drop out of searching mode
+								_giveOrderTime = idMath::INFINITY; // will never hear an order to guard
 								_nextTurnTime = gameLocal.time + TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA);
 							}
 						}
@@ -365,6 +393,8 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 			else
 			{
 				// check for closeness to goal to keep from running in circles around the spot
+				//owner->PrintGoalData(_guardSpot,1);
+
 				float distToSpot = (_guardSpot - ownerOrigin).LengthFast();
 				if (distToSpot <= CLOSE_ENOUGH)
 				{
@@ -389,7 +419,7 @@ bool GuardSpotTask::Perform(Subsystem& subsystem)
 				{
 					if (!_millingOnly)
 					{
-						_nextTurnTime = gameLocal.time + (TURN_DELAY + gameLocal.random.RandomInt(TURN_DELAY_DELTA))/6;
+						_nextTurnTime = 0; // no more random turning, because you'll be quitting soon
 					}
 					else
 					{
@@ -455,7 +485,7 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 	if (door)
 	{
-		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door),DOOR_POS_FRONT);
+		idVec3 frontPos = door->GetDoorPosition(owner->GetDoorSide(door,owner->GetPhysics()->GetOrigin()),DOOR_POS_FRONT); // grayman #4227
 
 		// Can't stand at the front position, because you'll be in the way
 		// of anyone wanting to use the door from this side. Move toward the
@@ -480,10 +510,10 @@ void GuardSpotTask::SetNewGoal(const idVec3& newPos)
 
 void GuardSpotTask::OnFinish(idAI* owner) // grayman #2560
 {
-	// The action subsystem has finished guarding the spot, so set the
-	// booleans back to false
+	// The action subsystem has finished guarding the spot, so reset
 	owner->GetMemory().guardingInProgress = false;
 	owner->GetMemory().millingInProgress = false;
+	owner->GetMemory().currentSearchSpot = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY);
 }
 
 void GuardSpotTask::Save(idSaveGame* savefile) const
@@ -491,6 +521,7 @@ void GuardSpotTask::Save(idSaveGame* savefile) const
 	Task::Save(savefile);
 
 	savefile->WriteInt(_exitTime);
+	savefile->WriteInt(_giveOrderTime);
 	savefile->WriteInt(static_cast<int>(_guardSpotState));
 	savefile->WriteVec3(_guardSpot);
 	savefile->WriteInt(_nextTurnTime);
@@ -503,6 +534,7 @@ void GuardSpotTask::Restore(idRestoreGame* savefile)
 	Task::Restore(savefile);
 
 	savefile->ReadInt(_exitTime);
+	savefile->ReadInt(_giveOrderTime);
 
 	int temp;
 	savefile->ReadInt(temp);

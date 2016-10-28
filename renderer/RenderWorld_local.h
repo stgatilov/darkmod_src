@@ -42,8 +42,10 @@ typedef struct doublePortal_s {
 	// A portal will be considered closed if it is past the
 	// fog-out point in a fog volume.  We only support a single
 	// fog volume over each portal.
-	idRenderLightLocal *		fogLight;
+	idRenderLightLocal *	fogLight;
 	struct doublePortal_s *	nextFoggedPortal;
+	int						viewCount;		// For r_showPortals. Keep track whether the player's view flows through 
+											// individual portals, not just whole visleafs.  -- SteveL #4162
 } doublePortal_t;
 
 
@@ -51,7 +53,7 @@ typedef struct portalArea_s {
 	int				areaNum;
 	int				connectedAreaNum[NUM_PORTAL_ATTRIBUTES];	// if two areas have matching connectedAreaNum, they are
 									// not separated by a portal with the apropriate PS_BLOCK_* blockingBits
-	int				viewCount;		// set by R_FindViewLightsAndEntities
+	int				viewCount;		// set by R_FindViewLightsAndEntities. Marks whether anything in this area has been drawn this frame for r_showPortals
 	portal_t *		portals;		// never changes after load
 	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
 	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change

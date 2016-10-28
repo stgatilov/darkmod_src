@@ -1696,7 +1696,7 @@ int idAASLocal::GetClusterSize()
 }
 
 // grayman #3857
-void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits)
+void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds searchLimits, idAI* ai) // grayman #4238
 {
 	int clusterNum = GetClusterNum(areaNum);
 	if (clusterNum > 0)
@@ -1715,6 +1715,13 @@ void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds se
 				continue;
 			}
 
+			// grayman #4238 - don't use this portal if already occupied
+
+			if ( ai->PointObstructed(center) )
+			{
+				continue;
+			}
+
 			idVec4 spot = idVec4(center.x,center.y,center.z,idMath::INFINITY); // INFINITY = face search area origin
 			portalList.Append(spot);
 		}
@@ -1723,7 +1730,7 @@ void idAASLocal::GetPortals(int areaNum, idList<idVec4> &portalList, idBounds se
 	{
 		idVec3 center = AreaCenter(areaNum);
 
-		if (searchLimits.ContainsPoint(center))
+		if (searchLimits.ContainsPoint(center) || ai->PointObstructed(center)) // grayman #4238
 		{
 			// ignore this portal
 			return;

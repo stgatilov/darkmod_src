@@ -565,14 +565,13 @@ void tdmEAS::CleanRouteInfo(int startCluster, int goalCluster)
 
 ElevatorStationInfoPtr tdmEAS::GetElevatorStationInfo(int index)
 {
-	if (index >= 0 || index < static_cast<int>(_elevatorStations.size())) 
+	if ( (index >= 0) && (index < static_cast<int>(_elevatorStations.size()))) // grayman #4229
+	//if (index >= 0 || index < static_cast<int>(_elevatorStations.size())) // very bad
 	{
 		return _elevatorStations[static_cast<std::size_t>(index)];
 	}
-	else
-	{
-		return ElevatorStationInfoPtr();
-	}
+
+	return ElevatorStationInfoPtr();
 }
 
 RouteInfoList tdmEAS::FindRoutesToCluster(int startCluster, int startArea, int goalCluster, int goalArea)
@@ -871,19 +870,19 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 #if 0
 		// grayman - for debugging, print the nodes for this route
 		RouteType type = (*route)->routeType;
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     type = %s for route 1\r", type == ROUTE_TO_AREA ? "AREA" : "CLUSTER");
 		RouteNodeList& routeNodes = (*route)->routeNodes;
 
 		for ( RouteNodeList::const_iterator node = routeNodes.begin() ; node != routeNodes.end() ; node++ )
 		{
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     node:\r");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     node:\r");
 			ActionType actionType = (*node)->type;
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*node)->toArea);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*node)->toCluster);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*node)->elevator);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*node)->elevatorStation);
-			DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*node)->nodeTravelTime);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("          ActionType = %s\r", actionType == ACTION_WALK ? "WALK" : "ELEVATOR");
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("              toArea = %d\r", (*node)->toArea);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("           toCluster = %d\r", (*node)->toCluster);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("            elevator = %d\r", (*node)->elevator);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("     elevatorStation = %d\r", (*node)->elevatorStation);
+			DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("      nodeTravelTime = %d\r", (*node)->nodeTravelTime);
 		}
 #endif
 		path.elevatorRoute = *route;
@@ -894,6 +893,7 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 	return result;
 }
 
+/* grayman #4229
 // grayman #3548
 CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float maxVertDist)
 {
@@ -908,7 +908,19 @@ CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float max
 			for (int positionIdx = 0; positionIdx < positionList.Num(); positionIdx++)
 			{
 				CMultiStateMoverPosition* positionEnt = positionList[positionIdx].positionEnt.GetEntity();
+
+				// grayman #4229 - verify that this position entity belongs to an elevator
+				// that the AI can use (as opposed to, for example, dumbwaiters)
 		
+				int stationIndex = GetElevatorStationIndex(positionEnt);
+
+				// If stationIndex is < 0, the AI can't use the position entity.
+
+				if ( stationIndex < 0 )
+				{
+					continue;
+				}
+
 				idVec3 entOrigin = positionEnt->GetPhysics()->GetOrigin();
 				float dist = (pos - entOrigin).LengthFast();
 				if (dist < maxDist)
@@ -926,7 +938,7 @@ CMultiStateMover* tdmEAS::GetNearbyElevator(idVec3 pos, float maxDist, float max
 
 	return elevator;
 }
-
+*/
 
 void tdmEAS::DrawRoute(int startArea, int goalArea)
 {

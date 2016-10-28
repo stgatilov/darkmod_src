@@ -96,6 +96,8 @@ private:
 	/**
 	* If nec, create a new renderModel (and return true if done so). If force is true,
 	* the model will be recreated, regardless of whether there where enough changes or not.
+	* #4168 -- "force" is no longer used. The model is always created afresh, due to heap 
+	* corruption when the step was skipped. See notes in UpdateRenderModel(). 
 	*/
 	bool						UpdateRenderModel( const bool force = false);
 

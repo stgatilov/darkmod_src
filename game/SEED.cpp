@@ -76,6 +76,9 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 // define to output debug info about watched and combined entities
 //#define M_DEBUG_COMBINE
 
+// grayman #4153 - define to get stats
+//#define S_DEBUG 1
+
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "SEED.h"
@@ -1143,14 +1146,18 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 		// find the proper skin index
 		idStr skin = kv->GetValue();
 		int skinIdx = AddSkin( &skin );
+#ifdef S_DEBUG
 		gameLocal.Printf( "SEED %s: Adding skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+#endif
 		SeedClass.skins.Append ( skinIdx );
 		kv = ent->spawnArgs.MatchPrefix( "skin", kv );
 	}
 	idStr random_skin = ent->spawnArgs.GetString("random_skin","");
 	if ( !random_skin.IsEmpty() )
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf( "SEED %s: Entity has random_skin '%s'.\n", GetName(), random_skin.c_str() );
+#endif
 		// split up at "," and add all these to the skins
 		// if we have X commata, we have X+1 pieces, so go through all of them
 		int start = 0; int end = 0;
@@ -1181,7 +1188,9 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 						skin = "";
 					}
 					int skinIdx = AddSkin( &skin );
+#ifdef S_DEBUG
 					gameLocal.Printf( "SEED %s: Adding random skin '%s' (idx %i) to class.\n", GetName(), skin.c_str(), skinIdx );
+#endif
 					SeedClass.skins.Append ( skinIdx );
 				}
 				start = end;
@@ -1428,9 +1437,11 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 			fImgDensity = 1 - fImgDensity;
 		}
 
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: Using %s: %ix%i px, %i bpp, average density %0.4f.\n", 
 				GetName(), gameLocal.m_ImageMapManager->GetMapName( SeedClass.imgmap ) ,
 			   	w, h, bpp, fImgDensity );
+#endif
 		if (fImgDensity < 0.001f)
 		{
 			gameLocal.Warning("The average density of this image map is very low.");
@@ -1825,7 +1836,9 @@ void Seed::AddTemplateFromEntityDef( idStr base, const idList<idStr> *sa )
 	if( !p_Def )
 	{
 		// try "func_static" with that as model
+#ifdef S_DEBUG
 		gameLocal.Printf ("SEED %s: Cannot find entityDef %s, trying func_static with model.\n", GetName(), entityClass.c_str() );
+#endif
 		entityModel = entityClass;
 		entityClass = "func_static";
 		p_Def = gameLocal.FindEntityDefDict( "func_static", false );
@@ -1989,7 +2002,9 @@ void Seed::Prepare( void )
 					while( kv )
 					{
 						idStr classname = kv->GetValue();
+#ifdef S_DEBUG
 						gameLocal.Printf( "SEED %s: Inhibitor adding class '%s' (%s)\n", GetName(), classname.c_str(), SeedInhibitor.inhibit_only ? "inhibit" : "noinhibit" );
+#endif
 						SeedInhibitor.classnames.Append( classname );
 						// next one please
 						kv = ent->spawnArgs.MatchPrefix( prefix, kv );
@@ -2151,7 +2166,9 @@ void Seed::Prepare( void )
 		// if we do have pseudo classes, I cannot remove myself as they need me
 		if (m_iNumStaticMulties > 0)
 		{
+#ifdef S_DEBUG
 			gameLocal.Printf( "SEED %s: Cannot remove myself, because I have %i static multies.\n", GetName(), m_iNumStaticMulties );
+#endif
 		}
 		else
 		{
@@ -2171,7 +2188,9 @@ void Seed::Prepare( void )
 				if (entityClass && entityClass->pseudo)
 				{
 					canRemoveMyself = false;
+#ifdef S_DEBUG
 					gameLocal.Printf( "SEED %s: Cannot remove myself, because I have at least one static multi.\n", GetName() );
+#endif
 					// set to at least one so Restore() works
 					m_iNumStaticMulties = 1;
 					// no sense in spawning the rest right now
@@ -2206,7 +2225,9 @@ void Seed::Prepare( void )
 	if (m_Entities.Num() == 0)
 	{
 		// could not create any entities?
+#ifdef S_DEBUG
 		gameLocal.Printf( "SEED %s: Have no entities to control, becoming inactive.\n", GetName() );
+#endif
 		// Tels: Does somehow not work, bouncing us again and again into this branch?
 		BecomeInactive(TH_THINK);
 		m_iNumEntities = -1;
@@ -2338,7 +2359,9 @@ void Seed::PrepareEntities( void )
 			}
 		}
 
+#ifdef S_DEBUG
 		gameLocal.Printf( "SEED %s: Creating %i entities of class %s (#%i index %i, seed %i).\n", GetName(), iEntities, m_Classes[i].classname.c_str(), i, idx, m_iSeed );
+#endif
 
 		// default to what the SEED says
 		idAngles class_rotate_min = spawnArgs.GetAngles("seed_rotate_min", rand_rotate_min);
@@ -2509,8 +2532,10 @@ void Seed::PrepareEntities( void )
 							// outside range, zero-clamp
 							//probability = 0.0f;
 							// placement will fail, anyway:
+#ifdef S_DEBUG
 							gameLocal.Printf ("SEED %s: Skipping placement, probability == 0 (min %0.2f, p=%0.2f, max %0.2f).\n", 
 									GetName(), m_Classes[i].func_min, p, m_Classes[i].func_max );
+#endif
 							continue;
 						}
 					}
@@ -2519,7 +2544,9 @@ void Seed::PrepareEntities( void )
 						// clamp to min .. max
 						probability = idMath::ClampFloat( m_Classes[i].func_min, m_Classes[i].func_max, p );
 					}
+#ifdef S_DEBUG
 					gameLocal.Printf ("SEED %s: falloff func gave p = %0.2f (clamped %0.2f)\n", GetName(), p, probability);
+#endif
 				}
 
        			// image based falloff probability
@@ -2952,7 +2979,9 @@ void Seed::PrepareEntities( void )
 								idBox otherBox = SeedEntityBoxes[k];
 								if (otherBox.IntersectsBox (testBox))
 								{
+#ifdef S_DEBUG
 									gameLocal.Printf( "SEED %s: Entity %i box collides with entity %i box, trying another place.\n", GetName(), j, k );
+#endif
 									collides = true;
 									break;
 								}
@@ -2967,7 +2996,9 @@ void Seed::PrepareEntities( void )
 
 					if (tries < MAX_TRIES && m_iDebug > 0)
 					{
+#ifdef S_DEBUG
 						gameLocal.Printf( "SEED %s: Found valid position for entity %i with %i tries.\n", GetName(), j, tries );
+#endif
 					}
 					break;
 				}
@@ -3031,7 +3062,9 @@ void Seed::PrepareEntities( void )
 	m_Entities.Append( m_Watched );
 
 	timer_prepare.Stop();
+#ifdef S_DEBUG
 	gameLocal.Printf("SEED %s: Preparing %i entities took %0.0f ms.\n", GetName(), m_Entities.Num(), timer_prepare.Milliseconds() );
+#endif
 
 	// combine the spawned entities into megamodels if possible
 	CombineEntities();
@@ -3062,8 +3095,10 @@ void Seed::CreateWatchedList(void) {
 			continue;
 		}
 
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: Looking for brethren of %s (combine as '%s'), model %s.\n", 
 				GetName(), m_Classes[i].classname.c_str(), m_Classes[i].combine_as.c_str(), m_Classes[i].modelname.c_str() );
+#endif
 
 		// go through all entities
 		for (int j = 0; j < gameLocal.num_entities; j++)
@@ -3162,7 +3197,9 @@ void Seed::CreateWatchedList(void) {
 
     timer_create.Stop();
 
+#ifdef S_DEBUG
 	gameLocal.Printf("SEED %s: Creating %i watch list entities took %0.0f ms.\n", GetName(), m_Watched.Num(), timer_create.Milliseconds() );
+#endif
 }
 
 // sort a list of offsets by their distance
@@ -3197,7 +3234,9 @@ void Seed::CombineEntities( void )
 
 	if ( !m_bCombine )
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: combine = 0, skipping combine step.\n", GetName() );
+#endif
 		return;
 	}
 
@@ -3223,7 +3262,9 @@ void Seed::CombineEntities( void )
 	// we then expect all entities to be in the same PVS, too:
 	if (multiPVS)
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: MultiPVS.\n", GetName() );
+#endif
 		pvs.Clear();
 		// O(N)
 		for (int i = 0; i < m_Entities.Num(); i++)
@@ -3246,7 +3287,9 @@ void Seed::CombineEntities( void )
 	}
 	else if (m_iDebug > 1)
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: SinglePVS.\n", GetName() );
+#endif
 	}
 
 	idRenderModel* tempModel = NULL;
@@ -3512,7 +3555,9 @@ void Seed::CombineEntities( void )
 			}
 			if (m_iDebug > 0)
 			{
+#ifdef S_DEBUG
 				gameLocal.Printf("SEED %s: Combined %i entities.\n", GetName(), sortedOffsets.Num() );
+#endif
 			}
 			sortedOffsets.Clear();
 
@@ -3540,7 +3585,9 @@ void Seed::CombineEntities( void )
 
 	if (mergedCount > 0)
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: Merged entity positions, now building combined final list.\n", GetName() );
+#endif
 
 		// delete all entities that got merged by copying all that got not merged, then throw away the others
 
@@ -3566,8 +3613,10 @@ void Seed::CombineEntities( void )
 	sortedOffsets.Clear();
 
 	timer_combine.Stop();
+#ifdef S_DEBUG
 	gameLocal.Printf("SEED %s: Combined %i entities into %i entities, took %0.0f ms.\n",
 		GetName(), mergedCount + m_Entities.Num(), m_Entities.Num(), timer_combine.Milliseconds() );
+#endif
 
 	return;
 }
@@ -3892,13 +3941,17 @@ void Seed::Think( void )
 	// haven't initialized entities yet?
 	if (!m_bPrepared)
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf("SEED %s: Preparing entities.\n", GetName() );
+#endif
 		Prepare();
 	}
 	// GUI setting changed?
 	if ( idMath::Fabs(cv_lod_bias.GetFloat() - m_fLODBias) > 0.1)
 	{
+#ifdef S_DEBUG
 		gameLocal.Printf ("SEED %s: GUI setting changed, recomputing.\n", GetName() );
+#endif
 
 		int cur_entities = m_iNumEntities;
 
@@ -3915,7 +3968,9 @@ void Seed::Think( void )
 			// create same sequence again
 			m_iSeed_2 = m_iOrgSeed;
 
+#ifdef S_DEBUG
 			gameLocal.Printf ("SEED %s: Have now %i entities.\n", GetName(), m_iNumEntities );
+#endif
 
 			PrepareEntities();
 		}
@@ -4058,8 +4113,10 @@ void Seed::Think( void )
 			// the overall number seems to be the maximum number of entities that ever existed, so
 			// to get the true real amount, one would probably go through gameLocal.entities[] and
 			// count the valid ones:
+#ifdef S_DEBUG
 			gameLocal.Printf( "%s: spawned %i, culled %i, existing: %i, visible: %i, overall: %i\n",
 				GetName(), spawned, culled, m_iNumExisting, m_iNumVisible, m_iNumEntitiesInGame );
+#endif
 		}
 	}
 }

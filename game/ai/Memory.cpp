@@ -109,6 +109,7 @@ Memory::Memory(idAI* owningAI) :
 	issueMoveToPositionTask(false), // grayman #3052
 	closeSuspiciousDoor(false), // grayman #1327
 	currentSearchEventID(-1), // grayman #3424
+	searchStartTime(0), // grayman #4220
 	playerResponsible(false),  // grayman #3679 - is the player responsible for the attack?
 	stayPut(false), // grayman #3528
 	combatState(-1), // grayman #3507
@@ -201,6 +202,7 @@ void Memory::Save(idSaveGame* savefile) const
 	savefile->WriteBool(stopMilling); // grayman #3857
 	savefile->WriteBool(shouldMill); // grayman #3857
 	savefile->WriteFloat(guardingAngle); // grayman #3857
+	savefile->WriteInt(consecutiveRadialSpotFailures); // grayman #3857
 	savefile->WriteInt(static_cast<int>(repeatedBarkState)); // grayman #3857
 	savefile->WriteBool(fleeing);
 	savefile->WriteVec3(positionBeforeTakingCover);
@@ -247,6 +249,8 @@ void Memory::Save(idSaveGame* savefile) const
 	// end of #2866 changes
 
 	savefile->WriteInt(currentSearchEventID); // grayman #3424
+
+	savefile->WriteInt(searchStartTime); // grayman #4220
 
 	attacker.Save(savefile); // grayman #3679
 	savefile->WriteBool(playerResponsible); // grayman #3679
@@ -346,6 +350,7 @@ void Memory::Restore(idRestoreGame* savefile)
 	savefile->ReadBool(stopMilling); // grayman #3857
 	savefile->ReadBool(shouldMill); // grayman #3857
 	savefile->ReadFloat(guardingAngle); // grayman #3857
+	savefile->ReadInt(consecutiveRadialSpotFailures); // grayman #3857
 
 	savefile->ReadInt(temp);
 	repeatedBarkState = static_cast<ERepeatedBarkState>(temp); // grayman #3857
@@ -422,6 +427,8 @@ void Memory::Restore(idRestoreGame* savefile)
 	// end of #2866 changes
 
 	savefile->ReadInt(currentSearchEventID); // grayman #3424
+
+	savefile->ReadInt(searchStartTime); // grayman #4220
 
 	attacker.Restore(savefile); // grayman #3679
 	savefile->ReadBool(playerResponsible); // grayman #3679

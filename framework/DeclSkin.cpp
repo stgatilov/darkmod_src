@@ -148,10 +148,12 @@ const idMaterial *idDeclSkin::RemapShaderBySkin( const idMaterial *shader ) cons
 		return NULL;
 	}
 
+	/* // SteveL #4232: we do want to reskin collision models. Comment out this test.
 	// never remap surfaces that were originally nodraw, like collision hulls
 	if ( !shader->IsDrawn() ) {
 		return shader;
 	}
+	*/
 
 	for ( int i = 0; i < mappings.Num() ; i++ ) {
 		const skinMapping_t	*map = &mappings[i];

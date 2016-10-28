@@ -24,6 +24,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Game_local.h"
 
+#define MAX_MASS_TO_PUSH 8.0f // grayman #4383
+
 
 /*
 ============
@@ -785,9 +787,12 @@ int idPush::TryRotatePushEntity( trace_t &results, idEntity *check, idClipModel 
 		}
 
 		// grayman #3756 - check for collision with large AI
-		if ( check->IsType(idAI::Type) && ( check->GetPhysics()->GetMass() > SMALL_AI_MASS ) )
+		if ( check->IsType(idAI::Type) && ( check->GetPhysics()->GetMass() > SMALL_AI_MASS ) &&
+			// grayman #3967 - don't let bodies block moving objects
+			!static_cast<idAI*>(check)->AI_DEAD &&
+			!static_cast<idAI*>(check)->AI_KNOCKEDOUT)
 		{
-			// We are colliding with a large AI and are not allowed to push it, return BLOCKED
+			// We are colliding with a large conscious AI and are not allowed to push it, return BLOCKED
 			results.c.normal = -results.c.normal;
 			results.c.dist = -results.c.dist;
 
@@ -1260,6 +1265,13 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 			check->ProcessEvent( &EV_Gib, "damage_Gib" );
 		}
 
+		// grayman #4383
+		// if the entity is a small moveable
+		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() <= MAX_MASS_TO_PUSH) )
+		{
+			continue;
+		}
+
 		// blocked
 		results = pushResults;
 		results.fraction = 0.0f;
@@ -1426,6 +1438,13 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 			if ( static_cast<idAFEntity_Base *>(check)->IsActiveAF() ) {
 				check->ProcessEvent( &EV_Gib, "damage_Gib" );
 			}
+		}
+
+		// grayman #4383
+		// if the entity is a small moveable
+		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() <= MAX_MASS_TO_PUSH) )
+		{
+			continue;
 		}
 
 		// blocked

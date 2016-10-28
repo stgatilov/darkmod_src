@@ -147,6 +147,8 @@ void LightGem::InitializeLightGemEntity( void )
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noDynamicInteractions = false;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noShadow = true;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noSelfShadow = true;
+	//nbohr1more: #4379 lightgem culling
+	m_LightgemSurface.GetEntity()->GetRenderEntity()->islightgem = true;
 
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface.GetEntity());
 }
@@ -177,6 +179,8 @@ void LightGem::Restore( idRestoreGame & a_savedGame )
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noDynamicInteractions = false;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noShadow = true;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noSelfShadow = true;
+	//nbohr1more: #4379 lightgem culling
+	m_LightgemSurface.GetEntity()->GetRenderEntity()->islightgem = true;
 
 	DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("LightgemSurface: [%08lX]\r", m_LightgemSurface.GetEntity());
 }
@@ -425,16 +429,18 @@ void LightGem::AnalyzeRenderImage()
 
 			// The order is RGB. NOTE: Serp - I have moved the scale into the rgb multiplier
 			// this is to move the calculation into the precompiler (could move to .h directly)
-			m_fColVal[in] += (buffer[0] * (DARKMOD_LG_RED  * DARKMOD_LG_SCALE) +
-							  buffer[1] * (DARKMOD_LG_GREEN* DARKMOD_LG_SCALE) +
-							  buffer[2] * (DARKMOD_LG_BLUE * DARKMOD_LG_SCALE));
+			// #4395 Duzenko lightem pixel pack buffer optimization
+			m_fColVal[in] += (buffer[0] * (DARKMOD_LG_RED  ) +
+							  buffer[1] * (DARKMOD_LG_GREEN) +
+							  buffer[2] * (DARKMOD_LG_BLUE ));
 		}
 	}
 
 	// Calculate the average for each value
 	// Could be moved to the return
-	m_fColVal[0] *= DARKMOD_LG_TRIRATIO;
-	m_fColVal[1] *= DARKMOD_LG_TRIRATIO;
-	m_fColVal[2] *= DARKMOD_LG_TRIRATIO;
-	m_fColVal[3] *= DARKMOD_LG_TRIRATIO;
+	// #4395 Duzenko lightem pixel pack buffer optimization
+	m_fColVal[0] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
+	m_fColVal[1] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
+	m_fColVal[2] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
+	m_fColVal[3] *= DARKMOD_LG_TRIRATIO * DARKMOD_LG_SCALE;
 }

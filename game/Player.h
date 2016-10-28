@@ -291,6 +291,9 @@ public:
 	idScriptBool			AI_CROUCH;
 	idScriptBool			AI_ONGROUND;
 	idScriptBool			AI_ONLADDER;
+	// AI_INWATER holds a value from the enum waterLevel_t to say how deep the player is in 
+	// water. Can still be used as a boolean by scripts, because WATERLEVEL_NONE == 0. SteveL #4159
+	idScriptInt				AI_INWATER; 
 	//idScriptBool			AI_DEAD; // is defined on idActor now
 	idScriptBool			AI_RUN;
 	idScriptBool			AI_PAIN;
@@ -873,6 +876,9 @@ public:
 	// Shows/hides the in-game objectives GUI
 	void					ToggleObjectivesGUI();
 
+	// Shows/hides the in-game inventory grid GUI -- Durandall #4286
+	void					ToggleInventoryGridGUI();
+
 	/**
 	* Physically test whether an item would fit in the world when
 	* dropped with its center of mass (not origin!) at the specified point
@@ -952,6 +958,9 @@ public:
 	// Updates the in-game Objectives GUI, if visible (otherwise nothing happens)
 	void			UpdateObjectivesGUI();
 
+	// Updates the in-game Inventory Grid GUI, if visible (otherwise nothing happens) -- Durandall #4286
+	void			UpdateInventoryGridGUI();
+
 	void			PrintDebugHUD();
 
 	// Runs the "Click when ready" GUI, returns TRUE if the player is ready
@@ -973,16 +982,6 @@ public:
 	**/
 	idLocationEntity *GetLocation( void );
 
-// sikk---> Depth Render
-	void					ToggleSuppression( bool bSuppress );
-	bool					bViewModelsModified;
-// <---sikk
-	// sikk---> Depth of Field PostProcess
-	//int						GetTalkCursor( void ) { return talkCursor; };	// used to check if character has focus
-	bool					bIsZoomed;
-	float					focusDistance;
-// <---sikk
-
 protected:
 	/**
 	* greebo: This creates all the default inventory items and adds the weapons.
@@ -994,6 +993,10 @@ protected:
 	// greebo: Methods used to manage the GUI layer for the in-game objectives
 	void CreateObjectivesGUI();
 	void DestroyObjectivesGUI();
+
+	// Methods used to manage the GUI layer for the in-game inventory grid -- Durandall #4286
+	void CreateInventoryGridGUI();
+	void DestroyInventoryGridGUI();
 
 	/**
 	* greebo: Parses the spawnargs for any weapon definitions and adds them
@@ -1058,6 +1061,9 @@ private:
 
 	// The GUI handle used by the in-game objectives display 
 	int						objectivesOverlay;
+
+	// The GUI handle used by the in-game inventory grid display -- Durandall #4286
+	int						inventoryGridOverlay;
 
 	idInterpolate<float>	zoomFov;
 	idInterpolate<float>	centerView;
@@ -1146,6 +1152,9 @@ private:
 
 	// An integer keeping track of the lightgem interleaving
 	int							m_LightgemInterleave;
+	
+	// nbohr1more #4369 Dynamic Lightgem Interleave
+	int							m_LightgemInterleaveMin;
 
 	// grayman #597 - ignore attack button if depressed, but weapon has been lowered
 	bool						ignoreWeaponAttack;
@@ -1425,7 +1434,7 @@ private:
 	void					Event_ProcessInterMissionTriggers();
 
 	// Obsttorte: event to save the game
-	void					Event_saveGame(idStr name);
+	void					Event_saveGame(const char* name);
 
 
 	void					Event_setSavePermissions(int sp);

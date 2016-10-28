@@ -374,7 +374,7 @@ tree_t *FaceBSP( bspface_t *list ) {
 
 	start = Sys_Milliseconds();
 
-	common->Printf( "--- FaceBSP ---\n" );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "--- FaceBSP ---\n" );
 
 	tree = AllocTree ();
 
@@ -386,7 +386,7 @@ tree_t *FaceBSP( bspface_t *list ) {
 			tree->bounds.AddPoint( (*face->w)[i].ToVec3() );
 		}
 	}
-	common->Printf( "%5i faces\n", count );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i faces\n", count );
 
 	tree->headnode = AllocNode();
 	tree->headnode->bounds = tree->bounds;
@@ -394,11 +394,12 @@ tree_t *FaceBSP( bspface_t *list ) {
 
 	BuildFaceTree_r ( tree->headnode, list );
 
-	common->Printf( "%5i leafs\n", c_faceLeafs );
+	PrintIfVerbosityAtLeast( VL_ORIGDEFAULT, "%5i leafs\n", c_faceLeafs );
 
 	end = Sys_Milliseconds();
 
-	common->Printf( "%5.1f seconds faceBsp\n", ( end - start ) / 1000.0 );
+	verbosityLevel_t timingMsgVerbosity = ( end - start >= 50 ? VL_CONCISE : VL_ORIGDEFAULT ); // Only print if it'll show something other than 0.0
+	PrintIfVerbosityAtLeast( timingMsgVerbosity, "%5.1f seconds faceBsp\n", ( end - start ) / 1000.0 );
 
 	return tree;
 }

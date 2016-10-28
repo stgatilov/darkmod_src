@@ -579,7 +579,7 @@ void idSoundEmitterLocal::Spatialize( idVec3 listenerPos, int listenerArea, idRe
 		volumeLoss = 0; // grayman #3042 - accumulates volume loss via ResolveOrigin() processing
 
 		SoundChainResults results;
-		if ( soundWorld->ResolveOrigin( 0, NULL, soundInArea, 0.0f, 0.0f, origin, this, &results ) ) // grayman #3042
+		if ( soundWorld->ResolveOrigin( 0, NULL, soundInArea, 0.0f, 0.0f, origin, origin, this, &results ) ) // grayman #3042
 		{
 			// get results
 			spatializedOrigin = results.spatializedOrigin;
@@ -837,9 +837,9 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		}
 	}
 
-    // greebo: If a sound is started in between BeginLevelLoad() and EndLevelLoad()
-    // the corresponding sample might get purged in EndLevelLoad(), so set the flag to prevent this.
-    chan->leadinSample->levelLoadReferenced = true;
+	// greebo: If a sound is started in between BeginLevelLoad() and EndLevelLoad() #3804
+	// the corresponding sample might get purged in EndLevelLoad(), so set the flag to prevent this.
+	chan->leadinSample->levelLoadReferenced = true;
 
 	if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
 		common->Printf( "'%s'\n", chan->leadinSample->name.c_str() );
@@ -886,7 +886,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		chan->triggerGame44kHzTime -= diversity * length;
 		chan->triggerGame44kHzTime &= ~7;
 	}
-	
+
 	length *= 1000 / (float)PRIMARYFREQ;
 
 	Sys_LeaveCriticalSection();

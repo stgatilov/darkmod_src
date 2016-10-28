@@ -69,6 +69,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <boost/lexical_cast.hpp>
 
+#include "Tasks/PlayAnimationTask.h" // #3597
+
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
 const int AUD_ALERT_DELAY_MAX = 1500; // grayman #3356 - max amount of time delay (ms) before processing an audio alert
 
@@ -101,6 +103,8 @@ const float MAX_FLEE_DISTANCE = 10000.0f;
 
 #define INITIAL_PICKPOCKET_DELAY  2000 // how long to initially wait before proceeding (ms)
 #define LATCHED_PICKPOCKET_DELAY 60000 // how long to wait before seeing if a latch has been removed (ms)
+
+#define MIN_SPEED_TO_NOTICE_MOVEABLE 20 // grayman #4304 - minimum speed to notice getting hit by a moveable
 
 class CRelations;
 class CsndProp;
@@ -543,6 +547,8 @@ idAI::idAI()
 	m_allowAudioAlerts  = true;  // grayman #3424
 	m_searchID			= -1;	 // grayman #3857
 
+	m_pathWaitTaskEndtime = 0; // grayman #4046
+
 	m_SoundDir.Zero();
 	m_LastSight.Zero();
 	m_AlertLevelThisFrame = 0.0f;
@@ -565,6 +571,8 @@ idAI::idAI()
 	m_oldVisualAcuity = 0.0f;
 	m_sleepFloorZ = 0;  // grayman #2416
 	m_getupEndTime = 0; // grayman #2416
+
+	m_barkEndTime = 0; // grayman #3857
 
 	m_bCanDrown = true;
 	m_AirCheckTimer = 0;
@@ -762,6 +770,19 @@ void idAI::Save( idSaveGame *savefile ) const {
 		ds.stim.Save(savefile);
 	}
 
+	// grayman #4002 - entity alert list
+
+	savefile->WriteInt(alertQueue.Num());
+	for (i = 0 ; i < alertQueue.Num() ; i++)
+	{
+		EntityAlert ea = alertQueue[i];
+
+		savefile->WriteInt(ea.timeAlerted);
+		savefile->WriteInt(ea.alertIndex);
+		ea.entityResponsible.Save(savefile);
+		savefile->WriteBool(ea.processed);
+	}
+
 	savefile->WriteInt( talk_state );
 	talkTarget.Save( savefile );
 
@@ -839,6 +860,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteBool(m_deckedByPlayer);		// grayman #3314
 	savefile->WriteBool(m_allowAudioAlerts);	// grayman #3424
 	savefile->WriteInt(m_searchID);				// grayman #3857
+	savefile->WriteFloat(m_pathWaitTaskEndtime); // grayman #4046
 	savefile->WriteJoint( flashJointWorld );
 	savefile->WriteInt( muzzleFlashEnd );
 
@@ -991,6 +1013,9 @@ void idAI::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(m_lastThinkTime);
 	savefile->WriteInt(m_nextThinkFrame);
 
+	savefile->WriteString(m_barkName); // grayman #3857
+	savefile->WriteInt(m_barkEndTime); // grayman #3857
+	
 	savefile->WriteBool(m_bPushOffPlayer);
 
 	savefile->WriteBool(m_bCanBeFlatFooted);
@@ -1045,6 +1070,8 @@ void idAI::Save( idSaveGame *savefile ) const {
 	{
 		savefile->WriteObject(*i);
 	}
+	
+	savefile->WriteVec3( lastSearchedSpot ); // grayman #4220
 
 	mind->Save(savefile);
 
@@ -1201,6 +1228,18 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		delayedStims[i].stim.Restore(savefile);
 	}
 
+	// grayman #4002 - entity alert list
+
+	savefile->ReadInt(num);
+	alertQueue.SetNum(num);
+	for (i = 0 ; i < num ; i++)
+	{
+		savefile->ReadInt(alertQueue[i].timeAlerted);
+		savefile->ReadInt(alertQueue[i].alertIndex);
+		alertQueue[i].entityResponsible.Restore(savefile);
+		savefile->ReadBool(alertQueue[i].processed);
+	}
+
 	savefile->ReadInt( i );
 	talk_state = static_cast<talkState_t>( i );
 	talkTarget.Restore( savefile );
@@ -1288,6 +1327,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadBool(m_deckedByPlayer);	 // grayman #3314
 	savefile->ReadBool(m_allowAudioAlerts);	 // grayman #3424
 	savefile->ReadInt(m_searchID);			 // grayman #3857
+	savefile->ReadFloat(m_pathWaitTaskEndtime); // grayman #4046
 	savefile->ReadJoint( flashJointWorld );
 	savefile->ReadInt( muzzleFlashEnd );
 
@@ -1464,6 +1504,9 @@ void idAI::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(m_lastThinkTime);
 	savefile->ReadInt(m_nextThinkFrame);
 
+	savefile->ReadString(m_barkName); // grayman #3857
+	savefile->ReadInt(m_barkEndTime); // grayman #3857
+
 	savefile->ReadBool(m_bPushOffPlayer);
 
 	savefile->ReadBool(m_bCanBeFlatFooted);
@@ -1527,6 +1570,8 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadObject(reinterpret_cast<idClass *&>(tactEnt));
 		tactileIgnoreEntities.insert(tactEnt);
 	}
+	
+	savefile->ReadVec3( lastSearchedSpot); // grayman #4220
 
 	mind = ai::MindPtr(new ai::Mind(this));
 	mind->Restore(savefile);
@@ -1740,18 +1785,19 @@ void idAI::Spawn( void )
 	//alertTypeWeight[ai::EAlertTypeDeadPerson]			= 41;
 
 	alertTypeWeight[ai::EAlertTypeBlinded]				= 36; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeWeapon]				= 35;
-	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872
-	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327
-	alertTypeWeight[ai::EAlertTypeBlood]				= 30;
-	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26;
-	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25;
-	alertTypeWeight[ai::EAlertTypeDoor]					= 20;
-	alertTypeWeight[ai::EAlertTypeLightSource]			= 10;
-	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		=  8; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeHitByMoveable]		=  7;
+	//alertTypeWeight[ai::EAlertTypeWeapon]				= 35; // grayman #3992
+	alertTypeWeight[ai::EAlertTypeRope]					= 34; // grayman #2872 (dangling rope)
+	alertTypeWeight[ai::EAlertTypeSuspiciousItem]		= 33; // grayman #1327 (stuck arrows or flying fireballs)
+	alertTypeWeight[ai::EAlertTypeBlood]				= 30; // blood marker
+	alertTypeWeight[ai::EAlertTypeBrokenItem]			= 26; // shattered glass
+	alertTypeWeight[ai::EAlertTypeMissingItem]			= 25; // stolen loot
+	alertTypeWeight[ai::EAlertTypeWeapon]				= 24; // #3992 debug (dropped melee or ranged weapons)
+	alertTypeWeight[ai::EAlertTypeDoor]					= 20; // door found open should be closed
+	alertTypeWeight[ai::EAlertTypeLightSource]			= 10; // light found off should be on
+	alertTypeWeight[ai::EAlertTypeSuspiciousVisual]		=  8; // grayman #3857 (got a glimpse of the player)
+	alertTypeWeight[ai::EAlertTypeHitByMoveable]		=  7; // hit by something
 	alertTypeWeight[ai::EAlertTypePickedPocket]			=  6; // grayman #3857
-	alertTypeWeight[ai::EAlertTypeSuspicious]			=  5;
+	alertTypeWeight[ai::EAlertTypeSuspicious]			=  5; // audio alerts
 	alertTypeWeight[ai::EAlertTypeNone]					=  0;
 
 	// grayman #3857 - the following alert types are used to differentiate
@@ -1990,6 +2036,8 @@ void idAI::Spawn( void )
 	InitProjectileInfo();
 
 	delayedStims.Clear(); // grayman #2603
+
+	alertQueue.Clear(); // grayman #4002
 
 	particles.Clear();
 	restartParticles = true;
@@ -2309,6 +2357,7 @@ void idAI::Think( void )
 
 	SetNextThinkFrame();
 
+	//PrintGoalData(move.moveDest, 10);
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
 	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
 	{
@@ -3137,15 +3186,15 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	START_SCOPED_TIMING(aiPathToGoalTimer, scopedPathToGoalTimer);
 
 	idVec3 org = origin;
-	aas->PushPointIntoAreaNum( areaNum, org );
-	if ( !areaNum )
+	aas->PushPointIntoAreaNum(areaNum, org);
+	if (!areaNum)
 	{
 		return false;
 	}
 
 	idVec3 goal = goalOrigin;
-	aas->PushPointIntoAreaNum( goalAreaNum, goal );
-	if ( !goalAreaNum )
+	aas->PushPointIntoAreaNum(goalAreaNum, goal);
+	if (!goalAreaNum)
 	{
 		return false;
 	}
@@ -3174,7 +3223,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	else
 	{
 		int travelTime; // grayman #3548
-		returnval = aas->WalkPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, travelTime, actor ); // grayman #3548
+		returnval = aas->WalkPathToGoal(path, areaNum, org, goalAreaNum, goal, travelFlags, travelTime, actor); // grayman #3548
 	}
 	gameLocal.m_AreaManager.EnableForbiddenAreas(this);
 
@@ -3274,6 +3323,17 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 	return travelTime;
 }
 
+void idAI::SetStartTime(idVec3 pos)
+{
+	// grayman #3993 - if the new destination is close to the current
+	// destination, don't reset startTime
+
+	if ( (move.moveDest - pos).LengthFast() > 1.0f )
+	{
+		move.startTime = gameLocal.time;
+	}
+}
+
 /*
 =====================
 idAI::StopMove
@@ -3281,6 +3341,42 @@ idAI::StopMove
 */
 void idAI::StopMove( moveStatus_t status )
 {
+	// grayman #4238 - are we stopping while clipping into a large AI?
+
+//--------------------------------
+//	if ( gameLocal.framenum > 30 )
+//	{
+		if ( physicsObj.GetNumClipModels() )
+		{
+			idEntity	*hit;
+			idClipModel *cm;
+			idClipModel *clipModels[MAX_GENTITIES];
+
+			int num = gameLocal.clip.ClipModelsTouchingBounds(physicsObj.GetAbsBounds(), physicsObj.GetClipMask(), clipModels, MAX_GENTITIES);
+			for ( int i = 0; i < num; i++ )
+			{
+				cm = clipModels[i];
+				hit = cm->GetEntity();
+				if ( hit && (hit != this) )
+				{
+					if ( hit->IsType(idAI::Type) ) // hit is an AI?
+					{
+						if ( hit->GetPhysics()->GetMass() > SMALL_AI_MASS ) // hit is not a small AI?
+						{
+							idAI *hitAI = static_cast<idAI*>(hit);
+							if ( !hitAI->AI_FORWARD ) // hit is standing still?
+							{
+								hitAI->PushWithAF();
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+//	}
+//----------------------------------
+
 	// Note: you might be tempted to set AI_RUN to false here,
 	// but AI_RUN needs to persist when stopping at a point
 	// where the AI is just going to start moving again.
@@ -3291,11 +3387,12 @@ void idAI::StopMove( moveStatus_t status )
 	move.moveStatus		= status;
 	move.toAreaNum		= 0;
 	move.goalEntity		= NULL;
-	move.moveDest		= physicsObj.GetOrigin();
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
+	move.moveDest = physicsObj.GetOrigin();
 	AI_DEST_UNREACHABLE	= (status == MOVE_STATUS_DEST_UNREACHABLE);
 	AI_OBSTACLE_IN_PATH = false;
 	AI_BLOCKED			= false;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.duration		= 0;
 	move.range			= 0.0f;
 	move.speed			= 0.0f;
@@ -3334,10 +3431,11 @@ bool idAI::FaceEnemy( void )
 
 	TurnToward( lastVisibleEnemyPos );
 	move.goalEntity		= enemyEnt;
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
 	move.moveDest		= physicsObj.GetOrigin();
 	move.moveCommand	= MOVE_FACE_ENEMY;
 	move.moveStatus		= MOVE_STATUS_WAITING;
-	move.startTime		= gameLocal.time;
+	// move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= true;
@@ -3366,10 +3464,11 @@ bool idAI::FaceEntity( idEntity *ent )
 	idVec3 entityOrg = ent->GetPhysics()->GetOrigin();
 	TurnToward( entityOrg );
 	move.goalEntity		= ent;
+	SetStartTime(physicsObj.GetOrigin()); // grayman #3993
 	move.moveDest		= physicsObj.GetOrigin();
 	move.moveCommand	= MOVE_FACE_ENTITY;
 	move.moveStatus		= MOVE_STATUS_WAITING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	AI_MOVE_DONE		= true;
 	AI_FORWARD			= false;
@@ -3390,11 +3489,12 @@ bool idAI::DirectMoveToPosition( const idVec3 &pos ) {
 		return true;
 	}
 
+	SetStartTime(pos); // grayman #3993
 	move.moveDest		= pos;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_TO_POSITION_DIRECT;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -3425,11 +3525,17 @@ bool idAI::MoveToEnemyHeight( void ) {
 		return false;
 	}
 
-	move.moveDest.z		= lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+	 // grayman #3993
+	idVec3 pos = move.moveDest;
+	pos.z = lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+	SetStartTime(pos);
+	move.moveDest.z = pos.z;
+	//move.moveDest.z = lastVisibleEnemyPos.z + enemyEnt->EyeOffset().z + fly_offset;
+
 	move.goalEntity		= enemyEnt;
 	move.moveCommand	= MOVE_TO_ENEMYHEIGHT;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= 0.0f;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -3498,7 +3604,8 @@ bool idAI::MoveToEnemy( void ) {
 
 	if ( move.moveCommand != MOVE_TO_ENEMY ) {
 		move.moveCommand	= MOVE_TO_ENEMY;
-		move.startTime		= gameLocal.time;
+		SetStartTime(pos); // grayman #3993
+		//move.startTime		= gameLocal.time; // grayman #3993
 	}
 
 	move.moveDest		= pos;
@@ -3569,7 +3676,8 @@ bool idAI::MoveToEntity( idEntity *ent ) {
 	}
 
 	if ( ( move.moveCommand != MOVE_TO_ENTITY ) || ( move.goalEntity.GetEntity() != ent ) ) {
-		move.startTime		= gameLocal.time;
+		SetStartTime(pos); // grayman #3993
+		//move.startTime		= gameLocal.time; // grayman #3993
 		move.goalEntity		= ent;
 		move.moveCommand	= MOVE_TO_ENTITY;
 	}
@@ -3732,6 +3840,9 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 			//numObstacles = 0; // grayman #3548
 		}
 
+		/* grayman #4229 - abandon this section, since I can't get it
+		// to work correctly
+
 		// grayman #3548 - are any elevators nearby? If so, the fleeing AI
 		// would probably use it to escape. Find the elevator, pick the
 		// elevator station that's farthest from the event, and pretend both
@@ -3774,7 +3885,7 @@ bool idAI::Flee(idEntity* entityToFleeFrom, bool fleeingEvent, int algorithm, in
 				// are in the same location, at an elevator station
 				org = pos = bestElevatorPos;
 			}
-		}
+		}*/
 
 		// Set up the evaluator class
 		tdmAASFindEscape findEscapeArea(pos, org, distanceOption, 100, team); // grayman #3548
@@ -3929,7 +4040,7 @@ aasGoal_t idAI::GetPositionWithinRange(const idVec3& targetPos)
 idAI::GetObservationPosition
 =====================
 */
-idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne)
+idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float visualAcuityZeroToOne, const unsigned short maxCost) // grayman #4347
 {
 	int				areaNum;
 	aasObstacle_t	obstacle;
@@ -3974,7 +4085,8 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 		travelFlags, 
 		NULL, 
 		0, 
-		findGoal 
+		findGoal,
+		maxCost
 	) ) 
 	{
 		float bestDistance;
@@ -4053,9 +4165,9 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 				);
 			}
 		}
+
 		return observeFromPos;
 	}
-
 	else
 	{
 		observeFromPos = goal.origin;
@@ -4076,6 +4188,7 @@ idVec3 idAI::GetObservationPosition (const idVec3& pointToObserve, const float v
 				cv_ai_search_show.GetInteger()
 			);
 		}
+
 		return observeFromPos;
 	}
 }
@@ -4124,6 +4237,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 		return true;
 	}
 
+	SetStartTime(goal.origin); // grayman #3993
 	move.moveDest		= goal.origin;
 	move.toAreaNum		= goal.areaNum;
 	move.goalEntity		= ent;
@@ -4131,7 +4245,7 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.range			= range;
 	move.speed			= fly_speed;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
 	AI_DEST_UNREACHABLE = false;
@@ -4191,13 +4305,14 @@ bool idAI::MoveToAttackPosition( idEntity *ent, int attack_anim ) {
 		return false;
 	}
 
+	SetStartTime(goal.origin); // grayman #3993
 	move.moveDest		= goal.origin;
 	move.toAreaNum		= goal.areaNum;
 	move.goalEntity		= ent;
 	move.moveCommand	= MOVE_TO_ATTACK_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
 	move.speed			= fly_speed;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.anim			= attack_anim;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4249,17 +4364,17 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 
 		int areaNum	= PointReachableAreaNum( physicsObj.GetOrigin() );
 
-		if ( !PathToGoal( path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this ) )
+		if (!PathToGoal(path, areaNum, physicsObj.GetOrigin(), move.toAreaNum, org, this))
 		{
-			StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+			StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 			AI_DEST_UNREACHABLE = true;
 			return false;
 		}
 	}
 
-	if ( !move.toAreaNum && !NewWanderDir( org ) )
+	if (!move.toAreaNum && !NewWanderDir(org))
 	{
-		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
+		StopMove(MOVE_STATUS_DEST_UNREACHABLE);
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
@@ -4270,11 +4385,12 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 		NeedToUseElevator(path.elevatorRoute);
 	}
 
+	SetStartTime(org); // grayman #3993
+	//move.startTime = gameLocal.time; // grayman #3993
 	move.moveDest		= org;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_TO_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
 	move.speed			= fly_speed;
 	move.accuracy		= accuracy;
 	AI_MOVE_DONE		= false;
@@ -4340,12 +4456,13 @@ bool idAI::MoveToCover( idEntity *hideFromEnt, const idVec3 &hideFromPos ) {
 		return true;
 	}
 
+	SetStartTime(hideGoal.origin); // grayman #3993
 	move.moveDest		= hideGoal.origin;
 	move.toAreaNum		= hideGoal.areaNum;
 	move.goalEntity		= hideFromEnt;
 	move.moveCommand	= MOVE_TO_COVER;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4366,11 +4483,12 @@ idAI::SlideToPosition
 bool idAI::SlideToPosition( const idVec3 &pos, float time ) {
 	StopMove( MOVE_STATUS_DONE );
 
+	SetStartTime(pos); // grayman #3993
 	move.moveDest		= pos;
 	move.goalEntity		= NULL;
 	move.moveCommand	= MOVE_SLIDE_TO_POSITION;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.duration		= idPhysics::SnapTimeToPhysicsFrame( SEC2MS( time ) );
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4397,16 +4515,20 @@ idAI::WanderAround
 bool idAI::WanderAround( void ) {
 	StopMove( MOVE_STATUS_DONE );
 
-	move.moveDest = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
-	if ( !NewWanderDir( move.moveDest ) ) {
+	// grayman #3993
+	idVec3 pos = physicsObj.GetOrigin() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 256.0f;
+	if ( !NewWanderDir( pos ) ) {
+		move.moveDest = pos;
 		StopMove( MOVE_STATUS_DEST_UNREACHABLE );
 		AI_DEST_UNREACHABLE = true;
 		return false;
 	}
 
+	SetStartTime(pos); // grayman #3993
+	move.moveDest		= pos;
 	move.moveCommand	= MOVE_WANDER;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; // grayman #3993
 	move.speed			= fly_speed;
 	move.accuracy		= -1;
 	AI_MOVE_DONE		= false;
@@ -4494,6 +4616,13 @@ void idAI::SetMoveType( idStr moveType )
 	{
 		gameLocal.Warning( "Invalid movetype %s", moveType.c_str() );
 	}
+}
+
+// grayman #4039 - need a way to set move accuracy independent
+// of MoveToPosition()
+void idAI::SetMoveAccuracy(float accuracy)
+{
+	move.accuracy = accuracy;
 }
 
 /*
@@ -4586,11 +4715,15 @@ bool idAI::MoveAlongVector( float yaw )
 {
 	StopMove( MOVE_STATUS_DONE );
 	move.moveDir = idAngles( 0, yaw, 0 ).ToForward();
-	move.moveDest = physicsObj.GetOrigin() + move.moveDir * 256.0f;
+
+	// grayman #3993
+	idVec3 pos = physicsObj.GetOrigin() + move.moveDir * 256.0f;
+	SetStartTime(pos); // grayman #3993
+	move.moveDest = pos;
 
 	move.moveCommand	= MOVE_VECTOR;
 	move.moveStatus		= MOVE_STATUS_MOVING;
-	move.startTime		= gameLocal.time;
+	//move.startTime		= gameLocal.time; #3993
 	move.speed			= fly_speed;
 	AI_MOVE_DONE		= false;
 	AI_FORWARD			= true;
@@ -5157,18 +5290,29 @@ void idAI::Turn(const idVec3& pivotOffset) {
 	float turnAmount;
 	animFlags_t animflags;
 
-	if ( !turnRate ) {
+	if (!turnRate) {
 		return;
 	}
 
 	// check if the animator has marked this anim as non-turning
-	if ( !legsAnim.Disabled() && !legsAnim.AnimDone( 0 ) ) {
+	if (!legsAnim.Disabled() && !legsAnim.AnimDone(0)) {
 		animflags = legsAnim.GetAnimFlags();
-	} else {
+	}
+	else {
 		animflags = torsoAnim.GetAnimFlags();
 	}
-	if ( animflags.ai_no_turn ) {
+	if (animflags.ai_no_turn) {
 		return;
+	}
+
+	// Delay turning for custom idle anims --SteveL #3806
+	// grayman - but not when moving, because we can't miss our turns
+	if (!AI_FORWARD)
+	{
+		if ( WaitState() && ( idStr( WaitState() ) == "idle" || idStr( WaitState() ) == "idle_no_voice" ) )
+		{
+			return;
+		}
 	}
 
 	idVec3 startPos = viewAxis * pivotOffset;
@@ -6721,7 +6865,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// grayman #3857 - leave an ongoing search
 	if (m_searchID > 0)
 	{
-		gameLocal.m_searchManager->LeaveSearch(m_searchID,this);
+		gameLocal.m_searchManager->LeaveSearch(m_searchID, this);
 	}
 
 	ClearEnemy();
@@ -6836,6 +6980,8 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 
 	// grayman - print data re: being Killed
 	//gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
+
+	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -9756,10 +9902,14 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// grayman #3069 - and only if the AI can seek out the player
 
+	// grayman #4002 - Move AlertCallback() to the point where the AI's alert
+	// index drops to zero. For now, just register that the alert occurred.
+
 	// Objectives callback
 	if ( AlertIndexIncreased() && m_canSearch )
 	{
-		gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
+		RegisterAlert(m_AlertedByActor.GetEntity()); // grayman #4002 - add alert to alert queue
+		//gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 	}
 }
 
@@ -9896,6 +10046,148 @@ void idAI::SetAlertLevel(float newAlertLevel)
 bool idAI::AlertIndexIncreased() 
 {
 	return (AI_AlertIndex > m_prevAlertIndex);
+}
+
+// grayman #4002 - If the AI is alerted by an entity that already appears on
+// the alerted entity list, and a certain amount of time has gone by since
+// that previous alert occurred, and the new alert index is higher than the
+// previous entry, update the entry and return true.
+//
+// If the alerting entity doesn't appear on the list, create a new entry and
+// place it on the list and return true;
+//
+// Otherwise return false.
+
+void idAI::RegisterAlert(idEntity* alertedBy)
+{
+	if ( alertedBy )
+	{
+		EntityAlert ea;
+
+		ea.entityResponsible = alertedBy;	// The entity responsible
+		ea.timeAlerted = gameLocal.time;			// The last time this entity raised the alert index
+		ea.alertIndex = static_cast<int>(AI_AlertIndex); // The alert index reached
+		ea.processed = false; // This entry hasn't been processed yet
+
+		alertQueue.Insert(ea); // Place at front of queue
+	}
+}
+
+// grayman #4002 - Process the alert queue for alerts that need to be registered with mission stats.
+//                 Alerts are inserted at the front of the queue as they happen, so the earlier ones
+//                 have later timestamps than the later ones.
+
+void idAI::ProcessAlerts()
+{
+	// If an alert event was placed on the alert event queue, it's guaranteed that
+	// at the time of placement, the AI is allowed to search for the player and 
+	// the alert index was rising. So we don't need to check those conditions here.
+
+	// Iterate through the alert event queue to find all alerts caused
+	// by the same entity. As each alert is processed, mark it 'processed'.
+	// Quit the while loop when the number of alerts processed equals the number
+	// of alerts in the queue.
+
+	int numberOfAlerts = alertQueue.Num();
+	if ( numberOfAlerts == 0 )
+	{
+		return;
+	}
+
+	int alertsProcessed = 0;
+	idEntity* entityResponsible = NULL;
+	int nextTime = 0;
+	int nextAlertIndex;
+
+	while ( alertsProcessed < numberOfAlerts )
+	{
+		bool newEntity = true;
+
+		for ( int i = 0; i < numberOfAlerts; i++ )
+		{
+			EntityAlert *ea = &alertQueue[i];
+
+			if ( ea->processed )
+			{
+				continue;
+			}
+
+			if ( newEntity )
+			{
+				// This first entry represents the highest alert level the AI reached. It
+				// should be passed to mission stats.
+
+				entityResponsible = ea->entityResponsible.GetEntity(); // the entity we're currently processing
+				nextTime = ea->timeAlerted;	 // alert time
+				nextAlertIndex = ea->alertIndex; // alert index
+				ea->processed = true;
+				newEntity = false;
+
+				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, nextAlertIndex);
+				alertsProcessed++;
+				continue;
+			}
+
+			idEntity* thisEntityResponsible = ea->entityResponsible.GetEntity();
+
+			if ( thisEntityResponsible != entityResponsible )
+			{
+				continue; // this entry wasn't caused by the entity we're processing
+			}
+
+			ea->processed = true;
+			alertsProcessed++;
+
+			int thisAlertIndex = ea->alertIndex;
+			int thisTime = ea->timeAlerted;
+
+			// What is the time difference between this entry
+			// and the previous entry (which happens later in time, because the
+			// later entries appear earlier in the queue)?
+
+			int duration = nextTime - thisTime;
+			float alertDuration; // the average amount of time spent at a particular alert level (atime1, atime2, atime3, atime4)
+
+			switch ( thisAlertIndex )
+			{
+			case ai::EObservant:
+				alertDuration = atime1;
+				break;
+			case ai::ESuspicious:
+				alertDuration = atime2;
+				break;
+			case ai::ESearching:
+				alertDuration = atime3;
+				break;
+			case ai::EAgitatedSearching:
+			case ai::ECombat:
+				alertDuration = atime4;
+				break;
+			default:
+				alertDuration = 100000.0f; // should never be here
+				break;
+			}
+
+			alertDuration *= 1000 * 0.5f; // use half the average duration and convert to ms
+
+			if ( alertDuration > 10000.0f ) // suggested by demagogue
+			{
+				alertDuration = 10000.f;
+			}
+
+			if ( duration >= alertDuration )
+			{
+				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, thisAlertIndex);
+			}
+
+			// set up for reading the next entry
+
+			nextTime = thisTime;
+			nextAlertIndex = thisAlertIndex;
+		}
+	}
+
+	alertQueue.Clear();
 }
 
 void idAI::Event_GetAttacker()	// grayman #3679
@@ -10168,8 +10460,29 @@ void idAI::PerformVisualScan(float timecheck)
 	{
 		// grayman #3063
 		// Allow ramp up to Combat mode if the distance to the player is less than a cutoff distance.
+		// grayman #4348 - Also allow ramp up if the player is unreachable. Otherwise, the AI stand
+		// still some distance away because they can't walk closer to the player.
 
-		if ( ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
+		bool canWalkToPlayer = true;
+		int playerAreaNum = PointReachableAreaNum(m_LastSight);
+		if ( playerAreaNum == 0 )
+		{
+			canWalkToPlayer = false;
+		}
+		else
+		{
+			GetAAS()->PushPointIntoAreaNum(playerAreaNum, m_LastSight); // if this point is outside this area, it will be moved to one of the area's edges
+
+			idVec3 aiOrigin = GetPhysics()->GetOrigin();
+			int aiAreaNum = PointReachableAreaNum(aiOrigin, 1.0f);
+			aasPath_t path;
+			if ( !PathToGoal(path, aiAreaNum, aiOrigin, playerAreaNum, m_LastSight, this) )
+			{
+				canWalkToPlayer = false;
+			}
+		}
+								
+		if ( !canWalkToPlayer || ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
 		{
 			SetEnemy(player);
 			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
@@ -10177,7 +10490,7 @@ void idAI::PerformVisualScan(float timecheck)
 			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
 			// visibility in the mission data
 		}
-		else
+		else // player is too far away, but AI will continue to move because he can walk to the player
 		{
 			newAlertLevel = thresh_5 - 0.1;
 			alertInc = newAlertLevel - AI_AlertLevel;
@@ -10591,7 +10904,7 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 		if ( tactEnt->m_SetInMotionByActor.GetEntity() == this )
 		{
-			TactileIgnore(tactEnt);
+			//TactileIgnore(tactEnt); // grayman #4304 - ignore this time, but not forever
 			return;
 		}
 	}
@@ -10628,6 +10941,12 @@ void idAI::TactileAlert(idEntity* tactEnt, float amount)
 
 	if ( tactEnt->IsType(idMoveable::Type) )
 	{
+		// grayman #4304 - ignore the moveable if it isn't traveling fast enough to notice
+		if ( tactEnt->GetPhysics()->GetLinearVelocity().LengthFast() < MIN_SPEED_TO_NOTICE_MOVEABLE)
+		{
+			return;
+		}
+
 		// Ignore the moveable if you have an enemy.
 
 		if ( GetEnemy() == NULL )
@@ -11207,9 +11526,15 @@ void idAI::CheckTactile()
 
 	bool bumped = false;
 	idEntity* blockingEnt = physicsObj.GetSlideMoveEntity(); // grayman #3516 - always remember this
+
 	if ( blockingEnt == NULL )
 	{
 		return;
+	}
+
+	if ( blockingEnt != gameLocal.world ) // grayman #4346
+	{
+		m_tactileEntity = blockingEnt;
 	}
 
 	if ( !AI_KNOCKEDOUT &&
@@ -11219,7 +11544,7 @@ void idAI::CheckTactile()
 	{
 		if ( blockingEnt != gameLocal.world ) // ignore bumping into the world
 		{
-			m_tactileEntity = blockingEnt;
+			//m_tactileEntity = blockingEnt; // grayman #3993 // grayman #4346
 				
 			if ( blockingEnt->IsType(idAI::Type) )
 			{
@@ -11399,10 +11724,17 @@ bool idAI::TestKnockoutBlow( idEntity* attacker, const idVec3& dir, trace_t *tr,
 	   m_KoAlertImmuneState == 5 (no helmet), and their current alert level is
 	   below m_KoAlertImmuneState, a KO can occur only from behind.
     6. Finally, check the KO angles and determine if the blow has landed in the right place.
+	7. A sleeping AI can be KOed from the front, unless he's wearing a helmet with a facemask.
  */
 
 	bool immune2KO = false;
-	if ( spawnArgs.GetBool("is_civilian", "0") )
+	if ((GetMoveType() == MOVETYPE_SLEEP) && // grayman #3951
+		((minDotVert != 1.0f) && (minDotHoriz != 1.0f))) // cos(DEG2RAD(0.0f)) indicates elite faceguard helmet
+	{
+		// Rule #7 - no immunity
+		minDotVert = minDotHoriz = -1.0f; // cos(DEG2RAD(180.0f)) everyone gets KO'ed
+	}
+	else if (spawnArgs.GetBool("is_civilian", "0"))
 	{
 		// Rule #1
 	}
@@ -11678,6 +12010,8 @@ void idAI::Knockout( idEntity* inflictor )
 
 	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
 	m_dousedLightsSeen.Clear();
+
+	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
 }
 
 void idAI::PostKnockOut()
@@ -12115,11 +12449,21 @@ int idAI::PlayAndLipSync(const char *soundName, const char *animName, int msgTag
 	int duration;
 	StartSound( soundName, SND_CHANNEL_VOICE, 0, false, &duration, 0, msgTag ); // grayman #3355
 
+	// grayman #3857
 	if (cv_ai_bark_show.GetBool())
 	{
-		gameRenderWorld->DrawText( va("%s", soundName), GetEyePosition(), 0.25f, colorBlue, 
+		m_barkName = idStr(soundName);
+		m_barkEndTime = gameLocal.time + duration;
+	}
+
+	// grayman #3857 - moved to idAI::ShowDebugInfo()
+	/*
+	if (cv_ai_bark_show.GetBool())
+	{
+		gameRenderWorld->DrawText(va("%s", soundName), GetPhysics()->GetOrigin() + idVec3(0, 0, 90), 0.25f, colorWhite,
 			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, duration );
 	}
+	*/
 
 	// Do we want to lipsync this sound?
 	StopLipSync(); // Assume not
@@ -12294,7 +12638,7 @@ void idAI::DropOnRagdoll( void )
 			pWeap->DeactivateParry();
 			pWeap->ClearOwner();
 		}
-		
+
 		// greebo: Check if we should set some attachments to nonsolid
 		// this applies for instance to the builder guard's pauldrons which
 		// cause twitching and self-collisions when going down
@@ -12646,28 +12990,28 @@ void idAI::ShowDebugInfo()
 		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
 	}
 
-	if ( cv_ai_task_show.GetBool())
+	if (cv_ai_task_show.GetBool())
 	{
 		idStr str("State: ");
 		str += mind->GetState()->GetName() + "\n";
-		
+
 		if (GetSubsystem(ai::SubsysSenses)->IsEnabled()) str += "Senses: " + GetSubsystem(ai::SubsysSenses)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysMovement)->IsEnabled()) str += "Movement: " + GetSubsystem(ai::SubsysMovement)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysCommunication)->IsEnabled()) str += "Comm: " + GetSubsystem(ai::SubsysCommunication)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysSearch)->IsEnabled()) str += "Search: " + GetSubsystem(ai::SubsysSearch)->GetDebugInfo() + "\n"; // grayman #3857
 
-		gameRenderWorld->DrawText( str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
-	if ( cv_ai_alertlevel_show.GetBool() && ( health > 0 ) && !IsKnockedOut() )
+	if (cv_ai_alertlevel_show.GetBool() && (health > 0) && !IsKnockedOut())
 	{
-		gameRenderWorld->DrawText( va("Alert: %f; Index: %d", (float) AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(va("Alert: %f; Index: %d", (float)AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		// grayman #3857 - add debugging info for coordinated searches
-		if (( m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)) )
+		if ((m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)))
 		{
 			Search* search = gameLocal.m_searchManager->GetSearch(m_searchID);
-			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search,this);
+			Assignment* assignment = gameLocal.m_searchManager->GetAssignment(search, this);
 			smRole_t r = E_ROLE_NONE;
 			idStr role = "none";
 			if (assignment)
@@ -12686,15 +13030,15 @@ void idAI::ShowDebugInfo()
 					role = "observer";
 				}
 			}
-			gameRenderWorld->DrawText( va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			gameRenderWorld->DrawText(va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		}
 
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
 		{
-			gameRenderWorld->DrawText( va("Grace time: %d; Alert count: %d / %d", 
-				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time, 
-				m_AlertGraceCount, m_AlertGraceCountLimit), 
-				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+			gameRenderWorld->DrawText(va("Grace time: %d; Alert count: %d / %d",
+				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time,
+				m_AlertGraceCount, m_AlertGraceCountLimit),
+				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 		}
 	}
 
@@ -12718,7 +13062,7 @@ void idAI::ShowDebugInfo()
 		{
 			debugText += idStr("Waitstate: ") + WaitState();
 		}
-		gameRenderWorld->DrawText( debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText(debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
 	}
 
 	if (cv_ai_aasarea_show.GetBool() && aas != NULL)
@@ -12740,6 +13084,21 @@ void idAI::ShowDebugInfo()
 		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
 
 		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
+	}
+
+	// grayman #3857 - show barking info
+	if (cv_ai_bark_show.GetBool() && (gameLocal.time <= m_barkEndTime) && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthFast() < 1000))
+	{
+		gameRenderWorld->DrawText(va("%s", m_barkName.c_str()), physicsObj.GetOrigin() + idVec3(0, 0, 90), 0.25f, colorWhite,
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
+	}
+
+	// grayman #3857 - show AI name
+	if (cv_ai_name_show.GetBool() && ((physicsObj.GetOrigin() - gameLocal.GetLocalPlayer()->GetPhysics()->GetOrigin()).LengthSqr() < Square(1000)))
+	{
+		idVec4 colour = colorWhite;
+		gameRenderWorld->DrawText(va("%s", GetName()), physicsObj.GetOrigin() + idVec3(0, 0, 50), 0.25f, colour,
+			gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 16);
 	}
 }
 
@@ -13236,7 +13595,7 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	ai::Memory& memory = GetMemory();
 	memory.closeMe = door;
 	memory.closeSuspiciousDoor = false; // becomes TRUE when it's time to close the door
-	int doorSide = GetDoorSide(door); // grayman #3756
+	int doorSide = GetDoorSide(door,GetPhysics()->GetOrigin()); // grayman #3756 // grayman #4227
 	memory.susDoorCloseFromThisSide = doorSide; // which side of the door we're on
 
 	door->SetSearching(this); // keeps other AI from joining in the search
@@ -13256,14 +13615,14 @@ void idAI::SetUpSuspiciousDoor(CFrobDoor* door)
 	}
 }
 
-int idAI::GetDoorSide(CFrobDoor* frobDoor)
+int idAI::GetDoorSide(CFrobDoor* frobDoor, idVec3 pos) // grayman #4227
 {
 	int doorSide = 0;
 	// determine which side of the door we're on
 	idVec3 sm0 = frobDoor->GetDoorPosition(DOOR_SIDE_FRONT,DOOR_POS_SIDEMARKER);
 	idVec3 sm1 = frobDoor->GetDoorPosition(DOOR_SIDE_BACK,DOOR_POS_SIDEMARKER);
-	idVec3 ownerOrig = GetPhysics()->GetOrigin();
-	if ( (sm0 - ownerOrig).LengthSqr() < (sm1 - ownerOrig).LengthSqr() )
+	//idVec3 ownerOrig = GetPhysics()->GetOrigin();
+	if ( (sm0 - pos).LengthSqr() < (sm1 - pos).LengthSqr() )
 	{
 		doorSide = DOOR_SIDE_FRONT;
 	}
@@ -13274,4 +13633,68 @@ int idAI::GetDoorSide(CFrobDoor* frobDoor)
 
 	return doorSide;
 }
+
+// grayman #4238 - is point p obstructed by a standing humanoid AI other than yourself?
+
+bool idAI::PointObstructed(idVec3 p)
+{
+	// if an AI is already there, and it's not you, ignore this spot
+
+	idBounds b = idBounds(idVec3(p.x-16.0f, p.y-16.0f, p.z), idVec3(p.x+16.0f, p.y+16.0f, p.z+60.0f));
+	idClipModel *clipModelList[MAX_GENTITIES];
+	int numListedClipModels = gameLocal.clip.ClipModelsTouchingBounds( b, MASK_MONSTERSOLID, clipModelList, MAX_GENTITIES );
+	bool obstructed = false;
+	for ( int i = 0 ; i < numListedClipModels ; i++ )
+	{
+		idEntity* candidate = clipModelList[i]->GetEntity();
+		if ( candidate != NULL )
+		{
+			if ( candidate == this )
+			{
+				continue; // can't be obstructed by yourself
+			}
+
+			if ( candidate->IsType(idAI::Type) && (candidate->GetPhysics()->GetMass() > 5) )
+			{
+				idAI *candidateAI = static_cast<idAI*>(candidate);
+				if ( !candidateAI->AI_FORWARD ) // candidate is standing still?
+				{
+					obstructed = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if ( !obstructed )
+	{
+		return false; // not obstructed
+	}
+
+	return true; // obstructed
+}
+
+/*
+void idAI::PrintGoalData(idVec3 goal, int tag)
+{
+	idVec3 origin = GetPhysics()->GetOrigin();
+
+	float dist = (goal - origin).LengthFast();
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("idAI::PrintGoalData tag = %d - %s origin = [%s], goal = [%s], moveDest = [%s], dist = %f, yaw = %f\r", tag, GetName(), origin.ToString(), move.moveDest.ToString(), goal.ToString(), dist, GetCurrentYaw());
+}
+*/
+
+/*
+===============
+idAI::Event_PlayCustomAnim	#3597
+===============
+*/
+void idAI::Event_PlayCustomAnim( const char *animName )
+{
+	if ( !AI_DEAD && !AI_KNOCKEDOUT )
+	{
+		actionSubsystem->PushTask(ai::TaskPtr(new ai::PlayAnimationTask( animName, 12 )));
+	}
+}
+
 

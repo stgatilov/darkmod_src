@@ -207,6 +207,7 @@ private:
 	void						Event_GetMissionStatistic( const char* statisticName ); //               from Zbyl
 
 	void						Event_GetNextEntity( const char* key, const char* value, const idEntity* lastMatch );	// SteveL #3802
+	void						Event_EmitParticle( const char* particle, float startTime, float diversity, const idVec3& origin, const idVec3& angle ); // SteveL #3962
 
 public:							
 								CLASS_PROTOTYPE( idThread );

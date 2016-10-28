@@ -201,6 +201,8 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 				newStack = *ps;
 				newStack.p = p;
 				newStack.next = ps;
+				p->doublePortal->viewCount = tr.viewCount; // For r_showPortals. Keep track whether the player's view flows through 
+														   // individual portals, not just whole visleafs.  -- SteveL #4162
 				FloodViewThroughArea_r( origin, p->intoArea, &newStack );
 				continue;
 			}
@@ -225,6 +227,8 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 		// go through this portal
 		newStack.p = p;
 		newStack.next = ps;
+		p->doublePortal->viewCount = tr.viewCount; // For r_showPortals. Keep track whether the player's view flows through 
+												   // individual portals, not just whole visleafs.  -- SteveL #4162
 
 		// find the screen pixel bounding box of the remaining portal
 		// so we can scissor things outside it
@@ -608,6 +612,10 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
+		    // nbohr1more: #4379 lightgem culling
+		    if ( (!entity->parms.islightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == -1)){
+			    continue;
+			} 
 			if ( entity->parms.suppressSurfaceInViewID
 					&& entity->parms.suppressSurfaceInViewID == tr.viewDef->renderView.viewID ) {
 				continue;
@@ -646,6 +654,7 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 	const srfTriangles_t	*tri;
 	float			d;
 	idFixedWinding	w;		// we won't overflow because MAX_PORTAL_PLANES = 20
+	#define INSIDE_LIGHT_FRUSTUM_SLOP			32
 
 	if ( r_useLightCulling.GetInteger() == 0 ) {
 		return false;
@@ -660,6 +669,11 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 			// some fragment inside the portalStack to be visible
 			if ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
 				continue;
+			}
+			
+			if ( ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) > INSIDE_LIGHT_FRUSTUM_SLOP ) && (tr.viewDef->renderView.viewID == -1) )
+			{
+			continue;
 			}
 
 			// get the exact winding for this side
@@ -729,6 +743,7 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 
 	for ( lref = area->lightRefs.areaNext ; lref != &area->lightRefs ; lref = lref->areaNext ) {
 		light = lref->light;
+		
 
 		// debug tool to allow viewing of only one light at a time
 		if ( r_singleLight.GetInteger() >= 0 && r_singleLight.GetInteger() != light->index ) {
@@ -1042,7 +1057,7 @@ void idRenderWorldLocal::ShowPortals() {
 	portal_t	*p;
 	idWinding	*w;
 
-	// flood out through portals, setting area viewCount
+	// Check viewcount on areas and portals to see which got used this frame.
 	for ( i = 0 ; i < numPortalAreas ; i++ ) {
 		area = &portalAreas[i];
 		if ( area->viewCount != tr.viewCount ) {
@@ -1054,18 +1069,27 @@ void idRenderWorldLocal::ShowPortals() {
 				continue;
 			}
 
-			if ( portalAreas[ p->intoArea ].viewCount != tr.viewCount ) {
+			// Changed to show 3 colours. -- SteveL #4162
+			if ( p->doublePortal->viewCount == tr.viewCount )
+			{
+				// green = we see through this portal
+				qglColor3f( 0, 1, 0 );
+			} 
+			else if ( portalAreas[ p->intoArea ].viewCount == tr.viewCount )
+			{
+				// yellow = we see into this visleaf but not through this portal
+				qglColor3f( 1, 1, 0 );
+			}
+			else
+			{
 				// red = can't see
 				qglColor3f( 1, 0, 0 );
-			} else {
-				// green = see through
-				qglColor3f( 0, 1, 0 );
 			}
+
 
 			qglBegin( GL_LINE_LOOP );
 			for ( j = 0 ; j < w->GetNumPoints() ; j++ ) {
-				qglVertex3fv( (*w)[j].ToFloatPtr() );
-			}
+				qglVertex3fv( (*w)[j].ToFloatPtr() );			}
 			qglEnd();
 		}
 	}
