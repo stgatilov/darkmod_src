@@ -526,9 +526,11 @@ void Conbuf_AppendText( const char *pMsg )
 	//
 	// put this text into the windows console
 	//
-	SendMessage( s_wcd.hwndBuffer, EM_LINESCROLL, 0, 0xffff );
-	SendMessage( s_wcd.hwndBuffer, EM_SCROLLCARET, 0, 0 );
-	SendMessage( s_wcd.hwndBuffer, EM_REPLACESEL, 0, (LPARAM) buffer );
+	// duzenko #4408 - changed from SndMessage to workaround thread deadlock
+	// FIXME - buffer is unsafe
+	PostMessage( s_wcd.hwndBuffer, EM_LINESCROLL, 0, 0xffff );
+	PostMessage( s_wcd.hwndBuffer, EM_SCROLLCARET, 0, 0 );
+	PostMessage( s_wcd.hwndBuffer, EM_REPLACESEL, 0, (LPARAM) buffer );
 }
 
 /*

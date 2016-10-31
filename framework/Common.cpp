@@ -24,6 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../idlib/RevisionTracker.h"
 #include "../renderer/Image.h"
+#include "Session_local.h"
 #include <iostream>
 
 #define MAX_WARNING_LIST	256
@@ -112,6 +113,7 @@ int				time_frontendLast;
 int				time_backendLast;
 
 int				com_frameTime;			// time for the current frame in milliseconds
+int				com_frameMsec;
 int				com_frameNumber;		// variable frame number
 volatile int	com_ticNumber;			// 60 hz tics
 int				com_editors;			// currently opened editor(s)
@@ -2426,7 +2428,16 @@ void idCommonLocal::Frame( void ) {
 
 		eventLoop->RunEventLoop();
 
-		com_frameTime = com_ticNumber * USERCMD_MSEC;
+		// duzenko #4409 - need frame time msec to pass to game tic
+		static int	lastTime;
+		const int	nowTime = Sys_Milliseconds();
+		com_frameMsec = nowTime - lastTime;
+		lastTime = nowTime;
+
+		if (sessLocal.com_fixedTic.GetBool())
+			com_frameTime += com_frameMsec;
+		else
+			com_frameTime = com_ticNumber * USERCMD_MSEC;
 
 		idAsyncNetwork::RunFrame();
 
@@ -2444,10 +2455,6 @@ void idCommonLocal::Frame( void ) {
 
 		// report timing information
 		if ( com_speeds.GetBool() ) {
-			static int	lastTime;
-			const int	nowTime = Sys_Milliseconds();
-			const int	com_frameMsec = nowTime - lastTime;
-			lastTime = nowTime;
 			Printf("frame:%i all:%3i gfr:%3i fr:%3i(%d) br:%3i(%d)\n", com_frameNumber, com_frameMsec, time_gameFrame, time_frontend, time_frontendLast, time_backend, time_backendLast);
 			time_gameFrame = 0;
 			time_gameDraw = 0;
@@ -2551,6 +2558,9 @@ void idCommonLocal::SingleAsyncTic( void ) {
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
 	Sys_LeaveCriticalSection();
+
+	if (!com_shuttingDown) // duzenko #4408 - run game tics in background too
+		sessLocal.AsyncTick();
 }
 
 /*
@@ -2859,7 +2869,10 @@ void idCommonLocal::Shutdown( void ) {
 	idAsyncNetwork::client.Shutdown();
 
 	// game specific shut down
-	ShutdownGame( false );
+	// duzenko #4408 - game tic may still be running in background
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
+	ShutdownGame(false);
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 
 	// shut down non-portable system services
 	Sys_Shutdown();

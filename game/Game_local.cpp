@@ -3271,8 +3271,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		{
 			// update the game time
 			framenum++;
-			previousTime = time;
-			time += (int)(msec * g_timeModifier.GetFloat());
+			// duzenko #4409 - game time modified externally using system time. Dirty stinking FIXME
+			if (!cvarSystem->GetCVarBool("com_fixedTic")) {
+				previousTime = time;
+				time += (int)(msec * g_timeModifier.GetFloat());
+			}
 			realClientTime = time;
 
 #ifdef GAME_DLL
@@ -3494,11 +3497,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				break;
 			}
 
-			if (m_DoLightgem)
-			{
+			/*if (m_DoLightgem) // duzenko #4408 - move this to idGameLocal::Draw where the second half of this already is
+			{					// because 1) game tic could be on background thread and 2) it makes more sense 
 				player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
 				m_DoLightgem = false;
-			}
+			}*/
 
 		} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
 	}
@@ -3636,6 +3639,13 @@ bool idGameLocal::Draw( int clientNum )
 
 	if ( !player ) {
 		return false;
+	}
+
+	// Make the rendershot appear on the hud
+	// duzenko #4408 - moved this half from game tic
+	if (cv_lg_hud.GetInteger() == 0)
+	{
+		player->ProcessLightgem(true);
 	}
 
 	// render the scene

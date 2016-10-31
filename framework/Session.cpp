@@ -24,12 +24,14 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
+#include "../game/Game_local.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_fixedTic( "com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10 );
-idCVar	idSessionLocal::com_showDemo( "com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10);
+idCVar	idSessionLocal::com_asyncTic("com_asyncTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "", 0, 10);
+idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_aviDemoWidth( "com_aviDemoWidth", "256", CVAR_SYSTEM, "" );
@@ -2535,7 +2537,10 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	if ( outOfSequence ) {
 		Sys_GrabMouseCursor( false );
 	}
-
+	
+	// duzenko #4408 - wait/forbid background game tic
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
+	
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
 	// draw everything
@@ -2548,7 +2553,30 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	} else {
 		renderSystem->EndFrame( NULL, NULL );
 	}
+
+	// duzenko #4408 - allow background game tic
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+
 	insideUpdateScreen = false;
+}
+
+// duzenko #4408 - countdown, how many game tics are left to run
+int	gameTicsToRun = 0;
+
+/*
+===============
+idSessionLocal::AsyncTick
+duzenko #4408 - runs 60 times per seconds
+===============
+*/
+
+void idSessionLocal::AsyncTick() {
+	if (!com_asyncTic.GetBool() || !mapSpawned || !gameTicsToRun)
+		return;
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
+	while (gameTicsToRun-- > 0) 
+		RunGameTic();
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*
@@ -2610,7 +2638,7 @@ void idSessionLocal::Frame() {
 	if ( com_minTics.GetInteger() > 1 ) {
 		minTic = lastGameTic + com_minTics.GetInteger();
 	}
-	
+
 	if ( readDemo ) {
 		if ( !timeDemo && numDemoFrames != 1 ) {
 			minTic = lastDemoTic + USERCMD_PER_DEMO_FRAME;
@@ -2622,10 +2650,16 @@ void idSessionLocal::Frame() {
 	} else if ( writeDemo ) {
 		minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
 	}
-	
-	// fixedTic lets us run a forced number of usercmd each frame without timing
-	if ( com_fixedTic.GetInteger() ) {
+	// duzenko #4408 - don't sleep or it locks up
+	if ( com_asyncTic.GetInteger() ) {
 		minTic = latchedTicNumber;
+	}
+	// fixedTic lets us run a forced number of usercmd each frame without timing
+	if (com_fixedTic.GetInteger()) {
+		minTic = latchedTicNumber;
+		// duzenko #4409 - sorry, couldn't find a better way to do this - FIXME
+		((idGameLocal*)game)->previousTime = ((idGameLocal*)game)->time;
+		((idGameLocal*)game)->time += min(100, com_frameMsec);
 	}
 
 	// FIXME: deserves a cleanup and abstraction
@@ -2738,9 +2772,11 @@ void idSessionLocal::Frame() {
 		common->Printf( "%i ", latchedTicNumber - lastGameTic );
 	}
 
-	int	gameTicsToRun = latchedTicNumber - lastGameTic;
-	int i;
-	for ( i = 0 ; i < gameTicsToRun ; i++ ) {
+	// duzenko #4408 - optionally don't run game tics on main thread 
+	gameTicsToRun = latchedTicNumber - lastGameTic;
+	if (com_asyncTic.GetBool())
+		return;
+	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
 		if ( !mapSpawned ) {
 			// exited game play

@@ -201,6 +201,9 @@ float LightGem::Calculate(idPlayer *player)
 	
 	{ // Get position for lg
 		idEntity* lg = m_LightgemSurface.GetEntity();
+		// duzenko #4408 - this happens at map start if no game tics ran in background yet
+		if (lg->GetModelDefHandle() == -1) 
+			return 0.0f;
 		renderEntity_t* prent = lg->GetRenderEntity();
 
 		const idVec3& Cam = player->GetEyePosition();

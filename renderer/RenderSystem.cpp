@@ -132,6 +132,9 @@ static void R_IssueRenderCommands( void ) {
 	// are going to a file, or r_skipBackEnd is later disabled,
 	// usefull data can be received.
 
+	// duzenko #4408 - allow background game tic
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+
 	// r_skipRender is usually more usefull, because it will still
 	// draw 2D graphics
 	if ( !r_skipBackEnd.GetBool() ) {
@@ -139,6 +142,9 @@ static void R_IssueRenderCommands( void ) {
 	}
 
 	R_ClearCommandChain();
+
+	// duzenko #4408 - wait/forbid background game tic
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*

@@ -84,6 +84,7 @@ public:
 	virtual void		Stop();
 
 	virtual void		UpdateScreen( bool outOfSequence = true );
+	void				AsyncTick();
 
 	virtual void		PacifierUpdate(loadkey_t key, int count); // grayman #3763
 
@@ -142,6 +143,7 @@ public:
 	static idCVar		com_showTics;
 	static idCVar		com_minTics;
 	static idCVar		com_fixedTic;
+	static idCVar		com_asyncTic;
 	static idCVar		com_showDemo;
 	static idCVar		com_skipGameDraw;
 	static idCVar		com_aviDemoWidth;
