@@ -29,7 +29,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10);
+idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "", 0, 10);
 idCVar	idSessionLocal::com_asyncTic("com_asyncTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "", 0, 10);
 idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -2657,9 +2657,6 @@ void idSessionLocal::Frame() {
 	// fixedTic lets us run a forced number of usercmd each frame without timing
 	if (com_fixedTic.GetInteger()) {
 		minTic = latchedTicNumber;
-		// duzenko #4409 - sorry, couldn't find a better way to do this - FIXME
-		((idGameLocal*)game)->previousTime = ((idGameLocal*)game)->time;
-		((idGameLocal*)game)->time += min(100, com_frameMsec);
 	}
 
 	// FIXME: deserves a cleanup and abstraction

@@ -3271,10 +3271,14 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		{
 			// update the game time
 			framenum++;
-			// duzenko #4409 - game time modified externally using system time. Dirty stinking FIXME
-			if (!cvarSystem->GetCVarBool("com_fixedTic")) {
-				previousTime = time;
+			// duzenko #4409 - game time modified using game timer
+			previousTime = time;
+			if (!cvarSystem->GetCVarBool("com_fixedTic")) 
 				time += (int)(msec * g_timeModifier.GetFloat());
+			else {
+				//if (framenum < 20)
+					//common->Printf("%d + %d msec\n", time, m_GamePlayTimer.LastTickCapped());
+				time += m_GamePlayTimer.LastTickCapped();
 			}
 			realClientTime = time;
 

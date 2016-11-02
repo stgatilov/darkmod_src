@@ -22,26 +22,42 @@
 
 #include "precompiled_game.h"
 #include <ctime>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 /**
  * greebo: This class keeps track of the total gameplay time. Just call Update()
  * in regular intervals and the class checks the time difference since the last update call.
  *
  * For saving and loading, this class provides separate routines.
+ *
+ * duzenko #4409: added a high-preciosion timer to drive game time under com_fixedTic
  */
 class GamePlayTimer
 {
 	std::time_t _lastTime;
 	std::time_t _curTime;
 
+	// msec timer stuff
+	long _lastMsec;
+	long _curMsec;
+	long _lastTick;
+
 	// The passed time in seconds
 	unsigned int _timePassed;
+	unsigned int _msecPassed;
 
 	// TRUE if the timer updates the passed time
 	bool _enabled;
+
+	void msec(long *msec) {
+		boost::posix_time::ptime time = boost::posix_time::microsec_clock::local_time();
+		*msec = time.time_of_day().total_milliseconds();
+	}
+
 public:
 	GamePlayTimer() :
-		_timePassed(0)
+		_timePassed(0),
+		_msecPassed(0)
 	{}
 
 	// Defines the starting point
@@ -49,6 +65,8 @@ public:
 	{
 		// Remember this time as starting point
 		std::time(&_lastTime);
+		msec(&_curMsec);
+
 		SetEnabled(true);
 	}
 
@@ -70,7 +88,10 @@ public:
 	void Clear()
 	{
 		_timePassed = 0;
+		_msecPassed = 0;
+
 		std::time(&_lastTime);
+		msec(&_curMsec);
 	}
 
 	void Update()
@@ -88,6 +109,10 @@ public:
 
 		// Remember this last check time
 		_lastTime = _curTime;
+
+		_lastMsec = _curMsec;
+		msec(&_curMsec);
+		_msecPassed += _lastTick = _curMsec - _lastMsec;
 	}
 
 	idStr GetTime() const {
@@ -100,15 +125,35 @@ public:
 		return _timePassed;
 	}
 
+	// Returns diff between last two updates in milliseconds, capped to avoid physics glitches
+	unsigned int LastTickCapped() const
+	{
+		if (_lastTick < 0)
+			return 0;
+		else
+			if (_lastTick < 50)
+				return _lastTick;
+		return 50;
+	}
+
 	void Save(idSaveGame *savefile) const
 	{
+#if 1
+		savefile->WriteUnsignedInt(_msecPassed);
+#else
 		savefile->WriteUnsignedInt(_timePassed);
+#endif
 		savefile->WriteBool(_enabled);
 	}
 
 	void Restore(idRestoreGame *savefile)
 	{
+#if 1
+		savefile->ReadUnsignedInt(_msecPassed);
+		_timePassed = _msecPassed / 1000;
+#else
 		savefile->ReadUnsignedInt(_timePassed);
+#endif
 		savefile->ReadBool(_enabled);
 	}
 
