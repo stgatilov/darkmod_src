@@ -1556,14 +1556,14 @@ void idLight::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	WriteBindToSnapshot( msg );
 
 	msg.WriteByte( currentLevel );
-	msg.WriteInt( PackColor( baseColor ) );
+	msg.WriteLong( PackColor( baseColor ) );
 	// msg.WriteBits( lightParent.GetEntityNum(), GENTITYNUM_BITS );
 
 /*	// only helps prediction
-	msg.WriteInt( PackColor( fadeFrom ) );
-	msg.WriteInt( PackColor( fadeTo ) );
-	msg.WriteInt( fadeStart );
-	msg.WriteInt( fadeEnd );
+	msg.WriteLong( PackColor( fadeFrom ) );
+	msg.WriteLong( PackColor( fadeTo ) );
+	msg.WriteLong( fadeStart );
+	msg.WriteLong( fadeEnd );
 */
 
 	// FIXME: send renderLight.shader
@@ -1571,13 +1571,13 @@ void idLight::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteFloat( renderLight.lightRadius[1], 5, 10 );
 	msg.WriteFloat( renderLight.lightRadius[2], 5, 10 );
 
-	msg.WriteInt( PackColor( idVec4( renderLight.shaderParms[SHADERPARM_RED],
+	msg.WriteLong( PackColor( idVec4( renderLight.shaderParms[SHADERPARM_RED],
 									  renderLight.shaderParms[SHADERPARM_GREEN],
 									  renderLight.shaderParms[SHADERPARM_BLUE],
 									  renderLight.shaderParms[SHADERPARM_ALPHA] ) ) );
 
 	msg.WriteFloat( renderLight.shaderParms[SHADERPARM_TIMESCALE], 5, 10 );
-	msg.WriteInt( renderLight.shaderParms[SHADERPARM_TIMEOFFSET] );
+	msg.WriteLong( renderLight.shaderParms[SHADERPARM_TIMEOFFSET] );
 	//msg.WriteByte( renderLight.shaderParms[SHADERPARM_DIVERSITY] );
 	msg.WriteShort( renderLight.shaderParms[SHADERPARM_MODE] );
 
@@ -1608,14 +1608,14 @@ void idLight::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 			Off();
 		}
 	}
-	UnpackColor( msg.ReadInt(), baseColor );
+	UnpackColor( msg.ReadLong(), baseColor );
 	// lightParentEntityNum = msg.ReadBits( GENTITYNUM_BITS );	
 
 /*	// only helps prediction
-	UnpackColor( msg.ReadInt(), fadeFrom );
-	UnpackColor( msg.ReadInt(), fadeTo );
-	fadeStart = msg.ReadInt();
-	fadeEnd = msg.ReadInt();
+	UnpackColor( msg.ReadLong(), fadeFrom );
+	UnpackColor( msg.ReadLong(), fadeTo );
+	fadeStart = msg.ReadLong();
+	fadeEnd = msg.ReadLong();
 */
 
 	// FIXME: read renderLight.shader
@@ -1623,14 +1623,14 @@ void idLight::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	renderLight.lightRadius[1] = msg.ReadFloat( 5, 10 );
 	renderLight.lightRadius[2] = msg.ReadFloat( 5, 10 );
 
-	UnpackColor( msg.ReadInt(), shaderColor );
+	UnpackColor( msg.ReadLong(), shaderColor );
 	renderLight.shaderParms[SHADERPARM_RED] = shaderColor[0];
 	renderLight.shaderParms[SHADERPARM_GREEN] = shaderColor[1];
 	renderLight.shaderParms[SHADERPARM_BLUE] = shaderColor[2];
 	renderLight.shaderParms[SHADERPARM_ALPHA] = shaderColor[3];
 
 	renderLight.shaderParms[SHADERPARM_TIMESCALE] = msg.ReadFloat( 5, 10 );
-	renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = msg.ReadInt();
+	renderLight.shaderParms[SHADERPARM_TIMEOFFSET] = msg.ReadLong();
 	//renderLight.shaderParms[SHADERPARM_DIVERSITY] = msg.ReadFloat();
 	renderLight.shaderParms[SHADERPARM_MODE] = msg.ReadShort();
 

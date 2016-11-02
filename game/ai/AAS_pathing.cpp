@@ -135,7 +135,7 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 	
 	START_SCOPED_TIMING(actor->actorWalkPathValidTimer, scopedWalkPathValidTimer);
 
-	int curAreaNum, lastAreas[4], lastAreaIndex;
+	int curAreaNum, lastAreaNum, lastAreas[4], lastAreaIndex;
 	idPlane pathPlane, frontPlane, farPlane;
 	idReachability *reach;
 	const aasArea_t *area;
@@ -162,6 +162,7 @@ bool idAASLocal::WalkPathValid( int areaNum, const idVec3 &origin, int goalAreaN
 	farPlane.FitThroughPoint( goalOrigin );
 
 	curAreaNum = areaNum;
+	lastAreaNum = curAreaNum;
 
 	while ( 1 ) {
 

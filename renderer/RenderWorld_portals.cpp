@@ -332,7 +332,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 	portal_t*		p;
 	float			d;
 	portalArea_t *	area;
-	const portalStack_t	*check, *firstPortalStack = NULL;
+	const portalStack_t	*check, *firstPortalStack;
 	portalStack_t	newStack;
 	int				i, j;
 	idVec3			v1, v2;
@@ -446,6 +446,7 @@ prelight, because shadows are cast from back side which may not be in visible ar
 void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 	portalStack_t	ps;
 	int				i;
+	const idVec3 origin = light->globalLightOrigin;
 
 	// if the light origin areaNum is not in a valid area,
 	// the light won't have any area refs

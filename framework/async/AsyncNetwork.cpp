@@ -179,7 +179,7 @@ idAsyncNetwork::WriteUserCmdDelta
 */
 void idAsyncNetwork::WriteUserCmdDelta( idBitMsg &msg, const usercmd_t &cmd, const usercmd_t *base ) {
 	if ( base ) {
-		msg.WriteDeltaIntCounter( base->gameTime, cmd.gameTime );
+		msg.WriteDeltaLongCounter( base->gameTime, cmd.gameTime );
 		msg.WriteDeltaByte( base->buttons, cmd.buttons );
 		msg.WriteDeltaShort( base->mx, cmd.mx );
 		msg.WriteDeltaShort( base->my, cmd.my );
@@ -192,7 +192,7 @@ void idAsyncNetwork::WriteUserCmdDelta( idBitMsg &msg, const usercmd_t &cmd, con
 		return;
 	}
 
-	msg.WriteInt( cmd.gameTime );
+	msg.WriteLong( cmd.gameTime );
 	msg.WriteByte( cmd.buttons );
     msg.WriteShort( cmd.mx );
 	msg.WriteShort( cmd.my );
@@ -213,7 +213,7 @@ void idAsyncNetwork::ReadUserCmdDelta( const idBitMsg &msg, usercmd_t &cmd, cons
 	memset( &cmd, 0, sizeof( cmd ) );
 
 	if ( base ) {
-		cmd.gameTime = msg.ReadDeltaIntCounter( base->gameTime );
+		cmd.gameTime = msg.ReadDeltaLongCounter( base->gameTime );
 		cmd.buttons = msg.ReadDeltaByte( base->buttons );
 		cmd.mx = msg.ReadDeltaShort( base->mx );
 		cmd.my = msg.ReadDeltaShort( base->my );
@@ -226,7 +226,7 @@ void idAsyncNetwork::ReadUserCmdDelta( const idBitMsg &msg, usercmd_t &cmd, cons
 		return;
 	}
 
-	cmd.gameTime = msg.ReadInt();
+	cmd.gameTime = msg.ReadLong();
     cmd.buttons = msg.ReadByte();
     cmd.mx = msg.ReadShort();
 	cmd.my = msg.ReadShort();
