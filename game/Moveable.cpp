@@ -1429,7 +1429,7 @@ void idExplodingBarrel::Killed( idEntity *inflictor, idEntity *attacker, int dam
 			byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
 			msg.Init( msgBuf, sizeof( msgBuf ) );
-			msg.WriteInt( gameLocal.time );
+			msg.WriteLong( gameLocal.time );
 			ServerSendEvent( EVENT_EXPLODE, &msg, false, -1 );
 		}		
 	}
@@ -1628,7 +1628,7 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg 
 
 	switch( event ) {
 		case EVENT_EXPLODE: {
-			if ( gameLocal.realClientTime - msg.ReadInt() < spawnArgs.GetInt( "explode_lapse", "1000" ) ) {
+			if ( gameLocal.realClientTime - msg.ReadLong() < spawnArgs.GetInt( "explode_lapse", "1000" ) ) {
 				ExplodingEffects( );
 			}
 			return true;
@@ -1639,3 +1639,4 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg 
 	}
 //	return false;
 }
+

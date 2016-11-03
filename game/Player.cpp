@@ -7749,6 +7749,7 @@ idPlayer::RouteGuiMouse
 */
 void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 	sysEvent_t ev;
+    const char *command;
 
 	/*if ( gui == m_overlays.findInteractive() ) {
 		// Ensure that gui overlays are always able to execute commands,
@@ -7762,7 +7763,7 @@ void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 		
 	if ( usercmd.mx != oldMouseX || usercmd.my != oldMouseY ) {
 		ev = sys->GenerateMouseMoveEvent( usercmd.mx - oldMouseX, usercmd.my - oldMouseY );
-		gui->HandleEvent( &ev, gameLocal.time );
+		command = gui->HandleEvent( &ev, gameLocal.time );
 		oldMouseX = usercmd.mx;
 		oldMouseY = usercmd.my;
 	}
@@ -9572,7 +9573,7 @@ idPlayer::WritePlayerStateToSnapshot
 */
 void idPlayer::WritePlayerStateToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteByte( bobCycle );
-	msg.WriteInt( stepUpTime );
+	msg.WriteLong( stepUpTime );
 	msg.WriteFloat( stepUpDelta );
 }
 
@@ -9583,7 +9584,7 @@ idPlayer::ReadPlayerStateFromSnapshot
 */
 void idPlayer::ReadPlayerStateFromSnapshot( const idBitMsgDelta &msg ) {
 	bobCycle = msg.ReadByte();
-	stepUpTime = msg.ReadInt();
+	stepUpTime = msg.ReadLong();
 	stepUpDelta = msg.ReadFloat();
 }
 

@@ -8391,7 +8391,7 @@ void idPhysics_AF::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	int i;
 	idCQuat quat;
 
-	msg.WriteInt( current.atRest );
+	msg.WriteLong( current.atRest );
 	msg.WriteFloat( current.noMoveTime );
 	msg.WriteFloat( current.activateTime );
 	msg.WriteDeltaFloat( 0.0f, current.pushVelocity[0], AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS );
@@ -8438,7 +8438,7 @@ void idPhysics_AF::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	int i, num;
 	idCQuat quat;
 
-	current.atRest = msg.ReadInt();
+	current.atRest = msg.ReadLong();
 	current.noMoveTime = msg.ReadFloat();
 	current.activateTime = msg.ReadFloat();
 	current.pushVelocity[0] = msg.ReadDeltaFloat( 0.0f, AF_VELOCITY_EXPONENT_BITS, AF_VELOCITY_MANTISSA_BITS );

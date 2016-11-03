@@ -1027,8 +1027,8 @@ pvsHandle_t idPVS::SetupCurrentPVS( const int *sourceAreas, const int numSourceA
 
 			assert( sourceAreas[i] >= 0 && sourceAreas[i] < numAreas );
 
-            vis = reinterpret_cast<long *>(areaPVS + sourceAreas[i] * areaVisBytes);
-            pvs = reinterpret_cast<long *>(currentPVS[handle.i].pvs);
+            vis = reinterpret_cast<long*>(areaPVS + sourceAreas[i] * areaVisBytes);
+            pvs = reinterpret_cast<long*>(currentPVS[handle.i].pvs);
 			for ( j = 0; j < areaVisLongs; j++ ) {
 				*pvs++ |= *vis++;
 			}
