@@ -716,8 +716,8 @@ idEntityFx::WriteToSnapshot
 void idEntityFx::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	GetPhysics()->WriteToSnapshot( msg );
 	WriteBindToSnapshot( msg );
-	msg.WriteInt( ( fxEffect != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
-	msg.WriteInt( started );
+	msg.WriteLong( ( fxEffect != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
+	msg.WriteLong( started );
 }
 
 /*
@@ -730,8 +730,8 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 
 	GetPhysics()->ReadFromSnapshot( msg );
 	ReadBindFromSnapshot( msg );
-	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadInt() );
-	start_time = msg.ReadInt();
+	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
+	start_time = msg.ReadLong();
 
 	if ( fx_index != -1 && start_time > 0 && !fxEffect && started < 0 ) {
 		spawnArgs.GetInt( "effect_lapse", "1000", max_lapse );

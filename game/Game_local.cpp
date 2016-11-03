@@ -6582,7 +6582,7 @@ void idGameLocal::SetPortalState( qhandle_t portal, int blockingBits ) {
 	if ( !gameLocal.isClient ) {
 		outMsg.Init( msgBuf, sizeof( msgBuf ) );
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_PORTAL );
-		outMsg.WriteInt( portal );
+		outMsg.WriteLong( portal );
 		outMsg.WriteBits( blockingBits, NUM_RENDER_PORTAL_BITS );
 		networkSystem->ServerSendReliableMessage( -1, outMsg );
 	}

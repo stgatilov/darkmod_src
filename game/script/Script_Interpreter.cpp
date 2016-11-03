@@ -1917,7 +1917,9 @@ bool idInterpreter::Execute( void ) {
 
 		case OP_PUSH_V:
 			var_a = GetVariable( st->a );
-            PushVector(*var_a.vectorPtr);
+            Push( *reinterpret_cast<int *>( &var_a.vectorPtr->x ) );
+			Push( *reinterpret_cast<int *>( &var_a.vectorPtr->y ) );
+			Push( *reinterpret_cast<int *>( &var_a.vectorPtr->z ) );
 			break;
 
 		case OP_PUSH_OBJ:

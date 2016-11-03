@@ -566,12 +566,13 @@ idTestModel::TestAnim
 void idTestModel::TestAnim( const idCmdArgs &args ) {
 	idStr			name;
 	int				animNum;
+    const idAnim	*newanim;
 
 	if ( args.Argc() < 2 ) {
 		gameLocal.Printf( "usage: testanim <animname>\n" );
 		return;
 	}
-
+    newanim = NULL;
 	name = args.Argv( 1 );
 #if 0
     const idAnim	*newanim = NULL;
