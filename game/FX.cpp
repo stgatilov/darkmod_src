@@ -781,6 +781,8 @@ idTeleporter::Event_DoAction
 ================
 */
 void idTeleporter::Event_DoAction( idEntity *activator ) {
+    float angle;
+    angle = spawnArgs.GetFloat( "angle" );
 	idAngles a( 0, spawnArgs.GetFloat( "angle" ), 0 );
 	activator->Teleport( GetPhysics()->GetOrigin(), a, NULL );
 }
