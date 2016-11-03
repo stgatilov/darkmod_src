@@ -5085,7 +5085,8 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		
 		// bobCycle is effectively an 8-bit integer, which increases at a speed determined by bobmove
 		// and wraps around when it exceeds 8 bits.
-		bobCycle = (int)( old + bobmove * gameLocal.msec ) & 255;
+		// duzenko #4409 - use variable frame time instead of const
+		bobCycle = (int)( old + bobmove * gameLocal.getMsec() ) & 255;
 		
 		// bobFoot = most significant bit of bobCycle, so it will be equal to 1 for half the time,
 		// and 0 for the other half. This represents which foot we're placing our weight on right now.

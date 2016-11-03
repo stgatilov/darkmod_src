@@ -686,23 +686,26 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 ==============
 Scroll
 deals with scrolling text because we don't have key repeat
+duzenko #4409 - fix the last/next keyevnt system for variable frame time
 ==============
 */
 void idConsoleLocal::Scroll( ) {
 
-	if (lastKeyEvent == -1 || (lastKeyEvent+200) > eventLoop->Milliseconds()) {
+	if (lastKeyEvent == -1 || (lastKeyEvent + nextKeyEvent) > eventLoop->Milliseconds()) {
 		return;
 	}
 
 	// console scrolling
 	else if ( idKeyInput::IsDown( K_PGUP ) ) {
 		PageUp();
+		lastKeyEvent = eventLoop->Milliseconds();
 		nextKeyEvent = CONSOLE_REPEAT;
 		return;
 	}
 
 	else if ( idKeyInput::IsDown( K_PGDN ) ) {
 		PageDown();
+		lastKeyEvent = eventLoop->Milliseconds();
 		nextKeyEvent = CONSOLE_REPEAT;
 		return;
 	}

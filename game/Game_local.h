@@ -664,6 +664,7 @@ public:
 	int						time;					// in msec
 	int						m_Interleave;			// How often should the lightgem calculation be skipped?
 	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
+	int						getMsec();
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 

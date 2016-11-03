@@ -8194,6 +8194,14 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	return -1;
 }
 
+// duzenko #4409 - getMsec() used for head bob cycling
+
+int idGameLocal::getMsec() {
+	if (cvarSystem->GetCVarBool("com_fixedTic"))
+		return time - previousTime;
+	else
+		return msec;
+}
 
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   
 {
