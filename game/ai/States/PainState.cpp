@@ -50,6 +50,8 @@ void PainState::Init(idAI* owner)
 
 	if ( idStr(owner->WaitState()) == "pain" )
 	{
+		// End this state
+		owner->GetMind()->EndState();
 		return;
 	}
 
