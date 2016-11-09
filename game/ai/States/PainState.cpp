@@ -53,21 +53,38 @@ void PainState::Init(idAI* owner)
 		return;
 	}
 
-	owner->StopMove(MOVE_STATUS_DONE); // grayman #3857
-
 	Memory& memory = owner->GetMemory();
 
-	// Play the animation
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Pain", 4);
-	owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Pain", 4);
+	// grayman #4406 - If sitting or sleeping, don't allow the
+	// pain animation, because it screws up these other animations.
 
-	owner->SetWaitState("pain");
-	owner->SetWaitState(ANIMCHANNEL_TORSO, "pain");
-	owner->SetWaitState(ANIMCHANNEL_LEGS, "pain");
+	moveType_t moveType = owner->GetMoveType();
+	if ( moveType == MOVETYPE_SIT ||
+		moveType == MOVETYPE_SLEEP ||
+		moveType == MOVETYPE_SIT_DOWN ||
+		moveType == MOVETYPE_LAY_DOWN ||
+		moveType == MOVETYPE_GET_UP ||
+		moveType == MOVETYPE_GET_UP_FROM_LYING )
+	{
+		// Set end time
+		_stateEndTime = gameLocal.time;
+	}
+	else
+	{
+		owner->StopMove(MOVE_STATUS_DONE); // grayman #3857
 
-	// Set end time
-	_stateEndTime = gameLocal.time + 5000;
-	
+		// Play the animation
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_Pain", 4);
+		owner->SetAnimState(ANIMCHANNEL_LEGS, "Legs_Pain", 4);
+
+		owner->SetWaitState("pain");
+		owner->SetWaitState(ANIMCHANNEL_TORSO, "pain");
+		owner->SetWaitState(ANIMCHANNEL_LEGS, "pain");
+
+		// Set end time
+		_stateEndTime = gameLocal.time + 5000;
+	}
+
 	// grayman #3140 - if drowning, skip issuing a message. The drowning
 	// sound effect is handled in idActor::Damage().
 	if ( memory.causeOfPain != EPC_Drown )
