@@ -450,7 +450,7 @@ public:
 
 	
 	void RegisterAlert(idEntity* alertedBy); // grayman #4002 - register an alert
-	void ProcessAlerts(); // grayman #4002 - process queued alerts
+	int ExamineAlerts(); // grayman #4002 - examine queued alerts
 
 
 	/**
@@ -1340,8 +1340,8 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 		idEntityPtr<idEntity> entityResponsible;
 		//int entityNumber;
 
-		// Alert entry processed?
-		bool processed;
+		// Alert entry should be ignored?
+		bool ignore;
 	};
 
 	idList<EntityAlert> alertQueue; // grayman #4002

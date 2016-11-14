@@ -780,7 +780,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(ea.timeAlerted);
 		savefile->WriteInt(ea.alertIndex);
 		ea.entityResponsible.Save(savefile);
-		savefile->WriteBool(ea.processed);
+		savefile->WriteBool(ea.ignore);
 	}
 
 	savefile->WriteInt( talk_state );
@@ -1237,7 +1237,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(alertQueue[i].timeAlerted);
 		savefile->ReadInt(alertQueue[i].alertIndex);
 		alertQueue[i].entityResponsible.Restore(savefile);
-		savefile->ReadBool(alertQueue[i].processed);
+		savefile->ReadBool(alertQueue[i].ignore);
 	}
 
 	savefile->ReadInt( i );
@@ -6979,10 +6979,10 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// grayman #3848 - note who killed you
 	m_killedBy = attacker;
 
+	alertQueue.Clear(); // grayman #4002
+
 	// grayman - print data re: being Killed
 	//gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
-
-	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -9903,14 +9903,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// grayman #3069 - and only if the AI can seek out the player
 
-	// grayman #4002 - Move AlertCallback() to the point where the AI's alert
-	// index drops to zero. For now, just register that the alert occurred.
-
 	// Objectives callback
 	if ( AlertIndexIncreased() && m_canSearch )
 	{
 		RegisterAlert(m_AlertedByActor.GetEntity()); // grayman #4002 - add alert to alert queue
-		//gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
+		gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 	}
 }
 
@@ -10066,65 +10063,51 @@ void idAI::RegisterAlert(idEntity* alertedBy)
 		EntityAlert ea;
 
 		ea.entityResponsible = alertedBy;	// The entity responsible
-		ea.timeAlerted = gameLocal.time;			// The last time this entity raised the alert index
+		ea.timeAlerted = gameLocal.time;	// The last time this entity raised the alert index
 		ea.alertIndex = static_cast<int>(AI_AlertIndex); // The alert index reached
-		ea.processed = false; // This entry hasn't been processed yet
+		ea.ignore = false; // This entry hasn't been processed yet
 
 		alertQueue.Insert(ea); // Place at front of queue
 	}
 }
 
-// grayman #4002 - Process the alert queue for alerts that need to be registered with mission stats.
+// grayman #4002 - Examine the alert queue to determine if the current alert supercedes a previous alert.
+//				   Return the value of that previous alert.
 //                 Alerts are inserted at the front of the queue as they happen, so the earlier ones
 //                 have later timestamps than the later ones.
 
-void idAI::ProcessAlerts()
+int idAI::ExamineAlerts()
 {
-	// If an alert event was placed on the alert event queue, it's guaranteed that
-	// at the time of placement, the AI is allowed to search for the player and 
-	// the alert index was rising. So we don't need to check those conditions here.
-
-	// Iterate through the alert event queue to find all alerts caused
-	// by the same entity. As each alert is processed, mark it 'processed'.
-	// Quit the while loop when the number of alerts processed equals the number
-	// of alerts in the queue.
-
 	int numberOfAlerts = alertQueue.Num();
-	if ( numberOfAlerts == 0 )
-	{
-		return;
-	}
-
 	int alertsProcessed = 0;
 	idEntity* entityResponsible = NULL;
 	int nextTime = 0;
 	int nextAlertIndex;
+	int result = 0;
+	bool foundResult = false;
 
-	while ( alertsProcessed < numberOfAlerts )
+	while (( alertsProcessed < numberOfAlerts ) && !foundResult)
 	{
 		bool newEntity = true;
 
-		for ( int i = 0; i < numberOfAlerts; i++ )
+		for ( int i = 0 ; i < numberOfAlerts ; i++ )
 		{
 			EntityAlert *ea = &alertQueue[i];
 
-			if ( ea->processed )
+			if ( ea->ignore )
 			{
 				continue;
 			}
 
 			if ( newEntity )
 			{
-				// This first entry represents the highest alert level the AI reached. It
-				// should be passed to mission stats.
+				// This first entry represents the highest alert level the AI reached.
 
 				entityResponsible = ea->entityResponsible.GetEntity(); // the entity we're currently processing
 				nextTime = ea->timeAlerted;	 // alert time
 				nextAlertIndex = ea->alertIndex; // alert index
-				ea->processed = true;
+				//ea->processed = true;
 				newEntity = false;
-
-				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, nextAlertIndex);
 				alertsProcessed++;
 				continue;
 			}
@@ -10136,7 +10119,7 @@ void idAI::ProcessAlerts()
 				continue; // this entry wasn't caused by the entity we're processing
 			}
 
-			ea->processed = true;
+			ea->ignore = true;
 			alertsProcessed++;
 
 			int thisAlertIndex = ea->alertIndex;
@@ -10176,9 +10159,14 @@ void idAI::ProcessAlerts()
 				alertDuration = 10000.f;
 			}
 
-			if ( duration >= alertDuration )
+			// If the latest alert is too close to the previous alert, we should remove
+			// the stats for the previous alert.
+
+			if ( duration < alertDuration )
 			{
-				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, thisAlertIndex);
+				result = thisAlertIndex;
+				foundResult = true;
+				break;
 			}
 
 			// set up for reading the next entry
@@ -10188,7 +10176,15 @@ void idAI::ProcessAlerts()
 		}
 	}
 
-	alertQueue.Clear();
+/*	// Clear processed flags
+
+	for ( int i = 0 ; i < numberOfAlerts ; i++ )
+	{
+		EntityAlert *ea = &alertQueue[i];
+		ea->processed = false;
+	}*/
+
+	return result;
 }
 
 void idAI::Event_GetAttacker()	// grayman #3679
@@ -10486,10 +10482,10 @@ void idAI::PerformVisualScan(float timecheck)
 		if ( !canWalkToPlayer || ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
 		{
 			SetEnemy(player);
-			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
 
 			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
 			// visibility in the mission data
+			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
 		}
 		else // player is too far away, but AI will continue to move because he can walk to the player
 		{
@@ -12012,7 +12008,7 @@ void idAI::Knockout( idEntity* inflictor )
 	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
 	m_dousedLightsSeen.Clear();
 
-	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
+	alertQueue.Clear(); // grayman #4002
 }
 
 void idAI::PostKnockOut()
