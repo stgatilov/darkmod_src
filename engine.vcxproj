@@ -87,7 +87,7 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -297,6 +297,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
+      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
