@@ -539,10 +539,10 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
 	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
-		mipmapMode == 0;
+		mipmapMode = 0;
 	else
 		if (mipmapMode == 2 && !glGenerateMipmap)
-			mipmapMode == 1;
+			mipmapMode = 1;
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
