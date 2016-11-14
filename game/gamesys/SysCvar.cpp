@@ -529,7 +529,7 @@ idCVar g_timeModifier(				"g_timeModifier",			"1",			CVAR_GAME | CVAR_FLOAT, "Us
 idCVar g_timeentities(				"g_timeEntities",			"0",			CVAR_GAME | CVAR_FLOAT, "when non-zero, shows entities whose think functions exceeded the # of milliseconds specified" );
 
 
-idCVar g_enablePortalSky(			"g_enablePortalSky",		"1",			CVAR_GAME | CVAR_BOOL, "enables the portal sky" );
+idCVar g_enablePortalSky(			"g_enablePortalSky",		"2",			CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, "enables the portal sky: 1 - old method, 2 - new method" );
 
 	
 idCVar ai_debugScript(				"ai_debugScript",			"-1",			CVAR_GAME | CVAR_INTEGER, "displays script calls for the specified monster entity number" );

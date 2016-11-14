@@ -471,7 +471,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 												 // It should keep going even when not active.
 	}
 
-	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() ) {
+	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
 		
 		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
 			PSOrigin = gameLocal.portalSkyOrigin;
@@ -516,7 +516,8 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		}
 
 		gameRenderWorld->RenderScene( &portalView );
-		renderSystem->CaptureRenderToImage( "_currentRender" );
+		if (g_enablePortalSky.GetInteger() == 1) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
+			renderSystem->CaptureRenderToImage( "_currentRender" );
 
 		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
 	}

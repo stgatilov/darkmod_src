@@ -220,7 +220,7 @@ be updated after the triangle function completes.
 void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, 
 											  void (*triFunc_)( const drawSurf_t *) ) {
 	const drawSurf_t		*drawSurf;
-
+	int g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // cache the expensive call
 	backEnd.currentSpace = NULL;
 
 	for ( int i = 0  ; i < numDrawSurfs ; i++ ) {
@@ -236,6 +236,8 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 		} else {
 			return;
 		}
+		if (!strcmp(drawSurf->material->GetName(), "textures/smf/portal_sky") && g_enablePortalSky == 2)
+			return; // duzenko #4414 - skip the ceiling surface so that fpixels from the skybox stage are not overwritten
 
 		if ( drawSurf->space->weaponDepthHack ) {
 			RB_EnterWeaponDepthHack();

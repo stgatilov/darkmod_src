@@ -23,6 +23,45 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
+/*void DumpFramebuffer(const char *fileName) {
+	if (!r_ignore.GetBool())
+		return;
+	renderCrop_t r, *rc = &r;
+	glGetIntegerv(GL_VIEWPORT, (int*)rc);
+	qglReadBuffer(GL_BACK);
+
+	// calculate pitch of buffer that will be returned by qglReadPixels()
+	int alignment;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+
+	int pitch = rc->width * 4 + alignment - 1;
+	pitch = pitch - pitch % alignment;
+
+	byte *data = (byte *)R_StaticAlloc(pitch * rc->height);
+
+	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	byte *data2 = (byte *)R_StaticAlloc(rc->width * rc->height * 4);
+
+	for (int y = 0; y < rc->height; y++) {
+		for (int x = 0; x < rc->width; x++) {
+			int idx = y * pitch + x * 4;
+			int idx2 = (y * rc->width + x) * 4;
+
+			data2[idx2 + 0] = data[idx + 0];
+			data2[idx2 + 1] = data[idx + 1];
+			data2[idx2 + 2] = data[idx + 2];
+			data2[idx2 + 3] = 0xff;
+		}
+	}
+
+	R_WriteTGA(fileName, data2, rc->width, rc->height, true);
+
+	R_StaticFree(data);
+	R_StaticFree(data2);
+}*/
+
 /*
 =====================
 RB_BakeTextureMatrixIntoTexgen
@@ -1134,7 +1173,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		backEnd.currentRenderCopied = true;
 	}
 
-	GL_SelectTexture( 1 );
+	int g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // cache expensive call
+
+	GL_SelectTexture(1);
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
@@ -1162,6 +1203,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			&& !backEnd.currentRenderCopied ) {
 			break;
 		}
+
+		if (!strcmp(drawSurfs[i]->material->GetName(), "textures/smf/portal_sky") && g_enablePortalSky == 2)
+			continue; // duzenko #4414 - skip the ceiling surface so that fpixels from the skybox stage are not overwritten
 
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
 		
