@@ -27,7 +27,7 @@ static bool versioned = RegisterVersionedFile("$Source$  $Revision$   $Date$");
 
 
 #define SUBSAMPLE_WALK_PATH		1
-#define SUBSAMPLE_FLY_PATH		0
+#define SUBSAMPLE_FLY_PATH		1 // grayman #4412 - needed to smooth certain paths (was 0)
 
 const int		maxWalkPathIterations		= 10;
 const float		maxWalkPathDistance			= 500.0f;
@@ -365,7 +365,7 @@ bool idAASLocal::WalkPathToGoal( aasPath_t &path, int areaNum, const idVec3 &ori
 
 		if ( !reach )
 		{
-			// A this point, RouteToGoalArea() returned TRUE, but there's no reachability data, which makes
+			// At this point, RouteToGoalArea() returned TRUE, but there's no reachability data, which makes
 			// it useless.
 
 			//return false;
@@ -529,13 +529,26 @@ idVec3 idAASLocal::SubSampleFlyPath( int areaNum, const idVec3 &origin, const id
 }
 
 /*
+void idAASLocal::PrintReachability(int index,idReachability *reach) const
+{
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("=============================\r");
+	for ( ; reach ; reach = reach->next )
+	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("   %d: from area %d to area %d, start = [%s], end = [%s]\r",index,reach->fromAreaNum,reach->toAreaNum,reach->start.ToString(),reach->end.ToString());
+	}
+	DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("=============================\r");
+}
+*/
+
+/*
 ============
 idAASLocal::FlyPathToGoal
 
   FIXME: don't stop optimizing on first failure ?
 ============
 */
-bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags ) const {
+bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, int travelFlags, idActor* actor ) const // grayman #4412
+{
 	int i, travelTime, curAreaNum, lastAreas[4], lastAreaIndex, endAreaNum;
 	idReachability *reach(NULL);
 	idVec3 endPos;
@@ -560,7 +573,8 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 
 	for ( i = 0; i < maxFlyPathIterations; i++ ) {
 
-		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &path.firstDoor, NULL ) ) {
+		if ( !idAASLocal::RouteToGoalArea( curAreaNum, path.moveGoal, goalAreaNum, travelFlags, travelTime, &reach, &path.firstDoor, actor ) ) // grayman #4412
+		{
 			break;
 		}
 
@@ -585,10 +599,14 @@ bool idAASLocal::FlyPathToGoal( aasPath_t &path, int areaNum, const idVec3 &orig
 			}
 		}
 
+		//PrintReachability(i,reach);
 		path.moveGoal = reach->start;
 		path.moveAreaNum = curAreaNum;
 
 		if ( !idAASLocal::FlyPathValid( areaNum, origin, 0, reach->end, travelFlags, endPos, endAreaNum ) ) {
+#if SUBSAMPLE_FLY_PATH // grayman #4412
+				path.moveGoal = SubSampleFlyPath( areaNum, origin, path.moveGoal, goalOrigin, travelFlags, path.moveAreaNum );
+#endif
 			return true;
 		}
 

@@ -9827,7 +9827,7 @@ int idPlayer::ProcessLightgem(bool processing)
 	
     if ( cv_lg_interleave.GetInteger() > 0)
     {	
-		if ( static_cast<int>(y) > r) // grayman debug - remove compiler warning
+		if ( static_cast<int>(y) > r) // grayman - remove compiler warning
 		{
 			// gameLocal.Printf ( "Begin Dynamic lg_interleave" );
 			n = cv_lg_interleave.GetInteger();

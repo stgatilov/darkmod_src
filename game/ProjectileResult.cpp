@@ -254,8 +254,12 @@ void CProjectileResult::Init
 		spawnArgs.Set("projectile_owner", m_ProjData.Owner.GetEntity()->name);
 	}
 
-	// Run scripts:
-	RunResultScript();
+	// grayman #4412 - don't run 'active' or 'dud' scripts if the projectile is absorbed
+	idEntity* struckEnt = gameLocal.entities[collision.c.entityNum];
+	if ( (struckEnt == 0) || !struckEnt->spawnArgs.GetBool("absorb_projectile", "0") )
+	{
+		RunResultScript(); // Run scripts
+	}
 }
 
 void CProjectileResult::RunResultScript( void )

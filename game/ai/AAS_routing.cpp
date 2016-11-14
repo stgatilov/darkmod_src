@@ -1090,6 +1090,7 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		gameLocal.Printf( "RouteToGoalArea: areaNum %d out of range\n", areaNum );
 		return false;
 	}
+
 	if ( goalAreaNum <= 0 || goalAreaNum >= file->GetNumAreas() ) {
 		gameLocal.Printf( "RouteToGoalArea: goalAreaNum %d out of range\n", goalAreaNum );
 		return false;
@@ -1190,6 +1191,41 @@ bool idAASLocal::RouteToGoalArea( int areaNum, const idVec3 origin, int goalArea
 		if (actor != NULL && gameLocal.m_AreaManager.AreaIsForbidden(portalAreaNum, static_cast<idAI*>(actor)))
 		{
 			continue;
+		}
+
+		// grayman #4412 - Check for FLYING + DOORS and skip
+		// a portal exit if it has a closed door or partially open door that the
+		// flying AI can't fit through.
+
+		if (actor != NULL)
+		{
+			if ( actor->IsType(idAI::Type) )
+			{
+				idAI* ai = static_cast<idAI*>(actor);
+				if ( ai->GetMoveType() == MOVETYPE_FLY )
+				{
+					// check if there is a door in the path
+					aasArea_t pa = file->GetArea(portalAreaNum);
+					if ( pa.travelFlags & TFL_DOOR )
+					{
+						CFrobDoor* portalDoor = GetDoor(portalAreaNum);
+						if ( portalDoor != NULL )
+						{
+							if ( portalDoor->IsOpen() )
+							{
+								if ( !ai->FitsThrough(portalDoor) )
+								{
+									continue; // can't fit through the open door
+								}
+							}
+							else
+							{
+								continue; // can't go through the closed door
+							}
+						}
+					}
+				}
+			}
 		}
 
 		// get the cache of the portal area

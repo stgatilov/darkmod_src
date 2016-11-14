@@ -452,7 +452,6 @@ public:
 	void RegisterAlert(idEntity* alertedBy); // grayman #4002 - register an alert
 	int ExamineAlerts(); // grayman #4002 - examine queued alerts
 
-
 	/**
 	* Returns the float val of the specific AI's acuity.
 	* Acuity type is a char, from the same list as alert types.
@@ -531,6 +530,8 @@ public:
 
 	// GetUp is used both for getting up from sitting or sleeping
 	void GetUp();
+
+	bool FitsThrough(CFrobDoor* frobDoor); // grayman #4412
 
 public:
 	/**

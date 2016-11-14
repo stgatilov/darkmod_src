@@ -293,7 +293,8 @@ void idAASLocal::ShowWalkPath( const idVec3 &origin, int goalAreaNum, const idVe
 idAASLocal::ShowFlyPath
 ============
 */
-void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin ) const {
+void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec3 &goalOrigin, idActor* actor ) const // grayman #4412
+{
 	int i, areaNum, curAreaNum, travelTime;
 	idReachability *reach;
 	idVec3 org, areaCenter;
@@ -329,7 +330,8 @@ void idAASLocal::ShowFlyPath( const idVec3 &origin, int goalAreaNum, const idVec
 		org = reach->end;
 	}
 
-	if ( FlyPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_FLY|TFL_AIR ) ) {
+	if ( FlyPathToGoal( path, areaNum, origin, goalAreaNum, goalOrigin, TFL_WALK|TFL_FLY|TFL_AIR, actor ) ) // grayman #4412
+	{
 		gameRenderWorld->DebugArrow( colorBlue, origin, path.moveGoal, 2 );
 	}
 }
@@ -500,7 +502,7 @@ void idAASLocal::Test( const idVec3 &origin ) {
 		ShowWalkPath( origin, aas_showPath.GetInteger(), AreaCenter( aas_showPath.GetInteger() ) );
 	}
 	if ( ( aas_showFlyPath.GetInteger() > 0 ) && ( aas_showFlyPath.GetInteger() < file->GetNumAreas() ) ) {
-		ShowFlyPath( origin, aas_showFlyPath.GetInteger(), AreaCenter( aas_showFlyPath.GetInteger() ) );
+		ShowFlyPath( origin, aas_showFlyPath.GetInteger(), AreaCenter( aas_showFlyPath.GetInteger() ), NULL ); // grayman #4412
 	}
 	if ( ( aas_showHideArea.GetInteger() > 0 ) && ( aas_showHideArea.GetInteger() < file->GetNumAreas() ) ) {
 		ShowHideArea( origin, aas_showHideArea.GetInteger() );

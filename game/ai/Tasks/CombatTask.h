@@ -32,6 +32,7 @@ protected:
 	idEntityPtr<idActor> _enemy;
 
 	int _lastCombatBarkTime;
+	int _nextAttackTime; // grayman #4412
 
 	CombatTask();
 

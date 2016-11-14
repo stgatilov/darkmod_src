@@ -778,7 +778,12 @@ bool idProjectile::Collide( const trace_t &collision, const idVec3 &velocity ) {
 		{
 			pushDir = idVec3( 0,0,1 );
 		}
-		ent->ApplyImpulse( this, collision.c.id, collision.c.point, push * pushDir );
+
+		// grayman #4412 - Does the struck object absorb the projectile?
+		if ( !ent->spawnArgs.GetBool("absorb_projectile", "0") )
+		{
+			ent->ApplyImpulse(this, collision.c.id, collision.c.point, push * pushDir);
+		}
 	}
 
 	// MP: projectiles open doors
