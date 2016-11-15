@@ -35,6 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-
 //#define MAX_SEARCH_RADIUS 600.0f // grayman #4220 - search type 3: expand search radius to this
 #define MAX_SEARCH_TIME 200.0f  // grayman #4220 - search type 4: use type 3 expansion,
 								// but search radius depends on time from search start where we reach max search distance (in seconds)
+#define MAX_TRIES_TO_FIND_BOUNDARIES 3 // when testing search boundaries, do no more than this number of traces in each direction
 
 // Constructor
 CSearchManager::CSearchManager()
@@ -1040,6 +1041,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 						end.y += distN;
 						bool found = false;
 						idEntity* entHit = NULL;
+						int counter = 1;
 						while ( !found )
 						{
 							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
@@ -1048,7 +1050,9 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 								entHit = gameLocal.entities[result.c.entityNum];
 
-								if ( entHit == gameLocal.world )
+								if ( ( entHit == gameLocal.world ) ||
+									 ( result.fraction < VECTOR_EPSILON ) ||
+									 ( counter == MAX_TRIES_TO_FIND_BOUNDARIES ) )
 								{
 									found = true;
 									distN = result.endpos.y - search->_origin.y;
@@ -1063,6 +1067,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 								// reached the max N range
 								found = true;
 							}
+
+							counter++;
 						}
 
 						// Trace S.
@@ -1073,6 +1079,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 						end.y -= distS;
 						found = false;
 						entHit = NULL;
+						counter = 1;
 						while ( !found )
 						{
 							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
@@ -1081,7 +1088,9 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 								entHit = gameLocal.entities[result.c.entityNum];
 
-								if ( entHit == gameLocal.world )
+								if ( ( entHit == gameLocal.world ) ||
+									 ( result.fraction < VECTOR_EPSILON ) ||
+									 ( counter == MAX_TRIES_TO_FIND_BOUNDARIES ) )
 								{
 									found = true;
 									distS = search->_origin.y - result.endpos.y;
@@ -1096,6 +1105,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 								// reached the max S range
 								found = true;
 							}
+
+							counter++;
 						}
 
 						// Trace E.
@@ -1106,6 +1117,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 						end.x += distE;
 						found = false;
 						entHit = NULL;
+						counter = 1;
 						while ( !found )
 						{
 							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
@@ -1114,7 +1126,9 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 								entHit = gameLocal.entities[result.c.entityNum];
 
-								if ( entHit == gameLocal.world )
+								if ( ( entHit == gameLocal.world ) ||
+									 ( result.fraction < VECTOR_EPSILON ) ||
+									 ( counter == MAX_TRIES_TO_FIND_BOUNDARIES ) )
 								{
 									found = true;
 									distE = result.endpos.x - search->_origin.x;
@@ -1129,6 +1143,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 								// reached the max E range
 								found = true;
 							}
+
+							counter++;
 						}
 
 						// Trace W.
@@ -1139,6 +1155,7 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 						end.x -= distW;
 						found = false;
 						entHit = NULL;
+						counter = 1;
 						while ( !found )
 						{
 							if ( gameLocal.clip.TracePoint(result, start, end, MASK_SOLID, entHit) )
@@ -1147,7 +1164,9 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 
 								entHit = gameLocal.entities[result.c.entityNum];
 
-								if ( entHit == gameLocal.world )
+								if ( ( entHit == gameLocal.world ) ||
+									 ( result.fraction < VECTOR_EPSILON ) ||
+									 ( counter == MAX_TRIES_TO_FIND_BOUNDARIES ) )
 								{
 									found = true;
 									distW = search->_origin.x - result.endpos.x;
@@ -1162,6 +1181,8 @@ bool CSearchManager::JoinSearch(int searchID, idAI* ai)
 								// reached the max W range
 								found = true;
 							}
+
+							counter++;
 						}
 
 						// We now have distN, distS, distE, and distW. Use them to
