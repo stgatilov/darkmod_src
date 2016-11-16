@@ -529,7 +529,8 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 	}
 
 	hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
-	gameRenderWorld->RenderScene( &hackedView );
+	if (g_enablePortalSky.GetInteger() != -1) // duzenko #4414: debug tool to present the skybox stage result
+		gameRenderWorld->RenderScene( &hackedView );
 	// process the frame
 
 	//	fxManager->Process( &hackedView );

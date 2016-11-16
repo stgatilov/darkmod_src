@@ -1173,9 +1173,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		backEnd.currentRenderCopied = true;
 	}
 
-	int g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // cache expensive call
-
-	GL_SelectTexture(1);
+	GL_SelectTexture( 1 );
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
@@ -1203,9 +1201,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 			&& !backEnd.currentRenderCopied ) {
 			break;
 		}
-
-		if (!strcmp(drawSurfs[i]->material->GetName(), "textures/smf/portal_sky") && g_enablePortalSky == 2)
-			continue; // duzenko #4414 - skip the ceiling surface so that fpixels from the skybox stage are not overwritten
 
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
 		

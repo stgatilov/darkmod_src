@@ -32,6 +32,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
+int	g_enablePortalSky; // game cvar cached for speed
 
 /*
 ===========================================================================================
@@ -1352,6 +1353,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		if ( !shader->IsDrawn() ) {
 			continue;
 		}
+		if (!strcmp(shader->GetName(), "textures/smf/portal_sky") && g_enablePortalSky == 2)
+			continue; // duzenko #4414 - skip the ceiling surface so that pixels from the skybox stage are reused
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
@@ -1463,6 +1466,7 @@ void R_AddModelSurfaces( void ) {
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+	g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // duzenko #4414: cache the game cvar
 
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
