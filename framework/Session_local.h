@@ -84,7 +84,6 @@ public:
 	virtual void		Stop();
 
 	virtual void		UpdateScreen( bool outOfSequence = true );
-	void				AsyncTick();
 
 	virtual void		PacifierUpdate(loadkey_t key, int count); // grayman #3763
 

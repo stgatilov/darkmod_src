@@ -25,6 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
 #include "../game/Game_local.h"
+#include <thread>
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -213,6 +214,26 @@ static void Sess_WritePrecache_f( const idCmdArgs &args ) {
 	uiManager->WritePrecacheCommands( f );
 
 	fileSystem->CloseFile( f );
+}
+
+/*
+===============
+duzenko #4408
+===============
+*/
+
+bool gameTicThreadActivator;
+std::thread *gameTicThread;
+
+void GameTicThreadProc() {
+	while (1) {
+		Sys_EnterCriticalSection(CRITICAL_SECTION_TWO); // entered twice per frame
+		if (gameTicThreadActivator) { // set once per frame
+			sessLocal.RunGameTic();
+			gameTicThreadActivator = false;
+		}
+		Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+	}
 }
 
 /*
@@ -2538,9 +2559,6 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 		Sys_GrabMouseCursor( false );
 	}
 	
-	// duzenko #4408 - wait/forbid background game tic
-	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
-	
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
 	// draw everything
@@ -2554,29 +2572,7 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 		renderSystem->EndFrame( NULL, NULL );
 	}
 
-	// duzenko #4408 - allow background game tic
-	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
-
 	insideUpdateScreen = false;
-}
-
-// duzenko #4408 - countdown, how many game tics are left to run
-int	gameTicsToRun = 0;
-
-/*
-===============
-idSessionLocal::AsyncTick
-duzenko #4408 - runs 60 times per seconds
-===============
-*/
-
-void idSessionLocal::AsyncTick() {
-	if (!com_asyncTic.GetBool() || !mapSpawned || !gameTicsToRun)
-		return;
-	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
-	while (gameTicsToRun-- > 0) 
-		RunGameTic();
-	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*
@@ -2770,9 +2766,13 @@ void idSessionLocal::Frame() {
 	}
 
 	// duzenko #4408 - optionally don't run game tics on main thread 
-	gameTicsToRun = latchedTicNumber - lastGameTic;
-	if (com_asyncTic.GetBool())
+	int gameTicsToRun = latchedTicNumber - lastGameTic;
+	if (com_asyncTic.GetBool()) {
+		gameTicThreadActivator = true;
+		if (!gameTicThread)
+			gameTicThread = new std::thread(GameTicThreadProc);
 		return;
+	}
 	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
 		if ( !mapSpawned ) {

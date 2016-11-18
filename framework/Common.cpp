@@ -2413,6 +2413,9 @@ idCommonLocal::Frame
 =================
 */
 void idCommonLocal::Frame( void ) {
+	// duzenko #4408 - forbid background game tic until back renderer
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
+
 	try {
 
 		// pump all the events
@@ -2475,6 +2478,9 @@ void idCommonLocal::Frame( void ) {
 	catch( idException & ) {
 		return;			// an ERP_DROP was thrown
 	}
+
+	// duzenko #4408 - background game tic should be finished before this point
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*
@@ -2558,9 +2564,6 @@ void idCommonLocal::SingleAsyncTic( void ) {
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
 	Sys_LeaveCriticalSection();
-
-	if (!com_shuttingDown) // duzenko #4408 - run game tics in background too
-		sessLocal.AsyncTick();
 }
 
 /*
@@ -2869,10 +2872,7 @@ void idCommonLocal::Shutdown( void ) {
 	idAsyncNetwork::client.Shutdown();
 
 	// game specific shut down
-	// duzenko #4408 - game tic may still be running in background
-	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
 	ShutdownGame(false);
-	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 
 	// shut down non-portable system services
 	Sys_Shutdown();
