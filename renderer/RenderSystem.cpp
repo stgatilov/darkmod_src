@@ -132,9 +132,6 @@ static void R_IssueRenderCommands( void ) {
 	// are going to a file, or r_skipBackEnd is later disabled,
 	// usefull data can be received.
 
-	// duzenko #4408 - allow background game tic
-	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
-
 	// r_skipRender is usually more usefull, because it will still
 	// draw 2D graphics
 	if ( !r_skipBackEnd.GetBool() ) {
@@ -142,9 +139,6 @@ static void R_IssueRenderCommands( void ) {
 	}
 
 	R_ClearCommandChain();
-
-	// duzenko #4408 - wait/forbid background game tic
-	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*
@@ -730,8 +724,14 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_SWAP_BUFFERS;
 
+	// duzenko #4408 - allow background game tic
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+
 	// start the back end up again with the new command list
 	R_IssueRenderCommands();
+
+	// duzenko #4408 - wait/forbid background game tic
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
 
 	// use the other buffers next frame, because another CPU
 	// may still be rendering into the current buffers
