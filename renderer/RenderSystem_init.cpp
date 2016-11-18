@@ -103,7 +103,7 @@ idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_C
 idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "uses a flat surface instead of the bump map" );
 idCVar r_skipDiffuse( "r_skipDiffuse", "0", CVAR_RENDERER | CVAR_BOOL, "use black for diffuse" );
 idCVar r_skipROQ( "r_skipROQ", "0", CVAR_RENDERER | CVAR_BOOL, "skip ROQ decoding" );
-idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL, "skip depth capture" ); // #3877
+idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "skip depth capture" ); // #3877 #4418
 idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL, "soften particle transitions when player walks through them or they cross solid geometry" ); // #3878
 
 idCVar r_ignore( "r_ignore", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
@@ -120,7 +120,7 @@ idCVar r_useInteractionScissors( "r_useInteractionScissors", "2", CVAR_RENDERER 
 idCVar r_useShadowCulling( "r_useShadowCulling", "1", CVAR_RENDERER | CVAR_BOOL, "try to cull shadows from partially visible lights" );
 idCVar r_useFrustumFarDistance( "r_useFrustumFarDistance", "0", CVAR_RENDERER | CVAR_FLOAT, "if != 0 force the view frustum far distance to this distance" );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
-idCVar r_clear( "r_clear", "2", CVAR_RENDERER, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
+idCVar r_clear( "r_clear", "2", CVAR_RENDERER | CVAR_ARCHIVE, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
 idCVar r_offsetFactor( "r_offsetfactor", "-2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
 idCVar r_offsetUnits( "r_offsetunits", "-0.1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
 idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVAR_FLOAT, "bias value added to depth test for stencil shadow drawing" );
