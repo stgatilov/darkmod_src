@@ -614,9 +614,9 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
 		    // nbohr1more: #4379 lightgem culling
-		    if ( (!entity->parms.islightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )){
+		    if ( (!entity->parms.islightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )){
 			    continue;
-			} 
+			}
 			if ( entity->parms.suppressSurfaceInViewID
 					&& entity->parms.suppressSurfaceInViewID == tr.viewDef->renderView.viewID ) {
 				continue;
@@ -672,10 +672,10 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 				continue;
 			}
 			
-			if ( ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) > INSIDE_LIGHT_FRUSTUM_SLOP ) && (tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID ) )
+			if ( ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) > INSIDE_LIGHT_FRUSTUM_SLOP ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID ) )
 			{
-			continue;
-			}
+			   continue;
+		    }
 
 			// get the exact winding for this side
 			const idWinding *ow = light->frustumWindings[i];

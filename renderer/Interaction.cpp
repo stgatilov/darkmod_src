@@ -898,9 +898,9 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		}
 		
 		// nbohr1more: #4379 lightgem culling
-		if ((!HasShadows() ) && ( !shader->Islightgemsurf() ) && (tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )) {
+		if ((!HasShadows() ) && ( !shader->Islightgemsurf() ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )) {
 		    continue;
-			} 
+			}
 
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() ) {
@@ -1043,7 +1043,7 @@ void idInteraction::AddActiveInteraction( void ) {
 	
 
 	// nbohr1more: #4379 lightgem culling
-	if ((!HasShadows() ) && ( !entityDef->parms.islightgem ) && (tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )) {
+	if ((!HasShadows() ) && ( !entityDef->parms.islightgem ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )) {
 		    return;
 			} 
 	
