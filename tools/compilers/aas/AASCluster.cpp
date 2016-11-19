@@ -443,7 +443,7 @@ void idAASCluster::RemoveInvalidPortals( void ) {
 		}
 
 		if ( numOpenAreas <= 1 ) {
-			file->areas[i].contents &= ~AREACONTENTS_CLUSTERPORTAL; // grayman #4412 - turn off portal bit
+			file->areas[i].contents &= AREACONTENTS_CLUSTERPORTAL;
 			numInvalidPortals++;
 		}
 	}
