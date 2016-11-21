@@ -548,6 +548,10 @@ bool R_GenerateSubViews( void ) {
 		return false;
 	}
 
+	// duzenko #4420: no mirrors on lightgem stage
+	if (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID) // DARKMOD_LG_VIEWID ?
+		return false;
+
 	subviews = false;
 
 	// scan the surfaces until we either find a subview, or determine
