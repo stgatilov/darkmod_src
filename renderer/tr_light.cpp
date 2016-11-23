@@ -487,7 +487,22 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightProject[1] = light->lightProject[1];
 	vLight->lightProject[2] = light->lightProject[2];
 	vLight->lightProject[3] = light->lightProject[3];
-	vLight->fogPlane = light->frustum[5];
+	if (r_useAnonreclaimer.GetBool()) {
+		//anon begin
+		//vLight->fogPlane = light->frustum[5];
+		// the fog plane is the light far clip plane
+		idPlane fogPlane(light->baseLightProject[2][0] - light->baseLightProject[3][0],
+			light->baseLightProject[2][1] - light->baseLightProject[3][1],
+			light->baseLightProject[2][2] - light->baseLightProject[3][2],
+			light->baseLightProject[2][3] - light->baseLightProject[3][3]);
+		const float planeScale = idMath::InvSqrt(fogPlane.Normal().LengthSqr());
+		vLight->fogPlane[0] = fogPlane[0] * planeScale;
+		vLight->fogPlane[1] = fogPlane[1] * planeScale;
+		vLight->fogPlane[2] = fogPlane[2] * planeScale;
+		vLight->fogPlane[3] = fogPlane[3] * planeScale;
+		//anon end
+	} else
+		vLight->fogPlane = light->frustum[5];
 	vLight->frustumTris = light->frustumTris;
 	vLight->falloffImage = light->falloffImage;
 	vLight->lightShader = light->lightShader;
@@ -1581,7 +1596,9 @@ void R_RemoveUnecessaryViewLights( void ) {
 	viewLight_t		*vLight;
 
 	// go through each visible light
-	for ( vLight = tr.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
+	int numViewLights = 0;
+	for (vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next) {
+		numViewLights++;
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
@@ -1624,6 +1641,37 @@ void R_RemoveUnecessaryViewLights( void ) {
 			}
 
 			vLight->scissorRect.Intersect( surfRect );
+		}
+	}
+	if (r_useAnonreclaimer.GetBool()) {
+		// sort the viewLights list so the largest lights come first, which will reduce
+		// the chance of GPU pipeline bubbles
+		struct sortLight_t
+		{
+			viewLight_t* 	vLight;
+			int				screenArea;
+			static int sort(const void* a, const void* b)
+			{
+				return ((sortLight_t*)a)->screenArea - ((sortLight_t*)b)->screenArea;
+			}
+		};
+		sortLight_t* sortLights = (sortLight_t*)_alloca(sizeof(sortLight_t)* numViewLights);
+		int	numSortLightsFilled = 0;
+		for (viewLight_t* vLight = tr.viewDef->viewLights; vLight != NULL; vLight = vLight->next)
+		{
+			sortLights[numSortLightsFilled].vLight = vLight;
+			sortLights[numSortLightsFilled].screenArea = vLight->scissorRect.GetArea();
+			numSortLightsFilled++;
+		}
+
+		qsort(sortLights, numSortLightsFilled, sizeof(sortLights[0]), sortLight_t::sort);
+
+		// rebuild the linked list in order
+		tr.viewDef->viewLights = NULL;
+		for (int i = 0; i < numSortLightsFilled; i++)
+		{
+			sortLights[i].vLight->next = tr.viewDef->viewLights;
+			tr.viewDef->viewLights = sortLights[i].vLight;
 		}
 	}
 }

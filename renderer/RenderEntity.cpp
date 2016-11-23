@@ -36,7 +36,8 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	dynamicModelFrameCount	= 0;
 	cachedDynamicModel		= NULL;
 	referenceBounds			= bounds_zero;
-	viewCount				= 0;
+	globalReferenceBounds	= bounds_zero; //anon
+	viewCount = 0;
 	viewEntity				= NULL;
 	visibleCount			= 0;
 	decals					= NULL;
@@ -95,6 +96,11 @@ idRenderLightLocal::idRenderLightLocal() {
 	foggedPortals			= NULL;
 	firstInteraction		= NULL;
 	lastInteraction			= NULL;
+
+	//anon begin
+	baseLightProject.Zero();
+	inverseBaseLightProject.Zero();
+	//anon end
 }
 
 void idRenderLightLocal::FreeRenderLight() {

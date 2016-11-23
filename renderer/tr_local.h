@@ -58,6 +58,12 @@ public:
 	void		Union( const idScreenRect &rect );
 	bool		Equals( const idScreenRect &rect ) const;
 	bool		IsEmpty() const;
+	//anon begin
+	int			GetArea() const
+	{
+		return (x2 - x1 + 1) * (y2 - y1 + 1);
+	}
+	//anon end
 };
 
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds );
@@ -209,11 +215,18 @@ public:
 
 	// derived information
 	idPlane					lightProject[4];
+	//anon begin
+	idRenderMatrix			baseLightProject;		// global xyz1 to projected light strq
+	idRenderMatrix			inverseBaseLightProject;// transforms the zero-to-one cube to exactly cover the light in world space
+	//anon end
 
 	const idMaterial *		lightShader;			// guaranteed to be valid, even if parms.shader isn't
 	idImage *				falloffImage;
 
 	idVec3					globalLightOrigin;		// accounting for lightCenter and parallel
+	//anon begin
+	idBounds				globalLightBounds;
+	//anon end
 
 
 	idPlane					frustum[6];				// in global space, positive side facing out, last two are front/back
@@ -251,6 +264,8 @@ public:
 	renderEntity_t			parms;
 
 	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
+	idRenderMatrix			modelRenderMatrix;
+	idRenderMatrix			inverseBaseModelProject;// transforms the unit cube to exactly cover the model in world space
 
 	idRenderWorldLocal *	world;
 	int						index;					// in world entityDefs
@@ -266,6 +281,9 @@ public:
 	idRenderModel *			cachedDynamicModel;
 
 	idBounds				referenceBounds;		// the local bounds used to place entityRefs, either from parms or a model
+	// axis aligned bounding box in world space, derived from refernceBounds and
+	// modelMatrix in R_CreateEntityRefs()
+	idBounds				globalReferenceBounds;
 
 	// a viewEntity_t is created whenever a idRenderEntityLocal is considered for inclusion
 	// in a given view, even if it turns out to not be visible
@@ -873,6 +891,8 @@ extern idCVar r_useInteractionTable;	// create a full entityDefs * lightDefs tab
 extern idCVar r_useNodeCommonChildren;	// stop pushing reference bounds early when possible
 extern idCVar r_useSilRemap;			// 1 = consider verts with the same XYZ, but different ST the same for shadows
 extern idCVar r_useCulling;				// 0 = none, 1 = sphere, 2 = sphere + box
+extern idCVar r_useLightPortalCulling;	// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
+extern idCVar r_useEntityPortalCulling;	// 0 = none, 1 = box
 extern idCVar r_useLightCulling;		// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
 extern idCVar r_useLightScissors;		// 1 = use custom scissor rectangle for each light
 extern idCVar r_useClippedLightScissors;// 0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always
@@ -1008,6 +1028,7 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
+extern idCVar r_useAnonreclaimer;
 
 /*
 ====================================================================
@@ -1023,6 +1044,9 @@ void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
 void	GL_TexEnv( int env );
 void	GL_Cull( int cullType );
+//anon begin
+void    GL_DepthBoundsTest(const float zmin, const float zmax);
+//anon end
 
 const int GLS_SRCBLEND_ONE						= 0x0;
 const int GLS_SRCBLEND_ZERO						= 0x00000001;
@@ -1231,6 +1255,9 @@ void R_RemoveUnecessaryViewLights( void );
 
 void R_FreeDerivedData( void );
 void R_ReCreateWorldReferences( void );
+//anon begin
+void R_DeriveEntityData(idRenderEntityLocal* def);
+//anon end
 
 void R_CreateEntityRefs( idRenderEntityLocal *def );
 void R_CreateLightRefs( idRenderLightLocal *light );

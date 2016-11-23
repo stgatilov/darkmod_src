@@ -38,6 +38,7 @@
 #define CPU_EASYARGS					1
 
 #define ALIGN16( x )					__declspec(align(16)) x
+#define ALIGNTYPE16						__declspec(align(16)) // anon
 #define PACKED
 
 #define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
@@ -47,6 +48,12 @@
 
 #define ID_INLINE						__forceinline
 #define ID_STATIC_TEMPLATE				static
+
+//anon beign
+#define ID_INLINE_EXTERN				extern inline //anon
+#define ID_FORCE_INLINE					__forceinline //anon
+#define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
+//anon end
 
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
@@ -66,6 +73,7 @@
 #endif
 
 #define ALIGN16( x )					x __attribute__ ((aligned (16)))
+#define ALIGNTYPE16						__attribute__ ((aligned (16))) // anon
 
 #ifdef __MWERKS__
 #define PACKED
@@ -86,6 +94,7 @@
 #define ID_INLINE						inline
 #define ID_STATIC_TEMPLATE
 
+#define ID_INLINE_EXTERN				extern inline //anon
 #define assertmem( x, y )
 
 #endif
@@ -109,6 +118,7 @@
 #define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
 
 #define ALIGN16( x )					x
+#define ALIGNTYPE16						 // anon
 #define PACKED							__attribute__((packed))
 
 #define PATHSEPERATOR_STR				"/"

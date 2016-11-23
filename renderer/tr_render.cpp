@@ -716,6 +716,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	const float			*lightRegs = vLight->shaderRegisters;
 	drawInteraction_t	inter;
 
+	//anon begin
+	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
+	//anon end
+
 	if ( !surf->geo || !surf->geo->ambientCache || r_skipInteractions.GetBool() ) {
 		return;
 	}
@@ -723,11 +727,38 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
 	}
+	//anon begin
+	bool lightDepthBoundsDisabled = false;
+	//anon end
 
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
 		qglLoadMatrixf( surf->space->modelViewMatrix );
+		if (r_useAnonreclaimer.GetBool()) {
+			//anon bengin
+			// turn off the light depth bounds test if this model is rendered with a depth hack
+			if (useLightDepthBounds)
+			{
+				if (!surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f)
+				{
+					if (lightDepthBoundsDisabled)
+					{
+						GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
+						lightDepthBoundsDisabled = false;
+					}
+				}
+				else
+				{
+					if (!lightDepthBoundsDisabled)
+					{
+						GL_DepthBoundsTest(0.0f, 0.0f);
+						lightDepthBoundsDisabled = true;
+					}
+				}
+			}
+			//anon end
+		}
 	}
 
 	// change the scissor if needed
@@ -878,6 +909,14 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
 		RB_LeaveDepthHack();
 	}
+
+	//anon begin
+	if (r_useAnonreclaimer.GetBool())
+	if (useLightDepthBounds && lightDepthBoundsDisabled)
+	{
+		GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
+	}
+	//anon end
 }
 
 /*

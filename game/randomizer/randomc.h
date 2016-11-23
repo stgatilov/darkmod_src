@@ -111,7 +111,7 @@
 
 // Define 32 bit signed and unsigned integers.
 // Change these definitions, if necessary, on 64 bit computers
-typedef   signed long int32;     
+//typedef   signed long int32;     
 typedef unsigned long uint32;     
 
 class TRandomMersenne {                // encapsulate random number generator

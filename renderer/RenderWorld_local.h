@@ -253,6 +253,10 @@ public:
 
 	void					PushVolumeIntoTree( idRenderEntityLocal *def, idRenderLightLocal *light, int numPoints, const idVec3 (*points) );
 
+	//anon begin
+	void					PushFrustumIntoTree_r(idRenderEntityLocal* def, idRenderLightLocal* light, const frustumCorners_t& corners, int nodeNum);
+	void					PushFrustumIntoTree(idRenderEntityLocal* def, idRenderLightLocal* light, const idRenderMatrix& frustumTransform, const idBounds& frustumBounds);
+	//anon end
 	//-------------------------------
 	// tr_light.c
 	void					CreateLightDefInteractions( idRenderLightLocal *ldef );

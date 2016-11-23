@@ -96,6 +96,26 @@ build light models
 
 */
 
+//anon beign
+/*
+=================
+R_DeriveEntityData
+=================
+*/
+void R_DeriveEntityData(idRenderEntityLocal* entity)
+{
+	R_AxisToModelMatrix(entity->parms.axis, entity->parms.origin, entity->modelMatrix);
+
+	idRenderMatrix::CreateFromOriginAxis(entity->parms.origin, entity->parms.axis, entity->modelRenderMatrix);
+
+	// calculate the matrix that transforms the unit cube to exactly cover the model in world space
+	idRenderMatrix::OffsetScaleForBounds(entity->modelRenderMatrix, entity->referenceBounds, entity->inverseBaseModelProject);
+
+	// calculate the global model bounds by inverse projecting the unit cube with the 'inverseBaseModelProject'
+	idRenderMatrix::ProjectedBounds(entity->globalReferenceBounds, entity->inverseBaseModelProject, bounds_unitCube, false);
+}
+//anon end
+
 /*
 =================================================================================
 
@@ -180,19 +200,31 @@ void R_CreateEntityRefs( idRenderEntityLocal *def ) {
 		common->Printf( "big entityRef: %f,%f\n", def->referenceBounds[1][0] - def->referenceBounds[0][0], def->referenceBounds[1][1] - def->referenceBounds[0][1] );
 	}
 
-	for (int i = 0 ; i < 8 ; i++) {
-		v[0] = def->referenceBounds[i&1][0];
-		v[1] = def->referenceBounds[(i>>1)&1][1];
-		v[2] = def->referenceBounds[(i>>2)&1][2];
+	if (r_useAnonreclaimer.GetBool()) {
+		// derive entity data
+		R_DeriveEntityData(def);
 
-		R_LocalPointToGlobal( def->modelMatrix, v, transformed[i] ); 
+		// bump the view count so we can tell if an area already has a reference
+		tr.viewCount++;
+
+		// push these points down the BSP tree into areas
+		def->world->PushFrustumIntoTree(def, NULL, def->inverseBaseModelProject, bounds_unitCube);
 	}
+	else {
+		for (int i = 0; i < 8; i++) {
+			v[0] = def->referenceBounds[i & 1][0];
+			v[1] = def->referenceBounds[(i >> 1) & 1][1];
+			v[2] = def->referenceBounds[(i >> 2) & 1][2];
 
-	// bump the view count so we can tell if an area already has a reference
-	tr.viewCount++;
+			R_LocalPointToGlobal(def->modelMatrix, v, transformed[i]);
+		}
 
-	// push these points down the BSP tree into areas
-	def->world->PushVolumeIntoTree( def, NULL, 8, transformed );
+		// bump the view count so we can tell if an area already has a reference
+		tr.viewCount++;
+
+		// push these points down the BSP tree into areas
+		def->world->PushVolumeIntoTree(def, NULL, 8, transformed);
+	}
 }
 
 
@@ -320,6 +352,123 @@ void R_FreeLightDefFrustum( idRenderLightLocal *ldef ) {
 	}
 }
 
+//anon end
+/*
+========================
+R_ComputePointLightProjectionMatrix
+
+Computes the light projection matrix for a point light.
+========================
+*/
+static float R_ComputePointLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+{
+	assert(light->parms.pointLight);
+
+	// A point light uses a box projection.
+	// This projects into the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range.
+	localProject.Zero();
+	localProject[0][0] = 0.5f / light->parms.lightRadius[0];
+	localProject[1][1] = 0.5f / light->parms.lightRadius[1];
+	localProject[2][2] = 0.5f / light->parms.lightRadius[2];
+	localProject[0][3] = 0.5f;
+	localProject[1][3] = 0.5f;
+	localProject[2][3] = 0.5f;
+	localProject[3][3] = 1.0f;	// identity perspective
+
+	return 1.0f;
+}
+
+static const float SPOT_LIGHT_MIN_Z_NEAR = 8.0f;
+static const float SPOT_LIGHT_MIN_Z_FAR = 16.0f;
+
+/*
+========================
+R_ComputeSpotLightProjectionMatrix
+
+Computes the light projection matrix for a spot light.
+========================
+*/
+static float R_ComputeSpotLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+{
+	const float targetDistSqr = light->parms.target.LengthSqr();
+	const float invTargetDist = idMath::InvSqrt(targetDistSqr);
+	const float targetDist = invTargetDist * targetDistSqr;
+
+	const idVec3 normalizedTarget = light->parms.target * invTargetDist;
+	const idVec3 normalizedRight = light->parms.right * (0.5f * targetDist / light->parms.right.LengthSqr());
+	const idVec3 normalizedUp = light->parms.up * (-0.5f * targetDist / light->parms.up.LengthSqr());
+
+	localProject[0][0] = normalizedRight[0];
+	localProject[0][1] = normalizedRight[1];
+	localProject[0][2] = normalizedRight[2];
+	localProject[0][3] = 0.0f;
+
+	localProject[1][0] = normalizedUp[0];
+	localProject[1][1] = normalizedUp[1];
+	localProject[1][2] = normalizedUp[2];
+	localProject[1][3] = 0.0f;
+
+	localProject[3][0] = normalizedTarget[0];
+	localProject[3][1] = normalizedTarget[1];
+	localProject[3][2] = normalizedTarget[2];
+	localProject[3][3] = 0.0f;
+
+	// Set the falloff vector.
+	// This is similar to the Z calculation for depth buffering, which means that the
+	// mapped texture is going to be perspective distorted heavily towards the zero end.
+	const float zNear = Max(light->parms.start * normalizedTarget, SPOT_LIGHT_MIN_Z_NEAR);
+	const float zFar = Max(light->parms.end * normalizedTarget, SPOT_LIGHT_MIN_Z_FAR);
+	const float zScale = (zNear + zFar) / zFar;
+
+	localProject[2][0] = normalizedTarget[0] * zScale;
+	localProject[2][1] = normalizedTarget[1] * zScale;
+	localProject[2][2] = normalizedTarget[2] * zScale;
+	localProject[2][3] = -zNear * zScale;
+
+	// now offset to the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range
+	idVec4 projectedTarget;
+	localProject.TransformPoint(light->parms.target, projectedTarget);
+
+	const float ofs0 = 0.5f - projectedTarget[0] / projectedTarget[3];
+	localProject[0][0] += ofs0 * localProject[3][0];
+	localProject[0][1] += ofs0 * localProject[3][1];
+	localProject[0][2] += ofs0 * localProject[3][2];
+	localProject[0][3] += ofs0 * localProject[3][3];
+
+	const float ofs1 = 0.5f - projectedTarget[1] / projectedTarget[3];
+	localProject[1][0] += ofs1 * localProject[3][0];
+	localProject[1][1] += ofs1 * localProject[3][1];
+	localProject[1][2] += ofs1 * localProject[3][2];
+	localProject[1][3] += ofs1 * localProject[3][3];
+
+	return 1.0f / (zNear + zFar);
+}
+
+/*
+========================
+R_ComputeParallelLightProjectionMatrix
+
+Computes the light projection matrix for a parallel light.
+========================
+*/
+static float R_ComputeParallelLightProjectionMatrix(idRenderLightLocal* light, idRenderMatrix& localProject)
+{
+	assert(light->parms.parallel);
+
+	// A parallel light uses a box projection.
+	// This projects into the 0.0 - 1.0 texture range instead of -1.0 to 1.0 clip space range.
+	localProject.Zero();
+	localProject[0][0] = 0.5f / light->parms.lightRadius[0];
+	localProject[1][1] = 0.5f / light->parms.lightRadius[1];
+	localProject[2][2] = 0.5f / light->parms.lightRadius[2];
+	localProject[0][3] = 0.5f;
+	localProject[1][3] = 0.5f;
+	localProject[2][3] = 0.5f;
+	localProject[3][3] = 1.0f;	// identity perspective
+
+	return 1.0f;
+}
+
 /*
 =================
 R_DeriveLightData
@@ -328,80 +477,213 @@ Fills everything in based on light->parms
 =================
 */
 void R_DeriveLightData( idRenderLightLocal *light ) {
+	if (r_useAnonreclaimer.GetBool()) {
+		int i;
 
-	if ( light->parms.shader ) {
-		light->lightShader = light->parms.shader;
-	}
-
-	// If shader/images are missing, use defaults.
-	else if ( !light->lightShader ) {
-		light->lightShader = ( light->parms.pointLight ) ? tr.defaultShaderPoint : tr.defaultShaderProj;
-	}
-
-	light->falloffImage = light->lightShader->LightFalloffImage();
-	if ( !light->falloffImage ) {
-		// use the falloff from the default shader of the correct type
-		light->falloffImage = ( light->parms.pointLight ) 
-			? tr.defaultShaderPoint->LightFalloffImage()
-			: tr.defaultShaderProj->LightFalloffImage(); // projected lights by default don't diminish with distance
-	}
-
-	// set the projection
-	if ( !light->parms.pointLight ) {
-		// projected light
-		R_SetLightProject( light->lightProject, vec3_origin /* light->parms.origin */, light->parms.target, 
-			light->parms.right, light->parms.up, light->parms.start, light->parms.end);
-	} else {
-		// point light
-		memset( light->lightProject, 0, sizeof( light->lightProject ) );
-		light->lightProject[0][0] = 0.5f / light->parms.lightRadius[0];
-		light->lightProject[1][1] = 0.5f / light->parms.lightRadius[1];
-		light->lightProject[3][2] = 0.5f / light->parms.lightRadius[2];
-		light->lightProject[0][3] = 0.5f;
-		light->lightProject[1][3] = 0.5f;
-		light->lightProject[2][3] = 1.0f;
-		light->lightProject[3][3] = 0.5f;
-	}
-
-	// set the frustum planes
-	R_SetLightFrustum( light->lightProject, light->frustum );
-
-	// rotate the light planes and projections by the axis
-	R_AxisToModelMatrix( light->parms.axis, light->parms.origin, light->modelMatrix );
-
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[0], light->frustum[0] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[1], light->frustum[1] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[2], light->frustum[2] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[3], light->frustum[3] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[4], light->frustum[4] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->frustum[5], light->frustum[5] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->lightProject[0], light->lightProject[0] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->lightProject[1], light->lightProject[1] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->lightProject[2], light->lightProject[2] );
-	R_LocalPlaneToGlobal( light->modelMatrix, (const idPlane)light->lightProject[3], light->lightProject[3] );
-
-	// adjust global light origin for off center projections and parallel projections
-	// we are just faking parallel by making it a very far off center for now
-	if ( light->parms.parallel ) {
-		idVec3	 dir = light->parms.lightCenter;
-
-		if ( !dir.Normalize() ) {
-			// make point straight up if not specified
-			dir[2] = 1;
+		// decide which light shader we are going to use
+		if (light->parms.shader) {
+			light->lightShader = light->parms.shader;
 		}
-		light->globalLightOrigin = light->parms.origin + dir * 100000;
-	} 
-	else {
-		light->globalLightOrigin = light->parms.origin + light->parms.axis * light->parms.lightCenter;
+		if (!light->lightShader) {
+			if (light->parms.pointLight) {
+				light->lightShader = declManager->FindMaterial("lights/defaultPointLight");
+			}
+			else {
+				light->lightShader = declManager->FindMaterial("lights/defaultProjectedLight");
+			}
+		}
+
+		// get the falloff image
+		light->falloffImage = light->lightShader->LightFalloffImage();
+		if (!light->falloffImage) {
+			// use the falloff from the default shader of the correct type
+			const idMaterial	*defaultShader;
+
+			if (light->parms.pointLight) {
+				defaultShader = declManager->FindMaterial("lights/defaultPointLight");
+				light->falloffImage = defaultShader->LightFalloffImage();
+			}
+			else {
+				// projected lights by default don't diminish with distance
+				defaultShader = declManager->FindMaterial("lights/defaultProjectedLight");
+				light->falloffImage = defaultShader->LightFalloffImage();
+			}
+		}
+		// ------------------------------------
+		// compute the light projection matrix
+		// ------------------------------------
+
+		idRenderMatrix localProject;
+		float zScale = 1.0f;
+		if (light->parms.parallel) {
+			zScale = R_ComputeParallelLightProjectionMatrix(light, localProject);
+		}
+		else if (light->parms.pointLight) {
+			zScale = R_ComputePointLightProjectionMatrix(light, localProject);
+		}
+		else {
+			zScale = R_ComputeSpotLightProjectionMatrix(light, localProject);
+		}
+
+		// set the old style light projection where Z and W are flipped and
+		// for projected lights lightProject[3] is divided by ( zNear + zFar )
+		light->lightProject[0][0] = localProject[0][0];
+		light->lightProject[0][1] = localProject[0][1];
+		light->lightProject[0][2] = localProject[0][2];
+		light->lightProject[0][3] = localProject[0][3];
+
+		light->lightProject[1][0] = localProject[1][0];
+		light->lightProject[1][1] = localProject[1][1];
+		light->lightProject[1][2] = localProject[1][2];
+		light->lightProject[1][3] = localProject[1][3];
+
+		light->lightProject[2][0] = localProject[3][0];
+		light->lightProject[2][1] = localProject[3][1];
+		light->lightProject[2][2] = localProject[3][2];
+		light->lightProject[2][3] = localProject[3][3];
+
+		light->lightProject[3][0] = localProject[2][0] * zScale;
+		light->lightProject[3][1] = localProject[2][1] * zScale;
+		light->lightProject[3][2] = localProject[2][2] * zScale;
+		light->lightProject[3][3] = localProject[2][3] * zScale;
+
+		// set the frustum planes
+		R_SetLightFrustum(light->lightProject, light->frustum);
+
+		// transform the lightProject
+		float lightTransform[16];
+		R_AxisToModelMatrix(light->parms.axis, light->parms.origin, lightTransform);
+		for (i = 0; i < 6; i++) {
+			idPlane		temp;
+			temp = light->frustum[i];
+			R_LocalPlaneToGlobal(lightTransform, temp, light->frustum[i]);
+		}
+		for (i = 0; i < 4; i++) {
+			idPlane		temp;
+			temp = light->lightProject[i];
+			R_LocalPlaneToGlobal(lightTransform, temp, light->lightProject[i]);
+		}
+
+		// adjust global light origin for off center projections and parallel projections
+		// we are just faking parallel by making it a very far off center for now
+		if (light->parms.parallel) {
+			idVec3 dir = light->parms.lightCenter;
+			if (dir.Normalize() == 0.0f) {
+				// make point straight up if not specified
+				dir[2] = 1.0f;
+			}
+			light->globalLightOrigin = light->parms.origin + dir * 100000.0f;
+		}
+		else {
+			light->globalLightOrigin = light->parms.origin + light->parms.axis * light->parms.lightCenter;
+		}
+
+		R_FreeLightDefFrustum(light);
+
+		light->frustumTris = R_PolytopeSurface(6, light->frustum, light->frustumWindings);
+
+		// a projected light will have one shadowFrustum, a point light will have
+		// six unless the light center is outside the box
+		R_MakeShadowFrustums(light);
+
+		// Rotate and translate the light projection by the light matrix.
+		// 99% of lights remain axis aligned in world space.
+		idRenderMatrix lightMatrix;
+		idRenderMatrix::CreateFromOriginAxis(light->parms.origin, light->parms.axis, lightMatrix);
+
+		idRenderMatrix inverseLightMatrix;
+		if (!idRenderMatrix::Inverse(lightMatrix, inverseLightMatrix)) {
+			idLib::Warning("lightMatrix invert failed");
+		}
+
+		// 'baseLightProject' goes from global space -> light local space -> light projective space
+		idRenderMatrix::Multiply(localProject, inverseLightMatrix, light->baseLightProject);
+
+		// Invert the light projection so we can deform zero-to-one cubes into
+		// the light model and calculate global bounds.
+		if (!idRenderMatrix::Inverse(light->baseLightProject, light->inverseBaseLightProject)) {
+			idLib::Warning("baseLightProject invert failed");
+		}
+
+		// calculate the global light bounds by inverse projecting the zero to one cube with the 'inverseBaseLightProject'
+		idRenderMatrix::ProjectedBounds(light->globalLightBounds, light->inverseBaseLightProject, bounds_zeroOneCube, false);
 	}
+	else {
+		if (light->parms.shader) {
+			light->lightShader = light->parms.shader;
+		}
 
-	R_FreeLightDefFrustum( light );
+		// If shader/images are missing, use defaults.
+		else if (!light->lightShader) {
+			light->lightShader = (light->parms.pointLight) ? tr.defaultShaderPoint : tr.defaultShaderProj;
+		}
 
-	light->frustumTris = R_PolytopeSurface( 6, light->frustum, light->frustumWindings );
+		light->falloffImage = light->lightShader->LightFalloffImage();
+		if (!light->falloffImage) {
+			// use the falloff from the default shader of the correct type
+			light->falloffImage = (light->parms.pointLight)
+				? tr.defaultShaderPoint->LightFalloffImage()
+				: tr.defaultShaderProj->LightFalloffImage(); // projected lights by default don't diminish with distance
+		}
 
-	// a projected light will have one shadowFrustum, a point light will have
-	// six unless the light center is outside the box
-	R_MakeShadowFrustums( light );
+		// set the projection
+		if (!light->parms.pointLight) {
+			// projected light
+			R_SetLightProject(light->lightProject, vec3_origin /* light->parms.origin */, light->parms.target,
+				light->parms.right, light->parms.up, light->parms.start, light->parms.end);
+		}
+		else {
+			// point light
+			memset(light->lightProject, 0, sizeof(light->lightProject));
+			light->lightProject[0][0] = 0.5f / light->parms.lightRadius[0];
+			light->lightProject[1][1] = 0.5f / light->parms.lightRadius[1];
+			light->lightProject[3][2] = 0.5f / light->parms.lightRadius[2];
+			light->lightProject[0][3] = 0.5f;
+			light->lightProject[1][3] = 0.5f;
+			light->lightProject[2][3] = 1.0f;
+			light->lightProject[3][3] = 0.5f;
+		}
+
+		// set the frustum planes
+		R_SetLightFrustum(light->lightProject, light->frustum);
+
+		// rotate the light planes and projections by the axis
+		R_AxisToModelMatrix(light->parms.axis, light->parms.origin, light->modelMatrix);
+
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[0], light->frustum[0]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[1], light->frustum[1]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[2], light->frustum[2]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[3], light->frustum[3]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[4], light->frustum[4]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->frustum[5], light->frustum[5]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->lightProject[0], light->lightProject[0]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->lightProject[1], light->lightProject[1]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->lightProject[2], light->lightProject[2]);
+		R_LocalPlaneToGlobal(light->modelMatrix, (const idPlane)light->lightProject[3], light->lightProject[3]);
+
+		// adjust global light origin for off center projections and parallel projections
+		// we are just faking parallel by making it a very far off center for now
+		if (light->parms.parallel) {
+			idVec3	 dir = light->parms.lightCenter;
+
+			if (!dir.Normalize()) {
+				// make point straight up if not specified
+				dir[2] = 1;
+			}
+			light->globalLightOrigin = light->parms.origin + dir * 100000;
+		}
+		else {
+			light->globalLightOrigin = light->parms.origin + light->parms.axis * light->parms.lightCenter;
+		}
+
+		R_FreeLightDefFrustum(light);
+
+		light->frustumTris = R_PolytopeSurface(6, light->frustum, light->frustumWindings);
+
+		// a projected light will have one shadowFrustum, a point light will have
+		// six unless the light center is outside the box
+		R_MakeShadowFrustums(light);
+	}
 }
 
 /*
@@ -411,46 +693,75 @@ R_CreateLightRefs
 */
 #define	MAX_LIGHT_VERTS	40
 void R_CreateLightRefs( idRenderLightLocal *light ) {
-	idVec3	points[MAX_LIGHT_VERTS];
+	if (r_useAnonreclaimer.GetBool()) {
+		// determine the areaNum for the light origin, which may let us
+		// cull the light if it is behind a closed door
+		// it is debatable if we want to use the entity origin or the center offset origin,
+		// but we definitely don't want to use a parallel offset origin
+		light->areaNum = light->world->PointInArea(light->globalLightOrigin);
+		if (light->areaNum == -1) {
+			light->areaNum = light->world->PointInArea(light->parms.origin);
+		}
 
-	const srfTriangles_t *tri = light->frustumTris;
+		// bump the view count so we can tell if an
+		// area already has a reference
+		tr.viewCount++;
 
-	// because a light frustum is made of only six intersecting planes,
-	// we should never be able to get a stupid number of points...
-	if ( tri->numVerts > MAX_LIGHT_VERTS ) {
-		common->Error( "R_CreateLightRefs: %i points in frustumTris!", tri->numVerts );
+		// if we have a prelight model that includes all the shadows for the major world occluders,
+		// we can limit the area references to those visible through the portals from the light center.
+		// We can't do this in the normal case, because shadows are cast from back facing triangles, which
+		// may be in areas not directly visible to the light projection center.
+		if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
+			light->world->FlowLightThroughPortals(light);
+		}
+		else {
+			// push these points down the BSP tree into areas
+			light->world->PushFrustumIntoTree(NULL, light, light->inverseBaseLightProject, bounds_zeroOneCube);
+		}
 	}
+	else {
+		idVec3	points[MAX_LIGHT_VERTS];
 
-	for (int i = 0 ; i < tri->numVerts ; i++ ) {
-		points[i] = tri->verts[i].xyz;
-	}
+		const srfTriangles_t *tri = light->frustumTris;
 
-	if ( r_showUpdates.GetBool() && (tri->bounds[1][0] - tri->bounds[0][0] > 1024 || tri->bounds[1][1] - tri->bounds[0][1] > 1024) ) {
-		common->Printf( "big lightRef: %f,%f\n", tri->bounds[1][0] - tri->bounds[0][0], tri->bounds[1][1] - tri->bounds[0][1] );
-	}
+		// because a light frustum is made of only six intersecting planes,
+		// we should never be able to get a stupid number of points...
+		if (tri->numVerts > MAX_LIGHT_VERTS) {
+			common->Error("R_CreateLightRefs: %i points in frustumTris!", tri->numVerts);
+		}
 
-	// determine the areaNum for the light origin, which may let us
-	// cull the light if it is behind a closed door
-	// it is debatable if we want to use the entity origin or the center offset origin,
-	// but we definitely don't want to use a parallel offset origin
-	light->areaNum = light->world->PointInArea( light->globalLightOrigin );
-	if ( light->areaNum == -1 ) {
-		light->areaNum = light->world->PointInArea( light->parms.origin );
-	}
+		for (int i = 0; i < tri->numVerts; i++) {
+			points[i] = tri->verts[i].xyz;
+		}
 
-	// bump the view count so we can tell if an
-	// area already has a reference
-	tr.viewCount++;
+		if (r_showUpdates.GetBool() && (tri->bounds[1][0] - tri->bounds[0][0] > 1024 || tri->bounds[1][1] - tri->bounds[0][1] > 1024)) {
+			common->Printf("big lightRef: %f,%f\n", tri->bounds[1][0] - tri->bounds[0][0], tri->bounds[1][1] - tri->bounds[0][1]);
+		}
 
-	// if we have a prelight model that includes all the shadows for the major world occluders,
-	// we can limit the area references to those visible through the portals from the light center.
-	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
-	// may be in areas not directly visible to the light projection center.
-	if ( light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() ) {
-		light->world->FlowLightThroughPortals( light );
-	} else {
-		// push these points down the BSP tree into areas
-		light->world->PushVolumeIntoTree( NULL, light, tri->numVerts, points );
+		// determine the areaNum for the light origin, which may let us
+		// cull the light if it is behind a closed door
+		// it is debatable if we want to use the entity origin or the center offset origin,
+		// but we definitely don't want to use a parallel offset origin
+		light->areaNum = light->world->PointInArea(light->globalLightOrigin);
+		if (light->areaNum == -1) {
+			light->areaNum = light->world->PointInArea(light->parms.origin);
+		}
+
+		// bump the view count so we can tell if an
+		// area already has a reference
+		tr.viewCount++;
+
+		// if we have a prelight model that includes all the shadows for the major world occluders,
+		// we can limit the area references to those visible through the portals from the light center.
+		// We can't do this in the normal case, because shadows are cast from back facing triangles, which
+		// may be in areas not directly visible to the light projection center.
+		if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
+			light->world->FlowLightThroughPortals(light);
+		}
+		else {
+			// push these points down the BSP tree into areas
+			light->world->PushVolumeIntoTree(NULL, light, tri->numVerts, points);
+		}
 	}
 }
 
@@ -489,14 +800,25 @@ WindingCompletelyInsideLight
 ===============
 */
 bool WindingCompletelyInsideLight( const idWinding *w, const idRenderLightLocal *ldef ) {
-	float d = 0.0f;
-
-	for (int i = 0 ; i < w->GetNumPoints() ; i++ ) {
-		for (int j = 0 ; j < 6 ; j++ ) {
-			
-			d = (*w)[i].ToVec3() * ldef->frustum[j].Normal() + ldef->frustum[j][3];
-			if ( d > 0.0f ) {
+	if (r_useAnonreclaimer.GetBool()) {
+		for (int i = 0; i < w->GetNumPoints(); i++)
+		{
+			if (idRenderMatrix::CullPointToMVP(ldef->baseLightProject, (*w)[i].ToVec3(), true))
+			{
 				return false;
+			}
+		}
+	}
+	else {
+		float d = 0.0f;
+
+		for (int i = 0; i < w->GetNumPoints(); i++) {
+			for (int j = 0; j < 6; j++) {
+
+				d = (*w)[i].ToVec3() * ldef->frustum[j].Normal() + ldef->frustum[j][3];
+				if (d > 0.0f) {
+					return false;
+				}
 			}
 		}
 	}

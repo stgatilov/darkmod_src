@@ -23,6 +23,11 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
+
+//anon begin
+idCVar r_useLightAreaCulling("r_useLightAreaCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = off, 1 = on");
+//anon end
+
 /*
 
 
@@ -445,23 +450,41 @@ prelight, because shadows are cast from back side which may not be in visible ar
 */
 void idRenderWorldLocal::FlowLightThroughPortals( idRenderLightLocal *light ) {
 	portalStack_t	ps;
-	int				i;
-	const idVec3 origin = light->globalLightOrigin;
+	if (r_useAnonreclaimer.GetBool()) {
+		// if the light origin areaNum is not in a valid area,
+		// the light won't have any area refs
+		if (light->areaNum == -1) {
+			return;
+		}
 
-	// if the light origin areaNum is not in a valid area,
-	// the light won't have any area refs
-	if ( light->areaNum == -1 ) {
-		return;
+		idPlane frustumPlanes[6];
+		idRenderMatrix::GetFrustumPlanes(frustumPlanes, light->baseLightProject, true, true);
+
+		memset(&ps, 0, sizeof(ps));
+		ps.numPortalPlanes = 6;
+		for (int i = 0; i < 6; i++) {
+			ps.portalPlanes[i] = -frustumPlanes[i];
+		}
 	}
+	else {
+		int				i;
+		const idVec3 origin = light->globalLightOrigin;
 
-	memset( &ps, 0, sizeof( ps ) );
+		// if the light origin areaNum is not in a valid area,
+		// the light won't have any area refs
+		if (light->areaNum == -1) {
+			return;
+		}
 
-	ps.numPortalPlanes = 6;
-	for ( i = 0 ; i < 6 ; i++ ) {
-		ps.portalPlanes[i] = light->frustum[i];
+		memset(&ps, 0, sizeof(ps));
+
+		ps.numPortalPlanes = 6;
+		for (i = 0; i < 6; i++) {
+			ps.portalPlanes[i] = light->frustum[i];
+		}
+
 	}
-
-	FloodLightThroughArea_r( light, light->areaNum, &ps );
+	FloodLightThroughArea_r(light, light->areaNum, &ps);
 }
 
 //======================================================================================================
@@ -564,21 +587,102 @@ Return true if the entity reference bounds do not intersect the current portal c
 ================
 */
 bool idRenderWorldLocal::CullEntityByPortals( const idRenderEntityLocal *entity, const portalStack_t *ps ) {
+	if (r_useAnonreclaimer.GetBool()) {
+		if (r_useEntityPortalCulling.GetInteger() == 1)
+		{
 
-	if ( !r_useEntityCulling.GetBool() ) {
-		return false;
+			ALIGNTYPE16 frustumCorners_t corners;
+			idRenderMatrix::GetFrustumCorners(corners, entity->inverseBaseModelProject, bounds_unitCube);
+			for (int i = 0; i < ps->numPortalPlanes; i++)
+			{
+				if (idRenderMatrix::CullFrustumCornersToPlane(corners, ps->portalPlanes[i]) == FRUSTUM_CULL_FRONT)
+				{
+					return true;
+				}
+			}
+
+		}
+		else if (r_useEntityPortalCulling.GetInteger() >= 2)
+		{
+
+			idRenderMatrix baseModelProject;
+			//Was idRenderMatrix::Inverse but changed to InverseByDoubles for persicion
+			idRenderMatrix::Inverse(entity->inverseBaseModelProject, baseModelProject);
+
+			idPlane frustumPlanes[6];
+			idRenderMatrix::GetFrustumPlanes(frustumPlanes, baseModelProject, false, true);
+
+			// exact clip of light faces against all planes
+			for (int i = 0; i < 6; i++)
+			{
+				// the entity frustum planes face inward, so the planes that have the
+				// view origin on the positive side will be the "back" faces of the entity,
+				// which must have some fragment inside the portal stack planes to be visible
+				if (frustumPlanes[i].Distance(tr.viewDef->renderView.vieworg) <= 0.0f)
+				{
+					continue;
+				}
+
+				// calculate a winding for this frustum side
+				idFixedWinding w;
+				w.BaseForPlane(frustumPlanes[i]);
+				for (int j = 0; j < 6; j++)
+				{
+					if (j == i)
+					{
+						continue;
+					}
+					if (!w.ClipInPlace(frustumPlanes[j], ON_EPSILON))
+					{
+						break;
+					}
+				}
+				if (w.GetNumPoints() <= 2)
+				{
+					continue;
+				}
+
+				assert(ps->numPortalPlanes <= MAX_PORTAL_PLANES);
+				assert(w.GetNumPoints() + ps->numPortalPlanes < MAX_POINTS_ON_WINDING);
+
+				// now clip the winding against each of the portalStack planes
+				// skip the last plane which is the last portal itself
+				for (int j = 0; j < ps->numPortalPlanes - 1; j++)
+				{
+					if (!w.ClipInPlace(-ps->portalPlanes[j], ON_EPSILON))
+					{
+						break;
+					}
+				}
+
+				if (w.GetNumPoints() > 2)
+				{
+					// part of the winding is visible through the portalStack,
+					// so the entity is not culled
+					return false;
+				}
+			}
+
+			// nothing was visible
+			return true;
+
+		}
 	}
+	else {
+		if (!r_useEntityCulling.GetBool()) {
+			return false;
+		}
 
-	// try to cull the entire thing using the reference bounds.
-	// we do not yet do callbacks or dynamic model creation,
-	// because we want to do all touching of the model after
-	// we have determined all the lights that may effect it,
-	// which optimizes cache usage
-	if ( R_CullLocalBox( entity->referenceBounds, entity->modelMatrix,
-							ps->numPortalPlanes, ps->portalPlanes ) ) {
-		return true;
+		// try to cull the entire thing using the reference bounds.
+		// we do not yet do callbacks or dynamic model creation,
+		// because we want to do all touching of the model after
+		// we have determined all the lights that may effect it,
+		// which optimizes cache usage
+		if (R_CullLocalBox(entity->referenceBounds, entity->modelMatrix,
+			ps->numPortalPlanes, ps->portalPlanes)) {
+			return true;
+		}
 	}
-
 	return false;
 }
 
@@ -651,79 +755,157 @@ The last stack plane is not used because lights are not near clipped.
 ================
 */
 bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, const portalStack_t *ps ) {
-	int				i, j;
-	const srfTriangles_t	*tri;
-	float			d;
-	idFixedWinding	w;		// we won't overflow because MAX_PORTAL_PLANES = 20
-	#define INSIDE_LIGHT_FRUSTUM_SLOP			32
+	if (r_useAnonreclaimer.GetBool()) {
+		if (r_useLightPortalCulling.GetInteger() == 1)
+		{
 
-	if ( r_useLightCulling.GetInteger() == 0 ) {
-		return false;
-	}
-
-	if ( r_useLightCulling.GetInteger() >= 2 ) {
-		// exact clip of light faces against all planes
-		for ( i = 0; i < 6; i++ ) {
-			// the light frustum planes face out from the light,
-			// so the planes that have the view origin on the negative
-			// side will be the "back" faces of the light, which must have
-			// some fragment inside the portalStack to be visible
-			if ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
-				continue;
-			}
-			
-			if ( ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) > INSIDE_LIGHT_FRUSTUM_SLOP ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID ) )
+			ALIGNTYPE16 frustumCorners_t corners;
+			idRenderMatrix::GetFrustumCorners(corners, light->inverseBaseLightProject, bounds_zeroOneCube);
+			for (int i = 0; i < ps->numPortalPlanes; i++)
 			{
-			   continue;
-		    }
-
-			// get the exact winding for this side
-			const idWinding *ow = light->frustumWindings[i];
-
-			// projected lights may have one of the frustums degenerated
-			if ( !ow ) {
-				continue;
-			}
-
-			w = *ow;
-
-			// now check the winding against each of the portalStack planes
-			for ( j = 0; j < ps->numPortalPlanes - 1; j++ ) {
-				if ( !w.ClipInPlace( -ps->portalPlanes[j] ) ) {
-					break;
+				if (idRenderMatrix::CullFrustumCornersToPlane(corners, ps->portalPlanes[i]) == FRUSTUM_CULL_FRONT)
+				{
+					return true;
 				}
 			}
 
-			if ( w.GetNumPoints() ) {
-				// part of the winding is visible through the portalStack,
-				// so the light is not culled
-				return false;
-			}
 		}
-		// none of the light surfaces were visible
-		return true;
+		else if (r_useLightPortalCulling.GetInteger() >= 2)
+		{
 
-	} else {
+			idPlane frustumPlanes[6];
+			idRenderMatrix::GetFrustumPlanes(frustumPlanes, light->baseLightProject, true, true);
 
-		// simple point check against each plane
-		tri = light->frustumTris;
+			// exact clip of light faces against all planes
+			for (int i = 0; i < 6; i++)
+			{
+				// the light frustum planes face inward, so the planes that have the
+				// view origin on the positive side will be the "back" faces of the light,
+				// which must have some fragment inside the the portal stack planes to be visible
+				if (frustumPlanes[i].Distance(tr.viewDef->renderView.vieworg) <= 0.0f)
+				{
+					continue;
+				}
 
-		// check against frustum planes
-		for ( i = 0; i < ps->numPortalPlanes - 1; i++ ) {
-			for ( j = 0; j < tri->numVerts; j++ ) {
-				d = ps->portalPlanes[i].Distance( tri->verts[j].xyz );
-				if ( d < 0.0f ) {
-					break;	// point is inside this plane
+				// calculate a winding for this frustum side
+				idFixedWinding w;
+				w.BaseForPlane(frustumPlanes[i]);
+				for (int j = 0; j < 6; j++)
+				{
+					if (j == i)
+					{
+						continue;
+					}
+					if (!w.ClipInPlace(frustumPlanes[j], ON_EPSILON))
+					{
+						break;
+					}
+				}
+				if (w.GetNumPoints() <= 2)
+				{
+					continue;
+				}
+
+				assert(ps->numPortalPlanes <= MAX_PORTAL_PLANES);
+				assert(w.GetNumPoints() + ps->numPortalPlanes < MAX_POINTS_ON_WINDING);
+
+				// now clip the winding against each of the portalStack planes
+				// skip the last plane which is the last portal itself
+				for (int j = 0; j < ps->numPortalPlanes - 1; j++)
+				{
+					if (!w.ClipInPlace(-ps->portalPlanes[j], ON_EPSILON))
+					{
+						break;
+					}
+				}
+
+				if (w.GetNumPoints() > 2)
+				{
+					// part of the winding is visible through the portalStack,
+					// so the light is not culled
+					return false;
 				}
 			}
-			if ( j == tri->numVerts ) {
-				// all points were outside one of the planes
-				tr.pc.c_box_cull_out++;
-				return true;
+
+			// nothing was visible
+			return true;
+		}
+	}
+	else {
+		int				i, j;
+		const srfTriangles_t	*tri;
+		float			d;
+		idFixedWinding	w;		// we won't overflow because MAX_PORTAL_PLANES = 20
+#define INSIDE_LIGHT_FRUSTUM_SLOP			32
+
+		if (r_useLightCulling.GetInteger() == 0) {
+			return false;
+		}
+
+		if (r_useLightCulling.GetInteger() >= 2) {
+			// exact clip of light faces against all planes
+			for (i = 0; i < 6; i++) {
+				// the light frustum planes face out from the light,
+				// so the planes that have the view origin on the negative
+				// side will be the "back" faces of the light, which must have
+				// some fragment inside the portalStack to be visible
+				if (light->frustum[i].Distance(tr.viewDef->renderView.vieworg) >= 0) {
+					continue;
+				}
+
+				if ((light->frustum[i].Distance(tr.viewDef->renderView.vieworg) > INSIDE_LIGHT_FRUSTUM_SLOP) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID))
+				{
+					continue;
+				}
+
+				// get the exact winding for this side
+				const idWinding *ow = light->frustumWindings[i];
+
+				// projected lights may have one of the frustums degenerated
+				if (!ow) {
+					continue;
+				}
+
+				w = *ow;
+
+				// now check the winding against each of the portalStack planes
+				for (j = 0; j < ps->numPortalPlanes - 1; j++) {
+					if (!w.ClipInPlace(-ps->portalPlanes[j])) {
+						break;
+					}
+				}
+
+				if (w.GetNumPoints()) {
+					// part of the winding is visible through the portalStack,
+					// so the light is not culled
+					return false;
+				}
+			}
+			// none of the light surfaces were visible
+			return true;
+
+		}
+		else {
+
+			// simple point check against each plane
+			tri = light->frustumTris;
+
+			// check against frustum planes
+			for (i = 0; i < ps->numPortalPlanes - 1; i++) {
+				for (j = 0; j < tri->numVerts; j++) {
+					d = ps->portalPlanes[i].Distance(tri->verts[j].xyz);
+					if (d < 0.0f) {
+						break;	// point is inside this plane
+					}
+				}
+				if (j == tri->numVerts) {
+					// all points were outside one of the planes
+					tr.pc.c_box_cull_out++;
+					return true;
+				}
 			}
 		}
 	}
-
 	return false;
 }
 
@@ -753,10 +935,19 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 
 		// check for being closed off behind a door
 		// a light that doesn't cast shadows will still light even if it is behind a door
-		if ( r_useLightCulling.GetInteger() >= 3 &&
+		if (r_useAnonreclaimer.GetBool()) {
+			if (r_useLightAreaCulling.GetInteger() &&
 				!light->parms.noShadows && light->lightShader->LightCastsShadows()
-					&& light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ] ) {
-			continue;
+				&& light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]) {
+				continue;
+			}
+		}
+		else {
+			if (r_useLightCulling.GetInteger() >= 3 &&
+				!light->parms.noShadows && light->lightShader->LightCastsShadows()
+				&& light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]) {
+				continue;
+			}
 		}
 
 		// cull frustum

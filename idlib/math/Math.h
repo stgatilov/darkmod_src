@@ -79,10 +79,12 @@
 #define	FLOAT_IS_DENORMAL(x)	(((*(const unsigned long *)&x) & 0x7f800000) == 0x00000000 && \
 								 ((*(const unsigned long *)&x) & 0x007fffff) != 0x00000000 )
 
+#define IEEE_FLT_SIGNBITSET( a )	(reinterpret_cast<const unsigned int &>(a) >> IEEE_FLT_SIGN_BIT) //anon
 #define IEEE_FLT_MANTISSA_BITS	23
 #define IEEE_FLT_EXPONENT_BITS	8
 #define IEEE_FLT_EXPONENT_BIAS	127
 #define IEEE_FLT_SIGN_BIT		31
+#define IEEE_FLT_SIGN_MASK			( 1UL << IEEE_FLT_SIGN_BIT ) //anon
 
 #define IEEE_DBL_MANTISSA_BITS	52
 #define IEEE_DBL_EXPONENT_BITS	11
@@ -221,6 +223,9 @@ public:
 	static const float			M_MS2SEC;					// milliseconds to seconds multiplier
 	static const float			INFINITY;					// huge number which should be larger than any valid number used
 	static const float			FLT_EPSILON;				// smallest positive number such that 1.0+FLT_EPSILON != 1.0
+	//anon beign
+	static const float			FLT_SMALLEST_NON_DENORMAL;	// smallest non-denormal 32-bit floating point value
+	//anon end
 
 private:
 	enum {

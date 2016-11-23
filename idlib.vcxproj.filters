@@ -160,6 +160,9 @@
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\RevisionTracker.cpp" />
     <ClCompile Include="idlib\Image.cpp" />
+    <ClCompile Include="idlib\geometry\RenderMatrix.cpp">
+      <Filter>Geometry</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -352,5 +355,11 @@
     <ClInclude Include="idlib\Timer.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
     <ClInclude Include="idlib\Image.h" />
+    <ClInclude Include="idlib\geometry\RenderMatrix.h">
+      <Filter>Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\geometry\sys_intrinsics.h">
+      <Filter>Geometry</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

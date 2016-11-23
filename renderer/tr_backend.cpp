@@ -386,8 +386,30 @@ void GL_State( const int stateBits ) {
 	backEnd.glState.glStateBits = stateBits;
 }
 
+//anon begin
+/*
+========================
+GL_DepthBoundsTest
+========================
+*/
+void GL_DepthBoundsTest(const float zmin, const float zmax)
+{
+	if (!glConfig.depthBoundsTestAvailable || zmin > zmax)
+	{
+		return;
+	}
 
-
+	if (zmin == 0.0f && zmax == 0.0f)
+	{
+		qglDisable(GL_DEPTH_BOUNDS_TEST_EXT);
+	}
+	else
+	{
+		qglEnable(GL_DEPTH_BOUNDS_TEST_EXT);
+		qglDepthBoundsEXT(zmin, zmax);
+	}
+}
+//anon end
 
 /*
 ============================================================================

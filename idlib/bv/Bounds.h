@@ -113,6 +113,8 @@ private:
 };
 
 extern idBounds	bounds_zero;
+extern idBounds bounds_zeroOneCube; //anon
+extern idBounds bounds_unitCube; //anon
 
 ID_INLINE idBounds::idBounds( void ) {
 }
