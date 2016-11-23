@@ -66,11 +66,26 @@ void FailedKnockoutState::Init(idAI* owner)
 		gameLocal.Printf("%d: %s is attacked by an enemy (failed KO), will use Alert Idle\n",gameLocal.time,owner->GetName());
 	}
 
-	// Play the animation
-	owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
-	owner->PostEventMS( &AI_OverrideAnim, 0, ANIMCHANNEL_LEGS); // SteveL #3964
-	owner->SetWaitState("failed_ko"); // #3964: Set overall waitstate not just torso wait state else IdleAnimationTask::OnFinish will cancel it.
-	
+	// grayman #4423 - don't play the failed KO animation if the AI
+	// is in the process of sitting or sleeping
+
+	moveType_t moveType = owner->GetMoveType();
+	if ( moveType == MOVETYPE_SIT ||
+		moveType == MOVETYPE_SLEEP ||
+		moveType == MOVETYPE_SIT_DOWN ||
+		moveType == MOVETYPE_LAY_DOWN ||
+		moveType == MOVETYPE_GET_UP ||
+		moveType == MOVETYPE_GET_UP_FROM_LYING )
+	{
+		// do nothing
+	}
+	else
+	{	// Play the animation
+		owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_FailedKO", 4);
+		owner->PostEventMS(&AI_OverrideAnim, 0, ANIMCHANNEL_LEGS); // SteveL #3964
+		owner->SetWaitState("failed_ko"); // #3964: Set overall waitstate not just torso wait state else IdleAnimationTask::OnFinish will cancel it.
+	}
+
 	// 800 msec stun time
 	_allowEndTime = gameLocal.time + 800;
 

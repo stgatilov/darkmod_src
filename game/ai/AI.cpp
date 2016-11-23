@@ -5543,9 +5543,25 @@ idAI::ApplyImpulse
 */
 void idAI::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse )
 {
-	if ( (move.moveType != MOVETYPE_STATIC) && (move.moveType != MOVETYPE_SLIDE) && (move.moveType != MOVETYPE_FLY) ) // grayman #4412
+	moveType_t moveType = move.moveType;
+	if ( (moveType != MOVETYPE_STATIC) && (moveType != MOVETYPE_SLIDE) && (moveType != MOVETYPE_FLY) ) // grayman #4412
 	{
-		idActor::ApplyImpulse( ent, id, point, impulse );
+		// grayman #4423 - If sitting or sleeping, don't allow the
+		// impulse, because it screws up these other animations.
+
+		if ( moveType == MOVETYPE_SIT ||
+			moveType == MOVETYPE_SLEEP ||
+			moveType == MOVETYPE_SIT_DOWN ||
+			moveType == MOVETYPE_LAY_DOWN ||
+			moveType == MOVETYPE_GET_UP ||
+			moveType == MOVETYPE_GET_UP_FROM_LYING )
+		{
+			// ignore the impulse
+		}
+		else
+		{
+			idActor::ApplyImpulse(ent, id, point, impulse);
+		}
 	}
 }
 
