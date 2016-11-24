@@ -599,7 +599,7 @@ GLuint color_tex;
 void RB_FboEnter() {
 	if (!r_useFbo.GetBool())
 		return;
-	static GLuint depth_tex, fboId, rboId, TEXTURE_WIDTH, TEXTURE_HEIGHT;
+	static GLuint depth_tex, fboId, rboDepth, rboStencil, TEXTURE_WIDTH, TEXTURE_HEIGHT;
 	if (!color_tex) {
 		glGenTextures(1, &color_tex);
 		glBindTexture(GL_TEXTURE_2D, color_tex);
@@ -620,14 +620,17 @@ void RB_FboEnter() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
 		}*/
-	if (!rboId) {
+	if (!rboDepth) {
 		// create a renderbuffer object to store depth info
 		// NOTE: A depth renderable image should be attached the FBO for depth test.
 		// If we don't attach a depth renderable image to the FBO, then
 		// the rendering output will be corrupted because of missing depth test.
 		// If you also need stencil test for your rendering, then you must
 		// attach additional image to the stencil attachement point, too.
-		glGenRenderbuffersEXT(1, &rboId);
+		glGenRenderbuffersEXT(1, &rboDepth);
+	}
+	if (!rboStencil) {
+		glGenRenderbuffersEXT(1, &rboStencil);
 	}
 	GLuint curWidth = r_virtualResolution.GetFloat() * glConfig.vidWidth, curHeight = r_virtualResolution.GetFloat() * glConfig.vidHeight;
 	if (curWidth != TEXTURE_WIDTH || curHeight != TEXTURE_HEIGHT) {
@@ -635,9 +638,12 @@ void RB_FboEnter() {
 		TEXTURE_WIDTH = curWidth;
 		TEXTURE_HEIGHT = curHeight;
 		glBindTexture(GL_TEXTURE_2D, color_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
-		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboId);
-		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboDepth);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboStencil);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
 		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
 	}
 	//-------------------------
@@ -648,7 +654,8 @@ void RB_FboEnter() {
 		// attach a texture to FBO color attachement point
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
 		// attach a renderbuffer to depth attachment point
-		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboId);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboDepth);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboStencil);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
