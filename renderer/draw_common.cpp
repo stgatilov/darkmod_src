@@ -2000,7 +2000,7 @@ void	RB_STD_DrawView( void ) {
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
-	// fob and blend lights
+	// fog and blend lights
 	RB_STD_FogAllLights();
 
 	// now draw any post-processing effects using _currentRender
@@ -2008,6 +2008,5 @@ void	RB_STD_DrawView( void ) {
 		RB_STD_DrawShaderPasses( drawSurfs+processed, numDrawSurfs-processed );
 	}
 
-	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
-
+	RB_RenderDebugTools(drawSurfs, numDrawSurfs);
 }

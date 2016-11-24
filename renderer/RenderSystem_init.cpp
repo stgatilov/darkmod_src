@@ -227,6 +227,8 @@ idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL,
 idCVar r_stencilShadowMode( "r_stencilShadowMode", "0", CVAR_RENDERER | CVAR_INTEGER, "choose stencil shadow algorithm. 0 - default" );
 
 idCVar r_useAnonreclaimer("r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL, "test anonreclaimer patch");
+idCVar r_useFbo("r_useFbo", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects");
+idCVar r_virtualResolution("r_virtualResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
@@ -312,8 +314,17 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 
 // mipmaps
-PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
+PFNGLGENERATEMIPMAPPROC					glGenerateMipmap;
 
+// frame buffers
+PFNGLGENFRAMEBUFFERSEXTPROC				glGenFramebuffersEXT;
+PFNGLBINDFRAMEBUFFEREXTPROC 			glBindFramebufferEXT;
+PFNGLFRAMEBUFFERTEXTURE2DEXTPROC		glFramebufferTexture2DEXT;
+PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC		glCheckFramebufferStatusEXT;
+PFNGLGENRENDERBUFFERSEXTPROC			glGenRenderbuffersEXT;
+PFNGLBINDRENDERBUFFEREXTPROC			glBindRenderbufferEXT;
+PFNGLRENDERBUFFERSTORAGEEXTPROC			glRenderbufferStorageEXT;
+PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC		glFramebufferRenderbufferEXT;
 /*
 =================
 R_CheckExtension
@@ -532,6 +543,14 @@ static void R_CheckPortableExtensions( void ) {
  	}
 
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
+	glGenFramebuffersEXT = (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffersEXT");
+	glBindFramebufferEXT = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebufferEXT");
+	glFramebufferTexture2DEXT = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer("glFramebufferTexture2DEXT");
+	glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer("glCheckFramebufferStatusEXT");
+	glGenRenderbuffersEXT = (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenRenderbuffersEXT");
+	glBindRenderbufferEXT = (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbufferEXT");
+	glRenderbufferStorageEXT = (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorageEXT");
+	glFramebufferRenderbufferEXT = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbufferEXT");
 }
 
 

@@ -642,9 +642,9 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	glConfig.vidHeight = windowHeight;
 
 	renderCrops[0].x = 0;
-	renderCrops[0].y = 0;
-	renderCrops[0].width = windowWidth;
-	renderCrops[0].height = windowHeight;
+	renderCrops[0].y = 0;			// duzenko #4425: allow virtual resolution
+	renderCrops[0].width = windowWidth*r_virtualResolution.GetFloat();
+	renderCrops[0].height = windowHeight*r_virtualResolution.GetFloat();
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
@@ -770,8 +770,8 @@ Converts from SCREEN_WIDTH / SCREEN_HEIGHT coordinates to current cropped pixel 
 void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport ) {
 	renderCrop_t	*rc = &renderCrops[currentRenderCrop];
 
-	float wRatio = (float)rc->width / SCREEN_WIDTH;
-	float hRatio = (float)rc->height / SCREEN_HEIGHT;
+	float wRatio = (float) rc->width / SCREEN_WIDTH;
+	float hRatio = (float) rc->height / SCREEN_HEIGHT;
 
 	viewport->x1 = idMath::Ftoi( rc->x + renderView->x * wRatio );
 	viewport->x2 = idMath::Ftoi( rc->x + floor( ( renderView->x + renderView->width ) * wRatio + 0.5f ) - 1 );

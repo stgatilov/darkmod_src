@@ -1029,6 +1029,8 @@ extern idCVar r_debugRenderToTexture;
 extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
 extern idCVar r_useAnonreclaimer;
+extern idCVar r_useFbo;
+extern idCVar r_virtualResolution;
 
 /*
 ====================================================================

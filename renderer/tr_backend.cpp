@@ -593,6 +593,104 @@ const void	RB_CopyRender( const void *data ) {
 	}
 }
 
+// duzenko #4425: use framebuffer object for rendering in virtual resolution 
+GLuint color_tex;
+
+void RB_FboEnter() {
+	if (!r_useFbo.GetBool())
+		return;
+	static GLuint depth_tex, fboId, rboId, TEXTURE_WIDTH, TEXTURE_HEIGHT;
+	if (!color_tex) {
+		glGenTextures(1, &color_tex);
+		glBindTexture(GL_TEXTURE_2D, color_tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	/*if (!depth_tex) {
+		glGenTextures(1, &depth_tex);
+		glBindTexture(GL_TEXTURE_2D, depth_tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+		}*/
+	if (!rboId) {
+		// create a renderbuffer object to store depth info
+		// NOTE: A depth renderable image should be attached the FBO for depth test.
+		// If we don't attach a depth renderable image to the FBO, then
+		// the rendering output will be corrupted because of missing depth test.
+		// If you also need stencil test for your rendering, then you must
+		// attach additional image to the stencil attachement point, too.
+		glGenRenderbuffersEXT(1, &rboId);
+	}
+	GLuint curWidth = r_virtualResolution.GetFloat() * glConfig.vidWidth, curHeight = r_virtualResolution.GetFloat() * glConfig.vidHeight;
+	if (curWidth != TEXTURE_WIDTH || curHeight != TEXTURE_HEIGHT) {
+		//NULL means reserve texture memory, but texels are undefined
+		TEXTURE_WIDTH = curWidth;
+		TEXTURE_HEIGHT = curHeight;
+		glBindTexture(GL_TEXTURE_2D, color_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboId);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+	}
+	//-------------------------
+	if (!fboId) {
+		// create a framebuffer object, you need to delete them when program exits.
+		glGenFramebuffersEXT(1, &fboId);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+		// attach a texture to FBO color attachement point
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
+		// attach a renderbuffer to depth attachment point
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboId);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	}
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+}
+
+void RB_FboLeave() {
+	if (!r_useFbo.GetBool())
+		return;
+
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	qglLoadIdentity();
+	qglMatrixMode(GL_PROJECTION);
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho(0, 1, 0, 1, -1, 1);
+	glViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	GL_State(GLS_DEFAULT);
+	//GL_Cull(CT_TWO_SIDED);	// so mirror views also get it
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, color_tex);
+
+	qglDisable(GL_DEPTH_TEST);
+	qglDisable(GL_STENCIL_TEST);
+	qglBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	qglVertex2f(0, 0);
+	glTexCoord2f(0, 1);
+	qglVertex2f(0, 1);
+	glTexCoord2f(1, 1);
+	qglVertex2f(1, 1);
+	glTexCoord2f(1, 0);
+	qglVertex2f(1, 0);
+	qglEnd();
+
+	qglPopMatrix();
+	qglEnable(GL_DEPTH_TEST);
+	qglMatrixMode(GL_MODELVIEW);
+	glDisable(GL_TEXTURE_2D);
+}
+
 /*
 ====================
 RB_ExecuteBackEndCommands
@@ -619,7 +717,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
 
-	while ( cmds ) {
+	// duzenko #4425: create/switch to framebuffer object
+	RB_FboEnter();
+	while (cmds) {
 		switch ( cmds->commandId ) {
 		case RC_NOP:
 			break;
@@ -640,7 +740,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			c_copyRenders++;
 			break;
 		case RC_SWAP_BUFFERS:
-			RB_SwapBuffers( cmds );
+			// duzenko #4425: create/switch to framebuffer object
+			RB_FboLeave();
+			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;
 		default:

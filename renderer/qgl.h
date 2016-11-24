@@ -143,6 +143,16 @@ extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 // mipmaps
 extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
 
+//frame buffers
+extern PFNGLGENFRAMEBUFFERSEXTPROC          glGenFramebuffersEXT;
+extern PFNGLBINDFRAMEBUFFEREXTPROC			glBindFramebufferEXT;
+extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC		glFramebufferTexture2DEXT;
+extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC	glCheckFramebufferStatusEXT;
+extern PFNGLGENRENDERBUFFERSEXTPROC			glGenRenderbuffersEXT;
+extern PFNGLBINDRENDERBUFFEREXTPROC			glBindRenderbufferEXT;
+extern PFNGLRENDERBUFFERSTORAGEEXTPROC		glRenderbufferStorageEXT;
+extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC	glFramebufferRenderbufferEXT;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*
