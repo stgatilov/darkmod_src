@@ -642,9 +642,15 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	glConfig.vidHeight = windowHeight;
 
 	renderCrops[0].x = 0;
-	renderCrops[0].y = 0;			// duzenko #4425: allow virtual resolution
-	renderCrops[0].width = windowWidth*r_virtualResolution.GetFloat();
-	renderCrops[0].height = windowHeight*r_virtualResolution.GetFloat();
+	renderCrops[0].y = 0;
+	if (r_useFbo.GetBool()) { // duzenko #4425: allow virtual resolution
+		renderCrops[0].width = windowWidth*r_virtualResolution.GetFloat();
+		renderCrops[0].height = windowHeight*r_virtualResolution.GetFloat();
+	} else {
+		renderCrops[0].width = windowWidth;
+		renderCrops[0].height = windowHeight;
+	}
+	
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
