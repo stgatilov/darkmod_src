@@ -222,6 +222,7 @@ duzenko #4408
 ===============
 */
 
+#ifdef WIN32
 bool gameTicThreadActivator;
 std::thread *gameTicThread;
 
@@ -235,6 +236,7 @@ void GameTicThreadProc() {
 		Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 	}
 }
+#endif
 
 /*
 ===============================================================================
