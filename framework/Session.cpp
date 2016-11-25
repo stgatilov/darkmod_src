@@ -2767,11 +2767,13 @@ void idSessionLocal::Frame() {
 
 	// duzenko #4408 - optionally don't run game tics on main thread 
 	int gameTicsToRun = latchedTicNumber - lastGameTic;
-	if (com_asyncTic.GetBool()) {
+	if (com_asyncTic.GetBool()) { 
+#ifdef WIN32
 		gameTicThreadActivator = true;
 		if (!gameTicThread)
 			gameTicThread = new std::thread(GameTicThreadProc);
 		return;
+#endif 
 	}
 	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
