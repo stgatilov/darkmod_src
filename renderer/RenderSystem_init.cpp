@@ -299,6 +299,9 @@ PFNGLMAPBUFFERARBPROC					qglMapBufferARB;
 PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
 PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
 PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
+PFNGLMAPBUFFERRANGEPROC					glMapBufferRange;
+PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
+PFNGLBUFFERSUBDATAPROC					glBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointerARB;
@@ -501,6 +504,9 @@ static void R_CheckPortableExtensions( void ) {
 		qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
 		qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
 		qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
+		glMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer( "glMapBufferRange" );
+		glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GLimp_ExtensionPointer( "glUnmapBuffer" );
+		glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GLimp_ExtensionPointer("glBufferSubData");
 	}
 
 	// ARB_vertex_program

@@ -87,6 +87,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
+			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
 		}
 		qglDrawElements( GL_TRIANGLES, 
 						tri->numIndexes,
@@ -116,6 +117,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
+			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
 		}
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
