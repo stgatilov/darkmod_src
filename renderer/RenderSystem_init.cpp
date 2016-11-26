@@ -730,6 +730,10 @@ void R_InitOpenGL( void ) {
 	// Reset our gamma
 	R_SetColorMappings();
 
+	// duzenko #4425 reset fbo
+	extern GLuint fboColorTexture; // FIXME ugly 'magic' extern
+	fboColorTexture = 0;
+
 #ifdef _WIN32
 	static bool glCheck = false;
 	if ( !glCheck && win32.osversion.dwMajorVersion >= 6 ) {

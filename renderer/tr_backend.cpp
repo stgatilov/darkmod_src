@@ -594,15 +594,16 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint color_tex;
+GLuint fboColorTexture;
 
 void RB_FboEnter() {
 	if (!r_useFbo.GetBool())
 		return;
 	static GLuint depth_tex, fboId, rboDepth, rboStencil, TEXTURE_WIDTH, TEXTURE_HEIGHT;
-	if (!color_tex) {
-		glGenTextures(1, &color_tex);
-		glBindTexture(GL_TEXTURE_2D, color_tex);
+	if (!fboColorTexture) {
+		depth_tex = fboId = rboDepth = rboStencil = TEXTURE_WIDTH = TEXTURE_HEIGHT = 0; // vid restart?
+		glGenTextures(1, &fboColorTexture);
+		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -637,7 +638,7 @@ void RB_FboEnter() {
 		//NULL means reserve texture memory, but texels are undefined
 		TEXTURE_WIDTH = curWidth;
 		TEXTURE_HEIGHT = curHeight;
-		glBindTexture(GL_TEXTURE_2D, color_tex);
+		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
 		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboDepth);
 		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT);
@@ -652,7 +653,7 @@ void RB_FboEnter() {
 		glGenFramebuffersEXT(1, &fboId);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
 		// attach a texture to FBO color attachement point
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fboColorTexture, 0);
 		// attach a renderbuffer to depth attachment point
 		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboDepth);
 		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboStencil);
@@ -677,7 +678,7 @@ void RB_FboLeave() {
 	//GL_Cull(CT_TWO_SIDED);	// so mirror views also get it
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, color_tex);
+	glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 
 	qglDisable(GL_DEPTH_TEST);
 	qglDisable(GL_STENCIL_TEST);
