@@ -24,7 +24,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
-#include "../game/Game_local.h"
 #include <thread>
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
