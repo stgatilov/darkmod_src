@@ -24,8 +24,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
-#include "../game/Game_local.h"
+#ifdef WIN32
 #include <thread>
+#endif
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -222,6 +223,7 @@ duzenko #4408
 ===============
 */
 
+#ifdef WIN32
 bool gameTicThreadActivator;
 std::thread *gameTicThread;
 
@@ -235,6 +237,7 @@ void GameTicThreadProc() {
 		Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 	}
 }
+#endif
 
 /*
 ===============================================================================
@@ -2767,11 +2770,13 @@ void idSessionLocal::Frame() {
 
 	// duzenko #4408 - optionally don't run game tics on main thread 
 	int gameTicsToRun = latchedTicNumber - lastGameTic;
-	if (com_asyncTic.GetBool()) {
+	if (com_asyncTic.GetBool()) { 
+#ifdef WIN32
 		gameTicThreadActivator = true;
 		if (!gameTicThread)
 			gameTicThread = new std::thread(GameTicThreadProc);
 		return;
+#endif 
 	}
 	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
