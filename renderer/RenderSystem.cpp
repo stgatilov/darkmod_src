@@ -644,8 +644,8 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;
 	if (r_useFbo.GetBool()) { // duzenko #4425: allow virtual resolution
-		renderCrops[0].width = windowWidth*r_virtualResolution.GetFloat();
-		renderCrops[0].height = windowHeight*r_virtualResolution.GetFloat();
+		renderCrops[0].width = windowWidth*r_fboResolution.GetFloat();
+		renderCrops[0].height = windowHeight*r_fboResolution.GetFloat();
 	} else {
 		renderCrops[0].width = windowWidth;
 		renderCrops[0].height = windowHeight;
@@ -1046,6 +1046,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
                pbo = 0;
 		}
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
 	} else
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);

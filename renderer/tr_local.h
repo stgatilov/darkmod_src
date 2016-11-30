@@ -1030,7 +1030,9 @@ extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
 extern idCVar r_useAnonreclaimer;
 extern idCVar r_useFbo;
-extern idCVar r_virtualResolution;
+extern idCVar r_fboDebug;
+extern idCVar r_fboColorBits;
+extern idCVar r_fboResolution;
 
 /*
 ====================================================================
