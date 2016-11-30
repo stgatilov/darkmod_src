@@ -977,7 +977,8 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
-	qglReadBuffer( GL_BACK );
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
 
 	// calculate pitch of buffer that will be returned by qglReadPixels()
 	int alignment;
@@ -1023,7 +1024,8 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
-	qglReadBuffer( GL_BACK );
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
 
 // #4395 Duzenko lightem pixel pack buffer optimization
 

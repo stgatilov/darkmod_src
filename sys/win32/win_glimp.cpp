@@ -609,6 +609,10 @@ static bool GLW_SetFullScreen( glimpParms_t parms ) {
 		byte	filler[1024];
 	} hack;
 #endif
+	if (r_useFbo.GetBool()) {
+		win32.cdsFullscreen = true;
+		return true;
+	}
 	DEVMODE		dm;
 	int			cdsRet;
 
@@ -809,7 +813,7 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 	glConfig.isFullscreen = parms.fullScreen;
 
 	if ( parms.fullScreen ) {
-		exstyle = WS_EX_TOPMOST;
+		exstyle = 0;
 		stylebits = WS_POPUP | WS_VISIBLE | WS_SYSMENU;
 		SetWindowLong( win32.hWnd, GWL_STYLE, stylebits );
 		SetWindowLong( win32.hWnd, GWL_EXSTYLE, exstyle );
@@ -858,9 +862,17 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 		common->Printf( "%i %i %i %i\n", x, y, w, h );
 	}
 
-	bool ret = ( ChangeDisplaySettings( &dm, parms.fullScreen ? CDS_FULLSCREEN : 0 ) == DISP_CHANGE_SUCCESSFUL );
-	SetWindowPos( win32.hWnd, parms.fullScreen ? HWND_TOPMOST : HWND_NOTOPMOST, x, y, w, h, parms.fullScreen ? SWP_NOSIZE | SWP_NOMOVE : SWP_SHOWWINDOW );
-	return ret;
+	if (r_useFbo.GetBool()) { // duzenko #4425: always use desktop resolution when using fbo
+		if (parms.fullScreen)
+			SetWindowPos(win32.hWnd, 0, 0, 0, win32.desktopWidth, win32.desktopHeight, SWP_SHOWWINDOW);
+		else
+			SetWindowPos(win32.hWnd, 0, x, y, w, h, SWP_SHOWWINDOW);
+		return true;
+	} else {
+		bool ret = (ChangeDisplaySettings(&dm, parms.fullScreen ? CDS_FULLSCREEN : 0) == DISP_CHANGE_SUCCESSFUL);
+		SetWindowPos(win32.hWnd, parms.fullScreen ? HWND_TOPMOST : HWND_NOTOPMOST, x, y, w, h, parms.fullScreen ? SWP_NOSIZE | SWP_NOMOVE : SWP_SHOWWINDOW);
+		return ret;
+	}
 }
 
 /*

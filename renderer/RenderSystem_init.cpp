@@ -1980,7 +1980,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	bool full = true;
+	bool full = !r_useFbo.GetBool();
 	bool forceWindow = false;
 	for ( int i = 1 ; i < args.Argc() ; i++ ) {
 		if ( idStr::Icmp( args.Argv( i ), "partial" ) == 0 ) {
@@ -2032,6 +2032,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		globalImages->ReloadAllImages();
 	} else {
 		glimpParms_t	parms;
+		R_GetModeInfo(&glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger());
 		parms.width = glConfig.vidWidth;
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
@@ -2040,8 +2041,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}
-
-
 
 	// make sure the regeneration doesn't use anything no longer valid
 	tr.viewCount++;
