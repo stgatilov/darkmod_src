@@ -69,13 +69,15 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
-	backEnd.pc.c_drawElements++;
-	backEnd.pc.c_drawIndexes += tri->numIndexes;
-	backEnd.pc.c_drawVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && tr.viewDef && tr.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_drawElements++;
+		backEnd.pc.c_drawIndexes += tri->numIndexes;
+		backEnd.pc.c_drawVertexes += tri->numVerts;
 
-	if ( tri->ambientSurface && ( tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts ) ) {
-		backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		if (tri->ambientSurface && (tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts)) {
+			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+			backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		}
 	}
 
 	if ( r_useIndexBuffers.GetBool() && tri->indexCache ) {
