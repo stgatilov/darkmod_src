@@ -595,16 +595,14 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboColorTexture, fboDepthTexture, fboStencilTexture;
+GLuint fboId, fboColorTexture, fboDepthTexture, fboStencilTexture, fboWidth, fboHeight;
 
 void RB_FboEnter() {
-	if (!r_useFbo.GetBool())
-		return;
 	GL_CheckErrors();
-	static GLuint fboId, rboDepth, rboStencil, TEXTURE_WIDTH, TEXTURE_HEIGHT;
+	static GLuint rboDepth, rboStencil;
 	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
 	if (!fboColorTexture) {
-		fboDepthTexture = fboId = rboDepth = rboStencil = TEXTURE_WIDTH = TEXTURE_HEIGHT = 0; // vid restart?
+		fboDepthTexture = fboId = rboDepth = rboStencil = fboWidth = fboHeight = 0; // vid restart?
 		glGenTextures(1, &fboColorTexture);
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -641,20 +639,20 @@ void RB_FboEnter() {
 		glGenRenderbuffersEXT(1, &rboStencil);
 	}*/
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
-	if (curWidth != TEXTURE_WIDTH || curHeight != TEXTURE_HEIGHT || r_fboColorBits.IsModified()) {
-		TEXTURE_WIDTH = curWidth;
-		TEXTURE_HEIGHT = curHeight;
+	if (curWidth != fboWidth || curHeight != fboHeight || r_fboColorBits.IsModified()) {
+		fboWidth = curWidth;
+		fboHeight = curHeight;
 		r_fboColorBits.ClearModified();
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, fboWidth, fboHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 		glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
 		if (separateStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fboWidth, fboHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 			glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, fboWidth, fboHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
 		}
 		else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, fboWidth, fboHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, 0);
 		}
 		/*glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboDepth);
 		if (separateStencil) {`
@@ -692,11 +690,13 @@ void RB_FboEnter() {
 }
 
 void RB_FboLeave() {
-	if (!r_useFbo.GetBool())
-		return;
 	GL_CheckErrors();
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	qglLoadIdentity();
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebufferEXT(0, 0, fboWidth, fboHeight, 0, 0, glConfig.vidWidth,
+		glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+	/*qglLoadIdentity();
 	qglMatrixMode(GL_PROJECTION);
 	qglPushMatrix();
 	qglLoadIdentity();
@@ -704,7 +704,6 @@ void RB_FboLeave() {
 	glViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	GL_State(GLS_DEFAULT);
-	//GL_Cull(CT_TWO_SIDED);	// so mirror views also get it
 
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, r_fboDebug.GetInteger() ? fboDepthTexture : fboColorTexture);
@@ -725,7 +724,7 @@ void RB_FboLeave() {
 	qglPopMatrix();
 	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
-	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);*/
 	GL_CheckErrors();
 }
 
@@ -745,7 +744,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	}
 
 	// r_debugRenderToTexture
-	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0;
+	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0, fboUsed = 0;
 
 	backEndStartTime = Sys_Milliseconds();
 
@@ -755,15 +754,19 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
 
-	// duzenko #4425: create/switch to framebuffer object
-	RB_FboEnter();
 	while (cmds) {
 		switch ( cmds->commandId ) {
 		case RC_NOP:
 			break;
 		case RC_DRAW_VIEW:
-			RB_DrawView( cmds );
-			if ( ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys ) {
+			// duzenko #4425: create/switch to framebuffer object
+			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
+			if (r_useFbo.GetBool() && !fboUsed) { 
+				RB_FboEnter();
+				fboUsed = 1;
+			}
+			RB_DrawView(cmds);
+			if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) {
 				c_draw3d++;
 			} else {
 				c_draw2d++;
@@ -779,7 +782,8 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content 
-			RB_FboLeave();
+			if (fboUsed)
+				RB_FboLeave();
 			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;

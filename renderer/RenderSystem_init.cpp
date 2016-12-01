@@ -229,7 +229,7 @@ idCVar r_stencilShadowMode( "r_stencilShadowMode", "0", CVAR_RENDERER | CVAR_INT
 idCVar r_useAnonreclaimer("r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL, "test anonreclaimer patch");
 idCVar r_useFbo("r_useFbo", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects");
 idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0 - color, 1 - depth");
-idCVar r_fboColorBits("r_fboColorBits", "15", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32");
+idCVar r_fboColorBits("r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32");
 idCVar r_fboResolution("r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
@@ -324,6 +324,7 @@ PFNGLGENERATEMIPMAPPROC					glGenerateMipmap;
 // frame buffers
 PFNGLGENFRAMEBUFFERSEXTPROC				glGenFramebuffersEXT;
 PFNGLBINDFRAMEBUFFEREXTPROC 			glBindFramebufferEXT;
+PFNGLBLITFRAMEBUFFEREXTPROC				glBlitFramebufferEXT;
 PFNGLFRAMEBUFFERTEXTURE2DEXTPROC		glFramebufferTexture2DEXT;
 PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC		glCheckFramebufferStatusEXT;
 PFNGLGENRENDERBUFFERSEXTPROC			glGenRenderbuffersEXT;
@@ -559,6 +560,7 @@ static void R_CheckPortableExtensions( void ) {
 	glBindRenderbufferEXT = (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbufferEXT");
 	glRenderbufferStorageEXT = (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorageEXT");
 	glFramebufferRenderbufferEXT = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbufferEXT");
+	glBlitFramebufferEXT = (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebufferEXT");
 }
 
 
@@ -1980,7 +1982,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		return;
 	}
 
-	bool full = !r_useFbo.GetBool();
+	bool full = true;
 	bool forceWindow = false;
 	for ( int i = 1 ; i < args.Argc() ; i++ ) {
 		if ( idStr::Icmp( args.Argv( i ), "partial" ) == 0 ) {
