@@ -863,9 +863,16 @@ bool GLimp_SetScreenParms( glimpParms_t parms ) {
 	}
 
 	if (r_useFbo.GetBool()) { // duzenko #4425: always use desktop resolution when using fbo
-		if (parms.fullScreen)
-			SetWindowPos(win32.hWnd, 0, 0, 0, win32.desktopWidth, win32.desktopHeight, SWP_SHOWWINDOW);
-		else
+		if (parms.fullScreen) {
+			HMONITOR hMonitor = MonitorFromWindow(win32.hWnd, MONITOR_DEFAULTTOPRIMARY);
+			MONITORINFO lpmi;
+			lpmi.cbSize = sizeof(lpmi);
+			if (GetMonitorInfo(hMonitor, &lpmi))
+				SetWindowPos(win32.hWnd, 0, lpmi.rcMonitor.left, lpmi.rcMonitor.top, 
+					lpmi.rcMonitor.right - lpmi.rcMonitor.left, lpmi.rcMonitor.bottom - lpmi.rcMonitor.top, SWP_SHOWWINDOW);
+			else
+				SetWindowPos(win32.hWnd, 0, 0, 0, win32.desktopWidth, win32.desktopHeight, SWP_SHOWWINDOW);
+		} else
 			SetWindowPos(win32.hWnd, 0, x, y, w, h, SWP_SHOWWINDOW);
 		return true;
 	} else {
