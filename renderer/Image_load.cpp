@@ -1742,8 +1742,10 @@ void idImage::Bind() {
 
 
 	// bump our statistic counters
-	frameUsed = backEnd.frameCount;
-	bindCount++;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		frameUsed = backEnd.frameCount;
+		bindCount++;
+	}
 
 	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 

@@ -69,7 +69,7 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
-	if (r_showPrimitives.GetBool() && tr.viewDef && tr.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += tri->numIndexes;
 		backEnd.pc.c_drawVertexes += tri->numVerts;
@@ -106,9 +106,11 @@ May not use all the indexes in the surface if caps are skipped
 ================
 */
 void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) {
-	backEnd.pc.c_shadowElements++;
-	backEnd.pc.c_shadowIndexes += numIndexes;
-	backEnd.pc.c_shadowVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_shadowElements++;
+		backEnd.pc.c_shadowIndexes += numIndexes;
+		backEnd.pc.c_shadowVertexes += tri->numVerts;
+	}
 
 	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
 		qglDrawElements( GL_TRIANGLES, 
