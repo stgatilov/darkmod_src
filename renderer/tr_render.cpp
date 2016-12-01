@@ -85,7 +85,8 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 						tri->numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
-		backEnd.pc.c_vboIndexes += tri->numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) 
+			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
@@ -117,7 +118,8 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 						numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) );
-		backEnd.pc.c_vboIndexes += numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
+			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
