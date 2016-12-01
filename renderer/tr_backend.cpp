@@ -691,10 +691,10 @@ void RB_FboEnter() {
 
 void RB_FboLeave() {
 	GL_CheckErrors();
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebufferEXT(0, 0, fboWidth, fboHeight, 0, 0, glConfig.vidWidth,
-		glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBlitFramebufferEXT(0, 0, fboWidth, fboHeight, 0, 0, 
+		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
 	//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	/*qglLoadIdentity();
 	qglMatrixMode(GL_PROJECTION);
@@ -760,7 +760,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_DRAW_VIEW:
 			// duzenko #4425: create/switch to framebuffer object
-			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
+			//if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
 			if (r_useFbo.GetBool() && !fboUsed) { 
 				RB_FboEnter();
 				fboUsed = 1;
