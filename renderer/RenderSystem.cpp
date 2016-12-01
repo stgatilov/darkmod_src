@@ -1024,6 +1024,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
+	int backEndStartTime = Sys_Milliseconds();
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);
 
@@ -1052,6 +1053,8 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
 	} else
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+	int backEndFinishTime = Sys_Milliseconds();
+	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
 }
 
 /*
