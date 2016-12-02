@@ -69,13 +69,15 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
-	backEnd.pc.c_drawElements++;
-	backEnd.pc.c_drawIndexes += tri->numIndexes;
-	backEnd.pc.c_drawVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_drawElements++;
+		backEnd.pc.c_drawIndexes += tri->numIndexes;
+		backEnd.pc.c_drawVertexes += tri->numVerts;
 
-	if ( tri->ambientSurface && ( tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts ) ) {
-		backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		if (tri->ambientSurface && (tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts)) {
+			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+			backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		}
 	}
 
 	if ( r_useIndexBuffers.GetBool() && tri->indexCache ) {
@@ -83,7 +85,8 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 						tri->numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
-		backEnd.pc.c_vboIndexes += tri->numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) 
+			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
@@ -103,16 +106,19 @@ May not use all the indexes in the surface if caps are skipped
 ================
 */
 void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) {
-	backEnd.pc.c_shadowElements++;
-	backEnd.pc.c_shadowIndexes += numIndexes;
-	backEnd.pc.c_shadowVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_shadowElements++;
+		backEnd.pc.c_shadowIndexes += numIndexes;
+		backEnd.pc.c_shadowVertexes += tri->numVerts;
+	}
 
 	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) );
-		backEnd.pc.c_vboIndexes += numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
+			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();

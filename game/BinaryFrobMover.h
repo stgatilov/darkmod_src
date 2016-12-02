@@ -88,6 +88,7 @@ public:
 	virtual void			Event_ClearPlayerImmobilization(idEntity* player); // grayman #3643
 	virtual void			Event_Lock_StatusUpdate(); // grayman #3643
 	virtual void			Event_Lock_OnLockPicked(); // grayman #3643
+	virtual void			Event_GetFractionalPosition(void); // grayman #4433
 
 	// Performs a "delayed" lock, closes the mover and tries to lock it afterwards
 	virtual void			CloseAndLock();

@@ -103,6 +103,7 @@ const char *idGameLocal::surfaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
+bool com_fixedTic;
 
 /* This list isn't actually used by the code, it's here just for reference. The code
    accepts any first word in the description as the surface type name: */
@@ -3273,7 +3274,8 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			framenum++;
 			// duzenko #4409 - game time modified using game timer
 			previousTime = time;
-			if (!cvarSystem->GetCVarBool("com_fixedTic")) 
+			com_fixedTic = cvarSystem->GetCVarBool("com_fixedTic"); // cache for getMsec()
+			if (!com_fixedTic) 
 				time += (int)(msec * g_timeModifier.GetFloat());
 			else {
 				//if (framenum < 20)
@@ -8197,7 +8199,7 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 // duzenko #4409 - getMsec() used for head bob cycling
 
 int idGameLocal::getMsec() {
-	if (cvarSystem->GetCVarBool("com_fixedTic"))
+	if (com_fixedTic)
 		return time - previousTime;
 	else
 		return msec;

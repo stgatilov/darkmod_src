@@ -48,6 +48,7 @@ const idEventDef EV_TDM_FrobMover_ToggleLock( "ToggleLock", EventArgs(), EV_RETU
 const idEventDef EV_TDM_FrobMover_IsOpen( "IsOpen", EventArgs(), 'f', 
 	"Returns true (nonzero) if the mover is open, which is basically\n" \
 	"the same as \"not closed\". A mover is considered closed when it is at its close position." );
+const idEventDef EV_TDM_FrobMover_GetFractionalPosition( "GetFractionalPosition", EventArgs(), 'f', "Returns a fraction between 0.00 (closed) and 1.00 (open)." ); // grayman #4433
 const idEventDef EV_TDM_FrobMover_IsLocked( "IsLocked", EventArgs(), 'f', "Returns true (nonzero) if the mover is currently locked." );
 const idEventDef EV_TDM_FrobMover_IsPickable( "IsPickable", EventArgs(), 'f', "Returns true (nonzero) if this frobmover is pickable." );
 const idEventDef EV_TDM_FrobMover_HandleLockRequest( "_handleLockRequest", EventArgs(), EV_RETURNS_VOID, "internal"); // used for periodic checks to lock the door once it is fully closed
@@ -71,6 +72,7 @@ CLASS_DECLARATION( idMover, CBinaryFrobMover )
 	EVENT( EV_TDM_FrobMover_ClearPlayerImmobilization,	CBinaryFrobMover::Event_ClearPlayerImmobilization ) // grayman #3643
 	EVENT( EV_TDM_Lock_StatusUpdate,		CBinaryFrobMover::Event_Lock_StatusUpdate) // grayman #3643
 	EVENT( EV_TDM_Lock_OnLockPicked,		CBinaryFrobMover::Event_Lock_OnLockPicked) // grayman #3643
+	EVENT( EV_TDM_FrobMover_GetFractionalPosition,  CBinaryFrobMover::Event_GetFractionalPosition) // grayman #4433
 END_CLASS
 
 CBinaryFrobMover::CBinaryFrobMover()
@@ -1815,5 +1817,13 @@ void CBinaryFrobMover::Event_Lock_OnLockPicked()
 	// "Lock is picked" signal, unlock in master mode
 	Unlock(true);
 }
+
+// grayman #4433
+void CBinaryFrobMover::Event_GetFractionalPosition(void)
+{
+	// return a fraction from 0.00 (closed) to 1.00 (fully open)
+	idThread::ReturnFloat(GetFractionalPosition());
+}
+
 
 
