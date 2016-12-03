@@ -482,7 +482,8 @@ static void	RB_SetBuffer( const void *data ) {
 		} else {
 			qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
 		}
-		qglClear( GL_COLOR_BUFFER_BIT );
+		if (!r_useFbo.GetBool()) // duzenko #4425: not needed for default framebuffer, happens elsewhere for fbo
+			qglClear( GL_COLOR_BUFFER_BIT );
 	}
 }
 
@@ -686,6 +687,7 @@ void RB_FboEnter() {
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 	}
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+	qglClear(GL_COLOR_BUFFER_BIT); // otherwise transparent skybox blends with previous frame
 	GL_CheckErrors();
 }
 
