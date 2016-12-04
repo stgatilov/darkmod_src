@@ -596,14 +596,14 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboId, fboColorTexture, fboDepthTexture, fboStencilTexture, fboWidth, fboHeight;
+GLuint fboId, fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboWidth, fboHeight;
 
 void RB_FboEnter() {
 	GL_CheckErrors();
 	static GLuint rboDepth, rboStencil;
 	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
 	if (!fboColorTexture) {
-		fboDepthTexture = fboId = rboDepth = rboStencil = fboWidth = fboHeight = 0; // vid restart?
+		/*fboDepthTexture = */fboId = rboDepth = rboStencil = fboWidth = fboHeight = 0; // vid restart?
 		glGenTextures(1, &fboColorTexture);
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -611,14 +611,14 @@ void RB_FboEnter() {
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-	if (!fboDepthTexture) {
+	/*if (!fboDepthTexture) {
 		glGenTextures(1, &fboDepthTexture);
 		glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}	
+	}	*/
 	if (!fboStencilTexture && separateStencil) {
 		glGenTextures(1, &fboStencilTexture);
 		glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
@@ -646,7 +646,14 @@ void RB_FboEnter() {
 		r_fboColorBits.ClearModified();
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, fboWidth, fboHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
-		glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
+		globalImages->currentDepthImage->Bind();
+		globalImages->currentDepthImage->uploadWidth = curWidth;
+		globalImages->currentDepthImage->uploadHeight = curHeight;
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		//glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
 		if (separateStencil) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fboWidth, fboHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 			glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
@@ -677,8 +684,8 @@ void RB_FboEnter() {
 		// attach a renderbuffer to depth attachment point
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboDepth);
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, separateStencil ? rboStencil : rboDepth);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, fboDepthTexture, 0);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : fboDepthTexture, 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, globalImages->currentDepthImage->texnum, 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : globalImages->currentDepthImage->texnum, 0);
 		int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
 			common->Printf("glCheckFramebufferStatusEXT %d\n", status); 

@@ -585,10 +585,11 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
-	if (	backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
+	if ( backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
 		 && !r_skipDepthCapture.GetBool() )
 	{
-		globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
+		if (!r_useFbo.GetBool()) // duzenko #4425 - depth texture already available
+			globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 														  backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, 
