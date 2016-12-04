@@ -46,16 +46,15 @@ edge silhouettes.
 ================
 */
 void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo ) {
+	idVec3 localLightOrigin;
+
+	if (cullInfo.facing != NULL) {
+		return;
+	}
+	R_GlobalPointToLocal(ent->modelMatrix, light->globalLightOrigin, localLightOrigin);
+	const int numFaces = tri->numIndexes / 3;
+
 	if (r_useAnonreclaimer.GetBool()) {
-		if (cullInfo.facing != NULL)
-		{
-			return;
-		}
-
-		idVec3 localLightOrigin;
-		R_GlobalPointToLocal(ent->modelMatrix, light->globalLightOrigin, localLightOrigin);
-
-		const int numFaces = tri->numIndexes / 3;
 		cullInfo.facing = (byte*)R_StaticAlloc((numFaces + 1) * sizeof(cullInfo.facing[0]));
 
 		// exact geometric cull against face
@@ -70,34 +69,29 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 
 			cullInfo.facing[face] = (d >= 0.0f);
 		}
-		cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 	}
 	else {
-		idVec3 localLightOrigin;
-
-		if (cullInfo.facing != NULL) {
-			return;
-		}
-
-		R_GlobalPointToLocal(ent->modelMatrix, light->globalLightOrigin, localLightOrigin);
-
-		int numFaces = tri->numIndexes / 3;
-
 		if (!tri->facePlanes || !tri->facePlanesCalculated) {
 			R_DeriveFacePlanes(const_cast<srfTriangles_t *>(tri));
 		}
 
 		cullInfo.facing = (byte *)R_StaticAlloc((numFaces + 1) * sizeof(cullInfo.facing[0]));
 
-		// calculate back face culling
-		float *planeSide = (float *)_alloca16(numFaces * sizeof(float));
+		if (0) { // duzenko #4424: old code, questionable regarding cpu cache
+			// calculate back face culling
+			float *planeSide = (float *)_alloca16(numFaces * sizeof(float));
 
-		// exact geometric cull against face
-		SIMDProcessor->Dot(planeSide, localLightOrigin, tri->facePlanes, numFaces);
-		SIMDProcessor->CmpGE(cullInfo.facing, planeSide, 0.0f, numFaces);
-
-		cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
+			// exact geometric cull against face
+			SIMDProcessor->Dot(planeSide, localLightOrigin, tri->facePlanes, numFaces);
+			SIMDProcessor->CmpGE(cullInfo.facing, planeSide, 0.0f, numFaces);
+		} else { // duzenko #4424: similar to d3bfg don't use a temp array (no speed difference really)
+			for (int face = 0; face < numFaces; face++) {
+				const float d = tri->facePlanes[face].Distance(localLightOrigin);
+				cullInfo.facing[face] = (d >= 0.0f);
+			}
+		}
 	}
+	cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 }
 
 /*
@@ -157,8 +151,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 				cullInfo.cullBits[j] |= (d < LIGHT_CLIP_EPSILON) << i;
 			}
 		}
-	}
-	else {
+	} else {
 		int i, frontBits;
 
 		if (cullInfo.cullBits != NULL) {
@@ -185,17 +178,31 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		}
 
 		cullInfo.cullBits = (byte *)R_StaticAlloc(tri->numVerts * sizeof(cullInfo.cullBits[0]));
-		SIMDProcessor->Memset(cullInfo.cullBits, 0, tri->numVerts * sizeof(cullInfo.cullBits[0]));
+		if (0) { // duzenko #4424:  original code - questionable in terms of cpu cache
+			SIMDProcessor->Memset(cullInfo.cullBits, 0, tri->numVerts * sizeof(cullInfo.cullBits[0]));
 
-		float *planeSide = (float *)_alloca16(tri->numVerts * sizeof(float));
+			float *planeSide = (float *)_alloca16(tri->numVerts * sizeof(float));
 
-		for (i = 0; i < 6; i++) {
-			// if completely infront of this clipping plane
-			if (frontBits & (1 << i)) {
-				continue;
+			for (i = 0; i < 6; i++) {
+				// if completely infront of this clipping plane
+				if (frontBits & (1 << i)) {
+					continue;
+				}
+				SIMDProcessor->Dot(planeSide, cullInfo.localClipPlanes[i], tri->verts, tri->numVerts);
+				SIMDProcessor->CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts);
 			}
-			SIMDProcessor->Dot(planeSide, cullInfo.localClipPlanes[i], tri->verts, tri->numVerts);
-			SIMDProcessor->CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts);
+		} else { // duzenko #4424: same as above but more like d3bfg: 1 pass through memory array, no memset and extra mem allocation
+			for (int j = 0; j < tri->numVerts; j++) {
+				byte b = 0;
+				for (int i = 0; i < 6; i++)	{
+					// if completely infront of this clipping plane
+					if ((frontBits & (1 << i)))
+						continue;
+					float d = cullInfo.localClipPlanes[i].Distance(tri->verts[j].xyz);
+					b |= (d < LIGHT_CLIP_EPSILON) << i;
+				}
+				cullInfo.cullBits[j] = b;
+			}
 		}
 	}
 }
