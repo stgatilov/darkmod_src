@@ -596,13 +596,12 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboWidth, fboHeight;
+GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture;
 
 void RB_FboEnter() {
 	GL_CheckErrors();
 	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
 	if (!fboId) {
-		/*fboColorTexture = */fboWidth = fboHeight = 0; // vid restart?
 		/*glGenTextures(1, &fboColorTexture);
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -627,49 +626,34 @@ void RB_FboEnter() {
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
-	if (curWidth != fboWidth || curHeight != fboHeight || r_fboColorBits.IsModified()) {
-		fboWidth = curWidth;
-		fboHeight = curHeight;
+	if (curWidth != globalImages->currentRenderImage->uploadWidth || curHeight != globalImages->currentRenderImage->uploadHeight 
+		|| curWidth != globalImages->currentDepthImage->uploadWidth || curHeight != globalImages->currentDepthImage->uploadHeight
+		|| r_fboColorBits.IsModified()
+	) {
 		r_fboColorBits.ClearModified();
-//		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		globalImages->currentRenderImage->Bind();
-		if (globalImages->currentRenderImage->uploadWidth != curWidth) // r_useFbo toggled
-			globalImages->currentRenderImage->uploadWidth = curWidth;
-		if (globalImages->currentRenderImage->uploadHeight != curHeight)
-			globalImages->currentRenderImage->uploadHeight = curHeight;
+		globalImages->currentRenderImage->uploadWidth = curWidth;
+		globalImages->currentRenderImage->uploadHeight = curHeight;
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, fboWidth, fboHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 		globalImages->currentDepthImage->Bind();
-		if (globalImages->currentDepthImage->uploadWidth != curWidth)
-			globalImages->currentDepthImage->uploadWidth = curWidth;
-		if (globalImages->currentDepthImage->uploadHeight != curHeight)
-			globalImages->currentDepthImage->uploadHeight = curHeight;
+		globalImages->currentDepthImage->uploadWidth = curWidth;
+		globalImages->currentDepthImage->uploadHeight = curHeight;
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (separateStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fboWidth, fboHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 			glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, fboWidth, fboHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
 		}
 		else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, fboWidth, fboHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, 0);
 		}
-		/*glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboDepth);
-		if (separateStencil) {`
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT16, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rboStencil);
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX8, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-		} else {
-			glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT, TEXTURE_WIDTH, TEXTURE_HEIGHT);
-			glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-		}*/
 	}
 	//-------------------------
 	if (!fboId) {
@@ -679,8 +663,6 @@ void RB_FboEnter() {
 		// attach a texture to FBO color attachement point
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
 		// attach a renderbuffer to depth attachment point
-		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboDepth);
-		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, separateStencil ? rboStencil : rboDepth);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, globalImages->currentDepthImage->texnum, 0);
 		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : globalImages->currentDepthImage->texnum, 0);
 		int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
@@ -698,7 +680,7 @@ void RB_FboEnter() {
 void RB_FboLeave() {
 	GL_CheckErrors();
 	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebufferEXT(0, 0, fboWidth, fboHeight, 0, 0, 
+	glBlitFramebufferEXT(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
 		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
 	//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
