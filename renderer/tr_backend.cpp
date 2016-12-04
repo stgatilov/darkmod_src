@@ -596,20 +596,19 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboId, fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboWidth, fboHeight;
+GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboWidth, fboHeight;
 
 void RB_FboEnter() {
 	GL_CheckErrors();
-	static GLuint rboDepth, rboStencil;
 	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
-	if (!fboColorTexture) {
-		/*fboDepthTexture = */fboId = rboDepth = rboStencil = fboWidth = fboHeight = 0; // vid restart?
-		glGenTextures(1, &fboColorTexture);
+	if (!fboId) {
+		/*fboColorTexture = */fboWidth = fboHeight = 0; // vid restart?
+		/*glGenTextures(1, &fboColorTexture);
 		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
 	}
 	/*if (!fboDepthTexture) {
 		glGenTextures(1, &fboDepthTexture);
@@ -627,33 +626,31 @@ void RB_FboEnter() {
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
-	/*if (!rboDepth) {
-		// create a renderbuffer object to store depth info
-		// NOTE: A depth renderable image should be attached the FBO for depth test.
-		// If we don't attach a depth renderable image to the FBO, then
-		// the rendering output will be corrupted because of missing depth test.
-		// If you also need stencil test for your rendering, then you must
-		// attach additional image to the stencil attachement point, too.
-		glGenRenderbuffersEXT(1, &rboDepth);
-	}
-	if (!rboStencil && separateStencil) {
-		glGenRenderbuffersEXT(1, &rboStencil);
-	}*/
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 	if (curWidth != fboWidth || curHeight != fboHeight || r_fboColorBits.IsModified()) {
 		fboWidth = curWidth;
 		fboHeight = curHeight;
 		r_fboColorBits.ClearModified();
-		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, fboWidth, fboHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
-		globalImages->currentDepthImage->Bind();
-		globalImages->currentDepthImage->uploadWidth = curWidth;
-		globalImages->currentDepthImage->uploadHeight = curHeight;
+//		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
+		globalImages->currentRenderImage->Bind();
+		if (globalImages->currentRenderImage->uploadWidth != curWidth) // r_useFbo toggled
+			globalImages->currentRenderImage->uploadWidth = curWidth;
+		if (globalImages->currentRenderImage->uploadHeight != curHeight)
+			globalImages->currentRenderImage->uploadHeight = curHeight;
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		//glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, fboWidth, fboHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		globalImages->currentDepthImage->Bind();
+		if (globalImages->currentDepthImage->uploadWidth != curWidth)
+			globalImages->currentDepthImage->uploadWidth = curWidth;
+		if (globalImages->currentDepthImage->uploadHeight != curHeight)
+			globalImages->currentDepthImage->uploadHeight = curHeight;
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (separateStencil) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, fboWidth, fboHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 			glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
@@ -680,7 +677,7 @@ void RB_FboEnter() {
 		glGenFramebuffersEXT(1, &fboId);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
 		// attach a texture to FBO color attachement point
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fboColorTexture, 0);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
 		// attach a renderbuffer to depth attachment point
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, rboDepth);
 		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, separateStencil ? rboStencil : rboDepth);

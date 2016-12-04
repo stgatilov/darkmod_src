@@ -735,8 +735,8 @@ void R_InitOpenGL( void ) {
 	R_SetColorMappings();
 
 	// duzenko #4425 reset fbo
-	extern GLuint fboColorTexture; // FIXME ugly 'magic' extern
-	fboColorTexture = 0;
+	extern GLuint fboId; // FIXME ugly 'magic' extern
+	fboId = 0;
 
 #ifdef _WIN32
 	static bool glCheck = false;
