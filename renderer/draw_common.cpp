@@ -1170,6 +1170,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
 		}
+		extern void RB_FboToggleColorBuffer(); // duzenko #4425 FIXME ugly magic extern
+		if (r_useFbo.GetBool())
+			RB_FboToggleColorBuffer();
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -1179,7 +1182,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_SelectTexture( 0 );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	RB_SetProgramEnvironment();
+	RB_SetProgramEnvironment(); 
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
 	// because we want to defer the matrix load because many

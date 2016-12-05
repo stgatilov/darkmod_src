@@ -146,15 +146,16 @@ extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
 
 //frame buffers
-extern PFNGLGENFRAMEBUFFERSEXTPROC          glGenFramebuffersEXT;
-extern PFNGLBINDFRAMEBUFFEREXTPROC			glBindFramebufferEXT;
-extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC		glFramebufferTexture2DEXT;
-extern PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC	glCheckFramebufferStatusEXT;
-extern PFNGLGENRENDERBUFFERSEXTPROC			glGenRenderbuffersEXT;
-extern PFNGLBINDRENDERBUFFEREXTPROC			glBindRenderbufferEXT;
-extern PFNGLRENDERBUFFERSTORAGEEXTPROC		glRenderbufferStorageEXT;
-extern PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC	glFramebufferRenderbufferEXT;
-extern PFNGLBLITFRAMEBUFFEREXTPROC			glBlitFramebufferEXT;
+extern PFNGLGENFRAMEBUFFERSPROC          glGenFramebuffers;
+extern PFNGLBINDFRAMEBUFFERPROC			glBindFramebuffer;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC		glFramebufferTexture2D;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC	glCheckFramebufferStatus;
+extern PFNGLGENRENDERBUFFERSPROC			glGenRenderbuffers;
+extern PFNGLBINDRENDERBUFFERPROC			glBindRenderbuffer;
+extern PFNGLRENDERBUFFERSTORAGEPROC		glRenderbufferStorage;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC	glFramebufferRenderbuffer;
+extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
+extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 
 //===========================================================================
 

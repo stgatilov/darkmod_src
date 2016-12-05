@@ -596,9 +596,11 @@ const void	RB_CopyRender( const void *data ) {
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture;
+GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboUsed;
 
 void RB_FboEnter() {
+	if (fboUsed && fboId != 0)
+		return;
 	GL_CheckErrors();
 	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
 	if (!fboId) {
@@ -639,11 +641,19 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+
+		globalImages->fboSecondImage->Bind();
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+
 		globalImages->currentDepthImage->Bind();
 		globalImages->currentDepthImage->uploadWidth = curWidth;
 		globalImages->currentDepthImage->uploadHeight = curHeight;
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (separateStencil) {
@@ -652,39 +662,53 @@ void RB_FboEnter() {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
 		}
 		else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8_EXT, 0);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 	}
 	//-------------------------
 	if (!fboId) {
 		// create a framebuffer object, you need to delete them when program exits.
-		glGenFramebuffersEXT(1, &fboId);
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+		glGenFramebuffers(1, &fboId);
+		glBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
 		// attach a texture to FBO color attachement point
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
+		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->fboSecondImage->texnum, 0);
 		// attach a renderbuffer to depth attachment point
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, globalImages->currentDepthImage->texnum, 0);
-		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : globalImages->currentDepthImage->texnum, 0);
-		int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentDepthImage->texnum, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : globalImages->currentDepthImage->texnum, 0);
+		int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
 			common->Printf("glCheckFramebufferStatusEXT %d\n", status); 
 			r_useFbo.SetBool(false);
 		}
-		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboId);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+//	glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
 	qglClear(GL_COLOR_BUFFER_BIT); // otherwise transparent skybox blends with previous frame
+	fboUsed = 1;
 	GL_CheckErrors();
 }
 
+void RB_FboToggleColorBuffer() {
+	if (fboUsed == 0)
+		return;
+	globalImages->currentRenderImage->Bind();
+	qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
+		0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->fboSecondImage->texnum, 0);
+}
+
 void RB_FboLeave() {
+	if (fboUsed == 0)
+		return;
 	GL_CheckErrors();
-	glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebufferEXT(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
+	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
 		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	glBindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
-	//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-	/*qglLoadIdentity();
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);*/
+	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+	qglLoadIdentity();
 	qglMatrixMode(GL_PROJECTION);
 	qglPushMatrix();
 	qglLoadIdentity();
@@ -694,7 +718,17 @@ void RB_FboLeave() {
 	GL_State(GLS_DEFAULT);
 
 	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, r_fboDebug.GetInteger() ? fboDepthTexture : fboColorTexture);
+	switch (r_fboDebug.GetInteger())
+	{
+	case 1: 
+		glBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
+		break;
+	case 2: 
+		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
+		break;
+	default:
+		glBindTexture(GL_TEXTURE_2D, globalImages->fboSecondImage->texnum);
+	}
 
 	qglDisable(GL_DEPTH_TEST);
 	qglDisable(GL_STENCIL_TEST);
@@ -712,7 +746,8 @@ void RB_FboLeave() {
 	qglPopMatrix();
 	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
-	glDisable(GL_TEXTURE_2D);*/
+	glDisable(GL_TEXTURE_2D);
+	fboUsed = 0;
 	GL_CheckErrors();
 }
 
@@ -732,7 +767,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	}
 
 	// r_debugRenderToTexture
-	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0, fboUsed = 0;
+	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0;
 
 	backEndStartTime = Sys_Milliseconds();
 
@@ -748,11 +783,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_DRAW_VIEW:
 			// duzenko #4425: create/switch to framebuffer object
-			//if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
-			if (r_useFbo.GetBool() && !fboUsed) { 
-				RB_FboEnter();
-				fboUsed = 1;
-			}
+			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
+				if (r_useFbo.GetBool() && ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) 
+					RB_FboEnter();
 			RB_DrawView(cmds);
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) {
 				c_draw3d++;
@@ -770,8 +803,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content 
-			if (fboUsed)
-				RB_FboLeave();
+			RB_FboLeave();
 			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;

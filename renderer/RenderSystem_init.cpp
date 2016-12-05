@@ -322,15 +322,17 @@ PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 PFNGLGENERATEMIPMAPPROC					glGenerateMipmap;
 
 // frame buffers
-PFNGLGENFRAMEBUFFERSEXTPROC				glGenFramebuffersEXT;
-PFNGLBINDFRAMEBUFFEREXTPROC 			glBindFramebufferEXT;
-PFNGLBLITFRAMEBUFFEREXTPROC				glBlitFramebufferEXT;
-PFNGLFRAMEBUFFERTEXTURE2DEXTPROC		glFramebufferTexture2DEXT;
-PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC		glCheckFramebufferStatusEXT;
-PFNGLGENRENDERBUFFERSEXTPROC			glGenRenderbuffersEXT;
-PFNGLBINDRENDERBUFFEREXTPROC			glBindRenderbufferEXT;
-PFNGLRENDERBUFFERSTORAGEEXTPROC			glRenderbufferStorageEXT;
-PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC		glFramebufferRenderbufferEXT;
+PFNGLGENFRAMEBUFFERSPROC				glGenFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC 				glBindFramebuffer;
+PFNGLBLITFRAMEBUFFERPROC				glBlitFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC			glFramebufferTexture2D;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC			glCheckFramebufferStatus;
+PFNGLGENRENDERBUFFERSPROC				glGenRenderbuffers;
+PFNGLBINDRENDERBUFFERPROC				glBindRenderbuffer;
+PFNGLRENDERBUFFERSTORAGEPROC			glRenderbufferStorage;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC		glFramebufferRenderbuffer;
+PFNGLDRAWBUFFERSPROC					glDrawBuffers;
+
 /*
 =================
 R_CheckExtension
@@ -552,15 +554,16 @@ static void R_CheckPortableExtensions( void ) {
  	}
 
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
-	glGenFramebuffersEXT = (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffersEXT");
-	glBindFramebufferEXT = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebufferEXT");
-	glFramebufferTexture2DEXT = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer("glFramebufferTexture2DEXT");
-	glCheckFramebufferStatusEXT = (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer("glCheckFramebufferStatusEXT");
-	glGenRenderbuffersEXT = (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenRenderbuffersEXT");
-	glBindRenderbufferEXT = (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbufferEXT");
-	glRenderbufferStorageEXT = (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorageEXT");
-	glFramebufferRenderbufferEXT = (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbufferEXT");
-	glBlitFramebufferEXT = (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebufferEXT");
+	glGenFramebuffers= (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffers");
+	glBindFramebuffer= (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebuffer");
+	glFramebufferTexture2D= (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer("glFramebufferTexture2D");
+	glCheckFramebufferStatus= (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer("glCheckFramebufferStatus");
+	glGenRenderbuffers= (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenRenderbuffers");
+	glBindRenderbuffer= (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbuffer");
+	glRenderbufferStorage= (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorage");
+	glFramebufferRenderbuffer= (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbuffer");
+	glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebuffer");
+	glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
 }
 
 
