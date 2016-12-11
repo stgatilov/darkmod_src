@@ -333,8 +333,8 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 		common->Printf( "succeeded\n" );
 	}
 
-	// the multisample path uses the wgl 
-	if ( wglChoosePixelFormatARB && (parms.multiSamples > 1 || r_useFbo.GetBool()) ) {
+	// the multisample path uses the wgl					// duzenko #4425: AA needs to be setup elsewhere
+	if ( wglChoosePixelFormatARB && (parms.multiSamples > 1 && !r_useFbo.GetBool()) ) {
 		int		iAttributes[20];
 		FLOAT	fAttributes[] = {0, 0};
 		UINT	numFormats;

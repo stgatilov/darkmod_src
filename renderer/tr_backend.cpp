@@ -595,46 +595,28 @@ const void	RB_CopyRender( const void *data ) {
 	}
 }
 
-// duzenko #4425: use framebuffer object for rendering in virtual resolution 
-GLuint fboId, /*fboColorTexture, /*fboDepthTexture, */fboStencilTexture, fboUsed;
+// duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
+GLuint fboId;
+bool fboUsed;
 
 void RB_FboEnter() {
-	if (fboUsed && fboId != 0)
+	if (fboUsed && fboId)
 		return;
-	GL_CheckErrors();
-	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0;
-	if (!fboId) {
-		/*glGenTextures(1, &fboColorTexture);
-		glBindTexture(GL_TEXTURE_2D, fboColorTexture);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);*/
-	}
-	/*if (!fboDepthTexture) {
-		glGenTextures(1, &fboDepthTexture);
-		glBindTexture(GL_TEXTURE_2D, fboDepthTexture);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}	*/
-	if (!fboStencilTexture && separateStencil) {
-		glGenTextures(1, &fboStencilTexture);
-		glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	}
+	GL_CheckErrors(); // debug
+
+	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0; // may change after a vid_restart
+	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
+	
+	// reset textures 
 	if (curWidth != globalImages->currentRenderImage->uploadWidth || curHeight != globalImages->currentRenderImage->uploadHeight 
 		|| curWidth != globalImages->currentDepthImage->uploadWidth || curHeight != globalImages->currentDepthImage->uploadHeight
 		|| r_fboColorBits.IsModified()
-	) {
+	) { // FIXME don't allocate memory if sharing color/depth
 		r_fboColorBits.ClearModified();
+
 		globalImages->currentRenderImage->Bind();
-		globalImages->currentRenderImage->uploadWidth = curWidth;
+		globalImages->currentRenderImage->uploadWidth = curWidth; // used as a shader param
 		globalImages->currentRenderImage->uploadHeight = curHeight;
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -642,15 +624,35 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
-		globalImages->fboSecondImage->Bind();
+		globalImages->currentRenderFbo->Bind();
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
+		if (separateStencil) {
+			globalImages->currentStencilFbo->Bind();
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
+		}
+
+		globalImages->currentDepthFbo->Bind();
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		if (separateStencil) {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		} else {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+		}
+
 		globalImages->currentDepthImage->Bind();
-		globalImages->currentDepthImage->uploadWidth = curWidth;
+		globalImages->currentDepthImage->uploadWidth = curWidth; // used as a shader param
 		globalImages->currentDepthImage->uploadHeight = curHeight;
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -658,55 +660,69 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (separateStencil) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-			glBindTexture(GL_TEXTURE_2D, fboStencilTexture);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
-		}
-		else {
+		} else {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 	}
-	//-------------------------
-	if (!fboId) {
+
+	// (re-)attach textures to FBO
+	if (!fboId || r_fboSharedColor.IsModified() || r_fboSharedDepth.IsModified()) {
 		// create a framebuffer object, you need to delete them when program exits.
-		glGenFramebuffers(1, &fboId);
+		if (!fboId)
+			glGenFramebuffers(1, &fboId);
+		r_fboSharedColor.ClearModified();
+		r_fboSharedDepth.ClearModified();
 		glBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
 		// attach a texture to FBO color attachement point
-		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->fboSecondImage->texnum, 0);
+		if (r_fboSharedColor.GetBool())
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0);
 		// attach a renderbuffer to depth attachment point
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentDepthImage->texnum, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, separateStencil ? fboStencilTexture : globalImages->currentDepthImage->texnum, 0);
+		GLuint depthTex = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage->texnum : globalImages->currentDepthFbo->texnum;
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+		if (separateStencil)
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0);
+		else
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
 		int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
+		if (GL_FRAMEBUFFER_COMPLETE != status) {
 			common->Printf("glCheckFramebufferStatusEXT %d\n", status); 
 			r_useFbo.SetBool(false);
 		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0); // not obvious, but let it be 
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-//	glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0);
 	qglClear(GL_COLOR_BUFFER_BIT); // otherwise transparent skybox blends with previous frame
-	fboUsed = 1;
+	fboUsed = true;
 	GL_CheckErrors();
 }
 
-void RB_FboToggleColorBuffer() {
-	if (fboUsed == 0)
+// called when post-proceesing is about to start, needs depth and pixels as both input and output for water and smoke
+void RB_FboAccessColorDepth() {
+	if (!fboUsed)
 		return;
-	globalImages->currentRenderImage->Bind();
-	qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
-		0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, globalImages->fboSecondImage->texnum, 0);
+	if (!r_fboSharedColor.GetBool()) {
+		globalImages->currentRenderImage->Bind();
+		qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
+			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
+	}
+	if (!r_fboSharedDepth.GetBool()) {
+		globalImages->currentDepthImage->Bind();
+		qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
+			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0);
+	}
 }
 
-void RB_FboLeave() {
-	if (fboUsed == 0)
+// switch from fbo to default framebuffer, copy content
+void RB_FboLeave(viewDef_t* viewDef) {
+	if (!fboUsed)
 		return;
 	GL_CheckErrors();
-	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	// hasn't worked very well at the first approach, maybe retry later
+	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
-		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);*/
+		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
 	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
 	qglLoadIdentity();
 	qglMatrixMode(GL_PROJECTION);
@@ -723,11 +739,14 @@ void RB_FboLeave() {
 	case 1: 
 		glBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
 		break;
-	case 2: 
+	case 2:
 		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
 		break;
+	case 3:
+		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthFbo->texnum);
+		break;
 	default:
-		glBindTexture(GL_TEXTURE_2D, globalImages->fboSecondImage->texnum);
+		glBindTexture(GL_TEXTURE_2D, r_fboSharedColor.GetBool() ? globalImages->currentRenderImage->texnum : globalImages->currentRenderFbo->texnum);
 	}
 
 	qglDisable(GL_DEPTH_TEST);
@@ -746,7 +765,14 @@ void RB_FboLeave() {
 	qglPopMatrix();
 	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
-	glDisable(GL_TEXTURE_2D);
+	if (viewDef) { // normal resolition 2d
+		tr.renderCrops[0].width = glConfig.vidWidth;
+		tr.renderCrops[0].height = glConfig.vidHeight;
+		viewDef->viewport.x2 = glConfig.vidWidth - 1;
+		viewDef->viewport.y2 = glConfig.vidHeight - 1;
+		viewDef->scissor.x2 = glConfig.vidWidth - 1;
+		viewDef->scissor.y2 = glConfig.vidHeight - 1;
+	}
 	fboUsed = 0;
 	GL_CheckErrors();
 }
@@ -784,8 +810,11 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_DRAW_VIEW:
 			// duzenko #4425: create/switch to framebuffer object
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
-				if (r_useFbo.GetBool() && ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) 
-					RB_FboEnter();
+				if (r_useFbo.GetBool())
+					if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys)
+						RB_FboEnter();
+					else
+						RB_FboLeave(((const drawSurfsCommand_t *)cmds)->viewDef); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
 			RB_DrawView(cmds);
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) {
 				c_draw3d++;
@@ -803,7 +832,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content 
-			RB_FboLeave();
+			RB_FboLeave(NULL);
 			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;

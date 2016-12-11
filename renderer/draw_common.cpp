@@ -588,7 +588,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
 		 && !r_skipDepthCapture.GetBool() )
 	{
-		if (!r_useFbo.GetBool()) // duzenko #4425 - depth texture already available
+		if (!r_useFbo.GetBool()) // duzenko #4425 - depth texture will be available later in RB_STD_DrawShaderPasses
 			globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
@@ -1170,9 +1170,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
 		}
-		extern void RB_FboToggleColorBuffer(); // duzenko #4425 FIXME ugly magic extern
+		extern void RB_FboAccessColorDepth(); // duzenko #4425 FIXME ugly magic extern
 		if (r_useFbo.GetBool())
-			RB_FboToggleColorBuffer();
+			RB_FboAccessColorDepth();
 		backEnd.currentRenderCopied = true;
 	}
 

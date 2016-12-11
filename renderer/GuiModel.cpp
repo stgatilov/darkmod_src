@@ -233,6 +233,11 @@ void idGuiModel::EmitFullScreen( void ) {
 		viewDef->renderView.height = SCREEN_HEIGHT;
 
 		tr.RenderViewToViewport( &viewDef->renderView, &viewDef->viewport );
+		// duzenko #4425 FIXME CRUTCH? always use window size for 2d if fbo is on
+		if (r_useFbo.GetBool()) {
+			viewDef->viewport.x2 = glConfig.vidWidth - 1;
+			viewDef->viewport.y2 = glConfig.vidHeight - 1;
+		}
 
 		viewDef->scissor.x1 = 0;
 		viewDef->scissor.y1 = 0;
