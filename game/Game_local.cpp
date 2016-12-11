@@ -670,10 +670,10 @@ void idGameLocal::CheckTDMVersion()
 	// Check Request Status
 	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		Printf("%s.\n", common->Translate( "#str_2002") );	// Connection Error
+		Printf("%s\n", common->Translate( "#str_02002") );	// Connection Error.
 
 		msg.title = common->Translate( "#str_02136" );		// Version Check Failed
-		msg.message = common->Translate( "#str_02132" );	// Cannot connect to server.
+		msg.message = common->Translate( "#str_02007" );	// Cannot connect to server.
 
 		AddMainMenuMessage(msg);
 		return;
