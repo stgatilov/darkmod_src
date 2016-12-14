@@ -622,14 +622,14 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		qglTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
 		globalImages->currentRenderFbo->Bind();
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		qglTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
 		if (fboSharedStencil) {
 			globalImages->currentStencilFbo->Bind();
@@ -637,7 +637,7 @@ void RB_FboEnter() {
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
 		}
 
 		globalImages->currentDepthFbo->Bind();
@@ -646,9 +646,9 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (fboSharedStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 
 		globalImages->currentDepthImage->Bind();
@@ -659,9 +659,9 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		if (fboSharedStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 	}
 
@@ -729,36 +729,36 @@ void RB_FboLeave(viewDef_t* viewDef) {
 	qglPushMatrix();
 	qglLoadIdentity();
 	qglOrtho(0, 1, 0, 1, -1, 1);
-	glViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	GL_State(GLS_DEFAULT);
 
-	glEnable(GL_TEXTURE_2D);
+	qglEnable(GL_TEXTURE_2D);
 	switch (r_fboDebug.GetInteger())
 	{
 	case 1: 
 		glBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
 		break;
 	case 2:
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
+		qglBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
 		break;
 	case 3:
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthFbo->texnum);
+		qglBindTexture(GL_TEXTURE_2D, globalImages->currentDepthFbo->texnum);
 		break;
 	default:
-		glBindTexture(GL_TEXTURE_2D, r_fboSharedColor.GetBool() ? globalImages->currentRenderImage->texnum : globalImages->currentRenderFbo->texnum);
+		qglBindTexture(GL_TEXTURE_2D, r_fboSharedColor.GetBool() ? globalImages->currentRenderImage->texnum : globalImages->currentRenderFbo->texnum);
 	}
 
 	qglDisable(GL_DEPTH_TEST);
 	qglDisable(GL_STENCIL_TEST);
 	qglBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
+	qglTexCoord2f(0, 0);
 	qglVertex2f(0, 0);
-	glTexCoord2f(0, 1);
+	qglTexCoord2f(0, 1);
 	qglVertex2f(0, 1);
-	glTexCoord2f(1, 1);
+	qglTexCoord2f(1, 1);
 	qglVertex2f(1, 1);
-	glTexCoord2f(1, 0);
+	qglTexCoord2f(1, 0);
 	qglVertex2f(1, 0);
 	qglEnd();
 
