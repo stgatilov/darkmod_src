@@ -24,7 +24,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
+#ifdef WIN32
 #include <thread>
+#endif
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
