@@ -737,7 +737,7 @@ void RB_FboLeave(viewDef_t* viewDef) {
 	switch (r_fboDebug.GetInteger())
 	{
 	case 1: 
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
+		qglBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
 		break;
 	case 2:
 		qglBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
