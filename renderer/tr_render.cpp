@@ -302,11 +302,13 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 
 		// change the scissor if needed
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			backEnd.currentScissor = drawSurf->scissorRect;
-			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+			if (drawSurf->scissorRect.x2 >= 0 && drawSurf->scissorRect.y2 >= 0) { // duzenko: FIXME find out why they are negative sometimes
+				backEnd.currentScissor = drawSurf->scissorRect;
+				qglScissor(backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+			}
 		}
 
 		// render it
