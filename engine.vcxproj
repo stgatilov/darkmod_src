@@ -444,6 +444,7 @@
     <ClInclude Include="sound\OggVorbis\ogg\os_types.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
+    <ClInclude Include="sys\win32\dxerr.h" />
     <ClInclude Include="sys\win32\wglext.h" />
     <ClInclude Include="sys\win32\win_local.h" />
     <ClInclude Include="sys\win32\rc\AFEditor_resource.h" />
@@ -1727,6 +1728,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="sys\sys_local.cpp" />
+    <ClCompile Include="sys\win32\dxerr.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />
     <ClCompile Include="sys\win32\win_glimp.cpp" />
     <ClCompile Include="sys\win32\win_input.cpp" />

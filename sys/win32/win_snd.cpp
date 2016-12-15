@@ -22,7 +22,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 // DirectX SDK
-#include <DxErr.h>
+#include "dxerr.h"
 
 #include <ks.h>
 #include <ksmedia.h>
@@ -237,7 +237,7 @@ void idAudioHardwareWIN32::SetPrimaryBufferFormat( dword dwPrimaryFreq, dword dw
        
 	// Obtain write-primary cooperative level. 
 	if( FAILED( hr = m_pDS->SetCooperativeLevel(win32.hWnd, DSSCL_PRIORITY ) ) ) {
-        DXTRACE_ERR( TEXT("SetPrimaryBufferFormat"), hr );
+        DXTRACE_ERR( L"SetPrimaryBufferFormat", hr );
 		return;
 	}
 
@@ -264,7 +264,7 @@ void idAudioHardwareWIN32::SetPrimaryBufferFormat( dword dwPrimaryFreq, dword dw
 		waveFormatPCMEx.Samples.wValidBitsPerSample = 16;
 
 		if( FAILED( hr = pDSBPrimary->SetFormat((WAVEFORMATEX*)&waveFormatPCMEx) ) ) {
-	        DXTRACE_ERR( TEXT("SetPrimaryBufferFormat"), hr );
+	        DXTRACE_ERR( L"SetPrimaryBufferFormat", hr );
 			return;
 		}
 		numSpeakers = 6;		// force it to think 5.1
@@ -592,13 +592,13 @@ int idAudioBufferWIN32::FillBufferWithSound( LPDIRECTSOUNDBUFFER pDSB, bool bRep
     // Make sure we have focus, and we didn't just switch in from
     // an app which had a DirectSound device
     if( FAILED( hr = RestoreBuffer( pDSB, NULL ) ) ) {
-        DXTRACE_ERR( TEXT("RestoreBuffer"), hr );
+        DXTRACE_ERR( L"RestoreBuffer", hr );
 		return -1;
 	}
 
     // Lock the buffer down
     if( FAILED( hr = pDSB->Lock( 0, m_dwDSBufferSize, &pDSLockedBuffer, &dwDSLockedBufferSize, NULL, NULL, 0L ) ) ) {
-        DXTRACE_ERR( TEXT("Lock"), hr );
+        DXTRACE_ERR( L"Lock", hr );
 		return -1;
 	}
 
@@ -606,7 +606,7 @@ int idAudioBufferWIN32::FillBufferWithSound( LPDIRECTSOUNDBUFFER pDSB, bool bRep
     m_pWaveFile->ResetFile();
 
     if( FAILED( hr = m_pWaveFile->Read( (byte*) pDSLockedBuffer, dwDSLockedBufferSize, &dwWavDataRead ) ) ) {
-        return DXTRACE_ERR( TEXT("Read"), hr );
+        return DXTRACE_ERR( L"Read", hr );
 	}
 
     if( dwWavDataRead == 0 ) {
@@ -622,12 +622,12 @@ int idAudioBufferWIN32::FillBufferWithSound( LPDIRECTSOUNDBUFFER pDSB, bool bRep
                 // This will keep reading in until the buffer is full 
                 // for very short files
                 if( FAILED( hr = m_pWaveFile->ResetFile() ) ) {
-                    return DXTRACE_ERR( TEXT("ResetFile"), hr );
+                    return DXTRACE_ERR( L"ResetFile", hr );
 				}
 
                 hr = m_pWaveFile->Read( (byte*)pDSLockedBuffer + dwReadSoFar, dwDSLockedBufferSize - dwReadSoFar, &dwWavDataRead );
                 if( FAILED(hr) ) {
-                    return DXTRACE_ERR( TEXT("Read"), hr );
+                    return DXTRACE_ERR( L"Read", hr );
 				}
 
                 dwReadSoFar += dwWavDataRead;
@@ -663,7 +663,7 @@ int idAudioBufferWIN32::RestoreBuffer( LPDIRECTSOUNDBUFFER pDSB, bool* pbWasRest
 
     ulong dwStatus;
     if( FAILED( hr = pDSB->GetStatus( &dwStatus ) ) ) {
-        return DXTRACE_ERR( TEXT("GetStatus"), hr );
+        return DXTRACE_ERR( L"GetStatus", hr );
 	}
 
     if( dwStatus & DSBSTATUS_BUFFERLOST ) {
@@ -818,7 +818,7 @@ bool idAudioBufferWIN32::GetCurrentPosition( ulong *pdwCurrentWriteCursor ) {
     // Make sure we have focus, and we didn't just switch in from
     // an app which had a DirectSound device
     if( FAILED( hr = RestoreBuffer( m_apDSBuffer, NULL ) ) ) {
-        DXTRACE_ERR( TEXT("RestoreBuffer"), hr );
+        DXTRACE_ERR( L"RestoreBuffer", hr );
 		return false;
 	}
 

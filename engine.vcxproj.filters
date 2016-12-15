@@ -563,6 +563,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
+    <ClInclude Include="sys\win32\dxerr.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1591,6 +1594,9 @@
     <ClCompile Include="framework\precompiled_engine.cpp" />
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\win32\dxerr.cpp">
+      <Filter>Sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
