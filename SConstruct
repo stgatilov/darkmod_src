@@ -250,7 +250,12 @@ if ( g_sdk or SDK != '0' ):
 
 g_build = BUILD_ROOT + '/' + BUILD
 
-SConsignFile( 'scons.signatures' )
+# 
+# Use an absolute path to a single signature file to avoid a problem
+# whereby everything gets rebuilt every time due to the signature file
+# not being detected.
+# 
+SConsignFile(os.path.join(Dir('#').abspath, 'scons.signatures'))
 
 if ( GL_HARDLINK != '0' ):
 	g_build += '-hardlink'

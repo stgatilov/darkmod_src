@@ -2,9 +2,6 @@
 
 mkdir -p ~/games/tdm/darkmod
 
-# make sure this file exists
-touch scons.signatures.dblite
-
 # FAST=true
 # --debug=explain
 
