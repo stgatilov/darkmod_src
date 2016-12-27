@@ -555,6 +555,8 @@ static void R_CheckPortableExtensions( void ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
 
+	glConfig.pixelBufferAvailable = R_CheckExtension("ARB_pixel_buffer_object");
+
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
 	glGenFramebuffers= (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffers");
 	glBindFramebuffer= (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebuffer");

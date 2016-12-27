@@ -1029,8 +1029,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 		qglReadBuffer(GL_BACK);
 
 // #4395 Duzenko lightem pixel pack buffer optimization
-
-	if (1) {
+	if (glConfig.pixelBufferAvailable) {
 		static int nbytes = 64 * 64 * 3;
 		if (!pbo) {
 			qglGenBuffersARB(1, &pbo);
@@ -1046,7 +1045,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 		}
 		else {
 			// #4395 vid_restart ?
-               pbo = 0;
+            pbo = 0;
 		}
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
