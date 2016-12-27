@@ -731,7 +731,7 @@ void RB_FboLeave(viewDef_t* viewDef) {
 	qglOrtho(0, 1, 0, 1, -1, 1);
 	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	GL_State(GLS_DEFAULT);
+	//GL_State(GLS_DEFAULT);
 
 	qglEnable(GL_TEXTURE_2D);
 	switch (r_fboDebug.GetInteger())

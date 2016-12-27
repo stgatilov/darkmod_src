@@ -1086,10 +1086,11 @@ void idPlayerView::dnPostProcessManager::Update( void )
 			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidthPowOf2, 1.0f, 1.0f, 1.0f );			 
 			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
 			renderSystem->CaptureRenderToImage( m_imageBloom );
+
 			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeightPowOf2, 1.0f, 1.0f, 1.0f );		 
 			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
-
 			renderSystem->CaptureRenderToImage( m_imageBloom );
+
 			renderSystem->UnCrop();
 			//---------------------
 
@@ -1110,24 +1111,29 @@ void idPlayerView::dnPostProcessManager::Update( void )
 void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 {
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-	if( m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth !=renderSystem->GetScreenWidth() )
-	{
-		m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
+	if (!cvarSystem->GetCVarBool("r_useFbo")) {
+		m_iScreenWidthPowOf2 = renderSystem->GetScreenWidth();
+		m_iScreenHeightPowOf2 = renderSystem->GetScreenHeight();
+	} else {
+		if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
+		{
+			m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
 
-		// This should probably fix the ATI issue...
-		renderSystem->GetGLSettings( m_iScreenWidth, m_iScreenHeight );
+			// This should probably fix the ATI issue...
+			renderSystem->GetGLSettings(m_iScreenWidth, m_iScreenHeight);
 
-		//assert( iScreenWidth != 0 && iScreenHeight != 0 );
+			//assert( iScreenWidth != 0 && iScreenHeight != 0 );
 
-		while( m_iScreenWidthPowOf2 < m_iScreenWidth ) {
-			m_iScreenWidthPowOf2 <<= 1;
+			while (m_iScreenWidthPowOf2 < m_iScreenWidth) {
+				m_iScreenWidthPowOf2 <<= 1;
+			}
+			while (m_iScreenHeightPowOf2 < m_iScreenHeight) {
+				m_iScreenHeightPowOf2 <<= 1;
+			}
 		}
-		while( m_iScreenHeightPowOf2 < m_iScreenHeight ) {
-			m_iScreenHeightPowOf2 <<= 1;
-		}
-		m_fShiftScale_x = m_iScreenWidth  / (float)m_iScreenWidthPowOf2;
-		m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
 	}
+	m_fShiftScale_x = m_iScreenWidth / (float)m_iScreenWidthPowOf2;
+	m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
 }
 
 void idPlayerView::dnPostProcessManager::RenderDebugTextures()
