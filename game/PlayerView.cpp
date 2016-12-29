@@ -1111,11 +1111,11 @@ void idPlayerView::dnPostProcessManager::Update( void )
 void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 {
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-	if (!cvarSystem->GetCVarBool("r_useFbo")) {
+	if (cvarSystem->GetCVarBool("r_useFbo")) {
 		m_iScreenWidthPowOf2 = renderSystem->GetScreenWidth();
 		m_iScreenHeightPowOf2 = renderSystem->GetScreenHeight();
 	} else {
-		if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
+		//if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
 		{
 			m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
 
