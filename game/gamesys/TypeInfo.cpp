@@ -17,6 +17,28 @@
  
 ******************************************************************************/
 
+// As stated below, the trick of defining "private" and "protected" is pure evil.
+// We pay for it in class definitions that implicitly declare private members
+// without using the (default) private visibility declaration.
+// This becomes a real problem in code like the one found in GCC 6.2, along the lines:
+//     
+//     class Class {
+//       struct PrivateStruct; // forward declaration
+//       // ...
+//         private:
+//       struct PrivateStruct {}; // actual definition
+//     };
+//
+// In this case, PrivateStruct is implicitly declared private, and then defined as
+// "private", that after our trick becomes "public". Joy ensues.
+// We import all the things like that before the trick takes places.
+// We lose access to some variable inspection, but we gain in compilability
+// (and a bit in sanity).
+#if defined(__GNUC__) && (__GNUC__ == 6)
+// these were observed in GNU GCC 6.2.0 (not in 5.4.0):
+#include <sstream>
+#endif // if GCC 6+
+
 // This is real evil but allows the code to inspect arbitrary class variables.
 #define private		public
 #define protected	public
