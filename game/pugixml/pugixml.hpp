@@ -17,6 +17,9 @@
 #include "pugiconfig.hpp"
 
 #ifndef PUGIXML_NO_STL
+#if defined(__clang__) || defined(__GNUC__)
+#include <string>
+#else
 namespace std
 {
 	struct bidirectional_iterator_tag;
@@ -43,6 +46,7 @@ namespace std
 	template <> class char_traits<char>;
 #endif
 }
+#endif // if not clang nor GCC
 #endif
 
 // Macro for deprecated features
