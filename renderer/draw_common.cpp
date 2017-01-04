@@ -23,7 +23,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
-/*void DumpFramebuffer(const char *fileName) {
+void RB_DumpFramebuffer(const char *fileName) {
 	if (!r_ignore.GetBool())
 		return;
 	renderCrop_t r, *rc = &r;
@@ -60,7 +60,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 	R_StaticFree(data);
 	R_StaticFree(data2);
-}*/
+}
 
 /*
 =====================

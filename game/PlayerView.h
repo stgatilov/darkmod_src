@@ -132,6 +132,7 @@ private:
 		int					m_nFramesToUpdateCookedData; // After these number of frames Cooked data will be updated. 0 means no update.
 
 		bool				m_bForceUpdateOnCookedData;
+		idCVar*				m_useFbo;
 
 		dnImageWrapper m_imageCurrentRender;
 		dnImageWrapper m_imageBloom;

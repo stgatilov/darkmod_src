@@ -1876,8 +1876,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	if (r_useFbo.GetBool()) { // assume h/w support for non-po2 sizes
 		potWidth = imageWidth;
 		potHeight = imageHeight;
-	}
-	else {
+	} else {
 		potWidth = MakePowerOfTwo(imageWidth);
 		potHeight = MakePowerOfTwo(imageHeight);
 	}

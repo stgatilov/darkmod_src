@@ -567,6 +567,20 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT, "ambient_cubic_light.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT, "ambient_cubic_light.vfp" },
 
+	// duzenko: backend bloom
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1, "cookMath_pass1.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1, "cookMath_pass1.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2, "cookMath_pass2.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2, "cookMath_pass2.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS, "brightPass_opt.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS, "brightPass_opt.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX, "blurx.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX, "blurx.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY, "blury.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY, "blury.vfp" },
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
+
 	// additional programs can be dynamically specified in materials
 };
 

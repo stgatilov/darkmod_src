@@ -917,7 +917,7 @@ m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOpt
 
 m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
 m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
-m_ImageAnisotropyHandle(-1)
+m_ImageAnisotropyHandle	(-1)
 {
 	m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
@@ -934,6 +934,7 @@ m_ImageAnisotropyHandle(-1)
 		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
 			boost::bind(&idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged, this));
 	}
+	m_useFbo = cvarSystem->Find( "r_useFbo" );
 }
 
 idPlayerView::dnPostProcessManager::~dnPostProcessManager()
@@ -1035,9 +1036,14 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 	}
 }
 
-
 void idPlayerView::dnPostProcessManager::Update( void )
 {
+	// duzenko: move bloom to back renderer, for now fbo-only
+	if (m_useFbo->GetBool()) {
+		renderSystem->CaptureRenderToImage( "_bloomImage" ); // duzenko: FIXME hack - better to extend renderCommand_t?
+		return;
+	}
+
 	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
 
 	if( r_postprocess_bloomKernelSize.IsModified() )
@@ -1111,11 +1117,8 @@ void idPlayerView::dnPostProcessManager::Update( void )
 void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 {
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-	if (cvarSystem->GetCVarBool("r_useFbo")) {
-		m_iScreenWidthPowOf2 = renderSystem->GetScreenWidth();
-		m_iScreenHeightPowOf2 = renderSystem->GetScreenHeight();
-	} else {
-		//if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
+	{
+		if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
 		{
 			m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
 

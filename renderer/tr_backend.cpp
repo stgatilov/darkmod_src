@@ -574,6 +574,7 @@ const void	RB_SwapBuffers( const void *data ) {
 	}
 }
 
+bool doFboBloom; // duzenko FIXME - use r_postprocess instead
 /*
 =============
 RB_CopyRender
@@ -581,8 +582,9 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-const void	RB_CopyRender( const void *data ) {
-	if ( r_skipCopyTexture.GetBool() ) {
+
+const void RB_CopyRender( const void *data ) {
+	if (r_skipCopyTexture.GetBool()) {
 		return;
 	}
 
@@ -591,20 +593,130 @@ const void	RB_CopyRender( const void *data ) {
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
 	if (cmd->image) {
-		cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
+		if (cmd->image->imgName.Icmp( "_bloomImage" ) == 0) // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
+			doFboBloom = true;
+		else
+			cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
 	}
+}
+
+void RB_DrawFullScreenQuad() {
+	qglBegin( GL_QUADS );
+	qglTexCoord2f( 0, 0 );
+	qglVertex2f( 0, 0 );
+	qglTexCoord2f( 0, 1 );
+	qglVertex2f( 0, 1 );
+	qglTexCoord2f( 1, 1 );
+	qglVertex2f( 1, 1 );
+	qglTexCoord2f( 1, 0 );
+	qglVertex2f( 1, 0 );
+	qglEnd();
+}
+
+/*
+=============
+RB_BloomStage
+
+Uplight the rendered picture. Originally in front renderer (idPlayerView::dnPostProcessManager), moved here fbo-only
+=============
+*/
+
+const void RB_FboBloom() {
+	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
+
+	GL_State( GLS_DEPTHMASK );
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	extern void RB_DumpFramebuffer( const char *fileName );
+
+	qglViewport( 0, 0, 256, 1 );
+	qglClear( GL_COLOR_BUFFER_BIT );
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
+	float	parm[4];
+	parm[0] = 0.8f;
+	parm[1] = 0.82f;
+	parm[2] = 0.9f;
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
+	RB_DumpFramebuffer( "be_bl_m1.tga" );
+
+	GL_SelectTexture( 0 );
+	globalImages->GetImage( "_cookedMath" )->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
+	parm[0] = 0.2f;
+	parm[1] = 2;
+	parm[2] = 5;
+	parm[3] = 0.8f;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
+	RB_DumpFramebuffer( "be_bl_m2.tga" );
+
+	qglViewport( 0, 0, w / 2, h / 2 );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->GetImage( "_cookedMath" )->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
+	RB_DrawFullScreenQuad();
+	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w/2, h/2, false );
+	RB_DumpFramebuffer( "be_bl_br.tga" );
+
+	GL_SelectTexture( 0 );
+	globalImages->GetImage( "_bloomImage" )->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
+	parm[0] = 2/w;
+	parm[1] = 1;
+	parm[2] = 1;
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	RB_DumpFramebuffer( "be_bl_gx.tga" );
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
+	parm[0] = 2 / h;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	RB_DumpFramebuffer( "be_bl_gy.tga" );
+
+	qglViewport( 0, 0, w, h );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->GetImage( "_bloomImage" )->Bind();
+	GL_SelectTexture( 2 );
+	globalImages->GetImage( "_cookedMath" )->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
+	parm[0] = 2;
+	parm[1] = 0.05f;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	RB_DumpFramebuffer( "be_bl_fi.tga" );
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
-bool fboUsed, fboSharedStencil;
+bool fboUsed;
 
 void RB_FboEnter() {
 	if (fboUsed && fboId)
 		return;
 	GL_CheckErrors(); // debug
 
-	fboSharedStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0; // may change after a vid_restart
+	bool fboSeparateStencil = strcmp(glConfig.vendor_string, "Intel") == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 	
@@ -631,7 +743,7 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		qglTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
-		if (fboSharedStencil) {
+		if (fboSeparateStencil) {
 			globalImages->currentStencilFbo->Bind();
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -645,7 +757,7 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (fboSharedStencil) {
+		if (fboSeparateStencil) {
 			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
 			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
@@ -658,7 +770,7 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (fboSharedStencil) {
+		if (fboSeparateStencil) {
 			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
 			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
@@ -681,7 +793,7 @@ void RB_FboEnter() {
 		// attach a renderbuffer to depth attachment point
 		GLuint depthTex = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage->texnum : globalImages->currentDepthFbo->texnum;
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
-		if (fboSharedStencil)
+		if (fboSeparateStencil)
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0);
 		else
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
@@ -715,53 +827,50 @@ void RB_FboAccessColorDepth() {
 }
 
 // switch from fbo to default framebuffer, copy content
-void RB_FboLeave(viewDef_t* viewDef) {
+void RB_FboLeave( viewDef_t* viewDef ) {
 	if (!fboUsed)
 		return;
 	GL_CheckErrors();
 	// hasn't worked very well at the first approach, maybe retry later
-	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
+	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
-		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
-	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+	glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
+	glBindFramebuffer( GL_FRAMEBUFFER_EXT, 0 );
 	qglLoadIdentity();
-	qglMatrixMode(GL_PROJECTION);
+	qglMatrixMode( GL_PROJECTION );
 	qglPushMatrix();
 	qglLoadIdentity();
-	qglOrtho(0, 1, 0, 1, -1, 1);
-	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	qglOrtho( 0, 1, 0, 1, -1, 1 );
+	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	//GL_State(GLS_DEFAULT);
 
-	qglEnable(GL_TEXTURE_2D);
-	switch (r_fboDebug.GetInteger())
-	{
-	case 1: 
-		qglBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
-		break;
-	case 2:
-		qglBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
-		break;
-	case 3:
-		qglBindTexture(GL_TEXTURE_2D, globalImages->currentDepthFbo->texnum);
-		break;
-	default:
-		qglBindTexture(GL_TEXTURE_2D, r_fboSharedColor.GetBool() ? globalImages->currentRenderImage->texnum : globalImages->currentRenderFbo->texnum);
+	qglEnable( GL_TEXTURE_2D );
+	qglDisable( GL_DEPTH_TEST );
+	qglDisable( GL_STENCIL_TEST );
+	if (doFboBloom) {
+		doFboBloom = false;
+		RB_FboBloom();
+	} else {
+		switch (r_fboDebug.GetInteger())
+		{
+		case 1:
+			globalImages->currentRenderImage->Bind();
+			break;
+		case 2:
+			globalImages->currentDepthImage->Bind();
+			break;
+		case 3:
+			globalImages->currentDepthFbo->Bind();
+			break;
+		default:
+			if (r_fboSharedColor.GetBool())
+				globalImages->currentRenderImage->Bind();
+			else
+				globalImages->currentRenderFbo->Bind();
+		}
+		RB_DrawFullScreenQuad();
 	}
-
-	qglDisable(GL_DEPTH_TEST);
-	qglDisable(GL_STENCIL_TEST);
-	qglBegin(GL_QUADS);
-	qglTexCoord2f(0, 0);
-	qglVertex2f(0, 0);
-	qglTexCoord2f(0, 1);
-	qglVertex2f(0, 1);
-	qglTexCoord2f(1, 1);
-	qglVertex2f(1, 1);
-	qglTexCoord2f(1, 0);
-	qglVertex2f(1, 0);
-	qglEnd();
-
 	qglPopMatrix();
 	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
