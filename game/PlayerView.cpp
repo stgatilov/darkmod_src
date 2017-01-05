@@ -1038,12 +1038,6 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 
 void idPlayerView::dnPostProcessManager::Update( void )
 {
-	// duzenko: move bloom to back renderer, for now fbo-only
-	if (m_useFbo->GetBool()) {
-		renderSystem->CaptureRenderToImage( "_bloomImage" ); // duzenko: FIXME hack - better to extend renderCommand_t?
-		return;
-	}
-
 	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
 
 	if( r_postprocess_bloomKernelSize.IsModified() )
@@ -1063,6 +1057,12 @@ void idPlayerView::dnPostProcessManager::Update( void )
 
 	if ( iPostProcessType != 0 ) 
 	{
+		// duzenko: move bloom to back renderer, for now fbo-only
+		if (m_useFbo->GetBool()) {
+			renderSystem->CaptureRenderToImage( "_bloomImage" ); // duzenko: FIXME hack - better to extend renderCommand_t?
+			return;
+		}
+
 		this->UpdateBackBufferParameters();
 
 		// Note to self1: CropRenderSize if not used before CaptureRenderToImage, then image caputured is of screen's size(non power of two) 

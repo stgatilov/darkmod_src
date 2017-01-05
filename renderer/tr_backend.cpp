@@ -615,25 +615,26 @@ void RB_DrawFullScreenQuad() {
 
 /*
 =============
-RB_BloomStage
+RB_FboBloom
 
-Uplight the rendered picture. Originally in front renderer (idPlayerView::dnPostProcessManager), moved here fbo-only
+Originally in front renderer (idPlayerView::dnPostProcessManager), moved here fbo-only
 =============
 */
 
 const void RB_FboBloom() {
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 
-	GL_State( GLS_DEPTHMASK );
+	//GL_State( GLS_DEPTHMASK );
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	GL_SelectTexture( 0 );
 	extern void RB_DumpFramebuffer( const char *fileName );
+	float	parm[4];
 
 	qglViewport( 0, 0, 256, 1 );
 	qglClear( GL_COLOR_BUFFER_BIT );
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
-	float	parm[4];
 	parm[0] = 0.8f;
 	parm[1] = 0.82f;
 	parm[2] = 0.9f;
@@ -643,20 +644,18 @@ const void RB_FboBloom() {
 	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
 	RB_DumpFramebuffer( "be_bl_m1.tga" );
 
-	GL_SelectTexture( 0 );
-	globalImages->GetImage( "_cookedMath" )->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
 	parm[0] = 0.2f;
 	parm[1] = 2;
 	parm[2] = 5;
-	parm[3] = 0.8f;
+	parm[3] = 0.1f;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
 	RB_DumpFramebuffer( "be_bl_m2.tga" );
 
-	qglViewport( 0, 0, w / 2, h / 2 );
+	qglViewport( 0, 0, w/2, h/2 );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
 	GL_SelectTexture( 1 );
@@ -664,10 +663,10 @@ const void RB_FboBloom() {
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
 	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w/2, h/2, false );
+	GL_SelectTexture( 0 );
+	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 	RB_DumpFramebuffer( "be_bl_br.tga" );
 
-	GL_SelectTexture( 0 );
 	globalImages->GetImage( "_bloomImage" )->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
@@ -677,7 +676,7 @@ const void RB_FboBloom() {
 	parm[3] = 1;
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w/2, h/2, false );
 	RB_DumpFramebuffer( "be_bl_gx.tga" );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
@@ -702,6 +701,8 @@ const void RB_FboBloom() {
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	RB_DumpFramebuffer( "be_bl_fi.tga" );
+	GL_SelectTexture( 2 );
+	globalImages->BindNull(); // or else GUI is screwed
 
 	qglDisable( GL_VERTEX_PROGRAM_ARB );
 	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
@@ -843,7 +844,6 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	qglOrtho( 0, 1, 0, 1, -1, 1 );
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	//GL_State(GLS_DEFAULT);
 
 	qglEnable( GL_TEXTURE_2D );
 	qglDisable( GL_DEPTH_TEST );
