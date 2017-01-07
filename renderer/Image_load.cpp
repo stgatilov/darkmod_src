@@ -1878,11 +1878,10 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 		potHeight = imageHeight;
 	} else {
 		potWidth = MakePowerOfTwo(imageWidth);
-		potHeight = MakePowerOfTwo(imageHeight);
+		potHeight = MakePowerOfTwo(imageHeight); 
+		GetDownsize( imageWidth, imageHeight ); // this line and the next one screw bloom in fbo
+		GetDownsize( potWidth, potHeight );
 	}
-
-	GetDownsize( imageWidth, imageHeight );
-	GetDownsize( potWidth, potHeight );
 
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);

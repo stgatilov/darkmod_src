@@ -622,6 +622,7 @@ Originally in front renderer (idPlayerView::dnPostProcessManager), moved here fb
 */
 
 const void RB_FboBloom() {
+	doFboBloom = false;
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 
 	//GL_State( GLS_DEPTHMASK );
@@ -710,13 +711,13 @@ const void RB_FboBloom() {
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
-bool fboUsed;
+bool fboUsed, fboRenderCopied;
 
 void RB_FboEnter() {
 	if (fboUsed && fboId)
 		return;
 	GL_CheckErrors(); // debug
-
+	fboRenderCopied = false;
 	bool fboSeparateStencil = strcmp(glConfig.vendor_string, "Intel") == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
@@ -813,18 +814,19 @@ void RB_FboEnter() {
 
 // called when post-proceesing is about to start, needs depth and pixels as both input and output for water and smoke
 void RB_FboAccessColorDepth() {
-	if (!fboUsed)
+	if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 		return;
 	if (!r_fboSharedColor.GetBool()) {
 		globalImages->currentRenderImage->Bind();
 		qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
 			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
 	}
-	if (!r_fboSharedDepth.GetBool()) {
+	if (!r_fboSharedDepth.GetBool() && !fboRenderCopied) {
 		globalImages->currentDepthImage->Bind();
 		qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
 			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0);
 	}
+	fboRenderCopied = true;
 }
 
 // switch from fbo to default framebuffer, copy content
@@ -832,6 +834,8 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	if (!fboUsed)
 		return;
 	GL_CheckErrors();
+	if (doFboBloom) // need currentRenderImage for bloom
+		RB_FboAccessColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
@@ -849,7 +853,6 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_STENCIL_TEST );
 	if (doFboBloom) {
-		doFboBloom = false;
 		RB_FboBloom();
 	} else {
 		switch (r_fboDebug.GetInteger())
