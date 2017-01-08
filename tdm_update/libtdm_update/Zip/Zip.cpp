@@ -386,6 +386,8 @@ ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string
 	changeTime.tm_mon = info.tmu_date.tm_mon;
 	changeTime.tm_year = info.tmu_date.tm_year - 1900;
 
+	changeTime.tm_isdst = -1;   // let 'mktime()' determine if DST is in effect
+
 	output->changeTime = mktime(&changeTime);
 	
 	// Open the file for raw read
