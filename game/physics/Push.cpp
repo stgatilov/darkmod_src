@@ -24,7 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Game_local.h"
 
-#define MAX_MASS_TO_PUSH 8.0f // grayman #4383
+#define MAX_MASS_TO_PUSH 1.5f // grayman #4383
 
 
 /*
@@ -1273,7 +1273,7 @@ float idPush::ClipTranslationalPush( trace_t &results, idEntity *pusher, const i
 
 		// grayman #4383
 		// if the entity is a small moveable
-		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() <= MAX_MASS_TO_PUSH) )
+		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() < MAX_MASS_TO_PUSH) )
 		{
 			continue;
 		}
@@ -1448,7 +1448,7 @@ float idPush::ClipRotationalPush( trace_t &results, idEntity *pusher, const int 
 
 		// grayman #4383
 		// if the entity is a small moveable
-		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() <= MAX_MASS_TO_PUSH) )
+		if ( check->IsType(idMoveable::Type) && (check->GetPhysics()->GetMass() < MAX_MASS_TO_PUSH) )
 		{
 			continue;
 		}
