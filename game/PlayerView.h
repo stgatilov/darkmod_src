@@ -122,7 +122,7 @@ private:
 	class dnPostProcessManager
 	{
 	private:
-		int					m_iScreenHeight;
+		/*int					m_iScreenHeight;
 		int					m_iScreenWidth;
 		int					m_iScreenHeightPowOf2;
 		int					m_iScreenWidthPowOf2;
@@ -132,7 +132,6 @@ private:
 		int					m_nFramesToUpdateCookedData; // After these number of frames Cooked data will be updated. 0 means no update.
 
 		bool				m_bForceUpdateOnCookedData;
-		idCVar*				m_useFbo;
 
 		dnImageWrapper m_imageCurrentRender;
 		dnImageWrapper m_imageBloom;
@@ -146,20 +145,21 @@ private:
 		const idMaterial *m_matGaussBlurX;
 		const idMaterial *m_matGaussBlurY;
 
-		const idMaterial *m_matFinalScenePass;
+		const idMaterial *m_matFinalScenePass;*/
 
 		int					m_ImageAnisotropyHandle;
+		idCVar*				r_postprocess;
 
 	public:
 		dnPostProcessManager();
 		~dnPostProcessManager();
 
 		// Methods
-		void Initialize	();						// This method should be invoked when idPlayerView::Restore is called.
+		//void Initialize	();					// This method should be invoked when idPlayerView::Restore is called.
 		void Update		();						// Called Every Frame. 
 
 		// Lets the cooked data update the next frame (if activated)
-		void ScheduleCookedDataUpdate	();
+		//void ScheduleCookedDataUpdate	();
 
 	private:
 		// Following methods should not be called by any other object, but itself.

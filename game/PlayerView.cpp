@@ -171,7 +171,7 @@ void idPlayerView::Restore( idRestoreGame *savefile ) {
 	savefile->ReadRenderView( view );
 
 	// Re-Initialize the PostProcess Manager.	- JC Denton
-	this->m_postProcessManager.Initialize();
+//	this->m_postProcessManager.Initialize();
 }
 
 /*
@@ -890,12 +890,12 @@ void idPlayerView::UpdateAmbientLight()
 
 void idPlayerView::OnReloadImages()
 {
-	m_postProcessManager.ScheduleCookedDataUpdate();
+//	m_postProcessManager.ScheduleCookedDataUpdate();
 }
 
 void idPlayerView::OnVidRestart()
 {
-	m_postProcessManager.ScheduleCookedDataUpdate();
+//	m_postProcessManager.ScheduleCookedDataUpdate();
 }
 
 /*
@@ -905,7 +905,7 @@ idPlayerView::dnPostProcessManager Class Definitions - JC Denton
 */
 
 idPlayerView::dnPostProcessManager::dnPostProcessManager():
-m_imageCurrentRender				( "_currentRender"			),
+/*m_imageCurrentRender				( "_currentRender"			),
 m_imageBloom						( "_bloomImage"				),
 m_imageCookedMath					( "_cookedMath"				),
 
@@ -916,15 +916,15 @@ m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
 m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOptimized" )	),
 
 m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
-m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),
+m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),*/
 m_ImageAnisotropyHandle	(-1)
 {
-	m_iScreenHeight = m_iScreenWidth = 0;
+	/*m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
-	m_nFramesToUpdateCookedData = 0;
+	m_nFramesToUpdateCookedData = 0;8*/
 
 	// Initialize once this object is created.	
-	this->Initialize();
+//	this->Initialize();
 
 	// Get notified on image anisotropy changes
 	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
@@ -934,7 +934,7 @@ m_ImageAnisotropyHandle	(-1)
 		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
 			boost::bind(&idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged, this));
 	}
-	m_useFbo = cvarSystem->Find( "r_useFbo" );
+	r_postprocess = cvarSystem->Find( "r_postprocess" );
 }
 
 idPlayerView::dnPostProcessManager::~dnPostProcessManager()
@@ -950,14 +950,14 @@ idPlayerView::dnPostProcessManager::~dnPostProcessManager()
 
 void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
 {
-	ScheduleCookedDataUpdate();
+//	ScheduleCookedDataUpdate();
 }
 
-void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
+/*void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
 {
 	m_nFramesToUpdateCookedData = 1;
 
-	if ( r_postprocess.GetBool())
+	if ( cvarSystem->GetCVarBool("r_postprocess") )
 	{
 		gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData);
 	}
@@ -965,14 +965,15 @@ void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
 	{
 		gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_postprocess is enabled.\n", m_nFramesToUpdateCookedData);
 	}
-}
+}*/
 
-void idPlayerView::dnPostProcessManager::Initialize()
+/*void idPlayerView::dnPostProcessManager::Initialize()
 {
 	m_bForceUpdateOnCookedData = true;
-	r_postprocess_bloomKernelSize.SetModified(); // This will print message in console about bloom kernel size. 
-}
+	cvarSystem->Find( "r_postprocess_bloomKernelSize" )->SetModified(); // This will print message in console about bloom kernel size. 
+}*/
 
+/* duzenko: moved to backend
 void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 {
 
@@ -1034,11 +1035,16 @@ void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
 
 		//gameLocal.Printf( "Screen size: %d, %d Power of 2 Size: %d, %d", m_iScreenWidth, m_iScreenHeight, m_iScreenWidthPowOf2, m_iScreenHeightPowOf2 );
 	}
-}
+}*/
 
 void idPlayerView::dnPostProcessManager::Update( void )
 {
-	float fBloomImageDownScale = Max(Min(r_postprocess_bloomKernelSize.GetInteger(), 2), 1 ) == 1 ? 2 : 4;
+	// duzenko: do bloom in the back renderer
+	if (r_postprocess->GetBool()) { // duzenko: FIXME hack - better to extend renderCommand_t, create a dedicated method in renderSystem?
+		renderSystem->CaptureRenderToImage( "_bloomImage" ); 
+		return;
+	}
+	/*float fBloomImageDownScale = Max( Min( r_postprocess_bloomKernelSize.GetInteger(), 2 ), 1 ) == 1 ? 2 : 4;
 
 	if( r_postprocess_bloomKernelSize.IsModified() )
 	{
@@ -1053,16 +1059,8 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		cv_interaction_vfp_type.ClearModified();
 	}
 
-	const int iPostProcessType = r_postprocess.GetInteger();
-
 	if ( iPostProcessType != 0 ) 
 	{
-		// duzenko: move bloom to back renderer, for now fbo-only
-		if (m_useFbo->GetBool()) {
-			renderSystem->CaptureRenderToImage( "_bloomImage" ); // duzenko: FIXME hack - better to extend renderCommand_t?
-			return;
-		}
-
 		this->UpdateBackBufferParameters();
 
 		// Note to self1: CropRenderSize if not used before CaptureRenderToImage, then image caputured is of screen's size(non power of two) 
@@ -1111,10 +1109,10 @@ void idPlayerView::dnPostProcessManager::Update( void )
 		//-------------------------------------------------
 
 		this->RenderDebugTextures();
-	}
+	}*/
 }
 
-void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
+/*void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 {
 	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
 	{
@@ -1137,9 +1135,9 @@ void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
 	}
 	m_fShiftScale_x = m_iScreenWidth / (float)m_iScreenWidthPowOf2;
 	m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
-}
+}*/
 
-void idPlayerView::dnPostProcessManager::RenderDebugTextures()
+/*void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 {
 	const int iDebugTexture = r_postprocess_debugMode.GetInteger();
 
@@ -1162,7 +1160,7 @@ void idPlayerView::dnPostProcessManager::RenderDebugTextures()
 				arrStretchedImages[i].m_fShiftScaleY, arrStretchedImages[i].m_fShiftScaleX, 0, 
 				*arrStretchedImages[i].m_pImage );
 	}
-}
+}*/
 
 // Moved Greebo's method from gameLocal to here. - J.C.Denton
 // The CVar is rendering related and from now on, would work when g_stoptime is set to 0

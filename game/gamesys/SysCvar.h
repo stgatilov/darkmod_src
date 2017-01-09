@@ -641,8 +641,7 @@ extern idCVar rb_showBuoyancy;								// MOD_WATERPHYSICS
 
 #endif
 
-// HDR related - J.C.Denton
-
+/*// HDR related - J.C.Denton
 extern idCVar r_postprocess;				
 extern idCVar r_postprocess_brightPassThreshold;
 extern idCVar r_postprocess_brightPassOffset;	
@@ -655,5 +654,5 @@ extern idCVar r_postprocess_debugMode;
 extern idCVar r_postprocess_bloomKernelSize;
 extern idCVar r_postprocess_bloomIntensity;
 extern idCVar r_postprocess_desaturation;
-
+*/
 #endif /* !__SYS_CVAR_H__ */

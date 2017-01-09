@@ -574,7 +574,24 @@ const void	RB_SwapBuffers( const void *data ) {
 	}
 }
 
-bool doFboBloom; // duzenko FIXME - use r_postprocess instead
+bool fboUsed, fboRenderCopied;
+// called when post-proceesing is about to start, needs pixels and sometimes depth as both input and output for water and smoke
+void RB_FboAccessColorDepth() {
+	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
+	//	return;
+	if (!fboUsed || !r_fboSharedColor.GetBool()) {
+		globalImages->currentRenderImage->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, fboUsed && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
+			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
+	}
+	if (fboUsed && !r_fboSharedDepth.GetBool() && !fboRenderCopied) {
+		globalImages->currentDepthImage->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0 );
+	}
+	fboRenderCopied = true;
+}
+
 /*
 =============
 RB_CopyRender
@@ -593,125 +610,16 @@ const void RB_CopyRender( const void *data ) {
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
 	if (cmd->image) {
-		if (cmd->image->imgName.Icmp( "_bloomImage" ) == 0) // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
-			doFboBloom = true;
-		else
+		if (cmd->image == globalImages->bloomImage) { // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
+			RB_FboAccessColorDepth();
+			RB_Bloom();
+		} else
 			cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
 	}
 }
 
-void RB_DrawFullScreenQuad() {
-	qglBegin( GL_QUADS );
-	qglTexCoord2f( 0, 0 );
-	qglVertex2f( 0, 0 );
-	qglTexCoord2f( 0, 1 );
-	qglVertex2f( 0, 1 );
-	qglTexCoord2f( 1, 1 );
-	qglVertex2f( 1, 1 );
-	qglTexCoord2f( 1, 0 );
-	qglVertex2f( 1, 0 );
-	qglEnd();
-}
-
-/*
-=============
-RB_FboBloom
-
-Originally in front renderer (idPlayerView::dnPostProcessManager), moved here fbo-only
-=============
-*/
-
-const void RB_FboBloom() {
-	doFboBloom = false;
-	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
-
-	//GL_State( GLS_DEPTHMASK );
-	qglEnable( GL_VERTEX_PROGRAM_ARB );
-	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-	GL_SelectTexture( 0 );
-	extern void RB_DumpFramebuffer( const char *fileName );
-	float	parm[4];
-
-	qglViewport( 0, 0, 256, 1 );
-	qglClear( GL_COLOR_BUFFER_BIT );
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
-	parm[0] = 0.8f;
-	parm[1] = 0.82f;
-	parm[2] = 0.9f;
-	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
-	RB_DumpFramebuffer( "be_bl_m1.tga" );
-
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
-	parm[0] = 0.2f;
-	parm[1] = 2;
-	parm[2] = 5;
-	parm[3] = 0.1f;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_cookedMath" )->CopyFramebuffer( 0, 0, 256, 1, false );
-	RB_DumpFramebuffer( "be_bl_m2.tga" );
-
-	qglViewport( 0, 0, w/2, h/2 );
-	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-	GL_SelectTexture( 1 );
-	globalImages->GetImage( "_cookedMath" )->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
-	RB_DrawFullScreenQuad();
-	GL_SelectTexture( 0 );
-	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-	RB_DumpFramebuffer( "be_bl_br.tga" );
-
-	globalImages->GetImage( "_bloomImage" )->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
-	parm[0] = 2/w;
-	parm[1] = 1;
-	parm[2] = 1;
-	parm[3] = 1;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w/2, h/2, false );
-	RB_DumpFramebuffer( "be_bl_gx.tga" );
-
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
-	parm[0] = 2 / h;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	globalImages->GetImage( "_bloomImage" )->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-	RB_DumpFramebuffer( "be_bl_gy.tga" );
-
-	qglViewport( 0, 0, w, h );
-	GL_SelectTexture( 0 );
-	globalImages->currentRenderImage->Bind();
-	GL_SelectTexture( 1 );
-	globalImages->GetImage( "_bloomImage" )->Bind();
-	GL_SelectTexture( 2 );
-	globalImages->GetImage( "_cookedMath" )->Bind();
-	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
-	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
-	parm[0] = 2;
-	parm[1] = 0.05f;
-	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
-	RB_DrawFullScreenQuad();
-	RB_DumpFramebuffer( "be_bl_fi.tga" );
-	GL_SelectTexture( 2 );
-	globalImages->BindNull(); // or else GUI is screwed
-
-	qglDisable( GL_VERTEX_PROGRAM_ARB );
-	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-}
-
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
-bool fboUsed, fboRenderCopied;
 
 void RB_FboEnter() {
 	if (fboUsed && fboId)
@@ -800,8 +708,10 @@ void RB_FboEnter() {
 		else
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
 		int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (GL_FRAMEBUFFER_COMPLETE != status) {
+		if (GL_FRAMEBUFFER_COMPLETE != status) { // something went wrong, fall back to default
 			common->Printf("glCheckFramebufferStatus %d\n", status); 
+			glDeleteFramebuffers( 1, &fboId );
+			fboId = 0; // try from scratch next time
 			r_useFbo.SetBool(false);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // not obvious, but let it be 
@@ -812,30 +722,11 @@ void RB_FboEnter() {
 	GL_CheckErrors();
 }
 
-// called when post-proceesing is about to start, needs depth and pixels as both input and output for water and smoke
-void RB_FboAccessColorDepth() {
-	if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
-		return;
-	if (!r_fboSharedColor.GetBool()) {
-		globalImages->currentRenderImage->Bind();
-		qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
-			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
-	}
-	if (!r_fboSharedDepth.GetBool() && !fboRenderCopied) {
-		globalImages->currentDepthImage->Bind();
-		qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0);
-	}
-	fboRenderCopied = true;
-}
-
 // switch from fbo to default framebuffer, copy content
 void RB_FboLeave( viewDef_t* viewDef ) {
 	if (!fboUsed)
 		return;
 	GL_CheckErrors();
-	if (doFboBloom) // need currentRenderImage for bloom
-		RB_FboAccessColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
@@ -852,9 +743,7 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	qglEnable( GL_TEXTURE_2D );
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_STENCIL_TEST );
-	if (doFboBloom) {
-		RB_FboBloom();
-	} else {
+	{
 		switch (r_fboDebug.GetInteger())
 		{
 		case 1:
@@ -874,10 +763,13 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 		}
 		RB_DrawFullScreenQuad();
 	}
+	qglEnable( GL_DEPTH_TEST );
 	qglPopMatrix();
-	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
-	if (viewDef) { // normal resolition 2d
+	GL_SelectTexture( 2 );
+	globalImages->BindNull(); // or else GUI is screwed
+	GL_SelectTexture( 0 );
+	if (viewDef) { // switch back to normal resolution for correct 2d
 		tr.renderCrops[0].width = glConfig.vidWidth;
 		tr.renderCrops[0].height = glConfig.vidHeight;
 		viewDef->viewport.x2 = glConfig.vidWidth - 1;
@@ -914,21 +806,23 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
+	bool v3d = false; // needs to be declared outside of switch case
 
 	while (cmds) {
 		switch ( cmds->commandId ) {
 		case RC_NOP:
 			break;
 		case RC_DRAW_VIEW:
+			v3d = ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys != NULL; // view is 2d or 3d
 			// duzenko #4425: create/switch to framebuffer object
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
 				if (r_useFbo.GetBool())
-					if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys)
+					if (v3d)
 						RB_FboEnter();
 					else
 						RB_FboLeave(((const drawSurfsCommand_t *)cmds)->viewDef); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
 			RB_DrawView(cmds);
-			if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) {
+			if (v3d) {
 				c_draw3d++;
 			} else {
 				c_draw2d++;

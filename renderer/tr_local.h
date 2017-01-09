@@ -1028,6 +1028,8 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
+
+// duzenko: late 2016 additions
 extern idCVar r_useAnonreclaimer;
 extern idCVar r_useFbo;
 extern idCVar r_fboDebug;
@@ -1035,6 +1037,20 @@ extern idCVar r_fboColorBits;
 extern idCVar r_fboSharedColor;
 extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
+
+// HDR related - J.C.Denton
+extern idCVar r_postprocess;
+extern idCVar r_postprocess_brightPassThreshold;
+extern idCVar r_postprocess_brightPassOffset;
+extern idCVar r_postprocess_colorCurveBias;
+extern idCVar r_postprocess_colorCorrection;
+extern idCVar r_postprocess_colorCorrectBias;
+extern idCVar r_postprocess_sceneExposure;
+extern idCVar r_postprocess_sceneGamma;
+extern idCVar r_postprocess_debugMode;
+extern idCVar r_postprocess_bloomKernelSize;
+extern idCVar r_postprocess_bloomIntensity;
+extern idCVar r_postprocess_desaturation;
 
 /*
 ====================================================================
@@ -1340,6 +1356,11 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
 void RB_STD_DrawView( void );
 void RB_STD_FogAllLights( void );
 void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
+
+// bloom related
+void RB_DumpFramebuffer( void );
+void RB_DrawFullScreenQuad( void );
+void RB_Bloom( void );
 
 /*
 ============================================================

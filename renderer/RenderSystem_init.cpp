@@ -226,7 +226,22 @@ idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVA
 idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL, "enable dedicated ambientLight shader" );
 idCVar r_stencilShadowMode( "r_stencilShadowMode", "0", CVAR_RENDERER | CVAR_INTEGER, "choose stencil shadow algorithm. 0 - default" );
 
-idCVar r_useAnonreclaimer("r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL, "test anonreclaimer patch");
+// bloom related - J.C.Denton
+idCVar r_postprocess_debugMode( "r_postprocess_debugMode", "0", CVAR_GAME | CVAR_INTEGER, " Shows all the textures generated for postprocessing effects. \n 1: Shows currentRender \n 2: Shows bloom Images \n 3: Shows Cooked Math Data." );
+idCVar r_postprocess( "r_postprocess", "0", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, " Activates bloom ( Requires DX9 compliant Hardware )" );
+idCVar r_postprocess_brightPassThreshold( "r_postprocess_brightPassThreshold", "0.2", CVAR_GAME | CVAR_FLOAT, " Intensities of this value are subtracted from scene render to extract bloom image" );
+idCVar r_postprocess_brightPassOffset( "r_postprocess_brightPassOffset", "2", CVAR_GAME | CVAR_FLOAT, " Bloom image receives smooth fade along a curve from bright to very bright areas based on this variable's value" );
+idCVar r_postprocess_colorCurveBias( "r_postprocess_colorCurveBias", "0.8", CVAR_GAME | CVAR_FLOAT, " Applies Exponential Color Curve to final pass (range 0 to 1), 1 = color curve fully applied , 0= No color curve" );
+idCVar r_postprocess_colorCorrection( "r_postprocess_colorCorrection", "5", CVAR_GAME | CVAR_FLOAT, " Applies an exponential color correction function to final scene " );
+idCVar r_postprocess_colorCorrectBias( "r_postprocess_colorCorrectBias", "0.1", CVAR_GAME | CVAR_FLOAT, " Applies an exponential color correction function to final scene with this bias. \n E.g. value ranges between 0-1. A blend is performed between scene render and color corrected image based on this value " );
+idCVar r_postprocess_desaturation( "r_postprocess_desaturation", "0.05", CVAR_GAME | CVAR_FLOAT, " Desaturates the scene " );
+idCVar r_postprocess_sceneExposure( "r_postprocess_sceneExposure", "0.9", CVAR_GAME | CVAR_FLOAT, " Scene render is linearly scaled up. Try values lower or greater than 1.0" );
+idCVar r_postprocess_sceneGamma( "r_postprocess_sceneGamma", "0.82", CVAR_GAME | CVAR_FLOAT, " Gamma Correction." );
+idCVar r_postprocess_bloomIntensity( "r_postprocess_bloomIntensity", "0", CVAR_GAME | CVAR_FLOAT | CVAR_ARCHIVE, " Adjusts the Bloom intensity. 0.0 disables the bloom but other postprocessing effects remain unaffected." );
+idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR_GAME | CVAR_INTEGER | CVAR_ARCHIVE, " Sets Bloom's Kernel size. Smaller is faster, takes less memory. Also, smaller kernel means larger bloom spread. \n 1. Large (2x smaller than current resolution) \n 2. Small (4x smaller than current resolution) " );
+
+// late 2016 additions by duzenko
+idCVar r_useAnonreclaimer( "r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL, "test anonreclaimer patch" );
 idCVar r_useFbo("r_useFbo", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects");
 idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments");
 idCVar r_fboColorBits("r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32");
@@ -326,6 +341,7 @@ PFNGLGENERATEMIPMAPPROC					glGenerateMipmap;
 // frame buffers
 PFNGLGENFRAMEBUFFERSPROC				glGenFramebuffers;
 PFNGLBINDFRAMEBUFFERPROC 				glBindFramebuffer;
+PFNGLDELETEFRAMEBUFFERSPROC				glDeleteFramebuffers;
 PFNGLBLITFRAMEBUFFERPROC				glBlitFramebuffer;
 PFNGLFRAMEBUFFERTEXTURE2DPROC			glFramebufferTexture2D;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC			glCheckFramebufferStatus;
@@ -559,8 +575,9 @@ static void R_CheckPortableExtensions( void ) {
 
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
 	glGenFramebuffers= (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffers");
-	glBindFramebuffer= (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebuffer");
-	glFramebufferTexture2D= (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer("glFramebufferTexture2D");
+	glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBindFramebuffer" );
+	glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteFramebuffers" );
+	glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer( "glFramebufferTexture2D" );
 	glCheckFramebufferStatus= (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer("glCheckFramebufferStatus");
 	glGenRenderbuffers= (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenRenderbuffers");
 	glBindRenderbuffer= (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbuffer");

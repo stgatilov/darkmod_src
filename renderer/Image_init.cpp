@@ -1981,7 +1981,10 @@ void idImageManager::Init() {
 	currentRenderFbo = ImageFromFunction("_currentRenderFbo", R_RGBA8Image);
 	currentDepthImage = ImageFromFunction("_currentDepth", R_RGBA8Image); // #3877. Allow shaders to access scene depth
 	currentDepthFbo = ImageFromFunction("_currentDepthFbo", R_RGBA8Image);
-	currentStencilFbo = ImageFromFunction("_currentStencilFbo", R_RGBA8Image);
+	currentStencilFbo = ImageFromFunction( "_currentStencilFbo", R_RGBA8Image );
+	
+	bloomCookedMath = ImageFromFunction( "_cookedMath", R_RGBA8Image );
+	bloomImage = ImageFromFunction( "_bloomImage", R_RGBA8Image );
 
 	cmdSystem->AddCommand( "reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images" );
 	cmdSystem->AddCommand( "listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images" );
