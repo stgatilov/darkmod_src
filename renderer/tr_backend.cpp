@@ -574,22 +574,22 @@ const void	RB_SwapBuffers( const void *data ) {
 	}
 }
 
-bool fboUsed, fboRenderCopied;
+bool fboUsed;
 // called when post-proceesing is about to start, needs pixels and sometimes depth as both input and output for water and smoke
-void RB_FboAccessColorDepth() {
+void RB_FboAccessColorDepth(bool DepthToo = false) {
 	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 	//	return;
-	if (!fboUsed || !r_fboSharedColor.GetBool()) {
+	GL_SelectTexture( 0 );
+	if ( !fboUsed || !r_fboSharedColor.GetBool() ) {
 		globalImages->currentRenderImage->Bind();
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, fboUsed && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
 			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
 	}
-	if (fboUsed && !r_fboSharedDepth.GetBool() && !fboRenderCopied) {
+	if (!(fboUsed && r_fboSharedDepth.GetBool()) && DepthToo) {
 		globalImages->currentDepthImage->Bind();
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
 			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0 );
 	}
-	fboRenderCopied = true;
 }
 
 /*
@@ -611,7 +611,6 @@ const void RB_CopyRender( const void *data ) {
 
 	if (cmd->image) {
 		if (cmd->image == globalImages->bloomImage) { // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
-			RB_FboAccessColorDepth();
 			RB_Bloom();
 		} else
 			cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
@@ -625,7 +624,6 @@ void RB_FboEnter() {
 	if (fboUsed && fboId)
 		return;
 	GL_CheckErrors(); // debug
-	fboRenderCopied = false;
 	bool fboSeparateStencil = strcmp(glConfig.vendor_string, "Intel") == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
@@ -727,6 +725,7 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	if (!fboUsed)
 		return;
 	GL_CheckErrors();
+	RB_FboAccessColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
@@ -740,9 +739,11 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
-	qglEnable( GL_TEXTURE_2D );
+	GL_State( GLS_DEFAULT );
+	//qglEnable( GL_TEXTURE_2D );
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_STENCIL_TEST );
+	qglColor3f( 1, 1, 1 );
 	{
 		switch (r_fboDebug.GetInteger())
 		{
@@ -766,8 +767,6 @@ void RB_FboLeave( viewDef_t* viewDef ) {
 	qglEnable( GL_DEPTH_TEST );
 	qglPopMatrix();
 	qglMatrixMode(GL_MODELVIEW);
-	GL_SelectTexture( 2 );
-	globalImages->BindNull(); // or else GUI is screwed
 	GL_SelectTexture( 0 );
 	if (viewDef) { // switch back to normal resolution for correct 2d
 		tr.renderCrops[0].width = glConfig.vidWidth;

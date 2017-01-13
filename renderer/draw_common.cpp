@@ -1120,7 +1120,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS ) {  
+	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) { // duzenko: skip for lightgem
 		if ( r_skipPostProcess.GetBool() ) {
 			return 0;
 		}
@@ -1131,9 +1131,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 				backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
 		}
-		extern void RB_FboAccessColorDepth(); // duzenko #4425 FIXME ugly magic extern
+		extern void RB_FboAccessColorDepth(bool DepthToo); // duzenko #4425 FIXME ugly magic extern
 		if (r_useFbo.GetBool())
-			RB_FboAccessColorDepth();
+			RB_FboAccessColorDepth(true);
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -2037,7 +2037,11 @@ Originally in front renderer (idPlayerView::dnPostProcessManager)
 */
 
 void RB_Bloom() {
-	( 1, 1, 1 );
+	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
+	if ( !w || !h ) // this has actually happened
+		return;
+	extern void RB_FboAccessColorDepth( bool DepthToo = false );
+	RB_FboAccessColorDepth();
 	RB_DumpFramebuffer( "be_bl_in.tga" );
 
 	// full screen blends
@@ -2051,8 +2055,6 @@ void RB_Bloom() {
 
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_STENCIL_TEST );
-
-	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );

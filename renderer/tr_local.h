@@ -1358,7 +1358,7 @@ void RB_STD_FogAllLights( void );
 void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
 
 // bloom related
-void RB_DumpFramebuffer( void );
+void RB_DumpFramebuffer( const char *fileName );
 void RB_DrawFullScreenQuad( void );
 void RB_Bloom( void );
 
