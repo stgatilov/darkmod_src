@@ -649,16 +649,23 @@ bool ZipFileWrite::CopyFileFromZip(const ZipFileReadPtr& fromZip, const std::str
 	// Convert the time into zip format
 	tm changeTime = safe_localtime(&file->changeTime);
 	
-    // file modification date sanity checks
-    // - known bad dates include the year 1980 and dates > current dates
-    time_t tnow = time(0);   // get time now
-    tm now = safe_localtime(&tnow);
+	// file modification date sanity checks
+	// - known bad dates include years 1980 and below and dates > current date
+	time_t tnow = time(0);	 // get time now
+	tm now = safe_localtime(&tnow);
 
-    if (changeTime.tm_year == 80 || file->changeTime > tnow)
-    {
-        changeTime = now;
-        tdm::TraceLog::WriteLine(LOG_VERBOSE, "[CopyFileFromZip]: Found and corrected strange file modification date for " + fromPath);
-    }
+	if (changeTime.tm_year <= 80 || file->changeTime > tnow)
+	{
+		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[CopyFileFromZip]: Found and corrected strange file modification date (" + 
+							intToStr(changeTime.tm_year + 1900) + "-" + 
+							intToStr(changeTime.tm_mon + 1) + "-" + 
+							intToStr(changeTime.tm_mday) + " " + 
+							intToStr(changeTime.tm_hour) + ":" + 
+							intToStr(changeTime.tm_min) + ":" + 
+							intToStr(changeTime.tm_sec) + 
+							") for " + fromPath);
+		changeTime = now;
+	}
 
 	// open destination file
 	zip_fileinfo zfi;
