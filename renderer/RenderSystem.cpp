@@ -293,9 +293,10 @@ idRenderSystemLocal::~idRenderSystemLocal
 =============
 */
 
-// #4395: Duzenko lightem pixel pack buffer optimization
 idRenderSystemLocal::~idRenderSystemLocal( void ) {
-	qglDeleteBuffersARB(1, &pbo);
+	// #4395: Duzenko lightem pixel pack buffer optimization
+	if (pbo && qglDeleteBuffersARB) // crashes on linux
+		qglDeleteBuffersARB(1, &pbo);
 }
 
 /*
