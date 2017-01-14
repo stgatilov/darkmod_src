@@ -1979,7 +1979,7 @@ void RB_DumpFramebuffer( const char *fileName ) {
 	if (!r_ignore.GetBool())
 		return;
 	renderCrop_t r, *rc = &r;
-	glGetIntegerv( GL_VIEWPORT, (int*)rc );
+	qglGetIntegerv( GL_VIEWPORT, (int*)rc );
 	if (!r_useFbo.GetBool())
 		qglReadBuffer( GL_BACK );
 
