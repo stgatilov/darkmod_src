@@ -292,10 +292,7 @@ idRenderSystemLocal::idRenderSystemLocal( void ) {
 idRenderSystemLocal::~idRenderSystemLocal
 =============
 */
-
-// #4395: Duzenko lightem pixel pack buffer optimization
 idRenderSystemLocal::~idRenderSystemLocal( void ) {
-	qglDeleteBuffersARB(1, &pbo);
 }
 
 /*
@@ -1021,7 +1018,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 
 // #4395 Duzenko lightem pixel pack buffer optimization
 
-	if (1) {
+	if (glConfig.pixelBufferAvailable) {
 		static int nbytes = 64 * 64 * 3;
 		if (!pbo) {
 			qglGenBuffersARB(1, &pbo);

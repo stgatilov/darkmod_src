@@ -68,6 +68,7 @@ typedef struct glconfig_s {
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				atiFragmentShaderAvailable; // ati r200 extensions
+	bool				pixelBufferAvailable;
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;
