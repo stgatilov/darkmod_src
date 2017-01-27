@@ -861,6 +861,28 @@ bool tdmEAS::FindRouteToGoal(aasPath_t &path, int areaNum, const idVec3 &origin,
 			return false; // we were looking for an ELEVATOR route as the first route in the list and didn't find one
 		}
 
+		// grayman #4466 - if the elevator is disabled, we can't go that way
+
+		RouteNodeList& routeNodes = (*route)->routeNodes;
+
+		for ( RouteNodeList::const_iterator node = routeNodes.begin(); node != routeNodes.end(); node++ )
+		{
+			if ( (*node)->type == ACTION_USE_ELEVATOR )
+			{
+				int elevatorNumber = (*node)->elevator;
+				if ( (elevatorNumber >= 0) && (elevatorNumber < _elevators.Num() ))
+				{
+					CMultiStateMover* elevator = _elevators[elevatorNumber].GetEntity();
+					if ( !elevator->spawnArgs.GetBool("enabled", "1") )
+					{
+						return false;
+					}
+				}
+
+				break;
+			}
+		}
+
 		// We have a valid ELEVATOR route, set the elevator flag on the path type
 
 		path.type = PATHTYPE_ELEVATOR;
