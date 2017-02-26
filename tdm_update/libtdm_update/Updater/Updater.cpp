@@ -1360,7 +1360,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	}
 
 #ifdef WIN32
-	batch << "@ping 127.0.0.1 -n 2 -w 1000 > nul" << std::endl; // # hack equivalent to Wait 2
+	batch << "@ping 127.0.0.1 -n 6 -w 1000 > nul" << std::endl; // # hack equivalent to Wait 5
 	batch << "@copy " << tempUpdater.string() << " " << updater.string() << " >nul" << std::endl;
 	batch << "@del " << tempUpdater.string() << std::endl;
 	batch << "@echo TDM Updater executable has been updated." << std::endl;
@@ -1376,7 +1376,7 @@ void Updater::PrepareUpdateBatchFile(const fs::path& temporaryUpdater)
 	batch << "#!/bin/bash" << std::endl;
 	batch << "echo \"Upgrading TDM Updater executable...\"" << std::endl;
 	batch << "cd \"" << GetTargetPath().string() << "\"" << std::endl; 
-	batch << "sleep 2s" << std::endl;
+	batch << "sleep 5s" << std::endl;
 	batch << "mv -f \"" << tempUpdater.string() << "\" \"" << updater.string() << "\"" << std::endl;
 	batch << "chmod +x \"" << updater.string() << "\"" << std::endl;
 	batch << "echo \"TDM Updater executable has been updated.\"" << std::endl;
