@@ -143,8 +143,8 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 		qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
 	}
 
-	if ( pStage->texture.texgen == TG_GLASSWARP ) {
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) {
+	/*if ( pStage->texture.texgen == TG_GLASSWARP ) { #3868
+		if ( tr.backEndRenderer == BE_ARB2 ) {
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP );
 			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 
@@ -181,7 +181,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 
 			GL_SelectTexture( 0 );
 		}
-	}
+	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
 		if ( tr.backEndRenderer == BE_ARB2 ) {
@@ -265,8 +265,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		qglDisable( GL_TEXTURE_GEN_Q );
 	}
 
-	if ( pStage->texture.texgen == TG_GLASSWARP ) {
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) {
+	/*if ( pStage->texture.texgen == TG_GLASSWARP ) { #3868
+		if ( tr.backEndRenderer == BE_ARB2 || tr.backEndRenderer == BE_NV30 ) {
 			GL_SelectTexture( 2 );
 			globalImages->BindNull();
 
@@ -281,7 +281,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			globalImages->BindNull();
 			GL_SelectTexture( 0 );
 		}
-	}
+	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
 		if ( tr.backEndRenderer == BE_ARB2 ) {

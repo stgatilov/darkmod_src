@@ -1404,8 +1404,8 @@ typedef enum {
 	FPROG_TEST,
 	VPROG_AMBIENT,
 	FPROG_AMBIENT,
-	VPROG_GLASSWARP,
-	FPROG_GLASSWARP,
+	//VPROG_GLASSWARP,#3868
+	//FPROG_GLASSWARP,
 	// rebb: direct light interactions, related to r_dedicatedAmbient
 	VPROG_TEST_DIRECT,
 	FPROG_TEST_DIRECT,
