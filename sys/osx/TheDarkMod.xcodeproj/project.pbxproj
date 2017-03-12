@@ -1224,7 +1224,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				ORGANIZATIONNAME = "Broken Glass Studios";
 			};
-			buildConfigurationList = 8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "Doom3" */;
+			buildConfigurationList = 8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "TheDarkMod" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
@@ -1606,7 +1606,7 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_OPTIMIZATION_LEVEL = 1;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ../../framework/precompiled_engine.h;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1704,6 +1704,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CONFIGURATION_BUILD_DIR = /Users/greebo/darkmod;
 				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_MODEL_TUNING = "";
 				GCC_ONE_BYTE_BOOL = YES;
@@ -1768,7 +1769,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "Doom3" */ = {
+		8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "TheDarkMod" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8191F1650912BBCD006AB5A4 /* Debug */,

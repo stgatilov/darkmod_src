@@ -419,12 +419,9 @@ const char *Sys_EXEPath( void ) {
  Sys_DefaultSavePath
  ==========
  */
-const char *Sys_DefaultSavePath(void) {
-#if defined( ID_DEMO_BUILD )
-	sprintf( savepath, "%s/Library/Application Support/Doom 3 Demo", [NSHomeDirectory() cString] );
-#else
-	sprintf( savepath, "%s/Library/Application Support/Doom 3", [NSHomeDirectory() cString] );
-#endif
+const char *Sys_DefaultSavePath(void)
+{
+	sprintf( savepath, "%s/Library/Application Support/darkmod", [NSHomeDirectory() cString] );
 	return savepath.c_str();
 }
 
