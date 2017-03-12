@@ -596,7 +596,7 @@
 		81225B840912C731005D34B9 /* game.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = game.xcodeproj; sourceTree = "<group>"; };
 		81326DC1099C162D003C4788 /* curl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = curl.xcodeproj; path = SubProjects/curl.xcodeproj; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		8D1107320486CEB800E47090 /* Doom 3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Doom 3.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D1107320486CEB800E47090 /* The Dark Mod.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "The Dark Mod.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -642,7 +642,7 @@
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D1107320486CEB800E47090 /* Doom 3.app */,
+				8D1107320486CEB800E47090 /* The Dark Mod.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1212,7 +1212,7 @@
 			name = "Doom 3";
 			productInstallPath = "$(HOME)/Applications";
 			productName = Doom3;
-			productReference = 8D1107320486CEB800E47090 /* Doom 3.app */;
+			productReference = 8D1107320486CEB800E47090 /* The Dark Mod.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -1222,7 +1222,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				ORGANIZATIONNAME = "id Software LLC";
+				ORGANIZATIONNAME = "Broken Glass Studios";
 			};
 			buildConfigurationList = 8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "Doom3" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -1635,7 +1635,8 @@
 					"-lcurl",
 				);
 				PREBINDING = NO;
-				PRODUCT_NAME = "Doom 3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.brokenglass.thedarkmod;
+				PRODUCT_NAME = "The Dark Mod";
 				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
 				VALID_ARCHS = i386;
@@ -1687,7 +1688,8 @@
 					"-lcurl",
 				);
 				PREBINDING = NO;
-				PRODUCT_NAME = "Doom 3";
+				PRODUCT_BUNDLE_IDENTIFIER = com.brokenglass.thedarkmod;
+				PRODUCT_NAME = "The Dark Mod";
 				SDKROOT = macosx10.6;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";

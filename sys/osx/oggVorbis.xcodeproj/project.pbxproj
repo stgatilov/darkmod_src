@@ -354,7 +354,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				ORGANIZATIONNAME = "id Software LLC";
+				ORGANIZATIONNAME = "Broken Glass Studios";
 			};
 			buildConfigurationList = 8125B8350912BA3100492E1F /* Build configuration list for PBXProject "oggVorbis" */;
 			compatibilityVersion = "Xcode 3.2";

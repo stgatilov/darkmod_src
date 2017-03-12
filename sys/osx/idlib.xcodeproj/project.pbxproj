@@ -796,7 +796,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				ORGANIZATIONNAME = "id Software LLC";
+				ORGANIZATIONNAME = "Broken Glass Studios";
 			};
 			buildConfigurationList = 81C857270912ACE80095BC33 /* Build configuration list for PBXProject "idlib" */;
 			compatibilityVersion = "Xcode 3.2";

@@ -5,19 +5,23 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>Doom 3</string>
+	<string>The Dark Mod</string>
 	<key>CFBundleIconFile</key>
 	<string>Doom3.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.idsoftware.doom3</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>The Dark Mod</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
-	<string>DOM3</string>
+	<string>TDM2</string>
 	<key>CFBundleVersion</key>
-	<string>3000</string>
+	<string>206</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.action-games</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
