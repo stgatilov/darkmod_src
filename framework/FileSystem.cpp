@@ -2061,7 +2061,15 @@ void idFileSystemLocal::Startup( void ) {
          idStr::Icmp( fs_mod.GetString(), BASE_TDM ) ) {
 		SetupGameDirectories( fs_mod.GetString() );
 	}
-
+    
+#if MACOS_X
+    // greebo: In OSX the default save path points to
+    // ~/Library/Application Support/darkmod, which is also the folder
+    // where FMs are stored and downloaded to. Add the default save path
+    // to the search queue with lower prio than the dev/currentfm path.
+    AddGameDirectory(Sys_DefaultSavePath(), "");
+#endif 
+    
 #if 0
 // taaaki - this code will no longer be necessary if individual user save locations are abolished.
 //          remove when certain
