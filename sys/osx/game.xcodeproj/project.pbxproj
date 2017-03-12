@@ -7,10 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3A176BEF149363220077AB23 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176BEE149363220077AB23 /* libjpeg.a */; };
-		3A176BF11493632A0077AB23 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176BF01493632A0077AB23 /* libdevil.a */; };
-		3A176BF3149363310077AB23 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176BF2149363310077AB23 /* libziploader.a */; };
-		3A176D091493668A0077AB23 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176D081493668A0077AB23 /* libpng.a */; };
 		3A537695148E80FA006DC4CE /* BoolParseNode.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537685148E80FA006DC4CE /* BoolParseNode.h */; };
 		3A537696148E80FA006DC4CE /* CampaignStatistics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537686148E80FA006DC4CE /* CampaignStatistics.cpp */; };
 		3A537697148E80FA006DC4CE /* CampaignStatistics.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537687148E80FA006DC4CE /* CampaignStatistics.h */; };
@@ -154,7 +150,6 @@
 		3A5377C3148E81C3006DC4CE /* pugiconfig.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377A4148E81C3006DC4CE /* pugiconfig.hpp */; };
 		3A5377C4148E81C3006DC4CE /* pugixml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377A5148E81C3006DC4CE /* pugixml.cpp */; };
 		3A5377C5148E81C3006DC4CE /* pugixml.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377A6148E81C3006DC4CE /* pugixml.hpp */; };
-		3A5377C6148E81C3006DC4CE /* pugixpath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377A7148E81C3006DC4CE /* pugixpath.cpp */; };
 		3A5377C7148E81C3006DC4CE /* PVSToAASMapping.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */; };
 		3A5377C8148E81C3006DC4CE /* PVSToAASMapping.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */; };
 		3A5377C9148E81C3006DC4CE /* _lrotl.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A5377AB148E81C3006DC4CE /* _lrotl.h */; };
@@ -374,6 +369,22 @@
 		3A537A58148E9F62006DC4CE /* Physics_Liquid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */; };
 		3A537A59148E9F62006DC4CE /* Physics_Liquid.h in Headers */ = {isa = PBXBuildFile; fileRef = 3A537A57148E9F62006DC4CE /* Physics_Liquid.h */; };
 		3AB237D014B78271001B0950 /* TypeInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A720912C42F005D34B9 /* TypeInfo.cpp */; };
+		3AF476531E733857006B26C2 /* GuardSpotTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF4764F1E733857006B26C2 /* GuardSpotTask.cpp */; };
+		3AF476541E733857006B26C2 /* GuardSpotTask.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF476501E733857006B26C2 /* GuardSpotTask.h */; };
+		3AF476551E733857006B26C2 /* PathSetMovetypeTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF476511E733857006B26C2 /* PathSetMovetypeTask.cpp */; };
+		3AF476561E733857006B26C2 /* PathSetMovetypeTask.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF476521E733857006B26C2 /* PathSetMovetypeTask.h */; };
+		3AF4765B1E733866006B26C2 /* HitByMoveableState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF476571E733866006B26C2 /* HitByMoveableState.cpp */; };
+		3AF4765C1E733866006B26C2 /* HitByMoveableState.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF476581E733866006B26C2 /* HitByMoveableState.h */; };
+		3AF4765D1E733866006B26C2 /* PocketPickedState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF476591E733866006B26C2 /* PocketPickedState.cpp */; };
+		3AF4765E1E733866006B26C2 /* PocketPickedState.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF4765A1E733866006B26C2 /* PocketPickedState.h */; };
+		3AF476611E733952006B26C2 /* SearchManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF4765F1E733952006B26C2 /* SearchManager.cpp */; };
+		3AF476621E733952006B26C2 /* SearchManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF476601E733952006B26C2 /* SearchManager.h */; };
+		3AF476651E7339E7006B26C2 /* Script_Doc_Export.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF476631E7339E7006B26C2 /* Script_Doc_Export.cpp */; };
+		3AF476661E7339E7006B26C2 /* Script_Doc_Export.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF476641E7339E7006B26C2 /* Script_Doc_Export.h */; };
+		3AFE7A3E1E74944300FDA5F6 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176D1B1493675B0077AB23 /* libdevil.a */; };
+		3AFE7A3F1E74945100FDA5F6 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176BEB149363140077AB23 /* libjpeg.a */; };
+		3AFE7A401E74945A00FDA5F6 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176CD8149366330077AB23 /* libpng.a */; };
+		3AFE7A411E74945D00FDA5F6 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176A18149359330077AB23 /* libziploader.a */; };
 		81225A3A0912C3DB005D34B9 /* libidlib_pic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 81225A210912C3A4005D34B9 /* libidlib_pic.a */; };
 		81225AC40912C42F005D34B9 /* PlayerIcon.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */; };
 		81225AC50912C42F005D34B9 /* Actor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81225A3C0912C42F005D34B9 /* Actor.cpp */; };
@@ -586,13 +597,8 @@
 
 /* Begin PBXFileReference section */
 		3A176A10149359330077AB23 /* ziploader.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ziploader.xcodeproj; sourceTree = "<group>"; };
-		3A176A6A149359C70077AB23 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = "/Users/Shared/darkmod_src/sys/osx/build/ziploader.build/Release/ziploader.build/Objects-normal/i386/libziploader.a"; sourceTree = "<absolute>"; };
 		3A176BE6149363140077AB23 /* jpeg.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = jpeg.xcodeproj; sourceTree = "<group>"; };
-		3A176BEE149363220077AB23 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libjpeg.a; sourceTree = "<absolute>"; };
-		3A176BF01493632A0077AB23 /* libdevil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdevil.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libdevil.a; sourceTree = "<absolute>"; };
-		3A176BF2149363310077AB23 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libziploader.a; sourceTree = "<absolute>"; };
 		3A176CD0149366330077AB23 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = png.xcodeproj; sourceTree = "<group>"; };
-		3A176D081493668A0077AB23 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libpng.a; sourceTree = "<absolute>"; };
 		3A176D161493675B0077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
 		3A537685148E80FA006DC4CE /* BoolParseNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BoolParseNode.h; path = ../../game/Objectives/BoolParseNode.h; sourceTree = SOURCE_ROOT; };
 		3A537686148E80FA006DC4CE /* CampaignStatistics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CampaignStatistics.cpp; path = ../../game/Objectives/CampaignStatistics.cpp; sourceTree = SOURCE_ROOT; };
@@ -737,7 +743,6 @@
 		3A5377A4148E81C3006DC4CE /* pugiconfig.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = pugiconfig.hpp; sourceTree = "<group>"; };
 		3A5377A5148E81C3006DC4CE /* pugixml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pugixml.cpp; sourceTree = "<group>"; };
 		3A5377A6148E81C3006DC4CE /* pugixml.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = pugixml.hpp; sourceTree = "<group>"; };
-		3A5377A7148E81C3006DC4CE /* pugixpath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pugixpath.cpp; sourceTree = "<group>"; };
 		3A5377A8148E81C3006DC4CE /* PVSToAASMapping.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PVSToAASMapping.cpp; path = ../../game/PVSToAASMapping.cpp; sourceTree = SOURCE_ROOT; };
 		3A5377A9148E81C3006DC4CE /* PVSToAASMapping.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PVSToAASMapping.h; path = ../../game/PVSToAASMapping.h; sourceTree = SOURCE_ROOT; };
 		3A5377AB148E81C3006DC4CE /* _lrotl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = _lrotl.h; sourceTree = "<group>"; };
@@ -958,6 +963,18 @@
 		3A537987148E8200006DC4CE /* Force_Push.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Force_Push.h; sourceTree = "<group>"; };
 		3A537A56148E9F62006DC4CE /* Physics_Liquid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Physics_Liquid.cpp; sourceTree = "<group>"; };
 		3A537A57148E9F62006DC4CE /* Physics_Liquid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Physics_Liquid.h; sourceTree = "<group>"; };
+		3AF4764F1E733857006B26C2 /* GuardSpotTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GuardSpotTask.cpp; sourceTree = "<group>"; };
+		3AF476501E733857006B26C2 /* GuardSpotTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GuardSpotTask.h; sourceTree = "<group>"; };
+		3AF476511E733857006B26C2 /* PathSetMovetypeTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PathSetMovetypeTask.cpp; sourceTree = "<group>"; };
+		3AF476521E733857006B26C2 /* PathSetMovetypeTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PathSetMovetypeTask.h; sourceTree = "<group>"; };
+		3AF476571E733866006B26C2 /* HitByMoveableState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HitByMoveableState.cpp; sourceTree = "<group>"; };
+		3AF476581E733866006B26C2 /* HitByMoveableState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HitByMoveableState.h; sourceTree = "<group>"; };
+		3AF476591E733866006B26C2 /* PocketPickedState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PocketPickedState.cpp; sourceTree = "<group>"; };
+		3AF4765A1E733866006B26C2 /* PocketPickedState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PocketPickedState.h; sourceTree = "<group>"; };
+		3AF4765F1E733952006B26C2 /* SearchManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SearchManager.cpp; path = ../../game/SearchManager.cpp; sourceTree = "<group>"; };
+		3AF476601E733952006B26C2 /* SearchManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SearchManager.h; path = ../../game/SearchManager.h; sourceTree = "<group>"; };
+		3AF476631E7339E7006B26C2 /* Script_Doc_Export.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Script_Doc_Export.cpp; sourceTree = "<group>"; };
+		3AF476641E7339E7006B26C2 /* Script_Doc_Export.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Script_Doc_Export.h; sourceTree = "<group>"; };
 		81225A1B0912C3A4005D34B9 /* idlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = idlib.xcodeproj; sourceTree = "<group>"; };
 		81225A3B0912C42F005D34B9 /* PlayerIcon.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = PlayerIcon.cpp; path = ../../game/PlayerIcon.cpp; sourceTree = SOURCE_ROOT; };
 		81225A3C0912C42F005D34B9 /* Actor.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Actor.cpp; path = ../../game/Actor.cpp; sourceTree = SOURCE_ROOT; };
@@ -1096,11 +1113,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3AFE7A411E74945D00FDA5F6 /* libziploader.a in Frameworks */,
+				3AFE7A401E74945A00FDA5F6 /* libpng.a in Frameworks */,
+				3AFE7A3F1E74945100FDA5F6 /* libjpeg.a in Frameworks */,
+				3AFE7A3E1E74944300FDA5F6 /* libdevil.a in Frameworks */,
 				81225A3A0912C3DB005D34B9 /* libidlib_pic.a in Frameworks */,
-				3A176BEF149363220077AB23 /* libjpeg.a in Frameworks */,
-				3A176BF11493632A0077AB23 /* libdevil.a in Frameworks */,
-				3A176BF3149363310077AB23 /* libziploader.a in Frameworks */,
-				3A176D091493668A0077AB23 /* libpng.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1117,11 +1134,6 @@
 				08FB7795FE84155DC02AAC07 /* Source */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 				81225A1B0912C3A4005D34B9 /* idlib.xcodeproj */,
-				3A176A6A149359C70077AB23 /* libziploader.a */,
-				3A176BEE149363220077AB23 /* libjpeg.a */,
-				3A176BF01493632A0077AB23 /* libdevil.a */,
-				3A176BF2149363310077AB23 /* libziploader.a */,
-				3A176D081493668A0077AB23 /* libpng.a */,
 			);
 			name = game;
 			sourceTree = "<group>";
@@ -1129,6 +1141,8 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				3AF4765F1E733952006B26C2 /* SearchManager.cpp */,
+				3AF476601E733952006B26C2 /* SearchManager.h */,
 				3A5376A7148E8114006DC4CE /* AbsenceMarker.cpp */,
 				3A5376A8148E8114006DC4CE /* AbsenceMarker.h */,
 				81225A3C0912C42F005D34B9 /* Actor.cpp */,
@@ -1438,7 +1452,6 @@
 				3A5377A4148E81C3006DC4CE /* pugiconfig.hpp */,
 				3A5377A5148E81C3006DC4CE /* pugixml.cpp */,
 				3A5377A6148E81C3006DC4CE /* pugixml.hpp */,
-				3A5377A7148E81C3006DC4CE /* pugixpath.cpp */,
 			);
 			name = pugixml;
 			path = ../../game/pugixml;
@@ -1538,6 +1551,10 @@
 		3A537854148E81F1006DC4CE /* States */ = {
 			isa = PBXGroup;
 			children = (
+				3AF476571E733866006B26C2 /* HitByMoveableState.cpp */,
+				3AF476581E733866006B26C2 /* HitByMoveableState.h */,
+				3AF476591E733866006B26C2 /* PocketPickedState.cpp */,
+				3AF4765A1E733866006B26C2 /* PocketPickedState.h */,
 				3A537855148E81F1006DC4CE /* AgitatedSearchingState.cpp */,
 				3A537856148E81F1006DC4CE /* AgitatedSearchingState.h */,
 				3A537857148E81F1006DC4CE /* AgitatedSearchingStateLanternBot.cpp */,
@@ -1595,6 +1612,10 @@
 		3A537889148E81F1006DC4CE /* Tasks */ = {
 			isa = PBXGroup;
 			children = (
+				3AF4764F1E733857006B26C2 /* GuardSpotTask.cpp */,
+				3AF476501E733857006B26C2 /* GuardSpotTask.h */,
+				3AF476511E733857006B26C2 /* PathSetMovetypeTask.cpp */,
+				3AF476521E733857006B26C2 /* PathSetMovetypeTask.h */,
 				3A53788A148E81F1006DC4CE /* AnimalPatrolTask.cpp */,
 				3A53788B148E81F1006DC4CE /* AnimalPatrolTask.h */,
 				3A53788C148E81F1006DC4CE /* ChaseEnemyRangedTask.cpp */,
@@ -1819,6 +1840,8 @@
 		81225AAD0912C42F005D34B9 /* script */ = {
 			isa = PBXGroup;
 			children = (
+				3AF476631E7339E7006B26C2 /* Script_Doc_Export.cpp */,
+				3AF476641E7339E7006B26C2 /* Script_Doc_Export.h */,
 				81225AAE0912C42F005D34B9 /* Script_Compiler.cpp */,
 				81225AAF0912C42F005D34B9 /* Script_Compiler.h */,
 				81225AB00912C42F005D34B9 /* Script_Interpreter.cpp */,
@@ -1849,6 +1872,7 @@
 				81225ADB0912C42F005D34B9 /* Anim_Testmodel.h in Headers */,
 				81225ADD0912C42F005D34B9 /* BrittleFracture.h in Headers */,
 				81225ADF0912C42F005D34B9 /* Camera.h in Headers */,
+				3AF476561E733857006B26C2 /* PathSetMovetypeTask.h in Headers */,
 				81225AE10912C42F005D34B9 /* Entity.h in Headers */,
 				81225AE40912C42F005D34B9 /* Game.h in Headers */,
 				81225AE60912C42F005D34B9 /* Game_local.h in Headers */,
@@ -1980,6 +2004,7 @@
 				3A5377CD148E81C3006DC4CE /* rancombi.h in Headers */,
 				3A5377CE148E81C3006DC4CE /* randomc.h in Headers */,
 				3A5377D3148E81C3006DC4CE /* RawVector.h in Headers */,
+				3AF476661E7339E7006B26C2 /* Script_Doc_Export.h in Headers */,
 				3A5377D5148E81C3006DC4CE /* Relations.h in Headers */,
 				3A537809148E81D7006DC4CE /* SEED.h in Headers */,
 				3A53780B148E81D7006DC4CE /* LootRuleSet.h in Headers */,
@@ -1992,6 +2017,7 @@
 				3A537824148E81D7006DC4CE /* ResponseEffect.h in Headers */,
 				3A537826148E81D7006DC4CE /* Stim.h in Headers */,
 				3A537828148E81D7006DC4CE /* StimResponse.h in Headers */,
+				3AF476541E733857006B26C2 /* GuardSpotTask.h in Headers */,
 				3A53782A148E81D7006DC4CE /* StimResponseCollection.h in Headers */,
 				3A53782C148E81D7006DC4CE /* StimResponseTimer.h in Headers */,
 				3A53782D148E81D7006DC4CE /* StimType.h in Headers */,
@@ -2019,6 +2045,7 @@
 				3A537900148E81F1006DC4CE /* AgitatedSearchingStateLanternBot.h in Headers */,
 				3A537902148E81F1006DC4CE /* AlertIdleState.h in Headers */,
 				3A537904148E81F1006DC4CE /* BlindedState.h in Headers */,
+				3AF4765C1E733866006B26C2 /* HitByMoveableState.h in Headers */,
 				3A537906148E81F1006DC4CE /* CombatState.h in Headers */,
 				3A537908148E81F1006DC4CE /* ConversationState.h in Headers */,
 				3A53790A148E81F1006DC4CE /* DeadState.h in Headers */,
@@ -2064,6 +2091,7 @@
 				3A53795A148E81F1006DC4CE /* PathHideTask.h in Headers */,
 				3A53795C148E81F1006DC4CE /* PathInteractTask.h in Headers */,
 				3A53795E148E81F1006DC4CE /* PathLookatTask.h in Headers */,
+				3AF4765E1E733866006B26C2 /* PocketPickedState.h in Headers */,
 				3A537960148E81F1006DC4CE /* PathShowTask.h in Headers */,
 				3A537962148E81F1006DC4CE /* PathSitTask.h in Headers */,
 				3A537964148E81F1006DC4CE /* PathSleepTask.h in Headers */,
@@ -2085,6 +2113,7 @@
 				3A537983148E81F1006DC4CE /* WanderInLocationTask.h in Headers */,
 				3A537985148E81F1006DC4CE /* tdmAASFindEscape.h in Headers */,
 				3A537989148E8200006DC4CE /* Force_Push.h in Headers */,
+				3AF476621E733952006B26C2 /* SearchManager.h in Headers */,
 				3A537A59148E9F62006DC4CE /* Physics_Liquid.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2125,6 +2154,7 @@
 			};
 			buildConfigurationList = 81225A280912C3A4005D34B9 /* Build configuration list for PBXProject "game" */;
 			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -2214,6 +2244,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				81225AC40912C42F005D34B9 /* PlayerIcon.cpp in Sources */,
+				3AF476611E733952006B26C2 /* SearchManager.cpp in Sources */,
 				81225AC50912C42F005D34B9 /* Actor.cpp in Sources */,
 				81225AC70912C42F005D34B9 /* AF.cpp in Sources */,
 				81225AC90912C42F005D34B9 /* AFEntity.cpp in Sources */,
@@ -2224,6 +2255,7 @@
 				81225AD10912C42F005D34B9 /* AI.cpp in Sources */,
 				81225AD30912C42F005D34B9 /* AI_events.cpp in Sources */,
 				81225AD40912C42F005D34B9 /* AI_pathing.cpp in Sources */,
+				3AF476531E733857006B26C2 /* GuardSpotTask.cpp in Sources */,
 				81225AD60912C42F005D34B9 /* Anim.cpp in Sources */,
 				81225AD80912C42F005D34B9 /* Anim_Blend.cpp in Sources */,
 				81225AD90912C42F005D34B9 /* Anim_Import.cpp in Sources */,
@@ -2269,6 +2301,7 @@
 				81225B2D0912C42F005D34B9 /* Projectile.cpp in Sources */,
 				81225B2F0912C42F005D34B9 /* Pvs.cpp in Sources */,
 				81225B310912C42F005D34B9 /* Script_Compiler.cpp in Sources */,
+				3AF4765B1E733866006B26C2 /* HitByMoveableState.cpp in Sources */,
 				81225B330912C42F005D34B9 /* Script_Interpreter.cpp in Sources */,
 				81225B350912C42F005D34B9 /* Script_Program.cpp in Sources */,
 				81225B370912C42F005D34B9 /* Script_Thread.cpp in Sources */,
@@ -2347,7 +2380,6 @@
 				3A5377BF148E81C3006DC4CE /* PositionWithinRangeFinder.cpp in Sources */,
 				3A5377C1148E81C3006DC4CE /* ProjectileResult.cpp in Sources */,
 				3A5377C4148E81C3006DC4CE /* pugixml.cpp in Sources */,
-				3A5377C6148E81C3006DC4CE /* pugixpath.cpp in Sources */,
 				3A5377C7148E81C3006DC4CE /* PVSToAASMapping.cpp in Sources */,
 				3A5377CB148E81C3006DC4CE /* mersenne.cpp in Sources */,
 				3A5377CC148E81C3006DC4CE /* mother.cpp in Sources */,
@@ -2366,6 +2398,7 @@
 				3A537821148E81D7006DC4CE /* Response.cpp in Sources */,
 				3A537823148E81D7006DC4CE /* ResponseEffect.cpp in Sources */,
 				3A537825148E81D7006DC4CE /* Stim.cpp in Sources */,
+				3AF476551E733857006B26C2 /* PathSetMovetypeTask.cpp in Sources */,
 				3A537827148E81D7006DC4CE /* StimResponse.cpp in Sources */,
 				3A537829148E81D7006DC4CE /* StimResponseCollection.cpp in Sources */,
 				3A53782B148E81D7006DC4CE /* StimResponseTimer.cpp in Sources */,
@@ -2411,6 +2444,7 @@
 				3A53792B148E81F1006DC4CE /* TakeCoverState.cpp in Sources */,
 				3A53792D148E81F1006DC4CE /* UnreachableTargetState.cpp in Sources */,
 				3A53792F148E81F1006DC4CE /* Subsystem.cpp in Sources */,
+				3AF476651E7339E7006B26C2 /* Script_Doc_Export.cpp in Sources */,
 				3A537931148E81F1006DC4CE /* AnimalPatrolTask.cpp in Sources */,
 				3A537933148E81F1006DC4CE /* ChaseEnemyRangedTask.cpp in Sources */,
 				3A537935148E81F1006DC4CE /* ChaseEnemyTask.cpp in Sources */,
@@ -2430,6 +2464,7 @@
 				3A537951148E81F1006DC4CE /* MoveToPositionTask.cpp in Sources */,
 				3A537953148E81F1006DC4CE /* PathAnimTask.cpp in Sources */,
 				3A537955148E81F1006DC4CE /* PathCornerTask.cpp in Sources */,
+				3AF4765D1E733866006B26C2 /* PocketPickedState.cpp in Sources */,
 				3A537957148E81F1006DC4CE /* PathCycleAnimTask.cpp in Sources */,
 				3A537959148E81F1006DC4CE /* PathHideTask.cpp in Sources */,
 				3A53795B148E81F1006DC4CE /* PathInteractTask.cpp in Sources */,
@@ -2521,6 +2556,7 @@
 				);
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				MAIN_CPP_DEFINES = _DEBUG;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -2535,7 +2571,8 @@
 				PREBINDING = NO;
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				SDKROOT = macosx10.6;
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\" \"$(SRCROOT)/../../game/\"";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = YES;
 			};
@@ -2566,6 +2603,7 @@
 				);
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -2585,8 +2623,9 @@
 				PREBINDING = NO;
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = game;
+				SDKROOT = macosx10.6;
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\"";
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../idlib/\" \"$(SRCROOT)/../../include/minizip/\" \"$(SRCROOT)/../../include/\" \"$(SRCROOT)/../../include/devil/\" \"$(SRCROOT)/../../game/\"";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = NO;
 			};
@@ -2604,8 +2643,8 @@
 					MACOS_X,
 					GAME_DLL,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				SDKROOT = macosx10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				SDKROOT = macosx10.6;
 				VALID_ARCHS = i386;
 			};
 			name = Debug;
@@ -2621,7 +2660,7 @@
 					MACOS_X,
 					GAME_DLL,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -2632,7 +2671,7 @@
 					"-fomit-frame-pointer",
 					"-fno-common",
 				);
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				VALID_ARCHS = i386;
 			};
 			name = Release;

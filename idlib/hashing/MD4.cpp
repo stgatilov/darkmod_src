@@ -38,7 +38,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "hashing/MD4.h"
+#include "MD4.h"
  
 /*
  * The basic MD4 functions.

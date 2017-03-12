@@ -54,7 +54,7 @@ static bool isHidden = false;
 @implementation NSOpenGLContext (CGLContextAccess)
 - (CGLContextObj) cglContext;
 {
-	return _contextAuxiliary;
+    return _contextAuxiliary;
 }
 @end
 
@@ -400,9 +400,9 @@ static bool CreateGameWindow(  glimpParms_t parms ) {
 #endif
 
 	// Store off the pixel format attributes that we actually got
-	[pixelFormat getValues: (long *) &glConfig.colorBits forAttribute: NSOpenGLPFAColorSize forVirtualScreen: 0];
-	[pixelFormat getValues: (long *) &glConfig.depthBits forAttribute: NSOpenGLPFADepthSize forVirtualScreen: 0];
-	[pixelFormat getValues: (long *) &glConfig.stencilBits forAttribute: NSOpenGLPFAStencilSize forVirtualScreen: 0];
+	[pixelFormat getValues: (GLint *) &glConfig.colorBits forAttribute: NSOpenGLPFAColorSize forVirtualScreen: 0];
+	[pixelFormat getValues: (GLint *) &glConfig.depthBits forAttribute: NSOpenGLPFADepthSize forVirtualScreen: 0];
+	[pixelFormat getValues: (GLint *) &glConfig.stencilBits forAttribute: NSOpenGLPFAStencilSize forVirtualScreen: 0];
 
 	glConfig.displayFrequency = [[glw_state.gameMode objectForKey: (id)kCGDisplayRefreshRate] intValue];
     
@@ -640,7 +640,7 @@ void GLimp_SetGamma(unsigned short red[256],
                     unsigned short green[256],
                     unsigned short blue[256]) {
 	CGGammaValue redGamma[256], greenGamma[256], blueGamma[256];
-	CGTableCount i;
+	uint32 i;
 	CGDisplayErr err;
         
 	for (i = 0; i < 256; i++) {
@@ -1252,11 +1252,12 @@ void GLW_InitExtensions( void ) { }
 unsigned long Sys_QueryVideoMemory() {
 	CGLError err;
 	CGLRendererInfoObj rendererInfo, rendererInfos[MAX_RENDERER_INFO_COUNT];
-	long rendererInfoIndex, rendererInfoCount = MAX_RENDERER_INFO_COUNT;
-	long rendererIndex, rendererCount;
-	long maxVRAM = 0, vram = 0;
-	long accelerated;
-	long rendererID;
+	GLint rendererInfoIndex, rendererInfoCount = MAX_RENDERER_INFO_COUNT;
+	GLint rendererIndex, rendererCount;
+    long maxVRAM = 0;
+    GLint vram = 0;
+	GLint accelerated;
+	GLint rendererID;
 	long totalRenderers = 0;
     
 	err = CGLQueryRendererInfo(CGDisplayIDToOpenGLDisplayMask(Sys_DisplayToUse()), rendererInfos, &rendererInfoCount);
@@ -1569,7 +1570,7 @@ NSDictionary *Sys_GetMatchingDisplayMode( glimpParms_t parms ) {
 #define MAX_DISPLAYS 128
 
 void Sys_GetGammaTable(glwgamma_t *table) {
-	CGTableCount tableSize = 512;
+	uint32 tableSize = 512;
 	CGDisplayErr err;
     
 	table->tableSize = tableSize;
@@ -1617,9 +1618,9 @@ void Sys_StoreGammaTables() {
 
 //  This isn't a mathematically correct fade, but we don't care that much.
 void Sys_SetScreenFade(glwgamma_t *table, float fraction) {
-	CGTableCount tableSize;
+	uint32 tableSize;
 	CGGammaValue *red, *blue, *green;
-	CGTableCount gammaIndex;
+	uint32 gammaIndex;
     
 	//    if (!glConfig.deviceSupportsGamma)
 	//        return;
@@ -1764,7 +1765,7 @@ void Sys_UnfadeScreen(CGDirectDisplayID display, glwgamma_t *table) {
 	common->Printf("Unfading display 0x%08x\n", display);
 
 	if (table) {
-		CGTableCount i;
+		uint32 i;
         
 		common->Printf("Given table:\n");
 		for (i = 0; i < table->tableSize; i++) {

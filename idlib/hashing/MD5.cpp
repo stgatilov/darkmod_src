@@ -39,7 +39,7 @@
  * compile-time configuration.
  */
  
-#include "hashing/MD5.h"
+#include "MD5.h"
  
 /*
  * The basic MD5 functions.

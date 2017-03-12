@@ -7,11 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3A176D3314936ACC0077AB23 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A176D3214936ACC0077AB23 /* libdevil.a */; };
-		3AB238F914B9C568001B0950 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238F814B9C568001B0950 /* libjpeg.a */; };
-		3AB238FF14B9C57A001B0950 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238FE14B9C57A001B0950 /* libpng.a */; };
-		3AB2390314B9C585001B0950 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB2390214B9C585001B0950 /* libziploader.a */; };
 		3AB2390E14B9C7DA001B0950 /* I18N.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2390C14B9C7DA001B0950 /* I18N.cpp */; };
+		3AF476681E73D563006B26C2 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AF476671E73D563006B26C2 /* IOKit.framework */; };
+		3AF4766A1E73D681006B26C2 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AF476691E73D681006B26C2 /* Carbon.framework */; };
+		3AF4766C1E73D87D006B26C2 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AF4766B1E73D87D006B26C2 /* OpenGL.framework */; };
+		3AFE7A431E74948200FDA5F6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AFE7A421E74948200FDA5F6 /* CoreAudio.framework */; };
+		3AFE7A441E74948600FDA5F6 /* libdevil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A1768DB149354D60077AB23 /* libdevil.a */; };
+		3AFE7A451E74948B00FDA5F6 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238D414B9B04E001B0950 /* libjpeg.a */; };
+		3AFE7A461E74948F00FDA5F6 /* libpng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AB238DA14B9B05C001B0950 /* libpng.a */; };
+		3AFE7A4D1E74957700FDA5F6 /* libziploader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AFE7A471E74949700FDA5F6 /* libziploader.a */; };
+		3AFE7A4E1E7497B000FDA5F6 /* PickMonitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256A10912BC79005D34B9 /* PickMonitor.cpp */; };
+		3AFE7A4F1E7497B900FDA5F6 /* PreferencesDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256A20912BC79005D34B9 /* PreferencesDialog.cpp */; };
 		812258110912BC79005D34B9 /* snd_efxfile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122565F0912BC78005D34B9 /* snd_efxfile.cpp */; };
 		812258120912BC79005D34B9 /* GEWindowWrapper_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */; };
 		812258130912BC79005D34B9 /* edit_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256630912BC79005D34B9 /* edit_stub.cpp */; };
@@ -51,8 +57,6 @@
 		812258350912BC79005D34B9 /* util_stub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122569B0912BC79005D34B9 /* util_stub.cpp */; };
 		812258360912BC79005D34B9 /* macosx_guids.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122569D0912BC79005D34B9 /* macosx_guids.cpp */; };
 		812258380912BC79005D34B9 /* macosx_misc.mm in Sources */ = {isa = PBXBuildFile; fileRef = 812256A00912BC79005D34B9 /* macosx_misc.mm */; };
-		812258390912BC79005D34B9 /* PickMonitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256A10912BC79005D34B9 /* PickMonitor.cpp */; };
-		8122583A0912BC79005D34B9 /* PreferencesDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256A20912BC79005D34B9 /* PreferencesDialog.cpp */; };
 		8122583B0912BC79005D34B9 /* macosx_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812256A50912BC79005D34B9 /* macosx_sound.cpp */; };
 		8122583C0912BC79005D34B9 /* macosx_event.mm in Sources */ = {isa = PBXBuildFile; fileRef = 812256A60912BC79005D34B9 /* macosx_event.mm */; };
 		8122583D0912BC79005D34B9 /* macosx_glimp.mm in Sources */ = {isa = PBXBuildFile; fileRef = 812256A80912BC79005D34B9 /* macosx_glimp.mm */; };
@@ -142,7 +146,6 @@
 		812258E20912BC79005D34B9 /* DeclFX.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257B60912BC79005D34B9 /* DeclFX.cpp */; };
 		812258E30912BC79005D34B9 /* DeclManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257B80912BC79005D34B9 /* DeclManager.cpp */; };
 		812258E40912BC79005D34B9 /* DeclParticle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257BA0912BC79005D34B9 /* DeclParticle.cpp */; };
-		812258E50912BC79005D34B9 /* DeclPDA.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257BC0912BC79005D34B9 /* DeclPDA.cpp */; };
 		812258E60912BC79005D34B9 /* DeclSkin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257BE0912BC79005D34B9 /* DeclSkin.cpp */; };
 		812258E70912BC79005D34B9 /* DeclTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257C00912BC79005D34B9 /* DeclTable.cpp */; };
 		812258E80912BC79005D34B9 /* DemoFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 812257C20912BC79005D34B9 /* DemoFile.cpp */; };
@@ -181,10 +184,6 @@
 		8122590C0912BC79005D34B9 /* CollisionModel_translate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8122580C0912BC79005D34B9 /* CollisionModel_translate.cpp */; };
 		812259930912BF7F005D34B9 /* libidlib_nopic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259820912BF1D005D34B9 /* libidlib_nopic.a */; };
 		812259940912BF87005D34B9 /* liboggVorbis_nopic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8122598F0912BF38005D34B9 /* liboggVorbis_nopic.a */; };
-		812259B00912BFDC005D34B9 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259A30912BFDC005D34B9 /* Carbon.framework */; };
-		812259B10912BFDC005D34B9 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259A40912BFDC005D34B9 /* IOKit.framework */; };
-		812259B30912BFDC005D34B9 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259A60912BFDC005D34B9 /* OpenGL.framework */; };
-		812259B70912C056005D34B9 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259B40912C056005D34B9 /* CoreAudio.framework */; };
 		812259FF0912C27D005D34B9 /* Doom 3.rsrc in Resources */ = {isa = PBXBuildFile; fileRef = 812259FD0912C27C005D34B9 /* Doom 3.rsrc */; };
 		81225A000912C27D005D34B9 /* Doom3.icns in Resources */ = {isa = PBXBuildFile; fileRef = 812259FE0912C27C005D34B9 /* Doom3.icns */; };
 		81225A0D0912C2D3005D34B9 /* ASLCore.nib in Resources */ = {isa = PBXBuildFile; fileRef = 81225A0B0912C2D3005D34B9 /* ASLCore.nib */; };
@@ -213,28 +212,28 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176B561493626B0077AB23 /* libjpeg.a */;
+			remoteGlobalIDString = 3A176B561493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 		3AB238D914B9B05C001B0950 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3AB238D514B9B05C001B0950 /* png.xcodeproj */;
 			proxyType = 2;
-			remoteGlobalIDString = 3A176C98149365AD0077AB23 /* libpng.a */;
+			remoteGlobalIDString = 3A176C98149365AD0077AB23;
 			remoteInfo = png;
 		};
 		3AB238DB14B9B060001B0950 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176B551493626B0077AB23 /* jpeg */;
+			remoteGlobalIDString = 3A176B551493626B0077AB23;
 			remoteInfo = jpeg;
 		};
 		3AB238DD14B9B064001B0950 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3AB238D514B9B05C001B0950 /* png.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 3A176C97149365AD0077AB23 /* png */;
+			remoteGlobalIDString = 3A176C97149365AD0077AB23;
 			remoteInfo = png;
 		};
 		8122597F0912BF1D005D34B9 /* PBXContainerItemProxy */ = {
@@ -303,15 +302,17 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
-		3A176D3214936ACC0077AB23 /* libdevil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdevil.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libdevil.a; sourceTree = "<absolute>"; };
-		3A176DDB1494CAA00077AB23 /* libidlib_pic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libidlib_pic.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libidlib_pic.a; sourceTree = "<absolute>"; };
 		3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = jpeg.xcodeproj; sourceTree = "<group>"; };
 		3AB238D514B9B05C001B0950 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = png.xcodeproj; sourceTree = "<group>"; };
-		3AB238F814B9C568001B0950 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libjpeg.a; sourceTree = "<absolute>"; };
-		3AB238FE14B9C57A001B0950 /* libpng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libpng.a; sourceTree = "<absolute>"; };
-		3AB2390214B9C585001B0950 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = /Users/Shared/darkmod_src/sys/osx/build/Release/libziploader.a; sourceTree = "<absolute>"; };
 		3AB2390C14B9C7DA001B0950 /* I18N.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = I18N.cpp; sourceTree = "<group>"; };
 		3AB2390D14B9C7DA001B0950 /* I18N.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = I18N.h; sourceTree = "<group>"; };
+		3AF476671E73D563006B26C2 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/System/Library/Frameworks/IOKit.framework; sourceTree = DEVELOPER_DIR; };
+		3AF476691E73D681006B26C2 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		3AF4766B1E73D87D006B26C2 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		3AFE7A421E74948200FDA5F6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		3AFE7A471E74949700FDA5F6 /* libziploader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libziploader.a; path = build/Debug/libziploader.a; sourceTree = "<group>"; };
+		3AFE7A491E7494DA00FDA5F6 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../macosx/boost/lib/libboost_filesystem.a; sourceTree = "<group>"; };
+		3AFE7A4A1E7494DA00FDA5F6 /* libboost_system.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_system.a; path = ../../macosx/boost/lib/libboost_system.a; sourceTree = "<group>"; };
 		8122565F0912BC78005D34B9 /* snd_efxfile.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = snd_efxfile.cpp; path = ../../sound/snd_efxfile.cpp; sourceTree = SOURCE_ROOT; };
 		812256620912BC78005D34B9 /* GEWindowWrapper_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = GEWindowWrapper_stub.cpp; path = ../../tools/guied/GEWindowWrapper_stub.cpp; sourceTree = SOURCE_ROOT; };
 		812256630912BC79005D34B9 /* edit_stub.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = edit_stub.cpp; path = ../../tools/edit_stub.cpp; sourceTree = SOURCE_ROOT; };
@@ -507,8 +508,6 @@
 		812257B90912BC79005D34B9 /* DeclManager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeclManager.h; sourceTree = "<group>"; };
 		812257BA0912BC79005D34B9 /* DeclParticle.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = DeclParticle.cpp; sourceTree = "<group>"; };
 		812257BB0912BC79005D34B9 /* DeclParticle.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeclParticle.h; sourceTree = "<group>"; };
-		812257BC0912BC79005D34B9 /* DeclPDA.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = DeclPDA.cpp; sourceTree = "<group>"; };
-		812257BD0912BC79005D34B9 /* DeclPDA.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeclPDA.h; sourceTree = "<group>"; };
 		812257BE0912BC79005D34B9 /* DeclSkin.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = DeclSkin.cpp; sourceTree = "<group>"; };
 		812257BF0912BC79005D34B9 /* DeclSkin.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = DeclSkin.h; sourceTree = "<group>"; };
 		812257C00912BC79005D34B9 /* DeclTable.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = DeclTable.cpp; sourceTree = "<group>"; };
@@ -605,17 +604,17 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3AFE7A4D1E74957700FDA5F6 /* libziploader.a in Frameworks */,
+				3AFE7A461E74948F00FDA5F6 /* libpng.a in Frameworks */,
+				3AFE7A451E74948B00FDA5F6 /* libjpeg.a in Frameworks */,
+				3AFE7A441E74948600FDA5F6 /* libdevil.a in Frameworks */,
+				3AFE7A431E74948200FDA5F6 /* CoreAudio.framework in Frameworks */,
+				3AF4766C1E73D87D006B26C2 /* OpenGL.framework in Frameworks */,
+				3AF4766A1E73D681006B26C2 /* Carbon.framework in Frameworks */,
+				3AF476681E73D563006B26C2 /* IOKit.framework in Frameworks */,
 				812259940912BF87005D34B9 /* liboggVorbis_nopic.a in Frameworks */,
 				812259930912BF7F005D34B9 /* libidlib_nopic.a in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-				812259B00912BFDC005D34B9 /* Carbon.framework in Frameworks */,
-				812259B10912BFDC005D34B9 /* IOKit.framework in Frameworks */,
-				812259B30912BFDC005D34B9 /* OpenGL.framework in Frameworks */,
-				812259B70912C056005D34B9 /* CoreAudio.framework in Frameworks */,
-				3A176D3314936ACC0077AB23 /* libdevil.a in Frameworks */,
-				3AB238F914B9C568001B0950 /* libjpeg.a in Frameworks */,
-				3AB238FF14B9C57A001B0950 /* libpng.a in Frameworks */,
-				3AB2390314B9C585001B0950 /* libziploader.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -662,11 +661,6 @@
 				812259790912BF1D005D34B9 /* idlib.xcodeproj */,
 				812259890912BF38005D34B9 /* oggVorbis.xcodeproj */,
 				81225B840912C731005D34B9 /* game.xcodeproj */,
-				3A176D3214936ACC0077AB23 /* libdevil.a */,
-				3A176DDB1494CAA00077AB23 /* libidlib_pic.a */,
-				3AB238F814B9C568001B0950 /* libjpeg.a */,
-				3AB238FE14B9C57A001B0950 /* libpng.a */,
-				3AB2390214B9C585001B0950 /* libziploader.a */,
 			);
 			name = Doom3;
 			sourceTree = "<group>";
@@ -688,6 +682,13 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3AFE7A491E7494DA00FDA5F6 /* libboost_filesystem.a */,
+				3AFE7A4A1E7494DA00FDA5F6 /* libboost_system.a */,
+				3AFE7A471E74949700FDA5F6 /* libziploader.a */,
+				3AFE7A421E74948200FDA5F6 /* CoreAudio.framework */,
+				3AF4766B1E73D87D006B26C2 /* OpenGL.framework */,
+				3AF476691E73D681006B26C2 /* Carbon.framework */,
+				3AF476671E73D563006B26C2 /* IOKit.framework */,
 				812259B40912C056005D34B9 /* CoreAudio.framework */,
 				812259A30912BFDC005D34B9 /* Carbon.framework */,
 				812259A40912BFDC005D34B9 /* IOKit.framework */,
@@ -1043,8 +1044,6 @@
 				812257B90912BC79005D34B9 /* DeclManager.h */,
 				812257BA0912BC79005D34B9 /* DeclParticle.cpp */,
 				812257BB0912BC79005D34B9 /* DeclParticle.h */,
-				812257BC0912BC79005D34B9 /* DeclPDA.cpp */,
-				812257BD0912BC79005D34B9 /* DeclPDA.h */,
 				812257BE0912BC79005D34B9 /* DeclSkin.cpp */,
 				812257BF0912BC79005D34B9 /* DeclSkin.h */,
 				812257C00912BC79005D34B9 /* DeclTable.cpp */,
@@ -1227,6 +1226,7 @@
 			};
 			buildConfigurationList = 8191F1640912BBCD006AB5A4 /* Build configuration list for PBXProject "Doom3" */;
 			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -1392,10 +1392,9 @@
 				812258350912BC79005D34B9 /* util_stub.cpp in Sources */,
 				812258360912BC79005D34B9 /* macosx_guids.cpp in Sources */,
 				812258380912BC79005D34B9 /* macosx_misc.mm in Sources */,
-				812258390912BC79005D34B9 /* PickMonitor.cpp in Sources */,
-				8122583A0912BC79005D34B9 /* PreferencesDialog.cpp in Sources */,
 				8122583B0912BC79005D34B9 /* macosx_sound.cpp in Sources */,
 				8122583C0912BC79005D34B9 /* macosx_event.mm in Sources */,
+				3AFE7A4F1E7497B900FDA5F6 /* PreferencesDialog.cpp in Sources */,
 				8122583D0912BC79005D34B9 /* macosx_glimp.mm in Sources */,
 				8122583E0912BC79005D34B9 /* DOOMController.mm in Sources */,
 				8122583F0912BC79005D34B9 /* posix_threads.cpp in Sources */,
@@ -1483,7 +1482,6 @@
 				812258E20912BC79005D34B9 /* DeclFX.cpp in Sources */,
 				812258E30912BC79005D34B9 /* DeclManager.cpp in Sources */,
 				812258E40912BC79005D34B9 /* DeclParticle.cpp in Sources */,
-				812258E50912BC79005D34B9 /* DeclPDA.cpp in Sources */,
 				812258E60912BC79005D34B9 /* DeclSkin.cpp in Sources */,
 				812258E70912BC79005D34B9 /* DeclTable.cpp in Sources */,
 				812258E80912BC79005D34B9 /* DemoFile.cpp in Sources */,
@@ -1519,6 +1517,7 @@
 				812259090912BC79005D34B9 /* CollisionModel_load.cpp in Sources */,
 				8122590A0912BC79005D34B9 /* CollisionModel_rotate.cpp in Sources */,
 				8122590B0912BC79005D34B9 /* CollisionModel_trace.cpp in Sources */,
+				3AFE7A4E1E7497B000FDA5F6 /* PickMonitor.cpp in Sources */,
 				8122590C0912BC79005D34B9 /* CollisionModel_translate.cpp in Sources */,
 				3AB2390E14B9C7DA001B0950 /* I18N.cpp in Sources */,
 			);
@@ -1604,7 +1603,6 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
@@ -1623,10 +1621,12 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../macosx/libcurl\"",
-					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
 					"\"$(SRCROOT)/build/Release\"",
-					"\"$(SRCROOT)/../../macosx/boost/lib\"",
+					"$(SRCROOT)/../../macosx/boost/lib",
+					"$(PROJECT_DIR)/build/Debug",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = NO;
 				OTHER_LDFLAGS = (
 					"-lboost_system",
 					"-lboost_filesystem",
@@ -1636,7 +1636,9 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
+				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
+				VALID_ARCHS = i386;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -1647,7 +1649,6 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
-				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
@@ -1662,10 +1663,12 @@
 				INFOPLIST_FILE = Info.plist;
 				LIBRARY_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../macosx/libcurl\"",
-					"\"$(SRCROOT)/build/devil.build/Release/devil.build/Objects-normal/i386\"",
 					"\"$(SRCROOT)/build/Release\"",
-					"\"$(SRCROOT)/../../macosx/boost/lib\"",
+					"$(SRCROOT)/../../macosx/boost/lib",
+					"$(PROJECT_DIR)/build/Debug",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = NO;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -1685,8 +1688,10 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "Doom 3";
+				SDKROOT = macosx10.6;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg\" \"$(SRCROOT)/../../include\" \"$(SRCROOT)/../../idlib\"";
+				VALID_ARCHS = i386;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = NO;
 			};
@@ -1706,13 +1711,13 @@
 					MACOS_X,
 				);
 				HEADER_SEARCH_PATHS = "";
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				MAIN_CPP_DEFINES = _DEBUG;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-fpermissive",
 				);
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "i386 ppc";
 			};
@@ -1732,7 +1737,7 @@
 					MACOS_X,
 				);
 				HEADER_SEARCH_PATHS = "";
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -1743,7 +1748,7 @@
 					"-fomit-frame-pointer",
 					"-fno-common",
 				);
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = /Users/Shared/darkmod_src/include/;
 				VALID_ARCHS = "ppc i386";
 			};

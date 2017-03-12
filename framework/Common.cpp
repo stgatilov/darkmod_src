@@ -2982,7 +2982,9 @@ void idCommonLocal::InitGame( void )
 	cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );
 
 	// cvars are initialized, but not the rendering system. Allow preference startup dialog
+#ifndef MACOS_X
 	Sys_DoPreferences();
+#endif
 
 	// init the user command input code
 	usercmdGen->Init();

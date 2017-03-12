@@ -230,6 +230,7 @@
 			};
 			buildConfigurationList = 1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "curl" */;
 			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -337,6 +338,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_CONFIG_H";
 				PRODUCT_NAME = curl_static;
+				SDKROOT = macosx10.6;
 				SYMROOT = ../Build;
 				ZERO_LINK = YES;
 			};
@@ -359,6 +361,7 @@
 				);
 				OTHER_CFLAGS = "-DHAVE_CONFIG_H";
 				PRODUCT_NAME = curl_static;
+				SDKROOT = macosx10.6;
 				SYMROOT = ../Build;
 			};
 			name = Release;

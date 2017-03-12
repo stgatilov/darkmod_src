@@ -31,7 +31,6 @@
 		3A17692E149354EB0077AB23 /* il_icon.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768F6149354EB0077AB23 /* il_icon.c */; };
 		3A17692F149354EB0077AB23 /* il_internal.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768F7149354EB0077AB23 /* il_internal.c */; };
 		3A176930149354EB0077AB23 /* il_io.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768F8149354EB0077AB23 /* il_io.c */; };
-		3A176931149354EB0077AB23 /* il_jp2.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768F9149354EB0077AB23 /* il_jp2.c */; };
 		3A176932149354EB0077AB23 /* il_jpeg.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768FA149354EB0077AB23 /* il_jpeg.c */; };
 		3A176933149354EB0077AB23 /* il_lif.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768FB149354EB0077AB23 /* il_lif.c */; };
 		3A176934149354EB0077AB23 /* il_main.c in Sources */ = {isa = PBXBuildFile; fileRef = 3A1768FC149354EB0077AB23 /* il_main.c */; };
@@ -295,9 +294,15 @@
 /* Begin PBXProject section */
 		3A176803149350650077AB23 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = 3A176806149350650077AB23 /* Build configuration list for PBXProject "devil" */;
 			compatibilityVersion = "Xcode 2.4";
+			developmentRegion = English;
 			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 3A176801149350650077AB23;
 			productRefGroup = 3A17681C149350DE0077AB23 /* Products */;
 			projectDirPath = "";
@@ -364,7 +369,6 @@
 				3A17692E149354EB0077AB23 /* il_icon.c in Sources */,
 				3A17692F149354EB0077AB23 /* il_internal.c in Sources */,
 				3A176930149354EB0077AB23 /* il_io.c in Sources */,
-				3A176931149354EB0077AB23 /* il_jp2.c in Sources */,
 				3A176932149354EB0077AB23 /* il_jpeg.c in Sources */,
 				3A176933149354EB0077AB23 /* il_lif.c in Sources */,
 				3A176934149354EB0077AB23 /* il_main.c in Sources */,
@@ -418,29 +422,39 @@
 		3A176804149350650077AB23 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
 			};
 			name = Debug;
 		};
 		3A176805149350650077AB23 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
 			};
 			name = Release;
 		};
 		3A17681D149350DF0077AB23 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_CONFIG_H;
 				INSTALL_PATH = /usr/local/lib;
 				PREBINDING = NO;
 				PRODUCT_NAME = devil;
+				SDKROOT = macosx10.6;
+				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg/\" \"$(SRCROOT)/../../include/libpng/\" \"$(SRCROOT)/../../include/devil/\" \"$(SRCROOT)/../../include/devil/IL/\"";
+				VALID_ARCHS = i386;
 			};
 			name = Debug;
 		};
@@ -448,8 +462,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = YES;
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
@@ -459,8 +472,9 @@
 				INSTALL_PATH = /usr/local/lib;
 				PREBINDING = NO;
 				PRODUCT_NAME = devil;
-				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
+				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/../../include/libjpeg/\" \"$(SRCROOT)/../../include/libpng/\" \"$(SRCROOT)/../../include/devil/\" \"$(SRCROOT)/../../include/devil/IL/\"";
+				VALID_ARCHS = i386;
 				ZERO_LINK = NO;
 			};
 			name = Release;

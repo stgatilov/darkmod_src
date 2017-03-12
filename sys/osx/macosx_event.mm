@@ -172,7 +172,7 @@ void Sys_ShutdownInput( void ) {
 }
 
 void processMouseMovedEvent( NSEvent *mouseMovedEvent ) {
-    CGMouseDelta dx, dy;
+    int32_t dx, dy;
     
     if ( !mouseActive ) {
         return;

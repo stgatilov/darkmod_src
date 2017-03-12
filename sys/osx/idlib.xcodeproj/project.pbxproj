@@ -16,6 +16,9 @@
 		3AB2386914B9A44D001B0950 /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2386714B9A44D001B0950 /* Image.h */; };
 		3AB2386A14B9A44D001B0950 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2386614B9A44D001B0950 /* Image.cpp */; };
 		3AB2386B14B9A44D001B0950 /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AB2386714B9A44D001B0950 /* Image.h */; };
+		3AF4766F1E73DC71006B26C2 /* RenderMatrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF4766D1E73DC71006B26C2 /* RenderMatrix.cpp */; };
+		3AF476701E73DC71006B26C2 /* RenderMatrix.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AF4766E1E73DC71006B26C2 /* RenderMatrix.h */; };
+		3AF476711E73DCF2006B26C2 /* RenderMatrix.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AF4766D1E73DC71006B26C2 /* RenderMatrix.cpp */; };
 		81C857480912AD020095BC33 /* BitMsg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C857470912AD020095BC33 /* BitMsg.cpp */; };
 		81C857C90912AD0D0095BC33 /* Base64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C8574A0912AD0D0095BC33 /* Base64.cpp */; };
 		81C857CA0912AD0D0095BC33 /* Base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 81C8574B0912AD0D0095BC33 /* Base64.h */; };
@@ -250,8 +253,6 @@
 		81C858C20912AD510095BC33 /* Timer.h in Headers */ = {isa = PBXBuildFile; fileRef = 81C857C60912AD0D0095BC33 /* Timer.h */; };
 		81C858C30912AD510095BC33 /* Token.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C857C70912AD0D0095BC33 /* Token.cpp */; };
 		81C858C40912AD510095BC33 /* Token.h in Headers */ = {isa = PBXBuildFile; fileRef = 81C857C80912AD0D0095BC33 /* Token.h */; };
-		81C858D90912ADD80095BC33 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C858D80912ADD80095BC33 /* OpenGL.framework */; };
-		81C858DA0912ADD80095BC33 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81C858D80912ADD80095BC33 /* OpenGL.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -260,6 +261,8 @@
 		3AB2382414B786D9001B0950 /* RevisionTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RevisionTracker.h; path = ../../idlib/RevisionTracker.h; sourceTree = SOURCE_ROOT; };
 		3AB2386614B9A44D001B0950 /* Image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Image.cpp; path = ../../idlib/Image.cpp; sourceTree = SOURCE_ROOT; };
 		3AB2386714B9A44D001B0950 /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Image.h; path = ../../idlib/Image.h; sourceTree = SOURCE_ROOT; };
+		3AF4766D1E73DC71006B26C2 /* RenderMatrix.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RenderMatrix.cpp; sourceTree = "<group>"; };
+		3AF4766E1E73DC71006B26C2 /* RenderMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderMatrix.h; sourceTree = "<group>"; };
 		81C857470912AD020095BC33 /* BitMsg.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = BitMsg.cpp; path = ../../idlib/BitMsg.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574A0912AD0D0095BC33 /* Base64.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Base64.cpp; path = ../../idlib/Base64.cpp; sourceTree = SOURCE_ROOT; };
 		81C8574B0912AD0D0095BC33 /* Base64.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Base64.h; path = ../../idlib/Base64.h; sourceTree = SOURCE_ROOT; };
@@ -378,7 +381,6 @@
 		81C857C70912AD0D0095BC33 /* Token.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Token.cpp; path = ../../idlib/Token.cpp; sourceTree = SOURCE_ROOT; };
 		81C857C80912AD0D0095BC33 /* Token.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Token.h; path = ../../idlib/Token.h; sourceTree = SOURCE_ROOT; };
 		81C858490912AD370095BC33 /* libidlib_nopic.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidlib_nopic.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		81C858D80912ADD80095BC33 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
 		D2AAC046055464E500DB518D /* libidlib_pic.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libidlib_pic.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -387,7 +389,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81C858DA0912ADD80095BC33 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -395,7 +396,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				81C858D90912ADD80095BC33 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,7 +407,6 @@
 			children = (
 				08FB7795FE84155DC02AAC07 /* Source */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
-				81C858D80912ADD80095BC33 /* OpenGL.framework */,
 			);
 			name = idlib;
 			sourceTree = "<group>";
@@ -507,6 +506,8 @@
 		81C8576A0912AD0D0095BC33 /* geometry */ = {
 			isa = PBXGroup;
 			children = (
+				3AF4766D1E73DC71006B26C2 /* RenderMatrix.cpp */,
+				3AF4766E1E73DC71006B26C2 /* RenderMatrix.h */,
 				81C8576B0912AD0D0095BC33 /* DrawVert.cpp */,
 				81C8576C0912AD0D0095BC33 /* DrawVert.h */,
 				81C8576D0912AD0D0095BC33 /* JointTransform.cpp */,
@@ -721,6 +722,7 @@
 				81C858120912AD0D0095BC33 /* Angles.h in Headers */,
 				81C858140912AD0D0095BC33 /* Complex.h in Headers */,
 				81C858150912AD0D0095BC33 /* Curve.h in Headers */,
+				3AF476701E73DC71006B26C2 /* RenderMatrix.h in Headers */,
 				81C858160912AD0D0095BC33 /* Extrapolate.h in Headers */,
 				81C858170912AD0D0095BC33 /* Interpolate.h in Headers */,
 				81C858190912AD0D0095BC33 /* Lcp.h in Headers */,
@@ -798,6 +800,7 @@
 			};
 			buildConfigurationList = 81C857270912ACE80095BC33 /* Build configuration list for PBXProject "idlib" */;
 			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				English,
@@ -860,6 +863,7 @@
 				81C858AA0912AD510095BC33 /* Simd.cpp in Sources */,
 				81C858AC0912AD510095BC33 /* Simd_3DNow.cpp in Sources */,
 				81C858AE0912AD510095BC33 /* Simd_AltiVec.cpp in Sources */,
+				3AF476711E73DCF2006B26C2 /* RenderMatrix.cpp in Sources */,
 				81C858B00912AD510095BC33 /* Simd_Generic.cpp in Sources */,
 				81C858B20912AD510095BC33 /* Simd_MMX.cpp in Sources */,
 				81C858B40912AD510095BC33 /* Simd_SSE.cpp in Sources */,
@@ -898,6 +902,7 @@
 				81C857F30912AD0D0095BC33 /* TraceModel.cpp in Sources */,
 				81C857F50912AD0D0095BC33 /* Winding.cpp in Sources */,
 				81C857F70912AD0D0095BC33 /* Winding2D.cpp in Sources */,
+				3AF4766F1E73DC71006B26C2 /* RenderMatrix.cpp in Sources */,
 				81C857FB0912AD0D0095BC33 /* CRC32.cpp in Sources */,
 				81C858010912AD0D0095BC33 /* MD4.cpp in Sources */,
 				81C858030912AD0D0095BC33 /* MD5.cpp in Sources */,
@@ -957,11 +962,14 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../include/devil\"",
 					"\"$(SRCROOT)/../../include\"",
+					/opt/local/include,
 				);
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_STYLE = STATIC;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_pic;
+				SDKROOT = macosx10.6;
 				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
 				ZERO_LINK = YES;
@@ -983,8 +991,10 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../include/devil\"",
 					"\"$(SRCROOT)/../../include\"",
+					/opt/local/include,
 				);
 				LIBRARY_STYLE = STATIC;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -997,6 +1007,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_pic;
+				SDKROOT = macosx10.6;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = "ppc i386";
@@ -1017,13 +1028,13 @@
 					"$(MAIN_CPP_DEFINES)",
 					MACOS_X,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				MAIN_CPP_DEFINES = _DEBUG;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-fpermissive",
 				);
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				USE_SEPARATE_HEADERMAPS = YES;
 				VALID_ARCHS = i386;
 			};
@@ -1042,12 +1053,12 @@
 					"$(MAIN_CPP_DEFINES)",
 					MACOS_X,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-fpermissive",
 				);
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx10.6;
 				USE_SEPARATE_HEADERMAPS = YES;
 				VALID_ARCHS = i386;
 			};
@@ -1069,17 +1080,20 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../include\"",
 					"\"$(SRCROOT)/../../include/devil\"",
+					/opt/local/include,
 				);
 				INSTALL_PATH = "$(HOME)/lib";
 				LIBRARY_STYLE = STATIC;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_nopic;
+				SDKROOT = macosx10.6;
 				SECTORDER_FLAGS = "";
 				USER_HEADER_SEARCH_PATHS = "";
-				VALID_ARCHS = "ppc i386";
+				VALID_ARCHS = i386;
 				WARNING_CFLAGS = (
 					"-Wmost",
 					"-Wno-four-char-constants",
@@ -1103,8 +1117,10 @@
 				HEADER_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../include\"",
 					"\"$(SRCROOT)/../../include/devil\"",
+					/opt/local/include,
 				);
 				LIBRARY_STYLE = STATIC;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CFLAGS = (
 					"-finline",
 					"-finline-limit=1000",
@@ -1117,9 +1133,10 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = idlib_nopic;
+				SDKROOT = macosx10.6;
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = "";
-				VALID_ARCHS = "ppc i386";
+				VALID_ARCHS = i386;
 				ZERO_LINK = NO;
 			};
 			name = Release;

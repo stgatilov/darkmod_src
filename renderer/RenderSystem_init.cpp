@@ -300,7 +300,7 @@ PFNGLALPHAFRAGMENTOP3ATIPROC			qglAlphaFragmentOp3ATI;
 PFNGLSETFRAGMENTSHADERCONSTANTATIPROC	qglSetFragmentShaderConstantATI;
 
 // separate stencil
-PFNGLSTENCILOPSEPARATEPROC				qglStencilOpSeparate;
+PFNGLSTENCILOPSEPARATEATIPROC				qglStencilOpSeparate;
 
 // ARB_texture_compression
 PFNGLCOMPRESSEDTEXIMAGE2DARBPROC		qglCompressedTexImage2DARB;
@@ -319,8 +319,8 @@ PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
 PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
 PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
 PFNGLMAPBUFFERRANGEPROC					glMapBufferRange;
-PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
-PFNGLBUFFERSUBDATAPROC					glBufferSubData;
+//PFNGLUNMAPBUFFERARBPROC					glUnmapBuffer;
+//PFNGLBUFFERSUBDATAARBPROC					glBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointerARB;
@@ -349,7 +349,7 @@ PFNGLGENRENDERBUFFERSPROC				glGenRenderbuffers;
 PFNGLBINDRENDERBUFFERPROC				glBindRenderbuffer;
 PFNGLRENDERBUFFERSTORAGEPROC			glRenderbufferStorage;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC		glFramebufferRenderbuffer;
-PFNGLDRAWBUFFERSPROC					glDrawBuffers;
+//PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 
 /*
 =================
@@ -458,7 +458,7 @@ static void R_CheckPortableExtensions( void ) {
 
 	// separate stencil (part of OpenGL 2.0 spec)
 	if ( glConfig.glVersion >= 2.0 ) {
-		qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
+		qglStencilOpSeparate = (PFNGLSTENCILOPSEPARATEATIPROC)GLimp_ExtensionPointer( "glStencilOpSeparate" );
 		if( qglStencilOpSeparate ) {
 			common->Printf( "^2v^0 - using %s\n", "glStencilOpSeparate" );
 			glConfig.twoSidedStencilAvailable = true;
@@ -528,8 +528,8 @@ static void R_CheckPortableExtensions( void ) {
 		qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
 		qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
 		glMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer( "glMapBufferRange" );
-		glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GLimp_ExtensionPointer( "glUnmapBuffer" );
-		glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GLimp_ExtensionPointer("glBufferSubData");
+		//glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GLimp_ExtensionPointer( "glUnmapBuffer" );
+		//glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GLimp_ExtensionPointer("glBufferSubData");
 	}
 
 	// ARB_vertex_program
@@ -584,7 +584,7 @@ static void R_CheckPortableExtensions( void ) {
 	glRenderbufferStorage= (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorage");
 	glFramebufferRenderbuffer= (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbuffer");
 	glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebuffer");
-	glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
+	//glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
 }
 
 

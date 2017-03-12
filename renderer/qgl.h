@@ -88,8 +88,8 @@ extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
 extern PFNGLGETBUFFERPARAMETERIVARBPROC qglGetBufferParameterivARB;
 extern PFNGLGETBUFFERPOINTERVARBPROC qglGetBufferPointervARB;
 extern PFNGLMAPBUFFERRANGEPROC glMapBufferRange;
-extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
-extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
+//extern PFNGLUNMAPBUFFERARBPROC glUnmapBuffer;
+//extern PFNGLBUFFERSUBDATAARBPROC glBufferSubData;
 
 // NV_register_combiners
 extern	void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
@@ -123,7 +123,7 @@ extern	PFNGLALPHAFRAGMENTOP3ATIPROC	qglAlphaFragmentOp3ATI;
 extern	PFNGLSETFRAGMENTSHADERCONSTANTATIPROC	qglSetFragmentShaderConstantATI;
 
 // separate stencil
-extern PFNGLSTENCILOPSEPARATEPROC			qglStencilOpSeparate;
+extern PFNGLSTENCILOPSEPARATEATIPROC			qglStencilOpSeparate;
 
 // ARB_texture_compression
 extern	PFNGLCOMPRESSEDTEXIMAGE2DARBPROC	qglCompressedTexImage2DARB;
@@ -155,8 +155,8 @@ extern PFNGLGENRENDERBUFFERSPROC		glGenRenderbuffers;
 extern PFNGLBINDRENDERBUFFERPROC		glBindRenderbuffer;
 extern PFNGLRENDERBUFFERSTORAGEPROC		glRenderbufferStorage;
 extern PFNGLFRAMEBUFFERRENDERBUFFERPROC	glFramebufferRenderbuffer;
-extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
-extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
+//extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
+//extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 
 //===========================================================================
 
