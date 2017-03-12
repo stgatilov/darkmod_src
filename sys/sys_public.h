@@ -62,14 +62,15 @@
 // Mac OSX
 #if defined(MACOS_X) || defined(__APPLE__)
 
-#define BUILD_STRING				"MacOSX-universal"
 #define BUILD_OS_ID					1
 #ifdef __ppc__
 	#define	CPUSTRING					"ppc"
 	#define CPU_EASYARGS				0
+    #define BUILD_STRING				"MacOSX-ppc"
 #elif defined(__i386__)
 	#define	CPUSTRING					"x86"
 	#define CPU_EASYARGS				1
+    #define BUILD_STRING				"MacOSX-i386"
 #endif
 
 #define ALIGN16( x )					x __attribute__ ((aligned (16)))
