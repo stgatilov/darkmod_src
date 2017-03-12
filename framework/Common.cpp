@@ -904,12 +904,23 @@ void idCommonLocal::InitGameArguments() {
         darkmodPath.AppendPath(fsGameBase);
     }
 	
-	if ( !fsGameDefined ) {
+	if ( !fsGameDefined )
+    {
 		// no fs_currentfm defined, try to load the currentfm.txt from darkmod
-		idStr currentModFile = darkmodPath;
+        idStr currentModFile;
+        
+#ifdef MACOS_X
+        // greebo: In OSX, the currentfm.txt file is written to ModPath(),
+        // which is the same as Sys_DefaultSavePath()
+        currentModFile = Sys_DefaultSavePath();
+#else
+        currentModFile = darkmodPath;
+#endif
+        
 		currentModFile.AppendPath("currentfm.txt");
-		idStr mod;
-
+		
+        idStr mod;
+        
 		// this will just read the content of a file - in this case, to get the fm name from
 		// the aforementioned currentModFile
 		{
@@ -960,8 +971,12 @@ void idCommonLocal::InitGameArguments() {
 
     // look for fms folder
     idStrList fmList;
+#if MACOS_X
+    idStr fmPath = Sys_DefaultSavePath();
+#else
     idStr fmPath = darkmodPath;
-
+#endif
+    
     Sys_ListFiles( fmPath.c_str(), "/", fmList );
     fmPath.AppendPath("fms");
 
