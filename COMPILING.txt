@@ -15,55 +15,28 @@ Download the libcurl 7.21 source package, and extract it on your system, then ru
 The library is then located in /usr/local/lib/libcurl.a.
 Copy that to darkmod_src/linux/libcurl/
 
-=== Building libcurl in Mac OS X ===
-
-Download the libcurl 7.21 source package, and extract it on your system. To produce a so-called "fat" binary you need to
-compile for both i386 and ppc targets.
-
-Build the i386 target by entering:
-
- env CFLAGS="-m32 -arch i386" LDFLAGS="-m32 -arch i386" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
- make
- sudo make install
-
-After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
-and rename it to ./libcurl.i386.a
-
-Build the powerpc target by entering:
-
- env CFLAGS="-m32 -arch ppc" LDFLAGS="-m32 -arch ppc" ./configure --disable-ldap --build=powerpc-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
- make
- sudo make install
-
-After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
-and rename it to ./libcurl.ppc.a
-
-Finally call lipo to combine these two into a fat binary by entering this in your curl folder.
-
- lipo -arch i386 libcurl.i386.a -arch ppc libcurl.ppc.a -create -output libcurl.a
-
-The filesize of the newly created libcurl.a should be around the sum of the single ppc and i386 libs, you can double-check that.
-Copy the libcurl.a into your darkmod_src/macosx/libcurl/ and you're done with this step.
-
 === Building Boost static libs in Mac OS X ===
 
-Download the boost 1.45 sources and extract them to your hard drive. Create a jam user config file to use the
-g++ 4.0 compiler instead of the default gcc 4.2 in Leopard: create a new file in your boost root folder and
-name it user-config-darwin.jam:
+Download the boost 1.57 sources and extract them to your hard drive. Build the b2 utility using bootstrap, replacing /Users/greebo/ with your home folder:
 
- using darwin : 8.11 : /usr/bin/g++-4.0 :
-     <architecture>"combined"
-     <address-model>"32"
-     <macosx-version>"10.4"
-     <macosx-version-min>"10.4"
-     <link>"static"
-     <threading>"multi" ;
+ ./bootstrap.sh --prefix=/Users/greebo/boost-1.57
 
-Download a bjam binary for OS X to your machine, then build boost threads, filesystem and system:
+Then build the static libraries one by one, we need these:
 
- /path/to/bjam --user-config=../../../user-config-darwin.jam architecture=combined link=static threading=multi address-model=32 release [stage]
+ filesystem
+ program_options
+ regex
+ system
+ thread
 
-The "stage" option only works in filesystem and system (not in thread, as of boost 1.45). You'll find the filesystem and system libs in
-the ./stage folder of your boost root, the libboost_thread.a will be located in the bin.v2 folder after compilation. 
+The b2 command that built the 32 bit libraries against the 10.6 SDK worked for me is the one below.
+Note that you'll need to download the 10.6 SDK from somewhere to be able to build against that:
+
+ b2 cxxflags="-arch i386 -mmacosx-version-min=10.6 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk" address-model=32 architecture=x86 link=static release [stage]
+
+The "stage" option only works in some libraries (not in thread, as of boost 1.57). You'll find the filesystem and system libs in
+the ./stage folder of the current directory, the libboost_thread.a will be located in the bin.v2 folder after compilation, like this:
+
+ ./bin.v2/libs/thread/build/darwin-4.2.1/release/address-model-32/architecture-x86/link-static/threading-multi/libboost_thread.a
 
 Copy all libboost*.a files to darkmod_src/macosx/boost/lib/.
