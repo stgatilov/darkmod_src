@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A6D99871E75308600711B97 /* thedarkmod.icns in Resources */ = {isa = PBXBuildFile; fileRef = 3A6D99861E75308600711B97 /* thedarkmod.icns */; };
 		3AB2390E14B9C7DA001B0950 /* I18N.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AB2390C14B9C7DA001B0950 /* I18N.cpp */; };
 		3AF476681E73D563006B26C2 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AF476671E73D563006B26C2 /* IOKit.framework */; };
 		3AF4766A1E73D681006B26C2 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AF476691E73D681006B26C2 /* Carbon.framework */; };
@@ -185,7 +186,6 @@
 		812259930912BF7F005D34B9 /* libidlib_nopic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 812259820912BF1D005D34B9 /* libidlib_nopic.a */; };
 		812259940912BF87005D34B9 /* liboggVorbis_nopic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8122598F0912BF38005D34B9 /* liboggVorbis_nopic.a */; };
 		812259FF0912C27D005D34B9 /* Doom 3.rsrc in Resources */ = {isa = PBXBuildFile; fileRef = 812259FD0912C27C005D34B9 /* Doom 3.rsrc */; };
-		81225A000912C27D005D34B9 /* Doom3.icns in Resources */ = {isa = PBXBuildFile; fileRef = 812259FE0912C27C005D34B9 /* Doom3.icns */; };
 		81225A0D0912C2D3005D34B9 /* ASLCore.nib in Resources */ = {isa = PBXBuildFile; fileRef = 81225A0B0912C2D3005D34B9 /* ASLCore.nib */; };
 		81225A100912C2E9005D34B9 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 81225A0E0912C2E9005D34B9 /* Localizable.strings */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
@@ -302,6 +302,7 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		3A1768D3149354D60077AB23 /* devil.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = devil.xcodeproj; sourceTree = "<group>"; };
+		3A6D99861E75308600711B97 /* thedarkmod.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = thedarkmod.icns; sourceTree = "<group>"; };
 		3AB238CF14B9B04E001B0950 /* jpeg.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = jpeg.xcodeproj; sourceTree = "<group>"; };
 		3AB238D514B9B05C001B0950 /* png.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = png.xcodeproj; sourceTree = "<group>"; };
 		3AB2390C14B9C7DA001B0950 /* I18N.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = I18N.cpp; sourceTree = "<group>"; };
@@ -586,7 +587,6 @@
 		812259A60912BFDC005D34B9 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
 		812259B40912C056005D34B9 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /Developer/SDKs/MacOSX10.4u.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
 		812259FD0912C27C005D34B9 /* Doom 3.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; path = "Doom 3.rsrc"; sourceTree = "<group>"; };
-		812259FE0912C27C005D34B9 /* Doom3.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Doom3.icns; sourceTree = "<group>"; };
 		81225A0C0912C2D3005D34B9 /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/ASLCore.nib; sourceTree = "<group>"; };
 		81225A0F0912C2E9005D34B9 /* English */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/Localizable.strings; sourceTree = "<group>"; };
 		81225A110912C300005D34B9 /* French */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = French; path = French.lproj/ASLCore.nib; sourceTree = "<group>"; };
@@ -668,8 +668,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3A6D99861E75308600711B97 /* thedarkmod.icns */,
 				812259FD0912C27C005D34B9 /* Doom 3.rsrc */,
-				812259FE0912C27C005D34B9 /* Doom3.icns */,
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
 				81225A0E0912C2E9005D34B9 /* Localizable.strings */,
@@ -1191,9 +1191,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		8D1107260486CEB800E47090 /* Doom 3 */ = {
+		8D1107260486CEB800E47090 /* The Dark Mod */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8191F1600912BBCD006AB5A4 /* Build configuration list for PBXNativeTarget "Doom 3" */;
+			buildConfigurationList = 8191F1600912BBCD006AB5A4 /* Build configuration list for PBXNativeTarget "The Dark Mod" */;
 			buildPhases = (
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
@@ -1209,7 +1209,7 @@
 				3AB238DC14B9B060001B0950 /* PBXTargetDependency */,
 				3AB238DE14B9B064001B0950 /* PBXTargetDependency */,
 			);
-			name = "Doom 3";
+			name = "The Dark Mod";
 			productInstallPath = "$(HOME)/Applications";
 			productName = Doom3;
 			productReference = 8D1107320486CEB800E47090 /* The Dark Mod.app */;
@@ -1268,7 +1268,7 @@
 			);
 			projectRoot = "";
 			targets = (
-				8D1107260486CEB800E47090 /* Doom 3 */,
+				8D1107260486CEB800E47090 /* The Dark Mod */,
 			);
 		};
 /* End PBXProject section */
@@ -1340,8 +1340,8 @@
 				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
 				812259FF0912C27D005D34B9 /* Doom 3.rsrc in Resources */,
-				81225A000912C27D005D34B9 /* Doom3.icns in Resources */,
 				81225A0D0912C2D3005D34B9 /* ASLCore.nib in Resources */,
+				3A6D99871E75308600711B97 /* thedarkmod.icns in Resources */,
 				81225A100912C2E9005D34B9 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1759,7 +1759,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		8191F1600912BBCD006AB5A4 /* Build configuration list for PBXNativeTarget "Doom 3" */ = {
+		8191F1600912BBCD006AB5A4 /* Build configuration list for PBXNativeTarget "The Dark Mod" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8191F1610912BBCD006AB5A4 /* Debug */,
