@@ -1,0 +1,489 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3AE81DB71E7CFDEC003E9162 /* Constants.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D811E7CFDEC003E9162 /* Constants.h */; };
+		3AE81DB81E7CFDEC003E9162 /* CRC.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D821E7CFDEC003E9162 /* CRC.h */; };
+		3AE81DB91E7CFDEC003E9162 /* ExceptionSafeThread.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D831E7CFDEC003E9162 /* ExceptionSafeThread.h */; };
+		3AE81DBA1E7CFDEC003E9162 /* File.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D841E7CFDEC003E9162 /* File.cpp */; };
+		3AE81DBB1E7CFDEC003E9162 /* File.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D851E7CFDEC003E9162 /* File.h */; };
+		3AE81DBC1E7CFDEC003E9162 /* Download.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D871E7CFDEC003E9162 /* Download.cpp */; };
+		3AE81DBD1E7CFDEC003E9162 /* Download.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D881E7CFDEC003E9162 /* Download.h */; };
+		3AE81DBE1E7CFDEC003E9162 /* DownloadManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D891E7CFDEC003E9162 /* DownloadManager.cpp */; };
+		3AE81DBF1E7CFDEC003E9162 /* DownloadManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D8A1E7CFDEC003E9162 /* DownloadManager.h */; };
+		3AE81DC01E7CFDEC003E9162 /* HttpConnection.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D8B1E7CFDEC003E9162 /* HttpConnection.cpp */; };
+		3AE81DC11E7CFDEC003E9162 /* HttpConnection.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D8C1E7CFDEC003E9162 /* HttpConnection.h */; };
+		3AE81DC21E7CFDEC003E9162 /* HttpRequest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D8D1E7CFDEC003E9162 /* HttpRequest.cpp */; };
+		3AE81DC31E7CFDEC003E9162 /* HttpRequest.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D8E1E7CFDEC003E9162 /* HttpRequest.h */; };
+		3AE81DC41E7CFDEC003E9162 /* MirrorDownload.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D8F1E7CFDEC003E9162 /* MirrorDownload.cpp */; };
+		3AE81DC51E7CFDEC003E9162 /* MirrorDownload.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D901E7CFDEC003E9162 /* MirrorDownload.h */; };
+		3AE81DC61E7CFDEC003E9162 /* MirrorList.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D911E7CFDEC003E9162 /* MirrorList.h */; };
+		3AE81DC71E7CFDEC003E9162 /* IniFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D921E7CFDEC003E9162 /* IniFile.cpp */; };
+		3AE81DC81E7CFDEC003E9162 /* IniFile.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D931E7CFDEC003E9162 /* IniFile.h */; };
+		3AE81DC91E7CFDEC003E9162 /* PackageInstructions.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D961E7CFDEC003E9162 /* PackageInstructions.h */; };
+		3AE81DCA1E7CFDEC003E9162 /* Packager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81D981E7CFDEC003E9162 /* Packager.cpp */; };
+		3AE81DCB1E7CFDEC003E9162 /* Packager.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D991E7CFDEC003E9162 /* Packager.h */; };
+		3AE81DCC1E7CFDEC003E9162 /* PackagerOptions.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9A1E7CFDEC003E9162 /* PackagerOptions.h */; };
+		3AE81DCD1E7CFDEC003E9162 /* Pk4Mappings.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9B1E7CFDEC003E9162 /* Pk4Mappings.h */; };
+		3AE81DCE1E7CFDEC003E9162 /* ProgramOptions.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9C1E7CFDEC003E9162 /* ProgramOptions.h */; };
+		3AE81DCF1E7CFDEC003E9162 /* ReleaseFileset.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9D1E7CFDEC003E9162 /* ReleaseFileset.h */; };
+		3AE81DD01E7CFDEC003E9162 /* ReleaseManifest.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9E1E7CFDEC003E9162 /* ReleaseManifest.h */; };
+		3AE81DD11E7CFDEC003E9162 /* ReleaseVersions.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81D9F1E7CFDEC003E9162 /* ReleaseVersions.h */; };
+		3AE81DD21E7CFDEC003E9162 /* SvnClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DA01E7CFDEC003E9162 /* SvnClient.cpp */; };
+		3AE81DD31E7CFDEC003E9162 /* SvnClient.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA11E7CFDEC003E9162 /* SvnClient.h */; };
+		3AE81DD41E7CFDEC003E9162 /* SvnClientImpl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DA21E7CFDEC003E9162 /* SvnClientImpl.cpp */; };
+		3AE81DD51E7CFDEC003E9162 /* SvnClientImpl.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA31E7CFDEC003E9162 /* SvnClientImpl.h */; };
+		3AE81DD61E7CFDEC003E9162 /* TraceLog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DA41E7CFDEC003E9162 /* TraceLog.cpp */; };
+		3AE81DD71E7CFDEC003E9162 /* TraceLog.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA51E7CFDEC003E9162 /* TraceLog.h */; };
+		3AE81DD81E7CFDEC003E9162 /* UpdatePackage.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA61E7CFDEC003E9162 /* UpdatePackage.h */; };
+		3AE81DD91E7CFDEC003E9162 /* UpdatePackageInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA71E7CFDEC003E9162 /* UpdatePackageInfo.h */; };
+		3AE81DDA1E7CFDEC003E9162 /* DifferentialUpdateInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DA91E7CFDEC003E9162 /* DifferentialUpdateInfo.h */; };
+		3AE81DDB1E7CFDEC003E9162 /* ProgressHandler.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DAA1E7CFDEC003E9162 /* ProgressHandler.h */; };
+		3AE81DDC1E7CFDEC003E9162 /* UpdateController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DAB1E7CFDEC003E9162 /* UpdateController.cpp */; };
+		3AE81DDD1E7CFDEC003E9162 /* UpdateController.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DAC1E7CFDEC003E9162 /* UpdateController.h */; };
+		3AE81DDE1E7CFDEC003E9162 /* Updater.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DAD1E7CFDEC003E9162 /* Updater.cpp */; };
+		3AE81DDF1E7CFDEC003E9162 /* Updater.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DAE1E7CFDEC003E9162 /* Updater.h */; };
+		3AE81DE01E7CFDEC003E9162 /* UpdaterOptions.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DAF1E7CFDEC003E9162 /* UpdaterOptions.h */; };
+		3AE81DE11E7CFDEC003E9162 /* UpdateStep.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DB01E7CFDEC003E9162 /* UpdateStep.h */; };
+		3AE81DE21E7CFDEC003E9162 /* UpdateView.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DB11E7CFDEC003E9162 /* UpdateView.h */; };
+		3AE81DE31E7CFDEC003E9162 /* Util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DB21E7CFDEC003E9162 /* Util.cpp */; };
+		3AE81DE41E7CFDEC003E9162 /* Util.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DB31E7CFDEC003E9162 /* Util.h */; };
+		3AE81DE51E7CFDEC003E9162 /* Zip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE81DB51E7CFDEC003E9162 /* Zip.cpp */; };
+		3AE81DE61E7CFDEC003E9162 /* Zip.h in Headers */ = {isa = PBXBuildFile; fileRef = 3AE81DB61E7CFDEC003E9162 /* Zip.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		3ABA558B1E7CFC0900793A56 /* libtdm_update.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libtdm_update.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		3AE81D811E7CFDEC003E9162 /* Constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constants.h; path = libtdm_update/Constants.h; sourceTree = SOURCE_ROOT; };
+		3AE81D821E7CFDEC003E9162 /* CRC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CRC.h; path = libtdm_update/CRC.h; sourceTree = SOURCE_ROOT; };
+		3AE81D831E7CFDEC003E9162 /* ExceptionSafeThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ExceptionSafeThread.h; path = libtdm_update/ExceptionSafeThread.h; sourceTree = SOURCE_ROOT; };
+		3AE81D841E7CFDEC003E9162 /* File.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = File.cpp; path = libtdm_update/File.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D851E7CFDEC003E9162 /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = File.h; path = libtdm_update/File.h; sourceTree = SOURCE_ROOT; };
+		3AE81D871E7CFDEC003E9162 /* Download.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Download.cpp; path = libtdm_update/Http/Download.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D881E7CFDEC003E9162 /* Download.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Download.h; path = libtdm_update/Http/Download.h; sourceTree = SOURCE_ROOT; };
+		3AE81D891E7CFDEC003E9162 /* DownloadManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DownloadManager.cpp; path = libtdm_update/Http/DownloadManager.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D8A1E7CFDEC003E9162 /* DownloadManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DownloadManager.h; path = libtdm_update/Http/DownloadManager.h; sourceTree = SOURCE_ROOT; };
+		3AE81D8B1E7CFDEC003E9162 /* HttpConnection.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HttpConnection.cpp; path = libtdm_update/Http/HttpConnection.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D8C1E7CFDEC003E9162 /* HttpConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HttpConnection.h; path = libtdm_update/Http/HttpConnection.h; sourceTree = SOURCE_ROOT; };
+		3AE81D8D1E7CFDEC003E9162 /* HttpRequest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HttpRequest.cpp; path = libtdm_update/Http/HttpRequest.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D8E1E7CFDEC003E9162 /* HttpRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HttpRequest.h; path = libtdm_update/Http/HttpRequest.h; sourceTree = SOURCE_ROOT; };
+		3AE81D8F1E7CFDEC003E9162 /* MirrorDownload.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MirrorDownload.cpp; path = libtdm_update/Http/MirrorDownload.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D901E7CFDEC003E9162 /* MirrorDownload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MirrorDownload.h; path = libtdm_update/Http/MirrorDownload.h; sourceTree = SOURCE_ROOT; };
+		3AE81D911E7CFDEC003E9162 /* MirrorList.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MirrorList.h; path = libtdm_update/Http/MirrorList.h; sourceTree = SOURCE_ROOT; };
+		3AE81D921E7CFDEC003E9162 /* IniFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IniFile.cpp; path = libtdm_update/IniFile.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D931E7CFDEC003E9162 /* IniFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IniFile.h; path = libtdm_update/IniFile.h; sourceTree = SOURCE_ROOT; };
+		3AE81D961E7CFDEC003E9162 /* PackageInstructions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PackageInstructions.h; path = libtdm_update/PackageInstructions.h; sourceTree = SOURCE_ROOT; };
+		3AE81D981E7CFDEC003E9162 /* Packager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Packager.cpp; path = libtdm_update/Packager/Packager.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81D991E7CFDEC003E9162 /* Packager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Packager.h; path = libtdm_update/Packager/Packager.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9A1E7CFDEC003E9162 /* PackagerOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PackagerOptions.h; path = libtdm_update/Packager/PackagerOptions.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9B1E7CFDEC003E9162 /* Pk4Mappings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Pk4Mappings.h; path = libtdm_update/Pk4Mappings.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9C1E7CFDEC003E9162 /* ProgramOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgramOptions.h; path = libtdm_update/ProgramOptions.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9D1E7CFDEC003E9162 /* ReleaseFileset.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ReleaseFileset.h; path = libtdm_update/ReleaseFileset.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9E1E7CFDEC003E9162 /* ReleaseManifest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ReleaseManifest.h; path = libtdm_update/ReleaseManifest.h; sourceTree = SOURCE_ROOT; };
+		3AE81D9F1E7CFDEC003E9162 /* ReleaseVersions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ReleaseVersions.h; path = libtdm_update/ReleaseVersions.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA01E7CFDEC003E9162 /* SvnClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SvnClient.cpp; path = libtdm_update/SvnClient.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DA11E7CFDEC003E9162 /* SvnClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SvnClient.h; path = libtdm_update/SvnClient.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA21E7CFDEC003E9162 /* SvnClientImpl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SvnClientImpl.cpp; path = libtdm_update/SvnClientImpl.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DA31E7CFDEC003E9162 /* SvnClientImpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SvnClientImpl.h; path = libtdm_update/SvnClientImpl.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA41E7CFDEC003E9162 /* TraceLog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TraceLog.cpp; path = libtdm_update/TraceLog.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DA51E7CFDEC003E9162 /* TraceLog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TraceLog.h; path = libtdm_update/TraceLog.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA61E7CFDEC003E9162 /* UpdatePackage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdatePackage.h; path = libtdm_update/UpdatePackage.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA71E7CFDEC003E9162 /* UpdatePackageInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdatePackageInfo.h; path = libtdm_update/UpdatePackageInfo.h; sourceTree = SOURCE_ROOT; };
+		3AE81DA91E7CFDEC003E9162 /* DifferentialUpdateInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DifferentialUpdateInfo.h; path = libtdm_update/Updater/DifferentialUpdateInfo.h; sourceTree = SOURCE_ROOT; };
+		3AE81DAA1E7CFDEC003E9162 /* ProgressHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressHandler.h; path = libtdm_update/Updater/ProgressHandler.h; sourceTree = SOURCE_ROOT; };
+		3AE81DAB1E7CFDEC003E9162 /* UpdateController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = UpdateController.cpp; path = libtdm_update/Updater/UpdateController.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DAC1E7CFDEC003E9162 /* UpdateController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdateController.h; path = libtdm_update/Updater/UpdateController.h; sourceTree = SOURCE_ROOT; };
+		3AE81DAD1E7CFDEC003E9162 /* Updater.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Updater.cpp; path = libtdm_update/Updater/Updater.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DAE1E7CFDEC003E9162 /* Updater.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Updater.h; path = libtdm_update/Updater/Updater.h; sourceTree = SOURCE_ROOT; };
+		3AE81DAF1E7CFDEC003E9162 /* UpdaterOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdaterOptions.h; path = libtdm_update/Updater/UpdaterOptions.h; sourceTree = SOURCE_ROOT; };
+		3AE81DB01E7CFDEC003E9162 /* UpdateStep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdateStep.h; path = libtdm_update/Updater/UpdateStep.h; sourceTree = SOURCE_ROOT; };
+		3AE81DB11E7CFDEC003E9162 /* UpdateView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UpdateView.h; path = libtdm_update/Updater/UpdateView.h; sourceTree = SOURCE_ROOT; };
+		3AE81DB21E7CFDEC003E9162 /* Util.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Util.cpp; path = libtdm_update/Util.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DB31E7CFDEC003E9162 /* Util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Util.h; path = libtdm_update/Util.h; sourceTree = SOURCE_ROOT; };
+		3AE81DB51E7CFDEC003E9162 /* Zip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Zip.cpp; path = libtdm_update/Zip/Zip.cpp; sourceTree = SOURCE_ROOT; };
+		3AE81DB61E7CFDEC003E9162 /* Zip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Zip.h; path = libtdm_update/Zip/Zip.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3ABA55881E7CFC0900793A56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3ABA55821E7CFC0900793A56 = {
+			isa = PBXGroup;
+			children = (
+				3ABA558D1E7CFC0900793A56 /* libtdm_update */,
+				3ABA558C1E7CFC0900793A56 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3ABA558C1E7CFC0900793A56 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3ABA558B1E7CFC0900793A56 /* libtdm_update.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3ABA558D1E7CFC0900793A56 /* libtdm_update */ = {
+			isa = PBXGroup;
+			children = (
+				3AE81D811E7CFDEC003E9162 /* Constants.h */,
+				3AE81D821E7CFDEC003E9162 /* CRC.h */,
+				3AE81D831E7CFDEC003E9162 /* ExceptionSafeThread.h */,
+				3AE81D841E7CFDEC003E9162 /* File.cpp */,
+				3AE81D851E7CFDEC003E9162 /* File.h */,
+				3AE81D861E7CFDEC003E9162 /* Http */,
+				3AE81D921E7CFDEC003E9162 /* IniFile.cpp */,
+				3AE81D931E7CFDEC003E9162 /* IniFile.h */,
+				3AE81D961E7CFDEC003E9162 /* PackageInstructions.h */,
+				3AE81D971E7CFDEC003E9162 /* Packager */,
+				3AE81D9B1E7CFDEC003E9162 /* Pk4Mappings.h */,
+				3AE81D9C1E7CFDEC003E9162 /* ProgramOptions.h */,
+				3AE81D9D1E7CFDEC003E9162 /* ReleaseFileset.h */,
+				3AE81D9E1E7CFDEC003E9162 /* ReleaseManifest.h */,
+				3AE81D9F1E7CFDEC003E9162 /* ReleaseVersions.h */,
+				3AE81DA01E7CFDEC003E9162 /* SvnClient.cpp */,
+				3AE81DA11E7CFDEC003E9162 /* SvnClient.h */,
+				3AE81DA21E7CFDEC003E9162 /* SvnClientImpl.cpp */,
+				3AE81DA31E7CFDEC003E9162 /* SvnClientImpl.h */,
+				3AE81DA41E7CFDEC003E9162 /* TraceLog.cpp */,
+				3AE81DA51E7CFDEC003E9162 /* TraceLog.h */,
+				3AE81DA61E7CFDEC003E9162 /* UpdatePackage.h */,
+				3AE81DA71E7CFDEC003E9162 /* UpdatePackageInfo.h */,
+				3AE81DA81E7CFDEC003E9162 /* Updater */,
+				3AE81DB21E7CFDEC003E9162 /* Util.cpp */,
+				3AE81DB31E7CFDEC003E9162 /* Util.h */,
+				3AE81DB41E7CFDEC003E9162 /* Zip */,
+			);
+			path = libtdm_update;
+			sourceTree = "<group>";
+		};
+		3AE81D861E7CFDEC003E9162 /* Http */ = {
+			isa = PBXGroup;
+			children = (
+				3AE81D871E7CFDEC003E9162 /* Download.cpp */,
+				3AE81D881E7CFDEC003E9162 /* Download.h */,
+				3AE81D891E7CFDEC003E9162 /* DownloadManager.cpp */,
+				3AE81D8A1E7CFDEC003E9162 /* DownloadManager.h */,
+				3AE81D8B1E7CFDEC003E9162 /* HttpConnection.cpp */,
+				3AE81D8C1E7CFDEC003E9162 /* HttpConnection.h */,
+				3AE81D8D1E7CFDEC003E9162 /* HttpRequest.cpp */,
+				3AE81D8E1E7CFDEC003E9162 /* HttpRequest.h */,
+				3AE81D8F1E7CFDEC003E9162 /* MirrorDownload.cpp */,
+				3AE81D901E7CFDEC003E9162 /* MirrorDownload.h */,
+				3AE81D911E7CFDEC003E9162 /* MirrorList.h */,
+			);
+			path = Http;
+			sourceTree = "<group>";
+		};
+		3AE81D971E7CFDEC003E9162 /* Packager */ = {
+			isa = PBXGroup;
+			children = (
+				3AE81D981E7CFDEC003E9162 /* Packager.cpp */,
+				3AE81D991E7CFDEC003E9162 /* Packager.h */,
+				3AE81D9A1E7CFDEC003E9162 /* PackagerOptions.h */,
+			);
+			path = Packager;
+			sourceTree = "<group>";
+		};
+		3AE81DA81E7CFDEC003E9162 /* Updater */ = {
+			isa = PBXGroup;
+			children = (
+				3AE81DA91E7CFDEC003E9162 /* DifferentialUpdateInfo.h */,
+				3AE81DAA1E7CFDEC003E9162 /* ProgressHandler.h */,
+				3AE81DAB1E7CFDEC003E9162 /* UpdateController.cpp */,
+				3AE81DAC1E7CFDEC003E9162 /* UpdateController.h */,
+				3AE81DAD1E7CFDEC003E9162 /* Updater.cpp */,
+				3AE81DAE1E7CFDEC003E9162 /* Updater.h */,
+				3AE81DAF1E7CFDEC003E9162 /* UpdaterOptions.h */,
+				3AE81DB01E7CFDEC003E9162 /* UpdateStep.h */,
+				3AE81DB11E7CFDEC003E9162 /* UpdateView.h */,
+			);
+			path = Updater;
+			sourceTree = "<group>";
+		};
+		3AE81DB41E7CFDEC003E9162 /* Zip */ = {
+			isa = PBXGroup;
+			children = (
+				3AE81DB51E7CFDEC003E9162 /* Zip.cpp */,
+				3AE81DB61E7CFDEC003E9162 /* Zip.h */,
+			);
+			path = Zip;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		3ABA55891E7CFC0900793A56 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AE81DE61E7CFDEC003E9162 /* Zip.h in Headers */,
+				3AE81DC91E7CFDEC003E9162 /* PackageInstructions.h in Headers */,
+				3AE81DCD1E7CFDEC003E9162 /* Pk4Mappings.h in Headers */,
+				3AE81DC11E7CFDEC003E9162 /* HttpConnection.h in Headers */,
+				3AE81DBB1E7CFDEC003E9162 /* File.h in Headers */,
+				3AE81DB91E7CFDEC003E9162 /* ExceptionSafeThread.h in Headers */,
+				3AE81DBF1E7CFDEC003E9162 /* DownloadManager.h in Headers */,
+				3AE81DC31E7CFDEC003E9162 /* HttpRequest.h in Headers */,
+				3AE81DBD1E7CFDEC003E9162 /* Download.h in Headers */,
+				3AE81DCB1E7CFDEC003E9162 /* Packager.h in Headers */,
+				3AE81DD71E7CFDEC003E9162 /* TraceLog.h in Headers */,
+				3AE81DC81E7CFDEC003E9162 /* IniFile.h in Headers */,
+				3AE81DCE1E7CFDEC003E9162 /* ProgramOptions.h in Headers */,
+				3AE81DD91E7CFDEC003E9162 /* UpdatePackageInfo.h in Headers */,
+				3AE81DD81E7CFDEC003E9162 /* UpdatePackage.h in Headers */,
+				3AE81DD31E7CFDEC003E9162 /* SvnClient.h in Headers */,
+				3AE81DDA1E7CFDEC003E9162 /* DifferentialUpdateInfo.h in Headers */,
+				3AE81DDF1E7CFDEC003E9162 /* Updater.h in Headers */,
+				3AE81DDB1E7CFDEC003E9162 /* ProgressHandler.h in Headers */,
+				3AE81DCC1E7CFDEC003E9162 /* PackagerOptions.h in Headers */,
+				3AE81DDD1E7CFDEC003E9162 /* UpdateController.h in Headers */,
+				3AE81DD51E7CFDEC003E9162 /* SvnClientImpl.h in Headers */,
+				3AE81DE01E7CFDEC003E9162 /* UpdaterOptions.h in Headers */,
+				3AE81DE21E7CFDEC003E9162 /* UpdateView.h in Headers */,
+				3AE81DB71E7CFDEC003E9162 /* Constants.h in Headers */,
+				3AE81DC61E7CFDEC003E9162 /* MirrorList.h in Headers */,
+				3AE81DD11E7CFDEC003E9162 /* ReleaseVersions.h in Headers */,
+				3AE81DE41E7CFDEC003E9162 /* Util.h in Headers */,
+				3AE81DC51E7CFDEC003E9162 /* MirrorDownload.h in Headers */,
+				3AE81DD01E7CFDEC003E9162 /* ReleaseManifest.h in Headers */,
+				3AE81DE11E7CFDEC003E9162 /* UpdateStep.h in Headers */,
+				3AE81DCF1E7CFDEC003E9162 /* ReleaseFileset.h in Headers */,
+				3AE81DB81E7CFDEC003E9162 /* CRC.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		3ABA558A1E7CFC0900793A56 /* libtdm_update */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3ABA55961E7CFC0900793A56 /* Build configuration list for PBXNativeTarget "libtdm_update" */;
+			buildPhases = (
+				3ABA55871E7CFC0900793A56 /* Sources */,
+				3ABA55881E7CFC0900793A56 /* Frameworks */,
+				3ABA55891E7CFC0900793A56 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libtdm_update;
+			productName = libtdm_update;
+			productReference = 3ABA558B1E7CFC0900793A56 /* libtdm_update.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3ABA55831E7CFC0900793A56 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = "Broken Glass Studios";
+				TargetAttributes = {
+					3ABA558A1E7CFC0900793A56 = {
+						CreatedOnToolsVersion = 7.1;
+					};
+				};
+			};
+			buildConfigurationList = 3ABA55861E7CFC0900793A56 /* Build configuration list for PBXProject "libtdm_update" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3ABA55821E7CFC0900793A56;
+			productRefGroup = 3ABA558C1E7CFC0900793A56 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3ABA558A1E7CFC0900793A56 /* libtdm_update */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3ABA55871E7CFC0900793A56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AE81DC21E7CFDEC003E9162 /* HttpRequest.cpp in Sources */,
+				3AE81DDE1E7CFDEC003E9162 /* Updater.cpp in Sources */,
+				3AE81DBE1E7CFDEC003E9162 /* DownloadManager.cpp in Sources */,
+				3AE81DE51E7CFDEC003E9162 /* Zip.cpp in Sources */,
+				3AE81DBA1E7CFDEC003E9162 /* File.cpp in Sources */,
+				3AE81DCA1E7CFDEC003E9162 /* Packager.cpp in Sources */,
+				3AE81DD41E7CFDEC003E9162 /* SvnClientImpl.cpp in Sources */,
+				3AE81DBC1E7CFDEC003E9162 /* Download.cpp in Sources */,
+				3AE81DD61E7CFDEC003E9162 /* TraceLog.cpp in Sources */,
+				3AE81DD21E7CFDEC003E9162 /* SvnClient.cpp in Sources */,
+				3AE81DDC1E7CFDEC003E9162 /* UpdateController.cpp in Sources */,
+				3AE81DC41E7CFDEC003E9162 /* MirrorDownload.cpp in Sources */,
+				3AE81DC01E7CFDEC003E9162 /* HttpConnection.cpp in Sources */,
+				3AE81DC71E7CFDEC003E9162 /* IniFile.cpp in Sources */,
+				3AE81DE31E7CFDEC003E9162 /* Util.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3ABA55941E7CFC0900793A56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3ABA55951E7CFC0900793A56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3ABA55971E7CFC0900793A56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					MACOS_X,
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../include";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
+			};
+			name = Debug;
+		};
+		3ABA55981E7CFC0900793A56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = MACOS_X;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../include";
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3ABA55861E7CFC0900793A56 /* Build configuration list for PBXProject "libtdm_update" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3ABA55941E7CFC0900793A56 /* Debug */,
+				3ABA55951E7CFC0900793A56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3ABA55961E7CFC0900793A56 /* Build configuration list for PBXNativeTarget "libtdm_update" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3ABA55971E7CFC0900793A56 /* Debug */,
+				3ABA55981E7CFC0900793A56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3ABA55831E7CFC0900793A56 /* Project object */;
+}

@@ -1,0 +1,394 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3AE6F0CD1E7D3164008A1B2D /* liblibtdm_update.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AE6F0C31E7D2C3C008A1B2D /* liblibtdm_update.a */; };
+		3AE6F0D01E7D31A7008A1B2D /* ConsoleUpdater.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE6F0CE1E7D31A7008A1B2D /* ConsoleUpdater.cpp */; };
+		3AE6F0D11E7D31A7008A1B2D /* tdm_update.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3AE6F0CF1E7D31A7008A1B2D /* tdm_update.cpp */; };
+		3AE6F1081E7D35EA008A1B2D /* liblibminizip.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AE6F0F61E7D357D008A1B2D /* liblibminizip.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3AE6F0C21E7D2C3C008A1B2D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AE6F0BE1E7D2C3C008A1B2D /* libtdm_update.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3ABA558B1E7CFC0900793A56;
+			remoteInfo = libtdm_update;
+		};
+		3AE6F0D21E7D31B8008A1B2D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AE6F0BE1E7D2C3C008A1B2D /* libtdm_update.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3ABA558A1E7CFC0900793A56;
+			remoteInfo = libtdm_update;
+		};
+		3AE6F0F51E7D357D008A1B2D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AE6F0F11E7D357D008A1B2D /* libminizip.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3AE6F0DD1E7D3531008A1B2D;
+			remoteInfo = libminizip;
+		};
+		3AE6F1061E7D35E5008A1B2D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3AE6F0F11E7D357D008A1B2D /* libminizip.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3AE6F0DC1E7D3531008A1B2D;
+			remoteInfo = libminizip;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3AE6F0B21E7D2BCF008A1B2D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		3AE6F0B41E7D2BCF008A1B2D /* tdm_update.macosx */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tdm_update.macosx; sourceTree = BUILT_PRODUCTS_DIR; };
+		3AE6F0BE1E7D2C3C008A1B2D /* libtdm_update.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libtdm_update.xcodeproj; sourceTree = "<group>"; };
+		3AE6F0C81E7D2E6F008A1B2D /* ConsoleUpdater.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleUpdater.h; sourceTree = SOURCE_ROOT; };
+		3AE6F0C91E7D2E6F008A1B2D /* LogWriters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LogWriters.h; sourceTree = SOURCE_ROOT; };
+		3AE6F0CE1E7D31A7008A1B2D /* ConsoleUpdater.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleUpdater.cpp; sourceTree = SOURCE_ROOT; };
+		3AE6F0CF1E7D31A7008A1B2D /* tdm_update.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tdm_update.cpp; sourceTree = SOURCE_ROOT; };
+		3AE6F0F11E7D357D008A1B2D /* libminizip.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = libminizip.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3AE6F0B11E7D2BCF008A1B2D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AE6F1081E7D35EA008A1B2D /* liblibminizip.a in Frameworks */,
+				3AE6F0CD1E7D3164008A1B2D /* liblibtdm_update.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3AE6F0AB1E7D2BCF008A1B2D = {
+			isa = PBXGroup;
+			children = (
+				3AE6F0F11E7D357D008A1B2D /* libminizip.xcodeproj */,
+				3AE6F0C61E7D2E53008A1B2D /* Sources */,
+				3AE6F0BE1E7D2C3C008A1B2D /* libtdm_update.xcodeproj */,
+				3AE6F0B51E7D2BCF008A1B2D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3AE6F0B51E7D2BCF008A1B2D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AE6F0B41E7D2BCF008A1B2D /* tdm_update.macosx */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AE6F0BF1E7D2C3C008A1B2D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AE6F0C31E7D2C3C008A1B2D /* liblibtdm_update.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3AE6F0C61E7D2E53008A1B2D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				3AE6F0CE1E7D31A7008A1B2D /* ConsoleUpdater.cpp */,
+				3AE6F0CF1E7D31A7008A1B2D /* tdm_update.cpp */,
+				3AE6F0C81E7D2E6F008A1B2D /* ConsoleUpdater.h */,
+				3AE6F0C91E7D2E6F008A1B2D /* LogWriters.h */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		3AE6F0F21E7D357D008A1B2D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3AE6F0F61E7D357D008A1B2D /* liblibminizip.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3AE6F0B31E7D2BCF008A1B2D /* tdm_update */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3AE6F0BB1E7D2BCF008A1B2D /* Build configuration list for PBXNativeTarget "tdm_update" */;
+			buildPhases = (
+				3AE6F0B01E7D2BCF008A1B2D /* Sources */,
+				3AE6F0B11E7D2BCF008A1B2D /* Frameworks */,
+				3AE6F0B21E7D2BCF008A1B2D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3AE6F1071E7D35E5008A1B2D /* PBXTargetDependency */,
+				3AE6F0D31E7D31B8008A1B2D /* PBXTargetDependency */,
+			);
+			name = tdm_update;
+			productName = tdm_update;
+			productReference = 3AE6F0B41E7D2BCF008A1B2D /* tdm_update.macosx */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3AE6F0AC1E7D2BCF008A1B2D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0710;
+				ORGANIZATIONNAME = "Broken Glass Studios";
+				TargetAttributes = {
+					3AE6F0B31E7D2BCF008A1B2D = {
+						CreatedOnToolsVersion = 7.1;
+					};
+				};
+			};
+			buildConfigurationList = 3AE6F0AF1E7D2BCF008A1B2D /* Build configuration list for PBXProject "tdm_update" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3AE6F0AB1E7D2BCF008A1B2D;
+			productRefGroup = 3AE6F0B51E7D2BCF008A1B2D /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 3AE6F0F21E7D357D008A1B2D /* Products */;
+					ProjectRef = 3AE6F0F11E7D357D008A1B2D /* libminizip.xcodeproj */;
+				},
+				{
+					ProductGroup = 3AE6F0BF1E7D2C3C008A1B2D /* Products */;
+					ProjectRef = 3AE6F0BE1E7D2C3C008A1B2D /* libtdm_update.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				3AE6F0B31E7D2BCF008A1B2D /* tdm_update */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		3AE6F0C31E7D2C3C008A1B2D /* liblibtdm_update.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = liblibtdm_update.a;
+			remoteRef = 3AE6F0C21E7D2C3C008A1B2D /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		3AE6F0F61E7D357D008A1B2D /* liblibminizip.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = liblibminizip.a;
+			remoteRef = 3AE6F0F51E7D357D008A1B2D /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3AE6F0B01E7D2BCF008A1B2D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AE6F0D11E7D31A7008A1B2D /* tdm_update.cpp in Sources */,
+				3AE6F0D01E7D31A7008A1B2D /* ConsoleUpdater.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3AE6F0D31E7D31B8008A1B2D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = libtdm_update;
+			targetProxy = 3AE6F0D21E7D31B8008A1B2D /* PBXContainerItemProxy */;
+		};
+		3AE6F1071E7D35E5008A1B2D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = libminizip;
+			targetProxy = 3AE6F1061E7D35E5008A1B2D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3AE6F0B91E7D2BCF008A1B2D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3AE6F0BA1E7D2BCF008A1B2D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		3AE6F0BC1E7D2BCF008A1B2D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/libtdm_update",
+					"$(SRCROOT)/../include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/../macosx/boost/lib",
+					"$(SRCROOT)/../macosx/libcurl",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				OTHER_LDFLAGS = (
+					"-lboost_filesystem",
+					"-lboost_thread",
+					"-lboost_program_options",
+					"-lboost_system",
+					"-lboost_regex",
+					"-lcurl",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME).macosx";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
+			};
+			name = Debug;
+		};
+		3AE6F0BD1E7D2BCF008A1B2D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LIBRARY = "libstdc++";
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/libtdm_update",
+					"$(SRCROOT)/../include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(SRCROOT)/../macosx/boost/lib",
+					"$(SRCROOT)/../macosx/libcurl",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				OTHER_LDFLAGS = (
+					"-lboost_filesystem",
+					"-lboost_thread",
+					"-lboost_program_options",
+					"-lboost_system",
+					"-lboost_regex",
+					"-lcurl",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME).macosx";
+				SDKROOT = macosx10.6;
+				VALID_ARCHS = i386;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3AE6F0AF1E7D2BCF008A1B2D /* Build configuration list for PBXProject "tdm_update" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3AE6F0B91E7D2BCF008A1B2D /* Debug */,
+				3AE6F0BA1E7D2BCF008A1B2D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3AE6F0BB1E7D2BCF008A1B2D /* Build configuration list for PBXNativeTarget "tdm_update" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3AE6F0BC1E7D2BCF008A1B2D /* Debug */,
+				3AE6F0BD1E7D2BCF008A1B2D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3AE6F0AC1E7D2BCF008A1B2D /* Project object */;
+}

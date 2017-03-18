@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "49c82d7f-2e2a-0410-a16f-ae8f201b507f++747",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "49c82d7f-2e2a-0410-a16f-ae8f201b507f++747" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "49c82d7f-2e2a-0410-a16f-ae8f201b507f++747" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "1B843673-66CB-4CE4-87A6-FBFD56C983FB",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "49c82d7f-2e2a-0410-a16f-ae8f201b507f++747" : "darkmod_src\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "tdm_update",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "tdm_update\/tdm_update.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/svn.thedarkmod.com\/svn\/darkmod_src",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "49c82d7f-2e2a-0410-a16f-ae8f201b507f++747"
+    }
+  ]
+}
