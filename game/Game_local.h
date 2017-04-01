@@ -89,7 +89,8 @@ class idLocationEntity;
 
 #define	MAX_CLIENTS				32
 // Tels: If you change this value, make sure that LUDICROUS_INDEX 
-// in renderer/RenderWorld_local.h is higher than MAX_GENTITIES:
+// in renderer/RenderWorld_local.h is higher than MAX_GENTITIES
+// stgatilov: also, update definition of idEntityPtr type in game.natvis
 #define	GENTITYNUM_BITS			13
 #define	MAX_GENTITIES			(1<<GENTITYNUM_BITS)
 #define	ENTITYNUM_NONE			(MAX_GENTITIES-1)
