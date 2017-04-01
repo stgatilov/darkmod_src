@@ -760,7 +760,7 @@ public:
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			CaptureRenderToBuffer(unsigned char* buffer);
 	virtual void			UnCrop();
-	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
+	//virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 
 public:
@@ -769,7 +769,7 @@ public:
 							~idRenderSystemLocal( void );
 
 	void					Clear( void );
-	void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
+	//void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
 	void					RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport );
 
 public:
@@ -790,11 +790,11 @@ public:
 	int						tiledViewport[2];
 
 	// determines which back end to use, and if vertex programs are in use
-	backEndName_t			backEndRenderer;
+	/*backEndName_t			backEndRenderer;
 	bool					backEndRendererHasVertexPrograms;
 	float					backEndRendererMaxLight;	// 1.0 for standard, unlimited for floats
 														// determines how much overbrighting needs
-														// to be done post-process
+														// to be done post-process*/
 
 	idVec4					ambientLightVector;	// used for "ambient bump mapping"
 
@@ -875,14 +875,14 @@ extern idCVar r_flareSize;				// scale the flare deforms from the material def
 extern idCVar r_gamma;					// changes gamma tables
 extern idCVar r_brightness;				// changes gamma tables
 
-extern idCVar r_renderer;				// arb, nv10, nv20, r200, gl2, etc
+//extern idCVar r_renderer;				// arb, nv10, nv20, r200, gl2, etc
 
-extern idCVar r_cgVertexProfile;		// arbvp1, vp20, vp30
-extern idCVar r_cgFragmentProfile;		// arbfp1, fp30
+//extern idCVar r_cgVertexProfile;		// arbvp1, vp20, vp30
+//extern idCVar r_cgFragmentProfile;		// arbfp1, fp30
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 
-extern idCVar r_useNV20MonoLights;		// 1 = allow an interaction pass optimization
+//extern idCVar r_useNV20MonoLights;		// 1 = allow an interaction pass optimization
 extern idCVar r_useLightPortalFlow;		// 1 = do a more precise area reference determination
 extern idCVar r_useTripleTextureARB;	// 1 = cards with 3+ texture units do a two pass instead of three pass
 extern idCVar r_useShadowSurfaceScissor;// 1 = scissor shadows by the scissor rect of the interaction surfaces
@@ -1372,14 +1372,14 @@ DRAW_*
 
 void	RB_ARB_DrawInteractions( void );
 
-void	R_R200_Init( void );
+/*void	R_R200_Init( void );
 void	RB_R200_DrawInteractions( void );
 
 void	R_NV10_Init( void );
 void	RB_NV10_DrawInteractions( void );
 
 void	R_NV20_Init( void );
-void	RB_NV20_DrawInteractions( void );
+void	RB_NV20_DrawInteractions( void );*/
 
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );

@@ -47,7 +47,7 @@ idCVar r_customHeight( "r_customHeight", "486", CVAR_RENDERER | CVAR_ARCHIVE | C
 idCVar r_singleTriangle( "r_singleTriangle", "0", CVAR_RENDERER | CVAR_BOOL, "only draw a single triangle per primitive" );
 idCVar r_checkBounds( "r_checkBounds", "0", CVAR_RENDERER | CVAR_BOOL, "compare all surface bounds with precalculated ones" );
 
-idCVar r_useNV20MonoLights( "r_useNV20MonoLights", "1", CVAR_RENDERER | CVAR_INTEGER, "use pass optimization for mono lights" );
+//idCVar r_useNV20MonoLights( "r_useNV20MonoLights", "1", CVAR_RENDERER | CVAR_INTEGER, "use pass optimization for mono lights" );
 idCVar r_useConstantMaterials( "r_useConstantMaterials", "1", CVAR_RENDERER | CVAR_BOOL, "use pre-calculated material registers if possible" );
 idCVar r_useTripleTextureARB( "r_useTripleTextureARB", "1", CVAR_RENDERER | CVAR_BOOL, "cards with 3+ texture units do a two pass instead of three pass" );
 idCVar r_useSilRemap( "r_useSilRemap", "1", CVAR_RENDERER | CVAR_BOOL, "consider verts with the same XYZ, but different ST the same for shadows" );
@@ -77,7 +77,7 @@ idCVar r_swapInterval( "r_swapInterval", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVA
 idCVar r_gamma( "r_gamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 3.0f );
 idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f );
 
-idCVar r_renderer( "r_renderer", "best", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
+//idCVar r_renderer( "r_renderer", "best", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
 
 idCVar r_jitter( "r_jitter", "0", CVAR_RENDERER | CVAR_BOOL, "randomly subpixel jitter the projection matrix" );
 
@@ -207,8 +207,8 @@ idCVar r_showSkel( "r_showSkel", "0", CVAR_RENDERER | CVAR_INTEGER, "draw the sk
 idCVar r_jointNameScale( "r_jointNameScale", "0.02", CVAR_RENDERER | CVAR_FLOAT, "size of joint names when r_showskel is set to 1" );
 idCVar r_jointNameOffset( "r_jointNameOffset", "0.5", CVAR_RENDERER | CVAR_FLOAT, "offset of joint names when r_showskel is set to 1" );
 
-idCVar r_cgVertexProfile( "r_cgVertexProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbvp1, vp20, vp30" );     
-idCVar r_cgFragmentProfile( "r_cgFragmentProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbfp1, fp30" );
+/*idCVar r_cgVertexProfile( "r_cgVertexProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbvp1, vp20, vp30" );     
+idCVar r_cgFragmentProfile( "r_cgFragmentProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbfp1, fp30" );*/
 
 idCVar r_debugLineDepthTest( "r_debugLineDepthTest", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "perform depth test on debug lines" );
 idCVar r_debugLineWidth( "r_debugLineWidth", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "width of debug lines" );
@@ -737,9 +737,9 @@ void R_InitOpenGL( void ) {
 
 	// parse our vertex and fragment programs, possibly disably support for
 	// one of the paths if there was an error
-	R_NV10_Init();
+	/*R_NV10_Init();
 	R_NV20_Init();
-	R_R200_Init();
+	R_R200_Init();*/
 	R_ARB2_Init();
 
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
@@ -749,8 +749,8 @@ void R_InitOpenGL( void ) {
 	vertexCache.Init();
 
 	// select which renderSystem we are going to use
-	r_renderer.SetModified();
-	tr.SetBackEndRenderer();
+	//r_renderer.SetModified();
+	//tr.SetBackEndRenderer();
 
 	// allocate the frame data, which may be more if smp is enabled
 	R_InitFrameData();
@@ -1931,7 +1931,7 @@ void GfxInfo_f( const idCmdArgs &args ) {
 	common->Printf( "CPU: %s\n", Sys_GetProcessorString() );
 
 	const char *active[2] = { "", " (ACTIVE)" };
-	common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
+	/*common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
 
 	if ( glConfig.allowNV10Path ) {
 		common->Printf( "NV10 path ENABLED%s\n", active[tr.backEndRenderer == BE_NV10] );
@@ -1949,10 +1949,10 @@ void GfxInfo_f( const idCmdArgs &args ) {
 		common->Printf( "R200 path ENABLED%s\n", active[tr.backEndRenderer == BE_R200] );
 	} else {
 		common->Printf( "R200 path disabled\n" );
-	}
+	}*/
 
-	if ( glConfig.allowARB2Path ) {
-		common->Printf( "ARB2 path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB2] );
+	if ( true/*glConfig.allowARB2Path*/ ) {
+		common->Printf( "ARB2 path ENABLED%s\n", active[true/*tr.backEndRenderer == BE_ARB2*/] );
 	} else {
 		common->Printf( "ARB2 path disabled\n" );
 	}
@@ -2217,9 +2217,9 @@ void idRenderSystemLocal::Clear( void ) {
 	viewportOffset[1] = 0;
 	tiledViewport[0] = 0;
 	tiledViewport[1] = 0;
-	backEndRenderer = BE_BAD;
+	/*backEndRenderer = BE_BAD;
 	backEndRendererHasVertexPrograms = false;
-	backEndRendererMaxLight = 1.0f;
+	backEndRendererMaxLight = 1.0f;*/
 	ambientLightVector.Zero();
 	sortOffset = 0;
 	worlds.Clear();
@@ -2296,7 +2296,7 @@ void idRenderSystemLocal::Init( void ) {
 
 	// determine which back end we will use
 	// FIXME : ??? this is invalid here as there is not enough information to set it up correctly
-	SetBackEndRenderer();
+	//SetBackEndRenderer();
 
 	common->Printf( "renderSystem initialized.\n" );
 	common->Printf( "--------------------------------------\n" );
@@ -2448,8 +2448,8 @@ int idRenderSystemLocal::GetScreenHeight( void ) const {
 idRenderSystemLocal::GetCardCaps
 ========================
 */
-void idRenderSystemLocal::GetCardCaps( bool &oldCard, bool &nv10or20 ) {
+/*void idRenderSystemLocal::GetCardCaps( bool &oldCard, bool &nv10or20 ) {
 	nv10or20 = ( tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
 	oldCard = ( tr.backEndRenderer == BE_ARB || tr.backEndRenderer == BE_R200 || tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
-}
+}*/
 

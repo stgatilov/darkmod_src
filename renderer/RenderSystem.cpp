@@ -530,7 +530,7 @@ SetBackEndRenderer
 Check for changes in the back end renderSystem, possibly invalidating cached data
 ==================
 */
-void idRenderSystemLocal::SetBackEndRenderer() {
+/*void idRenderSystemLocal::SetBackEndRenderer() {
 	if ( !r_renderer.IsModified() ) {
 		return;
 	}
@@ -614,7 +614,7 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	}
 
 	r_renderer.ClearModified();
-}
+}*/
 
 /*
 ====================
@@ -629,7 +629,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	}
 
 	// determine which back end we will use
-	SetBackEndRenderer();
+	//SetBackEndRenderer();
 
 	guiModel->Clear();
 

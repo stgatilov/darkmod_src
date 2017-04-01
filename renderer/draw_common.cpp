@@ -184,7 +184,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
-		if ( tr.backEndRenderer == BE_ARB2 ) {
+		//if ( tr.backEndRenderer == BE_ARB2 ) {
 			// see if there is also a bump map specified
 			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 			if ( bumpStage ) {
@@ -217,7 +217,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT );
 				qglEnable( GL_VERTEX_PROGRAM_ARB );
 			}
-		} else {
+		/*} else {
 			qglEnable( GL_TEXTURE_GEN_S );
 			qglEnable( GL_TEXTURE_GEN_T );
 			qglEnable( GL_TEXTURE_GEN_R );
@@ -234,7 +234,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 
 			qglLoadMatrixf( mat );
 			qglMatrixMode( GL_MODELVIEW );
-		}
+		}*/
 	}
 }
 
@@ -284,7 +284,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
-		if ( tr.backEndRenderer == BE_ARB2 ) {
+		//if ( tr.backEndRenderer == BE_ARB2 ) {
 			// see if there is also a bump map specified
 			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 			if ( bumpStage ) {
@@ -302,7 +302,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableClientState( GL_NORMAL_ARRAY );
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );
-		} else {
+		/*} else {
 			qglDisable( GL_TEXTURE_GEN_S );
 			qglDisable( GL_TEXTURE_GEN_T );
 			qglDisable( GL_TEXTURE_GEN_R );
@@ -314,7 +314,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglMatrixMode( GL_TEXTURE );
 			qglLoadIdentity();
 			qglMatrixMode( GL_MODELVIEW );
-		}
+		}*/
 	}
 
 	if ( pStage->texture.hasMatrix ) {
@@ -825,9 +825,9 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			//--------------------------
 
 			// completely skip the stage if we don't have the capability
-			if ( tr.backEndRenderer != BE_ARB2 ) {
+			/*if ( tr.backEndRenderer != BE_ARB2 ) {
 				continue;
-			}
+			}*/
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
@@ -899,7 +899,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		else if ( soft_particle 
 				 && surf->particle_radius > 0.0f 
 				 && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) 
-				 && tr.backEndRenderer == BE_ARB2
+				 //&& tr.backEndRenderer == BE_ARB2
 				 && !r_skipNewAmbient.GetBool()
 				)
 		{
@@ -1126,7 +1126,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 && !r_useFbo.GetBool() ) {
+		if ( backEnd.viewDef->viewEntitys 
+			//&& tr.backEndRenderer == BE_ARB2 
+			&& !r_useFbo.GetBool() ) {
 			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 				backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
@@ -1197,7 +1199,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 
 	// set the light position if we are using a vertex program to project the rear surfaces
-	if ( tr.backEndRendererHasVertexPrograms && r_useShadowVertexProgram.GetBool()
+	if ( //tr.backEndRendererHasVertexPrograms && // 
+		r_useShadowVertexProgram.GetBool()
 		&& surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
 
@@ -1937,7 +1940,7 @@ void	RB_STD_DrawView( void ) {
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
-	switch( tr.backEndRenderer ) {
+	/*switch( tr.backEndRenderer ) {
 	case BE_ARB:
 		RB_ARB_DrawInteractions();
 		break;
@@ -1953,7 +1956,8 @@ void	RB_STD_DrawView( void ) {
 	case BE_R200:
 		RB_R200_DrawInteractions();
 		break;
-	}
+	}*/
+	RB_ARB2_DrawInteractions();
 
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
