@@ -10,5 +10,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <DisableSpecificWarnings>4127</DisableSpecificWarnings>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)\sys\msvc\natvis\*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>

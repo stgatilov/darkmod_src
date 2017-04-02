@@ -196,34 +196,22 @@
       <PreprocessorDefinitions>NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Without MFC|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -234,33 +222,21 @@
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
     </Lib>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -269,9 +245,6 @@
       <Optimization>Full</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>xcopy /Y "$(ProjectDir)*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="idlib\bv\Bounds.cpp" />
