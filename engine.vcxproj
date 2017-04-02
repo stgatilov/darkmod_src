@@ -264,8 +264,6 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/arch:SSE2 %(AdditionalOptions)</AdditionalOptions>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -323,7 +321,6 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <Optimization>MaxSpeed</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
