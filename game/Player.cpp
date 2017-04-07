@@ -10333,10 +10333,17 @@ bool idPlayer::SelectInventoryItem(const idStr& name)
 	{
 		// Empty name specified, clear the inventory cursor
 		itemName = TDM_DUMMY_ITEM;
-		if (prev->GetName() != itemName)
+		if ( prev ) // grayman #4505 - in case prev is NULL
 		{
-			// Save name of current item (to restore it in idEntity::NextPrevInventoryItem)
-			m_LastItemNameBeforeClear = prev->GetName();
+			if ( prev->GetName() != itemName )
+			{
+				// Save name of current item (to restore it in idEntity::NextPrevInventoryItem)
+				m_LastItemNameBeforeClear = prev->GetName();
+			}
+		}
+		else
+		{
+			m_LastItemNameBeforeClear = TDM_DUMMY_ITEM;
 		}
 	}
 	
