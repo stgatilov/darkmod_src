@@ -3670,7 +3670,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 
 void Cmd_updateCookedMathData_f( const idCmdArgs& args )
 {
-	r_postprocess_colorCurveBias.SetModified();
+	cvarSystem->Find("r_postprocess_colorCurveBias")->SetModified();
 }
 
 void Cmd_LODBiasChanged_f( const idCmdArgs& args )

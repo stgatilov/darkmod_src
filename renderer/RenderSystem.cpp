@@ -293,9 +293,10 @@ idRenderSystemLocal::~idRenderSystemLocal
 =============
 */
 
-// #4395: Duzenko lightem pixel pack buffer optimization
 idRenderSystemLocal::~idRenderSystemLocal( void ) {
-	qglDeleteBuffersARB(1, &pbo);
+	// #4395: Duzenko lightem pixel pack buffer optimization
+	/*if (pbo && qglDeleteBuffersARB) // crashes on linux, never called on windows, needs to be moved to a better place or removed at all
+		qglDeleteBuffersARB(1, &pbo);*/
 }
 
 /*
@@ -529,7 +530,7 @@ SetBackEndRenderer
 Check for changes in the back end renderSystem, possibly invalidating cached data
 ==================
 */
-void idRenderSystemLocal::SetBackEndRenderer() {
+/*void idRenderSystemLocal::SetBackEndRenderer() {
 	if ( !r_renderer.IsModified() ) {
 		return;
 	}
@@ -613,7 +614,7 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	}
 
 	r_renderer.ClearModified();
-}
+}*/
 
 /*
 ====================
@@ -628,7 +629,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	}
 
 	// determine which back end we will use
-	SetBackEndRenderer();
+	//SetBackEndRenderer();
 
 	guiModel->Clear();
 
@@ -1029,8 +1030,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 		qglReadBuffer(GL_BACK);
 
 // #4395 Duzenko lightem pixel pack buffer optimization
-
-	if (1) {
+	if (glConfig.pixelBufferAvailable) {
 		static int nbytes = 64 * 64 * 3;
 		if (!pbo) {
 			qglGenBuffersARB(1, &pbo);
@@ -1046,7 +1046,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 		}
 		else {
 			// #4395 vid_restart ?
-               pbo = 0;
+            pbo = 0;
 		}
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);

@@ -16,6 +16,7 @@ idlib_string = ' \
 	containers/HashIndex.cpp \
 	geometry/DrawVert.cpp \
 	geometry/Winding2D.cpp \
+	geometry/RenderMatrix.cpp \
 	geometry/Surface_SweptSpline.cpp \
 	geometry/Winding.cpp \
 	geometry/Surface.cpp \

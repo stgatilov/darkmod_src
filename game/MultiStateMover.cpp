@@ -292,6 +292,13 @@ void CMultiStateMover::Activate(idEntity* activator)
 		return;
 	}
 
+	// grayman #4466 - if the mover is disabled, we can't activate it
+
+	if ( !spawnArgs.GetBool("enabled", "1") )
+	{
+		return;
+	}
+
 	// Get the "position" spawnarg from the activator
 	idStr targetPosition;
 	if (!activator->spawnArgs.GetString("position", "", targetPosition))

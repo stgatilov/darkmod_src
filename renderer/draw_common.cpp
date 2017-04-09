@@ -23,45 +23,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
-/*void DumpFramebuffer(const char *fileName) {
-	if (!r_ignore.GetBool())
-		return;
-	renderCrop_t r, *rc = &r;
-	glGetIntegerv(GL_VIEWPORT, (int*)rc);
-	qglReadBuffer(GL_BACK);
-
-	// calculate pitch of buffer that will be returned by qglReadPixels()
-	int alignment;
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
-
-	int pitch = rc->width * 4 + alignment - 1;
-	pitch = pitch - pitch % alignment;
-
-	byte *data = (byte *)R_StaticAlloc(pitch * rc->height);
-
-	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
-	qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-	byte *data2 = (byte *)R_StaticAlloc(rc->width * rc->height * 4);
-
-	for (int y = 0; y < rc->height; y++) {
-		for (int x = 0; x < rc->width; x++) {
-			int idx = y * pitch + x * 4;
-			int idx2 = (y * rc->width + x) * 4;
-
-			data2[idx2 + 0] = data[idx + 0];
-			data2[idx2 + 1] = data[idx + 1];
-			data2[idx2 + 2] = data[idx + 2];
-			data2[idx2 + 3] = 0xff;
-		}
-	}
-
-	R_WriteTGA(fileName, data2, rc->width, rc->height, true);
-
-	R_StaticFree(data);
-	R_StaticFree(data2);
-}*/
-
 /*
 =====================
 RB_BakeTextureMatrixIntoTexgen
@@ -182,8 +143,8 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 		qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
 	}
 
-	if ( pStage->texture.texgen == TG_GLASSWARP ) {
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) {
+	/*if ( pStage->texture.texgen == TG_GLASSWARP ) { #3868
+		if ( tr.backEndRenderer == BE_ARB2 ) {
 			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP );
 			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 
@@ -220,10 +181,10 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 
 			GL_SelectTexture( 0 );
 		}
-	}
+	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
-		if ( tr.backEndRenderer == BE_ARB2 ) {
+		//if ( tr.backEndRenderer == BE_ARB2 ) {
 			// see if there is also a bump map specified
 			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 			if ( bumpStage ) {
@@ -256,7 +217,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT );
 				qglEnable( GL_VERTEX_PROGRAM_ARB );
 			}
-		} else {
+		/*} else {
 			qglEnable( GL_TEXTURE_GEN_S );
 			qglEnable( GL_TEXTURE_GEN_T );
 			qglEnable( GL_TEXTURE_GEN_R );
@@ -273,7 +234,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 
 			qglLoadMatrixf( mat );
 			qglMatrixMode( GL_MODELVIEW );
-		}
+		}*/
 	}
 }
 
@@ -304,8 +265,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		qglDisable( GL_TEXTURE_GEN_Q );
 	}
 
-	if ( pStage->texture.texgen == TG_GLASSWARP ) {
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) {
+	/*if ( pStage->texture.texgen == TG_GLASSWARP ) { #3868
+		if ( tr.backEndRenderer == BE_ARB2 || tr.backEndRenderer == BE_NV30 ) {
 			GL_SelectTexture( 2 );
 			globalImages->BindNull();
 
@@ -320,10 +281,10 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			globalImages->BindNull();
 			GL_SelectTexture( 0 );
 		}
-	}
+	}*/
 
 	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
-		if ( tr.backEndRenderer == BE_ARB2 ) {
+		//if ( tr.backEndRenderer == BE_ARB2 ) {
 			// see if there is also a bump map specified
 			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
 			if ( bumpStage ) {
@@ -341,7 +302,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglDisableClientState( GL_NORMAL_ARRAY );
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );
-		} else {
+		/*} else {
 			qglDisable( GL_TEXTURE_GEN_S );
 			qglDisable( GL_TEXTURE_GEN_T );
 			qglDisable( GL_TEXTURE_GEN_R );
@@ -353,7 +314,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			qglMatrixMode( GL_TEXTURE );
 			qglLoadIdentity();
 			qglMatrixMode( GL_MODELVIEW );
-		}
+		}*/
 	}
 
 	if ( pStage->texture.hasMatrix ) {
@@ -864,9 +825,9 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			//--------------------------
 
 			// completely skip the stage if we don't have the capability
-			if ( tr.backEndRenderer != BE_ARB2 ) {
+			/*if ( tr.backEndRenderer != BE_ARB2 ) {
 				continue;
-			}
+			}*/
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
@@ -938,7 +899,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		else if ( soft_particle 
 				 && surf->particle_radius > 0.0f 
 				 && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) 
-				 && tr.backEndRenderer == BE_ARB2
+				 //&& tr.backEndRenderer == BE_ARB2
 				 && !r_skipNewAmbient.GetBool()
 				)
 		{
@@ -1159,20 +1120,22 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS ) {  
+	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) { // duzenko: skip for lightgem
 		if ( r_skipPostProcess.GetBool() ) {
 			return 0;
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 && !r_useFbo.GetBool() ) {
+		if ( backEnd.viewDef->viewEntitys 
+			//&& tr.backEndRenderer == BE_ARB2 
+			&& !r_useFbo.GetBool() ) {
 			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
-				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
+				backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
+				backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
 		}
-		extern void RB_FboAccessColorDepth(); // duzenko #4425 FIXME ugly magic extern
+		extern void RB_FboAccessColorDepth(bool DepthToo); // duzenko #4425 FIXME ugly magic extern
 		if (r_useFbo.GetBool())
-			RB_FboAccessColorDepth();
+			RB_FboAccessColorDepth(true);
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -1236,7 +1199,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 
 	// set the light position if we are using a vertex program to project the rear surfaces
-	if ( tr.backEndRendererHasVertexPrograms && r_useShadowVertexProgram.GetBool()
+	if ( //tr.backEndRendererHasVertexPrograms && // 
+		r_useShadowVertexProgram.GetBool()
 		&& surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
 
@@ -1976,7 +1940,7 @@ void	RB_STD_DrawView( void ) {
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
-	switch( tr.backEndRenderer ) {
+	/*switch( tr.backEndRenderer ) {
 	case BE_ARB:
 		RB_ARB_DrawInteractions();
 		break;
@@ -1992,7 +1956,8 @@ void	RB_STD_DrawView( void ) {
 	case BE_R200:
 		RB_R200_DrawInteractions();
 		break;
-	}
+	}*/
+	RB_ARB2_DrawInteractions();
 
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
@@ -2012,4 +1977,174 @@ void	RB_STD_DrawView( void ) {
 	}
 
 	RB_RenderDebugTools(drawSurfs, numDrawSurfs);
+}
+
+void RB_DumpFramebuffer( const char *fileName ) {
+	if (!r_ignore.GetBool())
+		return;
+	renderCrop_t r, *rc = &r;
+	qglGetIntegerv( GL_VIEWPORT, (int*)rc );
+	if (!r_useFbo.GetBool())
+		qglReadBuffer( GL_BACK );
+
+	// calculate pitch of buffer that will be returned by qglReadPixels()
+	int alignment;
+	qglGetIntegerv( GL_PACK_ALIGNMENT, &alignment );
+
+	int pitch = rc->width * 4 + alignment - 1;
+	pitch = pitch - pitch % alignment;
+
+	byte *data = (byte *)R_StaticAlloc( pitch * rc->height );
+
+	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data );
+
+	byte *data2 = (byte *)R_StaticAlloc( rc->width * rc->height * 4 );
+
+	for (int y = 0; y < rc->height; y++) {
+		for (int x = 0; x < rc->width; x++) {
+			int idx = y * pitch + x * 4;
+			int idx2 = (y * rc->width + x) * 4;
+
+			data2[idx2 + 0] = data[idx + 0];
+			data2[idx2 + 1] = data[idx + 1];
+			data2[idx2 + 2] = data[idx + 2];
+			data2[idx2 + 3] = 0xff;
+		}
+	}
+
+	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
+
+	R_StaticFree( data );
+	R_StaticFree( data2 );
+}
+
+void RB_DrawFullScreenQuad() {
+	qglBegin( GL_QUADS );
+	qglTexCoord2f( 0, 0 );
+	qglVertex2f( 0, 0 );
+	qglTexCoord2f( 0, 1 );
+	qglVertex2f( 0, 1 );
+	qglTexCoord2f( 1, 1 );
+	qglVertex2f( 1, 1 );
+	qglTexCoord2f( 1, 0 );
+	qglVertex2f( 1, 0 );
+	qglEnd();
+}
+
+/*
+=============
+RB_FboBloom
+
+Originally in front renderer (idPlayerView::dnPostProcessManager)
+=============
+*/
+
+void RB_Bloom() {
+	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
+	if ( !w || !h ) // this has actually happened
+		return;
+	extern void RB_FboAccessColorDepth( bool DepthToo = false );
+	RB_FboAccessColorDepth();
+	RB_DumpFramebuffer( "be_bl_in.tga" );
+
+	// full screen blends
+	qglLoadIdentity();
+	qglMatrixMode( GL_PROJECTION );
+	qglPushMatrix();
+	qglLoadIdentity();
+	qglOrtho( 0, 1, 0, 1, -1, 1 );
+
+	GL_State( GLS_DEPTHMASK );
+
+	qglDisable( GL_DEPTH_TEST );
+	qglDisable( GL_STENCIL_TEST );
+
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	GL_SelectTexture( 0 );
+	extern void RB_DumpFramebuffer( const char *fileName );
+	float	parm[4];
+
+	qglViewport( 0, 0, 256, 1 );
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH1 );
+	parm[0] = r_postprocess_colorCurveBias.GetFloat();
+	parm[1] = r_postprocess_sceneGamma.GetFloat();
+	parm[2] = r_postprocess_sceneExposure.GetFloat();
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	RB_DumpFramebuffer( "be_bl_m1.tga" );
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
+	parm[0] = r_postprocess_brightPassThreshold.GetFloat();
+	parm[1] = r_postprocess_brightPassOffset.GetFloat();
+	parm[2] = r_postprocess_colorCorrection.GetFloat();
+	parm[3] = Max( Min( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
+	RB_DumpFramebuffer( "be_bl_m2.tga" );
+
+	qglViewport( 0, 0, w / 2, h / 2 );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->bloomCookedMath->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_BRIGHTNESS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_BRIGHTNESS );
+	RB_DrawFullScreenQuad();
+	GL_SelectTexture( 0 );
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	RB_DumpFramebuffer( "be_bl_br.tga" );
+
+	globalImages->bloomImage->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRX );
+	parm[0] = 2 / w;
+	parm[1] = 1;
+	parm[2] = 1;
+	parm[3] = 1;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	RB_DumpFramebuffer( "be_bl_gx.tga" );
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
+	parm[0] = 2 / h;
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
+	RB_DumpFramebuffer( "be_bl_gy.tga" );
+
+	qglViewport( 0, 0, w, h );
+	GL_SelectTexture( 0 );
+	globalImages->currentRenderImage->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->bloomImage->Bind();
+	GL_SelectTexture( 2 );
+	globalImages->bloomCookedMath->Bind();
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS );
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS );
+	parm[0] = r_postprocess_bloomIntensity.GetFloat();
+	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
+	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	RB_DrawFullScreenQuad();
+	RB_DumpFramebuffer( "be_bl_fi.tga" );
+	GL_SelectTexture( 2 );
+	globalImages->BindNull(); // or else GUI is screwed
+	GL_SelectTexture( 1 );
+	globalImages->BindNull(); // or else GUI is screwed
+	GL_SelectTexture( 0 );
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+
+	qglPopMatrix();
+	qglEnable( GL_DEPTH_TEST );
+	qglMatrixMode( GL_MODELVIEW );
 }

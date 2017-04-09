@@ -574,6 +574,24 @@ const void	RB_SwapBuffers( const void *data ) {
 	}
 }
 
+bool fboUsed;
+// called when post-proceesing is about to start, needs pixels and sometimes depth as both input and output for water and smoke
+void RB_FboAccessColorDepth(bool DepthToo = false) {
+	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
+	//	return;
+	GL_SelectTexture( 0 );
+	if ( !fboUsed || !r_fboSharedColor.GetBool() ) {
+		globalImages->currentRenderImage->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, fboUsed && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
+			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
+	}
+	if (!(fboUsed && r_fboSharedDepth.GetBool()) && DepthToo) {
+		globalImages->currentDepthImage->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0 );
+	}
+}
+
 /*
 =============
 RB_CopyRender
@@ -581,8 +599,9 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-const void	RB_CopyRender( const void *data ) {
-	if ( r_skipCopyTexture.GetBool() ) {
+
+const void RB_CopyRender( const void *data ) {
+	if (r_skipCopyTexture.GetBool()) {
 		return;
 	}
 
@@ -591,20 +610,21 @@ const void	RB_CopyRender( const void *data ) {
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
 	if (cmd->image) {
-		cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
+		if (cmd->image == globalImages->bloomImage) { // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
+			RB_Bloom();
+		} else
+			cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
 	}
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
-bool fboUsed;
 
 void RB_FboEnter() {
 	if (fboUsed && fboId)
 		return;
 	GL_CheckErrors(); // debug
-
-	bool separateStencil = strcmp(glConfig.vendor_string, "NVIDIA Corporation") != 0; // may change after a vid_restart
+	bool fboSeparateStencil = strcmp(glConfig.vendor_string, "Intel") == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 	
@@ -622,22 +642,22 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		qglTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
 		globalImages->currentRenderFbo->Bind();
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
+		qglTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL); //NULL means reserve texture memory, but texels are undefined
 
-		if (separateStencil) {
+		if (fboSeparateStencil) {
 			globalImages->currentStencilFbo->Bind();
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0);
 		}
 
 		globalImages->currentDepthFbo->Bind();
@@ -645,10 +665,10 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (separateStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		if (fboSeparateStencil) {
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 
 		globalImages->currentDepthImage->Bind();
@@ -658,10 +678,10 @@ void RB_FboEnter() {
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		if (separateStencil) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		if (fboSeparateStencil) {
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 		} else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
+			qglTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 		}
 	}
 
@@ -681,13 +701,15 @@ void RB_FboEnter() {
 		// attach a renderbuffer to depth attachment point
 		GLuint depthTex = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage->texnum : globalImages->currentDepthFbo->texnum;
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
-		if (separateStencil)
+		if (fboSeparateStencil)
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0);
 		else
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
 		int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (GL_FRAMEBUFFER_COMPLETE != status) {
-			common->Printf("glCheckFramebufferStatusEXT %d\n", status); 
+		if (GL_FRAMEBUFFER_COMPLETE != status) { // something went wrong, fall back to default
+			common->Printf("glCheckFramebufferStatus %d\n", status); 
+			glDeleteFramebuffers( 1, &fboId );
+			fboId = 0; // try from scratch next time
 			r_useFbo.SetBool(false);
 		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); // not obvious, but let it be 
@@ -698,74 +720,55 @@ void RB_FboEnter() {
 	GL_CheckErrors();
 }
 
-// called when post-proceesing is about to start, needs depth and pixels as both input and output for water and smoke
-void RB_FboAccessColorDepth() {
-	if (!fboUsed)
-		return;
-	if (!r_fboSharedColor.GetBool()) {
-		globalImages->currentRenderImage->Bind();
-		qglCopyTexImage2D(GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
-			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0);
-	}
-	if (!r_fboSharedDepth.GetBool()) {
-		globalImages->currentDepthImage->Bind();
-		qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
-			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0);
-	}
-}
-
 // switch from fbo to default framebuffer, copy content
-void RB_FboLeave(viewDef_t* viewDef) {
+void RB_FboLeave( viewDef_t* viewDef ) {
 	if (!fboUsed)
 		return;
 	GL_CheckErrors();
+	RB_FboAccessColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
-	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
+	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
-		glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
-	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+	glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
+	glBindFramebuffer( GL_FRAMEBUFFER_EXT, 0 );
 	qglLoadIdentity();
-	qglMatrixMode(GL_PROJECTION);
+	qglMatrixMode( GL_PROJECTION );
 	qglPushMatrix();
 	qglLoadIdentity();
-	qglOrtho(0, 1, 0, 1, -1, 1);
-	glViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-	GL_State(GLS_DEFAULT);
+	qglOrtho( 0, 1, 0, 1, -1, 1 );
+	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
-	glEnable(GL_TEXTURE_2D);
-	switch (r_fboDebug.GetInteger())
+	GL_State( GLS_DEFAULT );
+	//qglEnable( GL_TEXTURE_2D );
+	qglDisable( GL_DEPTH_TEST );
+	qglDisable( GL_STENCIL_TEST );
+	qglColor3f( 1, 1, 1 );
 	{
-	case 1: 
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentRenderImage->texnum);
-		break;
-	case 2:
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthImage->texnum);
-		break;
-	case 3:
-		glBindTexture(GL_TEXTURE_2D, globalImages->currentDepthFbo->texnum);
-		break;
-	default:
-		glBindTexture(GL_TEXTURE_2D, r_fboSharedColor.GetBool() ? globalImages->currentRenderImage->texnum : globalImages->currentRenderFbo->texnum);
+		switch (r_fboDebug.GetInteger())
+		{
+		case 1:
+			globalImages->currentRenderImage->Bind();
+			break;
+		case 2:
+			globalImages->currentDepthImage->Bind();
+			break;
+		case 3:
+			globalImages->currentDepthFbo->Bind();
+			break;
+		default:
+			if (r_fboSharedColor.GetBool())
+				globalImages->currentRenderImage->Bind();
+			else
+				globalImages->currentRenderFbo->Bind();
+		}
+		RB_DrawFullScreenQuad();
 	}
-
-	qglDisable(GL_DEPTH_TEST);
-	qglDisable(GL_STENCIL_TEST);
-	qglBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	qglVertex2f(0, 0);
-	glTexCoord2f(0, 1);
-	qglVertex2f(0, 1);
-	glTexCoord2f(1, 1);
-	qglVertex2f(1, 1);
-	glTexCoord2f(1, 0);
-	qglVertex2f(1, 0);
-	qglEnd();
-
+	qglEnable( GL_DEPTH_TEST );
 	qglPopMatrix();
-	qglEnable(GL_DEPTH_TEST);
 	qglMatrixMode(GL_MODELVIEW);
-	if (viewDef) { // normal resolition 2d
+	GL_SelectTexture( 0 );
+	if (viewDef) { // switch back to normal resolution for correct 2d
 		tr.renderCrops[0].width = glConfig.vidWidth;
 		tr.renderCrops[0].height = glConfig.vidHeight;
 		viewDef->viewport.x2 = glConfig.vidWidth - 1;
@@ -802,21 +805,23 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
+	bool v3d = false; // needs to be declared outside of switch case
 
 	while (cmds) {
 		switch ( cmds->commandId ) {
 		case RC_NOP:
 			break;
 		case RC_DRAW_VIEW:
+			v3d = ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys != NULL; // view is 2d or 3d
 			// duzenko #4425: create/switch to framebuffer object
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
 				if (r_useFbo.GetBool())
-					if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys)
+					if (v3d)
 						RB_FboEnter();
 					else
 						RB_FboLeave(((const drawSurfsCommand_t *)cmds)->viewDef); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
 			RB_DrawView(cmds);
-			if (((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys) {
+			if (v3d) {
 				c_draw3d++;
 			} else {
 				c_draw2d++;

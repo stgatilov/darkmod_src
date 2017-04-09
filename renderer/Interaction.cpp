@@ -194,11 +194,12 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		} else { // duzenko #4424: same as above but more like d3bfg: 1 pass through memory array, no memset and extra mem allocation
 			for (int j = 0; j < tri->numVerts; j++) {
 				byte b = 0;
+				idVec3 &vec = tri->verts[j].xyz;
 				for (int i = 0; i < 6; i++)	{
 					// if completely infront of this clipping plane
 					if ((frontBits & (1 << i)))
 						continue;
-					float d = cullInfo.localClipPlanes[i].Distance(tri->verts[j].xyz);
+					float d = cullInfo.localClipPlanes[i].Distance(vec);
 					b |= (d < LIGHT_CLIP_EPSILON) << i;
 				}
 				cullInfo.cullBits[j] = b;

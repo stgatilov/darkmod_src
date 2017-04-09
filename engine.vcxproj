@@ -361,6 +361,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <Link>
       <AdditionalLibraryDirectories>openal\lib;sys\win32\dongle;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -403,9 +404,6 @@
       <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
       <AdditionalOptions>/arch:SSE2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <Manifest>
-      <EnableDPIAwareness>true</EnableDPIAwareness>
-    </Manifest>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -563,9 +561,6 @@
 @copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
     </PostBuildEvent>
-    <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
-    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h" />
@@ -676,6 +671,7 @@
     <ClInclude Include="sound\OggVorbis\ogg\os_types.h" />
     <ClInclude Include="sys\sys_local.h" />
     <ClInclude Include="sys\sys_public.h" />
+    <ClInclude Include="sys\win32\dxerr.h" />
     <ClInclude Include="sys\win32\wglext.h" />
     <ClInclude Include="sys\win32\win_local.h" />
     <ClInclude Include="sys\win32\rc\AFEditor_resource.h" />
@@ -2117,12 +2113,8 @@
     <ClCompile Include="framework\async\ServerScan.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />
-    <ClCompile Include="renderer\draw_arb.cpp" />
     <ClCompile Include="renderer\draw_arb2.cpp" />
     <ClCompile Include="renderer\draw_common.cpp" />
-    <ClCompile Include="renderer\draw_nv10.cpp" />
-    <ClCompile Include="renderer\draw_nv20.cpp" />
-    <ClCompile Include="renderer\draw_r200.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />
@@ -2579,6 +2571,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="sys\sys_local.cpp" />
+    <ClCompile Include="sys\win32\dxerr.cpp" />
     <ClCompile Include="sys\win32\win_cpu.cpp" />
     <ClCompile Include="sys\win32\win_glimp.cpp" />
     <ClCompile Include="sys\win32\win_input.cpp" />

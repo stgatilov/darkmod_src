@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  
+  <Type Name="CRawVector">
+    <DisplayString>[{num}]{{...}}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>m_Size</Size>
+        <ValuePointer>m_Pointer</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- Note: if GENTITYNUM_BITS changes, you have to update numbers/masks here too -->
+  <Type Name="idEntityPtr&lt;*&gt;">
+    <DisplayString Condition="spawnId == 0">Eptr (empty)</DisplayString>
+    <DisplayString Condition="spawnId != 0">Eptr (num = {spawnId &amp; 0x1FFF}, spId = {spawnId &gt;&gt; 13})</DisplayString>
+    <Expand>
+      <Synthetic Name="[WRONG]" Condition="spawnId != 0 &amp;&amp; gameLocal.spawnIds[spawnId &amp; 0x1FFF] != spawnId &gt;&gt; 13">
+        <DisplayString>set = {spawnId &gt;&gt; 13} != {gameLocal.spawnIds[spawnId &amp; 0x1FFF]} = stored</DisplayString>
+      </Synthetic>
+      <Item Name="[entity]" Condition="spawnId != 0">
+        gameLocal.entities[spawnId &amp; 0x1FFF]
+      </Item>
+    </Expand>
+  </Type>
+
+  <Type Name="idEntity">
+    <DisplayString>Entity {name}: num={entityNumber} def={entityDefNumber}</DisplayString>
+  </Type>
+
+  <Type Name="idCVar">
+    <DisplayString>CVar {name,na}: {value,na}</DisplayString>
+  </Type>
+  
+  <Type Name="idDeclLocal">
+    <DisplayString>Decl {name} from {sourceFile->fileName}</DisplayString>
+  </Type>
+  <Type Name="idDeclFile">
+    <DisplayString>DeclFile {fileName}  ({numLines} lines)</DisplayString>
+    <Expand>
+      <Synthetic Name="[All Decls]" ExcludeView="raw">
+        <Expand>
+          <LinkedListItems>
+            <HeadPointer>decls</HeadPointer>
+            <NextPointer>nextInFile</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="Note:">
+        <DisplayString>expand [Raw View] to see members</DisplayString>
+      </Synthetic>
+    </Expand>
+  </Type>
+  
+  <Type Name="idVarDef">
+    <DisplayString>VarDef {name->name}: {typeDef->type}</DisplayString>
+    <!--
+      TODO: display real value of variable (make it expandable)
+      Note: all the cases are handled in idVarDef::PrintInfo method.
+    -->
+  </Type>
+
+</AutoVisualizer>

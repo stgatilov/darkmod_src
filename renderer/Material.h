@@ -144,7 +144,7 @@ typedef enum {
 	TG_WOBBLESKY_CUBE,
 	TG_SCREEN,			// screen aligned, for mirrorRenders and screen space temporaries
 	TG_SCREEN2,
-	TG_GLASSWARP
+	//TG_GLASSWARP #3868
 } texgen_t;
 
 typedef struct {

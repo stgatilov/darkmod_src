@@ -76,7 +76,7 @@ Returns false if the cache couldn't be allocated, in which case the surface shou
 */
 bool R_CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri ) {
 	// not needed if we have vertex programs
-	if ( tr.backEndRendererHasVertexPrograms ) {
+	if ( true /*tr.backEndRendererHasVertexPrograms*/ ) {
 		return true;
 	}
 	// fogs and blends don't need light vectors
@@ -696,7 +696,7 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 		}
 
 		// calculate the specular coordinates if we aren't using vertex programs
-		if ( !tr.backEndRendererHasVertexPrograms && !r_skipSpecular.GetBool() && tr.backEndRenderer != BE_ARB ) {
+		if (!/*tr.backEndRendererHasVertexPrograms*/true && !r_skipSpecular.GetBool() /*&& tr.backEndRenderer != BE_ARB*/) {
 			R_SpecularTexGen( drawSurf, light->globalLightOrigin, tr.viewDef->renderView.vieworg );
 			// if we failed to allocate space for the specular calculations, drop the surface
 			if ( !drawSurf->dynamicTexCoords ) {

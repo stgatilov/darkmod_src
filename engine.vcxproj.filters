@@ -569,6 +569,9 @@
     <ClInclude Include="renderer\CinematicFFMpeg.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="sys\win32\dxerr.h">
+      <Filter>Sys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -682,22 +685,10 @@
     <ClCompile Include="renderer\Cinematic.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\draw_arb.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="renderer\draw_arb2.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_common.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_nv10.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_nv20.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="renderer\draw_r200.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\GuiModel.cpp">
@@ -1597,6 +1588,9 @@
     </ClCompile>
     <ClCompile Include="renderer\CinematicFFMpeg.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="sys\win32\dxerr.cpp">
+      <Filter>Sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

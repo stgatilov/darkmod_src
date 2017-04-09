@@ -760,7 +760,7 @@ public:
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			CaptureRenderToBuffer(unsigned char* buffer);
 	virtual void			UnCrop();
-	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
+	//virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 
 public:
@@ -769,7 +769,7 @@ public:
 							~idRenderSystemLocal( void );
 
 	void					Clear( void );
-	void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
+	//void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
 	void					RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport );
 
 public:
@@ -790,11 +790,11 @@ public:
 	int						tiledViewport[2];
 
 	// determines which back end to use, and if vertex programs are in use
-	backEndName_t			backEndRenderer;
+	/*backEndName_t			backEndRenderer;
 	bool					backEndRendererHasVertexPrograms;
 	float					backEndRendererMaxLight;	// 1.0 for standard, unlimited for floats
 														// determines how much overbrighting needs
-														// to be done post-process
+														// to be done post-process*/
 
 	idVec4					ambientLightVector;	// used for "ambient bump mapping"
 
@@ -875,14 +875,14 @@ extern idCVar r_flareSize;				// scale the flare deforms from the material def
 extern idCVar r_gamma;					// changes gamma tables
 extern idCVar r_brightness;				// changes gamma tables
 
-extern idCVar r_renderer;				// arb, nv10, nv20, r200, gl2, etc
+//extern idCVar r_renderer;				// arb, nv10, nv20, r200, gl2, etc
 
-extern idCVar r_cgVertexProfile;		// arbvp1, vp20, vp30
-extern idCVar r_cgFragmentProfile;		// arbfp1, fp30
+//extern idCVar r_cgVertexProfile;		// arbvp1, vp20, vp30
+//extern idCVar r_cgFragmentProfile;		// arbfp1, fp30
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 
-extern idCVar r_useNV20MonoLights;		// 1 = allow an interaction pass optimization
+//extern idCVar r_useNV20MonoLights;		// 1 = allow an interaction pass optimization
 extern idCVar r_useLightPortalFlow;		// 1 = do a more precise area reference determination
 extern idCVar r_useTripleTextureARB;	// 1 = cards with 3+ texture units do a two pass instead of three pass
 extern idCVar r_useShadowSurfaceScissor;// 1 = scissor shadows by the scissor rect of the interaction surfaces
@@ -1028,6 +1028,8 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 extern idCVar r_stencilShadowMode;
+
+// duzenko: late 2016 additions
 extern idCVar r_useAnonreclaimer;
 extern idCVar r_useFbo;
 extern idCVar r_fboDebug;
@@ -1035,6 +1037,20 @@ extern idCVar r_fboColorBits;
 extern idCVar r_fboSharedColor;
 extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
+
+// HDR related - J.C.Denton
+extern idCVar r_postprocess;
+extern idCVar r_postprocess_brightPassThreshold;
+extern idCVar r_postprocess_brightPassOffset;
+extern idCVar r_postprocess_colorCurveBias;
+extern idCVar r_postprocess_colorCorrection;
+extern idCVar r_postprocess_colorCorrectBias;
+extern idCVar r_postprocess_sceneExposure;
+extern idCVar r_postprocess_sceneGamma;
+extern idCVar r_postprocess_debugMode;
+extern idCVar r_postprocess_bloomKernelSize;
+extern idCVar r_postprocess_bloomIntensity;
+extern idCVar r_postprocess_desaturation;
 
 /*
 ====================================================================
@@ -1341,6 +1357,11 @@ void RB_STD_DrawView( void );
 void RB_STD_FogAllLights( void );
 void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
 
+// bloom related
+void RB_DumpFramebuffer( const char *fileName );
+void RB_DrawFullScreenQuad( void );
+void RB_Bloom( void );
+
 /*
 ============================================================
 
@@ -1351,14 +1372,14 @@ DRAW_*
 
 void	RB_ARB_DrawInteractions( void );
 
-void	R_R200_Init( void );
+/*void	R_R200_Init( void );
 void	RB_R200_DrawInteractions( void );
 
 void	R_NV10_Init( void );
 void	RB_NV10_DrawInteractions( void );
 
 void	R_NV20_Init( void );
-void	RB_NV20_DrawInteractions( void );
+void	RB_NV20_DrawInteractions( void );*/
 
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
@@ -1383,8 +1404,8 @@ typedef enum {
 	FPROG_TEST,
 	VPROG_AMBIENT,
 	FPROG_AMBIENT,
-	VPROG_GLASSWARP,
-	FPROG_GLASSWARP,
+	//VPROG_GLASSWARP,#3868
+	//FPROG_GLASSWARP,
 	// rebb: direct light interactions, related to r_dedicatedAmbient
 	VPROG_TEST_DIRECT,
 	FPROG_TEST_DIRECT,
@@ -1406,7 +1427,20 @@ typedef enum {
 	//
 	VPROG_AMBIENT_CUBE_LIGHT,
 	FPROG_AMBIENT_CUBE_LIGHT,
-	//
+	// duzenko: backend bloom,
+	VPROG_BLOOM_COOK_MATH1,
+	FPROG_BLOOM_COOK_MATH1,
+	VPROG_BLOOM_COOK_MATH2,
+	FPROG_BLOOM_COOK_MATH2,
+	VPROG_BLOOM_BRIGHTNESS,
+	FPROG_BLOOM_BRIGHTNESS,
+	VPROG_BLOOM_GAUSS_BLRX,
+	FPROG_BLOOM_GAUSS_BLRX,
+	VPROG_BLOOM_GAUSS_BLRY,
+	FPROG_BLOOM_GAUSS_BLRY,
+	VPROG_BLOOM_FINAL_PASS,
+	FPROG_BLOOM_FINAL_PASS,
+	// 
 	PROG_USER
 } program_t;
 
