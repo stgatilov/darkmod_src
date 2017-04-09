@@ -539,10 +539,10 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
 	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
-		mipmapMode == 0;
+		mipmapMode = 0;
 	else
 		if (mipmapMode == 2 && !glGenerateMipmap)
-			mipmapMode == 1;
+			mipmapMode = 1;
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
@@ -665,13 +665,13 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
 	} else {
 		if (mipmapMode == 1) // duzenko #4401
-			glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+			qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 		if (mipmapMode == 2) // duzenko #4401
 			glGenerateMipmap(GL_TEXTURE_2D);
 		if (mipmapMode == 1) // duzenko #4401
 			if (strcmp(glConfig.vendor_string, "Intel")) // known to have crashed on Intel
-				glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
+				qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
 	}
 	
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
@@ -1742,8 +1742,10 @@ void idImage::Bind() {
 
 
 	// bump our statistic counters
-	frameUsed = backEnd.frameCount;
-	bindCount++;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		frameUsed = backEnd.frameCount;
+		bindCount++;
+	}
 
 	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 
@@ -1877,7 +1879,8 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	GetDownsize( imageWidth, imageHeight );
 	GetDownsize( potWidth, potHeight );
 
-	qglReadBuffer( GL_BACK );
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
 
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
@@ -1946,7 +1949,8 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight, bo
 	GetDownsize( imageWidth, imageHeight );
 	GetDownsize( potWidth, potHeight );
 	// Ensure we are reading from the back buffer:
-	qglReadBuffer( GL_BACK );
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer( GL_BACK );
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
 	if ( ( useOversizedBuffer && ( uploadWidth < potWidth || uploadHeight < potHeight ) ) || ( !useOversizedBuffer && ( uploadWidth != potWidth || uploadHeight != potHeight ) ) ) 

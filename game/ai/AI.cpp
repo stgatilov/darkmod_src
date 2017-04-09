@@ -780,7 +780,7 @@ void idAI::Save( idSaveGame *savefile ) const {
 		savefile->WriteInt(ea.timeAlerted);
 		savefile->WriteInt(ea.alertIndex);
 		ea.entityResponsible.Save(savefile);
-		savefile->WriteBool(ea.processed);
+		savefile->WriteBool(ea.ignore);
 	}
 
 	savefile->WriteInt( talk_state );
@@ -1237,7 +1237,7 @@ void idAI::Restore( idRestoreGame *savefile ) {
 		savefile->ReadInt(alertQueue[i].timeAlerted);
 		savefile->ReadInt(alertQueue[i].alertIndex);
 		alertQueue[i].entityResponsible.Restore(savefile);
-		savefile->ReadBool(alertQueue[i].processed);
+		savefile->ReadBool(alertQueue[i].ignore);
 	}
 
 	savefile->ReadInt( i );
@@ -2390,6 +2390,68 @@ void idAI::Think( void )
 		fl.isDormant = false;
 		DormantEnd();
 	}
+
+	// grayman #4412 - testing shows that dmap doesn't properly mark all portals for
+	// flying AI. So the AI won't see a closed door as a solid wall. To solve this,
+	// see if there's a nearby door and mark its AAS area unreachable if the AI
+	// can't fly through the door. This allows him to seek an alternate route.
+
+	if ( GetMoveType() == MOVETYPE_FLY )
+	{
+		idBounds bounds = physicsObj.GetAbsBounds();
+		bounds[0].x -= 16;
+		bounds[0].y -= 16;
+		bounds[0].x += 16;
+		bounds[0].y += 16;
+		idEntity* ents[MAX_GENTITIES];
+		int num = gameLocal.clip.EntitiesTouchingBounds( bounds, CONTENTS_SOLID, ents, MAX_GENTITIES );
+		if (num > 0)
+		{
+			for ( int i = 0; i < num; i++ )
+			{
+				// check if there's a door
+				idEntity *e = ents[i];
+
+				if ( e == NULL )
+				{
+					continue;
+				}
+
+				if ( e->IsType(CFrobDoor::Type) )
+				{
+					CFrobDoor* frobDoor = static_cast<CFrobDoor*>(e);
+					bool foundImpassableDoor = false;
+
+					if ( frobDoor->IsOpen() )
+					{
+						if ( !FitsThrough(frobDoor) )
+						{
+							foundImpassableDoor = true; // can't fit through the open door
+						}
+					}
+					else // can't go through the closed door
+					{
+						foundImpassableDoor = true; // can't go through the closed door
+					}
+
+					int areaNum = frobDoor->GetAASArea(aas);
+					if ( foundImpassableDoor )
+					{
+						// add AAS area number of the door to forbidden areas
+						gameLocal.m_AreaManager.AddForbiddenArea(areaNum, this);
+						PostEventMS(&AI_ReEvaluateArea, doorRetryTime, areaNum);
+						frobDoor->RegisterAI(this); // grayman #1145 - this AI is interested in this door
+					}
+					else
+					{
+						// door is passable, so remove its area number from forbidden areas
+						gameLocal.m_AreaManager.RemoveForbiddenArea(areaNum, this);
+					}
+					break;
+				}
+			}
+		}
+	}
 			
 	// save old origin and velocity for crashlanding
 	// grayman #3699 - the physics object for an AI will change
@@ -2633,7 +2695,8 @@ void idAI::Think( void )
 	UpdateDamageEffects();
 	LinkCombat();
 
-	if (health > 0)
+	// grayman #4412 - flying AI unaffected by CrashLand()
+	if ((health > 0) && (GetMoveType() != MOVETYPE_FLY))
 	{
 		idActor::CrashLand( physicsObj, oldOrigin, oldVelocity );
 	}
@@ -3065,7 +3128,7 @@ void idAI::DrawRoute( void ) const {
 	if ( aas && move.toAreaNum && move.moveCommand != MOVE_NONE && move.moveCommand != MOVE_WANDER && move.moveCommand != MOVE_FACE_ENEMY && move.moveCommand != MOVE_FACE_ENTITY && move.moveCommand != MOVE_TO_POSITION_DIRECT && move.moveCommand != MOVE_VECTOR ) 
 	{
 		if ( move.moveType == MOVETYPE_FLY ) {
-			aas->ShowFlyPath( physicsObj.GetOrigin(), move.toAreaNum, move.moveDest );
+			aas->ShowFlyPath( physicsObj.GetOrigin(), move.toAreaNum, move.moveDest, NULL ); // grayman #4412
 		} else {
 			aas->ShowWalkPath( physicsObj.GetOrigin(), move.toAreaNum, move.moveDest );
 		}
@@ -3208,7 +3271,7 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	idBounds bounds = GetPhysics()->GetBounds();
 
 	// angua: don't do this check when flying
-	if (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance) && GetMoveType() != MOVETYPE_FLY) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
+	if ( (GetMoveType() != MOVETYPE_FLY) && (height > (bounds[1][2] + reachedpos_bbox_expansion + 0.4*aas_reachability_z_tolerance) ) ) // grayman #2717 - don't look so far up, and add reachedpos_bbox_expansion
 	{
 		goalAreaNum = 0;
 		return false;
@@ -3218,7 +3281,29 @@ bool idAI::PathToGoal( aasPath_t &path, int areaNum, const idVec3 &origin, int g
 	gameLocal.m_AreaManager.DisableForbiddenAreas(this);
 	if ( move.moveType == MOVETYPE_FLY )
 	{
-		returnval = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags );
+		returnval = aas->FlyPathToGoal( path, areaNum, org, goalAreaNum, goal, travelFlags, actor ); // grayman #4412
+
+		// grayman #4412 - The elemental walks up steps like a human AI: it travels forward
+		// until it hits a step, then goes up and forward, up and forward, etc. until it hits
+		// the top of the steps. To smooth out that climb, let's see if the distance from
+		// path.moveGoal to the floor beneath it is less than 24. If so, let's raise it so it's
+		// 24 off the floor. The exception to this is if path.moveGoal is a path_corner, because
+		// we want the elemental to honor a path corner's height off the floor.
+		idPathCorner *currentPath = GetMemory().currentPath.GetEntity();
+		if ( !currentPath || // is there a path node?
+			 (idStr::Icmp(currentPath->spawnArgs.GetString("classname"), "path_corner") != 0 ) || // is it a true path_corner?
+			 ((currentPath->GetPhysics()->GetOrigin() - path.moveGoal).LengthFast() > VECTOR_EPSILON )) // are we headed for a path_corner?
+		{
+			// not headed for a true path_corner
+			trace_t trace;
+			idVec3 end = path.moveGoal;
+			end.z -= 24.0f;
+			gameLocal.clip.TracePoint(trace, path.moveGoal, end, MASK_OPAQUE, this);
+			if ( trace.fraction < 1.0f )
+			{
+				path.moveGoal.z = trace.endpos.z + 24.0f;
+			}
+		}
 	}
 	else
 	{
@@ -3312,7 +3397,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 	{
 		if ( move.moveType == MOVETYPE_FLY )
 		{
-			aas->ShowFlyPath( start, toArea, end );
+			aas->ShowFlyPath( start, toArea, end, this ); // grayman #4412
 		}
 		else
 		{
@@ -4231,6 +4316,15 @@ bool idAI::MoveOutOfRange( idEntity *ent, float range ) {
 	}
 
 	DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Best fleeing location is: %f %f %f in area %d\r", goal.origin.x, goal.origin.y, goal.origin.z, goal.areaNum);
+
+	// grayman #4412 - The code assumes we want a goal position with
+	// the same z value as the entity we're moving away from. If I'm a
+	// flying monster, I want to retain my z value.
+
+	if ( move.moveType == MOVETYPE_FLY )
+	{
+		goal.origin.z = org.z;
+	}
 
 	if ( ReachedPos( goal.origin, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
@@ -5446,12 +5540,27 @@ bool idAI::TurnToward( const idVec3 &pos ) {
 idAI::ApplyImpulse
 ================
 */
-void idAI::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse ) {
-	// FIXME: Jim take a look at this and see if this is a reasonable thing to do
-	// instead of a spawnArg flag.. Sabaoth is the only slide monster ( and should be the only one for D3 )
-	// and we don't want him taking physics impulses as it can knock him off the path
-	if ( move.moveType != MOVETYPE_STATIC && move.moveType != MOVETYPE_SLIDE ) {
-		idActor::ApplyImpulse( ent, id, point, impulse );
+void idAI::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec3 &impulse )
+{
+	moveType_t moveType = move.moveType;
+	if ( (moveType != MOVETYPE_STATIC) && (moveType != MOVETYPE_SLIDE) && (moveType != MOVETYPE_FLY) ) // grayman #4412
+	{
+		// grayman #4423 - If sitting or sleeping, don't allow the
+		// impulse, because it screws up these other animations.
+
+		if ( moveType == MOVETYPE_SIT ||
+			moveType == MOVETYPE_SLEEP ||
+			moveType == MOVETYPE_SIT_DOWN ||
+			moveType == MOVETYPE_LAY_DOWN ||
+			moveType == MOVETYPE_GET_UP ||
+			moveType == MOVETYPE_GET_UP_FROM_LYING )
+		{
+			// ignore the impulse
+		}
+		else
+		{
+			idActor::ApplyImpulse(ent, id, point, impulse);
+		}
 	}
 }
 
@@ -6242,7 +6351,8 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 
 	// make sure we're not flying too high to get through doors
 	goLower = false;
-	if ( origin.z > goalPos.z ) {
+	if ( origin.z > goalPos.z )
+	{
 		dest = goalPos;
 		dest.z = origin.z + 128.0f;
 		idAI::PredictPath( this, aas, goalPos, dest - origin, 1000, 1000, SE_BLOCKED, path );
@@ -6257,7 +6367,8 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 		}
 	}
 
-	if ( !goLower ) {
+	if ( !goLower )
+	{
 		// make sure we don't fly too low
 		end = origin;
 
@@ -6270,7 +6381,7 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 		}
 
 		gameLocal.clip.Translation( trace, origin, end, physicsObj.GetClipModel(), mat3_identity, MASK_MONSTERSOLID, this );
-		vel += Seek( vel, origin, trace.endpos, AI_SEEK_PREDICTION );
+		vel += Seek(vel, origin, trace.endpos, AI_SEEK_PREDICTION);
 	}
 }
 
@@ -6344,11 +6455,9 @@ void idAI::FlyMove( void ) {
 	if ( ( move.moveCommand != MOVE_NONE ) && ReachedPos( move.moveDest, move.moveCommand ) ) {
 		StopMove( MOVE_STATUS_DONE );
 	}
-
 	if ( ai_debugMove.GetBool() ) {
 		gameLocal.Printf( "%d: %s: %s, vel = %.2f, sp = %.2f, maxsp = %.2f\n", gameLocal.time, name.c_str(), moveCommandString[ move.moveCommand ], physicsObj.GetLinearVelocity().Length(), move.speed, fly_speed );
 	}
-
 	if ( move.moveCommand != MOVE_TO_POSITION_DIRECT ) {
 		idVec3 vel = physicsObj.GetLinearVelocity();
 
@@ -6365,7 +6474,7 @@ void idAI::FlyMove( void ) {
 		// add in bobbing
 		AddFlyBob( vel );
 
-		if ( enemy.GetEntity() && ( move.moveCommand != MOVE_TO_POSITION ) ) {
+		if (enemy.GetEntity() && ( move.moveCommand != MOVE_TO_POSITION ) ) {
 			AdjustFlyHeight( vel, goalPos );
 		}
 
@@ -6903,8 +7012,7 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	SwapHeadAFCM( false );
 
 	if ( spawnArgs.GetString( "model_death", "", &modelDeath ) ) {
-		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
-		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
+		//StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL ); // grayman #4412
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 		SetModel( modelDeath );
 		physicsObj.SetLinearVelocity( vec3_zero );
@@ -6978,10 +7086,10 @@ void idAI::Killed( idEntity *inflictor, idEntity *attacker, int damage, const id
 	// grayman #3848 - note who killed you
 	m_killedBy = attacker;
 
+	alertQueue.Clear(); // grayman #4002
+
 	// grayman - print data re: being Killed
 	//gameLocal.Printf("'%s' killed at [%s], Player %s responsible, inflictor = '%s', attacker = '%s'\n", GetName(),GetPhysics()->GetOrigin().ToString(),bPlayerResponsible ? "is" : "isn't",inflictor ? inflictor->GetName():"NULL",attacker ? attacker->GetName():"NULL");
-
-	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
 }
 
 void idAI::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
@@ -9902,14 +10010,11 @@ void idAI::Event_AlertAI(const char *type, float amount, idActor* actor) // gray
 
 	// grayman #3069 - and only if the AI can seek out the player
 
-	// grayman #4002 - Move AlertCallback() to the point where the AI's alert
-	// index drops to zero. For now, just register that the alert occurred.
-
 	// Objectives callback
 	if ( AlertIndexIncreased() && m_canSearch )
 	{
 		RegisterAlert(m_AlertedByActor.GetEntity()); // grayman #4002 - add alert to alert queue
-		//gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
+		gameLocal.m_MissionData->AlertCallback( this, m_AlertedByActor.GetEntity(), static_cast<int>(AI_AlertIndex) );
 	}
 }
 
@@ -10065,65 +10170,50 @@ void idAI::RegisterAlert(idEntity* alertedBy)
 		EntityAlert ea;
 
 		ea.entityResponsible = alertedBy;	// The entity responsible
-		ea.timeAlerted = gameLocal.time;			// The last time this entity raised the alert index
+		ea.timeAlerted = gameLocal.time;	// The last time this entity raised the alert index
 		ea.alertIndex = static_cast<int>(AI_AlertIndex); // The alert index reached
-		ea.processed = false; // This entry hasn't been processed yet
-
+		ea.ignore = false; // This entry hasn't been processed yet
 		alertQueue.Insert(ea); // Place at front of queue
 	}
 }
 
-// grayman #4002 - Process the alert queue for alerts that need to be registered with mission stats.
+// grayman #4002 - Examine the alert queue to determine if the current alert supercedes a previous alert.
+//				   Return the value of that previous alert.
 //                 Alerts are inserted at the front of the queue as they happen, so the earlier ones
 //                 have later timestamps than the later ones.
 
-void idAI::ProcessAlerts()
+int idAI::ExamineAlerts()
 {
-	// If an alert event was placed on the alert event queue, it's guaranteed that
-	// at the time of placement, the AI is allowed to search for the player and 
-	// the alert index was rising. So we don't need to check those conditions here.
-
-	// Iterate through the alert event queue to find all alerts caused
-	// by the same entity. As each alert is processed, mark it 'processed'.
-	// Quit the while loop when the number of alerts processed equals the number
-	// of alerts in the queue.
-
 	int numberOfAlerts = alertQueue.Num();
-	if ( numberOfAlerts == 0 )
-	{
-		return;
-	}
-
 	int alertsProcessed = 0;
 	idEntity* entityResponsible = NULL;
 	int nextTime = 0;
 	int nextAlertIndex;
+	int result = 0;
+	bool foundResult = false;
 
-	while ( alertsProcessed < numberOfAlerts )
+	while (( alertsProcessed < numberOfAlerts ) && !foundResult)
 	{
 		bool newEntity = true;
 
-		for ( int i = 0; i < numberOfAlerts; i++ )
+		for ( int i = 0 ; i < numberOfAlerts ; i++ )
 		{
 			EntityAlert *ea = &alertQueue[i];
 
-			if ( ea->processed )
+			if ( ea->ignore )
 			{
 				continue;
 			}
 
 			if ( newEntity )
 			{
-				// This first entry represents the highest alert level the AI reached. It
-				// should be passed to mission stats.
+				// This first entry represents the highest alert level the AI reached.
 
 				entityResponsible = ea->entityResponsible.GetEntity(); // the entity we're currently processing
 				nextTime = ea->timeAlerted;	 // alert time
 				nextAlertIndex = ea->alertIndex; // alert index
-				ea->processed = true;
+				//ea->processed = true;
 				newEntity = false;
-
-				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, nextAlertIndex);
 				alertsProcessed++;
 				continue;
 			}
@@ -10135,7 +10225,7 @@ void idAI::ProcessAlerts()
 				continue; // this entry wasn't caused by the entity we're processing
 			}
 
-			ea->processed = true;
+			ea->ignore = true;
 			alertsProcessed++;
 
 			int thisAlertIndex = ea->alertIndex;
@@ -10175,9 +10265,14 @@ void idAI::ProcessAlerts()
 				alertDuration = 10000.f;
 			}
 
-			if ( duration >= alertDuration )
+			// If the latest alert is too close to the previous alert, we should remove
+			// the stats for the previous alert.
+
+			if ( duration < alertDuration )
 			{
-				gameLocal.m_MissionData->AlertCallback(this, entityResponsible, thisAlertIndex);
+				result = thisAlertIndex;
+				foundResult = true;
+				break;
 			}
 
 			// set up for reading the next entry
@@ -10187,7 +10282,15 @@ void idAI::ProcessAlerts()
 		}
 	}
 
-	alertQueue.Clear();
+/*	// Clear processed flags
+
+	for ( int i = 0 ; i < numberOfAlerts ; i++ )
+	{
+		EntityAlert *ea = &alertQueue[i];
+		ea->processed = false;
+	}*/
+
+	return result;
 }
 
 void idAI::Event_GetAttacker()	// grayman #3679
@@ -10485,10 +10588,10 @@ void idAI::PerformVisualScan(float timecheck)
 		if ( !canWalkToPlayer || ((m_LastSight - physicsObj.GetOrigin()).LengthFast()*s_DOOM_TO_METERS ) <= cv_ai_sight_combat_cutoff.GetFloat() )
 		{
 			SetEnemy(player);
-			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
 
 			// set flag that tells UpDateEnemyPosition() to NOT count this instance of player
 			// visibility in the mission data
+			m_ignorePlayer = true; // grayman #3063 - don't count this instance for mission statistics (defer until Combat state begins)
 		}
 		else // player is too far away, but AI will continue to move because he can walk to the player
 		{
@@ -12011,7 +12114,7 @@ void idAI::Knockout( idEntity* inflictor )
 	// grayman #3559 - clear list of doused lights this AI has seen; no longer needed
 	m_dousedLightsSeen.Clear();
 
-	ProcessAlerts(); // grayman #4002 - send data to mission stats if necessary
+	alertQueue.Clear(); // grayman #4002
 }
 
 void idAI::PostKnockOut()
@@ -12056,7 +12159,7 @@ void idAI::PostKnockOut()
 
 	if ( spawnArgs.GetString( "model_knockedout", "", &modelKOd ) )
 	{
-		// lost soul is only case that does not use a ragdoll and has a model_death so get the death sound in here
+		// fire elemental is only case that does not use a ragdoll and has a model_death so get the death sound in here
 		StartSound( "snd_death", SND_CHANNEL_VOICE, 0, false, NULL );
 		renderEntity.shaderParms[ SHADERPARM_TIMEOFFSET ] = -MS2SEC( gameLocal.time );
 		SetModel( modelKOd );
@@ -13695,6 +13798,74 @@ void idAI::Event_PlayCustomAnim( const char *animName )
 	{
 		actionSubsystem->PushTask(ai::TaskPtr(new ai::PlayAnimationTask( animName, 12 )));
 	}
+}
+
+// grayman #4412 - idAI::FitsThrough() tries to fit the AI through
+// from a head-on direction, which doesn't care about wall thickness.
+
+// Derived from HandleDoorTask::FitsThrough(). All uses of that could be
+// replaced with this, but it's used in a dozen places in the door handling task,
+// and I'd rather not touch that task if at all possible.
+
+bool idAI::FitsThrough(CFrobDoor* frobDoor)
+{
+	// This calculates the gap left by a partially open door
+	// and checks if it is large enough for the AI to fit through it.
+
+	idBounds aiBounds = GetPhysics()->GetBounds();
+	float aiSize = 2*aiBounds[1][0] + 8;
+
+	idAngles rotate = spawnArgs.GetAngles("rotate", "0 90 0"); // grayman #3643
+	bool rotates = ( (rotate.yaw != 0) || (rotate.pitch != 0) || (rotate.roll != 0) );
+	if (rotates)
+	{
+		idAngles tempAngle;
+		frobDoor->GetMoverPhysics()->GetLocalAngles(tempAngle);
+
+		const idVec3& closedPos = frobDoor->GetClosedPos();
+		idVec3 dir = closedPos;
+		dir.z = 0;
+		float dist = dir.LengthFast();
+
+		idAngles alpha = frobDoor->GetClosedAngles() - tempAngle;
+		float absAlpha = idMath::Fabs(alpha.yaw);
+		float delta = dist*(1.0 - idMath::Fabs(idMath::Cos(DEG2RAD(absAlpha))));
+
+		return (delta >= aiSize);
+	}
+
+	// grayman #3643 - sliding door
+
+	idVec3 origin = frobDoor->GetMoverPhysics()->GetOrigin(); // where origin is now
+	idVec3 closedOrigin = frobDoor->GetClosedOrigin(); // where origin is when door is closed
+	idVec3 delta = closedOrigin - origin;
+	delta.x = idMath::Fabs(delta.x);
+	delta.y = idMath::Fabs(delta.y);
+	delta.z = idMath::Fabs(delta.z);
+	if ( delta.x > 0 )
+	{
+		if (delta.x >= aiSize)
+		{
+			return true; // assume vertical fit
+		}
+	}
+	else if (delta.y > 0)
+	{
+		if (delta.y >= aiSize) // assume vertical fit
+		{
+			return true;
+		}
+	}
+	else if (delta.z > 0)
+	{
+		float height = aiBounds.GetSize().z;
+		if (delta.z >= height)
+		{
+			return true; // assume horizontal fit
+		}
+	}
+
+	return false;
 }
 
 

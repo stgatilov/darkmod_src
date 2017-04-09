@@ -340,7 +340,7 @@ LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 		case WM_SYSKEYDOWN:
 			if ( wParam == 13 ) {	// alt-enter toggles full-screen
 				cvarSystem->SetCVarBool( "r_fullscreen", !renderSystem->IsFullScreen() );
-				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart\n" );
+				cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "vid_restart partial\n" );
 				return 0;
 			}
 			// fall through for other keys

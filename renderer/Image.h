@@ -406,6 +406,7 @@ public:
 	idImage *			scratchImage2;
 	idImage *			accumImage;
 	idImage *			currentRenderImage;			// for SS_POST_PROCESS shaders
+	idImage *			currentRenderFbo;
 	idImage *			scratchCubeMapImage;
 	idImage *			specularTableImage;			// 1D intensity texture with our specular function
 	idImage *			specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
@@ -413,6 +414,8 @@ public:
 
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
+	idImage *			currentDepthFbo;
+	idImage *			currentStencilFbo;
 
 	//--------------------------------------------------------
 	

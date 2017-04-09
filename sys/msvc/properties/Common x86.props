@@ -7,6 +7,9 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)/win32/lib</AdditionalLibraryDirectories>
     </Lib>

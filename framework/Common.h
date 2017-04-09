@@ -69,9 +69,12 @@ extern idCVar		com_videoRam;
 extern int			time_gameFrame;			// game logic time
 extern int			time_gameDraw;			// game present time
 extern int			time_frontend;			// renderer frontend time
+extern int			time_frontendLast;		// renderer frontend time
 extern int			time_backend;			// renderer backend time
+extern int			time_backendLast;		// renderer backend time
 
 extern int			com_frameTime;			// time for the current frame in milliseconds
+extern int			com_frameMsec;
 extern volatile int	com_ticNumber;			// 60 hz tics, incremented by async function
 extern int			com_editors;			// current active editor(s)
 extern bool			com_editorActive;		// true if an editor has focus

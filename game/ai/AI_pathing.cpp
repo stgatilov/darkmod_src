@@ -1375,7 +1375,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	// build a path tree
 	pathNode_t* root = BuildPathTree(physics, obstacles, numObstacles, clipBounds, path.startPosOutsideObstacles.ToVec2(), path.seekPosOutsideObstacles.ToVec2(), path ); // grayman #2345 - added 'physics'
 
-//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
+	//PrintNodes(root,0,obstacles); // grayman for debugging path trees
 	
 	STOP_TIMING(owner->actorBuildPathTreeTimer);
 
@@ -1388,7 +1388,7 @@ bool idAI::FindPathAroundObstacles( const idPhysics *physics, const idAAS *aas, 
 	START_TIMING(owner->actorPrunePathTreeTimer);
 	PrunePathTree( root, path.seekPosOutsideObstacles.ToVec2() );
 	STOP_TIMING(owner->actorPrunePathTreeTimer);
-//	PrintNodes(root,0,obstacles); // grayman for debugging path trees
+	//PrintNodes(root,0,obstacles); // grayman - for debugging path trees
 
 	// find the optimal path
 	START_TIMING(owner->actorFindOptimalPathTimer);
@@ -1665,7 +1665,10 @@ bool idAI::PredictPath( const idEntity *ent, const idAAS *aas, const idVec3 &sta
 		}
 
 		// add gravity
-		curVelocity += gravity * frameTime * 0.001f;
+		if ( static_cast<const idAI *>(ent)->GetMoveType() != MOVETYPE_FLY ) // grayman #4412 - no gravity if flying
+		{
+			curVelocity += gravity * frameTime * 0.001f;
+		}
 	}
 
 	path.endTime = totalTime;

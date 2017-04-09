@@ -55,7 +55,7 @@ void FollowActorTask::Init(idAI* owner, Subsystem& subsystem)
 
 	if (_actor.GetEntity() == NULL)
 	{
-		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("FollowActorTask will terminate after Think() since a NULL actor was being passed in.\r");
+		DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("FollowActorTask will terminate after Perform() since a NULL actor was being passed in.\r");
 	}
 }
 

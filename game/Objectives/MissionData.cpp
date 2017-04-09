@@ -214,6 +214,40 @@ void CMissionData::MissionEvent
 			}
 			// index in this array is determined by alert value
 			pStat = &m_Stats.AIAlerts[ EntDat1->value ];
+
+			// grayman #4002 - Decide which alert level to record for the stealth score.
+			// If this new alert level is too close to a previous alert level,
+			// then the previous alert needs to be removed.
+
+			// This only applies if the new alert level is higher than EObservant.
+			if ( EntDat1->bIsAI )
+			{
+				int alertLevel = EntDat1->value;
+				if ( alertLevel > ai::EObservant )
+				{
+					idEntity* ent = gameLocal.FindEntity(EntDat1->name.c_str());
+					if ( ent->IsType(idAI::Type) )
+					{
+						// Has this AI registered a previous alert at a lower level,
+						// during this alert cycle? An alert cycle is where an AI rises
+						// from Idle to something higher, then drops back down to idle.
+						idAI *ai = static_cast<idAI*>(ent);
+						int removeThisAlertLevel = ai->ExamineAlerts();
+						if (removeThisAlertLevel > 0)
+						{
+							SStat *pStatPrevious = &m_Stats.AIAlerts[removeThisAlertLevel];
+							// Subtract from all appropriate stats
+							pStatPrevious->Overall--;
+							pStatPrevious->ByTeam[EntDat1->team]--;
+							pStatPrevious->ByType[EntDat1->type]--;
+							pStatPrevious->ByInnocence[EntDat1->innocence]--;
+
+							// Even though pStatPrevious->WhileAirborne might not be the same now
+							// as it was when this previous alert was registered, don't worry about it. It isn't used.
+						}
+					}
+				}
+			}
 		}
 		else
 		{
@@ -904,8 +938,6 @@ void CMissionData::Event_MissionEnd()
 					/*gameLocal.m_MissionData->*/Add2TimePlayerSeen(gameLocal.time - ai->lastTimePlayerSeen);
 				}
 			}
-
-			ai->ProcessAlerts(); // grayman #4002
 		}
 	}
 }

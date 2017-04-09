@@ -106,6 +106,7 @@ const char *idGameLocal::surfaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
+bool com_fixedTic;
 
 /* This list isn't actually used by the code, it's here just for reference. The code
    accepts any first word in the description as the surface type name: */
@@ -674,10 +675,10 @@ void idGameLocal::CheckTDMVersion()
 	// Check Request Status
 	if (req->GetStatus() != CHttpRequest::OK)
 	{
-		Printf("%s.\n", common->Translate( "#str_2002") );	// Connection Error
+		Printf("%s\n", common->Translate( "#str_02002") );	// Connection Error.
 
 		msg.title = common->Translate( "#str_02136" );		// Version Check Failed
-		msg.message = common->Translate( "#str_02132" );	// Cannot connect to server.
+		msg.message = common->Translate( "#str_02007" );	// Cannot connect to server.
 
 		AddMainMenuMessage(msg);
 		return;
@@ -3276,8 +3277,16 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 		{
 			// update the game time
 			framenum++;
+			// duzenko #4409 - game time modified using game timer
 			previousTime = time;
-			time += (int)(msec * g_timeModifier.GetFloat());
+			com_fixedTic = cvarSystem->GetCVarBool("com_fixedTic"); // cache for getMsec()
+			if (!com_fixedTic) 
+				time += (int)(msec * g_timeModifier.GetFloat());
+			else {
+				//if (framenum < 20)
+					//common->Printf("%d + %d msec\n", time, m_GamePlayTimer.LastTickCapped());
+				time += m_GamePlayTimer.LastTickCapped();
+			}
 			realClientTime = time;
 
 #ifdef GAME_DLL
@@ -3499,11 +3508,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				break;
 			}
 
-			if (m_DoLightgem)
-			{
+			/*if (m_DoLightgem) // duzenko #4408 - move this to idGameLocal::Draw where the second half of this already is
+			{					// because 1) game tic could be on background thread and 2) it makes more sense 
 				player->ProcessLightgem(cv_lg_hud.GetInteger() == 0);
 				m_DoLightgem = false;
-			}
+			}*/
 
 		} while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
 	}
@@ -3637,6 +3646,13 @@ bool idGameLocal::Draw( int clientNum )
 
 	if ( !player ) {
 		return false;
+	}
+
+	// Make the rendershot appear on the hud
+	// duzenko #4408 - moved this half from game tic
+	if (cv_lg_hud.GetInteger() == 0)
+	{
+		player->ProcessLightgem(true);
 	}
 
 	// render the scene
@@ -8181,6 +8197,14 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	return -1;
 }
 
+// duzenko #4409 - getMsec() used for head bob cycling
+
+int idGameLocal::getMsec() {
+	if (com_fixedTic)
+		return time - previousTime;
+	else
+		return msec;
+}
 
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   
 {

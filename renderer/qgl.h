@@ -87,7 +87,9 @@ extern PFNGLMAPBUFFERARBPROC qglMapBufferARB;
 extern PFNGLUNMAPBUFFERARBPROC qglUnmapBufferARB;
 extern PFNGLGETBUFFERPARAMETERIVARBPROC qglGetBufferParameterivARB;
 extern PFNGLGETBUFFERPOINTERVARBPROC qglGetBufferPointervARB;
-
+extern PFNGLMAPBUFFERRANGEPROC glMapBufferRange;
+extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
+extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 
 // NV_register_combiners
 extern	void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
@@ -142,6 +144,18 @@ extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
 // mipmaps
 extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
+
+//frame buffers
+extern PFNGLGENFRAMEBUFFERSPROC          glGenFramebuffers;
+extern PFNGLBINDFRAMEBUFFERPROC			glBindFramebuffer;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC		glFramebufferTexture2D;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC	glCheckFramebufferStatus;
+extern PFNGLGENRENDERBUFFERSPROC			glGenRenderbuffers;
+extern PFNGLBINDRENDERBUFFERPROC			glBindRenderbuffer;
+extern PFNGLRENDERBUFFERSTORAGEPROC		glRenderbufferStorage;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC	glFramebufferRenderbuffer;
+extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
+extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 
 //===========================================================================
 

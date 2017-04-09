@@ -2942,7 +2942,7 @@ idActor::SetAnimState
 void idActor::SetAnimState( int channel, const char *statename, int blendFrames ) {
 	const function_t *func;
 
-	// greebo: Try to lookup the script function of this animstate
+// greebo: Try to lookup the script function of this animstate
 	func = scriptObject.GetFunction( statename );
 	if ( !func ) {
 //		assert( 0 ); // greebo: don't just crash, a missing script function can happen...
@@ -4244,7 +4244,7 @@ void idActor::Event_PlayCycle( int channel, const char *animname ) {
 		if ( ( channel == ANIMCHANNEL_HEAD ) && head.GetEntity() ) {
 			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), spawnArgs.GetString( "def_head", "" ) );
 		} else {
-			gameLocal.Printf( "missing '%s' animation on '%s' (%s)\n", animname, name.c_str(), GetEntityDefName() );
+			gameLocal.Printf( "missing '%s' animation on '%s' (%s), channel %d\n", animname, name.c_str(), GetEntityDefName(),channel );
 		}
 #endif
 

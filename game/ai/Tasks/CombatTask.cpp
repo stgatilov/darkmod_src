@@ -31,7 +31,8 @@ namespace ai
 {
 
 CombatTask::CombatTask() :
-	_lastCombatBarkTime(-1)
+	_lastCombatBarkTime(-1),
+	_nextAttackTime(0) // grayman #4412
 {}
 
 void CombatTask::Init(idAI* owner, Subsystem& subsystem)
@@ -68,6 +69,7 @@ void CombatTask::Save(idSaveGame* savefile) const
 
 	_enemy.Save(savefile);
 	savefile->WriteInt(_lastCombatBarkTime);
+	savefile->WriteInt(_nextAttackTime); // grayman #4412
 }
 
 void CombatTask::Restore(idRestoreGame* savefile)
@@ -76,6 +78,7 @@ void CombatTask::Restore(idRestoreGame* savefile)
 
 	_enemy.Restore(savefile);
 	savefile->ReadInt(_lastCombatBarkTime);
+	savefile->ReadInt(_nextAttackTime); // grayman #4412
 }
 
 } // namespace ai

@@ -42,7 +42,15 @@ void RangedCombatTask::Init(idAI* owner, Subsystem& subsystem)
 	// Init the base class
 	CombatTask::Init(owner, subsystem);
 
-	_enemy = owner->GetEnemy();
+	/* grayman #4412 - This block of code doesn't terminate the task.
+	   The same check in the Perform() method will terminate the task properly. 
+	// _enemy = owner->GetEnemy(); // set by CombatTask::Init()
+	if (_enemy.GetEntity() == NULL)
+	{
+		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("RangedCombatTask::Init - No enemy, terminating task!\r");
+		return; // terminate me
+	}
+	*/
 }
 
 bool RangedCombatTask::Perform(Subsystem& subsystem)
@@ -56,15 +64,15 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 	if (enemy == NULL)
 	{
 		DM_LOG(LC_AI, LT_ERROR)LOGSTRING("No enemy, terminating task!\r");
-		return false; // terminate me
+		return true; // terminate me
 	}
 
 	// Can we damage the enemy already? (this flag is set by the combat state)
-	if (owner->GetMemory().canHitEnemy)
+	if ( (gameLocal.time >= _nextAttackTime) && (owner->GetMemory().canHitEnemy) && (idStr(owner->WaitState()) != "ranged_attack") ) // grayman #4412
 	{
-		idStr waitState(owner->WaitState());
-		if (waitState != "ranged_attack")
-		{
+		//idStr waitState(owner->WaitState());
+		//if (waitState != "ranged_attack")
+		//{
 			// Waitstate is not matching, this means that the animation 
 			// can be started.
 			owner->SetAnimState(ANIMCHANNEL_TORSO, "Torso_RangedAttack", 5);
@@ -90,9 +98,19 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 				}
 				EmitCombatBark(owner, bark);
 			}
-		}
-		else
-		{
+		//}
+		//else
+		//{
+		/* grayman #4412 - Instead of pushing RangedCombatTask down on the
+		   task queue and placing a WaitTask on top of it, just don't do anything.
+
+		   This improves the elemental, but what does it do to archers and mages, who
+		   launch missiles as their ranged attacks? The extra wait padding below needs
+		   to be handled in a "next stage", so that the WaitTask isn't used (I think it
+		   was disrupting the ranged attack animation for the elemental), and we just
+		   wait a bit more based on comparing current time against a future time when we
+		   can attack again.
+
 			idAnimator* animator = owner->GetAnimatorForChannel(ANIMCHANNEL_LEGS);
 			int animint = animator->CurrentAnim(ANIMCHANNEL_LEGS)->AnimNum();
 			int length = animator->AnimLength(animint);
@@ -100,7 +118,10 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			int padding = gameLocal.random.RandomInt(4000) + 1000;
 
 			owner->actionSubsystem->PushTask(TaskPtr(new WaitTask(length + padding)));
-		}
+		}*/
+		//grayman #4412 - end
+		
+		_nextAttackTime = gameLocal.time + gameLocal.random.RandomInt(4000) + 3000; // grayman #4412
 	}
 
 	return false; // not finished yet

@@ -69,13 +69,15 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
-	backEnd.pc.c_drawElements++;
-	backEnd.pc.c_drawIndexes += tri->numIndexes;
-	backEnd.pc.c_drawVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_drawElements++;
+		backEnd.pc.c_drawIndexes += tri->numIndexes;
+		backEnd.pc.c_drawVertexes += tri->numVerts;
 
-	if ( tri->ambientSurface && ( tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts ) ) {
-		backEnd.pc.c_drawRefIndexes += tri->numIndexes;
-		backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		if (tri->ambientSurface && (tri->indexes == tri->ambientSurface->indexes || tri->verts == tri->ambientSurface->verts)) {
+			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+			backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		}
 	}
 
 	if ( r_useIndexBuffers.GetBool() && tri->indexCache ) {
@@ -83,10 +85,12 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 						tri->numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
-		backEnd.pc.c_vboIndexes += tri->numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) 
+			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
+			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
 		}
 		qglDrawElements( GL_TRIANGLES, 
 						tri->numIndexes,
@@ -103,19 +107,23 @@ May not use all the indexes in the surface if caps are skipped
 ================
 */
 void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) {
-	backEnd.pc.c_shadowElements++;
-	backEnd.pc.c_shadowIndexes += numIndexes;
-	backEnd.pc.c_shadowVertexes += tri->numVerts;
+	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+		backEnd.pc.c_shadowElements++;
+		backEnd.pc.c_shadowIndexes += numIndexes;
+		backEnd.pc.c_shadowVertexes += tri->numVerts;
+	}
 
 	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) );
-		backEnd.pc.c_vboIndexes += numIndexes;
+		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
+			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
 			vertexCache.UnbindIndex();
+			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
 		}
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
@@ -220,7 +228,6 @@ be updated after the triangle function completes.
 void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, 
 											  void (*triFunc_)( const drawSurf_t *) ) {
 	const drawSurf_t		*drawSurf;
-
 	backEnd.currentSpace = NULL;
 
 	for ( int i = 0  ; i < numDrawSurfs ; i++ ) {
@@ -717,6 +724,10 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	const float			*lightRegs = vLight->shaderRegisters;
 	drawInteraction_t	inter;
 
+	//anon begin
+	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
+	//anon end
+
 	if ( !surf->geo || !surf->geo->ambientCache || r_skipInteractions.GetBool() ) {
 		return;
 	}
@@ -724,11 +735,38 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
 	}
+	//anon begin
+	bool lightDepthBoundsDisabled = false;
+	//anon end
 
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != backEnd.currentSpace ) {
 		backEnd.currentSpace = surf->space;
 		qglLoadMatrixf( surf->space->modelViewMatrix );
+		if (r_useAnonreclaimer.GetBool()) {
+			//anon bengin
+			// turn off the light depth bounds test if this model is rendered with a depth hack
+			if (useLightDepthBounds)
+			{
+				if (!surf->space->weaponDepthHack && surf->space->modelDepthHack == 0.0f)
+				{
+					if (lightDepthBoundsDisabled)
+					{
+						GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
+						lightDepthBoundsDisabled = false;
+					}
+				}
+				else
+				{
+					if (!lightDepthBoundsDisabled)
+					{
+						GL_DepthBoundsTest(0.0f, 0.0f);
+						lightDepthBoundsDisabled = true;
+					}
+				}
+			}
+			//anon end
+		}
 	}
 
 	// change the scissor if needed
@@ -879,6 +917,14 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
 		RB_LeaveDepthHack();
 	}
+
+	//anon begin
+	if (r_useAnonreclaimer.GetBool())
+	if (useLightDepthBounds && lightDepthBoundsDisabled)
+	{
+		GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
+	}
+	//anon end
 }
 
 /*

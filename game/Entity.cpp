@@ -91,7 +91,7 @@ const idEventDef EV_BindToBody( "bindToBody",
 			  'd', "orientated", "binds the orientation as well as position, if set to 1"), EV_RETURNS_VOID, "Bind to AF body");
 
 const idEventDef EV_GetBindMaster( "getBindMaster", EventArgs(), 'e', "Returns the entity's bindmaster");
-const idEventDef EV_NumBindChildren( "numBindChildren", EventArgs(), 'd', "Returns the number of bound entities lower down in the bind chain than this entity" );
+const idEventDef EV_NumBindChildren( "numBindChildren", EventArgs(), 'd', "Returns the number of bound entities lower down in the bind chain than this entity, but be sure to give it the topmost bindmaster" );
 const idEventDef EV_GetBindChild( "getBindChild", EventArgs('d', "ind", "child index"), 'e', "Returns the ind_th bind child of this entity or NULL if index is invalid.\nNOTE: indices start at zero" );
 const idEventDef EV_Unbind( "unbind", EventArgs(), EV_RETURNS_VOID, "Detaches this entity from its master.");
 const idEventDef EV_RemoveBinds( "removeBinds", EventArgs(), EV_RETURNS_VOID, "Removes all attached entities from the game" );

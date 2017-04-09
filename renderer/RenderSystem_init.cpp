@@ -63,7 +63,7 @@ idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER 
 
 idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 // Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
-idCVar r_useIndexBuffers( "r_useIndexBuffers", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
+idCVar r_useIndexBuffers( "r_useIndexBuffers", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
 idCVar r_useInfiniteFarZ( "r_useInfiniteFarZ", "1", CVAR_RENDERER | CVAR_BOOL, "use the no-far-clip-plane trick" );
@@ -103,8 +103,8 @@ idCVar r_skipSpecular( "r_skipSpecular", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_C
 idCVar r_skipBump( "r_skipBump", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "uses a flat surface instead of the bump map" );
 idCVar r_skipDiffuse( "r_skipDiffuse", "0", CVAR_RENDERER | CVAR_BOOL, "use black for diffuse" );
 idCVar r_skipROQ( "r_skipROQ", "0", CVAR_RENDERER | CVAR_BOOL, "skip ROQ decoding" );
-idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL, "skip depth capture" ); // #3877
-idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL, "soften particle transitions when player walks through them or they cross solid geometry" ); // #3878
+idCVar r_skipDepthCapture( "r_skipDepthCapture", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "skip depth capture" ); // #3877 #4418
+idCVar r_useSoftParticles( "r_useSoftParticles", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "soften particle transitions when player walks through them or they cross solid geometry" ); // #3878 #4418
 
 idCVar r_ignore( "r_ignore", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
 idCVar r_ignore2( "r_ignore2", "0", CVAR_RENDERER, "used for random debugging without defining new vars" );
@@ -112,7 +112,11 @@ idCVar r_usePreciseTriangleInteractions( "r_usePreciseTriangleInteractions", "0"
 idCVar r_useCulling( "r_useCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = sphere, 2 = sphere + box", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar r_useLightCulling( "r_useLightCulling", "3", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = box, 2 = exact clip of polyhedron faces, 3 = also areas", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
 idCVar r_useLightScissors( "r_useLightScissors", "1", CVAR_RENDERER | CVAR_BOOL, "1 = use custom scissor rectangle for each light" );
-idCVar r_useClippedLightScissors( "r_useClippedLightScissors", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
+//anon begin
+idCVar r_useLightPortalCulling("r_useLightPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar r_useEntityPortalCulling("r_useEntityPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+//anon end
+idCVar r_useClippedLightScissors("r_useClippedLightScissors", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
 idCVar r_useEntityCulling( "r_useEntityCulling", "1", CVAR_RENDERER | CVAR_BOOL, "0 = none, 1 = box" );
 idCVar r_useEntityScissors( "r_useEntityScissors", "0", CVAR_RENDERER | CVAR_BOOL, "1 = use custom scissor rectangle for each entity" );
 idCVar r_useInteractionCulling( "r_useInteractionCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions" );
@@ -120,7 +124,7 @@ idCVar r_useInteractionScissors( "r_useInteractionScissors", "2", CVAR_RENDERER 
 idCVar r_useShadowCulling( "r_useShadowCulling", "1", CVAR_RENDERER | CVAR_BOOL, "try to cull shadows from partially visible lights" );
 idCVar r_useFrustumFarDistance( "r_useFrustumFarDistance", "0", CVAR_RENDERER | CVAR_FLOAT, "if != 0 force the view frustum far distance to this distance" );
 idCVar r_logFile( "r_logFile", "0", CVAR_RENDERER | CVAR_INTEGER, "number of frames to emit GL logs" );
-idCVar r_clear( "r_clear", "2", CVAR_RENDERER, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
+idCVar r_clear( "r_clear", "2", CVAR_RENDERER | CVAR_ARCHIVE, "force screen clear every frame, 1 = purple, 2 = black, 'r g b' = custom" );
 idCVar r_offsetFactor( "r_offsetfactor", "-2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
 idCVar r_offsetUnits( "r_offsetunits", "-0.1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "polygon offset parameter" ); // #4079
 idCVar r_shadowPolygonOffset( "r_shadowPolygonOffset", "-1", CVAR_RENDERER | CVAR_FLOAT, "bias value added to depth test for stencil shadow drawing" );
@@ -222,6 +226,14 @@ idCVar r_screenshot_format(		"r_screenshot_format", "jpg",   CVAR_RENDERER | CVA
 idCVar r_dedicatedAmbient( "r_dedicatedAmbient", "1", CVAR_RENDERER | CVAR_BOOL, "enable dedicated ambientLight shader" );
 idCVar r_stencilShadowMode( "r_stencilShadowMode", "0", CVAR_RENDERER | CVAR_INTEGER, "choose stencil shadow algorithm. 0 - default" );
 
+idCVar r_useAnonreclaimer("r_useAnonreclaimer", "0", CVAR_RENDERER | CVAR_BOOL, "test anonreclaimer patch");
+idCVar r_useFbo("r_useFbo", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects");
+idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments");
+idCVar r_fboColorBits("r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32");
+idCVar r_fboSharedColor("r_fboSharedColor", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Don't copy color buffer (risk of feedback loop when post-processing)");
+idCVar r_fboSharedDepth("r_fboSharedDepth", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Don't copy depth buffer (unexplainable artifacts when post-processing)");
+idCVar r_fboResolution("r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
+
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
@@ -291,6 +303,9 @@ PFNGLMAPBUFFERARBPROC					qglMapBufferARB;
 PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
 PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
 PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
+PFNGLMAPBUFFERRANGEPROC					glMapBufferRange;
+PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
+PFNGLBUFFERSUBDATAPROC					glBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointerARB;
@@ -306,7 +321,19 @@ PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 
 // mipmaps
-PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
+PFNGLGENERATEMIPMAPPROC					glGenerateMipmap;
+
+// frame buffers
+PFNGLGENFRAMEBUFFERSPROC				glGenFramebuffers;
+PFNGLBINDFRAMEBUFFERPROC 				glBindFramebuffer;
+PFNGLBLITFRAMEBUFFERPROC				glBlitFramebuffer;
+PFNGLFRAMEBUFFERTEXTURE2DPROC			glFramebufferTexture2D;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC			glCheckFramebufferStatus;
+PFNGLGENRENDERBUFFERSPROC				glGenRenderbuffers;
+PFNGLBINDRENDERBUFFERPROC				glBindRenderbuffer;
+PFNGLRENDERBUFFERSTORAGEPROC			glRenderbufferStorage;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC		glFramebufferRenderbuffer;
+PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 
 /*
 =================
@@ -484,6 +511,9 @@ static void R_CheckPortableExtensions( void ) {
 		qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
 		qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
 		qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
+		glMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer( "glMapBufferRange" );
+		glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GLimp_ExtensionPointer( "glUnmapBuffer" );
+		glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GLimp_ExtensionPointer("glBufferSubData");
 	}
 
 	// ARB_vertex_program
@@ -526,6 +556,16 @@ static void R_CheckPortableExtensions( void ) {
  	}
 
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer("glGenerateMipmap");
+	glGenFramebuffers= (PFNGLGENFRAMEBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenFramebuffers");
+	glBindFramebuffer= (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer("glBindFramebuffer");
+	glFramebufferTexture2D= (PFNGLFRAMEBUFFERTEXTURE2DEXTPROC)GLimp_ExtensionPointer("glFramebufferTexture2D");
+	glCheckFramebufferStatus= (PFNGLCHECKFRAMEBUFFERSTATUSEXTPROC)GLimp_ExtensionPointer("glCheckFramebufferStatus");
+	glGenRenderbuffers= (PFNGLGENRENDERBUFFERSEXTPROC)GLimp_ExtensionPointer("glGenRenderbuffers");
+	glBindRenderbuffer= (PFNGLBINDRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glBindRenderbuffer");
+	glRenderbufferStorage= (PFNGLRENDERBUFFERSTORAGEEXTPROC)GLimp_ExtensionPointer("glRenderbufferStorage");
+	glFramebufferRenderbuffer= (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbuffer");
+	glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebuffer");
+	glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
 }
 
 
@@ -702,6 +742,10 @@ void R_InitOpenGL( void ) {
 
 	// Reset our gamma
 	R_SetColorMappings();
+
+	// duzenko #4425 reset fbo
+	extern GLuint fboId; // FIXME ugly 'magic' extern
+	fboId = 0;
 
 #ifdef _WIN32
 	static bool glCheck = false;
@@ -1993,6 +2037,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		globalImages->ReloadAllImages();
 	} else {
 		glimpParms_t	parms;
+		R_GetModeInfo(&glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger());
 		parms.width = glConfig.vidWidth;
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
@@ -2001,8 +2046,6 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}
-
-
 
 	// make sure the regeneration doesn't use anything no longer valid
 	tr.viewCount++;

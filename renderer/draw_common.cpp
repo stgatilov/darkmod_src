@@ -23,6 +23,45 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
+/*void DumpFramebuffer(const char *fileName) {
+	if (!r_ignore.GetBool())
+		return;
+	renderCrop_t r, *rc = &r;
+	glGetIntegerv(GL_VIEWPORT, (int*)rc);
+	qglReadBuffer(GL_BACK);
+
+	// calculate pitch of buffer that will be returned by qglReadPixels()
+	int alignment;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &alignment);
+
+	int pitch = rc->width * 4 + alignment - 1;
+	pitch = pitch - pitch % alignment;
+
+	byte *data = (byte *)R_StaticAlloc(pitch * rc->height);
+
+	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
+	qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	byte *data2 = (byte *)R_StaticAlloc(rc->width * rc->height * 4);
+
+	for (int y = 0; y < rc->height; y++) {
+		for (int x = 0; x < rc->width; x++) {
+			int idx = y * pitch + x * 4;
+			int idx2 = (y * rc->width + x) * 4;
+
+			data2[idx2 + 0] = data[idx + 0];
+			data2[idx2 + 1] = data[idx + 1];
+			data2[idx2 + 2] = data[idx + 2];
+			data2[idx2 + 3] = 0xff;
+		}
+	}
+
+	R_WriteTGA(fileName, data2, rc->width, rc->height, true);
+
+	R_StaticFree(data);
+	R_StaticFree(data2);
+}*/
+
 /*
 =====================
 RB_BakeTextureMatrixIntoTexgen
@@ -546,10 +585,11 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
-	if (	backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
+	if ( backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
 		 && !r_skipDepthCapture.GetBool() )
 	{
-		globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
+		if (!r_useFbo.GetBool()) // duzenko #4425 - depth texture will be available later in RB_STD_DrawShaderPasses
+			globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 														  backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, 
@@ -1125,12 +1165,14 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 ) {
+		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 && !r_useFbo.GetBool() ) {
 			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
 				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
-					
 		}
+		extern void RB_FboAccessColorDepth(); // duzenko #4425 FIXME ugly magic extern
+		if (r_useFbo.GetBool())
+			RB_FboAccessColorDepth();
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -1140,7 +1182,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	GL_SelectTexture( 0 );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	RB_SetProgramEnvironment();
+	RB_SetProgramEnvironment(); 
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
 	// because we want to defer the matrix load because many
@@ -1961,7 +2003,7 @@ void	RB_STD_DrawView( void ) {
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
-	// fob and blend lights
+	// fog and blend lights
 	RB_STD_FogAllLights();
 
 	// now draw any post-processing effects using _currentRender
@@ -1969,6 +2011,5 @@ void	RB_STD_DrawView( void ) {
 		RB_STD_DrawShaderPasses( drawSurfs+processed, numDrawSurfs-processed );
 	}
 
-	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
-
+	RB_RenderDebugTools(drawSurfs, numDrawSurfs);
 }

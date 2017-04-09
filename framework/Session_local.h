@@ -142,6 +142,7 @@ public:
 	static idCVar		com_showTics;
 	static idCVar		com_minTics;
 	static idCVar		com_fixedTic;
+	static idCVar		com_asyncTic;
 	static idCVar		com_showDemo;
 	static idCVar		com_skipGameDraw;
 	static idCVar		com_aviDemoWidth;

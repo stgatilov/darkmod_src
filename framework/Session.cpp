@@ -23,12 +23,17 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Session_local.h"
+#include "../renderer/tr_local.h"
+#ifdef WIN32
+#include <thread>
+#endif
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_showTics( "com_showTics", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
-idCVar	idSessionLocal::com_fixedTic( "com_fixedTic", "0", CVAR_SYSTEM | CVAR_INTEGER, "", 0, 10 );
-idCVar	idSessionLocal::com_showDemo( "com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar	idSessionLocal::com_fixedTic("com_fixedTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "", 0, 10);
+idCVar	idSessionLocal::com_asyncTic("com_asyncTic", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "", 0, 10);
+idCVar	idSessionLocal::com_showDemo("com_showDemo", "0", CVAR_SYSTEM | CVAR_BOOL, "");
 idCVar	idSessionLocal::com_skipGameDraw( "com_skipGameDraw", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_aviDemoSamples( "com_aviDemoSamples", "16", CVAR_SYSTEM, "" );
 idCVar	idSessionLocal::com_aviDemoWidth( "com_aviDemoWidth", "256", CVAR_SYSTEM, "" );
@@ -211,6 +216,28 @@ static void Sess_WritePrecache_f( const idCmdArgs &args ) {
 
 	fileSystem->CloseFile( f );
 }
+
+/*
+===============
+duzenko #4408
+===============
+*/
+
+#ifdef WIN32
+bool gameTicThreadActivator;
+std::thread *gameTicThread;
+
+void GameTicThreadProc() {
+	while (1) {
+		Sys_EnterCriticalSection(CRITICAL_SECTION_TWO); // entered twice per frame
+		if (gameTicThreadActivator) { // set once per frame
+			sessLocal.RunGameTic();
+			gameTicThreadActivator = false;
+		}
+		Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+	}
+}
+#endif
 
 /*
 ===============================================================================
@@ -2539,14 +2566,16 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	if ( outOfSequence ) {
 		Sys_GrabMouseCursor( false );
 	}
-
+	
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
 	// draw everything
 	Draw();
 
-	if ( com_speeds.GetBool() ) {
-		renderSystem->EndFrame( &time_frontend, &time_backend );
+	if (com_speeds.GetBool()) {
+		time_backendLast = backEnd.pc.msecLast;
+		time_frontendLast = tr.pc.frontEndMsecLast;
+		renderSystem->EndFrame(&time_frontend, &time_backend);
 	} else {
 		renderSystem->EndFrame( NULL, NULL );
 	}
@@ -2613,7 +2642,7 @@ void idSessionLocal::Frame() {
 	if ( com_minTics.GetInteger() > 1 ) {
 		minTic = lastGameTic + com_minTics.GetInteger();
 	}
-	
+
 	if ( readDemo ) {
 		if ( !timeDemo && numDemoFrames != 1 ) {
 			minTic = lastDemoTic + USERCMD_PER_DEMO_FRAME;
@@ -2625,9 +2654,12 @@ void idSessionLocal::Frame() {
 	} else if ( writeDemo ) {
 		minTic = lastGameTic + USERCMD_PER_DEMO_FRAME;		// demos are recorded at 30 hz
 	}
-	
+	// duzenko #4408 - don't sleep or it locks up
+	if ( com_asyncTic.GetInteger() ) {
+		minTic = latchedTicNumber;
+	}
 	// fixedTic lets us run a forced number of usercmd each frame without timing
-	if ( com_fixedTic.GetInteger() ) {
+	if (com_fixedTic.GetInteger()) {
 		minTic = latchedTicNumber;
 	}
 
@@ -2741,9 +2773,17 @@ void idSessionLocal::Frame() {
 		common->Printf( "%i ", latchedTicNumber - lastGameTic );
 	}
 
-	int	gameTicsToRun = latchedTicNumber - lastGameTic;
-	int i;
-	for ( i = 0 ; i < gameTicsToRun ; i++ ) {
+	// duzenko #4408 - optionally don't run game tics on main thread 
+	int gameTicsToRun = latchedTicNumber - lastGameTic;
+	if (com_asyncTic.GetBool()) { 
+#ifdef WIN32
+		gameTicThreadActivator = true;
+		if (!gameTicThread)
+			gameTicThread = new std::thread(GameTicThreadProc);
+		return;
+#endif 
+	}
+	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
 		if ( !mapSpawned ) {
 			// exited game play

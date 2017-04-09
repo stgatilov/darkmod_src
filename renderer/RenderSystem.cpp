@@ -643,8 +643,14 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 
 	renderCrops[0].x = 0;
 	renderCrops[0].y = 0;
-	renderCrops[0].width = windowWidth;
-	renderCrops[0].height = windowHeight;
+	if (r_useFbo.GetBool()) { // duzenko #4425: allow virtual resolution
+		renderCrops[0].width = windowWidth*r_fboResolution.GetFloat();
+		renderCrops[0].height = windowHeight*r_fboResolution.GetFloat();
+	} else {
+		renderCrops[0].width = windowWidth;
+		renderCrops[0].height = windowHeight;
+	}
+	
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
@@ -712,17 +718,6 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
-	// save out timing information
-	if ( frontEndMsec ) {
-		*frontEndMsec = pc.frontEndMsec;
-	}
-	if ( backEndMsec ) {
-		*backEndMsec = backEnd.pc.msec;
-	}
-
-	// print any other statistics and clear all of them
-	R_PerformanceCounters();
-
 	// check for dynamic changes that require some initialization
 	R_CheckCvars();
 
@@ -735,8 +730,14 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_SWAP_BUFFERS;
 
+	// duzenko #4408 - allow background game tic
+	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
+
 	// start the back end up again with the new command list
 	R_IssueRenderCommands();
+
+	// duzenko #4408 - wait/forbid background game tic
+	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
 
 	// use the other buffers next frame, because another CPU
 	// may still be rendering into the current buffers
@@ -753,6 +754,16 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		}
 	}
 
+	// save out timing information
+	if (frontEndMsec) {
+		*frontEndMsec = pc.frontEndMsec;
+	}
+	if (backEndMsec) {
+		*backEndMsec = backEnd.pc.msec;
+	}
+
+	// print any other statistics and clear all of them
+	R_PerformanceCounters();
 }
 
 /*
@@ -765,8 +776,8 @@ Converts from SCREEN_WIDTH / SCREEN_HEIGHT coordinates to current cropped pixel 
 void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport ) {
 	renderCrop_t	*rc = &renderCrops[currentRenderCrop];
 
-	float wRatio = (float)rc->width / SCREEN_WIDTH;
-	float hRatio = (float)rc->height / SCREEN_HEIGHT;
+	float wRatio = (float) rc->width / SCREEN_WIDTH;
+	float hRatio = (float) rc->height / SCREEN_HEIGHT;
 
 	viewport->x1 = idMath::Ftoi( rc->x + renderView->x * wRatio );
 	viewport->x2 = idMath::Ftoi( rc->x + floor( ( renderView->x + renderView->width ) * wRatio + 0.5f ) - 1 );
@@ -966,7 +977,8 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
-	qglReadBuffer( GL_BACK );
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
 
 	// calculate pitch of buffer that will be returned by qglReadPixels()
 	int alignment;
@@ -1012,7 +1024,9 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
-	qglReadBuffer( GL_BACK );
+	int backEndStartTime = Sys_Milliseconds();
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
 
 // #4395 Duzenko lightem pixel pack buffer optimization
 
@@ -1035,9 +1049,12 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer)
                pbo = 0;
 		}
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
 	} else
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+	int backEndFinishTime = Sys_Milliseconds();
+	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
 }
 
 /*

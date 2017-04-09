@@ -35,7 +35,7 @@
 #define TFL_INVALID					BIT(0)		// not valid
 #define TFL_WALK					BIT(1)		// walking
 #define TFL_CROUCH					BIT(2)		// crouching
-#define TFL_WALKOFFLEDGE			BIT(3)		// walking of a ledge
+#define TFL_WALKOFFLEDGE			BIT(3)		// walking off a ledge
 #define TFL_BARRIERJUMP				BIT(4)		// jumping onto a barrier
 #define TFL_JUMP					BIT(5)		// jumping
 #define TFL_LADDER					BIT(6)		// climbing a ladder
@@ -65,7 +65,7 @@
 #define AREA_CROUCH					BIT(5)		// AI cannot walk but can only crouch in this area
 #define AREA_REACHABLE_WALK			BIT(6)		// area is reachable by walking or swimming
 #define AREA_REACHABLE_FLY			BIT(7)		// area is reachable by flying
-#define AREA_DOOR					BIT(8)		// area contains one ore more doors
+#define AREA_DOOR					BIT(8)		// area contains one or more doors
 
 // area contents flags
 #define AREACONTENTS_SOLID			BIT(0)		// solid, not a valid area

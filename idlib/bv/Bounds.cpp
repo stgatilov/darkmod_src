@@ -23,6 +23,8 @@
 
 
 idBounds bounds_zero( vec3_zero, vec3_zero );
+idBounds bounds_zeroOneCube(idVec3(0.0f), idVec3(1.0f)); //anon
+idBounds bounds_unitCube(idVec3(-1.0f), idVec3(1.0f)); //anon
 
 /*
 ============

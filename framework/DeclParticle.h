@@ -43,7 +43,7 @@ public:
 
 typedef enum {
 	PDIST_RECT,				// ( sizeX sizeY sizeZ )
-	PDIST_CYLINDER,			// ( sizeX sizeY sizeZ )
+	PDIST_CYLINDER,			// ( sizeX sizeY sizeZ ringFraction)
 	PDIST_SPHERE			// ( sizeX sizeY sizeZ ringFraction )
 							// a ringFraction of zero allows the entire sphere, 0.9 would only
 							// allow the outer 10% of the sphere

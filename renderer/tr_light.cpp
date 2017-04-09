@@ -32,6 +32,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #define CHECK_BOUNDS_EPSILON			1.0f
 
+int	g_enablePortalSky; // game cvar cached for speed
 
 /*
 ===========================================================================================
@@ -486,7 +487,22 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->lightProject[1] = light->lightProject[1];
 	vLight->lightProject[2] = light->lightProject[2];
 	vLight->lightProject[3] = light->lightProject[3];
-	vLight->fogPlane = light->frustum[5];
+	if (r_useAnonreclaimer.GetBool()) {
+		//anon begin
+		//vLight->fogPlane = light->frustum[5];
+		// the fog plane is the light far clip plane
+		idPlane fogPlane(light->baseLightProject[2][0] - light->baseLightProject[3][0],
+			light->baseLightProject[2][1] - light->baseLightProject[3][1],
+			light->baseLightProject[2][2] - light->baseLightProject[3][2],
+			light->baseLightProject[2][3] - light->baseLightProject[3][3]);
+		const float planeScale = idMath::InvSqrt(fogPlane.Normal().LengthSqr());
+		vLight->fogPlane[0] = fogPlane[0] * planeScale;
+		vLight->fogPlane[1] = fogPlane[1] * planeScale;
+		vLight->fogPlane[2] = fogPlane[2] * planeScale;
+		vLight->fogPlane[3] = fogPlane[3] * planeScale;
+		//anon end
+	} else
+		vLight->fogPlane = light->frustum[5];
 	vLight->frustumTris = light->frustumTris;
 	vLight->falloffImage = light->falloffImage;
 	vLight->lightShader = light->lightShader;
@@ -1352,6 +1368,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		if ( !shader->IsDrawn() ) {
 			continue;
 		}
+		if (!strcmp(shader->GetName(), "textures/smf/portal_sky") && g_enablePortalSky == 2)
+			continue; // duzenko #4414 - skip the ceiling surface so that pixels from the skybox stage are reused
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
@@ -1463,6 +1481,7 @@ void R_AddModelSurfaces( void ) {
 	// clear the ambient surface list
 	tr.viewDef->numDrawSurfs = 0;
 	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+	g_enablePortalSky = cvarSystem->GetCVarInteger("g_enablePortalSky"); // duzenko #4414: cache the game cvar
 
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
@@ -1577,7 +1596,9 @@ void R_RemoveUnecessaryViewLights( void ) {
 	viewLight_t		*vLight;
 
 	// go through each visible light
-	for ( vLight = tr.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
+	int numViewLights = 0;
+	for (vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next) {
+		numViewLights++;
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
@@ -1620,6 +1641,37 @@ void R_RemoveUnecessaryViewLights( void ) {
 			}
 
 			vLight->scissorRect.Intersect( surfRect );
+		}
+	}
+	if (r_useAnonreclaimer.GetBool()) {
+		// sort the viewLights list so the largest lights come first, which will reduce
+		// the chance of GPU pipeline bubbles
+		struct sortLight_t
+		{
+			viewLight_t* 	vLight;
+			int				screenArea;
+			static int sort(const void* a, const void* b)
+			{
+				return ((sortLight_t*)a)->screenArea - ((sortLight_t*)b)->screenArea;
+			}
+		};
+		sortLight_t* sortLights = (sortLight_t*)_alloca(sizeof(sortLight_t)* numViewLights);
+		int	numSortLightsFilled = 0;
+		for (viewLight_t* vLight = tr.viewDef->viewLights; vLight != NULL; vLight = vLight->next)
+		{
+			sortLights[numSortLightsFilled].vLight = vLight;
+			sortLights[numSortLightsFilled].screenArea = vLight->scissorRect.GetArea();
+			numSortLightsFilled++;
+		}
+
+		qsort(sortLights, numSortLightsFilled, sizeof(sortLights[0]), sortLight_t::sort);
+
+		// rebuild the linked list in order
+		tr.viewDef->viewLights = NULL;
+		for (int i = 0; i < numSortLightsFilled; i++)
+		{
+			sortLights[i].vLight->next = tr.viewDef->viewLights;
+			tr.viewDef->viewLights = sortLights[i].vLight;
 		}
 	}
 }

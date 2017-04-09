@@ -2017,8 +2017,10 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 				}
 			}
 
-			if( bOnList )
-				ent->SetFrobable( m_bCurFrobState );
+			if ( bOnList )
+			{
+				ent->SetFrobable(m_bCurFrobState);
+			}
 		}
 		else 
 		{	
@@ -2032,12 +2034,12 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 
 // Uncomment for debugging
 
-		idStr frobnofrob = "not frobable.";
+/*		idStr frobnofrob = "not frobable.";
 		if( m_bCurFrobState )
 			frobnofrob = "frobable.";
 
 		DM_LOG(LC_MISC,LT_DEBUG)LOGSTRING("Target_SetFrobable: Set entity %s to frob state: %s\r", Ents[i]->name.c_str(), frobnofrob.c_str() );
-
+*/
 	}
 }
 
