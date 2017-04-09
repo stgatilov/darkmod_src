@@ -1043,7 +1043,7 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 		*pic = NULL;
 	}
 	if ( timestamp ) {
-		*timestamp = 0xFFFFFFFF;
+		*timestamp = -1;  //0xFFFFFFFF  stgatilov: 2^32-1 is not -1 in 64-bit mode!
 	}
 	if ( width ) {
 		*width = 0;

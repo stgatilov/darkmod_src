@@ -42,7 +42,7 @@
 ===============================================================================
 */
 
-static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= 0xFFFFFFFF;
+static const ID_TIME_T	FILE_NOT_FOUND_TIMESTAMP	= -1;   //0xFFFFFFFF;  stgatilov: in x64 mode it is not -1
 static const int		MAX_PURE_PAKS				= 128;
 static const int		MAX_OSPATH					= 256;
 
