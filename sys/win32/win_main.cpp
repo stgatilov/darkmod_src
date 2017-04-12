@@ -74,15 +74,21 @@ static	HANDLE		hTimer;
 Sys_Createthread
 ==================
 */
+typedef std::pair<xthread_t, void*> CreateThreadStartParams;
+DWORD WINAPI CreateThreadStartRoutine(LPVOID lpThreadParameter) {
+	auto arg = *((CreateThreadStartParams*)lpThreadParameter);
+	delete ((CreateThreadStartParams*)lpThreadParameter);
+	return arg.first(arg.second);
+}
 void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count )
 {
-    // greebo: Somehow the x86 compiler won't eat the xthread_t even though the signature has the same return and argument types.
-    // so let's do a nasty reinterpret_cast<>
-
+	//stgatilov: it is illegal to reinterpret cdecl function as stdcall function (in 32-bit case)
+	//so we have to pass a helper function here, which would in turn call original callback
+	auto helperParam = new CreateThreadStartParams(function, parms);
 	HANDLE temp = CreateThread(	NULL,	// LPSECURITY_ATTRIBUTES lpsa,
 									0,		// DWORD cbStack,
-                                    reinterpret_cast<LPTHREAD_START_ROUTINE>(function),	// LPTHREAD_START_ROUTINE lpStartAddr,
-									parms,	// LPVOID lpvThreadParm,
+									CreateThreadStartRoutine,	// LPTHREAD_START_ROUTINE lpStartAddr,
+									helperParam,	// LPVOID lpvThreadParm,
 									0,		//   DWORD fdwCreate,
 									&info.threadId);
 	info.threadHandle = (intptr_t) temp;
