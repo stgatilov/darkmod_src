@@ -52,6 +52,9 @@ double Sys_GetClockTicks( void ) {
 
 #elif defined (_MSC_VER) && defined(_WIN64)
 
+	  // stgatilov: serialize pipeline with cpuid instruction
+    int values[4];
+    __cpuid(values, 0);
     // greebo: Use the intrinsic provided by the VC++ compiler in x64
     unsigned __int64 ticks = __rdtsc();
     return static_cast<double>(ticks);
