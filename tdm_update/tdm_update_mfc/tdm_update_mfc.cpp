@@ -57,10 +57,12 @@ using namespace tdm;
 BOOL UpdaterApplication::InitInstance()
 {
 	// Start logging
-	try {
+	try
+    {
 		RegisterLogWriters();
 	} 
-	catch (FileOpenException &e) {
+	catch (FileOpenException& )
+    {
 		// basic error-checking - most common cause of failure at this point is a read-only directory or log file.
 		// if other issues are detected by the users, this will have to be expanded to cater for other types of errors
 		AfxMessageBox(L"TDM Updater Error:\nUnable to open log file and start updater. Please ensure that the current directory is not set to 'Read-only'.\n\n"

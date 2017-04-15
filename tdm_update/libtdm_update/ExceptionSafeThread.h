@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
+#include <thread>
+#include <functional>
 #include <string>
+#include <memory>
+#include "ThreadControl.h"
 
 namespace tdm
 {
@@ -47,10 +49,10 @@ class ExceptionSafeThread
 {
 private:
 	// The function object to call
-	boost::function<void()> _function;
+	std::function<void()> _function;
 
 	// The actual thread
-	boost::shared_ptr<boost::thread> _thread;
+	std::shared_ptr<std::thread> _thread;
 
 	// The error message which is filled when exceptions are thrown within the thread
 	std::string _errMsg;
@@ -59,20 +61,20 @@ private:
 
 	bool _done;
 
-	boost::function<void()> _onFinish;
+    std::function<void()> _onFinish;
 
 public:
-	ExceptionSafeThread(const boost::function<void()>& function) :
+    ExceptionSafeThread(const std::function<void()>& function) :
 		_function(function),
-		_thread(new boost::thread(boost::bind(&ExceptionSafeThread::ThreadStart, this))),
+		_thread(new std::thread(std::bind(&ExceptionSafeThread::ThreadStart, this))),
 		_interrupted(false),
 		_done(false)
 	{}
 
 	// Construct this thread with a callback which will be invoked when the thread is done (failure or not)
-	ExceptionSafeThread(const boost::function<void()>& function, const boost::function<void()>& callbackOnFinish) :
+    ExceptionSafeThread(const std::function<void()>& function, const std::function<void()>& callbackOnFinish) :
 		_function(function),
-		_thread(new boost::thread(boost::bind(&ExceptionSafeThread::ThreadStart, this))),
+        _thread(new std::thread(std::bind(&ExceptionSafeThread::ThreadStart, this))),
 		_interrupted(false),
 		_done(false),
 		_onFinish(callbackOnFinish)
@@ -80,9 +82,24 @@ public:
 
 	~ExceptionSafeThread()
 	{
-		if (_thread != NULL && !_done)
+		if (_thread != NULL)
 		{
-			_thread->interrupt();
+            if (!_done)
+            {
+                ThreadControl::InterruptThread(_thread->get_id());
+            }
+
+            // If the main app thread is calling this, let's join first
+            if (_thread->joinable())
+            {
+                if (_thread->get_id() != std::this_thread::get_id())
+                {
+                    _thread->join();
+                }
+
+                // Any joinable thread must be detached before its destructor is reached
+                _thread->detach();
+            }
 		}
 	}
 
@@ -110,7 +127,7 @@ public:
 	{
 		if (_thread != NULL)
 		{
-			_thread->interrupt();
+            ThreadControl::InterruptThread(_thread->get_id());
 		}
 	}
 
@@ -137,7 +154,7 @@ private:
 		{
 			_function();
 		}
-		catch (boost::thread_interrupted&)
+        catch (ThreadInterruptedException&)
 		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Thread interrupted.");
 			_interrupted = true;
@@ -152,11 +169,14 @@ private:
 		// Invoke the callback when done
 		if (_onFinish)
 		{
+            // Make sure we're not joinable before calling the handler
+            _thread->detach();
+
 			// This might destroy this object, don't do anything afterwards
 			_onFinish(); 
 		}
 	}
 };
-typedef boost::shared_ptr<ExceptionSafeThread> ExceptionSafeThreadPtr;
+typedef std::shared_ptr<ExceptionSafeThread> ExceptionSafeThreadPtr;
 
 } // namespace

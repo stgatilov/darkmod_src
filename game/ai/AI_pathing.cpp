@@ -235,6 +235,9 @@ void GetPointOutsideObstacles( const obstacle_t *obstacles, const int numObstacl
 		}
 	}
 
+    /* if (i == 0)
+        return; */
+
 	newPoint = point - ( bestd + PUSH_OUTSIDE_OBSTACLES ) * bestPlane.ToVec2();
 	if ( PointInsideObstacle( obstacles, numObstacles, newPoint ) == -1 ) {
 		point = newPoint;

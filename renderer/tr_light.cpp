@@ -1498,8 +1498,8 @@ void R_AddModelSurfaces( void ) {
 			}
 		}
 
-		float oldFloatTime;
-		int oldTime;
+        float oldFloatTime = 0.0f;
+        int oldTime = 0;
 
 		game->SelectTimeGroup( vEntity->entityDef->parms.timeGroup );
 

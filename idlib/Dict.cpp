@@ -249,7 +249,7 @@ idDict::Checksum
 ================
 */
 int	idDict::Checksum( void ) const {
-	unsigned long ret;
+	unsigned int ret;
 
 	idList<idKeyValue> sorted = args;
 	sorted.Sort( KeyCompare );
@@ -454,7 +454,7 @@ static void WriteString( const char *s, idFile *f ) {
 		idLib::common->Error( "idDict::WriteToFileHandle: bad string" );
 	}
 
-	f->Write( s, strlen(s) + 1 );
+    f->Write(s, static_cast<int>(strlen(s) + 1));
 }
 
 /*
@@ -536,7 +536,7 @@ const idKeyValue *idDict::MatchPrefix( const char *prefix, const idKeyValue *las
 
 	assert( prefix );
 
-	const int len = strlen( prefix );
+    const int len = static_cast<int>(strlen(prefix));
 	int start = -1;
 
 	if ( lastMatch ) {
@@ -581,7 +581,7 @@ idDict::WriteToFileHandle
 */
 void idDict::WriteToFileHandle( idFile *f ) const {
 
-	int c = LittleLong( args.Num() );
+	int c = LittleInt( args.Num() );
 
 	f->Write( &c, sizeof( c ) );
 
@@ -626,7 +626,7 @@ void idDict::ReadFromFileHandle( idFile *f ) {
 	Clear();
 
 	f->Read( &c, sizeof( c ) );
-	c = LittleLong( c );
+	c = LittleInt( c );
 	for ( int i = 0; i < c; i++ ) {
 		key = ReadString( f );
 		val = ReadString( f );

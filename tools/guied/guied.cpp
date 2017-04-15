@@ -138,7 +138,7 @@ Returns true if the given string is an expression
 */
 bool IsExpression ( const char* s )
 {
-	idParser src( s, strlen ( s ), "", 
+    idParser src(s, static_cast<int>(strlen(s)), "",
 				  LEXFL_ALLOWMULTICHARLITERALS		| 
 				  LEXFL_NOSTRINGCONCAT				| 
 				  LEXFL_ALLOWBACKSLASHSTRINGCONCAT	|

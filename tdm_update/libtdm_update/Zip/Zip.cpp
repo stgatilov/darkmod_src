@@ -30,7 +30,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 namespace tdm
@@ -51,7 +50,7 @@ namespace tdm
 	// Shortcut method
 	inline std::string intToStr(int number)
 	{
-		return boost::lexical_cast<std::string>(number);
+		return std::to_string(number);
 	}
 
 ZipFileRead::ZipFileRead(unzFile handle) :
@@ -318,7 +317,7 @@ std::list<fs::path> ZipFileRead::ExtractAllFilesTo(const fs::path& destPath,
 		result = unzGoToNextFile(_handle);
 	}
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Found " + boost::lexical_cast<std::string>(filesToExtract.size()) + " files to extract.");
+	TraceLog::WriteLine(LOG_VERBOSE, "Found " + std::to_string(filesToExtract.size()) + " files to extract.");
 
 	// The list of extracted files, for returning to the caller
 	std::list<fs::path> extractedFiles;
@@ -411,7 +410,7 @@ ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string
 	if (output->data.size() != info.compressed_size) 
 	{
 		tdm::TraceLog::WriteLine(LOG_VERBOSE, "[ReadCompressedFile]: Could not allocate memory for " + filename + ": " + 
-								 intToStr(result) + " - Size: " + boost::lexical_cast<std::string>(info.compressed_size));
+								 intToStr(result) + " - Size: " + std::to_string(info.compressed_size));
 		return CompressedFilePtr();
 	}
 
@@ -448,9 +447,9 @@ ZipFileRead::CompressedFilePtr ZipFileRead::ReadCompressedFile(const std::string
 	return output;
 }
 
-boost::uint32_t ZipFileRead::GetCumulativeCrc()
+uint32_t ZipFileRead::GetCumulativeCrc()
 {
-	boost::uint32_t overallCRC = 0;
+	uint32_t overallCRC = 0;
 
 	int result = unzGoToFirstFile(_handle);
 

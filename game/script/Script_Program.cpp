@@ -27,20 +27,20 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
-idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", sizeof( void * ), NULL );
-idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", sizeof( void * ), NULL );
+idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", sizeof( intptr_t ), NULL );
+idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", sizeof( intptr_t ), NULL );
 idTypeDef	type_string( ev_string, &def_string, "string", MAX_STRING_LEN, NULL );
-idTypeDef	type_float( ev_float, &def_float, "float", sizeof( float ), NULL );
-idTypeDef	type_vector( ev_vector, &def_vector, "vector", sizeof( idVec3 ), NULL );
-idTypeDef	type_entity( ev_entity, &def_entity, "entity", sizeof( int * ), NULL );					// stored as entity number pointer
-idTypeDef	type_field( ev_field, &def_field, "field", sizeof( void * ), NULL );
-idTypeDef	type_function( ev_function, &def_function, "function", sizeof( void * ), &type_void );
-idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( int ), NULL );
-idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof( void * ), NULL );
-idTypeDef	type_object( ev_object, &def_object, "object", sizeof( int * ), NULL );					// stored as entity number pointer
-idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( int ), NULL );		// only used for jump opcodes
-idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( int ), NULL );				// only used for function call and thread opcodes
-idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( int ), NULL );
+idTypeDef	type_float( ev_float, &def_float, "float", sizeof( intptr_t ), NULL );
+idTypeDef	type_vector( ev_vector, &def_vector, "vector", E_EVENT_SIZEOF_VEC, NULL );
+idTypeDef	type_entity( ev_entity, &def_entity, "entity", sizeof( intptr_t ), NULL );					// stored as entity number pointer
+idTypeDef	type_field( ev_field, &def_field, "field", sizeof( intptr_t ), NULL );
+idTypeDef	type_function( ev_function, &def_function, "function", sizeof( intptr_t ), &type_void );
+idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( intptr_t ), NULL );
+idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof( intptr_t ), NULL );
+idTypeDef	type_object( ev_object, &def_object, "object", sizeof( intptr_t ), NULL );					// stored as entity number pointer
+idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( intptr_t ), NULL );		// only used for jump opcodes
+idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( intptr_t ), NULL );				// only used for function call and thread opcodes
+idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( intptr_t ), NULL );
 
 idVarDef	def_void( &type_void );
 idVarDef	def_scriptevent( &type_scriptevent );
@@ -770,7 +770,7 @@ void idVarDef::PrintInfo( idFile *file, int instructionPointer ) const {
 			switch( etype ) {
 			case ev_string :
 				file->Printf( "\"" );
-				len = strlen( value.stringPtr );
+                len = static_cast<int>(strlen(value.stringPtr));
 				ch = value.stringPtr;
 				for( i = 0; i < len; i++, ch++ ) {
 					if ( idStr::CharIsPrintable( *ch ) ) {
@@ -892,7 +892,7 @@ idScriptObject::Save
 ================
 */
 void idScriptObject::Save( idSaveGame *savefile ) const {
-	size_t size;
+	int size;
 
 	if ( type == &type_object && data == NULL ) {
 		// Write empty string for uninitialized object
@@ -925,7 +925,7 @@ void idScriptObject::Restore( idRestoreGame *savefile ) {
 		savefile->Error( "idScriptObject::Restore: failed to restore object of type '%s'.", typeName.c_str() );
 	}
 
-	savefile->ReadInt( (int &)size );
+	savefile->ReadInt( size );
 	if ( size != type->Size() ) {
 		savefile->Error( "idScriptObject::Restore: size of object '%s' doesn't match size in save game.", typeName.c_str() );
 	}
@@ -965,7 +965,7 @@ bool idScriptObject::SetType( const char *typeName ) {
 
 		// allocate the memory
 		size = type->Size();
-		data = ( byte * )Mem_Alloc( size );
+        data = (byte *)Mem_Alloc(static_cast<int>(size));
 	}
 
 	// init object memory
@@ -1221,6 +1221,44 @@ void idProgram::AddDefToNameList( idVarDef *def, const char *name ) {
 }
 
 /*
+==============
+idProgram::ReserveMem
+
+reserves memory for global variables and returns the starting pointer
+==============
+*/
+byte *idProgram::ReserveMem(int size) {
+    byte *res = &variables[numVariables];
+    numVariables += size;
+    if (numVariables > sizeof(variables)) {
+        throw idCompileError(va("Exceeded global memory size (%d bytes)", sizeof(variables)));
+    }
+
+    memset(res, 0, size);
+
+    return res;
+}
+
+/*
+============
+idProgram::AllocVarDef
+============
+*/
+idVarDef *idProgram::AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope) {
+    idVarDef	*def;
+
+    def = new idVarDef(type);
+    def->scope = scope;
+    def->numUsers = 1;
+    def->num = varDefs.Append(def);
+
+    // add the def to the list with defs with this name and set the name pointer
+    AddDefToNameList(def, name);
+
+    return def;
+}
+
+/*
 ============
 idProgram::AllocDef
 ============
@@ -1233,13 +1271,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 	idVarDef	*def_z;
 
 	// allocate a new def
-	def = new idVarDef( type );
-	def->scope		= scope;
-	def->numUsers	= 1;
-	def->num		= varDefs.Append( def );
-
-	// add the def to the list with defs with this name and set the name pointer
-	AddDefToNameList( def, name );
+    def = AllocVarDef(type, name, scope);
 
 	if ( ( type->Type() == ev_vector ) || ( ( type->Type() == ev_field ) && ( type->FieldType()->Type() == ev_vector ) ) ) {
 		//
@@ -1253,7 +1285,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			scope->value.functionPtr->locals += type->Size();
 		} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 			idTypeDef	newtype( ev_field, NULL, "float field", 0, &type_float );
-			idTypeDef	*type = GetType( newtype, true );
+			idTypeDef	*ftype = GetType( newtype, true );
 
 			// set the value to the variable's position in the object
 			def->value.ptrOffset = scope->TypeDef()->Size();
@@ -1261,30 +1293,52 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
 			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocDef( type, element, scope, constant );
+			def_x = AllocDef( ftype, element, scope, constant );
 
 			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocDef( type, element, scope, constant );
-			def_y->value.ptrOffset = def_x->value.ptrOffset + type_float.Size();
+			def_y = AllocDef( ftype, element, scope, constant );
+			def_y->value.ptrOffset = def_x->value.ptrOffset + sizeof(float);
 
 			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocDef( type, element, scope, constant );
-			def_z->value.ptrOffset = def_y->value.ptrOffset + type_float.Size();
+			def_z = AllocDef( ftype, element, scope, constant );
+			def_z->value.ptrOffset = def_y->value.ptrOffset + sizeof(float);
 		} else {
+			idTypeDef	newtype( ev_float, &def_float, "vector float", 0, NULL );
+			idTypeDef	*ftype = GetType( newtype, true );
+
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
 			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocDef( &type_float, element, scope, constant );
+			def_x = AllocVarDef( ftype, element, scope );
 
 			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocDef( &type_float, element, scope, constant );
+			def_y = AllocVarDef( ftype, element, scope );
 
 			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocDef( &type_float, element, scope, constant );
+			def_z = AllocVarDef( ftype, element, scope );
 
-			// point the vector def to the x coordinate
-			def->value			= def_x->value;
-			def->initialized	= def_x->initialized;
+			// get the memory for the full vector and point the _x, _y and _z
+			// defs at the vector member offsets
+			if ( scope->Type() == ev_function ) {
+				// vector on stack
+				def->value.stackOffset	= scope->value.functionPtr->locals;
+				def->initialized		= idVarDef::stackVariable;
+				scope->value.functionPtr->locals += type->Size();
+
+				def_x->value.stackOffset = def->value.stackOffset;
+				def_y->value.stackOffset = def_x->value.stackOffset + sizeof(float);
+				def_z->value.stackOffset = def_y->value.stackOffset + sizeof(float);
+			} else {
+				// global vector
+				def->value.bytePtr		= ReserveMem(type->Size());
+				def_x->value.bytePtr	= def->value.bytePtr;
+				def_y->value.bytePtr	= def_x->value.bytePtr + sizeof(float);
+				def_z->value.bytePtr	= def_y->value.bytePtr + sizeof(float);
+			}
+
+			def_x->initialized = def->initialized;
+			def_y->initialized = def->initialized;
+			def_z->initialized = def->initialized;
 		}
 	} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 		//
@@ -1311,13 +1365,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 		//
 		// global variable
 		//
-		def->value.bytePtr = &variables[ numVariables ];
-		numVariables += def->TypeDef()->Size();
-		if ( numVariables > sizeof( variables ) ) {
-			throw idCompileError( va( "Exceeded global memory size (%d bytes)", sizeof( variables ) ) );
-		}
-
-		memset( def->value.bytePtr, 0, def->TypeDef()->Size() );
+		def->value.bytePtr = ReserveMem(def->TypeDef()->Size());
 	}
 
 	return def;
@@ -1686,7 +1734,7 @@ Called after all files are compiled to check for errors
 ==============
 */
 void idProgram::FinishCompilation( void ) {
-	int	i;
+	unsigned int	i;
 
 	top_functions	= functions.Num();
 	top_statements	= statements.Num();
@@ -1710,11 +1758,10 @@ called after all files are compiled to report memory usage.
 ==============
 */
 void idProgram::CompileStats( void ) {
-	int	memused;
-	int	memallocated;
-	int	numdefs;
-	int	stringspace;
-	int funcMem;
+	unsigned long	memused;
+	unsigned long	memallocated;
+	unsigned long	stringspace;
+	unsigned long   funcMem;
 	int	i;
 
 	gameLocal.Printf( "---------- Compile stats ----------\n" );
@@ -1725,37 +1772,36 @@ void idProgram::CompileStats( void ) {
 		gameLocal.DPrintf( "   %s\n", fileList[ i ].c_str() );
 		stringspace += fileList[ i ].Allocated();
 	}
-	stringspace += fileList.Size();
+    stringspace += static_cast<unsigned long>(fileList.Size());
 
-	numdefs = varDefs.Num();
 	memused = varDefs.Num() * sizeof( idVarDef );
 	memused += types.Num() * sizeof( idTypeDef );
 	memused += stringspace;
 
 	for( i = 0; i < types.Num(); i++ ) {
-		memused += types[ i ]->Allocated();
+		memused += static_cast<unsigned long>(types[ i ]->Allocated());
 	}
 
-	funcMem = functions.MemoryUsed();
+    funcMem = static_cast<unsigned long>(functions.MemoryUsed());
 	for( i = 0; i < functions.Num(); i++ ) {
-		funcMem += functions[ i ].Allocated();
+        funcMem += static_cast<unsigned long>(functions[i].Allocated());
 	}
 
 	memallocated = funcMem + memused + sizeof( idProgram );
 
-	memused += statements.MemoryUsed();
-	memused += functions.MemoryUsed();	// name and filename of functions are shared, so no need to include them
+    memused += static_cast<unsigned long>(statements.MemoryUsed());
+    memused += static_cast<unsigned long>(functions.MemoryUsed());	// name and filename of functions are shared, so no need to include them
 	memused += sizeof( variables );
 
 	gameLocal.Printf( "\nMemory usage:\n" );
-	gameLocal.Printf( "     Strings: %d, %d bytes\n", fileList.Num(), stringspace );
-	gameLocal.Printf( "  Statements: %d, %d bytes\n", statements.Num(), statements.MemoryUsed() );
-	gameLocal.Printf( "   Functions: %d, %d bytes\n", functions.Num(), funcMem );
-	gameLocal.Printf( "   Variables: %d bytes\n", numVariables );
-	gameLocal.Printf( "    Mem used: %d bytes\n", memused );
-	gameLocal.Printf( " Static data: %d bytes\n", sizeof( idProgram ) );
-	gameLocal.Printf( "   Allocated: %d bytes\n", memallocated );
-	gameLocal.Printf( " Thread size: %d bytes\n\n", sizeof( idThread ) );
+	gameLocal.Printf( "     Strings: %d, %lu bytes\n", fileList.Num(), stringspace );
+	gameLocal.Printf( "  Statements: %d, %lu bytes\n", statements.Num(), static_cast<unsigned long>(statements.MemoryUsed()) );
+	gameLocal.Printf( "   Functions: %d, %lu bytes\n", functions.Num(), funcMem );
+	gameLocal.Printf( "   Variables: %lu bytes\n", numVariables );
+	gameLocal.Printf( "    Mem used: %lu bytes\n", memused );
+	gameLocal.Printf( " Static data: %lu bytes\n", static_cast<unsigned long>(sizeof( idProgram )) );
+	gameLocal.Printf( "   Allocated: %lu bytes\n", memallocated );
+    gameLocal.Printf(" Thread size: %lu bytes\n\n", static_cast<unsigned long>(sizeof(idThread)));
 }
 
 /*
@@ -1910,7 +1956,7 @@ void idProgram::RegisterScriptEvents()
 		}
 
 		const char* argFormat = eventDef->GetArgFormat();
-		int numArgs = strlen(argFormat);
+		int numArgs = static_cast<int>(strlen(argFormat));
 		bool argumentsValid = true;
 
 		// Check if any of the argument types is invalid before allocating anything
@@ -2005,7 +2051,7 @@ void idProgram::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( -1 );
 
 	savefile->WriteInt( numVariables );
-	for ( i = variableDefaults.Num(); i < numVariables; i++ ) {
+	for (unsigned int i = variableDefaults.Num(); i < numVariables; i++ ) {
 		savefile->WriteByte( variables[i] );
 	}
 
@@ -2142,7 +2188,7 @@ void idProgram::Restart( void ) {
 	
 	// reset the variables to their default values
 	numVariables = variableDefaults.Num();
-	for( i = 0; i < numVariables; i++ ) {
+	for(unsigned int i = 0; i < numVariables; i++ ) {
 		variables[ i ] = variableDefaults[ i ];
 	}
 }

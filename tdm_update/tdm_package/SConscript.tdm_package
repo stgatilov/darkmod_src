@@ -64,8 +64,6 @@ elif g_os == 'FreeBSD':
 		'crypto',
 		File('/usr/local/lib/libboost_filesystem.a'),
 		File('/usr/local/lib/libboost_program_options.a'),
-		File('/usr/local/lib/libboost_thread.a'),
-		File('/usr/local/lib/libboost_regex.a'),
 		File('/usr/local/lib/libboost_system.a'),
 		File('/usr/local/lib/libcurl.a')
 	])
@@ -75,8 +73,6 @@ else:
 		local_env.Append(LIBS = [
 			File('#/../../linux/boost/lib/libboost_filesystem.a'),
 			File('#/../../linux/boost/lib/libboost_program_options.a'),
-			File('#/../../linux/boost/lib/libboost_thread.a'),
-			File('#/../../linux/boost/lib/libboost_regex.a'),
 			File('#/../../linux/boost/lib/libboost_system.a'),
 			File('#/../../linux/libcurl/libcurl.a')
 		])
@@ -84,8 +80,6 @@ else:
 		local_env.Append(LIBS = [
 			File('#/../../linux/boost/lib.debian50-amd64/libboost_filesystem.a'),
 			File('#/../../linux/boost/lib.debian50-amd64/libboost_program_options.a'),
-			File('#/../../linux/boost/lib.debian50-amd64/libboost_thread.a'),
-			File('#/../../linux/boost/lib.debian50-amd64/libboost_regex.a'),
 			File('#/../../linux/boost/lib.debian50-amd64/libboost_system.a'),
 			File('#/../../linux/libcurl/libcurl.debian50-amd64.a')
 		])

@@ -670,7 +670,7 @@ void R_InitOpenGL( void ) {
 	glimpParms_t	parms;
 	int				i;
 
-	common->Printf( "----- R_InitOpenGL -----\n" );
+    common->Printf("----- Initializing OpenGL -----\n");
 
 	if ( glConfig.isInitialized ) {
 		common->FatalError( "R_InitOpenGL called while active" );
@@ -731,6 +731,10 @@ void R_InitOpenGL( void ) {
 	}
 
 	glConfig.isInitialized = true;
+
+    common->Printf("OpenGL vendor: %s\n", glConfig.vendor_string);
+    common->Printf("OpenGL renderer: %s\n", glConfig.renderer_string);
+    common->Printf("OpenGL version: %s\n", glConfig.version_string);
 
 	// recheck all the extensions (FIXME: this might be dangerous)
 	R_CheckPortableExtensions();
@@ -1225,7 +1229,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 				tr.primaryWorld->RenderScene( ref );
 				tr.EndFrame( NULL, NULL );
 			} else {
-				session->UpdateScreen();
+				session->UpdateScreen(false);
 			}
 
 			int w = ( xo + oldWidth > width )   ? (width - xo)  : oldWidth;
@@ -1730,9 +1734,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 	idStr		fullname;
 	const char	*baseName;
-	renderView_t	ref;
-	viewDef_t	primary;
-	//int		downSample;
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;
@@ -1743,7 +1744,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	}
 	baseName = args.Argv( 1 );
 
-	//downSample = 0;
 	if ( args.Argc() == 3 ) {
 		outSize = atoi( args.Argv( 2 ) );
 	} else {
@@ -1902,7 +1902,7 @@ void R_SetColorMappings( void ) {
 GfxInfo_f
 ================
 */
-void GfxInfo_f( const idCmdArgs &args ) {
+static void GfxInfo_f( const idCmdArgs &args ) {
 	const char *fsstrings[] =
 	{
 		"windowed",
@@ -1958,8 +1958,6 @@ void GfxInfo_f( const idCmdArgs &args ) {
 	}
 
 	//=============================
-
-	common->Printf( "-------\n" );
 
 	if ( r_finish.GetBool() ) {
 		common->Printf( "Forcing glFinish\n" );
@@ -2252,8 +2250,6 @@ idRenderSystemLocal::Init
 */
 void idRenderSystemLocal::Init( void ) {	
 
-	common->Printf( "------- Initializing renderSystem --------\n" );
-
 	// clear all our internal state
 	viewCount = 1;		// so cleared structures never match viewCount
 	// we used to memset tr, but now that it is a class, we can't, so
@@ -2297,9 +2293,6 @@ void idRenderSystemLocal::Init( void ) {
 	// determine which back end we will use
 	// FIXME : ??? this is invalid here as there is not enough information to set it up correctly
 	//SetBackEndRenderer();
-
-	common->Printf( "renderSystem initialized.\n" );
-	common->Printf( "--------------------------------------\n" );
 }
 
 /*

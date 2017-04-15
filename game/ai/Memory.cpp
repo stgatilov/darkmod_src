@@ -216,7 +216,7 @@ void Memory::Save(idSaveGame* savefile) const
 
 	doorRelated.currentDoor.Save(savefile);
 
-	savefile->WriteInt(doorRelated.doorInfo.size());
+    savefile->WriteInt(static_cast<int>(doorRelated.doorInfo.size()));
 	for (DoorInfoMap::const_iterator i = doorRelated.doorInfo.begin();
 		 i != doorRelated.doorInfo.end(); ++i)
 	{

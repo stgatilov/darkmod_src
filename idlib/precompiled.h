@@ -60,9 +60,6 @@
 #include <mmreg.h>
 
 #define DIRECTINPUT_VERSION  0x0800			// was 0x0700 with the old mssdk
-#define DIRECTSOUND_VERSION  0x0800
-
-#include <dsound.h>
 #include <dinput.h>
 
 #endif /* !GAME_DLL */
@@ -87,6 +84,7 @@
 	#define NDEBUG
 #endif
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>

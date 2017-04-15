@@ -24,8 +24,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Game_local.h"
 
-#include <boost/bind.hpp>
-
 static int MakePowerOfTwo( int num ) {
 	int		pot;
 
@@ -932,7 +930,7 @@ m_ImageAnisotropyHandle	(-1)
 	if (imageAnistropy != NULL)
 	{
 		m_ImageAnisotropyHandle = imageAnistropy->AddOnModifiedCallback(
-			boost::bind(&idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged, this));
+            [&]() { OnImageAnisotropyChanged(); });
 	}
 	r_postprocess = cvarSystem->Find( "r_postprocess" );
 }

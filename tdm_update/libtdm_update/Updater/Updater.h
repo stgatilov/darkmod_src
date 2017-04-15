@@ -132,7 +132,7 @@ public:
 		// called on finishing the single-file
 		virtual void OnDownloadFinish() = 0;
 	};
-	typedef boost::shared_ptr<DownloadProgress> DownloadProgressPtr;
+	typedef std::shared_ptr<DownloadProgress> DownloadProgressPtr;
 
 	// An object to get notified in regular intervals about the file operations
 	class FileOperationProgress
@@ -142,7 +142,7 @@ public:
 
 		virtual void OnFileOperationFinish() = 0;
 	};
-	typedef boost::shared_ptr<FileOperationProgress> FileOperationProgressPtr;
+	typedef std::shared_ptr<FileOperationProgress> FileOperationProgressPtr;
 
 private:
 	const UpdaterOptions& _options;
@@ -335,7 +335,7 @@ private:
 	void PerformSingleMirroredDownload(const std::string& remoteFile);
 
 	// Downloads a file from a random mirror to the target folder, checking required size and CRC after download
-	void PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc);
+	void PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, uint32_t requiredCrc);
 
 	// Starts the download and waits for completion
 	void PerformSingleMirroredDownload(const DownloadPtr& download);

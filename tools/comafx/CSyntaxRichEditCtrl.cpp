@@ -1113,7 +1113,7 @@ void CSyntaxRichEditCtrl::ToolTipShow( int charIndex, const char *string ) {
 	funcParmToolTipStart = charIndex;
 	funcParmToolTip.SetWindowText( string );
 	p1 = funcParmToolTip.PosFromChar( 0 );
-	p2 = funcParmToolTip.PosFromChar( strlen( string ) - 1 );
+    p2 = funcParmToolTip.PosFromChar(static_cast<UINT>(strlen(string)) - 1);
 	point = PosFromChar( charIndex );
 	GetClientRect( rect );
 	if ( point.y < rect.bottom - FUNCPARMTOOLTIP_OFFSET - FUNCPARMTOOLTIP_HEIGHT ) {
@@ -1354,7 +1354,7 @@ void CSyntaxRichEditCtrl::GoToLine( int line ) {
 CSyntaxRichEditCtrl::OnToolHitTest
 ================
 */
-int CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
+INT_PTR CSyntaxRichEditCtrl::OnToolHitTest( CPoint point, TOOLINFO* pTI ) const {
 	CRichEditCtrl::OnToolHitTest( point, pTI );
 
     pTI->hwnd = GetSafeHwnd();
@@ -1821,7 +1821,7 @@ void CSyntaxRichEditCtrl::OnProtected( NMHDR *pNMHDR, LRESULT *pResult ) {
 		}
 		case WM_SETTEXT: {
 			updateRange.cpMin = pEP->chrg.cpMin;
-			updateRange.cpMax = pEP->chrg.cpMin + strlen( (LPCTSTR) pEP->lParam );
+			updateRange.cpMax = pEP->chrg.cpMin + static_cast<LONG>(strlen( (LPCTSTR) pEP->lParam ));
 			break;
 		}
 		case WM_CUT: {

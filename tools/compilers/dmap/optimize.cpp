@@ -599,7 +599,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 	optEdge_t	*e, *e1, *e2;
 	optVertex_t *v1, *v2, *v3;
 	idVec3		dir1, dir2;
-	float		len, dist;
+	float		dist;
 	idVec3		point;
 	idVec3		offset;
 	float		off;
@@ -623,6 +623,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 			e = e->v2link;
 		} else {
 			common->Error( "RemoveIfColinear: mislinked edge" );
+            return;
 		}
 	}
 
@@ -644,6 +645,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 		v1 = e1->v1;
 	} else {
 		common->Error( "RemoveIfColinear: mislinked edge" );
+        return;
 	}
 	if ( e2->v1 == v2 ) {
 		v3 = e2->v2;
@@ -651,10 +653,12 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 		v3 = e2->v1;
 	} else {
 		common->Error( "RemoveIfColinear: mislinked edge" );
+        return;
 	}
 
 	if ( v1 == v3 ) {
 		common->Error( "RemoveIfColinear: mislinked edge" );
+        return;
 	}
 
 	// they must point in opposite directions
@@ -665,7 +669,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 
 	// see if they are colinear
 	VectorSubtract( v3->v.xyz, v1->v.xyz, dir1 );
-	len = dir1.Normalize();
+	dir1.Normalize();
 	VectorSubtract( v2->v.xyz, v1->v.xyz, dir2 );
 	dist = DotProduct( dir2, dir1 );
 	VectorMA( v1->v.xyz, dist, dir1, point );
@@ -698,6 +702,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 	// v2 should have no edges now
 	if ( v2->edges ) {
 		common->Error( "RemoveIfColinear: didn't remove properly" );
+        return;
 	}
 
 
@@ -929,6 +934,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		second = e1->v1;
 	} else {
 		common->Error( "CreateOptTri: mislinked edge" );
+        return;
 	}
 
 	if ( e2->v1 == first ) {
@@ -937,10 +943,12 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		third = e2->v1;
 	} else {
 		common->Error( "CreateOptTri: mislinked edge" );
+        return;
 	}
 
 	if ( !IsTriangleValid( first, second, third ) ) {
 		common->Error( "CreateOptTri: invalid" );
+        return;
 	}
 
 //DrawEdges( island );
@@ -971,6 +979,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 			opposite = opposite->v2link;
 		} else {
 			common->Error( "BuildOptTriangles: mislinked edge" );
+            return;
 		}
 	}
 
@@ -1045,6 +1054,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 }
 
 // debugging tool
+#if 0
 static void ReportNearbyVertexes( const optVertex_t *v, const optIsland_t *island ) {
 	const optVertex_t	*ov;
 	float		d;
@@ -1064,6 +1074,7 @@ static void ReportNearbyVertexes( const optVertex_t *v, const optIsland_t *islan
 		}
 	}
 }
+#endif
 
 /*
 ====================
@@ -1073,8 +1084,8 @@ Generate a new list of triangles from the optEdeges
 ====================
 */
 static void BuildOptTriangles( optIsland_t *island ) {
-	optVertex_t		*ov, *second, *third, *middle;
-	optEdge_t		*e1, *e1Next, *e2, *e2Next, *check, *checkNext;
+    optVertex_t		*ov, *second = NULL, *third = NULL, *middle = NULL;
+    optEdge_t		*e1, *e1Next = NULL, *e2, *e2Next = NULL, *check, *checkNext = NULL;
 
 	// free them
 	FreeOptTriangles( island );
@@ -1726,6 +1737,7 @@ static void OptimizeIsland( optIsland_t *island ) {
 AddVertexToIsland_r
 ================
 */
+#if 0
 static void AddVertexToIsland_r( optVertex_t *vert, optIsland_t *island ) {
 	optEdge_t	*e;
 
@@ -1760,6 +1772,7 @@ static void AddVertexToIsland_r( optVertex_t *vert, optIsland_t *island ) {
 	}
 
 }
+#endif
 
 /*
 ====================
@@ -1775,6 +1788,7 @@ doing this, because PointInSourceTris() can give a bad answer if
 the source list has triangles not used in the optimization
 ====================
 */
+#if 0
 static void SeparateIslands( optimizeGroup_t *opt ) {
 	int		i;
 	optIsland_t	island;
@@ -1797,6 +1811,7 @@ static void SeparateIslands( optimizeGroup_t *opt ) {
 		common->Printf( "%6i islands\n", numIslands );
 	}
 }
+#endif
 
 static void DontSeparateIslands( optimizeGroup_t *opt ) {
 	int		i;
@@ -1829,6 +1844,7 @@ PointInSourceTris
 This is a sloppy bounding box check
 ====================
 */
+#if 0
 static bool PointInSourceTris( float x, float y, float z, optimizeGroup_t *opt ) {
 	mapTri_t	*tri;
 	idBounds	b;
@@ -1853,6 +1869,7 @@ static bool PointInSourceTris( float x, float y, float z, optimizeGroup_t *opt )
 	}
 	return false;
 }
+#endif
 
 /*
 ====================

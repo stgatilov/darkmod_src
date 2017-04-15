@@ -1120,7 +1120,7 @@ bool idAASFileLocal::Load( const idStr &fileName, const unsigned int mapFileCRC 
 		return false;
 	}
 
-	c = token.GetUnsignedLongValue();
+    c = token.GetUnsignedIntValue();
 	if ( mapFileCRC && c != mapFileCRC ) {
 		common->Warning( "AAS file '%s' is out of date (mapFileCRC %u vs. token CRC %u)", name.c_str(), mapFileCRC, c );
 		return false;
@@ -1195,7 +1195,7 @@ idAASFileLocal::MemorySize
 ================
 */
 int idAASFileLocal::MemorySize( void ) const {
-	int size;
+	size_t size;
 
 	size = planeList.Size();
 	size += vertices.Size();
@@ -1210,7 +1210,7 @@ int idAASFileLocal::MemorySize( void ) const {
 	size += clusters.Size();
 	size += sizeof( idReachability_Walk ) * NumReachabilities();
 
-	return size;
+	return static_cast<int>(size);
 }
 
 /*

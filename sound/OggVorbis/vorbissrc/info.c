@@ -64,7 +64,7 @@ void vorbis_comment_add(vorbis_comment *vc,char *comment){
 			    (vc->comments+2)*sizeof(*vc->user_comments));
   vc->comment_lengths=_ogg_realloc(vc->comment_lengths,
       			    (vc->comments+2)*sizeof(*vc->comment_lengths));
-  vc->comment_lengths[vc->comments]=strlen(comment);
+  vc->comment_lengths[vc->comments] = (int)strlen(comment);
   vc->user_comments[vc->comments]=_ogg_malloc(vc->comment_lengths[vc->comments]+1);
   strcpy(vc->user_comments[vc->comments], comment);
   vc->comments++;
@@ -94,7 +94,7 @@ static int tagcompare(const char *s1, const char *s2, int n){
 char *vorbis_comment_query(vorbis_comment *vc, char *tag, int count){
   long i;
   int found = 0;
-  int taglen = strlen(tag)+1; /* +1 for the = we append */
+  int taglen = (int)strlen(tag)+1; /* +1 for the = we append */
   char *fulltag = alloca(taglen+ 1);
 
   strcpy(fulltag, tag);
@@ -114,7 +114,7 @@ char *vorbis_comment_query(vorbis_comment *vc, char *tag, int count){
 
 int vorbis_comment_query_count(vorbis_comment *vc, char *tag){
   int i,count=0;
-  int taglen = strlen(tag)+1; /* +1 for the = we append */
+  int taglen = (int)strlen(tag)+1; /* +1 for the = we append */
   char *fulltag = alloca(taglen+1);
   strcpy(fulltag,tag);
   strcat(fulltag, "=");
@@ -417,7 +417,7 @@ static int _vorbis_pack_info(oggpack_buffer *opb,vorbis_info *vi){
 
 static int _vorbis_pack_comment(oggpack_buffer *opb,vorbis_comment *vc){
   char temp[]="Xiph.Org libVorbis I 20030909";
-  int bytes = strlen(temp);
+  int bytes = (int)strlen(temp);
 
   /* preamble */  
   oggpack_write(opb,0x03,8);

@@ -191,7 +191,7 @@ idCurve::RombergIntegral
 ====================
 */
 template< class type >
-ID_INLINE float idCurve<type>::RombergIntegral( const float t0, const float t1, const int order ) const {
+inline float idCurve<type>::RombergIntegral( const float t0, const float t1, const int order ) const {
 	int i, j, k, m, n;
 	float sum, delta;
 	float *temp[2];

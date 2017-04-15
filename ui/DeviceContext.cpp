@@ -669,7 +669,7 @@ int idDeviceContext::DrawText(float x, float y, float scale, idVec4 color, const
 		const unsigned char	*s = (const unsigned char*)text;
 		renderSystem->SetColor(color);
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
-		len = strlen(text);
+        len = static_cast<int>(strlen(text));
 		if (limit > 0 && len > limit) {
 			len = limit;
 		}
@@ -789,7 +789,7 @@ int idDeviceContext::TextHeight(const char *text, float scale, int limit) {
 	useScale = scale * font->glyphScale;
 	max = 0;
 	if (text) {
-		len = strlen(text);
+        len = static_cast<int>(strlen(text));
 		if (limit > 0 && len > limit) {
 			len = limit;
 		}
@@ -904,7 +904,7 @@ void idDeviceContext::DrawEditCursor( float x, float y, float scale ) {
 	}
 	SetFontByScale(scale);
 	float useScale = scale * useFont->glyphScale;
-	const glyphInfo_t *glyph2 = &useFont->glyphs[(overStrikeMode) ? '_' : '|'];
+	const glyphInfo_t *glyph2 = &useFont->glyphs[overStrikeMode ? int('_') : int('|')];
 	float	yadj = useScale * glyph2->top;
  	PaintChar(x, y - yadj,glyph2->imageWidth,glyph2->imageHeight,useScale,glyph2->s,glyph2->t,glyph2->s2,glyph2->t2,glyph2->glyph);
 }

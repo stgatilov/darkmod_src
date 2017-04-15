@@ -57,7 +57,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/libtdm_update;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;WIN32;_CRT_SECURE_NO_WARNINGS;TDM_USE_OLD_CRC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
@@ -65,6 +65,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;libsvn_client-1.lib;libapr-1.lib;libsvn_subr-1.lib;libsvn_fs_fs-1.lib;libsvn_fs_base-1.lib;libsvn_fs-1.lib;libsvn_wc-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -98,6 +99,7 @@ copy $(SolutionDir)..\win32\subversion\bin\*.dll $(OutDir)
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libtdm_update.lib;ZipLoader.lib;WS2_32.lib;libsvn_client-1.lib;libapr-1.lib;libsvn_subr-1.lib;libsvn_fs_fs-1.lib;libsvn_fs_base-1.lib;libsvn_fs-1.lib;libsvn_wc-1.lib;%(AdditionalDependencies)</AdditionalDependencies>

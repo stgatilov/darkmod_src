@@ -256,7 +256,7 @@ public:
 	static void				TouchFileList_f( const idCmdArgs &args );
 
 private:
-	friend dword 			BackgroundDownloadThread( void *parms );
+    friend THREAD_RETURN_TYPE 			BackgroundDownloadThread(void *parms);
 
 	searchpath_t *			searchPaths;
 	int						readCount;			// total bytes read
@@ -305,7 +305,7 @@ private:
 
 private:
 	void					ReplaceSeparators( idStr &path, char sep = PATHSEPERATOR_CHAR );
-	long					HashFileName( const char *fname ) const;
+    int 					HashFileName(const char *fname) const;
 	int						ListOSFiles( const char *directory, const char *extension, idStrList &list );
 	FILE *					OpenOSFile( const char *name, const char *mode, idStr *caseSensitiveName = NULL );
 	FILE *					OpenOSFileCorrectName( idStr &path, const char *mode );
@@ -382,9 +382,9 @@ idFileSystemLocal::HashFileName
 return a hash value for the filename
 ================
 */
-long idFileSystemLocal::HashFileName( const char *fname ) const {
+int idFileSystemLocal::HashFileName( const char *fname ) const {
 	int		i;
-	long	hash;
+	int	hash;
 	char	letter;
 
 	hash = 0;
@@ -397,7 +397,7 @@ long idFileSystemLocal::HashFileName( const char *fname ) const {
 		if ( letter == '\\' ) {
 			letter = '/';		// damn path names
 		}
-		hash += (long)(letter * (i+119));
+		hash += (int)(letter * (i+119));
 		i++;
 	}
 	hash &= (FILE_HASH_SIZE-1);
@@ -717,7 +717,7 @@ search paths.
 #define GPATH_COUNT 4
 const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
 	static char relativePath[MAX_STRING_CHARS];
-	char *s, *base = NULL;
+	const char *s, *base = NULL;
      
 	// skip a drive letter?
 
@@ -744,7 +744,7 @@ const char *idFileSystemLocal::OSPathToRelativePath( const char *OSPath ) {
         }
 
         if ( base == NULL && gamePath && strlen( gamePath ) ) {
-            base = (char *)strstr( OSPath, gamePath );
+            base = strstr( OSPath, gamePath );
             while ( base ) {
 				char c1 = '\0', c2;
 				if ( base > OSPath ) {
@@ -830,7 +830,7 @@ bool idFileSystemLocal::FileIsInPAK( const char *relativePath ) {
 	searchpath_t	*search;
 	pack_t			*pak;
 	fileInPack_t	*pakFile;
-	long			hash;
+	int			hash;
 
 	if ( !searchPaths ) {
 		common->FatalError( "Filesystem call made without initialization\n" );
@@ -1135,7 +1135,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 	unz_global_info gi;
 	char			filename_inzip[MAX_ZIPPED_FILE_NAME];
 	unz_file_info	file_info;
-	long			hash;
+	int			hash;
 	int				fs_numHeaderLongs;
 	int *			fs_headerLongs;
 	FILE			*f;
@@ -1187,7 +1187,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 			break;
 		}
 		if ( file_info.uncompressed_size > 0 ) {
-			fs_headerLongs[fs_numHeaderLongs++] = LittleLong( file_info.crc );
+			fs_headerLongs[fs_numHeaderLongs++] = LittleInt( file_info.crc );
 		}
 		hash = HashFileName( filename_inzip );
 		buildBuffer[i].name = filename_inzip;
@@ -1225,7 +1225,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 	}
 
 	pack->checksum = MD4_BlockChecksum( fs_headerLongs, 4 * fs_numHeaderLongs );
-	pack->checksum = LittleLong( pack->checksum );
+	pack->checksum = LittleInt( pack->checksum );
 
 	Mem_Free( fs_headerLongs );
 
@@ -1334,7 +1334,7 @@ int idFileSystemLocal::GetFileList( const char *relativePath, const idStrList &e
 		return 0;
 	}
 
-	pathLength = strlen( relativePath );
+    pathLength = static_cast<int>(strlen(relativePath));
 	if ( pathLength ) {
 		pathLength++;	// for the trailing '/'
 	}
@@ -1900,7 +1900,7 @@ void idFileSystemLocal::TouchFileList_f( const idCmdArgs &args ) {
 	const char *buffer = NULL;
 	idParser src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 	if ( fileSystem->ReadFile( args.Argv( 1 ), ( void** )&buffer, NULL ) && buffer ) {
-		src.LoadMemory( buffer, strlen( buffer ), args.Argv( 1 ) );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), args.Argv(1));
 		if ( src.IsLoaded() ) {
 			idToken token;
 			while( src.ReadToken( &token ) ) {
@@ -2498,7 +2498,7 @@ idFileSystemLocal::FileAllowedFromDir
 */
 bool idFileSystemLocal::FileAllowedFromDir( const char *path ) {
 
-	const unsigned int l = strlen( path );
+    const unsigned int l = static_cast<unsigned int>(strlen(path));
 
 	if  (  !strcmp( path + l - 4, ".cfg" )		// for config files
 		|| !strcmp( path + l - 4, ".dat" )		// for journal files
@@ -2597,7 +2597,7 @@ idFile *idFileSystemLocal::OpenFileReadFlags( const char *relativePath, int sear
 	pack_t *		pak;
 	fileInPack_t *	pakFile;
 	directory_t *	dir;
-	long			hash;
+	int			hash;
 	FILE *			fp;
 	
 	if ( !searchPaths ) {
@@ -2960,7 +2960,7 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 		return size * nmemb;
 	}
 #ifdef _WIN32
-		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, size * nmemb );
+		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, static_cast<unsigned int>(size * nmemb) );
 #else
 		return fwrite( ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
 #endif
@@ -2990,7 +2990,7 @@ BackgroundDownload
 Reads part of a file from a background thread.
 ===================
 */
-dword BackgroundDownloadThread( void *parms ) {
+THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
 	while( 1 ) {
 		Sys_EnterCriticalSection();
 		backgroundDownload_t	*bgl = fileSystemLocal.backgroundDownloads;
@@ -3103,7 +3103,7 @@ dword BackgroundDownloadThread( void *parms ) {
 #endif
 		}
 	}
-	return 0;
+    return (THREAD_RETURN_TYPE)0;
 }
 
 /*
@@ -3113,7 +3113,7 @@ idFileSystemLocal::StartBackgroundReadThread
 */
 void idFileSystemLocal::StartBackgroundDownloadThread() {
 	if ( !backgroundThread.threadHandle ) {
-		Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, backgroundThread, "backgroundDownload", g_threads, &g_thread_count );
+		Sys_CreateThread( BackgroundDownloadThread, NULL, THREAD_NORMAL, backgroundThread, "backgroundDownload", g_threads, &g_thread_count );
 		if ( !backgroundThread.threadHandle ) {
 			common->Warning( "idFileSystemLocal::StartBackgroundDownloadThread: failed" );
 		}
@@ -3232,7 +3232,7 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	char			dllName[MAX_OSPATH];
 	idStr			dllPath;
 	int				dllHash;
-	pack_t			*inPak;
+	pack_t			*inPak = NULL;
 	pack_t			*pak;
     time_t          timePak = 0, timeDll = 0;
 
@@ -3253,6 +3253,9 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 	dllPath = Sys_EXEPath( );
 	dllPath.StripFilename( );
 	dllPath.AppendPath( dllName );
+	
+	common->Printf("Searching for DLL in %s", dllPath.c_str());
+
 	dllFile = OpenExplicitFileRead( dllPath );
 
     if ( !serverPaks.Num() ) {

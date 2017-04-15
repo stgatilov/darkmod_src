@@ -75,7 +75,6 @@ idSessionLocal::SetGUI
 =================
 */
 void idSessionLocal::SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) {
-	const char	*cmd;
 
 	guiActive = gui;
 	guiHandle = handle;
@@ -98,7 +97,7 @@ void idSessionLocal::SetGUI( idUserInterface *gui, HandleGuiCommand_t handle ) {
 	memset( &ev, 0, sizeof( ev ) );
 	ev.evType = SE_NONE;
 
-	cmd = guiActive->HandleEvent( &ev, com_frameTime );
+	guiActive->HandleEvent( &ev, com_frameTime );
 	guiActive->Activate( true, com_frameTime );
 }
 
@@ -303,11 +302,7 @@ void idSessionLocal::SetMainMenuGuiVars( void ) {
 	// Mods Menu
 	SetModsMenuGuiVars();
 
-#if defined( __linux__ )
-	guiMainMenu->SetStateString( "driver_prompt", "1" );
-#else
 	guiMainMenu->SetStateString( "driver_prompt", "0" );
-#endif
 
 	SetPbMenuGuiVars();
 }
@@ -826,12 +821,8 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			}
 			if ( !vcmd.Icmp( "eax" ) ) {
 				if ( cvarSystem->GetCVarBool( "s_useEAXReverb" ) ) {
-					int eax = soundSystem->IsEAXAvailable();
-					switch ( eax ) {
-					case 2:
-						// OpenAL subsystem load failed
-						MessageBox( MSG_OK, common->Translate( "#str_07238" ), common->Translate( "#str_07231" ), true );
-						break;
+                    int efx = soundSystem->IsEFXAvailable();
+                    switch (efx) {
 					case 1:
 						// when you restart
 						MessageBox( MSG_OK, common->Translate( "#str_04137" ), common->Translate( "#str_07231" ), true );
@@ -1015,8 +1006,7 @@ void idSessionLocal::HandleInGameCommands( const char *menuCommand ) {
 		if ( guiActive ) {
 			sysEvent_t  ev;
 			ev.evType = SE_NONE;
-			const char	*cmd;
-			cmd = guiActive->HandleEvent( &ev, com_frameTime );
+			guiActive->HandleEvent( &ev, com_frameTime );
 			guiActive->Activate( false, com_frameTime );
 			guiActive = NULL;
 		}

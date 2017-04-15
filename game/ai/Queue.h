@@ -76,7 +76,7 @@ public:
 	*/
 	void Save(idSaveGame *savefile) const
 	{
-		savefile->WriteInt(ListType::size());
+        savefile->WriteInt(static_cast<int>(ListType::size()));
 		for (typename ListType::const_iterator i = ListType::begin(); 
 			 i != ListType::end(); 
 			 ++i)

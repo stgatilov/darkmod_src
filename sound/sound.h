@@ -281,11 +281,6 @@ public:
 	// shutdown routine
 	virtual	void			Shutdown( void ) = 0;
 
-	// call ClearBuffer if there is a chance that the AsyncUpdate won't get called
-	// for 20+ msec, which would cause a stuttering repeat of the current
-	// buffer contents
-	virtual void			ClearBuffer( void ) = 0;
-
 	// sound is attached to the window, and must be recreated when the window is changed
 	virtual bool			InitHW( void ) = 0;
 	virtual bool			ShutdownHW( void ) = 0;
@@ -332,8 +327,8 @@ public:
 	// prints memory info
 	virtual void			PrintMemInfo( MemInfo_t *mi ) = 0;
 
-	// is EAX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
-	virtual int				IsEAXAvailable( void ) = 0;
+	// is EFX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
+	virtual int				IsEFXAvailable( void ) = 0;
 };
 
 extern idSoundSystem	*soundSystem;

@@ -30,8 +30,8 @@ FS_WriteFloatString
 =================
 */
 int FS_WriteFloatString( char *buf, const char *fmt, va_list argPtr ) {
-	long i;
-	unsigned long u;
+    int i;
+    unsigned int u;
 	double f;
 	char *str;
 	int index;
@@ -69,27 +69,27 @@ int FS_WriteFloatString( char *buf, const char *fmt, va_list argPtr ) {
 						break;
 					case 'd':
 					case 'i':
-						i = va_arg( argPtr, long );
+						i = va_arg( argPtr, int );
 						index += sprintf( buf+index, format.c_str(), i );
 						break;
 					case 'u':
-						u = va_arg( argPtr, unsigned long );
+						u = va_arg( argPtr, unsigned int );
 						index += sprintf( buf+index, format.c_str(), u );
 						break;
 					case 'o':
-						u = va_arg( argPtr, unsigned long );
+						u = va_arg( argPtr, unsigned int );
 						index += sprintf( buf+index, format.c_str(), u );
 						break;
 					case 'x':
-						u = va_arg( argPtr, unsigned long );
+						u = va_arg( argPtr, unsigned int );
 						index += sprintf( buf+index, format.c_str(), u );
 						break;
 					case 'X':
-						u = va_arg( argPtr, unsigned long );
+						u = va_arg( argPtr, unsigned int );
 						index += sprintf( buf+index, format.c_str(), u );
 						break;
 					case 'c':
-						i = va_arg( argPtr, long );
+						i = va_arg( argPtr, int );
 						index += sprintf( buf+index, format.c_str(), (char) i );
 						break;
 					case 's':
@@ -248,22 +248,28 @@ void idFile::Rewind( void ) {
 idFile::Printf
 =================
 */
-int idFile::Printf( const char *fmt, ... ) {
-	char buf[MAX_PRINT_MSG_SIZE];
-	va_list argptr;
+int idFile::Printf(const char *fmt, ...) {
+    char buf[MAX_PRINT_MSG_SIZE];
+    va_list argptr;
 
-	va_start( argptr, fmt );
-	const int length = idStr::vsnPrintf( buf, MAX_PRINT_MSG_SIZE-1, fmt, argptr );
-	va_end( argptr );
+    va_start(argptr, fmt);
 
 #ifdef WIN32
-	// so notepad formats the lines correctly
-  	idStr	work( buf );
- 	work.Replace( "\n", "\r\n" );
-  
-  	return Write( work.c_str(), work.Length() );
+    // Write to the buffer and replace the newlines in Windows
+    idStr::vsnPrintf(buf, MAX_PRINT_MSG_SIZE - 1, fmt, argptr);
+    va_end(argptr);
+
+    // so notepad formats the lines correctly
+    idStr	work( buf );
+    work.Replace( "\n", "\r\n" );
+
+    return Write(work.c_str(), work.Length());
 #else
-	return Write( buf, length );
+    // No need to replace newlines in platforms other than Windows
+    const int length = idStr::vsnPrintf(buf, MAX_PRINT_MSG_SIZE - 1, fmt, argptr);
+    va_end(argptr);
+
+    return Write(buf, length);
 #endif
 }
 
@@ -302,7 +308,7 @@ int idFile::WriteFloatString( const char *fmt, ... ) {
  */
 int idFile::ReadInt( int &value ) {
 	const int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
+	value = LittleInt(value);
 
 	return result;
 }
@@ -314,7 +320,7 @@ int idFile::ReadInt( int &value ) {
  */
 int idFile::ReadUnsignedInt( unsigned int &value ) {
 	const int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
+	value = LittleInt(value);
 
 	return result;
 }
@@ -471,7 +477,7 @@ int idFile::ReadMat3( idMat3 &mat ) {
  =================
  */
 int idFile::WriteInt( const int value ) {
-	const int v = LittleLong(value);
+	const int v = LittleInt(value);
 
 	return Write( &v, sizeof( v ) );
 }
@@ -482,7 +488,7 @@ int idFile::WriteInt( const int value ) {
  =================
  */
 int idFile::WriteUnsignedInt( const unsigned int value ) {
-	const unsigned int v = LittleLong(value);
+	const unsigned int v = LittleInt(value);
 
 	return Write( &v, sizeof( v ) );
 }
@@ -555,7 +561,7 @@ int idFile::WriteBool( const bool value ) {
  =================
  */
 int idFile::WriteString( const char *value ) {
-	const int len = strlen( value );
+	const int len = static_cast<int>(strlen( value ));
 	WriteInt( len );
 
     return Write( value, len );
@@ -1087,7 +1093,7 @@ int idFile_Permanent::Read( void *buffer, int len ) {
 	int tries = 0;
 	while( remaining ) {
 		block = remaining;
-		read = fread( buf, 1, block, o );
+		read = static_cast<int>(fread( buf, 1, block, o ));
 		if ( read == 0 ) {
 			// we might have been trying to read from a CD, which
 			// sometimes returns a 0 read on windows
@@ -1138,7 +1144,7 @@ int idFile_Permanent::Write( const void *buffer, int len ) {
 	int tries = 0;
 	while( remaining ) {
 		block = remaining;
-		written = fwrite( buf, 1, block, o );
+		written = static_cast<int>(fwrite( buf, 1, block, o ));
 		if ( written == 0 ) {
 			if ( !tries ) {
 				tries = 1;

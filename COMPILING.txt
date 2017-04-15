@@ -2,18 +2,96 @@ To read the most recent compilation guide, please visit:
 
 http://wiki.thedarkmod.com/index.php?title=The_Dark_Mod_-_Compilation_Guide
 
-See also the README.linux file for further info about how to compile the code for Linux.
+== Compiling on Windows ==
 
-=== Additional info about building the static 32-bit library libcurl ===
+A project file for Microsoft Visual Studio 2013 is provided in TheDarkMod.sln
+The solution file is compatible with VS2013 Community Edition.
 
-Download the libcurl 7.21 source package, and extract it on your system, then run the following commands:
+You will need the Microsoft DirectX SDK installed as well.
+If it does not reside in "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
+you will need to update the property sheets accordingly.
 
- env CFLAGS="-m32" LDFLAGS="-m32" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-libidn --without-zlib
+DirectX SDK
+http://www.microsoft.com/en-us/download/details.aspx?id=6812
+
+Multibyte MFC Library for Visual Studio 2013
+http://www.microsoft.com/en-us/download/details.aspx?id=40770
+
+Windows SDK (for Windows 8.1 users)
+http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
+
+== Compiling on Linux / Ubuntu 14.04 ==
+
+sudo apt-get install scons subversion libc6-dev-i386 g++-multilib libx11-dev:i386 libxxf86vm-dev:i386 libopenal-dev:i386 libasound2-dev:i386 libxext-dev:i386
+
+=== Compiling 64-bit boost static libraries (with -fPIC) ===
+
+Get the Boost 1.57 sources from their website and extract it to somewhere. Run the bootstrap script 
+to build the bjam binary:
+
+ ./bootstrap.sh
+
+Then compile the needed libraries:
+
+ bjam release link=static threading=multi address-model=64 runtime-link=static cxxflags='-fPIC' stage /boost/chrono /boost/date_time /boost/filesystem /boost/program_options /boost/regex /boost/system /boost/thread
+
+I had to scrap the various .a files together from the bin.v2 folder, get the following libs and copy them to
+darkmod_src/linux/boost/lib64
+
+ libboost_program_options.a
+ libboost_regex.a
+ libboost_system.a
+ libboost_thread.a
+ libboost_chrono.a
+ libboost_date_time.a
+ libboost_filesystem.a
+
+=== Compiling 64-bit PolarSSL with -fPIC ===
+
+PolarSSL is needed by libcurl to download stuff from SSL-secured sites.
+
+Get the polarSSL 1.3.7 from their website.
+Get cmake: sudo apt-get install cmake
+
+Add the line to the CMakeLists.txt, after the compiler checks part:
+
+ set(CMAKE_POSITION_INDEPENDENT_CODE ON) 
+
+Then build the library:
+
+ cmake .
  make
  sudo make install
 
-The library is then located in /usr/local/lib/libcurl.a.
+This will place libpolarssl.a in your /usr/local/lib folder. Copy it to linux/polarssl/lib64/
+
+=== Compiling the static libcurl library ===
+
+==== Building the static 32-bit library libcurl ====
+
+Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
+
+ env CFLAGS="-m32" LDFLAGS="-m32" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x86
+ make jobs=8
+ sudo make install
+
+The library is then located in /home/greebo/curl_install_x86/lib/libcurl.a.
 Copy that to darkmod_src/linux/libcurl/
+
+==== Building the static 64-bit library libcurl ====
+
+ Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
+
+ env CFLAGS="-m64 -fPIC" LDFLAGS="-m64" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x64
+ make jobs=8
+ make install
+
+The library is then located in /home/greebo/curl_install_x64/lib/libcurl.a.
+Copy that to darkmod_src/linux/libcurl/lib64/
+
+== Compiling on OSX ==
+
+The XCode projects are out of date at the moment and will need fixing.
 
 === Building libcurl in Mac OS X ===
 

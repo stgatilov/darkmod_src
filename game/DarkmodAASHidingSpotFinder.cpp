@@ -1082,8 +1082,8 @@ void CDarkmodAASHidingSpotFinder::debugDrawHidingSpots(int viewLifetime)
 	idVec3 markerArrowLength (0.0, 0.0, 25.0f);
 
 	// Iterate the hiding spot debug draw list
-	size_t spotCount = CDarkmodAASHidingSpotFinder::DebugDrawList.Num();
-	for (size_t spotIndex = 0; spotIndex < spotCount; spotIndex++)
+	int spotCount = CDarkmodAASHidingSpotFinder::DebugDrawList.Num();
+	for (int spotIndex = 0; spotIndex < spotCount; spotIndex++)
 	{
 		idVec4 markerColor(0.0f, 0.0f, 0.0f, 0.0f);
 		

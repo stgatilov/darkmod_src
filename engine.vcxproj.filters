@@ -563,6 +563,12 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
+    <ClInclude Include="sound\efxlib.h">
+      <Filter>Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\CinematicFFMpeg.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="sys\win32\dxerr.h">
       <Filter>Sys</Filter>
     </ClInclude>
@@ -947,9 +953,6 @@
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_shared.cpp">
-      <Filter>Sys</Filter>
-    </ClCompile>
-    <ClCompile Include="sys\win32\win_snd.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="sys\win32\win_syscon.cpp">
@@ -1583,14 +1586,14 @@
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\CinematicFFMpeg.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="sys\win32\dxerr.cpp">
       <Filter>Sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="openal\idal.py">
-      <Filter>Sound</Filter>
-    </None>
     <None Include="sound\OggVorbis\vorbissrc\lookups.pl">
       <Filter>Sound\vorbissrc</Filter>
     </None>

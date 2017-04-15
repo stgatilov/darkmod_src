@@ -99,7 +99,7 @@ BOOL CEntityDlg::OnInitDialog()
 	// EXCEPTION: OCX Property Pages should return FALSE
 }
 
-int CEntityDlg::OnToolHitTest(CPoint point, TOOLINFO* pTI) const
+INT_PTR CEntityDlg::OnToolHitTest(CPoint point, TOOLINFO* pTI) const
 {
 	// TODO: Add your specialized code here and/or call the base class
 
@@ -280,7 +280,7 @@ const char *CEntityDlg::TranslateString(const char *buf) {
 	int			i, l;
 	char		*out;
 
-	l = strlen(buf);
+    l = static_cast<int>(strlen(buf));
 	out = buf2;
 	for (i = 0; i < l; i++) {
 		if (buf[i] == '\n') {
@@ -1141,7 +1141,7 @@ void CEntityDlg::OnBnClickedStopAnimation()
 	KillTimer ( 0 );
 }
 
-void CEntityDlg::OnTimer(UINT nIDEvent)
+void CEntityDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	if ( !editEntity ) {
 		OnBnClickedStopAnimation ();

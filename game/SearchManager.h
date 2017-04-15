@@ -11,9 +11,9 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 6097 $ (Revision of last commit) 
- $Date: 2014-09-07 14:53:08 -0400 (Sun, 07 Sep 2014) $ (Date of last commit)
- $Author: grayman $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 /******************************************************************************

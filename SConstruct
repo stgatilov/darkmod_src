@@ -13,9 +13,10 @@ conf_filename='site.conf'
 # choose configuration variables which should be saved between runs
 # ( we handle all those as strings )
 serialized=['CC', 'CXX', 'JOBS', 'BUILD', 'IDNET_HOST', 'GL_HARDLINK', 'DEDICATED',
-	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK', 'ALSA',
+	'DEBUG_MEMORY', 'LIBC_MALLOC', 'ID_NOLANADDRESS', 'ID_MCHECK',
 	'TARGET_CORE', 'TARGET_GAME', 'TARGET_MONO', 'TARGET_DEMO', 'NOCURL',
-	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP' ]
+	'BUILD_ROOT', 'BUILD_GAMEPAK', 'BASEFLAGS', 'SILENT', 'NO_GCH', 'OPENMP',
+	'TARGET_ARCH' ]
 
 # global build mode ------------------------------
 
@@ -75,6 +76,10 @@ NO_GCH (default 0)
     
 OPENMP (default 0)
 	Enable OpenMP builds.
+
+TARGET_ARCH (default: "x86")
+	Build for either x86 or x64 architecture.
+
 """
 
 if ( not g_sdk ):
@@ -119,6 +124,9 @@ ID_MCHECK (default 2)
 	1 forces on, 2 forces off
 	note that Doom has it's own block allocator/checking
 	this should not be considered a replacement, but an additional tool
+
+OPENAL (default 1)
+	enable OpenAL sound backend support
 
 ALSA (default 1)
 	enable ALSA sound backend support
@@ -178,6 +186,7 @@ LIBC_MALLOC = '1'
 ID_NOLANADDRESS = '0'
 ID_MCHECK = '2'
 BUILD_ROOT = 'build'
+OPENAL = '1'
 ALSA = '1'
 SETUP = '0'
 SDK = '0'
@@ -188,6 +197,7 @@ BASEFLAGS = ''
 SILENT = '0'
 NO_GCH = '0'
 OPENMP = '0'
+TARGET_ARCH = 'x86'
 
 # end default settings ---------------------------
 
@@ -295,15 +305,19 @@ BASECPPFLAGS.append( '-Wno-unknown-pragmas' )
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
 BASECPPFLAGS.append( '-fmessage-length=0' )
-# gcc 4.0
-BASECPPFLAGS.append( '-fpermissive' )
+# C++11 features
+BASECPPFLAGS.append( '-std=c++11' )
 
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
 	BASECPPFLAGS.append( '-fvisibility=hidden' )
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
-	BASECPPFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x86' ):
+		BASECPPFLAGS.append( '-m32' )
+		BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x64' ):
+		BASECPPFLAGS.append( '-m64' )
+		BASELINKFLAGS.append( '-m64' )
     
 	if ( OPENMP != '0' ):
 		# openmp support for changes made to the renderer
@@ -335,9 +349,11 @@ elif ( BUILD == 'release' ):
 	# -fschedule-insns2: implicit at -O2
 	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
 	# greebo: Took out -Winline, this is spamming real hard
-	OPTCPPFLAGS = [ '-O3', '-march=pentium3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
+	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
+	if ( TARGET_ARCH == 'x86' ):
+		OPTCPPFLAGS.append( '-march=pentium3' );
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -364,112 +380,6 @@ if ( ID_MCHECK == '1' ):
 g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 scons_utils.SetupUtils( g_base_env )
 
-#######################################################################################
-# greebo: Precompiled header related
-#
-# This is taken from GchBuilder 1.1, the SCons builder for gcc's precompiled headers
-# Copyright (C) 2006  Tim Blechmann
-#
-
-import SCons.Action
-import SCons.Builder
-import SCons.Scanner.C
-import SCons.Util
-import SCons.Script
-import os
-
-GchAction = SCons.Action.Action('$GCHCOM', '$GCHCOMSTR')
-GchShAction = SCons.Action.Action('$GCHSHCOM', '$GCHSHCOMSTR')
-
-def gen_suffix(env, sources):
-    return sources[0].get_suffix() + env['GCHSUFFIX']
-
-GchShBuilder = SCons.Builder.Builder(action = GchShAction,
-                                     source_scanner = SCons.Scanner.C.CScanner(),
-                                     suffix = gen_suffix)
-
-GchBuilder = SCons.Builder.Builder(action = GchAction,
-                                   source_scanner = SCons.Scanner.C.CScanner(),
-                                   suffix = gen_suffix)
-
-def header_path(node):
-    h_path = node.abspath
-    idx = h_path.rfind('.gch')
-    if idx != -1:
-        h_path = h_path[0:idx]
-        if not os.path.isfile(h_path):
-            raise SCons.Errors.StopError("can't find header file: {0}".format(h_path))
-        return h_path
-
-    else:
-        raise SCons.Errors.StopError("{0} file doesn't have .gch extension".format(h_path))
-
-
-def static_pch_emitter(target,source,env):
-    SCons.Defaults.StaticObjectEmitter( target, source, env )
-    scanner = SCons.Scanner.C.CScanner()
-    path = scanner.path(env)
-
-    deps = scanner(source[0], env, path)
-    if env.get('Gch'):
-        h_path = header_path(env['Gch'])
-        if h_path in [x.abspath for x in deps]:
-            #print 'Found dep. on pch: ', target[0], ' -> ', env['Gch']
-            env.Depends(target, env['Gch'])
-
-    return (target, source)
-
-def shared_pch_emitter(target,source,env):
-    SCons.Defaults.SharedObjectEmitter( target, source, env )
-
-    scanner = SCons.Scanner.C.CScanner()
-    path = scanner.path(env)
-    deps = scanner(source[0], env, path)
-
-    if env.get('GchSh'):
-        h_path = header_path(env['GchSh'])
-        if h_path in [x.abspath for x in deps]:
-            #print 'Found dep. on pch (shared): ', target[0], ' -> ', env['Gch']
-            env.Depends(target, env['GchSh'])
-
-    return (target, source)
-
-def GchGenerate(env):
-    """
-    Add builders and construction variables for the Gch builder.
-    """
-    env.Append(BUILDERS = {
-        'gch': env.Builder(
-        action = GchAction,
-        target_factory = env.fs.File,
-        ),
-        'gchsh': env.Builder(
-        action = GchShAction,
-        target_factory = env.fs.File,
-        ),
-        })
-
-    try:
-        bld = env['BUILDERS']['Gch']
-        bldsh = env['BUILDERS']['GchSh']
-    except KeyError:
-        bld = GchBuilder
-        bldsh = GchShBuilder
-        env['BUILDERS']['Gch'] = bld
-        env['BUILDERS']['GchSh'] = bldsh
-
-    env['GCHCOM']     = '$CXX -Wall -o $TARGET -x c++-header -c $CXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCE'
-    env['GCHSHCOM']   = '$CXX -o $TARGET -x c++-header -c $SHCXXFLAGS $CCFLAGS $_CCCOMCOM $SOURCE'
-    env['GCHSUFFIX']  = '.gch'
-
-    for suffix in SCons.Util.Split('.c .C .cc .cxx .cpp .c++'):
-        env['BUILDERS']['StaticObject'].add_emitter( suffix, static_pch_emitter )
-        env['BUILDERS']['SharedObject'].add_emitter( suffix, shared_pch_emitter )
-
-GchGenerate(g_base_env)
-
-#######################################################################################
-
 g_base_env.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found first
 g_base_env.Append(CPPPATH = '#/include')
 g_base_env.Append(CPPPATH = '#/include/zlib')
@@ -478,6 +388,9 @@ g_base_env.Append(CPPPATH = '#/include/libjpeg')
 g_base_env.Append(CPPPATH = '#/include/libpng')
 g_base_env.Append(CPPPATH = '#/include/devil')
 g_base_env.Append(CPPPATH = '#/')
+
+# Boost matrix has one of these
+g_base_env.Append( CPPFLAGS = '-Wno-unused-local-typedefs' )
 
 g_env = g_base_env.Clone()
 
@@ -520,7 +433,7 @@ curl_lib = []
 # if idlib should produce PIC objects ( depending on core or game inclusion )
 local_idlibpic = 0
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH'
+GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK OPENAL ALSA idlib_objects game_objects local_dedicated local_gamedll local_demo local_idlibpic curl_lib local_curl OPTCPPFLAGS NO_GCH TARGET_ARCH'
 
 # end general configuration ----------------------
 
@@ -543,7 +456,10 @@ if ( NOCURL == '0' and ( TARGET_CORE == '1' or TARGET_MONO == '1' ) ):
 	else:
 		local_curl = 1
 	Export( 'GLOBALS ' + GLOBALS )
-	curl_lib = [ '#linux/libcurl/libcurl.a' ] # Use the static one built for TDM
+	if ( TARGET_ARCH == 'x86' ):
+		curl_lib = [ '#linux/libcurl/libcurl.a' ] # Use the static one built for TDM
+	if ( TARGET_ARCH == 'x64' ):
+		curl_lib = [ '#linux/libcurl/lib64/libcurl.a' ]
 
 if ( TARGET_CORE == '1' ):
 	local_gamedll = 1
@@ -560,7 +476,10 @@ if ( TARGET_CORE == '1' ):
 		Export( 'GLOBALS ' + GLOBALS ) # update idlib_objects
 		doom = SConscript( g_build + '/core/sys/scons/SConscript.core' )
 
-		InstallAs( '#thedarkmod.' + cpu, doom )
+		if ( TARGET_ARCH == 'x64' ):
+			InstallAs( '#thedarkmod.x64', doom )
+		else:
+			InstallAs( '#thedarkmod.' + cpu, doom )
 		
 	if ( DEDICATED == '1' or DEDICATED == '2' ):
 		local_dedicated = 1
@@ -592,9 +511,16 @@ if ( TARGET_GAME == '1' ):
 	if ( TARGET_GAME == '1' ):
 		Export( 'GLOBALS ' + GLOBALS )
 		game = SConscript( g_build + '/game/sys/scons/SConscript.game' )
-		game_base = InstallAs( '#game%s-base.so' % cpu, game )
+		
+		if ( TARGET_ARCH == 'x64' ):
+			game_name = 'gamex64.so'
+			game_base = InstallAs( ('#%s' % game_name), game )
+		else:
+			game_name = 'gamex86.so'
+			game_base = InstallAs( ('#%s' % game_name), game )
+
 		if ( BUILD_GAMEPAK == '1' ):
-			Command( '#tdm_game02.pk4', [ game_base, game ], Action( g_env.BuildGamePak ) )
+			Command( '#tdm_game02.pk4', [ game_base, game, game_name ], Action( g_env.BuildGamePak ) )
 	
 if ( TARGET_MONO == '1' ):
 	# NOTE: no D3XP atm. add a TARGET_MONO_D3XP

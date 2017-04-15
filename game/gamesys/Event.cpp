@@ -93,7 +93,7 @@ void idEventDef::Construct()
 		this->formatspec = "";
 	}
 	
-	numargs = strlen( formatspec );
+    numargs = static_cast<int>(strlen(formatspec));
 	assert( numargs <= D_EVENT_MAXARGS );
 	if ( numargs > D_EVENT_MAXARGS ) {
 		eventError = true;
@@ -113,21 +113,21 @@ void idEventDef::Construct()
 
 	for( i = 0; i < numargs; i++ )
 	{
-		argOffset[ i ] = argsize;
+        argOffset[i] = static_cast<int>(argsize);
 
 		switch( formatspec[ i ] )
 		{
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
-			argsize += sizeof( float );
+            argsize += sizeof(intptr_t);
 			break;
 
 		case D_EVENT_INTEGER :
-			argsize += sizeof( int );
+            argsize += sizeof(intptr_t);
 			break;
 
 		case D_EVENT_VECTOR :
-			argsize += sizeof( idVec3 );
+            argsize += E_EVENT_SIZEOF_VEC;
 			break;
 
 		case D_EVENT_STRING :
@@ -286,7 +286,7 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 
 	size = evdef->GetArgSize();
 	if ( size ) {
-		ev->data = eventDataAllocator.Alloc( size );
+        ev->data = eventDataAllocator.Alloc(static_cast<int>(size));
 		memset( ev->data, 0, size );
 	} else {
 		ev->data = NULL;
@@ -358,7 +358,7 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 idEvent::CopyArgs
 ================
 */
-void idEvent::CopyArgs( const idEventDef *evdef, int numargs, va_list args, int data[ D_EVENT_MAXARGS ] ) {
+void idEvent::CopyArgs( const idEventDef *evdef, int numargs, va_list args, intptr_t data[ D_EVENT_MAXARGS ] ) {
 	int			i;
 	const char	*format;
 	idEventArg	*arg;
@@ -487,7 +487,7 @@ idEvent::ServiceEvents
 void idEvent::ServiceEvents( void ) {
 	idEvent		*event;
 	int			num;
-	int			args[ D_EVENT_MAXARGS ];
+	intptr_t	args[ D_EVENT_MAXARGS ];
 	int			offset;
 	int			i;
 	int			numargs;
@@ -557,14 +557,6 @@ void idEvent::ServiceEvents( void ) {
 		event->eventNode.Remove();
 		assert( event->object );
 		event->object->ProcessEventArgPtr( ev, args );
-
-#if 0
-		// event functions may never leave return values on the FPU stack
-		// enable this code to check if any event call left values on the FPU stack
-		if ( !sys->FPU_StackIsEmpty() ) {
-			gameLocal.Error( "idEvent::ServiceEvents %d: %s left a value on the FPU stack\n", num, ev->GetName() );
-		}
-#endif
 
 		// return the event to the free list
 		event->Free();
@@ -655,7 +647,7 @@ void idEvent::Save( idSaveGame *savefile ) {
 		savefile->WriteString( event->eventdef->GetName() );
 		savefile->WriteString( event->typeinfo->classname );
 		savefile->WriteObject( event->object );
-		savefile->WriteInt( event->eventdef->GetArgSize() );
+        savefile->WriteInt(static_cast<int>(event->eventdef->GetArgSize()));
 		format = event->eventdef->GetArgFormat();
 		for ( i = 0, size = 0; i < event->eventdef->GetNumArgs(); ++i) {
 			dataPtr = &event->data[ event->eventdef->GetArgOffset( i ) ];
@@ -888,7 +880,7 @@ void CreateEventCallbackHandler( void ) {
 					string1 += "const float";
 					string2 += va( "*( float * )&data[ %d ]", k );
 				} else {
-					string1 += "const int";
+                    string1 += "const intptr_t";
 					string2 += va( "data[ %d ]", k );
 				}
 

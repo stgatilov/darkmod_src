@@ -71,7 +71,7 @@ bool MA_ParseHeaderIndex(maAttribHeader_t* header, int& minIndex, int& maxIndex,
 	idParser miniParse;
 	idToken token;
 
-	miniParse.LoadMemory(header->name, strlen(header->name), headerType);
+    miniParse.LoadMemory(header->name, static_cast<int>(strlen(header->name)), headerType);
 	if(skipString) {
 		miniParse.SkipUntilString(skipString);
 	}
@@ -394,7 +394,7 @@ bool MA_ParseFace(idParser& parser, maAttribHeader_t* header) {
 			pMesh->faces[currentFace].vertexColors[0] = pMesh->faces[currentFace].vertexColors[1] = pMesh->faces[currentFace].vertexColors[2] = -1;
 
 		} else if(!token.Icmp("mu")) {
-			int uvstIndex = parser.ParseInt();
+			/*int uvstIndex = */parser.ParseInt();
 			int count = parser.ParseInt();
 			if(count != 3) {
 				throw idException(va("Maya Loader '%s': Invalid texture coordinates.", parser.GetFileName()));
@@ -968,7 +968,7 @@ maModel_t *MA_Parse( const char *buffer, const char* filename, bool verbose ) {
 
 	idParser parser;
 	parser.SetFlags(LEXFL_NOSTRINGCONCAT);
-	parser.LoadMemory(buffer, strlen(buffer), filename);
+    parser.LoadMemory(buffer, static_cast<int>(strlen(buffer)), filename);
 
 	idToken token;
 	while(parser.ReadToken(&token)) {

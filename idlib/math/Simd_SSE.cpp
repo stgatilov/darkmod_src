@@ -31,11 +31,6 @@
 //                                                        E
 //===============================================================
 
-
-#if defined(MACOS_X) && defined(__i386__)
-
-#include <xmmintrin.h>
-
 #define DRAWVERT_SIZE				60
 #define DRAWVERT_XYZ_OFFSET			(0*4)
 #define DRAWVERT_ST_OFFSET			(3*4)
@@ -43,6 +38,10 @@
 #define DRAWVERT_TANGENT0_OFFSET	(8*4)
 #define DRAWVERT_TANGENT1_OFFSET	(11*4)
 #define DRAWVERT_COLOR_OFFSET		(14*4)
+
+#if defined(MACOS_X) && defined(__i386__)
+
+#include <xmmintrin.h>
 
 #define SHUFFLEPS( x, y, z, w )		(( (x) & 3 ) << 6 | ( (y) & 3 ) << 4 | ( (z) & 3 ) << 2 | ( (w) & 3 ))
 #define R_SHUFFLEPS( x, y, z, w )	(( (w) & 3 ) << 6 | ( (z) & 3 ) << 4 | ( (y) & 3 ) << 2 | ( (x) & 3 ))
@@ -84,8 +83,8 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idPlane &constant, const idDrawVe
 	char *dst_p = (char *) dst;                             // dst_p = ecx
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
-	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
-	
+    assert( ptrdiff_t(&src->xyz) - ptrdiff_t(src) == DRAWVERT_XYZ_OFFSET );
+
 	/*
 		and			eax, ~3
 		movss		xmm4, [edi+0]
@@ -247,7 +246,7 @@ idSIMD_SSE::MinMax
 void VPCALL idSIMD_SSE::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
 
 	assert( sizeof( idDrawVert ) == DRAWVERT_SIZE );
-	assert( (int)&((idDrawVert *)0)->xyz == DRAWVERT_XYZ_OFFSET );
+    assert( ptrdiff_t(&src->xyz) - ptrdiff_t(src) == DRAWVERT_XYZ_OFFSET );
 
 	__m128 xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
 	char *indexes_p;
@@ -612,7 +611,7 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *
 	*/
 }
 
-#elif defined(_WIN32)
+#elif defined(_MSC_VER) && defined(_M_IX86)
 
 #include <xmmintrin.h>
 
@@ -989,12 +988,6 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *
 
 
 #define DRAWVERT_SIZE				60
-#define DRAWVERT_XYZ_OFFSET			(0*4)
-#define DRAWVERT_ST_OFFSET			(3*4)
-#define DRAWVERT_NORMAL_OFFSET		(5*4)
-#define DRAWVERT_TANGENT0_OFFSET	(8*4)
-#define DRAWVERT_TANGENT1_OFFSET	(11*4)
-#define DRAWVERT_COLOR_OFFSET		(14*4)
 
 #define JOINTQUAT_SIZE				(7*4)
 #define JOINTMAT_SIZE				(4*3*4)
@@ -1008,16 +1001,16 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *
 ALIGN8_INIT1( unsigned short SIMD_W_zero, 0 );
 ALIGN8_INIT1( unsigned short SIMD_W_maxShort, 1<<15 );
 
-ALIGN4_INIT1( unsigned long SIMD_DW_mat2quatShuffle0, (3<<0)|(2<<8)|(1<<16)|(0<<24) );
-ALIGN4_INIT1( unsigned long SIMD_DW_mat2quatShuffle1, (0<<0)|(1<<8)|(2<<16)|(3<<24) );
-ALIGN4_INIT1( unsigned long SIMD_DW_mat2quatShuffle2, (1<<0)|(0<<8)|(3<<16)|(2<<24) );
-ALIGN4_INIT1( unsigned long SIMD_DW_mat2quatShuffle3, (2<<0)|(3<<8)|(0<<16)|(1<<24) );
+ALIGN4_INIT1( unsigned int SIMD_DW_mat2quatShuffle0, (3<<0)|(2<<8)|(1<<16)|(0<<24) );
+ALIGN4_INIT1( unsigned int SIMD_DW_mat2quatShuffle1, (0<<0)|(1<<8)|(2<<16)|(3<<24) );
+ALIGN4_INIT1( unsigned int SIMD_DW_mat2quatShuffle2, (1<<0)|(0<<8)|(3<<16)|(2<<24) );
+ALIGN4_INIT1( unsigned int SIMD_DW_mat2quatShuffle3, (2<<0)|(3<<8)|(0<<16)|(1<<24) );
 
-ALIGN4_INIT4( unsigned long SIMD_SP_singleSignBitMask, (unsigned long) ( 1 << 31 ), 0, 0, 0 );
-ALIGN4_INIT1( unsigned long SIMD_SP_signBitMask, (unsigned long) ( 1 << 31 ) );
-ALIGN4_INIT1( unsigned long SIMD_SP_absMask, (unsigned long) ~( 1 << 31 ) );
-ALIGN4_INIT1( unsigned long SIMD_SP_infinityMask, (unsigned long) ~( 1 << 23 ) );
-ALIGN4_INIT1( unsigned long SIMD_SP_not, 0xFFFFFFFF );
+ALIGN4_INIT4( unsigned int SIMD_SP_singleSignBitMask, (unsigned int) ( 1 << 31 ), 0, 0, 0 );
+ALIGN4_INIT1( unsigned int SIMD_SP_signBitMask, (unsigned int) ( 1 << 31 ) );
+ALIGN4_INIT1( unsigned int SIMD_SP_absMask, (unsigned int) ~( 1 << 31 ) );
+ALIGN4_INIT1( unsigned int SIMD_SP_infinityMask, (unsigned int) ~( 1 << 23 ) );
+ALIGN4_INIT1( unsigned int SIMD_SP_not, 0xFFFFFFFF );
 
 ALIGN4_INIT1( float SIMD_SP_zero, 0.0f );
 ALIGN4_INIT1( float SIMD_SP_half, 0.5f );
@@ -1941,7 +1934,7 @@ float SSE_ATan( float y, float x ) {
 	if ( fabs( y ) > fabs( x ) ) {
 		a = -x / y;
 		d = idMath::HALF_PI;
-		*((unsigned long *)&d) ^= ( *((unsigned long *)&x) ^ *((unsigned long *)&y) ) & (1<<31);
+		*((unsigned int *)&d) ^= ( *((unsigned int *)&x) ^ *((unsigned int *)&y) ) & (1<<31);
 	} else {
 		a = y / x;
 		d = 0.0f;
@@ -11518,7 +11511,7 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 		ALIGN16( float omega1[4] );
 		ALIGN16( float scale0[4] );
 		ALIGN16( float scale1[4] );
-		ALIGN16( unsigned long signBit[4] );
+		ALIGN16( unsigned int signBit[4] );
 
 		cosom[0] = jointQuat0[0] * blendQuat0[0];
 		cosom[1] = jointQuat0[1] * blendQuat0[1];
@@ -11540,15 +11533,15 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 		cosom[2] += jointQuat3[2] * blendQuat3[2];
 		cosom[3] += jointQuat3[3] * blendQuat3[3];
 
-		signBit[0] = (*(unsigned long *)&cosom[0]) & ( 1 << 31 );
-		signBit[1] = (*(unsigned long *)&cosom[1]) & ( 1 << 31 );
-		signBit[2] = (*(unsigned long *)&cosom[2]) & ( 1 << 31 );
-		signBit[3] = (*(unsigned long *)&cosom[3]) & ( 1 << 31 );
+		signBit[0] = (*(unsigned int *)&cosom[0]) & ( 1 << 31 );
+		signBit[1] = (*(unsigned int *)&cosom[1]) & ( 1 << 31 );
+		signBit[2] = (*(unsigned int *)&cosom[2]) & ( 1 << 31 );
+		signBit[3] = (*(unsigned int *)&cosom[3]) & ( 1 << 31 );
 
-		(*(unsigned long *)&cosom[0]) ^= signBit[0];
-		(*(unsigned long *)&cosom[1]) ^= signBit[1];
-		(*(unsigned long *)&cosom[2]) ^= signBit[2];
-		(*(unsigned long *)&cosom[3]) ^= signBit[3];
+		(*(unsigned int *)&cosom[0]) ^= signBit[0];
+		(*(unsigned int *)&cosom[1]) ^= signBit[1];
+		(*(unsigned int *)&cosom[2]) ^= signBit[2];
+		(*(unsigned int *)&cosom[3]) ^= signBit[3];
 
 		scale0[0] = 1.0f - cosom[0] * cosom[0];
 		scale0[1] = 1.0f - cosom[1] * cosom[1];
@@ -11595,10 +11588,10 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 		scale1[2] = SSE_SinZeroHalfPI( omega1[2] ) * sinom[2];
 		scale1[3] = SSE_SinZeroHalfPI( omega1[3] ) * sinom[3];
 
-		(*(unsigned long *)&scale1[0]) ^= signBit[0];
-		(*(unsigned long *)&scale1[1]) ^= signBit[1];
-		(*(unsigned long *)&scale1[2]) ^= signBit[2];
-		(*(unsigned long *)&scale1[3]) ^= signBit[3];
+		(*(unsigned int *)&scale1[0]) ^= signBit[0];
+		(*(unsigned int *)&scale1[1]) ^= signBit[1];
+		(*(unsigned int *)&scale1[2]) ^= signBit[2];
+		(*(unsigned int *)&scale1[3]) ^= signBit[3];
 
 		jointQuat0[0] = scale0[0] * jointQuat0[0] + scale1[0] * blendQuat0[0];
 		jointQuat0[1] = scale0[1] * jointQuat0[1] + scale1[1] * blendQuat0[1];
@@ -11654,13 +11647,13 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 		float omega;
 		float scale0;
 		float scale1;
-		unsigned long signBit;
+		unsigned int signBit;
 
 		cosom = jointQuat.x * blendQuat.x + jointQuat.y * blendQuat.y + jointQuat.z * blendQuat.z + jointQuat.w * blendQuat.w;
 
-		signBit = (*(unsigned long *)&cosom) & ( 1 << 31 );
+		signBit = (*(unsigned int *)&cosom) & ( 1 << 31 );
 
-		(*(unsigned long *)&cosom) ^= signBit;
+		(*(unsigned int *)&cosom) ^= signBit;
 
 		scale0 = 1.0f - cosom * cosom;
 		scale0 = ( scale0 <= 0.0f ) ? SIMD_SP_tiny[0] : scale0;
@@ -11669,7 +11662,7 @@ void VPCALL idSIMD_SSE::BlendJoints( idJointQuat *joints, const idJointQuat *ble
 		scale0 = idMath::Sin16( ( 1.0f - lerp ) * omega ) * sinom;
 		scale1 = idMath::Sin16( lerp * omega ) * sinom;
 
-		(*(unsigned long *)&scale1) ^= signBit;
+		(*(unsigned int *)&scale1) ^= signBit;
 
 		jointQuat.x = scale0 * jointQuat.x + scale1 * blendQuat.x;
 		jointQuat.y = scale0 * jointQuat.y + scale1 * blendQuat.y;
@@ -13655,7 +13648,7 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 
 	for ( i = 0; i <= numIndexes - 12; i += 12 ) {
 		idDrawVert *a, *b, *c;
-		ALIGN16( unsigned long signBit[4] );
+		ALIGN16( unsigned int signBit[4] );
 		ALIGN16( float d0[4] );
 		ALIGN16( float d1[4] );
 		ALIGN16( float d2[4] );
@@ -13958,10 +13951,10 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 		tmp[2] -= d4[2] * d8[2];
 		tmp[3] -= d4[3] * d8[3];
 
-		signBit[0] = ( *(unsigned long *)&tmp[0] ) & ( 1 << 31 );
-		signBit[1] = ( *(unsigned long *)&tmp[1] ) & ( 1 << 31 );
-		signBit[2] = ( *(unsigned long *)&tmp[2] ) & ( 1 << 31 );
-		signBit[3] = ( *(unsigned long *)&tmp[3] ) & ( 1 << 31 );
+		signBit[0] = ( *(unsigned int *)&tmp[0] ) & ( 1 << 31 );
+		signBit[1] = ( *(unsigned int *)&tmp[1] ) & ( 1 << 31 );
+		signBit[2] = ( *(unsigned int *)&tmp[2] ) & ( 1 << 31 );
+		signBit[3] = ( *(unsigned int *)&tmp[3] ) & ( 1 << 31 );
 
 		// first tangent
 		t0[0] = d0[0] * d9[0];
@@ -14014,10 +14007,10 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 		tmp[2] = idMath::RSqrt( tmp[2] );
 		tmp[3] = idMath::RSqrt( tmp[3] );
 
-		*(unsigned long *)&tmp[0] ^= signBit[0];
-		*(unsigned long *)&tmp[1] ^= signBit[1];
-		*(unsigned long *)&tmp[2] ^= signBit[2];
-		*(unsigned long *)&tmp[3] ^= signBit[3];
+		*(unsigned int *)&tmp[0] ^= signBit[0];
+		*(unsigned int *)&tmp[1] ^= signBit[1];
+		*(unsigned int *)&tmp[2] ^= signBit[2];
+		*(unsigned int *)&tmp[3] ^= signBit[3];
 
 		t0[0] *= tmp[0];
 		t0[1] *= tmp[1];
@@ -14085,10 +14078,10 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 		tmp[2] = idMath::RSqrt( tmp[2] );
 		tmp[3] = idMath::RSqrt( tmp[3] );
 
-		*(unsigned long *)&tmp[0] ^= signBit[0];
-		*(unsigned long *)&tmp[1] ^= signBit[1];
-		*(unsigned long *)&tmp[2] ^= signBit[2];
-		*(unsigned long *)&tmp[3] ^= signBit[3];
+		*(unsigned int *)&tmp[0] ^= signBit[0];
+		*(unsigned int *)&tmp[1] ^= signBit[1];
+		*(unsigned int *)&tmp[2] ^= signBit[2];
+		*(unsigned int *)&tmp[3] ^= signBit[3];
 
 		t3[0] *= tmp[0];
 		t3[1] *= tmp[1];
@@ -14211,7 +14204,7 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 
 	for ( ; i < numIndexes; i += 3 ) {
 		idDrawVert *a, *b, *c;
-		ALIGN16( unsigned long signBit[4] );
+		ALIGN16( unsigned int signBit[4] );
 		float d0, d1, d2, d3, d4;
 		float d5, d6, d7, d8, d9;
 		float n0, n1, n2;
@@ -14437,7 +14430,7 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 
 		// area sign bit
 		tmp = d3 * d9 - d4 * d8;
-		signBit[0] = ( *(unsigned long *)&tmp ) & ( 1 << 31 );
+		signBit[0] = ( *(unsigned int *)&tmp ) & ( 1 << 31 );
 
 		// first tangent
 		t0 = d0 * d9 - d4 * d5;
@@ -14445,7 +14438,7 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 		t2 = d2 * d9 - d4 * d7;
 
 		tmp = idMath::RSqrt( t0 * t0 + t1 * t1 + t2 * t2 );
-		*(unsigned long *)&tmp ^= signBit[0];
+		*(unsigned int *)&tmp ^= signBit[0];
 
 		t0 *= tmp;
 		t1 *= tmp;
@@ -14457,7 +14450,7 @@ void VPCALL idSIMD_SSE::DeriveTangents( idPlane *planes, idDrawVert *verts, cons
 		t5 = d3 * d7 - d2 * d8;
 
 		tmp = idMath::RSqrt( t3 * t3 + t4 * t4 + t5 * t5 );
-		*(unsigned long *)&tmp ^= signBit[0];
+		*(unsigned int *)&tmp ^= signBit[0];
 
 		t3 *= tmp;
 		t4 *= tmp;
@@ -18075,4 +18068,4 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 #endif
 }
 
-#endif /* _WIN32 */
+#endif /* MSC_VER */

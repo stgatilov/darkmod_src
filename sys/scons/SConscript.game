@@ -185,11 +185,6 @@ Objectives/ObjectiveCondition.cpp \
 Objectives/ObjectiveLocation.cpp \
 Http/HttpConnection.cpp \
 Http/HttpRequest.cpp \
-randomizer/mersenne.cpp \
-randomizer/mother.cpp \
-randomizer/ranrotb.cpp \
-randomizer/ranrotw.cpp \
-randomizer/userintf.cpp \
 ZipLoader/ZipLoader.cpp \
 pugixml/pugixml.cpp \
 Shop/LootRuleSet.cpp \
@@ -301,28 +296,31 @@ local_env = g_game_env.Clone()
 local_env.Prepend(CPPPATH = '#/game')
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ] )
+local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch', '-fPIC' ] )
 
-# Link the runtime statically, link statically against libpng.a
-# the corresponding package libpng12-dev must be available on the system
-local_env.Append( LINKFLAGS = [ '-lrt' ] ) #, '-lpng'
 
-local_env.Append(LIBS = [
-	# Uncomment this if you're on a x64 system - there is no libpng.a on Ubuntu x64 for instance
-	#File('/usr/lib32/libpng.so'),
-	File('#/linux/libcurl/libcurl.a'),
-	File('#/linux/polarssl/libpolarssl.a'),
-	File('#/linux/boost/lib/libboost_filesystem.a'),
-	File('#/linux/boost/lib/libboost_system.a'),
-	File('#/linux/boost/lib/libboost_thread.a')
-])
 
-if NO_GCH == '0':
+if (TARGET_ARCH == 'x86'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/libcurl.a'),
+		File('#/linux/polarssl/libpolarssl.a'),
+		File('#/linux/boost/lib/libboost_filesystem.a'),
+		File('#/linux/boost/lib/libboost_system.a')
+	])
+if (TARGET_ARCH == 'x64'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/lib64/libcurl.a'),
+		File('#/linux/polarssl/lib64/libpolarssl.a'),
+		File('#/linux/boost/lib64/libboost_filesystem.a'),
+		File('#/linux/boost/lib64/libboost_system.a')
+	])
+
+#if NO_GCH == '0':
 	# greebo: Set up our precompiled header
-	GCH_CPPFLAGS = local_env['CPPFLAGS']
-	GCH_CPPFLAGS += ['-fPIC']
+	#GCH_CPPFLAGS = local_env['CPPFLAGS']
+	#GCH_CPPFLAGS += ['-fPIC']
 
-	local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
+	#local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
 
 # greebo: Use custom compiled devIL and libjpeg in Linux
 devil_list = SConscript( '../../sys/scons/SConscript.devil' )

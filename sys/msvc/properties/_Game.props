@@ -4,7 +4,7 @@
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>Game Library</_PropertySheetDisplayName>
     <OutDir>$(SolutionDir)..\darkmod\</OutDir>
-    <TargetName>gamex86</TargetName>
+    <TargetName>game$(PlatformShortName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -13,7 +13,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)/include/zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>.\game\game.def</ModuleDefinitionFile>

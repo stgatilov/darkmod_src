@@ -721,7 +721,6 @@ static void ASE_KeyGEOMOBJECT( const char *token )
 	else if ( !strcmp( token, "*MESH" ) )
 	{
 		ase.currentMesh = &ase.currentObject->mesh;
-		memset( ase.currentMesh, 0, sizeof( ase.currentMesh ) );
 
 		ASE_ParseBracedBlock( ASE_KeyMESH );
 	}
@@ -782,7 +781,7 @@ aseModel_t *ASE_Parse( const char *buffer, bool verbose ) {
 	ase.verbose = verbose;
 
 	ase.buffer = buffer;
-	ase.len = strlen( buffer );
+    ase.len = static_cast<int>(strlen(buffer));
 	ase.curpos = ase.buffer;
 	ase.currentObject = NULL;
 

@@ -54,12 +54,13 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(SolutionDir)/../include/zlib;$(SolutionDir)/../win32/include;$(SolutionDir)/../win32/subversion/include;$(SolutionDir)/../win32/subversion/include/apr;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;WIN32;CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;USE_LIBSVN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -78,6 +79,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>4355;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -89,6 +91,7 @@
     <ClCompile Include="Http\HttpConnection.cpp" />
     <ClCompile Include="Http\HttpRequest.cpp" />
     <ClCompile Include="Http\MirrorDownload.cpp" />
+    <ClCompile Include="ThreadControl.cpp" />
     <ClCompile Include="Zip\Zip.cpp" />
     <ClCompile Include="Updater\UpdateController.cpp" />
     <ClCompile Include="Updater\Updater.cpp" />
@@ -107,6 +110,7 @@
     <ClInclude Include="Http\HttpRequest.h" />
     <ClInclude Include="Http\MirrorDownload.h" />
     <ClInclude Include="Http\MirrorList.h" />
+    <ClInclude Include="ThreadControl.h" />
     <ClInclude Include="Zip\Zip.h" />
     <ClInclude Include="Updater\DifferentialUpdateInfo.h" />
     <ClInclude Include="Updater\ProgressHandler.h" />

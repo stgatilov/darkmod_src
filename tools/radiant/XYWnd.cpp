@@ -2872,13 +2872,13 @@ void CXYWnd::XY_DrawGrid() {
 		for (x = xb; x < xe; x += stepSize) {
 			qglRasterPos2f(x, m_vOrigin[nDim2] + h - 10 / m_fScale);
 			sprintf(text, "%i", (int)x);
-			qglCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+            qglCallLists(static_cast<GLsizei>(strlen(text)), GL_UNSIGNED_BYTE, text);
 		}
 
 		for (y = yb; y < ye; y += stepSize) {
 			qglRasterPos2f(m_vOrigin[nDim1] - w + 1, y);
 			sprintf(text, "%i", (int)y);
-			qglCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+            qglCallLists(static_cast<GLsizei>(strlen(text)), GL_UNSIGNED_BYTE, text);
 		}
 
 		if (Active()) {
@@ -2898,7 +2898,7 @@ void CXYWnd::XY_DrawGrid() {
 			strcpy(cView, "YZ Side");
 		}
 
-		qglCallLists(strlen(cView), GL_UNSIGNED_BYTE, cView);
+        qglCallLists(static_cast<GLsizei>(strlen(cView)), GL_UNSIGNED_BYTE, cView);
 	}
 
 	/*
@@ -2975,7 +2975,7 @@ void CXYWnd::XY_DrawBlockGrid() {
 		for (y = yb; y < ye; y += 1024) {
 			qglRasterPos2f(x + 512, y + 512);
 			sprintf(text, "%i,%i", (int)floor(x / 1024), (int)floor(y / 1024));
-			qglCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+            qglCallLists(static_cast<GLsizei>(strlen(text)), GL_UNSIGNED_BYTE, text);
 		}
 	}
 
@@ -2998,7 +2998,7 @@ void GLColoredBoxWithLabel(float x, float y, float size, idVec4 color, const cha
 	qglColor4f(textColor[0], textColor[1], textColor[2], textColor[3]);
 	qglLineWidth(lineSize);
 	qglRasterPos2f(x + xofs, y + yofs);
-	qglCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+    qglCallLists(static_cast<GLsizei>(strlen(text)), GL_UNSIGNED_BYTE, text);
 }
 
 /*
@@ -4359,7 +4359,7 @@ idVec3 &CXYWnd::RotateOrigin() {
  =======================================================================================================================
  =======================================================================================================================
  */
-void CXYWnd::OnTimer(UINT nIDEvent) {
+void CXYWnd::OnTimer(UINT_PTR nIDEvent) {
 	if (nIDEvent == 100) {
 		int nDim1 = (m_nViewType == YZ) ? 1 : 0;
 		int nDim2 = (m_nViewType == XY) ? 1 : 2;

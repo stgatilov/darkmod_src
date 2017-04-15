@@ -22,8 +22,12 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#include <float.h>
 #include "win_local.h"
 
+#if defined(_MSC_VER) && defined(_WIN64)
+#include <immintrin.h>
+#endif
 
 /*
 ==============================================================
@@ -45,6 +49,15 @@ double Sys_GetClockTicks( void ) {
 
 	QueryPerformanceCounter( &li );
 	return = (double ) li.LowPart + (double) 0xFFFFFFFF * li.HighPart;
+
+#elif defined (_MSC_VER) && defined(_WIN64)
+
+	  // stgatilov: serialize pipeline with cpuid instruction
+    int values[4];
+    __cpuid(values, 0);
+    // greebo: Use the intrinsic provided by the VC++ compiler in x64
+    unsigned __int64 ticks = __rdtsc();
+    return static_cast<double>(ticks);
 
 #else
 
@@ -122,8 +135,13 @@ double Sys_ClockTicksPerSecond( void ) {
 HasCPUID
 ================
 */
-static bool HasCPUID( void ) {
-	__asm 
+static bool HasCPUID( void )
+{
+#if defined(_MSC_VER) && defined(_WIN64)
+    // Yes, we just have it, we're not compiling on 486-compatible hardware
+    return true;
+#else
+    __asm 
 	{
 		pushfd						// save eflags
 		pop		eax
@@ -152,6 +170,7 @@ err:
 	return false;
 good:
 	return true;
+#endif
 }
 
 #define _REG_EAX		0
@@ -164,7 +183,19 @@ good:
 CPUID
 ================
 */
-static void CPUID( int func, unsigned regs[4] ) {
+static void CPUID( int func, unsigned regs[4] )
+{
+#if defined (_MSC_VER) && defined(_WIN64)
+    // greebo: Use intrinsics on x64 in VC++
+    int values[4];
+
+    __cpuid(values, func);
+
+    regs[_REG_EAX] = values[0];
+    regs[_REG_EBX] = values[1];
+    regs[_REG_ECX] = values[2];
+    regs[_REG_EDX] = values[3];
+#else
 	unsigned regEAX, regEBX, regECX, regEDX;
 
 	__asm pusha
@@ -181,6 +212,7 @@ static void CPUID( int func, unsigned regs[4] ) {
 	regs[_REG_EBX] = regEBX;
 	regs[_REG_ECX] = regECX;
 	regs[_REG_EDX] = regEDX;
+#endif
 }
 
 
@@ -336,14 +368,13 @@ LogicalProcPerPhysicalProc
 #define NUM_LOGICAL_BITS   0x00FF0000     // EBX[23:16] Bit 16-23 in ebx contains the number of logical
                                           // processors per physical processor when execute cpuid with 
                                           // eax set to 1
-static unsigned char LogicalProcPerPhysicalProc( void ) {
-	unsigned int regebx = 0;
-	__asm {
-		mov eax, 1
-		cpuid
-		mov regebx, ebx
-	}
-	return (unsigned char) ((regebx & NUM_LOGICAL_BITS) >> 16);
+static unsigned char LogicalProcPerPhysicalProc( void )
+{
+    unsigned regs[4];
+
+    CPUID(1, regs);
+
+	return (unsigned char) ((regs[_REG_EBX] & NUM_LOGICAL_BITS) >> 16);
 }
 
 /*
@@ -354,14 +385,13 @@ GetAPIC_ID
 #define INITIAL_APIC_ID_BITS  0xFF000000  // EBX[31:24] Bits 24-31 (8 bits) return the 8-bit unique 
                                           // initial APIC ID for the processor this code is running on.
                                           // Default value = 0xff if HT is not supported
-static unsigned char GetAPIC_ID( void ) {
-	unsigned int regebx = 0;
-	__asm {
-		mov eax, 1
-		cpuid
-		mov regebx, ebx
-	}
-	return (unsigned char) ((regebx & INITIAL_APIC_ID_BITS) >> 24);
+static unsigned char GetAPIC_ID( void )
+{
+    unsigned regs[4];
+
+    CPUID(1, regs);
+
+    return (unsigned char)((regs[_REG_EBX] & INITIAL_APIC_ID_BITS) >> 24);
 }
 
 /*
@@ -379,7 +409,8 @@ CPUCount
 #define HT_SUPPORTED_NOT_ENABLED	3
 #define HT_CANNOT_DETECT			4
 
-int CPUCount( int &logicalNum, int &physicalNum ) {
+int CPUCount( int &logicalNum, int &physicalNum )
+{
 	int statusFlag;
 	SYSTEM_INFO info;
 
@@ -400,8 +431,6 @@ int CPUCount( int &logicalNum, int &physicalNum ) {
 
 	if ( logicalNum >= 1 ) {	// > 1 doesn't mean HT is enabled in the BIOS
 		HANDLE hCurrentProcessHandle;
-		DWORD  dwProcessAffinity;
-		DWORD  dwSystemAffinity;
 		DWORD  dwAffinityMask;
 
 		// Calculate the appropriate  shifts and mask based on the 
@@ -416,6 +445,9 @@ int CPUCount( int &logicalNum, int &physicalNum ) {
 		}
 		
 		hCurrentProcessHandle = GetCurrentProcess();
+
+        DWORD_PTR  dwProcessAffinity;
+        DWORD_PTR  dwSystemAffinity;
 		GetProcessAffinityMask( hCurrentProcessHandle, &dwProcessAffinity, &dwSystemAffinity );
 
 		// Check if available process affinity mask is equal to the
@@ -494,7 +526,8 @@ static bool HasHTT( void ) {
 HasHTT
 ================
 */
-static bool HasDAZ( void ) {
+static bool HasDAZ( void )
+{
 	__declspec(align(16)) unsigned char FXSaveArea[512];
 	unsigned char *FXArea = FXSaveArea;
 	DWORD dwMask = 0;
@@ -510,10 +543,14 @@ static bool HasDAZ( void ) {
 
 	memset( FXArea, 0, sizeof( FXSaveArea ) );
 
+#if defined(_MSC_VER) && defined(_WIN64)
+    _fxsave(FXArea);
+#else
 	__asm {
 		mov		eax, FXArea
 		FXSAVE	[eax]
 	}
+#endif
 
 	dwMask = *(DWORD *)&FXArea[28];						// Read the MXCSR Mask
 	return ( ( dwMask & ( 1 << 6 ) ) == ( 1 << 6 ) );	// Return if the DAZ bit is set
@@ -668,237 +705,61 @@ int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, 
 	return length;
 }
 
-/*
-===============
-Sys_FPU_StackIsEmpty
-===============
-*/
-bool Sys_FPU_StackIsEmpty( void ) {
-	__asm {
-		mov			eax, statePtr
-		fnstenv		[eax]
-		mov			eax, [eax+8]
-		xor			eax, 0xFFFFFFFF
-		and			eax, 0x0000FFFF
-		jz			empty
-	}
-	return false;
-empty:
-	return true;
+// Only do this in 32 bit builds
+#if defined(_MSC_VER) && !defined(_WIN64)
+
+#define MXCSR_DAZ	(1 << 6)
+#define MXCSR_FTZ	(1 << 15)
+
+#define STREFLOP_FSTCW(cw) do { short tmp; __asm { fstcw tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_FLDCW(cw) do { short tmp = (cw); __asm { fclex }; __asm { fldcw tmp }; } while (0)
+#define STREFLOP_STMXCSR(cw) do { int tmp; __asm { stmxcsr tmp }; (cw) = tmp; } while (0)
+#define STREFLOP_LDMXCSR(cw) do { int tmp = (cw); __asm { ldmxcsr tmp }; } while (0)
+
+static void EnableMXCSRFlag(int flag, bool enable, const char *name)
+{
+    int sse_mode;
+
+    STREFLOP_STMXCSR(sse_mode);
+
+    if (enable && (sse_mode & flag) == flag) {
+        common->Printf("%s mode is already enabled\n", name);
+        return;
+    }
+
+    if (!enable && (sse_mode & flag) == 0) {
+        common->Printf("%s mode is already disabled\n", name);
+        return;
+    }
+
+    if (enable) {
+        common->Printf("enabling %s mode\n", name);
+        sse_mode |= flag;
+    }
+    else {
+        common->Printf("disabling %s mode\n", name);
+        sse_mode &= ~flag;
+    }
+
+    STREFLOP_LDMXCSR(sse_mode);
 }
-
-/*
-===============
-Sys_FPU_ClearStack
-===============
-*/
-void Sys_FPU_ClearStack( void ) {
-	__asm {
-		mov			eax, statePtr
-		fnstenv		[eax]
-		mov			eax, [eax+8]
-		xor			eax, 0xFFFFFFFF
-		mov			edx, (3<<14)
-	emptyStack:
-		mov			ecx, eax
-		and			ecx, edx
-		jz			done
-		fstp		st
-		shr			edx, 2
-		jmp			emptyStack
-	done:
-	}
-}
-
-/*
-===============
-Sys_FPU_GetState
-
-  gets the FPU state without changing the state
-===============
-*/
-const char *Sys_FPU_GetState( void ) {
-	double fpuStack[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	double *fpuStackPtr = fpuStack;
-	int i, numValues;
-	char *ptr;
-
-	__asm {
-		mov			esi, statePtr
-		mov			edi, fpuStackPtr
-		fnstenv		[esi]
-		mov			esi, [esi+8]
-		xor			esi, 0xFFFFFFFF
-		mov			edx, (3<<14)
-		xor			eax, eax
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fst			qword ptr [edi+0]
-		inc			eax
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(1)
-		fst			qword ptr [edi+8]
-		inc			eax
-		fxch		st(1)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(2)
-		fst			qword ptr [edi+16]
-		inc			eax
-		fxch		st(2)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(3)
-		fst			qword ptr [edi+24]
-		inc			eax
-		fxch		st(3)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(4)
-		fst			qword ptr [edi+32]
-		inc			eax
-		fxch		st(4)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(5)
-		fst			qword ptr [edi+40]
-		inc			eax
-		fxch		st(5)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(6)
-		fst			qword ptr [edi+48]
-		inc			eax
-		fxch		st(6)
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st(7)
-		fst			qword ptr [edi+56]
-		inc			eax
-		fxch		st(7)
-	done:
-		mov			numValues, eax
-	}
-
-	int ctrl = *(int *)&fpuState[0];
-	int stat = *(int *)&fpuState[4];
-	int tags = *(int *)&fpuState[8];
-	int inof = *(int *)&fpuState[12];
-	int inse = *(int *)&fpuState[16];
-	int opof = *(int *)&fpuState[20];
-	int opse = *(int *)&fpuState[24];
-
-	ptr = fpuString;
-	ptr += sprintf( ptr,"FPU State:\n"
-						"num values on stack = %d\n", numValues );
-	for ( i = 0; i < 8; i++ ) {
-		ptr += sprintf( ptr, "ST%d = %1.10e\n", i, fpuStack[i] );
-	}
-
-	Sys_FPU_PrintStateFlags( ptr, ctrl, stat, tags, inof, inse, opof, opse );
-
-	return fpuString;
-}
-
-/*
-===============
-Sys_FPU_EnableExceptions
-===============
-*/
-void Sys_FPU_EnableExceptions( int exceptions ) {
-	__asm {
-		mov			eax, statePtr
-		mov			ecx, exceptions
-		and			cx, 63
-		not			cx
-		fnstcw		word ptr [eax]
-		mov			bx, word ptr [eax]
-		or			bx, 63
-		and			bx, cx
-		mov			word ptr [eax], bx
-		fldcw		word ptr [eax]
-	}
-}
-
-/*
-===============
-Sys_FPU_SetPrecision
-===============
-*/
-void Sys_FPU_SetPrecision( int precision ) {
-	short precisionBitTable[4] = { 0, 1, 3, 0 };
-	short precisionBits = precisionBitTable[precision & 3] << 8;
-	short precisionMask = ~( ( 1 << 9 ) | ( 1 << 8 ) );
-
-	__asm {
-		mov			eax, statePtr
-		mov			cx, precisionBits
-		fnstcw		word ptr [eax]
-		mov			bx, word ptr [eax]
-		and			bx, precisionMask
-		or			bx, cx
-		mov			word ptr [eax], bx
-		fldcw		word ptr [eax]
-	}
-}
-
-/*
-================
-Sys_FPU_SetRounding
-================
-*/
-void Sys_FPU_SetRounding( int rounding ) {
-	short roundingBitTable[4] = { 0, 1, 2, 3 };
-	short roundingBits = roundingBitTable[rounding & 3] << 10;
-	short roundingMask = ~( ( 1 << 11 ) | ( 1 << 10 ) );
-
-	__asm {
-		mov			eax, statePtr
-		mov			cx, roundingBits
-		fnstcw		word ptr [eax]
-		mov			bx, word ptr [eax]
-		and			bx, roundingMask
-		or			bx, cx
-		mov			word ptr [eax], bx
-		fldcw		word ptr [eax]
-	}
-}
+#endif
 
 /*
 ================
 Sys_FPU_SetDAZ
 ================
 */
-void Sys_FPU_SetDAZ( bool enable ) {
-	DWORD dwData;
+void Sys_FPU_SetDAZ(bool enable) 
+{
+#if defined(_MSC_VER) && !defined(_WIN64)
+    if (!HasDAZ()) {
+        common->Printf("this CPU doesn't support Denormals-Are-Zero\n");
+        return;
+    }
 
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 6
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<6)	// clear DAX bit
-		or		eax, ecx		// set the DAZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
+    EnableMXCSRFlag(MXCSR_DAZ, enable, "Denormals-Are-Zero");
+#endif
 }
 
 /*
@@ -906,18 +767,20 @@ void Sys_FPU_SetDAZ( bool enable ) {
 Sys_FPU_SetFTZ
 ================
 */
-void Sys_FPU_SetFTZ( bool enable ) {
-	DWORD dwData;
+void Sys_FPU_SetFTZ(bool enable)
+{
+#if defined(_MSC_VER) && !defined(_WIN64)
+    EnableMXCSRFlag(MXCSR_FTZ, enable, "Flush-To-Zero");
+#endif
+}
 
-	_asm {
-		movzx	ecx, byte ptr enable
-		and		ecx, 1
-		shl		ecx, 15
-		STMXCSR	dword ptr dwData
-		mov		eax, dwData
-		and		eax, ~(1<<15)	// clear FTZ bit
-		or		eax, ecx		// set the FTZ bit
-		mov		dwData, eax
-		LDMXCSR	dword ptr dwData
-	}
+/*
+===============
+Sys_FPU_SetPrecision
+===============
+*/
+void Sys_FPU_SetPrecision() {
+#if defined(_MSC_VER) && defined(_M_IX86)
+    _controlfp(_PC_64, _MCW_PC);
+#endif
 }

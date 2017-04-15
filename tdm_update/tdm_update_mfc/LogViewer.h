@@ -21,7 +21,7 @@
 
 #include "afxwin.h"
 #include "TraceLog.h"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 // LogViewer dialog
 
@@ -54,4 +54,4 @@ public:
 	CEdit _logView;
 	afx_msg void OnBnClickedOk();
 };
-typedef boost::shared_ptr<LogViewer> LogViewerPtr;
+typedef std::shared_ptr<LogViewer> LogViewerPtr;

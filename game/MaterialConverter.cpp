@@ -250,7 +250,7 @@ bool MaterialParsingHelper::FindBlockContainingWords(  const char *a_text, std::
 		// Make sure that, this is not the first word we have found.
 		if ( a_arrSearchWords.begin() != iter )
 		{
-			if ( uiSearchIndex != uiSearchOffset )
+            if (uiSearchIndex != static_cast<int>(uiSearchOffset))
 			{
 				//  				gameLocal.Warning( " Could not find search word %s in the expected order", (*iter).c_str() );
 
@@ -531,7 +531,7 @@ eMaterialConversionStatus MaterialConverter::ConvertMaterial( idMaterial *a_pMat
 	charBuffer.resize(  a_pMaterial->GetTextLength() + 1, 0 );
 	a_pMaterial->GetText( &charBuffer[0] );
 
-	idLexer lexSource( &charBuffer[0], charBuffer.size(), a_pMaterial->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+    idLexer lexSource(&charBuffer[0], static_cast<int>(charBuffer.size()), a_pMaterial->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES);
 
 	gameLocal.Printf("Finding out shader stages... \n" );
 
@@ -672,7 +672,7 @@ eMaterialConversionStatus MaterialConverter::ConvertMaterial( idMaterial *a_pMat
 	//------------------------------------
 	int i;
 	unsigned int uiEndoftheBlock = 0;
-	for( i= charBuffer.size() - 1; i > 0; i-- )
+    for (i = static_cast<int>(charBuffer.size()) - 1; i > 0; i--)
 	{
 		if( '}' == charBuffer[i] )
 		{

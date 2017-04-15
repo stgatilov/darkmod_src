@@ -210,7 +210,15 @@ type *idBlockAlloc<type,blockSize>::Alloc( void ) {
 
 template<class type, int blockSize>
 void idBlockAlloc<type,blockSize>::Free( type *t ) {
-	element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (int) &((element_t *)0)->t ) );
+	// old code 
+	// element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (int) &((element_t *)0)->t ) );
+	// Code ported from dhewm3, this does not fire the fpermissive warning in gcc
+    // greebo: disabled this, this does NOT produce correct results, the offset can be different than sizeof(intptr_t)
+	// element_t *element = (element_t *)( intptr_t(t) - sizeof(intptr_t) );
+
+    // greebo: Use the standard offsetof macro as defined in <cstddef>
+    element_t *element = reinterpret_cast<element_t*>(intptr_t(t) - offsetof(element_t, t));
+
 	element->next = free;
 	free = element;
 	active--;

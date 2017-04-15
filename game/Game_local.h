@@ -130,6 +130,7 @@ void gameError( const char *fmt, ... );
 #include "LightController.h"
 #include "ModMenu.h"
 
+#include <random> // for mersenne twister
 #include <boost/shared_ptr.hpp>
 
 #ifdef __linux__
@@ -521,6 +522,7 @@ public:
 	float					globalShaderParms[ MAX_GLOBAL_SHADER_PARMS ];	
 
 	idRandom				random;					// random number generator used throughout the game
+    std::mt19937            randomMt;               // alternative random number generator (state is not persistent between map loads)
 
 	idProgram				program;				// currently loaded script and data space
 	idThread *				frameCommandThread;
@@ -1253,7 +1255,7 @@ ID_INLINE bool idEntityPtr<type>::IsValid( void ) const {
 template< class type >
 ID_INLINE type *idEntityPtr<type>::GetEntity( void ) const {
 	int entityNum = spawnId & ( ( 1 << GENTITYNUM_BITS ) - 1 );
-	if ( ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) ) {
+	if ( gameLocal.spawnIds[ entityNum ] == ( spawnId >> GENTITYNUM_BITS ) ) {
 		return static_cast<type *>( gameLocal.entities[ entityNum ] );
 	}
 	return NULL;

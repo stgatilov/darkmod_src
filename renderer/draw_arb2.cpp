@@ -594,7 +594,7 @@ void R_LoadARBProgram( int progIndex ) {
 	fullPath += progs[progIndex].name;
 	char	*fileBuffer;
 	char	*buffer;
-	char	*start, *end;
+	char	*start = NULL, *end;
 
     // load the program even if we don't support it
 	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
@@ -655,7 +655,7 @@ void R_LoadARBProgram( int progIndex ) {
 	//qglGetError();
 
 	qglProgramStringARB( progs[progIndex].target, GL_PROGRAM_FORMAT_ASCII_ARB,
-		strlen( start ), (unsigned char *)start );
+                        static_cast<GLsizei>(strlen(start)), (unsigned char *)start);
 
 // this is pretty important for quick shader debugging, better have it in always
 //#ifdef _DEBUG

@@ -90,6 +90,7 @@ for i in range( len( devil_list ) ):
 local_env = g_env.Clone()
 
 # Use the config header in include/devil/IL
+local_env.Append(CPPPATH = '#/include/libpng')
 local_env.Append(CPPPATH = '#/include/devil/IL')
 local_env.Append(CPPFLAGS = '-DHAVE_CONFIG_H')
 

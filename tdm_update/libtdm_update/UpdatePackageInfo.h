@@ -43,12 +43,12 @@ public:
 	void VisitSection(const IniFile& iniFile, const std::string& sectionName)
 	{
 		// Parse the section headers, e.g. [UpdatePackage from 1.02 to 1.03]
-		boost::regex expr("^UpdatePackage from ([\\.0-9]+) to ([\\.0-9]+)$",
-						  boost::regex::perl|boost::regex::icase);
+		std::regex expr("^UpdatePackage from ([\\.0-9]+) to ([\\.0-9]+)$",
+						  std::regex::ECMAScript|std::regex::icase);
 
-		boost::smatch matches;
+		std::smatch matches;
 		
-		if (boost::regex_match(sectionName, matches, expr))
+		if (std::regex_match(sectionName, matches, expr))
 		{
 			std::string fromVersion = matches[1].str();
 			std::string toVersion = matches[2].str();
@@ -63,7 +63,7 @@ public:
 
 			package.filename = iniFile.GetValue(sectionName, "package");
 			package.crc = CRC::ParseFromString(iniFile.GetValue(sectionName, "crc"));
-			package.filesize = boost::lexical_cast<std::size_t>(iniFile.GetValue(sectionName, "filesize"));
+            package.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(sectionName, "filesize")));
 			package.fromVersion = fromVersion;
 			package.toVersion = toVersion;
 

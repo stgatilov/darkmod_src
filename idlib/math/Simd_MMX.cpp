@@ -40,7 +40,7 @@ const char * idSIMD_MMX::GetName( void ) const {
 	return "MMX";
 }
 
-#elif defined(_WIN32)
+#elif defined(_MSC_VER) && defined(_M_IX86)
 
 #define EMMS_INSTRUCTION		__asm emms
 
@@ -355,4 +355,4 @@ loop2:
 	}
 }
 
-#endif /* _WIN32 */
+#endif /* MSC_VER */

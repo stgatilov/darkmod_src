@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <boost/regex.hpp>
+#include <regex>
 #include "../ProgramOptions.h"
 
 namespace tdm
@@ -65,23 +65,23 @@ public:
 		}
 
 		// Get the proxy info out of this string
-		boost::regex expr("^(https?)://(([^@]+)|([^@]+)@([^@]+))$",
-						  boost::regex::perl|boost::regex::icase);
+		std::regex expr("^(https?)://(([^@]+)|([^@]+)@([^@]+))$",
+						  std::regex::ECMAScript|std::regex::icase);
 
-		boost::smatch matches;
+		std::smatch matches;
 		
-		if (boost::regex_match(proxyStr, matches, expr))
+		if (std::regex_match(proxyStr, matches, expr))
 		{
 			if (matches[3].matched)
 			{
 				// Non-authenticated proxy
-				TraceLog::WriteLine(LOG_VERBOSE, "Using proxy: " + matches[3]);
+				TraceLog::WriteLine(LOG_VERBOSE, "Using proxy: " + matches[3].str());
 				conn->SetProxyHost(matches[3]);
 			}
 			else if (matches[5].matched)
 			{
 				// Proxy with authentication
-				TraceLog::WriteLine(LOG_VERBOSE, "Using proxy with authentication: " + matches[5]);
+				TraceLog::WriteLine(LOG_VERBOSE, "Using proxy with authentication: " + matches[5].str());
 				conn->SetProxyHost(matches[5]);
 				
 				// Split the username and password

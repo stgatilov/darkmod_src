@@ -24,8 +24,8 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/spirit/include/classic.hpp>
-#include <boost/bind.hpp>
-#include <boost/regex.hpp>
+#include <functional>
+#include <regex>
 
 namespace bs = boost::spirit::classic;
 
@@ -36,7 +36,7 @@ namespace tdm
 // tdm_player01.pk4: ^models/md5/weapons, ^models/md5/chars/thief, ^dds/models/md5/chars/thief
 
 // The list of regex patterns for each PK4
-typedef std::vector<boost::regex> Patterns;
+typedef std::vector<std::regex> Patterns;
 
 // A pair associating a PK4 file name with a pattern list
 typedef std::pair<std::string, Patterns> Pk4Mapping;
@@ -134,7 +134,7 @@ private:
 		// Set the destination on the last element
 		assert(!empty());
 
-		back().second.push_back(boost::regex(beg, end, boost::regex::perl));
+        back().second.push_back(std::regex(beg, end, std::regex::ECMAScript));
 	}
 };
 

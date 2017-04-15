@@ -1571,19 +1571,18 @@ void idDeclManagerLocal::ListDecls_f( const idCmdArgs &args ) {
 	int		i, j;
 	int		totalDecls = 0;
 	int		totalText = 0;
-	int		totalStructs = 0;
+	size_t		totalStructs = 0;
 
 	for ( i = 0; i < declManagerLocal.declTypes.Num(); i++ ) {
-		int size, num;
-
+		
 		if ( declManagerLocal.declTypes[i] == NULL ) {
 			continue;
 		}
 
-		num = declManagerLocal.linearLists[i].Num();
+		int num = declManagerLocal.linearLists[i].Num();
 		totalDecls += num;
 
-		size = 0;
+		size_t size = 0;
 		for ( j = 0; j < num; j++ ) {
 			size += declManagerLocal.linearLists[i][j]->Size();
 			if ( declManagerLocal.linearLists[i][j]->self != NULL ) {
@@ -1601,7 +1600,7 @@ void idDeclManagerLocal::ListDecls_f( const idCmdArgs &args ) {
 	}
 
 	common->Printf( "%i total decls is %i decl files\n", totalDecls, declManagerLocal.loadedFiles.Num() );
-	common->Printf( "%iKB in text, %iKB in structures\n", totalText >> 10, totalStructs >> 10 );
+	common->Printf( "%iKB in text, %luKB in structures\n", totalText >> 10, static_cast<unsigned long>(totalStructs) >> 10 );
 }
 
 /*
@@ -2055,7 +2054,7 @@ void idDeclLocal::MakeDefault() {
 	self->FreeData();
 
 	// parse
-	self->Parse( defaultText, strlen( defaultText ) );
+    self->Parse(defaultText, static_cast<int>(strlen(defaultText)));
 
 	// we could still eventually hit the recursion if we have enough Error() calls inside Parse...
 	--recursionLevel;

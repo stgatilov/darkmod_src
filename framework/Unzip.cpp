@@ -1104,7 +1104,8 @@ static int unzlocal_getShort (FILE* fin, uLong *pX)
 {
 	short	v;
 
-	fread( &v, sizeof(v), 1, fin );
+	if (fread( &v, sizeof(v), 1, fin ) != 1)
+		return UNZ_ERRNO;
 
 	*pX = LittleShort( v);
 	return UNZ_OK;
@@ -1133,9 +1134,10 @@ static int unzlocal_getLong (FILE *fin, uLong *pX)
 {
 	int		v;
 
-	fread( &v, sizeof(v), 1, fin );
+	if (fread( &v, sizeof(v), 1, fin ) != 1)
+		return UNZ_ERRNO;
 
-	*pX = LittleLong( v);
+	*pX = LittleInt( v);
 	return UNZ_OK;
 
 /*
@@ -1480,10 +1482,12 @@ static int unzlocal_GetCurrentFileInfoInternal (unzFile file,
 
 	/* we check the magic */
 	if (err==UNZ_OK)
+    {
 		if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
 			err=UNZ_ERRNO;
 		else if (uMagic!=0x02014b50)
 			err=UNZ_BADZIPFILE;
+    }
 
 	if (unzlocal_getShort(s->file,&file_info.version) != UNZ_OK)
 		err=UNZ_ERRNO;
@@ -1560,10 +1564,12 @@ static int unzlocal_GetCurrentFileInfoInternal (unzFile file,
 			uSizeRead = extraFieldBufferSize;
 
 		if (lSeek!=0)
+        {
 			if (fseek(s->file,lSeek,SEEK_CUR)==0)
 				lSeek=0;
 			else
 				err=UNZ_ERRNO;
+        }
 		if ((file_info.size_file_extra>0) && (extraFieldBufferSize>0))
 			if (fread(extraField,(uInt)uSizeRead,1,s->file)!=1)
 				err=UNZ_ERRNO;
@@ -1585,10 +1591,12 @@ static int unzlocal_GetCurrentFileInfoInternal (unzFile file,
 			uSizeRead = commentBufferSize;
 
 		if (lSeek!=0)
+        {
 			if (fseek(s->file,lSeek,SEEK_CUR)==0)
 				lSeek=0;
 			else
 				err=UNZ_ERRNO;
+        }
 		if ((file_info.size_file_comment>0) && (commentBufferSize>0))
 			if (fread(szComment,(uInt)uSizeRead,1,s->file)!=1)
 				err=UNZ_ERRNO;
@@ -1784,10 +1792,12 @@ static int unzlocal_CheckCurrentFileCoherencyHeader (unz_s* s, uInt* piSizeVar,
 
 
 	if (err==UNZ_OK)
+    {
 		if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
 			err=UNZ_ERRNO;
 		else if (uMagic!=0x04034b50)
 			err=UNZ_BADZIPFILE;
+    }
 
 	if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
 		err=UNZ_ERRNO;
@@ -1966,7 +1976,7 @@ extern int unzReadCurrentFile  (unzFile file, void *buf, unsigned len)
 		return UNZ_PARAMERROR;
 
 
-	if ((pfile_in_zip_read_info->read_buffer == NULL))
+	if (pfile_in_zip_read_info->read_buffer == NULL)
 		return UNZ_END_OF_LIST_OF_FILE;
 	if (len==0)
 		return 0;

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <OpenALSoftDLLPath>Win64\bin\OpenAL32_x64.dll</OpenALSoftDLLPath>
+    <TdmExecutableName>TheDarkModx64</TdmExecutableName>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)/win64/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent />
+    <PostBuildEvent />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="OpenALSoftDLLPath">
+      <Value>$(OpenALSoftDLLPath)</Value>
+    </BuildMacro>
+    <BuildMacro Include="TdmExecutableName">
+      <Value>$(TdmExecutableName)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

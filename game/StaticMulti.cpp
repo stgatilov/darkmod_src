@@ -167,7 +167,7 @@ assemble it), and the LOD stages (contains the distance for each LOD stage)
 */
 void CStaticMulti::SetLODData( const idVec3 &origin, const unsigned int lodHandle, idStr modelName, idList<model_ofs_t>* offsets, idStr materialName, const idRenderModel* hModel, const idClipModel* clipModel )
 {
-	idClipModel *clip;
+	idClipModel *clip = NULL;
 	bool clipLoaded = false;
 	active = true;
 

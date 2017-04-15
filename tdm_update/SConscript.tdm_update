@@ -58,8 +58,6 @@ else:
 	local_env.Append(LIBS = [
 		File('#/../linux/boost/lib/libboost_filesystem.a'),
 		File('#/../linux/boost/lib/libboost_program_options.a'),
-		File('#/../linux/boost/lib/libboost_thread.a'),
-		File('#/../linux/boost/lib/libboost_regex.a'),
 		File('#/../linux/boost/lib/libboost_system.a'),
 		File('#/../linux/libcurl/libcurl.a'),
 		File('#/../linux/polarssl/libpolarssl.a'),

@@ -1161,7 +1161,7 @@ void RenderBump_f( const idCmdArgs &args ) {
 	int		i, j;
 	const char	*cmdLine;
 	int		numRenderBumps;
-	renderBump_t	*renderBumps, *rb;
+	renderBump_t	*renderBumps, *rb = NULL;
 	renderBump_t	opt;
 	int		startTime, endTime;
 
@@ -1342,13 +1342,11 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 	int		i;
 	idBounds	bounds;
 	srfTriangles_t	*mesh;
-	float	boundsScale;
 
 	// update the screen as we print
 	common->SetRefreshOnPrint( true );
 
 	width = height = 256;
-	boundsScale = 0;
 
 	// check options
 	for ( i = 1 ; i < args.Argc() - 1; i++ ) {
@@ -1376,6 +1374,7 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 
 	if ( i != ( args.Argc() - 1 ) ) {
 		common->Error( "usage: renderBumpFlat [-size width height] asefile" );
+        return;
 	}
 
 	common->Printf( "Final image size: %i, %i\n", width, height );
@@ -1542,6 +1541,8 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 			GLimp_SwapBuffers();
 			qglReadPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer ); 
 
+            c = width * height;
+
 			if ( colorPass ) {
 				// add to the sum buffer
 				for ( i = 0 ; i < c ; i++ ) {
@@ -1552,7 +1553,6 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 				}
 			} else {
 				// normalize
-				c = width * height;
 				for ( i = 0 ; i < c ; i++ ) {
 					idVec3	v;
 

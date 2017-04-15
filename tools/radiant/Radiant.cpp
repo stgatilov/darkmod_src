@@ -240,7 +240,7 @@ BOOL CRadiantApp::InitInstance()
 				strcpy( g_qeglobals.use_ini_registry, key.GetBuffer(0) );
 				RegCreateKeyEx( HKEY_CURRENT_USER, key, 0, NULL, 
 					REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisp );
-				RegSetValueEx( hkResult, "RadiantName", 0, REG_SZ, reinterpret_cast<CONST BYTE *>(RadiantPath), strlen( RadiantPath )+1 );
+                RegSetValueEx(hkResult, "RadiantName", 0, REG_SZ, reinterpret_cast<CONST BYTE *>(RadiantPath), static_cast<DWORD>(strlen(RadiantPath) + 1));
 				RegCloseKey( hkResult );
 				break;
 			}

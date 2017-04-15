@@ -2490,7 +2490,7 @@ void VPCALL idSIMD_Generic::DeriveTangents( idPlane *planes, idDrawVert *verts, 
 	idPlane *planesPtr = planes;
 	for ( i = 0; i < numIndexes; i += 3 ) {
 		idDrawVert *a, *b, *c;
-		unsigned long signBit;
+		unsigned int signBit;
 		float d0[5], d1[5], f, area;
 		idVec3 n, t0, t1;
 
@@ -2531,7 +2531,7 @@ void VPCALL idSIMD_Generic::DeriveTangents( idPlane *planes, idDrawVert *verts, 
 
 		// area sign bit
 		area = d0[3] * d1[4] - d0[4] * d1[3];
-		signBit = ( *(unsigned long *)&area ) & ( 1 << 31 );
+		signBit = ( *(unsigned int *)&area ) & ( 1 << 31 );
 
 		// first tangent
 		t0[0] = d0[0] * d1[4] - d0[4] * d1[0];
@@ -2539,7 +2539,7 @@ void VPCALL idSIMD_Generic::DeriveTangents( idPlane *planes, idDrawVert *verts, 
 		t0[2] = d0[2] * d1[4] - d0[4] * d1[2];
 
 		f = idMath::RSqrt( t0.x * t0.x + t0.y * t0.y + t0.z * t0.z );
-		*(unsigned long *)&f ^= signBit;
+		*(unsigned int *)&f ^= signBit;
 
 		t0.x *= f;
 		t0.y *= f;
@@ -2551,7 +2551,7 @@ void VPCALL idSIMD_Generic::DeriveTangents( idPlane *planes, idDrawVert *verts, 
 		t1[2] = d0[3] * d1[2] - d0[2] * d1[3];
 
 		f = idMath::RSqrt( t1.x * t1.x + t1.y * t1.y + t1.z * t1.z );
-		*(unsigned long *)&f ^= signBit;
+		*(unsigned int *)&f ^= signBit;
 
 		t1.x *= f;
 		t1.y *= f;
@@ -2607,9 +2607,12 @@ void VPCALL idSIMD_Generic::DeriveUnsmoothedTangents( idDrawVert *verts, const d
 
 	for ( i = 0; i < numVerts; i++ ) {
 		idDrawVert *a, *b, *c;
-		float d0, d1, d2, d3, d4;
-		float d5, d6, d7, d8, d9;
-		float s0, s1, s2;
+#ifndef DERIVE_UNSMOOTHED_BITANGENT
+        float d3, d8;
+#endif
+        float d0, d1, d2, d4;
+        float d5, d6, d7, d9;
+        float s0, s1, s2;
 		float n0, n1, n2;
 		float t0, t1, t2;
 		float t3, t4, t5;
@@ -2623,14 +2626,18 @@ void VPCALL idSIMD_Generic::DeriveUnsmoothedTangents( idDrawVert *verts, const d
 		d0 = b->xyz[0] - a->xyz[0];
 		d1 = b->xyz[1] - a->xyz[1];
 		d2 = b->xyz[2] - a->xyz[2];
-		d3 = b->st[0] - a->st[0];
-		d4 = b->st[1] - a->st[1];
+#ifndef DERIVE_UNSMOOTHED_BITANGENT
+        d3 = b->st[0] - a->st[0];
+#endif
+        d4 = b->st[1] - a->st[1];
 
 		d5 = c->xyz[0] - a->xyz[0];
 		d6 = c->xyz[1] - a->xyz[1];
 		d7 = c->xyz[2] - a->xyz[2];
-		d8 = c->st[0] - a->st[0];
-		d9 = c->st[1] - a->st[1];
+#ifndef DERIVE_UNSMOOTHED_BITANGENT
+        d8 = c->st[0] - a->st[0];
+#endif
+        d9 = c->st[1] - a->st[1];
 
 		s0 = dt.normalizationScale[0];
 		s1 = dt.normalizationScale[1];

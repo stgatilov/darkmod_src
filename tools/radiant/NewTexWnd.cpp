@@ -344,7 +344,7 @@ void CNewTexWnd::OnPaint() {
 				else {
 					name++;
 				}
-				qglCallLists(strlen(name), GL_UNSIGNED_BYTE, name);
+                qglCallLists(static_cast<GLsizei>(strlen(name)), GL_UNSIGNED_BYTE, name);
 				//qglCallLists(va("%s -- %d, %d" strlen(name), GL_UNSIGNED_BYTE, name);
 			} 
 		}

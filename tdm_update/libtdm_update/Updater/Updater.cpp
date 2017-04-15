@@ -26,6 +26,7 @@
 #include "../Constants.h"
 #include "../File.h"
 #include "../Util.h"
+#include "../ThreadControl.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
@@ -133,7 +134,7 @@ void Updater::UpdateMirrors()
 			continue;
 		}
 
-		TraceLog::WriteLine(LOG_VERBOSE, "Done, got " + boost::lexical_cast<std::string>(tempMirrors.size()) + " mirrors.");
+		TraceLog::WriteLine(LOG_VERBOSE, "Done, got " + std::to_string(tempMirrors.size()) + " mirrors.");
 
 		// Move the file over the actual one, we know it's good
 		File::Remove(actualMirrorPath);
@@ -155,7 +156,7 @@ void Updater::LoadMirrors()
 	// Interpret the info and build the mirror list
 	_mirrors = MirrorList(*mirrorsIni);
 
-	TraceLog::WriteLine(LOG_VERBOSE, "Found " + boost::lexical_cast<std::string>(_mirrors.size()) + " mirrors.");
+	TraceLog::WriteLine(LOG_VERBOSE, "Found " + std::to_string(_mirrors.size()) + " mirrors.");
 }
 
 std::size_t Updater::GetNumMirrors()
@@ -243,6 +244,8 @@ void Updater::DetermineLocalVersion()
 
 		for (ReleaseFileSet::const_iterator f = set.begin(); f != set.end(); ++f)
 		{
+            ThreadControl::InterruptionPoint();
+
 			NotifyFileProgress(f->second.file, CurFileInfo::Check, static_cast<double>(curItem) / totalItems);
 
 			curItem++;
@@ -279,7 +282,7 @@ void Updater::DetermineLocalVersion()
 			}
 
 			// Calculate the CRC of this file
-			boost::uint32_t crc = CRC::GetCrcForFile(candidate);
+			uint32_t crc = CRC::GetCrcForFile(candidate);
 
 			if (crc != f->second.crc)
 			{
@@ -533,7 +536,7 @@ bool Updater::VerifyUpdatePackageAt(const UpdatePackage& info, const fs::path& p
 	}
 
 	// Calculate the CRC of this file
-	boost::uint32_t crc = CRC::GetCrcForFile(package);
+	uint32_t crc = CRC::GetCrcForFile(package);
 
 	if (crc != info.crc)
 	{
@@ -667,7 +670,7 @@ void Updater::PerformDifferentialUpdateStep()
 		// Double-check the PK4 checksum before doing the merge
 		try
 		{
-			boost::uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
+			uint32_t crc = CRC::GetCrcForFile(targetPk4Path);
 
 			if (crc == diff.checksumBefore)
 			{
@@ -738,7 +741,7 @@ void Updater::PerformDifferentialUpdateStep()
 		targetPk4.reset();
 
 		// Calculate CRC after patching
-		boost::uint32_t crcAfter = CRC::GetCrcForFile(targetPk4Path);
+		uint32_t crcAfter = CRC::GetCrcForFile(targetPk4Path);
 
 		if (crcAfter != diff.checksumAfter)
 		{
@@ -872,7 +875,7 @@ void Updater::PerformSingleMirroredDownload(const std::string& remoteFile)
 	PerformSingleMirroredDownload(download);
 }
 
-void Updater::PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, boost::uint32_t requiredCrc)
+void Updater::PerformSingleMirroredDownload(const std::string& remoteFile, std::size_t requiredSize, uint32_t requiredCrc)
 {
 	DownloadPtr download = PrepareMirroredDownload(remoteFile);
 
@@ -891,7 +894,7 @@ void Updater::PerformSingleMirroredDownload(const DownloadPtr& download)
 
 	while (_downloadManager->HasPendingDownloads())
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		_downloadManager->ProcessDownloads();
 
@@ -899,7 +902,7 @@ void Updater::PerformSingleMirroredDownload(const DownloadPtr& download)
 
 		for (int i = 0; i < 50; ++i)
 		{
-			boost::this_thread::interruption_point();
+			ThreadControl::InterruptionPoint();
 			Util::Wait(10);
 		}
 	}
@@ -1022,7 +1025,7 @@ void Updater::CheckLocalFiles()
 
 bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& releaseFile)
 {
-	boost::this_thread::interruption_point();
+	ThreadControl::InterruptionPoint();
 
 	fs::path localFile = installPath / releaseFile.file;
 
@@ -1047,7 +1050,7 @@ bool Updater::CheckLocalFile(const fs::path& installPath, const ReleaseFile& rel
 		}
 
 		// Size is matching, check CRC
-		boost::uint32_t existingCrc = CRC::GetCrcForFile(localFile);
+		uint32_t existingCrc = CRC::GetCrcForFile(localFile);
 
 		if (existingCrc == releaseFile.crc)
 		{
@@ -1079,7 +1082,7 @@ void Updater::PrepareUpdateStep()
 	// Create a download for each of the files
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		// Create a mirrored download
 		DownloadPtr download(new MirrorDownload(_conn, _mirrors, i->second.file.string(), targetPath / i->second.file));
@@ -1105,7 +1108,7 @@ void Updater::PerformUpdateStep()
 	while (_downloadManager->HasPendingDownloads())
 	{
 		// For catching terminations
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		_downloadManager->ProcessDownloads();
 
@@ -1134,7 +1137,7 @@ void Updater::PerformUpdateStep()
 	// Check if any ZIP files have been downloaded, these need to be extracted
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		DownloadPtr download = _downloadManager->GetDownload(i->second.downloadId);
 
@@ -1161,7 +1164,7 @@ void Updater::NotifyFullUpdateProgress()
 
 	for (ReleaseFileSet::iterator i = _downloadQueue.begin(); i != _downloadQueue.end(); ++i)
 	{
-		boost::this_thread::interruption_point();
+		ThreadControl::InterruptionPoint();
 
 		if (i->second.downloadId == -1)
 		{
@@ -1214,7 +1217,7 @@ void Updater::NotifyDownloadProgress()
 		info.downloadSpeed = curDownload->GetDownloadSpeed();
 		info.downloadedBytes = curDownload->GetDownloadedBytes();
 
-		MirrorDownloadPtr mirrorDownload = boost::dynamic_pointer_cast<MirrorDownload>(curDownload);
+		MirrorDownloadPtr mirrorDownload = std::dynamic_pointer_cast<MirrorDownload>(curDownload);
 
 		if (mirrorDownload != NULL)
 		{

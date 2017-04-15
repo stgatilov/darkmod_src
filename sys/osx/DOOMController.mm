@@ -45,15 +45,6 @@ static idStr			modSavepath; // greebo: Added for TDM mission handling
 
 extern	bool	key_overstrikeMode;
 
-#define TEST_FPU_EXCEPTIONS 			\
-FPU_EXCEPTION_INVALID_OPERATION |		\
-FPU_EXCEPTION_DENORMALIZED_OPERAND |	\
-FPU_EXCEPTION_DIVIDE_BY_ZERO |			\
-/* FPU_EXCEPTION_NUMERIC_OVERFLOW |	*/		\
-/* FPU_EXCEPTION_NUMERIC_UNDERFLOW | */		\
-/* FPU_EXCEPTION_INEXACT_RESULT | */		\
-0
-
 #define kRegKey @"RegCode"
 
 static const ControlID	kRegCode1EditText =	{ 'RegC', 1 };
@@ -500,110 +491,6 @@ const char *Sys_GetProcessorString( void ) {
 
 /*
 ===============
-Sys_FPU_EnableExceptions
-http://developer.apple.com/documentation/mac/PPCNumerics/PPCNumerics-154.html
-http://developer.apple.com/documentation/Performance/Conceptual/Mac_OSX_Numerics/Mac_OSX_Numerics.pdf
-===============
-*/
-
-#define fegetenvd(x) asm volatile( "mffs %0" : "=f" (x) );
-#define fesetenvd(x) asm volatile( "mtfsf 255,%0" : : "f" (x) ); 
-enum {
-	FE_ENABLE_INEXACT		= 0x8,
-	FE_ENABLE_DIVBYZERO		= 0x10,
-	FE_ENABLE_UNDERFLOW		= 0x20,
-	FE_ENABLE_OVERFLOW		= 0x40,
-	FE_ENABLE_INVALID		= 0x80,
-	FE_ENABLE_ALL_EXCEPT	= 0xF8
-};
-
-typedef union {
-	struct {
-		unsigned long hi;
-		unsigned long lo;
-	} i;
-	double d;
-} hexdouble;
-
-static int exception_mask = 0;
-
-void Sys_FPU_EnableExceptions( int exceptions ) {
-#if 0
-	if ( exceptions & ( FPU_EXCEPTION_INVALID_OPERATION | FPU_EXCEPTION_DENORMALIZED_OPERAND ) ) {
-		// clear the flag before enabling the exception
-		asm( "mtfsb0 2" );
-		asm( "mtfsb0 7" );
-		asm( "mtfsb0 8" );
-		asm( "mtfsb0 9" );
-		asm( "mtfsb0 10" );
-		asm( "mtfsb0 11" );
-		asm( "mtfsb0 12" );
-		asm( "mtfsb0 21" );
-		asm( "mtfsb0 22" );
-		asm( "mtfsb0 23" );
-		// enable
-		asm( "mtfsb1 24" );
-	} else {
-		asm( "mtfsb0 24" );
-	}
-	if ( exceptions & FPU_EXCEPTION_DIVIDE_BY_ZERO ) {
-		asm( "mtfsb0 5" );
-		asm( "mtfsb1 27" );
-	} else {
-		asm( "mtfsb0 27" );
-	}
-	if ( exceptions & FPU_EXCEPTION_NUMERIC_OVERFLOW ) {
-		asm( "mtfsb0 3" );
-		asm( "mtfsb1 25" );
-	} else {
-		asm( "mtfsb0 25" );
-	}
-	if ( exceptions & FPU_EXCEPTION_NUMERIC_UNDERFLOW ) {
-		asm( "mtfsb0 4" );
-		asm( "mtfsb1 26" );
-	} else {
-		asm( "mtfsb0 26" );
-	}
-	if ( exceptions & FPU_EXCEPTION_INEXACT_RESULT ) {
-		asm( "mtfsb0 6" );
-		asm( "mtfsb0 13" );
-		asm( "mtfsb0 14" );
-		asm( "mtfsb1 28" );
-	} else {
-		asm( "mtfsb0 28" );
-	}
-#elif defined(__ppc__)
-	hexdouble t;
-	exception_mask = 0;
-	if ( exceptions & ( FPU_EXCEPTION_INVALID_OPERATION | FPU_EXCEPTION_DENORMALIZED_OPERAND ) ) {
-		exception_mask |= FE_ENABLE_INVALID;
-	}
-	if ( exceptions & FPU_EXCEPTION_DIVIDE_BY_ZERO ) {
-		exception_mask |= FE_ENABLE_DIVBYZERO;
-	}
-	if ( exceptions & FPU_EXCEPTION_NUMERIC_OVERFLOW ) {
-		exception_mask |= FE_ENABLE_OVERFLOW;
-	}
-	if ( exceptions & FPU_EXCEPTION_NUMERIC_UNDERFLOW ) {
-		exception_mask |= FE_ENABLE_UNDERFLOW;
-	}
-	if ( exceptions & FPU_EXCEPTION_INEXACT_RESULT ) {
-		exception_mask |= FE_ENABLE_INVALID;
-	}
-	Sys_Printf( "Sys_FPUEnableExceptions: 0x%x\n", exception_mask );
-	// clear the exception flags
-	feclearexcept( FE_ALL_EXCEPT );
-	// set the enable flags on the exceptions we want
-	fegetenvd( t.d );
-	t.i.lo &= ~FE_ENABLE_ALL_EXCEPT;
-	t.i.lo |= exception_mask;
-	fesetenvd( t.d );
-	Sys_Printf( "done\n" );
-#endif
-}
-
-/*
-===============
 Sys_FPE_handler
 ===============
 */
@@ -999,13 +886,15 @@ static OSErr DoRegCodeDialog( char* ioRegCode1 )
 Sys_AsyncThread
 =================
 */
-void Sys_AsyncThread( void ) {
+THREAD_RETURN_TYPE Sys_AsyncThread( void* ) {
 	while ( 1 ) {
 		usleep( 16666 );
 		common->Async();
 		Sys_TriggerEvent( TRIGGER_EVENT_ONE );
 		pthread_testcancel();
 	}
+
+    return (THREAD_RETURN_TYPE) 0;
 }
 
 

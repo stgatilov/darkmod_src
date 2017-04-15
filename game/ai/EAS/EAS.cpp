@@ -106,7 +106,7 @@ void tdmEAS::SetupClusterInfoStructures()
 		//const aasCluster_t& cluster = _aas->file->GetCluster(static_cast<int>(i));
 		
 		_clusterInfo[i] = ClusterInfoPtr(new ClusterInfo);
-		_clusterInfo[i]->clusterNum = i;
+        _clusterInfo[i]->clusterNum = static_cast<int>(i);
 		// Make sure each ClusterInfo structure can hold RouteInfo pointers to every other cluster
 		_clusterInfo[i]->routeToCluster.resize(_clusterInfo.size());
 	}
@@ -270,7 +270,7 @@ void tdmEAS::SetupRoutesBetweenClusters()
 
 	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
 	{
-		int startArea = _aas->GetAreaInCluster(startCluster);
+        int startArea = _aas->GetAreaInCluster(static_cast<int>(startCluster));
 
 		if (startArea <= 0)
 		{
@@ -287,7 +287,7 @@ void tdmEAS::SetupRoutesBetweenClusters()
 
 	for ( std::size_t startCluster = 0 ; startCluster < _clusterInfo.size() ; startCluster++ )
 	{
-		int startArea = _aas->GetAreaInCluster(startCluster);
+        int startArea = _aas->GetAreaInCluster(static_cast<int>(startCluster));
 
 		if (startArea <= 0)
 		{
@@ -306,14 +306,14 @@ void tdmEAS::SetupRoutesBetweenClusters()
 				continue;
 			}
 
-			int goalArea = _aas->GetAreaInCluster(goalCluster);
+            int goalArea = _aas->GetAreaInCluster(static_cast<int>(goalCluster));
 			if ( goalArea <= 0 )
 			{
 				continue;
 			}
 			
 			_routingIterations = 0;
-			FindRoutesToCluster(startCluster, startArea, goalCluster, goalArea);
+            FindRoutesToCluster(static_cast<int>(startCluster), startArea, static_cast<int>(goalCluster), goalArea);
 		}
 
 		common->PacifierUpdate(LOAD_KEY_ROUTING_INTERIM,(int)startCluster + 1); // grayman #3763
@@ -353,7 +353,7 @@ void tdmEAS::SortRoutes()
 	{
 		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
 		{
-			SortRoute(startCluster, goalCluster);
+            SortRoute(static_cast<int>(startCluster), static_cast<int>(goalCluster));
 		}
 	}
 }
@@ -416,7 +416,7 @@ void tdmEAS::CondenseRouteInfo()
 	{
 		for (std::size_t goalCluster = 0; goalCluster < _clusterInfo[startCluster]->routeToCluster.size(); goalCluster++)
 		{
-			CleanRouteInfo(startCluster, goalCluster);
+            CleanRouteInfo(static_cast<int>(startCluster), static_cast<int>(goalCluster));
 		}
 	}
 }

@@ -11,9 +11,9 @@
 # 
 # Project: The Dark Mod (http://www.thedarkmod.com/)
 # 
-# $Revision: 5572 $ (Revision of last commit) 
-# $Date: 2012-09-18 01:35:30 +0930 (Tue, 18 Sep 2012) $ (Date of last commit)
-# $Author: greebo $ (Author of last commit)
+# $Revision$ (Revision of last commit) 
+# $Date$ (Date of last commit)
+# $Author$ (Author of last commit)
 # 
 #*****************************************************************************
 
@@ -23,6 +23,8 @@ Import( 'GLOBALS' )
 Import( GLOBALS )
 
 libpng_string = ' \
+	pngwtran.c \
+	pngwutil.c \
 	png.c \
 	pngerror.c \
 	pngget.c \
@@ -35,10 +37,7 @@ libpng_string = ' \
 	pngset.c \
 	pngtrans.c \
 	pngwio.c \
-	pngwrite.c \
-	pngwtran.c \
-	pngwutil.c'
-
+	pngwrite.c'
 
 libpng_list = scons_utils.BuildList( '', libpng_string )
 

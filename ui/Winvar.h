@@ -23,7 +23,7 @@
 #include "Rectangle.h"
 
 static const char *VAR_GUIPREFIX = "gui::";
-static const int VAR_GUIPREFIX_LEN = strlen(VAR_GUIPREFIX);
+static const int VAR_GUIPREFIX_LEN = static_cast<int>(strlen(VAR_GUIPREFIX));
 
 class idWindow;
 class idWinVar {

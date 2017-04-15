@@ -166,7 +166,7 @@ int Map_GetUniqueEntityID(const char *prefix, const char *eclass) {
 				} else {
 					buf = va("%s_", eclass);
 				}
-				int			len = strlen(buf);
+                int			len = static_cast<int>(strlen(buf));
 				if ( idStr::Cmpn(name, buf, len) == 0 ) {
 					int j = atoi(name + len);
 					if (j > id) {
@@ -650,7 +650,7 @@ bool Map_SaveFile(const char *filename, bool use_region, bool autosave) {
 	brush_t		*b;
 	idStr status;
 
-	int len = strlen(filename);
+    int len = static_cast<int>(strlen(filename));
 	WIN32_FIND_DATA FileData;
 	if (FindFirstFile(filename, &FileData) != INVALID_HANDLE_VALUE) { 
 		// the file exists;

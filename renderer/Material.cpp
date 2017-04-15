@@ -23,6 +23,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
+#include "CinematicFFMpeg.h"
 
 /*
 
@@ -1190,7 +1191,6 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ts->cinematic->InitFromFile( token.c_str(), loop );
 			continue;
 		}
-
 		else if ( !token.Icmp( "soundmap" ) ) {
 			if ( !src.ReadToken( &token ) ) {
 				common->Warning( "missing parameter for 'soundmap' keyword in material '%s'", GetName() );
@@ -1699,7 +1699,7 @@ void idMaterial::AddImplicitStages( const textureRepeat_t trpDefault /* = TR_REP
 
 	if ( !hasBump ) {
 		idStr::snPrintf( buffer, sizeof( buffer ), "blend bumpmap\nmap _flat\n}\n" );
-		newSrc.LoadMemory( buffer, strlen(buffer), "bumpmap" );
+        newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "bumpmap");
 		newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 		ParseStage( newSrc, trpDefault );
 		newSrc.FreeSource();
@@ -2000,7 +2000,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( !token.Icmp( "diffusemap" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::snPrintf( buffer, sizeof( buffer ), "blend diffusemap\nmap %s\n}\n", str );
-			newSrc.LoadMemory( buffer, strlen(buffer), "diffusemap" );
+            newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "diffusemap");
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();
@@ -2010,7 +2010,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( !token.Icmp( "specularmap" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::snPrintf( buffer, sizeof( buffer ), "blend specularmap\nmap %s\n}\n", str );
-			newSrc.LoadMemory( buffer, strlen(buffer), "specularmap" );
+            newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "specularmap");
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();
@@ -2020,7 +2020,7 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 		else if ( !token.Icmp( "bumpmap" ) ) {
 			str = R_ParsePastImageProgram( src );
 			idStr::snPrintf( buffer, sizeof( buffer ), "blend bumpmap\nmap %s\n}\n", str );
-			newSrc.LoadMemory( buffer, strlen(buffer), "bumpmap" );
+            newSrc.LoadMemory(buffer, static_cast<int>(strlen(buffer)), "bumpmap");
 			newSrc.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 			ParseStage( newSrc, trpDefault );
 			newSrc.FreeSource();

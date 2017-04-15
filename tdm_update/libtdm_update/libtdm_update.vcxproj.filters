@@ -48,6 +48,7 @@
     <ClCompile Include="SvnClientImpl.cpp" />
     <ClCompile Include="TraceLog.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="ThreadControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Http\Download.h">
@@ -115,5 +116,6 @@
     <ClInclude Include="UpdatePackage.h" />
     <ClInclude Include="UpdatePackageInfo.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="ThreadControl.h" />
   </ItemGroup>
 </Project>

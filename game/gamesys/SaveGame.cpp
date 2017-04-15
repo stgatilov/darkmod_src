@@ -192,9 +192,8 @@ void idSaveGame::WriteSignedChar( const signed char value ) {
 }
 
 void idSaveGame::WriteString( const char *string ) {
-	int len;
-
-	len = strlen( string );
+	
+    int len = static_cast<int>(strlen(string));
 	WriteInt( len );
     Write( string, len );
 }
@@ -1160,8 +1159,8 @@ void idSaveGame::Write##name_type (const cpp_type value)					\
 		file->Write##name_type(value);										\
 }
 
-DEFINE_READWRITE_PRIMITIVE(int, Int, Long)
-DEFINE_READWRITE_PRIMITIVE(unsigned int, UnsignedInt, Long)
+DEFINE_READWRITE_PRIMITIVE(int, Int, Int)
+DEFINE_READWRITE_PRIMITIVE(unsigned int, UnsignedInt, Int)
 DEFINE_READWRITE_PRIMITIVE(short, Short, Short)
 DEFINE_READWRITE_PRIMITIVE(char, Char, Char)
 DEFINE_READWRITE_PRIMITIVE(unsigned char, UnsignedChar, Char)

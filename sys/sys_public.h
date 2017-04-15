@@ -32,16 +32,23 @@
 // Win32
 #if defined(WIN32) || defined(_WIN32)
 
+#ifdef _WIN64
+#define	BUILD_STRING					"win-x64"
+#define	CPUSTRING						"x64"
+#else
 #define	BUILD_STRING					"win-x86"
-#define BUILD_OS_ID						0
 #define	CPUSTRING						"x86"
+#endif
+
+#define BUILD_OS_ID						0
+
 #define CPU_EASYARGS					1
 
 #define ALIGN16( x )					__declspec(align(16)) x
 #define ALIGNTYPE16						__declspec(align(16)) // anon
 #define PACKED
 
-#define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
@@ -56,6 +63,12 @@
 //anon end
 
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
+
+#define THREAD_RETURN_TYPE unsigned long
+
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#define ID_LITTLE_ENDIAN			1
+#endif
 
 #endif
 
@@ -83,7 +96,7 @@
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
@@ -97,17 +110,24 @@
 #define ID_INLINE_EXTERN				extern inline //anon
 #define assertmem( x, y )
 
+#define THREAD_RETURN_TYPE				void *
+
 #endif
 
 
 // Linux
 #ifdef __linux__
 
+#define BUILD_OS_ID					2
+
 #ifdef __i386__
 	#define	BUILD_STRING				"linux-x86"
-	#define BUILD_OS_ID					2
 	#define CPUSTRING					"x86"
 	#define CPU_EASYARGS				1
+#elif defined(__x86_64__)
+	#define	BUILD_STRING				"linux-x86_64"
+	#define CPUSTRING					"x64"
+	#define CPU_EASYARGS				0
 #elif defined(__ppc__)
 	#define	BUILD_STRING				"linux-ppc"
 	#define CPUSTRING					"ppc"
@@ -115,7 +135,7 @@
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define ALIGN16( x )					x
 #define ALIGNTYPE16						 // anon
@@ -132,12 +152,34 @@
 
 #define assertmem( x, y )
 
+#define THREAD_RETURN_TYPE				void *
+
+#endif
+
+#if !defined(ID_LITTLE_ENDIAN) && !defined(ID_BIG_ENDIAN)
+	#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__)
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			#define ID_LITTLE_ENDIAN
+		#endif
+	#elif defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
+		#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			#define ID_BIG_ENDIAN
+		#endif
+	#endif
+#endif
+
+#if !defined(ID_LITTLE_ENDIAN) && !defined(ID_BIG_ENDIAN)
+	#if defined(__i386__) || defined(__x86_64__)
+		#define ID_LITTLE_ENDIAN		1
+	#elif defined(__ppc__)
+		#define ID_BIG_ENDIAN			1
+	#endif
 #endif
 
 #ifdef __GNUC__
 #define id_attribute(x) __attribute__(x)
 #else
-#define id_attribute(x)  
+#define id_attribute(x)
 #endif
 
 typedef enum {
@@ -157,21 +199,6 @@ typedef enum {
 	CPUID_FTZ							= 0x04000,	// Flush-To-Zero mode (denormal results are flushed to zero)
 	CPUID_DAZ							= 0x08000	// Denormals-Are-Zero mode (denormal source operands are set to zero)
 } cpuid_t;
-
-typedef enum {
-	FPU_EXCEPTION_INVALID_OPERATION		= 1,
-	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 2,
-	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 4,
-	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 8,
-	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 16,
-	FPU_EXCEPTION_INEXACT_RESULT		= 32
-} fpuExceptions_t;
-
-typedef enum {
-	FPU_PRECISION_SINGLE				= 0,
-	FPU_PRECISION_DOUBLE				= 1,
-	FPU_PRECISION_DOUBLE_EXTENDED		= 2
-} fpuPrecision_t;
 
 typedef enum {
 	FPU_ROUNDING_TO_NEAREST				= 0,
@@ -221,8 +248,6 @@ typedef struct sysEvent_s {
 	void *			evPtr;				// this must be manually freed if not NULL
 } sysEvent_t;
 
-typedef unsigned long address_t;
-
 template<class type> class idList;		// for Sys_ListFiles
 
 
@@ -230,8 +255,6 @@ void			Sys_Init( void );
 void			Sys_Shutdown( void );
 void			Sys_Error( const char *error, ...);
 void			Sys_Quit( void );
-
-bool			Sys_AlreadyRunning( void );
 
 // note that this isn't journaled...
 char *			Sys_GetClipboardData( void );
@@ -264,23 +287,8 @@ double			Sys_ClockTicksPerSecond( void );
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
 
-// returns true if the FPU stack is empty
-bool			Sys_FPU_StackIsEmpty( void );
-
-// empties the FPU stack
-void			Sys_FPU_ClearStack( void );
-
-// returns the FPU state as a string
-const char *	Sys_FPU_GetState( void );
-
-// enables the given FPU exceptions
-void			Sys_FPU_EnableExceptions( int exceptions );
-
-// sets the FPU precision
-void			Sys_FPU_SetPrecision( int precision );
-
-// sets the FPU rounding mode
-void			Sys_FPU_SetRounding( int rounding );
+// sets the FPU precision to double
+void			Sys_FPU_SetPrecision();
 
 // sets Flush-To-Zero mode (only available when CPUID_FTZ is set)
 void			Sys_FPU_SetFTZ( bool enable );
@@ -304,24 +312,17 @@ bool			Sys_UnlockMemory( void *ptr, int bytes );
 // set amount of physical work memory
 void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
 
-// allows retrieving the call stack at execution points
-void			Sys_GetCallStack( address_t *callStack, const int callStackSize );
-const char *	Sys_GetCallStackStr( const address_t *callStack, const int callStackSize );
-const char *	Sys_GetCallStackCurStr( int depth );
-const char *	Sys_GetCallStackCurAddressStr( int depth );
-void			Sys_ShutdownSymbols( void );
-
 // DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
-int				Sys_DLL_Load( const char *dllName );
-void *			Sys_DLL_GetProcAddress( int dllHandle, const char *procName );
-void			Sys_DLL_Unload( int dllHandle );
+uintptr_t		Sys_DLL_Load(const char *dllName);
+void *			Sys_DLL_GetProcAddress(uintptr_t dllHandle, const char *procName);
+void			Sys_DLL_Unload(uintptr_t dllHandle);
 
 // event generation
 void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
 void			Sys_ClearEvents( void );
 
-// input is tied to windows, so it needs to be started up and shut down whenever 
+// input is tied to windows, so it needs to be started up and shut down whenever
 // the main window is recreated
 void			Sys_InitInput( void );
 void			Sys_ShutdownInput( void );
@@ -465,7 +466,7 @@ void			Sys_ShutdownNetworking( void );
 ==============================================================
 */
 
-typedef unsigned int (*xthread_t)( void * );
+typedef THREAD_RETURN_TYPE (*xthread_t)( void * );
 
 typedef enum {
 	THREAD_NORMAL,
@@ -475,8 +476,8 @@ typedef enum {
 
 typedef struct {
 	const char *	name;
-	int				threadHandle;
-	unsigned long	threadId;
+	intptr_t		threadHandle;
+    unsigned long	threadId;
 } xthreadInfo;
 
 const int MAX_THREADS				= 10;
@@ -489,7 +490,7 @@ void				Sys_DestroyThread( xthreadInfo& info ); // sets threadHandle back to 0
 // find the name of the calling thread
 // if index != NULL, set the index in g_threads array (use -1 for "main" thread)
 const char *		Sys_GetThreadName( int *index = 0 );
- 
+
 const int MAX_CRITICAL_SECTIONS		= 4;
 
 enum {
@@ -531,24 +532,15 @@ public:
 	virtual double			ClockTicksPerSecond( void ) = 0;
 	virtual cpuid_t			GetProcessorId( void ) = 0;
 	virtual const char *	GetProcessorString( void ) = 0;
-	virtual const char *	FPU_GetState( void ) = 0;
-	virtual bool			FPU_StackIsEmpty( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
-
-	virtual void			FPU_EnableExceptions( int exceptions ) = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;
 
-	virtual void			GetCallStack( address_t *callStack, const int callStackSize ) = 0;
-	virtual const char *	GetCallStackStr( const address_t *callStack, const int callStackSize ) = 0;
-	virtual const char *	GetCallStackCurStr( int depth ) = 0;
-	virtual void			ShutdownSymbols( void ) = 0;
-
-	virtual int				DLL_Load( const char *dllName ) = 0;
-	virtual void *			DLL_GetProcAddress( int dllHandle, const char *procName ) = 0;
-	virtual void			DLL_Unload( int dllHandle ) = 0;
+    virtual uintptr_t		DLL_Load(const char *dllName) = 0;
+    virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) = 0;
+    virtual void			DLL_Unload(uintptr_t dllHandle) = 0;
 	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) = 0;
 
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) = 0;
@@ -559,8 +551,5 @@ public:
 };
 
 extern idSys *				sys;
-
-bool Sys_LoadOpenAL( void );
-void Sys_FreeOpenAL( void );
 
 #endif /* !__SYS_PUBLIC__ */

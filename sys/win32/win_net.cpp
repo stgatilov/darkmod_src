@@ -397,8 +397,8 @@ void NET_OpenSocks( int port ) {
 		int		plen;
 
 		// build the request
-		ulen = strlen( net_socksUsername.GetString() );
-		plen = strlen( net_socksPassword.GetString() );
+		ulen = static_cast<int>(strlen( net_socksUsername.GetString() ));
+		plen = static_cast<int>(strlen( net_socksPassword.GetString() ));
 
 		buf[0] = 1;		// username/password authentication version
 		buf[1] = ulen;

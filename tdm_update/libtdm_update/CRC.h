@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <cstdio>
+#include <cstdint>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -46,9 +47,9 @@ namespace tdm
 class CRC
 {
 public:
-	static boost::uint32_t ParseFromString(const std::string& hexaStr)
+	static uint32_t ParseFromString(const std::string& hexaStr)
 	{
-		boost::uint32_t out;
+		uint32_t out;
 
 		std::stringstream ss;
 
@@ -66,7 +67,7 @@ public:
 		return out;
 	}
 
-	static std::string ToString(boost::uint32_t crc)
+	static std::string ToString(uint32_t crc)
 	{
 		return (boost::format("%x") % crc).str();
 	}
@@ -77,7 +78,7 @@ public:
 	 *
 	 * @throws: std::runtime_error if something goes wrong.
 	 */
-	static boost::uint32_t GetCrcForFile(const fs::path& file)
+	static uint32_t GetCrcForFile(const fs::path& file)
 	{
 		try
 		{
@@ -105,14 +106,14 @@ public:
 	// It fails to produce the same CRC as the one found in the ZIP archives
 	// See http://modetwo.net/darkmod/index.php?/topic/11473-problem-with-crcs-and-the-updater/
 
-	static boost::uint32_t GetCrcForNonZipFileOld(const fs::path& file)
+	static uint32_t GetCrcForNonZipFileOld(const fs::path& file)
 	{
 		// Open the file for reading
 		FILE* fh = fopen(file.string().c_str(), "rb");
 
 		if (fh == NULL) throw std::runtime_error("Could not open file: " + file.string());
 
-		boost::uint32_t crc = 0;
+		uint32_t crc = 0;
 		
 		while (true)
 		{
@@ -141,14 +142,14 @@ public:
 		return crc;
 	}
 	
-	static boost::uint32_t GetCrcForNonZipFile(const fs::path& file)
+	static uint32_t GetCrcForNonZipFile(const fs::path& file)
 	{
 		// Open the file for reading
 		FILE* fh = fopen(file.string().c_str(), "rb");
 
 		if (fh == NULL) throw std::runtime_error("Could not open file: " + file.string());
 
-		boost::uint32_t crc = 0;
+		uint32_t crc = 0;
 		boost::crc_32_type processor;
 		
 		while (true)
@@ -176,14 +177,14 @@ public:
 		return crc;
 	}
 
-	static boost::uint32_t GetCrcForZip(const fs::path& file)
+	static uint32_t GetCrcForZip(const fs::path& file)
 	{
 		// Open the file for reading
 		ZipFileReadPtr zipFile = Zip::OpenFileRead(file);
 
 		if (zipFile == NULL) throw std::runtime_error("Could not open ZIP file: " + file.string());
 
-		boost::uint32_t crc = zipFile->GetCumulativeCrc();
+		uint32_t crc = zipFile->GetCumulativeCrc();
 
 		TraceLog::WriteLine(LOG_VERBOSE, "CRC calculated for zip file " + file.string() + " = " + (boost::format("%x") % crc).str());
 

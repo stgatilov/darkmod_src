@@ -91,7 +91,7 @@ HttpRequestPtr HttpConnection::CreateRequest(const std::string& url, const std::
 void HttpConnection::AddBytesDownloaded(std::size_t bytes)
 {
 	// Make sure only one thread is accessing the counter at a time
-	boost::mutex::scoped_lock lock(_bytesDownloadedMutex);
+	std::lock_guard<std::mutex> lock(_bytesDownloadedMutex);
 
 	_bytesDownloaded += bytes;
 }

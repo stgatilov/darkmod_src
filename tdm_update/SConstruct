@@ -143,6 +143,8 @@ BASECPPFLAGS.append( BASEFLAGS )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
+# Use C++11 features
+BASECPPFLAGS.append( '-std=c++11' )
 
 # Don't throw warnings for unknown pragmas (used by VC++)
 BASECPPFLAGS.append('-Wno-unknown-pragmas')

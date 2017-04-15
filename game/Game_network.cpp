@@ -170,7 +170,7 @@ void idGameLocal::ServerSendDeclRemapToClient( int clientNum, declType_t type, i
 	outMsg.BeginWriting();
 	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_REMAP_DECL );
 	outMsg.WriteByte( type );
-	outMsg.WriteLong( index );
+	outMsg.WriteInt( index );
 	outMsg.WriteString( decl->GetName() );
 	networkSystem->ServerSendReliableMessage( clientNum, outMsg );
 }
@@ -315,7 +315,7 @@ void idGameLocal::ServerClientBegin( int clientNum ) {
 	outMsg.BeginWriting();
 	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_SPAWN_PLAYER );
 	outMsg.WriteByte( clientNum );
-	outMsg.WriteLong( spawnIds[ clientNum ] );
+	outMsg.WriteInt( spawnIds[ clientNum ] );
 	networkSystem->ServerSendReliableMessage( -1, outMsg );
 }
 
@@ -378,7 +378,7 @@ void idGameLocal::ServerWriteInitialReliableMessages( int clientNum ) {
 		outMsg.BeginWriting( );
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_SPAWN_PLAYER );
 		outMsg.WriteByte( i );
-		outMsg.WriteLong( spawnIds[ i ] );
+		outMsg.WriteInt( spawnIds[ i ] );
 		networkSystem->ServerSendReliableMessage( clientNum, outMsg );
 	}
 
@@ -389,7 +389,7 @@ void idGameLocal::ServerWriteInitialReliableMessages( int clientNum ) {
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_EVENT );
 		outMsg.WriteBits( event->spawnId, 32 );
 		outMsg.WriteByte( event->event );
-		outMsg.WriteLong( event->time );
+		outMsg.WriteInt( event->time );
 		outMsg.WriteBits( event->paramsSize, idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
 		if ( event->paramsSize ) {
 			outMsg.WriteData( event->paramsBuf, event->paramsSize );
@@ -403,7 +403,7 @@ void idGameLocal::ServerWriteInitialReliableMessages( int clientNum ) {
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.BeginWriting();
 	outMsg.WriteByte( GAME_RELIABLE_MESSAGE_PORTALSTATES );
-	outMsg.WriteLong( numPortals );
+	outMsg.WriteInt( numPortals );
 	for ( i = 0; i < numPortals; i++ ) {
 		outMsg.WriteBits( gameRenderWorld->GetPortalState( (qhandle_t) (i+1) ) , NUM_RENDER_PORTAL_BITS );
 	}
@@ -586,7 +586,7 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 #if ASYNC_WRITE_TAGS
 	idRandom tagRandom;
 	tagRandom.SetSeed( random.RandomInt() );
-	msg.WriteLong( tagRandom.GetSeed() );
+	msg.WriteInt( tagRandom.GetSeed() );
 #endif
 
 	// create the snapshot
@@ -637,7 +637,7 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 			snapshot->firstEntityState = newBase;
 
 #if ASYNC_WRITE_TAGS
-			msg.WriteLong( tagRandom.RandomInt() );
+			msg.WriteInt( tagRandom.RandomInt() );
 #endif
 		}
 	}
@@ -648,15 +648,15 @@ void idGameLocal::ServerWriteSnapshot( int clientNum, int sequence, idBitMsg &ms
 #if ASYNC_WRITE_PVS
 	for ( i = 0; i < idEntity::MAX_PVS_AREAS; i++ ) {
 		if ( i < numSourceAreas ) {
-			msg.WriteLong( sourceAreas[ i ] );
+			msg.WriteInt( sourceAreas[ i ] );
 		} else {
-			msg.WriteLong( 0 );
+			msg.WriteInt( 0 );
 		}
 	}
 	gameLocal.pvs.WritePVS( pvsHandle, msg );
 #endif
 	for ( i = 0; i < ENTITY_PVS_SIZE; i++ ) {
-		msg.WriteDeltaLong( clientPVS[clientNum][i], snapshot->pvs[i] );
+		msg.WriteDeltaInt( clientPVS[clientNum][i], snapshot->pvs[i] );
 	}
 
 	// free the PVS
@@ -1005,7 +1005,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 
 #if ASYNC_WRITE_TAGS
 	idRandom tagRandom;
-	tagRandom.SetSeed( msg.ReadLong() );
+	tagRandom.SetSeed( msg.ReadInt() );
 #endif
 
 	// read all entities from the snapshot
@@ -1083,7 +1083,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 		ent->snapshotBits = msg.GetNumBitsRead() - numBitsRead;
 
 #if ASYNC_WRITE_TAGS
-		if ( msg.ReadLong() != tagRandom.RandomInt() ) {
+		if ( msg.ReadInt() != tagRandom.RandomInt() ) {
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "writeGameState" );
 			if ( entityDefNumber >= 0 && entityDefNumber < declManager->GetNumDecls( DECL_ENTITYDEF ) ) {
 				classname = declManager->DeclByIndex( DECL_ENTITYDEF, entityDefNumber, false )->GetName();
@@ -1136,7 +1136,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 		sourceAreas[ i++ ] = 0;
 	}
 	for ( i = 0; i < idEntity::MAX_PVS_AREAS; i++ ) {
-		serverPVS[ i ] = msg.ReadLong();
+		serverPVS[ i ] = msg.ReadInt();
 	}
 	if ( memcmp( sourceAreas, serverPVS, idEntity::MAX_PVS_AREAS * sizeof( int ) ) ) {
 		common->Warning( "client PVS areas != server PVS areas, sequence 0x%x", sequence );
@@ -1152,7 +1152,7 @@ void idGameLocal::ClientReadSnapshot( int clientNum, int sequence, const int gam
 	gameLocal.pvs.ReadPVS( pvsHandle, msg );
 #endif
 	for ( i = 0; i < ENTITY_PVS_SIZE; i++ ) {
-		snapshot->pvs[i] = msg.ReadDeltaLong( clientPVS[clientNum][i] );
+		snapshot->pvs[i] = msg.ReadDeltaInt( clientPVS[clientNum][i] );
 	}
 
 	// add entities in the PVS that haven't changed since the last applied snapshot
@@ -1323,7 +1323,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			char name[MAX_STRING_CHARS];
 
 			type = msg.ReadByte();
-			index = msg.ReadLong();
+			index = msg.ReadInt();
 			msg.ReadString( name, sizeof( name ) );
 
 			const idDecl *decl = declManager->FindType( (declType_t)type, name, false );
@@ -1337,7 +1337,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 		}
 		case GAME_RELIABLE_MESSAGE_SPAWN_PLAYER: {
 			int client = msg.ReadByte();
-			int spawnId = msg.ReadLong();
+			int spawnId = msg.ReadInt();
 			if ( !entities[ client ] ) {
 				SpawnPlayer( client );
 				entities[ client ]->FreeModelDef();
@@ -1371,7 +1371,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			break;
 		}
 		case GAME_RELIABLE_MESSAGE_SOUND_INDEX: {
-			int index = gameLocal.ClientRemapDecl( DECL_SOUND, msg.ReadLong() );
+			int index = gameLocal.ClientRemapDecl( DECL_SOUND, msg.ReadInt() );
 			if ( index >= 0 && index < declManager->GetNumDecls( DECL_SOUND ) ) {
 				const idSoundShader *shader = declManager->SoundByIndex( index );
 				mpGame.PlayGlobalSound( -1, SND_COUNT, shader->GetName() );
@@ -1395,7 +1395,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 
 			event->spawnId = msg.ReadBits( 32 );
 			event->event = msg.ReadByte();
-			event->time = msg.ReadLong();
+			event->time = msg.ReadInt();
 
 			event->paramsSize = msg.ReadBits( idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
 			if ( event->paramsSize ) {
@@ -1442,7 +1442,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			break;
 		}
 		case GAME_RELIABLE_MESSAGE_PORTALSTATES: {
-			int numPortals = msg.ReadLong();
+			int numPortals = msg.ReadInt();
 			assert( numPortals == gameRenderWorld->NumPortals() );
 			for ( int i = 0; i < numPortals; i++ ) {
 				gameRenderWorld->SetPortalState( (qhandle_t) (i+1), msg.ReadBits( NUM_RENDER_PORTAL_BITS ) );
@@ -1450,7 +1450,7 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			break;
 		}
 		case GAME_RELIABLE_MESSAGE_PORTAL: {
-			qhandle_t portal = msg.ReadLong();
+			qhandle_t portal = msg.ReadInt();
 			int blockingBits = msg.ReadBits( NUM_RENDER_PORTAL_BITS );
 			assert( portal > 0 && portal <= gameRenderWorld->NumPortals() );
 			gameRenderWorld->SetPortalState( portal, blockingBits );

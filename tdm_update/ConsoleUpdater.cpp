@@ -19,6 +19,7 @@
 
 #include "ConsoleUpdater.h"
 
+#include <functional>
 #include "Util.h"
 
 namespace tdm
@@ -61,7 +62,7 @@ ConsoleUpdater::ConsoleUpdater(int argc, char* argv[]) :
 	_controller(*this, fs::path(argv[0]).leaf(), _options),
 	_done(false)
 {
-	_abortSignalHandler = boost::bind(&ConsoleUpdater::OnAbort, this, _1);
+	_abortSignalHandler = std::bind(&ConsoleUpdater::OnAbort, this, std::placeholders::_1);
 
 	signal(SIGABRT, AbortSignalHandler);
 	signal(SIGTERM, AbortSignalHandler);
