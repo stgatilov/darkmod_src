@@ -162,7 +162,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -170,7 +170,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -179,7 +179,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -188,7 +188,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -196,7 +196,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -204,7 +204,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Dedicated.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -213,7 +213,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithMemoryLog.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -222,7 +222,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithMemoryLog.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -230,7 +230,7 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -238,33 +238,33 @@
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_WithInlines.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Release.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
-    <Import Project="sys\msvc\properties\Common x86.props" />
+    <Import Project="sys\msvc\properties\Common_x86.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Common.props" />
-    <Import Project="sys\msvc\properties\Common x64.props" />
+    <Import Project="sys\msvc\properties\Common_x64.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Game.props" />
     <Import Project="$(SolutionDir)/sys/msvc/properties/_Debug.props" />
   </ImportGroup>
