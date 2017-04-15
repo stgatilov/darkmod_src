@@ -29,7 +29,7 @@ namespace ai
 #define TASK_WAIT "Wait"
 
 class WaitTask;
-typedef boost::shared_ptr<WaitTask> WaitTaskPtr;
+typedef std::shared_ptr<WaitTask> WaitTaskPtr;
 
 class WaitTask :
 	public Task

@@ -36,7 +36,7 @@ namespace ai
 #define FLEE_DIST_DELTA	 300 // incremental distance to put between you and the threat
 
 class FleeTask;
-typedef boost::shared_ptr<FleeTask> FleeTaskPtr;
+typedef std::shared_ptr<FleeTask> FleeTaskPtr;
 
 class FleeTask :
 	public Task

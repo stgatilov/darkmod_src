@@ -27,18 +27,18 @@
 
 class CStimResponseCollection;
 class CStim;
-typedef boost::shared_ptr<CStim> CStimPtr;
+typedef std::shared_ptr<CStim> CStimPtr;
 class CResponse;
-typedef boost::shared_ptr<CResponse> CResponsePtr;
+typedef std::shared_ptr<CResponse> CResponsePtr;
 class CAbsenceMarker;
 class CObjectiveLocation;
 
 class CInventory;
-typedef boost::shared_ptr<CInventory> CInventoryPtr;
+typedef std::shared_ptr<CInventory> CInventoryPtr;
 class CInventoryItem;
-typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
+typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
 class CInventoryCursor;
-typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
+typedef std::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
 /**
 * This struct defines one entity with an optional offset, count and

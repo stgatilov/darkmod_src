@@ -42,16 +42,16 @@ namespace ai
  */
 template <class Element>
 class Queue :
-	public std::list< boost::shared_ptr<Element> >
+	public std::list< std::shared_ptr<Element> >
 {
 	// Parent list type
-	typedef std::list<boost::shared_ptr<Element> > ListType;
+	typedef std::list<std::shared_ptr<Element> > ListType;
 		
 	// greebo: Don't define data members in a class deriving from an STL container
 	// (std::list destructor is non-virtual)
 
 	// Shortcut typedef
-	typedef boost::shared_ptr<Element> ElementPtr;
+	typedef std::shared_ptr<Element> ElementPtr;
 
 public:
 	/**

@@ -34,7 +34,7 @@ const float PATH_PREDICTION_CONSTANT = 26.0; // Empirically determined for smoot
 											 // turns at any m_maxInterleaveThinkFrames
 
 class PathCornerTask;
-typedef boost::shared_ptr<PathCornerTask> PathCornerTaskPtr;
+typedef std::shared_ptr<PathCornerTask> PathCornerTaskPtr;
 
 class PathCornerTask :
 	public PathTask

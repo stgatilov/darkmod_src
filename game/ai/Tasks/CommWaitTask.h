@@ -29,7 +29,7 @@ namespace ai
 #define TASK_COMM_WAIT "CommWaitTask"
 
 class CommWaitTask;
-typedef boost::shared_ptr<CommWaitTask> CommWaitTaskPtr;
+typedef std::shared_ptr<CommWaitTask> CommWaitTaskPtr;
 
 // A simple silent task, causes the AI to shut up for a while
 class CommWaitTask :

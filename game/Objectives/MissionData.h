@@ -35,7 +35,6 @@
 #include "ObjectiveComponent.h"
 
 #include "../DarkModGlobals.h"
-#include <boost/shared_ptr.hpp>
 #include "MissionStatistics.h"
 
 #include "EMissionResult.h"
@@ -580,6 +579,6 @@ protected:
 	// The team number of the player, needed for the statistics GUI
 	int			m_PlayerTeam;
 }; // CMissionData
-typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
+typedef std::shared_ptr<CMissionData> CMissionDataPtr;
 
 #endif // MISSIONDATA_H

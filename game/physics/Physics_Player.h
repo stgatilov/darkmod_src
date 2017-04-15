@@ -21,7 +21,6 @@
 #ifndef __PHYSICS_PLAYER_H__
 #define __PHYSICS_PLAYER_H__
 
-#include <boost/shared_ptr.hpp>
 
 /*
 ===================================================================================
@@ -88,7 +87,7 @@ enum EMantlePhase
 };
 
 class CForcePush;
-typedef boost::shared_ptr<CForcePush> CForcePushPtr;
+typedef std::shared_ptr<CForcePush> CForcePushPtr;
 
 // The class itself
 class idPhysics_Player : 

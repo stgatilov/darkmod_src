@@ -39,7 +39,7 @@ namespace ai
 #define HANDLE_DOOR_ACCURACY_RUNNING 24  // grayman #3317 - less accuracy when moving faster
 
 class HandleDoorTask;
-typedef boost::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
+typedef std::shared_ptr<HandleDoorTask> HandleDoorTaskPtr;
 
 class HandleDoorTask :
 	public Task

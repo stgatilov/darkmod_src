@@ -22,7 +22,6 @@
 
 #include "precompiled_game.h"
 
-#include <boost/shared_ptr.hpp>
 
 namespace ai {
 
@@ -138,7 +137,7 @@ private:
 	// Tries to convert the string representation of the command into a Type enum value
 	static Type GetType(const idStr& cmdString);
 };
-typedef boost::shared_ptr<ConversationCommand> ConversationCommandPtr;
+typedef std::shared_ptr<ConversationCommand> ConversationCommandPtr;
 
 } // namespace ai
 

@@ -52,7 +52,7 @@ protected:
 	// about the enemy's position
 	void EmitCombatBark(idAI* owner, const idStr& sndName);
 };
-typedef boost::shared_ptr<CombatTask> CombatTaskPtr;
+typedef std::shared_ptr<CombatTask> CombatTaskPtr;
 
 } // namespace ai
 

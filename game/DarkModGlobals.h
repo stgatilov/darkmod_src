@@ -56,7 +56,7 @@ Darkmod LAS
 #include <boost/filesystem.hpp>
 
 class IniFile;
-typedef boost::shared_ptr<IniFile> IniFilePtr;
+typedef std::shared_ptr<IniFile> IniFilePtr;
 
 typedef enum {
 	LT_INIT,

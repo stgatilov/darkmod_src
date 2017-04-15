@@ -31,7 +31,7 @@ namespace ai
 #define TASK_HANDLE_ELEVATOR "HandleElevator"
 
 class HandleElevatorTask;
-typedef boost::shared_ptr<HandleElevatorTask> HandleElevatorTaskPtr;
+typedef std::shared_ptr<HandleElevatorTask> HandleElevatorTaskPtr;
 
 class HandleElevatorTask :
 	public Task

@@ -39,7 +39,7 @@ namespace ai
 #define TASK_GUARD_SPOT "GuardSpot"
 
 class GuardSpotTask;
-typedef boost::shared_ptr<GuardSpotTask> GuardSpotTaskPtr;
+typedef std::shared_ptr<GuardSpotTask> GuardSpotTaskPtr;
 
 class GuardSpotTask :
 	public Task

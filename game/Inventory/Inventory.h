@@ -269,6 +269,6 @@ private:
 	int		m_Jewelry;
 	int		m_Goods;
 };
-typedef boost::shared_ptr<CInventory> CInventoryPtr;
+typedef std::shared_ptr<CInventory> CInventoryPtr;
 
 #endif /* __DARKMOD_INVENTORY_H__ */

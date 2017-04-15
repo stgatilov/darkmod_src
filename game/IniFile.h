@@ -25,13 +25,12 @@
 #include <set>
 #include <istream>
 #include <boost/filesystem.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
 namespace fs = boost::filesystem;
 
 class IniFile;
-typedef boost::shared_ptr<IniFile> IniFilePtr;
+typedef std::shared_ptr<IniFile> IniFilePtr;
 
 class IniFile
 {

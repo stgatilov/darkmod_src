@@ -29,7 +29,7 @@ namespace ai
 #define TASK_RANDOM_TURNING "RandomTurning"
 
 class RandomTurningTask;
-typedef boost::shared_ptr<RandomTurningTask> RandomTurningTaskPtr;
+typedef std::shared_ptr<RandomTurningTask> RandomTurningTaskPtr;
 
 class RandomTurningTask :
 	public Task

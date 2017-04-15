@@ -153,7 +153,7 @@ void CommunicationSubsystem::AddSilence(int duration)
 	if (!_taskQueue.empty())
 	{
 		CommunicationTaskPtr lastCommTask = 
-			boost::dynamic_pointer_cast<CommunicationTask>(_taskQueue.back());
+			std::dynamic_pointer_cast<CommunicationTask>(_taskQueue.back());
 
 		if (lastCommTask != NULL)
 		{
@@ -216,7 +216,7 @@ CommunicationTaskPtr CommunicationSubsystem::GetCurrentCommTask()
 {
 	TaskPtr curTask = GetCurrentTask();
 
-	return curTask ? boost::dynamic_pointer_cast<CommunicationTask>(curTask) : CommunicationTaskPtr();
+	return curTask ? std::dynamic_pointer_cast<CommunicationTask>(curTask) : CommunicationTaskPtr();
 }
 
 int CommunicationSubsystem::GetCurrentPriority()

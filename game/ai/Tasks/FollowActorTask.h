@@ -29,7 +29,7 @@ namespace ai
 #define TASK_FOLLOW_ACTOR "FollowActor"
 
 class FollowActorTask;
-typedef boost::shared_ptr<FollowActorTask> FollowActorTaskPtr;
+typedef std::shared_ptr<FollowActorTask> FollowActorTaskPtr;
 
 class FollowActorTask :
 	public Task

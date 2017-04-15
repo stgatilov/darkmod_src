@@ -52,6 +52,6 @@ public:
 	// Returns true if there is a download already in progress
 	bool DownloadInProgress();
 };
-typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
+typedef std::shared_ptr<CDownloadManager> CDownloadManagerPtr;
 
 #endif /* _MISSION_DOWNLOAD_MANAGER_H_ */

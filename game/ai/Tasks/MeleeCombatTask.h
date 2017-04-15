@@ -29,7 +29,7 @@ namespace ai
 #define TASK_MELEE_COMBAT "MeleeCombat"
 
 class MeleeCombatTask;
-typedef boost::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
+typedef std::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
 
 class MeleeCombatTask :
 	public CombatTask

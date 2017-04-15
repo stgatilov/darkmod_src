@@ -39,7 +39,7 @@ namespace ai
 #define TASK_INVESTIGATE_SPOT "InvestigateSpot"
 
 class InvestigateSpotTask;
-typedef boost::shared_ptr<InvestigateSpotTask> InvestigateSpotTaskPtr;
+typedef std::shared_ptr<InvestigateSpotTask> InvestigateSpotTaskPtr;
 
 class InvestigateSpotTask :
 	public Task

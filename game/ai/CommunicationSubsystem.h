@@ -20,7 +20,6 @@
 #ifndef __AI_COMMUNICATION_SUBSYSTEM_H__
 #define __AI_COMMUNICATION_SUBSYSTEM_H__
 
-#include <boost/shared_ptr.hpp>
 #include <list>
 
 #include "Tasks/CommunicationTask.h"
@@ -81,7 +80,7 @@ protected:
 	// Returns the currently active commtask or NULL if no commtask is active
 	CommunicationTaskPtr GetCurrentCommTask();
 };
-typedef boost::shared_ptr<CommunicationSubsystem> CommunicationSubsystemPtr;
+typedef std::shared_ptr<CommunicationSubsystem> CommunicationSubsystemPtr;
 
 } // namespace ai
 

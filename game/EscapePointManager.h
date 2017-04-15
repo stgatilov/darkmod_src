@@ -21,7 +21,6 @@
 
 #include "precompiled_game.h"
 #include <map>
-#include <boost/shared_ptr.hpp>
 
 #include "EscapePointEvaluator.h"
 
@@ -136,11 +135,11 @@ class CEscapePointManager
 	typedef idList< idEntityPtr<tdmPathFlee> > EscapeEntityList;
 
 	// The pointer-type for the list above
-	typedef boost::shared_ptr<EscapeEntityList> EscapeEntityListPtr;
+	typedef std::shared_ptr<EscapeEntityList> EscapeEntityListPtr;
 
 	// The list of AAS-specific escape points plus shared_ptr typedef.
 	typedef idList<EscapePoint> EscapePointList;
-	typedef boost::shared_ptr<EscapePointList> EscapePointListPtr;
+	typedef std::shared_ptr<EscapePointList> EscapePointListPtr;
 
 	// A map associating an AAS to EscapePointLists.
 	typedef std::map<idAAS*, EscapePointListPtr> AASEscapePointMap;

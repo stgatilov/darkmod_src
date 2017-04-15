@@ -29,7 +29,7 @@ namespace ai
 #define TASK_CHASE_ENEMY_RANGED "ChaseEnemyRanged"
 
 class ChaseEnemyRangedTask;
-typedef boost::shared_ptr<ChaseEnemyRangedTask> ChaseEnemyRangedTaskPtr;
+typedef std::shared_ptr<ChaseEnemyRangedTask> ChaseEnemyRangedTaskPtr;
 
 class ChaseEnemyRangedTask :
 	public Task

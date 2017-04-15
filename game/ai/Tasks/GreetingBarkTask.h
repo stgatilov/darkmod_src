@@ -30,7 +30,7 @@ namespace ai
 #define TASK_GREETING_BARK "GreetingBark"
 
 class GreetingBarkTask;
-typedef boost::shared_ptr<GreetingBarkTask> GreetingBarkTaskPtr;
+typedef std::shared_ptr<GreetingBarkTask> GreetingBarkTaskPtr;
 
 class GreetingBarkTask :
 	public SingleBarkTask

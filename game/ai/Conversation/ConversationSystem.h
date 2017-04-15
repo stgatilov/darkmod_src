@@ -90,7 +90,7 @@ private:
 	// Helper to load a conversation from an entity's spawnargs
 	void LoadConversationEntity(idMapEntity* entity);
 };
-typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
+typedef std::shared_ptr<ConversationSystem> ConversationSystemPtr;
 
 } // namespace ai
 

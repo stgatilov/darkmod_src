@@ -21,10 +21,10 @@
 
 #include "ButtonStateTracker.h"
 class CInventoryItem;
-typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
+typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
 
 class CInventoryWeaponItem;
-typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
+typedef std::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 
 /*
 ===============================================================================

@@ -873,7 +873,7 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* 
 	{
 		// The position of the sound is different from the current search spot, so redefine the goal
 		TaskPtr curTask = owner->searchSubsystem->GetCurrentTask(); // grayman #3857 - switch from action to search 
-		InvestigateSpotTaskPtr investigateSpotTask = boost::dynamic_pointer_cast<InvestigateSpotTask>(curTask);
+		InvestigateSpotTaskPtr investigateSpotTask = std::dynamic_pointer_cast<InvestigateSpotTask>(curTask);
 		if (investigateSpotTask)
 		{
 			investigateSpotTask->SetNewGoal(memory.alertPos); // Redirect the owner to a new position
@@ -882,7 +882,7 @@ bool SearchingState::OnAudioAlert(idStr soundName, bool addFuzziness, idEntity* 
 		}
 		else
 		{
-			GuardSpotTaskPtr guardSpotTask = boost::dynamic_pointer_cast<GuardSpotTask>(curTask);
+			GuardSpotTaskPtr guardSpotTask = std::dynamic_pointer_cast<GuardSpotTask>(curTask);
 			if (guardSpotTask)
 			{
 				guardSpotTask->SetNewGoal(memory.alertPos); // Redirect the owner to a new position

@@ -29,7 +29,7 @@ namespace ai
 #define TASK_WANDER_IN_LOCATION "WanderInLocation"
 
 class WanderInLocationTask;
-typedef boost::shared_ptr<WanderInLocationTask> WanderInLocationTaskPtr;
+typedef std::shared_ptr<WanderInLocationTask> WanderInLocationTaskPtr;
 
 class WanderInLocationTask :
 	public Task

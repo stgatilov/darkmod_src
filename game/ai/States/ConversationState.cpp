@@ -677,7 +677,7 @@ ConversationState::ExecutionState ConversationState::GetConversationStateOfActor
 	if (ai != NULL)
 	{
 		// Get the actor's conversationstate
-		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+		ConversationStatePtr convState = std::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
 		// Get the state and exit
 		return (convState != NULL) ? convState->GetExecutionState() : ENumExecutionStates;

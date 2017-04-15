@@ -142,7 +142,7 @@ public:
 	virtual void Save(idSaveGame* savefile) const;
 	virtual void Restore(idRestoreGame* savefile);
 };
-typedef boost::shared_ptr<Mind> MindPtr;
+typedef std::shared_ptr<Mind> MindPtr;
 
 } // namespace ai
 

@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PLAY_ANIMATION "PlayAnimation"
 
 class PlayAnimationTask;
-typedef boost::shared_ptr<PlayAnimationTask> PlayAnimationTaskPtr;
+typedef std::shared_ptr<PlayAnimationTask> PlayAnimationTaskPtr;
 
 class PlayAnimationTask :
 	public Task

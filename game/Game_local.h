@@ -131,7 +131,6 @@ void gameError( const char *fmt, ... );
 #include "ModMenu.h"
 
 #include <random> // for mersenne twister
-#include <boost/shared_ptr.hpp>
 
 #ifdef __linux__
 #include "../renderer/RenderWorld.h"
@@ -143,48 +142,48 @@ class CLightMaterial;
 class CsndPropLoader;
 class CsndProp;
 class CRelations;
-typedef boost::shared_ptr<CRelations> CRelationsPtr;
+typedef std::shared_ptr<CRelations> CRelationsPtr;
 class CMissionData;
-typedef boost::shared_ptr<CMissionData> CMissionDataPtr;
+typedef std::shared_ptr<CMissionData> CMissionDataPtr;
 class CampaignStats;
-typedef boost::shared_ptr<CampaignStats> CampaignStatsPtr;
+typedef std::shared_ptr<CampaignStats> CampaignStatsPtr;
 class CStimResponse;
-typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
+typedef std::shared_ptr<CStimResponse> CStimResponsePtr;
 class CStim;
-typedef boost::shared_ptr<CStim> CStimPtr;
+typedef std::shared_ptr<CStim> CStimPtr;
 class CStimResponseTimer;
 class CGrabber;
 class CEscapePointManager;
 class CMissionManager;
-typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
+typedef std::shared_ptr<CMissionManager> CMissionManagerPtr;
 class CHttpConnection;
-typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
+typedef std::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 class CInventory;
-typedef boost::shared_ptr<CInventory> CInventoryPtr;
+typedef std::shared_ptr<CInventory> CInventoryPtr;
 
 class CModMenu;
-typedef boost::shared_ptr<CModMenu> CModMenuPtr;
+typedef std::shared_ptr<CModMenu> CModMenuPtr;
 
 class CModelGenerator;
-typedef boost::shared_ptr<CModelGenerator> CModelGeneratorPtr;
+typedef std::shared_ptr<CModelGenerator> CModelGeneratorPtr;
 class ImageMapManager;
-typedef boost::shared_ptr<ImageMapManager> ImageMapManagerPtr;
+typedef std::shared_ptr<ImageMapManager> ImageMapManagerPtr;
 class CLightController;
-typedef boost::shared_ptr<CLightController> CLightControllerPtr;
+typedef std::shared_ptr<CLightController> CLightControllerPtr;
 
 // Forward declare the Conversation System
 namespace ai { 
 	class ConversationSystem;
-	typedef boost::shared_ptr<ConversationSystem> ConversationSystemPtr;
+	typedef std::shared_ptr<ConversationSystem> ConversationSystemPtr;
 } // namespace
 
 class CDownloadMenu;
-typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
+typedef std::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 class CDownloadManager;
-typedef boost::shared_ptr<CDownloadManager> CDownloadManagerPtr;
+typedef std::shared_ptr<CDownloadManager> CDownloadManagerPtr;
 
 class CShop;
-typedef boost::shared_ptr<CShop> CShopPtr;
+typedef std::shared_ptr<CShop> CShopPtr;
 
 class CSearchManager; // grayman #3857
 

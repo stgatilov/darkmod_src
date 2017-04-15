@@ -31,7 +31,6 @@
 
 #include "DarkmodAASHidingSpotFinder.h"
 #include <map>
-#include <boost/shared_ptr.hpp>
 
 //---------------------------------------------------------------------------
 
@@ -55,7 +54,7 @@ private:
 	};
 
 	// Smart pointer typedef
-	typedef boost::shared_ptr<HidingSpotSearchNode> HidingSpotSearchNodePtr;
+	typedef std::shared_ptr<HidingSpotSearchNode> HidingSpotSearchNodePtr;
 
 	// greebo: The array holding all active hiding spot search pointers
 	typedef std::map<int, HidingSpotSearchNodePtr> HidingSpotSearchMap;

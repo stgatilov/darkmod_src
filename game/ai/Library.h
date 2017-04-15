@@ -46,7 +46,7 @@ class Library :
 {
 public:
 	// The shared_ptr type of a registered Element
-	typedef boost::shared_ptr<Element> ElementPtr;
+	typedef std::shared_ptr<Element> ElementPtr;
 
 	// Define the function type to Create an Element Instance
 	typedef boost::function<ElementPtr()> CreateInstanceFunc;

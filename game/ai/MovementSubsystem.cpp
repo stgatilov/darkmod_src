@@ -844,7 +844,7 @@ void MovementSubsystem::ResolveBlock(idEntity* blockingEnt)
 	{
 		const SubsystemPtr& subsys = owner->movementSubsystem;
 		TaskPtr task = subsys->GetCurrentTask();
-		if ( boost::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL )
+		if ( std::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL )
 		{
 			if ( task->CanAbort() ) // let the elevator task finish if in the final stages
 			{

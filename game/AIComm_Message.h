@@ -31,7 +31,6 @@
 #ifndef COMMUNICATION_MESSAGE_HEADER
 #define COMMUNICATION_MESSAGE_HEADER
 
-#include <boost/shared_ptr.hpp>
 #include "StimResponse/StimResponse.h"
 
 namespace ai {
@@ -250,7 +249,7 @@ struct CommMessage
 	*/
 	idVec3 m_positionOfIssuance;
 };
-typedef boost::shared_ptr<CommMessage> CommMessagePtr;
+typedef std::shared_ptr<CommMessage> CommMessagePtr;
 typedef idList<ai::CommMessagePtr> MessageList;
 
 } // namespace ai

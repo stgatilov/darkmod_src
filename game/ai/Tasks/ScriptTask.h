@@ -29,7 +29,7 @@ namespace ai
 #define TASK_SCRIPT "ScriptTask"
 
 class ScriptTask;
-typedef boost::shared_ptr<ScriptTask> ScriptTaskPtr;
+typedef std::shared_ptr<ScriptTask> ScriptTaskPtr;
 
 /** 
  * greebo: A ScriptTask can be plugged into any AI subsystem and

@@ -29,7 +29,7 @@ namespace ai
 #define TASK_IDLE_ANIMATION "IdleAnimation"
 
 class IdleAnimationTask;
-typedef boost::shared_ptr<IdleAnimationTask> IdleAnimationTaskPtr;
+typedef std::shared_ptr<IdleAnimationTask> IdleAnimationTaskPtr;
 
 class IdleAnimationTask :
 	public Task

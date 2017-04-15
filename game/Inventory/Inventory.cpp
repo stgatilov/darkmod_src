@@ -138,14 +138,14 @@ void CInventory::CopyPersistentItemsFrom(const CInventory& sourceInventory, idEn
 			bool addItem = true;
 
 			// Handle weapons separately, otherwise we might end up with duplicate weapon items
-			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+			CInventoryWeaponItemPtr weaponItem = std::dynamic_pointer_cast<CInventoryWeaponItem>(item);
 
 			if (weaponItem && weaponCategory)
 			{
 				// Weapon items need special consideration. For arrow-based weapons try to merge the ammo.
 				for ( int w = 0 ; w < weaponCategory->GetNumItems() ; ++w )
 				{
-					CInventoryWeaponItemPtr thisWeapon = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
+					CInventoryWeaponItemPtr thisWeapon = std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
 
 					if (!thisWeapon)
 					{
@@ -1043,7 +1043,7 @@ CInventoryItemPtr CInventory::ValidateAmmo(idEntity* ent, const bool gotFromShop
 	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
 	{
 		CInventoryWeaponItemPtr weaponItem = 
-			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+			std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		// Is this the right weapon?
 		if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
@@ -1102,7 +1102,7 @@ CInventoryItemPtr CInventory::ValidateWeapon(idEntity* ent, const bool gotFromSh
 	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
 	{
 		CInventoryWeaponItemPtr weaponItem = 
-			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+			std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		// Is this the right weapon? (must be a melee weapon, allowed empty)
 		if (weaponItem != NULL && weaponItem->IsAllowedEmpty() && weaponItem->GetWeaponName() == weaponName)

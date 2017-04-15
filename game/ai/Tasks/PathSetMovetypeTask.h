@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_SET_MOVETYPE "PathSetMovetype"
 
 class PathSetMovetypeTask;
-typedef boost::shared_ptr<PathSetMovetypeTask> PathSetMovetypeTaskPtr;
+typedef std::shared_ptr<PathSetMovetypeTask> PathSetMovetypeTaskPtr;
 
 class PathSetMovetypeTask :
 	public PathTask

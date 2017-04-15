@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_SHOW "PathShow"
 
 class PathShowTask;
-typedef boost::shared_ptr<PathShowTask> PathShowTaskPtr;
+typedef std::shared_ptr<PathShowTask> PathShowTaskPtr;
 
 class PathShowTask :
 	public PathTask

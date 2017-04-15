@@ -13272,7 +13272,7 @@ void idAI::SetLastKilled(idActor *killed)
 bool idAI::SwitchToConversationState(const idStr& conversationName)
 {
 	ai::ConversationStatePtr state = 
-		boost::static_pointer_cast<ai::ConversationState>(ai::ConversationState::CreateInstance());
+		std::static_pointer_cast<ai::ConversationState>(ai::ConversationState::CreateInstance());
 
 	// Convert the name to an index
 	int convIndex = gameLocal.m_ConversationSystem->GetConversationIndex(conversationName);
@@ -13542,7 +13542,7 @@ bool idAI::CanGreet() // grayman #3338
 
 	// grayman #3448 - no greeting if involved in a conversation
 	// grayman #3559 - use simpler method
-/*	ai::ConversationStatePtr convState = boost::dynamic_pointer_cast<ai::ConversationState>(GetMind()->GetState());
+/*	ai::ConversationStatePtr convState = std::dynamic_pointer_cast<ai::ConversationState>(GetMind()->GetState());
 	if (convState != NULL)
 	{
 		return false;
@@ -13652,8 +13652,8 @@ void idAI::Event_PickedPocketSetup2() // grayman #3559
 
 		if ( task != NULL )
 		{
-			if ( ( m_HandlingDoor && ( boost::dynamic_pointer_cast<ai::HandleDoorTask>(task) != NULL ) ) ||
-				 ( m_HandlingElevator && ( boost::dynamic_pointer_cast<ai::HandleElevatorTask>(task) != NULL ) ) )
+			if ( ( m_HandlingDoor && ( std::dynamic_pointer_cast<ai::HandleDoorTask>(task) != NULL ) ) ||
+				 ( m_HandlingElevator && ( std::dynamic_pointer_cast<ai::HandleElevatorTask>(task) != NULL ) ) )
 			{
 				if (task->CanAbort())
 				{

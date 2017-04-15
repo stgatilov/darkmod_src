@@ -22,7 +22,6 @@
 
 #include "ElevatorStationInfo.h"
 #include "RouteInfo.h"
-#include <boost/shared_ptr.hpp>
 
 namespace eas {
 
@@ -98,7 +97,7 @@ struct ClusterInfo
 		}
 	}
 };
-typedef boost::shared_ptr<ClusterInfo> ClusterInfoPtr;
+typedef std::shared_ptr<ClusterInfo> ClusterInfoPtr;
 
 } // namespace eas
 

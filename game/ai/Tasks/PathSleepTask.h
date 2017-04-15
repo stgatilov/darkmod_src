@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_SLEEP "PathSleep"
 
 class PathSleepTask;
-typedef boost::shared_ptr<PathSleepTask> PathSleepTaskPtr;
+typedef std::shared_ptr<PathSleepTask> PathSleepTaskPtr;
 
 class PathSleepTask :
 	public PathTask

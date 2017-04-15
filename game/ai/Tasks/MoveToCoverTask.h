@@ -29,7 +29,7 @@ namespace ai
 #define TASK_MOVE_TO_COVER "MoveToCover"
 
 class MoveToCoverTask;
-typedef boost::shared_ptr<MoveToCoverTask> MoveToCoverTaskPtr;
+typedef std::shared_ptr<MoveToCoverTask> MoveToCoverTaskPtr;
 
 class MoveToCoverTask :
 	public Task

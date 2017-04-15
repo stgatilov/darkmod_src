@@ -22,7 +22,6 @@
 
 #include <list>
 #include <vector>
-#include "boost/shared_ptr.hpp"
 #include "RouteNode.h"
 
 namespace eas {
@@ -57,7 +56,7 @@ struct RouteInfo
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 };
-typedef boost::shared_ptr<RouteInfo> RouteInfoPtr;
+typedef std::shared_ptr<RouteInfo> RouteInfoPtr;
 typedef std::list<RouteInfoPtr> RouteInfoList;
 typedef std::vector<RouteInfoList> RouteInfoListVector;
 

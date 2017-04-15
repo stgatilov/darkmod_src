@@ -20,7 +20,6 @@
 #ifndef __SHOPITEM_H__
 #define	__SHOPITEM_H__
 
-#include <boost/shared_ptr.hpp>
 
 // Represents an item for sale
 class CShopItem
@@ -111,7 +110,7 @@ public:
 	void Save(idSaveGame *savefile) const;
 	void Restore(idRestoreGame *savefile);
 };
-typedef boost::shared_ptr<CShopItem> CShopItemPtr;
+typedef std::shared_ptr<CShopItem> CShopItemPtr;
 
 // A list of shop items
 typedef idList<CShopItemPtr> ShopItemList;
