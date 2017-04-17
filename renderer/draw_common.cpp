@@ -434,6 +434,11 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		bool	didDraw = false;
 
 		//qglEnable( GL_ALPHA_TEST );
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA );
+		qglEnable( GL_VERTEX_PROGRAM_ARB );
+		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
 			pStage = shader->GetStage(stage);
@@ -460,10 +465,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			}
 			qglColor4fv( color );
 
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA );
-			qglEnable( GL_VERTEX_PROGRAM_ARB );
-			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] };
 			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, &parm[0] );
 			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
@@ -478,11 +479,12 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			RB_DrawElementsWithCounters( tri );
 
 			RB_FinishStageTexturing( pStage, surf, ac );
-			qglDisable( GL_VERTEX_PROGRAM_ARB );
-			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 		}
+
 		//qglDisable( GL_ALPHA_TEST );
-		if ( !didDraw ) {
+		qglDisable( GL_VERTEX_PROGRAM_ARB );
+		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+		if (!didDraw) {
 			drawSolid = true;
 		}
 	}
