@@ -360,7 +360,7 @@ void GL_State( const int stateBits ) {
 	}
 
 	// alpha test
-	if ( diff & GLS_ATEST_BITS ) {
+/*	if ( diff & GLS_ATEST_BITS ) {
 		switch ( stateBits & GLS_ATEST_BITS ) {
 		case 0:
 			qglDisable( GL_ALPHA_TEST );
@@ -381,7 +381,7 @@ void GL_State( const int stateBits ) {
 			assert( 0 );
 			break;
 		}
-	}
+	}*/
 
 	backEnd.glState.glStateBits = stateBits;
 }

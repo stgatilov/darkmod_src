@@ -579,6 +579,9 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
+	// duzenko: depth+alpha 
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
 	// additional programs can be dynamically specified in materials
 };
 

@@ -1107,10 +1107,10 @@ const int GLS_DEPTHFUNC_ALWAYS					= 0x00010000;
 const int GLS_DEPTHFUNC_EQUAL					= 0x00020000;
 const int GLS_DEPTHFUNC_LESS					= 0x0;
 
-const int GLS_ATEST_EQ_255						= 0x10000000;
+/*const int GLS_ATEST_EQ_255						= 0x10000000;
 const int GLS_ATEST_LT_128						= 0x20000000;
 const int GLS_ATEST_GE_128						= 0x40000000;
-const int GLS_ATEST_BITS						= 0x70000000;
+const int GLS_ATEST_BITS						= 0x70000000;*/
 
 const int GLS_DEFAULT							= GLS_DEPTHFUNC_ALWAYS;
 
@@ -1433,6 +1433,9 @@ typedef enum {
 	FPROG_BLOOM_GAUSS_BLRY,
 	VPROG_BLOOM_FINAL_PASS,
 	FPROG_BLOOM_FINAL_PASS,
+	// duzenko: ARB shader depth+alpha
+	VPROG_DEPTH_ALPHA,
+	FPROG_DEPTH_ALPHA,
 	// 
 	PROG_USER
 } program_t;
