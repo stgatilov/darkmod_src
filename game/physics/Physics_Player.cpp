@@ -3552,7 +3552,7 @@ void idPhysics_Player::MantleMove()
 	float timeForMantlePhase = GetMantleTimeForPhase(m_mantlePhase);
 
 	// Compute proportion into the current movement phase which we are
-	float timeRatio = 0.0f;
+	float timeRatio = 1.0f;
 
 	if (timeForMantlePhase != 0)
 	{
@@ -3612,6 +3612,15 @@ void idPhysics_Player::MantleMove()
 		newPosition += (idMath::Sin (timeRadians) * rockDistance) * viewRight;
 		viewAngles.roll = idMath::Sin (timeRadians) * rockDistance;
 
+		// stgatilov: set precise values at the very end of animation
+		if (timeRatio == 1.0f)
+		{
+			assert((newPosition - m_mantlePushEndPos).Length() <= 0.1f);
+			newPosition = m_mantlePushEndPos;
+			assert(fabs(viewAngles.roll) <= 0.1f);
+			viewAngles.roll = 0.0f;
+		}
+
 		if (self != NULL)
 		{
 			static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
@@ -3657,7 +3666,7 @@ void idPhysics_Player::UpdateMantleTimers()
 	{
 		idPlayer* player = static_cast<idPlayer*>(self); // grayman #3010
 		// Handle expiring mantle phases
-		while (framemSecLeft >= m_mantleTime && m_mantlePhase != notMantling_DarkModMantlePhase)
+		while (framemSecLeft >= m_mantleTime && m_mantlePhase != notMantling_DarkModMantlePhase && m_mantlePhase != fixClipping_DarkModMantlePhase)
 		{
 			framemSecLeft -= m_mantleTime;
 			m_mantleTime = 0;
@@ -3688,17 +3697,14 @@ void idPhysics_Player::UpdateMantleTimers()
 
 			case push_DarkModMantlePhase:
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("MantleMod: mantle completed\r");
+
+				//stgatilov: finish mantling animation completely (#4435)
+				//(set position of player exactly to the mantle endpoint)
+				MantleMove();
+
 				// check for clipping problems after mantling
 				// will advance to notMantling when the player isn't clipping
 				m_mantlePhase = fixClipping_DarkModMantlePhase;
-
-				// greebo: Reset the viewangle roll to 0 after mantling, sometimes this stays at 0.6 or something
-				viewAngles.roll = 0;
-
-				if (self != NULL)
-				{
-					static_cast<idPlayer*>(self)->SetViewAngles(viewAngles);
-				}
 
 				break;
 
