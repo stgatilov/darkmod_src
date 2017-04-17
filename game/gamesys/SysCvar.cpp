@@ -107,7 +107,7 @@ idCVar cv_ai_opt_update_enemypos_interleave (	"tdm_ai_opt_update_enemypos_interl
 
 idCVar cv_ai_opt_nomind (						"tdm_ai_opt_nomind",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI has its Mind thinking routines disabled." );
 idCVar cv_ai_opt_novisualstim (					"tdm_ai_opt_novisualstim",			"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not process any incoming visual stimuli." );
-idCVar cv_ai_opt_nolipsync (					"tdm_ai_opt_nolipsync",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not play lipsync animations." );
+idCVar cv_ai_opt_nolipsync (					"tdm_ai_opt_nolipsync",				"0",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "If true (nonzero), AI will not play lipsync animations." );
 idCVar cv_ai_opt_nopresent (					"tdm_ai_opt_nopresent",				"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not be presented." );
 idCVar cv_ai_opt_noobstacleavoidance (			"tdm_ai_opt_noobstacleavoidance",	"0",			CVAR_GAME | CVAR_BOOL, "If true (nonzero), AI will not check for obstacles." );
 idCVar cv_ai_hiding_spot_max_light_quotient(	"tdm_ai_hiding_spot_max_light_quotient",	"2.0",	CVAR_GAME | CVAR_FLOAT, "Hiding spot search light quotient." );
