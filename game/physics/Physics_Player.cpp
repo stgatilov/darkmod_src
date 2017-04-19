@@ -1746,7 +1746,9 @@ void idPhysics_Player::CheckGround( void ) {
 		// do something corrective if stuck in solid
 		idPhysics_Player::CorrectAllSolid( groundTrace, contents );
 	}
-	else if ( m_mantlePhase == fixClipping_DarkModMantlePhase )
+	//stgatilov: call hacky method CorrectAllSolid only once per mantle
+	//otherwise, player can start levitating up in a really unlucky case
+	/*else */if ( m_mantlePhase == fixClipping_DarkModMantlePhase )
 	{
 		// the mantle stage can advance to done if we're not currently clipping
 		m_mantlePhase = notMantling_DarkModMantlePhase;
