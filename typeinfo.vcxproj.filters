@@ -7,6 +7,9 @@
     <Filter Include="Framework">
       <UniqueIdentifier>{40a69fce-c497-466a-ad0d-cc5a4293aab0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\minizip">
+      <UniqueIdentifier>{0a7ca3e7-4ec2-4c86-96d0-941f97231625}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TypeInfo\main.cpp">
@@ -27,8 +30,11 @@
     <ClCompile Include="framework\FileSystem.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="framework\Unzip.cpp">
-      <Filter>Framework</Filter>
+    <ClCompile Include="framework\minizip\ioapi.c">
+      <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\minizip\unzip.cpp">
+      <Filter>Framework\minizip</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -52,6 +58,12 @@
     </ClInclude>
     <ClInclude Include="framework\Unzip.h">
       <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\minizip\ioapi.h">
+      <Filter>Framework\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\minizip\unzip.h">
+      <Filter>Framework\minizip</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
