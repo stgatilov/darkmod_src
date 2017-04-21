@@ -1359,6 +1359,31 @@ idFile_InZip::Seek
 #define ZIP_SEEK_BUF_SIZE	(1<<15)
 
 int idFile_InZip::Seek( long offset, fsOrigin_t origin ) {
+	//stgatilov: try to seek using minizip function
+	//this would work very fast if the file is uncompressed
+	//see issue 4504 (and 4507) for reasoning behind this
+
+	//Note: mode constants are different from standard ones!
+	int stdioOrigin = -1;
+	if (origin == FS_SEEK_SET) stdioOrigin = SEEK_SET;
+	if (origin == FS_SEEK_CUR) stdioOrigin = SEEK_CUR;
+	if (origin == FS_SEEK_END) stdioOrigin = SEEK_END;
+
+	if (stdioOrigin == SEEK_CUR && offset == 0)
+		return 0; //noop
+
+	if (stdioOrigin == SEEK_END) {
+		//Note: meaning of offset is non-standard here!
+		offset = -offset;
+	}
+	//try to seek quickly in uncompressed zip:
+	int simpleSeekOk = unzseek64(z, offset, stdioOrigin);
+	if (simpleSeekOk == UNZ_OK)
+		return 0;
+
+	//zip is likely to be compressed, seek slowly then
+	//note that we have to read and decompress all intermediate data
+
 	int res, i;
 	char *buf;
 
