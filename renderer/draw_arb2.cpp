@@ -729,6 +729,26 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 
 /*
 ==================
+R_UseProgram
+
+One liner for qglBindProgramARB+qglEnable frag+vert
+==================
+*/
+void R_UseProgram( int vProg ) {
+	if (vProg == PROG_INVALID) {
+		qglDisable( GL_VERTEX_PROGRAM_ARB );
+		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+	} else {
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, vProg );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, vProg+1 ); // as defined by program_t
+		qglEnable( GL_VERTEX_PROGRAM_ARB );
+		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	}
+
+}
+
+/*
+==================
 R_ReloadARBPrograms_f
 ==================
 */

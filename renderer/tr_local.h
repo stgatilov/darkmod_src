@@ -1440,6 +1440,8 @@ typedef enum {
 	PROG_USER
 } program_t;
 
+void R_UseProgram( int vProg = PROG_INVALID );
+
 /*
 
   All vertex programs use the same constant register layout:

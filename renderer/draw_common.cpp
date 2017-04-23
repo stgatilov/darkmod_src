@@ -434,11 +434,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		bool	didDraw = false;
 
 		//qglEnable( GL_ALPHA_TEST );
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA );
-		qglEnable( GL_VERTEX_PROGRAM_ARB );
-		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-
+		R_UseProgram( VPROG_DEPTH_ALPHA );
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
 			pStage = shader->GetStage(stage);
@@ -465,9 +461,10 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			}
 			qglColor4fv( color );
 
-			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] };
-			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, &parm[0] );
+			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister]};
 			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
+			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] + 0.5 / 255 }; // 4511
+			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, &parm[0] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -482,8 +479,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		}
 
 		//qglDisable( GL_ALPHA_TEST );
-		qglDisable( GL_VERTEX_PROGRAM_ARB );
-		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+		R_UseProgram( );
 		if (!didDraw) {
 			drawSolid = true;
 		}
