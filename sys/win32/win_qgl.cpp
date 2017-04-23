@@ -2103,20 +2103,22 @@ void GLimp_EnableLogging( bool enable ) {
 			struct tm		*newtime;
 			ID_TIME_T			aclock;
 			idStr			qpath;
-			int				i;
+			static int		i = 0;
 			const char		*path;
 
 			initialFrames = r_logFile.GetInteger();
 
 			// scan for an unused filename
-			for ( i = 0 ; i < 9999 ; i++ ) {
+			/*for ( i = 0 ; i < 9999 ; i++ ) {
 				sprintf( qpath, "renderlog_%i.txt", i ); 
 				if ( fileSystem->ReadFile( qpath, NULL, NULL ) == -1 ) {
 					break;		// use this name
 				}
-			}
+			}*/
+			sprintf( qpath, "renderlog_%i.txt", ++i );
 
-			path = fileSystem->RelativePathToOSPath( qpath, "fs_savepath" );
+			//path = fileSystem->RelativePathToOSPath( qpath, "fs_savepath" );
+			path = fileSystem->ModPath() + qpath;
 			idStr::Copynz( ospath, path, sizeof( ospath ) );
 			tr.logFile = fopen( ospath, "wt" );
 
