@@ -25,6 +25,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
+//stgatilov: font dat file always contains exactly this number of bytes
+//note that this size is different from sizeof(fontInfo_t) in x64 mode
+//the data is read from dat file and put field-by-field into font_info_t
+//see method idRenderSystemLocal::RegisterFont for details
 #define FILESIZE_fontInfo_t (20548)
 
 #ifdef BUILD_FREETYPE
