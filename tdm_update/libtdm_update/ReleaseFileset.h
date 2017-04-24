@@ -82,7 +82,7 @@ struct ReleaseFile
 	// A ReleaseFile is equal if filename, size, archive flag, CRC and all members are equal
 	bool operator==(const ReleaseFile& other) const
 	{
-		if (file != other.file || crc != other.crc || filesize != other.filesize || isArchive != isArchive)
+		if (file != other.file || crc != other.crc || filesize != other.filesize || isArchive != other.isArchive)
 		{
 			return false;
 		}
