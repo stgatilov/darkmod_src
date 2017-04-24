@@ -419,7 +419,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 
 	bool drawSolid = false;
 
@@ -434,6 +433,8 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		bool	didDraw = false;
 
 		//qglEnable( GL_ALPHA_TEST );
+		qglEnableVertexAttribArrayARB( 8 );
+		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		R_UseProgram( VPROG_DEPTH_ALPHA );
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
@@ -480,6 +481,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 		//qglDisable( GL_ALPHA_TEST );
 		R_UseProgram( );
+		qglDisableVertexAttribArrayARB( 8 );
 		if (!didDraw) {
 			drawSolid = true;
 		}
@@ -536,7 +538,8 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// the first texture will be used for alpha tested surfaces
 	GL_SelectTexture( 0 );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
