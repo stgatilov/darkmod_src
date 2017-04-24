@@ -42,7 +42,12 @@
 
 #define BUILD_OS_ID						0
 
+#ifdef _WIN64
+//stgatilov: see idClass::ProcessEventArgPtr for info
+#define CPU_EASYARGS					0
+#else
 #define CPU_EASYARGS					1
+#endif
 
 #define ALIGN16( x )					__declspec(align(16)) x
 #define ALIGNTYPE16						__declspec(align(16)) // anon
