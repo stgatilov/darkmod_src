@@ -1439,7 +1439,10 @@ private:
 
 	void					Event_setSavePermissions(int sp);
 
-	
+	//stgatilov: testing script-cpp interop
+	void Event_TestEvent1(float float_pi, int int_beef, float float_exp, const char *string_tdm, float float_exp10, int int_food);
+	void Event_TestEvent2(int int_prevres, idVec3 *vec_123, int int_food, idEntity *ent_player, idEntity *ent_null, float float_pi, float float_exp);
+	void Event_TestEvent3(idEntity *ent_prevres, idVec3 *vec_123, float float_pi, idEntity *ent_player);
 };
 
 ID_INLINE bool idPlayer::IsReady( void ) {
