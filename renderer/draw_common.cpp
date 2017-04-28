@@ -725,6 +725,292 @@ void RB_SetProgramEnvironmentSpace( void ) {
 
 /*
 ==================
+RB_STD_T_RenderShaderPasses_OldStage
+
+Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
+==================
+*/
+void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	// set the color
+	float		color[4];
+	const float	*regs = surf->shaderRegisters;
+	color[0] = regs[pStage->color.registers[0]];
+	color[1] = regs[pStage->color.registers[1]];
+	color[2] = regs[pStage->color.registers[2]];
+	color[3] = regs[pStage->color.registers[3]];
+
+	// skip the entire stage if an add would be black
+	if ((pStage->drawStateBits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) == (GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE)
+		&& color[0] <= 0 && color[1] <= 0 && color[2] <= 0) {
+		return;
+	}
+
+	// skip the entire stage if a blend would be completely transparent
+	if ((pStage->drawStateBits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) == (GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA)
+		&& color[3] <= 0) {
+		return;
+	}
+
+	// select the vertex color source
+	if (pStage->vertexColor == SVC_IGNORE) {
+		qglColor4fv( color );
+	} else {
+		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+		qglEnableClientState( GL_COLOR_ARRAY );
+
+		if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
+			GL_TexEnv( GL_COMBINE_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PRIMARY_COLOR_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_ONE_MINUS_SRC_COLOR );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1 );
+		}
+
+		// for vertex color and modulated color, we need to enable a second
+		// texture stage
+		if (color[0] != 1 || color[1] != 1 || color[2] != 1 || color[3] != 1) {
+			GL_SelectTexture( 1 );
+
+			globalImages->whiteImage->Bind();
+			GL_TexEnv( GL_COMBINE_ARB );
+
+			qglTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, color );
+
+			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_PREVIOUS_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_CONSTANT_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_SRC_COLOR );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1 );
+
+			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_ALPHA_ARB, GL_PREVIOUS_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_CONSTANT_ARB );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA_ARB, GL_SRC_ALPHA );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_ALPHA_ARB, GL_SRC_ALPHA );
+			qglTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
+
+			GL_SelectTexture( 0 );
+		}
+	}
+
+	// bind the texture
+	RB_BindVariableStageImage( &pStage->texture, regs );
+
+	// set the state
+	GL_State( pStage->drawStateBits );
+
+	RB_PrepareStageTexturing( pStage, surf, ac );
+
+	const srfTriangles_t	*tri = surf->geo;
+	// draw it
+	RB_DrawElementsWithCounters( tri );
+
+	RB_FinishStageTexturing( pStage, surf, ac );
+
+	if (pStage->vertexColor != SVC_IGNORE) {
+		qglDisableClientState( GL_COLOR_ARRAY );
+
+		GL_SelectTexture( 1 );
+		GL_TexEnv( GL_MODULATE );
+		globalImages->BindNull();
+		GL_SelectTexture( 0 );
+		GL_TexEnv( GL_MODULATE );
+	}
+}
+
+/*
+==================
+RB_STD_T_RenderShaderPasses_New
+
+Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
+==================
+*/
+void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	if (r_skipNewAmbient.GetBool())
+		return;
+	//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+	qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+	qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+	qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+
+	//qglEnableClientState( GL_COLOR_ARRAY );
+	qglEnableVertexAttribArrayARB( 9 );
+	qglEnableVertexAttribArrayARB( 10 );
+	qglEnableClientState( GL_NORMAL_ARRAY );
+
+	GL_State( pStage->drawStateBits );
+
+	newShaderStage_t *newStage = pStage->newStage;
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+
+	const srfTriangles_t	*tri = surf->geo;
+	// megaTextures bind a lot of images and set a lot of parameters
+	if (newStage->megaTexture) {
+		newStage->megaTexture->SetMappingForSurface( tri );
+		idVec3	localViewer;
+		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
+		newStage->megaTexture->BindForViewOrigin( localViewer );
+	}
+
+	const float	*regs = surf->shaderRegisters;
+	for (int i = 0; i < newStage->numVertexParms; i++) {
+		float	parm[4];
+		parm[0] = regs[newStage->vertexParms[i][0]];
+		parm[1] = regs[newStage->vertexParms[i][1]];
+		parm[2] = regs[newStage->vertexParms[i][2]];
+		parm[3] = regs[newStage->vertexParms[i][3]];
+		qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
+	}
+
+	for (int i = 0; i < newStage->numFragmentProgramImages; i++) {
+		if (newStage->fragmentProgramImages[i]) {
+			GL_SelectTexture( i );
+			newStage->fragmentProgramImages[i]->Bind();
+		}
+	}
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
+	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+
+	// draw it
+	RB_DrawElementsWithCounters( tri );
+
+	for (int i = 1; i < newStage->numFragmentProgramImages; i++) {
+		if (newStage->fragmentProgramImages[i]) {
+			GL_SelectTexture( i );
+			globalImages->BindNull();
+		}
+	}
+	if (newStage->megaTexture) {
+		newStage->megaTexture->Unbind();
+	}
+
+	GL_SelectTexture( 0 );
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+
+	//qglDisableClientState( GL_COLOR_ARRAY );
+	qglDisableVertexAttribArrayARB( 9 );
+	qglDisableVertexAttribArrayARB( 10 );
+	qglDisableClientState( GL_NORMAL_ARRAY );
+}
+
+/*
+==================
+RB_STD_T_RenderShaderPasses_SoftParticle
+
+Extracted from the giantic loop in RB_STD_T_RenderShaderPasses
+==================
+*/
+void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage_t *pStage, const drawSurf_t *surf ) {
+	// determine the blend mode (used by soft particles #3878)
+	const int src_blend = pStage->drawStateBits & GLS_SRCBLEND_BITS;
+	if (r_skipNewAmbient.GetBool() || !(src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA))
+		return;
+
+	// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of 
+	// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
+	// designer has specified their own shader programs, those will be used instead of the soft particle program.
+	if (pStage->vertexColor == SVC_IGNORE)
+	{
+		// Ignoring vertexColor is not recommended for particles. The particle system uses vertexColor for fading.
+		// However, there are existing particle effects that don't use it, in which case we default to using the 
+		// rgb color modulation specified in the material like the "old stages" do below. 
+		const float	*regs = surf->shaderRegisters;
+		float		color[4];
+		color[0] = regs[pStage->color.registers[0]];
+		color[1] = regs[pStage->color.registers[1]];
+		color[2] = regs[pStage->color.registers[2]];
+		color[3] = regs[pStage->color.registers[3]];
+		qglColor4fv( color );
+	} else
+	{
+		// A properly set-up particle shader
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+		//qglEnableClientState( GL_COLOR_ARRAY );
+		qglEnableVertexAttribArrayARB( 3 );
+		qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+	}
+
+	GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS ); // Disable depth clipping. The fragment program will 
+	// handle it to allow overdraw.
+
+	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_SOFT_PARTICLE );
+	qglEnable( GL_VERTEX_PROGRAM_ARB );
+
+	// Bind image and _currentDepth
+	GL_SelectTexture( 0 );
+	pStage->texture.image->Bind();
+	GL_SelectTexture( 1 );
+	globalImages->currentDepthImage->Bind();
+
+	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_SOFT_PARTICLE );
+	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+
+	// Set up parameters for fragment program
+
+	// program.env[5] is the particle radius, given as { radius, 1/(faderange), 1/radius }
+	float fadeRange;
+	// fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
+	// blends (light glares), because additive effects work differently. Fog is half as apparent when a wall
+	// is in the middle of it. Light glares lose no visibility when they have something to reflect off. See 
+	// issue #3878 for diagram
+	if (src_blend == GLS_SRCBLEND_SRC_ALPHA) // an alpha blend material
+	{
+		fadeRange = surf->particle_radius * 2.0f;
+	} else if (src_blend == GLS_SRCBLEND_ONE) // an additive (blend add) material
+	{
+		fadeRange = surf->particle_radius;
+	}
+
+	float parm[4] = {
+		surf->particle_radius,
+		1.0f / (fadeRange),
+		1.0f / surf->particle_radius,
+		0.0f
+	};
+	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, parm );
+
+	// program.env[6] is the color channel mask. It gets added to the fade multiplier, so adding 1 
+	//    to a channel will make sure it doesn't get faded at all. Particles with additive blend 
+	//    need their RGB channels modifying to blend them out. Particles with an alpha blend need 
+	//    their alpha channel modifying.
+	if (src_blend == GLS_SRCBLEND_SRC_ALPHA) // an alpha blend material
+	{
+		parm[0] = parm[1] = parm[2] = 1.0f; // Leave the rgb channels at full strength when fading
+		parm[3] = 0.0f;						// but fade the alpha channel
+	} else if (src_blend == GLS_SRCBLEND_ONE) // an additive (blend add) material
+	{
+		parm[0] = parm[1] = parm[2] = 0.0f; // Fade the rgb channels but
+		parm[3] = 1.0f;						// leave the alpha channel at full strength
+	}
+	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, parm );
+
+	const srfTriangles_t	*tri = surf->geo;
+	// draw it
+	RB_DrawElementsWithCounters( tri );
+
+	// Clean up GL state
+	GL_SelectTexture( 1 );
+	globalImages->BindNull();
+	GL_SelectTexture( 0 );
+	globalImages->BindNull();
+
+	qglDisable( GL_VERTEX_PROGRAM_ARB );
+	qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+
+	if (pStage->vertexColor != SVC_IGNORE) {
+		qglDisableVertexAttribArrayARB( 3 );
+		//qglDisableClientState( GL_COLOR_ARRAY );
+	}
+}
+
+/*
+==================
 RB_STD_T_RenderShaderPasses
 
 This is also called for the generated 2D rendering
@@ -735,7 +1021,6 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	const idMaterial	*shader;
 	const shaderStage_t *pStage;
 	const float	*regs;
-	float		color[4];
 	const srfTriangles_t	*tri;
 
 	tri = surf->geo;
@@ -821,287 +1106,18 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			continue;
 		}
 
-		// determine the blend mode (used by soft particles #3878)
-		const int src_blend = pStage->drawStateBits & GLS_SRCBLEND_BITS;
-
 		// see if we are a new-style stage
 		newShaderStage_t *newStage = pStage->newStage;
 		if ( newStage ) {
-			//--------------------------
-			//
-			// new style stages
-			//
-			//--------------------------
-
-			// completely skip the stage if we don't have the capability
-			/*if ( tr.backEndRenderer != BE_ARB2 ) {
-				continue;
-			}*/
-			if ( r_skipNewAmbient.GetBool() ) {
-				continue;
-			}
-			//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-			qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-			qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-
-			//qglEnableClientState( GL_COLOR_ARRAY );
-			qglEnableVertexAttribArrayARB( 9 );
-			qglEnableVertexAttribArrayARB( 10 );
-			qglEnableClientState( GL_NORMAL_ARRAY );
-
-			GL_State( pStage->drawStateBits );
-
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
-			qglEnable( GL_VERTEX_PROGRAM_ARB );
-
-			// megaTextures bind a lot of images and set a lot of parameters
-			if ( newStage->megaTexture ) {
-				newStage->megaTexture->SetMappingForSurface( tri );
-				idVec3	localViewer;
-				R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
-				newStage->megaTexture->BindForViewOrigin( localViewer );
-			}
-
-			for ( int i = 0 ; i < newStage->numVertexParms ; i++ ) {
-				float	parm[4];
-				parm[0] = regs[ newStage->vertexParms[i][0] ];
-				parm[1] = regs[ newStage->vertexParms[i][1] ];
-				parm[2] = regs[ newStage->vertexParms[i][2] ];
-				parm[3] = regs[ newStage->vertexParms[i][3] ];
-				qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
-			}
-
-			for ( int i = 0 ; i < newStage->numFragmentProgramImages ; i++ ) {
-				if ( newStage->fragmentProgramImages[i] ) {
-					GL_SelectTexture( i );
-					newStage->fragmentProgramImages[i]->Bind();
-				}
-			}
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
-			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-
-			// draw it
-			RB_DrawElementsWithCounters( tri );
-
-			for ( int i = 1 ; i < newStage->numFragmentProgramImages ; i++ ) {
-				if ( newStage->fragmentProgramImages[i] ) {
-					GL_SelectTexture( i );
-					globalImages->BindNull();
-				}
-			}
-			if ( newStage->megaTexture ) {
-				newStage->megaTexture->Unbind();
-			}
-
-			GL_SelectTexture( 0 );
-
-			qglDisable( GL_VERTEX_PROGRAM_ARB );
-			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-
-			//qglDisableClientState( GL_COLOR_ARRAY );
-			qglDisableVertexAttribArrayARB( 9 );
-			qglDisableVertexAttribArrayARB( 10 );
-			qglDisableClientState( GL_NORMAL_ARRAY );
+			RB_STD_T_RenderShaderPasses_NewStage( ac, pStage, surf);
 			continue;
 		}
-		//else duzenko - redundant else?
-		if ( soft_particle 
-				 && surf->particle_radius > 0.0f 
-				 && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) 
-				 //&& tr.backEndRenderer == BE_ARB2
-				 && !r_skipNewAmbient.GetBool()
-				)
+		if ( soft_particle && surf->particle_radius > 0.0f)
 		{
-			// SteveL #3878. Particles are automatically softened by the engine, unless they have shader programs of 
-			// their own (i.e. are "newstages" handled above). This section comes after the newstage part so that if a
-			// designer has specified their own shader programs, those will be used instead of the soft particle program.
-			if ( pStage->vertexColor == SVC_IGNORE )
-			{
-				// Ignoring vertexColor is not recommended for particles. The particle system uses vertexColor for fading.
-				// However, there are existing particle effects that don't use it, in which case we default to using the 
-				// rgb color modulation specified in the material like the "old stages" do below. 
-				color[0] = regs[pStage->color.registers[0]];
-				color[1] = regs[pStage->color.registers[1]];
-				color[2] = regs[pStage->color.registers[2]];
-				color[3] = regs[pStage->color.registers[3]];
-				qglColor4fv( color );
-			}
-			else
-			{
-				// A properly set-up particle shader
-				//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-				//qglEnableClientState( GL_COLOR_ARRAY );
-				qglEnableVertexAttribArrayARB( 3 );
-				qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-			}
-
-			GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS ); // Disable depth clipping. The fragment program will 
-																	  // handle it to allow overdraw.
-
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_SOFT_PARTICLE );
-			qglEnable( GL_VERTEX_PROGRAM_ARB );
-
-			// Bind image and _currentDepth
-			GL_SelectTexture( 0 );
-			pStage->texture.image->Bind();
-			GL_SelectTexture( 1 );
-			globalImages->currentDepthImage->Bind();
-
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_SOFT_PARTICLE );
-			qglEnable( GL_FRAGMENT_PROGRAM_ARB );
-
-			// Set up parameters for fragment program
-			
-			// program.env[5] is the particle radius, given as { radius, 1/(faderange), 1/radius }
-			float fadeRange;
-			// fadeRange is the particle diameter for alpha blends (like smoke), but the particle radius for additive
-			// blends (light glares), because additive effects work differently. Fog is half as apparent when a wall
-			// is in the middle of it. Light glares lose no visibility when they have something to reflect off. See 
-			// issue #3878 for diagram
-			if ( src_blend == GLS_SRCBLEND_SRC_ALPHA ) // an alpha blend material
-			{
-				fadeRange = surf->particle_radius * 2.0f;
-			}
-			else if ( src_blend == GLS_SRCBLEND_ONE ) // an additive (blend add) material
-			{
-				fadeRange = surf->particle_radius;
-			}
-
-			float parm[4] = {
-				surf->particle_radius,
-				1.0f / ( fadeRange ),
-				1.0f / surf->particle_radius,
-				0.0f
-			};
-			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 5, parm );
-
-			// program.env[6] is the color channel mask. It gets added to the fade multiplier, so adding 1 
-			//    to a channel will make sure it doesn't get faded at all. Particles with additive blend 
-			//    need their RGB channels modifying to blend them out. Particles with an alpha blend need 
-			//    their alpha channel modifying.
-			if ( src_blend == GLS_SRCBLEND_SRC_ALPHA ) // an alpha blend material
-			{
-				parm[0] = parm[1] = parm[2] = 1.0f; // Leave the rgb channels at full strength when fading
-				parm[3] = 0.0f;						// but fade the alpha channel
-			}
-			else if ( src_blend == GLS_SRCBLEND_ONE ) // an additive (blend add) material
-			{
-				parm[0] = parm[1] = parm[2] = 0.0f; // Fade the rgb channels but
-				parm[3] = 1.0f;						// leave the alpha channel at full strength
-			}
-			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, parm );
-			
-			// draw it
-			RB_DrawElementsWithCounters( tri );
-
-			// Clean up GL state
-			GL_SelectTexture( 1 );
-			globalImages->BindNull();
-			GL_SelectTexture( 0 );
-			globalImages->BindNull();
-			
-			qglDisable( GL_VERTEX_PROGRAM_ARB );
-			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
-
-			if ( pStage->vertexColor != SVC_IGNORE ) {
-				qglDisableVertexAttribArrayARB( 3 );
-				//qglDisableClientState( GL_COLOR_ARRAY );
-			}
+			RB_STD_T_RenderShaderPasses_SoftParticle( ac, pStage, surf );
 			continue;
 		}
-
-		//--------------------------
-		//
-		// old style stages
-		//
-		//--------------------------
-
-		// set the color
-		color[0] = regs[ pStage->color.registers[0] ];
-		color[1] = regs[ pStage->color.registers[1] ];
-		color[2] = regs[ pStage->color.registers[2] ];
-		color[3] = regs[ pStage->color.registers[3] ];
-
-		// skip the entire stage if an add would be black
-		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE ) 
-			&& color[0] <= 0 && color[1] <= 0 && color[2] <= 0 ) {
-			continue;
-		}
-
-		// skip the entire stage if a blend would be completely transparent
-		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA )
-			&& color[3] <= 0 ) {
-			continue;
-		}
-
-		// select the vertex color source
-		if ( pStage->vertexColor == SVC_IGNORE ) {
-			qglColor4fv( color );
-		} else {
-			qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			qglEnableClientState( GL_COLOR_ARRAY );
-
-			if ( pStage->vertexColor == SVC_INVERSE_MODULATE ) {
-				GL_TexEnv( GL_COMBINE_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PRIMARY_COLOR_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_ONE_MINUS_SRC_COLOR );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1 );
-			}
-
-			// for vertex color and modulated color, we need to enable a second
-			// texture stage
-			if ( color[0] != 1 || color[1] != 1 || color[2] != 1 || color[3] != 1 ) {
-				GL_SelectTexture( 1 );
-
-				globalImages->whiteImage->Bind();
-				GL_TexEnv( GL_COMBINE_ARB );
-
-				qglTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, color );
-
-				qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_PREVIOUS_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_CONSTANT_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_SRC_COLOR );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1 );
-
-				qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_ALPHA_ARB, GL_MODULATE );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_ALPHA_ARB, GL_PREVIOUS_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_ALPHA_ARB, GL_CONSTANT_ARB );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA_ARB, GL_SRC_ALPHA );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_ALPHA_ARB, GL_SRC_ALPHA );
-				qglTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
-
-				GL_SelectTexture( 0 );
-			}
-		}
-
-		// bind the texture
-		RB_BindVariableStageImage( &pStage->texture, regs );
-
-		// set the state
-		GL_State( pStage->drawStateBits );
-		
-		RB_PrepareStageTexturing( pStage, surf, ac );
-
-		// draw it
-		RB_DrawElementsWithCounters( tri );
-
-		RB_FinishStageTexturing( pStage, surf, ac );
-		
-		if ( pStage->vertexColor != SVC_IGNORE ) {
-			qglDisableClientState( GL_COLOR_ARRAY );
-
-			GL_SelectTexture( 1 );
-			GL_TexEnv( GL_MODULATE );
-			globalImages->BindNull();
-			GL_SelectTexture( 0 );
-			GL_TexEnv( GL_MODULATE );
-		}
+		RB_STD_T_RenderShaderPasses_OldStage( ac, pStage, surf );
 	}
 
 	// reset polygon offset
@@ -1819,31 +1835,6 @@ void RB_STD_FogAllLights( void ) {
 			continue;
 		}
 
-#if 0 // _D3XP disabled that
-		if ( r_ignore.GetInteger() ) {
-			// we use the stencil buffer to guarantee that no pixels will be
-			// double fogged, which happens in some areas that are thousands of
-			// units from the origin
-			backEnd.currentScissor = vLight->scissorRect;
-			if ( r_useScissor.GetBool() ) {
-				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-			}
-			qglClear( GL_STENCIL_BUFFER_BIT );
-
-			qglEnable( GL_STENCIL_TEST );
-
-			// only pass on the cleared stencil values
-			qglStencilFunc( GL_EQUAL, 128, 255 );
-
-			// when we pass the stencil test and depth test and are going to draw,
-			// increment the stencil buffer so we don't ever draw on that pixel again
-			qglStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
-		}
-#endif
-
 		if ( vLight->lightShader->IsFogLight() ) {
 			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
 		} else if ( vLight->lightShader->IsBlendLight() ) {
@@ -1993,8 +1984,6 @@ void	RB_STD_DrawView( void ) {
 }
 
 void RB_DumpFramebuffer( const char *fileName ) {
-	if (!r_ignore.GetBool())
-		return;
 	renderCrop_t r, *rc = &r;
 	qglGetIntegerv( GL_VIEWPORT, (int*)rc );
 	if (!r_useFbo.GetBool())
@@ -2059,7 +2048,6 @@ void RB_Bloom() {
 		return;
 	extern void RB_FboAccessColorDepth( bool DepthToo = false );
 	RB_FboAccessColorDepth();
-	RB_DumpFramebuffer( "be_bl_in.tga" );
 
 	// full screen blends
 	qglLoadIdentity();
@@ -2076,7 +2064,6 @@ void RB_Bloom() {
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 	GL_SelectTexture( 0 );
-	extern void RB_DumpFramebuffer( const char *fileName );
 	float	parm[4];
 
 	qglViewport( 0, 0, 256, 1 );
@@ -2089,7 +2076,6 @@ void RB_Bloom() {
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
-	RB_DumpFramebuffer( "be_bl_m1.tga" );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH2 );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_COOK_MATH2 );
@@ -2100,7 +2086,6 @@ void RB_Bloom() {
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	globalImages->bloomCookedMath->CopyFramebuffer( 0, 0, 256, 1, false );
-	RB_DumpFramebuffer( "be_bl_m2.tga" );
 
 	qglViewport( 0, 0, w / 2, h / 2 );
 	GL_SelectTexture( 0 );
@@ -2112,7 +2097,6 @@ void RB_Bloom() {
 	RB_DrawFullScreenQuad();
 	GL_SelectTexture( 0 );
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-	RB_DumpFramebuffer( "be_bl_br.tga" );
 
 	globalImages->bloomImage->Bind();
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRX );
@@ -2124,7 +2108,6 @@ void RB_Bloom() {
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-	RB_DumpFramebuffer( "be_bl_gx.tga" );
 
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_GAUSS_BLRY );
 	qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY );
@@ -2132,7 +2115,6 @@ void RB_Bloom() {
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
-	RB_DumpFramebuffer( "be_bl_gy.tga" );
 
 	qglViewport( 0, 0, w, h );
 	GL_SelectTexture( 0 );
@@ -2147,7 +2129,6 @@ void RB_Bloom() {
 	parm[1] = Max( Min( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
 	qglProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 	RB_DrawFullScreenQuad();
-	RB_DumpFramebuffer( "be_bl_fi.tga" );
 	GL_SelectTexture( 2 );
 	globalImages->BindNull(); // or else GUI is screwed
 	GL_SelectTexture( 1 );
