@@ -1436,6 +1436,9 @@ typedef enum {
 	// duzenko: ARB shader depth+alpha
 	VPROG_DEPTH_ALPHA,
 	FPROG_DEPTH_ALPHA,
+	// duzenko: ARB shader for old stage
+	VPROG_OLD_STAGE,
+	FPROG_OLD_STAGE,
 	// 
 	PROG_USER
 } program_t;

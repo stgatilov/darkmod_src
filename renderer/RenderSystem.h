@@ -60,14 +60,14 @@ typedef struct glconfig_s {
 	bool				cubeMapAvailable;
 	bool				envDot3Available;
 
-	bool				registerCombinersAvailable;
+	//bool				registerCombinersAvailable;
 	bool				ARBVertexBufferObjectAvailable;
-	bool				ARBVertexProgramAvailable;
-	bool				ARBFragmentProgramAvailable;
+	//bool				ARBVertexProgramAvailable;
+	//bool				ARBFragmentProgramAvailable;
 	bool				twoSidedStencilAvailable;
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
-	bool				atiFragmentShaderAvailable; // ati r200 extensions
+	//bool				atiFragmentShaderAvailable; // ati r200 extensions
 	bool				pixelBufferAvailable;
 
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame

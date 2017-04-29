@@ -582,6 +582,10 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// duzenko: depth+alpha 
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
+
+	// duzenko: old stage replacement 
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_OLD_STAGE, "oldstage.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_OLD_STAGE, "oldstage.vfp" },
 	// additional programs can be dynamically specified in materials
 };
 
@@ -622,22 +626,23 @@ void R_LoadARBProgram( int progIndex ) {
 		// allocate a new identifier for this program
 		progs[progIndex].ident = PROG_USER + progIndex;
 	}
+	common->Printf( " %d", progs[progIndex].ident );
 
 	// vertex and fragment programs can both be present in a single file, so
 	// scan for the proper header to be the start point, and stamp a 0 in after the end
 	start = NULL;
 	if ( progs[progIndex].target == GL_VERTEX_PROGRAM_ARB ) {
-		if ( !glConfig.ARBVertexProgramAvailable ) {
+		/*if ( !glConfig.ARBVertexProgramAvailable ) {
 			common->Printf( S_COLOR_RED ": GL_VERTEX_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
-		}
+		}*/
 		start = strstr( (char *)buffer, "!!ARBvp" );
 	}
 	if ( progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB ) {
-		if ( !glConfig.ARBFragmentProgramAvailable ) {
+		/*if ( !glConfig.ARBFragmentProgramAvailable ) {
 			common->Printf( S_COLOR_RED ": GL_FRAGMENT_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
-		}
+		}*/
 		start = strstr( (char *)buffer, "!!ARBfp" );
 	}
 	if ( !start ) {
@@ -731,7 +736,7 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 ==================
 R_UseProgram
 
-One liner for qglBindProgramARB+qglEnable frag+vert
+One-liner for qglBindProgramARB+qglEnable frag+vert
 ==================
 */
 void R_UseProgram( int vProg ) {
@@ -744,7 +749,6 @@ void R_UseProgram( int vProg ) {
 		qglEnable( GL_VERTEX_PROGRAM_ARB );
 		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 	}
-
 }
 
 /*
@@ -773,10 +777,10 @@ void R_ARB2_Init( void ) {
 
 	common->Printf( "---------- R_ARB2_Init ----------\n" );
 
-	if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
+	/*if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
 		common->Printf( "Not available.\n" );
 		return;
-	}
+	}*/
 
 	common->Printf( "Available.\n" );
 
