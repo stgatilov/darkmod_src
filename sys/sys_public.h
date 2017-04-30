@@ -67,6 +67,20 @@
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
 //anon end
 
+//stgatilov begin
+#ifdef _WIN64
+    #define __SSE__
+    #define __SSE2__        //SSE/SSE2 arithmetic is always used in x64
+#else
+    #if _M_IX86_FP >= 1
+        #define __SSE__     //at least /arch:SSE
+    #endif
+    #if _M_IX86_FP >= 2
+        #define __SSE2__    //at least /arch:SSE2
+    #endif
+#endif
+//stgatilov end
+
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
 #define THREAD_RETURN_TYPE unsigned long
