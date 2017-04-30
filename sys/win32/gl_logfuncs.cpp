@@ -415,6 +415,8 @@ static void APIENTRY logEnable(GLenum cap) {
 
 static void APIENTRY logEnableClientState(GLenum array) {
 	fprintf( tr.logFile, "glEnableClientState %s\n", EnumString(array) );
+	if (array == GL_TEXTURE_COORD_ARRAY)
+		idStr(" ");
 	dllEnableClientState(array);
 }
 

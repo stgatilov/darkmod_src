@@ -510,7 +510,7 @@ void RB_ARB2_DrawInteractions( void ) {
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 
 	GL_SelectTexture( 0 );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+//	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 }
 
 //===================================================================================

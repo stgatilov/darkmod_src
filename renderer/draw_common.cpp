@@ -1080,7 +1080,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+//	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	RB_SetProgramEnvironment(); 
 
@@ -1412,7 +1412,7 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
 	}
 
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	qglStencilFunc( GL_GEQUAL, 128, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
@@ -1735,6 +1735,7 @@ void RB_STD_FogAllLights( void ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	qglDisable( GL_STENCIL_TEST );
+	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		backEnd.vLight = vLight;
@@ -1751,6 +1752,7 @@ void RB_STD_FogAllLights( void ) {
 		qglDisable( GL_STENCIL_TEST );
 	}
 
+	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 	qglEnable( GL_STENCIL_TEST );
 }
 

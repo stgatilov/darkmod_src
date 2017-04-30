@@ -45,7 +45,7 @@ void RB_SetDefaultGLState( void ) {
 
 	// the vertex array is always enabled
 	qglEnableClientState( GL_VERTEX_ARRAY );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+//	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 	qglDisableClientState( GL_COLOR_ARRAY );
 
 	// make sure our GL state vector is set correctly
