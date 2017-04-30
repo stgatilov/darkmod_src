@@ -401,11 +401,26 @@ ID_INLINE bool idBounds::ContainsPoint( const idVec3 &p ) const {
 }
 
 ID_INLINE bool idBounds::IntersectsBounds( const idBounds &a ) const {
+#ifdef __SSE__
+	//stgatilov: use fast vectorized test
+	static_assert(sizeof(idVec3) == 12, "SSE fast path expects tight packing of idVec3");
+	const auto &t = *this;
+	__m128 tmin = _mm_loadu_ps(&t.b[0].x);	//xyzX
+	__m128 tmax = _mm_loadu_ps(&t.b[0].z);	//zXYZ
+	__m128 amin = _mm_loadu_ps(&a.b[0].x);
+	__m128 amax = _mm_loadu_ps(&a.b[0].z);
+	tmax = _mm_shuffle_ps(tmax, tmax, _MM_SHUFFLE(1, 3, 2, 1));	//XYZX
+	amax = _mm_shuffle_ps(amax, amax, _MM_SHUFFLE(1, 3, 2, 1));
+	__m128 mask = _mm_or_ps(_mm_cmplt_ps(amax, tmin), _mm_cmpgt_ps(amin, tmax));
+	int bits = _mm_movemask_ps(mask);
+	return (bits & 7) == 0;
+#else
 	if ( a.b[1][0] < b[0][0] || a.b[1][1] < b[0][1] || a.b[1][2] < b[0][2]
 		|| a.b[0][0] > b[1][0] || a.b[0][1] > b[1][1] || a.b[0][2] > b[1][2] ) {
 		return false;
 	}
 	return true;
+#endif
 }
 
 ID_INLINE idSphere idBounds::ToSphere( void ) const {
