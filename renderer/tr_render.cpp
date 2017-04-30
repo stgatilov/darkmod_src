@@ -670,7 +670,9 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteraction)(const drawInteraction_t *) ) {
+static void RB_SubmittInteraction( drawInteraction_t *din
+	//, void (*DrawInteraction)(const drawInteraction_t *) 
+) {
 
 	if ( !din->bumpImage ) {
 		return;
@@ -688,26 +690,9 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 		din->specularImage = globalImages->blackImage;
 	}
 
-	DrawInteraction( din );
-
-	// Serp - This check is more expensive than just making extra calls, I am not sure if the calls might result in
-	// things which should not be lit, being lit. Welp, we'll see.
-#if 0
-	// if we wouldn't draw anything, don't call the Draw function
-	if ( ( 
-		din->diffuseImage != globalImages->blackImage && (
-		din->diffuseColor[0] > 0.0f || 
-		din->diffuseColor[1] > 0.0f || 
-		din->diffuseColor[2] > 0.0f ) )
-		|| ( 
-		din->specularImage != globalImages->blackImage && (
-		din->specularColor[0] > 0.0f || 
-		din->specularColor[1] > 0.0f || 
-		din->specularColor[2] > 0.0f ) ) 
-		) {
-			DrawInteraction( din );
-	}
-#endif
+	extern void RB_ARB2_DrawInteraction( const drawInteraction_t * din ); // duzenko FIXME ugly extern
+	RB_ARB2_DrawInteraction( din );
+	//DrawInteraction( din );
 }
 
 /*
@@ -718,7 +703,9 @@ This can be used by different draw_* backends to decompose a complex light / sur
 interaction into primitive interactions
 =============
 */
-void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) ) {
+void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
+	//, void (*DrawInteraction)(const drawInteraction_t *) 
+) {
 	const idMaterial	*surfaceShader = surf->material;
 	const float			*surfaceRegs = surf->shaderRegisters;
 	const viewLight_t	*vLight = backEnd.vLight;
@@ -864,7 +851,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 						break;
 					}
 					// draw any previous interaction
-					RB_SubmittInteraction( &inter, DrawInteraction );
+					RB_SubmittInteraction( &inter/*, DrawInteraction*/ );
 					inter.diffuseImage = NULL;
 					inter.specularImage = NULL;
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
@@ -876,7 +863,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 						break;
 					}
 					else if ( inter.diffuseImage ) {
-						RB_SubmittInteraction( &inter, DrawInteraction );
+						RB_SubmittInteraction( &inter/*, DrawInteraction*/ );
 					}
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
 											inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
@@ -897,7 +884,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 					    break;
 					}	
 					else if ( inter.specularImage ) {
-						RB_SubmittInteraction( &inter, DrawInteraction );
+						RB_SubmittInteraction( &inter/*, DrawInteraction*/ );
 					}
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage,
 											inter.specularMatrix, inter.specularColor.ToFloatPtr() );
@@ -912,7 +899,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 		}
 
 		// draw the final interaction
-		RB_SubmittInteraction( &inter, DrawInteraction );
+		RB_SubmittInteraction( &inter/*, DrawInteraction*/ );
 	}
 
 	// unhack depth range if needed

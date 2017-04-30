@@ -216,7 +216,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
 		// times with different colors and images if the surface or light have multiple layers
-		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
+		RB_CreateSingleDrawInteractions( surf/*, RB_ARB2_DrawInteraction*/ );
 	}
 
 	qglDisableVertexAttribArrayARB( 8 );
@@ -347,7 +347,7 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 
 		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
 		// times with different colors and images if the surface or light have multiple layers
-		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
+		RB_CreateSingleDrawInteractions( surf/*, RB_ARB2_DrawInteraction*/ );
 	}
 
 	qglDisableVertexAttribArrayARB( 8 );
