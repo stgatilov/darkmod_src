@@ -42,6 +42,10 @@ in the portal areas that can be seen from the current viewpoint.
 // view down, which is still correct, just conservative
 const int MAX_PORTAL_PLANES	= 20;
 
+// stgatilov: ensure that normal vector of a portal plane has error less than this coefficient
+// if after winding is clipped, we see a portal plane with larger error, we simply drop such a plane
+const float MAX_PLANE_NORMAL_ERROR = 0.001;
+
 typedef struct portalStack_s {
 	portal_t	*p;
 	const struct portalStack_s *next;
@@ -260,12 +264,16 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 			v1 = origin - w[i].ToVec3();
 			v2 = origin - w[j].ToVec3();
 
-			newStack.portalPlanes[newStack.numPortalPlanes].Normal().Cross( v2, v1 );
-
-			// if it is degenerate, skip the plane
-			if ( newStack.portalPlanes[newStack.numPortalPlanes].Normalize() < 0.01f ) {
+			//stgatilov: drop plane if its direction is not precise enough
+			idVec3 normal;
+			normal.Cross(v2, v1);
+			float sinAng = normal.LengthFast() * idMath::RSqrt(v2.LengthSqr() * v1.LengthSqr());
+			static const float SIN_THRESHOLD = idMath::FLT_EPSILON / MAX_PLANE_NORMAL_ERROR;
+			if (sinAng <= SIN_THRESHOLD)
 				continue;
-			}
+
+			newStack.portalPlanes[newStack.numPortalPlanes].Normal() = normal;
+			newStack.portalPlanes[newStack.numPortalPlanes].Normalize();
 			newStack.portalPlanes[newStack.numPortalPlanes].FitThroughPoint( origin );
 
 			newStack.numPortalPlanes++;
@@ -423,12 +431,16 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 			v1 = light->globalLightOrigin - w[i].ToVec3();
 			v2 = light->globalLightOrigin - w[j].ToVec3();
 
-			newStack.portalPlanes[newStack.numPortalPlanes].Normal().Cross( v2, v1 );
-
-			// if it is degenerate, skip the plane
-			if ( newStack.portalPlanes[newStack.numPortalPlanes].Normalize() < 0.01f ) {
+			//stgatilov: drop plane if its direction is not precise enough
+			idVec3 normal;
+			normal.Cross(v2, v1);
+			float sinAng = normal.LengthFast() * idMath::RSqrt(v2.LengthSqr() * v1.LengthSqr());
+			static const float SIN_THRESHOLD = idMath::FLT_EPSILON / MAX_PLANE_NORMAL_ERROR;
+			if (sinAng <= SIN_THRESHOLD)
 				continue;
-			}
+
+			newStack.portalPlanes[newStack.numPortalPlanes].Normal() = normal;
+			newStack.portalPlanes[newStack.numPortalPlanes].Normalize();
 			newStack.portalPlanes[newStack.numPortalPlanes].FitThroughPoint( light->globalLightOrigin );
 
 			newStack.numPortalPlanes++;
