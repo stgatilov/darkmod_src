@@ -44,7 +44,7 @@ const int MAX_PORTAL_PLANES	= 20;
 
 // stgatilov: ensure that normal vector of a portal plane has error less than this coefficient
 // if after winding is clipped, we see a portal plane with larger error, we simply drop such a plane
-const float MAX_PLANE_NORMAL_ERROR = 0.001;
+const float MAX_PLANE_NORMAL_ERROR = 0.001f;
 
 typedef struct portalStack_s {
 	portal_t	*p;
