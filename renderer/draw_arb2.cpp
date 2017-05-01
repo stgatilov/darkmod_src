@@ -737,6 +737,7 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 R_UseProgram
 
 One-liner for qglBindProgramARB+qglEnable frag+vert
+Important: fprog needs to go straight after vprog in program_t
 ==================
 */
 void R_UseProgram( int vProg ) {
@@ -748,6 +749,7 @@ void R_UseProgram( int vProg ) {
 		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, vProg+1 ); // as defined by program_t
 		qglEnable( GL_VERTEX_PROGRAM_ARB );
 		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+		GL_CheckErrors();
 	}
 }
 

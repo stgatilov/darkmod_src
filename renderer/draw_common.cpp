@@ -695,9 +695,16 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		}
 	}
 
-	qglEnableVertexAttribArrayARB( 8 );
-	qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-	R_UseProgram( VPROG_OLD_STAGE );
+	switch (pStage->texture.texgen) {
+	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
+		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
+		break;
+	default:
+		qglEnableVertexAttribArrayARB( 8 );
+		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		R_UseProgram( VPROG_OLD_STAGE );
+	}
 
 	// bind the texture
 	RB_BindVariableStageImage( &pStage->texture, regs );
@@ -713,8 +720,14 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 
 	RB_FinishStageTexturing( pStage, surf, ac );
 
-	qglDisableVertexAttribArrayARB( 8 );
-	R_UseProgram();
+	switch (pStage->texture.texgen) {
+	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
+		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		break;
+	default:
+		qglDisableVertexAttribArrayARB( 8 );
+		R_UseProgram();
+	}
 
 	if (pStage->vertexColor != SVC_IGNORE) {
 		qglDisableClientState( GL_COLOR_ARRAY );

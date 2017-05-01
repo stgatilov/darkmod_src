@@ -410,7 +410,7 @@ void RB_BindVariableStageImage( const textureStage_t *texture, const float *shad
 ======================
 RB_BindStageTexture
 ======================
-*/
+*//*
 void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *texture, const drawSurf_t *surf ) {
 	// image
 	RB_BindVariableStageImage( texture, shaderRegisters );
@@ -445,7 +445,7 @@ void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *te
 	if ( texture->hasMatrix ) {
 		RB_LoadShaderTextureMatrix( shaderRegisters, texture );
 	}
-}
+}*/
 
 /*
 ======================
