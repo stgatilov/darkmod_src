@@ -127,12 +127,22 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping)
     _packetTimeOffset = 0;
     _looping = looping;
 
-    return OpenAVDecoder();
+	return true;// OpenAVDecoder();
 }
 
 bool idCinematicFFMpeg::OpenAVDecoder()
 {
     _file = fileSystem->OpenFileRead(_path.c_str());
+	if (idStr::FindText( _file->GetFullPath(), ".pk4/", false ) >= 0) {
+		byte *b = new byte[_file->Length()];
+		_file->Read( b, _file->Length() );
+		idFile *extrFile = fileSystem->OpenFileWrite( _path );
+		extrFile->Write( b, _file->Length() );
+		delete b;
+		delete _file;
+		delete extrFile;
+		_file = fileSystem->OpenFileRead( _path.c_str() );
+	}
 
     if (_file == NULL)
     {
