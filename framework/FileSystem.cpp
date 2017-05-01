@@ -539,7 +539,8 @@ void idFileSystemLocal::CreateOSPath( const char *OSPath ) {
 	
 	// make absolutely sure that it can't back up the path
 	// FIXME: what about c: ?
-	if ( strstr( OSPath, ".." ) || strstr( OSPath, "::" ) ) {
+	// duzenko: allow .. in the middle
+	if (strstr( OSPath, ".." ) == OSPath || strstr( OSPath, "::" ) ) {
 #ifdef _DEBUG		
 		common->DPrintf( "refusing to create relative path \"%s\"\n", OSPath );
 #endif
