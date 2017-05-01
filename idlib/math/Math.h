@@ -24,6 +24,13 @@
 #include <limits> // before FLT_EPSILON is #undefined
 #include <boost/numeric/ublas/matrix.hpp> // before FLT_EPSILON is #undefined
 
+#ifdef __SSE__
+#include <xmmintrin.h>
+#endif
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
+
 #ifdef __linux__
 #include "../../sys/sys_public.h"
 #include <cassert>
@@ -248,7 +255,14 @@ private:
 };
 
 ID_INLINE float idMath::RSqrt( float x ) {
-
+#ifdef __SSE__
+	//stgatilov: prefer SSE rsqrt instruction
+	__m128 xx = _mm_set_ss(x);  //12-bit precision
+	//note: we have to ensure that rsqrt(0) is a big number
+	//the clamp constant is equal to FLT_SMALLEST_NON_DENORMAL
+	__m128 rr = _mm_rsqrt_ss(_mm_max_ss(xx, _mm_set_ss(1.1754944e-038f)));
+	return _mm_cvtss_f32(rr);
+#else
     int i;
 	float y, r;
 
@@ -258,10 +272,16 @@ ID_INLINE float idMath::RSqrt( float x ) {
 	r = *reinterpret_cast<float *>( &i );
 	r = r * ( 1.5f - r * r * y );
 	return r;
+#endif
 }
 
 ID_INLINE float idMath::InvSqrt16( float x ) {
-
+#ifdef __SSE__
+	//stgatilov: prefer SSE way
+	float r = RSqrt(x);
+	r = r * (1.5f - 0.5f * x * r * r);  //23-bit precision
+	return r;
+#else
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
@@ -272,10 +292,14 @@ ID_INLINE float idMath::InvSqrt16( float x ) {
 	double r = seed.f;
 	r = r * ( 1.5f - r * r * y );
 	return (float) r;
+#endif
 }
 
 ID_INLINE float idMath::InvSqrt( float x ) {
-
+#ifdef __SSE__
+	//stgatilov: one NR iteration should be almost enough for float32 precision
+	return InvSqrt16(x);    //23-bit precision
+#else
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
@@ -287,9 +311,19 @@ ID_INLINE float idMath::InvSqrt( float x ) {
 	r = r * ( 1.5f - r * r * y );
 	r = r * ( 1.5f - r * r * y );
 	return (float) r;
+#endif
 }
 
 ID_INLINE double idMath::InvSqrt64( float x ) {
+#ifdef __SSE2__
+	//stgatilov: use rsqrt from SSE and NR iterations
+	double t = x;
+	double r = (double)RSqrt(x);
+	r = r * (1.5 - 0.5 * t * r * r);    //23-bit
+	r = r * (1.5 - 0.5 * t * r * r);    //46-bit
+	r = r * (1.5 - 0.5 * t * r * r);    // > 53-bit
+	return r;
+#else
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
@@ -302,6 +336,7 @@ ID_INLINE double idMath::InvSqrt64( float x ) {
 	r = r * ( 1.5f - r * r * y );
 	r = r * ( 1.5f - r * r * y );
 	return r;
+#endif
 }
 
 ID_INLINE float idMath::Sqrt16( float x ) {
@@ -397,7 +432,8 @@ ID_INLINE double idMath::Cos64( float a ) {
 }
 
 ID_INLINE void idMath::SinCos( float a, float &s, float &c ) {
-#if defined(_MSC_VER) && defined(_M_IX86)
+	//stgatilov: we should not use FPU when SSE arithmetic is used
+#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
 	_asm {
 		fld		a
 		fsincos
@@ -450,7 +486,8 @@ ID_INLINE void idMath::SinCos16( float a, float &s, float &c ) {
 }
 
 ID_INLINE void idMath::SinCos64( float a, double &s, double &c ) {
-#if defined(_MSC_VER) && defined(_M_IX86)
+	//stgatilov: we should not use FPU when SSE arithmetic is used
+#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
 	_asm {
 		fld		a
 		fsincos
@@ -786,9 +823,17 @@ ID_INLINE int idMath::Abs( int x ) {
 }
 
 ID_INLINE float idMath::Fabs( float f ) {
+#ifdef __SSE2__
+	//stgatilov: prefer using FP operations instead of integer ones
+	//this should merge nicely with other FP computations
+	const __m128 vmask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
+	__m128 res = _mm_and_ps(_mm_set_ss(f), vmask);
+	return _mm_cvtss_f32(res);
+#else
 	int tmp = *reinterpret_cast<int *>( &f );
 	tmp &= 0x7FFFFFFF;
 	return *reinterpret_cast<float *>( &tmp );
+#endif
 }
 
 ID_INLINE float idMath::Floor( float f ) {
@@ -808,7 +853,8 @@ ID_INLINE int idMath::Ftoi( float f ) {
 }
 
 ID_INLINE int idMath::FtoiFast( float f ) {
-#if defined(_MSC_VER) && defined(_M_IX86)
+	//stgatilov: when SSE arithmetic is used, do not use FPU
+#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
 	int i;
 	__asm fld		f
 	__asm fistp		i		// use default rouding mode (round nearest)
@@ -840,7 +886,8 @@ ID_INLINE unsigned int idMath::Ftol( float f ) {
 }
 
 ID_INLINE unsigned int idMath::FtolFast( float f ) {
-#if defined(_MSC_VER) && defined(_M_IX86)
+	//stgatilov: when SSE arithmetic is used, do not use FPU
+#if defined(_MSC_VER) && defined(_M_IX86) && !defined(__SSE__)
 	// FIXME: this overflows on 31bits still .. same as FtoiFast
 	unsigned int i;
 	__asm fld		f
