@@ -23,6 +23,8 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Unzip.h"
+//stgatilov: for pk4 repacking
+#include "minizip/Zip.h"
 
 #ifdef WIN32
 	#include <io.h>	// for _read
@@ -1125,6 +1127,93 @@ addonInfo_t *idFileSystemLocal::ParseAddonDef( const char *buf, const int len ) 
 	return NULL;
 }
 
+
+/*
+stgatilov: Some types of files should not be compressed by pk4.
+Otherwise reading them would be quite inefficient, usually because seeking through zlib stream is slow.
+Primary examples are:
+  issue 4507: ROQ videos are now read by ffmpeg, which performs tons of seeking through file;
+	issue 4504: OGG sounds are read by ogg+vorbis, which also performs quite a lot of seeking;
+That's why if we detect that such a file is compressed in pk4, we recompress the whole pk4 archive.
+*/
+#include "CompressionParameters.h"
+bool DoNotCompressFile(const char *filename) {
+	for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++)
+		if (idStr::CheckExtension(filename, PK4_UNCOMPRESSED_EXTENSIONS[i]))
+			return true;
+	return false;
+}
+
+static const int REPACK_BUFFER_SIZE = 32768;
+bool RepackPK4(unzFile uf, const char *srcZipfile) {
+	common->Printf("Repacking %s...\n", srcZipfile);
+#define SAFECALL(expr, ...) \
+	if ((expr) != 0) { \
+		common->Warning(__VA_ARGS__); \
+		return false; \
+	}
+
+	//create new pk4 file
+	idStr tempZipfileB = idStr(srcZipfile) + ".tmp";
+	const char *tempZipfile = tempZipfileB.c_str();
+	remove(tempZipfile);
+	zipFile zf = zipOpen(tempZipfile, APPEND_STATUS_CREATE);
+	SAFECALL(zf == NULL, "Cannot create %s", tempZipfile);
+
+	//open old pk4 file
+	unz_global_info64 gi;
+	SAFECALL(unzGetGlobalInfo64( uf, &gi ), "Cannot get global info of %s", srcZipfile);
+
+	//create new pk4.tmp file with repacked data
+	char filename_inzip[MAX_ZIPPED_FILE_NAME];
+	unz_file_info64	unz_file_info;
+	zip_fileinfo zip_file_info;
+	char buffer[REPACK_BUFFER_SIZE];
+	SAFECALL(unzGoToFirstFile(uf), "Cannot get first file of %s", srcZipfile);
+	for (int i = 0; i < gi.number_entry; i++) {
+		SAFECALL(unzGetCurrentFileInfo64( uf, &unz_file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0 ), "Failed to read info of file in %s", srcZipfile);
+		//copy necessary file info
+		zip_file_info.dosDate = unz_file_info.dosDate;
+		zip_file_info.external_fa = unz_file_info.external_fa;
+		zip_file_info.internal_fa = unz_file_info.internal_fa;
+		zip_file_info.tmz_date = reinterpret_cast<tm_zip&>(unz_file_info.tmu_date);
+		//check if the file needs complete repacking (or direct copy is enough)
+		bool repack_file = DoNotCompressFile(filename_inzip) && unz_file_info.compression_method != 0;
+		bool raw = !repack_file;
+		//open file in both pk4-s
+		int method, level;
+		SAFECALL(unzOpenCurrentFile2(uf, &method, &level, raw), "Cannot open file %s in %s", filename_inzip, srcZipfile);
+		if (repack_file)
+			method = level = 0;	//store repacked files uncompressed
+		SAFECALL(zipOpenNewFileInZip2(zf, filename_inzip, &zip_file_info, NULL, 0, NULL, 0, NULL, method, level, raw), "Cannot create file %s in %s", filename_inzip, tempZipfile);
+		//copy all file data from old to new pk4
+		while (true) {
+			int cnt = unzReadCurrentFile(uf, buffer, REPACK_BUFFER_SIZE);
+			SAFECALL(cnt < 0, "Cannot read from file %s in %s", filename_inzip, srcZipfile);
+			if (cnt == 0) break;
+			SAFECALL(zipWriteInFileInZip(zf, buffer, cnt), "Cannot write to file %s in %s", filename_inzip, tempZipfile);
+		}
+		//close file in both pk4-s
+		SAFECALL(unzCloseCurrentFile(uf), "Cannot close file %s in %s", filename_inzip, srcZipfile);
+		SAFECALL(zipCloseFileInZipRaw(zf, unz_file_info.uncompressed_size, unz_file_info.crc), "Cannot finish file %s in %s", filename_inzip, tempZipfile);
+		//iterate further
+		if (i + 1 < gi.number_entry)
+			SAFECALL(unzGoToNextFile(uf), "Cannot iterate to next file in %s", srcZipfile);
+	}
+
+	//close new and old pk4 files
+	SAFECALL(unzClose(uf), "Cannot close %s", srcZipfile);
+	SAFECALL(zipClose(zf, NULL), "Cannot finish %s", tempZipfile);
+
+	//replace the olf pk4 file
+	remove(srcZipfile);
+	SAFECALL(rename(tempZipfile, srcZipfile), "Cannot rename %s to %s", tempZipfile, srcZipfile);
+
+#undef SAFECALL
+	return true;
+}
+
+
 /*
 =================
 idFileSystemLocal::LoadZipFile
@@ -1182,6 +1271,7 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 
 	pack->length = len;
 
+	bool needsRepacking = false;
 	unzGoToFirstFile(uf);
 	fs_headerLongs = (int *)Mem_ClearedAlloc( gi.number_entry * sizeof(int) );
 	for ( int i = 0; i < (int)gi.number_entry; i++ ) {
@@ -1201,8 +1291,22 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 		// add the file to the hash
 		buildBuffer[i].next = pack->hashTable[hash];
 		pack->hashTable[hash] = &buildBuffer[i];
+		//stgatilov: check if file is compressed but should be uncompressed
+		if (DoNotCompressFile(filename_inzip) && file_info.compression_method != 0)
+			needsRepacking = true;
 		// go to the next file in the zip
 		unzGoToNextFile(uf);
+	}
+
+	//stgatilov: repack the whole pk4 if required
+	if (needsRepacking) {
+		Mem_Free(fs_headerLongs);
+		delete pack;
+		delete[] buildBuffer;
+		if (RepackPK4(uf, zipfile))
+			return LoadZipFile(zipfile);
+		else
+			return NULL;	//repacking error
 	}
 
 	// check if this is an addon pak
