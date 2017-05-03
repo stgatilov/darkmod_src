@@ -696,8 +696,9 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	}
 
 	switch (pStage->texture.texgen) {
-	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 		break;
 	default:
@@ -721,6 +722,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	RB_FinishStageTexturing( pStage, surf, ac );
 
 	switch (pStage->texture.texgen) {
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
