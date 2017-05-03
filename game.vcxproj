@@ -706,7 +706,6 @@
     <ClCompile Include="game\LightController.cpp" />
     <ClCompile Include="game\LightGem.cpp" />
     <ClCompile Include="game\Liquid.cpp" />
-    <ClCompile Include="game\MaterialConverter.cpp" />
     <ClCompile Include="game\MeleeWeapon.cpp" />
     <ClCompile Include="game\Misc.cpp" />
     <ClCompile Include="game\Missions\Download.cpp" />
@@ -970,7 +969,6 @@
     <ClInclude Include="game\LightController.h" />
     <ClInclude Include="game\LightGem.h" />
     <ClInclude Include="game\Liquid.h" />
-    <ClInclude Include="game\MaterialConverter.h" />
     <ClInclude Include="game\MatrixSq.h" />
     <ClInclude Include="game\MeleeWeapon.h" />
     <ClInclude Include="game\Misc.h" />

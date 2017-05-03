@@ -458,7 +458,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( backEnd.viewDef->numClipPlanes ) {
 		GL_SelectTexture( 1 );
 		globalImages->alphaNotchImage->Bind();
-		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglEnable( GL_TEXTURE_GEN_S );
 		qglTexCoord2f( 1, 0.5 );
 	}
@@ -466,7 +466,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// the first texture will be used for alpha tested surfaces
 	GL_SelectTexture( 0 );
 	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
@@ -1032,7 +1032,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		// see if we are a new-style stage
 		newShaderStage_t *newStage = pStage->newStage;
 		if ( newStage ) {
-			RB_STD_T_RenderShaderPasses_NewStage( ac, pStage, surf);
+			RB_STD_T_RenderShaderPasses_NewStage( ac, pStage, surf );
 			continue;
 		}
 		if ( soft_particle && surf->particle_radius > 0.0f)
@@ -1095,7 +1095,6 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-//	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	RB_SetProgramEnvironment(); 
 
@@ -1388,7 +1387,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	RB_LogComment( "---------- RB_StencilShadowPass ----------\n" );
 
 	globalImages->BindNull();
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	// for visualizing the shadows
 	if ( r_showShadows.GetInteger() ) {
@@ -1426,8 +1424,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
 	}
-
-	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	qglStencilFunc( GL_GEQUAL, 128, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );

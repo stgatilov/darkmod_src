@@ -395,7 +395,7 @@ void RB_ARB2_DrawInteractions( void ) {
 	const idMaterial	*lightShader;
 
 	GL_SelectTexture( 0 );
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 	//anon begin
 	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
 	//anon end
