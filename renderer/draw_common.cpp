@@ -132,6 +132,7 @@ void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSu
 }
 
 
+
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -1852,6 +1853,19 @@ void	RB_STD_DrawView( void ) {
 	drawSurfs = (drawSurf_t **)&backEnd.viewDef->drawSurfs[0];
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
 
+/* ~SS
+	if (   r_softShadows.GetFloat() > 0.0f							// soft shadows requested
+		&& backEnd.viewDef->viewEntitys								// a 3d draw, not the menu screen
+		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID	// not a lightgem pass
+		&& r_showShadows.GetInteger() == 0							// not debugging shadow vols
+		&& glConfig.glVersion > 3.0 )								// i.e 3.1 or above, float-safe 
+	{
+		backEnd.usingSoftShadows = true;
+		softShadowMgr->NewFrame();
+	} else {
+		backEnd.usingSoftShadows = false;
+	}
+*/
 	// clear the z buffer, set the projection matrix, etc
 	RB_BeginDrawingView();
 
