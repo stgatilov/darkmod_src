@@ -422,6 +422,14 @@ void RB_ARB2_DrawInteractions( void ) {
 		lightShader = vLight->lightShader;
 		//anon begin
 		// set the depth bounds for the whole light
+		// Softshadows
+		/*if ( backEnd.usingSoftShadows && (vLight->globalShadows || vLight->localShadows) ) 
+		{
+			softShadowMgr->DrawInteractions( vLight );
+			softShadowMgr->DrawDebugOutput( vLight );
+		} 
+		else */
+		// {
 		if (useLightDepthBounds)
 		{
 			GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
@@ -492,6 +500,8 @@ void RB_ARB2_DrawInteractions( void ) {
 				GL_DepthBoundsTest(0.0f, 0.0f);
 			}
 			//anon end
+			
+	    // } SoftShadows		
 
 		// translucent surfaces never get stencil shadowed
 		if ( r_skipTranslucent.GetBool() ) {
