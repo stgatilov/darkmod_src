@@ -358,6 +358,76 @@ PFNGLRENDERBUFFERSTORAGEPROC			glRenderbufferStorage;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC		glFramebufferRenderbuffer;
 PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 
+/* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
+
+// Frame Buffer Objects
+PFNGLISRENDERBUFFERPROC					qglIsRenderbuffer;
+PFNGLBINDRENDERBUFFERPROC				qglBindRenderbuffer;
+PFNGLDELETERENDERBUFFERSPROC			qglDeleteRenderbuffers;
+PFNGLGENRENDERBUFFERSPROC				qglGenRenderbuffers;
+PFNGLRENDERBUFFERSTORAGEPROC			qglRenderbufferStorage;
+PFNGLGETRENDERBUFFERPARAMETERIVPROC		qglGetRenderbufferParameteriv;
+PFNGLISFRAMEBUFFERPROC					qglIsFramebuffer;
+PFNGLBINDFRAMEBUFFERPROC				qglBindFramebuffer;
+PFNGLDELETEFRAMEBUFFERSPROC				qglDeleteFramebuffers;
+PFNGLGENFRAMEBUFFERSPROC				qglGenFramebuffers;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC			qglCheckFramebufferStatus;
+PFNGLFRAMEBUFFERTEXTURE1DPROC			qglFramebufferTexture1D;
+PFNGLFRAMEBUFFERTEXTURE2DPROC			qglFramebufferTexture2D;
+PFNGLFRAMEBUFFERTEXTURE3DPROC			qglFramebufferTexture3D;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC		qglFramebufferRenderbuffer;
+PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC qglGetFramebufferAttachmentParameteriv;
+PFNGLGENERATEMIPMAPPROC					qglGenerateMipmap;
+PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
+PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
+PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
+PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
+
+// GLSL
+PFNGLATTACHSHADERPROC						qglAttachShader;
+PFNGLCOMPILESHADERPROC						qglCompileShader;
+PFNGLCREATEPROGRAMPROC						qglCreateProgram;
+PFNGLCREATESHADERPROC						qglCreateShader;
+PFNGLLINKPROGRAMPROC						qglLinkProgram;
+PFNGLSHADERSOURCEPROC						qglShaderSource;
+PFNGLUSEPROGRAMPROC							qglUseProgram;
+PFNGLUNIFORM1FPROC							qglUniform1f;
+PFNGLUNIFORM2FPROC							qglUniform2f;
+PFNGLUNIFORM3FPROC							qglUniform3f;
+PFNGLUNIFORM4FPROC							qglUniform4f;
+PFNGLUNIFORM1IPROC							qglUniform1i;
+PFNGLUNIFORM2IPROC							qglUniform2i;
+PFNGLUNIFORM3IPROC							qglUniform3i;
+PFNGLUNIFORM4IPROC							qglUniform4i;
+PFNGLUNIFORM1FVPROC							qglUniform1fv;
+PFNGLUNIFORM2FVPROC							qglUniform2fv;
+PFNGLUNIFORM3FVPROC							qglUniform3fv;
+PFNGLUNIFORM4FVPROC							qglUniform4fv;
+PFNGLUNIFORM1IVPROC							qglUniform1iv;
+PFNGLUNIFORM2IVPROC							qglUniform2iv;
+PFNGLUNIFORM3IVPROC							qglUniform3iv;
+PFNGLUNIFORM4IVPROC							qglUniform4iv;
+PFNGLUNIFORMMATRIX2FVPROC					qglUniformMatrix2fv;
+PFNGLUNIFORMMATRIX3FVPROC					qglUniformMatrix3fv;
+PFNGLUNIFORMMATRIX4FVPROC					qglUniformMatrix4fv;
+PFNGLVALIDATEPROGRAMPROC					qglValidateProgram;
+PFNGLGETSHADERIVPROC						qglGetShaderiv;
+PFNGLGETATTRIBLOCATIONPROC					qglGetAttribLocation;
+PFNGLGETUNIFORMLOCATIONPROC					qglGetUniformLocation;
+PFNGLISPROGRAMPROC							qglIsProgram;
+PFNGLISSHADERPROC							qglIsShader;
+PFNGLGETSHADERINFOLOGPROC					qglGetShaderInfoLog;
+PFNGLDELETEPROGRAMPROC						qglDeleteProgram;
+PFNGLDELETESHADERPROC						qglDeleteShader;
+PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
+PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
+
+// State management
+PFNGLBLENDEQUATIONPROC						qglBlendEquation;
+
+ -----====+++  END TDM ~SS Extensions  +++====-----   */
+
+
 /*
 =================
 R_CheckExtension
@@ -577,6 +647,78 @@ static void R_CheckPortableExtensions( void ) {
  	if ( glConfig.depthBoundsTestAvailable ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
+	
+		/* -----====+++|  BEGIN TDM ~SS Extensions  |+++====-----   
+
+	if ( glConfig.glVersion > 3.0 ) {
+
+		// Frame Buffer Objects
+		qglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GLimp_ExtensionPointer( "glIsRenderbuffer" );
+		qglBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)GLimp_ExtensionPointer( "glBindRenderbuffer" );
+		qglDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteRenderbuffers" );
+		qglGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)GLimp_ExtensionPointer( "glGenRenderbuffers" );
+		qglRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)GLimp_ExtensionPointer( "glRenderbufferStorage" );
+		qglGetRenderbufferParameteriv = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetRenderbufferParameteriv" );
+		qglIsFramebuffer = (PFNGLISFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glIsFramebuffer" );
+		qglBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBindFramebuffer" );
+		qglDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glDeleteFramebuffers" );
+		qglGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)GLimp_ExtensionPointer( "glGenFramebuffers" );
+		qglCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)GLimp_ExtensionPointer( "glCheckFramebufferStatus" );
+		qglFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)GLimp_ExtensionPointer( "glFramebufferTexture1D" );
+		qglFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)GLimp_ExtensionPointer( "glFramebufferTexture2D" );
+		qglFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)GLimp_ExtensionPointer( "glFramebufferTexture3D" );
+		qglFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GLimp_ExtensionPointer( "glFramebufferRenderbuffer" );
+		qglGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetFramebufferAttachmentParameteriv" );
+		qglGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer( "glGenerateMipmap" );
+		qglBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GLimp_ExtensionPointer( "glBlitFramebuffer" );
+		qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)GLimp_ExtensionPointer( "glRenderbufferStorageMultisample" );
+		qglFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
+		qglDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer( "glDrawBuffers" );	
+
+		// GLSL
+		qglAttachShader = (PFNGLATTACHSHADERPROC)GLimp_ExtensionPointer( "glAttachShader" );
+		qglCompileShader = (PFNGLCOMPILESHADERPROC)GLimp_ExtensionPointer( "glCompileShader" );
+		qglCreateProgram = (PFNGLCREATEPROGRAMPROC)GLimp_ExtensionPointer( "glCreateProgram" );
+		qglCreateShader = (PFNGLCREATESHADERPROC)GLimp_ExtensionPointer( "glCreateShader" );
+		qglLinkProgram = (PFNGLLINKPROGRAMPROC)GLimp_ExtensionPointer( "glLinkProgram" );
+		qglShaderSource = (PFNGLSHADERSOURCEPROC)GLimp_ExtensionPointer( "glShaderSource" );
+		qglUseProgram = (PFNGLUSEPROGRAMPROC)GLimp_ExtensionPointer( "glUseProgram" );
+		qglUniform1f = (PFNGLUNIFORM1FPROC)GLimp_ExtensionPointer( "glUniform1f" );
+		qglUniform2f = (PFNGLUNIFORM2FPROC)GLimp_ExtensionPointer( "glUniform2f" );
+		qglUniform3f = (PFNGLUNIFORM3FPROC)GLimp_ExtensionPointer( "glUniform3f" );
+		qglUniform4f = (PFNGLUNIFORM4FPROC)GLimp_ExtensionPointer( "glUniform4f" );
+		qglUniform1i = (PFNGLUNIFORM1IPROC)GLimp_ExtensionPointer( "glUniform1i" );
+		qglUniform2i = (PFNGLUNIFORM2IPROC)GLimp_ExtensionPointer( "glUniform2i" );
+		qglUniform3i = (PFNGLUNIFORM3IPROC)GLimp_ExtensionPointer( "glUniform3i" );
+		qglUniform4i = (PFNGLUNIFORM4IPROC)GLimp_ExtensionPointer( "glUniform4i" );
+		qglUniform1fv = (PFNGLUNIFORM1FVPROC)GLimp_ExtensionPointer( "glUniform1fv" );
+		qglUniform2fv = (PFNGLUNIFORM2FVPROC)GLimp_ExtensionPointer( "glUniform2fv" );
+		qglUniform3fv = (PFNGLUNIFORM3FVPROC)GLimp_ExtensionPointer( "glUniform3fv" );
+		qglUniform4fv = (PFNGLUNIFORM4FVPROC)GLimp_ExtensionPointer( "glUniform4fv" );
+		qglUniform1iv = (PFNGLUNIFORM1IVPROC)GLimp_ExtensionPointer( "glUniform1iv" );
+		qglUniform2iv = (PFNGLUNIFORM2IVPROC)GLimp_ExtensionPointer( "glUniform2iv" );
+		qglUniform3iv = (PFNGLUNIFORM3IVPROC)GLimp_ExtensionPointer( "glUniform3iv" );
+		qglUniform4iv = (PFNGLUNIFORM4IVPROC)GLimp_ExtensionPointer( "glUniform4iv" );
+		qglUniformMatrix2fv = (PFNGLUNIFORMMATRIX2FVPROC)GLimp_ExtensionPointer( "glUniformMatrix2fv" );
+		qglUniformMatrix3fv = (PFNGLUNIFORMMATRIX3FVPROC)GLimp_ExtensionPointer( "glUniformMatrix3fv" );
+		qglUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GLimp_ExtensionPointer( "glUniformMatrix4fv" );
+		qglValidateProgram = (PFNGLVALIDATEPROGRAMPROC)GLimp_ExtensionPointer( "glValidateProgram" );
+		qglGetShaderiv = (PFNGLGETSHADERIVPROC)GLimp_ExtensionPointer( "glGetShaderiv" );
+		qglGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glGetAttribLocation" );
+		qglGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC)GLimp_ExtensionPointer( "glGetUniformLocation" );
+		qglIsProgram = (PFNGLISPROGRAMPROC)GLimp_ExtensionPointer( "glIsProgram" );
+		qglIsShader = (PFNGLISSHADERPROC)GLimp_ExtensionPointer( "glIsShader" );
+		qglGetShaderInfoLog = (PFNGLGETSHADERINFOLOGPROC)GLimp_ExtensionPointer( "glGetShaderInfoLog" );
+		qglDeleteProgram = (PFNGLDELETEPROGRAMPROC)GLimp_ExtensionPointer( "glDeleteProgram" );
+		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
+		qglGetProgramiv = (PFNGLGETPROGRAMIVPROC)GLimp_ExtensionPointer( "glGetProgramiv" );
+		qglGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)GLimp_ExtensionPointer( "glGetProgramInfoLog" );
+
+		// State management
+		qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
+	}
+
+	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
 
 	glConfig.pixelBufferAvailable = R_CheckExtension("ARB_pixel_buffer_object");
 
