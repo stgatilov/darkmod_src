@@ -169,7 +169,15 @@ public:
 	void		GenerateCubeImage( const byte *pic[6], int size, 
 						textureFilter_t filter, bool allowDownSize, 
 						textureDepth_t depth );
+/*	void		GenerateRendertarget(); //~SS
+	// added for soft shadows jitter map, but should be generally useful for storing data 
+	// in a 3D texture. No mipmaps, high quality, nearest filtering, user specifies the format.
+	void		GenerateDataCubeImage( const GLvoid* data, int width, int height, int depth, textureRepeat_t repeat,
+									   GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
+*/
 
+						
+						
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
 	void		CopyDepthbuffer( int x, int y, int width, int height, bool useOversizedBuffer );
@@ -246,7 +254,7 @@ public:
 	// data for listImages
 	int					uploadWidth, uploadHeight, uploadDepth;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 	int					internalFormat;
-
+/*	GLuint				pixelDataFormat[2]; */ // ~ss
 	idImage 			*cacheUsagePrev, *cacheUsageNext;	// for dynamic cache purging of old images
 
 	idImage *			hashNext;				// for hash chains to speed lookup
@@ -280,6 +288,7 @@ ID_INLINE idImage::idImage() {
 	bindCount = 0;
 	uploadWidth = uploadHeight = uploadDepth = 0;
 	internalFormat = 0;
+	//	pixelDataFormat[0] = pixelDataFormat[1] = 0;	//~SS. Used for regenerating render target textures
 	cacheUsagePrev = cacheUsageNext = NULL;
 	hashNext = NULL;
 	isMonochrome = false;
@@ -316,6 +325,9 @@ public:
 	// The callback will be issued immediately, and later if images are reloaded or vid_restart
 	// The callback function should call one of the idImage::Generate* functions to fill in the data
 	idImage *			ImageFromFunction( const char *name, void (*generatorFunction)( idImage *image ));
+
+		// For generating a rendertarget image. Can be called a second time with same name to resize or change format.
+//	idImage *			RendertargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType );
 
 	// called once a frame to allow any background loads that have been completed
 	// to turn into textures.
