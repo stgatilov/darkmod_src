@@ -1424,6 +1424,38 @@ idImage *idImageManager::ImageFromFunction( const char *_name, void (*generatorF
 	return image;
 }
 
+/* ~ss
+==================
+RendertargetImage
+
+An image suitable for a render target. No mipmaps, no downsizing. Calling code specifies the internal format. 
+Can be called with an existing image name to resize an image or change its format
+==================
+
+idImage *idImageManager::RendertargetImage( const char* name, int width, int height, GLuint internalFormat, GLuint pixelFormat, GLuint pixelType )
+{
+	idImage* img = GetImage(name);
+
+	if ( !img )
+	{
+		img = AllocImage( name );
+		img->generatorFunction = R_RendertargetImage;
+		img->referencedOutsideLevelLoad = true;
+	}
+
+	img->uploadWidth = width;
+	img->uploadHeight = height;
+	img->internalFormat = internalFormat;
+	img->pixelDataFormat[0] = pixelFormat;
+	img->pixelDataFormat[1] = pixelType;
+	
+	// NB there's no difference between ActuallyLoadImage() and Reload() for generated images. Both just call the generator function.
+	img->ActuallyLoadImage( false, true );
+	return img;
+}
+
+/*
+
 /*
 ===============
 ImageFromFile
