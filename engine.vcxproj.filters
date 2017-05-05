@@ -566,6 +566,9 @@
       <Filter>Sys</Filter>
     </ClInclude>
     <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
+	<!- ClInclude Include="renderer\draw_soft_shadows.h" ->
+      <!- Filter>Renderer</Filter ->
+    <!- /ClInclude ->
     <ClInclude Include="sound\efxlib.h">
       <Filter>Sound</Filter>
     </ClInclude>
