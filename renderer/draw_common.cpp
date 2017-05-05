@@ -131,8 +131,6 @@ void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSu
 	qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
 }
 
-
-
 /*
 ================
 RB_PrepareStageTexturing_ReflectCube
@@ -651,14 +649,34 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		return;
 	}
 
+	const float zero[4] = { r_ambient_testadd.GetFloat(), r_ambient_testadd.GetFloat(), r_ambient_testadd.GetFloat(), 0 };
+	static const float one[4] = { 1, 1, 1, 1 };
+	static const float negOne[4] = { -1, -1, -1, -1 };
+
+	switch (pStage->vertexColor) {
+	case SVC_IGNORE:
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, one );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, zero );
+		break;
+	case SVC_MODULATE:
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, color );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, zero );
+		break;
+	case SVC_INVERSE_MODULATE:
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, negOne );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, one );
+		break;
+	}
 	// select the vertex color source
 	if (pStage->vertexColor == SVC_IGNORE) {
 		qglColor4fv( color );
 	} else {
 		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
 		qglEnableClientState( GL_COLOR_ARRAY );
+		//qglEnableVertexAttribArrayARB( 3 );
+		//qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 
-		if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
+		/*if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
 			GL_TexEnv( GL_COMBINE_ARB );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
@@ -693,11 +711,11 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			qglTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
 
 			GL_SelectTexture( 0 );
-		}
+		}*/
 	}
 
 	switch (pStage->texture.texgen) {
-	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
@@ -723,7 +741,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	RB_FinishStageTexturing( pStage, surf, ac );
 
 	switch (pStage->texture.texgen) {
-	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
@@ -733,13 +751,14 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	}
 
 	if (pStage->vertexColor != SVC_IGNORE) {
+		//qglDisableVertexAttribArrayARB( 3 );
 		qglDisableClientState( GL_COLOR_ARRAY );
 
-		GL_SelectTexture( 1 );
+		/*GL_SelectTexture( 1 );
 		GL_TexEnv( GL_MODULATE );
 		globalImages->BindNull();
 		GL_SelectTexture( 0 );
-		GL_TexEnv( GL_MODULATE );
+		GL_TexEnv( GL_MODULATE );*/
 	}
 }
 
@@ -958,6 +977,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	if ( shader->IsPortalSky() ) { // NB TDM portal sky does not use this flag or whatever mechanism 
 		return;					   // it used to support. Our portalSky is drawn in this procedure using
 	}							   // the skybox image captured in _currentRender. -- SteveL working on #4182
+	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );
 
 	// change the matrix if needed
 	if ( surf->space != backEnd.currentSpace ) {

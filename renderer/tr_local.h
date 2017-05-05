@@ -1035,7 +1035,7 @@ extern idCVar r_stencilShadowMode;
 extern idCVar r_softShadDebug;
 extern idCVar r_softShadMaxSize; */
 
-// duzenko: late 2016 additions
+// duzenko: late 2016-17 additions
 extern idCVar r_useAnonreclaimer;
 extern idCVar r_useFbo;
 extern idCVar r_fboDebug;
@@ -1043,6 +1043,7 @@ extern idCVar r_fboColorBits;
 extern idCVar r_fboSharedColor;
 extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
+extern idCVar r_ambient_testadd;
 
 // HDR related - J.C.Denton
 extern idCVar r_postprocess;
