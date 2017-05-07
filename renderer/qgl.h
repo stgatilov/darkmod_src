@@ -227,6 +227,9 @@ extern PFNGLFRAMEBUFFERRENDERBUFFERPROC	glFramebufferRenderbuffer;
 extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
 extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 
+// arb assembly info
+extern PFNGLGETPROGRAMIVARBPROC			glGetProgramivARB;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*

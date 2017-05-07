@@ -359,6 +359,9 @@ PFNGLRENDERBUFFERSTORAGEPROC			glRenderbufferStorage;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC		glFramebufferRenderbuffer;
 PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 
+// arb assembly info
+PFNGLGETPROGRAMIVARBPROC				glGetProgramivARB;
+
 /* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
 
 // Frame Buffer Objects
@@ -735,10 +738,15 @@ static void R_CheckPortableExtensions( void ) {
 	glFramebufferRenderbuffer= (PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC)GLimp_ExtensionPointer("glFramebufferRenderbuffer");
 	glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebuffer");
 	glDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer("glDrawBuffers");
+	glGetProgramivARB = (PFNGLGETPROGRAMIVARBPROC)GLimp_ExtensionPointer( "glGetProgramivARB" );
 
 	int n;
 	glGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
+	if (glGetProgramivARB) {
+		glGetProgramivARB( GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ENV_PARAMETERS_ARB, &n );
+		common->Printf( "Max env parameters: %d\n", n );
+	}
 }
 
 
