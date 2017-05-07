@@ -201,6 +201,10 @@ public:
 	static unsigned int			Ftol( float f );			// float to int conversion
 	static unsigned int			FtolFast( float );			// fast float to int conversion but uses current FPU round mode (default round nearest)
 
+	//stgatilov: branchless min and max for floating point values
+	static float Fmin ( float a, float b );
+	static float Fmax ( float a, float b );
+
 	static signed char			ClampChar( int i );
 	static signed short			ClampShort( int i );
 	static int					ClampInt( int min, int max, int value );
@@ -913,6 +917,22 @@ ID_INLINE unsigned int idMath::FtolFast( float f ) {
 	return i;
 #else
 	return (unsigned int) f;
+#endif
+}
+
+ID_INLINE float idMath::Fmin ( float a, float b ) {
+#ifdef __SSE__
+	return _mm_cvtss_f32(_mm_min_ss(_mm_set_ss(a), _mm_set_ss(b)));
+#else
+	return a < b ? a : b;
+#endif
+}
+
+ID_INLINE float idMath::Fmax ( float a, float b ) {
+#ifdef __SSE__
+	return _mm_cvtss_f32(_mm_max_ss(_mm_set_ss(a), _mm_set_ss(b)));
+#else
+	return a > b ? a : b;
 #endif
 }
 

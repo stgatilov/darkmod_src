@@ -66,7 +66,9 @@ public:
 	* Tels: Get the size of the bounds, that is b1 - b0
 	*/
 	idVec3			GetSize( void ) const;
-
+	//stgatilov: checks if any size is negative
+	bool			IsBackwards( void ) const;
+	//note: only X coordinate is checked!
 	bool			IsCleared( void ) const;						// returns true if bounds are inside out
 
 	bool			AddPoint( const idVec3 &v );					// add the point, returns true if the bounds expanded
@@ -96,6 +98,7 @@ public:
 					// most tight bounds for a translation
 	void			FromPointTranslation( const idVec3 &point, const idVec3 &translation );
 	void			FromBoundsTranslation( const idBounds &bounds, const idVec3 &origin, const idMat3 &axis, const idVec3 &translation );
+	void			FromBoundsTranslation( const idBounds &bounds, const idVec3 &origin, const idVec3 &translation );
 					// most tight bounds for a rotation
 	void			FromPointRotation( const idVec3 &point, const idRotation &rotation );
 	void			FromBoundsRotation( const idBounds &bounds, const idVec3 &origin, const idMat3 &axis, const idRotation &rotation );
@@ -231,6 +234,10 @@ ID_INLINE idVec3 idBounds::GetSize( void ) const {
 	return idVec3( b[1][0] - b[0][0], b[1][1] - b[0][1], b[1][2] - b[0][2] );
 }
 	
+ID_INLINE bool idBounds::IsBackwards( void ) const {
+	return b[1][0] < b[0][0] || b[1][1] < b[0][1] || b[1][2] < b[0][2];
+}
+
 ID_INLINE bool idBounds::IsCleared( void ) const {
 	return b[0][0] > b[1][0];
 }

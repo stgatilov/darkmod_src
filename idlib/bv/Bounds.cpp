@@ -301,6 +301,19 @@ void idBounds::FromBoundsTranslation( const idBounds &bounds, const idVec3 &orig
 		}
 	}
 }
+void idBounds::FromBoundsTranslation( const idBounds &bounds, const idVec3 &origin, const idVec3 &translation ) {
+	b[0] = bounds[0] + origin;
+	b[1] = bounds[1] + origin;
+	for ( int i = 0; i < 3; i++ ) {
+		if ( translation[i] < 0.0f ) {
+			b[0][i] += translation[i];
+		}
+		else {
+			b[1][i] += translation[i];
+		}
+	}
+}
+
 
 /*
 ================
