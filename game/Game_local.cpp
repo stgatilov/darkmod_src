@@ -808,6 +808,9 @@ void idGameLocal::Shutdown( void ) {
 	// shut down the animation manager
 	animationLib.Shutdown();
 
+	// shut down globals (make sure to remove images from there)
+	g_Global.Shutdown();
+
 	Printf( "--------------------------------------\n" );
 
 #ifdef GAME_DLL

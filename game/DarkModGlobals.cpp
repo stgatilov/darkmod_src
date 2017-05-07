@@ -154,9 +154,38 @@ idStr GetExpandedTildePath(const char* path)
 
 CGlobal::CGlobal()
 {
+	//stgatilov: please, write only necessary zero-initialization here!
+	//move all real initialization logic into Init method
 	memset(m_LogArray, 0, sizeof(m_LogArray));
 	memset(m_ClassArray, 0, sizeof(m_ClassArray));
+	m_LogFile = 0;
+	m_Frame = 0;
+	m_MaxFrobDistance = 0;
+	m_LogClass = LC_SYSTEM;
+	m_LogType = LT_DEBUG;
+	m_Filename = "undefined";
+	m_DriveLetter = 0;
+	m_Linenumber = 0;
+}
 
+CGlobal::~CGlobal()
+{
+	if (m_LogFile != NULL)
+	{
+		fclose(m_LogFile);
+	}
+}
+
+void CGlobal::Shutdown() {
+	//stgatilov: calling destructor + def. constructor
+	//it makes sure that all dynamic stuff is destroyed,
+	//and all members remain in "constructed" state
+	this->~CGlobal();
+	new(this) CGlobal();
+}
+
+void CGlobal::Init()
+{
 	// Initialise all logtypes to false
 	for (int i = 0; i < LT_COUNT; ++i)
 	{
@@ -177,12 +206,6 @@ CGlobal::CGlobal()
 	m_ClassArray[LC_INIT] = true;
 	m_ClassArray[LC_FORCE] = true;
 
-	m_Frame = 0;
-	m_MaxFrobDistance = 0;
-	m_LogClass = LC_SYSTEM;
-	m_LogType = LT_DEBUG;
-	m_Filename = "undefined";
-	m_Linenumber = 0;
 
 	idStr logFilePath = DARKMOD_LOGFILE;
 
@@ -218,18 +241,7 @@ CGlobal::CGlobal()
 	{
 		m_AcuityHash.Add( m_AcuityHash.GenerateKey( m_AcuityNames[i].c_str(), false ), i );
 	}
-}
 
-CGlobal::~CGlobal()
-{
-	if (m_LogFile != NULL)
-	{
-		fclose(m_LogFile);
-	}
-}
-
-void CGlobal::Init()
-{
 	// Report the darkmod path for diagnostic purposes
 	LogString("Darkmod path is %s\r", GetDarkmodPath().c_str());
 
