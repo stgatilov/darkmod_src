@@ -804,12 +804,7 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 		}
 
 		// if the bounds really do overlap
-		if (	check->absBounds[0][0] > parms.bounds[1][0] ||
-				check->absBounds[1][0] < parms.bounds[0][0] ||
-				check->absBounds[0][1] > parms.bounds[1][1] ||
-				check->absBounds[1][1] < parms.bounds[0][1] ||
-				check->absBounds[0][2] > parms.bounds[1][2] ||
-				check->absBounds[1][2] < parms.bounds[0][2] ) {
+		if ( !check->absBounds.IntersectsBounds(parms.bounds) ) {
 			continue;
 		}
 
@@ -832,9 +827,7 @@ idClip::ClipModelsTouchingBounds
 int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, idClipModel **clipModelList, int maxCount ) const {
 	listParms_t parms;
 
-	if (	bounds[0][0] > bounds[1][0] ||
-			bounds[0][1] > bounds[1][1] ||
-			bounds[0][2] > bounds[1][2] ) {
+	if (	bounds.IsBackwards() ) {
 		// we should not go through the tree for degenerate or backwards bounds
 		assert( false );
 		return 0;
@@ -860,12 +853,16 @@ idClip::EntitiesTouchingBounds
 */
 int idClip::EntitiesTouchingBounds( const idBounds &bounds, int contentMask, idEntity **entityList, int maxCount ) const {
 	idClipModel *clipModelList[MAX_GENTITIES];
-	int i, j, count, entCount;
-
-	count = idClip::ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
-	entCount = 0;
-	for ( i = 0; i < count; i++ ) {
+	int count = idClip::ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
+	int entCount = FilterEntities( entityList, maxCount, clipModelList, count );
+	return entCount;
+}
+//stgatilov: filtering part of EntitiesTouchingBounds refactored into this internal method
+int idClip::FilterEntities( idEntity **entityList, int maxCount, idClipModel **clipModelList, int count ) const {
+	int entCount = 0;
+	for ( int i = 0; i < count; i++ ) {
 		// entity could already be in the list because an entity can use multiple clip models
+		int j;
 		for ( j = 0; j < entCount; j++ ) {
 			if ( entityList[j] == clipModelList[i]->entity ) {
 				break;
@@ -896,25 +893,25 @@ idClip::GetTraceClipModels
 ====================
 */
 int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const {
-	int i, num;
-	idClipModel	*cm;
-	idEntity *passOwner;
-
-	num = ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
-
+	int num = ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
+	FilterClipModels(passEntity, clipModelList, num);
+	return num;
+}
+//stgatilov: filtering part of GetTraceClipModels refactored into this internal method
+void idClip::FilterClipModels(const idEntity *passEntity, idClipModel **clipModelList, int num ) const {
 	if ( !passEntity ) {
-		return num;
+		return;
 	}
 
+	idEntity *passOwner;
 	if ( passEntity->GetPhysics()->GetNumClipModels() > 0 ) {
 		passOwner = passEntity->GetPhysics()->GetClipModel()->GetOwner();
 	} else {
 		passOwner = NULL;
 	}
 
-	for ( i = 0; i < num; i++ ) {
-
-		cm = clipModelList[i];
+	for ( int i = 0; i < num; i++ ) {
+		idClipModel	*cm = clipModelList[i];
 
 		// check if we should ignore this entity
 		if ( cm->entity == passEntity ) {
@@ -929,8 +926,6 @@ int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const i
 			}
 		}
 	}
-
-	return num;
 }
 
 /*
@@ -1017,58 +1012,9 @@ idClip::TranslationEntities
 */
 void idClip::TranslationEntities( trace_t &results, const idVec3 &start, const idVec3 &end,
 						const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
-	int i, num;
-	idClipModel *touch, *clipModelList[MAX_GENTITIES];
-	idBounds traceBounds;
-	float radius;
-	trace_t trace;
-	const idTraceModel *trm;
-
-	if ( TestHugeTranslation( results, mdl, start, end, trmAxis ) ) {
-		return;
-	}
-
-	trm = TraceModelForClipModel( mdl );
-
-	results.fraction = 1.0f;
-	results.endpos = end;
-	results.endAxis = trmAxis;
-
-	if ( !trm ) {
-		traceBounds.FromPointTranslation( start, end - start );
-		radius = 0.0f;
-	} else {
-		traceBounds.FromBoundsTranslation( trm->bounds, start, trmAxis, end - start );
-		radius = trm->bounds.GetRadius();
-	}
-
-	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
-
-	for ( i = 0; i < num; i++ ) {
-		touch = clipModelList[i];
-
-		if ( !touch ) {
-			continue;
-		}
-
-		if ( touch->renderModelHandle != -1 ) {
-			idClip::numRenderModelTraces++;
-			TraceRenderModel( trace, start, end, radius, trmAxis, touch );
-		} else {
-			idClip::numTranslations++;
-			collisionModelManager->Translation( &trace, start, end, trm, trmAxis, contentMask,
-									touch->Handle(), touch->origin, touch->axis );
-		}
-
-		if ( trace.fraction < results.fraction ) {
-			results = trace;
-			results.c.entityNum = touch->entity->entityNumber;
-			results.c.id = touch->id;
-			if ( results.fraction == 0.0f ) {
-				break;
-			}
-		}
-	}
+	//stgatilov: I refactored this method because it was complete copy/paste of Translation
+	//except for the fact that collision with World is ignored
+	Translation(results, start, end, mdl, trmAxis, contentMask, passEntity, true);
 }
 
 /*
@@ -1077,7 +1023,8 @@ idClip::Translation
 ============
 */
 bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &end,
-						const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity ) {
+						const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity,
+						bool ignoreWorld ) {
 	int i, num;
 	idClipModel *touch, *clipModelList[MAX_GENTITIES];
 	idBounds traceBounds;
@@ -1091,7 +1038,7 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 
 	trm = TraceModelForClipModel( mdl );
 
-	if ( !passEntity || passEntity->entityNumber != ENTITYNUM_WORLD ) {
+	if ( !ignoreWorld && (!passEntity || passEntity->entityNumber != ENTITYNUM_WORLD) ) {
 		// test world
 		idClip::numTranslations++;
 		collisionModelManager->Translation( &results, start, end, trm, trmAxis, contentMask, 0, vec3_origin, mat3_default );
@@ -1106,13 +1053,21 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 		results.endAxis = trmAxis;
 	}
 
-	if ( !trm ) {
-		traceBounds.FromPointTranslation( start, results.endpos - start );
-		radius = 0.0f;
-	} else {
-		traceBounds.FromBoundsTranslation( trm->bounds, start, trmAxis, results.endpos - start );
+	//stgatilov: first obtain bounds with rotation applied (relative to start point)
+	idBounds localBounds;
+	if ( trm ) {
+		if (trmAxis.IsRotated())
+			localBounds.FromTransformedBounds(trm->bounds, idVec3(0.0f), trmAxis);
+		else
+			localBounds = trm->bounds;
 		radius = trm->bounds.GetRadius();
 	}
+	else {
+		localBounds.Zero();
+		radius = 0.0f;
+	}
+	//then obtain bounds in global coordinates during the whole movement
+	traceBounds.FromBoundsTranslation(localBounds, start, results.endpos - start);
 
 	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
 

@@ -272,7 +272,7 @@ public:
 
 	// clip versus the rest of the world
 	bool					Translation( trace_t &results, const idVec3 &start, const idVec3 &end,
-								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
+								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity, bool ignoreWorld = false );
 	bool					Rotation( trace_t &results, const idVec3 &start, const idRotation &rotation,
 								const idClipModel *mdl, const idMat3 &trmAxis, int contentMask, const idEntity *passEntity );
 	bool					Motion( trace_t &results, const idVec3 &start, const idVec3 &end, const idRotation &rotation,
@@ -342,6 +342,9 @@ private:
 	const idTraceModel *	TraceModelForClipModel( const idClipModel *mdl ) const;
 	int						GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const;
 	void					TraceRenderModel( trace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, const idMat3 &axis, idClipModel *touch ) const;
+
+	void					FilterClipModels(const idEntity *passEntity, idClipModel **clipModelList, int num ) const;
+	int						FilterEntities( idEntity **entityList, int maxCount, idClipModel **clipModelList, int count ) const;
 };
 
 
