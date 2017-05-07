@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug with inlines and memory log|Win32">
@@ -403,6 +403,7 @@
     <ClCompile Include="idlib\math\Angles.cpp" />
     <ClCompile Include="idlib\math\Complex.cpp" />
     <ClCompile Include="idlib\math\Lcp.cpp" />
+    <ClCompile Include="idlib\math\Line.cpp" />
     <ClCompile Include="idlib\math\Math.cpp" />
     <ClCompile Include="idlib\math\Matrix.cpp" />
     <ClCompile Include="idlib\math\Ode.cpp" />
@@ -510,6 +511,7 @@
     <ClInclude Include="idlib\math\Extrapolate.h" />
     <ClInclude Include="idlib\math\Interpolate.h" />
     <ClInclude Include="idlib\math\Lcp.h" />
+    <ClInclude Include="idlib\math\Line.h" />
     <ClInclude Include="idlib\math\Math.h" />
     <ClInclude Include="idlib\math\Matrix.h" />
     <ClInclude Include="idlib\math\Ode.h" />

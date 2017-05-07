@@ -163,6 +163,9 @@
     <ClCompile Include="idlib\geometry\RenderMatrix.cpp">
       <Filter>Geometry</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\math\Line.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -360,6 +363,9 @@
     </ClInclude>
     <ClInclude Include="idlib\geometry\sys_intrinsics.h">
       <Filter>Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Line.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

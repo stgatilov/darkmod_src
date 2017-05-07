@@ -38,6 +38,7 @@
 class idClip;
 class idClipModel;
 class idEntity;
+struct listParmsMoving;
 
 
 //===============================================================
@@ -345,6 +346,12 @@ private:
 
 	void					FilterClipModels(const idEntity *passEntity, idClipModel **clipModelList, int num ) const;
 	int						FilterEntities( idEntity **entityList, int maxCount, idClipModel **clipModelList, int count ) const;
+
+	void					ClipModelsTouchingMovingBounds_r( const clipSector_s *node, idBounds &nodeBounds, listParmsMoving &parms ) const;
+	int						ClipModelsTouchingMovingBounds( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
+								int contentMask, idClipModel **clipModelList, float *fractionLowers, int maxCount ) const;
+	int						GetTraceClipModels( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
+								int contentMask, const idEntity *passEntity, idClipModel **clipModelList, float *fractionLowers ) const;
 };
 
 

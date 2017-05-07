@@ -22,6 +22,7 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#include "math/Line.h"
 #include "../Game_local.h"
 
 #define	MAX_SECTOR_DEPTH				12
@@ -820,6 +821,89 @@ void idClip::ClipModelsTouchingBounds_r( const struct clipSector_s *node, listPa
 }
 
 /*
+====================
+idClip::ClipModelsTouchingMovingBounds_r
+====================
+*/
+struct listParmsMoving : public listParms_t {
+	//line segment defining movement of object
+	idVec3 start;
+	idVec3 invDir;
+	//thickess of the moving bounds
+	idVec3 extent;
+	//for each output clipmodel: lower bound on fraction of an intersection point
+	float *fractionLowers;
+
+	ID_INLINE bool IntersectsBounds(const idBounds &objBounds, float range[2]) const {
+		range[0] = 0.0f, range[1] = 1.0f;
+		return MovingBoundsIntersectBounds(start, invDir, extent, objBounds, range);
+	}
+};
+
+void idClip::ClipModelsTouchingMovingBounds_r( const clipSector_s *node, idBounds &nodeBounds, listParmsMoving &parms ) const {
+	float tempRange[2];
+	if (!parms.IntersectsBounds(nodeBounds, tempRange))
+		return;
+
+	if (node->axis != -1) {
+		if ( parms.bounds[0][node->axis] <= node->dist ) {
+			float &coord = nodeBounds[1][node->axis];
+			float old = coord;
+			coord = node->dist;
+			ClipModelsTouchingMovingBounds_r( node->children[1], nodeBounds, parms );
+			coord = old;
+		}
+		if ( parms.bounds[1][node->axis] >= node->dist ) {
+			float &coord = nodeBounds[0][node->axis];
+			float old = coord;
+			coord = node->dist;
+			ClipModelsTouchingMovingBounds_r( node->children[0], nodeBounds, parms );
+			coord = old;
+		}
+		return;
+	}
+
+	for ( clipLink_t *link = node->clipLinks; link; link = link->nextInSector ) {
+		idClipModel	*check = link->clipModel;
+
+		// if the clip model is enabled
+		if ( !check->enabled ) {
+			continue;
+		}
+
+		// avoid duplicates in the list
+		if ( check->touchCount == touchCount ) {
+			continue;
+		}
+
+		// if the clip model does not have any contents we are looking for
+		if ( !( check->contents & parms.contentMask ) ) {
+			continue;
+		}
+
+		// if the bounds really do overlap
+		if ( !check->absBounds.IntersectsBounds(parms.bounds) ) {
+			continue;
+		}
+
+		// if moving bounds intersect with entity bounds
+		if ( !parms.IntersectsBounds(check->absBounds, tempRange) ) {
+			continue;
+		}
+
+		check->touchCount = touchCount;
+		parms.list[parms.count] = check;
+		parms.fractionLowers[parms.count] = tempRange[0];
+		parms.count++;
+
+		if ( parms.count >= parms.maxCount ) {
+			gameLocal.Warning( "idClip::ClipModelsTouchingMovingBounds_r: max count (%i) reached", parms.maxCount );
+			return;
+		}
+	}
+}
+
+/*
 ================
 idClip::ClipModelsTouchingBounds
 ================
@@ -842,6 +926,51 @@ int idClip::ClipModelsTouchingBounds( const idBounds &bounds, int contentMask, i
 
 	touchCount++;
 	ClipModelsTouchingBounds_r( clipSectors, parms );
+
+	return parms.count;
+}
+
+/*
+================
+idClip::ClipModelsTouchingMovingBounds
+================
+*/
+int idClip::ClipModelsTouchingMovingBounds(
+			const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
+			int contentMask,
+			idClipModel **clipModelList, float *fractionLowers, int maxCount ) const
+{
+	listParmsMoving parms;
+
+	if (	absBounds.IsBackwards() ) {
+		// we should not go through the tree for degenerate or backwards bounds
+		assert( false );
+		return 0;
+	}
+
+	parms.bounds[0] = absBounds[0] - vec3_boxEpsilon;
+	parms.bounds[1] = absBounds[1] + vec3_boxEpsilon;
+	parms.contentMask = contentMask;
+	parms.list = clipModelList;
+	parms.count = 0;
+	parms.maxCount = maxCount;
+
+	parms.fractionLowers = fractionLowers;
+	parms.start = start + stillBounds.GetCenter();
+	parms.extent = stillBounds.GetSize() * 0.5f + vec3_boxEpsilon;
+	parms.invDir = GetInverseMovementVelocity(start, end);
+
+	touchCount++;
+	idBounds nodeBounds(idVec3(-1e+10f), idVec3(1e+10f));
+	ClipModelsTouchingMovingBounds_r( clipSectors, nodeBounds, parms );
+
+	// sort clip models by lower bound on intersection time
+	for (int i = 0; i < parms.count; i++)
+		for (int j = i+1; j < parms.count; j++)
+			if (fractionLowers[i] > fractionLowers[j]) {
+				idSwap(fractionLowers[i], fractionLowers[j]);
+				idSwap(clipModelList[i], clipModelList[j]);
+			}
 
 	return parms.count;
 }
@@ -894,6 +1023,13 @@ idClip::GetTraceClipModels
 */
 int idClip::GetTraceClipModels( const idBounds &bounds, int contentMask, const idEntity *passEntity, idClipModel **clipModelList ) const {
 	int num = ClipModelsTouchingBounds( bounds, contentMask, clipModelList, MAX_GENTITIES );
+	FilterClipModels(passEntity, clipModelList, num);
+	return num;
+}
+int idClip::GetTraceClipModels( const idBounds &absBounds, const idBounds &stillBounds, const idVec3 &start, const idVec3 &end,
+	int contentMask, const idEntity *passEntity, idClipModel **clipModelList, float *fractionLowers ) const 
+{
+	int num = ClipModelsTouchingMovingBounds( absBounds, stillBounds, start, end, contentMask, clipModelList, fractionLowers, MAX_GENTITIES );
 	FilterClipModels(passEntity, clipModelList, num);
 	return num;
 }
@@ -1027,6 +1163,7 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 						bool ignoreWorld ) {
 	int i, num;
 	idClipModel *touch, *clipModelList[MAX_GENTITIES];
+	float fractionLowers[MAX_GENTITIES];
 	idBounds traceBounds;
 	float radius;
 	trace_t trace;
@@ -1069,13 +1206,33 @@ bool idClip::Translation( trace_t &results, const idVec3 &start, const idVec3 &e
 	//then obtain bounds in global coordinates during the whole movement
 	traceBounds.FromBoundsTranslation(localBounds, start, results.endpos - start);
 
-	num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
+	idVec3 globalSize = traceBounds.GetSize(), localSizeCap = localBounds.GetSize() * 2.0;
+	float totalMovement = (results.endpos - start).Length();
+	bool movingClipCheck = (totalMovement > CM_BOX_EPSILON && (globalSize.x > localSizeCap.x || globalSize.y > localSizeCap.y || globalSize.z > localSizeCap.z));
+	if (movingClipCheck) {
+		//box moved significantly: clip with moving bounds
+		num = GetTraceClipModels( traceBounds, localBounds, start, results.endpos, contentMask, passEntity, clipModelList, fractionLowers );
+		//note: convert fraction bounds to [start..end] range
+		float partOfWhole = totalMovement * idMath::InvSqrt((end - start).LengthSqr());
+		for (i = 0; i < num; i++)
+			fractionLowers[i] *= partOfWhole;
+	} else {
+		//box almost stands still: clip with bounds of whole movement
+		num = GetTraceClipModels( traceBounds, contentMask, passEntity, clipModelList );
+	}
 
 	for ( i = 0; i < num; i++ ) {
 		touch = clipModelList[i];
 
 		if ( !touch ) {
 			continue;
+		}
+
+		if (movingClipCheck && fractionLowers[i] > results.fraction) {
+			//stgatilov: judging from bounds, we can only obtain higher fractions for other models
+			for (int t = i; t < num; t++)
+				assert(fractionLowers[t] > results.fraction);	//were sorted in ClipModelsTouchingMovingBounds
+			break;
 		}
 
 		if ( touch->renderModelHandle != -1 ) {
