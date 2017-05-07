@@ -244,8 +244,9 @@ public:
 	 * The buffer is managed by the calling code and needs to provide space for the current rendercrop's 
 	 * size using 3 bytes per pixel (stored in order RGB). Use CropRenderSize(), then GetCurrentRenderCropSize() 
 	 * to receive the necessary size.
+	 * stgatilov: usePbo = true is set only for lightgem capturing! (see #4395)
 	 */
-	virtual void			CaptureRenderToBuffer(unsigned char* buffer) = 0;
+	virtual void			CaptureRenderToBuffer(unsigned char* buffer, bool usePbo = false) = 0;
 
 	virtual void			UnCrop() = 0;
 	//virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 ) = 0;

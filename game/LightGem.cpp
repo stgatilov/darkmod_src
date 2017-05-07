@@ -318,7 +318,7 @@ float LightGem::Calculate(idPlayer *player)
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 			DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Rendering to lightgem render buffer\n");
 
-			renderSystem->CaptureRenderToBuffer(m_LightgemImgBuffer);
+			renderSystem->CaptureRenderToBuffer(m_LightgemImgBuffer, true);
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_CaptureRenderToBuffer );
 
 #if 0
