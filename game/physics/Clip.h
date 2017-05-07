@@ -321,6 +321,7 @@ public:
 	void					PrintStatistics( void );
 	void					DrawClipModels( const idVec3 &eye, const float radius, const idEntity *passEntity );
 	bool					DrawModelContactFeature( const contactInfo_t &contact, const idClipModel *clipModel, int lifetime ) const;
+	void					DrawClipModel( const idClipModel *clipModel, const idVec3 &eye, const float radius ) const;
 
 private:
 	int						numClipSectors;

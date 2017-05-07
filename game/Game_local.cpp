@@ -4983,6 +4983,35 @@ void idGameLocal::RunDebugInfo( void ) {
 		clip.PrintStatistics();
 	}
 
+	if ( int contentsMask = g_showCollisionAlongView.GetInteger() ) {
+		trace_t results;
+		idVec3 eye;
+		idMat3 matr;
+		player->GetViewPos(eye, matr);
+		idVec3 dir = matr[0];
+		idVec3 end = eye + dir * CM_MAX_TRACE_DIST * 0.9f;
+		if (clip.Translation(results, eye, end, 0, idMat3(), contentsMask, player)) {
+			int idx = results.c.entityNum;
+			if (idx >= 0 && idx < MAX_GENTITIES) {
+				idEntity *ent = entities[idx];
+				if (ent) {
+					auto mdl = ent->GetPhysics()->GetClipModel();
+					if (ent != world)
+						clip.DrawClipModel(mdl, eye, 0.0f);
+					idBox box(results.c.point, idVec3(1.0f), matr);
+					gameRenderWorld->DebugBox(idVec4(0, 1, 1, 1), box);
+					static int lastDump = 0;
+					int nowTime = clock();
+					if (nowTime >= lastDump + CLOCKS_PER_SEC) {
+						float dist = (results.endpos - eye).Length();
+						Printf("Clipped along view direction: \"%s\" at distance %0.1f\n", ent->GetName(), dist);
+						lastDump = nowTime;
+					}
+				}
+			}
+		}
+	}
+
 	if ( g_showPVS.GetInteger() ) {
 		pvs.DrawPVS( origin, ( g_showPVS.GetInteger() == 2 ) ? PVS_ALL_PORTALS_OPEN : PVS_NORMAL );
 	}

@@ -1747,6 +1747,19 @@ void idClip::PrintStatistics( void ) {
 
 /*
 ============
+idClip::DrawClipModel
+============
+*/
+void idClip::DrawClipModel( const idClipModel *clipModel, const idVec3 &eye, const float radius ) const {
+	if ( clipModel->renderModelHandle != -1 ) {
+		gameRenderWorld->DebugBounds( colorCyan, clipModel->GetAbsBounds() );
+	} else {
+		collisionModelManager->DrawModel( clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis(), eye, radius );
+	}
+}
+
+/*
+============
 idClip::DrawClipModels
 ============
 */
@@ -1765,11 +1778,7 @@ void idClip::DrawClipModels( const idVec3 &eye, const float radius, const idEnti
 		if ( clipModel->GetEntity() == passEntity ) {
 			continue;
 		}
-		if ( clipModel->renderModelHandle != -1 ) {
-			gameRenderWorld->DebugBounds( colorCyan, clipModel->GetAbsBounds() );
-		} else {
-			collisionModelManager->DrawModel( clipModel->Handle(), clipModel->GetOrigin(), clipModel->GetAxis(), eye, radius );
-		}
+		DrawClipModel(clipModel, eye, radius);
 	}
 }
 

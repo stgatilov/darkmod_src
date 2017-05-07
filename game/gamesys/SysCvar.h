@@ -439,6 +439,7 @@ extern idCVar	g_showTriggers;
 extern idCVar	g_showCollisionWorld;
 extern idCVar	g_showCollisionModels;
 extern idCVar	g_showCollisionTraces;
+extern idCVar g_showCollisionAlongView;
 extern idCVar	g_maxShowDistance;
 extern idCVar	g_showEntityInfo;
 extern idCVar	g_showviewpos;
