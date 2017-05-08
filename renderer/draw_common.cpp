@@ -196,7 +196,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 		break;
 	case TG_SCREEN:
-		RB_PrepareStageTexturing_Screen(pStage, surf, ac);
+		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
 	case TG_SCREEN2:
 		RB_PrepareStageTexturing_Screen2( pStage, surf, ac );
@@ -242,7 +242,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			// per-pixel reflection mapping without bump mapping
 		}
 
-		qglDisableClientState( GL_NORMAL_ARRAY );
+		qglDisableVertexAttribArrayARB( 2 );
+		//qglDisableClientState( GL_NORMAL_ARRAY );
 		R_UseProgram();
 		break;
 	}
@@ -659,8 +660,8 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 
 	switch (pStage->vertexColor) {
 	case SVC_IGNORE:
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, one );
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, zero );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, zero );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, color );
 		break;
 	case SVC_MODULATE:
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, color );
@@ -672,15 +673,17 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		break;
 	}
 	// select the vertex color source
-	if (pStage->vertexColor == SVC_IGNORE) {
-		qglColor4fv( color );
+	qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+	qglEnableVertexAttribArrayARB( 3 );
+	/*if (pStage->vertexColor == SVC_IGNORE) {
 	} else {
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-		qglEnableClientState( GL_COLOR_ARRAY );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+		//qglEnableClientState( GL_COLOR_ARRAY );
+
 		//qglEnableVertexAttribArrayARB( 3 );
 		//qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 
-		/*if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
+		if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
 			GL_TexEnv( GL_COMBINE_ARB );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
@@ -715,14 +718,18 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			qglTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
 
 			GL_SelectTexture( 0 );
-		}*/
-	}
+		}
+	}*/
 
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
-		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
+		break;
+	case TG_SCREEN: case TG_SCREEN2:
+		qglColor4fv( color );
+	case TG_REFLECT_CUBE:
+		//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		//qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 		break;
 	default:
 		qglEnableVertexAttribArrayARB( 8 );
@@ -746,17 +753,19 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
-	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		break;
+	case TG_REFLECT_CUBE: 
+	case TG_SCREEN: case TG_SCREEN2:
 		break;
 	default:
 		qglDisableVertexAttribArrayARB( 8 );
 		R_UseProgram();
 	}
 
+	qglDisableVertexAttribArrayARB( 3 );
 	if (pStage->vertexColor != SVC_IGNORE) {
-		//qglDisableVertexAttribArrayARB( 3 );
-		qglDisableClientState( GL_COLOR_ARRAY );
+		//qglDisableClientState( GL_COLOR_ARRAY );
 
 		/*GL_SelectTexture( 1 );
 		GL_TexEnv( GL_MODULATE );
@@ -1774,7 +1783,6 @@ void RB_STD_FogAllLights( void ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	qglDisable( GL_STENCIL_TEST );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		backEnd.vLight = vLight;
@@ -1783,15 +1791,16 @@ void RB_STD_FogAllLights( void ) {
 			continue;
 		}
 
-		if ( vLight->lightShader->IsFogLight() ) {
+		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		if (vLight->lightShader->IsFogLight()) {
 			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
 		} else if ( vLight->lightShader->IsBlendLight() ) {
 			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
 		}
+		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglDisable( GL_STENCIL_TEST );
 	}
 
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 	qglEnable( GL_STENCIL_TEST );
 }
 
