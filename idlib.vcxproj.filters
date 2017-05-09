@@ -166,6 +166,7 @@
     <ClCompile Include="idlib\math\Line.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\Heap_Embedded.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -367,5 +368,6 @@
     <ClInclude Include="idlib\math\Line.h">
       <Filter>Math</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\Heap_Embedded.h" />
   </ItemGroup>
 </Project>

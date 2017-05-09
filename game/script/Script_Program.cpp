@@ -886,7 +886,8 @@ idScriptObject::Free
 */
 void idScriptObject::Free( void ) {
 	if ( data ) {
-		Mem_Free( data );
+		//stgatilov #4520: on 64-bit platform, use special memory allocator
+		gameLocal.program.ScriptObjectMemory_Free(data);
 	}
 
 	data = NULL;
@@ -972,7 +973,9 @@ bool idScriptObject::SetType( const char *typeName ) {
 
 		// allocate the memory
 		size = type->Size();
-        data = (byte *)Mem_Alloc(static_cast<int>(size));
+		
+		//stgatilov #4520: on 64-bit platform, use special memory allocator
+		data = gameLocal.program.ScriptObjectMemory_Alloc(static_cast<int>(size));
 	}
 
 	// init object memory
@@ -1944,6 +1947,11 @@ void idProgram::FreeData( void ) {
 	top_defs		= 0;
 	top_files		= 0;
 
+	//stgatilov #4520: clear special memory zone for script object data in x64
+	Mem_Free(som_buffer);  som_buffer = 0;
+	som_totalSize = -1;
+	som_allocator.Clear();
+
 	filename = "";
 }
 
@@ -2031,7 +2039,59 @@ void idProgram::Startup( const char *defaultScript )
 	}
 
 	FinishCompilation();
+
+	if (sizeof(void*) != 4) {
+		//stgatilov #4520: prepare special memory zone for all script object data
+		ScriptObjectMemory_Init();
+	}
 }
+
+void idProgram::ScriptObjectMemory_Init() {
+	//check what is the maximum object size
+	int maxObjectSize = -1;
+	idVarDef *maxDef = 0;
+	for (int i = 0; i < varDefs.Num(); i++) {
+		idVarDef *var = varDefs[i];
+		if (var->Type() == ev_object) {
+			if (maxObjectSize < var->TypeDef()->Size()) {
+				maxObjectSize = var->TypeDef()->Size();
+				maxDef = var;
+			}
+		}
+	}
+	//print it to console for information
+	gameLocal.Printf("Maximum object size: %d\n", maxObjectSize);
+	if (maxDef)
+		gameLocal.Printf("Largest object type name: %s\n", maxDef->TypeDef()->Name());
+
+	//(uncomment for testing allocator)
+	//idEmbeddedAllocator::Test(17, 53, 1000000);
+	//idEmbeddedAllocator::Test(MAX_GENTITIES, 1000, 1000000);
+
+	//note: there would never be more script objects than entities
+	//so we need to accomodate MAX_GENTITIES allocations of size <= maxObjectSize
+	som_totalSize = som_allocator.GetSizeUpperBound(MAX_GENTITIES, maxObjectSize);
+	som_buffer = (byte*)Mem_Alloc(som_totalSize);
+	som_allocator.Init(som_buffer, som_totalSize);
+}
+
+byte *idProgram::ScriptObjectMemory_Alloc(int size) {
+	if (sizeof(void*) == 4)
+		return (byte*)Mem_Alloc(size);
+
+	byte *res = (byte*)som_allocator.Alloc(size);
+	if (!res)
+		gameLocal.Error("Failed to allocate idScriptObject data\n");
+	return res;
+}
+
+void idProgram::ScriptObjectMemory_Free(byte *ptr) {
+	if (sizeof(void*) == 4)
+		return Mem_Free(ptr);
+
+	som_allocator.Free(ptr);
+}
+
 
 /*
 ================

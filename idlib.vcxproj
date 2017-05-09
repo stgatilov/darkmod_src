@@ -399,6 +399,7 @@
     <ClCompile Include="idlib\hashing\CRC32.cpp" />
     <ClCompile Include="idlib\hashing\MD4.cpp" />
     <ClCompile Include="idlib\hashing\MD5.cpp" />
+    <ClCompile Include="idlib\Heap_Embedded.cpp" />
     <ClCompile Include="idlib\Image.cpp" />
     <ClCompile Include="idlib\math\Angles.cpp" />
     <ClCompile Include="idlib\math\Complex.cpp" />
@@ -504,6 +505,7 @@
     <ClInclude Include="idlib\hashing\CRC32.h" />
     <ClInclude Include="idlib\hashing\MD4.h" />
     <ClInclude Include="idlib\hashing\MD5.h" />
+    <ClInclude Include="idlib\Heap_Embedded.h" />
     <ClInclude Include="idlib\Image.h" />
     <ClInclude Include="idlib\math\Angles.h" />
     <ClInclude Include="idlib\math\Complex.h" />
