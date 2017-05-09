@@ -119,17 +119,17 @@ void idEventDef::Construct()
 		{
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
-            argsize += sizeof(intptr_t);
+            argsize += sizeof(float);
 			break;
 
 		case D_EVENT_INTEGER :
 		case D_EVENT_ENTITY :
 		case D_EVENT_ENTITY_NULL :
-            argsize += sizeof(intptr_t);
+            argsize += sizeof(int);
 			break;
 
 		case D_EVENT_VECTOR :
-            argsize += E_EVENT_SIZEOF_VEC;
+            argsize += sizeof(idVec3);
 			break;
 
 		case D_EVENT_STRING :
@@ -648,20 +648,20 @@ void idEvent::Save( idSaveGame *savefile ) {
 			switch( format[ i ] ) {
 				case D_EVENT_FLOAT :
 					savefile->WriteFloat( *reinterpret_cast<float *>( dataPtr ) );
-					size += sizeof( intptr_t );
+					size += sizeof( float );
 					break;
 				case D_EVENT_INTEGER :
 					savefile->WriteInt( *reinterpret_cast<int *>( dataPtr ) );
-					size += sizeof( intptr_t );
+					size += sizeof( int );
 					break;
 				case D_EVENT_ENTITY :
 				case D_EVENT_ENTITY_NULL :
 					reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Save(savefile);
-					size += sizeof( intptr_t );
+					size += sizeof( int );
 					break;
 				case D_EVENT_VECTOR :
 					savefile->WriteVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
-					size += E_EVENT_SIZEOF_VEC;
+					size += sizeof( idVec3 );
 					break;
 				case D_EVENT_TRACE :
 					validTrace = *reinterpret_cast<bool *>( dataPtr );
@@ -748,20 +748,20 @@ void idEvent::Restore( idRestoreGame *savefile ) {
 				switch( format[ j ] ) {
 					case D_EVENT_FLOAT :
 						savefile->ReadFloat( *reinterpret_cast<float *>( dataPtr ) );
-						size += sizeof( intptr_t );
+						size += sizeof( float );
 						break;
 					case D_EVENT_INTEGER :
 						savefile->ReadInt( *reinterpret_cast<int *>( dataPtr ) );
-						size += sizeof( intptr_t );
+						size += sizeof( int );
 						break;
 					case D_EVENT_ENTITY :
 					case D_EVENT_ENTITY_NULL :
 						reinterpret_cast< idEntityPtr<idEntity> * >( dataPtr )->Restore(savefile);
-						size += sizeof( intptr_t );
+						size += sizeof( int );
 						break;
 					case D_EVENT_VECTOR :
 						savefile->ReadVec3( *reinterpret_cast<idVec3 *>( dataPtr ) );
-						size += E_EVENT_SIZEOF_VEC;
+						size += sizeof( idVec3 );
 						break;
 					case D_EVENT_TRACE :
 						savefile->ReadBool( *reinterpret_cast<bool *>( dataPtr ) );
