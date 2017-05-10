@@ -74,7 +74,7 @@ m_postProcessManager()			// Invoke the postprocess Manager Constructor - J.C.Den
 
 	// JC: Just set the flag so that we know that the update is needed.
 	cv_ambient_method.SetModified();
-	cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
+	// cv_interaction_vfp_type.SetModified();	// Always update interaction shader the first time. J.C.Denton
 }
 
 /*
@@ -1163,7 +1163,7 @@ void idPlayerView::dnPostProcessManager::Update( void )
 // Moved Greebo's method from gameLocal to here. - J.C.Denton
 // The CVar is rendering related and from now on, would work when g_stoptime is set to 0
 
-void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
+/* void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
 {
 	// Check the CVARs
 	switch (cv_interaction_vfp_type.GetInteger())
@@ -1184,4 +1184,6 @@ void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
 		this->UpdateInteractionShader();
 	};
 }
-
+*/
+// nbohr1more: GUI files directly reference r_testARBprograms now that cvar archive is set
+// this workaround is not needed anymore
