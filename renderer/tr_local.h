@@ -1498,8 +1498,8 @@ typedef enum {
 	PP_COLOR_MODULATE,
 	PP_COLOR_ADD,
 
-	PP_LIGHT_FALLOFF_TQ = 20,	// only for NV programs
-	PP_MISC_0 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
+	PP_DEPTH_ALPHA_TEST = 20,
+	PP_MISC_0 = 21 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
 } programParameter_t;
 
 
