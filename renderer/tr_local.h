@@ -1217,7 +1217,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 // note that many of these assume a normalized matrix, and will not work with scaled axis
 void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
+void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
 void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out );
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
@@ -1498,6 +1498,7 @@ typedef enum {
 	PP_COLOR_MODULATE,
 	PP_COLOR_ADD,
 
+	PP_DEPTH_CLIP_PLANE = 19,
 	PP_DEPTH_ALPHA_TEST = 20,
 	PP_MISC_0 = 21 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
 } programParameter_t;

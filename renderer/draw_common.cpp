@@ -282,12 +282,11 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// update the clip plane if needed
 	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
-		GL_SelectTexture( 1 );
-		
 		idPlane	plane;
-
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, plane.ToFloatPtr() );
 		plane[3] += 0.5;	// the notch is in the middle
+		GL_SelectTexture( 1 );
 		qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
 		GL_SelectTexture( 0 );
 	}
@@ -397,7 +396,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister]};
 			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
 			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] + 0.5 / 255 }; // 4511
-			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, &parm[0] );
+			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, PP_DEPTH_ALPHA_TEST, &parm[0] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -466,6 +465,9 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglEnable( GL_TEXTURE_GEN_S );
 		qglTexCoord2f( 1, 0.5 );
+	} else {
+		float noClip[] = { 0, 0, 0, 1 };
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, noClip );
 	}
 
 	// the first texture will be used for alpha tested surfaces
