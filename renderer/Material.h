@@ -143,7 +143,7 @@ typedef enum {
 	TG_SKYBOX_CUBE,
 	TG_WOBBLESKY_CUBE,
 	TG_SCREEN,			// screen aligned, for mirrorRenders and screen space temporaries
-	TG_SCREEN2,
+	//TG_SCREEN2,		// #4431 same operation as TG_SCREEN, removed
 	//TG_GLASSWARP #3868
 } texgen_t;
 

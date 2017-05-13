@@ -102,9 +102,10 @@ void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSur
 ================
 RB_PrepareStageTexturing_Screen2
 Extracted from RB_PrepareStageTexturing
+Appears to be similar to RB_PrepareStageTexturing_Screen
 ================
 */
-void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+/*void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
 	qglEnable( GL_TEXTURE_GEN_S );
 	qglEnable( GL_TEXTURE_GEN_T );
 	qglEnable( GL_TEXTURE_GEN_Q );
@@ -129,7 +130,7 @@ void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSu
 	plane[2] = mat[11];
 	plane[3] = mat[15];
 	qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
-}
+}*/
 
 /*
 ================
@@ -195,12 +196,12 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 		break;
-	case TG_SCREEN:
+	case TG_SCREEN:	//case TG_SCREEN2:
 		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
-	case TG_SCREEN2:
+/*	case TG_SCREEN2: 
 		RB_PrepareStageTexturing_Screen2( pStage, surf, ac );
-		break;
+		break;*/
 	case TG_REFLECT_CUBE:
 		RB_PrepareStageTexturing_ReflectCube( pStage, surf, ac );
 		break;
@@ -223,7 +224,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	case TG_DIFFUSE_CUBE: case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
 		break;
-	case TG_SCREEN: case TG_SCREEN2:
+	case TG_SCREEN: //case TG_SCREEN2:
 		qglDisable( GL_TEXTURE_GEN_S );
 		qglDisable( GL_TEXTURE_GEN_T );
 		qglDisable( GL_TEXTURE_GEN_Q );
@@ -728,7 +729,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
-	case TG_SCREEN: case TG_SCREEN2:
+	case TG_SCREEN: //case TG_SCREEN2:
 		qglColor4fv( color );
 	case TG_REFLECT_CUBE:
 		//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -759,7 +760,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
 	case TG_REFLECT_CUBE: 
-	case TG_SCREEN: case TG_SCREEN2:
+	case TG_SCREEN: //case TG_SCREEN2:
 		break;
 	default:
 		qglDisableVertexAttribArrayARB( 8 );

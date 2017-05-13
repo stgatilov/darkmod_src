@@ -410,6 +410,8 @@ static void APIENTRY logEdgeFlagv(const GLboolean *flag) {
 
 static void APIENTRY logEnable(GLenum cap) {
 	fprintf( tr.logFile, "glEnable %s\n", EnumString(cap) );
+	if (cap == GL_TEXTURE_GEN_S)
+		idStr( " " );
 	dllEnable(cap);
 }
 

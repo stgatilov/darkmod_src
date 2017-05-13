@@ -463,9 +463,9 @@ void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *sur
 		qglDisable( GL_TEXTURE_GEN_S );
 		qglDisable( GL_TEXTURE_GEN_T );
 		qglDisable( GL_TEXTURE_GEN_R );
-		qglTexGenf( GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
+		/*qglTexGenf( GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
 		qglTexGenf( GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-		qglTexGenf( GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
+		qglTexGenf( GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );*/
 		qglDisableClientState( GL_NORMAL_ARRAY );
 
 		qglMatrixMode( GL_TEXTURE );
