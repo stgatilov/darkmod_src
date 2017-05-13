@@ -116,8 +116,6 @@ void RB_LogComment( const char *comment, ... ) {
 
 //=============================================================================
 
-
-
 /*
 ====================
 GL_SelectTexture
@@ -134,12 +132,11 @@ void GL_SelectTexture( const int unit ) {
 	}
 
 	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
-	qglClientActiveTextureARB( GL_TEXTURE0_ARB + unit );
+	//qglClientActiveTextureARB( GL_TEXTURE0_ARB + unit );
 	RB_LogComment( "glActiveTextureARB( %i );\nglClientActiveTextureARB( %i );\n", unit, unit );
 
 	backEnd.glState.currenttmu = unit;
 }
-
 
 /*
 ====================
