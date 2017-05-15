@@ -587,6 +587,9 @@
     <ClInclude Include="framework\CompressionParameters.h">
       <Filter>Framework</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\CinematicID.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1612,6 +1615,9 @@
     </ClCompile>
     <ClCompile Include="framework\minizip\zip.cpp">
       <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\CinematicID.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

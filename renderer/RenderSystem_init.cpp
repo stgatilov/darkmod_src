@@ -1102,7 +1102,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 	}
 
 	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	tr.testVideo = idCinematic::Alloc();
+	tr.testVideo = idCinematic::Alloc( nullptr );
 	tr.testVideo->InitFromFile( args.Argv( 1 ), true );
 
 	cinData_t	cin;
