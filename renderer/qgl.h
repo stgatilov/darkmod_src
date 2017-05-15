@@ -230,6 +230,26 @@ extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 // arb assembly info
 extern PFNGLGETPROGRAMIVARBPROC			glGetProgramivARB;
 
+// glsl
+extern PFNGLCREATESHADERPROC			qglCreateShader;
+extern PFNGLSHADERSOURCEPROC			qglShaderSource;
+extern PFNGLCOMPILESHADERPROC			qglCompileShader;
+extern PFNGLGETSHADERIVPROC				qglGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC		qglGetShaderInfoLog;
+extern PFNGLDELETESHADERPROC            qglDeleteShader;
+extern PFNGLCREATEPROGRAMPROC           qglCreateProgram;
+extern PFNGLATTACHSHADERPROC            qglAttachShader;
+extern PFNGLLINKPROGRAMPROC             qglLinkProgram;
+extern PFNGLGETPROGRAMIVPROC            qglGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC       qglGetProgramInfoLog;
+extern PFNGLDELETEPROGRAMPROC           qglDeleteProgram;
+extern PFNGLUSEPROGRAMPROC              qglUseProgram;
+extern PFNGLUNIFORM4FVPROC              qglUniform4fv;
+extern PFNGLUNIFORM1FVPROC              qglUniform1fv;
+extern PFNGLUNIFORM1FPROC               qglUniform1f;
+extern PFNGLGETUNIFORMLOCATIONPROC      qglGetUniformLocation;
+extern PFNGLBINDATTRIBLOCATIONPROC		qglBindAttribLocation;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*

@@ -362,7 +362,7 @@ PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 // arb assembly info
 PFNGLGETPROGRAMIVARBPROC				glGetProgramivARB;
 
-/* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
+// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
 
 // Frame Buffer Objects
 PFNGLISRENDERBUFFERPROC					qglIsRenderbuffer;
@@ -425,11 +425,12 @@ PFNGLDELETEPROGRAMPROC						qglDeleteProgram;
 PFNGLDELETESHADERPROC						qglDeleteShader;
 PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
 PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
+PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
 
 // State management
 PFNGLBLENDEQUATIONPROC						qglBlendEquation;
 
- -----====+++  END TDM ~SS Extensions  +++====-----   */
+// -----====+++  END TDM ~SS Extensions  +++====-----   */
 
 
 /*
@@ -652,10 +653,10 @@ static void R_CheckPortableExtensions( void ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
 	
-		/* -----====+++|  BEGIN TDM ~SS Extensions  |+++====-----   
+		//* -----====+++|  BEGIN TDM ~SS Extensions  |+++====-----   
 
-	if ( glConfig.glVersion > 3.0 ) {
-
+	//if ( glConfig.glVersion > 3.0 ) 
+	{
 		// Frame Buffer Objects
 		qglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GLimp_ExtensionPointer( "glIsRenderbuffer" );
 		qglBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)GLimp_ExtensionPointer( "glBindRenderbuffer" );
@@ -717,12 +718,13 @@ static void R_CheckPortableExtensions( void ) {
 		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
 		qglGetProgramiv = (PFNGLGETPROGRAMIVPROC)GLimp_ExtensionPointer( "glGetProgramiv" );
 		qglGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)GLimp_ExtensionPointer( "glGetProgramInfoLog" );
+		qglBindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glBindAttribLocation" );
 
 		// State management
 		qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	}
 
-	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
+//	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
 
 	glConfig.pixelBufferAvailable = R_CheckExtension("ARB_pixel_buffer_object");
 
@@ -748,7 +750,6 @@ static void R_CheckPortableExtensions( void ) {
 		common->Printf( "Max env parameters: %d\n", n );
 	}
 }
-
 
 /*
 ====================

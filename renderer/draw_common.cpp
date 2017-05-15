@@ -285,11 +285,13 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
 		idPlane	plane;
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, plane.ToFloatPtr() );
+		GLint locClipPlane = qglGetUniformLocation( 1, "clipPlane" );
+		qglUniform4fv( locClipPlane, 1, plane.ToFloatPtr() );
+		/*qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, plane.ToFloatPtr() );
 		plane[3] += 0.5;	// the notch is in the middle
 		GL_SelectTexture( 1 );
 		qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
-		GL_SelectTexture( 0 );
+		GL_SelectTexture( 0 );*/
 	}
 
 	if ( !shader->IsDrawn() ) {
@@ -367,7 +369,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		//qglEnable( GL_ALPHA_TEST );
 		qglEnableVertexAttribArrayARB( 8 );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		R_UseProgram( VPROG_DEPTH_ALPHA );
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
 			pStage = shader->GetStage(stage);
@@ -396,8 +397,10 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister]};
 			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
-			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] + 0.5 / 255 }; // 4511
-			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, PP_DEPTH_ALPHA_TEST, &parm[0] );
+			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] + 0.5 / 255 }; // 4511
+			//qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, PP_DEPTH_ALPHA_TEST, &parm[0] );
+			GLint locAlphaTest = qglGetUniformLocation( 1, "alphaTest" );
+			qglUniform1f( locAlphaTest, regs[pStage->alphaTestRegister] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -412,7 +415,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		}
 
 		//qglDisable( GL_ALPHA_TEST );
-		R_UseProgram( );
 		qglDisableVertexAttribArrayARB( 8 );
 		if (!didDraw) {
 			drawSolid = true;
@@ -428,7 +430,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		RB_DrawElementsWithCounters( tri );
 	}
 
-
 	// reset polygon offset
 	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
@@ -438,7 +439,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	if ( shader->GetSort() == SS_SUBVIEW ) {
 		GL_State( GLS_DEPTHFUNC_LESS );
 	}
-
 }
 
 void RB_SetProgramEnvironment(); // Defined in the shader passes section next, now re-used for depth capture in #3877
@@ -459,16 +459,19 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
+	qglUseProgram( 1 );
 	// enable the second texture for mirror plane clipping if needed
 	if ( backEnd.viewDef->numClipPlanes ) {
-		GL_SelectTexture( 1 );
-		globalImages->alphaNotchImage->Bind();
+		//GL_SelectTexture( 1 );
+		//globalImages->alphaNotchImage->Bind();
 		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		qglEnable( GL_TEXTURE_GEN_S );
-		qglTexCoord2f( 1, 0.5 );
+		//qglEnable( GL_TEXTURE_GEN_S );
+		//qglTexCoord2f( 1, 0.5 );
 	} else {
 		float noClip[] = { 0, 0, 0, 1 };
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, noClip );
+		//qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, noClip );
+		GLint locClipPlane = qglGetUniformLocation( 1, "clipPlane" );
+		qglUniform4fv( locClipPlane, 1, noClip );
 	}
 
 	// the first texture will be used for alpha tested surfaces
@@ -502,12 +505,13 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		RB_SetProgramEnvironment();
 	}
 
-	if ( backEnd.viewDef->numClipPlanes ) {
+	/*if ( backEnd.viewDef->numClipPlanes ) {
 		GL_SelectTexture( 1 );
 		globalImages->BindNull();
 		qglDisable( GL_TEXTURE_GEN_S );
 		GL_SelectTexture( 0 );
-	}
+	}*/
+	qglUseProgram( 0 );
 }
 
 /*

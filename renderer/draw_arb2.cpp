@@ -534,7 +534,8 @@ void RB_ARB2_DrawInteractions( void ) {
 typedef struct {
 	GLenum			target;
 	GLuint			ident;
-	char			name[64];
+	char*			name;
+	GLuint          genId; // glsl program id
 } progDef_t;
 
 #define MAX_GLPROGS			512
@@ -595,14 +596,114 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
 	// duzenko: depth+alpha 
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
+	{ 0, VPROG_DEPTH_ALPHA, "depthAlpha" },
 
 	// duzenko: old stage replacement 
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_OLD_STAGE, "oldstage.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_OLD_STAGE, "oldstage.vfp" },
 	// additional programs can be dynamically specified in materials
 };
+
+static GLuint shaderCompileFromFile( GLenum type, const char *filePath )
+{
+	char *source;
+	GLuint shader;
+	GLint length, result;
+
+	/* get shader source */
+	char    *fileBuffer;
+
+	// load the program even if we don't support it
+	fileSystem->ReadFile( filePath, (void **)&fileBuffer, NULL );
+	if ( !fileBuffer ) {
+		common->Warning( "shaderCompileFromFile: \'%s\' not found", filePath );
+		return 0;
+	}
+
+	common->Printf( "%s\n", filePath );
+
+	source = fileBuffer;
+
+	/* create shader object, set the source, and compile */
+	shader = qglCreateShader( type );
+	length = strlen( source );
+	qglShaderSource( shader, 1, (const char **)&source, &length );
+	qglCompileShader( shader );
+	fileSystem->FreeFile( fileBuffer );
+
+	/* make sure the compilation was successful */
+	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
+	if ( result == GL_FALSE ) {
+		char *log;
+
+		/* get the shader info log */
+		qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
+		log = new char[length];
+		qglGetShaderInfoLog( shader, length, &result, log );
+
+		/* print an error message and the info log */
+		common->Warning( "shaderCompileFromFile(): Unable to compile %s: %s\n", filePath, log );
+		delete log;
+
+		qglDeleteShader( shader );
+		return 0;
+	}
+
+	return shader;
+}
+
+/*
+* Compiles and attaches a shader of the
+* given type to the given program object.
+*/
+void shaderAttachFromFile( progDef_t& prog, GLenum type )
+{
+	/* compile the shader */
+	GLuint shader = shaderCompileFromFile( type, idStr( "glprogs/" ) + prog.name + (type == GL_FRAGMENT_SHADER ? ".fp" : ".vp") );
+	if ( shader != 0 ) {
+		/* attach the shader to the program */
+		qglAttachShader( prog.genId, shader );
+
+		/* delete the shader - it won't actually be
+		* destroyed until the program that it's attached
+		* to has been destroyed */
+		qglDeleteShader( shader );
+	}
+}
+
+/*
+=================
+R_LoadGlslProgram
+=================
+*/
+void R_LoadGlslProgram( progDef_t& prog ) {
+	if ( prog.genId )
+		qglDeleteProgram( prog.genId );
+	prog.genId = qglCreateProgram();
+	shaderAttachFromFile( prog, GL_VERTEX_SHADER );
+	shaderAttachFromFile( prog, GL_FRAGMENT_SHADER );
+	qglBindAttribLocation(prog.genId, 8, "tc0");
+	GLint result;/* link the program and make sure that there were no errors */
+	qglLinkProgram( prog.genId );
+	qglGetProgramiv( prog.genId, GL_LINK_STATUS, &result );
+	if ( result != GL_TRUE ) {
+		GLint length;
+		char *log;
+
+		/* get the program info log */
+		qglGetProgramiv( prog.genId, GL_INFO_LOG_LENGTH, &length );
+		log = new char[length];
+		qglGetProgramInfoLog( prog.genId, length, &result, log );
+
+		/* print an error message and the info log */
+		common->Warning( "sceneInit(): Program linking failed: %s\n", log );
+		delete log;
+
+		/* delete the program */
+		qglDeleteProgram( prog.genId );
+		prog.genId = 0;
+	}
+}
 
 /*
 =================
@@ -720,7 +821,7 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	stripped.StripFileExtension();
 
 	// see if it is already loaded
-	for ( i = 0 ; progs[i].name[0] ; i++ ) {
+	for ( i = 0 ; progs[i].name ; i++ ) {
 		if ( progs[i].target != target ) {
 			continue;
 		}
@@ -740,8 +841,8 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	// add it to the list and load it
 	progs[i].ident = (program_t)0;	// will be gen'd by R_LoadARBProgram
 	progs[i].target = target;
-	strncpy( progs[i].name, program, sizeof( progs[i].name ) - 1 );
-
+	progs[i].name = new char[strlen( program ) + 1];
+	strcpy( progs[i].name, program );	
 	R_LoadARBProgram( i );
 
 	return progs[i].ident;
@@ -778,8 +879,11 @@ void R_ReloadARBPrograms_f( const idCmdArgs &args ) {
 	int		i;
 
 	common->Printf( "----- R_ReloadARBPrograms -----\n" );
-	for ( i = 0 ; progs[i].name[0] ; i++ ) {
-		R_LoadARBProgram( i );
+	for ( i = 0; progs[i].name && progs[i].name[0]; i++ ) {
+		if ( progs[i].target )
+			R_LoadARBProgram( i );
+		else
+			R_LoadGlslProgram( progs[i] );
 	}
 	common->Printf( "-------------------------------\n" );
 }
