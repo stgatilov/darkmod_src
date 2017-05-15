@@ -596,11 +596,9 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
 	// duzenko: depth+alpha 
-	{ 0, VPROG_DEPTH_ALPHA, "depthAlpha" },
-
+	{ 0, PROG_DEPTH_ALPHA, "depthAlpha" },
 	// duzenko: old stage replacement 
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_OLD_STAGE, "oldstage.vfp" },
-	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_OLD_STAGE, "oldstage.vfp" },
+	{ 0, PROG_OLD_STAGE, "oldstage" },
 	// additional programs can be dynamically specified in materials
 };
 
@@ -682,7 +680,8 @@ void R_LoadGlslProgram( progDef_t& prog ) {
 	prog.genId = qglCreateProgram();
 	shaderAttachFromFile( prog, GL_VERTEX_SHADER );
 	shaderAttachFromFile( prog, GL_FRAGMENT_SHADER );
-	qglBindAttribLocation(prog.genId, 8, "tc0");
+	qglBindAttribLocation( prog.genId, 3, "Color" );
+	qglBindAttribLocation( prog.genId, 8, "TexCoord0" );
 	GLint result;/* link the program and make sure that there were no errors */
 	qglLinkProgram( prog.genId );
 	qglGetProgramiv( prog.genId, GL_LINK_STATUS, &result );
@@ -848,22 +847,30 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	return progs[i].ident;
 }
 
+int R_FindProgramGlsl( int Prog ) {
+	RB_LogComment( "R_FindProgramGlsl %d\n", Prog );
+	for (progDef_t* prog = progs; prog->name; prog++)
+		if (prog->ident == Prog)
+			return prog->genId;
+	return 0;
+}
+
 /*
 ==================
-R_UseProgram
+R_UseProgramARB
 
 One-liner for qglBindProgramARB+qglEnable frag+vert
 Important: fprog needs to go straight after vprog in program_t
 ==================
 */
-void R_UseProgram( int vProg ) {
+void R_UseProgramARB( int vProg ) {
 	if (vProg == PROG_INVALID) {
 		qglDisable( GL_VERTEX_PROGRAM_ARB );
 		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 	} else {
 		RB_LogComment( "R_UseProgram %d\n", vProg );
 		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, vProg );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, vProg+1 ); // as defined by program_t
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, vProg + 1 ); // as defined by program_t
 		qglEnable( GL_VERTEX_PROGRAM_ARB );
 		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 		GL_CheckErrors();

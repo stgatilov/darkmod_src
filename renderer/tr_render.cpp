@@ -480,11 +480,6 @@ void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *sur
 	}
 }
 
-
-
-//=============================================================================================
-
-
 /*
 =================
 RB_DetermineLightScale
@@ -501,7 +496,7 @@ we should also look at surface evaluations, which would let surfaces
 overbright past 1.0
 =================
 */
-void RB_DetermineLightScale( void ) {
+/*void RB_DetermineLightScale( void ) {
 	viewLight_t			*vLight;
 	const idMaterial	*shader;
 	float				max, v;
@@ -551,8 +546,7 @@ void RB_DetermineLightScale( void ) {
 		backEnd.overBright = max / tr.backEndRendererMaxLight;
 	}
 #endif
-}
-
+}*/
 
 /*
 =================

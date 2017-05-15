@@ -689,7 +689,8 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-	
+	int					glProgram;
+
 	// bool				usingSoftShadows; //~SS
 } backEndState_t;
 
@@ -1441,16 +1442,15 @@ typedef enum {
 	VPROG_BLOOM_FINAL_PASS,
 	FPROG_BLOOM_FINAL_PASS,
 	// duzenko: ARB shader depth+alpha
-	VPROG_DEPTH_ALPHA,
-	FPROG_DEPTH_ALPHA,
+	PROG_DEPTH_ALPHA,
 	// duzenko: ARB shader for old stage
-	VPROG_OLD_STAGE,
-	FPROG_OLD_STAGE,
+	PROG_OLD_STAGE,
 	// 
 	PROG_USER
 } program_t;
 
-void R_UseProgram( int vProg = PROG_INVALID );
+void R_UseProgramARB( int vProg = PROG_INVALID );
+int R_FindProgramGlsl( int Prog );
 
 /*
 
