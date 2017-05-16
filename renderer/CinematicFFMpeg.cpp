@@ -394,8 +394,11 @@ int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
 bool idCinematicFFMpeg::ReadPacket(AVPacket& avpkt) {
 	TIMER_START(readPacket);
 	int ret = av_read_frame(_formatContext, &_packet);
+
+	AVStream* st = _formatContext->streams[_packet.stream_index];
+	AVMediaType type = avcodec_get_type(st->codec->codec_id);
 	TIMER_END_LOG(readPacket, "Read packet");
-	LogPrintf("Packet: stream = %d  size = %d", _packet.stream_index, _packet.size);
+	LogPrintf("Packet: stream = %d (%s)  size = %d", _packet.stream_index, av_get_media_type_string(type), _packet.size);
 	LogPrintf("  DTS = %lld  PTS = %lld  dur = %d", _packet.dts, _packet.pts, _packet.duration);
 	return ret >= 0;
 }
@@ -613,8 +616,11 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
 int idCinematicFFMpeg::CalculatePacketTime()
 {
+	//TODO: we rely here on the fact that _tempFrame is still current
+	int64_t pts = av_frame_get_best_effort_timestamp(_tempFrame);
+
 	double timeBase = av_q2d(_formatContext->streams[_videoStreamIndex]->time_base);
-	double frameTime = _packet.pts * timeBase;
+	double frameTime = pts * timeBase;
 
 	// Calculate the time in msecs
 	int packetTime = static_cast<int>(frameTime * 1000);
