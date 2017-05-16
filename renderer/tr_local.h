@@ -1046,6 +1046,9 @@ extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
 extern idCVar r_ambient_testadd;
 
+// stgatilov ROQ
+extern idCVar r_cinematic_legacyRoq;
+
 // HDR related - J.C.Denton
 extern idCVar r_postprocess;
 extern idCVar r_postprocess_brightPassThreshold;

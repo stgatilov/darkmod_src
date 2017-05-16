@@ -24,12 +24,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "CinematicID.h"
 #include "CinematicFFMpeg.h"
+#include "tr_local.h"
 
-
-idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
-	"Play cinematics with original Doom3 code or with FFmpeg libraries. "
-	"0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg"
-);
 
 /*
 ==============
