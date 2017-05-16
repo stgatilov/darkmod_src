@@ -77,6 +77,9 @@ private: // methods
 	// Returns the index of the best suitable stream type, requires an open format context
 	int                     FindBestStreamByType(AVMediaType type);
 
+	// Reads a single packed from video, using AVFormat library
+	bool                    ReadPacket(AVPacket& avpkt);
+
 	// Decodes a single stream packet into the RGBA buffer
 	int                     DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& frameDecoded);
 
@@ -86,6 +89,10 @@ private: // methods
 
 	// Returns the time in msecs of the current _packet
 	int                     CalculatePacketTime();
+
+	// Implementation method for public method ImageForTime
+	cinData_t               GetFrame(int milliseconds);
+
 
 private: // members
 
