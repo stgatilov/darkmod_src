@@ -33,10 +33,8 @@ idCinematic::InitCinematic
 ==============
 */
 void idCinematic::InitCinematic( void ) {
-	if (r_cinematic_legacyRoq.GetInteger() != 0)
-		idCinematicLocal::InitCinematic();
-	if (r_cinematic_legacyRoq.GetInteger() != 2)
-		idCinematicFFMpeg::InitCinematic();
+	idCinematicLocal::InitCinematic();
+	idCinematicFFMpeg::InitCinematic();
 }
 
 /*
@@ -45,10 +43,8 @@ idCinematic::ShutdownCinematic
 ==============
 */
 void idCinematic::ShutdownCinematic( void ) {
-	if (r_cinematic_legacyRoq.GetInteger() != 0)
-		idCinematicLocal::ShutdownCinematic();
-	if (r_cinematic_legacyRoq.GetInteger() != 2)
-		idCinematicFFMpeg::ShutdownCinematic();
+	idCinematicLocal::ShutdownCinematic();
+	idCinematicFFMpeg::ShutdownCinematic();
 }
 
 /*
