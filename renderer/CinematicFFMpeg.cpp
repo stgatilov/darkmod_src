@@ -131,7 +131,7 @@ idCinematicFFMpeg::idCinematicFFMpeg() :
 	_file(NULL),
 	_duration(0),
 	_frameRate(0),
-	_startTime(0),
+	_startTime(-1),
 	_status(FMV_EOF),
 	_bufferSize(0),
 	_formatContext(NULL),
@@ -446,6 +446,11 @@ cinData_t idCinematicFFMpeg::GetFrame(int milliseconds) {
 	if (milliseconds < 0)
 		milliseconds = 0;
 
+	if (_startTime < 0) {
+		LogPrintf("Start time is not set, setting it to now (%d)", milliseconds);
+		_startTime = milliseconds;
+	}
+
 	cinData_t data;
 	memset(&data, 0, sizeof(data));
 
@@ -637,6 +642,7 @@ void idCinematicFFMpeg::Close()
 
 	_packetTimeOffset = 0;
 	_highestNextPacketTime = -1;
+	_startTime = -1;
 	CALL_END_LOG();
 }
 
