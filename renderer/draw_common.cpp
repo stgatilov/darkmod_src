@@ -72,65 +72,41 @@ Extracted from RB_PrepareStageTexturing
 ================
 */
 void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
-	qglEnable( GL_TEXTURE_GEN_S );
-	qglEnable( GL_TEXTURE_GEN_T );
-	qglEnable( GL_TEXTURE_GEN_Q );
+	//qglEnable( GL_TEXTURE_GEN_S );
+	//qglEnable( GL_TEXTURE_GEN_T );
+	//qglEnable( GL_TEXTURE_GEN_Q );
 
 	float	mat[16], plane[4];
+	int loc;
 	myGlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
 
 	plane[0] = mat[0];
 	plane[1] = mat[4];
 	plane[2] = mat[8];
 	plane[3] = mat[12];
-	qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
+	//qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
+	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneS" );
+	qglUniform4fv( loc, 1, plane );
 
 	plane[0] = mat[1];
 	plane[1] = mat[5];
 	plane[2] = mat[9];
 	plane[3] = mat[13];
-	qglTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
+	//qglTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
+	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneT" );
+	qglUniform4fv( loc, 1, plane );
 
 	plane[0] = mat[3];
 	plane[1] = mat[7];
 	plane[2] = mat[11];
 	plane[3] = mat[15];
-	qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
+	//qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
+	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneQ" );
+	qglUniform4fv( loc, 1, plane );
+
+	loc = qglGetUniformLocation( backEnd.glProgram, "screenTex" );
+	qglUniform1f( loc, 1 );
 }
-
-/*
-================
-RB_PrepareStageTexturing_Screen2
-Extracted from RB_PrepareStageTexturing
-Appears to be similar to RB_PrepareStageTexturing_Screen
-================
-*/
-/*void RB_PrepareStageTexturing_Screen2( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
-	qglEnable( GL_TEXTURE_GEN_S );
-	qglEnable( GL_TEXTURE_GEN_T );
-	qglEnable( GL_TEXTURE_GEN_Q );
-
-	float	mat[16], plane[4];
-	myGlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
-
-	plane[0] = mat[0];
-	plane[1] = mat[4];
-	plane[2] = mat[8];
-	plane[3] = mat[12];
-	qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
-
-	plane[0] = mat[1];
-	plane[1] = mat[5];
-	plane[2] = mat[9];
-	plane[3] = mat[13];
-	qglTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
-
-	plane[0] = mat[3];
-	plane[1] = mat[7];
-	plane[2] = mat[11];
-	plane[3] = mat[15];
-	qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
-}*/
 
 /*
 ================
@@ -196,12 +172,9 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 		break;
-	case TG_SCREEN:	//case TG_SCREEN2:
+	case TG_SCREEN:
 		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
-/*	case TG_SCREEN2: 
-		RB_PrepareStageTexturing_Screen2( pStage, surf, ac );
-		break;*/
 	case TG_REFLECT_CUBE:
 		RB_PrepareStageTexturing_ReflectCube( pStage, surf, ac );
 		break;
@@ -224,10 +197,14 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 	case TG_DIFFUSE_CUBE: case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
 		break;
-	case TG_SCREEN: //case TG_SCREEN2:
-		qglDisable( GL_TEXTURE_GEN_S );
-		qglDisable( GL_TEXTURE_GEN_T );
-		qglDisable( GL_TEXTURE_GEN_Q );
+	case TG_SCREEN:
+	{
+		//qglDisable( GL_TEXTURE_GEN_S );
+		//qglDisable( GL_TEXTURE_GEN_T );
+		//qglDisable( GL_TEXTURE_GEN_Q );
+		int loc = qglGetUniformLocation( backEnd.glProgram, "screenTex" );
+		qglUniform1f( loc, 0 );
+	}
 		break;
 	case TG_REFLECT_CUBE:
 		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
@@ -477,8 +454,6 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// the first texture will be used for alpha tested surfaces
 	GL_SelectTexture( 0 );
-	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
@@ -671,16 +646,15 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 	qglEnableVertexAttribArrayARB( 3 );
 
-	RB_PrepareStageTexturing( pStage, surf, ac );
-
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
-	case TG_SCREEN: 
-		qglColor4fv( color );
 	case TG_REFLECT_CUBE:
 		break;
+	case TG_SCREEN:
+		qglColor4fv( color );
+		//break;
 	default:
 		qglEnableVertexAttribArrayARB( 8 );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -704,6 +678,8 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		}
 	}
 
+	RB_PrepareStageTexturing( pStage, surf, ac );
+
 	// bind the texture
 	RB_BindVariableStageImage( &pStage->texture, regs );
 
@@ -721,8 +697,8 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		break;
 	case TG_REFLECT_CUBE: 
-	case TG_SCREEN: 
 		break;
+	case TG_SCREEN:
 	default:
 		qglDisableVertexAttribArrayARB( 8 );
 		qglUseProgram(0);

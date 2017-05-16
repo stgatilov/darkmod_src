@@ -142,7 +142,7 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
-/* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
+// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
 
 // Frame Buffer Objects
 extern PFNGLISRENDERBUFFERPROC				qglIsRenderbuffer;
@@ -205,11 +205,12 @@ extern PFNGLDELETEPROGRAMPROC				qglDeleteProgram;
 extern PFNGLDELETESHADERPROC				qglDeleteShader;
 extern PFNGLGETPROGRAMIVPROC				qglGetProgramiv;
 extern PFNGLGETPROGRAMINFOLOGPROC			qglGetProgramInfoLog;
+extern PFNGLBINDATTRIBLOCATIONPROC			qglBindAttribLocation;
 
 // State management
 extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
- -----====+++   END TDM ~SS Extensions   +++====-----   */
+// -----====+++   END TDM ~SS Extensions   +++====-----   */
 
 // mipmaps
 extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
@@ -229,26 +230,6 @@ extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 
 // arb assembly info
 extern PFNGLGETPROGRAMIVARBPROC			glGetProgramivARB;
-
-// glsl
-extern PFNGLCREATESHADERPROC			qglCreateShader;
-extern PFNGLSHADERSOURCEPROC			qglShaderSource;
-extern PFNGLCOMPILESHADERPROC			qglCompileShader;
-extern PFNGLGETSHADERIVPROC				qglGetShaderiv;
-extern PFNGLGETSHADERINFOLOGPROC		qglGetShaderInfoLog;
-extern PFNGLDELETESHADERPROC            qglDeleteShader;
-extern PFNGLCREATEPROGRAMPROC           qglCreateProgram;
-extern PFNGLATTACHSHADERPROC            qglAttachShader;
-extern PFNGLLINKPROGRAMPROC             qglLinkProgram;
-extern PFNGLGETPROGRAMIVPROC            qglGetProgramiv;
-extern PFNGLGETPROGRAMINFOLOGPROC       qglGetProgramInfoLog;
-extern PFNGLDELETEPROGRAMPROC           qglDeleteProgram;
-extern PFNGLUSEPROGRAMPROC              qglUseProgram;
-extern PFNGLUNIFORM4FVPROC              qglUniform4fv;
-extern PFNGLUNIFORM1FVPROC              qglUniform1fv;
-extern PFNGLUNIFORM1FPROC               qglUniform1f;
-extern PFNGLGETUNIFORMLOCATIONPROC      qglGetUniformLocation;
-extern PFNGLBINDATTRIBLOCATIONPROC		qglBindAttribLocation;
 
 //===========================================================================
 
