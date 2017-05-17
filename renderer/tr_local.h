@@ -1444,10 +1444,10 @@ typedef enum {
 	FPROG_BLOOM_GAUSS_BLRY,
 	VPROG_BLOOM_FINAL_PASS,
 	FPROG_BLOOM_FINAL_PASS,
-	// duzenko: ARB shader depth+alpha
-	PROG_DEPTH_ALPHA,
-	// duzenko: ARB shader for old stage
-	PROG_OLD_STAGE,
+	
+	PROG_DEPTH_ALPHA, // duzenko: glsl shader depth+alpha
+	PROG_OLD_STAGE, // duzenko: glsl shader for old stage
+	PROG_FOG, // duzenko: glsl shader for fog
 	// 
 	PROG_USER
 } program_t;

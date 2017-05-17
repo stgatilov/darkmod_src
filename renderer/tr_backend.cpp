@@ -94,7 +94,6 @@ void RB_SetDefaultGLState( void ) {
 	}
 }
 
-
 /*
 ====================
 RB_LogComment

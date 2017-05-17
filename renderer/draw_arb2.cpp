@@ -595,10 +595,10 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
-	// duzenko: depth+alpha 
-	{ 0, PROG_DEPTH_ALPHA, "depthAlpha" },
-	// duzenko: old stage replacement 
-	{ 0, PROG_OLD_STAGE, "oldstage" },
+	{ 0, PROG_DEPTH_ALPHA, "depthAlpha" }, // duzenko: depth+alpha 
+	{ 0, PROG_OLD_STAGE, "oldstage" }, // duzenko: old stage replacement 
+	{ 0, PROG_FOG, "fog" }, // duzenko: texgen-based fog replacement 
+
 	// additional programs can be dynamically specified in materials
 };
 
