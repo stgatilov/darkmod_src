@@ -1611,61 +1611,6 @@ static void APIENTRY logTexCoordPointer(GLint size, GLenum type, GLsizei stride,
 	dllTexCoordPointer(size, type, stride, pointer);
 }
 
-static void APIENTRY logTexEnvf(GLenum target, GLenum pname, GLfloat param) {
-	fprintf( tr.logFile, "glTexEnvf %s %s %g\n", EnumString(target), EnumString(pname), param );
-	dllTexEnvf(target, pname, param);
-}
-
-static void APIENTRY logTexEnvfv(GLenum target, GLenum pname, const GLfloat *params) {
-// unknown type: "const GLfloat *" name: "params"
-	fprintf( tr.logFile, "glTexEnvfv %s %s 'const GLfloat * params'\n", EnumString(target), EnumString(pname) );
-	dllTexEnvfv(target, pname, params);
-}
-
-static void APIENTRY logTexEnvi(GLenum target, GLenum pname, GLint param) {
-	fprintf( tr.logFile, "glTexEnvi %s %s %s\n", EnumString( target ), EnumString( pname ), EnumString( param ) );
-	dllTexEnvi( target, pname, param );
-}
-
-static void APIENTRY logTexEnviv(GLenum target, GLenum pname, const GLint *params) {
-// unknown type: "const GLint *" name: "params"
-	fprintf( tr.logFile, "glTexEnviv %s %s 'const GLint * params'\n", EnumString(target), EnumString(pname) );
-	dllTexEnviv(target, pname, params);
-}
-
-static void APIENTRY logTexGend(GLenum coord, GLenum pname, GLdouble param) {
-	fprintf( tr.logFile, "glTexGend %s %s %g\n", EnumString(coord), EnumString(pname), param );
-	dllTexGend(coord, pname, param);
-}
-
-static void APIENTRY logTexGendv(GLenum coord, GLenum pname, const GLdouble *params) {
-// unknown type: "const GLdouble *" name: "params"
-	fprintf( tr.logFile, "glTexGendv %s %s 'const GLdouble * params'\n", EnumString(coord), EnumString(pname) );
-	dllTexGendv(coord, pname, params);
-}
-
-static void APIENTRY logTexGenf(GLenum coord, GLenum pname, GLfloat param) {
-	fprintf( tr.logFile, "glTexGenf %s %s %s\n", EnumString( coord ), EnumString( pname ), EnumString(param) );
-	dllTexGenf(coord, pname, param);
-}
-
-static void APIENTRY logTexGenfv(GLenum coord, GLenum pname, const GLfloat *params) {
-// unknown type: "const GLfloat *" name: "params"
-	fprintf( tr.logFile, "glTexGenfv %s %s 'const GLfloat * params'\n", EnumString(coord), EnumString(pname) );
-	dllTexGenfv(coord, pname, params);
-}
-
-static void APIENTRY logTexGeni(GLenum coord, GLenum pname, GLint param) {
-	fprintf( tr.logFile, "glTexGeni %s %s %d\n", EnumString(coord), EnumString(pname), param );
-	dllTexGeni(coord, pname, param);
-}
-
-static void APIENTRY logTexGeniv(GLenum coord, GLenum pname, const GLint *params) {
-// unknown type: "const GLint *" name: "params"
-	fprintf( tr.logFile, "glTexGeniv %s %s 'const GLint * params'\n", EnumString(coord), EnumString(pname) );
-	dllTexGeniv(coord, pname, params);
-}
-
 static void APIENTRY logTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels) {
 // unknown type: "const GLvoid *" name: "pixels"
 	fprintf( tr.logFile, "glTexImage1D %s %d %d %d %d %s %s 'const GLvoid * pixels'\n", EnumString(target), level, internalformat, width, border, EnumString(format), EnumString(type) );

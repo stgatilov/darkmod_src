@@ -77,13 +77,6 @@ void RB_SetDefaultGLState( void ) {
 	for ( int i = glConfig.maxTextureUnits - 1 ; i >= 0 ; i-- ) {
 		GL_SelectTexture( i );
 
-		// object linear texgen is our default
-		/*qglTexGenf( GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-		qglTexGenf( GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-		qglTexGenf( GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-		qglTexGenf( GL_Q, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );*/
-
-		GL_TexEnv( GL_MODULATE );
 		qglDisable( GL_TEXTURE_2D );
 		if ( glConfig.texture3DAvailable ) {
 			qglDisable( GL_TEXTURE_3D );
@@ -173,28 +166,6 @@ void GL_Cull( const int cullType ) {
 	}
 
 	backEnd.glState.faceCulling = cullType;
-}
-
-/*
-====================
-GL_TexEnv
-====================
-*/
-void GL_TexEnv( int env ) {
-
-	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-	if ( env == tmu->texEnv ) {
-		return;
-	}
-
-	tmu->texEnv = env;
-
-	if ( env & (GL_COMBINE_EXT|GL_MODULATE|GL_REPLACE|GL_DECAL|GL_ADD) ) {
-		qglTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, env );
-	} else {
-		common->Error( "GL_TexEnv: invalid env '%d' passed\n", env );
-	}
-
 }
 
 /*

@@ -368,7 +368,6 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// check and draw the surfaces
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	GL_TexEnv( GL_MODULATE );
 
 	globalImages->whiteImage->Bind();
 

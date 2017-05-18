@@ -72,10 +72,6 @@ Extracted from RB_PrepareStageTexturing
 ================
 */
 void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
-	//qglEnable( GL_TEXTURE_GEN_S );
-	//qglEnable( GL_TEXTURE_GEN_T );
-	//qglEnable( GL_TEXTURE_GEN_Q );
-
 	float	mat[16], plane[4];
 	int loc;
 	myGlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
@@ -84,7 +80,6 @@ void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSur
 	plane[1] = mat[4];
 	plane[2] = mat[8];
 	plane[3] = mat[12];
-	//qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
 	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneS" );
 	qglUniform4fv( loc, 1, plane );
 
@@ -92,7 +87,6 @@ void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSur
 	plane[1] = mat[5];
 	plane[2] = mat[9];
 	plane[3] = mat[13];
-	//qglTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
 	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneT" );
 	qglUniform4fv( loc, 1, plane );
 
@@ -100,7 +94,6 @@ void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSur
 	plane[1] = mat[7];
 	plane[2] = mat[11];
 	plane[3] = mat[15];
-	//qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
 	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneQ" );
 	qglUniform4fv( loc, 1, plane );
 
@@ -696,15 +689,6 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	}
 
 	qglDisableVertexAttribArrayARB( 3 );
-	if (pStage->vertexColor != SVC_IGNORE) {
-		//qglDisableClientState( GL_COLOR_ARRAY );
-
-		/*GL_SelectTexture( 1 );
-		GL_TexEnv( GL_MODULATE );
-		globalImages->BindNull();
-		GL_SelectTexture( 0 );
-		GL_TexEnv( GL_MODULATE );*/
-	}
 }
 
 /*
@@ -1429,10 +1413,6 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 		}
 
-		//GL_SelectTexture( 0 );
-		//qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[0].ToFloatPtr() );
-		//qglTexGenfv( GL_T, GL_OBJECT_PLANE, lightProject[1].ToFloatPtr() );
-		//qglTexGenfv( GL_Q, GL_OBJECT_PLANE, lightProject[2].ToFloatPtr() );
 		int loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneS");
 		qglUniform4fv(loc, 1, lightProject[0].ToFloatPtr());
 		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneT");
@@ -1440,8 +1420,6 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneQ");
 		qglUniform4fv(loc, 1, lightProject[2].ToFloatPtr());
 
-		//GL_SelectTexture( 1 );
-		//qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[3].ToFloatPtr() );
 		loc = qglGetUniformLocation(backEnd.glProgram, "tex1PlaneS");
 		qglUniform4fv(loc, 1, lightProject[3].ToFloatPtr());
 	}

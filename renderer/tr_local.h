@@ -620,7 +620,6 @@ typedef struct {
 	int		current2DMap;
 	int		current3DMap;
 	int		currentCubeMap;
-	int		texEnv;
 	textureType_t	textureType;
 } tmu_t;
 
@@ -1075,7 +1074,6 @@ void	GL_SelectTexture( int unit );
 void	GL_CheckErrors( void );
 void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
-void	GL_TexEnv( int env );
 void	GL_Cull( int cullType );
 //anon begin
 void    GL_DepthBoundsTest(const float zmin, const float zmax);
