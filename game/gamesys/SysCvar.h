@@ -414,7 +414,7 @@ extern idCVar	g_decals;
 extern idCVar	g_knockback;
 extern idCVar	g_gravity;
 extern idCVar	g_skipFX;
-extern idCVar	g_skipParticles;
+//extern idCVar	g_skipParticles;
 extern idCVar	g_bloodEffects;
 extern idCVar	g_projectileLights;
 extern idCVar	g_doubleVision;

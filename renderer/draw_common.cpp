@@ -264,11 +264,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
 		GLint locClipPlane = qglGetUniformLocation( backEnd.glProgram, "clipPlane" );
 		qglUniform4fv( locClipPlane, 1, plane.ToFloatPtr() );
-		/*qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, plane.ToFloatPtr() );
-		plane[3] += 0.5;	// the notch is in the middle
-		GL_SelectTexture( 1 );
-		qglTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
-		GL_SelectTexture( 0 );*/
 	}
 
 	if ( !shader->IsDrawn() ) {
@@ -343,7 +338,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		// draw a normal opaque surface
 		bool	didDraw = false;
 
-		//qglEnable( GL_ALPHA_TEST );
 		qglEnableVertexAttribArrayARB( 8 );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 		// perforated surfaces may have multiple alpha tested stages
@@ -372,10 +366,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			}
 			qglColor4fv( color );
 
-			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister]};
-			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
-			//GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] + 0.5 / 255 }; // 4511
-			//qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, PP_DEPTH_ALPHA_TEST, &parm[0] );
 			GLint locAlphaTest = qglGetUniformLocation( backEnd.glProgram, "alphaTest" );
 			qglUniform1f( locAlphaTest, regs[pStage->alphaTestRegister] );
 
@@ -391,7 +381,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			RB_FinishStageTexturing( pStage, surf, ac );
 		}
 
-		//qglDisable( GL_ALPHA_TEST );
 		qglDisableVertexAttribArrayARB( 8 );
 		if (!didDraw) {
 			drawSolid = true;
@@ -1440,13 +1429,21 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 		}
 
-		GL_SelectTexture( 0 );
-		qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[0].ToFloatPtr() );
-		qglTexGenfv( GL_T, GL_OBJECT_PLANE, lightProject[1].ToFloatPtr() );
-		qglTexGenfv( GL_Q, GL_OBJECT_PLANE, lightProject[2].ToFloatPtr() );
+		//GL_SelectTexture( 0 );
+		//qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[0].ToFloatPtr() );
+		//qglTexGenfv( GL_T, GL_OBJECT_PLANE, lightProject[1].ToFloatPtr() );
+		//qglTexGenfv( GL_Q, GL_OBJECT_PLANE, lightProject[2].ToFloatPtr() );
+		int loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneS");
+		qglUniform4fv(loc, 1, lightProject[0].ToFloatPtr());
+		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneT");
+		qglUniform4fv(loc, 1, lightProject[1].ToFloatPtr());
+		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneQ");
+		qglUniform4fv(loc, 1, lightProject[2].ToFloatPtr());
 
-		GL_SelectTexture( 1 );
-		qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[3].ToFloatPtr() );
+		//GL_SelectTexture( 1 );
+		//qglTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[3].ToFloatPtr() );
+		loc = qglGetUniformLocation(backEnd.glProgram, "tex1PlaneS");
+		qglUniform4fv(loc, 1, lightProject[3].ToFloatPtr());
 	}
 
 	// this gets used for both blend lights and shadow draws
@@ -1462,7 +1459,6 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 
 	RB_DrawElementsWithCounters( tri );
 }
-
 
 /*
 =====================
@@ -1491,17 +1487,21 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 
 	// texture 1 will get the falloff texture
 	GL_SelectTexture( 1 );
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	qglEnable( GL_TEXTURE_GEN_S );
-	qglTexCoord2f( 0, 0.5 );
+	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglEnable( GL_TEXTURE_GEN_S );
+	//qglTexCoord2f( 0, 0.5 );
 	backEnd.vLight->falloffImage->Bind();
 
 	// texture 0 will get the projected texture
-	GL_SelectTexture( 0 );
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	qglEnable( GL_TEXTURE_GEN_S );
-	qglEnable( GL_TEXTURE_GEN_T );
-	qglEnable( GL_TEXTURE_GEN_Q );
+	//GL_SelectTexture( 0 );
+	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//qglEnable( GL_TEXTURE_GEN_S );
+	//qglEnable( GL_TEXTURE_GEN_T );
+	//qglEnable( GL_TEXTURE_GEN_Q );
+
+	qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_BLEND));
+	int loc = qglGetUniformLocation(backEnd.glProgram, "texture1");
+	qglUniform1i(loc, 1);
 
 	for ( i = 0 ; i < lightShader->GetNumStages() ; i++ ) {
 		stage = lightShader->GetStage(i);
@@ -1524,7 +1524,9 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 		backEnd.lightColor[1] = regs[ stage->color.registers[1] ];
 		backEnd.lightColor[2] = regs[ stage->color.registers[2] ];
 		backEnd.lightColor[3] = regs[ stage->color.registers[3] ];
-		qglColor4fv( backEnd.lightColor );
+//		qglColor4fv( backEnd.lightColor );
+		loc = qglGetUniformLocation(backEnd.glProgram, "blendColor");
+		qglUniform4fv(loc, 1, backEnd.lightColor);
 
 		RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BlendLight );
 		RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BlendLight );
@@ -1538,15 +1540,15 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 	}
 
 	GL_SelectTexture( 1 );
-	qglDisable( GL_TEXTURE_GEN_S );
+	//qglDisable( GL_TEXTURE_GEN_S );
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	qglDisable( GL_TEXTURE_GEN_S );
-	qglDisable( GL_TEXTURE_GEN_T );
-	qglDisable( GL_TEXTURE_GEN_Q );
+	//qglDisable( GL_TEXTURE_GEN_S );
+	//qglDisable( GL_TEXTURE_GEN_T );
+	//qglDisable( GL_TEXTURE_GEN_Q );
+	qglUseProgram(backEnd.glProgram = 0);
 }
-
 
 //========================================================================
 
@@ -1677,7 +1679,7 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	qglUseProgram( 0 );
+	qglUseProgram(backEnd.glProgram = 0);
 }
 
 /*
@@ -1705,13 +1707,13 @@ void RB_STD_FogAllLights( void ) {
 			continue;
 		}
 
-		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		if (vLight->lightShader->IsFogLight()) {
 			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
 		} else if ( vLight->lightShader->IsBlendLight() ) {
 			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
 		}
-		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglDisable( GL_STENCIL_TEST );
 	}
 

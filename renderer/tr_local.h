@@ -1448,6 +1448,7 @@ typedef enum {
 	PROG_DEPTH_ALPHA, // duzenko: glsl shader depth+alpha
 	PROG_OLD_STAGE, // duzenko: glsl shader for old stage
 	PROG_FOG, // duzenko: glsl shader for fog
+	PROG_BLEND, // duzenko: glsl shader for blend lights
 	// 
 	PROG_USER
 } program_t;
