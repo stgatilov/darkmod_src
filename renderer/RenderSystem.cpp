@@ -1056,6 +1056,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer, bool useP
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
 	} else
 		qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+	qglClear(GL_COLOR_BUFFER_BIT);
 	int backEndFinishTime = Sys_Milliseconds();
 	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
 }

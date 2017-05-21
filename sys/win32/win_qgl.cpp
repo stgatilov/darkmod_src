@@ -355,7 +355,7 @@ void ( APIENTRY * qglTexCoord4iv )(const GLint *v);
 void ( APIENTRY * qglTexCoord4s )(GLshort s, GLshort t, GLshort r, GLshort q);
 void ( APIENTRY * qglTexCoord4sv )(const GLshort *v);
 void ( APIENTRY * qglTexCoordPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-void ( APIENTRY * qglTexEnvf )(GLenum target, GLenum pname, GLfloat param);
+/*void ( APIENTRY * qglTexEnvf )(GLenum target, GLenum pname, GLfloat param);
 void ( APIENTRY * qglTexEnvfv )(GLenum target, GLenum pname, const GLfloat *params);
 void ( APIENTRY * qglTexEnvi )(GLenum target, GLenum pname, GLint param);
 void ( APIENTRY * qglTexEnviv )(GLenum target, GLenum pname, const GLint *params);
@@ -364,7 +364,7 @@ void ( APIENTRY * qglTexGendv )(GLenum coord, GLenum pname, const GLdouble *para
 void ( APIENTRY * qglTexGenf )(GLenum coord, GLenum pname, GLfloat param);
 void ( APIENTRY * qglTexGenfv )(GLenum coord, GLenum pname, const GLfloat *params);
 void ( APIENTRY * qglTexGeni )(GLenum coord, GLenum pname, GLint param);
-void ( APIENTRY * qglTexGeniv )(GLenum coord, GLenum pname, const GLint *params);
+void ( APIENTRY * qglTexGeniv )(GLenum coord, GLenum pname, const GLint *params);*/
 void ( APIENTRY * qglTexImage1D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 void ( APIENTRY * qglTexImage2D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 void ( APIENTRY * qglTexParameterf )(GLenum target, GLenum pname, GLfloat param);
