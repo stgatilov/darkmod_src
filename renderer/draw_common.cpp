@@ -454,7 +454,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	if ( backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
 		 && !r_skipDepthCapture.GetBool() )
 	{
-		if (!r_useFbo.GetBool()) // duzenko #4425 - depth texture will be available later in RB_STD_DrawShaderPasses
+		if (!(r_useFbo.GetBool() && r_fboSharedDepth.GetBool()) ) // duzenko #4425 - depth texture is already bound to framebuffer
 			globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
