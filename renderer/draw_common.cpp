@@ -162,9 +162,9 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	case TG_DIFFUSE_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		break;
-	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
+	/*case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
-		break;
+		break;*/
 	case TG_SCREEN:
 		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
@@ -187,7 +187,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 
 	switch (pStage->texture.texgen)
 	{
-	case TG_DIFFUSE_CUBE: case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
+	case TG_DIFFUSE_CUBE: //case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
 		break;
 	case TG_SCREEN:
@@ -629,23 +629,21 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	qglEnableVertexAttribArrayARB( 3 );
 
 	switch (pStage->texture.texgen) {
-	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
-		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: 
+		qglEnableVertexAttribArrayARB(8);
+		qglVertexAttribPointerARB(8, 3, GL_FLOAT, false, 0, vertexCache.Position(surf->dynamicTexCoords));
+		qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_CUBE_MAP));
 		break;
 	case TG_REFLECT_CUBE:
-		if (r_ignore.GetBool())
-			return;
 		break;
 	case TG_SCREEN:
 		qglColor4fv( color );
-		//break;
 	default:
 		qglEnableVertexAttribArrayARB( 8 );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		backEnd.glProgram = R_FindProgramGlsl( PROG_OLD_STAGE );
-		int locColorAdd = qglGetUniformLocation( backEnd.glProgram, "colorAdd" );
+		qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_OLD_STAGE));
+		int locColorAdd = qglGetUniformLocation(backEnd.glProgram, "colorAdd");
 		int locColorMul = qglGetUniformLocation( backEnd.glProgram, "colorMul" );
-		qglUseProgram( backEnd.glProgram );
 		switch (pStage->vertexColor) {
 		case SVC_IGNORE:
 			qglUniform4fv( locColorMul, 1, zero );
@@ -677,15 +675,13 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	RB_FinishStageTexturing( pStage, surf, ac );
 
 	switch (pStage->texture.texgen) {
-	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
-		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		break;
 	case TG_REFLECT_CUBE: 
 		break;
+	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: 
 	case TG_SCREEN:
 	default:
 		qglDisableVertexAttribArrayARB( 8 );
-		qglUseProgram(0);
+		qglUseProgram( backEnd.glProgram = 0 );
 	}
 
 	qglDisableVertexAttribArrayARB( 3 );

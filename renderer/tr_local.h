@@ -1447,6 +1447,7 @@ typedef enum {
 	PROG_OLD_STAGE, // duzenko: glsl shader for old stage
 	PROG_FOG, // duzenko: glsl shader for fog
 	PROG_BLEND, // duzenko: glsl shader for blend lights
+	PROG_CUBE_MAP, // duzenko: glsl shader for cubemap texture
 	// 
 	PROG_USER
 } program_t;

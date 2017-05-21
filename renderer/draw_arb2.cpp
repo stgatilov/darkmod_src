@@ -599,6 +599,7 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ 0, PROG_OLD_STAGE, "oldstage" }, // duzenko: old stage replacement 
 	{ 0, PROG_FOG, "fog" }, // duzenko: texgen-based fog replacement 
 	{ 0, PROG_BLEND, "blend" }, // duzenko: texgen-based fog replacement 
+	{ 0, PROG_CUBE_MAP, "cubeMap" }, 
 
 	// additional programs can be dynamically specified in materials
 };
