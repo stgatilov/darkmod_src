@@ -669,13 +669,13 @@ to handle mirrors,
 */
 void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 #ifndef	ID_DEDICATED
-	renderView_t	copy;
+	//renderView_t	copy;
 
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
 
-	copy = *renderView;
+	//copy = *renderView;
 
 	// skip front end rendering work, which will result
 	// in only gui drawing
