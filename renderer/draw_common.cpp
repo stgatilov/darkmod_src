@@ -635,6 +635,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_CUBE_MAP));
 		break;
 	case TG_REFLECT_CUBE:
+		qglColor4fv(color);
 		break;
 	case TG_SCREEN:
 		qglColor4fv( color );
