@@ -162,9 +162,6 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	case TG_DIFFUSE_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		break;
-	/*case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
-		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
-		break;*/
 	case TG_SCREEN:
 		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
@@ -192,9 +189,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		break;
 	case TG_SCREEN:
 	{
-		//qglDisable( GL_TEXTURE_GEN_S );
-		//qglDisable( GL_TEXTURE_GEN_T );
-		//qglDisable( GL_TEXTURE_GEN_Q );
 		int loc = qglGetUniformLocation( backEnd.glProgram, "screenTex" );
 		qglUniform1f( loc, 0 );
 	}
@@ -214,7 +208,6 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		}
 
 		qglDisableVertexAttribArrayARB( 2 );
-		//qglDisableClientState( GL_NORMAL_ARRAY );
 		R_UseProgramARB();
 		break;
 	}
@@ -624,10 +617,6 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	static const float one[4] = { 1, 1, 1, 1 };
 	const float negOne[4] = { -color[0], -color[1], -color[2], -1 };
 
-	// select the vertex color source
-	qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
-	qglEnableVertexAttribArrayARB( 3 );
-
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: 
 		qglEnableVertexAttribArrayARB(8);
@@ -651,10 +640,16 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			qglUniform4fv( locColorAdd, 1, color );
 			break;
 		case SVC_MODULATE:
+			// select the vertex color source
+			qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
+			qglEnableVertexAttribArrayARB(3);
 			qglUniform4fv( locColorMul, 1, color );
 			qglUniform4fv( locColorAdd, 1, zero );
 			break;
 		case SVC_INVERSE_MODULATE:
+			// select the vertex color source
+			qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
+			qglEnableVertexAttribArrayARB(3);
 			qglUniform4fv( locColorMul, 1, negOne );
 			qglUniform4fv( locColorAdd, 1, color );
 			break;
@@ -683,9 +678,12 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	default:
 		qglDisableVertexAttribArrayARB( 8 );
 		qglUseProgram( backEnd.glProgram = 0 );
+		switch (pStage->vertexColor) {
+		case SVC_MODULATE:
+		case SVC_INVERSE_MODULATE:
+			qglDisableVertexAttribArrayARB(3);
+		}
 	}
-
-	qglDisableVertexAttribArrayARB( 3 );
 }
 
 /*
