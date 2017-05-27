@@ -318,6 +318,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		drawSolid = true;
 	}
 
+	GLint locAlphaTest = qglGetUniformLocation(backEnd.glProgram, "alphaTest");
 	// we may have multiple alpha tested stages
 	if ( shader->Coverage() == MC_PERFORATED ) {
 		// if the only alpha tested stages are condition register omitted,
@@ -350,10 +351,12 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			if ( color[3] <= 0 ) {
 				continue;
 			}
-			qglColor4fv( color );
+//			qglColor4fv( color );
+			GLint locColor = qglGetUniformLocation(backEnd.glProgram, "color");
+			if (locColor >= 0)
+				qglUniform4fv(locColor, 1, color);
 
-			GLint locAlphaTest = qglGetUniformLocation( backEnd.glProgram, "alphaTest" );
-			qglUniform1f( locAlphaTest, regs[pStage->alphaTestRegister] );
+			qglUniform1f(locAlphaTest, regs[pStage->alphaTestRegister]);
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -375,8 +378,9 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// draw the entire surface solid
 	if ( drawSolid ) {
-		qglColor4fv( color );
-		globalImages->whiteImage->Bind();
+		//qglColor4fv( color );
+		//globalImages->whiteImage->Bind();
+		qglUniform1f(locAlphaTest, -1); // hint the glsl to skip texturing
 
 		// draw it
 		RB_DrawElementsWithCounters( tri );
@@ -1073,7 +1077,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
-	qglColor3f( 1, 1, 1 );
+	//qglColor3f( 1, 1, 1 );
 
 	return i;
 }
