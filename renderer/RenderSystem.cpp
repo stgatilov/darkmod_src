@@ -1040,7 +1040,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer, bool useP
 			qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
 		}
 		if (rc->width * rc->height * 3 != pboSize)
-			common->Error( "CaptureRenderToBuffer: wrong PBO size" );
+			common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", rc->width, rc->height, pboSize );
 		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, pbo);
 		unsigned char* ptr = (unsigned char*)qglMapBufferARB(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
 		if (ptr) {
