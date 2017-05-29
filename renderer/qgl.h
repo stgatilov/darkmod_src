@@ -248,6 +248,7 @@ extern  GLboolean ( APIENTRY * qglAreTexturesResident )(GLsizei n, const GLuint 
 extern  void ( APIENTRY * qglArrayElement )(GLint i);
 extern  void ( APIENTRY * qglBegin )(GLenum mode);
 extern  void ( APIENTRY * qglBindTexture )(GLenum target, GLuint texture);
+extern  void ( APIENTRY * qglBlendEquation )(GLenum mode);
 extern  void ( APIENTRY * qglBitmap )(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
 extern  void ( APIENTRY * qglBlendFunc )(GLenum sfactor, GLenum dfactor);
 extern  void ( APIENTRY * qglCallList )(GLuint list);
