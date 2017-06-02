@@ -161,6 +161,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 #ifndef _D3SDK
 
+#include "../game/Game_local.h"
 #ifdef GAME_DLL
 
 #if defined(_D3XP)

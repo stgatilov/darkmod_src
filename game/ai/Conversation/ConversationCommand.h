@@ -20,7 +20,7 @@
 #ifndef __AI_CONVERSATION_COMMAND_H__
 #define __AI_CONVERSATION_COMMAND_H__
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 
 namespace ai {

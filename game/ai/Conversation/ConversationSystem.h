@@ -20,7 +20,7 @@
 #ifndef __AI_CONVERSATION_SYSTEM_H__
 #define __AI_CONVERSATION_SYSTEM_H__
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 #include "Conversation.h"
 

@@ -17,7 +17,7 @@
  $Author$ (Author of last commit)
  
 ******************************************************************************/
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -1887,7 +1887,7 @@ idEntity::~idEntity( void )
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
-	if (gameLocal.m_Grabber->GetEquipped() == this)
+	if ( gameLocal.m_Grabber && gameLocal.m_Grabber->GetEquipped() == this )
 	{
 		if ( spawnArgs.GetBool("shoulderable") )
 		{

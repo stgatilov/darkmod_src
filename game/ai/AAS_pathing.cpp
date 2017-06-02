@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Source$  $Revision$   $Date$");

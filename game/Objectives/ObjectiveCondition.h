@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_CONDITION_H
 #define TDM_OBJECTIVE_CONDITION_H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 #include "Objective.h"
 

@@ -20,7 +20,7 @@
 #ifndef TDM_CAMPAIGN_STATISTICS_H
 #define TDM_CAMPAIGN_STATISTICS_H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 #include "MissionStatistics.h"
 

@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4127 4996 4805 4800)
@@ -207,6 +207,7 @@ void TestGameAPI( void ) {
 	gameImport_t testImport;
 	gameExport_t testExport;
 
+	testImport.version = GAME_API_VERSION;
 	testImport.sys						= ::sys;
 	testImport.common					= ::common;
 	testImport.cmdSystem				= ::cmdSystem;

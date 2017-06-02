@@ -21,7 +21,7 @@
 // TODO: Detecting stuck items (distance + angular offset)
 // TODO: Handling stuck items (initially stop the player's motion, then if they continue that motion, drop the item)
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

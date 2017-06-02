@@ -20,7 +20,7 @@
 #ifndef _MOD_INFO_H_
 #define _MOD_INFO_H_
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 class CModInfoDecl;
 typedef std::shared_ptr<CModInfoDecl> CModInfoDeclPtr;

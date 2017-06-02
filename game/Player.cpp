@@ -16,7 +16,7 @@
  $Author$ (Author of last commit)
  
 ******************************************************************************/
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4355) // greebo: Disable warning "'this' used in constructor"

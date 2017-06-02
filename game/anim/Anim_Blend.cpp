@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -26,11 +26,11 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../DarkModGlobals.h"
 #include "../MeleeWeapon.h"
 #include "../ai/Tasks/SingleBarkTask.h"
-#include "anim/Anim.h"
-#include "ai/AI.h"
-#include "Player.h"
-#include "FX.h"
-#include "Weapon.h"
+#include "../anim/Anim.h"
+#include "../ai/AI.h"
+#include "../Player.h"
+#include "../FX.h"
+#include "../Weapon.h"
 
 
 static const char *channelNames[ ANIM_NumAnimChannels ] = {

@@ -19,7 +19,7 @@
 
 // Copyright (C) 2006 Chris Sarantos <csarantos@gmail.com>
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
