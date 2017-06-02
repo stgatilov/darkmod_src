@@ -626,9 +626,6 @@
     <ClInclude Include="renderer\CinematicFFMpeg.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="sys\win32\dxerr.h">
-      <Filter>Sys</Filter>
-    </ClInclude>
     <ClInclude Include="framework\minizip\ioapi.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
@@ -2410,9 +2407,6 @@
     </ClCompile>
     <ClCompile Include="renderer\CinematicFFMpeg.cpp">
       <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="sys\win32\dxerr.cpp">
-      <Filter>Sys</Filter>
     </ClCompile>
     <ClCompile Include="framework\minizip\ioapi.c">
       <Filter>Framework\minizip</Filter>
