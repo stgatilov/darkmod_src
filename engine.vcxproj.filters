@@ -623,9 +623,6 @@
     <ClInclude Include="sound\efxlib.h">
       <Filter>Sound</Filter>
     </ClInclude>
-    <ClInclude Include="renderer\CinematicFFMpeg.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="framework\minizip\ioapi.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
@@ -1393,6 +1390,9 @@
     </ClInclude>
     <ClInclude Include="game\precompiled_game.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="renderer\CinematicFFMpeg.h">
+      <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2405,9 +2405,6 @@
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\CinematicFFMpeg.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="framework\minizip\ioapi.c">
       <Filter>Framework\minizip</Filter>
     </ClCompile>
@@ -3148,6 +3145,9 @@
     </ClCompile>
     <ClCompile Include="game\precompiled_game.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\CinematicFFMpeg.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

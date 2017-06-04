@@ -21,15 +21,7 @@ $Author$ (Author of last commit)
 
 #include "Cinematic.h"
 #include <memory>
-
-extern "C"
-{
-
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-
-}
+#include "../ExtLibs/ffmpeg.h"
 
 /**
  * Cinematic driven by the ffmpeg libavcodec library.
