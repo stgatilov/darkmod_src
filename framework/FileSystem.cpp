@@ -22,7 +22,7 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
-#include "Unzip.h"
+#include "minizip/Unzip.h"
 //stgatilov: for pk4 repacking
 #include "minizip/Zip.h"
 

@@ -538,7 +538,7 @@
       <OptimizeReferences>
       </OptimizeReferences>
       <MapExports>true</MapExports>
-      <AdditionalDependencies>ExtLibs.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -601,7 +601,6 @@
     <ClInclude Include="framework\precompiled_engine.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
-    <ClInclude Include="framework\Unzip.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
     <ClInclude Include="framework\async\AsyncClient.h" />
     <ClInclude Include="framework\async\AsyncNetwork.h" />

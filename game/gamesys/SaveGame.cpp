@@ -26,7 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "TypeInfo.h"
 
-#include "zlib.h"
+#include "../ExtLibs/zip.h"
 
 /*
 Save game related helper classes.
@@ -121,11 +121,11 @@ void idSaveGame::FinalizeCache( void ) {
 
 	//resize destination buffer
 	CRawVector zipped;
-	int zipsize = compressBound(cache.size());
+	int zipsize = ExtLibs::compressBound(cache.size());
 	zipped.resize(zipsize);
 
 	//compress the cache
-	int err = compress((Bytef *)&zipped[0], (uLongf*)&zipsize,
+	int err = ExtLibs::compress((Bytef *)&zipped[0], (uLongf*)&zipsize,
 		(const Bytef *)&cache[0], cache.size());
 	if (err != Z_OK)
 		gameLocal.Error("idSaveGame::FinalizeCache: compress failed with code %d", err);
@@ -602,7 +602,7 @@ void idRestoreGame::InitializeCache() {
 	file->Read(&zipped[0], zipped.size());
 
 	//decompress data
-	int err = uncompress(
+	int err = ExtLibs::uncompress(
 		(Bytef *)&cache[0], (uLongf*)&cacheSize,
 		(const Bytef *)&zipped[0], zipped.size());
 	if (err != Z_OK)

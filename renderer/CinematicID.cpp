@@ -1282,7 +1282,7 @@ jpeg_memory_src (j_decompress_ptr cinfo, byte *infile, int size)
   src->pub.init_source = init_source;
   src->pub.fill_input_buffer = fill_input_buffer;
   src->pub.skip_input_data = skip_input_data;
-  src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+  src->pub.resync_to_restart = ExtLibs::jpeg_resync_to_restart; /* use default method */
   src->pub.term_source = term_source;
   src->infile = infile;
   src->memsize = size;
@@ -1307,10 +1307,10 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
   /* Step 1: allocate and initialize JPEG decompression object */
 
   /* We set up the normal JPEG error routines, then override error_exit. */
-  cinfo.err = jpeg_std_error(&jerr);
+  cinfo.err = ExtLibs::jpeg_std_error( &jerr );
 
   /* Now we can initialize the JPEG decompression object. */
-  jpeg_create_decompress(&cinfo);
+  ExtLibs::jpeg_create_decompress( &cinfo );
 
   /* Step 2: specify data source (eg, a file) */
 
@@ -1318,7 +1318,7 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 
   /* Step 3: read file parameters with jpeg_read_header() */
 
-  (void) jpeg_read_header(&cinfo, TRUE);
+  (void) ExtLibs::jpeg_read_header(&cinfo, TRUE);
   /* We can ignore the return value from jpeg_read_header since
    *   (a) suspension is not possible with the stdio data source, and
    *   (b) we passed TRUE to reject a tables-only JPEG file as an error.
@@ -1339,7 +1339,7 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
     cinfo.do_fancy_upsampling = FALSE;
 //	cinfo.out_color_space = JCS_GRAYSCALE;
 	
-  (void) jpeg_start_decompress(&cinfo);
+  (void) ExtLibs::jpeg_start_decompress(&cinfo);
   /* We can ignore the return value since suspension is not possible
    * with the stdio data source.
    */
@@ -1370,7 +1370,7 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
      * Here the array is only one element long, but you could ask for
      * more than one scanline at a time if that's more convenient.
      */
-    (void) jpeg_read_scanlines(&cinfo, &buffer[0], 1);
+	  (void)ExtLibs::jpeg_read_scanlines( &cinfo, &buffer[0], 1 );
 
     /* Assume put_scanline_someplace wants a pointer and sample count. */
 	memcpy( wStatus, &buffer[0][0], row_stride );
@@ -1392,7 +1392,7 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
 
   /* Step 7: Finish decompression */
 
-  (void) jpeg_finish_decompress(&cinfo);
+  (void)ExtLibs::jpeg_finish_decompress( &cinfo );
   /* We can ignore the return value since suspension is not possible
    * with the stdio data source.
    */
@@ -1400,7 +1400,7 @@ int JPEGBlit( byte *wStatus, byte *data, int datasize )
   /* Step 8: Release JPEG decompression object */
 
   /* This is an important step since it will release a good deal of memory. */
-  jpeg_destroy_decompress(&cinfo);
+  ExtLibs::jpeg_destroy_decompress(&cinfo);
 
   /* At this point you may want to check to see whether any corrupt-data
    * warnings occurred (test whether jerr.pub.num_warnings is nonzero).

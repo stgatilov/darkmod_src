@@ -228,9 +228,6 @@
     <ClInclude Include="framework\Session_local.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="framework\Unzip.h">
-      <Filter>Framework</Filter>
-    </ClInclude>
     <ClInclude Include="framework\UsercmdGen.h">
       <Filter>Framework</Filter>
     </ClInclude>

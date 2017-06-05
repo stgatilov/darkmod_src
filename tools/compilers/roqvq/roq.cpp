@@ -23,6 +23,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "roq.h"
 #include "codec.h"
+#include "../ExtLibs/jpeg.h"
 
 roq		*theRoQ;				// current roq file
 
@@ -273,13 +274,13 @@ void roq::JPEGStartCompress (j_compress_ptr cinfo, bool write_all_tables) {
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
 
   if (write_all_tables)
-    jpeg_suppress_tables(cinfo, FALSE);	/* mark all tables to be written */
+    ExtLibs::jpeg_suppress_tables(cinfo, FALSE);	/* mark all tables to be written */
 
   /* (Re)initialize error mgr and destination modules */
   (*cinfo->err->reset_error_mgr) ((j_common_ptr) cinfo);
   (*cinfo->dest->init_destination) (cinfo);
   /* Perform master selection of active modules */
-  jinit_compress_master(cinfo);
+  ExtLibs::jinit_compress_master( cinfo );
   /* Set up for the first pass */
   (*cinfo->master->prepare_for_pass) (cinfo);
   /* Ready for application to drive first pass through jpeg_write_scanlines
@@ -426,9 +427,9 @@ void roq::WriteLossless( void ) {
 	* This routine fills in the contents of struct jerr, and returns jerr's
 	* address which we place into the link field in cinfo.
 	*/
-	cinfo.err = jpeg_std_error(&jerr);
+	cinfo.err = ExtLibs::jpeg_std_error(&jerr);
 	/* Now we can initialize the JPEG compression object. */
-	jpeg_create_compress(&cinfo);
+	ExtLibs::jpeg_create_compress( &cinfo );
 
 	/* Step 2: specify data destination (eg, a file) */
 	/* Note: steps 2 and 3 can be done in either order. */
@@ -454,11 +455,11 @@ void roq::WriteLossless( void ) {
 	* (You must set at least cinfo.in_color_space before calling this,
 	* since the defaults depend on the source color space.)
 	*/
-	jpeg_set_defaults(&cinfo);
+	ExtLibs::jpeg_set_defaults(&cinfo);
 	/* Now you can set any non-default parameters you wish to.
 	* Here we just illustrate the use of quality (quantization table) scaling:
 	*/
-	jpeg_set_quality(&cinfo, paramFile->JpegQuality(), true /* limit to baseline-JPEG values */);
+	ExtLibs::jpeg_set_quality( &cinfo, paramFile->JpegQuality(), true /* limit to baseline-JPEG values */ );
 
 	/* Step 4: Start compressor */
 
@@ -489,7 +490,7 @@ void roq::WriteLossless( void ) {
 
 	/* Step 6: Finish compression */
 
-	jpeg_finish_compress(&cinfo);
+	ExtLibs::jpeg_finish_compress(&cinfo);
 	/* After finish_compress, we can close the output file. */
 
 	directdw = hackSize;
@@ -504,7 +505,7 @@ void roq::WriteLossless( void ) {
 	/* Step 7: release JPEG compression object */
 
 	/* This is an important step since it will release a good deal of memory. */
-	jpeg_destroy_compress(&cinfo);
+	ExtLibs::jpeg_destroy_compress(&cinfo);
 
 	/* And we're done! */
 	encoder->SetPreviousImage( "first frame", image );

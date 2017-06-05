@@ -51,6 +51,7 @@
 #define ID_TIME_T time_t
 #include "../sys/sys_public.h" //"sys/platform.h"
 #include "../idlib/Heap.h"     //"idlib/Heap.h"
+#include "../ExtLibs/zip.h"
 
 // we don't need crypt support
 #define NOCRYPT 1
@@ -1242,7 +1243,7 @@ extern int ZEXPORT zipOpenNewFileInZip4_64 (zipFile file, const char* filename, 
           if (windowBits>0)
               windowBits = -windowBits;
 
-          err = deflateInit2(&zi->ci.stream, level, Z_DEFLATED, windowBits, memLevel, strategy);
+          err = ExtLibs::deflateInit2(&zi->ci.stream, level, Z_DEFLATED, windowBits, memLevel, strategy);
 
           if (err==Z_OK)
               zi->ci.stream_initialised = Z_DEFLATED;
@@ -1435,7 +1436,7 @@ extern int ZEXPORT zipWriteInFileInZip (zipFile file,const void* buf,unsigned in
     if (zi->in_opened_file_inzip == 0)
         return ZIP_PARAMERROR;
 
-    zi->ci.crc32 = crc32(zi->ci.crc32,(const Bytef *)buf,(uInt)len);
+    zi->ci.crc32 = ExtLibs::crc32(zi->ci.crc32,(const Bytef *)buf,(uInt)len);
 
 #ifdef HAVE_BZIP2
     if(zi->ci.method == Z_BZIP2ED && (!zi->ci.raw))
@@ -1494,7 +1495,7 @@ extern int ZEXPORT zipWriteInFileInZip (zipFile file,const void* buf,unsigned in
           if ((zi->ci.method == Z_DEFLATED) && (!zi->ci.raw))
           {
               uLong uTotalOutBefore = zi->ci.stream.total_out;
-              err=deflate(&zi->ci.stream,  Z_NO_FLUSH);
+			  err = ExtLibs::deflate( &zi->ci.stream, Z_NO_FLUSH );
               if(uTotalOutBefore > zi->ci.stream.total_out)
               {
                 int bBreak = 0;
@@ -1564,7 +1565,7 @@ extern int ZEXPORT zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_s
                                         zi->ci.stream.next_out = zi->ci.buffered_data;
                                 }
                                 uTotalOutBefore = zi->ci.stream.total_out;
-                                err=deflate(&zi->ci.stream,  Z_FINISH);
+								err = ExtLibs::deflate( &zi->ci.stream, Z_FINISH );
                                 zi->ci.pos_in_buffered_data += (uInt)(zi->ci.stream.total_out - uTotalOutBefore) ;
                         }
                 }
@@ -1606,7 +1607,7 @@ extern int ZEXPORT zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_s
 
     if ((zi->ci.method == Z_DEFLATED) && (!zi->ci.raw))
     {
-        int tmp_err = deflateEnd(&zi->ci.stream);
+		int tmp_err = ExtLibs::deflateEnd( &zi->ci.stream );
         if (err == ZIP_OK)
             err = tmp_err;
         zi->ci.stream_initialised = 0;
