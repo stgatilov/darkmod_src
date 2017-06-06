@@ -26,16 +26,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Image.h"
 #include "tr_local.h"
 
-extern "C"
-{
-
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavformat/avio.h>
-#include <libswscale/swscale.h>
-
-}
-
 idCVar r_cinematic_log("r_cinematic_log", 0, CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, 
 	"Dump logs from cinematic into \"log_cinematics.txt\" file."
 );
@@ -125,7 +115,6 @@ void idCinematicFFMpeg::LogCallback(void* avcl, int level, const char *fmt, va_l
 	Sys_LeaveCriticalSection(CRITICAL_SECTION_THREE);
 }
 
-
 idCinematicFFMpeg::idCinematicFFMpeg() :
 	_looping(false),
 	_file(NULL),
@@ -143,7 +132,7 @@ idCinematicFFMpeg::idCinematicFFMpeg() :
 	_swsContext(NULL)
 {
 	// Make sure all codecs are registered
-	el_register_all();
+	ExtLibs::av_register_all();
 	// Create log file if requested by cvar (only once)
 	if (!logFile) {
 		if (r_cinematic_log.GetBool() || r_cinematic_log_ffmpeg.GetBool()) {
@@ -174,15 +163,15 @@ public:
 		_bufferSize(4096),
 		_context(NULL)
 	{
-		unsigned char* buffer = static_cast<unsigned char*>(el_malloc(_bufferSize));
-		_context = el_io_alloc_context( buffer, _bufferSize, 0, this,
+		unsigned char* buffer = static_cast<unsigned char*>(ExtLibs::av_malloc( _bufferSize ));
+		_context = ExtLibs::avio_alloc_context(buffer, _bufferSize, 0, this,
 			&VFSIOContext::read, NULL, &VFSIOContext::seek);
 	}
 
 	~VFSIOContext()
 	{
-		el_free(_context->buffer);
-		el_free(_context);
+		ExtLibs::av_free( _context->buffer );
+		ExtLibs::av_free( _context );
 	}
 
 	static int read(void* opaque, unsigned char* buf, int buf_size)
@@ -240,25 +229,25 @@ bool idCinematicFFMpeg::OpenAVDecoder()
 	LogPrintf("Opened file %s", _path.c_str());
 
 	if (r_cinematic_log_ffmpeg.GetBool())
-		el_log_set_callback(idCinematicFFMpeg::LogCallback);
+		ExtLibs::av_log_set_callback( idCinematicFFMpeg::LogCallback );
 
 	TIMER_START(ctxAlloc);
 	// Use libavformat to detect the video type and stream
-	_formatContext = el_format_alloc_context();
+	_formatContext = ExtLibs::avformat_alloc_context();
 	// To use the VFS we need to set up a custom AV I/O context
 	_customIOContext.reset(new VFSIOContext(_file));
 	_formatContext->pb = _customIOContext->getContext();
 	TIMER_END_LOG(ctxAlloc, "AVFormat context allocated");
 
 	TIMER_START(formatOpen);
-	if (el_format_open_input( &_formatContext, _path.c_str(), NULL, NULL ) < 0) {
+	if (ExtLibs::avformat_open_input( &_formatContext, _path.c_str(), NULL, NULL ) < 0) {
 		common->Warning("Could not open %s\n", _path.c_str());
 		return false;
 	}
 	TIMER_END_LOG(formatOpen, "AVFormat input opened");
 
 	TIMER_START(findStream);
-	if (el_format_find_stream_info( _formatContext, NULL ) < 0) {
+	if (ExtLibs::avformat_find_stream_info( _formatContext, NULL ) < 0) {
 		common->Warning("Could not find stream info %s\n", _path.c_str());
 		return false;
 	}
@@ -292,12 +281,12 @@ bool idCinematicFFMpeg::OpenAVDecoder()
 
 	TIMER_START(allocTemp);
 	// Allocate the temporary frame for decoding
-	_tempFrame = el_frame_alloc();
+	_tempFrame = ExtLibs::av_frame_alloc();
 	if (!_tempFrame) {
 		common->Warning("Could not allocate video frame\n");
 		return false;
 	}
-	el_init_packet(&_packet);
+	ExtLibs::av_init_packet( &_packet );
 	_packet.data = NULL;
 	_packet.size = 0;
 	TIMER_END_LOG(allocTemp, "Alloc frame & init packet");
@@ -306,7 +295,7 @@ bool idCinematicFFMpeg::OpenAVDecoder()
 
 	TIMER_START(createSwsCtx);
 	// Set up the scaling context used to re-encode the images
-	_swsContext = el_getContext(
+	_swsContext = ExtLibs::sws_getContext(
 		_videoDecoderContext->width, _videoDecoderContext->height,
 		_videoDecoderContext->pix_fmt,
 		_videoDecoderContext->width, _videoDecoderContext->height,
@@ -328,26 +317,26 @@ void idCinematicFFMpeg::CloseAVDecoder()
 	_bufferSize = 0;
 
 	if (_tempFrame != NULL)
-		el_frame_free( &_tempFrame );
+		ExtLibs::av_frame_free( &_tempFrame );
 	_tempFrame = NULL;
 
 	if (_swsContext != NULL)
-		el_freeContext( _swsContext );
+		ExtLibs::sws_freeContext( _swsContext );
 	_swsContext = NULL;
 
 	_videoStreamIndex = -1;
 
 	if (_videoDecoderContext != NULL)
-		el_codec_close(_videoDecoderContext);
+		ExtLibs::avcodec_close( _videoDecoderContext );
 	_videoDecoderContext = NULL;
 
 	if (_formatContext != NULL)
-		el_format_close_input( &_formatContext );
+		ExtLibs::avformat_close_input(&_formatContext);
 	_formatContext = NULL;
 
 	_customIOContext.reset();
 
-	el_log_set_callback(el_log_default_callback);
+	ExtLibs::av_log_set_callback( ExtLibs::av_log_default_callback );
 
 	if (_file != NULL)
 		fileSystem->CloseFile(_file);
@@ -358,21 +347,21 @@ void idCinematicFFMpeg::CloseAVDecoder()
 int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
 {
 	TIMER_START(findBestStream);
-	int streamIndex = el_find_best_stream( _formatContext, type, -1, -1, NULL, 0 );
+	int streamIndex = ExtLibs::av_find_best_stream( _formatContext, type, -1, -1, NULL, 0 );
 	if (streamIndex < 0) {
-		common->Warning("Could not find %s stream in input.\n", el_get_media_type_string(type));
+		common->Warning( "Could not find %s stream in input.\n", ExtLibs::av_get_media_type_string( type ) );
 		return -1;
 	}
 	TIMER_END_LOG(findBestStream, "Found best stream");
 	AVStream* st = _formatContext->streams[streamIndex];
 
 	AVCodecID codecId = st->codec->codec_id;
-	LogPrintf("Stream %d is encoded with codec %d: %s", streamIndex, codecId, el_codec_get_name(codecId));
+	LogPrintf( "Stream %d is encoded with codec %d: %s", streamIndex, codecId, ExtLibs::avcodec_get_name( codecId ) );
 	// find decoder for the stream
 	TIMER_START(findDecoder);
-	AVCodec* dec = el_codec_find_decoder(codecId);
+	AVCodec* dec = ExtLibs::avcodec_find_decoder( codecId );
 	if (!dec) {
-		common->Warning("Failed to find %s:%s decoder\n", el_get_media_type_string(type), el_codec_get_name(codecId));
+		common->Warning( "Failed to find %s:%s decoder\n", ExtLibs::av_get_media_type_string( type ), ExtLibs::avcodec_get_name( codecId ) );
 		return AVERROR(EINVAL);
 	}
 	TIMER_END_LOG(findDecoder, "Found decoder");
@@ -380,9 +369,9 @@ int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
 	TIMER_START(openCodec);
 	AVDictionary *opts = NULL;
 	// Use API_MODE_NEW_API_REF_COUNT
-	el_dict_set(&opts, "refcounted_frames", "1", 0);
-	if (el_codec_open2(st->codec, dec, &opts) < 0) {
-		common->Warning("Failed to open %s:%s codec\n", el_get_media_type_string(type), el_codec_get_name(codecId));
+	ExtLibs::av_dict_set( &opts, "refcounted_frames", "1", 0 );
+	if (ExtLibs::avcodec_open2( st->codec, dec, &opts ) < 0) {
+		common->Warning( "Failed to open %s:%s codec\n", ExtLibs::av_get_media_type_string( type ), ExtLibs::avcodec_get_name( codecId ) );
 		return -1;
 	}
 	TIMER_END_LOG(openCodec, "Opened decoder");
@@ -393,12 +382,12 @@ int idCinematicFFMpeg::FindBestStreamByType(AVMediaType type)
 
 bool idCinematicFFMpeg::ReadPacket(AVPacket& avpkt) {
 	TIMER_START(readPacket);
-	int ret = el_read_frame( _formatContext, &_packet );
+	int ret = ExtLibs::av_read_frame( _formatContext, &_packet );
 
 	AVStream* st = _formatContext->streams[_packet.stream_index];
-	AVMediaType type = el_codec_get_type(st->codec->codec_id);
+	AVMediaType type = ExtLibs::avcodec_get_type( st->codec->codec_id );
 	TIMER_END_LOG(readPacket, "Read packet");
-	LogPrintf("Packet: stream = %d (%s)  size = %d", _packet.stream_index, el_get_media_type_string(type), _packet.size);
+	LogPrintf( "Packet: stream = %d (%s)  size = %d", _packet.stream_index, ExtLibs::av_get_media_type_string( type ), _packet.size );
 	LogPrintf("  DTS = %lld  PTS = %lld  dur = %d", _packet.dts, _packet.pts, _packet.duration);
 	return ret >= 0;
 }
@@ -411,7 +400,7 @@ int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& fra
 	TIMER_START(decode);
 	// Decode the packet
 	int got_frame = 0;
-	int ret = el_codec_decode_video2(_videoDecoderContext, _tempFrame, &got_frame, &avpkt);
+	int ret = ExtLibs::avcodec_decode_video2( _videoDecoderContext, _tempFrame, &got_frame, &avpkt );
 	if (ret < 0) {
 		common->Warning("Error decoding video frame (%d)\n", ret);
 		return ret;
@@ -427,7 +416,7 @@ int idCinematicFFMpeg::DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& fra
 		// That's why swscale expects only single destination pointer + stride
 		uint8_t* const dstPtr[1] = { targetRGBA };
 		int lineWidth[1] = { _videoDecoderContext->width * 4 };
-		el_scale(
+		ExtLibs::sws_scale(
 			_swsContext,
 			_tempFrame->data, _tempFrame->linesize, 0, _tempFrame->height,
 			dstPtr, lineWidth
@@ -557,7 +546,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 
 	while (ReadPacket(_packet)) {
 		if (_packet.stream_index != _videoStreamIndex) {
-			el_free_packet(&_packet);
+			ExtLibs::av_free_packet( &_packet );
 			continue;
 		}
 
@@ -582,7 +571,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 				targetBuffer.duration = _packet.duration * av_q2d(_formatContext->streams[_videoStreamIndex]->time_base) * 1000;
 				LogPrintf("Decoded frame with timestamp: %d + %d", targetBuffer.timeStamp, targetBuffer.duration);
 
-				el_free_packet(&_packet);
+				ExtLibs::av_free_packet( &_packet );
 				return true;
 			}
 		} while (_packet.size > 0);
@@ -602,11 +591,11 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 		targetBuffer.duration = _packet.duration * av_q2d(_formatContext->streams[_videoStreamIndex]->time_base) * 1000;
 		LogPrintf("Decoded frame with timestamp: %d + %d", targetBuffer.timeStamp, targetBuffer.duration);
 
-		el_free_packet(&_packet);
+		ExtLibs::av_free_packet( &_packet );
 		return true;
 	}
 
-	el_free_packet(&_packet);
+	ExtLibs::av_free_packet( &_packet );
 
 	// We seem to be out of frames
 	_status = FMV_EOF;
@@ -617,7 +606,7 @@ bool idCinematicFFMpeg::ReadFrame(FrameBuffer& targetBuffer)
 int idCinematicFFMpeg::CalculatePacketTime()
 {
 	//TODO: we rely here on the fact that _tempFrame is still current
-	int64_t pts = el_frame_get_best_effort_timestamp(_tempFrame);
+	int64_t pts = ExtLibs::av_frame_get_best_effort_timestamp( _tempFrame );
 
 	double timeBase = av_q2d(_formatContext->streams[_videoStreamIndex]->time_base);
 	double frameTime = pts * timeBase;
