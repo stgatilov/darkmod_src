@@ -4,6 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <OutDir>$(SolutionDir)..\darkmod\</OutDir>
+    <TargetName>$(ExtLibsModule)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

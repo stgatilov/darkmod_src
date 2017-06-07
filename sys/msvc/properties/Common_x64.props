@@ -4,6 +4,7 @@
   <PropertyGroup Label="UserMacros">
     <OpenALSoftDLLPath>Win64\bin\OpenAL32_x64.dll</OpenALSoftDLLPath>
     <TdmExecutableName>TheDarkModx64</TdmExecutableName>
+    <ExtLibsModule>ExtLibsx64</ExtLibsModule>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>
@@ -19,6 +20,9 @@
     </BuildMacro>
     <BuildMacro Include="TdmExecutableName">
       <Value>$(TdmExecutableName)</Value>
+    </BuildMacro>
+    <BuildMacro Include="ExtLibsModule">
+      <Value>$(ExtLibsModule)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
