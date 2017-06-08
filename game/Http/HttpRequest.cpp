@@ -33,7 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <Wspiapi.h>
 #endif
 
-#include <curl/curl.h>
+#include "../ExtLibs/curl.h"
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_conn(conn),
@@ -69,23 +69,23 @@ int CHttpRequest::TDMHttpProgressFunc(void *clientp, double dltotal, double dlno
 void CHttpRequest::InitRequest()
 {
 	// Init the curl session
-	_handle = curl_easy_init();
+	_handle = ExtLibs::curl_easy_init();
 
 	// specify URL to get
-	curl_easy_setopt(_handle, CURLOPT_URL, _url.c_str());
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_URL, _url.c_str() );
 
 	// Connect the callback
 	if (!_destFilename.empty())
 	{
-		curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteFileCallback);
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteFileCallback );
 	}
 	else
 	{
-		curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteMemoryCallback);
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_WRITEFUNCTION, CHttpRequest::WriteMemoryCallback );
 	}
 
 	// We pass ourselves as user data pointer to the callback function
-	curl_easy_setopt(_handle, CURLOPT_WRITEDATA, this);
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_WRITEDATA, this );
 
 	// Set agent
 	idStr agent = "The Dark Mod Agent/";
@@ -99,17 +99,17 @@ void CHttpRequest::InitRequest()
 	agent += " MacOSX";
 #endif
 
-	curl_easy_setopt(_handle, CURLOPT_USERAGENT, agent.c_str());
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_USERAGENT, agent.c_str() );
 
 	// Tels: #3261: only allow FTP, FTPS, HTTP and HTTPS (HTTPS and FTPS need SSL support compiled in)
-	curl_easy_setopt(_handle, CURLOPT_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS );
 
 	// Tels: #3261: allow redirects on the server, with a limit of 10 redirects, and limit
 	// 	 the protocols to FTP, FTPS, HTTP, HTTPS to avoid rogue servers giving us random
 	//	 things like Telnet or POP3 on random targets.
-	curl_easy_setopt(_handle, CURLOPT_FOLLOWLOCATION,			       true);
-	curl_easy_setopt(_handle, CURLOPT_MAXREDIRS,					 10);
-	curl_easy_setopt(_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS);
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_FOLLOWLOCATION, true );
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_MAXREDIRS, 10 );
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_FTP + CURLPROTO_FTPS + CURLPROTO_HTTP + CURLPROTO_HTTPS );
 
     // #3418: we need to provide the ca bundle
     idStr capath = g_Global.GetDarkmodPath().c_str();
@@ -123,24 +123,24 @@ void CHttpRequest::InitRequest()
     {
         delete catest;
     }
-    curl_easy_setopt(_handle, CURLOPT_CAINFO, capath.c_str());
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_CAINFO, capath.c_str() );
 
 	// Agent Jones #3766
 
 	// The default progress meter function is not used here. Disable it.
-	curl_easy_setopt(_handle, CURLOPT_NOPROGRESS, false);
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_NOPROGRESS, false );
 
 	// Progress callback
-	curl_easy_setopt(_handle, CURLOPT_XFERINFOFUNCTION, CHttpRequest::TDMHttpProgressFunc);
-	curl_easy_setopt(_handle, CURLOPT_XFERINFODATA, this);//this will become the clientp arg in TDMHttpProgressFunc
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_XFERINFOFUNCTION, CHttpRequest::TDMHttpProgressFunc );
+	ExtLibs::curl_easy_setopt( _handle, CURLOPT_XFERINFODATA, this );//this will become the clientp arg in TDMHttpProgressFunc
 																				
 	// end #3766
 
 	// Get the proxy from the HttpConnection class
 	if (_conn.HasProxy())
 	{
-		curl_easy_setopt(_handle, CURLOPT_PROXY, _conn.GetProxyHost().c_str());
-		curl_easy_setopt(_handle, CURLOPT_PROXYUSERPWD, (_conn.GetProxyUsername() + ":" + _conn.GetProxyPassword()).c_str());
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXY, _conn.GetProxyHost().c_str() );
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXYUSERPWD, (_conn.GetProxyUsername() + ":" + _conn.GetProxyPassword()).c_str() );
 	}
 }
 
@@ -157,7 +157,7 @@ void CHttpRequest::Perform()
 		_destStream.open(_destFilename.c_str(), std::ofstream::out|std::ofstream::binary);
 	}
 
-	CURLcode result = curl_easy_perform(_handle);
+	CURLcode result = ExtLibs::curl_easy_perform( _handle );
 
 	if (!_destFilename.empty())
 	{
@@ -183,7 +183,7 @@ void CHttpRequest::Perform()
 		};
 	}
 
-	curl_easy_cleanup(_handle);
+	ExtLibs::curl_easy_cleanup( _handle );
 
 	_handle = NULL;
 }
@@ -222,7 +222,7 @@ void CHttpRequest::UpdateProgress()
 {
 	double size;
 	double downloaded;
-	CURLcode result = curl_easy_getinfo(_handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size);
+	CURLcode result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &size );
 
 	if (result != CURLE_OK) 
 	{
@@ -230,7 +230,7 @@ void CHttpRequest::UpdateProgress()
 		return;
 	}
 
-	result = curl_easy_getinfo(_handle, CURLINFO_SIZE_DOWNLOAD, &downloaded);
+	result = ExtLibs::curl_easy_getinfo( _handle, CURLINFO_SIZE_DOWNLOAD, &downloaded );
 
 	if (result != CURLE_OK) 
 	{

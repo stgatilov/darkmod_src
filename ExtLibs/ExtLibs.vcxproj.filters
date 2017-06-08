@@ -6,6 +6,7 @@
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="devil.h" />
     <ClInclude Include="zip.h" />
+    <ClInclude Include="curl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -13,5 +14,6 @@
     <ClCompile Include="jpeg.cpp" />
     <ClCompile Include="devil.cpp" />
     <ClCompile Include="zip.cpp" />
+    <ClCompile Include="curl.cpp" />
   </ItemGroup>
 </Project>

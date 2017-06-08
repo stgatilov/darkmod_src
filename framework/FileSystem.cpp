@@ -42,7 +42,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #endif
 
 #if ID_ENABLE_CURL
-	#include "../include/curl/curl.h"
+	#include "../ExtLibs/curl.h"
 #endif
 
 /*
@@ -3122,7 +3122,7 @@ THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
 			// use a local buffer for curl error since the size define is local
 			char error_buf[ CURL_ERROR_SIZE ];
 			bgl->url.dlerror[ 0 ] = '\0';
-			CURL *session = curl_easy_init();
+			CURL *session = ExtLibs::curl_easy_init();
 			CURLcode ret;
 			if ( !session ) {
 				bgl->url.dlstatus = CURLE_FAILED_INIT;
@@ -3130,56 +3130,56 @@ THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_ERRORBUFFER, error_buf );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_ERRORBUFFER, error_buf );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_URL, bgl->url.url.c_str() );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_URL, bgl->url.url.c_str() );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_FAILONERROR, 1 );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_FAILONERROR, 1 );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_WRITEFUNCTION, idFileSystemLocal::CurlWriteFunction );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_WRITEFUNCTION, idFileSystemLocal::CurlWriteFunction );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_WRITEDATA, bgl );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_WRITEDATA, bgl );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_NOPROGRESS, 0 );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_NOPROGRESS, 0 );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_PROGRESSFUNCTION, idFileSystemLocal::CurlProgressFunction );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_PROGRESSFUNCTION, idFileSystemLocal::CurlProgressFunction );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
 				bgl->completed = true;
 				continue;
 			}
-			ret = curl_easy_setopt( session, CURLOPT_PROGRESSDATA, bgl );
+			ret = ExtLibs::curl_easy_setopt( session, CURLOPT_PROGRESSDATA, bgl );
 			if ( ret ) {
 				bgl->url.dlstatus = ret;
 				bgl->url.status = DL_FAILED;
@@ -3189,7 +3189,7 @@ THREAD_RETURN_TYPE BackgroundDownloadThread(void *parms) {
 			bgl->url.dlnow = 0;
 			bgl->url.dltotal = 0;
 			bgl->url.status = DL_INPROGRESS;
-			ret = curl_easy_perform( session );
+			ret = ExtLibs::curl_easy_perform( session );
 			if ( ret ) {
 				Sys_Printf( "curl_easy_perform failed: %s\n", error_buf );
 				idStr::Copynz( bgl->url.dlerror, error_buf, MAX_STRING_CHARS );
