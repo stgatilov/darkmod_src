@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <stdio.h>
 #include "jpeg.h"
 extern "C" {
 #include <jpegint.h>

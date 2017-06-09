@@ -16,24 +16,6 @@
     <Filter Include="Sound">
       <UniqueIdentifier>{2b6b512d-2388-41b9-8880-402e156ec20b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sound\vorbissrc">
-      <UniqueIdentifier>{63e32bc7-65cb-4ee2-8b8f-2d546502dbf4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\vorbissrc\books">
-      <UniqueIdentifier>{40269b4b-9ecd-432f-a25a-a802a60ad93d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\vorbissrc\modes">
-      <UniqueIdentifier>{ce6b537e-d981-4a37-9907-5460db169903}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\vorbis">
-      <UniqueIdentifier>{cae44ca7-f71e-479d-b9a2-f7a9b8676924}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\oggsrc">
-      <UniqueIdentifier>{4bd5585c-21a4-4c0b-a27c-d41a167f5f43}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sound\ogg">
-      <UniqueIdentifier>{9a23ae4a-a963-4984-a90b-6902bf5665c5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Sys">
       <UniqueIdentifier>{8672dd57-2df1-454a-be5e-1ea2d6647cef}</UniqueIdentifier>
     </Filter>
@@ -326,138 +308,6 @@
     </ClInclude>
     <ClInclude Include="sound\sound.h">
       <Filter>Sound</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\backends.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\bitrate.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\codebook.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\codec_internal.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\envelope.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\highlevel.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\lookup.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\lookup_data.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\lpc.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\lsp.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\masking.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\mdct.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\misc.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\os.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\psy.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\registry.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\scales.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\smallft.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\window.h">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\books\floor\floor_books.h">
-      <Filter>Sound\vorbissrc\books</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\books\coupled\res_books_stereo.h">
-      <Filter>Sound\vorbissrc\books</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\books\uncoupled\res_books_uncoupled.h">
-      <Filter>Sound\vorbissrc\books</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\floor_all.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\psych_11.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\psych_16.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\psych_44.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\psych_8.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\residue_16.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\residue_44.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\residue_44u.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\residue_8.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_11.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_16.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_22.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_32.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_44.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_44u.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_8.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbissrc\modes\setup_X.h">
-      <Filter>Sound\vorbissrc\modes</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbis\codec.h">
-      <Filter>Sound\vorbis</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbis\vorbisenc.h">
-      <Filter>Sound\vorbis</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\vorbis\vorbisfile.h">
-      <Filter>Sound\vorbis</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\ogg\ogg.h">
-      <Filter>Sound\ogg</Filter>
-    </ClInclude>
-    <ClInclude Include="sound\OggVorbis\ogg\os_types.h">
-      <Filter>Sound\ogg</Filter>
     </ClInclude>
     <ClInclude Include="sys\sys_local.h">
       <Filter>Sys</Filter>
@@ -1671,81 +1521,6 @@
     </ClCompile>
     <ClCompile Include="sound\snd_world.cpp">
       <Filter>Sound</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\analysis.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\barkmel.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\bitrate.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\block.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\codebook.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\envelope.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\floor0.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\floor1.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\info.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\lookup.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\lpc.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\lsp.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\mapping0.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\mdct.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\psy.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\registry.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\res0.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\sharedbook.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\smallft.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\synthesis.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\vorbisenc.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\vorbisfile.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\vorbissrc\windowvb.c">
-      <Filter>Sound\vorbissrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\oggsrc\bitwise.c">
-      <Filter>Sound\oggsrc</Filter>
-    </ClCompile>
-    <ClCompile Include="sound\OggVorbis\oggsrc\framing.c">
-      <Filter>Sound\oggsrc</Filter>
     </ClCompile>
     <ClCompile Include="sys\sys_local.cpp">
       <Filter>Sys</Filter>
@@ -3148,9 +2923,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="sound\OggVorbis\vorbissrc\lookups.pl">
-      <Filter>Sound\vorbissrc</Filter>
-    </None>
     <None Include="sys\win32\rc\res\BEVEL.BMP">
       <Filter>Sys\RC\res</Filter>
     </None>
