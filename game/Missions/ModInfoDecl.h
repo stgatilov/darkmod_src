@@ -20,7 +20,7 @@
 #ifndef _MOD_INFO_DECL_H_
 #define _MOD_INFO_DECL_H_
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 
 class CModInfoDecl
 {

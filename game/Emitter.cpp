@@ -26,7 +26,7 @@ func_emitters - have one or more particle models
 
 */
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

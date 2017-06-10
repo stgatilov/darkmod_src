@@ -67,7 +67,7 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 	  In addition, the trace do not take entity rotation into account.
 */
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 // define to output model generation debug info

@@ -26,7 +26,7 @@ Event are used for scheduling tasks and for linking script commands.
 
 */
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

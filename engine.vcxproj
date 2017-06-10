@@ -59,7 +59,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>DarkMod</ProjectName>
+    <ProjectName>DarkModTools</ProjectName>
     <ProjectGuid>{49BEC5C6-B964-417A-851E-808886B57420}</ProjectGuid>
     <RootNamespace>DoomDLL</RootNamespace>
     <SccProjectName>
@@ -327,6 +327,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <TargetName>$(TdmExecutableName)Tools</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">
     <Link>
@@ -4277,6 +4278,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="ExtLibs\ExtLibs.vcxproj">
+      <Project>{5f1a77c3-f94d-4c5f-b14b-03202cdfc317}</Project>
+    </ProjectReference>
     <ProjectReference Include="idlib.vcxproj">
       <Project>{49bec5c6-b964-417a-851e-808886b57400}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
