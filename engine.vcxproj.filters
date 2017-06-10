@@ -459,7 +459,6 @@
     <ClInclude Include="ui\Winvar.h">
       <Filter>Ui</Filter>
     </ClInclude>
-    <ClInclude Include="framework\precompiled_engine.h" />
     <ClInclude Include="framework\I18N.h">
       <Filter>Framework</Filter>
     </ClInclude>
@@ -1241,6 +1240,7 @@
     <ClInclude Include="renderer\CinematicFFMpeg.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\precompiled.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2173,7 +2173,6 @@
     <ClCompile Include="ui\Winvar.cpp">
       <Filter>Ui</Filter>
     </ClCompile>
-    <ClCompile Include="framework\precompiled_engine.cpp" />
     <ClCompile Include="framework\I18N.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
@@ -2921,6 +2920,7 @@
     <ClCompile Include="renderer\CinematicFFMpeg.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\precompiled.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

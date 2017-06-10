@@ -545,7 +545,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile>
-      <PrecompiledHeaderFile>precompiled_engine.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <PostBuildEvent>
@@ -601,7 +601,6 @@
     <ClInclude Include="framework\minizip\ioapi.h" />
     <ClInclude Include="framework\minizip\unzip.h" />
     <ClInclude Include="framework\minizip\zip.h" />
-    <ClInclude Include="framework\precompiled_engine.h" />
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
@@ -862,6 +861,7 @@
     <ClInclude Include="game\Weapon.h" />
     <ClInclude Include="game\WorldSpawn.h" />
     <ClInclude Include="game\ZipLoader\ZipLoader.h" />
+    <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
@@ -2354,22 +2354,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="framework\precompiled_engine.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="framework\Session.cpp" />
     <ClCompile Include="framework\Session_menu.cpp" />
     <ClCompile Include="framework\UsercmdGen.cpp" />
@@ -2637,6 +2621,22 @@
     <ClCompile Include="game\Weapon.cpp" />
     <ClCompile Include="game\WorldSpawn.cpp" />
     <ClCompile Include="game\ZipLoader\ZipLoader.cpp" />
+    <ClCompile Include="idlib\precompiled.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug with inlines|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />
     <ClCompile Include="renderer\CinematicID.cpp" />
