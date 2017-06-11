@@ -51,6 +51,8 @@ public:
 	virtual const char *	GetName( void );
 							// Get the full file path.
 	virtual const char *	GetFullPath( void );
+							// Checks if the file is compressed (i.e. compressed file inside PK4)
+	virtual bool IsCompressed( void );
 							// Read data from the file to the buffer.
 	virtual int				Read( void *buffer, int len );
 							// Write data from the buffer to the file.
@@ -228,10 +230,12 @@ public:
 	virtual void			ForceFlush( void );
 	virtual void			Flush( void );
 	virtual int				Seek( long offset, fsOrigin_t origin );
+	virtual bool IsCompressed( void );
 
 private:
 	idStr					name;			// name of the file in the pak
 	idStr					fullPath;		// full file path including pak file name
+	bool compressed;		// whether the file is actually compressed
 	ZPOS64_T				zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
     ID_TIME_T               fileLastMod;    // last modified date/time of the file

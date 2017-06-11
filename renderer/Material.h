@@ -566,6 +566,9 @@ public:
 
 	void				UpdateCinematic( int time ) const;
 
+	//stgatilov #4534: this method is used for playing sound from a video
+	idCinematic *GetCinematic() const;
+
 	//------------------------------------------------------------------
 
 						// gets an image for the editor to use

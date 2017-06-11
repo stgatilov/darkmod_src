@@ -20,7 +20,6 @@ $Author$ (Author of last commit)
 #pragma once
 
 #include "Cinematic.h"
-#include <memory>
 #include "../ExtLibs/ffmpeg.h"
 
 /**
@@ -35,106 +34,201 @@ public:
 	static void			InitCinematic(void);
 	static void			ShutdownCinematic(void);
 
-	virtual bool			InitFromFile(const char *qpath, bool looping);
-	virtual cinData_t		ImageForTime(int milliseconds);
+	virtual bool			InitFromFile(const char *qpath, bool looping, bool withAudio);
 	virtual int				AnimationLength();
-	virtual void			Close();
+	virtual cinData_t		ImageForTime(int milliseconds);
+	virtual bool SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output);
+	virtual cinStatus_t GetStatus() const;
+
 	virtual void			ResetTime(int time);
-
-private:
-	// A buffer with a timestamp for decoding and precaching 
-	struct FrameBuffer
-	{
-		int                     timeStamp;     // video time in msecs
-		int                     duration;      // frame duration in msecs
-		std::shared_ptr<byte>   rgbaImage;     // byte buffer holding RGBA image
-
-		FrameBuffer() :
-			timeStamp(-1),
-			duration(0)
-		{}
-	};
+	virtual void			Close();
 
 private: // methods
-
-	// Creates the whole libavcodec contexts, also called when resetting the time
-	bool                    OpenAVDecoder();
-
-	// Frees the libavcodec structures, doesn't touch the FrameBuffers
-	void                    CloseAVDecoder();
+	void _ResetTime();
 
 	// Logging callback used by FFmpeg library
-	static void             LogCallback(void* avcl, int level, const char *fmt, va_list vl);
+	static void LogCallback(void* avcl, int level, const char *fmt, va_list vl);
 
-	// Returns the index of the best suitable stream type, requires an open format context
-	int                     FindBestStreamByType(AVMediaType type);
+	// initializes and allocates all decoder data (see section below)
+	// this includes: file handle, AV libs contexts, packets queue
+	// note: also called when resetting time
+	bool OpenDecoder();
+	// (internal implementation)
+	bool _OpenDecoder();
+	// frees and deallocates all decoder data
+	void CloseDecoder();
+	// is decoder properly opened now?
+	bool IsDecoderOpened() const;
+	bool IsDecoderOpened_Locking() const;
 
-	// Reads a single packed from video, using AVFormat library
-	bool                    ReadPacket(AVPacket& avpkt);
 
-	// Decodes a single stream packet into the RGBA buffer
-	int                     DecodePacket(AVPacket& avpkt, byte* targetRGBA, bool& frameDecoded);
+	// finds and returns the index of best suitable stream of given type
+	// opens this stream with appropriate decoder (codec)
+	// note: format context must be already opened
+	int OpenBestStreamOfType(AVMediaType type);
 
-	// Load the next frame and save it to the given buffer. Buffer data will be overwritten.
-	// Returns true if the buffer was filled, false on failure/EOF.
-	bool                    ReadFrame(FrameBuffer& targetBuffer);
-
-	// Returns the time in msecs of the current _packet
-	int                     CalculatePacketTime();
-
-	// Implementation method for public method ImageForTime
-	cinData_t               GetFrame(int milliseconds);
-
+	// increments current lap (loop) number
+	// reopens decoder to repeat video from the beginning
+	bool IncrementLap(double videoTime);
 
 private: // members
 
-	// The path of the cinematic (VFS path)
-	idStr                   _path;
+	static const int CRITICAL_SECTION_PACKETS = CRITICAL_SECTION_ONE;
+	static const int CRITICAL_SECTION_CLOCK = CRITICAL_SECTION_ONE;
+	static const int CRITICAL_SECTION_DECODER = CRITICAL_SECTION_ONE;
 
+	//=== input parameters:
+
+	// The path of the cinematic (VFS path)
+	idStr _path;
 	// Whether this cinematic is supposed to loop
-	bool                    _looping;
+	bool _looping;
+	// Whether we have to decode and playback audio from the file
+	bool _withAudio;
+
+	//=== some constant info (get once per video)
+
+	// duration of this cinematic in seconds
+	double _duration;
+	// The frame rate this cinematic was encoded in (frames per sec)
+	double _frameRate;
+	// size of the RGBA buffer in decoded frames
+	int _framebufferWidth;
+	int _framebufferHeight;
+
+	//=== video clock
+
+	// renderer's backend time when the video started (in sec)
+	double _startTime;
+
+	// at what moment (in video time - relative to video start) first sample was decoded (in sec)
+	double _soundTimeOffset;
+
+	// last time video was decoded for this time (relative to video start, in sec)
+	double _lastVideoTime;
+
+	// how many full laps have already been played
+	int _loopNumber;
+	// the highest calculated frame ending time of all time
+	// time is determined by video packets, so it does not take previous laps into account
+	// this value stops changing after single full lap, and it equals loop duration afterwards
+	double _loopDuration;
+
+	//set to true when video has ended
+	bool _finished;
+
+	//=== decoder data (including AV libs)
 
 	// The virtual file we're streaming from
-	idFile*                 _file;
-
+	idFile* _file;
+	// file reading wrapper for AV libs
 	class VFSIOContext;
-	std::unique_ptr<VFSIOContext>   _customIOContext;
+	VFSIOContext* _customIOContext;
 
-	// Duration of this cinematic in msecs
-	int                     _duration;
+	// context for demuxing container (avi/mp4/whatever)
+	AVFormatContext* _formatContext;
+	// context for decoding video frames (xvid/mpeg2/whatever)
+	AVCodecContext* _videoDecoderContext;
+	// context for decoding audio samples (mp3/ogg/whatever)
+	AVCodecContext* _audioDecoderContext;
+	// context for scaling and color space conversions (e.g. YUV -> RGB)
+	SwsContext* _swScaleContext;
+	// context for sound samples conversion
+	SwrContext* _swResampleContext;
 
-	// The frame rate this cinematic was encoded in
-	float                   _frameRate;
+	// we are decoding video from this stream
+	int _videoStreamIndex;
+	// we are decoding audio from this stream (-1 if none)
+	int _audioStreamIndex;
 
-	// The backend time the video started
-	int						_startTime;
+	// single frame used for intermediate storage of video decoder
+	AVFrame *_tempVideoFrame;
+	AVFrame *_tempAudioFrame;
 
-	// The status of this cinematic
-	cinStatus_t				_status;
+	// queues of packets fetched from file but not yet decoded
+	typedef idQueue(AVPacketList, next) PacketQueue;
+	PacketQueue _videoPackets;
+	PacketQueue _audioPackets;
 
-	// The buffer holding the RGBA frame data
-	FrameBuffer             _buffer;
-	FrameBuffer             _bufferNext;
+	// read one packet from file, put it into proper queue
+	bool FetchPacket();
+	bool FetchPacket_Locking();
+	// returns first packet from packet queue, and removes it from queue
+	// if no packets are available, fetches one from file automatically
+	AVPacketList *GetPacket(PacketQueue &queue);
+	AVPacketList *GetPacket_Locking(PacketQueue &queue);
+	// kill first packet in the specified queue
+	bool DropPacket(PacketQueue &queue);
+	// free specified packet node (internal)
+	void FreePacket(AVPacketList *packetNode);
 
-	// Size of the RGBA buffer in the FrameBuffer structs
-	int                     _bufferSize;
+	//=== decoding: general
 
-	AVFormatContext*        _formatContext;
-	AVCodecContext*         _videoDecoderContext;
-	int                     _videoStreamIndex;
+	// decode at least one video/audio frame, reading packets from queue
+	// returns false if there are no more video packets to decode
+	// note: decoded frame may be discarded immediately, if it ends earlier than specified time
+	bool FetchFrames(AVMediaType type, double discardTime);
+	// decode exactly one packet from queue (may not produce a frame immediately)
+	// returns number of frames decoded
+	int DecodePacket(AVMediaType type, AVPacket &packet, double discardTime);
+	// process a given video/audio frame just decoded
+	void ProcessDecodedFrame(AVMediaType type, AVFrame *decodedFrame, double discardTime);
 
-	// The packet used for decoding decoded 
-	AVPacket                _packet;
+	//=== decoded video frames
 
-	// The time offset that is added to packet timestamps, used for looping
-	int                     _packetTimeOffset;
+	//single completely decoded frame
+	struct DecodedFrame {
+		// true only for the very first frame in video
+		bool _first;
+		// video time in seconds
+		double _timestamp;
+		// frame duration in seconds
+		double _duration;
+		// byte array holding RGBA image
+		byte *_image;
 
-	// The highest calculated packet time (unlooped time)
-	int                     _highestNextPacketTime;
+		//frames belong to linked list
+		DecodedFrame *_next;
 
-	// Frame data in native pixel format
-	AVFrame*                _tempFrame;
+		DecodedFrame() : _first(false), _timestamp(DBL_MAX), _duration(-DBL_MAX), _image(NULL), _next(NULL) {}
+	};
 
-	// The scaling library context for this video
-	SwsContext*             _swsContext;
+	struct FramesStorage {
+		//all decoded frames which are not yet obsolete
+		idQueue(DecodedFrame, _next) _alive;
+		//obsolete frames: they can be reused without reallocation
+		idStack(DecodedFrame, _next) _dead;
+	};
+	FramesStorage _videoFrames;
+
+	// process a given video frame just decoded:
+	// convert it to RGBA and put into frames storage
+	void ProcessDecodedVideoFrame(AVFrame *decodedFrame, double timestamp, double duration, bool first);
+	// return two consecutive frames: prev happens before specified time, next happens after specified time
+	// also returns interpolation ratio in [0, 1]
+	// note: fetches frames automatically if necessary
+	bool GetFrame(double videoTime, DecodedFrame* &prevFrame, DecodedFrame* &nextFrame, double &ratio);
+	// remove all frames with timestamp older that the specified time
+	void DiscardOldFrames(double videoTime);
+	// frees all memory taken by frames
+	void DestroyAllFrames();
+
+	//=== decoded audio samples
+
+	struct SamplesStorage {
+		AVAudioFifo *_fifo;
+		double _startTime;
+
+		SamplesStorage() : _fifo(NULL), _startTime(DBL_MAX) {}
+	};
+	SamplesStorage _audioSamples;
+
+	// process a given audio frame just decoded:
+	// TODO!
+	void ProcessDecodedAudioFrame(AVFrame *decodedFrame, double timestamp, double duration);
+	bool GetAudioInterval(double startTime, int samplesCount, float *output);
+	// remove all frames with timestamp older that the specified time
+	void DiscardOldSamples(double videoTime);
+	void DestroyAllSamples();
+
 };

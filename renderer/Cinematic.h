@@ -67,13 +67,26 @@ public:
 	virtual				~idCinematic();
 
 	// returns false if it failed to load
-	virtual bool		InitFromFile( const char *qpath, bool looping );
+	virtual bool		InitFromFile( const char *qpath, bool looping, bool withAudio = false );
 
 	// returns the length of the animation in milliseconds
 	virtual int			AnimationLength();
 
 	// the pointers in cinData_t will remain valid until the next UpdateForTime() call
 	virtual cinData_t	ImageForTime( int milliseconds );
+
+	//stgatilov #4534: allows to get sound from video file
+	//only frequency 44100 Hz (PRIMARYFREQ) is supported
+	//sampleOffset and sampleSize specify beginning and length of interval (in samples)
+	//output buffer must be large enough to hold sampleSize samples
+	//number of samples read is returned in sampleSize
+	//note: this method can be called from multiple threads (e.g. sound thread) !
+	virtual bool SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output);
+
+	//stgatilov #4535: allows anyone to check at any moment if the video has ended
+	//note that ImageForTime is called from backend, so it is hard to save result status from there
+	virtual cinStatus_t GetStatus() const;
+
 
 	// closes the file and frees all allocated memory
 	virtual void		Close();

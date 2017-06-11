@@ -292,6 +292,7 @@ idSoundSample::idSoundSample() {
 	onDemand = false;
 	purged = false;
 	levelLoadReferenced = false;
+	cinematic = NULL;
 }
 
 /*
@@ -422,6 +423,27 @@ inline void IssueSoundSampleFailure(const char* message, ALenum errorCode, const
     common->Error("%s: file: %s, error code: %d", message, soundName, errorCode);
 }
 
+void idSoundSample::LoadFromCinematic(const idMaterial *material) {
+	idCinematic *cin = material ? material->GetCinematic() : NULL;
+	if (!cin) {
+		MakeDefault();
+		return;
+	}
+
+	cinematic = cin;
+
+	objectInfo.wFormatTag = WAVE_FORMAT_TAG_STREAM_CINEMATICS;
+	objectInfo.nChannels = 1;	//TODO: stereo
+	objectInfo.nSamplesPerSec = PRIMARYFREQ;	//44100 hz
+	objectInfo.nAvgBytesPerSec = 0;	//nobody cares
+	objectInfo.nBlockAlign = sizeof(float) * objectInfo.nChannels;
+	objectInfo.wBitsPerSample = sizeof(float) * 8;
+	objectInfo.cbSize = 0;
+
+	//cinematic decides when it ends: set infinite duration here
+	objectSize = INT_MAX / 2;
+}
+
 /*
 ===================
 idSoundSample::Load
@@ -433,6 +455,11 @@ void idSoundSample::Load( void ) {
 	defaultSound = false;
 	purged = false;
 	hardwareBuffer = false;
+
+	//stgatilov #4534: material name may be specified instead of sound file
+	//in such case this material must have cinematics, and sound is taken from there
+	if (const idMaterial *material = declManager->FindMaterial(name, false))
+		return LoadFromCinematic(material);
 
 	timestamp = GetNewTimeStamp();
 
@@ -658,4 +685,9 @@ bool idSoundSample::FetchFromCache( int offset, const byte **output, int *positi
 		}
 	}
 	return true;
+}
+
+bool idSoundSample::FetchFromCinematic(int sampleOffset, int *sampleSize, float *output) {
+	assert(cinematic);
+	return cinematic->SoundForTimeInterval(sampleOffset, sampleSize, PRIMARYFREQ, output);
 }

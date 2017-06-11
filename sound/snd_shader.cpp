@@ -331,6 +331,18 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 				leadins[ numLeadins ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
 				numLeadins++;
 			}
+		} else if ( !token.Icmp( "fromVideo" ) ) {
+			//#4534: instead of specifying a sound sample file,
+			//the name of a material may be specified with "fromVideo" keyword
+			//this material must have cinematic in it, declared with audio enabled
+			//then the sound stream from the cinematic's video would be used as base sound sample for the shader
+			if ( !src.ReadToken( &token ) ) {
+				src.Warning( "Expected material name after fromVideo" );
+				return false;
+			}
+			token.BackSlashesToSlashes();
+			entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+			numEntries++;
 		} else if ( token.Find( ".wav", false ) != -1 || token.Find( ".ogg", false ) != -1 ) {
 			// add to the wav list
 			if ( soundSystemLocal.soundCache && numEntries < maxSamples ) {

@@ -2676,6 +2676,7 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 	idFile_InZip *file = new idFile_InZip();
 	file->z = uf;
 	file->name = relativePath;
+	file->compressed = (file_info.compression_method != 0);
 	file->fullPath = pak->pakFilename + "/" + relativePath;
 	file->zipFilePos = pakFile->pos;
 	file->fileSize = file_info.uncompressed_size;

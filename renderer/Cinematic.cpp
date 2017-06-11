@@ -75,7 +75,7 @@ idCinematic::~idCinematic( ) {
 idCinematic::InitFromFile
 ==============
 */
-bool idCinematic::InitFromFile( const char *qpath, bool looping ) {
+bool idCinematic::InitFromFile( const char *qpath, bool looping, bool withAudio ) {
 	return false;
 }
 
@@ -105,6 +105,14 @@ cinData_t idCinematic::ImageForTime( int milliseconds ) {
 	cinData_t c;
 	memset( &c, 0, sizeof( c ) );
 	return c;
+}
+
+bool idCinematic::SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output) {
+	return false;
+}
+
+cinStatus_t idCinematic::GetStatus() const {
+	return FMV_PLAY;
 }
 
 /*

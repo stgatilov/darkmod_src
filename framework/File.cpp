@@ -164,6 +164,15 @@ const char *idFile::GetFullPath( void ) {
 
 /*
 =================
+idFile::IsCompressed
+=================
+*/
+bool idFile::IsCompressed( void ) {
+	return false;
+}
+
+/*
+=================
 idFile::Read
 =================
 */
@@ -1265,8 +1274,9 @@ idFile_InZip::idFile_InZip
 idFile_InZip::idFile_InZip( void ) {
 	name = "invalid";
 	zipFilePos = 0;
+	compressed = false;
 	fileSize = 0;
-    fileLastMod = 0;
+	fileLastMod = 0;
 	memset( &z, 0, sizeof( z ) );
 }
 
@@ -1347,6 +1357,15 @@ idFile_InZip::Timestamp
 */
 ID_TIME_T idFile_InZip::Timestamp( void ) {
 	return fileLastMod;
+}
+
+/*
+================
+idFile_InZip::IsCompressed
+================
+*/
+bool idFile_InZip::IsCompressed( void) {
+	return compressed;
 }
 
 /*

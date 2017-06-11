@@ -1173,22 +1173,32 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}*/
 
 		else if ( !token.Icmp( "videomap" ) ) {
-			// note that videomaps will always be in clamp mode, so texture
-			// coordinates had better be in the 0 to 1 range
-			if ( !src.ReadToken( &token ) ) {
-				common->Warning( "missing parameter for 'videoMap' keyword in material '%s'", GetName() );
-				continue;
-			}
+			bool withAudio = false;
 			bool loop = false;
-			if ( !token.Icmp( "loop" ) ) {
-				loop = true;
+			bool error = false;
+			while (true) {
+				// note that videomaps will always be in clamp mode, so texture
+				// coordinates had better be in the 0 to 1 range
 				if ( !src.ReadToken( &token ) ) {
 					common->Warning( "missing parameter for 'videoMap' keyword in material '%s'", GetName() );
-					continue;
+					error = true;
+					break;
 				}
+				if ( !token.Icmp( "loop" ) )
+					loop = true;
+				else if ( !token.Icmp( "withAudio" ) )
+					withAudio = true;		//#4534
+				else
+					break;
 			}
-			ts->cinematic = idCinematic::Alloc( token.c_str() );
-			ts->cinematic->InitFromFile( token.c_str(), loop );
+			if (loop && withAudio) {
+					common->Warning( "Enabling both 'loop' and 'withAudio' for 'videoMap' is not implemented (material '%s')", GetName() );
+					loop = false;
+			}
+			if (!error) {
+				ts->cinematic = idCinematic::Alloc( token.c_str() );
+				ts->cinematic->InitFromFile( token.c_str(), loop, withAudio );
+			}
 			continue;
 		}
 		else if ( !token.Icmp( "soundmap" ) ) {
@@ -2605,6 +2615,13 @@ void idMaterial::ResetCinematicTime( int time ) const {
 			stages[i].texture.cinematic->ResetTime( time );
 		}
 	}
+}
+
+idCinematic *idMaterial::GetCinematic() const {
+	if ( !stages || !stages[0].texture.cinematic ) {
+		return NULL;
+	}
+	return stages[0].texture.cinematic;
 }
 
 /*

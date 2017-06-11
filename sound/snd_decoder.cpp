@@ -281,6 +281,7 @@ public:
 	void					Clear( void );
 	int						DecodePCM( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
 	int						DecodeOGG( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
+	int						DecodeCinematics( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
 
 private:
 	bool					failed;				// set if decoding failed
@@ -442,6 +443,10 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 			readSamples44k = DecodeOGG( sample, sampleOffset44k, sampleCount44k, dest );
 			break;
 		}
+		case WAVE_FORMAT_TAG_STREAM_CINEMATICS: {
+			readSamples44k = DecodeCinematics( sample, sampleOffset44k, sampleCount44k, dest );
+			break;
+		}
 		default: {
 			readSamples44k = 0;
 			break;
@@ -453,6 +458,19 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 	if ( readSamples44k < sampleCount44k ) {
 		memset( dest + readSamples44k, 0, ( sampleCount44k - readSamples44k ) * sizeof( dest[0] ) );
 	}
+}
+
+int idSampleDecoderLocal::DecodeCinematics( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest ) {
+	lastFormat = WAVE_FORMAT_TAG_STREAM_CINEMATICS;
+	lastSample = sample;
+
+	int readSamples = sampleCount44k;
+	if ( !sample->FetchFromCinematic(sampleOffset44k, &readSamples, dest) ) {
+		failed = true;
+		return 0;
+	}
+
+	return readSamples;
 }
 
 /*

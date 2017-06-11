@@ -120,10 +120,15 @@ idCinematicLocal::~idCinematicLocal() {
 idCinematicLocal::InitFromFile
 ==============
 */
-bool idCinematicLocal::InitFromFile( const char *qpath, bool amilooping ) {
+bool idCinematicLocal::InitFromFile( const char *qpath, bool amilooping, bool withAudio ) {
 	unsigned short RoQID;
 
 	Close();
+
+	if (withAudio) {
+		common->Warning("Cannot play sound from legacy ROQ cinematics (%s)", qpath);
+		return false;
+	}
 
 	inMemory = 0;
 	animationLength = 100000;
