@@ -337,6 +337,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -354,6 +355,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -371,6 +373,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>_INLINEDEBUG;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -388,6 +391,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -406,6 +410,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <AdditionalOptions>/arch:SSE2 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -424,6 +429,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>_DEBUG;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -442,6 +448,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -459,6 +466,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -475,6 +483,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -492,6 +501,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -508,6 +518,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -525,6 +536,7 @@
     </ClCompile>
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
@@ -566,6 +578,7 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
       <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
