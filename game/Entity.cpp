@@ -1911,7 +1911,8 @@ idEntity::~idEntity( void )
 	gameLocal.RemoveResponse(this);
 	gameLocal.RemoveStim(this);
 
-	if ( gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS ) {
+#ifdef MULTIPLAYER
+	if (gameLocal.GameState() != GAMESTATE_SHUTDOWN && !gameLocal.isClient && fl.networkSync && entityNumber >= MAX_CLIENTS) {
 		idBitMsg	msg;
 		byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
 
@@ -1920,6 +1921,7 @@ idEntity::~idEntity( void )
 		msg.WriteBits( gameLocal.GetSpawnId( this ), 32 );
 		networkSystem->ServerSendReliableMessage( -1, msg );
 	}
+#endif
 
 	DeconstructScriptObject();
 	scriptObject.Free();
@@ -4464,7 +4466,8 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		return true;
 	}
 
-	if ( gameLocal.isServer && broadcast ) {
+#ifdef MULTIPLAYER
+	if (gameLocal.isServer && broadcast) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
@@ -4474,7 +4477,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		msg.WriteByte( channel );
 		ServerSendEvent( EVENT_STARTSOUNDSHADER, &msg, false, -1 );
 	}
-
+#endif
 	// set a random value for diversity unless one was parsed from the entity
 
 	if ( refSound.diversity < 0.0f )
@@ -8603,6 +8606,7 @@ idEntity::ServerSendEvent
 ================
 */
 void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent, int excludeClient ) const {
+#ifdef MULTIPLAYER
 	idBitMsg	outMsg;
 	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
 
@@ -8628,16 +8632,17 @@ void idEntity::ServerSendEvent( int eventId, const idBitMsg *msg, bool saveEvent
 		outMsg.WriteBits( 0, idMath::BitsForInteger( MAX_EVENT_PARAM_SIZE ) );
 	}
 
-		if ( excludeClient != -1 ) {
+		if (excludeClient != -1) {
 			networkSystem->ServerSendReliableMessageExcluding( excludeClient, outMsg );
 		} else {
 			networkSystem->ServerSendReliableMessage( -1, outMsg );
 		}
 
-		if ( saveEvent ) {
+		if (saveEvent) {
 			gameLocal.SaveEntityNetworkEvent( this, eventId, msg );
 		}
-	}
+#endif
+}
 
 /*
 ================
@@ -8645,6 +8650,7 @@ idEntity::ClientSendEvent
 ================
 */
 void idEntity::ClientSendEvent( int eventId, const idBitMsg *msg ) const {
+#ifdef MULTIPLAYER
 	idBitMsg	outMsg;
 	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
 
@@ -8671,6 +8677,7 @@ void idEntity::ClientSendEvent( int eventId, const idBitMsg *msg ) const {
 	}
 
 	networkSystem->ClientSendReliableMessage( outMsg );
+#endif
 }
 
 /*
@@ -8694,6 +8701,7 @@ idEntity::ClientReceiveEvent
 ================
 */
 bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+#ifdef MULTIPLAYER
 	int					index;
 	const idSoundShader	*shader;
 	s_channelType		channel;
@@ -8726,7 +8734,9 @@ bool idEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return false;
 		}
 	}
-//	return false;
+#else
+	return false;
+#endif
 }
 
 /*
@@ -9201,7 +9211,8 @@ void idAnimatedEntity::AddDamageEffect( const trace_t &collision, const idVec3 &
 
 	AddLocalDamageEffect( jointNum, localOrigin, localNormal, localDir, def, collision.c.material );
 
-	if ( gameLocal.isServer ) {
+#ifdef MULTIPLAYER
+	if (gameLocal.isServer) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
@@ -9217,6 +9228,7 @@ void idAnimatedEntity::AddDamageEffect( const trace_t &collision, const idVec3 &
 		msg.WriteLong( gameLocal.ServerRemapDecl( -1, DECL_MATERIAL, collision.c.material->Index() ) );
 		ServerSendEvent( EVENT_ADD_DAMAGE_EFFECT, &msg, false, -1 );
 	}
+#endif
 }
 
 /*
@@ -9367,6 +9379,7 @@ idAnimatedEntity::ClientReceiveEvent
 ================
 */
 bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+#ifdef MULTIPLAYER
 	int damageDefIndex;
 	int materialIndex;
 	jointHandle_t jointNum;
@@ -9391,7 +9404,9 @@ bool idAnimatedEntity::ClientReceiveEvent( int event, int time, const idBitMsg &
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-//	return false;
+#else
+	return false;
+#endif
 }
 
 /*

@@ -158,7 +158,9 @@ extern "C" gameExport_t *GetGameAPI( gameImport_t *import ) {
 		cmdSystem					= import->cmdSystem;
 		cvarSystem					= import->cvarSystem;
 		fileSystem					= import->fileSystem;
-		networkSystem				= import->networkSystem;
+#ifdef MULTIPLAYER
+		networkSystem = import->networkSystem;
+#endif
 		renderSystem				= import->renderSystem;
 		soundSystem					= import->soundSystem;
 		renderModelManager			= import->renderModelManager;
@@ -213,7 +215,9 @@ void TestGameAPI( void ) {
 	testImport.cmdSystem				= ::cmdSystem;
 	testImport.cvarSystem				= ::cvarSystem;
 	testImport.fileSystem				= ::fileSystem;
-	testImport.networkSystem			= ::networkSystem;
+#ifdef MULTIPLAYER
+	testImport.networkSystem = ::networkSystem;
+#endif
 	testImport.renderSystem				= ::renderSystem;
 	testImport.soundSystem				= ::soundSystem;
 	testImport.renderModelManager		= ::renderModelManager;
@@ -409,8 +413,10 @@ void idGameLocal::Clear( void )
 	memset( clientPVS, 0, sizeof( clientPVS ) );
 	memset( clientSnapshots, 0, sizeof( clientSnapshots ) );
 
+#ifdef MULTIPLAYER
 	eventQueue.Init();
 	savedEventQueue.Init();
+#endif
 	memset( lagometer, 0, sizeof( lagometer ) );
 
 	portalSkyEnt			= NULL;
@@ -742,8 +748,9 @@ void idGameLocal::Shutdown( void ) {
 	Printf( "------------ Game Shutdown -----------\n" );
 	
 	m_lightGem.Deinitialize();
+#ifdef MULTIPLAYER
 	mpGame.Shutdown();
-
+#endif
 	MapShutdown();
 
 	// greebo: De-allocate the missiondata singleton, this is not 
@@ -1026,8 +1033,9 @@ void idGameLocal::SaveGame( idFile *f ) {
 	savegame.WriteBool( skipCinematic );
 
 	savegame.WriteBool( isMultiplayer );
+#ifdef MULTIPLAYER
 	savegame.WriteInt( gameType );
-
+#endif
 	savegame.WriteInt( framenum );
 	savegame.WriteInt( previousTime );
 	savegame.WriteInt( time );
@@ -1440,7 +1448,9 @@ const idDict* idGameLocal::SetUserInfo( int clientNum, const idDict &userInfo, b
 
 		if ( !isClient ) {
 			// now mark this client in game
+#ifdef MULTIPLAYER
 			mpGame.EnterGame( clientNum );
+#endif
 		}
 	}
 
@@ -1471,21 +1481,22 @@ idGameLocal::SetServerInfo
 ============
 */
 void idGameLocal::SetServerInfo( const idDict &_serverInfo ) {
-	idBitMsg	outMsg;
-	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
-
 	serverInfo = _serverInfo;
 	UpdateServerInfoFlags();
 
-	if ( !isClient ) {
+#ifdef MULTIPLAYER
+	if (!isClient) {
+		idBitMsg	outMsg;
+		byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
+
 		// Let our clients know the server info changed
 		outMsg.Init( msgBuf, sizeof( msgBuf ) );
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_SERVERINFO );
 		outMsg.WriteDeltaDict( gameLocal.serverInfo, NULL );
 		networkSystem->ServerSendReliableMessage( -1, outMsg );
 	}
+#endif
 }
-
 
 /*
 ===================
@@ -1528,7 +1539,9 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	musicSpeakers.Clear();			// Tels: Clear the list even on reload to account for dynamic changes
 	cv_music_volume.SetModified();	// SnoopJeDi: we want to fade on level start
 
+#ifdef MULTIPLAYER
 	InitAsyncNetwork();
+#endif
 
 	if ( !sameMap || ( mapFile && mapFile->NeedsReload() ) ) {
 		// load the .map file
@@ -1680,8 +1693,10 @@ void idGameLocal::LocalMapRestart( ) {
 		}
 	}
 
+#ifdef MULTIPLAYER
 	eventQueue.Shutdown();
 	savedEventQueue.Shutdown();
+#endif
 
 	MapClear( false );
 
@@ -1734,8 +1749,6 @@ idGameLocal::MapRestart
 ===================
 */
 void idGameLocal::MapRestart( ) {
-	idBitMsg	outMsg;
-	byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
 	idDict		newInfo;
 	int			i;
 	const idKeyValue *keyval, *keyval2;
@@ -1759,14 +1772,19 @@ void idGameLocal::MapRestart( ) {
 		if ( i != newInfo.GetNumKeyVals() ) {
 			cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "nextMap\n" );
 		} else {
+#ifdef MULTIPLAYER
+			idBitMsg	outMsg;
+			byte		msgBuf[MAX_GAME_MESSAGE_SIZE];
 			outMsg.Init( msgBuf, sizeof( msgBuf ) );
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_RESTART );
 			outMsg.WriteBits( 1, 1 );
 			outMsg.WriteDeltaDict( serverInfo, NULL );
 			networkSystem->ServerSendReliableMessage( -1, outMsg );
-
+#endif
 			LocalMapRestart();
+#ifdef MULTIPLAYER
 			mpGame.MapRestart();
+#endif
 		}
 	}
 }
@@ -1970,9 +1988,10 @@ void idGameLocal::InitFromNewMap( const char *mapName, idRenderWorld *renderWorl
 	// Then, apply the worldspawn settings
 	m_RelationsManager->SetFromArgs( world->spawnArgs );
 
+#ifdef MULTIPLAYER
 	mpGame.Reset();
-
 	mpGame.Precache();
+#endif
 
 	// free up any unused animations
 	animationLib.FlushUnusedAnims();
@@ -2229,8 +2248,9 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	savegame.ReadBool( skipCinematic );
 
 	savegame.ReadBool( isMultiplayer );
+#ifdef MULTIPLAYER
 	savegame.ReadInt( (int &)gameType );
-
+#endif
 	savegame.ReadInt( framenum );
 	savegame.ReadInt( previousTime );
 	savegame.ReadInt( time );
@@ -2379,9 +2399,10 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	}
 	savegame.RestoreObjects();
 
+#ifdef MULTIPLAYER
 	mpGame.Reset();
-
 	mpGame.Precache();
+#endif
 
 	// free up any unused animations
 	animationLib.FlushUnusedAnims();
@@ -2537,7 +2558,9 @@ void idGameLocal::MapShutdown( void ) {
 	clip.Shutdown();
 	idClipModel::ClearTraceModelCache();
 
+#ifdef MULTIPLAYER
 	ShutdownAsyncNetwork();
+#endif
 
 	mapFileName.Clear();
 
@@ -2891,7 +2914,9 @@ void idGameLocal::SpawnPlayer( int clientNum )
 		numClients = clientNum + 1;
 	}
 
+#ifdef MULTIPLAYER
 	mpGame.SpawnPlayer( clientNum );
+#endif
 }
 
 /*
@@ -3324,8 +3349,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			// free old smoke particles
 			smokeParticles->FreeSmokes();
 
+#ifdef MULTIPLAYER
 			// process events on the server
 			ServerProcessEntityNetworkEventQueue();
+#endif
 
 			// update our gravity vector if needed.
 			UpdateGravity();
@@ -3444,10 +3471,11 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			FreePlayerPVS();
 
 			// do multiplayer related stuff
-			if ( isMultiplayer ) {
+#ifdef MULTIPLAYER
+			if (isMultiplayer) {
 				mpGame.Run();
 			}
-
+#endif
 			if ( cv_music_volume.IsModified() ) {  //SnoopJeDi, fade that sound!
 				float music_vol = cv_music_volume.GetFloat();
 				for ( int i = 0; i < musicSpeakers.Num(); i++ ) {
@@ -3642,10 +3670,11 @@ makes rendering and sound system calls
 */
 bool idGameLocal::Draw( int clientNum )
 {
-	if ( isMultiplayer ) {
+#ifdef MULTIPLAYER
+	if (isMultiplayer) {
 		return mpGame.Draw( clientNum );
 	}
-
+#endif
 	idPlayer *player = static_cast<idPlayer *>(entities[ clientNum ]);
 
 	if ( !player ) {
@@ -3711,10 +3740,12 @@ idGameLocal::StartMenu
 ================
 */
 idUserInterface* idGameLocal::StartMenu( void ) {
-	if ( !isMultiplayer ) {
-		return NULL;
+	if ( isMultiplayer ) {
+#ifdef MULTIPLAYER
+		return mpGame.StartMenu();
+#endif
 	}
-	return mpGame.StartMenu();
+	return NULL;
 }
 
 /*
@@ -3723,10 +3754,12 @@ idGameLocal::HandleGuiCommands
 ================
 */
 const char* idGameLocal::HandleGuiCommands( const char *menuCommand ) {
-	if ( !isMultiplayer ) {
-		return NULL;
+#ifdef MULTIPLAYER
+	if (isMultiplayer) {
+		return mpGame.HandleGuiCommands( menuCommand );
 	}
-	return mpGame.HandleGuiCommands( menuCommand );
+#endif
+	return NULL;
 }
 
 int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthStr, idList<BriefingVideoPart>& targetList)
@@ -6625,16 +6658,18 @@ idGameLocal::SetPortalState
 ============
 */
 void idGameLocal::SetPortalState( qhandle_t portal, int blockingBits ) {
+#ifdef MULTIPLAYER
 	idBitMsg outMsg;
-	byte msgBuf[ MAX_GAME_MESSAGE_SIZE ];
+	byte msgBuf[MAX_GAME_MESSAGE_SIZE];
 
-	if ( !gameLocal.isClient ) {
+	if (!gameLocal.isClient) {
 		outMsg.Init( msgBuf, sizeof( msgBuf ) );
 		outMsg.WriteByte( GAME_RELIABLE_MESSAGE_PORTAL );
 		outMsg.WriteLong( portal );
 		outMsg.WriteBits( blockingBits, NUM_RENDER_PORTAL_BITS );
 		networkSystem->ServerSendReliableMessage( -1, outMsg );
 	}
+#endif
 	gameRenderWorld->SetPortalState( portal, blockingBits );
 }
 
@@ -6801,8 +6836,9 @@ idGameLocal::UpdateServerInfoFlags
 ================
 */
 void idGameLocal::UpdateServerInfoFlags() {
+#ifdef MULTIPLAYER
 	gameType = GAME_SP;
-	if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "deathmatch" ) == 0 ) ) {
+	if ((idStr::Icmp( serverInfo.GetString( "si_gameType" ), "deathmatch" ) == 0)) {
 		gameType = GAME_DM;
 	} else if ( ( idStr::Icmp( serverInfo.GetString( "si_gameType" ), "Tourney" ) == 0 ) ) {
 		gameType = GAME_TOURNEY;
@@ -6821,6 +6857,7 @@ void idGameLocal::UpdateServerInfoFlags() {
 			serverInfo.SetInt( "si_fraglimit", 1 );
 		}
 	}
+#endif
 }
 
 
@@ -6857,7 +6894,9 @@ idGameLocal::ThrottleUserInfo
 ================
 */
 void idGameLocal::ThrottleUserInfo( void ) {
+#ifdef MULTIPLAYER
 	mpGame.ThrottleUserInfo();
+#endif
 }
 
 /*
@@ -6986,8 +7025,8 @@ idGameLocal::GetClientStats
 ================
 */
 
+#ifdef MULTIPLAYER
 void idGameLocal::GetClientStats( int clientNum, char *data, const int len ) {
-
 	mpGame.PlayerStats( clientNum, data, len );
 }
 
@@ -7010,6 +7049,7 @@ void idGameLocal::SwitchTeam( int clientNum, int team )
 		mpGame.SwitchToTeam ( clientNum, oldTeam, team );
 	}
 }
+#endif
 
 void idGameLocal::GetMapLoadingGUI( char gui[ MAX_STRING_CHARS ] )
 {

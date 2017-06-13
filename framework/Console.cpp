@@ -230,6 +230,7 @@ int SCR_DrawMemoryUsage( int y ) {
 SCR_DrawAsyncStats
 ==================
 */
+#ifdef MULTIPLAYER
 int SCR_DrawAsyncStats( int y ) {
 	int outgoingRate, incomingRate;
 	float outgoingCompression, incomingCompression;
@@ -278,7 +279,7 @@ int SCR_DrawAsyncStats( int y ) {
 
 	return y;
 }
-
+#endif
 /*
 ==================
 SCR_DrawSoundDecoders
@@ -1228,7 +1229,9 @@ void idConsoleLocal::Draw( bool forceFullScreen ) {
 		y = SCR_DrawSoundDecoders( y );
 	}
 	
-	if ( com_showAsyncStats.GetBool() ) {
+#ifdef MULTIPLAYER
+	if (com_showAsyncStats.GetBool()) {
 		y = SCR_DrawAsyncStats( y );
 	}
+#endif
 }

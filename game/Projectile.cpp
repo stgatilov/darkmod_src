@@ -1003,7 +1003,8 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 
 	DefaultDamageEffect( this, spawnArgs, collision, velocity );
 
-	if ( gameLocal.isServer && fl.networkSync ) {
+#ifdef MULTIPLAYER
+	if (gameLocal.isServer && fl.networkSync) {
 
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
@@ -1027,6 +1028,7 @@ void idProjectile::AddDefaultDamageEffect( const trace_t &collision, const idVec
 		msg.WriteFloat( velocity[2], 5, 10 );
 		ServerSendEvent( EVENT_DAMAGE_EFFECT, &msg, false, excludeClient );
 	}
+#endif
 }
 
 /*
@@ -1803,6 +1805,7 @@ idProjectile::ClientReceiveEvent
 ================
 */
 bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
+#ifdef MULTIPLAYER
 	trace_t collision;
 	idVec3 velocity;
 
@@ -1825,7 +1828,9 @@ bool idProjectile::ClientReceiveEvent( int event, int time, const idBitMsg &msg 
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-//	return false;
+#else
+	return false;
+#endif
 }
 
 /*

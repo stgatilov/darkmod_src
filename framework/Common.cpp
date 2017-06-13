@@ -1603,7 +1603,11 @@ void Com_ReloadEngine_f( const idCmdArgs &args ) {
 	}
 	commonLocal.ShutdownGame( true );
 	commonLocal.InitGame();
-	if ( !menu && !idAsyncNetwork::serverDedicated.GetBool() ) {
+	if ( !menu 
+#ifdef MULTIPLAYER
+		&& !idAsyncNetwork::serverDedicated.GetBool()
+#endif
+		) {
 		Sys_ShowConsole( 0, false );
 	}
 	common->Printf( "============= ReloadEngine end ===============\n" );
@@ -2441,6 +2445,7 @@ void idCommonLocal::Frame( void ) {
 		else
 			com_frameTime = com_ticNumber * USERCMD_MSEC;
 
+#ifdef MULTIPLAYER
 		idAsyncNetwork::RunFrame();
 
 		if ( idAsyncNetwork::IsActive() ) {
@@ -2448,7 +2453,9 @@ void idCommonLocal::Frame( void ) {
 				session->GuiFrameEvents();
 				session->UpdateScreen( false );
 			}
-		} else {
+		} else 
+#endif
+		{
 			session->Frame();
 
 			// normal, in-sequence screen update
@@ -2486,9 +2493,11 @@ void idCommonLocal::GUIFrame( bool execCmd, bool network ) {
 	eventLoop->RunEventLoop( execCmd );	// and execute any commands
 	com_frameTime = com_ticNumber * USERCMD_MSEC;
 
-	if ( network ) {
+#ifdef MULTIPLAYER
+	if (network) {
 		idAsyncNetwork::RunFrame();
 	}
+#endif
 
 	session->Frame();
 	session->UpdateScreen( false );	
@@ -2864,8 +2873,10 @@ void idCommonLocal::Shutdown( void ) {
 
 	com_shuttingDown = true;
 
+#ifdef MULTIPLAYER
 	idAsyncNetwork::server.Kill();
 	idAsyncNetwork::client.Shutdown();
+#endif
 
     // save persistent console history
     console->SaveHistory();
@@ -2993,18 +3004,24 @@ void idCommonLocal::InitGame( void )
 
 	PrintLoadingMessage( Translate( "#str_04347" ) );
 
+#ifdef	ID_DEDICATED
 	// init async network
 	idAsyncNetwork::Init();
 
-#ifdef	ID_DEDICATED
 	idAsyncNetwork::server.InitPort();
 	cvarSystem->SetCVarBool( "s_noSound", true );
 #else
 
-	if ( idAsyncNetwork::serverDedicated.GetInteger() == 1 ) {
+#ifdef MULTIPLAYER
+	// init async network
+	idAsyncNetwork::Init();
+
+	if (idAsyncNetwork::serverDedicated.GetInteger() == 1) {
 		idAsyncNetwork::server.InitPort();
 		cvarSystem->SetCVarBool( "s_noSound", true );
-	} else {
+	} else 
+#endif
+	{
 		// init OpenGL, which will open a window and connect sound and input hardware
 		PrintLoadingMessage( Translate( "#str_04348" ) );
 		InitRenderSystem();
@@ -3055,7 +3072,12 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	// shutdown the script debugger
 	// DebuggerServerShutdown();
 
+#ifdef MULTIPLAYER
 	idAsyncNetwork::client.Shutdown();
+
+	// shut down async networking
+	idAsyncNetwork::Shutdown();
+#endif
 
 	// shut down the session
 	session->Shutdown();
@@ -3065,9 +3087,6 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 
 	// shut down the sound system
 	soundSystem->Shutdown();
-
-	// shut down async networking
-	idAsyncNetwork::Shutdown();
 
 	// shut down the user command input code
 	usercmdGen->Shutdown();

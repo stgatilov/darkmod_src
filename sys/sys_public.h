@@ -61,7 +61,7 @@
 #define ID_INLINE						__forceinline
 #define ID_STATIC_TEMPLATE				static
 
-//anon beign
+//anon begin
 #define ID_INLINE_EXTERN				extern inline //anon
 #define ID_FORCE_INLINE					__forceinline //anon
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon

@@ -716,7 +716,9 @@ idEntityFx::WriteToSnapshot
 void idEntityFx::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	GetPhysics()->WriteToSnapshot( msg );
 	WriteBindToSnapshot( msg );
-	msg.WriteLong( ( fxEffect != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
+#ifdef MULTIPLAYER
+	msg.WriteLong( (fxEffect != NULL) ? gameLocal.ServerRemapDecl( -1, DECL_FX, fxEffect->Index() ) : -1 );
+#endif
 	msg.WriteLong( started );
 }
 
@@ -726,14 +728,18 @@ idEntityFx::ReadFromSnapshot
 =================
 */
 void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
-	int fx_index, start_time, max_lapse;
-
 	GetPhysics()->ReadFromSnapshot( msg );
 	ReadBindFromSnapshot( msg );
-	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
-	start_time = msg.ReadLong();
+#ifdef MULTIPLAYER
+	int fx_index, start_time, max_lapse;
 
-	if ( fx_index != -1 && start_time > 0 && !fxEffect && started < 0 ) {
+	fx_index = gameLocal.ClientRemapDecl( DECL_FX, msg.ReadLong() );
+	start_time =
+#endif
+	msg.ReadLong();
+
+#ifdef MULTIPLAYER
+	if (fx_index != -1 && start_time > 0 && !fxEffect && started < 0) {
 		spawnArgs.GetInt( "effect_lapse", "1000", max_lapse );
 		if ( gameLocal.time - start_time > max_lapse ) {
 			// too late, skip the effect completely
@@ -748,6 +754,7 @@ void idEntityFx::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 		Setup( fx->GetName() );
 		Start( start_time );
 	}
+#endif
 }
 
 /*

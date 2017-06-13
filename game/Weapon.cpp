@@ -2555,7 +2555,7 @@ idWeapon::ClientReceiveEvent
 ================
 */
 bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
-
+#ifdef MULTIPLAYER
 	switch( event ) {
 		case EVENT_RELOAD: {
 			if ( gameLocal.time - time < 1000 ) {
@@ -2585,7 +2585,9 @@ bool idWeapon::ClientReceiveEvent( int event, int time, const idBitMsg &msg ) {
 			return idEntity::ClientReceiveEvent( event, time, msg );
 		}
 	}
-//	return false;
+#else
+	return false;
+#endif
 }
 
 /*
@@ -3009,7 +3011,8 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 		worldModel.GetEntity()->SetSkin( skinDecl );
 	}
 
-	if ( gameLocal.isServer ) {
+#ifdef MULTIPLAYER
+	if (gameLocal.isServer) {
 		idBitMsg	msg;
 		byte		msgBuf[MAX_EVENT_PARAM_SIZE];
 
@@ -3017,6 +3020,7 @@ void idWeapon::Event_SetSkin( const char *skinname ) {
 		msg.WriteLong( ( skinDecl != NULL ) ? gameLocal.ServerRemapDecl( -1, DECL_SKIN, skinDecl->Index() ) : -1 );
 		ServerSendEvent( EVENT_CHANGESKIN, &msg, false, -1 );
 	}
+#endif
 }
 
 /*
@@ -3376,14 +3380,15 @@ void idWeapon::Event_Melee( void ) {
 			ent->ApplyImpulse( this, tr.c.id, tr.c.point, impulse );
 
 			// weapon stealing - do this before damaging so weapons are not dropped twice
-			if ( gameLocal.isMultiplayer
+#ifdef MULTIPLAYER
+			if (gameLocal.isMultiplayer
 				&& weaponDef && weaponDef->dict.GetBool( "stealing" )
 				&& ent->IsType( idPlayer::Type )
 				&& ( gameLocal.gameType != GAME_TDM || gameLocal.serverInfo.GetBool( "si_teamDamage" ) || ( owner->team != static_cast< idPlayer * >( ent )->team ) )
 				) {
 				owner->StealWeapon( static_cast< idPlayer * >( ent ) );
 			}
-
+#endif
 			if ( ent->fl.takedamage ) {
 				idVec3 kickDir, globalKickDir;
 				meleeDef->dict.GetVector( "kickDir", "0 0 0", kickDir );

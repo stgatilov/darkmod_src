@@ -559,6 +559,7 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PreprocessorDefinitions>NO_MFC;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FavorSizeOrSpeed />
     </ClCompile>
     <PostBuildEvent>
       <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
@@ -617,12 +618,6 @@
     <ClInclude Include="framework\Session.h" />
     <ClInclude Include="framework\Session_local.h" />
     <ClInclude Include="framework\UsercmdGen.h" />
-    <ClInclude Include="framework\async\AsyncClient.h" />
-    <ClInclude Include="framework\async\AsyncNetwork.h" />
-    <ClInclude Include="framework\async\AsyncServer.h" />
-    <ClInclude Include="framework\async\MsgChannel.h" />
-    <ClInclude Include="framework\async\NetworkSystem.h" />
-    <ClInclude Include="framework\async\ServerScan.h" />
     <ClInclude Include="game\AbsenceMarker.h" />
     <ClInclude Include="game\Actor.h" />
     <ClInclude Include="game\AF.h" />
@@ -797,7 +792,6 @@
     <ClInclude Include="game\ModMenu.h" />
     <ClInclude Include="game\Moveable.h" />
     <ClInclude Include="game\Mover.h" />
-    <ClInclude Include="game\MultiplayerGame.h" />
     <ClInclude Include="game\MultiStateMover.h" />
     <ClInclude Include="game\MultiStateMoverButton.h" />
     <ClInclude Include="game\MultiStateMoverPosition.h" />
@@ -1229,12 +1223,6 @@
     <ClCompile Include="framework\Session.cpp" />
     <ClCompile Include="framework\Session_menu.cpp" />
     <ClCompile Include="framework\UsercmdGen.cpp" />
-    <ClCompile Include="framework\async\AsyncClient.cpp" />
-    <ClCompile Include="framework\async\AsyncNetwork.cpp" />
-    <ClCompile Include="framework\async\AsyncServer.cpp" />
-    <ClCompile Include="framework\async\MsgChannel.cpp" />
-    <ClCompile Include="framework\async\NetworkSystem.cpp" />
-    <ClCompile Include="framework\async\ServerScan.cpp" />
     <ClCompile Include="game\AbsenceMarker.cpp" />
     <ClCompile Include="game\Actor.cpp" />
     <ClCompile Include="game\AF.cpp" />
@@ -1389,7 +1377,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="game\Game_local.cpp" />
-    <ClCompile Include="game\Game_network.cpp" />
     <ClCompile Include="game\Grabber.cpp" />
     <ClCompile Include="game\HidingSpotSearchCollection.cpp" />
     <ClCompile Include="game\Http\HttpConnection.cpp" />
@@ -1420,7 +1407,6 @@
     <ClCompile Include="game\ModMenu.cpp" />
     <ClCompile Include="game\Moveable.cpp" />
     <ClCompile Include="game\Mover.cpp" />
-    <ClCompile Include="game\MultiplayerGame.cpp" />
     <ClCompile Include="game\MultiStateMover.cpp" />
     <ClCompile Include="game\MultiStateMoverButton.cpp" />
     <ClCompile Include="game\MultiStateMoverPosition.cpp" />

@@ -622,12 +622,13 @@ extern idCVar	si_gameType;
 extern idCVar	si_map;
 extern idCVar	si_spectators;
 
+#ifdef MULTIPLAYER
 extern idCVar	net_clientSelfSmoothing;
+#endif
 
 extern idCVar	net_clientLagOMeter;
 
 extern const char *si_gameTypeArgs[];
-
 
 extern const char *ui_skinArgs[];
 

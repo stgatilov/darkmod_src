@@ -548,7 +548,9 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			if ( guiActive->State().GetBool( "lanSet" ) ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "LANScan" );
 			} else {
+#ifdef MULTIPLAYER
 				idAsyncNetwork::GetNETServers();
+#endif
 			}
 			continue;
 		}
@@ -557,12 +559,15 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			if ( guiActive->State().GetBool( "lanSet" ) ) {
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "LANScan" );
 			} else {
-				idAsyncNetwork::client.serverList.NetScan( );
+#ifdef MULTIPLAYER
+				idAsyncNetwork::client.serverList.NetScan();
+#endif
 			}
 			continue;
 		}
 
-		if ( !idStr::Icmp( cmd, "FilterServers" ) ) {
+#ifdef MULTIPLAYER
+		if (!idStr::Icmp( cmd, "FilterServers" )) {
 			idAsyncNetwork::client.serverList.ApplyFilter( );
 			continue;
 		}
@@ -601,8 +606,9 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			idAsyncNetwork::client.serverList.GUIUpdateSelected();
 			continue;
 		}
+#endif
 
-		if ( !idStr::Icmp( cmd, "LANConnect" ) ) {
+		if (!idStr::Icmp( cmd, "LANConnect" )) {
 			int sel = guiActive->State().GetInt( "serverList_selid_0" ); 
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, va( "Connect %d\n", sel ) );
 			return;
@@ -940,7 +946,8 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			continue;
 		}
 
-		if ( !idStr::Icmp( cmd, "CheckUpdate" ) ) {
+#ifdef MULTIPLAYER
+		if (!idStr::Icmp( cmd, "CheckUpdate" )) {
 			idAsyncNetwork::client.SendVersionCheck();
 			continue;
 		}
@@ -949,6 +956,7 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 			idAsyncNetwork::client.SendVersionCheck( true );
 			continue;
 		}
+#endif
 	}
 }
 

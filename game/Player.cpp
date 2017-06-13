@@ -2697,11 +2697,13 @@ void idPlayer::ServerSpectate( bool spectate ) {
 		if ( spectate ) {
 			SetSpectateOrigin();
 		} else {
-			if ( gameLocal.gameType == GAME_DM ) {
+#ifdef MULTIPLAYER
+			if (gameLocal.gameType == GAME_DM) {
 				// make sure the scores are reset so you can't exploit by spectating and entering the game back
 				// other game types don't matter, as you either can't join back, or it's team scores
 				gameLocal.mpGame.ClearFrags( entityNumber );
 			}
+#endif
 		}
 	}
 	if ( !spectate ) {
@@ -2919,7 +2921,8 @@ idPlayer::UpdateSkinSetup
 ==============
 */
 void idPlayer::UpdateSkinSetup( bool restart ) {
-	if ( restart ) {
+#ifdef MULTIPLAYER
+	if (restart) {
 		team = ( idStr::Icmp( GetUserInfo()->GetString( "ui_team" ), "Blue" ) == 0 );
 	}
 	if ( gameLocal.gameType == GAME_TDM ) {
@@ -2953,6 +2956,7 @@ void idPlayer::UpdateSkinSetup( bool restart ) {
 		colorBarIndex = 0;
 	}
 	colorBar = colorBarTable[ colorBarIndex ];
+#endif
 }
 
 /*
@@ -2995,7 +2999,6 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	idDict	*userInfo;
 	bool	modifiedInfo;
 	bool	spec;
-	bool	newready;
 
 	userInfo = GetUserInfo();
 	showWeaponViewModel = userInfo->GetBool( "ui_showGun" );
@@ -3009,11 +3012,14 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 	spec = ( idStr::Icmp( userInfo->GetString( "ui_spectate" ), "Spectate" ) == 0 );
 	if ( gameLocal.serverInfo.GetBool( "si_spectators" ) ) {
 		// never let spectators go back to game while sudden death is on
-		if ( canModify && gameLocal.mpGame.GetGameState() == idMultiplayerGame::SUDDENDEATH && !spec && wantSpectate == true ) {
+#ifdef MULTIPLAYER
+		if (canModify && gameLocal.mpGame.GetGameState() == idMultiplayerGame::SUDDENDEATH && !spec && wantSpectate == true) {
 
 			userInfo->Set( "ui_spectate", "Spectate" );
 			modifiedInfo |= true;
-		} else {
+		} else 
+#endif
+		{
 			if ( spec != wantSpectate && !spec ) {
 				// returning from spectate, set forceRespawn so we don't get stuck in spectate forever
 				forceRespawn = true;
@@ -3032,7 +3038,9 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 		}
 		wantSpectate = false;
 	}
-	newready = ( idStr::Icmp( userInfo->GetString( "ui_ready" ), "Ready" ) == 0 );
+#ifdef MULTIPLAYER
+	bool	newready;
+	newready = (idStr::Icmp( userInfo->GetString( "ui_ready" ), "Ready" ) == 0);
 	if ( ready != newready && gameLocal.mpGame.GetGameState() == idMultiplayerGame::WARMUP && !wantSpectate ) {
 		gameLocal.mpGame.AddChatLine( common->Translate( "#str_07180" ), userInfo->GetString( "ui_name" ), newready ? common->Translate( "#str_04300" ) : common->Translate( "#str_04301" ) );
 	}
@@ -3044,7 +3052,8 @@ bool idPlayer::UserInfoChanged( bool canModify ) {
 		modifiedInfo |= BalanceTDM( );
 	}
 	UpdateSkinSetup( false );
-	
+#endif
+
 	isChatting = userInfo->GetBool( "ui_chat", "0" );
 	if ( canModify && isChatting && AI_DEAD ) {
 
@@ -5857,6 +5866,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			PrevWeapon();
 			break;
 		}
+#ifdef MULTIPLAYER
 		case IMPULSE_17:
 		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
@@ -5865,6 +5875,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 		}
+#endif
 
 		case IMPULSE_18:
 		{
@@ -5876,6 +5887,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			ToggleObjectivesGUI();
 			break;
 		}
+#ifdef MULTIPLAYER
 		case IMPULSE_20:
 		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
@@ -5892,6 +5904,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 		}
+#endif
 
 		case IMPULSE_23:		// Crouch
 		{
@@ -5975,6 +5988,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 			break;
 
+#ifdef MULTIPLAYER
 		case IMPULSE_28:
 		{
 			if ( gameLocal.isClient || entityNumber == gameLocal.localClientNum )
@@ -5992,6 +6006,7 @@ void idPlayer::PerformImpulse( int impulse ) {
 			}
 		}
 		break;
+#endif
 
 		case IMPULSE_30:		// Toggle Inventory Grid GUI #4286
 		{
@@ -7934,6 +7949,7 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 	m_killedBy = attacker;
 
 	if ( gameLocal.isMultiplayer || g_testDeath.GetBool() ) {
+#ifdef MULTIPLAYER
 		idPlayer *killer = NULL;
 		// no gibbing in MP. Event_Gib will early out in MP
 		if ( attacker->IsType( idPlayer::Type ) ) {
@@ -7945,6 +7961,7 @@ void idPlayer::Killed( idEntity *inflictor, idEntity *attacker, int damage, cons
 			}
 		}
 		gameLocal.mpGame.PlayerDeath( this, killer, isTelefragged );
+#endif
 	} else
 	{
 		physicsObj.SetContents( CONTENTS_CORPSE | CONTENTS_MONSTERCLIP );
@@ -8068,7 +8085,8 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 	attacker->DamageFeedback( this, inflictor, damage );
 
 	// check for team damage
-	if ( gameLocal.gameType == GAME_TDM
+#ifdef MULTIPLAYER
+	if (gameLocal.gameType == GAME_TDM
 		&& !gameLocal.serverInfo.GetBool( "si_teamDamage" )
 		&& !damageDef->GetBool( "noTeam" )
 		&& player
@@ -8076,6 +8094,7 @@ void idPlayer::CalcDamagePoints( idEntity *inflictor, idEntity *attacker, const 
 		&& player->team == team ) {
 			damage = 0;
 	}
+#endif
 
 	*health = damage;
 }
@@ -9394,14 +9413,16 @@ bool idPlayer::GetPhysicsToVisualTransform( idVec3 &origin, idMat3 &axis ) {
 			idVec2 originDiff = renderOrigin.ToVec2() - smoothedOrigin.ToVec2();
 			if ( originDiff.LengthSqr() < Square( 100.0f ) ) {
 				// smoothen by pushing back to the previous position
-				if ( selfSmooth ) {
+#ifdef MULTIPLAYER
+				if (selfSmooth) {
 
 					assert( entityNumber == gameLocal.localClientNum );
 
 					renderOrigin.ToVec2() -= net_clientSelfSmoothing.GetFloat() * originDiff;
 
-				} else {
-
+				} else 
+#endif
+				{
 					renderOrigin.ToVec2() -= gameLocal.clientSmoothing * originDiff;
 				}
 			}
@@ -9461,7 +9482,9 @@ void idPlayer::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	msg.WriteDeltaFloat( 0.0f, deltaViewAngles[1] );
 	msg.WriteDeltaFloat( 0.0f, deltaViewAngles[2] );
 	msg.WriteShort( health );
+#ifdef MULTIPLAYER
 	msg.WriteBits( gameLocal.ServerRemapDecl( -1, DECL_ENTITYDEF, lastDamageDef ), gameLocal.entityDefBits );
+#endif
 	msg.WriteDir( lastDamageDir, 9 );
 	msg.WriteShort( lastDamageLocation );
 	msg.WriteBits( idealWeapon, idMath::BitsForInteger( 256 ) );
@@ -9497,7 +9520,9 @@ void idPlayer::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	deltaViewAngles[1] = msg.ReadDeltaFloat( 0.0f );
 	deltaViewAngles[2] = msg.ReadDeltaFloat( 0.0f );
 	health = msg.ReadShort();
+#ifdef MULTIPLAYER
 	lastDamageDef = gameLocal.ClientRemapDecl( DECL_ENTITYDEF, msg.ReadBits( gameLocal.entityDefBits ) );
+#endif
 	lastDamageDir = msg.ReadDir( 9 );
 	lastDamageLocation = msg.ReadShort();
 	newIdealWeapon = msg.ReadBits( idMath::BitsForInteger( 256 ) );
@@ -9787,6 +9812,7 @@ idPlayer::UpdatePlayerIcons
 ===============
 */
 void idPlayer::UpdatePlayerIcons( void ) {
+#ifdef MULTIPLAYER
 	int time = networkSystem->ServerGetClientTimeSinceLastPacket( entityNumber );
 	if ( time > cvarSystem->GetCVarInteger( "net_clientMaxPrediction" ) ) {
 		isLagged = true;
@@ -9794,6 +9820,7 @@ void idPlayer::UpdatePlayerIcons( void ) {
 		isLagged = false;
 	}
 	// TODO: chatting, PDA, etc?
+#endif
 }
 
 /*

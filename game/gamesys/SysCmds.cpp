@@ -945,11 +945,13 @@ void Cmd_Kill_f( const idCmdArgs &args ) {
 
 	if ( gameLocal.isMultiplayer ) {
 		if ( gameLocal.isClient ) {
+#ifdef MULTIPLAYER
 			idBitMsg	outMsg;
 			byte		msgBuf[ MAX_GAME_MESSAGE_SIZE ];
 			outMsg.Init( msgBuf, sizeof( msgBuf ) );
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_KILL );
 			networkSystem->ClientSendReliableMessage( outMsg );
+#endif
 		} else {
 			player = gameLocal.GetClientByCmdArgs( args );
 			if ( !player ) {
@@ -1040,6 +1042,7 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 		name = "server";
 	}
 
+#ifdef MULTIPLAYER
 	if ( gameLocal.isClient ) {
 		idBitMsg	outMsg;
 		byte		msgBuf[ 256 ];
@@ -1051,6 +1054,7 @@ static void Cmd_Say( bool team, const idCmdArgs &args ) {
 	} else {
 		gameLocal.mpGame.ProcessChatMessage( gameLocal.localClientNum, team, name, text, NULL );
 	}
+#endif
 }
 
 /*
@@ -1077,7 +1081,9 @@ Cmd_AddChatLine_f
 ==================
 */
 static void Cmd_AddChatLine_f( const idCmdArgs &args ) {
+#ifdef MULTIPLAYER
 	gameLocal.mpGame.AddChatLine( args.Argv( 1 ) );
+#endif
 }
 
 /*
@@ -2646,6 +2652,7 @@ outputs a string from the string table for the specified id
 ===============
 */
 void Cmd_TestId_f( const idCmdArgs &args ) {
+#ifdef MULTIPLAYER
 	idStr	id;
 	int		i;
 	if ( args.Argc() == 1 ) {
@@ -2660,6 +2667,7 @@ void Cmd_TestId_f( const idCmdArgs &args ) {
 		id = STRTABLE_ID + id;
 	}
 	gameLocal.mpGame.AddChatLine( common->Translate( id ), "<nothing>", "<nothing>", "<nothing>" );	
+#endif
 }
 
 void Cmd_SetClipMask(const idCmdArgs& args)
@@ -3849,6 +3857,7 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "disasmScript",			Cmd_DisasmScript_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"disassembles script" );
 	cmdSystem->AddCommand( "exportmodels",			Cmd_ExportModels_f,			CMD_FL_GAME|CMD_FL_CHEAT,	"exports models", ArgCompletion_DefFile );
 
+#ifdef MULTIPLAYER
 	// multiplayer client commands ( replaces old impulses stuff )
 	cmdSystem->AddCommand( "clientDropWeapon",		idMultiplayerGame::DropWeapon_f, CMD_FL_GAME,			"drop current weapon" );
 	cmdSystem->AddCommand( "clientMessageMode",		idMultiplayerGame::MessageMode_f, CMD_FL_GAME,			"ingame gui message mode" );
@@ -3857,10 +3866,11 @@ void idGameLocal::InitConsoleCommands( void ) {
 //	cmdSystem->AddCommand( "clientCallVote",		idMultiplayerGame::CallVote_f,	CMD_FL_GAME,			"call a vote: clientCallVote si_.. proposed_value" );
 	cmdSystem->AddCommand( "clientVoiceChat",		idMultiplayerGame::VoiceChat_f,	CMD_FL_GAME,			"voice chats: clientVoiceChat <sound shader>" );
 	cmdSystem->AddCommand( "clientVoiceChatTeam",	idMultiplayerGame::VoiceChatTeam_f,	CMD_FL_GAME,		"team voice chats: clientVoiceChat <sound shader>" );
+	cmdSystem->AddCommand( "serverForceReady", idMultiplayerGame::ForceReady_f, CMD_FL_GAME, "force all players ready" );
+#endif
 
 	// multiplayer server commands
 	cmdSystem->AddCommand( "serverMapRestart",		idGameLocal::MapRestart_f,	CMD_FL_GAME,				"restart the current game" );
-	cmdSystem->AddCommand( "serverForceReady",	idMultiplayerGame::ForceReady_f,CMD_FL_GAME,				"force all players ready" );
 	cmdSystem->AddCommand( "serverNextMap",			idGameLocal::NextMap_f,		CMD_FL_GAME,				"change to the next map" );
 
 	// greebo: Added commands to alter the clipmask/contents of entities.
