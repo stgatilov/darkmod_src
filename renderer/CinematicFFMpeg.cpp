@@ -304,7 +304,7 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 		TIMER_START(createSwrCtx);
 		// Set up the scaling context used to convert the images to RGBA
 		_swResampleContext = ExtLibs::swr_alloc_set_opts(NULL,
-			AV_CH_LAYOUT_MONO/*TODO: stereo*/, AV_SAMPLE_FMT_FLTP, FREQ44K,
+			(_channels == 2 ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO), AV_SAMPLE_FMT_FLT, FREQ44K,
 			_audioDecoderContext->channel_layout, _audioDecoderContext->sample_fmt, _audioDecoderContext->sample_rate,
 			0, _customIOContext
 		);
@@ -319,7 +319,7 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 		//but it is not part of decoder's data structures
 		//and it is NOT destroyed when decoder is closed
 		if (!_audioSamples._fifo) {
-			_audioSamples._fifo = ExtLibs::av_audio_fifo_alloc(AV_SAMPLE_FMT_FLTP, 1 /*TODO: stereo*/, FREQ44K);
+			_audioSamples._fifo = ExtLibs::av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, _channels, FREQ44K);
 			_audioSamples._startTime = 0.0;
 		}
 	}
@@ -685,17 +685,17 @@ void idCinematicFFMpeg::ProcessDecodedAudioFrame(AVFrame *decodedFrame, double t
 
 	while (true) {
 		static const int BuffSize = FREQ44K / 10;
-		float buff[BuffSize];
+		float buff[2 * BuffSize];
 
 		TIMER_START(swrResample);
-		uint8_t* dstPtr[1] = { (uint8_t*)buff };
-		int moreSamples = ExtLibs::swr_convert(_swResampleContext, dstPtr, BuffSize, NULL, 0);
+		uint8_t* dstPtr = (uint8_t*)buff;
+		int moreSamples = ExtLibs::swr_convert(_swResampleContext, &dstPtr, BuffSize, NULL, 0);
 		if (moreSamples == 0)
 			break;
-		SIMDProcessor->Mul(buff, 32767.0f, buff, moreSamples);
+		SIMDProcessor->Mul(buff, 32767.0f, buff, _channels * moreSamples);
 		TIMER_END_LOG(swrResample, "Converted sound samples");
 
-		int cnt = ExtLibs::av_audio_fifo_write(_audioSamples._fifo, (void**)dstPtr, moreSamples);
+		int cnt = ExtLibs::av_audio_fifo_write(_audioSamples._fifo, (void**)&dstPtr, moreSamples);
 		assert(cnt == moreSamples);
 		decodedSamples += moreSamples;
 	}
@@ -726,15 +726,15 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 	else {
 		int insert = int(-rngStart + 0.5);
 		if (insert > 0) {
-			float fill = 0;
+			float fill[2] = {0, 0};
 			//TODO: use this code with newer FFmpeg
 			/*if (ExtLibs::av_audio_fifo_size(_audioSamples._fifo) > 0) {
-				float *ptr = &fill;
+				float *ptr = fill;
 				ExtLibs::av_audio_fifo_peek(_audioSamples._fifo, (void**)&ptr, 1);
 			}*/
 			//TODO: remove this crap with newer ffmpeg
 			assert(ExtLibs::av_audio_fifo_size(_audioSamples._fifo) > 0);
-			float *ptr = &fill;
+			float *ptr = fill;
 			if (ExtLibs::av_audio_fifo_read(_audioSamples._fifo, (void**)&ptr, 1)) {
 				_audioSamples._startTime += 1.0 / FREQ44K;
 				insert++;
@@ -742,8 +742,9 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 
 			insert = min(insert, samplesCount);
 			for (int i = 0; i < insert; i++)
-				output[i] = fill;
-			output += insert;
+				for (int j = 0; j < _channels; j++)
+					output[_channels * i + j] = fill[j];
+			output += _channels * insert;
 			samplesCount -= insert;
 			LogPrintf("Inserted %d zero sound samples", insert);
 		}
@@ -782,6 +783,7 @@ idCinematicFFMpeg::idCinematicFFMpeg() :
 	_frameRate(-1),
 	_framebufferWidth(-1),
 	_framebufferHeight(-1),
+	_channels(-1),
 	_startTime(-1),
 	_loopNumber(-1),
 	_loopDuration(-1),
@@ -827,6 +829,7 @@ bool idCinematicFFMpeg::InitFromFile(const char *qpath, bool looping, bool withA
 	_path = qpath;
 	_looping = looping;
 	_withAudio = withAudio;
+	_channels = 2;
 
 	bool res = false;
 	if (r_cinematic_checkImmediately.GetBool()) {

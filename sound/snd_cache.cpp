@@ -433,7 +433,7 @@ void idSoundSample::LoadFromCinematic(const idMaterial *material) {
 	cinematic = cin;
 
 	objectInfo.wFormatTag = WAVE_FORMAT_TAG_STREAM_CINEMATICS;
-	objectInfo.nChannels = 1;	//TODO: stereo
+	objectInfo.nChannels = 2;	//stereo
 	objectInfo.nSamplesPerSec = PRIMARYFREQ;	//44100 hz
 	objectInfo.nAvgBytesPerSec = 0;	//nobody cares
 	objectInfo.nBlockAlign = sizeof(float) * objectInfo.nChannels;

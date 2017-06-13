@@ -444,7 +444,9 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 			break;
 		}
 		case WAVE_FORMAT_TAG_STREAM_CINEMATICS: {
-			readSamples44k = DecodeCinematics( sample, sampleOffset44k, sampleCount44k, dest );
+			int ch = sample->objectInfo.nChannels;
+			assert(sampleOffset44k % ch == 0 && sampleCount44k % ch == 0);
+			readSamples44k = ch * DecodeCinematics( sample, sampleOffset44k / ch, sampleCount44k / ch, dest );
 			break;
 		}
 		default: {

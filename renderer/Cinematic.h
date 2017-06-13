@@ -76,9 +76,10 @@ public:
 	virtual cinData_t	ImageForTime( int milliseconds );
 
 	//stgatilov #4534: allows to get sound from video file
-	//only frequency 44100 Hz (PRIMARYFREQ) is supported
+	//only frequency 44100 Hz (PRIMARYFREQ) stereo is supported
 	//sampleOffset and sampleSize specify beginning and length of interval (in samples)
-	//output buffer must be large enough to hold sampleSize samples
+	//each stereo sample consists of left speaker value and right speaker value (speakers are interleaved)
+	//output buffer must be large enough to hold 2 * sampleSize float values
 	//number of samples read is returned in sampleSize
 	//note: this method can be called from multiple threads (e.g. sound thread) !
 	virtual bool SoundForTimeInterval(int sampleOffset, int *sampleSize, int frequency, float *output);

@@ -95,6 +95,8 @@ private: // members
 	// size of the RGBA buffer in decoded frames
 	int _framebufferWidth;
 	int _framebufferHeight;
+	// how many audio channels we produce as output (currently it is 2 = stereo)
+	int _channels;
 
 	//=== video clock
 
