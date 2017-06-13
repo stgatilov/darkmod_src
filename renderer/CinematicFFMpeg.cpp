@@ -272,6 +272,9 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 	}
 	AVStream* videoStream = _formatContext->streams[_videoStreamIndex];
 	_videoDecoderContext = videoStream->codec;
+	AVRational videoTBase = ExtLibs::av_codec_get_pkt_timebase(_videoDecoderContext);
+	LogPrintf("Video stream timebase: %d/%d = %0.6lf", videoTBase.num, videoTBase.den, ExtLibs::av_q2d(videoTBase));
+
 
 	if (_withAudio) {
 		// Find the most suitable audio stream and open decoder for it
@@ -282,6 +285,8 @@ bool idCinematicFFMpeg::_OpenDecoder() {
 		}
 		AVStream* audioStream = _formatContext->streams[_audioStreamIndex];
 		_audioDecoderContext = audioStream->codec;
+		AVRational audioTBase = ExtLibs::av_codec_get_pkt_timebase(_audioDecoderContext);
+		LogPrintf("Audio stream timebase: %d/%d = %0.6lf", audioTBase.num, audioTBase.den, ExtLibs::av_q2d(audioTBase));
 	}
 
 	TIMER_START(createSwsCtx);
@@ -715,22 +720,32 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 		if (drop > 0) {
 			ExtLibs::av_audio_fifo_drain(_audioSamples._fifo, drop);
 			_audioSamples._startTime += drop / double(FREQ44K);
+			LogPrintf("Dropped %d sound samples", drop);
 		}
 	}
 	else {
 		int insert = int(-rngStart + 0.5);
-		if (insert) {
+		if (insert > 0) {
 			float fill = 0;
 			//TODO: use this code with newer FFmpeg
 			/*if (ExtLibs::av_audio_fifo_size(_audioSamples._fifo) > 0) {
 				float *ptr = &fill;
 				ExtLibs::av_audio_fifo_peek(_audioSamples._fifo, (void**)&ptr, 1);
 			}*/
+			//TODO: remove this crap with newer ffmpeg
+			assert(ExtLibs::av_audio_fifo_size(_audioSamples._fifo) > 0);
+			float *ptr = &fill;
+			if (ExtLibs::av_audio_fifo_read(_audioSamples._fifo, (void**)&ptr, 1)) {
+				_audioSamples._startTime += 1.0 / FREQ44K;
+				insert++;
+			}
+
 			insert = min(insert, samplesCount);
 			for (int i = 0; i < insert; i++)
 				output[i] = fill;
 			output += insert;
 			samplesCount -= insert;
+			LogPrintf("Inserted %d zero sound samples", insert);
 		}
 		if (samplesCount == 0)
 			return true;

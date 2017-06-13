@@ -44,6 +44,7 @@ namespace ExtLibs {
 		int *got_frame_ptr, const AVPacket *avpkt);
 	EXTLIB enum AVMediaType avcodec_get_type( enum AVCodecID codec_id );
 	EXTLIB const char *avcodec_get_name( enum AVCodecID id );
+	EXTLIB AVRational av_codec_get_pkt_timebase (const AVCodecContext *avctx);
 	EXTLIB AVIOContext *avio_alloc_context(
 		unsigned char *buffer,
 		int buffer_size,

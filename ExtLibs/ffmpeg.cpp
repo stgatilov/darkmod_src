@@ -96,6 +96,10 @@ namespace ExtLibs {
 		return ::avcodec_get_name( id );
 	}
 
+	AVRational av_codec_get_pkt_timebase (const AVCodecContext *avctx) {
+		return ::av_codec_get_pkt_timebase(avctx);
+	}
+
 	AVIOContext *avio_alloc_context(
 		unsigned char *buffer,
 		int buffer_size,

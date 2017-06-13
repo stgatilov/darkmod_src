@@ -224,11 +224,15 @@ private: // members
 	SamplesStorage _audioSamples;
 
 	// process a given audio frame just decoded:
-	// TODO!
+	// convert it to 44K frequency with predefined channel layout
+	// and put into samples storage
 	void ProcessDecodedAudioFrame(AVFrame *decodedFrame, double timestamp, double duration);
+	// return decoded samples in the given time interval (video clock time + samples count)
+	// note: fetches audio frames automatically if necessary
 	bool GetAudioInterval(double startTime, int samplesCount, float *output);
 	// remove all frames with timestamp older that the specified time
 	void DiscardOldSamples(double videoTime);
+	// free memory taken by sound samples
 	void DestroyAllSamples();
 
 };
