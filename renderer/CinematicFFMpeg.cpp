@@ -26,8 +26,18 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Image.h"
 #include "tr_local.h"
 
-
+//note: equals PRIMARYFREQ from sound headers
 #define FREQ44K 44100
+
+//when audio clock and video clock deviate from each other by more that this number of seconds
+//then audio clock is resynced to video clock (possibly introducing a crack/jump in sound)
+static const double SYNC_CLOCKS_TOLERANCE = 0.3;
+
+//maximal allowed error in packet timestamp recorded in video file
+//most known case of timestamp jitter is Matroska container, which stores all timestamps as integer number of milliseconds
+//audio FIFO for decoded samples would fix jitter up to this tolerance, anything greater would result in sound "cracks"
+static const double TIMESTAMP_JITTER_TOLERANCE = 0.01;
+
 
 idCVar r_cinematic_log("r_cinematic_log", 0, CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, 
 	"Dump logs from cinematic into \"log_cinematics.txt\" file."
@@ -681,7 +691,9 @@ void idCinematicFFMpeg::ProcessDecodedAudioFrame(AVFrame *decodedFrame, double t
 	int decodedSamples = ExtLibs::swr_convert_frame(_swResampleContext, NULL, decodedFrame);
 
 	int beforeCnt = ExtLibs::av_audio_fifo_size(_audioSamples._fifo);
-	_audioSamples._startTime = timestamp - beforeCnt / double(FREQ44K);
+	double newStartTime = timestamp - beforeCnt / double(FREQ44K);
+	if (fabs(newStartTime - _audioSamples._startTime) > TIMESTAMP_JITTER_TOLERANCE)
+		_audioSamples._startTime = newStartTime;
 
 	while (true) {
 		static const int BuffSize = FREQ44K / 10;
@@ -706,7 +718,7 @@ void idCinematicFFMpeg::ProcessDecodedAudioFrame(AVFrame *decodedFrame, double t
 bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, float *output) {
 	while (true) {
 		double fifoEndTime = _audioSamples._startTime + ExtLibs::av_audio_fifo_size(_audioSamples._fifo) / double(FREQ44K);
-		double reqEndTime = videoTime + (samplesCount + 3) / double(FREQ44K);
+		double reqEndTime = videoTime + (samplesCount + 3) / double(FREQ44K) + TIMESTAMP_JITTER_TOLERANCE;
 		if (fifoEndTime >= reqEndTime)
 			break;
 		bool ok = FetchFrames(AVMEDIA_TYPE_AUDIO, videoTime);
@@ -760,7 +772,7 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 }
 
 void idCinematicFFMpeg::DiscardOldSamples(double videoTime) {
-	int drop = int((videoTime - _audioSamples._startTime) * FREQ44K);
+	int drop = int((videoTime - _audioSamples._startTime - TIMESTAMP_JITTER_TOLERANCE) * FREQ44K);
 	drop = min(drop, ExtLibs::av_audio_fifo_size(_audioSamples._fifo));
 	if (drop > 0) {
 		ExtLibs::av_audio_fifo_drain(_audioSamples._fifo, drop);
@@ -944,7 +956,7 @@ bool idCinematicFFMpeg::SoundForTimeInterval(int sampleOffset, int *sampleSize, 
 	Sys_LeaveCriticalSection(CRITICAL_SECTION_CLOCK);
 
 	double gap = lastVideoTime - (_soundTimeOffset + soundTime);
-	if (fabs(gap) > 0.3 || _soundTimeOffset == DBL_MAX) {	//TODO: constant?
+	if (fabs(gap) > SYNC_CLOCKS_TOLERANCE || _soundTimeOffset == DBL_MAX) {
 		double old = _soundTimeOffset;
 		_soundTimeOffset = lastVideoTime - soundTime;
 		LogPrintf("Changed sound offset from %0.3lf to %0.3lf", old, _soundTimeOffset);
