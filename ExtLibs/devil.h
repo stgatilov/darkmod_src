@@ -7,7 +7,6 @@
 #endif
 
 namespace ExtLibs {
-	EXTLIB ILAPI ILvoid    ILAPIENTRY ilInit( void );
-	EXTLIB ILAPI ILboolean ILAPIENTRY ilLoadL( ILenum Type, const ILvoid *Lump, ILuint Size );
-
+	EXTLIB ILvoid    ILAPIENTRY ilInit( void );
+	EXTLIB ILboolean ILAPIENTRY ilLoadL( ILenum Type, const ILvoid *Lump, ILuint Size );
 }

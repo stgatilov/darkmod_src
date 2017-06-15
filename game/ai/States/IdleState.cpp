@@ -125,7 +125,7 @@ void IdleState::Init(idAI* owner)
 	owner->senseSubsystem->ClearTasks();
 
 	// angua: drunken AIs won't do any head turning and idle anims for now
-	if (owner->spawnArgs.GetBool("drunk", "0") == false)
+	if (/*owner->spawnArgs.GetBool("drunk", "0")*/ owner->m_IsDrunk == false)
 	{
 		// The action subsystem plays the idle anims (scratching, yawning...)
 		owner->actionSubsystem->PushTask(IdleAnimationTask::CreateInstance());
@@ -166,7 +166,7 @@ void IdleState::Init(idAI* owner)
 	int idleBarkIntervalMin = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_min", "20"));
 	int idleBarkIntervalMax = SEC2MS(owner->spawnArgs.GetInt("idle_bark_interval_max", "60"));
 	// Push the regular patrol barking to the list too
-	if (owner->spawnArgs.GetBool("drunk", "0"))
+	if (/*owner->spawnArgs.GetBool("drunk", "0")*/ owner->m_IsDrunk)
 	{
 		owner->commSubsystem->AddCommTask(
 			CommunicationTaskPtr(new RepeatedBarkTask("snd_drunk", idleBarkIntervalMin, idleBarkIntervalMax))

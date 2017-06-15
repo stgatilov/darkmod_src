@@ -58,12 +58,12 @@
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
 
-#define ID_INLINE						__forceinline
+#define ID_INLINE						__inline
 #define ID_STATIC_TEMPLATE				static
 
 //anon begin
 #define ID_INLINE_EXTERN				extern inline //anon
-#define ID_FORCE_INLINE					__forceinline //anon
+#define ID_FORCE_INLINE					__inline //anon
 #define ID_FORCE_INLINE_EXTERN			extern __forceinline //anon
 //anon end
 
