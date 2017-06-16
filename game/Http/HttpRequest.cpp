@@ -33,8 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <Wspiapi.h>
 #endif
 
-#include <curl\curl.h>
-#define ExtLibs
+#include "../ExtLibs/curl.h"
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 	_conn(conn),
@@ -156,13 +155,6 @@ void CHttpRequest::Perform()
 	if (!_destFilename.empty())
 	{
 		_destStream.open(_destFilename.c_str(), std::ofstream::out|std::ofstream::binary);
-	}
-
-	char error_buf[CURL_ERROR_SIZE];
-	CURLcode ret;
-	ret = ExtLibs::curl_easy_setopt( _handle, CURLOPT_ERRORBUFFER, error_buf );
-	error_buf[0] = 0;
-	if ( ret ) {
 	}
 
 	CURLcode result = ExtLibs::curl_easy_perform( _handle );

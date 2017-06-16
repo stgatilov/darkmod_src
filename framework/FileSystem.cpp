@@ -42,8 +42,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #endif
 
 #if ID_ENABLE_CURL
-	#include <curl\curl.h>
-	#define ExtLibs
+	#include "../ExtLibs/curl.h"
 #endif
 
 /*
