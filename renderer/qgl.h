@@ -208,7 +208,8 @@ extern PFNGLGETPROGRAMINFOLOGPROC			qglGetProgramInfoLog;
 extern PFNGLBINDATTRIBLOCATIONPROC			qglBindAttribLocation;
 
 // State management
-extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
+//stgatilov: this type breaks Linux build, and it is not used anyway
+//extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
 // -----====+++   END TDM ~SS Extensions   +++====-----   */
 

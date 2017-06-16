@@ -24,7 +24,7 @@
 	#define	MAX_PRINT_MSG_SIZE	16 * 1024
 #endif
 
-#include "minizip\unzip.h"
+#include "minizip/unzip.h"
 
 /*
 ==============================================================
