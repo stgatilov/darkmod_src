@@ -16,10 +16,6 @@
 # 
 # Project: The Dark Mod (http://www.thedarkmod.com/)
 # 
-# $Revision$ (Revision of last commit) 
-# $Date$ (Date of last commit)
-# $Author$ (Author of last commit)
-# 
 #*****************************************************************************
 
 import sys, os
@@ -89,13 +85,9 @@ renderer_string = ' \
 	RenderWorld_portals.cpp \
 	VertexCache.cpp \
 	cg_explicit.cpp \
-	draw_arb.cpp \
 	draw_arb2.cpp \
 	draw_common.cpp \
 	draw_exp_stub.cpp \
-	draw_nv10.cpp \
-	draw_nv20.cpp \
-	draw_r200.cpp \
 	tr_backend.cpp \
 	tr_deform.cpp \
 	tr_font.cpp \
