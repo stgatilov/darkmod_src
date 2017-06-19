@@ -7,9 +7,6 @@
     <Filter Include="Framework">
       <UniqueIdentifier>{f5d345cb-9f26-4da2-9ef1-335e871dcce5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Framework\Async">
-      <UniqueIdentifier>{78d0b2e7-608c-46f4-8945-a3fbf061ccae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{19b363f5-76a7-4256-b7f0-7a6ec012d09d}</UniqueIdentifier>
     </Filter>
@@ -212,24 +209,6 @@
     </ClInclude>
     <ClInclude Include="framework\UsercmdGen.h">
       <Filter>Framework</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\AsyncClient.h">
-      <Filter>Framework\Async</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\AsyncNetwork.h">
-      <Filter>Framework\Async</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\AsyncServer.h">
-      <Filter>Framework\Async</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\MsgChannel.h">
-      <Filter>Framework\Async</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\NetworkSystem.h">
-      <Filter>Framework\Async</Filter>
-    </ClInclude>
-    <ClInclude Include="framework\async\ServerScan.h">
-      <Filter>Framework\Async</Filter>
     </ClInclude>
     <ClInclude Include="renderer\Cinematic.h">
       <Filter>Renderer</Filter>
@@ -1141,9 +1120,6 @@
     <ClInclude Include="game\Mover.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="game\MultiplayerGame.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="game\MultiStateMover.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -1329,24 +1305,6 @@
     </ClCompile>
     <ClCompile Include="framework\UsercmdGen.cpp">
       <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\AsyncClient.cpp">
-      <Filter>Framework\Async</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\AsyncNetwork.cpp">
-      <Filter>Framework\Async</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\AsyncServer.cpp">
-      <Filter>Framework\Async</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\MsgChannel.cpp">
-      <Filter>Framework\Async</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\NetworkSystem.cpp">
-      <Filter>Framework\Async</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\async\ServerScan.cpp">
-      <Filter>Framework\Async</Filter>
     </ClCompile>
     <ClCompile Include="renderer\Cinematic.cpp">
       <Filter>Renderer</Filter>
@@ -2764,9 +2722,6 @@
     <ClCompile Include="game\Game_local.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="game\Game_network.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="game\GameEdit.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -2819,9 +2774,6 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\Mover.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\MultiplayerGame.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\MultiStateMover.cpp">
