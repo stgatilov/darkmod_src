@@ -536,7 +536,7 @@ bool LineSegTriangleIntersect(const idVec3 Seg[LSG_COUNT], idVec3 Tri[3], idVec3
 
 	tmp = p * e1;			// Dotproduct
 
-	if(tmp > -idMath::FLT_EPSILON && tmp < idMath::FLT_EPSILON)
+	if(tmp > -idMath::FLT_EPS && tmp < idMath::FLT_EPS)
 	{
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("No triangle intersection: tmp = %f\r", tmp);
 		goto Quit;
@@ -732,8 +732,8 @@ EIntersection IntersectLineLightCone(const idVec3 rkLine[LSG_COUNT],
 
 		DM_LOGPLANE(LC_MATH, LT_DEBUG, txt, frustum[i]);
 
-		sides[i][0] = frustum[i].Side(rkLine[LSG_ORIGIN], idMath::FLT_EPSILON);
-		sides[i][1] = frustum[i].Side(EndPoint, idMath::FLT_EPSILON);
+		sides[i][0] = frustum[i].Side(rkLine[LSG_ORIGIN], idMath::FLT_EPS);
+		sides[i][1] = frustum[i].Side(EndPoint, idMath::FLT_EPS);
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%d]: sides[%d][0]: %d sides[%d][1]: %d\r", i, i,sides[i][0], i,sides[i][1]);
 		if ( ( sides[i][0] == PLANESIDE_FRONT ) && ( sides[i][1] == PLANESIDE_FRONT ) )
 		{
@@ -790,7 +790,7 @@ EIntersection IntersectLineLightCone(const idVec3 rkLine[LSG_COUNT],
 						{
 							continue; // skip the plane you just intersected
 						}
-						x = frustum[j].Side(candidate, idMath::FLT_EPSILON);
+						x = frustum[j].Side(candidate, idMath::FLT_EPS);
 						if (x == PLANESIDE_FRONT)
 						{
 							inside = false;
@@ -862,14 +862,14 @@ EIntersection IntersectLineLightCone(const idVec3 rkLine[LSG_COUNT],
 			bool bEnd = true;
 			for ( i = 0 ; i < 6 ; i++ )
 			{
-				x = frustum[i].Side(Intersect[0], idMath::FLT_EPSILON);
+				x = frustum[i].Side(Intersect[0], idMath::FLT_EPS);
 				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/0] intersection test returns %u\r", i, x);
 				if (x != PLANESIDE_BACK)
 				{
 					bStart = false;
 				}
 
-				x = frustum[i].Side(Intersect[1], idMath::FLT_EPSILON);
+				x = frustum[i].Side(Intersect[1], idMath::FLT_EPS);
 				DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/1] intersection test returns %u\r", i, x);
 				if (x != PLANESIDE_BACK)
 				{
@@ -931,7 +931,7 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 	// Calculate the angle between the target and the lightvector.
 	angle = rkCone[ELA_TARGET].Length() * rkLine[LSG_DIRECTION].Length();
 	DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Denominator: %f\r", angle);
-	if ( angle >= idMath::FLT_EPSILON )
+	if ( angle >= idMath::FLT_EPS )
 	{
 		angle = idMath::ACos((rkCone[ELA_TARGET] * rkLine[LSG_DIRECTION])/angle);
 //		if(t > (idMath::PI/2))
@@ -952,8 +952,8 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 
 		DM_LOGPLANE(LC_MATH, LT_DEBUG, txt, frustum[i]);
 
-		Start[i] = frustum[i].Side(rkLine[LSG_ORIGIN], idMath::FLT_EPSILON);
-		End[i] = frustum[i].Side(EndPoint, idMath::FLT_EPSILON);
+		Start[i] = frustum[i].Side(rkLine[LSG_ORIGIN], idMath::FLT_EPS);
+		End[i] = frustum[i].Side(EndPoint, idMath::FLT_EPS);
 
 		DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u]: Start %u   End: %u\r", i, Start[i], End[i]);
 
@@ -997,14 +997,14 @@ EIntersection IntersectLineCone(const idVec3 rkLine[LSG_COUNT],
 		bStart = bEnd = true;
 		for (i = 0; i < 6; i++)
 		{
-			x = frustum[i].Side(Intersect[0], idMath::FLT_EPSILON);
+			x = frustum[i].Side(Intersect[0], idMath::FLT_EPS);
 			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/0] intersection test returns %u\r", i, x);
 			if (x != PLANESIDE_BACK)
 			{
 				bStart = false;
 			}
 
-			x = frustum[i].Side(Intersect[1], idMath::FLT_EPSILON);
+			x = frustum[i].Side(Intersect[1], idMath::FLT_EPS);
 			DM_LOG(LC_MATH, LT_DEBUG)LOGSTRING("Frustum[%u/1] intersection test returns %u\r", i, x);
 			if (x != PLANESIDE_BACK)
 			{

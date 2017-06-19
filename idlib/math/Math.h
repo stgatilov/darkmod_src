@@ -21,8 +21,6 @@
 #define __MATH_MATH_H__
 
 #include <cmath>
-#include <limits> // before FLT_EPSILON is #undefined
-#include <boost/numeric/ublas/matrix.hpp> // before FLT_EPSILON is #undefined
 
 #ifdef __linux__
 #include "../../sys/sys_public.h"
@@ -49,10 +47,6 @@
 
 #ifdef INFINITY
 #undef INFINITY
-#endif
-
-#ifdef FLT_EPSILON
-#undef FLT_EPSILON
 #endif
 
 #define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
@@ -222,7 +216,7 @@ public:
 	static const float			M_SEC2MS;					// seconds to milliseconds multiplier
 	static const float			M_MS2SEC;					// milliseconds to seconds multiplier
 	static const float			INFINITY;					// huge number which should be larger than any valid number used
-	static const float			FLT_EPSILON;				// smallest positive number such that 1.0+FLT_EPSILON != 1.0
+	static const float			FLT_EPS;					// smallest positive number such that 1.0+FLT_EPSILON != 1.0
 	//anon beign
 	static const float			FLT_SMALLEST_NON_DENORMAL;	// smallest non-denormal 32-bit floating point value
 	//anon end

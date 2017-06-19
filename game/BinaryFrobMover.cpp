@@ -1176,7 +1176,7 @@ float CBinaryFrobMover::GetMoveTimeRotationFraction() // grayman #3711
 	int index = (delta[0] > delta[1]) ? 0 : 1;
 	index = (delta[2] > delta[index]) ? 2 : index;
 
-	if (fullRotation[index] < idMath::FLT_EPSILON) return 1;
+	if (fullRotation[index] < idMath::FLT_EPS) return 1;
 
 	float fraction = delta[index]/fullRotation[index];
 
@@ -1211,7 +1211,7 @@ float CBinaryFrobMover::GetMoveTimeTranslationFraction() // grayman #3711
 	int index = (delta[0] > delta[1]) ? 0 : 1;
 	index = (delta[2] > delta[index]) ? 2 : index;
 
-	if (fullTranslation[index] < idMath::FLT_EPSILON)
+	if (fullTranslation[index] < idMath::FLT_EPS)
 	{
 		return 1;
 	}
