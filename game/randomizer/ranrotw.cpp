@@ -72,8 +72,8 @@ uint32 TRanrotWGenerator::BRandom() {
   // generate next random number
   uint32 y, z;
   // generate next number
-  z = _lrotl(randbuffer[p1][0], R1) + randbuffer[p2][0];
-  y = _lrotl(randbuffer[p1][1], R2) + randbuffer[p2][1];
+  z = my_lrotl(randbuffer[p1][0], R1) + randbuffer[p2][0];
+  y = my_lrotl(randbuffer[p1][1], R2) + randbuffer[p2][1];
   randbuffer[p1][0] = y; randbuffer[p1][1] = z;
   // rotate list pointers
   if (--p1 < 0) p1 = KK - 1;

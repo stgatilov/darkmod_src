@@ -66,7 +66,7 @@ TRanrotBGenerator::TRanrotBGenerator(uint32 seed) {
 double TRanrotBGenerator::Random() {
   uint32 x;
   // generate next random number
-  x = randbuffer[p1] = _lrotl(randbuffer[p2], R1) + _lrotl(randbuffer[p1], R2);
+  x = randbuffer[p1] = my_lrotl(randbuffer[p2], R1) + my_lrotl(randbuffer[p1], R2);
   // rotate list pointers
   if (--p1 < 0) p1 = KK - 1;
   if (--p2 < 0) p2 = KK - 1;
