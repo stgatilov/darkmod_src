@@ -271,7 +271,7 @@ bool idAudioHardwareOSS::Initialize( ) {
 	}
 	// instead of an exact match, do a very close to
 	// there is some horrible Ensonic ES1371 which replies 44101 for a 44100 request
-	if ( abs( m_speed - PRIMARYFREQ ) > 5 ) {
+	if ( abs( int(m_speed) - PRIMARYFREQ ) > 5 ) {
 		common->Warning( "ioctl SNDCTL_DSP_SPEED failed to get the requested frequency %d, got %d", PRIMARYFREQ, m_speed );
 		InitFailed();
 		return false;
