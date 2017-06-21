@@ -306,6 +306,9 @@ if ( g_os == 'Linux' ):
 	# get the 64 bits machine on the distcc array to produce 32 bit binaries :)
 	BASECPPFLAGS.append( '-m32' )
 	BASELINKFLAGS.append( '-m32' )
+	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
+	# This allows to link with libraries (like boost), which were built in older versions of GCC
+	BASECPPFLAGS.append( '-D_GLIBCXX_USE_CXX11_ABI=0' )
     
 	if ( OPENMP != '0' ):
 		# openmp support for changes made to the renderer
