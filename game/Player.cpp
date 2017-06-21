@@ -1197,7 +1197,7 @@ CInventoryWeaponItemPtr idPlayer::GetCurrentWeaponItem()
 		return CInventoryWeaponItemPtr();
 	}
 
-	return boost::dynamic_pointer_cast<CInventoryWeaponItem>(m_WeaponCursor->GetCurrentItem());
+	return std::dynamic_pointer_cast<CInventoryWeaponItem>(m_WeaponCursor->GetCurrentItem());
 }
 
 CInventoryWeaponItemPtr idPlayer::GetWeaponItem(const idStr& weaponName)
@@ -1217,7 +1217,7 @@ CInventoryWeaponItemPtr idPlayer::GetWeaponItem(const idStr& weaponName)
 	// Cycle through all available weapons and find the one with the given name
 	for (int i = 0; i < weaponCategory->GetNumItems(); ++i)
 	{
-		CInventoryWeaponItemPtr weapon = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+		CInventoryWeaponItemPtr weapon = std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		if (weapon != NULL && weaponName == weapon->GetWeaponName())
 		{
@@ -1241,7 +1241,7 @@ void idPlayer::SortWeaponItems()
 
 	for (int i = 0; i < weaponCategory->GetNumItems(); ++i)
 	{
-		CInventoryWeaponItemPtr item = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+		CInventoryWeaponItemPtr item = std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		if (item == NULL) continue;
 
@@ -1785,7 +1785,7 @@ void idPlayer::SetupInventory()
 	for (int i = 0; i < category->GetNumItems(); i++)
 	{
 		CInventoryWeaponItemPtr item = 
-			boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
+			std::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 
 		if (item->GetWeaponIndex() != 0 && item->IsAllowedEmpty())
 		{
@@ -1824,7 +1824,7 @@ void idPlayer::SetupInventory()
 			for (int i = 0; i < category->GetNumItems(); i++)
 			{
 				CInventoryWeaponItemPtr item = 
-					boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
+					std::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 
 				if (item->GetWeaponName() == weaponName)
 				{
@@ -3338,13 +3338,11 @@ idPlayer::UpdateConditions
 void idPlayer::UpdateConditions( void )
 {
 	idVec3	velocity;
-	float	fallspeed;
 	float	forwardspeed;
 	float	sidespeed;
 
 	// minus the push velocity to avoid playing the walking animation and sounds when riding a mover
 	velocity = physicsObj.GetLinearVelocity() - physicsObj.GetPushedLinearVelocity();
-	fallspeed = velocity * physicsObj.GetGravityNormal();
 
 	if ( influenceActive ) {
 		AI_FORWARD		= false;
@@ -3670,7 +3668,7 @@ int idPlayer::SlotForWeapon( const char *weaponName )
 	for (int i = 0; i < weaponCategory->GetNumItems(); i++)
 	{
 		CInventoryWeaponItemPtr weaponItem = 
-			boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+			std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		// Is this the right weapon?
 		if (weaponItem != NULL && weaponItem->GetWeaponName() == weaponName)
@@ -3725,7 +3723,7 @@ int idPlayer::GetHightestWeaponIndex()
 
 	for (int i = 0; i < numWeapons; ++i)
 	{
-		CInventoryWeaponItemPtr item = boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
+		CInventoryWeaponItemPtr item = std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(i));
 
 		assert(item != NULL);
 
@@ -3898,7 +3896,7 @@ bool idPlayer::SelectWeapon( int num, bool force )
 	{
 		// Try to retrieve a weapon item from the given category
 		CInventoryWeaponItemPtr item = 
-			boost::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
+			std::dynamic_pointer_cast<CInventoryWeaponItem>(category->GetItem(i));
 		
 		if (item != NULL && item->GetWeaponIndex() == num)
 		{
@@ -7752,7 +7750,7 @@ idPlayer::RouteGuiMouse
 */
 void idPlayer::RouteGuiMouse( idUserInterface *gui ) {
 	sysEvent_t ev;
-	const char *command;
+    const char *command;
 
 	/*if ( gui == m_overlays.findInteractive() ) {
 		// Ensure that gui overlays are always able to execute commands,
@@ -11508,7 +11506,7 @@ CInventoryItemPtr idPlayer::AddToInventory(idEntity *ent)
 	CInventoryItemPtr returnValue = idEntity::AddToInventory(ent);
 
 	// Has this item been added to a weapon item?
-	CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(returnValue);
+	CInventoryWeaponItemPtr weaponItem = std::dynamic_pointer_cast<CInventoryWeaponItem>(returnValue);
 
 	CInventoryItemPtr prev;
 
@@ -11880,7 +11878,7 @@ void idPlayer::EnforcePersistentInventoryItemLimits()
 
 		for (int w = 0; w < weaponCategory->GetNumItems(); ++w)
 		{
-			CInventoryWeaponItemPtr weaponItem =  boost::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
+			CInventoryWeaponItemPtr weaponItem =  std::dynamic_pointer_cast<CInventoryWeaponItem>(weaponCategory->GetItem(w));
 
 			if (weaponItem->GetPersistentCount() <= 0)
 			{

@@ -21,7 +21,6 @@
 #define	_DOWNLOAD_MENU_H_
 
 #include <map>
-#include <boost/shared_ptr.hpp>
 
 // Handles mainmenu that displays list of downloadable mods/PK4 files
 class CDownloadMenu
@@ -82,6 +81,6 @@ private:
 
 	idStr GetMissionDownloadProgressString(int modIndex);
 };
-typedef boost::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
+typedef std::shared_ptr<CDownloadMenu> CDownloadMenuPtr;
 
 #endif	/* _DOWNLOAD_MENU_H_ */

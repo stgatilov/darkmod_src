@@ -106,6 +106,6 @@ private:
 	// A list of contained items (are deleted on destruction of this object).
 	idList<CInventoryItemPtr>	m_Item;
 };
-typedef boost::shared_ptr<CInventoryCategory> CInventoryCategoryPtr;
+typedef std::shared_ptr<CInventoryCategory> CInventoryCategoryPtr;
 
 #endif /* __DARKMOD_INVENTORYCATEGORY_H__ */

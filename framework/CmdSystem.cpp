@@ -216,7 +216,6 @@ idCmdSystemLocal::Exec_f
 */
 void idCmdSystemLocal::Exec_f( const idCmdArgs &args ) {
 	char *	f;
-	int		len;
 	idStr	filename;
 
 	if ( args.Argc () != 2 ) {
@@ -226,7 +225,7 @@ void idCmdSystemLocal::Exec_f( const idCmdArgs &args ) {
 
 	filename = args.Argv(1);
 	filename.DefaultFileExtension( ".cfg" );
-	len = fileSystem->ReadFile( filename, reinterpret_cast<void **>(&f), NULL );
+	fileSystem->ReadFile( filename, reinterpret_cast<void **>(&f), NULL );
 	if ( !f ) {
 		common->Printf( "Couldn't exec %s - file does not exist.\n", args.Argv(1) );
 		return;
@@ -518,10 +517,9 @@ Adds a \n to the text
 ============
 */
 void idCmdSystemLocal::InsertCommandText( const char *text ) {
-	int		len;
 	int		i;
 
-	len = strlen( text ) + 1;
+	int len = static_cast<int>(strlen( text )) + 1;
 	if ( len + textLength > (int)sizeof( textBuf ) ) {
 		common->Printf( "idCmdSystemLocal::InsertText: buffer overflow\n" );
 		return;
@@ -549,9 +547,8 @@ Adds command text at the end of the buffer, does NOT add a final \n
 ============
 */
 void idCmdSystemLocal::AppendCommandText( const char *text ) {
-	int l;
-	
-	l = strlen( text );
+		
+    int l = static_cast<int>(strlen(text));
 
 	if ( textLength + l >= (int)sizeof( textBuf ) ) {
 		common->Printf( "idCmdSystemLocal::AppendText: buffer overflow\n" );

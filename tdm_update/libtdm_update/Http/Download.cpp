@@ -26,7 +26,7 @@
 #include "../Util.h"
 #include "../Constants.h"
 
-#include <boost/bind.hpp>
+#include <functional>
 
 namespace fs = boost::filesystem;
 
@@ -100,7 +100,7 @@ void Download::Start()
 	TraceLog::WriteLine(LOG_VERBOSE, "Downloading to temporary file " + _tempFilename.string());
 
 	_status = IN_PROGRESS;
-	_thread = ThreadPtr(new boost::thread(boost::bind(&Download::Perform, this)));
+	_thread = ThreadPtr(new std::thread(std::bind(&Download::Perform, this)));
 }
 
 void Download::Stop()
@@ -161,7 +161,7 @@ void Download::EnableFilesizeCheck(bool enable)
 	_filesizeCheckEnabled = enable;
 }
 
-void Download::SetRequiredCrc(boost::uint32_t requiredCrc)
+void Download::SetRequiredCrc(uint32_t requiredCrc)
 {
 	_requiredCrc = requiredCrc;
 }
@@ -287,7 +287,7 @@ bool Download::CheckIntegrity()
 		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Checking CRC of downloaded file, expecting %x") %
 				_requiredCrc).str());
 
-		boost::uint32_t crc = CRC::GetCrcForFile(_tempFilename);
+		uint32_t crc = CRC::GetCrcForFile(_tempFilename);
 
 		if (crc != _requiredCrc)
 		{

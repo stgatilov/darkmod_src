@@ -29,7 +29,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 LRESULT CALLBACK GEScriptEdit_WndProc ( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam )
 {
-	WNDPROC wndproc = (WNDPROC) GetWindowLong ( hwnd, GWL_USERDATA );
+	WNDPROC wndproc = (WNDPROC) GetWindowLongPtr ( hwnd, GWLP_USERDATA );
 	
 	switch ( msg )
 	{
@@ -54,7 +54,7 @@ bool GEItescriptsDlg_Init ( HWND hwnd )
 	HWND				script;
 	
 	// Extract the window pointer from the win32 windows user data long
-	window = (idWindow*)GetWindowLong ( hwnd, GWL_USERDATA );
+	window = (idWindow*)GetWindowLongPtr ( hwnd, GWLP_USERDATA );
 	assert ( window );
 	
 	// Get the window wrapper of the script window
@@ -66,8 +66,8 @@ bool GEItescriptsDlg_Init ( HWND hwnd )
 
 	UINT tabsize = 16;
 	SendMessage ( script, EM_SETTABSTOPS, 1, (LPARAM)&tabsize );
-	SetWindowLong ( script, GWL_USERDATA, GetWindowLong ( script, GWL_WNDPROC ) );
-	SetWindowLong ( script, GWL_WNDPROC, (LONG) GEScriptEdit_WndProc );					
+	SetWindowLongPtr ( script, GWLP_USERDATA, GetWindowLongPtr ( script, GWLP_WNDPROC ) );
+	SetWindowLongPtr ( script, GWLP_WNDPROC, (LONG) GEScriptEdit_WndProc );					
 
 	TEXTMETRIC tm;
 	HDC dc;
@@ -131,7 +131,7 @@ bool GEItescriptsDlg_Apply ( HWND hwnd )
 	HWND				script;
 	
 	// Extract the window pointer from the win32 windows user data long
-	window = (idWindow*)GetWindowLong ( hwnd, GWL_USERDATA );
+	window = (idWindow*)GetWindowLongPtr ( hwnd, GWLP_USERDATA );
 	assert ( window );
 	
 	// Get the window wrapper of the script window
@@ -299,7 +299,7 @@ INT_PTR CALLBACK GEItescriptsDlg_WndProc ( HWND hwnd, UINT msg, WPARAM wParam, L
 	switch ( msg )
 	{
 		case WM_INITDIALOG:
-			SetWindowLong ( hwnd, GWL_USERDATA, lParam );
+			SetWindowLongPtr ( hwnd, GWLP_USERDATA, lParam );
 			GEItescriptsDlg_Init ( hwnd );
 
 			gApp.GetOptions().GetWindowPlacement ( "scripts", hwnd );

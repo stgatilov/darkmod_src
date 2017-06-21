@@ -21,9 +21,9 @@
 
 #include "HttpConnection.h"
 #include "HttpRequest.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <memory>
 #include <boost/filesystem.hpp>
+#include <thread>
 
 namespace fs = boost::filesystem;
 
@@ -81,7 +81,7 @@ protected:
 	// The corresponding HTTP request
 	HttpRequestPtr _request;
 
-	typedef boost::shared_ptr<boost::thread> ThreadPtr;
+	typedef std::shared_ptr<std::thread> ThreadPtr;
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;
@@ -125,7 +125,7 @@ public:
 	void EnableFilesizeCheck(bool enable);
 
 	// Set the required CRC for this download
-	void SetRequiredCrc(boost::uint32_t requiredCrc);
+	void SetRequiredCrc(uint32_t requiredCrc);
 
 	// Set the required filesize for this download
 	void SetRequiredFilesize(std::size_t requiredSize);
@@ -158,6 +158,6 @@ protected:
 	// Check method
 	bool CheckIntegrity();
 };
-typedef boost::shared_ptr<Download> DownloadPtr;
+typedef std::shared_ptr<Download> DownloadPtr;
 
 }

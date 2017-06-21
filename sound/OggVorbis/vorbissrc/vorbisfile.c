@@ -64,7 +64,7 @@ static long _get_data(OggVorbis_File *vf){
   errno=0;
   if(vf->datasource){
     char *buffer=ogg_sync_buffer(&vf->oy,CHUNKSIZE);
-    long bytes=(vf->callbacks.read_func)(buffer,1,CHUNKSIZE,vf->datasource);
+    long bytes = (long) (vf->callbacks.read_func)(buffer,1,CHUNKSIZE,vf->datasource);
     if(bytes>0)ogg_sync_wrote(&vf->oy,bytes);
     if(bytes==0 && errno)return(-1);
     return(bytes);

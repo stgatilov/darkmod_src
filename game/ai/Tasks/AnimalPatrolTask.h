@@ -29,7 +29,7 @@ namespace ai
 #define TASK_ANIMAL_PATROL "AnimalPatrol"
 
 class AnimalPatrolTask;
-typedef boost::shared_ptr<AnimalPatrolTask> AnimalPatrolTaskPtr;
+typedef std::shared_ptr<AnimalPatrolTask> AnimalPatrolTaskPtr;
 
 class AnimalPatrolTask :
 	public Task

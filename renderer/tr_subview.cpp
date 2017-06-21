@@ -101,7 +101,7 @@ OPTIMIZE: we could also take exact portal passing into consideration
 */
 bool R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) {
 	const srfTriangles_t *tri;
-	int numTriangles;
+    int numTriangles;
 	idPlane clip, eye;
 	unsigned int pointOr;
 	unsigned int pointAnd;
@@ -141,7 +141,7 @@ bool R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) {
 	}
 
 	// backface and frustum cull
-	numTriangles = tri->numIndexes / 3;
+    numTriangles = tri->numIndexes / 3;
 
 	R_GlobalPointToLocal( drawSurf->space->modelMatrix, tr.viewDef->renderView.vieworg, localView );
 
@@ -261,7 +261,7 @@ R_XrayViewBySurface
 */
 static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	viewDef_t		*parms;
-	orientation_t	surface, camera;
+    orientation_t	surface, camera;
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original

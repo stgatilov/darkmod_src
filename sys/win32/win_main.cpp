@@ -28,7 +28,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <direct.h>
 #include <io.h>
 #include <conio.h>
-#include <mapi.h>
 #include <ShellAPI.h>
 
 #ifndef __MRC__
@@ -57,7 +56,6 @@ idCVar Win32Vars_t::win_outputDebugString( "win_outputDebugString", "0", CVAR_SY
 idCVar Win32Vars_t::win_outputEditString( "win_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar Win32Vars_t::win_viewlog( "win_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
 idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
-idCVar Win32Vars_t::win_allowMultipleInstances( "win_allowMultipleInstances", "0", CVAR_SYSTEM | CVAR_BOOL, "allow multiple instances running concurrently" );
 
 Win32Vars_t	win32;
 
@@ -76,20 +74,30 @@ static	HANDLE		hTimer;
 Sys_Createthread
 ==================
 */
-void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count ) {
+typedef std::pair<xthread_t, void*> CreateThreadStartParams;
+DWORD WINAPI CreateThreadStartRoutine(LPVOID lpThreadParameter) {
+	auto arg = *((CreateThreadStartParams*)lpThreadParameter);
+	delete ((CreateThreadStartParams*)lpThreadParameter);
+	return arg.first(arg.second);
+}
+void Sys_CreateThread(  xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count )
+{
+	//stgatilov: it is illegal to reinterpret cdecl function as stdcall function (in 32-bit case)
+	//so we have to pass a helper function here, which would in turn call original callback
+	auto helperParam = new CreateThreadStartParams(function, parms);
 	HANDLE temp = CreateThread(	NULL,	// LPSECURITY_ATTRIBUTES lpsa,
 									0,		// DWORD cbStack,
-									(LPTHREAD_START_ROUTINE)function,	// LPTHREAD_START_ROUTINE lpStartAddr,
-									parms,	// LPVOID lpvThreadParm,
+									CreateThreadStartRoutine,	// LPTHREAD_START_ROUTINE lpStartAddr,
+									helperParam,	// LPVOID lpvThreadParm,
 									0,		//   DWORD fdwCreate,
 									&info.threadId);
-	info.threadHandle = (int) temp;
+	info.threadHandle = (intptr_t) temp;
 	if (priority == THREAD_HIGHEST) {
 		SetThreadPriority( (HANDLE)info.threadHandle, THREAD_PRIORITY_HIGHEST );		//  we better sleep enough to do this
 	} else if (priority == THREAD_ABOVE_NORMAL ) {
 		SetThreadPriority( (HANDLE)info.threadHandle, THREAD_PRIORITY_ABOVE_NORMAL );
 	}
-	info.name = name;
+    info.name = name;
 	if ( *thread_count < MAX_THREADS ) {
 		threads[(*thread_count)++] = &info;
 	} else {
@@ -123,7 +131,7 @@ Sys_GetThreadName
 ==================
 */
 const char* Sys_GetThreadName(int *index) {
-	int id = GetCurrentThreadId();
+    DWORD id = GetCurrentThreadId();
 	for( int i = 0; i < g_thread_count; i++ ) {
 		if ( id == g_threads[i]->threadId ) {
 			if ( index ) {
@@ -193,12 +201,12 @@ void Sys_TriggerEvent( int index ) {
 #ifdef DEBUG
 
 
-static unsigned int debug_total_alloc = 0;
-static unsigned int debug_total_alloc_count = 0;
-static unsigned int debug_current_alloc = 0;
-static unsigned int debug_current_alloc_count = 0;
-static unsigned int debug_frame_alloc = 0;
-static unsigned int debug_frame_alloc_count = 0;
+static size_t debug_total_alloc = 0;
+static size_t debug_total_alloc_count = 0;
+static size_t debug_current_alloc = 0;
+static size_t debug_current_alloc_count = 0;
+static size_t debug_frame_alloc = 0;
+static size_t debug_frame_alloc_count = 0;
 
 idCVar sys_showMallocs( "sys_showMallocs", "0", CVAR_SYSTEM, "" );
 
@@ -592,7 +600,7 @@ Sys_ListFiles
 int Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) {
 	idStr		search;
 	struct _finddata_t findinfo;
-	int			findhandle;
+    intptr_t	findhandle;
 	int			flag;
 
 	if ( !extension) {
@@ -739,7 +747,7 @@ namespace
 Sys_DLL_Load
 =====================
 */
-int Sys_DLL_Load( const char *dllName ) {
+uintptr_t Sys_DLL_Load(const char *dllName) {
 	HINSTANCE	libHandle;
 	libHandle = LoadLibrary( dllName );
 	if ( libHandle ) {
@@ -756,7 +764,7 @@ int Sys_DLL_Load( const char *dllName ) {
 			return 0;
 		}
 	}
-	return (int)libHandle;
+    return (uintptr_t)libHandle;
 }
 
 /*
@@ -764,7 +772,7 @@ int Sys_DLL_Load( const char *dllName ) {
 Sys_DLL_GetProcAddress
 =====================
 */
-void *Sys_DLL_GetProcAddress( int dllHandle, const char *procName ) {
+void *Sys_DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) {
 	return GetProcAddress( (HINSTANCE)dllHandle, procName ); 
 }
 
@@ -773,7 +781,7 @@ void *Sys_DLL_GetProcAddress( int dllHandle, const char *procName ) {
 Sys_DLL_Unload
 =====================
 */
-void Sys_DLL_Unload( int dllHandle ) {
+void Sys_DLL_Unload(uintptr_t dllHandle) {
 	if ( !dllHandle ) {
 		return;
 	}
@@ -900,7 +908,7 @@ void Sys_GenerateEvents( void ) {
 		char	*b;
 		int		len;
 
-		len = strlen( s ) + 1;
+        len = static_cast<int>(strlen(s) + 1);
 		b = (char *)Mem_Alloc( len );
 		strcpy( b, s );
 		Sys_QueEvent( 0, SE_CONSOLE, 0, 0, len, b );
@@ -958,7 +966,7 @@ void Sys_In_Restart_f( const idCmdArgs &args ) {
 Sys_AsyncThread
 ==================
 */
-static void Sys_AsyncThread( void *parm ) {
+static THREAD_RETURN_TYPE Sys_AsyncThread(void *parm) {
 	int		wakeNumber;
 	int		startTime;
 
@@ -988,6 +996,8 @@ static void Sys_AsyncThread( void *parm ) {
 
 		common->Async();
 	}
+
+    return (THREAD_RETURN_TYPE)0;
 }
 
 /*
@@ -1008,7 +1018,7 @@ void Sys_StartAsyncThread( void ) {
 	t.HighPart = t.LowPart = 0;
 	SetWaitableTimer( hTimer, &t, USERCMD_MSEC, NULL, NULL, TRUE );
 
-	Sys_CreateThread( (xthread_t)Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
+    Sys_CreateThread( Sys_AsyncThread, NULL, THREAD_ABOVE_NORMAL, threadInfo, "Async", g_threads,  &g_thread_count );
 
 #ifdef SET_THREAD_AFFINITY 
 	// give the async thread an affinity for the second cpu
@@ -1018,25 +1028,6 @@ void Sys_StartAsyncThread( void ) {
 	if ( !threadInfo.threadHandle ) {
 		common->Error( "Sys_StartAsyncThread: failed" );
 	}
-}
-
-/*
-================
-Sys_AlreadyRunning
-
-returns true if there is a copy of TDM running already
-================
-*/
-bool Sys_AlreadyRunning( void ) {
-#ifndef DEBUG
-	if ( !win32.win_allowMultipleInstances.GetBool() ) {
-		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "TDM" );
-		if ( ::GetLastError() == ERROR_ALREADY_EXISTS || ::GetLastError() == ERROR_ACCESS_DENIED ) {
-			return true;
-		}
-	}
-#endif
-	return false;
 }
 
 /*
@@ -1255,144 +1246,7 @@ void Win_Frame( void ) {
 	}
 }
 
-extern "C" { void _chkstk( int size ); };
-void clrstk( void );
-
-/*
-====================
-TestChkStk
-====================
-*/
-void TestChkStk( void ) {
-	int		buffer[0x1000];
-
-	buffer[0] = 1;
-}
-
-/*
-====================
-HackChkStk
-====================
-*/
-void HackChkStk( void ) {
-	DWORD	old;
-	VirtualProtect( _chkstk, 6, PAGE_EXECUTE_READWRITE, &old );
-	*(byte *)_chkstk = 0xe9;
-	*(int *)((int)_chkstk+1) = (int)clrstk - (int)_chkstk - 5;
-
-	TestChkStk();
-}
-
-/*
-====================
-GetExceptionCodeInfo
-====================
-*/
-const char *GetExceptionCodeInfo( UINT code ) {
-	switch( code ) {
-		case EXCEPTION_ACCESS_VIOLATION: return "The thread tried to read from or write to a virtual address for which it does not have the appropriate access.";
-		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED: return "The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking.";
-		case EXCEPTION_BREAKPOINT: return "A breakpoint was encountered.";
-		case EXCEPTION_DATATYPE_MISALIGNMENT: return "The thread tried to read or write data that is misaligned on hardware that does not provide alignment. For example, 16-bit values must be aligned on 2-byte boundaries; 32-bit values on 4-byte boundaries, and so on.";
-		case EXCEPTION_FLT_DENORMAL_OPERAND: return "One of the operands in a floating-point operation is denormal. A denormal value is one that is too small to represent as a standard floating-point value.";
-		case EXCEPTION_FLT_DIVIDE_BY_ZERO: return "The thread tried to divide a floating-point value by a floating-point divisor of zero.";
-		case EXCEPTION_FLT_INEXACT_RESULT: return "The result of a floating-point operation cannot be represented exactly as a decimal fraction.";
-		case EXCEPTION_FLT_INVALID_OPERATION: return "This exception represents any floating-point exception not included in this list.";
-		case EXCEPTION_FLT_OVERFLOW: return "The exponent of a floating-point operation is greater than the magnitude allowed by the corresponding type.";
-		case EXCEPTION_FLT_STACK_CHECK: return "The stack overflowed or underflowed as the result of a floating-point operation.";
-		case EXCEPTION_FLT_UNDERFLOW: return "The exponent of a floating-point operation is less than the magnitude allowed by the corresponding type.";
-		case EXCEPTION_ILLEGAL_INSTRUCTION: return "The thread tried to execute an invalid instruction.";
-		case EXCEPTION_IN_PAGE_ERROR: return "The thread tried to access a page that was not present, and the system was unable to load the page. For example, this exception might occur if a network connection is lost while running a program over the network.";
-		case EXCEPTION_INT_DIVIDE_BY_ZERO: return "The thread tried to divide an integer value by an integer divisor of zero.";
-		case EXCEPTION_INT_OVERFLOW: return "The result of an integer operation caused a carry out of the most significant bit of the result.";
-		case EXCEPTION_INVALID_DISPOSITION: return "An exception handler returned an invalid disposition to the exception dispatcher. Programmers using a high-level language such as C should never encounter this exception.";
-		case EXCEPTION_NONCONTINUABLE_EXCEPTION: return "The thread tried to continue execution after a noncontinuable exception occurred.";
-		case EXCEPTION_PRIV_INSTRUCTION: return "The thread tried to execute an instruction whose operation is not allowed in the current machine mode.";
-		case EXCEPTION_SINGLE_STEP: return "A trace trap or other single-instruction mechanism signaled that one instruction has been executed.";
-		case EXCEPTION_STACK_OVERFLOW: return "The thread used up its stack.";
-		default: return "Unknown exception";
-	}
-}
-
 int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse );
-
-/*
-====================
-_except_handler
-====================
-*/
-EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD *ExceptionRecord, void * EstablisherFrame,
-												struct _CONTEXT *ContextRecord, void * DispatcherContext ) {
-
-	static char msg[ 8192 ];
-	char FPUFlags[2048];
-
-	Sys_FPU_PrintStateFlags( FPUFlags, ContextRecord->FloatSave.ControlWord,
-										ContextRecord->FloatSave.StatusWord,
-										ContextRecord->FloatSave.TagWord,
-										ContextRecord->FloatSave.ErrorOffset,
-										ContextRecord->FloatSave.ErrorSelector,
-										ContextRecord->FloatSave.DataOffset,
-										ContextRecord->FloatSave.DataSelector );
-
-
-	sprintf( msg, 
-		"Please describe what you were doing when TDM crashed!\n"
-			"\n"
-			"-= FATAL EXCEPTION =-\n"
-			"\n"
-			"%s\n"
-			"\n"
-			"0x%x at address 0x%08x\n"
-			"\n"
-			"%s\n"
-			"\n"
-			"EAX = 0x%08x EBX = 0x%08x\n"
-			"ECX = 0x%08x EDX = 0x%08x\n"
-			"ESI = 0x%08x EDI = 0x%08x\n"
-			"EIP = 0x%08x ESP = 0x%08x\n"
-			"EBP = 0x%08x EFL = 0x%08x\n"
-			"\n"
-			"CS = 0x%04x\n"
-			"SS = 0x%04x\n"
-			"DS = 0x%04x\n"
-			"ES = 0x%04x\n"
-			"FS = 0x%04x\n"
-			"GS = 0x%04x\n"
-			"\n"
-			"%s\n",
-			com_version.GetString(),
-			ExceptionRecord->ExceptionCode,
-			ExceptionRecord->ExceptionAddress,
-			GetExceptionCodeInfo( ExceptionRecord->ExceptionCode ),
-			ContextRecord->Eax, ContextRecord->Ebx,
-			ContextRecord->Ecx, ContextRecord->Edx,
-			ContextRecord->Esi, ContextRecord->Edi,
-			ContextRecord->Eip, ContextRecord->Esp,
-			ContextRecord->Ebp, ContextRecord->EFlags,
-			ContextRecord->SegCs,
-			ContextRecord->SegSs,
-			ContextRecord->SegDs,
-			ContextRecord->SegEs,
-			ContextRecord->SegFs,
-			ContextRecord->SegGs,
-			FPUFlags
-		);
-
-	//EmailCrashReport( msg );
-	common->FatalError( msg );
-
-    // Tell the OS to restart the faulting instruction
-    return ExceptionContinueExecution;
-}
-
-#define TEST_FPU_EXCEPTIONS	/*	FPU_EXCEPTION_INVALID_OPERATION |		*/	\
-							/*	FPU_EXCEPTION_DENORMALIZED_OPERAND |	*/	\
-							/*	FPU_EXCEPTION_DIVIDE_BY_ZERO |			*/	\
-							/*	FPU_EXCEPTION_NUMERIC_OVERFLOW |		*/	\
-							/*	FPU_EXCEPTION_NUMERIC_UNDERFLOW |		*/	\
-							/*	FPU_EXCEPTION_INEXACT_RESULT |			*/	\
-								0
 
 /*
 ==================
@@ -1404,16 +1258,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	const HCURSOR hcurSave = ::SetCursor( LoadCursor( 0, IDC_WAIT ) );
 
 	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
-
-#if 0
-    DWORD handler = (DWORD)_except_handler;
-    __asm
-    {                           // Build EXCEPTION_REGISTRATION record:
-        push    handler         // Address of handler function
-        push    FS:[0]          // Address of previous handler
-        mov     FS:[0],ESP      // Install new EXECEPTION_REGISTRATION
-    }
-#endif
 
 	win32.hInstance = hInstance;
 	idStr::Copynz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
@@ -1436,14 +1280,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	_CrtSetDbgFlag( 0 );
 #endif
 
-//	Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
-	Sys_FPU_SetPrecision( FPU_PRECISION_DOUBLE_EXTENDED );
-
 	common->Init( 0, NULL, lpCmdLine );
-
-#if TEST_FPU_EXCEPTIONS != 0
-	common->Printf( Sys_FPU_GetState() );
-#endif
 
 	Sys_StartAsyncThread();
 
@@ -1477,9 +1314,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 #ifdef DEBUG
 		Sys_MemFrame();
 #endif
-
-		// set exceptions, even if some crappy syscall changes them!
-		Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
 
 #ifdef ID_ALLOW_TOOLS
 		if ( com_editors ) {
@@ -1528,42 +1362,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	// never gets here
 	return 0;
-}
-
-/*
-====================
-clrstk
-
-I tried to get the run time to call this at every function entry, but
-====================
-*/
-static int	parmBytes;
-__declspec( naked ) void clrstk( void ) {
-	// eax = bytes to add to stack
-	__asm {
-		mov		[parmBytes],eax
-        neg     eax                     ; compute new stack pointer in eax
-        add     eax,esp
-        add     eax,4
-        xchg    eax,esp
-        mov     eax,dword ptr [eax]		; copy the return address
-        push    eax
-        
-        ; clear to zero
-        push	edi
-        push	ecx
-        mov		edi,esp
-        add		edi,12
-        mov		ecx,[parmBytes]
-		shr		ecx,2
-        xor		eax,eax
-		cld
-        rep	stosd
-        pop		ecx
-        pop		edi
-        
-        ret
-	}
 }
 
 /*

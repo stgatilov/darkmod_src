@@ -37,24 +37,15 @@ public:
 	virtual double			ClockTicksPerSecond( void );
 	virtual cpuid_t			GetProcessorId( void );
 	virtual const char *	GetProcessorString( void );
-	virtual const char *	FPU_GetState( void );
-	virtual bool			FPU_StackIsEmpty( void );
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
-
-	virtual void			FPU_EnableExceptions( int exceptions );
-
-	virtual void			GetCallStack( address_t *callStack, const int callStackSize );
-	virtual const char *	GetCallStackStr( const address_t *callStack, const int callStackSize );
-	virtual const char *	GetCallStackCurStr( int depth );
-	virtual void			ShutdownSymbols( void );
 
 	virtual bool			LockMemory( void *ptr, int bytes );
 	virtual bool			UnlockMemory( void *ptr, int bytes );
 
-	virtual int				DLL_Load( const char *dllName );
-	virtual void *			DLL_GetProcAddress( int dllHandle, const char *procName );
-	virtual void			DLL_Unload( int dllHandle );
+    virtual uintptr_t		DLL_Load(const char *dllName);
+    virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName);
+    virtual void			DLL_Unload(uintptr_t dllHandle);
 	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength );
 
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down );

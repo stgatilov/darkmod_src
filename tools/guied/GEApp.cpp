@@ -116,7 +116,7 @@ bool rvGEApp::Initialize ( void )
 		return false;
 	}
 
-	SetClassLong( mMDIFrame, GCL_HICON, ( LONG )LoadIcon( win32.hInstance, MAKEINTRESOURCE( IDI_GUIED ) ) );
+	SetClassLongPtr( mMDIFrame, GCLP_HICON, ( LONG_PTR )LoadIcon( win32.hInstance, MAKEINTRESOURCE( IDI_GUIED ) ) );
 	
 	// Create the MDI window
 	CLIENTCREATESTRUCT ccs;
@@ -256,7 +256,7 @@ Main frame window procedure
 */
 LRESULT CALLBACK rvGEApp::FrameWndProc ( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	rvGEApp* app = (rvGEApp*) GetWindowLong ( hWnd, GWL_USERDATA );
+	rvGEApp* app = (rvGEApp*) GetWindowLongPtr ( hWnd, GWLP_USERDATA );
 
 	switch ( uMsg )
 	{		
@@ -341,7 +341,7 @@ LRESULT CALLBACK rvGEApp::FrameWndProc ( HWND hWnd, UINT uMsg, WPARAM wParam, LP
 
 			assert ( app );
 			
-			SetWindowLong ( hWnd, GWL_USERDATA, (LONG)app );
+			SetWindowLongPtr ( hWnd, GWLP_USERDATA, (LONG)app );
 
 			app->mMDIFrame = hWnd;
 			
@@ -378,7 +378,7 @@ MDI Child window procedure
 */
 LRESULT CALLBACK rvGEApp::MDIChildProc ( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	rvGEWorkspace* workspace = (rvGEWorkspace*)GetWindowLong ( hWnd, GWL_USERDATA );	
+	rvGEWorkspace* workspace = (rvGEWorkspace*)GetWindowLongPtr ( hWnd, GWLP_USERDATA );	
 
 	// Give the active workspace a chance to play with it
 	if ( workspace )

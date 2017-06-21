@@ -731,7 +731,7 @@ void State::OnVisualStim(idEntity* stimSource)
 		}
 
 		/* old way
-		ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(owner->GetMind()->GetState());
+		ConversationStatePtr convState = std::dynamic_pointer_cast<ConversationState>(owner->GetMind()->GetState());
 
 		if (convState != NULL)
 		{
@@ -4358,7 +4358,7 @@ void State::OnVisualStimDoor(idEntity* stimSource, idAI* owner)
 	memory.susDoorSameAsCurrentDoor = false;
 	const SubsystemPtr& subsys = owner->movementSubsystem;
 	TaskPtr task = subsys->GetCurrentTask();
-	if ( boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL )
+	if ( std::dynamic_pointer_cast<HandleDoorTask>(task) != NULL )
 	{
 		CFrobDoor* currentDoor = memory.doorRelated.currentDoor.GetEntity();
 		if ( !task->CanAbort() )
@@ -5456,7 +5456,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 		TaskPtr task = subsys->GetCurrentTask();
 
 		bool useSwitchTask = false;
-		if (boost::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL)
+		if (std::dynamic_pointer_cast<HandleElevatorTask>(task) != NULL)
 		{
 			// The current task at the front of the queue (running or not)
 			// is an elevator task.
@@ -5492,7 +5492,7 @@ void State::OnFrobDoorEncounter(CFrobDoor* frobDoor)
 			const SubsystemPtr& subsys = owner->movementSubsystem;
 			TaskPtr task = subsys->GetCurrentTask();
 
-			if (boost::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
+			if (std::dynamic_pointer_cast<HandleDoorTask>(task) != NULL)
 			{
 				// grayman #2706 - only quit this door if you're in the approaching states.
 				// otherwise, finish with this door before you move to another one.

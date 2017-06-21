@@ -29,7 +29,7 @@ namespace ai
 #define TASK_RANGED_COMBAT "RangedCombat"
 
 class RangedCombatTask;
-typedef boost::shared_ptr<RangedCombatTask> RangedCombatTaskPtr;
+typedef std::shared_ptr<RangedCombatTask> RangedCombatTaskPtr;
 
 class RangedCombatTask :
 	public CombatTask

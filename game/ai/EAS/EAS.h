@@ -26,7 +26,6 @@
 #include <set>
 #include <vector>
 #include <list>
-#include <boost/shared_ptr.hpp>
 
 #include "RouteNode.h"
 #include "RouteInfo.h"

@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_TURN "PathTurn"
 
 class PathTurnTask;
-typedef boost::shared_ptr<PathTurnTask> PathTurnTaskPtr;
+typedef std::shared_ptr<PathTurnTask> PathTurnTaskPtr;
 
 class PathTurnTask :
 	public PathTask

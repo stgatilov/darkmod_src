@@ -162,7 +162,6 @@ bool Util::DarkRadiantIsRunning()
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <boost/lexical_cast.hpp>
 
 namespace tdm
 {
@@ -170,14 +169,15 @@ namespace tdm
 namespace
 {
 	const std::string PROC_FOLDER("/proc/");
-	const std::string TDM_PROCESS_NAME("thedarkmod.x86"); // grayman - looking for tdm now instead of doom3
+	const std::string TDM_PROCESS_NAME("thedarkmod.x86"); // grayman - looking for tdm now instead of doom3 
+    const std::string TDM_PROCESS_NAME_X64("thedarkmod.x64");
 
 	bool CheckProcessFile(const std::string& name, const std::string& processName)
 	{
 		// Try to cast the filename to an integer number (=PID)
 		try
 		{
-			unsigned long pid = boost::lexical_cast<unsigned long>(name);
+			unsigned long pid = std::stoul(name);
 		
 			// Was the PID read correctly?
 			if (pid == 0)
@@ -205,7 +205,7 @@ namespace
 			// Close the file
 			cmdLineFile.close();
 		}
-		catch (const boost::bad_lexical_cast&)
+		catch (std::invalid_argument&)
 		{
 			// Cast to int failed, no PID
 		}
@@ -220,7 +220,8 @@ bool Util::TDMIsRunning()
 	// Traverse the /proc folder, this sets the flag to TRUE if the process was found
 	for (fs::directory_iterator i = fs::directory_iterator(PROC_FOLDER); i != fs::directory_iterator(); ++i)
 	{
-		if (CheckProcessFile(i->path().leaf().string(), TDM_PROCESS_NAME)) // grayman - looking for tdm now instead of doom3
+		if (CheckProcessFile(i->path().leaf().string(), TDM_PROCESS_NAME) ||
+            CheckProcessFile(i->path().leaf().string(), TDM_PROCESS_NAME_X64)) // grayman - looking for tdm now instead of doom3
 		{
 			return true;
 		}

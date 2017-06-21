@@ -221,7 +221,7 @@ private:
 	idStrList					warningList;
 	idStrList					errorList;
 
-	int							gameDLL;
+    uintptr_t					gameDLL;
 
 #ifdef ID_WRITE_VERSION
 	idCompressor *				config_compressor;
@@ -303,7 +303,7 @@ BOOL CALLBACK EnumWindowsProc( HWND hwnd, LPARAM lParam ) {
 	char buff[1024];
 
 	::GetWindowText( hwnd, buff, sizeof( buff ) );
-	if ( idStr::Icmpn( buff, EDITOR_WINDOWTEXT, strlen( EDITOR_WINDOWTEXT ) ) == 0 ) {
+    if (idStr::Icmpn(buff, EDITOR_WINDOWTEXT, static_cast<int>(strlen(EDITOR_WINDOWTEXT))) == 0) {
 		com_hwndMsg = hwnd;
 		return FALSE;
 	}
@@ -371,7 +371,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			t /= 1000;
 		}
 		sprintf( msg, "[%i]", t );
-		timeLength = strlen( msg );
+        timeLength = static_cast<int>(strlen(msg));
 	} else {
 		timeLength = 0;
 	}
@@ -442,7 +442,7 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			Printf( "log file '%s' opened on %s\n", fileName, asctime( newtime ) );
 		}
 		if ( logFile ) {
-			logFile->Write( msg, strlen( msg ) );
+            logFile->Write(msg, static_cast<int>(strlen(msg)));
 			logFile->Flush();	// ForceFlush doesn't help a whole lot
 		}
 	}
@@ -849,11 +849,10 @@ idCommonLocal::ParseCommandLine
 ==================
 */
 void idCommonLocal::ParseCommandLine( int argc, const char **argv ) {
-	int current_count;
 
 	com_numConsoleLines = 0;
-	current_count = 0;
-	// API says no program path
+	
+    // API says no program path
 	for ( int i = 0; i < argc; i++ ) {
 		if ( argv[ i ][ 0 ] == '+' ) {
 			com_numConsoleLines++;
@@ -1688,7 +1687,7 @@ void idCommonLocal::LocalizeMapData( const char *fileName, idLangDict &langDict 
 	common->SetRefreshOnPrint( true );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			common->Printf( "Processing %s\n", fileName );
 			idStr mapFileName;
@@ -1735,7 +1734,7 @@ void idCommonLocal::LocalizeGui( const char *fileName, idLangDict &langDict ) {
 	char nl = 'n';
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idFile *outFile = fileSystem->OpenFileWrite( fileName ); 
 			common->Printf( "Processing %s\n", fileName );
@@ -1824,7 +1823,7 @@ void LoadMapLocalizeData(ListHash& listHash) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idStr classname;
 			idToken token;
@@ -1858,7 +1857,7 @@ void LoadGuiParmExcludeList(idStrList& list) {
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
-		src.LoadMemory( buffer, strlen(buffer), fileName );
+        src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), fileName);
 		if ( src.IsLoaded() ) {
 			idStr classname;
 			idToken token;
@@ -2390,7 +2389,7 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	if ( !( msg && *msg ) ) {
 		return;
 	}
-	int len = strlen( msg );
+    int len = static_cast<int>(strlen(msg));
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, declManager->FindMaterial( "splashScreen" ) );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );
@@ -2467,12 +2466,6 @@ void idCommonLocal::Frame( void ) {
 
 		// set idLib frame number for frame based memory dumps
 		idLib::frameNumber = com_frameNumber;
-
-		// the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
-		if ( !Sys_FPU_StackIsEmpty() ) {
-			Printf( Sys_FPU_GetState() );
-			FatalError( "idCommon::Frame: the FPU stack is not empty at the end of the frame\n" );
-		}
 	}
 
 	catch( idException & ) {
@@ -2813,9 +2806,8 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// override cvars from command line
 		StartupVariable( NULL, false );
 
-		if ( !idAsyncNetwork::serverDedicated.GetInteger() && Sys_AlreadyRunning() ) {
-			Sys_Quit();
-		}
+        // set fpu double extended precision
+        Sys_FPU_SetPrecision();
 
 		// initialize processor specific SIMD implementation
 		InitSIMD();
@@ -2851,6 +2843,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline )
 		// greebo: Keep the console lines around, we need it when reloading the engine
 		//ClearCommandLine();
 
+        // load the persistent console history
+        console->LoadHistory();
+
 		com_fullyInitialized = true;
 	}
 
@@ -2871,6 +2866,9 @@ void idCommonLocal::Shutdown( void ) {
 
 	idAsyncNetwork::server.Kill();
 	idAsyncNetwork::client.Shutdown();
+
+    // save persistent console history
+    console->SaveHistory();
 
 	// game specific shut down
 	ShutdownGame(false);
@@ -3053,7 +3051,6 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	if ( sw ) {
 		sw->StopAllSounds();
 	}
-	soundSystem->ClearBuffer();
 
 	// shutdown the script debugger
 	// DebuggerServerShutdown();

@@ -56,14 +56,6 @@ const char *idSysLocal::GetProcessorString( void ) {
 	return Sys_GetProcessorString();
 }
 
-const char *idSysLocal::FPU_GetState( void ) {
-	return Sys_FPU_GetState();
-}
-
-bool idSysLocal::FPU_StackIsEmpty( void ) {
-	return Sys_FPU_StackIsEmpty();
-}
-
 void idSysLocal::FPU_SetFTZ( bool enable ) {
 	Sys_FPU_SetFTZ( enable );
 }
@@ -80,39 +72,25 @@ bool idSysLocal::UnlockMemory( void *ptr, int bytes ) {
 	return Sys_UnlockMemory( ptr, bytes );
 }
 
-void idSysLocal::GetCallStack( address_t *callStack, const int callStackSize ) {
-	Sys_GetCallStack( callStack, callStackSize );
-}
-
-const char * idSysLocal::GetCallStackStr( const address_t *callStack, const int callStackSize ) {
-	return Sys_GetCallStackStr( callStack, callStackSize );
-}
-
-const char * idSysLocal::GetCallStackCurStr( int depth ) {
-	return Sys_GetCallStackCurStr( depth );
-}
-
-void idSysLocal::ShutdownSymbols( void ) {
-	Sys_ShutdownSymbols();
-}
-
-int idSysLocal::DLL_Load( const char *dllName ) {
+uintptr_t idSysLocal::DLL_Load(const char *dllName) {
 	return Sys_DLL_Load( dllName );
 }
 
-void *idSysLocal::DLL_GetProcAddress( int dllHandle, const char *procName ) {
+void *idSysLocal::DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) {
 	return Sys_DLL_GetProcAddress( dllHandle, procName );
 }
 
-void idSysLocal::DLL_Unload( int dllHandle ) {
+void idSysLocal::DLL_Unload(uintptr_t dllHandle) {
 	Sys_DLL_Unload( dllHandle );
 }
 
 void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
 #ifdef _WIN32
-	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
+    // e.g. gamex64.dll
+    idStr::snPrintf(dllName, maxLength, "%s%s.dll", baseName, CPUSTRING);
 #elif defined( __linux__ )
-	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".so", baseName );
+    // e.g. gamex64.so
+    idStr::snPrintf(dllName, maxLength, "%s%s.so", baseName, CPUSTRING);
 #elif defined( MACOS_X )
 	idStr::snPrintf( dllName, maxLength, "%s" ".dylib", baseName );
 #else
@@ -138,10 +116,6 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) {
 	ev.evPtrLength = 0;
 	ev.evPtr = NULL;
 	return ev;
-}
-
-void idSysLocal::FPU_EnableExceptions( int exceptions ) {
-	Sys_FPU_EnableExceptions( exceptions );
 }
 
 /*

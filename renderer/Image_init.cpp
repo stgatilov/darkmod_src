@@ -227,6 +227,7 @@ R_AlphaRampImage
 Creates a 0-255 ramp image
 ================
 */
+#if 0
 static void R_AlphaRampImage( idImage *image ) {
 	byte	data[256][4];
 
@@ -240,7 +241,7 @@ static void R_AlphaRampImage( idImage *image ) {
 	image->GenerateImage( (byte *)data, 256, 1, 
 		TF_NEAREST, false, TR_CLAMP, TD_HIGH_QUALITY );
 }
-
+#endif
 
 /*
 ==================
@@ -380,6 +381,7 @@ static void R_RGBA8Image( idImage *image ) {
 		TF_DEFAULT, false, TR_REPEAT, TD_HIGH_QUALITY );
 }
 
+#if 0
 static void R_RGB8Image( idImage *image ) {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
@@ -392,6 +394,7 @@ static void R_RGB8Image( idImage *image ) {
 	image->GenerateImage( (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, 
 		TF_DEFAULT, false, TR_REPEAT, TD_HIGH_QUALITY );
 }
+#endif
 
 static void R_AlphaNotchImage( idImage *image ) {
 	byte	data[2][4];
@@ -447,7 +450,7 @@ static void R_AmbientNormalImage( idImage *image ) {
 	image->GenerateCubeImage( pics, 2, TF_DEFAULT, true, TD_HIGH_QUALITY );
 }
 
-
+#if 0
 static void CreateSquareLight( void ) {
 	byte		*buffer;
 	int			dx, dy;
@@ -517,7 +520,7 @@ static void CreateFlashOff( void ) {
 
 	R_StaticFree( buffer );
 }
-
+#endif
 
 /*
 ===============
@@ -618,6 +621,9 @@ static void getCubeVector(int i, int cubesize, int x, int y, float *vector) {
 		vector[1] = -tc;
 		vector[2] = -1.0f;
 		break;
+    default:
+        common->Error("getCubeVector: invalid cube map face index");
+        return;
 	}
 
 	const float mag = idMath::InvSqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
@@ -633,7 +639,7 @@ static void getCubeVector(int i, int cubesize, int x, int y, float *vector) {
  * access the cube map.
  */
 static void makeNormalizeVectorCubeMap( idImage *image ) {
-	float	vector[3];
+	float vector[3] = { };
 	byte	*pixels[6];
 
 	const int size = NORMAL_MAP_SIZE;

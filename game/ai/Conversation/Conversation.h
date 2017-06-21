@@ -148,7 +148,7 @@ private:
 	// Helper function to parse the properties from the spawnargs
 	void InitFromSpawnArgs(const idDict& dict, int index);
 };
-typedef boost::shared_ptr<Conversation> ConversationPtr;
+typedef std::shared_ptr<Conversation> ConversationPtr;
 
 } // namespace ai
 

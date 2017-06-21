@@ -26,7 +26,7 @@ void SCR_DrawTextLeftAlign ( int &y, const char *text, ... ) id_attribute((forma
 void SCR_DrawTextRightAlign( int &y, const char *text, ... ) id_attribute((format(printf,2,3)));
 
 
-#define CONSOLE_POOL			(524288/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
+#define CONSOLE_POOL			(2097152/8) // PoT / sizeof(char) - while sizeof works in most preprocs, we cant assume that
 #define	LINE_WIDTH				(SCREEN_WIDTH / SMALLCHAR_WIDTH -1) // if there are more chars than space to display, they will not wrap
 #define	TOTAL_LINES				(CONSOLE_POOL / LINE_WIDTH) // number of lines in the console buffer
 #define	CON_TEXTSIZE			(TOTAL_LINES * LINE_WIDTH)
@@ -81,6 +81,9 @@ private:
 	void				Scroll();
 	void				SetDisplayFraction( float frac );
 	void				UpdateDisplayFraction( void );
+
+    virtual void		SaveHistory();
+    virtual void		LoadHistory();
 
 	//============================
 
@@ -198,7 +201,7 @@ int SCR_DrawFPS( int y ) {
 
 	s = va( "%ifps", fps );
 
-	renderSystem->DrawBigStringExt( SCREEN_WIDTH - (strlen( s )*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
+    renderSystem->DrawBigStringExt(SCREEN_WIDTH - static_cast<int>(strlen(s)*BIGCHAR_WIDTH), y + 2, s, colorWhite, true, localConsole.charSetShader);
 
 	return (y + BIGCHAR_HEIGHT + 4);
 }
@@ -518,10 +521,44 @@ void idConsoleLocal::Dump( const char *fileName, const bool unwrap ) {
 			buffer[x+2] = '\n';
 			buffer[x+3] = 0;
 		}
-		f->Write( buffer, strlen( buffer ) );
+        f->Write(buffer, static_cast<int>(strlen(buffer)));
 	}
 
 	fileSystem->CloseFile( f );
+}
+
+void idConsoleLocal::SaveHistory()
+{
+    idFile *f = fileSystem->OpenFileWrite("consolehistory.dat");
+    for (int i = 0; i < COMMAND_HISTORY; ++i) {
+        // make sure the history is in the right order
+        int line = (nextHistoryLine + i) % COMMAND_HISTORY;
+        const char *s = historyEditLines[line].GetBuffer();
+        if (s && s[0]) {
+            f->WriteString(s);
+        }
+    }
+    fileSystem->CloseFile(f);
+}
+
+void idConsoleLocal::LoadHistory()
+{
+    idFile *f = fileSystem->OpenFileRead("consolehistory.dat");
+    if (f == NULL) // file doesn't exist
+        return;
+
+    historyLine = 0;
+    idStr tmp;
+    for (int i = 0; i < COMMAND_HISTORY; ++i) {
+        if (f->Tell() >= f->Length()) {
+            break; // EOF is reached
+        }
+        f->ReadString(tmp);
+        historyEditLines[i].SetBuffer(tmp.c_str());
+        ++historyLine;
+    }
+    nextHistoryLine = historyLine;
+    fileSystem->CloseFile(f);
 }
 
 /*
@@ -604,10 +641,17 @@ void idConsoleLocal::KeyDownEvent( int key ) {
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, consoleField.GetBuffer() ); // valid command
 		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "\n" );
 
-		// copy line to history buffer
-		historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField;
-		nextHistoryLine++;
-		historyLine = nextHistoryLine;
+        // copy line to history buffer, if it isn't the same as the last command
+        if (idStr::Cmp(consoleField.GetBuffer(),
+            historyEditLines[(nextHistoryLine + COMMAND_HISTORY - 1) % COMMAND_HISTORY].GetBuffer()) != 0)
+        {
+            historyEditLines[nextHistoryLine % COMMAND_HISTORY] = consoleField;
+            nextHistoryLine++;
+        }
+
+        historyLine = nextHistoryLine;
+        // clear the next line from old garbage, else the oldest history entry turns up when pressing DOWN
+        historyEditLines[nextHistoryLine % COMMAND_HISTORY].Clear();
 
 		consoleField.Clear();
 		consoleField.SetWidthInChars( LINE_WIDTH );
@@ -965,7 +1009,7 @@ void idConsoleLocal::DrawInput() {
 	const int y = vislines - ( SMALLCHAR_HEIGHT * 2 );
 
 	if ( consoleField.GetAutoCompleteLength() != 0 ) {
-		const int autoCompleteLength = strlen( consoleField.GetBuffer() ) - consoleField.GetAutoCompleteLength();
+        const int autoCompleteLength = static_cast<int>(strlen(consoleField.GetBuffer())) - consoleField.GetAutoCompleteLength();
 
 		if ( autoCompleteLength > 0 ) {
 			renderSystem->SetColor4( 0.8f, 0.2f, 0.2f, 0.45f );

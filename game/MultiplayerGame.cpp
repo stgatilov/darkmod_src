@@ -1478,12 +1478,7 @@ void idMultiplayerGame::UpdateMainGui( void ) {
 		mainGui->SetStateString( keyval->GetKey(), keyval->GetValue() );
 	}
 	mainGui->StateChanged( gameLocal.time );
-#if defined( __linux__ )
-	// replacing the oh-so-useful s_reverse with sound backend prompt
-	mainGui->SetStateString( "driver_prompt", "1" );
-#else
 	mainGui->SetStateString( "driver_prompt", "0" );
-#endif
 }
 
 /*
@@ -2172,7 +2167,7 @@ void idMultiplayerGame::PlayGlobalSound( int to, snd_evt_t evt, const char *shad
 				return;
 			}
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_SOUND_INDEX );
-			outMsg.WriteLong( gameLocal.ServerRemapDecl( to, DECL_SOUND, shaderDecl->Index() ) );
+			outMsg.WriteInt( gameLocal.ServerRemapDecl( to, DECL_SOUND, shaderDecl->Index() ) );
 		} else {
 			outMsg.WriteByte( GAME_RELIABLE_MESSAGE_SOUND_EVENT );
 			outMsg.WriteByte( evt );
@@ -2794,7 +2789,7 @@ void idMultiplayerGame::ServerCallVote( int clientNum, const idBitMsg &msg ) {
 			}
 			int				num = fileSystem->GetNumMaps();
 			int				i;
-			const idDict	*dict;
+			const idDict	*dict = NULL;
 			bool			haveMap = false;
 			for ( i = 0; i < num; i++ ) {
 				dict = fileSystem->GetMapDecl( i );

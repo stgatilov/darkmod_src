@@ -506,7 +506,7 @@ int idBitMsg::ReadDeltaByteCounter( int oldValue ) const {
 		return oldValue;
 	}
 	newValue = ReadBits( i );
-	return ( oldValue & ~( ( 1 << i ) - 1 ) | newValue );
+	return ( (oldValue & ~( ( 1 << i ) - 1 ) ) | newValue );
 }
 
 /*
@@ -522,7 +522,7 @@ int idBitMsg::ReadDeltaShortCounter( int oldValue ) const {
 		return oldValue;
 	}
 	newValue = ReadBits( i );
-	return ( oldValue & ~( ( 1 << i ) - 1 ) | newValue );
+	return ( (oldValue & ~( ( 1 << i ) - 1 ) ) | newValue );
 }
 
 /*
@@ -538,7 +538,7 @@ int idBitMsg::ReadDeltaLongCounter( int oldValue ) const {
 		return oldValue;
 	}
 	newValue = ReadBits( i );
-	return ( oldValue & ~( ( 1 << i ) - 1 ) | newValue );
+	return ( ( oldValue & ~( ( 1 << i ) - 1 ) ) | newValue );
 }
 
 /*

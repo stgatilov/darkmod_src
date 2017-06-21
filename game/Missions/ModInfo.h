@@ -21,10 +21,9 @@
 #define _MOD_INFO_H_
 
 #include "precompiled_game.h"
-#include <boost/shared_ptr.hpp>
 
 class CModInfoDecl;
-typedef boost::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
+typedef std::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
 
 class CModInfo
 {
@@ -123,6 +122,6 @@ public:
 	// grayman #3733
 	void	GetMissionTitles(idStr missionTitles);
 };
-typedef boost::shared_ptr<CModInfo> CModInfoPtr;
+typedef std::shared_ptr<CModInfo> CModInfoPtr;
 
 #endif /* _MOD_INFO_H_ */

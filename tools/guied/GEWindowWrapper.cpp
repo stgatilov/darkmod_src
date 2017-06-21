@@ -536,7 +536,7 @@ the finish method is called to finish up any last details
 bool rvGEWindowWrapper::VerfiyStateKey( const char *name,const char *value,idStr *result ) {
 	idStr old;
 	bool failed;
-	idParser src(value, strlen(value), "", LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
+    idParser src(value, static_cast<int>(strlen(value)), "", LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT);
 
 	// Save the current value
 	old = mState.GetString(name);

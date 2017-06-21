@@ -11,9 +11,9 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 5121 $ (Revision of last commit) 
- $Date: 2011-12-11 20:12:26 +0100 (So, 11 Dez 2011) $ (Date of last commit)
- $Author: greebo $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 
@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_SET_MOVETYPE "PathSetMovetype"
 
 class PathSetMovetypeTask;
-typedef boost::shared_ptr<PathSetMovetypeTask> PathSetMovetypeTaskPtr;
+typedef std::shared_ptr<PathSetMovetypeTask> PathSetMovetypeTaskPtr;
 
 class PathSetMovetypeTask :
 	public PathTask

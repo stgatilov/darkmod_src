@@ -21,7 +21,6 @@
 #define _MOD_INFO_DECL_H_
 
 #include "precompiled_game.h"
-#include <boost/shared_ptr.hpp>
 
 class CModInfoDecl
 {
@@ -44,6 +43,6 @@ public:
 
 	static const char* const TYPE_NAME;
 };
-typedef boost::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
+typedef std::shared_ptr<CModInfoDecl> CModInfoDeclPtr;
 
 #endif /* _MOD_INFO_DECL_H_ */

@@ -11,16 +11,16 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 6097 $ (Revision of last commit) 
- $Date: 2014-09-07 14:53:08 -0400 (Sun, 07 Sep 2014) $ (Date of last commit)
- $Author: grayman $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id: SearchManager.cpp 6097 2014-09-07 18:53:08Z grayman $");
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "Game_local.h"
 #include "SearchManager.h"
@@ -1789,7 +1789,7 @@ void CSearchManager::Save(idSaveGame* savefile)
 		search->_hidingSpots.Save(savefile);
 		savefile->WriteBool(search->_hidingSpotsReady);
 
-		int num = search->_hidingSpotIndexes.size();
+		int num = static_cast<int>(search->_hidingSpotIndexes.size());
 		savefile->WriteInt(num);
 		for ( int j = 0 ; j < num ; j++ )
 		{

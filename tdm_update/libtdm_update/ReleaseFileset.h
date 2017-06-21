@@ -20,7 +20,6 @@
 #pragma once
 
 #include <boost/filesystem.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "IniFile.h"
 #include "CRC.h"
@@ -38,7 +37,7 @@ struct ReleaseFile
 	boost::filesystem::path file;
 
 	// CRC32 checksum
-	boost::uint32_t	crc;
+	uint32_t	crc;
 
 	// The file size in bytes
 	std::size_t	filesize;
@@ -66,7 +65,7 @@ struct ReleaseFile
 		downloadId(-1)
 	{}
 
-	ReleaseFile(const boost::filesystem::path& pathToFile, boost::uint32_t crc_) :
+	ReleaseFile(const boost::filesystem::path& pathToFile, uint32_t crc_) :
 		isArchive(false),
 		file(pathToFile),
 		crc(crc_),
@@ -162,7 +161,7 @@ public:
 						ReleaseFileSet::value_type(filename, ReleaseFile(filename)));
 					
 					result.first->second.crc = CRC::ParseFromString(iniFile.GetValue(section, "crc"));
-					result.first->second.filesize = boost::lexical_cast<std::size_t>(iniFile.GetValue(section, "size"));
+					result.first->second.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(section, "size")));
 
 					if (boost::algorithm::iends_with(filename, "pk4") || 
 						boost::algorithm::iends_with(filename, "zip"))
@@ -191,7 +190,7 @@ public:
 
 					member.isArchive = false;
 					member.crc = CRC::ParseFromString(iniFile.GetValue(section, "crc"));
-					member.filesize = boost::lexical_cast<std::size_t>(iniFile.GetValue(section, "size"));
+                    member.filesize = static_cast<std::size_t>(std::stoul(iniFile.GetValue(section, "size")));
 
 					result.first->second.members.insert(member);
 				}

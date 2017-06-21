@@ -51,15 +51,18 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
 
-#include "randomizer/randomc.h"
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <chrono>
 #include <iostream>
 
+#ifdef max
+#undef max
+#endif
+
 CGlobal g_Global;
-TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd(time(0));
 
 extern CMissionData		g_MissionData;
 extern CsndPropLoader	g_SoundPropLoader;
@@ -351,6 +354,7 @@ void idGameLocal::Clear( void )
 
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
+    randomMt.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 	world = NULL;
 	frameCommandThread = NULL;
 	testmodel = NULL;
@@ -510,9 +514,10 @@ void idGameLocal::Init( void ) {
 #endif
 
 	Printf( "--------- Initializing Game ----------\n" );
-	Printf( "%s %d.%02d, code revision %d\n", 
+	Printf( "%s %d.%02d, %s, code revision %d\n", 
 		GAME_VERSION, 
 		TDM_VERSION_MAJOR, TDM_VERSION_MINOR, 
+        BUILD_STRING,
 		RevisionTracker::Instance().GetHighestRevision() 
 	);
 	Printf( "Build date: %s\n", __DATE__ );
@@ -1503,7 +1508,7 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 	if (loadingGUI != NULL )
 	{
 		// Use our own randomizer, the gameLocal.random one is not yet initialised
-		loadingGUI->SetStateFloat("random_value", static_cast<float>(rnd.Random()));
+		loadingGUI->SetStateFloat("random_value", static_cast<float>(randomMt()) / randomMt.max());
 		// #2807: Allow GUI scripts to distinguish between a quickload and a full load, so 
 		// they can choose to show only short messages. 
 		loadingGUI->SetStateBool("quickloading", sameAsPrevMap);
@@ -3554,11 +3559,7 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	float	ratio_y;
 	float	ratio_fov;
 
-	if ( !sys->FPU_StackIsEmpty() ) {
-		Printf( sys->FPU_GetState() );
-		Error( "idGameLocal::CalcFov: FPU stack not empty" );
-	}
-
+   
 	// first, calculate the vertical fov based on a 640x480 view
 	x = 640.0f / tan( base_fov / 360.0f * idMath::PI );
 	y = atan2( 480.0f, x );
@@ -3567,7 +3568,7 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	// FIXME: somehow, this is happening occasionally
 	assert( fov_y > 0 );
 	if ( fov_y <= 0 ) {
-		Printf( sys->FPU_GetState() );
+       
 		Error( "idGameLocal::CalcFov: bad result" );
 	}
 
@@ -3623,7 +3624,7 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 	// FIXME: somehow, this is happening occasionally
 	assert( ( fov_x > 0 ) && ( fov_y > 0 ) );
 	if ( ( fov_y <= 0 ) || ( fov_x <= 0 ) ) {
-		Printf( sys->FPU_GetState() );
+    
 		Error( "idGameLocal::CalcFov: bad result" );
 	}
 }
@@ -5638,7 +5639,7 @@ int idGameLocal::GetTargets( const idDict &args, idList< idEntityPtr<idEntity> >
 
 	list.Clear();
 
-	refLength = strlen( ref );
+	refLength = static_cast<int>(strlen( ref ));
 	num = args.GetNumKeyVals();
 	for( i = 0; i < num; i++ ) {
 
@@ -5667,7 +5668,7 @@ int idGameLocal::GetRelights( const idDict &args, idList< idEntityPtr<idEntity> 
 	const idKeyValue *arg;
 	idEntity *ent;
 
-	refLength = strlen(ref);
+    refLength = static_cast<int>(strlen(ref));
 	num = args.GetNumKeyVals();
 	for (i = 0 ; i < num ; i++)
 	{

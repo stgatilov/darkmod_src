@@ -116,7 +116,7 @@ private:
 
 	void Wrapup(idAI* owner);
 };
-typedef boost::shared_ptr<ConversationState> ConversationStatePtr;
+typedef std::shared_ptr<ConversationState> ConversationStatePtr;
 
 } // namespace ai
 

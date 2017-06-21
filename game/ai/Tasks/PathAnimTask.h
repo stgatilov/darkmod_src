@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_ANIM "PathAnim"
 
 class PathAnimTask;
-typedef boost::shared_ptr<PathAnimTask> PathAnimTaskPtr;
+typedef std::shared_ptr<PathAnimTask> PathAnimTaskPtr;
 
 class PathAnimTask :
 	public PathTask

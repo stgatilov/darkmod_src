@@ -2095,7 +2095,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteInt(team);
 
-	savefile->WriteInt(m_EntityRelations.size());
+    savefile->WriteInt(static_cast<int>(m_EntityRelations.size()));
 	for (EntityRelationsMap::const_iterator i = m_EntityRelations.begin(); i != m_EntityRelations.end(); ++i)
 	{
 		savefile->WriteObject(i->first);
@@ -2162,7 +2162,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	for( int i=0; i < m_Attachments.Num(); i++ )
 		m_Attachments[i].Save( savefile );
 
-	savefile->WriteInt( m_AttNameMap.size() );
+    savefile->WriteInt(static_cast<int>(m_AttNameMap.size()));
 	for ( AttNameMap::const_iterator k = m_AttNameMap.begin();
          k != m_AttNameMap.end(); ++k )
     {
@@ -2216,7 +2216,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 	savefile->WriteVec3( m_LastRestPos ); // grayman #3992
 
 	// SteveL #3817: make decals persistent
-	savefile->WriteInt( decals_list.size() );
+    savefile->WriteInt(static_cast<int>(decals_list.size()));
 	for ( std::list<SDecalInfo>::const_iterator i = decals_list.begin(); i != decals_list.end(); ++i )
 	{
 		savefile->WriteString( i->decal );
@@ -4470,7 +4470,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.BeginWriting();
-		msg.WriteLong( gameLocal.ServerRemapDecl( -1, DECL_SOUND, shader->Index() ) );
+		msg.WriteInt( gameLocal.ServerRemapDecl( -1, DECL_SOUND, shader->Index() ) );
 		msg.WriteByte( channel );
 		ServerSendEvent( EVENT_STARTSOUNDSHADER, &msg, false, -1 );
 	}
@@ -5991,7 +5991,7 @@ idEntity::RunPhysics
 bool idEntity::RunPhysics( void ) {
 	int			i, reachedTime, startTime, endTime;
 	idEntity *	part, *blockedPart, *blockingEntity(NULL);
-	trace_t		results;
+    trace_t		results;
 	bool		moved;
 
 	// don't run physics if not enabled
@@ -6966,7 +6966,7 @@ bool idEntity::HandleGuiCommands( idEntity *entityGui, const char *cmds ) {
 	if ( entityGui && cmds && *cmds ) {
 		idLexer src;
 		idToken token, token2, token3, token4;
-		src.LoadMemory( cmds, strlen( cmds ), "guiCommands" );
+        src.LoadMemory(cmds, static_cast<int>(strlen(cmds)), "guiCommands");
 		while( 1 ) {
 
 			if ( !src.ReadToken( &token ) ) {
@@ -7328,7 +7328,7 @@ idCurve_Spline<idVec3> *idEntity::GetSpline( void ) const {
 		return NULL;
 	}
 
-	idStr str = kv->GetKey().Right( kv->GetKey().Length() - strlen( curveTag ) );
+    idStr str = kv->GetKey().Right(kv->GetKey().Length() - static_cast<int>(strlen(curveTag)));
 	if ( str.Icmp( "CatmullRomSpline" ) == 0 ) {
 		spline = new idCurve_CatmullRomSpline<idVec3>();
 	} else if ( str.Icmp( "nubs" ) == 0 ) {

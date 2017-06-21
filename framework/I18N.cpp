@@ -359,7 +359,7 @@ int I18NLocal::LoadCharacterMapping( idStr& lang ) {
 		return 0;
 	}
 	
-	src.LoadMemory( buffer, strlen( buffer ), file );
+    src.LoadMemory(buffer, static_cast<int>(strlen(buffer)), file);
 	if ( !src.IsLoaded() ) {
 		common->Warning("I18N: Cannot load character remapping %s.", file.c_str() );
 		return 0;

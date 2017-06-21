@@ -75,7 +75,7 @@ void CDownload::Start()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Downloading to temporary file %s.\r", _tempFilename.c_str());
 
 	_status = IN_PROGRESS;
-	_thread = ThreadPtr(new boost::thread(boost::bind(&CDownload::Perform, this)));
+	_thread = ThreadPtr(new std::thread(boost::bind(&CDownload::Perform, this)));
 }
 
 void CDownload::Stop(bool canceled)

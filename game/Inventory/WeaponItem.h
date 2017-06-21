@@ -131,6 +131,6 @@ public:
 	// Override CInventoryItem::RestoreItemEntityFromDict, don't do anything but clear the saved dict
 	virtual void RestoreItemEntityFromDict(const idVec3& entPosition);
 };
-typedef boost::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
+typedef std::shared_ptr<CInventoryWeaponItem> CInventoryWeaponItemPtr;
 
 #endif /* __DARKMOD_INVENTORYWEAPONITEM_H__ */

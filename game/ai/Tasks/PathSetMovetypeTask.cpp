@@ -11,16 +11,16 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 5292 $ (Revision of last commit) 
- $Date: 2012-02-23 17:17:34 +0100 (Do, 23 Feb 2012) $ (Date of last commit)
- $Author: grayman $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 
 #include "precompiled_game.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id: PathSetMovetypeTask.cpp 5292 2012-02-23 16:17:34Z grayman $");
+static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "../Memory.h"
 #include "PathSetMovetypeTask.h"

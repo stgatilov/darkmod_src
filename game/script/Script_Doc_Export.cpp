@@ -69,7 +69,7 @@ namespace
 		}
 
 		const char* argFormat = ev.GetArgFormat();
-		int numArgs = strlen(argFormat);
+        int numArgs = static_cast<int>(strlen(argFormat));
 
 		// Check if any of the argument types is invalid before allocating anything
 		for (int arg = 0; arg < numArgs; ++arg)
@@ -462,5 +462,5 @@ void ScriptEventDocGeneratorXml::WriteDoc(idFile& out)
 	std::stringstream stream;
 	doc.save(stream);
 
-	out.Write(stream.str().c_str(), stream.str().length());
+    out.Write(stream.str().c_str(), static_cast<int>(stream.str().length()));
 }

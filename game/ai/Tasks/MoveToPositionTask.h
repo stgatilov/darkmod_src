@@ -31,7 +31,7 @@ namespace ai
 #define DEFAULT_ENTITY_REACH_DISTANCE 50.0f
 
 class MoveToPositionTask;
-typedef boost::shared_ptr<MoveToPositionTask> MoveToPositionTaskPtr;
+typedef std::shared_ptr<MoveToPositionTask> MoveToPositionTaskPtr;
 
 class MoveToPositionTask :
 	public Task

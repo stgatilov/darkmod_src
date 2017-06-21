@@ -630,7 +630,7 @@ void CLightDlg::LoadLightTextures() {
 		mat = declManager->MaterialByIndex(i, false);
 		idStr str = mat->GetName();
 		str.ToLower();
-		if (str.Icmpn("lights/", strlen("lights/")) == 0 || str.Icmpn("fogs/", strlen("fogs/")) == 0) {
+        if (str.Icmpn("lights/", static_cast<int>(strlen("lights/"))) == 0 || str.Icmpn("fogs/", static_cast<int>(strlen("fogs/"))) == 0) {
 			m_wndLights.AddString(mat->GetName());
 		}
 	}

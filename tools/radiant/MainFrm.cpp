@@ -707,7 +707,7 @@ static UINT indicators[] = {
  =======================================================================================================================
  =======================================================================================================================
  */
-void CMainFrame::OnDisplayChange(UINT wParam, long lParam) {
+void CMainFrame::OnDisplayChange(WPARAM wParam, LPARAM lp) {
 	int n = wParam;
 }
 
@@ -993,7 +993,7 @@ void CMainFrame::ShowMenuItemKeyBindings(CMenu *pMenu) {
 		MenuItemInfo.fMask = MIIM_TYPE;
 		MenuItemInfo.fType = MFT_STRING;
 		MenuItemInfo.dwTypeData = key;
-		MenuItemInfo.cch = strlen(key);
+        MenuItemInfo.cch = static_cast<UINT>(strlen(key));
 		SetMenuItemInfo(pMenu->m_hMenu, g_Commands[i].m_nCommand, FALSE, &MenuItemInfo);
 	}
 }
@@ -1186,7 +1186,7 @@ void FindReplace(CString& strContents, const char* pTag, const char* pValue) {
 	if (strcmp(pTag, pValue) == 0)
 		return;
 	for (int nPos = strContents.Find(pTag); nPos >= 0; nPos = strContents.Find(pTag)) {
-		int nRightLen = strContents.GetLength() - strlen(pTag) - nPos;
+        int nRightLen = strContents.GetLength() - static_cast<int>(strlen(pTag)) - nPos;
 		CString strLeft = strContents.Left(nPos);
 		CString strRight = strContents.Right(nRightLen);
 		strLeft += pValue;
@@ -1392,7 +1392,7 @@ bool MouseDown() {
  =======================================================================================================================
  */
 
-void CMainFrame::OnTimer(UINT nIDEvent) {
+void CMainFrame::OnTimer(UINT_PTR nIDEvent) {
 	static bool autoSavePending = false;
 
 	if ( nIDEvent == QE_TIMER0 && !MouseDown() ) {
@@ -2143,7 +2143,7 @@ void RunBsp (const char *command) {
 		in = name;
 	}
 
-	if (idStr::Icmpn(command, "bspext", strlen("runbsp")) == 0) {
+    if (idStr::Icmpn(command, "bspext", static_cast<int>(strlen("runbsp"))) == 0) {
 		PROCESS_INFORMATION ProcessInformation;
 		STARTUPINFO	startupinfo;
 		char buff[2048];

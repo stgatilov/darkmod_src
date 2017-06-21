@@ -824,7 +824,7 @@ void idThread::KillThread( const char *name ) {
 	if ( ptr ) {
 		len = ptr - name;
 	} else {
-		len = strlen( name );
+        len = static_cast<int>(strlen(name));
 	}
 
 	// kill only those threads whose name matches name
@@ -1137,9 +1137,6 @@ idThread::Event_TerminateThread
 ================
 */
 void idThread::Event_TerminateThread( int num ) {
-	idThread *thread;
-
-	thread = GetThread( num );
 	KillThread( num );
 }
 
@@ -1889,9 +1886,8 @@ idThread::Event_StrLen
 ================
 */
 void idThread::Event_StrLen( const char *string ) {
-	int len;
-
-	len = strlen( string );
+	
+    int len = static_cast<int>(strlen(string));
 	idThread::ReturnInt( len );
 }
 
@@ -1901,14 +1897,13 @@ idThread::Event_StrLeft
 ================
 */
 void idThread::Event_StrLeft( const char *string, int num ) {
-	int len;
 
 	if ( num < 0 ) {
 		idThread::ReturnString( "" );
 		return;
 	}
 
-	len = strlen( string );
+    int len = static_cast<int>(strlen(string));
 	if ( len < num ) {
 		idThread::ReturnString( string );
 		return;
@@ -1924,14 +1919,13 @@ idThread::Event_StrRight
 ================
 */
 void idThread::Event_StrRight( const char *string, int num ) {
-	int len;
 
 	if ( num < 0 ) {
 		idThread::ReturnString( "" );
 		return;
 	}
 
-	len = strlen( string );
+    int len = static_cast<int>(strlen(string));
 	if ( len < num ) {
 		idThread::ReturnString( string );
 		return;
@@ -1946,14 +1940,13 @@ idThread::Event_StrSkip
 ================
 */
 void idThread::Event_StrSkip( const char *string, int num ) {
-	int len;
 
 	if ( num < 0 ) {
 		idThread::ReturnString( string );
 		return;
 	}
 
-	len = strlen( string );
+    int len = static_cast<int>(strlen(string));
 	if ( len < num ) {
 		idThread::ReturnString( "" );
 		return;
@@ -1968,7 +1961,6 @@ idThread::Event_StrMid
 ================
 */
 void idThread::Event_StrMid( const char *string, int start, int num ) {
-	int len;
 
 	if ( num < 0 ) {
 		idThread::ReturnString( "" );
@@ -1978,7 +1970,7 @@ void idThread::Event_StrMid( const char *string, int start, int num ) {
 	if ( start < 0 ) {
 		start = 0;
 	}
-	len = strlen( string );
+    int len = static_cast<int>(strlen(string));
 	if ( start > len ) {
 		start = len;
 	}
@@ -1997,11 +1989,9 @@ idThread::Event_StrRemove
 ================
 */
 void idThread::Event_StrRemove( const char *string, const char *remove ) {
-	int slen;
-	int rlen;
-
-	slen = strlen( string );
-	rlen = strlen( remove );
+	
+    int slen = static_cast<int>(strlen(string));
+    int rlen = static_cast<int>(strlen(remove));
 	// nothing to replace (slen==0), remove longer than input string, or remove empty?
 	if ( slen < rlen || rlen == 0 ) {
 		ReturnString( string );
@@ -2020,11 +2010,9 @@ idThread::Event_StrReplace
 ================
 */
 void idThread::Event_StrReplace( const char *string, const char *remove, const char *replace ) {
-	int slen;
-	int rlen;
-
-	slen = strlen( string );
-	rlen = strlen( remove );
+	
+	int slen = static_cast<int>(strlen( string ));
+	int rlen = static_cast<int>(strlen( remove ));
 	// nothing to replace (slen==0), remove longer than input string, or remove empty?
 	if ( slen < rlen || rlen == 0 ) {
 		ReturnString( string );
@@ -2043,8 +2031,8 @@ idThread::Event_StrFind
 ================
 */
 void idThread::Event_StrFind( const char *string, const char *find, const int mcasesensitive, const int mstart, const int mend ) {
-	const int slen = strlen( string );
-	const int flen = strlen( find );
+	const int slen = static_cast<int>(strlen( string ));
+	const int flen = static_cast<int>(strlen( find ));
 
 	// avoid FindText() calling strlen again
 	// mend == -1 => go to the end

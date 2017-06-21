@@ -1425,19 +1425,19 @@ void idAsyncClient::SetupConnection( void ) {
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 		msg.WriteString( "challenge" );
-		msg.WriteLong( clientId );
+		msg.WriteInt( clientId );
 		clientPort.SendPacket( serverAddress, msg.GetData(), msg.GetSize() );
 	} else if ( clientState == CS_CONNECTING ) {
 		common->Printf( "sending connect to %s with challenge 0x%x\n", Sys_NetAdrToString( serverAddress ), serverChallenge );
 		msg.Init( msgBuf, sizeof( msgBuf ) );
 		msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 		msg.WriteString( "connect" );
-		msg.WriteLong( ASYNC_PROTOCOL_VERSION );
+		msg.WriteInt( ASYNC_PROTOCOL_VERSION );
 		msg.WriteShort( BUILD_OS_ID ); // 0 to fake win32
-		msg.WriteLong( clientDataChecksum );
-		msg.WriteLong( serverChallenge );
+		msg.WriteInt( clientDataChecksum );
+		msg.WriteInt( serverChallenge );
 		msg.WriteShort( clientId );
-		msg.WriteLong( cvarSystem->GetCVarInteger( "net_clientMaxRate" ) );
+		msg.WriteInt( cvarSystem->GetCVarInteger( "net_clientMaxRate" ) );
 		msg.WriteString( cvarSystem->GetCVarString( "com_guid" ) );
 		msg.WriteString( cvarSystem->GetCVarString( "password" ), -1, false );
 		// do not make the protocol depend on PB
@@ -1452,7 +1452,7 @@ void idAsyncClient::SetupConnection( void ) {
 			msg.BeginWriting();
 			msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
 			msg.WriteString( "clAuth" );
-			msg.WriteLong( ASYNC_PROTOCOL_VERSION );
+			msg.WriteInt( ASYNC_PROTOCOL_VERSION );
 			msg.WriteNetadr( serverAddress );
 			// if we don't have a com_guid, this will request a direct reply from auth with it
 			msg.WriteByte( cvarSystem->GetCVarString( "com_guid" )[0] ? 1 : 0 );

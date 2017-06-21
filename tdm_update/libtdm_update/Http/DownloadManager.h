@@ -78,6 +78,6 @@ public:
 	// Iterate over all registered downloads
 	void ForeachDownload(DownloadVisitor& visitor);
 };
-typedef boost::shared_ptr<DownloadManager> DownloadManagerPtr;
+typedef std::shared_ptr<DownloadManager> DownloadManagerPtr;
 
 }

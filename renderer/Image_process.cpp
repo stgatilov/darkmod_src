@@ -264,7 +264,7 @@ void	R_SetAlphaNormalDivergence( byte *in, int width, int height ) {
 					if ( yy == 0 && xx == 0 ) {
 						continue;
 					}
-					byte	*corner_p = in + ( ((y+yy)&(height-1)) * width + ((x+xx)&width-1) ) * 4;
+					byte	*corner_p = in + ( ((y+yy)&(height-1)) * width + ((x+xx)&(width-1)) ) * 4;
 					idVec3	corner;
 					corner[0] = ( corner_p[0] - 128 ) / 127;
 					corner[1] = ( corner_p[1] - 128 ) / 127;
@@ -301,7 +301,6 @@ byte *R_MipMapWithAlphaSpecularity( const byte *in, int width, int height ) {
 	int		i, j, c, x, y, sx, sy;
 	const byte	*in_p;
 	byte	*out, *out_p;
-	int		row;
 	int		newWidth, newHeight;
 	float	*fbuf, *fbuf_p;
 
@@ -320,8 +319,6 @@ byte *R_MipMapWithAlphaSpecularity( const byte *in, int width, int height ) {
 		fbuf_p[2] = ( in_p[2] / 255.0 ) * 2.0 - 1.0;
 		fbuf_p[3] = ( in_p[3] / 255.0 );				// filtered divegence / specularity
 	}
-
-	row = width * 4;
 
 	newWidth = width >> 1;
 	newHeight = height >> 1;

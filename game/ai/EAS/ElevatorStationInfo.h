@@ -21,7 +21,6 @@
 #define __AI_EAS_ELEVATOR_STATION_INFO_H__
 
 #include <list>
-#include <boost/shared_ptr.hpp>
 #include "RouteNode.h"
 #include "../../Game_local.h"
 
@@ -64,7 +63,7 @@ struct ElevatorStationInfo
 		savefile->ReadInt(elevatorNum);
 	}
 };
-typedef boost::shared_ptr<ElevatorStationInfo> ElevatorStationInfoPtr;
+typedef std::shared_ptr<ElevatorStationInfo> ElevatorStationInfoPtr;
 typedef std::list<ElevatorStationInfoPtr> ElevatorStationInfoList;
 
 } // namespace eas

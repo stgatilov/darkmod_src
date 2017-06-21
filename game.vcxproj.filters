@@ -40,9 +40,6 @@
     <Filter Include="pugixml">
       <UniqueIdentifier>{8d28a139-1856-4077-a734-36bbbb7b4cb9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="randomizer">
-      <UniqueIdentifier>{6c33ed16-7d0d-497b-ae02-75d700056200}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shop">
       <UniqueIdentifier>{690e9078-025b-40a2-80b0-78b02000b24b}</UniqueIdentifier>
     </Filter>
@@ -338,18 +335,6 @@
     </ClCompile>
     <ClCompile Include="game\Shop\LootRuleSet.cpp">
       <Filter>Shop</Filter>
-    </ClCompile>
-    <ClCompile Include="game\randomizer\mother.cpp">
-      <Filter>randomizer</Filter>
-    </ClCompile>
-    <ClCompile Include="game\randomizer\ranrotb.cpp">
-      <Filter>randomizer</Filter>
-    </ClCompile>
-    <ClCompile Include="game\randomizer\ranrotw.cpp">
-      <Filter>randomizer</Filter>
-    </ClCompile>
-    <ClCompile Include="game\randomizer\mersenne.cpp">
-      <Filter>randomizer</Filter>
     </ClCompile>
     <ClCompile Include="game\pugixml\pugixml.cpp">
       <Filter>pugixml</Filter>
@@ -925,15 +910,6 @@
     </ClInclude>
     <ClInclude Include="game\Shop\LootRuleSet.h">
       <Filter>Shop</Filter>
-    </ClInclude>
-    <ClInclude Include="game\randomizer\rancombi.h">
-      <Filter>randomizer</Filter>
-    </ClInclude>
-    <ClInclude Include="game\randomizer\randomc.h">
-      <Filter>randomizer</Filter>
-    </ClInclude>
-    <ClInclude Include="game\randomizer\_lrotl.h">
-      <Filter>randomizer</Filter>
     </ClInclude>
     <ClInclude Include="game\pugixml\pugixml.hpp">
       <Filter>pugixml</Filter>

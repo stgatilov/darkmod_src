@@ -215,30 +215,27 @@ idSoundChannel::ALStop
 ===================
 */
 void idSoundChannel::ALStop( void ) {
-	if ( idSoundSystemLocal::useOpenAL ) {
+    if (alIsSource(openalSource)) {
+        alSourceStop(openalSource);
+        alSourcei(openalSource, AL_BUFFER, 0);
+        soundSystemLocal.FreeOpenALSource(openalSource);
+    }
 
-		if ( alIsSource( openalSource ) ) {
-			alSourceStop( openalSource );
-			alSourcei( openalSource, AL_BUFFER, 0 );
-			soundSystemLocal.FreeOpenALSource( openalSource );
-		}
+    if (openalStreamingBuffer[0] && openalStreamingBuffer[1] && openalStreamingBuffer[2]) {
+        alGetError();
+        alDeleteBuffers(3, &openalStreamingBuffer[0]);
+        if (alGetError() == AL_NO_ERROR) {
+            openalStreamingBuffer[0] = openalStreamingBuffer[1] = openalStreamingBuffer[2] = 0;
+        }
+    }
 
-		if ( openalStreamingBuffer[0] && openalStreamingBuffer[1] && openalStreamingBuffer[2] ) {
-			alGetError();
-			alDeleteBuffers( 3, &openalStreamingBuffer[0] );
-			if ( alGetError() == AL_NO_ERROR ) {
-				openalStreamingBuffer[0] = openalStreamingBuffer[1] = openalStreamingBuffer[2] = 0;
-			}
-		}
-
-		if ( lastopenalStreamingBuffer[0] && lastopenalStreamingBuffer[1] && lastopenalStreamingBuffer[2] ) {
-			alGetError();
-			alDeleteBuffers( 3, &lastopenalStreamingBuffer[0] );
-			if ( alGetError() == AL_NO_ERROR ) {
-				lastopenalStreamingBuffer[0] = lastopenalStreamingBuffer[1] = lastopenalStreamingBuffer[2] = 0;
-			}
-		}
-	}
+    if (lastopenalStreamingBuffer[0] && lastopenalStreamingBuffer[1] && lastopenalStreamingBuffer[2]) {
+        alGetError();
+        alDeleteBuffers(3, &lastopenalStreamingBuffer[0]);
+        if (alGetError() == AL_NO_ERROR) {
+            lastopenalStreamingBuffer[0] = lastopenalStreamingBuffer[1] = lastopenalStreamingBuffer[2] = 0;
+        }
+    }
 }
 
 /*
@@ -446,7 +443,7 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			if ( !( chan->parms.soundShaderFlags & SSF_LOOPING ) ) {
 				ALint state = AL_PLAYING;
 
-				if ( idSoundSystemLocal::useOpenAL && alIsSource( chan->openalSource ) ) {
+                if (alIsSource(chan->openalSource)) {
 					alGetSourcei( chan->openalSource, AL_SOURCE_STATE, &state );
 				}
 				idSlowChannel slow = GetSlowChannel( chan );
@@ -475,9 +472,9 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			}
 
 			// free decoder memory if no sound was decoded for a while
-			if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) {
+		/*	if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) {
 				chan->decoder->ClearDecoder();
-			}
+			} */
 
 			hasActive = true;
 
@@ -1177,7 +1174,7 @@ idSlowChannel::GenerateSlowChannel
 void idSlowChannel::GenerateSlowChannel( FracTime& playPos, int sampleCount44k, float* finalBuffer ) {
 	idSoundWorldLocal *sw = static_cast<idSoundWorldLocal*>( soundSystemLocal.GetPlayingSoundWorld() );
 	float in[MIXBUFFER_SAMPLES+3], out[MIXBUFFER_SAMPLES+3], *src, *spline, slowmoSpeed;
-	int i, neededSamples, orgTime, zeroedPos, count = 0;
+	int i, neededSamples, zeroedPos, count = 0;
 
 	src = in + 2;
 	spline = out + 2;
@@ -1190,7 +1187,6 @@ void idSlowChannel::GenerateSlowChannel( FracTime& playPos, int sampleCount44k, 
 	}
 
 	neededSamples = sampleCount44k * slowmoSpeed + 4;
-	orgTime = playPos.time;
 
 	// get the channel's samples
 	chan->GatherChannelSamples( playPos.time * 2, neededSamples, src );

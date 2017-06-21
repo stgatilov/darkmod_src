@@ -21,7 +21,6 @@
 #define _MISSION_DB_H_
 
 #include <map>
-#include <boost/shared_ptr.hpp>
 #include "ModInfo.h"
 
 /**
@@ -54,6 +53,6 @@ public:
 private:
 	void ReloadMissionInfoFile();
 };
-typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
+typedef std::shared_ptr<CMissionDB> CMissionDBPtr;
 
 #endif /* _MISSION_DB_H_ */

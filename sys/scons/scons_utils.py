@@ -141,10 +141,13 @@ class idGamePaks( idSetupBase ):
 	def BuildGamePak( self, target = None, source = None, env = None ):
 		# NOTE: ew should have done with zipfile module
 		temp_dir = tempfile.mkdtemp( prefix = 'gamepak' )
-		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, 'gamex86.so' ) ) )
-		self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, 'gamex86.so' ) )
+		# source[0] is the binary path of the game DLL
+		# source[2] is the DLL name 'gamex64.so'
+		dllName = source[2].name
+		self.SimpleCommand( 'cp %s %s' % ( source[0].abspath, os.path.join( temp_dir, dllName ) ) )
+		self.SimpleCommand( 'strip %s' % os.path.join( temp_dir, dllName ) )
 		self.SimpleCommand( 'echo 2 > %s' % ( os.path.join( temp_dir, 'binary.conf' ) ) )
-		self.SimpleCommand( 'cd %s ; zip %s gamex86.so binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ) ) )
+		self.SimpleCommand( 'cd %s ; zip %s %s binary.conf' % ( temp_dir, os.path.join( temp_dir, target[0].abspath ), dllName ) )
 		self.SimpleCommand( 'rm -r %s' % temp_dir )
 		return None
 

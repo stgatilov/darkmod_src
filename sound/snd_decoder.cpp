@@ -49,20 +49,20 @@ extern "C" {
 }
 
 void *_decoder_malloc( size_t size ) {
-	void *ptr = decoderMemoryAllocator.Alloc( size );
+    void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
 
 void *_decoder_calloc( size_t num, size_t size ) {
-	void *ptr = decoderMemoryAllocator.Alloc( num * size );
+    void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(num * size));
 	assert( ( num * size ) == 0 || ptr != NULL );
 	memset( ptr, 0, num * size );
 	return ptr;
 }
 
 void *_decoder_realloc( void *memblock, size_t size ) {
-	void *ptr = decoderMemoryAllocator.Resize( (byte *)memblock, size );
+    void *ptr = decoderMemoryAllocator.Resize((byte *)memblock, static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
@@ -87,7 +87,7 @@ FS_ReadOGG
 */
 size_t FS_ReadOGG( void *dest, size_t size1, size_t size2, void *fh ) {
 	idFile *f = reinterpret_cast<idFile *>(fh);
-	return f->Read( dest, size1 * size2 );
+    return f->Read(dest, static_cast<int>(size1 * size2));
 }
 
 /*

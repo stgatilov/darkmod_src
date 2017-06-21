@@ -195,6 +195,6 @@ public:
 	*/
 	virtual void PostFired (int numResponses);
 };
-typedef boost::shared_ptr<CStim> CStimPtr;
+typedef std::shared_ptr<CStim> CStimPtr;
 
 #endif /* SR_STIM__H */

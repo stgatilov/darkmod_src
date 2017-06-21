@@ -20,7 +20,7 @@
 #ifndef __CVARSYSTEM_H__
 #define __CVARSYSTEM_H__
 
-#include <boost/function.hpp>
+#include <functional>
 
 /*
 ===============================================================================
@@ -146,7 +146,7 @@ public:
 	static void				RegisterStaticVars( void );
 
 	// Function signature for modification signals, e.g. void OnCVarModified()
-	typedef boost::function<void ()> OnModifiedFunc;
+	typedef std::function<void ()> OnModifiedFunc;
 
 	// greebo: Registers a function to get notified on modifications. Is called on all subsequent CVAR modifications. 
 	// Callbacks are called in the order they've been registered. A non-negative integer is returned which can be used

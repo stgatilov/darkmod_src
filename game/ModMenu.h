@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
 
 class CModInfo;
-typedef boost::shared_ptr<CModInfo> CModInfoPtr;
+typedef std::shared_ptr<CModInfo> CModInfoPtr;
 
 // Handles mainmenu that displays list of mods (FMs) and lets user
 // chose which one to load. Also handles display of briefing page

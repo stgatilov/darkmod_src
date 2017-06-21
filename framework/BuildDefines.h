@@ -73,21 +73,8 @@
 	#define	ID_ALLOW_TOOLS
 #endif
 
-// don't do backtraces in release builds.
-// atm, we have no useful way to reconstruct the trace, so let's leave it off
-#define ID_BT_STUB
-#ifndef ID_BT_STUB
-	#if defined( __linux__ )
-		#if defined( _DEBUG )
-			#define ID_BT_STUB
-		#endif
-	#else
-		#define ID_BT_STUB
-	#endif
-#endif
-
 #ifndef ID_OPENAL
-#	if ( defined(_WIN32) || defined(MACOS_X) ) && !defined( ID_DEDICATED )
+#	if !defined( ID_DEDICATED )
 #		define ID_OPENAL 1
 #	else
 #		define ID_OPENAL 0

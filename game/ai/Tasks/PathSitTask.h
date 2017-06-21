@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_SIT "PathSit"
 
 class PathSitTask;
-typedef boost::shared_ptr<PathSitTask> PathSitTaskPtr;
+typedef std::shared_ptr<PathSitTask> PathSitTaskPtr;
 
 class PathSitTask :
 	public PathTask

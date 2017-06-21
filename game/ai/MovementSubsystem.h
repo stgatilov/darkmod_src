@@ -20,7 +20,6 @@
 #ifndef __AI_MOVEMENTSUBSYSTEM_H__
 #define __AI_MOVEMENTSUBSYSTEM_H__
 
-#include <boost/shared_ptr.hpp>
 #include <list>
 
 #include "Tasks/Task.h"
@@ -139,7 +138,7 @@ protected:
 private:
 	void DebugDraw(idAI* owner);
 };
-typedef boost::shared_ptr<MovementSubsystem> MovementSubsystemPtr;
+typedef std::shared_ptr<MovementSubsystem> MovementSubsystemPtr;
 
 } // namespace ai
 

@@ -21,8 +21,6 @@
 
 #include "precompiled_game.h"
 
-#include <boost/shared_ptr.hpp>
-
 // Forward Declaration
 class EscapePoint;
 struct EscapeConditions;
@@ -105,7 +103,7 @@ protected:
 	 */
 	bool	PerformProximityToThreatCheck(EscapePoint& escapePoint, idVec3 _threatLocation);
 };
-typedef boost::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
+typedef std::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 
 /**
  * ==== EVALUATOR IMPLEMENTATIONS === 

@@ -20,7 +20,6 @@
 #ifndef __AI_TASK_H__
 #define __AI_TASK_H__
 
-#include <boost/shared_ptr.hpp>
 
 namespace ai
 {
@@ -126,7 +125,7 @@ public:
 		return true;
 	}
 };
-typedef boost::shared_ptr<Task> TaskPtr;
+typedef std::shared_ptr<Task> TaskPtr;
 
 } // namespace ai
 

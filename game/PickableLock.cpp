@@ -25,9 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Game_local.h"
 #include "DarkModGlobals.h"
 #include "PickableLock.h"
-#include "randomizer/randomc.h"
-
-extern TRandomCombined<TRanrotWGenerator,TRandomMersenne> rnd;
+#include <random>
 
 static const char* StateNames[] =
 {
@@ -820,9 +818,12 @@ idStringList PickableLock::CreatePinPattern(int clicks, int baseCount, int maxCo
 	
 	idStr head = va(header + "%%0%uu", strNumLen);
 
+    // We want random integers in the range [0..maxCount]
+    std::uniform_int_distribution<int> randomInts(0, maxCount);
+
 	for (int i = 0; i < clicks; i++)
 	{
-		int r = rnd.IRandom(0, maxCount);
+        int r = randomInts(gameLocal.randomMt);
 
 		idStr click = va(head, r);
 		returnValue.Append(click);

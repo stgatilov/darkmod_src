@@ -21,8 +21,7 @@
 #define _DOWNLOAD_H_
 
 #include "../Http/HttpRequest.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <thread>
 
 /**
  * An object representing a single download.
@@ -88,7 +87,7 @@ private:
 	// The corresponding HTTP request
 	CHttpRequestPtr _request;
 
-	typedef boost::shared_ptr<boost::thread> ThreadPtr;
+	typedef std::shared_ptr<std::thread> ThreadPtr;
 	ThreadPtr _thread;
 
 	bool _pk4CheckEnabled;
@@ -146,6 +145,6 @@ private:
 	// Thread entry point
 	void Perform();
 };
-typedef boost::shared_ptr<CDownload> CDownloadPtr;
+typedef std::shared_ptr<CDownload> CDownloadPtr;
 
 #endif /* _DOWNLOAD_H_ */

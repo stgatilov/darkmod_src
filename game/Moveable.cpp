@@ -1639,3 +1639,4 @@ bool idExplodingBarrel::ClientReceiveEvent( int event, int time, const idBitMsg 
 	}
 //	return false;
 }
+

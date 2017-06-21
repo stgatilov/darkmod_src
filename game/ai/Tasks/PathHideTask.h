@@ -29,7 +29,7 @@ namespace ai
 #define TASK_PATH_HIDE "PathHide"
 
 class PathHideTask;
-typedef boost::shared_ptr<PathHideTask> PathHideTaskPtr;
+typedef std::shared_ptr<PathHideTask> PathHideTaskPtr;
 
 class PathHideTask :
 	public PathTask

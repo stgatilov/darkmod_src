@@ -33,7 +33,7 @@ public:
 	fs::path filename;
 
 	// Checksum of the update archive itself
-	boost::uint32_t crc;
+	uint32_t crc;
 
 	// The filesize
 	std::size_t filesize;
@@ -53,10 +53,10 @@ public:
 	struct PK4Difference
 	{
 		// The checksum of the base PK4
-		boost::uint32_t checksumBefore;
+		uint32_t checksumBefore;
 
 		// The checksum of the head PK4
-		boost::uint32_t checksumAfter;
+		uint32_t checksumAfter;
 
 		// Files that should be added to this PK4
 		std::set<ReleaseFile> membersToBeAdded;

@@ -86,13 +86,11 @@ static void SetBrushContents( uBrush_t *b ) {
 	int			contents, c2;
 	side_t		*s;
 	int			i;
-	bool	mixed;
 
 	s = &b->sides[0];
 	contents = s->material->GetContentFlags();
 
 	b->contentShader = s->material;
-	mixed = false;
 
 	// a brush is only opaque if all sides are opaque
 	b->opaque = true;
@@ -106,7 +104,6 @@ static void SetBrushContents( uBrush_t *b ) {
 
 		c2 = s->material->GetContentFlags();
 		if (c2 != contents) {
-			mixed = true;
 			contents |= c2;
 		}
 
@@ -194,6 +191,7 @@ static uBrush_t *FinishBrush( void ) {
 AdjustEntityForOrigin
 ================
 */
+#if 0
 static void AdjustEntityForOrigin( uEntity_t *ent ) {
 	primitive_t	*prim;
 	uBrush_t	*b;
@@ -225,6 +223,7 @@ static void AdjustEntityForOrigin( uEntity_t *ent ) {
 		CreateBrushWindings(b);
 	}
 }
+#endif
 
 /*
 =================

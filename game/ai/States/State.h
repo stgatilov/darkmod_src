@@ -23,7 +23,6 @@
 #include "../../AIComm_Message.h"
 #include "../../BinaryFrobMover.h"
 #include "../Subsystem.h"
-#include <boost/shared_ptr.hpp>
 
 namespace ai
 {
@@ -229,7 +228,7 @@ private:
 	};
 
 };
-typedef boost::shared_ptr<State> StatePtr;
+typedef std::shared_ptr<State> StatePtr;
 
 } // namespace ai
 

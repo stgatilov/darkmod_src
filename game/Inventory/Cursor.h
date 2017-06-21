@@ -149,6 +149,6 @@ protected:
 	// The unique ID of this cursor
 	int m_CursorId;
 };
-typedef boost::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
+typedef std::shared_ptr<CInventoryCursor> CInventoryCursorPtr;
 
 #endif /* __DARKMOD_INVENTORYCURSOR_H__ */

@@ -726,7 +726,6 @@ Debugging tool
 =====================
 */
 static void RB_ShowTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
-	modelTrace_t mt;
 	idVec3 end;
 
 	if ( !r_showTris.GetInteger() ) {
@@ -1216,6 +1215,7 @@ RB_ShowNormals
 Debugging tool
 =====================
 */
+#if 0
 static void RB_AltShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	int			i, j, k;
 	drawSurf_t	*drawSurf;
@@ -1283,7 +1283,7 @@ static void RB_AltShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	qglEnable( GL_DEPTH_TEST );
 	qglEnable( GL_STENCIL_TEST );
 }
-
+#endif
 
 
 /*
@@ -1715,7 +1715,7 @@ float RB_DrawTextLength( const char *text, float scale, int len ) {
 
 	if ( text && *text ) {
 		if ( !len ) {
-			len = strlen(text);
+            len = static_cast<int>(strlen(text));
 		}
 		for ( i = 0; i < len; i++ ) {
 			charIndex = text[i] - 32;
@@ -1753,7 +1753,7 @@ RB_DrawText
 */
 static void RB_DrawText( const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align ) {
 	int i, j, len, num, index, charIndex, line;
-	float textLen, spacing;
+	float textLen = 0.0f, spacing;
 	idVec3 org, p1, p2;
 
 	if ( text && *text ) {
@@ -1766,7 +1766,7 @@ static void RB_DrawText( const char *text, const idVec3 &origin, float scale, co
 			line = 0;
 		}
 
-		len = strlen( text );
+        len = static_cast<int>(strlen(text));
 		for ( i = 0; i < len; i++ ) {
 
 			if ( i == 0 || text[i] == '\n' ) {

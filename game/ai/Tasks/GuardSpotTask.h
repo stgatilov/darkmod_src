@@ -11,9 +11,9 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 5121 $ (Revision of last commit) 
- $Date: 2011-12-11 14:12:26 -0500 (Sun, 11 Dec 2011) $ (Date of last commit)
- $Author: greebo $ (Author of last commit)
+ $Revision$ (Revision of last commit) 
+ $Date$ (Date of last commit)
+ $Author$ (Author of last commit)
  
 ******************************************************************************/
 
@@ -39,7 +39,7 @@ namespace ai
 #define TASK_GUARD_SPOT "GuardSpot"
 
 class GuardSpotTask;
-typedef boost::shared_ptr<GuardSpotTask> GuardSpotTaskPtr;
+typedef std::shared_ptr<GuardSpotTask> GuardSpotTaskPtr;
 
 class GuardSpotTask :
 	public Task

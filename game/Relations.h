@@ -51,7 +51,6 @@
 #include "precompiled_game.h"
 #include "DarkModGlobals.h"
 #include "MatrixSq.h"
-#include <boost/shared_ptr.hpp>
 
 class CRelations : 
 	public idClass
@@ -183,7 +182,7 @@ protected:
 	**/
 	CMatrixSq<int>		m_RelMat;
 };
-typedef boost::shared_ptr<CRelations> CRelationsPtr;
+typedef std::shared_ptr<CRelations> CRelationsPtr;
 
 /**
  * greebo: A spawnable relation entity. At spawn time, this entity copies its 

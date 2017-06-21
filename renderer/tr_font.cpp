@@ -25,6 +25,8 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "tr_local.h"
 
+#define FILESIZE_fontInfo_t (20548)
+
 #ifdef BUILD_FREETYPE
 #include "../ft2/fterrors.h"
 #include "../ft2/ftsystem.h"
@@ -326,7 +328,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		idStr::Copynz( outFont->name, name, sizeof( outFont->name ) );
 
 		len = fileSystem->ReadFile( name, NULL, &ftime );
-		if ( len != sizeof( fontInfo_t ) ) {
+		if ( len != FILESIZE_fontInfo_t ) {
 			// Couldn't find the font file, so look for other sizes
 			pointSize = 0;
 			for (int i = 0; i < replacementCount; i++) {
@@ -337,7 +339,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 				// common->Printf( "Not found, trying to load font %s size %i (i=%i)\n", name, replacement, i );
 
 				len = fileSystem->ReadFile( name, NULL, &ftime );
-				if (len == sizeof( fontInfo_t )) {
+                if (len == FILESIZE_fontInfo_t) {
 					common->Printf( "Font %s in size %i not found, using size %i instead.\n", fontName, sizes[fontCount], replacement );
 					pointSize = replacement;
 					// end loop
@@ -371,7 +373,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 			outFont->glyphs[i].t			= readFloat();
 			outFont->glyphs[i].s2			= readFloat();
 			outFont->glyphs[i].t2			= readFloat();
-			int junk /* font.glyphs[i].glyph */		= readInt();
+			/* font.glyphs[i].glyph = */		readInt();
 			//FIXME: the +6, -6 skips the embedded fonts/ 
 			memcpy( outFont->glyphs[i].shaderName, &fdFile[fdOffset + 6], 32 - 6 );
 			fdOffset += 32;
@@ -520,6 +522,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 	memcpy( &registeredFont[registeredFontCount++], &font, sizeof( fontInfo_t ) );
 
 	if ( r_saveFontData->integer ) { 
+        common->Warning( "FIXME: font saving doesnt respect alignment!" );
 		fileSystem->WriteFile( va( "fonts/fontImage_%i.dat", pointSize), &font, sizeof( fontInfo_t ) );
 	}
 

@@ -21,7 +21,6 @@
 #define _HTTP_REQUEST_H_
 
 #include <fstream>
-#include <boost/shared_ptr.hpp>
 
 class CHttpConnection;
 
@@ -29,7 +28,7 @@ class CHttpConnection;
 typedef void CURL;
 
 // Shared_ptr typedef
-typedef boost::shared_ptr<pugi::xml_document> XmlDocumentPtr;
+typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 /**
  * greebo: An object representing a single HttpRequest, holding 
@@ -106,6 +105,6 @@ private:
 
 	void UpdateProgress();
 };
-typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
+typedef std::shared_ptr<CHttpRequest> CHttpRequestPtr;
 
 #endif /* _HTTP_REQUEST_H_ */

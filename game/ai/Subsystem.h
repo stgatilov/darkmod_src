@@ -20,7 +20,6 @@
 #ifndef __AI_SUBSYSTEM_H__
 #define __AI_SUBSYSTEM_H__
 
-#include <boost/shared_ptr.hpp>
 #include <list>
 
 #include "Tasks/Task.h"
@@ -125,7 +124,7 @@ public:
 	// Returns some debug text for console or renderworld display
 	virtual idStr GetDebugInfo();
 };
-typedef boost::shared_ptr<Subsystem> SubsystemPtr;
+typedef std::shared_ptr<Subsystem> SubsystemPtr;
 
 } // namespace ai
 

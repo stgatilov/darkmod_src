@@ -86,13 +86,13 @@ static void R_HeightmapToNormalMap( byte *data, int width, int height, float sca
 	for ( i = 0 ; i < height ; i++ ) {
 		for ( j = 0 ; j < width ; j++ ) {
 			int		d1, d2, d3, d4;
-			int		a1, a2, a3, a4;
+			int		a1, a3, a4;
 
 			// FIXME: look at five points?
 
 			// look at three points to estimate the gradient
 			a1 = d1 = depth[ ( i * width + j ) ];
-			a2 = d2 = depth[ ( i * width + ( ( j + 1 ) & ( width - 1 ) ) ) ];
+			d2 = depth[ ( i * width + ( ( j + 1 ) & ( width - 1 ) ) ) ];
 			a3 = d3 = depth[ ( ( ( i + 1 ) & ( height - 1 ) ) * width + j ) ];
 			a4 = d4 = depth[ ( ( ( i + 1 ) & ( height - 1 ) ) * width + ( ( j + 1 ) & ( width - 1 ) ) ) ];
 
@@ -611,7 +611,7 @@ R_LoadImageProgram
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamps, textureDepth_t *depth ) {
 	idLexer src;
 
-	src.LoadMemory( name, strlen(name), name );
+    src.LoadMemory(name, static_cast<int>(strlen(name)), name);
 	src.SetFlags( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
 
 	parseBuffer[0] = 0;

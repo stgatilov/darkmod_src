@@ -100,7 +100,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case WM_CLOSE:
 			if ( cvarSystem->IsInitialized() && com_skipRenderer.GetBool() ) {
 				cmdString = Mem_CopyString( "quit" );
-				Sys_QueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
+                Sys_QueEvent(0, SE_CONSOLE, 0, 0, static_cast<int>(strlen(cmdString)) + 1, cmdString);
 			} else if ( s_wcd.quitOnClose ) {
 				PostQuitMessage( 0 );
 			} else {
@@ -138,7 +138,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 					PostQuitMessage( 0 );
 				} else {
 					cmdString = Mem_CopyString( "quit" );
-					Sys_QueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
+                    Sys_QueEvent(0, SE_CONSOLE, 0, 0, static_cast<int>(strlen(cmdString)) + 1, cmdString);
 				}
 			} else if ( wParam == CLEAR_ID ) {
 				SendMessage( s_wcd.hwndBuffer, EM_SETSEL, 0, -1 );
@@ -387,7 +387,7 @@ void Sys_CreateConsole( void ) {
 												win32.hInstance, NULL );
 	SendMessage( s_wcd.hwndBuffer, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
-	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLong( s_wcd.hwndInputLine, GWL_WNDPROC, ( long ) InputLineWndProc );
+	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLongPtr( s_wcd.hwndInputLine, GWLP_WNDPROC, (LONG_PTR) InputLineWndProc );
 	SendMessage( s_wcd.hwndInputLine, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
 // don't show it now that we have a splash screen up

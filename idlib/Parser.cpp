@@ -225,7 +225,7 @@ define_t *idParser::CopyDefine( define_t *define ) {
 	define_t *newdefine;
 	idToken *token, *newtoken, *lasttoken;
 
-	newdefine = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(define->name) + 1);
+    newdefine = (define_t *)Mem_Alloc(static_cast<int>(sizeof(define_t) + strlen(define->name) + 1));
 	//copy the define name
 	newdefine->name = (char *) newdefine + sizeof(define_t);
 	strcpy(newdefine->name, define->name);
@@ -287,7 +287,7 @@ define_t *idParser::DefineFromString( const char *string ) {
 	idParser src;
 	define_t *def;
 
-	if ( !src.LoadMemory(string, strlen(string), "*defineString") ) {
+    if (!src.LoadMemory(string, static_cast<int>(strlen(string)), "*defineString")) {
 		return NULL;
 	}
 	// create a define from the source
@@ -628,7 +628,7 @@ void idParser::AddBuiltinDefines( void ) {
 	};
 
 	for (i = 0; builtin[i].string; i++) {
-		define = (define_t *) Mem_Alloc(sizeof(define_t) + strlen(builtin[i].string) + 1);
+        define = (define_t *)Mem_Alloc(static_cast<int>(sizeof(define_t) + strlen(builtin[i].string) + 1));
 		define->name = (char *) define + sizeof(define_t);
 		strcpy(define->name, builtin[i].string);
 		define->flags = DEFINE_FIXED;
@@ -1285,7 +1285,7 @@ typedef struct operator_s
 
 typedef struct value_s
 {
-	signed long int intvalue;
+	int intvalue;
 	double floatvalue;
 	int parentheses;
 	struct value_s *prev, *next;
@@ -1356,8 +1356,8 @@ int PC_OperatorPriority(int op) {
 
 #define FreeOperator(op)
 
-int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer ) {
-	operator_t *o, *firstoperator, *lastoperator;
+int idParser::EvaluateTokens( idToken *tokens, int *intvalue, double *floatvalue, int integer ) {
+    operator_t *o, *firstoperator, *lastoperator;
 	value_t *v, *firstvalue, *lastvalue, *v1, *v2;
 	idToken *t;
 	int brace = 0;
@@ -1368,7 +1368,6 @@ int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double
 	int questmarkintvalue = 0;
 	double questmarkfloatvalue = 0;
 	int gotquestmarkvalue = false;
-	int lastoperatortype = 0;
 	//
 	operator_t operator_heap[MAX_OPERATORS];
 	int numoperators = 0;
@@ -1727,7 +1726,6 @@ int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double
 #endif //DEBUG_EVAL
 		if (error)
 			break;
-		lastoperatortype = o->op;
 		//if not an operator with arity 1
 		if (o->op != P_LOGIC_NOT && o->op != P_BIN_NOT) {
 			//remove the second value if not question mark operator
@@ -1781,7 +1779,7 @@ int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double
 idParser::Evaluate
 ================
 */
-int idParser::Evaluate( signed long int *intvalue, double *floatvalue, int integer ) {
+int idParser::Evaluate( int *intvalue, double *floatvalue, int integer ) {
 	idToken token, *firsttoken, *lasttoken;
 	idToken *t, *nexttoken;
 	define_t *define;
@@ -1872,8 +1870,8 @@ int idParser::Evaluate( signed long int *intvalue, double *floatvalue, int integ
 idParser::DollarEvaluate
 ================
 */
-int idParser::DollarEvaluate( signed long int *intvalue, double *floatvalue, int integer) {
-	int indent, defined = false;
+int idParser::DollarEvaluate( int *intvalue, double *floatvalue, int integer) {
+    int indent, defined = false;
 	idToken token, *firsttoken, *lasttoken;
 	idToken *t, *nexttoken;
 	define_t *define;
@@ -1974,7 +1972,7 @@ idParser::Directive_elif
 ================
 */
 int idParser::Directive_elif( void ) {
-	signed long int value;
+	int value;
 	int type, skip;
 
 	idParser::PopIndent( &type, &skip );
@@ -1996,7 +1994,7 @@ idParser::Directive_if
 ================
 */
 int idParser::Directive_if( void ) {
-	signed long int value;
+	int value;
 	int skip;
 
 	if ( !idParser::Evaluate( &value, NULL, true ) ) {
@@ -2092,7 +2090,7 @@ idParser::Directive_eval
 ================
 */
 int idParser::Directive_eval( void ) {
-	signed long int value;
+	int value;
 	idToken token;
 	char buf[128];
 
@@ -2231,7 +2229,7 @@ idParser::DollarDirective_evalint
 ================
 */
 int idParser::DollarDirective_evalint( void ) {
-	signed long int value;
+	int value;
 	idToken token;
 	char buf[128];
 
@@ -2280,7 +2278,7 @@ int idParser::DollarDirective_evalfloat( void ) {
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_FLOAT | TT_LONG | TT_DECIMAL | TT_VALUESVALID;
-	token.intvalue = (unsigned long) fabs( value );
+	token.intvalue = (unsigned int) fabs( value );
 	token.floatvalue = fabs( value );
 	idParser::UnreadSourceToken( &token );
 	if ( value < 0 ) {
@@ -2937,7 +2935,7 @@ void idParser::GetStringFromMarker( idStr& out, bool clean ) {
 	
 	// If cleaning then reparse
 	if ( clean ) {	
-		idParser temp( marker_p, strlen( marker_p ), "temp", flags );
+        idParser temp(marker_p, static_cast<int>(strlen(marker_p)), "temp", flags);
 		idToken token;
 		while ( temp.ReadToken ( &token ) ) {
 			out += token;

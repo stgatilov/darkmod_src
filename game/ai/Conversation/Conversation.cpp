@@ -126,7 +126,7 @@ bool Conversation::CheckConditions()
 /* previous code
 		// FIXME: This might not be enough, if the AI has pushed other states on top of the conversation state
 		ConversationStatePtr convState = 
-				boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+				std::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
 		if (convState != NULL)
 		{
@@ -186,7 +186,7 @@ void Conversation::End()
 
 		// Let's see if the AI is currently in a conversation.
 		ConversationStatePtr convState = 
-			boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+			std::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
 		if (convState != NULL)
 		{
@@ -321,7 +321,7 @@ ConversationStatePtr Conversation::GetConversationState(int actor)
 	}
 
 	// Let's see if the AI can handle this conversation command
-	ConversationStatePtr convState = boost::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
+	ConversationStatePtr convState = std::dynamic_pointer_cast<ConversationState>(ai->GetMind()->GetState());
 
 	if (convState == NULL)
 	{

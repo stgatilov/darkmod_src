@@ -1109,7 +1109,7 @@ idBrushBSP::MakeNodePortal
 void idBrushBSP::MakeNodePortal( idBrushBSPNode *node ) {
 	idBrushBSPPortal *newPortal, *p;
 	idWinding *w;
-	int side;
+	int side = 0;
 
 	w = BaseWindingForNode( node );
 
@@ -1172,6 +1172,7 @@ void idBrushBSP::SplitNodePortals( idBrushBSPNode *node ) {
 		}
 		else {
 			common->Error( "idBrushBSP::SplitNodePortals: mislinked portal" );
+            return;
 		}
 		nextPortal = p->next[side];
 
@@ -1356,8 +1357,8 @@ void idBrushBSP::LeakFile( const idStr &fileName ) {
 	int count, next, s;
 	idVec3 mid;
 	idFile *lineFile;
-	idBrushBSPNode *node, *nextNode;
-	idBrushBSPPortal *p, *nextPortal;
+	idBrushBSPNode *node, *nextNode = NULL;
+	idBrushBSPPortal *p, *nextPortal = NULL;
 	idStr qpath, name;
 
 	if ( !outside->occupied ) {

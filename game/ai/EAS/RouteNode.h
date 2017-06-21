@@ -21,7 +21,6 @@
 #define __AI_EAS_ROUTENODE_H__
 
 #include <list>
-#include <boost/shared_ptr.hpp>
 
 namespace eas {
 
@@ -55,7 +54,7 @@ struct RouteNode
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 };
-typedef boost::shared_ptr<RouteNode> RouteNodePtr;
+typedef std::shared_ptr<RouteNode> RouteNodePtr;
 typedef std::list<RouteNodePtr> RouteNodeList;
 
 } // namespace eas

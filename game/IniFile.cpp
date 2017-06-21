@@ -28,9 +28,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <fstream>
 #include <sstream>
 
-#include <boost/program_options/detail/convert.hpp>
-#include <boost/program_options/detail/config_file.hpp>
-
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/spirit/include/classic.hpp>
@@ -219,6 +216,9 @@ private:
 	// Most recently added section and key
 	std::string _lastSection;
 	std::string _lastKey;
+
+    // To avoid a compiler warning, just define an inaccessible assignment operator
+    IniParser& operator=(const IniParser& other);
 
 public:
 	IniParser(IniFile& self) :

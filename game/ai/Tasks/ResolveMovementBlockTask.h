@@ -30,7 +30,7 @@ namespace ai
 #define RESOLVE_MOVE_DIST 16 // grayman #2345
 
 class ResolveMovementBlockTask;
-typedef boost::shared_ptr<ResolveMovementBlockTask> ResolveMovementBlockTaskPtr;
+typedef std::shared_ptr<ResolveMovementBlockTask> ResolveMovementBlockTaskPtr;
 
 class ResolveMovementBlockTask :
 	public Task

@@ -23,9 +23,8 @@
 #include <list>
 #include <vector>
 #include <time.h>
-#include <boost/shared_ptr.hpp>
-#include <boost/shared_array.hpp>
-#include <boost/cstdint.hpp>
+#include <cstdint>
+#include <memory>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
@@ -63,12 +62,12 @@ public:
 		std::vector<char>			comment;
 		std::vector<unsigned char>	localExtraField;
 	};
-	typedef boost::shared_ptr<CompressedFile> CompressedFilePtr;
+	typedef std::shared_ptr<CompressedFile> CompressedFilePtr;
 
 	struct MemberInfo
 	{
 		std::string filename;
-		boost::uint32_t crc;
+		uint32_t crc;
 		std::size_t uncompressedSize;
 		std::size_t compressedSize;
 	};
@@ -147,7 +146,7 @@ public:
 	 * @returns: the cumulative CRC.
 	 * @throws: std::runtime_error on any failures.
 	 */
-	boost::uint32_t GetCumulativeCrc();
+	uint32_t GetCumulativeCrc();
 
     /**
     * Iterates over all archive members and checks for files with dates outside the acceptable range
@@ -157,7 +156,7 @@ public:
     */
     bool ContainsBadDate();
 };
-typedef boost::shared_ptr<ZipFileRead> ZipFileReadPtr;
+typedef std::shared_ptr<ZipFileRead> ZipFileReadPtr;
 
 /**
  * A class wrapping around a minizip file handle, for storing data
@@ -204,7 +203,7 @@ public:
 	 */
 	bool CopyFileFromZip(const ZipFileReadPtr& fromZip, const std::string& fromPath, const std::string& toPath);
 };
-typedef boost::shared_ptr<ZipFileWrite> ZipFileWritePtr;
+typedef std::shared_ptr<ZipFileWrite> ZipFileWritePtr;
 
 /**
  * greebo: This service class can be used to load and inspect zip files and

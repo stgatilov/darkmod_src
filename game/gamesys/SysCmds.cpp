@@ -3454,7 +3454,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		charBuffer.resize(  mat->GetTextLength() + 1, 0 );
 		mat->GetText( &charBuffer[0] );
 
-		idLexer lexSource( &charBuffer[0], charBuffer.size(), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES );
+        idLexer lexSource(&charBuffer[0], static_cast<int>(charBuffer.size()), mat->GetName(), LEXFL_NOFATALERRORS | LEXFL_ALLOWPATHNAMES);
 
 		gameLocal.Printf("Finding out shader stages... \n" );
 
@@ -3596,7 +3596,7 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 		//------------------------------------
 		int i;
 		unsigned int uiEndoftheBlock = 0;
-		for( i= charBuffer.size() - 1; i > 0; i-- )
+        for (i = static_cast<int>(charBuffer.size()) - 1; i > 0; i--)
 		{
 			if( '}' == charBuffer[i] )
 			{

@@ -1240,6 +1240,7 @@ static const char *EnumString( GLenum t )
 	return buffer[oldIndex];
 }
 
+#if 0
 static const char *FloatData( const GLfloat *v, int count ) {
 	static char buffer[8][1024];
 	static int index = 0;
@@ -1260,6 +1261,7 @@ static const char *FloatData( const GLfloat *v, int count ) {
 
 	return name;
 }
+#endif
 
 #if 0
 

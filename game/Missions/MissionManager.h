@@ -21,15 +21,14 @@
 #define _MISSION_MANAGER_H_
 
 #include "ModInfo.h"
-#include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
 
 // Shared_ptr typedef
 #include "../pugixml/pugixml.hpp"
-typedef boost::shared_ptr<pugi::xml_document> XmlDocumentPtr;
+typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 class CMissionDB;
-typedef boost::shared_ptr<CMissionDB> CMissionDBPtr;
+typedef std::shared_ptr<CMissionDB> CMissionDBPtr;
 
 namespace fs = boost::filesystem;
 
@@ -80,7 +79,7 @@ struct MissionScreenshot
 		return temp;
 	}
 };
-typedef boost::shared_ptr<MissionScreenshot> MissionScreenshotPtr;
+typedef std::shared_ptr<MissionScreenshot> MissionScreenshotPtr;
 
 struct DownloadableMod
 {
@@ -418,6 +417,6 @@ private:
 
 	bool ProcessMissionScreenshot(const fs::path& tempFilename, DownloadableMod& mod, int screenshotNum);
 };
-typedef boost::shared_ptr<CMissionManager> CMissionManagerPtr;
+typedef std::shared_ptr<CMissionManager> CMissionManagerPtr;
 
 #endif /* _MISSION_MANAGER_H_ */

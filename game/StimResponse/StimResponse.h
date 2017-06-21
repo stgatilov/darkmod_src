@@ -139,6 +139,6 @@ public:
 
 	idEntityPtr<idEntity>	m_Owner;
 };
-typedef boost::shared_ptr<CStimResponse> CStimResponsePtr;
+typedef std::shared_ptr<CStimResponse> CStimResponsePtr;
 
 #endif /* SR_STIMRESPONSE__H */

@@ -21,8 +21,8 @@
 
 #include <string>
 #include <stdexcept>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
+#include <memory>
+#include <mutex>
 
 namespace tdm
 {
@@ -40,7 +40,7 @@ class FileLogWriter :
 private:
 	FILE* _logFile;
 
-	boost::mutex _mutex;
+	std::mutex _mutex;
 
 public:
 	FileLogWriter(const std::string& path) :
@@ -78,7 +78,7 @@ public:
 		if (lc != LOG_PROGRESS)
 		{
 			// Make sure only one thread is writing to the file at a time
-			boost::mutex::scoped_lock lock(_mutex);
+			std::lock_guard<std::mutex> lock(_mutex);
 
 			fputs(str.c_str(), _logFile);
 			fflush(_logFile);
@@ -101,8 +101,8 @@ public:
 
 void RegisterLogWriters()
 {
-	boost::shared_ptr<tdm::FileLogWriter> logWriter(new tdm::FileLogWriter("tdm_update.log"));
-	boost::shared_ptr<tdm::ConsoleLogWriter> consoleWriter(new tdm::ConsoleLogWriter);
+	std::shared_ptr<tdm::FileLogWriter> logWriter(new tdm::FileLogWriter("tdm_update.log"));
+	std::shared_ptr<tdm::ConsoleLogWriter> consoleWriter(new tdm::ConsoleLogWriter);
 
 	tdm::TraceLog::Instance().Register(logWriter);
 	tdm::TraceLog::Instance().Register(consoleWriter);

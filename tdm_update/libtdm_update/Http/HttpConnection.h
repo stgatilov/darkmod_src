@@ -20,14 +20,14 @@
 #pragma once
 
 #include <string>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <mutex>
 
 namespace tdm
 {
 
 class HttpRequest;
-typedef boost::shared_ptr<HttpRequest> HttpRequestPtr;
+typedef std::shared_ptr<HttpRequest> HttpRequestPtr;
 
 /**
  * greebo: An object representing a single HttpConnection, holding 
@@ -46,7 +46,7 @@ private:
 	std::size_t _bytesDownloaded;
 
 	// The mutex for managing access to the counter above
-	boost::mutex _bytesDownloadedMutex;
+	std::mutex _bytesDownloadedMutex;
 
 public:
 	HttpConnection();
@@ -74,6 +74,6 @@ public:
 	HttpRequestPtr CreateRequest(const std::string& url);
 	HttpRequestPtr CreateRequest(const std::string& url, const std::string& destFilename);
 };
-typedef boost::shared_ptr<HttpConnection> HttpConnectionPtr;
+typedef std::shared_ptr<HttpConnection> HttpConnectionPtr;
 
 }

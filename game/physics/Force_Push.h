@@ -20,7 +20,6 @@
 #define __FORCE_PUSH_H__
 
 #include "Force.h"
-#include <boost/shared_ptr.hpp>
 
 /**
  * greebo: This class should represent the push force as applied by the player
@@ -62,6 +61,6 @@ private:
 
 	idEntity*			owner;			// the owning entity
 };
-typedef boost::shared_ptr<CForcePush> CForcePushPtr;
+typedef std::shared_ptr<CForcePush> CForcePushPtr;
 
 #endif /* __FORCE_PUSH_H__ */

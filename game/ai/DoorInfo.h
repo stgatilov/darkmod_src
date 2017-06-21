@@ -20,7 +20,6 @@
 #ifndef __DOOR_INFO_H__
 #define __DOOR_INFO_H__
 
-#include <boost/shared_ptr.hpp>
 
 namespace ai
 {
@@ -53,7 +52,7 @@ struct DoorInfo
 	void Save(idSaveGame* savefile) const;
 	void Restore(idRestoreGame* savefile);
 };
-typedef boost::shared_ptr<DoorInfo> DoorInfoPtr;
+typedef std::shared_ptr<DoorInfo> DoorInfoPtr;
 
 } // namespace ai
 

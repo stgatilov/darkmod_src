@@ -7,7 +7,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>ID_ENABLE_CURL=0;ID_TYPEINFO;__DOOM_DLL__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

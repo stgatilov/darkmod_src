@@ -166,7 +166,7 @@ protected:
 	// greebo: Optional item dictionary. This is used to transfer inventory items between missions
 	// including their item entities. These entities will be saved at mission end and re-spawned at the 
 	// start of the next mission.
-	boost::shared_ptr<idDict> m_ItemDict;
+	std::shared_ptr<idDict> m_ItemDict;
 
 	idEntityPtr<idEntity>	m_BindMaster;
 	idStr					m_Name;
@@ -215,6 +215,6 @@ protected:
 	**/
 	idMat3					m_DropOrientation;
 };
-typedef boost::shared_ptr<CInventoryItem> CInventoryItemPtr;
+typedef std::shared_ptr<CInventoryItem> CInventoryItemPtr;
 
 #endif /* __DARKMOD_INVENTORYITEM_H__ */

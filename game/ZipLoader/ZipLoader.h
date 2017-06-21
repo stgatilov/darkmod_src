@@ -23,7 +23,6 @@
 #pragma hdrstop
 
 #include "precompiled_game.h"
-#include <boost/shared_ptr.hpp>
 #include "minizip/unzip.h"
 
 /**
@@ -57,7 +56,7 @@ public:
 	 */
 	bool ExtractFileTo(const idStr& fileName, const idStr& destPath);
 };
-typedef boost::shared_ptr<CZipFile> CZipFilePtr;
+typedef std::shared_ptr<CZipFile> CZipFilePtr;
 
 /**
  * greebo: This service class can be used to load and inspect zip files and

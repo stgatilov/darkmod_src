@@ -23,7 +23,7 @@
 #include <list>
 #include "Download.h"
 #include "MirrorList.h"
-#include <boost/random/mersenne_twister.hpp>
+#include <random>
 
 namespace tdm
 {
@@ -36,7 +36,7 @@ class MirrorDownload :
 	public Download
 {
 private:
-	static boost::mt19937 _rand;
+	static std::mt19937 _rand;
 
 	// The ordered list of mirrors, same order as the protected _url;
 	std::vector<Mirror> _mirrors;
@@ -63,6 +63,6 @@ public:
 	// Called by the Updater
 	static void InitRandomizer();
 };
-typedef boost::shared_ptr<MirrorDownload> MirrorDownloadPtr;
+typedef std::shared_ptr<MirrorDownload> MirrorDownloadPtr;
 
 } // namespace

@@ -29,7 +29,7 @@ namespace ai
 #define TASK_INTERACTION "Interaction"
 
 class InteractionTask;
-typedef boost::shared_ptr<InteractionTask> InteractionTaskPtr;
+typedef std::shared_ptr<InteractionTask> InteractionTaskPtr;
 
 class InteractionTask :
 	public Task

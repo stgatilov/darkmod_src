@@ -20,10 +20,9 @@
 #ifndef _HTTP_CONNECTION_H_
 #define _HTTP_CONNECTION_H_
 
-#include <boost/shared_ptr.hpp>
 
 class CHttpRequest;
-typedef boost::shared_ptr<CHttpRequest> CHttpRequestPtr;
+typedef std::shared_ptr<CHttpRequest> CHttpRequestPtr;
 
 /**
  * greebo: An object representing a single HttpConnection, holding 
@@ -60,6 +59,6 @@ public:
 	CHttpRequestPtr CreateRequest(const std::string& url);
 	CHttpRequestPtr CreateRequest(const std::string& url, const std::string& destFilename);
 };
-typedef boost::shared_ptr<CHttpConnection> CHttpConnectionPtr;
+typedef std::shared_ptr<CHttpConnection> CHttpConnectionPtr;
 
 #endif /* _HTTP_CONNECTION_H_ */

@@ -101,6 +101,6 @@ protected:
 	*/
 	idList<CResponseEffect*> m_ResponseEffects;
 };
-typedef boost::shared_ptr<CResponse> CResponsePtr;
+typedef std::shared_ptr<CResponse> CResponsePtr;
 
 #endif /* SR_RESPONSE__H */

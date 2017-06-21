@@ -21,22 +21,13 @@
 #define __SND_LOCAL_H__
 
 // you need the OpenAL headers for build, even if AL is not enabled - http://www.openal.org/
-#ifdef _WIN32
-#include "../openal/include/al.h"
-#include "../openal/include/alc.h"
-#include "../openal/idal.h"
-// broken OpenAL SDK ?
-#define ID_ALCHAR (ALubyte *)
-#elif defined( MACOS_X )
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#define ID_ALCHAR
-#else         
 #include <AL/al.h>
 #include <AL/alc.h>
-#define ID_ALCHAR
-#endif
-#include "../openal/include/efxlib.h"
+#include <AL/alext.h>
+
+#include "../framework/UsercmdGen.h"
+#include "sound.h"
+#include "efxlib.h"
 
 // demo sound commands
 typedef enum {
@@ -213,38 +204,6 @@ private:
     int				OpenOGG( const char* strFileName, waveformatex_t* pwfx = NULL );
 	int				ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
 	int				CloseOGG( void );
-};
-
-
-/*
-===================================================================================
-
-idAudioHardware
-
-===================================================================================
-*/
-
-class idAudioHardware {
-public:
-	static idAudioHardware *Alloc();
-
-    virtual					~idAudioHardware();
-
-    virtual bool			Initialize( ) = 0;
-
-	virtual bool			Lock( void **pDSLockedBuffer, ulong *dwDSLockedBufferSize ) = 0;
-	virtual bool			Unlock( void *pDSLockedBuffer, dword dwDSLockedBufferSize ) = 0;
-	virtual bool			GetCurrentPosition( ulong *pdwCurrentWriteCursor ) = 0;
-	
-	// try to write as many sound samples to the device as possible without blocking and prepare for a possible new mixing call
-	// returns wether there is *some* space for writing available
-	virtual bool			Flush( void ) = 0;
-
-	virtual void			Write( bool flushing ) = 0;
-
-	virtual int				GetNumberOfSpeakers( void )= 0;
-	virtual int				GetMixBufferSize( void ) = 0;
-	virtual short*			GetMixBuffer( void ) = 0;
 };
 
 
@@ -612,7 +571,6 @@ public:
 
 	void					Shutdown( void );
 	void					Init( idRenderWorld *rw );
-	void					ClearBuffer( void );
 
 	// update
 	void					ForegroundUpdate( int currentTime );
@@ -639,7 +597,9 @@ public:
 	idVec3					listenerQU;			// position in "quake units"
 	int						listenerArea;
 	idStr					listenerAreaName;
-	int						listenerEnvironmentID;
+    ALuint					listenerEffect;
+    ALuint					listenerSlot;
+    ALuint					listenerFilter;
 
 	int						gameMsec;
 	int						game44kHz;
@@ -690,7 +650,6 @@ public:
 
 	// shutdown routine
 	virtual	void			Shutdown( void );
-	virtual void			ClearBuffer( void );
 
 	// sound is attached to the window, and must be recreated when the window is changed
 	virtual bool			ShutdownHW( void );
@@ -724,7 +683,7 @@ public:
 
 	virtual void			PrintMemInfo( MemInfo_t *mi );
 
-	virtual int				IsEAXAvailable( void );
+    virtual int				IsEFXAvailable(void);
 
 	//-------------------------
 
@@ -738,7 +697,6 @@ public:
 	ALuint					AllocOpenALSource( idSoundChannel *chan, bool looping, bool stereo );
 	void					FreeOpenALSource( ALuint handle );
 
-	idAudioHardware *		snd_audio_hw;
 	idSoundCache *			soundCache;
 
 	idSoundWorldLocal *		currentSoundWorld;	// the one to mix each async tic
@@ -771,21 +729,34 @@ public:
 	ALCcontext				*openalContext;
 	ALsizei					openalSourceCount;
 	openalSource_t			openalSources[256];
-	EAXSet					alEAXSet;
-	EAXGet					alEAXGet;
-	EAXSetBufferMode		alEAXSetBufferMode;
-	EAXGetBufferMode		alEAXGetBufferMode;
+
+    LPALGENEFFECTS			alGenEffects;
+    LPALDELETEEFFECTS		alDeleteEffects;
+    LPALISEFFECT			alIsEffect;
+    LPALEFFECTI				alEffecti;
+    LPALEFFECTF				alEffectf;
+    LPALEFFECTFV			alEffectfv;
+    LPALGENFILTERS			alGenFilters;
+    LPALDELETEFILTERS		alDeleteFilters;
+    LPALISFILTER			alIsFilter;
+    LPALFILTERI				alFilteri;
+    LPALFILTERF				alFilterf;
+    LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
+    LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
+    LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
+    LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
+
 	idEFXFile				EFXDatabase;
 	bool					efxloaded;
 							// latches
-	static bool				useOpenAL;
-	static bool				useEAXReverb;
+    static bool				useEFXReverb;
 							// mark available during initialization, or through an explicit test
-	static int				EAXAvailable;
+    static int				EFXAvailable;
 
 
 	static idCVar			s_noSound;
 	static idCVar			s_diffractionMax; // grayman #4219
+    static idCVar			s_device;
 	static idCVar			s_quadraticFalloff;
 	static idCVar			s_drawSounds;
 	static idCVar			s_minVolume6;
@@ -810,10 +781,7 @@ public:
 	static idCVar			s_force22kHz;
 	static idCVar			s_clipVolumes;
 	static idCVar			s_realTimeDecoding;
-	static idCVar			s_libOpenAL;
-	static idCVar			s_useOpenAL;
 	static idCVar			s_useEAXReverb;
-	static idCVar			s_muteEAXReverb;
 	static idCVar			s_decompressionLimit;
 
 	static idCVar			s_slowAttenuate;

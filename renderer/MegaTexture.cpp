@@ -367,7 +367,6 @@ void idTextureLevel::UpdateTile( int localX, int localY, int globalX, int global
 			break;
 		}
 
-		int	byteSize = size * 4;
 		// mip-map in place
 		for ( int y = 0 ; y < size ; y++ ) {
 			byte	*in, *in2, *out;
@@ -637,7 +636,7 @@ Incrementally load a giant tga file and process into the mega texture block form
 ====================
 */
 void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
-	int		columns, rows, fileSize, numBytes;
+	int		columns, fileSize, numBytes;
 	byte	*pixbuf;
 	int		row, column;
 	TargaHeader	targa_header;
@@ -700,7 +699,6 @@ void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
 	}
 
 	columns = targa_header.width;
-	rows = targa_header.height;
 
 	// skip TARGA image comment
 	if ( targa_header.id_length != 0 ) {

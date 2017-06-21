@@ -19,6 +19,7 @@
 
 #include "MirrorDownload.h"
 
+#include <chrono>
 #include "../TraceLog.h"
 
 #ifdef max
@@ -29,7 +30,7 @@ namespace tdm
 {
 
 // Init the static randomizer
-boost::mt19937 MirrorDownload::_rand;
+std::mt19937 MirrorDownload::_rand;
 
 MirrorDownload::MirrorDownload(const HttpConnectionPtr& conn, 
 							   const MirrorList& mirrors, 
@@ -90,7 +91,7 @@ std::string MirrorDownload::GetCurrentMirrorName()
 
 void MirrorDownload::InitRandomizer()
 {
-	_rand.seed(static_cast<boost::uint32_t>(std::time(0)));
+    _rand.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 }
 
 } // namespace

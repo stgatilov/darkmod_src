@@ -29,7 +29,7 @@ namespace ai
 #define VERY_HIGH_BARK_PRIORITY 9000000
 
 class CommunicationTask;
-typedef boost::shared_ptr<CommunicationTask> CommunicationTaskPtr;
+typedef std::shared_ptr<CommunicationTask> CommunicationTaskPtr;
 
 /** 
  * A CommunicationTask is a more specialised task, extending

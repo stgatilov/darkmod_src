@@ -637,7 +637,7 @@ void CShop::AddPersistentStartingEquipment()
 			}
 
 			// Check if this is a weapon
-			CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+			CInventoryWeaponItemPtr weaponItem = std::dynamic_pointer_cast<CInventoryWeaponItem>(item);
 
 			bool isWeapon = (weaponItem != NULL);
 			bool weaponIsAllowedEmpty = weaponItem ? weaponItem->IsAllowedEmpty() : false;
@@ -664,7 +664,7 @@ int CShop::GetQuantityForItem(const CInventoryItemPtr& item)
 	int quantity = item->GetPersistentCount();
 
 	// Check if this is a weapon
-	CInventoryWeaponItemPtr weaponItem = boost::dynamic_pointer_cast<CInventoryWeaponItem>(item);
+	CInventoryWeaponItemPtr weaponItem = std::dynamic_pointer_cast<CInventoryWeaponItem>(item);
 
 	bool isWeapon = (weaponItem != NULL);
 
