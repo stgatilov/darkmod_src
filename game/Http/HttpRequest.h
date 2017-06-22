@@ -82,7 +82,7 @@ public:
 	static size_t WriteMemoryCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self);
 	static size_t WriteFileCallback(void* ptr, size_t size, size_t nmemb, CHttpRequest* self);
 
-	static int CHttpRequest::TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
+	static int TDMHttpProgressFunc(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
 
 	RequestStatus GetStatus();
 

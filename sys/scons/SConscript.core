@@ -54,6 +54,7 @@ ogg_list = scons_utils.BuildList( 'sound/OggVorbis', ogg_string )
 
 renderer_string = ' \
 	Cinematic.cpp \
+	CinematicFFMpeg.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
@@ -294,25 +295,37 @@ ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
 
 
-if ( local_dedicated == 0 ):
-	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
-#	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-	local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
-	local_env.Append( LIBS = [ 'openal' ] )
-
 # greebo: Add boost and image libraries
 if (TARGET_ARCH == 'x86'):
 	local_env.Append(LIBS = [
 		File('#/linux/polarssl/libpolarssl.a'),
 		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a')		
+		File('#/linux/boost/lib/libboost_system.a'),
+		File('#/linux/ffmpeg/libavformat.a'),
+		File('#/linux/ffmpeg/libavcodec.a'),
+		File('#/linux/ffmpeg/libavutil.a'),
+		File('#/linux/ffmpeg/libswscale.a'),
+		File('#/linux/ffmpeg/libswresample.a')
 	])
 if (TARGET_ARCH == 'x64'):
 	local_env.Append(LIBS = [
 		File('#/linux/polarssl/lib64/libpolarssl.a'),
 		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a')
+		File('#/linux/boost/lib64/libboost_system.a'),
+		File('#/linux/ffmpeg/lib64/libavformat.a'),
+		File('#/linux/ffmpeg/lib64/libavcodec.a'),
+		File('#/linux/ffmpeg/lib64/libavutil.a'),
+		File('#/linux/ffmpeg/lib64/libswscale.a'),
+		File('#/linux/ffmpeg/lib64/libswresample.a')
 	])
+
+if ( local_dedicated == 0 ):
+	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
+#	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
+	local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
+	local_env.Append( LIBS = [ 'openal' ] )
+	local_env.Append( LIBS = [ 'dl' ] )
+	local_env.Append( LIBS = [ 'pthread' ] )
 
 source_list = core_list
 source_list += idlib_objects

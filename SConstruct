@@ -307,8 +307,6 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 BASECPPFLAGS.append( '-fmessage-length=0' )
 # C++11 features
 BASECPPFLAGS.append( '-std=c++11' )
-# gcc 5.4: std::move and std::copy_n missing
-BASECPPFLAGS.append( '-std=c++11' )
 
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
@@ -392,6 +390,7 @@ g_base_env.Append(CPPPATH = '#/include/minizip')
 g_base_env.Append(CPPPATH = '#/include/libjpeg')
 g_base_env.Append(CPPPATH = '#/include/libpng')
 g_base_env.Append(CPPPATH = '#/include/devil')
+g_base_env.Append(CPPPATH = '#/include/ffmpeg')
 g_base_env.Append(CPPPATH = '#/')
 
 # Boost matrix has one of these
