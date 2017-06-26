@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug with inlines and memory log|Win32">
@@ -471,6 +471,7 @@
     <ClCompile Include="idlib\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="idlib\Allocators.h" />
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />

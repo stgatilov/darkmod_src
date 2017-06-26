@@ -129,7 +129,8 @@ framework_string = ' \
 	FileSystem.cpp \
 	I18N.cpp \
 	KeyInput.cpp \
-	Unzip.cpp \
+	minizip/ioapi.c \
+	minizip/unzip.cpp \
 	UsercmdGen.cpp \
 	Session_menu.cpp \
 	Session.cpp \
@@ -272,6 +273,8 @@ local_env = g_env.Clone()
 # To help finding the precompiled_engine.h 
 local_env.Prepend(CPPPATH = '#framework')
 g_env_noopt.Prepend(CPPPATH = '#framework')
+# Internal minizip now uses external zlib
+local_env.Append(CPPPATH = '#/include/zlib')
 
 #if NO_GCH == '0':
 #	# greebo: Set up the precompiled headers for the engine project
@@ -337,7 +340,30 @@ source_list += curl_lib
 source_list += SConscript( '../../sys/scons/SConscript.devil' )
 source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
 source_list += SConscript( '../../sys/scons/SConscript.libpng' )
-source_list += SConscript( '../../sys/scons/SConscript.ziploader' )
+
+# stgatilov: we need zlib code because the abovementioned libraries use it
+# BUT we cannot use external minizip, because internal one duplicates its symbols
+# source_list += SConscript( '../../sys/scons/SConscript.ziploader' )
+zlib_string = ' \
+	zlib/adler32.c \
+	zlib/compress.c \
+	zlib/crc32.c \
+	zlib/deflate.c \
+	zlib/gzclose.c \
+	zlib/gzlib.c \
+	zlib/gzread.c \
+	zlib/gzwrite.c \
+	zlib/infback.c \
+	zlib/inffast.c \
+	zlib/inflate.c \
+	zlib/inftrees.c \
+	zlib/trees.c \
+	zlib/uncompr.c \
+	zlib/zutil.c'
+zlib_list = scons_utils.BuildList( '', zlib_string )
+for i in range( len( zlib_list ) ):
+	zlib_list[ i ] = '../../lib/' + zlib_list[ i ]
+source_list += zlib_list
 
 source_list += g_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
 

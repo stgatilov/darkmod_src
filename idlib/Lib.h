@@ -171,6 +171,7 @@ public:
 
 // memory management and arrays
 #include "Heap.h"
+#include "Allocators.h"
 #include "containers/List.h"
 
 // math

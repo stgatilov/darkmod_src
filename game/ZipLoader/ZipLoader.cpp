@@ -25,7 +25,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ZipLoader.h"
 
 #include <fstream>
-#include "minizip/unzip.h"
+#include "../framework/Unzip.h"
 
 CZipFile::CZipFile(unzFile handle) :
 	_handle(handle)
