@@ -352,15 +352,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="framework\minizip\ioapi.c" />
+    <ClCompile Include="framework\minizip\unzip.cpp" />
     <ClCompile Include="TypeInfo\main.cpp" />
     <ClCompile Include="TypeInfo\TypeInfoGen.cpp" />
     <ClCompile Include="framework\CmdSystem.cpp" />
     <ClCompile Include="framework\CVarSystem.cpp" />
     <ClCompile Include="framework\File.cpp" />
     <ClCompile Include="framework\FileSystem.cpp" />
-    <ClCompile Include="framework\Unzip.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="framework\minizip\ioapi.h" />
+    <ClInclude Include="framework\minizip\unzip.h" />
     <ClInclude Include="TypeInfo\TypeInfoGen.h" />
     <ClInclude Include="framework\CmdSystem.h" />
     <ClInclude Include="framework\CVarSystem.h" />

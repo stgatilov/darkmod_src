@@ -24,6 +24,8 @@
 	#define	MAX_PRINT_MSG_SIZE	16 * 1024
 #endif
 
+#include "Unzip.h"
+
 /*
 ==============================================================
 
@@ -230,7 +232,7 @@ public:
 private:
 	idStr					name;			// name of the file in the pak
 	idStr					fullPath;		// full file path including pak file name
-	int						zipFilePos;		// zip file info position in pak
+	ZPOS64_T				zipFilePos;		// zip file info position in pak
 	int						fileSize;		// size of the file
     ID_TIME_T               fileLastMod;    // last modified date/time of the file
 	void *					z;				// unzip info

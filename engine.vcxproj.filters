@@ -97,6 +97,9 @@
     <Filter Include="Ui">
       <UniqueIdentifier>{b3166d25-0562-49da-bc8d-961006fe1785}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Framework\minizip">
+      <UniqueIdentifier>{7d31555f-296c-48d6-a1a6-362dc3e34dd0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cm\CollisionModel.h">
@@ -572,6 +575,12 @@
     <ClInclude Include="sys\win32\dxerr.h">
       <Filter>Sys</Filter>
     </ClInclude>
+    <ClInclude Include="framework\minizip\ioapi.h">
+      <Filter>Framework\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\minizip\unzip.h">
+      <Filter>Framework\minizip</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -656,9 +665,6 @@
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="framework\Session_menu.cpp">
-      <Filter>Framework</Filter>
-    </ClCompile>
-    <ClCompile Include="framework\Unzip.cpp">
       <Filter>Framework</Filter>
     </ClCompile>
     <ClCompile Include="framework\UsercmdGen.cpp">
@@ -1591,6 +1597,12 @@
     </ClCompile>
     <ClCompile Include="sys\win32\dxerr.cpp">
       <Filter>Sys</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\minizip\ioapi.c">
+      <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\minizip\unzip.cpp">
+      <Filter>Framework\minizip</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

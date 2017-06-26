@@ -20,7 +20,7 @@
 #ifndef __HEAP_H__
 #define __HEAP_H__
 
-#include "math/Math.h" // OrbWeaver: Max() macro
+template<class T> ID_INLINE T	HMax( T x, T y ) { return ( x > y ) ? x : y; }
 
 #include <cstdlib>
 #include <cstddef> // for NULL
@@ -724,7 +724,7 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Al
 	if ( block != NULL ) {
 		UnlinkFreeInternal( block );
 	} else if ( allowAllocs ) {
-		int allocSize = Max( baseBlockSize, alignedBytes + (int)sizeof( idDynamicBlock<type> ) );
+		int allocSize = HMax( baseBlockSize, alignedBytes + (int)sizeof( idDynamicBlock<type> ) );
 		block = ( idDynamicBlock<type> * ) Mem_Alloc16( allocSize );
 		if ( lockMemory ) {
 			idLib::sys->LockMemory( block, baseBlockSize );
@@ -789,7 +789,7 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Re
 	}
 
 	// if the unused space at the end of this block is large enough to hold a block with at least one element
-	if ( block->GetSize() - alignedBytes - (int)sizeof( idDynamicBlock<type> ) < Max( minBlockSize, (int)sizeof( type ) ) ) {
+	if ( block->GetSize() - alignedBytes - (int)sizeof( idDynamicBlock<type> ) < HMax( minBlockSize, (int)sizeof( type ) ) ) {
 		return block;
 	}
 
