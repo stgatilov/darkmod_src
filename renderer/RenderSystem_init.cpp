@@ -615,7 +615,7 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	int n;
-	glGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
+	qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
 	common->Printf( "Max vertex attribs: %d\n", n );
 }
 
