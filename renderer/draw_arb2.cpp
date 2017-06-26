@@ -216,7 +216,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
 		// times with different colors and images if the surface or light have multiple layers
-		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
+		RB_CreateSingleDrawInteractions( surf/*, RB_ARB2_DrawInteraction*/ );
 	}
 
 	qglDisableVertexAttribArrayARB( 8 );
@@ -347,7 +347,7 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 
 		// this may cause RB_ARB2_DrawInteraction to be exacuted multiple
 		// times with different colors and images if the surface or light have multiple layers
-		RB_CreateSingleDrawInteractions( surf, RB_ARB2_DrawInteraction );
+		RB_CreateSingleDrawInteractions( surf/*, RB_ARB2_DrawInteraction*/ );
 	}
 
 	qglDisableVertexAttribArrayARB( 8 );
@@ -510,7 +510,7 @@ void RB_ARB2_DrawInteractions( void ) {
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 
 	GL_SelectTexture( 0 );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+//	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 }
 
 //===================================================================================
@@ -582,6 +582,10 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	// duzenko: depth+alpha 
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
+
+	// duzenko: old stage replacement 
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_OLD_STAGE, "oldstage.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_OLD_STAGE, "oldstage.vfp" },
 	// additional programs can be dynamically specified in materials
 };
 
@@ -622,22 +626,23 @@ void R_LoadARBProgram( int progIndex ) {
 		// allocate a new identifier for this program
 		progs[progIndex].ident = PROG_USER + progIndex;
 	}
+	common->Printf( " %d", progs[progIndex].ident );
 
 	// vertex and fragment programs can both be present in a single file, so
 	// scan for the proper header to be the start point, and stamp a 0 in after the end
 	start = NULL;
 	if ( progs[progIndex].target == GL_VERTEX_PROGRAM_ARB ) {
-		if ( !glConfig.ARBVertexProgramAvailable ) {
+		/*if ( !glConfig.ARBVertexProgramAvailable ) {
 			common->Printf( S_COLOR_RED ": GL_VERTEX_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
-		}
+		}*/
 		start = strstr( (char *)buffer, "!!ARBvp" );
 	}
 	if ( progs[progIndex].target == GL_FRAGMENT_PROGRAM_ARB ) {
-		if ( !glConfig.ARBFragmentProgramAvailable ) {
+		/*if ( !glConfig.ARBFragmentProgramAvailable ) {
 			common->Printf( S_COLOR_RED ": GL_FRAGMENT_PROGRAM_ARB not available\n" S_COLOR_DEFAULT );
 			return;
-		}
+		}*/
 		start = strstr( (char *)buffer, "!!ARBfp" );
 	}
 	if ( !start ) {
@@ -729,6 +734,25 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 
 /*
 ==================
+R_UseProgram
+
+One-liner for qglBindProgramARB+qglEnable frag+vert
+==================
+*/
+void R_UseProgram( int vProg ) {
+	if (vProg == PROG_INVALID) {
+		qglDisable( GL_VERTEX_PROGRAM_ARB );
+		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+	} else {
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, vProg );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, vProg+1 ); // as defined by program_t
+		qglEnable( GL_VERTEX_PROGRAM_ARB );
+		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+	}
+}
+
+/*
+==================
 R_ReloadARBPrograms_f
 ==================
 */
@@ -753,10 +777,10 @@ void R_ARB2_Init( void ) {
 
 	common->Printf( "---------- R_ARB2_Init ----------\n" );
 
-	if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
+	/*if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
 		common->Printf( "Not available.\n" );
 		return;
-	}
+	}*/
 
 	common->Printf( "Available.\n" );
 

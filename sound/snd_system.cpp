@@ -725,7 +725,7 @@ float idSoundSystemLocal::dB2Scale( const float val ) const {
 		return 1.0f;				// most common
 	} else if ( val <= -60.0f ) {
 		return 0.0f;
-	} else if ( val >= 60.0f ) {
+	} else if ( val >= 60.0f * (1.0f - idMath::FLT_EPSILON) ) {
 		return powf( 2.0f, val * ( 1.0f / 6.0f ) ); 
 	}
 	int ival = (int)( ( val + 60.0f ) * 10.0f );

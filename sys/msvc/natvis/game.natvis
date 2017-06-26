@@ -56,10 +56,61 @@
   
   <Type Name="idVarDef">
     <DisplayString>VarDef {name->name}: {typeDef->type}</DisplayString>
-    <!--
-      TODO: display real value of variable (make it expandable)
-      Note: all the cases are handled in idVarDef::PrintInfo method.
-    -->
+    <Expand>
+      <Item Name="[type]">*typeDef</Item>
+      <Synthetic Name="[value]">
+        <DisplayString Condition="typeDef->type == ev_void">void</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_namespace">namespace</DisplayString>
+        <DisplayString Condition="initialized == stackVariable">stack[{value.stackOffset}]</DisplayString>
+        <!-- Note: showing value is currently impossible for stack variables -->
+        <DisplayString Condition="typeDef->type == ev_boolean">{value.intPtr[0] != 0}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_float">{value.floatPtr[0]}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_vector">{value.vectorPtr[0]}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_string">{value.stringPtr,s}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_function">{value.functionPtr[0]}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_virtualfunction">{value.virtualFunction}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_jumpoffset">{value.jumpOffset}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_argsize">{value.argSize}</DisplayString>
+        <DisplayString Condition="typeDef->type == ev_field">{value.ptrOffset}</DisplayString>
+        <!-- Note: never saw ev_object, ev_entity, ev_scriptevent being non-local -->
+        <Expand>
+          <ExpandedItem>value</ExpandedItem>
+        </Expand>
+      </Synthetic>
+      <Item Name="initialized">initialized</Item>
+      <Synthetic Name="[name]">
+        <DisplayString>{name->name}</DisplayString>
+        <Expand>
+          <ExpandedItem>name</ExpandedItem>
+        </Expand>
+      </Synthetic>
+      <Item Name="scope">scope</Item>
+      <Synthetic Name="Note:">
+        <DisplayString>expand [Raw View] to see members</DisplayString>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="idTypeDef">
+    <DisplayString>{type} {name}</DisplayString>
+  </Type>
+
+  <Type Name="statement_s">
+    <Expand>
+      <Synthetic Name="[op]">
+        <DisplayString>{op}:{idCompiler::opcodes[op].opname,sb}</DisplayString>
+        <Expand>
+          <ExpandedItem>idCompiler::opcodes[op]</ExpandedItem>
+        </Expand>
+      </Synthetic>
+      <Item Name="[a]">*a</Item>
+      <Item Name="[b]">*b</Item>
+      <Item Name="[c]">*c</Item>
+      <Synthetic Name="[file]">
+        <DisplayString>{file}:{gameLocal.program.fileList.list[file],s}</DisplayString>
+      </Synthetic>
+      <Item Name="linenumber">linenumber</Item>
+    </Expand>
   </Type>
 
 </AutoVisualizer>

@@ -332,6 +332,7 @@ idSoundEmitterLocal::idSoundEmitterLocal
 */
 idSoundEmitterLocal::idSoundEmitterLocal( void ) {	
 	soundWorld = NULL;
+	index = -1;
 	Clear();
 }
 
@@ -359,6 +360,7 @@ void idSoundEmitterLocal::Clear( void ) {
 
 	removeStatus = REMOVE_STATUS_SAMPLEFINISHED;
 	distance = 0.0f;
+	realDistance = 0.0f;
 
 	lastValidPortalArea = -1;
 
@@ -368,6 +370,7 @@ void idSoundEmitterLocal::Clear( void ) {
 	amplitude = 0;
 	maxDistance = 10.0f;	// meters
 	minDistance = 0.0f;		// grayman #3042
+	volumeLoss = 0.0f;
 	spatializedOrigin.Zero();
 
 	memset( &parms, 0, sizeof( parms ) );

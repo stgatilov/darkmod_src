@@ -768,6 +768,7 @@ void idInterpreter::CallEvent( const function_t *func, int argsize ) {
 
 	format = evdef->GetArgFormat();
 	for( j = 0, i = 0, pos = type_object.Size(); ( pos < argsize ) || ( format[ i ] != 0 ); i++ ) {
+		data[i] = 0;	//stgatilov: clear for easier debugging in x64
 		switch( format[ i ] ) {
 		case D_EVENT_INTEGER :
 			var.intPtr = ( int * )&localstack[ start + pos ];
@@ -898,6 +899,7 @@ void idInterpreter::CallSysEvent( const function_t *func, int argsize ) {
 
 	format = evdef->GetArgFormat();
 	for( j = 0, i = 0, pos = 0; ( pos < argsize ) || ( format[ i ] != 0 ); i++ ) {
+		data[i] = 0;	//stgatilov: clear for easier debugging in x64
 		switch( format[ i ] ) {
 		case D_EVENT_INTEGER :
 			source.intPtr = ( int * )&localstack[ start + pos ];

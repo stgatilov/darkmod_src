@@ -964,6 +964,12 @@ on ppc architecture, floats are passed in a seperate set of registers
 the function prototypes must have matching float declaration
 
 http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/2rt_powerpc_abi/chapter_9_section_5.html
+
+stgatilov: the same applies for x64 architecture.
+Windows x64 calling convention requires passing:
+  first 4 integers in: RCX, RDX, R8, R9
+  first 4 floats   in: XMM0, XMM1, XMM2, XMM3  (SSE)
+              rest on: stack
 */
 
 	switch( ev->GetFormatspecIndex() ) {
@@ -980,6 +986,8 @@ http://developer.apple.com/documentation/DeveloperTools/Conceptual/MachORuntime/
 	}
 
 #else
+
+	//stgatilov: CPU_EASYARGS way is known to work properly only with cdecl calling convention!
 
 	assert( D_EVENT_MAXARGS == 8 );
 

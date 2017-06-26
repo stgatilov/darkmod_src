@@ -1328,7 +1328,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 void RB_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
-void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) );
+void RB_CreateSingleDrawInteractions( const drawSurf_t *surf/*, void (*DrawInteraction)(const drawInteraction_t *)*/ );
 
 const shaderStage_t *RB_SetLightTexture( const idRenderLightLocal *light );
 
@@ -1436,9 +1436,14 @@ typedef enum {
 	// duzenko: ARB shader depth+alpha
 	VPROG_DEPTH_ALPHA,
 	FPROG_DEPTH_ALPHA,
+	// duzenko: ARB shader for old stage
+	VPROG_OLD_STAGE,
+	FPROG_OLD_STAGE,
 	// 
 	PROG_USER
 } program_t;
+
+void R_UseProgram( int vProg = PROG_INVALID );
 
 /*
 
