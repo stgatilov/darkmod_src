@@ -278,12 +278,14 @@ idRotation idMat3::ToRotation( void ) const {
 		r.vec[k]	= ( mat[ k ][ i ] + mat[ i ][ k ] ) * s;
 	}
 	r.angle = idMath::ACos( r.angle );
-	if ( idMath::Fabs( r.angle ) < 1e-10f ) {
+	//stgatilov: avoid underflow in length calculation
+	float sqrLength = r.vec.LengthSqr();
+	if ( idMath::Fabs( r.angle ) < 1e-10f || sqrLength == 0.0f ) {
 		r.vec.Set( 0.0f, 0.0f, 1.0f );
 		r.angle = 0.0f;
 	} else {
 		//vec *= (1.0f / sin( angle ));
-		r.vec.Normalize();
+		r.vec *= idMath::InvSqrt( sqrLength );
 		r.vec.FixDegenerateNormal();
 		r.angle *= 2.0f * idMath::M_RAD2DEG;
 	}

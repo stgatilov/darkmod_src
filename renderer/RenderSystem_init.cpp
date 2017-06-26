@@ -613,6 +613,10 @@ static void R_CheckPortableExtensions( void ) {
 			glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebufferEXT");
 		}
 	}
+
+	int n;
+	glGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &n );
+	common->Printf( "Max vertex attribs: %d\n", n );
 }
 
 

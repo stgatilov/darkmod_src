@@ -433,7 +433,12 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		// draw a normal opaque surface
 		bool	didDraw = false;
 
-		qglEnable( GL_ALPHA_TEST );
+		//qglEnable( GL_ALPHA_TEST );
+		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA );
+		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA );
+		qglEnable( GL_VERTEX_PROGRAM_ARB );
+		qglEnable( GL_FRAGMENT_PROGRAM_ARB );
+
 		// perforated surfaces may have multiple alpha tested stages
 		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
 			pStage = shader->GetStage(stage);
@@ -460,7 +465,9 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			}
 			qglColor4fv( color );
 
-			qglAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
+			GLfloat parm[4] = { 0, 0, 0, regs[pStage->alphaTestRegister] };
+			qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, &parm[0] );
+			//qglAlphaFunc( GL_GREATER, regs[pStage->alphaTestRegister] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -473,8 +480,11 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 			RB_FinishStageTexturing( pStage, surf, ac );
 		}
-		qglDisable( GL_ALPHA_TEST );
-		if ( !didDraw ) {
+
+		//qglDisable( GL_ALPHA_TEST );
+		qglDisable( GL_VERTEX_PROGRAM_ARB );
+		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
+		if (!didDraw) {
 			drawSolid = true;
 		}
 	}
@@ -831,12 +841,12 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
-			qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+			//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
 			qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 			qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 			qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
-			qglEnableClientState( GL_COLOR_ARRAY );
+			//qglEnableClientState( GL_COLOR_ARRAY );
 			qglEnableVertexAttribArrayARB( 9 );
 			qglEnableVertexAttribArrayARB( 10 );
 			qglEnableClientState( GL_NORMAL_ARRAY );
@@ -890,13 +900,14 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglDisable( GL_VERTEX_PROGRAM_ARB );
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 
-			qglDisableClientState( GL_COLOR_ARRAY );
+			//qglDisableClientState( GL_COLOR_ARRAY );
 			qglDisableVertexAttribArrayARB( 9 );
 			qglDisableVertexAttribArrayARB( 10 );
 			qglDisableClientState( GL_NORMAL_ARRAY );
 			continue;
 		}
-		else if ( soft_particle 
+		//else duzenko - redundant else?
+		if ( soft_particle 
 				 && surf->particle_radius > 0.0f 
 				 && ( src_blend == GLS_SRCBLEND_ONE || src_blend == GLS_SRCBLEND_SRC_ALPHA ) 
 				 //&& tr.backEndRenderer == BE_ARB2
@@ -920,8 +931,10 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			else
 			{
 				// A properly set-up particle shader
-				qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-				qglEnableClientState( GL_COLOR_ARRAY );
+				//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+				//qglEnableClientState( GL_COLOR_ARRAY );
+				qglEnableVertexAttribArrayARB( 3 );
+				qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 			}
 
 			GL_State( pStage->drawStateBits | GLS_DEPTHFUNC_ALWAYS ); // Disable depth clipping. The fragment program will 
@@ -993,7 +1006,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 
 			if ( pStage->vertexColor != SVC_IGNORE ) {
-				qglDisableClientState( GL_COLOR_ARRAY );
+				qglDisableVertexAttribArrayARB( 3 );
+				//qglDisableClientState( GL_COLOR_ARRAY );
 			}
 			continue;
 		}

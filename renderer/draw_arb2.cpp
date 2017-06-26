@@ -183,7 +183,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArrayARB( 9 );
 	qglEnableVertexAttribArrayARB( 10 );
 	qglEnableVertexAttribArrayARB( 11 );
-	qglEnableClientState( GL_COLOR_ARRAY );
+	//qglEnableClientState( GL_COLOR_ARRAY );
 
 	// texture 0 is the normalization cube map for the vector towards the light
 	GL_SelectTextureNoClient( 0 );
@@ -207,7 +207,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
 		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
@@ -223,7 +223,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArrayARB( 9 );
 	qglDisableVertexAttribArrayARB( 10 );
 	qglDisableVertexAttribArrayARB( 11 );
-	qglDisableClientState( GL_COLOR_ARRAY );
+	//qglDisableClientState( GL_COLOR_ARRAY );
 
 	// disable features
 	GL_SelectTextureNoClient( 6 );
@@ -312,7 +312,8 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArrayARB( 9 );
 	qglEnableVertexAttribArrayARB( 10 );
 	qglEnableVertexAttribArrayARB( 11 );
-	qglEnableClientState( GL_COLOR_ARRAY );
+	qglEnableVertexAttribArrayARB( 3 );
+	//qglEnableClientState( GL_COLOR_ARRAY );
 
 	// texture 0 is the normalization cube map for the vector towards the light
 	GL_SelectTextureNoClient( 0 );
@@ -336,7 +337,8 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
+		qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
@@ -352,7 +354,8 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArrayARB( 9 );
 	qglDisableVertexAttribArrayARB( 10 );
 	qglDisableVertexAttribArrayARB( 11 );
-	qglDisableClientState( GL_COLOR_ARRAY );
+	qglDisableVertexAttribArrayARB( 3 );
+	//qglDisableClientState( GL_COLOR_ARRAY );
 
 	// disable features
 	
@@ -532,11 +535,6 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT, "ambientLight.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT, "ambientLight.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW, "shadow.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_R200_INTERACTION, "R200_interaction.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_NV20_BUMP_AND_LIGHT, "nv20_bumpAndLight.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_NV20_DIFFUSE_COLOR, "nv20_diffuseColor.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_NV20_SPECULAR_COLOR, "nv20_specularColor.vp" },
-	{ GL_VERTEX_PROGRAM_ARB, VPROG_NV20_DIFFUSE_AND_SPECULAR_COLOR, "nv20_diffuseAndSpecularColor.vp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT, "environment.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT, "environment.vfp" },
 
@@ -581,6 +579,9 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 
+	// duzenko: depth+alpha 
+	{ GL_VERTEX_PROGRAM_ARB, VPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
+	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_DEPTH_ALPHA, "depth_alpha.vfp" },
 	// additional programs can be dynamically specified in materials
 };
 
