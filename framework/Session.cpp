@@ -49,6 +49,9 @@ idCVar	idSessionLocal::saveGameName( "saveGameName", "", CVAR_GAME | CVAR_ROM, "
 idCVar	idSessionLocal::com_numQuickSaves( "com_numQuickSaves", "2", CVAR_GAME | CVAR_NOCHEAT | CVAR_INTEGER | CVAR_ARCHIVE, 
 	"How many quicksaves to retain. Reducing the number won't delete any that you already have.", 1.0f, 100000.0f );
 
+// stgatilov: allow choosing format for savegame previews
+idCVar	com_savegame_preview_format( "com_savegame_preview_format", "jpg", CVAR_GAME | CVAR_ARCHIVE, "Image format used to store previews for game saves: tga/jpg." );
+
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
 
@@ -1896,6 +1899,16 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		soundSystem->SetPlayingSoundWorld( NULL );
 	}
 
+	//stgatilov: choose preview image format
+	idStr previewExtension = com_savegame_preview_format.GetString();
+	Image::Format previewFormat = Image::GetFormatFromString( previewExtension.c_str() );
+	//note: only tga and jpg are currently supported
+	if ( previewFormat != Image::JPG && previewFormat != Image::TGA ) {
+		common->Warning( "Unknown preview image extension %s, falling back to default.", previewExtension.c_str() );
+		previewFormat = Image::TGA;
+		previewExtension = "tga";
+	}
+
 	// setup up paths
 	
 	ScrubSaveGameFileName( gameFile );
@@ -1904,7 +1917,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	gameFile.SetFileExtension( ".save" );
 
 	previewFile = gameFile;
-	previewFile.SetFileExtension( ".tga" );
+	previewFile.SetFileExtension( previewExtension.c_str() );
 
 	descriptionFile = gameFile;
 	descriptionFile.SetFileExtension( ".txt" );
@@ -1950,11 +1963,29 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	// close the sava game file
 	fileSystem->CloseFile( fileOut );
 
+	//stgatilov: clear old screenshots with this name (if present)
+	{
+		idStr tmpName = previewFile;
+		tmpName.SetFileExtension("tga");
+		fileSystem->RemoveFile(tmpName.c_str());
+		tmpName.SetFileExtension("jpg");
+		fileSystem->RemoveFile(tmpName.c_str());
+	}
+
 	// Write screenshot
 	if ( !autosave ) {
 		renderSystem->CropRenderSize( 320, 240, false );
 		game->Draw( 0 );
-		renderSystem->CaptureRenderToFile( previewFile, true );
+
+		//stgatilov: render image to buffer and save via devIL
+		Image image;
+		int width, height, bpp = 3;
+		renderSystem->GetCurrentRenderCropSize(width, height);
+		image.Init(width, height, bpp);
+		renderSystem->CaptureRenderToBuffer(image.GetImageData());
+		idStr previewPath = fileSystem->RelativePathToOSPath(previewFile.c_str(), "fs_modSavePath");
+		image.SaveImageToFile(previewPath.c_str(), previewFormat);
+
 		renderSystem->UnCrop();
 	}
 

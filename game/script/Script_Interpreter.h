@@ -25,7 +25,7 @@
 #endif
 
 #define MAX_STACK_DEPTH 	64
-#define LOCALSTACK_SIZE 	(6144 * 2)
+#define LOCALSTACK_SIZE 	6144
 
 typedef struct prstack_s {
 	int 				s;
@@ -61,7 +61,7 @@ private:
 	void				PopParms( int numParms );
 	void				PushString( const char *string );
 	void				PushVector( const idVec3 &vector );
-	void				Push( intptr_t value );
+	void				Push( int value );
 	const char			*FloatToString( float value );
 	void				AppendString( idVarDef *def, const char *from );
 	void				SetString( idVarDef *def, const char *from );
@@ -149,12 +149,12 @@ ID_INLINE void idInterpreter::PopParms( int numParms ) {
 idInterpreter::Push
 ====================
 */
-ID_INLINE void idInterpreter::Push( intptr_t value ) {
-	if ( localstackUsed + sizeof( intptr_t ) > LOCALSTACK_SIZE ) {
+ID_INLINE void idInterpreter::Push( int value ) {
+	if ( localstackUsed + sizeof( int ) > LOCALSTACK_SIZE ) {
 		Error( "Push: locals stack overflow\n" );
 	}
-	*( intptr_t * )&localstack[ localstackUsed ]	= value;
-	localstackUsed += sizeof( intptr_t );
+	*( int * )&localstack[ localstackUsed ]	= value;
+	localstackUsed += sizeof( int );
 }
 
 /*
@@ -163,11 +163,11 @@ idInterpreter::PushVector
 ====================
 */
 ID_INLINE void idInterpreter::PushVector( const idVec3 &vector ) {
-	if ( localstackUsed + E_EVENT_SIZEOF_VEC > LOCALSTACK_SIZE ) {
+	if ( localstackUsed + sizeof(idVec3) > LOCALSTACK_SIZE ) {
 		Error( "Push: locals stack overflow\n" );
 	}
 	*( idVec3 * )&localstack[ localstackUsed ] = vector;
-	localstackUsed += E_EVENT_SIZEOF_VEC;
+	localstackUsed += sizeof(idVec3);
 }
 
 /*

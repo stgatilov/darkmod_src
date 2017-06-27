@@ -134,6 +134,7 @@ public:
 	CGlobal();
 	~CGlobal();
 
+	void Shutdown();
 	void Init();
 
 	void LogPlane(idStr const &Name, idPlane const &Plane);

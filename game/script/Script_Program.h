@@ -20,6 +20,8 @@
 #ifndef __SCRIPT_PROGRAM_H__
 #define __SCRIPT_PROGRAM_H__
 
+#include "Heap_Embedded.h"
+
 class idScriptObject;
 class idEventDef;
 class idVarDef;
@@ -293,7 +295,7 @@ typedef union varEval_s {
 	int						jumpOffset;
 	int						stackOffset;		// offset in stack for local variables
 	int						argSize;
-	varEval_s				*evalPtr;
+	//varEval_s				*evalPtr;
 	int						ptrOffset;
 } varEval_t;
 
@@ -446,6 +448,11 @@ private:
 	int											top_defs;
 	int											top_files;
 
+	//stgatilov #4520: special allocation for script objects in x64
+	byte *som_buffer;
+	int som_totalSize;
+	idEmbeddedAllocator som_allocator;
+
 	void										CompileStats( void );
    	byte										*ReserveMem(int size);
 	idVarDef									*AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope);
@@ -521,6 +528,13 @@ public:
 	void										ReturnEntity( idEntity *ent );
 	
 	int											NumFilenames( void ) { return fileList.Num( ); }
+
+	//stgatilov #4520: special allocation for script objects in x64
+	void ScriptObjectMemory_Init();
+	byte *ScriptObjectMemory_Alloc(int size);
+	void ScriptObjectMemory_Free(byte *ptr);
+	int ScriptObjectMemory_Pack(byte *ptr);
+	byte *ScriptObjectMemory_Unpack(int offset);
 
 private:
 	// greebo: Registers all events declared by the static idEventDef variables
@@ -625,5 +639,23 @@ idProgram::GetFilenameForStatement
 ID_INLINE const char *idProgram::GetFilenameForStatement( int index ) {
 	return GetFilename( statements[ index ].file );
 }
+
+//stgatilov #4520: converting between 32-bit offset and 64-bit real address
+ID_INLINE int idProgram::ScriptObjectMemory_Pack(byte *ptr) {
+	if (sizeof(void*) == 4)
+		return (int)ptr;
+
+	assert(ptr >= som_buffer && ptr < som_buffer + som_totalSize);
+	//note: we add 1 here, because zero offset is reserved for zero pointer!
+	return ptr - som_buffer + 1;
+}
+ID_INLINE byte *idProgram::ScriptObjectMemory_Unpack(int offset) {
+	if (sizeof(void*) == 4)
+		return (byte*)offset;
+
+	assert(offset > 0 && offset <= som_totalSize);
+	return som_buffer + offset - 1;
+}
+
 
 #endif /* !__SCRIPT_PROGRAM_H__ */

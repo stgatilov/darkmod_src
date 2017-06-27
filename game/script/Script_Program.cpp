@@ -27,20 +27,20 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
-idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", sizeof( intptr_t ), NULL );
-idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", sizeof( intptr_t ), NULL );
+idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", sizeof(int), NULL );
+idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", sizeof(int), NULL );
 idTypeDef	type_string( ev_string, &def_string, "string", MAX_STRING_LEN, NULL );
-idTypeDef	type_float( ev_float, &def_float, "float", sizeof( intptr_t ), NULL );
-idTypeDef	type_vector( ev_vector, &def_vector, "vector", E_EVENT_SIZEOF_VEC, NULL );
-idTypeDef	type_entity( ev_entity, &def_entity, "entity", sizeof( intptr_t ), NULL );					// stored as entity number pointer
-idTypeDef	type_field( ev_field, &def_field, "field", sizeof( intptr_t ), NULL );
-idTypeDef	type_function( ev_function, &def_function, "function", sizeof( intptr_t ), &type_void );
-idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( intptr_t ), NULL );
-idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof( intptr_t ), NULL );
-idTypeDef	type_object( ev_object, &def_object, "object", sizeof( intptr_t ), NULL );					// stored as entity number pointer
-idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( intptr_t ), NULL );		// only used for jump opcodes
-idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( intptr_t ), NULL );				// only used for function call and thread opcodes
-idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( intptr_t ), NULL );
+idTypeDef	type_float( ev_float, &def_float, "float", sizeof(float), NULL );
+idTypeDef	type_vector( ev_vector, &def_vector, "vector", sizeof(idVec3), NULL );
+idTypeDef	type_entity( ev_entity, &def_entity, "entity", sizeof(int), NULL );					// stored as entity number pointer
+idTypeDef	type_field( ev_field, &def_field, "field", sizeof(int), NULL );
+idTypeDef	type_function( ev_function, &def_function, "function", sizeof(int), &type_void );
+idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof(int), NULL );
+idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof(int), NULL );
+idTypeDef	type_object( ev_object, &def_object, "object", sizeof(int), NULL );					// stored as entity number pointer
+idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof(int), NULL );		// only used for jump opcodes
+idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof(int), NULL );				// only used for function call and thread opcodes
+idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof(int), NULL );
 
 idVarDef	def_void( &type_void );
 idVarDef	def_scriptevent( &type_scriptevent );
@@ -656,6 +656,10 @@ void idVarDef::SetValue( const eval_t &_value, bool constant ) {
 		initialized = initializedVariable;
 	}
 
+	//stgatilov: zero vardef's value for some types
+	//otherwise upper half may contain trash in x64 mode
+	static_assert(sizeof(value) == sizeof(intptr_t), "valEval_t must have size of pointer");
+
 	switch( typeDef->Type() ) {
 	case ev_pointer :
 	case ev_boolean :
@@ -664,10 +668,12 @@ void idVarDef::SetValue( const eval_t &_value, bool constant ) {
 		break;
 
 	case ev_jumpoffset :
+		*(intptr_t*)(&value) = 0;
 		value.jumpOffset = _value._int;
 		break;
 
 	case ev_argsize :
+		*(intptr_t*)(&value) = 0;
 		value.argSize = _value._int;
 		break;
 
@@ -694,6 +700,7 @@ void idVarDef::SetValue( const eval_t &_value, bool constant ) {
 		break;
 
 	case ev_virtualfunction :
+		*(intptr_t*)(&value) = 0;
 		value.virtualFunction = _value._int;
 		break;
 
@@ -879,7 +886,8 @@ idScriptObject::Free
 */
 void idScriptObject::Free( void ) {
 	if ( data ) {
-		Mem_Free( data );
+		//stgatilov #4520: on 64-bit platform, use special memory allocator
+		gameLocal.program.ScriptObjectMemory_Free(data);
 	}
 
 	data = NULL;
@@ -965,7 +973,9 @@ bool idScriptObject::SetType( const char *typeName ) {
 
 		// allocate the memory
 		size = type->Size();
-        data = (byte *)Mem_Alloc(static_cast<int>(size));
+		
+		//stgatilov #4520: on 64-bit platform, use special memory allocator
+		data = gameLocal.program.ScriptObjectMemory_Alloc(static_cast<int>(size));
 	}
 
 	// init object memory
@@ -1937,6 +1947,11 @@ void idProgram::FreeData( void ) {
 	top_defs		= 0;
 	top_files		= 0;
 
+	//stgatilov #4520: clear special memory zone for script object data in x64
+	Mem_Free(som_buffer);  som_buffer = 0;
+	som_totalSize = -1;
+	som_allocator.Clear();
+
 	filename = "";
 }
 
@@ -2024,7 +2039,59 @@ void idProgram::Startup( const char *defaultScript )
 	}
 
 	FinishCompilation();
+
+	if (sizeof(void*) != 4) {
+		//stgatilov #4520: prepare special memory zone for all script object data
+		ScriptObjectMemory_Init();
+	}
 }
+
+void idProgram::ScriptObjectMemory_Init() {
+	//check what is the maximum object size
+	int maxObjectSize = -1;
+	idVarDef *maxDef = 0;
+	for (int i = 0; i < varDefs.Num(); i++) {
+		idVarDef *var = varDefs[i];
+		if (var->Type() == ev_object) {
+			if (maxObjectSize < var->TypeDef()->Size()) {
+				maxObjectSize = var->TypeDef()->Size();
+				maxDef = var;
+			}
+		}
+	}
+	//print it to console for information
+	gameLocal.Printf("Maximum object size: %d\n", maxObjectSize);
+	if (maxDef)
+		gameLocal.Printf("Largest object type name: %s\n", maxDef->TypeDef()->Name());
+
+	//(uncomment for testing allocator)
+	//idEmbeddedAllocator::Test(17, 53, 1000000);
+	//idEmbeddedAllocator::Test(MAX_GENTITIES, 1000, 1000000);
+
+	//note: there would never be more script objects than entities
+	//so we need to accomodate MAX_GENTITIES allocations of size <= maxObjectSize
+	som_totalSize = som_allocator.GetSizeUpperBound(MAX_GENTITIES, maxObjectSize);
+	som_buffer = (byte*)Mem_Alloc(som_totalSize);
+	som_allocator.Init(som_buffer, som_totalSize);
+}
+
+byte *idProgram::ScriptObjectMemory_Alloc(int size) {
+	if (sizeof(void*) == 4)
+		return (byte*)Mem_Alloc(size);
+
+	byte *res = (byte*)som_allocator.Alloc(size);
+	if (!res)
+		gameLocal.Error("Failed to allocate idScriptObject data\n");
+	return res;
+}
+
+void idProgram::ScriptObjectMemory_Free(byte *ptr) {
+	if (sizeof(void*) == 4)
+		return Mem_Free(ptr);
+
+	som_allocator.Free(ptr);
+}
+
 
 /*
 ================

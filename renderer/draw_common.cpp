@@ -146,20 +146,24 @@ void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const dr
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
 
-		qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		//qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointerARB( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 
 		qglEnableVertexAttribArrayARB( 9 );
 		qglEnableVertexAttribArrayARB( 10 );
-		qglEnableClientState( GL_NORMAL_ARRAY );
+		//qglEnableClientState( GL_NORMAL_ARRAY );
+		qglEnableVertexAttribArrayARB( 2 );
 
 		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 		R_UseProgram( VPROG_BUMPY_ENVIRONMENT );
 	} else {
 		// per-pixel reflection mapping without a normal map
-		qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		qglEnableClientState( GL_NORMAL_ARRAY );
+		//qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		qglVertexAttribPointerARB( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
+		//qglEnableClientState( GL_NORMAL_ARRAY );
+		qglEnableVertexAttribArrayARB( 2 );
 
 		R_UseProgram( VPROG_ENVIRONMENT );
 	}
@@ -192,7 +196,7 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 		qglTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 		break;
 	case TG_SCREEN:
-		RB_PrepareStageTexturing_Screen(pStage, surf, ac);
+		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
 	case TG_SCREEN2:
 		RB_PrepareStageTexturing_Screen2( pStage, surf, ac );
@@ -238,7 +242,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			// per-pixel reflection mapping without bump mapping
 		}
 
-		qglDisableClientState( GL_NORMAL_ARRAY );
+		qglDisableVertexAttribArrayARB( 2 );
+		//qglDisableClientState( GL_NORMAL_ARRAY );
 		R_UseProgram();
 		break;
 	}
@@ -344,7 +349,8 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	}
 
 	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
-	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 	bool drawSolid = false;
 
@@ -655,8 +661,8 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 
 	switch (pStage->vertexColor) {
 	case SVC_IGNORE:
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, one );
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, zero );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, zero );
+		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, color );
 		break;
 	case SVC_MODULATE:
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, color );
@@ -668,15 +674,17 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 		break;
 	}
 	// select the vertex color source
-	if (pStage->vertexColor == SVC_IGNORE) {
-		qglColor4fv( color );
+	qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+	qglEnableVertexAttribArrayARB( 3 );
+	/*if (pStage->vertexColor == SVC_IGNORE) {
 	} else {
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-		qglEnableClientState( GL_COLOR_ARRAY );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
+		//qglEnableClientState( GL_COLOR_ARRAY );
+
 		//qglEnableVertexAttribArrayARB( 3 );
 		//qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 
-		/*if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
+		if (pStage->vertexColor == SVC_INVERSE_MODULATE) {
 			GL_TexEnv( GL_COMBINE_ARB );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
 			qglTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
@@ -711,14 +719,18 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 			qglTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
 
 			GL_SelectTexture( 0 );
-		}*/
-	}
+		}
+	}*/
 
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
-		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
+		break;
+	case TG_SCREEN: case TG_SCREEN2:
+		qglColor4fv( color );
+	case TG_REFLECT_CUBE:
+		//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		//qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 		break;
 	default:
 		qglEnableVertexAttribArrayARB( 8 );
@@ -742,17 +754,19 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 
 	switch (pStage->texture.texgen) {
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: //case TG_EXPLICIT:
-	case TG_REFLECT_CUBE: case TG_SCREEN: case TG_SCREEN2:
 		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		break;
+	case TG_REFLECT_CUBE: 
+	case TG_SCREEN: case TG_SCREEN2:
 		break;
 	default:
 		qglDisableVertexAttribArrayARB( 8 );
 		R_UseProgram();
 	}
 
+	qglDisableVertexAttribArrayARB( 3 );
 	if (pStage->vertexColor != SVC_IGNORE) {
-		//qglDisableVertexAttribArrayARB( 3 );
-		qglDisableClientState( GL_COLOR_ARRAY );
+		//qglDisableClientState( GL_COLOR_ARRAY );
 
 		/*GL_SelectTexture( 1 );
 		GL_TexEnv( GL_MODULATE );
@@ -777,13 +791,15 @@ void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *
 	qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 	qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 	qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-	qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+	//qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+	qglVertexAttribPointerARB( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
 
 	//qglEnableClientState( GL_COLOR_ARRAY );
 	qglEnableVertexAttribArrayARB( 8 );
 	qglEnableVertexAttribArrayARB( 9 );
 	qglEnableVertexAttribArrayARB( 10 );
-	qglEnableClientState( GL_NORMAL_ARRAY );
+	//qglEnableClientState( GL_NORMAL_ARRAY );
+	qglEnableVertexAttribArrayARB( 2 );
 
 	GL_State( pStage->drawStateBits );
 
@@ -841,7 +857,8 @@ void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *
 	qglDisableVertexAttribArrayARB( 8 );
 	qglDisableVertexAttribArrayARB( 9 );
 	qglDisableVertexAttribArrayARB( 10 );
-	qglDisableClientState( GL_NORMAL_ARRAY );
+	//qglDisableClientState( GL_NORMAL_ARRAY );
+	qglDisableVertexAttribArrayARB( 2 );
 }
 
 /*
@@ -1030,7 +1047,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 
 	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
-	qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
 		pStage = shader->GetStage(stage);
@@ -1187,7 +1205,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		return;
 	}
 
-	qglVertexPointer( 4, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position(tri->shadowCache) );
+	//qglVertexPointer( 4, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position(tri->shadowCache) );
+	qglVertexAttribPointerARB( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
 
 	// we always draw the sil planes, but we may not need to draw the front or rear caps
 	int	numIndexes;
@@ -1491,10 +1510,12 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 	// this gets used for both blend lights and shadow draws
 	if ( tri->ambientCache ) {
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
-		qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	} else if ( tri->shadowCache ) {
+		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+	} else if (tri->shadowCache) {
 		shadowCache_t	*sc = (shadowCache_t *)vertexCache.Position( tri->shadowCache );
-		qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
+		//qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
+		qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
 	}
 
 	RB_DrawElementsWithCounters( tri );
@@ -1767,7 +1788,6 @@ void RB_STD_FogAllLights( void ) {
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
 	qglDisable( GL_STENCIL_TEST );
-	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		backEnd.vLight = vLight;
@@ -1776,15 +1796,16 @@ void RB_STD_FogAllLights( void ) {
 			continue;
 		}
 
-		if ( vLight->lightShader->IsFogLight() ) {
+		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		if (vLight->lightShader->IsFogLight()) {
 			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
 		} else if ( vLight->lightShader->IsBlendLight() ) {
 			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
 		}
+		qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglDisable( GL_STENCIL_TEST );
 	}
 
-	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 	qglEnable( GL_STENCIL_TEST );
 }
 

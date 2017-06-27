@@ -377,6 +377,7 @@ bool idSessionLocal::HandleSaveGameMenuCommand( idCmdArgs &args, int &icmd ) {
 		if ( choice >= 0 && choice < loadGameList.Num() ) {
 			fileSystem->RemoveFile( va("savegames/%s.save", loadGameList[choice].c_str()) );
 			fileSystem->RemoveFile( va("savegames/%s.tga", loadGameList[choice].c_str()) );
+			fileSystem->RemoveFile( va("savegames/%s.jpg", loadGameList[choice].c_str()) );
 			fileSystem->RemoveFile( va("savegames/%s.txt", loadGameList[choice].c_str()) );
 			SetSaveGameGuiVars( );
 			guiActive->StateChanged( com_frameTime );

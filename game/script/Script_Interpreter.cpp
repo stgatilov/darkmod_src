@@ -992,6 +992,10 @@ bool idInterpreter::Execute( void ) {
 	}
 #endif
 
+	//stgatilov #4520: shortcuts for pointer-offset conversion
+#define PACK(ptr) gameLocal.program.ScriptObjectMemory_Pack(ptr)
+#define UNPACK(offset) gameLocal.program.ScriptObjectMemory_Unpack(offset)
+
 	runaway = 5000000;
 
 	doneProcessing = false;
@@ -1670,123 +1674,136 @@ bool idInterpreter::Execute( void ) {
 
 		case OP_STOREP_F:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->floatPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->floatPtr = *var_a.floatPtr;
+				*var.floatPtr = *var_a.floatPtr;
 			}
 			break;
 
 		case OP_STOREP_ENT:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->entityNumberPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->entityNumberPtr = *var_a.entityNumberPtr;
+				*var.entityNumberPtr = *var_a.entityNumberPtr;
 			}
 			break;
 
 		case OP_STOREP_FLD:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->intPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->intPtr = *var_a.intPtr;
+				*var.intPtr = *var_a.intPtr;
 			}
 			break;
 
 		case OP_STOREP_BOOL:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->intPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->intPtr = *var_a.intPtr;
+				*var.intPtr = *var_a.intPtr;
 			}
 			break;
 
 		case OP_STOREP_S:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->stringPtr ) {
-				idStr::Copynz( var_b.evalPtr->stringPtr, GetString( st->a ), MAX_STRING_LEN );
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
+				idStr::Copynz( var.stringPtr, GetString( st->a ), MAX_STRING_LEN );
 			}
 			break;
 
 		case OP_STOREP_V:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->vectorPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->vectorPtr = *var_a.vectorPtr;
+				*var.vectorPtr = *var_a.vectorPtr;
 			}
 			break;
 		
 		case OP_STOREP_FTOS:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->stringPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				idStr::Copynz( var_b.evalPtr->stringPtr, FloatToString( *var_a.floatPtr ), MAX_STRING_LEN );
+				idStr::Copynz( var.stringPtr, FloatToString( *var_a.floatPtr ), MAX_STRING_LEN );
 			}
 			break;
 
 		case OP_STOREP_BTOS:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->stringPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
 				if ( *var_a.floatPtr != 0.0f ) {
-					idStr::Copynz( var_b.evalPtr->stringPtr, "true", MAX_STRING_LEN );
+					idStr::Copynz( var.stringPtr, "true", MAX_STRING_LEN );
 				} else {
-					idStr::Copynz( var_b.evalPtr->stringPtr, "false", MAX_STRING_LEN );
+					idStr::Copynz( var.stringPtr, "false", MAX_STRING_LEN );
 				}
 			}
 			break;
 
 		case OP_STOREP_VTOS:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->stringPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				idStr::Copynz( var_b.evalPtr->stringPtr, var_a.vectorPtr->ToString(), MAX_STRING_LEN );
+				idStr::Copynz( var.stringPtr, var_a.vectorPtr->ToString(), MAX_STRING_LEN );
 			}
 			break;
 
 		case OP_STOREP_FTOBOOL:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->intPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
 				if ( *var_a.floatPtr != 0.0f ) {
-					*var_b.evalPtr->intPtr = 1;
+					*var.intPtr = 1;
 				} else {
-					*var_b.evalPtr->intPtr = 0;
+					*var.intPtr = 0;
 				}
 			}
 			break;
 
 		case OP_STOREP_BOOLTOF:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->floatPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->floatPtr = static_cast<float>( *var_a.intPtr );
+				*var.floatPtr = static_cast<float>( *var_a.intPtr );
 			}
 			break;
 
 		case OP_STOREP_OBJ:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->entityNumberPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
-				*var_b.evalPtr->entityNumberPtr = *var_a.entityNumberPtr;
+				*var.entityNumberPtr = *var_a.entityNumberPtr;
 			}
 			break;
 
 		case OP_STOREP_OBJENT:
 			var_b = GetVariable( st->b );
-			if ( var_b.evalPtr && var_b.evalPtr->entityNumberPtr ) {
+			if ( var_b.intPtr && *var_b.intPtr ) {
+				var.bytePtr = UNPACK(*var_b.intPtr);
 				var_a = GetVariable( st->a );
 				obj = GetScriptObject( *var_a.entityNumberPtr );
 				if ( !obj ) {
-					*var_b.evalPtr->entityNumberPtr = 0;
+					*var.entityNumberPtr = 0;
 
 				// st->b points to type_pointer, which is just a temporary that gets its type reassigned, so we store the real type in st->c
 				// so that we can do a type check during run time since we don't know what type the script object is at compile time because it
 				// comes from an entity
 				} else if ( !obj->GetTypeDef()->Inherits( st->c->TypeDef() ) ) {
 					//Warning( "object '%s' cannot be converted to '%s'", obj->GetTypeName(), st->c->TypeDef()->Name() );
-					*var_b.evalPtr->entityNumberPtr = 0;
+					*var.entityNumberPtr = 0;
 				} else {
-					*var_b.evalPtr->entityNumberPtr = *var_a.entityNumberPtr;
+					*var.entityNumberPtr = *var_a.entityNumberPtr;
 				}
 			}
 			break;
@@ -1796,9 +1813,12 @@ bool idInterpreter::Execute( void ) {
 			var_c = GetVariable( st->c );
 			obj = GetScriptObject( *var_a.entityNumberPtr );
 			if ( obj ) {
-				var_c.evalPtr->bytePtr = &obj->data[ st->b->value.ptrOffset ];
+				//stgatilov #4520: store in 32-bit variable:
+				//  32-bit: real address (pointer)
+				//  64-bit: 32-bit offset relative to memory zone
+				*var_c.intPtr = PACK(&obj->data[ st->b->value.ptrOffset ]);
 			} else {
-				var_c.evalPtr->bytePtr = NULL;
+				*var_c.intPtr = 0;
 			}
 			break;
 
@@ -1939,6 +1959,9 @@ bool idInterpreter::Execute( void ) {
 			break;
 		}
 	}
+
+#undef PACK
+#undef UNPACK
 
 #ifdef PROFILE_SCRIPT
 	if (debug && functionTimers.size() > 0) {

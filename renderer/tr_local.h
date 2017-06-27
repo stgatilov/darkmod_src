@@ -760,7 +760,7 @@ public:
 	virtual void			GetCurrentRenderCropSize(int& width, int& height);
 	virtual void			CaptureRenderToImage( const char *imageName );
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
-	virtual void			CaptureRenderToBuffer(unsigned char* buffer);
+	virtual void			CaptureRenderToBuffer(unsigned char* buffer, bool usePbo = false);
 	virtual void			UnCrop();
 	//virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
