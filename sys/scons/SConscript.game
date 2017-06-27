@@ -145,7 +145,6 @@ Intersection.cpp \
 IniFile.cpp \
 LightGem.cpp \
 Liquid.cpp \
-MaterialConverter.cpp \
 MeleeWeapon.cpp \
 ModMenu.cpp \
 MultiStateMover.cpp \

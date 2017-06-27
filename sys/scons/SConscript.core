@@ -131,6 +131,7 @@ framework_string = ' \
 	KeyInput.cpp \
 	minizip/ioapi.c \
 	minizip/unzip.cpp \
+	minizip/zip.cpp \
 	UsercmdGen.cpp \
 	Session_menu.cpp \
 	Session.cpp \
