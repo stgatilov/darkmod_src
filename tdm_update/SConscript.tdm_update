@@ -29,6 +29,11 @@ import sys, os, string
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
+if ( g_os == 'Linux' ):
+	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
+	# This allows to link with libraries (like boost), which were built in older versions of GCC
+	g_env.Append( CPPFLAGS = '-D_GLIBCXX_USE_CXX11_ABI=0' )
+
 def BuildList( s_prefix, s_string ):
 	s_list = string.split( s_string )
 	for i in range( len( s_list ) ):
