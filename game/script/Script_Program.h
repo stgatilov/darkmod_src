@@ -643,7 +643,7 @@ ID_INLINE const char *idProgram::GetFilenameForStatement( int index ) {
 //stgatilov #4520: converting between 32-bit offset and 64-bit real address
 ID_INLINE int idProgram::ScriptObjectMemory_Pack(byte *ptr) {
 	if (sizeof(void*) == 4)
-		return (int)ptr;
+		return (int)(uintptr_t)ptr;
 
 	assert(ptr >= som_buffer && ptr < som_buffer + som_totalSize);
 	//note: we add 1 here, because zero offset is reserved for zero pointer!
@@ -651,7 +651,7 @@ ID_INLINE int idProgram::ScriptObjectMemory_Pack(byte *ptr) {
 }
 ID_INLINE byte *idProgram::ScriptObjectMemory_Unpack(int offset) {
 	if (sizeof(void*) == 4)
-		return (byte*)offset;
+		return (byte*)(uintptr_t)offset;
 
 	assert(offset > 0 && offset <= som_totalSize);
 	return som_buffer + offset - 1;

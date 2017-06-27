@@ -289,6 +289,7 @@ local_env = g_game_env.Clone()
 
 # The game files use the game/precompiled_game.h header, make sure it can be found
 local_env.Prepend(CPPPATH = '#/game')
+local_env.Append(CPPPATH = '#/idlib')
 
 local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
 local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch', '-fPIC' ] )

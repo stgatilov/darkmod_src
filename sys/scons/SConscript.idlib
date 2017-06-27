@@ -39,11 +39,13 @@ idlib_string = ' \
 	math/Simd.cpp \
 	math/Simd_Generic.cpp \
 	math/Vector.cpp \
+	math/Line.cpp \
 	Base64.cpp \
 	BitMsg.cpp \
 	CmdArgs.cpp \
 	Dict.cpp \
 	Heap.cpp \
+	Heap_Embedded.cpp \
 	Image.cpp \
 	LangDict.cpp \
 	Lexer.cpp \
