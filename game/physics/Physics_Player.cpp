@@ -199,18 +199,19 @@ Handles user intended acceleration
 void idPhysics_Player::Accelerate( const idVec3 &wishdir, const float wishspeed, const float accel ) {
 #if 1
 	// q2 style
-	float addspeed, accelspeed, currentspeed;
+	//float addspeed;
+	float accelspeed, currentspeed;
 
 	currentspeed = current.velocity * wishdir;
-	addspeed = wishspeed - currentspeed;
+	/*addspeed = wishspeed - currentspeed;
 	if (addspeed <= 0) {
 		return;
-	}
-	accelspeed = accel * frametime * wishspeed;
-	if (accelspeed > addspeed) {
+	}*/
+	// this acceleration has friction-like effects if currentspeed is bigger than wishspeed.
+	accelspeed = accel * frametime * (wishspeed - currentspeed); // accel * frametime * wishspeed;
+	/*if (accelspeed > addspeed) {
 		accelspeed = addspeed;
-	}
-	
+	}*/
 	current.velocity += accelspeed * wishdir;
 #else
 	// proper way (avoids strafe jump maxspeed bug), but feels bad
@@ -282,6 +283,63 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 	planes[numplanes] = current.velocity;
 	planes[numplanes].Normalize();
 	numplanes++;
+
+	// BluePill : Push test tweaked for low frametimes (relies on hardcoded values)
+	// needs further testing whether it can negatively affect mission gameplay
+	if ( push && current.velocity.LengthSqr() > 0.0F )
+	{
+		// calculate the "real time" velocity as if the framerate was constantly 60fps
+		// idPhysics_RigidBody::Evaluate (-> idODE_*::Evaluate) already takes account of the frametime
+		// just applying current.velocity would cause the actual movement to be velocity*frametime² per frame, while it should be velocity*frametime.
+		idVec3 realtimeVelocity = current.velocity;
+		// prevent potential division by zero (minimum frametime should be 1ms)
+		if (frametime > 0.0001F)
+			realtimeVelocity *= (MS2SEC(USERCMD_MSEC) / frametime);
+
+		// BluePill : Hardcoded trace range of 5.0, looked good for different crouch/walk speeds
+		// calculate the end of the reachable range to push entities
+		end = current.origin + current.velocity * ( 5.0F / current.velocity.LengthFast() );
+
+		// see if we can make it there
+		gameLocal.clip.Translation( trace, current.origin, end, clipModel, clipModel->GetAxis(), clipMask, self );
+
+		// if we are not blocked by the world
+		if ( trace.c.entityNum != ENTITYNUM_WORLD ) {
+
+			clipModel->SetPosition( current.origin, clipModel->GetAxis() );
+
+			// clip movement, only push idMoveables, don't push entities the player is standing on
+			// apply impact to pushed objects
+			pushFlags = PUSHFL_CLIP | PUSHFL_ONLYMOVEABLE | PUSHFL_NOGROUNDENTITIES | PUSHFL_APPLYIMPULSE;
+
+			// clip & push
+
+			// greebo: Don't use the idPusher
+			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end - current.origin, cv_pm_pushmod.GetFloat() );
+
+			// Set the trace result to zero, we're pushing into things here
+			// trace.fraction = 0.0f;
+			trace.endpos = current.origin;
+
+			// greebo: Check the entity in front of us
+			idEntity* pushedEnt = gameLocal.entities[trace.c.entityNum];
+			if (pushedEnt != NULL)
+			{
+				// Register the blocking physics object with our push force
+				m_PushForce->SetPushEntity(pushedEnt, 0);
+				m_PushForce->SetContactInfo(trace, realtimeVelocity);
+
+				totalMass = pushedEnt->GetPhysics()->GetMass();
+			}
+
+			if (totalMass > 0.0f) {
+				// decrease velocity based on the total mass of the objects being pushed ?
+				current.velocity *= 1.0f - idMath::ClampFloat(0.0f, 1000.0f, totalMass - 20.0f) * (1.0f / 950.0f);
+
+				pushed = true;
+			}
+		}
+	}
 
 	for ( bumpcount = 0; bumpcount < numbumps; bumpcount++ )
 	{
@@ -391,7 +449,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			}
 		}
 
-		// if we can push other entities and not blocked by the world
+		// original push test code; the new push test is located above this loop
+		/*// if we can push other entities and not blocked by the world
 		if ( push && trace.c.entityNum != ENTITYNUM_WORLD ) {
 
 			clipModel->SetPosition( current.origin, clipModel->GetAxis() );
@@ -401,7 +460,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			pushFlags = PUSHFL_CLIP | PUSHFL_ONLYMOVEABLE | PUSHFL_NOGROUNDENTITIES | PUSHFL_APPLYIMPULSE;
 
 			// clip & push
-			
+
 			// greebo: Don't use the idPusher
 			//totalMass = gameLocal.push.ClipTranslationalPush( trace, self, pushFlags, end, end - current.origin, cv_pm_pushmod.GetFloat() );
 
@@ -425,7 +484,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 				current.velocity *= 1.0f - idMath::ClampFloat( 0.0f, 1000.0f, totalMass - 20.0f ) * ( 1.0f / 950.0f );
 				pushed = true;
 			}
-	
+
 			current.origin = trace.endpos;
 			time_left -= time_left * trace.fraction;
 
@@ -433,7 +492,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			if ( trace.fraction >= 1.0f ) {
 				break;
 			}
-		}
+		}*/
 
 		if ( !stepped ) {
 			// let the entity know about the collision
@@ -571,7 +630,7 @@ idPhysics_Player::Friction
 Handles both ground friction and water friction
 ==================
 */
-void idPhysics_Player::Friction( void )
+void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFriction )
 {
 	idVec3 vel = current.velocity;
 
@@ -595,11 +654,14 @@ void idPhysics_Player::Friction( void )
 		return;
 	}
 
-	float drop = 0;
+	// float drop = 0;
+	float friction = 0.0f;
 
 	// spectator friction
 	if ( current.movementType == PM_SPECTATOR ) {
-		drop += speed * PM_FLYFRICTION * frametime;
+		// TODO if anyone is crazy enough to add multiplayer and spectator mode to TDM : Check whether this works as intented!
+		friction = PM_FLYFRICTION;
+		//drop += speed * PM_FLYFRICTION * frametime;
 	}
 	// apply ground friction
 	else if ( walking && waterLevel <= WATERLEVEL_FEET )
@@ -608,30 +670,43 @@ void idPhysics_Player::Friction( void )
 		{
 			// grayman - #2409 - less friction on slick surfaces
 
-			float friction = PM_FRICTION; // default
+			friction = PM_FRICTION; // default
 			if (groundMaterial && (groundMaterial->IsSlick()))
 			{
 				friction *= PM_SLICK; // reduce friction
 			}
-			float control = (speed < PM_STOPSPEED) ? PM_STOPSPEED : speed;
-			drop += control * friction * frametime;
+
+			/*float control = (speed < PM_STOPSPEED) ? PM_STOPSPEED : speed;
+			drop += control * friction * frametime;*/
 		}
 	}
 	// apply water friction even if just wading
-	else if ( waterLevel ) {
-		drop += speed * PM_WATERFRICTION * waterLevel * frametime;
+	else if (waterLevel) {
+		friction = PM_WATERFRICTION * waterLevel;
+		//drop += speed * PM_WATERFRICTION * waterLevel * frametime;
 	}
 	// apply air friction
 	else {
-		drop += speed * PM_AIRFRICTION * frametime;
+		friction = PM_AIRFRICTION;
+		//drop += speed * PM_AIRFRICTION * frametime;
 	}
+	if (forceFriction > 0.0f)
+		friction = forceFriction;
 
+	// bluepill: don't apply friction to the current acceleration direction as the acceleration calculation does that already.
+	// don't set drop as this friction calculation doesn't treat all velocity components equally
+	idVec3 frictionComponent = vel - ((vel * wishdir) * wishdir);
+	if (frictionComponent.LengthSqr() <= 1.5625f) // Length() <= 1.25f; value seems good enough
+		current.velocity -= frictionComponent;
+	else
+		current.velocity += frictionComponent * (friction * frametime * (0.0f - 1.0f)); // -1.0 for 100% frictionComponent
+	
 	// scale the velocity
-	float newspeed = speed - drop;
+	/*float newspeed = speed - drop;
 	if (newspeed < 0) {
 		newspeed = 0;
 	}
-	current.velocity *= ( newspeed / speed );
+	current.velocity *= ( newspeed / speed );*/
 }
 
 /*
@@ -665,7 +740,7 @@ void idPhysics_Player::WaterMove()
 	// Lower ranged weapons while swimming
 	static_cast<idPlayer*>(self)->SetImmobilization( "WaterMove", EIM_ATTACK_RANGED );
 
-	Friction();
+	//Friction();
 
 	float scale = CmdScale( command );
 
@@ -711,6 +786,9 @@ void idPhysics_Player::WaterMove()
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_WATERACCELERATE );
 
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir );
+
 	// make sure we can go up slopes easily under water
 	if ( groundPlane && ( current.velocity * groundTrace.c.normal ) < 0.0f ) {
 		float vel = current.velocity.Length();
@@ -736,7 +814,7 @@ void idPhysics_Player::FlyMove( void ) {
 	float	scale;
 
 	// normal slowdown
-	idPhysics_Player::Friction();
+	//idPhysics_Player::Friction();
 
 	scale = idPhysics_Player::CmdScale( command );
 
@@ -752,6 +830,9 @@ void idPhysics_Player::FlyMove( void ) {
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_FLYACCELERATE );
 
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir );
+
 	idPhysics_Player::SlideMove( false, false, false, false );
 }
 
@@ -766,7 +847,7 @@ void idPhysics_Player::AirMove( void ) {
 	float		wishspeed;
 	float		scale;
 
-	idPhysics_Player::Friction();
+	//idPhysics_Player::Friction();
 
 	scale = idPhysics_Player::CmdScale( command );
 
@@ -784,6 +865,9 @@ void idPhysics_Player::AirMove( void ) {
 
 	// not on ground, so little effect on velocity
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_AIRACCELERATE );
+	
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir );
 
 	// we may have a ground plane that is very steep, even
 	// though we don't have a groundentity
@@ -820,7 +904,8 @@ void idPhysics_Player::WalkMove( void )
 		return;
 	}
 
-	Friction();
+	// BluePill : Move friction calculation after acceleration.
+	//Friction();
 
 	float scale = CmdScale( command );
 
@@ -868,12 +953,16 @@ void idPhysics_Player::WalkMove( void )
 		}
 	}
 
+
 	Accelerate( wishdir, wishspeed, accelerate );
 
 	if ( /*( groundMaterial && groundMaterial->IsSlick() ) || grayman #2409 */ current.movementFlags & PMF_TIME_KNOCKBACK )
 	{
 		current.velocity += gravityVector * frametime;
 	}
+
+	// BluePill : don't apply friction on the wishdir direction, Accelerate does that already.
+	Friction( wishdir );
 
 	idVec3 oldVelocity = current.velocity;
 
@@ -942,12 +1031,12 @@ idPhysics_Player::NoclipMove
 ===============
 */
 void idPhysics_Player::NoclipMove( void ) {
-	float		speed, drop, friction, newspeed, stopspeed;
+	//float		speed, drop, friction, newspeed, stopspeed;
 	float		scale, wishspeed;
 	idVec3		wishdir;
 
 	// friction
-	speed = current.velocity.Length();
+	/*speed = current.velocity.Length();
 	if ( speed < 20.0f ) {
 		current.velocity = vec3_origin;
 	}
@@ -966,7 +1055,7 @@ void idPhysics_Player::NoclipMove( void ) {
 		}
 
 		current.velocity *= newspeed / speed;
-	}
+	}*/
 
 	// accelerate
 	scale = idPhysics_Player::CmdScale( command );
@@ -977,6 +1066,9 @@ void idPhysics_Player::NoclipMove( void ) {
 	wishspeed *= scale;
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_ACCELERATE );
+
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir, PM_NOCLIPFRICTION );
 
 	// move
 	current.origin += frametime * current.velocity;
@@ -997,7 +1089,7 @@ void idPhysics_Player::SpectatorMove( void ) {
 
 	// fly movement
 
-	idPhysics_Player::Friction();
+	// idPhysics_Player::Friction();
 
 	scale = idPhysics_Player::CmdScale( command );
 
@@ -1011,6 +1103,9 @@ void idPhysics_Player::SpectatorMove( void ) {
 	wishspeed = wishdir.Normalize();
 
 	idPhysics_Player::Accelerate( wishdir, wishspeed, PM_FLYACCELERATE );
+	
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir );
 
 	idPhysics_Player::SlideMove( false, false, false, false );
 }
@@ -1620,11 +1715,14 @@ void idPhysics_Player::LadderMove( void )
 	// ========================== End Surface Extent Test ==================
 
 	// do strafe friction
-	idPhysics_Player::Friction();
+	// idPhysics_Player::Friction();
 
 	// accelerate
 	wishspeed = wishvel.Normalize();
 	idPhysics_Player::Accelerate( wishvel, wishspeed, accel );
+
+	// don't apply friction on the wishdir direction
+	idPhysics_Player::Friction( wishdir );
 
 	// cap the vertical travel velocity
 	upscale = current.velocity * -gravityNormal;

@@ -5491,6 +5491,7 @@ void idPhysics_AF::Evolve( float timeStep ) {
 	idVec6 force;
 	idRotation rotation;
 	float vSqr, maxLinearVelocity, maxAngularVelocity;
+	float frictionTickMul;
 	
 	maxLinearVelocity = af_maxLinearVelocity.GetFloat() / timeStep;
 	maxAngularVelocity = af_maxAngularVelocity.GetFloat() / timeStep;
@@ -5522,6 +5523,9 @@ void idPhysics_AF::Evolve( float timeStep ) {
 	// make absolutely sure all contact constraints are satisfied
 	VerifyContactConstraints();
 
+	// make friction independent of the frametime (i.e. the time between two calls of this function)
+	frictionTickMul = timeStep / MS2SEC(gameLocal.GetMSec());
+
 	// calculate the position of the bodies for the next physics state
 	for ( i = 0; i < bodies.Num(); i++ ) {
 		body = bodies[i];
@@ -5544,15 +5548,15 @@ void idPhysics_AF::Evolve( float timeStep ) {
 		// apply a higher friction value if the AF is underwater
 		waterLevel = body->GetWaterLevel();
 		if( waterLevel == 0.0f || this->water == NULL ) {
-			body->next->spatialVelocity.SubVec3(0) -= body->linearFriction * body->next->spatialVelocity.SubVec3(0);
+			body->next->spatialVelocity.SubVec3(0) -= frictionTickMul * body->linearFriction * body->next->spatialVelocity.SubVec3(0);
 		}
 		else {
-			body->next->spatialVelocity.SubVec3(0) -= (body->linearFriction * (this->water->GetViscosity()+WATER_FRICTION) * waterLevel) * body->next->spatialVelocity.SubVec3(0);
+			body->next->spatialVelocity.SubVec3(0) -= frictionTickMul * (body->linearFriction * (this->water->GetViscosity() + WATER_FRICTION) * waterLevel) * body->next->spatialVelocity.SubVec3(0);
 		}
 #else
-		body->next->spatialVelocity.SubVec3(0) -= body->linearFriction * body->next->spatialVelocity.SubVec3(0);
+		body->next->spatialVelocity.SubVec3(0) -= frictionTickMul * body->linearFriction * body->next->spatialVelocity.SubVec3(0);
 #endif	
-		body->next->spatialVelocity.SubVec3(1) -= body->angularFriction * body->next->spatialVelocity.SubVec3(1);
+		body->next->spatialVelocity.SubVec3(1) -= frictionTickMul * body->angularFriction * body->next->spatialVelocity.SubVec3(1);
 	}
 }
 
