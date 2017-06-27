@@ -1621,8 +1621,8 @@ static void APIENTRY logTexEnvfv(GLenum target, GLenum pname, const GLfloat *par
 }
 
 static void APIENTRY logTexEnvi(GLenum target, GLenum pname, GLint param) {
-	fprintf( tr.logFile, "glTexEnvi %s %s %d\n", EnumString(target), EnumString(pname), param );
-	dllTexEnvi(target, pname, param);
+	fprintf( tr.logFile, "glTexEnvi %s %s %s\n", EnumString( target ), EnumString( pname ), EnumString( param ) );
+	dllTexEnvi( target, pname, param );
 }
 
 static void APIENTRY logTexEnviv(GLenum target, GLenum pname, const GLint *params) {
@@ -1643,7 +1643,7 @@ static void APIENTRY logTexGendv(GLenum coord, GLenum pname, const GLdouble *par
 }
 
 static void APIENTRY logTexGenf(GLenum coord, GLenum pname, GLfloat param) {
-	fprintf( tr.logFile, "glTexGenf %s %s %g\n", EnumString(coord), EnumString(pname), param );
+	fprintf( tr.logFile, "glTexGenf %s %s %s\n", EnumString( coord ), EnumString( pname ), EnumString(param) );
 	dllTexGenf(coord, pname, param);
 }
 
@@ -1677,7 +1677,7 @@ static void APIENTRY logTexImage2D(GLenum target, GLint level, GLint internalfor
 }
 
 static void APIENTRY logTexParameterf(GLenum target, GLenum pname, GLfloat param) {
-	fprintf( tr.logFile, "glTexParameterf %s %s %g\n", EnumString(target), EnumString(pname), param );
+	fprintf( tr.logFile, "glTexParameterf %s %s %s\n", EnumString( target ), EnumString( pname ), EnumString( param ) );
 	dllTexParameterf(target, pname, param);
 }
 

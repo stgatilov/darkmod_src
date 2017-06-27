@@ -581,6 +581,12 @@
     <ClInclude Include="framework\minizip\unzip.h">
       <Filter>Framework\minizip</Filter>
     </ClInclude>
+    <ClInclude Include="framework\minizip\zip.h">
+      <Filter>Framework\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="framework\CompressionParameters.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -1602,6 +1608,9 @@
       <Filter>Framework\minizip</Filter>
     </ClCompile>
     <ClCompile Include="framework\minizip\unzip.cpp">
+      <Filter>Framework\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="framework\minizip\zip.cpp">
       <Filter>Framework\minizip</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1350,7 +1350,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri );
 void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes );
 void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
-void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *texture, const drawSurf_t *surf );
+//void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *texture, const drawSurf_t *surf );
 void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf );
 void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
 void RB_STD_DrawView( void );
@@ -1389,13 +1389,13 @@ int		R_FindARBProgram( GLenum target, const char *program );
 typedef enum {
 	PROG_INVALID,
 	VPROG_INTERACTION,
+	FPROG_INTERACTION,
 	VPROG_ENVIRONMENT,
+	FPROG_ENVIRONMENT,
 	VPROG_BUMPY_ENVIRONMENT,
+	FPROG_BUMPY_ENVIRONMENT,
 	VPROG_STENCIL_SHADOW,
 	VPROG_TEST,
-	FPROG_INTERACTION,
-	FPROG_ENVIRONMENT,
-	FPROG_BUMPY_ENVIRONMENT,
 	FPROG_TEST,
 	VPROG_AMBIENT,
 	FPROG_AMBIENT,

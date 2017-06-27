@@ -703,6 +703,8 @@ void Packager::SortFilesIntoPk4s()
 	TraceLog::WriteLine(LOG_STANDARD, (boost::format("%d entries in the manifest could not be matched, check the logs.") % _manifest.size()).str());
 }
 
+#include "../framework/CompressionParameters.h"
+
 void Packager::ProcessPackageElement(Package::const_iterator p)
 {
 	fs::path outputDir = _options.Get("outputdir");
@@ -762,9 +764,18 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 			continue;
 		}
 
+		//stgatilov: some files must be stored uncompressed, e.g. ROQ and OGG
 		ZipFileWrite::CompressionMethod method = ZipFileWrite::DEFLATE_MAX;
+		auto ext = fs::extension(sourceFile);
+		for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++)
+			if (ext == std::string(".") + PK4_UNCOMPRESSED_EXTENSIONS[i])
+				method = ZipFileWrite::STORE;
 
-		TraceLog::WriteLine(LOG_VERBOSE, (boost::format("Deflating file %s.") % sourceFile.string()).str());
+		TraceLog::WriteLine(LOG_VERBOSE,
+			(boost::format("%s file %s.")
+			% (method == ZipFileWrite::STORE ? "Storing" : "Deflating")
+			% sourceFile.string()).str()
+		);
 
 		pk4->DeflateFile(sourceFile, targetFile.string(), method);
 	}
