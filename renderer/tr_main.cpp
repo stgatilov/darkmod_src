@@ -747,6 +747,32 @@ void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 				view[3] * tr.viewDef->projectionMatrix[ i + 3 * 4 ];
 		}
 
+	/* ~SS }
+
+	ndc[0] = clip[0] / clip[3];
+	ndc[1] = clip[1] / clip[3];
+	ndc[2] = ( clip[2] + clip[3] ) / ( 2 * clip[3] );
+}
+
+
+==========================
+R_EyeToNormalizedDeviceCoordinates
+
+-1 to 1 range in x, y, and z
+==========================
+
+void R_EyeToNormalizedDeviceCoordinates( const idVec3 &eye, idVec3 &ndc ) {
+	int		i;
+	idVec4	clip;
+	const float* const projMatrix = tr.viewDef ? tr.viewDef->projectionMatrix : tr.primaryView->projectionMatrix;
+
+	for ( i = 0 ; i < 4 ; i ++ ) 
+	{
+		clip[i] = 
+			eye[0] * projMatrix[ i + 0 * 4 ] +
+			eye[1] * projMatrix[ i + 1 * 4 ] +
+			eye[2] * projMatrix[ i + 2 * 4 ] +
+			1.0f   * projMatrix[ i + 3 * 4 ]; ~SS */ 
 	}
 
 	ndc[0] = clip[0] / clip[3];
