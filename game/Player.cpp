@@ -7027,7 +7027,14 @@ void idPlayer::Move( void )
 			SetEyeHeight( newEyeOffset );
 		} else {
 			// smooth out duck height changes
-			SetEyeHeight( EyeHeight() * pm_crouchrate.GetFloat() + newEyeOffset * ( 1.0f - pm_crouchrate.GetFloat() ) );
+
+			// smoothing takes a constant amount of frames (and a constant minimum time if com_fixedTic == 0)
+			// SetEyeHeight( EyeHeight() * pm_crouchrate.GetFloat() + newEyeOffset * ( 1.0f - pm_crouchrate.GetFloat() ) );
+
+			// smoothing in a constant duration 
+			// multiply the crouchrate by a frametime factor (frametime 1/30 => 2, 1/60 => 1, 1/120 => 0.5, ...)
+			float crouchrate = (1.0f - pm_crouchrate.GetFloat()) * ((1.0f * gameLocal.getMsec()) / gameLocal.GetMSec());
+			SetEyeHeight(EyeHeight() * (1 - crouchrate) + newEyeOffset * crouchrate);
 		}
 	}
 
