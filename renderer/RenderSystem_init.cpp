@@ -434,7 +434,7 @@ PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
 PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
 
 // State management
-PFNGLBLENDEQUATIONPROC						qglBlendEquation;
+//PFNGLBLENDEQUATIONPROC						qglBlendEquation;
 
 // -----====+++  END TDM ~SS Extensions  +++====-----   */
 
@@ -727,7 +727,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglBindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glBindAttribLocation" );
 
 		// State management
-		qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
+		//qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	}
 
 //	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */

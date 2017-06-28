@@ -54,6 +54,7 @@ ogg_list = scons_utils.BuildList( 'sound/OggVorbis', ogg_string )
 
 renderer_string = ' \
 	Cinematic.cpp \
+	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
