@@ -620,7 +620,6 @@ typedef struct {
 	int		current2DMap;
 	int		current3DMap;
 	int		currentCubeMap;
-	int		texEnv;
 	textureType_t	textureType;
 } tmu_t;
 
@@ -689,7 +688,8 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-	
+	int					glProgram;
+
 	// bool				usingSoftShadows; //~SS
 } backEndState_t;
 
@@ -1045,6 +1045,9 @@ extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
 extern idCVar r_ambient_testadd;
 
+// stgatilov ROQ
+extern idCVar r_cinematic_legacyRoq;
+
 // HDR related - J.C.Denton
 extern idCVar r_postprocess;
 extern idCVar r_postprocess_brightPassThreshold;
@@ -1071,7 +1074,6 @@ void	GL_SelectTexture( int unit );
 void	GL_CheckErrors( void );
 void	GL_ClearStateDelta( void );
 void	GL_State( int stateVector );
-void	GL_TexEnv( int env );
 void	GL_Cull( int cullType );
 //anon begin
 void    GL_DepthBoundsTest(const float zmin, const float zmax);
@@ -1217,7 +1219,7 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 // note that many of these assume a normalized matrix, and will not work with scaled axis
 void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
+void VPCALL R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
 void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out );
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
 void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
@@ -1440,17 +1442,18 @@ typedef enum {
 	FPROG_BLOOM_GAUSS_BLRY,
 	VPROG_BLOOM_FINAL_PASS,
 	FPROG_BLOOM_FINAL_PASS,
-	// duzenko: ARB shader depth+alpha
-	VPROG_DEPTH_ALPHA,
-	FPROG_DEPTH_ALPHA,
-	// duzenko: ARB shader for old stage
-	VPROG_OLD_STAGE,
-	FPROG_OLD_STAGE,
+	
+	PROG_DEPTH_ALPHA, // duzenko: glsl shader depth+alpha
+	PROG_OLD_STAGE, // duzenko: glsl shader for old stage
+	PROG_FOG, // duzenko: glsl shader for fog
+	PROG_BLEND, // duzenko: glsl shader for blend lights
+	PROG_CUBE_MAP, // duzenko: glsl shader for cubemap texture
 	// 
 	PROG_USER
 } program_t;
 
-void R_UseProgram( int vProg = PROG_INVALID );
+void R_UseProgramARB( int vProg = PROG_INVALID );
+int R_FindProgramGlsl( int Prog );
 
 /*
 
@@ -1498,8 +1501,7 @@ typedef enum {
 	PP_COLOR_MODULATE,
 	PP_COLOR_ADD,
 
-	PP_LIGHT_FALLOFF_TQ = 20,	// only for NV programs
-	PP_MISC_0 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
+	PP_MISC_0 = 21 // rebb: env vec4 slot for misc data, currently only used for world-up in object-space
 } programParameter_t;
 
 

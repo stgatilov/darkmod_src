@@ -31,6 +31,8 @@
 ===============================================================================
 */
 
+extern idCVar r_cinematic_legacyRoq;
+
 // cinematic states
 typedef enum {
 	FMV_IDLE,
@@ -59,7 +61,7 @@ public:
 
 	// allocates and returns a private subclass that implements the methods
 	// This should be used instead of new
-	static idCinematic	*Alloc();
+	static idCinematic	*Alloc( const char *qpath );
 
 	// frees all allocated memory
 	virtual				~idCinematic();

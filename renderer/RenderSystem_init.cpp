@@ -141,7 +141,7 @@ idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, 
 idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1> );
 idCVar r_subviewOnly( "r_subviewOnly", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged" );
 idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_BOOL  | CVAR_ARCHIVE, "enable shadows" );
-idCVar r_testARBProgram( "r_testARBProgram", "0", CVAR_RENDERER | CVAR_BOOL, "experiment with vertex/fragment programs" );
+idCVar r_testARBProgram( "r_testARBProgram", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "experiment with vertex/fragment programs" );
 idCVar r_testGamma( "r_testGamma", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels", 0, 195 );
 idCVar r_testGammaBias( "r_testGammaBias", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels" );
 idCVar r_testStepGamma( "r_testStepGamma", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels" );
@@ -256,6 +256,12 @@ idCVar r_fboSharedDepth("r_fboSharedDepth", "0", CVAR_RENDERER | CVAR_BOOL | CVA
 idCVar r_fboResolution("r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
 idCVar r_ambient_testadd( "r_ambient_testadd", "0", CVAR_RENDERER | CVAR_FLOAT, "Added ambient brightness for testing purposes. ", 0, 1 );
 
+// relocate stgatilov ROQ options
+
+idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
+	"Play cinematics with original Doom3 code or with FFmpeg libraries. "
+	"0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg");
+
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
@@ -362,7 +368,7 @@ PFNGLDRAWBUFFERSPROC					glDrawBuffers;
 // arb assembly info
 PFNGLGETPROGRAMIVARBPROC				glGetProgramivARB;
 
-/* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
+// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
 
 // Frame Buffer Objects
 PFNGLISRENDERBUFFERPROC					qglIsRenderbuffer;
@@ -425,11 +431,12 @@ PFNGLDELETEPROGRAMPROC						qglDeleteProgram;
 PFNGLDELETESHADERPROC						qglDeleteShader;
 PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
 PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
+PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
 
 // State management
 PFNGLBLENDEQUATIONPROC						qglBlendEquation;
 
- -----====+++  END TDM ~SS Extensions  +++====-----   */
+// -----====+++  END TDM ~SS Extensions  +++====-----   */
 
 
 /*
@@ -652,10 +659,10 @@ static void R_CheckPortableExtensions( void ) {
  		qglDepthBoundsEXT = (PFNGLDEPTHBOUNDSEXTPROC)GLimp_ExtensionPointer( "glDepthBoundsEXT" );
  	}
 	
-		/* -----====+++|  BEGIN TDM ~SS Extensions  |+++====-----   
+		//* -----====+++|  BEGIN TDM ~SS Extensions  |+++====-----   
 
-	if ( glConfig.glVersion > 3.0 ) {
-
+	//if ( glConfig.glVersion > 3.0 ) 
+	{
 		// Frame Buffer Objects
 		qglIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GLimp_ExtensionPointer( "glIsRenderbuffer" );
 		qglBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)GLimp_ExtensionPointer( "glBindRenderbuffer" );
@@ -717,12 +724,13 @@ static void R_CheckPortableExtensions( void ) {
 		qglDeleteShader = (PFNGLDELETESHADERPROC)GLimp_ExtensionPointer( "glDeleteShader" );
 		qglGetProgramiv = (PFNGLGETPROGRAMIVPROC)GLimp_ExtensionPointer( "glGetProgramiv" );
 		qglGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)GLimp_ExtensionPointer( "glGetProgramInfoLog" );
+		qglBindAttribLocation = (PFNGLBINDATTRIBLOCATIONPROC)GLimp_ExtensionPointer( "glBindAttribLocation" );
 
 		// State management
 		qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	}
 
-	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
+//	 -----====+++|   END TDM ~SS Extensions   |+++====-----   */
 
 	glConfig.pixelBufferAvailable = R_CheckExtension("ARB_pixel_buffer_object");
 
@@ -776,7 +784,6 @@ static void R_CheckPortableExtensions( void ) {
 		common->Printf( "Max env parameters: %d\n", n );
 	}
 }
-
 
 /*
 ====================
@@ -1129,7 +1136,7 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 	}
 
 	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	tr.testVideo = idCinematic::Alloc();
+	tr.testVideo = idCinematic::Alloc( nullptr );
 	tr.testVideo->InitFromFile( args.Argv( 1 ), true );
 
 	cinData_t	cin;

@@ -307,7 +307,7 @@
 #define qglTexCoord4s glTexCoord4s
 #define qglTexCoord4sv glTexCoord4sv
 #define qglTexCoordPointer glTexCoordPointer
-#define	qglTexEnvf glTexEnvf
+/*#define	qglTexEnvf glTexEnvf
 #define	qglTexEnvfv glTexEnvfv
 #define	qglTexEnvi glTexEnvi
 #define	qglTexEnviv glTexEnviv
@@ -316,7 +316,7 @@
 #define qglTexGenf glTexGenf
 #define qglTexGenfv glTexGenfv
 #define qglTexGeni glTexGeni
-#define qglTexGeniv glTexGeniv
+#define qglTexGeniv glTexGeniv*/
 #define qglTexImage1D glTexImage1D
 #define qglTexImage2D glTexImage2D
 #define qglTexParameterf glTexParameterf

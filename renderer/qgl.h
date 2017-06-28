@@ -142,7 +142,7 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
-/* -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
+// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
 
 // Frame Buffer Objects
 extern PFNGLISRENDERBUFFERPROC				qglIsRenderbuffer;
@@ -205,11 +205,12 @@ extern PFNGLDELETEPROGRAMPROC				qglDeleteProgram;
 extern PFNGLDELETESHADERPROC				qglDeleteShader;
 extern PFNGLGETPROGRAMIVPROC				qglGetProgramiv;
 extern PFNGLGETPROGRAMINFOLOGPROC			qglGetProgramInfoLog;
+extern PFNGLBINDATTRIBLOCATIONPROC			qglBindAttribLocation;
 
 // State management
 extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
- -----====+++   END TDM ~SS Extensions   +++====-----   */
+// -----====+++   END TDM ~SS Extensions   +++====-----   */
 
 // mipmaps
 extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
@@ -531,16 +532,6 @@ extern  void ( APIENTRY * qglTexCoord4iv )(const GLint *v);
 extern  void ( APIENTRY * qglTexCoord4s )(GLshort s, GLshort t, GLshort r, GLshort q);
 extern  void ( APIENTRY * qglTexCoord4sv )(const GLshort *v);
 extern  void ( APIENTRY * qglTexCoordPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-extern  void ( APIENTRY * qglTexEnvf )(GLenum target, GLenum pname, GLfloat param);
-extern  void ( APIENTRY * qglTexEnvfv )(GLenum target, GLenum pname, const GLfloat *params);
-extern  void ( APIENTRY * qglTexEnvi )(GLenum target, GLenum pname, GLint param);
-extern  void ( APIENTRY * qglTexEnviv )(GLenum target, GLenum pname, const GLint *params);
-extern  void ( APIENTRY * qglTexGend )(GLenum coord, GLenum pname, GLdouble param);
-extern  void ( APIENTRY * qglTexGendv )(GLenum coord, GLenum pname, const GLdouble *params);
-extern  void ( APIENTRY * qglTexGenf )(GLenum coord, GLenum pname, GLfloat param);
-extern  void ( APIENTRY * qglTexGenfv )(GLenum coord, GLenum pname, const GLfloat *params);
-extern  void ( APIENTRY * qglTexGeni )(GLenum coord, GLenum pname, GLint param);
-extern  void ( APIENTRY * qglTexGeniv )(GLenum coord, GLenum pname, const GLint *params);
 extern  void ( APIENTRY * qglTexImage1D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 extern  void ( APIENTRY * qglTexImage2D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 extern  void ( APIENTRY * qglTexParameterf )(GLenum target, GLenum pname, GLfloat param);
