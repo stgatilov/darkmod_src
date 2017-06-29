@@ -242,16 +242,11 @@ sys_string = ' \
 	linux/main.cpp \
 	stub/util_stub.cpp'
 
-if ( local_dedicated == 0 ):
-	sys_string += ' \
-		linux/glimp.cpp \
-		posix/posix_input.cpp \
-		linux/input.cpp \
-		linux/libXNVCtrl/NVCtrl.c'
-else:
-	sys_string += ' \
-        linux/dedicated.cpp \
-        stub/openal_stub.cpp'
+sys_string += ' \
+	linux/glimp.cpp \
+	posix/posix_input.cpp \
+	linux/input.cpp \
+	linux/libXNVCtrl/NVCtrl.c'
 
 sys_list = scons_utils.BuildList( 'sys', sys_string )
 
@@ -275,22 +270,15 @@ local_env = g_env.Clone()
 # To help finding the precompiled_engine.h 
 local_env.Prepend(CPPPATH = '#framework')
 g_env_noopt.Prepend(CPPPATH = '#framework')
+local_env.Prepend(CPPPATH = '#idlib')
+g_env_noopt.Prepend(CPPPATH = '#idlib')
 # Internal minizip now uses external zlib
-local_env.Append(CPPPATH = '#/include/zlib')
+local_env.Prepend(CPPPATH = '#/include/zlib')
 
 #if NO_GCH == '0':
 #	# greebo: Set up the precompiled headers for the engine project
 #	local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
 #	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
-
-if ( local_dedicated == 1 ):
-    local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
-
-if ( local_gamedll == 1 ):
-	local_env.Append( CPPDEFINES = [ '__DOOM_DLL__' ] )
-
-if ( local_demo == 1 ):
-	local_env.Append( CPPDEFINES = [ 'ID_DEMO_BUILD' ] )
 
 if ( local_curl == 0 ):
 	local_env.Append( CPPDEFINES = [ 'ID_ENABLE_CURL=0' ] )
@@ -299,10 +287,10 @@ ogg_env = local_env.Clone()
 ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
 
-
 # greebo: Add boost and image libraries
 if (TARGET_ARCH == 'x86'):
 	local_env.Append(LIBS = [
+		File('#/linux/libcurl/libcurl.a'),
 		File('#/linux/polarssl/libpolarssl.a'),
 		File('#/linux/boost/lib/libboost_filesystem.a'),
 		File('#/linux/boost/lib/libboost_system.a'),
@@ -314,6 +302,7 @@ if (TARGET_ARCH == 'x86'):
 	])
 if (TARGET_ARCH == 'x64'):
 	local_env.Append(LIBS = [
+		File('#/linux/libcurl/lib64/libcurl.a'),
 		File('#/linux/polarssl/lib64/libpolarssl.a'),
 		File('#/linux/boost/lib64/libboost_filesystem.a'),
 		File('#/linux/boost/lib64/libboost_system.a'),
@@ -324,16 +313,15 @@ if (TARGET_ARCH == 'x64'):
 		File('#/linux/ffmpeg/lib64/libswresample.a')
 	])
 
-if ( local_dedicated == 0 ):
-	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
-#	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-	local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
-	local_env.Append( LIBS = [ 'openal' ] )
-	local_env.Append( LIBS = [ 'dl' ] )
-	local_env.Append( LIBS = [ 'pthread' ] )
+
+local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
+#local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
+local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
+local_env.Append( LIBS = [ 'openal' ] )
+local_env.Append( LIBS = [ 'dl' ] )
+local_env.Append( LIBS = [ 'pthread' ] )
 
 source_list = core_list
-source_list += idlib_objects
 source_list += [ '../../glimp/sys/scons/libglimp.a' ]
 source_list += libogg
 source_list += curl_lib
@@ -343,9 +331,10 @@ source_list += SConscript( '../../sys/scons/SConscript.devil' )
 source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
 source_list += SConscript( '../../sys/scons/SConscript.libpng' )
 
-# stgatilov: we need zlib code because the abovementioned libraries use it
-# BUT we cannot use external minizip, because internal one duplicates its symbols
-# source_list += SConscript( '../../sys/scons/SConscript.ziploader' )
+source_list += SConscript( '../../sys/scons/Sconscript.idlib' )
+source_list += SConscript( '../../sys/scons/Sconscript.game' )
+
+# stgatilov: we need only zlib code, because internal minizip uses it
 zlib_string = ' \
 	zlib/adler32.c \
 	zlib/compress.c \
@@ -369,8 +358,5 @@ source_list += zlib_list
 
 source_list += g_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
 
-if ( local_gamedll == 0 ):
-	source_list += game_objects
-
-d3wm = local_env.Program( target = 'doom', source = source_list )
+d3wm = local_env.Program( target = 'thedarkmod', source = source_list )
 Return( 'd3wm' )

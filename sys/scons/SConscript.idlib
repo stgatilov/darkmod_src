@@ -97,15 +97,9 @@ local_env_noopt.Append( CPPFLAGS = flags )
 
 ret_list = []
 
-if ( local_idlibpic == 0 ):
-	for f in idlib_list:
-		ret_list += local_env.StaticObject( source = f )
-	for f in idlib_noopt_list:
-		ret_list += local_env_noopt.StaticObject( source = f )
-else:
-	for f in idlib_list:
-		ret_list += local_env.SharedObject( source = f )
-	for f in idlib_noopt_list:
-		ret_list += local_env_noopt.SharedObject( source = f )
+for f in idlib_list:
+	ret_list += local_env.StaticObject( source = f )
+for f in idlib_noopt_list:
+	ret_list += local_env_noopt.StaticObject( source = f )
 
 Return( 'ret_list' )
