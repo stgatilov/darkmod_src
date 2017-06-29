@@ -37,7 +37,7 @@
 #ifndef SNDPROPLOADER_H
 #define SNDPROPLOADER_H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #include "DarkModGlobals.h"
 
 template <class type> 

@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -653,7 +653,7 @@ void R_SetLightProject(idPlane lightProject[4],
 	lightProject[3][3] = -(startGlobal * lightProject[3].Normal());
 }
 
-void R_SetLightFrustum(const idPlane lightProject[4], idPlane frustum[6])
+/*void R_SetLightFrustum(const idPlane lightProject[4], idPlane frustum[6])
 {
 	int		i;
 
@@ -678,7 +678,7 @@ void R_SetLightFrustum(const idPlane lightProject[4], idPlane frustum[6])
 		l = frustum[i].Normalize();
 		frustum[i][3] /= l;
 	}
-}
+}*/
 
 // grayman #3584 - rewritten for light cones
 EIntersection IntersectLineLightCone(const idVec3 rkLine[LSG_COUNT],

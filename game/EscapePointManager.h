@@ -19,7 +19,7 @@
 #ifndef ESCAPE_POINT_MANAGER__H
 #define ESCAPE_POINT_MANAGER__H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #include <map>
 
 #include "EscapePointEvaluator.h"

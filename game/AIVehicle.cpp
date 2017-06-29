@@ -20,7 +20,7 @@
 // Copyright (C) 2007 The Dark Mod Authors
 //
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

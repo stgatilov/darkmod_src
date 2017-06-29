@@ -42,7 +42,7 @@ move around it to view it from different angles.
 =============================================================================
 */
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

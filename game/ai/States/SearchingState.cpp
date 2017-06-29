@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -35,7 +35,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../../AbsenceMarker.h"
 #include "../../AIComm_Message.h"
 #include "FleeState.h" // grayman #3317
-#include "SearchManager.h" // grayman #3857
+#include "../game/SearchManager.h" // grayman #3857
 
 #define MILL_RADIUS 150.0f // grayman #3857
 #define MAX_RADIAL_SPOT_ATTEMPTS 20 // grayman #3857

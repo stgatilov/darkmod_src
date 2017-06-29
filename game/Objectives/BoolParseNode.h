@@ -20,7 +20,7 @@
 #ifndef TDM_OBJECTIVE_BOOLPARSENODE_H
 #define TDM_OBJECTIVE_BOOLPARSENODE_H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 /**
 * Structure for parsing boolean logic

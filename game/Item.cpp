@@ -22,7 +22,7 @@
 * All inventory and frob functionality has been moved to idEntity
 **/
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

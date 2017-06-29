@@ -19,7 +19,7 @@
 #ifndef POSITION_WITHIN_RANGE_FINDER__H
 #define POSITION_WITHIN_RANGE_FINDER__H
 
-#include "precompiled_game.h"
+#include "precompiled_engine.h"
 
 class PositionWithinRangeFinder : 
 	public idAASCallback
