@@ -18,33 +18,32 @@ import scons_utils
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
-libpng_string = ' \
-	png.c \
-	pngerror.c \
-	pngget.c \
-	pngmem.c \
-	pngpread.c \
-	pngread.c \
-	pngrio.c \
-	pngrtran.c \
-	pngrutil.c \
-	pngset.c \
-	pngtrans.c \
-	pngwio.c \
-	pngwrite.c \
-	pngwtran.c \
-	pngwutil.c'
+zlib_string = ' \
+	zlib/adler32.c \
+	zlib/compress.c \
+	zlib/crc32.c \
+	zlib/deflate.c \
+	zlib/gzclose.c \
+	zlib/gzlib.c \
+	zlib/gzread.c \
+	zlib/gzwrite.c \
+	zlib/infback.c \
+	zlib/inffast.c \
+	zlib/inflate.c \
+	zlib/inftrees.c \
+	zlib/trees.c \
+	zlib/uncompr.c \
+	zlib/zutil.c'
 
-
-libpng_list = scons_utils.BuildList( '', libpng_string )
-for i in range( len( libpng_list ) ):
-	libpng_list[ i ] = '../../lib/libpng/' + libpng_list[ i ]
+zlib_list = scons_utils.BuildList( '', zlib_string )
+for i in range( len( zlib_list ) ):
+	zlib_list[ i ] = '../../lib/' + zlib_list[ i ]
 
 local_env = g_env_base.Clone()
-# Use the libpng headers
-local_env.Append(CPPPATH = '#/include/libpng')
+# Use the zlib headers
+local_env.Append(CPPPATH = '#/include/zlib')
 
 ret_list = []
-for f in libpng_list:
+for f in zlib_list:
 	ret_list += local_env.StaticObject( source = f )
 Return( 'ret_list' )

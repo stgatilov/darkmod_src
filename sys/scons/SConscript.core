@@ -255,6 +255,8 @@ tools_string = ' \
 
 tools_list = scons_utils.BuildList( 'tools', tools_string )
 
+
+
 core_list = framework_list + renderer_list + ui_list \
 	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
 	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
@@ -265,13 +267,10 @@ for i in range( len( core_list ) ):
 for i in range( len( ogg_list ) ):
 	ogg_list[ i ] = '../../' + ogg_list[ i ]
 
-local_env = g_env.Clone()
-
+local_env = g_env_base.Clone()
 # To help finding the precompiled_engine.h 
 local_env.Prepend(CPPPATH = '#framework')
-g_env_noopt.Prepend(CPPPATH = '#framework')
 local_env.Prepend(CPPPATH = '#idlib')
-g_env_noopt.Prepend(CPPPATH = '#idlib')
 # Internal minizip now uses external zlib
 local_env.Prepend(CPPPATH = '#/include/zlib')
 
@@ -313,7 +312,6 @@ if (TARGET_ARCH == 'x64'):
 		File('#/linux/ffmpeg/lib64/libswresample.a')
 	])
 
-
 local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
 #local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
 local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
@@ -335,28 +333,10 @@ source_list += SConscript( '../../sys/scons/Sconscript.idlib' )
 source_list += SConscript( '../../sys/scons/Sconscript.game' )
 
 # stgatilov: we need only zlib code, because internal minizip uses it
-zlib_string = ' \
-	zlib/adler32.c \
-	zlib/compress.c \
-	zlib/crc32.c \
-	zlib/deflate.c \
-	zlib/gzclose.c \
-	zlib/gzlib.c \
-	zlib/gzread.c \
-	zlib/gzwrite.c \
-	zlib/infback.c \
-	zlib/inffast.c \
-	zlib/inflate.c \
-	zlib/inftrees.c \
-	zlib/trees.c \
-	zlib/uncompr.c \
-	zlib/zutil.c'
-zlib_list = scons_utils.BuildList( '', zlib_string )
-for i in range( len( zlib_list ) ):
-	zlib_list[ i ] = '../../lib/' + zlib_list[ i ]
-source_list += zlib_list
+source_list += SConscript( '../../sys/scons/Sconscript.zlib' )
 
-source_list += g_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
+local_env_noopt = scons_utils.CloneWithoutOptimization(local_env, None)
+source_list += local_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
 
 d3wm = local_env.Program( target = 'thedarkmod', source = source_list )
 Return( 'd3wm' )

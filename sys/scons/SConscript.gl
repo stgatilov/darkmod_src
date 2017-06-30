@@ -48,7 +48,7 @@ def build_logfuncs(env, target, source):
 	
 	print 'Generated %s' % target[0]
 
-gl_env = g_env.Clone()
+gl_env = g_env_base.Clone()
 gl_env.Append( CPPPATH = '#' )
 gl_env.Append( CPPPATH = '#/idlib' )
 gl_env.Append( CPPFLAGS = '-DGLIMP' )

@@ -87,12 +87,6 @@ ID_MCHECK (default 2)
 	note that Doom has it's own block allocator/checking
 	this should not be considered a replacement, but an additional tool
 
-OPENAL (default 1)
-	enable OpenAL sound backend support
-
-ALSA (default 1)
-	enable ALSA sound backend support
-	
 NOCURL (default 0)
 	set to 1 to disable usage of libcurl and http/ftp downloads feature
 """
@@ -135,8 +129,6 @@ DEBUG_MEMORY = '0'
 LIBC_MALLOC = '1'
 ID_MCHECK = '2'
 BUILD_ROOT = 'build'
-OPENAL = '1'
-ALSA = '1'
 NOCONF = '0'
 NOCURL = '0'
 BASEFLAGS = ''
@@ -221,7 +213,6 @@ BASECPPFLAGS = [ ]
 CORECPPPATH = [ ]
 CORELIBPATH = [ ]
 CORECPPFLAGS = [ ]
-GAMECPPFLAGS = [ ]
 BASELINKFLAGS = [ ]
 CORELINKFLAGS = [ ]
 
@@ -239,6 +230,8 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 BASECPPFLAGS.append( '-fmessage-length=0' )
 # C++11 features
 BASECPPFLAGS.append( '-std=c++11' )
+# maintain this dangerous optimization off at all times
+BASECPPFLAGS.append( '-fno-strict-aliasing' )
 
 if ( g_os == 'Linux' ):
 	# gcc 4.x option only - only export what we mean to from the game SO
@@ -303,39 +296,22 @@ if ( ID_MCHECK == '1' ):
 	BASECPPFLAGS.append( '-DID_MCHECK' )
 	
 # create the build environements
-g_base_env = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
-scons_utils.SetupUtils( g_base_env )
+g_env_base = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
+scons_utils.SetupUtils( g_env_base )
 
-g_base_env.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found first
-g_base_env.Append(CPPPATH = '#/include')
-g_base_env.Append(CPPPATH = '#/include/zlib')
-g_base_env.Append(CPPPATH = '#/include/minizip')
-g_base_env.Append(CPPPATH = '#/include/libjpeg')
-g_base_env.Append(CPPPATH = '#/include/libpng')
-g_base_env.Append(CPPPATH = '#/include/devil')
-g_base_env.Append(CPPPATH = '#/include/ffmpeg')
-g_base_env.Append(CPPPATH = '#/')
+g_env_base.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found first
+g_env_base.Append(CPPPATH = '#/include')
+g_env_base.Append(CPPPATH = '#/include/zlib')
+#g_env_base.Append(CPPPATH = '#/include/minizip')
+g_env_base.Append(CPPPATH = '#/include/libjpeg')
+g_env_base.Append(CPPPATH = '#/include/libpng')
+g_env_base.Append(CPPPATH = '#/include/devil')
+g_env_base.Append(CPPPATH = '#/include/ffmpeg')
+g_env_base.Append(CPPPATH = '#/')
 
-# Boost matrix has one of these
-g_base_env.Append( CPPFLAGS = '-Wno-unused-local-typedefs' )
-
-g_env = g_base_env.Clone()
-
-g_env['CPPFLAGS'] += OPTCPPFLAGS
-g_env['CPPFLAGS'] += CORECPPFLAGS
-g_env['LINKFLAGS'] += CORELINKFLAGS
-
-g_env_noopt = g_base_env.Clone()
-g_env_noopt['CPPFLAGS'] += CORECPPFLAGS
-
-g_game_env = g_base_env.Clone()
-g_game_env['CPPFLAGS'] += OPTCPPFLAGS
-g_game_env['CPPFLAGS'] += GAMECPPFLAGS
-
-# maintain this dangerous optimization off at all times
-g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
-g_env_noopt.Append( CPPFLAGS = '-fno-strict-aliasing' )
-g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
+g_env_base['CPPFLAGS'] += OPTCPPFLAGS
+g_env_base['CPPFLAGS'] += CORECPPFLAGS
+g_env_base['LINKFLAGS'] += CORELINKFLAGS
 
 #if ( int(JOBS) > 1 ):
 #	print 'Using buffered process output'
@@ -351,7 +327,7 @@ g_game_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 local_curl = 0
 curl_lib = []
 
-GLOBALS = 'g_env g_env_noopt g_game_env g_os ID_MCHECK OPENAL ALSA curl_lib local_curl OPTCPPFLAGS NO_GCH TARGET_ARCH'
+GLOBALS = 'g_env_base g_os ID_MCHECK curl_lib local_curl NO_GCH TARGET_ARCH'
 
 # end general configuration ----------------------
 
