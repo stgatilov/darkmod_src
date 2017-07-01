@@ -22,6 +22,7 @@ import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
+Import( 'g_env_game' )
 
 ogg_string = ' \
 	oggsrc/bitwise.c \

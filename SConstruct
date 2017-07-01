@@ -312,13 +312,6 @@ g_env_base['CPPFLAGS'] += OPTCPPFLAGS
 g_env_base['CPPFLAGS'] += CORECPPFLAGS
 g_env_base['LINKFLAGS'] += CORELINKFLAGS
 
-# environment for core engine + game + idlib
-# has additional include paths which are not used for third-party libraries
-g_env_game = g_env_base.Clone()
-g_env_game.Append(CPPPATH = '#/idlib')
-g_env_game.Append(CPPPATH = '#/framework')
-g_env_game.Append(CPPPATH = '#/game')
-
 
 #if ( int(JOBS) > 1 ):
 #	print 'Using buffered process output'
@@ -334,7 +327,7 @@ g_env_game.Append(CPPPATH = '#/game')
 local_curl = 0
 curl_lib = []
 
-GLOBALS = 'g_env_base g_env_game g_os ID_MCHECK curl_lib local_curl NO_GCH TARGET_ARCH'
+GLOBALS = 'g_env_base g_os ID_MCHECK curl_lib local_curl NO_GCH TARGET_ARCH'
 
 # end general configuration ----------------------
 

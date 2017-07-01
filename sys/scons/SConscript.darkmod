@@ -23,6 +23,14 @@ import scons_utils
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
+# environment for core engine + game + idlib
+# has additional include paths which are not used for third-party libraries
+g_env_game = g_env_base.Clone()
+g_env_game.Append(CPPPATH = '#/idlib')
+g_env_game.Append(CPPPATH = '#/framework')
+g_env_game.Append(CPPPATH = '#/game')
+Export( 'g_env_game' )
+
 
 source_list = []
 # Build three parts of the TDM game: idlib, core engine, game;

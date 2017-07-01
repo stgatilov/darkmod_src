@@ -25,6 +25,7 @@ import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
+Import( 'g_env_game' )
 
 game_string = ' \
 	Actor.cpp \
