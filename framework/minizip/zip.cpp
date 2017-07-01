@@ -51,7 +51,7 @@
 #define ID_TIME_T time_t
 #include "../sys/sys_public.h" //"sys/platform.h"
 #include "../idlib/Heap.h"     //"idlib/Heap.h"
-#include "../ExtLibs/zip.h"
+#include "../ExtLibs/zlib.h"
 
 // we don't need crypt support
 #define NOCRYPT 1

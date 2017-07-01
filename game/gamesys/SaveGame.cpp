@@ -26,7 +26,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "TypeInfo.h"
 
-#include "../ExtLibs/zip.h"
+#include "../ExtLibs/zlib.h"
 
 /*
 Save game related helper classes.

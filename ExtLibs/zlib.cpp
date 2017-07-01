@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "zip.h"
+#include "zlib.h"
 
 namespace ExtLibs {
 	EXTLIB ZEXTERN int ZEXPORT inflate OF( (z_streamp strm, int flush) ) {

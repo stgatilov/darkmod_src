@@ -5,7 +5,6 @@
     <ClInclude Include="jpeg.h" />
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="devil.h" />
-    <ClInclude Include="zip.h" />
     <ClInclude Include="vorbis.h" />
     <ClInclude Include="..\sound\OggVorbis\ogg\ogg.h">
       <Filter>ogg</Filter>
@@ -493,13 +492,13 @@
     <ClInclude Include="..\lib\curl\x509asn1.h">
       <Filter>curl</Filter>
     </ClInclude>
+    <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ffmpeg.cpp" />
     <ClCompile Include="jpeg.cpp" />
     <ClCompile Include="devil.cpp" />
-    <ClCompile Include="zip.cpp" />
     <ClCompile Include="vorbis.cpp" />
     <ClCompile Include="..\sound\OggVorbis\oggsrc\bitwise.c">
       <Filter>oggsrc</Filter>
@@ -918,6 +917,7 @@
     <ClCompile Include="..\lib\curl\x509asn1.c">
       <Filter>curl</Filter>
     </ClCompile>
+    <ClCompile Include="zlib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ogg">

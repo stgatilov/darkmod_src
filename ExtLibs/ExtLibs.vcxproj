@@ -323,7 +323,7 @@
     <ClInclude Include="jpeg.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="vorbis.h" />
-    <ClInclude Include="zip.h" />
+    <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\lib\curl\amigaos.c">
@@ -1170,7 +1170,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="vorbis.cpp" />
-    <ClCompile Include="zip.cpp" />
+    <ClCompile Include="zlib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\lib\curl\objnames.inc" />
