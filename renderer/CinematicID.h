@@ -21,8 +21,8 @@
 #define __CINEMATIC_ID_H__
 
 #define JPEG_INTERNALS
+#include "../ExtLibs/jpeg.h"
 extern "C" {
-#include <jpeglib.h>
 }
 
 #include "tr_local.h"
@@ -42,7 +42,7 @@ public:
 	static void InitCinematic();
 	static void ShutdownCinematic();
 
-	virtual bool			InitFromFile( const char *qpath, bool looping );
+	virtual bool			InitFromFile( const char *qpath, bool looping, bool withAudio );
 	virtual cinData_t		ImageForTime( int milliseconds );
 	virtual int				AnimationLength();
 	virtual void			Close();

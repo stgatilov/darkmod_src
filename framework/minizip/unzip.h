@@ -47,11 +47,7 @@
 #define _unz64_H
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef _ZLIB_H
-#include <zlib.h>
+//extern "C" {
 #endif
 
 #include "ioapi.h"
@@ -452,7 +448,7 @@ extern unzFile unzReOpen( const char* path, unzFile file );
 */
 
 #ifdef __cplusplus
-}
+//}
 #endif
 
 #endif /* _unz64_H */

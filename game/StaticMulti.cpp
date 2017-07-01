@@ -30,7 +30,7 @@ TODO: track skin changes on the different LOD stages
 
 */
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

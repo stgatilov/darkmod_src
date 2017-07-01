@@ -330,7 +330,8 @@ idLCP_Square::CalcForceDelta
   modifies this->delta_f
 ============
 */
-ID_INLINE void idLCP_Square::CalcForceDelta( int d, float dir ) {
+//ID_INLINE duzenko: this function is inline into a loop and contains _alloca
+void idLCP_Square::CalcForceDelta( int d, float dir ) {
 	int i;
 	float *ptr;
 

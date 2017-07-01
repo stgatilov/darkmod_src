@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -32,17 +32,18 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <Wspiapi.h>
 #endif
 
-#include <curl/curl.h>
+#include "curl\curl.h"
+#define ExtLibs
 
 CHttpConnection::CHttpConnection()
 {
-	curl_global_init(CURL_GLOBAL_ALL);
+	ExtLibs::curl_global_init(CURL_GLOBAL_ALL);
 }
 
 CHttpConnection::~CHttpConnection()
 {
 	// Clean up cURL
-	curl_global_cleanup();
+	ExtLibs::curl_global_cleanup();
 }
 
 bool CHttpConnection::HasProxy()

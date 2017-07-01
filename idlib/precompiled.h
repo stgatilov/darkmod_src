@@ -141,7 +141,11 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "../sound/sound.h"
 
 // asynchronous networking
+#ifdef MULTIPLAYER
 #include "../framework/async/NetworkSystem.h"
+// asynchronous networking
+#include "../framework/async/AsyncNetwork.h"
+#endif
 
 // user interfaces
 #include "../ui/ListGUI.h"
@@ -181,9 +185,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "../framework/Console.h"
 #include "../framework/DemoFile.h"
 #include "../framework/Session.h"
-
-// asynchronous networking
-#include "../framework/async/AsyncNetwork.h"
 
 // The editor entry points are always declared, but may just be
 // stubbed out on non-windows platforms.

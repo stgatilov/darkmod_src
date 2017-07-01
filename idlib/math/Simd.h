@@ -49,7 +49,7 @@ public:
 */
 
 #ifdef _WIN32
-#define VPCALL __fastcall
+#define VPCALL __vectorcall//__fastcall
 #else
 #define VPCALL
 #endif

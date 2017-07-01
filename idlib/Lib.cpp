@@ -26,7 +26,7 @@
 #include <unistd.h>
 #endif
 
-#include <IL/il.h>
+#include <../ExtLibs/devil.h>
 
 /*
 ===============================================================================
@@ -76,7 +76,7 @@ void idLib::Init( void ) {
 	idDict::Init();
 
 	// greebo: Initialize the image library, so we can use it later on.
-	ilInit();
+	ExtLibs::ilInit();
 }
 
 /*

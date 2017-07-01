@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -1045,6 +1045,18 @@ void idWindow::Time() {
 	}
 
 	cmd = "";
+
+	//stgatilov #4535: check if video has ended
+	if (background && background->GetCinematic()) {
+		idCinematic *cin = background->GetCinematic();
+		if (cin->GetStatus() == FMV_EOF) {
+			//notify GUI script about this
+			RunNamedEvent("CinematicEnd");
+			//close cinematic to avoid firing this event endlessly
+			//also, it surely avoids triggering this event again when cinematic is reset from GUI
+			cin->Close();
+		}
+	}
 
 	int c = timeLineEvents.Num();
 	if ( c > 0 ) {

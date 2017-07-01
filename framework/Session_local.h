@@ -53,6 +53,10 @@ struct fileTIME_T {
 					operator int() const { return timeStamp; }
 };
 
+#ifndef MULTIPLAYER
+#define MAX_ASYNC_CLIENTS 1
+#endif
+
 typedef struct {
 	idDict			serverInfo;
 	idDict			syncedCVars;

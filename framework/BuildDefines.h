@@ -70,7 +70,9 @@
 
 // don't define ID_ALLOW_TOOLS when we don't want tool code in the executable.
 #if defined( _WIN32 ) && !defined( ID_DEDICATED )
-	#define	ID_ALLOW_TOOLS
+#ifndef NO_MFC
+#define	ID_ALLOW_TOOLS
+#endif
 #endif
 
 #ifndef ID_OPENAL

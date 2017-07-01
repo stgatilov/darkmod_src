@@ -17,14 +17,13 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "snd_local.h"
-#include "OggVorbis/vorbis/codec.h"
-#include "OggVorbis/vorbis/vorbisfile.h"
+#include "../ExtLibs/vorbis.h"
 
 
 /*
@@ -144,7 +143,7 @@ int ov_openFile( idFile *f, OggVorbis_File *vf ) {
 	callbacks.seek_func = FS_SeekOGG;
 	callbacks.close_func = FS_CloseOGG;
 	callbacks.tell_func = FS_TellOGG;
-	return ov_open_callbacks((void *)f, vf, NULL, -1, callbacks);
+	return ExtLibs::ov_open_callbacks( (void *)f, vf, NULL, -1, callbacks );
 }
 
 /*
@@ -176,17 +175,17 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 
 	mfileTime = mhmmio->Timestamp();
 
-	vorbis_info *vi = ov_info( ov, -1 );
+	vorbis_info *vi = ExtLibs::ov_info( ov, -1 );
 
 	mpwfx.Format.nSamplesPerSec = vi->rate;
 	mpwfx.Format.nChannels = vi->channels;
 	mpwfx.Format.wBitsPerSample = sizeof(short) * 8;
-	mdwSize = ov_pcm_total( ov, -1 ) * vi->channels;	// pcm samples * num channels
+	mdwSize = ExtLibs::ov_pcm_total( ov, -1 ) * vi->channels;	// pcm samples * num channels
 	mbIsReadingFromMemory = false;
 
 	if ( idSoundSystemLocal::s_realTimeDecoding.GetBool() ) {
 
-		ov_clear( ov );
+		ExtLibs::ov_clear( ov );
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 		delete ov;
@@ -223,7 +222,7 @@ int idWaveFile::ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead ) {
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
 
 	do {
-		int ret = ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &ov->stream );
+		int ret = ExtLibs::ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &ov->stream );
 		if ( ret == 0 ) {
 			break;
 		}
@@ -252,7 +251,7 @@ int idWaveFile::CloseOGG( void ) {
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
 	if ( ov != NULL ) {
 		Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
-		ov_clear( ov );
+		ExtLibs::ov_clear( ov );
 		delete ov;
 		Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
 		fileSystem->CloseFile( mhmmio );
@@ -282,6 +281,7 @@ public:
 	void					Clear( void );
 	int						DecodePCM( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
 	int						DecodeOGG( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
+	int						DecodeCinematics( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest );
 
 private:
 	bool					failed;				// set if decoding failed
@@ -383,7 +383,7 @@ void idSampleDecoderLocal::ClearDecoder( void ) {
 			break;
 		}
 		case WAVE_FORMAT_TAG_OGG: {
-			ov_clear( &ogg );
+			ExtLibs::ov_clear( &ogg );
 			memset( &ogg, 0, sizeof( ogg ) );
 			break;
 		}
@@ -443,6 +443,12 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 			readSamples44k = DecodeOGG( sample, sampleOffset44k, sampleCount44k, dest );
 			break;
 		}
+		case WAVE_FORMAT_TAG_STREAM_CINEMATICS: {
+			int ch = sample->objectInfo.nChannels;
+			assert(sampleOffset44k % ch == 0 && sampleCount44k % ch == 0);
+			readSamples44k = ch * DecodeCinematics( sample, sampleOffset44k / ch, sampleCount44k / ch, dest );
+			break;
+		}
 		default: {
 			readSamples44k = 0;
 			break;
@@ -454,6 +460,19 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 	if ( readSamples44k < sampleCount44k ) {
 		memset( dest + readSamples44k, 0, ( sampleCount44k - readSamples44k ) * sizeof( dest[0] ) );
 	}
+}
+
+int idSampleDecoderLocal::DecodeCinematics( idSoundSample *sample, int sampleOffset44k, int sampleCount44k, float *dest ) {
+	lastFormat = WAVE_FORMAT_TAG_STREAM_CINEMATICS;
+	lastSample = sample;
+
+	int readSamples = sampleCount44k;
+	if ( !sample->FetchFromCinematic(sampleOffset44k, &readSamples, dest) ) {
+		failed = true;
+		return 0;
+	}
+
+	return readSamples;
 }
 
 /*
@@ -529,7 +548,7 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 
 	// seek to the right offset if necessary
 	if ( sampleOffset != lastSampleOffset ) {
-		if ( ov_pcm_seek( &ogg, sampleOffset / sample->objectInfo.nChannels ) != 0 ) {
+		if (ExtLibs::ov_pcm_seek( &ogg, sampleOffset / sample->objectInfo.nChannels ) != 0) {
 			failed = true;
 			return 0;
 		}
@@ -542,7 +561,7 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 	readSamples = 0;
 	do {
 		float **samples;
-		int ret = ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &ogg.stream );
+		int ret = ExtLibs::ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &ogg.stream );
 		if ( ret == 0 ) {
 			failed = true;
 			break;

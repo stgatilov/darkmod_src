@@ -17,12 +17,12 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
-#include "Unzip.h"
+#include "minizip/Unzip.h"
 
 /*
 =================
@@ -160,6 +160,15 @@ idFile::GetFullPath
 */
 const char *idFile::GetFullPath( void ) {
 	return "";
+}
+
+/*
+=================
+idFile::IsCompressed
+=================
+*/
+bool idFile::IsCompressed( void ) {
+	return false;
 }
 
 /*
@@ -1265,8 +1274,9 @@ idFile_InZip::idFile_InZip
 idFile_InZip::idFile_InZip( void ) {
 	name = "invalid";
 	zipFilePos = 0;
+	compressed = false;
 	fileSize = 0;
-    fileLastMod = 0;
+	fileLastMod = 0;
 	memset( &z, 0, sizeof( z ) );
 }
 
@@ -1347,6 +1357,15 @@ idFile_InZip::Timestamp
 */
 ID_TIME_T idFile_InZip::Timestamp( void ) {
 	return fileLastMod;
+}
+
+/*
+================
+idFile_InZip::IsCompressed
+================
+*/
+bool idFile_InZip::IsCompressed( void) {
+	return compressed;
 }
 
 /*

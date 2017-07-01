@@ -21,7 +21,7 @@
 // Copyright (C) 2004 Gerhard W. Gruber <sparhawk@gmx.at>
 // Copyright (C) 2004-2011 The Dark Mod Team
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

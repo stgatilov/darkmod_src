@@ -110,6 +110,7 @@ typedef unsigned char byte;
 #define ID_TIME_T time_t
 #include "../sys/sys_public.h" //"sys/platform.h"
 #include "../idlib/Heap.h"     //"idlib/Heap.h"
+#include "../ExtLibs/zip.h"
 
 // we don't need crypt support
 #define NOUNCRYPT 1
@@ -1617,7 +1618,7 @@ extern int ZEXPORT unzOpenCurrentFile3 (unzFile file, int* method,
       pfile_in_zip_read_info->stream.next_in = 0;
       pfile_in_zip_read_info->stream.avail_in = 0;
 
-      err=inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
+      err=ExtLibs::inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
       if (err == Z_OK)
         pfile_in_zip_read_info->stream_initialised=Z_DEFLATED;
       else
@@ -1820,7 +1821,7 @@ extern int ZEXPORT unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
 
             pfile_in_zip_read_info->total_out_64 = pfile_in_zip_read_info->total_out_64 + uDoCopy;
 
-            pfile_in_zip_read_info->crc32 = crc32(pfile_in_zip_read_info->crc32,
+			pfile_in_zip_read_info->crc32 = ExtLibs::crc32( pfile_in_zip_read_info->crc32,
                                 pfile_in_zip_read_info->stream.next_out,
                                 uDoCopy);
             pfile_in_zip_read_info->rest_read_uncompressed-=uDoCopy;
@@ -1890,7 +1891,7 @@ extern int ZEXPORT unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
                 (pfile_in_zip_read_info->rest_read_compressed == 0))
                 flush = Z_FINISH;
             */
-            err=inflate(&pfile_in_zip_read_info->stream,flush);
+            err=ExtLibs::inflate(&pfile_in_zip_read_info->stream,flush);
 
             if ((err>=0) && (pfile_in_zip_read_info->stream.msg!=NULL))
               err = Z_DATA_ERROR;
@@ -1901,7 +1902,7 @@ extern int ZEXPORT unzReadCurrentFile  (unzFile file, voidp buf, unsigned len)
             pfile_in_zip_read_info->total_out_64 = pfile_in_zip_read_info->total_out_64 + uOutThis;
 
             pfile_in_zip_read_info->crc32 =
-                crc32(pfile_in_zip_read_info->crc32,bufBefore,
+                ExtLibs::crc32(pfile_in_zip_read_info->crc32,bufBefore,
                         (uInt)(uOutThis));
 
             pfile_in_zip_read_info->rest_read_uncompressed -=
@@ -2135,7 +2136,7 @@ extern int ZEXPORT unzCloseCurrentFile (unzFile file)
     TRYFREE(pfile_in_zip_read_info->read_buffer);
     pfile_in_zip_read_info->read_buffer = NULL;
     if (pfile_in_zip_read_info->stream_initialised == Z_DEFLATED)
-        inflateEnd(&pfile_in_zip_read_info->stream);
+        ExtLibs::inflateEnd(&pfile_in_zip_read_info->stream);
 #ifdef HAVE_BZIP2
     else if (pfile_in_zip_read_info->stream_initialised == Z_BZIP2ED)
         BZ2_bzDecompressEnd(&pfile_in_zip_read_info->bstream);

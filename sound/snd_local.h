@@ -104,7 +104,8 @@ typedef waveformat_s waveformat_t;
 /* flags for wFormatTag field of WAVEFORMAT */
 enum {
 	WAVE_FORMAT_TAG_PCM		= 1,
-	WAVE_FORMAT_TAG_OGG		= 2
+	WAVE_FORMAT_TAG_OGG		= 2,
+	WAVE_FORMAT_TAG_STREAM_CINEMATICS = 3		//#4534
 };
 
 /* specific waveform format structure for PCM data */
@@ -838,6 +839,11 @@ public:
 	void					PurgeSoundSample();			// frees all data
 	void					CheckForDownSample();		// down sample if required
 	bool					FetchFromCache( int offset, const byte **output, int *position, int *size, const bool allowIO );
+
+	//stgatilov #4534: for playing sound from a video
+	idCinematic *cinematic;
+	void LoadFromCinematic(const idMaterial *material);
+	bool FetchFromCinematic(int sampleOffset, int *sampleSize, float *output);
 };
 
 

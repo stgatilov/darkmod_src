@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -1053,9 +1053,9 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 
 				for ( int i = 0 ; i < volList.Num() ; i++ )
 				{
-					SoundChainResults *scr1 = chainResults[i];
+					SoundChainResults *scres = chainResults[i];
 					float factor = volList[i]/totalEffectiveVolume;
-					aveSpatialOrigin += (scr1->spatializedOrigin)*factor;
+					aveSpatialOrigin += (scres->spatializedOrigin)*factor;
 				}
 			}
 			else

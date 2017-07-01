@@ -4,6 +4,7 @@
   <PropertyGroup Label="UserMacros">
     <OpenALSoftDLLPath>Win32\bin\OpenAL32_x86.dll</OpenALSoftDLLPath>
     <TdmExecutableName>TheDarkMod</TdmExecutableName>
+    <ExtLibsModule>ExtLibs</ExtLibsModule>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>
@@ -15,6 +16,9 @@
     </Lib>
     <Link>
       <AdditionalLibraryDirectories>$(SolutionDir)/win32/lib;$(SolutionDir)/win32/devil/lib;$(SolutionDir)/win32/libjpeg/lib;$(SolutionDir)/win32/libpng/lib;$(WindowsSDK_LibraryPath_x86);C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent />
   </ItemDefinitionGroup>
@@ -24,6 +28,9 @@
     </BuildMacro>
     <BuildMacro Include="TdmExecutableName">
       <Value>$(TdmExecutableName)</Value>
+    </BuildMacro>
+    <BuildMacro Include="ExtLibsModule">
+      <Value>$(ExtLibsModule)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

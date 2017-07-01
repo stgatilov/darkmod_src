@@ -30,7 +30,7 @@
 *
 *****************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "Game_local.h"

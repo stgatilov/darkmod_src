@@ -17,7 +17,7 @@
  
 ******************************************************************************/
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");
@@ -2086,10 +2086,12 @@ void idImageManager::EndLevelLoad()
 	const int start = Sys_Milliseconds();
 	insideLevelLoad = false;
 
-	if ( idAsyncNetwork::serverDedicated.GetInteger() )
+#ifdef MULTIPLAYER
+	if (idAsyncNetwork::serverDedicated.GetInteger())
 	{
 		return;
 	}
+#endif
 
 	common->Printf( "----- idImageManager::EndLevelLoad -----\n" );
 

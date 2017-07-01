@@ -43,7 +43,7 @@
 #define private		public
 #define protected	public
 
-#include "precompiled_engine.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 static bool versioned = RegisterVersionedFile("$Id$");

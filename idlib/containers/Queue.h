@@ -36,7 +36,9 @@ public:
 							idQueueTemplate( void );
 
 	void					Add( type *element );
-	type *					Get( void );
+	type *				Get( void );
+	type *				Peek( void );
+	type *				Last( void );
 
 private:
 	type *					first;
@@ -74,6 +76,16 @@ type *idQueueTemplate<type,nextOffset>::Get( void ) {
 		QUEUE_NEXT_PTR(element) = NULL;
 	}
 	return element;
+}
+
+template< class type, int nextOffset >
+type * idQueueTemplate<type,nextOffset>::Peek( void ) {
+	return first;
+}
+
+template< class type, int nextOffset >
+type * idQueueTemplate<type,nextOffset>::Last( void ) {
+	return last;
 }
 
 #endif /* !__QUEUE_H__ */

@@ -36,7 +36,8 @@ public:
 							idStackTemplate( void );
 
 	void					Add( type *element );
-	type *					Get( void );
+	type *				Get( void );
+	type *				Peek( void );
 
 private:
 	type *					top;
@@ -73,5 +74,11 @@ type *idStackTemplate<type,nextOffset>::Get( void ) {
 	}
 	return element;
 }
+
+template< class type, int nextOffset >
+type * idStackTemplate<type,nextOffset>::Peek( void ) {
+	return top;
+}
+
 
 #endif /* !__STACK_H__ */
