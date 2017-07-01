@@ -48,12 +48,10 @@ def build_logfuncs(env, target, source):
 	
 	print 'Generated %s' % target[0]
 
-gl_env = g_env.Clone()
+gl_env = g_env_base.Clone()
 gl_env.Append( CPPPATH = '#' )
+gl_env.Append( CPPPATH = '#/idlib' )
 gl_env.Append( CPPFLAGS = '-DGLIMP' )
-
-if ( local_dedicated == 1 ):
-	gl_env.Append( CPPFLAGS = '-DID_DEDICATED' )
 
 # general M4 builder setup
 # files we are going to generate from their M4 counterparts
@@ -84,15 +82,9 @@ gl_env.Depends( logfuncs, '../gllog/gl_def.m4' )
 sources = []
 sources.append( '../gllog/gl_extensions.cpp' )
 
-if ( local_dedicated == 1 ):
-	sources.append( '../linux/glimp_stub.cpp' )
-else:
-	sources.append( '../linux/glimp_dlopen.cpp' )
-	sources.append( '../linux/glimp_logging.cpp' )
+sources.append( '../linux/glimp_dlopen.cpp' )
+sources.append( '../linux/glimp_logging.cpp' )
 
-#if ( DEDICATED != '0' ):
-#	sources.append( '../linux/glimp_stub.cpp' )
-#
 #if ( GL_HARDLINK == '0' ):
 #	sources.append( '../linux/glimp_dlopen.cpp' )
 #	sources.append( '../linux/glimp_logging.cpp' )

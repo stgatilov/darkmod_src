@@ -18,42 +18,16 @@
 # 
 #*****************************************************************************
 
-import sys, os
 import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
-
-ogg_string = ' \
-	oggsrc/bitwise.c \
-	oggsrc/framing.c \
-	vorbissrc/analysis.c \
-	vorbissrc/bitrate.c \
-	vorbissrc/block.c \
-	vorbissrc/codebook.c \
-	vorbissrc/envelope.c \
-	vorbissrc/floor0.c \
-	vorbissrc/floor1.c \
-	vorbissrc/info.c \
-	vorbissrc/lookup.c \
-	vorbissrc/lpc.c \
-	vorbissrc/lsp.c \
-	vorbissrc/mapping0.c \
-	vorbissrc/mdct.c \
-	vorbissrc/psy.c \
-	vorbissrc/registry.c \
-	vorbissrc/res0.c \
-	vorbissrc/sharedbook.c \
-	vorbissrc/smallft.c \
-	vorbissrc/synthesis.c \
-	vorbissrc/vorbisenc.c \
-	vorbissrc/vorbisfile.c \
-	vorbissrc/windowvb.c'
-
-ogg_list = scons_utils.BuildList( 'sound/OggVorbis', ogg_string )
+Import( 'g_env_game' )
 
 renderer_string = ' \
 	Cinematic.cpp \
+	CinematicID.cpp \
+	CinematicFFMpeg.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
@@ -85,13 +59,9 @@ renderer_string = ' \
 	RenderWorld_portals.cpp \
 	VertexCache.cpp \
 	cg_explicit.cpp \
-	draw_arb.cpp \
 	draw_arb2.cpp \
 	draw_common.cpp \
 	draw_exp_stub.cpp \
-	draw_nv10.cpp \
-	draw_nv20.cpp \
-	draw_r200.cpp \
 	tr_backend.cpp \
 	tr_deform.cpp \
 	tr_font.cpp \
@@ -109,7 +79,6 @@ renderer_string = ' \
 	tr_trace.cpp \
 	tr_trisurf.cpp \
 	tr_turboshadow.cpp'
-
 renderer_list = scons_utils.BuildList( 'renderer', renderer_string )
 
 framework_string = ' \
@@ -132,17 +101,12 @@ framework_string = ' \
 	FileSystem.cpp \
 	I18N.cpp \
 	KeyInput.cpp \
-	Unzip.cpp \
+	minizip/ioapi.c \
+	minizip/unzip.cpp \
+	minizip/zip.cpp \
 	UsercmdGen.cpp \
 	Session_menu.cpp \
-	Session.cpp \
-	async/AsyncClient.cpp \
-	async/AsyncNetwork.cpp \
-	async/AsyncServer.cpp \
-	async/MsgChannel.cpp \
-	async/NetworkSystem.cpp \
-	async/ServerScan.cpp'
-
+	Session.cpp'
 framework_list = scons_utils.BuildList( 'framework', framework_string )
 
 cm_string = ' \
@@ -171,7 +135,6 @@ dmap_string = ' \
 	tritools.cpp \
 	ubrush.cpp \
 	usurface.cpp'
-
 dmap_list = scons_utils.BuildList( 'tools/compilers/dmap', dmap_string )
 
 aas_string = ' \
@@ -188,7 +151,6 @@ aas_string = ' \
 	AASFileManager.cpp \
 	Brush.cpp \
 	BrushBSP.cpp'
-	
 aas_list = scons_utils.BuildList( 'tools/compilers/aas', aas_string )
 
 roq_string = ' \
@@ -196,7 +158,6 @@ roq_string = ' \
 	codec.cpp \
 	roq.cpp \
 	roqParam.cpp'
-
 roq_list = scons_utils.BuildList( 'tools/compilers/roqvq', roq_string )
 
 renderbump_list = [ 'tools/compilers/renderbump/renderbump.cpp' ]
@@ -210,7 +171,6 @@ snd_string = ' \
 	snd_system.cpp \
 	snd_wavefile.cpp \
 	snd_world.cpp'
-
 snd_list = scons_utils.BuildList( 'sound', snd_string )
 
 ui_string = ' \
@@ -230,7 +190,6 @@ ui_string = ' \
 	UserInterface.cpp \
 	Window.cpp \
 	Winvar.cpp'
-
 ui_list = scons_utils.BuildList( 'ui', ui_string )
 
 sys_string = ' \
@@ -240,100 +199,33 @@ sys_string = ' \
 	posix/posix_signal.cpp \
 	posix/posix_threads.cpp \
 	linux/main.cpp \
-	stub/util_stub.cpp'
-
-if ( local_dedicated == 0 ):
-	sys_string += ' \
-		linux/glimp.cpp \
-		posix/posix_input.cpp \
-		linux/input.cpp \
-		linux/libXNVCtrl/NVCtrl.c'
-else:
-	sys_string += ' \
-        linux/dedicated.cpp \
-        stub/openal_stub.cpp'
-
+	stub/util_stub.cpp \
+	linux/glimp.cpp \
+	posix/posix_input.cpp \
+	linux/input.cpp \
+	linux/libXNVCtrl/NVCtrl.c'
 sys_list = scons_utils.BuildList( 'sys', sys_string )
 
 tools_string = ' \
 	guied/GEWindowWrapper_stub.cpp'
-
 tools_list = scons_utils.BuildList( 'tools', tools_string )
 
+
+
+# Compile the rest of the core engine
 core_list = framework_list + renderer_list + ui_list \
 	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
 	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
-
 for i in range( len( core_list ) ):
 	core_list[ i ] = '../../' + core_list[ i ]
 
-for i in range( len( ogg_list ) ):
-	ogg_list[ i ] = '../../' + ogg_list[ i ]
-
-local_env = g_env.Clone()
-
-# To help finding the precompiled_engine.h 
-local_env.Prepend(CPPPATH = '#framework')
-g_env_noopt.Prepend(CPPPATH = '#framework')
-
-#if NO_GCH == '0':
-#	# greebo: Set up the precompiled headers for the engine project
-#	local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
-#	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
-
-if ( local_dedicated == 1 ):
-    local_env.Append( CPPDEFINES = [ 'ID_DEDICATED', 'ID_GL_HARDLINK' ] )
-
-if ( local_gamedll == 1 ):
-	local_env.Append( CPPDEFINES = [ '__DOOM_DLL__' ] )
-
-if ( local_demo == 1 ):
-	local_env.Append( CPPDEFINES = [ 'ID_DEMO_BUILD' ] )
-
+local_env = g_env_game.Clone()
 if ( local_curl == 0 ):
 	local_env.Append( CPPDEFINES = [ 'ID_ENABLE_CURL=0' ] )
+local_env_noopt = scons_utils.CloneWithoutOptimization(local_env, None)
 
-ogg_env = local_env.Clone()
-ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
-libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
-
-
-if ( local_dedicated == 0 ):
-	local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
-#	local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-	local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
-	local_env.Append( LIBS = [ 'openal' ] )
-
-# greebo: Add boost and image libraries
-if (TARGET_ARCH == 'x86'):
-	local_env.Append(LIBS = [
-		File('#/linux/polarssl/libpolarssl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a')		
-	])
-if (TARGET_ARCH == 'x64'):
-	local_env.Append(LIBS = [
-		File('#/linux/polarssl/lib64/libpolarssl.a'),
-		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a')
-	])
-
-source_list = core_list
-source_list += idlib_objects
-source_list += [ '../../glimp/sys/scons/libglimp.a' ]
-source_list += libogg
-source_list += curl_lib
-
-# greebo: Use custom compiled devIL and libjpeg (since the engine requires 4 bytes per pixel format) in Linux
-source_list += SConscript( '../../sys/scons/SConscript.devil' )
-source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
-source_list += SConscript( '../../sys/scons/SConscript.libpng' )
-source_list += SConscript( '../../sys/scons/SConscript.ziploader' )
-
-source_list += g_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
-
-if ( local_gamedll == 0 ):
-	source_list += game_objects
-
-d3wm = local_env.Program( target = 'doom', source = source_list )
-Return( 'd3wm' )
+ret_list = []
+for f in core_list:
+	ret_list += local_env.StaticObject( source = f )
+ret_list += local_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )	# disabled optimization
+Return( 'ret_list' )

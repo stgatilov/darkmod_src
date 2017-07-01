@@ -101,9 +101,12 @@ unzseek() was added by stgatilov so that uncompressed files can be freely seeked
 #else // 0
 // use doom3 headers
 //stgatilov: we need much more headers here
+#include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+typedef unsigned char byte;
 #define ID_TIME_T time_t
 #include "../sys/sys_public.h" //"sys/platform.h"
 #include "../idlib/Heap.h"     //"idlib/Heap.h"

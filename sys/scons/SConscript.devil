@@ -76,23 +76,15 @@ devil_string = ' \
 	il_wal.c \
 	il_xpm.c'
 
-devil_list = scons_utils.BuildList( '', devil_string )
+devil_list = scons_utils.BuildList( '../../lib/devil', devil_string )
 
-# greebo: The source files are located in darkmod_src/lib/devil, for all platforms
-
-for i in range( len( devil_list ) ):
-	devil_list[ i ] = '../../lib/devil/' + devil_list[ i ]
-
-local_env = g_env.Clone()
-
+local_env = g_env_base.Clone()
 # Use the config header in include/devil/IL
 local_env.Append(CPPPATH = '#/include/libpng')
 local_env.Append(CPPPATH = '#/include/devil/IL')
 local_env.Append(CPPFLAGS = '-DHAVE_CONFIG_H')
 
 ret_list = []
-
 for f in devil_list:
-	ret_list += local_env.SharedObject( source = f )
-
+	ret_list += local_env.StaticObject( source = f )
 Return( 'ret_list' )

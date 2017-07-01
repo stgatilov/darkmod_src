@@ -365,6 +365,7 @@
     <ClInclude Include="idlib\geometry\sys_intrinsics.h">
       <Filter>Geometry</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\Allocators.h" />
     <ClInclude Include="idlib\math\Line.h">
       <Filter>Math</Filter>
     </ClInclude>

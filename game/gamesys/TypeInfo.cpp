@@ -34,7 +34,7 @@
 // We import all the things like that before the trick takes places.
 // We lose access to some variable inspection, but we gain in compilability
 // (and a bit in sanity).
-#if defined(__GNUC__) && (__GNUC__ == 6)
+#if defined(__GNUC__) && (__GNUC__ >= 5)
 // these were observed in GNU GCC 6.2.0 (not in 5.4.0):
 #include <sstream>
 #endif // if GCC 6+

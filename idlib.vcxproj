@@ -489,6 +489,7 @@
     <ClCompile Include="idlib\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="idlib\Allocators.h" />
     <ClInclude Include="idlib\bv\Bounds.h" />
     <ClInclude Include="idlib\bv\Box.h" />
     <ClInclude Include="idlib\bv\Frustum.h" />

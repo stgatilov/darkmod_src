@@ -155,7 +155,7 @@ idAngles idMat3::ToAngles( void ) const {
 	theta = -asin( sp );
 	cp = cos( theta );
 
-	if ( cp > 8192.0f * idMath::FLT_EPSILON ) {
+	if ( cp > 8192.0f * idMath::FLT_EPS ) {
 		angles.pitch	= RAD2DEG( theta );
 		angles.yaw		= RAD2DEG( atan2( mat[ 0 ][ 1 ], mat[ 0 ][ 0 ] ) );
 		angles.roll		= RAD2DEG( atan2( mat[ 1 ][ 2 ], mat[ 2 ][ 2 ] ) );
@@ -5073,11 +5073,11 @@ bool idMatX::SVD_Factor( idVecX &w, idMatX &V ) {
 			nm = 0;
 			for ( l = k; l >= 0; l-- ) {
 				nm = l - 1;
-				if ( ( idMath::Fabs( rv1[l] ) + anorm ) == anorm /* idMath::Fabs( rv1[l] ) < idMath::FLT_EPSILON */ ) {
+				if ( ( idMath::Fabs( rv1[l] ) + anorm ) == anorm /* idMath::Fabs( rv1[l] ) < idMath::FLT_EPS */ ) {
 					flag = 0;
 					break;
 				}
-				if ( ( idMath::Fabs( w[nm] ) + anorm ) == anorm /* idMath::Fabs( w[nm] ) < idMath::FLT_EPSILON */ ) {
+				if ( ( idMath::Fabs( w[nm] ) + anorm ) == anorm /* idMath::Fabs( w[nm] ) < idMath::FLT_EPS */ ) {
 					break;
 				}
 			}
@@ -5087,7 +5087,7 @@ bool idMatX::SVD_Factor( idVecX &w, idMatX &V ) {
 				for ( i = l; i <= k; i++ ) {
 					f = s * rv1[i];
 
-					if ( ( idMath::Fabs( f ) + anorm ) != anorm /* idMath::Fabs( f ) > idMath::FLT_EPSILON */ ) {
+					if ( ( idMath::Fabs( f ) + anorm ) != anorm /* idMath::Fabs( f ) > idMath::FLT_EPS */ ) {
 						g = w[i];
 						h = Pythag( f, g );
 						w[i] = h;
@@ -5191,7 +5191,7 @@ void idMatX::SVD_Solve( idVecX &x, const idVecX &b, const idVecX &w, const idMat
 
 	for ( i = 0; i < numColumns; i++ ) {
 		sum = 0.0f;
-		if ( w[i] >= idMath::FLT_EPSILON ) {
+		if ( w[i] >= idMath::FLT_EPS ) {
 			for ( j = 0; j < numRows; j++ ) {
 				sum += (*this)[j][i] * b[j];
 			}
@@ -5227,7 +5227,7 @@ void idMatX::SVD_Inverse( idMatX &inv, const idVecX &w, const idMatX &V ) const 
 	// V * [diag(1/w[i])]
 	for ( i = 0; i < numRows; i++ ) {
 		wi = w[i];
-		wi = ( wi < idMath::FLT_EPSILON ) ? 0.0f : 1.0f / wi;
+		wi = ( wi < idMath::FLT_EPS ) ? 0.0f : 1.0f / wi;
 		for ( j = 0; j < numColumns; j++ ) {
 			V2[j][i] *= wi;
 		}
@@ -5260,7 +5260,7 @@ void idMatX::SVD_MultiplyFactors( idMatX &m, const idVecX &w, const idMatX &V ) 
 
 	for ( r = 0; r < numRows; r++ ) {
 		// calculate row of matrix
-		if ( w[r] >= idMath::FLT_EPSILON ) {
+		if ( w[r] >= idMath::FLT_EPS ) {
 			for ( i = 0; i < V.GetNumRows(); i++ ) {
 				sum = 0.0f;
 				for ( j = 0; j < numColumns; j++ ) {

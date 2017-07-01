@@ -492,6 +492,7 @@
     <ClInclude Include="..\lib\curl\x509asn1.h">
       <Filter>curl</Filter>
     </ClInclude>
+    <ClInclude Include="Export.h" />
     <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>

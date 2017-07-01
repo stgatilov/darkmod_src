@@ -173,5 +173,17 @@ def SetupUtils( env ):
 def BuildList( s_prefix, s_string ):
 	s_list = string.split( s_string )
 	for i in range( len( s_list ) ):
-		s_list[ i ] = s_prefix + '/' + s_list[ i ]
+		s_list[i] = os.path.join(s_prefix, s_list[i])
 	return s_list
+
+def CloneWithoutOptimization(env, opt_level):
+	res = env.Clone()
+	try:
+		res['CPPFLAGS'].remove('-O3')
+	except:
+		print('Error: -O3 not found in CPPFLAGS, optimization not suppressed.')
+		pass
+	if opt_level is not None:
+		res.Append(CPPFLAGS = opt_level)
+	return res
+

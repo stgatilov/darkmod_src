@@ -21,8 +21,6 @@
 #define __MATH_MATH_H__
 
 #include <cmath>
-#include <limits> // before FLT_EPSILON is #undefined
-#include <boost/numeric/ublas/matrix.hpp> // before FLT_EPSILON is #undefined
 
 #ifdef __SSE__
 #include <xmmintrin.h>
@@ -56,10 +54,6 @@
 
 #ifdef INFINITY
 #undef INFINITY
-#endif
-
-#ifdef FLT_EPSILON
-#undef FLT_EPSILON
 #endif
 
 #define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
@@ -205,6 +199,9 @@ public:
 	static float Fmin ( float a, float b );
 	static float Fmax ( float a, float b );
 
+	static int Imin ( int a, int b );
+	static int Imax ( int a, int b );
+
 	static signed char			ClampChar( int i );
 	static signed short			ClampShort( int i );
 	static int					ClampInt( int min, int max, int value );
@@ -233,7 +230,7 @@ public:
 	static const float			M_SEC2MS;					// seconds to milliseconds multiplier
 	static const float			M_MS2SEC;					// milliseconds to seconds multiplier
 	static const float			INFINITY;					// huge number which should be larger than any valid number used
-	static const float			FLT_EPSILON;				// smallest positive number such that 1.0+FLT_EPSILON != 1.0
+	static const float			FLT_EPS;					// smallest positive number such that 1.0+FLT_EPSILON != 1.0
 	//anon beign
 	static const float			FLT_SMALLEST_NON_DENORMAL;	// smallest non-denormal 32-bit floating point value
 	//anon end
@@ -934,6 +931,14 @@ ID_INLINE float idMath::Fmax ( float a, float b ) {
 #else
 	return a > b ? a : b;
 #endif
+}
+
+ID_INLINE int idMath::Imin ( int a, int b ) {
+	return (a < b ? a : b);
+}
+
+ID_INLINE int idMath::Imax ( int a, int b ) {
+	return (a > b ? a : b);
 }
 
 ID_INLINE signed char idMath::ClampChar( int i ) {

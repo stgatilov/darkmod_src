@@ -19,8 +19,6 @@ Import( 'GLOBALS' )
 Import( GLOBALS )
 
 libpng_string = ' \
-	pngwtran.c \
-	pngwutil.c \
 	png.c \
 	pngerror.c \
 	pngget.c \
@@ -33,23 +31,18 @@ libpng_string = ' \
 	pngset.c \
 	pngtrans.c \
 	pngwio.c \
-	pngwrite.c'
+	pngwrite.c \
+	pngwtran.c \
+	pngwutil.c'
 
-libpng_list = scons_utils.BuildList( '', libpng_string )
 
-# greebo: The source files are located in darkmod_src/lib/libpng, for all platforms
+libpng_list = scons_utils.BuildList( '../../lib/libpng', libpng_string )
 
-for i in range( len( libpng_list ) ):
-	libpng_list[ i ] = '../../lib/libpng/' + libpng_list[ i ]
-
-local_env = g_env.Clone()
-
+local_env = g_env_base.Clone()
 # Use the libpng headers
 local_env.Append(CPPPATH = '#/include/libpng')
 
 ret_list = []
-
 for f in libpng_list:
-	ret_list += local_env.SharedObject( source = f )
-
+	ret_list += local_env.StaticObject( source = f )
 Return( 'ret_list' )

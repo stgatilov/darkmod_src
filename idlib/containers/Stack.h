@@ -28,7 +28,7 @@
 ===============================================================================
 */
 
-#define idStack( type, next )		idStackTemplate<type, (int)&(((type*)NULL)->next)>
+#define idStack( type, next )		idStackTemplate<type, (int)(size_t)&(((type*)NULL)->next)>
 
 template< class type, int nextOffset >
 class idStackTemplate {

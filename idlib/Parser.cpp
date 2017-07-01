@@ -700,9 +700,9 @@ int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken 
 			curtime = ctime(&t);
 			(*token) = "\"";
 			token->Append( curtime+4 );
-			token[7] = '\0';
+			(*token)[7] = '\0';
 			token->Append( curtime+20 );
-			token[10] = '\0';
+			(*token)[10] = '\0';
 			token->Append( "\"" );
 			free(curtime);
 			token->type = TT_STRING;
@@ -719,7 +719,7 @@ int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken 
 			curtime = ctime(&t);
 			(*token) = "\"";
 			token->Append( curtime+11 );
-			token[8] = '\0';
+			(*token)[8] = '\0';
 			token->Append( "\"" );
 			free(curtime);
 			token->type = TT_STRING;

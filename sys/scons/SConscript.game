@@ -25,8 +25,8 @@ import scons_utils
 
 Import( 'GLOBALS' )
 Import( GLOBALS )
+Import( 'g_env_game' )
 
-# Master list of source files to compile
 game_string = ' \
 	Actor.cpp \
 	AF.cpp \
@@ -37,7 +37,6 @@ game_string = ' \
 	Emitter.cpp \
 	FX.cpp \
 	Game_local.cpp \
-	Game_network.cpp \
 	GameEdit.cpp \
 	IK.cpp \
 	Item.cpp \
@@ -45,7 +44,6 @@ game_string = ' \
 	Misc.cpp \
 	Moveable.cpp \
 	Mover.cpp \
-	MultiplayerGame.cpp \
 	Player.cpp \
 	PlayerIcon.cpp \
 	PlayerView.cpp \
@@ -104,229 +102,182 @@ game_string = ' \
 	script/Script_Program.cpp \
 	script/Script_Thread.cpp'
 
+darkmod_string = ' \
+	AIComm_Message.cpp \
+	AIVehicle.cpp \
+	BinaryFrobMover.cpp \
+	BloodMarker.cpp \
+	ButtonStateTracker.cpp \
+	DarkmodAASHidingSpotFinder.cpp \
+	DarkModGlobals.cpp \
+	darkmodHidingSpotTree.cpp \
+	darkModLAS.cpp \
+	decltdm_matinfo.cpp \
+	declxdata.cpp \
+	DifficultyManager.cpp \
+	DifficultySettings.cpp \
+	DownloadMenu.cpp \
+	EscapePointEvaluator.cpp \
+	EscapePointManager.cpp \
+	Force_Grab.cpp \
+	Func_Shooter.cpp \
+	FrobDoor.cpp \
+	FrobButton.cpp \
+	FrobDoorHandle.cpp \
+	FrobHandle.cpp \
+	FrobLever.cpp \
+	FrobLock.cpp \
+	FrobLockHandle.cpp \
+	Grabber.cpp \
+	HidingSpotSearchCollection.cpp \
+	AbsenceMarker.cpp \
+	Intersection.cpp \
+	IniFile.cpp \
+	LightGem.cpp \
+	Liquid.cpp \
+	MeleeWeapon.cpp \
+	ModMenu.cpp \
+	MultiStateMover.cpp \
+	MultiStateMoverButton.cpp \
+	MultiStateMoverPosition.cpp \
+	OverlaySys.cpp \
+	PositionWithinRangeFinder.cpp \
+	ProjectileResult.cpp \
+	PVSToAASMapping.cpp \
+	PickableLock.cpp \
+	Relations.cpp \
+	SndProp.cpp \
+	SndPropLoader.cpp \
+	TimerManager.cpp \
+	UserManager.cpp \
+	Inventory/Category.cpp \
+	Inventory/Cursor.cpp \
+	Inventory/Inventory.cpp \
+	Inventory/InventoryItem.cpp \
+	Inventory/WeaponItem.cpp \
+	Missions/Download.cpp \
+	Missions/DownloadManager.cpp \
+	Missions/MissionDB.cpp \
+	Missions/ModInfo.cpp \
+	Missions/ModInfoDecl.cpp \
+	Missions/MissionManager.cpp \
+	Objectives/CampaignStatistics.cpp \
+	Objectives/MissionData.cpp \
+	Objectives/MissionStatistics.cpp \
+	Objectives/Objective.cpp \
+	Objectives/ObjectiveComponent.cpp \
+	Objectives/ObjectiveCondition.cpp \
+	Objectives/ObjectiveLocation.cpp \
+	Http/HttpConnection.cpp \
+	Http/HttpRequest.cpp \
+	ZipLoader/ZipLoader.cpp \
+	pugixml/pugixml.cpp \
+	Shop/LootRuleSet.cpp \
+	Shop/Shop.cpp \
+	Shop/ShopItem.cpp \
+	StimResponse/Response.cpp \
+	StimResponse/ResponseEffect.cpp \
+	StimResponse/Stim.cpp \
+	StimResponse/StimResponse.cpp \
+	StimResponse/StimResponseCollection.cpp \
+	StimResponse/StimResponseTimer.cpp \
+	ai/AreaManager.cpp \
+	ai/CommunicationSubsystem.cpp \
+	ai/DoorInfo.cpp \
+	ai/Mind.cpp \
+	ai/Memory.cpp \
+	ai/MovementSubsystem.cpp \
+	ai/Subsystem.cpp \
+	ai/Conversation/ConversationSystem.cpp \
+	ai/Conversation/Conversation.cpp \
+	ai/Conversation/ConversationCommand.cpp \
+	ai/EAS/EAS.cpp \
+	ai/EAS/RouteInfo.cpp \
+	ai/EAS/RouteNode.cpp \
+	ai/States/AgitatedSearchingState.cpp \
+	ai/States/AlertIdleState.cpp \
+	ai/States/BlindedState.cpp \
+	ai/States/CombatState.cpp \
+	ai/States/AgitatedSearchingStateLanternBot.cpp \
+	ai/States/ConversationState.cpp \
+	ai/States/DeadState.cpp \
+	ai/States/EmergeFromCoverState.cpp \
+	ai/States/FailedKnockoutState.cpp \
+	ai/States/FleeState.cpp \
+	ai/States/FleeDoneState.cpp \
+	ai/States/IdleSleepState.cpp \
+	ai/States/IdleState.cpp \
+	ai/States/KnockedOutState.cpp \
+	ai/States/LostTrackOfEnemyState.cpp \
+	ai/States/ObservantState.cpp \
+	ai/States/PainState.cpp \
+	ai/States/PocketPickedState.cpp \
+	ai/States/SearchingState.cpp \
+	ai/States/State.cpp \
+	ai/States/StayInCoverState.cpp \
+	ai/States/SuspiciousState.cpp \
+	ai/States/SwitchOnLightState.cpp \
+	ai/States/ExamineRopeState.cpp \
+	ai/States/TakeCoverState.cpp \
+	ai/States/UnreachableTargetState.cpp \
+	ai/States/HitByMoveableState.cpp \
+	ai/Tasks/ChaseEnemyRangedTask.cpp \
+	ai/Tasks/ChaseEnemyTask.cpp \
+	ai/Tasks/CombatTask.cpp \
+	ai/Tasks/CommunicationTask.cpp \
+	ai/Tasks/CommWaitTask.cpp \
+	ai/Tasks/FleeTask.cpp \
+	ai/Tasks/FollowActorTask.cpp \
+	ai/Tasks/GreetingBarkTask.cpp \
+	ai/Tasks/GuardSpotTask.cpp \
+	ai/Tasks/HandleDoorTask.cpp \
+	ai/Tasks/HandleElevatorTask.cpp \
+	ai/Tasks/IdleAnimationTask.cpp \
+	ai/Tasks/InteractionTask.cpp \
+	ai/Tasks/InvestigateSpotTask.cpp \
+	ai/Tasks/MeleeCombatTask.cpp \
+	ai/Tasks/MoveToCoverTask.cpp \
+	ai/Tasks/MoveToPositionTask.cpp \
+	ai/Tasks/PathAnimTask.cpp \
+	ai/Tasks/PathCornerTask.cpp \
+	ai/Tasks/PathCycleAnimTask.cpp \
+	ai/Tasks/PathHideTask.cpp \
+	ai/Tasks/PathInteractTask.cpp \
+	ai/Tasks/PathLookatTask.cpp \
+	ai/Tasks/PathShowTask.cpp \
+	ai/Tasks/PathSetMovetypeTask.cpp \
+	ai/Tasks/PathSitTask.cpp \
+	ai/Tasks/PathSleepTask.cpp \
+	ai/Tasks/PathTask.cpp \
+	ai/Tasks/PathTurnTask.cpp \
+	ai/Tasks/PathWaitForTriggerTask.cpp \
+	ai/Tasks/PathWaitTask.cpp \
+	ai/Tasks/PlayAnimationTask.cpp \
+	ai/Tasks/AnimalPatrolTask.cpp \
+	ai/Tasks/RandomHeadturnTask.cpp \
+	ai/Tasks/RandomTurningTask.cpp \
+	ai/Tasks/RangedCombatTask.cpp \
+	ai/Tasks/RepeatedBarkTask.cpp \
+	ai/Tasks/ResolveMovementBlockTask.cpp \
+	ai/Tasks/SingleBarkTask.cpp \
+	ai/Tasks/ScriptTask.cpp \
+	ai/Tasks/ThrowObjectTask.cpp \
+	ai/Tasks/WaitTask.cpp \
+	ai/Tasks/WanderInLocationTask.cpp \
+	SEED.cpp \
+	ModelGenerator.cpp \
+	ImageMapManager.cpp \
+	LightController.cpp \
+	StaticMulti.cpp \
+	RawVector.cpp'
 
-game_list = scons_utils.BuildList( 'game', game_string )
+game_list = scons_utils.BuildList( '../../game', game_string )
+darkmod_list = scons_utils.BuildList( '../../game/', darkmod_string )
+full_list = game_list + darkmod_list
 
-for i in range( len( game_list ) ):
-	game_list[ i ] = '../../' + game_list[ i ]
+local_env = g_env_game.Clone()
 
-# DarkMod source files
-
-darkModSrc = '\
-AIComm_Message.cpp \
-AIVehicle.cpp \
-BinaryFrobMover.cpp \
-BloodMarker.cpp \
-ButtonStateTracker.cpp \
-DarkmodAASHidingSpotFinder.cpp \
-DarkModGlobals.cpp \
-darkmodHidingSpotTree.cpp \
-darkModLAS.cpp \
-decltdm_matinfo.cpp \
-declxdata.cpp \
-DifficultyManager.cpp \
-DifficultySettings.cpp \
-DownloadMenu.cpp \
-EscapePointEvaluator.cpp \
-EscapePointManager.cpp \
-Force_Grab.cpp \
-Func_Shooter.cpp \
-FrobDoor.cpp \
-FrobButton.cpp \
-FrobDoorHandle.cpp \
-FrobHandle.cpp \
-FrobLever.cpp \
-FrobLock.cpp \
-FrobLockHandle.cpp \
-Grabber.cpp \
-HidingSpotSearchCollection.cpp \
-AbsenceMarker.cpp \
-Intersection.cpp \
-IniFile.cpp \
-LightGem.cpp \
-Liquid.cpp \
-MaterialConverter.cpp \
-MeleeWeapon.cpp \
-ModMenu.cpp \
-MultiStateMover.cpp \
-MultiStateMoverButton.cpp \
-MultiStateMoverPosition.cpp \
-OverlaySys.cpp \
-PositionWithinRangeFinder.cpp \
-ProjectileResult.cpp \
-PVSToAASMapping.cpp \
-PickableLock.cpp \
-Relations.cpp \
-SndProp.cpp \
-SndPropLoader.cpp \
-TimerManager.cpp \
-UserManager.cpp \
-Inventory/Category.cpp \
-Inventory/Cursor.cpp \
-Inventory/Inventory.cpp \
-Inventory/InventoryItem.cpp \
-Inventory/WeaponItem.cpp \
-Missions/Download.cpp \
-Missions/DownloadManager.cpp \
-Missions/MissionDB.cpp \
-Missions/ModInfo.cpp \
-Missions/ModInfoDecl.cpp \
-Missions/MissionManager.cpp \
-Objectives/CampaignStatistics.cpp \
-Objectives/MissionData.cpp \
-Objectives/MissionStatistics.cpp \
-Objectives/Objective.cpp \
-Objectives/ObjectiveComponent.cpp \
-Objectives/ObjectiveCondition.cpp \
-Objectives/ObjectiveLocation.cpp \
-Http/HttpConnection.cpp \
-Http/HttpRequest.cpp \
-ZipLoader/ZipLoader.cpp \
-pugixml/pugixml.cpp \
-Shop/LootRuleSet.cpp \
-Shop/Shop.cpp \
-Shop/ShopItem.cpp \
-StimResponse/Response.cpp \
-StimResponse/ResponseEffect.cpp \
-StimResponse/Stim.cpp \
-StimResponse/StimResponse.cpp \
-StimResponse/StimResponseCollection.cpp \
-StimResponse/StimResponseTimer.cpp \
-ai/AreaManager.cpp \
-ai/CommunicationSubsystem.cpp \
-ai/DoorInfo.cpp \
-ai/Mind.cpp \
-ai/Memory.cpp \
-ai/MovementSubsystem.cpp \
-ai/Subsystem.cpp \
-ai/Conversation/ConversationSystem.cpp \
-ai/Conversation/Conversation.cpp \
-ai/Conversation/ConversationCommand.cpp \
-ai/EAS/EAS.cpp \
-ai/EAS/RouteInfo.cpp \
-ai/EAS/RouteNode.cpp \
-ai/States/AgitatedSearchingState.cpp \
-ai/States/AlertIdleState.cpp \
-ai/States/BlindedState.cpp \
-ai/States/CombatState.cpp \
-ai/States/AgitatedSearchingStateLanternBot.cpp \
-ai/States/ConversationState.cpp \
-ai/States/DeadState.cpp \
-ai/States/EmergeFromCoverState.cpp \
-ai/States/FailedKnockoutState.cpp \
-ai/States/FleeState.cpp \
-ai/States/FleeDoneState.cpp \
-ai/States/IdleSleepState.cpp \
-ai/States/IdleState.cpp \
-ai/States/KnockedOutState.cpp \
-ai/States/LostTrackOfEnemyState.cpp \
-ai/States/ObservantState.cpp \
-ai/States/PainState.cpp \
-ai/States/PocketPickedState.cpp \
-ai/States/SearchingState.cpp \
-ai/States/State.cpp \
-ai/States/StayInCoverState.cpp \
-ai/States/SuspiciousState.cpp \
-ai/States/SwitchOnLightState.cpp \
-ai/States/ExamineRopeState.cpp \
-ai/States/TakeCoverState.cpp \
-ai/States/UnreachableTargetState.cpp \
-ai/States/HitByMoveableState.cpp \
-ai/Tasks/ChaseEnemyRangedTask.cpp \
-ai/Tasks/ChaseEnemyTask.cpp \
-ai/Tasks/CombatTask.cpp \
-ai/Tasks/CommunicationTask.cpp \
-ai/Tasks/CommWaitTask.cpp \
-ai/Tasks/FleeTask.cpp \
-ai/Tasks/FollowActorTask.cpp \
-ai/Tasks/GreetingBarkTask.cpp \
-ai/Tasks/GuardSpotTask.cpp \
-ai/Tasks/HandleDoorTask.cpp \
-ai/Tasks/HandleElevatorTask.cpp \
-ai/Tasks/IdleAnimationTask.cpp \
-ai/Tasks/InteractionTask.cpp \
-ai/Tasks/InvestigateSpotTask.cpp \
-ai/Tasks/MeleeCombatTask.cpp \
-ai/Tasks/MoveToCoverTask.cpp \
-ai/Tasks/MoveToPositionTask.cpp \
-ai/Tasks/PathAnimTask.cpp \
-ai/Tasks/PathCornerTask.cpp \
-ai/Tasks/PathCycleAnimTask.cpp \
-ai/Tasks/PathHideTask.cpp \
-ai/Tasks/PathInteractTask.cpp \
-ai/Tasks/PathLookatTask.cpp \
-ai/Tasks/PathShowTask.cpp \
-ai/Tasks/PathSetMovetypeTask.cpp \
-ai/Tasks/PathSitTask.cpp \
-ai/Tasks/PathSleepTask.cpp \
-ai/Tasks/PathTask.cpp \
-ai/Tasks/PathTurnTask.cpp \
-ai/Tasks/PathWaitForTriggerTask.cpp \
-ai/Tasks/PathWaitTask.cpp \
-ai/Tasks/PlayAnimationTask.cpp \
-ai/Tasks/AnimalPatrolTask.cpp \
-ai/Tasks/RandomHeadturnTask.cpp \
-ai/Tasks/RandomTurningTask.cpp \
-ai/Tasks/RangedCombatTask.cpp \
-ai/Tasks/RepeatedBarkTask.cpp \
-ai/Tasks/ResolveMovementBlockTask.cpp \
-ai/Tasks/SingleBarkTask.cpp \
-ai/Tasks/ScriptTask.cpp \
-ai/Tasks/ThrowObjectTask.cpp \
-ai/Tasks/WaitTask.cpp \
-ai/Tasks/WanderInLocationTask.cpp \
-SEED.cpp \
-ModelGenerator.cpp \
-ImageMapManager.cpp \
-LightController.cpp \
-StaticMulti.cpp \
-RawVector.cpp'
-
-darkModList = scons_utils.BuildList('../../game/', darkModSrc)
-
-ziploader_list = SConscript( '../../sys/scons/SConscript.ziploader' )
-
-local_env = g_game_env.Clone()
-
-# The game files use the game/precompiled_game.h header, make sure it can be found
-local_env.Prepend(CPPPATH = '#/game')
-
-local_env.Append( CPPDEFINES = [ 'GAME_DLL' ] )
-local_env.Append( CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch', '-fPIC' ] )
-
-
-
-if (TARGET_ARCH == 'x86'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/polarssl/libpolarssl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a')
-	])
-if (TARGET_ARCH == 'x64'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/lib64/libcurl.a'),
-		File('#/linux/polarssl/lib64/libpolarssl.a'),
-		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a')
-	])
-
-#if NO_GCH == '0':
-	# greebo: Set up our precompiled header
-	#GCH_CPPFLAGS = local_env['CPPFLAGS']
-	#GCH_CPPFLAGS += ['-fPIC']
-
-	#local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
-
-# greebo: Use custom compiled devIL and libjpeg in Linux
-devil_list = SConscript( '../../sys/scons/SConscript.devil' )
-libjpeg_list = SConscript( '../../sys/scons/SConscript.libjpeg' )
-libpng_list = SConscript( '../../sys/scons/SConscript.libpng' )
-
-full_list = game_list + darkModList + idlib_objects + ziploader_list + devil_list + libjpeg_list + libpng_list
-
-ret = local_env.SharedLibrary('game', full_list )
-
+ret = []
+for f in full_list:
+	ret += local_env.StaticObject( source = f )
 Return( 'ret' )
-
-

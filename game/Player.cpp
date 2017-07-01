@@ -12267,28 +12267,28 @@ void TestEventError() {
 	common->Error("Script events internal check failed!\n");
 }
 void idPlayer::Event_TestEvent1(float float_pi, int int_beef, float float_exp, const char *string_tdm, float float_exp10, int int_food) {
-	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPSILON) TestEventError();
+	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPS) TestEventError();
 	if (int_beef != 0xbeef) TestEventError();
-	if (idMath::Fabs(float_exp - idMath::E) > 5.0f * idMath::FLT_EPSILON) TestEventError();
+	if (idMath::Fabs(float_exp - idMath::E) > 5.0f * idMath::FLT_EPS) TestEventError();
 	if (idStr::Cmp(string_tdm, "TheDarkMod") != 0) TestEventError();
-	if (idMath::Fabs(float_exp10 / idMath::Exp(10.0f) - 1.0f) > 2.0f * idMath::FLT_EPSILON) TestEventError();
+	if (idMath::Fabs(float_exp10 / idMath::Exp(10.0f) - 1.0f) > 2.0f * idMath::FLT_EPS) TestEventError();
 	if (int_food != 0xf00d) TestEventError();
 	idThread::ReturnInt(int_beef + int_food);
 }
 void idPlayer::Event_TestEvent2(int int_prevres, idVec3 *vec_123, int int_food, idEntity *ent_player, idEntity *ent_null, float float_pi, float float_exp) {
 	if (int_prevres - int_food != 0xbeef) TestEventError();
-	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 5.0f * idMath::FLT_EPSILON)) TestEventError();
+	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 5.0f * idMath::FLT_EPS)) TestEventError();
 	if (int_food != 0xf00d) TestEventError();
 	if (ent_player != this) TestEventError();
 	if (ent_null) TestEventError();
-	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPSILON) TestEventError();
-	if (idMath::Fabs(float_exp - idMath::E) > 5.0f * idMath::FLT_EPSILON) TestEventError();
+	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPS) TestEventError();
+	if (idMath::Fabs(float_exp - idMath::E) > 5.0f * idMath::FLT_EPS) TestEventError();
 	idThread::ReturnEntity(this);
 }
 void idPlayer::Event_TestEvent3(idEntity *ent_prevres, idVec3 *vec_123, float float_pi, idEntity *ent_player) {
 	if (ent_prevres != this) TestEventError();
-	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 5.0f * idMath::FLT_EPSILON)) TestEventError();
-	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPSILON) TestEventError();
+	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 5.0f * idMath::FLT_EPS)) TestEventError();
+	if (idMath::Fabs(float_pi - idMath::PI) > 5.0f * idMath::FLT_EPS) TestEventError();
 	if (ent_prevres != this) TestEventError();
 	idThread::ReturnVector(*vec_123 + *vec_123);
 }

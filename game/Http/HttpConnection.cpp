@@ -32,7 +32,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <Wspiapi.h>
 #endif
 
-#include "curl\curl.h"
+#include "curl/curl.h"
 #define ExtLibs
 
 CHttpConnection::CHttpConnection()

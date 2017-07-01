@@ -2,11 +2,7 @@ extern "C" {
 #include <jpeglib.h>
 }
 
-#ifdef MAKEDLL
-#  define EXTLIB __declspec(dllexport)
-#else
-#  define EXTLIB __declspec(dllimport)
-#endif
+#include "Export.h"
 
 namespace ExtLibs {
 	EXTLIB EXTERN( struct jpeg_error_mgr * ) jpeg_std_error

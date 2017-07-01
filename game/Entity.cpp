@@ -1887,7 +1887,8 @@ idEntity::~idEntity( void )
 	DM_LOG(LC_FUNCTION, LT_DEBUG)LOGSTRING("this: %08lX [%s]\r", this, __FUNCTION__);
 
 	// Tels: #2430 - If this entity is shouldered by the player, dequip it forcefully
-	if ( gameLocal.m_Grabber && gameLocal.m_Grabber->GetEquipped() == this )
+	//stgatilov: in case of save loading error, grabber may not exist yet
+	if (gameLocal.m_Grabber && gameLocal.m_Grabber->GetEquipped() == this)
 	{
 		if ( spawnArgs.GetBool("shoulderable") )
 		{

@@ -4,11 +4,7 @@ extern "C" {
 }
 #endif
 
-#ifdef MAKEDLL
-#  define EXTLIB __declspec(dllexport)
-#else
-#  define EXTLIB __declspec(dllimport)
-#endif
+#include "Export.h"
 
 namespace ExtLibs {
 	EXTLIB ZEXTERN int ZEXPORT inflate OF( (z_streamp strm, int flush) );

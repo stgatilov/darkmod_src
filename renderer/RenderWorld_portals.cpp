@@ -268,7 +268,7 @@ void idRenderWorldLocal::FloodViewThroughArea_r( const idVec3 origin, int areaNu
 			idVec3 normal;
 			normal.Cross(v2, v1);
 			float sinAng = normal.LengthFast() * idMath::RSqrt(v2.LengthSqr() * v1.LengthSqr());
-			static const float SIN_THRESHOLD = idMath::FLT_EPSILON / MAX_PLANE_NORMAL_ERROR;
+			static const float SIN_THRESHOLD = idMath::FLT_EPS / MAX_PLANE_NORMAL_ERROR;
 			if (sinAng <= SIN_THRESHOLD)
 				continue;
 
@@ -435,7 +435,7 @@ void idRenderWorldLocal::FloodLightThroughArea_r( idRenderLightLocal *light, int
 			idVec3 normal;
 			normal.Cross(v2, v1);
 			float sinAng = normal.LengthFast() * idMath::RSqrt(v2.LengthSqr() * v1.LengthSqr());
-			static const float SIN_THRESHOLD = idMath::FLT_EPSILON / MAX_PLANE_NORMAL_ERROR;
+			static const float SIN_THRESHOLD = idMath::FLT_EPS / MAX_PLANE_NORMAL_ERROR;
 			if (sinAng <= SIN_THRESHOLD)
 				continue;
 

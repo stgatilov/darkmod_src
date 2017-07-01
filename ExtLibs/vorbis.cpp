@@ -1,5 +1,9 @@
 #include "stdafx.h"
 #include "vorbis.h"
+#include <stdlib.h>
+#include <string.h>
+
+static ov_alloc_callbacks allocation_callbacks = {0};
 
 extern "C" {
 	void *_decoder_malloc( size_t size );
@@ -9,29 +13,26 @@ extern "C" {
 }
 
 void *_decoder_malloc( size_t size ) {
-	void *ptr = malloc(size);
-	//assert( size == 0 || ptr != NULL );
-	return ptr;
+	return allocation_callbacks._decoder_malloc(size);
 }
 
 void *_decoder_calloc( size_t num, size_t size ) {
-	void *ptr = malloc(size*num);
-	//assert( (num * size) == 0 || ptr != NULL );
-	memset( ptr, 0, num * size );
-	return ptr;
+	return allocation_callbacks._decoder_calloc(num, size);
 }
 
 void *_decoder_realloc( void *memblock, size_t size ) {
-	void *ptr = realloc( (byte *)memblock, static_cast<int>(size) );
-	//assert( size == 0 || ptr != NULL );
-	return ptr;
+	return allocation_callbacks._decoder_realloc(memblock, size);
 }
 
 void _decoder_free( void *memblock ) {
-	free(memblock);
+	return allocation_callbacks._decoder_free(memblock);
 }
 
 namespace ExtLibs {
+	EXTLIB void ov_use_custom_alloc(ov_alloc_callbacks callbacks) {
+		allocation_callbacks = callbacks;
+	}
+
 	EXTLIB int ov_clear( OggVorbis_File *vf ) {
 		return ::ov_clear( vf );
 	}

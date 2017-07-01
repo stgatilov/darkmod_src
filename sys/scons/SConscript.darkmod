@@ -1,0 +1,82 @@
+# -*- mode: python -*-
+# DOOM build script
+# TTimo <ttimo@idsoftware.com> 
+# http://scons.sourceforge.net
+
+#*****************************************************************************
+#                    The Dark Mod GPL Source Code
+# 
+# This file is part of the The Dark Mod Source Code, originally based 
+# on the Doom 3 GPL Source Code as published in 2011.
+# 
+# The Dark Mod Source Code is free software: you can redistribute it 
+# and/or modify it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation, either version 3 of the License, 
+# or (at your option) any later version. For details, see LICENSE.TXT.
+# 
+# Project: The Dark Mod (http://www.thedarkmod.com/)
+# 
+#*****************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+# environment for core engine + game + idlib
+# has additional include paths which are not used for third-party libraries
+g_env_game = g_env_base.Clone()
+g_env_game.Append(CPPPATH = '#/idlib')
+g_env_game.Append(CPPPATH = '#/framework')
+g_env_game.Append(CPPPATH = '#/game')
+Export( 'g_env_game' )
+
+
+source_list = []
+# Build three parts of the TDM game: idlib, core engine, game;
+source_list += SConscript( '../../sys/scons/SConscript.idlib' )
+source_list += SConscript( '../../sys/scons/SConscript.core' )
+source_list += SConscript( '../../sys/scons/SConscript.game' )
+# Add glimp stuff (built separately)
+source_list += [ '../../glimp/sys/scons/libglimp.a' ]
+# Link against ExtLibs
+source_list += SConscript( '../../sys/scons/SConscript.extlibs' )
+
+local_env = g_env_game.Clone()
+
+# greebo: Add all custom-built libraries
+if (TARGET_ARCH == 'x86'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/libcurl.a'),
+		File('#/linux/polarssl/libpolarssl.a'),
+		File('#/linux/boost/lib/libboost_filesystem.a'),
+		File('#/linux/boost/lib/libboost_system.a'),
+		File('#/linux/ffmpeg/libavformat.a'),
+		File('#/linux/ffmpeg/libavcodec.a'),
+		File('#/linux/ffmpeg/libavutil.a'),
+		File('#/linux/ffmpeg/libswscale.a'),
+		File('#/linux/ffmpeg/libswresample.a')
+	])
+if (TARGET_ARCH == 'x64'):
+	local_env.Append(LIBS = [
+		File('#/linux/libcurl/lib64/libcurl.a'),
+		File('#/linux/polarssl/lib64/libpolarssl.a'),
+		File('#/linux/boost/lib64/libboost_filesystem.a'),
+		File('#/linux/boost/lib64/libboost_system.a'),
+		File('#/linux/ffmpeg/lib64/libavformat.a'),
+		File('#/linux/ffmpeg/lib64/libavcodec.a'),
+		File('#/linux/ffmpeg/lib64/libavutil.a'),
+		File('#/linux/ffmpeg/lib64/libswscale.a'),
+		File('#/linux/ffmpeg/lib64/libswresample.a')
+	])
+
+# Add all standard libraries (taken from system)
+local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
+#local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
+local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
+local_env.Append( LIBS = [ 'openal' ] )
+local_env.Append( LIBS = [ 'dl' ] )
+local_env.Append( LIBS = [ 'pthread' ] )
+
+thedarkmod = local_env.Program( target = 'thedarkmod', source = source_list )
+Return( 'thedarkmod' )

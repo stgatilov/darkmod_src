@@ -45,6 +45,7 @@
 #else // 0
 // use doom3 headers
 //stgatilov: we need much more headers here
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

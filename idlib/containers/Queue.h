@@ -28,7 +28,7 @@
 ===============================================================================
 */
 
-#define idQueue( type, next )		idQueueTemplate<type, (int)&(((type*)NULL)->next)>
+#define idQueue( type, next )		idQueueTemplate<type, (int)(size_t)&(((type*)NULL)->next)>
 
 template< class type, int nextOffset >
 class idQueueTemplate {

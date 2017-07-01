@@ -40,33 +40,26 @@ idDynamicBlockAlloc<byte, 1<<20, 128>		decoderMemoryAllocator;
 
 const int MIN_OGGVORBIS_MEMORY				= 768 * 1024;
 
-extern "C" {
-	void *_decoder_malloc( size_t size );
-	void *_decoder_calloc( size_t num, size_t size );
-	void *_decoder_realloc( void *memblock, size_t size );
-	void _decoder_free( void *memblock );
-}
-
-void *_decoder_malloc( size_t size ) {
+void *custom_decoder_malloc( size_t size ) {
     void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
 
-void *_decoder_calloc( size_t num, size_t size ) {
+void *custom_decoder_calloc( size_t num, size_t size ) {
     void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(num * size));
 	assert( ( num * size ) == 0 || ptr != NULL );
 	memset( ptr, 0, num * size );
 	return ptr;
 }
 
-void *_decoder_realloc( void *memblock, size_t size ) {
+void *custom_decoder_realloc( void *memblock, size_t size ) {
     void *ptr = decoderMemoryAllocator.Resize((byte *)memblock, static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
 
-void _decoder_free( void *memblock ) {
+void custom_decoder_free( void *memblock ) {
 	decoderMemoryAllocator.Free( (byte *)memblock );
 }
 
@@ -302,6 +295,9 @@ idSampleDecoder::Init
 ====================
 */
 void idSampleDecoder::Init( void ) {
+	ov_alloc_callbacks alloc_callbacks = {custom_decoder_malloc, custom_decoder_calloc, custom_decoder_realloc, custom_decoder_free};
+	ExtLibs::ov_use_custom_alloc(alloc_callbacks);
+
 	decoderMemoryAllocator.Init();
 	decoderMemoryAllocator.SetLockMemory( true );
 	decoderMemoryAllocator.SetFixedBlocks( idSoundSystemLocal::s_realTimeDecoding.GetBool() ? 10 : 1 );

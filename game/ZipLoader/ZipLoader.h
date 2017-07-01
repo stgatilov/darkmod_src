@@ -23,7 +23,6 @@
 #pragma hdrstop
 
 #include "precompiled.h"
-#include "minizip/unzip.h"
 
 /**
  * A class wrapping around a minizip file handle, providing

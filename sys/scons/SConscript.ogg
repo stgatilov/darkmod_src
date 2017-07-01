@@ -18,37 +18,37 @@ import scons_utils
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
-ziploader_string = ' \
-	zlib/adler32.c \
-	zlib/compress.c \
-	zlib/crc32.c \
-	zlib/deflate.c \
-	zlib/gzclose.c \
-	zlib/gzlib.c \
-	zlib/gzread.c \
-	zlib/gzwrite.c \
-	zlib/infback.c \
-	zlib/inffast.c \
-	zlib/inflate.c \
-	zlib/inftrees.c \
-	zlib/trees.c \
-	zlib/uncompr.c \
-	zlib/zutil.c \
-	minizip/ioapi.c \
-	minizip/mztools.c \
-	minizip/unzip.c \
-	minizip/zip.c'
+ogg_string = ' \
+	oggsrc/bitwise.c \
+	oggsrc/framing.c \
+	vorbissrc/analysis.c \
+	vorbissrc/bitrate.c \
+	vorbissrc/block.c \
+	vorbissrc/codebook.c \
+	vorbissrc/envelope.c \
+	vorbissrc/floor0.c \
+	vorbissrc/floor1.c \
+	vorbissrc/info.c \
+	vorbissrc/lookup.c \
+	vorbissrc/lpc.c \
+	vorbissrc/lsp.c \
+	vorbissrc/mapping0.c \
+	vorbissrc/mdct.c \
+	vorbissrc/psy.c \
+	vorbissrc/registry.c \
+	vorbissrc/res0.c \
+	vorbissrc/sharedbook.c \
+	vorbissrc/smallft.c \
+	vorbissrc/synthesis.c \
+	vorbissrc/vorbisenc.c \
+	vorbissrc/vorbisfile.c \
+	vorbissrc/windowvb.c'
+ogg_list = scons_utils.BuildList( '../../sound/OggVorbis', ogg_string )
 
-ziploader_list = scons_utils.BuildList( '', ziploader_string )
-
-for i in range( len( ziploader_list ) ):
-	ziploader_list[ i ] = '../../lib/' + ziploader_list[ i ]
-
-local_env = g_env.Clone()
+local_env = g_env_base.Clone()
+local_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 
 ret_list = []
-
-for f in ziploader_list:
-	ret_list += local_env.SharedObject( source = f )
-
+for f in ogg_list:
+	ret_list += local_env.StaticObject( source = f )
 Return( 'ret_list' )

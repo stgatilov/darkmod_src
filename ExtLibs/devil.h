@@ -1,10 +1,6 @@
 #include <IL/il.h>
 
-#ifdef MAKEDLL
-#  define EXTLIB __declspec(dllexport)
-#else
-#  define EXTLIB __declspec(dllimport)
-#endif
+#include "Export.h"
 
 namespace ExtLibs {
 	EXTLIB ILvoid    ILAPIENTRY ilInit( void );

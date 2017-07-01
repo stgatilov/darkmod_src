@@ -319,6 +319,7 @@
     <ClInclude Include="..\sound\OggVorbis\vorbis\vorbisenc.h" />
     <ClInclude Include="..\sound\OggVorbis\vorbis\vorbisfile.h" />
     <ClInclude Include="devil.h" />
+    <ClInclude Include="Export.h" />
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="jpeg.h" />
     <ClInclude Include="stdafx.h" />

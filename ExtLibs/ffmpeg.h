@@ -10,12 +10,7 @@ extern "C" {
 #include <libavutil/audio_fifo.h>
 }
 
-
-#ifdef MAKEDLL
-#  define EXTLIB __declspec(dllexport)
-#else
-#  define EXTLIB __declspec(dllimport)
-#endif
+#include "Export.h"
 
 namespace ExtLibs {
 	EXTLIB double av_q2d(AVRational a);

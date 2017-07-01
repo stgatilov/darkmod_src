@@ -18,62 +18,30 @@ import scons_utils
 Import( 'GLOBALS' )
 Import( GLOBALS )
 
-libjpeg_string = ' \
-	jaricom.c \
-	jcapimin.c \
-	jcapistd.c \
-	jcarith.c \
-	jccoefct.c \
-	jccolor.c \
-	jcdctmgr.c \
-	jchuff.c \
-	jcinit.c \
-	jcmainct.c \
-	jcmarker.c \
-	jcmaster.c \
-	jcomapi.c \
-	jcparam.c \
-	jcprepct.c \
-	jcsample.c \
-	jctrans.c \
-	jdapimin.c \
-	jdapistd.c \
-	jdarith.c \
-	jdatadst.c \
-	jdatasrc.c \
-	jdcoefct.c \
-	jdcolor.c \
-	jddctmgr.c \
-	jdhuff.c \
-	jdinput.c \
-	jdmainct.c \
-	jdmarker.c \
-	jdmaster.c \
-	jdmerge.c \
-	jdpostct.c \
-	jdsample.c \
-	jdtrans.c \
-	jerror.c \
-	jfdctflt.c \
-	jfdctfst.c \
-	jfdctint.c \
-	jidctflt.c \
-	jidctfst.c \
-	jidctint.c \
-	jmemmgr.c \
-	jmemnobs.c \
-	jquant1.c \
-	jquant2.c \
-	jutils.c \
-	transupp.c'
+zlib_string = ' \
+	zlib/adler32.c \
+	zlib/compress.c \
+	zlib/crc32.c \
+	zlib/deflate.c \
+	zlib/gzclose.c \
+	zlib/gzlib.c \
+	zlib/gzread.c \
+	zlib/gzwrite.c \
+	zlib/infback.c \
+	zlib/inffast.c \
+	zlib/inflate.c \
+	zlib/inftrees.c \
+	zlib/trees.c \
+	zlib/uncompr.c \
+	zlib/zutil.c'
 
-libjpeg_list = scons_utils.BuildList( '../../lib/libjpeg', libjpeg_string )
+zlib_list = scons_utils.BuildList( '../../lib/', zlib_string )
 
 local_env = g_env_base.Clone()
-# Use the libjpeg headers
-local_env.Append(CPPPATH = '#/include/libjpeg')
+# Use the zlib headers
+local_env.Append(CPPPATH = '#/include/zlib')
 
 ret_list = []
-for f in libjpeg_list:
+for f in zlib_list:
 	ret_list += local_env.StaticObject( source = f )
 Return( 'ret_list' )
