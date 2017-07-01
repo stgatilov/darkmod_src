@@ -76,9 +76,7 @@ devil_string = ' \
 	il_wal.c \
 	il_xpm.c'
 
-devil_list = scons_utils.BuildList( '', devil_string )
-for i in range( len( devil_list ) ):
-	devil_list[ i ] = '../../lib/devil/' + devil_list[ i ]
+devil_list = scons_utils.BuildList( '../../lib/devil', devil_string )
 
 local_env = g_env_base.Clone()
 # Use the config header in include/devil/IL

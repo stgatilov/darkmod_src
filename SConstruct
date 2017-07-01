@@ -299,10 +299,9 @@ if ( ID_MCHECK == '1' ):
 g_env_base = Environment( ENV = os.environ, CC = CC, CXX = CXX, LINK = LINK, CPPFLAGS = BASECPPFLAGS, LINKFLAGS = BASELINKFLAGS, CPPPATH = CORECPPPATH, LIBPATH = CORELIBPATH )
 scons_utils.SetupUtils( g_env_base )
 
-g_env_base.Prepend(CPPPATH=['.'])	# Makes sure the precompiled headers are found first
+g_env_base.Prepend(CPPPATH=['.'])
 g_env_base.Append(CPPPATH = '#/include')
 g_env_base.Append(CPPPATH = '#/include/zlib')
-#g_env_base.Append(CPPPATH = '#/include/minizip')
 g_env_base.Append(CPPPATH = '#/include/libjpeg')
 g_env_base.Append(CPPPATH = '#/include/libpng')
 g_env_base.Append(CPPPATH = '#/include/devil')
@@ -312,6 +311,14 @@ g_env_base.Append(CPPPATH = '#/')
 g_env_base['CPPFLAGS'] += OPTCPPFLAGS
 g_env_base['CPPFLAGS'] += CORECPPFLAGS
 g_env_base['LINKFLAGS'] += CORELINKFLAGS
+
+# environment for core engine + game + idlib
+# has additional include paths which are not used for third-party libraries
+g_env_game = g_env_base.Clone()
+g_env_game.Append(CPPPATH = '#/idlib')
+g_env_game.Append(CPPPATH = '#/framework')
+g_env_game.Append(CPPPATH = '#/game')
+
 
 #if ( int(JOBS) > 1 ):
 #	print 'Using buffered process output'
@@ -327,7 +334,7 @@ g_env_base['LINKFLAGS'] += CORELINKFLAGS
 local_curl = 0
 curl_lib = []
 
-GLOBALS = 'g_env_base g_os ID_MCHECK curl_lib local_curl NO_GCH TARGET_ARCH'
+GLOBALS = 'g_env_base g_env_game g_os ID_MCHECK curl_lib local_curl NO_GCH TARGET_ARCH'
 
 # end general configuration ----------------------
 
@@ -354,7 +361,7 @@ if ( NOCURL == '0' ):
 VariantDir( g_build + '/core/glimp', '.', duplicate = 1 )
 SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
 VariantDir( g_build + '/core', '.', duplicate = 0 )
-thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.core' )
+thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.darkmod' )
 
 if ( TARGET_ARCH == 'x64' ):
 	InstallAs( '#thedarkmod.x64', thedarkmod )

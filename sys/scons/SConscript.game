@@ -276,18 +276,7 @@ game_list = scons_utils.BuildList( '../../game', game_string )
 darkmod_list = scons_utils.BuildList( '../../game/', darkmod_string )
 full_list = game_list + darkmod_list
 
-local_env = g_env_base.Clone()
-local_env.Prepend(CPPPATH = '#/game')
-local_env.Append(CPPPATH = '#/idlib')
-local_env.Append(CPPPATH = '#/framework')
-local_env.Append(CPPFLAGS = [ '-Wno-deprecated', '-Winvalid-pch' ])
-
-#if NO_GCH == '0':
-	# greebo: Set up our precompiled header
-	#GCH_CPPFLAGS = local_env['CPPFLAGS']
-	#GCH_CPPFLAGS += ['-fPIC']
-
-	#local_env['GchSh'] = local_env.GchSh('#game/precompiled_game.h', CPPFLAGS = GCH_CPPFLAGS)[0]
+local_env = g_env_game.Clone()
 
 ret = []
 for f in full_list:

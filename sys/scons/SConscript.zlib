@@ -35,9 +35,7 @@ zlib_string = ' \
 	zlib/uncompr.c \
 	zlib/zutil.c'
 
-zlib_list = scons_utils.BuildList( '', zlib_string )
-for i in range( len( zlib_list ) ):
-	zlib_list[ i ] = '../../lib/' + zlib_list[ i ]
+zlib_list = scons_utils.BuildList( '../../lib/', zlib_string )
 
 local_env = g_env_base.Clone()
 # Use the zlib headers

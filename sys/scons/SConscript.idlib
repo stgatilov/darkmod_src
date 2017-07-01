@@ -61,17 +61,10 @@ suppress_optimization_string = ' \
 	bv/Frustum_gcc.cpp \
 	Token.cpp'
 
-idlib_list = scons_utils.BuildList( 'idlib', idlib_string)
-for i in range( len( idlib_list ) ):
-	idlib_list[ i ] = '../../' + idlib_list[ i ]
+idlib_list = scons_utils.BuildList( '../../idlib', idlib_string)
+suppress_optimization_list = scons_utils.BuildList( '../../idlib', suppress_optimization_string )
 
-suppress_optimization_list = scons_utils.BuildList( 'idlib', suppress_optimization_string )
-for i in range( len( suppress_optimization_list ) ):
-	suppress_optimization_list[ i ] = '../../' + suppress_optimization_list[ i ]
-
-local_env = g_env_base.Clone()
-# The idlib files use the idlib/precompiled.h header, make sure it's the first to be found
-local_env.Prepend(CPPPATH = '#/idlib')
+local_env = g_env_game.Clone()
 # max allowed -O1
 local_env_noopt = scons_utils.CloneWithoutOptimization(local_env, '-O1')
 

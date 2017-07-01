@@ -18,7 +18,6 @@
 # 
 #*****************************************************************************
 
-import sys, os
 import scons_utils
 
 Import( 'GLOBALS' )
@@ -107,7 +106,6 @@ renderer_string = ' \
 	tr_trace.cpp \
 	tr_trisurf.cpp \
 	tr_turboshadow.cpp'
-
 renderer_list = scons_utils.BuildList( 'renderer', renderer_string )
 
 framework_string = ' \
@@ -142,7 +140,6 @@ framework_string = ' \
 	async/MsgChannel.cpp \
 	async/NetworkSystem.cpp \
 	async/ServerScan.cpp'
-
 framework_list = scons_utils.BuildList( 'framework', framework_string )
 
 cm_string = ' \
@@ -171,7 +168,6 @@ dmap_string = ' \
 	tritools.cpp \
 	ubrush.cpp \
 	usurface.cpp'
-
 dmap_list = scons_utils.BuildList( 'tools/compilers/dmap', dmap_string )
 
 aas_string = ' \
@@ -188,7 +184,6 @@ aas_string = ' \
 	AASFileManager.cpp \
 	Brush.cpp \
 	BrushBSP.cpp'
-	
 aas_list = scons_utils.BuildList( 'tools/compilers/aas', aas_string )
 
 roq_string = ' \
@@ -196,7 +191,6 @@ roq_string = ' \
 	codec.cpp \
 	roq.cpp \
 	roqParam.cpp'
-
 roq_list = scons_utils.BuildList( 'tools/compilers/roqvq', roq_string )
 
 renderbump_list = [ 'tools/compilers/renderbump/renderbump.cpp' ]
@@ -210,7 +204,6 @@ snd_string = ' \
 	snd_system.cpp \
 	snd_wavefile.cpp \
 	snd_world.cpp'
-
 snd_list = scons_utils.BuildList( 'sound', snd_string )
 
 ui_string = ' \
@@ -230,7 +223,6 @@ ui_string = ' \
 	UserInterface.cpp \
 	Window.cpp \
 	Winvar.cpp'
-
 ui_list = scons_utils.BuildList( 'ui', ui_string )
 
 sys_string = ' \
@@ -240,103 +232,42 @@ sys_string = ' \
 	posix/posix_signal.cpp \
 	posix/posix_threads.cpp \
 	linux/main.cpp \
-	stub/util_stub.cpp'
-
-sys_string += ' \
+	stub/util_stub.cpp \
 	linux/glimp.cpp \
 	posix/posix_input.cpp \
 	linux/input.cpp \
 	linux/libXNVCtrl/NVCtrl.c'
-
 sys_list = scons_utils.BuildList( 'sys', sys_string )
 
 tools_string = ' \
 	guied/GEWindowWrapper_stub.cpp'
-
 tools_list = scons_utils.BuildList( 'tools', tools_string )
 
 
 
-core_list = framework_list + renderer_list + ui_list \
-	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
-	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
-
-for i in range( len( core_list ) ):
-	core_list[ i ] = '../../' + core_list[ i ]
-
+# Build ogg library with its custom include paths
 for i in range( len( ogg_list ) ):
 	ogg_list[ i ] = '../../' + ogg_list[ i ]
-
-local_env = g_env_base.Clone()
-# To help finding the precompiled_engine.h 
-local_env.Prepend(CPPPATH = '#framework')
-local_env.Prepend(CPPPATH = '#idlib')
-# Internal minizip now uses external zlib
-local_env.Prepend(CPPPATH = '#/include/zlib')
-
-#if NO_GCH == '0':
-#	# greebo: Set up the precompiled headers for the engine project
-#	local_env['Gch'] = local_env.Gch('#framework/precompiled_engine.h')[0]
-#	local_env.Append(CPPFLAGS = [ '-Winvalid-pch' ] )
-
-if ( local_curl == 0 ):
-	local_env.Append( CPPDEFINES = [ 'ID_ENABLE_CURL=0' ] )
-
-ogg_env = local_env.Clone()
+ogg_env = g_env_base.Clone()
 ogg_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
 libogg = ogg_env.StaticLibrary( 'ogg', ogg_list )
 
-# greebo: Add boost and image libraries
-if (TARGET_ARCH == 'x86'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/libcurl.a'),
-		File('#/linux/polarssl/libpolarssl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a'),
-		File('#/linux/ffmpeg/libavformat.a'),
-		File('#/linux/ffmpeg/libavcodec.a'),
-		File('#/linux/ffmpeg/libavutil.a'),
-		File('#/linux/ffmpeg/libswscale.a'),
-		File('#/linux/ffmpeg/libswresample.a')
-	])
-if (TARGET_ARCH == 'x64'):
-	local_env.Append(LIBS = [
-		File('#/linux/libcurl/lib64/libcurl.a'),
-		File('#/linux/polarssl/lib64/libpolarssl.a'),
-		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a'),
-		File('#/linux/ffmpeg/lib64/libavformat.a'),
-		File('#/linux/ffmpeg/lib64/libavcodec.a'),
-		File('#/linux/ffmpeg/lib64/libavutil.a'),
-		File('#/linux/ffmpeg/lib64/libswscale.a'),
-		File('#/linux/ffmpeg/lib64/libswresample.a')
-	])
 
-local_env.Append( LIBS = [ 'X11', 'Xext', 'Xxf86vm' ] ) # 'Xxf86dga', 
-#local_env.Append( LIBPATH = [ '/usr/X11R6/lib' ] )
-local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
-local_env.Append( LIBS = [ 'openal' ] )
-local_env.Append( LIBS = [ 'dl' ] )
-local_env.Append( LIBS = [ 'pthread' ] )
+# Compile the rest of the core engine
+core_list = framework_list + renderer_list + ui_list \
+	+ cm_list + dmap_list + renderbump_list + aas_list + roq_list \
+	+ snd_list + sys_list + tools_list + [ 'TypeInfo/TypeInfoGen.cpp' ]
+for i in range( len( core_list ) ):
+	core_list[ i ] = '../../' + core_list[ i ]
 
-source_list = core_list
-source_list += [ '../../glimp/sys/scons/libglimp.a' ]
-source_list += libogg
-source_list += curl_lib
-
-# greebo: Use custom compiled devIL and libjpeg (since the engine requires 4 bytes per pixel format) in Linux
-source_list += SConscript( '../../sys/scons/SConscript.devil' )
-source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
-source_list += SConscript( '../../sys/scons/SConscript.libpng' )
-
-source_list += SConscript( '../../sys/scons/Sconscript.idlib' )
-source_list += SConscript( '../../sys/scons/Sconscript.game' )
-
-# stgatilov: we need only zlib code, because internal minizip uses it
-source_list += SConscript( '../../sys/scons/Sconscript.zlib' )
-
+local_env = g_env_game.Clone()
+if ( local_curl == 0 ):
+	local_env.Append( CPPDEFINES = [ 'ID_ENABLE_CURL=0' ] )
 local_env_noopt = scons_utils.CloneWithoutOptimization(local_env, None)
-source_list += local_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )
 
-d3wm = local_env.Program( target = 'thedarkmod', source = source_list )
-Return( 'd3wm' )
+ret_list = []
+for f in core_list:
+	ret_list += local_env.StaticObject( source = f )
+ret_list += local_env_noopt.StaticObject( '../../tools/compilers/dmap/optimize_gcc.cpp' )	# disabled optimization
+ret_list += libogg
+Return( 'ret_list' )

@@ -36,9 +36,7 @@ libpng_string = ' \
 	pngwutil.c'
 
 
-libpng_list = scons_utils.BuildList( '', libpng_string )
-for i in range( len( libpng_list ) ):
-	libpng_list[ i ] = '../../lib/libpng/' + libpng_list[ i ]
+libpng_list = scons_utils.BuildList( '../../lib/libpng', libpng_string )
 
 local_env = g_env_base.Clone()
 # Use the libpng headers

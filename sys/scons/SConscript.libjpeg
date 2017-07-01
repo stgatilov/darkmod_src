@@ -67,9 +67,7 @@ libjpeg_string = ' \
 	jutils.c \
 	transupp.c'
 
-libjpeg_list = scons_utils.BuildList( '', libjpeg_string )
-for i in range( len( libjpeg_list ) ):
-	libjpeg_list[ i ] = '../../lib/libjpeg/' + libjpeg_list[ i ]
+libjpeg_list = scons_utils.BuildList( '../../lib/libjpeg', libjpeg_string )
 
 local_env = g_env_base.Clone()
 # Use the libjpeg headers
