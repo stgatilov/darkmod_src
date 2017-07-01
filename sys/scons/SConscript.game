@@ -37,7 +37,6 @@ game_string = ' \
 	Emitter.cpp \
 	FX.cpp \
 	Game_local.cpp \
-	Game_network.cpp \
 	GameEdit.cpp \
 	IK.cpp \
 	Item.cpp \
@@ -45,7 +44,6 @@ game_string = ' \
 	Misc.cpp \
 	Moveable.cpp \
 	Mover.cpp \
-	MultiplayerGame.cpp \
 	Player.cpp \
 	PlayerIcon.cpp \
 	PlayerView.cpp \

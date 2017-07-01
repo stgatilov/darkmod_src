@@ -39,14 +39,8 @@ source_list += SConscript( '../../sys/scons/SConscript.core' )
 source_list += SConscript( '../../sys/scons/SConscript.game' )
 # Add glimp stuff (built separately)
 source_list += [ '../../glimp/sys/scons/libglimp.a' ]
-# Add curl library (built separately)
-source_list += curl_lib
-# greebo: Use custom compiled devIL and libjpeg (since the engine requires 4 bytes per pixel format) in Linux
-source_list += SConscript( '../../sys/scons/SConscript.devil' )
-source_list += SConscript( '../../sys/scons/SConscript.libjpeg' )
-source_list += SConscript( '../../sys/scons/SConscript.libpng' )
-# stgatilov: we need only zlib code, because internal minizip uses it
-source_list += SConscript( '../../sys/scons/SConscript.zlib' )
+# Link against ExtLibs
+source_list += SConscript( '../../sys/scons/SConscript.extlibs' )
 
 local_env = g_env_game.Clone()
 

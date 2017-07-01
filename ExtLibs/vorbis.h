@@ -1,11 +1,7 @@
 //#include "libvorbis-1.3.5/include/vorbis/vorbisfile.h"
 #include "../sound/OggVorbis/vorbis/vorbisfile.h"
 
-#ifdef MAKEDLL
-#  define EXTLIB __declspec(dllexport)
-#else
-#  define EXTLIB __declspec(dllimport)
-#endif
+#include "Export.h"
 
 namespace ExtLibs {
 	EXTLIB int ov_clear( OggVorbis_File *vf );

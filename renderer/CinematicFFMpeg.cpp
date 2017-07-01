@@ -752,7 +752,7 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 				insert++;
 			}
 
-			insert = min(insert, samplesCount);
+			insert = idMath::Imin(insert, samplesCount);
 			for (int i = 0; i < insert; i++)
 				for (int j = 0; j < _channels; j++)
 					output[_channels * i + j] = fill[j];
@@ -773,7 +773,7 @@ bool idCinematicFFMpeg::GetAudioInterval(double videoTime, int samplesCount, flo
 
 void idCinematicFFMpeg::DiscardOldSamples(double videoTime) {
 	int drop = int((videoTime - _audioSamples._startTime - TIMESTAMP_JITTER_TOLERANCE) * FREQ44K);
-	drop = min(drop, ExtLibs::av_audio_fifo_size(_audioSamples._fifo));
+	drop = idMath::Imin(drop, ExtLibs::av_audio_fifo_size(_audioSamples._fifo));
 	if (drop > 0) {
 		ExtLibs::av_audio_fifo_drain(_audioSamples._fifo, drop);
 		_audioSamples._startTime += drop / double(FREQ44K);

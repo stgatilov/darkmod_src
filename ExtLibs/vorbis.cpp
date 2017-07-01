@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "vorbis.h"
+#include <stdlib.h>
+#include <string.h>
 
 extern "C" {
 	void *_decoder_malloc( size_t size );
@@ -22,7 +24,7 @@ void *_decoder_calloc( size_t num, size_t size ) {
 }
 
 void *_decoder_realloc( void *memblock, size_t size ) {
-	void *ptr = realloc( (byte *)memblock, static_cast<int>(size) );
+	void *ptr = realloc( memblock, static_cast<int>(size) );
 	//assert( size == 0 || ptr != NULL );
 	return ptr;
 }

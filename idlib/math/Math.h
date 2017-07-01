@@ -199,6 +199,9 @@ public:
 	static float Fmin ( float a, float b );
 	static float Fmax ( float a, float b );
 
+	static int Imin ( int a, int b );
+	static int Imax ( int a, int b );
+
 	static signed char			ClampChar( int i );
 	static signed short			ClampShort( int i );
 	static int					ClampInt( int min, int max, int value );
@@ -928,6 +931,14 @@ ID_INLINE float idMath::Fmax ( float a, float b ) {
 #else
 	return a > b ? a : b;
 #endif
+}
+
+ID_INLINE int idMath::Imin ( int a, int b ) {
+	return (a < b ? a : b);
+}
+
+ID_INLINE int idMath::Imax ( int a, int b ) {
+	return (a > b ? a : b);
 }
 
 ID_INLINE signed char idMath::ClampChar( int i ) {

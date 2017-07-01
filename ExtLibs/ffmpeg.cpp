@@ -11,7 +11,7 @@ namespace ExtLibs {
 		return ::av_get_media_type_string( media_type );
 	}
 
-	void *av_malloc( size_t size ) av_malloc_attrib av_alloc_size( 1 ) {
+	void av_malloc_attrib av_alloc_size( 1 ) *av_malloc( size_t size ) {
 		return ::av_malloc( size );
 	}
 
