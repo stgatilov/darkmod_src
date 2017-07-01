@@ -1,0 +1,54 @@
+#*****************************************************************************
+#                    The Dark Mod GPL Source Code
+# 
+# This file is part of the The Dark Mod Source Code, originally based 
+# on the Doom 3 GPL Source Code as published in 2011.
+# 
+# The Dark Mod Source Code is free software: you can redistribute it 
+# and/or modify it under the terms of the GNU General Public License as 
+# published by the Free Software Foundation, either version 3 of the License, 
+# or (at your option) any later version. For details, see LICENSE.TXT.
+# 
+# Project: The Dark Mod (http://www.thedarkmod.com/)
+# 
+#*****************************************************************************
+
+import scons_utils
+
+Import( 'GLOBALS' )
+Import( GLOBALS )
+
+ogg_string = ' \
+	oggsrc/bitwise.c \
+	oggsrc/framing.c \
+	vorbissrc/analysis.c \
+	vorbissrc/bitrate.c \
+	vorbissrc/block.c \
+	vorbissrc/codebook.c \
+	vorbissrc/envelope.c \
+	vorbissrc/floor0.c \
+	vorbissrc/floor1.c \
+	vorbissrc/info.c \
+	vorbissrc/lookup.c \
+	vorbissrc/lpc.c \
+	vorbissrc/lsp.c \
+	vorbissrc/mapping0.c \
+	vorbissrc/mdct.c \
+	vorbissrc/psy.c \
+	vorbissrc/registry.c \
+	vorbissrc/res0.c \
+	vorbissrc/sharedbook.c \
+	vorbissrc/smallft.c \
+	vorbissrc/synthesis.c \
+	vorbissrc/vorbisenc.c \
+	vorbissrc/vorbisfile.c \
+	vorbissrc/windowvb.c'
+ogg_list = scons_utils.BuildList( '../../sound/OggVorbis', ogg_string )
+
+local_env = g_env_base.Clone()
+local_env.Append( CPPPATH = '#sound/OggVorbis/vorbissrc' )
+
+ret_list = []
+for f in ogg_list:
+	ret_list += local_env.StaticObject( source = f )
+Return( 'ret_list' )
