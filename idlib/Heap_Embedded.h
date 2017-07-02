@@ -17,7 +17,7 @@
 #define __HEAP_EMBEDDED__
 
 #include "Heap.h"
-#include "Containers/List.h"
+#include "containers/List.h"
 
 //stgatilov: this allocator always serves requests from within single memory block
 //it was originally implemented for storing idScriptObject data in x64 mode
