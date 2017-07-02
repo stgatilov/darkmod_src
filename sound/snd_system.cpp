@@ -305,12 +305,8 @@ void idSoundSystemLocal::Init() {
 
 	graph = NULL;
 
-	if ( !s_noSound.GetBool() ) {
-		idSampleDecoder::Init();
-		soundCache = new idSoundCache();
-	}
+//======== set up openal device and context ========
 
-	// set up openal device and context
 	common->Printf("Setup OpenAL device and context\n");
 
 	const char *device = s_device.GetString();
@@ -348,8 +344,13 @@ void idSoundSystemLocal::Init() {
 		common->Printf("OpenAL: failed to open device '%s' (0x%x), using default\n", device, alGetError());
 		openalDevice = alcOpenDevice(NULL);
 	}
-
-	common->Printf("OpenAL: using '%s'\n", alcGetString(openalDevice, ALC_DEVICE_SPECIFIER));
+	
+	if (openalDevice)
+		common->Printf("OpenAL: using '%s'\n", alcGetString(openalDevice, ALC_DEVICE_SPECIFIER));
+	else {
+		common->Printf("OpenAL: no device found, sound disabled\n");
+		s_noSound.SetBool(true);
+	}
 
 	openalContext = alcCreateContext(openalDevice, NULL);
 	alcMakeContextCurrent(openalContext);
@@ -435,6 +436,13 @@ void idSoundSystemLocal::Init() {
 
 	useEFXReverb = idSoundSystemLocal::s_useEAXReverb.GetBool();
 	efxloaded = false;
+
+//======== openal setup finished ========
+
+	if ( !s_noSound.GetBool() ) {
+		idSampleDecoder::Init();
+		soundCache = new idSoundCache();
+	}
 
 	cmdSystem->AddCommand( "listSounds", ListSounds_f, CMD_FL_SOUND, "lists all sounds" );
 	cmdSystem->AddCommand( "listSoundDecoders", ListSoundDecoders_f, CMD_FL_SOUND, "list active sound decoders" );

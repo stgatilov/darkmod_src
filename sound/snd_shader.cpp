@@ -337,8 +337,10 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 				return false;
 			}
 			token.BackSlashesToSlashes();
-			entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
-			numEntries++;
+			if ( soundSystemLocal.soundCache ) {
+				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound( token.c_str(), onDemand );
+				numEntries++;
+			}
 		} else if ( token.Find( ".wav", false ) != -1 || token.Find( ".ogg", false ) != -1 ) {
 			// add to the wav list
 			if ( soundSystemLocal.soundCache && numEntries < maxSamples ) {
