@@ -2034,7 +2034,9 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			}
 			
 			// (re)start if needed..
-			if ( chan->triggered ) {
+			ALint state = 0;
+			alGetSourcei( chan->openalSource, AL_SOURCE_STATE, &state);
+			if ( chan->triggered || state != AL_PLAYING ) {
 				alSourcePlay( chan->openalSource );
 				chan->triggered = false;
 			}
