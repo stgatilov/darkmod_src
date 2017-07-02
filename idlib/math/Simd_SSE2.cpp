@@ -267,15 +267,6 @@ ALIGN4_INIT1( float SIMD_SP_oneOverTwoPI, 1.0f / idMath::TWO_PI );
 ALIGN4_INIT1( float SIMD_SP_infinity, idMath::INFINITY );
 
 
-/*
-============
-idSIMD_SSE2::GetName
-============
-*/
-const char * idSIMD_SSE2::GetName( void ) const {
-	return "MMX & SSE & SSE2";
-}
-
 #if 0		// the SSE2 code is ungodly slow
 
 /*

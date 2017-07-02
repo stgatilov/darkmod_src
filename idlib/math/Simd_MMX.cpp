@@ -42,15 +42,6 @@ const char * idSIMD_MMX::GetName( void ) const {
 #define EMMS_INSTRUCTION		__asm emms
 
 /*
-============
-idSIMD_MMX::GetName
-============
-*/
-const char * idSIMD_MMX::GetName( void ) const {
-	return "MMX";
-}
-
-/*
 ================
 MMX_Memcpy8B
 ================

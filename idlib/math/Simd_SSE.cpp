@@ -2073,15 +2073,6 @@ void SSE_TestTrigonometry( void ) {
 
 /*
 ============
-idSIMD_SSE::GetName
-============
-*/
-const char * idSIMD_SSE::GetName( void ) const {
-	return "MMX & SSE";
-}
-
-/*
-============
 idSIMD_SSE::Add
 
   dst[i] = constant + src[i];

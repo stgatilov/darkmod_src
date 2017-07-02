@@ -243,15 +243,6 @@ float SSE3_Dot( const idVec4 &v1, const idVec4 &v2 ) {
 
 /*
 ============
-idSIMD_SSE3::GetName
-============
-*/
-const char * idSIMD_SSE3::GetName( void ) const {
-	return "MMX & SSE & SSE2 & SSE3";
-}
-
-/*
-============
 idSIMD_SSE3::TransformVerts
 ============
 */
