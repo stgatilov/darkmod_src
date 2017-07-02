@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #if !defined(AFX_DLGCAMERA_H__59C12359_E3EB_4081_9F28_01793D75CF20__INCLUDED_)
 #define AFX_DLGCAMERA_H__59C12359_E3EB_4081_9F28_01793D75CF20__INCLUDED_

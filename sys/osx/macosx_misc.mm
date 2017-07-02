@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 916 $ (Revision of last commit) 
- $Date: 2007-04-20 22:48:14 +0200 (Fr, 20 Apr 2007) $ (Date of last commit)
- $Author: greebo $ (Author of last commit)
- 
 ******************************************************************************/
 
 #define GL_GLEXT_LEGACY // AppKit.h include pulls in gl.h already

@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #ifndef _MULTI_STATE_MOVER_POSITION_H_
 #define _MULTI_STATE_MOVER_POSITION_H_

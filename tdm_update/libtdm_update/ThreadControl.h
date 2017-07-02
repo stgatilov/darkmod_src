@@ -11,10 +11,6 @@ or (at your option) any later version. For details, see LICENSE.TXT.
 
 Project: The Dark Mod Updater (http://www.thedarkmod.com/)
 
-$Revision$ (Revision of last commit)
-$Date$ (Date of last commit)
-$Author$ (Author of last commit)
-
 ******************************************************************************/
 
 #pragma once

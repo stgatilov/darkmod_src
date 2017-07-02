@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 6858 $ (Revision of last commit) 
- $Date: 2017-05-05 09:29:06 +0700 (ѕт, 05 май 2017) $ (Date of last commit)
- $Author: nbohr1more $ (Author of last commit)
- 
 ******************************************************************************/
 
 #include "precompiled.h"

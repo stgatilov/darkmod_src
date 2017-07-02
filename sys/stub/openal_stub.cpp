@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #include "../idlib/precompiled.h"
 #include "../sound/snd_local.h"

@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #ifndef __LIGHTGEM_H__
 #define __LIGHTGEM_H__

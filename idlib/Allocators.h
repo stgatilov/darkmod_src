@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 6959 $ (Revision of last commit) 
- $Date: 2017-06-26 09:29:40 +0700 (Ον, 26 θών 2017) $ (Date of last commit)
- $Author: stgatilov $ (Author of last commit)
- 
 ******************************************************************************/
 
 #ifndef __ALLOCATORS_H__

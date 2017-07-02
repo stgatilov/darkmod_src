@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #if !defined(AFX_WAITDLG_H__2B7A6C91_8D3F_4BEE_B564_33A0CFFA241B__INCLUDED_)
 #define AFX_WAITDLG_H__2B7A6C91_8D3F_4BEE_B564_33A0CFFA241B__INCLUDED_

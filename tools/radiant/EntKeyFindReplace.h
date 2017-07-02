@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #if !defined(AFX_ENTKEYFINDREPLACE_H__1AE54C31_FC22_11D3_8A60_00500424438B__INCLUDED_)
 #define AFX_ENTKEYFINDREPLACE_H__1AE54C31_FC22_11D3_8A60_00500424438B__INCLUDED_

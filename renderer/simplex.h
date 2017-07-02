@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 const int NUM_SIMPLEX_CHARS = 95;
 const static int simplex[NUM_SIMPLEX_CHARS][112] = {

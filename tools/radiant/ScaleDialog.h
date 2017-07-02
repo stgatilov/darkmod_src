@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #if !defined(AFX_SCALEDIALOG_H__8A9B33B2_9922_11D1_B568_00AA00A410FC__INCLUDED_)
 #define AFX_SCALEDIALOG_H__8A9B33B2_9922_11D1_B568_00AA00A410FC__INCLUDED_

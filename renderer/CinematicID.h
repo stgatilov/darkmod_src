@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision: 5122 $ (Revision of last commit) 
- $Date: 2011-12-12 03:47:31 +0800 (ѕн, 12 дек 2011) $ (Date of last commit)
- $Author: greebo $ (Author of last commit)
- 
 ******************************************************************************/
 
 #ifndef __CINEMATIC_ID_H__

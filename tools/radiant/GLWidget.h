@@ -11,10 +11,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 #if !defined(AFX_IDGLWIDGET_H__6399A341_2976_4A6E_87DD_9AF4DBD4C5DB__INCLUDED_)
 #define AFX_IDGLWIDGET_H__6399A341_2976_4A6E_87DD_9AF4DBD4C5DB__INCLUDED_

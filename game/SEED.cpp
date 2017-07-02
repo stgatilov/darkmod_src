@@ -12,10 +12,6 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
- $Revision$ (Revision of last commit) 
- $Date$ (Date of last commit)
- $Author$ (Author of last commit)
- 
 ******************************************************************************/
 
 // Copyright (C) 2010-2011 Tels (Donated to The Dark Mod Team)
