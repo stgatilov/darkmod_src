@@ -1046,11 +1046,23 @@ void idWindow::Time() {
 	if (background && background->GetCinematic()) {
 		idCinematic *cin = background->GetCinematic();
 		if (cin->GetStatus() == FMV_EOF) {
-			//notify GUI script about this
-			RunNamedEvent("CinematicEnd");
-			//close cinematic to avoid firing this event endlessly
-			//also, it surely avoids triggering this event again when cinematic is reset from GUI
-			cin->Close();
+			//#4547: check if the event is handled by script
+			bool hasEvent = false;
+			for (int i = 0; i < namedEvents.Num(); i++) {
+				if (namedEvents[i]->mName.Icmp("CinematicEnd") == 0)
+					hasEvent = true;
+			}
+			if (hasEvent) {
+				//notify GUI script about this
+				RunNamedEvent("CinematicEnd");
+				//close cinematic to avoid firing this event endlessly
+				//also, it surely avoids triggering this event again when cinematic is reset from GUI
+				cin->Close();
+			}
+			else {
+				//#4547: retain cinematic in EOF state if script does not know about CinematicEnd event
+				//this is needed for backwards compatibility: old scripts do not stop GUI time after video ends (e.g. credits)
+			}
 		}
 	}
 
