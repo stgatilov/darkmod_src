@@ -26,7 +26,6 @@
 //
 //===============================================================
 
-#if defined(MACOS_X) && defined(__i386__)
 /*
 ============
 idSIMD_MMX::GetName
@@ -36,7 +35,9 @@ const char * idSIMD_MMX::GetName( void ) const {
 	return "MMX";
 }
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
+#if defined(MACOS_X) && defined(__i386__)
+
+#elif SIMD_USE_ASM
 
 #define EMMS_INSTRUCTION		__asm emms
 
@@ -351,4 +352,4 @@ loop2:
 	}
 }
 
-#endif /* MSC_VER */
+#endif /* SIMD_USE_ASM */

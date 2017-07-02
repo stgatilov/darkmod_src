@@ -27,7 +27,7 @@
 //
 //===============================================================
 
-#if defined(_MSC_VER) && defined(_M_IX86)
+#if SIMD_USE_ASM
 
 /*
 ============
@@ -281,4 +281,4 @@ $memcpy_final:
     }
 }
 
-#endif /* _WIN32 */
+#endif /* SIMD_USE_ASM */

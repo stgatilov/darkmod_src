@@ -29,8 +29,6 @@
 //
 //===============================================================
 
-#if defined(MACOS_X) && defined(__i386__)
-
 /*
 ============
 idSIMD_SSE3::GetName
@@ -40,7 +38,9 @@ const char * idSIMD_SSE3::GetName( void ) const {
 	return "MMX & SSE & SSE2 & SSE3";
 }
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
+#if defined(MACOS_X) && defined(__i386__)
+
+#elif SIMD_USE_ASM
 
 #include <xmmintrin.h>
 
@@ -351,4 +351,4 @@ void VPCALL idSIMD_SSE3::TransformVerts( idDrawVert *verts, const int numVerts, 
 #endif
 }
 
-#endif /* _WIN32 */
+#endif /* SIMD_USE_ASM */

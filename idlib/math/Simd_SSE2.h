@@ -26,19 +26,26 @@
 
 class idSIMD_SSE2 : public idSIMD_SSE {
 public:
-#if defined(MACOS_X) && defined(__i386__)
 	virtual const char * VPCALL GetName( void ) const;
+
+#if defined(MACOS_X) && defined(__i386__)
 	virtual void VPCALL CmpLT( byte *dst,			const byte bitNum,		const float *src0,		const float constant,	const int count );		
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
-	virtual const char * VPCALL GetName( void ) const;
+#elif SIMD_USE_ASM
 
 	//virtual void VPCALL MatX_LowerTriangularSolve( const idMatX &L, float *x, const float *b, const int n, int skip = 0 );
 	//virtual void VPCALL MatX_LowerTriangularSolveTranspose( const idMatX &L, float *x, const float *b, const int n );
 
 	virtual void VPCALL MixedSoundToSamples( short *samples, const float *mixBuffer, const int numSamples );
 
+#else
+	virtual void VPCALL NormalizeTangents( idDrawVert *verts, const int numVerts );
+	virtual void VPCALL TransformVerts( idDrawVert *verts, const int numVerts, const idJointMat *joints, const idVec4 *weights, const int *index, const int numWeights );
+	virtual	void VPCALL MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count );
+	virtual void VPCALL DeriveTangents( idPlane *planes, idDrawVert *verts, const int numVerts, const int *indexes, const int numIndexes );
+
 #endif
+
 };
 
 #endif /* !__MATH_SIMD_SSE2_H__ */

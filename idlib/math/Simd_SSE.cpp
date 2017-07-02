@@ -35,13 +35,6 @@
 #define DRAWVERT_TANGENT1_OFFSET	(11*4)
 #define DRAWVERT_COLOR_OFFSET		(14*4)
 
-#if defined(MACOS_X) && defined(__i386__)
-
-#include <xmmintrin.h>
-
-#define SHUFFLEPS( x, y, z, w )		(( (x) & 3 ) << 6 | ( (y) & 3 ) << 4 | ( (z) & 3 ) << 2 | ( (w) & 3 ))
-#define R_SHUFFLEPS( x, y, z, w )	(( (w) & 3 ) << 6 | ( (z) & 3 ) << 4 | ( (y) & 3 ) << 2 | ( (x) & 3 ))
-
 /*
 ============
 idSIMD_SSE::GetName
@@ -50,6 +43,13 @@ idSIMD_SSE::GetName
 const char * idSIMD_SSE::GetName( void ) const {
 	return "MMX & SSE";
 }
+
+#if defined(MACOS_X) && defined(__i386__)
+
+#include <xmmintrin.h>
+
+#define SHUFFLEPS( x, y, z, w )		(( (x) & 3 ) << 6 | ( (y) & 3 ) << 4 | ( (z) & 3 ) << 2 | ( (w) & 3 ))
+#define R_SHUFFLEPS( x, y, z, w )	(( (w) & 3 ) << 6 | ( (z) & 3 ) << 4 | ( (y) & 3 ) << 2 | ( (x) & 3 ))
 
 /*
 ============
@@ -607,7 +607,7 @@ void VPCALL idSIMD_SSE::Dot( float *dst, const idVec3 &constant, const idPlane *
 	*/
 }
 
-#elif defined(_MSC_VER) && defined(_M_IX86)
+#elif SIMD_USE_ASM
 
 #include <xmmintrin.h>
 
@@ -18064,4 +18064,4 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 #endif
 }
 
-#endif /* MSC_VER */
+#endif /* SIMD_USE_ASM */

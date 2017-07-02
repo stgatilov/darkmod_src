@@ -371,6 +371,23 @@ TIME_TYPE time_in_millisec( void ) {
 #define StopRecordTime( end )				\
 	end = mach_absolute_time();
 #endif
+
+#elif defined(_MSC_VER)		//MSVC, but e.g. 64-bit
+
+#define TIME_TYPE int
+
+#define StartRecordTime( start ) {\
+	int temp[4];\
+	__cpuid(temp, 0);\
+	start = (TIME_TYPE)__rdtsc();\
+}
+
+#define StopRecordTime( end ) {\
+	int temp[4];\
+	__cpuid(temp, 0);\
+	end = (TIME_TYPE)__rdtsc();\
+}
+
 #else
 
 #define TIME_TYPE int

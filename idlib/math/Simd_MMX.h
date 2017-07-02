@@ -26,15 +26,11 @@
 
 class idSIMD_MMX : public idSIMD_Generic {
 public:
+	virtual const char * VPCALL GetName( void ) const;
 #if defined(MACOS_X) && defined(__i386__)
-	virtual const char * VPCALL GetName( void ) const;
-
-#elif defined(_MSC_VER) && defined(_M_IX86)
-	virtual const char * VPCALL GetName( void ) const;
-
+#elif SIMD_USE_ASM
 	virtual void VPCALL Memcpy( void *dst,			const void *src,		const int count );
 	virtual void VPCALL Memset( void *dst,			const int val,			const int count );
-
 #endif
 };
 
