@@ -24,7 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 	_mB_to_gain(millibels,AL_EAXREVERB_MIN_ ## property, AL_EAXREVERB_MAX_ ## property)
 
 static inline ALfloat _mB_to_gain(ALfloat millibels, ALfloat min, ALfloat max) {
-    return idMath::ClampFloat(min, max, idMath::Pow(10.0f, millibels / 2000.0f));
+	return idMath::ClampFloat(min, max, idMath::Pow(10.0f, millibels / 2000.0f));
 }
 
 idSoundEffect::idSoundEffect() :
@@ -32,30 +32,30 @@ effect(0) {
 }
 
 idSoundEffect::~idSoundEffect() {
-    if (soundSystemLocal.alIsEffect(effect))
-        soundSystemLocal.alDeleteEffects(1, &effect);
+	if (soundSystemLocal.alIsEffect(effect))
+		soundSystemLocal.alDeleteEffects(1, &effect);
 }
 
 bool idSoundEffect::alloc() {
-    alGetError();
+	alGetError();
 
-    ALenum e;
+	ALenum e;
 
-    soundSystemLocal.alGenEffects(1, &effect);
-    e = alGetError();
-    if (e != AL_NO_ERROR) {
-        common->Warning("idSoundEffect::alloc: alGenEffects failed: 0x%x", e);
-        return false;
-    }
+	soundSystemLocal.alGenEffects(1, &effect);
+	e = alGetError();
+	if (e != AL_NO_ERROR) {
+		common->Warning("idSoundEffect::alloc: alGenEffects failed: 0x%x", e);
+		return false;
+	}
 
-    soundSystemLocal.alEffecti(effect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
-    e = alGetError();
-    if (e != AL_NO_ERROR) {
-        common->Warning("idSoundEffect::alloc: alEffecti failed: 0x%x", e);
-        return false;
-    }
+	soundSystemLocal.alEffecti(effect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
+	e = alGetError();
+	if (e != AL_NO_ERROR) {
+		common->Warning("idSoundEffect::alloc: alEffecti failed: 0x%x", e);
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 /*
@@ -90,16 +90,16 @@ idEFXFile::FindEffect
 ===============
 */
 bool idEFXFile::FindEffect(idStr &name, ALuint *effect) {
-    int i;
+	int i;
 
-    for (i = 0; i < effects.Num(); i++) {
-        if (effects[i]->name == name) {
-            *effect = effects[i]->effect;
-            return true;
-        }
-    }
+	for (i = 0; i < effects.Num(); i++) {
+		if (effects[i]->name == name) {
+			*effect = effects[i]->effect;
+			return true;
+		}
+	}
 
-    return false;
+	return false;
 }
 
 /*
@@ -116,7 +116,7 @@ idEFXFile::ReadEffect
 		if (err != AL_NO_ERROR)												\
 			common->Warning("alEffecti(" # param ", %d) "					\
 							"failed: 0x%x", _v, err);						\
-    	} while (false)
+		} while (false)
 
 #define efxf(param, value)													\
 	do {																	\
@@ -127,7 +127,7 @@ idEFXFile::ReadEffect
 		if (err != AL_NO_ERROR)												\
 			common->Warning("alEffectf(" # param ", %.3f) "					\
 							"failed: 0x%x", _v, err);						\
-    	} while (false)
+		} while (false)
 
 #define efxfv(param, value0, value1, value2)								\
 	do {																	\
@@ -142,38 +142,38 @@ idEFXFile::ReadEffect
 		if (err != AL_NO_ERROR)												\
 			common->Warning("alEffectfv(" # param ", %.3f, %.3f, %.3f) "	\
 							"failed: 0x%x",	_v[0], _v[1], _v[2], err);		\
-    	} while (false)
+		} while (false)
 
 bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
-    idToken name, token;
+	idToken name, token;
 
-    if ( !src.ReadToken( &token ) )
-        return false;
+	if ( !src.ReadToken( &token ) )
+		return false;
 
-    // reverb effect
-    if ( token != "reverb" ) {
-        // other effect (not supported at the moment)
-        src.Error( "idEFXFile::ReadEffect: Unknown effect definition" );
+	// reverb effect
+	if ( token != "reverb" ) {
+		// other effect (not supported at the moment)
+		src.Error( "idEFXFile::ReadEffect: Unknown effect definition" );
 
-        return false;
-    }
+		return false;
+	}
 
-    src.ReadTokenOnLine( &token );
-    name = token;
+	src.ReadTokenOnLine( &token );
+	name = token;
 
-    if ( !src.ReadToken( &token ) )
-        return false;
+	if ( !src.ReadToken( &token ) )
+		return false;
 
-    if ( token != "{" ) {
-        src.Error( "idEFXFile::ReadEffect: { not found, found %s", token.c_str() );
-        return false;
-    }
+	if ( token != "{" ) {
+		src.Error( "idEFXFile::ReadEffect: { not found, found %s", token.c_str() );
+		return false;
+	}
 
-    ALenum err;
-    alGetError();
-    EFXprintf("Loading EFX effect '%s' (#%u)\n", name.c_str(), effect->effect);
+	ALenum err;
+	alGetError();
+	EFXprintf("Loading EFX effect '%s' (#%u)\n", name.c_str(), effect->effect);
 
-    do {
+	do {
 		if ( !src.ReadToken( &token ) ) {
 			src.Error( "idEFXFile::ReadEffect: EOF without closing brace" );
 			return false;
@@ -234,7 +234,7 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 			efxf(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, src.ParseFloat());
 		} else if ( token == "flags" ) {
 			src.ReadTokenOnLine( &token );
-            unsigned int flags = token.GetUnsignedIntValue();
+			unsigned int flags = token.GetUnsignedIntValue();
 
 			efxi(AL_EAXREVERB_DECAY_HFLIMIT, (flags & 0x20) ? AL_TRUE : AL_FALSE);
 			// the other SCALE flags have no equivalent in efx
@@ -244,7 +244,7 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 		}
 	} while ( 1 );
 
-    return true;
+	return true;
 }
 
 /*
@@ -270,20 +270,20 @@ bool idEFXFile::LoadFile( const char *filename, bool OSPath ) {
 		return false;
 	}
 	
-    while (!src.EndOfFile()) {
-        idSoundEffect *effect = new idSoundEffect;
+	while (!src.EndOfFile()) {
+		idSoundEffect *effect = new idSoundEffect;
 
-        if (!effect->alloc()) {
-            delete effect;
-            Clear();
-            return false;
-        }
+		if (!effect->alloc()) {
+			delete effect;
+			Clear();
+			return false;
+		}
 
-        if (ReadEffect(src, effect))
-            effects.Append(effect);
-        else
-            delete effect;
-    };
+		if (ReadEffect(src, effect))
+			effects.Append(effect);
+		else
+			delete effect;
+	};
 
 	return true;
 }

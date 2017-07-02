@@ -36,7 +36,7 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	listenerArea = 0;
 	listenerAreaName = "Undefined";
 
-    if (idSoundSystemLocal::useEFXReverb) {
+	if (idSoundSystemLocal::useEFXReverb) {
 		if (!soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
 			alGetError();
 
@@ -58,12 +58,12 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 				listenerFilter = AL_FILTER_NULL;
 			} else {
 				soundSystemLocal.alFilteri(listenerFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
-                // original EAX occusion value was -1150
-                // default OCCLUSIONLFRATIO is 0.25
+				// original EAX occusion value was -1150
+				// default OCCLUSIONLFRATIO is 0.25
 
-                // pow(10.0, (-1150*0.25)/2000.0)
-                soundSystemLocal.alFilterf(listenerFilter, AL_LOWPASS_GAIN, 0.718208f);
-                // pow(10.0, -1150/2000.0)
+				// pow(10.0, (-1150*0.25)/2000.0)
+				soundSystemLocal.alFilterf(listenerFilter, AL_LOWPASS_GAIN, 0.718208f);
+				// pow(10.0, -1150/2000.0)
 			}
 		}
 	}
@@ -126,18 +126,18 @@ void idSoundWorldLocal::Shutdown() {
 
 	AVIClose();
 
-    if (idSoundSystemLocal::useEFXReverb) {
-        if (soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
-            soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECTSLOT_NULL);
-            soundSystemLocal.alDeleteAuxiliaryEffectSlots(1, &listenerSlot);
-            listenerSlot = AL_EFFECTSLOT_NULL;
-        }
+	if (idSoundSystemLocal::useEFXReverb) {
+		if (soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
+			soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECTSLOT_NULL);
+			soundSystemLocal.alDeleteAuxiliaryEffectSlots(1, &listenerSlot);
+			listenerSlot = AL_EFFECTSLOT_NULL;
+		}
 
-        if (soundSystemLocal.alIsFilter(listenerFilter)) {
-            soundSystemLocal.alDeleteFilters(1, &listenerFilter);
-            listenerFilter = AL_FILTER_NULL;
-        }
-    }
+		if (soundSystemLocal.alIsFilter(listenerFilter)) {
+			soundSystemLocal.alDeleteFilters(1, &listenerFilter);
+			listenerFilter = AL_FILTER_NULL;
+		}
+	}
 
 	for ( i = 0; i < emitters.Num(); i++ ) {
 		if ( emitters[i] ) {
@@ -282,7 +282,7 @@ void idSoundWorldLocal::ProcessDemoCommand( idDemoFile *readDemo ) {
 		return;
 	}
 
-    int dc;
+	int dc;
 
 	if ( !readDemo->ReadInt( dc ) ) {
 		return;
@@ -460,48 +460,48 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 		return;
 	} 
 
-    // update the listener position and orientation
-    ALfloat listenerPosition[3];
+	// update the listener position and orientation
+	ALfloat listenerPosition[3];
 
-    listenerPosition[0] = -listenerPos.y;
-    listenerPosition[1] = listenerPos.z;
-    listenerPosition[2] = -listenerPos.x;
+	listenerPosition[0] = -listenerPos.y;
+	listenerPosition[1] = listenerPos.z;
+	listenerPosition[2] = -listenerPos.x;
 
-    ALfloat listenerOrientation[6];
+	ALfloat listenerOrientation[6];
 
-    listenerOrientation[0] = -listenerAxis[0].y;
-    listenerOrientation[1] = listenerAxis[0].z;
-    listenerOrientation[2] = -listenerAxis[0].x;
+	listenerOrientation[0] = -listenerAxis[0].y;
+	listenerOrientation[1] = listenerAxis[0].z;
+	listenerOrientation[2] = -listenerAxis[0].x;
 
-    listenerOrientation[3] = -listenerAxis[2].y;
-    listenerOrientation[4] = listenerAxis[2].z;
-    listenerOrientation[5] = -listenerAxis[2].x;
+	listenerOrientation[3] = -listenerAxis[2].y;
+	listenerOrientation[4] = listenerAxis[2].z;
+	listenerOrientation[5] = -listenerAxis[2].x;
 
-    alListenerf(AL_GAIN, 1.0f);
-    alListenerfv(AL_POSITION, listenerPosition);
-    alListenerfv(AL_ORIENTATION, listenerOrientation);
+	alListenerf(AL_GAIN, 1.0f);
+	alListenerfv(AL_POSITION, listenerPosition);
+	alListenerfv(AL_ORIENTATION, listenerOrientation);
 
-    if (idSoundSystemLocal::useEFXReverb && soundSystemLocal.efxloaded) {
-        ALuint effect = 0;
-        idStr s(listenerArea);
+	if (idSoundSystemLocal::useEFXReverb && soundSystemLocal.efxloaded) {
+		ALuint effect = 0;
+		idStr s(listenerArea);
 
-        bool found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
-        if (!found) {
-            s = listenerAreaName;
-            found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
-        }
-        if (!found) {
-            s = "default";
-            found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
-        }
+		bool found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
+		if (!found) {
+			s = listenerAreaName;
+			found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
+		}
+		if (!found) {
+			s = "default";
+			found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
+		}
 
-        // only update if change in settings
-        if (found && listenerEffect != effect) {
-            EFXprintf("Switching to EFX '%s' (#%u)\n", s.c_str(), effect);
-            listenerEffect = effect;
-            soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
-        }
-    }
+		// only update if change in settings
+		if (found && listenerEffect != effect) {
+			EFXprintf("Switching to EFX '%s' (#%u)\n", s.c_str(), effect);
+			listenerEffect = effect;
+			soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
+		}
+	}
 
 	// debugging option to mute all but a single soundEmitter
 	if ( idSoundSystemLocal::s_singleEmitter.GetInteger() > 0 && idSoundSystemLocal::s_singleEmitter.GetInteger() < emitters.Num() ) {
@@ -548,8 +548,8 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 		}
 	}
 
-    // TODO port to OpenAL
-    if (false && enviroSuitActive) {
+	// TODO port to OpenAL
+	if (false && enviroSuitActive) {
 		soundSystemLocal.DoEnviroSuit( finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers );
 	}
 }
@@ -569,7 +569,7 @@ void idSoundWorldLocal::AVIOpen( const char *path, const char *name ) {
 
 	lastAVI44kHz = game44kHz - game44kHz % MIXBUFFER_SAMPLES;
 
-    if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 6) {
+	if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 6) {
 		fpa[0] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_left.raw" );
 		fpa[1] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_right.raw" );
 		fpa[2] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_center.raw" );
@@ -600,10 +600,10 @@ void idSoundWorldLocal::AVIUpdate() {
 		return;
 	}
 
-    numSpeakers = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
+	numSpeakers = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
 
 	float	mix[MIXBUFFER_SAMPLES*6+16];
-    float	*mix_p = (float *)(((intptr_t)mix + 15) & ~15);	// SIMD align
+	float	*mix_p = (float *)(((intptr_t)mix + 15) & ~15);	// SIMD align
 
 	SIMDProcessor->Memset( mix_p, 0, MIXBUFFER_SAMPLES*sizeof(float)*numSpeakers );
 
@@ -654,7 +654,7 @@ void idSoundWorldLocal::AVIClose( void ) {
 			fpa[i] = NULL;
 		}
 	}
-    if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 2) {
+	if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 2) {
 		// convert it to a wave file
 		idFile *rL, *lL, *wO;
 		idStr	name;
@@ -967,10 +967,10 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		{
 			chainResults.Append(res);
 		} 
-        else 
-        {
-            delete res; // SoundChainResults for this iteration no longer required, so free it
-        }
+		else 
+		{
+			delete res; // SoundChainResults for this iteration no longer required, so free it
+		}
 	}
 
 	if ( chainResults.Num() > 0 ) // were there any usable results?
@@ -1060,8 +1060,8 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 			}
 		}
 
-        // we're done with the SoundChainResults, so remove them from the heap
-        chainResults.DeleteContents(true);
+		// we're done with the SoundChainResults, so remove them from the heap
+		chainResults.DeleteContents(true);
 
 		results->spatializedOrigin = aveSpatialOrigin;
 		results->distance = aveDist;
@@ -1940,7 +1940,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	int offset = current44kHz - chan->trigger44kHzTime;
 	float inputSamples[MIXBUFFER_SAMPLES*2+16];
-    float *alignedInputSamples = (float *)((((intptr_t)inputSamples) + 15) & ~15);
+	float *alignedInputSamples = (float *)((((intptr_t)inputSamples) + 15) & ~15);
 
 	//
 	// allocate and initialize hardware source
@@ -1975,15 +1975,15 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 #endif
 			alSourcef( chan->openalSource, AL_PITCH, ( slowmoActive && !chan->disallowSlow ) ? ( slowmoSpeed ) : ( 1.0f ) );
 
-            if (idSoundSystemLocal::useEFXReverb) {
-                if (enviroSuitActive) {
-                    alSourcei(chan->openalSource, AL_DIRECT_FILTER, listenerFilter);
-                    alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilter);
-                }
-                else {
-                    alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL);
-                }
-            }
+			if (idSoundSystemLocal::useEFXReverb) {
+				if (enviroSuitActive) {
+					alSourcei(chan->openalSource, AL_DIRECT_FILTER, listenerFilter);
+					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilter);
+				}
+				else {
+					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL);
+				}
+			}
 
 			if ( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ) {
 				// handle uncompressed (non streaming) single shot and looping sounds

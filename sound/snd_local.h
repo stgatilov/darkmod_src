@@ -74,25 +74,25 @@ class idSoundWorldLocal;
 #pragma pack (push, 1)
 #endif
 struct waveformatex_s {
-    word    wFormatTag;        /* format type */
-    word    nChannels;         /* number of channels (i.e. mono, stereo...) */
-    dword   nSamplesPerSec;    /* sample rate */
-    dword   nAvgBytesPerSec;   /* for buffer estimation */
-    word    nBlockAlign;       /* block size of data */
-    word    wBitsPerSample;    /* Number of bits per sample of mono data */
-    word    cbSize;            /* The count in bytes of the size of
-                                    extra information (after cbSize) */
+	word    wFormatTag;        /* format type */
+	word    nChannels;         /* number of channels (i.e. mono, stereo...) */
+	dword   nSamplesPerSec;    /* sample rate */
+	dword   nAvgBytesPerSec;   /* for buffer estimation */
+	word    nBlockAlign;       /* block size of data */
+	word    wBitsPerSample;    /* Number of bits per sample of mono data */
+	word    cbSize;            /* The count in bytes of the size of
+									extra information (after cbSize) */
 } PACKED;
 
 typedef waveformatex_s waveformatex_t;
 
 /* OLD general waveform format structure (information common to all formats) */
 struct waveformat_s {
-    word    wFormatTag;        /* format type */
-    word    nChannels;         /* number of channels (i.e. mono, stereo, etc.) */
-    dword   nSamplesPerSec;    /* sample rate */
-    dword   nAvgBytesPerSec;   /* for buffer estimation */
-    word    nBlockAlign;       /* block size of data */
+	word    wFormatTag;        /* format type */
+	word    nChannels;         /* number of channels (i.e. mono, stereo, etc.) */
+	dword   nSamplesPerSec;    /* sample rate */
+	dword   nAvgBytesPerSec;   /* for buffer estimation */
+	word    nBlockAlign;       /* block size of data */
 } PACKED;
 
 typedef waveformat_s waveformat_t;
@@ -106,8 +106,8 @@ enum {
 
 /* specific waveform format structure for PCM data */
 struct pcmwaveformat_s {
-    waveformat_t	wf;
-    word			wBitsPerSample;
+	waveformat_t	wf;
+	word			wBitsPerSample;
 } PACKED;
 
 typedef pcmwaveformat_s pcmwaveformat_t;
@@ -121,15 +121,15 @@ typedef pcmwaveformat_s pcmwaveformat_t;
 #define fourcc_riff     mmioFOURCC('R', 'I', 'F', 'F')
 
 struct waveformatextensible_s {
-    waveformatex_t    Format;
-    union {
-        word wValidBitsPerSample;       /* bits of precision  */
-        word wSamplesPerBlock;          /* valid if wBitsPerSample==0*/
-        word wReserved;                 /* If neither applies, set to zero*/
-    } Samples;
-    dword           dwChannelMask;      /* which channels are */
-                                        /* present in stream  */
-    int            SubFormat;
+	waveformatex_t    Format;
+	union {
+		word wValidBitsPerSample;       /* bits of precision  */
+		word wSamplesPerBlock;          /* valid if wBitsPerSample==0*/
+		word wReserved;                 /* If neither applies, set to zero*/
+	} Samples;
+	dword           dwChannelMask;      /* which channels are */
+										/* present in stream  */
+	int            SubFormat;
 } PACKED;
 
 typedef waveformatextensible_s waveformatextensible_t;
@@ -163,42 +163,42 @@ idWaveFile
 
 class idWaveFile {
 public:
-				    idWaveFile( void );
+					idWaveFile( void );
 					~idWaveFile( void );
 
-    int				Open( const char* strFileName, waveformatex_t* pwfx = NULL );
-    int				OpenFromMemory( short* pbData, int ulDataSize, waveformatextensible_t* pwfx );
-    int				Read( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
+	int				Open( const char* strFileName, waveformatex_t* pwfx = NULL );
+	int				OpenFromMemory( short* pbData, int ulDataSize, waveformatextensible_t* pwfx );
+	int				Read( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
 	int				Seek( int offset );
-    int				Close( void );
-    int				ResetFile( void );
+	int				Close( void );
+	int				ResetFile( void );
 
 	int				GetOutputSize( void ) { return mdwSize; }
 	int				GetMemorySize( void ) { return mMemSize; }
 
-    waveformatextensible_t	mpwfx;        // Pointer to waveformatex structure
+	waveformatextensible_t	mpwfx;        // Pointer to waveformatex structure
 
 private:
 	idFile *		mhmmio;			// I/O handle for the WAVE
-    mminfo_t		mck;			// Multimedia RIFF chunk
-    mminfo_t		mckRiff;		// used when opening a WAVE file
-    dword			mdwSize;		// size in samples
+	mminfo_t		mck;			// Multimedia RIFF chunk
+	mminfo_t		mckRiff;		// used when opening a WAVE file
+	dword			mdwSize;		// size in samples
 	dword			mMemSize;		// size of the wave data in memory
 	dword			mseekBase;
 	ID_TIME_T			mfileTime;
 
-    bool			mbIsReadingFromMemory;
-    short *			mpbData;
-    short *			mpbDataCur;
-    dword			mulDataSize;
+	bool			mbIsReadingFromMemory;
+	short *			mpbData;
+	short *			mpbDataCur;
+	dword			mulDataSize;
 
 	void *			ogg;			// only !NULL when !s_realTimeDecoding
 	bool			isOgg;
 
 private:
-    int				ReadMMIO( void );
+	int				ReadMMIO( void );
 
-    int				OpenOGG( const char* strFileName, waveformatex_t* pwfx = NULL );
+	int				OpenOGG( const char* strFileName, waveformatex_t* pwfx = NULL );
 	int				ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead );
 	int				CloseOGG( void );
 };
@@ -214,11 +214,11 @@ Encapsulates functionality of a DirectSound buffer.
 
 class idAudioBuffer {
 public:
-    virtual int 		Play( dword dwPriority=0, dword dwFlags=0 ) = 0;
-    virtual int			Stop( void ) = 0;
-    virtual int			Reset( void ) = 0;
-    virtual bool		IsSoundPlaying( void ) = 0;
-    virtual void	 	SetVolume( float x ) = 0;
+	virtual int 		Play( dword dwPriority=0, dword dwFlags=0 ) = 0;
+	virtual int			Stop( void ) = 0;
+	virtual int			Reset( void ) = 0;
+	virtual bool		IsSoundPlaying( void ) = 0;
+	virtual void	 	SetVolume( float x ) = 0;
 };
 
 
@@ -594,9 +594,9 @@ public:
 	idVec3					listenerQU;			// position in "quake units"
 	int						listenerArea;
 	idStr					listenerAreaName;
-    ALuint					listenerEffect;
-    ALuint					listenerSlot;
-    ALuint					listenerFilter;
+	ALuint					listenerEffect;
+	ALuint					listenerSlot;
+	ALuint					listenerFilter;
 
 	int						gameMsec;
 	int						game44kHz;
@@ -680,7 +680,7 @@ public:
 
 	virtual void			PrintMemInfo( MemInfo_t *mi );
 
-    virtual int				IsEFXAvailable(void);
+	virtual int				IsEFXAvailable(void);
 
 	//-------------------------
 
@@ -727,33 +727,33 @@ public:
 	ALsizei					openalSourceCount;
 	openalSource_t			openalSources[256];
 
-    LPALGENEFFECTS			alGenEffects;
-    LPALDELETEEFFECTS		alDeleteEffects;
-    LPALISEFFECT			alIsEffect;
-    LPALEFFECTI				alEffecti;
-    LPALEFFECTF				alEffectf;
-    LPALEFFECTFV			alEffectfv;
-    LPALGENFILTERS			alGenFilters;
-    LPALDELETEFILTERS		alDeleteFilters;
-    LPALISFILTER			alIsFilter;
-    LPALFILTERI				alFilteri;
-    LPALFILTERF				alFilterf;
-    LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
-    LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
-    LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
-    LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
+	LPALGENEFFECTS			alGenEffects;
+	LPALDELETEEFFECTS		alDeleteEffects;
+	LPALISEFFECT			alIsEffect;
+	LPALEFFECTI				alEffecti;
+	LPALEFFECTF				alEffectf;
+	LPALEFFECTFV			alEffectfv;
+	LPALGENFILTERS			alGenFilters;
+	LPALDELETEFILTERS		alDeleteFilters;
+	LPALISFILTER			alIsFilter;
+	LPALFILTERI				alFilteri;
+	LPALFILTERF				alFilterf;
+	LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
+	LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
+	LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
+	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
 
 	idEFXFile				EFXDatabase;
 	bool					efxloaded;
 							// latches
-    static bool				useEFXReverb;
+	static bool				useEFXReverb;
 							// mark available during initialization, or through an explicit test
-    static int				EFXAvailable;
+	static int				EFXAvailable;
 
 
 	static idCVar			s_noSound;
 	static idCVar			s_diffractionMax; // grayman #4219
-    static idCVar			s_device;
+	static idCVar			s_device;
 	static idCVar			s_quadraticFalloff;
 	static idCVar			s_drawSounds;
 	static idCVar			s_minVolume6;

@@ -37,20 +37,20 @@ idDynamicBlockAlloc<byte, 1<<20, 128>		decoderMemoryAllocator;
 const int MIN_OGGVORBIS_MEMORY				= 768 * 1024;
 
 void *custom_decoder_malloc( size_t size ) {
-    void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(size));
+	void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
 
 void *custom_decoder_calloc( size_t num, size_t size ) {
-    void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(num * size));
+	void *ptr = decoderMemoryAllocator.Alloc(static_cast<int>(num * size));
 	assert( ( num * size ) == 0 || ptr != NULL );
 	memset( ptr, 0, num * size );
 	return ptr;
 }
 
 void *custom_decoder_realloc( void *memblock, size_t size ) {
-    void *ptr = decoderMemoryAllocator.Resize((byte *)memblock, static_cast<int>(size));
+	void *ptr = decoderMemoryAllocator.Resize((byte *)memblock, static_cast<int>(size));
 	assert( size == 0 || ptr != NULL );
 	return ptr;
 }
@@ -75,7 +75,7 @@ FS_ReadOGG
 */
 size_t FS_ReadOGG( void *dest, size_t size1, size_t size2, void *fh ) {
 	idFile *f = reinterpret_cast<idFile *>(fh);
-    return f->Read(dest, static_cast<int>(size1 * size2));
+	return f->Read(dest, static_cast<int>(size1 * size2));
 }
 
 /*

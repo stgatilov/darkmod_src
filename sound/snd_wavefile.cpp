@@ -268,7 +268,7 @@ int idWaveFile::Read( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead ) {
 		if( (byte*)(mpbDataCur + dwSizeToRead) > (byte*)(mpbData + mulDataSize) ) {
 			dwSizeToRead = mulDataSize - (int)(mpbDataCur - mpbData);
 		}
- 		SIMDProcessor->Memcpy( pBuffer, mpbDataCur, dwSizeToRead );
+		SIMDProcessor->Memcpy( pBuffer, mpbDataCur, dwSizeToRead );
 		mpbDataCur += dwSizeToRead;
 
 		if ( pdwSizeRead != NULL ) {
