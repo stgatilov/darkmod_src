@@ -47,6 +47,18 @@ const float PM_NOCLIPFRICTION	= 12.0f;
 const float PM_SLICK			= 0.1f; // grayman - #2409 - for slippery surfaces
 
 /**
+* Friction multiplier to stop the player more quickly.
+* Should also be tested with slopes as the gravity direction is always treated equally.
+**/
+const float PM_STOPFRICTIONMUL	= 2.5f;
+
+/**
+* Low player speed boundary (squared), below which movement is fully stopped.
+* Affects all directions except the current acceleration direction if there is acceleration.
+**/
+const float PM_MAXSTOPSPEEDSQR	= 14.0f;
+
+/**
 *  Height unit increment for mantle test
 * This value should be >= 1.0
 * A larger value reduces the number of tests during a mantle
@@ -653,8 +665,11 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 	// float drop = 0;
 	float friction = 0.0f;
 
+	if (forceFriction > 1e-3f) {
+		friction = forceFriction;
+	}
 	// spectator friction
-	if ( current.movementType == PM_SPECTATOR ) {
+	else if ( current.movementType == PM_SPECTATOR ) {
 		// TODO if anyone is crazy enough to add multiplayer and spectator mode to TDM : Check whether this works as intented!
 		friction = PM_FLYFRICTION;
 		//drop += speed * PM_FLYFRICTION * frametime;
@@ -686,17 +701,22 @@ void idPhysics_Player::Friction( const idVec3 &wishdir, const float forceFrictio
 		friction = PM_AIRFRICTION;
 		//drop += speed * PM_AIRFRICTION * frametime;
 	}
-	if (forceFriction > 0.0f)
-		friction = forceFriction;
+
+	// if there is no player intended movement
+	if (wishdir.LengthSqr() <= 1e-5f) {
+		friction *= PM_STOPFRICTIONMUL;
+	}
 
 	// bluepill: don't apply friction to the current acceleration direction as the acceleration calculation does that already.
 	// don't set drop as this friction calculation doesn't treat all velocity components equally
 	idVec3 frictionComponent = vel - ((vel * wishdir) * wishdir);
-	if (frictionComponent.LengthSqr() <= 1.5625f) // Length() <= 1.25f; value seems good enough
+	if (frictionComponent.LengthSqr() <= PM_MAXSTOPSPEEDSQR) { // fully stop movement for slow speeds
 		current.velocity -= frictionComponent;
-	else
+	}
+	else {
 		current.velocity += frictionComponent * (friction * frametime * (0.0f - 1.0f)); // -1.0 for 100% frictionComponent
-	
+	}
+
 	// scale the velocity
 	/*float newspeed = speed - drop;
 	if (newspeed < 0) {
