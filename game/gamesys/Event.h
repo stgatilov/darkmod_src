@@ -122,7 +122,7 @@ private:
 public:
 	static bool					initialized;
 
-								~idEvent();
+	~idEvent();
 
 	static idEvent				*Alloc( const idEventDef *evdef, int numargs, va_list args );
 	static void					CopyArgs( const idEventDef *evdef, int numargs, va_list args, intptr_t data[ D_EVENT_MAXARGS ]  );

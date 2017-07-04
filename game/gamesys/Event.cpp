@@ -89,7 +89,7 @@ void idEventDef::Construct()
 		this->formatspec = "";
 	}
 	
-    numargs = static_cast<int>(strlen(formatspec));
+	numargs = static_cast<int>(strlen(formatspec));
 	assert( numargs <= D_EVENT_MAXARGS );
 	if ( numargs > D_EVENT_MAXARGS ) {
 		eventError = true;
@@ -109,23 +109,23 @@ void idEventDef::Construct()
 
 	for( i = 0; i < numargs; i++ )
 	{
-        argOffset[i] = static_cast<int>(argsize);
+		argOffset[i] = static_cast<int>(argsize);
 
 		switch( formatspec[ i ] )
 		{
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
-            argsize += sizeof(float);
+			argsize += sizeof(float);
 			break;
 
 		case D_EVENT_INTEGER :
 		case D_EVENT_ENTITY :
 		case D_EVENT_ENTITY_NULL :
-            argsize += sizeof(int);
+			argsize += sizeof(int);
 			break;
 
 		case D_EVENT_VECTOR :
-            argsize += sizeof(idVec3);
+			argsize += sizeof(idVec3);
 			break;
 
 		case D_EVENT_STRING :
@@ -276,7 +276,7 @@ idEvent *idEvent::Alloc( const idEventDef *evdef, int numargs, va_list args ) {
 
 	size = evdef->GetArgSize();
 	if ( size ) {
-        ev->data = eventDataAllocator.Alloc(static_cast<int>(size));
+		ev->data = eventDataAllocator.Alloc(static_cast<int>(size));
 		memset( ev->data, 0, size );
 	} else {
 		ev->data = NULL;
@@ -637,7 +637,7 @@ void idEvent::Save( idSaveGame *savefile ) {
 		savefile->WriteString( event->eventdef->GetName() );
 		savefile->WriteString( event->typeinfo->classname );
 		savefile->WriteObject( event->object );
-        savefile->WriteInt(static_cast<int>(event->eventdef->GetArgSize()));
+		savefile->WriteInt(static_cast<int>(event->eventdef->GetArgSize()));
 		format = event->eventdef->GetArgFormat();
 		for ( i = 0, size = 0; i < event->eventdef->GetNumArgs(); ++i) {
 			dataPtr = &event->data[ event->eventdef->GetArgOffset( i ) ];
@@ -876,7 +876,7 @@ void CreateEventCallbackHandler( void ) {
 					string1 += "const float";
 					string2 += va( "*( float * )&data[ %d ]", k );
 				} else {
-                    string1 += "const intptr_t";
+					string1 += "const intptr_t";
 					string2 += va( "data[ %d ]", k );
 				}
 
