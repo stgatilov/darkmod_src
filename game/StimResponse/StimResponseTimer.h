@@ -39,7 +39,7 @@ public:
 		signed short Millisecond;
 	} Time;
 	struct {
-        signed long TimerVal;
+		signed int TimerVal;
 		signed short Millisecond;
 	} Val;
 } TimerValue;

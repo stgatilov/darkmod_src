@@ -19,6 +19,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "StimResponseTimer.h"
 
+static_assert((size_t)&((TimerValue*)NULL)->Time.Millisecond == 4, "TimerValue type has wrong packing");
+static_assert((size_t)&((TimerValue*)NULL)->Val.Millisecond == 4, "TimerValue type has wrong packing");
+
 /********************************************************************/
 /*                 CStimResponseTimer                               */
 /********************************************************************/
@@ -40,6 +43,17 @@ CStimResponseTimer::~CStimResponseTimer(void)
 {
 }
 
+static void Save(idSaveGame *savefile, const TimerValue &val) {
+	savefile->WriteInt(val.Val.TimerVal);
+	savefile->WriteInt(val.Val.Millisecond);
+}
+static void Restore(idRestoreGame *savefile, TimerValue &val) {
+	savefile->ReadInt(val.Val.TimerVal);
+	int tmp;
+	savefile->ReadInt(tmp);
+	val.Val.Millisecond = (short)tmp;
+}
+
 void CStimResponseTimer::Save(idSaveGame *savefile) const
 {
 	savefile->WriteFloat(static_cast<float>(m_LastTick));
@@ -53,8 +67,8 @@ void CStimResponseTimer::Save(idSaveGame *savefile) const
 	savefile->WriteInt(m_Reload);
 	savefile->WriteInt(m_ReloadVal);
 
-	savefile->Write(&m_Timer, sizeof(m_Timer));
-	savefile->Write(&m_TimerVal, sizeof(m_TimerVal));
+	::Save(savefile, m_Timer);
+	::Save(savefile, m_TimerVal);
 }
 
 void CStimResponseTimer::Restore(idRestoreGame *savefile)
@@ -82,8 +96,8 @@ void CStimResponseTimer::Restore(idRestoreGame *savefile)
 	savefile->ReadInt(m_Reload);
 	savefile->ReadInt(m_ReloadVal);
 
-	savefile->Read(&m_Timer, sizeof(m_Timer));
-	savefile->Read(&m_TimerVal, sizeof(m_TimerVal));
+	::Restore(savefile, m_Timer);
+	::Restore(savefile, m_TimerVal);
 }
 
 void CStimResponseTimer::SetTicks(double const &TicksPerSecond)

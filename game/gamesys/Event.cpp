@@ -224,6 +224,20 @@ const idEventDef *idEventDef::FindEvent( const char *name ) {
 	return NULL;
 }
 
+
+static bool CompareEventDefs(idEventDef *a, idEventDef *b) {
+	//note: idEventDef::Construct ensures that event defs have distinct names
+	int cmp = idStr::Cmp(a->GetName(), b->GetName());
+	return cmp < 0;
+}
+
+void idEventDef::SortEventDefs() {
+	for (int i = 0; i < numEventDefs; i++)
+		for (int j = 0; j < i; j++)
+			if (CompareEventDefs(eventDefList[i], eventDefList[j]))
+				idSwap(eventDefList[i], eventDefList[j]);
+}
+
 /***********************************************************************
 
   idEvent
@@ -583,6 +597,10 @@ void idEvent::Init( void ) {
 		ClearEventList();
 		return;
 	}
+
+	//#4549: sort event definitions for savegames compatibility between different platforms
+	//currently they are ordered by static initialization order, which is not defined between CPP files
+	idEventDef::SortEventDefs();
 
 	ClearEventList();
 

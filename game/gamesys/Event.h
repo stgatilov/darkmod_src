@@ -97,6 +97,9 @@ public:
 	static const idEventDef		*GetEventCommand( int eventnum );
 	static const idEventDef		*FindEvent( const char *name );
 
+	//#4549 sort event defs to ensure deterministic order
+	static void					SortEventDefs();
+
 private:
 	// Shared constructor
 	void Construct();
