@@ -1,4 +1,3 @@
-// vim:ts=4:sw=4:cindent
 /*****************************************************************************
                     The Dark Mod GPL Source Code
  
@@ -306,8 +305,8 @@ lod_handle	CModelGenerator::RegisterLODData( const lod_data_t *mLOD ) {
 #endif
 	// copy data
 	lod_data_t *l = m_LODList[smallestFree].LODPtr;
-  	l->DistCheckInterval		= mLOD->DistCheckInterval;
-  	l->bDistCheckXYOnly			= mLOD->bDistCheckXYOnly;
+	l->DistCheckInterval		= mLOD->DistCheckInterval;
+	l->bDistCheckXYOnly			= mLOD->bDistCheckXYOnly;
 	l->fLODFadeOutRange			= mLOD->fLODFadeOutRange;
 	l->fLODFadeInRange			= mLOD->fLODFadeInRange;
 	l->fLODNormalDistance		= mLOD->fLODNormalDistance;
@@ -428,9 +427,9 @@ const lod_data_t* CModelGenerator::GetLODDataPtr( const lod_handle handle ) cons
 */
 void CModelGenerator::Print( void ) const {
 
-    long memory = static_cast<long>(m_LODList.MemoryUsed());
+	long memory = static_cast<long>(m_LODList.MemoryUsed());
 	long memory_saved = 0;
-    long users = 0;
+	long users = 0;
 
 	int n = m_LODList.Num();
 
@@ -452,11 +451,11 @@ void CModelGenerator::Print( void ) const {
 #ifdef M_DEBUG
 			gameLocal.Printf(" DistCheckInterval %i bDistCheckXYOnly %s noshadowsLOD %04x fLODFadeOutRange %0.02f fLODFadeInRange %0.02f fLODNormalDistance %0.02f\n",
 				l->DistCheckInterval,
-		 		l->bDistCheckXYOnly ? "yes" : "no",
+				l->bDistCheckXYOnly ? "yes" : "no",
 				l->noshadowsLOD,
-		 		l->fLODFadeOutRange,
-		 		l->fLODFadeInRange,
-		 		l->fLODNormalDistance );
+				l->fLODFadeOutRange,
+				l->fLODFadeInRange,
+				l->fLODNormalDistance );
 #endif
 			for (int j = 0; j < LOD_LEVELS; j++)
 			{
@@ -823,7 +822,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 	{
 		gameLocal.Error("No LOD models DuplicateLODModels");
 	}
-    //gameLocal.Warning("Have %i LOD stages.", nSources);
+	//gameLocal.Warning("Have %i LOD stages.", nSources);
 
 	// Stages of our plan:
 
@@ -1198,7 +1197,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		{
 			continue;
 		}
-	   	if (lod >= nSources) { lod = nSources - 1; }
+		if (lod >= nSources) { lod = nSources - 1; }
 
 		// precompute these (stgatilov):
 		// scale matrix
@@ -1298,7 +1297,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 						int(vs->color[1]),
 						int(vs->color[2]),
 						int(vs->color[3])
-					   	);
+						);
 					gameLocal.Printf ("Now Vert %d (%d): xyz (%s) st (%s) tangent (%s) (%s) normal (%s) color %d %d %d %d.\n",
 						j, nV, v->xyz.ToString(), v->st.ToString(), 
 						v->tangents[0].ToString(), v->tangents[1].ToString(), v->normal.ToString(),
@@ -1306,7 +1305,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 						int(v->color[1]),
 						int(v->color[2]),
 						int(v->color[3])
-					   	);
+						);
 				}*/
 				nV ++;
 
@@ -1363,9 +1362,9 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 		}
 #endif
 
-        newSurf->geometry->tangentsCalculated = true;
-        newSurf->geometry->facePlanesCalculated = true;
-        newSurf->geometry->generateNormals = false;
+		newSurf->geometry->tangentsCalculated = true;
+		newSurf->geometry->facePlanesCalculated = true;
+		newSurf->geometry->generateNormals = false;
 		// calculate new bounds
 		SIMDProcessor->MinMax( newSurf->geometry->bounds[0], newSurf->geometry->bounds[1], newSurf->geometry->verts, newSurf->geometry->numVerts );
 		newSurf->id = 0;
@@ -1385,7 +1384,7 @@ idRenderModel * CModelGenerator::DuplicateLODModels (const idList<const idRender
 
 #ifdef M_TIMINGS
 	timer_finishsurfaces.Stop();
-    timer_combinemodels.Stop();
+	timer_combinemodels.Stop();
 
 	if (model_combines % 10 == 0)
 	{
