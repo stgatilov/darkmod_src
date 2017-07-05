@@ -314,6 +314,6 @@ idLangDict::Print
 */
 void idLangDict::Print( void ) const {
 	int c = args.Num();
-	idLib::common->Printf("idLangDict: %li KB in %i entries.\n", static_cast<long>(args.Size() + hash.Size()) >> 10l, c);
+	idLib::common->Printf("idLangDict: %d KB in %d entries.\n", static_cast<int>(args.Size() + hash.Size()) >> 10, c);
 	//hash.Print();
 }

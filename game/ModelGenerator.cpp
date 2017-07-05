@@ -427,9 +427,9 @@ const lod_data_t* CModelGenerator::GetLODDataPtr( const lod_handle handle ) cons
 */
 void CModelGenerator::Print( void ) const {
 
-	long memory = static_cast<long>(m_LODList.MemoryUsed());
-	long memory_saved = 0;
-	long users = 0;
+	int memory = static_cast<int>(m_LODList.MemoryUsed());
+	int memory_saved = 0;
+	int users = 0;
 
 	int n = m_LODList.Num();
 
@@ -446,7 +446,7 @@ void CModelGenerator::Print( void ) const {
 		if (m_LODList[i].users > 0 && m_LODList[i].LODPtr)
 		{
 			// the struct itself
-			long this_memory = sizeof(lod_data_t);
+			int this_memory = (int)sizeof(lod_data_t);
 			lod_data_t *l = m_LODList[i].LODPtr;
 #ifdef M_DEBUG
 			gameLocal.Printf(" DistCheckInterval %i bDistCheckXYOnly %s noshadowsLOD %04x fLODFadeOutRange %0.02f fLODFadeInRange %0.02f fLODNormalDistance %0.02f\n",

@@ -250,7 +250,7 @@ unsigned int Image::GetDataLength() const
 	if (m_ImageId != IL_IMAGE_NONE)
 	{
 		ilBindImage(m_ImageId);
-		return static_cast<unsigned long>(ilGetInteger(IL_IMAGE_SIZE_OF_DATA));
+		return static_cast<unsigned int>(ilGetInteger(IL_IMAGE_SIZE_OF_DATA));
 	}
 
 	return 0;

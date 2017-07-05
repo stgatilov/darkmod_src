@@ -122,7 +122,7 @@ public:
 	 * has been stopped before, but has not yet expired, it will
 	 * just continue where it stopped which is different to Restart().
 	 */
-	virtual void Start(unsigned long sysTicks);
+	virtual void Start(unsigned int sysTicks);
 
 	/**
 	 * Stop will simply stop the timer without any changes
@@ -134,7 +134,7 @@ public:
 	 * is specified it will be decreased, which means that if no more
 	 * reloads are possible, restart will have no effect.
 	 */
-	virtual void Restart(unsigned long sysTicks);
+	virtual void Restart(unsigned int sysTicks);
 	
 	/**
 	 * Reset will reset the timer. This means that also the reload
@@ -149,7 +149,7 @@ public:
 	 * The timer returns FALSE if the timer is inactive or
 	 * the time to fire has not yet come.
 	 */
-	virtual bool Tick(unsigned long sysTicks);
+	virtual bool Tick(unsigned int sysTicks);
 
 	/**
 	 * Returns true if the timer had expired at least once since the 
@@ -162,16 +162,16 @@ public:
 	/**
 	 * Fills the timevalue calculated from the tick counter.
 	 */
-	void MakeTime(TimerValue &Time, unsigned long sysTicks);
+	void MakeTime(TimerValue &Time, unsigned int sysTicks);
 
 public:
 	CStimResponseTimer();
 	virtual ~CStimResponseTimer(void);
 
 protected:
-	unsigned long	m_LastTick;
-	unsigned long	m_Ticker;
-	unsigned long	m_TicksPerMilliSecond;
+	unsigned int	m_LastTick;
+	unsigned int	m_Ticker;
+	unsigned int	m_TicksPerMilliSecond;
 
 	bool			m_Fired;
 

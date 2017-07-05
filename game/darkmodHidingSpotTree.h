@@ -81,9 +81,9 @@ private:
 protected:
 
 	// The number of areas
-	unsigned long numAreas;
+	unsigned int numAreas;
 
-	unsigned long numSpots;
+	unsigned int numSpots;
 
 	// The first area
 	TDarkmodHidingSpotAreaNode* p_firstArea;
@@ -116,7 +116,7 @@ protected:
 	*	case you should fix it yourself, damnit.
 
 	*/
-	void quicksortHidingSpotList(darkModHidingSpot*& inout_p_firstNode,	unsigned long numSpots);
+	void quicksortHidingSpotList(darkModHidingSpot*& inout_p_firstNode,	unsigned int numSpots);
 
 	/*!
 	* This method sorts the given area list
@@ -131,7 +131,7 @@ protected:
 	void quicksortAreaList
 	(
 		TDarkmodHidingSpotAreaNode*& inout_p_firstNode,
-		unsigned long numAreas
+		unsigned int numAreas
 	);
 
 	/*!
@@ -180,7 +180,7 @@ public:
 	/*!
 	* Get the number of spots in the entire tree
 	*/
-	ID_INLINE unsigned long getNumSpots()
+	ID_INLINE unsigned int getNumSpots()
 	{
 		return numSpots;
 	}

@@ -1050,9 +1050,9 @@ void CDarkmodAASHidingSpotFinder::debugAppendHidingSpotsToDraw
 {
 	idList<darkModHidingSpot> hidingSpotsToAppend;
 
-	unsigned long numSpots = inout_hidingSpots.getNumSpots();
+	unsigned int numSpots = inout_hidingSpots.getNumSpots();
 
-	for (unsigned long spotIndex = 0; spotIndex < numSpots; spotIndex ++)
+	for (unsigned int spotIndex = 0; spotIndex < numSpots; spotIndex ++)
 	{
 		darkModHidingSpot* p_spot = inout_hidingSpots.getNthSpot (spotIndex);
 

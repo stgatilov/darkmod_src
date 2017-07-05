@@ -156,14 +156,14 @@ void CDarkmodHidingSpotTree::Restore( idRestoreGame *savefile )
 	savefile->ReadInt(maxAreaNodeId);
 
 	savefile->ReadFloat(tempFloat);
-	numAreas = static_cast<unsigned long>(tempFloat);
+	numAreas = static_cast<unsigned int>(tempFloat);
 	savefile->ReadFloat(tempFloat);
-	numSpots = static_cast<unsigned long>(tempFloat);
+	numSpots = static_cast<unsigned int>(tempFloat);
 
 	p_firstArea = NULL;
 
 	TDarkmodHidingSpotAreaNode* lastArea = NULL;
-	for (unsigned long areaIndex = 0; areaIndex < numAreas; areaIndex++)
+	for (unsigned int areaIndex = 0; areaIndex < numAreas; areaIndex++)
 	{
 		TDarkmodHidingSpotAreaNode* curArea = new TDarkmodHidingSpotAreaNode;
 
@@ -1178,8 +1178,8 @@ bool CDarkmodHidingSpotTree::getOneNth(	unsigned int N, CDarkmodHidingSpotTree& 
 bool CDarkmodHidingSpotTree::sortForNewCenter(idVec3 center, float searchRadius)
 {
 	// Run through entire tree, and recalculate quality of each point given new distance from center
-	unsigned long numSpots = getNumSpots();
-	unsigned long spotIndex = 0;
+	unsigned int numSpots = getNumSpots();
+	unsigned int spotIndex = 0;
 
 	for (spotIndex = 0; spotIndex < numSpots; spotIndex ++)
 	{
@@ -1262,7 +1262,7 @@ bool CDarkmodHidingSpotTree::sortForNewCenter(idVec3 center, float searchRadius)
 void CDarkmodHidingSpotTree::quicksortHidingSpotList
 (
 	darkModHidingSpot*& inout_p_firstNode,
-	unsigned long numSpots
+	unsigned int numSpots
 )
 {
 	/* If list is empty or only one node long , we are done
@@ -1277,7 +1277,7 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 
 	// We use median point as pivote
 	darkModHidingSpot* p_pivot = inout_p_firstNode;
-	for (unsigned long rideCount = 0; rideCount < (numSpots/2); rideCount ++)
+	for (unsigned int rideCount = 0; rideCount < (numSpots/2); rideCount ++)
 	{
 		p_pivot = p_pivot->p_next;
 		if (p_pivot == NULL)
@@ -1291,8 +1291,8 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 	// We'll put equal into the greater list
 	darkModHidingSpot* p_firstGreaterOrEqual = NULL;
 	darkModHidingSpot* p_firstLess = NULL;
-	unsigned long numGreaterOrEqual = 0;
-	unsigned long numLess = 0;
+	unsigned int numGreaterOrEqual = 0;
+	unsigned int numLess = 0;
 
 	darkModHidingSpot* p_cursor = inout_p_firstNode;
 	while (p_cursor != NULL)
@@ -1346,7 +1346,7 @@ void CDarkmodHidingSpotTree::quicksortHidingSpotList
 void CDarkmodHidingSpotTree::quicksortAreaList
 (
 	TDarkmodHidingSpotAreaNode*& inout_p_firstNode,
-	unsigned long numAreas
+	unsigned int numAreas
 )
 {
 	// If list is empty or only one node long , we are done
@@ -1361,7 +1361,7 @@ void CDarkmodHidingSpotTree::quicksortAreaList
 
 	// We use median point as pivote
 	TDarkmodHidingSpotAreaNode* p_pivot = inout_p_firstNode;
-	for (unsigned long rideCount = 0; rideCount < (numAreas/2); rideCount ++)
+	for (unsigned int rideCount = 0; rideCount < (numAreas/2); rideCount ++)
 	{
 		p_pivot = p_pivot->p_nextSibling;
 		if (p_pivot == NULL)
@@ -1375,8 +1375,8 @@ void CDarkmodHidingSpotTree::quicksortAreaList
 	// We'll put equal into the greater list
 	TDarkmodHidingSpotAreaNode* p_firstGreaterOrEqual = NULL;
 	TDarkmodHidingSpotAreaNode* p_firstLess = NULL;
-	unsigned long numGreaterOrEqual = 0;
-	unsigned long numLess = 0;
+	unsigned int numGreaterOrEqual = 0;
+	unsigned int numLess = 0;
 
 	TDarkmodHidingSpotAreaNode* p_cursor = inout_p_firstNode;
 	while (p_cursor != NULL)

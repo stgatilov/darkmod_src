@@ -3429,12 +3429,12 @@ void Cmd_BatchConvertMaterials_f( const idCmdArgs& args )
 	const unsigned int uiStartIndex			= atoi(args.Argv(1));
 	const unsigned int uiMaterialsToProcess	= atoi(args.Argv(2));
 
-	const unsigned long uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
+	const unsigned int uiTotalMats = declManager->GetNumDecls( DECL_MATERIAL );
 
-	gameLocal.Printf("Parsing %lu materials, this may take few minutes...\n", uiTotalMats );
+	gameLocal.Printf("Parsing %u materials, this may take few minutes...\n", uiTotalMats );
 
-	unsigned long ulMaterialsProcessed = 0;
-	unsigned long i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
+	unsigned int ulMaterialsProcessed = 0;
+	unsigned int i = uiStartIndex > (uiTotalMats - 1) ? uiTotalMats : uiStartIndex;
 	const unsigned uiMaxMaterialsToProcess = i + uiMaterialsToProcess;
 	for ( ; i < uiTotalMats && i < uiMaxMaterialsToProcess; i++ )
 	{

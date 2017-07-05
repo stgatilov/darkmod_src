@@ -77,13 +77,13 @@ void CStimResponseTimer::Restore(idRestoreGame *savefile)
 	int tempInt;
 
 	savefile->ReadFloat(tempFloat);
-	m_LastTick = static_cast<long>(tempFloat);
+	m_LastTick = static_cast<int>(tempFloat);
 
 	savefile->ReadFloat(tempFloat);
-	m_Ticker = static_cast<long>(tempFloat);
+	m_Ticker = static_cast<int>(tempFloat);
 
 	savefile->ReadFloat(tempFloat);
-	m_TicksPerMilliSecond = static_cast<long>(tempFloat);
+	m_TicksPerMilliSecond = static_cast<int>(tempFloat);
 
 	savefile->ReadBool(m_Fired);
 
@@ -102,7 +102,7 @@ void CStimResponseTimer::Restore(idRestoreGame *savefile)
 
 void CStimResponseTimer::SetTicks(double const &TicksPerSecond)
 {
-	m_TicksPerMilliSecond = static_cast<unsigned long>(TicksPerSecond);
+	m_TicksPerMilliSecond = static_cast<unsigned int>(TicksPerSecond);
 }
 
 TimerValue CStimResponseTimer::ParseTimeString(idStr &str)
@@ -182,13 +182,13 @@ void CStimResponseTimer::Stop(void)
 	SetState(SRTS_DISABLED);
 }
 
-void CStimResponseTimer::Start(unsigned long sysTicks)
+void CStimResponseTimer::Start(unsigned int sysTicks)
 {
 	m_LastTick = sysTicks;
 	SetState(SRTS_RUNNING);
 }
 
-void CStimResponseTimer::Restart(unsigned long sysTicks)
+void CStimResponseTimer::Restart(unsigned int sysTicks)
 {
 	// Switch to the next timer cycle if reloading is still possible or 
 	// reloading is ignored.
@@ -216,10 +216,10 @@ void CStimResponseTimer::SetState(TimerState State)
 	m_State = State;
 }
 
-bool CStimResponseTimer::Tick(unsigned long sysTicks)
+bool CStimResponseTimer::Tick(unsigned int sysTicks)
 {
 	bool returnValue = false;
-	unsigned long ticksPassed;
+	unsigned int ticksPassed;
 	double msPassed;
 	
 	if(m_State != SRTS_RUNNING)
@@ -232,7 +232,7 @@ bool CStimResponseTimer::Tick(unsigned long sysTicks)
 	// the value instead of adding it. In the next cylce, everything 
 	// should work again though, since we always store the current
 	// value to remember it for the next cycle.
-	/* unsigned long */ ticksPassed = sysTicks - m_LastTick;
+	/* unsigned int */ ticksPassed = sysTicks - m_LastTick;
 	
 	// If the overrun happened, we just ignore this tick. It's the easiest
 	// thing to do and the safest.
@@ -281,7 +281,7 @@ Quit:
 	return returnValue;
 }
 
-void CStimResponseTimer::MakeTime(TimerValue &t, unsigned long Ticks)
+void CStimResponseTimer::MakeTime(TimerValue &t, unsigned int Ticks)
 {
 	double msPassed = floor(static_cast<double>(Ticks) / m_TicksPerMilliSecond);
 
