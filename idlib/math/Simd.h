@@ -45,7 +45,7 @@ public:
 */
 
 #ifdef _WIN32
-#define VPCALL __vectorcall//__fastcall
+#define VPCALL __fastcall
 #else
 #define VPCALL
 #endif

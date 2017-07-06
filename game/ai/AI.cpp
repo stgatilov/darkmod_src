@@ -2100,8 +2100,6 @@ void idAI::Spawn( void )
 	m_DroppingTorch = false;	// grayman #2603
 	m_ReactingToPickedPocket = false; // grayman #3559
 	m_InConversation = false;	// grayman #3559
-	m_IsDrunk = spawnArgs.GetBool( "drunk", "0" );
-	m_drunkAcuityFactor = spawnArgs.GetFloat( "drunk_acuity_factor", "1" );
 
 	// =============== Set up KOing and FOV ==============
 	const char *HeadJointName = spawnArgs.GetString("head_jointname", "Head");
@@ -10408,9 +10406,9 @@ float idAI::GetAcuity(const char *type) const
 //	}
 
 	// angua: drunken AI have reduced acuity, unless they have seen evidence of intruders
-	if ( /*spawnArgs.GetBool("drunk", "0")*/ m_IsDrunk && !HasSeenEvidence() )
+	if ( spawnArgs.GetBool("drunk", "0") && !HasSeenEvidence() )
 	{
-		returnval *= m_drunkAcuityFactor;// spawnArgs.GetFloat( "drunk_acuity_factor", "1" );
+		returnval *= spawnArgs.GetFloat("drunk_acuity_factor", "1");
 	}
 
 	//DM_LOG(LC_AI, LT_DEBUG)LOGSTRING("Acuity %s = %f\r", type, returnval);

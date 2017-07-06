@@ -1185,10 +1185,6 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	 */
 	bool					m_InConversation;
 
-	//duzenko: cache this two rather than lookup on each Think()
-	bool					m_IsDrunk; 
-	float					m_drunkAcuityFactor;
-
 	/**
 	 * grayman #2706: is set true when the move prior to door handling is saved
 	 */
