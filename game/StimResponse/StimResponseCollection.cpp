@@ -538,7 +538,7 @@ void CStimResponseCollection::CreateTimer(const idDict& args, const CStimPtr& st
 		// timer starts on map startup by default, otherwise wait for start
 		if (!args.GetBool(va("sr_timer_waitforstart_%u", index), "0"))
 		{
-			timer->Start(static_cast<unsigned long>(sys->GetClockTicks()));
+			timer->Start(static_cast<unsigned int>(sys->GetClockTicks()));
 		}
 	}
 }

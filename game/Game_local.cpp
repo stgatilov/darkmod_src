@@ -355,7 +355,7 @@ void idGameLocal::Clear( void )
 
 	memset( globalShaderParms, 0, sizeof( globalShaderParms ) );
 	random.SetSeed( 0 );
-    randomMt.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
+	randomMt.seed(static_cast<unsigned long>(std::chrono::system_clock::now().time_since_epoch().count()));
 	world = NULL;
 	frameCommandThread = NULL;
 	testmodel = NULL;
@@ -3366,7 +3366,7 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			lasTimer.Stop();
 			DM_LOG(LC_LIGHT, LT_INFO)LOGSTRING("Time to update LAS: %lf\r", lasTimer.Milliseconds());
 
-			unsigned long ticks = static_cast<unsigned long>(sys->GetClockTicks());
+			unsigned int ticks = static_cast<unsigned int>(sys->GetClockTicks());
 
 			// Tick the timers. Should be done before stim/response, just to be safe. :)
 			ProcessTimer(ticks);
@@ -7661,7 +7661,7 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 	return numResponses;
 }
 
-void idGameLocal::ProcessTimer(unsigned long ticks)
+void idGameLocal::ProcessTimer(unsigned int ticks)
 {
 	int i, n;
 	CStimResponseTimer *t;
@@ -7706,7 +7706,7 @@ CStimResponsePtr idGameLocal::FindStimResponse(int uniqueId)
 	return CStimResponsePtr();
 }
 
-void idGameLocal::ProcessStimResponse(unsigned long ticks)
+void idGameLocal::ProcessStimResponse(unsigned int ticks)
 {
 	if (cv_sr_disable.GetBool())
 	{

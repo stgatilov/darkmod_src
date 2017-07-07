@@ -34,9 +34,9 @@ class GamePlayTimer
 	std::time_t _curTime;
 
 	// msec timer stuff
-	long _lastMsec;
-	long _curMsec;
-	long _lastTick;
+	int _lastMsec;
+	int _curMsec;
+	int _lastTick;
 
 	// The passed time in seconds
 	unsigned int _timePassed;
@@ -45,7 +45,7 @@ class GamePlayTimer
 	// TRUE if the timer updates the passed time
 	bool _enabled;
 
-	void msec(long *msec) {
+	void msec(int *msec) {
 		boost::posix_time::ptime time = boost::posix_time::microsec_clock::local_time();
 		*msec = time.time_of_day().total_milliseconds();
 	}

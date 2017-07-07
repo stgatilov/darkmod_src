@@ -1001,12 +1001,12 @@ public:
 	/**
 	 * Process the timer ticks for all timers that are used for other purposes than stim/responses.
 	 */
-	void					ProcessTimer(unsigned long ticks);
+	void					ProcessTimer(unsigned int ticks);
 
 	/**
 	 * ProcessStimResponse will check whether stims are in reach of a response and if so activate them.
 	 */
-	void					ProcessStimResponse(unsigned long ticks);
+	void					ProcessStimResponse(unsigned int ticks);
 
 	/**
 	 * greebo: Traverses the entities and tries to find the Stim/Response with the given ID.

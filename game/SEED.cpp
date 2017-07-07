@@ -758,8 +758,8 @@ http://en.wikipedia.org/wiki/Linear_congruential_generator
 ===============
 */
 ID_INLINE float Seed::RandomFloat( void ) {
-	unsigned long i;
-	m_iSeed = 1664525L * m_iSeed + 1013904223L;
+	unsigned int i;
+	m_iSeed = 1664525U * m_iSeed + 1013904223U;
 	i = Seed::IEEE_ONE | ( m_iSeed & Seed::IEEE_MASK );
 	return ( ( *(float *)&i ) - 1.0f );
 }
@@ -789,8 +789,8 @@ void Seed::Spawn( void ) {
 		// gameLocal.random.RandomInt() always returns 1 hence it is unusable:
 		// add the entity number so that different seeds spawned in the same second
 		// don't display the same pattern
-		unsigned long seconds = (unsigned long) time (NULL) + (unsigned long) entityNumber;
-	    m_iSeed_2 = (int) (1664525L * seconds + 1013904223L) & 0x7FFFFFFFL;
+		unsigned int seconds = (unsigned int) time (NULL) + (unsigned int) entityNumber;
+		m_iSeed_2 = (int) (1664525U * seconds + 1013904223U) & 0x7FFFFFFFU;
 	}
 
 	// to restart the same sequence, f.i. when the user changes level of detail in GUI

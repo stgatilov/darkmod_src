@@ -605,7 +605,7 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 		return 0;
 	}
 
-	ulong dwCurrentWritePos;
+	dword dwCurrentWritePos;
 	dword dwCurrentBlock;
 
 	// here we do it in samples ( overflows in 27 hours or so )

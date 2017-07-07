@@ -318,7 +318,7 @@ void CGlobal::LogString(const char *fmt, ...)
 	va_list arg;
 	va_start(arg, fmt);
 
-	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4lu] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
+	fprintf(m_LogFile, "[%s (%4u):%s (%s) FR: %4u] ", m_Filename, m_Linenumber, LTString[lt], LCString[lc], m_Frame);
 	vfprintf(m_LogFile, fmt, arg);
 	fprintf(m_LogFile, "\n");
 	fflush(m_LogFile);

@@ -216,7 +216,7 @@ public:
 
 	LC_LogClass		m_LogClass;
 	LT_LogType		m_LogType;
-	long			m_Frame;
+	int			m_Frame;
 	const char		*m_Filename;
 	char			m_DriveLetter;		// Remember the last driveletter
 	int				m_Linenumber;

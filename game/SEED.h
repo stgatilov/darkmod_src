@@ -507,16 +507,16 @@ private:
 	*/
 	int 						m_iNumEntitiesInGame;
 
-	static const unsigned long	IEEE_ONE  = 0x3f800000;
-	static const unsigned long	IEEE_MASK = 0x007fffff;
+	static const unsigned int IEEE_ONE  = 0x3f800000U;
+	static const unsigned int IEEE_MASK = 0x007fffffU;
 
-	static const unsigned long	NOCOLLIDE_SAME   = 0x01;
-	static const unsigned long	NOCOLLIDE_OTHER  = 0x02;
-	static const unsigned long	NOCOLLIDE_STATIC = 0x04;
-	static const unsigned long	NOCOLLIDE_WORLD  = 0x08;
-	static const unsigned long	NOCOLLIDE_ATALL  = NOCOLLIDE_WORLD + NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
-	static const unsigned long	COLLIDE_WORLD    = NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
-	static const unsigned long	COLLIDE_ALL  	 = 0x00;
+	static const unsigned int NOCOLLIDE_SAME   = 0x01;
+	static const unsigned int NOCOLLIDE_OTHER  = 0x02;
+	static const unsigned int NOCOLLIDE_STATIC = 0x04;
+	static const unsigned int NOCOLLIDE_WORLD  = 0x08;
+	static const unsigned int NOCOLLIDE_ATALL  = NOCOLLIDE_WORLD + NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
+	static const unsigned int COLLIDE_WORLD    = NOCOLLIDE_STATIC + NOCOLLIDE_OTHER + NOCOLLIDE_SAME;
+	static const unsigned int COLLIDE_ALL  	 = 0x00;
 };
 
 #endif /* !__GAME_SEED_H__ */
