@@ -20,7 +20,8 @@
 
 idCVar in_mouse( "in_mouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
 idCVar in_dgamouse( "in_dgamouse", "1", CVAR_SYSTEM | CVAR_ARCHIVE, "" );
-idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT, "" );
+idCVar in_nograb( "in_nograb", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
+idCVar in_nowarp( "in_nowarp", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "" );
 
 // have a working xkb extension
 static bool have_xkb = false;
@@ -215,7 +216,14 @@ void Sys_GrabMouseCursor( bool grabIt ) {
 		#endif
 		return;
 	}
-	
+
+	//stgatilov: disable warping mouse pointer to window center
+	//warping does not work properly with virtual machine mouse integration
+	if ( in_nowarp.GetBool() && !in_nograb.GetBool() ) {
+		common->Printf("in_nowarp 1, forcing nograb\n");
+		in_nograb.SetBool( true );
+	}
+
 	if ( glConfig.isFullscreen ) {
 		if ( !grabIt ) {
 			return; // never ungrab while fullscreen
@@ -458,6 +466,19 @@ void Posix_PollInput() {
 					Posix_AddMousePollEvent( M_DELTAX, dx );
 					if (!Posix_AddMousePollEvent( M_DELTAY, dy ))
 						return;
+				} else if (in_nowarp.GetBool()) {
+					// stgatilov: in nowarp mode queue mouse displacement events immediately
+					static int prevX = glConfig.vidWidth / 2;
+					static int prevY = glConfig.vidHeight / 2;
+					dx = ((int) event.xmotion.x - prevX);
+					dy = ((int) event.xmotion.y - prevY);
+					prevX = event.xmotion.x;
+					prevY = event.xmotion.y;
+
+					Posix_QueEvent( SE_MOUSE, dx, dy, 0, NULL);
+					Posix_AddMousePollEvent( M_DELTAX, dx );
+					if (!Posix_AddMousePollEvent( M_DELTAY, dy ))
+						return;
 				} else {
 					// if it's a center motion, we've just returned from our warp
 					// FIXME: we generate mouse delta on wrap return, but that lags us quite a bit from the initial event..
@@ -482,7 +503,7 @@ void Posix_PollInput() {
 
 					mwx = event.xmotion.x;
 					mwy = event.xmotion.y;
-				    XWarpPointer(dpy,None,win,0,0,0,0, (glConfig.vidWidth/2),(glConfig.vidHeight/2));
+					XWarpPointer(dpy,None,win,0,0,0,0, (glConfig.vidWidth/2),(glConfig.vidHeight/2));
 				}
 			break;
 		}
