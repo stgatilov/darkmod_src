@@ -268,13 +268,11 @@ elif ( BUILD == 'profile' ):
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '1'
 elif ( BUILD == 'release' ):
-	# -fomit-frame-pointer: "-O also turns on -fomit-frame-pointer on machines where doing so does not interfere with debugging."
-	#   on x86 have to set it explicitely
+	# -fomit-frame-pointer: not set because if prohibits debugging (which is necessary even on release build)
 	# -finline-functions: implicit at -O3
 	# -fschedule-insns2: implicit at -O2
-	# no-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
-	# greebo: Took out -Winline, this is spamming real hard
-	OPTCPPFLAGS = [ '-O3', '-ffast-math', '-fno-unsafe-math-optimizations', '-fomit-frame-pointer' ] 
+	# -fno-unsafe-math-optimizations: that should be on by default really. hit some wonko bugs in physics code because of that
+	OPTCPPFLAGS = [ '-g', '-O3', '-ffast-math', '-fno-unsafe-math-optimizations' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
 	if ( TARGET_ARCH == 'x86' ):
@@ -356,9 +354,13 @@ SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
 VariantDir( g_build + '/core', '.', duplicate = 0 )
 thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.darkmod' )
 
-if ( TARGET_ARCH == 'x64' ):
-	InstallAs( '#thedarkmod.x64', thedarkmod )
-else:
-	InstallAs( '#thedarkmod.' + cpu, thedarkmod )
-		
+exe_name = 'thedarkmod' + ('.x64' if TARGET_ARCH == 'x64' else cpu)
+# Note: this target only runs if you append ".." (without quotes) as the last argument to scons command line
+# It copies executable into ../darkmod, which is default location of darkmod installation in development environment
+InstallAs( '../darkmod/' + exe_name, thedarkmod )
+# this runs always and produces TDM binary in local directory
+InstallAs( '#' + exe_name, thedarkmod )
+if ( BUILD == 'release' ):	# strip debug info in release
+	Command(exe_name, thedarkmod, "strip $SOURCE -o $TARGET")
+
 # end targets ------------------------------------
