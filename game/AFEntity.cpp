@@ -593,17 +593,18 @@ Pass damage to body at the bindjoint
 void idAFAttachment::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &dir, 
 	const char *damageDefName, const float damageScale, const int location, trace_t *tr ) 
 {
+	trace_t traceCopy;
 	trace_t *pTrace = NULL;
 
 	if( tr )
 	{
-		trace_t TraceCopy = *tr;
+		traceCopy = *tr;
+		pTrace = &traceCopy;
 
 		//TDM Fix: Propagate the trace.
 		// Also, some things like KO check the endpoint of the trace rather than the "location" for the joint hit
 		// So change this in the trace to the attach joint on the body we're attached to.
-		TraceCopy.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( attachJoint );
-		pTrace = &TraceCopy;
+		traceCopy.c.id = JOINT_HANDLE_TO_CLIPMODEL_ID( attachJoint );
 	}
 
 	if ( body ) 
