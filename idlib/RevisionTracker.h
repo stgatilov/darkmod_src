@@ -27,6 +27,7 @@ class RevisionTracker
 	// Some stats
 	int _highestRevision;
 	int _lowestRevision;
+	idStr _version;
 
 public:
 	/**
@@ -40,6 +41,9 @@ public:
 	 */
 	int GetHighestRevision() const;
 	int GetLowestRevision() const;
+
+	/// returns string representation of current revision
+	const char *GetRevisionString() const;
 
 	/**
 	 * Use this method to register a new revision.

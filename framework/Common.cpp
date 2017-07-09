@@ -33,7 +33,7 @@ typedef enum {
 } errorParm_t;
 
 #if defined( _DEBUG )
-	#define BUILD_DEBUG "-debug"
+	#define BUILD_DEBUG " debug"
 #else
 	#define BUILD_DEBUG ""
 #endif
@@ -50,7 +50,11 @@ public:
 	{
 		if (string[0] == 0x0)
 		{
-			sprintf( string, "%s #%d%s %s %s %s", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision(), BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__ );
+			sprintf( string, "%s #%d (%s)%s %s %s %s",
+				ENGINE_VERSION,
+				RevisionTracker::Instance().GetHighestRevision(), RevisionTracker::Instance().GetRevisionString(),
+				BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__
+			);
 		}
 
 		return string;

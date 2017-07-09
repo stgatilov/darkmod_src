@@ -21,13 +21,47 @@
 #include <climits>
 #include <vector>
 #include <string>
+
+//#define USE_OLD_REVISION_TRACKING
+
+#ifdef USE_OLD_REVISION_TRACKING
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
+#else
+//this auto-generated file contains svnversion output in string constant
+#include "svnversion.h"
+#endif
+
 
 RevisionTracker::RevisionTracker() :
 	_highestRevision(0),
 	_lowestRevision(INT_MAX)
+#ifdef USE_OLD_REVISION_TRACKING
 {}
+#else
+{
+	_version = SVN_WORKING_COPY_VERSION;
+
+	idStr buff = _version;
+	for (int i = 0; i < buff.Length(); i++)
+		if (!idStr::CharIsNumeric(buff[i]))
+			buff[i] = ' ';
+	idLexer lexer(buff.c_str(), buff.Length(), "svnversion");
+
+	idToken token;
+	if (lexer.ReadToken(&token) && token.IsNumeric()) {
+		_lowestRevision = token.GetIntValue();
+		if (lexer.ReadToken(&token) && token.IsNumeric())
+			_highestRevision = token.GetIntValue();		//min:max
+		else
+			_highestRevision = _lowestRevision;				//rev
+	}
+}
+#endif
+
+const char *RevisionTracker::GetRevisionString() const {
+	return _version.c_str();
+}
 
 int RevisionTracker::GetHighestRevision() const
 {
@@ -38,6 +72,8 @@ int RevisionTracker::GetLowestRevision() const
 {
 	return _lowestRevision;
 }
+
+#ifdef USE_OLD_REVISION_TRACKING
 
 void RevisionTracker::AddRevision(int revision) 
 {
@@ -50,6 +86,8 @@ void RevisionTracker::AddRevision(int revision)
 	{
 		_lowestRevision = revision;
 	}
+
+	sprintf(_version, "%d", _highestRevision);
 }
 
 void RevisionTracker::ParseSVNIdString(const char* input)
@@ -73,6 +111,16 @@ bool RegisterVersionedFile(const char* str) {
 
 	return true;
 }
+
+#else
+
+
+//TODO: remove
+bool RegisterVersionedFile(const char* str) {
+	return true;
+}
+
+#endif
 
 // Accessor to the singleton
 RevisionTracker& RevisionTracker::Instance()

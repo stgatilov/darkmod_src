@@ -555,6 +555,7 @@
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
     <ClInclude Include="idlib\Str.h" />
+    <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="idlib\BitMsg.h" />
     <ClInclude Include="idlib\Dict.h" />

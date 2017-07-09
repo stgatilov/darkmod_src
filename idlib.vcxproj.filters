@@ -370,5 +370,6 @@
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="idlib\Heap_Embedded.h" />
+    <ClInclude Include="idlib\svnversion.h" />
   </ItemGroup>
 </Project>

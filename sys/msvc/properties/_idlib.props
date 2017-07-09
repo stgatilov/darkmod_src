@@ -13,5 +13,13 @@
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)\sys\msvc\natvis\*.natvis" "%USERPROFILE%\Documents\Visual Studio 2013\Visualizers\"</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>cd $(ProjectDir)
+call gen_svnversion.cmd
+</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Insert SVN revision number into svnversion.h</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
 </Project>
