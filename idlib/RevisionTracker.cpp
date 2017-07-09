@@ -26,8 +26,7 @@
 
 RevisionTracker::RevisionTracker() :
 	_highestRevision(0),
-	_lowestRevision(INT_MAX),
-	_numFiles(0)
+	_lowestRevision(INT_MAX)
 {}
 
 int RevisionTracker::GetHighestRevision() const
@@ -40,15 +39,8 @@ int RevisionTracker::GetLowestRevision() const
 	return _lowestRevision;
 }
 
-int RevisionTracker::GetNumFiles() const
-{
-	return _numFiles;
-}
-
 void RevisionTracker::AddRevision(int revision) 
 {
-	_numFiles++;
-
 	if (_highestRevision < revision)
 	{
 		_highestRevision = revision;
@@ -73,6 +65,13 @@ void RevisionTracker::ParseSVNIdString(const char* input)
 		// The third token is the SVN revision, convert it to integer and pass it along
 		Instance().AddRevision(atoi(parts[2].c_str()));
 	}
+}
+
+bool RegisterVersionedFile(const char* str) {
+	// greebo: Add the revision to the RevisionTracker class
+	RevisionTracker::ParseSVNIdString(str);
+
+	return true;
 }
 
 // Accessor to the singleton

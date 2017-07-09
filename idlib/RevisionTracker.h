@@ -27,7 +27,6 @@ class RevisionTracker
 	// Some stats
 	int _highestRevision;
 	int _lowestRevision;
-	int _numFiles;
 
 public:
 	/**
@@ -41,7 +40,6 @@ public:
 	 */
 	int GetHighestRevision() const;
 	int GetLowestRevision() const;
-	int GetNumFiles() const;
 
 	/**
 	 * Use this method to register a new revision.
@@ -60,12 +58,6 @@ public:
 };
 
 // Used to find the highest revision of all .cpp files calling this
-inline bool RegisterVersionedFile(const char* str)
-{
-	// greebo: Add the revision to the RevisionTracker class
-	RevisionTracker::ParseSVNIdString(str);
-
-	return true;
-}
+bool RegisterVersionedFile(const char* str);
 
 #endif /* __TDM_REVISION_TRACKER_H__ */
