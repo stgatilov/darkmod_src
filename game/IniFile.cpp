@@ -24,8 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include <fstream>
 #include <sstream>
 
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/split.hpp>
+#include "StdString.h"
 #include <boost/spirit/include/classic.hpp>
 #include <boost/bind.hpp>
 
@@ -177,7 +176,7 @@ void IniFile::ExportToFile(const fs::path& file, const std::string& headerCommen
 	{
 		// Split the header text into lines and export it as INI comment
 		std::vector<std::string> lines;
-		boost::algorithm::split(lines, headerComments, boost::algorithm::is_any_of("\n"));
+		stdext::split(lines, headerComments, "\n");
 
 		for (std::size_t i = 0; i < lines.size(); ++i)
 		{
@@ -236,7 +235,7 @@ public:
 		// Just remember the key name, an AddValue() call is imminent
 		_lastKey = std::string(beg, end);
 
-		boost::algorithm::trim(_lastKey);
+		stdext::trim(_lastKey);
 	}
 
 	void AddValue(char const* beg, char const* end)

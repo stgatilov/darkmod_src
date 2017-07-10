@@ -27,10 +27,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "DownloadManager.h"
 #include "../Http/HttpConnection.h"
 #include "../Http/HttpRequest.h"
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include "StdString.h"
 
 namespace
 {
@@ -123,7 +120,7 @@ void CMissionManager::CleanupModFolder(const idStr& name)
 		// Iterate over all files in the mod folder
 		for (fs::directory_iterator i(modPath); i != fs::directory_iterator(); ++i)
 		{
-			if (boost::algorithm::to_lower_copy(fs::extension(*i)) == ".pk4")
+			if (stdext::to_lower_copy(fs::extension(*i)) == ".pk4")
 			{
 				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase PK4 files %s\r", i->path().string().c_str());
 				continue;
@@ -364,7 +361,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		}
 
 		// Check if this is a l10n pack, if yes we need to move it to the same mod folder
-		bool isL10nPack = boost::algorithm::iends_with(pk4path.stem().string(), "_l10n");
+		bool isL10nPack = stdext::iends_with(pk4path.stem().string(), "_l10n");
 
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("This is a localisation pack: %s\r", isL10nPack ? "yes" : "no");
 
@@ -526,7 +523,7 @@ void CMissionManager::GenerateModList()
 			}
 
 			// Check if this is a localisation pack, don't extract files from those
-			bool isL10nPack = boost::algorithm::iends_with(pk4path.stem().string(), "_l10n");
+			bool isL10nPack = stdext::iends_with(pk4path.stem().string(), "_l10n");
 
 			if (!isL10nPack && pk4file->ContainsFile(cv_tdm_fm_desc_file.GetString()))
 			{
@@ -1025,7 +1022,7 @@ int CMissionManager::StartReloadDownloadableMods()
 	std::string list = cv_tdm_mission_list_urls.GetString();
 
 	std::vector<std::string> urls;
-	boost::algorithm::split(urls, list, boost::algorithm::is_any_of(";"));
+	stdext::split(urls, list, ";");
 
 	if (urls.empty())
 	{

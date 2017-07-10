@@ -23,8 +23,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../ZipLoader/ZipLoader.h"
 #include "MissionManager.h"
 
-#include <boost/bind.hpp>
-
 CDownload::CDownload(const idStr& url, const idStr& destFilename, bool enablePK4check) :
 	_curUrl(0),
 	_destFilename(destFilename),
@@ -71,7 +69,7 @@ void CDownload::Start()
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Downloading to temporary file %s.\r", _tempFilename.c_str());
 
 	_status = IN_PROGRESS;
-	_thread = ThreadPtr(new std::thread(boost::bind(&CDownload::Perform, this)));
+	_thread = ThreadPtr(new std::thread(std::bind(&CDownload::Perform, this)));
 }
 
 void CDownload::Stop(bool canceled)

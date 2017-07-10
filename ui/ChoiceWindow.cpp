@@ -22,8 +22,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Window.h"
 #include "UserInterfaceLocal.h"
 #include "ChoiceWindow.h"
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 
 /*
 ============
@@ -277,7 +276,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 		// split the choices into a list
 		std::vector<std::string> choiceParts;
 		std::string choices_std = choicesStr.c_str();
-		boost::algorithm::split(choiceParts, choices_std, boost::algorithm::is_any_of(";"));
+		stdext::split(choiceParts, choices_std, ";");
 
 		if (choiceParts.size() <= 0)
 		{
@@ -298,7 +297,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 		// split the values into a list
 		std::vector<std::string> valuesParts;
 		std::string values_std = choiceVals.c_str();
-		boost::algorithm::split(valuesParts, values_std, boost::algorithm::is_any_of(";"));
+		stdext::split(valuesParts, values_std, ";");
 
 		if (valuesParts.size() <= 0)
 		{

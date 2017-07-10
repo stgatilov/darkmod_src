@@ -18,6 +18,7 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "snd_local.h"
+#include <limits.h>
 
 #define USE_SOUND_CACHE_ALLOCATOR
 

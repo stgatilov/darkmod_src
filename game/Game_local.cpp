@@ -46,10 +46,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "Http/HttpConnection.h"
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
-
-#include <boost/algorithm/string/trim.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 
 #include <chrono>
 #include <iostream>
@@ -3766,15 +3763,15 @@ int idGameLocal::LoadVideosFromString(const char* videosStr, const char* lengthS
 	std::string lengths = lengthStr;
 
 	// Remove leading and trailing semicolons
-	boost::algorithm::trim_if(videos, boost::algorithm::is_any_of(";"));
-	boost::algorithm::trim_if(lengths, boost::algorithm::is_any_of(";"));
+	stdext::trim(videos, ";");
+	stdext::trim(lengths, ";");
 
 	// Split strings into parts
 	std::vector<std::string> vidParts;
 	std::vector<std::string> lengthParts;
 
-	boost::algorithm::split(vidParts, videos, boost::algorithm::is_any_of(";"));
-	boost::algorithm::split(lengthParts, lengths, boost::algorithm::is_any_of(";"));
+	stdext::split(vidParts, videos, ";");
+	stdext::split(lengthParts, lengths, ";");
 
 	if (vidParts.size() != lengthParts.size())
 	{

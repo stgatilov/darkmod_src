@@ -25,8 +25,7 @@
 //#define USE_OLD_REVISION_TRACKING
 
 #ifdef USE_OLD_REVISION_TRACKING
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 #else
 //this auto-generated file contains svnversion output in string constant
 #include "svnversion.h"
@@ -96,7 +95,7 @@ void RevisionTracker::ParseSVNIdString(const char* input)
 	std::vector<std::string> parts;
 
 	// Split the incoming string into parts
-	boost::algorithm::split(parts, revStr, boost::algorithm::is_any_of(" "));
+	stdext::split(parts, revStr, " ");
 
 	if (parts.size() > 1)
 	{

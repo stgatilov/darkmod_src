@@ -18,8 +18,6 @@
 
 #include <map>
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <boost/function.hpp>
 
 namespace ai
 {
@@ -37,15 +35,14 @@ namespace ai
  * Use the CreateInstance() method to acquire a new instance of a named element.
  */
 template <class Element>
-class Library :
-	public boost::noncopyable
+class Library
 {
 public:
 	// The shared_ptr type of a registered Element
 	typedef std::shared_ptr<Element> ElementPtr;
 
 	// Define the function type to Create an Element Instance
-	typedef boost::function<ElementPtr()> CreateInstanceFunc;
+	typedef std::function<ElementPtr()> CreateInstanceFunc;
 
 private:
 	// This is the map associating task names with CreateInstance() methods
@@ -57,6 +54,10 @@ private:
 	// Private constructor
 	Library() 
 	{}
+
+	//noncopyable
+	Library(const Library&) = delete;
+	Library& operator=(const Library&) = delete;
 
 public:
 	

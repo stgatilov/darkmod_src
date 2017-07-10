@@ -24,8 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "TimerManager.h"
 #include "MeleeWeapon.h"
 #include "AbsenceMarker.h"
-#include <boost/algorithm/string/split.hpp> // grayman #3074
-#include <boost/algorithm/string/classification.hpp> // grayman #3074
+#include "StdString.h"
 
 // #include "logmgr.h"
 /***********************************************************************
@@ -2680,7 +2679,7 @@ void idActor::UnbindNotify( idEntity *ent )
 		{
 			std::string keyString = key.c_str();
 			std::vector<std::string> substrings; // will hold the separated substrings
-			boost::algorithm::split(substrings, keyString, boost::algorithm::is_any_of(" "));
+			stdext::split(substrings, keyString, " ");
 			replacedAnimation = idStr(substrings[0].c_str());
 			// ignore substrings[1] because we don't need it
 		}
@@ -3256,7 +3255,7 @@ void idActor::LoadReplacementAnims(const idDict& spawnArgs, const char *attached
 		{
 			std::string keyString = key.c_str();
 			std::vector<std::string> substrings; // will hold the separated substrings
-			boost::algorithm::split(substrings, keyString, boost::algorithm::is_any_of(" "));
+			stdext::split(substrings, keyString, " ");
 			idStr replacedAnimation = idStr(substrings[0].c_str());
 			const char *jointName = substrings[1].c_str();
 

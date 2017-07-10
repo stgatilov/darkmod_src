@@ -31,8 +31,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "StimResponse/StimResponseCollection.h"
 #include "Inventory/Inventory.h"  // SteveL #3784
 #include "Inventory/WeaponItem.h" // SteveL #3784
-#include <boost/algorithm/string/split.hpp> // grayman #3554
-#include <boost/algorithm/string/classification.hpp> // grayman #3554
+#include "StdString.h"
 
 /*
 ===============================================================================
@@ -1858,7 +1857,7 @@ void CTarget_SetObjectiveComponentState::Event_Activate( idEntity *activator )
 		{
 			std::vector<std::string> substrings; // will hold the separated substrings
 			std::string ids = StringID.c_str();
-			boost::algorithm::split(substrings, ids, boost::algorithm::is_any_of(","));
+			stdext::split(substrings, ids, ",");
 			const char* objective = idStr(substrings[0].c_str());
 			const char* component = idStr(substrings[1].c_str());
 		

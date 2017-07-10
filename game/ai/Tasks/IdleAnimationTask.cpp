@@ -24,8 +24,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <vector>
 #include <string>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 
 namespace ai
 {
@@ -103,7 +102,7 @@ void IdleAnimationTask::Init(idAI* owner, Subsystem& subsystem)
 void IdleAnimationTask::ParseAnimsToList(const std::string& animStringList, idStringList& targetList)
 {
 	std::vector<std::string> anims; // will hold the separated strings
-	boost::algorithm::split(anims, animStringList, boost::algorithm::is_any_of(" ,"));
+	stdext::split(anims, animStringList, " ,");
 
 	// Copy the strings into the target idStringList
 	for (std::size_t i = 0; i < anims.size(); i++)

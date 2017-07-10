@@ -30,8 +30,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <vector>
 #include <string>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp>
 
 class CRelations;
 

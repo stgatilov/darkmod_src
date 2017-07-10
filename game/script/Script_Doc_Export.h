@@ -19,7 +19,6 @@
 #include <map>
 #include <string>
 #include "../../idlib/Str.h"
-#include <boost/algorithm/string/predicate.hpp>
 
 class idFile;
 class idEventDef;
@@ -27,12 +26,11 @@ class idEventDef;
 class ScriptEventDocGenerator
 {
 protected:
-	struct CompareCaseInsensitively : 
-		std::binary_function<std::string, std::string, bool>
+	struct CompareCaseInsensitively
 	{
 		bool operator() (const std::string & s1, const std::string & s2) const
 		{
-			return boost::algorithm::ilexicographical_compare(s1, s2);
+			return idStr::Icmp(s1.c_str(), s2.c_str()) < 0;
 		}
 	};
 

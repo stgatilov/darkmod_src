@@ -21,7 +21,6 @@
 #include <set>
 #include <istream>
 #include <boost/filesystem.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -35,21 +34,19 @@ public:
 	typedef std::vector<KeyValuePair> KeyValuePairList;
 
 private:
-	struct SectionCompareFunctor : 
-		public std::binary_function<std::string, std::string, bool>
+	struct SectionCompareFunctor
 	{
 		bool operator()(const std::string& s1, const std::string& s2) const
 		{
-			return boost::algorithm::ilexicographical_compare(s1, s2);
+			return idStr::Icmp(s1.c_str(), s2.c_str()) < 0;
 		}
 	};
 
-	struct KeyCompareFunctor : 
-		public std::binary_function<std::string, std::string, bool>
+	struct KeyCompareFunctor
 	{
 		bool operator()(const KeyValuePair& kvp1, const KeyValuePair& kvp2) const
 		{
-			return boost::algorithm::ilexicographical_compare(kvp1.first, kvp2.first);
+			return idStr::Icmp(kvp1.first.c_str(), kvp2.first.c_str()) < 0;
 		}
 	};
 

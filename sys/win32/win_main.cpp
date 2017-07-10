@@ -38,9 +38,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <string>
 #include <vector>
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/classification.hpp>
+#include "StdString.h"
 
 idCVar Win32Vars_t::sys_arch( "sys_arch", "", CVAR_SYSTEM | CVAR_INIT, "" );
 idCVar Win32Vars_t::sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
@@ -712,7 +710,7 @@ namespace
 		std::vector<std::string> parts;
 		std::vector<std::string> resultParts;
 
-		boost::algorithm::split(parts, std::string(input.c_str()), boost::algorithm::is_any_of("\\/"));
+		stdext::split(parts, std::string(input.c_str()), "\\/");
 
 		for (std::size_t i = 0; i < parts.size(); ++i)
 		{
@@ -734,7 +732,7 @@ namespace
 			}
 		}
 
-		return idStr(boost::algorithm::join(resultParts, "\\").c_str());
+		return idStr(stdext::join(resultParts, "\\").c_str());
 	}
 }
 

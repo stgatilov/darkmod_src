@@ -63,8 +63,6 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "EAS/EAS.h" // grayman #3548
 #include "EAS/ElevatorStationInfo.h" // grayman #3548
 
-#include <boost/lexical_cast.hpp>
-
 #include "Tasks/PlayAnimationTask.h" // #3597
 
 const int AUD_ALERT_DELAY_MIN =  500; // grayman #3356 - min amount of time delay (ms) before processing an audio alert
