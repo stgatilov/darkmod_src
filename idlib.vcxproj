@@ -458,6 +458,7 @@
     <ClCompile Include="idlib\Lexer.cpp" />
     <ClCompile Include="idlib\Parser.cpp" />
     <ClCompile Include="idlib\RevisionTracker.cpp" />
+    <ClCompile Include="idlib\StdString.cpp" />
     <ClCompile Include="idlib\Str.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
     <ClCompile Include="idlib\BitMsg.cpp" />
@@ -554,6 +555,7 @@
     <ClInclude Include="idlib\Lexer.h" />
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
+    <ClInclude Include="idlib\StdString.h" />
     <ClInclude Include="idlib\Str.h" />
     <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\Token.h" />

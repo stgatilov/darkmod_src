@@ -167,6 +167,9 @@
       <Filter>Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\Heap_Embedded.cpp" />
+    <ClCompile Include="idlib\StdString.cpp">
+      <Filter>Text</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -371,5 +374,8 @@
     </ClInclude>
     <ClInclude Include="idlib\Heap_Embedded.h" />
     <ClInclude Include="idlib\svnversion.h" />
+    <ClInclude Include="idlib\StdString.h">
+      <Filter>Text</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
