@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idLib", "idlib.vcxproj", "{49BEC5C6-B964-417A-851E-808886B57400}"
 EndProject
@@ -19,8 +19,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DarkModTools", "engine.vcxp
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtLibs", "ExtLibs\ExtLibs.vcxproj", "{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DarkMod", "darkmod.vcxproj", "{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -171,34 +169,6 @@ Global
 		{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}.Release|Win32.Build.0 = Release|Win32
 		{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}.Release|x64.ActiveCfg = Release|x64
 		{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}.Release|x64.Build.0 = Release|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines and memory log|Win32.ActiveCfg = Debug with inlines and memory log|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines and memory log|Win32.Build.0 = Debug with inlines and memory log|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines and memory log|x64.ActiveCfg = Debug with inlines and memory log|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines and memory log|x64.Build.0 = Debug with inlines and memory log|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines|Win32.ActiveCfg = Debug with inlines|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines|Win32.Build.0 = Debug with inlines|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines|x64.ActiveCfg = Debug with inlines|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug with inlines|x64.Build.0 = Debug with inlines|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug|Win32.ActiveCfg = Debug|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug|Win32.Build.0 = Debug|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug|x64.ActiveCfg = Debug|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Debug|x64.Build.0 = Debug|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug with inlines|Win32.ActiveCfg = Dedicated Debug with inlines|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug with inlines|Win32.Build.0 = Dedicated Debug with inlines|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug with inlines|x64.ActiveCfg = Dedicated Debug with inlines|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug with inlines|x64.Build.0 = Dedicated Debug with inlines|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug|Win32.ActiveCfg = Dedicated Debug|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug|Win32.Build.0 = Dedicated Debug|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug|x64.ActiveCfg = Dedicated Debug|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Debug|x64.Build.0 = Dedicated Debug|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Release|Win32.ActiveCfg = Dedicated Release|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Release|Win32.Build.0 = Dedicated Release|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Release|x64.ActiveCfg = Dedicated Release|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Dedicated Release|x64.Build.0 = Dedicated Release|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Release|Win32.ActiveCfg = Release|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Release|Win32.Build.0 = Release|Win32
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Release|x64.ActiveCfg = Release|x64
-		{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
