@@ -274,8 +274,8 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 	if ( latchedChoices.Icmp( choicesStr ) ) {
 		choices.Clear();
 
-	        // split the choices into a list
-	        std::vector<std::string> choiceParts;
+		// split the choices into a list
+		std::vector<std::string> choiceParts;
 		std::string choices_std = choicesStr.c_str();
 		boost::algorithm::split(choiceParts, choices_std, boost::algorithm::is_any_of(";"));
 
@@ -283,7 +283,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 		{
 			common->Warning("The choices string array is empty for %s.", cvarStr.c_str());
 			values.Clear();
-                	return;
+			return;
 		}
 		for (unsigned int i = 0; i < choiceParts.size(); i++)
 		{
@@ -295,7 +295,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 	if ( choiceVals.Length() && latchedVals.Icmp( choiceVals ) ) {
 		values.Clear();
 
-	        // split the values into a list
+		// split the values into a list
 		std::vector<std::string> valuesParts;
 		std::string values_std = choiceVals.c_str();
 		boost::algorithm::split(valuesParts, values_std, boost::algorithm::is_any_of(";"));
@@ -303,7 +303,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 		if (valuesParts.size() <= 0)
 		{
 			common->Warning("The values string array is empty for %s.", cvarStr.c_str());
-                	return;
+			return;
 		}
 		for (unsigned int i = 0; i < valuesParts.size(); i++)
 		{
@@ -314,7 +314,7 @@ void idChoiceWindow::UpdateChoicesAndVals( void ) {
 		if (choices.Num() != values.Num())
 		{
 			common->Warning("idChoiceWindow:: gui '%s' window '%s' has value count unequal to choices count",
-				gui->GetSourceFile(), name.c_str() ); 
+			gui->GetSourceFile(), name.c_str() ); 
 		}
 		latchedVals = choiceVals.c_str();
 	}
