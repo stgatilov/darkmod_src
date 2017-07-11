@@ -311,20 +311,12 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	m_numPortals = in->m_numPortals;
 
 	// copy the connectivity database from sndPropLoader
-	if( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when copying area connectivity database to gameplay object\r");
-		goto Quit;
-	}
+	m_sndAreas = new SsndArea[m_numAreas];
 
 
 	DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Attempting to copy m_PortData with %d portals\r", m_numPortals);
 	// copy the handle-indexed portal data from sndPropLoader
-	if( (m_PortData = new SPortData[m_numPortals]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when copying portal data array to gameplay object\r");
-		goto Quit;
-	}
+	m_PortData = new SPortData[m_numPortals];
 
 	// copy the areas array, element by element
 	for( int i=0; i < m_numAreas; i++ )
@@ -343,17 +335,14 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 			m_sndAreas[i].portals[k] = in->m_sndAreas[i].portals[k];
 		}
 
-		m_sndAreas[i].portalDists = new CMatRUT<float>;
+		if (in->m_sndAreas[i].portalDists) {
+			m_sndAreas[i].portalDists = new CMatRUT<float>;
 
-		// Copy the values
-		if (in->m_sndAreas[i].portalDists->size() > 0)
-		{
+			// Copy the values
 			*m_sndAreas[i].portalDists = *(in->m_sndAreas[i].portalDists);
 		}
 		else
-		{
-			m_sndAreas[i].portalDists->Clear();
-		}
+			m_sndAreas[i].portalDists = nullptr;
 	}
 
 	// copy the portal data array, element by element
@@ -371,18 +360,10 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 	m_AreaPropsG = in->m_AreaPropsG;
 
 	// initialize Event Areas
-	if ( (m_EventAreas = new SEventArea[m_numAreas]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing m_EventAreas\r");
-		goto Quit;
-	}
+	m_EventAreas = new SEventArea[m_numAreas];
 
 	// initialize Populated Areas
-	if ( (m_PopAreas = new SPopArea[m_numAreas]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing m_PopAreas\r");
-		goto Quit;
-	}
+	m_PopAreas = new SPopArea[m_numAreas];
 
 	// Initialize the timestamp in Populated Areas
 
@@ -400,11 +381,7 @@ void CsndProp::SetupFromLoader( const CsndPropLoader *in )
 
 		numPorts = m_sndAreas[j].numPortals;
 
-		if ( (pEvArea->PortalDat = new SPortEvent[ numPorts ]) == NULL )
-		{
-			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing portal data array for area %d in m_EventAreas\r", j);
-			goto Quit;
-		}
+		pEvArea->PortalDat = new SPortEvent[ numPorts ];
 
 		// point the event portals to the m_sndAreas portals
 		for ( int l = 0 ; l < numPorts ; l++ )

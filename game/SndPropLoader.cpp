@@ -622,17 +622,8 @@ void CsndPropLoader::CreateAreasData ( void )
 	numPortals = gameRenderWorld->NumPortals();
 	//pCenters.Zero(); // grayman #3660 - move down, gets initialized for each area
 
-	if ( (m_sndAreas = new SsndArea[m_numAreas]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when allocating array of %d Areas\r", m_numAreas);
-			goto Quit;
-	}
-
-	if ( (m_PortData = new SPortData[m_numPortals]) == NULL )
-	{
-		DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when allocating array of %d portals\r", m_numPortals);
-			goto Quit;
-	}
+	m_sndAreas = new SsndArea[m_numAreas];
+	m_PortData = new SPortData[m_numPortals];
 
 	// Initialize portal data array
 	for ( int k2 = 0 ; k2 < m_numPortals ; k2++ )
@@ -652,14 +643,11 @@ void CsndPropLoader::CreateAreasData ( void )
 		area->LossMult = 1.0;
 		np = gameRenderWorld->NumPortalsInArea(i);
 		area->numPortals = np;
+		area->portalDists = nullptr;
 
 		DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Number of Portals in Area %d = %d\r", i, np);
 
-		if ( (area->portals = new SsndPortal[np]) == NULL )
-		{
-			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Create Areas: Out of memory when building portals array for Area %d\r", i);
-			goto Quit;
-		}
+		area->portals = new SsndPortal[np];
 		for ( j = 0 ; j < np ; j++ ) 
 		{
 			portalTmp = gameRenderWorld->GetPortal(i,j);
@@ -718,8 +706,6 @@ void CsndPropLoader::CreateAreasData ( void )
 	WritePortLosses();
 
     DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("Create Areas array finished.\r");
-Quit:
-	return;
 }
 
 
@@ -734,11 +720,7 @@ void CsndPropLoader::WritePortLosses( void )
 	{
 		numPorts = m_sndAreas[area].numPortals;
 
-		if ( (m_sndAreas[area].portalDists = new CMatRUT<float>) == NULL)
-		{
-			DM_LOG(LC_SOUND, LT_ERROR)LOGSTRING("Out of memory when initializing portal losses array for area %d\r", area);
-			goto Quit;
-		}
+		m_sndAreas[area].portalDists = new CMatRUT<float>;
 
 		// no need to write a matrix if the area only has one portal
 		if (numPorts == 1)
@@ -762,8 +744,6 @@ void CsndPropLoader::WritePortLosses( void )
 			}
 		}
 	}
-Quit:
-	return;
 }
 
 float CsndPropLoader::CalcPortDist(	int area, int port1, int port2)
