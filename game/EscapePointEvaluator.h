@@ -30,7 +30,7 @@ struct EscapeConditions;
 class EscapePointEvaluator
 {
 protected:
-	const EscapeConditions& _conditions;
+	const EscapeConditions* _conditions;
 
 	// This holds the ID of the best escape point so far
 	int _bestId;

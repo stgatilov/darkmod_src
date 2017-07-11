@@ -48,7 +48,7 @@
 
 #define SEED_DEBUG_MATERIAL_COUNT 13
 /** List of debug materials to use for the SEED megamodels */
-const char* seed_debug_materials[SEED_DEBUG_MATERIAL_COUNT] = {
+static const char* seed_debug_materials[SEED_DEBUG_MATERIAL_COUNT] = {
 	"debug_red",
 	"debug_blue",
 	"debug_green",

@@ -47,7 +47,7 @@ public:
 
 private:
 	// The connection we're working with
-	CHttpConnection& _conn;
+	CHttpConnection* _conn;
 
 	// The URL we're supposed to query
 	std::string _url;

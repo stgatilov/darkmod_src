@@ -22,7 +22,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ai/AAS_local.h"
 
 EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
-	_conditions(conditions),
+	_conditions(&conditions),
 	_bestId(-1), // Set the ID to invalid
 	_startAreaNum(conditions.self.GetEntity()->PointReachableAreaNum(conditions.fromPosition, 2.0f)),
 	_bestTime(0),
@@ -32,7 +32,7 @@ EscapePointEvaluator::EscapePointEvaluator(const EscapeConditions& conditions) :
 
 bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 {
-	if (_conditions.distanceOption == DIST_DONT_CARE)
+	if (_conditions->distanceOption == DIST_DONT_CARE)
 	{
 		_bestId = escapePoint.id;
 		return false; // we have a valid point, we don't care about distance, end the search
@@ -42,7 +42,7 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	int travelFlags(TFL_WALK|TFL_AIR|TFL_DOOR);
 
 	// grayman #3548 - shouldn't we also allow travel by elevator?
-	idAI* ai = _conditions.self.GetEntity();
+	idAI* ai = _conditions->self.GetEntity();
 	if (ai && ai->CanUseElevators())
 	{
 		travelFlags |= TFL_ELEVATOR;
@@ -56,7 +56,7 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	// RouteToGoalArea() only checks walking.
 
 	aasPath_t path;
-	bool canReachPoint = _conditions.aas->WalkPathToGoal( path, _startAreaNum, _conditions.fromPosition, escapePoint.areaNum, escapePoint.origin, travelFlags, travelTime, ai );
+	bool canReachPoint = _conditions->aas->WalkPathToGoal( path, _startAreaNum, _conditions->fromPosition, escapePoint.areaNum, escapePoint.origin, travelFlags, travelTime, ai );
 	//bool canReachPoint = _conditions.aas->RouteToGoalArea(_startAreaNum, _conditions.fromPosition, escapePoint.areaNum, travelFlags, travelTime, &reach, NULL, ai);
 
 	if ( !canReachPoint )
@@ -71,8 +71,8 @@ bool EscapePointEvaluator::PerformDistanceCheck(EscapePoint& escapePoint)
 	{
 		// Either the minDistanceToThreat is negative, or the distance has to be larger
 		// for the escape point to be considered as better
-		if (_conditions.minDistanceToThreat < 0 || 
-			(_threatPosition - escapePoint.origin).LengthFast() >= _conditions.minDistanceToThreat)
+		if (_conditions->minDistanceToThreat < 0 || 
+			(_threatPosition - escapePoint.origin).LengthFast() >= _conditions->minDistanceToThreat)
 		{
 			// This is a better flee point
 			_bestId = escapePoint.id;

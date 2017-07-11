@@ -33,7 +33,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #define ExtLibs
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
-	_conn(conn),
+	_conn(&conn),
 	_url(url),
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET),
@@ -42,7 +42,7 @@ CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url) :
 {}
 
 CHttpRequest::CHttpRequest(CHttpConnection& conn, const std::string& url, const std::string& destFilename) :
-	_conn(conn),
+	_conn(&conn),
 	_url(url),
 	_handle(NULL),
 	_status(NOT_PERFORMED_YET),
@@ -134,10 +134,10 @@ void CHttpRequest::InitRequest()
 	// end #3766
 
 	// Get the proxy from the HttpConnection class
-	if (_conn.HasProxy())
+	if (_conn->HasProxy())
 	{
-		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXY, _conn.GetProxyHost().c_str() );
-		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXYUSERPWD, (_conn.GetProxyUsername() + ":" + _conn.GetProxyPassword()).c_str() );
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXY, _conn->GetProxyHost().c_str() );
+		ExtLibs::curl_easy_setopt( _handle, CURLOPT_PROXYUSERPWD, (_conn->GetProxyUsername() + ":" + _conn->GetProxyPassword()).c_str() );
 	}
 }
 
