@@ -1014,6 +1014,9 @@ idEntity::idEntity()
 	m_LightQuotient = 0;
 	m_LightQuotientLastEvalTime = -1;
 
+	previousVoiceShader = nullptr;
+	previousBodyShader = nullptr;
+
 	// by default no LOD to save memory and time
 	m_LODHandle = 0;
 	m_DistCheckTimeStamp = 0;

@@ -108,7 +108,6 @@ private:
 
 	idList<model_ofs_t>*		m_Offsets;			//!< pt to the list of the individual entity combined into the model
 	idList<model_changeinfo_t>	m_Changes;			//!< list with changes accumulated before a rendermodel update
-	idList<const idRenderModel*>* m_LODs;			//!< list with LOD models to use
 
 	const idRenderModel*		m_hModel;			//!< if we need to combine from a func_static, this is its renderModel
 	idStr						m_modelName;		//!< in case we have no LOD struct, this is our model name
