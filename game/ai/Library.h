@@ -56,8 +56,8 @@ private:
 	{}
 
 	//noncopyable
-	Library(const Library&) = delete;
-	Library& operator=(const Library&) = delete;
+	Library(const Library&);
+	Library& operator=(const Library&);
 
 public:
 	

@@ -1380,6 +1380,7 @@ const int	CINEMATIC_SKIP_DELAY	= SEC2MS( 2.0f );
 #include "script/Script_Interpreter.h"
 #include "script/Script_Thread.h"
 
+#ifndef ID_TYPEINFO
 const float	RB_VELOCITY_MAX				= 16000;
 const int	RB_VELOCITY_TOTAL_BITS		= 16;
 const int	RB_VELOCITY_EXPONENT_BITS	= idMath::BitsForInteger( idMath::BitsForFloat( RB_VELOCITY_MAX ) ) + 1;
@@ -1392,5 +1393,6 @@ const float	RB_FORCE_MAX				= 1e20f;
 const int	RB_FORCE_TOTAL_BITS			= 16;
 const int	RB_FORCE_EXPONENT_BITS		= idMath::BitsForInteger( idMath::BitsForFloat( RB_FORCE_MAX ) ) + 1;
 const int	RB_FORCE_MANTISSA_BITS		= RB_FORCE_TOTAL_BITS - 1 - RB_FORCE_EXPONENT_BITS;
+#endif
 
 #endif	/* !__GAME_LOCAL_H__ */

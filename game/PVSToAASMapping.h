@@ -13,7 +13,8 @@
  
 ******************************************************************************/
 
-#pragma once
+#ifndef PVS_TO_AAS_MAPPING_H
+#define PVS_TO_AAS_MAPPING_H
 
 #include "../game/Light.h"
 
@@ -105,3 +106,5 @@ public:
 	 */
 	void DebugShowMappings(int lifetime);
 };
+
+#endif

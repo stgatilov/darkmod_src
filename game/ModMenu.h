@@ -16,8 +16,6 @@
 #ifndef _MOD_MENU_H_
 #define	_MOD_MENU_H_
 
-#pragma once
-
 
 class CModInfo;
 typedef std::shared_ptr<CModInfo> CModInfoPtr;

@@ -807,6 +807,12 @@ void idTypeInfoGen::CreateTypeInfo( const char *path ) {
 
 		src.SetFlags( LEXFL_NOBASEINCLUDES );
 
+		//stgatilov: allow including "precompiled.h" from idlib's directory
+		idStr idlibPath = path;
+		idlibPath.StripFilename();
+		idlibPath += "/idlib";
+		src.SetIncludePath(idlibPath);
+
 		for ( j = 0; j < defines.Num(); j++ ) {
 			src.AddDefine( defines[j] );
 		}

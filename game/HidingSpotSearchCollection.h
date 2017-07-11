@@ -13,7 +13,9 @@
  
 ******************************************************************************/
 
-#pragma once
+#ifndef HIDING_SPOT_SEARCH_COLLECTION_H
+#define HIDING_SPOT_SEARCH_COLLECTION_H
+
 /**
 * The purpose of this class is to contain all the hiding spot searches in use by
 * the AIs in the game.  Hiding spot searches can be shared, so this holds all
@@ -131,3 +133,5 @@ private:
 	*/
 	int findSearchByBounds(idBounds bounds, idBounds exclusionBounds);
 };
+
+#endif

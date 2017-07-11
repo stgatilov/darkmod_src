@@ -13,7 +13,8 @@
  
 ******************************************************************************/
 
-#pragma once
+#ifndef DARKMOD_LAS_H
+#define DARKMOD_LAS_H
 
 //class darkModLAS;
 
@@ -253,3 +254,5 @@ private:
 
 // The Dark Mod Light Awareness System
 extern darkModLAS LAS;
+
+#endif

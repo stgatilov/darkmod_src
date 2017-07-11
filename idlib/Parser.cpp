@@ -752,6 +752,17 @@ int idParser::ExpandDefine( idToken *deftoken, define_t *define, idToken **first
 	idToken *t1, *t2, *first, *last, *nextpt, token;
 	int parmnum, i;
 
+	//stgatilov: allow writing #if MACRO for undefined MACRO
+	//so we substitute undefined define with zero
+	if (!define) {
+		idToken *zero = new idToken(*deftoken);;
+		*zero = "0";
+		zero->type = TT_NUMBER;
+		zero->NumberValue();
+		*firsttoken = *lasttoken = zero;
+		return true;
+	}
+
 	// if it is a builtin define
 	if ( define->builtin ) {
 		return idParser::ExpandBuiltinDefine( deftoken, define, firsttoken, lasttoken );
@@ -1817,8 +1828,10 @@ int idParser::Evaluate( int *intvalue, double *floatvalue, int integer ) {
 				//then it must be a define
 				define = FindHashedDefine(idParser::definehash, token.c_str());
 				if (!define) {
-					idParser::Error( "can't Evaluate '%s', not defined", token.c_str() );
-					return false;
+					//stgatilov: allow writing "#if MACRO" for undefined MACRO
+					idParser::Warning( "can't evaluate undefined macro '%s', substituted with zero", token.c_str() );
+					//idParser::Error( "can't Evaluate '%s', not defined", token.c_str() );
+					//return false;
 				}
 				if ( !idParser::ExpandDefineIntoSource( &token, define ) ) {
 					return false;

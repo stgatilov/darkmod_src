@@ -13,7 +13,8 @@
  
 ******************************************************************************/
 
-#pragma once
+#ifndef DARKMOD_AAS_HIDING_SPOT_FINDER_H
+#define DARKMOD_AAS_HIDING_SPOT_FINDER_H
 
 // Required includes
 #include "../game/ai/AAS.h"
@@ -481,3 +482,5 @@ public:
 		idAAS* p_aas
 	);
 };
+
+#endif
