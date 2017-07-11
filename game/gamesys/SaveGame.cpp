@@ -663,7 +663,7 @@ void idRestoreGame::RestoreObjects( void ) {
 	idStr gameState = file->GetName();
 	gameState.StripFileExtension();
 	WriteGameState_f( idCmdArgs( va( "test %s_restore", gameState.c_str() ), false ) );
-	//CompareGameState_f( idCmdArgs( va( "test %s_save", gameState.c_str() ) ) );
+	CompareGameState_f( idCmdArgs( va( "test %s_save", gameState.c_str() ), false ) );
 	gameLocal.Error( "dumped game states" );
 #endif
 }
