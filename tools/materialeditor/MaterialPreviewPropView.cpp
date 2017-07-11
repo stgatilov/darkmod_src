@@ -20,6 +20,12 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "MaterialPreviewPropView.h"
 
+#ifdef ID_DEBUG_MEMORY
+#undef new
+#undef DEBUG_NEW
+#define DEBUG_NEW new
+#endif
+
 
 // MaterialPropTreeView
 

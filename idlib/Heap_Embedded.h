@@ -22,6 +22,7 @@
 //stgatilov: this allocator always serves requests from within single memory block
 //it was originally implemented for storing idScriptObject data in x64 mode
 class idEmbeddedAllocator {
+private:
 	char *bufferPtr;
 	int bufferSize;
 	idList<int> freePos;

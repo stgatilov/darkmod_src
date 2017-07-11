@@ -28,6 +28,7 @@ class CMultiStateMoverButton;
 class CMultiStateMoverPosition : 
 	public idEntity
 {
+private:
 	// The list of targetted obstacle entities
 	idList< idEntityPtr<idFuncAASObstacle> > aasObstacleEntities;
 

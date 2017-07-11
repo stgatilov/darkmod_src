@@ -166,18 +166,22 @@ CGlobal::CGlobal()
 
 CGlobal::~CGlobal()
 {
-	if (m_LogFile != NULL)
-	{
-		fclose(m_LogFile);
-	}
+	Shutdown();
 }
 
 void CGlobal::Shutdown() {
-	//stgatilov: calling destructor + def. constructor
-	//it makes sure that all dynamic stuff is destroyed,
-	//and all members remain in "constructed" state
-	this->~CGlobal();
-	new(this) CGlobal();
+	m_SurfaceHardness.Clear();
+	m_SurfaceHardnessHash.Clear();
+	if (m_LogFile != NULL)
+	{
+		fclose(m_LogFile);
+		m_LogFile = 0;
+	}
+	m_LightMaterial.Clear();
+	m_Image.Clear();
+	m_RenderImage.Unload();
+	m_AcuityNames.Clear();
+	m_AcuityHash.Clear();
 }
 
 void CGlobal::Init()

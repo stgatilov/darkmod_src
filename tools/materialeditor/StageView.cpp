@@ -17,6 +17,13 @@
 
 static bool versioned = RegisterVersionedFile("$Id$");
 
+#ifdef ID_DEBUG_MEMORY
+#undef protected
+#undef new
+#undef DEBUG_NEW
+#define DEBUG_NEW new
+#endif
+
 #include "StageView.h"
 
 IMPLEMENT_DYNCREATE(StageView, ToggleListView)

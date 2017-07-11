@@ -41,6 +41,7 @@ namespace difficulty {
  */
 class DifficultyManager
 {
+private:
 	// The selected difficulty [0 .. DIFFICULTY_COUNT-1]
 	int _difficulty;
 

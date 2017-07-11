@@ -10,6 +10,12 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "PropTreeView.h"
 
+#ifdef ID_DEBUG_MEMORY
+#undef new
+#undef DEBUG_NEW
+#define DEBUG_NEW new
+#endif
+
 // CPropTreeView
 
 IMPLEMENT_DYNCREATE(CPropTreeView, CFormView)

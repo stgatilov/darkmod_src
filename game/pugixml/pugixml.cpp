@@ -12,6 +12,9 @@
  */
 #include "precompiled.h"
 #pragma hdrstop
+#ifdef ID_DEBUG_MEMORY
+	#undef new
+#endif
 
 #include "pugixml.hpp"
 

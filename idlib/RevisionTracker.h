@@ -24,6 +24,7 @@
  */
 class RevisionTracker
 {
+private:
 	// Some stats
 	int _highestRevision;
 	int _lowestRevision;

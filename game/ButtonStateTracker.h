@@ -31,6 +31,7 @@ class idPlayer;
 
 class ButtonStateTracker
 {
+private:
 	// The class that is going to be notified on button release
 	idPlayer* _owner;
 

@@ -76,6 +76,7 @@ public:
  */
 class DifficultySettings
 {
+private:
 	// The settings map associates classnames with spawnarg change records.
 	// Multiple settings can be made for a single classname.
 	typedef std::multimap<std::string, Setting> SettingsMap;
@@ -163,6 +164,7 @@ public:
  */
 class CVARDifficultySettings
 {
+private:
 	// The settings list
 	typedef idList<CVARSetting> SettingsMap;
 	SettingsMap _settings;

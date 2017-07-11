@@ -20,6 +20,10 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "IniFile.h"
 
+#ifdef ID_DEBUG_MEMORY
+	#undef new
+#endif
+
 #include <set>
 #include <fstream>
 #include <sstream>

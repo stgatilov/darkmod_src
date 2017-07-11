@@ -30,6 +30,7 @@
  */
 class GamePlayTimer
 {
+private:
 	std::time_t _lastTime;
 	std::time_t _curTime;
 

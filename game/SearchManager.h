@@ -130,6 +130,7 @@ typedef enum
 
 class CSearchManager
 {
+private:
 	idList<Search*> _searches;       // A list of all active searches in the mission
 	int				_uniqueSearchID; // the next unique id to assign to a new search
 	int				_nextThinkTime;	 // grayman #4220 - the search manager's 'think' process only thinks every N seconds

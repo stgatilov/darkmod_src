@@ -1346,7 +1346,7 @@ typedef enum {
 } memorySortType_t;
 
 void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int numFrames ) {
-	int numBlocks, totalSize, r, j;
+	int numBlocks, totalSize, r;
 	debugMemory_t *b;
 	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted, *nextSorted;
 	idStr module, funcName;
@@ -1426,6 +1426,9 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 				}
 				break;
 			}
+			default:
+				nextSorted = prevSorted = nullptr;	//mute warning
+				common->Error("Unknown memorySortType");
 		}
 		if ( !prevSorted ) {
 			a->next = sortedAllocInfo;
