@@ -30,6 +30,7 @@ typedef std::shared_ptr<InteractionTask> InteractionTaskPtr;
 class InteractionTask :
 	public Task
 {
+private:
 	idEntity* _interactEnt;
 
 	int _waitEndTime;

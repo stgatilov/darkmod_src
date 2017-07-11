@@ -30,6 +30,7 @@ typedef std::shared_ptr<ThrowObjectTask> ThrowObjectTaskPtr;
 class ThrowObjectTask :
 	public Task
 {
+private:
 	int _projectileDelayMin;
 	int _projectileDelayMax;
 	int _nextThrowObjectTime;

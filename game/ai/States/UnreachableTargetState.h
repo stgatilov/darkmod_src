@@ -26,6 +26,7 @@ namespace ai
 class UnreachableTargetState :
 	public State
 {
+private:
 	// The AI's enemy
 	idEntityPtr<idActor> _enemy;
 	//bool _takingCoverPossible; // grayman #3507 - made local to Think()

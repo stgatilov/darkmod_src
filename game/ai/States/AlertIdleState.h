@@ -17,6 +17,7 @@
 #define __AI_ALERT_IDLE_STATE_H__
 
 #include "State.h"
+#include "IdleState.h"
 
 namespace ai
 {

@@ -31,6 +31,7 @@ typedef std::shared_ptr<ChaseEnemyTask> ChaseEnemyTaskPtr;
 class ChaseEnemyTask :
 	public Task
 {
+private:
 	idEntityPtr<idActor> _enemy;
 	int _reachEnemyCheck;
 

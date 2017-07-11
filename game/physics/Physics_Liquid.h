@@ -13,6 +13,9 @@
  
 ******************************************************************************/
 
+#ifndef PHYSICS_LIQUID_H
+#define PHYSICS_LIQUID_H
+
 /*
 ===============================================================================
 
@@ -74,5 +77,7 @@ private:
 	idVec3				minWaveVelocity;
 	idVec3				minSplashVelocity;
 };
+
+#endif
 
 #endif

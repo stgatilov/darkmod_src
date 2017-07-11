@@ -42,6 +42,7 @@ namespace eas {
  */
 class tdmEAS
 {
+private:
 	// The owning AAS
 	idAASLocal* _aas;
 

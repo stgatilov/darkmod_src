@@ -13,6 +13,9 @@
  
 ******************************************************************************/
 
+#ifndef DEBUG_GRAPH_H
+#define DEBUG_GRAPH_H
+
 // Copyright (C) 2004 Id Software, Inc.
 //
 // DebugGraph.h
@@ -28,3 +31,5 @@ private:
 	idList<float>	samples;
 	int				index;
 };
+
+#endif

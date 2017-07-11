@@ -127,6 +127,7 @@ struct EscapeGoal
 
 class CEscapePointManager
 {
+private:
 	// A list of Escape Point entities
 	typedef idList< idEntityPtr<tdmPathFlee> > EscapeEntityList;
 

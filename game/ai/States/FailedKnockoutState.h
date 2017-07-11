@@ -26,6 +26,7 @@ namespace ai
 class FailedKnockoutState :
 	public State
 {
+private:
 	int _stateEndTime;
 	int _allowEndTime;
 	idEntity* _attacker;

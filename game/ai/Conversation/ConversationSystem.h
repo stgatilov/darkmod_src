@@ -24,6 +24,7 @@ namespace ai {
 
 class ConversationSystem
 {
+private:
 	// The indexed list of conversations
 	idList<ConversationPtr> _conversations;
 

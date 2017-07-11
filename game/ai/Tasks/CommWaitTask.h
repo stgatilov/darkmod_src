@@ -31,6 +31,7 @@ typedef std::shared_ptr<CommWaitTask> CommWaitTaskPtr;
 class CommWaitTask :
 	public CommunicationTask
 {
+private:
 	int _duration;
 	int _endTime;
 

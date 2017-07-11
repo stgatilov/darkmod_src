@@ -30,6 +30,7 @@ typedef std::shared_ptr<PathInteractTask> PathInteractTaskPtr;
 class PathInteractTask :
 	public PathTask
 {
+private:
 	idEntity* _target;
 
 	int _waitEndTime;

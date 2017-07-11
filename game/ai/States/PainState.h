@@ -27,6 +27,7 @@ namespace ai
 class PainState :
 	public State
 {
+private:
 	int _stateEndTime;
 	
 public:

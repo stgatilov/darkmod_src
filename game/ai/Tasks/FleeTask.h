@@ -37,6 +37,7 @@ typedef std::shared_ptr<FleeTask> FleeTaskPtr;
 class FleeTask :
 	public Task
 {
+private:
 	idEntityPtr<idActor> _enemy;
 	int _escapeSearchLevel;
 	int _failureCount;

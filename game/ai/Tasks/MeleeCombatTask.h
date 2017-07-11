@@ -30,6 +30,7 @@ typedef std::shared_ptr<MeleeCombatTask> MeleeCombatTaskPtr;
 class MeleeCombatTask :
 	public CombatTask
 {
+private:
 	/** 
 	* Set to true if we want to force an attack or parry at the next opportunity
 	* I.e., we wait until we can do this action even if we could do the other first

@@ -40,6 +40,7 @@ typedef std::shared_ptr<InvestigateSpotTask> InvestigateSpotTaskPtr;
 class InvestigateSpotTask :
 	public Task
 {
+private:
 	// The search spot to investigate
 	idVec3 _searchSpot;
 

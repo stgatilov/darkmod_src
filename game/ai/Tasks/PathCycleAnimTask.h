@@ -30,6 +30,7 @@ typedef std::shared_ptr<PathCycleAnimTask> PathCycleAnimTaskPtr;
 class PathCycleAnimTask :
 	public PathTask
 {
+private:
 	int _waitEndTime;
 
 	// Private constructor

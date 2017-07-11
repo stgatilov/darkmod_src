@@ -29,6 +29,7 @@ namespace ai {
  */
 class Conversation
 {
+private:
 	// The name of this conversation
 	idStr _name;
 

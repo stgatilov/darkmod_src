@@ -30,6 +30,7 @@ typedef std::shared_ptr<AnimalPatrolTask> AnimalPatrolTaskPtr;
 class AnimalPatrolTask :
 	public Task
 {
+private:
 	// greebo: These are the various states the animal is in
 	// It's a basic set of actions, chosen randomly, repeating
 	enum EState

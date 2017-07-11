@@ -16,7 +16,7 @@
 
 // Copyright (C) 2010 Tels (Donated to The Dark Mod)
 
-#ifndef __DAKRMOD_STATICMULTI_H__
+#ifndef __DARKMOD_STATICMULTI_H__
 #define __DARKMOD_STATICMULTI_H__
 
 #include "Misc.h"

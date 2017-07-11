@@ -26,6 +26,7 @@ namespace ai
 class KnockedOutState :
 	public State
 {
+private:
 	bool _waitingForKnockout;
 public:
 	// Get the name of this state

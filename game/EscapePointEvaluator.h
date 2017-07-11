@@ -113,6 +113,7 @@ typedef std::shared_ptr<EscapePointEvaluator> EscapePointEvaluatorPtr;
 class AnyEscapePointFinder :
 	public EscapePointEvaluator
 {
+private:
 	// The team of the fleeing AI, which is evaluated against the
 	// teams of the AI near the flee point.
 	int _team;
@@ -129,6 +130,7 @@ public:
 class GuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
+private:
 	// The team of the fleeing AI, which is evaluated against the
 	// teams of the AI near the flee point.
 	int _team;
@@ -148,6 +150,7 @@ public:
 class FriendlyEscapePointFinder :
 	public EscapePointEvaluator
 {
+private:
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point and the teams of the AI near the flee point.
 	int _team;
@@ -167,6 +170,7 @@ public:
 class FriendlyGuardedEscapePointFinder :
 	public EscapePointEvaluator
 {
+private:
 	// The team of the fleeing AI, which is evaluated against the
 	// team of the escape point and the teams of the AI near the flee point.
 	int _team;

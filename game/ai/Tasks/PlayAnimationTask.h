@@ -30,6 +30,7 @@ typedef std::shared_ptr<PlayAnimationTask> PlayAnimationTaskPtr;
 class PlayAnimationTask :
 	public Task
 {
+private:
 	idStr _animName;
 
 	int _blendFrames;

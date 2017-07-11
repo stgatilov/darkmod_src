@@ -30,6 +30,7 @@ typedef std::shared_ptr<IdleAnimationTask> IdleAnimationTaskPtr;
 class IdleAnimationTask :
 	public Task
 {
+private:
 	int _nextAnimationTime;
 
 	idStringList _idleAnimations;

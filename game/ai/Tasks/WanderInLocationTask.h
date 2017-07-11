@@ -30,6 +30,7 @@ typedef std::shared_ptr<WanderInLocationTask> WanderInLocationTaskPtr;
 class WanderInLocationTask :
 	public Task
 {
+private:
 	idVec3 _location;
 
 	// Private default constructor

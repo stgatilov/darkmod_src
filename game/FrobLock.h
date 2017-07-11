@@ -26,6 +26,7 @@
 class CFrobLock :
 	public idStaticEntity
 {
+private:
 	// The actual lock implementation
 	PickableLock*	m_Lock;
 

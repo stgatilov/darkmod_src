@@ -30,6 +30,7 @@ typedef std::shared_ptr<ChaseEnemyRangedTask> ChaseEnemyRangedTaskPtr;
 class ChaseEnemyRangedTask :
 	public Task
 {
+private:
 	bool _hasGoal;
 
 	idEntityPtr<idActor> _enemy;

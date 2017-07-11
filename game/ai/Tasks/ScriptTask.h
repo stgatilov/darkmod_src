@@ -43,6 +43,7 @@ typedef std::shared_ptr<ScriptTask> ScriptTaskPtr;
 class ScriptTask :
 	public Task
 {
+private:
 	// The name of the script function to execute
 	idStr _functionName;	
 

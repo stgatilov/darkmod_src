@@ -34,6 +34,7 @@
 class CMultiStateMover : 
 	public idMover
 {
+private:
 	idList<MoverPositionInfo> positionInfo;
 
 	idVec3 forwardDirection;
