@@ -16,6 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
+#pragma warning(disable: 4324)	//struct was padded due to __declspec(align())
 
 
 #ifndef USE_LIBC_MALLOC
@@ -1219,8 +1220,7 @@ void Mem_EnableLeakTest( const char *name ) {
 #undef		Mem_Alloc16
 #undef		Mem_Free16
 
-// size of this struct must be a multiple of 16 bytes
-typedef struct debugMemory_s {
+typedef struct ALIGNTYPE16 debugMemory_s {
 	const char *			fileName;
 	int						lineNumber;
 	int						frameNumber;
@@ -1228,6 +1228,7 @@ typedef struct debugMemory_s {
 	struct debugMemory_s *	prev;
 	struct debugMemory_s *	next;
 } debugMemory_t;
+static_assert(sizeof(debugMemory_t) % 16 == 0, "size of debugMemory_t struct must be a multiple of 16 bytes");
 
 static debugMemory_t *	mem_debugMemory = NULL;
 static char				mem_leakName[256] = "";
