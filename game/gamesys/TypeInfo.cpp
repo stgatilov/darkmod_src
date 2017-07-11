@@ -47,6 +47,7 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "../Game_local.h"
 
 #ifdef ID_DEBUG_MEMORY
+#include "TypeInfo_GenHelper.h"			// stgatilov: define all classes
 #include "GameTypeInfo.h"				// Make sure this is up to date!
 #else
 #include "NoGameTypeInfo.h"

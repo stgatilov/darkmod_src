@@ -770,6 +770,7 @@
     <ClInclude Include="game\gamesys\SysCmds.h" />
     <ClInclude Include="game\gamesys\SysCvar.h" />
     <ClInclude Include="game\gamesys\TypeInfo.h" />
+    <ClInclude Include="game\gamesys\TypeInfo_GenHelper.h" />
     <ClInclude Include="game\Game_local.h" />
     <ClInclude Include="game\Grabber.h" />
     <ClInclude Include="game\HidingSpotSearchCollection.h" />
@@ -2528,6 +2529,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="game\gamesys\TypeInfo_GenHelper.cpp" />
     <ClCompile Include="game\Game_local.cpp" />
     <ClCompile Include="game\Grabber.cpp" />
     <ClCompile Include="game\HidingSpotSearchCollection.cpp" />

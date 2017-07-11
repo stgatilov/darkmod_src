@@ -794,9 +794,16 @@ void idTypeInfoGen::CreateTypeInfo( const char *path ) {
 
 	files = fileSystem->ListFilesTree( path, ".cpp" );
 
-	for ( i = 0; i < files->GetNumFiles(); i++ ) {
 
-		fileName = fileSystem->RelativePathToOSPath( files->GetFile( i ) );
+	for ( i = -1; i < files->GetNumFiles(); i++ ) {
+		if (i < 0) {
+			//stgatilov: parse TypeInfo.cpp as first (and only) file
+			fileName = path;
+			fileName.AppendPath("gamesys\\TypeInfo_GenHelper.cpp");
+			fileName = fileSystem->RelativePathToOSPath(fileName);
+		}
+		else
+			fileName = fileSystem->RelativePathToOSPath( files->GetFile( i ) );
 
 		common->Printf( "processing '%s' for type info...\n", fileName.c_str() );
 

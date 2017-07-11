@@ -1217,6 +1217,9 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="idlib\precompiled.h" />
+    <ClInclude Include="game\gamesys\TypeInfo_GenHelper.h">
+      <Filter>Game\GameSys</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2873,6 +2876,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="idlib\precompiled.cpp" />
+    <ClCompile Include="game\gamesys\TypeInfo_GenHelper.cpp">
+      <Filter>Game\GameSys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">
