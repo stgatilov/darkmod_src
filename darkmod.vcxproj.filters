@@ -1378,6 +1378,12 @@
     <ClInclude Include="tools\compilers\compiler_public.h">
       <Filter>Tools\Compilers</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\svnversion.h">
+      <Filter>idLib</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\StdString.h">
+      <Filter>idLib\Text</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2724,6 +2730,9 @@
     </ClCompile>
     <ClCompile Include="tools\compilers\roqvq\roqParam.cpp">
       <Filter>Tools\Compilers\RoqVQ</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\StdString.cpp">
+      <Filter>idLib\Text</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1534,6 +1534,8 @@ void idGameLocal::LoadMap( const char *mapName, int randseed ) {
 
 #ifdef MULTIPLAYER
 	InitAsyncNetwork();
+#else
+	realClientTime = 0; 
 #endif
 
 	if ( !sameMap || ( mapFile && mapFile->NeedsReload() ) ) {

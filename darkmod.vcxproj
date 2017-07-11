@@ -931,7 +931,9 @@
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
+    <ClInclude Include="idlib\StdString.h" />
     <ClInclude Include="idlib\Str.h" />
+    <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\Timer.h" />
     <ClInclude Include="idlib\Token.h" />
     <ClInclude Include="renderer\Cinematic.h" />
@@ -1554,6 +1556,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="idlib\RevisionTracker.cpp" />
+    <ClCompile Include="idlib\StdString.cpp" />
     <ClCompile Include="idlib\Str.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
