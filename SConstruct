@@ -240,6 +240,7 @@ if ( g_os == 'Linux' ):
 	if ( TARGET_ARCH == 'x86' ):
 		BASECPPFLAGS.append( '-m32' )
 		BASELINKFLAGS.append( '-m32' )
+		BASECPPFLAGS.append( '-msse2' );
 	if ( TARGET_ARCH == 'x64' ):
 		BASECPPFLAGS.append( '-m64' )
 		BASELINKFLAGS.append( '-m64' )
@@ -275,8 +276,6 @@ elif ( BUILD == 'release' ):
 	OPTCPPFLAGS = [ '-g', '-O3', '-ffast-math', '-fno-unsafe-math-optimizations' ] 
 	if ( ID_MCHECK == '0' ):
 		ID_MCHECK = '2'
-	if ( TARGET_ARCH == 'x86' ):
-		OPTCPPFLAGS.append( '-march=pentium3' );
 else:
 	print 'Unknown build configuration ' + BUILD
 	sys.exit(0)
@@ -363,7 +362,7 @@ SConscript( g_build + '/core/glimp/sys/scons/SConscript.gl' )
 VariantDir( g_build + '/core', '.', duplicate = 0 )
 thedarkmod = SConscript( g_build + '/core/sys/scons/SConscript.darkmod' )
 
-exe_name = 'thedarkmod' + ('.x64' if TARGET_ARCH == 'x64' else cpu)
+exe_name = 'thedarkmod.' + ('x64' if TARGET_ARCH == 'x64' else cpu)
 # Note: this target only runs if you append ".." (without quotes) as the last argument to scons command line
 # It copies executable into ../darkmod, which is default location of darkmod installation in development environment
 InstallAs( '../darkmod/' + exe_name, thedarkmod )
