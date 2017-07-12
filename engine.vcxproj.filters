@@ -306,9 +306,6 @@
     <ClInclude Include="sys\win32\rc\CreateResourceIDs.h">
       <Filter>Sys\RC</Filter>
     </ClInclude>
-    <ClInclude Include="sys\win32\rc\Debugger_resource.h">
-      <Filter>Sys\RC</Filter>
-    </ClInclude>
     <ClInclude Include="sys\win32\rc\DeclEditor_resource.h">
       <Filter>Sys\RC</Filter>
     </ClInclude>
@@ -444,7 +441,6 @@
     <ClInclude Include="sys\win32\wglext.h">
       <Filter>Sys</Filter>
     </ClInclude>
-    <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
     <ClInclude Include="sound\efxlib.h">
       <Filter>Sound</Filter>
     </ClInclude>
@@ -3081,9 +3077,6 @@
     <ResourceCompile Include="sys\win32\rc\Common.rc">
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\Debugger.rc">
-      <Filter>Sys\RC</Filter>
-    </ResourceCompile>
     <ResourceCompile Include="sys\win32\rc\DeclEditor.rc">
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
@@ -3111,458 +3104,457 @@
     <ResourceCompile Include="sys\win32\rc\SoundEditor.rc">
       <Filter>Sys\RC</Filter>
     </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\PDAEditor.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuildStep Include="tools\edit_public.h">
+    <ClInclude Include="tools\edit_public.h">
       <Filter>Tools</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAF.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAF.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFBody.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFBody.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraint.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraint.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintBallAndSocket.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintBallAndSocket.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintFixed.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintFixed.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintHinge.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintHinge.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintSlider.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintSlider.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintSpring.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintSpring.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintUniversal.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFConstraintUniversal.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFName.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFName.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFProperties.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFProperties.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFView.h">
+    </ClInclude>
+    <ClInclude Include="tools\af\DialogAFView.h">
       <Filter>Tools\AF</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CDIB.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\CDIB.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CPathTreeCtrl.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\CPathTreeCtrl.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CSyntaxRichEditCtrl.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\CSyntaxRichEditCtrl.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogColorPicker.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\DialogColorPicker.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogGoToLine.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\DialogGoToLine.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogName.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\DialogName.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\StdAfx.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\StdAfx.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\VectorCtl.h">
+    </ClInclude>
+    <ClInclude Include="tools\comafx\VectorCtl.h">
       <Filter>Tools\ComAfx</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\ColorButton.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\ColorButton.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\DialogHelpers.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\DialogHelpers.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\MaskEdit.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\MaskEdit.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\OpenFileDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\OpenFileDialog.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropertyGrid.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropertyGrid.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\RegistryOptions.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\RegistryOptions.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\RollupPanel.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\RollupPanel.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\SpinButton.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\SpinButton.h">
       <Filter>Tools\Common</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTree.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTree.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeInfo.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeInfo.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItem.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItem.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemButton.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemButton.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemCheck.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemCheck.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemColor.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemColor.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemCombo.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemCombo.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemEdit.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemEdit.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemEditButton.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemEditButton.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemFileEdit.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemFileEdit.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemStatic.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeItemStatic.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeList.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeList.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeView.h">
+    </ClInclude>
+    <ClInclude Include="tools\common\PropTree\PropTreeView.h">
       <Filter>Tools\Common\PropTree</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclBrowser.h">
+    </ClInclude>
+    <ClInclude Include="tools\decl\DialogDeclBrowser.h">
       <Filter>Tools\Decl</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclEditor.h">
+    </ClInclude>
+    <ClInclude Include="tools\decl\DialogDeclEditor.h">
       <Filter>Tools\Decl</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclNew.h">
+    </ClInclude>
+    <ClInclude Include="tools\decl\DialogDeclNew.h">
       <Filter>Tools\Decl</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEApp.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEApp.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEDeleteModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEDeleteModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEHideModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEHideModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEInsertModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEInsertModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEItemPropsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEItemPropsDlg.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEItemScriptsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEItemScriptsDlg.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEKeyValueModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEKeyValueModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifierGroup.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEModifierGroup.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifierStack.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEModifierStack.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEMoveModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEMoveModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GENavigator.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GENavigator.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEOptions.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEOptions.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEOptionsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEOptionsDlg.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEProperties.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEProperties.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEPropertyPage.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEPropertyPage.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GESelectionMgr.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GESelectionMgr.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GESizeModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GESizeModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEStateModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEStateModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEStatusBar.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEStatusBar.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GETransformer.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GETransformer.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEViewer.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEViewer.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEWindowWrapper.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEWindowWrapper.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEWorkspace.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEWorkspace.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEZOrderModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\guied\GEZOrderModifier.h">
       <Filter>Tools\GuiEd</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\sound\DialogSound.h">
+    </ClInclude>
+    <ClInclude Include="tools\sound\DialogSound.h">
       <Filter>Tools\Sound</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\sound\DialogSoundGroup.h">
+    </ClInclude>
+    <ClInclude Include="tools\sound\DialogSoundGroup.h">
       <Filter>Tools\Sound</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\ConsoleView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\ConsoleView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\FindDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\FindDialog.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDef.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialDef.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDoc.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialDoc.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDocManager.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialDocManager.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialEditor.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialEditor.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialEditView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialEditView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialModifier.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialModifier.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPreviewPropView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialPreviewPropView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPreviewView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialPreviewView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPropTreeView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialPropTreeView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialTreeView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialTreeView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MaterialView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MEMainFrame.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MEMainFrame.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MEOptions.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\MEOptions.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\StageView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\StageView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\ToggleListView.h">
+    </ClInclude>
+    <ClInclude Include="tools\materialeditor\ToggleListView.h">
       <Filter>Tools\MaterialEditor</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\particle\DialogParticleEditor.h">
+    </ClInclude>
+    <ClInclude Include="tools\particle\DialogParticleEditor.h">
       <Filter>Tools\Particle</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\autocaulk.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\autocaulk.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CameraTargetDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CameraTargetDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CamWnd.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CamWnd.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CapDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CapDialog.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\cmdlib.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\cmdlib.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CommandsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CommandsDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CommentsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CommentsDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ConsoleDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\ConsoleDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CurveDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\CurveDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogInfo.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\DialogInfo.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogTextures.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\DialogTextures.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogThick.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\DialogThick.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DlgCamera.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\DlgCamera.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DlgEvent.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\DlgEvent.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorBrush.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EditorBrush.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorEntity.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EditorEntity.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorMap.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EditorMap.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditViewDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EditViewDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntityDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EntityDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntityListDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EntityListDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntKeyFindReplace.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\EntKeyFindReplace.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\FindTextureDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\FindTextureDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\GetString.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\GetString.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\GLWidget.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\GLWidget.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\InspectorDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\InspectorDialog.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\LightDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\LightDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MainFrm.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\MainFrm.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MapInfo.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\MapInfo.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MediaPreviewDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\MediaPreviewDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MRU.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\MRU.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\NewProjDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\NewProjDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\NewTexWnd.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\NewTexWnd.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PARSE.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PARSE.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PatchDensityDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PatchDensityDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PatchDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PatchDialog.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PMESH.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PMESH.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PrefsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PrefsDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PreviewDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PreviewDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PropertyList.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\PropertyList.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QE3.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\QE3.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QEDEFS.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\QEDEFS.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QERTYPES.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\QERTYPES.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Radiant.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\Radiant.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\RotateDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\RotateDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ScaleDialog.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\ScaleDialog.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\SELECT.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\SELECT.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\splines.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\splines.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\SurfaceDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\SurfaceDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TabsDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\TabsDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TearoffContainerWindow.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\TearoffContainerWindow.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TextureBar.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\TextureBar.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Textures.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\Textures.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Undo.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\Undo.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\WaitDlg.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\WaitDlg.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\WaveOpen.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\WaveOpen.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\XYWnd.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\XYWnd.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Z.H">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\Z.H">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ZClip.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\ZClip.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ZWnd.h">
+    </ClInclude>
+    <ClInclude Include="tools\radiant\ZWnd.h">
       <Filter>Tools\Radiant</Filter>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\script\DialogScriptEditor.h">
+    </ClInclude>
+    <ClInclude Include="tools\script\DialogScriptEditor.h">
       <Filter>Tools\Script</Filter>
-    </CustomBuildStep>
+    </ClInclude>
   </ItemGroup>
 </Project>

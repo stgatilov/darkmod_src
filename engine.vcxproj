@@ -675,101 +675,57 @@
     <ClInclude Include="sys\win32\rc\AFEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\Common_resource.h" />
     <ClInclude Include="sys\win32\rc\CreateResourceIDs.h" />
-    <ClInclude Include="sys\win32\rc\Debugger_resource.h" />
     <ClInclude Include="sys\win32\rc\DeclEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\doom_resource.h" />
     <ClInclude Include="sys\win32\rc\GuiEd_resource.h" />
     <ClInclude Include="sys\win32\rc\MaterialEditor_Resource.h" />
     <ClInclude Include="sys\win32\rc\ParticleEditor_resource.h" />
-    <ClInclude Include="sys\win32\rc\PDAEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\PropTree_resource.h" />
     <ClInclude Include="sys\win32\rc\Radiant_resource.h" />
     <ClInclude Include="sys\win32\rc\ScriptEditor_resource.h" />
     <ClInclude Include="sys\win32\rc\SoundEditor_resource.h" />
-    <CustomBuildStep Include="tools\edit_public.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAF.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFBody.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraint.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintBallAndSocket.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintFixed.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintHinge.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintSlider.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintSpring.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFConstraintUniversal.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFName.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFProperties.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\af\DialogAFView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CDIB.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CPathTreeCtrl.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\CSyntaxRichEditCtrl.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogColorPicker.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogGoToLine.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\DialogName.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\StdAfx.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\comafx\VectorCtl.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\ColorButton.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\DialogHelpers.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\MaskEdit.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\OpenFileDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropertyGrid.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\RegistryOptions.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\RollupPanel.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\SpinButton.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTree.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeInfo.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItem.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemButton.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemCheck.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemColor.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemCombo.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemEdit.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemEditButton.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemFileEdit.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeItemStatic.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeList.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\common\PropTree\PropTreeView.h">
-    </CustomBuildStep>
+    <ClInclude Include="tools\edit_public.h" />
+    <ClInclude Include="tools\af\DialogAF.h" />
+    <ClInclude Include="tools\af\DialogAFBody.h" />
+    <ClInclude Include="tools\af\DialogAFConstraint.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintBallAndSocket.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintFixed.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintHinge.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintSlider.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintSpring.h" />
+    <ClInclude Include="tools\af\DialogAFConstraintUniversal.h" />
+    <ClInclude Include="tools\af\DialogAFName.h" />
+    <ClInclude Include="tools\af\DialogAFProperties.h" />
+    <ClInclude Include="tools\af\DialogAFView.h" />
+    <ClInclude Include="tools\comafx\CDIB.h" />
+    <ClInclude Include="tools\comafx\CPathTreeCtrl.h" />
+    <ClInclude Include="tools\comafx\CSyntaxRichEditCtrl.h" />
+    <ClInclude Include="tools\comafx\DialogColorPicker.h" />
+    <ClInclude Include="tools\comafx\DialogGoToLine.h" />
+    <ClInclude Include="tools\comafx\DialogName.h" />
+    <ClInclude Include="tools\comafx\StdAfx.h" />
+    <ClInclude Include="tools\comafx\VectorCtl.h" />
+    <ClInclude Include="tools\common\ColorButton.h" />
+    <ClInclude Include="tools\common\DialogHelpers.h" />
+    <ClInclude Include="tools\common\MaskEdit.h" />
+    <ClInclude Include="tools\common\OpenFileDialog.h" />
+    <ClInclude Include="tools\common\PropertyGrid.h" />
+    <ClInclude Include="tools\common\RegistryOptions.h" />
+    <ClInclude Include="tools\common\RollupPanel.h" />
+    <ClInclude Include="tools\common\SpinButton.h" />
+    <ClInclude Include="tools\common\PropTree\PropTree.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeInfo.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItem.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemButton.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemCheck.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemColor.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemCombo.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemEdit.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemEditButton.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemFileEdit.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeItemStatic.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeList.h" />
+    <ClInclude Include="tools\common\PropTree\PropTreeView.h" />
     <ClInclude Include="tools\compilers\compiler_public.h" />
     <ClInclude Include="tools\compilers\aas\AASBuild_local.h" />
     <ClInclude Include="tools\compilers\aas\AASCluster.h" />
@@ -785,296 +741,114 @@
     <ClInclude Include="tools\compilers\roqvq\quaddefs.h" />
     <ClInclude Include="tools\compilers\roqvq\roq.h" />
     <ClInclude Include="tools\compilers\roqvq\roqParam.h" />
-    <CustomBuildStep Include="tools\debugger\DebuggerApp.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerBreakpoint.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerClient.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerFindDlg.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerMessages.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerQuickWatchDlg.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerScript.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerServer.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\debugger\DebuggerWindow.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclBrowser.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclEditor.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\decl\DialogDeclNew.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEApp.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEDeleteModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEHideModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEInsertModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEItemPropsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEItemScriptsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEKeyValueModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifierGroup.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEModifierStack.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEMoveModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GENavigator.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEOptions.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEOptionsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEProperties.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEPropertyPage.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GESelectionMgr.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GESizeModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEStateModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEStatusBar.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GETransformer.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEViewer.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEWindowWrapper.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEWorkspace.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\guied\GEZOrderModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\sound\DialogSound.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\sound\DialogSoundGroup.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\ConsoleView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\FindDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDef.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDoc.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialDocManager.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialEditor.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialEditView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialModifier.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPreviewPropView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPreviewView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialPropTreeView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialTreeView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MaterialView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MEMainFrame.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\MEOptions.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\StageView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\materialeditor\ToggleListView.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\particle\DialogParticleEditor.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\pda\DialogPDAEditor.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\autocaulk.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CameraTargetDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CamWnd.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CapDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\cmdlib.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CommandsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CommentsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ConsoleDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\CurveDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogInfo.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogTextures.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DialogThick.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DlgCamera.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\DlgEvent.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorBrush.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorEntity.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditorMap.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EditViewDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntityDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntityListDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\EntKeyFindReplace.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\FindTextureDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\GetString.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\GLWidget.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\InspectorDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\LightDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MainFrm.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MapInfo.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MediaPreviewDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\MRU.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\NewProjDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\NewTexWnd.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PARSE.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PatchDensityDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PatchDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PMESH.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PrefsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PreviewDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\PropertyList.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QE3.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QEDEFS.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\QERTYPES.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Radiant.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\RotateDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ScaleDialog.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\SELECT.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\splines.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\SurfaceDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TabsDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TearoffContainerWindow.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\TextureBar.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Textures.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Undo.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\WaitDlg.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\WaveOpen.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\XYWnd.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\Z.H">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ZClip.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\radiant\ZWnd.h">
-    </CustomBuildStep>
-    <CustomBuildStep Include="tools\script\DialogScriptEditor.h">
-    </CustomBuildStep>
+    <ClInclude Include="tools\decl\DialogDeclBrowser.h" />
+    <ClInclude Include="tools\decl\DialogDeclEditor.h" />
+    <ClInclude Include="tools\decl\DialogDeclNew.h" />
+    <ClInclude Include="tools\guied\GEApp.h" />
+    <ClInclude Include="tools\guied\GEDeleteModifier.h" />
+    <ClInclude Include="tools\guied\GEHideModifier.h" />
+    <ClInclude Include="tools\guied\GEInsertModifier.h" />
+    <ClInclude Include="tools\guied\GEItemPropsDlg.h" />
+    <ClInclude Include="tools\guied\GEItemScriptsDlg.h" />
+    <ClInclude Include="tools\guied\GEKeyValueModifier.h" />
+    <ClInclude Include="tools\guied\GEModifier.h" />
+    <ClInclude Include="tools\guied\GEModifierGroup.h" />
+    <ClInclude Include="tools\guied\GEModifierStack.h" />
+    <ClInclude Include="tools\guied\GEMoveModifier.h" />
+    <ClInclude Include="tools\guied\GENavigator.h" />
+    <ClInclude Include="tools\guied\GEOptions.h" />
+    <ClInclude Include="tools\guied\GEOptionsDlg.h" />
+    <ClInclude Include="tools\guied\GEProperties.h" />
+    <ClInclude Include="tools\guied\GEPropertyPage.h" />
+    <ClInclude Include="tools\guied\GESelectionMgr.h" />
+    <ClInclude Include="tools\guied\GESizeModifier.h" />
+    <ClInclude Include="tools\guied\GEStateModifier.h" />
+    <ClInclude Include="tools\guied\GEStatusBar.h" />
+    <ClInclude Include="tools\guied\GETransformer.h" />
+    <ClInclude Include="tools\guied\GEViewer.h" />
+    <ClInclude Include="tools\guied\GEWindowWrapper.h" />
+    <ClInclude Include="tools\guied\GEWorkspace.h" />
+    <ClInclude Include="tools\guied\GEZOrderModifier.h" />
+    <ClInclude Include="tools\sound\DialogSound.h" />
+    <ClInclude Include="tools\sound\DialogSoundGroup.h" />
+    <ClInclude Include="tools\materialeditor\ConsoleView.h" />
+    <ClInclude Include="tools\materialeditor\FindDialog.h" />
+    <ClInclude Include="tools\materialeditor\MaterialDef.h" />
+    <ClInclude Include="tools\materialeditor\MaterialDoc.h" />
+    <ClInclude Include="tools\materialeditor\MaterialDocManager.h" />
+    <ClInclude Include="tools\materialeditor\MaterialEditor.h" />
+    <ClInclude Include="tools\materialeditor\MaterialEditView.h" />
+    <ClInclude Include="tools\materialeditor\MaterialModifier.h" />
+    <ClInclude Include="tools\materialeditor\MaterialPreviewPropView.h" />
+    <ClInclude Include="tools\materialeditor\MaterialPreviewView.h" />
+    <ClInclude Include="tools\materialeditor\MaterialPropTreeView.h" />
+    <ClInclude Include="tools\materialeditor\MaterialTreeView.h" />
+    <ClInclude Include="tools\materialeditor\MaterialView.h" />
+    <ClInclude Include="tools\materialeditor\MEMainFrame.h" />
+    <ClInclude Include="tools\materialeditor\MEOptions.h" />
+    <ClInclude Include="tools\materialeditor\StageView.h" />
+    <ClInclude Include="tools\materialeditor\ToggleListView.h" />
+    <ClInclude Include="tools\particle\DialogParticleEditor.h" />
+    <ClInclude Include="tools\radiant\autocaulk.h" />
+    <ClInclude Include="tools\radiant\CameraTargetDlg.h" />
+    <ClInclude Include="tools\radiant\CamWnd.h" />
+    <ClInclude Include="tools\radiant\CapDialog.h" />
+    <ClInclude Include="tools\radiant\cmdlib.h" />
+    <ClInclude Include="tools\radiant\CommandsDlg.h" />
+    <ClInclude Include="tools\radiant\CommentsDlg.h" />
+    <ClInclude Include="tools\radiant\ConsoleDlg.h" />
+    <ClInclude Include="tools\radiant\CurveDlg.h" />
+    <ClInclude Include="tools\radiant\DialogInfo.h" />
+    <ClInclude Include="tools\radiant\DialogTextures.h" />
+    <ClInclude Include="tools\radiant\DialogThick.h" />
+    <ClInclude Include="tools\radiant\DlgCamera.h" />
+    <ClInclude Include="tools\radiant\DlgEvent.h" />
+    <ClInclude Include="tools\radiant\EditorBrush.h" />
+    <ClInclude Include="tools\radiant\EditorEntity.h" />
+    <ClInclude Include="tools\radiant\EditorMap.h" />
+    <ClInclude Include="tools\radiant\EditViewDlg.h" />
+    <ClInclude Include="tools\radiant\EntityDlg.h" />
+    <ClInclude Include="tools\radiant\EntityListDlg.h" />
+    <ClInclude Include="tools\radiant\EntKeyFindReplace.h" />
+    <ClInclude Include="tools\radiant\FindTextureDlg.h" />
+    <ClInclude Include="tools\radiant\GetString.h" />
+    <ClInclude Include="tools\radiant\GLWidget.h" />
+    <ClInclude Include="tools\radiant\InspectorDialog.h" />
+    <ClInclude Include="tools\radiant\LightDlg.h" />
+    <ClInclude Include="tools\radiant\MainFrm.h" />
+    <ClInclude Include="tools\radiant\MapInfo.h" />
+    <ClInclude Include="tools\radiant\MediaPreviewDlg.h" />
+    <ClInclude Include="tools\radiant\MRU.H" />
+    <ClInclude Include="tools\radiant\NewProjDlg.h" />
+    <ClInclude Include="tools\radiant\NewTexWnd.h" />
+    <ClInclude Include="tools\radiant\PARSE.H" />
+    <ClInclude Include="tools\radiant\PatchDensityDlg.h" />
+    <ClInclude Include="tools\radiant\PatchDialog.h" />
+    <ClInclude Include="tools\radiant\PMESH.H" />
+    <ClInclude Include="tools\radiant\PrefsDlg.h" />
+    <ClInclude Include="tools\radiant\PreviewDlg.h" />
+    <ClInclude Include="tools\radiant\PropertyList.h" />
+    <ClInclude Include="tools\radiant\QE3.H" />
+    <ClInclude Include="tools\radiant\QEDEFS.H" />
+    <ClInclude Include="tools\radiant\QERTYPES.H" />
+    <ClInclude Include="tools\radiant\Radiant.h" />
+    <ClInclude Include="tools\radiant\RotateDlg.h" />
+    <ClInclude Include="tools\radiant\ScaleDialog.h" />
+    <ClInclude Include="tools\radiant\SELECT.H" />
+    <ClInclude Include="tools\radiant\splines.h" />
+    <ClInclude Include="tools\radiant\SurfaceDlg.h" />
+    <ClInclude Include="tools\radiant\TabsDlg.h" />
+    <ClInclude Include="tools\radiant\TearoffContainerWindow.h" />
+    <ClInclude Include="tools\radiant\TextureBar.h" />
+    <ClInclude Include="tools\radiant\Textures.h" />
+    <ClInclude Include="tools\radiant\Undo.h" />
+    <ClInclude Include="tools\radiant\WaitDlg.h" />
+    <ClInclude Include="tools\radiant\WaveOpen.h" />
+    <ClInclude Include="tools\radiant\XYWnd.h" />
+    <ClInclude Include="tools\radiant\Z.H" />
+    <ClInclude Include="tools\radiant\ZClip.h" />
+    <ClInclude Include="tools\radiant\ZWnd.h" />
+    <ClInclude Include="tools\script\DialogScriptEditor.h" />
     <ClInclude Include="ui\BindWindow.h" />
     <ClInclude Include="ui\ChoiceWindow.h" />
     <ClInclude Include="ui\DeviceContext.h" />
@@ -1488,88 +1262,47 @@
     <ClCompile Include="sys\win32\win_syscon.cpp" />
     <ClCompile Include="sys\win32\win_wndproc.cpp" />
     <ClCompile Include="sys\win32\rc\CreateResourceIDs.cpp" />
-    <ClCompile Include="tools\af\DialogAF.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFBody.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraint.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintBallAndSocket.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintFixed.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintHinge.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintSlider.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintSpring.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFConstraintUniversal.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFName.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFProperties.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\af\DialogAFView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\CDIB.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\CPathTreeCtrl.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\CSyntaxRichEditCtrl.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\DialogColorPicker.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\DialogGoToLine.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\DialogName.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\StdAfx.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\comafx\VectorCtl.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\AlphaPopup.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\ColorButton.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\MaskEdit.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\OpenFileDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropertyGrid.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\RegistryOptions.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\RollupPanel.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\SpinButton.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTree.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeInfo.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItem.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemButton.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemCheck.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemColor.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemCombo.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemEdit.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemEditButton.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemFileEdit.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeItemStatic.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeList.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\common\PropTree\PropTreeView.cpp">
-    </ClCompile>
+    <ClCompile Include="tools\af\DialogAF.cpp" />
+    <ClCompile Include="tools\af\DialogAFBody.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraint.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintBallAndSocket.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintFixed.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintHinge.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintSlider.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintSpring.cpp" />
+    <ClCompile Include="tools\af\DialogAFConstraintUniversal.cpp" />
+    <ClCompile Include="tools\af\DialogAFName.cpp" />
+    <ClCompile Include="tools\af\DialogAFProperties.cpp" />
+    <ClCompile Include="tools\af\DialogAFView.cpp" />
+    <ClCompile Include="tools\comafx\CDIB.cpp" />
+    <ClCompile Include="tools\comafx\CPathTreeCtrl.cpp" />
+    <ClCompile Include="tools\comafx\CSyntaxRichEditCtrl.cpp" />
+    <ClCompile Include="tools\comafx\DialogColorPicker.cpp" />
+    <ClCompile Include="tools\comafx\DialogGoToLine.cpp" />
+    <ClCompile Include="tools\comafx\DialogName.cpp" />
+    <ClCompile Include="tools\comafx\StdAfx.cpp" />
+    <ClCompile Include="tools\comafx\VectorCtl.cpp" />
+    <ClCompile Include="tools\common\AlphaPopup.cpp" />
+    <ClCompile Include="tools\common\ColorButton.cpp" />
+    <ClCompile Include="tools\common\MaskEdit.cpp" />
+    <ClCompile Include="tools\common\OpenFileDialog.cpp" />
+    <ClCompile Include="tools\common\PropertyGrid.cpp" />
+    <ClCompile Include="tools\common\RegistryOptions.cpp" />
+    <ClCompile Include="tools\common\RollupPanel.cpp" />
+    <ClCompile Include="tools\common\SpinButton.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTree.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeInfo.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItem.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemButton.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemCheck.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemColor.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemCombo.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemEdit.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemEditButton.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemFileEdit.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeItemStatic.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeList.cpp" />
+    <ClCompile Include="tools\common\PropTree\PropTreeView.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_file.cpp" />
     <ClCompile Include="tools\compilers\aas\AASBuild_gravity.cpp" />
@@ -1603,238 +1336,122 @@
     <ClCompile Include="tools\compilers\roqvq\NSBitmapImageRep.cpp" />
     <ClCompile Include="tools\compilers\roqvq\roq.cpp" />
     <ClCompile Include="tools\compilers\roqvq\roqParam.cpp" />
-    <ClCompile Include="tools\decl\DialogDeclBrowser.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\decl\DialogDeclEditor.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\decl\DialogDeclNew.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEApp.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GECheckInDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEDeleteModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEHideModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEInsertModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEItemPropsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEItemScriptsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEKeyValueModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEModifierGroup.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEModifierStack.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEMoveModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GENavigator.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEOptions.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEOptionsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEProperties.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEPropertyPage.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GESelectionMgr.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GESizeModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEStateModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEStatusBar.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GETransformer.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEViewer.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEWindowWrapper.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEWorkspace.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEWorkspaceFile.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\GEZOrderModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\guied\guied.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\sound\DialogSound.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\sound\DialogSoundGroup.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\ConsoleView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\FindDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialDef.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialDoc.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialDocManager.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialEditor.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialEditView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialModifier.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialPreviewPropView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialPreviewView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialPropTreeView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialTreeView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MaterialView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MEMainFrame.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\MEOptions.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\StageView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\materialeditor\ToggleListView.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\particle\DialogParticleEditor.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\autocaulk.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CameraTargetDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CamWnd.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CapDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\cmdlib.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CommandsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CommentsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\ConsoleDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CSG.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\CurveDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DialogInfo.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DialogTextures.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DialogThick.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DlgCamera.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DlgEvent.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\DRAG.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\ECLASS.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EditorBrush.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EditorBrushPrimit.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EditorEntity.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EditorMap.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EditViewDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EntityDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EntityListDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\EntKeyFindReplace.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\FindTextureDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\GetString.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\GLWidget.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\InspectorDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\LightDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\MainFrm.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\MapInfo.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\MediaPreviewDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\MRU.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\NewProjDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\NewTexWnd.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PARSE.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PatchDensityDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PatchDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PMESH.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PointFile.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PrefsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PreviewDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\PropertyList.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\QE3.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\Radiant.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\RotateDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\ScaleDialog.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\SELECT.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\splines.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\SurfaceDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\TabsDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\TearoffContainerWindow.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\TextureBar.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\Undo.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\VERTSEL.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\WaitDlg.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\WaveOpen.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\WIN_DLG.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\WIN_QE3.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\XYWnd.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\Z.CPP">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\ZClip.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\radiant\ZWnd.cpp">
-    </ClCompile>
-    <ClCompile Include="tools\script\DialogScriptEditor.cpp">
-    </ClCompile>
+    <ClCompile Include="tools\decl\DialogDeclBrowser.cpp" />
+    <ClCompile Include="tools\decl\DialogDeclEditor.cpp" />
+    <ClCompile Include="tools\decl\DialogDeclNew.cpp" />
+    <ClCompile Include="tools\guied\GEApp.cpp" />
+    <ClCompile Include="tools\guied\GECheckInDlg.cpp" />
+    <ClCompile Include="tools\guied\GEDeleteModifier.cpp" />
+    <ClCompile Include="tools\guied\GEHideModifier.cpp" />
+    <ClCompile Include="tools\guied\GEInsertModifier.cpp" />
+    <ClCompile Include="tools\guied\GEItemPropsDlg.cpp" />
+    <ClCompile Include="tools\guied\GEItemScriptsDlg.cpp" />
+    <ClCompile Include="tools\guied\GEKeyValueModifier.cpp" />
+    <ClCompile Include="tools\guied\GEModifier.cpp" />
+    <ClCompile Include="tools\guied\GEModifierGroup.cpp" />
+    <ClCompile Include="tools\guied\GEModifierStack.cpp" />
+    <ClCompile Include="tools\guied\GEMoveModifier.cpp" />
+    <ClCompile Include="tools\guied\GENavigator.cpp" />
+    <ClCompile Include="tools\guied\GEOptions.cpp" />
+    <ClCompile Include="tools\guied\GEOptionsDlg.cpp" />
+    <ClCompile Include="tools\guied\GEProperties.cpp" />
+    <ClCompile Include="tools\guied\GEPropertyPage.cpp" />
+    <ClCompile Include="tools\guied\GESelectionMgr.cpp" />
+    <ClCompile Include="tools\guied\GESizeModifier.cpp" />
+    <ClCompile Include="tools\guied\GEStateModifier.cpp" />
+    <ClCompile Include="tools\guied\GEStatusBar.cpp" />
+    <ClCompile Include="tools\guied\GETransformer.cpp" />
+    <ClCompile Include="tools\guied\GEViewer.cpp" />
+    <ClCompile Include="tools\guied\GEWindowWrapper.cpp" />
+    <ClCompile Include="tools\guied\GEWorkspace.cpp" />
+    <ClCompile Include="tools\guied\GEWorkspaceFile.cpp" />
+    <ClCompile Include="tools\guied\GEZOrderModifier.cpp" />
+    <ClCompile Include="tools\guied\guied.cpp" />
+    <ClCompile Include="tools\sound\DialogSound.cpp" />
+    <ClCompile Include="tools\sound\DialogSoundGroup.cpp" />
+    <ClCompile Include="tools\materialeditor\ConsoleView.cpp" />
+    <ClCompile Include="tools\materialeditor\FindDialog.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialDef.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialDoc.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialDocManager.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialEditor.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialEditView.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialModifier.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialPreviewPropView.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialPreviewView.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialPropTreeView.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialTreeView.cpp" />
+    <ClCompile Include="tools\materialeditor\MaterialView.cpp" />
+    <ClCompile Include="tools\materialeditor\MEMainFrame.cpp" />
+    <ClCompile Include="tools\materialeditor\MEOptions.cpp" />
+    <ClCompile Include="tools\materialeditor\StageView.cpp" />
+    <ClCompile Include="tools\materialeditor\ToggleListView.cpp" />
+    <ClCompile Include="tools\particle\DialogParticleEditor.cpp" />
+    <ClCompile Include="tools\radiant\autocaulk.cpp" />
+    <ClCompile Include="tools\radiant\CameraTargetDlg.cpp" />
+    <ClCompile Include="tools\radiant\CamWnd.cpp" />
+    <ClCompile Include="tools\radiant\CapDialog.cpp" />
+    <ClCompile Include="tools\radiant\cmdlib.cpp" />
+    <ClCompile Include="tools\radiant\CommandsDlg.cpp" />
+    <ClCompile Include="tools\radiant\CommentsDlg.cpp" />
+    <ClCompile Include="tools\radiant\ConsoleDlg.cpp" />
+    <ClCompile Include="tools\radiant\CSG.CPP" />
+    <ClCompile Include="tools\radiant\CurveDlg.cpp" />
+    <ClCompile Include="tools\radiant\DialogInfo.cpp" />
+    <ClCompile Include="tools\radiant\DialogTextures.cpp" />
+    <ClCompile Include="tools\radiant\DialogThick.cpp" />
+    <ClCompile Include="tools\radiant\DlgCamera.cpp" />
+    <ClCompile Include="tools\radiant\DlgEvent.cpp" />
+    <ClCompile Include="tools\radiant\DRAG.CPP" />
+    <ClCompile Include="tools\radiant\ECLASS.CPP" />
+    <ClCompile Include="tools\radiant\EditorBrush.cpp" />
+    <ClCompile Include="tools\radiant\EditorBrushPrimit.cpp" />
+    <ClCompile Include="tools\radiant\EditorEntity.cpp" />
+    <ClCompile Include="tools\radiant\EditorMap.cpp" />
+    <ClCompile Include="tools\radiant\EditViewDlg.cpp" />
+    <ClCompile Include="tools\radiant\EntityDlg.cpp" />
+    <ClCompile Include="tools\radiant\EntityListDlg.cpp" />
+    <ClCompile Include="tools\radiant\EntKeyFindReplace.cpp" />
+    <ClCompile Include="tools\radiant\FindTextureDlg.cpp" />
+    <ClCompile Include="tools\radiant\GetString.cpp" />
+    <ClCompile Include="tools\radiant\GLWidget.cpp" />
+    <ClCompile Include="tools\radiant\InspectorDialog.cpp" />
+    <ClCompile Include="tools\radiant\LightDlg.cpp" />
+    <ClCompile Include="tools\radiant\MainFrm.cpp" />
+    <ClCompile Include="tools\radiant\MapInfo.cpp" />
+    <ClCompile Include="tools\radiant\MediaPreviewDlg.cpp" />
+    <ClCompile Include="tools\radiant\MRU.CPP" />
+    <ClCompile Include="tools\radiant\NewProjDlg.cpp" />
+    <ClCompile Include="tools\radiant\NewTexWnd.cpp" />
+    <ClCompile Include="tools\radiant\PARSE.CPP" />
+    <ClCompile Include="tools\radiant\PatchDensityDlg.cpp" />
+    <ClCompile Include="tools\radiant\PatchDialog.cpp" />
+    <ClCompile Include="tools\radiant\PMESH.CPP" />
+    <ClCompile Include="tools\radiant\PointFile.cpp" />
+    <ClCompile Include="tools\radiant\PrefsDlg.cpp" />
+    <ClCompile Include="tools\radiant\PreviewDlg.cpp" />
+    <ClCompile Include="tools\radiant\PropertyList.cpp" />
+    <ClCompile Include="tools\radiant\QE3.CPP" />
+    <ClCompile Include="tools\radiant\Radiant.cpp" />
+    <ClCompile Include="tools\radiant\RotateDlg.cpp" />
+    <ClCompile Include="tools\radiant\ScaleDialog.cpp" />
+    <ClCompile Include="tools\radiant\SELECT.CPP" />
+    <ClCompile Include="tools\radiant\splines.cpp" />
+    <ClCompile Include="tools\radiant\SurfaceDlg.cpp" />
+    <ClCompile Include="tools\radiant\TabsDlg.cpp" />
+    <ClCompile Include="tools\radiant\TearoffContainerWindow.cpp" />
+    <ClCompile Include="tools\radiant\TextureBar.cpp" />
+    <ClCompile Include="tools\radiant\Undo.cpp" />
+    <ClCompile Include="tools\radiant\VERTSEL.CPP" />
+    <ClCompile Include="tools\radiant\WaitDlg.cpp" />
+    <ClCompile Include="tools\radiant\WaveOpen.cpp" />
+    <ClCompile Include="tools\radiant\WIN_DLG.CPP" />
+    <ClCompile Include="tools\radiant\WIN_QE3.CPP" />
+    <ClCompile Include="tools\radiant\XYWnd.cpp" />
+    <ClCompile Include="tools\radiant\Z.CPP" />
+    <ClCompile Include="tools\radiant\ZClip.cpp" />
+    <ClCompile Include="tools\radiant\ZWnd.cpp" />
+    <ClCompile Include="tools\script\DialogScriptEditor.cpp" />
     <ClCompile Include="ui\BindWindow.cpp" />
     <ClCompile Include="ui\ChoiceWindow.cpp" />
     <ClCompile Include="ui\DeviceContext.cpp" />
@@ -1941,16 +1558,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\Debugger.rc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ResourceCompile>
     <ResourceCompile Include="sys\win32\rc\DeclEditor.rc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
@@ -1983,16 +1590,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ResourceCompile>
     <ResourceCompile Include="sys\win32\rc\ParticleEditor.rc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ResourceCompile>
-    <ResourceCompile Include="sys\win32\rc\PDAEditor.rc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
