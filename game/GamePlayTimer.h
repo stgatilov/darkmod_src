@@ -18,7 +18,6 @@
 
 //#include "precompiled.h"
 #include <ctime>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
 /**
  * greebo: This class keeps track of the total gameplay time. Just call Update()
@@ -35,20 +34,19 @@ private:
 	std::time_t _curTime;
 
 	// msec timer stuff
-	int _lastMsec;
-	int _curMsec;
+	uint64_t _lastMsec;
+	uint64_t _curMsec;
 	int _lastTick;
 
 	// The passed time in seconds
-	unsigned int _timePassed;
-	unsigned int _msecPassed;
+	uint32_t _timePassed;
+	uint32_t _msecPassed;
 
 	// TRUE if the timer updates the passed time
 	bool _enabled;
 
-	void msec(int *msec) {
-		boost::posix_time::ptime time = boost::posix_time::microsec_clock::local_time();
-		*msec = time.time_of_day().total_milliseconds();
+	void msec(uint64_t *msec) {
+		*msec = Sys_GetTimeMicroseconds() / 1000;
 	}
 
 public:
@@ -109,7 +107,8 @@ public:
 
 		_lastMsec = _curMsec;
 		msec(&_curMsec);
-		_msecPassed += _lastTick = _curMsec - _lastMsec;
+		assert(_curMsec >= _lastMsec);
+		_msecPassed += _lastTick = uint32_t(_curMsec - _lastMsec);
 	}
 
 	idStr GetTime() const {
@@ -117,13 +116,13 @@ public:
 	}
 
 	// Returns the gameplay time in seconds
-	unsigned int GetTimeInSeconds() const
+	uint32_t GetTimeInSeconds() const
 	{
 		return _timePassed;
 	}
 
 	// Returns diff between last two updates in milliseconds, capped to avoid physics glitches
-	unsigned int LastTickCapped() const
+	uint32_t LastTickCapped() const
 	{
 		if (_lastTick < 0)
 			return 0;

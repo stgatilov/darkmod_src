@@ -298,6 +298,11 @@ int				Sys_Milliseconds( void );
 double			Sys_GetClockTicks( void );
 double			Sys_ClockTicksPerSecond( void );
 
+// timing equivalent to boost::posix_time::microsec_clock
+// returns number of microseconds passed after 1970-Jan-01
+// uses GetSystemTimeAsFileTime on Windows and gettimeofday on other platforms
+uint64_t Sys_GetTimeMicroseconds( void );
+
 // returns a selection of the CPUID_* flags
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
@@ -553,9 +558,9 @@ public:
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;
 
-    virtual uintptr_t		DLL_Load(const char *dllName) = 0;
-    virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) = 0;
-    virtual void			DLL_Unload(uintptr_t dllHandle) = 0;
+	virtual uintptr_t		DLL_Load(const char *dllName) = 0;
+	virtual void *			DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) = 0;
+	virtual void			DLL_Unload(uintptr_t dllHandle) = 0;
 	virtual void			DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) = 0;
 
 	virtual sysEvent_t		GenerateMouseButtonEvent( int button, bool down ) = 0;

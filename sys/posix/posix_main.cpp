@@ -169,6 +169,15 @@ int Sys_Milliseconds( void ) {
 	return curtime;
 }
 
+uint64_t Sys_GetTimeMicroseconds( void ) {
+	struct timeval tp;
+	//returns time since the Epoch (1970-01-01)
+	gettimeofday(&tp, NULL);
+
+	uint64_t curtime = (tp.tv_sec) * 1000000LL + tp.tv_usec;
+	return curtime;
+}
+
 /*
 ================
 Sys_Mkdir
