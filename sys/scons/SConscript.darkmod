@@ -77,6 +77,7 @@ local_env.Append( LIBPATH = [ '/usr/lib/i386-linux-gnu' ] )
 local_env.Append( LIBS = [ 'openal' ] )
 local_env.Append( LIBS = [ 'dl' ] )
 local_env.Append( LIBS = [ 'pthread' ] )
+local_env.Append( LIBS = [ 'stdc++fs' ] )
 
 thedarkmod = local_env.Program( target = 'thedarkmod', source = source_list )
 Return( 'thedarkmod' )

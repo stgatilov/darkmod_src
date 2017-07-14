@@ -201,4 +201,9 @@
     </Expand>
   </Type>
 
+  <Type Name="stdext::path">
+    <DisplayString>{d._Myptr->_Mystr}</DisplayString>
+    <StringView>d._Myptr->_Mystr</StringView>
+  </Type>
+
 </AutoVisualizer>

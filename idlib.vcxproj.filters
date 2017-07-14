@@ -170,6 +170,7 @@
     <ClCompile Include="idlib\StdString.cpp">
       <Filter>Text</Filter>
     </ClCompile>
+    <ClCompile Include="idlib\StdFilesystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -377,5 +378,6 @@
     <ClInclude Include="idlib\StdString.h">
       <Filter>Text</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\StdFilesystem.h" />
   </ItemGroup>
 </Project>

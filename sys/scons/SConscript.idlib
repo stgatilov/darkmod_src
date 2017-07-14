@@ -60,6 +60,7 @@ idlib_string = ' \
 	RevisionTracker.cpp \
 	Str.cpp \
 	StdString.cpp \
+	StdFilesystem.cpp \
 	Timer.cpp'
 
 # greebo: Compile the token source with less aggressive optimisation, to resolve issue #3184
