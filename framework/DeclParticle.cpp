@@ -99,7 +99,7 @@ void idDeclParticle::GetStageBounds( idParticleStage *stage ) {
 
 		// SteveL #4218: Speed up load time for long-lived particles.
 		// Limit the sampling to 250 spread across the particle's lifetime.
-		const int step_milliseconds = (std::max)(maxMsec / 250, 16); // 16 was the original value, meaning test every frame
+		const int step_milliseconds = idMath::Imax(maxMsec / 250, 16); // 16 was the original value, meaning test every frame
 
 		for ( int inCycleTime = 0 ; inCycleTime < maxMsec ; inCycleTime += step_milliseconds )
 		{

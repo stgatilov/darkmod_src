@@ -25,6 +25,7 @@
 #define MATRIXSQ_H
 
 #include "DarkModGlobals.h"
+#include <algorithm>
 
 template <class Type>
 class CMatrixSq

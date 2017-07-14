@@ -80,7 +80,7 @@ public:
 	 * Load the image from the given file (absolute OS path) into memory 
 	 * and allow access to it. Any previous image is unloaded.
 	 */
-	bool LoadImageFromFile(const boost::filesystem::path& path);
+	bool LoadImageFromFile(const fs::path& path);
 	/**
 	 * Load the image from memory buffer into memory 
 	 * and allow access to it. Any previous image is unloaded.
@@ -92,7 +92,7 @@ public:
 	 * Saves the image to the given file (absolute OS path).
 	 * Existing target file will be overwritten without further confirmation.
 	 */
-	bool SaveImageToFile(const boost::filesystem::path& path, Format format = TGA) const;
+	bool SaveImageToFile(const fs::path& path, Format format = TGA) const;
 	/**
 	 * Saves the image to the given file (filename as in D3's filesystem).
 	 * Existing target file will be overwritten without further confirmation.

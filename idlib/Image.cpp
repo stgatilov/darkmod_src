@@ -276,7 +276,7 @@ bool Image::SaveImageToFile(const fs::path& path, Format format) const
 	}
 
 	//create directories if necessary
-	fs::create_directories(path.branch_path());
+	fs::create_directories(path.parent_path());
 	//write image file
 	return SaveDevILToFile(path.string().c_str(), format);
 }

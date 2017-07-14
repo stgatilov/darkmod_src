@@ -2395,7 +2395,7 @@ void CTarget_ItemRemove::Event_Activate(idEntity* activator)
 		if ( item && item->IsStackable() )
 		{
 			const int n = item->GetCount();
-			const int toRemove = stackableCount <= 0 ? n : (std::min)(n, stackableCount);
+			const int toRemove = stackableCount <= 0 ? n : idMath::Imin(n, stackableCount);
 			const char* classname = item->GetItemEntity()->spawnArgs.GetString("classname");
 			item->SetCount( n - toRemove );
 			if ( dropInWorld )
@@ -2416,7 +2416,7 @@ void CTarget_ItemRemove::Event_Activate(idEntity* activator)
 		if ( weap )
 		{
 			const int n = weap->GetAmmo();
-			const int toRemove = ammoCount <= 0 ? n : (std::min)(n, ammoCount);
+			const int toRemove = ammoCount <= 0 ? n : idMath::Imin(n, ammoCount);
 			const idStr classname = idStr("atdm:ammo_") + ammoType;
 			weap->SetAmmo( n - toRemove );
 			if ( dropInWorld )

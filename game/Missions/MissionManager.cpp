@@ -298,7 +298,7 @@ void CMissionManager::SearchForNewMods()
 		DoMoveFile(i->first, targetPath);
 		
 		// Remove the file portion
-		targetPath.remove_leaf();
+		targetPath.remove_filename();
 
 		// Remove any darkmod.txt, splashimage etc. when copying a new PK4. It may contain updated versions of those.
 		DoRemoveFile(targetPath / cv_tdm_fm_desc_file.GetString());
@@ -323,7 +323,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
     if (!fs::is_directory(fmPath)) 
     {
         DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmPath.string().c_str());
-        if (boost::filesystem::create_directory(fmPath)) 
+        if (fs::create_directory(fmPath)) 
         {
             gameLocal.Warning("FM root folder does not exist, but one was created.\rYou can download missions using the in-game mission downloader.\r");
         } 
@@ -373,7 +373,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 		}
 
 		// Deduce the mod folder name based on the PK4 name
-		idStr modName = pk4path.leaf().string().c_str();
+		idStr modName = pk4path.filename().string().c_str();
 		modName.StripPath();
 		modName.StripFileExtension();
 		modName.ToLower();
@@ -464,7 +464,7 @@ void CMissionManager::GenerateModList()
     if (!fs::is_directory(fmPath)) 
     {
         DM_LOG(LC_MAINMENU, LT_ERROR)LOGSTRING("FM root folder does not exist: %s\r", fmPath.string().c_str());
-        if (boost::filesystem::create_directory(fmPath)) 
+        if (fs::create_directory(fmPath)) 
         {
             gameLocal.Warning("FM root folder does not exist, but one was created.\rYou can download missions using the in-game mission downloader.\r");
         } 
