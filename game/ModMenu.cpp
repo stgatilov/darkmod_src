@@ -18,7 +18,6 @@
 static bool versioned = RegisterVersionedFile("$Id$");
 
 #include <string>
-#include <boost/filesystem.hpp>
 
 #include "ModMenu.h"
 #include "Shop/Shop.h"
@@ -38,7 +37,8 @@ CModMenu::CModMenu() :
 	_modTop(0)
 {}
 
-namespace fs = boost::filesystem;
+#include <StdFilesystem.h>
+namespace fs = stdext;
 
 // Handle mainmenu commands
 void CModMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)

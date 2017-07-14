@@ -20,9 +20,9 @@
 #include <map>
 #include <set>
 #include <istream>
-#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+#include <StdFilesystem.h>
+namespace fs = stdext;
 
 class IniFile;
 typedef std::shared_ptr<IniFile> IniFilePtr;

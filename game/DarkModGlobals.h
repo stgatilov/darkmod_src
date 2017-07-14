@@ -49,7 +49,6 @@ VersionCheckResult CompareVersion(int major, int minor, int toMajor, int toMinor
 Darkmod LAS
 */
 #include "darkModLAS.h"
-#include <boost/filesystem.hpp>
 
 class IniFile;
 typedef std::shared_ptr<IniFile> IniFilePtr;

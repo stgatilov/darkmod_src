@@ -17,7 +17,9 @@
 #define _MISSION_MANAGER_H_
 
 #include "ModInfo.h"
-#include <boost/filesystem.hpp>
+
+#include "StdFilesystem.h"
+namespace fs = stdext;
 
 // Shared_ptr typedef
 #include "../pugixml/pugixml.hpp"
@@ -25,8 +27,6 @@ typedef std::shared_ptr<pugi::xml_document> XmlDocumentPtr;
 
 class CMissionDB;
 typedef std::shared_ptr<CMissionDB> CMissionDBPtr;
-
-namespace fs = boost::filesystem;
 
 const char* const TMP_MISSION_SCREENSHOT_PREFIX = "previewshot_";
 const char* const TMP_MISSION_SCREENSHOT_FOLDER = "_missionshots"; // relative to fms/

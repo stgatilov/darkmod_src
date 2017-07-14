@@ -32,13 +32,13 @@ static bool versioned = RegisterVersionedFile("$Id$");
 #include "ModMenu.h"
 #include "ai/AI.h"
 #include "IniFile.h"
-#include <boost/filesystem.hpp>
 
 #ifdef MACOS_X
 #include <mach-o/dyld.h>
 #endif
 
-namespace fs = boost::filesystem;
+#include <StdFilesystem.h>
+namespace fs = stdext;
 
 class idAI;
 

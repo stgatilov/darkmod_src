@@ -118,24 +118,25 @@ void CMissionManager::CleanupModFolder(const idStr& name)
 	if (fs::exists(modPath))
 	{
 		// Iterate over all files in the mod folder
-		for (fs::directory_iterator i(modPath); i != fs::directory_iterator(); ++i)
+		auto modPaths = fs::directory_enumerate(modPath);
+		for (const auto &path : modPaths)
 		{
-			if (stdext::to_lower_copy(fs::extension(*i)) == ".pk4")
+			if (stdext::to_lower_copy(path.extension().string()) == ".pk4")
 			{
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase PK4 files %s\r", i->path().string().c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase PK4 files %s\r", path.string().c_str());
 				continue;
 			}
 
-			if (i->path().filename() == cv_tdm_fm_desc_file.GetString() || 
-				i->path().filename() == cv_tdm_fm_notes_file.GetString() || 
-				i->path().filename() == cv_tdm_fm_splashimage_file.GetString())
+			if (path.filename() == cv_tdm_fm_desc_file.GetString() || 
+				path.filename() == cv_tdm_fm_notes_file.GetString() || 
+				path.filename() == cv_tdm_fm_splashimage_file.GetString())
 			{
-				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase meta data file %s\r", i->path().string().c_str());
+				DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Won't erase meta data file %s\r", path.string().c_str());
 				continue;
 			}
 
-			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will erase recursively: %s\r", i->path().string().c_str());
-			fs::remove_all(*i);
+			DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Will erase recursively: %s\r", path.string().c_str());
+			fs::remove_all(path);
 		}
 	}
 	else
@@ -334,11 +335,12 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
         }
     }
 
-	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
+	auto fmPathFiles = fs::directory_enumerate(fmPath);
+	for (const auto &path : fmPathFiles)
 	{
-		if (fs::is_directory(*i)) continue;
+		if (fs::is_directory(path)) continue;
 
-		fs::path pk4path = *i;
+		fs::path pk4path = path;
 
 		// Check extension
 		idStr extLower = pk4path.extension().string().c_str();
@@ -475,9 +477,10 @@ void CMissionManager::GenerateModList()
         }
     }
 
-	for (fs::directory_iterator i = fs::directory_iterator(fmPath); i != fs::directory_iterator(); ++i)
+	auto fmPathFiles = fs::directory_enumerate(fmPath);
+	for (const auto &path : fmPathFiles)
 	{
-		fs::path modFolder = *i;
+		fs::path modFolder = path;
 
 		if (!fs::is_directory(modFolder)) continue; // skip non-folders
 
@@ -500,9 +503,10 @@ void CMissionManager::GenerateModList()
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("%s file not found, looking for PK4s.\r", descFileName.string().c_str());
 
 		// Check for PK4s in that folder
-		for (fs::directory_iterator pk4Iter = fs::directory_iterator(modFolder); pk4Iter != fs::directory_iterator(); ++pk4Iter)
+		auto modFolderFiles = fs::directory_enumerate(modFolder);
+		for (const auto &pk4path : modFolderFiles)
 		{
-			fs::path pk4path = *pk4Iter;
+			//fs::path pk4path = *pk4Iter;
 
 			idStr extension = pk4path.extension().string().c_str();
 			extension.ToLower();

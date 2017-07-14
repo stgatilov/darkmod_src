@@ -20,9 +20,9 @@ static bool versioned = RegisterVersionedFile("$Id$");
 
 #include "ModInfo.h"
 #include "ModInfoDecl.h"
-#include <boost/filesystem.hpp>
 
-namespace fs = boost::filesystem;
+#include <StdFilesystem.h>
+namespace fs = stdext;
 
 std::size_t CModInfo::GetModFolderSize()
 {
@@ -39,12 +39,11 @@ std::size_t CModInfo::GetModFolderSize()
 	if (fs::exists(modPath))
 	{
 		// Iterate over all files in the mod folder
-		for (fs::recursive_directory_iterator i(modPath); 
-			i != fs::recursive_directory_iterator(); ++i)
+		auto recPaths = fs::recursive_directory_enumerate(modPath);
+		for (const auto &path : recPaths)
 		{
-			if (fs::is_directory(i->path())) continue;
-
-			_modFolderSize += fs::file_size(i->path());
+			if (fs::is_directory(path)) continue;
+			_modFolderSize += fs::file_size(path);
 		}
 	}
 
