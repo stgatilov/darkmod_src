@@ -223,7 +223,7 @@ bool Image::LoadImageFromFile(const fs::path& path)
 	//unload previous image
 	Unload();
 
-	//set name to boost filename
+	//set name to std::filesystem filename
 	m_Name = path.string().c_str();
 
 	//try to open file

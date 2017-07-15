@@ -76,7 +76,7 @@ public:
 		{
 			CreateInstanceFunc& createInstance(i->second);
 
-			// Invoke the boost::function to gather the TaskPtr
+			// Invoke the std::function to gather the TaskPtr
 			returnValue = createInstance();
 		}
 

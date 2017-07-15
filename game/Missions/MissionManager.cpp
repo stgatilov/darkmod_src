@@ -319,7 +319,7 @@ CMissionManager::MoveList CMissionManager::SearchForNewMods(const idStr& extensi
 
 	DM_LOG(LC_MAINMENU, LT_INFO)LOGSTRING("Looking for %s files in FM root folder: %s\r", extension.c_str(), fmPath.string().c_str());
 
-	// greebo: Use boost::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
+	// greebo: Use std::filesystem to enumerate new PK4s, idFileSystem::ListFiles might be too unreliable
 	// Iterate over all found PK4s and check if they're valid
     if (!fs::is_directory(fmPath)) 
     {
@@ -940,7 +940,7 @@ CMissionManager::InstallResult CMissionManager::InstallMod(const idStr& name)
 
 		DM_LOG(LC_MAINMENU, LT_DEBUG)LOGSTRING("Copying file %s to %s\r", pk4fileOsPath.string().c_str(), targetFile.string().c_str());
 
-		// Use boost::filesystem instead of id's (comments state that copying large files can be problematic)
+		// Use std::filesystem instead of id's (comments state that copying large files can be problematic)
 		//fileeSystem->CopyFile(pk4fileOsPath, targetFile.string().c_str());
 
 		// Copy the PK4 file and make sure any target file with the same name is removed beforehand

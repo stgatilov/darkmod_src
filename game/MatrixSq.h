@@ -16,8 +16,6 @@
 * 
 * CLASS DESCRIPTION: 
 * CMatrixSq is a container for square matrices (n x n)
-* 
-* Implemented by means of boost::matrix.
 *
 **********************************************************/
 
