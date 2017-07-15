@@ -244,9 +244,6 @@ if ( g_os == 'Linux' ):
 	if ( TARGET_ARCH == 'x64' ):
 		BASECPPFLAGS.append( '-m64' )
 		BASELINKFLAGS.append( '-m64' )
-	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
-	# This allows to link with libraries (like boost), which were built in older versions of GCC
-	BASECPPFLAGS.append( '-D_GLIBCXX_USE_CXX11_ABI=0' )
     
 	if ( OPENMP != '0' ):
 		# openmp support for changes made to the renderer

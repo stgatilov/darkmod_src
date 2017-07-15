@@ -49,8 +49,6 @@ if (TARGET_ARCH == 'x86'):
 	local_env.Append(LIBS = [
 		File('#/linux/libcurl/libcurl.a'),
 		File('#/linux/polarssl/libpolarssl.a'),
-		File('#/linux/boost/lib/libboost_filesystem.a'),
-		File('#/linux/boost/lib/libboost_system.a'),
 		File('#/linux/ffmpeg/libavformat.a'),
 		File('#/linux/ffmpeg/libavcodec.a'),
 		File('#/linux/ffmpeg/libavutil.a'),
@@ -61,8 +59,6 @@ if (TARGET_ARCH == 'x64'):
 	local_env.Append(LIBS = [
 		File('#/linux/libcurl/lib64/libcurl.a'),
 		File('#/linux/polarssl/lib64/libpolarssl.a'),
-		File('#/linux/boost/lib64/libboost_filesystem.a'),
-		File('#/linux/boost/lib64/libboost_system.a'),
 		File('#/linux/ffmpeg/lib64/libavformat.a'),
 		File('#/linux/ffmpeg/lib64/libavcodec.a'),
 		File('#/linux/ffmpeg/lib64/libavutil.a'),
