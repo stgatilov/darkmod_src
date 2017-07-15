@@ -19,7 +19,7 @@
 
 namespace stdext {
 	//alternative to boost::algorithm::split
-	void split(std::vector<std::string> &tokens, const std::string &text, const char *delimiters);
+	void split(std::vector<std::string> &tokens, const std::string &text, const char *delimiters = " \n\r\t\f\v");
 	//alternative to boost::algorithm::join
 	std::string join(const std::vector<std::string> &tokens, const char *separator);
 	//alternative to boost::algorithm::trim(_if)
