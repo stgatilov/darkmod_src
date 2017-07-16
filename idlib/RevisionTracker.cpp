@@ -22,22 +22,13 @@
 #include <vector>
 #include <string>
 
-//#define USE_OLD_REVISION_TRACKING
-
-#ifdef USE_OLD_REVISION_TRACKING
-#include "StdString.h"
-#else
 //this auto-generated file contains svnversion output in string constant
 #include "svnversion.h"
-#endif
 
 
 RevisionTracker::RevisionTracker() :
 	_highestRevision(0),
 	_lowestRevision(INT_MAX)
-#ifdef USE_OLD_REVISION_TRACKING
-{}
-#else
 {
 	_version = SVN_WORKING_COPY_VERSION;
 
@@ -56,7 +47,6 @@ RevisionTracker::RevisionTracker() :
 			_highestRevision = _lowestRevision;				//rev
 	}
 }
-#endif
 
 const char *RevisionTracker::GetRevisionString() const {
 	return _version.c_str();
@@ -71,55 +61,6 @@ int RevisionTracker::GetLowestRevision() const
 {
 	return _lowestRevision;
 }
-
-#ifdef USE_OLD_REVISION_TRACKING
-
-void RevisionTracker::AddRevision(int revision) 
-{
-	if (_highestRevision < revision)
-	{
-		_highestRevision = revision;
-	}
-
-	if (_lowestRevision > revision)
-	{
-		_lowestRevision = revision;
-	}
-
-	sprintf(_version, "%d", _highestRevision);
-}
-
-void RevisionTracker::ParseSVNIdString(const char* input)
-{
-	std::string revStr(input);
-	std::vector<std::string> parts;
-
-	// Split the incoming string into parts
-	stdext::split(parts, revStr, " ");
-
-	if (parts.size() > 1)
-	{
-		// The third token is the SVN revision, convert it to integer and pass it along
-		Instance().AddRevision(atoi(parts[2].c_str()));
-	}
-}
-
-bool RegisterVersionedFile(const char* str) {
-	// greebo: Add the revision to the RevisionTracker class
-	RevisionTracker::ParseSVNIdString(str);
-
-	return true;
-}
-
-#else
-
-
-//TODO: remove
-bool RegisterVersionedFile(const char* str) {
-	return true;
-}
-
-#endif
 
 // Accessor to the singleton
 RevisionTracker& RevisionTracker::Instance()

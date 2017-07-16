@@ -46,23 +46,8 @@ public:
 	/// returns string representation of current revision
 	const char *GetRevisionString() const;
 
-	/**
-	 * Use this method to register a new revision.
-	 */
-	void AddRevision(int revision);
-
-	/**
-	 * Entry point for FileVersionList(). Take this method to
-	 * parse an SVN id string and retrieve the revision.
-	 * This methods passes the call to AddRevision.
-	 */
-	static void ParseSVNIdString(const char* input);
-
 	// Accessor to the singleton
 	static RevisionTracker& Instance();
 };
-
-// Used to find the highest revision of all .cpp files calling this
-bool RegisterVersionedFile(const char* str);
 
 #endif /* __TDM_REVISION_TRACKER_H__ */
