@@ -246,6 +246,7 @@ idLight::idLight()
 	fadeEnd				= 0;
 	soundWasPlaying		= false;
 	m_MaxLightRadius	= 0.0f;
+	m_MaterialName = NULL;
 	m_LightMaterial		= NULL;
 	m_BlendlightTexture = NULL; // SteveL #3752
 

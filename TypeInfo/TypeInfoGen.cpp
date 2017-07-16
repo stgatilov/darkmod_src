@@ -797,7 +797,7 @@ void idTypeInfoGen::CreateTypeInfo( const char *path ) {
 
 	for ( i = -1; i < files->GetNumFiles(); i++ ) {
 		if (i < 0) {
-			//stgatilov: parse TypeInfo.cpp as first (and only) file
+			//stgatilov: parse TypeInfo_GenHelper.cpp as the first (and only) file
 			fileName = path;
 			fileName.AppendPath("gamesys\\TypeInfo_GenHelper.cpp");
 			fileName = fileSystem->RelativePathToOSPath(fileName);
