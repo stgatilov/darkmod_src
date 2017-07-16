@@ -40,7 +40,7 @@ Manager
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 // tr_imageprogram.c
 

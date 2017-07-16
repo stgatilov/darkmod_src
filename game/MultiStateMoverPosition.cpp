@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "MultiStateMoverPosition.h"
 #include "MultiStateMoverButton.h"

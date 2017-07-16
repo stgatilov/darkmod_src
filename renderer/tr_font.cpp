@@ -17,7 +17,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "tr_local.h"
 

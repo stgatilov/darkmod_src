@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "math/Line.h"
 #include "../Game_local.h"

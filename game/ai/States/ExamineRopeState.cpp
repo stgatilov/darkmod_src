@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "ExamineRopeState.h"
 //#include "../Memory.h"

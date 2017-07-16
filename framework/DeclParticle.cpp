@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 struct ParticleParmDesc {
 	const char *name;

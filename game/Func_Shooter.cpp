@@ -15,7 +15,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Func_Shooter.h"
 #include "StimResponse/StimResponseCollection.h"

@@ -41,7 +41,7 @@ move around it to view it from different angles.
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "../Game_local.h"
 

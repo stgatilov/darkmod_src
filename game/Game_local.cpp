@@ -18,7 +18,7 @@
 
 #pragma warning(disable : 4127 4996 4805 4800)
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Game_local.h"
 #include "DarkModGlobals.h"

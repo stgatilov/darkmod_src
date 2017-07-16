@@ -22,7 +22,7 @@ see dmap.gcc.zip test map and .proc outputs
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "dmap.h"
 

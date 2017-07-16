@@ -25,7 +25,7 @@ Various utility objects and functions.
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Game_local.h"
 #include "SndProp.h"

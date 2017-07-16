@@ -17,7 +17,7 @@
 
 #pragma warning(disable : 4355) // greebo: Disable warning "'this' used in constructor"
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Game_local.h"
 #include "ai/AAS_local.h"

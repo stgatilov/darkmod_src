@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Source$  $Revision$   $Date$");
+
 
 #include "AAS_local.h"
 #include "../TimerManager.h"

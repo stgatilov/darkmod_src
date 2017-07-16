@@ -31,7 +31,7 @@ TODO: Call FinishSurfaces() for all orginal models, then cache their shadow vert
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "ModelGenerator.h"
 

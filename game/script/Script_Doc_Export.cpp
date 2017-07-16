@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Script_Doc_Export.h"
 #include "../pugixml/pugixml.hpp"

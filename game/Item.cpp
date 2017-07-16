@@ -21,7 +21,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #pragma warning(disable : 4996)
 

@@ -16,7 +16,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "AgitatedSearchingStateLanternBot.h"
 #include "../Tasks/ScriptTask.h"

@@ -25,7 +25,7 @@ instancing of objects.
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "../Game_local.h"
 #include "../Grabber.h"

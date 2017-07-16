@@ -15,7 +15,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Source$  $Revision$   $Date$");
+
 
 #include "../Game_local.h"
 #include "../DarkModGlobals.h"

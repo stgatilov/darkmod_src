@@ -18,7 +18,7 @@
 
 #pragma warning(disable : 4533 4800)
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "Category.h"
 #include "WeaponItem.h"

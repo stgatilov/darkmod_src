@@ -75,7 +75,7 @@ TODO: We currently determine the material by doing a point-trace, then when the 
 // grayman #4153 - define to get stats
 //#define S_DEBUG 1
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "SEED.h"
 

@@ -17,7 +17,7 @@
 
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "../Game_local.h"
 #include "../ai/AAS_local.h"

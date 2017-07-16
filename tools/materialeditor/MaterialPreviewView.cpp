@@ -17,7 +17,7 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-static bool versioned = RegisterVersionedFile("$Id$");
+
 
 #include "../radiant/QE3.H"
 #include "MaterialPreviewView.h"
