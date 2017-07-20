@@ -1978,8 +1978,6 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 	int numEnts = gameLocal.clip.EntitiesTouchingBounds(GetPhysics()->GetAbsBounds(), cm, Ents, MAX_GENTITIES);
 	GetPhysics()->DisableClip();
 
-	idBounds setFrobableTargetBox = GetPhysics()->GetAbsBounds(); // grayman #4494
-
 	// toggle frobability
 	m_bCurFrobState = !m_bCurFrobState;
 	
@@ -1997,23 +1995,6 @@ void CTarget_SetFrobable::Event_Activate( idEntity *activator )
 		if (ent->spawnArgs.GetBool("immune_to_target_setfrobable", "0")) 
 		{
 			continue; // greebo: per-entity exclusion
-		}
-
-		// grayman #4494 - Verify bounding boxes are touching. The list m_EntsSetUnfrobable
-		// can contain false items because some items carry two clipmodels, one much larger
-		// than the other. The second clipmodel has to do with the size of the item's
-		// frob box, which is irrelevant here. We don't want to turn off frobability here
-		// based on the much larger frob box, but only based on the physical clipmodel size.
-
-		idBounds entBox = ent->GetPhysics()->GetAbsBounds();
-		if ((entBox[1].x < setFrobableTargetBox[0].x) ||
-			(entBox[0].x > setFrobableTargetBox[1].x) ||
-			(entBox[1].y < setFrobableTargetBox[0].y) ||
-			(entBox[0].y > setFrobableTargetBox[1].y) ||
-			(entBox[1].z < setFrobableTargetBox[0].z) ||
-			(entBox[0].z > setFrobableTargetBox[1].z) )
-		{
-			continue;
 		}
 
 		if( m_bCurFrobState )
