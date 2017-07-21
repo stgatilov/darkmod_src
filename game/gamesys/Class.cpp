@@ -452,7 +452,7 @@ void * idClass::operator new( size_t s ) {
 	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
@@ -474,7 +474,7 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
-	size >>= 3;
+	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
 	}
