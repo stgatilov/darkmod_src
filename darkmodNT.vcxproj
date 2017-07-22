@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>DarkMod</ProjectName>
+    <ProjectName>DarkModNoTools</ProjectName>
     <ProjectGuid>{6C743332-F519-44CC-A7D6-A57AFC3F2CE1}</ProjectGuid>
     <RootNamespace>DoomDLL</RootNamespace>
     <SccProjectName>
@@ -718,6 +718,7 @@
     <ClInclude Include="idlib\Parser.h" />
     <ClInclude Include="idlib\precompiled.h" />
     <ClInclude Include="idlib\RevisionTracker.h" />
+    <ClInclude Include="idlib\StdFilesystem.h" />
     <ClInclude Include="idlib\StdString.h" />
     <ClInclude Include="idlib\Str.h" />
     <ClInclude Include="idlib\svnversion.h" />
@@ -1173,6 +1174,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="idlib\RevisionTracker.cpp" />
+    <ClCompile Include="idlib\StdFilesystem.cpp" />
     <ClCompile Include="idlib\StdString.cpp" />
     <ClCompile Include="idlib\Str.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
@@ -1299,15 +1301,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="ExtLibs\ExtLibs.vcxproj">
-      <Project>{5f1a77c3-f94d-4c5f-b14b-03202cdfc317}</Project>
-    </ProjectReference>
-    <ProjectReference Include="typeinfo.vcxproj">
-      <Project>{6ea6406f-3e65-47d9-8246-d6660a81606f}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

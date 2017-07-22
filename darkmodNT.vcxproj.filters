@@ -1378,11 +1378,14 @@
     <ClInclude Include="tools\compilers\compiler_public.h">
       <Filter>Tools\Compilers</Filter>
     </ClInclude>
+    <ClInclude Include="idlib\StdString.h">
+      <Filter>idLib\Text</Filter>
+    </ClInclude>
     <ClInclude Include="idlib\svnversion.h">
       <Filter>idLib</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\StdString.h">
-      <Filter>idLib\Text</Filter>
+    <ClInclude Include="idlib\StdFilesystem.h">
+      <Filter>idLib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2733,6 +2736,9 @@
     </ClCompile>
     <ClCompile Include="idlib\StdString.cpp">
       <Filter>idLib\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="idlib\StdFilesystem.cpp">
+      <Filter>idLib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
