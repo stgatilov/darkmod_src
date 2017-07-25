@@ -96,11 +96,13 @@
 // non-portable system services
 #include "../sys/sys_public.h"
 
+//stgatilov: make sure build defines take effect on idlib headers included from Lib.h
+#include "../framework/BuildDefines.h"
+
 // id lib
 #include "../idlib/Lib.h"
 
 // framework
-#include "../framework/BuildDefines.h"
 #include "../framework/Licensee.h"
 #include "../framework/CmdSystem.h"
 #include "../framework/CVarSystem.h"

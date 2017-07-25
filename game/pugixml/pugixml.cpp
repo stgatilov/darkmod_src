@@ -12,7 +12,7 @@
  */
 #include "precompiled.h"
 #pragma hdrstop
-#ifdef ID_DEBUG_MEMORY
+#if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 	#undef new
 #endif
 

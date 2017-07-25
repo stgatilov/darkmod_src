@@ -441,7 +441,7 @@ void idClass::Shutdown( void ) {
 idClass::new
 ================
 */
-#ifdef ID_DEBUG_MEMORY
+#if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 #undef new
 #endif
 
@@ -491,7 +491,7 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 	return p + 1;
 }
 
-#ifdef ID_DEBUG_MEMORY
+#if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 #define new ID_DEBUG_NEW
 #endif
 

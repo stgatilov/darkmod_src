@@ -16,7 +16,7 @@
 #ifndef __QE3_H__
 #define __QE3_H__
 
-#ifdef ID_DEBUG_MEMORY
+#if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 #undef new
 #undef DEBUG_NEW
 #define DEBUG_NEW new

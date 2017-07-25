@@ -17,11 +17,13 @@
 
 
 
-#ifdef ID_DEBUG_MEMORY
-#undef protected
+#if defined(ID_DEBUG_MEMORY) && defined(ID_REDIRECT_NEWDELETE)
 #undef new
 #undef DEBUG_NEW
 #define DEBUG_NEW new
+#endif
+#ifdef ID_USE_TYPEINFO
+#undef protected
 #endif
 
 #include "ToggleListView.h"
