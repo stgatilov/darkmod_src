@@ -46,7 +46,7 @@
 
 #include "../Game_local.h"
 
-#ifdef ID_DEBUG_MEMORY
+#ifdef ID_USE_TYPEINFO
 #include "TypeInfo_GenHelper.h"			// stgatilov: define all classes
 #include "GameTypeInfo.h"				// Make sure this is up to date!
 #else

@@ -249,6 +249,8 @@ void idClass::CallSpawn( void ) {
 
 	type = GetType();
 	CallSpawnFunc( type );
+
+	FindUninitializedMemory();
 }
 
 /*
@@ -286,7 +288,11 @@ void idClass::FindUninitializedMemory( void ) {
 	size >>= 2;
 	for ( int i = 0; i < size; i++ ) {
 		if ( ptr[i] == 0xcdcdcdcd ) {
+#ifdef ID_USE_TYPEINFO
 			const char *varName = GetTypeVariableName( GetClassname(), i << 2 );
+#else
+			const char *varName = "[unknown]";
+#endif
 			gameLocal.Warning( "type '%s' has uninitialized variable %s (offset %d)", GetClassname(), varName, i << 2 );
 		}
 	}
@@ -449,13 +455,14 @@ void * idClass::operator new( size_t s ) {
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = (unsigned int *)p;
+	//stgatilov: already filled with 0xCD in Mem_Alloc
+/*	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
-	}
+	}*/
 #endif
 
 	return p + 1;
@@ -471,13 +478,14 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned int *ptr = (unsigned int *)p;
+	//stgatilov: already filled with 0xCD in Mem_Alloc
+/*	unsigned int *ptr = (unsigned int *)p;
 	int size = s;
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
 	for ( int i = 1; i < size; i++ ) {
 		ptr[i] = 0xcdcdcdcd;
-	}
+	}*/
 #endif
 
 	return p + 1;

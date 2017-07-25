@@ -25,6 +25,7 @@
 //#define ID_REDIRECT_NEWDELETE
 //#define ID_DEBUG_MEMORY
 //#define ID_DEBUG_UNINITIALIZED_MEMORY
+//#define ID_USE_TYPEINFO
 
 // if enabled, the console won't toggle upon ~, unless you start the binary with +set com_allowConsole 1
 // Ctrl+Alt+~ will always toggle the console no matter what

@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ID_REDIRECT_NEWDELETE;ID_DEBUG_MEMORY;ID_DEBUG_UNINITIALIZED_MEMORY;ID_USE_TYPEINFO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
 </Project>

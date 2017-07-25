@@ -108,7 +108,7 @@ incorrect.  Use this on concrete classes only.
 	idClass *nameofclass::CreateInstance( void ) {													\
 		try {																						\
 			nameofclass *ptr = new nameofclass;														\
-			ptr->FindUninitializedMemory();															\
+			/*ptr->FindUninitializedMemory();*/														\
 			return ptr;																				\
 		}																							\
 		catch( idAllocError & ) {																	\

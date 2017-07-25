@@ -45,7 +45,7 @@
 	#define ASYNC_WRITE_PVS 0
 #endif
 
-#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
+#ifdef ID_USE_TYPEINFO
 // This is real evil but allows the code to inspect arbitrary class variables.
 #define private		public
 #define protected	public

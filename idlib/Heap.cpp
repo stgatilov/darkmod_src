@@ -1065,6 +1065,9 @@ void *Mem_Alloc( const int size ) {
 		return malloc( size );
 	}
 	void *mem = mem_heap->Allocate( size );
+#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
+	memset(mem, 0xCD, size);
+#endif
 	Mem_UpdateAllocStats( mem_heap->Msize( mem ) );
 	return mem;
 }
@@ -1105,6 +1108,9 @@ void *Mem_Alloc16( const int size ) {
 		return malloc( size );
 	}
 	void *mem = mem_heap->Allocate16( size );
+#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
+	memset(mem, 0xCD, size);
+#endif
 	// make sure the memory is 16 byte aligned
 	assert( ( ((intptr_t)mem) & 15) == 0 );
 	return mem;
@@ -1536,6 +1542,9 @@ void *Mem_AllocDebugMemory( const int size, const char *fileName, const int line
 	else {
 		p = mem_heap->Allocate( size + sizeof( debugMemory_t ) );
 	}
+#ifdef ID_DEBUG_UNINITIALIZED_MEMORY
+	memset(p, 0xCD, size);
+#endif
 
 	Mem_UpdateAllocStats( size );
 
