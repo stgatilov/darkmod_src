@@ -42,14 +42,14 @@ namespace
 
 		const EventArgs& args = ev.GetArgs();
 
-		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
+		for (size_t i = 0; i < args.size(); i++)
 		{
 			out += out.IsEmpty() ? "" : ", ";
 
-			idTypeDef* type = idCompiler::GetTypeForEventArg(i->type);
+			idTypeDef* type = idCompiler::GetTypeForEventArg(args[i].type);
 
 			// Use a generic variable name "a", "b", "c", etc. if no name present
-			out += va("%s %s", type->Name(), strlen(i->name) > 0 ? i->name : idStr(gen[g++]).c_str());
+			out += va("%s %s", type->Name(), strlen(args[i].name) > 0 ? args[i].name : idStr(gen[g++]).c_str());
 		}
 
 		return out;
@@ -162,18 +162,18 @@ idStr ScriptEventDocGeneratorD3Script::GetEventDocumentation(const idEventDef& e
 
 	idStr argDesc;
 
-	for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
+	for (size_t i = 0; i < args.size(); i++)
 	{
-		if (idStr::Length(i->desc) == 0)
+		if (idStr::Length(args[i].desc) == 0)
 		{
 			continue;
 		}
 
 		// Format line breaks in the description
-		idStr desc(i->desc);
+		idStr desc(args[i].desc);
 		desc.Replace("\n", "\n * ");
 
-		argDesc += va("\n * @%s: %s", i->name, desc.c_str());
+		argDesc += va("\n * @%s: %s", args[i].name, desc.c_str());
 	}
 
 	if (!argDesc.IsEmpty())
@@ -243,18 +243,18 @@ idStr ScriptEventDocGeneratorMediaWiki::GetEventDescription(const idEventDef& ev
 
 	idStr argDesc;
 
-	for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
+	for (size_t i = 0; i < args.size(); i++)
 	{
-		if (idStr::Length(i->desc) == 0)
+		if (idStr::Length(args[i].desc) == 0)
 		{
 			continue;
 		}
 
 		// Format line breaks in the description
-		idStr desc(i->desc);
+		idStr desc(args[i].desc);
 		desc.Replace("\n", " "); // no artificial line breaks
 
-		argDesc += va("::''%s'': %s\n", i->name, desc.c_str());
+		argDesc += va("::''%s'': %s\n", args[i].name, desc.c_str());
 	}
 
 	if (!argDesc.IsEmpty())
@@ -425,16 +425,16 @@ void ScriptEventDocGeneratorXml::WriteDoc(idFile& out)
 
 		const EventArgs& args = ev->GetArgs();
 
-		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i)
+		for (size_t i = 0; i < args.size(); i++)
 		{
-			idTypeDef* type = idCompiler::GetTypeForEventArg(i->type);
+			idTypeDef* type = idCompiler::GetTypeForEventArg(args[i].type);
 
 			// Use a generic variable name "a", "b", "c", etc. if no name present
 			pugi::xml_node argNode = eventNode.append_child("argument");
-			argNode.append_attribute("name").set_value(strlen(i->name) > 0 ? i->name : idStr(gen[g++]).c_str());
+			argNode.append_attribute("name").set_value(strlen(args[i].name) > 0 ? args[i].name : idStr(gen[g++]).c_str());
 			argNode.append_attribute("type").set_value(type->Name());
 
-			idStr desc(i->desc);
+			idStr desc(args[i].desc);
 			desc.Replace("\n", " "); // no artificial line breaks
 
 			argNode.append_attribute("description").set_value(desc.c_str());

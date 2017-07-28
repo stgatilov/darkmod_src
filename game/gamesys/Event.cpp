@@ -56,10 +56,6 @@ idEventDef::idEventDef(const char* name_, const EventArgs& args_, char returnTyp
 
 idEventDef::~idEventDef()
 {
-	if (formatspec != NULL && formatspec[0] != '\0')
-	{
-		delete[] formatspec;
-	}
 }
 
 void idEventDef::Construct()
@@ -71,23 +67,9 @@ void idEventDef::Construct()
 	assert(name != NULL);
 	assert(!idEvent::initialized);
 	
-	if (!args.empty())
-	{
-		char* format = new char[args.size() + 1];
-		format[args.size()] = '\0';
-
-		std::size_t arg = 0;
-		for (EventArgs::const_iterator i = args.begin(); i != args.end(); ++i, ++arg)
-		{
-			format[arg] = i->type;
-		}
-
-		this->formatspec = format;
-	}
-	else
-	{
-		this->formatspec = "";
-	}
+	for (size_t i = 0; i < args.size(); i++)
+		formatspec[i] = args[i].type;
+	formatspec[args.size()] = '\0';
 	
 	numargs = static_cast<int>(strlen(formatspec));
 	assert( numargs <= D_EVENT_MAXARGS );

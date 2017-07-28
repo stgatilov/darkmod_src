@@ -28,10 +28,14 @@ struct EventArg
  *
  * idEventDef allow for up to 8 arguments, and so are the constructors of this class.
  */
-class EventArgs :
-	public std::vector<EventArg>
-{
+class EventArgs {
+	idStaticList<EventArg, 8> args;
 public:
+
+	const EventArg &operator[](int index) const;
+	size_t size() const;
+	bool empty() const;
+
 	EventArgs();															// 0 args
 	
 	EventArgs(char argType1, const char* argName1, const char* argDesc1);	// 1 arg
@@ -79,57 +83,69 @@ public:
 			  char argType8, const char* argName8, const char* argDesc8);
 };
 
+inline size_t EventArgs::size() const {
+	return args.Num();
+}
+inline bool EventArgs::empty() const {
+	return args.Num() == 0;
+}
+inline const EventArg &EventArgs::operator[](int index) const {
+	return args[index];
+}
+
 inline EventArgs::EventArgs()
-{}
-	
-inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1) :
-	std::vector<EventArg>(1)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
+	args.SetNum(0);
+}
+	
+inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1)
+{
+	args.SetNum(1);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
 }
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,
-			  char argType2, const char* argName2, const char* argDesc2) :
-	std::vector<EventArg>(2)
+			  char argType2, const char* argName2, const char* argDesc2)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
+	args.SetNum(2);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
 }
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,
 			  char argType2, const char* argName2, const char* argDesc2,
-			  char argType3, const char* argName3, const char* argDesc3) :
-	std::vector<EventArg>(3)
+			  char argType3, const char* argName3, const char* argDesc3)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
+	args.SetNum(3);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
 }
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,
 			  char argType2, const char* argName2, const char* argDesc2,
 			  char argType3, const char* argName3, const char* argDesc3,
-			  char argType4, const char* argName4, const char* argDesc4) :
-	std::vector<EventArg>(4)
+			  char argType4, const char* argName4, const char* argDesc4)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
-	(*this)[3].type = argType4; (*this)[3].name = argName4; (*this)[3].desc = argDesc4;
+	args.SetNum(4);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
+	args[3].type = argType4; args[3].name = argName4; args[3].desc = argDesc4;
 }
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,	// 5 args
 			  char argType2, const char* argName2, const char* argDesc2,
 			  char argType3, const char* argName3, const char* argDesc3,
 			  char argType4, const char* argName4, const char* argDesc4,
-			  char argType5, const char* argName5, const char* argDesc5) :
-	std::vector<EventArg>(5)
+			  char argType5, const char* argName5, const char* argDesc5)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
-	(*this)[3].type = argType4; (*this)[3].name = argName4; (*this)[3].desc = argDesc4;
-	(*this)[4].type = argType5; (*this)[4].name = argName5; (*this)[4].desc = argDesc5;
+	args.SetNum(5);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
+	args[3].type = argType4; args[3].name = argName4; args[3].desc = argDesc4;
+	args[4].type = argType5; args[4].name = argName5; args[4].desc = argDesc5;
 }	
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,	// 6 args
@@ -137,15 +153,15 @@ inline EventArgs::EventArgs(char argType1, const char* argName1, const char* arg
 			  char argType3, const char* argName3, const char* argDesc3,
 			  char argType4, const char* argName4, const char* argDesc4,
 			  char argType5, const char* argName5, const char* argDesc5,
-			  char argType6, const char* argName6, const char* argDesc6) :
-	std::vector<EventArg>(6)
+			  char argType6, const char* argName6, const char* argDesc6)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
-	(*this)[3].type = argType4; (*this)[3].name = argName4; (*this)[3].desc = argDesc4;
-	(*this)[4].type = argType5; (*this)[4].name = argName5; (*this)[4].desc = argDesc5;
-	(*this)[5].type = argType6; (*this)[5].name = argName6; (*this)[5].desc = argDesc6;
+	args.SetNum(6);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
+	args[3].type = argType4; args[3].name = argName4; args[3].desc = argDesc4;
+	args[4].type = argType5; args[4].name = argName5; args[4].desc = argDesc5;
+	args[5].type = argType6; args[5].name = argName6; args[5].desc = argDesc6;
 }	
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,	// 7 args
@@ -154,16 +170,16 @@ inline EventArgs::EventArgs(char argType1, const char* argName1, const char* arg
 			  char argType4, const char* argName4, const char* argDesc4,
 			  char argType5, const char* argName5, const char* argDesc5,
 			  char argType6, const char* argName6, const char* argDesc6,
-			  char argType7, const char* argName7, const char* argDesc7) :
-	std::vector<EventArg>(7)
+			  char argType7, const char* argName7, const char* argDesc7)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
-	(*this)[3].type = argType4; (*this)[3].name = argName4; (*this)[3].desc = argDesc4;
-	(*this)[4].type = argType5; (*this)[4].name = argName5; (*this)[4].desc = argDesc5;
-	(*this)[5].type = argType6; (*this)[5].name = argName6; (*this)[5].desc = argDesc6;
-	(*this)[6].type = argType7; (*this)[6].name = argName7; (*this)[6].desc = argDesc7;
+	args.SetNum(7);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
+	args[3].type = argType4; args[3].name = argName4; args[3].desc = argDesc4;
+	args[4].type = argType5; args[4].name = argName5; args[4].desc = argDesc5;
+	args[5].type = argType6; args[5].name = argName6; args[5].desc = argDesc6;
+	args[6].type = argType7; args[6].name = argName7; args[6].desc = argDesc7;
 }
 
 inline EventArgs::EventArgs(char argType1, const char* argName1, const char* argDesc1,	// 8 args
@@ -173,17 +189,17 @@ inline EventArgs::EventArgs(char argType1, const char* argName1, const char* arg
 			  char argType5, const char* argName5, const char* argDesc5,
 			  char argType6, const char* argName6, const char* argDesc6,
 			  char argType7, const char* argName7, const char* argDesc7,
-			  char argType8, const char* argName8, const char* argDesc8) :
-	std::vector<EventArg>(8)
+			  char argType8, const char* argName8, const char* argDesc8)
 {
-	(*this)[0].type = argType1; (*this)[0].name = argName1; (*this)[0].desc = argDesc1;
-	(*this)[1].type = argType2; (*this)[1].name = argName2; (*this)[1].desc = argDesc2;
-	(*this)[2].type = argType3; (*this)[2].name = argName3; (*this)[2].desc = argDesc3;
-	(*this)[3].type = argType4; (*this)[3].name = argName4; (*this)[3].desc = argDesc4;
-	(*this)[4].type = argType5; (*this)[4].name = argName5; (*this)[4].desc = argDesc5;
-	(*this)[5].type = argType6; (*this)[5].name = argName6; (*this)[5].desc = argDesc6;
-	(*this)[6].type = argType7; (*this)[6].name = argName7; (*this)[6].desc = argDesc7;
-	(*this)[7].type = argType8; (*this)[7].name = argName8; (*this)[7].desc = argDesc8;
+	args.SetNum(8);
+	args[0].type = argType1; args[0].name = argName1; args[0].desc = argDesc1;
+	args[1].type = argType2; args[1].name = argName2; args[1].desc = argDesc2;
+	args[2].type = argType3; args[2].name = argName3; args[2].desc = argDesc3;
+	args[3].type = argType4; args[3].name = argName4; args[3].desc = argDesc4;
+	args[4].type = argType5; args[4].name = argName5; args[4].desc = argDesc5;
+	args[5].type = argType6; args[5].name = argName6; args[5].desc = argDesc6;
+	args[6].type = argType7; args[6].name = argName7; args[6].desc = argDesc7;
+	args[7].type = argType8; args[7].name = argName8; args[7].desc = argDesc8;
 }
 
 #endif

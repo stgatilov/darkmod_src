@@ -57,7 +57,7 @@ class idEventDef
 {
 private:
 	const char					*name;
-	const char					*formatspec;
+	char					formatspec [D_EVENT_MAXARGS + 2 ];
 	unsigned int				formatspecIndex;
 	int							returnType;
 	int							numargs;
