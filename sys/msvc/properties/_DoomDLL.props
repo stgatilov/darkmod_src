@@ -23,7 +23,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <ShowProgress>NotSet</ShowProgress>
-      <IgnoreSpecificDefaultLibraries>LIBCMT.lib</IgnoreSpecificDefaultLibraries>
     </Link>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
