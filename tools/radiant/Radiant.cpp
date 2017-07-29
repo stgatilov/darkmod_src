@@ -459,3 +459,30 @@ void Sys_Status(const char *psz, int part )
 	}
 	g_pParentWnd->SetStatusText(part, psz);
 }
+
+//=========================================================
+//stgatilov: Dirty hack to fix MFC states destruction.
+// Used only in Sys_Quit, when the game is exited.
+// Note that you can easily remove it, this does not affect the TDM game.
+//
+// Debug builds crash during process destruction otherwise.
+// That is because there are two CWinApp now:
+//   1. theApp (CRadiantApp) --- the real application
+//   2. mfc120d.dll!_afxOleWinApp -- the weird thing from MFC's DLL
+// Both try to destroy the same module state during their destruction
+// (which is mfc120d.dll!_afxBaseModuleState).
+//=========================================================
+AFX_MODULE_STATE radiantState(FALSE, NULL, _MSC_VER);
+void CRadiantApp::MfcHack() {
+	//very dirty hack: link manually this CWinApp to its own state
+	m_pModuleState = &radiantState;
+}
+void Sys_MfcHack() {	//wrapper (called from Sys_Quit in win_main.cpp)
+	theApp.MfcHack();
+}
+CRadiantApp::~CRadiantApp() {
+	//at this moment, _afxOleWinApp is already destroyed, but theApp is not
+	//so switch to our custom module state to make sure it is destroyed (and not _afxBaseModuleState again).
+	AfxSetModuleState(m_pModuleState);
+}
+//=========================================================

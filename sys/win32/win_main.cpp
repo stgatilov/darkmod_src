@@ -360,10 +360,15 @@ void Sys_Error( const char *error, ... ) {
 Sys_Quit
 ==============
 */
+void Sys_MfcHack();
 void Sys_Quit( void ) {
 	timeEndPeriod( 1 );
 	Sys_ShutdownInput();
 	Sys_DestroyConsole();
+#ifndef NO_MFC
+	//see comment near definition for explanation
+	Sys_MfcHack();
+#endif
 	ExitProcess( 0 );
 }
 

@@ -34,6 +34,9 @@ class CRadiantApp : public CWinApp
 
 public:
 	CRadiantApp();
+	~CRadiantApp();
+
+	void MfcHack();
 
 // Overrides
 	// ClassWizard generated virtual function overrides
