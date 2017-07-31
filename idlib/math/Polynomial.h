@@ -27,6 +27,7 @@
 
 class idPolynomial {
 public:
+	~idPolynomial( void );
 					idPolynomial( void );
 					explicit idPolynomial( int d );
 					explicit idPolynomial( float a, float b );
@@ -87,6 +88,10 @@ private:
 	void			Resize( int d, bool keep );
 	int				Laguer( const idComplex *coef, const int degree, idComplex &r ) const;
 };
+
+ID_INLINE idPolynomial::~idPolynomial( void ) {
+	Mem_Free16(coefficient);
+}
 
 ID_INLINE idPolynomial::idPolynomial( void ) {
 	degree = -1;
@@ -165,9 +170,11 @@ ID_INLINE idPolynomial idPolynomial::operator-() const {
 }
 
 ID_INLINE idPolynomial &idPolynomial::operator=( const idPolynomial &p ) { 
-	Resize( p.degree, false );
-	for ( int i = 0; i <= degree; i++ ) {
-		coefficient[i] = p.coefficient[i];
+	if (this != &p) {
+		Resize( p.degree, false );
+		for ( int i = 0; i <= degree; i++ ) {
+			coefficient[i] = p.coefficient[i];
+		}
 	}
 	return *this;
 }

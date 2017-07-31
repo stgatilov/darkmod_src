@@ -1245,7 +1245,31 @@ Mem_CleanupFileName
 ==================
 */
 const char *Mem_CleanupFileName( const char *fileName ) {
-	int i1, i2;
+	static char newFileNames[4][MAX_STRING_CHARS];
+	static int index;
+
+	index = (index + 1) & 3;
+	char *path = newFileNames[index];
+	strcpy(path, fileName);
+
+	for (int i = 0; path[i]; i++)
+		if (path[i] == '\\')
+			path[i] = '/';
+	static const char *BASE_DIR = "tdm/";
+	char *tdm = strstr(path, BASE_DIR);
+	if (tdm)
+		path = tdm + strlen(BASE_DIR);
+	while (char *topar = strstr(path, "/../")) {
+		char *ptr;
+		for (ptr = topar; ptr > path && *(ptr-1) != '/'; ptr--);
+		topar += 4;
+		memmove(ptr, topar, strlen(topar) + 1);
+	}
+	return path;
+
+	//stgatilov: the original code was allocating idStr
+	//which is wrong because string pool is already dead
+/*	int i1, i2;
 	idStr newFileName;
 	static char newFileNames[4][MAX_STRING_CHARS];
 	static int index;
@@ -1270,7 +1294,7 @@ const char *Mem_CleanupFileName( const char *fileName ) {
 	}
 	index = ( index + 1 ) & 3;
 	strncpy( newFileNames[index], newFileName.c_str(), sizeof( newFileNames[index] ) );
-	return newFileNames[index];
+	return newFileNames[index];*/
 }
 
 /*
@@ -1282,7 +1306,6 @@ void Mem_Dump( const char *fileName ) {
 	int i, numBlocks, totalSize;
 	char dump[32], *ptr;
 	debugMemory_t *b;
-	idStr module, funcName;
 	FILE *f;
 
 	f = fopen( fileName, "wb" );
