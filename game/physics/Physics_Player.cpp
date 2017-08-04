@@ -2925,6 +2925,7 @@ idPhysics_Player::idPhysics_Player( void )
 	m_CurrentLeanTiltDegrees = 0.0;
 	m_CurrentLeanStretch = 0.0;
 	m_b_leanFinished = true;
+	m_leanTime = 0.0f;
 	m_leanMoveStartTilt = 0.0;
 	m_leanMoveEndTilt = 0.0;
 	m_leanMoveMaxAngle = 0.0;

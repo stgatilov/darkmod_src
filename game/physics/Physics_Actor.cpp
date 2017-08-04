@@ -39,7 +39,7 @@ idPhysics_Actor::idPhysics_Actor( void ) {
 	groundEntityPtr = NULL;
 
 #ifdef MOD_WATERPHYSICS
-	waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
+	previousWaterLevel = waterLevel = WATERLEVEL_NONE;	// MOD_WATERPHYSICS
 	waterType = 0;					// MOD_WATERPHYSICS
 	waterLevelChanged = true;
 	submerseFrame = 0;

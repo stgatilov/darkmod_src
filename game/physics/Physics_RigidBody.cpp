@@ -1158,6 +1158,7 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 #ifdef MOD_WATERPHYSICS
 	this->water = NULL;
 	this->m_fWaterMurkiness = 0.0f;
+	this->volume = -FLT_MAX;	//to be set
 #endif
 
 	// use the least expensive euler integrator
@@ -1166,6 +1167,7 @@ idPhysics_RigidBody::idPhysics_RigidBody( void ) {
 	dropToFloor = false;
 	noImpact = false;
 	noContact = false;
+	testSolid = false;
 
 	hasMaster = false;
 	isOrientated = false;
