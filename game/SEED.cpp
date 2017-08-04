@@ -1044,12 +1044,13 @@ void Seed::AddClassFromEntity( idEntity *ent, const bool watch, const bool getSp
 	// #2579: parse from map file
 	if (getSpawnargs)
 	{
-	    // Load the map from the missiondata class (provides cached loading)
+		// Load the map from the missiondata class
 		idStr filename = gameLocal.GetMapFileName();
-	    idMapFile* mapFile = gameLocal.m_MissionData->LoadMap(filename);
+		//this call is caching: map is physically loaded only once
+		idMapFile* mapFile = gameLocal.m_MissionData->LoadMap(filename);
 
-    	if (NULL != mapFile)
-    	{
+		if (NULL != mapFile)
+		{
 			// loaded the map file, see if we can find the entity in there
 			SeedClass.spawnArgs = LoadSpawnArgsFromMap(mapFile, ent->GetName(), SeedClass.classname);
 		}
