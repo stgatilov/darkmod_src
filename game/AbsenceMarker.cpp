@@ -30,6 +30,7 @@ END_CLASS
 
 CAbsenceMarker::CAbsenceMarker()
 {
+	ownerTeam = -1;
 	referenced_entityDefNumber = -1;
 	referenced_entityDefName.Empty();
 	referenced_entityName.Empty();

@@ -154,6 +154,7 @@ Seed::Seed( void ) {
 	m_iNumVisible = 0;
 
 	m_iNumPVSAreas = 0;
+	memset(m_iPVSAreas, -1, sizeof(m_iPVSAreas));
 	m_iThinkCounter = 0;
 
 	m_DistCheckTimeStamp = 0;

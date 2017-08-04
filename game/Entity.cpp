@@ -1025,6 +1025,8 @@ idEntity::idEntity()
 	m_MinLODBias = 0.0f;
 	m_MaxLODBias = 10.0f;
 
+	m_LODLevel = m_ModelLODCur = m_SkinLODCur = 0xDEAFBEEF;	//to be set
+
 	// grayman #597 - for hiding arrows when nocked to the bow
 	m_HideUntilTime = 0;
 

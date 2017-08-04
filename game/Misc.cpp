@@ -2194,6 +2194,14 @@ CLASS_DECLARATION( idEntity, idPortalEntity )
 	EVENT( EV_PostSpawn,			idPortalEntity::Event_PostSpawn )		// grayman #3042
 END_CLASS
 
+idPortalEntity::idPortalEntity() {
+	m_SoundLoss = m_LightLoss = 0.0f;
+	m_Portal = -1;
+	m_Entity = nullptr;
+	m_EntityLocationDone = false;
+}
+idPortalEntity::~idPortalEntity() {}
+
 /*
 ================
 idPortalEntity::Spawn

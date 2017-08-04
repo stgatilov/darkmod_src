@@ -94,6 +94,7 @@ CBinaryFrobMover::CBinaryFrobMover()
 	m_vImpulseDirClose.Zero();
 	m_stopWhenBlocked = false;
 	m_LockOnClose = false;
+	m_mousePosition.Zero();
 	m_bFineControlStarting = false;
 	m_closedBox = box_zero; // grayman #2345 - holds closed position
 	m_closedBox.Clear();	// grayman #2345

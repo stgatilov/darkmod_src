@@ -168,6 +168,7 @@ idMover::idMover(void)
 	move_delta.Zero();
 	move_speed = 0.0f;
 	move_time = 0;
+	prevTransSpeed = 0.0f;
 	deceltime = 0;
 	acceltime = 0;
 	stopRotation = false;

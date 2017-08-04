@@ -471,6 +471,8 @@ idPortalEntity
 class idPortalEntity : public idEntity {
 public:
 	CLASS_PROTOTYPE( idPortalEntity );
+	idPortalEntity();
+	~idPortalEntity();
 
 	void				Spawn( void );
 

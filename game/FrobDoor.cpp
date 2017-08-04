@@ -85,9 +85,11 @@ CFrobDoor::CFrobDoor()
 	m_lossClosed = 0;
 	m_lossBaseAI = 0;			// AI sound loss provided by other entities, i.e. location separator
 	m_lossBasePlayer = 0;		// Player sound loss provided by other entities, i.e. location separator
+	m_isTransparent = false;
 	m_controllers.Clear();		// grayman #3643 - list of my controllers
 	m_doorHandlingPositions.Clear(); // grayman #3643 - list of my door handling positions
 	m_AIPushingDoor = false;	// grayman #3748
+	m_speedFactor = -1.0f;
 }
 
 CFrobDoor::~CFrobDoor()
