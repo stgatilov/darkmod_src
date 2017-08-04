@@ -696,6 +696,19 @@ unsigned int idMapEntity::GetGeometryCRC( void ) const {
 	return crc;
 }
 
+
+idMapFile::idMapFile( void ) {
+	version = CURRENT_MAP_VERSION;
+	fileTime = 0;
+	geometryCRC = 0;
+	entities.Resize( 1024, 256 );
+	hasPrimitiveData = false;
+}
+
+idMapFile::~idMapFile( void ) {
+	entities.DeleteContents( true );
+}
+
 /*
 ===============
 idMapFile::Parse

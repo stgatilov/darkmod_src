@@ -171,7 +171,7 @@ protected:
 class idMapFile {
 public:
 							idMapFile( void );
-							~idMapFile( void ) { entities.DeleteContents( true ); }
+							~idMapFile( void );
 
 							// filename does not require an extension
 							// normally this will use a .reg file instead of a .map file if it exists,
@@ -212,13 +212,5 @@ protected:
 private:
 	void					SetGeometryCRC( void );
 };
-
-ID_INLINE idMapFile::idMapFile( void ) {
-	version = CURRENT_MAP_VERSION;
-	fileTime = 0;
-	geometryCRC = 0;
-	entities.Resize( 1024, 256 );
-	hasPrimitiveData = false;
-}
 
 #endif /* !__MAPFILE_H__ */
