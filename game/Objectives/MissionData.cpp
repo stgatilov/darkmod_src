@@ -1677,8 +1677,13 @@ bool    CMissionData::MatchLocationObjectives( idEntity * entity )
     return false;
 }
 
-idMapFile* CMissionData::LoadMap(const idStr& mapFileName)
+idMapFile* CMissionData::LoadMap(const idStr& fn)
 {
+	//stgatilov: idMapFile::GetName returns filename without extension
+	//if we don't strip it here, then "mapFileName == m_mapFile->GetName()" won't work
+	idStr mapFileName = fn;
+	mapFileName.StripFileExtension();
+
 	// First, check if we already have a map loaded
 	if (m_mapFile != NULL)
 	{

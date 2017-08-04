@@ -727,21 +727,22 @@ bool idMapFile::Parse( const char *filename, bool ignoreRegion, bool osPath ) {
 	fullName = name;
 	hasPrimitiveData = false;
 
-	if ( !ignoreRegion ) {
+	if ( !src.IsLoaded() && !ignoreRegion ) {
 		// try loading a .reg file first
 		fullName.SetFileExtension( "reg" );
 		src.LoadFile( fullName, osPath );
+		if (src.IsLoaded())
+			fileName = fullName;
 	}
-
 	if ( !src.IsLoaded() ) {
 		// now try a .map file
 		fullName.SetFileExtension( "map" );
 		src.LoadFile( fullName, osPath );
-		if ( !src.IsLoaded() ) {
-			// didn't get anything at all
-			return false;
-		}
+		if (src.IsLoaded())
+			fileName = fullName;
 	}
+	if ( !src.IsLoaded() )
+		return false;
 
 	version = OLD_MAP_VERSION;
 	fileTime = src.GetFileTime();
@@ -981,7 +982,7 @@ idMapFile::NeedsReload
 bool idMapFile::NeedsReload() {
 	if ( name.Length() ) {
 		ID_TIME_T time = (ID_TIME_T)-1;
-		if ( idLib::fileSystem->ReadFile( name, NULL, &time ) > 0 ) {
+		if ( idLib::fileSystem->ReadFile( fileName, NULL, &time ) > 0 ) {
 			return ( time > fileTime );
 		}
 	}

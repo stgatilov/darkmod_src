@@ -185,6 +185,8 @@ public:
 	idMapEntity *			GetEntity( int i ) const { return entities[i]; }
 							// get the name without file extension
 	const char *			GetName( void ) const { return name; }
+							// get the name of file used to load map via idFilesystem
+	const char *			GetFileName( void ) const { return fileName; }
 							// get the file time
 	ID_TIME_T				GetFileTime( void ) const { return fileTime; }
 							// get CRC for the map geometry
@@ -206,7 +208,7 @@ protected:
 	ID_TIME_T				fileTime;
 	unsigned int			geometryCRC;
 	idList<idMapEntity *>	entities;
-	idStr					name;
+	idStr					name, fileName;
 	bool					hasPrimitiveData;
 
 private:
