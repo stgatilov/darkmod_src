@@ -430,7 +430,7 @@ void idGameLocal::Clear( void )
 }
 
 // grayman #3807
-int idGameLocal::DetermineSpyglassOverlay()
+int idGameLocal::DetermineAspectRatio()
 {
 	int result = 0;
 
@@ -632,7 +632,7 @@ void idGameLocal::Init( void ) {
 	}
 
 	// grayman #3807 - set spyglass overlay per aspect ratio
-	m_spyglassOverlay = DetermineSpyglassOverlay();
+	m_spyglassOverlay = DetermineAspectRatio();
 }
 
 const idStr& idGameLocal::GetMapFileName() const
@@ -8104,7 +8104,7 @@ void idGameLocal::OnReloadImages()
 void idGameLocal::OnVidRestart()
 {
 	// grayman #3807 - set spyglass overlay per aspect ratio
-	m_spyglassOverlay = DetermineSpyglassOverlay();
+	m_spyglassOverlay = DetermineAspectRatio();
 
 	idPlayer* player = GetLocalPlayer();
 

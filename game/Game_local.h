@@ -765,7 +765,7 @@ public:
 	virtual void			SpawnPlayer( int clientNum );
 	virtual gameReturn_t	RunFrame( const usercmd_t *clientCmds );
 	virtual int				GetSpyglassOverlay(); // grayman #3807
-	virtual int				DetermineSpyglassOverlay(); // grayman #3807
+	virtual int				DetermineAspectRatio(); // grayman #3807
 
 	/**
 	* TDM: Pause/Unpause game

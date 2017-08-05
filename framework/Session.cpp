@@ -1368,11 +1368,33 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 	// give the gamecode a chance to override
 	game->GetMapLoadingGUI( guiMap );
 
-	if ( uiManager->CheckGui( guiMap ) ) {
+	if ( uiManager->CheckGui( guiMap ) )
+	{
 		guiLoading = uiManager->FindGui( guiMap, true, false, true );
-	} else {
-		guiLoading = uiManager->FindGui( "guis/map/loading.gui", true, false, true );
 	}
+	else
+	{
+		guiLoading = uiManager->FindGui( "guis/map/loading.gui", true, false, true );
+
+		// grayman #4594 - use different images based on aspect ratios
+		switch (gameLocal.DetermineAspectRatio())
+		{
+		default:
+		case 0:
+			guiLoading->HandleNamedEvent("loadBackground_4x3");
+			break;
+		case 1:
+			guiLoading->HandleNamedEvent("loadBackground_5x4");
+			break;
+		case 2:
+			guiLoading->HandleNamedEvent("loadBackground_16x9");
+			break;
+		case 3:
+			guiLoading->HandleNamedEvent("loadBackground_16x10");
+			break;
+		}
+	}
+
 	guiLoading->SetStateFloat( "map_loading", 0.0f );
 }
 
