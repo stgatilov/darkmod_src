@@ -1309,6 +1309,27 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			def_z = AllocDef( ftype, element, scope, constant );
 			def_z->value.ptrOffset = def_y->value.ptrOffset + sizeof(float);
 		} else {
+			// make automatic defs for the vectors elements
+			// origin can be accessed as origin_x, origin_y, and origin_z
+			sprintf( element, "%s_x", def->Name() );
+			def_x = AllocDef( &type_float, element, scope, constant );
+
+			sprintf( element, "%s_y", def->Name() );
+			def_y = AllocDef( &type_float, element, scope, constant );
+
+			sprintf( element, "%s_z", def->Name() );
+			def_z = AllocDef( &type_float, element, scope, constant );
+
+			// point the vector def to the x coordinate
+			def->value			= def_x->value;
+			def->initialized	= def_x->initialized;
+
+			//stgatilov #4598:
+			//The following code was originally taken from dhewm3 (see revision 6200 in x64 branch).
+			//However, it was necessary there because dhewm3 changed sizes of builtin script types.
+			//In TDM, we reverted back to being fully binary compatible with original DOOM3 (see #4520).
+			//That's why the code is commented, and the original D3 code (just above) is used now.
+#if 0
 			idTypeDef	newtype( ev_float, &def_float, "vector float", 0, NULL );
 			idTypeDef	*ftype = GetType( newtype, true );
 
@@ -1345,6 +1366,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			def_x->initialized = def->initialized;
 			def_y->initialized = def->initialized;
 			def_z->initialized = def->initialized;
+#endif
 		}
 	} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 		//
