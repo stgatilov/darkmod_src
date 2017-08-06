@@ -15,14 +15,9 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 
-
-frameData_t		*frameData;
 backEndState_t	backEnd;
-
 
 /*
 ======================

@@ -16,6 +16,7 @@
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
 
+#include <atomic>
 #include "Image.h"
 #include "MegaTexture.h"
 
@@ -110,7 +111,8 @@ static const int	DSF_VIEW_INSIDE_SHADOW	= 1;
 static const int	DSF_SOFT_PARTICLE		= 2; // #3878
 
 typedef struct drawSurf_s {
-	const srfTriangles_t	*geo;
+	const srfTriangles_t	*frontendGeo;  // do not use in the backend; may be modified by the frontend
+	const srfTriangles_t	*backendGeo;
 	const struct viewEntity_s *space;
 	const idMaterial		*material;	// may be NULL for shadow volumes
 	float					sort;		// material->sort, modified by gui / entity sort offsets
@@ -542,14 +544,11 @@ typedef struct frameMemoryBlock_s {
 // all of the information needed by the back end must be
 // contained in a frameData_t.  This entire structure is
 // duplicated so the front and back end can run in parallel
-// on an SMP machine (OBSOLETE: this capability has been removed)
+// on an SMP machine
 typedef struct {
-	// one or more blocks of memory for all frame
-	// temporary allocations
-	frameMemoryBlock_t	*memory;
-
-	// alloc will point somewhere into the memory chain
-	frameMemoryBlock_t	*alloc;
+	std::atomic<int>	frameMemoryAllocated;
+	std::atomic<int>	frameMemoryUsed;
+	byte*				frameMemory;
 
 	srfTriangles_t *	firstDeferredFreeTriSurf;
 	srfTriangles_t *	lastDeferredFreeTriSurf;
@@ -563,11 +562,12 @@ typedef struct {
 } frameData_t;
 
 extern	frameData_t	*frameData;
+extern	frameData_t *backendFrameData;
 
 //=======================================================================
 
 void R_LockSurfaceScene( viewDef_t *parms );
-void R_ClearCommandChain( void );
+void R_ClearCommandChain( frameData_t *frameData );
 void R_AddDrawViewCmd( viewDef_t *parms );
 
 void R_ReloadGuis_f( const idCmdArgs &args );
@@ -1194,6 +1194,10 @@ void		GLimp_DeactivateContext( void );
 
 void		GLimp_EnableLogging( bool enable );
 
+void		GLimp_ActivateFrontendContext();
+void		GLimp_DeactivateFrontendContext();
+
+//void		GLimp_InitGlewContext();
 
 /*
 ====================================================================
@@ -1679,7 +1683,7 @@ SCENE GENERATION
 
 void R_InitFrameData( void );
 void R_ShutdownFrameData( void );
-int R_CountFrameData( void );
+//int R_CountFrameData( void );
 void R_ToggleSmpFrame( void );
 void *R_FrameAlloc( int bytes );
 void *R_ClearedFrameAlloc( int bytes );

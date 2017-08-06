@@ -1,16 +1,20 @@
 /*****************************************************************************
-                    The Dark Mod GPL Source Code
- 
- This file is part of the The Dark Mod Source Code, originally based 
- on the Doom 3 GPL Source Code as published in 2011.
- 
- The Dark Mod Source Code is free software: you can redistribute it 
- and/or modify it under the terms of the GNU General Public License as 
- published by the Free Software Foundation, either version 3 of the License, 
- or (at your option) any later version. For details, see LICENSE.TXT.
- 
- Project: The Dark Mod (http://www.thedarkmod.com/)
- 
+The Dark Mod GPL Source Code
+
+This file is part of the The Dark Mod Source Code, originally based
+on the Doom 3 GPL Source Code as published in 2011.
+
+The Dark Mod Source Code is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. For details, see LICENSE.TXT.
+
+Project: The Dark Mod (http://www.thedarkmod.com/)
+
+$Revision$ (Revision of last commit)
+$Date$ (Date of last commit)
+$Author$ (Author of last commit)
+
 ******************************************************************************/
 
 // vertex cache calls should only be made by the front end
@@ -33,7 +37,7 @@ typedef struct vertCache_s {
 
 	int				offset;
 	int				size;				// may be larger than the amount asked for, due
-										// to round up and minimum fragment sizes
+	// to round up and minimum fragment sizes
 	int				tag;				// a tag of 0 is a free block
 	struct vertCache_s	**	user;		// will be set to zero when purged
 	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
@@ -47,7 +51,7 @@ public:
 	void			Shutdown();
 
 	// just for gfxinfo printing
-	bool			IsFast( ) { return !virtualMemory; };
+	bool			IsFast() { return !virtualMemory; };
 
 	// called when vertex programs are enabled or disabled, because
 	// the cached data is no longer valid
@@ -82,7 +86,7 @@ public:
 	// this block won't have to zero a buffer pointer when it is purged,
 	// but it must still wait for the frames to pass, in case the GPU
 	// is still referencing it
-	void			Free( vertCache_t *buffer );	
+	void			Free( vertCache_t *buffer );
 
 	// updates the counter for determining which temp space to use
 	// and which blocks can be purged
@@ -117,14 +121,14 @@ private:
 	vertCache_t		*tempBuffers[NUM_VERTEX_FRAMES];		// allocated at startup
 	bool			tempOverflow;			// had to alloc a temp in static memory
 
-	idBlockAlloc<vertCache_t,1024>	headerAllocator;
+	idBlockAlloc<vertCache_t, 1024>	headerAllocator;
 
-	vertCache_t		freeStaticHeaders;		// head of doubly linked list
-	vertCache_t		freeDynamicHeaders;		// head of doubly linked list
-	vertCache_t		dynamicHeaders;			// head of doubly linked list
-	vertCache_t		deferredFreeList;		// head of doubly linked list
-	vertCache_t		staticHeaders;			// head of doubly linked list in MRU order,
-											// staticHeaders.next is most recently used
+	vertCache_t		freeStaticHeaders[NUM_VERTEX_FRAMES];		// head of doubly linked list
+	vertCache_t		freeDynamicHeaders[NUM_VERTEX_FRAMES];		// head of doubly linked list
+	vertCache_t		dynamicHeaders[NUM_VERTEX_FRAMES];			// head of doubly linked list
+	vertCache_t		deferredFreeList[NUM_VERTEX_FRAMES];		// head of doubly linked list
+	vertCache_t		staticHeaders[NUM_VERTEX_FRAMES];			// head of doubly linked list in MRU order,
+	// staticHeaders.next is most recently used
 };
 
 extern	idVertexCache	vertexCache;

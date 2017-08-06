@@ -512,7 +512,7 @@ void Conbuf_AppendText( const char *pMsg )
 	// replace selection instead of appending if we're overflowing
 	//
 	if ( s_totalChars > 0x7000 ) {
-		SendMessage( s_wcd.hwndBuffer, EM_SETSEL, 0, -1 );
+		PostMessage( s_wcd.hwndBuffer, EM_SETSEL, 0, -1 );
 		s_totalChars = bufLen;
 	}
 
@@ -521,9 +521,9 @@ void Conbuf_AppendText( const char *pMsg )
 	//
 	// duzenko #4408 - changed from SendMessage to workaround thread deadlock
 	// FIXME - buffer is unsafe
-	SendMessage( s_wcd.hwndBuffer, EM_LINESCROLL, 0, 0xffff );
-	SendMessage( s_wcd.hwndBuffer, EM_SCROLLCARET, 0, 0 );
-	SendMessage( s_wcd.hwndBuffer, EM_REPLACESEL, 0, (LPARAM)buffer );
+	PostMessage( s_wcd.hwndBuffer, EM_LINESCROLL, 0, 0xffff );
+	PostMessage( s_wcd.hwndBuffer, EM_SCROLLCARET, 0, 0 );
+	PostMessage( s_wcd.hwndBuffer, EM_REPLACESEL, 0, (LPARAM)buffer );
 }
 
 /*

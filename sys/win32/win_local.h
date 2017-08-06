@@ -105,7 +105,8 @@ typedef struct {
 
 	HDC				hDC;				// handle to device context
 	HGLRC			hGLRC;				// handle to GL rendering context
-	PIXELFORMATDESCRIPTOR pfd;		
+	HGLRC			hSecondaryGLRC;		// handle to secondary shared context
+	PIXELFORMATDESCRIPTOR pfd;
 	int				pixelformat;
 
 	HINSTANCE		hinstOpenGL;		// HINSTANCE for the OpenGL library

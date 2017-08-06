@@ -135,6 +135,7 @@ public:
 
 	// Makes rendering and sound system calls to display for a given clientNum.
 	virtual bool				Draw( int clientNum ) = 0;
+	virtual void				DrawLightgem( int clientNum ) = 0;
 
 	// Let the game do it's own UI when ESCAPE is used
 	virtual escReply_t			HandleESC( idUserInterface **gui ) = 0;

@@ -73,7 +73,7 @@ idCVar com_machineSpec( "com_machineSpec", "-1", CVAR_INTEGER | CVAR_ARCHIVE | C
 idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );
 idCVar com_memoryMarker( "com_memoryMarker", "-1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "used as a marker for memory stats" );
 idCVar com_preciseTic( "com_preciseTic", "1", CVAR_BOOL|CVAR_SYSTEM, "run one game tick every async thread update" );
-idCVar com_asyncInput( "com_asyncInput", "0", CVAR_BOOL|CVAR_SYSTEM, "sample input from the async thread" );
+idCVar com_asyncInput( "com_asyncInput", "0", CVAR_BOOL | CVAR_SYSTEM, "sample input from the async thread" );
 
 #define ASYNCSOUND_INFO "0: mix sound inline, 1: memory mapped async mix, 2: callback mixing, 3: write async mix"
 #if defined( MACOS_X )
@@ -2416,9 +2416,6 @@ idCommonLocal::Frame
 =================
 */
 void idCommonLocal::Frame( void ) {
-	// duzenko #4408 - forbid background game tic until back renderer
-	Sys_EnterCriticalSection(CRITICAL_SECTION_TWO);
-
 	try {
 
 		// pump all the events
@@ -2478,9 +2475,6 @@ void idCommonLocal::Frame( void ) {
 	catch( idException & ) {
 		return;			// an ERP_DROP was thrown
 	}
-
-	// duzenko #4408 - background game tic should be finished before this point
-	Sys_LeaveCriticalSection(CRITICAL_SECTION_TWO);
 }
 
 /*

@@ -772,6 +772,7 @@ public:
 	**/
 	virtual void			PauseGame( bool bPauseState );
 	virtual bool			Draw( int clientNum );
+	virtual void			DrawLightgem( int clientNum );
 	virtual escReply_t		HandleESC( idUserInterface **gui );
 	virtual idUserInterface	*StartMenu( void );
 	virtual const char *	HandleGuiCommands( const char *menuCommand );

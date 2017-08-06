@@ -503,13 +503,13 @@ void RB_ShowLightCount( void ) {
 		for ( i = 0 ; i < 2 ; i++ ) {
 			for ( surf = i ? vLight->localInteractions: vLight->globalInteractions; surf; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
-				if ( !surf->geo->ambientCache ) {
+				if (!surf->backendGeo->ambientCache) {
 					continue;
 				}
 
-				const idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
+				const idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 				qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), &ac->xyz );
-				RB_DrawElementsWithCounters( surf->geo );
+				RB_DrawElementsWithCounters( surf->backendGeo );
 			}
 		}
 	}
@@ -572,7 +572,7 @@ void RB_ShowSilhouette( void ) {
 				; surf ; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
 
-				const srfTriangles_t	*tri = surf->geo;
+				const srfTriangles_t	*tri = surf->backendGeo;
 
 				qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
 				qglBegin( GL_LINES );
@@ -645,7 +645,7 @@ static void RB_ShowShadowCount( void ) {
 			for ( surf = i ? vLight->localShadows : vLight->globalShadows 
 				; surf ; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
-				const srfTriangles_t	*tri = surf->geo;
+				const srfTriangles_t	*tri = surf->backendGeo;
 				if ( !tri->shadowCache ) {
 					continue;
 				}
@@ -696,7 +696,7 @@ RB_T_RenderTriangleSurfaceAsLines
 ===============
 */
 void RB_T_RenderTriangleSurfaceAsLines( const drawSurf_t *surf ) {
-	const srfTriangles_t *tri = surf->geo;
+	const srfTriangles_t *tri = surf->backendGeo;
 
 	if ( !tri->verts ) {
 		return;
@@ -912,7 +912,7 @@ static void RB_ShowTexturePolarity( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -988,7 +988,7 @@ static void RB_ShowUnsmoothedTangents( drawSurf_t **drawSurfs, int numDrawSurfs 
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 		qglBegin( GL_TRIANGLES );
 		for ( j = 0 ; j < tri->numIndexes ; j+=3 ) {
 			idDrawVert	*a, *b, *c;
@@ -1037,7 +1037,7 @@ static void RB_ShowTangentSpace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1091,7 +1091,7 @@ static void RB_ShowVertexColor( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1154,7 +1154,7 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		RB_SimpleSurfaceSetup( drawSurf );
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 		if ( !tri->verts ) {
 			continue;
 		}
@@ -1183,7 +1183,7 @@ static void RB_ShowNormals( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		RB_SimpleWorldSetup();
 		for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 			drawSurf = drawSurfs[i];
-			tri = drawSurf->geo;
+			tri = drawSurf->backendGeo;
 			if ( !tri->verts ) {
 				continue;
 			}
@@ -1306,7 +1306,7 @@ static void RB_ShowTextureVectors( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 
 		if ( !tri->verts ) {
 			continue;
@@ -1405,7 +1405,7 @@ static void RB_ShowDominantTris( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 
 		if ( !tri->verts ) {
 			continue;
@@ -1466,7 +1466,7 @@ static void RB_ShowEdges( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf = drawSurfs[i];
 
-		tri = drawSurf->geo;
+		tri = drawSurf->backendGeo;
 
 		idDrawVert *ac = (idDrawVert *)tri->verts;
 		if ( !ac ) {

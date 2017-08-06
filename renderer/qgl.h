@@ -88,7 +88,7 @@ extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 
 // NV_register_combiners
-/*extern	void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
+extern	void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
 extern	void ( APIENTRY *qglCombinerParameterivNV )( GLenum pname, const GLint *params );
 extern	void ( APIENTRY *qglCombinerParameterfNV )( GLenum pname, const GLfloat param );
 extern	void ( APIENTRY *qglCombinerParameteriNV )( GLenum pname, const GLint param );
@@ -97,7 +97,7 @@ extern	void ( APIENTRY *qglCombinerInputNV )( GLenum stage, GLenum portion, GLen
 extern	void ( APIENTRY *qglCombinerOutputNV )( GLenum stage, GLenum portion, GLenum abOutput, GLenum cdOutput, 
 											   GLenum sumOutput, GLenum scale, GLenum bias, GLboolean abDotProduct,
 											   GLboolean cdDotProduct, GLboolean muxSum );
-extern	void ( APIENTRY *qglFinalCombinerInputNV )( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage );*/
+extern	void ( APIENTRY *qglFinalCombinerInputNV )( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage );
 
 // 3D textures
 extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);

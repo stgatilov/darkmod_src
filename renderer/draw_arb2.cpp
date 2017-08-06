@@ -117,7 +117,7 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	din->specularImage->Bind();
 
 	// draw it
-	RB_DrawElementsWithCounters( din->surf->geo );
+	RB_DrawElementsWithCounters( din->surf->backendGeo );
 }
 
 
@@ -203,7 +203,7 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 		// perform setup here that will not change over multiple interaction passes
 
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
 		qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
@@ -336,7 +336,7 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 		// perform setup here that will not change over multiple interaction passes
 
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->geo->ambientCache );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
 		qglVertexAttribPointerARB( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
