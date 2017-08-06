@@ -18,7 +18,7 @@
 
 
 
-#include "minizip/Unzip.h"
+#include "minizip/unzip.h"
 
 /*
 =================

@@ -18,9 +18,9 @@
 
 
 
-#include "minizip/Unzip.h"
+#include "minizip/unzip.h"
 //stgatilov: for pk4 repacking
-#include "minizip/Zip.h"
+#include "minizip/zip.h"
 
 #ifdef WIN32
 	#include <io.h>	// for _read
