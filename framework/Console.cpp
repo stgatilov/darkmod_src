@@ -1114,7 +1114,8 @@ void idConsoleLocal::DrawSolidConsole( float frac ) {
 	// draw the version number
 	renderSystem->SetColor( idStr::ColorForIndex( C_COLOR_CYAN ) );
 	{
-		const idStr version = va("%s #%d", ENGINE_VERSION, RevisionTracker::Instance().GetHighestRevision());
+		// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
+		const idStr version = va("%s/%u #%d", ENGINE_VERSION, sizeof(void*) * 8, RevisionTracker::Instance().GetHighestRevision());
 		const int vlen = version.Length();
 
 		for ( x = 0; x < vlen; x++ ) {

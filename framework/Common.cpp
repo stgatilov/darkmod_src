@@ -50,8 +50,10 @@ public:
 	{
 		if (string[0] == 0x0)
 		{
-			sprintf( string, "%s #%d (%s)%s %s %s %s",
+			// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
+			sprintf( string, "%s/%u #%d (%s)%s %s %s %s",
 				ENGINE_VERSION,
+				sizeof(void*) * 8,
 				RevisionTracker::Instance().GetHighestRevision(), RevisionTracker::Instance().GetRevisionString(),
 				BUILD_DEBUG, BUILD_STRING, __DATE__, __TIME__
 			);

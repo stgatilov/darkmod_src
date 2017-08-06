@@ -311,7 +311,16 @@ void Sys_CreateConsole( void ) {
 
 	//s_wcd.hbmLogo = LoadBitmap( win32.hInstance, MAKEINTRESOURCE( IDB_BITMAP_LOGO) );
 
-	idStr title = va( "%s %d.%02d", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+	// grayman #4539 - show whether this is a 32-bit or 64-bit binary
+	// I had a problem building the 'title' string.
+	// va() accepts the following:
+	// idStr title = va( "%s%d.%02d/%u", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8);
+	// but crashes when I add an extra character:
+	// idStr title = va( "%s %d.%02d/%u", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8);
+	// It's as if there's a limitation on the number of chars va will accept, which makes no sense.
+	// So, for now, I'm going to change the title from "The Dark Mod 2.06" to "TDM 2.06" to give me room for the bit size.
+
+	idStr title = va( "%s/%u", ENGINE_VERSION, sizeof(void*) * 8);
 
 	s_wcd.hWnd = CreateWindowEx( 0,
 							   DEDCLASS,

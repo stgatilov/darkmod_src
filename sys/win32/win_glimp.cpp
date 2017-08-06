@@ -543,7 +543,8 @@ static bool GLW_CreateWindow( glimpParms_t parms ) {
 		}
 	}
 
-	idStr title = va( "%s %d.%02d", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR);
+	// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
+	idStr title = va( "%s %d.%02d/%u", GAME_NAME, TDM_VERSION_MAJOR, TDM_VERSION_MINOR, sizeof(void*) * 8);
 
 	win32.hWnd = CreateWindowEx (
 		 exstyle, 
