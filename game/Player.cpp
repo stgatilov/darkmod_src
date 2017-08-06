@@ -12124,13 +12124,14 @@ void idPlayer::Event_SetSpyglassOverlayBackground()
 		m_overlays.broadcastNamedEvent("initBackground_4x3");
 		break;
 	case 1:
-		m_overlays.broadcastNamedEvent("initBackground_5x4");
-		break;
-	case 2:
+	case 4:
 		m_overlays.broadcastNamedEvent("initBackground_16x9");
 		break;
-	case 3:
+	case 2:
 		m_overlays.broadcastNamedEvent("initBackground_16x10");
+		break;
+	case 3:
+		m_overlays.broadcastNamedEvent("initBackground_5x4");
 		break;
 	}
 }

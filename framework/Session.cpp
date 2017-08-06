@@ -1365,13 +1365,16 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 			guiLoading->HandleNamedEvent("loadBackground_4x3");
 			break;
 		case 1:
-			guiLoading->HandleNamedEvent("loadBackground_5x4");
-			break;
-		case 2:
 			guiLoading->HandleNamedEvent("loadBackground_16x9");
 			break;
-		case 3:
+		case 2:
 			guiLoading->HandleNamedEvent("loadBackground_16x10");
+			break;
+		case 3:
+			guiLoading->HandleNamedEvent("loadBackground_5x4");
+			break;
+		case 4:
+			guiLoading->HandleNamedEvent("loadBackground_16x9tv");
 			break;
 		}
 	}

@@ -439,48 +439,35 @@ int idGameLocal::DetermineAspectRatio()
 
 	if (ratio_fov > 0.01)
 	{
-		// There are four overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9.
-		// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.777778.
+		// There are several overlays, one for each of these aspect ratios: 5:4, 4:3, 16:10, 16:9 TV, 16:9.
+		// Converting those to a single ratio gives us: 1.25, 1.333333, 1.6, 1.770833, 1.777778.
 		// To match an overlay to a given 'ratio_fov', we'll assume that halfway between two
 		// ratios, we'll switch from the lower aspect ratio to the higher.
 
 		if (ratio_fov < (1.25 + (1.333333 - 1.25)/2))
 		{
-			result = 1; // 5:4
+			result = 3; // 5:4
 		}
 		else if (ratio_fov < (1.333333 + (1.6 - 1.333333)/2))
 		{
 			result = 0; // 4:3
 		}
-		else if (ratio_fov < (1.6 + (1.777778 - 1.6)/2))
+		else if (ratio_fov < (1.6 + (1.770833 - 1.6)/2))
 		{
-			result = 3; // 16:10
+			result = 2; // 16:10
+		}
+		else if (ratio_fov < (1.770833 + (1.777778 - 1.770833)/2))
+		{
+			result = 4; // 16:9 TV
 		}
 		else
 		{
-			result = 2; // 16:9 & 16:9 TV
+			result = 1; // 16:9
 		}
 	}
 	else
 	{
-		// use r_aspectRatio
-		switch( r_aspectRatio.GetInteger() )
-		{
-		default:
-		case 0: // 4:3
-			result = 0;
-			break;
-		case 1: // 16:9
-		case 4: // TV 16:9
-			result = 2;
-			break;
-		case 2: // 16:10
-			result = 3;
-			break;
-		case 3: // 5:4
-			result = 1;
-			break;
-		}
+		result = r_aspectRatio.GetInteger(); // use r_aspectRatio
 	}
 
 	return result;
