@@ -376,7 +376,8 @@ void CGlobal::LoadINISettings(const IniFilePtr& iniFile)
 
 	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("Executable last cleaned and rebuilt on " __DATE__ " " __TIME__ "\r");
 
-	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d/u, code revision %d (%s)\r", 
+	// BluePill #4539 - show whether this is a 32-bit or 64-bit binary
+	DM_LOG(LC_INIT, LT_INIT)LOGSTRING("%s %d.%02d/%u, code revision %d (%s)\r", 
 		GAME_VERSION,
 		TDM_VERSION_MAJOR,
 		TDM_VERSION_MINOR,
