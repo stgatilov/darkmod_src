@@ -1663,9 +1663,9 @@ void idPhysics_Player::LadderMove( void )
 	scale = idPhysics_Player::CmdScale( command );
 
 	float lenVert = viewForward * -gravityNormal;
-	float lenTransv = idMath::Sqrt( 1.0f - NormalDot * NormalDot - lenVert * lenVert );
+	float lenTransv = idMath::Fabs(viewForward * gravityNormal.Cross(ClimbNormXY));
 	// Dump everything that's not in the transverse direction into the vertical direction
-	float lenVert2 = idMath::Sqrt( 1.0f - lenTransv * lenTransv );
+	float lenVert2 = idMath::Sqrt(NormalDot * NormalDot + lenVert * lenVert);
 
 	// resolve up/down, with some tolerance so player can still go up looking slightly down
 	if( lenVert < -0.3 )
