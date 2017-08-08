@@ -133,7 +133,30 @@ struct DownloadableMod
 
 	static int SortCompareTitle(const DownloadableModPtr* a, const DownloadableModPtr* b)
 	{
-		return idStr::Cmp((*a)->title, (*b)->title);
+		//alexdiru 4499
+		idStr aName = common->Translate((*a)->title);
+		idStr prefix = "";
+		idStr suffix = "";
+		common->GetI18N()->MoveArticlesToBack(aName, prefix, suffix);
+		if (!suffix.IsEmpty())
+		{
+			// found, remove prefix and append suffix
+			aName.StripLeadingOnce(prefix.c_str());
+			aName += suffix;
+		}
+
+		idStr bName = common->Translate((*b)->title);
+		prefix = "";
+		suffix = "";
+		common->GetI18N()->MoveArticlesToBack(bName, prefix, suffix);
+		if (!suffix.IsEmpty())
+		{
+			// found, remove prefix and append suffix
+			bName.StripLeadingOnce(prefix.c_str());
+			bName += suffix;
+		}
+
+		return aName.Icmp(bName);
 	}
 
 	// Gets the local path to the screenshot image (relative to darkmod path, e.g. fms/_missionshots/preview_monst02.jpg)
