@@ -13,38 +13,31 @@
  
 ******************************************************************************/
 
-#ifndef __AI_PATH_SLEEP_TASK_H__
-#define __AI_PATH_SLEEP_TASK_H__
+#ifndef __AI_PATH_WAKEUP_TASK_H__
+#define __AI_PATH_WAKEUP_TASK_H__
 
 #include "PathTask.h"
-
-// grayman #3820 - These must be kept in sync with their counterparts in AI.h
-// and tdm_ai.script.
-// The sleep_location spawnarg can be used both on path_sleep entities and
-// on the AI entities. The former has priority over the latter
-#define SLEEP_LOC_UNDEFINED	-1
-#define SLEEP_LOC_FLOOR		 0
-#define SLEEP_LOC_BED		 1
-#define SLEEP_LOC_CHAIR		 2
 
 namespace ai
 {
 
 // Define the name of this task
-#define TASK_PATH_SLEEP "PathSleep"
+#define TASK_PATH_WAKEUP "PathWakeup"
 
-class PathSleepTask;
-typedef std::shared_ptr<PathSleepTask> PathSleepTaskPtr;
+class PathWakeupTask;
+typedef std::shared_ptr<PathWakeupTask> PathWakeupTaskPtr;
 
-class PathSleepTask :
+class PathWakeupTask :
 	public PathTask
 {
 private:
+	int _waitEndTime;
+
 	// Private constructor
-	PathSleepTask();
+	PathWakeupTask();
 
 public:
-	PathSleepTask(idPathCorner* path);
+	PathWakeupTask(idPathCorner* path);
 
 	// Get the name of this task
 	virtual const idStr& GetName() const;
@@ -54,13 +47,17 @@ public:
 
 	virtual bool Perform(Subsystem& subsystem);
 
-	virtual void OnFinish(idAI* owner); // grayman #3528
+	virtual void OnFinish(idAI* owner);
+
+	// Save/Restore methods
+	virtual void Save(idSaveGame* savefile) const;
+	virtual void Restore(idRestoreGame* savefile);
 
 	// Creates a new Instance of this task
-	static PathSleepTaskPtr CreateInstance();
+	static PathWakeupTaskPtr CreateInstance();
 
 };
 
 } // namespace ai
 
-#endif /* __AI_PATH_SLEEP_TASK_H__ */
+#endif /* __AI_PATH_WAKEUP_TASK_H__ */

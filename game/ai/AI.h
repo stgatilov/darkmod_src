@@ -60,6 +60,15 @@ static const int s_MAXACUITIES = 15;
 #define ATTACK_ON_ACTIVATE		2
 #define ATTACK_ON_SIGHT			4
 
+// grayman #3820 - These must be kept in sync with their counterparts in PathSleepTask.h
+// and tdm_ai.script.
+// The sleep_location spawnarg can be used both on path_sleep entities and
+// on the AI entities. The former has priority over the latter
+#define SLEEP_LOC_UNDEFINED		-1
+#define SLEEP_LOC_FLOOR			0
+#define SLEEP_LOC_BED			1
+#define SLEEP_LOC_CHAIR			2
+
 typedef enum {
 	TALK_NEVER,
 	TALK_DEAD,
@@ -522,10 +531,13 @@ public:
 
 	// angua: calls the script functions for sitting down and getting up
 	void SitDown();
-	void LayDown();
+	void FallAsleep();
 
 	// GetUp is used both for getting up from sitting or sleeping
 	void GetUp();
+
+	// grayman #3820 - wake up w/o standing up
+	void WakeUp();
 
 	bool FitsThrough(CFrobDoor* frobDoor); // grayman #4412
 
@@ -924,6 +936,11 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	*   ai::ECombat            == 5 if thresh_5 <= AI_AlertLevel (and an enemy is known)
 	**/
 	idScriptFloat			AI_AlertIndex;
+
+	/**
+	* Whether the AI is sleeping on the floor (0), on a bed (1) or in a chair (2)
+	**/
+	idScriptFloat			AI_SleepLocation; // grayman #3820
 	
 	/**
 	* Stores the amount alerted in this frame
@@ -1423,7 +1440,7 @@ public: // greebo: Made these public for now, I didn't want to write an accessor
 	void					SlideMove( void );
 	void					SittingMove();
 	void					NoTurnMove();
-	void					LayDownMove();
+	void					SleepingMove();
 	void					AdjustFlyingAngles( void );
 	void					AddFlyBob( idVec3 &vel );
 	void					AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos );

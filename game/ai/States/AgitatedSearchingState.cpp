@@ -67,7 +67,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 	if ( moveType == MOVETYPE_SIT      || 
 		 moveType == MOVETYPE_SLEEP    ||
 		 moveType == MOVETYPE_SIT_DOWN ||
-		 moveType == MOVETYPE_LAY_DOWN )
+		 moveType == MOVETYPE_FALL_ASLEEP ) // grayman #3820 - was MOVETYPE_LAY_DOWN
 	{
 		owner->GetUp(); // it's okay to call this multiple times
 		owner->GetMind()->EndState();
@@ -75,7 +75,7 @@ bool AgitatedSearchingState::CheckAlertLevel(idAI* owner)
 		return false;
 	}
 
-	if ( ( moveType == MOVETYPE_GET_UP ) ||	( moveType == MOVETYPE_GET_UP_FROM_LYING ) )
+	if ( ( moveType == MOVETYPE_GET_UP ) ||	( moveType == MOVETYPE_WAKE_UP ) ) // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 	{
 		owner->GetMind()->EndState();
 		owner->GetMemory().leaveAlertState = true; // grayman #3857

@@ -168,10 +168,10 @@ bool IdleAnimationTask::Perform(Subsystem& subsystem)
 			!(owner->AI_RUN && owner->AI_FORWARD) && // grayman #3857 - AI_RUN might be left over after coming to a full stop
 			!(owner->AI_FORWARD && (owner->AI_AlertIndex >= ESuspicious)) &&  // grayman #3857 - only play idle search anims when standing
 			moveType != MOVETYPE_SIT_DOWN &&
-			moveType != MOVETYPE_LAY_DOWN &&
+			moveType != MOVETYPE_FALL_ASLEEP && // grayman #3820 - was MOVETYPE_LAY_DOWN
 			moveType != MOVETYPE_SLEEP &&
 			moveType != MOVETYPE_GET_UP &&
-			moveType != MOVETYPE_GET_UP_FROM_LYING &&
+			moveType != MOVETYPE_WAKE_UP && // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 			!drowning &&
 			(!owner->m_HandlingDoor || (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) &&
 			!(owner->AI_RUN && owner->m_HandlingDoor && (owner->GetMoveStatus() == MOVE_STATUS_WAITING)) && // grayman #4040

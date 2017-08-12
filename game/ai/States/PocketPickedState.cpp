@@ -86,9 +86,9 @@ void PocketPickedState::Think(idAI* owner)
 		 memory.stopReactingToPickedPocket || // check if something happened to abort the state
 		 (moveType == MOVETYPE_SLEEP) || // or asleep
 		 (moveType == MOVETYPE_SIT_DOWN) || // or in the act of sitting down
-		 (moveType == MOVETYPE_LAY_DOWN) || // or in the act of lying down to sleep
+		 (moveType == MOVETYPE_FALL_ASLEEP) || // or in the act of lying down to sleep // grayman #3820 - was MOVETYPE_LAY_DOWN
 		 (moveType == MOVETYPE_GET_UP) ||   // or getting up from sitting
-		 (moveType == MOVETYPE_GET_UP_FROM_LYING) ) // or getting up from lying down
+		 (moveType == MOVETYPE_WAKE_UP) ) // or getting up from lying down // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 	{
 		Wrapup(owner);
 		return;

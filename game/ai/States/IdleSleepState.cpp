@@ -121,10 +121,29 @@ void IdleSleepState::Think(idAI* owner)
 			&& owner->GetCurrentYaw() == memory.idleYaw)
 		{
 			owner->AI_LAY_DOWN_LEFT = owner->spawnArgs.GetBool("lay_down_left", "1");
-			owner->LayDown();
+			owner->FallAsleep();
 		}
 	}
-	else if (owner->GetMoveType() == MOVETYPE_GET_UP_FROM_LYING)
+	// grayman #3820 - MOVETYPE_WAKE_UP used to clear the movement tasks, which
+	// caused the AI to re-initialize his movement. When trying to have a sitting &
+	// sleeping AI stay seated when he wakes up, we can't re-initialize his
+	// movement, because that makes him think he has to stand up and re-assess his
+	// patrol path, and we don't want him to do that if we want him to stay seated.
+	//
+	// Since MOVETYPE_WAKE_UP for a sleeping sitter will be turned into MOVETYPE_SIT
+	// once he wakes up, the idle sleep state will end when he returns to MOVETYPE_SIT.
+	// Only at that point can we end the sleep state and return him to the idle state.
+	else if (owner->GetMoveType() == MOVETYPE_WAKE_UP)
+	{
+		// still waking up, so do nothing
+	}
+	else if (owner->GetMoveType() == MOVETYPE_SIT) // sitting, ready to move on
+	{
+		owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
+		owner->commSubsystem->ClearTasks();
+		return;
+	}
+	else if (owner->GetMoveType() == MOVETYPE_ANIM) // standing, ready to move on
 	{
 		owner->GetMind()->SwitchState(owner->backboneStates[ERelaxed]);
 		owner->commSubsystem->ClearTasks();
@@ -134,7 +153,7 @@ void IdleSleepState::Think(idAI* owner)
 	UpdateAlertLevel();
 
 	// Ensure we are in the correct alert level
-	if (!CheckAlertLevel(owner)) return;
+	CheckAlertLevel(owner);
 }
 
 

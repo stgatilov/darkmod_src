@@ -26,6 +26,7 @@
 #include "../States/IdleSleepState.h"
 #include "../Library.h"
 
+
 namespace ai
 {
 
@@ -50,18 +51,43 @@ void PathSleepTask::Init(idAI* owner, Subsystem& subsystem)
 {
 	PathTask::Init(owner, subsystem);
 
-	if(_path.GetEntity()->spawnArgs.GetBool("lay_down_left", "1"))
+	// grayman #3820 - AI can fall asleep on the floor, on a bed, or on a chair.
+	// This is defined by the 'sleep_location' spawnarg on the path_sleep entity.
+	// To support 2.05 and earlier, where the 'sleep_location' is defined on the AI,
+	// we'll continue to allow both definitions, but the one on the path_sleep overrides
+	// the one on the AI, if it exists.
+
+	int sleepLocation = _path.GetEntity()->spawnArgs.GetInt("sleep_location", "-1"); // grayman #3820
+	if ( sleepLocation == SLEEP_LOC_UNDEFINED )
 	{
-		owner->AI_LAY_DOWN_LEFT = true;
-	}
-	else
-	{
-		owner->AI_LAY_DOWN_LEFT = false;
+		// There is no sleep_location spawnarg on the path_sleep, so see if there's one
+		// on the AI. If there isn't, then default to sleeping on a bed.
+		sleepLocation = owner->spawnArgs.GetInt("sleep_location", "1"); // grayman #3820
 	}
 
-	if (owner->GetMoveType() == MOVETYPE_ANIM)
+	owner->AI_SleepLocation = sleepLocation; // tell the animation scripts what to do
+
+	if ( (sleepLocation == SLEEP_LOC_FLOOR) || (sleepLocation == SLEEP_LOC_BED) )
 	{
-		owner->LayDown();
+		if ( _path.GetEntity()->spawnArgs.GetBool("lay_down_left", "1") )
+		{
+			owner->AI_LAY_DOWN_LEFT = true;
+		}
+		else
+		{
+			owner->AI_LAY_DOWN_LEFT = false;
+		}
+		if (owner->GetMoveType() == MOVETYPE_ANIM)
+		{
+			owner->FallAsleep();
+		}
+	}
+	else if ( sleepLocation == SLEEP_LOC_CHAIR ) // sleep while sitting in a chair
+	{
+		if (owner->GetMoveType() == MOVETYPE_SIT) // need to be already sitting in a chair
+		{
+			owner->FallAsleep();
+		}
 	}
 }
 

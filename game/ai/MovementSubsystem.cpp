@@ -38,6 +38,7 @@
 #include "Tasks/MoveToPositionTask.h"
 #include "Tasks/PathSetMovetypeTask.h"
 #include "Tasks/FollowActorTask.h"
+#include "Tasks/PathWakeupTask.h" // grayman #3820
 #include "Tasks/HandleElevatorTask.h" // grayman #3050
 
 namespace ai
@@ -395,28 +396,36 @@ void MovementSubsystem::StartPathTask()
 	}
 	else if (classname == "path_sleep")
 	{
-		// grayman #3670 - Because of the way patrolling is designed,
-		// it's possible that we can process a path_sleep twice in a row.
-		// This happens because when we fall asleep, we start the idle sleep
-		// task, which executes a StartPatrol(), which leads us back here
-		// with the same path_sleep node.
-		// So, if we're already asleep, don't process a path_sleep.
-
-		if ( _owner.GetEntity()->GetMoveType() != MOVETYPE_SLEEP )
+		// grayman #3820 - can't fall asleep if the owner has seen evidence or alert idle is disabled
+		if (!_owner.GetEntity()->HasSeenEvidence() || _owner.GetEntity()->spawnArgs.GetBool("disable_alert_idle", "0"))
 		{
-			if (path->spawnArgs.FindKey("angle") != NULL)
+			// grayman #3670 - Because of the way patrolling is designed,
+			// it's possible that we can process a path_sleep twice in a row.
+			// This happens because when we fall asleep, we start the idle sleep
+			// task, which executes a StartPatrol(), which leads us back here
+			// with the same path_sleep node.
+			// So, if we're already asleep, don't process a path_sleep.
+
+			if ( _owner.GetEntity()->GetMoveType() != MOVETYPE_SLEEP )
 			{
-				// We have an angle key set, push a PathTurnTask on top of the sleep task
-				tasks.push_back(TaskPtr(new PathSleepTask(path)));
-				// The "task" variable will be pushed later on in this code
-				tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path,false))); // grayman #3670
-			}
-			else 
-			{
-				// No "angle" key set, just schedule the sleep task
-				tasks.push_back(PathSleepTaskPtr(new PathSleepTask(path)));
+				if ( path->spawnArgs.FindKey("angle") != NULL )
+				{
+					// We have an angle key set, push a PathTurnTask on top of the sleep task
+					tasks.push_back(TaskPtr(new PathSleepTask(path)));
+					// The "task" variable will be pushed later on in this code
+					tasks.push_back(PathTurnTaskPtr(new PathTurnTask(path, false))); // grayman #3670
+				}
+				else
+				{
+					// No "angle" key set, just schedule the sleep task
+					tasks.push_back(PathSleepTaskPtr(new PathSleepTask(path)));
+				}
 			}
 		}
+	}
+	else if (classname == "path_wakeup") // grayman #3820
+	{
+		tasks.push_back(PathWakeupTaskPtr(new PathWakeupTask(path)));
 	}
 	else if (classname == "path_waitfortrigger")
 	{

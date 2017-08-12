@@ -60,9 +60,9 @@ void PainState::Init(idAI* owner)
 	if ( moveType == MOVETYPE_SIT ||
 		moveType == MOVETYPE_SLEEP ||
 		moveType == MOVETYPE_SIT_DOWN ||
-		moveType == MOVETYPE_LAY_DOWN ||
+		moveType == MOVETYPE_FALL_ASLEEP || // grayman #3820 - was MOVETYPE_LAY_DOWN
 		moveType == MOVETYPE_GET_UP ||
-		moveType == MOVETYPE_GET_UP_FROM_LYING )
+		moveType == MOVETYPE_WAKE_UP ) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 	{
 		// Set end time
 		_stateEndTime = gameLocal.time;

@@ -1863,6 +1863,8 @@ void idAI::Spawn( void )
 	AI_VISALERT = false;
 	AI_TACTALERT = false;
 
+	AI_SleepLocation = spawnArgs.GetInt("sleep_location", "1"); // grayman #3820
+
 	fl.takedamage		= !spawnArgs.GetBool( "noDamage" );
 	enemy				= NULL;
 	allowMove			= true;
@@ -2353,7 +2355,9 @@ void idAI::Think( void )
 
 	//PrintGoalData(move.moveDest, 10);
 	// grayman #2416 - don't let origin slip below the floor when getting up from lying down
-	if ( ( gameLocal.time <= m_getupEndTime ) && ( idStr(WaitState()) == "get_up_from_lying_down") )
+	if ( ( gameLocal.time <= m_getupEndTime ) &&
+		 ( idStr(WaitState()) == "wake_up") &&
+		 ((AI_SleepLocation == SLEEP_LOC_FLOOR) || (AI_SleepLocation == SLEEP_LOC_BED)))// grayman #3820
 	{
 		idVec3 origin = physicsObj.GetOrigin();
 		if ( origin.z < m_sleepFloorZ )
@@ -2594,12 +2598,12 @@ void idAI::Think( void )
 				NoTurnMove();
 				break;
 
-			case MOVETYPE_LAY_DOWN :
+			case MOVETYPE_FALL_ASLEEP : // grayman #3820 - was MOVETYPE_LAY_DOWN
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				LayDownMove();
+				SleepingMove();
 				break;
 
 			case MOVETYPE_GET_UP :
@@ -2611,12 +2615,12 @@ void idAI::Think( void )
 				CheckBlink();
 				break;
 
-			case MOVETYPE_GET_UP_FROM_LYING :
+			case MOVETYPE_WAKE_UP : // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 				// static monsters
 				UpdateEnemyPosition();
 				UpdateScript();
 				// moving and turning not allowed
-				LayDownMove();
+				SleepingMove();
 				break;
 
 			default:
@@ -2720,9 +2724,9 @@ bool idAI::ThinkingIsAllowed()
 		// angua: AI think every frame while sitting/laying down and getting up
 		// otherwise, the AI might end up in a different sleeping position
 		if (move.moveType == MOVETYPE_SIT_DOWN
-			|| move.moveType == MOVETYPE_LAY_DOWN
+			|| move.moveType == MOVETYPE_FALL_ASLEEP // grayman #3820 - was MOVETYPE_LAY_DOWN
 			|| move.moveType == MOVETYPE_GET_UP
-			|| move.moveType == MOVETYPE_GET_UP_FROM_LYING)
+			|| move.moveType == MOVETYPE_WAKE_UP) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 		{
 			return true;
 		}
@@ -2912,6 +2916,8 @@ void idAI::LinkScriptVariables( void )
 
 	AI_AlertLevel.LinkTo(			scriptObject, "AI_AlertLevel" );
 	AI_AlertIndex.LinkTo(			scriptObject, "AI_AlertIndex" );
+
+	AI_SleepLocation.LinkTo(		scriptObject, "AI_SleepLocation" ); // grayman #3820
 
 	//these are set until unset by the script
 	AI_HEARDSOUND.LinkTo(		scriptObject, "AI_HEARDSOUND");
@@ -4435,8 +4441,8 @@ bool idAI::MoveToPosition( const idVec3 &pos, float accuracy )
 		|| ( GetMoveType() == MOVETYPE_SLEEP )
 		|| ( GetMoveType() == MOVETYPE_SIT_DOWN )
 		|| ( GetMoveType() == MOVETYPE_GET_UP )
-		|| ( GetMoveType() == MOVETYPE_LAY_DOWN )
-		|| ( GetMoveType() == MOVETYPE_GET_UP_FROM_LYING ) )
+		|| ( GetMoveType() == MOVETYPE_FALL_ASLEEP ) // grayman #3820 - was MOVETYPE_LAY_DOWN
+		|| ( GetMoveType() == MOVETYPE_WAKE_UP ) ) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 	{
 		GetUp();
 		return true;
@@ -4688,17 +4694,17 @@ void idAI::SetMoveType( idStr moveType )
 	{
 		SetMoveType(MOVETYPE_SLEEP);
 	}
-	else if (moveType.Icmp("MOVETYPE_LAY_DOWN") == 0)
+	else if (moveType.Icmp("MOVETYPE_FALL_ASLEEP") == 0) // grayman #3820 - was MOVETYPE_LAY_DOWN
 	{
-		SetMoveType(MOVETYPE_LAY_DOWN);
+		SetMoveType(MOVETYPE_FALL_ASLEEP);
 	}
 	else if (moveType.Icmp("MOVETYPE_GET_UP") == 0)
 	{
 		SetMoveType(MOVETYPE_GET_UP);
 	}
-	else if (moveType.Icmp("MOVETYPE_GET_UP_FROM_LYING") == 0)
+	else if (moveType.Icmp("MOVETYPE_WAKE_UP") == 0) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 	{
-		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
+		SetMoveType(MOVETYPE_WAKE_UP);
 	}
 	else
 	{
@@ -5506,7 +5512,7 @@ bool idAI::TurnToward( const idVec3 &pos ) {
 
 	if ( ( move.moveType != MOVETYPE_SIT ) &&
 		 ( move.moveType != MOVETYPE_GET_UP ) &&
-		 ( move.moveType != MOVETYPE_GET_UP_FROM_LYING ) )
+		 ( move.moveType != MOVETYPE_WAKE_UP ) ) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 	{
 		dir = pos - physicsObj.GetOrigin();
 		physicsObj.GetGravityAxis().ProjectVector( dir, local_dir );
@@ -5545,9 +5551,9 @@ void idAI::ApplyImpulse( idEntity *ent, int id, const idVec3 &point, const idVec
 		if ( moveType == MOVETYPE_SIT ||
 			moveType == MOVETYPE_SLEEP ||
 			moveType == MOVETYPE_SIT_DOWN ||
-			moveType == MOVETYPE_LAY_DOWN ||
+			moveType == MOVETYPE_FALL_ASLEEP || // grayman #3820 - was MOVETYPE_LAY_DOWN
 			moveType == MOVETYPE_GET_UP ||
-			moveType == MOVETYPE_GET_UP_FROM_LYING )
+			moveType == MOVETYPE_WAKE_UP ) // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
 		{
 			// ignore the impulse
 		}
@@ -6100,7 +6106,7 @@ void idAI::NoTurnMove()
 
 
 
-void idAI::LayDownMove()
+void idAI::SleepingMove()
 {
 	idVec3 oldorigin(physicsObj.GetOrigin());
 	idMat3 oldaxis(viewAxis);
@@ -11170,7 +11176,7 @@ bool idAI::CheckTactileIgnore(idEntity* tactEnt)
 
 	// grayman #3009 - ignore all tactile alerts while getting up
 
-	if ( ( move.moveType == MOVETYPE_GET_UP ) || ( move.moveType == MOVETYPE_GET_UP_FROM_LYING ) )
+	if ( ( move.moveType == MOVETYPE_GET_UP ) || ( move.moveType == MOVETYPE_WAKE_UP ) ) // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 	{
 		return true;
 	}
@@ -13330,10 +13336,10 @@ void idAI::GetUp()
 		SetMoveType(MOVETYPE_GET_UP);
 		SetWaitState("get_up");
 	}
-	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_LAY_DOWN ) ) // grayman #3290 - corrected logic
+	else if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_FALL_ASLEEP ) ) // grayman #3290 - corrected logic // grayman #3820 - MOVETYPE_FALL_ASLEEP was MOVETYPE_LAY_DOWN
 	{
-		SetMoveType(MOVETYPE_GET_UP_FROM_LYING);
-		SetWaitState("get_up_from_lying_down");
+		SetMoveType(MOVETYPE_WAKE_UP); // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
+		SetWaitState("wake_up"); // grayman #3820
 		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
 
 		// Reset visual, hearing and tactile acuity
@@ -13345,17 +13351,36 @@ void idAI::GetUp()
 	}
 }
 
-void idAI::LayDown()
+// grayman #3820 - GetUp() w/o standing up
+
+void idAI::WakeUp()
 {
-	if (GetMoveType() != MOVETYPE_ANIM)
+	moveType_t moveType = GetMoveType();
+
+	if ( ( moveType == MOVETYPE_SLEEP ) || ( moveType == MOVETYPE_FALL_ASLEEP ) ) // grayman #3820 - MOVETYPE_FALL_ASLEEP was MOVETYPE_LAY_DOWN
+	{
+		SetMoveType(MOVETYPE_WAKE_UP); // grayman #3820 - was MOVETYPE_GET_UP_FROM_LYING
+		SetWaitState("wake_up"); // grayman #3820
+		m_getupEndTime = gameLocal.time + 4300; // failsafe to stop checking m_sleepFloorZ
+
+		// Reset visual, hearing and tactile acuity
+		SetAcuity("vis", m_oldVisualAcuity);
+		SetAcuity("aud", GetBaseAcuity("aud") * 2);
+		SetAcuity("tact", GetBaseAcuity("tact") * 2);
+	}
+}
+
+void idAI::FallAsleep()
+{
+	if ((GetMoveType() != MOVETYPE_ANIM) && (GetMoveType() != MOVETYPE_SIT)) // grayman #3820
 	{
 		return;
 	}
 
 	AI_LAY_DOWN_FACE_DIR = idAngles( 0, current_yaw, 0 ).ToForward();
 
-	SetMoveType(MOVETYPE_LAY_DOWN);
-	SetWaitState("lay_down");
+	SetMoveType(MOVETYPE_FALL_ASLEEP);
+	SetWaitState("fall_asleep");
 
 	// grayman #2416 - register where the floor is. Can't just use origin.z,
 	// because AI who start missions sleeping might not have lowered to the
@@ -13625,9 +13650,9 @@ void idAI::Event_PickedPocketSetup2() // grayman #3559
 	{
 		if ( (moveType == MOVETYPE_SLEEP) ||	// asleep
 			 (moveType == MOVETYPE_SIT_DOWN) || // or in the act of sitting down
-			 (moveType == MOVETYPE_LAY_DOWN) || // or in the act of lying down to sleep
+			 (moveType == MOVETYPE_FALL_ASLEEP) || // or in the act of lying down to sleep // grayman #3820 - was MOVETYPE_LAY_DOWN
 			 (moveType == MOVETYPE_GET_UP) ||   // or getting up from sitting
-			 (moveType == MOVETYPE_GET_UP_FROM_LYING) ) // or getting up from lying down
+			 (moveType == MOVETYPE_WAKE_UP) ) // or getting up from lying down // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 		{
 			memory.latchPickedPocket = true;
 		}

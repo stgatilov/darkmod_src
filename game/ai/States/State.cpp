@@ -576,9 +576,9 @@ void State::OnVisualStim(idEntity* stimSource)
 	moveType_t moveType = owner->GetMoveType();
 	if ( moveType == MOVETYPE_SIT_DOWN			|| // standing->sitting
 		 moveType == MOVETYPE_GET_UP			|| // sitting->standing
-		 moveType == MOVETYPE_GET_UP_FROM_LYING	|| // sleeping->standing
+		 moveType == MOVETYPE_WAKE_UP			|| // sleeping->standing // grayman #3820 - MOVETYPE_WAKE_UP was MOVETYPE_GET_UP_FROM_LYING
 		 moveType == MOVETYPE_SLEEP				|| // sleeping
-		 moveType == MOVETYPE_LAY_DOWN )		   // standing->lying down
+		 moveType == MOVETYPE_FALL_ASLEEP )		   // standing->lying down // grayman #3820 - was MOVETYPE_LAY_DOWN
 	{
 		return;
 	}
