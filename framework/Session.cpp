@@ -2643,7 +2643,7 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
 	// draw everything
-	if ( !r_smp.GetBool() )
+	if ( !com_smp.GetBool() )
 		Draw();
 	if (mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
 		game->DrawLightgem( GetLocalClientNum() );
@@ -2709,7 +2709,7 @@ void idSessionLocal::Frame() {
 		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
 	}
 
-	if (r_smp.GetBool()) {
+	if ( com_smp.GetBool() ) {
 		latchedTicNumber = com_ticNumber;
 	} else {
 		// at startup, we may be backwards
@@ -2855,7 +2855,7 @@ void idSessionLocal::Frame() {
 		common->Printf( "%i ", gameTicsToRun );
 	}
 
-	if (!r_smp.GetBool()) 
+	if ( !com_smp.GetBool() )
 	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
 		if ( !mapSpawned ) {
@@ -3087,6 +3087,8 @@ Waits for the game tics task to complete.
 */
 void idSessionLocal::WaitForGameTicCompletion() {
 	std::unique_lock<std::mutex> lock( signalMutex );
+	if ( r_showSmp.GetBool() )
+		common->Printf( frontendActive ? "F" : "." );
 	while (frontendActive) {
 		signalMainThread.wait( lock );
 	}

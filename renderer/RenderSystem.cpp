@@ -713,7 +713,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	}
 
 	// start the back end up again with the new command list
-	if ( r_smp.GetBool() ) {
+	if ( com_smp.GetBool() ) {
 		int startLoop = Sys_Milliseconds();
 		session->FireGameTics();
 		int endSignal = Sys_Milliseconds();
