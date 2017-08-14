@@ -1387,6 +1387,9 @@
     <ClInclude Include="idlib\StdFilesystem.h">
       <Filter>idLib</Filter>
     </ClInclude>
+    <ClInclude Include="game\ai\Tasks\PathWakeupTask.h">
+      <Filter>Game\AI\Tasks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
@@ -2739,6 +2742,9 @@
     </ClCompile>
     <ClCompile Include="idlib\StdFilesystem.cpp">
       <Filter>idLib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
+      <Filter>Game\AI\Tasks</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

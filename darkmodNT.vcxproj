@@ -483,6 +483,7 @@
     <ClInclude Include="game\ai\Tasks\PathTurnTask.h" />
     <ClInclude Include="game\ai\Tasks\PathWaitForTriggerTask.h" />
     <ClInclude Include="game\ai\Tasks\PathWaitTask.h" />
+    <ClInclude Include="game\ai\Tasks\PathWakeupTask.h" />
     <ClInclude Include="game\ai\Tasks\PlayAnimationTask.h" />
     <ClInclude Include="game\ai\Tasks\RandomHeadturnTask.h" />
     <ClInclude Include="game\ai\Tasks\RandomTurningTask.h" />
@@ -939,6 +940,7 @@
     <ClCompile Include="game\ai\Tasks\PathTurnTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathWaitForTriggerTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathWaitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PlayAnimationTask.cpp" />
     <ClCompile Include="game\ai\Tasks\RandomHeadturnTask.cpp" />
     <ClCompile Include="game\ai\Tasks\RandomTurningTask.cpp" />

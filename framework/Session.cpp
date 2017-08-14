@@ -2643,7 +2643,8 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
 	// draw everything
-	//Draw();
+	if ( !r_smp.GetBool() )
+		Draw();
 	if (mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
 		game->DrawLightgem( GetLocalClientNum() );
 	}
@@ -2708,7 +2709,7 @@ void idSessionLocal::Frame() {
 		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
 	}
 
-	if (1) {
+	if (r_smp.GetBool()) {
 		latchedTicNumber = com_ticNumber;
 	} else {
 		// at startup, we may be backwards
@@ -2854,7 +2855,7 @@ void idSessionLocal::Frame() {
 		common->Printf( "%i ", gameTicsToRun );
 	}
 
-	if (0) 
+	if (!r_smp.GetBool()) 
 	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
 		RunGameTic();
 		if ( !mapSpawned ) {

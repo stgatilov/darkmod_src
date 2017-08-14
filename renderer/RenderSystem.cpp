@@ -707,16 +707,24 @@ Returns the number of msec spent in the back end
 =============
 */
 void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
-	emptyCommand_t *cmd;
 
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
 
 	// start the back end up again with the new command list
-	int startLoop = Sys_Milliseconds();
-	session->FireGameTics();
-	int endSignal = Sys_Milliseconds();
+	if ( r_smp.GetBool() ) {
+		int startLoop = Sys_Milliseconds();
+		session->FireGameTics();
+		int endSignal = Sys_Milliseconds();
+	} else {
+		// close any gui drawing
+		guiModel->EmitFullScreen();
+		guiModel->Clear();
+		// add the swapbuffers command
+		emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+		cmd->commandId = RC_SWAP_BUFFERS;
+	}
 	R_IssueRenderCommands( backendFrameData );
 	int endRender = Sys_Milliseconds();
 	session->WaitForGameTicCompletion();

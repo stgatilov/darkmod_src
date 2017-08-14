@@ -965,6 +965,7 @@ extern idCVar r_showIntensity;			// draw the screen colors based on intensity, r
 extern idCVar r_showDefs;				// report the number of modeDefs and lightDefs in view
 extern idCVar r_showTrace;				// show the intersection of an eye trace with the world
 extern idCVar r_showSmp;				// show which end (front or back) is blocking
+extern idCVar r_smp;					// enable SMP
 extern idCVar r_showDepth;				// display the contents of the depth buffer and the depth range
 extern idCVar r_showImages;				// draw all images to screen instead of rendering
 extern idCVar r_showTris;				// enables wireframe rendering of the world
