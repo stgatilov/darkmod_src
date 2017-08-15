@@ -1009,6 +1009,7 @@ extern idCVar r_singleArea;				// only draw the portal area the view is actually
 extern idCVar r_singleSurface;			// suppress all but one surface on each entity
 extern idCVar r_shadowPolygonOffset;	// bias value added to depth test for stencil shadow drawing
 extern idCVar r_shadowPolygonFactor;	// scale value for stencil shadow drawing
+extern idCVar r_skipModels;			
 
 extern idCVar r_jitter;					// randomly subpixel jitter the projection matrix
 extern idCVar r_lightSourceRadius;		// for soft-shadow sampling

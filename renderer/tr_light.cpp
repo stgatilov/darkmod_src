@@ -1338,8 +1338,12 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 
 	if ( def->dynamicModel ) {
 		model = def->dynamicModel;
+		if ( r_skipModels.GetInteger() == 1 )
+			return;
 	} else {
 		model = def->parms.hModel;
+		if ( r_skipModels.GetInteger() == 2 )
+			return;
 	}
 
 	// add all the surfaces
