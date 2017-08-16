@@ -635,7 +635,11 @@ static void RB_SubmittInteraction( drawInteraction_t *din
 	}
 
 	extern void RB_ARB2_DrawInteraction( const drawInteraction_t * din ); // duzenko FIXME ugly extern
-	RB_ARB2_DrawInteraction( din );
+	extern void RB_GLSL_DrawInteraction( const drawInteraction_t * din ); // duzenko FIXME ugly extern
+	if ( r_ignore2.GetBool() )
+		RB_GLSL_DrawInteraction( din );
+	else
+		RB_ARB2_DrawInteraction( din );
 	//DrawInteraction( din );
 }
 

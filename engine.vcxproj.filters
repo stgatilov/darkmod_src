@@ -2875,6 +2875,12 @@
     <ClCompile Include="game\gamesys\TypeInfo_GenHelper.cpp">
       <Filter>Game\GameSys</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\draw_glsl.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
+      <Filter>Game\AI\Tasks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

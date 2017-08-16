@@ -1106,7 +1106,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
-		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
+		//qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
+		qglUniform4fv( stencilShadowShader.localLightOrigin, 1, localLight.ToFloatPtr() );
 	}
 
 	tri = surf->backendGeo;
@@ -1190,8 +1191,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		return;
 	}
 
-	//rebb : mainly for testing different implementations
-	switch( r_stencilShadowMode.GetInteger() ) {
+	//rebb : mainly for testing different implementations // duzenko: disabled due to lack of speed difference
+	/*switch( r_stencilShadowMode.GetInteger() ) {
 		// uses twoSidedStencil if enabled/available, otherwise Carmack's workaround
 		case 2:
 		{
@@ -1276,7 +1277,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		// uses twoSidedStencil if enabled/available, alternative path broken for camera-in-shadow case
 		default:
-		{
+		{*/
 			// patent-free work around
 			if ( !external ) {
 				// depth-fail stencil shadows
@@ -1313,8 +1314,8 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 					RB_DrawShadowElementsWithCounters( tri, numIndexes );
 				}
 			}
-		}
-	}
+		//}
+	//}
 }
 
 /*
@@ -1821,7 +1822,10 @@ void	RB_STD_DrawView( void ) {
 		RB_R200_DrawInteractions();
 		break;
 	}*/
-	RB_ARB2_DrawInteractions();
+	if ( r_ignore2.GetBool() )
+		RB_GLSL_DrawInteractions();
+	else
+		RB_ARB2_DrawInteractions();
 
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );

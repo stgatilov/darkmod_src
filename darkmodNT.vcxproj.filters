@@ -2746,6 +2746,9 @@
     <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
       <Filter>Game\AI\Tasks</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\draw_glsl.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "idLib", "idlib.vcxproj", "{49BEC5C6-B964-417A-851E-808886B57400}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -237,22 +237,22 @@ Global
 		{9B11C0F2-9F0C-4EF1-AC44-26A7D9819D76}.Release|Win32.ActiveCfg = Debug
 		{9B11C0F2-9F0C-4EF1-AC44-26A7D9819D76}.Release|x64.ActiveCfg = Debug
 		{9B11C0F2-9F0C-4EF1-AC44-26A7D9819D76}.Release|x86.ActiveCfg = Debug
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|Mixed Platforms.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|Win32.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|x64.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|x86.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|Mixed Platforms.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|Win32.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|x64.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|x86.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|Mixed Platforms.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|Win32.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|x64.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|x86.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|Mixed Platforms.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|Win32.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|x64.ActiveCfg = Debug|x64
-		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|x86.ActiveCfg = Debug|x64
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|Mixed Platforms.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|Win32.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|x64.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines and memory log|x86.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|Mixed Platforms.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|Win32.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|x64.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug with inlines|x86.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|Mixed Platforms.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|Win32.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|x64.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Debug|x86.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|Mixed Platforms.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|Win32.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|x64.ActiveCfg = Debug
+		{B8996517-0E0F-4670-BA8F-1120510193F3}.Release|x86.ActiveCfg = Debug
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

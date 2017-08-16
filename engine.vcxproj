@@ -991,6 +991,7 @@
     <ClCompile Include="game\ai\Tasks\PathTurnTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathWaitForTriggerTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PathWaitTask.cpp" />
+    <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp" />
     <ClCompile Include="game\ai\Tasks\PlayAnimationTask.cpp" />
     <ClCompile Include="game\ai\Tasks\RandomHeadturnTask.cpp" />
     <ClCompile Include="game\ai\Tasks\RandomTurningTask.cpp" />
@@ -1171,6 +1172,7 @@
     <ClCompile Include="renderer\CinematicID.cpp" />
     <ClCompile Include="renderer\draw_arb2.cpp" />
     <ClCompile Include="renderer\draw_common.cpp" />
+    <ClCompile Include="renderer\draw_glsl.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />
     <ClCompile Include="renderer\Image_init.cpp" />
