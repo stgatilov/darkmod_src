@@ -78,7 +78,11 @@ bool RangedCombatTask::Perform(Subsystem& subsystem)
 			// the script function when the animation is done.
 			owner->SetWaitState("ranged_attack");
 
-			if (_lastCombatBarkTime == -1)
+			// grayman #4394 - checking _lastCombatBarkTime caused this bark to
+			// only be emitted once. It sounds better if the bark occurs on a
+			// random basis.
+			//if (_lastCombatBarkTime == -1)
+			if (gameLocal.random.RandomFloat() > 0.5)
 			{
 				// grayman #3343 - accommodate different barks for human and non-human enemies
 
