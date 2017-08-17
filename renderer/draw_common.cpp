@@ -1106,8 +1106,10 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
-		//qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
-		qglUniform4fv( stencilShadowShader.localLightOrigin, 1, localLight.ToFloatPtr() );
+		if ( r_ignore2.GetBool() )
+			qglUniform4fv( stencilShadowShader.localLightOrigin, 1, localLight.ToFloatPtr() );
+		else
+			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
 	}
 
 	tri = surf->backendGeo;
