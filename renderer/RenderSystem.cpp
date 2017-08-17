@@ -712,18 +712,9 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		return;
 	}
 
-	if ( com_smp.GetBool() ) {
-		int startLoop = Sys_Milliseconds();
-		session->ActivateFrontend();
-		int endSignal = Sys_Milliseconds();
-	} else {
-		// close any gui drawing
-		guiModel->EmitFullScreen();
-		guiModel->Clear();
-		// add the swapbuffers command
-		emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
-		cmd->commandId = RC_SWAP_BUFFERS;
-	}
+	int startLoop = Sys_Milliseconds();
+	session->ActivateFrontend();
+	int endSignal = Sys_Milliseconds();
 	// start the back end up again with the new command list
 	R_IssueRenderCommands( backendFrameData );
 	int endRender = Sys_Milliseconds();

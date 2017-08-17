@@ -290,7 +290,9 @@ public:
 
 	void				AdvanceRenderDemo( bool singleFrameOnly );
 	void				RunGameTic();
-	
+	void				RunGameTics();
+	void				DrawFrame();
+
 	void				FinishCmdLoad();
 	void				LoadLoadingGui(const char *mapName);
 

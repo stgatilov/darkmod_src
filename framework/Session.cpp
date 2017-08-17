@@ -2642,9 +2642,6 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 
-	// draw everything
-	if ( !com_smp.GetBool() )
-		Draw();
 	if (com_speeds.GetBool()) {
 		time_backendLast = backEnd.pc.msecLast;
 		time_frontendLast = tr.pc.frontEndMsecLast;
@@ -2854,19 +2851,6 @@ void idSessionLocal::Frame() {
 	if ( com_showTics.GetBool() ) {
 		common->Printf( "%i ", gameTicsToRun );
 	}
-
-	if ( !com_smp.GetBool() )
-	for (int i = 0 ; i < gameTicsToRun ; i++ ) {
-		RunGameTic();
-		if ( !mapSpawned ) {
-			// exited game play
-			break;
-		}
-		if ( syncNextGameFrame ) {
-			// long game frame, so break out and continue executing as if there was no hitch
-			break;
-		}
-	}
 }
 
 /*
@@ -2995,6 +2979,27 @@ void idSessionLocal::RunGameTic() {
 	}
 }
 
+void idSessionLocal::RunGameTics() {
+	// run game tics
+	for (int i = 0; i < gameTicsToRun; ++i) {
+		RunGameTic();
+		if (!mapSpawned || syncNextGameFrame) {
+			break;
+		}
+	}
+}
+
+void idSessionLocal::DrawFrame() {
+	// render next frame
+	Draw();
+	// close any gui drawing
+	tr.guiModel->EmitFullScreen();
+	tr.guiModel->Clear();
+	// add the swapbuffers command
+	emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd->commandId = RC_SWAP_BUFFERS;
+}
+
 /*
 ===============
 idSessionLocal::FrontendThreadFunction
@@ -3028,23 +3033,10 @@ void idSessionLocal::FrontendThreadFunction() {
 		}
 		int endWaitForRenderThread = Sys_Milliseconds();
 
-		// run game tics
-		for (int i = 0; i < gameTicsToRun; ++i) {
-			RunGameTic();
-			if (!mapSpawned || syncNextGameFrame) {
-				break;
-			}
-		}
+		RunGameTics();
 		int endGameTics = Sys_Milliseconds();
 
-		// render next frame
-		Draw();
-		// close any gui drawing
-		tr.guiModel->EmitFullScreen();
-		tr.guiModel->Clear();
-		// add the swapbuffers command
-		emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
-		cmd->commandId = RC_SWAP_BUFFERS;
+		DrawFrame();
 		int endDraw = Sys_Milliseconds();
 
 		{ // lock scope - signal render thread
@@ -3091,12 +3083,18 @@ Activates game tic and frontend rendering on a separate thread.
 ===============
 */
 void idSessionLocal::ActivateFrontend() {
-	std::unique_lock<std::mutex> lock( signalMutex );
-	while( !frontendReady ) {
-		signalMainThread.wait( lock );
+	if( com_smp.GetBool() ) {
+		std::unique_lock<std::mutex> lock( signalMutex );
+		while( !frontendReady ) {
+			signalMainThread.wait( lock );
+		}
+		frontendActive = true;
+		signalFrontendThread.notify_one();
+	} else {
+		// run game tics and frontend drawing serially
+		RunGameTics();
+		DrawFrame();
 	}
-	frontendActive = true;
-	signalFrontendThread.notify_one();
 }
 
 /*
@@ -3108,11 +3106,13 @@ Waits for the frontend to finish preparing the next frame.
 ===============
 */
 void idSessionLocal::WaitForFrontendCompletion() {
-	std::unique_lock<std::mutex> lock( signalMutex );
-	if ( r_showSmp.GetBool() )
-		common->Printf( frontendActive ? "F" : "." );
-	while (frontendActive) {
-		signalMainThread.wait( lock );
+	if( com_smp.GetBool() ) {
+		std::unique_lock<std::mutex> lock( signalMutex );
+		if( r_showSmp.GetBool() )
+			common->Printf( frontendActive ? "F" : "." );
+		while( frontendActive ) {
+			signalMainThread.wait( lock );
+		}
 	}
 }
 
