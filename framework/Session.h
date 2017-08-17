@@ -107,8 +107,8 @@ public:
 
 	virtual int		GetSaveGameVersion( void ) = 0;
 
-	virtual void	FireGameTics() = 0;
-	virtual void	WaitForGameTicCompletion() = 0;
+	virtual void	ActivateFrontend() = 0;
+	virtual void	WaitForFrontendCompletion() = 0;
 
 	// The render world and sound world used for this session.
 	idRenderWorld *	rw;

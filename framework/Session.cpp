@@ -2645,16 +2645,16 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	// draw everything
 	if ( !com_smp.GetBool() )
 		Draw();
-	if (mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
-		game->DrawLightgem( GetLocalClientNum() );
-	}
-
 	if (com_speeds.GetBool()) {
 		time_backendLast = backEnd.pc.msecLast;
 		time_frontendLast = tr.pc.frontEndMsecLast;
 		renderSystem->EndFrame(&time_frontend, &time_backend);
 	} else {
 		renderSystem->EndFrame( NULL, NULL );
+	}
+
+	if( mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0 ) {
+		game->DrawLightgem( GetLocalClientNum() );
 	}
 
 	insideUpdateScreen = false;
@@ -3004,14 +3004,18 @@ Runs game tics and draw call creation in a background thread.
 */
 void idSessionLocal::FrontendThreadFunction() {
 	GLimp_ActivateFrontendContext();  // needs its own context to fill buffers
-	//GLimp_InitGlewContext();
 
 	idFile* logFile = fileSystem->OpenFileWrite( "frontend_timings.txt", "fs_savepath", "" );
 
 	while (true) {
 		int beginLoop = Sys_Milliseconds();
-		{ // lock scope - wait for render thread
+		{ // lock scope
 			std::unique_lock<std::mutex> lock( signalMutex );
+			// signal render thread that we are ready to do work
+			frontendReady = true;
+			signalMainThread.notify_one();
+
+			// wait for render thread
 			while (!frontendActive && !shutdownFrontend) {
 				signalFrontendThread.wait( lock );
 			}
@@ -3020,8 +3024,10 @@ void idSessionLocal::FrontendThreadFunction() {
 				fileSystem->CloseFile( logFile );
 				return;
 			}
+			frontendReady = false;
 		}
 		int endWaitForRenderThread = Sys_Milliseconds();
+
 		// run game tics
 		for (int i = 0; i < gameTicsToRun; ++i) {
 			RunGameTic();
@@ -3033,17 +3039,12 @@ void idSessionLocal::FrontendThreadFunction() {
 
 		// render next frame
 		Draw();
-
 		// close any gui drawing
 		tr.guiModel->EmitFullScreen();
 		tr.guiModel->Clear();
-
 		// add the swapbuffers command
 		emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 		cmd->commandId = RC_SWAP_BUFFERS;
-
-		// ensure all buffers are ready before returning them to the render thread
-		glFlush();
 		int endDraw = Sys_Milliseconds();
 
 		{ // lock scope - signal render thread
@@ -3053,39 +3054,60 @@ void idSessionLocal::FrontendThreadFunction() {
 		}
 		int endSignalRenderThread = Sys_Milliseconds();
 
+		// sync all GL commands so that created buffers will be ready for backend thread in the next frame
+		if( glConfig.fenceSyncAvailable ) {
+			GLsync glSync = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
+			if( glSync != nullptr ) {
+				GLenum result = qglClientWaitSync( glSync, GL_SYNC_FLUSH_COMMANDS_BIT, 100000000 );
+				if( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) {
+					common->Warning( "glClientWaitSync did not complete successfully.\n" );
+				}
+				qglDeleteSync( glSync );
+			} else {
+				common->Error( "Failed to create GL fence\n" );
+			}
+		} else {
+			// this is going to be expensive...
+			qglFinish();
+		}
+		int endGlSync = Sys_Milliseconds();
+
 		int timeWaiting = endWaitForRenderThread - beginLoop;
 		int timeGameTics = endGameTics - endWaitForRenderThread;
 		int timeDrawing = endDraw - endGameTics;
 		int timeSignal = endSignalRenderThread - endDraw;
+		int timeSync = endGlSync - endSignalRenderThread;
 
-		logFile->Printf( "Frontend timing: wait %d - gametics %d - drawing %d - signal %d\n", timeWaiting, timeGameTics, timeDrawing, timeSignal );
+		logFile->Printf( "Frontend timing: wait %d - gametics %d - drawing %d - signal %d - sync %d\n", timeWaiting, timeGameTics, timeDrawing, timeSignal, timeSync );
 	}
 }
 
 /*
 ===============
-idSessionLocal::fireGameTics
+idSessionLocal::ActivateFrontend
 
 Called before the rendering backend starts working.
-Runs game tics as a task in the background.
+Activates game tic and frontend rendering on a separate thread.
 ===============
 */
-void idSessionLocal::FireGameTics() {
-	//Draw();
+void idSessionLocal::ActivateFrontend() {
 	std::unique_lock<std::mutex> lock( signalMutex );
+	while( !frontendReady ) {
+		signalMainThread.wait( lock );
+	}
 	frontendActive = true;
 	signalFrontendThread.notify_one();
 }
 
 /*
 ===============
-idSessionLocal::waitForGameTicCompletion
+idSessionLocal::WaitForFrontendCompletion
 
 Called after the rendering backend finishes.
-Waits for the game tics task to complete.
+Waits for the frontend to finish preparing the next frame.
 ===============
 */
-void idSessionLocal::WaitForGameTicCompletion() {
+void idSessionLocal::WaitForFrontendCompletion() {
 	std::unique_lock<std::mutex> lock( signalMutex );
 	if ( r_showSmp.GetBool() )
 		common->Printf( frontendActive ? "F" : "." );

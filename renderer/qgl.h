@@ -228,6 +228,11 @@ extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
 // arb assembly info
 extern PFNGLGETPROGRAMIVARBPROC			glGetProgramivARB;
 
+// GL fence sync
+extern PFNGLFENCESYNCPROC				qglFenceSync;
+extern PFNGLCLIENTWAITSYNCPROC			qglClientWaitSync;
+extern PFNGLDELETESYNCPROC				qglDeleteSync;
+
 //===========================================================================
 
 // non-windows systems will just redefine qgl* to gl*

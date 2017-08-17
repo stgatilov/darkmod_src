@@ -109,8 +109,8 @@ public:
 
 	virtual int			GetSaveGameVersion( void );
 
-	virtual void		FireGameTics();
-	virtual void		WaitForGameTicCompletion();
+	virtual void		ActivateFrontend();
+	virtual void		WaitForFrontendCompletion();
 	
 	virtual const char *GetCurrentMapName();
 
@@ -260,6 +260,7 @@ public:
 	std::condition_variable signalMainThread;
 	std::mutex			signalMutex;
 	volatile bool		frontendActive;
+	volatile bool		frontendReady;
 	volatile bool		shutdownFrontend;
 
 	void				FrontendThreadFunction();

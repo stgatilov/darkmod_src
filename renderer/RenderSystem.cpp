@@ -712,10 +712,9 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		return;
 	}
 
-	// start the back end up again with the new command list
 	if ( com_smp.GetBool() ) {
 		int startLoop = Sys_Milliseconds();
-		session->FireGameTics();
+		session->ActivateFrontend();
 		int endSignal = Sys_Milliseconds();
 	} else {
 		// close any gui drawing
@@ -725,9 +724,10 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 		cmd->commandId = RC_SWAP_BUFFERS;
 	}
+	// start the back end up again with the new command list
 	R_IssueRenderCommands( backendFrameData );
 	int endRender = Sys_Milliseconds();
-	session->WaitForGameTicCompletion();
+	session->WaitForFrontendCompletion();
 	int endWait = Sys_Milliseconds();
 
 	// check for dynamic changes that require some initialization

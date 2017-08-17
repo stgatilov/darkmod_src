@@ -424,6 +424,11 @@ PFNGLGETPROGRAMIVPROC						qglGetProgramiv;
 PFNGLGETPROGRAMINFOLOGPROC					qglGetProgramInfoLog;
 PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
 
+// GL fence sync
+PFNGLFENCESYNCPROC						qglFenceSync;
+PFNGLCLIENTWAITSYNCPROC					qglClientWaitSync;
+PFNGLDELETESYNCPROC						qglDeleteSync;
+
 // State management
 //PFNGLBLENDEQUATIONPROC						qglBlendEquation;
 
@@ -765,6 +770,14 @@ static void R_CheckPortableExtensions( void ) {
 		if (glConfig.framebufferBlitAvailable) {
 			glBlitFramebuffer= (PFNGLBLITFRAMEBUFFEREXTPROC)GLimp_ExtensionPointer("glBlitFramebufferEXT");
 		}
+	}
+
+	glConfig.fenceSyncAvailable = R_CheckExtension( "GL_ARB_sync" );
+	if( glConfig.fenceSyncAvailable ) {
+		qglFenceSync = ( PFNGLFENCESYNCPROC )GLimp_ExtensionPointer( "glFenceSync" );
+		qglClientWaitSync = ( PFNGLCLIENTWAITSYNCPROC )GLimp_ExtensionPointer( "glClientWaitSync" );
+		qglDeleteSync = ( PFNGLDELETESYNCPROC )GLimp_ExtensionPointer( "glDeleteSync" );
+		common->Printf( "GL fence sync available\n" );
 	}
 
 	int n;
