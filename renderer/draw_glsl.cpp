@@ -193,7 +193,8 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 		// set model matrix
 		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
