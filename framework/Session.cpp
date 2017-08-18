@@ -3010,7 +3010,7 @@ Runs game tics and draw call creation in a background thread.
 void idSessionLocal::FrontendThreadFunction() {
 	GLimp_ActivateFrontendContext();  // needs its own context to fill buffers
 
-	idFile* logFile = fileSystem->OpenFileWrite( "frontend_timings.txt", "fs_savepath", "" );
+	idFile* logFile = nullptr; 
 
 	while (true) {
 		int beginLoop = Sys_Milliseconds();
@@ -3025,8 +3025,10 @@ void idSessionLocal::FrontendThreadFunction() {
 				signalFrontendThread.wait( lock );
 			}
 			if (shutdownFrontend) {
-				logFile->Flush();
-				fileSystem->CloseFile( logFile );
+				if( logFile ) {
+					logFile->Flush();
+					fileSystem->CloseFile( logFile );
+				}
 				return;
 			}
 			frontendReady = false;
@@ -3064,13 +3066,17 @@ void idSessionLocal::FrontendThreadFunction() {
 		}
 		int endGlSync = Sys_Milliseconds();
 
-		int timeWaiting = endWaitForRenderThread - beginLoop;
-		int timeGameTics = endGameTics - endWaitForRenderThread;
-		int timeDrawing = endDraw - endGameTics;
-		int timeSignal = endSignalRenderThread - endDraw;
-		int timeSync = endGlSync - endSignalRenderThread;
-
-		logFile->Printf( "Frontend timing: wait %d - gametics %d - drawing %d - signal %d - sync %d\n", timeWaiting, timeGameTics, timeDrawing, timeSignal, timeSync );
+		if( r_logSmpTimings.GetBool() ) {
+			int timeWaiting = endWaitForRenderThread - beginLoop;
+			int timeGameTics = endGameTics - endWaitForRenderThread;
+			int timeDrawing = endDraw - endGameTics;
+			int timeSignal = endSignalRenderThread - endDraw;
+			int timeSync = endGlSync - endSignalRenderThread;
+			if( !logFile ) {
+				logFile = fileSystem->OpenFileWrite( "frontend_timings.txt", "fs_savepath", "" );
+			}
+			logFile->Printf( "Frontend timing: wait %d - gametics %d - drawing %d - signal %d - sync %d\n", timeWaiting, timeGameTics, timeDrawing, timeSignal, timeSync );
+		}
 	}
 }
 

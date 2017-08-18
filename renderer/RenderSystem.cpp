@@ -707,6 +707,7 @@ Returns the number of msec spent in the back end
 =============
 */
 void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
+	static idFile* logFile = nullptr; 
 
 	if ( !glConfig.isInitialized ) {
 		return;
@@ -720,6 +721,16 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	int endRender = Sys_Milliseconds();
 	session->WaitForFrontendCompletion();
 	int endWait = Sys_Milliseconds();
+
+	if( r_logSmpTimings.GetBool() ) {
+		if( !logFile ) {
+			logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
+		}
+		int signalFrontend = endSignal - startLoop;
+		int render = endRender - endSignal;
+		int waitForFrontend = endWait - endRender;
+		logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
+	}
 
 	// check for dynamic changes that require some initialization
 	R_CheckCvars();
