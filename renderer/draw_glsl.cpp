@@ -64,66 +64,38 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
     static const float one[4] = { 1, 1, 1, 1 };
     static const float negOne[4] = { -1, -1, -1, -1 };
     
+	shaderProgram_t *shader = din->ambientLight ? &ambientInteractionShader : &interactionShader;
     // load all the shader parameters
-	if ( din->ambientLight ) {
-		qglUniform4fv( ambientInteractionShader.localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
-		qglUniform4fv( ambientInteractionShader.diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
-
-		switch ( din->vertexColor ) {
-		case SVC_IGNORE:
-			qglUniform4f( ambientInteractionShader.colorModulate, zero[0], zero[1], zero[2], zero[3] );
-			qglUniform4f( ambientInteractionShader.colorAdd, one[0], one[1], one[2], one[3] );
-			break;
-		case SVC_MODULATE:
-			qglUniform4f( ambientInteractionShader.colorModulate, one[0], one[1], one[2], one[3] );
-			qglUniform4f( ambientInteractionShader.colorAdd, zero[0], zero[1], zero[2], zero[3] );
-			break;
-		case SVC_INVERSE_MODULATE:
-			qglUniform4f( ambientInteractionShader.colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
-			qglUniform4f( ambientInteractionShader.colorAdd, one[0], one[1], one[2], one[3] );
-			break;
-		}
-
-		// set the constant color
-		qglUniform4fv( ambientInteractionShader.diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	} else {
-		qglUniform4fv( interactionShader.localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	qglUniform4fv( shader->localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	qglUniform4fv( shader->lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
+	qglUniform4fv( shader->lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
+	qglUniform4fv( shader->lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
+	qglUniform4fv( shader->lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
+	qglUniform4fv( shader->bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
+	qglUniform4fv( shader->bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
+	qglUniform4fv( shader->diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
+	qglUniform4fv( shader->diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
+	// set the constant color
+	qglUniform4fv( shader->diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
+	qglUniform4fv( shader->diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
+	switch ( din->vertexColor ) {
+	case SVC_IGNORE:
+		qglUniform4f( shader->colorModulate, zero[0], zero[1], zero[2], zero[3] );
+		qglUniform4f( shader->colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	case SVC_MODULATE:
+		qglUniform4f( shader->colorModulate, one[0], one[1], one[2], one[3] );
+		qglUniform4f( shader->colorAdd, zero[0], zero[1], zero[2], zero[3] );
+		break;
+	case SVC_INVERSE_MODULATE:
+		qglUniform4f( shader->colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
+		qglUniform4f( shader->colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	}
+	if ( !din->ambientLight ) {
 		qglUniform4fv( interactionShader.localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-		qglUniform4fv( interactionShader.lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
-		qglUniform4fv( interactionShader.lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
-		qglUniform4fv( interactionShader.lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
-		qglUniform4fv( interactionShader.lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
-		qglUniform4fv( interactionShader.bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
-		qglUniform4fv( interactionShader.bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
-		qglUniform4fv( interactionShader.diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
-		qglUniform4fv( interactionShader.diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
 		qglUniform4fv( interactionShader.specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
 		qglUniform4fv( interactionShader.specularMatrixT, 1, din->specularMatrix[1].ToFloatPtr() );
-
-		switch ( din->vertexColor ) {
-		case SVC_IGNORE:
-			qglUniform4f( interactionShader.colorModulate, zero[0], zero[1], zero[2], zero[3] );
-			qglUniform4f( interactionShader.colorAdd, one[0], one[1], one[2], one[3] );
-			break;
-		case SVC_MODULATE:
-			qglUniform4f( interactionShader.colorModulate, one[0], one[1], one[2], one[3] );
-			qglUniform4f( interactionShader.colorAdd, zero[0], zero[1], zero[2], zero[3] );
-			break;
-		case SVC_INVERSE_MODULATE:
-			qglUniform4f( interactionShader.colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
-			qglUniform4f( interactionShader.colorAdd, one[0], one[1], one[2], one[3] );
-			break;
-		}
-	
-		// set the constant colors
-		qglUniform4fv( interactionShader.diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
 		qglUniform4fv( interactionShader.specularColor, 1, din->specularColor.ToFloatPtr() );
 	}
 
