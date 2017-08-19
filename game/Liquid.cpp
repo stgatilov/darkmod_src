@@ -238,60 +238,71 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity )
 
 	ProcCollisionStims( e, collision.c.id );
 
-	eMass = e->GetPhysics()->GetMass();
 	splashSpot = collision.c.point;
 		
 	if ( velSquare > phys->GetMinSplashVelocity().LengthSqr() )
 	{
-		// pick which splash particle to spawn
-		// first we check the entity, if it's not defined we use
-		// one defined for this liquid.
-		sName = e->spawnArgs.GetString(this->smokeName.c_str());
-		if ( *sName != '\0' )
+		// grayman #4600 - The entity might be entering the liquid more than once
+		// as it breaks the plane of the liquid. Wait a bit before splashing again.
+		if ( gameLocal.time >= e->m_splashtime )
 		{
-			// load entity particle
-			splash = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE,sName));
-		}
-		else
-		{
-			// load a liquid particle based on the mass of the splashing entity
-			if ( eMass < SMALL_SPLASH )
+			e->m_splashtime = gameLocal.time + 100;
+
+			// pick which splash particle to spawn
+			// first we check the entity, if it's not defined we use
+			// one defined for this liquid.
+			sName = e->spawnArgs.GetString(this->smokeName.c_str());
+			if ( *sName != '\0' )
 			{
-				splash = this->splash[0];
-			}
-			else if ( eMass < MEDIUM_SPLASH )
-			{
-				splash = this->splash[1];
+				// load entity particle
+				splash = static_cast<const idDeclParticle *>(declManager->FindType(DECL_PARTICLE, sName));
 			}
 			else
 			{
-				splash = this->splash[2];
+				eMass = e->GetPhysics()->GetMass();
+				// load a liquid particle based on the mass of the splashing entity
+				if ( eMass < SMALL_SPLASH )
+				{
+					splash = this->splash[0];
+				}
+				else if ( eMass < MEDIUM_SPLASH )
+				{
+					splash = this->splash[1];
+				}
+				else
+				{
+					splash = this->splash[2];
+				}
 			}
+
+			// play the sound for a splash
+			e->StartSound(this->soundName.c_str(), SND_CHANNEL_ANY, 0, false, NULL);
+
+			// grayman #3413 - propagate the global sound for the splash
+
+			idStr size = e->spawnArgs.GetString("spr_object_size");
+			if ( size.IsEmpty() )
+			{
+				if ( eMass < SMALL_SPLASH )
+				{
+					size = "small";
+				}
+				else if ( eMass < MEDIUM_SPLASH )
+				{
+					size = "medium";
+				}
+				else
+				{
+					size = "large";
+				}
+			}
+			idStr splashName = idStr("splash_") + size;
+			e->PropSoundS(NULL, splashName, 0, 0);
 		}
-	
-		// play the sound for a splash
-		e->StartSound( this->soundName.c_str(), SND_CHANNEL_ANY, 0, false, NULL);
-
-		// grayman #3413 - propagate the global sound for the splash
-
-		idStr size = e->spawnArgs.GetString("spr_object_size");
-		if ( size.IsEmpty() )
+		else // grayman #4600
 		{
-			if ( eMass < SMALL_SPLASH )
-			{
-				size = "small";
-			}
-			else if ( eMass < MEDIUM_SPLASH )
-			{
-				size = "medium";
-			}
-			else
-			{
-				size = "large";
-			}
+			return true;
 		}
-		idStr splashName = idStr("splash_") + size;
-		e->PropSoundS( NULL,splashName,0,0 );
 	}
 	else if ( velSquare > phys->GetMinWaveVelocity().LengthSqr() )
 	{

@@ -1652,7 +1652,7 @@ void idEntity::Spawn( void )
 	m_LastRestPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3992
 
 	m_pushedBy = NULL;		// grayman #4603
-//	m_splashtime = 0;		// grayman #4600
+	m_splashtime = 0;		// grayman #4600
 }
 
 /*
@@ -2224,7 +2224,7 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	m_pushedBy.Save( savefile ); // grayman #4603
 
-//	savefile->WriteInt(m_splashtime); // grayman #4600
+	savefile->WriteInt(m_splashtime); // grayman #4600
 
 	// SteveL #3817: make decals persistent
     savefile->WriteInt(static_cast<int>(decals_list.size()));
@@ -2533,7 +2533,7 @@ void idEntity::Restore( idRestoreGame *savefile )
 
 	m_pushedBy.Restore( savefile ); // grayman #4603
 
-//	savefile->ReadInt(m_splashtime); // grayman #4600
+	savefile->ReadInt(m_splashtime); // grayman #4600
 
 	// SteveL #3817: make decals persistent
 	int decalscount;

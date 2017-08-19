@@ -481,7 +481,7 @@ public:
 	/**
 	* When can I next make a splash?
 	**/
-//	int						m_splashtime; // grayman #4600
+	int						m_splashtime; // grayman #4600
 
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
