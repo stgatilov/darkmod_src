@@ -44,7 +44,7 @@ CommunicationTask::CommunicationTask(const idStr& soundName) :
 		prioName.StripLeadingOnce("snd_");
 		prioName = "prio_" + prioName;
 
-		// Emit a warning if priority not found, but only if sound name is empty
+		// Emit a warning if priority not found, but only if sound name is not empty
 		if (!dict->GetInt(prioName, "-1", _priority) && !soundName.IsEmpty())
 		{
 			gameLocal.Warning("Could not find bark priority for %s", soundName.c_str());

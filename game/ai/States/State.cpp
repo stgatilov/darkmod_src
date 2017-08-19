@@ -66,6 +66,7 @@ namespace ai
 #define PERSONTYPE_PRIEST			"PERSONTYPE_PRIEST"
 //#define PERSONTYPE_ELITE			"PERSONTYPE_ELITE" // grayman #3457 - no longer need ELITE
 #define PERSONTYPE_BEGGAR			"PERSONTYPE_BEGGAR" // grayman #3323
+#define PERSONTYPE_WHORE			"PERSONTYPE_WHORE" // grayman #4473
 
 //----------------------------------------------------------------------------------------
 // The following strings define genders of person, these are used if AIUse is AIUSE_PERSON 
@@ -78,7 +79,6 @@ namespace ai
 #define PERSONGENDER_FEMALE		"PERSONGENDER_FEMALE"
 #define PERSONGENDER_UNKNOWN	"PERSONGENDER_UNKNOWN"
 
-//const float CHANCE_FOR_GREETING = 0.3f;		// 30% chance for greeting
 const int MIN_TIME_LIGHT_ALERT = 10000;		// ms - grayman #2603
 const int REMARK_DISTANCE = 200;			// grayman #2903 - no greeting or warning if farther apart than this
 const int MIN_DIST_TO_LOWLIGHT_DOOR = 300;	// grayman #2959 - AI must be closer than this to "see" a low-light door
@@ -107,10 +107,6 @@ const int WARN_DIST_MISSING_ITEM = 500;
 const int WARN_DIST_EVIDENCE_INTRUDERS = 400;
 
 const int WARNING_RESPONSE_DELAY = 1000; // grayman #2920 - how long to delay before responding to a warning (ms)
-
-// grayman #3075 - when checking whether two AI have seen the same corpse, the two corpse positions
-// are allowed to be up to this far apart to be considered the same corpse
-//const int WARN_DIST_BODY_CAN_SHIFT = 100; // grayman #3424 - no longer used
 
 const int WARN_DIST_MAX_Z = 100; // no warning if the sender is farther than this vertically from the alert spot (same for each alert type)
 //----------------------------------------------------------------------------------------
@@ -1813,7 +1809,6 @@ void State::OnActorEncounter(idEntity* stimSource, idAI* owner)
 						if ( gameLocal.time >= info.nextGreetingTime ) // grayman #3415
 						{
 							soundName = GetGreetingSound(owner, player); // grayman #3576
-							//soundName = "snd_greeting_generic";
 							int delay = ( MINIMUM_TIME_BETWEEN_GREETING_SAME_ACTOR + gameLocal.random.RandomInt(EXTRA_DELAY_BETWEEN_GREETING_SAME_ACTOR))*1000;
 							info.nextGreetingTime = gameLocal.time + delay;
 
@@ -2444,51 +2439,61 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 
 	// Start with barks to specific character types, used regardless of who it comes from.
 	
-	if (otherPersonType == PERSONTYPE_PRIEST)
+	// grayman #4473 - specific greeting from whore to male
+	if (ownPersonType == PERSONTYPE_WHORE)
 	{
-		if (ownPersonType == PERSONTYPE_PRIEST) // priests use generic greeting for other priests
+		// whores only solicit males
+		if (otherPersonGender == PERSONGENDER_MALE)
 		{
-			if (owner->spawnArgs.FindKey("snd_greeting_builder") != NULL) // grayman #3457
+			// whores don't solicit priests or beggars
+			if (( otherPersonType != PERSONTYPE_PRIEST ) && ( otherPersonType != PERSONTYPE_BEGGAR ))
 			{
-				soundName = "snd_greeting_builder"; // grayman #3457
+				if ( owner->spawnArgs.FindKey("snd_greeting_whore_to_male") != NULL )
+				{
+					soundName = "snd_greeting_whore_to_male";
+				}
 			}
 		}
-		else
+	}
+
+	if ( soundName.IsEmpty() )
+	{
+		if ( otherPersonType == PERSONTYPE_PRIEST )
 		{
-			if (owner->spawnArgs.FindKey("snd_greeting_cleric") != NULL)
+			if ( ownPersonType == PERSONTYPE_PRIEST ) // priests use generic greeting for other priests
 			{
-				soundName = "snd_greeting_cleric";
+				if ( owner->spawnArgs.FindKey("snd_greeting_builder") != NULL ) // grayman #3457
+				{
+					soundName = "snd_greeting_builder"; // grayman #3457
+				}
+			}
+			else
+			{
+				if ( owner->spawnArgs.FindKey("snd_greeting_cleric") != NULL )
+				{
+					soundName = "snd_greeting_cleric";
+				}
 			}
 		}
-	}
-	else if (otherPersonType == PERSONTYPE_BUILDER)
-	{
-		if (owner->spawnArgs.FindKey("snd_greeting_builder") != NULL)
+		else if ( otherPersonType == PERSONTYPE_BUILDER )
 		{
-			soundName = "snd_greeting_builder";
-		}
-	}
-	else if (otherPersonType == PERSONTYPE_PAGAN)
-	{
-		if (owner->spawnArgs.FindKey("snd_greeting_pagan") != NULL)
-		{
-			soundName = "snd_greeting_pagan";
-		}
-	}
-	else if (otherPersonType == PERSONTYPE_BEGGAR) // grayman #3323
-	{
-		if (owner->spawnArgs.FindKey("snd_greeting_beggar") != NULL)
-		{
-			soundName = "snd_greeting_beggar";
-		}
-	}
-	else if (otherPersonType == PERSONTYPE_CITYWATCH) // grayman #3457 - Is the other Actor a citywatch, and owner is not?
-	{
-		if (ownPersonType != PERSONTYPE_CITYWATCH)
-		{
-			if (owner->spawnArgs.FindKey("snd_greeting_citywatch") != NULL)
+			if ( owner->spawnArgs.FindKey("snd_greeting_builder") != NULL )
 			{
-				soundName = "snd_greeting_citywatch";
+				soundName = "snd_greeting_builder";
+			}
+		}
+		else if ( otherPersonType == PERSONTYPE_PAGAN )
+		{
+			if ( owner->spawnArgs.FindKey("snd_greeting_pagan") != NULL )
+			{
+				soundName = "snd_greeting_pagan";
+			}
+		}
+		else if ( otherPersonType == PERSONTYPE_BEGGAR ) // grayman #3323
+		{
+			if ( owner->spawnArgs.FindKey("snd_greeting_beggar") != NULL )
+			{
+				soundName = "snd_greeting_beggar";
 			}
 		}
 	}
@@ -2499,12 +2504,21 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 		// greeting others. These are "snooty" greetings.
 		if ( (ownPersonType == PERSONTYPE_NOBLE) || (owner->spawnArgs.GetInt("rank", "0") > (otherActor->spawnArgs.GetInt("rank", "0") + 1) ) ) // grayman #3457
 		{
-			// nobles use generic greeting for other nobles
 			if (otherPersonType == PERSONTYPE_NOBLE)
 			{
-				if (owner->spawnArgs.FindKey("snd_greeting_generic") != NULL)
+				if (otherPersonGender == PERSONGENDER_FEMALE)
 				{
-					soundName = "snd_greeting_generic";
+					if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
+					{
+						soundName = "snd_greeting_noble_female";
+					}
+				}
+				else if (otherPersonGender == PERSONGENDER_MALE)
+				{
+					if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
+					{
+						soundName = "snd_greeting_noble_male";
+					}
 				}
 			}
 			else if ( (otherPersonType == PERSONTYPE_PROGUARD) || (otherPersonType == PERSONTYPE_CITYWATCH) ) // grayman #3457
@@ -2560,33 +2574,14 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 				{
 					soundName = "snd_greeting_guard_to_guard";
 				}
-				else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
-				{
-					soundName = "snd_greeting_guard";
-				}
 			}
 			else // the other Actor is a generic character
 			{
 				if (otherPersonGender == PERSONGENDER_FEMALE)
 				{
-					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_female") != NULL)
+					if (owner->spawnArgs.FindKey("snd_greeting_to_female") != NULL)
 					{
-						soundName = "snd_greeting_guard_to_female";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
-					{
-						soundName = "snd_greeting_female";
-					}
-				}
-				else if (otherPersonGender == PERSONGENDER_MALE)
-				{
-					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_male") != NULL)
-					{
-						soundName = "snd_greeting_guard_to_male";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
-					{
-						soundName = "snd_greeting_male";
+						soundName = "snd_greeting_to_female";
 					}
 				}
 
@@ -2596,10 +2591,6 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 					if (owner->spawnArgs.FindKey("snd_greeting_guard_to_civilian") != NULL)
 					{
 						soundName = "snd_greeting_guard_to_civilian";
-					}
-					else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
-					{
-						soundName = "snd_greeting_civilian";
 					}
 				}
 			}
@@ -2615,22 +2606,14 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 		{
 			if (otherPersonGender == PERSONGENDER_FEMALE)
 			{
-				if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_female") != NULL)
-				{
-					soundName = "snd_greeting_civilian_to_noble_female";
-				}
-				else if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
+				if (owner->spawnArgs.FindKey( "snd_greeting_noble_female") != NULL)
 				{
 					soundName = "snd_greeting_noble_female";
 				}
 			}
 			else if (otherPersonGender == PERSONGENDER_MALE)
 			{
-				if (owner->spawnArgs.FindKey( "snd_greeting_civilian_to_noble_male") != NULL)
-				{
-					soundName = "snd_greeting_civilian_to_noble_male";
-				}
-				else if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
+				if (owner->spawnArgs.FindKey( "snd_greeting_noble_male") != NULL)
 				{
 					soundName = "snd_greeting_noble_male";
 				}
@@ -2642,10 +2625,6 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 			{
 				soundName = "snd_greeting_civilian_to_guard";
 			}
-			else if (owner->spawnArgs.FindKey( "snd_greeting_guard") != NULL)
-			{
-				soundName = "snd_greeting_guard";
-			}
 		}
 		else // the other Actor is a generic character too
 		{
@@ -2655,20 +2634,9 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 				{
 					soundName = "snd_greeting_civilian_to_female";
 				}
-				else if (owner->spawnArgs.FindKey("snd_greeting_female") != NULL)
+				else if (owner->spawnArgs.FindKey("snd_greeting_to_female") != NULL)
 				{
-					soundName = "snd_greeting_female";
-				}
-			}
-			else if (otherPersonGender == PERSONGENDER_MALE)
-			{
-				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_male") != NULL)
-				{
-					soundName = "snd_greeting_civilian_to_male";
-				}
-				else if (owner->spawnArgs.FindKey("snd_greeting_male") != NULL)
-				{
-					soundName = "snd_greeting_male";
+					soundName = "snd_greeting_to_female";
 				}
 			}
 
@@ -2678,10 +2646,6 @@ idStr State::GetGreetingSound(idActor* owner, idActor* otherActor) // grayman #3
 				if (owner->spawnArgs.FindKey("snd_greeting_civilian_to_civilian") != NULL)
 				{
 					soundName = "snd_greeting_civilian_to_civilian";
-				}
-				else if (owner->spawnArgs.FindKey("snd_greeting_civilian") != NULL)
-				{
-					soundName = "snd_greeting_civilian";
 				}
 			}
 		}
