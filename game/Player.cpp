@@ -4754,6 +4754,34 @@ idLocationEntity *idPlayer::GetLocation( void )
 
 /*
 ================
+idPlayer::CheckPushEntity
+================
+*/
+bool idPlayer::CheckPushEntity(idEntity *entity) // grayman #4603
+{
+	bool result = false;
+	if (GetPhysics()->IsType(idPhysics_Player::Type)) // should always be true
+	{
+		result = static_cast<idPhysics_Player*>(GetPhysics())->CheckPushEntity(entity);
+	}
+	return result;
+}
+
+/*
+================
+idPlayer::ClearPushEntity
+================
+*/
+void idPlayer::ClearPushEntity() // grayman #4603 - clear the entity the player is pushing
+{
+	if (GetPhysics()->IsType(idPhysics_Player::Type)) // should always be true
+	{
+		static_cast<idPhysics_Player*>(GetPhysics())->ClearPushEntity();
+	}
+}
+
+/*
+================
 idPlayer::ClearFocus
 
 Clears the focus cursor

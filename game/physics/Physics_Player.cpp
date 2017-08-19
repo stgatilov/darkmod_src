@@ -4982,6 +4982,16 @@ void idPhysics_Player::RopeRemovalCleanup( idEntity *RopeEnt )
 		m_RopeEntTouched = NULL;
 }
 
+bool idPhysics_Player::CheckPushEntity(idEntity *entity) // grayman #4603
+{
+	return (entity == m_PushForce->GetPushEntity());
+}
+
+void idPhysics_Player::ClearPushEntity() // grayman #4603
+{
+	m_PushForce->SetPushEntity(NULL);
+}
+
 void idPhysics_Player::UpdateLeanPhysics()
 {
 	idPlayer *p_player = static_cast<idPlayer*>(self);

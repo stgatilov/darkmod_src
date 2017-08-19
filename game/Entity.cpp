@@ -1650,6 +1650,9 @@ void idEntity::Spawn( void )
 	previousBodyIndex = 0;		// index of most recent body sound requested (1->N, where there are N sounds)
 
 	m_LastRestPos = idVec3(idMath::INFINITY, idMath::INFINITY, idMath::INFINITY); // grayman #3992
+
+	m_pushedBy = NULL;		// grayman #4603
+//	m_splashtime = 0;		// grayman #4600
 }
 
 /*
@@ -2219,6 +2222,10 @@ void idEntity::Save( idSaveGame *savefile ) const
 
 	savefile->WriteVec3( m_LastRestPos ); // grayman #3992
 
+	m_pushedBy.Save( savefile ); // grayman #4603
+
+//	savefile->WriteInt(m_splashtime); // grayman #4600
+
 	// SteveL #3817: make decals persistent
     savefile->WriteInt(static_cast<int>(decals_list.size()));
 	for ( std::list<SDecalInfo>::const_iterator i = decals_list.begin(); i != decals_list.end(); ++i )
@@ -2523,6 +2530,10 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadVec3( m_VinePlantNormal );
 
 	savefile->ReadVec3( m_LastRestPos ); // grayman #3992
+
+	m_pushedBy.Restore( savefile ); // grayman #4603
+
+//	savefile->ReadInt(m_splashtime); // grayman #4600
 
 	// SteveL #3817: make decals persistent
 	int decalscount;
@@ -4480,6 +4491,7 @@ bool idEntity::StartSoundShader( const idSoundShader *shader, const s_channelTyp
 		ServerSendEvent( EVENT_STARTSOUNDSHADER, &msg, false, -1 );
 	}
 #endif
+
 	// set a random value for diversity unless one was parsed from the entity
 
 	if ( refSound.diversity < 0.0f )

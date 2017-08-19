@@ -40,6 +40,11 @@ void CForcePush::SetOwner(idEntity* ownerEnt)
 	owner = ownerEnt;
 }
 
+idEntity* CForcePush::GetPushEntity() // grayman #4603
+{
+	return (pushEnt);
+}
+
 void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 {
 	idEntity* lastPushEntity = lastPushEnt.GetEntity();
@@ -60,14 +65,27 @@ void CForcePush::SetPushEntity(idEntity* pushEnt, int id)
 		}
 
 		// Did we push anything the frame before?
-		if (lastPushEntity != NULL && lastPushEntity->IsType(idMoveable::Type))
+		if (lastPushEntity != NULL)
 		{
-			// Let the pushed entity know that it is not being pushed anymore
-			static_cast<idMoveable*>(lastPushEntity)->SetIsPushed(false, vec3_zero);
+			if (lastPushEntity->IsType(idMoveable::Type) )
+			{
+				// Let the pushed entity know that it is not being pushed anymore
+				static_cast<idMoveable*>(lastPushEntity)->SetIsPushed(false, vec3_zero);
+			}
+			lastPushEntity->m_pushedBy = NULL; // grayman #4603
 		}
 	}
 
 	this->pushEnt = pushEnt;
+
+	// grayman #4603 - Record the pusher in the pushed entity. If pushEnt is subsequently removed from the game,
+	// we want to tell the pusher about it. Otherwise pushEnt can point to garbage, leading to a crash.
+
+	if ( pushEnt )
+	{
+		pushEnt->m_pushedBy = this->owner;
+	}
+
 	this->id = id;
 }
 

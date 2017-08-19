@@ -229,6 +229,9 @@ public:	// common physics interface
 **/
 	void					RopeRemovalCleanup( idEntity *RopeEnt );
 
+	bool					CheckPushEntity(idEntity *entity); // grayman #4603
+	void					ClearPushEntity(); // grayman #4603
+
 private:
 	// player physics state
 	playerPState_t			current;

@@ -978,6 +978,9 @@ public:
 	**/
 	idLocationEntity *GetLocation( void );
 
+	bool			CheckPushEntity(idEntity *entity); // grayman #4603
+	void			ClearPushEntity(); // grayman #4603
+
 protected:
 	/**
 	* greebo: This creates all the default inventory items and adds the weapons.

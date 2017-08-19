@@ -1081,6 +1081,21 @@ void idClass::Event_Remove( void )
 		}
 	}
 
+	// grayman #4603 - If we are currently being pushed, tell the
+	// player we don't exist any more. As far as I can tell, 
+	// m_pushedBy.GetEntity() is always the player. But we have
+	// to double-check what the player is currently pushing. It might not be us.
+
+	idEntity *pusher = static_cast<idEntity*>(this)->m_pushedBy.GetEntity();
+	if (pusher == player)
+	{
+		if ( player->CheckPushEntity(static_cast<idEntity*>(this)) )
+		{
+			player->ClearPushEntity(); // player is no longer pushing me
+			static_cast<idEntity*>(this)->m_pushedBy = NULL; // I'm no longer being pushed by the player
+		}
+	}
+
 	delete this;
 }
 

@@ -31,6 +31,8 @@ public:
 
 	void				SetOwner(idEntity* ownerEnt);
 
+	idEntity*			GetPushEntity(); // grayman #4603
+
 	// Set physics object which is about to be pushed
 	void				SetPushEntity(idEntity* pushEnt, int id = -1);
 

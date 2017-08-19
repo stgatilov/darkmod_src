@@ -473,6 +473,16 @@ public:
 	**/
 	idVec3					m_LastRestPos; // grayman #3992
 
+	/**
+	* Who's pushing me.
+	**/
+	idEntityPtr<idEntity>	m_pushedBy; // grayman #4603
+
+	/**
+	* When can I next make a splash?
+	**/
+//	int						m_splashtime; // grayman #4600
+
 public:
 	ABSTRACT_PROTOTYPE( idEntity );
 
