@@ -1087,12 +1087,18 @@ void idClass::Event_Remove( void )
 	// to double-check what the player is currently pushing. It might not be us.
 
 	idEntity *pusher = static_cast<idEntity*>(this)->m_pushedBy.GetEntity();
-	if (pusher == player)
+	if ( pusher )
 	{
-		if ( player->CheckPushEntity(static_cast<idEntity*>(this)) )
+		if ( player )
 		{
-			player->ClearPushEntity(); // player is no longer pushing me
-			static_cast<idEntity*>(this)->m_pushedBy = NULL; // I'm no longer being pushed by the player
+			if ( pusher == player )
+			{
+				if ( player->CheckPushEntity(static_cast<idEntity*>(this)) )
+				{
+					player->ClearPushEntity(); // player is no longer pushing me
+					static_cast<idEntity*>(this)->m_pushedBy = NULL; // I'm no longer being pushed by the player
+				}
+			}
 		}
 	}
 
