@@ -31,9 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
-shaderProgram_t		interactionShader;
-shaderProgram_t		ambientInteractionShader;
-shaderProgram_t		stencilShadowShader;
+shaderProgram_t		interactionShader, ambientInteractionShader, stencilShadowShader;
 
 /*
 =========================================================================================
@@ -165,7 +163,6 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 		// set model matrix
@@ -173,6 +170,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 			qglUniformMatrix4fv( ambientInteractionShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		} else {
 			qglUniformMatrix4fv( interactionShader.modelMatrix, 1, false, surf->space->modelMatrix );
+			qglUniform1f( interactionShader.advanced, r_testARBProgram.GetFloat());
 		}
 
 		// this may cause RB_GLSL_DrawInteraction to be executed multiple
@@ -457,6 +455,7 @@ static bool RB_GLSL_InitShaders() {
 		interactionShader.lightProjectionT = qglGetUniformLocation( interactionShader.program, "u_lightProjectionT" );
 		interactionShader.lightProjectionQ = qglGetUniformLocation( interactionShader.program, "u_lightProjectionQ" );
 		interactionShader.lightFalloff = qglGetUniformLocation( interactionShader.program, "u_lightFalloff" );
+		interactionShader.advanced = qglGetUniformLocation( interactionShader.program, "u_advanced" );
 
 		interactionShader.bumpMatrixS = qglGetUniformLocation( interactionShader.program, "u_bumpMatrixS" );
 		interactionShader.bumpMatrixT = qglGetUniformLocation( interactionShader.program, "u_bumpMatrixT" );
