@@ -272,17 +272,6 @@
     <ClCompile Include="idlib\math\Quat.cpp" />
     <ClCompile Include="idlib\math\Rotation.cpp" />
     <ClCompile Include="idlib\math\Simd.cpp" />
-    <ClCompile Include="idlib\math\Simd_3DNow.cpp" />
-    <ClCompile Include="idlib\math\Simd_AltiVec.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="idlib\math\Simd_Generic.cpp" />
     <ClCompile Include="idlib\math\Simd_MMX.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE.cpp" />
@@ -373,8 +362,6 @@
     <ClInclude Include="idlib\math\Random.h" />
     <ClInclude Include="idlib\math\Rotation.h" />
     <ClInclude Include="idlib\math\Simd.h" />
-    <ClInclude Include="idlib\math\Simd_3DNow.h" />
-    <ClInclude Include="idlib\math\Simd_AltiVec.h" />
     <ClInclude Include="idlib\math\Simd_Generic.h" />
     <ClInclude Include="idlib\math\Simd_MMX.h" />
     <ClInclude Include="idlib\math\Simd_SSE.h" />

@@ -1260,12 +1260,6 @@
     <ClInclude Include="idlib\math\Simd.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
-    <ClInclude Include="idlib\math\Simd_3DNow.h">
-      <Filter>idLib\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="idlib\math\Simd_AltiVec.h">
-      <Filter>idLib\Math</Filter>
-    </ClInclude>
     <ClInclude Include="idlib\math\Simd_Generic.h">
       <Filter>idLib\Math</Filter>
     </ClInclude>
@@ -2563,12 +2557,6 @@
       <Filter>idLib\Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Simd.cpp">
-      <Filter>idLib\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="idlib\math\Simd_3DNow.cpp">
-      <Filter>idLib\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="idlib\math\Simd_AltiVec.cpp">
       <Filter>idLib\Math</Filter>
     </ClCompile>
     <ClCompile Include="idlib\math\Simd_Generic.cpp">

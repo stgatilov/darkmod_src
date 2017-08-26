@@ -266,7 +266,7 @@ static bool HasCMOV( void ) {
 Has3DNow
 ================
 */
-static bool Has3DNow( void ) {
+/*static bool Has3DNow( void ) {
 	unsigned regs[4];
 
 	// check AMD-specific functions
@@ -282,7 +282,7 @@ static bool Has3DNow( void ) {
 	}
 
 	return false;
-}
+}*/
 
 /*
 ================
@@ -498,7 +498,7 @@ int CPUCount( int &logicalNum, int &physicalNum )
 HasHTT
 ================
 */
-static bool HasHTT( void ) {
+/*static bool HasHTT( void ) {
 	unsigned regs[4];
 	int logicalNum, physicalNum, HTStatusFlag;
 
@@ -515,7 +515,7 @@ static bool HasHTT( void ) {
 		return false;
 	}
 	return true;
-}
+}*/
 
 /*
 ================
@@ -577,10 +577,10 @@ cpuid_t Sys_GetCPUId( void ) {
 		flags |= CPUID_MMX;
 	}
 
-	// check for 3DNow!
+/*	// check for 3DNow!
 	if ( Has3DNow() ) {
 		flags |= CPUID_3DNOW;
-	}
+	}*/
 
 	// check for Streaming SIMD Extensions
 	if ( HasSSE() ) {
@@ -598,9 +598,9 @@ cpuid_t Sys_GetCPUId( void ) {
 	}
 
 	// check for Hyper-Threading Technology
-	if ( HasHTT() ) {
+/*	if ( HasHTT() ) {
 		flags |= CPUID_HTT;
-	}
+	}*/
 
 	// check for Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions
 	if ( HasCMOV() ) {
