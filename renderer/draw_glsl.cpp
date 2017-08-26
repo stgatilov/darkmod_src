@@ -151,15 +151,17 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArrayARB( 9 );
 	qglEnableVertexAttribArrayARB( 10 );
 	qglEnableVertexAttribArrayARB( 11 );
-	qglEnableClientState( GL_COLOR_ARRAY );
+	//qglEnableClientState( GL_COLOR_ARRAY );
+	qglEnableVertexAttribArrayARB(3);
 
 	for ( ; surf ; surf=surf->nextOnLight ) {
 		// perform setup here that will not change over multiple interaction passes
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
-		qglVertexAttribPointerARB( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
+		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
+		qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
+		qglVertexAttribPointerARB(11, 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
 		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -182,7 +184,8 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArrayARB( 9 );
 	qglDisableVertexAttribArrayARB( 10 );
 	qglDisableVertexAttribArrayARB( 11 );
-	qglDisableClientState( GL_COLOR_ARRAY );
+	//qglDisableClientState( GL_COLOR_ARRAY );
+	qglDisableVertexAttribArrayARB(3);
 
 	// disable features
 	GL_SelectTextureNoClient( 4 );
@@ -383,7 +386,8 @@ bool R_LinkGLSLShader( shaderProgram_t *shaderProgram, bool needsAttributes ) {
 	qglAttachShader( shaderProgram->program, shaderProgram->fragmentShader );
 
 	if ( needsAttributes ) {
-		qglBindAttribLocation( shaderProgram->program, 8, "attr_TexCoord" );
+		qglBindAttribLocation(shaderProgram->program, 3, "attr_Color");
+		qglBindAttribLocation(shaderProgram->program, 8, "attr_TexCoord");
 		qglBindAttribLocation( shaderProgram->program, 9, "attr_Tangent" );
 		qglBindAttribLocation( shaderProgram->program, 10, "attr_Bitangent" );
 		qglBindAttribLocation( shaderProgram->program, 11, "attr_Normal" );
