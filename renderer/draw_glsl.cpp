@@ -64,7 +64,6 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
     
 	shaderProgram_t *shader = din->ambientLight ? &ambientInteractionShader : &interactionShader;
     // load all the shader parameters
-	qglUniform4fv( shader->localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform4fv( shader->lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
 	qglUniform4fv( shader->lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
 	qglUniform4fv( shader->lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
@@ -95,6 +94,9 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		qglUniform4fv( interactionShader.specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
 		qglUniform4fv( interactionShader.specularMatrixT, 1, din->specularMatrix[1].ToFloatPtr() );
 		qglUniform4fv( interactionShader.specularColor, 1, din->specularColor.ToFloatPtr() );
+		qglUniform4fv( shader->localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	} else {
+		qglUniform4fv( shader->localLightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	}
 
 	// set the textures
