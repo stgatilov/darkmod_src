@@ -2826,11 +2826,11 @@ void Cmd_ListConversations_f(const idCmdArgs& args)
 	}
 }
 
-void Cmd_ShowLoot_f(const idCmdArgs& args)
+void Cmd_ShowLoot_f( const idCmdArgs& args )
 {
-	if (gameLocal.GameState() != GAMESTATE_ACTIVE)
+	if ( gameLocal.GameState() != GAMESTATE_ACTIVE )
 	{
-		gameLocal.Printf("No map running\n");
+		gameLocal.Printf( "No map running\n" );
 		return;
 	}
 
@@ -2839,49 +2839,81 @@ void Cmd_ShowLoot_f(const idCmdArgs& args)
 	int jewels = 0;
 	int goods = 0;
 
-	for (idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next())
+	for ( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
 	{
-		if (ent == NULL) continue;
+		if ( ent == NULL ) continue;
 
-		int value = ent->spawnArgs.GetInt("inv_loot_value", "-1");
+		int value = ent->spawnArgs.GetInt( "inv_loot_value", "-1" );
 
-		if (value <= 0) continue; // no loot item
+		if ( value <= 0 ) continue; // no loot item
 
 		items++;
 
-		LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs(ent->spawnArgs);
-		
-		idVec4 colour(colorWhite);
+		LootType lootType = CInventoryItem::GetLootTypeFromSpawnargs( ent->spawnArgs );
 
-		switch(lootType)
+		idVec4 colour( colorWhite );
+
+		switch ( lootType )
 		{
-			case LOOT_GOLD:
-				gold += value;
-				colour = idVec4(0.97f, 0.93f, 0.58f, 1);
+		case LOOT_GOLD:
+			gold += value;
+			colour = idVec4( 0.97f, 0.93f, 0.58f, 1 );
 			break;
 
-			case LOOT_GOODS:
-				goods += value;
-				colour = idVec4(0.3f, 0.91f, 0.3f, 1);
+		case LOOT_GOODS:
+			goods += value;
+			colour = idVec4( 0.3f, 0.91f, 0.3f, 1 );
 			break;
 
-			case LOOT_JEWELS:
-				jewels += value;
-				colour = idVec4(0.96f, 0.2f, 0.2f, 1);
+		case LOOT_JEWELS:
+			jewels += value;
+			colour = idVec4( 0.96f, 0.2f, 0.2f, 1 );
 			break;
-			
-			default: break;
-		} 
-		
-		gameRenderWorld->DebugBox(colour, idBox(ent->GetPhysics()->GetAbsBounds()), 5000);
+
+		default: break;
+		}
+
+		gameRenderWorld->DebugBox( colour, idBox( ent->GetPhysics()->GetAbsBounds() ), 5000 );
 	}
 
-	gameLocal.Printf("Highlighing loot items for 5 seconds...\n");
-	gameLocal.Printf("Loot items remaining: %d\n", items);
-	gameLocal.Printf("Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods);
+	gameLocal.Printf( "Highlighing loot items for 5 seconds...\n" );
+	gameLocal.Printf( "Loot items remaining: %d\n", items );
+	gameLocal.Printf( "Gold: %d, Jewels: %d, Goods: %d\n", gold, jewels, goods );
 }
 
-void Cmd_ActivateLog_f(const idCmdArgs& args)
+
+void Cmd_ShowKeys_f( const idCmdArgs& args )
+{
+	if ( gameLocal.GameState() != GAMESTATE_ACTIVE )
+	{
+		gameLocal.Printf( "No map running\n" );
+		return;
+	}
+
+	int items = 0;
+
+	for ( idEntity* ent = gameLocal.spawnedEntities.Next(); ent != NULL; ent = ent->spawnNode.Next() )
+	{
+		if ( ent == NULL ) continue;
+
+		const char* value = ent->spawnArgs.GetString( "inv_category", "" );
+
+		//if ( strcmp( common->GetI18N()->Translate( value ), "Keys" ) ) continue; // no key
+		if ( strcmp( value, "#str_02392" ) ) continue; // no key
+		
+		items++;
+
+		idVec4 colour( colorWhite );
+
+		gameRenderWorld->DebugBox( colour, idBox( ent->GetPhysics()->GetAbsBounds() ), 5000 );
+
+		gameLocal.Printf( "  %s\n", ent->name.c_str() );
+	}
+
+	gameLocal.Printf( "Highlighing %d keys for 5 seconds...\n", items );
+}
+
+void Cmd_ActivateLog_f( const idCmdArgs& args )
 {
 	if (args.Argc() != 2)
 	{
@@ -3835,7 +3867,8 @@ void idGameLocal::InitConsoleCommands( void ) {
 	cmdSystem->AddCommand( "tdm_start_conversation",	Cmd_StartConversation_f,	CMD_FL_GAME,			"Starts the conversation with the given name." );
 	cmdSystem->AddCommand( "tdm_list_conversations",	Cmd_ListConversations_f,	CMD_FL_GAME,			"List all available conversations by name." );
 
-	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f,	CMD_FL_GAME|CMD_FL_CHEAT,			"Highlight all loot items in the map." );
+	cmdSystem->AddCommand( "tdm_show_keys",			Cmd_ShowKeys_f,	CMD_FL_GAME|CMD_FL_CHEAT,			"Highlight all keys in the map." );
+	cmdSystem->AddCommand( "tdm_show_loot",			Cmd_ShowLoot_f, CMD_FL_GAME | CMD_FL_CHEAT, "Highlight all loot items in the map." );
 
 	cmdSystem->AddCommand( "tdm_activatelogclass",		Cmd_ActivateLog_f,			CMD_FL_GAME,	"Activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
 	cmdSystem->AddCommand( "tdm_deactivatelogclass",	Cmd_DeactivateLog_f,		CMD_FL_GAME,	"De-activates a specific log class during run-time (as defined in darkmod.ini)", CGlobal::ArgCompletion_LogClasses );
