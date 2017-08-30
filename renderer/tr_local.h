@@ -880,7 +880,6 @@ extern idCVar r_brightness;				// changes gamma tables
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 
-//extern idCVar r_useNV20MonoLights;		// 1 = allow an interaction pass optimization
 extern idCVar r_useLightPortalFlow;		// 1 = do a more precise area reference determination
 extern idCVar r_useTripleTextureARB;	// 1 = cards with 3+ texture units do a two pass instead of three pass
 extern idCVar r_useShadowSurfaceScissor;// 1 = scissor shadows by the scissor rect of the interaction surfaces
@@ -909,11 +908,11 @@ extern idCVar r_useShadowProjectedCull;	// 1 = discard triangles outside light v
 extern idCVar r_useDeferredTangents;	// 1 = don't always calc tangents after deform
 extern idCVar r_useCachedDynamicModels;	// 1 = cache snapshots of dynamic models
 extern idCVar r_useTwoSidedStencil;		// 1 = do stencil shadows in one pass with different ops on each side
-extern idCVar r_useInfiniteFarZ;		// 1 = use the no-far-clip-plane trick
+//extern idCVar r_useInfiniteFarZ;		// 1 = use the no-far-clip-plane trick
 extern idCVar r_useScissor;				// 1 = scissor clip as portals and lights are processed
 extern idCVar r_usePortals;				// 1 = use portals to perform area culling, otherwise draw everything
 extern idCVar r_useStateCaching;		// avoid redundant state changes in GL_*() calls
-extern idCVar r_useCombinerDisplayLists;// if 1, put all nvidia register combiner programming in display lists
+//extern idCVar r_useCombinerDisplayLists;// if 1, put all nvidia register combiner programming in display lists
 extern idCVar r_useVertexBuffers;		// if 0, don't use ARB_vertex_buffer_object for vertexes
 extern idCVar r_useIndexBuffers;		// if 0, don't use ARB_vertex_buffer_object for indexes
 extern idCVar r_useEntityCallbacks;		// if 0, issue the callback immediately at update time, rather than defering
@@ -1037,6 +1036,7 @@ extern idCVar r_softShadMaxSize; */
 // duzenko: late 2016-17 additions
 extern idCVar r_useAnonreclaimer;
 extern idCVar r_useFbo;
+extern idCVar r_useGLSL;
 extern idCVar r_fboDebug;
 extern idCVar r_fboColorBits;
 extern idCVar r_fboSharedColor;
@@ -1384,22 +1384,12 @@ DRAW_*
 
 void	RB_ARB_DrawInteractions( void );
 
-/*void	R_R200_Init( void );
-void	RB_R200_DrawInteractions( void );
-
-void	R_NV10_Init( void );
-void	RB_NV10_DrawInteractions( void );
-
-void	R_NV20_Init( void );
-void	RB_NV20_DrawInteractions( void );*/
-
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
 void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 
-void	R_GLSL_Init( void );
-void	R_ReloadGLSLShaders_f( const idCmdArgs &args );
+void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
 void	RB_GLSL_DrawInteractions( void );
 
 typedef enum {
@@ -1450,11 +1440,6 @@ typedef enum {
 	VPROG_BLOOM_FINAL_PASS,
 	FPROG_BLOOM_FINAL_PASS,
 	
-	PROG_DEPTH_ALPHA, // duzenko: glsl shader depth+alpha
-	PROG_OLD_STAGE, // duzenko: glsl shader for old stage
-	PROG_FOG, // duzenko: glsl shader for fog
-	PROG_BLEND, // duzenko: glsl shader for blend lights
-	PROG_CUBE_MAP, // duzenko: glsl shader for cubemap texture
 	// 
 	PROG_USER
 } program_t;
@@ -1462,14 +1447,57 @@ typedef enum {
 void R_UseProgramARB( int vProg = PROG_INVALID );
 int R_FindProgramGlsl( int Prog );
 
-typedef struct shaderProgram_s
-{
+struct shaderProgram_t {
 	GLhandleARB     program;					// program = vertex + fragment shader
+	bool Load( char *fileName );
+	virtual void AfterLoad();
+private:
+	void AttachShader( GLint ShaderType, char *fileName );
+	GLuint CompileShader( GLint ShaderType, idStr &fileName );
+};
 
-	GLhandleARB     vertexShader;
-	GLhandleARB     fragmentShader;
+struct oldStageProgram_t : shaderProgram_t {
+	GLint			texPlaneS;
+	GLint			texPlaneT;
+	GLint			texPlaneQ;
+	GLint			screenTex;
+	GLint			colorMul;
+	GLint			colorAdd;
+	virtual	void AfterLoad();
+};
 
-	// uniform parameters
+struct depthProgram_t : shaderProgram_t {
+	GLint			clipPlane;
+	GLint			color;
+	GLint			alphaTest;
+	virtual	void AfterLoad();
+};
+
+struct blendProgram_t : shaderProgram_t {
+	GLint			tex0PlaneS;
+	GLint			tex0PlaneT;
+	GLint			tex0PlaneQ;
+	GLint			tex1PlaneS;
+	GLint			texture1;
+	GLint			blendColor;
+	virtual	void AfterLoad();
+};
+
+struct fogProgram_t : shaderProgram_t {
+	GLint			tex0PlaneS;
+	GLint			tex1PlaneS;
+	GLint			fogEnter;
+	GLint			texture1;
+	GLint			fogColor;
+	virtual	void AfterLoad();
+};
+
+struct lightProgram_t : shaderProgram_t {
+	GLint			localLightOrigin;
+	virtual	void AfterLoad();
+};
+
+struct interactionProgram_t : lightProgram_t {
 	GLint			u_normalTexture;
 	GLint			u_lightFalloffTexture;
 	GLint			u_lightProjectionTexture;
@@ -1478,7 +1506,6 @@ typedef struct shaderProgram_s
 
 	GLint			modelMatrix;
 
-	GLint			localLightOrigin;
 	GLint			localViewOrigin;
 
 	GLint			lightProjectionS;
@@ -1499,11 +1526,8 @@ typedef struct shaderProgram_s
 
 	GLint			diffuseColor;
 	GLint			specularColor;
-} shaderProgram_t;
-
-extern shaderProgram_t  interactionShader;
-extern shaderProgram_t  ambientInteractionShader;
-extern shaderProgram_t	stencilShadowShader;
+	virtual	void AfterLoad();
+};
 
 /*
 

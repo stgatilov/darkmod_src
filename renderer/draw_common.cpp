@@ -15,9 +15,14 @@
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
+
+extern shaderProgram_t cubeMapShader;
+extern oldStageProgram_t oldStageShader;
+extern depthProgram_t depthShader;
+extern fogProgram_t fogShader;
+extern blendProgram_t blendShader;
+extern lightProgram_t stencilShadowShader;
 
 /*
 =====================
@@ -69,32 +74,27 @@ Extracted from RB_PrepareStageTexturing
 */
 void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
 	float	mat[16], plane[4];
-	int loc;
 	myGlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
 
 	plane[0] = mat[0];
 	plane[1] = mat[4];
 	plane[2] = mat[8];
 	plane[3] = mat[12];
-	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneS" );
-	qglUniform4fv( loc, 1, plane );
+	qglUniform4fv( oldStageShader.texPlaneS, 1, plane );
 
 	plane[0] = mat[1];
 	plane[1] = mat[5];
 	plane[2] = mat[9];
 	plane[3] = mat[13];
-	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneT" );
-	qglUniform4fv( loc, 1, plane );
+	qglUniform4fv( oldStageShader.texPlaneT, 1, plane );
 
 	plane[0] = mat[3];
 	plane[1] = mat[7];
 	plane[2] = mat[11];
 	plane[3] = mat[15];
-	loc = qglGetUniformLocation( backEnd.glProgram, "texPlaneQ" );
-	qglUniform4fv( loc, 1, plane );
+	qglUniform4fv( oldStageShader.texPlaneQ, 1, plane );
 
-	loc = qglGetUniformLocation( backEnd.glProgram, "screenTex" );
-	qglUniform1f( loc, 1 );
+	qglUniform1f( oldStageShader.screenTex, 1 );
 }
 
 /*
@@ -184,10 +184,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
 		break;
 	case TG_SCREEN:
-	{
-		int loc = qglGetUniformLocation( backEnd.glProgram, "screenTex" );
-		qglUniform1f( loc, 0 );
-	}
+		qglUniform1f( oldStageShader.screenTex, 0 );
 		break;
 	case TG_REFLECT_CUBE:
 		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
@@ -244,8 +241,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
 		idPlane	plane;
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
-		GLint locClipPlane = qglGetUniformLocation( backEnd.glProgram, "clipPlane" );
-		qglUniform4fv( locClipPlane, 1, plane.ToFloatPtr() );
+		qglUniform4fv( depthShader.clipPlane, 1, plane.ToFloatPtr() );
 	}
 
 	if ( !shader->IsDrawn() ) {
@@ -314,8 +310,6 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		drawSolid = true;
 	}
 
-	GLint locAlphaTest = qglGetUniformLocation(backEnd.glProgram, "alphaTest");
-	GLint locColor = qglGetUniformLocation(backEnd.glProgram, "color");
 	// we may have multiple alpha tested stages
 	if ( shader->Coverage() == MC_PERFORATED ) {
 		// if the only alpha tested stages are condition register omitted,
@@ -348,10 +342,9 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			if ( color[3] <= 0 ) {
 				continue;
 			}
-//			qglColor4fv( color );
-			qglUniform4fv(locColor, 1, color);
+			qglUniform4fv(depthShader.color, 1, color);
 
-			qglUniform1f(locAlphaTest, regs[pStage->alphaTestRegister]);
+			qglUniform1f( depthShader.alphaTest, regs[pStage->alphaTestRegister] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
@@ -373,10 +366,8 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 
 	// draw the entire surface solid
 	if ( drawSolid ) {
-		//qglColor4fv( color );
-		qglUniform4fv(locColor, 1, color);
-		//globalImages->whiteImage->Bind();
-		qglUniform1f(locAlphaTest, -1); // hint the glsl to skip texturing
+		qglUniform4fv(depthShader.color, 1, color);
+		qglUniform1f(depthShader.alphaTest, -1); // hint the glsl to skip texturing
 
 		// draw it
 		RB_DrawElementsWithCounters( tri );
@@ -411,20 +402,13 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
-	backEnd.glProgram = R_FindProgramGlsl( PROG_DEPTH_ALPHA );
+	backEnd.glProgram = depthShader.program;
 	qglUseProgram( backEnd.glProgram );
 	// enable the second texture for mirror plane clipping if needed
 	if ( backEnd.viewDef->numClipPlanes ) {
-		//GL_SelectTexture( 1 );
-		//globalImages->alphaNotchImage->Bind();
-		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		//qglEnable( GL_TEXTURE_GEN_S );
-		//qglTexCoord2f( 1, 0.5 );
 	} else {
-		float noClip[] = { 0, 0, 0, 1 };
-		//qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_DEPTH_CLIP_PLANE, noClip );
-		GLint locClipPlane = qglGetUniformLocation( backEnd.glProgram, "clipPlane" );
-		qglUniform4fv( locClipPlane, 1, noClip );
+		const float noClip[] = { 0, 0, 0, 1 };
+		qglUniform4fv( depthShader.clipPlane, 1, noClip );
 	}
 
 	// the first texture will be used for alpha tested surfaces
@@ -621,7 +605,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE: 
 		qglEnableVertexAttribArrayARB(8);
 		qglVertexAttribPointerARB(8, 3, GL_FLOAT, false, 0, vertexCache.Position(surf->dynamicTexCoords));
-		qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_CUBE_MAP));
+		qglUseProgram( backEnd.glProgram = cubeMapShader.program );
 		break;
 	case TG_REFLECT_CUBE:
 		qglColor4fv(color);
@@ -631,27 +615,25 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	default:
 		qglEnableVertexAttribArrayARB( 8 );
 		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_OLD_STAGE));
-		int locColorAdd = qglGetUniformLocation(backEnd.glProgram, "colorAdd");
-		int locColorMul = qglGetUniformLocation( backEnd.glProgram, "colorMul" );
+		qglUseProgram( backEnd.glProgram = oldStageShader.program );
 		switch (pStage->vertexColor) {
 		case SVC_IGNORE:
-			qglUniform4fv( locColorMul, 1, zero );
-			qglUniform4fv( locColorAdd, 1, color );
+			qglUniform4fv( oldStageShader.colorMul, 1, zero );
+			qglUniform4fv( oldStageShader.colorAdd, 1, color );
 			break;
 		case SVC_MODULATE:
 			// select the vertex color source
 			qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
 			qglEnableVertexAttribArrayARB(3);
-			qglUniform4fv( locColorMul, 1, color );
-			qglUniform4fv( locColorAdd, 1, zero );
+			qglUniform4fv( oldStageShader.colorMul, 1, color );
+			qglUniform4fv( oldStageShader.colorAdd, 1, zero );
 			break;
 		case SVC_INVERSE_MODULATE:
 			// select the vertex color source
 			qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
 			qglEnableVertexAttribArrayARB(3);
-			qglUniform4fv( locColorMul, 1, negOne );
-			qglUniform4fv( locColorAdd, 1, color );
+			qglUniform4fv( oldStageShader.colorMul, 1, negOne );
+			qglUniform4fv( oldStageShader.colorAdd, 1, color );
 			break;
 		}
 	}
@@ -1106,7 +1088,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
-		if ( r_ignore2.GetBool() )
+		if ( r_useGLSL.GetBool() )
 			qglUniform4fv( stencilShadowShader.localLightOrigin, 1, localLight.ToFloatPtr() );
 		else
 			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
@@ -1411,15 +1393,11 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 			R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 		}
 
-		int loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneS");
-		qglUniform4fv(loc, 1, lightProject[0].ToFloatPtr());
-		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneT");
-		qglUniform4fv(loc, 1, lightProject[1].ToFloatPtr());
-		loc = qglGetUniformLocation(backEnd.glProgram, "tex0PlaneQ");
-		qglUniform4fv(loc, 1, lightProject[2].ToFloatPtr());
+		qglUniform4fv( blendShader.tex0PlaneS, 1, lightProject[0].ToFloatPtr() );
+		qglUniform4fv( blendShader.tex0PlaneT, 1, lightProject[1].ToFloatPtr() );
+		qglUniform4fv( blendShader.tex0PlaneQ, 1, lightProject[2].ToFloatPtr() );
 
-		loc = qglGetUniformLocation(backEnd.glProgram, "tex1PlaneS");
-		qglUniform4fv(loc, 1, lightProject[3].ToFloatPtr());
+		qglUniform4fv( blendShader.tex1PlaneS, 1, lightProject[3].ToFloatPtr() );
 	}
 
 	// this gets used for both blend lights and shadow draws
@@ -1463,21 +1441,12 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 
 	// texture 1 will get the falloff texture
 	GL_SelectTexture( 1 );
-	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	//qglEnable( GL_TEXTURE_GEN_S );
-	//qglTexCoord2f( 0, 0.5 );
 	backEnd.vLight->falloffImage->Bind();
 
 	// texture 0 will get the projected texture
-	//GL_SelectTexture( 0 );
-	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	//qglEnable( GL_TEXTURE_GEN_S );
-	//qglEnable( GL_TEXTURE_GEN_T );
-	//qglEnable( GL_TEXTURE_GEN_Q );
 
-	qglUseProgram(backEnd.glProgram = R_FindProgramGlsl(PROG_BLEND));
-	int loc = qglGetUniformLocation(backEnd.glProgram, "texture1");
-	qglUniform1i(loc, 1);
+	qglUseProgram( backEnd.glProgram = blendShader.program );
+	qglUniform1i(blendShader.texture1, 1);
 
 	for ( i = 0 ; i < lightShader->GetNumStages() ; i++ ) {
 		stage = lightShader->GetStage(i);
@@ -1500,9 +1469,7 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 		backEnd.lightColor[1] = regs[ stage->color.registers[1] ];
 		backEnd.lightColor[2] = regs[ stage->color.registers[2] ];
 		backEnd.lightColor[3] = regs[ stage->color.registers[3] ];
-//		qglColor4fv( backEnd.lightColor );
-		loc = qglGetUniformLocation(backEnd.glProgram, "blendColor");
-		qglUniform4fv(loc, 1, backEnd.lightColor);
+		qglUniform4fv(blendShader.blendColor, 1, backEnd.lightColor);
 
 		RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BlendLight );
 		RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BlendLight );
@@ -1516,13 +1483,9 @@ static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawS
 	}
 
 	GL_SelectTexture( 1 );
-	//qglDisable( GL_TEXTURE_GEN_S );
 	globalImages->BindNull();
 
 	GL_SelectTexture( 0 );
-	//qglDisable( GL_TEXTURE_GEN_S );
-	//qglDisable( GL_TEXTURE_GEN_T );
-	//qglDisable( GL_TEXTURE_GEN_Q );
 	qglUseProgram(backEnd.glProgram = 0);
 }
 
@@ -1544,14 +1507,12 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[0], local );
 		local[3] += 0.5;
-		int loc = qglGetUniformLocation( backEnd.glProgram, "tex0PlaneS" );
-		qglUniform4fv( loc, 1, local.ToFloatPtr() );
+		qglUniform4fv( fogShader.tex0PlaneS, 1, local.ToFloatPtr() );
 
 		GL_SelectTexture( 1 );
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[1], local );
-		loc = qglGetUniformLocation( backEnd.glProgram, "tex1PlaneS" );
-		qglUniform4fv( loc, 1, local.ToFloatPtr() );
+		qglUniform4fv( fogShader.tex1PlaneS, 1, local.ToFloatPtr() );
 	}
 
 	RB_T_RenderTriangleSurface( surf );
@@ -1614,14 +1575,11 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	GL_SelectTexture( 0 );
 	globalImages->fogImage->Bind();
 
-	backEnd.glProgram = R_FindProgramGlsl( PROG_FOG );
+	backEnd.glProgram = fogShader.program;
 	qglUseProgram(backEnd.glProgram);
-	int loc = qglGetUniformLocation( backEnd.glProgram, "texture1" );
-	qglUniform1i( loc, 1 );
-	loc = qglGetUniformLocation( backEnd.glProgram, "fogColor" );
-	qglUniform3fv( loc, 1, backEnd.lightColor );
-	loc = qglGetUniformLocation( backEnd.glProgram, "fogEnter" );
-	qglUniform1f( loc, FOG_ENTER );
+	qglUniform1i( fogShader.texture1, 1 );
+	qglUniform3fv( fogShader.fogColor, 1, backEnd.lightColor );
+	qglUniform1f( fogShader.fogEnter, FOG_ENTER );
 
 	fogPlanes[0][0] = a * backEnd.viewDef->worldSpace.modelViewMatrix[2];
 	fogPlanes[0][1] = a * backEnd.viewDef->worldSpace.modelViewMatrix[6];
@@ -1806,25 +1764,7 @@ void	RB_STD_DrawView( void ) {
 	// subviews
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
-	// main light renderer
-	/*switch( tr.backEndRenderer ) {
-	case BE_ARB:
-		RB_ARB_DrawInteractions();
-		break;
-	case BE_ARB2:	
-		RB_ARB2_DrawInteractions();
-		break;
-	case BE_NV20:
-		RB_NV20_DrawInteractions();
-		break;
-	case BE_NV10:
-		RB_NV10_DrawInteractions();
-		break;
-	case BE_R200:
-		RB_R200_DrawInteractions();
-		break;
-	}*/
-	if ( r_ignore2.GetBool() )
+	if ( r_useGLSL.GetBool() )
 		RB_GLSL_DrawInteractions();
 	else
 		RB_ARB2_DrawInteractions();

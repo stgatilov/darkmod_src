@@ -29,9 +29,17 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+
+
 #include "tr_local.h"
 
-shaderProgram_t		interactionShader, ambientInteractionShader, stencilShadowShader;
+shaderProgram_t cubeMapShader;
+oldStageProgram_t oldStageShader;
+depthProgram_t depthShader;
+lightProgram_t stencilShadowShader;
+fogProgram_t fogShader;
+blendProgram_t blendShader;
+interactionProgram_t interactionShader, ambientInteractionShader;
 
 /*
 =========================================================================================
@@ -62,7 +70,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
     static const float one[4] = { 1, 1, 1, 1 };
     static const float negOne[4] = { -1, -1, -1, -1 };
     
-	shaderProgram_t *shader = din->ambientLight ? &ambientInteractionShader : &interactionShader;
+	interactionProgram_t *shader = din->ambientLight ? &ambientInteractionShader : &interactionShader;
     // load all the shader parameters
 	qglUniform4fv( shader->lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
 	qglUniform4fv( shader->lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
@@ -218,7 +226,6 @@ void RB_GLSL_DrawInteractions( void ) {
 	viewLight_t		*vLight;
 
 	GL_SelectTexture( 0 );
-	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	//
 	// for each light, perform adding and shadowing
@@ -292,255 +299,6 @@ void RB_GLSL_DrawInteractions( void ) {
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
 
 	GL_SelectTexture( 0 );
-	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-}
-
-/*
-=================
-R_LoadGLSLShader
-
-loads GLSL vertex or fragment shaders
-=================
-*/
-bool R_LoadGLSLShader( const char *name, shaderProgram_t *shaderProgram, GLenum type ) {
-	idStr	fullPath = "glprogs/";
-	fullPath += name;
-	char	*fileBuffer;
-	char	*buffer;
-
-	common->Printf( "%s", fullPath.c_str() );
-
-	// load the program even if we don't support it, so
-	// fs_copyfiles can generate cross-platform data dumps
-	fileSystem->ReadFile( fullPath.c_str(), (void **)&fileBuffer, NULL );
-	if ( !fileBuffer ) {
-		common->Printf( ": File not found\n" );
-		return false;
-	}
-
-	// copy to stack memory and free
-	buffer = (char *)_alloca( strlen( fileBuffer ) + 1 );
-	strcpy( buffer, fileBuffer );
-	fileSystem->FreeFile( fileBuffer );
-
-	if ( !glConfig.isInitialized ) {
-		return false;
-	}
-
-	GLhandleARB* shader;
-
-	switch ( type ) {
-	case GL_VERTEX_SHADER_ARB:
-		// create and compile vertex shader
-		shader = &shaderProgram->vertexShader;
-		shaderProgram->vertexShader = qglCreateShader( GL_VERTEX_SHADER_ARB );
-		break;
-	case GL_FRAGMENT_SHADER_ARB:
-		// create and copmpile fragment shader
-		shader = &shaderProgram->fragmentShader;
-		shaderProgram->fragmentShader = qglCreateShader( GL_FRAGMENT_SHADER_ARB );
-		break;
-	default:
-		common->Printf( "R_LoadGLSLShader: no type\n" );
-		return false;
-	}
-	qglShaderSource( *shader, 1, (const GLcharARB **)&buffer, 0 );
-	qglCompileShader( *shader );
-
-	/* make sure the compilation was successful */
-	GLint length, result;
-	qglGetShaderiv( *shader, GL_COMPILE_STATUS, &result );
-	if ( result == GL_FALSE ) {
-		char *log;
-
-		/* get the shader info log */
-		qglGetShaderiv( *shader, GL_INFO_LOG_LENGTH, &length );
-		log = new char[length];
-		qglGetShaderInfoLog( *shader, length, &result, log );
-
-		/* print an error message and the info log */
-		common->Warning( "shaderCompileFromFile(): Unable to compile %s: %s\n", fullPath.c_str(), log );
-		delete log;
-
-		qglDeleteShader( *shader );
-		return 0;
-	}
-
-	common->Printf( "\n" );
-	return true;
-}
-
-/*
-=================
-R_LinkGLSLShader
-
-links the GLSL vertex and fragment shaders together to form a GLSL program
-=================
-*/
-bool R_LinkGLSLShader( shaderProgram_t *shaderProgram, bool needsAttributes ) {
-	GLint result;
-
-	if ( shaderProgram->program )
-		qglDeleteProgram( shaderProgram->program );
-	shaderProgram->program = qglCreateProgram();
-
-	qglAttachShader( shaderProgram->program, shaderProgram->vertexShader );
-	qglAttachShader( shaderProgram->program, shaderProgram->fragmentShader );
-
-	if ( needsAttributes ) {
-		qglBindAttribLocation(shaderProgram->program, 3, "attr_Color");
-		qglBindAttribLocation(shaderProgram->program, 8, "attr_TexCoord");
-		qglBindAttribLocation( shaderProgram->program, 9, "attr_Tangent" );
-		qglBindAttribLocation( shaderProgram->program, 10, "attr_Bitangent" );
-		qglBindAttribLocation( shaderProgram->program, 11, "attr_Normal" );
-	}
-
-	qglLinkProgram( shaderProgram->program );
-
-	qglGetProgramiv( shaderProgram->program, GL_LINK_STATUS, &result );
-	if ( !result ) {
-		GLint length;
-		char *log;
-
-		/* get the program info log */
-		qglGetProgramiv( shaderProgram->program, GL_INFO_LOG_LENGTH, &length );
-		log = new char[length];
-		qglGetProgramInfoLog( shaderProgram->program, length, &result, log );
-
-		/* print an error message and the info log */
-		common->Warning( "Program linking failed: %s\n", log );
-		delete log;
-
-		/* delete the program */
-		qglDeleteProgram( shaderProgram->program );
-		shaderProgram->program = 0;
-		return false;
-	}
-
-	return true;
-}
-
-/*
-=================
-R_ValidateGLSLProgram
-
-makes sure GLSL program is valid
-=================
-*/
-bool R_ValidateGLSLProgram( shaderProgram_t *shaderProgram ) {
-	GLint validProgram;
-
-	qglValidateProgram( shaderProgram->program );
-
-	qglGetProgramiv( shaderProgram->program, GL_OBJECT_VALIDATE_STATUS_ARB, &validProgram );
-	if ( !validProgram ) {
-		common->Printf( "R_ValidateGLSLProgram: program invalid\n" );
-		return false;
-	}
-
-	return true;
-}
-
-static bool RB_GLSL_InitShaders() {
-	// load interation shaders
-	R_LoadGLSLShader( "interaction.vs", &interactionShader, GL_VERTEX_SHADER_ARB );
-	R_LoadGLSLShader( "interaction.fs", &interactionShader, GL_FRAGMENT_SHADER_ARB );
-	if ( R_LinkGLSLShader( &interactionShader, true ) && R_ValidateGLSLProgram( &interactionShader ) ) {
-		// set uniform locations
-		interactionShader.u_normalTexture = qglGetUniformLocation( interactionShader.program, "u_normalTexture" );
-		interactionShader.u_lightFalloffTexture = qglGetUniformLocation( interactionShader.program, "u_lightFalloffTexture" );
-		interactionShader.u_lightProjectionTexture = qglGetUniformLocation( interactionShader.program, "u_lightProjectionTexture" );
-		interactionShader.u_diffuseTexture = qglGetUniformLocation( interactionShader.program, "u_diffuseTexture" );
-		interactionShader.u_specularTexture = qglGetUniformLocation( interactionShader.program, "u_specularTexture" );
-
-		interactionShader.modelMatrix = qglGetUniformLocation( interactionShader.program, "u_modelMatrix" );
-
-		interactionShader.localLightOrigin = qglGetUniformLocation( interactionShader.program, "u_lightOrigin" );
-		interactionShader.localViewOrigin = qglGetUniformLocation( interactionShader.program, "u_viewOrigin" );
-		interactionShader.lightProjectionS = qglGetUniformLocation( interactionShader.program, "u_lightProjectionS" );
-		interactionShader.lightProjectionT = qglGetUniformLocation( interactionShader.program, "u_lightProjectionT" );
-		interactionShader.lightProjectionQ = qglGetUniformLocation( interactionShader.program, "u_lightProjectionQ" );
-		interactionShader.lightFalloff = qglGetUniformLocation( interactionShader.program, "u_lightFalloff" );
-		interactionShader.advanced = qglGetUniformLocation( interactionShader.program, "u_advanced" );
-
-		interactionShader.bumpMatrixS = qglGetUniformLocation( interactionShader.program, "u_bumpMatrixS" );
-		interactionShader.bumpMatrixT = qglGetUniformLocation( interactionShader.program, "u_bumpMatrixT" );
-		interactionShader.diffuseMatrixS = qglGetUniformLocation( interactionShader.program, "u_diffuseMatrixS" );
-		interactionShader.diffuseMatrixT = qglGetUniformLocation( interactionShader.program, "u_diffuseMatrixT" );
-		interactionShader.specularMatrixS = qglGetUniformLocation( interactionShader.program, "u_specularMatrixS" );
-		interactionShader.specularMatrixT = qglGetUniformLocation( interactionShader.program, "u_specularMatrixT" );
-
-		interactionShader.colorModulate = qglGetUniformLocation( interactionShader.program, "u_colorModulate" );
-		interactionShader.colorAdd = qglGetUniformLocation( interactionShader.program, "u_colorAdd" );
-
-		interactionShader.diffuseColor = qglGetUniformLocation( interactionShader.program, "u_diffuseColor" );
-		interactionShader.specularColor = qglGetUniformLocation( interactionShader.program, "u_specularColor" );
-
-		// set texture locations
-		qglUseProgram( interactionShader.program );
-		qglUniform1i( interactionShader.u_normalTexture, 0 );
-		qglUniform1i( interactionShader.u_lightFalloffTexture, 1 );
-		qglUniform1i( interactionShader.u_lightProjectionTexture, 2 );
-		qglUniform1i( interactionShader.u_diffuseTexture, 3 );
-		qglUniform1i( interactionShader.u_specularTexture, 4 );
-		qglUseProgram( 0 );
-    } else {
-        common->Printf( "GLSL interactionShader failed to init.\n" );
-        return false;
-	}
-
-	// load ambient interation shaders
-	R_LoadGLSLShader( "ambientInteraction.vs", &ambientInteractionShader, GL_VERTEX_SHADER_ARB );
-	R_LoadGLSLShader( "ambientInteraction.fs", &ambientInteractionShader, GL_FRAGMENT_SHADER_ARB );
-	if ( R_LinkGLSLShader( &ambientInteractionShader, true ) && R_ValidateGLSLProgram( &ambientInteractionShader ) ) {
-		// set uniform locations
-		ambientInteractionShader.u_normalTexture = qglGetUniformLocation( ambientInteractionShader.program, "u_normalTexture" );
-		ambientInteractionShader.u_lightFalloffTexture = qglGetUniformLocation( ambientInteractionShader.program, "u_lightFalloffTexture" );
-		ambientInteractionShader.u_lightProjectionTexture = qglGetUniformLocation( ambientInteractionShader.program, "u_lightProjectionTexture" );
-		ambientInteractionShader.u_diffuseTexture = qglGetUniformLocation( ambientInteractionShader.program, "u_diffuseTexture" );
-
-		ambientInteractionShader.modelMatrix = qglGetUniformLocation( ambientInteractionShader.program, "u_modelMatrix" );
-
-		ambientInteractionShader.localLightOrigin = qglGetUniformLocation( ambientInteractionShader.program, "u_lightOrigin" );
-		ambientInteractionShader.lightProjectionS = qglGetUniformLocation( ambientInteractionShader.program, "u_lightProjectionS" );
-		ambientInteractionShader.lightProjectionT = qglGetUniformLocation( ambientInteractionShader.program, "u_lightProjectionT" );
-		ambientInteractionShader.lightProjectionQ = qglGetUniformLocation( ambientInteractionShader.program, "u_lightProjectionQ" );
-		ambientInteractionShader.lightFalloff = qglGetUniformLocation( ambientInteractionShader.program, "u_lightFalloff" );
-
-		ambientInteractionShader.bumpMatrixS = qglGetUniformLocation( ambientInteractionShader.program, "u_bumpMatrixS" );
-		ambientInteractionShader.bumpMatrixT = qglGetUniformLocation( ambientInteractionShader.program, "u_bumpMatrixT" );
-		ambientInteractionShader.diffuseMatrixS = qglGetUniformLocation( ambientInteractionShader.program, "u_diffuseMatrixS" );
-		ambientInteractionShader.diffuseMatrixT = qglGetUniformLocation( ambientInteractionShader.program, "u_diffuseMatrixT" );
-
-		ambientInteractionShader.colorModulate = qglGetUniformLocation( ambientInteractionShader.program, "u_colorModulate" );
-		ambientInteractionShader.colorAdd = qglGetUniformLocation( ambientInteractionShader.program, "u_colorAdd" );
-
-		ambientInteractionShader.diffuseColor = qglGetUniformLocation( ambientInteractionShader.program, "u_diffuseColor" );
-
-		// set texture locations
-		qglUseProgram( ambientInteractionShader.program );
-		qglUniform1i( ambientInteractionShader.u_normalTexture, 0 );
-		qglUniform1i( ambientInteractionShader.u_lightFalloffTexture, 1 );
-		qglUniform1i( ambientInteractionShader.u_lightProjectionTexture, 2 );
-		qglUniform1i( ambientInteractionShader.u_diffuseTexture, 3 );
-		qglUseProgram( 0 );
-    } else {
-        common->Printf( "GLSL ambientInteractionShader failed to init.\n" );
-        return false;
-	}
-
-	// load stencil shadow extrusion shaders
-	R_LoadGLSLShader( "stencilshadow.vs", &stencilShadowShader, GL_VERTEX_SHADER_ARB );
-	R_LoadGLSLShader( "stencilshadow.fs", &stencilShadowShader, GL_FRAGMENT_SHADER_ARB );
-	if ( R_LinkGLSLShader( &stencilShadowShader, false ) && R_ValidateGLSLProgram( &stencilShadowShader ) ) {
-		// set uniform locations
-		stencilShadowShader.localLightOrigin = qglGetUniformLocation( stencilShadowShader.program, "u_lightOrigin" );
-    } else {
-        common->Printf( "GLSL stencilShadowShader failed to init.\n" );
-        return false;
-    }
-
-	return true;
 }
 
 /*
@@ -548,32 +306,235 @@ static bool RB_GLSL_InitShaders() {
 R_ReloadGLSLShaders_f
 ==================
 */
-void R_ReloadGLSLShaders_f( const idCmdArgs &args ) {
-	RB_GLSL_InitShaders();
+bool R_ReloadGLSLPrograms() {
+	if ( !interactionShader.Load( "interaction" ) )
+		return false;
+	if ( !ambientInteractionShader.Load( "ambientInteraction" ) )
+		return false;
+	if ( !stencilShadowShader.Load( "stencilshadow" ) )
+		return false;
+	if ( !oldStageShader.Load( "oldStage" ) )
+		return false;
+	if ( !depthShader.Load( "depthAlpha" ) )
+		return false;
+	if ( !fogShader.Load( "fog" ) )
+		return false;
+	if ( !blendShader.Load( "blend" ) )
+		return false;
+	if ( !cubeMapShader.Load( "cubeMap" ) )
+		return false;
+	return true;
 }
 
-/*
- ==================
- R_GLSL_Init
- ==================
- */
-void R_GLSL_Init( void ) {
-	//glConfig.allowGLSLPath = false;
+void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
+	common->Printf( "---------- R_ReloadGLSLPrograms_f -----------\n" );
 
-	common->Printf( "---------- R_GLSL_Init -----------\n" );
-
-	/*if ( !glConfig.GLSLAvailable ) {
-		common->Printf( "Not available.\n" );
-		return;
-	} else */if ( !RB_GLSL_InitShaders() ) {
+	if ( !R_ReloadGLSLPrograms() ) {
+		r_useGLSL.SetBool( false );
 		common->Printf( "GLSL shaders failed to init.\n" );
 		return;
 	}
-	
-	common->Printf( "Available.\n" );
 
 	common->Printf( "---------------------------------\n" );
-
-	//glConfig.allowGLSLPath = true;
 }
 
+/*
+=================
+shaderProgram_t::CompileShader
+=================
+*/
+GLuint shaderProgram_t::CompileShader( GLint ShaderType, idStr &fileName ) {
+	char *source;
+	GLuint shader;
+	GLint length, result;
+
+	/* get shader source */
+	char    *fileBuffer;
+
+	// load the program even if we don't support it
+	fileSystem->ReadFile( fileName, (void **)&fileBuffer, NULL );
+	if ( !fileBuffer ) {
+		common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName.c_str() );
+		return 0;
+	}
+
+	common->Printf( "%s\n", fileName.c_str() );
+
+	source = fileBuffer;
+
+	/* create shader object, set the source, and compile */
+	shader = qglCreateShader( ShaderType );
+	length = strlen( source );
+	qglShaderSource( shader, 1, (const char **)&source, &length );
+	qglCompileShader( shader );
+	fileSystem->FreeFile( fileBuffer );
+
+	/* make sure the compilation was successful */
+	qglGetShaderiv( shader, GL_COMPILE_STATUS, &result );
+	if ( result == GL_FALSE ) {
+		char *log;
+
+		/* get the shader info log */
+		qglGetShaderiv( shader, GL_INFO_LOG_LENGTH, &length );
+		log = new char[length];
+		qglGetShaderInfoLog( shader, length, &result, log );
+
+		/* print an error message and the info log */
+		common->Warning( "shaderCompileFromFile(): Unable to compile %s: %s\n", fileName.c_str(), log );
+		delete log;
+
+		qglDeleteShader( shader );
+		return 0;
+	}
+
+	return shader;
+}
+
+/*
+=================
+shaderProgram_t::AttachShader
+=================
+*/
+void shaderProgram_t::AttachShader( GLint ShaderType, char *fileName ) {
+	/* compile the shader */
+	GLuint shader = CompileShader( ShaderType, idStr( "glprogs/" ) + fileName + (ShaderType == GL_FRAGMENT_SHADER ? ".fs" : ".vs") );
+	if ( shader != 0 ) {
+		/* attach the shader to the program */
+		qglAttachShader( program, shader );
+
+		/* delete the shader - it won't actually be
+		* destroyed until the program that it's attached
+		* to has been destroyed */
+		qglDeleteShader( shader );
+	}
+}
+
+/*
+=================
+shaderProgram_t::Load
+=================
+*/
+bool shaderProgram_t::Load( char *fileName ) {
+	if ( program )
+		qglDeleteProgram( program );
+	program = qglCreateProgram();
+	AttachShader( GL_VERTEX_SHADER, fileName );
+	AttachShader( GL_FRAGMENT_SHADER, fileName );
+	qglBindAttribLocation( program, 3, "attr_Color" );
+	qglBindAttribLocation( program, 8, "attr_TexCoord" );
+	qglBindAttribLocation( program, 9, "attr_Tangent" );
+	qglBindAttribLocation( program, 10, "attr_Bitangent" );
+	qglBindAttribLocation( program, 11, "attr_Normal" );
+	//qglBindAttribLocation( prog.genId, 3, "Color" );
+	//qglBindAttribLocation( prog.genId, 8, "TexCoord0" );
+
+	GLint result;/* link the program and make sure that there were no errors */
+	qglLinkProgram( program );
+	qglGetProgramiv( program, GL_LINK_STATUS, &result );
+	if ( result != GL_TRUE ) {
+		/* get the program info log */
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		char *log = new char[length];
+		qglGetProgramInfoLog( program, length, &result, log );
+		/* print an error message and the info log */
+		common->Warning( "Program linking failed: %s\n", log );
+		delete log;
+
+		/* delete the program */
+		qglDeleteProgram( program );
+		program = 0;
+		return false;
+	}
+
+	GLint validProgram;
+	qglValidateProgram( program );
+	qglGetProgramiv( program, GL_OBJECT_VALIDATE_STATUS_ARB, &validProgram );
+	if ( !validProgram ) {
+		common->Printf( "R_ValidateGLSLProgram: program invalid\n" );
+		return false;
+	}
+
+	AfterLoad();
+	return true;
+}
+
+void shaderProgram_t::AfterLoad() {
+
+}
+
+void oldStageProgram_t::AfterLoad() {
+	texPlaneS = qglGetUniformLocation( program, "texPlaneS" );
+	texPlaneT = qglGetUniformLocation( program, "texPlaneT" );
+	texPlaneQ = qglGetUniformLocation( program, "texPlaneQ" );
+	screenTex = qglGetUniformLocation( program, "screenTex" );
+	colorMul = qglGetUniformLocation( program, "colorMul" );
+	colorAdd = qglGetUniformLocation( program, "colorAdd" );
+}
+
+void depthProgram_t::AfterLoad() {
+	clipPlane = qglGetUniformLocation( program, "clipPlane" );
+	color = qglGetUniformLocation( program, "color" );
+	alphaTest = qglGetUniformLocation( program, "alphaTest" );
+}
+
+void blendProgram_t::AfterLoad() {
+	tex0PlaneS = qglGetUniformLocation( program, "tex0PlaneS" );
+	tex0PlaneT = qglGetUniformLocation( program, "tex0PlaneT" );
+	tex0PlaneQ = qglGetUniformLocation( program, "tex0PlaneQ" );
+	tex1PlaneS = qglGetUniformLocation( program, "tex1PlaneS" );
+	texture1 = qglGetUniformLocation( program, "texture1" );
+	blendColor = qglGetUniformLocation( program, "blendColor" );
+}
+
+void fogProgram_t::AfterLoad() {
+	tex0PlaneS = qglGetUniformLocation( program, "tex0PlaneS" );
+	tex1PlaneS = qglGetUniformLocation( program, "tex1PlaneS" );
+	texture1 = qglGetUniformLocation( program, "texture1" );
+	fogColor = qglGetUniformLocation( program, "fogColor" );
+	fogEnter = qglGetUniformLocation( program, "fogEnter" );
+}
+
+void lightProgram_t::AfterLoad() {
+	localLightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
+}
+
+void interactionProgram_t::AfterLoad() {
+	lightProgram_t::AfterLoad();
+	u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
+	u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
+	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
+	u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
+	u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
+
+	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
+
+	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
+	lightProjectionS = qglGetUniformLocation( program, "u_lightProjectionS" );
+	lightProjectionT = qglGetUniformLocation( program, "u_lightProjectionT" );
+	lightProjectionQ = qglGetUniformLocation( program, "u_lightProjectionQ" );
+	lightFalloff = qglGetUniformLocation( program, "u_lightFalloff" );
+	advanced = qglGetUniformLocation( program, "u_advanced" );
+
+	bumpMatrixS = qglGetUniformLocation( program, "u_bumpMatrixS" );
+	bumpMatrixT = qglGetUniformLocation( program, "u_bumpMatrixT" );
+	diffuseMatrixS = qglGetUniformLocation( program, "u_diffuseMatrixS" );
+	diffuseMatrixT = qglGetUniformLocation( program, "u_diffuseMatrixT" );
+	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
+	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
+
+	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
+	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
+
+	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
+	specularColor = qglGetUniformLocation( program, "u_specularColor" );
+
+	// set texture locations
+	qglUseProgram( program );
+	qglUniform1i( u_normalTexture, 0 );
+	qglUniform1i( u_lightFalloffTexture, 1 );
+	qglUniform1i( u_lightProjectionTexture, 2 );
+	qglUniform1i( u_diffuseTexture, 3 );
+	qglUniform1i( u_specularTexture, 4 );
+	qglUseProgram( 0 );
+}
