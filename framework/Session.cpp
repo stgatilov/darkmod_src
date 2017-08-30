@@ -1384,27 +1384,6 @@ void idSessionLocal::LoadLoadingGui( const char *mapName ) {
 
 /*
 ===============
-idSessionLocal::GetBytesNeededForMapLoad
-===============
-*/
-/* grayman #3763 - no longer used
-int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName ) {
-	const idDecl *mapDecl = declManager->FindType( DECL_MAPDEF, mapName, false );
-	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( mapDecl );
-	if ( mapDef ) {
-		return mapDef->dict.GetInt( va("size%d", Max( 0, com_machineSpec.GetInteger() ) ) );
-	} else {
-		if ( com_machineSpec.GetInteger() < 2 ) {
-			return 200 * 1024 * 1024;
-		} else {
-			return 400 * 1024 * 1024;
-		}
-	}
-}
-*/
-
-/*
-===============
 idSessionLocal::SetBytesNeededForMapLoad
 ===============
 */
@@ -1415,7 +1394,7 @@ void idSessionLocal::SetBytesNeededForMapLoad( const char *mapName, int bytesNee
 	if ( com_updateLoadSize.GetBool() && mapDef ) {
 		// we assume that if com_updateLoadSize is true then the file is writable
 
-		mapDef->dict.SetInt( va("size%d", com_machineSpec.GetInteger()), bytesNeeded );
+		mapDef->dict.SetInt( "size0", bytesNeeded );
 
 		idStr declText = "\nmapDef ";
 		declText += mapDef->GetName();
