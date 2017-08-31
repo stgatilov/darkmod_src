@@ -65,69 +65,6 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 
 /*
 ==================
-R_CreateLightingCache
-
-Returns false if the cache couldn't be allocated, in which case the surface should be skipped.
-==================
-*/
-bool R_CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri ) {
-	// not needed if we have vertex programs
-	if ( true /*tr.backEndRendererHasVertexPrograms*/ ) {
-		return true;
-	}
-	// fogs and blends don't need light vectors
-	else if ( light->lightShader->IsBlendLight() || light->lightShader->IsFogLight() ) {
-		return true;
-	}
-
-	idVec3 localLightOrigin;
-	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
-
-	const int size = tri->ambientSurface->numVerts * sizeof( lightingCache_t );
-	lightingCache_t *cache = (lightingCache_t *)_alloca16( size );
-
-#if 1
-
-	SIMDProcessor->CreateTextureSpaceLightVectors( &cache[0].localLightVector, localLightOrigin,
-												tri->ambientSurface->verts, tri->ambientSurface->numVerts, tri->indexes, tri->numIndexes );
-
-#else
-
-	bool *used = (bool *)_alloca16( tri->ambientSurface->numVerts * sizeof( used[0] ) );
-	memset( used, 0, tri->ambientSurface->numVerts * sizeof( used[0] ) );
-
-	// because the interaction may be a very small subset of the full surface,
-	// it makes sense to only deal with the verts used
-	for ( int j = 0; j < tri->numIndexes; j++ ) {
-		int i = tri->indexes[j];
-		if ( used[i] ) {
-			continue;
-		}
-		used[i] = true;
-
-		idVec3 lightDir;
-		const idDrawVert *v;
-
-		v = &tri->ambientSurface->verts[i];
-
-		lightDir = localLightOrigin - v->xyz;
-
-		cache[i].localLightVector[0] = lightDir * v->tangents[0];
-		cache[i].localLightVector[1] = lightDir * v->tangents[1];
-		cache[i].localLightVector[2] = lightDir * v->normal;
-	}
-
-#endif
-
-	vertexCache.Alloc( cache, size, &tri->lightingCache );
-	if ( !tri->lightingCache ) {
-		return false;
-	}
-	return true;
-}
-
-/*
-==================
 R_CreatePrivateShadowCache
 
 This is used only for a specific light
@@ -281,76 +218,6 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	surf->dynamicTexCoords = vertexCache.AllocFrameTemp( texCoords, size );
 }
-
-/*
-=================
-R_SpecularTexGen
-
-Calculates the specular coordinates for cards without vertex programs.
-=================
-*/
-static void R_SpecularTexGen( drawSurf_t *surf, const idVec3 &globalLightOrigin, const idVec3 &viewOrg ) {
-	const srfTriangles_t *tri;
-	idVec3	localLightOrigin, localViewOrigin;
-
-	R_GlobalPointToLocal( surf->space->modelMatrix, globalLightOrigin, localLightOrigin );
-	R_GlobalPointToLocal( surf->space->modelMatrix, viewOrg, localViewOrigin );
-
-	tri = surf->frontendGeo;
-
-	// Serp - Changed to 3 component from 4 in gpl release
-	const int size = tri->numVerts * sizeof( idVec3 );
-	idVec3 *texCoords = (idVec3 *) _alloca16( size );
-
-#if 1
-
-	SIMDProcessor->CreateSpecularTextureCoords( texCoords, localLightOrigin, localViewOrigin,
-											tri->verts, tri->numVerts, tri->indexes, tri->numIndexes );
-
-#else
-
-	bool *used = (bool *)_alloca16( tri->numVerts * sizeof( used[0] ) );
-	memset( used, 0, tri->numVerts * sizeof( used[0] ) );
-
-	// because the interaction may be a very small subset of the full surface,
-	// it makes sense to only deal with the verts used
-	for ( int j = 0; j < tri->numIndexes; j++ ) {
-		int i = tri->indexes[j];
-		if ( used[i] ) {
-			continue;
-		}
-		used[i] = true;
-
-		float ilength;
-
-		const idDrawVert *v = &tri->verts[i];
-
-		idVec3 lightDir = localLightOrigin - v->xyz;
-		idVec3 viewDir = localViewOrigin - v->xyz;
-
-		ilength = idMath::RSqrt( lightDir * lightDir );
-		lightDir[0] *= ilength;
-		lightDir[1] *= ilength;
-		lightDir[2] *= ilength;
-
-		ilength = idMath::RSqrt( viewDir * viewDir );
-		viewDir[0] *= ilength;
-		viewDir[1] *= ilength;
-		viewDir[2] *= ilength;
-
-		lightDir += viewDir;
-
-		texCoords[i][0] = lightDir * v->tangents[0];
-		texCoords[i][1] = lightDir * v->tangents[1];
-		texCoords[i][2] = lightDir * v->normal;
-		texCoords[i][3] = 1;
-	}
-
-#endif
-
-	surf->dynamicTexCoords = vertexCache.AllocFrameTemp( texCoords, size );
-}
-
 
 //=======================================================================================================
 
@@ -694,15 +561,6 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 			float *regs = (float *)R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
 			drawSurf->shaderRegisters = regs;
 			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, tr.viewDef, space->entityDef->parms.referenceSound );
-		}
-
-		// calculate the specular coordinates if we aren't using vertex programs
-		if (!/*tr.backEndRendererHasVertexPrograms*/true && !r_skipSpecular.GetBool() /*&& tr.backEndRenderer != BE_ARB*/) {
-			R_SpecularTexGen( drawSurf, light->globalLightOrigin, tr.viewDef->renderView.vieworg );
-			// if we failed to allocate space for the specular calculations, drop the surface
-			if ( !drawSurf->dynamicTexCoords ) {
-				return;
-			}
 		}
 	}
 
