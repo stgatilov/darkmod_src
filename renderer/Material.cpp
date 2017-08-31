@@ -1163,10 +1163,6 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ts->texgen = TG_SCREEN; //TG_SCREEN2; duzenko: treated by renderer same as TG_SCREEN, simplified
 			continue;
 		}
-		/*else if (  !token.Icmp( "glassWarp" ) ) { #3868
-			ts->texgen = TG_GLASSWARP;
-			continue;
-		}*/
 
 		else if ( !token.Icmp( "videomap" ) ) {
 			bool withAudio = false;
