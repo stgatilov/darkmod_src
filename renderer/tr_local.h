@@ -1485,8 +1485,6 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			u_diffuseTexture;
 	GLint			u_specularTexture;
 
-	GLint			modelMatrix;
-
 	GLint			localViewOrigin;
 
 	GLint			lightProjectionS;

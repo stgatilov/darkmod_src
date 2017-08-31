@@ -179,9 +179,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 		// set model matrix
 		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-			qglUniformMatrix4fv( ambientInteractionShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		} else {
-			qglUniformMatrix4fv( interactionShader.modelMatrix, 1, false, surf->space->modelMatrix );
 			qglUniform1f( interactionShader.advanced, r_testARBProgram.GetFloat());
 		}
 
@@ -498,8 +496,6 @@ void interactionProgram_t::AfterLoad() {
 	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
 	u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
-
-	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
 	lightProjectionS = qglGetUniformLocation( program, "u_lightProjectionS" );
