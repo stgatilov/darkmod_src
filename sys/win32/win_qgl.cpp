@@ -1144,19 +1144,6 @@ DEF(GL_Q)
 /*      GL_FLOAT */
 /*      GL_DOUBLE */
 
-/* TextureEnvMode */
-DEF(GL_MODULATE)
-DEF(GL_DECAL)
-/*      GL_BLEND */
-/*      GL_REPLACE */
-
-/* TextureEnvParameter */
-DEF(GL_TEXTURE_ENV_MODE)
-DEF(GL_TEXTURE_ENV_COLOR)
-
-/* TextureEnvTarget */
-DEF(GL_TEXTURE_ENV)
-
 /* TextureGenMode */
 DEF(GL_EYE_LINEAR)
 DEF(GL_OBJECT_LINEAR)

@@ -455,8 +455,7 @@ void RB_ARB2_DrawInteractions( void ) {
 		}
 		
 		// nbohr1more #3881: toggle test verse direct shaders further up the tree to reduce bind complexity
-		if ( r_useShadowVertexProgram.GetBool() ) {
-		    if (r_testARBProgram.GetBool()) {
+		if ( r_testARBProgram.GetBool() ) {
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
 			RB_StencilShadowPass( vLight->globalShadows );
@@ -466,9 +465,8 @@ void RB_ARB2_DrawInteractions( void ) {
 			RB_StencilShadowPass( vLight->localShadows );
 			RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
-		    } 
-			else
-			{
+		} else
+		{
 			qglEnable( GL_VERTEX_PROGRAM_ARB );
 			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_STENCIL_SHADOW );
 			RB_StencilShadowPass( vLight->globalShadows );
@@ -478,31 +476,17 @@ void RB_ARB2_DrawInteractions( void ) {
 			RB_StencilShadowPass( vLight->localShadows );
 			RB_ARB2_CreateDrawInteractions_simple( vLight->globalInteractions );
 			qglDisable( GL_VERTEX_PROGRAM_ARB );	// if there weren't any globalInteractions, it would have stayed on
-		    } 
-			}
-		    
-			else if (r_testARBProgram.GetBool()) {
-			RB_StencilShadowPass( vLight->globalShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->localInteractions );
-			RB_StencilShadowPass( vLight->localShadows );
-			RB_ARB2_CreateDrawInteractions( vLight->globalInteractions );
-		    }
-			else{
-			RB_StencilShadowPass( vLight->globalShadows );
-			RB_ARB2_CreateDrawInteractions_simple( vLight->localInteractions );
-			RB_StencilShadowPass( vLight->localShadows );
-			RB_ARB2_CreateDrawInteractions_simple( vLight->globalInteractions );
-		    }
+		}
 
-			//anon begin
-			// reset depth bounds
-			if (useLightDepthBounds)
-			{
-				GL_DepthBoundsTest(0.0f, 0.0f);
-			}
-			//anon end
-			
-	    // } SoftShadows		
+		//anon begin
+		// reset depth bounds
+		if ( useLightDepthBounds )
+		{
+			GL_DepthBoundsTest( 0.0f, 0.0f );
+		}
+		//anon end
+
+		// } SoftShadows		
 
 		// translucent surfaces never get stencil shadowed
 		if ( r_skipTranslucent.GetBool() ) {
@@ -590,12 +574,6 @@ static progDef_t	progs[MAX_GLPROGS] = {
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_GAUSS_BLRY, "blury.vfp" },
 	{ GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
 	{ GL_FRAGMENT_PROGRAM_ARB, FPROG_BLOOM_FINAL_PASS, "finalScenePass_opt.vfp" },
-
-/*	{ 0, PROG_DEPTH_ALPHA, "depthAlpha" }, // duzenko: depth+alpha 
-	{ 0, PROG_OLD_STAGE, "oldstage" }, // duzenko: old stage replacement 
-	{ 0, PROG_FOG, "fog" }, // duzenko: texgen-based fog replacement 
-	{ 0, PROG_BLEND, "blend" }, // duzenko: texgen-based fog replacement 
-	{ 0, PROG_CUBE_MAP, "cubeMap" }, */
 
 	// additional programs can be dynamically specified in materials
 };

@@ -1081,9 +1081,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 	const srfTriangles_t	*tri;
 
 	// set the light position if we are using a vertex program to project the rear surfaces
-	if ( //tr.backEndRendererHasVertexPrograms && // 
-		r_useShadowVertexProgram.GetBool()
-		&& surf->space != backEnd.currentSpace ) {
+	if ( surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
 
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
@@ -1100,7 +1098,6 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		return;
 	}
 
-	//qglVertexPointer( 4, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position(tri->shadowCache) );
 	qglVertexAttribPointerARB( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
 
 	// we always draw the sil planes, but we may not need to draw the front or rear caps
@@ -1175,131 +1172,42 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		return;
 	}
 
-	//rebb : mainly for testing different implementations // duzenko: disabled due to lack of speed difference
-	/*switch( r_stencilShadowMode.GetInteger() ) {
-		// uses twoSidedStencil if enabled/available, otherwise Carmack's workaround
-		case 2:
-		{
-			if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-				if( !external ) {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP );
-				} else {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr );
-				}
-
-				GL_Cull( CT_TWO_SIDED );
-				RB_DrawShadowElementsWithCounters( tri, numIndexes );
-			} else {
-				// Carmack's original "patent-free workaround" ( slow )
-				if( !external ) {
-					// "preload" the stencil buffer with the number of volumes
-					// that get clipped by the near or far clip plane
-					qglStencilOp( GL_KEEP, tr.stencilDecr, tr.stencilDecr );
-					GL_Cull( CT_FRONT_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-					qglStencilOp( GL_KEEP, tr.stencilIncr, tr.stencilIncr );
-					GL_Cull( CT_BACK_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				}
-
-				// traditional depth-pass stencil shadows
-				qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
-				GL_Cull( CT_FRONT_SIDED );
-				RB_DrawShadowElementsWithCounters( tri, numIndexes );
-
-				qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilDecr );
-				GL_Cull( CT_BACK_SIDED );
-				RB_DrawShadowElementsWithCounters( tri, numIndexes );
-			}
-
-			break;
-		}
-
-		// uses twoSidedStencil if enabled/available
-		case 1:
-		{
-			// patent-free work around
-			if ( !external ) {
-				// depth-fail stencil shadows
-				if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP );
-					GL_Cull( CT_TWO_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				} else {
-					// "preload" the stencil buffer with the number of volumes
-					// that get clipped by the near or far clip plane
-					qglStencilOp( GL_KEEP, tr.stencilIncr, GL_KEEP );
-					GL_Cull( CT_BACK_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
+	// patent-free work around
+	if ( !external ) {
+		// depth-fail stencil shadows
+		if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
+			qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP );
+			qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP );
+			GL_Cull( CT_TWO_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
+		} else {
+			// "preload" the stencil buffer with the number of volumes
+			// that get clipped by the near or far clip plane
+			qglStencilOp( GL_KEEP, tr.stencilDecr, tr.stencilDecr );
+			GL_Cull( CT_FRONT_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
 	
-					qglStencilOp( GL_KEEP, tr.stencilDecr, GL_KEEP );
-					GL_Cull( CT_FRONT_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				}
-			} else {
-				// traditional depth-pass stencil shadows
-				if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr );
-					GL_Cull( CT_TWO_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				} else {	
-					qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
-					GL_Cull( CT_FRONT_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-		
-					qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilDecr );
-					GL_Cull( CT_BACK_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				}
-			}
-			break;
+			qglStencilOp( GL_KEEP, tr.stencilIncr, tr.stencilIncr );
+			GL_Cull( CT_BACK_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
 		}
-
-		// uses twoSidedStencil if enabled/available, alternative path broken for camera-in-shadow case
-		default:
-		{*/
-			// patent-free work around
-			if ( !external ) {
-				// depth-fail stencil shadows
-				if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, tr.stencilDecr, GL_KEEP );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, tr.stencilIncr, GL_KEEP );
-					GL_Cull( CT_TWO_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				} else {
-					// "preload" the stencil buffer with the number of volumes
-					// that get clipped by the near or far clip plane
-					qglStencilOp( GL_KEEP, tr.stencilDecr, tr.stencilDecr );
-					GL_Cull( CT_FRONT_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-	
-					qglStencilOp( GL_KEEP, tr.stencilIncr, tr.stencilIncr );
-					GL_Cull( CT_BACK_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				}
-			} else {
-				// traditional depth-pass stencil shadows
-				if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr );
-					qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr );
-					GL_Cull( CT_TWO_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				} else {	
-					qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
-					GL_Cull( CT_FRONT_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
+	} else {
+		// traditional depth-pass stencil shadows
+		if( r_useTwoSidedStencil.GetBool() && glConfig.twoSidedStencilAvailable ) {
+			qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_FRONT : GL_BACK, GL_KEEP, GL_KEEP, tr.stencilIncr );
+			qglStencilOpSeparate( backEnd.viewDef->isMirror ? GL_BACK : GL_FRONT, GL_KEEP, GL_KEEP, tr.stencilDecr );
+			GL_Cull( CT_TWO_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
+		} else {	
+			qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilIncr );
+			GL_Cull( CT_FRONT_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
 		
-					qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilDecr );
-					GL_Cull( CT_BACK_SIDED );
-					RB_DrawShadowElementsWithCounters( tri, numIndexes );
-				}
-			}
-		//}
-	//}
+			qglStencilOp( GL_KEEP, GL_KEEP, tr.stencilDecr );
+			GL_Cull( CT_BACK_SIDED );
+			RB_DrawShadowElementsWithCounters( tri, numIndexes );
+		}
+	}
 }
 
 /*

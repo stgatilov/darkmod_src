@@ -264,24 +264,16 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		if ( r_useShadowVertexProgram.GetBool() ) {
-			qglUseProgram( stencilShadowShader.program );
+		qglUseProgram( stencilShadowShader.program );
 
-			RB_StencilShadowPass( vLight->globalShadows );
-			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
+		RB_StencilShadowPass( vLight->globalShadows );
+		RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 
-			qglUseProgram( stencilShadowShader.program );
-			RB_StencilShadowPass( vLight->localShadows );
-			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
+		qglUseProgram( stencilShadowShader.program );
+		RB_StencilShadowPass( vLight->localShadows );
+		RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
 
-			qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
-		} else {
-			RB_StencilShadowPass( vLight->globalShadows );
-			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
-
-			RB_StencilShadowPass( vLight->localShadows );
-			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
-		}
+		qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 
 		// translucent surfaces never get stencil shadowed
 		if ( r_skipTranslucent.GetBool() ) {
