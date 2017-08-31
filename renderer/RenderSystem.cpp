@@ -99,9 +99,6 @@ static void R_PerformanceCounters( void ) {
 		int	m1 = frameData ? frameData->memoryHighwater : 0;
 		common->Printf( "frameData: %i (%i)\n", m0, m1 );
 	}
-	if ( r_showLightScale.GetBool() ) {
-		common->Printf( "lightScale: %f\n", backEnd.pc.maxLightValue );
-	}
 
 	memset( &tr.pc, 0, sizeof( tr.pc ) );
 	memset( &backEnd.pc, 0, sizeof( backEnd.pc ) );

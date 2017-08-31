@@ -1540,8 +1540,6 @@ void RB_STD_FogAllLights( void ) {
 
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
-	qglDisable( GL_STENCIL_TEST );
-
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
 		backEnd.vLight = vLight;
 
@@ -1549,86 +1547,16 @@ void RB_STD_FogAllLights( void ) {
 			continue;
 		}
 
-		//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		qglDisable( GL_STENCIL_TEST );
 		if (vLight->lightShader->IsFogLight()) {
 			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
 		} else if ( vLight->lightShader->IsBlendLight() ) {
 			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
 		}
-		//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		qglDisable( GL_STENCIL_TEST );
 	}
 
 	qglEnable( GL_STENCIL_TEST );
 }
-
-//=========================================================================================
-
-/*
-==================
-RB_STD_LightScale
-
-Perform extra blending passes to multiply the entire buffer by
-a floating point value
-==================
-*/
-void RB_STD_LightScale( void ) {
-	float	v, f;
-
-	if ( backEnd.overBright == 1.0f || r_skipLightScale.GetBool() ) {
-		return;
-	}
-
-	// the scissor may be smaller than the viewport for subviews
-	else if ( r_useScissor.GetBool() ) {
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1, 
-			backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1, 
-			backEnd.viewDef->scissor.x2 - backEnd.viewDef->scissor.x1 + 1,
-			backEnd.viewDef->scissor.y2 - backEnd.viewDef->scissor.y1 + 1 );
-		backEnd.currentScissor = backEnd.viewDef->scissor;
-	}
-
-	RB_LogComment( "---------- RB_STD_LightScale ----------\n" );
-
-	// full screen blends
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity(); 
-    qglOrtho( 0, 1, 0, 1, -1, 1 );
-
-	GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_SRC_COLOR );
-	GL_Cull( CT_TWO_SIDED );	// so mirror views also get it
-	globalImages->BindNull();
-	qglDisable( GL_DEPTH_TEST );
-	qglDisable( GL_STENCIL_TEST );
-
-	v = 1;
-	while ( idMath::Fabs( v - backEnd.overBright ) > 0.01 ) {	// a little extra slop
-		f = backEnd.overBright / v;
-		f /= 2;
-		if ( f > 1 ) {
-			f = 1;
-		}
-		qglColor3f( f, f, f );
-		v = v * f * 2;
-
-		qglBegin( GL_QUADS );
-		qglVertex2f( 0,0 );	
-		qglVertex2f( 0,1 );
-		qglVertex2f( 1,1 );	
-		qglVertex2f( 1,0 );	
-		qglEnd();
-	}
-
-
-	qglPopMatrix();
-	qglEnable( GL_DEPTH_TEST );
-	qglMatrixMode( GL_MODELVIEW );
-	GL_Cull( CT_FRONT_SIDED );
-}
-
-//=========================================================================================
 
 /*
 =============
@@ -1663,8 +1591,6 @@ void	RB_STD_DrawView( void ) {
 	// clear the z buffer, set the projection matrix, etc
 	RB_BeginDrawingView();
 
-	// decide how much overbrighting we are going to do
-	//RB_DetermineLightScale();
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
 
@@ -1679,9 +1605,6 @@ void	RB_STD_DrawView( void ) {
 
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
-
-	// uplight the entire screen to crutch up not having better blending range
-	RB_STD_LightScale();
 
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
