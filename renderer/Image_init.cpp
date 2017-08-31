@@ -945,11 +945,8 @@ void idImageManager::ChangeTextureFilter( void ) {
 		case TT_2D:
 			texEnum = GL_TEXTURE_2D;
 			break;
-		case TT_3D:
-			texEnum = GL_TEXTURE_3D;
-			break;
 		case TT_CUBIC:
-			texEnum = GL_TEXTURE_CUBE_MAP_EXT;
+			texEnum = GL_TEXTURE_CUBE_MAP;
 			break;
 		default:
 			texEnum = GL_TEXTURE_2D;
@@ -1958,11 +1955,8 @@ void idImageManager::BindNull() {
 	case TT_2D:
 		qglDisable( GL_TEXTURE_2D );
 		break;
-	case TT_3D:
-		qglDisable( GL_TEXTURE_3D );
-		break;
 	case TT_CUBIC:
-		qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
+		qglDisable( GL_TEXTURE_CUBE_MAP );
 		break;
 	}
 	tmu->textureType = TT_DISABLED;

@@ -73,7 +73,7 @@ void RB_SetDefaultGLState( void ) {
 			qglDisable( GL_TEXTURE_3D );
 		}
 		if ( glConfig.cubeMapAvailable ) {
-			qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
+			qglDisable( GL_TEXTURE_CUBE_MAP );
 		}
 	}
 }

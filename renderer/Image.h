@@ -122,9 +122,7 @@ typedef enum {
 typedef enum {
 	TT_DISABLED,
 	TT_2D,
-	TT_3D,
 	TT_CUBIC,
-	TT_RECT
 } textureType_t;
 
 typedef enum {
@@ -159,9 +157,6 @@ public:
 	void		GenerateImage( const byte *pic, int width, int height, 
 					   textureFilter_t filter, bool allowDownSize, 
 					   textureRepeat_t repeat, textureDepth_t depth );
-	void		Generate3DImage( const byte *pic, int width, int height, int depth,
-						textureFilter_t filter, bool allowDownSize, 
-						textureRepeat_t repeat, textureDepth_t minDepth );
 	void		GenerateCubeImage( const byte *pic[6], int size, 
 						textureFilter_t filter, bool allowDownSize, 
 						textureDepth_t depth );
@@ -248,7 +243,7 @@ public:
 	int					classification;			// just for resource profiling
 
 	// data for listImages
-	int					uploadWidth, uploadHeight, uploadDepth;	// after power of two, downsample, and MAX_TEXTURE_SIZE
+	int					uploadWidth, uploadHeight;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 	int					internalFormat;
 /*	GLuint				pixelDataFormat[2]; */ // ~ss
 	idImage 			*cacheUsagePrev, *cacheUsageNext;	// for dynamic cache purging of old images
@@ -282,7 +277,7 @@ ID_INLINE idImage::idImage() {
 	defaulted = false;
 	timestamp = 0;
 	bindCount = 0;
-	uploadWidth = uploadHeight = uploadDepth = 0;
+	uploadWidth = uploadHeight = 0;
 	internalFormat = 0;
 	//	pixelDataFormat[0] = pixelDataFormat[1] = 0;	//~SS. Used for regenerating render target textures
 	cacheUsagePrev = cacheUsageNext = NULL;
