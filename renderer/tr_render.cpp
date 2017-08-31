@@ -410,7 +410,7 @@ RB_FinishStageTexture
 */
 void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf ) {
 
-	if ( texture->texgen & (TG_DIFFUSE_CUBE | TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE) ) {
+	if ( texture->texgen & (/*TG_DIFFUSE_CUBE |*/ TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE) ) {
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ),
 			(void *)&(((idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache ))->st) );
 	}

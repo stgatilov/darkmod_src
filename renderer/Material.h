@@ -134,7 +134,7 @@ typedef struct {
 
 typedef enum {
 	TG_EXPLICIT,
-	TG_DIFFUSE_CUBE,
+	//TG_DIFFUSE_CUBE,
 	TG_REFLECT_CUBE,
 	TG_SKYBOX_CUBE,
 	TG_WOBBLESKY_CUBE,

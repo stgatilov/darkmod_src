@@ -1283,9 +1283,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		// texture coordinate generation
 		else if ( !token.Icmp( "texGen" ) ) {
 			src.ExpectAnyToken( &token );
-			if ( !token.Icmp( "normal" ) ) {
+			/*if ( !token.Icmp( "normal" ) ) {
 				ts->texgen = TG_DIFFUSE_CUBE;
-			} else if ( !token.Icmp( "reflect" ) ) {
+			} else */if ( !token.Icmp( "reflect" ) ) {
 				ts->texgen = TG_REFLECT_CUBE;
 			} else if ( !token.Icmp( "skybox" ) ) {
 				ts->texgen = TG_SKYBOX_CUBE;

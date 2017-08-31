@@ -155,9 +155,9 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	// texgens
 	switch (pStage->texture.texgen)
 	{
-	case TG_DIFFUSE_CUBE:
+/*	case TG_DIFFUSE_CUBE:
 		qglTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		break;
+		break;*/
 	case TG_SCREEN:
 		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
 		break;
@@ -180,9 +180,9 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 
 	switch (pStage->texture.texgen)
 	{
-	case TG_DIFFUSE_CUBE: //case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
+/*	case TG_DIFFUSE_CUBE: //case TG_SKYBOX_CUBE: case TG_WOBBLESKY_CUBE:
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
-		break;
+		break;*/
 	case TG_SCREEN:
 		qglUniform1f( oldStageShader.screenTex, 0 );
 		break;
