@@ -1384,6 +1384,9 @@
     <ClInclude Include="game\ai\Tasks\PathWakeupTask.h">
       <Filter>Game\AI\Tasks</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\glsl.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">

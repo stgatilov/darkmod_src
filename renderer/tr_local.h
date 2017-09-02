@@ -683,11 +683,9 @@ typedef struct {
 	glstate_t			glState;
 
 	int					c_copyFrameBuffer;
-	int					glProgram;
 
 	// bool				usingSoftShadows; //~SS
 } backEndState_t;
-
 
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 										// be automatically expanded as needed
@@ -1421,87 +1419,6 @@ typedef enum {
 } program_t;
 
 void R_UseProgramARB( int vProg = PROG_INVALID );
-int R_FindProgramGlsl( int Prog );
-
-struct shaderProgram_t {
-	GLhandleARB     program;					// program = vertex + fragment shader
-	bool Load( char *fileName );
-	virtual void AfterLoad();
-private:
-	void AttachShader( GLint ShaderType, char *fileName );
-	GLuint CompileShader( GLint ShaderType, idStr &fileName );
-};
-
-struct oldStageProgram_t : shaderProgram_t {
-	GLint			texPlaneS;
-	GLint			texPlaneT;
-	GLint			texPlaneQ;
-	GLint			screenTex;
-	GLint			colorMul;
-	GLint			colorAdd;
-	virtual	void AfterLoad();
-};
-
-struct depthProgram_t : shaderProgram_t {
-	GLint			clipPlane;
-	GLint			color;
-	GLint			alphaTest;
-	virtual	void AfterLoad();
-};
-
-struct blendProgram_t : shaderProgram_t {
-	GLint			tex0PlaneS;
-	GLint			tex0PlaneT;
-	GLint			tex0PlaneQ;
-	GLint			tex1PlaneS;
-	GLint			texture1;
-	GLint			blendColor;
-	virtual	void AfterLoad();
-};
-
-struct fogProgram_t : shaderProgram_t {
-	GLint			tex0PlaneS;
-	GLint			tex1PlaneS;
-	GLint			fogEnter;
-	GLint			texture1;
-	GLint			fogColor;
-	virtual	void AfterLoad();
-};
-
-struct lightProgram_t : shaderProgram_t {
-	GLint			localLightOrigin;
-	virtual	void AfterLoad();
-};
-
-struct interactionProgram_t : lightProgram_t {
-	GLint			u_normalTexture;
-	GLint			u_lightFalloffTexture;
-	GLint			u_lightProjectionTexture;
-	GLint			u_diffuseTexture;
-	GLint			u_specularTexture;
-
-	GLint			localViewOrigin;
-
-	GLint			lightProjectionS;
-	GLint			lightProjectionT;
-	GLint			lightProjectionQ;
-	GLint			lightFalloff;
-	GLint			advanced;
-
-	GLint			bumpMatrixS;
-	GLint			bumpMatrixT;
-	GLint			diffuseMatrixS;
-	GLint			diffuseMatrixT;
-	GLint			specularMatrixS;
-	GLint			specularMatrixT;
-
-	GLint			colorModulate;
-	GLint			colorAdd;
-
-	GLint			diffuseColor;
-	GLint			specularColor;
-	virtual	void AfterLoad();
-};
 
 /*
 

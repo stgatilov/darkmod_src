@@ -36,7 +36,7 @@ void RB_SetDefaultGLState( void ) {
 
 	// the vertex array is always enabled
 	//qglEnableClientState( GL_VERTEX_ARRAY );
-	qglEnableVertexAttribArrayARB( 0 );
+	qglEnableVertexAttribArray( 0 );
 	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 	//qglDisableClientState( GL_COLOR_ARRAY );
 
@@ -111,9 +111,8 @@ void GL_SelectTexture( const int unit ) {
 		return;
 	}
 
-	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
-	//qglClientActiveTextureARB( GL_TEXTURE0_ARB + unit );
-	RB_LogComment( "glActiveTextureARB( %i );\nglClientActiveTextureARB( %i );\n", unit, unit );
+	qglActiveTexture( GL_TEXTURE0 + unit );
+	RB_LogComment( "glActiveTextureARB( %i );\n", unit );
 
 	backEnd.glState.currenttmu = unit;
 }

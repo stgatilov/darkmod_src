@@ -2052,13 +2052,10 @@ bool QGL_Init( const char *dllname )
 	qwglSetPixelFormat           = SetPixelFormat;
 	qwglSwapBuffers              = SwapBuffers;
 
-	qglActiveTextureARB = 0;
-	qglClientActiveTextureARB = 0;
-	qglMultiTexCoord2fARB = 0;
+	qglActiveTexture = 0;
 
 	return true;
 }
-
 
 /*
 ==================

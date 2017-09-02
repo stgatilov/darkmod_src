@@ -32,6 +32,41 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #include "tr_local.h"
+#include "glsl.h"
+
+struct interactionProgram_t : lightProgram_t {
+	GLint			localViewOrigin;
+
+	GLint			lightProjectionS;
+	GLint			lightProjectionT;
+	GLint			lightProjectionQ;
+	GLint			lightFalloff;
+
+	GLint			bumpMatrixS;
+	GLint			bumpMatrixT;
+	GLint			diffuseMatrixS;
+	GLint			diffuseMatrixT;
+	GLint			colorModulate;
+	GLint			colorAdd;
+	GLint			diffuseColor;
+
+	virtual	void AfterLoad();
+	virtual void UpdateUniforms( const drawInteraction_t *din );
+	virtual void Use();
+};
+
+struct pointInteractionProgram_t : interactionProgram_t {
+	GLint			advanced;
+	GLint			specularMatrixS;
+	GLint			specularMatrixT;
+	GLint			specularColor;
+	virtual	void AfterLoad();
+	virtual void UpdateUniforms( const drawInteraction_t *din );
+};
+
+struct ambientInteractionProgram_t : interactionProgram_t {
+	virtual void UpdateUniforms( const drawInteraction_t *din );
+};
 
 shaderProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
@@ -39,7 +74,10 @@ depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
 fogProgram_t fogShader;
 blendProgram_t blendShader;
-interactionProgram_t interactionShader, ambientInteractionShader;
+pointInteractionProgram_t pointInteractionShader;
+ambientInteractionProgram_t ambientInteractionShader;
+
+interactionProgram_t* currrentInteractionShader;
 
 /*
 =========================================================================================
@@ -50,84 +88,35 @@ GENERAL INTERACTION RENDERING
 */
 
 /*
-====================
-GL_SelectTextureNoClient
-====================
-*/
-static void GL_SelectTextureNoClient( int unit ) {
-	backEnd.glState.currenttmu = unit;
-	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
-	RB_LogComment( "glActiveTexture( %i )\n", unit );
-}
-
-/*
 ==================
 RB_GLSL_DrawInteraction
 ==================
 */
 void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
-    static const float zero[4] = { 0, 0, 0, 0 };
-    static const float one[4] = { 1, 1, 1, 1 };
-    static const float negOne[4] = { -1, -1, -1, -1 };
-    
-	interactionProgram_t *shader = din->ambientLight ? &ambientInteractionShader : &interactionShader;
-    // load all the shader parameters
-	qglUniform4fv( shader->lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
-	qglUniform4fv( shader->lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
-	qglUniform4fv( shader->lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
-	qglUniform4fv( shader->lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
-	qglUniform4fv( shader->bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
-	qglUniform4fv( shader->bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
-	qglUniform4fv( shader->diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
-	qglUniform4fv( shader->diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
-	// set the constant color
-	qglUniform4fv( shader->diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	qglUniform4fv( shader->diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
-	switch ( din->vertexColor ) {
-	case SVC_IGNORE:
-		qglUniform4f( shader->colorModulate, zero[0], zero[1], zero[2], zero[3] );
-		qglUniform4f( shader->colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	case SVC_MODULATE:
-		qglUniform4f( shader->colorModulate, one[0], one[1], one[2], one[3] );
-		qglUniform4f( shader->colorAdd, zero[0], zero[1], zero[2], zero[3] );
-		break;
-	case SVC_INVERSE_MODULATE:
-		qglUniform4f( shader->colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
-		qglUniform4f( shader->colorAdd, one[0], one[1], one[2], one[3] );
-		break;
-	}
-	if ( !din->ambientLight ) {
-		qglUniform4fv( interactionShader.localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
-		qglUniform4fv( interactionShader.specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
-		qglUniform4fv( interactionShader.specularMatrixT, 1, din->specularMatrix[1].ToFloatPtr() );
-		qglUniform4fv( interactionShader.specularColor, 1, din->specularColor.ToFloatPtr() );
-		qglUniform4fv( shader->localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
-	} else {
-		qglUniform4fv( shader->localLightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
-	}
+	// load all the shader parameters
+	currrentInteractionShader->UpdateUniforms( din );
 
 	// set the textures
 
 	// texture 0 will be the per-surface bump map
-	GL_SelectTextureNoClient( 0 );
+	GL_SelectTexture( 0 );
 	din->bumpImage->Bind();
 
 	// texture 1 will be the light falloff texture
-	GL_SelectTextureNoClient( 1 );
+	GL_SelectTexture( 1 );
 	din->lightFalloffImage->Bind();
 
 	// texture 2 will be the light projection texture
-	GL_SelectTextureNoClient( 2 );
+	GL_SelectTexture( 2 );
 	din->lightImage->Bind();
 
 	// texture 3 is the per-surface diffuse map
-	GL_SelectTextureNoClient( 3 );
+	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
 	if ( !din->ambientLight ) {
 		// texture 4 is the per-surface specular map
-		GL_SelectTextureNoClient( 4 );
+		GL_SelectTexture( 4 );
 		din->specularImage->Bind();
 	}
 
@@ -150,70 +139,56 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
 	// bind the vertex and fragment program
-	if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-		qglUseProgram( ambientInteractionShader.program );
-	} else {
-		qglUseProgram( interactionShader.program );
-	}
+	shaderProgram_t::ChooseInteractionProgram();
 
 	// enable the vertex arrays
-	qglEnableVertexAttribArrayARB( 8 );
-	qglEnableVertexAttribArrayARB( 9 );
-	qglEnableVertexAttribArrayARB( 10 );
-	qglEnableVertexAttribArrayARB( 11 );
-	//qglEnableClientState( GL_COLOR_ARRAY );
-	qglEnableVertexAttribArrayARB(3);
+	qglEnableVertexAttribArray( 8 );
+	qglEnableVertexAttribArray( 9 );
+	qglEnableVertexAttribArray( 10 );
+	qglEnableVertexAttribArray( 11 );
+	qglEnableVertexAttribArray(3);
 
 	for ( ; surf ; surf=surf->nextOnLight ) {
 		// perform setup here that will not change over multiple interaction passes
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
-		//qglColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), ac->color );
-		qglVertexAttribPointerARB(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
-		qglVertexAttribPointerARB(11, 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
-		qglVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-		qglVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-		qglVertexAttribPointerARB( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
-		qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
-
-		// set model matrix
-		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
-		} else {
-			qglUniform1f( interactionShader.advanced, r_testARBProgram.GetFloat());
-		}
+		qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
+		qglVertexAttribPointer(11, 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
+		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
 		// this may cause RB_GLSL_DrawInteraction to be executed multiple
 		// times with different colors and images if the surface or light have multiple layers
 		RB_CreateSingleDrawInteractions( surf/*, RB_GLSL_DrawInteraction*/ );
 	}
 
-	qglDisableVertexAttribArrayARB( 8 );
-	qglDisableVertexAttribArrayARB( 9 );
-	qglDisableVertexAttribArrayARB( 10 );
-	qglDisableVertexAttribArrayARB( 11 );
-	//qglDisableClientState( GL_COLOR_ARRAY );
-	qglDisableVertexAttribArrayARB(3);
+	qglDisableVertexAttribArray( 8 );
+	qglDisableVertexAttribArray( 9 );
+	qglDisableVertexAttribArray( 10 );
+	qglDisableVertexAttribArray( 11 );
+	qglDisableVertexAttribArray(3);
 
 	// disable features
-	GL_SelectTextureNoClient( 4 );
+	GL_SelectTexture( 4 );
 	globalImages->BindNull();
 
-	GL_SelectTextureNoClient( 3 );
+	GL_SelectTexture( 3 );
 	globalImages->BindNull();
 
-	GL_SelectTextureNoClient( 2 );
+	GL_SelectTexture( 2 );
 	globalImages->BindNull();
 
-	GL_SelectTextureNoClient( 1 );
+	GL_SelectTexture( 1 );
 	globalImages->BindNull();
 
-	backEnd.glState.currenttmu = -1;
+	//backEnd.glState.currenttmu = -1; ???
 	GL_SelectTexture( 0 );
 
 	qglUseProgram( 0 );
 }
-
 
 /*
 ==================
@@ -262,12 +237,12 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		qglUseProgram( stencilShadowShader.program );
+		stencilShadowShader.Use();
 
 		RB_StencilShadowPass( vLight->globalShadows );
 		RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 
-		qglUseProgram( stencilShadowShader.program );
+		stencilShadowShader.Use();
 		RB_StencilShadowPass( vLight->localShadows );
 		RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
 
@@ -297,23 +272,16 @@ R_ReloadGLSLShaders_f
 ==================
 */
 bool R_ReloadGLSLPrograms() {
-	if ( !interactionShader.Load( "interaction" ) )
-		return false;
-	if ( !ambientInteractionShader.Load( "ambientInteraction" ) )
-		return false;
-	if ( !stencilShadowShader.Load( "stencilshadow" ) )
-		return false;
-	if ( !oldStageShader.Load( "oldStage" ) )
-		return false;
-	if ( !depthShader.Load( "depthAlpha" ) )
-		return false;
-	if ( !fogShader.Load( "fog" ) )
-		return false;
-	if ( !blendShader.Load( "blend" ) )
-		return false;
-	if ( !cubeMapShader.Load( "cubeMap" ) )
-		return false;
-	return true;
+	bool ok = true;
+	ok &= pointInteractionShader.Load( "interaction" );				// filenames hardcoded here since they're not used elsewhere
+	ok &= ambientInteractionShader.Load( "ambientInteraction" );
+	ok &= stencilShadowShader.Load( "stencilshadow" );
+	ok &= oldStageShader.Load( "oldStage" );
+	ok &= depthShader.Load( "depthAlpha" );
+	ok &= fogShader.Load( "fog" );
+	ok &= blendShader.Load( "blend" );
+	ok &= cubeMapShader.Load( "cubeMap" );
+	return ok;
 }
 
 void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
@@ -415,8 +383,6 @@ bool shaderProgram_t::Load( char *fileName ) {
 	qglBindAttribLocation( program, 9, "attr_Tangent" );
 	qglBindAttribLocation( program, 10, "attr_Bitangent" );
 	qglBindAttribLocation( program, 11, "attr_Normal" );
-	//qglBindAttribLocation( prog.genId, 3, "Color" );
-	//qglBindAttribLocation( prog.genId, 8, "TexCoord0" );
 
 	GLint result;/* link the program and make sure that there were no errors */
 	qglLinkProgram( program );
@@ -450,7 +416,18 @@ bool shaderProgram_t::Load( char *fileName ) {
 }
 
 void shaderProgram_t::AfterLoad() {
+	// or else abstract class error in primitive shaders (cubeMap)
+}
 
+void shaderProgram_t::Use() {
+	qglUseProgram( program );
+}
+
+void shaderProgram_t::ChooseInteractionProgram() {
+	if ( backEnd.vLight->lightShader->IsAmbientLight() ) 
+		ambientInteractionShader.Use();
+	else
+		pointInteractionShader.Use();
 }
 
 void oldStageProgram_t::AfterLoad() {
@@ -491,32 +468,29 @@ void lightProgram_t::AfterLoad() {
 
 void interactionProgram_t::AfterLoad() {
 	lightProgram_t::AfterLoad();
-	u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
-	u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
-	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
-	u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
-	u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
 	lightProjectionS = qglGetUniformLocation( program, "u_lightProjectionS" );
 	lightProjectionT = qglGetUniformLocation( program, "u_lightProjectionT" );
 	lightProjectionQ = qglGetUniformLocation( program, "u_lightProjectionQ" );
 	lightFalloff = qglGetUniformLocation( program, "u_lightFalloff" );
-	advanced = qglGetUniformLocation( program, "u_advanced" );
 
 	bumpMatrixS = qglGetUniformLocation( program, "u_bumpMatrixS" );
 	bumpMatrixT = qglGetUniformLocation( program, "u_bumpMatrixT" );
 	diffuseMatrixS = qglGetUniformLocation( program, "u_diffuseMatrixS" );
 	diffuseMatrixT = qglGetUniformLocation( program, "u_diffuseMatrixT" );
-	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
-	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
 
 	colorModulate = qglGetUniformLocation( program, "u_colorModulate" );
 	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
 
 	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
-	specularColor = qglGetUniformLocation( program, "u_specularColor" );
 
+	GLint u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
+	GLint u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
+	GLint u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
+	GLint u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
+	GLint u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
+	
 	// set texture locations
 	qglUseProgram( program );
 	qglUniform1i( u_normalTexture, 0 );
@@ -525,4 +499,64 @@ void interactionProgram_t::AfterLoad() {
 	qglUniform1i( u_diffuseTexture, 3 );
 	qglUniform1i( u_specularTexture, 4 );
 	qglUseProgram( 0 );
+}
+
+void interactionProgram_t::Use() {
+	lightProgram_t::Use();
+	currrentInteractionShader = this;
+}
+
+void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	static const float	zero[4]		= { 0, 0, 0, 0 },
+						one[4]		= { 1, 1, 1, 1 },
+						negOne[4]	= { -1, -1, -1, -1 };
+
+	qglUniform4fv( lightProjectionS, 1, din->lightProjection[0].ToFloatPtr() );
+	qglUniform4fv( lightProjectionT, 1, din->lightProjection[1].ToFloatPtr() );
+	qglUniform4fv( lightProjectionQ, 1, din->lightProjection[2].ToFloatPtr() );
+	qglUniform4fv( lightFalloff, 1, din->lightProjection[3].ToFloatPtr() );
+	qglUniform4fv( bumpMatrixS, 1, din->bumpMatrix[0].ToFloatPtr() );
+	qglUniform4fv( bumpMatrixT, 1, din->bumpMatrix[1].ToFloatPtr() );
+	qglUniform4fv( diffuseMatrixS, 1, din->diffuseMatrix[0].ToFloatPtr() );
+	qglUniform4fv( diffuseMatrixT, 1, din->diffuseMatrix[1].ToFloatPtr() );
+	// set the constant color
+	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
+	qglUniform4fv( diffuseColor, 1, din->diffuseColor.ToFloatPtr() );
+	switch ( din->vertexColor ) {
+	case SVC_IGNORE:
+		qglUniform4f( colorModulate, zero[0], zero[1], zero[2], zero[3] );
+		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	case SVC_MODULATE:
+		qglUniform4f( colorModulate, one[0], one[1], one[2], one[3] );
+		qglUniform4f( colorAdd, zero[0], zero[1], zero[2], zero[3] );
+		break;
+	case SVC_INVERSE_MODULATE:
+		qglUniform4f( colorModulate, negOne[0], negOne[1], negOne[2], negOne[3] );
+		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
+		break;
+	}
+}
+
+void pointInteractionProgram_t::AfterLoad() {
+	interactionProgram_t::AfterLoad();
+	advanced = qglGetUniformLocation( program, "u_advanced" );
+	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
+	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
+	specularColor = qglGetUniformLocation( program, "u_specularColor" );
+}
+
+void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	interactionProgram_t::UpdateUniforms( din );
+	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
+	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
+	qglUniform4fv( specularMatrixT, 1, din->specularMatrix[1].ToFloatPtr() );
+	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
+	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
+}
+
+void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	interactionProgram_t::UpdateUniforms( din );
+	qglUniform4fv( localLightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 }

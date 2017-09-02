@@ -252,8 +252,8 @@ idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
-void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
-void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
+void ( APIENTRY * qglActiveTexture )( GLenum texture );
+//void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
 /*void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
 void ( APIENTRY *qglCombinerParameterivNV )( GLenum pname, const GLint *params );
@@ -324,9 +324,9 @@ PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
 PFNGLBUFFERSUBDATAPROC					glBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
-PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointerARB;
-PFNGLENABLEVERTEXATTRIBARRAYARBPROC		qglEnableVertexAttribArrayARB;
-PFNGLDISABLEVERTEXATTRIBARRAYARBPROC	qglDisableVertexAttribArrayARB;
+PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointer;
+PFNGLENABLEVERTEXATTRIBARRAYARBPROC		qglEnableVertexAttribArray;
+PFNGLDISABLEVERTEXATTRIBARRAYARBPROC	qglDisableVertexAttribArray;
 PFNGLPROGRAMSTRINGARBPROC				qglProgramStringARB;
 PFNGLBINDPROGRAMARBPROC					qglBindProgramARB;
 PFNGLGENPROGRAMSARBPROC					qglGenProgramsARB;
@@ -463,8 +463,7 @@ static void R_CheckPortableExtensions( void ) {
 	if ( glConfig.multitextureAvailable ) {
 		qglMultiTexCoord2fARB = (void(APIENTRY *)(GLenum, GLfloat, GLfloat))GLimp_ExtensionPointer( "glMultiTexCoord2fARB" );
 		qglMultiTexCoord2fvARB = (void(APIENTRY *)(GLenum, GLfloat *))GLimp_ExtensionPointer( "glMultiTexCoord2fvARB" );
-		qglActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTextureARB" );
-		qglClientActiveTextureARB = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glClientActiveTextureARB" );
+		qglActiveTexture = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTexture" );
 		qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, (GLint *)&glConfig.maxTextureUnits );
 		if ( glConfig.maxTextureUnits > MAX_MULTITEXTURE_UNITS ) {
 			glConfig.maxTextureUnits = MAX_MULTITEXTURE_UNITS;
@@ -597,9 +596,9 @@ static void R_CheckPortableExtensions( void ) {
 	}
 
 	// ARB_vertex_program
-	qglVertexAttribPointerARB = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
-	qglEnableVertexAttribArrayARB = (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
-	qglDisableVertexAttribArrayARB = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
+	qglVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
+	qglEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glEnableVertexAttribArrayARB" );
+	qglDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYARBPROC)GLimp_ExtensionPointer( "glDisableVertexAttribArrayARB" );
 	qglProgramStringARB = (PFNGLPROGRAMSTRINGARBPROC)GLimp_ExtensionPointer( "glProgramStringARB" );
 	qglBindProgramARB = (PFNGLBINDPROGRAMARBPROC)GLimp_ExtensionPointer( "glBindProgramARB" );
 	qglGenProgramsARB = (PFNGLGENPROGRAMSARBPROC)GLimp_ExtensionPointer( "glGenProgramsARB" );

@@ -1216,6 +1216,9 @@
     <ClInclude Include="game\gamesys\TypeInfo_GenHelper.h">
       <Filter>Game\GameSys</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\glsl.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">

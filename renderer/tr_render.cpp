@@ -19,6 +19,7 @@
 
 
 #include "tr_local.h"
+#include "glsl.h"
 
 /*
 
@@ -145,7 +146,7 @@ void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
 
 	const idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	qglVertexAttribPointerARB( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 	//qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
 
 	RB_DrawElementsWithCounters( tri );
@@ -567,7 +568,6 @@ static void RB_SubmittInteraction( drawInteraction_t *din
 	}
 
 	extern void RB_ARB2_DrawInteraction( const drawInteraction_t * din ); // duzenko FIXME ugly extern
-	extern void RB_GLSL_DrawInteraction( const drawInteraction_t * din ); // duzenko FIXME ugly extern
 	if ( r_useGLSL.GetBool() )
 		RB_GLSL_DrawInteraction( din );
 	else
