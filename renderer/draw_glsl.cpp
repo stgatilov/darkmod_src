@@ -29,8 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "tr_local.h"
 #include "glsl.h"
 
@@ -42,6 +40,8 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			lightProjectionQ;
 	GLint			lightFalloff;
 
+	GLint			u_lightProjectionTexture;
+	
 	GLint			bumpMatrixS;
 	GLint			bumpMatrixT;
 	GLint			diffuseMatrixS;
@@ -57,9 +57,11 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
+	GLint			cubic;
 	GLint			specularMatrixS;
 	GLint			specularMatrixT;
 	GLint			specularColor;
+	GLint			u_lightProjectionCubemap;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -123,7 +125,6 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// draw it
 	RB_DrawElementsWithCounters( din->surf->backendGeo );
 }
-
 
 /*
 =============
@@ -403,15 +404,27 @@ bool shaderProgram_t::Load( char *fileName ) {
 		return false;
 	}
 
+	AfterLoad();
+
 	GLint validProgram;
 	qglValidateProgram( program );
-	qglGetProgramiv( program, GL_OBJECT_VALIDATE_STATUS_ARB, &validProgram );
+	qglGetProgramiv( program, GL_VALIDATE_STATUS, &validProgram );
 	if ( !validProgram ) {
-		common->Printf( "R_ValidateGLSLProgram: program invalid\n" );
+		/* get the program info log */
+		GLint length;
+		qglGetProgramiv( program, GL_INFO_LOG_LENGTH, &length );
+		char *log = new char[length];
+		qglGetProgramInfoLog( program, length, &result, log );
+		/* print an error message and the info log */
+		common->Warning( "Program validation failed: %s\n", log );
+		delete log;
+
+		/* delete the program */
+		qglDeleteProgram( program );
+		program = 0;
 		return false;
 	}
 
-	AfterLoad();
 	return true;
 }
 
@@ -487,7 +500,7 @@ void interactionProgram_t::AfterLoad() {
 
 	GLint u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
 	GLint u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
-	GLint u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
+	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
 	GLint u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	GLint u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 	
@@ -541,9 +554,15 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
+	cubic = qglGetUniformLocation( program, "u_cubic" );
 	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
 	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
 	specularColor = qglGetUniformLocation( program, "u_specularColor" );
+	
+	u_lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
+	qglUseProgram( program );
+	qglUniform1i( u_lightProjectionCubemap, 5 ); // else validation fails, 2 at render time
+	qglUseProgram( 0 );
 }
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
@@ -554,6 +573,15 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
+	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
+		qglUniform1f( cubic, 1.0 );
+		qglUniform1i( u_lightProjectionTexture, 5 );
+		qglUniform1i( u_lightProjectionCubemap, 2 );
+	} else {
+		qglUniform1f( cubic, 0.0 );
+		qglUniform1i( u_lightProjectionTexture, 2 );
+		qglUniform1i( u_lightProjectionCubemap, 5 );
+	}
 }
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
