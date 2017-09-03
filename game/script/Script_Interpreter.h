@@ -110,6 +110,7 @@ public:
 	 * s = string  (char *)
 	 * f = float
 	 * v = vector
+	 * d = integer (converted to float)
 	 * b = boolean
 	 */
 	bool				EnterFunctionVarArgVN(const function_t *func, bool clearStack, const char *fmt, va_list args);

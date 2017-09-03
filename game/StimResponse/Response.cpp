@@ -97,7 +97,7 @@ void CResponse::TriggerResponse(idEntity *sourceEntity, const CStimPtr& stim)
 		DM_LOG(LC_STIM_RESPONSE, LT_DEBUG)LOGSTRING("Running ResponseScript\r");
 		idThread *pThread = new idThread(func);
 		int n = pThread->GetThreadNum();
-		pThread->CallFunctionArgs(func, true, "eef", owner, sourceEntity, n);
+		pThread->CallFunctionArgs(func, true, "eed", owner, sourceEntity, n);
 		pThread->DelayedStart(0);
 	}
 	else

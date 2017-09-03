@@ -2024,14 +2024,21 @@ bool idInterpreter::EnterFunctionVarArgVN(const function_t *func, bool clearStac
 			break;
 
 			case 'f':
-				f = va_arg(args, double);
-				// i = static_cast<int>(f);
+				//stgatilov: variadic function impliticly converted parameter to double
+				//so we extract double and convert it back to float
+				f = (float)va_arg(args, double);
+				//interpret as int32 value for push
 				i = *( (int*) &f);
 				Push(i);
 			break;
 
 			case 'd':
 				i = va_arg(args, int);
+				//stgatilov: scripts cannot process integer parameter
+				//so we convert integer to float
+				f = (float)i;
+				//and get int32 representation of it to push
+				i = *(int*)&f;
 				Push(i);
 			break;
 

@@ -65,7 +65,7 @@ void CResponseEffect::runScript(idEntity* owner, idEntity* stimEntity, float mag
 
 	idThread *pThread = new idThread(_scriptFunction);
 	int n = pThread->GetThreadNum();
-	pThread->CallFunctionArgs(_scriptFunction, true, "eesff", owner, stimEntity, _effectPostfix.c_str(), magnitude, n);
+	pThread->CallFunctionArgs(_scriptFunction, true, "eesfd", owner, stimEntity, _effectPostfix.c_str(), magnitude, n);
 	pThread->DelayedStart(0);
 }
 
