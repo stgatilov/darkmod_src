@@ -251,14 +251,23 @@ private:
 	static bool					initialized;
 };
 
+
+#ifdef __SSE__
+//makes sure the value is not less than FLT_SMALLEST_NON_DENORMAL
+#define SSE_MAKEPOSITIVE(x) _mm_cvtss_f32(_mm_max_ss(_mm_set_ss(x), _mm_set_ss(1.1754944e-038f)))
+//makes sure the value is not less than zero
+#define SSE_MAKENONNEG(x) _mm_cvtss_f32(_mm_max_ss(_mm_set_ss(x), _mm_setzero_ps()))
+//C++ equivalent of SSE rsqrt instruction (12-bit precision)
+#define SSE_RSQRT(x) _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x)))
+//C++ equivalent of SSE sqrt instruction (exactly rounded, IEEE)
+#define SSE_SQRT(x) _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)))
+#endif
+
 ID_INLINE float idMath::RSqrt( float x ) {
 #ifdef __SSE__
-	//stgatilov: prefer SSE rsqrt instruction
-	__m128 xx = _mm_set_ss(x);  //12-bit precision
-	//note: we have to ensure that rsqrt(0) is a big number
-	//the clamp constant is equal to FLT_SMALLEST_NON_DENORMAL
-	__m128 rr = _mm_rsqrt_ss(_mm_max_ss(xx, _mm_set_ss(1.1754944e-038f)));
-	return _mm_cvtss_f32(rr);
+	//stgatilov: use SSE instruction rsqrt
+	x = SSE_MAKEPOSITIVE(x);
+	return SSE_RSQRT(x);                  //12-bit precision
 #else
     int i;
 	float y, r;
@@ -274,9 +283,10 @@ ID_INLINE float idMath::RSqrt( float x ) {
 
 ID_INLINE float idMath::InvSqrt16( float x ) {
 #ifdef __SSE__
-	//stgatilov: prefer SSE way
-	float r = RSqrt(x);
-	r = r * (1.5f - 0.5f * x * r * r);  //23-bit precision
+	//stgatilov: use rsqrt approximation + one NR iteration
+	x = SSE_MAKEPOSITIVE(x);
+	float r = SSE_RSQRT(x);               //12-bit precision
+	r = (0.5f * r) * (3.0f - x * r * r);  //23-bit precision
 	return r;
 #else
 	dword a = ((union _flint*)(&x))->i;
@@ -294,8 +304,8 @@ ID_INLINE float idMath::InvSqrt16( float x ) {
 
 ID_INLINE float idMath::InvSqrt( float x ) {
 #ifdef __SSE__
-	//stgatilov: one NR iteration should be almost enough for float32 precision
-	return InvSqrt16(x);    //23-bit precision
+	//stgatilov: one NR iteration is almost enough for float32 precision
+	return InvSqrt16(x);                  //23-bit precision
 #else
 	dword a = ((union _flint*)(&x))->i;
 	union _flint seed;
@@ -313,12 +323,13 @@ ID_INLINE float idMath::InvSqrt( float x ) {
 
 ID_INLINE double idMath::InvSqrt64( float x ) {
 #ifdef __SSE2__
-	//stgatilov: use rsqrt from SSE and NR iterations
-	double t = x;
-	double r = (double)RSqrt(x);
-	r = r * (1.5 - 0.5 * t * r * r);    //23-bit
-	r = r * (1.5 - 0.5 * t * r * r);    //46-bit
-	r = r * (1.5 - 0.5 * t * r * r);    // > 53-bit
+	//stgatilov: use rsqrt from SSE and three NR iterations
+	x = SSE_MAKEPOSITIVE(x);
+	double t = 0.5 * (double)x;
+	double r = (double)SSE_RSQRT(x);      //12-bit precision
+	r = r * (1.5 - t * r * r);            //23-bit
+	r = r * (1.5 - t * r * r);            //46-bit
+	r = r * (1.5 - t * r * r);            // > 53-bit
 	return r;
 #else
 	dword a = ((union _flint*)(&x))->i;
@@ -337,15 +348,33 @@ ID_INLINE double idMath::InvSqrt64( float x ) {
 }
 
 ID_INLINE float idMath::Sqrt16( float x ) {
+#ifdef __SSE__
+	//stgatilov: precise sqrt instruction from SSE is faster and more compact
+	//than using rsqrt + 1 NR iteration + multiply back...
+	x = SSE_MAKENONNEG(x);
+	return SSE_SQRT(x);
+#else
 	return x * InvSqrt16( x );
+#endif
 }
 
 ID_INLINE float idMath::Sqrt( float x ) {
+#ifdef __SSE__
+	return Sqrt16(x);	//same precise sqrt
+#else
 	return x * InvSqrt( x );
+#endif
 }
 
 ID_INLINE double idMath::Sqrt64( float x ) {
+#ifdef __SSE2__
+	//stgatilov: use precise sqrt instruction from SSE2, it is surely faster
+	x = SSE_MAKENONNEG(x);
+	__m128d xmm = _mm_set_sd((double)x);
+	return _mm_cvtsd_f64(_mm_sqrt_sd(xmm, xmm));
+#else
 	return x * InvSqrt64( x );
+#endif
 }
 
 ID_INLINE float idMath::Sin( float a ) {
