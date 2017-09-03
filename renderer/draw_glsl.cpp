@@ -40,6 +40,8 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			lightProjectionQ;
 	GLint			lightFalloff;
 
+	GLint			cubic;
+	GLint			u_lightProjectionCubemap;
 	GLint			u_lightProjectionTexture;
 	
 	GLint			bumpMatrixS;
@@ -57,11 +59,9 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
-	GLint			cubic;
 	GLint			specularMatrixS;
 	GLint			specularMatrixT;
 	GLint			specularColor;
-	GLint			u_lightProjectionCubemap;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -437,7 +437,7 @@ void shaderProgram_t::Use() {
 }
 
 void shaderProgram_t::ChooseInteractionProgram() {
-	if ( backEnd.vLight->lightShader->IsAmbientLight() ) 
+	if ( backEnd.vLight->lightShader->IsAmbientLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() )
 		ambientInteractionShader.Use();
 	else
 		pointInteractionShader.Use();
@@ -497,10 +497,12 @@ void interactionProgram_t::AfterLoad() {
 	colorAdd = qglGetUniformLocation( program, "u_colorAdd" );
 
 	diffuseColor = qglGetUniformLocation( program, "u_diffuseColor" );
+	cubic = qglGetUniformLocation( program, "u_cubic" );
 
 	GLint u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
 	GLint u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
 	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
+	u_lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
 	GLint u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	GLint u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 	
@@ -511,6 +513,7 @@ void interactionProgram_t::AfterLoad() {
 	qglUniform1i( u_lightProjectionTexture, 2 );
 	qglUniform1i( u_diffuseTexture, 3 );
 	qglUniform1i( u_specularTexture, 4 );
+	qglUniform1i( u_lightProjectionCubemap, 5 ); // else validation fails, 2 at render time
 	qglUseProgram( 0 );
 }
 
@@ -549,6 +552,15 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
 		break;
 	}
+	if ( backEnd.vLight->lightShader->IsCubicLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() ) {
+		qglUniform1f( cubic, 1.0 );
+		qglUniform1i( u_lightProjectionTexture, 5 );
+		qglUniform1i( u_lightProjectionCubemap, 2 );
+	} else {
+		qglUniform1f( cubic, 0.0 );
+		qglUniform1i( u_lightProjectionTexture, 2 );
+		qglUniform1i( u_lightProjectionCubemap, 5 );
+	}
 }
 
 void pointInteractionProgram_t::AfterLoad() {
@@ -558,11 +570,6 @@ void pointInteractionProgram_t::AfterLoad() {
 	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
 	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
 	specularColor = qglGetUniformLocation( program, "u_specularColor" );
-	
-	u_lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
-	qglUseProgram( program );
-	qglUniform1i( u_lightProjectionCubemap, 5 ); // else validation fails, 2 at render time
-	qglUseProgram( 0 );
 }
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
@@ -573,15 +580,6 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		qglUniform1f( cubic, 1.0 );
-		qglUniform1i( u_lightProjectionTexture, 5 );
-		qglUniform1i( u_lightProjectionCubemap, 2 );
-	} else {
-		qglUniform1f( cubic, 0.0 );
-		qglUniform1i( u_lightProjectionTexture, 2 );
-		qglUniform1i( u_lightProjectionCubemap, 5 );
-	}
 }
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
