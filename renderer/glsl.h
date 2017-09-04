@@ -15,7 +15,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #pragma once
 
-#include "gl\GL.h"
+#include "qgl.h"
 
 struct shaderProgram_t {
 	GLuint program;								// GPU program = vertex + fragment shader
@@ -25,7 +25,7 @@ struct shaderProgram_t {
 	static void ChooseInteractionProgram();
 private:
 	void AttachShader( GLint ShaderType, char *fileName );
-	GLuint CompileShader( GLint ShaderType, idStr &fileName );
+	GLuint CompileShader( GLint ShaderType, const idStr &fileName );
 };
 
 struct oldStageProgram_t : shaderProgram_t {

@@ -302,7 +302,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 shaderProgram_t::CompileShader
 =================
 */
-GLuint shaderProgram_t::CompileShader( GLint ShaderType, idStr &fileName ) {
+GLuint shaderProgram_t::CompileShader( GLint ShaderType, const idStr &fileName ) {
 	char *source;
 	GLuint shader;
 	GLint length, result;

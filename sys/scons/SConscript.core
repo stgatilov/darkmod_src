@@ -62,6 +62,7 @@ renderer_string = ' \
 	draw_arb2.cpp \
 	draw_common.cpp \
 	draw_exp_stub.cpp \
+	draw_glsl.cpp \
 	tr_backend.cpp \
 	tr_deform.cpp \
 	tr_font.cpp \

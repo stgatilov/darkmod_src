@@ -252,6 +252,7 @@ darkmod_string = ' \
 	ai/Tasks/PathTurnTask.cpp \
 	ai/Tasks/PathWaitForTriggerTask.cpp \
 	ai/Tasks/PathWaitTask.cpp \
+	ai/Tasks/PathWakeupTask.cpp \
 	ai/Tasks/PlayAnimationTask.cpp \
 	ai/Tasks/AnimalPatrolTask.cpp \
 	ai/Tasks/RandomHeadturnTask.cpp \
