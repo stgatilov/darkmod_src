@@ -55,6 +55,7 @@ struct interactionProgram_t : lightProgram_t {
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 	virtual void Use();
+	static void ChooseInteractionProgram();
 };
 
 struct pointInteractionProgram_t : interactionProgram_t {
@@ -140,7 +141,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
 	// bind the vertex and fragment program
-	shaderProgram_t::ChooseInteractionProgram();
+	interactionProgram_t::ChooseInteractionProgram();
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArray( 8 );
@@ -302,7 +303,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 shaderProgram_t::CompileShader
 =================
 */
-GLuint shaderProgram_t::CompileShader( GLint ShaderType, const idStr &fileName ) {
+GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char* fileName ) {
 	char *source;
 	GLuint shader;
 	GLint length, result;
@@ -313,11 +314,11 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const idStr &fileName )
 	// load the program even if we don't support it
 	fileSystem->ReadFile( fileName, (void **)&fileBuffer, NULL );
 	if ( !fileBuffer ) {
-		common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName.c_str() );
+		common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName );
 		return 0;
 	}
 
-	common->Printf( "%s\n", fileName.c_str() );
+	common->Printf( "%s\n", fileName );
 
 	source = fileBuffer;
 
@@ -339,7 +340,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const idStr &fileName )
 		qglGetShaderInfoLog( shader, length, &result, log );
 
 		/* print an error message and the info log */
-		common->Warning( "shaderCompileFromFile(): Unable to compile %s: %s\n", fileName.c_str(), log );
+		common->Warning( "shaderCompileFromFile(): Unable to compile %s: %s\n", fileName, log );
 		delete log;
 
 		qglDeleteShader( shader );
@@ -434,13 +435,6 @@ void shaderProgram_t::AfterLoad() {
 
 void shaderProgram_t::Use() {
 	qglUseProgram( program );
-}
-
-void shaderProgram_t::ChooseInteractionProgram() {
-	if ( backEnd.vLight->lightShader->IsAmbientLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() )
-		ambientInteractionShader.Use();
-	else
-		pointInteractionShader.Use();
 }
 
 void oldStageProgram_t::AfterLoad() {
@@ -563,10 +557,16 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	}
 }
 
+void interactionProgram_t::ChooseInteractionProgram() {
+	if ( backEnd.vLight->lightShader->IsAmbientLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() )
+		ambientInteractionShader.Use();
+	else
+		pointInteractionShader.Use();
+}
+
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
-	cubic = qglGetUniformLocation( program, "u_cubic" );
 	specularMatrixS = qglGetUniformLocation( program, "u_specularMatrixS" );
 	specularMatrixT = qglGetUniformLocation( program, "u_specularMatrixT" );
 	specularColor = qglGetUniformLocation( program, "u_specularColor" );

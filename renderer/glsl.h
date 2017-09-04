@@ -22,10 +22,9 @@ struct shaderProgram_t {
 	bool Load( char *fileName );
 	virtual void AfterLoad();
 	virtual void Use();							// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
-	static void ChooseInteractionProgram();
 private:
 	void AttachShader( GLint ShaderType, char *fileName );
-	GLuint CompileShader( GLint ShaderType, const idStr &fileName );
+	GLuint CompileShader( GLint ShaderType, const char* fileName );
 };
 
 struct oldStageProgram_t : shaderProgram_t {
