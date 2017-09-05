@@ -1148,7 +1148,10 @@ void R_MakeIrradiance( byte *pics[6], int *size ) {
 					sampleSide = rand.RandomInt() % 6;
 					sampleX = rand.RandomInt() % *size;
 					sampleY = rand.RandomInt() % *size;
-					sampleWeight = .1f;
+					if ( min(side, sampleSide) / 2 == max(side, sampleSide) / 2 && side != sampleSide ) // 0-1, 2-3, 4-5
+						sampleWeight = 0;
+					else
+						sampleWeight = .1f;
 				}
 				pOutPixel[4 * outX] = Sum0 / SumWeight;
 				pOutPixel[4 * outX + 1] = Sum1 / SumWeight;
