@@ -1117,6 +1117,54 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 
 /*
 =======================
+R_MakeIrradiance
+
+=======================
+*/
+
+void R_MakeIrradiance( byte *pics[6], int *size ) {
+	if ( *size == 0 )
+		return;
+	idRandom2 rand;
+	int outSize = 16;
+	byte* outPics[6];
+	for ( int side = 0; side < 6; side++ ) // assume cubemaps are RGBA
+		outPics[side] = (byte*)R_StaticAlloc( 4 * outSize*outSize );
+	for ( int side = 0; side < 6; side++ )
+		for ( int outY = 0; outY < outSize; outY++ ) {
+			int inY = outY * *size / outSize;
+			byte* pOutPixel = outPics[side] + 4 * outY * outSize;
+			for ( int outX = 0; outX < outSize; outX++ ) {
+				int inX = outX * *size / outSize,
+					Sum0 = 0, Sum1 = 0, Sum2 = 0;
+				int sampleSide = side, sampleX = inX, sampleY = inY;
+				float SumWeight = 0., sampleWeight = 1.;
+				for ( int i = 0; i < 9; i++ ) { // scatter select
+					byte* pInPixel = pics[sampleSide] + 4 * (sampleY * *size + sampleX);
+					Sum0 += pInPixel[0] * sampleWeight;
+					Sum1 += pInPixel[1] * sampleWeight;
+					Sum2 += pInPixel[2] * sampleWeight;
+					SumWeight += sampleWeight;
+					sampleSide = rand.RandomInt() % 6;
+					sampleX = rand.RandomInt() % *size;
+					sampleY = rand.RandomInt() % *size;
+					sampleWeight = .1f;
+				}
+				pOutPixel[4 * outX] = Sum0 / SumWeight;
+				pOutPixel[4 * outX + 1] = Sum1 / SumWeight;
+				pOutPixel[4 * outX + 2] = Sum2 / SumWeight;
+				pOutPixel[4 * outX + 3] = 0xff;
+			}
+		}
+	for ( int side = 0; side < 6; side++ ) {
+		R_StaticFree( pics[side] );
+		pics[side] = outPics[side];
+	}
+	*size = outSize;
+}
+
+/*
+=======================
 R_LoadCubeImages
 
 Loads six files with proper extensions
@@ -1130,7 +1178,19 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 	int		i, j;
 	const char	**sides;
 	char	fullName[MAX_IMAGE_NAME];
-	int		width, height, size = 0;
+	int		width, height, size = 0, makeIrradiance = 0;
+
+	idLexer lexer( imgName, strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
+	idToken		token;
+	lexer.ReadToken( &token );
+	if ( !token.Icmp( "makeIrradiance" ) ) {
+		makeIrradiance = 1;
+		lexer.ReadToken( &token ); // '('
+		lexer.ReadToken( &token ); // source cubemap
+		imgName = token.c_str();
+	}
+
+	lexer.FreeSource();
 
 	if ( extensions == CF_CAMERA ) {
 		sides = cameraSides;
@@ -1211,6 +1271,9 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		}
 		return false;
 	}
+
+	if ( makeIrradiance )
+		R_MakeIrradiance( pics, &size );
 
 	if ( outSize ) {
 		*outSize = size;

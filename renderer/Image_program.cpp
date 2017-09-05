@@ -563,14 +563,21 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		if ( pic ) {
 			int		c;
 			c = *width * *height * 4;
-			for ( i = 0 ; i < c ; i+=4 ) {
-				(*pic)[i+3] = ( (*pic)[i+0] + (*pic)[i+1] + (*pic)[i+2] ) / 3;
-				(*pic)[i+0] = 
-				(*pic)[i+1] = 
-				(*pic)[i+2] = 255;
+			for ( i = 0; i < c; i += 4 ) {
+				(*pic)[i + 3] = ((*pic)[i + 0] + (*pic)[i + 1] + (*pic)[i + 2]) / 3;
+				(*pic)[i + 0] =
+					(*pic)[i + 1] =
+					(*pic)[i + 2] = 255;
 			}
 		}
 
+		MatchAndAppendToken( src, ")" );
+		return true;
+	}
+
+	if ( !token.Icmp( "makeIrradiance" ) ) {
+		MatchAndAppendToken( src, "(" );
+		R_ParseImageProgram_r( src, pic, width, height, timestamps, depth );
 		MatchAndAppendToken( src, ")" );
 		return true;
 	}
