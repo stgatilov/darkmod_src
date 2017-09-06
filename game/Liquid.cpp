@@ -242,11 +242,13 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity )
 		
 	if ( velSquare > phys->GetMinSplashVelocity().LengthSqr() )
 	{
+		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%d: idLiquid::Collide - %s m_splashtime = %d\r",gameLocal.time,e->GetName(),e->m_splashtime);
 		// grayman #4600 - The entity might be entering the liquid more than once
 		// as it breaks the plane of the liquid. Wait a bit before splashing again.
 		if ( gameLocal.time >= e->m_splashtime )
 		{
 			e->m_splashtime = gameLocal.time + 100;
+			eMass = e->GetPhysics()->GetMass();
 
 			// pick which splash particle to spawn
 			// first we check the entity, if it's not defined we use
@@ -259,7 +261,6 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity )
 			}
 			else
 			{
-				eMass = e->GetPhysics()->GetMass();
 				// load a liquid particle based on the mass of the splashing entity
 				if ( eMass < SMALL_SPLASH )
 				{
