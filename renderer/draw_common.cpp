@@ -1589,9 +1589,6 @@ void	RB_STD_DrawView( void ) {
 	else
 		RB_ARB2_DrawInteractions();
 
-	// disable stencil shadow test
-	qglStencilFunc( GL_ALWAYS, 128, 255 );
-
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
