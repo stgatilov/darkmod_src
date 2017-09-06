@@ -31,19 +31,18 @@ typedef enum {
 typedef struct vertCache_s {
 	GLuint			vbo;
 	GLenum          target;
-	GLenum          usage;
+	//GLenum          usage;
 	//void			*virtMem;			// only one of vbo / virtMem will be set
 	//bool			indexBuffer;		// holds indexes instead of vertexes
 
 	int				offset;
 	int				size;				// may be larger than the amount asked for, due
 	// to round up and minimum fragment sizes
-	int				tag;				// a tag of 0 is a free block
+	vertBlockTag_t				tag;				// a tag of 0 is a free block
 	struct vertCache_s	**	user;		// will be set to zero when purged
 	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
 	int				frameUsed;			// it can't be purged if near the current frame
 } vertCache_t;
-
 
 class idVertexCache {
 public:
