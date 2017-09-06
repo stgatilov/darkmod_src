@@ -1108,10 +1108,12 @@ static void RemoveDegenerateTriangles( srfTriangles_t *tri ) {
 	}
 
 	// this doesn't free the memory used by the unused verts
-
+	/* grayman - message is useless, since the mapper can't do anything with it.
+	   it also confuses new mappers, who always ask about it.
 	if ( c_removed ) {
 		common->Printf( "removed %i degenerate triangles from shadow\n", c_removed );
 	}
+	*/
 }
 
 /*
