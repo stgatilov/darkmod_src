@@ -308,7 +308,6 @@ static void R_ImageAdd( byte *data1, int width1, int height1, byte *data2, int w
 		newMap = NULL;
 	}
 
-
 	c = width1 * height1 * 4;
 
 	for ( i = 0 ; i < c ; i++ ) {
