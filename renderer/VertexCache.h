@@ -20,8 +20,6 @@ $Author$ (Author of last commit)
 // vertex cache calls should only be made by the front end
 
 #define NUM_VERTEX_FRAMES			2
-#define FRAME_MEMORY_BYTES			0x200000 // frame size
-#define EXPAND_HEADERS				1024
 
 typedef enum {
 	TAG_FREE,
@@ -32,8 +30,10 @@ typedef enum {
 
 typedef struct vertCache_s {
 	GLuint			vbo;
-	void			*virtMem;			// only one of vbo / virtMem will be set
-	bool			indexBuffer;		// holds indexes instead of vertexes
+	GLenum          target;
+	GLenum          usage;
+	//void			*virtMem;			// only one of vbo / virtMem will be set
+	//bool			indexBuffer;		// holds indexes instead of vertexes
 
 	int				offset;
 	int				size;				// may be larger than the amount asked for, due
@@ -51,7 +51,7 @@ public:
 	void			Shutdown();
 
 	// just for gfxinfo printing
-	bool			IsFast() { return !virtualMemory; };
+	//bool			IsFast() { return !virtualMemory; };
 
 	// called when vertex programs are enabled or disabled, because
 	// the cached data is no longer valid
@@ -97,13 +97,14 @@ public:
 	void			List();
 
 private:
-	bool			virtualMemory;			// not fast stuff
+	//bool			virtualMemory;			// not fast stuff
 
 	void			InitMemoryBlocks( int size );
 	void			ActuallyFree( vertCache_t *block );
 
 	static idCVar	r_showVertexCache;
-	static idCVar	r_vertexBufferMegs;
+	static idCVar   r_useMapBufferRange;
+	static idCVar   r_reuseVertexCacheSooner;
 
 	int				staticCountTotal;
 	int				staticAllocTotal;		// for end of frame purging

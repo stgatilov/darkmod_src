@@ -741,19 +741,19 @@ R_ARB2_Init
 ==================
 */
 void R_ARB2_Init( void ) {
-	//glConfig.allowARB2Path = false;
+	/*glConfig.allowARB2Path = false;
 
 	common->Printf( "---------- R_ARB2_Init ----------\n" );
 
-	/*if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
+	if ( !glConfig.ARBVertexProgramAvailable || !glConfig.ARBFragmentProgramAvailable ) {
 		common->Printf( "Not available.\n" );
 		return;
-	}*/
+	}
 
 	common->Printf( "Available.\n" );
 
 	common->Printf( "---------------------------------\n" );
 
-	//glConfig.allowARB2Path = true;
+	glConfig.allowARB2Path = true;*/
 }
 

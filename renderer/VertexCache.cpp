@@ -24,8 +24,11 @@ $Author$ (Author of last commit)
 
 #include "tr_local.h"
 
+static const int	FRAME_MEMORY_BYTES = 0x200000;
+static const int	EXPAND_HEADERS = 32;
+
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "" );
-idCVar idVertexCache::r_vertexBufferMegs( "r_vertexBufferMegs", "32", CVAR_INTEGER | CVAR_RENDERER, "" );
+idCVar idVertexCache::r_useMapBufferRange( "r_useMapBufferRange", "0", CVAR_BOOL | CVAR_RENDERER, "use ARB_map_buffer_range for optimization" );
 
 idVertexCache		vertexCache;
 
@@ -43,6 +46,29 @@ void CacheLog( const char* fmt, ... ) {
 	cacheLogFile->VPrintf( fmt, args );
 	va_end( args );
 	cacheLogFile->Flush();*/
+}
+
+/*
+==============
+GL_BindBuffer
+==============
+*/
+static void GL_BindBuffer( GLenum target, GLuint buffer ) {
+	static GLuint gl_current_array_buffer = 0, gl_current_index_buffer = 0, *currentTargetBufer = &gl_current_array_buffer;
+
+	switch ( target ) {
+	case GL_ARRAY_BUFFER_ARB:
+		break;
+	case GL_ELEMENT_ARRAY_BUFFER_ARB:
+		currentTargetBufer = &gl_current_index_buffer;
+		break;
+	default:
+		common->Error( "GL_BindBuffer : invalid buffer target : %i\n", (int)target );
+	}
+	if ( *currentTargetBufer == buffer )
+		return;
+
+	qglBindBufferARB( target, *currentTargetBufer = buffer );
 }
 
 /*
@@ -83,10 +109,10 @@ void idVertexCache::ActuallyFree( vertCache_t *block ) {
 			glBindBufferARB( GL_ARRAY_BUFFER_ARB, block->vbo );
 			glBufferDataARB( GL_ARRAY_BUFFER_ARB, 0, 0, GL_DYNAMIC_DRAW_ARB );
 #endif
-		} else if ( block->virtMem ) {
+		} /*else if ( block->virtMem ) {
 			Mem_Free( block->virtMem );
 			block->virtMem = NULL;
-		}
+		}*/
 	}
 	block->tag = TAG_FREE;		// mark as free
 
@@ -134,20 +160,16 @@ void *idVertexCache::Position( vertCache_t *buffer ) {
 				common->Printf( "GL_ARRAY_BUFFER_ARB = %i (%i bytes)\n", buffer->vbo, buffer->size );
 			}
 		}
-		if ( buffer->indexBuffer ) {
-			qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, buffer->vbo );
-		} else {
-			qglBindBufferARB( GL_ARRAY_BUFFER_ARB, buffer->vbo );
-		}
+		GL_BindBuffer( buffer->target, buffer->vbo );
 		return (void *)buffer->offset;
 	}
 
 	// virtual memory is a real pointer
-	return (void *)((byte *)buffer->virtMem + buffer->offset);
+	return NULL;// (void *)((byte *)buffer->virtMem + buffer->offset);
 }
 
 void idVertexCache::UnbindIndex() {
-	qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	GL_BindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 }
 
 
@@ -161,20 +183,16 @@ idVertexCache::Init
 void idVertexCache::Init() {
 	cmdSystem->AddCommand( "listVertexCache", R_ListVertexCache_f, CMD_FL_RENDERER, "lists vertex cache" );
 
-	if ( r_vertexBufferMegs.GetInteger() < 8 ) {
-		r_vertexBufferMegs.SetInteger( 8 );
-	}
-
-	virtualMemory = false;
+	//virtualMemory = false;
 
 	// use ARB_vertex_buffer_object unless explicitly disabled
-	if ( r_useVertexBuffers.GetInteger() && glConfig.ARBVertexBufferObjectAvailable ) {
+	//if ( r_useVertexBuffers.GetInteger() && glConfig.ARBVertexBufferObjectAvailable ) {
 		common->Printf( "using ARB_vertex_buffer_object memory\n" );
-	} else {
+	/*} else {
 		virtualMemory = true;
 		r_useIndexBuffers.SetBool( false );
 		common->Printf( "WARNING: vertex array range in virtual memory (SLOW)\n" );
-	}
+	}*/
 
 	// initialize the cache memory blocks
 	for ( int i = 0; i < NUM_VERTEX_FRAMES; i++ ) {
@@ -254,9 +272,9 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 			block->next->prev = block;
 			block->prev->next = block;
 
-			if ( !virtualMemory ) {
+			//if ( !virtualMemory ) {
 				qglGenBuffersARB( 1, &block->vbo );
-			}
+			//}
 		}
 	}
 
@@ -284,15 +302,15 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 	// referenced by the GPU yet, and can be purged if needed.
 	block->frameUsed = currentFrame - NUM_VERTEX_FRAMES;
 
-	block->indexBuffer = indexBuffer;
+	//block->indexBuffer = indexBuffer;
+	block->target = indexBuffer ? GL_ELEMENT_ARRAY_BUFFER_ARB : GL_ARRAY_BUFFER_ARB;
 
 	// copy the data
 	if ( block->vbo ) {
+		GL_BindBuffer( block->target, block->vbo );
 		if ( indexBuffer ) {
-			qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, block->vbo );
 			qglBufferDataARB( GL_ELEMENT_ARRAY_BUFFER_ARB, (GLsizeiptrARB)size, data, GL_STATIC_DRAW_ARB );
 		} else {
-			qglBindBufferARB( GL_ARRAY_BUFFER_ARB, block->vbo );
 			if ( allocatingTempBuffer ) {
 				qglBufferDataARB( GL_ARRAY_BUFFER_ARB, (GLsizeiptrARB)size, data, GL_STREAM_DRAW_ARB );
 			} else {
@@ -300,8 +318,8 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 			}
 		}
 	} else {
-		block->virtMem = Mem_Alloc( size );
-		SIMDProcessor->Memcpy( block->virtMem, data, size );
+		/*block->virtMem = Mem_Alloc( size );
+		SIMDProcessor->Memcpy( block->virtMem, data, size );*/
 	}
 
 	// this will be set to zero when it is purged
@@ -418,7 +436,8 @@ vertCache_t	*idVertexCache::AllocFrameTemp( void *data, int size ) {
 
 	block->size = size;
 	block->tag = TAG_TEMP;
-	block->indexBuffer = false;
+	//block->indexBuffer = false;
+	block->target = GL_ARRAY_BUFFER_ARB;
 	block->offset = dynamicAllocThisFrame;
 	dynamicAllocThisFrame += block->size;
 	dynamicCountThisFrame++;
@@ -426,14 +445,33 @@ vertCache_t	*idVertexCache::AllocFrameTemp( void *data, int size ) {
 	block->frameUsed = 0;
 
 	// copy the data
-	block->virtMem = tempBuffers[listNum]->virtMem;
+	//block->virtMem = tempBuffers[listNum]->virtMem;
 	block->vbo = tempBuffers[listNum]->vbo;
 
 	if ( block->vbo ) {
-		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, block->vbo );
-		qglBufferSubDataARB( GL_ARRAY_BUFFER_ARB, block->offset, (GLsizeiptrARB)size, data );
+		GL_BindBuffer( GL_ARRAY_BUFFER_ARB, block->vbo );		// try to get an unsynchronized map if at all possible
+		if ( glConfig.mapBufferRangeAvailable && r_useMapBufferRange.GetBool() ) {
+			void *dst = NULL;
+			GLbitfield access = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
+
+			// if the buffer has wrapped then we orphan it
+			if ( block->offset == 0 ) {
+				access = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+			} else {
+				access = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_RANGE_BIT;
+			}
+			if ( (dst = qglMapBufferRange( GL_ARRAY_BUFFER, block->offset, (GLsizeiptr)size, access )) != NULL ) {
+				SIMDProcessor->Memcpy( (byte *)dst, data, size );
+				qglUnmapBufferARB( GL_ARRAY_BUFFER_ARB );
+				return block;
+			} else {
+				qglBufferSubDataARB( GL_ARRAY_BUFFER_ARB, block->offset, (GLsizeiptr)size, data );
+			}
+		} else {
+			qglBufferSubDataARB( GL_ARRAY_BUFFER_ARB, block->offset, (GLsizeiptr)size, data );
+		}
 	} else {
-		SIMDProcessor->Memcpy( (byte *)block->virtMem + block->offset, data, size );
+		//SIMDProcessor->Memcpy( (byte *)block->virtMem + block->offset, data, size );
 	}
 
 	CacheLog( "Allocated frame temp vertCache block %d, current list %d\r", block, listNum );
@@ -476,12 +514,12 @@ void idVertexCache::EndFrame() {
 	}
 #endif
 
-	if ( !virtualMemory ) {
+	//if ( !virtualMemory ) {
 		// unbind vertex buffers so normal virtual memory will be used in case
 		// r_useVertexBuffers / r_useIndexBuffers
-		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
-		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
-	}
+	GL_BindBuffer( GL_ARRAY_BUFFER_ARB, 0 );
+	GL_BindBuffer( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	//}
 
 
 	currentFrame = tr.frameCount;
@@ -539,17 +577,16 @@ void idVertexCache::List( void ) {
 		numFreeDynamicHeaders++;
 	}
 
-	common->Printf( "%i megs working set\n", r_vertexBufferMegs.GetInteger() );
 	common->Printf( "%i dynamic temp buffers of %ik\n", NUM_VERTEX_FRAMES, FRAME_MEMORY_BYTES / 1024 );
 	common->Printf( "%5i active static headers\n", numActive );
 	common->Printf( "%5i free static headers\n", numFreeStaticHeaders );
 	common->Printf( "%5i free dynamic headers\n", numFreeDynamicHeaders );
 
-	if ( !virtualMemory ) {
+	//if ( !virtualMemory ) {
 		common->Printf( "Vertex cache is in ARB_vertex_buffer_object memory (FAST).\n" );
-	} else {
+	/*} else {
 		common->Printf( "Vertex cache is in virtual memory (SLOW)\n" );
-	}
+	}*/
 
 	if ( r_useIndexBuffers.GetBool() ) {
 		common->Printf( "Index buffers are accelerated.\n" );

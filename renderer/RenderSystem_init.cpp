@@ -57,12 +57,11 @@ idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shad
 																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
 idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");
 */
-idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
+//idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 // Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
 idCVar r_useIndexBuffers( "r_useIndexBuffers", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
-//idCVar r_useInfiniteFarZ( "r_useInfiniteFarZ", "1", CVAR_RENDERER | CVAR_BOOL, "use the no-far-clip-plane trick" );
 
 idCVar r_znear( "r_znear", "3", CVAR_RENDERER | CVAR_FLOAT, "near Z clip plane distance", 0.001f, 200.0f );
 
@@ -72,8 +71,6 @@ idCVar r_swapInterval( "r_swapInterval", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVA
 
 idCVar r_gamma( "r_gamma", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 3.0f );
 idCVar r_brightness( "r_brightness", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "changes gamma tables", 0.5f, 2.0f );
-
-//idCVar r_renderer( "r_renderer", "best", CVAR_RENDERER | CVAR_ARCHIVE, "hardware specific renderer path to use", r_rendererArgs, idCmdSystem::ArgCompletion_String<r_rendererArgs> );
 
 idCVar r_jitter( "r_jitter", "0", CVAR_RENDERER | CVAR_BOOL, "randomly subpixel jitter the projection matrix" );
 
@@ -141,7 +138,6 @@ idCVar r_flareSize( "r_flareSize", "1", CVAR_RENDERER | CVAR_FLOAT, "scale the f
 idCVar r_useExternalShadows( "r_useExternalShadows", "1", CVAR_RENDERER | CVAR_INTEGER, "1 = skip drawing caps when outside the light volume, 2 = force to no caps for testing", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar r_useOptimizedShadows( "r_useOptimizedShadows", "1", CVAR_RENDERER | CVAR_BOOL, "use the dmap generated static shadow volumes" );
 idCVar r_useScissor( "r_useScissor", "1", CVAR_RENDERER | CVAR_BOOL, "scissor clip as portals and lights are processed" );
-//idCVar r_useCombinerDisplayLists( "r_useCombinerDisplayLists", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_NOCHEAT, "put all nvidia register combiner programming in display lists" );
 idCVar r_useDepthBoundsTest( "r_useDepthBoundsTest", "1", CVAR_RENDERER | CVAR_BOOL, "use depth bounds test to reduce shadow fill" );
 
 idCVar r_screenFraction( "r_screenFraction", "100", CVAR_RENDERER | CVAR_INTEGER, "for testing fill rate, the resolution of the entire screen can be changed" );
@@ -250,12 +246,12 @@ idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_
 	"Play cinematics with original Doom3 code or with FFmpeg libraries. "
 	"0 - always use FFmpeg libraries, 1 - use original Doom3 code for ROQ and FFmpeg for other videos, 2 - never use FFmpeg");
 
-void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
+void (APIENTRY * qglActiveTexture)(GLenum texture);
+/*void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
-void ( APIENTRY * qglActiveTexture )( GLenum texture );
-//void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
+void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
 
-/*void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
+*void ( APIENTRY *qglCombinerParameterfvNV )( GLenum pname, const GLfloat *params );
 void ( APIENTRY *qglCombinerParameterivNV )( GLenum pname, const GLint *params );
 void ( APIENTRY *qglCombinerParameterfNV )( GLenum pname, const GLfloat param );
 void ( APIENTRY *qglCombinerParameteriNV )( GLenum pname, const GLint param );
@@ -281,25 +277,6 @@ void (APIENTRY *qFreeMemoryNV)( void *pointer );
 #define Q_FREE_MEMORY_NV "wglFreeMemoryNV"
 #endif*/
 
-void (APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, GLsizei, GLint, GLenum, GLenum, const GLvoid *);
-
-
-// ATI_fragment_shader
-PFNGLGENFRAGMENTSHADERSATIPROC			qglGenFragmentShadersATI;
-PFNGLBINDFRAGMENTSHADERATIPROC			qglBindFragmentShaderATI;
-PFNGLDELETEFRAGMENTSHADERATIPROC		qglDeleteFragmentShaderATI;
-PFNGLBEGINFRAGMENTSHADERATIPROC			qglBeginFragmentShaderATI;
-PFNGLENDFRAGMENTSHADERATIPROC			qglEndFragmentShaderATI;
-PFNGLPASSTEXCOORDATIPROC				qglPassTexCoordATI;
-PFNGLSAMPLEMAPATIPROC					qglSampleMapATI;
-PFNGLCOLORFRAGMENTOP1ATIPROC			qglColorFragmentOp1ATI;
-PFNGLCOLORFRAGMENTOP2ATIPROC			qglColorFragmentOp2ATI;
-PFNGLCOLORFRAGMENTOP3ATIPROC			qglColorFragmentOp3ATI;
-PFNGLALPHAFRAGMENTOP1ATIPROC			qglAlphaFragmentOp1ATI;
-PFNGLALPHAFRAGMENTOP2ATIPROC			qglAlphaFragmentOp2ATI;
-PFNGLALPHAFRAGMENTOP3ATIPROC			qglAlphaFragmentOp3ATI;
-PFNGLSETFRAGMENTSHADERCONSTANTATIPROC	qglSetFragmentShaderConstantATI;
-
 // separate stencil
 PFNGLSTENCILOPSEPARATEPROC				qglStencilOpSeparate;
 
@@ -319,9 +296,7 @@ PFNGLMAPBUFFERARBPROC					qglMapBufferARB;
 PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
 PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
 PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
-PFNGLMAPBUFFERRANGEPROC					glMapBufferRange;
-PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
-PFNGLBUFFERSUBDATAPROC					glBufferSubData;
+PFNGLMAPBUFFERRANGEPROC                 qglMapBufferRange;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointer;
@@ -461,8 +436,8 @@ static void R_CheckPortableExtensions( void ) {
 	// GL_ARB_multitexture
 	glConfig.multitextureAvailable = R_CheckExtension( "GL_ARB_multitexture" );
 	if ( glConfig.multitextureAvailable ) {
-		qglMultiTexCoord2fARB = (void(APIENTRY *)(GLenum, GLfloat, GLfloat))GLimp_ExtensionPointer( "glMultiTexCoord2fARB" );
-		qglMultiTexCoord2fvARB = (void(APIENTRY *)(GLenum, GLfloat *))GLimp_ExtensionPointer( "glMultiTexCoord2fvARB" );
+		/*qglMultiTexCoord2fARB = (void(APIENTRY *)(GLenum, GLfloat, GLfloat))GLimp_ExtensionPointer( "glMultiTexCoord2fARB" );
+		qglMultiTexCoord2fvARB = (void(APIENTRY *)(GLenum, GLfloat *))GLimp_ExtensionPointer( "glMultiTexCoord2fvARB" );*/
 		qglActiveTexture = (void(APIENTRY *)(GLenum))GLimp_ExtensionPointer( "glActiveTexture" );
 		qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, (GLint *)&glConfig.maxTextureUnits );
 		if ( glConfig.maxTextureUnits > MAX_MULTITEXTURE_UNITS ) {
@@ -531,69 +506,24 @@ static void R_CheckPortableExtensions( void ) {
 		}
 	}
 
-	// GL_NV_register_combiners
-/*	glConfig.registerCombinersAvailable = R_CheckExtension( "GL_NV_register_combiners" );
-	if ( glConfig.registerCombinersAvailable ) {
-		qglCombinerParameterfvNV = (void (APIENTRY *)( GLenum pname, const GLfloat *params ))
-			GLimp_ExtensionPointer( "glCombinerParameterfvNV" );
-		qglCombinerParameterivNV = (void (APIENTRY *)( GLenum pname, const GLint *params ))
-			GLimp_ExtensionPointer( "glCombinerParameterivNV" );
-		qglCombinerParameterfNV = (void (APIENTRY *)( GLenum pname, const GLfloat param ))
-			GLimp_ExtensionPointer( "glCombinerParameterfNV" );
-		qglCombinerParameteriNV = (void (APIENTRY *)( GLenum pname, const GLint param ))
-			GLimp_ExtensionPointer( "glCombinerParameteriNV" );
-		qglCombinerInputNV = (void (APIENTRY *)( GLenum stage, GLenum portion, GLenum variable, GLenum input,
-											  GLenum mapping, GLenum componentUsage ))
-			GLimp_ExtensionPointer( "glCombinerInputNV" );
-		qglCombinerOutputNV = (void (APIENTRY *)( GLenum stage, GLenum portion, GLenum abOutput, GLenum cdOutput, 
-											   GLenum sumOutput, GLenum scale, GLenum bias, GLboolean abDotProduct,
-											   GLboolean cdDotProduct, GLboolean muxSum ))
-			GLimp_ExtensionPointer( "glCombinerOutputNV" );
-		qglFinalCombinerInputNV = (void (APIENTRY *)( GLenum variable, GLenum input, GLenum mapping, GLenum componentUsage ))
-			GLimp_ExtensionPointer( "glFinalCombinerInputNV" );
-	}*/
-
-	// GL_ATI_fragment_shader
-	/*glConfig.atiFragmentShaderAvailable = R_CheckExtension( "GL_ATI_fragment_shader" );
-	if (! glConfig.atiFragmentShaderAvailable ) {
-		// only on OSX: ATI_fragment_shader is faked through ATI_text_fragment_shader (macosx_glimp.cpp)
-		glConfig.atiFragmentShaderAvailable = R_CheckExtension( "GL_ATI_text_fragment_shader" );
-	}
-	if ( glConfig.atiFragmentShaderAvailable ) {
-		qglGenFragmentShadersATI = (PFNGLGENFRAGMENTSHADERSATIPROC)GLimp_ExtensionPointer( "glGenFragmentShadersATI" );
-		qglBindFragmentShaderATI = (PFNGLBINDFRAGMENTSHADERATIPROC)GLimp_ExtensionPointer( "glBindFragmentShaderATI" );
-		qglDeleteFragmentShaderATI = (PFNGLDELETEFRAGMENTSHADERATIPROC)GLimp_ExtensionPointer( "glDeleteFragmentShaderATI" );
-		qglBeginFragmentShaderATI = (PFNGLBEGINFRAGMENTSHADERATIPROC)GLimp_ExtensionPointer( "glBeginFragmentShaderATI" );
-		qglEndFragmentShaderATI = (PFNGLENDFRAGMENTSHADERATIPROC)GLimp_ExtensionPointer( "glEndFragmentShaderATI" );
-		qglPassTexCoordATI = (PFNGLPASSTEXCOORDATIPROC)GLimp_ExtensionPointer( "glPassTexCoordATI" );
-		qglSampleMapATI = (PFNGLSAMPLEMAPATIPROC)GLimp_ExtensionPointer( "glSampleMapATI" );
-		qglColorFragmentOp1ATI = (PFNGLCOLORFRAGMENTOP1ATIPROC)GLimp_ExtensionPointer( "glColorFragmentOp1ATI" );
-		qglColorFragmentOp2ATI = (PFNGLCOLORFRAGMENTOP2ATIPROC)GLimp_ExtensionPointer( "glColorFragmentOp2ATI" );
-		qglColorFragmentOp3ATI = (PFNGLCOLORFRAGMENTOP3ATIPROC)GLimp_ExtensionPointer( "glColorFragmentOp3ATI" );
-		qglAlphaFragmentOp1ATI = (PFNGLALPHAFRAGMENTOP1ATIPROC)GLimp_ExtensionPointer( "glAlphaFragmentOp1ATI" );
-		qglAlphaFragmentOp2ATI = (PFNGLALPHAFRAGMENTOP2ATIPROC)GLimp_ExtensionPointer( "glAlphaFragmentOp2ATI" );
-		qglAlphaFragmentOp3ATI = (PFNGLALPHAFRAGMENTOP3ATIPROC)GLimp_ExtensionPointer( "glAlphaFragmentOp3ATI" );
-		qglSetFragmentShaderConstantATI = (PFNGLSETFRAGMENTSHADERCONSTANTATIPROC)GLimp_ExtensionPointer( "glSetFragmentShaderConstantATI" );
-	}*/
-
 	// ARB_vertex_buffer_object
-	glConfig.ARBVertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
-	if(glConfig.ARBVertexBufferObjectAvailable) {
-		qglBindBufferARB = (PFNGLBINDBUFFERARBPROC)GLimp_ExtensionPointer( "glBindBufferARB");
-		qglDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GLimp_ExtensionPointer( "glDeleteBuffersARB");
-		qglGenBuffersARB = (PFNGLGENBUFFERSARBPROC)GLimp_ExtensionPointer( "glGenBuffersARB");
-		qglIsBufferARB = (PFNGLISBUFFERARBPROC)GLimp_ExtensionPointer( "glIsBufferARB");
-		qglBufferDataARB = (PFNGLBUFFERDATAARBPROC)GLimp_ExtensionPointer( "glBufferDataARB");
-		qglBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glBufferSubDataARB");
-		qglGetBufferSubDataARB = (PFNGLGETBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glGetBufferSubDataARB");
-		qglMapBufferARB = (PFNGLMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glMapBufferARB");
-		qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
-		qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
-		qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
-		glMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer( "glMapBufferRange" );
-		glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GLimp_ExtensionPointer( "glUnmapBuffer" );
-		glBufferSubData = (PFNGLBUFFERSUBDATAPROC)GLimp_ExtensionPointer("glBufferSubData");
-	}
+	//glConfig.vertexBufferObjectAvailable = R_CheckExtension( "GL_ARB_vertex_buffer_object" );
+	if ( !R_CheckExtension( "GL_ARB_vertex_buffer_object" ) )
+		common->Error( "VBO NOT SUPPORTED" );
+	qglBindBufferARB = (PFNGLBINDBUFFERARBPROC)GLimp_ExtensionPointer( "glBindBufferARB");
+	qglDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GLimp_ExtensionPointer( "glDeleteBuffersARB");
+	qglGenBuffersARB = (PFNGLGENBUFFERSARBPROC)GLimp_ExtensionPointer( "glGenBuffersARB");
+	qglIsBufferARB = (PFNGLISBUFFERARBPROC)GLimp_ExtensionPointer( "glIsBufferARB");
+	qglBufferDataARB = (PFNGLBUFFERDATAARBPROC)GLimp_ExtensionPointer( "glBufferDataARB");
+	qglBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glBufferSubDataARB");
+	qglGetBufferSubDataARB = (PFNGLGETBUFFERSUBDATAARBPROC)GLimp_ExtensionPointer( "glGetBufferSubDataARB");
+	qglMapBufferARB = (PFNGLMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glMapBufferARB");
+	qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
+	qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
+	qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
+	qglMapBufferRange = (PFNGLMAPBUFFERRANGEPROC)GLimp_ExtensionPointer( "glMapBufferRange" );
+	// ARB_MapBufferRange
+	glConfig.mapBufferRangeAvailable = R_CheckExtension( "GL_ARB_map_buffer_range" );
 
 	// ARB_vertex_program
 	qglVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );
@@ -2145,11 +2075,11 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 		common->Printf( "Two sided stencil not available\n" );
 	}
 
-	if ( vertexCache.IsFast() ) {
+	/*if ( vertexCache.IsFast() ) {
 		common->Printf( "Vertex cache is fast\n" );
 	} else {
 		common->Printf( "Vertex cache is SLOW\n" );
-	}
+	}*/
 }
 
 /*
