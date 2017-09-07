@@ -380,7 +380,7 @@ shaderProgram_t::Load
 =================
 */
 bool shaderProgram_t::Load( char *fileName ) {
-	if ( program )
+	if ( program && qglIsProgram( program ) )
 		qglDeleteProgram( program );
 	program = qglCreateProgram();
 	AttachShader( GL_VERTEX_SHADER, fileName );

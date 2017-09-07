@@ -54,7 +54,7 @@ GL_BindBuffer
 ==============
 */
 static void GL_BindBuffer( GLenum target, GLuint buffer ) {
-	static GLuint gl_current_array_buffer = 0, gl_current_index_buffer = 0, *currentTargetBufer = &gl_current_array_buffer;
+	/*static GLuint gl_current_array_buffer = 0, gl_current_index_buffer = 0, *currentTargetBufer = &gl_current_array_buffer;
 
 	switch ( target ) {
 	case GL_ARRAY_BUFFER_ARB:
@@ -68,7 +68,8 @@ static void GL_BindBuffer( GLenum target, GLuint buffer ) {
 	if ( *currentTargetBufer == buffer )
 		return;
 
-	qglBindBufferARB( target, *currentTargetBufer = buffer );
+	qglBindBufferARB( target, *currentTargetBufer = buffer );*/
+	qglBindBufferARB( target, buffer ); 
 }
 
 /*
