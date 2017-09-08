@@ -16006,7 +16006,8 @@ idSIMD_SSE::UpSamplePCMTo44kHz
   Duplicate samples for 44kHz output.
 ============
 */
-void idSIMD_SSE::UpSamplePCMTo44kHz( float *dest, const short *src, const int numSamples, const int kHz, const int numChannels ) {
+//stgatilov #3969: resampling acceleration is buggy and useless
+/*void idSIMD_SSE::UpSamplePCMTo44kHz( float *dest, const short *src, const int numSamples, const int kHz, const int numChannels ) {
 	if ( kHz == 11025 ) {
 		if ( numChannels == 1 ) {
 			SSE_UpSample11kHzMonoPCMTo44kHz( dest, src, numSamples );
@@ -16024,7 +16025,7 @@ void idSIMD_SSE::UpSamplePCMTo44kHz( float *dest, const short *src, const int nu
 	} else {
 		assert( 0 );
 	}
-}
+}*/
 
 /*
 ============
@@ -16313,7 +16314,8 @@ idSIMD_SSE::UpSampleOGGTo44kHz
   Duplicate samples for 44kHz output.
 ============
 */
-void idSIMD_SSE::UpSampleOGGTo44kHz( float *dest, const float * const *ogg, const int numSamples, const int kHz, const int numChannels ) {
+//stgatilov #3969: resampling acceleration is buggy and useless
+/*void idSIMD_SSE::UpSampleOGGTo44kHz( float *dest, const float * const *ogg, const int numSamples, const int kHz, const int numChannels ) {
 	if ( kHz == 11025 ) {
 		if ( numChannels == 1 ) {
 			SSE_UpSample11kHzMonoOGGTo44kHz( dest, ogg[0], numSamples );
@@ -16335,7 +16337,7 @@ void idSIMD_SSE::UpSampleOGGTo44kHz( float *dest, const float * const *ogg, cons
 	} else {
 		assert( 0 );
 	}
-}
+}*/
 
 /*
 ============
