@@ -300,7 +300,8 @@ int SCR_DrawSoundDecoders( int y ) {
 		} else {
 			percent = localTime * 100 / sampleTime;
 		}
-		SCR_DrawTextLeftAlign( y, "%3d: %3d%% (%1.2f) %s: %s (%dkB)", numActiveDecoders, percent, decoderInfo.lastVolume, 
+		SCR_DrawTextLeftAlign( y, "%2d:%c%3d%% (%1.2f) %s: %s (%dkB)",
+			numActiveDecoders, (decoderInfo.looping ? 'L' : ' '), percent, decoderInfo.lastVolume, 
 			decoderInfo.format.c_str(), decoderInfo.name.c_str(), decoderInfo.numBytes >> 10 );
 		numActiveDecoders++;
 	}
