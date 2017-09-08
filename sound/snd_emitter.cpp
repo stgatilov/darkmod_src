@@ -471,9 +471,9 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			}
 
 			// free decoder memory if no sound was decoded for a while
-		/*	if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) {
+			if ( chan->decoder != NULL && chan->decoder->GetLastDecodeTime() < current44kHzTime - SOUND_DECODER_FREE_DELAY ) {
 				chan->decoder->ClearDecoder();
-			} */
+			}
 
 			hasActive = true;
 
