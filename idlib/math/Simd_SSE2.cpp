@@ -949,15 +949,15 @@ void idSIMD_SSE2::TransformVerts( idDrawVert *verts, const int numVerts, const i
 }
 
 
-void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) {
+template<class Lambda> static ID_INLINE void VertexMinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count, Lambda Index ) {
 	__m128 rmin = _mm_set1_ps( 1e30f);
 	__m128 rmax = _mm_set1_ps(-1e30f);
 	int i = 0;
 	for (; i < (count & (~3)); i += 4) {
-		__m128 pos0 = _mm_loadu_ps(&src[i+0].xyz.x);
-		__m128 pos1 = _mm_loadu_ps(&src[i+1].xyz.x);
-		__m128 pos2 = _mm_loadu_ps(&src[i+2].xyz.x);
-		__m128 pos3 = _mm_loadu_ps(&src[i+3].xyz.x);
+		__m128 pos0 = _mm_loadu_ps(&src[Index(i + 0)].xyz.x);
+		__m128 pos1 = _mm_loadu_ps(&src[Index(i + 1)].xyz.x);
+		__m128 pos2 = _mm_loadu_ps(&src[Index(i + 2)].xyz.x);
+		__m128 pos3 = _mm_loadu_ps(&src[Index(i + 3)].xyz.x);
 		__m128 min01 = _mm_min_ps(pos0, pos1);
 		__m128 max01 = _mm_max_ps(pos0, pos1);
 		__m128 min23 = _mm_min_ps(pos2, pos3);
@@ -968,15 +968,15 @@ void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const
 		rmax = _mm_max_ps(rmax, maxA);
 	}
 	if (i + 0 < count) {
-		__m128 pos = _mm_loadu_ps(&src[i + 0].xyz.x);
+		__m128 pos = _mm_loadu_ps(&src[Index(i + 0)].xyz.x);
 		rmin = _mm_min_ps(rmin, pos);
 		rmax = _mm_max_ps(rmax, pos);
 		if (i + 1 < count) {
-			__m128 pos = _mm_loadu_ps(&src[i + 1].xyz.x);
+			__m128 pos = _mm_loadu_ps(&src[Index(i + 1)].xyz.x);
 			rmin = _mm_min_ps(rmin, pos);
 			rmax = _mm_max_ps(rmax, pos);
 			if (i + 2 < count) {
-				__m128 pos = _mm_loadu_ps(&src[i + 2].xyz.x);
+				__m128 pos = _mm_loadu_ps(&src[Index(i + 2)].xyz.x);
 				rmin = _mm_min_ps(rmin, pos);
 				rmax = _mm_max_ps(rmax, pos);
 			}
@@ -986,6 +986,12 @@ void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const
 	_mm_store_ss(&min.z, _mm_movehl_ps(rmin, rmin));
 	_mm_store_sd((double*)&max.x, _mm_castps_pd(rmax));
 	_mm_store_ss(&max.z, _mm_movehl_ps(rmax, rmax));
+}
+void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int count ) {
+	VertexMinMax(min, max, src, count, [](int i) { return i; });
+}
+void idSIMD_SSE2::MinMax( idVec3 &min, idVec3 &max, const idDrawVert *src, const int *indexes, const int count ) {
+	VertexMinMax(min, max, src, count, [indexes](int i) { return indexes[i]; });
 }
 
 
