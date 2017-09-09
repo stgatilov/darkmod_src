@@ -409,36 +409,30 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 // FIXME: these assume no skewing or scaling transforms
 
 void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
-#if defined(MACOS_X) && defined(__i386__)
-	__m128 m0, m1, m2, m3;
-	__m128 in0, in1, in2;
-	float i0,i1,i2;
-	i0 = in[0];
-	i1 = in[1];
-	i2 = in[2];
+#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
+	__m128 row0 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 row1 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 row2 = _mm_loadu_ps(&modelMatrix[8]);
+	__m128 row3 = _mm_loadu_ps(&modelMatrix[12]);
 	
-	m0 = _mm_loadu_ps(&modelMatrix[0]);
-	m1 = _mm_loadu_ps(&modelMatrix[4]);
-	m2 = _mm_loadu_ps(&modelMatrix[8]);
-	m3 = _mm_loadu_ps(&modelMatrix[12]);
+	__m128 xxxx = _mm_set1_ps(in.x);
+	__m128 yyyy = _mm_set1_ps(in.y);
+	__m128 zzzz = _mm_set1_ps(in.z);
 	
-	in0 = _mm_load1_ps(&i0);
-	in1 = _mm_load1_ps(&i1);
-	in2 = _mm_load1_ps(&i2);
-	
-	m0 = _mm_mul_ps(m0, in0);
-	m1 = _mm_mul_ps(m1, in1);
-	m2 = _mm_mul_ps(m2, in2);
+	__m128 res = _mm_add_ps(
+		_mm_add_ps(
+			_mm_mul_ps(row0, xxxx),
+			_mm_mul_ps(row1, yyyy)
+		),
+		_mm_add_ps(
+			_mm_mul_ps(row2, zzzz),
+			row3
+		)
+	);
 
-	m0 = _mm_add_ps(m0, m1);
-	m0 = _mm_add_ps(m0, m2);
-	m0 = _mm_add_ps(m0, m3);
-	
-	_mm_store_ss(&out[0], m0);
-	m1 = (__m128) _mm_shuffle_epi32((__m128i)m0, 0x55);
-	_mm_store_ss(&out[1], m1);
-	m2 = _mm_movehl_ps(m2, m0);
-	_mm_store_ss(&out[2], m2);
+	//unaligned float x 3 store
+	_mm_storel_pi((__m64*)&out[0], res);
+	_mm_store_ss(&out[2], _mm_movehl_ps(res, res));
 #else	
 	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
 		+ in[2] * modelMatrix[8] + modelMatrix[12];
@@ -748,7 +742,29 @@ myGlMultMatrix
 ==========================
 */
 void myGlMultMatrix( const float a[16], const float b[16], float out[16] ) {
-#if 0
+#ifdef __SSE__
+	__m128 B0x = _mm_loadu_ps(&b[0]);
+	__m128 B1x = _mm_loadu_ps(&b[4]);
+	__m128 B2x = _mm_loadu_ps(&b[8]);
+	__m128 B3x = _mm_loadu_ps(&b[12]);
+	for (int i = 0; i < 4; i++) {
+		__m128 Ai0 = _mm_set1_ps(a[4*i+0]);
+		__m128 Ai1 = _mm_set1_ps(a[4*i+1]);
+		__m128 Ai2 = _mm_set1_ps(a[4*i+2]);
+		__m128 Ai3 = _mm_set1_ps(a[4*i+3]);
+		__m128 Rix = _mm_add_ps(
+			_mm_add_ps(
+				_mm_mul_ps(Ai0, B0x),
+				_mm_mul_ps(Ai1, B1x)
+			),
+			_mm_add_ps(
+				_mm_mul_ps(Ai2, B2x),
+				_mm_mul_ps(Ai3, B3x)
+			)
+		);
+		_mm_storeu_ps(&out[4*i], Rix);
+	}
+#elif 0
 	int		i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {
