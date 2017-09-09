@@ -1811,11 +1811,11 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 ====================
 CopyDepthbuffer
 
-This should just be part of copyFramebuffer once we have a proper image type field 
+This should just be part of copyFramebuffer once we have a proper image type field
 Fixed #3877. Allow shaders to access scene depth -- revelator + SteveL
 ====================
 */
-void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) 
+void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer )
 {
 	this->Bind();
 	// if the size isn't a power of 2, the image must be increased in size
@@ -1825,11 +1825,11 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight, bo
 	GetDownsize( imageWidth, imageHeight );
 	GetDownsize( potWidth, potHeight );
 	// Ensure we are reading from the back buffer:
-	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
-	if ( ( useOversizedBuffer && ( uploadWidth < potWidth || uploadHeight < potHeight ) ) || ( !useOversizedBuffer && ( uploadWidth != potWidth || uploadHeight != potHeight ) ) ) 
+	if ( (useOversizedBuffer && (uploadWidth < potWidth || uploadHeight < potHeight)) || (!useOversizedBuffer && (uploadWidth != potWidth || uploadHeight != potHeight)) )
 	{
 		uploadWidth = potWidth;
 		uploadHeight = potHeight;
@@ -1837,14 +1837,49 @@ void idImage::CopyDepthbuffer( int x, int y, int imageWidth, int imageHeight, bo
 		// It resizes the texture to a power of two that can hold the screen,
 		// and then subsequent captures to the texture put the depth component into the RGB channels
 		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, potWidth, potHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL );
-	}
-	else {
+	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness.
 	}
 	qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR ); // GL_NEAREST for Soft Shadow ~SS
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR ); // GL_NEAREST
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+}
+
+/*
+====================
+CopyStencilBuffer
+
+This should just be part of copyFramebuffer once we have a proper image type field
+====================
+*/
+void idImage::CopyStencilBuffer( int x, int y, int imageWidth, int imageHeight )
+{
+	this->Bind();
+	// only resize if the current dimensions can't hold it at all,
+	// otherwise subview renderings could thrash this
+	if ( x + imageWidth > uploadWidth || y + imageHeight > uploadHeight )
+	{
+		uploadWidth = x + imageWidth;
+		uploadHeight = y + imageHeight;
+		// This bit runs once only at map start, because it tests whether the image is too small to hold the screen.
+		// It resizes the texture to a power of two that can hold the screen,
+		// and then subsequent captures to the texture put the depth component into the RGB channels
+		//qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, uploadWidth, uploadHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, NULL );
+		//qglTexImage2D( GL_TEXTURE_2D, 0, GL_R8, uploadWidth, uploadHeight, 0, GL_RED, GL_UNSIGNED_BYTE, NULL );
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, uploadWidth, uploadHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL );
+	} else {
+		// otherwise, just subimage upload it so that drivers can tell we are going to be changing`
+		// it and don't try and do a texture compression or some other silliness.
+	}
+	const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+	glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+	qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, x, y, imageWidth, imageHeight, 0 );
+	//qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, x, y, imageWidth, imageHeight, 0 );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ); // GL_NEAREST for Soft Shadow ~SS
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ); // GL_NEAREST
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 }

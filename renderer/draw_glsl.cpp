@@ -128,6 +128,15 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		din->specularImage->Bind();
 	}
 
+	if ( r_softShadows.GetBool() ) {
+		GL_SelectTexture( 6 );
+		idImage* depth = globalImages->currentDepthImage;
+		//idImage* depth = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage : globalImages->currentDepthFbo;
+		depth->Bind();
+		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+	}
+
 	// draw it
 	RB_DrawElementsWithCounters( din->surf->backendGeo );
 }
@@ -179,6 +188,11 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray(3);
 
 	// disable features
+	if ( r_softShadows.GetBool() ) {
+		GL_SelectTexture( 6 );
+		globalImages->BindNull();
+	}
+
 	GL_SelectTexture( 4 );
 	globalImages->BindNull();
 
@@ -245,13 +259,20 @@ void RB_GLSL_DrawInteractions( void ) {
 		}
 
 		stencilShadowShader.Use();
-
 		RB_StencilShadowPass( vLight->globalShadows );
+		if ( r_softShadows.GetBool() ) 
+			qglStencilFunc( GL_ALWAYS, 128, 255 );
+		;//qglDisable( GL_STENCIL_TEST );
 		RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
+		//qglEnable( GL_STENCIL_TEST );
 
 		stencilShadowShader.Use();
 		RB_StencilShadowPass( vLight->localShadows );
+		if ( r_softShadows.GetBool() )
+			qglStencilFunc( GL_ALWAYS, 128, 255 );
+		;//qglDisable( GL_STENCIL_TEST );
 		RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
+		//qglEnable( GL_STENCIL_TEST );
 
 		qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 
@@ -345,7 +366,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char* fileName ) 
 		qglGetShaderInfoLog( shader, length, &result, log );
 
 		/* print an error message and the info log */
-		common->Warning( "shaderCompileFromFile(%s) validation: %s\n", fileName, log );
+		common->Warning( "shaderCompileFromFile(%s) validation\n%s\n", fileName, log );
 		delete log;
 
 		qglDeleteShader( shader );
@@ -401,7 +422,7 @@ bool shaderProgram_t::Load( char *fileName ) {
 		char *log = new char[length];
 		qglGetProgramInfoLog( program, length, &result, log );
 		/* print an error message and the info log */
-		common->Warning( "Program linking failed: %s\n", log );
+		common->Warning( "Program linking failed\n%s\n", log );
 		delete log;
 
 		/* delete the program */
@@ -422,7 +443,7 @@ bool shaderProgram_t::Load( char *fileName ) {
 		char *log = new char[length];
 		qglGetProgramInfoLog( program, length, &result, log );
 		/* print an error message and the info log */
-		common->Warning( "Program validation failed: %s\n", log );
+		common->Warning( "Program validation failed\n%s\n", log );
 		delete log;
 
 		/* delete the program */
@@ -581,6 +602,11 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
+	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
+	// set texture locations
+	qglUseProgram( program );
+	qglUniform1i( u_stencilTexture, 6 );
+	qglUseProgram( 0 );
 }
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {

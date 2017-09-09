@@ -2884,6 +2884,9 @@
     <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
       <Filter>Game\AI\Tasks</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\framebufer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="sys\win32\rc\res\BEVEL.BMP">

@@ -383,7 +383,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		 && !r_skipDepthCapture.GetBool() )
 	{
 		if (!(r_useFbo.GetBool() && r_fboSharedDepth.GetBool()) ) // duzenko #4425 - depth texture is already bound to framebuffer
-			globalImages->currentDepthImage->CopyDepthbuffer( backEnd.viewDef->viewport.x1,
+			globalImages->currentDepthImage->CopyDepthBuffer( backEnd.viewDef->viewport.x1,
 														  backEnd.viewDef->viewport.y1,
 														  backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 														  backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, 
@@ -963,7 +963,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 		extern void RB_FboAccessColorDepth(bool DepthToo); // duzenko #4425 FIXME ugly magic extern
 		if (r_useFbo.GetBool())
-			RB_FboAccessColorDepth(true);
+			RB_FboAccessColorDepth(false);
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -1216,8 +1216,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	qglStencilFunc( GL_GEQUAL, 128, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 }
-
-
 
 /*
 =============================================================================================

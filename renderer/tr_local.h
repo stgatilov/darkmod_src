@@ -1006,8 +1006,8 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 
-/* extern idCVar r_softShadows; //~SS
-extern idCVar r_softShadDebug;
+extern idCVar r_softShadows; //~SS
+/*extern idCVar r_softShadDebug;
 extern idCVar r_softShadMaxSize; */
 
 // duzenko: late 2016-17 additions

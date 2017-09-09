@@ -167,8 +167,8 @@ public:
 						
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
-	void		CopyDepthbuffer( int x, int y, int width, int height, bool useOversizedBuffer );
-
+	void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
+	void		CopyStencilBuffer( int x, int y, int width, int height );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -412,6 +412,7 @@ public:
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
 	idImage *			currentDepthFbo;
 	idImage *			currentStencilFbo;
+	idImage *			stencilCopy;
 	idImage *			bloomCookedMath;
 	idImage *			bloomImage;
 
