@@ -44,7 +44,7 @@
 // TDM uses entity shaderparm 11 to control frob highlight state
 #define FROB_SHADERPARM 11
 
-#define FIRST_FRAME_SOUND_PROP_ALLOWED 60 // grayman #3768 - no sound propagation before this frame
+#define FIRST_FRAME_SOUND_PROP_ALLOWED 120 // grayman #3768 - no sound propagation before this frame, change from 60 to 120 for 2.06
 
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
