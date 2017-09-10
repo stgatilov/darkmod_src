@@ -60,6 +60,9 @@ public:
 	// Called on errors and game exits.
 	virtual void	Stop() = 0;
 
+	virtual void	StartFrontendThread() = 0;
+	virtual void	TerminateFrontendThread() = 0;
+
 	// Redraws the screen, handling games, guis, console, etc
 	// during normal once-a-frame updates, outOfSequence will be false,
 	// but when the screen is updated in a modal manner, as with utility

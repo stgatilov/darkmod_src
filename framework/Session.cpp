@@ -327,14 +327,7 @@ void idSessionLocal::Stop() {
 	SetGUI( NULL, NULL );
 }
 
-/*
-===============
-idSessionLocal::Shutdown
-===============
-*/
-void idSessionLocal::Shutdown() {
-	int i;
-
+void idSessionLocal::TerminateFrontendThread() {
 	if (frontendThread.joinable()) {
 		{  // lock scope
 			std::lock_guard<std::mutex> lock( signalMutex );
@@ -343,6 +336,17 @@ void idSessionLocal::Shutdown() {
 		}
 		frontendThread.join();
 	}
+}
+
+/*
+===============
+idSessionLocal::Shutdown
+===============
+*/
+void idSessionLocal::Shutdown() {
+	int i;
+
+	TerminateFrontendThread();
 
 	if (aviCaptureMode) {
 		EndAVICapture();
@@ -3008,6 +3012,7 @@ void idSessionLocal::FrontendThreadFunction() {
 					logFile->Flush();
 					fileSystem->CloseFile( logFile );
 				}
+				GLimp_DeactivateFrontendContext();
 				return;
 			}
 			frontendReady = false;
@@ -3101,6 +3106,11 @@ void idSessionLocal::WaitForFrontendCompletion() {
 	}
 }
 
+void idSessionLocal::StartFrontendThread() {
+	frontendActive = shutdownFrontend = false;
+	frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
+}
+
 /*
 ===============
 idSessionLocal::Init
@@ -3176,8 +3186,7 @@ void idSessionLocal::Init() {
 	guiActive = NULL;
 	guiHandle = NULL;
 
-	frontendActive = shutdownFrontend = false;
-	frontendThread = std::thread( &idSessionLocal::FrontendThreadFunction, this );
+	StartFrontendThread();
 	
 	common->Printf( "session initialized\n" );
 	common->Printf( "--------------------------------------\n" );

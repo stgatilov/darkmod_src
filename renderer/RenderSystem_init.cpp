@@ -2134,6 +2134,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		Sys_ShutdownInput();
 		globalImages->PurgeAllImages();
 		// free the context and close the window
+		session->TerminateFrontendThread();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
@@ -2147,6 +2148,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 		// regenerate all images
 		globalImages->ReloadAllImages();
+		session->StartFrontendThread();
 	} else {
 		glimpParms_t	parms;
 		R_GetModeInfo(&glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger());

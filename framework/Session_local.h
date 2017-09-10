@@ -84,6 +84,7 @@ public:
 	virtual void		Shutdown();
 
 	virtual void		Stop();
+	virtual void		TerminateFrontendThread();
 
 	virtual void		UpdateScreen( bool outOfSequence = true );
 
@@ -111,7 +112,8 @@ public:
 
 	virtual void		ActivateFrontend();
 	virtual void		WaitForFrontendCompletion();
-	
+	virtual void		StartFrontendThread();
+
 	virtual const char *GetCurrentMapName();
 
 	//=====================================
