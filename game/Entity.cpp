@@ -44,7 +44,7 @@
 // TDM uses entity shaderparm 11 to control frob highlight state
 #define FROB_SHADERPARM 11
 
-#define FIRST_FRAME_SOUND_PROP_ALLOWED 120 // grayman #3768 - no sound propagation before this frame, change from 60 to 120 for 2.06
+#define FIRST_TIME_SOUND_PROP_ALLOWED 2000 // grayman #3768 - no sound propagation before this time
 
 // overridable events
 const idEventDef EV_PostSpawn( "<postspawn>", EventArgs(), EV_RETURNS_VOID, "internal" );
@@ -4676,7 +4676,7 @@ void idEntity::PropSoundS( const char *localName, const char *globalName, float 
 
 	// grayman #3393 - don't propagate sounds in early frames,
 	// because some AI might not yet be set up to hear them
-	if ( gameLocal.framenum < FIRST_FRAME_SOUND_PROP_ALLOWED )
+	if ( gameLocal.time < FIRST_TIME_SOUND_PROP_ALLOWED )
 	{
 		return;
 	}
@@ -4843,7 +4843,7 @@ idEntity::PropSoundDirect
 void idEntity::PropSoundDirect( const char *sndName, bool bForceLocal, bool bAssumeEnv, float VolModIn, int msgTag ) // grayman #3355
 {
 	// grayman #3768 - don't propagate sounds in the early frames
-	if (gameLocal.framenum < FIRST_FRAME_SOUND_PROP_ALLOWED)
+	if (gameLocal.time < FIRST_TIME_SOUND_PROP_ALLOWED)
 	{
 		return;
 	}
