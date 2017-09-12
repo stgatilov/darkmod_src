@@ -200,7 +200,7 @@ private:
 	void						SingleAsyncTic( void );
 	void						LoadGameDLL( void );
 	void						UnloadGameDLL( void );
-	void						PrintLoadingMessage( const char *msg );
+	//void						PrintLoadingMessage( const char *msg );
 
 	// greebo: used to initialise the fs_currentfm/fs_mod parameters
 	void						InitGameArguments();
@@ -2372,7 +2372,7 @@ void idCommonLocal::InitRenderSystem( void ) {
 idCommonLocal::PrintLoadingMessage
 =================
 */
-void idCommonLocal::PrintLoadingMessage( const char *msg ) {
+/*void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	if ( !( msg && *msg ) ) {
 		return;
 	}
@@ -2381,7 +2381,7 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	renderSystem->DrawStretchPic( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f, declManager->FindMaterial( "splashScreen" ) );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );
 	renderSystem->EndFrame( NULL, NULL );
-}
+} duzenko: useless because we have no splash window */
 
 /*
 =================
@@ -2917,7 +2917,7 @@ void idCommonLocal::InitGame( void )
 	// Init the i18n manager
 	i18n->Init();
 
-	PrintLoadingMessage( Translate( "#str_04344" ) );
+	//PrintLoadingMessage( Translate( "#str_04344" ) );
 
 	// load the font, etc
 	console->LoadGraphics();
@@ -2925,7 +2925,7 @@ void idCommonLocal::InitGame( void )
 	// init journalling, etc
 	eventLoop->Init();
 
-	PrintLoadingMessage( Translate( "#str_04345" ) );
+	//PrintLoadingMessage( Translate( "#str_04345" ) );
 
 	// exec the startup scripts
 	cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "exec editor.cfg\n" );
@@ -2956,12 +2956,12 @@ void idCommonLocal::InitGame( void )
 	// init the user command input code
 	usercmdGen->Init();
 
-	PrintLoadingMessage( Translate( "#str_04346" ) );
+	//PrintLoadingMessage( Translate( "#str_04346" ) );
 
 	// start the sound system, but don't do any hardware operations yet
 	soundSystem->Init();
 
-	PrintLoadingMessage( Translate( "#str_04347" ) );
+	//PrintLoadingMessage( Translate( "#str_04347" ) );
 
 #ifdef	ID_DEDICATED
 	// init async network
@@ -2982,7 +2982,7 @@ void idCommonLocal::InitGame( void )
 #endif
 	{
 		// init OpenGL, which will open a window and connect sound and input hardware
-		PrintLoadingMessage( Translate( "#str_04348" ) );
+		//PrintLoadingMessage( Translate( "#str_04348" ) );
 		InitRenderSystem();
 	}
 #endif
