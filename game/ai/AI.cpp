@@ -12510,11 +12510,10 @@ void idAI::UpdateAir()
 	else
 	{
 		// regain breath twice as fast as losing
-		m_AirTics += 2;
-
-		if (m_AirTics > m_AirTicksMax)
-		{
-			m_AirTics = m_AirTicksMax;
+		if ( m_AirTics < m_AirTicksMax ) { // avoid unnecessary memory writes
+			m_AirTics += 2;
+			if ( m_AirTics > m_AirTicksMax )
+				m_AirTics = m_AirTicksMax;
 		}
 	}
 

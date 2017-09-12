@@ -1047,8 +1047,8 @@ private:
 	int						numProjectileHits;		// number of hits on mobs
 
 	bool					airless;
-	int						airTics;				// set to pm_airTics at start, drops in vacuum
-	int						lastAirDamage;
+	int						airTics;				// set to pm_airTics at start, drops in water
+	int						lastAirDamage, lastAirCheck;
 	
 	bool					underWaterEffectsActive; // True, if the under water effects are in charge
 	int						underWaterGUIHandle;	 // The handle of the GUI underwater overlay

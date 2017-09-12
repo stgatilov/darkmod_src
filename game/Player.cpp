@@ -5565,7 +5565,7 @@ idPlayer::UpdateAir
 ===================
 */
 void idPlayer::UpdateAir( void )
-{	
+{
 	if ( health <= 0 )
 	{
 		return;
@@ -5587,8 +5587,7 @@ void idPlayer::UpdateAir( void )
 			{
 				const int	*pvsAreas = GetPVSAreas();
 				areaNum = pvsAreas[0];
-			}
-			else
+			} else
 			{
 				areaNum = gameRenderWorld->PointInArea( this->GetPhysics()->GetOrigin() );
 			}
@@ -5599,8 +5598,8 @@ void idPlayer::UpdateAir( void )
 #ifdef MOD_WATERPHYSICS // check if the player is in water
 
 	idPhysics* phys = GetPhysics();
-	
-	if (phys != NULL && phys->IsType(idPhysics_Actor::Type) && 
+
+	if ( phys != NULL && phys->IsType( idPhysics_Actor::Type ) &&
 		static_cast<idPhysics_Actor*>(phys)->GetWaterLevel() >= WATERLEVEL_HEAD )
 	{
 		newAirless = true;	// MOD_WATERPHYSICS
@@ -5624,24 +5623,7 @@ void idPlayer::UpdateAir( void )
 				hud->HandleNamedEvent( "noAir" );
 			}
 		}
-
-		airTics--;
-
-		if ( airTics < 0 )
-		{
-			airTics = 0;
-			// check for damage
-			const idDict *damageDef = gameLocal.FindEntityDefDict( "damage_noair", false );
-			int dmgTiming = 1000 * (damageDef ? static_cast<int>(damageDef->GetFloat( "delay", "3.0" )) : 3 );
-			if ( gameLocal.time > lastAirDamage + dmgTiming )
-			{
-				Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
-				lastAirDamage = gameLocal.time;
-			}
-		}
-		
-	}
-	else
+	} else
 	{
 		if ( airless )
 		{
@@ -5657,19 +5639,32 @@ void idPlayer::UpdateAir( void )
 				hud->HandleNamedEvent( "Air" );
 			}
 		}
-
-		airTics += 2;	// regain twice as fast as lose
-		if ( airTics > pm_airTics.GetInteger() )
-		{
-			airTics = pm_airTics.GetInteger();
-		}
 	}
 
 	airless = newAirless;
 
 	if ( hud )
-	{
 		hud->SetStateInt( "player_air", 100 * airTics / pm_airTics.GetInteger() );
+
+	if ( gameLocal.time >= lastAirCheck ) {
+		if ( airless ) {
+			airTics--;
+			if ( airTics < 0 ) {
+				airTics = 0;
+				// check for damage
+				const idDict *damageDef = gameLocal.FindEntityDefDict( "damage_noair", false );
+				int dmgTiming = 1000 * (damageDef ? static_cast<int>(damageDef->GetFloat( "delay", "3.0" )) : 3);
+				if ( gameLocal.time > lastAirDamage + dmgTiming ) {
+					Damage( NULL, NULL, vec3_origin, "damage_noair", 1.0f, 0 );
+					lastAirDamage = gameLocal.time;
+				}
+			}
+		} else {
+			airTics += 2;	// regain twice as fast as lose
+			if ( airTics > pm_airTics.GetInteger() )
+				airTics = pm_airTics.GetInteger();
+		}
+		lastAirCheck = gameLocal.time + 17; // mimic the legacy 60 tics per second
 	}
 }
 
