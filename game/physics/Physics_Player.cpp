@@ -2558,16 +2558,9 @@ idPhysics_Player::MovePlayer
 ================
 */
 void idPhysics_Player::MovePlayer( int msec ) {
-	static int moveTimeAcc = 0;
-	msec += moveTimeAcc;
-	if ( msec < USERCMD_MSEC ) {
-		moveTimeAcc = msec;
-		return;
-	}
 	// determine the time
 	framemsec = msec;
 	frametime = framemsec * 0.001f;
-	moveTimeAcc = 0;
 
 	// this counter lets us debug movement problems with a journal
 	// by setting a conditional breakpoint for the previous frame
@@ -3322,7 +3315,12 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	ActivateContactEntities();
 
-	MovePlayer( timeStepMSec );
+	static int moveTimeAccum = 0;
+	moveTimeAccum += timeStepMSec;
+	while ( moveTimeAccum >= USERCMD_MSEC ) {
+		MovePlayer( USERCMD_MSEC );
+		moveTimeAccum -= USERCMD_MSEC;
+	}
 
 	// Apply the push force to all objects encountered during MovePlayer
 	m_PushForce->Evaluate(timeStepMSec);
