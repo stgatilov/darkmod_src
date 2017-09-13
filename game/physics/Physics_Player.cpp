@@ -452,7 +452,6 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 					}
 				}
 
-
 				DM_LOG(LC_MOVEMENT, LT_DEBUG)LOGSTRING ("performing step up, velocity now %.4f %.4f %.4f\r",  current.velocity.x, current.velocity.y, current.velocity.z);
 			}
 		}
@@ -2559,6 +2558,16 @@ idPhysics_Player::MovePlayer
 ================
 */
 void idPhysics_Player::MovePlayer( int msec ) {
+	static int moveTimeAcc = 0;
+	msec += moveTimeAcc;
+	if ( msec < USERCMD_MSEC ) {
+		moveTimeAcc += msec;
+		return;
+	}
+	// determine the time
+	framemsec = msec;
+	frametime = framemsec * 0.001f;
+	moveTimeAcc = 0;
 
 	// this counter lets us debug movement problems with a journal
 	// by setting a conditional breakpoint for the previous frame
@@ -2570,10 +2579,6 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	m_bRopeContact = false;
 	m_bClimbableAhead = false;
 	m_bClimbDetachThisFrame = false;
-
-	// determine the time
-	framemsec = msec;
-	frametime = framemsec * 0.001f;
 
 	// default speed
 	playerSpeed = walkSpeed;
