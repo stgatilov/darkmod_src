@@ -2561,7 +2561,7 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	static int moveTimeAcc = 0;
 	msec += moveTimeAcc;
 	if ( msec < USERCMD_MSEC ) {
-		moveTimeAcc += msec;
+		moveTimeAcc = msec;
 		return;
 	}
 	// determine the time
