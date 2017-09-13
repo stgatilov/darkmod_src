@@ -667,8 +667,6 @@ public:
 	int						previousTime;			// time in msec of last frame
 	int						time;					// in msec
 	int						m_Interleave;			// How often should the lightgem calculation be skipped?
-	static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
-	int						getMsec();
 
 	int						vacuumAreaNum;			// -1 if level doesn't have any outside areas
 
@@ -906,7 +904,9 @@ public:
 	// added the following to assist licensees with merge issues
 	int						GetFrameNum() const { return framenum; };
 	int						GetTime() const { return time; };
-	int						GetMSec() const { return msec; };
+	//int						GetMSec() const { return msec; };
+	//static const int		msec = USERCMD_MSEC;	// time since last update in milliseconds
+	int						getMsec(); 
 
 	int						GetNextClientNum( int current ) const;
 	idPlayer *				GetClientByNum( int current ) const;

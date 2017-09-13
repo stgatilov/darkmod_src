@@ -571,7 +571,6 @@
     <ClInclude Include="game\physics\Push.h" />
     <ClInclude Include="game\PickableLock.h" />
     <ClInclude Include="game\Player.h" />
-    <ClInclude Include="game\PlayerIcon.h" />
     <ClInclude Include="game\PlayerView.h" />
     <ClInclude Include="game\PositionWithinRangeFinder.h" />
     <ClInclude Include="game\precompiled_game.h" />
@@ -1118,7 +1117,6 @@
     <ClCompile Include="game\physics\Push.cpp" />
     <ClCompile Include="game\PickableLock.cpp" />
     <ClCompile Include="game\Player.cpp" />
-    <ClCompile Include="game\PlayerIcon.cpp" />
     <ClCompile Include="game\PlayerView.cpp" />
     <ClCompile Include="game\PositionWithinRangeFinder.cpp" />
     <ClCompile Include="game\precompiled_game.cpp" />

@@ -2423,7 +2423,8 @@ void idCommonLocal::Frame( void ) {
 		if (sessLocal.com_fixedTic.GetBool())
 			com_frameTime += com_frameMsec;
 		else
-			com_frameTime = com_ticNumber * USERCMD_MSEC;
+			//com_frameTime = com_ticNumber * USERCMD_MSEC;
+			com_frameTime += USERCMD_MSEC;
 
 #ifdef MULTIPLAYER
 		idAsyncNetwork::RunFrame();

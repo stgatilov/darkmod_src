@@ -5520,7 +5520,7 @@ void idPhysics_AF::Evolve( float timeStep ) {
 	VerifyContactConstraints();
 
 	// make friction independent of the frametime (i.e. the time between two calls of this function)
-	frictionTickMul = timeStep / MS2SEC(gameLocal.GetMSec());
+	frictionTickMul = timeStep / MS2SEC( USERCMD_MSEC );
 
 	// calculate the position of the bodies for the next physics state
 	for ( i = 0; i < bodies.Num(); i++ ) {

@@ -929,7 +929,7 @@ void CFrobDoor::UpdateHandlePosition()
 	// greebo: Don't issue an handle update position call each frame,
 	// this might cause movers to freeze in place, as the extrapolation class
 	// let's them rest for the first frame
-	if (gameLocal.time <= m_LastHandleUpdateTime + gameLocal.msec) return;
+	if (gameLocal.time <= m_LastHandleUpdateTime + USERCMD_MSEC) return;
 
 	m_LastHandleUpdateTime = gameLocal.time;
 

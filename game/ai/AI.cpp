@@ -3216,7 +3216,7 @@ int idAI::PointReachableAreaNum( const idVec3 &pos, const float boundsScale, con
 
 /*	idBounds temp(bounds);
 	temp.TranslateSelf(newPos);
-	gameRenderWorld->DebugBox(colorGreen, idBox(temp),gameLocal.msec);*/
+	gameRenderWorld->DebugBox(colorGreen, idBox(temp),USERCMD_MSEC);*/
 
 	int areaNum = 0;
 
@@ -3355,7 +3355,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 
 		if ( ai_debugMove.GetBool() )
 		{
-			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -3379,7 +3379,7 @@ float idAI::TravelDistance( const idVec3 &start, const idVec3 &end )
 
 		if ( ai_debugMove.GetBool() )
 		{
-			gameRenderWorld->DebugLine( colorBlue, start, end, gameLocal.msec, false );
+			gameRenderWorld->DebugLine( colorBlue, start, end, USERCMD_MSEC, false );
 			gameRenderWorld->DrawText( va( "%d", ( int )dist ), ( start + end ) * 0.5f, 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3() );
 		}
 
@@ -5047,7 +5047,7 @@ bool idAI::GetMovePos(idVec3 &seekPos)
 		seekPos = org + move.moveDir * 2048.0f;
 
 		if (ai_debugMove.GetBool())	{
-			gameRenderWorld->DebugLine( colorYellow, org, seekPos, gameLocal.msec, true );
+			gameRenderWorld->DebugLine( colorYellow, org, seekPos, USERCMD_MSEC, true );
 		}
 	}
 	else
@@ -5426,7 +5426,7 @@ void idAI::Turn(const idVec3& pivotOffset) {
 		current_yaw = idMath::AngleNormalize180( anim_turn_yaw + rotateAxis[ 0 ].ToYaw() );
 	} else {
 		diff = idMath::AngleNormalize180( ideal_yaw - current_yaw );
-		turnVel += AI_TURN_SCALE * diff * MS2SEC( gameLocal.msec );
+		turnVel += AI_TURN_SCALE * diff * MS2SEC( USERCMD_MSEC );
 		if ( turnVel > turnRate ) {
 			turnVel = turnRate;
 		} else if ( turnVel < -turnRate ) {
@@ -5434,10 +5434,10 @@ void idAI::Turn(const idVec3& pivotOffset) {
 		}
 		turnAmount = turnVel * MS2SEC( gameLocal.time - m_lastThinkTime );
 		if ( ( diff >= 0.0f ) && ( turnAmount >= diff ) ) {
-			turnVel = diff / MS2SEC( gameLocal.msec );
+			turnVel = diff / MS2SEC( USERCMD_MSEC );
 			turnAmount = diff;
 		} else if ( ( diff <= 0.0f ) && ( turnAmount <= diff ) ) {
-			turnVel = diff / MS2SEC( gameLocal.msec );
+			turnVel = diff / MS2SEC( USERCMD_MSEC );
 			turnAmount = diff;
 		}
 		current_yaw += turnAmount;
@@ -5456,9 +5456,9 @@ void idAI::Turn(const idVec3& pivotOffset) {
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorRed, org, org + idAngles( 0, ideal_yaw, 0 ).ToForward() * 64, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorGreen, org, org + idAngles( 0, current_yaw, 0 ).ToForward() * 48, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org, org + idAngles( 0, current_yaw + turnVel, 0 ).ToForward() * 32, USERCMD_MSEC );
 	}
 }
 
@@ -5572,7 +5572,7 @@ idAI::GetMoveDelta
 void idAI::GetMoveDelta( const idMat3 &oldaxis, const idMat3 &axis, idVec3 &delta )
 {
 	// Get the delta from the animation system (for one frame) and transform it
-	// animator.GetDelta( gameLocal.time - gameLocal.msec, gameLocal.time, delta);
+	// animator.GetDelta( gameLocal.time - USERCMD_MSEC, gameLocal.time, delta);
 
 	// angua: distance from last thinking time
 	animator.GetDelta( m_lastThinkTime, gameLocal.time, delta);
@@ -5633,8 +5633,8 @@ void idAI::CheckObstacleAvoidance( const idVec3 &goalPos, idVec3 &newPos )
 
 	if ( ai_showObstacleAvoidance.GetBool())
 	{
-		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), gameLocal.msec );
-		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), gameLocal.msec );
+		gameRenderWorld->DebugLine( colorBlue, goalPos + idVec3( 1.0f, 1.0f, 0.0f ), goalPos + idVec3( 1.0f, 1.0f, 64.0f ), USERCMD_MSEC );
+		gameRenderWorld->DebugLine( foundPath ? colorYellow : colorRed, path.seekPos, path.seekPos + idVec3( 0.0f, 0.0f, 64.0f ), USERCMD_MSEC );
 	}
 
 	if (!foundPath)
@@ -6025,9 +6025,9 @@ void idAI::AnimMove()
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -6067,9 +6067,9 @@ void idAI::SittingMove()
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -6096,9 +6096,9 @@ void idAI::NoTurnMove()
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 
@@ -6134,9 +6134,9 @@ void idAI::SleepingMove()
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -6155,7 +6155,7 @@ idVec3 Seek( idVec3 &vel, const idVec3 &org, const idVec3 &goal, float predictio
 	// predict our position
 	predictedPos = org + vel * prediction;
 	goalDelta = goal - predictedPos;
-	seekVel = goalDelta * MS2SEC( gameLocal.msec );
+	seekVel = goalDelta * MS2SEC( USERCMD_MSEC );
 
 	return seekVel;
 }
@@ -6219,8 +6219,8 @@ void idAI::SlideMove( void ) {
 
 	// seek the goal position
 	goalDelta = goalPos - predictedPos;
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
-	vel += goalDelta * MS2SEC( gameLocal.msec );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
+	vel += goalDelta * MS2SEC( USERCMD_MSEC );
 
 	// cap our speed
 	vel.Truncate( fly_speed );
@@ -6265,9 +6265,9 @@ void idAI::SlideMove( void ) {
 	}
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -6327,7 +6327,7 @@ void idAI::AddFlyBob( idVec3 &vel ) {
 	if ( fly_bob_strength ) {
 		t = MS2SEC( gameLocal.time + entityNumber * 497 );
 		fly_bob_add = ( viewAxis[ 1 ] * idMath::Sin16( t * fly_bob_horz ) + viewAxis[ 2 ] * idMath::Sin16( t * fly_bob_vert ) ) * fly_bob_strength;
-		vel += fly_bob_add * MS2SEC( gameLocal.msec );
+		vel += fly_bob_add * MS2SEC( USERCMD_MSEC );
 		if ( ai_debugMove.GetBool() ) {
 			const idVec3 &origin = physicsObj.GetOrigin();
 			gameRenderWorld->DebugArrow( colorOrange, origin, origin + fly_bob_add, 0 );
@@ -6363,7 +6363,7 @@ void idAI::AdjustFlyHeight( idVec3 &vel, const idVec3 &goalPos ) {
 		}
 
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, gameLocal.msec );
+			gameRenderWorld->DebugBounds( goLower ? colorRed : colorGreen, physicsObj.GetBounds(), path.endPos, USERCMD_MSEC );
 		}
 	}
 
@@ -6408,11 +6408,11 @@ void idAI::AdjustFlySpeed( idVec3 &vel ) {
 	float speed;
 
 	// apply dampening
-	vel -= vel * AI_FLY_DAMPENING * MS2SEC( gameLocal.msec );
+	vel -= vel * AI_FLY_DAMPENING * MS2SEC( USERCMD_MSEC );
 
 	// gradually speed up/slow down to desired speed
 	speed = vel.Normalize();
-	speed += ( move.speed - speed ) * MS2SEC( gameLocal.msec );
+	speed += ( move.speed - speed ) * MS2SEC( USERCMD_MSEC );
 	if ( speed < 0.0f ) {
 		speed = 0.0f;
 	} else if ( move.speed && ( speed > move.speed ) ) {
@@ -6514,11 +6514,11 @@ void idAI::FlyMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		gameRenderWorld->DebugLine( colorCyan, oldorigin, physicsObj.GetOrigin(), 4000 );
-		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorBlue, org, goalPos, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorOrange, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), move.moveDest, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorRed, org, org + physicsObj.GetLinearVelocity(), USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorBlue, org, goalPos, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 		DrawRoute();
 	}
 }
@@ -6555,9 +6555,9 @@ void idAI::StaticMove( void ) {
 
 	if ( ai_debugMove.GetBool() ) {
 		const idVec3 &org = physicsObj.GetOrigin();
-		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, gameLocal.msec );
-		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, gameLocal.msec, true );
-		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, gameLocal.msec, true );
+		gameRenderWorld->DebugBounds( colorMagenta, physicsObj.GetBounds(), org, USERCMD_MSEC );
+		gameRenderWorld->DebugLine( colorBlue, org, move.moveDest, USERCMD_MSEC, true );
+		gameRenderWorld->DebugLine( colorYellow, org + EyeOffset(), org + EyeOffset() + viewAxis[ 0 ] * physicsObj.GetGravityAxis() * 16.0f, USERCMD_MSEC, true );
 	}
 }
 
@@ -8075,8 +8075,8 @@ void idAI::UpdateEnemyPosition()
 
 	if (ai_debugMove.GetBool())
 	{
-		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, gameLocal.msec );
+		gameRenderWorld->DebugBounds( colorLtGrey, enemyEnt->GetPhysics()->GetBounds(), lastReachableEnemyPos, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorWhite, enemyEnt->GetPhysics()->GetBounds(), lastVisibleReachableEnemyPos, USERCMD_MSEC );
 	}
 }
 
@@ -9251,7 +9251,7 @@ bool idAI::UpdateAnimationControllers( void ) {
 		}
 		eyeOffset.z = eyepos.z - physicsObj.GetOrigin().z;
 		if ( ai_debugMove.GetBool() ) {
-			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
+			gameRenderWorld->DebugLine( colorRed, eyepos, eyepos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
 		}
 	} else {
 		eyepos = GetEyePosition();
@@ -9293,9 +9293,9 @@ bool idAI::UpdateAnimationControllers( void ) {
 	newLookAng.pitch = 0.0f;
 
 #if 0
-	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, gameLocal.msec );
-	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, gameLocal.msec );
+	gameRenderWorld->DebugLine( colorRed, orientationJointPos, focusPos, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorYellow, orientationJointPos, orientationJointPos + orientationJointAxis[ 0 ] * 32.0f, USERCMD_MSEC );
+	gameRenderWorld->DebugLine( colorGreen, orientationJointPos, orientationJointPos + newLookAng.ToForward() * 48.0f, USERCMD_MSEC );
 #endif
 
 	// determine pitch from joint position
@@ -9553,12 +9553,12 @@ void idCombatNode::DrawDebugInfo( void ) {
 			idVec3 pos3 = org + rightDir * node->min_dist;
 			idVec3 pos4 = org + rightDir * cone_dist;
 
-			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos1, pos2, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos1, pos3, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos3, pos4, gameLocal.msec );
-			gameRenderWorld->DebugLine( color, pos2, pos4, gameLocal.msec );
-			gameRenderWorld->DebugBounds( color, bounds, org, gameLocal.msec );
+			gameRenderWorld->DebugLine( color, node->GetPhysics()->GetOrigin(), ( pos1 + pos3 ) * 0.5f, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos1, pos2, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos1, pos3, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos3, pos4, USERCMD_MSEC );
+			gameRenderWorld->DebugLine( color, pos2, pos4, USERCMD_MSEC );
+			gameRenderWorld->DebugBounds( color, bounds, org, USERCMD_MSEC );
 		}
 	}
 }
@@ -9869,7 +9869,7 @@ void idAI::HearSound(SSprParms *propParms, float noise, const idVec3& origin)
 		{
 			gameRenderWorld->DrawText( va("Alert: %.2f", psychLoud), 
 				(GetEyePosition() - GetPhysics()->GetGravityNormal() * 55.0f), 0.25f, 
-				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec * 30);
+				colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC * 30);
 		}
 
 		if ( cv_ai_debug.GetBool() )
@@ -10695,8 +10695,8 @@ void idAI::PerformVisualScan(float timecheck)
 
 	if (cv_ai_visdist_show.GetFloat() > 0) 
 	{
-		gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,70), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * gameLocal.msec);
-		gameRenderWorld->DrawText(va("Alert increase: %.2f", incAlert), GetEyePosition() + idVec3(0,0,60), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * gameLocal.msec);
+		gameRenderWorld->DrawText("see you!", GetEyePosition() + idVec3(0,0,70), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * USERCMD_MSEC);
+		gameRenderWorld->DrawText(va("Alert increase: %.2f", incAlert), GetEyePosition() + idVec3(0,0,60), 0.2f, idVec4( 0.5f, 0.00f, 0.00f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 60 * USERCMD_MSEC);
 	}
 
 	float newAlertLevel = AI_AlertLevel + incAlert;
@@ -10778,18 +10778,18 @@ float idAI::GetVisibility( idEntity *ent ) const
 	{
 		idStr alertText(clampVal);
 		alertText = "clampVal: "+ alertText;
-		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		idStr alertText2(clampdist);
 		alertText2 = "clampdist: "+ alertText2;
-		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, USERCMD_MSEC);
 		idStr alertText3(safedist);
 		alertText3 = "safedist: "+ alertText3;
-		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, USERCMD_MSEC);
 		idStr alertText4(dist);
 		alertText4 = "distance: "+ alertText4;
-		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 	}
 
 	return clampVal;
@@ -10847,21 +10847,21 @@ float idAI::GetVisibility( idEntity *ent ) const
 	{
 		idStr alertText(clampVal);
 		alertText = "clampVal: "+ alertText;
-		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText.c_str(), GetEyePosition() + idVec3(0,0,1), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		idStr alertText2(clampdist);
 		alertText2 = "clampdist: "+ alertText2;
-		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText2.c_str(), GetEyePosition() + idVec3(0,0,10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), clampdist / s_DOOM_TO_METERS, 100, USERCMD_MSEC);
 		idStr alertText3(safedist);
 		alertText3 = "savedist: "+ alertText3;
-		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
-		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText3.c_str(), GetEyePosition() + idVec3(0,0,20), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
+		gameRenderWorld->DebugCircle(idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), GetPhysics()->GetOrigin(),idVec3(0,0,1), safedist / s_DOOM_TO_METERS, 100, USERCMD_MSEC);
 		idStr alertText4(returnval);
 		alertText4 = "returnval: "+ alertText4;
-		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText4.c_str(), GetEyePosition() + idVec3(0,0,30), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		idStr alertText5(dist);
 		alertText5 = "distance: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,-10), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 	}
 	
 	return returnval;
@@ -10901,7 +10901,7 @@ float idAI::GetCalibratedLightgemValue() const
 	{
 		idStr alertText5(lgem);
 		alertText5 = "lgem: "+ alertText5;
-		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(alertText5.c_str(), GetEyePosition() + idVec3(0,0,40), 0.2f, idVec4( 0.15f, 0.15f, 0.15f, 1.00f ), gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 	}
 
 	return clampVal;
@@ -11397,7 +11397,7 @@ bool idAI::IsEntityHiddenByDarkness(idEntity* p_entity, const float sightThresho
 		float visFraction = GetCalibratedLightgemValue(); // returns values in [0..1]
 /*
 		// greebo: Debug output, comment me out
-		gameRenderWorld->DrawText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(idStr(visFraction), GetEyePosition() + idVec3(0,0,1), 0.11f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 */
 		// Draw debug graphic
 		/*if (cv_ai_visdist_show.GetFloat() > 1.0)
@@ -11985,10 +11985,10 @@ void idAI::KnockoutDebugDraw( void )
 
 	// vertical angle in green
 	radius = AngVert * 0.5f  * 30.0f;
-	gameRenderWorld->DebugCone( colorGreen, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
+	gameRenderWorld->DebugCone( colorGreen, KOSpot, 30.0f * ConeDir, 0, radius, USERCMD_MSEC );
 	// horizontal angle in red
 	radius = AngHoriz * 0.5f * 30.0f;
-	gameRenderWorld->DebugCone( colorRed, KOSpot, 30.0f * ConeDir, 0, radius, gameLocal.msec );
+	gameRenderWorld->DebugCone( colorRed, KOSpot, 30.0f * ConeDir, 0, radius, USERCMD_MSEC );
 }
 
 /*
@@ -12321,7 +12321,7 @@ void idAI::FOVDebugDraw( void )
 		radius = idMath::Tan(AngVert) * coneLength;
 	}
 
-	gameRenderWorld->DebugCone( colorBlue, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
+	gameRenderWorld->DebugCone( colorBlue, HeadCenter, coneLength * ConeDir, 0, radius, USERCMD_MSEC );
 	
 	// now do the same for horizontal FOV angle, orange cone
 	if (AngHoriz >= (idMath::PI / 4.0f))
@@ -12338,7 +12338,7 @@ void idAI::FOVDebugDraw( void )
 		radius = idMath::Tan(AngHoriz) * coneLength;
 	}
 
-	gameRenderWorld->DebugCone( colorOrange, HeadCenter, coneLength * ConeDir, 0, radius, gameLocal.msec );
+	gameRenderWorld->DebugCone( colorOrange, HeadCenter, coneLength * ConeDir, 0, radius, USERCMD_MSEC );
 }
 
 moveStatus_t idAI::GetMoveStatus() const
@@ -12476,7 +12476,7 @@ bool idAI::MouthIsUnderwater( void )
 	}
 	sprintf( healthLevel, " (%d)", health );
 	gameRenderWorld->DrawText((str + healthLevel).c_str(),(GetEyePosition() - GetPhysics()->GetGravityNormal()*60.0f), 
-		0.25f, color, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 150 * gameLocal.msec);
+		0.25f, color, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 150 * USERCMD_MSEC);
 #endif
 
 	return bReturnVal;
@@ -13089,7 +13089,7 @@ void idAI::ShowDebugInfo()
 	
 	if ( cv_ai_dest_show.GetBool() )
 	{
-		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, gameLocal.msec);
+		gameRenderWorld->DebugArrow(colorYellow, physicsObj.GetOrigin(), move.moveDest, 5, USERCMD_MSEC);
 	}
 
 	if (cv_ai_task_show.GetBool())
@@ -13103,12 +13103,12 @@ void idAI::ShowDebugInfo()
 		if (GetSubsystem(ai::SubsysAction)->IsEnabled()) str += "Action: " + GetSubsystem(ai::SubsysAction)->GetDebugInfo() + "\n";
 		if (GetSubsystem(ai::SubsysSearch)->IsEnabled()) str += "Search: " + GetSubsystem(ai::SubsysSearch)->GetDebugInfo() + "\n"; // grayman #3857
 
-		gameRenderWorld->DrawText(str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(str, (GetEyePosition() - physicsObj.GetGravityNormal()*-25.0f), 0.25f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 	}
 
 	if (cv_ai_alertlevel_show.GetBool() && (health > 0) && !IsKnockedOut())
 	{
-		gameRenderWorld->DrawText(va("Alert: %f; Index: %d", (float)AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(va("Alert: %f; Index: %d", (float)AI_AlertLevel, (int)AI_AlertIndex), (GetEyePosition() - physicsObj.GetGravityNormal()*45.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		// grayman #3857 - add debugging info for coordinated searches
 		if ((m_searchID > 0) && ((AI_AlertIndex == ai::ESearching) || (AI_AlertIndex == ai::EAgitatedSearching)))
 		{
@@ -13132,7 +13132,7 @@ void idAI::ShowDebugInfo()
 					role = "observer";
 				}
 			}
-			gameRenderWorld->DrawText(va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+			gameRenderWorld->DrawText(va("Event: %d; Search: %d; Role: %s", search->_eventID, search->_searchID, role.c_str()), (GetEyePosition() - physicsObj.GetGravityNormal()*20.0f), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		}
 
 		if (m_AlertGraceStart + m_AlertGraceTime - gameLocal.time > 0)
@@ -13140,7 +13140,7 @@ void idAI::ShowDebugInfo()
 			gameRenderWorld->DrawText(va("Grace time: %d; Alert count: %d / %d",
 				m_AlertGraceStart + m_AlertGraceTime - gameLocal.time,
 				m_AlertGraceCount, m_AlertGraceCountLimit),
-				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+				GetEyePosition(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 		}
 	}
 
@@ -13164,7 +13164,7 @@ void idAI::ShowDebugInfo()
 		{
 			debugText += idStr("Waitstate: ") + WaitState();
 		}
-		gameRenderWorld->DrawText(debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec);
+		gameRenderWorld->DrawText(debugText, (GetEyePosition() - physicsObj.GetGravityNormal()*-25), 0.20f, colorMagenta, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC);
 	}
 
 	if (cv_ai_aasarea_show.GetBool() && aas != NULL)
@@ -13177,15 +13177,15 @@ void idAI::ShowDebugInfo()
 
 		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
 
-		gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorGreen, playerViewMatrix, 1, gameLocal.msec);
-		gameRenderWorld->DebugBox(colorGreen, idBox(areaBounds), gameLocal.msec);
+		gameRenderWorld->DrawText(va("%d", areaNum), areaCenter, 0.2f, colorGreen, playerViewMatrix, 1, USERCMD_MSEC);
+		gameRenderWorld->DebugBox(colorGreen, idBox(areaBounds), USERCMD_MSEC);
 	}
 
 	if (cv_ai_elevator_show.GetBool())
 	{
 		idMat3 playerViewMatrix(gameLocal.GetLocalPlayer()->viewAngles.ToMat3());
 
-		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, gameLocal.msec);
+		gameRenderWorld->DrawText(m_HandlingElevator ? "Elevator" : "---", physicsObj.GetOrigin(), 0.2f, m_HandlingElevator ? colorRed : colorGreen, playerViewMatrix, 1, USERCMD_MSEC);
 	}
 
 	// grayman #3857 - show barking info

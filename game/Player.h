@@ -791,10 +791,13 @@ public:
 	// Virtal override of idActor::OnElevator()
 	virtual CMultiStateMover* OnElevator(bool mustBeMoving) const;
 
+#ifdef MULTIPLAYER
+	idPlayerIcon			playerIcon;
 	virtual	void			UpdatePlayerIcons( void );
 	virtual	void			DrawPlayerIcons( void );
 	virtual	void			HidePlayerIcons( void );
 	bool					NeedsIcon( void );
+#endif
 
 	bool					SelfSmooth( void );
 
@@ -1205,8 +1208,6 @@ private:
 	int						MPAimFadeTime;			// for GUI fade
 	bool					MPAimHighlight;
 	bool					isTelefragged;			// proper obituaries
-
-	idPlayerIcon			playerIcon;
 
 	bool					selfSmooth;
 

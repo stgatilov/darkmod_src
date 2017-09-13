@@ -468,7 +468,7 @@ void CsndProp::Propagate
 
 	if ( cv_moveable_collision.GetBool() && maker->IsType(idMoveable::Type) )
 	{
-		gameRenderWorld->DrawText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+		gameRenderWorld->DrawText( va("PropVol: %f", vol0), maker->GetPhysics()->GetOrigin(), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
 	}
 
 	SSprParms propParms;

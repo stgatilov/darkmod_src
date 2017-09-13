@@ -1134,7 +1134,7 @@ void idAI::Event_MeleeAttackToJoint( const char *jointname, const char *meleeDef
 	start = GetEyePosition();
 	
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorYellow, start, end, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorYellow, start, end, USERCMD_MSEC );
 	}
 
 	gameLocal.clip.TranslationEntities( trace, start, end, NULL, mat3_identity, MASK_SHOT_BOUNDINGBOX, this );
@@ -2112,8 +2112,8 @@ void idAI::Event_TestChargeAttack( void ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), end - physicsObj.GetOrigin(), 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), end, gameLocal.msec );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), end, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), end, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), end, USERCMD_MSEC );
 	}
 
 	if ( ( path.endEvent == 0 ) || ( path.blockingEntity == enemyEnt ) ) {
@@ -2162,8 +2162,8 @@ void idAI::Event_TestAnimMoveTowardEnemy( const char *animname ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), moveVec, 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
 	}
 
 	idThread::ReturnInt( path.endEvent == 0 );
@@ -2194,8 +2194,8 @@ void idAI::Event_TestAnimMove( const char *animname ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), moveVec, 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
-		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( path.endEvent == 0 ? colorYellow : colorRed, physicsObj.GetBounds(), physicsObj.GetOrigin() + moveVec, USERCMD_MSEC );
 	}
 
 	idThread::ReturnInt( path.endEvent == 0 );
@@ -2212,10 +2212,10 @@ void idAI::Event_TestMoveToPosition( const idVec3 &position ) {
 	idAI::PredictPath( this, aas, physicsObj.GetOrigin(), position - physicsObj.GetOrigin(), 1000, 1000, ( move.moveType == MOVETYPE_FLY ) ? SE_BLOCKED : ( SE_ENTER_OBSTACLE | SE_BLOCKED | SE_ENTER_LEDGE_AREA ), path );
 
 	if ( ai_debugMove.GetBool() ) {
-		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), position, gameLocal.msec );
-		gameRenderWorld->DebugBounds( colorYellow, physicsObj.GetBounds(), position, gameLocal.msec );
+		gameRenderWorld->DebugLine( colorGreen, physicsObj.GetOrigin(), position, USERCMD_MSEC );
+		gameRenderWorld->DebugBounds( colorYellow, physicsObj.GetBounds(), position, USERCMD_MSEC );
 		if ( path.endEvent ) {
-			gameRenderWorld->DebugBounds( colorRed, physicsObj.GetBounds(), path.endPos, gameLocal.msec );
+			gameRenderWorld->DebugBounds( colorRed, physicsObj.GetBounds(), path.endPos, USERCMD_MSEC );
 		}
 	}
 

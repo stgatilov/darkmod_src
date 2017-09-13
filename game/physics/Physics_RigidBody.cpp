@@ -1905,7 +1905,7 @@ bool idPhysics_RigidBody::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	if (cv_phys_show_momentum.GetBool()) 
 	{
-		gameRenderWorld->DrawText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+		gameRenderWorld->DrawText( idStr(current.i.linearMomentum.LengthFast()), GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 	}
 
 	return true; // grayman #2478

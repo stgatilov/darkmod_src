@@ -118,7 +118,7 @@ bool FleeTask::Perform(Subsystem& subsystem)
 	}
 
 	//gameRenderWorld->DrawText( va("%d  %d",_escapeSearchLevel, _distOpt), owner->GetPhysics()->GetAbsBounds().GetCenter(), 
-	// 	1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
+	// 	1.0f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
 
 	// angua: in any case stop fleeing after max time (1 min).
 	// Might stay in flee task forever if pathing to destination not possible otherwise

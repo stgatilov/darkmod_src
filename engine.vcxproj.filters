@@ -1134,9 +1134,6 @@
     <ClInclude Include="game\Player.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="game\PlayerIcon.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="game\PlayerView.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -2794,9 +2791,6 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\Player.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\PlayerIcon.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="game\PlayerView.cpp">

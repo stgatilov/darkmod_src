@@ -432,8 +432,8 @@ bool idMoveable::Collide( const trace_t &collision, const idVec3 &velocity )
 
 				if (cv_moveable_collision.GetBool())
 				{
-					gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
-					gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * gameLocal.msec );
+					gameRenderWorld->DrawText( va("Velocity: %f", v), (physicsObj.GetOrigin() + idVec3(0, 0, 20)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
+					gameRenderWorld->DrawText( va("Volume: %f", volume), (physicsObj.GetOrigin() + idVec3(0, 0, 10)), 0.25f, colorGreen, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 100 * USERCMD_MSEC );
 					gameRenderWorld->DebugArrow( colorMagenta, collision.c.point, (collision.c.point + 30 * collision.c.normal), 4.0f, 1);
 				}
 
@@ -840,8 +840,8 @@ void idMoveable::UpdateSlidingSounds()
 		// Only consider the xyspeed if the velocity is in pointing in the same direction as we're being pushed
 		float xySpeed = (idMath::Fabs(xyVelocity * pushDirection) > 0.2f) ? xyVelocity.NormalizeFast() : 0;
 
-		//gameRenderWorld->DrawText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, gameLocal.msec );
-		//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetAbsBounds().GetCenter(), GetPhysics()->GetAbsBounds().GetCenter() + xyVelocity, 1, gameLocal.msec );
+		//gameRenderWorld->DrawText( idStr(xySpeed), GetPhysics()->GetAbsBounds().GetCenter(), 0.1f, colorWhite, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, USERCMD_MSEC );
+		//gameRenderWorld->DebugArrow(colorWhite, GetPhysics()->GetAbsBounds().GetCenter(), GetPhysics()->GetAbsBounds().GetCenter() + xyVelocity, 1, USERCMD_MSEC );
 
 		if (wasPushedLastFrame && xySpeed <= SLIDING_VELOCITY_THRESHOLD)
 		{

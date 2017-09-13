@@ -683,7 +683,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 				// just have been starting to move
 				_state = EPossiblyBlocked;
 				// Changed state to possibly blocked, record time
-				_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+				_lastTimeNotBlocked =  gameLocal.time - USERCMD_MSEC;
 			}
 			break;
 		case EPossiblyBlocked:
@@ -696,7 +696,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 
 					// Send a signal to the current State
 					owner->GetMind()->GetState()->OnMovementBlocked(owner);
-					_timeBlockStarted =  gameLocal.time - gameLocal.msec;
+					_timeBlockStarted =  gameLocal.time - USERCMD_MSEC;
 				}
 			}
 			else if (!torsoCustomIdleAnim && !legsCustomIdleAnim) // Bounds might not be safe yet if you're doing an idle animation
@@ -724,7 +724,7 @@ void MovementSubsystem::CheckBlocked(idAI* owner)
 				if (gameLocal.time >= _timeBlockStarted + _blockTimeShouldEnd*2)
 				{
 					_state = EPossiblyBlocked;
-					_lastTimeNotBlocked =  gameLocal.time - gameLocal.msec;
+					_lastTimeNotBlocked =  gameLocal.time - USERCMD_MSEC;
 				}
 			}
 			break;
@@ -977,7 +977,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 
 	if (!_historyBounds.IsCleared())
 	{
-		gameRenderWorld->DebugBox(colorWhite, idBox(_historyBounds), 3* gameLocal.msec);
+		gameRenderWorld->DebugBox(colorWhite, idBox(_historyBounds), 3* USERCMD_MSEC);
 	}
 
 	idStr str;
@@ -1012,7 +1012,7 @@ void MovementSubsystem::DebugDraw(idAI* owner)
 
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
-		0.25f, colour, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3 * gameLocal.msec);
+		0.25f, colour, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 3 * USERCMD_MSEC);
 	}
 
 } // namespace ai

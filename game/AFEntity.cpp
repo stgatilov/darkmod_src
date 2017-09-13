@@ -2803,7 +2803,7 @@ void idAFEntity_VehicleSimple::Think( void ) {
 
 			origin = suspension[i]->GetWheelOrigin();
 			velocity = body->GetPointVelocity( origin ) * body->GetWorldAxis()[0];
-			wheelAngles[i] += velocity * MS2SEC( gameLocal.msec ) / wheelRadius;
+			wheelAngles[i] += velocity * MS2SEC( USERCMD_MSEC ) / wheelRadius;
 
 			// additional rotation about the wheel axis
 			wheelRotation.SetAngle( RAD2DEG( wheelAngles[i] ) );
@@ -2995,7 +2995,7 @@ void idAFEntity_VehicleFourWheels::Think( void ) {
 			if ( force == 0.0f ) {
 				velocity = wheels[i]->GetLinearVelocity() * wheels[i]->GetWorldAxis()[0];
 			}
-			wheelAngles[i] += velocity * MS2SEC( gameLocal.msec ) / wheelRadius;
+			wheelAngles[i] += velocity * MS2SEC( USERCMD_MSEC ) / wheelRadius;
 			// give the wheel joint an additional rotation about the wheel axis
 			rotation.SetAngle( RAD2DEG( wheelAngles[i] ) );
 			axis = af.GetPhysics()->GetAxis( 0 );
@@ -3185,7 +3185,7 @@ void idAFEntity_VehicleSixWheels::Think( void ) {
 			if ( force == 0.0f ) {
 				velocity = wheels[i]->GetLinearVelocity() * wheels[i]->GetWorldAxis()[0];
 			}
-			wheelAngles[i] += velocity * MS2SEC( gameLocal.msec ) / wheelRadius;
+			wheelAngles[i] += velocity * MS2SEC( USERCMD_MSEC ) / wheelRadius;
 			// give the wheel joint an additional rotation about the wheel axis
 			rotation.SetAngle( RAD2DEG( wheelAngles[i] ) );
 			axis = af.GetPhysics()->GetAxis( 0 );

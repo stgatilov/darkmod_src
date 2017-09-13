@@ -211,9 +211,9 @@ void CForce_Grab::Evaluate( int time )
 
 	dir1 = m_dragPosition - dragOrigin;
 	l1 = dir1.Normalize();
-	dT = MS2SEC(gameLocal.getMsec()); // duzenko 4409: fixed tick + USERCMD_MSEC -> flickering
+	dT = MS2SEC(gameLocal.getMsec()); // duzenko 4409: fixed tic + USERCMD_MSEC -> flickering
 	if (dT < MS2SEC( USERCMD_MSEC )) // BluePill : Fix grab speed for higher framerates
-		dT =  MS2SEC( USERCMD_MSEC ); // time elapsed is time between user mouse commands
+		dT = MS2SEC( USERCMD_MSEC ); // time elapsed is time between user mouse commands
 
 	if( !m_bApplyDamping )
 		m_damping = 0.0f;

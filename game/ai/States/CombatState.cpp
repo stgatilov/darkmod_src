@@ -574,7 +574,7 @@ void CombatState::Think(idAI* owner)
 	}
 
 	// angua: look at enemy
-	owner->Event_LookAtPosition(enemy->GetEyePosition(), gameLocal.msec);
+	owner->Event_LookAtPosition( enemy->GetEyePosition(), USERCMD_MSEC );
 
 	Memory& memory = owner->GetMemory();
 

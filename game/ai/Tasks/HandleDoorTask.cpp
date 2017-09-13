@@ -2754,17 +2754,17 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 	gameRenderWorld->DebugArrow(colorCyan, _frontPos, _frontPos + idVec3(0, 0, 20), 2, 1000);
 	gameRenderWorld->DrawText("front", 
 		(_frontPos + idVec3(0, 0, 30)), 
-		0.2f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		0.2f, colorCyan, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	gameRenderWorld->DebugArrow(colorYellow, _backPos, _backPos + idVec3(0, 0, 20), 2, 1000);
 	gameRenderWorld->DrawText("back", 
 		(_backPos + idVec3(0, 0, 30)), 
-		0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		0.2f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	gameRenderWorld->DebugArrow(colorPink, _midPos, _midPos + idVec3(0, 0, 20), 2, 1000);
 	gameRenderWorld->DrawText("mid", 
 		(_midPos + idVec3(0, 0, 30)), 
-		0.2f, colorPink, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		0.2f, colorPink, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	/*	grayman #2345/#2706
 
@@ -2878,7 +2878,7 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 
 	gameRenderWorld->DrawText(str.c_str(), 
 		(owner->GetEyePosition() - owner->GetPhysics()->GetGravityNormal()*60.0f), 
-		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+		0.25f, colorYellow, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 	//Memory& memory = owner->GetMemory();
 	//CFrobDoor* frobDoor = memory.doorRelated.currentDoor.GetEntity();
@@ -2890,13 +2890,13 @@ void HandleDoorTask::DrawDebugOutput(idAI* owner)
 		{
 			gameRenderWorld->DrawText("Master", 
 				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
-				0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+				0.25f, colorOrange, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 		}
 		else
 		{
 			gameRenderWorld->DrawText("Slave", 
 				(owner->GetPhysics()->GetOrigin() + idVec3(0, 0, 20)), 
-				0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * gameLocal.msec);
+				0.25f, colorMdGrey, gameLocal.GetLocalPlayer()->viewAngles.ToMat3(), 1, 4 * USERCMD_MSEC);
 
 		}
 	}

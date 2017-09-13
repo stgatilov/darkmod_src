@@ -1375,7 +1375,8 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			internalFormat = GL_COMPRESSED_LUMINANCE_LATC1_EXT;
 			break;
 		case DDS_MAKEFOURCC( 'A', 'T', 'I', '2' ):
-			internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
+			//internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
+			internalFormat = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
 			break;
         default:
             common->Warning( "Invalid compressed internal format: %s", imgName.c_str() );

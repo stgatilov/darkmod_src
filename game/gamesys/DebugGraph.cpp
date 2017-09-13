@@ -78,7 +78,7 @@ void idDebugGraph::Draw( const idVec4 &color, float scale ) const {
 		vec1 = pos + axis[ 2 ] * value1 - axis[ 1 ] * ( i - 1 ) + axis[ 0 ] * samples.Num();
 		vec2 = pos + axis[ 2 ] * value2 - axis[ 1 ] * i + axis[ 0 ] * samples.Num();
 
-		gameRenderWorld->DebugLine( color, vec1, vec2, gameLocal.msec, false );
+		gameRenderWorld->DebugLine( color, vec1, vec2, USERCMD_MSEC, false );
 		value1 = value2;
 	}
 }

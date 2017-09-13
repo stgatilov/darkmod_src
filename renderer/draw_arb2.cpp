@@ -707,7 +707,8 @@ Important: fprog needs to go straight after vprog in program_t
 ==================
 */
 void R_UseProgramARB( int vProg ) {
-	if (vProg == PROG_INVALID) {
+	GL_CheckErrors();
+	if ( vProg == PROG_INVALID ) {
 		qglDisable( GL_VERTEX_PROGRAM_ARB );
 		qglDisable( GL_FRAGMENT_PROGRAM_ARB );
 	} else {

@@ -669,7 +669,7 @@ void idProjectile::Think( void ) {
 		renderLight.origin = GetPhysics()->GetOrigin() + GetPhysics()->GetAxis() * lightOffset;
 		renderLight.axis = GetPhysics()->GetAxis();
 		if ( ( lightDefHandle != -1 ) ) {
-			if ( lightEndTime > 0 && gameLocal.time <= lightEndTime + gameLocal.GetMSec() ) {
+			if ( lightEndTime > 0 && gameLocal.time <= lightEndTime + USERCMD_MSEC ) {
 				idVec3 color( 0, 0, 0 );
 				if ( gameLocal.time < lightEndTime ) {
 					float frac = ( float )( gameLocal.time - lightStartTime ) / ( float )( lightEndTime - lightStartTime );

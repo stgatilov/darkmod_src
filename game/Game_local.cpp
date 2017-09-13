@@ -47,6 +47,7 @@
 #include "Http/HttpRequest.h"
 #include "StimResponse/StimType.h" // grayman #2721
 #include "StdString.h"
+#include "Session_local.h"
 
 #include <chrono>
 #include <iostream>
@@ -99,7 +100,6 @@ const char *idGameLocal::surfaceTypeNames[ MAX_SURFACE_TYPES ] = {
 	"none",	"metal", "stone", "flesh", "wood", "cardboard", "liquid", "glass", "plastic",
 	"ricochet", "surftype10", "surftype11", "surftype12", "surftype13", "surftype14", "surftype15"
 };
-bool com_fixedTic;
 
 /* This list isn't actually used by the code, it's here just for reference. The code
    accepts any first word in the description as the surface type name: */
@@ -3294,14 +3294,10 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 			framenum++;
 			// duzenko #4409 - game time modified using game timer
 			previousTime = time;
-			com_fixedTic = cvarSystem->GetCVarBool("com_fixedTic"); // cache for getMsec()
-			if (!com_fixedTic) 
-				time += (int)(msec * g_timeModifier.GetFloat());
-			else {
-				//if (framenum < 20)
-					//common->Printf("%d + %d msec\n", time, m_GamePlayTimer.LastTickCapped());
+			if ( idSessionLocal::com_fixedTic.GetBool() )
 				time += m_GamePlayTimer.LastTickCapped();
-			}
+			else 
+				time += (int)(USERCMD_MSEC * g_timeModifier.GetFloat());
 			realClientTime = time;
 
 #ifdef GAME_DLL
@@ -6523,7 +6519,7 @@ void idGameLocal::SetCamera( idCamera *cam ) {
 
 	} else {
 		inCinematic = false;
-		cinematicStopTime = time + msec;
+		cinematicStopTime = time + USERCMD_MSEC;
 
 		// restore r_znear
 		cvarSystem->SetCVarFloat( "r_znear", 3.0f );
@@ -7650,7 +7646,7 @@ int idGameLocal::DoResponseAction(const CStimPtr& stim, int numEntities, idEntit
 				if (cv_sr_show.GetInteger() > 0)
 				{
 					// Show successful S/R
-					gameRenderWorld->DebugArrow(colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
+					gameRenderWorld->DebugArrow( colorGreen, stimOrigin, srEntities[i]->GetPhysics()->GetOrigin(), 1, 4 * USERCMD_MSEC );
 				}
 
 				// Fire the response and pass the originating entity plus the stim object itself
@@ -7884,7 +7880,7 @@ void idGameLocal::ProcessStimResponse(unsigned int ticks)
 						for (int n2 = 0; n2 < n; ++n2)
 						{
 							// Show failed S/R
-							gameRenderWorld->DebugArrow(colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, 4 * gameLocal.msec);
+							gameRenderWorld->DebugArrow( colorRed, bounds.GetCenter(), srEntities[n2]->GetPhysics()->GetOrigin(), 1, 4 * USERCMD_MSEC );
 						}
 					}
 
@@ -8270,13 +8266,13 @@ int idGameLocal::FindSuspiciousEvent( EventType type, idVec3 location, idEntity*
 	return -1;
 }
 
-// duzenko #4409 - getMsec() used for head bob cycling
+// duzenko #4409 - last frame time in msec, used for head bob cycling, physics
 
 int idGameLocal::getMsec() {
-	if (com_fixedTic)
+	if ( idSessionLocal::com_fixedTic.GetBool() )
 		return time - previousTime;
 	else
-		return msec;
+		return USERCMD_MSEC;
 }
 
 int idGameLocal::LogSuspiciousEvent( SuspiciousEvent se, bool forceLog ) // grayman #3857   
