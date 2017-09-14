@@ -17,7 +17,7 @@
 #pragma hdrstop
 
 
-
+#include <thread>
 #include "tr_local.h"
 
 /*
@@ -1202,67 +1202,83 @@ R_MakeIrradiance
 
 =======================
 */
-void R_MakeAmbientMap( byte *buffers[6], byte *outBuffer, int outSize, int samples, int size, int crutchUp, bool specular, int side ) {
+void R_MakeAmbientMap( MakeAmbientMapParam& param ) {
 	InitCubeAxis();
 
-		for ( int x = 0; x < outSize; x++ ) {
-			for ( int y = 0; y < outSize; y++ ) {
-				idVec3	dir, test;
+	for ( int y = 0; y < param.outSize; y++ ) {
+		for ( int x = 0; x < param.outSize; x++ ) {
+			idVec3	dir, test;
 
-				dir = cubeAxis[side][0] + -(-1 + 2.0*x / (outSize - 1)) * cubeAxis[side][1] + -(-1 + 2.0*y / (outSize - 1)) * cubeAxis[side][2];
-				dir.Normalize();
-				test = dir;
-				float total[3] = { 0, 0, 0 }, totDot = 0;
-				float dot = 1;
+			dir = cubeAxis[param.side][0] + -(-1 + 2.0*x / (param.outSize - 1)) * cubeAxis[param.side][1] + -(-1 + 2.0*y / (param.outSize - 1)) * cubeAxis[param.side][2];
+			dir.Normalize();
+			test = dir;
+			float total[3] = { 0, 0, 0 }, totDot = 0;
+			float dot = 1;
 
-				//float	limit = specular ? 0.95 : 0.25;		// small for specular, almost hemisphere for ambient
-				float	specularLimit = 0.95f;		
+			//float	limit = specular ? 0.95 : 0.25;		// small for specular, almost hemisphere for ambient
+			float	specularLimit = 0.95f;
 
-				for ( int s = 0; s < samples; s++ ) {
-					byte	result[4];
-					R_SampleCubeMap( test, size, buffers, result );
-					total[0] += result[0];
-					total[1] += result[1];
-					total[2] += result[2];
-					totDot += dot;
-					// pick a random direction vector that is inside the unit sphere but not behind dir,
-					// which is a robust way to evenly sample a hemisphere
-					while ( 1 ) {
-						for ( int j = 0; j < 3; j++ ) {
-							test[j] = -1 + 2 * (rand() & 0x7fff) / (float)0x7fff;
+			for ( int s = 0; s < param.samples; s++ ) {
+				byte	result[4];
+				R_SampleCubeMap( test, param.size, param.buffers, result );
+				total[0] += result[0];
+				total[1] += result[1];
+				total[2] += result[2];
+				totDot += dot;
+				// pick a random direction vector that is inside the unit sphere but not behind dir,
+				// which is a robust way to evenly sample a hemisphere
+				while ( 1 ) {
+					for ( int j = 0; j < 3; j++ ) {
+						test[j] = -1 + 2 * (rand() & 0x7fff) / (float)0x7fff;
+					}
+					//if ( test.Length() > 1.0 ) why do a sqrt?
+					//if ( test.LengthSqr() > 1.0 ) why this at all?
+					if ( test.LengthSqr() == 0.0 )
+						continue;
+					test.Normalize();
+					dot = test * dir;
+					if ( param.specular )
+						if ( dot > specularLimit )
+							break;
+						else
+							; // out of the specular spot
+					else {
+						if ( dot < 0 ) {
+							test = -test;
+							dot = -dot;
 						}
-						//if ( test.Length() > 1.0 ) why do a sqrt?
-						//if ( test.LengthSqr() > 1.0 ) why this at all?
-						if ( test.LengthSqr() == 0.0 )
-							continue;
-						test.Normalize();
-						dot = test * dir;
-						if ( specular )
-							if ( dot > specularLimit ) 	// don't do a complete hemisphere
-								break;
-							else
-								; // out of the specular spot
-						else {
-							if ( dot < 0 ) {
-								test = -test;
-								dot = -dot;
-							}
-							if ( dot > 1e-3 )
-								break;
-						}
+						if ( dot > 1e-3 )
+							break;
 					}
 				}
-				outBuffer[(y*outSize + x) * 4 + 0] = crutchUp * total[0]  / totDot;
-				outBuffer[(y*outSize + x) * 4 + 1] = crutchUp * total[1]  / totDot;
-				outBuffer[(y*outSize + x) * 4 + 2] = crutchUp * total[2]  / totDot;
-				outBuffer[(y*outSize + x) * 4 + 3] = 255;
 			}
+			byte *pixel = param.outBuffer + (y*param.outSize + x) * 4;
+			pixel[0] = param.crutchUp * total[0] / totDot;
+			pixel[1] = param.crutchUp * total[1] / totDot;
+			pixel[2] = param.crutchUp * total[2] / totDot;
+			pixel[3] = 255;
 		}
+	}
 }
 
-void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
-	for ( int i = 0; i < 6; i++ )
-		R_MakeAmbientMap( buffers, outBuffers[i], outSize, samples, size, crutchUp, false, i );
+DECLSPEC_NOINLINE void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
+	std::thread threads[6];
+	MakeAmbientMapParam tParams[6];
+	for( int i = 0; i < 6; i++ ) {
+		//R_MakeAmbientMap( buffers, outBuffers[i], outSize, samples, size, crutchUp, false, i );
+		MakeAmbientMapParam &p = tParams[i];
+		p.buffers = buffers;
+		p.outBuffer = outBuffers[i];
+		p.outSize = outSize;
+		p.samples = samples;
+		p.size = size;
+		p.crutchUp = crutchUp;
+		p.specular = specular;
+		p.side = i;
+		threads[i] = std::thread( R_MakeAmbientMap, p );
+	}
+	for ( auto& th : threads )
+		th.join();
 }
 
 /*
@@ -1274,14 +1290,14 @@ R_MakeIrradiance
 void R_MakeIrradiance( byte *pics[6], int *size ) {
 	if ( *size == 0 )
 		return;
-	idRandom2 rand;
+	int time = Sys_Milliseconds();
 	int outSize = 32;
 	byte* outPics[6];
-	int startTime = Sys_Milliseconds();
 	for ( int side = 0; side < 6; side++ ) // assume cubemaps are RGBA
 		outPics[side] = (byte*)R_StaticAlloc( 4 * outSize*outSize );
-	R_MakeAmbientMaps( pics, outPics, outSize, 99, *size, 1, false );
-/*	for ( int side = 0; side < 6; side++ )
+	R_MakeAmbientMaps( pics, outPics, outSize, 333, *size, 1, false );
+	/*idRandom2 rand;
+	for ( int side = 0; side < 6; side++ )
 		for ( int outY = 0; outY < outSize; outY++ ) {
 			int inY = outY * *size / outSize;
 			byte* pOutPixel = outPics[side] + 4 * outY * outSize;
@@ -1314,7 +1330,8 @@ void R_MakeIrradiance( byte *pics[6], int *size ) {
 		R_StaticFree( pics[side] );
 		pics[side] = outPics[side];
 	}
-	common->Printf( "R_MakeIrradiance completed in %d ms.\n", Sys_Milliseconds() - startTime );
+	time = Sys_Milliseconds() - time;
+	common->Printf( "R_MakeIrradiance completed in %d ms.\n", time );
 	*size = outSize;
 }
 

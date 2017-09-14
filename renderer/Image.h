@@ -105,6 +105,16 @@ typedef struct
 	unsigned int dwReserved2[3];
 } ddsFileHeader_t;
 
+struct MakeAmbientMapParam {
+	byte **buffers;
+	byte *outBuffer;
+	int outSize;
+	int samples;
+	int size;
+	int crutchUp;
+	bool specular;
+	int side;
+};
 
 // increasing numeric values imply more information is stored
 typedef enum {

@@ -1767,6 +1767,7 @@ Saves out env/<basename>_amb_ft.tga, etc
 ================== 
 */  
 void R_MakeAmbientMap_f( const idCmdArgs &args ) {
+	MakeAmbientMapParam param;
 	idStr		fullname;
 	const char	*baseName;
 	byte		*buffers[6];
@@ -1778,19 +1779,18 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	}
 	baseName = args.Argv( 1 );
 
-	int outSize = 32;
+	param.outSize = 32;
 	if ( args.Argc() > 2 ) 
-		outSize = atoi( args.Argv( 2 ) );
-	int	samples = 1000;
+		param.outSize = atoi( args.Argv( 2 ) );
+	param.samples = 1000;
 	if ( args.Argc() > 3 )
-		samples = atoi( args.Argv( 3 ) );
-	int	crutchUp = 1;
+		param.samples = atoi( args.Argv( 3 ) );
+	param.crutchUp = 1;
 	if ( args.Argc() > 4 )
-		crutchUp = atoi( args.Argv( 4 ) );
+		param.crutchUp = atoi( args.Argv( 4 ) );
 	int	specular = 1;
 	if ( args.Argc() > 5 )
 		specular = atoi( args.Argv( 5 ) );
-
 
 	// read all of the images
 	for ( int i = 0 ; i < 6 ; i++ ) {
@@ -1807,39 +1807,35 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		}
 	}
 
-	extern void R_MakeAmbientMap( byte *buffers[6], byte *outBuffers, int outSize, int samples, int size, int crutchUp, bool specular, int side );
-	extern void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular );
+	extern void R_MakeAmbientMap( MakeAmbientMapParam& param );
+	//extern void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular );
 
 	//byte	*outBuffer = (byte *)_alloca( outSize * outSize * 4 );
-	byte	*outBuffer = (byte*)R_StaticAlloc( 4 * outSize*outSize );
+	param.outBuffer = (byte*)R_StaticAlloc( 4 * param.outSize*param.outSize );
 
-	for ( bool map = false; ; ) {
-		common->Printf( !map ? "Ambient (1/2)\n" : "Specular (2/2)\n" );
+	for ( param.specular = false;; ) {
+		common->Printf( !param.specular ? "Ambient (1/2)\n" : "Specular (2/2)\n" );
 		session->UpdateScreen();
 		
-		for ( int i = 0; i < 6; i++ ) {
-			if ( !map ) {
-				sprintf( fullname, "env/%s_amb%s", baseName, cubeExtensions[i] );
-			} else {
-				sprintf( fullname, "env/%s_spec%s", baseName, cubeExtensions[i] );
-			}
-			common->Printf( "%d/6: %s\n", i + 1, fullname.c_str() );
+		for ( param.side = 0; param.side < 6; param.side++ ) {
+			sprintf( fullname, param.specular ? "env/%s_spec%s" : "env/%s_amb%s", baseName, cubeExtensions[param.side] );
+			common->Printf( "%d/6: %s\n", param.side + 1, fullname.c_str() );
 			session->UpdateScreen();
 
 			// resample with hemispherical blending
-			R_MakeAmbientMap( buffers, outBuffer, outSize, samples, width, crutchUp, map, i );
+			R_MakeAmbientMap( param );
 
 			common->Printf( "Writing out...\n" );
 			session->UpdateScreen();
-			R_WriteTGA( fullname, outBuffer, outSize, outSize );
+			R_WriteTGA( fullname, param.outBuffer, param.outSize, param.outSize );
 		}
-		if ( !map && specular ) // TODO move to the loop operator above
-			map = true;
+		if ( !param.specular && specular ) // TODO move to the loop operator above
+			param.specular = true;
 		else
 			break;
 	}
 
-	R_StaticFree( outBuffer );
+	R_StaticFree( param.outBuffer );
 	for ( int f = 0 ; f < 6 ; f++ ) {
 		if ( buffers[f] ) {
 			Mem_Free( buffers[f] );
