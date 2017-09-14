@@ -1679,7 +1679,6 @@ envshot <basename>
 Saves out env/<basename>_ft.tga, etc
 ================== 
 */  
-//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 const static char *cubeExtensions[6] = { "_forward.tga", "_left.tga", "_right.tga", "_back.tga", "_down.tga", "_up.tga" }; // names changed for TDM in #4041
 
 void R_EnvShot_f( const idCmdArgs &args ) {
@@ -1757,60 +1756,6 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 
 //============================================================================
 
-static idMat3		cubeAxis[6];
-
-
-/*
-==================
-R_SampleCubeMap
-==================
-*/
-void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result[4] ) {
-	float	adir[3];
-	int		axis, x, y;
-
-	adir[0] = fabs(dir[0]);
-	adir[1] = fabs(dir[1]);
-	adir[2] = fabs(dir[2]);
-
-	if ( dir[0] >= adir[1] && dir[0] >= adir[2] ) {
-		axis = 0;
-	} else if ( -dir[0] >= adir[1] && -dir[0] >= adir[2] ) {
-		axis = 1;
-	} else if ( dir[1] >= adir[0] && dir[1] >= adir[2] ) {
-		axis = 2;
-	} else if ( -dir[1] >= adir[0] && -dir[1] >= adir[2] ) {
-		axis = 3;
-	} else if ( dir[2] >= adir[1] && dir[2] >= adir[2] ) {
-		axis = 4;
-	} else {
-		axis = 5;
-	}
-
-	float	fx = (dir * cubeAxis[axis][1]) / (dir * cubeAxis[axis][0]);
-	float	fy = (dir * cubeAxis[axis][2]) / (dir * cubeAxis[axis][0]);
-
-	fx = -fx;
-	fy = -fy;
-	x = size * 0.5 * (fx + 1);
-	y = size * 0.5 * (fy + 1);
-	if ( x < 0 ) {
-		x = 0;
-	} else if ( x >= size ) {
-		x = size-1;
-	}
-	if ( y < 0 ) {
-		y = 0;
-	} else if ( y >= size ) {
-		y = size-1;
-	}
-
-	result[0] = buffers[axis][(y*size+x)*4+0];
-	result[1] = buffers[axis][(y*size+x)*4+1];
-	result[2] = buffers[axis][(y*size+x)*4+2];
-	result[3] = buffers[axis][(y*size+x)*4+3];
-}
-
 
 /* 
 ================== 
@@ -1822,49 +1767,30 @@ Saves out env/<basename>_amb_ft.tga, etc
 ================== 
 */  
 void R_MakeAmbientMap_f( const idCmdArgs &args ) {
-	//const static char *cubeExtensions[6] = { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", "_pz.tga", "_nz.tga" };
 	idStr		fullname;
 	const char	*baseName;
-	int			outSize;
 	byte		*buffers[6];
 	int			width, height;
 
-	if ( args.Argc() != 2 && args.Argc() != 3 ) {
-		common->Printf( "USAGE: ambientshot <basename> [size]\n" );
+	if ( args.Argc() < 2 && args.Argc() > 4 ) {
+		common->Printf( "USAGE: ambientshot <basename> [size [sample_count [crutch_up [specular?]]]]\n" );
 		return;
 	}
 	baseName = args.Argv( 1 );
 
-	if ( args.Argc() == 3 ) {
+	int outSize = 32;
+	if ( args.Argc() > 2 ) 
 		outSize = atoi( args.Argv( 2 ) );
-	} else {
-		outSize = 32;
-	}
+	int	samples = 1000;
+	if ( args.Argc() > 3 )
+		samples = atoi( args.Argv( 3 ) );
+	int	crutchUp = 1;
+	if ( args.Argc() > 4 )
+		crutchUp = atoi( args.Argv( 4 ) );
+	int	specular = 1;
+	if ( args.Argc() > 5 )
+		specular = atoi( args.Argv( 5 ) );
 
-	memset( &cubeAxis, 0, sizeof( cubeAxis ) );
-	cubeAxis[0][0][0] = 1;
-	cubeAxis[0][1][2] = 1;
-	cubeAxis[0][2][1] = 1;
-
-	cubeAxis[1][0][0] = -1;
-	cubeAxis[1][1][2] = -1;
-	cubeAxis[1][2][1] = 1;
-
-	cubeAxis[2][0][1] = 1;
-	cubeAxis[2][1][0] = -1;
-	cubeAxis[2][2][2] = -1;
-
-	cubeAxis[3][0][1] = -1;
-	cubeAxis[3][1][0] = -1;
-	cubeAxis[3][2][2] = 1;
-
-	cubeAxis[4][0][2] = 1;
-	cubeAxis[4][1][0] = -1;
-	cubeAxis[4][2][1] = 1;
-
-	cubeAxis[5][0][2] = -1;
-	cubeAxis[5][1][0] = 1;
-	cubeAxis[5][2][1] = 1;
 
 	// read all of the images
 	for ( int i = 0 ; i < 6 ; i++ ) {
@@ -1881,74 +1807,48 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		}
 	}
 
-	// resample with hemispherical blending
-	int	samples = 1000;
+	extern void R_MakeAmbientMap( byte *buffers[6], byte *outBuffers, int outSize, int samples, int size, int crutchUp, bool specular, int side );
+	extern void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular );
 
-	byte	*outBuffer = (byte *)_alloca( outSize * outSize * 4 );
+	//byte	*outBuffer = (byte *)_alloca( outSize * outSize * 4 );
+	byte	*outBuffer = (byte*)R_StaticAlloc( 4 * outSize*outSize );
 
-	for ( int map = 0 ; map < 2 ; map++ ) {
-		for ( int i = 0 ; i < 6 ; i++ ) {
-			for ( int x = 0 ; x < outSize ; x++ ) {
-				for ( int y = 0 ; y < outSize ; y++ ) {
-					idVec3	dir;
-					float	total[3];
-
-					dir = cubeAxis[i][0] + -( -1 + 2.0*x/(outSize-1) ) * cubeAxis[i][1] + -( -1 + 2.0*y/(outSize-1) ) * cubeAxis[i][2];
-					dir.Normalize();
-					total[0] = total[1] = total[2] = 0;
-	//samples = 1;
-					float	limit = map ? 0.95 : 0.25;		// small for specular, almost hemisphere for ambient
-
-					for ( int s = 0 ; s < samples ; s++ ) {
-						// pick a random direction vector that is inside the unit sphere but not behind dir,
-						// which is a robust way to evenly sample a hemisphere
-						idVec3	test;
-						while( 1 ) {
-							for ( int j = 0 ; j < 3 ; j++ ) {
-								test[j] = -1 + 2 * (rand()&0x7fff)/(float)0x7fff;
-							}
-							if ( test.Length() > 1.0 ) {
-								continue;
-							}
-							test.Normalize();
-							if ( test * dir > limit ) {	// don't do a complete hemisphere
-								break;
-							}
-						}
-						byte	result[4];
-	//test = dir;
-						R_SampleCubeMap( test, width, buffers, result );
-						total[0] += result[0];
-						total[1] += result[1];
-						total[2] += result[2];
-					}
-					outBuffer[(y*outSize+x)*4+0] = total[0] / samples;
-					outBuffer[(y*outSize+x)*4+1] = total[1] / samples;
-					outBuffer[(y*outSize+x)*4+2] = total[2] / samples;
-					outBuffer[(y*outSize+x)*4+3] = 255;
-				}
-			}
-
-			if ( map == 0 ) {
+	for ( bool map = false; ; ) {
+		common->Printf( !map ? "Ambient (1/2)\n" : "Specular (2/2)\n" );
+		session->UpdateScreen();
+		
+		for ( int i = 0; i < 6; i++ ) {
+			if ( !map ) {
 				sprintf( fullname, "env/%s_amb%s", baseName, cubeExtensions[i] );
 			} else {
 				sprintf( fullname, "env/%s_spec%s", baseName, cubeExtensions[i] );
 			}
-			common->Printf( "writing %s\n", fullname.c_str() );
+			common->Printf( "%d/6: %s\n", i + 1, fullname.c_str() );
+			session->UpdateScreen();
+
+			// resample with hemispherical blending
+			R_MakeAmbientMap( buffers, outBuffer, outSize, samples, width, crutchUp, map, i );
+
+			common->Printf( "Writing out...\n" );
 			session->UpdateScreen();
 			R_WriteTGA( fullname, outBuffer, outSize, outSize );
 		}
+		if ( !map && specular ) // TODO move to the loop operator above
+			map = true;
+		else
+			break;
 	}
 
+	R_StaticFree( outBuffer );
 	for ( int f = 0 ; f < 6 ; f++ ) {
 		if ( buffers[f] ) {
 			Mem_Free( buffers[f] );
 		}
 	}
+	session->UpdateScreen();
 } 
 
 //============================================================================
-
 
 /*
 ===============

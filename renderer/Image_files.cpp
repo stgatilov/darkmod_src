@@ -1114,6 +1114,87 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 	}
 }
 
+static idMat3		cubeAxis[6];
+
+void InitCubeAxis() {
+	if ( cubeAxis[0][0][0] == 1 )
+		return;
+	//memset( &cubeAxis, 0, sizeof( cubeAxis ) ); relax! 
+	cubeAxis[0][0][0] = 1;
+	cubeAxis[0][1][2] = 1;
+	cubeAxis[0][2][1] = 1;
+
+	cubeAxis[1][0][0] = -1;
+	cubeAxis[1][1][2] = -1;
+	cubeAxis[1][2][1] = 1;
+
+	cubeAxis[2][0][1] = 1;
+	cubeAxis[2][1][0] = -1;
+	cubeAxis[2][2][2] = -1;
+
+	cubeAxis[3][0][1] = -1;
+	cubeAxis[3][1][0] = -1;
+	cubeAxis[3][2][2] = 1;
+
+	cubeAxis[4][0][2] = 1;
+	cubeAxis[4][1][0] = -1;
+	cubeAxis[4][2][1] = 1;
+
+	cubeAxis[5][0][2] = -1;
+	cubeAxis[5][1][0] = 1;
+	cubeAxis[5][2][1] = 1;
+}
+
+/*
+==================
+R_SampleCubeMap
+==================
+*/
+void R_SampleCubeMap( const idVec3 &dir, int size, byte *buffers[6], byte result[4] ) {
+	float	adir[3];
+	int		axis, x, y;
+
+	adir[0] = fabs( dir[0] );
+	adir[1] = fabs( dir[1] );
+	adir[2] = fabs( dir[2] );
+
+	if ( dir[0] >= adir[1] && dir[0] >= adir[2] ) {
+		axis = 0;
+	} else if ( -dir[0] >= adir[1] && -dir[0] >= adir[2] ) {
+		axis = 1;
+	} else if ( dir[1] >= adir[0] && dir[1] >= adir[2] ) {
+		axis = 2;
+	} else if ( -dir[1] >= adir[0] && -dir[1] >= adir[2] ) {
+		axis = 3;
+	} else if ( dir[2] >= adir[1] && dir[2] >= adir[2] ) {
+		axis = 4;
+	} else {
+		axis = 5;
+	}
+
+	float	fx = (dir * cubeAxis[axis][1]) / (dir * cubeAxis[axis][0]);
+	float	fy = (dir * cubeAxis[axis][2]) / (dir * cubeAxis[axis][0]);
+
+	fx = -fx;
+	fy = -fy;
+	x = size * 0.5 * (fx + 1);
+	y = size * 0.5 * (fy + 1);
+	if ( x < 0 ) {
+		x = 0;
+	} else if ( x >= size ) {
+		x = size - 1;
+	}
+	if ( y < 0 ) {
+		y = 0;
+	} else if ( y >= size ) {
+		y = size - 1;
+	}
+
+	result[0] = buffers[axis][(y*size + x) * 4 + 0];
+	result[1] = buffers[axis][(y*size + x) * 4 + 1];
+	result[2] = buffers[axis][(y*size + x) * 4 + 2];
+	result[3] = buffers[axis][(y*size + x) * 4 + 3];
+}
 
 /*
 =======================
@@ -1121,16 +1202,86 @@ R_MakeIrradiance
 
 =======================
 */
+void R_MakeAmbientMap( byte *buffers[6], byte *outBuffer, int outSize, int samples, int size, int crutchUp, bool specular, int side ) {
+	InitCubeAxis();
 
+		for ( int x = 0; x < outSize; x++ ) {
+			for ( int y = 0; y < outSize; y++ ) {
+				idVec3	dir, test;
+
+				dir = cubeAxis[side][0] + -(-1 + 2.0*x / (outSize - 1)) * cubeAxis[side][1] + -(-1 + 2.0*y / (outSize - 1)) * cubeAxis[side][2];
+				dir.Normalize();
+				test = dir;
+				float total[3] = { 0, 0, 0 }, totDot = 0;
+				float dot = 1;
+
+				//float	limit = specular ? 0.95 : 0.25;		// small for specular, almost hemisphere for ambient
+				float	specularLimit = 0.95f;		
+
+				for ( int s = 0; s < samples; s++ ) {
+					byte	result[4];
+					R_SampleCubeMap( test, size, buffers, result );
+					total[0] += result[0];
+					total[1] += result[1];
+					total[2] += result[2];
+					totDot += dot;
+					// pick a random direction vector that is inside the unit sphere but not behind dir,
+					// which is a robust way to evenly sample a hemisphere
+					while ( 1 ) {
+						for ( int j = 0; j < 3; j++ ) {
+							test[j] = -1 + 2 * (rand() & 0x7fff) / (float)0x7fff;
+						}
+						//if ( test.Length() > 1.0 ) why do a sqrt?
+						//if ( test.LengthSqr() > 1.0 ) why this at all?
+						if ( test.LengthSqr() == 0.0 )
+							continue;
+						test.Normalize();
+						dot = test * dir;
+						if ( specular )
+							if ( dot > specularLimit ) 	// don't do a complete hemisphere
+								break;
+							else
+								; // out of the specular spot
+						else {
+							if ( dot < 0 ) {
+								test = -test;
+								dot = -dot;
+							}
+							if ( dot > 1e-3 )
+								break;
+						}
+					}
+				}
+				outBuffer[(y*outSize + x) * 4 + 0] = crutchUp * total[0]  / totDot;
+				outBuffer[(y*outSize + x) * 4 + 1] = crutchUp * total[1]  / totDot;
+				outBuffer[(y*outSize + x) * 4 + 2] = crutchUp * total[2]  / totDot;
+				outBuffer[(y*outSize + x) * 4 + 3] = 255;
+			}
+		}
+}
+
+void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
+	for ( int i = 0; i < 6; i++ )
+		R_MakeAmbientMap( buffers, outBuffers[i], outSize, samples, size, crutchUp, false, i );
+}
+
+/*
+=======================
+R_MakeIrradiance
+
+=======================
+*/
 void R_MakeIrradiance( byte *pics[6], int *size ) {
 	if ( *size == 0 )
 		return;
 	idRandom2 rand;
-	int outSize = 16;
+	int outSize = 32;
 	byte* outPics[6];
+	int startTime = Sys_Milliseconds();
 	for ( int side = 0; side < 6; side++ ) // assume cubemaps are RGBA
 		outPics[side] = (byte*)R_StaticAlloc( 4 * outSize*outSize );
-	for ( int side = 0; side < 6; side++ )
+	R_MakeAmbientMaps( pics, outPics, outSize, 99, *size, 1, false );
+/*	for ( int side = 0; side < 6; side++ )
 		for ( int outY = 0; outY < outSize; outY++ ) {
 			int inY = outY * *size / outSize;
 			byte* pOutPixel = outPics[side] + 4 * outY * outSize;
@@ -1158,11 +1309,12 @@ void R_MakeIrradiance( byte *pics[6], int *size ) {
 				pOutPixel[4 * outX + 2] = Sum2 / SumWeight;
 				pOutPixel[4 * outX + 3] = 0xff;
 			}
-		}
+		}*/
 	for ( int side = 0; side < 6; side++ ) {
 		R_StaticFree( pics[side] );
 		pics[side] = outPics[side];
 	}
+	common->Printf( "R_MakeIrradiance completed in %d ms.\n", Sys_Milliseconds() - startTime );
 	*size = outSize;
 }
 
