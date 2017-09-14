@@ -6436,8 +6436,11 @@ idEntity::ActivateContacts
 */
 void idEntity::ActivateContacts()
 {
+
+// nbohr1more: #3871 - increase contact limit to 128 watch for future issues with this limit
+
 	idList<contactInfo_t> contacts;
-	contacts.SetNum( 10, false );
+	contacts.SetNum( 128, false );
 
 	idVec6 dir;
 	int num;
@@ -6448,7 +6451,7 @@ void idEntity::ActivateContacts()
 
 	if ( clipModel->IsTraceModel() )
 	{
-		num = gameLocal.clip.Contacts( &contacts[0], 10, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, clipModel, mat3_identity, CONTENTS_SOLID, this );
 	}
 	else
 	{
@@ -6457,7 +6460,7 @@ void idEntity::ActivateContacts()
 	
 		idTraceModel trm(GetPhysics()->GetBounds());
 		idClipModel clip(trm);
-		num = gameLocal.clip.Contacts( &contacts[0], 10, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
+		num = gameLocal.clip.Contacts( &contacts[0], 128, GetPhysics()->GetOrigin(),dir, CONTACT_EPSILON, &clip, mat3_identity, CONTENTS_SOLID, this );
 	}
 	
 	contacts.SetNum( num, false );
