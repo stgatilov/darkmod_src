@@ -901,7 +901,15 @@ idPhysics_Player::WalkMove
 */
 void idPhysics_Player::WalkMove( void ) 
 {
-	if ( waterLevel > WATERLEVEL_WAIST && ( viewForward * groundTrace.c.normal ) > 0.0f )
+	static float moveTimeAccum = 0;
+	moveTimeAccum += frametime;
+	while ( moveTimeAccum < MS2SEC( USERCMD_MSEC ) ) {
+		return;
+	}
+	frametime = moveTimeAccum;
+	moveTimeAccum = 0;
+
+	if ( waterLevel > WATERLEVEL_WAIST && (viewForward * groundTrace.c.normal) > 0.0f )
 	{
 		// begin swimming
 		WaterMove();
@@ -967,7 +975,6 @@ void idPhysics_Player::WalkMove( void )
 			accelerate *= 3.0f;
 		}
 	}
-
 
 	Accelerate( wishdir, wishspeed, accelerate );
 
@@ -3315,12 +3322,7 @@ bool idPhysics_Player::Evaluate( int timeStepMSec, int endTimeMSec ) {
 
 	ActivateContactEntities();
 
-	static int moveTimeAccum = 0;
-	moveTimeAccum += timeStepMSec;
-	while ( moveTimeAccum >= USERCMD_MSEC ) {
-		MovePlayer( USERCMD_MSEC );
-		moveTimeAccum -= USERCMD_MSEC;
-	}
+	MovePlayer( timeStepMSec );
 
 	// Apply the push force to all objects encountered during MovePlayer
 	m_PushForce->Evaluate(timeStepMSec);
