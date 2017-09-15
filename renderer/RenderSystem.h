@@ -25,7 +25,6 @@
 ===============================================================================
 */
 
-
 // Contains variables specific to the OpenGL configuration being run right now.
 // These are constant once the OpenGL subsystem is initialized.
 typedef struct glconfig_s {
@@ -38,21 +37,17 @@ typedef struct glconfig_s {
 	float				glVersion;				// atof( version_string )
 
 	int					maxTextureSize;			// queried from GL
-	int					maxTextureUnits;
+	int					maxTextures;
 	int					maxTextureCoords;
-	int					maxTextureImageUnits;
 	float				maxTextureAnisotropy;
 	int					maxSamples;
 
 	int					colorBits, depthBits, stencilBits;
 
-	bool				multitextureAvailable;
 	bool				textureCompressionAvailable;
 	bool				anisotropicAvailable;
 	bool				textureLODBiasAvailable;
-	bool				cubeMapAvailable;
 	bool                mapBufferRangeAvailable;
-	//bool				vertexBufferObjectAvailable;
 	bool				twoSidedStencilAvailable;
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;

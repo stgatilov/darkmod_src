@@ -100,7 +100,7 @@ idCVar com_logFile( "logFile", "0", CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "
 idCVar com_logFileName( "logFileName", "qconsole.log", CVAR_SYSTEM | CVAR_NOCHEAT, "name of log file, if empty, qconsole.log will be used" );
 idCVar com_makingBuild( "com_makingBuild", "0", CVAR_BOOL | CVAR_SYSTEM, "1 when making a build" );
 idCVar com_updateLoadSize( "com_updateLoadSize", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "update the load size after loading a map" );
-idCVar com_videoRam( "com_videoRam", "128", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "holds the last amount of detected video ram" );
+//idCVar com_videoRam( "com_videoRam", "128", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCHEAT | CVAR_ARCHIVE, "holds the last amount of detected video ram" );
 
 idCVar com_product_lang_ext( "com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files." );
 
@@ -183,7 +183,7 @@ public:
 	void						LocalizeMapData( const char *fileName, idLangDict &langDict );
 	void						LocalizeSpecificMapData( const char *fileName, idLangDict &langDict, const idLangDict &replaceArgs );
 
-	void						SetMachineSpec( void );
+	//void						SetMachineSpec( void );
 
 private:
 	void						InitCommands( void );
@@ -1530,16 +1530,16 @@ void Com_WriteConfig_f( const idCmdArgs &args ) {
 Com_SetMachineSpecs_f
 =================
 */
-void Com_SetMachineSpec_f( const idCmdArgs &args ) {
+/*void Com_SetMachineSpec_f( const idCmdArgs &args ) {
 	commonLocal.SetMachineSpec();
-}
+}*/
 
 /*
 =================
 Com_ExecMachineSpecs_f
 =================
 */
-void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
+/*void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 	if ( Sys_GetVideoRam() < 128 ) {
 		cvarSystem->SetCVarBool( "image_ignoreHighQuality", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
@@ -1562,7 +1562,7 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 		cvarSystem->SetCVarBool( "com_purgeAll", false, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
 	}
-}
+}*/
 
 /*
 =================
@@ -2296,8 +2296,8 @@ void idCommonLocal::InitCommands( void ) {
 	cmdSystem->AddCommand( "exit", Com_Quit_f, CMD_FL_SYSTEM, "exits the game" );
 	cmdSystem->AddCommand( "writeConfig", Com_WriteConfig_f, CMD_FL_SYSTEM, "writes a config file" );
 	cmdSystem->AddCommand( "reloadEngine", Com_ReloadEngine_f, CMD_FL_SYSTEM, "reloads the engine down to including the file system" );
-	cmdSystem->AddCommand( "setMachineSpec", Com_SetMachineSpec_f, CMD_FL_SYSTEM, "detects system capabilities and sets com_machineSpec to appropriate value" );
-	cmdSystem->AddCommand( "execMachineSpec", Com_ExecMachineSpec_f, CMD_FL_SYSTEM, "execs the appropriate config files and sets cvars based on com_machineSpec" );
+/*	cmdSystem->AddCommand( "setMachineSpec", Com_SetMachineSpec_f, CMD_FL_SYSTEM, "detects system capabilities and sets com_machineSpec to appropriate value" );
+	cmdSystem->AddCommand( "execMachineSpec", Com_ExecMachineSpec_f, CMD_FL_SYSTEM, "execs the appropriate config files and sets cvars based on com_machineSpec" );*/
 
 #if !defined( ID_DEDICATED )
 	// compilers
@@ -2701,7 +2701,7 @@ bool idCommonLocal::IsInitialized( void ) const {
 idCommonLocal::SetMachineSpec
 =================
 */
-void idCommonLocal::SetMachineSpec( void ) {
+/*void idCommonLocal::SetMachineSpec( void ) {
 	cpuid_t	cpu = Sys_GetProcessorId();
 	double ghz = Sys_ClockTicksPerSecond() * 0.000000001f;
 	int vidRam = Sys_GetVideoRam();
@@ -2710,7 +2710,7 @@ void idCommonLocal::SetMachineSpec( void ) {
 	Printf( "Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory\n\n", ghz, sysRam, vidRam);
 
 	com_videoRam.SetInteger( vidRam );
-}
+}*/
 
 /*
 =================
@@ -2897,7 +2897,7 @@ void idCommonLocal::InitGame( void )
 	CheckToolMode();
 
     // greebo: the config.spec file is saved to the mod save path in darkmod/fms/<fs_game>/
-	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath", "" ) );
+	/*idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath", "" ) );
 	bool sysDetect = ( file == NULL );
 	if ( file ) {
 		fileSystem->CloseFile( file );
@@ -2910,7 +2910,7 @@ void idCommonLocal::InitGame( void )
 	if ( sysDetect ) {
 		SetMachineSpec();
 		Com_ExecMachineSpec_f( args );
-	}
+	}*/
 
 	// initialize the renderSystem data structures, but don't start OpenGL yet
 	renderSystem->Init();
@@ -3003,13 +3003,13 @@ void idCommonLocal::InitGame( void )
 	// have to do this twice.. first one sets the correct r_mode for the renderer init
 	// this time around the backend is all setup correct.. a bit fugly but do not want
 	// to mess with all the gl init at this point.. an old vid card will never qualify for 
-	if ( sysDetect ) {
+	/*if ( sysDetect ) {
 		SetMachineSpec();
 		Com_ExecMachineSpec_f( args );
 		cvarSystem->SetCVarInteger( "s_numberOfSpeakers", 6 );
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "s_restart\n" );
 		cmdSystem->ExecuteCommandBuffer();
-	}
+	}*/
 
 	// tels: #3199: now that the game DLL is loaded, we can execute another config, this
 	// enables it to run f.i. dmap (dmap before DLL load produces no AAS):

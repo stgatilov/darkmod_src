@@ -35,10 +35,7 @@ void RB_SetDefaultGLState( void ) {
 	qglColor4f (1.0f, 1.0f, 1.0f, 1.0f);
 
 	// the vertex array is always enabled
-	//qglEnableClientState( GL_VERTEX_ARRAY );
 	qglEnableVertexAttribArray( 0 );
-	//qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	//qglDisableClientState( GL_COLOR_ARRAY );
 
 	// make sure our GL state vector is set correctly
 	memset( &backEnd.glState, 0, sizeof( backEnd.glState ) );
@@ -61,17 +58,14 @@ void RB_SetDefaultGLState( void ) {
 	qglCullFace( GL_FRONT_AND_BACK );
 	qglShadeModel( GL_SMOOTH );
 
-	if ( r_useScissor.GetBool() ) {
+	if ( r_useScissor.GetBool() ) 
 		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	}
 
-	for ( int i = glConfig.maxTextureUnits - 1 ; i >= 0 ; i-- ) {
+	for ( int i = glConfig.maxTextures - 1 ; i >= 0 ; i-- ) {
 		GL_SelectTexture( i );
 
 		qglDisable( GL_TEXTURE_2D );
-		if ( glConfig.cubeMapAvailable ) {
-			qglDisable( GL_TEXTURE_CUBE_MAP );
-		}
+		qglDisable( GL_TEXTURE_CUBE_MAP );
 	}
 }
 
@@ -102,11 +96,10 @@ GL_SelectTexture
 ====================
 */
 void GL_SelectTexture( const int unit ) {
-	if ( backEnd.glState.currenttmu == unit ) {
+	if ( backEnd.glState.currenttmu == unit ) 
 		return;
-	}
 
-	if ( unit < 0 || (unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits) ) {
+	if ( unit < 0 || unit >= MAX_MULTITEXTURE_UNITS ) {
 		common->Warning( "GL_SelectTexture: unit = %i", unit );
 		return;
 	}

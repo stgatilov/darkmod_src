@@ -788,10 +788,6 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 		return;
 	}
 
-	if ( ! glConfig.cubeMapAvailable ) {
-		return;
-	}
-
 	width = height = size;
 
 	// generate the texture number
@@ -1237,8 +1233,8 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	//	return false;
 	//}
 
-	// god i love last minute hacks :-)
-	if ( com_videoRam.GetInteger() >= 128 && imgName.Icmpn( "lights/", 7 ) == 0 ) {
+	// compressed light images may look ugly
+	if ( /*com_videoRam.GetInteger() >= 128 &&*/ imgName.Icmpn( "lights/", 7 ) == 0 ) {
 		return false;
 	}
 
@@ -1637,7 +1633,7 @@ void idImage::Bind() {
 	tmu_t *tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 
 	// enable or disable apropriate texture modes
-	if ( tmu->textureType != type && ( backEnd.glState.currenttmu <	glConfig.maxTextureUnits ) ) {
+	if ( tmu->textureType != type && backEnd.glState.currenttmu < MAX_MULTITEXTURE_UNITS ) {
 		if ( tmu->textureType == TT_CUBIC ) {
 			qglDisable( GL_TEXTURE_CUBE_MAP );
 		} else if ( tmu->textureType == TT_2D ) {

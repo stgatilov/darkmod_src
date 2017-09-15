@@ -91,4 +91,4 @@
 // Linux info
 #define LINUX_DEFAULT_PATH				"."	
 
-#define CONFIG_SPEC					"config.spec"
+//#define CONFIG_SPEC					"config.spec"

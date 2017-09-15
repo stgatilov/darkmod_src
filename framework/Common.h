@@ -59,7 +59,7 @@ extern idCVar		com_showAsyncStats;
 extern idCVar		com_showSoundDecoders;
 extern idCVar		com_makingBuild;
 extern idCVar		com_updateLoadSize;
-extern idCVar		com_videoRam;
+//extern idCVar		com_videoRam;
 
 extern int			time_gameFrame;			// game logic time
 extern int			time_gameDraw;			// game present time
