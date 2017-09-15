@@ -459,7 +459,7 @@ public:
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system
 
-int MakePowerOfTwo( int num );
+//int MakePowerOfTwo( int num );
 
 /*
 ====================================================================

@@ -61,7 +61,7 @@ void RB_SetDefaultGLState( void ) {
 	if ( r_useScissor.GetBool() ) 
 		qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
-	for ( int i = glConfig.maxTextures - 1 ; i >= 0 ; i-- ) {
+	for ( int i = MAX_MULTITEXTURE_UNITS - 1; i >= 0; i-- ) {
 		GL_SelectTexture( i );
 
 		qglDisable( GL_TEXTURE_2D );

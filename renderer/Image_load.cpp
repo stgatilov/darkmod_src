@@ -30,12 +30,12 @@ static bool FormatIsDXT( int internalFormat ) {
 	return true;
 }
 
-int MakePowerOfTwo( int num ) {
+/*int MakePowerOfTwo( int num ) {
 	int		pot;
 	for (pot = 1 ; pot < num ; pot<<=1) {
 	}
 	return pot;
-}
+}*/
 
 /*
 ================
@@ -461,8 +461,6 @@ No support for texture environment colors or GL_BLEND or GL_DECAL
 texture environments, because the automatic optimization to single
 or dual component textures makes those modes potentially undefined.
 
-No non-power-of-two images.
-
 No palettized textures.
 
 There is no way to specify separate wrap/clamp values for S and T
@@ -476,7 +474,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 					   textureRepeat_t repeatParm, textureDepth_t depthParm ) {
 	bool		preserveBorder;
 	byte		*scaledBuffer;
-	int			scaled_width, scaled_height;
+	//int			scaled_width, scaled_height;
 	byte		*shrunk;
 
 	PurgeImage();
@@ -502,15 +500,15 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	}
 
 	// make sure it is a power of 2
-	scaled_width = MakePowerOfTwo( width );
-	scaled_height = MakePowerOfTwo( height );
+	//scaled_width = MakePowerOfTwo( width );
+	//scaled_height = MakePowerOfTwo( height );
 
-	if ( scaled_width != width || scaled_height != height ) {
+	/*if ( scaled_width != width || scaled_height != height ) {
 		common->Error( "R_CreateImage: not a power of 2 image" );
-	}
+	}*/
 
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize( scaled_width, scaled_height );
+	GetDownsize( width, height );
 
 	scaledBuffer = NULL;
 
@@ -528,16 +526,11 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			mipmapMode = 1;
 
 	// copy or resample data as appropriate for first MIP level
-	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
+	//if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
 		// we must copy even if unchanged, because the border zeroing
 		// would otherwise modify const data
-		if (1) // duzenko #4401
-			scaledBuffer = (byte*) pic;
-		else {
-			scaledBuffer = (byte *) R_StaticAlloc( sizeof(unsigned) * scaled_width * scaled_height );
-			memcpy( scaledBuffer, pic, width*height * 4 );
-		}
-	}
+	scaledBuffer = (byte*) pic;
+	/*}
 	else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
 		// scaledBuffer = R_ResampleTexture( pic, width, height, width >>= 1, height >>= 1 );
@@ -569,10 +562,10 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		// one might have shrunk down below the target size
 		scaled_width = width;
 		scaled_height = height;
-	}
+	}*/
 
-	uploadHeight = scaled_height;
-	uploadWidth = scaled_width;
+	uploadWidth = width;
+	uploadHeight = height;
 	type = TT_2D;
 
 	// zero the border if desired, allowing clamped projection textures
@@ -608,7 +601,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 				}
 			}
 			*/
-			R_WriteTGA( filename, scaledBuffer, scaled_width, scaled_height, false );
+			R_WriteTGA( filename, scaledBuffer, width, height, false );
 
 			// put it back
 			/*
@@ -628,7 +621,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// if the image is precompressed ( either in palletized mode or true rxgb mode )
 	// then it is loaded above and the swap never happens here
 	if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() != 1 ) {
-		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
+		for ( int i = 0; i < width * height * 4; i += 4 ) {
 			scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
 			scaledBuffer[ i ] = 0;
 		}
@@ -645,11 +638,11 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			}
 		}
 		*/
-		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
+		UploadCompressedNormalMap( width, height, scaledBuffer, 0 );
 	} else {
 		if (mipmapMode == 1) // duzenko #4401
 			qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 		if (mipmapMode == 2) // duzenko #4401
 			glGenerateMipmap(GL_TEXTURE_2D);
 		if (mipmapMode == 1) // duzenko #4401
@@ -661,22 +654,22 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	int		miplevel;
 
 	miplevel = 0;
-	while ( scaled_width > 1 || scaled_height > 1 ) {
+	while ( width > 1 || height > 1 ) {
 		if (mipmapMode > 0) // duzenko #4401
 			break;
 		// preserve the border after mip map unless repeating
-		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );
+		shrunk = R_MipMap( scaledBuffer, width, height, preserveBorder );
 		if (pic != scaledBuffer) // duzenko #4401
 			R_StaticFree( scaledBuffer );
 		scaledBuffer = shrunk;
 
-		scaled_width >>= 1;
-		scaled_height >>= 1;
-		if ( scaled_width < 1 ) {
-			scaled_width = 1;
+		width >>= 1;
+		height >>= 1;
+		if ( width < 1 ) {
+			width = 1;
 		}
-		if ( scaled_height < 1 ) {
-			scaled_height = 1;
+		if ( height < 1 ) {
+			height = 1;
 		}
 		miplevel++;
 
@@ -685,20 +678,15 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		// rasterizer's texture level selection algorithm
 		// Changing the color doesn't help with lumminance/alpha/intensity formats...
 		if ( depth == TD_DIFFUSE && globalImages->image_colorMipLevels.GetBool() ) {
-			R_BlendOverTexture( (byte *)scaledBuffer, scaled_width * scaled_height, mipBlendColors[miplevel] );
+			R_BlendOverTexture( (byte *)scaledBuffer, width * height, mipBlendColors[miplevel] );
 		}
 
 		// upload the mip map
-		if ( internalFormat == GL_COLOR_INDEX8_EXT ) {
-			UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, miplevel );
-		} else {
-			qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 
+		if ( internalFormat == GL_COLOR_INDEX8_EXT ) 
+			UploadCompressedNormalMap( width, height, scaledBuffer, miplevel );
+		else
+			qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, width, height, 
 				0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		}
-	}
-
-	if (scaledBuffer != 0 && pic != scaledBuffer) { // duzenko #4401
-		R_StaticFree( scaledBuffer );
 	}
 
 	SetImageFilterAndRepeat();
@@ -1726,7 +1714,6 @@ void idImage::BindFragment() {
 	}
 }
 
-
 /*
 ====================
 CopyFramebuffer
@@ -1735,13 +1722,13 @@ CopyFramebuffer
 void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
 	Bind();
 
-	if ( cvarSystem->GetCVarBool( "g_lowresFullscreenFX" ) ) {
+	/*if ( cvarSystem->GetCVarBool( "g_lowresFullscreenFX" ) ) {
 		imageWidth = 512;
 		imageHeight = 512;
-	}
+	}*/
 
 	// if the size isn't a power of 2, the image must be increased in size
-	int	potWidth, potHeight;
+	/*int	potWidth, potHeight;
 
 	if (r_useFbo.GetBool()) { // assume h/w support for non-po2 sizes
 		potWidth = imageWidth;
@@ -1751,34 +1738,29 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 		potHeight = MakePowerOfTwo(imageHeight); 
 		GetDownsize( imageWidth, imageHeight ); // this line and the next one screw bloom in fbo
 		GetDownsize( potWidth, potHeight );
-	}
+	}*/
 
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);
 
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
-	if ( ( useOversizedBuffer && ( uploadWidth < potWidth || uploadHeight < potHeight ) )
-		|| ( !useOversizedBuffer && ( uploadWidth != potWidth || uploadHeight != potHeight ) ) ) {
-		uploadWidth = potWidth;
-		uploadHeight = potHeight;
-		if ( potWidth == imageWidth && potHeight == imageHeight ) {
+	if ( (useOversizedBuffer && (uploadWidth < imageWidth || uploadHeight < imageHeight))
+		|| (!useOversizedBuffer && (uploadWidth != imageWidth || uploadHeight != imageHeight)) ) {
+		uploadWidth = imageWidth;
+		uploadHeight = imageHeight;
+		if ( imageWidth == imageWidth && imageWidth == imageHeight ) {
 			qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 		} else {
-			byte	*junk;
+			//byte	*junk;
 			// we need to create a dummy image with power of two dimensions,
 			// then do a qglCopyTexSubImage2D of the data we want
 			// this might be a 16+ meg allocation, which could fail on _alloca
-			junk = (byte *)Mem_Alloc( potWidth * potHeight * 4 );
-			memset( junk, 0, potWidth * potHeight * 4 );		//!@#
-#if 0 // Disabling because it's unnecessary and introduces a green strip on edge of _currentRender
-			for ( int i = 0 ; i < potWidth * potHeight * 4 ; i+=4 ) {
-				junk[i+1] = 255;
-			}
-#endif
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, junk );
-			Mem_Free( junk );
-
+			//junk = (byte *)Mem_Alloc( potWidth * potHeight * 4 );
+			//memset( junk, 0, potWidth * potHeight * 4 );		//!@#
+			//qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, junk );
+			//Mem_Free( junk );
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
 			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 		}
 	} else {
@@ -1788,12 +1770,12 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	}
 
 	// if the image isn't a full power of two, duplicate an extra row and/or column to fix bilerps
-	if ( imageWidth != potWidth ) {
+	/*if ( imageWidth != potWidth ) {
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, imageWidth, 0, x+imageWidth-1, y, 1, imageHeight );
 	}
 	if ( imageHeight != potHeight ) {
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, imageHeight, x, y+imageHeight-1, imageWidth, 1 );
-	}
+	}*/
 
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -1816,24 +1798,24 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 {
 	this->Bind();
 	// if the size isn't a power of 2, the image must be increased in size
-	int potWidth, potHeight;
+	/*int potWidth, potHeight;
 	potWidth = MakePowerOfTwo( imageWidth );
 	potHeight = MakePowerOfTwo( imageHeight );
 	GetDownsize( imageWidth, imageHeight );
-	GetDownsize( potWidth, potHeight );
+	GetDownsize( potWidth, potHeight );*/
 	// Ensure we are reading from the back buffer:
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
-	if ( (useOversizedBuffer && (uploadWidth < potWidth || uploadHeight < potHeight)) || (!useOversizedBuffer && (uploadWidth != potWidth || uploadHeight != potHeight)) )
+	if ( (useOversizedBuffer && (uploadWidth < imageWidth || uploadHeight < imageHeight)) || (!useOversizedBuffer && (uploadWidth != imageWidth || uploadHeight != imageHeight)) )
 	{
-		uploadWidth = potWidth;
-		uploadHeight = potHeight;
+		uploadWidth = imageWidth;
+		uploadHeight = imageHeight;
 		// This bit runs once only at map start, because it tests whether the image is too small to hold the screen.
 		// It resizes the texture to a power of two that can hold the screen,
 		// and then subsequent captures to the texture put the depth component into the RGB channels
-		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, potWidth, potHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL );
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, imageWidth, imageHeight, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL );
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness.

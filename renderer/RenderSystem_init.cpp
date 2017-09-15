@@ -449,7 +449,8 @@ static void R_CheckPortableExtensions( void ) {
 		common->Error( "GL_ARB_texture_cube_map not supported!\n" );
 
 	// GL_ARB_texture_non_power_of_two
-	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two" );
+	if (!R_CheckExtension( "GL_ARB_texture_non_power_of_two" ))
+		common->Error( "GL_ARB_texture_non_power_of_two not supported!\n" );
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
