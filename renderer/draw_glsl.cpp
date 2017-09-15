@@ -43,7 +43,9 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			cubic;
 	GLint			u_lightProjectionCubemap;
 	GLint			u_lightProjectionTexture;
-	
+	GLint			u_lightFalloffCubemap;
+	GLint			u_lightFalloffTexture;
+
 	GLint			colorModulate;
 	GLint			colorAdd;
 
@@ -122,11 +124,11 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
-	if ( !din->ambientLight ) {
+	//if ( !din->ambientLight ) {
 		// texture 4 is the per-surface specular map
 		GL_SelectTexture( 4 );
 		din->specularImage->Bind();
-	}
+	//}
 
 	if ( r_softShadows.GetBool() ) {
 		GL_SelectTexture( 6 );
@@ -537,9 +539,10 @@ void interactionProgram_t::AfterLoad() {
 	cubic = qglGetUniformLocation( program, "u_cubic" );
 
 	GLint u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
-	GLint u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
 	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
 	u_lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
+	u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
+	u_lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
 	GLint u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
 	GLint u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 	
@@ -551,6 +554,7 @@ void interactionProgram_t::AfterLoad() {
 	qglUniform1i( u_diffuseTexture, 3 );
 	qglUniform1i( u_specularTexture, 4 );
 	qglUniform1i( u_lightProjectionCubemap, 5 ); // else validation fails, 2 at render time
+	qglUniform1i( u_lightFalloffCubemap, 6 ); // else validation fails, 1 at render time
 	qglUseProgram( 0 );
 }
 
@@ -588,10 +592,14 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( u_lightProjectionTexture, 5 );
 		qglUniform1i( u_lightProjectionCubemap, 2 );
+		qglUniform1i( u_lightFalloffTexture, 6 );
+		qglUniform1i( u_lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( u_lightProjectionTexture, 2 );
 		qglUniform1i( u_lightProjectionCubemap, 5 );
+		qglUniform1i( u_lightFalloffTexture, 1 );
+		qglUniform1i( u_lightFalloffCubemap, 6 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );

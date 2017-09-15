@@ -1956,6 +1956,13 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT );
 			continue;
 		}
+		else if ( !token.Icmp( "lightFalloffCubeMap" ) ) {
+			str = R_ParsePastImageProgram( src );
+			idStr copy = str;	// so other things don't step on it
+
+			lightFalloffImage = globalImages->ImageFromFile( copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT, CF_CAMERA );
+			continue;
+		}
 		// guisurf <guifile> | guisurf entity
 		// an entity guisurf must have an idUserInterface
 		// specified in the renderEntity
