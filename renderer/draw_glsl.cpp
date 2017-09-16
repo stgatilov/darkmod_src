@@ -132,16 +132,10 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	//}
 
 	if ( r_softShadows.GetBool() ) {
-		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
-		idImage* depth = globalImages->currentDepthFbo;
-		//idImage* depth = globalImages->currentDepthFbo;
-		GL_SelectTexture( 6 );
-		depth->Bind();
-		//glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
-		idImage* stencil = globalImages->currentStencilFbo;
 		GL_SelectTexture( 7 );
+		extern void FB_BindStencilTexture();
+		idImage* stencil = globalImages->currentStencilFbo;
 		stencil->Bind();
-		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 	}
 
 	// draw it
@@ -268,9 +262,9 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		extern void FB_SwapDepthTexture( idImage *newDepthTexture, bool copy );
-		if ( r_softShadows.GetBool() )
-			FB_SwapDepthTexture( globalImages->currentDepthFbo, true );
+		//extern void FB_SwapDepthTexture( idImage *newDepthTexture, bool copy );
+		//if ( r_softShadows.GetBool() )
+		//	FB_SwapDepthTexture( globalImages->currentDepthFbo, true );
 
 		if ( !(r_ignore.GetInteger() & 1) ) {
 			stencilShadowShader.Use();
@@ -288,14 +282,14 @@ void RB_GLSL_DrawInteractions( void ) {
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		if ( r_softShadows.GetBool() ) {
+		/*if ( r_softShadows.GetBool() ) {
 			stencilShadowShader.Use();
 			r_showShadows.SetInteger( -1 );
 			RB_StencilShadowPass( vLight->globalShadows );
 			RB_StencilShadowPass( vLight->localShadows );
 			r_showShadows.SetInteger( 0 );
 			FB_SwapDepthTexture( globalImages->currentDepthImage, false );
-		}
+		}*/
 		
 		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );

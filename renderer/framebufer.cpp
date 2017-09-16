@@ -37,12 +37,13 @@ void FB_AccessColorDepth( bool DepthToo = false ) {
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
+bool fboSeparateStencil; 
 
 void FB_Enter() {
 	if ( fboUsed && fboId )
 		return;
 	GL_CheckErrors(); // debug
-	bool fboSeparateStencil = strcmp( glConfig.vendor_string, "Intelq" ) == 0; // may change after a vid_restart
+	bool fboSeparateStencil = strcmp( glConfig.vendor_string, "Intel" ) == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
@@ -69,18 +70,16 @@ void FB_Enter() {
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); //NULL means reserve texture memory, but texels are undefined
 
-		//if ( fboSeparateStencil ) {
+		if ( fboSeparateStencil ) {
 			globalImages->currentStencilFbo->Bind();
 			globalImages->currentStencilFbo->uploadWidth = curWidth;
 			globalImages->currentStencilFbo->uploadHeight = curHeight;
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			//qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-			//qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
-		//}
+		}
 
 		globalImages->currentDepthFbo->Bind();
 		globalImages->currentDepthFbo->uploadWidth = curWidth;
@@ -144,34 +143,27 @@ void FB_Enter() {
 	GL_CheckErrors();
 }
 
+void FB_BindStencilTexture() {
+	const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+	idImage* stencil = fboSeparateStencil ? globalImages->currentStencilFbo : globalImages->currentDepthImage;
+	stencil->Bind();
+	if ( !fboSeparateStencil )
+		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+}
+
 void FB_SwapDepthTexture(idImage *newDepthTexture, bool copy) {
 	if ( !fboUsed )
 		return;
 	GL_CheckErrors();
 	if ( copy ) {
 		newDepthTexture->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
-		//qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
-		/*glCopyImageSubData( globalImages->currentDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0,
-			newDepthTexture->texnum, GL_TEXTURE_2D, 0, 0, 0, 0,
-			glConfig.vidWidth, glConfig.vidHeight, 1 );*/
-		GL_CheckErrors();
+		//qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
 		qglBindTexture( GL_TEXTURE_2D, 0 );
-		GL_CheckErrors();
 	} else {
 		globalImages->currentStencilFbo->Bind();
-		//qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, glConfig.vidWidth, glConfig.vidHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
-		//qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, glConfig.vidWidth, glConfig.vidHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
-		GL_CheckErrors();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
-		//qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
-		/*glCopyImageSubData( globalImages->currentDepthImage->texnum, GL_TEXTURE_2D, 0, 0, 0, 0,
-		newDepthTexture->texnum, GL_TEXTURE_2D, 0, 0, 0, 0,
-		glConfig.vidWidth, glConfig.vidHeight, 1 );*/
-		GL_CheckErrors();
+		//qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
 		qglGenerateMipmap( GL_TEXTURE_2D );
 		qglBindTexture( GL_TEXTURE_2D, 0 );
-		GL_CheckErrors();
 	}
 	int status;
 	status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
@@ -179,7 +171,6 @@ void FB_SwapDepthTexture(idImage *newDepthTexture, bool copy) {
 		common->Printf( "glCheckFramebufferStatus %d\n", status );
 	}
 	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, newDepthTexture->texnum, 0 );
-	GL_CheckErrors();
 	status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 	if ( GL_FRAMEBUFFER_COMPLETE != status ) {
 		common->Printf( "glCheckFramebufferStatus %d\n", status );
