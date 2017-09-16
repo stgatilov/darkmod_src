@@ -85,6 +85,11 @@ bool CModInfoDecl::Parse(idLexer& src)
 
 void CModInfoDecl::Update(const idStr& name)
 {
+	if ( name.IsEmpty() ) // grayman #4338
+	{
+		return;
+	}
+
 	_bodyText = TYPE_NAME;
 	_bodyText += " " + name;
 	_bodyText += "\n{\n";
