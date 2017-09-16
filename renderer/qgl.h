@@ -157,6 +157,7 @@ extern PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 extern PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
 extern PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
+extern PFNGLCOPYIMAGESUBDATANVPROC			glCopyImageSubData;
 
 // GLSL
 extern PFNGLATTACHSHADERPROC				qglAttachShader;
@@ -202,26 +203,8 @@ extern PFNGLBINDATTRIBLOCATIONPROC			qglBindAttribLocation;
 //stgatilov: this type breaks Linux build, and it is not used anyway
 //extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
-// -----====+++   END TDM ~SS Extensions   +++====-----   */
-
-// mipmaps
-extern PFNGLGENERATEMIPMAPPROC              glGenerateMipmap;
-
-//frame buffers
-extern PFNGLGENFRAMEBUFFERSPROC         glGenFramebuffers;
-extern PFNGLBINDFRAMEBUFFERPROC			glBindFramebuffer;
-extern PFNGLDELETEFRAMEBUFFERSPROC		glDeleteFramebuffers;
-extern PFNGLFRAMEBUFFERTEXTURE2DPROC	glFramebufferTexture2D;
-extern PFNGLCHECKFRAMEBUFFERSTATUSPROC	glCheckFramebufferStatus;
-extern PFNGLGENRENDERBUFFERSPROC		glGenRenderbuffers;
-extern PFNGLBINDRENDERBUFFERPROC		glBindRenderbuffer;
-extern PFNGLRENDERBUFFERSTORAGEPROC		glRenderbufferStorage;
-extern PFNGLFRAMEBUFFERRENDERBUFFERPROC	glFramebufferRenderbuffer;
-extern PFNGLBLITFRAMEBUFFERPROC			glBlitFramebuffer;
-extern PFNGLDRAWBUFFERSPROC				glDrawBuffers;
-
 // arb assembly info
-extern PFNGLGETPROGRAMIVARBPROC			glGetProgramivARB;
+extern PFNGLGETPROGRAMIVARBPROC			qglGetProgramivARB;
 
 // GL fence sync
 extern PFNGLFENCESYNCPROC				qglFenceSync;

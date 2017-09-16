@@ -68,6 +68,7 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
+	GLint			softShadows;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -131,11 +132,15 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	//}
 
 	if ( r_softShadows.GetBool() ) {
-		GL_SelectTexture( 7 );
-		idImage* depth = globalImages->currentDepthImage;
-		//idImage* depth = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage : globalImages->currentDepthFbo;
-		depth->Bind();
 		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+		idImage* depth = globalImages->currentDepthFbo;
+		//idImage* depth = globalImages->currentDepthFbo;
+		GL_SelectTexture( 6 );
+		depth->Bind();
+		//glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT );
+		idImage* stencil = globalImages->currentStencilFbo;
+		GL_SelectTexture( 7 );
+		stencil->Bind();
 		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 	}
 
@@ -193,6 +198,8 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	if ( r_softShadows.GetBool() ) {
 		GL_SelectTexture( 7 );
 		globalImages->BindNull();
+		GL_SelectTexture( 6 );
+		globalImages->BindNull();
 	}
 
 	GL_SelectTexture( 4 );
@@ -211,6 +218,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	GL_SelectTexture( 0 );
 
 	qglUseProgram( 0 );
+	GL_CheckErrors();
 }
 
 /*
@@ -260,13 +268,17 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
+		extern void FB_SwapDepthTexture( idImage *newDepthTexture, bool copy );
+		if ( r_softShadows.GetBool() )
+			FB_SwapDepthTexture( globalImages->currentDepthFbo, true );
+
 		if ( !(r_ignore.GetInteger() & 1) ) {
 			stencilShadowShader.Use();
 			RB_StencilShadowPass( vLight->globalShadows );
 			if ( r_softShadows.GetBool() )
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
-		if ( !(r_ignore.GetInteger() & 4) ) 
+		if ( (r_ignore.GetInteger() & 4) ) 
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 
 		if ( !(r_ignore.GetInteger() & 2) ) {
@@ -275,7 +287,17 @@ void RB_GLSL_DrawInteractions( void ) {
 			if ( r_softShadows.GetBool() )
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
-		if ( (r_ignore.GetInteger() & 4) )
+
+		if ( r_softShadows.GetBool() ) {
+			stencilShadowShader.Use();
+			r_showShadows.SetInteger( -1 );
+			RB_StencilShadowPass( vLight->globalShadows );
+			RB_StencilShadowPass( vLight->localShadows );
+			r_showShadows.SetInteger( 0 );
+			FB_SwapDepthTexture( globalImages->currentDepthImage, false );
+		}
+		
+		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 		if ( !(r_ignore.GetInteger() & 8) )
 			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
@@ -596,14 +618,14 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( u_lightProjectionTexture, 5 );
 		qglUniform1i( u_lightProjectionCubemap, 2 );
-		qglUniform1i( u_lightFalloffTexture, 6 );
+		//qglUniform1i( u_lightFalloffTexture, 6 );
 		qglUniform1i( u_lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( u_lightProjectionTexture, 2 );
 		qglUniform1i( u_lightProjectionCubemap, 5 );
 		qglUniform1i( u_lightFalloffTexture, 1 );
-		qglUniform1i( u_lightFalloffCubemap, 6 );
+		//qglUniform1i( u_lightFalloffCubemap, 6 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
@@ -614,10 +636,13 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
+	softShadows = qglGetUniformLocation( program, "u_softShadows" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
+	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
 	qglUseProgram( program );
 	qglUniform1i( u_stencilTexture, 7 );
+	qglUniform1i( u_depthTexture, 6 );
 	qglUseProgram( 0 );
 }
 
@@ -625,6 +650,7 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
+	qglUniform1f( softShadows, r_softShadows.GetFloat() );
 }
 
 void ambientInteractionProgram_t::AfterLoad() {

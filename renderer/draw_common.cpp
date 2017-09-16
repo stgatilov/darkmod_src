@@ -352,6 +352,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		return;
 	}
 
+	GL_CheckErrors();
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
 	depthShader.Use();
@@ -392,6 +393,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	}
 
 	qglUseProgram( 0 );
+	GL_CheckErrors();
 }
 
 /*
@@ -1021,6 +1023,7 @@ the shadow volumes face INSIDE
 =====================
 */
 static void RB_T_Shadow( const drawSurf_t *surf ) {
+	GL_CheckErrors();
 	const srfTriangles_t	*tri;
 
 	// set the light position if we are using a vertex program to project the rear surfaces
@@ -1151,6 +1154,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 			RB_DrawShadowElementsWithCounters( tri, numIndexes );
 		}
 	}
+	GL_CheckErrors();
 }
 
 /*
@@ -1177,6 +1181,9 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	// for visualizing the shadows
 	switch ( r_showShadows.GetInteger() )
 	{
+	case -1:
+		GL_State( /*GLS_DEPTHMASK |/**/ GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
+		break;
 	case 1:
 		// draw filled in
 		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_LESS );

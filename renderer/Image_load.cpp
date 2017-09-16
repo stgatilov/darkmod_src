@@ -522,7 +522,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
 		mipmapMode = 0;
 	else
-		if (mipmapMode == 2 && !glGenerateMipmap)
+		if (mipmapMode == 2 && !qglGenerateMipmap)
 			mipmapMode = 1;
 
 	// copy or resample data as appropriate for first MIP level
@@ -644,7 +644,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 			qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 		if (mipmapMode == 2) // duzenko #4401
-			glGenerateMipmap(GL_TEXTURE_2D);
+			qglGenerateMipmap(GL_TEXTURE_2D);
 		if (mipmapMode == 1) // duzenko #4401
 			if (strcmp(glConfig.vendor_string, "Intel")) // known to have crashed on Intel
 				qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
@@ -1359,8 +1359,8 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
 			internalFormat = GL_COMPRESSED_LUMINANCE_LATC1_EXT;
 			break;
 		case DDS_MAKEFOURCC( 'A', 'T', 'I', '2' ):
-			//internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
-			internalFormat = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
+			internalFormat = GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT;
+			//internalFormat = GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
 			break;
         default:
             common->Warning( "Invalid compressed internal format: %s", imgName.c_str() );

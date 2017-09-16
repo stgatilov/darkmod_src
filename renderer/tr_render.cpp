@@ -277,6 +277,7 @@ RB_RenderDrawSurfChainWithFunction
 */
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, 
 										void (*triFunc_)( const drawSurf_t *) ) {
+	GL_CheckErrors();
 	const drawSurf_t		*drawSurf;
 
 	backEnd.currentSpace = NULL;
@@ -318,6 +319,7 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 
 		backEnd.currentSpace = drawSurf->space;
 	}
+	GL_CheckErrors();
 }
 
 /*
