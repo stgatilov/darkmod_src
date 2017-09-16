@@ -573,8 +573,8 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
 	bool v3d = false, was2d = false; // needs to be declared outside of switch case
-	extern void RB_FboEnter();
-	extern void RB_FboLeave( viewDef_t* viewDef );
+	extern void FB_Enter();
+	extern void FB_Leave( viewDef_t* viewDef );
 
 	while (cmds) {
 		switch ( cmds->commandId ) {
@@ -586,9 +586,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
 				if (r_useFbo.GetBool() && !was2d) // don't switch to FBO if some 2d has happened (e.g. compass)
 					if ( v3d ) {
-						RB_FboEnter();
+						FB_Enter();
 					} else {
-						RB_FboLeave( ((const drawSurfsCommand_t *)cmds)->viewDef ); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
+						FB_Leave( ((const drawSurfsCommand_t *)cmds)->viewDef ); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
 						was2d = true;
 					}
 			RB_DrawView(cmds);
@@ -608,7 +608,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content 
-			RB_FboLeave(NULL);
+			FB_Leave(NULL);
 			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;

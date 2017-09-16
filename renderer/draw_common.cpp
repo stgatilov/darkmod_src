@@ -954,16 +954,14 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys 
-			//&& tr.backEndRenderer == BE_ARB2 
-			&& !r_useFbo.GetBool() ) {
-			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
-				backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
-				backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
-		}
-		extern void RB_FboAccessColorDepth(bool DepthToo); // duzenko #4425 FIXME ugly magic extern
-		if (r_useFbo.GetBool())
-			RB_FboAccessColorDepth(false);
+		extern void FB_AccessColorDepth( bool DepthToo ); // duzenko #4425 FIXME ugly magic extern
+		if ( backEnd.viewDef->viewEntitys && !r_useFbo.GetBool() )
+			if ( r_useFbo.GetBool() )
+				FB_AccessColorDepth( false );
+			else
+				globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
+					backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
+					backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
 		backEnd.currentRenderCopied = true;
 	}
 
@@ -1177,18 +1175,23 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	globalImages->BindNull();
 
 	// for visualizing the shadows
-	if ( r_showShadows.GetInteger() ) {
-		if ( r_showShadows.GetInteger() == 2 ) {
-			// draw filled in
-			GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_LESS  );
-		} else {
-			// draw as lines, filling the depth buffer
-			GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_POLYMODE_LINE | GLS_DEPTHFUNC_ALWAYS  );
-		}
-	} else {
+	switch ( r_showShadows.GetInteger() )
+	{
+	case 1:
+		// draw filled in
+		GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_LESS );
+		break;
+	case 2:
+		GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_POLYMODE_LINE | GLS_DEPTHFUNC_ALWAYS );
+		break;
+	case 3:
+		GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_POLYMODE_LINE | GLS_DEPTHFUNC_LESS );
+		break;
+	default:
 		// don't write to the color buffer, just the stencil buffer
 		GL_State( GLS_DEPTHMASK | GLS_COLORMASK | GLS_ALPHAMASK | GLS_DEPTHFUNC_LESS );
-	}
+		break;
+	} 
 
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglPolygonOffset( r_shadowPolygonFactor.GetFloat(), -r_shadowPolygonOffset.GetFloat() );
@@ -1622,8 +1625,8 @@ void RB_Bloom() {
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 	if ( !w || !h ) // this has actually happened
 		return;
-	extern void RB_FboAccessColorDepth( bool DepthToo = false );
-	RB_FboAccessColorDepth();
+	extern void FB_AccessColorDepth( bool DepthToo );
+	FB_AccessColorDepth( false );
 
 	// full screen blends
 	qglLoadIdentity();

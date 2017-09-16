@@ -131,7 +131,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	//}
 
 	if ( r_softShadows.GetBool() ) {
-		GL_SelectTexture( 6 );
+		GL_SelectTexture( 7 );
 		idImage* depth = globalImages->currentDepthImage;
 		//idImage* depth = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage : globalImages->currentDepthFbo;
 		depth->Bind();
@@ -191,7 +191,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// disable features
 	if ( r_softShadows.GetBool() ) {
-		GL_SelectTexture( 6 );
+		GL_SelectTexture( 7 );
 		globalImages->BindNull();
 	}
 
@@ -260,21 +260,25 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		stencilShadowShader.Use();
-		RB_StencilShadowPass( vLight->globalShadows );
-		if ( r_softShadows.GetBool() ) 
-			qglStencilFunc( GL_ALWAYS, 128, 255 );
-		;//qglDisable( GL_STENCIL_TEST );
-		RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
-		//qglEnable( GL_STENCIL_TEST );
+		if ( !(r_ignore.GetInteger() & 1) ) {
+			stencilShadowShader.Use();
+			RB_StencilShadowPass( vLight->globalShadows );
+			if ( r_softShadows.GetBool() )
+				qglStencilFunc( GL_ALWAYS, 128, 255 );
+		}
+		if ( !(r_ignore.GetInteger() & 4) ) 
+			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 
-		stencilShadowShader.Use();
-		RB_StencilShadowPass( vLight->localShadows );
-		if ( r_softShadows.GetBool() )
-			qglStencilFunc( GL_ALWAYS, 128, 255 );
-		;//qglDisable( GL_STENCIL_TEST );
-		RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
-		//qglEnable( GL_STENCIL_TEST );
+		if ( !(r_ignore.GetInteger() & 2) ) {
+			stencilShadowShader.Use();
+			RB_StencilShadowPass( vLight->localShadows );
+			if ( r_softShadows.GetBool() )
+				qglStencilFunc( GL_ALWAYS, 128, 255 );
+		}
+		if ( (r_ignore.GetInteger() & 4) )
+			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
+		if ( !(r_ignore.GetInteger() & 8) )
+			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
 
 		qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 
@@ -613,7 +617,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	// set texture locations
 	qglUseProgram( program );
-	qglUniform1i( u_stencilTexture, 6 );
+	qglUniform1i( u_stencilTexture, 7 );
 	qglUseProgram( 0 );
 }
 

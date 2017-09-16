@@ -398,8 +398,6 @@ void RB_ARB2_DrawInteractions( void ) {
 		}
 
 		lightShader = vLight->lightShader;
-		//anon begin
-		// set the depth bounds for the whole light
 		// Softshadows
 		/*if ( backEnd.usingSoftShadows && (vLight->globalShadows || vLight->localShadows) ) 
 		{
@@ -408,7 +406,9 @@ void RB_ARB2_DrawInteractions( void ) {
 		} 
 		else */
 		// {
-		if (useLightDepthBounds)
+		//anon begin
+		// set the depth bounds for the whole light
+		if ( useLightDepthBounds )
 		{
 			GL_DepthBoundsTest(vLight->scissorRect.zmin, vLight->scissorRect.zmax);
 		}

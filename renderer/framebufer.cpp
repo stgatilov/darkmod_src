@@ -19,7 +19,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 bool fboUsed;
 // called when post-proceesing is about to start, needs pixels and sometimes depth as both input and output for water and smoke
-void RB_FboAccessColorDepth( bool DepthToo = false ) {
+void FB_AccessColorDepth( bool DepthToo = false ) {
 	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 	//	return;
 	GL_SelectTexture( 0 );
@@ -38,7 +38,7 @@ void RB_FboAccessColorDepth( bool DepthToo = false ) {
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
 
-void RB_FboEnter() {
+void FB_Enter() {
 	if ( fboUsed && fboId )
 		return;
 	GL_CheckErrors(); // debug
@@ -138,12 +138,16 @@ void RB_FboEnter() {
 	GL_CheckErrors();
 }
 
+void FB_SwapDepthTexture(idImage *newDepthTexture) {
+
+}
+
 // switch from fbo to default framebuffer, copy content
-void RB_FboLeave( viewDef_t* viewDef ) {
+void FB_Leave( viewDef_t* viewDef ) {
 	if ( !fboUsed )
 		return;
 	GL_CheckErrors();
-	RB_FboAccessColorDepth();
+	FB_AccessColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
