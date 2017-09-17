@@ -200,7 +200,6 @@ void idSessionLocal::SetSaveGameGuiVars( void ) {
 
 	guiActive->SetStateString( "loadgame_sel_0", "-1" );
 	guiActive->SetStateString( "loadgame_shot", "guis/assets/blankLevelShot" );
-
 }
 
 /*

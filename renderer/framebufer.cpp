@@ -43,7 +43,7 @@ void FB_Enter() {
 	if ( fboUsed && fboId )
 		return;
 	GL_CheckErrors(); // debug
-	bool fboSeparateStencil = strcmp( glConfig.vendor_string, "Intel" ) == 0; // may change after a vid_restart
+	fboSeparateStencil = strcmp( glConfig.vendor_string, "Intel" ) == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
