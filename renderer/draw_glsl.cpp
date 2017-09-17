@@ -612,14 +612,14 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( u_lightProjectionTexture, 5 );
 		qglUniform1i( u_lightProjectionCubemap, 2 );
-		//qglUniform1i( u_lightFalloffTexture, 6 );
+		qglUniform1i( u_lightFalloffTexture, 6 );
 		qglUniform1i( u_lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( u_lightProjectionTexture, 2 );
 		qglUniform1i( u_lightProjectionCubemap, 5 );
 		qglUniform1i( u_lightFalloffTexture, 1 );
-		//qglUniform1i( u_lightFalloffCubemap, 6 );
+		qglUniform1i( u_lightFalloffCubemap, 6 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );

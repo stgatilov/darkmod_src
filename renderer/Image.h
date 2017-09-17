@@ -178,7 +178,6 @@ public:
 	void		CopyFramebuffer( int x, int y, int width, int height, bool useOversizedBuffer );
 
 	void		CopyDepthBuffer( int x, int y, int width, int height, bool useOversizedBuffer );
-	void		CopyStencilBuffer( int x, int y, int width, int height );
 
 	void		UploadScratch( const byte *pic, int width, int height );
 
@@ -458,8 +457,6 @@ public:
 };
 
 extern idImageManager	*globalImages;		// pointer to global list for the rest of the system
-
-//int MakePowerOfTwo( int num );
 
 /*
 ====================================================================

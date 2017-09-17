@@ -433,8 +433,7 @@ static void R_CheckPortableExtensions( void ) {
 		common->Error( "GL_ARB_texture_cube_map not supported!\n" );
 
 	// GL_ARB_texture_non_power_of_two
-	if (!R_CheckExtension( "GL_ARB_texture_non_power_of_two" ))
-		common->Error( "GL_ARB_texture_non_power_of_two not supported!\n" );
+	glConfig.textureNonPowerOfTwoAvailable = R_CheckExtension( "GL_ARB_texture_non_power_of_two" );
 
 	// GL_ARB_texture_compression + GL_S3_s3tc
 	// DRI drivers may have GL_ARB_texture_compression but no GL_EXT_texture_compression_s3tc
@@ -1730,14 +1729,15 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	MakeAmbientMapParam param;
 	idStr		fullname;
 	const char	*baseName;
-	byte		*buffers[6];
-	int			width, height;
 
-	if ( args.Argc() < 2 && args.Argc() > 4 ) {
-		common->Printf( "USAGE: ambientshot <basename> [size [sample_count [crutch_up [specular?]]]]\n" );
+	if ( args.Argc() < 2 || args.Argc() > 6 ) {
+		common->Printf( "USAGE: MakeAmbientMap <basename> [size [sample_count [crutch_up [specular?]]]]\n" );
 		return;
 	}
 	baseName = args.Argv( 1 );
+	
+	byte* facepalm[6];
+	param.buffers = facepalm;
 
 	param.outSize = 32;
 	if ( args.Argc() > 2 ) 
@@ -1757,20 +1757,18 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		sprintf( fullname, "env/%s%s", baseName, cubeExtensions[i] );
 		common->Printf( "loading %s\n", fullname.c_str() );
 		session->UpdateScreen();
-		R_LoadImage( fullname, &buffers[i], &width, &height, NULL, true );
-		if ( !buffers[i] ) {
+		R_LoadImage( fullname, &param.buffers[i], &param.size, &param.size, NULL, true );
+		if ( !param.buffers[i] ) {
 			common->Printf( "failed.\n" );
 			for ( i-- ; i >= 0 ; i-- ) {
-				Mem_Free( buffers[i] );
+				Mem_Free( param.buffers[i] );
 			}
 			return;
 		}
 	}
 
 	extern void R_MakeAmbientMap( MakeAmbientMapParam& param );
-	//extern void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular );
 
-	//byte	*outBuffer = (byte *)_alloca( outSize * outSize * 4 );
 	param.outBuffer = (byte*)R_StaticAlloc( 4 * param.outSize*param.outSize );
 
 	for ( param.specular = false;; ) {
@@ -1797,8 +1795,8 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 
 	R_StaticFree( param.outBuffer );
 	for ( int f = 0 ; f < 6 ; f++ ) {
-		if ( buffers[f] ) {
-			Mem_Free( buffers[f] );
+		if ( param.buffers[f] ) {
+			Mem_Free( param.buffers[f] );
 		}
 	}
 	session->UpdateScreen();

@@ -957,7 +957,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 		// only dump if in a 3d view
 		extern void FB_AccessColorDepth( bool DepthToo ); // duzenko #4425 FIXME ugly magic extern
-		if ( backEnd.viewDef->viewEntitys && !r_useFbo.GetBool() )
+		if ( backEnd.viewDef->viewEntitys )
 			if ( r_useFbo.GetBool() )
 				FB_AccessColorDepth( false );
 			else
