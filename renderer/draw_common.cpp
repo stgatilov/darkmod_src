@@ -1223,8 +1223,11 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
 	}
 
-	qglStencilFunc( GL_GEQUAL, 128, 255 );
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
+	if ( r_softShadows.GetBool() )
+		qglStencilFunc( GL_ALWAYS, 128, 255 );
+	else
+		qglStencilFunc( GL_GEQUAL, 128, 255 );
 }
 
 /*

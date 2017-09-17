@@ -108,7 +108,6 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	currrentInteractionShader->UpdateUniforms( din );
 
 	// set the textures
-
 	// texture 0 will be the per-surface bump map
 	GL_SelectTexture( 0 );
 	din->bumpImage->Bind();
@@ -134,8 +133,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	if ( r_softShadows.GetBool() ) {
 		GL_SelectTexture( 7 );
 		extern void FB_BindStencilTexture();
-		idImage* stencil = globalImages->currentStencilFbo;
-		stencil->Bind();
+		FB_BindStencilTexture();
 	}
 
 	// draw it
@@ -191,8 +189,6 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	// disable features
 	if ( r_softShadows.GetBool() ) {
 		GL_SelectTexture( 7 );
-		globalImages->BindNull();
-		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 	}
 
@@ -262,15 +258,9 @@ void RB_GLSL_DrawInteractions( void ) {
 			qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		//extern void FB_SwapDepthTexture( idImage *newDepthTexture, bool copy );
-		//if ( r_softShadows.GetBool() )
-		//	FB_SwapDepthTexture( globalImages->currentDepthFbo, true );
-
 		if ( !(r_ignore.GetInteger() & 1) ) {
 			stencilShadowShader.Use();
 			RB_StencilShadowPass( vLight->globalShadows );
-			if ( r_softShadows.GetBool() )
-				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 		if ( (r_ignore.GetInteger() & 4) ) 
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
@@ -282,15 +272,6 @@ void RB_GLSL_DrawInteractions( void ) {
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		/*if ( r_softShadows.GetBool() ) {
-			stencilShadowShader.Use();
-			r_showShadows.SetInteger( -1 );
-			RB_StencilShadowPass( vLight->globalShadows );
-			RB_StencilShadowPass( vLight->localShadows );
-			r_showShadows.SetInteger( 0 );
-			FB_SwapDepthTexture( globalImages->currentDepthImage, false );
-		}*/
-		
 		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
 		if ( !(r_ignore.GetInteger() & 8) )
@@ -632,11 +613,9 @@ void pointInteractionProgram_t::AfterLoad() {
 	advanced = qglGetUniformLocation( program, "u_advanced" );
 	softShadows = qglGetUniformLocation( program, "u_softShadows" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
-	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
 	qglUseProgram( program );
 	qglUniform1i( u_stencilTexture, 7 );
-	qglUniform1i( u_depthTexture, 6 );
 	qglUseProgram( 0 );
 }
 
@@ -644,7 +623,10 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	qglUniform1f( softShadows, r_softShadows.GetFloat() );
+	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows )
+		qglUniform1f( softShadows, r_softShadows.GetFloat() );
+	else
+		qglUniform1f( softShadows, 0 );
 }
 
 void ambientInteractionProgram_t::AfterLoad() {
