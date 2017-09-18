@@ -262,7 +262,8 @@ void RB_GLSL_DrawInteractions( void ) {
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		FB_CopyStencil();
+		if ( r_softShadows.GetBool() )
+			FB_CopyStencil();
 
 		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
