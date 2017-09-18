@@ -25,6 +25,12 @@
 ===============================================================================
 */
 
+enum glVendor_t {
+	glvAny,
+	glvAMD,
+	glvIntel,
+};
+
 // Contains variables specific to the OpenGL configuration being run right now.
 // These are constant once the OpenGL subsystem is initialized.
 typedef struct glconfig_s {
@@ -33,6 +39,7 @@ typedef struct glconfig_s {
 	const char			*version_string;
 	const char			*extensions_string;
 	const char			*wgl_extensions_string;
+	glVendor_t			vendor;
 
 	float				glVersion;				// atof( version_string )
 

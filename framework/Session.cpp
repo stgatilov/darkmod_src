@@ -3037,9 +3037,8 @@ void idSessionLocal::FrontendThreadFunction() {
 			GLsync glSync = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 			if( glSync != nullptr ) {
 				GLenum result = qglClientWaitSync( glSync, GL_SYNC_FLUSH_COMMANDS_BIT, 100000000 );
-				if( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) {
-					common->Warning( "glClientWaitSync did not complete successfully.\n" );
-				}
+				if( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) 
+					common->Warning( "glClientWaitSync did not complete successfully (result code %d).\n", result );
 				qglDeleteSync( glSync );
 			} else {
 				common->Error( "Failed to create GL fence\n" );

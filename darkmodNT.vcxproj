@@ -725,6 +725,7 @@
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
+    <ClInclude Include="renderer\FrameBuffer.h" />
     <ClInclude Include="renderer\glext.h" />
     <ClInclude Include="renderer\glsl.h" />
     <ClInclude Include="renderer\GuiModel.h" />

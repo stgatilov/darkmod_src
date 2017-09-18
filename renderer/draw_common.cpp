@@ -17,6 +17,7 @@
 
 #include "tr_local.h"
 #include "glsl.h"
+#include "FrameBuffer.h"
 
 /*
 ================
@@ -956,10 +957,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// only dump if in a 3d view
-		extern void FB_AccessColorDepth( bool DepthToo ); // duzenko #4425 FIXME ugly magic extern
 		if ( backEnd.viewDef->viewEntitys )
 			if ( r_useFbo.GetBool() )
-				FB_AccessColorDepth( false );
+				FB_CopyColorDepth();
 			else
 				globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 					backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
@@ -1635,8 +1635,7 @@ void RB_Bloom() {
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 	if ( !w || !h ) // this has actually happened
 		return;
-	extern void FB_AccessColorDepth( bool DepthToo );
-	FB_AccessColorDepth( false );
+	FB_CopyColorDepth();
 
 	// full screen blends
 	qglLoadIdentity();

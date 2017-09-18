@@ -1384,6 +1384,9 @@
     <ClInclude Include="renderer\glsl.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="renderer\FrameBuffer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">

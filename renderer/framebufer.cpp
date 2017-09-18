@@ -18,8 +18,10 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #include "tr_local.h"
 
 bool fboUsed;
-// called when post-proceesing is about to start, needs pixels and sometimes depth as both input and output for water and smoke
-void FB_AccessColorDepth( bool DepthToo = false ) {
+
+// called when post-proceesing is about to start, needs pixels 
+// but no longer depth as both input and output for water and smoke
+void FB_CopyColorDepth() {
 	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 	//	return;
 	GL_SelectTexture( 0 );
@@ -28,22 +30,20 @@ void FB_AccessColorDepth( bool DepthToo = false ) {
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, fboUsed && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
 			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
 	}
-	if ( !(fboUsed && r_fboSharedDepth.GetBool()) && DepthToo ) {
+	/*if ( !(fboUsed && r_fboSharedDepth.GetBool()) && DepthToo ) {
 		globalImages->currentDepthImage->Bind();
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
 			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0 );
-	}
+	}*/
 }
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboId;
-bool fboSeparateStencil; 
 
 void FB_Enter() {
 	if ( fboUsed && fboId )
 		return;
 	GL_CheckErrors(); // debug
-	fboSeparateStencil = strcmp( glConfig.vendor_string, "Intel" ) == 0; // may change after a vid_restart
 	// virtual resolution as a modern alternative for actual desktop resolution affecting all other windows
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 
@@ -70,7 +70,7 @@ void FB_Enter() {
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); //NULL means reserve texture memory, but texels are undefined
 
-		if ( fboSeparateStencil ) {
+		if ( glConfig.vendor != glvAny ) { 
 			globalImages->currentStencilFbo->Bind();
 			globalImages->currentStencilFbo->uploadWidth = curWidth;
 			globalImages->currentStencilFbo->uploadHeight = curHeight;
@@ -81,6 +81,15 @@ void FB_Enter() {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
 		}
 
+		/*globalImages->stencilCopy->Bind();
+		globalImages->stencilCopy->uploadWidth = curWidth;
+		globalImages->stencilCopy->uploadHeight = curHeight;
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );*/
+
 		globalImages->currentDepthFbo->Bind();
 		globalImages->currentDepthFbo->uploadWidth = curWidth;
 		globalImages->currentDepthFbo->uploadHeight = curHeight;
@@ -88,7 +97,7 @@ void FB_Enter() {
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		if ( fboSeparateStencil ) {
+		if ( glConfig.vendor == glvIntel ) { // FIXME allow 24-bit depth for low-res monitors
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 		} else {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
@@ -101,7 +110,7 @@ void FB_Enter() {
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		if ( fboSeparateStencil ) {
+		if ( glConfig.vendor == glvIntel ) { // FIXME allow 24-bit depth for low-res monitors
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 		} else {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
@@ -124,7 +133,7 @@ void FB_Enter() {
 		// attach a renderbuffer to depth attachment point
 		GLuint depthTex = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage->texnum : globalImages->currentDepthFbo->texnum;
 		qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
-		if ( fboSeparateStencil )
+		if ( glConfig.vendor == glvIntel ) // separate stencil, thank God
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
 		else
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
@@ -143,11 +152,30 @@ void FB_Enter() {
 	GL_CheckErrors();
 }
 
+/*
+ Soft shadows vendor specific implementation
+ Intel: separate stencil, direct access, fastest
+ nVidia: combined stencil & depth, direct access, fast
+ AMD: combined stencil & depth, direct access very slow, resorting to stencil copy
+ */
+
+void FB_CopyStencil() { // duzenko: why, AMD? WHY?? 
+	if ( glConfig.vendor != glvAMD || !r_softShadows.GetBool() )
+		return;
+	globalImages->currentStencilFbo->Bind();
+	qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
+	/*globalImages->currentDepthFbo->Bind();
+	idScreenRect& r = backEnd.currentScissor;
+	//qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, r.x1, r.y1, r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );*/
+	GL_CheckErrors();
+}
+
 void FB_BindStencilTexture() {
 	const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
-	idImage* stencil = fboSeparateStencil ? globalImages->currentStencilFbo : globalImages->currentDepthImage;
+	idImage* stencil = glConfig.vendor != glvAny ? globalImages->currentStencilFbo : globalImages->currentDepthImage;
+	//stencil = globalImages->currentDepthFbo;
 	stencil->Bind();
-	if ( !fboSeparateStencil )
+	if ( glConfig.vendor != glvIntel )
 		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 }
 
@@ -190,7 +218,7 @@ void FB_Leave( viewDef_t* viewDef ) {
 	if ( !fboUsed )
 		return;
 	GL_CheckErrors();
-	FB_AccessColorDepth();
+	FB_CopyColorDepth();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,

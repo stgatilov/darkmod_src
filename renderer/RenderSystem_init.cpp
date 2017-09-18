@@ -769,6 +769,11 @@ void R_InitOpenGL( void ) {
 	glConfig.version_string = (const char *)qglGetString(GL_VERSION);
 	glConfig.extensions_string = (const char *)qglGetString(GL_EXTENSIONS);
 
+	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 )
+		glConfig.vendor = glvIntel;
+	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
+		glConfig.vendor = glvAMD;
+
 	// OpenGL driver constants
 	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
 	glConfig.maxTextureSize = temp;
@@ -798,10 +803,6 @@ void R_InitOpenGL( void ) {
 
 	// allocate the vertex array range or vertex objects
 	vertexCache.Init();
-
-	// select which renderSystem we are going to use
-	//r_renderer.SetModified();
-	//tr.SetBackEndRenderer();
 
 	// allocate the frame data, which may be more if smp is enabled
 	R_InitFrameData();

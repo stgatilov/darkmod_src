@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 #include "glsl.h"
+#include "FrameBuffer.h"
 
 struct interactionProgram_t : lightProgram_t {
 	GLint			localViewOrigin;
@@ -91,14 +92,6 @@ ambientInteractionProgram_t ambientInteractionShader;
 interactionProgram_t* currrentInteractionShader;
 
 /*
-=========================================================================================
-
-GENERAL INTERACTION RENDERING
-
-=========================================================================================
-*/
-
-/*
 ==================
 RB_GLSL_DrawInteraction
 ==================
@@ -124,15 +117,14 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
-	//if ( !din->ambientLight ) {
+	if ( !din->ambientLight || din->ambientCubicLight ) {
 		// texture 4 is the per-surface specular map
 		GL_SelectTexture( 4 );
 		din->specularImage->Bind();
-	//}
+	}
 
 	if ( r_softShadows.GetBool() ) {
 		GL_SelectTexture( 7 );
-		extern void FB_BindStencilTexture();
 		FB_BindStencilTexture();
 	}
 
@@ -225,21 +217,19 @@ void RB_GLSL_DrawInteractions( void ) {
 	// for each light, perform adding and shadowing
 	//
 	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
-
+		
 		// do fogging later
-		if ( vLight->lightShader->IsFogLight() ) {
+		if ( vLight->lightShader->IsFogLight() ) 
 			continue;
-		}
-		if ( vLight->lightShader->IsBlendLight() ) {
+		if ( vLight->lightShader->IsBlendLight() ) 
 			continue;
-		}
 
 		// if there are no interactions, get out!
 		if ( !vLight->localInteractions && !vLight->globalInteractions && 
-			!vLight->translucentInteractions ) {
+			!vLight->translucentInteractions ) 
 			continue;
-		}
+
+		backEnd.vLight = vLight;
 
 		// clear the stencil buffer if needed
 		if ( vLight->globalShadows || vLight->localShadows ) {
@@ -271,6 +261,8 @@ void RB_GLSL_DrawInteractions( void ) {
 			if ( r_softShadows.GetBool() )
 				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
+
+		FB_CopyStencil();
 
 		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );

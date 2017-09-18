@@ -16,6 +16,7 @@
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "FrameBuffer.h"
 
 backEndState_t	backEnd;
 
@@ -573,8 +574,6 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
 	bool v3d = false, was2d = false; // needs to be declared outside of switch case
-	extern void FB_Enter();
-	extern void FB_Leave( viewDef_t* viewDef );
 
 	while (cmds) {
 		switch ( cmds->commandId ) {
