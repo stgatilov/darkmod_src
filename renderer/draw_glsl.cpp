@@ -123,7 +123,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		din->specularImage->Bind();
 	}
 
-	if ( r_softShadows.GetBool() ) {
+	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		GL_SelectTexture( 7 );
 		FB_BindStencilTexture();
 	}
@@ -179,7 +179,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray(3);
 
 	// disable features
-	if ( r_softShadows.GetBool() ) {
+	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		GL_SelectTexture( 7 );
 		globalImages->BindNull();
 	}
@@ -258,11 +258,9 @@ void RB_GLSL_DrawInteractions( void ) {
 		if ( !(r_ignore.GetInteger() & 2) ) {
 			stencilShadowShader.Use();
 			RB_StencilShadowPass( vLight->localShadows );
-			if ( r_softShadows.GetBool() )
-				qglStencilFunc( GL_ALWAYS, 128, 255 );
 		}
 
-		if ( r_softShadows.GetBool() )
+		if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
 			FB_CopyStencil();
 
 		if ( !(r_ignore.GetInteger() & 4) )
@@ -616,7 +614,7 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows )
+	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
 		qglUniform1f( softShadows, r_softShadows.GetFloat() );
 	else
 		qglUniform1f( softShadows, 0 );
