@@ -913,7 +913,7 @@ void idEntity::UpdateChangeableSpawnArgs( const idDict *source ) {
 	cameraTarget = NULL;
 	target = source->GetString( "cameraTarget" );
 	if ( target && target[0] ) {
-		// update the camera taget
+		// update the camera target
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
 	}
 
@@ -1471,7 +1471,7 @@ void idEntity::Spawn( void )
 	cameraTarget = NULL;
 	temp = spawnArgs.GetString( "cameraTarget" );
 	if ( temp && temp[0] ) {
-		// update the camera taget
+		// update the camera target
 		PostEventMS( &EV_UpdateCameraTarget, 0 );
 	}
 
@@ -2271,7 +2271,10 @@ void idEntity::Restore( idRestoreGame *savefile )
 	savefile->ReadInt( dormantStart );
 	savefile->ReadBool( cinematic );
 
-	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) );
+	savefile->ReadObject( reinterpret_cast<idClass *&>( cameraTarget ) ); 
+
+	// // grayman #4615 - update the camera target (will handle a NULL "cameraTarget")
+	PostEventMS( &EV_UpdateCameraTarget, 0 );
 
 	savefile->ReadInt( health );
 	savefile->ReadInt( maxHealth );

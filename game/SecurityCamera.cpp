@@ -78,6 +78,9 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt( pvsArea );
 	savefile->WriteStaticObject( physicsObj );
 	savefile->WriteTraceModel( trm );
+
+	savefile->WriteBool(rotate);	// grayman #4615
+	savefile->WriteBool(seePlayer);	// grayman #4615
 }
 
 /*
@@ -106,6 +109,9 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt( pvsArea );
 	savefile->ReadStaticObject( physicsObj );
 	savefile->ReadTraceModel( trm );
+
+	savefile->ReadBool(rotate);		// grayman #4615
+	savefile->ReadBool(seePlayer);	// grayman #4615
 }
 
 /*
@@ -113,23 +119,26 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 idSecurityCamera::Spawn
 ================
 */
-void idSecurityCamera::Spawn( void ) {
+void idSecurityCamera::Spawn( void )
+{
 	idStr	str;
 
+	rotate		= spawnArgs.GetBool("rotate", "1");		// grayman #4615
+	seePlayer	= spawnArgs.GetBool("seePlayer", "1");	// grayman #4615
 	sweepAngle	= spawnArgs.GetFloat( "sweepAngle", "90" );
 	health		= spawnArgs.GetInt( "health", "100" );
 	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
 	scanDist	= spawnArgs.GetFloat( "scanDist", "200" );
-	flipAxis	= spawnArgs.GetBool( "flipAxis" );
+	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );	// grayman #4615
 
-	modelAxis	= spawnArgs.GetInt( "modelAxis" );
+	modelAxis	= spawnArgs.GetInt( "modelAxis", "0" );	// grayman #4615
 	if ( modelAxis < 0 || modelAxis > 2 ) {
 		modelAxis = 0;
 	}
 
 	spawnArgs.GetVector( "viewOffset", "0 0 0", viewOffset );
 
-	if ( spawnArgs.GetBool( "spotLight" ) ) {
+	if ( spawnArgs.GetBool( "spotLight", "0" ) ) {	// grayman #4615
 		PostEventMS( &EV_SecurityCam_AddLight, 0 );
 	}
 
@@ -139,7 +148,10 @@ void idSecurityCamera::Spawn( void ) {
 	scanFovCos = cos( scanFov * idMath::PI / 360.0f );
 
 	angle = GetPhysics()->GetAxis().ToAngles().yaw;
-	StartSweep();
+	if ( rotate ) // grayman #4615
+	{
+		StartSweep();
+	}
 	SetAlertMode( SCANNING );
 	BecomeActive( TH_THINK );
 
@@ -280,7 +292,8 @@ renderView_t *idSecurityCamera::GetRenderView() {
 idSecurityCamera::CanSeePlayer
 ================
 */
-bool idSecurityCamera::CanSeePlayer( void ) {
+bool idSecurityCamera::CanSeePlayer( void )
+{
 	int i;
 	float dist;
 	idPlayer *ent;
@@ -292,6 +305,11 @@ bool idSecurityCamera::CanSeePlayer( void ) {
 
 	for ( i = 0; i < gameLocal.numClients; i++ ) {
 		ent = static_cast<idPlayer*>(gameLocal.entities[ i ]);
+
+		if ( !seePlayer ) // grayman #4615 - if this camera doesn't react to the player
+		{
+			continue;
+		}
 
 		if ( !ent || ent->fl.notarget || ent->fl.invisible ) // grayman #3857 - added 'invisible'
 		{
@@ -373,10 +391,14 @@ void idSecurityCamera::Think( void ) {
 
 				SetAlertMode(ALERT);
 				stopSweeping = gameLocal.time;
-				if (sweeping) {
-					CancelEvents( &EV_SecurityCam_Pause );
-				} else {
-					CancelEvents( &EV_SecurityCam_ReverseSweep );
+				if ( rotate ) // grayman #4615
+				{
+					if ( sweeping ) {
+						CancelEvents(&EV_SecurityCam_Pause);
+					}
+					else {
+						CancelEvents(&EV_SecurityCam_ReverseSweep);
+					}
 				}
 				sweeping = false;
 				StopSound( SND_CHANNEL_ANY, false );
@@ -385,29 +407,34 @@ void idSecurityCamera::Think( void ) {
 				sightTime = spawnArgs.GetFloat( "sightTime", "5" );
 				PostEventSec(&EV_SecurityCam_Alert, sightTime);
 			}
-		} else {
-			if (alertMode == ALERT) {
+		}
+		else {
+			if ( alertMode == ALERT ) {
 				float	sightResume;
 
 				SetAlertMode(LOSINGINTEREST);
-				CancelEvents( &EV_SecurityCam_Alert );
-				
-				sightResume = spawnArgs.GetFloat( "sightResume", "1.5" );
-				PostEventSec( &EV_SecurityCam_ContinueSweep, sightResume );
+				CancelEvents(&EV_SecurityCam_Alert);
+
+				sightResume = spawnArgs.GetFloat("sightResume", "1.5");
+				PostEventSec(&EV_SecurityCam_ContinueSweep, sightResume);
 			}
 
-			if ( sweeping ) {
-				idAngles a = GetPhysics()->GetAxis().ToAngles();
+			if ( rotate ) // grayman #4615
+			{
+				if ( sweeping ) {
+					idAngles a = GetPhysics()->GetAxis().ToAngles();
 
-				pct = ( gameLocal.time - sweepStart ) / ( sweepEnd - sweepStart );
-				travel = pct * sweepAngle;
-				if ( negativeSweep ) {
-					a.yaw = angle + travel;
-				} else {
-					a.yaw = angle - travel;
+					pct = (gameLocal.time - sweepStart) / (sweepEnd - sweepStart);
+					travel = pct * sweepAngle;
+					if ( negativeSweep ) {
+						a.yaw = angle + travel;
+					}
+					else {
+						a.yaw = angle - travel;
+					}
+
+					SetAngles(a);
 				}
-
-				SetAngles( a );
 			}
 		}
 	}
@@ -453,13 +480,20 @@ void idSecurityCamera::StartSweep( void ) {
 idSecurityCamera::Event_ContinueSweep
 ================
 */
-void idSecurityCamera::Event_ContinueSweep( void ) {
+void idSecurityCamera::Event_ContinueSweep( void )
+{
+	if ( !rotate ) // grayman #4615
+	{
+		SetAlertMode(SCANNING);
+		return;
+	}
+
 	float pct = (stopSweeping - sweepStart) / (sweepEnd - sweepStart);
 	float f = gameLocal.time - (sweepEnd - sweepStart) * pct;
 	int speed;
 
 	sweepStart = f;
-	speed = static_cast<int>(MS2SEC( SweepSpeed() ));
+	speed = static_cast<int>(SEC2MS( SweepSpeed() )); // grayman #4615 - SEC2MS, not MS2SEC
 	sweepEnd = sweepStart + speed;
    	PostEventMS( &EV_SecurityCam_Pause, static_cast<int>(speed * (1.0f - pct)));
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
@@ -507,7 +541,7 @@ void idSecurityCamera::Event_Pause( void ) {
 	sweepWait = spawnArgs.GetFloat( "sweepWait", "0.5" );
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
-	StartSound( "snd_stop", SND_CHANNEL_BODY, 0, false, NULL );
+	StartSound( "snd_end", SND_CHANNEL_BODY, 0, false, NULL );
    	PostEventSec( &EV_SecurityCam_ReverseSweep, sweepWait );
 }
 
@@ -534,6 +568,22 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	physicsObj.SetContents( CONTENTS_SOLID );
 	physicsObj.SetClipMask( MASK_SOLID | CONTENTS_BODY | CONTENTS_CORPSE | CONTENTS_MOVEABLECLIP );
 	SetPhysics( &physicsObj );
+
+	if ( spawnArgs.GetBool("spotLight", "0") ) // grayman #4615 - remove any bound light
+	{
+		idList<idEntity *> children;
+		GetTeamChildren( &children );
+		for ( int i = 0; i < children.Num(); i++ )
+		{
+			idEntity *child = children[i];
+			if ( child && child->IsType(idLight::Type) )
+			{
+				child->PostEventMS( &EV_Remove, 0 );
+				break;
+			}
+		}
+	}
+
 	physicsObj.DropToFloor();
 }
 

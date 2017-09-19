@@ -67,6 +67,9 @@ private:
 	idPhysics_RigidBody		physicsObj;
 	idTraceModel			trm;
 
+	bool					rotate;		// grayman #4615
+	bool					seePlayer;	// grayman #4615
+
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
 	void					SetAlertMode( int status );
