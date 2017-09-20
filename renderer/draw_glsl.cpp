@@ -240,6 +240,8 @@ void RB_GLSL_DrawInteractions( void ) {
 					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 			}
+			if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
+				FB_ToggleShadow( true );
 			qglClear( GL_STENCIL_BUFFER_BIT );
 		} else {
 			// no shadows, so no need to read or write the stencil buffer
@@ -261,7 +263,7 @@ void RB_GLSL_DrawInteractions( void ) {
 		}
 
 		if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
-			FB_CopyStencil();
+			FB_ToggleShadow( false );
 
 		if ( !(r_ignore.GetInteger() & 4) )
 			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );

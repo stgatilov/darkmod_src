@@ -2737,7 +2737,7 @@
     <ClCompile Include="renderer\draw_glsl.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\framebufer.cpp">
+    <ClCompile Include="renderer\FrameBufer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>

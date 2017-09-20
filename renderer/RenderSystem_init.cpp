@@ -17,8 +17,8 @@
 #pragma hdrstop
 
 
-
 #include "tr_local.h"
+#include "FrameBuffer.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -811,8 +811,7 @@ void R_InitOpenGL( void ) {
 	R_SetColorMappings();
 
 	// duzenko #4425 reset fbo
-	extern GLuint fboId; // FIXME ugly 'magic' extern
-	fboId = 0;
+	FB_Clear();
 
 #ifdef _WIN32
 	static bool glCheck = false;
@@ -1875,32 +1874,7 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	}
 	common->Printf( "CPU: %s\n", Sys_GetProcessorString() );
 
-	const char *active[2] = { "", " (ACTIVE)" };
-	/*common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
-
-	if ( glConfig.allowNV10Path ) {
-		common->Printf( "NV10 path ENABLED%s\n", active[tr.backEndRenderer == BE_NV10] );
-	} else {
-		common->Printf( "NV10 path disabled\n" );
-	}
-
-	if ( glConfig.allowNV20Path ) {
-		common->Printf( "NV20 path ENABLED%s\n", active[tr.backEndRenderer == BE_NV20] );
-	} else {
-		common->Printf( "NV20 path disabled\n" );
-	}
-
-	if ( glConfig.allowR200Path ) {
-		common->Printf( "R200 path ENABLED%s\n", active[tr.backEndRenderer == BE_R200] );
-	} else {
-		common->Printf( "R200 path disabled\n" );
-	}*/
-
-	if ( true/*glConfig.allowARB2Path*/ ) {
-		common->Printf( "ARB2 path ENABLED%s\n", active[true/*tr.backEndRenderer == BE_ARB2*/] );
-	} else {
-		common->Printf( "ARB2 path disabled\n" );
-	}
+	common->Printf( "ARB2 path ENABLED\n" );
 
 	//=============================
 
@@ -1929,12 +1903,6 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 	} else if ( !glConfig.twoSidedStencilAvailable ) {
 		common->Printf( "Two sided stencil not available\n" );
 	}
-
-	/*if ( vertexCache.IsFast() ) {
-		common->Printf( "Vertex cache is fast\n" );
-	} else {
-		common->Printf( "Vertex cache is SLOW\n" );
-	}*/
 }
 
 /*

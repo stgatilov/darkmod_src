@@ -28,8 +28,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #pragma once
 
-extern void FB_CopyStencil();
 extern void FB_BindStencilTexture();
+extern void FB_Clear();
 extern void FB_Enter();
 extern void FB_Leave( viewDef_t* viewDef );
 extern void FB_CopyColorDepth();
+extern void FB_ToggleShadow( bool on );
