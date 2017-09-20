@@ -1538,68 +1538,23 @@ idImage	*idImageManager::ImageFromFile( const char *_name, textureFilter_t filte
 
 	// HACK: to allow keep fonts from being mip'd, as new ones will be introduced with localization
 	// this keeps us from having to make a material for each font tga
-	if ( name.Find( "fontImage_") >= 0 ) {
-		allowDownSize = false;
-	}
-	
+	if ( name.Find( "fontImage_") >= 0 
 	//nbohr1more: 4358 blacklist texture paths to prevent image_downsize from making fonts, guis, and background images blurry
-	
-	else if ( name.Find("fonts/") >= 0) 
-	{
-	allowDownSize = false;   
-	}	
-	else if ( name.Find("guis/assets/") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("postprocess/") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("_cookedMath") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("_currentRender") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("_currentDepth") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("/consolefont") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("/bigchars") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("/entityGui") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("video/") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("fsfx") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if ( name.Find("/AFX") >= 0)
-	{	
-	allowDownSize = false;	  
-	}
-	else if (name.Find("_afxweight") >= 0)
-	{
-	allowDownSize = false;
-	}
-	else if (name.Find("_bloomImage") >= 0)
-	{
-	allowDownSize = false;
-	}
+	|| name.Find("fonts/") >= 0
+	|| name.Find("guis/assets/") >= 0
+	|| name.Find("postprocess/") >= 0
+	|| name.Find("_cookedMath") >= 0
+	|| name.Find("_currentRender") >= 0
+	|| name.Find("_currentDepth") >= 0
+	|| name.Find("/consolefont") >= 0
+	|| name.Find("/bigchars") >= 0
+	|| name.Find("/entityGui") >= 0
+	|| name.Find("video/") >= 0
+	|| name.Find("fsfx") >= 0
+	|| name.Find("/AFX") >= 0
+	|| name.Find("_afxweight") >= 0
+	|| name.Find("_bloomImage") >= 0)
+		allowDownSize = false;
 
 	image->allowDownSize = allowDownSize;
 	image->repeat = repeat;

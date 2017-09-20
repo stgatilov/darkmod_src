@@ -280,14 +280,12 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	viewDef_t		*parms;
 
 	// remote views can be reused in a single frame
-	if ( stage->dynamicFrameCount == tr.frameCount ) {
+	if ( stage->dynamicFrameCount == tr.frameCount ) 
 		return;
-	}
 
 	// if the entity doesn't have a remoteRenderView, do nothing
-	if ( !surf->space->entityDef->parms.remoteRenderView ) {
+	if ( !surf->space->entityDef->parms.remoteRenderView ) 
 		return;
-	}
 
 	// copy the viewport size from the original
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
@@ -322,9 +320,8 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
-	if (!stage->image) {
+	if (!stage->image) 
 		stage->image = globalImages->scratchImage;
-	}
 
 	tr.CaptureRenderToImage( stage->image->imgName );
 	tr.UnCrop();
