@@ -2187,6 +2187,7 @@ void idRenderSystemLocal::Clear( void ) {
 	demoGuiModel = NULL;
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
+	pbo = 0;
 }
 
 /*
@@ -2205,6 +2206,7 @@ void idRenderSystemLocal::Init( void ) {
 	ambientLightVector[1] = 0.5f - 0.385f;
 	ambientLightVector[2] = 0.8925f;
 	ambientLightVector[3] = 1.0f;
+	pbo = 0;
 
 	memset( &backEnd, 0, sizeof( backEnd ) );
 
@@ -2248,7 +2250,7 @@ idRenderSystemLocal::Shutdown
 */
 void idRenderSystemLocal::Shutdown( void ) {	
 	common->Printf( "idRenderSystem::Shutdown()\n" );
-
+    pbo = 0;
 	R_DoneFreeType( );
 
 	if ( glConfig.isInitialized ) {
