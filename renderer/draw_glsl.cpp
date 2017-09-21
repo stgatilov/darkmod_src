@@ -117,11 +117,11 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
-	if ( !din->ambientLight || din->ambientCubicLight ) {
+	//if ( !din->ambientLight || din->ambientCubicLight ) { duzenko: IMHO specular needs to be included in ambient by simple add
 		// texture 4 is the per-surface specular map
 		GL_SelectTexture( 4 );
 		din->specularImage->Bind();
-	}
+	//}
 
 	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		GL_SelectTexture( 7 );
