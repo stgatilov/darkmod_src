@@ -475,13 +475,11 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 
 	scissor.Intersect( tr.viewDef->scissor );
 
-	if ( scissor.IsEmpty() ) {
-		// cropped out
+	if ( scissor.IsEmpty() ) // cropped out
 		return false;
-	}
 
 	// see what kind of subview we are making
-	if ( shader->GetSort() != SS_SUBVIEW ) {
+	//if ( shader->GetSort() != SS_SUBVIEW ) {
 		for ( int i = 0 ; i < shader->GetNumStages() ; i++ ) {
 			const shaderStage_t	*stage = shader->GetStage( i );
 			switch ( stage->texture.dynamic ) {
@@ -497,13 +495,12 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			}
 		}
 		return true;
-	}
+	//}
 
 	// issue a new view command
 	parms = R_MirrorViewBySurface( drawSurf );
-	if ( !parms ) {
+	if ( !parms ) 
 		return false;
-	}
 
 	parms->scissor = scissor;
 	parms->superView = tr.viewDef;
@@ -553,13 +550,11 @@ bool R_GenerateSubViews( void ) {
 		drawSurf = tr.viewDef->drawSurfs[i];
 		shader = drawSurf->material;
 
-		if ( !shader || !shader->HasSubview() ) {
+		if ( !shader || !shader->HasSubview() ) 
 			continue;
-		}
 
-		if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+		if ( R_GenerateSurfaceSubview( drawSurf ) ) 
 			subviews = true;
-		}
 	}
 
 	return subviews;
