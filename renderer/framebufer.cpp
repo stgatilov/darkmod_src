@@ -265,6 +265,8 @@ void FB_BindStencilTexture() {
 }
 
 void FB_ToggleShadow( bool on ) {
+	if ( glConfig.vendor == glvIntel )
+		return;
 	GL_CheckErrors();
 	if ( on && !depthCopiedThisView ) {
 		globalImages->currentDepthFbo->Bind();
