@@ -32,5 +32,5 @@ extern void FB_BindStencilTexture();
 extern void FB_Clear();
 extern void FB_Enter();
 extern void FB_Leave( viewDef_t* viewDef );
-extern void FB_CopyColorDepth();
+extern void FB_CopyColorBuffer();
 extern void FB_ToggleShadow( bool on );

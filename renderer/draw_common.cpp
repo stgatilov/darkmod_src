@@ -959,7 +959,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		// only dump if in a 3d view
 		if ( backEnd.viewDef->viewEntitys )
 			if ( r_useFbo.GetBool() )
-				FB_CopyColorDepth();
+				FB_CopyColorBuffer();
 			else
 				globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 					backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
@@ -1635,7 +1635,7 @@ void RB_Bloom() {
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 	if ( !w || !h ) // this has actually happened
 		return;
-	FB_CopyColorDepth();
+	FB_CopyColorBuffer();
 
 	// full screen blends
 	qglLoadIdentity();

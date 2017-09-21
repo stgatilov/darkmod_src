@@ -21,7 +21,7 @@ bool fboUsed;
 
 // called when post-proceesing is about to start, needs pixels 
 // but no longer depth as both input and output for water and smoke
-void FB_CopyColorDepth() {
+void FB_CopyColorBuffer() {
 	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 	//	return;
 	GL_SelectTexture( 0 );
@@ -39,6 +39,7 @@ void FB_CopyColorDepth() {
 
 // duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
 GLuint fboPrimary, fboShadow;
+bool depthCopiedThisView; 
 
 void CheckCreatePrimary() {
 	GL_CheckErrors(); // debug
@@ -141,6 +142,7 @@ void CheckCreatePrimary() {
 			qglDeleteFramebuffers( 1, &fboPrimary );
 			fboPrimary = 0; // try from scratch next time
 			r_useFbo.SetBool( false );
+			r_softShadows.SetInteger( 0 );
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
@@ -158,7 +160,6 @@ void CheckCreatePrimary() {
 			common->Printf( "glCheckFramebufferStatus %d\n", status );
 			qglDeleteFramebuffers( 1, &fboShadow );
 			fboShadow = 0; // try from scratch next time
-			r_useFbo.SetBool( false );
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
@@ -168,10 +169,15 @@ void FB_Clear() {
 	fboPrimary = fboShadow = 0;
 }
 
-bool depthCopiedThisView;
-
 void FB_Enter() {
-	if ( fboUsed && fboPrimary )
+	if ( r_softShadows.GetBool() ) {
+		r_useGLSL.SetBool( true );
+		r_useFbo.SetBool( true );
+		r_fboSharedDepth.SetBool( true );
+	}
+	if ( !r_useFbo.GetBool() )
+		return;
+	if ( fboUsed )
 		return;
 	CheckCreatePrimary();
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
@@ -181,40 +187,13 @@ void FB_Enter() {
 	GL_CheckErrors();
 }
 
-/*
- Soft shadows vendor specific implementation
- Intel: separate stencil buffer, direct access, awesome
- Others: combined stencil & depth, copy to a separate FBO, meh
- */
-
-void FB_BindStencilTexture() {
-	GL_CheckErrors();
-	if ( glConfig.vendor != glvIntel ) {
-		globalImages->currentDepthFbo->Bind();
-		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
-		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
-	} else
-		globalImages->currentStencilFbo->Bind();
-	GL_CheckErrors();
-}
-
-void FB_ToggleShadow( bool on ) {
-	GL_CheckErrors();
-	if ( on && !depthCopiedThisView ) {
-		globalImages->currentDepthFbo->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
-		depthCopiedThisView = true;
-	}
-	GL_CheckErrors();
-	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : fboPrimary );
-}
-
 // switch from fbo to default framebuffer, copy content
 void FB_Leave( viewDef_t* viewDef ) {
 	if ( !fboUsed )
 		return;
 	GL_CheckErrors();
-	FB_CopyColorDepth();
+	if ( r_ignore2.GetBool() )
+		FB_CopyColorBuffer();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
@@ -229,7 +208,6 @@ void FB_Leave( viewDef_t* viewDef ) {
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 
 	GL_State( GLS_DEFAULT );
-	//qglEnable( GL_TEXTURE_2D );
 	qglDisable( GL_DEPTH_TEST );
 	qglDisable( GL_STENCIL_TEST );
 	qglColor3f( 1, 1, 1 );
@@ -265,7 +243,34 @@ void FB_Leave( viewDef_t* viewDef ) {
 		viewDef->scissor.x2 = glConfig.vidWidth - 1;
 		viewDef->scissor.y2 = glConfig.vidHeight - 1;
 	}
-	fboUsed = 0;
+	fboUsed = false;
 	GL_CheckErrors();
 }
 
+/*
+Soft shadows vendor specific implementation
+Intel: separate stencil buffer, direct access, awesome
+Others: combined stencil & depth, copy to a separate FBO, meh
+*/
+
+void FB_BindStencilTexture() {
+	GL_CheckErrors();
+	if ( glConfig.vendor != glvIntel ) {
+		globalImages->currentDepthFbo->Bind();
+		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
+		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+	} else
+		globalImages->currentStencilFbo->Bind();
+	GL_CheckErrors();
+}
+
+void FB_ToggleShadow( bool on ) {
+	GL_CheckErrors();
+	if ( on && !depthCopiedThisView ) {
+		globalImages->currentDepthFbo->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
+		depthCopiedThisView = true;
+	}
+	GL_CheckErrors();
+	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : fboPrimary );
+}
