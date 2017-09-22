@@ -1250,7 +1250,10 @@ idGameLocal::PlayerReady
 */
 bool idGameLocal::PlayerReady()
 {
-	return GetLocalPlayer()->IsReady();
+	idPlayer* player = GetLocalPlayer();
+	if ( player == NULL ) // duzenko: game has not started yet, better this than CTD
+		return false;
+	return player->IsReady();
 }
 
 /*

@@ -431,7 +431,7 @@ static void	RB_SetBuffer( const void *data ) {
 		} else {
 			qglClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
 		}
-		if (!r_useFbo.GetBool()) // duzenko #4425: not needed for default framebuffer, happens elsewhere for fbo
+		if ( !r_useFbo.GetBool() || !game->PlayerReady() ) // duzenko #4425: happens elsewhere for fbo, "Click when ready" skips FBO even with r_useFbo 1
 			qglClear( GL_COLOR_BUFFER_BIT );
 	}
 }
@@ -587,7 +587,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 					if ( v3d ) {
 						FB_Enter();
 					} else {
-						FB_Leave( ((const drawSurfsCommand_t *)cmds)->viewDef ); // duzenko: render 2d in default framebuffer, hopefully no 3d drawing after this
+						FB_Leave( ((const drawSurfsCommand_t *)cmds)->viewDef ); // duzenko: render 2d in default framebuffer, as well as all 3d until frame end
 						was2d = true;
 					}
 			RB_DrawView(cmds);

@@ -17,7 +17,9 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "tr_local.h"
 
-bool fboUsed;
+bool isInFbo;
+bool depthCopiedThisView;
+GLuint fboPrimary, fboShadow;
 
 // called when post-proceesing is about to start, needs pixels 
 // but no longer depth as both input and output for water and smoke
@@ -25,9 +27,9 @@ void FB_CopyColorBuffer() {
 	//if (!fboUsed) // we need to copy render separately for water/smoke and then again for bloom
 	//	return;
 	GL_SelectTexture( 0 );
-	if ( !fboUsed || !r_fboSharedColor.GetBool() ) {
+	if ( !isInFbo || !r_fboSharedColor.GetBool() ) {
 		globalImages->currentRenderImage->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, fboUsed && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, isInFbo && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
 			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
 	}
 	/*if ( !(fboUsed && r_fboSharedDepth.GetBool()) && DepthToo ) {
@@ -36,10 +38,6 @@ void FB_CopyColorBuffer() {
 			0, 0, globalImages->currentDepthImage->uploadWidth, globalImages->currentDepthImage->uploadHeight, 0 );
 	}*/
 }
-
-// duzenko #4425: use framebuffer object for rendering in virtual resolution, separate stencil, lower color depth and depth precision, etc
-GLuint fboPrimary, fboShadow;
-bool depthCopiedThisView; 
 
 void CheckCreatePrimary() {
 	GL_CheckErrors(); // debug
@@ -177,19 +175,19 @@ void FB_Enter() {
 	}
 	if ( !r_useFbo.GetBool() )
 		return;
-	if ( fboUsed )
+	if ( isInFbo )
 		return;
 	CheckCreatePrimary();
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
-	fboUsed = true;
+	isInFbo = true;
 	depthCopiedThisView = false;
 	GL_CheckErrors();
 }
 
 // switch from fbo to default framebuffer, copy content
 void FB_Leave( viewDef_t* viewDef ) {
-	if ( !fboUsed )
+	if ( !isInFbo )
 		return;
 	GL_CheckErrors();
 	if ( r_ignore2.GetBool() )
@@ -243,7 +241,7 @@ void FB_Leave( viewDef_t* viewDef ) {
 		viewDef->scissor.x2 = glConfig.vidWidth - 1;
 		viewDef->scissor.y2 = glConfig.vidHeight - 1;
 	}
-	fboUsed = false;
+	isInFbo = false;
 	GL_CheckErrors();
 }
 
@@ -265,7 +263,7 @@ void FB_BindStencilTexture() {
 }
 
 void FB_ToggleShadow( bool on ) {
-	if ( glConfig.vendor == glvIntel )
+	if ( glConfig.vendor == glvIntel || !isInFbo ) // "Click when ready" screen calls this when not in FBO
 		return;
 	GL_CheckErrors();
 	if ( on && !depthCopiedThisView ) {
