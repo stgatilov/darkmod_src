@@ -957,7 +957,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys && !backEnd.viewDef->isSubview )
+		if ( backEnd.viewDef->viewEntitys/* && !backEnd.viewDef->isSubview */)
 			if ( r_useFbo.GetBool() )
 				FB_CopyColorBuffer();
 			else
