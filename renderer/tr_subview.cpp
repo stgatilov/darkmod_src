@@ -298,7 +298,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 
-	tr.CropRenderSize( stage->width, stage->height, true );
+	//tr.CropRenderSize( stage->width, stage->height, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -324,7 +324,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 		stage->image = globalImages->scratchImage;
 
 	tr.CaptureRenderToImage( stage->image->imgName );
-	tr.UnCrop();
+	//tr.UnCrop();
 }
 
 /*
@@ -346,7 +346,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect sciss
 		return;
 	}
 
-	tr.CropRenderSize( stage->width, stage->height, true );
+	//tr.CropRenderSize( stage->width, stage->height, true, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -371,10 +371,11 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect sciss
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
-	stage->image = globalImages->scratchImage;
+	if ( !stage->image )
+		stage->image = globalImages->scratchImage;
 
 	tr.CaptureRenderToImage( stage->image->imgName );
-	tr.UnCrop();
+	//tr.UnCrop();
 }
 
 /*

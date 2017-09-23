@@ -596,6 +596,8 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			} else {
 				c_draw2d++;
 			}
+			if ( r_frontBuffer.GetBool() )
+				qglFinish();
 			break;
 		case RC_SET_BUFFER:
 			RB_SetBuffer( cmds );

@@ -1765,19 +1765,21 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 		if ( potWidth == imageWidth && potHeight == imageHeight ) {
 			qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 		} else {
-			byte	*junk;
+			//byte	*junk;
 			// we need to create a dummy image with power of two dimensions,
 			// then do a qglCopyTexSubImage2D of the data we want
 			// this might be a 16+ meg allocation, which could fail on _alloca
-			junk = (byte *)Mem_Alloc( potWidth * potHeight * 4 );
-			memset( junk, 0, potWidth * potHeight * 4 );		//!@#
+			//junk = (byte *)Mem_Alloc( potWidth * potHeight * 4 );
+			//memset( junk, 0, potWidth * potHeight * 4 );		//!@#
 #if 0 // Disabling because it's unnecessary and introduces a green strip on edge of _currentRender
 			for ( int i = 0 ; i < potWidth * potHeight * 4 ; i+=4 ) {
 				junk[i+1] = 255;
 			}
 #endif
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, junk );
-			Mem_Free( junk );
+			GLint f = r_useFbo.GetBool() && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA;
+			//qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, junk );
+			qglTexImage2D( GL_TEXTURE_2D, 0, f, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+			//Mem_Free( junk );
 
 			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 		}
@@ -1802,6 +1804,9 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
 	backEnd.c_copyFrameBuffer++;
+
+	if ( r_ignore2.GetBool() )
+		RB_DumpFramebuffer( imgName + ".tga" );
 }
 
 /*
