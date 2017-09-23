@@ -335,6 +335,9 @@ R_MirrorRender
 void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor ) {
 	viewDef_t		*parms;
 
+	if ( tr.viewDef->isSubview ) // #4615 HOM effect - only draw mirror from player's view
+		return;
+
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount ) {
 		return;
