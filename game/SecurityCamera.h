@@ -69,19 +69,25 @@ private:
 
 	bool					rotate;		// grayman #4615
 	bool					seePlayer;	// grayman #4615
+	bool					stopped;	// grayman #4615
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
 	void					SetAlertMode( int status );
 	void					DrawFov( void );
 	const idVec3			GetAxis( void ) const;
-	float					SweepSpeed( void ) const;
+	float					SweepTime( void ) const;
 
 	void					Event_ReverseSweep( void );
 	void					Event_ContinueSweep( void );
 	void					Event_Pause( void );
 	void					Event_Alert( void );
 	void					Event_AddLight( void );
+
+	void					Activate( idEntity* activator ); // grayman #4615
+	float					GetCalibratedLightgemValue(idPlayer* player); // grayman #4615
+	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold); // grayman #4615
+
 };
 
 #endif /* !__GAME_SECURITYCAMERA_H__ */

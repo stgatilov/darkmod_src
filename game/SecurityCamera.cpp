@@ -81,6 +81,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteBool(rotate);	// grayman #4615
 	savefile->WriteBool(seePlayer);	// grayman #4615
+	savefile->WriteBool(stopped);	// grayman #4615
 }
 
 /*
@@ -112,6 +113,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadBool(rotate);		// grayman #4615
 	savefile->ReadBool(seePlayer);	// grayman #4615
+	savefile->ReadBool(stopped);	// grayman #4615
 }
 
 /*
@@ -130,6 +132,7 @@ void idSecurityCamera::Spawn( void )
 	scanFov		= spawnArgs.GetFloat( "scanFov", "90" );
 	scanDist	= spawnArgs.GetFloat( "scanDist", "200" );
 	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );	// grayman #4615
+	stopped		= false; // grayman #4615
 
 	modelAxis	= spawnArgs.GetInt( "modelAxis", "0" );	// grayman #4615
 	if ( modelAxis < 0 || modelAxis > 2 ) {
@@ -289,6 +292,56 @@ renderView_t *idSecurityCamera::GetRenderView() {
 
 /*
 ================
+idSecurityCamera::GetCalibratedLightgemValue
+================
+*/
+float idSecurityCamera::GetCalibratedLightgemValue(idPlayer* player)
+{
+	float lgem = static_cast<float>(player->GetCurrentLightgemValue());
+	float term0 = -0.03f;
+	float term1 = 0.03f * lgem;
+	float term2 = 0.001f * idMath::Pow16(lgem, 2);
+	float term3 = 0.00013f * idMath::Pow16(lgem, 3);
+	float term4 = -0.000011f * idMath::Pow16(lgem, 4);
+	float term5 = 0.0000001892f * idMath::Pow16(lgem, 5);
+	float clampVal = term0 + term1 + term2 + term3 + term4 + term5;
+	return clampVal;
+}
+
+/*
+================
+idSecurityCamera::IsEntityHiddenByDarkness
+================
+*/
+
+bool idSecurityCamera::IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold)
+{
+	// Quick test using LAS at entity origin
+	idPhysics* p_physics = player->GetPhysics();
+
+	if (p_physics == NULL) 
+	{
+		return false;	// Not in darkness
+	}
+
+	// Use lightgem
+		
+	// greebo: Check the visibility of the player depending on lgem and distance
+	float visFraction = GetCalibratedLightgemValue(player); // returns values in [0..1]
+
+	// Very low threshold for visibility
+	if (visFraction < sightThreshold)
+	{
+		// Not visible, entity is hidden in darkness
+		return true;
+	}
+
+	// Visible, visual stim above threshold
+	return false;
+}
+
+/*
+================
 idSecurityCamera::CanSeePlayer
 ================
 */
@@ -329,6 +382,12 @@ bool idSecurityCamera::CanSeePlayer( void )
 		}
 
 		if ( dir * GetAxis() < scanFovCos ) {
+			continue;
+		}
+
+		// grayman #4615 - take lighting into account
+		if (IsEntityHiddenByDarkness(ent, 0.1f))
+		{
 			continue;
 		}
 
@@ -384,9 +443,12 @@ void idSecurityCamera::Think( void ) {
 	// run physics
 	RunPhysics();
 
-	if ( thinkFlags & TH_THINK ) {
-		if (CanSeePlayer()) {
-			if (alertMode == SCANNING) {
+	if ( thinkFlags & TH_THINK )
+	{
+		if (CanSeePlayer())
+		{
+			if (alertMode == SCANNING)
+			{
 				float	sightTime;
 
 				SetAlertMode(ALERT);
@@ -408,7 +470,8 @@ void idSecurityCamera::Think( void ) {
 				PostEventSec(&EV_SecurityCam_Alert, sightTime);
 			}
 		}
-		else {
+		else
+		{
 			if ( alertMode == ALERT ) {
 				float	sightResume;
 
@@ -421,7 +484,8 @@ void idSecurityCamera::Think( void ) {
 
 			if ( rotate ) // grayman #4615
 			{
-				if ( sweeping ) {
+				if ( sweeping && !stopped ) // grayman #4615
+				{
 					idAngles a = GetPhysics()->GetAxis().ToAngles();
 
 					pct = (gameLocal.time - sweepStart) / (sweepEnd - sweepStart);
@@ -452,10 +516,10 @@ const idVec3 idSecurityCamera::GetAxis( void ) const {
 
 /*
 ================
-idSecurityCamera::SweepSpeed
+idSecurityCamera::SweepTime
 ================
 */
-float idSecurityCamera::SweepSpeed( void ) const {
+float idSecurityCamera::SweepTime( void ) const {
 	return spawnArgs.GetFloat( "sweepSpeed", "5" );
 }
 
@@ -465,13 +529,13 @@ idSecurityCamera::StartSweep
 ================
 */
 void idSecurityCamera::StartSweep( void ) {
-	int speed;
+	int sweepTime;
 
 	sweeping = true;
 	sweepStart = gameLocal.time;
-	speed = SEC2MS( SweepSpeed() );
-	sweepEnd = sweepStart + speed;
-   	PostEventMS( &EV_SecurityCam_Pause, speed );
+	sweepTime = SEC2MS( SweepTime() );
+	sweepEnd = sweepStart + sweepTime;
+   	PostEventMS( &EV_SecurityCam_Pause, sweepTime );
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 }
 
@@ -488,17 +552,18 @@ void idSecurityCamera::Event_ContinueSweep( void )
 		return;
 	}
 
-	float pct = (stopSweeping - sweepStart) / (sweepEnd - sweepStart);
+	float pct = (stopSweeping - sweepStart) / (sweepEnd - sweepStart); // % of the sweep travelled
 	float f = gameLocal.time - (sweepEnd - sweepStart) * pct;
-	int speed;
+	int sweepTime;
 
 	sweepStart = f;
-	speed = static_cast<int>(SEC2MS( SweepSpeed() )); // grayman #4615 - SEC2MS, not MS2SEC
-	sweepEnd = sweepStart + speed;
-   	PostEventMS( &EV_SecurityCam_Pause, static_cast<int>(speed * (1.0f - pct)));
+	sweepTime = static_cast<int>(SEC2MS( SweepTime() )); // grayman #4615 - SEC2MS, not MS2SEC
+	sweepEnd = sweepStart + sweepTime;
+   	PostEventMS( &EV_SecurityCam_Pause, static_cast<int>(sweepTime * (1.0f - pct)));
 	StartSound( "snd_moving", SND_CHANNEL_BODY, 0, false, NULL );
 	SetAlertMode(SCANNING);
 	sweeping = true;
+	stopped = false; // grayman #4615
 }
 
 /*
@@ -640,3 +705,47 @@ void idSecurityCamera::Present( void )
 		gameRenderWorld->UpdateEntityDef( modelDefHandle, &renderEntity );
 	}
 }
+
+/*
+================
+idSecurityCamera::Activate
+================
+*/
+void idSecurityCamera::Activate( idEntity* activator ) // grayman #4615
+{
+	if ( !rotate )
+	{
+		return;
+	}
+
+	if ( sweeping )
+	{
+		if ( stopped )
+		{
+			PostEventSec( &EV_SecurityCam_ContinueSweep, 0 );
+			stopped = false;
+		}
+		else
+		{
+			stopped = true;
+			stopSweeping = gameLocal.time;
+			StopSound(SND_CHANNEL_ANY, false);
+			StartSound("snd_end", SND_CHANNEL_BODY, 0, false, NULL);
+			CancelEvents(&EV_SecurityCam_Pause);
+		}
+	}
+	else
+	{
+		if ( stopped )
+		{
+			PostEventSec(&EV_SecurityCam_ReverseSweep, 0);
+			stopped = false;
+		}
+		else
+		{
+			stopped = true;
+			CancelEvents(&EV_SecurityCam_ReverseSweep);
+		}
+	}
+}
+
