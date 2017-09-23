@@ -298,7 +298,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 
-	//tr.CropRenderSize( stage->width, stage->height, true );
+	tr.CropRenderSize( stage->width, stage->height, true );
 
 	parms->renderView.x = 0;
 	parms->renderView.y = 0;
@@ -324,7 +324,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 		stage->image = globalImages->scratchImage;
 
 	tr.CaptureRenderToImage( stage->image->imgName );
-	//tr.UnCrop();
+	tr.UnCrop();
 }
 
 /*
@@ -332,7 +332,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 R_MirrorRender
 =================
 */
-void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor ) {
+void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
 	viewDef_t		*parms;
 
 	if ( tr.viewDef->isSubview ) // #4615 HOM effect - only draw mirror from player's view
@@ -358,10 +358,11 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect sciss
 
 	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
 
-	parms->scissor.x1 = 0;
+	/*parms->scissor.x1 = 0;
 	parms->scissor.y1 = 0;
 	parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
-	parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
+	parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;*/
+	parms->scissor = scissor;
 
 	parms->superView = tr.viewDef;
 	parms->subviewSurface = surf;
