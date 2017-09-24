@@ -1142,8 +1142,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 
 		else if (  !token.Icmp( "mirrorRenderMap" ) ) {
 			ts->dynamic = DI_MIRROR_RENDER;
-			ts->width = src.ParseInt();
-			ts->height = src.ParseInt();
+			//ts->width = src.ParseInt();
+			//ts->height = src.ParseInt();
+			src.SkipRestOfLine();
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
