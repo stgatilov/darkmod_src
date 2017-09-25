@@ -1232,7 +1232,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 		if ( !shader->IsDrawn() ) {
 			continue;
 		}
-		if (!strcmp(shader->GetName(), "textures/smf/portal_sky") && g_enablePortalSky.GetInteger() != 1)
+		//if ( !strcmp( shader->GetName(), "textures/smf/portal_sky" ) && g_enablePortalSky.GetInteger() != 1 )
+		if ( shader->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() != 1 )
 			continue; // duzenko #4414 - skip the ceiling surface so that pixels from the skybox stage are reused
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
