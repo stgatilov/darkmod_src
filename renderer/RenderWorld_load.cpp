@@ -643,7 +643,9 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		for ( int j = 0; j < hModel->NumSurfaces(); j++ ) {
 			const modelSurface_t *surf = hModel->Surface( j );
 
-			if ( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) ) {
+			if ( surf->shader->GetSort() == SS_PORTAL_SKY ) // grayman - use SS_PORTAL_SKY 'sort' value, not the material name
+//			if ( surf->shader->GetName() == idStr( "textures/smf/portal_sky" ) )
+			{
 				def->needsPortalSky = true;
 			}
 		}
