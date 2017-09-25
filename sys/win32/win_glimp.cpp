@@ -217,7 +217,7 @@ void GLW_CheckWGLExtensions( HDC hDC ) {
 
 	// WGL_EXT_swap_control
 	wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC) GLimp_ExtensionPointer( "wglSwapIntervalEXT" );
-	r_swapInterval.SetModified();	// force a set next frame
+	//r_swapInterval.SetModified();	// force a set next frame
 
 	// WGL_ARB_pixel_format
 	wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)GLimp_ExtensionPointer("wglGetPixelFormatAttribivARB");
@@ -979,12 +979,11 @@ void GLimp_SwapBuffers( void ) {
 
 	// wglSwapinterval is a windows-private extension,
 	// so we must check for it here instead of portably
-	if ( r_swapInterval.IsModified() ) {
-		r_swapInterval.ClearModified();
+	if ( r_swapIntervalTemp.IsModified() ) {
+		r_swapIntervalTemp.ClearModified();
 
-		if ( wglSwapIntervalEXT ) {
-			wglSwapIntervalEXT( r_swapInterval.GetInteger() );
-		}
+		if ( wglSwapIntervalEXT ) 
+			wglSwapIntervalEXT( r_swapIntervalTemp.GetInteger() );
 	}
 
 	qwglSwapBuffers( win32.hDC );

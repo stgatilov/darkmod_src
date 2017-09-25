@@ -2760,7 +2760,9 @@ void idSessionLocal::Frame() {
 			// early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
 			usercmdGen->GetDirectUsercmd();
 		}
-	}
+		r_swapIntervalTemp.SetInteger( 1 );
+	} else
+		r_swapIntervalTemp.SetInteger( r_swapInterval.GetInteger() );
 
 	if ( !mapSpawned ) {
 		return;
