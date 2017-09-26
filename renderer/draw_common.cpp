@@ -217,6 +217,9 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		return;
 	}
 
+	if ( surf->material->GetSort() == SS_PORTAL_SKY )
+		return;
+
 	// get the expressions for conditionals / color / texcoords
 	regs = surf->shaderRegisters;
 
@@ -827,13 +830,16 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	tri = surf->backendGeo;
 	shader = surf->material;
 
-	if ( !shader->HasAmbient() ) {
+	if ( !shader->HasAmbient() ) 
 		return;
-	}
 
-	if ( shader->IsPortalSky() ) { // NB TDM portal sky does not use this flag or whatever mechanism 
+	if ( shader->IsPortalSky() )  // NB TDM portal sky does not use this flag or whatever mechanism 
 		return;					   // it used to support. Our portalSky is drawn in this procedure using
-	}							   // the skybox image captured in _currentRender. -- SteveL working on #4182
+								   // the skybox image captured in _currentRender. -- SteveL working on #4182
+
+	if ( surf->material->GetSort() == SS_PORTAL_SKY )
+		return;
+
 	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );
 
 	// change the matrix if needed
@@ -894,19 +900,16 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		pStage = shader->GetStage(stage);
 
 		// check the enable condition
-		if ( regs[ pStage->conditionRegister ] == 0 ) {
+		if ( regs[ pStage->conditionRegister ] == 0 ) 
 			continue;
-		}
 
 		// skip the stages involved in lighting
-		if ( pStage->lighting != SL_AMBIENT ) {
+		if ( pStage->lighting != SL_AMBIENT ) 
 			continue;
-		}
 
 		// skip if the stage is ( GL_ZERO, GL_ONE ), which is used for some alpha masks
-		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE ) ) {
+		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE ) ) 
 			continue;
-		}
 
 		// see if we are a new-style stage
 		newShaderStage_t *newStage = pStage->newStage;

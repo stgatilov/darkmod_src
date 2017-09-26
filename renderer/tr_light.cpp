@@ -1233,8 +1233,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			continue;
 		}
 		//if ( !strcmp( shader->GetName(), "textures/smf/portal_sky" ) && g_enablePortalSky.GetInteger() != 1 )
-		if ( shader->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() != 1 )
-			continue; // duzenko #4414 - skip the ceiling surface so that pixels from the skybox stage are reused
+		//if ( shader->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() != 1 )
+			//continue; // duzenko #4414 - skip the ceiling surface so that pixels from the skybox stage are reused
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970

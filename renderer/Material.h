@@ -73,7 +73,8 @@ typedef enum {
 	DI_CUBE_RENDER,
 	DI_MIRROR_RENDER,
 	DI_XRAY_RENDER,
-	DI_REMOTE_RENDER
+	DI_REMOTE_RENDER,
+	DI_PORTAL_RENDER
 } dynamicidImage_t;
 
 // note: keep opNames[] in sync with changes

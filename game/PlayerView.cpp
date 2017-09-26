@@ -498,20 +498,20 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 
 			float pot;
 			int	 w = vidWidth;
-			pot = MakePowerOfTwo( w );
+			pot = w;// MakePowerOfTwo( w );
 			shiftScale.x = (float)w / pot;
 
 			int	 h = vidHeight;
-			pot = MakePowerOfTwo( h );
+			pot = h;// MakePowerOfTwo( h );
 			shiftScale.y = (float)h / pot;
 
 			hackedView.shaderParms[6] = shiftScale.x; // grayman #3108 - neuro used [4], we use [6]
 			hackedView.shaderParms[7] = shiftScale.y; // grayman #3108 - neuro used [5], we use [7]
 		}
 
-		gameRenderWorld->RenderScene( &portalView );
+		/*gameRenderWorld->RenderScene( &portalView );
 		if (g_enablePortalSky.GetInteger() == 1) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
-			renderSystem->CaptureRenderToImage( "_currentRender" );
+			renderSystem->CaptureRenderToImage( "_currentRender" );*/
 
 		hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
 	}

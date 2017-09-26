@@ -1133,14 +1133,19 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		else if (  !token.Icmp( "remoteRenderMap" ) ) {
+		else if ( !token.Icmp( "remoteRenderMap" ) ) {
 			ts->dynamic = DI_REMOTE_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
 			continue;
 		}
 
-		else if (  !token.Icmp( "mirrorRenderMap" ) ) {
+		else if ( !token.Icmp( "portalRenderMap" ) ) {
+			ts->dynamic = DI_PORTAL_RENDER;
+			continue;
+		}
+
+		else if ( !token.Icmp( "mirrorRenderMap" ) ) {
 			ts->dynamic = DI_MIRROR_RENDER;
 			//ts->width = src.ParseInt();
 			//ts->height = src.ParseInt();
