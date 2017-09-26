@@ -3074,7 +3074,7 @@ Activates game tic and frontend rendering on a separate thread.
 ===============
 */
 void idSessionLocal::ActivateFrontend() {
-	if( com_smp.GetBool() ) {
+	if( com_smp.GetBool() && !guiActive ) {
 		std::unique_lock<std::mutex> lock( signalMutex );
 		while( !frontendReady ) {
 			signalMainThread.wait( lock );
