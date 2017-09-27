@@ -386,7 +386,9 @@ duzenko: copy pasted from idPlayerView::SingleView
 void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
 	viewDef_t		*parms;
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
-	*parms = *tr.viewDef;
+	*parms = *tr.primaryView;
+	parms->renderView.viewID = 0;
+	parms->numClipPlanes = 0;
 
 	// hack the shake in at the very last moment, so it can't cause any consistency problems
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
@@ -413,7 +415,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// It should keep going even when not active.
 	}
 
-	if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+	//if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
 
 		if ( gameLocal.GetCurrentPortalSkyType() == PORTALSKY_STANDARD ) {
 			PSOrigin = gameLocal.portalSkyOrigin;
@@ -432,7 +434,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// end neuro & 7318
 
 		parms->renderView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
-		parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
+		parms->renderView.viewaxis = tr.viewDef->renderView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
 
 		//gameRenderWorld->RenderScene( &portalView );
 
@@ -457,7 +459,13 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// can use level time
 		tr.frameShaderTime = parms->floatTime;
 
-		parms->isMirror = false;
+		idVec3	cross;
+		cross = parms->renderView.viewaxis[1].Cross( parms->renderView.viewaxis[2] );
+		if ( cross * parms->renderView.viewaxis[0] > 0 ) {
+			parms->isMirror = false;
+		} else {
+			parms->isMirror = true;
+		}
 
 		// rendering this view may cause other views to be rendered
 		// for mirrors / portals / shadows / environment maps
@@ -465,16 +473,18 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// updated to the demo file
 		R_RenderView( *parms );
 
+		//Sys_Sleep( 0 );
+
 		//if ( g_enablePortalSky.GetInteger() == 1 ) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
 		//	renderSystem->CaptureRenderToImage( "_currentRender" );
 
 		//hackedView.forceUpdate = true;				// FIX: for smoke particles not drawing when portalSky present
-	} else // grayman #3108 - contributed by 7318 
+	/*} else // grayman #3108 - contributed by 7318 
 	{
 		// So if g_enablePortalSky is disabled, GlobalPortalSkies doesn't break.
 		// When g_enablePortalSky gets re-enabled, GlobalPortalSkies keeps working. 
 		gameLocal.playerOldEyePos = currentEyePos;
-	}
+	}*/
 
 	//hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
 	
@@ -636,7 +646,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 				R_XrayRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
 				break;
 			case DI_PORTAL_RENDER:
-				R_PortalRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
+				// R_PortalRender( drawSurf, const_cast<textureStage_t *>(&stage->texture), scissor );
 				break;
 			}
 		}
@@ -661,15 +671,6 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 	return true;*/
 }
 
-ID_INLINE int SubviewCompare( const drawSurf_t *a, const drawSurf_t *b ) {
-	dynamicidImage_t ad = DI_STATIC, bd = DI_STATIC;
-	if ( a->material && a->material->GetNumStages() > 0 )
-		ad = a->material->GetStage( 0 )->texture.dynamic;
-	if ( b->material && b->material->GetNumStages() > 0 )
-		bd = b->material->GetStage( 0 )->texture.dynamic;
-	return ad - bd;
-}
-
 /*
 ================
 R_GenerateSubViews
@@ -683,50 +684,51 @@ would change tr.viewCount.
 ================
 */
 bool R_GenerateSubViews( void ) {
-	drawSurf_t		*drawSurf;
+	drawSurf_t *drawSurf, *skySurf = NULL;
 	int				i;
 	bool			subviews;
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) {
+	if ( r_skipSubviews.GetBool() ) 
 		return false;
-	}
 
 	// duzenko #4420: no mirrors on lightgem stage
 	if (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID) // DARKMOD_LG_VIEWID ?
 		return false;
 
 	subviews = false;
-	static bool portalSky; // static or else stack overflow
-
-	idList<drawSurf_t> list;
 
 	// scan the surfaces until we either find a subview, or determine
 	// there are no more subview surfaces.
-	for ( i = 0 ; i < tr.viewDef->numDrawSurfs ; i++ ) {
+	for ( i = 0; i < tr.viewDef->numDrawSurfs; i++ ) {
 		drawSurf = tr.viewDef->drawSurfs[i];
 		shader = drawSurf->material;
 
-		if ( !shader || !shader->HasSubview() ) 
+		if ( !shader || !shader->HasSubview() )
 			continue;
-		list.Append( *drawSurf );
-		if ( shader->GetSort() == SS_PORTAL_SKY )
-			portalSky = true;
+
+		if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+			subviews = true;
+			if ( shader->GetSort() == SS_PORTAL_SKY ) // portal sky needs to be the last one, and only once
+				skySurf = drawSurf;
+		}
 	}
 
-	list.Sort( SubviewCompare );
-
-	for ( i = 0; i < list.Num(); i++ )
-		if ( R_GenerateSurfaceSubview( &list[i] ) )
-			subviews = true;
-
-	if ( !portalSky && gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
-		idScreenRect sc;
-		portalSky = true;
-		R_PortalRender( NULL, NULL, sc );
-		portalSky = false;
-		subviews = true;
+	static bool dontReenter = false;
+	if ( !dontReenter ) {
+		dontReenter = true;
+		if ( skySurf ) { // textures/smf/portal_sky
+			idScreenRect sc;
+			R_PortalRender( skySurf, NULL, sc );
+		} else { // caulk 
+			if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+				idScreenRect sc;
+				R_PortalRender( NULL, NULL, sc );
+				subviews = true;
+			}
+		}
+		dontReenter = false;
 	}
 
 	return subviews;
