@@ -190,8 +190,7 @@ void FB_Leave( viewDef_t* viewDef ) {
 	if ( !isInFbo )
 		return;
 	GL_CheckErrors();
-	if ( r_ignore2.GetBool() )
-		FB_CopyColorBuffer();
+	//FB_CopyColorBuffer();
 	// hasn't worked very well at the first approach, maybe retry later
 	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,

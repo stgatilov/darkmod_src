@@ -307,7 +307,7 @@ float LightGem::Calculate(idPlayer *player)
 			PROFILE_BLOCK_START	( LightGem_Calculate_ForLoop_RenderScene );
 			
 			gameRenderWorld->SetRenderView(&m_Lightgem_rv); // most likely not needed
-			gameRenderWorld->RenderScene(&m_Lightgem_rv);
+			gameRenderWorld->RenderScene(m_Lightgem_rv);
 			
 			PROFILE_BLOCK_END	( LightGem_Calculate_ForLoop_RenderScene );
 

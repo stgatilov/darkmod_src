@@ -519,7 +519,7 @@ void idGLDrawableView::draw(int x, int y, int w, int h) {
 
 		refdef.time = eventLoop->Milliseconds();
 
-		world->RenderScene( &refdef );
+		world->RenderScene( refdef );
 
 		if ( showLights ) {
 			drawLights( &refdef );

@@ -566,9 +566,9 @@ extern	frameData_t *backendFrameData;
 
 //=======================================================================
 
-void R_LockSurfaceScene( viewDef_t *parms );
+void R_LockSurfaceScene( viewDef_t &parms );
 void R_ClearCommandChain( frameData_t *frameData );
-void R_AddDrawViewCmd( viewDef_t *parms );
+void R_AddDrawViewCmd( viewDef_t &parms );
 
 void R_ReloadGuis_f( const idCmdArgs &args );
 void R_ListGuis_f( const idCmdArgs &args );
@@ -764,7 +764,7 @@ public:
 
 	void					Clear( void );
 	//void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
-	void					RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport );
+	void					RenderViewToViewport( const renderView_t &renderView, idScreenRect &viewport );
 
 public:
 	// renderer globals
@@ -1188,7 +1188,7 @@ MAIN
 ====================================================================
 */
 
-void R_RenderView( viewDef_t *parms );
+void R_RenderView( viewDef_t &parms );
 
 // performs radius cull first, then corner cull
 bool R_CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
@@ -1215,7 +1215,7 @@ void R_TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3
 
 void R_TransposeGLMatrix( const float in[16], float out[16] );
 
-void R_SetViewMatrix( viewDef_t *viewDef );
+void R_SetViewMatrix( viewDef_t &viewDef );
 
 void myGlMultMatrix( const float *a, const float *b, float *out );
 

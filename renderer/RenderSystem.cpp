@@ -177,12 +177,12 @@ void R_ClearCommandChain( frameData_t *frameData ) {
 R_ViewStatistics
 =================
 */
-static void R_ViewStatistics( viewDef_t *parms ) {
+static void R_ViewStatistics( viewDef_t &parms ) {
 	// report statistics about this view
 	if ( !r_showSurfaces.GetBool() ) {
 		return;
 	}
-	common->Printf( "view:%p surfs:%i\n", parms, parms->numDrawSurfs );
+	common->Printf( "view:%p surfs:%i\n", parms, parms.numDrawSurfs );
 }
 
 /*
@@ -193,15 +193,15 @@ This is the main 3D rendering command.  A single scene may
 have multiple views if a mirror, portal, or dynamic texture is present.
 =============
 */
-void	R_AddDrawViewCmd( viewDef_t *parms ) {
+void	R_AddDrawViewCmd( viewDef_t &parms ) {
 	drawSurfsCommand_t	*cmd;
 
 	cmd = (drawSurfsCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_DRAW_VIEW;
 
-	cmd->viewDef = parms;
+	cmd->viewDef = &parms;
 
-	if ( parms->viewEntitys ) {
+	if ( parms.viewEntitys ) {
 		// save the command for r_lockSurfaces debugging
 		tr.lockSurfacesCmd = *cmd;
 	}
@@ -231,13 +231,13 @@ matricies have been changed.  This allow the culling tightness to be
 evaluated interactively.
 ======================
 */
-void R_LockSurfaceScene( viewDef_t *parms ) {
+void R_LockSurfaceScene( viewDef_t &parms ) {
 	drawSurfsCommand_t	*cmd;
 	viewEntity_t			*vModel;
 
 	// set the matrix for world space to eye space
 	R_SetViewMatrix( parms );
-	tr.lockSurfacesCmd.viewDef->worldSpace = parms->worldSpace;
+	tr.lockSurfacesCmd.viewDef->worldSpace = parms.worldSpace;
 	
 	// update the view origin and axis, and all
 	// the entity matricies
@@ -678,16 +678,16 @@ RenderViewToViewport
 Converts from SCREEN_WIDTH / SCREEN_HEIGHT coordinates to current cropped pixel coordinates
 =====================
 */
-void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport ) {
+void idRenderSystemLocal::RenderViewToViewport( const renderView_t &renderView, idScreenRect &viewport ) {
 	renderCrop_t	*rc = &renderCrops[currentRenderCrop];
 
 	float wRatio = (float) rc->width / SCREEN_WIDTH;
 	float hRatio = (float) rc->height / SCREEN_HEIGHT;
 
-	viewport->x1 = idMath::Ftoi( rc->x + renderView->x * wRatio );
-	viewport->x2 = idMath::Ftoi( rc->x + floor( ( renderView->x + renderView->width ) * wRatio + 0.5f ) - 1 );
-	viewport->y1 = idMath::Ftoi( ( rc->y + rc->height ) - floor( ( renderView->y + renderView->height ) * hRatio + 0.5f ) );
-	viewport->y2 = idMath::Ftoi( ( rc->y + rc->height ) - floor( renderView->y * hRatio + 0.5f ) - 1 );
+	viewport.x1 = idMath::Ftoi( rc->x + renderView.x * wRatio );
+	viewport.x2 = idMath::Ftoi( rc->x + floor( ( renderView.x + renderView.width ) * wRatio + 0.5f ) - 1 );
+	viewport.y1 = idMath::Ftoi( ( rc->y + rc->height ) - floor( ( renderView.y + renderView.height ) * hRatio + 0.5f ) );
+	viewport.y2 = idMath::Ftoi( ( rc->y + rc->height ) - floor( renderView.y * hRatio + 0.5f ) - 1 );
 }
 
 static int RoundDownToPowerOfTwo( int v ) {
@@ -746,7 +746,7 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 	renderView.height = height;
 
 	idScreenRect	r;
-	RenderViewToViewport( &renderView, &r );
+	RenderViewToViewport( renderView, r );
 
 	width = r.x2 - r.x1 + 1;
 	height = r.y2 - r.y1 + 1;

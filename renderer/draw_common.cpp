@@ -217,7 +217,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( surf->material->GetSort() == SS_PORTAL_SKY )
+	if ( surf->material->GetSort() == SS_PORTAL_SKY && !r_ignore2.GetBool() )
 		return;
 
 	// get the expressions for conditionals / color / texcoords
@@ -837,7 +837,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		return;					   // it used to support. Our portalSky is drawn in this procedure using
 								   // the skybox image captured in _currentRender. -- SteveL working on #4182
 
-	if ( surf->material->GetSort() == SS_PORTAL_SKY )
+	if ( surf->material->GetSort() == SS_PORTAL_SKY && !r_ignore.GetBool() )
 		return;
 
 	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );

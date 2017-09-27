@@ -314,7 +314,7 @@ public:
 	// rendering a scene may actually render multiple subviews for mirrors and portals, and
 	// may render composite textures for gui console screens and light projections
 	// It would also be acceptable to render a scene multiple times, for "rear view mirrors", etc
-	virtual void			RenderScene( const renderView_t *renderView ) = 0;
+	virtual void			RenderScene( const renderView_t &renderView ) = 0;
 
 	//-------------- Portal Area Information -----------------
 

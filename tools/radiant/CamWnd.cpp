@@ -2089,7 +2089,7 @@ void CCamWnd::Cam_Render() {
 		refdef.time = eventLoop->Milliseconds();
 	}
 
-	g_qeglobals.rw->RenderScene( &refdef );
+	g_qeglobals.rw->RenderScene( refdef );
 
 	int	frontEnd, backEnd;
 

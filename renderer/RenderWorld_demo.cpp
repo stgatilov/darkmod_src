@@ -334,7 +334,7 @@ void	idRenderWorldLocal::WriteVisibleDefs( const viewDef_t *viewDef ) {
 WriteRenderView
 ================
 */
-void	idRenderWorldLocal::WriteRenderView( const renderView_t *renderView ) {
+void	idRenderWorldLocal::WriteRenderView( const renderView_t &renderView ) {
 	int i;
 
 	// only the main renderWorld writes stuff to demos, not the wipes or
@@ -346,27 +346,27 @@ void	idRenderWorldLocal::WriteRenderView( const renderView_t *renderView ) {
 	// write the actual view command
 	session->writeDemo->WriteInt( DS_RENDER );
 	session->writeDemo->WriteInt( DC_RENDERVIEW );
-	session->writeDemo->WriteInt( renderView->viewID );
-	session->writeDemo->WriteInt( renderView->x );
-	session->writeDemo->WriteInt( renderView->y );
-	session->writeDemo->WriteInt( renderView->width );
-	session->writeDemo->WriteInt( renderView->height );
-	session->writeDemo->WriteFloat( renderView->fov_x );
-	session->writeDemo->WriteFloat( renderView->fov_y );
-	session->writeDemo->WriteVec3( renderView->vieworg );
-	session->writeDemo->WriteMat3( renderView->viewaxis );
-	session->writeDemo->WriteBool( renderView->cramZNear );
-	session->writeDemo->WriteBool( renderView->forceUpdate );
+	session->writeDemo->WriteInt( renderView.viewID );
+	session->writeDemo->WriteInt( renderView.x );
+	session->writeDemo->WriteInt( renderView.y );
+	session->writeDemo->WriteInt( renderView.width );
+	session->writeDemo->WriteInt( renderView.height );
+	session->writeDemo->WriteFloat( renderView.fov_x );
+	session->writeDemo->WriteFloat( renderView.fov_y );
+	session->writeDemo->WriteVec3( renderView.vieworg );
+	session->writeDemo->WriteMat3( renderView.viewaxis );
+	session->writeDemo->WriteBool( renderView.cramZNear );
+	session->writeDemo->WriteBool( renderView.forceUpdate );
 	// binary compatibility with old win32 version writing padded structures directly to disk
 	session->writeDemo->WriteUnsignedChar( 0 );
 	session->writeDemo->WriteUnsignedChar( 0 );
-	session->writeDemo->WriteInt( renderView->time );
+	session->writeDemo->WriteInt( renderView.time );
 	for ( i = 0; i < MAX_GLOBAL_SHADER_PARMS; i++ )
-		session->writeDemo->WriteFloat( renderView->shaderParms[i] );
+		session->writeDemo->WriteFloat( renderView.shaderParms[i] );
     session->writeDemo->WriteInt(0); //renderView->globalMaterial
 	
 	if ( r_showDemo.GetBool() ) {
-		common->Printf( "write DC_RENDERVIEW: %i\n", renderView->time );
+		common->Printf( "write DC_RENDERVIEW: %i\n", renderView.time );
 	}
 }
 

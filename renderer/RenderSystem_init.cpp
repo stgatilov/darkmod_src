@@ -1173,7 +1173,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 R_RenderingFPS
 ================
 */
-static float R_RenderingFPS( const renderView_t *renderView ) {
+static float R_RenderingFPS( const renderView_t &renderView ) {
 	qglFinish();
 
 	int		start = Sys_Milliseconds();
@@ -1216,7 +1216,7 @@ void R_Benchmark_f( const idCmdArgs &args ) {
 
 	for ( int size = 100 ; size >= 10 ; size -= 10 ) {
 		r_screenFraction.SetInteger( size );
-		fps = R_RenderingFPS( &view );
+		fps = R_RenderingFPS( view );
 		int	kpix = glConfig.vidWidth * glConfig.vidHeight * ( size * 0.01 ) * ( size * 0.01 ) * 0.001;
 		msec = 1000.0 / fps;
 		common->Printf( "kpix: %4i  msec:%5.1f fps:%5.1f\n", kpix, msec, fps );
@@ -1224,7 +1224,7 @@ void R_Benchmark_f( const idCmdArgs &args ) {
 
 	// enable r_singleTriangle 1 while r_screenFraction is still at 10
 	r_singleTriangle.SetBool( 1 );
-	fps = R_RenderingFPS( &view );
+	fps = R_RenderingFPS( view );
 	msec = 1000.0 / fps;
 	common->Printf( "single tri  msec:%5.1f fps:%5.1f\n", msec, fps );
 	r_singleTriangle.SetBool( 0 );
@@ -1232,7 +1232,7 @@ void R_Benchmark_f( const idCmdArgs &args ) {
 
 	// enable r_skipRenderContext 1
 	r_skipRenderContext.SetBool( true );
-	fps = R_RenderingFPS( &view );
+	fps = R_RenderingFPS( view );
 	msec = 1000.0 / fps;
 	common->Printf( "no context  msec:%5.1f fps:%5.1f\n", msec, fps );
 	r_skipRenderContext.SetBool( false );
@@ -1277,7 +1277,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 
 			if ( ref ) {
 				tr.BeginFrame( oldWidth, oldHeight );
-				tr.primaryWorld->RenderScene( ref );
+				tr.primaryWorld->RenderScene( *ref );
 				tr.EndFrame( NULL, NULL );
 			} else {
 				session->UpdateScreen(false);

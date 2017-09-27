@@ -818,7 +818,7 @@ R_SetViewMatrix
 Sets up the world to view matrix for a given viewParm
 =================
 */
-void R_SetViewMatrix( viewDef_t *viewDef ) {
+void R_SetViewMatrix( viewDef_t &viewDef ) {
 	idVec3	origin;
 	viewEntity_t *world;
 	float	viewerMatrix[16];
@@ -831,7 +831,7 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 		0, 0, 0, 1
 	};
 
-	world = &viewDef->worldSpace;
+	world = &viewDef.worldSpace;
 
 	memset( world, 0, sizeof(*world) );
 
@@ -841,21 +841,21 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 	world->modelMatrix[2*4+2] = 1;
 
 	// transform by the camera placement
-	origin = viewDef->renderView.vieworg;
+	origin = viewDef.renderView.vieworg;
 
-	viewerMatrix[0] = viewDef->renderView.viewaxis[0][0];
-	viewerMatrix[4] = viewDef->renderView.viewaxis[0][1];
-	viewerMatrix[8] = viewDef->renderView.viewaxis[0][2];
+	viewerMatrix[0] = viewDef.renderView.viewaxis[0][0];
+	viewerMatrix[4] = viewDef.renderView.viewaxis[0][1];
+	viewerMatrix[8] = viewDef.renderView.viewaxis[0][2];
 	viewerMatrix[12] = -origin[0] * viewerMatrix[0] + -origin[1] * viewerMatrix[4] + -origin[2] * viewerMatrix[8];
 
-	viewerMatrix[1] = viewDef->renderView.viewaxis[1][0];
-	viewerMatrix[5] = viewDef->renderView.viewaxis[1][1];
-	viewerMatrix[9] = viewDef->renderView.viewaxis[1][2];
+	viewerMatrix[1] = viewDef.renderView.viewaxis[1][0];
+	viewerMatrix[5] = viewDef.renderView.viewaxis[1][1];
+	viewerMatrix[9] = viewDef.renderView.viewaxis[1][2];
 	viewerMatrix[13] = -origin[0] * viewerMatrix[1] + -origin[1] * viewerMatrix[5] + -origin[2] * viewerMatrix[9];
 
-	viewerMatrix[2] = viewDef->renderView.viewaxis[2][0];
-	viewerMatrix[6] = viewDef->renderView.viewaxis[2][1];
-	viewerMatrix[10] = viewDef->renderView.viewaxis[2][2];
+	viewerMatrix[2] = viewDef.renderView.viewaxis[2][0];
+	viewerMatrix[6] = viewDef.renderView.viewaxis[2][1];
+	viewerMatrix[10] = viewDef.renderView.viewaxis[2][2];
 	viewerMatrix[14] = -origin[0] * viewerMatrix[2] + -origin[1] * viewerMatrix[6] + -origin[2] * viewerMatrix[10];
 
 	viewerMatrix[3] = 0;
@@ -1075,10 +1075,10 @@ a mirror / remote location, or a 3D view on a gui surface.
 Parms will typically be allocated with R_FrameAlloc
 ================
 */
-void R_RenderView( viewDef_t *parms ) {
+void R_RenderView( viewDef_t &parms ) {
 	viewDef_t		*oldView;
 
-	if ( parms->renderView.width <= 0 || parms->renderView.height <= 0 ) {
+	if ( parms.renderView.width <= 0 || parms.renderView.height <= 0 ) {
 		return;
 	}
 
@@ -1087,12 +1087,12 @@ void R_RenderView( viewDef_t *parms ) {
 	// save view in case we are a subview
 	oldView = tr.viewDef;
 
-	tr.viewDef = parms;
+	tr.viewDef = &parms;
 
 	tr.sortOffset = 0;
 
 	// set the matrix for world space to eye space
-	R_SetViewMatrix( tr.viewDef );
+	R_SetViewMatrix( *tr.viewDef );
 
 	// the four sides of the view frustum are needed
 	// for culling and portal visibility
@@ -1104,7 +1104,7 @@ void R_RenderView( viewDef_t *parms ) {
 
 	// identify all the visible portalAreas, and the entityDefs and
 	// lightDefs that are in them and pass culling.
-	static_cast<idRenderWorldLocal *>(parms->renderWorld)->FindViewLightsAndEntities();
+	static_cast<idRenderWorldLocal *>(parms.renderWorld)->FindViewLightsAndEntities();
 
 	// constrain the view frustum to the view lights and entities
 	R_ConstrainViewFrustum();
@@ -1134,8 +1134,8 @@ void R_RenderView( viewDef_t *parms ) {
 	}
 
 	// copy drawsurf geo state for backend use
-	for (int i = 0; i < parms->numDrawSurfs; ++i) {
-		drawSurf_t* surf = parms->drawSurfs[i];
+	for (int i = 0; i < parms.numDrawSurfs; ++i) {
+		drawSurf_t* surf = parms.drawSurfs[i];
 		srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
 		memcpy( copiedGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
 		surf->backendGeo = copiedGeo;
@@ -1143,7 +1143,7 @@ void R_RenderView( viewDef_t *parms ) {
 
 	// write everything needed to the demo file
 	if ( session->writeDemo ) {
-		static_cast<idRenderWorldLocal *>(parms->renderWorld)->WriteVisibleDefs( tr.viewDef );
+		static_cast<idRenderWorldLocal *>(parms.renderWorld)->WriteVisibleDefs( tr.viewDef );
 	}
 
 	// add the rendering commands for this viewDef

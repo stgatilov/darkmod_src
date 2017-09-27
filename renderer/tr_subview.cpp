@@ -277,7 +277,6 @@ R_RemoteRender
 ===============
 */
 static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
-	viewDef_t		*parms;
 
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount ) 
@@ -288,7 +287,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 		return;
 
 	// copy the viewport size from the original
-	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
+	viewDef_t* parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
 
 	parms->isSubview = true;
@@ -305,7 +304,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->renderView.width = SCREEN_WIDTH;
 	parms->renderView.height = SCREEN_HEIGHT;
 
-	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
+	tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
 	parms->scissor.x1 = 0;
 	parms->scissor.y1 = 0;
@@ -316,7 +315,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->subviewSurface = surf;
 
 	// generate render commands for it
-	R_RenderView(parms);
+	R_RenderView(*parms);
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
@@ -356,7 +355,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->renderView.width = SCREEN_WIDTH;
 	parms->renderView.height = SCREEN_HEIGHT;
 
-	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
+	tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
 	parms->scissor = scissor;
 
@@ -367,7 +366,7 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->isMirror = (((int)parms->isMirror ^ (int)tr.viewDef->isMirror) != 0);
 
 	// generate render commands for it
-	R_RenderView( parms );
+	R_RenderView( *parms );
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
@@ -381,12 +380,16 @@ void R_MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 /*
 =================
 R_PortalRender
+duzenko: copy pasted from idPlayerView::SingleView
 =================
 */
 void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scissor ) {
+	viewDef_t		*parms;
+	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
+	*parms = *tr.viewDef;
+
 	// hack the shake in at the very last moment, so it can't cause any consistency problems
-	renderView_t	hackedView = tr.viewDef->renderView;
-	hackedView.viewaxis = hackedView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
+	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
 
 	//gameRenderWorld->RenderScene( &hackedView );
 
@@ -398,7 +401,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	if ( (gameLocal.CheckGlobalPortalSky()) || (gameLocal.GetCurrentPortalSkyType() == PORTALSKY_LOCAL) ) {
 		// in a case of a moving portalSky
 
-		currentEyePos = hackedView.vieworg;
+		currentEyePos = parms->renderView.vieworg;
 
 		if ( gameLocal.playerOldEyePos == Zero ) {
 			// Initialize playerOldEyePos. This will only happen in one tick.
@@ -428,33 +431,40 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		gameLocal.playerOldEyePos = currentEyePos;
 		// end neuro & 7318
 
-		renderView_t portalView = hackedView;
+		parms->renderView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
+		parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
 
-		portalView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
-		//		portalView.vieworg = gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetOrigin();
-		portalView.viewaxis = portalView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
+		//gameRenderWorld->RenderScene( &portalView );
 
-		// setup global fixup projection vars
-		if ( 1 ) {
-			int vidWidth, vidHeight;
-			idVec2 shiftScale;
+		// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
+		tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
-			renderSystem->GetGLSettings( vidWidth, vidHeight );
+		// the scissor bounds may be shrunk in subviews even if
+		// the viewport stays the same
+		// this scissor range is local inside the viewport
+		parms->scissor.x1 = 0;
+		parms->scissor.y1 = 0;
+		parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
+		parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
 
-			float pot;
-			int	 w = vidWidth;
-			pot = w;// MakePowerOfTwo( w );
-			shiftScale.x = (float)w / pot;
 
-			int	 h = vidHeight;
-			pot = h;// MakePowerOfTwo( h );
-			shiftScale.y = (float)h / pot;
+		parms->isSubview = true;
+		parms->initialViewAreaOrigin = parms->renderView.vieworg;
+		parms->floatTime = parms->renderView.time * 0.001f;
+		//parms->renderWorld = this;
 
-			//tr.viewDef->renderView.shaderParms[6] = shiftScale.x; // grayman #3108 - neuro used [4], we use [6]
-			//tr.viewDef->renderView.shaderParms[7] = shiftScale.y; // grayman #3108 - neuro used [5], we use [7]
-		}
+		// use this time for any subsequent 2D rendering, so damage blobs/etc 
+		// can use level time
+		tr.frameShaderTime = parms->floatTime;
 
-		gameRenderWorld->RenderScene( &portalView );
+		parms->isMirror = false;
+
+		// rendering this view may cause other views to be rendered
+		// for mirrors / portals / shadows / environment maps
+		// this will also cause any necessary entities and lights to be
+		// updated to the demo file
+		R_RenderView( *parms );
+
 		//if ( g_enablePortalSky.GetInteger() == 1 ) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
 		//	renderSystem->CaptureRenderToImage( "_currentRender" );
 
@@ -502,15 +512,15 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->isMirror = (((int)parms->isMirror ^ (int)tr.viewDef->isMirror) != 0);
 
 	// generate render commands for it
-	R_RenderView( parms );*/
+	R_RenderView( parms );
 
 	// copy this rendering to the image
-	//stage->dynamicFrameCount = tr.frameCount;
+	stage->dynamicFrameCount = tr.frameCount;
 	if ( !stage->image )
 		stage->image = globalImages->scratchImage;
 
-	//tr.CaptureRenderToImage( stage->image->imgName );
-	//tr.UnCrop();
+	tr.CaptureRenderToImage( stage->image->imgName );
+	tr.UnCrop();*/
 }
 
 /*
@@ -539,7 +549,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	parms->renderView.width = SCREEN_WIDTH;
 	parms->renderView.height = SCREEN_HEIGHT;
 
-	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
+	tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
 	parms->scissor.x1 = 0;
 	parms->scissor.y1 = 0;
@@ -553,7 +563,7 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 	parms->isMirror = ( ( (int)parms->isMirror ^ (int)tr.viewDef->isMirror ) != 0 );
 
 	// generate render commands for it
-	R_RenderView( parms );
+	R_RenderView( *parms );
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
@@ -574,13 +584,11 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 	const idMaterial		*shader;
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) {
+	if ( r_skipSubviews.GetBool() ) 
 		return false;
-	}
 
-	if ( R_PreciseCullSurface( drawSurf, ndcBounds ) ) {
+	if ( R_PreciseCullSurface( drawSurf, ndcBounds ) ) 
 		return false;
-	}
 
 	shader = drawSurf->material;
 
@@ -593,9 +601,8 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 			break;
 		}
 	}
-	if ( parms ) {
+	if ( parms ) 
 		return false;
-	}
 
 	// crop the scissor bounds based on the precise cull
 	idScreenRect	scissor;
@@ -691,6 +698,7 @@ bool R_GenerateSubViews( void ) {
 		return false;
 
 	subviews = false;
+	static bool portalSky; // static or else stack overflow
 
 	idList<drawSurf_t> list;
 
@@ -703,6 +711,8 @@ bool R_GenerateSubViews( void ) {
 		if ( !shader || !shader->HasSubview() ) 
 			continue;
 		list.Append( *drawSurf );
+		if ( shader->GetSort() == SS_PORTAL_SKY )
+			portalSky = true;
 	}
 
 	list.Sort( SubviewCompare );
@@ -711,6 +721,13 @@ bool R_GenerateSubViews( void ) {
 		if ( R_GenerateSurfaceSubview( &list[i] ) )
 			subviews = true;
 
+	if ( !portalSky && gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+		idScreenRect sc;
+		portalSky = true;
+		R_PortalRender( NULL, NULL, sc );
+		portalSky = false;
+		subviews = true;
+	}
 
 	return subviews;
 }

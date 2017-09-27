@@ -150,7 +150,7 @@ void idRenderWindow::Draw(int time, float x, float y) {
 	refdef.fov_y = 2 * atan((float)drawRect.h / drawRect.w) * idMath::M_RAD2DEG;
 
 	refdef.time = time;
-	world->RenderScene(&refdef);
+	world->RenderScene(refdef);
 }
 
 void idRenderWindow::PostParse() {

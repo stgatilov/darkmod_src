@@ -663,7 +663,7 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 ====================
 */
-void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
+void idRenderWorldLocal::RenderScene( const renderView_t &renderView ) {
 #ifndef	ID_DEDICATED
 	//renderView_t	copy;
 
@@ -679,8 +679,8 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 		return;
 	}
 
-	if ( renderView->fov_x <= 0 || renderView->fov_y <= 0 ) {
-		common->Error( "idRenderWorld::RenderScene: bad FOVs: %f, %f", renderView->fov_x, renderView->fov_y );
+	if ( renderView.fov_x <= 0 || renderView.fov_y <= 0 ) {
+		common->Error( "idRenderWorld::RenderScene: bad FOVs: %f, %f", renderView.fov_x, renderView.fov_y );
 	}
 
 	// close any gui drawing
@@ -692,14 +692,14 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	// setup view parms for the initial view
 	//
 	viewDef_t		*parms = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *parms ) );
-	parms->renderView = *renderView;
+	parms->renderView = renderView;
 
 	if ( tr.takingScreenshot ) {
 		parms->renderView.forceUpdate = true;
 	}
 
 	// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
-	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
+	tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
 	// the scissor bounds may be shrunk in subviews even if
 	// the viewport stays the same
@@ -711,7 +711,7 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 
 
 	parms->isSubview = false;
-	parms->initialViewAreaOrigin = renderView->vieworg;
+	parms->initialViewAreaOrigin = renderView.vieworg;
 	parms->floatTime = parms->renderView.time * 0.001f;
 	parms->renderWorld = this;
 
@@ -730,20 +730,20 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	}
 
 	if ( r_lockSurfaces.GetBool() ) {
-		R_LockSurfaceScene( parms );
+		R_LockSurfaceScene( *parms );
 		return;
 	}
 
 	// save this world for use by some console commands
 	tr.primaryWorld = this;
-	tr.primaryRenderView = *renderView;
+	tr.primaryRenderView = renderView;
 	tr.primaryView = parms;
 
 	// rendering this view may cause other views to be rendered
 	// for mirrors / portals / shadows / environment maps
 	// this will also cause any necessary entities and lights to be
 	// updated to the demo file
-	R_RenderView( parms );
+	R_RenderView( *parms );
 
 	// now write delete commands for any modified-but-not-visible entities, and
 	// add the renderView command to the demo

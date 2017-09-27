@@ -92,7 +92,7 @@ public:
 	virtual void			RemoveDecals( qhandle_t entityHandle );
 
 	virtual void			SetRenderView( const renderView_t *renderView );
-	virtual	void			RenderScene( const renderView_t *renderView );
+	virtual	void			RenderScene( const renderView_t &renderView );
 
 	virtual	int				NumAreas( void ) const;
 	virtual int				PointInArea( const idVec3 &point ) const;
@@ -219,7 +219,7 @@ public:
 	bool					ProcessDemoCommand( idDemoFile *readDemo, renderView_t *demoRenderView, int *demoTimeOffset );
 
 	void					WriteLoadMap();
-	void					WriteRenderView( const renderView_t *renderView );
+	void					WriteRenderView( const renderView_t &renderView );
 	void					WriteVisibleDefs( const viewDef_t *viewDef );
 	void					WriteFreeLight( qhandle_t handle );
 	void					WriteFreeEntity( qhandle_t handle );

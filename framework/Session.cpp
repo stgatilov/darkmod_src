@@ -2530,7 +2530,7 @@ void idSessionLocal::Draw() {
 		
 		guiActive->Redraw( com_frameTime );
 	} else if ( readDemo ) {
-		rw->RenderScene( &currentDemoRenderView );
+		rw->RenderScene( currentDemoRenderView );
 		renderSystem->DrawDemoPics();
 	} else if ( mapSpawned ) {
 		bool gameDraw = false;

@@ -1805,8 +1805,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 
 	backEnd.c_copyFrameBuffer++;
 
-	if ( r_ignore2.GetBool() )
-		RB_DumpFramebuffer( imgName + ".tga" );
+	//RB_DumpFramebuffer( imgName + ".tga" );
 }
 
 /*

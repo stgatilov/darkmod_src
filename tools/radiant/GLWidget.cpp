@@ -452,7 +452,7 @@ void idGLDrawableMaterial::draw(int x, int y, int w, int h) {
 
 		refdef.time = eventLoop->Milliseconds();
 
-		world->RenderScene( &refdef );
+		world->RenderScene( refdef );
 		int frontEnd, backEnd;
 		renderSystem->EndFrame( &frontEnd, &backEnd );
 
@@ -680,7 +680,7 @@ void idGLDrawableModel::draw(int x, int y, int w, int h) {
 
 	refdef.time = eventLoop->Milliseconds();
 
-	world->RenderScene( &refdef );
+	world->RenderScene( refdef );
 	int frontEnd, backEnd;
 	renderSystem->EndFrame( &frontEnd, &backEnd );
 
