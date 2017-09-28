@@ -5110,6 +5110,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 	else if (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD || noclip)
 	{
 		// No viewbob when fully underwater or in noclip mode, start at beginning of cycle again
+		SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
 		bobCycle = 0;
 		bobFoot = 0;
 		bobfracsin = 0;
