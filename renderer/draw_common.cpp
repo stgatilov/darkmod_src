@@ -217,7 +217,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( surf->material->GetSort() == SS_PORTAL_SKY && !r_ignore2.GetBool() )
+	if ( surf->material->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() == 2 )
 		return;
 
 	// get the expressions for conditionals / color / texcoords
@@ -373,7 +373,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// decal surfaces may enable polygon offset
 	qglPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
 
-	GL_State( GLS_DEPTHFUNC_LESS );
+	GL_State( GLS_DEPTHFUNC_LESS & GLS_COLORMASK & GLS_ALPHAMASK );
 
 	// Enable stencil test if we are going to be using it for shadows.
 	// If we didn't do this, it would be legal behavior to get z fighting
@@ -837,7 +837,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		return;					   // it used to support. Our portalSky is drawn in this procedure using
 								   // the skybox image captured in _currentRender. -- SteveL working on #4182
 
-	if ( surf->material->GetSort() == SS_PORTAL_SKY && !r_ignore.GetBool() )
+	if ( surf->material->GetSort() == SS_PORTAL_SKY && g_enablePortalSky.GetInteger() == 2 )
 		return;
 
 	RB_LogComment( ">> RB_STD_T_RenderShaderPasses %s\n", surf->material->GetName() );

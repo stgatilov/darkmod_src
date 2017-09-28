@@ -526,11 +526,15 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
-	if ( !stage->image )
-		stage->image = globalImages->scratchImage;
-
-	tr.CaptureRenderToImage( stage->image->imgName );
 	tr.UnCrop();*/
+	if ( g_enablePortalSky.GetInteger() == 1 ) {
+		if ( !stage )
+			stage = (textureStage_t*)&surf->material->GetStage( 0 )->texture;
+		if ( !stage->image )
+			stage->image = globalImages->currentRenderImage;
+
+		tr.CaptureRenderToImage( stage->image->imgName );
+	}
 }
 
 /*
@@ -722,7 +726,7 @@ bool R_GenerateSubViews( void ) {
 			idScreenRect sc;
 			R_PortalRender( skySurf, NULL, sc );
 		} else { // caulk 
-			if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetInteger() ) {
+			if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() ) {
 				idScreenRect sc;
 				R_PortalRender( NULL, NULL, sc );
 				subviews = true;
