@@ -528,12 +528,12 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	stage->dynamicFrameCount = tr.frameCount;
 	tr.UnCrop();*/
 	if ( g_enablePortalSky.GetInteger() == 1 ) {
-		if ( !stage )
-			stage = (textureStage_t*)&surf->material->GetStage( 0 )->texture;
-		if ( !stage->image )
-			stage->image = globalImages->currentRenderImage;
-
-		tr.CaptureRenderToImage( stage->image->imgName );
+		idImage *image = NULL;
+		if ( stage )
+			image = stage->image;
+		if ( !image )
+			image = globalImages->currentRenderImage;
+		tr.CaptureRenderToImage( image->imgName );
 	}
 }
 
