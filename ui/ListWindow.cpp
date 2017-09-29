@@ -11,11 +11,11 @@
  
  Project: The Dark Mod (http://www.thedarkmod.com/)
  
+ 
 ******************************************************************************/
 
 #include "precompiled.h"
 #pragma hdrstop
-
 
 
 #include "../framework/Session_local.h"
@@ -75,7 +75,7 @@ void idListWindow::AddCurrentSel( int sel ) {
 }
 
 int idListWindow::GetCurrentSel() {
-	return ( currentSel.Num() ) ? currentSel[0] : 0;
+	return ( currentSel.Num() ) ? currentSel[0] : -1;
 }
 
 bool idListWindow::IsSelected( int index ) {
@@ -136,52 +136,44 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 						clickTime = gui->GetTime();
 					}
 				} else {
-					SetCurrentSel( listItems.Num() - 1 );
+					SetCurrentSel( -1 );
 				}
 			}
-		} else if ( key == K_UPARROW || key == K_PGUP || key == K_DOWNARROW || key == K_PGDN ) {
-			int numLines = 1;
-
-			if ( key == K_PGUP || key == K_PGDN ) {
-				numLines = numVisibleLines / 2;
-			}
-
-			if ( key == K_UPARROW || key == K_PGUP ) {
-				numLines = -numLines;
-			}
-
-			if ( idKeyInput::IsDown( K_CTRL ) ) {
-				top += numLines;
-			} else {
-				SetCurrentSel( GetCurrentSel() + numLines );
-			}
-		} else {
-			return ret;
-		}
-	} else if ( event->evType == SE_CHAR ) {
+    } else if (key == K_UPARROW) {
+      --top;
+    } else if (key == K_DOWNARROW) {
+      ++top;
+    } else if (key == K_PGUP) {
+      top -= numVisibleLines;
+    } else if (key == K_PGDN) {
+      top += numVisibleLines;
+    } else {
+      return ret;
+	  } 
+  } else if ( event->evType == SE_CHAR ) {
 		if ( !idStr::CharIsPrintable(key) ) {
 			return ret;
 		}
-
+  
 		if ( gui->GetTime() > typedTime + 1000 ) {
 			typed = "";
 		}
 		typedTime = gui->GetTime();
 		typed.Append( key );
-
+  
 		for ( int i=0; i<listItems.Num(); i++ ) {
 			if ( idStr::Icmpn( typed, listItems[i], typed.Length() ) == 0 ) {
 				SetCurrentSel( i );
 				break;
 			}
 		}
-
+  
 	} else {
 		return ret;
 	}
 
 	if ( GetCurrentSel() < 0 ) {
-		SetCurrentSel( 0 );
+		SetCurrentSel( -1 );
 	}
 
 	if ( GetCurrentSel() >= listItems.Num() ) {
@@ -189,14 +181,14 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 	}
 
 	if ( scroller->GetHigh() > 0.0f ) {
-		if ( !idKeyInput::IsDown( K_CTRL ) ) {
-			if ( top > GetCurrentSel() - 1 ) {
-				top = GetCurrentSel() - 1;
-			}
-			if ( top < GetCurrentSel() - numVisibleLines + 2 ) {
-				top = GetCurrentSel() - numVisibleLines + 2;
-			}
-		}
+	//	if ( !idKeyInput::IsDown( K_CTRL ) ) {
+	//		if ( top > GetCurrentSel() - 1 ) {
+	//			top = GetCurrentSel() - 1;
+	//		}
+	//		if ( top < GetCurrentSel() - numVisibleLines + 2 ) {
+	//			top = GetCurrentSel() - numVisibleLines + 2;
+	//		}
+	//	}
 
 		if ( top > listItems.Num() - 2 ) {
 			top = listItems.Num() - 2;
@@ -210,18 +202,18 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 		scroller->SetValue(0.0f);
 	}
 
-	if ( key != K_MOUSE1 ) {
-		// Send a fake mouse click event so onAction gets run in our parents
-		const sysEvent_t ev = sys->GenerateMouseButtonEvent( 1, true );
-		idWindow::HandleEvent(&ev, updateVisuals);
-	}
+	//if ( key != K_MOUSE1 ) {
+	//	// Send a fake mouse click event so onAction gets run in our parents
+	//	const sysEvent_t ev = sys->GenerateMouseButtonEvent( 1, true );
+	//	idWindow::HandleEvent(&ev, updateVisuals);
+	//}
 
 	if ( currentSel.Num() > 0 ) {
 		for ( int i = 0; i < currentSel.Num(); i++ ) {
 			gui->SetStateInt( va( "%s_sel_%i", listName.c_str(), i ), currentSel[i] );
 		}
 	} else {
-		gui->SetStateInt( va( "%s_sel_0", listName.c_str() ), 0 );
+		gui->SetStateInt( va( "%s_sel_0", listName.c_str() ), -1 );
 	}
 	gui->SetStateInt( va( "%s_numsel", listName.c_str() ), currentSel.Num() );
 
