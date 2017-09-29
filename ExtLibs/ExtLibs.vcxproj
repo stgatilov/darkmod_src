@@ -121,7 +121,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -141,7 +140,6 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -324,7 +322,6 @@
     <ClInclude Include="Export.h" />
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="jpeg.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="vorbis.h" />
     <ClInclude Include="zlib.h" />
   </ItemGroup>
@@ -1175,7 +1172,9 @@
     <ClCompile Include="openal-soft-master\Alc\backends\loopback.c" />
     <ClCompile Include="openal-soft-master\Alc\backends\mmdevapi.c" />
     <ClCompile Include="openal-soft-master\Alc\backends\null.c">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/Alc/backends/null.c.obj</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)/Alc/backends/null.c.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="openal-soft-master\Alc\backends\wave.c" />
     <ClCompile Include="openal-soft-master\Alc\backends\winmm.c" />
@@ -1192,6 +1191,7 @@
     <ClCompile Include="openal-soft-master\Alc\effects\modulator.c" />
     <ClCompile Include="openal-soft-master\Alc\effects\null.c">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/Alc/effects/null.c.obj</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)/Alc/effects/null.c.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="openal-soft-master\Alc\effects\reverb.c" />
     <ClCompile Include="openal-soft-master\Alc\helpers.c" />
@@ -1244,12 +1244,6 @@
     </ClCompile>
     <ClCompile Include="openal-soft-master\OpenAL32\sample_cvt.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="vorbis.cpp" />
     <ClCompile Include="zlib.cpp" />

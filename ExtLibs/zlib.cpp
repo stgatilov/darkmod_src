@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "zlib.h"
 
 namespace ExtLibs {

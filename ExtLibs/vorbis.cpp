@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "vorbis.h"
 #include <stdlib.h>
 #include <string.h>

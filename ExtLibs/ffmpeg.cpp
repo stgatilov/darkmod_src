@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "ffmpeg.h"
 
 namespace ExtLibs {
