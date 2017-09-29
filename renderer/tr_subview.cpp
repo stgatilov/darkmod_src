@@ -720,17 +720,15 @@ bool R_GenerateSubViews( void ) {
 	}
 
 	static bool dontReenter = false;
-	if ( !dontReenter ) {
+	if ( !dontReenter && gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() ) {
 		dontReenter = true;
 		if ( skySurf ) { // textures/smf/portal_sky
 			idScreenRect sc;
 			R_PortalRender( skySurf, NULL, sc );
 		} else { // caulk 
-			if ( gameLocal.portalSkyEnt.GetEntity() && gameLocal.IsPortalSkyActive() && g_enablePortalSky.GetBool() ) {
-				idScreenRect sc;
-				R_PortalRender( NULL, NULL, sc );
-				subviews = true;
-			}
+			idScreenRect sc;
+			R_PortalRender( NULL, NULL, sc );
+			subviews = true;
 		}
 		dontReenter = false;
 	}
