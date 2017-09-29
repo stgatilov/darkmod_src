@@ -121,11 +121,13 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -1164,6 +1166,85 @@
     <ClCompile Include="devil.cpp" />
     <ClCompile Include="ffmpeg.cpp" />
     <ClCompile Include="jpeg.cpp" />
+    <ClCompile Include="openal-soft-master\Alc\ALc.c" />
+    <ClCompile Include="openal-soft-master\Alc\alcConfig.c" />
+    <ClCompile Include="openal-soft-master\Alc\alcRing.c" />
+    <ClCompile Include="openal-soft-master\Alc\ALu.c" />
+    <ClCompile Include="openal-soft-master\Alc\ambdec.c" />
+    <ClCompile Include="openal-soft-master\Alc\backends\base.c" />
+    <ClCompile Include="openal-soft-master\Alc\backends\loopback.c" />
+    <ClCompile Include="openal-soft-master\Alc\backends\mmdevapi.c" />
+    <ClCompile Include="openal-soft-master\Alc\backends\null.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/Alc/backends/null.c.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\Alc\backends\wave.c" />
+    <ClCompile Include="openal-soft-master\Alc\backends\winmm.c" />
+    <ClCompile Include="openal-soft-master\Alc\bformatdec.c" />
+    <ClCompile Include="openal-soft-master\Alc\bs2b.c" />
+    <ClCompile Include="openal-soft-master\Alc\converter.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\chorus.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\compressor.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\dedicated.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\distortion.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\echo.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\equalizer.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\flanger.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\modulator.c" />
+    <ClCompile Include="openal-soft-master\Alc\effects\null.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)/Alc/effects/null.c.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\Alc\effects\reverb.c" />
+    <ClCompile Include="openal-soft-master\Alc\helpers.c" />
+    <ClCompile Include="openal-soft-master\Alc\hrtf.c" />
+    <ClCompile Include="openal-soft-master\Alc\mastering.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer_c.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer_sse.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer_sse2.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer_sse3.c" />
+    <ClCompile Include="openal-soft-master\Alc\mixer_sse41.c" />
+    <ClCompile Include="openal-soft-master\Alc\nfcfilter.c" />
+    <ClCompile Include="openal-soft-master\Alc\panning.c" />
+    <ClCompile Include="openal-soft-master\Alc\uhjfilter.c" />
+    <ClCompile Include="openal-soft-master\common\almalloc.c" />
+    <ClCompile Include="openal-soft-master\common\atomic.c" />
+    <ClCompile Include="openal-soft-master\common\rwlock.c" />
+    <ClCompile Include="openal-soft-master\common\threads.c" />
+    <ClCompile Include="openal-soft-master\common\uintmap.c" />
+    <ClCompile Include="openal-soft-master\OpenAL32\alAuxEffectSlot.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alBuffer.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alEffect.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alError.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alExtension.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alFilter.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alListener.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alSource.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alState.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\alThunk.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
+    <ClCompile Include="openal-soft-master\OpenAL32\sample_cvt.c">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
