@@ -80,10 +80,6 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 		return 16;
 	case GL_RGB5:
 		return 16;
-	case GL_COLOR_INDEX8_EXT:
-		return 8;
-	case GL_COLOR_INDEX:
-		return 8;
 	case GL_COMPRESSED_RGB_ARB:
 		return 4;			// not sure
 	case GL_COMPRESSED_RGBA_ARB:
@@ -94,67 +90,7 @@ int idImage::BitsForInternalFormat( int internalFormat ) const {
 	return 0;
 }
 
-/*
-==================
-UploadCompressedNormalMap
-
-Create a 256 color palette to be used by compressed normal maps
-==================
-*/
-void idImage::UploadCompressedNormalMap( int width, int height, const byte *rgba, int mipLevel ) {
-	byte	*normals;
-	const byte	*in;
-	byte	*out;
-	int		x, y, z;
-	int		row;
-
-	// OpenGL's pixel packing rule
-	row = width < 4 ? 4 : width;
-
-	normals = (byte *)_alloca( row * height );
-	if ( normals == NULL ) {
-		common->Error( "R_UploadCompressedNormalMap: _alloca failed" );
-	}
-
-	in = rgba;
-	out = normals;
-	for ( int i = 0 ; i < height ; i++, out += row, in += width * 4 ) {
-		for ( int j = 0 ; j < width ; j++ ) {
-			x = in[ j * 4 + 0 ];
-			y = in[ j * 4 + 1 ];
-			z = in[ j * 4 + 2 ];
-
-			int c;
-			if ( x == 128 && y == 128 && z == 128 ) {
-				// the "nullnormal" color
-				c = 255;
-			} else {
-				c = ( globalImages->originalToCompressed[x] << 4 ) | globalImages->originalToCompressed[y];
-				if ( c == 255 ) {
-					c = 254;	// don't use the nullnormal color
-				}
-			}
-			out[j] = c;
-		}
-	}
-
-	if ( mipLevel == 0 ) {
-		// Optionally write out the paletized normal map to a .tga
-		if ( globalImages->image_writeNormalTGAPalletized.GetBool() ) {
-			char filename[MAX_IMAGE_NAME];
-			ImageProgramStringToCompressedFileName( imgName, filename );
-			char *ext = strrchr(filename, '.');
-			if ( ext ) {
-				strcpy(ext, "_pal.tga");
-				R_WritePalTGA( filename, normals, globalImages->compressedPalette, width, height);
-			}
-		}
-	}
-}
-
-
 //=======================================================================
-
 
 static byte	mipBlendColors[16][4] = {
 	{0,0,0,0},
@@ -235,11 +171,7 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first 
 	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 1) {
-			// image_useNormalCompression should only be set to 1 on nv_10 and nv_20 paths
-			return GL_COLOR_INDEX8_EXT;
-		} else if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionAvailable ) {
-			// image_useNormalCompression == 2 uses rxgb format which produces really good quality for medium settings
+		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable) {
 			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		} else {
 			// we always need the alpha channel for bump maps for swizzling
@@ -521,10 +453,10 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	internalFormat = SelectInternalFormat( &pic, 1, width, height, depth );
 
 	int mipmapMode = globalImages->image_mipmapMode.GetInteger(); // duzenko #4401
-	if (preserveBorder || internalFormat == GL_COLOR_INDEX8_EXT)
+	if ( preserveBorder )
 		mipmapMode = 0;
 	else
-		if (mipmapMode == 2 && !qglGenerateMipmap)
+		if ( mipmapMode == 2 && !qglGenerateMipmap )
 			mipmapMode = 1;
 
 	// copy or resample data as appropriate for first MIP level
@@ -625,9 +557,9 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// swap the red and alpha for rxgb support
 	// do this even on tga normal maps so we only have to use
 	// one fragment program
-	// if the image is precompressed ( either in palletized mode or true rxgb mode )
+	// if the image is precompressed
 	// then it is loaded above and the swap never happens here
-	if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() != 1 ) {
+	if ( depth == TD_BUMP ) {
 		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
 			scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
 			scaledBuffer[ i ] = 0;
@@ -636,26 +568,14 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// upload the main image level
 	Bind();
 
-	if ( internalFormat == GL_COLOR_INDEX8_EXT ) {
-		/*
-		if ( depth == TD_BUMP ) {
-			for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
-				scaledBuffer[ i ] = scaledBuffer[ i + 3 ];
-				scaledBuffer[ i + 3 ] = 0;
-			}
-		}
-		*/
-		UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, 0 );
-	} else {
-		if (mipmapMode == 1) // duzenko #4401
-			qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-		qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		if (mipmapMode == 2) // duzenko #4401
-			qglGenerateMipmap(GL_TEXTURE_2D);
-		if (mipmapMode == 1) // duzenko #4401
-			if (strcmp(glConfig.vendor_string, "Intel")) // known to have crashed on Intel
-				qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
-	}
+	if (mipmapMode == 1) // duzenko #4401
+		qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	if (mipmapMode == 2) // duzenko #4401
+		qglGenerateMipmap(GL_TEXTURE_2D);
+	if ( mipmapMode == 1 ) // duzenko #4401
+		if ( strcmp( glConfig.vendor_string, "Intel" ) ) // known to have crashed on Intel
+			qglTexParameteri( GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE );
 	
 	// create and upload the mip map levels, which we do in all cases, even if we don't think they are needed
 	int		miplevel;
@@ -689,12 +609,8 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 		}
 
 		// upload the mip map
-		if ( internalFormat == GL_COLOR_INDEX8_EXT ) {
-			UploadCompressedNormalMap( scaled_width, scaled_height, scaledBuffer, miplevel );
-		} else {
-			qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 
-				0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-		}
+		qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height,
+			0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	}
 
 	if (scaledBuffer != 0 && pic != scaledBuffer) { // duzenko #4401
@@ -828,7 +744,6 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 	}
 
 	// upload the base level
-	// FIXME: support GL_COLOR_INDEX8_EXT?
 	for ( i = 0 ; i < 6 ; i++ ) {
 		qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, internalFormat, scaled_width, scaled_height, 0, 
 			GL_RGBA, GL_UNSIGNED_BYTE, pic[i] );
@@ -967,12 +882,6 @@ void idImage::WritePrecompressedImage() {
 	int altInternalFormat = 0;
 	int bitSize = 0;
 	switch ( internalFormat ) {
-		case GL_COLOR_INDEX8_EXT:
-		case GL_COLOR_INDEX:
-			// this will not work with dds viewers but we need it in this format to save disk load speed ( i.e. size ) 
-			altInternalFormat = GL_COLOR_INDEX;
-			bitSize = 24;
-		break;
 		case 1:
 		case GL_INTENSITY8:
 		case GL_LUMINANCE8:
@@ -1075,7 +984,7 @@ void idImage::WritePrecompressedImage() {
 			break;
 		}
 	} else {
-		header.ddspf.dwFlags = DDSF_RGB;// (internalFormat == GL_COLOR_INDEX8_EXT) ? DDSF_RGB | DDSF_ID_INDEXCOLOR : DDSF_RGB;
+		header.ddspf.dwFlags = DDSF_RGB;
 		header.ddspf.dwRGBBitCount = bitSize;
 		switch ( altInternalFormat ) {
 		case GL_BGRA_EXT:
@@ -1085,7 +994,6 @@ void idImage::WritePrecompressedImage() {
 			// Fall through
 		case GL_BGR_EXT:
 		case GL_LUMINANCE:
-		case GL_COLOR_INDEX:
 			header.ddspf.dwRBitMask = 0x00FF0000;
 			header.ddspf.dwGBitMask = 0x0000FF00;
 			header.ddspf.dwBBitMask = 0x000000FF;
@@ -1229,10 +1137,6 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 
 	// Allow grabbing of DDS's from original Doom pak files
 
-	//if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() >= 2 ) {
-	//	return false;
-	//}
-
 	// compressed light images may look ugly
 	if ( /*com_videoRam.GetInteger() >= 128 &&*/ imgName.Icmpn( "lights/", 7 ) == 0 ) {
 		return false;
@@ -1292,13 +1196,6 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		R_StaticFree( data );
 		return false;
 	}
-
-	// if we don't support color index textures, we must load the full image
-	// should we just expand the 256 color image to 32 bit for upload?
-/*	if ( ddspf_dwFlags & DDSF_ID_INDEXCOLOR ) {
-		R_StaticFree( data );
-		return false;
-	}*/
 
 	// upload all the levels
 	UploadPrecompressedImage( data, len );
@@ -1385,13 +1282,8 @@ void idImage::UploadPrecompressedImage( byte *data, int len ) {
         externalFormat = GL_BGRA_EXT;
 		internalFormat = GL_RGBA8;
     } else if ( ( header->ddspf.dwFlags & DDSF_RGB ) && header->ddspf.dwRGBBitCount == 24 ) {
-		/*if ( header->ddspf.dwFlags & DDSF_ID_INDEXCOLOR ) { 
-			externalFormat = GL_COLOR_INDEX;
-			internalFormat = GL_COLOR_INDEX8_EXT;
-		} else*/ {
-			externalFormat = GL_BGR_EXT;
-			internalFormat = GL_RGB8;
-		}
+		externalFormat = GL_BGR_EXT;
+		internalFormat = GL_RGB8;
 	} else if ( header->ddspf.dwRGBBitCount == 8 ) {
 		externalFormat = GL_ALPHA;
 		internalFormat = GL_ALPHA8;
@@ -1523,19 +1415,7 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 			MakeDefault();
 			return;
 		}
-/*
-		// swap the red and alpha for rxgb support
-		// do this even on tga normal maps so we only have to use
-		// one fragment program
-		// if the image is precompressed ( either in palletized mode or true rxgb mode )
-		// then it is loaded above and the swap never happens here
-		if ( depth == TD_BUMP && globalImages->image_useNormalCompression.GetInteger() != 1 ) {
-			for ( int i = 0; i < width * height * 4; i += 4 ) {
-				pic[ i + 3 ] = pic[ i ];
-				pic[ i ] = 0;
-			}
-		}
-*/
+
 		// build a hash for checking duplicate image files
 		// NOTE: takes about 10% of image load times (SD)
 		// may not be strictly necessary, but some code uses it, so let's leave it in
@@ -2056,12 +1936,6 @@ void idImage::Print() const {
 		break;
 	case GL_RGB5:
 		common->Printf( "RGB5  " );
-		break;
-	case GL_COLOR_INDEX8_EXT:
-		common->Printf( "CI8   " );
-		break;
-	case GL_COLOR_INDEX:
-		common->Printf( "CI    " );
 		break;
 	case GL_COMPRESSED_RGB_ARB:
 		common->Printf( "RGBC  " );
