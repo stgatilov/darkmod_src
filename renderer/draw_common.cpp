@@ -21,37 +21,6 @@
 
 /*
 ================
-RB_PrepareStageTexturing_Screen
-Extracted from RB_PrepareStageTexturing
-================
-*/
-void RB_PrepareStageTexturing_Screen( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
-	float	mat[16], plane[4];
-	myGlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
-
-	plane[0] = mat[0];
-	plane[1] = mat[4];
-	plane[2] = mat[8];
-	plane[3] = mat[12];
-	qglUniform4fv( oldStageShader.texPlaneS, 1, plane );
-
-	plane[0] = mat[1];
-	plane[1] = mat[5];
-	plane[2] = mat[9];
-	plane[3] = mat[13];
-	qglUniform4fv( oldStageShader.texPlaneT, 1, plane );
-
-	plane[0] = mat[3];
-	plane[1] = mat[7];
-	plane[2] = mat[11];
-	plane[3] = mat[15];
-	qglUniform4fv( oldStageShader.texPlaneQ, 1, plane );
-
-	qglUniform1f( oldStageShader.screenTex, 1 );
-}
-
-/*
-================
 RB_PrepareStageTexturing_ReflectCube
 Extracted from RB_PrepareStageTexturing
 ================
@@ -108,11 +77,8 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage, const drawSurf_t *su
 	// texgens
 	switch (pStage->texture.texgen)
 	{
-/*	case TG_DIFFUSE_CUBE:
-		qglTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-		break;*/
 	case TG_SCREEN:
-		RB_PrepareStageTexturing_Screen( pStage, surf, ac );
+		qglUniform1f( oldStageShader.screenTex, 1 );
 		break;
 	case TG_REFLECT_CUBE:
 		RB_PrepareStageTexturing_ReflectCube( pStage, surf, ac );

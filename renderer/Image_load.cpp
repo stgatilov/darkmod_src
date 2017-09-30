@@ -1452,7 +1452,6 @@ void idImage::PurgeImage() {
 	// clear all the current binding caches, so the next bind will do a real one
 	for ( int i = 0 ; i < MAX_MULTITEXTURE_UNITS ; i++ ) {
 		backEnd.glState.tmu[i].current2DMap = -1;
-		backEnd.glState.tmu[i].current3DMap = -1;
 		backEnd.glState.tmu[i].currentCubeMap = -1;
 	}
 }

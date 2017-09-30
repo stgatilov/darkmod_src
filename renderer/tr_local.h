@@ -614,7 +614,6 @@ typedef struct {
 
 typedef struct {
 	int		current2DMap;
-	int		current3DMap;
 	int		currentCubeMap;
 	textureType_t	textureType;
 } tmu_t;

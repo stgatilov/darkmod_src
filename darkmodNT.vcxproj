@@ -262,9 +262,10 @@
       <PreprocessorDefinitions>_INLINEDEBUG;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
@@ -280,9 +281,10 @@
       <PreprocessorDefinitions>NO_MFC;_INLINEDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

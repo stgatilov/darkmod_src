@@ -390,10 +390,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	parms->renderView.viewID = 0;
 	parms->numClipPlanes = 0;
 
-	// hack the shake in at the very last moment, so it can't cause any consistency problems
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
-
-	//gameRenderWorld->RenderScene( &hackedView );
 
 	// grayman #3108 - contributed by neuro & 7318
 	idVec3 diff, currentEyePos, PSOrigin, Zero;
@@ -436,14 +433,9 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		parms->renderView.vieworg = PSOrigin;	// grayman #3108 - contributed by neuro & 7318
 		parms->renderView.viewaxis = tr.viewDef->renderView.viewaxis * gameLocal.portalSkyEnt.GetEntity()->GetPhysics()->GetAxis();
 
-		//gameRenderWorld->RenderScene( &portalView );
-
 		// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
 		tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
-		// the scissor bounds may be shrunk in subviews even if
-		// the viewport stays the same
-		// this scissor range is local inside the viewport
 		parms->scissor.x1 = 0;
 		parms->scissor.y1 = 0;
 		parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
@@ -453,10 +445,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		parms->isSubview = true;
 		parms->initialViewAreaOrigin = parms->renderView.vieworg;
 		parms->floatTime = parms->renderView.time * 0.001f;
-		//parms->renderWorld = this;
 
-		// use this time for any subsequent 2D rendering, so damage blobs/etc 
-		// can use level time
 		tr.frameShaderTime = parms->floatTime;
 
 		idVec3	cross;
@@ -467,13 +456,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 			parms->isMirror = true;
 		}
 
-		// rendering this view may cause other views to be rendered
-		// for mirrors / portals / shadows / environment maps
-		// this will also cause any necessary entities and lights to be
-		// updated to the demo file
 		R_RenderView( *parms );
-
-		//Sys_Sleep( 0 );
 
 		//if ( g_enablePortalSky.GetInteger() == 1 ) // duzenko #4414 - the new method will use the left-over pixels in framebuffer
 		//	renderSystem->CaptureRenderToImage( "_currentRender" );
@@ -489,9 +472,6 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	//hackedView.forceUpdate = true; // Fix for lightgem problems? -Gildoran
 	
 	/*viewDef_t		*parms;
-
-	if ( tr.viewDef->isSubview ) // #4615 HOM effect - only draw mirror from player's view
-		return;
 
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount ) {

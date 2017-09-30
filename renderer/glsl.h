@@ -28,9 +28,6 @@ private:
 };
 
 struct oldStageProgram_t : shaderProgram_t {
-	GLint			texPlaneS;
-	GLint			texPlaneT;
-	GLint			texPlaneQ;
 	GLint			screenTex;
 	GLint			colorMul;
 	GLint			colorAdd;

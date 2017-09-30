@@ -460,9 +460,6 @@ void shaderProgram_t::Use() {
 }
 
 void oldStageProgram_t::AfterLoad() {
-	texPlaneS = qglGetUniformLocation( program, "texPlaneS" );
-	texPlaneT = qglGetUniformLocation( program, "texPlaneT" );
-	texPlaneQ = qglGetUniformLocation( program, "texPlaneQ" );
 	screenTex = qglGetUniformLocation( program, "screenTex" );
 	colorMul = qglGetUniformLocation( program, "colorMul" );
 	colorAdd = qglGetUniformLocation( program, "colorAdd" );
