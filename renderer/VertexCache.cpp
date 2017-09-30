@@ -28,7 +28,7 @@ static const int	FRAME_MEMORY_BYTES = 0x200000;
 static const int	EXPAND_HEADERS = 32;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "" );
-idCVar idVertexCache::r_useMapBufferRange( "r_useMapBufferRange", "0", CVAR_BOOL | CVAR_RENDERER, "use ARB_map_buffer_range for optimization" );
+idCVar idVertexCache::r_useMapBufferRange( "r_useMapBufferRange", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "use ARB_map_buffer_range for optimization" );
 
 idVertexCache		vertexCache;
 
