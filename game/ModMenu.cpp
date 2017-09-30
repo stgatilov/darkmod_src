@@ -174,7 +174,7 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 	{
 		bool missionIsCurrentlyInstalled = gameLocal.m_MissionManager->GetCurrentModName() == info->modName;
 
-    idStr name = gui->GetStateString( va("missionList_item_%d", modIndex) );
+    idStr name = common->Translate( info != NULL ? info->displayName : "");
     gui->SetStateString("mod_name", name);
     gui->SetStateString("mod_desc", common->Translate( info != NULL ? info->description : ""));
     gui->SetStateString("mod_author", info != NULL ? info->author : "");
@@ -199,9 +199,11 @@ void CModMenu::UpdateSelectedMod(idUserInterface* gui)
 
 		gui->SetStateString("selectedModCompleted", info->GetModCompletedString());
 		gui->SetStateString("selectedModLastPlayDate", info->GetKeyValue("last_play_date", "-"));
+		gui->SetStateBool("modToInstallVisible", true);
 	}
 	else
 	{
+		gui->SetStateBool("modToInstallVisible", false);
 		gui->SetStateBool("installModButtonVisible", false);
 		gui->SetStateString("selectedModSize", "0 Bytes");
 		gui->SetStateBool("eraseSelectedModButtonVisible", false);

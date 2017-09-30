@@ -190,8 +190,8 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 	//		}
 	//	}
 
-		if ( top > listItems.Num() - 2 ) {
-			top = listItems.Num() - 2;
+		if ( top > listItems.Num() - numVisibleLines ) {
+			top = listItems.Num() - numVisibleLines;
 		}
 		if ( top < 0 ) {
 			top = 0;
