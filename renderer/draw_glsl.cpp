@@ -581,16 +581,16 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	}
 	if ( backEnd.vLight->lightShader->IsCubicLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() ) {
 		qglUniform1f( cubic, 1.0 );
-		qglUniform1i( u_lightProjectionTexture, 0 );
+		qglUniform1i( u_lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( u_lightProjectionCubemap, 2 );
-		qglUniform1i( u_lightFalloffTexture, 0 );
+		qglUniform1i( u_lightFalloffTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( u_lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( u_lightProjectionTexture, 2 );
-		qglUniform1i( u_lightProjectionCubemap, 0 );
+		qglUniform1i( u_lightProjectionCubemap, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( u_lightFalloffTexture, 1 );
-		qglUniform1i( u_lightFalloffCubemap, 0 );
+		qglUniform1i( u_lightFalloffCubemap, MAX_MULTITEXTURE_UNITS );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
