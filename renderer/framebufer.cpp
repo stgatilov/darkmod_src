@@ -252,6 +252,9 @@ Others: combined stencil & depth, copy to a separate FBO, meh
 
 void FB_BindStencilTexture() {
 	GL_CheckErrors();
+	GL_SelectTexture( 6 );
+	globalImages->currentDepthImage->Bind();
+	GL_SelectTexture( 7 );
 	if ( glConfig.vendor != glvIntel ) {
 		globalImages->currentDepthFbo->Bind();
 		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;

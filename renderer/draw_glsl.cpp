@@ -123,10 +123,8 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		din->specularImage->Bind();
 	//}
 
-	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
-		GL_SelectTexture( 7 );
+	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) 
 		FB_BindStencilTexture();
-	}
 
 	// draw it
 	RB_DrawElementsWithCounters( din->surf->backendGeo );
@@ -180,6 +178,8 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 	// disable features
 	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
+		GL_SelectTexture( 6 );
+		globalImages->BindNull();
 		GL_SelectTexture( 7 );
 		globalImages->BindNull();
 	}
@@ -581,16 +581,16 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	}
 	if ( backEnd.vLight->lightShader->IsCubicLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() ) {
 		qglUniform1f( cubic, 1.0 );
-		qglUniform1i( u_lightProjectionTexture, 5 );
+		qglUniform1i( u_lightProjectionTexture, 0 );
 		qglUniform1i( u_lightProjectionCubemap, 2 );
-		qglUniform1i( u_lightFalloffTexture, 6 );
+		qglUniform1i( u_lightFalloffTexture, 0 );
 		qglUniform1i( u_lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( u_lightProjectionTexture, 2 );
-		qglUniform1i( u_lightProjectionCubemap, 5 );
+		qglUniform1i( u_lightProjectionCubemap, 0 );
 		qglUniform1i( u_lightFalloffTexture, 1 );
-		qglUniform1i( u_lightFalloffCubemap, 6 );
+		qglUniform1i( u_lightFalloffCubemap, 0 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
@@ -603,8 +603,10 @@ void pointInteractionProgram_t::AfterLoad() {
 	advanced = qglGetUniformLocation( program, "u_advanced" );
 	softShadows = qglGetUniformLocation( program, "u_softShadows" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
+	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
 	qglUseProgram( program );
+	qglUniform1i( u_depthTexture, 6 );
 	qglUniform1i( u_stencilTexture, 7 );
 	qglUseProgram( 0 );
 }
