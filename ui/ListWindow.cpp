@@ -463,12 +463,12 @@ void idListWindow::Draw(int time, float x, float y) {
 		if ( IsSelected( i ) ) {
 			rect.h = lineHeight;
 			dc->DrawFilledRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, borderColor);
-			if ( flags & WIN_FOCUS ) {
+			
 				idVec4 color = borderColor;
 				color.w = 1.0f;
 				dc->DrawRect(rect.x, rect.y + pixelOffset, rect.w, rect.h, 1.0f, color );
 			}
-		}
+		
 		rect.y ++;
 		rect.h = lineHeight - 1;
 		if ( hover && !noEvents && Contains(rect, gui->CursorX(), gui->CursorY()) ) {

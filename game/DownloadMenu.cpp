@@ -30,10 +30,7 @@ namespace
 	}
 }
 
-CDownloadMenu::CDownloadMenu() :
-	_availListTop(0),
-	_selectedListTop(0)
-{}
+
 
 void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 {
@@ -43,6 +40,7 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		if (_selectedMods.Num() > 0)
 		{
 			UpdateDownloadProgress(gui);
+			UpdateGUI(gui);
 		}
 		
 		// Do we have a pending mission list request?
@@ -74,8 +72,9 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 				{
 					gui->HandleNamedEvent("onAvailableMissionsRefreshed"); // hide progress dialog
 
-					UpdateGUI(gui);
+					
 					UpdateDownloadProgress(gui);
+					UpdateGUI(gui);
 				}
 				break;
 
@@ -184,10 +183,12 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		}
 
 		// Clear data before updating the list
-		_selectedListTop = 0;
+		gui->DeleteStateVar("downloadSelectedList_item_0");
+		
 		_selectedMods.Clear();
-		UpdateGUI(gui);
 		UpdateDownloadProgress(gui);
+		UpdateGUI(gui);
+		
 
 		// Start refreshing the list, will be handled in mainmenu_heartbeat
 		if (gameLocal.m_MissionManager->StartReloadDownloadableMods() == -1)
@@ -248,9 +249,9 @@ void CDownloadMenu::HandleCommands(const idStr& cmd, idUserInterface* gui)
 		}
 		_selectedMods.Remove(_selectedMods[index]);
 
+		
+		if (_selectedMods.Num()<1 ) UpdateDownloadProgress(gui); // Last one
 		UpdateGUI(gui);
-		if (_selectedMods.Num()<1 )//last one
-		UpdateDownloadProgress(gui);
 	}
 	else if (cmd == "ondownloadablemissionshowdetails")
 	{
@@ -375,6 +376,8 @@ void CDownloadMenu::PerformScreenshotStep(idUserInterface* gui, int step)
 
 void CDownloadMenu::StartDownload(idUserInterface* gui)
 {
+	
+	int missionIndex = gui->GetStateInt("downloadAvailableList_sel_0", "-1");
 	// Add a new download for each selected mission
 	const DownloadableModList& mods = gameLocal.m_MissionManager->GetDownloadableMods();
 
@@ -382,7 +385,7 @@ void CDownloadMenu::StartDownload(idUserInterface* gui)
 	{
 		int missionIndex = _selectedMods[i];
 
-		if (missionIndex > mods.Num()) continue;
+		if (missionIndex < 0 || missionIndex > mods.Num()) continue;
 
 		const DownloadableMod& mod = *mods[missionIndex];
 
@@ -517,27 +520,18 @@ void CDownloadMenu::UpdateGUI(idUserInterface* gui)
 	// Missions in the download queue
 	for (int i = 0; i < _selectedMods.Num(); ++i)
 	{
-		// Apply page offset
-		int listIndex = i + _selectedListTop;
-		bool listItemExists = listIndex < _selectedMods.Num();
-
-		// Get the referenced mission index, -1 ==> no mission
-		int modIndex = listItemExists ? _selectedMods[listIndex] : -1;
-
-		gui->SetStateString(va("downloadSelectedList_item_%d", i), modIndex != -1 ? mods[modIndex]->title : "");
-
-		// Find the download ID and initialise the value to empty if no download is existing yet
-		ActiveDownloads::const_iterator it = _downloads.find(modIndex);
-
-		if (it == _downloads.end())
-		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), listItemExists ? common->Translate( "#str_02180" ) : "");	// "queued"
-			continue;
-		}
+	
+		   int modIndex = _selectedMods[i];
+idStr lineContents;
+    if (modIndex < 0 || modIndex >= mods.Num()) continue;
+    lineContents = mods[modIndex]->title;
+    lineContents += "\t";
+    lineContents += GetMissionDownloadProgressString(_selectedMods[i]);
+    gui->SetStateString(va("downloadSelectedList_item_%d", i), lineContents);
 	}
 
   // Cap list by clearing elements
-  gui->SetStateString(va("downloadSelectedList_item_%d", _selectedMods.Num()), "");
+  gui->DeleteStateVar(va("downloadSelectedList_item_%d", _selectedMods.Num()));
 
 	gui->SetStateInt("dl_mission_count", _selectedMods.Num());
 	gui->SetStateBool("dl_button_available", _selectedMods.Num() > 0 && !downloadInProgress);
@@ -571,29 +565,6 @@ void CDownloadMenu::UpdateDownloadProgress(idUserInterface* gui)
 		}
 	}
 
-	// Missions in the download queue
-	for (int i = 0; i < _selectedMods.Num(); ++i)
-	{
-		// Apply page offset
-		int listIndex = i + _selectedListTop;
-		bool listItemExists = listIndex < _selectedMods.Num();
-
-		// Get the referenced mod index, -1 ==> no mod
-		int modIndex = listItemExists ? _selectedMods[listIndex] : -1;
-
-		if (!listItemExists || modIndex == -1)
-		{
-			gui->SetStateString(va("dl_mission_progress_%d", i), "");
-			continue;
-		}
-
-		// Update the progress string
-		idStr progressStr = GetMissionDownloadProgressString(modIndex);
-
-		if (progressStr.IsEmpty()) continue;
-
-		gui->SetStateString(va("dl_mission_progress_%d", i), progressStr);
-	}
 
 	// Update the "in progress" state flag 
 	bool prevDownloadsInProgress = gui->GetStateBool("mission_download_in_progress");
