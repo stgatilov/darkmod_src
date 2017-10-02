@@ -874,6 +874,7 @@ extern idCVar r_useCulling;				// 0 = none, 1 = sphere, 2 = sphere + box
 extern idCVar r_useLightPortalCulling;	// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
 extern idCVar r_useEntityPortalCulling;	// 0 = none, 1 = box
 extern idCVar r_useLightCulling;		// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
+extern idCVar r_useLightgemLightCulling; // 1 = dont render lights to the lightgem if the player isn't inside them
 extern idCVar r_useLightScissors;		// 1 = use custom scissor rectangle for each light
 extern idCVar r_useClippedLightScissors;// 0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always
 extern idCVar r_useEntityCulling;		// 0 = none, 1 = box

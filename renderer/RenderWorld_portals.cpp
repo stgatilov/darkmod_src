@@ -860,10 +860,13 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 				if (light->frustum[i].Distance(tr.viewDef->renderView.vieworg) >= 0) {
 					continue;
 				}
-
-				if ((light->frustum[i].Distance(tr.viewDef->renderView.vieworg) > INSIDE_LIGHT_FRUSTUM_SLOP) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID))
-				{
+				
+				if (r_useLightgemLightCulling.GetInteger() > 0)	
+                {
+				    if ((light->frustum[i].Distance(tr.viewDef->renderView.vieworg) > INSIDE_LIGHT_FRUSTUM_SLOP) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID))
+				    {
 					continue;
+				    }
 				}
 
 				// get the exact winding for this side
