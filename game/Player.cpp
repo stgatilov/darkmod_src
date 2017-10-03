@@ -7224,7 +7224,13 @@ void idPlayer::UpdateHUD()
 
 	// Broadcast the HUD opacity value
 	m_overlays.setGlobalStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
-
+	// Obsttorte
+	m_overlays.setGlobalStateFloat("iconSize", cv_gui_iconSize.GetFloat());
+	m_overlays.setGlobalStateFloat("smallTextSize", cv_gui_smallTextSize.GetFloat());
+	m_overlays.setGlobalStateFloat("bigTextSize", cv_gui_bigTextSize.GetFloat());
+	m_overlays.setGlobalStateFloat("lightgemSize", cv_gui_lightgemSize.GetFloat());
+	m_overlays.setGlobalStateFloat("barSize", cv_gui_barSize.GetFloat());
+	m_overlays.setGlobalStateFloat("objectiveTextSize", cv_gui_objectiveTextSize.GetFloat());
 	// Propagate the CVAR to the HUD
 	hud->SetStateBool("HUD_LightgemVisible", !cv_tdm_hud_hide_lightgem.GetBool());
 

@@ -3967,6 +3967,7 @@ idGameLocal::UpdateGUIScaling
 */
 void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 {
+	
 	float wobble = 1.0f;
 	// this could be turned into a warble-wobble effect f.i. for player poisoned etc.
 	//float wobble = random.RandomFloat() * 0.02 + 0.98;
@@ -3989,6 +3990,14 @@ void idGameLocal::UpdateGUIScaling( idUserInterface *gui )
 	// We have only one scaling factor to scale text, so use the average of X and Y
 	// This will have odd effects if W and H differ greatly, but is better than to not scale the text
 	gui->SetStateFloat("SCALE", (y_mul + x_mul) / 2);
+	
+	/*
+	gui->SetStateFloat("iconSize", cvarSystem->GetCVarFloat("gui_iconSize"));
+	gui->SetStateFloat("smallTextSize", cvarSystem->GetCVarFloat("gui_smallTextSize"));
+	gui->SetStateFloat("bigTextSize", cvarSystem->GetCVarFloat("gui_bigTextSize"));
+	gui->SetStateFloat("lightgemSize", cvarSystem->GetCVarFloat("gui_lightgemSize"));
+	gui->SetStateFloat("barSize", cvarSystem->GetCVarFloat("gui_barSize"));
+	*/
 }
 
 /*
@@ -4203,7 +4212,14 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		gui->SetStateInt("video_aspectratio", cvarSystem->GetCVarInteger("r_aspectRatio"));
 		gui->SetStateBool("confirmQuit", cv_mainmenu_confirmquit.GetBool());
 		gui->SetStateBool("menu_bg_music", cv_tdm_menu_music.GetBool());
-
+		// Obsttorte
+		gui->SetStateFloat("iconSize", cv_gui_iconSize.GetFloat());
+		gui->SetStateFloat("smallTextSize", cv_gui_smallTextSize.GetFloat());
+		gui->SetStateFloat("bigTextSize", cv_gui_bigTextSize.GetFloat());
+		gui->SetStateFloat("lightgemSize", cv_gui_lightgemSize.GetFloat());
+		gui->SetStateFloat("barSize", cv_gui_barSize.GetFloat());
+		gui->SetStateFloat("objectiveTextSize", cv_gui_objectiveTextSize.GetFloat());
+		gui->SetStateFloat("HUD_Opacity", cv_tdm_hud_opacity.GetFloat());
 		if (cv_tdm_menu_music.IsModified())
 		{
 			gui->HandleNamedEvent("OnMenuMusicSettingChanged");
