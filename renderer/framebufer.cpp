@@ -175,13 +175,13 @@ void FB_Enter() {
 	}
 	if ( !r_useFbo.GetBool() )
 		return;
+	depthCopiedThisView = false;
 	if ( isInFbo )
 		return;
 	CheckCreatePrimary();
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
 	isInFbo = true;
-	depthCopiedThisView = false;
 	GL_CheckErrors();
 }
 
