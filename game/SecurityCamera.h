@@ -24,6 +24,7 @@
 ===================================================================================
 */
 
+// grayman #4615 - Refactored for 2.06
 
 class idSecurityCamera : public idEntity {
 public:
@@ -44,7 +45,24 @@ public:
 
 private:
 
-	enum { SCANNING, LOSINGINTEREST, ALERT, ACTIVATED };
+	enum
+	{
+		MODE_SCANNING,
+		MODE_LOSINGINTEREST,
+		MODE_SIGHTED,
+		MODE_ALERT
+	};
+
+	enum
+	{
+		STATE_SWEEPING,
+		STATE_PLAYERSIGHTED,
+		STATE_ALERTED,
+		STATE_LOSTINTEREST,
+		STATE_POWERRETURNS_SWEEPING,
+		STATE_POWERRETURNS_PAUSED,
+		STATE_PAUSED
+	};
 
 	float					angle;
 	float					sweepAngle;
@@ -53,12 +71,11 @@ private:
 	float					scanDist;
 	float					scanFov;
 							
-	float					sweepStart;
-	float					sweepEnd;
+	int						sweepStartTime;
+	int						sweepEndTime;
 	bool					negativeSweep;
 	bool					sweeping;
 	int						alertMode;
-	float					stopSweeping;
 	float					scanFovCos;
 
 	idVec3					viewOffset;
@@ -67,9 +84,20 @@ private:
 	idPhysics_RigidBody		physicsObj;
 	idTraceModel			trm;
 
-	bool					rotate;		// grayman #4615
-	bool					seePlayer;	// grayman #4615
-	bool					stopped;	// grayman #4615
+	bool					rotate;
+	bool					stationary;
+	int						nextAlertTime;
+	int						state;
+	int						startAlertTime;
+	bool					emitPauseSound;
+	int						emitPauseSoundTime;
+	int						pauseEndTime;
+	int						endAlertTime;
+	int						lostInterestEndTime;
+	float					percentSwept;
+	idEntityPtr<idLight>	spotLight;
+	bool					powerOn;
+	bool					spotlightPowerOn;
 
 	void					StartSweep( void );
 	bool					CanSeePlayer( void );
@@ -78,15 +106,15 @@ private:
 	const idVec3			GetAxis( void ) const;
 	float					SweepTime( void ) const;
 
-	void					Event_ReverseSweep( void );
-	void					Event_ContinueSweep( void );
-	void					Event_Pause( void );
-	void					Event_Alert( void );
+	void					ReverseSweep( void );
+	void					ContinueSweep( void );
 	void					Event_AddLight( void );
+	void					Event_SpotLight_Toggle( void );
+	void					Event_Sweep_Toggle( void );
 
-	void					Activate( idEntity* activator ); // grayman #4615
-	float					GetCalibratedLightgemValue(idPlayer* player); // grayman #4615
-	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold); // grayman #4615
+	void					Activate( idEntity* activator );
+	float					GetCalibratedLightgemValue(idPlayer* player);
+	bool					IsEntityHiddenByDarkness(idPlayer* player, const float sightThreshold);
 
 };
 
