@@ -1083,7 +1083,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		RB_DrawShadowElementsWithCounters( tri, numIndexes );
 		GL_Cull( CT_FRONT_SIDED );
 		qglEnable( GL_STENCIL_TEST );
-
+		GL_CheckErrors();
 		return;
 	}
 
@@ -1542,8 +1542,8 @@ void	RB_STD_DrawView( void ) {
 }
 
 void RB_DumpFramebuffer( const char *fileName ) {
-	renderCrop_t r, *rc = &r;
-	qglGetIntegerv( GL_VIEWPORT, (int*)rc );
+	renderCrop_t r;
+	qglGetIntegerv( GL_VIEWPORT, &r.x );
 	if (!r_useFbo.GetBool())
 		qglReadBuffer( GL_BACK );
 
@@ -1551,29 +1551,29 @@ void RB_DumpFramebuffer( const char *fileName ) {
 	int alignment;
 	qglGetIntegerv( GL_PACK_ALIGNMENT, &alignment );
 
-	int pitch = rc->width * 4 + alignment - 1;
+	int pitch = r.width * 4 + alignment - 1;
 	pitch = pitch - pitch % alignment;
 
-	byte *data = (byte *)R_StaticAlloc( pitch * rc->height );
+	byte *data = (byte *)R_StaticAlloc( pitch * r.height );
 
 	// GL_RGBA/GL_UNSIGNED_BYTE seems to be the safest option
-	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGBA, GL_UNSIGNED_BYTE, data );
+	qglReadPixels( r.x, r.y, r.width, r.height, GL_RGBA, GL_UNSIGNED_BYTE, data );
 
-	byte *data2 = (byte *)R_StaticAlloc( rc->width * rc->height * 4 );
+	byte *data2 = (byte *)R_StaticAlloc( r.width * r.height * 4 );
 
-	for (int y = 0; y < rc->height; y++) {
-		for (int x = 0; x < rc->width; x++) {
+	for ( int y = 0; y < r.height; y++ ) {
+		/*for ( int x = 0; x < r.width; x++ ) {
 			int idx = y * pitch + x * 4;
-			int idx2 = (y * rc->width + x) * 4;
-
+			int idx2 = (y * r.width + x) * 4;
 			data2[idx2 + 0] = data[idx + 0];
 			data2[idx2 + 1] = data[idx + 1];
 			data2[idx2 + 2] = data[idx + 2];
 			data2[idx2 + 3] = 0xff;
-		}
+		}*/
+		memcpy( data2 + y * r.width * 4, data + y * pitch, r.width * 4 );
 	}
 
-	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
+	R_WriteTGA( fileName, data2, r.width, r.height, true );
 
 	R_StaticFree( data );
 	R_StaticFree( data2 );

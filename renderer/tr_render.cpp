@@ -285,37 +285,35 @@ void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs,
 	for ( drawSurf = drawSurfs ; drawSurf ; drawSurf = drawSurf->nextOnLight ) {
 		// change the matrix if needed
 		// Note (Serp) : this used to be ( drawSurf->space != backEnd.currentSpace) however, since it's always going to be NULL...
-		if ( drawSurf->space ) {
+		if ( drawSurf->space ) 
 			qglLoadMatrixf( drawSurf->space->modelViewMatrix );
-		} else {
+		else
 			return;
-		}
-
-		if ( drawSurf->space->weaponDepthHack ) {
-			RB_EnterWeaponDepthHack();
-		}
-
-		if ( drawSurf->space->modelDepthHack ) {
-			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
-		}
 
 		// change the scissor if needed
 		if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( drawSurf->scissorRect ) ) {
-			if (drawSurf->scissorRect.x2 >= 0 && drawSurf->scissorRect.y2 >= 0) { // duzenko: FIXME find out why they are negative sometimes
+			const idScreenRect &r = drawSurf->scissorRect;
+			if ( r.x1 <= r.x2 && r.y1 <= r.y2 ) { // duzenko: FIXME find out why they are negative sometimes
 				backEnd.currentScissor = drawSurf->scissorRect;
-				qglScissor(backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
 					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
 					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
-			}
+					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+			} else
+				continue; // duzenko: why bother
 		}
+
+		if ( drawSurf->space->weaponDepthHack ) 
+			RB_EnterWeaponDepthHack();
+
+		if ( drawSurf->space->modelDepthHack ) 
+			RB_EnterModelDepthHack( drawSurf->space->modelDepthHack );
 
 		// render it
 		triFunc_( drawSurf );
 
-		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack ) {
+		if ( drawSurf->space->weaponDepthHack || drawSurf->space->modelDepthHack ) 
 			RB_LeaveDepthHack();
-		}
 
 		backEnd.currentSpace = drawSurf->space;
 	}
