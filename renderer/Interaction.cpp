@@ -1001,6 +1001,14 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			continue;
 		}
 		
+		/* if (lightDef->parms.parallel && r_skipParallelLights.GetBool() ) {
+		    continue;
+		}
+		
+		if ( !lightDef->parms.pointLight && r_skipProjectedLights.GetBool() ) {
+		    continue;
+		} */
+		
 		// nbohr1more: #4379 lightgem culling
 		if ((!HasShadows() ) && ( !shader->Islightgemsurf() ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )) {
 		    continue;

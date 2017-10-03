@@ -223,6 +223,12 @@ void RB_GLSL_DrawInteractions( void ) {
 			continue;
 		if ( vLight->lightShader->IsBlendLight() ) 
 			continue;
+		/* if  ( vLight->lightDef->parms.parallel && r_skipParallelLights.GetBool() )
+		    continue;
+			
+		if ( !vLight->lightDef->parms.pointLight && r_skipProjectedLights.GetBool() ) {
+		    continue;
+		} */
 
 		// if there are no interactions, get out!
 		if ( !vLight->localInteractions && !vLight->globalInteractions && 
@@ -615,7 +621,7 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
+	if ((backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
 		qglUniform1f( softShadows, r_softShadows.GetFloat() );
 	else
 		qglUniform1f( softShadows, 0 );
