@@ -96,6 +96,7 @@ private:
 	int						lostInterestEndTime;
 	float					percentSwept;
 	idEntityPtr<idLight>	spotLight;
+	idEntityPtr<idEntity>	cameraDisplay;
 	bool					powerOn;
 	bool					spotlightPowerOn;
 
@@ -111,6 +112,7 @@ private:
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );
 	void					Event_Sweep_Toggle( void );
+	void					PostSpawn( void );
 
 	void					Activate( idEntity* activator );
 	float					GetCalibratedLightgemValue(idPlayer* player);

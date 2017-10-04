@@ -48,6 +48,7 @@ CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_AddLight,			idSecurityCamera::Event_AddLight )
 	EVENT( EV_SecurityCam_SpotLightToggle,	idSecurityCamera::Event_SpotLight_Toggle )
 	EVENT( EV_SecurityCam_SweepToggle,		idSecurityCamera::Event_Sweep_Toggle)
+	EVENT( EV_PostSpawn,					idSecurityCamera::PostSpawn )
 END_CLASS
 
 #define ALERT_INTERVAL 5000 // time between alert sounds (ms)
@@ -90,6 +91,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(lostInterestEndTime);
 	savefile->WriteFloat(percentSwept);
 	spotLight.Save(savefile);
+	cameraDisplay.Save(savefile);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
 }
@@ -132,6 +134,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lostInterestEndTime);
 	savefile->ReadFloat(percentSwept);
 	spotLight.Restore(savefile);
+	cameraDisplay.Restore(savefile);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
 }
@@ -161,6 +164,7 @@ void idSecurityCamera::Spawn( void )
 	endAlertTime = 0;
 	lostInterestEndTime = 0;
 	spotLight	= NULL;
+	cameraDisplay = NULL;
 
 	modelAxis	= spawnArgs.GetInt( "modelAxis", "0" );
 	if ( modelAxis < 0 || modelAxis > 2 ) {
@@ -226,6 +230,41 @@ void idSecurityCamera::Spawn( void )
 
 	powerOn = spawnArgs.GetBool("start_on", "1");
 	spotlightPowerOn = spawnArgs.GetBool("spotlight", "1");
+
+	// Schedule a post-spawn event to setup other spawnargs
+	PostEventMS( &EV_PostSpawn, 1 );
+}
+
+/*
+================
+idSecurityCamera::PostSpawn
+================
+*/
+void idSecurityCamera::PostSpawn()
+{
+	// Search entities for those who have a "cameraTarget" pointing to this camera.
+	// One should be found, and set 'cameraDisplay' to that entitiy.
+
+	for ( int i = 0; i < MAX_GENTITIES; ++i )
+	{
+		idEntity* ent = gameLocal.entities[i];
+		if ( !ent )
+		{
+			continue;	// skip past nulls in the index
+		}
+
+		if ( ent == this )
+		{
+			continue;	// skip yourself
+		}
+
+		idEntity *ect = ent->cameraTarget;
+		if ( ect && (ect == this ))
+		{
+			cameraDisplay = ent;
+			break;
+		}
+	}
 }
 
 /*
@@ -749,19 +788,19 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	// call base class method to switch to broken model
 	idEntity::BecomeBroken( inflictor );
 
-	if ( spawnArgs.GetBool("spotLight", "0") ) // remove any bound light
+	// Remove a spotlight, if there is one.
+
+	idLight* light = spotLight.GetEntity();
+	if ( light )
 	{
-		idList<idEntity *> children;
-		GetTeamChildren( &children );
-		for ( int i = 0; i < children.Num(); i++ )
-		{
-			idEntity *child = children[i];
-			if ( child && child->IsType(idLight::Type) )
-			{
-				child->PostEventMS( &EV_Remove, 0 );
-				break;
-			}
-		}
+		light->PostEventMS( &EV_Remove, 0 );
+	}
+
+	// Turn off the display screen
+
+	if ( cameraDisplay.GetEntity() )
+	{
+		cameraDisplay.GetEntity()->Hide();
 	}
 }
 
@@ -794,8 +833,8 @@ void idSecurityCamera::Present( void )
 	}
 	BecomeInactive( TH_UPDATEVISUALS );
 
-	// camera target for remote render views
-	if ( cameraTarget ) {
+	if ( cameraTarget )
+	{
 		renderEntity.remoteRenderView = cameraTarget->GetRenderView();
 	}
 
@@ -819,7 +858,7 @@ idSecurityCamera::Activate - turn camera power on/off
 */
 void idSecurityCamera::Activate(idEntity* activator)
 {
-	if (health <= 0)
+	if ( health <= 0 )
 	{
 		return; // can't activate a dead camera
 	}
@@ -847,8 +886,8 @@ void idSecurityCamera::Activate(idEntity* activator)
 
 	if ( powerOn )
 	{
-		BecomeActive( TH_THINK );
-		switch(state)
+		BecomeActive(TH_THINK);
+		switch ( state )
 		{
 		case STATE_SWEEPING:
 			state = STATE_POWERRETURNS_SWEEPING;
@@ -867,7 +906,7 @@ void idSecurityCamera::Activate(idEntity* activator)
 	else
 	{
 		StopSound(SND_CHANNEL_ANY, false);
-		BecomeInactive( TH_THINK );
+		BecomeInactive(TH_THINK);
 	}
 
 	// set skin
@@ -886,6 +925,20 @@ void idSecurityCamera::Activate(idEntity* activator)
 	else
 	{
 		Event_SetSkin("security_camera_off"); // change skin
+	}
+
+	// Toggle display screen
+
+	if ( cameraDisplay.GetEntity() )
+	{
+		if ( powerOn )
+		{
+			cameraDisplay.GetEntity()->Show();
+		}
+		else
+		{
+			cameraDisplay.GetEntity()->Hide();
+		}
 	}
 }
 
