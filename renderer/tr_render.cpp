@@ -475,7 +475,6 @@ void RB_BeginDrawingView (void) {
 
 	backEnd.glState.faceCulling = -1;		// force face culling to set next time
 	GL_Cull( CT_FRONT_SIDED );
-
 }
 
 /*

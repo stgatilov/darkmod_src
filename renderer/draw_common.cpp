@@ -1193,9 +1193,7 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
-		qglStencilFunc( GL_ALWAYS, 128, 255 );
-	else
+	if ( !r_softShadows.GetBool() || backEnd.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )
 		qglStencilFunc( GL_GEQUAL, 128, 255 );
 }
 
@@ -1616,7 +1614,6 @@ void RB_Bloom() {
 	GL_State( GLS_DEPTHMASK );
 
 	qglDisable( GL_DEPTH_TEST );
-	qglDisable( GL_STENCIL_TEST );
 
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );

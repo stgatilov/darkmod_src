@@ -206,7 +206,6 @@ void FB_Leave( viewDef_t* viewDef ) {
 
 	GL_State( GLS_DEFAULT );
 	qglDisable( GL_DEPTH_TEST );
-	qglDisable( GL_STENCIL_TEST );
 	qglColor3f( 1, 1, 1 );
 	{
 		switch ( r_fboDebug.GetInteger() )
@@ -270,7 +269,7 @@ void FB_ToggleShadow( bool on ) {
 	GL_CheckErrors();
 	if ( on && !depthCopiedThisView ) {
 		globalImages->currentDepthFbo->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0 );
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, globalImages->currentDepthFbo->uploadWidth, globalImages->currentDepthFbo->uploadHeight, 0 );
 		depthCopiedThisView = true;
 	}
 	GL_CheckErrors();
