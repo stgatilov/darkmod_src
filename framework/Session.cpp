@@ -2718,11 +2718,6 @@ void idSessionLocal::Frame() {
 		if (com_fixedTic.GetInteger()) {
 			minTic = latchedTicNumber;
 		}
-		
-		if (minTic < lastGameTic + USERCMD_MSEC) {
-		   latchedTicNumber = com_ticNumber;
-		}
-		    
 
 		// FIXME: deserves a cleanup and abstraction
 #if defined( _WIN32 )
