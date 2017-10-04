@@ -69,7 +69,7 @@ private:
 EngineVersion engineVersion;
 
 idCVar com_version( "si_version", "not set", CVAR_SYSTEM|CVAR_ROM|CVAR_SERVERINFO, "engine version" );
-
+// idCVar com_maxFPS( "com_maxFPS", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "define the maximum FPS cap" );
 idCVar com_skipRenderer( "com_skipRenderer", "0", CVAR_BOOL|CVAR_SYSTEM, "skip the renderer completely" );
 idCVar com_purgeAll( "com_purgeAll", "0", CVAR_BOOL | CVAR_ARCHIVE | CVAR_SYSTEM, "purge everything between level loads" );
 idCVar com_memoryMarker( "com_memoryMarker", "-1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_INIT, "used as a marker for memory stats" );
@@ -2424,7 +2424,7 @@ void idCommonLocal::Frame( void ) {
 			com_frameTime += com_frameMsec;
 		else
 			//com_frameTime = com_ticNumber * USERCMD_MSEC;
-			com_frameTime += USERCMD_MSEC;
+			com_frameTime += USERCMD_MSEC; // Max(USERCMD_MSEC, (1000 / Max(1, com_maxFPS.GetInteger()) ) );
 
 #ifdef MULTIPLAYER
 		idAsyncNetwork::RunFrame();
