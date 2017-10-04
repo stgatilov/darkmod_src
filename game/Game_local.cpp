@@ -4702,6 +4702,21 @@ void idGameLocal::HandleMainMenuCommands( const char *menuCommand, idUserInterfa
 		idCVar * cvar = cvarSystem->Find( "r_gamma" );
 		cvar ? cvar->SetFloat( 1.2f ) :	Warning("Cannot find CVAR r_gamma.");
 	}
+	else if (cmd == "resethud") // Obsttorte
+	{
+		idCVar * cvar = cvarSystem->Find("gui_iconSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_iconSize.");
+		cvar = cvarSystem->Find("gui_smallTextSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_smallTextSize.");
+		cvar = cvarSystem->Find("gui_lightgemSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_lightgemSize.");
+		cvar = cvarSystem->Find("gui_bigTextSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_bigTextSize.");
+		cvar = cvarSystem->Find("gui_barSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_barSize.");
+		cvar = cvarSystem->Find("gui_objectiveTextSize");
+		cvar ? cvar->SetFloat(1.0f) : Warning("Cannot find CVAR gui_objectiveTextSize.");
+	}
 	else if (cmd == "onstartmissionclicked")
 	{
 		// First mission to be started, reset index
