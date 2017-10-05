@@ -385,7 +385,7 @@ bool idRenderSystemLocal::RegisterFont( const char *fontName, fontInfoEx_t &font
 		for (int i = GLYPH_START; i <= GLYPH_END; i++) {
 			idStr::snPrintf(name, sizeof(name), "%s/%s", fontName, outFont->glyphs[i].shaderName);
 			outFont->glyphs[i].glyph = declManager->FindMaterial(name);
-			outFont->glyphs[i].glyph->SetSort( SS_GUI );
+			outFont->glyphs[i].glyph->SetSort( SS_DECAL );
 			if (mh < outFont->glyphs[i].height) {
 				mh = outFont->glyphs[i].height;
 			}
