@@ -2322,7 +2322,7 @@ void CMissionData::UpdateGUIState(idUserInterface* ui)
 
 	ui->SetStateInt("NumVisibleObjectives", objIndices.Num());
 	ui->SetStateInt("ObjectiveBoxIsVisible", 1);
-
+	ui->SetStateFloat("objectivesTextSize", cv_gui_objectiveTextSize.GetFloat());
 	// Tell the GUI to set its values
 	ui->HandleNamedEvent("GetObjectivesInfo");
 
