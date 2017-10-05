@@ -977,6 +977,7 @@ int idRenderWorldLocal::BoundsInAreas( const idBounds &bounds, int *areas, int m
 	return numAreas;
 }
 
+#if 0
 /*
 ================
 GuiTrace
@@ -1058,6 +1059,7 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 st
 
 	return pt;
 }
+#endif
 
 /*
 ===================
