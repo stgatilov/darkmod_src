@@ -419,7 +419,7 @@ void idGLDrawableMaterial::draw(int x, int y, int w, int h) {
 			renderEntity_t worldEntity;
 
 			memset( &worldEntity, 0, sizeof( worldEntity ) );
-			if ( mat->HasGui() ) {
+			if ( mat->GlobalGui() ) {
 				worldEntity.gui[ 0 ] = mat->GlobalGui();
 			}
 			worldEntity.hModel = worldModel;

@@ -373,10 +373,10 @@ public:
 						// returns true if the material will draw any non light interaction stages
 	bool				HasAmbient( void ) const { return ( numAmbientStages > 0 ); }
 
-
-	                    // returns true if material has a gui
+#if 0
+	// returns true if material has a gui
 	bool				HasGui( void ) const { return ( entityGui != 0 || gui != NULL ); }
-
+#endif
 						// returns true if the material will generate another view, either as
 						// a mirror or dynamic rendered image
 	bool				HasSubview( void ) const { return hasSubview; }
