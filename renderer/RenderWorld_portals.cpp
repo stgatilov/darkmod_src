@@ -726,7 +726,7 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
 		    // nbohr1more: #4379 lightgem culling
-		    if ( (!entity->parms.islightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )){
+		    if ( (!entity->parms.isLightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )){
 			    continue;
 			}
 			if ( entity->parms.suppressSurfaceInViewID

@@ -543,7 +543,7 @@ public:
 	int					Spectrum( void ) const { return spectrum; }
 	
 		                // nbohr1more: #4379 lightgem culling
-	bool				Islightgemsurf( void ) const { return islightgemsurf; }
+	bool				IsLightgemSurf( void ) const { return isLightgemSurf; }
 
 	float				GetPolygonOffset( void ) const { return polygonOffset; }
 
@@ -666,7 +666,7 @@ private:
 	bool				unsmoothedTangents;
 	bool				hasSubview;			// mirror, remote render, etc
 	bool				allowOverlays;
-	bool				islightgemsurf;            // nbohr1more: #4379 lightgem culling
+	bool				isLightgemSurf;            // nbohr1more: #4379 lightgem culling
 
 	int					numOps;
 	expOp_t *			ops;				// evaluate to make expressionRegisters

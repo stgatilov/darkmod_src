@@ -822,7 +822,7 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 	renderEntity->noDynamicInteractions = args->GetBool( "noDynamicInteractions" );
 	
 	// nbohr1more: #4379 lightgem culling
-	renderEntity->islightgem = args->GetBool( "islightgem" );
+	renderEntity->isLightgem = args->GetBool( "islightgem" );
 
 	// check noshadows flag
 	renderEntity->noShadow = args->GetBool( "noshadows" );

@@ -169,9 +169,6 @@ void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
 	tr.guiRecursionLevel--;
 }
 
-
-
-
 /*
 ================,
 R_ReloadGuis_f
