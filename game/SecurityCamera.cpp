@@ -19,18 +19,15 @@
 
   SecurityCamera.cpp
 
-  Security camera that triggers targets when player is in view
+  Security camera that watches for the player
 
 */
 
 #include "precompiled.h"
 #pragma hdrstop
 
-
-
 #include "Game_local.h"
 #include "StimResponse/StimResponseCollection.h"
-
 
 /***********************************************************************
 
@@ -53,6 +50,11 @@ END_CLASS
 
 #define ALERT_INTERVAL 5000 // time between alert sounds (ms)
 #define PAUSE_SOUND_TIMING 500 // start sound prior to finishing sweep
+#define SPARK_DELAY_BASE 3000  // base delay to next death spark
+#define SPARK_DELAY_VARIANCE 2000 // randomize spark delay
+#define SPARK_REMOVE_DELAY_FUTURE 20000 // temp assignment for when next to spawn sparks
+#define SPARK_REMOVE_DELAY 1000 // sparks are visible for this duration
+
 /*
 ================
 idSecurityCamera::Save
@@ -68,6 +70,8 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 							
 	savefile->WriteInt( sweepStartTime );
 	savefile->WriteInt( sweepEndTime );
+	savefile->WriteInt( nextSparkTime );
+	savefile->WriteInt( removeSparkTime );
 	savefile->WriteBool( negativeSweep );
 	savefile->WriteBool( sweeping );
 	savefile->WriteInt( alertMode );
@@ -91,6 +95,7 @@ void idSecurityCamera::Save( idSaveGame *savefile ) const {
 	savefile->WriteInt(lostInterestEndTime);
 	savefile->WriteFloat(percentSwept);
 	spotLight.Save(savefile);
+	sparks.Save(savefile);
 	cameraDisplay.Save(savefile);
 	savefile->WriteBool(powerOn);
 	savefile->WriteBool(spotlightPowerOn);
@@ -111,6 +116,8 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 							
 	savefile->ReadInt( sweepStartTime );
 	savefile->ReadInt( sweepEndTime );
+	savefile->ReadInt( nextSparkTime );
+	savefile->ReadInt( removeSparkTime );
 	savefile->ReadBool( negativeSweep );
 	savefile->ReadBool( sweeping );
 	savefile->ReadInt( alertMode );
@@ -134,6 +141,7 @@ void idSecurityCamera::Restore( idRestoreGame *savefile ) {
 	savefile->ReadInt(lostInterestEndTime);
 	savefile->ReadFloat(percentSwept);
 	spotLight.Restore(savefile);
+	sparks.Restore(savefile);
 	cameraDisplay.Restore(savefile);
 	savefile->ReadBool(powerOn);
 	savefile->ReadBool(spotlightPowerOn);
@@ -156,7 +164,9 @@ void idSecurityCamera::Spawn( void )
 	flipAxis	= spawnArgs.GetBool( "flipAxis", "0" );
 	stationary	= false;
 	nextAlertTime = 0;
-	state		= STATE_SWEEPING;
+	nextSparkTime = 0;
+	removeSparkTime = 0;
+	state		  = STATE_SWEEPING;
 	emitPauseSound = true;
 	startAlertTime = 0;
 	emitPauseSoundTime = 0;
@@ -164,6 +174,7 @@ void idSecurityCamera::Spawn( void )
 	endAlertTime = 0;
 	lostInterestEndTime = 0;
 	spotLight	= NULL;
+	sparks = NULL;
 	cameraDisplay = NULL;
 
 	modelAxis	= spawnArgs.GetInt( "modelAxis", "0" );
@@ -531,6 +542,35 @@ void idSecurityCamera::SetAlertMode( int alert ) {
 
 /*
 ================
+idSecurityCamera::AddSparks
+================
+*/
+void idSecurityCamera::AddSparks( void )
+{
+	if ( !powerOn )
+	{
+		sparks = NULL; // no sparks if there's no power
+		return;
+	}
+
+	// Create sparks
+
+	idEntity *sparkEntity;
+	idDict args;
+
+	args.Set("classname","func_emitter");
+	args.Set("origin", GetPhysics()->GetOrigin().ToString());
+	args.Set("model","sparks_wires.prt");
+	gameLocal.SpawnEntityDef( args, &sparkEntity );
+	sparks = sparkEntity;
+	sparkEntity->Show();
+
+	nextSparkTime = gameLocal.time + SPARK_DELAY_BASE + gameLocal.random.RandomInt(SPARK_DELAY_VARIANCE);
+	removeSparkTime = gameLocal.time + SPARK_REMOVE_DELAY;
+}
+
+/*
+================
 idSecurityCamera::Think
 ================
 */
@@ -554,6 +594,27 @@ void idSecurityCamera::Think( void )
 
 	// run physics
 	RunPhysics();
+
+	if ( state == STATE_DEAD )
+	{
+		// check if it's time to remove the sparks
+
+		if (sparks.GetEntity() && ( gameLocal.time >= removeSparkTime ))
+		{
+			sparks.GetEntity()->PostEventMS( &EV_SafeRemove, 0 );
+			sparks = NULL;
+			removeSparkTime = gameLocal.time + SPARK_REMOVE_DELAY_FUTURE; // far in the future
+		}
+
+		// handle electric sparking sound
+
+		if (powerOn && ( gameLocal.time >= nextSparkTime ))
+		{
+			StopSound(SND_CHANNEL_ANY, false);
+			StartSound("snd_sparks", SND_CHANNEL_BODY, 0, false, NULL);
+			AddSparks(); // Create sparks
+		}
+	}
 
 	if ( thinkFlags & TH_THINK )
 	{
@@ -596,9 +657,9 @@ void idSecurityCamera::Think( void )
 					StartSound("snd_alert", SND_CHANNEL_BODY, 0, false, NULL);
 					nextAlertTime = gameLocal.time + ALERT_INTERVAL;
 					endAlertTime = gameLocal.time + SEC2MS(spawnArgs.GetFloat("wait", "20"));
-					state = STATE_ALERTED;
 					SetAlertMode(MODE_ALERT);
 					ActivateTargets(this);
+					state = STATE_ALERTED;
 				}
 				else
 				{
@@ -614,6 +675,15 @@ void idSecurityCamera::Think( void )
 				if ( rotate && !stationary )
 				{
 					ContinueSweep(); // changes state to STATE_SWEEPING
+				}
+				else
+				{
+					StopSound( SND_CHANNEL_ANY, false );
+					StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
+					SetAlertMode(MODE_SCANNING);
+					sweeping = false;
+					stationary = true;
+					state = STATE_SWEEPING;
 				}
 			}
 			break;
@@ -676,6 +746,8 @@ void idSecurityCamera::Think( void )
 					ReverseSweep(); // changes state to STATE_SWEEPING
 				}
 			}
+			break;
+		case STATE_DEAD:
 			break;
 		}
 
@@ -779,6 +851,7 @@ idSecurityCamera::Killed
 void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int damage, const idVec3 &dir, int location ) {
 	sweeping = false;
 	StopSound( SND_CHANNEL_ANY, false );
+	StartSound("snd_death", SND_CHANNEL_BODY, 0, false, NULL);
 	const char *fx = spawnArgs.GetString( "fx_destroyed" );
 	if ( fx[0] != '\0' )
 	{
@@ -802,6 +875,10 @@ void idSecurityCamera::Killed( idEntity *inflictor, idEntity *attacker, int dama
 	{
 		cameraDisplay.GetEntity()->Hide();
 	}
+
+	AddSparks(); // Create sparks
+	state = STATE_DEAD;
+	BecomeActive(TH_UPDATEPARTICLES); // keeps stationary camera thinking to display sparks
 }
 
 
@@ -858,13 +935,18 @@ idSecurityCamera::Activate - turn camera power on/off
 */
 void idSecurityCamera::Activate(idEntity* activator)
 {
-	if ( health <= 0 )
+	powerOn = !powerOn;
+
+	if ( state == STATE_DEAD )
 	{
-		return; // can't activate a dead camera
+		if (powerOn && ( sparks.GetEntity() == NULL ))
+		{
+			AddSparks();
+		}
+		return;
 	}
 
 	idLight* light = spotLight.GetEntity();
-	powerOn = !powerOn;
 
 	if ( light )
 	{
@@ -900,6 +982,8 @@ void idSecurityCamera::Activate(idEntity* activator)
 			break;
 		case STATE_PAUSED:
 			state = STATE_POWERRETURNS_PAUSED;
+			break;
+		case STATE_DEAD:
 			break;
 		}
 	}
@@ -967,6 +1051,7 @@ void idSecurityCamera::Event_Sweep_Toggle( void )
 	case STATE_PLAYERSIGHTED:
 	case STATE_LOSTINTEREST:
 	case STATE_ALERTED:
+	case STATE_DEAD:
 		break;
 	case STATE_PAUSED:
 		if ( !stationary )

@@ -61,7 +61,8 @@ private:
 		STATE_LOSTINTEREST,
 		STATE_POWERRETURNS_SWEEPING,
 		STATE_POWERRETURNS_PAUSED,
-		STATE_PAUSED
+		STATE_PAUSED,
+		STATE_DEAD
 	};
 
 	float					angle;
@@ -73,6 +74,8 @@ private:
 							
 	int						sweepStartTime;
 	int						sweepEndTime;
+	int						nextSparkTime;
+	int						removeSparkTime;
 	bool					negativeSweep;
 	bool					sweeping;
 	int						alertMode;
@@ -96,6 +99,7 @@ private:
 	int						lostInterestEndTime;
 	float					percentSwept;
 	idEntityPtr<idLight>	spotLight;
+	idEntityPtr<idEntity>	sparks;
 	idEntityPtr<idEntity>	cameraDisplay;
 	bool					powerOn;
 	bool					spotlightPowerOn;
@@ -113,6 +117,7 @@ private:
 	void					Event_SpotLight_Toggle( void );
 	void					Event_Sweep_Toggle( void );
 	void					PostSpawn( void );
+	void					AddSparks(void);
 
 	void					Activate( idEntity* activator );
 	float					GetCalibratedLightgemValue(idPlayer* player);
