@@ -200,11 +200,6 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines and memory log|x64'">
     <Link>
@@ -216,11 +211,6 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|Win32'">
     <Link>
@@ -233,11 +223,6 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug with inlines|x64'">
     <Link>
@@ -249,11 +234,6 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
@@ -267,11 +247,6 @@
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
       <AdditionalOptions>/arch:SSE2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -284,19 +259,10 @@
     <ClCompile>
       <PrecompiledHeaderFile>precompiled.h</PrecompiledHeaderFile>
     </ClCompile>
-    <PostBuildEvent>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
-    </PostBuildEvent>
-    <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
       <AdditionalLibraryDirectories>openal\lib;sys\win32\dongle;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <OptimizeReferences>
-      </OptimizeReferences>
       <MapExports>true</MapExports>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
