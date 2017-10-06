@@ -94,6 +94,11 @@ void GLimp_ActivateFrontendContext() {
     qglXMakeCurrent( dpy, win, frontendCtx );
 }
 
+void GLimp_DeactivateFrontendContext() {
+    assert( dpy );
+    qglXMakeCurrent( dpy, None, NULL );
+}
+
 /*
 =================
 GLimp_SaveGamma
