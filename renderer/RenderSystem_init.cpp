@@ -1771,8 +1771,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 		}
 	}
 
-	extern void R_MakeAmbientMap( MakeAmbientMapParam& param );
-
 	param.outBuffer = (byte*)R_StaticAlloc( 4 * param.outSize*param.outSize );
 
 	for ( param.specular = false;; ) {

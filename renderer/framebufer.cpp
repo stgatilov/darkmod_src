@@ -257,7 +257,7 @@ void FB_BindStencilTexture() {
 	if ( glConfig.vendor != glvIntel ) {
 		globalImages->currentDepthFbo->Bind();
 		const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
-		glTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
+		qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 	} else
 		globalImages->currentStencilFbo->Bind();
 	GL_CheckErrors();
