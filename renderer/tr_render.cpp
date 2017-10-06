@@ -638,9 +638,14 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
 	//anon end
 
-	if (!surf->backendGeo || !surf->backendGeo->ambientCache || r_skipInteractions.GetBool()) {
+	if (!surf->backendGeo || !surf->backendGeo->ambientCache) 
 		return;
-	}
+	if ( vLight->lightShader->IsAmbientLight() ) {
+		if ( r_skipAmbient.GetBool() )
+			return;
+	} else
+		if ( r_skipInteractions.GetBool() )
+			return;
 
 	if ( tr.logFile ) {
 		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
