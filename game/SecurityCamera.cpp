@@ -206,7 +206,7 @@ void idSecurityCamera::Spawn( void )
 		StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
 	}
 	SetAlertMode( MODE_SCANNING );
-	BecomeActive( TH_THINK );
+	BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 
 	if ( health ) {
 		fl.takedamage = true;
@@ -902,13 +902,13 @@ idSecurityCamera::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
+
 void idSecurityCamera::Present( void ) 
 {
 	// don't present to the renderer if the entity hasn't changed
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;
 	}
-	BecomeInactive( TH_UPDATEVISUALS );
 
 	if ( cameraTarget )
 	{
