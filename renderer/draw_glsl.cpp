@@ -70,6 +70,7 @@ struct interactionProgram_t : lightProgram_t {
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
 	GLint			softShadows;
+	GLint			lightBoundsDist;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -608,6 +609,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
 	softShadows = qglGetUniformLocation( program, "u_softShadows" );
+	lightBoundsDist = qglGetUniformLocation( program, "u_lightBoundsDist" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
@@ -621,9 +623,16 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ((backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
+	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		qglUniform1f( softShadows, r_softShadows.GetFloat() );
-	else
+		const idBounds &b = din->surf->backendGeo->bounds;
+		const idVec3 bc = b.GetCenter(), l = din->localLightOrigin.ToVec3();
+		float dist = 0;
+		if ( !b.ContainsPoint( l ) ) {
+			dist = (bc-l).LengthFast() - b.GetRadius( bc );
+		}
+		qglUniform1f( lightBoundsDist, dist );
+	} else
 		qglUniform1f( softShadows, 0 );
 }
 
