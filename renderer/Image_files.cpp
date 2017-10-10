@@ -1350,7 +1350,7 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 	char	fullName[MAX_IMAGE_NAME];
 	int		width, height, size = 0, makeIrradiance = 0;
 
-	idLexer lexer( imgName, strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
+	idLexer lexer( imgName, (int)strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
 	idToken		token;
 	lexer.ReadToken( &token );
 	if ( !token.Icmp( "makeIrradiance" ) ) {
