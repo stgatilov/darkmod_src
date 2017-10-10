@@ -71,6 +71,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
 	GLint			softShadows;
 	GLint			lightBoundsDist;
+	GLint			softShadowSamples;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -605,11 +606,59 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
+void AddPoissonDiskSamples(idList<idVec2> &pts, float dist) {
+	static const int MaxFailStreak = 1000;
+	idRandom rnd;
+	int fails = 0;
+	while (1) {
+		idVec2 np;
+		np.x = rnd.CRandomFloat();
+		np.y = rnd.CRandomFloat();
+		if (np.LengthFast() > 1.0f)
+			continue;
+
+		bool ok = true;
+		for (int i = 0; ok && i < pts.Num(); i++)
+			if ((pts[i] - np).LengthFast() < dist)
+				ok = false;
+
+		if (!ok) {
+			fails++;
+			if (fails == MaxFailStreak)
+				break;
+		}
+		else
+			pts.Append(np);
+	}
+}
+
+void GeneratePoissonDiskSampling(idList<idVec2> &pts, int wantedCount) {
+	pts.Clear();
+	pts.Append(idVec2(0, 0));
+	for (int i = 0; i < 6; i++) {
+		float ang = 0.3f + idMath::TWO_PI * i / 6;
+		float c, s;
+		idMath::SinCos(ang, s, c);
+		pts.Append(idVec2(c, s));
+	}
+	if (wantedCount < 6)
+		return;
+	float dist = idMath::Sqrt(2.0f / wantedCount);
+	do {
+		pts.Resize(7);
+		AddPoissonDiskSamples(pts, dist);
+		dist *= 0.9f;
+	} while (pts.Num() - 1 < wantedCount);
+	idSwap(pts[0], pts[wantedCount]);
+	pts.Resize(wantedCount);
+}
+
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
 	softShadows = qglGetUniformLocation( program, "u_softShadows" );
 	lightBoundsDist = qglGetUniformLocation( program, "u_lightBoundsDist" );
+	softShadowSamples = qglGetUniformLocation( program, "u_softShadowSamples" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
@@ -619,12 +668,21 @@ void pointInteractionProgram_t::AfterLoad() {
 	qglUseProgram( 0 );
 }
 
+//TODO: is this global variable harming multithreading?
+idList<idVec2> g_softShadowsSamples;
+
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		qglUniform1f( softShadows, r_softShadows.GetFloat() );
+
+		int sampleK = (int)r_softShadows.GetFloat();
+		if (g_softShadowsSamples.Num() != sampleK)
+			GeneratePoissonDiskSampling(g_softShadowsSamples, sampleK);
+		qglUniform2fv(softShadowSamples, sampleK, &g_softShadowsSamples[0].x);
+
 		/*const idBounds &b = din->surf->backendGeo->bounds;
 		const idVec3 bc = b.GetCenter(), l = din->localLightOrigin.ToVec3();
 		float dist = 0;
