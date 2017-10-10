@@ -2740,6 +2740,9 @@
     <ClCompile Include="renderer\FrameBufer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="renderer\draw_stencil.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game\game.def">

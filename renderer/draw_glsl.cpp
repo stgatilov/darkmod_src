@@ -353,7 +353,7 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char* fileName ) 
 
 	/* create shader object, set the source, and compile */
 	shader = qglCreateShader( ShaderType );
-	length = strlen( source );
+	length = (GLint)strlen( source );
 	qglShaderSource( shader, 1, (const char **)&source, &length );
 	qglCompileShader( shader );
 	fileSystem->FreeFile( fileBuffer );
@@ -625,13 +625,13 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		qglUniform1f( softShadows, r_softShadows.GetFloat() );
-		const idBounds &b = din->surf->backendGeo->bounds;
+		/*const idBounds &b = din->surf->backendGeo->bounds;
 		const idVec3 bc = b.GetCenter(), l = din->localLightOrigin.ToVec3();
 		float dist = 0;
 		if ( !b.ContainsPoint( l ) ) {
 			dist = (bc-l).LengthFast() - b.GetRadius( bc );
 		}
-		qglUniform1f( lightBoundsDist, dist );
+		qglUniform1f( lightBoundsDist, dist );*/
 	} else
 		qglUniform1f( softShadows, 0 );
 }
