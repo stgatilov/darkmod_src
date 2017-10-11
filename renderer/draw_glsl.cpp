@@ -62,6 +62,7 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			specularColor;
 
 	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 	virtual void Use();
 	static void ChooseInteractionProgram();
@@ -74,6 +75,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			lightBoundsDist;
 	GLint			softShadowSamples;
 	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
@@ -120,13 +122,11 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
-	//if ( !din->ambientLight || din->ambientCubicLight ) { duzenko: IMHO specular needs to be included in ambient by simple add
-		// texture 4 is the per-surface specular map
-		GL_SelectTexture( 4 );
-		din->specularImage->Bind();
-	//}
+	// texture 4 is the per-surface specular map
+	GL_SelectTexture( 4 );
+	din->specularImage->Bind();
 
-	if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) 
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) 
 		FB_BindStencilTexture();
 
 	// draw it
@@ -139,15 +139,15 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
-	if ( !surf ) {
+	if ( !surf ) 
 		return;
-	}
 
 	// perform setup here that will be constant for all interactions
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | backEnd.depthFunc );
 
 	// bind the vertex and fragment program
 	interactionProgram_t::ChooseInteractionProgram();
+	currrentInteractionShader->UpdateUniforms( surf == backEnd.vLight->translucentInteractions );
 
 	// enable the vertex arrays
 	qglEnableVertexAttribArray( 8 );
@@ -180,7 +180,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray(3);
 
 	// disable features
-	if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 		GL_SelectTexture( 7 );
@@ -199,7 +199,6 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	GL_SelectTexture( 1 );
 	globalImages->BindNull();
 
-	//backEnd.glState.currenttmu = -1; ???
 	GL_SelectTexture( 0 );
 
 	qglUseProgram( 0 );
@@ -208,83 +207,86 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 
 /*
 ==================
+RB_GLSL_DrawLight
+==================
+*/
+void RB_GLSL_DrawLight( void ) {
+	bool soft = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
+
+	// clear the stencil buffer if needed
+	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
+		backEnd.currentScissor = backEnd.vLight->scissorRect;
+		if ( r_useScissor.GetBool() ) {
+			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		}
+		if ( soft )
+			FB_ToggleShadow( true );
+		qglClear( GL_STENCIL_BUFFER_BIT );
+	} else {
+		// no shadows, so no need to read or write the stencil buffer
+		qglStencilFunc( GL_ALWAYS, 128, 255 );
+	}
+
+	stencilShadowShader.Use();
+	RB_StencilShadowPass( backEnd.vLight->globalShadows );
+	
+	if ( (r_ignore.GetInteger() & 4) ) {
+		if ( soft )
+			FB_ToggleShadow( false );
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+		if ( soft )
+			FB_ToggleShadow( true );
+	}
+
+	stencilShadowShader.Use();
+	RB_StencilShadowPass( backEnd.vLight->localShadows );
+
+	if ( soft )
+		FB_ToggleShadow( false );
+
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
+
+	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+
+	// translucent surfaces never get stencil shadowed
+	if ( r_skipTranslucent.GetBool() ) 
+		return;
+
+	qglStencilFunc( GL_ALWAYS, 128, 255 );
+
+	backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
+	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+}
+
+/*
+==================
 RB_GLSL_DrawInteractions
 ==================
 */
 void RB_GLSL_DrawInteractions( void ) {
-	viewLight_t		*vLight;
-
 	GL_SelectTexture( 0 );
 
 	//
 	// for each light, perform adding and shadowing
 	//
-	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
+	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
 		
 		// do fogging later
-		if ( vLight->lightShader->IsFogLight() ) 
+		if ( backEnd.vLight->lightShader->IsFogLight() )
 			continue;
-		if ( vLight->lightShader->IsBlendLight() ) 
+		if ( backEnd.vLight->lightShader->IsBlendLight() )
 			continue;
 
 		// if there are no interactions, get out!
-		if ( !vLight->localInteractions && !vLight->globalInteractions && 
-			!vLight->translucentInteractions ) 
+		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions )
 			continue;
 
-		backEnd.vLight = vLight;
-
-		// clear the stencil buffer if needed
-		if ( vLight->globalShadows || vLight->localShadows ) {
-			backEnd.currentScissor = vLight->scissorRect;
-			if ( r_useScissor.GetBool() ) {
-				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-			}
-			if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
-				FB_ToggleShadow( true );
-			qglClear( GL_STENCIL_BUFFER_BIT );
-		} else {
-			// no shadows, so no need to read or write the stencil buffer
-			// we might in theory want to use GL_ALWAYS instead of disabling
-			// completely, to satisfy the invarience rules
-			qglStencilFunc( GL_ALWAYS, 128, 255 );
-		}
-
-		if ( !(r_ignore.GetInteger() & 1) ) {
-			stencilShadowShader.Use();
-			RB_StencilShadowPass( vLight->globalShadows );
-		}
-		if ( (r_ignore.GetInteger() & 4) ) 
-			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
-
-		if ( !(r_ignore.GetInteger() & 2) ) {
-			stencilShadowShader.Use();
-			RB_StencilShadowPass( vLight->localShadows );
-		}
-
-		if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
-			FB_ToggleShadow( false );
-
-		if ( !(r_ignore.GetInteger() & 4) )
-			RB_GLSL_CreateDrawInteractions( vLight->localInteractions );
-		if ( !(r_ignore.GetInteger() & 8) )
-			RB_GLSL_CreateDrawInteractions( vLight->globalInteractions );
-
-		qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
-
-		// translucent surfaces never get stencil shadowed
-		if ( r_skipTranslucent.GetBool() ) {
-			continue;
-		}
-
-		qglStencilFunc( GL_ALWAYS, 128, 255 );
-
-		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-		RB_GLSL_CreateDrawInteractions( vLight->translucentInteractions );
-		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+		RB_GLSL_DrawLight();
 	}
 
 	// disable stencil shadow test
@@ -552,6 +554,9 @@ void interactionProgram_t::AfterLoad() {
 	qglUseProgram( 0 );
 }
 
+void interactionProgram_t::UpdateUniforms( bool translucent ) {
+}
+
 void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	static const float	zero[4]		= { 0, 0, 0, 0 },
 						one[4]		= { 1, 1, 1, 1 },
@@ -601,53 +606,6 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
-//TODO: move poisson sampling code to proper place
-void AddPoissonDiskSamples(idList<idVec2> &pts, float dist) {
-	static const int MaxFailStreak = 1000;
-	idRandom rnd;
-	int fails = 0;
-	while (1) {
-		idVec2 np;
-		np.x = rnd.CRandomFloat();
-		np.y = rnd.CRandomFloat();
-		if (np.LengthFast() > 1.0f)
-			continue;
-
-		bool ok = true;
-		for (int i = 0; ok && i < pts.Num(); i++)
-			if ((pts[i] - np).LengthFast() < dist)
-				ok = false;
-
-		if (!ok) {
-			fails++;
-			if (fails == MaxFailStreak)
-				break;
-		}
-		else
-			pts.Append(np);
-	}
-}
-void GeneratePoissonDiskSampling(idList<idVec2> &pts, int wantedCount) {
-	pts.Clear();
-	pts.Append(idVec2(0, 0));
-	for (int i = 0; i < 6; i++) {
-		float ang = 0.3f + idMath::TWO_PI * i / 6;
-		float c, s;
-		idMath::SinCos(ang, s, c);
-		pts.Append(idVec2(c, s));
-	}
-	if (wantedCount < 6)
-		return;
-	float dist = idMath::Sqrt(2.0f / wantedCount);
-	do {
-		pts.Resize(7);
-		AddPoissonDiskSamples(pts, dist);
-		dist *= 0.9f;
-	} while (pts.Num() - 1 < wantedCount);
-	idSwap(pts[0], pts[wantedCount]);
-	pts.Resize(wantedCount);
-}
-
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
@@ -667,30 +625,25 @@ void pointInteractionProgram_t::AfterLoad() {
 //TODO: is this global variable harming multithreading?
 idList<idVec2> g_softShadowsSamples;
 
-void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-	interactionProgram_t::UpdateUniforms( din );
-	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
+	if ( !translucent && (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
 		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 )
-			GeneratePoissonDiskSampling(g_softShadowsSamples, sampleK);
-		qglUniform2fv(softShadowSamples, sampleK, &g_softShadowsSamples[0].x);
-
-		/*const idBounds &b = din->surf->backendGeo->bounds;
-		const idVec3 bc = b.GetCenter(), l = din->localLightOrigin.ToVec3();
-		float dist = 0;
-		if ( !b.ContainsPoint( l ) ) {
-			dist = (bc-l).LengthFast() - b.GetRadius( bc );
-		}
-		qglUniform1f( lightBoundsDist, dist );*/
+			GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
+		qglUniform2fv( softShadowSamples, sampleK, &g_softShadowsSamples[0].x );
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
 		qglUniform1f( softShadowsRadius, 0.0f );
 	}
+}
+
+void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+	interactionProgram_t::UpdateUniforms( din );
+	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 }
 
 void ambientInteractionProgram_t::AfterLoad() {

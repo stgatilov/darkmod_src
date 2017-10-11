@@ -350,8 +350,7 @@ void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
 
 	// Make the early depth pass available to shaders. #3877
-	if ( backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID  // Suppress for lightgem rendering passes
-		 && !r_skipDepthCapture.GetBool() )
+	if ( !backEnd.viewDef->IsLightGem() && !r_skipDepthCapture.GetBool() )
 	{
 		if (!(r_useFbo.GetBool() && r_fboSharedDepth.GetBool()) ) // duzenko #4425 - depth texture is already bound to framebuffer
 			globalImages->currentDepthImage->CopyDepthBuffer( backEnd.viewDef->viewport.x1,
@@ -920,10 +919,9 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) { // duzenko: skip for lightgem
-		if ( r_skipPostProcess.GetBool() ) {
+	if ( drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS && !backEnd.viewDef->IsLightGem() ) {
+		if ( r_skipPostProcess.GetBool() ) 
 			return 0;
-		}
 
 		// only dump if in a 3d view
 		if ( backEnd.viewDef->viewEntitys/* && !backEnd.viewDef->isSubview */)
@@ -959,8 +957,7 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// we need to draw the post process shaders after we have drawn the fog lights
-		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS
-			&& !backEnd.currentRenderCopied ) {
+		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
 			break;
 		}
 

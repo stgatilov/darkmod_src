@@ -74,3 +74,6 @@ extern lightProgram_t stencilShadowShader;
 
 void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
 void RB_GLSL_DrawInteractions( void );
+
+void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
+void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

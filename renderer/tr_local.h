@@ -447,6 +447,7 @@ typedef struct viewDef_s {
 	// crossing a closed door.  This is used to avoid drawing interactions
 	// when the light is behind a closed door.
 
+	bool				IsLightGem() const { return renderView.viewID < 0; }
 } viewDef_t;
 
 

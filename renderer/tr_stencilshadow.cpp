@@ -1377,3 +1377,49 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	return newTri;
 }
+
+void AddPoissonDiskSamples( idList<idVec2> &pts, float dist ) {
+	static const int MaxFailStreak = 1000;
+	idRandom rnd;
+	int fails = 0;
+	while ( 1 ) {
+		idVec2 np;
+		np.x = rnd.CRandomFloat();
+		np.y = rnd.CRandomFloat();
+		if ( np.LengthFast() > 1.0f )
+			continue;
+
+		bool ok = true;
+		for ( int i = 0; ok && i < pts.Num(); i++ )
+			if ( (pts[i] - np).LengthFast() < dist )
+				ok = false;
+
+		if ( !ok ) {
+			fails++;
+			if ( fails == MaxFailStreak )
+				break;
+		} else
+			pts.Append( np );
+	}
+}
+
+void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount ) {
+	pts.Clear();
+	pts.Append( idVec2( 0, 0 ) );
+	for ( int i = 0; i < 6; i++ ) {
+		float ang = 0.3f + idMath::TWO_PI * i / 6;
+		float c, s;
+		idMath::SinCos( ang, s, c );
+		pts.Append( idVec2( c, s ) );
+	}
+	if ( wantedCount < 6 )
+		return;
+	float dist = idMath::Sqrt( 2.0f / wantedCount );
+	do {
+		pts.Resize( 7 );
+		AddPoissonDiskSamples( pts, dist );
+		dist *= 0.9f;
+	} while ( pts.Num() - 1 < wantedCount );
+	idSwap( pts[0], pts[wantedCount] );
+	pts.Resize( wantedCount );
+}
