@@ -72,4 +72,5 @@ extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 
-extern void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
+void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
+void RB_GLSL_DrawInteractions( void );

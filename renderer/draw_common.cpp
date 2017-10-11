@@ -1274,27 +1274,13 @@ void	RB_STD_DrawView( void ) {
 	drawSurfs = (drawSurf_t **)&backEnd.viewDef->drawSurfs[0];
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
 
-/* ~SS
-	if (   r_softShadows.GetFloat() > 0.0f							// soft shadows requested
-		&& backEnd.viewDef->viewEntitys								// a 3d draw, not the menu screen
-		&& backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID	// not a lightgem pass
-		&& r_showShadows.GetInteger() == 0							// not debugging shadow vols
-		&& glConfig.glVersion > 3.0 )								// i.e 3.1 or above, float-safe 
-	{
-		backEnd.usingSoftShadows = true;
-		softShadowMgr->NewFrame();
-	} else {
-		backEnd.usingSoftShadows = false;
-	}
-*/
 	// clear the z buffer, set the projection matrix, etc
 	RB_BeginDrawingView();
 
 	backEnd.lightScale = r_lightScale.GetFloat();
 	backEnd.overBright = 1.0f;
 
-	// fill the depth buffer and clear color buffer to black except on
-	// subviews
+	// fill the depth buffer and clear color buffer to black except on subviews
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	if ( r_useGLSL.GetBool() )

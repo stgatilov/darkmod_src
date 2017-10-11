@@ -92,7 +92,7 @@ blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
-interactionProgram_t &currrentInteractionShader = ambientInteractionShader;
+interactionProgram_t *currrentInteractionShader;
 
 /*
 ==================
@@ -101,7 +101,7 @@ RB_GLSL_DrawInteraction
 */
 void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the shader parameters
-	currrentInteractionShader.UpdateUniforms( din );
+	currrentInteractionShader->UpdateUniforms( din );
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
@@ -226,12 +226,6 @@ void RB_GLSL_DrawInteractions( void ) {
 			continue;
 		if ( vLight->lightShader->IsBlendLight() ) 
 			continue;
-		/* if  ( vLight->lightDef->parms.parallel && r_skipParallelLights.GetBool() )
-		    continue;
-			
-		if ( !vLight->lightDef->parms.pointLight && r_skipProjectedLights.GetBool() ) {
-		    continue;
-		} */
 
 		// if there are no interactions, get out!
 		if ( !vLight->localInteractions && !vLight->globalInteractions && 
@@ -510,7 +504,7 @@ void interactionProgram_t::ChooseInteractionProgram() {
 
 void interactionProgram_t::Use() {
 	lightProgram_t::Use();
-	currrentInteractionShader = *this;
+	currrentInteractionShader = this;
 }
 
 void interactionProgram_t::AfterLoad() {
@@ -682,7 +676,7 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
-		if (g_softShadowsSamples.Num() != sampleK)
+		if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 )
 			GeneratePoissonDiskSampling(g_softShadowsSamples, sampleK);
 		qglUniform2fv(softShadowSamples, sampleK, &g_softShadowsSamples[0].x);
 

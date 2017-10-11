@@ -857,9 +857,8 @@ void GL_CheckErrors( void ) {
 	// check for up to 10 errors pending
 	for ( i = 0 ; i < 10 ; i++ ) {
 		err = qglGetError();
-		if ( err == GL_NO_ERROR ) {
+		if ( err == GL_NO_ERROR )
 			return;
-		}
 		switch( err ) {
 			case GL_INVALID_ENUM:
 				strcpy( s, "GL_INVALID_ENUM" );
