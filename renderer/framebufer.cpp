@@ -140,7 +140,7 @@ void CheckCreatePrimary() {
 			qglDeleteFramebuffers( 1, &fboPrimary );
 			fboPrimary = 0; // try from scratch next time
 			r_useFbo.SetBool( false );
-			r_softShadows.SetInteger( 0 );
+			r_softShadowsQuality.SetInteger( 0 );
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	}
@@ -168,7 +168,7 @@ void FB_Clear() {
 }
 
 void FB_Enter() {
-	if ( r_softShadows.GetBool() ) {
+	if ( r_softShadowsQuality.GetBool() ) {
 		r_useGLSL.SetBool( true );
 		r_useFbo.SetBool( true );
 		r_fboSharedDepth.SetBool( true );

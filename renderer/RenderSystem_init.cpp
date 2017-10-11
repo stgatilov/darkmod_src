@@ -51,8 +51,12 @@ idCVar r_useTwoSidedStencil( "r_useTwoSidedStencil", "1", CVAR_RENDERER | CVAR_B
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
-idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" ); //~SteveL SS
+//duzenko & stgatilov:
+idCVar r_softShadowsQuality( "r_softShadowsQuality", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Number of samples in soft shadows blur. 0 = hard shadows, 6 = low-quality, 24 = good, 96 = perfect" );
+idCVar r_softShadowsRadius( "r_softShadowsRadius", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Radius of light source for soft shadows. Decreasing it makes soft shadows less blurry." );
+
 /* ~ss
+idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" );
 idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "
 																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
 idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");

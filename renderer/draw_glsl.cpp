@@ -69,7 +69,8 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			advanced;
-	GLint			softShadows;
+	GLint			softShadowsQuality;
+	GLint			softShadowsRadius;
 	GLint			lightBoundsDist;
 	GLint			softShadowSamples;
 	virtual	void AfterLoad();
@@ -125,7 +126,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		din->specularImage->Bind();
 	//}
 
-	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) 
+	if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) 
 		FB_BindStencilTexture();
 
 	// draw it
@@ -179,7 +180,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray(3);
 
 	// disable features
-	if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
+	if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
 		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 		GL_SelectTexture( 7 );
@@ -248,7 +249,7 @@ void RB_GLSL_DrawInteractions( void ) {
 					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 			}
-			if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
+			if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
 				FB_ToggleShadow( true );
 			qglClear( GL_STENCIL_BUFFER_BIT );
 		} else {
@@ -270,7 +271,7 @@ void RB_GLSL_DrawInteractions( void ) {
 			RB_StencilShadowPass( vLight->localShadows );
 		}
 
-		if ( r_softShadows.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
+		if ( r_softShadowsQuality.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID )
 			FB_ToggleShadow( false );
 
 		if ( !(r_ignore.GetInteger() & 4) )
@@ -606,6 +607,7 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( specularColor, 1, din->specularColor.ToFloatPtr() );
 }
 
+//TODO: move poisson sampling code to proper place
 void AddPoissonDiskSamples(idList<idVec2> &pts, float dist) {
 	static const int MaxFailStreak = 1000;
 	idRandom rnd;
@@ -631,7 +633,6 @@ void AddPoissonDiskSamples(idList<idVec2> &pts, float dist) {
 			pts.Append(np);
 	}
 }
-
 void GeneratePoissonDiskSampling(idList<idVec2> &pts, int wantedCount) {
 	pts.Clear();
 	pts.Append(idVec2(0, 0));
@@ -656,9 +657,10 @@ void GeneratePoissonDiskSampling(idList<idVec2> &pts, int wantedCount) {
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
-	softShadows = qglGetUniformLocation( program, "u_softShadows" );
+	softShadowsQuality = qglGetUniformLocation( program, "u_softShadowsQuality" );
+	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
+	softShadowSamples = qglGetUniformLocation( program, "u_softShadowsSamples" );
 	lightBoundsDist = qglGetUniformLocation( program, "u_lightBoundsDist" );
-	softShadowSamples = qglGetUniformLocation( program, "u_softShadowSamples" );
 	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	// set texture locations
@@ -676,9 +678,10 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
 	if ( (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) {
-		qglUniform1f( softShadows, r_softShadows.GetFloat() );
+		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
+		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
-		int sampleK = (int)r_softShadows.GetFloat();
+		int sampleK = r_softShadowsQuality.GetInteger();
 		if (g_softShadowsSamples.Num() != sampleK)
 			GeneratePoissonDiskSampling(g_softShadowsSamples, sampleK);
 		qglUniform2fv(softShadowSamples, sampleK, &g_softShadowsSamples[0].x);
@@ -690,8 +693,10 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 			dist = (bc-l).LengthFast() - b.GetRadius( bc );
 		}
 		qglUniform1f( lightBoundsDist, dist );*/
-	} else
-		qglUniform1f( softShadows, 0 );
+	} else {
+		qglUniform1i( softShadowsQuality, 0 );
+		qglUniform1f( softShadowsRadius, 0.0f );
+	}
 }
 
 void ambientInteractionProgram_t::AfterLoad() {

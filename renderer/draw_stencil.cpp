@@ -233,6 +233,6 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 	}
 
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
-	if ( !r_softShadows.GetBool() || backEnd.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )
+	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )
 		qglStencilFunc( GL_GEQUAL, 128, 255 );
 }
