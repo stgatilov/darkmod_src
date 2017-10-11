@@ -92,7 +92,7 @@ blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
-interactionProgram_t* currrentInteractionShader;
+interactionProgram_t &currrentInteractionShader = ambientInteractionShader;
 
 /*
 ==================
@@ -101,7 +101,7 @@ RB_GLSL_DrawInteraction
 */
 void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the shader parameters
-	currrentInteractionShader->UpdateUniforms( din );
+	currrentInteractionShader.UpdateUniforms( din );
 
 	// set the textures
 	// texture 0 will be the per-surface bump map
@@ -510,7 +510,7 @@ void interactionProgram_t::ChooseInteractionProgram() {
 
 void interactionProgram_t::Use() {
 	lightProgram_t::Use();
-	currrentInteractionShader = this;
+	currrentInteractionShader = *this;
 }
 
 void interactionProgram_t::AfterLoad() {
