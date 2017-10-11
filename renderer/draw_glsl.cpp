@@ -247,7 +247,8 @@ void RB_GLSL_DrawLight( void ) {
 	if ( soft )
 		FB_ToggleShadow( false );
 
-	RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	if ( !(r_ignore.GetInteger() & 4) ) 
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
 	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
