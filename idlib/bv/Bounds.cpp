@@ -426,3 +426,13 @@ void idBounds::ToPoints( idVec3 points[8] ) const {
 		points[i][2] = b[(i>>2)&1][2];
 	}
 }
+
+/*
+============
+idBounds::ToString
+============
+*/
+const idStr idBounds::ToString( const int precision ) const {
+	return idStr( b[0].ToString( precision ) ) + " -> " + idStr( b[1].ToString( precision ) );
+}
+
