@@ -44,16 +44,6 @@ int Sys_ReturnKeyboardInputEvent( const int n, int &action, bool &state ) { retu
 unsigned char Sys_MapCharForKey( int key ) { return (unsigned char)key; }
 
 /*
-================
-Sys_GetVideoRam
-returns in megabytes
-================
-*/
-int Sys_GetVideoRam( void ) {
-	return 64;
-}
-
-/*
 ==========
 GL
 ==========

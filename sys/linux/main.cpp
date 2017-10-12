@@ -363,32 +363,6 @@ double Sys_ClockTicksPerSecond(void) {
 }
 
 /*
-================
-Sys_GetSystemRam
-returns in megabytes
-================
-*/
-int Sys_GetSystemRam( void ) {
-	long	count, page_size;
-	int		mb;
-
-	count = sysconf( _SC_PHYS_PAGES );
-	if ( count == -1 ) {
-		common->Printf( "GetSystemRam: sysconf _SC_PHYS_PAGES failed\n" );
-		return 512;
-	}	
-	page_size = sysconf( _SC_PAGE_SIZE );
-	if ( page_size == -1 ) {
-		common->Printf( "GetSystemRam: sysconf _SC_PAGE_SIZE failed\n" );
-		return 512;
-	}
-	mb= (int)( (double)count * (double)page_size / ( 1024 * 1024 ) );
-	// round to the nearest 16Mb
-	mb = ( mb + 8 ) & ~15;
-	return mb;
-}
-
-/*
 ==================
 Sys_DoStartProcess
 if we don't fork, this function never returns
