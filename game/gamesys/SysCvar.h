@@ -192,8 +192,8 @@ extern idCVar cv_tdm_crouch_toggle;
 extern idCVar cv_tdm_crouch_toggle_hold_time;
 extern idCVar cv_tdm_reattach_delay;
 
-// nbohr1more: TDM toggle creep
-// extern idCVar cv_tdm_creep_toggle;
+// nbohr1more: #558 TDM toggle creep
+extern idCVar cv_tdm_creep_toggle;
 
 /**
 * TDM Leaning vars:

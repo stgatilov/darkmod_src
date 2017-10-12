@@ -219,8 +219,8 @@ idCVar cv_tdm_crouch_toggle(			"tdm_toggle_crouch",			"1",			CVAR_GAME | CVAR_AR
 idCVar cv_tdm_crouch_toggle_hold_time(	"tdm_crouch_toggle_hold_time",	"400",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "The time in milliseconds to hold crouch while on a rope/ladder for starting to slide down." );
 idCVar cv_tdm_reattach_delay(			"tdm_reattach_delay",			"100",			CVAR_GAME | CVAR_ARCHIVE | CVAR_FLOAT, "Delay (in ms) for reattaching to ropes/ladders after detaching using crouch." );
 
-// Toggle Creep
-// idCVar cv_tdm_creep_toggle(			"tdm_toggle_creep",			"1",			CVAR_GAME | CVAR_ARCHIVE | CVAR_BOOL, "Set to 1 to make creep toggleable." );
+// nbohr1more: #558 Toggle Creep
+idCVar cv_tdm_creep_toggle(			    "tdm_toggle_creep",			"0",			CVAR_GAME | CVAR_BOOL, "Set to 1 to make creep toggleable." );
 
 /**
 * Dark Mod Leaning
