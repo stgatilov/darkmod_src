@@ -1700,10 +1700,13 @@ void idImage::CopyDepthBuffer( int x, int y, int imageWidth, int imageHeight, bo
 	this->Bind();
 	// if the size isn't a power of 2, the image must be increased in size
 	int potWidth, potHeight;
-	potWidth = MakePowerOfTwo( imageWidth );
+	/*potWidth = MakePowerOfTwo( imageWidth );
 	potHeight = MakePowerOfTwo( imageHeight );
 	GetDownsize( imageWidth, imageHeight );
-	GetDownsize( potWidth, potHeight );
+	GetDownsize( potWidth, potHeight );*/
+	potWidth = imageWidth;
+	potHeight = imageHeight;
+	
 	// Ensure we are reading from the back buffer:
 	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );

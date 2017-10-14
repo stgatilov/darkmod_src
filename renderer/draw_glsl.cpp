@@ -74,6 +74,8 @@ struct pointInteractionProgram_t : interactionProgram_t {
 	GLint			softShadowsRadius;
 	GLint			lightBoundsDist;
 	GLint			softShadowSamples;
+	//TODO: is this global variable harming multithreading?
+	idList<idVec2> g_softShadowsSamples;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
@@ -213,56 +215,56 @@ RB_GLSL_DrawLight
 void RB_GLSL_DrawLight( void ) {
 	bool soft = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 
-		// clear the stencil buffer if needed
+	// clear the stencil buffer if needed
 	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
 		backEnd.currentScissor = backEnd.vLight->scissorRect;
-			if ( r_useScissor.GetBool() ) {
-				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-			}
-		if ( soft )
-				FB_ToggleShadow( true );
-			qglClear( GL_STENCIL_BUFFER_BIT );
-		} else {
-			// no shadows, so no need to read or write the stencil buffer
-			qglStencilFunc( GL_ALWAYS, 128, 255 );
+		if ( r_useScissor.GetBool() ) {
+			qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
+		if ( soft )
+			FB_ToggleShadow( true );
+		qglClear( GL_STENCIL_BUFFER_BIT );
+	} else {
+		// no shadows, so no need to read or write the stencil buffer
+		qglStencilFunc( GL_ALWAYS, 128, 255 );
+	}
 
-			stencilShadowShader.Use();
+	stencilShadowShader.Use();
 	RB_StencilShadowPass( backEnd.vLight->globalShadows );
-	
+
 	if ( (r_ignore.GetInteger() & 4) ) {
 		if ( soft )
 			FB_ToggleShadow( false );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		if ( soft )
 			FB_ToggleShadow( true );
-		}
+	}
 
-			stencilShadowShader.Use();
+	stencilShadowShader.Use();
 	RB_StencilShadowPass( backEnd.vLight->localShadows );
 
 	if ( soft )
-			FB_ToggleShadow( false );
+		FB_ToggleShadow( false );
 
-		if ( !(r_ignore.GetInteger() & 4) )
+	if ( !(r_ignore.GetInteger() & 4) )
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
-		qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 
-		// translucent surfaces never get stencil shadowed
-	if ( r_skipTranslucent.GetBool() ) 
+	// translucent surfaces never get stencil shadowed
+	if ( r_skipTranslucent.GetBool() )
 		return;
 
-		qglStencilFunc( GL_ALWAYS, 128, 255 );
+	qglStencilFunc( GL_ALWAYS, 128, 255 );
 
-		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
+	backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
-		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
-	}
+	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+}
 
 /*
 ==================
@@ -622,9 +624,6 @@ void pointInteractionProgram_t::AfterLoad() {
 	qglUniform1i( u_stencilTexture, 7 );
 	qglUseProgram( 0 );
 }
-
-//TODO: is this global variable harming multithreading?
-idList<idVec2> g_softShadowsSamples;
 
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
