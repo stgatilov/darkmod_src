@@ -419,6 +419,7 @@ public:
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
 	idImage *			currentDepthFbo;
+	idImage *			shadowCubeMap;
 	idImage *			currentStencilFbo;
 	//idImage *			stencilCopy;
 	idImage *			bloomCookedMath;

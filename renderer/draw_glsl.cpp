@@ -33,6 +33,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "glsl.h"
 #include "FrameBuffer.h"
 
+struct shadowMapProgram_t : lightProgram_t {
+	GLint shadowMapProjections;
+	virtual	void AfterLoad();
+};
+
 struct interactionProgram_t : lightProgram_t {
 	GLint			localViewOrigin;
 
@@ -41,11 +46,8 @@ struct interactionProgram_t : lightProgram_t {
 	GLint			lightProjectionQ;
 	GLint			lightFalloff;
 
-	GLint			cubic;
-	GLint			u_lightProjectionCubemap;
-	GLint			u_lightProjectionTexture;
-	GLint			u_lightFalloffCubemap;
-	GLint			u_lightFalloffTexture;
+	GLint cubic;
+	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
 
 	GLint			colorModulate;
 	GLint			colorAdd;
@@ -69,13 +71,11 @@ struct interactionProgram_t : lightProgram_t {
 };
 
 struct pointInteractionProgram_t : interactionProgram_t {
-	GLint			advanced;
-	GLint			softShadowsQuality;
-	GLint			softShadowsRadius;
-	GLint			lightBoundsDist;
-	GLint			softShadowSamples;
+	GLint advanced;
+	GLint softShadowsQuality, softShadowsRadius, softShadowSamples;
+	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
-	idList<idVec2> g_softShadowsSamples;
+	idList<idVec2>	g_softShadowsSamples;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
@@ -91,6 +91,7 @@ shaderProgram_t cubeMapShader;
 oldStageProgram_t oldStageShader;
 depthProgram_t depthShader;
 lightProgram_t stencilShadowShader;
+shadowMapProgram_t shadowMapShader;
 fogProgram_t fogShader;
 blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
@@ -124,12 +125,12 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 3 );
 	din->diffuseImage->Bind();
 
-		// texture 4 is the per-surface specular map
-		GL_SelectTexture( 4 );
-		din->specularImage->Bind();
+	// texture 4 is the per-surface specular map
+	GL_SelectTexture( 4 );
+	din->specularImage->Bind();
 
 	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) 
-		FB_BindStencilTexture();
+		FB_BindShadowTexture();
 
 	// draw it
 	RB_DrawElementsWithCounters( din->surf->backendGeo );
@@ -140,8 +141,8 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 RB_GLSL_CreateDrawInteractions
 =============
 */
-static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
-	if ( !surf ) 
+void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
+	if ( !surf )
 		return;
 
 	// perform setup here that will be constant for all interactions
@@ -156,15 +157,15 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArray( 9 );
 	qglEnableVertexAttribArray( 10 );
 	qglEnableVertexAttribArray( 11 );
-	qglEnableVertexAttribArray(3);
+	qglEnableVertexAttribArray( 3 );
 
-	for ( ; surf ; surf=surf->nextOnLight ) {
+	for ( ; surf; surf = surf->nextOnLight ) {
 		// perform setup here that will not change over multiple interaction passes
 
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
-		qglVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
-		qglVertexAttribPointer(11, 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
+		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -179,7 +180,7 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 9 );
 	qglDisableVertexAttribArray( 10 );
 	qglDisableVertexAttribArray( 11 );
-	qglDisableVertexAttribArray(3);
+	qglDisableVertexAttribArray( 3 );
 
 	// disable features
 	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) {
@@ -208,12 +209,44 @@ static void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 }
 
 /*
+=============
+RB_GLSL_CreateDrawInteractions
+=============
+*/
+DECLSPEC_NOINLINE void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
+	if ( !surf )
+		return;
+
+	// perform setup here that will be constant for all interactions
+	shadowMapShader.Use();
+
+	for ( ; surf; surf = surf->nextOnLight ) {
+		// set the vertex pointers
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
+		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+		RB_DrawElementsWithCounters( surf->backendGeo );
+	}
+
+	GL_SelectTexture( 0 );
+
+	qglUseProgram( 0 );
+	GL_CheckErrors();
+}
+
+/*
 ==================
-RB_GLSL_DrawLight
+RB_GLSL_DrawLight_Stencil
 ==================
 */
-void RB_GLSL_DrawLight( void ) {
-	bool soft = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
+void RB_GLSL_DrawLight_Stencil( void ) {
+	backEnd.currentScissor = backEnd.vLight->scissorRect;
+	if ( r_useScissor.GetBool() )
+		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+	
+	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 
 	// clear the stencil buffer if needed
 	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
@@ -224,7 +257,7 @@ void RB_GLSL_DrawLight( void ) {
 				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
 				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
-		if ( soft )
+		if ( useShadowFbo )
 			FB_ToggleShadow( true );
 		qglClear( GL_STENCIL_BUFFER_BIT );
 	} else {
@@ -235,35 +268,54 @@ void RB_GLSL_DrawLight( void ) {
 	stencilShadowShader.Use();
 	RB_StencilShadowPass( backEnd.vLight->globalShadows );
 
-	if ( (r_ignore.GetInteger() & 4) ) {
-		if ( soft )
+	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
+	if ( NoSelfShadows ) {
+		if ( useShadowFbo )
 			FB_ToggleShadow( false );
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-		if ( soft )
+		if ( useShadowFbo )
 			FB_ToggleShadow( true );
 	}
 
 	stencilShadowShader.Use();
 	RB_StencilShadowPass( backEnd.vLight->localShadows );
 
-	if ( soft )
+	if ( useShadowFbo )
 		FB_ToggleShadow( false );
 
-	if ( !(r_ignore.GetInteger() & 4) )
+	if ( !NoSelfShadows )
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
 	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+}
 
-	// translucent surfaces never get stencil shadowed
-	if ( r_skipTranslucent.GetBool() )
-		return;
+/*
+==================
+RB_GLSL_DrawLight_ShadowMap
+==================
+*/
+DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
+	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
+	
+	FB_ToggleShadow( true );
+	qglViewport( 0, 0, 256, 256 );
+	qglClear( GL_DEPTH_BUFFER_BIT );
+	GL_State( GLS_DEPTHFUNC_LESS );
+	RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
+	RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+	FB_ToggleShadow( false );
+	const idScreenRect &r = backEnd.viewDef->viewport;
+	qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 
-	qglStencilFunc( GL_ALWAYS, 128, 255 );
+	if ( NoSelfShadows ) 
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 
-	backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
-	RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
-	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
+	if ( !NoSelfShadows )
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
+
+	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 }
 
 /*
@@ -271,7 +323,7 @@ void RB_GLSL_DrawLight( void ) {
 RB_GLSL_DrawInteractions
 ==================
 */
-void RB_GLSL_DrawInteractions( void ) {
+DECLSPEC_NOINLINE void RB_GLSL_DrawInteractions( void ) {
 	GL_SelectTexture( 0 );
 
 	//
@@ -289,7 +341,20 @@ void RB_GLSL_DrawInteractions( void ) {
 		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions )
 			continue;
 
-		RB_GLSL_DrawLight();
+		if ( r_shadows.GetInteger() == 2 )
+			RB_GLSL_DrawLight_ShadowMap();
+		else
+			RB_GLSL_DrawLight_Stencil();
+
+		// translucent surfaces never get stencil shadowed
+		if ( r_skipTranslucent.GetBool() )
+			continue;
+
+		qglStencilFunc( GL_ALWAYS, 128, 255 );
+
+		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
+		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 	}
 
 	// disable stencil shadow test
@@ -307,7 +372,8 @@ bool R_ReloadGLSLPrograms() {
 	bool ok = true;
 	ok &= pointInteractionShader.Load( "interaction" );				// filenames hardcoded here since they're not used elsewhere
 	ok &= ambientInteractionShader.Load( "ambientInteraction" );
-	ok &= stencilShadowShader.Load( "stencilshadow" );
+	ok &= stencilShadowShader.Load( "stencilShadow" );
+	ok &= shadowMapShader.Load( "shadowMap" );
 	ok &= oldStageShader.Load( "oldStage" );
 	ok &= depthShader.Load( "depthAlpha" );
 	ok &= fogShader.Load( "fog" );
@@ -333,7 +399,7 @@ void R_ReloadGLSLPrograms_f( const idCmdArgs &args ) {
 shaderProgram_t::CompileShader
 =================
 */
-GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char* fileName ) {
+GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) {
 	char *source;
 	GLuint shader;
 	GLint length, result;
@@ -344,7 +410,8 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char* fileName ) 
 	// load the program even if we don't support it
 	fileSystem->ReadFile( fileName, (void **)&fileBuffer, NULL );
 	if ( !fileBuffer ) {
-		common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName );
+		if ( ShaderType != GL_GEOMETRY_SHADER )
+			common->Warning( "shaderCompileFromFile: \'%s\' not found", fileName );
 		return 0;
 	}
 
@@ -386,8 +453,24 @@ shaderProgram_t::AttachShader
 =================
 */
 void shaderProgram_t::AttachShader( GLint ShaderType, char *fileName ) {
-	/* compile the shader */
-	GLuint shader = CompileShader( ShaderType, idStr( "glprogs/" ) + fileName + (ShaderType == GL_FRAGMENT_SHADER ? ".fs" : ".vs") );
+	idStr fn( "glprogs/" );
+	fn.Append( fileName );
+	switch ( ShaderType )
+	{
+	case GL_VERTEX_SHADER:
+		fn.Append( ".vs" );
+		break;
+	case GL_GEOMETRY_SHADER:
+		fn.Append( ".gs" );
+		break;
+	case GL_FRAGMENT_SHADER:
+		fn.Append( ".fs" );
+		break;
+	default:
+		common->Warning("Unknown ShaderType in shaderProgram_t::AttachShader");
+		break;
+	}
+	GLuint shader = CompileShader( ShaderType, fn.c_str() );
 	if ( shader != 0 ) {
 		/* attach the shader to the program */
 		qglAttachShader( program, shader );
@@ -409,6 +492,7 @@ bool shaderProgram_t::Load( char *fileName ) {
 		qglDeleteProgram( program );
 	program = qglCreateProgram();
 	AttachShader( GL_VERTEX_SHADER, fileName );
+	AttachShader( GL_GEOMETRY_SHADER, fileName );
 	AttachShader( GL_FRAGMENT_SHADER, fileName );
 	qglBindAttribLocation( program, 3, "attr_Color" );
 	qglBindAttribLocation( program, 8, "attr_TexCoord" );
@@ -500,6 +584,10 @@ void lightProgram_t::AfterLoad() {
 	localLightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
 }
 
+void shadowMapProgram_t::AfterLoad() {
+	shadowMapProjections = qglGetUniformLocation( program, "shadowMapProjections" );
+}
+
 void interactionProgram_t::ChooseInteractionProgram() {
 	if ( backEnd.vLight->lightShader->IsAmbientLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() )
 		ambientInteractionShader.Use();
@@ -537,23 +625,25 @@ void interactionProgram_t::AfterLoad() {
 
 	cubic = qglGetUniformLocation( program, "u_cubic" );
 
-	GLint u_normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
-	u_lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
-	u_lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
-	u_lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
-	u_lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
-	GLint u_diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
-	GLint u_specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
+	GLint normalTexture = qglGetUniformLocation( program, "u_normalTexture" );
+	lightProjectionTexture = qglGetUniformLocation( program, "u_lightProjectionTexture" );
+	lightProjectionCubemap = qglGetUniformLocation( program, "u_lightProjectionCubemap" );
+	lightFalloffTexture = qglGetUniformLocation( program, "u_lightFalloffTexture" );
+	lightFalloffCubemap = qglGetUniformLocation( program, "u_lightFalloffCubemap" );
+	GLint diffuseTexture = qglGetUniformLocation( program, "u_diffuseTexture" );
+	GLint specularTexture = qglGetUniformLocation( program, "u_specularTexture" );
 	
 	// set texture locations
 	qglUseProgram( program );
-	qglUniform1i( u_normalTexture, 0 );
-	qglUniform1i( u_lightFalloffTexture, 1 );
-	qglUniform1i( u_lightProjectionTexture, 2 );
-	qglUniform1i( u_diffuseTexture, 3 );
-	qglUniform1i( u_specularTexture, 4 );
-	qglUniform1i( u_lightProjectionCubemap, 5 ); // else validation fails, 2 at render time
-	qglUniform1i( u_lightFalloffCubemap, 6 ); // else validation fails, 1 at render time
+	// static bindings
+	qglUniform1i( normalTexture, 0 );
+	qglUniform1i( lightFalloffTexture, 1 );
+	qglUniform1i( lightProjectionTexture, 2 );
+	qglUniform1i( diffuseTexture, 3 );
+	qglUniform1i( specularTexture, 4 );
+	// can't have sampler2D, usampler2D, samplerCube have the same TMU index
+	qglUniform1i( lightProjectionCubemap, 5 ); 
+	qglUniform1i( lightFalloffCubemap, 5 );
 	qglUseProgram( 0 );
 }
 
@@ -592,16 +682,16 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	}
 	if ( backEnd.vLight->lightShader->IsCubicLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() ) {
 		qglUniform1f( cubic, 1.0 );
-		qglUniform1i( u_lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( u_lightProjectionCubemap, 2 );
-		qglUniform1i( u_lightFalloffTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( u_lightFalloffCubemap, 1 );
+		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightProjectionCubemap, 2 );
+		qglUniform1i( lightFalloffTexture, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightFalloffCubemap, 1 );
 	} else {
 		qglUniform1f( cubic, 0.0 );
-		qglUniform1i( u_lightProjectionTexture, 2 );
-		qglUniform1i( u_lightProjectionCubemap, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( u_lightFalloffTexture, 1 );
-		qglUniform1i( u_lightFalloffCubemap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightProjectionTexture, 2 );
+		qglUniform1i( lightProjectionCubemap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightFalloffTexture, 1 );
+		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
@@ -615,13 +705,14 @@ void pointInteractionProgram_t::AfterLoad() {
 	softShadowsQuality = qglGetUniformLocation( program, "u_softShadowsQuality" );
 	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
 	softShadowSamples = qglGetUniformLocation( program, "u_softShadowsSamples" );
-	lightBoundsDist = qglGetUniformLocation( program, "u_lightBoundsDist" );
-	GLuint u_stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
-	GLuint u_depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
+	stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
+	depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
+	shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
 	// set texture locations
 	qglUseProgram( program );
-	qglUniform1i( u_depthTexture, 6 );
-	qglUniform1i( u_stencilTexture, 7 );
+	// can't have sampler2D, usampler2D, samplerCube on the same TMU index
+	qglUniform1i( shadowMap, 5 );
+	qglUniform1i( stencilTexture, 6 );
 	qglUseProgram( 0 );
 }
 
@@ -638,6 +729,15 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
 		qglUniform1f( softShadowsRadius, 0.0f );
+	}
+	if ( r_shadows.GetInteger() == 2 ) {
+		qglUniform1i( shadowMap, 6 );
+		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
+	} else {
+		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( stencilTexture, 6 );
+		qglUniform1i( depthTexture, 7 );
 	}
 }
 

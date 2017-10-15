@@ -24,7 +24,7 @@ struct shaderProgram_t {
 	virtual void Use();							// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
 private:
 	void AttachShader( GLint ShaderType, char *fileName );
-	GLuint CompileShader( GLint ShaderType, const char* fileName );
+	GLuint CompileShader( GLint ShaderType, const char *fileName );
 };
 
 struct oldStageProgram_t : shaderProgram_t {
@@ -61,7 +61,7 @@ struct fogProgram_t : shaderProgram_t {
 };
 
 struct lightProgram_t : shaderProgram_t {
-	GLint			localLightOrigin;
+	GLint localLightOrigin;
 	virtual	void AfterLoad();
 };
 

@@ -337,7 +337,7 @@ PFNGLGENFRAMEBUFFERSPROC				qglGenFramebuffers;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC			qglCheckFramebufferStatus;
 PFNGLFRAMEBUFFERTEXTURE1DPROC			qglFramebufferTexture1D;
 PFNGLFRAMEBUFFERTEXTURE2DPROC			qglFramebufferTexture2D;
-PFNGLFRAMEBUFFERTEXTURE3DPROC			qglFramebufferTexture3D;
+PFNGLFRAMEBUFFERTEXTUREPROC				qglFramebufferTexture;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC		qglFramebufferRenderbuffer;
 PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC qglGetFramebufferAttachmentParameteriv;
 PFNGLGENERATEMIPMAPPROC					qglGenerateMipmap;
@@ -585,7 +585,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)GLimp_ExtensionPointer( "glCheckFramebufferStatus" );
 		qglFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)GLimp_ExtensionPointer( "glFramebufferTexture1D" );
 		qglFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)GLimp_ExtensionPointer( "glFramebufferTexture2D" );
-		qglFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)GLimp_ExtensionPointer( "glFramebufferTexture3D" );
+		qglFramebufferTexture = (PFNGLFRAMEBUFFERTEXTUREPROC)GLimp_ExtensionPointer( "glFramebufferTexture" );
 		qglFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GLimp_ExtensionPointer( "glFramebufferRenderbuffer" );
 		qglGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetFramebufferAttachmentParameteriv" );
 		qglGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer( "glGenerateMipmap" );
