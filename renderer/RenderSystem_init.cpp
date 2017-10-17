@@ -1464,7 +1464,8 @@ screenshot [width] [height] [samples]
 #define	MAX_BLENDS	256	// to keep the accumulation in shorts
 void R_ScreenShot_f( const idCmdArgs &args ) {
 	idStr checkname;
-
+    qglFinish();
+	
 	int width = glConfig.vidWidth;
 	int height = glConfig.vidHeight;
 	int	blends = 0;
@@ -1504,8 +1505,9 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 
 	// put the console away
 	console->Close();
-
+    
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
+	qglFinish();
 }
 
 /*
