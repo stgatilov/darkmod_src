@@ -133,11 +133,12 @@ void CheckCreateShadow() {
 	// (re-)attach textures to FBO
 	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
+	static textureType_t nowType;
 
 	// reset textures 
 	if ( curWidth != globalImages->currentDepthFbo->uploadWidth 
 		|| curHeight != globalImages->currentDepthFbo->uploadHeight 
-		|| globalImages->currentDepthFbo->type != type
+		|| nowType != type
 	) {
 		if ( type == TT_2D ) {
 			globalImages->currentDepthFbo->Bind();
@@ -157,7 +158,7 @@ void CheckCreateShadow() {
 			globalImages->shadowCubeMap->uploadWidth = size;
 			globalImages->shadowCubeMap->uploadHeight = size;
 			for ( int sideId = 0; sideId < 6; sideId++ ) 
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT32, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
 			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -165,14 +166,18 @@ void CheckCreateShadow() {
 			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
 		}
+		globalImages->BindNull();
 	}
-	if ( !fboShadow && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
+	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel) ) {
 		if ( !fboShadow )
 			qglGenFramebuffers( 1, &fboShadow );
-		qglBindFramebuffer( GL_FRAMEBUFFER_EXT, fboShadow );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
 		if ( r_shadows.GetInteger() == 2 ) {
 			GLuint depthTex = globalImages->shadowCubeMap->texnum;
-			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
+			//qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
+			for ( int sideId = 0; sideId < 6; sideId++ )
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, depthTex, 0 );
+			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
 		} else {
 			GLuint depthTex = globalImages->currentDepthFbo->texnum;
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
@@ -184,6 +189,7 @@ void CheckCreateShadow() {
 			fboShadow = 0; // try from scratch next time
 		}
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		nowType = type;
 	}
 	GL_CheckErrors();
 }

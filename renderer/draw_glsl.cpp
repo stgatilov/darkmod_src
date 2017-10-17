@@ -732,13 +732,14 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	}
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglUniform1i( shadowMap, 6 );
-		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS+1 );
 	} else {
 		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( stencilTexture, 6 );
-		qglUniform1i( depthTexture, 7 );
+		qglUniform1i( depthTexture, 6 );
+		qglUniform1i( stencilTexture, 7 );
 	}
+	GL_CheckErrors();
 }
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
