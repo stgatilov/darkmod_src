@@ -1997,6 +1997,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 
 	// Write screenshot
 	if ( !autosave ) {
+	    qglFinish();
 		renderSystem->CropRenderSize( 320, 240, false );
 		game->Draw( 0 );
 
@@ -2010,6 +2011,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		image.SaveImageToFile(previewPath.c_str(), previewFormat);
 
 		renderSystem->UnCrop();
+		qglFinish();
 	}
 
 	// Write description, which is just a text file with
