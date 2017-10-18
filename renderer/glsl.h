@@ -63,6 +63,8 @@ struct fogProgram_t : shaderProgram_t {
 struct lightProgram_t : shaderProgram_t {
 	GLint localLightOrigin;
 	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent );
+	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
 extern shaderProgram_t cubeMapShader;

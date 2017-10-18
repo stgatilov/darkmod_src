@@ -178,6 +178,7 @@ void CheckCreateShadow() {
 			for ( int sideId = 0; sideId < 6; sideId++ )
 				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
+			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
 		} else {
 			GLuint depthTex = globalImages->currentDepthFbo->texnum;
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
@@ -229,6 +230,7 @@ void FB_ToggleShadow( bool on ) {
 		GL_CheckErrors();
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : r_useFbo.GetBool() ? fboPrimary : 0 );
+	GL_CheckErrors();
 }
 
 void FB_Clear() {

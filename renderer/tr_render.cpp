@@ -66,7 +66,7 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
-	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+	if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += tri->numIndexes;
 		backEnd.pc.c_drawVertexes += tri->numVerts;
@@ -82,7 +82,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 						tri->numIndexes,
 						GL_INDEX_TYPE,
 						vertexCache.Position( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
-		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) 
+		if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) 
 			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
 		if ( r_useIndexBuffers.GetBool() ) {
@@ -641,7 +641,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 	if (!surf->backendGeo || !surf->backendGeo->ambientCache) 
 		return;
 	if ( vLight->lightShader->IsAmbientLight() ) {
-		if ( r_skipAmbient.GetBool() )
+		if ( r_skipAmbient.GetInteger() == 2 )
 			return;
 	} else
 		if ( r_skipInteractions.GetBool() )

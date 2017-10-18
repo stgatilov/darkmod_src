@@ -36,6 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 struct shadowMapProgram_t : lightProgram_t {
 	GLint shadowMapProjections;
 	virtual	void AfterLoad();
+	virtual void Use();
 };
 
 struct interactionProgram_t : lightProgram_t {
@@ -97,7 +98,7 @@ blendProgram_t blendShader;
 pointInteractionProgram_t pointInteractionShader;
 ambientInteractionProgram_t ambientInteractionShader;
 
-interactionProgram_t* currrentInteractionShader;
+lightProgram_t* currrentInteractionShader;
 
 /*
 ==================
@@ -106,6 +107,7 @@ RB_GLSL_DrawInteraction
 */
 void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the shader parameters
+	GL_CheckErrors();
 	currrentInteractionShader->UpdateUniforms( din );
 
 	// set the textures
@@ -133,7 +135,9 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 		FB_BindShadowTexture();
 
 	// draw it
+	GL_CheckErrors();
 	RB_DrawElementsWithCounters( din->surf->backendGeo );
+	GL_CheckErrors();
 }
 
 /*
@@ -213,7 +217,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 RB_GLSL_CreateDrawInteractions
 =============
 */
-DECLSPEC_NOINLINE void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
+void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 	if ( !surf )
 		return;
 
@@ -298,6 +302,7 @@ RB_GLSL_DrawLight_ShadowMap
 DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
 	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
 	
+	GL_CheckErrors();
 	FB_ToggleShadow( true );
 	qglViewport( 0, 0, 256, 256 );
 	qglClear( GL_DEPTH_BUFFER_BIT );
@@ -308,14 +313,17 @@ DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
 	const idScreenRect &r = backEnd.viewDef->viewport;
 	qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 
-	if ( NoSelfShadows ) 
-		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-
-	if ( !NoSelfShadows )
-		RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
+	if ( !(r_ignore.GetInteger() & 1) ) {
+		if ( NoSelfShadows )
+			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+		if ( !NoSelfShadows )
+			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	}
+	if ( !(r_ignore.GetInteger() & 2) )
+		RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 
 	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+	GL_CheckErrors();
 }
 
 /*
@@ -415,8 +423,6 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 		return 0;
 	}
 
-	common->Printf( "%s\n", fileName );
-
 	source = fileBuffer;
 
 	/* create shader object, set the source, and compile */
@@ -488,6 +494,7 @@ shaderProgram_t::Load
 =================
 */
 bool shaderProgram_t::Load( char *fileName ) {
+	common->Printf( "%s\n", fileName );
 	if ( program && qglIsProgram( program ) )
 		qglDeleteProgram( program );
 	program = qglCreateProgram();
@@ -584,8 +591,20 @@ void lightProgram_t::AfterLoad() {
 	localLightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
 }
 
+
+void lightProgram_t::UpdateUniforms( bool translucent ) {
+}
+
+void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
+}
+
 void shadowMapProgram_t::AfterLoad() {
 	shadowMapProjections = qglGetUniformLocation( program, "shadowMapProjections" );
+}
+
+void shadowMapProgram_t::Use() {
+	lightProgram_t::Use();
+	currrentInteractionShader = this;
 }
 
 void interactionProgram_t::ChooseInteractionProgram() {
@@ -593,6 +612,7 @@ void interactionProgram_t::ChooseInteractionProgram() {
 		ambientInteractionShader.Use();
 	else
 		pointInteractionShader.Use();
+	GL_CheckErrors();
 }
 
 void interactionProgram_t::Use() {
@@ -689,9 +709,9 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	} else {
 		qglUniform1f( cubic, 0.0 );
 		qglUniform1i( lightProjectionTexture, 2 );
-		qglUniform1i( lightProjectionCubemap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightProjectionCubemap, MAX_MULTITEXTURE_UNITS+1 );
 		qglUniform1i( lightFalloffTexture, 1 );
-		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( lightFalloffCubemap, MAX_MULTITEXTURE_UNITS+1 );
 	}
 	qglUniform4fv( localViewOrigin, 1, din->localViewOrigin.ToFloatPtr() );
 	qglUniform4fv( specularMatrixS, 1, din->specularMatrix[0].ToFloatPtr() );
@@ -733,9 +753,9 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglUniform1i( shadowMap, 6 );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
-		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS+1 );
+		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS+2 );
 	} else {
-		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS );
+		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS+1 );
 		qglUniform1i( depthTexture, 6 );
 		qglUniform1i( stencilTexture, 7 );
 	}
@@ -745,6 +765,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	GL_CheckErrors();
 }
 
 void ambientInteractionProgram_t::AfterLoad() {
@@ -756,4 +777,5 @@ void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din )
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( localLightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	qglUniformMatrix4fv( modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
+	GL_CheckErrors();
 }
