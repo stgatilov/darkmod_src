@@ -423,6 +423,21 @@ GLuint shaderProgram_t::CompileShader( GLint ShaderType, const char *fileName ) 
 		return 0;
 	}
 
+	switch ( ShaderType ) {
+	case GL_VERTEX_SHADER:
+		common->Printf( "V" );
+		break;
+	case GL_GEOMETRY_SHADER:
+		common->Printf( "G" );
+		break;
+	case GL_FRAGMENT_SHADER:
+		common->Printf( "F" );
+		break;
+	default:
+		common->Warning( "Unknown ShaderType in shaderProgram_t::CompileShader" );
+		break;
+	}
+	
 	source = fileBuffer;
 
 	/* create shader object, set the source, and compile */
@@ -461,8 +476,7 @@ shaderProgram_t::AttachShader
 void shaderProgram_t::AttachShader( GLint ShaderType, char *fileName ) {
 	idStr fn( "glprogs/" );
 	fn.Append( fileName );
-	switch ( ShaderType )
-	{
+	switch ( ShaderType ) {
 	case GL_VERTEX_SHADER:
 		fn.Append( ".vs" );
 		break;
@@ -494,13 +508,14 @@ shaderProgram_t::Load
 =================
 */
 bool shaderProgram_t::Load( char *fileName ) {
-	common->Printf( "%s\n", fileName );
+	common->Printf( "%s ", fileName );
 	if ( program && qglIsProgram( program ) )
 		qglDeleteProgram( program );
 	program = qglCreateProgram();
 	AttachShader( GL_VERTEX_SHADER, fileName );
 	AttachShader( GL_GEOMETRY_SHADER, fileName );
 	AttachShader( GL_FRAGMENT_SHADER, fileName );
+	common->Printf( "\n" );
 	qglBindAttribLocation( program, 3, "attr_Color" );
 	qglBindAttribLocation( program, 8, "attr_TexCoord" );
 	qglBindAttribLocation( program, 9, "attr_Tangent" );
@@ -600,6 +615,34 @@ void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 
 void shadowMapProgram_t::AfterLoad() {
 	shadowMapProjections = qglGetUniformLocation( program, "shadowMapProjections" );
+	idMat3		axis[6]; // copy pasted from R_EnvShot_f
+	memset( &axis, 0, sizeof( axis ) );
+	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
+	// forward = east (positive x-axis in DR)
+	axis[0][0][0] = 1;
+	axis[0][1][1] = 1;
+	axis[0][2][2] = 1;
+	// left = north
+	axis[1][0][1] = 1;
+	axis[1][1][0] = -1;
+	axis[1][2][2] = 1;
+	// right = south
+	axis[2][0][1] = -1;
+	axis[2][1][0] = 1;
+	axis[2][2][2] = 1;
+	// back = west
+	axis[3][0][0] = -1;
+	axis[3][1][1] = -1;
+	axis[3][2][2] = 1;
+	// down, while facing forward
+	axis[4][0][2] = -1;
+	axis[4][1][1] = 1;
+	axis[4][2][0] = 1;
+	// up, while facing forward
+	axis[5][0][2] = 1;
+	axis[5][1][1] = 1;
+	axis[5][2][0] = -1;
+	qglUniformMatrix3fv( shadowMapProjections, 6, 1, (GLfloat*)axis );
 }
 
 void shadowMapProgram_t::Use() {
