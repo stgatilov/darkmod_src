@@ -175,8 +175,9 @@ void CheckCreateShadow() {
 		if ( r_shadows.GetInteger() == 2 ) {
 			GLuint depthTex = globalImages->shadowCubeMap->texnum;
 			//qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
-			for ( int sideId = 0; sideId < 6; sideId++ )
-				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, depthTex, 0 );
+			/*for ( int sideId = 0; sideId < 6; sideId++ )
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, depthTex, 0 );*/
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
 			//qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
 		} else {

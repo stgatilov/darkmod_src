@@ -562,6 +562,7 @@ bool shaderProgram_t::Load( char *fileName ) {
 		return false;
 	}
 
+	GL_CheckErrors();
 	return true;
 }
 
@@ -615,7 +616,7 @@ void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 
 void shadowMapProgram_t::AfterLoad() {
 	shadowMapProjections = qglGetUniformLocation( program, "shadowMapProjections" );
-	idMat3		axis[6]; // copy pasted from R_EnvShot_f
+	idMat3 axis[6]; // copy pasted from R_EnvShot_f
 	memset( &axis, 0, sizeof( axis ) );
 	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
 	// forward = east (positive x-axis in DR)
@@ -642,7 +643,8 @@ void shadowMapProgram_t::AfterLoad() {
 	axis[5][0][2] = 1;
 	axis[5][1][1] = 1;
 	axis[5][2][0] = -1;
-	qglUniformMatrix3fv( shadowMapProjections, 6, 1, (GLfloat*)axis );
+	qglUniformMatrix3fv( shadowMapProjections, 6, false, (GLfloat*)axis );
+	GL_CheckErrors();
 }
 
 void shadowMapProgram_t::Use() {
