@@ -1449,6 +1449,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
+	pbo = 0;
 }
 
 /*
@@ -1508,6 +1509,7 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
     
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
 	qglFinish();
+	
 }
 
 /*
