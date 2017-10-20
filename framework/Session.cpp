@@ -45,6 +45,8 @@ idCVar	com_savegame_preview_format( "com_savegame_preview_format", "jpg", CVAR_G
 idSessionLocal		sessLocal;
 idSession			*session = &sessLocal;
 
+bool no_smp = false;
+
 // these must be kept up to date with window Levelshot in guis/mainmenu.gui
 const int PREVIEW_X = 211;
 const int PREVIEW_Y = 31;
@@ -260,6 +262,7 @@ void idSessionLocal::Clear() {
 	msgRunning = false;
 	guiMsgRestore = NULL;
 	msgIgnoreButtons = false;
+	no_smp = false;
 
 	//bytesNeededForMapLoad = 0; // grayman #3763 - no longer used
 
@@ -2665,7 +2668,24 @@ void idSessionLocal::Frame() {
 	} else {
 		Sys_GrabMouseCursor( true );
 	}
-
+	
+	//nbohr1more: disable SMP for debug render tools
+	if (r_showSurfaceInfo.GetBool() || 
+	r_showSilhouette.GetBool() || 
+	r_showViewEntitys.GetBool() || 
+	r_showEdges.GetBool() || 
+	r_showPortals.GetBool() ||
+	r_showViewEntitys.GetBool() ||
+	r_showShadowCount.GetBool() ||
+	r_showLightCount.GetBool() ||
+	r_showDepth.GetBool() ||
+	r_showTris.GetInteger() > 0 ||
+	r_showLights.GetInteger() > 0 ) {
+	no_smp = true;
+	} else {
+	no_smp = false;
+	}
+   
 	// save the screenshot and audio from the last draw if needed
 	if ( aviCaptureMode ) {
 		idStr	name;
@@ -3076,7 +3096,7 @@ Activates game tic and frontend rendering on a separate thread.
 ===============
 */
 void idSessionLocal::ActivateFrontend() {
-	if( com_smp.GetBool() && !guiActive ) {
+	if( com_smp.GetBool() && !guiActive && !no_smp ) {
 		std::unique_lock<std::mutex> lock( signalMutex );
 		while( !frontendReady ) {
 			signalMainThread.wait( lock );
