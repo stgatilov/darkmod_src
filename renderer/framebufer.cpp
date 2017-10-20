@@ -168,7 +168,7 @@ void CheckCreateShadow() {
 		}
 		globalImages->BindNull();
 	}
-	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel) ) {
+	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
 		if ( !fboShadow )
 			qglGenFramebuffers( 1, &fboShadow );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );

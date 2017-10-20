@@ -131,7 +131,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 	GL_SelectTexture( 4 );
 	din->specularImage->Bind();
 
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) 
+	if ( (r_softShadowsQuality.GetBool()) && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2) 
 		FB_BindShadowTexture();
 
 	// draw it
@@ -243,13 +243,6 @@ RB_GLSL_DrawLight_Stencil
 ==================
 */
 void RB_GLSL_DrawLight_Stencil( void ) {
-	backEnd.currentScissor = backEnd.vLight->scissorRect;
-	if ( r_useScissor.GetBool() )
-		qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-		backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-		backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-		backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 
 	// clear the stencil buffer if needed
@@ -264,10 +257,9 @@ void RB_GLSL_DrawLight_Stencil( void ) {
 		if ( useShadowFbo )
 			FB_ToggleShadow( true );
 		qglClear( GL_STENCIL_BUFFER_BIT );
-	} else {
+	} else 
 		// no shadows, so no need to read or write the stencil buffer
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
-	}
 
 	stencilShadowShader.Use();
 	RB_StencilShadowPass( backEnd.vLight->globalShadows );
@@ -300,28 +292,21 @@ RB_GLSL_DrawLight_ShadowMap
 ==================
 */
 DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
-	const bool NoSelfShadows = true; // otherwise low-poly "round" models cast ugly shadows on themselves
-	
+	// clear the stencil buffer if needed
 	GL_CheckErrors();
-	FB_ToggleShadow( true );
-	qglViewport( 0, 0, 256, 256 );
-	qglClear( GL_DEPTH_BUFFER_BIT );
-	GL_State( GLS_DEPTHFUNC_LESS );
-	RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
-	RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
-	FB_ToggleShadow( false );
-	const idScreenRect &r = backEnd.viewDef->viewport;
-	qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
-
-	if ( !(r_ignore.GetInteger() & 1) ) {
-		if ( NoSelfShadows )
-			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
-		if ( !NoSelfShadows )
-			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	if ( !(r_ignore.GetInteger() & 4) ) {
+		FB_ToggleShadow( true );
+		qglViewport( 0, 0, 256, 256 );
+		qglClear( GL_DEPTH_BUFFER_BIT );
+		GL_State( GLS_DEPTHFUNC_LESS );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
+		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+		FB_ToggleShadow( false );
+		const idScreenRect &r = backEnd.viewDef->viewport;
+		qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 	}
-	if ( !(r_ignore.GetInteger() & 2) )
-		RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
-
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
 	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
 	GL_CheckErrors();
 }
@@ -643,7 +628,9 @@ void shadowMapProgram_t::AfterLoad() {
 	axis[5][0][2] = 1;
 	axis[5][1][1] = 1;
 	axis[5][2][0] = -1;
+	qglUseProgram( program );
 	qglUniformMatrix3fv( shadowMapProjections, 6, false, (GLfloat*)axis );
+	qglUseProgram( 0 );
 	GL_CheckErrors();
 }
 
