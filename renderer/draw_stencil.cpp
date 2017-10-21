@@ -42,7 +42,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 		R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.vLight->globalLightOrigin, localLight.ToVec3() );
 		localLight.w = 0.0f;
 		if ( r_useGLSL.GetBool() )
-			qglUniform4fv( stencilShadowShader.localLightOrigin, 1, localLight.ToFloatPtr() );
+			qglUniform4fv( stencilShadowShader.lightOrigin, 1, localLight.ToFloatPtr() );
 		else
 			qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, localLight.ToFloatPtr() );
 	}

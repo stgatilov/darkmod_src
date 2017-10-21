@@ -34,35 +34,33 @@ If you have questions concerning this license or the applicable additional terms
 #include "FrameBuffer.h"
 
 struct shadowMapProgram_t : lightProgram_t {
-	GLint shadowMapProjections;
-	virtual	void AfterLoad();
 	virtual void Use();
 };
 
 struct interactionProgram_t : lightProgram_t {
-	GLint			localViewOrigin;
-
-	GLint			lightProjectionS;
-	GLint			lightProjectionT;
-	GLint			lightProjectionQ;
-	GLint			lightFalloff;
+	GLint localViewOrigin;
+		  
+	GLint lightProjectionS;
+	GLint lightProjectionT;
+	GLint lightProjectionQ;
+	GLint lightFalloff;
 
 	GLint cubic;
 	GLint lightProjectionCubemap, lightProjectionTexture, lightFalloffCubemap, lightFalloffTexture;
 
-	GLint			colorModulate;
-	GLint			colorAdd;
-
-	GLint			bumpMatrixS;
-	GLint			bumpMatrixT;
-
-	GLint			diffuseMatrixS;
-	GLint			diffuseMatrixT;
-	GLint			diffuseColor;
-
-	GLint			specularMatrixS;
-	GLint			specularMatrixT;
-	GLint			specularColor;
+	GLint colorModulate;
+	GLint colorAdd;
+		  
+	GLint bumpMatrixS;
+	GLint bumpMatrixT;
+		  
+	GLint diffuseMatrixS;
+	GLint diffuseMatrixT;
+	GLint diffuseColor;
+		  
+	GLint specularMatrixS;
+	GLint specularMatrixT;
+	GLint specularColor;
 
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent );
@@ -83,7 +81,6 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
-	GLint			modelMatrix;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
@@ -225,6 +222,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 	shadowMapShader.Use();
 
 	for ( ; surf; surf = surf->nextOnLight ) {
+		qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
@@ -589,7 +588,8 @@ void fogProgram_t::AfterLoad() {
 }
 
 void lightProgram_t::AfterLoad() {
-	localLightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
+	lightOrigin = qglGetUniformLocation( program, "u_lightOrigin" );
+	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 }
 
 
@@ -597,41 +597,6 @@ void lightProgram_t::UpdateUniforms( bool translucent ) {
 }
 
 void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-}
-
-void shadowMapProgram_t::AfterLoad() {
-	shadowMapProjections = qglGetUniformLocation( program, "shadowMapProjections" );
-	idMat3 axis[6]; // copy pasted from R_EnvShot_f
-	memset( &axis, 0, sizeof( axis ) );
-	// SteveL #4041: these axes were wrong, causing some of the images to be flipped and rotated.
-	// forward = east (positive x-axis in DR)
-	axis[0][0][0] = 1;
-	axis[0][1][1] = 1;
-	axis[0][2][2] = 1;
-	// left = north
-	axis[1][0][1] = 1;
-	axis[1][1][0] = -1;
-	axis[1][2][2] = 1;
-	// right = south
-	axis[2][0][1] = -1;
-	axis[2][1][0] = 1;
-	axis[2][2][2] = 1;
-	// back = west
-	axis[3][0][0] = -1;
-	axis[3][1][1] = -1;
-	axis[3][2][2] = 1;
-	// down, while facing forward
-	axis[4][0][2] = -1;
-	axis[4][1][1] = 1;
-	axis[4][2][0] = 1;
-	// up, while facing forward
-	axis[5][0][2] = 1;
-	axis[5][1][1] = 1;
-	axis[5][2][0] = -1;
-	qglUseProgram( program );
-	qglUniformMatrix3fv( shadowMapProjections, 6, false, (GLfloat*)axis );
-	qglUseProgram( 0 );
-	GL_CheckErrors();
 }
 
 void shadowMapProgram_t::Use() {
@@ -796,18 +761,18 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
-	qglUniform4fv( localLightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
+	qglUniform4fv( lightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
 	GL_CheckErrors();
 }
 
 void ambientInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
-	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 }
 
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
-	qglUniform4fv( localLightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
+	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	qglUniformMatrix4fv( modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
 	GL_CheckErrors();
 }
