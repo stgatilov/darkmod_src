@@ -1508,7 +1508,17 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 	console->Close();
     
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
-	qglFinish();
+	if ( r_useFbo.GetBool() == 1)
+       {
+		r_useFbo.SetBool(0);
+		session->RunGameTic();
+		session->UpdateScreen();
+		qglFinish();
+		r_useFbo.SetBool(1);
+		session->RunGameTic();
+		session->UpdateScreen();
+		qglFinish();
+	   }
 	
 }
 
