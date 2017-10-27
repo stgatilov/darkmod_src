@@ -70,7 +70,7 @@ struct interactionProgram_t : lightProgram_t {
 };
 
 struct pointInteractionProgram_t : interactionProgram_t {
-	GLint advanced;
+	GLint advanced, shadows;
 	GLint softShadowsQuality, softShadowsRadius, softShadowSamples;
 	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
@@ -215,13 +215,15 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
-	if ( !surf )
+	if ( backEnd.vLight->lightShader->IsAmbientLight() || !surf )
 		return;
 
 	// perform setup here that will be constant for all interactions
 	shadowMapShader.Use();
 
 	for ( ; surf; surf = surf->nextOnLight ) {
+		if ( !surf->material->SurfaceCastsShadow() )
+			continue;
 		qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
@@ -593,11 +595,9 @@ void lightProgram_t::AfterLoad() {
 }
 
 
-void lightProgram_t::UpdateUniforms( bool translucent ) {
-}
+void lightProgram_t::UpdateUniforms( bool translucent ) {}
 
-void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
-}
+void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {}
 
 void shadowMapProgram_t::Use() {
 	lightProgram_t::Use();
@@ -605,7 +605,7 @@ void shadowMapProgram_t::Use() {
 }
 
 void interactionProgram_t::ChooseInteractionProgram() {
-	if ( backEnd.vLight->lightShader->IsAmbientLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() )
+	if ( backEnd.vLight->lightShader->IsAmbientLight() )
 		ambientInteractionShader.Use();
 	else
 		pointInteractionShader.Use();
@@ -664,8 +664,7 @@ void interactionProgram_t::AfterLoad() {
 	qglUseProgram( 0 );
 }
 
-void interactionProgram_t::UpdateUniforms( bool translucent ) {
-}
+void interactionProgram_t::UpdateUniforms( bool translucent ) {}
 
 void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	static const float	zero[4]		= { 0, 0, 0, 0 },
@@ -697,7 +696,7 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 		qglUniform4f( colorAdd, one[0], one[1], one[2], one[3] );
 		break;
 	}
-	if ( backEnd.vLight->lightShader->IsCubicLight() || backEnd.vLight->lightShader->IsAmbientCubicLight() ) {
+	if ( backEnd.vLight->lightShader->IsCubicLight() /*|| backEnd.vLight->lightShader->IsAmbientCubicLight()*/ ) {
 		qglUniform1f( cubic, 1.0 );
 		qglUniform1i( lightProjectionTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( lightProjectionCubemap, 2 );
@@ -719,6 +718,7 @@ void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 void pointInteractionProgram_t::AfterLoad() {
 	interactionProgram_t::AfterLoad();
 	advanced = qglGetUniformLocation( program, "u_advanced" );
+	shadows = qglGetUniformLocation( program, "u_shadows" );
 	softShadowsQuality = qglGetUniformLocation( program, "u_softShadowsQuality" );
 	softShadowsRadius = qglGetUniformLocation( program, "u_softShadowsRadius" );
 	softShadowSamples = qglGetUniformLocation( program, "u_softShadowsSamples" );
@@ -747,6 +747,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1i( softShadowsQuality, 0 );
 		qglUniform1f( softShadowsRadius, 0.0f );
 	}
+	qglUniform1f( shadows, r_shadows.GetFloat() );
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglUniform1i( shadowMap, 6 );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );

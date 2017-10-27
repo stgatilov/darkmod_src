@@ -459,7 +459,7 @@ public:
 	bool				IsAmbientLight() const { return ambientLight; }
 	
 						// nbohr1more #3881: cubemap based lighting (further changes)
-	bool				IsAmbientCubicLight() const { return ambientCubicLight; }
+	//bool				IsAmbientCubicLight() const { return ambientCubicLight; }
 	
 						// nbohr1more #3881: cubemap based lighting
 	bool				IsCubicLight() const { return cubicLight; }
@@ -468,7 +468,7 @@ public:
 						// but individual light entities can also override this value
 						// nbohr1more #3881: cubemap based lighting (further changes)
 	bool				LightCastsShadows() const { return TestMaterialFlag( MF_FORCESHADOWS ) ||
-								( !fogLight && !ambientLight && !ambientCubicLight && !blendLight && !TestMaterialFlag( MF_NOSHADOWS ) ); }
+								( !fogLight && !ambientLight /*&& !ambientCubicLight*/ && !blendLight && !TestMaterialFlag( MF_NOSHADOWS ) ); }
 
 						// fog lights, blend lights, ambient lights, etc will all have to have interaction
 						// triangles generated for sides facing away from the light as well as those
@@ -476,7 +476,7 @@ public:
 						// sides, making everything "noSelfShadow", but that would make noshadow lights
 						// potentially slower than normal lights, which detracts from their optimization
 						// ability, so they currently do not.
-	bool				LightEffectsBackSides() const { return fogLight || ambientLight || ambientCubicLight || blendLight; }
+	bool				LightEffectsBackSides() const { return fogLight || ambientLight /*|| ambientCubicLight*/ || blendLight; }
 
 						// NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
 	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
@@ -661,7 +661,7 @@ private:
 	bool				fogLight;
 	bool				blendLight;
 	bool				ambientLight;
-	bool				ambientCubicLight;   // nbohr1more #3881: cubemap based lighting further changes
+	//bool				ambientCubicLight;   // nbohr1more #3881: cubemap based lighting further changes
 	bool				cubicLight;          // nbohr1more #3881: cubemap based lighting
 	bool				unsmoothedTangents;
 	bool				hasSubview;			// mirror, remote render, etc

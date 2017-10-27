@@ -467,7 +467,7 @@ typedef struct {
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
 	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
-	int					ambientCubicLight;    // nbohr1more #3881: dedicated cubemap light further changes
+	//int					ambientCubicLight;    // nbohr1more #3881: dedicated cubemap light further changes
 	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)	
 	int					cubicLight;    // nbohr1more #3881: dedicated cubemap light // probably not needed
 

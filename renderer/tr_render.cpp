@@ -710,12 +710,12 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 	inter.localLightOrigin[3] = 0;
 	inter.localViewOrigin[3] = 1;
 	inter.cubicLight = lightShader->IsCubicLight(); // nbohr1more #3881: cubemap lights
-	inter.ambientCubicLight = lightShader->IsAmbientCubicLight(); // nbohr1more #3881: cubemap lights further changes
+	//inter.ambientCubicLight = lightShader->IsAmbientCubicLight(); // nbohr1more #3881: cubemap lights further changes
 	inter.ambientLight = lightShader->IsAmbientLight();
 
 	// rebb: world-up vector in local coordinates, required for certain effects, currently only for ambient lights. alternatively pass whole modelMatrix and calculate in shader
 	// nbohr1more #3881: cubemap lights further changes
-	if( lightShader->IsAmbientLight() || lightShader->IsAmbientCubicLight() ) {
+	if( lightShader->IsAmbientLight() /*|| lightShader->IsAmbientCubicLight()*/ ) {
 		// remove commented code as needed, just shows what was simplified here
 		//idVec3 upVec( 0.0f, 0.0f, 1.0f );
 		//R_GlobalVectorToLocal( surf->space->modelMatrix, upVec, inter.worldUpLocal.ToVec3() );
