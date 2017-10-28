@@ -184,7 +184,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglDisableVertexAttribArray( 3 );
 
 	// disable features
-	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() ) {
+	if ( r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem() || r_shadows.GetInteger() == 2 ) {
 		GL_SelectTexture( 6 );
 		globalImages->BindNull();
 		GL_SelectTexture( 7 );

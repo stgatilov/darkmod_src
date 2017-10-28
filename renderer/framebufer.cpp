@@ -226,7 +226,7 @@ void FB_ToggleShadow( bool on ) {
 		depthCopiedThisView = true;
 		GL_CheckErrors();
 	}
-	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : r_useFbo.GetBool() ? fboPrimary : 0 );
+	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : isInFbo ? fboPrimary : 0 );
 	GL_CheckErrors();
 
 	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
