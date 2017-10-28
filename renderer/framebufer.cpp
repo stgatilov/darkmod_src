@@ -17,6 +17,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 #include "tr_local.h"
 
+const int shadowMapSize = 256;
+
 bool isInFbo;
 bool depthCopiedThisView;
 GLuint fboPrimary, fboShadow;
@@ -138,34 +140,32 @@ void CheckCreateShadow() {
 	// reset textures 
 	if ( curWidth != globalImages->currentDepthFbo->uploadWidth 
 		|| curHeight != globalImages->currentDepthFbo->uploadHeight 
-		|| nowType != type
+		//|| nowType != type
 	) {
-		if ( type == TT_2D ) {
-			globalImages->currentDepthFbo->Bind();
-			globalImages->currentDepthFbo->uploadWidth = curWidth;
-			globalImages->currentDepthFbo->uploadHeight = curHeight;
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-			if ( glConfig.vendor == glvIntel ) // FIXME allow 24-bit depth for low-res monitors
-				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
-			else 
-				qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
-		} else {
-			globalImages->shadowCubeMap->Bind();
-			int size = 256;
-			globalImages->shadowCubeMap->uploadWidth = size;
-			globalImages->shadowCubeMap->uploadHeight = size;
-			for ( int sideId = 0; sideId < 6; sideId++ ) 
-				qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-			qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
-		}
+		globalImages->currentDepthFbo->Bind();
+		globalImages->currentDepthFbo->uploadWidth = curWidth;
+		globalImages->currentDepthFbo->uploadHeight = curHeight;
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		if ( glConfig.vendor == glvIntel ) // FIXME allow 24-bit depth for low-res monitors
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+		else 
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
+	} 
+	if ( globalImages->shadowCubeMap->uploadWidth != shadowMapSize ) {
+		globalImages->shadowCubeMap->Bind();
+		globalImages->shadowCubeMap->uploadWidth = shadowMapSize;
+		globalImages->shadowCubeMap->uploadHeight = shadowMapSize;
+		for ( int sideId = 0; sideId < 6; sideId++ ) 
+			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
 		globalImages->BindNull();
 	}
 	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
@@ -174,12 +174,8 @@ void CheckCreateShadow() {
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
 		if ( r_shadows.GetInteger() == 2 ) {
 			GLuint depthTex = globalImages->shadowCubeMap->texnum;
-			//qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
-			/*for ( int sideId = 0; sideId < 6; sideId++ )
-				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, depthTex, 0 );*/
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
-			//qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
 		} else {
 			GLuint depthTex = globalImages->currentDepthFbo->texnum;
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
@@ -232,6 +228,25 @@ void FB_ToggleShadow( bool on ) {
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : r_useFbo.GetBool() ? fboPrimary : 0 );
 	GL_CheckErrors();
+
+	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
+		qglDepthMask( on );
+		if ( on ) {
+			qglViewport( 0, 0, shadowMapSize, shadowMapSize );
+			if ( r_useScissor.GetBool() )
+				qglScissor( 0, 0, shadowMapSize, shadowMapSize );
+			qglClear( GL_DEPTH_BUFFER_BIT );
+			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
+		} else {
+			const idScreenRect &r = backEnd.viewDef->viewport;
+			qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
+			if ( r_useScissor.GetBool() )
+				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+		}
+	}
 }
 
 void FB_Clear() {

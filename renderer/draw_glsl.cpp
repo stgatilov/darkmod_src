@@ -215,15 +215,13 @@ RB_GLSL_CreateDrawInteractions
 =============
 */
 void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
-	if ( backEnd.vLight->lightShader->IsAmbientLight() || !surf )
+	if ( !surf )
 		return;
-
-	// perform setup here that will be constant for all interactions
 	shadowMapShader.Use();
-
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() )
 			continue;
+		//if ( !entityDef->parms.noShadow );
 		qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
@@ -231,9 +229,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 		RB_DrawElementsWithCounters( surf->backendGeo );
 	}
-
 	GL_SelectTexture( 0 );
-
 	qglUseProgram( 0 );
 	GL_CheckErrors();
 }
@@ -243,8 +239,10 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 RB_GLSL_DrawLight_Stencil
 ==================
 */
-void RB_GLSL_DrawLight_Stencil( void ) {
+DECLSPEC_NOINLINE void RB_GLSL_DrawLight_Stencil( void ) {
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
+	pointInteractionShader.Use();
+	qglUniform1f( pointInteractionShader.shadows, 1 );
 
 	// clear the stencil buffer if needed
 	if ( backEnd.vLight->globalShadows || backEnd.vLight->localShadows ) {
@@ -295,16 +293,22 @@ RB_GLSL_DrawLight_ShadowMap
 DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
 	// clear the stencil buffer if needed
 	GL_CheckErrors();
-	if ( !(r_ignore.GetInteger() & 4) ) {
-		FB_ToggleShadow( true );
-		qglViewport( 0, 0, 256, 256 );
-		qglClear( GL_DEPTH_BUFFER_BIT );
-		GL_State( GLS_DEPTHFUNC_LESS );
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
-		RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
-		FB_ToggleShadow( false );
-		const idScreenRect &r = backEnd.viewDef->viewport;
-		qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
+	if ( !backEnd.vLight->lightShader->IsAmbientLight() ) {
+		bool doShadows =
+			!backEnd.vLight->lightDef->parms.noShadows
+			&& backEnd.vLight->lightShader->LightCastsShadows();
+
+		if ( doShadows ) {
+			FB_ToggleShadow( true );
+			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
+			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+			FB_ToggleShadow( false );
+			pointInteractionShader.Use();
+			qglUniform1f( pointInteractionShader.shadows, 2 );
+		} else {
+			pointInteractionShader.Use();
+			qglUniform1f( pointInteractionShader.shadows, 0 );
+		}
 	}
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
@@ -319,41 +323,30 @@ RB_GLSL_DrawInteractions
 */
 DECLSPEC_NOINLINE void RB_GLSL_DrawInteractions( void ) {
 	GL_SelectTexture( 0 );
-
-	//
 	// for each light, perform adding and shadowing
-	//
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
-		
 		// do fogging later
 		if ( backEnd.vLight->lightShader->IsFogLight() )
 			continue;
 		if ( backEnd.vLight->lightShader->IsBlendLight() )
 			continue;
-
 		// if there are no interactions, get out!
 		if ( !backEnd.vLight->localInteractions && !backEnd.vLight->globalInteractions && !backEnd.vLight->translucentInteractions )
 			continue;
-
 		if ( r_shadows.GetInteger() == 2 )
 			RB_GLSL_DrawLight_ShadowMap();
 		else
 			RB_GLSL_DrawLight_Stencil();
-
 		// translucent surfaces never get stencil shadowed
 		if ( r_skipTranslucent.GetBool() )
 			continue;
-
 		qglStencilFunc( GL_ALWAYS, 128, 255 );
-
 		backEnd.depthFunc = GLS_DEPTHFUNC_LESS;
 		RB_GLSL_CreateDrawInteractions( backEnd.vLight->translucentInteractions );
 		backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
 	}
-
 	// disable stencil shadow test
 	qglStencilFunc( GL_ALWAYS, 128, 255 );
-
 	GL_SelectTexture( 0 );
 }
 
@@ -747,7 +740,6 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1i( softShadowsQuality, 0 );
 		qglUniform1f( softShadowsRadius, 0.0f );
 	}
-	qglUniform1f( shadows, r_shadows.GetFloat() );
 	if ( r_shadows.GetInteger() == 2 ) {
 		qglUniform1i( shadowMap, 6 );
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );

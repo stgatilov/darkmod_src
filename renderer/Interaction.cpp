@@ -1155,9 +1155,8 @@ void idInteraction::AddActiveInteraction( void ) {
 	
 
 	// nbohr1more: #4379 lightgem culling
-	if ((!HasShadows() ) && ( !entityDef->parms.isLightgem ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )) {
-		    return;
-			} 
+	if ( !HasShadows() && !entityDef->parms.isLightgem && tr.viewDef->IsLightGem())
+		return;
 	
 	// do not waste time culling the interaction frustum if there will be no shadows
 	else if ( !HasShadows() ) {
