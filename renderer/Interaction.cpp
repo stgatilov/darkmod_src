@@ -1015,7 +1015,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 			}
 
 		// generate a lighted surface and add it
-		if ( shader->ReceivesLighting() ) {
+		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 ) {
 			if ( tri->ambientViewCount == tr.viewCount ) {
 				sint->lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 			} else {
@@ -1269,7 +1269,7 @@ void idInteraction::AddActiveInteraction( void ) {
 
 					// there will only be localSurfaces if the light casts shadows and
 					// there are surfaces with NOSELFSHADOW
-					if ( sint->shader->Coverage() == MC_TRANSLUCENT ) {
+					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
 						R_LinkLightSurf( &vLight->translucentInteractions, lightTris, 
 							vEntity, lightDef, shader, lightScissor, false );
 					} else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW) ) {

@@ -523,9 +523,8 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
 	drawSurf_t		*drawSurf;
 
-	if ( !space ) {
+	if ( !space )
 		space = &tr.viewDef->worldSpace;
-	}
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
@@ -541,9 +540,8 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	memcpy( copiedGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
 	drawSurf->backendGeo = copiedGeo;
 
-	if ( viewInsideShadow ) {
+	if ( viewInsideShadow )
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
-	}
 
 	if ( !shader ) {
 		// shadows won't have a shader
@@ -1051,6 +1049,8 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		drawSurf->dsFlags = 0;
 		drawSurf->particle_radius = 0.0f;
 	}
+	//if ( entityDef->parms.noShadow )
+		//drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 
 	// bumping this offset each time causes surfaces with equal sort orders to still
 	// deterministically draw in the order they are added
@@ -1185,59 +1185,45 @@ each viewEntity that has a non-empty scissorRect
 */
 static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 	int					i, total;
-	idRenderEntityLocal	*def;
 	srfTriangles_t		*tri;
 	idRenderModel		*model;
 	const idMaterial	*shader;
 
-	def = vEntity->entityDef;
-
-	if ( def->dynamicModel ) {
-		model = def->dynamicModel;
-		if ( r_skipModels.GetInteger() == 1 )
-			return;
-	} else {
-		model = def->parms.hModel;
-		if ( r_skipModels.GetInteger() == 2 )
-			return;
-	}
-
+	idRenderEntityLocal &def = *vEntity->entityDef;
+	if ( def.dynamicModel ) 
+		model = def.dynamicModel;
+	else
+		model = def.parms.hModel;
+	
 	// add all the surfaces
 	total = model->NumSurfaces();
 	for ( i = 0 ; i < total ; i++ ) {
-		const modelSurface_t	*surf = model->Surface( i );
+		const modelSurface_t *surf = model->Surface( i );
 
 		// for debugging, only show a single surface at a time
-		if ( r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger() ) {
+		if ( r_singleSurface.GetInteger() >= 0 && i != r_singleSurface.GetInteger() )
 			continue;
-		}
 
 		tri = surf->geometry;
-		if ( !tri ) {
+		if ( !tri )
 			continue;
-		}
-		if ( !tri->numIndexes ) {
+		if ( !tri->numIndexes )
 			continue;
-		}
 		shader = surf->shader;
-		shader = R_RemapShaderBySkin( shader, def->parms.customSkin, def->parms.customShader );
+		shader = R_RemapShaderBySkin( shader, def.parms.customSkin, def.parms.customShader );
 
 		R_GlobalShaderOverride( &shader );
 
-		if ( !shader ) {	
+		if ( !shader )
 			continue;
-		}
-		if ( !shader->IsDrawn() ) {
+		if ( !shader->IsDrawn() && r_shadows.GetInteger()!=2 )
 			continue;
-		}
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
 		if ( tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID
 			&& ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) )
-		{
 			continue;
-		}
 
 		// debugging tool to make sure we are have the correct pre-calculated bounds
 		if ( r_checkBounds.GetBool() ) {
@@ -1246,39 +1232,35 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 				for ( k = 0 ; k < 3 ; k++ ) {
 					if ( tri->verts[j].xyz[k] > tri->bounds[1][k] + CHECK_BOUNDS_EPSILON
 						|| tri->verts[j].xyz[k] < tri->bounds[0][k] - CHECK_BOUNDS_EPSILON ) {
-						common->Printf( "bad tri->bounds on %s:%s\n", def->parms.hModel->Name(), shader->GetName() );
+						common->Printf( "bad tri->bounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
 						break;
 					}
-					if ( tri->verts[j].xyz[k] > def->referenceBounds[1][k] + CHECK_BOUNDS_EPSILON
-						|| tri->verts[j].xyz[k] < def->referenceBounds[0][k] - CHECK_BOUNDS_EPSILON ) {
-						common->Printf( "bad referenceBounds on %s:%s\n", def->parms.hModel->Name(), shader->GetName() );
+					if ( tri->verts[j].xyz[k] > def.referenceBounds[1][k] + CHECK_BOUNDS_EPSILON
+						|| tri->verts[j].xyz[k] < def.referenceBounds[0][k] - CHECK_BOUNDS_EPSILON ) {
+						common->Printf( "bad referenceBounds on %s:%s\n", def.parms.hModel->Name(), shader->GetName() );
 						break;
 					}
 				}
-				if ( k != 3 ) {
+				if ( k != 3 )
 					break;
-				}
 			}
 		}
 
 		if ( !R_CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
-			def->visibleCount = tr.viewCount;
+			def.visibleCount = tr.viewCount;
 
 			// make sure we have an ambient cache
-			if ( !R_CreateAmbientCache( tri, shader->ReceivesLighting() ) ) {
+			if ( !R_CreateAmbientCache( tri, shader->ReceivesLighting() ) )
 				// don't add anything if the vertex cache was too full to give us an ambient cache
 				return;
-			}
 			// touch it so it won't get purged
 			vertexCache.Touch( tri->ambientCache );
 
-			if ( r_useIndexBuffers.GetBool() && !tri->indexCache ) {
+			if ( r_useIndexBuffers.GetBool() && !tri->indexCache ) 
 				vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );
-			}
-			if ( tri->indexCache ) {
+			if ( tri->indexCache ) 
 				vertexCache.Touch( tri->indexCache );
-			}
 
 			// Soft Particles -- SteveL #3878
 			float particle_radius = -1.0f;		// Default = disallow softening, but allow modelDepthHack if specified in the decl.
@@ -1286,11 +1268,9 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 				&& !shader->ReceivesLighting()							// don't soften surfaces that are meant to be solid
 				&& tr.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) // Skip during "invisible" rendering passes (e.g. lightgem)
 			{
-				const idRenderModelPrt* prt = dynamic_cast<const idRenderModelPrt*>( def->parms.hModel );
+				const idRenderModelPrt* prt = dynamic_cast<const idRenderModelPrt*>( def.parms.hModel );
 				if ( prt )
-				{
 					particle_radius = prt->SofteningRadius( surf->id );
-				}
 			}
 
 			// add the surface for drawing
@@ -1303,9 +1283,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 	}
 
 	// add the lightweight decal surfaces
-	for ( idRenderModelDecal *decal = def->decals; decal; decal = decal->Next() ) {
+	for ( idRenderModelDecal *decal = def.decals; decal; decal = decal->Next() )
 		decal->AddDecalDrawSurf( vEntity );
-	}
 }
 
 /*
@@ -1346,6 +1325,15 @@ void R_AddModelSurfaces( void ) {
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
 	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+
+		idRenderEntityLocal &def = *vEntity->entityDef;
+		if ( def.dynamicModel ) { // debug filter
+			if ( r_skipModels.GetInteger() == 1 )
+				continue;
+		} else {
+			if ( r_skipModels.GetInteger() == 2 )
+				continue;
+		}
 
 		if ( r_useEntityScissors.GetBool() ) {
 			// calculate the screen area covered by the entity

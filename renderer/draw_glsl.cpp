@@ -63,7 +63,7 @@ struct interactionProgram_t : lightProgram_t {
 	GLint specularColor;
 
 	virtual	void AfterLoad();
-	virtual void UpdateUniforms( bool translucent );
+	virtual void UpdateUniforms(bool translucent) {}
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 	virtual void Use();
 	static void ChooseInteractionProgram();
@@ -81,7 +81,6 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
-	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
@@ -218,18 +217,18 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 	if ( !surf )
 		return;
 	shadowMapShader.Use();
+	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() )
+			continue; //most of dynamic models don't have this flag but use an _invisible_ shadow material
+		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
 			continue;
-		//if ( !entityDef->parms.noShadow );
-		qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 		RB_DrawElementsWithCounters( surf->backendGeo );
 	}
-	GL_SelectTexture( 0 );
 	qglUseProgram( 0 );
 	GL_CheckErrors();
 }
@@ -587,11 +586,6 @@ void lightProgram_t::AfterLoad() {
 	modelMatrix = qglGetUniformLocation( program, "u_modelMatrix" );
 }
 
-
-void lightProgram_t::UpdateUniforms( bool translucent ) {}
-
-void lightProgram_t::UpdateUniforms( const drawInteraction_t *din ) {}
-
 void shadowMapProgram_t::Use() {
 	lightProgram_t::Use();
 	currrentInteractionShader = this;
@@ -656,8 +650,6 @@ void interactionProgram_t::AfterLoad() {
 	qglUniform1i( lightFalloffCubemap, 5 );
 	qglUseProgram( 0 );
 }
-
-void interactionProgram_t::UpdateUniforms( bool translucent ) {}
 
 void interactionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	static const float	zero[4]		= { 0, 0, 0, 0 },
@@ -759,13 +751,9 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	GL_CheckErrors();
 }
 
-void ambientInteractionProgram_t::AfterLoad() {
-	interactionProgram_t::AfterLoad();
-}
-
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
-	qglUniformMatrix4fv( modelMatrix, 1, false, backEnd.currentSpace->modelMatrix );
+	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	GL_CheckErrors();
 }

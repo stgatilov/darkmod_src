@@ -108,7 +108,8 @@ SURFACES
 // drawSurf_t are initialized manually, so check all places they're created if adding a member.
 
 static const int	DSF_VIEW_INSIDE_SHADOW	= 1;
-static const int	DSF_SOFT_PARTICLE		= 2; // #3878
+static const int	DSF_SOFT_PARTICLE = 2; // #3878
+static const int	DSF_SHADOW_MAP_IGNORE = 4; // #4641
 
 typedef struct drawSurf_s {
 	const srfTriangles_t	*frontendGeo;  // do not use in the backend; may be modified by the frontend
