@@ -70,8 +70,10 @@ public:
 	virtual void			ClearWarnings( const char *reason ) {}
 	virtual void			PacifierUpdate( loadkey_t key, int count ) {} // grayman #3763
 	virtual void			Error( const char *fmt, ... ) { STDIO_PRINT( "ERROR: ", "\n" ); exit(0); }
-	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit(0); }
-	virtual const char *		Translate(const char* msg) { return NULL; }
+	virtual void			DoError( const char *msg, int code ) { printf( "ERROR: %s\n", msg ); exit( 0 ); }
+	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit( 0 ); }
+	virtual void			DoFatalError( const char *msg, int code ) { printf( "FATAL ERROR: %s\n", msg ); exit( 0 ); }
+	virtual const char *		Translate( const char* msg ) { return NULL; }
 	virtual I18N*			GetI18N() { return NULL; }
 	virtual const char *		KeysFromBinding( const char *bind ) { return NULL; }
 	virtual const char *		BindingFromKey( const char *key ) { return NULL; }

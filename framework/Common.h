@@ -204,10 +204,12 @@ public:
 								// Issues a C++ throw. Normal errors just abort to the game loop,
 								// which is appropriate for media or dynamic logic errors.
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
+	virtual void				DoError( const char *msg, int code ) = 0;
 
 								// Fatal errors quit all the way to a system dialog box, which is appropriate for
 								// static internal errors or cases where the system may be corrupted.
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
+	virtual void				DoFatalError( const char *msg, int code ) = 0;
 
 								// greebo: Provides access to I18N-related methods
 	virtual I18N*				GetI18N() = 0;
@@ -234,5 +236,16 @@ public:
 };
 
 extern idCommon *		common;
+
+class ErrorReportedException {
+	idStr msg;
+	int   code;
+	bool  fatal;
+public:
+	ErrorReportedException(const char* msg, int code, bool fatal) : msg(msg), code(code), fatal(fatal) {}
+	const idStr& ErrorMessage() const { return msg; }
+	int			 ErrorCode() const { return code; }
+	bool		 IsFatalError() const { return fatal; }
+};
 
 #endif /* !__COMMON_H__ */

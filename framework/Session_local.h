@@ -17,6 +17,7 @@
 #define __SESSIONLOCAL_H__
 #include <thread>
 #include <condition_variable>
+#include <memory>
 
 /*
 
@@ -265,6 +266,7 @@ public:
 	volatile bool		frontendActive;
 	volatile bool		frontendReady;
 	volatile bool		shutdownFrontend;
+	std::shared_ptr<ErrorReportedException> frontendException;
 
 	void				FrontendThreadFunction();
 

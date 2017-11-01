@@ -3017,21 +3017,21 @@ Runs game tics and draw call creation in a background thread.
 void idSessionLocal::FrontendThreadFunction() {
 	GLimp_ActivateFrontendContext();  // needs its own context to fill buffers
 
-	idFile* logFile = nullptr; 
+	idFile* logFile = nullptr;
 
-	while (true) {
-		int beginLoop = Sys_Milliseconds();
+	while( true ) {
+		int beginLoop = Sys_Milliseconds(); 
 		{ // lock scope
-			std::unique_lock<std::mutex> lock( signalMutex );
+			std::unique_lock< std::mutex > lock( signalMutex );
 			// signal render thread that we are ready to do work
 			frontendReady = true;
 			signalMainThread.notify_one();
 
 			// wait for render thread
-			while (!frontendActive && !shutdownFrontend) {
+			while( !frontendActive && !shutdownFrontend ) {
 				signalFrontendThread.wait( lock );
 			}
-			if (shutdownFrontend) {
+			if( shutdownFrontend ) {
 				if( logFile ) {
 					logFile->Flush();
 					fileSystem->CloseFile( logFile );
@@ -3042,15 +3042,19 @@ void idSessionLocal::FrontendThreadFunction() {
 			frontendReady = false;
 		}
 		int endWaitForRenderThread = Sys_Milliseconds();
+		int endGameTics, endDraw;
+		try {
+			RunGameTics();
+			endGameTics = Sys_Milliseconds();
 
-		RunGameTics();
-		int endGameTics = Sys_Milliseconds();
-
-		DrawFrame();
-		int endDraw = Sys_Milliseconds();
-
+			DrawFrame();
+			endDraw = Sys_Milliseconds();
+		} catch( std::shared_ptr< ErrorReportedException > e ) {
+			frontendException = e;
+		} 
+		
 		{ // lock scope - signal render thread
-			std::unique_lock<std::mutex> lock( signalMutex );
+			std::unique_lock< std::mutex > lock( signalMutex );
 			frontendActive = false;
 			signalMainThread.notify_one();
 		}
@@ -3061,7 +3065,7 @@ void idSessionLocal::FrontendThreadFunction() {
 			GLsync glSync = qglFenceSync( GL_SYNC_GPU_COMMANDS_COMPLETE, 0 );
 			if( glSync != nullptr ) {
 				GLenum result = qglClientWaitSync( glSync, GL_SYNC_FLUSH_COMMANDS_BIT, 100000000 );
-				if( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED ) 
+				if( result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED )
 					common->Warning( "glClientWaitSync did not complete successfully (result code %d).\n", result );
 				qglDeleteSync( glSync );
 			} else {
@@ -3125,6 +3129,12 @@ void idSessionLocal::WaitForFrontendCompletion() {
 			common->Printf( frontendActive ? "F" : "." );
 		while( frontendActive ) {
 			signalMainThread.wait( lock );
+		}
+
+		if( frontendException ) {
+			std::shared_ptr<ErrorReportedException> e = frontendException;
+			frontendException.reset();
+			throw e;
 		}
 	}
 }

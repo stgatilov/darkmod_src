@@ -617,23 +617,31 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		return;
 	}
 
-	int startLoop = Sys_Milliseconds();
-	session->ActivateFrontend();
-	int endSignal = Sys_Milliseconds();
-	// start the back end up again with the new command list
-	R_IssueRenderCommands( backendFrameData );
-	int endRender = Sys_Milliseconds();
-	session->WaitForFrontendCompletion();
-	int endWait = Sys_Milliseconds();
+	try {
+		int startLoop = Sys_Milliseconds();
+		session->ActivateFrontend();
+		int endSignal = Sys_Milliseconds();
+		// start the back end up again with the new command list
+		R_IssueRenderCommands( backendFrameData );
+		int endRender = Sys_Milliseconds();
+		session->WaitForFrontendCompletion();
+		int endWait = Sys_Milliseconds();
 
-	if( r_logSmpTimings.GetBool() ) {
-		if( !logFile ) {
-			logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
+		if( r_logSmpTimings.GetBool() ) {
+			if( !logFile ) {
+				logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
+			}
+			int signalFrontend = endSignal - startLoop;
+			int render = endRender - endSignal;
+			int waitForFrontend = endWait - endRender;
+			logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
 		}
-		int signalFrontend = endSignal - startLoop;
-		int render = endRender - endSignal;
-		int waitForFrontend = endWait - endRender;
-		logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
+	} catch( std::shared_ptr<ErrorReportedException> e ) {
+		session->WaitForFrontendCompletion();
+		if( e->IsFatalError() )
+			common->DoFatalError( e->ErrorMessage(), e->ErrorCode() );
+		else
+			common->DoError( e->ErrorMessage(), e->ErrorCode() );
 	}
 
 	// check for dynamic changes that require some initialization

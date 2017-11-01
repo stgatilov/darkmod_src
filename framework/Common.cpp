@@ -162,7 +162,9 @@ public:
 	virtual void				ClearWarnings( const char *reason );
 	virtual void				PacifierUpdate( loadkey_t key, int count ); // grayman #3763
 	virtual void				Error( const char *fmt, ... ) id_attribute((format(printf,2,3)));
-	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3)));
+	virtual void				DoError( const char *msg, int code );
+	virtual void				FatalError( const char *fmt, ... ) id_attribute( ( format( printf, 2, 3 ) ) );
+	virtual void				DoFatalError( const char *msg, int code );
 	virtual const char*			Translate( const char* str );
 	virtual bool                WindowAvailable(void); // Agent Jones #3766
 
@@ -672,14 +674,8 @@ idCommonLocal::Error
 */
 void idCommonLocal::Error( const char *fmt, ... ) {
 	va_list		argptr;
-	static int	lastErrorTime;
-	static int	errorCount;
-	int			currentTime;
 
 	int code = ERP_DROP;
-
-	// always turn this off after an error
-	com_refreshOnPrint = false;
 
 	// if we don't have GL running, make it a fatal error
 	if ( !renderSystem->IsOpenGLRunning() ) {
@@ -699,57 +695,79 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 		code = ERP_FATAL;
 	}
 
+	com_errorEntered = code;
+
+	char msgBuf[MAX_PRINT_MSG_SIZE];
+	va_start( argptr, fmt );
+	idStr::vsnPrintf( msgBuf, sizeof( msgBuf ), fmt, argptr );
+	va_end (argptr);
+	msgBuf[sizeof(msgBuf)-1] = '\0';
+
+	throw std::make_shared<ErrorReportedException>(msgBuf, code, false);
+}
+
+/*
+==================
+idCommonLocal::DoError
+==================
+*/
+void idCommonLocal::DoError( const char *msg, int code ) {
+	static int	lastErrorTime;
+	static int	errorCount;
+
+	// always turn this off after an error
+	com_refreshOnPrint = false;
+
 	// if we are getting a solid stream of ERP_DROP, do an ERP_FATAL
-	currentTime = Sys_Milliseconds();
-	if ( currentTime - lastErrorTime < 100 ) {
-		if ( ++errorCount > 3 ) {
+	int currentTime = Sys_Milliseconds();
+	if( currentTime - lastErrorTime < 100 ) {
+		if( ++errorCount > 3 ) {
 			code = ERP_FATAL;
 		}
-	} else {
+	}
+	else {
 		errorCount = 0;
 	}
 	lastErrorTime = currentTime;
 
 	com_errorEntered = code;
 
-	va_start (argptr,fmt);
-	idStr::vsnPrintf( errorMessage, sizeof(errorMessage), fmt, argptr );
-	va_end (argptr);
-	errorMessage[sizeof(errorMessage)-1] = '\0';
-
 	// copy the error message to the clip board
-	Sys_SetClipboardData( errorMessage );
+	Sys_SetClipboardData( msg );
 
 	// add the message to the error list
-	errorList.AddUnique( errorMessage );
+	errorList.AddUnique( msg );
 
 	// Dont shut down the session for gui editor or debugger
-	if ( !( com_editors & ( EDITOR_GUI ) ) ) {
+	if( !( com_editors & ( EDITOR_GUI ) ) ) {
 		session->Stop();
 	}
 
-	if ( code == ERP_DISCONNECT ) {
+	if( code == ERP_DISCONNECT ) {
 		com_errorEntered = 0;
-		throw idException( errorMessage );
-	// The gui editor doesnt want thing to com_error so it handles exceptions instead
-	} else if( com_editors & ( EDITOR_GUI ) ) {
+		throw idException( msg );
+		// The gui editor doesnt want thing to com_error so it handles exceptions instead
+	}
+	else if( com_editors & ( EDITOR_GUI ) ) {
 		com_errorEntered = 0;
-		throw idException( errorMessage );
-	} else if ( code == ERP_DROP ) {
-		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", errorMessage );
+		throw idException( msg );
+	}
+	else if( code == ERP_DROP ) {
+		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", msg );
 		com_errorEntered = 0;
-		throw idException( errorMessage );
-	} else {
-		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", errorMessage );
+		throw idException( msg );
+	}
+	else {
+		Printf( S_COLOR_RED "ERROR:%s\n" S_COLOR_DEFAULT "--------------------------------------\n", msg );
 	}
 
-	if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
+	if( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
 	}
 
 	Shutdown();
 
-	Sys_Error( "%s", errorMessage );
+	Sys_Error( "%s", msg );
 }
 
 /*
@@ -761,6 +779,7 @@ Dump out of the game to a system dialog
 */
 void idCommonLocal::FatalError( const char *fmt, ... ) {
 	va_list		argptr;
+	char msgBuf[MAX_PRINT_MSG_SIZE];
 
 	// if we got a recursive error, make it fatal
 	if ( com_errorEntered ) {
@@ -770,14 +789,14 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 		// full screen rendering window covering the
 		// error dialog
 
-		Sys_Printf( "FATAL:recursed fatal error:\n%s\n", errorMessage );
+		Sys_Printf( "FATAL:recursed fatal error:\n" );
 
 		va_start( argptr, fmt );
-		idStr::vsnPrintf( errorMessage, sizeof(errorMessage), fmt, argptr );
+		idStr::vsnPrintf( msgBuf, sizeof(msgBuf), fmt, argptr );
 		va_end( argptr );
-		errorMessage[sizeof(errorMessage)-1] = '\0';
+		msgBuf[sizeof(msgBuf)-1] = '\0';
 
-		Sys_Printf( "%s\n", errorMessage );
+		Sys_Printf( "%s\n", msgBuf );
 
 		// write the console to a log file?
 		Sys_Quit();
@@ -785,19 +804,32 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 	com_errorEntered = ERP_FATAL;
 
 	va_start( argptr, fmt );
-	idStr::vsnPrintf( errorMessage, sizeof(errorMessage), fmt, argptr );
+	idStr::vsnPrintf( msgBuf, sizeof(msgBuf), fmt, argptr );
 	va_end( argptr );
-	errorMessage[sizeof(errorMessage)-1] = '\0';
+	msgBuf[sizeof(msgBuf)-1] = '\0';
 
-	if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
+	throw std::make_shared<ErrorReportedException>( msgBuf, ERP_FATAL, true );
+}
+
+/*
+==================
+idCommonLocal::DoFatalError
+
+Dump out of the game to a system dialog
+==================
+*/
+void idCommonLocal::DoFatalError( const char *msg, int code ) {
+	com_errorEntered = ERP_FATAL;
+
+	if( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
 	}
 
-	Sys_SetFatalError( errorMessage );
+	Sys_SetFatalError( msg );
 
 	Shutdown();
 
-	Sys_Error( "%s", errorMessage );
+	Sys_Error( "%s", msg );
 }
 
 /*
