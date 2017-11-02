@@ -94,6 +94,11 @@ void GLimp_ActivateFrontendContext() {
     qglXMakeCurrent( dpy, win, frontendCtx );
 }
 
+void GLimp_DeactivateFrontendContext() {
+    assert( dpy );
+    qglXMakeCurrent( dpy, None, NULL );
+}
+
 /*
 =================
 GLimp_SaveGamma
@@ -579,85 +584,4 @@ GLimp_SetScreenParms
 */
 bool GLimp_SetScreenParms( glimpParms_t parms ) {
 	return true;
-}
-
-/*
-================
-Sys_GetVideoRam
-returns in megabytes
-open your own display connection for the query and close it
-using the one shared with GLimp_Init is not stable
-================
-*/
-int Sys_GetVideoRam( void ) {
-	static int run_once = 0;
-	int major, minor, value;
-	Display *l_dpy;
-	int l_scrnum;
-
-	if ( run_once ) {
-		return run_once;
-	}
-
-	if ( sys_videoRam.GetInteger() ) {
-		run_once = sys_videoRam.GetInteger();
-		return sys_videoRam.GetInteger();
-	}
-
-	// try a few strategies to guess the amount of video ram
-	common->Printf( "guessing video ram ( use +set sys_videoRam to force ) ..\n" );
-	if ( !GLimp_OpenDisplay( ) ) {
-		run_once = 64;
-		return run_once;
-	}
-	l_dpy = dpy;
-	l_scrnum = scrnum;
-	// go for nvidia ext first
-	if ( XNVCTRLQueryVersion( l_dpy, &major, &minor ) ) {
-		common->Printf( "found XNVCtrl extension %d.%d\n", major, minor );
-		if ( XNVCTRLIsNvScreen( l_dpy, l_scrnum ) ) {
-			if ( XNVCTRLQueryAttribute( l_dpy, l_scrnum, 0, NV_CTRL_VIDEO_RAM, &value ) ) {
-				run_once = value / 1024;
-				return run_once;
-			} else {
-				common->Printf( "XNVCtrlQueryAttribute NV_CTRL_VIDEO_RAM failed\n" );
-			}
-		} else {
-			common->Printf( "default screen %d is not controlled by NVIDIA driver\n", l_scrnum );
-		}
-	}
-	// try ATI /proc read ( for the lack of a better option )
-	int fd;
-	if ( ( fd = open( "/proc/dri/0/umm", O_RDONLY ) ) != -1 ) {
-		int len;
-		char umm_buf[ 1024 ];
-		char *line;
-		if ( ( len = read( fd, umm_buf, 1024 ) ) != -1 ) {
-			// should be way enough to get the full file
-			// grab "free  LFB = " line and "free  Inv = " lines
-			umm_buf[ len-1 ] = '\0';
-			line = umm_buf;
-			line = strtok( umm_buf, "\n" );
-			int total = 0;
-			while ( line ) {
-				if ( strlen( line ) >= 13 && strstr( line, "max   LFB =" ) == line ) {
-					total += atoi( line + 12 );
-				} else if ( strlen( line ) >= 13 && strstr( line, "max   Inv =" ) == line ) {
-					total += atoi( line + 12 );
-				}
-				line = strtok( NULL, "\n" );
-			}
-			if ( total ) {
-				run_once = total / 1048576;
-				// round to the lower 16Mb
-				run_once &= ~15;
-				return run_once;
-			}
-		} else {
-			common->Printf( "read /proc/dri/0/umm failed: %s\n", strerror( errno ) );
-		}
-	}
-	common->Printf( "guess failed, return default low-end VRAM setting ( 64MB VRAM )\n" );
-	run_once = 64;
-	return run_once;
 }

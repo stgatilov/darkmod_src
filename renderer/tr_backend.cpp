@@ -29,8 +29,8 @@ may touch, including the editor.
 ======================
 */
 void RB_SetDefaultGLState( void ) {
-
 	RB_LogComment( "--- R_SetDefaultGLState ---\n" );
+	GL_CheckErrors();
 
 	qglClearDepth( 1.0f );
 	qglColor4f (1.0f, 1.0f, 1.0f, 1.0f);
@@ -622,6 +622,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 
 	// go back to the default texture so the editor doesn't mess up a bound image
 	qglBindTexture( GL_TEXTURE_2D, 0 );
+	GL_CheckErrors();
 	backEnd.glState.tmu[0].current2DMap = -1;
 
 	// stop rendering on this thread

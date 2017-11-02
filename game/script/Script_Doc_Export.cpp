@@ -42,7 +42,7 @@ namespace
 
 		const EventArgs& args = ev.GetArgs();
 
-		for (size_t i = 0; i < args.size(); i++)
+		for ( int i = 0; i < args.size(); i++ )
 		{
 			out += out.IsEmpty() ? "" : ", ";
 
@@ -162,7 +162,7 @@ idStr ScriptEventDocGeneratorD3Script::GetEventDocumentation(const idEventDef& e
 
 	idStr argDesc;
 
-	for (size_t i = 0; i < args.size(); i++)
+	for ( int i = 0; i < args.size(); i++ )
 	{
 		if (idStr::Length(args[i].desc) == 0)
 		{
@@ -243,7 +243,7 @@ idStr ScriptEventDocGeneratorMediaWiki::GetEventDescription(const idEventDef& ev
 
 	idStr argDesc;
 
-	for (size_t i = 0; i < args.size(); i++)
+	for ( int i = 0; i < args.size(); i++ )
 	{
 		if (idStr::Length(args[i].desc) == 0)
 		{
@@ -425,7 +425,7 @@ void ScriptEventDocGeneratorXml::WriteDoc(idFile& out)
 
 		const EventArgs& args = ev->GetArgs();
 
-		for (size_t i = 0; i < args.size(); i++)
+		for ( int i = 0; i < args.size(); i++ )
 		{
 			idTypeDef* type = idCompiler::GetTypeForEventArg(args[i].type);
 

@@ -149,7 +149,7 @@ extern PFNGLGENFRAMEBUFFERSPROC				qglGenFramebuffers;
 extern PFNGLCHECKFRAMEBUFFERSTATUSPROC		qglCheckFramebufferStatus;
 extern PFNGLFRAMEBUFFERTEXTURE1DPROC		qglFramebufferTexture1D;
 extern PFNGLFRAMEBUFFERTEXTURE2DPROC		qglFramebufferTexture2D;
-extern PFNGLFRAMEBUFFERTEXTURE3DPROC		qglFramebufferTexture3D;
+extern PFNGLFRAMEBUFFERTEXTUREPROC			qglFramebufferTexture;
 extern PFNGLFRAMEBUFFERRENDERBUFFERPROC		qglFramebufferRenderbuffer;
 extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC qglGetFramebufferAttachmentParameteriv;
 extern PFNGLGENERATEMIPMAPPROC				qglGenerateMipmap;

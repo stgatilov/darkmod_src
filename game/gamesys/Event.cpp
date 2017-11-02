@@ -67,7 +67,7 @@ void idEventDef::Construct()
 	assert(name != NULL);
 	assert(!idEvent::initialized);
 	
-	for (size_t i = 0; i < args.size(); i++)
+	for ( int i = 0; i < args.size(); i++ )
 		formatspec[i] = args[i].type;
 	formatspec[args.size()] = '\0';
 	

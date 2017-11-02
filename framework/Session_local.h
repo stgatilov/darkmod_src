@@ -109,7 +109,8 @@ public:
 	virtual void		TimeHitch( int msec );
 
 	virtual int			GetSaveGameVersion( void );
-
+    
+	virtual void		RunGameTic();
 	virtual void		ActivateFrontend();
 	virtual void		WaitForFrontendCompletion();
 	virtual void		StartFrontendThread();
@@ -291,7 +292,7 @@ public:
 	void				EndAVICapture();
 
 	void				AdvanceRenderDemo( bool singleFrameOnly );
-	void				RunGameTic();
+	// void				RunGameTic();
 	void				RunGameTics();
 	void				DrawFrame();
 

@@ -1201,7 +1201,7 @@ R_MakeIrradiance
 
 =======================
 */
-void R_MakeAmbientMap( MakeAmbientMapParam& param ) {
+void R_MakeAmbientMap( MakeAmbientMapParam param ) {
 	InitCubeAxis();
 
 	for ( int y = 0; y < param.outSize; y++ ) {
@@ -1260,12 +1260,11 @@ void R_MakeAmbientMap( MakeAmbientMapParam& param ) {
 	}
 }
 
-DECLSPEC_NOINLINE void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
+void R_MakeAmbientMaps( byte *buffers[6], byte *outBuffers[6], int outSize, int samples, int size, int crutchUp, bool specular ) {
 	std::thread threads[6];
-	MakeAmbientMapParam tParams[6];
 	for( int i = 0; i < 6; i++ ) {
 		//R_MakeAmbientMap( buffers, outBuffers[i], outSize, samples, size, crutchUp, false, i );
-		MakeAmbientMapParam &p = tParams[i];
+		MakeAmbientMapParam p;
 		p.buffers = buffers;
 		p.outBuffer = outBuffers[i];
 		p.outSize = outSize;
@@ -1351,7 +1350,7 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 	char	fullName[MAX_IMAGE_NAME];
 	int		width, height, size = 0, makeIrradiance = 0;
 
-	idLexer lexer( imgName, strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
+	idLexer lexer( imgName, (int)strlen( imgName ), imgName, LEXFL_ALLOWPATHNAMES );
 	idToken		token;
 	lexer.ReadToken( &token );
 	if ( !token.Icmp( "makeIrradiance" ) ) {

@@ -33,7 +33,7 @@ class EventArgs {
 public:
 
 	const EventArg &operator[](int index) const;
-	size_t size() const;
+	int size() const;
 	bool empty() const;
 
 	EventArgs();															// 0 args
@@ -83,7 +83,7 @@ public:
 			  char argType8, const char* argName8, const char* argDesc8);
 };
 
-inline size_t EventArgs::size() const {
+inline int EventArgs::size() const {
 	return args.Num();
 }
 inline bool EventArgs::empty() const {

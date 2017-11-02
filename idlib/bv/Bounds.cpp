@@ -432,7 +432,7 @@ void idBounds::ToPoints( idVec3 points[8] ) const {
 idBounds::ToString
 ============
 */
-const char * idBounds::ToString( const int precision ) const {
+const idStr idBounds::ToString( const int precision ) const {
 	return idStr( b[0].ToString( precision ) ) + " -> " + idStr( b[1].ToString( precision ) );
 }
 

@@ -301,9 +301,10 @@
       <PreprocessorDefinitions>NO_MFC;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copies the openAL Soft DLL for Windows to the output folder</Message>
-      <Command>@echo Copying  $(SolutionDir)$(OpenALSoftDLLPath) to $(OutDir)
-@copy $(SolutionDir)$(OpenALSoftDLLPath) $(OutDir) /Y</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -1178,6 +1179,7 @@
     <ClCompile Include="renderer\draw_arb2.cpp" />
     <ClCompile Include="renderer\draw_common.cpp" />
     <ClCompile Include="renderer\draw_glsl.cpp" />
+    <ClCompile Include="renderer\draw_stencil.cpp" />
     <ClCompile Include="renderer\FrameBufer.cpp" />
     <ClCompile Include="renderer\GuiModel.cpp" />
     <ClCompile Include="renderer\Image_files.cpp" />

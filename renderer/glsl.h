@@ -24,7 +24,7 @@ struct shaderProgram_t {
 	virtual void Use();							// 	qglUseProgram( 0 ) to reset, maybe consider RAII?
 private:
 	void AttachShader( GLint ShaderType, char *fileName );
-	GLuint CompileShader( GLint ShaderType, const char* fileName );
+	GLuint CompileShader( GLint ShaderType, const char *fileName );
 };
 
 struct oldStageProgram_t : shaderProgram_t {
@@ -61,8 +61,11 @@ struct fogProgram_t : shaderProgram_t {
 };
 
 struct lightProgram_t : shaderProgram_t {
-	GLint			localLightOrigin;
+	GLint lightOrigin;
+	GLint modelMatrix;
 	virtual	void AfterLoad();
+	virtual void UpdateUniforms( bool translucent ) {}
+	virtual void UpdateUniforms(const drawInteraction_t *din) {}
 };
 
 extern shaderProgram_t cubeMapShader;
@@ -72,4 +75,8 @@ extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 
-extern void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
+void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
+void RB_GLSL_DrawInteractions( void );
+
+void AddPoissonDiskSamples( idList<idVec2> &pts, float dist );
+void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount );

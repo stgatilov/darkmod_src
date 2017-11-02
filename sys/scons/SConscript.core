@@ -28,6 +28,7 @@ renderer_string = ' \
 	Cinematic.cpp \
 	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
+	framebufer.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
@@ -63,6 +64,7 @@ renderer_string = ' \
 	draw_common.cpp \
 	draw_exp_stub.cpp \
 	draw_glsl.cpp \
+	draw_stencil.cpp \
 	tr_backend.cpp \
 	tr_deform.cpp \
 	tr_font.cpp \

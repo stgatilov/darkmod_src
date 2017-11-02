@@ -844,7 +844,6 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 		const srfTriangles_t	*tri;
 		float			d;
 		idFixedWinding	w;		// we won't overflow because MAX_PORTAL_PLANES = 20
-#define INSIDE_LIGHT_FRUSTUM_SLOP			32
 
 		if (r_useLightCulling.GetInteger() == 0) {
 			return false;
@@ -859,14 +858,6 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 				// some fragment inside the portalStack to be visible
 				if (light->frustum[i].Distance(tr.viewDef->renderView.vieworg) >= 0) {
 					continue;
-				}
-				
-				if (r_useLightgemLightCulling.GetInteger() > 0)	
-                {
-				    if ((light->frustum[i].Distance(tr.viewDef->renderView.vieworg) > INSIDE_LIGHT_FRUSTUM_SLOP) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID))
-				    {
-					continue;
-				    }
 				}
 
 				// get the exact winding for this side

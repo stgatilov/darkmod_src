@@ -108,7 +108,8 @@ SURFACES
 // drawSurf_t are initialized manually, so check all places they're created if adding a member.
 
 static const int	DSF_VIEW_INSIDE_SHADOW	= 1;
-static const int	DSF_SOFT_PARTICLE		= 2; // #3878
+static const int	DSF_SOFT_PARTICLE = 2; // #3878
+static const int	DSF_SHADOW_MAP_IGNORE = 4; // #4641
 
 typedef struct drawSurf_s {
 	const srfTriangles_t	*frontendGeo;  // do not use in the backend; may be modified by the frontend
@@ -447,6 +448,7 @@ typedef struct viewDef_s {
 	// crossing a closed door.  This is used to avoid drawing interactions
 	// when the light is behind a closed door.
 
+	bool				IsLightGem() const { return renderView.viewID < 0; }
 } viewDef_t;
 
 
@@ -466,7 +468,7 @@ typedef struct {
 	stageVertexColor_t	vertexColor;	// applies to both diffuse and specular
 
 	int					ambientLight;	// use tr.ambientNormalMap instead of normalization cube map
-	int					ambientCubicLight;    // nbohr1more #3881: dedicated cubemap light further changes
+	//int					ambientCubicLight;    // nbohr1more #3881: dedicated cubemap light further changes
 	// (not a bool just to avoid an uninitialized memory check of the pad region by valgrind)	
 	int					cubicLight;    // nbohr1more #3881: dedicated cubemap light // probably not needed
 
@@ -874,7 +876,6 @@ extern idCVar r_useCulling;				// 0 = none, 1 = sphere, 2 = sphere + box
 extern idCVar r_useLightPortalCulling;	// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
 extern idCVar r_useEntityPortalCulling;	// 0 = none, 1 = box
 extern idCVar r_useLightCulling;		// 0 = none, 1 = box, 2 = exact clip of polyhedron faces
-extern idCVar r_useLightgemLightCulling; // 1 = dont render lights to the lightgem if the player isn't inside them
 extern idCVar r_useLightScissors;		// 1 = use custom scissor rectangle for each light
 extern idCVar r_useClippedLightScissors;// 0 = full screen when near clipped, 1 = exact when near clipped, 2 = exact always
 extern idCVar r_useEntityCulling;		// 0 = none, 1 = box
@@ -1009,8 +1010,11 @@ extern idCVar r_debugRenderToTexture;
 // rebb: dedicated ambient
 extern idCVar r_dedicatedAmbient;
 
-extern idCVar r_softShadows; //~SS
-/*extern idCVar r_softShadDebug;
+extern idCVar r_softShadowsQuality;
+extern idCVar r_softShadowsRadius;
+
+/*extern idCVar r_softShadows; //~SS
+extern idCVar r_softShadDebug;
 extern idCVar r_softShadMaxSize; */
 
 // duzenko: late 2016-17 additions
@@ -1364,7 +1368,6 @@ void	R_ReloadARBPrograms_f( const idCmdArgs &args );
 int		R_FindARBProgram( GLenum target, const char *program );
 
 void	R_ReloadGLSLPrograms_f( const idCmdArgs &args );
-void	RB_GLSL_DrawInteractions( void );
 
 typedef enum {
 	PROG_INVALID,

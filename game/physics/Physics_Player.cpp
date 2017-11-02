@@ -2179,9 +2179,10 @@ void idPhysics_Player::CheckClimbable( void )
 	forward.Normalize();
 
 	float tracedist;
-	if ( walking ) 
+	if ( walking || ( waterLevel >= WATERLEVEL_WAIST ) )
 	{
 		// don't want to get sucked towards the ladder when still walking or when climbing
+		// nbohr1more; #625 prevent player from being sucked onto ladders from far away when underwater
 		tracedist = 1.0f;
 	} 
 	else 

@@ -102,7 +102,8 @@ public:
 	void			ToPoints( idVec3 points[8] ) const;
 	idSphere		ToSphere( void ) const;
 
-	const char *		ToString( const int precision = 2 ) const;
+	// duzenko: don't delete, used for random debugging by grayman
+	const idStr		ToString( const int precision = 2 ) const;
 
 	void			AxisProjection( const idVec3 &dir, float &min, float &max ) const;
 	void			AxisProjection( const idVec3 &origin, const idMat3 &axis, const idVec3 &dir, float &min, float &max ) const;

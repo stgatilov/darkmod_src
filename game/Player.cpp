@@ -3413,7 +3413,12 @@ void idPlayer::UpdateConditions( void )
 	AI_DEAD			= ( health <= 0 );
 	
 	// DarkMod: Catch the creep modifier
-	AI_CREEP		=( usercmd.buttons & BUTTON_5 ) && true;
+	if (cv_tdm_creep_toggle.GetBool()){
+	AI_CREEP = true;
+	}
+	else {
+	AI_CREEP		= ( usercmd.buttons & BUTTON_5 ) && true;
+	}
 }
 
 /*
@@ -5144,7 +5149,7 @@ void idPlayer::BobCycle( const idVec3 &pushVelocity ) {
 		}
 
 		// greebo: is the player creeping? (Only kicks in when not running, run key cancels out creep key)
-		if (usercmd.buttons & BUTTON_5 && !(usercmd.buttons & BUTTON_RUN)) 
+		if ( (cv_tdm_creep_toggle.GetBool() || (usercmd.buttons & BUTTON_5)) && !(usercmd.buttons & BUTTON_RUN)) 
 		{
 			bobmove *= 0.5f * (1 - bobFrac);
 		}
@@ -6709,7 +6714,7 @@ void idPlayer::AdjustSpeed( void )
 			speed = pm_noclipspeed.GetFloat() * cv_pm_runmod.GetFloat();
 			bobFrac = 0.0f;
 		} 
-		else if (usercmd.buttons & BUTTON_5)
+		else if ((usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
 		{
 			// slow "creep" noclip
 			speed = pm_noclipspeed.GetFloat() * cv_pm_creepmod.GetFloat();
@@ -6757,7 +6762,7 @@ void idPlayer::AdjustSpeed( void )
 		bobFrac = 0.0f;
 
 		// apply creep modifier; creep is on button_5
-		if( usercmd.buttons & BUTTON_5 )
+		if( (usercmd.buttons & BUTTON_5) || cv_tdm_creep_toggle.GetBool())
 		{
 			speed *= cv_pm_creepmod.GetFloat();
 		}

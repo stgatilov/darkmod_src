@@ -419,6 +419,7 @@ public:
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
 	idImage *			currentDepthFbo;
+	idImage *			shadowCubeMap;
 	idImage *			currentStencilFbo;
 	//idImage *			stencilCopy;
 	idImage *			bloomCookedMath;
@@ -490,6 +491,7 @@ IMAGEFILES
 void R_LoadImage( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, bool makePowerOf2 );
 // pic is in top to bottom raster format
 bool R_LoadCubeImages( const char *cname, cubeFiles_t extensions, byte *pic[6], int *size, ID_TIME_T *timestamp );
+void R_MakeAmbientMap( MakeAmbientMapParam param );
 
 /*
 ====================================================================

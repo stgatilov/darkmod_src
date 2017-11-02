@@ -33,7 +33,7 @@ GENERAL INTERACTION RENDERING
 RB_ARB2_DrawInteraction
 ==================
 */
-void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
+void RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	// load all the vertex program parameters
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_LIGHT_ORIGIN, din->localLightOrigin.ToFloatPtr() );
 	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_VIEW_ORIGIN, din->localViewOrigin.ToFloatPtr() );
@@ -50,9 +50,8 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 
 	// rebb: pass world-up in local coords to fragment program for ambient lights
 	// nbohr1more #3881: cubemap based lighting (copy rebb's changes for uniformity, may not be required depending on usage and testing )
-	if( din->ambientLight || din->ambientCubicLight) {
+	if( din->ambientLight)
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_MISC_0, din->worldUpLocal.ToFloatPtr() );
-	}
 
 	// testing fragment based normal mapping
 	if ( r_testARBProgram.GetBool() ) {
@@ -129,32 +128,29 @@ void RB_ARB2_CreateDrawInteractions( const drawSurf_t *surf ) {
 	// nbohr1more #3881: removed the direct interaction cvar toggle
 	// nbohr1more #3881: dedicated cubemap lighting
 	
-	if ( backEnd.vLight->lightShader->IsAmbientCubicLight() )
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
-	}
-	// nbohr1more #3881: dedicated cubemap lighting (further changes)
-	else if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		if ( backEnd.vLight->lightDef->parms.pointLight )
+	if ( backEnd.vLight->lightShader->IsCubicLight() )
+		if ( backEnd.vLight->lightShader->IsAmbientLight() )
 		{
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_POINT );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_POINT );
-		} else
-		{
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_PROJ );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_PROJ );
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
+		} else { // nbohr1more #3881: dedicated cubemap lighting (further changes)
+			if ( backEnd.vLight->lightDef->parms.pointLight )
+			{
+				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_POINT );
+				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_POINT );
+			} else {
+				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_CUBIC_PROJ );
+				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_CUBIC_PROJ );
+			}
 		}
-	}
-	else if ( backEnd.vLight->lightShader->IsAmbientLight() )
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
-	} else
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_DIRECT );
-	}
+	else 
+		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
+		} else {
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_TEST_DIRECT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_TEST_DIRECT );
+		}
 
 	qglEnable(GL_VERTEX_PROGRAM_ARB);
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);
@@ -255,32 +251,26 @@ void RB_ARB2_CreateDrawInteractions_simple( const drawSurf_t *surf ) {
 	// nbohr1more #3881: removed direct interaction cvar toggle
 	// nbohr1more #3881: dedicated cubemap lighting
 	
-	if ( backEnd.vLight->lightShader->IsAmbientCubicLight() )
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
-	}
-	// nbohr1more #3881: dedicated cubemap lighting (further changes)
-	else if ( backEnd.vLight->lightShader->IsCubicLight() ) {
-		if ( backEnd.vLight->lightDef->parms.pointLight )
-		{
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT_POINT );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT_POINT );
-		} else
-		{
-			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT_PROJ );
-			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT_PROJ );
+	if ( backEnd.vLight->lightShader->IsCubicLight() )
+		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT_CUBE_LIGHT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT_CUBE_LIGHT );
+		} else // nbohr1more #3881: dedicated cubemap lighting (further changes)
+			if ( backEnd.vLight->lightDef->parms.pointLight ) {
+				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT_POINT );
+				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT_POINT );
+			} else {
+				qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_CUBIC_LIGHT_PROJ );
+				qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_CUBIC_LIGHT_PROJ );
+			}
+	else 
+		if ( backEnd.vLight->lightShader->IsAmbientLight() ) {
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
+		} else {
+			qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION_DIRECT );
+			qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION_DIRECT );
 		}
-	}
-	else if ( backEnd.vLight->lightShader->IsAmbientLight() )
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_AMBIENT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_AMBIENT );
-	} else
-	{
-		qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_INTERACTION_DIRECT );
-		qglBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_INTERACTION_DIRECT );
-	}
 
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable(GL_FRAGMENT_PROGRAM_ARB);

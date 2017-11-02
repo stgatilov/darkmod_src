@@ -51,8 +51,12 @@ idCVar r_useTwoSidedStencil( "r_useTwoSidedStencil", "1", CVAR_RENDERER | CVAR_B
 idCVar r_useDeferredTangents( "r_useDeferredTangents", "1", CVAR_RENDERER | CVAR_BOOL, "defer tangents calculations after deform" );
 idCVar r_useCachedDynamicModels( "r_useCachedDynamicModels", "1", CVAR_RENDERER | CVAR_BOOL, "cache snapshots of dynamic models" );
 
-idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" ); //~SteveL SS
+//duzenko & stgatilov:
+idCVar r_softShadowsQuality( "r_softShadowsQuality", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Number of samples in soft shadows blur. 0 = hard shadows, 6 = low-quality, 24 = good, 96 = perfect" );
+idCVar r_softShadowsRadius( "r_softShadowsRadius", "1.0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Radius of light source for soft shadows. Decreasing it makes soft shadows less blurry." );
+
 /* ~ss
+idCVar r_softShadows( "r_softShadows", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "Soft shadows. 0 = hard shadows, >0 = light radius" );
 idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shadows debug. 1 = Show penumbra lines, 2 = show penumbra sampling regions, "
 																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
 idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");
@@ -84,7 +88,7 @@ idCVar r_skipBackEnd( "r_skipBackEnd", "0", CVAR_RENDERER | CVAR_BOOL, "don't dr
 idCVar r_skipRender( "r_skipRender", "0", CVAR_RENDERER | CVAR_BOOL, "skip 3D rendering, but pass 2D" );
 idCVar r_skipRenderContext( "r_skipRenderContext", "0", CVAR_RENDERER | CVAR_BOOL, "NULL the rendering context during backend 3D rendering" );
 idCVar r_skipTranslucent( "r_skipTranslucent", "0", CVAR_RENDERER | CVAR_BOOL, "skip the translucent interaction rendering" );
-idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_BOOL, "bypasses all non-interaction drawing" );
+idCVar r_skipAmbient( "r_skipAmbient", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = bypasses all non-interaction drawing, 2 = skips ambient light interactions" );
 idCVar r_skipNewAmbient( "r_skipNewAmbient", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "bypasses all vertex/fragment program ambient drawing" );
 idCVar r_skipBlendLights( "r_skipBlendLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all blend lights" );
 idCVar r_skipFogLights( "r_skipFogLights", "0", CVAR_RENDERER | CVAR_BOOL, "skip all fog lights" );
@@ -106,7 +110,6 @@ idCVar r_ignore2( "r_ignore2", "0", CVAR_RENDERER, "used for random debugging wi
 idCVar r_usePreciseTriangleInteractions( "r_usePreciseTriangleInteractions", "0", CVAR_RENDERER | CVAR_BOOL, "1 = do winding clipping to determine if each ambiguous tri should be lit" );
 idCVar r_useCulling( "r_useCulling", "2", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = sphere, 2 = sphere + box", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar r_useLightCulling( "r_useLightCulling", "3", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = box, 2 = exact clip of polyhedron faces, 3 = also areas", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
-idCVar r_useLightgemLightCulling( "r_useLightgemLightCulling", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "1 = dont render lights to the lightgem if the player isn't inside them" );
 idCVar r_useLightScissors( "r_useLightScissors", "1", CVAR_RENDERER | CVAR_BOOL, "1 = use custom scissor rectangle for each light" );
 //anon begin
 idCVar r_useLightPortalCulling("r_useLightPortalCulling", "1", CVAR_RENDERER | CVAR_INTEGER, "0 = none, 1 = cull frustum corners to plane, 2 = exact clip the frustum faces", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
@@ -130,7 +133,7 @@ idCVar r_skipSubviews( "r_skipSubviews", "0", CVAR_RENDERER | CVAR_INTEGER, "1 =
 idCVar r_skipGuiShaders( "r_skipGuiShaders", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all gui elements on surfaces, 2 = skip drawing but still handle events, 3 = draw but skip events", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
 idCVar r_skipParticles( "r_skipParticles", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = skip all particle systems", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1> );
 idCVar r_subviewOnly( "r_subviewOnly", "0", CVAR_RENDERER | CVAR_BOOL, "1 = don't render main view, allowing subviews to be debugged" );
-idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_BOOL  | CVAR_ARCHIVE, "enable shadows" );
+idCVar r_shadows( "r_shadows", "1", CVAR_RENDERER | CVAR_INTEGER  | CVAR_ARCHIVE, "1 = stencil shadows, 2 = shadow maps" );
 idCVar r_testARBProgram( "r_testARBProgram", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "experiment with vertex/fragment programs" );
 idCVar r_testGamma( "r_testGamma", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels", 0, 195 );
 idCVar r_testGammaBias( "r_testGammaBias", "0", CVAR_RENDERER | CVAR_FLOAT, "if > 0 draw a grid pattern to test gamma levels" );
@@ -168,7 +171,7 @@ idCVar r_showDefs( "r_showDefs", "0", CVAR_RENDERER | CVAR_BOOL, "report the num
 idCVar r_showTrace( "r_showTrace", "0", CVAR_RENDERER | CVAR_INTEGER, "show the intersection of an eye trace with the world", idCmdSystem::ArgCompletion_Integer<0,2> );
 idCVar r_showIntensity( "r_showIntensity", "0", CVAR_RENDERER | CVAR_BOOL, "draw the screen colors based on intensity, red = 0, green = 128, blue = 255" );
 idCVar r_showImages( "r_showImages", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = show all images instead of rendering, 2 = show in proportional size", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
-idCVar com_smp( "com_smp", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "enable SMP" );
+idCVar com_smp( "com_smp", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "enable SMP" );
 idCVar r_showSmp( "r_showSmp", "0", CVAR_RENDERER | CVAR_BOOL, "show which end (front or back) is blocking" );
 idCVar r_logSmpTimings( "r_logSmpTimings", "0", CVAR_RENDERER | CVAR_BOOL, "log timings for frontend and backend rendering" );
 idCVar r_showLights( "r_showLights", "0", CVAR_RENDERER | CVAR_INTEGER, "1 = just print volumes numbers, highlighting ones covering the view, 2 = also draw planes of each volume, 3 = also draw edges of each volume", 0, 3, idCmdSystem::ArgCompletion_Integer<0,3> );
@@ -334,7 +337,7 @@ PFNGLGENFRAMEBUFFERSPROC				qglGenFramebuffers;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC			qglCheckFramebufferStatus;
 PFNGLFRAMEBUFFERTEXTURE1DPROC			qglFramebufferTexture1D;
 PFNGLFRAMEBUFFERTEXTURE2DPROC			qglFramebufferTexture2D;
-PFNGLFRAMEBUFFERTEXTURE3DPROC			qglFramebufferTexture3D;
+PFNGLFRAMEBUFFERTEXTUREPROC				qglFramebufferTexture;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC		qglFramebufferRenderbuffer;
 PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC qglGetFramebufferAttachmentParameteriv;
 PFNGLGENERATEMIPMAPPROC					qglGenerateMipmap;
@@ -582,7 +585,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)GLimp_ExtensionPointer( "glCheckFramebufferStatus" );
 		qglFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)GLimp_ExtensionPointer( "glFramebufferTexture1D" );
 		qglFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)GLimp_ExtensionPointer( "glFramebufferTexture2D" );
-		qglFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)GLimp_ExtensionPointer( "glFramebufferTexture3D" );
+		qglFramebufferTexture = (PFNGLFRAMEBUFFERTEXTUREPROC)GLimp_ExtensionPointer( "glFramebufferTexture" );
 		qglFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GLimp_ExtensionPointer( "glFramebufferRenderbuffer" );
 		qglGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)GLimp_ExtensionPointer( "glGetFramebufferAttachmentParameteriv" );
 		qglGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GLimp_ExtensionPointer( "glGenerateMipmap" );
@@ -853,9 +856,8 @@ void GL_CheckErrors( void ) {
 	// check for up to 10 errors pending
 	for ( i = 0 ; i < 10 ; i++ ) {
 		err = qglGetError();
-		if ( err == GL_NO_ERROR ) {
+		if ( err == GL_NO_ERROR )
 			return;
-		}
 		switch( err ) {
 			case GL_INVALID_ENUM:
 				strcpy( s, "GL_INVALID_ENUM" );
@@ -1447,6 +1449,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
+	pbo = 0;
 }
 
 /*
@@ -1462,7 +1465,8 @@ screenshot [width] [height] [samples]
 #define	MAX_BLENDS	256	// to keep the accumulation in shorts
 void R_ScreenShot_f( const idCmdArgs &args ) {
 	idStr checkname;
-
+    qglFinish();
+	
 	int width = glConfig.vidWidth;
 	int height = glConfig.vidHeight;
 	int	blends = 0;
@@ -1502,8 +1506,20 @@ void R_ScreenShot_f( const idCmdArgs &args ) {
 
 	// put the console away
 	console->Close();
-
+    
 	tr.TakeScreenshot( width, height, checkname, blends, NULL );
+	if ( r_useFbo.GetBool() == 1)
+       {
+		r_useFbo.SetBool(0);
+		session->RunGameTic();
+		session->UpdateScreen();
+		qglFinish();
+		r_useFbo.SetBool(1);
+		session->RunGameTic();
+		session->UpdateScreen();
+		qglFinish();
+	   }
+	
 }
 
 /*
@@ -1770,8 +1786,6 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 			return;
 		}
 	}
-
-	extern void R_MakeAmbientMap( MakeAmbientMapParam& param );
 
 	param.outBuffer = (byte*)R_StaticAlloc( 4 * param.outSize*param.outSize );
 

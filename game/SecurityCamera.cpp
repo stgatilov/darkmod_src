@@ -206,7 +206,7 @@ void idSecurityCamera::Spawn( void )
 		StartSound( "snd_stationary", SND_CHANNEL_BODY, 0, false, NULL );
 	}
 	SetAlertMode( MODE_SCANNING );
-	BecomeActive( TH_THINK );
+	BecomeActive( TH_THINK | TH_UPDATEVISUALS );
 
 	if ( health ) {
 		fl.takedamage = true;
@@ -254,7 +254,7 @@ idSecurityCamera::PostSpawn
 void idSecurityCamera::PostSpawn()
 {
 	// Search entities for those who have a "cameraTarget" pointing to this camera.
-	// One should be found, and set 'cameraDisplay' to that entitiy.
+	// One should be found, and set 'cameraDisplay' to that entity.
 
 	for ( int i = 0; i < MAX_GENTITIES; ++i )
 	{
@@ -270,10 +270,19 @@ void idSecurityCamera::PostSpawn()
 		}
 
 		idEntity *ect = ent->cameraTarget;
-		if ( ect && (ect == this ))
+		if ( ect )
 		{
-			cameraDisplay = ent;
-			break;
+			if ( ect == this )
+			{
+				cameraDisplay = ent;
+				break;
+			}
+
+			if ( cameraTarget == ect )
+			{
+				cameraDisplay = ent;
+				break;
+			}
 		}
 	}
 }
@@ -902,13 +911,13 @@ idSecurityCamera::Present
 Present is called to allow entities to generate refEntities, lights, etc for the renderer.
 ================
 */
+
 void idSecurityCamera::Present( void ) 
 {
 	// don't present to the renderer if the entity hasn't changed
 	if ( !( thinkFlags & TH_UPDATEVISUALS ) ) {
 		return;
 	}
-	BecomeInactive( TH_UPDATEVISUALS );
 
 	if ( cameraTarget )
 	{

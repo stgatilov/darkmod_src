@@ -1527,45 +1527,6 @@ void Com_WriteConfig_f( const idCmdArgs &args ) {
 
 /*
 =================
-Com_SetMachineSpecs_f
-=================
-*/
-/*void Com_SetMachineSpec_f( const idCmdArgs &args ) {
-	commonLocal.SetMachineSpec();
-}*/
-
-/*
-=================
-Com_ExecMachineSpecs_f
-=================
-*/
-/*void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
-	if ( Sys_GetVideoRam() < 128 ) {
-		cvarSystem->SetCVarBool( "image_ignoreHighQuality", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBump", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeBumpLimit", 256, CVAR_ARCHIVE );
-	}
-
-	if ( Sys_GetSystemRam() < 512 ) {
-		cvarSystem->SetCVarBool( "image_ignoreHighQuality", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSize", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeLimit", 256, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecular", 1, CVAR_ARCHIVE );
-		cvarSystem->SetCVarInteger( "image_downSizeSpecularLimit", 64, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "com_purgeAll", true, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "r_forceLoadImages", true, CVAR_ARCHIVE );
-	} else {
-		cvarSystem->SetCVarBool( "com_purgeAll", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
-	}
-}*/
-
-/*
-=================
 Com_ReloadEngine_f
 =================
 */
@@ -2695,22 +2656,6 @@ idCommonLocal::IsInitialized
 bool idCommonLocal::IsInitialized( void ) const {
 	return com_fullyInitialized;
 }
-
-/*
-=================
-idCommonLocal::SetMachineSpec
-=================
-*/
-/*void idCommonLocal::SetMachineSpec( void ) {
-	cpuid_t	cpu = Sys_GetProcessorId();
-	double ghz = Sys_ClockTicksPerSecond() * 0.000000001f;
-	int vidRam = Sys_GetVideoRam();
-	int sysRam = Sys_GetSystemRam();
-
-	Printf( "Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory\n\n", ghz, sysRam, vidRam);
-
-	com_videoRam.SetInteger( vidRam );
-}*/
 
 /*
 =================

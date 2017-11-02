@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <OpenALSoftDLLPath>Win32\bin\OpenAL32_x86.dll</OpenALSoftDLLPath>
     <TdmExecutableName>TheDarkMod</TdmExecutableName>
     <ExtLibsModule>ExtLibs</ExtLibsModule>
   </PropertyGroup>
