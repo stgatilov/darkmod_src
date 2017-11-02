@@ -165,6 +165,7 @@ public:
 	virtual void				DoError( const char *msg, int code );
 	virtual void				FatalError( const char *fmt, ... ) id_attribute( ( format( printf, 2, 3 ) ) );
 	virtual void				DoFatalError( const char *msg, int code );
+	virtual void				SetErrorIndirection( bool enable );
 	virtual const char*			Translate( const char* str );
 	virtual bool                WindowAvailable(void); // Agent Jones #3766
 
@@ -212,6 +213,8 @@ private:
 	int							com_errorEntered;		// 0, ERP_DROP, etc
 	bool						com_shuttingDown;
 
+	bool						errorIndirection;
+
 	idFile *					logFile;
 
 	char						errorMessage[MAX_PRINT_MSG_SIZE];
@@ -247,6 +250,7 @@ idCommonLocal::idCommonLocal( void ) {
 	com_refreshOnPrint = false;
 	com_errorEntered = 0;
 	com_shuttingDown = false;
+	errorIndirection = false;
 
 	logFile = NULL;
 
@@ -703,7 +707,10 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 	va_end (argptr);
 	msgBuf[sizeof(msgBuf)-1] = '\0';
 
-	throw std::make_shared<ErrorReportedException>(msgBuf, code, false);
+	if( errorIndirection )
+		throw std::make_shared<ErrorReportedException>(msgBuf, code, false);
+
+	DoError( msgBuf, code );
 }
 
 /*
@@ -808,7 +815,10 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 	va_end( argptr );
 	msgBuf[sizeof(msgBuf)-1] = '\0';
 
-	throw std::make_shared<ErrorReportedException>( msgBuf, ERP_FATAL, true );
+	if( errorIndirection )
+		throw std::make_shared<ErrorReportedException>( msgBuf, ERP_FATAL, true );
+
+	DoFatalError( msgBuf, ERP_FATAL );
 }
 
 /*
@@ -830,6 +840,10 @@ void idCommonLocal::DoFatalError( const char *msg, int code ) {
 	Shutdown();
 
 	Sys_Error( "%s", msg );
+}
+
+void idCommonLocal::SetErrorIndirection( bool enable ) {
+	errorIndirection = enable;
 }
 
 /*

@@ -618,6 +618,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	}
 
 	try {
+		common->SetErrorIndirection( true );
 		int startLoop = Sys_Milliseconds();
 		session->ActivateFrontend();
 		int endSignal = Sys_Milliseconds();
@@ -626,6 +627,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		int endRender = Sys_Milliseconds();
 		session->WaitForFrontendCompletion();
 		int endWait = Sys_Milliseconds();
+		common->SetErrorIndirection( false );
 
 		if( r_logSmpTimings.GetBool() ) {
 			if( !logFile ) {
@@ -638,6 +640,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		}
 	} catch( std::shared_ptr<ErrorReportedException> e ) {
 		session->WaitForFrontendCompletion();
+		common->SetErrorIndirection( false );
 		if( e->IsFatalError() )
 			common->DoFatalError( e->ErrorMessage(), e->ErrorCode() );
 		else

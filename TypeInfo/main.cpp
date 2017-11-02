@@ -73,6 +73,7 @@ public:
 	virtual void			DoError( const char *msg, int code ) { printf( "ERROR: %s\n", msg ); exit( 0 ); }
 	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit( 0 ); }
 	virtual void			DoFatalError( const char *msg, int code ) { printf( "FATAL ERROR: %s\n", msg ); exit( 0 ); }
+	virtual void			SetErrorIndirection( bool ) {}
 	virtual const char *		Translate( const char* msg ) { return NULL; }
 	virtual I18N*			GetI18N() { return NULL; }
 	virtual const char *		KeysFromBinding( const char *bind ) { return NULL; }

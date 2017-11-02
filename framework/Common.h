@@ -211,6 +211,10 @@ public:
 	virtual void				FatalError( const char *fmt, ... ) id_attribute((format(printf,2,3))) = 0;
 	virtual void				DoFatalError( const char *msg, int code ) = 0;
 
+								// Needed during frontend/backend split, so that errors are properly propagated
+								// and don't run into threading issues
+	virtual void				SetErrorIndirection( bool enable ) = 0;
+
 								// greebo: Provides access to I18N-related methods
 	virtual I18N*				GetI18N() = 0;
 
