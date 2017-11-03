@@ -164,6 +164,11 @@ for k in ARGUMENTS.keys():
 	print 'Command line: ' + exec_cmd
 	exec( exec_cmd )
 
+# stgatilov: avoid annoying human errors when you set target='x32'
+# and get surprised that it does not build properly =)
+if TARGET_ARCH == 'x32':
+	TARGET_ARCH = 'x86'
+
 # end command line settings ----------------------
 
 # save site configuration ----------------------
@@ -182,7 +187,7 @@ if ( not ARGUMENTS.has_key( 'NOCONF' ) or ARGUMENTS['NOCONF'] != '1' ):
 
 # general configuration, target selection --------
 
-g_build = BUILD_ROOT + '/' + BUILD
+g_build = BUILD_ROOT + '/scons_' + TARGET_ARCH + '/' + BUILD
 
 # 
 # Use an absolute path to a single signature file to avoid a problem
