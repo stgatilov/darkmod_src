@@ -238,7 +238,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 RB_GLSL_DrawLight_Stencil
 ==================
 */
-DECLSPEC_NOINLINE void RB_GLSL_DrawLight_Stencil( void ) {
+void RB_GLSL_DrawLight_Stencil( void ) {
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 	pointInteractionShader.Use();
 	qglUniform1f( pointInteractionShader.shadows, 1 );
@@ -289,7 +289,7 @@ DECLSPEC_NOINLINE void RB_GLSL_DrawLight_Stencil( void ) {
 RB_GLSL_DrawLight_ShadowMap
 ==================
 */
-DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
+void RB_GLSL_DrawLight_ShadowMap( void ) {
 	// clear the stencil buffer if needed
 	GL_CheckErrors();
 	if ( !backEnd.vLight->lightShader->IsAmbientLight() ) {
@@ -320,7 +320,7 @@ DECLSPEC_NOINLINE void RB_GLSL_DrawLight_ShadowMap( void ) {
 RB_GLSL_DrawInteractions
 ==================
 */
-DECLSPEC_NOINLINE void RB_GLSL_DrawInteractions( void ) {
+void RB_GLSL_DrawInteractions( void ) {
 	GL_SelectTexture( 0 );
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
