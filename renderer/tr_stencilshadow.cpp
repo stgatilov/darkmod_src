@@ -1211,21 +1211,17 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	srfTriangles_t	*newTri;
 	int		capPlaneBits;
 
-	if ( !r_shadows.GetBool() ) {
+	if ( r_shadows.GetInteger() != 1 )
 		return NULL;
-	}
 
-	if ( tri->numSilEdges == 0 || tri->numIndexes == 0 || tri->numVerts == 0 ) {
+	if ( tri->numSilEdges == 0 || tri->numIndexes == 0 || tri->numVerts == 0 )
 		return NULL;
-	}
 
-	if ( tri->numIndexes < 0 ) {
+	if ( tri->numIndexes < 0 )
 		common->Error( "R_CreateShadowVolume: tri->numIndexes = %i", tri->numIndexes );
-	}
 
-	if ( tri->numVerts < 0 ) {
+	if ( tri->numVerts < 0 )
 		common->Error( "R_CreateShadowVolume: tri->numVerts = %i", tri->numVerts );
-	}
 
 	tr.pc.c_createShadowVolumes++;
 
