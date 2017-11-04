@@ -55,6 +55,12 @@
 #define PATHSEPERATOR_CHAR				'\\'
 
 #define ID_INLINE						__inline
+#ifdef _MSC_VER
+#define NOINLINE __declspec(noinline)
+#else
+#define NOINLINE __attribute__((noinline))
+#endif
+
 #define ID_STATIC_TEMPLATE				static
 
 //anon begin
