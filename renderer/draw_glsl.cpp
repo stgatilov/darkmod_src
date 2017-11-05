@@ -70,7 +70,7 @@ struct interactionProgram_t : lightProgram_t {
 };
 
 struct pointInteractionProgram_t : interactionProgram_t {
-	GLint advanced, shadows;
+	GLint advanced, shadows, lightOrigin2;
 	GLint softShadowsQuality, softShadowsRadius, softShadowSamples;
 	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
@@ -710,6 +710,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	stencilTexture = qglGetUniformLocation( program, "u_stencilTexture" );
 	depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
+	lightOrigin2 = qglGetUniformLocation( program, "u_lightOrigin2" );
 	// set texture locations
 	qglUseProgram( program );
 	// can't have sampler2D, usampler2D, samplerCube on the same TMU index
@@ -748,6 +749,7 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
 	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	qglUniform4fv( lightOrigin, 1, din->localLightOrigin.ToFloatPtr() );
+	qglUniform3fv( lightOrigin2, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	GL_CheckErrors();
 }
 

@@ -16,8 +16,8 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #pragma hdrstop
 
 #include "tr_local.h"
-
-const int shadowMapSize = 256;
+#include "FrameBuffer.h"
+#include "glsl.h"
 
 bool isInFbo;
 bool depthCopiedThisView;
@@ -104,7 +104,7 @@ void CheckCreatePrimary() {
 			qglGenFramebuffers( 1, &fboPrimary );
 		r_fboSharedColor.ClearModified();
 		//r_fboSharedDepth.ClearModified();
-		qglBindFramebuffer( GL_FRAMEBUFFER_EXT, fboPrimary );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		// attach a texture to FBO color attachement point
 		if ( r_fboSharedColor.GetBool() )
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
@@ -154,12 +154,15 @@ void CheckCreateShadow() {
 		else 
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
 	} 
-	if ( globalImages->shadowCubeMap->uploadWidth != shadowMapSize ) {
+	if ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
+		r_fboDepthBits.ClearModified();
 		globalImages->shadowCubeMap->Bind();
-		globalImages->shadowCubeMap->uploadWidth = shadowMapSize;
-		globalImages->shadowCubeMap->uploadHeight = shadowMapSize;
+		globalImages->shadowCubeMap->uploadWidth = r_shadowMapSize.GetInteger();
+		globalImages->shadowCubeMap->uploadHeight = r_shadowMapSize.GetInteger();
 		for ( int sideId = 0; sideId < 6; sideId++ ) 
-			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, GL_DEPTH_COMPONENT, shadowMapSize, shadowMapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, 
+			r_fboDepthBits.GetInteger() == 24 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, 
+			r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -232,9 +235,9 @@ void FB_ToggleShadow( bool on ) {
 	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
 		qglDepthMask( on );
 		if ( on ) {
-			qglViewport( 0, 0, shadowMapSize, shadowMapSize );
+			qglViewport( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
 			if ( r_useScissor.GetBool() )
-				qglScissor( 0, 0, shadowMapSize, shadowMapSize );
+				qglScissor( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
 			qglClear( GL_DEPTH_BUFFER_BIT );
 			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
 		} else {

@@ -1013,20 +1013,7 @@ extern idCVar r_dedicatedAmbient;
 extern idCVar r_softShadowsQuality;
 extern idCVar r_softShadowsRadius;
 
-/*extern idCVar r_softShadows; //~SS
-extern idCVar r_softShadDebug;
-extern idCVar r_softShadMaxSize; */
-
-// duzenko: late 2016-17 additions
 extern idCVar r_useAnonreclaimer;
-extern idCVar r_useFbo;
-extern idCVar r_useGLSL;
-extern idCVar r_fboDebug;
-extern idCVar r_fboColorBits;
-extern idCVar r_fboSharedColor;
-extern idCVar r_fboSharedDepth;
-extern idCVar r_fboResolution;
-extern idCVar r_ambient_testadd;
 
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;

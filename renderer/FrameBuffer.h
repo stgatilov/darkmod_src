@@ -28,6 +28,15 @@ If you have questions concerning this license or the applicable additional terms
 
 #pragma once
 
+extern idCVar r_useFbo;
+extern idCVar r_fboDebug;
+extern idCVar r_fboColorBits;
+extern idCVar r_fboDepthBits;
+extern idCVar r_fboSharedColor;
+extern idCVar r_fboSharedDepth;
+extern idCVar r_fboResolution;
+extern idCVar r_shadowMapSize;
+
 void FB_Clear();
 void FB_Enter();
 void FB_Leave( viewDef_t* viewDef );

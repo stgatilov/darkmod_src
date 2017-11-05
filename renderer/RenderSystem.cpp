@@ -18,6 +18,8 @@
 
 
 #include "tr_local.h"
+#include "FrameBuffer.h"
+#include "glsl.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;

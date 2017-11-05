@@ -19,6 +19,7 @@
 
 
 #include "tr_local.h"
+#include "FrameBuffer.h"
 
 /*
 PROBLEM: compressed textures may break the zero clamp rule!

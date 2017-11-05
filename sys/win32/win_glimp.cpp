@@ -35,6 +35,7 @@
 #include "win_local.h"
 #include "rc/doom_resource.h"
 #include "../../renderer/tr_local.h"
+#include "../../renderer/FrameBuffer.h"
 
 static void		GLW_InitExtensions( void );
 

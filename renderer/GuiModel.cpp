@@ -19,6 +19,7 @@
 
 
 #include "tr_local.h"
+#include "FrameBuffer.h"
 
 
 /*

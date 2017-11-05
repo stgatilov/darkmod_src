@@ -75,6 +75,9 @@ extern fogProgram_t fogShader;
 extern blendProgram_t blendShader;
 extern lightProgram_t stencilShadowShader;
 
+extern idCVar r_ambient_testadd;
+extern idCVar r_useGLSL;
+
 void RB_GLSL_DrawInteraction( const drawInteraction_t * din );
 void RB_GLSL_DrawInteractions( void );
 
