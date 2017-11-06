@@ -163,12 +163,12 @@ void CheckCreateShadow() {
 			qglTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + sideId, 0, 
 			r_fboDepthBits.GetInteger() == 24 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, 
 			r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
 		globalImages->BindNull();
 	}
 	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
@@ -219,7 +219,7 @@ void FB_BindShadowTexture() {
 	GL_CheckErrors();
 }
 
-void FB_ToggleShadow( bool on ) {
+void FB_ToggleShadow( bool on, bool clear ) {
 	if ( glConfig.vendor == glvIntel && r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
 		return;
 	CheckCreateShadow();
@@ -239,7 +239,8 @@ void FB_ToggleShadow( bool on ) {
 			qglViewport( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
 			if ( r_useScissor.GetBool() )
 				qglScissor( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
-			qglClear( GL_DEPTH_BUFFER_BIT );
+			if (clear)
+				qglClear( GL_DEPTH_BUFFER_BIT );
 			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
 		} else {
 			const idScreenRect &r = backEnd.viewDef->viewport;

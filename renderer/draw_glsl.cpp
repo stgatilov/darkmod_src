@@ -209,31 +209,6 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 }
 
 /*
-=============
-RB_GLSL_CreateDrawInteractions
-=============
-*/
-void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
-	if ( !surf )
-		return;
-	shadowMapShader.Use();
-	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
-	for ( ; surf; surf = surf->nextOnLight ) {
-		if ( !surf->material->SurfaceCastsShadow() )
-			continue; //most of dynamic models don't have this flag but use an _invisible_ shadow material
-		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
-			continue;
-		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
-		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
-		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
-		RB_DrawElementsWithCounters( surf->backendGeo );
-	}
-	qglUseProgram( 0 );
-	GL_CheckErrors();
-}
-
-/*
 ==================
 RB_GLSL_DrawLight_Stencil
 ==================
@@ -285,6 +260,33 @@ void RB_GLSL_DrawLight_Stencil( void ) {
 }
 
 /*
+=============
+RB_GLSL_CreateDrawInteractions
+=============
+*/
+void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
+	if ( !surf )
+		return;
+	FB_ToggleShadow( true, surf == backEnd.vLight->globalInteractions );
+	shadowMapShader.Use();
+	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
+	for ( ; surf; surf = surf->nextOnLight ) {
+		if ( !surf->material->SurfaceCastsShadow() )
+			continue; //most of dynamic models don't have this flag but use an _invisible_ shadow material
+		/*if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
+			continue;*/
+		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
+		// set the vertex pointers
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
+		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
+		RB_DrawElementsWithCounters( surf->backendGeo );
+	}
+	qglUseProgram( 0 );
+	FB_ToggleShadow( false );
+	GL_CheckErrors();
+}
+
+/*
 ==================
 RB_GLSL_DrawLight_ShadowMap
 ==================
@@ -298,20 +300,21 @@ void RB_GLSL_DrawLight_ShadowMap( void ) {
 			&& backEnd.vLight->lightShader->LightCastsShadows();
 
 		if ( doShadows ) {
-			FB_ToggleShadow( true );
 			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
-			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
-			FB_ToggleShadow( false );
 			pointInteractionShader.Use();
 			qglUniform1f( pointInteractionShader.shadows, 2 );
+			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
+			
+			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+			pointInteractionShader.Use();
 		} else {
 			pointInteractionShader.Use();
 			qglUniform1f( pointInteractionShader.shadows, 0 );
+			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 		}
 	}
-	RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 	RB_GLSL_CreateDrawInteractions( backEnd.vLight->globalInteractions );
-	qglUseProgram( 0 );	// if there weren't any globalInteractions, it would have stayed on
+	qglUseProgram( 0 );	
 	GL_CheckErrors();
 }
 
@@ -713,9 +716,9 @@ void pointInteractionProgram_t::AfterLoad() {
 	lightOrigin2 = qglGetUniformLocation( program, "u_lightOrigin2" );
 	// set texture locations
 	qglUseProgram( program );
-	// can't have sampler2D, usampler2D, samplerCube on the same TMU index
-	qglUniform1i( shadowMap, 5 );
-	qglUniform1i( stencilTexture, 6 );
+	// can't have sampler2D, usampler2D, samplerCube, samplerCubeShadow on the same TMU
+	qglUniform1i( shadowMap, 6 );
+	qglUniform1i( stencilTexture, 7 );
 	qglUseProgram( 0 );
 }
 
@@ -738,7 +741,7 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1i( depthTexture, MAX_MULTITEXTURE_UNITS );
 		qglUniform1i( stencilTexture, MAX_MULTITEXTURE_UNITS+2 );
 	} else {
-		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS+1 );
+		qglUniform1i( shadowMap, MAX_MULTITEXTURE_UNITS+2 );
 		qglUniform1i( depthTexture, 6 );
 		qglUniform1i( stencilTexture, 7 );
 	}
