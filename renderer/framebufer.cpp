@@ -234,6 +234,7 @@ void FB_ToggleShadow( bool on ) {
 
 	if ( r_shadows.GetInteger() == 2 ) { // additional steps for shadowmaps
 		qglDepthMask( on );
+		GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
 			qglViewport( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
 			if ( r_useScissor.GetBool() )

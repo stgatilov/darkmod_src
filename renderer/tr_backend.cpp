@@ -120,16 +120,14 @@ rendered is a mirored view.
 ====================
 */
 void GL_Cull( const int cullType ) {
-	if ( backEnd.glState.faceCulling == cullType ) {
+	if ( backEnd.glState.faceCulling == cullType )
 		return;
-	}
 
 	if ( cullType == CT_TWO_SIDED ) {
 		qglDisable( GL_CULL_FACE );
 	} else {
-		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) {
+		if ( backEnd.glState.faceCulling == CT_TWO_SIDED )
 			qglEnable( GL_CULL_FACE );
-		}
 
 		if ( cullType == CT_BACK_SIDED ) {
 			if ( backEnd.viewDef->isMirror ) {

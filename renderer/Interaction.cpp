@@ -378,13 +378,9 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	indexes = NULL;
 
 	// it is debatable if non-shadowing lights should light back faces. we aren't at the moment
-	if ( r_lightAllBackFaces.GetBool() || light->lightShader->LightEffectsBackSides()
-			|| shader->ReceivesLightingOnBackSides()
-				|| ent->parms.noSelfShadow || ent->parms.noShadow  ) {
-		includeBackFaces = true;
-	} else {
-		includeBackFaces = false;
-	}
+	includeBackFaces = r_lightAllBackFaces.GetBool() || r_shadows.GetInteger() == 2 // duzenko: need the back faces to work around shadowmap acne
+		|| light->lightShader->LightEffectsBackSides() || shader->ReceivesLightingOnBackSides()
+		|| ent->parms.noSelfShadow || ent->parms.noShadow;
 
 	// allocate a new surface for the lit triangles
 	newTri = R_AllocStaticTriSurf();
