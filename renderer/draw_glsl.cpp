@@ -726,7 +726,7 @@ void pointInteractionProgram_t::AfterLoad() {
 
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 	qglUniform1f( advanced, r_testARBProgram.GetFloat() );
-	if ( !translucent && (backEnd.vLight->globalShadows || backEnd.vLight->localShadows) && !backEnd.viewDef->IsLightGem() ) {
+	if ( !translucent && (backEnd.vLight->globalShadows || backEnd.vLight->localShadows || r_shadows.GetInteger() == 2) && !backEnd.viewDef->IsLightGem() ) {
 		qglUniform1i( softShadowsQuality, r_softShadowsQuality.GetInteger() );
 		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
