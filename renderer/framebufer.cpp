@@ -22,6 +22,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 bool isInFbo;
 bool depthCopiedThisView;
 GLuint fboPrimary, fboShadow;
+int ShadowMipMap;
 
 /*
 called when post-proceesing is about to start, needs pixels
@@ -164,11 +165,13 @@ void CheckCreateShadow() {
 			r_fboDepthBits.GetInteger() == 24 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, 
 			r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		if ( qglGenerateMipmap ) // 3.3 required for geometry shader anyway but still don't want crashes
+			qglGenerateMipmap( GL_TEXTURE_CUBE_MAP );
 		globalImages->BindNull();
 	}
 	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
@@ -223,7 +226,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	if ( glConfig.vendor == glvIntel && r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
 		return;
 	CheckCreateShadow();
-	if ( on && !depthCopiedThisView && r_shadows.GetInteger() == 1 ) {
+	if ( on && !depthCopiedThisView && r_shadows.GetInteger() == 1 ) { // (facepalm) most vendors can't do separate stencil so we need to copy depth from the main/default FBO
 		globalImages->currentDepthFbo->Bind();
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, globalImages->currentDepthFbo->uploadWidth, globalImages->currentDepthFbo->uploadHeight, 0 );
 		depthCopiedThisView = true;
@@ -236,10 +239,22 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		qglDepthMask( on );
 		GL_Cull( on ? CT_BACK_SIDED : CT_FRONT_SIDED ); // shadow acne fix, requires includeBackFaces in R_CreateLightTris
 		if ( on ) {
-			qglViewport( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
+			int mapSize = r_shadowMapSize.GetInteger();
+			ShadowMipMap = 0;
+			if ( !r_ignore.GetBool() ) {
+				int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight()),
+					screenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
+				while ( lightScreenSize < screenSize && ShadowMipMap < 5 ) {
+					ShadowMipMap++; // select a smaller map for small/distant lights
+					lightScreenSize <<= 1;
+					mapSize >>= 1;
+				}
+			} 
+			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap->texnum, ShadowMipMap );
+			qglViewport( 0, 0, mapSize, mapSize );
 			if ( r_useScissor.GetBool() )
-				qglScissor( 0, 0, r_shadowMapSize.GetInteger(), r_shadowMapSize.GetInteger() );
-			if (clear)
+				qglScissor( 0, 0, mapSize, mapSize );
+			if ( clear )
 				qglClear( GL_DEPTH_BUFFER_BIT );
 			GL_State( GLS_DEPTHFUNC_LESS ); // reset in RB_GLSL_CreateDrawInteractions
 		} else {

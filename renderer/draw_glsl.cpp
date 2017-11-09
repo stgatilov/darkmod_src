@@ -71,7 +71,7 @@ struct interactionProgram_t : lightProgram_t {
 
 struct pointInteractionProgram_t : interactionProgram_t {
 	GLint advanced, shadows, lightOrigin2;
-	GLint softShadowsQuality, softShadowsRadius, softShadowSamples;
+	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowMipMap;
 	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
 	idList<idVec2>	g_softShadowsSamples;
@@ -213,7 +213,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 RB_GLSL_DrawLight_Stencil
 ==================
 */
-void RB_GLSL_DrawLight_Stencil( void ) {
+void RB_GLSL_DrawLight_Stencil() {
 	bool useShadowFbo = r_softShadowsQuality.GetBool() && !backEnd.viewDef->IsLightGem();
 	pointInteractionShader.Use();
 	qglUniform1f( pointInteractionShader.shadows, 1 );
@@ -264,10 +264,10 @@ void RB_GLSL_DrawLight_Stencil( void ) {
 RB_GLSL_CreateDrawInteractions
 =============
 */
-void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
+void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = false ) {
 	if ( !surf )
 		return;
-	FB_ToggleShadow( true, surf == backEnd.vLight->globalInteractions );
+	FB_ToggleShadow( true, clear );
 	shadowMapShader.Use();
 	qglUniform4fv( shadowMapShader.lightOrigin, 1, backEnd.vLight->globalLightOrigin.ToFloatPtr() );
 	for ( ; surf; surf = surf->nextOnLight ) {
@@ -291,21 +291,22 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf ) {
 RB_GLSL_DrawLight_ShadowMap
 ==================
 */
-void RB_GLSL_DrawLight_ShadowMap( void ) {
-	// clear the stencil buffer if needed
+void RB_GLSL_DrawLight_ShadowMap() {
 	GL_CheckErrors();
 	if ( !backEnd.vLight->lightShader->IsAmbientLight() ) {
-		bool doShadows =
-			!backEnd.vLight->lightDef->parms.noShadows
+		bool doShadows = !backEnd.vLight->lightDef->parms.noShadows
 			&& backEnd.vLight->lightShader->LightCastsShadows();
 
 		if ( doShadows ) {
-			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions );
+			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->globalInteractions, true );
+			
 			pointInteractionShader.Use();
 			qglUniform1f( pointInteractionShader.shadows, 2 );
+			qglUniform1f( pointInteractionShader.shadowMipMap, ShadowMipMap );
 			RB_GLSL_CreateDrawInteractions( backEnd.vLight->localInteractions );
 			
 			RB_GLSL_DrawInteractions_ShadowMap( backEnd.vLight->localInteractions );
+			
 			pointInteractionShader.Use();
 		} else {
 			pointInteractionShader.Use();
@@ -323,7 +324,7 @@ void RB_GLSL_DrawLight_ShadowMap( void ) {
 RB_GLSL_DrawInteractions
 ==================
 */
-void RB_GLSL_DrawInteractions( void ) {
+void RB_GLSL_DrawInteractions() {
 	GL_SelectTexture( 0 );
 	// for each light, perform adding and shadowing
 	for ( backEnd.vLight = backEnd.viewDef->viewLights; backEnd.vLight; backEnd.vLight = backEnd.vLight->next ) {
@@ -714,6 +715,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	depthTexture = qglGetUniformLocation( program, "u_depthTexture" );
 	shadowMap = qglGetUniformLocation( program, "u_shadowMap" );
 	lightOrigin2 = qglGetUniformLocation( program, "u_lightOrigin2" );
+	shadowMipMap = qglGetUniformLocation( program, "u_shadowMipMap" );
 	// set texture locations
 	qglUseProgram( program );
 	// can't have sampler2D, usampler2D, samplerCube, samplerCubeShadow on the same TMU

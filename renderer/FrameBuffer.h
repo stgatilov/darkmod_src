@@ -37,6 +37,8 @@ extern idCVar r_fboSharedDepth;
 extern idCVar r_fboResolution;
 extern idCVar r_shadowMapSize;
 
+extern int ShadowMipMap;
+
 void FB_Clear();
 void FB_Enter();
 void FB_Leave( viewDef_t* viewDef );

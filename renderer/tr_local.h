@@ -55,12 +55,16 @@ public:
 	void		Union( const idScreenRect &rect );
 	bool		Equals( const idScreenRect &rect ) const;
 	bool		IsEmpty() const;
-	//anon begin
-	int			GetArea() const
-	{
-		return (x2 - x1 + 1) * (y2 - y1 + 1);
+	int			GetArea() { //anon 
+		return GetWidth() * GetHeight();
 	}
-	//anon end
+	// duzenko: got tired of all the inline subtractions
+	int GetWidth() {
+		return x2 - x1 + 1;
+	}
+	int GetHeight() {
+		return x2 - x1 + 1;
+	}
 };
 
 idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds );
