@@ -160,8 +160,8 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 	qglEnableVertexAttribArray( 3 );
 
 	for ( ; surf; surf = surf->nextOnLight ) {
-		// perform setup here that will not change over multiple interaction passes
-
+		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY )
+			continue;
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );

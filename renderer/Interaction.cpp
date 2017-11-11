@@ -1218,7 +1218,8 @@ void idInteraction::AddActiveInteraction( void ) {
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
-		if ( !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
+		if ( r_shadows.GetInteger() == 2 // duzenko: send off-screen surfaces to backend in case they cast shadows
+			|| !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.viewCount ) {
 
 			// make sure we have created this interaction, which may have been deferred
 			// on a previous use that only needed the shadow
@@ -1234,7 +1235,8 @@ void idInteraction::AddActiveInteraction( void ) {
 				// try to cull before adding
 				// FIXME: this may not be worthwhile. We have already done culling on the ambient,
 				// but individual surfaces may still be cropped somewhat more
-				if ( !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
+				if ( r_shadows.GetInteger() == 2 // duzenko: send off-screen surfaces to backend in case they cast shadows
+					|| !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 					// make sure the original surface has its ambient cache created
 					srfTriangles_t *tri = sint->ambientTris;

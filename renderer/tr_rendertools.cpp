@@ -830,10 +830,16 @@ static void RB_ShowViewEntitys( viewEntity_t *vModels ) {
 	if ( !r_showViewEntitys.GetBool() ) {
 		return;
 	}
-	if ( r_showViewEntitys.GetInteger() == 2 ) {
+	if ( r_showViewEntitys.GetInteger() >= 2 ) {
 		common->Printf( "view entities: " );
 		for ( ; vModels ; vModels = vModels->next ) {
-			common->Printf( "%i ", vModels->entityDef->index );
+			if ( r_showViewEntitys.GetInteger() > 2 ) {
+				renderEntity_t &re = vModels->entityDef->parms;
+				if ( !re.hModel )
+					common->Printf( "%3i NULL\n", vModels->entityDef->index );
+				common->Printf( "%3i %s\n", vModels->entityDef->index, re.hModel->Name() );
+			} else
+				common->Printf( "%i ", vModels->entityDef->index );
 		}
 		common->Printf( "\n" );
 		return;

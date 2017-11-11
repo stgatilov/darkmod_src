@@ -241,7 +241,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 		if ( on ) {
 			int mapSize = r_shadowMapSize.GetInteger();
 			ShadowMipMap = 0;
-			if ( !r_ignore.GetBool() ) {
+			//if ( !r_ignore.GetBool() ) {
 				int lightScreenSize = idMath::Imax( backEnd.vLight->scissorRect.GetWidth(), backEnd.vLight->scissorRect.GetHeight()),
 					screenSize = idMath::Imin( glConfig.vidWidth, glConfig.vidHeight );
 				while ( lightScreenSize < screenSize && ShadowMipMap < 5 ) {
@@ -249,7 +249,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 					lightScreenSize <<= 1;
 					mapSize >>= 1;
 				}
-			} 
+			//} 
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, globalImages->shadowCubeMap->texnum, ShadowMipMap );
 			qglViewport( 0, 0, mapSize, mapSize );
 			if ( r_useScissor.GetBool() )

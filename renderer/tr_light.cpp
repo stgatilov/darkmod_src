@@ -519,7 +519,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 R_LinkLightSurf
 =================
 */
-void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, 
+void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
 	drawSurf_t		*drawSurf;
 
@@ -533,7 +533,7 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
-	drawSurf->dsFlags = 0;
+	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
 	drawSurf->particle_radius = 0.0f; // #3878
 
 	srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
@@ -1049,8 +1049,6 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 		drawSurf->dsFlags = 0;
 		drawSurf->particle_radius = 0.0f;
 	}
-	//if ( entityDef->parms.noShadow )
-		//drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 
 	// bumping this offset each time causes surfaces with equal sort orders to still
 	// deterministically draw in the order they are added

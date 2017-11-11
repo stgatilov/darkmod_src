@@ -745,9 +745,9 @@ float idSoundWorldLocal::GetDiffractionLoss(const idVec3 p1, const idVec3 p2, co
 ===================
 idSoundWorldLocal::ResolveOrigin
 
-Find out of the sound is completely occluded by a closed door portal, or
+Find out if the sound is completely occluded by a closed door portal, or
 the virtual sound origin position at the portal closest to the listener.
-  this is called by the main thread
+  this is called by the main thread or the front renderer thread
 
 dist is the distance from the orignial sound origin to the current portal that enters soundArea
 def->distance is the distance we are trying to reduce.

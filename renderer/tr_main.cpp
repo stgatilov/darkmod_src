@@ -526,9 +526,8 @@ bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	float		worldRadius;
 	const idPlane	*frust;
 
-	if ( r_useCulling.GetInteger() == 0 ) {
+	if ( r_useCulling.GetInteger() == 0 )
 		return false;
-	}
 
 	// transform the surface bounds into world space
 	idVec3	localOrigin = ( bounds[0] + bounds[1] ) * 0.5;
@@ -565,9 +564,8 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	const idPlane *frust;
 
 	// we can disable box culling for experimental timing purposes
-	if ( r_useCulling.GetInteger() < 2 ) {
+	if ( r_useCulling.GetInteger() < 2 )
 		return false;
-	}
 
 	// transform into world space
 	for ( i = 0 ; i < 8 ; i++ ) {
