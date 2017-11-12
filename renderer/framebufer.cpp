@@ -338,12 +338,12 @@ void FB_Leave( viewDef_t* viewDef ) {
 	qglMatrixMode( GL_MODELVIEW );
 	GL_SelectTexture( 0 );
 	if ( viewDef ) { // switch back to normal resolution for correct 2d
-		tr.renderCrops[0].width = glConfig.vidWidth;
+		/*tr.renderCrops[0].width = glConfig.vidWidth;
 		tr.renderCrops[0].height = glConfig.vidHeight;
 		viewDef->viewport.x2 = glConfig.vidWidth - 1;
 		viewDef->viewport.y2 = glConfig.vidHeight - 1;
 		viewDef->scissor.x2 = glConfig.vidWidth - 1;
-		viewDef->scissor.y2 = glConfig.vidHeight - 1;
+		viewDef->scissor.y2 = glConfig.vidHeight - 1;*/
 	}
 	isInFbo = false;
 	GL_CheckErrors();
