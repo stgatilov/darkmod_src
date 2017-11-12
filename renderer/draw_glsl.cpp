@@ -273,8 +273,8 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 	for ( ; surf; surf = surf->nextOnLight ) {
 		if ( !surf->material->SurfaceCastsShadow() )
 			continue; //most of dynamic models don't have this flag but use an _invisible_ shadow material
-		/*if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
-			continue;*/
+		if ( surf->dsFlags & DSF_SHADOW_MAP_IGNORE )
+			continue; // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );

@@ -1265,8 +1265,7 @@ void idInteraction::AddActiveInteraction( void ) {
 					const idMaterial *shader = sint->shader;
 					R_GlobalShaderOverride( &shader );
 
-					// there will only be localSurfaces if the light casts shadows and
-					// there are surfaces with NOSELFSHADOW
+					// there will only be localSurfaces if the light casts shadows and there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT && sint->shader->ReceivesLighting() ) {
 						R_LinkLightSurf( &vLight->translucentInteractions, lightTris, 
 							vEntity, lightDef, shader, lightScissor, false );

@@ -521,12 +521,10 @@ R_LinkLightSurf
 */
 void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
-	drawSurf_t		*drawSurf;
-
 	if ( !space )
 		space = &tr.viewDef->worldSpace;
 
-	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
+	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
 	drawSurf->frontendGeo = tri;
 	drawSurf->backendGeo = nullptr;
@@ -534,6 +532,8 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
+	if ( space->entityDef->parms.noShadow )
+		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	drawSurf->particle_radius = 0.0f; // #3878
 
 	srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );

@@ -262,9 +262,9 @@ void FB_ToggleShadow( bool on, bool clear ) {
 			qglViewport( r.x1, r.y1, r.x2 - r.x1 + 1, r.y2 - r.y1 + 1 );
 			if ( r_useScissor.GetBool() )
 				qglScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
-				backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
+					backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+					backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+					backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
 		}
 	}
 }
