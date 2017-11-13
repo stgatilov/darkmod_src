@@ -418,10 +418,10 @@ public:
 
 
 	idImage *			currentDepthImage;			// #3877. Allow shaders to access scene depth
-	idImage *			currentDepthFbo;
+	idImage *			shadowDepthFbo;
 	idImage *			shadowCubeMap;
-	idImage *			currentStencilFbo;
-	//idImage *			stencilCopy;
+	idImage *			currentStencilFbo; // these two are only used on Intel since no one else support separate stencil
+	idImage *			shadowStencilFbo;
 	idImage *			bloomCookedMath;
 	idImage *			bloomImage;
 

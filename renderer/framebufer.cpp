@@ -76,15 +76,6 @@ void CheckCreatePrimary() {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
 		}
 
-		/*globalImages->stencilCopy->Bind();
-		globalImages->stencilCopy->uploadWidth = curWidth;
-		globalImages->stencilCopy->uploadHeight = curHeight;
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );*/
-
 		globalImages->currentDepthImage->Bind();
 		globalImages->currentDepthImage->uploadWidth = curWidth; // used as a shader param
 		globalImages->currentDepthImage->uploadHeight = curHeight;
@@ -100,11 +91,10 @@ void CheckCreatePrimary() {
 	}
 
 	// (re-)attach textures to FBO
-	if ( !fboPrimary || r_fboSharedColor.IsModified() /*|| r_fboSharedDepth.IsModified() */) {
+	if ( !fboPrimary || r_fboSharedColor.IsModified() ) {
 		if ( !fboPrimary )
 			qglGenFramebuffers( 1, &fboPrimary );
 		r_fboSharedColor.ClearModified();
-		//r_fboSharedDepth.ClearModified();
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		// attach a texture to FBO color attachement point
 		if ( r_fboSharedColor.GetBool() )
@@ -112,7 +102,6 @@ void CheckCreatePrimary() {
 		else
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
 		// attach a renderbuffer to depth attachment point
-		//GLuint depthTex = r_fboSharedDepth.GetBool() ? globalImages->currentDepthImage->texnum : globalImages->currentDepthFbo->texnum;
 		GLuint depthTex = globalImages->currentDepthImage->texnum;
 		if ( glConfig.vendor == glvIntel ) { // separate stencil, thank God
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
@@ -134,27 +123,36 @@ void CheckCreatePrimary() {
 
 void CheckCreateShadow() {
 	// (re-)attach textures to FBO
-	GLuint curWidth = r_fboResolution.GetFloat() * glConfig.vidWidth, curHeight = r_fboResolution.GetFloat() * glConfig.vidHeight;
+	GLuint curWidth = glConfig.vidWidth, curHeight = glConfig.vidHeight;
+	if ( isInFbo ) {
+		curWidth *= r_fboResolution.GetFloat();
+		curHeight *= r_fboResolution.GetFloat();
+	}
 	textureType_t type = r_shadows.GetInteger() == 2 ? TT_CUBIC : TT_2D;
 	static textureType_t nowType;
 
 	// reset textures 
-	if ( curWidth != globalImages->currentDepthFbo->uploadWidth 
-		|| curHeight != globalImages->currentDepthFbo->uploadHeight 
-		//|| nowType != type
-	) {
-		globalImages->currentDepthFbo->Bind();
-		globalImages->currentDepthFbo->uploadWidth = curWidth;
-		globalImages->currentDepthFbo->uploadHeight = curHeight;
+	if ( curWidth != globalImages->shadowDepthFbo->uploadWidth
+		|| curHeight != globalImages->shadowDepthFbo->uploadHeight ) {
+		if ( glConfig.vendor == glvIntel ) {
+			globalImages->currentStencilFbo->Bind();
+			globalImages->currentStencilFbo->uploadWidth = curWidth;
+			globalImages->currentStencilFbo->uploadHeight = curHeight;
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+			qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, curWidth, curHeight, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
+		}
+		globalImages->shadowDepthFbo->Bind();
+		globalImages->shadowDepthFbo->uploadWidth = curWidth;
+		globalImages->shadowDepthFbo->uploadHeight = curHeight;
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		if ( glConfig.vendor == glvIntel ) // FIXME allow 24-bit depth for low-res monitors
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
-		else 
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
-	} 
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
+	}
 	if ( globalImages->shadowCubeMap->uploadWidth != r_shadowMapSize.GetInteger() || r_fboDepthBits.IsModified() ) {
 		r_fboDepthBits.ClearModified();
 		globalImages->shadowCubeMap->Bind();
@@ -170,11 +168,11 @@ void CheckCreateShadow() {
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
 		//qglTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
-		if ( qglGenerateMipmap ) // 3.3 required for geometry shader anyway but still don't want crashes
+		if ( qglGenerateMipmap ) // 3.2 required for geometry shader anyway but still don't want crashes
 			qglGenerateMipmap( GL_TEXTURE_CUBE_MAP );
 		globalImages->BindNull();
 	}
-	if ( (!fboShadow || nowType != type) && (glConfig.vendor != glvIntel || r_shadows.GetInteger() == 2) ) {
+	if ( !fboShadow || nowType != type ) {
 		if ( !fboShadow )
 			qglGenFramebuffers( 1, &fboShadow );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboShadow );
@@ -183,8 +181,14 @@ void CheckCreateShadow() {
 			qglFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTex, 0 );
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0 );
 		} else {
-			GLuint depthTex = globalImages->currentDepthFbo->texnum;
-			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
+			if ( glConfig.vendor == glvIntel ) {
+				GLuint depthTex = globalImages->currentDepthImage->texnum;
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, globalImages->currentStencilFbo->texnum, 0 );
+			} else {
+				GLuint depthTex = globalImages->shadowDepthFbo->texnum;
+				qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
+			}
 		}
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 		if ( GL_FRAMEBUFFER_COMPLETE != status ) { // something went wrong, fall back to default
@@ -213,7 +217,7 @@ void FB_BindShadowTexture() {
 		globalImages->currentDepthImage->Bind();
 		GL_SelectTexture( 7 );
 		if ( glConfig.vendor != glvIntel ) {
-			globalImages->currentDepthFbo->Bind();
+			globalImages->shadowDepthFbo->Bind();
 			const GLenum GL_DEPTH_STENCIL_TEXTURE_MODE = 0x90EA;
 			qglTexParameteri( GL_TEXTURE_2D, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_STENCIL_INDEX );
 		} else
@@ -223,12 +227,12 @@ void FB_BindShadowTexture() {
 }
 
 void FB_ToggleShadow( bool on, bool clear ) {
-	if ( glConfig.vendor == glvIntel && r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
-		return;
+	if ( r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
+		;// return;
 	CheckCreateShadow();
-	if ( on && !depthCopiedThisView && r_shadows.GetInteger() == 1 ) { // (facepalm) most vendors can't do separate stencil so we need to copy depth from the main/default FBO
-		globalImages->currentDepthFbo->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, globalImages->currentDepthFbo->uploadWidth, globalImages->currentDepthFbo->uploadHeight, 0 );
+	if ( glConfig.vendor != glvIntel && on && !depthCopiedThisView && r_shadows.GetInteger() == 1 ) { // (facepalm) most vendors can't do separate stencil so we need to copy depth from the main/default FBO
+		globalImages->shadowDepthFbo->Bind();
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight, 0 );
 		depthCopiedThisView = true;
 		GL_CheckErrors();
 	}
@@ -274,11 +278,8 @@ void FB_Clear() {
 }
 
 void FB_Enter() {
-	if ( r_softShadowsQuality.GetBool() ) {
+	if ( r_softShadowsQuality.GetBool() ) 
 		r_useGLSL.SetBool( true );
-		//r_useFbo.SetBool( true );
-		//r_fboSharedDepth.SetBool( true );
-	}
 	depthCopiedThisView = false;
 	if ( !r_useFbo.GetBool() )
 		return;
@@ -323,7 +324,7 @@ void FB_Leave( viewDef_t* viewDef ) {
 			globalImages->currentDepthImage->Bind();
 			break;
 		case 3:
-			globalImages->currentDepthFbo->Bind();
+			globalImages->shadowDepthFbo->Bind();
 			break;
 		default:
 			if ( r_fboSharedColor.GetBool() )

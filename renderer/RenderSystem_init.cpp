@@ -245,7 +245,6 @@ idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CV
 idCVar r_fboDepthBits( "r_fboDepthBits", "24", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "16, 24" );
 idCVar r_shadowMapSize( "r_shadowMapSize", "256", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "Shadow map texture resolution" );
 idCVar r_fboSharedColor("r_fboSharedColor", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Don't copy color buffer (risk of feedback loop when post-processing)");
-idCVar r_fboSharedDepth("r_fboSharedDepth", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Don't copy depth buffer (unexplainable artifacts when post-processing)");
 idCVar r_fboResolution("r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
 idCVar r_ambient_testadd( "r_ambient_testadd", "0", CVAR_RENDERER | CVAR_FLOAT, "Added ambient brightness for testing purposes. ", 0, 1 );
 
