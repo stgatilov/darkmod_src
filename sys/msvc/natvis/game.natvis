@@ -30,7 +30,8 @@
   </Type>
 
   <Type Name="idCVar">
-    <DisplayString>CVar {name,na}: {value,na}</DisplayString>
+    <DisplayString Condition="internalVar != 0">CVar {((idInternalCVar*)internalVar)->nameString} is: {((idInternalCVar*)internalVar)->valueString}  (default:{((idInternalCVar*)internalVar)->resetString})</DisplayString>
+    <DisplayString Condition="internalVar == 0">CVar {name,na} is: {value,na}</DisplayString>
   </Type>
   
   <Type Name="idDeclLocal">
