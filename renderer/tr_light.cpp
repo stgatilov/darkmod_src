@@ -532,7 +532,7 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->dsFlags = scissor.IsEmpty() ? DSF_SHADOW_MAP_ONLY : 0;
-	if ( space->entityDef->parms.noShadow )
+	if ( space->entityDef && space->entityDef->parms.noShadow )
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	drawSurf->particle_radius = 0.0f; // #3878
 
