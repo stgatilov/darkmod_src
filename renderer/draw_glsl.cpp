@@ -731,9 +731,11 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 		qglUniform1f( softShadowsRadius, r_softShadowsRadius.GetFloat() );
 
 		int sampleK = r_softShadowsQuality.GetInteger();
-		if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 )
-			GeneratePoissonDiskSampling(g_softShadowsSamples, sampleK);
-		qglUniform2fv(softShadowSamples, sampleK, (float*)g_softShadowsSamples.Ptr());
+		if ( sampleK > 0 ) { // negative for debugging
+			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 )
+				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
+			qglUniform2fv( softShadowSamples, sampleK, (float*)g_softShadowsSamples.Ptr() );
+		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
 		qglUniform1f( softShadowsRadius, 0.0f );
