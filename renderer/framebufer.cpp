@@ -31,10 +31,13 @@ we need to copy render separately for water/smoke and then again for bloom
 void FB_CopyColorBuffer() {
 	GL_SelectTexture( 0 );
 	if ( !isInFbo || !r_fboSharedColor.GetBool() ) {
-		globalImages->currentRenderImage->Bind();
+		globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
+			backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
+			backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
+/*		globalImages->currentRenderImage->Bind();
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, isInFbo && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
 			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
-	}
+*/	}
 }
 
 void CheckCreatePrimary() {
