@@ -267,6 +267,9 @@ void CModMenu::DisplayBriefingPage(idUserInterface* gui)
 
 	// update GUI
 	gui->SetStateString("BriefingText", briefing);
+	gui->SetStateBool("ScrollDownVisible", scrollDown);
+	gui->SetStateBool("ScrollUpVisible", scrollUp);
+
 }
 
 void CModMenu::UpdateGUI(idUserInterface* gui)
