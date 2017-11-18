@@ -170,7 +170,7 @@ typedef struct renderLight_s {
 	idVec3					lightCenter;		// offset the lighting direction for shading and
 												// shadows, relative to origin
 
-	// frustum definition for projected lights, all reletive to origin
+	// frustum definition for projected lights, all relative to origin
 	// FIXME: we should probably have real plane equations here, and offer
 	// a helper function for conversion from this format
 	idVec3					target;

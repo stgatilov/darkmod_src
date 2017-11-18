@@ -74,7 +74,7 @@ struct pointInteractionProgram_t : interactionProgram_t {
 	GLint softShadowsQuality, softShadowsRadius, softShadowSamples, shadowMipMap;
 	GLint shadowMap, stencilTexture, depthTexture;
 	//TODO: is this global variable harming multithreading?
-	idList<idVec2>	g_softShadowsSamples;
+	idList<idVec2> g_softShadowsSamples;
 	virtual	void AfterLoad();
 	virtual void UpdateUniforms( bool translucent );
 	virtual void UpdateUniforms( const drawInteraction_t *din );
@@ -722,6 +722,7 @@ void pointInteractionProgram_t::AfterLoad() {
 	qglUniform1i( shadowMap, 6 );
 	qglUniform1i( stencilTexture, 7 );
 	qglUseProgram( 0 );
+	g_softShadowsSamples.Clear();
 }
 
 void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
@@ -732,9 +733,10 @@ void pointInteractionProgram_t::UpdateUniforms( bool translucent ) {
 
 		int sampleK = r_softShadowsQuality.GetInteger();
 		if ( sampleK > 0 ) { // negative for debugging
-			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 )
+			if ( g_softShadowsSamples.Num() != sampleK || g_softShadowsSamples.Num() == 0 ) {
 				GeneratePoissonDiskSampling( g_softShadowsSamples, sampleK );
-			qglUniform2fv( softShadowSamples, sampleK, (float*)g_softShadowsSamples.Ptr() );
+				qglUniform2fv( softShadowSamples, sampleK, (float*)g_softShadowsSamples.Ptr() );
+			}
 		}
 	} else {
 		qglUniform1i( softShadowsQuality, 0 );
