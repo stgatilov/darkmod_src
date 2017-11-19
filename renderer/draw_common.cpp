@@ -34,23 +34,21 @@ void RB_PrepareStageTexturing_ReflectCube( const shaderStage_t *pStage, const dr
 		bumpStage->texture.image->Bind();
 		GL_SelectTexture( 0 );
 
-		//qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
-		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+		qglVertexAttribPointer( 8, 2, GL_FLOAT, false, sizeof( idDrawVert ), &ac->st );
 		qglVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 
+		qglEnableVertexAttribArray( 2 );
+		qglEnableVertexAttribArray( 8 );
 		qglEnableVertexAttribArray( 9 );
 		qglEnableVertexAttribArray( 10 );
-		//qglEnableClientState( GL_NORMAL_ARRAY );
-		qglEnableVertexAttribArray( 2 );
 
 		// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 		R_UseProgramARB( VPROG_BUMPY_ENVIRONMENT );
 	} else {
 		// per-pixel reflection mapping without a normal map
-		//qglNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 2, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->normal );
-		//qglEnableClientState( GL_NORMAL_ARRAY );
 		qglEnableVertexAttribArray( 2 );
 
 		R_UseProgramARB( VPROG_ENVIRONMENT );
@@ -113,6 +111,7 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 			globalImages->BindNull();
 			GL_SelectTexture( 0 );
 
+			qglDisableVertexAttribArray( 8 );
 			qglDisableVertexAttribArray( 9 );
 			qglDisableVertexAttribArray( 10 );
 		} else {
