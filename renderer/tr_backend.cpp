@@ -412,7 +412,7 @@ static void	RB_SetBuffer( const void *data ) {
 
 	backEnd.frameCount = cmd->frameCount;
 
-	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+	//if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
@@ -516,9 +516,8 @@ const void	RB_SwapBuffers( const void *data ) {
     RB_LogComment( "***************** RB_SwapBuffers *****************\n" );
 
 	// don't flip if drawing to front buffer
-	if ( !r_frontBuffer.GetBool() ) {
+	if ( !r_frontBuffer.GetBool() ) 
 	    GLimp_SwapBuffers();
-	}
 }
 
 /*
@@ -529,21 +528,18 @@ Copy part of the current framebuffer to an image
 =============
 */
 
-const void RB_CopyRender( const void *data ) {
-	if (r_skipCopyTexture.GetBool()) {
+NOINLINE void RB_CopyRender( const void *data ) {
+	if (r_skipCopyTexture.GetBool())
 		return;
-	}
 
-	const copyRenderCommand_t *cmd = (copyRenderCommand_t *)data;
+	const copyRenderCommand_t &cmd = *(copyRenderCommand_t *)data;
 
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
-	if (cmd->image) {
-		if (cmd->image == globalImages->bloomImage) { // duzenko: hack? better to extend renderCommand_t? not necessary at all because of r_postprocess?
-			RB_Bloom();
-		} else
-			cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
-	}
+	if ( cmd.image )
+		cmd.image->CopyFramebuffer( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false );
+	if ( cmd.buffer )
+		FB_CopyRender( cmd );
 }
 
 /*
@@ -583,9 +579,9 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
 				if (!was2d) // don't switch to FBO if some 2d has happened (e.g. compass)
 					if ( v3d ) {
-						FB_Enter();
+						FB_TogglePrimary( true );
 					} else {
-						FB_Leave( ((const drawSurfsCommand_t *)cmds)->viewDef ); // duzenko: render 2d in default framebuffer, as well as all 3d until frame end
+						FB_TogglePrimary( false ); // duzenko: render 2d in default framebuffer, as well as all 3d until frame end
 						was2d = true;
 					}
 			RB_DrawView(cmds);
@@ -601,13 +597,16 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 			RB_SetBuffer( cmds );
 			c_setBuffers++;
 			break;
+		case RC_BLOOM:
+			RB_Bloom();
+			break;
 		case RC_COPY_RENDER:
 			RB_CopyRender( cmds );
 			c_copyRenders++;
 			break;
 		case RC_SWAP_BUFFERS:
 			// duzenko #4425: display the fbo content 
-			FB_Leave(NULL);
+			FB_TogglePrimary( false );
 			RB_SwapBuffers(cmds);
 			c_swapBuffers++;
 			break;

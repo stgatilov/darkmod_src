@@ -222,10 +222,12 @@ public:
 	 */
 	virtual void			GetCurrentRenderCropSize(int& width, int& height) = 0;
 
-	virtual void			CaptureRenderToImage( const char *imageName ) = 0;
+	virtual void			CaptureRenderToImage( idImage &image ) = 0;
 	// fixAlpha will set all the alpha channel values to 0xff, which allows screen captures
 	// to use the default tga loading code without having dimmed down areas in many places
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha = false ) = 0;
+	
+	virtual void			PostProcess() = 0;
 
 	/**
 	 * greebo: Like CaptureRenderToFile, but writes the result into the given byte buffer.

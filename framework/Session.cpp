@@ -18,6 +18,7 @@
 
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
+#include "../renderer/FrameBuffer.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -421,7 +422,7 @@ void idSessionLocal::StartWipe( const char *_wipeMaterial, bool hold ) {
 
 	Draw();
 
-	renderSystem->CaptureRenderToImage( "_scratch");
+	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
 
 	wipeMaterial = declManager->FindMaterial( _wipeMaterial, false );
@@ -1711,16 +1712,12 @@ const idStr GetNextQuicksaveFilename()
 
 	// Choose the save file name
 	idStr result;
-	if ( quicksaveCounter < idSessionLocal::com_numQuickSaves.GetInteger() )
-	{
+	if ( quicksaveCounter < idSessionLocal::com_numQuickSaves.GetInteger() ) {
 		result = FindUnusedFileName( ("savegames/" + quicksaveName + "_%d.save").c_str() );
-		result.StripLeading("savegames/");
-		result.StripTrailing(".save");
-	}
-	else
-	{
+		result.StripLeading( "savegames/" );
+		result.StripTrailing( ".save" );
+	} else
 		result = oldestFile;
-	}
 	return result;
 }
 
@@ -1913,7 +1910,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		}
 	}
 	if ( Sys_GetDriveFreeSpace( cvarSystem->GetCVarString( "fs_savepath" ) ) < 25 ) {
-		// "Not eough space" and "Unable to save"
+		// "Not enough space" and "Unable to save"
 		MessageBox( MSG_OK, common->Translate ( "#str_02014" ), common->Translate ( "#str_02013" ), true );
 		common->Printf( "Not enough drive space to save the game\n" );
 		return false;
@@ -2001,15 +1998,20 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	// Write screenshot
 	if ( !autosave ) {
 	    qglFinish();
-		renderSystem->CropRenderSize( 320, 240, false );
+		renderSystem->CropRenderSize( 170, 110 ); // actual size from mainmenu_loadsave.gui
 		game->Draw( 0 );
 
 		//stgatilov: render image to buffer and save via devIL
 		Image image;
 		int width, height, bpp = 3;
 		renderSystem->GetCurrentRenderCropSize(width, height);
+		if ( r_useFbo.GetBool() ) { // 4676
+			width /= r_fboResolution.GetFloat();
+			height /= r_fboResolution.GetFloat();
+		}
+		width = (width + 3) & ~3; //opengl wants width padded to 4x
 		image.Init(width, height, bpp);
-		renderSystem->CaptureRenderToBuffer(image.GetImageData());
+		renderSystem->CaptureRenderToBuffer( image.GetImageData() );
 		idStr previewPath = fileSystem->RelativePathToOSPath(previewFile.c_str(), "fs_modSavePath");
 		image.SaveImageToFile(previewPath.c_str(), previewFormat);
 

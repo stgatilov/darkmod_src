@@ -39,8 +39,8 @@ extern idCVar r_shadowMapSize;
 extern int ShadowMipMap;
 
 void FB_Clear();
-void FB_Enter();
-void FB_Leave( viewDef_t* viewDef );
 void FB_CopyColorBuffer();
+void FB_CopyRender( const copyRenderCommand_t &cmd );
+void FB_TogglePrimary( bool on );
 void FB_ToggleShadow( bool on, bool clear = false );
 void FB_BindShadowTexture();

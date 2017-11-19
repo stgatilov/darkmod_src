@@ -17,7 +17,7 @@
 #pragma hdrstop
 
 
-
+#include "../renderer/Image.h"
 #include "Game_local.h"
 
 static int MakePowerOfTwo( int num ) {
@@ -606,7 +606,7 @@ void idPlayerView::SingleView( idUserInterface *hud, const renderView_t *view, b
 		if ( !mtr ) {
 			common->Printf( "Rotoscope material not found.\n" );
 		} else {
-			renderSystem->CaptureRenderToImage( "_currentRender" );
+			renderSystem->CaptureRenderToImage( *globalImages->currentRenderImage );
 			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 			renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, mtr );
 		}
@@ -650,7 +650,7 @@ void idPlayerView::DoubleVision( idUserInterface *hud, const renderView_t *view,
 	// greebo: Draw the single view, but skip the HUD, this is done later
 	SingleView( hud, view, false ); 
 
-	renderSystem->CaptureRenderToImage( "_scratch" );
+	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
 
 	idVec4 color(1, 1, 1, 1);
@@ -676,7 +676,7 @@ idPlayerView::BerserkVision
 void idPlayerView::BerserkVision( idUserInterface *hud, const renderView_t *view ) {
 	renderSystem->CropRenderSize( 512, 256, true );
 	SingleView( hud, view );
-	renderSystem->CaptureRenderToImage( "_scratch" );
+	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
 	renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, dvMaterial );
@@ -776,7 +776,7 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 	}
 	if ( player->GetInfluenceMaterial() ) {
 		SingleView( hud, view );
-		renderSystem->CaptureRenderToImage( "_currentRender" );
+		renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
@@ -899,26 +899,12 @@ idPlayerView::dnPostProcessManager Class Definitions - JC Denton
 */
 
 idPlayerView::dnPostProcessManager::dnPostProcessManager():
-/*m_imageCurrentRender				( "_currentRender"			),
-m_imageBloom						( "_bloomImage"				),
-m_imageCookedMath					( "_cookedMath"				),
 
-m_matBrightPass			( declManager->FindMaterial( "postprocess/brightPassOptimized" )		),
-m_matGaussBlurX			( declManager->FindMaterial( "postprocess/blurx" )			),
-m_matGaussBlurY			( declManager->FindMaterial( "postprocess/blury" )			),
-//m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePass" )	),
-m_matFinalScenePass		( declManager->FindMaterial( "postprocess/finalScenePassOptimized" )	),
-
-m_matCookMath_pass1		( declManager->FindMaterial( "postprocess/cookMath_pass1" )		),
-m_matCookMath_pass2		( declManager->FindMaterial( "postprocess/cookMath_pass2" )		),*/
 m_ImageAnisotropyHandle	(-1)
 {
 	/*m_iScreenHeight = m_iScreenWidth = 0;
 	m_iScreenHeightPowOf2 = m_iScreenWidthPowOf2 = 0;
 	m_nFramesToUpdateCookedData = 0;8*/
-
-	// Initialize once this object is created.	
-//	this->Initialize();
 
 	// Get notified on image anisotropy changes
 	idCVar* imageAnistropy = cvarSystem->Find("image_anisotropy");
@@ -947,239 +933,9 @@ void idPlayerView::dnPostProcessManager::OnImageAnisotropyChanged()
 //	ScheduleCookedDataUpdate();
 }
 
-/*void idPlayerView::dnPostProcessManager::ScheduleCookedDataUpdate()
-{
-	m_nFramesToUpdateCookedData = 1;
-
-	if ( cvarSystem->GetCVarBool("r_postprocess") )
-	{
-		gameLocal.Printf("Cooked Data will be updated after %d frames...\n", m_nFramesToUpdateCookedData);
-	}
-	else
-	{
-		gameLocal.Printf("Cooked Data will be updated after %d frames immediately after r_postprocess is enabled.\n", m_nFramesToUpdateCookedData);
-	}
-}*/
-
-/*void idPlayerView::dnPostProcessManager::Initialize()
-{
-	m_bForceUpdateOnCookedData = true;
-	cvarSystem->Find( "r_postprocess_bloomKernelSize" )->SetModified(); // This will print message in console about bloom kernel size. 
-}*/
-
-/* duzenko: moved to backend
-void idPlayerView::dnPostProcessManager::UpdateCookedData( void )
-{
-
-	if( m_nFramesToUpdateCookedData > 0 )
-	{
-		m_nFramesToUpdateCookedData --;
-		m_bForceUpdateOnCookedData = true;
-		return;
-	}
-
-	if (	m_bForceUpdateOnCookedData || 
-			r_postprocess_colorCurveBias.IsModified() || r_postprocess_brightPassOffset.IsModified()	|| 
-			r_postprocess_brightPassThreshold.IsModified() || r_postprocess_sceneExposure.IsModified()	||
-			r_postprocess_sceneGamma.IsModified() || r_postprocess_colorCorrection.IsModified()			||
-			r_postprocess_colorCorrectBias.IsModified()
-		)
-	{
-
-		if( m_bForceUpdateOnCookedData )
-			gameLocal.Printf( "Forcing an update on cooked math data.\n" );
-
-		gameLocal.Printf( "Cooking math data please wait...\n" );
-
-		//------------------------------------------------------------------------
-		// Crop backbuffer image to the size of our cooked math image
-		//------------------------------------------------------------------------
-		renderSystem->CropRenderSize(256, 1, true);
-		//------------------------------------------------------------------------
-
-		//------------------------------------------------------------------------
-		// Cook math Pass 1 
-		//------------------------------------------------------------------------
-		renderSystem->SetColor4( r_postprocess_colorCurveBias.GetFloat(), r_postprocess_sceneGamma.GetFloat(), r_postprocess_sceneExposure.GetFloat(), 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass1 );
-		renderSystem->CaptureRenderToImage( m_imageCookedMath );
-
-		//------------------------------------------------------------------------
-		// Cook math Pass 2 
-		//------------------------------------------------------------------------
-		float fColorCurveBias = Max ( Min ( r_postprocess_colorCorrectBias.GetFloat(), 1.0f ), 0.0f );
- 		renderSystem->SetColor4( r_postprocess_brightPassThreshold.GetFloat(), r_postprocess_brightPassOffset.GetFloat(), r_postprocess_colorCorrection.GetFloat(), fColorCurveBias );
- 		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matCookMath_pass2 );
- 		renderSystem->CaptureRenderToImage( m_imageCookedMath );
-
-		//------------------------------------------------------------------------
-		renderSystem->UnCrop();
-		//------------------------------------------------------------------------
-		r_postprocess_colorCurveBias.ClearModified(); 
-		r_postprocess_brightPassOffset.ClearModified();
-		r_postprocess_brightPassThreshold.ClearModified();
-		r_postprocess_sceneExposure.ClearModified();
-		r_postprocess_sceneGamma.ClearModified();
-		r_postprocess_colorCorrection.ClearModified();
-		r_postprocess_colorCorrectBias.ClearModified();
-
-		m_bForceUpdateOnCookedData = false;
-
-		gameLocal.Printf( "Cooking complete.\n" );
-
-		//gameLocal.Printf( "Screen size: %d, %d Power of 2 Size: %d, %d", m_iScreenWidth, m_iScreenHeight, m_iScreenWidthPowOf2, m_iScreenHeightPowOf2 );
-	}
-}*/
-
 void idPlayerView::dnPostProcessManager::Update( void )
 {
 	// duzenko: do bloom in the back renderer
-	if (r_postprocess->GetBool()) { // duzenko: FIXME hack - better to extend renderCommand_t, create a dedicated method in renderSystem?
-		renderSystem->CaptureRenderToImage( "_bloomImage" ); 
-		return;
-	}
-	/*float fBloomImageDownScale = Max( Min( r_postprocess_bloomKernelSize.GetInteger(), 2 ), 1 ) == 1 ? 2 : 4;
-
-	if( r_postprocess_bloomKernelSize.IsModified() )
-	{
-		gameLocal.Printf(" Bloom Kernel size is set to: %s \n", fBloomImageDownScale == 2.0f ? "Large": "Small" );
-		r_postprocess_bloomKernelSize.ClearModified();
-	}
-
-	// Check the interaction.vfp settings
-	if( cv_interaction_vfp_type.IsModified() )
-	{
-		this->UpdateInteractionShader();
-		cv_interaction_vfp_type.ClearModified();
-	}
-
-	if ( iPostProcessType != 0 ) 
-	{
-		this->UpdateBackBufferParameters();
-
-		// Note to self1: CropRenderSize if not used before CaptureRenderToImage, then image caputured is of screen's size(non power of two) 
-		// Note to self2: CropRenderSize when used with dimensions greater than backbuffer res, automatically crops screen to res <= backbuffer res.
-
-		renderSystem->CaptureRenderToImage( m_imageCurrentRender );
-
-		this->UpdateCookedData();
-
-		const float fBloomIntensity = r_postprocess_bloomIntensity.GetFloat();
-		
-		if( fBloomIntensity > 0.0f )
-		{
-			//-------------------------------------------------
-			// Apply the bright-pass filter to acquire bloom image
-			//-------------------------------------------------
-			renderSystem->CropRenderSize(m_iScreenWidthPowOf2/fBloomImageDownScale, m_iScreenHeightPowOf2/fBloomImageDownScale, true);
-
-			renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matBrightPass );
-			renderSystem->CaptureRenderToImage( m_imageBloom );
-
-			//-------------------------------------------------
-			// Apply Gaussian Smoothing to create bloom
-			//-------------------------------------------------
-
-			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenWidthPowOf2, 1.0f, 1.0f, 1.0f );			 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurX );
-			renderSystem->CaptureRenderToImage( m_imageBloom );
-
-			renderSystem->SetColor4( fBloomImageDownScale/m_iScreenHeightPowOf2, 1.0f, 1.0f, 1.0f );		 
-			renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 1, 1, 0, m_matGaussBlurY );
-			renderSystem->CaptureRenderToImage( m_imageBloom );
-
-			renderSystem->UnCrop();
-			//---------------------
-
-		}
-
-		//-------------------------------------------------
-		// Calculate and Render Final Image
-		//-------------------------------------------------
-		float fDesaturation = Max ( Min ( r_postprocess_desaturation.GetFloat(), 1.0f ), 0.0f );
-		renderSystem->SetColor4( fBloomIntensity, fDesaturation, 1.0f, 1.0f );
-		renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, m_fShiftScale_y, m_fShiftScale_x, 0, m_matFinalScenePass );
-		//-------------------------------------------------
-
-		this->RenderDebugTextures();
-	}*/
+	if (r_postprocess->GetBool()) 
+		renderSystem->PostProcess(); 
 }
-
-/*void idPlayerView::dnPostProcessManager::UpdateBackBufferParameters()
-{
-	// This condition makes sure that, the 2 loops inside run once only when resolution changes or map starts.
-	{
-		if (m_iScreenHeight != renderSystem->GetScreenHeight() || m_iScreenWidth != renderSystem->GetScreenWidth())
-		{
-			m_iScreenWidthPowOf2 = 256, m_iScreenHeightPowOf2 = 256;
-
-			// This should probably fix the ATI issue...
-			renderSystem->GetGLSettings(m_iScreenWidth, m_iScreenHeight);
-
-			//assert( iScreenWidth != 0 && iScreenHeight != 0 );
-
-			while (m_iScreenWidthPowOf2 < m_iScreenWidth) {
-				m_iScreenWidthPowOf2 <<= 1;
-			}
-			while (m_iScreenHeightPowOf2 < m_iScreenHeight) {
-				m_iScreenHeightPowOf2 <<= 1;
-			}
-		}
-	}
-	m_fShiftScale_x = m_iScreenWidth / (float)m_iScreenWidthPowOf2;
-	m_fShiftScale_y = m_iScreenHeight / (float)m_iScreenHeightPowOf2;
-}*/
-
-/*void idPlayerView::dnPostProcessManager::RenderDebugTextures()
-{
-	const int iDebugTexture = r_postprocess_debugMode.GetInteger();
-
-	if( 0 < iDebugTexture && 4 > iDebugTexture ) 
-	{
-		struct {
-			dnImageWrapper *m_pImage;
-			float m_fShiftScaleX, m_fShiftScaleY;
-		} 
-		const arrStretchedImages[3] = { 
-				{&m_imageCurrentRender,	m_fShiftScale_x, m_fShiftScale_y },
-				{&m_imageBloom,			m_fShiftScale_x, m_fShiftScale_y },
-				{&m_imageCookedMath,	1.0f, 1.0f},
-		};
-		
-		int i = iDebugTexture - 1;
-
-		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
- 			renderSystem->DrawStretchPic( 0, SCREEN_HEIGHT * .2f, SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.6f, 0, 
-				arrStretchedImages[i].m_fShiftScaleY, arrStretchedImages[i].m_fShiftScaleX, 0, 
-				*arrStretchedImages[i].m_pImage );
-	}
-}*/
-
-// Moved Greebo's method from gameLocal to here. - J.C.Denton
-// The CVar is rendering related and from now on, would work when g_stoptime is set to 0
-
-/* void idPlayerView::dnPostProcessManager::UpdateInteractionShader()
-{
-	// Check the CVARs
-	switch (cv_interaction_vfp_type.GetInteger())
-	{
-	case 0: // Doom 3's default interaction shader
-		gameLocal.Printf("Using default interaction.vfp\n");
-		cvarSystem->SetCVarInteger("r_testARBProgram", 0);
-		break;
-
-	case 1: // JC Denton's enhanced interaction
-		gameLocal.Printf("Using TDM's enhanced interaction\n");
-		cvarSystem->SetCVarInteger("r_testARBProgram", 1);
-		break;
-
-	default:
-		gameLocal.Warning("Unknown interaction type setting found, reverting to enhanced standard.");
-		cv_interaction_vfp_type.SetInteger(0);
-		this->UpdateInteractionShader();
-	};
-}
-*/
-// nbohr1more: GUI files directly reference r_testARBprograms now that cvar archive is set
-// this workaround is not needed anymore

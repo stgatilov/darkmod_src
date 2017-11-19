@@ -170,13 +170,13 @@ bool		idRenderWorldLocal::ProcessDemoCommand( idDemoFile *readDemo, renderView_t
 		FreeLightDef( h );
 		break;
 
-	case DC_CAPTURE_RENDER:
-		if ( r_showDemo.GetBool() ) {
+	case DC_CAPTURE_RENDER: {
+		if ( r_showDemo.GetBool() )
 			common->Printf( "DC_CAPTURE_RENDER\n" );
-		}
-		renderSystem->CaptureRenderToImage( readDemo->ReadHashString() );
+		idImage	*image = globalImages->ImageFromFile( readDemo->ReadHashString(), TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT );
+		renderSystem->CaptureRenderToImage( *image );
 		break;
-
+	}
 	case DC_CROP_RENDER:
 		if ( r_showDemo.GetBool() ) {
 			common->Printf( "DC_CROP_RENDER\n" );

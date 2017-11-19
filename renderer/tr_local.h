@@ -503,32 +503,31 @@ typedef enum {
 	RC_DRAW_VIEW,
 	RC_SET_BUFFER,
 	RC_COPY_RENDER,
+	RC_BLOOM,
 	RC_SWAP_BUFFERS		// can't just assume swap at end of list because
 						// of forced list submission before syncs
 } renderCommand_t;
 
-typedef struct {
+struct emptyCommand_t {
 	renderCommand_t		commandId, *next;
-} emptyCommand_t;
+};
 
-typedef struct {
-	renderCommand_t		commandId, *next;
+struct setBufferCommand_t : emptyCommand_t {
 	GLenum	buffer;
 	int		frameCount;
-} setBufferCommand_t;
+};
 
-typedef struct {
-	renderCommand_t		commandId, *next;
+struct drawSurfsCommand_t : emptyCommand_t {
 	viewDef_t	*viewDef;
-} drawSurfsCommand_t;
+};
 
-typedef struct {
-	renderCommand_t		commandId, *next;
+struct copyRenderCommand_t : emptyCommand_t {
 	int		x, y, imageWidth, imageHeight;
 	idImage	*image;
-	int		cubeFace;					// when copying to a cubeMap
-} copyRenderCommand_t;
-
+	int		cubeFace;		// when copying to a cubeMap
+	unsigned char	*buffer;		// to memory instead of to texture
+	bool	usePBO;			// lightgem optimization
+};
 
 //=======================================================================
 
@@ -718,9 +717,6 @@ static const int	MAX_RENDER_CROPS = 8;
 */
 // #4395 Duzenko lightem pixel pack buffer optimization
 class idRenderSystemLocal : public idRenderSystem {
-private:
-	GLuint pbo;
-
 public:
 	// external functions
 	virtual void			Init( void );	virtual void			Shutdown( void );
@@ -757,9 +753,10 @@ public:
 	virtual void			TakeScreenshot( int width, int height, const char *fileName, int downSample, renderView_t *ref, bool envshot = false );
 	virtual void			CropRenderSize( int width, int height, bool makePowerOfTwo = false, bool forceDimensions = false );
 	virtual void			GetCurrentRenderCropSize(int& width, int& height);
-	virtual void			CaptureRenderToImage( const char *imageName );
+	virtual void			CaptureRenderToImage( idImage &image );
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			CaptureRenderToBuffer(unsigned char* buffer, bool usePbo = false);
+	virtual void			PostProcess();
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 

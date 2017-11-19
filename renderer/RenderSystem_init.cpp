@@ -818,9 +818,6 @@ void R_InitOpenGL( void ) {
 	// Reset our gamma
 	R_SetColorMappings();
 
-	// duzenko #4425 reset fbo
-	FB_Clear();
-
 #ifdef _WIN32
 	static bool glCheck = false;
 	if ( !glCheck && win32.osversion.dwMajorVersion >= 6 ) {
@@ -1450,7 +1447,6 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	R_StaticFree( buffer );
 
 	takingScreenshot = false;
-	pbo = 0;
 }
 
 /*
@@ -2174,7 +2170,9 @@ void idRenderSystemLocal::Clear( void ) {
 	demoGuiModel = NULL;
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
-	pbo = 0;
+	// duzenko #4425 reset fbo
+	FB_Clear();
+	r_swapIntervalTemp.SetModified();
 }
 
 /*
@@ -2193,7 +2191,6 @@ void idRenderSystemLocal::Init( void ) {
 	ambientLightVector[1] = 0.5f - 0.385f;
 	ambientLightVector[2] = 0.8925f;
 	ambientLightVector[3] = 1.0f;
-	pbo = 0;
 
 	memset( &backEnd, 0, sizeof( backEnd ) );
 
@@ -2237,7 +2234,6 @@ idRenderSystemLocal::Shutdown
 */
 void idRenderSystemLocal::Shutdown( void ) {	
 	common->Printf( "idRenderSystem::Shutdown()\n" );
-    pbo = 0;
 	R_DoneFreeType( );
 
 	if ( glConfig.isInitialized ) {
