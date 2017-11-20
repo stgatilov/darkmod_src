@@ -1415,7 +1415,7 @@ void Updater::FixPK4Dates()
     std::size_t totalFileOperations = std::count_if(
         fs::directory_iterator(targetPath),
         fs::directory_iterator(),
-        bind(static_cast<bool(*)(const fs::path&)>(File::IsPK4), bind(&fs::directory_entry::path, std::placeholders::_1)));
+        bind(static_cast<bool(*)(const fs::path&)>(File::IsPK4), std::bind(&fs::directory_entry::path, std::placeholders::_1)));
 
     // Search for and fix bad PK4 dates
     for (fs::directory_iterator i(targetPath); i != fs::directory_iterator(); ++i)

@@ -178,7 +178,7 @@ public:
 		// Open the file for reading
 		ZipFileReadPtr zipFile = Zip::OpenFileRead(file);
 
-		if (zipFile == NULL) throw std::runtime_error("Could not open ZIP file: " + file.string());
+		if (zipFile == nullptr) throw std::runtime_error("Could not open ZIP file: " + file.string());
 
 		uint32_t crc = zipFile->GetCumulativeCrc();
 

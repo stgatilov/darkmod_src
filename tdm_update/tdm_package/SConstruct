@@ -262,6 +262,7 @@ g_env = g_base_env.Clone()
 g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
+g_env.Append(CXXFLAGS = '-std=c++11')
 
 minizip_list = []
 libtdm_update_list = []
