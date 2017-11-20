@@ -2174,6 +2174,7 @@ void idRenderSystemLocal::Clear( void ) {
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
 	pbo = 0;
+	r_swapIntervalTemp.SetModified();
 }
 
 /*

@@ -2008,6 +2008,11 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 		Image image;
 		int width, height, bpp = 3;
 		renderSystem->GetCurrentRenderCropSize(width, height);
+		if ( r_useFbo.GetBool() ) { // 4676
+			width /= r_fboResolution.GetFloat();
+			height /= r_fboResolution.GetFloat();
+		}
+		width = (width + 3) & ~3; //opengl wants width padded to 4x
 		image.Init(width, height, bpp);
 		renderSystem->CaptureRenderToBuffer(image.GetImageData());
 		idStr previewPath = fileSystem->RelativePathToOSPath(previewFile.c_str(), "fs_modSavePath");
