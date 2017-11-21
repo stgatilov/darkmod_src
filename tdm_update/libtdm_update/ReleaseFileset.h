@@ -267,7 +267,7 @@ public:
 				// Open this archive
 				ZipFileReadPtr zipFile = Zip::OpenFileRead(file);
 
-				if (zipFile == nullptr)
+				if (zipFile == NULL)
 				{
 					TraceLog::WriteLine(LOG_STANDARD, "  Failed to open archive: " + file.string());
 					continue;

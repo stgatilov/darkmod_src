@@ -78,7 +78,7 @@ public:
 
 	~ExceptionSafeThread()
 	{
-		if (_thread != nullptr)
+		if (_thread != NULL)
 		{
             if (!_done)
             {
@@ -101,7 +101,7 @@ public:
 
 	void join()
 	{
-		if (_thread != nullptr)
+		if (_thread != NULL)
 		{
 			_thread->join();
 		}
@@ -121,7 +121,7 @@ public:
 	// Gets called when the user attempts to terminate the program
 	void interrupt()
 	{
-		if (_thread != nullptr)
+		if (_thread != NULL)
 		{
             ThreadControl::InterruptThread(_thread->get_id());
 		}
