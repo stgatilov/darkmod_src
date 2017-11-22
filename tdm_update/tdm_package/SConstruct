@@ -262,7 +262,12 @@ g_env = g_base_env.Clone()
 g_env['CPPFLAGS'] += OPTCPPFLAGS
 g_env.Append( CPPFLAGS = '-fno-strict-aliasing' )
 g_env['CPPFLAGS'] += CORECPPFLAGS
+# Use C++11 features
 g_env.Append(CXXFLAGS = '-std=c++11')
+if ( g_os == 'Linux' ):
+	# Use old ABI for std::string and std::list (which is not fully compliant with C++11)
+	# This allows to link with libraries (like boost), which were built in older versions of GCC
+	g_env.Append( CPPFLAGS = '-D_GLIBCXX_USE_CXX11_ABI=0' )
 
 minizip_list = []
 libtdm_update_list = []
