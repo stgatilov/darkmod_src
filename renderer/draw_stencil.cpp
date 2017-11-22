@@ -102,9 +102,9 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 			// draw different color for turboshadows
 			if ( surf->backendGeo->shadowCapPlaneBits & SHADOW_CAP_INFINITE ) {
 				if ( numIndexes == tri->numIndexes ) {
-					qglColor3f( 1 / backEnd.overBright, 0.1 / backEnd.overBright, 0.1 / backEnd.overBright );
+					qglColor3f( .5 / backEnd.overBright, 0.1 / backEnd.overBright, 0.1 / backEnd.overBright );
 				} else {
-					qglColor3f( 1 / backEnd.overBright, 0.4 / backEnd.overBright, 0.1 / backEnd.overBright );
+					qglColor3f( .5 / backEnd.overBright, 0.4 / backEnd.overBright, 0.1 / backEnd.overBright );
 				}
 			} else {
 				if ( numIndexes == tri->numIndexes ) {
@@ -222,7 +222,10 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_Shadow );
 
-	GL_Cull( CT_FRONT_SIDED );
+	if ( r_lightNoCulling.GetBool() )
+		GL_Cull( CT_TWO_SIDED );
+	else
+		GL_Cull( CT_FRONT_SIDED );
 
 	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
 		qglDisable( GL_POLYGON_OFFSET_FILL );
