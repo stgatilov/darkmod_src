@@ -901,7 +901,6 @@ extern idCVar r_useVertexBuffers;		// if 0, don't use ARB_vertex_buffer_object f
 extern idCVar r_useIndexBuffers;		// if 0, don't use ARB_vertex_buffer_object for indexes
 extern idCVar r_useEntityCallbacks;		// if 0, issue the callback immediately at update time, rather than defering
 extern idCVar r_lightAllBackFaces;		// light all the back faces, even when they would be shadowed
-extern idCVar r_lightNoCulling;			// don't cull stencil interactions for debugging
 extern idCVar r_useDepthBoundsTest;     // use depth bounds test to reduce shadow fill
 
 extern idCVar r_skipPostProcess;		// skip all post-process renderings

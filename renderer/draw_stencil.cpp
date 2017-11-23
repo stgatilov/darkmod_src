@@ -216,24 +216,18 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs ) {
 
 	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
+	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) 
 		qglEnable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_Shadow );
 
-	if ( r_lightNoCulling.GetBool() )
-		GL_Cull( CT_TWO_SIDED );
-	else
-		GL_Cull( CT_FRONT_SIDED );
+	GL_Cull( CT_FRONT_SIDED );
 
-	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) {
+	if ( r_shadowPolygonFactor.GetFloat() || r_shadowPolygonOffset.GetFloat() ) 
 		qglDisable( GL_POLYGON_OFFSET_FILL );
-	}
 
-	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) {
+	if ( glConfig.depthBoundsTestAvailable && r_useDepthBoundsTest.GetBool() ) 
 		qglDisable( GL_DEPTH_BOUNDS_TEST_EXT );
-	}
 
 	qglStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 	if ( !r_softShadowsQuality.GetBool() || backEnd.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID )
