@@ -2173,7 +2173,6 @@ void idRenderSystemLocal::Clear( void ) {
 	takingScreenshot = false;
 	// duzenko #4425 reset fbo
 	FB_Clear();
-	r_swapIntervalTemp.SetModified();
 }
 
 /*
@@ -2182,6 +2181,7 @@ idRenderSystemLocal::Init
 ===============
 */
 void idRenderSystemLocal::Init( void ) {	
+	r_swapIntervalTemp.SetModified();
 
 	// clear all our internal state
 	viewCount = 1;		// so cleared structures never match viewCount
