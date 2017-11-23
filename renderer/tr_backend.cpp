@@ -528,7 +528,7 @@ Copy part of the current framebuffer to an image
 =============
 */
 
-NOINLINE void RB_CopyRender( const void *data ) {
+void RB_CopyRender( const void *data ) {
 	if (r_skipCopyTexture.GetBool())
 		return;
 
