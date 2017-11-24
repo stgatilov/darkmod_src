@@ -122,11 +122,11 @@ idRenderWorldLocal::idRenderWorldLocal() {
 	areaNodes = NULL;
 	numAreaNodes = 0;
 
-	portalAreas = NULL;
-	numPortalAreas = 0;
+	//portalAreas = NULL;
+	//numPortalAreas = 0;
 
-	doublePortals = NULL;
-	numInterAreaPortals = 0;
+	//doublePortals = NULL;
+	//numInterAreaPortals = 0;
 
 	interactionTable = 0;
 	interactionTableWidth = 0;
@@ -780,7 +780,7 @@ NumAreas
 ===================
 */
 int idRenderWorldLocal::NumAreas( void ) const {
-	return numPortalAreas;
+	return (int)portalAreas.size();
 }
 
 /*
@@ -789,20 +789,19 @@ NumPortalsInArea
 ===================
 */
 int idRenderWorldLocal::NumPortalsInArea( int areaNum ) {
-	portalArea_t	*area;
-	int				count;
-	portal_t		*portal;
+	//int				count;
+	//portal_t		*portal;
 
-	if ( areaNum >= numPortalAreas || areaNum < 0 ) {
+	if ( areaNum >= (int)portalAreas.size() || areaNum < 0 ) {
 		common->Error( "idRenderWorld::NumPortalsInArea: bad areanum %i", areaNum );
 	}
-	area = &portalAreas[areaNum];
-
-	count = 0;
+	auto& area = portalAreas[areaNum];
+	return (int)area.areaPortals.size();
+	/*count = 0;
 	for ( portal = area->portals ; portal ; portal = portal->next ) {
 		count++;
 	}
-	return count;
+	return count;*/
 }
 
 /*
@@ -811,29 +810,28 @@ GetPortal
 ===================
 */
 exitPortal_t idRenderWorldLocal::GetPortal( int areaNum, int portalNum ) {
-	portalArea_t	*area;
-	int				count;
-	portal_t		*portal;
-	exitPortal_t	ret;
-
-	if ( areaNum > numPortalAreas ) {
+	//int				count;
+	if ( areaNum > (int)portalAreas.size() ) {
 		common->Error( "idRenderWorld::GetPortal: areaNum > numAreas" );
 	}
-	area = &portalAreas[areaNum];
+	auto& area = portalAreas[areaNum];
 
-	count = 0;
-	for ( portal = area->portals ; portal ; portal = portal->next ) {
-		if ( count == portalNum ) {
+	//count = 0;
+	//for ( int i = 0; i < area.areaPortals.size(); i++ ) {
+		auto portal = area.areaPortals[portalNum];
+		//if ( count == portalNum ) {
+			exitPortal_t ret( portal->w );
 			ret.areas[0] = areaNum;
 			ret.areas[1] = portal->intoArea;
-			ret.w = portal->w;
+			//ret.w = portal->w;
 			ret.blockingBits = portal->doublePortal->blockingBits;
 			ret.lossPlayer = portal->doublePortal->lossPlayer; // grayman #3042
-			ret.portalHandle = portal->doublePortal - doublePortals + 1;
+			//ret.portalHandle = portal->doublePortal - doublePortals + 1;
+			ret.portalHandle = portal->doublePortal - &doublePortals[0] + 1;
 			return ret;
-		}
-		count++;
-	}
+		//}
+		//count++;
+	//}
 
 	common->Error( "idRenderWorld::GetPortal: portalNum > numPortals" );
 
@@ -853,7 +851,7 @@ void idRenderWorldLocal::SetPortalPlayerLoss( qhandle_t portal, float loss ) // 
 		return;
 	}
 
-	if ( ( portal < 1 ) || ( portal > numInterAreaPortals ) )
+	if ( ( portal < 1 ) || ( portal > (int)doublePortals.size() ) )
 	{
 		common->Error( "SetPortalPlayerLoss: bad portal number %i", portal );
 	}
@@ -897,7 +895,7 @@ int idRenderWorldLocal::PointInArea( const idVec3 &point ) const {
 		}
 		if ( nodeNum < 0 ) {
 			nodeNum = -1 - nodeNum;
-			if ( nodeNum >= numPortalAreas ) {
+			if ( nodeNum >= (int)portalAreas.size() ) {
 				common->Error( "idRenderWorld::PointInArea: area out of range" );
 			}
 			return nodeNum;
@@ -1171,7 +1169,6 @@ const char* playerMaterialExcludeList[] = {
 bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const idVec3 &end, const float radius, bool skipDynamic, bool skipPlayer /*_D3XP*/ ) const {
 	areaReference_t * ref;
 	idRenderEntityLocal *def;
-	portalArea_t * area;
 	idRenderModel * model;
 	srfTriangles_t * tri;
 	localTrace_t localTrace;
@@ -1197,10 +1194,10 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 	// check all areas for models
 	for ( i = 0; i < numAreas; i++ ) {
 
-		area = &portalAreas[ areas[i] ];
+		const portalArea_t &area = portalAreas[areas[i]];
 
 		// check all models in this area
-		for ( ref = area->entityRefs.areaNext; ref != &area->entityRefs; ref = ref->areaNext ) {
+		for ( ref = area.entityRefs.areaNext; ref != &area.entityRefs; ref = ref->areaNext ) {
 			def = ref->entity;
 
 			model = def->parms.hModel;
@@ -1576,11 +1573,11 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 	
 	if ( nodeNum < 0 ) {
 		portalArea_t *area = &portalAreas[ (-1 - nodeNum) ];
-		if ( area->viewCount == tr.viewCount ) {
+		if ( area->areaViewCount == tr.viewCount ) {
 			return;	// already added a reference here
 		}
 
-		area->viewCount = tr.viewCount;
+		area->areaViewCount = tr.viewCount;
 
 		if ( def ) {
 			AddEntityRefToArea( def, area );
@@ -1601,7 +1598,7 @@ void idRenderWorldLocal::PushVolumeIntoTree_r( idRenderEntityLocal *def, idRende
 		// yet, because the test volume may yet wind up being in the
 		// solid part, which would cause bounds slightly poked into
 		// a wall to show up in the next room
-		if ( portalAreas[ node->commonChildrenArea ].viewCount == tr.viewCount ) {
+		if ( portalAreas[node->commonChildrenArea].areaViewCount == tr.viewCount ) {
 			return;
 		}
 	}
@@ -1718,11 +1715,11 @@ void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRende
 	{
 		int areaNum = -1 - nodeNum;
 		portalArea_t* area = &portalAreas[areaNum];
-		if (area->viewCount == tr.viewCount)
+		if ( area->areaViewCount == tr.viewCount )
 		{
 			return;	// already added a reference here
 		}
-		area->viewCount = tr.viewCount;
+		area->areaViewCount = tr.viewCount;
 
 		if (def != NULL)
 		{
@@ -1746,7 +1743,7 @@ void idRenderWorldLocal::PushFrustumIntoTree_r(idRenderEntityLocal* def, idRende
 		// yet, because the test volume may yet wind up being in the
 		// solid part, which would cause bounds slightly poked into
 		// a wall to show up in the next room
-		if (portalAreas[node->commonChildrenArea].viewCount == tr.viewCount)
+		if ( portalAreas[node->commonChildrenArea].areaViewCount == tr.viewCount )
 		{
 			return;
 		}

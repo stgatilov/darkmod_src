@@ -219,13 +219,14 @@ typedef struct renderView_s {
 
 
 // exitPortal_t is returned by idRenderWorld::GetPortal()
-typedef struct {
+struct exitPortal_t {
 	int					areas[2];		// areas connected by this portal
-	const idWinding	*	w;				// winding points have counter clockwise ordering seen from areas[0]
+	const idWinding&	w;				// winding points have counter clockwise ordering seen from areas[0]
 	int					blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
 	float				lossPlayer;		// grayman #3042 - sound loss (in dB) for Player-heard sounds
 	qhandle_t			portalHandle;
-} exitPortal_t;
+	exitPortal_t(idWinding& _w) : w(_w) {}
+};
 
 
 // guiPoint_t is returned by idRenderWorld::GuiTrace()

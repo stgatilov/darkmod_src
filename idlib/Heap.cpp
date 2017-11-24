@@ -59,7 +59,7 @@ public:
 	void			Free( void *p );				// free memory
 	void *			Allocate16( const dword bytes );// allocate 16 byte aligned memory
 	void			Free16( void *p );				// free 16 byte aligned memory
-	dword			Msize( void *p );				// return size of data block
+	size_t			Msize( void *p );				// return size of data block
 	void			Dump( void  );
 
 	void			AllocDefragBlock( void );		// hack for huge renderbumps
@@ -357,7 +357,7 @@ idHeap::Msize
 			allocation request (due to block alignment reasons).
 ================
 */
-dword idHeap::Msize( void *p ) {
+size_t idHeap::Msize( void *p ) {
 
 	if ( !p ) {
 		return 0;
@@ -981,7 +981,7 @@ void idHeap::LargeFree( void *ptr) {
 #undef new
 
 static idHeap *			mem_heap = NULL;
-static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
+static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, _SIZE_T_MAX, 0 };
 static memoryStats_t	mem_frame_allocs;
 static memoryStats_t	mem_frame_frees;
 
@@ -993,7 +993,7 @@ Mem_ClearFrameStats
 void Mem_ClearFrameStats( void ) {
 	mem_frame_allocs.num = mem_frame_frees.num = 0;
 	mem_frame_allocs.minSize = mem_frame_frees.minSize = 0x0fffffff;
-	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = -1;
+	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = _SIZE_T_MAX;
 	mem_frame_allocs.totalSize = mem_frame_frees.totalSize = 0;
 }
 
@@ -1021,7 +1021,7 @@ void Mem_GetStats( memoryStats_t &stats ) {
 Mem_UpdateStats
 ==================
 */
-void Mem_UpdateStats( memoryStats_t &stats, int size ) {
+void Mem_UpdateStats( memoryStats_t &stats, size_t size ) {
 	stats.num++;
 	if ( size < stats.minSize ) {
 		stats.minSize = size;
@@ -1037,7 +1037,7 @@ void Mem_UpdateStats( memoryStats_t &stats, int size ) {
 Mem_UpdateAllocStats
 ==================
 */
-void Mem_UpdateAllocStats( int size ) {
+void Mem_UpdateAllocStats( size_t size ) {
 	Mem_UpdateStats( mem_frame_allocs, size );
 	Mem_UpdateStats( mem_total_allocs, size );
 }
@@ -1047,7 +1047,7 @@ void Mem_UpdateAllocStats( int size ) {
 Mem_UpdateFreeStats
 ==================
 */
-void Mem_UpdateFreeStats( int size ) {
+void Mem_UpdateFreeStats( size_t size ) {
 	Mem_UpdateStats( mem_frame_frees, size );
 	mem_total_allocs.num--;
 	mem_total_allocs.totalSize -= size;

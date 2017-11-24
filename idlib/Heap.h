@@ -34,9 +34,9 @@
 
 typedef struct {
 	int		num;
-	int		minSize;
-	int		maxSize;
-	int		totalSize;
+	size_t		minSize;
+	size_t		maxSize;
+	size_t		totalSize;
 } memoryStats_t;
 
 

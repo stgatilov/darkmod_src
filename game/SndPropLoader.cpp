@@ -175,7 +175,7 @@ void CsndPropBase::Restore(idRestoreGame *savefile)
 
 			// Restore the winding pointer from idRenderWorld
 			exitPortal_t p = gameRenderWorld->GetPortal(area, portal);
-			soundportal.winding = p.w;
+			soundportal.winding = &p.w;
 		}
 
 		// Allocate and resize the triangle matrix
@@ -594,12 +594,11 @@ void CsndPropLoader::FillAPGfromAP ( int numAreas )
 int CsndPropLoader::FindSndPortal(int area, qhandle_t pHandle)
 {
 	int np, val(-1);
-	exitPortal_t portalTmp;
 		
 	np = gameRenderWorld->NumPortalsInArea(area);
 	for (int i = 0; i < np; i++)
 	{
-		portalTmp = gameRenderWorld->GetPortal(area,i);
+		auto portalTmp = gameRenderWorld->GetPortal(area,i);
 		//DM_LOG(LC_SOUND, LT_DEBUG)LOGSTRING("FindSndPortal: Desired handle %d, handle of portal %d: %d\r", pHandle, i, areaP->portals[i].handle ); //Uncomment for portal handle debugging
 		if(portalTmp.portalHandle == pHandle)
 		{
@@ -615,7 +614,6 @@ void CsndPropLoader::CreateAreasData ( void )
 {
 	int i, j, k, np, anum, propscount(0), numAreas(0), numPortals(0), PortIndex;
 	sndAreaPtr area;
-	exitPortal_t portalTmp;
 	idVec3 pCenters;
 
 	numAreas = gameRenderWorld->NumAreas();
@@ -650,14 +648,14 @@ void CsndPropLoader::CreateAreasData ( void )
 		area->portals = new SsndPortal[np];
 		for ( j = 0 ; j < np ; j++ ) 
 		{
-			portalTmp = gameRenderWorld->GetPortal(i,j);
+			auto portalTmp = gameRenderWorld->GetPortal(i,j);
 			
 			area->portals[j].portalNum = j;
 			area->portals[j].handle = portalTmp.portalHandle;
 			area->portals[j].from = portalTmp.areas[0]; // areas[0] is the 'from' area
 			area->portals[j].to = portalTmp.areas[1];
-			area->portals[j].center = portalTmp.w->GetCenter();
-			area->portals[j].winding = portalTmp.w;
+			area->portals[j].center = portalTmp.w.GetCenter();
+			area->portals[j].winding = &portalTmp.w;
 			
 			pCenters += area->portals[j].center;
 

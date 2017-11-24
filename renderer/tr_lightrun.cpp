@@ -839,7 +839,7 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 		return;
 	}
 
-	const portal_t	*prt;
+	//const portal_t	*prt;
 	portalArea_t	*area;
 	doublePortal_t	*dp;
 
@@ -847,7 +847,7 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 		// check all the models in this area
 		area = lref->area;
 
-		for ( prt = area->portals ; prt ; prt = prt->next ) {
+		for ( auto const &prt: area->areaPortals ) {
 			dp = prt->doublePortal;
 
 			// we only handle a single fog volume covering a portal
@@ -857,7 +857,7 @@ void R_CreateLightDefFogPortals( idRenderLightLocal *ldef ) {
 				continue;
 			}
 			
-			if ( WindingCompletelyInsideLight( prt->w, ldef ) ) {
+			if ( WindingCompletelyInsideLight( &prt->w, ldef ) ) {
 				dp->fogLight = ldef;
 				dp->nextFoggedPortal = ldef->foggedPortals;
 				ldef->foggedPortals = dp;
@@ -1116,7 +1116,7 @@ void R_ReCreateWorldReferences( void ) {
 
 			// the world model entities are put specifically in a single
 			// area, instead of just pushing their bounds into the tree
-			if ( i < rw->numPortalAreas ) {
+			if ( i < (int)rw->portalAreas.size() ) {
 				rw->AddEntityRefToArea( def, &rw->portalAreas[i] );
 			} else {
 				R_CreateEntityRefs( def );

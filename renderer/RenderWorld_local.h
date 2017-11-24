@@ -22,15 +22,15 @@
 
 typedef struct portal_s {
 	int						intoArea;		// area this portal leads to
-	idWinding *				w;				// winding points have counter clockwise ordering seen this area
+	idWinding 				w;				// winding points have counter clockwise ordering seen this area
 	idPlane					plane;			// view must be on the positive side of the plane to cross
-	struct portal_s *		next;			// next portal of the area
+	//struct portal_s *		next;			// next portal of the area
 	struct doublePortal_s *	doublePortal;
 } portal_t;
 
 
 typedef struct doublePortal_s {
-	struct portal_s	*		portals[2];
+	struct portal_s			portals[2];
 	int						blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc, set by doors that shut them off
 
 	float					lossPlayer;		// grayman #3042 - amount of Player sound loss (in dB)
@@ -40,8 +40,12 @@ typedef struct doublePortal_s {
 	// fog volume over each portal.
 	idRenderLightLocal *	fogLight;
 	struct doublePortal_s *	nextFoggedPortal;
-	int						viewCount;		// For r_showPortals. Keep track whether the player's view flows through 
+	int						portalViewCount;		// For r_showPortals. Keep track whether the player's view flows through 
 											// individual portals, not just whole visleafs.  -- SteveL #4162
+	doublePortal_s() { // zero fill
+		static doublePortal_s empty;
+		*this = empty;
+	}
 } doublePortal_t;
 
 
@@ -49,10 +53,15 @@ typedef struct portalArea_s {
 	int				areaNum;
 	int				connectedAreaNum[NUM_PORTAL_ATTRIBUTES];	// if two areas have matching connectedAreaNum, they are
 									// not separated by a portal with the apropriate PS_BLOCK_* blockingBits
-	int				viewCount;		// set by R_FindViewLightsAndEntities. Marks whether anything in this area has been drawn this frame for r_showPortals
-	portal_t *		portals;		// never changes after load
+	int				areaViewCount;		// set by R_FindViewLightsAndEntities. Marks whether anything in this area has been drawn this frame for r_showPortals
+	std::vector<portal_t*> areaPortals;		// never changes after load
 	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
 	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change
+	idScreenRect	areaScreenRect;
+	portalArea_s() { // zero fill
+		static portalArea_s empty;
+		*this = empty;
+	}
 } portalArea_t;
 
 
@@ -136,14 +145,12 @@ public:
 	areaNode_t *			areaNodes;
 	int						numAreaNodes;
 
-	portalArea_t *			portalAreas;
-	int						numPortalAreas;
+	std::vector<portalArea_t> portalAreas;
+	//int						numPortalAreas;
 	int						connectedAreaNum;		// incremented every time a door portal state changes
 
-	idScreenRect *			areaScreenRect;
-
-	doublePortal_t *		doublePortals;
-	int						numInterAreaPortals;
+	std::vector<doublePortal_t>	doublePortals;
+	//int						numInterAreaPortals;
 
 	idList<idRenderModel *>	localModels;
 
@@ -210,7 +217,7 @@ public:
 
 	bool					AreasAreConnected( int areaNum1, int areaNum2, portalConnection_t connection );
 	void					FloodConnectedAreas( portalArea_t *area, int portalAttributeIndex );
-	idScreenRect &			GetAreaScreenRect( int areaNum ) const { return areaScreenRect[areaNum]; }
+	const idScreenRect &	GetAreaScreenRect( int areaNum ) const { return portalAreas[areaNum].areaScreenRect; }
 	void					ShowPortals();
 
 	//--------------------------

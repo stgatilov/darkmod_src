@@ -33,39 +33,29 @@ void idRenderWorldLocal::FreeWorld() {
 	FreeDefs();
 
 	// free all the portals and check light/model references
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
-		portalArea_t	*area;
-		portal_t		*portal, *nextPortal;
+	for ( auto &area: portalAreas ) {
+		//portalArea_t	*area;
+		//portal_t		*portal, *nextPortal;
 
-		area = &portalAreas[i];
-		for ( portal = area->portals ; portal ; portal = nextPortal ) {
-			nextPortal = portal->next;
-			delete portal->w;
-			R_StaticFree( portal );
-		}
+		/*area = &portalAreas[i];
+		for ( int i = 0; i < (int)area->areaPortals.size(); i++ ) {
+			auto portal = area->areaPortals[i];
+			//nextPortal = portal->next;
+			delete portal.w;
+			//R_StaticFree( portal );
+		}*/
 
 		// there shouldn't be any remaining lightRefs or entityRefs
-		if ( area->lightRefs.areaNext != &area->lightRefs ) {
+		if ( area.lightRefs.areaNext != &area.lightRefs ) {
 			common->Error( "FreeWorld: unexpected remaining lightRefs" );
 		}
-		if ( area->entityRefs.areaNext != &area->entityRefs ) {
+		if ( area.entityRefs.areaNext != &area.entityRefs ) {
 			common->Error( "FreeWorld: unexpected remaining entityRefs" );
 		}
 	}
 
-	if ( portalAreas ) {
-		R_StaticFree( portalAreas );
-		portalAreas = NULL;
-		numPortalAreas = 0;
-		R_StaticFree( areaScreenRect );
-		areaScreenRect = NULL;
-	}
-
-	if ( doublePortals ) {
-		R_StaticFree( doublePortals );
-		doublePortals = NULL;
-		numInterAreaPortals = 0;
-	}
+	portalAreas.clear();
+	doublePortals.clear();
 
 	if ( areaNodes ) {
 		R_StaticFree( areaNodes );
@@ -242,7 +232,7 @@ void idRenderWorldLocal::SetupAreaRefs() {
 	int		i;
 
 	connectedAreaNum = 0;
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	for ( i = 0; i < (int)portalAreas.size(); i++ ) {
 		portalAreas[i].areaNum = i;
 		portalAreas[i].lightRefs.areaNext =
 		portalAreas[i].lightRefs.areaPrev =
@@ -263,36 +253,35 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 
 	src->ExpectTokenString( "{" );
 
-	numPortalAreas = src->ParseInt();
+	int numPortalAreas = src->ParseInt();
 	if ( numPortalAreas < 0 ) {
 		src->Error( "R_ParseInterAreaPortals: bad numPortalAreas" );
 		return;
 	}
-	portalAreas = (portalArea_t *)R_ClearedStaticAlloc( numPortalAreas * sizeof( portalAreas[0] ) );
-	areaScreenRect = (idScreenRect *) R_ClearedStaticAlloc( numPortalAreas * sizeof( idScreenRect ) );
+	portalAreas.resize( numPortalAreas );// = (portalArea_t *)R_ClearedStaticAlloc( numPortalAreas * sizeof( portalAreas[0] ) );
+	//areaScreenRect.resize( numPortalAreas );// = (idScreenRect *)R_ClearedStaticAlloc( numPortalAreas * sizeof( idScreenRect ) );
 
 	// set the doubly linked lists
 	SetupAreaRefs();
 
-	numInterAreaPortals = src->ParseInt();
+	auto numInterAreaPortals = src->ParseInt();
 	if ( numInterAreaPortals < 0 ) {
 		src->Error(  "R_ParseInterAreaPortals: bad numInterAreaPortals" );
 		return;
 	}
 
-	doublePortals = (doublePortal_t *)R_ClearedStaticAlloc( numInterAreaPortals * 
-		sizeof( doublePortals [0] ) );
+	doublePortals.resize( numInterAreaPortals );// = (doublePortal_t *)R_ClearedStaticAlloc( numInterAreaPortals * sizeof( doublePortals [0] ) );
 
 	for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
 		int		numPoints, a1, a2;
-		idWinding	*w;
-		portal_t	*p;
+		portal_t	*p = &doublePortals[i].portals[0];
+		idWinding	*w = &p->w;
 
 		numPoints = src->ParseInt();
 		a1 = src->ParseInt();
 		a2 = src->ParseInt();
 
-		w = new idWinding( numPoints );
+		//w = new idWinding( numPoints );
 		w->SetNumPoints( numPoints );
 		for ( j = 0 ; j < numPoints ; j++ ) {
 			src->Parse1DMatrix( 3, (*w)[j].ToFloatPtr() );
@@ -302,28 +291,30 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 		}
 
 		// add the portal to a1
-		p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
+		//p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
 		p->intoArea = a2;
 		p->doublePortal = &doublePortals[i];
-		p->w = w;
-		p->w->GetPlane( p->plane );
+		//p->w = w;
+		p->w.GetPlane( p->plane );
 
-		p->next = portalAreas[a1].portals;
-		portalAreas[a1].portals = p;
+		//p->next = portalAreas[a1].portals;
+		portalAreas[a1].areaPortals.push_back(p);
 
-		doublePortals[i].portals[0] = p;
+		//doublePortals[i].portals[0] = p;
 
 		// reverse it for a2
-		p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
+		//p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
+		p++;
 		p->intoArea = a1;
 		p->doublePortal = &doublePortals[i];
-		p->w = w->Reverse();
-		p->w->GetPlane( p->plane );
+		p->w = *w;
+		p->w.ReverseSelf();
+		p->w.GetPlane( p->plane );
 
-		p->next = portalAreas[a2].portals;
-		portalAreas[a2].portals = p;
+		//p->next = portalAreas[a2].portals;
+		portalAreas[a2].areaPortals.push_back(p);
 
-		doublePortals[i].portals[1] = p;
+		//doublePortals[i].portals[1] = p;
 	}
 
 	src->ExpectTokenString( "}" );
@@ -402,9 +393,9 @@ Sets up for a single area world
 =================
 */
 void idRenderWorldLocal::ClearWorld() {
-	numPortalAreas = 1;
-	portalAreas = (portalArea_t *)R_ClearedStaticAlloc( sizeof( portalAreas[0] ) );
-	areaScreenRect = (idScreenRect *) R_ClearedStaticAlloc( sizeof( idScreenRect ) );
+	//numPortalAreas = 1;
+	portalAreas.resize( 1 );// = (portalArea_t *)R_ClearedStaticAlloc( sizeof( portalAreas[0] ) );
+	//areaScreenRect.resize( 1 );// = (idScreenRect *)R_ClearedStaticAlloc( sizeof( idScreenRect ) );
 
 	SetupAreaRefs();
 
@@ -569,7 +560,7 @@ bool idRenderWorldLocal::InitFromMap( const char *name ) {
 	delete src;
 
 	// if it was a trivial map without any areas, create a single area
-	if ( !numPortalAreas ) {
+	if ( !portalAreas.size() ) {
 		ClearWorld();
 	}
 
@@ -592,12 +583,12 @@ void idRenderWorldLocal::ClearPortalStates() {
 	int		i, j;
 
 	// all portals start off open
-	for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
+	for ( i = 0 ; i < (int)doublePortals.size() ; i++ ) {
 		doublePortals[i].blockingBits = PS_BLOCK_NONE;
 	}
 
 	// flood fill all area connections
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	for ( i = 0; i < (int)portalAreas.size(); i++ ) {
 		for ( j = 0 ; j < NUM_PORTAL_ATTRIBUTES ; j++ ) {
 			connectedAreaNum++;
 			FloodConnectedAreas( &portalAreas[i], j );
@@ -616,7 +607,7 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 	// add the world model for each portal area
 	// we can't just call AddEntityDef, because that would place the references
 	// based on the bounding box, rather than explicitly into the correct area
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	for ( i = 0; i < (int)portalAreas.size(); i++ ) {
 		idRenderEntityLocal	*def;
 		int			index;
 
@@ -686,7 +677,7 @@ CheckAreaForPortalSky
 bool idRenderWorldLocal::CheckAreaForPortalSky( int areaNum ) {
 	areaReference_t	*ref;
 
-	assert( areaNum >= 0 && areaNum < numPortalAreas );
+	assert( areaNum >= 0 && areaNum < (int)portalAreas.size() );
 
 	for ( ref = portalAreas[areaNum].entityRefs.areaNext; ref->entity; ref = ref->areaNext ) {
 		assert( ref->area == &portalAreas[areaNum] );

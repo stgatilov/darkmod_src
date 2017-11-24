@@ -862,28 +862,28 @@ bool idSoundWorldLocal::ResolveOrigin( const int stackDepth, const soundPortalTr
 		idVec3 source;
 
 		idPlane	pl;
-		re.w->GetPlane( pl );
+		re.w.GetPlane( pl );
 
 		float  scale;
 		idVec3 dir = listenerQU - soundOrigin;
 		if ( !pl.RayIntersection( soundOrigin, dir, scale ) )
 		{
-			source = re.w->GetCenter();
+			source = re.w.GetCenter();
 		}
 		else
 		{
 			source = soundOrigin + scale * dir;
 
 			// if this point isn't inside the portal edges, slide it in
-			for ( int i = 0 ; i < re.w->GetNumPoints() ; i++ )
+			for ( int i = 0 ; i < re.w.GetNumPoints() ; i++ )
 			{
-				int j = ( i + 1 ) % re.w->GetNumPoints();
-				idVec3	edgeDir = (*(re.w))[j].ToVec3() - (*(re.w))[i].ToVec3();
+				int j = ( i + 1 ) % re.w.GetNumPoints();
+				idVec3	edgeDir = re.w[j].ToVec3() - re.w[i].ToVec3();
 				idVec3	edgeNormal;
 
 				edgeNormal.Cross( pl.Normal(), edgeDir );
 
-				idVec3 fromVert = source - (*(re.w))[j].ToVec3();
+				idVec3 fromVert = source - re.w[j].ToVec3();
 
 				float d = edgeNormal * fromVert;
 				if ( d > 0 )
