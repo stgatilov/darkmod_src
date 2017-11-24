@@ -981,7 +981,7 @@ void idHeap::LargeFree( void *ptr) {
 #undef new
 
 static idHeap *			mem_heap = NULL;
-static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, _SIZE_T_MAX, 0 };
+static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, SIZE_MAX, 0 };
 static memoryStats_t	mem_frame_allocs;
 static memoryStats_t	mem_frame_frees;
 
@@ -993,7 +993,7 @@ Mem_ClearFrameStats
 void Mem_ClearFrameStats( void ) {
 	mem_frame_allocs.num = mem_frame_frees.num = 0;
 	mem_frame_allocs.minSize = mem_frame_frees.minSize = 0x0fffffff;
-	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = _SIZE_T_MAX;
+	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = SIZE_MAX;
 	mem_frame_allocs.totalSize = mem_frame_frees.totalSize = 0;
 }
 
