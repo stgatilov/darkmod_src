@@ -21,6 +21,8 @@
 #include <cassert>
 #endif
 
+#define ASSERT_ENUM_STRING( string, index )		( 1 / (int)!( string - index ) ) ? #string : ""
+
 /*
 ===============================================================================
 
