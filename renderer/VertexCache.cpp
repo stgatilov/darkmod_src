@@ -599,10 +599,10 @@ void idVertexCache::List( void ) {
 std::vector<srfTriangles_t*> queuedTris;
 
 void idVertexCache::QueueTrisForUpload( srfTriangles_t *tri ) {
-	vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+	//vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
 	//Touch( tri->ambientCache );
-	/*queuedTris.push_back( (srfTriangles_t*)&tri );
-	UploadQueuedTris();*/
+	queuedTris.push_back( tri );
+	//UploadQueuedTris();*/
 }
 
 void idVertexCache::UploadQueuedTris() {
@@ -610,6 +610,7 @@ void idVertexCache::UploadQueuedTris() {
 		if ( tri->ambientCache )
 			continue;
 		vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+		tri->ambientCachePrev = tri->ambientCache;
 		Touch( tri->ambientCache );
 	}
 	queuedTris.clear();

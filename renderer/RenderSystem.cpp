@@ -199,11 +199,14 @@ void R_AddDrawViewCmd( viewDef_t &parms ) {
 	// copy drawsurf geo state for backend use
 	for ( int i = 0; i < parms.numDrawSurfs; ++i ) {
 		drawSurf_t* surf = parms.drawSurfs[i];
-		surf->backendGeo = surf->frontendGeo;
-		//surf->backendGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-		//memcpy( (void*)surf->backendGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
-		//if ( !surf->backendGeo->ambientCache && surf->backendGeo->ambientCacheQueued )
-			//vertexCache.QueueTrisForUpload( (srfTriangles_t*)surf->backendGeo );
+		if ( !surf->frontendGeo->ambientCachePrev )
+			surf->frontendGeo->ambientCachePrev = surf->frontendGeo->ambientCache;
+		//surf->frontendGeo = surf->frontendGeo;
+		//surf->frontendGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
+		//*surf->frontendGeo = *surf->frontendGeo;
+		//memcpy( (void*)surf->frontendGeo, surf->frontendGeo, sizeof( srfTriangles_t ) );
+		//if ( !surf->frontendGeo->ambientCache && surf->frontendGeo->ambientCacheQueued )
+			//vertexCache.QueueTrisForUpload( (srfTriangles_t*)surf->frontendGeo );
 	}
 
 	drawSurfsCommand_t	*cmd;

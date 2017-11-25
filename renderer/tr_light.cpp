@@ -521,19 +521,17 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 R_LinkLightSurf
 =================
 */
-void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space,
+void R_LinkLightSurf( const drawSurf_t **link, srfTriangles_t *tri, const viewEntity_t *space,
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow ) {
 	if ( !space )
 		space = &tr.viewDef->worldSpace;
 
 	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
-	drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
-	*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
+	//drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
+	//*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
+	drawSurf->frontendGeo = tri;
 	//drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = drawSurf->frontendGeo;
-	//drawSurf->backendGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-	//memcpy( (void*)drawSurf->backendGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
@@ -850,7 +848,7 @@ void R_AddLightSurfaces( void ) {
 				R_CreateAmbientCache( light->frustumTris, false );
 			}
 			// touch the surface so it won't get purged
-			vertexCache.Touch( light->frustumTris->ambientCache );
+			//vertexCache.Touch( light->frustumTris->ambientCache );
 		}
 
 		// add the prelight shadows for the static world geometry
@@ -1025,7 +1023,7 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) {
 R_AddDrawSurf
 =================
 */
-void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
+void R_AddDrawSurf( srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
 					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius )
 {
 	drawSurf_t		*drawSurf;
@@ -1034,10 +1032,10 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
-	drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
-	*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
-	//drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;
+	//drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
+	//*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
+	drawSurf->frontendGeo = tri;
+	//drawSurf->frontendGeo = nullptr;
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;

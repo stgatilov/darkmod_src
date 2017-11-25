@@ -1242,24 +1242,24 @@ void idInteraction::AddActiveInteraction( void ) {
 					// make sure the original surface has its ambient cache created
 					
 					srfTriangles_t *tri = sint->ambientTris;
-					if ( !tri->ambientCache ) {
+					/*if ( !tri->ambientCache ) {
 						if ( !R_CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) {
 							// skip if we were out of vertex memory
 							continue;
 						}
 					}
 					// reference the original surface's ambient cache
-					lightTris->ambientCache = tri->ambientCache;
+					lightTris->ambientCache = tri->ambientCache;*/
 					
+					lightTris = tri;
 					// touch the ambient surface so it won't get purged
-					vertexCache.Touch( lightTris->ambientCache );
+					if ( lightTris->ambientCache )
+						vertexCache.Touch( lightTris->ambientCache );
 
-					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) {
+					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) 
 						vertexCache.Alloc( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ), &lightTris->indexCache, true );
-					}
-					if ( lightTris->indexCache ) {
+					if ( lightTris->indexCache ) 
 						vertexCache.Touch( lightTris->indexCache );
-					}
 
 					// add the surface to the light list
 
