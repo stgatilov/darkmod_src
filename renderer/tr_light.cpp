@@ -53,10 +53,12 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 		R_DeriveTangents( tri );
 	}
 
-	vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
-	if ( !tri->ambientCache ) {
+	if ( r_ignore.GetBool() )
+		vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+	else
+		vertexCache.QueueTrisForUpload( tri );
+	if ( !tri->ambientCache ) 
 		return false;
-	}
 
 	return true;
 }
@@ -526,8 +528,12 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 
 	drawSurf_t *drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
 
-	drawSurf->frontendGeo = tri;
-	drawSurf->backendGeo = nullptr;
+	drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
+	*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
+	//drawSurf->frontendGeo = tri;
+	drawSurf->backendGeo = drawSurf->frontendGeo;
+	//drawSurf->backendGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
+	//memcpy( (void*)drawSurf->backendGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
 	drawSurf->space = space;
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
@@ -535,10 +541,6 @@ void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const 
 	if ( space->entityDef && space->entityDef->parms.noShadow )
 		drawSurf->dsFlags |= DSF_SHADOW_MAP_IGNORE;
 	drawSurf->particle_radius = 0.0f; // #3878
-
-	srfTriangles_t* copiedGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-	memcpy( copiedGeo, drawSurf->frontendGeo, sizeof( srfTriangles_t ) );
-	drawSurf->backendGeo = copiedGeo;
 
 	if ( viewInsideShadow )
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
@@ -1032,7 +1034,9 @@ void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const 
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
 	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
-	drawSurf->frontendGeo = tri;
+	drawSurf->frontendGeo = (const srfTriangles_t	*)R_FrameAlloc( sizeof( *drawSurf->frontendGeo ) );
+	*(srfTriangles_t	*)drawSurf->frontendGeo = *tri;
+	//drawSurf->frontendGeo = tri;
 	drawSurf->backendGeo = nullptr;
 	drawSurf->space = space;
 	drawSurf->material = shader;
@@ -1249,11 +1253,12 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			def.visibleCount = tr.viewCount;
 
 			// make sure we have an ambient cache
-			if ( !R_CreateAmbientCache( tri, shader->ReceivesLighting() ) )
+			if ( !R_CreateAmbientCache( tri, shader->ReceivesLighting() ) && r_ignore.GetBool() )
 				// don't add anything if the vertex cache was too full to give us an ambient cache
 				return;
 			// touch it so it won't get purged
-			vertexCache.Touch( tri->ambientCache );
+			if ( r_ignore.GetBool() || tri->ambientCache )
+				vertexCache.Touch( tri->ambientCache );
 
 			if ( r_useIndexBuffers.GetBool() && !tri->indexCache ) 
 				vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );

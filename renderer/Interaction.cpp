@@ -1240,6 +1240,7 @@ void idInteraction::AddActiveInteraction( void ) {
 					|| !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 					// make sure the original surface has its ambient cache created
+					
 					srfTriangles_t *tri = sint->ambientTris;
 					if ( !tri->ambientCache ) {
 						if ( !R_CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) {
@@ -1247,10 +1248,9 @@ void idInteraction::AddActiveInteraction( void ) {
 							continue;
 						}
 					}
-
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
-
+					
 					// touch the ambient surface so it won't get purged
 					vertexCache.Touch( lightTris->ambientCache );
 

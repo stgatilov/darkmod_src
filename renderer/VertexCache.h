@@ -95,6 +95,9 @@ public:
 	// listVertexCache calls this
 	void			List();
 
+	void QueueTrisForUpload( srfTriangles_t *tri );
+	void UploadQueuedTris();
+
 private:
 	//bool			virtualMemory;			// not fast stuff
 
