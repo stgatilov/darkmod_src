@@ -26,7 +26,7 @@
 	#define USE_LIBC_MALLOC		1
 #else
 	//TODO: remove idHeap in 32-bit case too
-	#define USE_LIBC_MALLOC		0
+	#define USE_LIBC_MALLOC		1
 #endif
 #endif
 

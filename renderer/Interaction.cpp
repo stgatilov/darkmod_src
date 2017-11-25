@@ -174,7 +174,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		}
 
 		cullInfo.cullBits = (byte *)R_StaticAlloc(tri->numVerts * sizeof(cullInfo.cullBits[0]));
-		if (0) { // duzenko #4424:  original code - questionable in terms of cpu cache
+#if 0 // duzenko #4424:  original code - questionable in terms of cpu cache
 			SIMDProcessor->Memset(cullInfo.cullBits, 0, tri->numVerts * sizeof(cullInfo.cullBits[0]));
 
 			float *planeSide = (float *)_alloca16(tri->numVerts * sizeof(float));
@@ -187,7 +187,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 				SIMDProcessor->Dot(planeSide, cullInfo.localClipPlanes[i], tri->verts, tri->numVerts);
 				SIMDProcessor->CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts);
 			}
-		} else { // duzenko #4424: same as above but more like d3bfg: 1 pass through memory array, no memset and extra mem allocation
+#else // duzenko #4424: same as above but more like d3bfg: 1 pass through memory array, no memset and extra mem allocation
 			for (int j = 0; j < tri->numVerts; j++) {
 				byte b = 0;
 				idVec3 &vec = tri->verts[j].xyz;
@@ -199,7 +199,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 					b |= (d < LIGHT_CLIP_EPSILON) << i;
 				}
 				cullInfo.cullBits[j] = b;
-			}
+#endif
 		}
 	}
 }

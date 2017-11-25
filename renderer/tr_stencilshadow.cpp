@@ -740,8 +740,6 @@ Also inits the remap[] array to all -1
 static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6], unsigned short *pointCull ) {
 	int i;
 	int frontBits;
-	float *planeSide;
-	byte *side1, *side2;
 
 	SIMDProcessor->Memset( remap, -1, tri->numVerts * sizeof( remap[0] ) );
 
@@ -758,21 +756,33 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 	}
 
 	// if the surface is not completely inside the light frustum
-	if ( frontBits == ( ( ( 1 << 6 ) - 1 ) ) << 6 ) {
+	if ( frontBits == ( ( ( 1 << 6 ) - 1 ) ) << 6 )
 		return;
-	}
 
-	planeSide = (float *) _alloca16( tri->numVerts * sizeof( float ) );
-	side1 = (byte *) _alloca16( tri->numVerts * sizeof( byte ) );
-	side2 = (byte *) _alloca16( tri->numVerts * sizeof( byte ) );
+#if 1 // duzenko: don't use SIMD here because temp buffers are slow
+	for ( int j = 0; j < tri->numVerts; j++ ) {
+		idVec3 &vec = tri->verts[j].xyz;
+		short bits = 0;
+		for ( i = 0; i < 6; i++ ) {
+			float d = frustum[i].Distance( vec );
+			bits |= (d < LIGHT_CLIP_EPSILON) << i;
+			bits |= (d > -LIGHT_CLIP_EPSILON) << (i + 6);
+		}
+		pointCull[j] = bits;
+	}
+#else
+	float *planeSide;
+	byte *side1, *side2;
+	planeSide = (float *)_alloca16( tri->numVerts * sizeof( float ) );
+	side1 = (byte *)_alloca16( tri->numVerts * sizeof( byte ) );
+	side2 = (byte *)_alloca16( tri->numVerts * sizeof( byte ) );
 	SIMDProcessor->Memset( side1, 0, tri->numVerts * sizeof( byte ) );
 	SIMDProcessor->Memset( side2, 0, tri->numVerts * sizeof( byte ) );
 
 	for ( i = 0; i < 6; i++ ) {
 
-		if ( frontBits & (1<<(i+6)) ) {
+		if ( frontBits & (1 << (i + 6)) )
 			continue;
-		}
 
 		SIMDProcessor->Dot( planeSide, frustum[i], tri->verts, tri->numVerts );
 		SIMDProcessor->CmpLT( side1, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts );
@@ -781,6 +791,7 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 	for ( i = 0; i < tri->numVerts; i++ ) {
 		pointCull[i] |= side1[i] | (side2[i] << 6);
 	}
+#endif
 }
 
 /*
