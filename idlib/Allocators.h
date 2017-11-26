@@ -196,7 +196,7 @@ type *idDynamicAlloc<type, baseBlockSize, minBlockSize>::Alloc( const int num ) 
 	}
 	numUsedBlocks++;
 	usedBlockMemory += num * sizeof( type );
-	return Mem_Alloc16( num * sizeof( type ) );
+	return (type*)Mem_Alloc16( num * sizeof( type ) );
 }
 
 template<class type, int baseBlockSize, int minBlockSize>

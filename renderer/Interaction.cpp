@@ -1327,13 +1327,14 @@ void idInteraction::AddActiveInteraction( void ) {
 					shadowTris->shadowCache = sint->ambientTris->shadowCache;
 				}
 				// if we are out of vertex cache space, skip the interaction
-				if ( !shadowTris->shadowCache ) {
+				if ( !shadowTris->shadowCache && r_ignore.GetBool() ) {
 					continue;
 				}
 			}
 
 			// touch the shadow surface so it won't get purged
-			vertexCache.Touch( shadowTris->shadowCache );
+			if ( shadowTris->shadowCache )
+				vertexCache.Touch( shadowTris->shadowCache );
 
 			if ( !shadowTris->indexCache && r_useIndexBuffers.GetBool() ) {
 				vertexCache.Alloc( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), &shadowTris->indexCache, true );

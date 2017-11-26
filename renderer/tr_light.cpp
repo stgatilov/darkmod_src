@@ -16,9 +16,11 @@
 #include "precompiled.h"
 #include <set>
 #include <unordered_set>
+#include <thread>
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "Session_local.h"
 #include "Model_local.h" // Added in #3878 (soft particles) to allow r_AddAmbientDrawSurfs to access info about particles to 
 						 // pass to the backend without bloating the modelSurface_t struct used everywhere. That struct is the only
 						 // output of ALL dynamic model updates, and it's a POD (non-initialized), so adding the info to it would 
@@ -35,6 +37,33 @@ VERTEX CACHE GENERATORS
 
 ===========================================================================================
 */
+std::vector<srfTriangles_t*> queuedAmbientTris;
+std::vector<srfTriangles_t*> queuedShadowTris;
+const std::thread::id MAIN_THREAD_ID = std::this_thread::get_id();
+
+/*void QueueTrisForUpload( srfTriangles_t *tri ) {
+	//vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+	//Touch( tri->ambientCache );
+	queuedAmbientTris.push_back( tri );
+	//UploadQueuedTris();
+}*/
+
+void UploadQueuedTris() {
+	for ( auto tri : queuedAmbientTris ) {
+		if ( !tri->ambientCache ) {
+			vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+			tri->ambientCachePrev = tri->ambientCache;
+		}
+		vertexCache.Touch( tri->ambientCache );
+	}
+	queuedAmbientTris.clear();
+	for ( auto tri : queuedShadowTris ) {
+		if ( !tri->shadowCache ) 
+			vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+		vertexCache.Touch( tri->shadowCache );
+	}
+	queuedShadowTris.clear();
+}
 
 /*
 ==================
@@ -44,19 +73,20 @@ Create it if needed
 ==================
 */
 bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
-	if ( tri->ambientCache ) {
+	if ( tri->ambientCache ) 
 		return true;
-	}
 
 	// we are going to use it for drawing, so make sure we have the tangents and normals
 	if ( needsLighting && !tri->tangentsCalculated ) {
 		R_DeriveTangents( tri );
 	}
 
-	if ( r_ignore.GetBool() )
+	extern idSessionLocal sessLocal;
+	if ( r_ignore.GetBool() || std::this_thread::get_id() != sessLocal.frontendThread.get_id() )
 		vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
 	else
-		vertexCache.QueueTrisForUpload( tri );
+		//vertexCache.QueueTrisForUpload( tri );
+		queuedAmbientTris.push_back( tri );
 	if ( !tri->ambientCache ) 
 		return false;
 
@@ -71,12 +101,12 @@ This is used only for a specific light
 ==================
 */
 void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
-
-	if ( !tri->shadowVertexes ) {
+	if ( !tri->shadowVertexes ) 
 		return;
-	}
-
-	vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+	if ( r_ignore.GetBool() || std::this_thread::get_id() != sessLocal.frontendThread.get_id() )
+		vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+	else
+		queuedShadowTris.push_back( tri );
 }
 
 /*
@@ -848,7 +878,8 @@ void R_AddLightSurfaces( void ) {
 				R_CreateAmbientCache( light->frustumTris, false );
 			}
 			// touch the surface so it won't get purged
-			//vertexCache.Touch( light->frustumTris->ambientCache );
+			if ( light->frustumTris->ambientCache )
+				vertexCache.Touch( light->frustumTris->ambientCache );
 		}
 
 		// add the prelight shadows for the static world geometry
@@ -879,7 +910,8 @@ void R_AddLightSurfaces( void ) {
 #endif
 
 			// touch the shadow surface so it won't get purged
-			vertexCache.Touch( tri->shadowCache );
+			if ( tri->shadowCache )
+				vertexCache.Touch( tri->shadowCache );
 
 			if ( r_useIndexBuffers.GetBool() ) {
 				if ( !tri->indexCache ) {

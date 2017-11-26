@@ -595,23 +595,3 @@ void idVertexCache::List( void ) {
 		common->Printf( "Index buffers are not used.\n" );
 	}
 }
-
-std::vector<srfTriangles_t*> queuedTris;
-
-void idVertexCache::QueueTrisForUpload( srfTriangles_t *tri ) {
-	//vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
-	//Touch( tri->ambientCache );
-	queuedTris.push_back( tri );
-	//UploadQueuedTris();*/
-}
-
-void idVertexCache::UploadQueuedTris() {
-	for ( auto tri : queuedTris ) {
-		if ( tri->ambientCache )
-			continue;
-		vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
-		tri->ambientCachePrev = tri->ambientCache;
-		Touch( tri->ambientCache );
-	}
-	queuedTris.clear();
-}

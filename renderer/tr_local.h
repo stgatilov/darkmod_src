@@ -1542,7 +1542,7 @@ TRISURF
 ============================================================
 */
 
-#define USE_TRI_DATA_ALLOCATOR
+//#define USE_TRI_DATA_ALLOCATOR duzenko: does not appear to improve speed or memory consumption
 
 void				R_InitTriSurfData( void );
 void				R_ShutdownTriSurfData( void );
