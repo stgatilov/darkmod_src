@@ -505,14 +505,18 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 				// so the entity chains should be somewhat shorter (they tend to be fairly close).
 				for ( inter = edef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
 					if ( inter->lightDef == ldef ) {
-						if ( !inter->IsEmpty() ) {
-							R_SetEntityDefViewEntity( edef );
-						}
 						break;
 					}
 				}
-				if ( !inter ) {
-					continue; 
+
+				// if we already have an interaction, we don't need to do anything
+				if ( inter != NULL ) {
+					// if this entity wasn't in view already, the scissor rect will be empty,
+					// so it will only be used for shadow casting
+					if ( !inter->IsEmpty() ) {
+						R_SetEntityDefViewEntity( edef );
+					}
+					continue;
 				}
 			}
 
