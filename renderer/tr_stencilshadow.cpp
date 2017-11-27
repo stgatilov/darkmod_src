@@ -750,13 +750,14 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 		}
 	}
 
-	// if the surface is not completely inside the light frustum
-	if ( frontBits == ((1 << 6) - 1) << 6 ) {
-		// initialize point cull
-		for ( i = 0; i < tri->numVerts; i++ )
-			pointCull[i] = frontBits;
-		return;
+	// initialize point cull
+	for ( i = 0; i < tri->numVerts; i++ ) {
+		pointCull[i] = frontBits;
 	}
+
+	// if the surface is not completely inside the light frustum
+	if ( frontBits == ( ( ( 1 << 6 ) - 1 ) ) << 6 )
+		return;
 
 #if 1 // duzenko: don't use SIMD here because temp buffers are slow
 	for ( int j = 0; j < tri->numVerts; j++ ) {
@@ -770,10 +771,6 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 		pointCull[j] = bits;
 	}
 #else
-	// initialize point cull
-	for ( i = 0; i < tri->numVerts; i++ )
-		pointCull[i] = frontBits;
-
 	float *planeSide;
 	byte *side1, *side2;
 	planeSide = (float *)_alloca16( tri->numVerts * sizeof( float ) );

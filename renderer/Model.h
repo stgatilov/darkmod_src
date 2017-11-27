@@ -116,7 +116,7 @@ typedef struct srfTriangles_s {
 
 	// data in vertex object space, not directly readable by the CPU
 	struct vertCache_s *		indexCache;				// int
-	struct vertCache_s			*ambientCache, *ambientCachePrev;	// idDrawVert
+	struct vertCache_s *		ambientCache;			// idDrawVert
 	struct vertCache_s *		shadowCache;			// shadowCache_t
 } srfTriangles_t;
 

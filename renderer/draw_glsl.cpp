@@ -132,7 +132,7 @@ void RB_GLSL_DrawInteraction( const drawInteraction_t *din ) {
 
 	// draw it
 	GL_CheckErrors();
-	RB_DrawElementsWithCounters( din->surf->frontendGeo );
+	RB_DrawElementsWithCounters( din->surf->backendGeo );
 	GL_CheckErrors();
 }
 
@@ -163,7 +163,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY )
 			continue;
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->frontendGeo->ambientCachePrev );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
@@ -277,9 +277,9 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			continue; // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->frontendGeo->ambientCachePrev );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
-		RB_DrawElementsWithCounters( surf->frontendGeo );
+		RB_DrawElementsWithCounters( surf->backendGeo );
 	}
 	qglUseProgram( 0 );
 	FB_ToggleShadow( false );

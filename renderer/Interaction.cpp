@@ -1243,26 +1243,26 @@ void idInteraction::AddActiveInteraction( void ) {
 					|| !R_CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
 
 					// make sure the original surface has its ambient cache created
-					
 					srfTriangles_t *tri = sint->ambientTris;
-					/*if ( !tri->ambientCache ) {
+					if ( !tri->ambientCache ) {
 						if ( !R_CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) {
 							// skip if we were out of vertex memory
 							continue;
 						}
 					}
-					// reference the original surface's ambient cache
-					lightTris->ambientCache = tri->ambientCache;*/
-					
-					lightTris = tri;
-					// touch the ambient surface so it won't get purged
-					if ( lightTris->ambientCache )
-						vertexCache.Touch( lightTris->ambientCache );
 
-					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) 
+					// reference the original surface's ambient cache
+					lightTris->ambientCache = tri->ambientCache;
+
+					// touch the ambient surface so it won't get purged
+					vertexCache.Touch( lightTris->ambientCache );
+
+					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) {
 						vertexCache.Alloc( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ), &lightTris->indexCache, true );
-					if ( lightTris->indexCache ) 
+					}
+					if ( lightTris->indexCache ) {
 						vertexCache.Touch( lightTris->indexCache );
+					}
 
 					// add the surface to the light list
 
@@ -1330,14 +1330,13 @@ void idInteraction::AddActiveInteraction( void ) {
 					shadowTris->shadowCache = sint->ambientTris->shadowCache;
 				}
 				// if we are out of vertex cache space, skip the interaction
-				if ( !shadowTris->shadowCache && r_ignore.GetBool() ) {
+				if ( !shadowTris->shadowCache ) {
 					continue;
 				}
 			}
 
 			// touch the shadow surface so it won't get purged
-			if ( shadowTris->shadowCache )
-				vertexCache.Touch( shadowTris->shadowCache );
+			vertexCache.Touch( shadowTris->shadowCache );
 
 			if ( !shadowTris->indexCache && r_useIndexBuffers.GetBool() ) {
 				vertexCache.Alloc( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), &shadowTris->indexCache, true );

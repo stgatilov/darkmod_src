@@ -152,7 +152,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	float		color[4];
 	const srfTriangles_t	*tri;
 
-	tri = surf->frontendGeo;
+	tri = surf->backendGeo;
 	shader = surf->material;
 
 	// update the clip plane if needed
@@ -177,7 +177,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( !tri->ambientCachePrev ) {
+	if ( !tri->ambientCache ) {
 		common->Printf( "RB_T_FillDepthBuffer: !tri->ambientCache\n" );
 		return;
 	}
@@ -221,7 +221,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		color[3] = 1;
 	}
 
-	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCachePrev );
+	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
@@ -561,7 +561,7 @@ void RB_STD_T_RenderShaderPasses_OldStage( idDrawVert *ac, const shaderStage_t *
 	// set the state
 	GL_State( pStage->drawStateBits );
 
-	const srfTriangles_t	*tri = surf->frontendGeo;
+	const srfTriangles_t	*tri = surf->backendGeo;
 	// draw it
 	RB_DrawElementsWithCounters( tri );
 
@@ -614,7 +614,7 @@ void RB_STD_T_RenderShaderPasses_NewStage( idDrawVert *ac, const shaderStage_t *
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 
-	const srfTriangles_t	*tri = surf->frontendGeo;
+	const srfTriangles_t	*tri = surf->backendGeo;
 	// megaTextures bind a lot of images and set a lot of parameters
 	if (newStage->megaTexture) {
 		newStage->megaTexture->SetMappingForSurface( tri );
@@ -758,7 +758,7 @@ void RB_STD_T_RenderShaderPasses_SoftParticle( idDrawVert *ac, const shaderStage
 	}
 	qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 6, parm );
 
-	const srfTriangles_t	*tri = surf->frontendGeo;
+	const srfTriangles_t	*tri = surf->backendGeo;
 	// draw it
 	RB_DrawElementsWithCounters( tri );
 
@@ -791,7 +791,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	const float	*regs;
 	const srfTriangles_t	*tri;
 
-	tri = surf->frontendGeo;
+	tri = surf->backendGeo;
 	shader = surf->material;
 
 	if ( !shader->HasAmbient() ) 
@@ -827,7 +827,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( !tri->ambientCachePrev ) {
+	if ( !tri->ambientCache ) {
 		common->Printf( "RB_T_RenderShaderPasses: !tri->ambientCache\n" );
 		return;
 	}
@@ -856,7 +856,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
 	}
 
-	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCachePrev );
+	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 
@@ -981,7 +981,7 @@ RB_T_BlendLight
 static void RB_T_BlendLight( const drawSurf_t *surf ) {
 	const srfTriangles_t *tri;
 
-	tri = surf->frontendGeo;
+	tri = surf->backendGeo;
 
 	if ( backEnd.currentSpace != surf->space ) {
 		idPlane	lightProject[4];
@@ -999,8 +999,8 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 	}
 
 	// this gets used for both blend lights and shadow draws
-	if ( tri->ambientCachePrev ) {
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( tri->ambientCachePrev );
+	if ( tri->ambientCache ) {
+		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	} else if (tri->shadowCache) {
@@ -1122,7 +1122,7 @@ RB_FogPass
 ==================
 */
 static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 ) {
-	srfTriangles_t*frustumTris;
+	const srfTriangles_t*frustumTris;
 	drawSurf_t			ds;
 	const idMaterial	*lightShader;
 	const shaderStage_t	*stage;
@@ -1134,13 +1134,14 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	frustumTris = backEnd.vLight->frustumTris;
 
 	// if we ran out of vertex cache memory, skip it
-	if ( !frustumTris->ambientCachePrev ) 
+	if ( !frustumTris->ambientCache ) {
 		return;
+	}
 	memset( &ds, 0, sizeof( ds ) );
 	if ( !backEnd.vLight->noFogBoundary ) // No need to create the drawsurf if we're not fogging the bounding box -- #3664
 	{
 		ds.space = &backEnd.viewDef->worldSpace;
-		ds.frontendGeo = frustumTris;
+		ds.backendGeo = frustumTris;
 		ds.scissorRect = backEnd.viewDef->scissor;
 	}
 

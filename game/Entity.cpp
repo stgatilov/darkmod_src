@@ -6007,6 +6007,15 @@ void idEntity::RestorePhysics( idPhysics *phys ) {
 
 /*
 ================
+idEntity::GetPhysics
+================
+*/
+idPhysics *idEntity::GetPhysics( void ) const {
+	return physics;
+}
+
+/*
+================
 idEntity::RunPhysics
 ================
 */

@@ -159,7 +159,7 @@ RB_T_RenderTriangleSurface
 ===============
 */
 void RB_T_RenderTriangleSurface( const drawSurf_t *surf ) {
-	RB_RenderTriangleSurface( surf->frontendGeo );
+	RB_RenderTriangleSurface( surf->backendGeo );
 }
 
 /*
@@ -413,7 +413,7 @@ void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *sur
 
 	if ( texture->texgen & (/*TG_DIFFUSE_CUBE |*/ TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE) ) {
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ),
-			(void *)&(((idDrawVert *)vertexCache.Position( surf->frontendGeo->ambientCache ))->st) );
+			(void *)&(((idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache ))->st) );
 	}
 	else if ( texture->texgen == TG_REFLECT_CUBE ) {
 		qglDisableClientState( GL_NORMAL_ARRAY );
@@ -638,7 +638,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
 	//anon end
 
-	if (!surf->frontendGeo || !surf->frontendGeo->ambientCachePrev) 
+	if (!surf->backendGeo || !surf->backendGeo->ambientCache) 
 		return;
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		if ( r_skipAmbient.GetInteger() == 2 )

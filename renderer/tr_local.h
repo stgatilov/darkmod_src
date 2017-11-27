@@ -117,8 +117,8 @@ static const int DSF_SHADOW_MAP_IGNORE = 4; // #4641
 static const int DSF_SHADOW_MAP_ONLY = 8; // #4641
 
 typedef struct drawSurf_s {
-	srfTriangles_t	*frontendGeo;  // do not use in the backend; may be modified by the frontend
-	//srfTriangles_t	*frontendGeo;
+	const srfTriangles_t	*frontendGeo;  // do not use in the backend; may be modified by the frontend
+	const srfTriangles_t	*backendGeo;
 	const struct viewEntity_s *space;
 	const idMaterial		*material;	// may be NULL for shadow volumes
 	float					sort;		// material->sort, modified by gui / entity sort offsets
@@ -348,7 +348,7 @@ typedef struct viewLight_s {
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
 	idPlane					fogPlane;					// fog plane for backend fog volume rendering
-	srfTriangles_t *	frustumTris;					// light frustum for backend fog volume rendering
+	const srfTriangles_t *	frustumTris;				// light frustum for backend fog volume rendering
 	const idMaterial *		lightShader;				// light shader used by backend
 	const float	*			shaderRegisters;			// shader registers used by backend
 	idImage *				falloffImage;				// falloff image used by backend
@@ -1233,10 +1233,10 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def );
 viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def );
 viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 
-void R_AddDrawSurf( srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
+void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
 					const idMaterial *shader, const idScreenRect &scissor, const float soft_particle_radius = -1.0f ); // soft particles in #3878
 
-void R_LinkLightSurf( const drawSurf_t **link, srfTriangles_t *tri, const viewEntity_t *space, 
+void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, 
 				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
 
 bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
@@ -1544,7 +1544,7 @@ TRISURF
 ============================================================
 */
 
-//#define USE_TRI_DATA_ALLOCATOR duzenko: does not appear to improve speed or memory consumption
+#define USE_TRI_DATA_ALLOCATOR
 
 void				R_InitTriSurfData( void );
 void				R_ShutdownTriSurfData( void );

@@ -195,17 +195,7 @@ This is the main 3D rendering command.  A single scene may
 have multiple views if a mirror, portal, or dynamic texture is present.
 =============
 */
-void R_AddDrawViewCmd( viewDef_t &parms ) {
-	// copy drawsurf geo state for backend use
-	for ( int i = 0; i < parms.numDrawSurfs; ++i ) {
-		drawSurf_t* surf = parms.drawSurfs[i];
-		auto geo = surf->frontendGeo;
-		if ( !geo->ambientCachePrev || geo->ambientCachePrev->tag == TAG_FREE || r_ignore.GetBool() )
-			geo->ambientCachePrev = geo->ambientCache;
-		//surf->frontendGeo = (srfTriangles_t*)R_FrameAlloc( sizeof( srfTriangles_t ) );
-		//*surf->frontendGeo = *surf->frontendGeo;
-	}
-
+void	R_AddDrawViewCmd( viewDef_t &parms ) {
 	drawSurfsCommand_t	*cmd;
 
 	cmd = (drawSurfsCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
@@ -640,9 +630,6 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		session->WaitForFrontendCompletion();
 		int endWait = Sys_Milliseconds();
 		common->SetErrorIndirection( false );
-
-		extern void UploadQueuedTris();
-		UploadQueuedTris(); // duzenko: moved some uploads from the frontend
 
 		if( r_logSmpTimings.GetBool() ) {
 			if( !logFile ) {

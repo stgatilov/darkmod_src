@@ -370,7 +370,7 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	// find how many are ambient
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		surf = drawSurfs[i];
-		tri = surf->frontendGeo;
+		tri = surf->backendGeo;
 
 		if ( tri == NULL || tri->verts == NULL ) {
 			continue;
