@@ -248,6 +248,8 @@ public:
 	idInteraction *			lastInteraction;
 
 	struct doublePortal_s *	foggedPortals;
+
+	std::map<int, idInteraction*> interactionMap;	// 4686: duzenko - replacement for global interaction table
 };
 
 

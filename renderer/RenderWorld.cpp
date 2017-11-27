@@ -1520,6 +1520,7 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 				index = ldef->index * interactionTableWidth + edef->index;
 
 				interactionTable[ index ] = inter;
+				ldef->interactionMap[edef->index] = inter;
 				count++;
 			}
 		}

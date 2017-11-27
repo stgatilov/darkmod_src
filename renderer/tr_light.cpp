@@ -480,45 +480,40 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			if ( edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled ) {
 				continue;
 			}
-
 			
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
 			idInteraction *inter;
-			if ( r_useInteractionTable.GetBool() && this->interactionTable ) {
+			if ( r_useInteractionTable.GetInteger() == 1 && this->interactionTable ) {
 				// allocating these tables may take several megs on big maps, but it saves 3% to 5% of
 				// the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
 				//int index = ldef->index * this->interactionTableWidth + edef->index;
 				inter = this->interactionTable[ (ldef->index * this->interactionTableWidth + edef->index) ];
-				if ( inter ) {
-					// if this entity wasn't in view already, the scissor rect will be empty,
-					// so it will only be used for shadow casting
-					if ( !inter->IsEmpty() ) {
-						R_SetEntityDefViewEntity( edef );
-					}
-					continue;
-				}
 			} else {
 				// scan the doubly linked lists, which may have several dozen entries
 
 				// we could check either model refs or light refs for matches, but it is
 				// assumed that there will be less lights in an area than models
 				// so the entity chains should be somewhat shorter (they tend to be fairly close).
-				for ( inter = edef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
-					if ( inter->lightDef == ldef ) {
-						break;
+				if ( r_useInteractionTable.GetInteger() == 0 )
+					for ( inter = edef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
+						if ( inter->lightDef == ldef ) {
+							break;
+						}
 					}
+				else {
+					auto search = ldef->interactionMap.find( edef->index );
+					if ( search != ldef->interactionMap.end() )
+						inter = search->second;
 				}
-
-				// if we already have an interaction, we don't need to do anything
-				if ( inter != NULL ) {
-					// if this entity wasn't in view already, the scissor rect will be empty,
-					// so it will only be used for shadow casting
-					if ( !inter->IsEmpty() ) {
-						R_SetEntityDefViewEntity( edef );
-					}
-					continue;
+			}
+			if ( inter ) {
+				// if this entity wasn't in view already, the scissor rect will be empty,
+				// so it will only be used for shadow casting
+				if ( !inter->IsEmpty() ) {
+					R_SetEntityDefViewEntity( edef );
 				}
+				continue;
 			}
 
 			// create a new interaction, but don't do any work other than bbox to frustum culling

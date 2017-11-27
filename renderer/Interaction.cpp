@@ -587,6 +587,8 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 		renderWorld->interactionTable[ index ] = interaction;
 	}
 
+	ldef->interactionMap[edef->index] = interaction;
+
 	return interaction;
 }
 
@@ -678,6 +680,7 @@ void idInteraction::UnlinkAndFree( void ) {
 		}
 		renderWorld->interactionTable[index] = NULL;
 	}
+	lightDef->interactionMap.erase( entityDef->index );
 
 	Unlink();
 
