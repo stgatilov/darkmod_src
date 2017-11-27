@@ -82,9 +82,10 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 	}
 
 	extern idSessionLocal sessLocal;
-	if ( r_ignore.GetBool() || std::this_thread::get_id() != sessLocal.frontendThread.get_id() )
+	if ( com_smp.GetInteger() < 2 || std::this_thread::get_id() != sessLocal.frontendThread.get_id() ) {
 		vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
-	else
+		tri->ambientCachePrev = tri->ambientCache;
+	} else
 		//vertexCache.QueueTrisForUpload( tri );
 		queuedAmbientTris.push_back( tri );
 	if ( !tri->ambientCache ) 
@@ -103,7 +104,7 @@ This is used only for a specific light
 void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
 	if ( !tri->shadowVertexes ) 
 		return;
-	if ( r_ignore.GetBool() || std::this_thread::get_id() != sessLocal.frontendThread.get_id() )
+	if ( com_smp.GetInteger() < 2 || std::this_thread::get_id() != sessLocal.frontendThread.get_id() )
 		vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
 	else
 		queuedShadowTris.push_back( tri );
