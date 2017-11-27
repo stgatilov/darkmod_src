@@ -505,6 +505,8 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 					auto search = ldef->interactionMap.find( edef->index );
 					if ( search != ldef->interactionMap.end() )
 						inter = search->second;
+					else
+						inter = NULL;
 				}
 			}
 			if ( inter ) {

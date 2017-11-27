@@ -150,32 +150,14 @@ idRenderWorldLocal::~idRenderWorldLocal() {
 
 /*
 ===================
-ResizeInteractionTable
-===================
-*/
-void idRenderWorldLocal::ResizeInteractionTable() {
-	// we overflowed the interaction table, so dump it
-	// we may want to resize this in the future if it turns out to be common
-	common->Warning( "Overflowed interactionTableWidth - table removed and disabled" );
-	R_StaticFree( interactionTable );
-	interactionTable = NULL;
-	r_useInteractionTable.SetBool( 0 );
-}
-
-/*
-===================
 AddEntityDef
 ===================
 */
 qhandle_t idRenderWorldLocal::AddEntityDef( const renderEntity_t *re ){
 	// try and reuse a free spot
 	int entityHandle = entityDefs.FindNull();
-	if ( entityHandle == -1 ) {
+	if ( entityHandle == -1 ) 
 		entityHandle = entityDefs.Append( NULL );
-		if ( interactionTable && entityDefs.Num() > interactionTableWidth ) {
-			ResizeInteractionTable();
-		}
-	}
 
 	UpdateEntityDef( entityHandle, re );
 	
@@ -349,12 +331,8 @@ qhandle_t idRenderWorldLocal::AddLightDef( const renderLight_t *rlight ) {
 	// try and reuse a free spot
 	int lightHandle = lightDefs.FindNull();
 
-	if ( lightHandle == -1 ) {
+	if ( lightHandle == -1 ) 
 		lightHandle = lightDefs.Append( NULL );
-		if ( interactionTable && lightDefs.Num() > interactionTableHeight ) {
-			ResizeInteractionTable();
-		}
-	}
 	UpdateLightDef( lightHandle, rlight );
 
 	return lightHandle;
@@ -1498,7 +1476,8 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 		interactionTableWidth = 2*BUFFER; // this->entityDefs.Num() + padding // grayman #3192 - double this dimension
 		interactionTableHeight = BUFFER; // this->lightDefs.Num() + padding
 		const int size = (interactionTableWidth * interactionTableHeight) * sizeof( interactionTable ); 
-		interactionTable = (idInteraction **)R_ClearedStaticAlloc( size );
+		if ( r_useInteractionTable.GetInteger() == 1 )
+			interactionTable = (idInteraction **)R_ClearedStaticAlloc( size );
 
 		//common->Printf( "entityDefs.Num(): %i\n", this->entityDefs.Num() );
 		//common->Printf( "lightDefs.Num(): %i\n", this->lightDefs.Num() );
@@ -1519,7 +1498,8 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 				edef = inter->entityDef;
 				index = ldef->index * interactionTableWidth + edef->index;
 
-				interactionTable[ index ] = inter;
+				if ( r_useInteractionTable.GetInteger() == 1 )
+					interactionTable[index] = inter;
 				ldef->interactionMap[edef->index] = inter;
 				count++;
 			}

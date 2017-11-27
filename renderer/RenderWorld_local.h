@@ -241,8 +241,6 @@ public:
 	//--------------------------
 	// RenderWorld.cpp
 
-	void					ResizeInteractionTable();
-
 	void					AddEntityRefToArea( idRenderEntityLocal *def, portalArea_t *area );
 	void					AddLightRefToArea( idRenderLightLocal *light, portalArea_t *area );
 
