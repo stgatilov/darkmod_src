@@ -16,6 +16,8 @@
 #ifndef __RENDERWORLDLOCAL_H__
 #define __RENDERWORLDLOCAL_H__
 
+#include "containers/DenseHash.h"
+
 // assume any lightDef or entityDef index above this is an internal error
 #define LUDICROUS_INDEX	65537		// (2 ** 16) + 1;
 
@@ -74,6 +76,18 @@ typedef struct {
 										// this is the area number, else CHILDREN_HAVE_MULTIPLE_AREAS
 } areaNode_t;
 
+
+struct InterTableHashFunction {
+	inline int operator() (int idx) const {
+		//note: f(x) = (A*x % P), where P = 2^31-1 is prime
+		static const unsigned MOD = ((1U<<31) - 1);
+		uint64_t prod = 0x04738F51ULL * (unsigned)idx;
+		unsigned mod = (prod >> 31) + prod & MOD;
+		unsigned modm = mod - MOD;
+		mod = mod < MOD ? mod : modm;
+		return (int)mod;
+	}
+};
 
 class idRenderWorldLocal : public idRenderWorld {
 public:
@@ -166,9 +180,8 @@ public:
 	// cache access, because the table is accessed by light in idRenderWorldLocal::CreateLightDefInteractions()
 	// Growing this table is time consuming, so we add a pad value to the number
 	// of entityDefs and lightDefs
-	idInteraction **		interactionTable;
-	int						interactionTableWidth;		// entityDefs
-	int						interactionTableHeight;		// lightDefs
+	static const int MAX_INTERACTION_TABLE_LOAD_FACTOR = 75;
+	idDenseHash<int, idInteraction*, InterTableHashFunction> interactionTable;
 
 
 	bool					generateAllInteractionsCalled;

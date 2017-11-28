@@ -579,15 +579,13 @@ idInteraction *idInteraction::AllocAndLink( idRenderEntityLocal *edef, idRenderL
 	}
 
 	// update the interaction table
-	if ( renderWorld->interactionTable ) {
-		int index = ldef->index * renderWorld->interactionTableWidth + edef->index;
-		if ( renderWorld->interactionTable[index] != NULL ) {
-			common->Error( "idInteraction::AllocAndLink: non NULL table entry" );
-		}
-		renderWorld->interactionTable[ index ] = interaction;
-	}
-
-	ldef->interactionMap[edef->index] = interaction;
+	int key = (ldef->index << 16) + edef->index;
+	auto &cell = renderWorld->interactionTable.Find(key);
+	if (!renderWorld->interactionTable.IsEmpty(cell))
+		common->Error( "idInteraction::AllocAndLink: non NULL table entry" );
+	cell.key = key;
+	cell.value = interaction;
+	renderWorld->interactionTable.Added(cell);
 
 	return interaction;
 }
@@ -673,14 +671,11 @@ void idInteraction::UnlinkAndFree( void ) {
 
 	// clear the table pointer
 	idRenderWorldLocal *renderWorld = this->lightDef->world;
-	if ( renderWorld->interactionTable ) {
-		int index = this->lightDef->index * renderWorld->interactionTableWidth + this->entityDef->index;
-		if ( renderWorld->interactionTable[index] != this ) {
-			common->Error( "idInteraction::UnlinkAndFree: interactionTable wasn't set" );
-		}
-		renderWorld->interactionTable[index] = NULL;
-	}
-	lightDef->interactionMap.erase( entityDef->index );
+	int key = (this->lightDef->index << 16) + this->entityDef->index;
+	auto &cell = renderWorld->interactionTable.Find(key);
+	if (cell.key != key)
+		common->Error( "idInteraction::UnlinkAndFree: interactionTable wasn't set" );
+	renderWorld->interactionTable.Erase(cell);
 
 	Unlink();
 

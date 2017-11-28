@@ -420,10 +420,8 @@ void idRenderWorldLocal::FreeDefs() {
 
 	generateAllInteractionsCalled = false;
 
-	if ( interactionTable ) {
-		R_StaticFree( interactionTable );
-		interactionTable = NULL;
-	}
+	interactionTable.Reset();
+	interactionTable.Init(-1, MAX_INTERACTION_TABLE_LOAD_FACTOR);
 
 	// free all lightDefs
 	for ( i = 0 ; i < lightDefs.Num() ; i++ ) {

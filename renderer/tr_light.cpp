@@ -451,31 +451,10 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef ) 
 			// if any of the edef's interaction match this light, we don't
 			// need to consider it. 
 			idInteraction *inter;
-			if ( r_useInteractionTable.GetInteger() == 1 && this->interactionTable ) {
-				// allocating these tables may take several megs on big maps, but it saves 3% to 5% of
-				// the CPU time.  The table is updated at interaction::AllocAndLink() and interaction::UnlinkAndFree()
-				//int index = ldef->index * this->interactionTableWidth + edef->index;
-				inter = this->interactionTable[ (ldef->index * this->interactionTableWidth + edef->index) ];
-			} else {
-				// scan the doubly linked lists, which may have several dozen entries
+			int key = (ldef->index << 16) + edef->index;
+			auto &cell = interactionTable.Find(key);
+			inter = interactionTable.IsEmpty(cell) ? NULL : cell.value;
 
-				// we could check either model refs or light refs for matches, but it is
-				// assumed that there will be less lights in an area than models
-				// so the entity chains should be somewhat shorter (they tend to be fairly close).
-				if ( r_useInteractionTable.GetInteger() == 0 )
-					for ( inter = edef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
-						if ( inter->lightDef == ldef ) {
-							break;
-						}
-					}
-				else {
-					auto search = ldef->interactionMap.find( edef->index );
-					if ( search != ldef->interactionMap.end() )
-						inter = search->second;
-					else
-						inter = NULL;
-				}
-			}
 			if ( inter ) {
 				// if this entity wasn't in view already, the scissor rect will be empty,
 				// so it will only be used for shadow casting

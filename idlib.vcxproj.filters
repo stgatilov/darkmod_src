@@ -367,5 +367,8 @@
       <Filter>Text</Filter>
     </ClInclude>
     <ClInclude Include="idlib\StdFilesystem.h" />
+    <ClInclude Include="idlib\containers\DenseHash.h">
+      <Filter>Containers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -132,6 +132,16 @@
       -->
     </Expand>
   </Type>
+
+  <Type Name="idDenseHash&lt;*,*,*&gt;">
+    <DisplayString>DenseHash: size = {count}/{size1 + 1}</DisplayString>
+    <Expand>
+      <ArrayItems>
+        <Size>size1 + 1</Size>
+        <ValuePointer>table._Myptr</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
   
   <Type Name="idLinkList&lt;*&gt;">
     <Expand>

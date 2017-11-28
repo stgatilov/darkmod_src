@@ -317,6 +317,7 @@
     <ClInclude Include="idlib\bv\Sphere.h" />
     <ClInclude Include="idlib\containers\BinSearch.h" />
     <ClInclude Include="idlib\containers\BTree.h" />
+    <ClInclude Include="idlib\containers\DenseHash.h" />
     <ClInclude Include="idlib\containers\HashIndex.h" />
     <ClInclude Include="idlib\containers\HashTable.h" />
     <ClInclude Include="idlib\containers\Hierarchy.h" />
