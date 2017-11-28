@@ -91,10 +91,12 @@ public:
                 if (_thread->get_id() != std::this_thread::get_id())
                 {
                     _thread->join();
+                    //note: _thread is empty after joining
                 }
-
-                // Any joinable thread must be detached before its destructor is reached
-                _thread->detach();
+                else {
+                    // Any joinable thread must be detached before its destructor is reached
+                    _thread->detach();
+                }
             }
 		}
 	}
