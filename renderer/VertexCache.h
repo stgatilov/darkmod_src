@@ -42,6 +42,7 @@ typedef struct vertCache_s {
 	struct vertCache_s	**	user;		// will be set to zero when purged
 	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
 	int				frameUsed;			// it can't be purged if near the current frame
+	void *data;
 } vertCache_t;
 
 class idVertexCache {
@@ -61,7 +62,7 @@ public:
 	// Alloc does NOT do a touch, which allows purging of things
 	// created at level load time even if a frame hasn't passed yet.
 	// These allocations can be purged, which will zero the pointer.
-	void			Alloc( void *data, int bytes, vertCache_t **buffer, bool indexBuffer = false );
+	void			Alloc( void *data, int bytes, vertCache_t **buffer, bool indexBuffer = false, bool queue = false );
 
 	// This will be a real pointer with virtual memory,
 	// but it will be an int offset cast to a pointer of ARB_vertex_buffer_object

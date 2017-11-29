@@ -29,6 +29,7 @@ static const int	EXPAND_HEADERS = 32;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "" );
 idCVar idVertexCache::r_useMapBufferRange( "r_useMapBufferRange", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "use ARB_map_buffer_range for optimization" );
+idCVar r_queueVertexUploads( "r_queueVertexUploads", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "queue some vertex uploads from frontend to backend" );
 
 idVertexCache		vertexCache;
 
@@ -249,12 +250,14 @@ void idVertexCache::Shutdown() {
 	headerAllocator.Shutdown();
 }
 
+std::vector<vertCache_t*> queuedAlloc;
+
 /*
 ===========
 idVertexCache::Alloc
 ===========
 */
-void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool indexBuffer ) {
+void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool indexBuffer, bool queue ) {
 	vertCache_t	*block;
 
 	if ( size <= 0 ) {
@@ -306,6 +309,10 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 	//block->indexBuffer = indexBuffer;
 	block->target = indexBuffer ? GL_ELEMENT_ARRAY_BUFFER_ARB : GL_ARRAY_BUFFER_ARB;
 
+	if ( !allocatingTempBuffer && r_queueVertexUploads.GetBool() && queue ) {
+		queuedAlloc.push_back( block );
+		block->data = data;
+	} else
 	// copy the data
 	if ( block->vbo ) {
 		GL_BindBuffer( block->target, block->vbo );
@@ -318,9 +325,6 @@ void idVertexCache::Alloc( void *data, int size, vertCache_t **buffer, bool inde
 				qglBufferDataARB( GL_ARRAY_BUFFER_ARB, (GLsizeiptrARB)size, data, GL_STATIC_DRAW_ARB );
 			}
 		}
-	} else {
-		/*block->virtMem = Mem_Alloc( size );
-		SIMDProcessor->Memcpy( block->virtMem, data, size );*/
 	}
 
 	// this will be set to zero when it is purged
@@ -514,6 +518,20 @@ void idVertexCache::EndFrame() {
 
 	}
 #endif
+
+	for ( auto block : queuedAlloc ) {
+		GL_BindBuffer( block->target, block->vbo );
+		if ( block->target == GL_ELEMENT_ARRAY_BUFFER_ARB ) {
+			qglBufferDataARB( GL_ELEMENT_ARRAY_BUFFER_ARB, (GLsizeiptrARB)block->size, block->data, GL_STATIC_DRAW_ARB );
+		} else {
+			if ( allocatingTempBuffer ) {
+				qglBufferDataARB( GL_ARRAY_BUFFER_ARB, (GLsizeiptrARB)block->size, block->data, GL_STREAM_DRAW_ARB );
+			} else {
+				qglBufferDataARB( GL_ARRAY_BUFFER_ARB, (GLsizeiptrARB)block->size, block->data, GL_STATIC_DRAW_ARB );
+			}
+		}
+	}
+	queuedAlloc.clear();
 
 	//if ( !virtualMemory ) {
 		// unbind vertex buffers so normal virtual memory will be used in case
