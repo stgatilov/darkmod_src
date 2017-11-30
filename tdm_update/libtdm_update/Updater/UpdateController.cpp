@@ -386,6 +386,14 @@ void UpdateController::OnFinishStep(UpdateStep step)
 
 			_view.OnFinishDifferentialUpdate(info);
 
+			//#4529 stgatilov: Since differential update does not uncompress unchanged OGG/ROQ files,
+			//The hashes of pk4 files are now different from the ones on the server.
+			//That's why we exit right away to avoid redoing the same differential update and redownloading the unchanged data.
+			if (info.fromVersion == "2.05" && info.toVersion == "2.06") {
+				TryToProceedTo(PostUpdateCleanup);
+				break;
+			}
+
 			// Go back to determine our local version
 			TryToProceedTo(DetermineLocalVersion);
 		}
