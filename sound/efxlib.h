@@ -33,13 +33,23 @@ public:
 	~idEFXFile();
 
 	bool FindEffect(idStr &name, ALuint *effect);
-	bool LoadFile(const char *filename, bool OSPath = false);
+	bool LoadFile(const char *filename);
 	void Clear(void);
+
+	//reloading with listSounds command
+	bool Reload();
+	bool IsAfterReload();
 
 private:
 	bool ReadEffect(idLexer &lexer, idSoundEffect *effect);
 
-	idList<idSoundEffect *>effects;
+	//filename initially passed to LoadFile (or empty if LoadFile never called)
+	//(used in Reload method)
+	idStr efxFilename;
+	//this flag is raised after reload: idSoundWorldLocal::MixLoop checks for it
+	bool isAfterReload;
+
+	idList<idSoundEffect *> effects;
 };
 
 #endif // __EFXLIBH

@@ -35,6 +35,7 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	listenerQU.Zero();
 	listenerArea = 0;
 	listenerAreaName = "Undefined";
+	listenerEffect = AL_EFFECTSLOT_NULL;
 
 	if (idSoundSystemLocal::useEFXReverb) {
 		if (!soundSystemLocal.alIsAuxiliaryEffectSlot(listenerSlot)) {
@@ -482,7 +483,7 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 	alListenerfv(AL_ORIENTATION, listenerOrientation);
 
 	if (idSoundSystemLocal::useEFXReverb && soundSystemLocal.efxloaded) {
-		ALuint effect = 0;
+		ALuint effect = AL_EFFECTSLOT_NULL;
 		idStr s(listenerArea);
 
 		bool found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
@@ -495,9 +496,10 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 			found = soundSystemLocal.EFXDatabase.FindEffect(s, &effect);
 		}
 
+		bool justReloaded = soundSystemLocal.EFXDatabase.IsAfterReload();
 		// only update if change in settings
-		if (found && listenerEffect != effect) {
-			EFXprintf("Switching to EFX '%s' (#%u)\n", s.c_str(), effect);
+		if (found && (listenerEffect != effect || justReloaded)) {
+			common->Printf("Switching to EFX '%s' (#%u)\n", s.c_str(), effect);
 			listenerEffect = effect;
 			soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
 		}
