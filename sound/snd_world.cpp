@@ -498,7 +498,7 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 
 		bool justReloaded = soundSystemLocal.EFXDatabase.IsAfterReload();
 		// only update if change in settings
-		if (found && (listenerEffect != effect || justReloaded)) {
+		if (listenerEffect != effect || justReloaded) {
 			common->Printf("Switching to EFX '%s' (#%u)\n", s.c_str(), effect);
 			listenerEffect = effect;
 			soundSystemLocal.alAuxiliaryEffectSloti(listenerSlot, AL_EFFECTSLOT_EFFECT, effect);
