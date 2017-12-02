@@ -227,6 +227,8 @@ typedef enum {
 
 	SS_NEAREST,			// screen blood blobs
 
+	SS_AFTER_FOG = 90,
+
 	SS_POST_PROCESS = 100	// after a screen copy to texture
 } materialSort_t;
 
