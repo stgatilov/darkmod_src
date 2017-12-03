@@ -89,7 +89,9 @@ public:
 			Reallocate();
 	}
 
+	int Count() const { return count; }
 	int Size() const { return size1 + 1; }
+	bool IsDead() const { return size1 == -1; }
 
 private:
 	void Reallocate() {

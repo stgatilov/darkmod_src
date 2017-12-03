@@ -673,7 +673,7 @@ void idInteraction::UnlinkAndFree( void ) {
 	idRenderWorldLocal *renderWorld = this->lightDef->world;
 	int key = (this->lightDef->index << 16) + this->entityDef->index;
 	auto &cell = renderWorld->interactionTable.Find(key);
-	if (cell.key != key)
+	if (cell.key != key || cell.value != this)
 		common->Error( "idInteraction::UnlinkAndFree: interactionTable wasn't set" );
 	renderWorld->interactionTable.Erase(cell);
 
