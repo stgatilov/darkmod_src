@@ -117,12 +117,14 @@ void idSaveGame::FinalizeCache( void ) {
 
 	//resize destination buffer
 	CRawVector zipped;
-	int zipsize = ExtLibs::compressBound(cache.size());
+	uLongf zipsize = ExtLibs::compressBound((uLongf)cache.size());
 	zipped.resize(zipsize);
 
 	//compress the cache
-	int err = ExtLibs::compress((Bytef *)&zipped[0], (uLongf*)&zipsize,
-		(const Bytef *)&cache[0], cache.size());
+	int err = ExtLibs::compress(
+		(Bytef *)&zipped[0], &zipsize,
+		(const Bytef *)&cache[0], (uLongf)cache.size()
+	);
 	if (err != Z_OK)
 		gameLocal.Error("idSaveGame::FinalizeCache: compress failed with code %d", err);
 	zipped.resize(zipsize);
@@ -598,9 +600,12 @@ void idRestoreGame::InitializeCache() {
 	file->Read(&zipped[0], zipped.size());
 
 	//decompress data
+	uLongf cacheSizeL = cacheSize;
 	int err = ExtLibs::uncompress(
-		(Bytef *)&cache[0], (uLongf*)&cacheSize,
-		(const Bytef *)&zipped[0], zipped.size());
+		(Bytef *)&cache[0], &cacheSizeL,
+		(const Bytef *)&zipped[0], (uLongf)zipped.size()
+	);
+	cacheSize = cacheSizeL;
 	if (err != Z_OK)
 		Error("idRestoreGame::InitializeCache: uncompress failed with code %d", err);
 	if (cacheSize != cache.size())
