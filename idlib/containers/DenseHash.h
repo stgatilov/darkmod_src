@@ -32,8 +32,9 @@ public:
 	idDenseHash() : size1(-1), count(0) {}
 	//note: must be called before any operation!
 	void Init(Key _empty, int loadfactor = 0) {
-		if (loadfactor <= 0) loadfactor = 75;
-		maxLoadPercent = min(loadfactor, 75);
+		if (loadfactor <= 0 || loadfactor > 75)
+			loadfactor = 75;
+		maxLoadPercent = loadfactor;
 		empty = _empty;
 		size1 = 3;
 		table.reset(new Elem[size1 + 1]);
