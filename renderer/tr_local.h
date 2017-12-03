@@ -63,7 +63,7 @@ public:
 		return x2 - x1 + 1;
 	}
 	int GetHeight() {
-		return x2 - x1 + 1;
+		return y2 - y1 + 1;
 	}
 };
 
