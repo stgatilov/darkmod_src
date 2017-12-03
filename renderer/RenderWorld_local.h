@@ -44,9 +44,13 @@ typedef struct doublePortal_s {
 	struct doublePortal_s *	nextFoggedPortal;
 	int						portalViewCount;		// For r_showPortals. Keep track whether the player's view flows through 
 											// individual portals, not just whole visleafs.  -- SteveL #4162
+
 	doublePortal_s() { // zero fill
-		static doublePortal_s empty;
-		*this = empty;
+		blockingBits = 0;
+		lossPlayer = 0;
+		fogLight = 0;
+		nextFoggedPortal = 0;
+		portalViewCount = 0;
 	}
 } doublePortal_t;
 
@@ -60,9 +64,14 @@ typedef struct portalArea_s {
 	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
 	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change
 	idScreenRect	areaScreenRect;
+
 	portalArea_s() { // zero fill
-		static portalArea_s empty;
-		*this = empty;
+		areaNum = 0;
+		memset(connectedAreaNum, 0, sizeof(connectedAreaNum));
+		areaViewCount = 0;
+		memset(&entityRefs, 0, sizeof(entityRefs));
+		memset(&lightRefs, 0, sizeof(lightRefs));
+		memset(&areaScreenRect, 0, sizeof(areaScreenRect));
 	}
 } portalArea_t;
 
