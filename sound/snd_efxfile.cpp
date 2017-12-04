@@ -63,7 +63,8 @@ bool idSoundEffect::alloc() {
 idEFXFile::idEFXFile
 ===============
 */
-idEFXFile::idEFXFile( void ) { 
+idEFXFile::idEFXFile( void ) {
+	isAfterReload = false;
 }
 
 /*
@@ -171,7 +172,7 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 
 	ALenum err;
 	alGetError();
-	EFXprintf("Loading EFX effect '%s' (#%u)\n", name.c_str(), effect->effect);
+	common->Printf("Loading EFX effect '%s' (#%u)\n", name.c_str(), effect->effect);
 
 	do {
 		if ( !src.ReadToken( &token ) ) {
@@ -252,11 +253,12 @@ bool idEFXFile::ReadEffect(idLexer &src, idSoundEffect *effect) {
 idEFXFile::LoadFile
 ===============
 */
-bool idEFXFile::LoadFile( const char *filename, bool OSPath ) {
+bool idEFXFile::LoadFile( const char *filename/*, bool OSPath*/ ) {
 	idLexer src( LEXFL_NOSTRINGCONCAT );
 	idToken token;
 
-	src.LoadFile( filename, OSPath );
+	efxFilename = filename;
+	src.LoadFile( filename/*, OSPath*/ );
 	if ( !src.IsLoaded() ) {
 		return false;
 	}
@@ -286,4 +288,33 @@ bool idEFXFile::LoadFile( const char *filename, bool OSPath ) {
 	};
 
 	return true;
+}
+
+/*
+===============
+idEFXFile::Reload
+===============
+*/
+bool idEFXFile::Reload() {
+	if (efxFilename.IsEmpty()) {
+		common->Warning("EFX file was not loaded, skipping reload");
+		return false;
+	}
+	//drop all idSoundEffect-s, delete all related OpenAL objects
+	Clear();
+	//mark that we reloaded the EFX file, all effects must be updated
+	isAfterReload = true;
+	//read all effects from file again
+	return LoadFile(efxFilename);
+}
+
+/*
+===============
+idEFXFile::IsAfterReload
+===============
+*/
+bool idEFXFile::IsAfterReload() {
+	bool res = isAfterReload;
+	isAfterReload = false;
+	return res;
 }

@@ -91,6 +91,11 @@ void SoundReloadSounds_f( const idCmdArgs &args ) {
 	}
 	soundSystem->SetMute( true );
 	soundSystemLocal.soundCache->ReloadSounds( force );
+	if (soundSystemLocal.useEFXReverb) {
+		bool ok = soundSystemLocal.EFXDatabase.Reload();
+		if (ok)
+			common->Printf("sound: reloaded EFX file\n");
+	}
 	soundSystem->SetMute( false );
 	common->Printf( "sound: changed sounds reloaded\n" );
 }

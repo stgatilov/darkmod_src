@@ -899,6 +899,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 	}
 }
 
+bool afterFog;
+
 /*
 =====================
 RB_STD_DrawShaderPasses
@@ -950,16 +952,16 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// we need to draw the post process shaders after we have drawn the fog lights
-		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) {
+		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !backEnd.currentRenderCopied )
 			break;
-		}
+
+		if ( drawSurfs[i]->material->GetSort() == SS_AFTER_FOG && !afterFog )
+			break;
 
 		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
-		
 	}
 
 	GL_Cull( CT_FRONT_SIDED );
-	//qglColor3f( 1, 1, 1 );
 
 	return i;
 }
@@ -1278,11 +1280,13 @@ void	RB_STD_DrawView( void ) {
 	else
 		RB_ARB2_DrawInteractions();
 
+	afterFog = false;
 	// now draw any non-light dependent shading passes
 	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
 	// fog and blend lights
 	RB_STD_FogAllLights();
+	afterFog = true;
 
 	// now draw any post-processing effects using _currentRender
 	if ( processed < numDrawSurfs ) {

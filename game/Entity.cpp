@@ -768,15 +768,13 @@ void idGameEdit::ParseSpawnArgsToRenderEntity( const idDict *args, renderEntity_
 		renderEntity->bounds.Zero();
 	}
 
-	idStr rskin = args->GetString( "random_skin", "" );
+	idStr rskin = args->GetString( "random_skin", "" ), skin;
 	if ( !rskin.IsEmpty() ) {
 		// found list, select a random skin
-		temp = rskin.RandomPart(gameLocal.random.RandomFloat()).c_str();
-	}
-	else {
-		// else just use the "skin" spawnarg
-		temp = args->GetString( "skin" );
-	}
+		skin = rskin.RandomPart( gameLocal.random.RandomFloat() ); // 4682 - need this object to live for a while
+		temp = skin.c_str();
+	} else
+		temp = args->GetString( "skin" ); // just use the "skin" spawnarg
 
 	if ( temp[0] != '\0' ) {
 		renderEntity->customSkin = declManager->FindSkin( temp );
