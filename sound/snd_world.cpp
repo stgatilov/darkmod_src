@@ -1978,12 +1978,20 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			alSourcef( chan->openalSource, AL_PITCH, ( slowmoActive && !chan->disallowSlow ) ? ( slowmoSpeed ) : ( 1.0f ) );
 
 			if (idSoundSystemLocal::useEFXReverb) {
-				if (enviroSuitActive) {
-					alSourcei(chan->openalSource, AL_DIRECT_FILTER, listenerFilter);
-					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilter);
+				if (global || omni) {
+					//stgatilov: disable EFX effect for all non-spatial sounds (set effect slot to NULL)
+					//TODO: make better criterion
+					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
 				}
 				else {
-					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL);
+					if (enviroSuitActive) {
+						alSourcei(chan->openalSource, AL_DIRECT_FILTER, listenerFilter);
+						alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilter);
+					}
+					else {
+						//stgatilov: enable EFX effect of current area (by sending source into effect slow)
+						alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL);
+					}
 				}
 			}
 
