@@ -274,6 +274,10 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 		else if ( !token.Icmp( "no_flicker" ) ) {
 			parms.soundShaderFlags |= SSF_NO_FLICKER;
 		}
+		// no_efx
+		else if ( !token.Icmp( "no_efx" ) ) {
+			parms.soundShaderFlags |= SSF_NO_EFX;
+		}
 		// plain
 		else if ( !token.Icmp( "plain" ) ) {	
 			// no longer supported

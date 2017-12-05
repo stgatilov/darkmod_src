@@ -42,6 +42,7 @@ static const int	SSF_PLAY_ONCE =			BIT(6);	// never restart if already playing o
 static const int	SSF_UNCLAMPED =			BIT(7);	// don't clamp calculated volumes at 1.0
 static const int	SSF_NO_FLICKER =		BIT(8);	// always return 1.0 for volume queries
 static const int	SSF_NO_DUPS =			BIT(9);	// try not to play the same sound twice in a row
+static const int	SSF_NO_EFX =			BIT(10);// do not apply EFX effect to the sound
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
 typedef struct {

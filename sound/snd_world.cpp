@@ -1978,9 +1978,10 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			alSourcef( chan->openalSource, AL_PITCH, ( slowmoActive && !chan->disallowSlow ) ? ( slowmoSpeed ) : ( 1.0f ) );
 
 			if (idSoundSystemLocal::useEFXReverb) {
-				if (global || omni) {
-					//stgatilov: disable EFX effect for all non-spatial sounds (set effect slot to NULL)
-					//TODO: make better criterion
+				int shaderFlags = chan->soundShader->GetParms()->soundShaderFlags;
+				if (shaderFlags & SSF_NO_EFX) {
+					//stgatilov: disable EFX effect for sound shaders containing "no_efx" keyword
+					//(see http://forums.thedarkmod.com/topic/19213-efx-discussion)
 					alSource3i(chan->openalSource, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
 				}
 				else {
