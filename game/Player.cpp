@@ -12292,32 +12292,32 @@ bool idPlayer::CanGreet() // grayman #3338
 }
 
 //stgatilov: script-cpp interop testing code
-void TestEventError() {
-	common->Error("Script events internal check failed!\n");
+void TestEventError(const char *name) {
+	common->Error("Script events internal check failed (%s)\n", name);
 }
 void idPlayer::Event_TestEvent1(float float_pi, int int_beef, float float_exp, const char *string_tdm, float float_exp10, int int_food) {
-	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError();
-	if (int_beef != 0xbeef) TestEventError();
-	if (idMath::Fabs(float_exp - idMath::E) > 10.0f * idMath::FLT_EPS) TestEventError();
-	if (idStr::Cmp(string_tdm, "TheDarkMod") != 0) TestEventError();
-	if (idMath::Fabs(float_exp10 / idMath::Exp(10.0f) - 1.0f) > 10.0f * idMath::FLT_EPS) TestEventError();
-	if (int_food != 0xf00d) TestEventError();
+	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError("1_1_pi");
+	if (int_beef != 0xbeef) TestEventError("1_2_beef");
+	if (idMath::Fabs(float_exp - idMath::E) > 10.0f * idMath::FLT_EPS) TestEventError("1_3_e");
+	if (idStr::Cmp(string_tdm, "TheDarkMod") != 0) TestEventError("1_4_tdm");
+	if (idMath::Fabs(float_exp10 / idMath::Exp(10.0f) - 1.0f) > 10.0 * idMath::FLT_EPS) TestEventError("1_5_exp10");
+	if (int_food != 0xf00d) TestEventError("1_6_food");
 	idThread::ReturnInt(int_beef + int_food);
 }
 void idPlayer::Event_TestEvent2(int int_prevres, idVec3 *vec_123, int int_food, idEntity *ent_player, idEntity *ent_null, float float_pi, float float_exp) {
-	if (int_prevres - int_food != 0xbeef) TestEventError();
-	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 10.0f * idMath::FLT_EPS)) TestEventError();
-	if (int_food != 0xf00d) TestEventError();
-	if (ent_player != this) TestEventError();
-	if (ent_null) TestEventError();
-	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError();
-	if (idMath::Fabs(float_exp - idMath::E) > 10.0f * idMath::FLT_EPS) TestEventError();
+	if (int_prevres - int_food != 0xbeef) TestEventError("2_1_beef");
+	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 10.0f * idMath::FLT_EPS)) TestEventError("2_2_vec");
+	if (int_food != 0xf00d) TestEventError("2_3_food");
+	if (ent_player != this) TestEventError("2_4_ent");
+	if (ent_null) TestEventError("2_5_null");
+	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError("2_6_pi");
+	if (idMath::Fabs(float_exp - idMath::E) > 10.0f * idMath::FLT_EPS) TestEventError("2_7_e");
 	idThread::ReturnEntity(this);
 }
 void idPlayer::Event_TestEvent3(idEntity *ent_prevres, idVec3 *vec_123, float float_pi, idEntity *ent_player) {
-	if (ent_prevres != this) TestEventError();
-	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 10.0f * idMath::FLT_EPS)) TestEventError();
-	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError();
-	if (ent_prevres != this) TestEventError();
+	if (ent_prevres != this) TestEventError("3_1_res");
+	if (!vec_123->Compare(idVec3(1.1f, 2.2f, 3.3f), 10.0f * idMath::FLT_EPS)) TestEventError("3_2_vec");
+	if (idMath::Fabs(float_pi - idMath::PI) > 10.0f * idMath::FLT_EPS) TestEventError("3_3_pi");
+	if (ent_player != this) TestEventError("3_4_ent");
 	idThread::ReturnVector(*vec_123 + *vec_123);
 }
