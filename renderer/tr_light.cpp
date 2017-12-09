@@ -558,7 +558,7 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 	r.Clear();
 
 	for ( int i = 0 ; i < 6 ; i++ ) {
-		const idWinding *ow = light->frustumWindings[i];
+		const idWinding &ow = light->frustumWindings[i];
 
 		// !ow - projected lights may have one of the frustums degenerated
 		// OR
@@ -567,11 +567,11 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) {
 		// so the planes that have the view origin on the negative
 		// side will be the "back" faces of the light, which must have
 		// some fragment inside the portalStack to be visible
-		if ( !ow || light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
+		if ( !ow.GetNumPoints() || light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
 			continue;
 		}
 
-		w = *ow;
+		w = ow;
 
 		// now check the winding against each of the frustum planes
 		for ( int j = 0; j < 5; j++ ) {

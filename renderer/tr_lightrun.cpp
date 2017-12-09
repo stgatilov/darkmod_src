@@ -341,10 +341,12 @@ void R_FreeLightDefFrustum( idRenderLightLocal *ldef ) {
 	}
 	// free frustum windings
 	for ( int i = 0; i < 6; i++ ) {
-		if ( ldef->frustumWindings[i] ) {
+		ldef->frustumWindings[i].SetNumPoints(0);
+/*		if ( ldef->frustumWindings[i] ) {
 			delete ldef->frustumWindings[i];
 			ldef->frustumWindings[i] = NULL;
 		}
+		*/
 	}
 }
 

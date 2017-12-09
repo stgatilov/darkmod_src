@@ -90,6 +90,8 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	cullInfo.facing[numFaces] = 1;	// for dangling edges to reference
 }
 
+idCVar r_useInteractionTriCulling( "r_useInteractionTriCulling", "1", CVAR_RENDERER | CVAR_BOOL, "1 = cull interactions tris" );
+
 /*
 =====================
 R_CalcInteractionCullBits
@@ -168,7 +170,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		}
 
 		// if the surface is completely inside the light frustum
-		if (frontBits == ((1 << 6) - 1)) {
+		if ( frontBits == ( ( 1 << 6 ) - 1 ) || !r_useInteractionTriCulling.GetBool() ) {
 			cullInfo.cullBits = LIGHT_CULL_ALL_FRONT;
 			return;
 		}

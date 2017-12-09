@@ -234,7 +234,7 @@ public:
 
 
 	idPlane					frustum[6];				// in global space, positive side facing out, last two are front/back
-	idWinding *				frustumWindings[6];		// used for culling
+	idWinding				frustumWindings[6];		// used for culling
 	srfTriangles_t *		frustumTris;			// triangulated frustumWindings[]
 
 	int						numShadowFrustums;		// one for projected lights, usually six for point lights
@@ -1289,7 +1289,7 @@ POLYTOPE
 ============================================================
 */
 
-srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWinding **windings );
+srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWinding *windings );
 
 /*
 ============================================================

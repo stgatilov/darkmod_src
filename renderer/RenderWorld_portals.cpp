@@ -857,14 +857,14 @@ bool idRenderWorldLocal::CullLightByPortals( const idRenderLightLocal *light, co
 				}
 
 				// get the exact winding for this side
-				const idWinding *ow = light->frustumWindings[i];
+				const idWinding &ow = light->frustumWindings[i];
 
 				// projected lights may have one of the frustums degenerated
-				if (!ow) {
+				if (!ow.GetNumPoints()) {
 					continue;
 				}
 
-				w = *ow;
+				w = ow;
 
 				// now check the winding against each of the portalStack planes
 				for (j = 0; j < ps->numPortalPlanes - 1; j++) {

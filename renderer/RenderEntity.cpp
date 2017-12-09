@@ -73,7 +73,7 @@ idRenderLightLocal::idRenderLightLocal() {
 	memset( shadowFrustums, 0, sizeof( shadowFrustums ) );
 	memset( lightProject, 0, sizeof( lightProject ) );
 	memset( frustum, 0, sizeof( frustum ) );
-	memset( frustumWindings, 0, sizeof( frustumWindings ) );
+	//memset( frustumWindings, 0, sizeof( frustumWindings ) );
 
 	lightHasMoved			= false;
 	world					= NULL;
