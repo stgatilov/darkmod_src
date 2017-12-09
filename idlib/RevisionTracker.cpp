@@ -46,6 +46,10 @@ RevisionTracker::RevisionTracker() :
 		else
 			_highestRevision = _lowestRevision;				//rev
 	}
+	else {
+		common->Warning("Cannot detect SVN version!");
+		common->Printf("Make sure 'svnversion' command works in console on the build machine.\n\n");
+	}
 }
 
 const char *RevisionTracker::GetRevisionString() const {

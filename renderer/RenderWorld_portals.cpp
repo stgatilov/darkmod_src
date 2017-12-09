@@ -1245,14 +1245,13 @@ idRenderWorldLocal::ShowPortals
 Debugging tool, won't work correctly with SMP or when mirrors are present
 =====================
 */
-
 void idRenderWorldLocal::ShowPortals() {
 	int			i, j;
 	portalArea_t	*area;
 	portal_t	*p;
 	idWinding	*w;
 
-	int viewCount = tr.viewCount; // 4659 - subviews may have screwed this, try harder
+	int viewCount = tr.viewCount; // duzenko #4659 - subviews may have screwed this, try harder
 	if ( backEnd.vLight && backEnd.vLight->lightDef )
 	{
 		viewCount = backEnd.vLight->lightDef->viewCount;
@@ -1261,7 +1260,7 @@ void idRenderWorldLocal::ShowPortals() {
 	// Check viewcount on areas and portals to see which got used this frame.
 	for ( i = 0 ; i < numPortalAreas ; i++ ) {
 		area = &portalAreas[i];
-		if ( area->viewCount != tr.viewCount ) {
+		if ( area->viewCount != viewCount ) {
 			continue;
 		}
 		for ( p = area->portals ; p ; p = p->next ) {
@@ -1271,12 +1270,12 @@ void idRenderWorldLocal::ShowPortals() {
 			}
 
 			// Changed to show 3 colours. -- SteveL #4162
-			if ( p->doublePortal->viewCount == tr.viewCount )
+			if ( p->doublePortal->viewCount == viewCount )
 			{
 				// green = we see through this portal
 				qglColor3f( 0, 1, 0 );
 			} 
-			else if ( portalAreas[ p->intoArea ].viewCount == tr.viewCount )
+			else if ( portalAreas[ p->intoArea ].viewCount == viewCount )
 			{
 				// yellow = we see into this visleaf but not through this portal
 				qglColor3f( 1, 1, 0 );
@@ -1290,13 +1289,8 @@ void idRenderWorldLocal::ShowPortals() {
 
 			qglBegin( GL_LINE_LOOP );
 			for ( j = 0 ; j < w->GetNumPoints() ; j++ ) {
-				qglVertex3fv( (*w)[j].ToFloatPtr() );
-			}
+				qglVertex3fv( (*w)[j].ToFloatPtr() );			}
 			qglEnd();
 		}
 	}
 }
-
-
-
-
