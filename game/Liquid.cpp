@@ -242,7 +242,6 @@ bool idLiquid::Collide( const trace_t &collision, const idVec3 &velocity )
 		
 	if ( velSquare > phys->GetMinSplashVelocity().LengthSqr() )
 	{
-		DM_LOG(LC_AAS, LT_DEBUG)LOGSTRING("%d: idLiquid::Collide - %s m_splashtime = %d\r",gameLocal.time,e->GetName(),e->m_splashtime);
 		// grayman #4600 - The entity might be entering the liquid more than once
 		// as it breaks the plane of the liquid. Wait a bit before splashing again.
 		if ( gameLocal.time >= e->m_splashtime )
