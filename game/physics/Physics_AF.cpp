@@ -6303,10 +6303,19 @@ void idPhysics_AF::Rest( void ) {
 	int i;
 
 	current.atRest = gameLocal.time;
-
 	for ( i = 0; i < bodies.Num(); i++ ) {
 		bodies[i]->current->spatialVelocity.Zero();
 		bodies[i]->current->externalForce.Zero();
+	}
+
+	// grayman #4609 - AF has come to rest. If this is at mission start,
+	// set nextSoundTime so it becomes okay for him to
+	// make suspicious propagated sounds from this time forward.
+
+	idAFEntity_Base *af = static_cast<idAFEntity_Base *>(self);
+	if (( gameLocal.time > 0) && (af->nextSoundTime == NO_PROP_SOUND ))
+	{
+		af->nextSoundTime = gameLocal.time;
 	}
 
 	self->BecomeInactive( TH_PHYSICS );

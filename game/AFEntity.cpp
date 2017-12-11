@@ -803,7 +803,7 @@ idAFEntity_Base::idAFEntity_Base( void )
 {
 	combatModel = NULL;
 	combatModelContents = 0;
-	nextSoundTime = 0;
+	nextSoundTime = NO_PROP_SOUND; // grayman #4609
 	spawnOrigin.Zero();
 	spawnAxis.Identity();
 	m_bGroundWhenDragged = false;
@@ -930,7 +930,7 @@ void idAFEntity_Base::Spawn( void )
 {
 	spawnOrigin = GetPhysics()->GetOrigin();
 	spawnAxis = GetPhysics()->GetAxis();
-	nextSoundTime = 0;
+	nextSoundTime = NO_PROP_SOUND; // grayman #4609
 	m_bGroundWhenDragged = spawnArgs.GetBool( "ground_when_dragged", "0" );
 	m_GroundBodyMinNum = spawnArgs.GetInt( "ground_min_number", "0" );
 	m_bDragAFDamping = spawnArgs.GetBool( "drag_af_damping", "0" );
@@ -1174,7 +1174,10 @@ bool idAFEntity_Base::Collide( const trace_t &collision, const idVec3 &velocity 
 	if ( af.IsActive() ) 
 	{
 		v = -( velocity * collision.c.normal );
-		if ( ( v > BOUNCE_SOUND_MIN_VELOCITY ) && ( gameLocal.time > nextSoundTime ) && !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some objects shouldn't propagate a bounce sound
+		if ( ( nextSoundTime != NO_PROP_SOUND ) && // grayman #4609
+			 ( gameLocal.time >= nextSoundTime ) &&
+			 ( v > BOUNCE_SOUND_MIN_VELOCITY ) &&
+			 !spawnArgs.GetBool("no_bounce_sound", "0") ) // grayman #3331 - some objects shouldn't propagate a bounce sound
 		{
 			f = v > BOUNCE_SOUND_MAX_VELOCITY ? 1.0f : idMath::Sqrt( v - BOUNCE_SOUND_MIN_VELOCITY ) * ( 1.0f / idMath::Sqrt( BOUNCE_SOUND_MAX_VELOCITY - BOUNCE_SOUND_MIN_VELOCITY ) );
 			// tels: #2953: support snd_bounce_material (like snd_bounce_carpet) here, too
@@ -2278,6 +2281,7 @@ void idAFEntity_WithAttachedHead::Spawn( void )
 	ParseAttachmentsAF();
 
 	af.GetPhysics()->PutToRest();
+
 	if ( !spawnArgs.GetBool( "nodrop", "0" ) ) {
 		af.GetPhysics()->Activate();
 	}
