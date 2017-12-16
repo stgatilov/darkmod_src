@@ -178,6 +178,8 @@ idAFEntity_Base
 ===============================================================================
 */
 
+#define NO_PROP_SOUND -1 // grayman #4609
+
 /**
 * TDM: Used for dynamically adding ents with clipmodels to the AF
 **/
@@ -317,13 +319,18 @@ public:
 	**/
 	bool					m_bDragAFDamping;
 
+	/**
+	* Next time this can make a sound
+	**/
+	int						nextSoundTime;	// grayman #4609 - made public
+
 protected:
 	idAF					af;				// articulated figure
 	idClipModel *			combatModel;	// render model for hit detection
 	int						combatModelContents;
 	idVec3					spawnOrigin;	// spawn origin
 	idMat3					spawnAxis;		// rotation axis used when spawned
-	int						nextSoundTime;	// next time this can make a sound
+	//int					nextSoundTime;	// next time this can make a sound // grayman #4609 - make public
 
 	/**
 	* List of ents that have been dynamically added to the AF via binding
