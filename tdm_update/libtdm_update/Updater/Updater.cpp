@@ -1563,6 +1563,22 @@ void Updater::RemoveAllPackagesExceptUpdater()
 	}
 }
 
+
+#ifdef WIN32
+static void ThrowWinApiError() {
+	LPVOID lpMsgBuf;
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+				  NULL,
+				  GetLastError(),
+				  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				  (LPTSTR) &lpMsgBuf,
+				  0,
+				  NULL);
+	throw Updater::FailureException("Could not start new process: " + std::string((LPCTSTR)lpMsgBuf));
+	LocalFree(lpMsgBuf);
+}
+#endif
+
 bool Updater::RestartRequired()
 {
 	return _updatingUpdater;
@@ -1598,25 +1614,9 @@ void Updater::RestartUpdater()
 			parentPath.string().c_str(), &siStartupInfo, &piProcessInfo);
 
 		if (!success)
-		{
-			LPVOID lpMsgBuf;
-
-			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-						  NULL,
-						  GetLastError(),
-						  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-						  (LPTSTR) &lpMsgBuf,
-						  0,
-						  NULL);
-
-			throw FailureException("Could not start new process: " + std::string((LPCTSTR)lpMsgBuf));
-			
-			LocalFree(lpMsgBuf);
-		}
+			ThrowWinApiError();
 		else
-		{
 			TraceLog::WriteLine(LOG_VERBOSE, "Process started");
-		}
 	}
 #else
 
@@ -1637,6 +1637,80 @@ void Updater::RestartUpdater()
 
 		// Done here too
 		return;
+	}
+#endif
+}
+
+void Updater::InstallVCRedist()
+{
+#ifdef WIN32
+	//detect bitness of Windows OS
+	bool windowsIs64Bit = true;
+	CHAR temp[256];
+	if (GetSystemWow64Directory(temp, sizeof(temp)) == 0)
+		if (GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+			windowsIs64Bit = false;
+	TraceLog::WriteLine(LOG_VERBOSE, "Detected " + std::string(windowsIs64Bit ? "64" : "32") + "-bit Windows OS.");
+
+	//install VC redistributable if not installed yet
+	//taken from https://stackoverflow.com/a/34209692/556899
+	static const CHAR *RegKeys[2] = {
+		"SOFTWARE\\Classes\\Installer\\Dependencies\\{f65db027-aff3-4070-886a-0d87064aabb1}",	//32-bit
+		"SOFTWARE\\Classes\\Installer\\Dependencies\\{050d4fc8-5d48-4b8f-8972-47c82c46020f}"	//64-bit
+	};
+	static const CHAR *CorrectVersion = "12.0.30501.0";
+	static_assert(_MSC_VER == 1800, "Version mismatch in VC redist detection code");
+	static const CHAR *RegValue = "Version";
+	static const char *RedistFilename[2] = {
+		"vcredist_x86.exe",
+		"vcredist_x64.exe"
+	};
+	//note: we need both 32-bit and 64-bit packages on 64-bit OS
+	for (int arch = 0; arch < (windowsIs64Bit ? 2 : 1); arch++) {
+		CHAR buffer[256];
+		DWORD length = sizeof(buffer);
+		LSTATUS err = RegGetValue(
+			HKEY_LOCAL_MACHINE,
+			RegKeys[arch],
+			RegValue,
+			RRF_RT_REG_SZ | RRF_ZEROONFAILURE,
+			NULL,
+			buffer,
+			&length
+		);
+		if (err == ERROR_SUCCESS && strcmp(buffer, CorrectVersion) == 0) {
+			TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(arch ? "64" : "32") + "-bit already installed.");
+			continue;
+		}
+
+		//set redict installer path
+		fs::path redist_exe_path = GetTargetPath() / RedistFilename[arch];
+		std::string redist_exe = redist_exe_path.string();
+		//run it via WinAPI
+		STARTUPINFO startup = {0};
+		PROCESS_INFORMATION process = {0};
+		startup.cb = sizeof(startup);
+		BOOL ok = CreateProcessA(
+			redist_exe.c_str(),
+			"/install /passive /norestart",
+			NULL, NULL, FALSE, 0,
+			NULL, NULL,
+			&startup, &process
+		);
+		if (!ok)
+			ThrowWinApiError();
+		TraceLog::WriteLine(LOG_VERBOSE, "Started process for vc_redist installer.");
+
+		//wait for installer to complete (to avoid two installers simultaneously)
+		while (true) {
+			err = WaitForSingleObject(process.hProcess, 10000);
+			if (err == WAIT_FAILED)
+				ThrowWinApiError();
+			if (err != WAIT_TIMEOUT)
+				break;
+			TraceLog::WriteLine(LOG_VERBOSE, "vc_redist installer still not complete...");
+		}
+		TraceLog::WriteLine(LOG_VERBOSE, "Process for vc_redist installer finished.");
 	}
 #endif
 }

@@ -299,6 +299,9 @@ public:
 	// Re-launches the updater (starts update batch file in Win32 builds)
 	void RestartUpdater();
 
+	// Run vc_redist installers to install CRT dlls (needs admin rights to install)
+	void InstallVCRedist();
+
 	// Cleanup (both after regular exit and user terminations)
 	void PostUpdateCleanup();
 

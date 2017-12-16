@@ -255,6 +255,7 @@ void UpdateController::PerformStep(UpdateStep step)
 	case PostUpdateCleanup:
         _updater.FixPK4Dates();
 		_updater.PostUpdateCleanup();
+		_updater.InstallVCRedist();
 		break;
 
 	case RestartUpdater:
