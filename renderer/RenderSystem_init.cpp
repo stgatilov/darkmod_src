@@ -1829,7 +1829,7 @@ void R_SetColorMappings( void ) {
 	int		inf;
 
 	b = r_brightness.GetFloat();
-	g = r_gamma.GetFloat();
+	g = 1;// r_gamma.GetFloat();
 
 	for ( int i = 0; i < 256; i++ ) {
 		j = i * b;

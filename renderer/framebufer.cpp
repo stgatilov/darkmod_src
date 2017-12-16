@@ -126,7 +126,7 @@ void CheckCreatePrimary() {
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		if ( glConfig.vendor == glvIntel ) { // FIXME allow 24-bit depth for low-res monitors
-			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+			qglTexImage2D( GL_TEXTURE_2D, 0, r_fboDepthBits.GetInteger() == 16 ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, curWidth, curHeight, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 		} else {
 			qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, curWidth, curHeight, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
 		}

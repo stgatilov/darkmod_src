@@ -81,6 +81,8 @@ struct pointInteractionProgram_t : interactionProgram_t {
 };
 
 struct ambientInteractionProgram_t : interactionProgram_t {
+	GLint gamma;
+	virtual	void AfterLoad();
 	virtual void UpdateUniforms( const drawInteraction_t *din );
 };
 
@@ -762,8 +764,14 @@ void pointInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	GL_CheckErrors();
 }
 
+void ambientInteractionProgram_t::AfterLoad() {
+	interactionProgram_t::AfterLoad();
+	gamma = qglGetUniformLocation( program, "u_gamma" );
+}
+
 void ambientInteractionProgram_t::UpdateUniforms( const drawInteraction_t *din ) {
 	interactionProgram_t::UpdateUniforms( din );
+	qglUniform1f( gamma, r_gamma.GetFloat()-1 );
 	qglUniform4fv( lightOrigin, 1, din->worldUpLocal.ToFloatPtr() );
 	qglUniformMatrix4fv( modelMatrix, 1, false, din->surf->space->modelMatrix );
 	GL_CheckErrors();
