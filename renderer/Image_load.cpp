@@ -626,6 +626,37 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 #endif
 }
 
+void idImage::GenerateAttachment( int width, int height, textureFilter_t filter, GLint format ) {
+	if ( uploadWidth == width && uploadHeight == height 
+		&& !( format == GL_DEPTH_COMPONENT && r_fboDepthBits.IsModified() ) 
+	) return;
+	this->filter = filter;
+	Bind();
+	uploadWidth = width;
+	uploadHeight = height;
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == TF_NEAREST ? GL_NEAREST : GL_LINEAR );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	switch ( format ) {
+	case GL_STENCIL_INDEX:
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, width, height, 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, 0 );
+		common->Printf( "Generated framebuffer STENCIL attachment: %dx%d\n", width, height );
+		break;
+	case GL_DEPTH_COMPONENT:
+		r_fboDepthBits.ClearModified();
+		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboDepthBits.GetInteger() == 16 ? GL_DEPTH_COMPONENT16 : GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+		common->Printf( "Generated framebuffer DEPTH attachment: %dx%d\n", width, height );
+		break;
+	case GL_DEPTH_STENCIL:
+		qglTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0 );
+		common->Printf( "Generated framebuffer DEPTH_STENCIL attachment: %dx%d\n", width, height );
+		break;
+	default:
+		common->Error( "Unsupported format in GenerateAttachment\n" );
+	}
+}
+
 /*
 ==================
 GenerateRenderTarget
