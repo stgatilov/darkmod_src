@@ -436,11 +436,14 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
 		tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
-		parms->scissor.x1 = 0;
-		parms->scissor.y1 = 0;
-		parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
-		parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
-
+		if ( tr.viewDef->isMirror ) {
+			parms->scissor = tr.viewDef->scissor; // mirror in an area that has `sky, limit to mirror rect only
+		} else {
+			parms->scissor.x1 = 0;
+			parms->scissor.y1 = 0;
+			parms->scissor.x2 = parms->viewport.x2 - parms->viewport.x1;
+			parms->scissor.y2 = parms->viewport.y2 - parms->viewport.y1;
+		}
 
 		parms->isSubview = true;
 		parms->initialViewAreaOrigin = parms->renderView.vieworg;
