@@ -2713,9 +2713,9 @@ void idSessionLocal::Frame() {
 		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
 	}
 
-	if ( com_smp.GetBool() && com_fixedTic.GetInteger() > 0 ) {
+	/*if ( com_smp.GetBool() && com_fixedTic.GetInteger() > 0 ) {
 		latchedTicNumber = com_ticNumber;
-	} else { 
+	} else */{ 
 		// at startup, we may be backwards
 		if (latchedTicNumber > com_ticNumber) {
 			latchedTicNumber = com_ticNumber;
@@ -2748,13 +2748,15 @@ void idSessionLocal::Frame() {
 		// Spin in place if needed.  The game should yield the cpu if
 		// it is running over 60 hz, because there is fundamentally
 		// nothing useful for it to do.
-		while (1) {
+		static uint64_t prevMicroSecs = Sys_GetTimeMicroseconds();
+		while (true) {
 			latchedTicNumber = com_ticNumber;
-			if (latchedTicNumber >= minTic) {
-				break;
-			}
+			if (latchedTicNumber >= minTic)
+				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 4000)
+					break;
 			Sys_Sleep( 1 );
 		}
+		prevMicroSecs = Sys_GetTimeMicroseconds();
 #else
 		while( 1 ) {
 			latchedTicNumber = com_ticNumber;
