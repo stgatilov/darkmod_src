@@ -3254,6 +3254,12 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 #endif
 
 	player = GetLocalPlayer();
+	if (!player) {
+		//stgatilov #4670: if player is absent, the game is most likely being shutdown
+		//so we should not compute anything in Game to avoid crashes
+		memset(&ret, 0, sizeof(ret));
+		return ret;
+	}
 
 	// Handle any mission downloads in progress
 	m_DownloadManager->ProcessDownloads();
