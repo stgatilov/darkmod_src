@@ -437,7 +437,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 		tr.RenderViewToViewport( parms->renderView, parms->viewport );
 
 		if ( tr.viewDef->isMirror ) {
-			parms->scissor = tr.viewDef->scissor; // mirror in an area that has `sky, limit to mirror rect only
+			parms->scissor = tr.viewDef->scissor; // mirror in an area that has sky, limit to mirror rect only
 		} else {
 			parms->scissor.x1 = 0;
 			parms->scissor.y1 = 0;

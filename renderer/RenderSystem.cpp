@@ -265,8 +265,8 @@ static void R_CheckCvars( void ) {
 	globalImages->CheckCvars();
 
 	// gamma stuff
-	if ( r_gamma.IsModified() || r_brightness.IsModified() ) {
-		r_gamma.ClearModified();
+	if ( /*r_gamma.IsModified() || */r_brightness.IsModified() ) {
+		//r_gamma.ClearModified();
 		r_brightness.ClearModified();
 		R_SetColorMappings();
 	}
