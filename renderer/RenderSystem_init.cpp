@@ -846,10 +846,11 @@ GL_CheckErrors
 ==================
 */
 void GL_CheckErrors( void ) {
-    int		err;
+	if ( r_ignoreGLErrors.GetBool() )
+		return;
+	int		err;
     char	s[64];
 	int		i;
-
 	// check for up to 10 errors pending
 	for ( i = 0 ; i < 10 ; i++ ) {
 		err = qglGetError();
@@ -882,9 +883,7 @@ void GL_CheckErrors( void ) {
 				break;
 		}
 
-		if ( !r_ignoreGLErrors.GetBool() ) {
-			common->Printf( "GL_CheckErrors: %s\n", s );
-		}
+		common->Printf( "GL_CheckErrors: %s\n", s );
 	}
 }
 

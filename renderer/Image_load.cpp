@@ -1645,77 +1645,25 @@ CopyFramebuffer
 */
 void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
 	Bind();
-
-/*	if ( cvarSystem->GetCVarBool( "g_lowresFullscreenFX" ) ) {
-		imageWidth = 512;
-		imageHeight = 512;
-	}*/
-
-	// if the size isn't a power of 2, the image must be increased in size
-	int	potWidth = imageWidth, potHeight = imageHeight;
-
-	/*if (r_useFbo.GetBool()) { // assume h/w support for non-po2 sizes
-		potWidth = imageWidth;
-		potHeight = imageHeight;
-	} else {
-		potWidth = MakePowerOfTwo(imageWidth);
-		potHeight = MakePowerOfTwo(imageHeight); 
-		GetDownsize( imageWidth, imageHeight ); // this line and the next one screw bloom in fbo
-		GetDownsize( potWidth, potHeight );
-	}*/
-
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);
-
 	// only resize if the current dimensions can't hold it at all,
 	// otherwise subview renderings could thrash this
-	if ( ( useOversizedBuffer && ( uploadWidth < potWidth || uploadHeight < potHeight ) )
-		|| ( !useOversizedBuffer && ( uploadWidth != potWidth || uploadHeight != potHeight ) ) ) {
-		uploadWidth = potWidth;
-		uploadHeight = potHeight;
-		if ( potWidth == imageWidth && potHeight == imageHeight ) {
-			qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
-		} else {
-			//byte	*junk;
-			// we need to create a dummy image with power of two dimensions,
-			// then do a qglCopyTexSubImage2D of the data we want
-			// this might be a 16+ meg allocation, which could fail on _alloca
-			//junk = (byte *)Mem_Alloc( potWidth * potHeight * 4 );
-			//memset( junk, 0, potWidth * potHeight * 4 );		//!@#
-#if 0 // Disabling because it's unnecessary and introduces a green strip on edge of _currentRender
-			for ( int i = 0 ; i < potWidth * potHeight * 4 ; i+=4 ) {
-				junk[i+1] = 255;
-			}
-#endif
-			GLint f = r_useFbo.GetBool() && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA;
-			//qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, junk );
-			qglTexImage2D( GL_TEXTURE_2D, 0, f, potWidth, potHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
-			//Mem_Free( junk );
-
-			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
-		}
+	if ( (useOversizedBuffer && (uploadWidth < imageWidth || uploadHeight < imageHeight))
+		|| (!useOversizedBuffer && (uploadWidth != imageWidth || uploadHeight != imageHeight)) ) {
+		uploadWidth = imageWidth;
+		uploadHeight = imageHeight;
+		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 	}
-
-	// if the image isn't a full power of two, duplicate an extra row and/or column to fix bilerps
-	if ( imageWidth != potWidth ) {
-		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, imageWidth, 0, x+imageWidth-1, y, 1, imageHeight );
-	}
-	if ( imageHeight != potHeight ) {
-		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, imageHeight, x, y+imageHeight-1, imageWidth, 1 );
-	}
-
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
 	backEnd.c_copyFrameBuffer++;
-
 	//RB_DumpFramebuffer( imgName + ".tga" );
 }
 
