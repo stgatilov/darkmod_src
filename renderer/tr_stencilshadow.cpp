@@ -1413,17 +1413,19 @@ void AddPoissonDiskSamples( idList<idVec2> &pts, float dist ) {
 void GeneratePoissonDiskSampling( idList<idVec2> &pts, int wantedCount ) {
 	pts.Clear();
 	pts.Append( idVec2( 0, 0 ) );
-	for ( int i = 0; i < 6; i++ ) {
-		float ang = 0.3f + idMath::TWO_PI * i / 6;
-		float c, s;
-		idMath::SinCos( ang, s, c );
-		pts.Append( idVec2( c, s ) );
+	if (wantedCount >= 12) {
+		//pre-generate vertices of perfect hexagon
+		for ( int i = 0; i < 6; i++ ) {
+			float ang = 0.3f + idMath::TWO_PI * i / 6;
+			float c, s;
+			idMath::SinCos( ang, s, c );
+			pts.Append( idVec2( c, s ) );
+		}
 	}
-	if ( wantedCount < 6 )
-		return;
 	float dist = idMath::Sqrt( 2.0f / wantedCount );
+	int fixedK = pts.Num();
 	do {
-		pts.Resize( 7 );
+		pts.Resize( fixedK );
 		AddPoissonDiskSamples( pts, dist );
 		dist *= 0.9f;
 	} while ( pts.Num() - 1 < wantedCount );
