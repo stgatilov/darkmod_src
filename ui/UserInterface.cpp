@@ -332,6 +332,8 @@ const char *idUserInterfaceLocal::HandleEvent( const sysEvent_t *event, int _tim
 
 	if ( event->evType == SE_MOUSE ) {
 		float sens = cvarSystem->GetCVarFloat( "sensitivity" );
+		if ( sens == 0 )
+			sens = 5; // duzenko: Builder's Blocks script compatibility
 		cursorX += event->evValue * sens * 0.2;
 		cursorY += event->evValue2 * sens * 0.2;
 
