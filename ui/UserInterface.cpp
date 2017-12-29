@@ -331,9 +331,8 @@ const char *idUserInterfaceLocal::HandleEvent( const sysEvent_t *event, int _tim
 	}
 
 	if ( event->evType == SE_MOUSE ) {
-		float sens = cvarSystem->GetCVarFloat( "sensitivity" );
-		cursorX += event->evValue * sens * 0.2;
-		cursorY += event->evValue2 * sens * 0.2;
+		cursorX += event->evValue;
+		cursorY += event->evValue2;
 
 		if (cursorX < 0) {
 			cursorX = 0;
