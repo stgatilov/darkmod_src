@@ -2017,6 +2017,11 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 					buffers[1] = chan->openalStreamingBuffer[1];
 					buffers[2] = chan->openalStreamingBuffer[2];
 					finishedbuffers = 3;
+					if (chan->openalStreamingOffset != offset) {
+						//stgatilov #4716: start playing sound from its current offset (not from the beginning)
+						//this is particularly important for looping sounds which play always
+						chan->openalStreamingOffset = offset;
+					}
 				} else {
 					alGetSourcei( chan->openalSource, AL_BUFFERS_PROCESSED, &finishedbuffers );
 					alSourceUnqueueBuffers( chan->openalSource, finishedbuffers, &buffers[0] );
