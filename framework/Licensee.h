@@ -42,7 +42,7 @@
 #define CONFIG_FILE					"Darkmod.cfg"
 
 // base folder where the source code lives
-#define SOURCE_CODE_BASE_FOLDER				"tdm"
+#define SOURCE_CODE_BASE_FOLDER				"darkmod_src"
 
 
 // default idnet host address
