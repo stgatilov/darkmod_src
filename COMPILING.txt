@@ -44,7 +44,7 @@ Here is the explanation of parameters:
 Run "scons --help" for more information about arguments.
 
 Note: by default the deploy-ready executables are put into the current directory (which is source code root directory).
-They are stripped off debug information, so you won't be able to debug them.
+They are stripped of debug information, so you won't be able to debug them.
 If you need debug information, make sure to specify ".." argument: then debuggable executables will be put into "../darkmod".
 
 
