@@ -1,147 +1,95 @@
 To read the most recent compilation guide, please visit:
+  http://wiki.thedarkmod.com/index.php?title=The_Dark_Mod_-_Compilation_Guide
 
-http://wiki.thedarkmod.com/index.php?title=The_Dark_Mod_-_Compilation_Guide
+Build process outputs TDM binaries to relative path "../darkmod", so you are strongly advised to have the following directory structure:
+  [base_tdm_path]/darkmod       <-- darkmod game location (contains e.g. TheDarkMod.exe)
+  [base_tdm_path]/darkmod_src   <-- source code location (contains e.g. TheDarkMod.sln)
+
 
 == Compiling on Windows ==
 
-A project file for Microsoft Visual Studio 2013 is provided in TheDarkMod.sln
-The solution file is compatible with VS2013 Community Edition.
+Microsoft Visual Studio 2013 (VS2013) is used to build TDM on Windows.
+Open solution file TheDarkMod.sln to start working.
+Choose appropriate platform and configuration, then build solution.
+All built executables will be put into "../darkmod" directory, potentially replacing the TDM executables already located there.
 
-You will need the Microsoft DirectX SDK installed as well.
-If it does not reside in "C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)"
-you will need to update the property sheets accordingly.
+You can use VS2013 Community Edition, which can be downloaded from here:
+  https://www.visualstudio.com/en-us/news/releasenotes/vs2013-community-vs#download-visual-studio-2013-community
+During installation, make sure that "Microsoft Foundation Classes for C++" (MFC) will be installed.
 
-DirectX SDK
-http://www.microsoft.com/en-us/download/details.aspx?id=6812
+You will also need the "Multibyte MFC Library for Visual Studio 2013", which is downloaded and installed separately:
+  http://www.microsoft.com/en-us/download/details.aspx?id=40770
 
-Multibyte MFC Library for Visual Studio 2013
-http://www.microsoft.com/en-us/download/details.aspx?id=40770
+The code uses DirectInput, which is automatically installed with VS2013 as a part of Windows SDK.
+In case of any trouble with DirectInput, you can download the deprecated "Microsoft DirectX SDK":
+  http://www.microsoft.com/en-us/download/details.aspx?id=6812
+In such case you will have to manually add paths to DirectX SDK to the property sheets.
 
-Windows SDK (for Windows 8.1 users)
-http://msdn.microsoft.com/en-us/windows/desktop/bg162891.aspx
 
-== Compiling on Linux / Ubuntu 14.04 ==
+== Compiling on Linux ==
 
-sudo apt-get install scons subversion libc6-dev-i386 g++-multilib libx11-dev:i386 libxxf86vm-dev:i386 libopenal-dev:i386 libasound2-dev:i386 libxext-dev:i386
+You need GCC 5 or newer to build TDM on Linux.
+Anything older than GCC 4.7 surely won't work.
+Just as the original Doom 3, TDM is built using Scons build system.
 
-=== Compiling 64-bit boost static libraries (with -fPIC) ===
+Being in the source code root directory ("darkmod_src"), you can build TDM with a command like this:
+  scons BUILD="release" TARGET_ARCH="x64" -j6 ..
+If you omit some parameters, Scons will either use the previously defined values or the default ones.
 
-Get the Boost 1.57 sources from their website and extract it to somewhere. Run the bootstrap script 
-to build the bjam binary:
+Here is the explanation of parameters:
+* BUILD="release": build release (i.e. optimized) executable
+* TARGET_ARCH="x64": build for 64-bit platform (pass "x86" or "x32" for 32-bit build)
+* -j6: run six instances of compiler in parallel for faster build (better specify the number of cores in your CPU)
+* ..: put executables with debug information to "../darkmod" (scons cannot access parent directory without it)
+Run "scons --help" for more information about arguments.
 
- ./bootstrap.sh
+Note: by default the deploy-ready executables are put into the current directory (which is source code root directory).
+They are stripped off debug information, so you won't be able to debug them.
+If you need debug information, make sure to specify ".." argument: then debuggable executables will be put into "../darkmod".
 
-Then compile the needed libraries:
 
- bjam release link=static threading=multi address-model=64 runtime-link=static cxxflags='-fPIC' stage /boost/chrono /boost/date_time /boost/filesystem /boost/program_options /boost/regex /boost/system /boost/thread
+=== Ubuntu 16.04: native ===
 
-I had to scrap the various .a files together from the bin.v2 folder, get the following libs and copy them to
-darkmod_src/linux/boost/lib64
+The best approach is to build binaries for the platform you have, i.e.: build 32-bit TDM on 32-bit OS, or 64-bit TDM on 64-bit OS.
+Here is the list of packages you need to install (on a clean Ubuntu installation):
 
- libboost_program_options.a
- libboost_regex.a
- libboost_system.a
- libboost_thread.a
- libboost_chrono.a
- libboost_date_time.a
- libboost_filesystem.a
+  sudo apt-get install scons                    //'scons' is currently not installed
+  sudo apt-get install m4                       //'SCons Environment' object has no attribute 'M4'
+  sudo apt-get install subversion               //svnversion: not found
+  sudo apt-get install mesa-common-dev          //no such file: "Gl/gl.h"
+  sudo apt-get install libxxf86vm-dev           //no such file: "X11/extensions/xf86vmode.h"
+  sudo apt-get install libopenal-dev            //no such file: "AL/al.h"
+  sudo apt-get install libxext-dev              //no such file: "X11/extensions/Xext.h"
 
-=== Compiling 64-bit PolarSSL with -fPIC ===
+Now run scons build with one of the commands:
 
-PolarSSL is needed by libcurl to download stuff from SSL-secured sites.
+  scons BUILD="release" TARGET_ARCH="x86" ..    //on 32-bit OS
+  scons BUILD="release" TARGET_ARCH="x64" ..    //on 64-bit OS
 
-Get the polarSSL 1.3.7 from their website.
-Get cmake: sudo apt-get install cmake
 
-Add the line to the CMakeLists.txt, after the compiler checks part:
+=== Ubuntu 16.04: 32-bit version on 64-bit OS ===
 
- set(CMAKE_POSITION_INDEPENDENT_CODE ON) 
+If you have 64-bit Linux, you can also build and run 32-bit TDM.
+Note that this approach is slightly more complicated.
 
-Then build the library:
+You have to install the following packages in addition to the ones listed above:
 
- cmake .
- make
- sudo make install
+  sudo apt-get install g++-multilib             //no such file: 'sys/cdefs.h'
+  sudo apt-get install libx11-dev:i386          //cannot find "-lX11"
+  sudo apt-get install libxxf86vm-dev:i386      //cannot find "-lXxf86vm"
+  sudo apt-get install libopenal-dev:i386       //cannot find "-lopenal"
+  sudo apt-get install libxext-dev:i386         //cannot find "-lXext"
 
-This will place libpolarssl.a in your /usr/local/lib folder. Copy it to linux/polarssl/lib64/
+Then run build as usual:
 
-=== Compiling the static libcurl library ===
+  scons BUILD="release" TARGET_ARCH="x86" ..
 
-==== Building the static 32-bit library libcurl ====
+The 64-bit and 32-bit versions can be built independently on a single 64-bit Linux.
 
-Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
 
- env CFLAGS="-m32" LDFLAGS="-m32" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x86
- make jobs=8
- sudo make install
+== Details ==
 
-The library is then located in /home/greebo/curl_install_x86/lib/libcurl.a.
-Copy that to darkmod_src/linux/libcurl/
-
-==== Building the static 64-bit library libcurl ====
-
- Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
-
- env CFLAGS="-m64 -fPIC" LDFLAGS="-m64" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x64
- make jobs=8
- make install
-
-The library is then located in /home/greebo/curl_install_x64/lib/libcurl.a.
-Copy that to darkmod_src/linux/libcurl/lib64/
-
-== Compiling on OSX ==
-
-The XCode projects are out of date at the moment and will need fixing.
-
-=== Building libcurl in Mac OS X ===
-
-Download the libcurl 7.21 source package, and extract it on your system. To produce a so-called "fat" binary you need to
-compile for both i386 and ppc targets.
-
-Build the i386 target by entering:
-
- env CFLAGS="-m32 -arch i386" LDFLAGS="-m32 -arch i386" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
- make
- sudo make install
-
-After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
-and rename it to ./libcurl.i386.a
-
-Build the powerpc target by entering:
-
- env CFLAGS="-m32 -arch ppc" LDFLAGS="-m32 -arch ppc" ./configure --disable-ldap --build=powerpc-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
- make
- sudo make install
-
-After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
-and rename it to ./libcurl.ppc.a
-
-Finally call lipo to combine these two into a fat binary by entering this in your curl folder.
-
- lipo -arch i386 libcurl.i386.a -arch ppc libcurl.ppc.a -create -output libcurl.a
-
-The filesize of the newly created libcurl.a should be around the sum of the single ppc and i386 libs, you can double-check that.
-Copy the libcurl.a into your darkmod_src/macosx/libcurl/ and you're done with this step.
-
-=== Building Boost static libs in Mac OS X ===
-
-Download the boost 1.45 sources and extract them to your hard drive. Create a jam user config file to use the
-g++ 4.0 compiler instead of the default gcc 4.2 in Leopard: create a new file in your boost root folder and
-name it user-config-darwin.jam:
-
- using darwin : 8.11 : /usr/bin/g++-4.0 :
-     <architecture>"combined"
-     <address-model>"32"
-     <macosx-version>"10.4"
-     <macosx-version-min>"10.4"
-     <link>"static"
-     <threading>"multi" ;
-
-Download a bjam binary for OS X to your machine, then build boost threads, filesystem and system:
-
- /path/to/bjam --user-config=../../../user-config-darwin.jam architecture=combined link=static threading=multi address-model=32 release [stage]
-
-The "stage" option only works in filesystem and system (not in thread, as of boost 1.45). You'll find the filesystem and system libs in
-the ./stage folder of your boost root, the libboost_thread.a will be located in the bin.v2 folder after compilation. 
-
-Copy all libboost*.a files to darkmod_src/macosx/boost/lib/.
+If you work with SVN, please make sure that "svnversion" command works properly in OS console.
+In case of Windows, install TortoiseSVN with "command line client tools" included.
+In case of Linux, it is included in "subversion" package.
+If you build TDM yourself, run it, and then open TDM console, you should see the correct SVN revision number in the lower-right corner.
