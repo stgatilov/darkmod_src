@@ -1,0 +1,121 @@
+=== Compiling 64-bit boost static libraries (with -fPIC) ===
+
+Get the Boost 1.57 sources from their website and extract it to somewhere. Run the bootstrap script 
+to build the bjam binary:
+
+ ./bootstrap.sh
+
+Then compile the needed libraries:
+
+ bjam release link=static threading=multi address-model=64 runtime-link=static cxxflags='-fPIC' stage /boost/chrono /boost/date_time /boost/filesystem /boost/program_options /boost/regex /boost/system /boost/thread
+
+I had to scrap the various .a files together from the bin.v2 folder, get the following libs and copy them to
+darkmod_src/linux/boost/lib64
+
+ libboost_program_options.a
+ libboost_regex.a
+ libboost_system.a
+ libboost_thread.a
+ libboost_chrono.a
+ libboost_date_time.a
+ libboost_filesystem.a
+
+=== Compiling 64-bit PolarSSL with -fPIC ===
+
+PolarSSL is needed by libcurl to download stuff from SSL-secured sites.
+
+Get the polarSSL 1.3.7 from their website.
+Get cmake: sudo apt-get install cmake
+
+Add the line to the CMakeLists.txt, after the compiler checks part:
+
+ set(CMAKE_POSITION_INDEPENDENT_CODE ON) 
+
+Then build the library:
+
+ cmake .
+ make
+ sudo make install
+
+This will place libpolarssl.a in your /usr/local/lib folder. Copy it to linux/polarssl/lib64/
+
+=== Compiling the static libcurl library ===
+
+==== Building the static 32-bit library libcurl ====
+
+Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
+
+ env CFLAGS="-m32" LDFLAGS="-m32" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x86
+ make jobs=8
+ sudo make install
+
+The library is then located in /home/greebo/curl_install_x86/lib/libcurl.a.
+Copy that to darkmod_src/linux/libcurl/
+
+==== Building the static 64-bit library libcurl ====
+
+ Download the libcurl 7.39 source package, and extract it on your system, then run the following commands:
+
+ env CFLAGS="-m64 -fPIC" LDFLAGS="-m64" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-ssl --with-polarssl --without-libidn --without-zlib --prefix=/home/greebo/curl_install_x64
+ make jobs=8
+ make install
+
+The library is then located in /home/greebo/curl_install_x64/lib/libcurl.a.
+Copy that to darkmod_src/linux/libcurl/lib64/
+
+== Compiling on OSX ==
+
+The XCode projects are out of date at the moment and will need fixing.
+
+=== Building libcurl in Mac OS X ===
+
+Download the libcurl 7.21 source package, and extract it on your system. To produce a so-called "fat" binary you need to
+compile for both i386 and ppc targets.
+
+Build the i386 target by entering:
+
+ env CFLAGS="-m32 -arch i386" LDFLAGS="-m32 -arch i386" ./configure --disable-ldap --build=i686-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
+ make
+ sudo make install
+
+After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
+and rename it to ./libcurl.i386.a
+
+Build the powerpc target by entering:
+
+ env CFLAGS="-m32 -arch ppc" LDFLAGS="-m32 -arch ppc" ./configure --disable-ldap --build=powerpc-unknown-linux-gnu --without-libidn --without-zlib --without-ssl
+ make
+ sudo make install
+
+After make install the static library can be found in /usr/local/lib/libcurl.a, copy that file to your curl folder 
+and rename it to ./libcurl.ppc.a
+
+Finally call lipo to combine these two into a fat binary by entering this in your curl folder.
+
+ lipo -arch i386 libcurl.i386.a -arch ppc libcurl.ppc.a -create -output libcurl.a
+
+The filesize of the newly created libcurl.a should be around the sum of the single ppc and i386 libs, you can double-check that.
+Copy the libcurl.a into your darkmod_src/macosx/libcurl/ and you're done with this step.
+
+=== Building Boost static libs in Mac OS X ===
+
+Download the boost 1.45 sources and extract them to your hard drive. Create a jam user config file to use the
+g++ 4.0 compiler instead of the default gcc 4.2 in Leopard: create a new file in your boost root folder and
+name it user-config-darwin.jam:
+
+ using darwin : 8.11 : /usr/bin/g++-4.0 :
+     <architecture>"combined"
+     <address-model>"32"
+     <macosx-version>"10.4"
+     <macosx-version-min>"10.4"
+     <link>"static"
+     <threading>"multi" ;
+
+Download a bjam binary for OS X to your machine, then build boost threads, filesystem and system:
+
+ /path/to/bjam --user-config=../../../user-config-darwin.jam architecture=combined link=static threading=multi address-model=32 release [stage]
+
+The "stage" option only works in filesystem and system (not in thread, as of boost 1.45). You'll find the filesystem and system libs in
+the ./stage folder of your boost root, the libboost_thread.a will be located in the bin.v2 folder after compilation. 
+
+Copy all libboost*.a files to darkmod_src/macosx/boost/lib/.
