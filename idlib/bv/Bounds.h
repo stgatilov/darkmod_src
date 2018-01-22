@@ -103,7 +103,7 @@ public:
 	idSphere		ToSphere( void ) const;
 
 	// duzenko: don't delete, used for random debugging by grayman
-	const idStr		ToString( const int precision = 2 ) const;
+	const char *	ToString( const int precision = 2 ) const; // grayman - used to be const char *, can't now make it idStr
 
 	void			AxisProjection( const idVec3 &dir, float &min, float &max ) const;
 	void			AxisProjection( const idVec3 &origin, const idMat3 &axis, const idVec3 &dir, float &min, float &max ) const;
