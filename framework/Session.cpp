@@ -1839,9 +1839,10 @@ void idSessionLocal::ScrubSaveGameFileName( idStr &saveFileName ) const {
 	// we just modify characters, but keep the length
 	int len = saveFileName.Length();
 	for ( int i = 0; i < len; i++ ) {
-		// random junk or a high-bit character, or a control character including space
-		if ( ( (const unsigned char)saveFileName[i] >= 128 ) ||
-		     ( (const unsigned char)saveFileName[i] <= 32  ) ||
+		const unsigned char c = (const unsigned char)saveFileName[i]; // grayman #4737
+		// random junk or a control character including space
+		if ( ( c <= 32  ) ||
+			 (( c >= 127) && (c <= 159)) || // grayman #4737 - replace special chars, but allow UTF chars
 		     ( strchr( ",.~!@#$%^&*()[]{}<>\\|/=?+;:-'\"", saveFileName[i] ) ) ) {
 			saveFileName[i] = '_';
 		}
