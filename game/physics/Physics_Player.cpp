@@ -449,6 +449,9 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 						// greebo: HACK ALARM: We add a "counter-gravity" this frame to avoid us from being dragged down again in the next frame
 						// TODO: Maybe we can do this somewhere else, where the player is sliding off slopes.
 						current.velocity -= gravityVector * frametime * 3;
+						
+						// BluePill: HACK to prevent sliding down curbs on high framerates.
+						m_SlopeIgnoreTimer = (framemsec < USERCMD_MSEC) ? 250 : 0;
 					}
 				}
 
@@ -901,13 +904,7 @@ idPhysics_Player::WalkMove
 */
 void idPhysics_Player::WalkMove( void ) 
 {
-	static float moveTimeAccum = 0;
-	moveTimeAccum += frametime;
-	while ( moveTimeAccum < MS2SEC( USERCMD_MSEC ) ) {
-		return;
-	}
-	frametime = moveTimeAccum;
-	moveTimeAccum = 0;
+	
 
 	if ( waterLevel > WATERLEVEL_WAIST && (viewForward * groundTrace.c.normal) > 0.0f )
 	{
@@ -1911,24 +1908,27 @@ void idPhysics_Player::CheckGround( void ) {
 		current.velocity += 3*velocityChange;
 		walkNormal = MIN_WALK_SLICK_NORMAL;
 	}
-
-	// slopes that are too steep will not be considered onground
-	if ( ( groundTrace.c.normal * -gravityNormal ) < walkNormal ) // grayman #2409
-	{
-		if ( debugLevel ) {
-			gameLocal.Printf( "%i:steep\n", c_pmove );
-		}
+	
+		// don't check for slopes for a short time (only used for high framerates)
+	if (m_SlopeIgnoreTimer <= 0) {
+		// slopes that are too steep will not be considered onground
+		if ( ( groundTrace.c.normal * -gravityNormal ) < walkNormal ) // grayman #2409
+		{
+			if ( debugLevel ) {
+				gameLocal.Printf( "%i:steep\n", c_pmove );
+			}
 
 		// FIXME: if they can't slide down the slope, let them walk (sharp crevices)
-
+		
 		// make sure we don't die from sliding down a steep slope
-		if ( current.velocity * gravityNormal > 150.0f ) {
-			current.velocity -= ( current.velocity * gravityNormal - 150.0f ) * gravityNormal;
-		}
+			if ( current.velocity * gravityNormal > 150.0f ) {
+				current.velocity -= ( current.velocity * gravityNormal - 150.0f ) * gravityNormal;
+			}
 
 		groundPlane = true;
 		walking = false;
 		return;
+	    }
 	}
 
 	groundPlane = true;
@@ -2587,6 +2587,10 @@ void idPhysics_Player::MovePlayer( int msec ) {
 	// remove jumped and stepped up flag
 	current.movementFlags &= ~(PMF_JUMPED|PMF_STEPPED_UP|PMF_STEPPED_DOWN);
 	current.stepUp = 0.0f;
+	
+	// update the slope ignore timer
+	if (m_SlopeIgnoreTimer > 0)
+	m_SlopeIgnoreTimer -= framemsec;
 
 	if ( command.upmove < 10 ) {
 		// not holding jump
@@ -2912,6 +2916,8 @@ idPhysics_Player::idPhysics_Player( void )
 	m_NextAttachTime = -1;
 
 	m_PushForce = CForcePushPtr(new CForcePush);
+	
+	m_SlopeIgnoreTimer = 0;
 
 	// swimming
 	waterLevel = WATERLEVEL_NONE;
@@ -3135,6 +3141,8 @@ void idPhysics_Player::Restore( idRestoreGame *savefile ) {
 	m_ClimbingOnEnt.Restore( savefile );
 
 	savefile->ReadInt( m_NextAttachTime );
+	
+	m_SlopeIgnoreTimer = 0;
 
 	savefile->ReadInt( (int &)waterLevel );
 	savefile->ReadInt( waterType );

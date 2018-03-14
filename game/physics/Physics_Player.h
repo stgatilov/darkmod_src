@@ -362,6 +362,13 @@ private:
 	int						m_ClimbSndRepDistHoriz;
 
 	int						m_NextAttachTime;
+	
+	/**
+	* Timer value used as a workaround to step up curbs on high framerates.
+	* Only set at a frametime below USERCMD_MSEC and decreased by the frametime each movement frame.
+	**/
+	
+	int						m_SlopeIgnoreTimer;
 
 	/**
 	* View yaw and pitch changes between this frame and last frame
