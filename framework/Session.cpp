@@ -2753,7 +2753,7 @@ void idSessionLocal::Frame() {
 		while (true) {
 			latchedTicNumber = com_ticNumber;
 			if (latchedTicNumber >= minTic)
-				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 4000)
+				if (com_fixedTic.GetInteger() == 0 || Sys_GetTimeMicroseconds() - prevMicroSecs >= 6000)
 					break;
 			Sys_Sleep( 1 );
 		}
