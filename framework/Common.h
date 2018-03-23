@@ -242,6 +242,7 @@ public:
 extern idCommon *		common;
 
 class ErrorReportedException {
+private:
 	idStr msg;
 	int   code;
 	bool  fatal;

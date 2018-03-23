@@ -376,6 +376,11 @@ idClassTypeInfo *idTypeInfoGen::ParseClassType( const char *scope, const char *t
 		src.ExpectTokenString( ";" );
 	}
 
+	for (int i = 0; i < typeInfo->variables.Num(); i++) {
+		idClassVariableInfo &var = typeInfo->variables[i];
+		var.reference = (var.type.Right(1) == "&");
+	}
+
 	//common->Printf( "class %s%s : %s\n", typeInfo->scope.c_str(), typeInfo->typeName.c_str(), typeInfo->superType.c_str() );
 
 	return typeInfo;
@@ -713,6 +718,7 @@ void idTypeInfoGen::ParseScope( const char *scope, bool isTemplate, idParser &sr
 							break;
 						}
 						varType.StripTrailing( "* " );
+						varType.StripTrailing( "& " );
 
 					} else {
 
@@ -733,6 +739,7 @@ void idTypeInfoGen::ParseScope( const char *scope, bool isTemplate, idParser &sr
 							var.bits = bits;
 							typeInfo->variables.Append( var );
 							varType.StripTrailing( "* " );
+							varType.StripTrailing( "& " );
 
 						} else if ( src.CheckTokenString( ";" ) ) {
 							idClassVariableInfo var;
@@ -1013,7 +1020,7 @@ void idTypeInfoGen::WriteTypeInfo( const char *fileName ) const {
 			const char *varName = info->variables[j].name.c_str();
 			const char *varType = info->variables[j].type.c_str();
 
-			if ( info->unnamed || info->isTemplate || info->variables[j].bits != 0 ) {
+			if ( info->unnamed || info->isTemplate || info->variables[j].bits != 0 || info->variables[j].reference ) {
 				file->WriteFloatString( "//" );
 			}
 			file->WriteFloatString( "\t{ \"%s\", \"%s\", (int)(&((%s *)0)->%s), sizeof( ((%s *)0)->%s ) },\n",

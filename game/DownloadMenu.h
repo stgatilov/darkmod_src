@@ -53,7 +53,6 @@ private:
 	ActiveDownloads _downloads;
 
 public:
-	CDownloadMenu() = default;
 
 	// handles main menu commands
 	void HandleCommands(const idStr& cmd, idUserInterface* gui);

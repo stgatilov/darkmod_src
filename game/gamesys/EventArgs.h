@@ -29,6 +29,7 @@ struct EventArg
  * idEventDef allow for up to 8 arguments, and so are the constructors of this class.
  */
 class EventArgs {
+private:
 	idStaticList<EventArg, 8> args;
 public:
 

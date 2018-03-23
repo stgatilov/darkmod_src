@@ -55,6 +55,7 @@ public:
 	idStr						name;
 	idStr						type;
 	int							bits;
+	bool						reference;
 };
 
 class idClassTypeInfo {
