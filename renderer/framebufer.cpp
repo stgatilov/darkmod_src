@@ -86,9 +86,8 @@ void CheckCreatePrimary() {
 
 	// reset textures 
 	if ( curWidth != globalImages->currentRenderImage->uploadWidth || curHeight != globalImages->currentRenderImage->uploadHeight
-		|| curWidth != globalImages->currentDepthImage->uploadWidth || curHeight != globalImages->currentDepthImage->uploadHeight
 		|| r_fboColorBits.IsModified()
-		) { // FIXME don't allocate memory if sharing color/depth
+	) { // FIXME don't allocate memory if sharing color/depth
 		r_fboColorBits.ClearModified();
 		globalImages->currentRenderImage->Bind();
 		globalImages->currentRenderImage->uploadWidth = curWidth; // used as a shader param
@@ -100,6 +99,8 @@ void CheckCreatePrimary() {
 		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); //NULL means reserve texture memory, but texels are undefined
 
 		globalImages->currentRenderFbo->Bind();
+		globalImages->currentRenderFbo->uploadWidth = curWidth; // used as a shader param
+		globalImages->currentRenderFbo->uploadHeight = curHeight;
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

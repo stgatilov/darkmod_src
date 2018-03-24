@@ -639,23 +639,6 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 		}
 		return true;
 	//}
-
-	// issue a new view command
-	/*parms = R_MirrorViewBySurface( drawSurf );
-	if ( !parms ) 
-		return false;
-
-	parms->scissor = scissor;
-	parms->superView = tr.viewDef;
-	parms->subviewSurface = drawSurf;
-
-	// triangle culling order changes with mirroring
-	parms->isMirror = ( ( (int)parms->isMirror ^ (int)tr.viewDef->isMirror ) != 0 );
-
-	// generate render commands for it
-	R_RenderView( parms );
-
-	return true;*/
 }
 
 /*

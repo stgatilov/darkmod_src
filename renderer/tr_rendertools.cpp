@@ -508,7 +508,8 @@ void RB_ShowLightCount( void ) {
 				}
 
 				const idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
-				qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), &ac->xyz );
+				//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), &ac->xyz );
+				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 				RB_DrawElementsWithCounters( surf->backendGeo );
 			}
 		}
