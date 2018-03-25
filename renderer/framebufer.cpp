@@ -41,6 +41,10 @@ void FB_CopyColorBuffer() {
 }
 
 void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
+	if (cmd.imageWidth * cmd.imageHeight == 0) {
+		//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
+		return;	//no pixels to be read
+	}
 	int backEndStartTime = Sys_Milliseconds();
 	if ( !primaryOn ) // #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
