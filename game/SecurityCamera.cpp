@@ -41,11 +41,14 @@ const idEventDef EV_SecurityCam_AddLight( "<addLight>", EventArgs(), EV_RETURNS_
 const idEventDef EV_SecurityCam_SpotLightToggle( "toggle_light", EventArgs(), EV_RETURNS_VOID, "Toggles the spotlight on/off." );
 const idEventDef EV_SecurityCam_SweepToggle( "toggle_sweep", EventArgs(), EV_RETURNS_VOID, "Toggles the camera sweep." );
 
+// Obsttorte
+const idEventDef EV_SecurityCam_GetSpotLight("getSpotLight", EventArgs(), 'e', "Returns the spotlight used by the camera. Returns null_entity if none is used.");
 CLASS_DECLARATION( idEntity, idSecurityCamera )
 	EVENT( EV_SecurityCam_AddLight,			idSecurityCamera::Event_AddLight )
 	EVENT( EV_SecurityCam_SpotLightToggle,	idSecurityCamera::Event_SpotLight_Toggle )
 	EVENT( EV_SecurityCam_SweepToggle,		idSecurityCamera::Event_Sweep_Toggle)
 	EVENT( EV_PostSpawn,					idSecurityCamera::PostSpawn )
+	EVENT( EV_SecurityCam_GetSpotLight,		idSecurityCamera::Event_GetSpotLight)	
 END_CLASS
 
 #define ALERT_INTERVAL 5000 // time between alert sounds (ms)
@@ -298,8 +301,10 @@ void idSecurityCamera::Event_AddLight( void )
 	idVec3	lightOffset;
 	idLight	*light;
 	idVec3  cameraOrigin = GetPhysics()->GetOrigin();
+	idVec3	lightColor;
 	
 	spawnArgs.GetVector( "lightOffset", "0 0 0", lightOffset );
+	spawnArgs.GetVector("_color", "1 1 1", lightColor);
 
 	// rotate the light origin offset around the z axis
 
@@ -322,6 +327,7 @@ void idSecurityCamera::Event_AddLight( void )
 	args.Set( "light_up", up.ToString() );
 	args.SetFloat( "angle", angle );
 	args.Set("texture", "lights/biground1");
+	args.Set("_color", lightColor.ToString());
 
 	light = static_cast<idLight *>( gameLocal.SpawnEntityType( idLight::Type, &args ) );
 	light->Bind( this, true );
@@ -358,6 +364,24 @@ void idSecurityCamera::Event_SpotLight_Toggle(void)
 			light->Off();
 			Event_SetSkin("security_camera_on_spotlight_off");
 		}
+	}
+}
+
+/*
+================
+idSecurityCamera::Event_GetSpotLight
+================
+*/
+void idSecurityCamera::Event_GetSpotLight()
+{
+	idLight* light = spotLight.GetEntity();
+	if (light == NULL)
+	{
+		idThread::ReturnEntity(NULL);
+	}
+	else
+	{
+		idThread::ReturnEntity(light);
 	}
 }
 
@@ -638,6 +662,7 @@ void idSecurityCamera::Think( void )
 				startAlertTime = gameLocal.time + SEC2MS(sightTime);
 				sweeping = false;
 				state = STATE_PLAYERSIGHTED;
+				SetAlertMode(MODE_SIGHTED);
 			}
 			else if ( rotate && !stationary )
 			{
@@ -945,7 +970,7 @@ idSecurityCamera::Activate - turn camera power on/off
 void idSecurityCamera::Activate(idEntity* activator)
 {
 	powerOn = !powerOn;
-
+	
 	if ( state == STATE_DEAD )
 	{
 		if (powerOn && ( sparks.GetEntity() == NULL ))

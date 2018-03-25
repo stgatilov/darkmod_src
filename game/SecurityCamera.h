@@ -116,6 +116,9 @@ private:
 	void					Event_AddLight( void );
 	void					Event_SpotLight_Toggle( void );
 	void					Event_Sweep_Toggle( void );
+	// Obsttorte
+	void					Event_GetSpotLight(void);
+
 	void					PostSpawn( void );
 	void					AddSparks(void);
 
