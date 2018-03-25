@@ -575,7 +575,8 @@ void RB_ShowSilhouette( void ) {
 
 				const srfTriangles_t	*tri = surf->backendGeo;
 
-				qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
+				//qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
+				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
 				qglBegin( GL_LINES );
 
 				for ( int j = 0 ; j < tri->numIndexes ; j+=3 ) {
@@ -665,7 +666,8 @@ static void RB_ShowShadowCount( void ) {
 				}
 
 				shadowCache_t *cache = (shadowCache_t *)vertexCache.Position( tri->shadowCache );
-				qglVertexPointer( 4, GL_FLOAT, sizeof( *cache ), &cache->xyz );
+				//qglVertexPointer( 4, GL_FLOAT, sizeof( *cache ), &cache->xyz );
+				qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), &cache->xyz );
 				RB_DrawElementsWithCounters( tri );
 			}
 		}
