@@ -90,6 +90,7 @@ void CheckCreatePrimary() {
 
 	// reset textures 
 	if ( curWidth != globalImages->currentRenderImage->uploadWidth || curHeight != globalImages->currentRenderImage->uploadHeight
+	    || curWidth != globalImages->currentDepthImage->uploadWidth || curHeight != globalImages->currentDepthImage->uploadHeight
 		|| r_fboColorBits.IsModified()
 	) { // FIXME don't allocate memory if sharing color/depth
 		r_fboColorBits.ClearModified();
