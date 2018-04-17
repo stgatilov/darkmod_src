@@ -18,8 +18,6 @@
 
 
 #include "tr_local.h"
-#include "FrameBuffer.h"
-#include "glsl.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
@@ -142,7 +140,7 @@ static void R_IssueRenderCommands( frameData_t *frameData ) {
 ============
 R_GetCommandBuffer
 
-Returns memory for a command buffer (stretchPicCommand_t (??? - duzenko), 
+Returns memory for a command buffer (stretchPicCommand_t, 
 drawSurfsCommand_t, etc) and links it to the end of the
 current command chain.
 ============
@@ -265,8 +263,8 @@ static void R_CheckCvars( void ) {
 	globalImages->CheckCvars();
 
 	// gamma stuff
-	if ( /*r_gamma.IsModified() || */r_brightness.IsModified() ) {
-		//r_gamma.ClearModified();
+	if ( r_gamma.IsModified() || r_brightness.IsModified() ) {
+		r_gamma.ClearModified();
 		r_brightness.ClearModified();
 		R_SetColorMappings();
 	}
@@ -619,34 +617,23 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		return;
 	}
 
-	try {
-		common->SetErrorIndirection( true );
-		int startLoop = Sys_Milliseconds();
-		session->ActivateFrontend();
-		int endSignal = Sys_Milliseconds();
-		// start the back end up again with the new command list
-		R_IssueRenderCommands( backendFrameData );
-		int endRender = Sys_Milliseconds();
-		session->WaitForFrontendCompletion();
-		int endWait = Sys_Milliseconds();
-		common->SetErrorIndirection( false );
+	int startLoop = Sys_Milliseconds();
+	session->ActivateFrontend();
+	int endSignal = Sys_Milliseconds();
+	// start the back end up again with the new command list
+	R_IssueRenderCommands( backendFrameData );
+	int endRender = Sys_Milliseconds();
+	session->WaitForFrontendCompletion();
+	int endWait = Sys_Milliseconds();
 
-		if( r_logSmpTimings.GetBool() ) {
-			if( !logFile ) {
-				logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
-			}
-			int signalFrontend = endSignal - startLoop;
-			int render = endRender - endSignal;
-			int waitForFrontend = endWait - endRender;
-			logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
+	if( r_logSmpTimings.GetBool() ) {
+		if( !logFile ) {
+			logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
 		}
-	} catch( std::shared_ptr<ErrorReportedException> e ) {
-		session->WaitForFrontendCompletion();
-		common->SetErrorIndirection( false );
-		if( e->IsFatalError() )
-			common->DoFatalError( e->ErrorMessage(), e->ErrorCode() );
-		else
-			common->DoError( e->ErrorMessage(), e->ErrorCode() );
+		int signalFrontend = endSignal - startLoop;
+		int render = endRender - endSignal;
+		int waitForFrontend = endWait - endRender;
+		logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
 	}
 
 	// check for dynamic changes that require some initialization
@@ -727,15 +714,17 @@ down, but still valid.
 ================
 */
 void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerOfTwo, bool forceDimensions ) {
-	if ( !glConfig.isInitialized )
+	if ( !glConfig.isInitialized ) {
 		return;
+	}
 
 	// close any gui drawing before changing the size
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
-	if ( width < 1 || height < 1 ) 
+	if ( width < 1 || height < 1 ) {
 		common->Error( "CropRenderSize: bad sizes" );
+	}
 
 	if ( session->writeDemo ) {
 		session->writeDemo->WriteInt( DS_RENDER );
@@ -744,8 +733,9 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 		session->writeDemo->WriteInt( height );
 		session->writeDemo->WriteInt( makePowerOfTwo );
 
-		if ( r_showDemo.GetBool() ) 
+		if ( r_showDemo.GetBool() ) {
 			common->Printf( "write DC_CROP_RENDER\n" );
+		}
 	}
 
 	// convert from virtual SCREEN_WIDTH/SCREEN_HEIGHT coordinates to physical OpenGL pixels
@@ -774,22 +764,28 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 		// FIXME: megascreenshots with offset viewports don't work right with this yet
 	}
 
-	// we might want to clip these to the crop window instead
-	while ( width > glConfig.vidWidth ) 
-		width >>= 1;
-	while ( height > glConfig.vidHeight )
-		height >>= 1;
+	renderCrop_t	*rc = &renderCrops[currentRenderCrop];
 
-	if ( currentRenderCrop == MAX_RENDER_CROPS )
+	// we might want to clip these to the crop window instead
+	while ( width > glConfig.vidWidth ) {
+		width >>= 1;
+	}
+	while ( height > glConfig.vidHeight ) {
+		height >>= 1;
+	}
+
+	if ( currentRenderCrop == MAX_RENDER_CROPS ) {
 		common->Error( "idRenderSystemLocal::CropRenderSize: currentRenderCrop == MAX_RENDER_CROPS" );
+	}
 
 	currentRenderCrop++;
 
-	renderCrop_t &rc = renderCrops[currentRenderCrop];
-	rc.x = 0;
-	rc.y = 0;
-	rc.width = width;
-	rc.height = height;
+	rc = &renderCrops[currentRenderCrop];
+
+	rc->x = 0;
+	rc->y = 0;
+	rc->width = width;
+	rc->height = height;
 }
 
 void idRenderSystemLocal::GetCurrentRenderCropSize(int& width, int& height)
@@ -830,17 +826,12 @@ void idRenderSystemLocal::UnCrop() {
 	}
 }
 
-void idRenderSystemLocal::PostProcess() {
-	emptyCommand_t *cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
-	cmd->commandId = RC_BLOOM;
-}
-
 /*
 ================
 CaptureRenderToImage
 ================
 */
-void idRenderSystemLocal::CaptureRenderToImage( idImage &image ) {
+void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
 	if ( !glConfig.isInitialized ) {
 		return;
 	}
@@ -850,84 +841,28 @@ void idRenderSystemLocal::CaptureRenderToImage( idImage &image ) {
 	if ( session->writeDemo ) {
 		session->writeDemo->WriteInt( DS_RENDER );
 		session->writeDemo->WriteInt( DC_CAPTURE_RENDER );
-		session->writeDemo->WriteHashString( image.imgName );
+		session->writeDemo->WriteHashString( imageName );
 
-		if ( r_showDemo.GetBool() )
-			common->Printf( "write DC_CAPTURE_RENDER: %s\n", image.imgName );
+		if ( r_showDemo.GetBool() ) {
+			common->Printf( "write DC_CAPTURE_RENDER: %s\n", imageName );
+		}
 	}
 
-	renderCrop_t &rc = renderCrops[currentRenderCrop];
+	// look up the image before we create the render command, because it
+	// may need to sync to create the image
+	idImage	*image = globalImages->ImageFromFile(imageName, TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT);
 
-	copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
-	cmd.commandId = RC_COPY_RENDER;
-	cmd.x = rc.x;
-	cmd.y = rc.y;
-	cmd.imageWidth = rc.width;
-	cmd.imageHeight = rc.height;
-	cmd.image = &image;
-	cmd.buffer = NULL;
-}
+	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
-void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char* buffer, bool usePbo )
-{
-	if ( !glConfig.isInitialized )
-		return;
+	copyRenderCommand_t *cmd = (copyRenderCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd->commandId = RC_COPY_RENDER;
+	cmd->x = rc->x;
+	cmd->y = rc->y;
+	cmd->imageWidth = rc->width;
+	cmd->imageHeight = rc->height;
+	cmd->image = image;
 
-	renderCrop_t rc = renderCrops[currentRenderCrop];
-	if ( r_useFbo.GetBool() && !usePbo ) { // 4676 duzenko FIXME usePbo has double function
-		rc.width /= r_fboResolution.GetFloat();
-		rc.height /= r_fboResolution.GetFloat();
-	}
-	rc.width = (rc.width + 3) & ~3; //opengl wants width padded to 4x
-
-	guiModel->EmitFullScreen();
 	guiModel->Clear();
-	
-	copyRenderCommand_t &cmd = *(copyRenderCommand_t *)R_GetCommandBuffer( sizeof( cmd ) );
-	cmd.commandId = RC_COPY_RENDER;
-	cmd.buffer = buffer;
-	cmd.usePBO = usePbo;
-	cmd.image = NULL;
-	cmd.x = rc.x;
-	cmd.y = rc.y;
-	cmd.imageWidth = rc.width;
-	cmd.imageHeight = rc.height;
-
-	R_IssueRenderCommands( frameData );
-
-	/*int backEndStartTime = Sys_Milliseconds();
-	if ( !r_useFbo.GetBool() ) // duzenko #4425: not applicable, raises gl errors
-		qglReadBuffer( GL_BACK );
-
-	// #4395 Duzenko lightem pixel pack buffer optimization
-	if ( usePbo && glConfig.pixelBufferAvailable ) {
-		static int pboSize = -1;
-		if ( !pbo ) {
-			pboSize = rc->width * rc->height * 3;
-			qglGenBuffersARB( 1, &pbo );
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-			qglBufferDataARB( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
-			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-		}
-		if ( rc->width * rc->height * 3 != pboSize )
-			common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", rc->width, rc->height, pboSize );
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-		unsigned char* ptr = (unsigned char*)qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
-		if ( ptr ) {
-			memcpy( buffer, ptr, pboSize );
-			qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
-		} else {
-			// #4395 vid_restart ?
-			pbo = 0;
-		}
-		qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, 0 );
-		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-	} else
-		qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, buffer );
-	qglClear( GL_COLOR_BUFFER_BIT );
-	int backEndFinishTime = Sys_Milliseconds();
-	backEnd.pc.msec += backEndFinishTime - backEndStartTime;*/
 }
 
 /*
@@ -937,8 +872,9 @@ CaptureRenderToFile
 ==============
 */
 void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlpha ) {
-	if ( !glConfig.isInitialized ) 
+	if ( !glConfig.isInitialized ) {
 		return;
+	}
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
@@ -979,6 +915,64 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 
 	R_StaticFree( data );
 	R_StaticFree( data2 );
+}
+
+void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer, bool usePbo)
+{
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	renderCrop_t rc = renderCrops[currentRenderCrop];
+	if ( r_useFbo.GetBool() && !usePbo ) { // 4676 duzenko FIXME usePbo has double function
+		rc.width /= r_fboResolution.GetFloat();
+		rc.height /= r_fboResolution.GetFloat();
+	}
+	rc.width = (rc.width + 3) & ~3; //opengl wants width padded to 4x
+
+	guiModel->EmitFullScreen();
+	guiModel->Clear();
+	R_IssueRenderCommands( frameData );
+	
+	if (cmd.imageWidth * cmd.imageHeight == 0) {
+		//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
+		return;	//no pixels to be read
+	}
+
+	int backEndStartTime = Sys_Milliseconds();
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+		qglReadBuffer(GL_BACK);
+
+// #4395 Duzenko lightem pixel pack buffer optimization
+	if (usePbo && glConfig.pixelBufferAvailable) {
+		static int pboSize = -1;
+		if (!pbo) {
+			pboSize = rc.width * rc.height * 3;
+			qglGenBuffersARB(1, &pbo);
+			qglBindBufferARB(GL_PIXEL_PACK_BUFFER, pbo);
+			qglBufferDataARB(GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ);
+			qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
+		}
+		if (rc.width * rc.height * 3 != pboSize)
+			common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", rc.width, rc.height, pboSize );
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, pbo);
+		unsigned char* ptr = (unsigned char*)qglMapBufferARB(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+		if (ptr) {
+			memcpy(buffer, ptr, pboSize);
+			qglUnmapBufferARB(GL_PIXEL_PACK_BUFFER);
+		}
+		else {
+			// #4395 vid_restart ?
+			pbo = 0;
+		}
+		qglReadPixels(rc.x, rc.y, rc.width, rc.height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
+		qglBindBufferARB(GL_PIXEL_PACK_BUFFER, 0);
+	} else
+		qglReadPixels(rc.x, rc.y, rc.width, rc.height, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+	qglClear(GL_COLOR_BUFFER_BIT);
+	int backEndFinishTime = Sys_Milliseconds();
+	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
 }
 
 /*
