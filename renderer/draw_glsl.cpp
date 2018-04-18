@@ -581,7 +581,7 @@ void blendProgram_t::AfterLoad() {
 
 void fogProgram_t::AfterLoad() {
 	tex0PlaneS = qglGetUniformLocation( program, "tex0PlaneS" );
-	tex1PlaneS = qglGetUniformLocation( program, "tex1PlaneS" );
+	tex1PlaneT = qglGetUniformLocation( program, "tex1PlaneT" );
 	texture1 = qglGetUniformLocation( program, "texture1" );
 	fogColor = qglGetUniformLocation( program, "fogColor" );
 	fogEnter = qglGetUniformLocation( program, "fogEnter" );

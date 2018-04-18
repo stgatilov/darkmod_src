@@ -1112,7 +1112,8 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 		GL_SelectTexture( 1 );
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[1], local );
-		qglUniform4fv( fogShader.tex1PlaneS, 1, local.ToFloatPtr() );
+		local[3] += FOG_ENTER;
+		qglUniform4fv( fogShader.tex1PlaneT, 1, local.ToFloatPtr() );
 	}
 
 	RB_T_RenderTriangleSurface( surf );

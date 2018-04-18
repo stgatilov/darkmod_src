@@ -53,7 +53,7 @@ struct blendProgram_t : shaderProgram_t {
 
 struct fogProgram_t : shaderProgram_t {
 	GLint			tex0PlaneS;
-	GLint			tex1PlaneS;
+	GLint			tex1PlaneT;
 	GLint			fogEnter;
 	GLint			texture1;
 	GLint			fogColor;
