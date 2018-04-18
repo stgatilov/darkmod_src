@@ -1103,13 +1103,9 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 	if ( backEnd.currentSpace != surf->space ) {
 		idPlane	local;
 
-		GL_SelectTexture( 0 );
-
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[0], local );
 		local[3] += 0.5;
 		qglUniform4fv( fogShader.tex0PlaneS, 1, local.ToFloatPtr() );
-
-		GL_SelectTexture( 1 );
 
 		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[1], local );
 		local[3] += FOG_ENTER;
@@ -1179,7 +1175,6 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	fogShader.Use();
 	qglUniform1i( fogShader.texture1, 1 );
 	qglUniform3fv( fogShader.fogColor, 1, backEnd.lightColor );
-	qglUniform1f( fogShader.fogEnter, FOG_ENTER );
 
 	fogPlanes[0][0] = a * backEnd.viewDef->worldSpace.modelViewMatrix[2];
 	fogPlanes[0][1] = a * backEnd.viewDef->worldSpace.modelViewMatrix[6];
@@ -1190,10 +1185,15 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	GL_SelectTexture( 1 );
 	globalImages->fogEnterImage->Bind();
 
-	// S is based on the view origin
-	float s = 0.001f * (backEnd.viewDef->renderView.vieworg * backEnd.vLight->fogPlane.Normal() + backEnd.vLight->fogPlane[3]);
+	// T will get a texgen for the fade plane, which is always the "top" plane on unrotated lights
+	fogPlanes[1][0] = 0.001f * backEnd.vLight->fogPlane[0];
+	fogPlanes[1][1] = 0.001f * backEnd.vLight->fogPlane[1];
+	fogPlanes[1][2] = 0.001f * backEnd.vLight->fogPlane[2];
+	fogPlanes[1][3] = 0.001f * backEnd.vLight->fogPlane[3];
 
-	fogPlanes[1][3] = FOG_ENTER + s;
+	// S is based on the view origin
+	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
+	qglUniform1f(fogShader.fogEnter, FOG_ENTER + s);
 
 	// draw it
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
