@@ -924,6 +924,12 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer, bool useP
 	}
 
 	renderCrop_t rc = renderCrops[currentRenderCrop];
+	
+	if (rc.width * rc.height == 0) {
+		//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
+		return;	//no pixels to be read
+	}
+	
 	if ( r_useFbo.GetBool() && !usePbo ) { // 4676 duzenko FIXME usePbo has double function
 		rc.width /= r_fboResolution.GetFloat();
 		rc.height /= r_fboResolution.GetFloat();
@@ -934,10 +940,7 @@ void idRenderSystemLocal::CaptureRenderToBuffer(unsigned char* buffer, bool useP
 	guiModel->Clear();
 	R_IssueRenderCommands( frameData );
 	
-	if (cmd.imageWidth * cmd.imageHeight == 0) {
-		//stgatilov #4754: this happens during lightgem calculating in minimized windowed TDM
-		return;	//no pixels to be read
-	}
+	
 
 	int backEndStartTime = Sys_Milliseconds();
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
