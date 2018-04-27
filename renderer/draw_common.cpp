@@ -1195,7 +1195,8 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 
 	// S is based on the view origin
 	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[1].Normal() + fogPlanes[1][3];
-
+    //nbohr1more: further fog backport work
+    qglUniform1f(fogShader.fogEnter, FOG_ENTER + s);
 
 	// draw it
 	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
