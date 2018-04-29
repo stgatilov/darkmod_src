@@ -764,7 +764,7 @@ void Packager::ProcessPackageElement(Package::const_iterator p)
 		ZipFileWrite::CompressionMethod method = ZipFileWrite::DEFLATE_MAX;
 		auto ext = fs::extension(sourceFile);
 		for (int i = 0; i < PK4_UNCOMPRESSED_EXTENSIONS_COUNT; i++)
-			if (ext == std::string(".") + PK4_UNCOMPRESSED_EXTENSIONS[i])
+			if (boost::iequals(ext, std::string(".") + PK4_UNCOMPRESSED_EXTENSIONS[i]))
 				method = ZipFileWrite::STORE;
 
 		TraceLog::WriteLine(LOG_VERBOSE,
