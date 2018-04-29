@@ -2881,6 +2881,9 @@ void idCommonLocal::InitGame( void )
 	// initialize the file system
 	fileSystem->Init();
 
+	// init journalling, etc
+	eventLoop->Init();
+
 	// initialize the declaration manager
 	declManager->Init();
 
@@ -2913,9 +2916,6 @@ void idCommonLocal::InitGame( void )
 
 	// load the font, etc
 	console->LoadGraphics();
-
-	// init journalling, etc
-	eventLoop->Init();
 
 	//PrintLoadingMessage( Translate( "#str_04345" ) );
 
