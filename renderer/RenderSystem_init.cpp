@@ -780,6 +780,8 @@ void R_InitOpenGL( void ) {
 		glConfig.vendor = glvIntel;
 	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
 		glConfig.vendor = glvAMD;
+	if ( strcmp( glConfig.vendor_string, "NVIDIA Corporation" ) == 0 )
+	    glConfig.vendor = glvNVIDIA;
 
 	// OpenGL driver constants
 	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
