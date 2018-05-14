@@ -238,6 +238,7 @@ idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR
 // 2016-2017 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer culling patch" );
 idCVar r_useFbo( "r_useFBO", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );
+idCVar r_nvidiaOverride( "r_nvidiaOverride", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
 idCVar r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB" );
 idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments");
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
@@ -780,7 +781,9 @@ void R_InitOpenGL( void ) {
 		glConfig.vendor = glvIntel;
 	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
 		glConfig.vendor = glvAMD;
-	if ( strcmp( glConfig.vendor_string, "NVIDIA Corporation" ) == 0 )
+	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0 
+	     || strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0 
+		 || strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 )
 	    glConfig.vendor = glvNVIDIA;
 
 	// OpenGL driver constants
@@ -818,6 +821,11 @@ void R_InitOpenGL( void ) {
 
 	// Reset our gamma
 	R_SetColorMappings();
+	
+	if ( (glConfig.vendor == glvNVIDIA) && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() ) {
+    common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
+	r_useFbo.SetBool(true);
+	}
 
 #ifdef _WIN32
 	static bool glCheck = false;
@@ -1898,6 +1906,8 @@ static void GfxInfo_f( const idCmdArgs &args ) {
 	} else {
 		common->Printf( "glFinish not forced\n" );
 	}
+	
+	
 
 #ifdef _WIN32	
 // WGL_EXT_swap_interval
@@ -2097,6 +2107,7 @@ R_InitCvars
 */
 void R_InitCvars( void ) {
 	// update latched cvars here
+	
 }
 
 /*
