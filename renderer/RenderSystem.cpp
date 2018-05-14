@@ -270,6 +270,14 @@ static void R_CheckCvars( void ) {
 		r_brightness.ClearModified();
 		R_SetColorMappings();
 	}
+	
+	if ( glConfig.vendor == glvNVIDIA && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() && !r_useFbo.GetBool() ) {
+	GL_CheckErrors();
+	qglFinish();
+	common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
+	r_useFbo.SetBool(1);
+	qglFinish();
+	}
 
 	// check for changes to logging state
 	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
