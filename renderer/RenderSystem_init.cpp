@@ -238,7 +238,7 @@ idCVar r_postprocess_bloomKernelSize( "r_postprocess_bloomKernelSize", "2", CVAR
 // 2016-2017 additions by duzenko
 idCVar r_useAnonreclaimer( "r_useBfgPortalCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "test anonreclaimer culling patch" );
 idCVar r_useFbo( "r_useFBO", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use framebuffer objects" );
-idCVar r_nvidiaOverride( "r_nvidiaOverride", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
+idCVar r_nvidiaOverride( "r_nvidiaOverride", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
 idCVar r_useGLSL( "r_useGLSL", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Use GLSL shaders instead of ARB" );
 idCVar r_fboDebug("r_fboDebug", "0", CVAR_RENDERER | CVAR_INTEGER, "0-3 individual fbo attachments");
 idCVar r_fboColorBits( "r_fboColorBits", "32", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "15, 32" );
@@ -747,8 +747,19 @@ void R_InitOpenGL( void ) {
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
 		parms.stereo = false;
+		
+		if (!r_useFbo.GetBool()) {
+		    parms.multiSamples = r_multiSamples.GetInteger();
+			} else {
+		    parms.multiSamples = 0; 
+			if  (r_multiSamples.GetInteger() > 0 ) {
+			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			} else {
+			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
+			r_fboResolution.SetFloat(1.0f);
+			}
+			}
 
 		if ( GLimp_Init( parms ) ) {
 			// it worked
@@ -2003,7 +2014,17 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
+		if (!r_useFbo.GetBool()) {
+		    parms.multiSamples = r_multiSamples.GetInteger();
+			} else {
+		    parms.multiSamples = 0; 
+			if (r_multiSamples.GetInteger() > 0 ) {
+			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			}else {
+			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
+			r_fboResolution.SetFloat(1.0f);
+			}
+			}
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}

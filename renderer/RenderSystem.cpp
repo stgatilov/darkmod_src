@@ -272,12 +272,22 @@ static void R_CheckCvars( void ) {
 	}
 	
 	if ( glConfig.vendor == glvNVIDIA && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() && !r_useFbo.GetBool() ) {
-	GL_CheckErrors();
-	qglFinish();
-	common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
-	r_useFbo.SetBool(1);
-	qglFinish();
-	}
+	    GL_CheckErrors();
+	    qglFinish();
+	    common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
+	    r_useFbo.SetBool(1);
+	    qglFinish();
+	  }
+	
+	if (r_useFbo.GetBool() && r_multiSamples.GetInteger() > 0 ) {
+	    glimpParms_t	parms;
+		r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+		parms.multiSamples = 0; 
+	    GLimp_SetScreenParms( parms );
+	    } else {
+		if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
+		r_fboResolution.SetFloat(1.0f);
+		}
 
 	// check for changes to logging state
 	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
