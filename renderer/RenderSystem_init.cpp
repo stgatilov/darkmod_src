@@ -247,6 +247,9 @@ idCVar r_fboSharedDepth("r_fboSharedDepth", "0", CVAR_RENDERER | CVAR_BOOL | CVA
 idCVar r_fboResolution("r_fboResolution", "1", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "internal rendering resolution factor");
 idCVar r_ambient_testadd( "r_ambient_testadd", "0", CVAR_RENDERER | CVAR_FLOAT, "Added ambient brightness for testing purposes. ", 0, 1 );
 
+//nbohr1more nvidia driver workaround
+idCVar r_nvidiaOverride( "r_nvidiaOverride", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Force FBO if Soft Shadows are enabled with Nvidia hardware" );
+
 // relocate stgatilov ROQ options
 
 idCVar r_cinematic_legacyRoq("r_cinematic_legacyRoq", "0", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE,
@@ -746,8 +749,19 @@ void R_InitOpenGL( void ) {
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
 		parms.stereo = false;
+		
+		if (!r_useFbo.GetBool()) {
+		    parms.multiSamples = r_multiSamples.GetInteger();
+			} else {
+		    parms.multiSamples = 0; 
+			if  (r_multiSamples.GetInteger() > 0 ) {
+			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			} else {
+			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
+			r_fboResolution.SetFloat(1.0f);
+			}
+			}
 
 		if ( GLimp_Init( parms ) ) {
 			// it worked
@@ -778,8 +792,13 @@ void R_InitOpenGL( void ) {
 
 	if ( strcmp( glConfig.vendor_string, "Intel" ) == 0 )
 		glConfig.vendor = glvIntel;
-	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 )
+	if ( strcmp( glConfig.vendor_string, "ATI Technologies Inc." ) == 0 
+	     || strncmp( glConfig.vendor_string, "AMD", 3 ) == 0 )
 		glConfig.vendor = glvAMD;
+	if ( strncmp( glConfig.vendor_string, "NVIDIA", 6 ) == 0 
+	     || strncmp( glConfig.vendor_string, "Nvidia", 6 ) == 0 
+		 || strncmp( glConfig.vendor_string, "nvidia", 6 ) == 0 )
+	    glConfig.vendor = glvNVIDIA;
 
 	// OpenGL driver constants
 	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
@@ -819,6 +838,12 @@ void R_InitOpenGL( void ) {
 
 	// duzenko #4425 reset fbo
 	FB_Clear();
+	
+	// nbohr1more: nvidia driver workaround
+	if ( (glConfig.vendor == glvNVIDIA) && r_softShadowsQuality.GetBool() && r_nvidiaOverride.GetBool() ) {
+    common->Printf( "Nvidia Hardware Detected. Forcing FBO\n");
+	r_useFbo.SetBool(true);
+	}
 
 #ifdef _WIN32
 	static bool glCheck = false;
@@ -1996,7 +2021,17 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.height = glConfig.vidHeight;
 		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
 		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
+		if (!r_useFbo.GetBool()) {
+		    parms.multiSamples = r_multiSamples.GetInteger();
+			} else {
+		    parms.multiSamples = 0; 
+			if (r_multiSamples.GetInteger() > 0 ) {
+			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			}else {
+			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
+			r_fboResolution.SetFloat(1.0f);
+			}
+			}
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}

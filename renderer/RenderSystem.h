@@ -29,6 +29,7 @@ enum glVendor_t {
 	glvAny,
 	glvAMD,
 	glvIntel,
+	glvNVIDIA,
 };
 
 // Contains variables specific to the OpenGL configuration being run right now.

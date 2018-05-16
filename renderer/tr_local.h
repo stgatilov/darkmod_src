@@ -1031,6 +1031,10 @@ extern idCVar r_ambient_testadd;
 // stgatilov ROQ
 extern idCVar r_cinematic_legacyRoq;
 
+//nbohr1more nvidia driver workarounds
+
+extern idCVar r_nvidiaOverride;
+
 // HDR related - J.C.Denton
 extern idCVar r_postprocess;
 extern idCVar r_postprocess_brightPassThreshold;
