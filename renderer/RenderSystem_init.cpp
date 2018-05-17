@@ -19,6 +19,7 @@
 
 #include "tr_local.h"
 #include "FrameBuffer.h"
+#include "../idlib/math/Math.h"
 
 // Vista OpenGL wrapper check
 #ifdef _WIN32
@@ -756,7 +757,7 @@ void R_InitOpenGL( void ) {
 			} else {
 		    parms.multiSamples = 0; 
 			if  (r_multiSamples.GetInteger() > 0 ) {
-			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
 			} else {
 			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
 			r_fboResolution.SetFloat(1.0f);
@@ -2026,7 +2027,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 			} else {
 		    parms.multiSamples = 0; 
 			if (r_multiSamples.GetInteger() > 0 ) {
-			r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+			r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
 			}else {
 			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
 			r_fboResolution.SetFloat(1.0f);

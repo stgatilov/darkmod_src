@@ -18,6 +18,7 @@
 
 
 #include "tr_local.h"
+#include "../idlib/math/Math.h"
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
@@ -279,7 +280,7 @@ static void R_CheckCvars( void ) {
 	  
 	  if (r_useFbo.GetBool() && r_multiSamples.GetInteger() > 0 ) {
 	    glimpParms_t	parms;
-		r_fboResolution.SetFloat( max(1.1f, ( (r_multiSamples.GetFloat() * 0.5f) -0.5f  )));
+		r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
 		parms.multiSamples = 0; 
 	    GLimp_SetScreenParms( parms );
 	    } else {
