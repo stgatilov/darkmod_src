@@ -751,15 +751,9 @@ void R_InitOpenGL( void ) {
 		
 		if (!r_useFbo.GetBool()) {
 		    parms.multiSamples = r_multiSamples.GetInteger();
-			} else {
+		} else {
 		    parms.multiSamples = 0; 
-			if  (r_multiSamples.GetInteger() > 0 ) {
-			r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
-			} else {
-			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
-			r_fboResolution.SetFloat(1.0f);
-			}
-			}
+		}
 
 		if ( GLimp_Init( parms ) ) {
 			// it worked
@@ -2016,15 +2010,9 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.displayHz = r_displayRefresh.GetInteger();
 		if (!r_useFbo.GetBool()) {
 		    parms.multiSamples = r_multiSamples.GetInteger();
-			} else {
+		} else {
 		    parms.multiSamples = 0; 
-			if (r_multiSamples.GetInteger() > 0 ) {
-			r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
-			}else {
-			if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
-			r_fboResolution.SetFloat(1.0f);
-			}
-			}
+		}
 		parms.stereo = false;
 		GLimp_SetScreenParms( parms );
 	}

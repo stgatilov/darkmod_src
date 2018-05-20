@@ -21,8 +21,41 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 bool primaryOn;
 bool depthCopiedThisView;
-GLuint fboPrimary, fboShadow, pbo;
+GLuint fboPrimary, fboResolve, fboShadow, pbo;
+GLuint renderBufferColor, renderBufferDepthStencil;
 int ShadowMipMap;
+
+void FB_Create( GLuint width, GLuint height, int msaa ) {
+	if( !fboPrimary )
+		qglGenFramebuffers( 1, &fboPrimary );
+	if( msaa > 1 ) {
+		if( !fboResolve )
+			qglGenFramebuffers( 1, &fboResolve );
+		if( !renderBufferColor )
+			qglGenRenderbuffers( 1, &renderBufferColor );
+		if( !renderBufferDepthStencil )
+			qglGenRenderbuffers( 1, &renderBufferDepthStencil );
+		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
+		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_RGBA, width, height );
+		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferDepthStencil );
+		qglRenderbufferStorageMultisample( GL_RENDERBUFFER, msaa, GL_DEPTH24_STENCIL8, width, height );
+		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
+		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
+	}
+}
+
+void FB_ResolveMultisampling( GLbitfield mask, GLenum filter = GL_NEAREST ) {
+	qglDisable( GL_SCISSOR_TEST );
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboResolve );
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+		0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+		mask, filter );
+	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboPrimary );
+	qglEnable( GL_SCISSOR_TEST );
+}
+
 
 /*
 called when post-proceesing is about to start, needs pixels
@@ -30,14 +63,13 @@ we need to copy render separately for water/smoke and then again for bloom
 */
 void FB_CopyColorBuffer() {
 	GL_SelectTexture( 0 );
-	if ( !primaryOn || !r_fboSharedColor.GetBool() ) {
+	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
+	} else if ( !primaryOn || !r_fboSharedColor.GetBool() ) {
 		globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 			backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 			backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
-/*		globalImages->currentRenderImage->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, isInFbo && r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA,
-			0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0 );
-*/	}
+	}
 }
 
 void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
@@ -50,6 +82,10 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 		qglReadBuffer( GL_BACK );
 	if ( r_frontBuffer.GetBool() )
 		qglFinish();
+	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboResolve );
+	}
 
 	//renderCrop_t rc = tr.renderCrops[tr.currentRenderCrop]; // copy because modified below
 	// #4395 lightem pixel pack buffer optimization
@@ -78,6 +114,9 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
 	} else
 		qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, cmd.buffer );
+
+	if( primaryOn && r_multiSamples.GetInteger() > 1 )
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 	qglClear( GL_COLOR_BUFFER_BIT );
 	int backEndFinishTime = Sys_Milliseconds();
 	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
@@ -119,13 +158,14 @@ void CheckCreatePrimary() {
 	globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, TF_NEAREST, glConfig.vendor == glvIntel ? GL_DEPTH_COMPONENT : GL_DEPTH_STENCIL );
 
 	// (re-)attach textures to FBO
-	if ( !fboPrimary || r_fboSharedColor.IsModified() ) {
-		if ( !fboPrimary )
-			qglGenFramebuffers( 1, &fboPrimary );
+	if ( !fboPrimary || r_fboSharedColor.IsModified() || r_multiSamples.IsModified() ) {
 		r_fboSharedColor.ClearModified();
-		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+		r_multiSamples.ClearModified();
+		int msaa = r_multiSamples.GetInteger();
+		FB_Create( curWidth, curHeight, msaa );
+		qglBindFramebuffer( GL_FRAMEBUFFER, (msaa > 1) ? fboResolve : fboPrimary );
 		// attach a texture to FBO color attachement point
-		if ( r_fboSharedColor.GetBool() )
+		if ( r_fboSharedColor.GetBool() || msaa > 1 )
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
 		else
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
@@ -137,11 +177,15 @@ void CheckCreatePrimary() {
 		} else {
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
 		}
-		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
-		if ( GL_FRAMEBUFFER_COMPLETE != status ) { // something went wrong, fall back to default
-			common->Printf( "glCheckFramebufferStatus %d\n", status );
+		int statusResolve = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+		int statusPrimary = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
+		if ( GL_FRAMEBUFFER_COMPLETE != statusResolve || GL_FRAMEBUFFER_COMPLETE != statusPrimary ) { // something went wrong, fall back to default
+			common->Printf( "glCheckFramebufferStatus - primary: %d - resolve: %d\n", statusPrimary, statusResolve );
 			qglDeleteFramebuffers( 1, &fboPrimary );
+			qglDeleteFramebuffers( 1, &fboResolve );
 			fboPrimary = 0; // try from scratch next time
+			fboResolve = 0;
 			r_useFbo.SetBool( false );
 			r_softShadowsQuality.SetInteger( 0 );
 		}
@@ -203,7 +247,7 @@ void CheckCreateShadow() {
 		}
 		int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
 		if ( GL_FRAMEBUFFER_COMPLETE != status ) { // something went wrong, fall back to default
-			common->Printf( "glCheckFramebufferStatus %d\n", status );
+			common->Printf( "glCheckFramebufferStatus shadow: %d\n", status );
 			qglDeleteFramebuffers( 1, &fboShadow );
 			fboShadow = 0; // try from scratch next time
 		}
@@ -241,10 +285,16 @@ void FB_ToggleShadow( bool on, bool clear ) {
 	//if ( r_shadows.GetInteger() < 2 ) // "Click when ready" screen calls this when not in FBO
 		//return;
 	CheckCreateShadow();
-	if ( glConfig.vendor != glvIntel && on && !depthCopiedThisView && r_shadows.GetInteger() == 1 ) { // (facepalm) most vendors can't do separate stencil so we need to copy depth from the main/default FBO
-		globalImages->shadowDepthFbo->Bind();
-		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, 0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight, 0 );
-		depthCopiedThisView = true;
+	if ( on &&  r_shadows.GetInteger() == 1 ) { 
+		if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
+			FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+			qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
+		}
+		if( !depthCopiedThisView && glConfig.vendor != glvIntel ) {  // (facepalm) most vendors can't do separate stencil so we need to copy depth from the main/default FBO
+			globalImages->shadowDepthFbo->Bind();
+			qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, 0, 0, globalImages->shadowDepthFbo->uploadWidth, globalImages->shadowDepthFbo->uploadHeight );
+			depthCopiedThisView = true;
+		}
 		GL_CheckErrors();
 	}
 	qglBindFramebuffer( GL_FRAMEBUFFER, on ? fboShadow : primaryOn ? fboPrimary : 0 );
@@ -285,7 +335,7 @@ void FB_ToggleShadow( bool on, bool clear ) {
 }
 
 void FB_Clear() {
-	fboPrimary = fboShadow = pbo = 0;
+	fboPrimary = fboResolve = fboShadow = pbo = 0;
 }
 
 void EnterPrimary() {
@@ -308,55 +358,63 @@ void LeavePrimary() {
 	if ( !primaryOn )
 		return;
 	GL_CheckErrors();
-	//FB_CopyColorBuffer();
-	// hasn't worked very well at the first approach, maybe retry later
-	/*glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight, 0, 0,
-	glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_NEAREST); */
-	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglOrtho( 0, 1, 0, 1, -1, 1 );
+
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-
-	GL_State( GLS_DEFAULT );
-	qglDisable( GL_DEPTH_TEST );
-	qglColor3f( 1, 1, 1 );
-	{
-		switch ( r_fboDebug.GetInteger() )
-		{
-		case 1:
-			globalImages->currentRenderImage->Bind();
-			break;
-		case 2:
-			globalImages->currentDepthImage->Bind();
-			break;
-		case 3:
-			globalImages->shadowDepthFbo->Bind();
-			break;
-		default:
-			if ( r_fboSharedColor.GetBool() )
-				globalImages->currentRenderImage->Bind();
-			else
-				globalImages->currentRenderFbo->Bind();
-		}
-		RB_DrawFullScreenQuad();
+	if( r_multiSamples.GetInteger() > 1 ) {
+		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
+		qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 	}
-	qglEnable( GL_DEPTH_TEST );
-	qglPopMatrix();
-	qglMatrixMode( GL_MODELVIEW );
-	GL_SelectTexture( 0 );
-	/*if ( viewDef ) { // switch back to normal resolution for correct 2d
-		tr.renderCrops[tr.currentRenderCrop].width = glConfig.vidWidth;
-		tr.renderCrops[tr.currentRenderCrop].height = glConfig.vidHeight;
-		viewDef->viewport.x2 = glConfig.vidWidth - 1;
-		viewDef->viewport.y2 = glConfig.vidHeight - 1;
-		viewDef->scissor.x2 = glConfig.vidWidth - 1;
-		viewDef->scissor.y2 = glConfig.vidHeight - 1;
-	}*/
+	qglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
+		0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
+
+	if( r_fboDebug.GetInteger() != 0 ) {
+		if( r_multiSamples.GetInteger() > 1 ) {
+			FB_ResolveMultisampling( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+		}
+		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		qglLoadIdentity();
+		qglMatrixMode( GL_PROJECTION );
+		qglPushMatrix();
+		qglLoadIdentity();
+		qglOrtho( 0, 1, 0, 1, -1, 1 );
+
+		GL_State( GLS_DEFAULT );
+		qglDisable( GL_DEPTH_TEST );
+		qglColor3f( 1, 1, 1 );
+		{
+			switch( r_fboDebug.GetInteger() ) {
+			case 1:
+				globalImages->currentRenderImage->Bind();
+				break;
+			case 2:
+				globalImages->currentDepthImage->Bind();
+				break;
+			case 3:
+				globalImages->shadowDepthFbo->Bind();
+				break;
+			default:
+				if( r_fboSharedColor.GetBool() )
+					globalImages->currentRenderImage->Bind();
+				else
+					globalImages->currentRenderFbo->Bind();
+			}
+			RB_DrawFullScreenQuad();
+		}
+		qglEnable( GL_DEPTH_TEST );
+		qglPopMatrix();
+		qglMatrixMode( GL_MODELVIEW );
+		GL_SelectTexture( 0 );
+		/*if ( viewDef ) { // switch back to normal resolution for correct 2d
+			tr.renderCrops[tr.currentRenderCrop].width = glConfig.vidWidth;
+			tr.renderCrops[tr.currentRenderCrop].height = glConfig.vidHeight;
+			viewDef->viewport.x2 = glConfig.vidWidth - 1;
+			viewDef->viewport.y2 = glConfig.vidHeight - 1;
+			viewDef->scissor.x2 = glConfig.vidWidth - 1;
+			viewDef->scissor.y2 = glConfig.vidHeight - 1;
+			}*/
+	}
 	primaryOn = false;
 	if ( r_frontBuffer.GetBool() )
 		qglFinish();

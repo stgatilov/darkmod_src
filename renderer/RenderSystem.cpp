@@ -279,15 +279,14 @@ static void R_CheckCvars( void ) {
 	    qglFinish();
 	  }
 	
-	if (r_useFbo.GetBool() && r_multiSamples.GetInteger() > 0 ) {
-	    glimpParms_t	parms;
-		r_fboResolution.SetFloat( Max(1.0f, (idMath::Floor( idMath::Pow( (r_multiSamples.GetFloat()), 1.0f / 3.0f ) * 100 + 0.5 ) / 100)) + 0.1f );
+	/*if (r_useFbo.GetBool() && r_multiSamples.GetInteger() > 0 ) {
+		// FIXME: GLimp_SetScreenParms does not actually modify MSAA settings, needs a restart currently.
+		// Also, without specifying the other parameters of parms, you end up with a full screen window,
+		// even if you had a smaller window before.
+		glimpParms_t	parms;
 		parms.multiSamples = 0; 
-	    GLimp_SetScreenParms( parms );
-	    } else {
-		if (r_useFbo.GetBool() && r_multiSamples.GetInteger() == 0 )
-		r_fboResolution.SetFloat(1.0f);
-		}
+		GLimp_SetScreenParms( parms );
+	}*/ 
 
 	// check for changes to logging state
 	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
