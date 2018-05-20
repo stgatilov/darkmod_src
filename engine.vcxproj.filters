@@ -2881,7 +2881,7 @@
     <ClCompile Include="game\ai\Tasks\PathWakeupTask.cpp">
       <Filter>Game\AI\Tasks</Filter>
     </ClCompile>
-    <ClCompile Include="renderer\framebufer.cpp">
+    <ClCompile Include="renderer\FrameBuffer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_stencil.cpp">

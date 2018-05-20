@@ -28,7 +28,7 @@ renderer_string = ' \
 	Cinematic.cpp \
 	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
-	framebufer.cpp \
+	FrameBuffer.cpp \
 	GuiModel.cpp \
 	Image_files.cpp \
 	Image_init.cpp \
