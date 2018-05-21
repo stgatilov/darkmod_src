@@ -32,7 +32,6 @@ extern idCVar r_useFbo;
 extern idCVar r_fboDebug;
 extern idCVar r_fboColorBits;
 extern idCVar r_fboDepthBits;
-extern idCVar r_fboSharedColor;
 extern idCVar r_fboResolution;
 extern idCVar r_shadowMapSize;
 

@@ -83,13 +83,8 @@ called when post-proceesing is about to start, needs pixels
 we need to copy render separately for water/smoke and then again for bloom
 */
 void FB_CopyColorBuffer() {
-	GL_SelectTexture( 0 );
 	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
-	} else if ( !primaryOn || !r_fboSharedColor.GetBool() ) {
-		globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
-			backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
-			backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
 	}
 }
 
@@ -152,20 +147,11 @@ void CheckCreatePrimary() {
 	if ( curWidth != globalImages->currentRenderImage->uploadWidth || curHeight != globalImages->currentRenderImage->uploadHeight
 	    || curWidth != globalImages->currentDepthImage->uploadWidth || curHeight != globalImages->currentDepthImage->uploadHeight
 		|| r_fboColorBits.IsModified()
-	) { // FIXME don't allocate memory if sharing color/depth
+	) {
 		r_fboColorBits.ClearModified();
 		globalImages->currentRenderImage->Bind();
 		globalImages->currentRenderImage->uploadWidth = curWidth; // used as a shader param
 		globalImages->currentRenderImage->uploadHeight = curHeight;
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		qglTexImage2D( GL_TEXTURE_2D, 0, r_fboColorBits.GetInteger() == 15 ? GL_RGB5_A1 : GL_RGBA, curWidth, curHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL ); //NULL means reserve texture memory, but texels are undefined
-
-		globalImages->currentRenderFbo->Bind();
-		globalImages->currentRenderFbo->uploadWidth = curWidth; // used as a shader param
-		globalImages->currentRenderFbo->uploadHeight = curHeight;
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -179,17 +165,13 @@ void CheckCreatePrimary() {
 	globalImages->currentDepthImage->GenerateAttachment( curWidth, curHeight, TF_NEAREST, glConfig.vendor == glvIntel ? GL_DEPTH_COMPONENT : GL_DEPTH_STENCIL );
 
 	// (re-)attach textures to FBO
-	if ( !fboPrimary || r_fboSharedColor.IsModified() || r_multiSamples.IsModified() ) {
-		r_fboSharedColor.ClearModified();
+	if ( !fboPrimary || r_multiSamples.IsModified() ) {
 		r_multiSamples.ClearModified();
 		int msaa = r_multiSamples.GetInteger();
 		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
 		qglBindFramebuffer( GL_FRAMEBUFFER, (msaa > 1) ? fboResolve : fboPrimary );
 		// attach a texture to FBO color attachement point
-		if ( r_fboSharedColor.GetBool() || msaa > 1 )
-			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
-		else
-			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderFbo->texnum, 0 );
+		qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
 		// attach a renderbuffer to depth attachment point
 		GLuint depthTex = globalImages->currentDepthImage->texnum;
 		if ( glConfig.vendor == glvIntel ) { // separate stencil, thank God
@@ -424,9 +406,6 @@ void LeavePrimary() {
 		qglColor3f( 1, 1, 1 );
 		{
 			switch( r_fboDebug.GetInteger() ) {
-			case 1:
-				globalImages->currentRenderImage->Bind();
-				break;
 			case 2:
 				globalImages->currentDepthImage->Bind();
 				break;
@@ -434,10 +413,7 @@ void LeavePrimary() {
 				globalImages->shadowDepthFbo->Bind();
 				break;
 			default:
-				if( r_fboSharedColor.GetBool() )
-					globalImages->currentRenderImage->Bind();
-				else
-					globalImages->currentRenderFbo->Bind();
+				globalImages->currentRenderImage->Bind();
 			}
 			RB_DrawFullScreenQuad();
 		}
