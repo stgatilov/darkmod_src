@@ -1219,7 +1219,9 @@
     <ClInclude Include="renderer\FrameBuffer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-  </ItemGroup>
+    <ClInclude Include="renderer\BufferObject.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cm\CollisionModel_contacts.cpp">
       <Filter>CM</Filter>
@@ -2885,6 +2887,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="renderer\draw_stencil.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="renderer\BufferObject.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>

@@ -97,6 +97,8 @@ public:
 	idInteraction *			entityNext;				// for entityDef chains
 	idInteraction *			entityPrev;
 
+	bool					staticInteraction;		// true if the interaction was created at map load time in static buffer space
+
 public:
 							idInteraction( void );
 
@@ -132,6 +134,9 @@ public:
 	// makes sure all necessary light surfaces and shadow surfaces are created, and
 	// calls R_LinkLightSurf() for each one
 	void					AddActiveInteraction( void );
+
+	// called by GenerateAllInteractions
+	void					CreateStaticInteraction();
 
 private:
 	enum {

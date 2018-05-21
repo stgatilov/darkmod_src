@@ -37,8 +37,8 @@ idRenderModelDecal::idRenderModelDecal
 */
 idRenderModelDecal::idRenderModelDecal( void ) {
 	memset( &tri, 0, sizeof( tri ) );
-	tri.verts = verts;
-	tri.indexes = indexes;
+	tri.verts = ( idDrawVert* )Mem_Alloc16( MAX_DECAL_VERTS * sizeof( idDrawVert ) );
+	tri.indexes = ( glIndex_t* )Mem_Alloc16( MAX_DECAL_INDEXES * sizeof( glIndex_t ) );
 	material = NULL;
 	nextDecal = NULL;
 }
@@ -49,6 +49,8 @@ idRenderModelDecal::~idRenderModelDecal
 ==================
 */
 idRenderModelDecal::~idRenderModelDecal( void ) {
+	Mem_Free16( tri.indexes );
+	Mem_Free16( tri.verts );
 }
 
 /*
@@ -502,7 +504,7 @@ void idRenderModelDecal::AddDecalDrawSurf( viewEntity_t *space ) {
 	*newTri = tri;
 
 	// copy the current vertexes to temp vertex cache
-	newTri->ambientCache = vertexCache.AllocFrameTemp( tri.verts, tri.numVerts * sizeof( idDrawVert ) );
+	newTri->ambientCache = vertexCache.AllocVertex( tri.verts, ALIGN( tri.numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
 
 	// create the drawsurf
 	R_AddDrawSurf( newTri, space, &space->entityDef->parms, material, space->scissorRect );

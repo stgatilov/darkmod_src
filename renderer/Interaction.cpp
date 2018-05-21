@@ -1251,16 +1251,10 @@ void idInteraction::AddActiveInteraction( void ) {
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
 
-					// touch the ambient surface so it won't get purged
-					vertexCache.Touch( lightTris->ambientCache );
-
-					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) {
-						vertexCache.Alloc( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ), &lightTris->indexCache, true );
+					if ( !vertexCache.CacheIsCurrent(lightTris->indexCache) && r_useIndexBuffers.GetBool() ) {
+						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, ALIGN( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
 					}
-					if ( lightTris->indexCache ) {
-						vertexCache.Touch( lightTris->indexCache );
-					}
-
+					
 					// add the surface to the light list
 
 					const idMaterial *shader = sint->shader;
@@ -1318,7 +1312,7 @@ void idInteraction::AddActiveInteraction( void ) {
 			}
 
 			// if we have been purged, re-upload the shadowVertexes
-			if ( !shadowTris->shadowCache ) {
+			if ( !vertexCache.CacheIsCurrent( shadowTris->shadowCache ) ) {
 				if ( shadowTris->shadowVertexes ) {
 					// each interaction has unique vertexes
 					R_CreatePrivateShadowCache( shadowTris );
@@ -1332,12 +1326,8 @@ void idInteraction::AddActiveInteraction( void ) {
 				}
 			}
 
-			// touch the shadow surface so it won't get purged
-			vertexCache.Touch( shadowTris->shadowCache );
-
-			if ( !shadowTris->indexCache && r_useIndexBuffers.GetBool() ) {
-				vertexCache.Alloc( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), &shadowTris->indexCache, true );
-				vertexCache.Touch( shadowTris->indexCache );
+			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) && r_useIndexBuffers.GetBool() ) {
+				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
 
 			// see if we can avoid using the shadow volume caps
@@ -1352,6 +1342,108 @@ void idInteraction::AddActiveInteraction( void ) {
 			}
 		}
 	}
+}
+
+/*
+======================
+CreateStaticInteraction
+
+Called by idRenderWorldLocal::GenerateAllInteractions
+======================
+*/
+void idInteraction::CreateStaticInteraction() {
+	// note that it is a static interaction
+	staticInteraction = true;
+	const idRenderModel *model = entityDef->parms.hModel;
+	if( model == NULL || model->NumSurfaces() <= 0 || model->IsDynamicModel() != DM_STATIC ) {
+		MakeEmpty();
+		return;
+	}
+
+	const idBounds bounds = model->Bounds( &entityDef->parms );
+
+	// if it doesn't contact the light frustum, none of the surfaces will
+	if( R_CullModelBoundsToLight( lightDef, bounds, entityDef->modelRenderMatrix ) ) {
+		MakeEmpty();
+		return;
+	}
+
+	//
+	// create slots for each of the model's surfaces
+	//
+	numSurfaces = model->NumSurfaces();
+	surfaces = ( surfaceInteraction_t * )R_ClearedStaticAlloc( sizeof( *surfaces ) * numSurfaces );
+
+	bool interactionGenerated = false;
+
+	// check each surface in the model
+	for( int c = 0; c < model->NumSurfaces(); c++ ) {
+		const modelSurface_t * surf = model->Surface( c );
+		srfTriangles_t * tri = surf->geometry;
+		if( tri == NULL ) {
+			continue;
+		}
+
+		// determine the shader for this surface, possibly by skinning
+		// Note that this will be wrong if customSkin/customShader are
+		// changed after map load time without invalidating the interaction!
+		const idMaterial * const shader = R_RemapShaderBySkin( surf->shader,
+			entityDef->parms.customSkin, entityDef->parms.customShader );
+		if( shader == NULL ) {
+			continue;
+		}
+
+		// try to cull each surface
+		if( R_CullModelBoundsToLight( lightDef, tri->bounds, entityDef->modelRenderMatrix ) ) {
+			continue;
+		}
+
+		surfaceInteraction_t *sint = &surfaces[c];
+
+		sint->shader = shader;
+		sint->ambientTris = tri;
+
+		// generate a set of indexes for the lit surfaces, culling away triangles that are
+		// not at least partially inside the light
+		if( shader->ReceivesLighting() ) {
+			srfTriangles_t * lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
+			if( lightTris != NULL ) {
+				lightTris->indexCache = vertexCache.AllocStaticIndex( lightTris->indexes, ALIGN( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+				sint->lightTris = lightTris;
+				interactionGenerated = true;
+			}
+		}
+
+		// if the interaction has shadows and this surface casts a shadow
+		if( HasShadows() && shader->SurfaceCastsShadow() && tri->silEdges != NULL ) {
+
+			// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
+			if( lightDef->parms.prelightModel == NULL || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool() ) {
+				srfTriangles_t * shadowTris = R_CreateShadowVolume( entityDef, tri, lightDef, SG_STATIC, sint->cullInfo );
+				if( shadowTris != NULL ) {
+					shadowTris->indexCache = vertexCache.AllocStaticIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
+					sint->shadowTris = shadowTris;
+
+					if( shader->Coverage() != MC_OPAQUE ) {
+						// if any surface is a shadow-casting perforated or translucent surface, or the
+						// base surface is suppressed in the view (world weapon shadows) we can't use
+						// the external shadow optimizations because we can see through some of the faces
+						shadowTris->numShadowIndexesNoCaps = shadowTris->numIndexes;
+						shadowTris->numShadowIndexesNoFrontCaps = shadowTris->numIndexes;
+					}
+				}
+				interactionGenerated = true;
+			}
+		}
+
+		R_FreeInteractionCullInfo( sint->cullInfo );
+	}
+
+	// if none of the surfaces generated anything, don't even bother checking?
+	if( !interactionGenerated ) {
+		MakeEmpty();
+	}
+
 }
 
 /*

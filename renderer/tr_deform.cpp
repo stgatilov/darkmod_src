@@ -46,7 +46,7 @@ static void R_FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idDraw
 		newTri->verts = NULL;
 	}
 
-	newTri->ambientCache = vertexCache.AllocFrameTemp( ac, newTri->numVerts * sizeof( idDrawVert ) );
+	newTri->ambientCache = vertexCache.AllocVertex( ac, ALIGN( newTri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
 	// if we are out of vertex cache, leave it the way it is
 	if ( newTri->ambientCache ) {
 		drawSurf->frontendGeo = newTri;
@@ -1212,7 +1212,7 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 					indexes += 6;
 				}
 				tri->numIndexes = indexes;
-				tri->ambientCache = vertexCache.AllocFrameTemp( tri->verts, tri->numVerts * sizeof( idDrawVert ) );
+				tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( idDrawVert ), VERTEX_CACHE_ALIGN ) );
 				if ( tri->ambientCache ) {
 					// add the drawsurf
 					R_AddDrawSurf( tri, surf->space, renderEntity, stage->material, surf->scissorRect );

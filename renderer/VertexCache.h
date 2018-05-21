@@ -17,76 +17,70 @@ $Author$ (Author of last commit)
 
 ******************************************************************************/
 
+#include "BufferObject.h"
+
 // vertex cache calls should only be made by the front end
 
 #define NUM_VERTEX_FRAMES			2
+#define FRAME_MEMORY_BYTES			0x200000 // frame size
+#define EXPAND_HEADERS				1024
 
-typedef enum {
-	TAG_FREE,
-	TAG_USED,
-	TAG_FIXED,		// for the temp buffers
-	TAG_TEMP		// in frame temp area, not static area
-} vertBlockTag_t;
+const int VERTCACHE_INDEX_MEMORY_PER_FRAME = 16 * 1024 * 1024;
+const int VERTCACHE_VERTEX_MEMORY_PER_FRAME = 16 * 1024 * 1024;
 
-typedef struct vertCache_s {
-	GLuint			vbo;
-	GLenum          target;
-	//GLenum          usage;
-	//void			*virtMem;			// only one of vbo / virtMem will be set
-	//bool			indexBuffer;		// holds indexes instead of vertexes
+// there are a lot more static indexes than vertexes, because interactions are just new
+// index lists that reference existing vertexes
+const int STATIC_INDEX_MEMORY = 31 * 1024 * 1024;
+const int STATIC_VERTEX_MEMORY = 31 * 1024 * 1024;	// make sure it fits in VERTCACHE_OFFSET_MASK!
 
-	int				offset;
-	int				size;				// may be larger than the amount asked for, due
-	// to round up and minimum fragment sizes
-	vertBlockTag_t				tag;				// a tag of 0 is a free block
-	struct vertCache_s	**	user;		// will be set to zero when purged
-	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
-	int				frameUsed;			// it can't be purged if near the current frame
-	void *data;
-} vertCache_t;
+const int VERTCACHE_NUM_FRAMES = 2;
+
+const int VERTCACHE_STATIC = 1;					// in the static set, not the per-frame set
+const int VERTCACHE_SIZE_SHIFT = 1;
+const int VERTCACHE_SIZE_MASK = 0x7fffff;		// 8 megs 
+const int VERTCACHE_OFFSET_SHIFT = 24;
+const int VERTCACHE_OFFSET_MASK = 0x1ffffff;	// 32 megs 
+const int VERTCACHE_FRAME_SHIFT = 49;
+const int VERTCACHE_FRAME_MASK = 0x7fff;		// 15 bits = 32k frames to wrap around
+
+const int VERTEX_CACHE_ALIGN = 32;
+const int INDEX_CACHE_ALIGN = 16;
+#define ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
+
+enum cacheType_t {
+	CACHE_VERTEX,
+	CACHE_INDEX,
+	CACHE_JOINT
+};
+
+struct geoBufferSet_t {
+	idIndexBuffer		indexBuffer;
+	idVertexBuffer		vertexBuffer;
+	byte *				mappedVertexBase;
+	byte *				mappedIndexBase;
+	std::atomic<int>	indexMemUsed;
+	std::atomic<int>	vertexMemUsed;
+	int					allocations;	// number of index and vertex allocations combined
+	int					vertexMapOffset;
+	int					indexMapOffset;
+};
 
 class idVertexCache {
 public:
 	void			Init();
 	void			Shutdown();
 
-	// just for gfxinfo printing
-	//bool			IsFast() { return !virtualMemory; };
-
 	// called when vertex programs are enabled or disabled, because
 	// the cached data is no longer valid
 	void			PurgeAll();
 
-	// Tries to allocate space for the given data in fast vertex
-	// memory, and copies it over.
-	// Alloc does NOT do a touch, which allows purging of things
-	// created at level load time even if a frame hasn't passed yet.
-	// These allocations can be purged, which will zero the pointer.
-	void			Alloc( void *data, int bytes, vertCache_t **buffer, bool indexBuffer = false, bool queue = false );
-
-	// This will be a real pointer with virtual memory,
-	// but it will be an int offset cast to a pointer of ARB_vertex_buffer_object
-	void *			Position( vertCache_t *buffer );
+	// will be an int offset cast to a pointer of ARB_vertex_buffer_object
+	void *			VertexPosition( vertCacheHandle_t handle );
+	void *			IndexPosition( vertCacheHandle_t handle );
 
 	// if r_useIndexBuffers is enabled, but you need to draw something without
 	// an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
 	void			UnbindIndex();
-
-	// automatically freed at the end of the next frame
-	// used for specular texture coordinates and gui drawing, which
-	// will change every frame.
-	// will return NULL if the vertex cache is completely full
-	// As with Position(), this may not actually be a pointer you can access.
-	vertCache_t	*	AllocFrameTemp( void *data, int bytes );
-
-	// notes that a buffer is used this frame, so it can't be purged
-	// out from under the GPU
-	void			Touch( vertCache_t *buffer );
-
-	// this block won't have to zero a buffer pointer when it is purged,
-	// but it must still wait for the frames to pass, in case the GPU
-	// is still referencing it
-	void			Free( vertCache_t *buffer );
 
 	// updates the counter for determining which temp space to use
 	// and which blocks can be purged
@@ -96,15 +90,66 @@ public:
 	// listVertexCache calls this
 	void			List();
 
+	// this data is only valid for one frame of rendering
+	vertCacheHandle_t AllocVertex( const void * data, int bytes ) {
+		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_VERTEX );
+	}
+	vertCacheHandle_t AllocIndex( const void * data, int bytes ) {
+		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_INDEX );
+	}
+
+	// this data is valid until the next map load
+	vertCacheHandle_t AllocStaticVertex( const void * data, int bytes ) {
+		if( staticData.vertexMemUsed + bytes > STATIC_VERTEX_MEMORY ) {
+			common->FatalError( "AllocStaticVertex failed, increase STATIC_VERTEX_MEMORY" );
+		}
+		return ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
+	}
+	vertCacheHandle_t AllocStaticIndex( const void * data, int bytes ) {
+		if( staticData.indexMemUsed + bytes > STATIC_INDEX_MEMORY ) {
+			common->FatalError( "AllocStaticIndex failed, increase STATIC_INDEX_MEMORY" );
+		}
+		return ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
+	}
+
+	byte *			  MappedVertexBuffer( vertCacheHandle_t handle ) {
+		assert( !CacheIsStatic( handle ) );
+		const uint64 offset = ( int )( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
+		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
+		assert( frameNum == ( currentFrame & VERTCACHE_FRAME_MASK ) );
+		return frameData[listNum].mappedVertexBase + offset;
+	}
+
+	byte *			  MappedIndexBuffer( vertCacheHandle_t handle ) {
+		assert( !CacheIsStatic( handle ) );
+		const uint64 offset = ( int )( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
+		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
+		assert( frameNum == ( currentFrame & VERTCACHE_FRAME_MASK ) );
+		return frameData[listNum].mappedIndexBase + offset;
+	}
+
+	// Returns false if it's been purged
+	// This can only be called by the front end, the back end should only be looking at
+	// vertCacheHandle_t that are already validated.
+	bool			CacheIsCurrent( const vertCacheHandle_t handle ) const {
+		if( CacheIsStatic( handle ) ) {
+			return true;
+		}
+		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
+		if( frameNum != ( currentFrame & VERTCACHE_FRAME_MASK ) ) {
+			return false;
+		}
+		return true;
+	}
+
+	static bool		CacheIsStatic( const vertCacheHandle_t handle ) {
+		return ( handle & VERTCACHE_STATIC ) != 0;
+	}
+
+
 private:
-	//bool			virtualMemory;			// not fast stuff
-
-	void			InitMemoryBlocks( int size );
-	void			ActuallyFree( vertCache_t *block );
-
 	static idCVar	r_showVertexCache;
-	static idCVar   r_useMapBufferRange;
-	static idCVar   r_reuseVertexCacheSooner;
+	static idCVar	r_vertexBufferMegs;
 
 	int				staticCountTotal;
 	int				staticAllocTotal;		// for end of frame purging
@@ -116,20 +161,23 @@ private:
 
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
+	int				backendListNum;
 
-	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW_ARB
+	geoBufferSet_t	frameData[VERTCACHE_NUM_FRAMES];
+	geoBufferSet_t  staticData;
 
-	vertCache_t		*tempBuffers[NUM_VERTEX_FRAMES];		// allocated at startup
-	bool			tempOverflow;			// had to alloc a temp in static memory
+	GLuint			currentVertexBuffer;
+	GLuint			currentIndexBuffer;
 
-	idBlockAlloc<vertCache_t, 1024>	headerAllocator;
+	// High water marks for the per-frame buffers
+	int				mostUsedVertex;
+	int				mostUsedIndex;
 
-	vertCache_t		freeStaticHeaders[NUM_VERTEX_FRAMES];		// head of doubly linked list
-	vertCache_t		freeDynamicHeaders[NUM_VERTEX_FRAMES];		// head of doubly linked list
-	vertCache_t		dynamicHeaders[NUM_VERTEX_FRAMES];			// head of doubly linked list
-	vertCache_t		deferredFreeList[NUM_VERTEX_FRAMES];		// head of doubly linked list
-	vertCache_t		staticHeaders[NUM_VERTEX_FRAMES];			// head of doubly linked list in MRU order,
-	// staticHeaders.next is most recently used
+	int				staticBufferUsed;
+	int				tempBufferUsed;
+
+	// Try to make room for <bytes> bytes
+	vertCacheHandle_t ActuallyAlloc( geoBufferSet_t & vcs, const void * data, int bytes, cacheType_t type );
 };
 
 extern	idVertexCache	vertexCache;

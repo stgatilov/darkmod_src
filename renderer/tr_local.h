@@ -126,7 +126,7 @@ typedef struct drawSurf_s {
 	const struct drawSurf_s	*nextOnLight;	// viewLight chains
 	idScreenRect			scissorRect;	// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
-	struct vertCache_s		*dynamicTexCoords;	// float * in vertex cache memory
+	vertCacheHandle_t		dynamicTexCoords;	// float * in vertex cache memory
 	                                            // specular directions for non vertex program cards, skybox texcoords, etc
 	float					particle_radius;	// The radius of individual quads for soft particles #3878
 } drawSurf_t;
@@ -871,7 +871,6 @@ extern idCVar r_checkBounds;			// compare all surface bounds with precalculated 
 extern idCVar r_useLightPortalFlow;		// 1 = do a more precise area reference determination
 extern idCVar r_useShadowSurfaceScissor;// 1 = scissor shadows by the scissor rect of the interaction surfaces
 extern idCVar r_useConstantMaterials;	// 1 = use pre-calculated material registers if possible
-extern idCVar r_useInteractionTable;	// create a full entityDefs * lightDefs table to make finding interactions faster
 extern idCVar r_useNodeCommonChildren;	// stop pushing reference bounds early when possible
 extern idCVar r_useSilRemap;			// 1 = consider verts with the same XYZ, but different ST the same for shadows
 extern idCVar r_useCulling;				// 0 = none, 1 = sphere, 2 = sphere + box
@@ -1589,6 +1588,10 @@ srfTriangles_t *	R_MergeTriangles( const srfTriangles_t *tri1, const srfTriangle
 // if the deformed verts have significant enough texture coordinate changes to reverse the texture
 // polarity of a triangle, the tangents will be incorrect
 void				R_DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes = true );
+
+// For static surfaces, the indexes, ambient, and shadow buffers can be pre-created at load
+// time, rather than being re-created each frame in the frame temporary buffers.
+void				R_CreateStaticBuffersForTri( srfTriangles_t & tri );
 
 // deformable meshes precalculate as much as possible from a base frame, then generate
 // complete srfTriangles_t from just a new set of vertexes

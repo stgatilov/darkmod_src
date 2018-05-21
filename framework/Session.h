@@ -62,6 +62,7 @@ public:
 
 	virtual void	StartFrontendThread() = 0;
 	virtual void	TerminateFrontendThread() = 0;
+	virtual bool	IsFrontend() const = 0;
 
 	// Redraws the screen, handling games, guis, console, etc
 	// during normal once-a-frame updates, outOfSequence will be false,

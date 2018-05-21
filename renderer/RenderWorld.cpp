@@ -1450,43 +1450,63 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 	// try and do any view specific optimizations
 	tr.viewDef = NULL;
 
+	int count = 0;
+
 	for ( int i = 0 ; i < this->lightDefs.Num() ; i++ ) {
 		idRenderLightLocal	*ldef = this->lightDefs[i];
-		if ( !ldef ) {
+		if( !ldef ) {
 			continue;
 		}
-		this->CreateLightDefInteractions( ldef );
+
+		// check all areas the light touches
+		for( areaReference_t *lref = ldef->references; lref; lref = lref->ownerNext ) {
+			portalArea_t *area = lref->area;
+
+			// check all the models in this area
+			for( areaReference_t *eref = area->entityRefs.areaNext; eref != &area->entityRefs; eref = eref->areaNext ) {
+				idRenderEntityLocal	 *edef = eref->entity;
+
+				// scan the doubly linked lists, which may have several dozen entries
+				idInteraction	*inter;
+
+				// we could check either model refs or light refs for matches, but it is
+				// assumed that there will be less lights in an area than models
+				// so the entity chains should be somewhat shorter (they tend to be fairly close).
+				for( inter = edef->firstInteraction; inter != NULL; inter = inter->entityNext ) {
+					if( inter->lightDef == ldef ) {
+						break;
+					}
+				}
+
+				// if we already have an interaction, we don't need to do anything
+				if( inter != NULL ) {
+					continue;
+				}
+
+				// make an interaction for this light / entity pair
+				// and add a pointer to it in the table
+				inter = idInteraction::AllocAndLink( edef, ldef );
+				int key = (ldef->index << 16) + edef->index;
+				auto &cell = interactionTable.Find(key);
+				cell.key = key;
+				cell.value = inter;
+				interactionTable.Added(cell);
+
+				count++;
+
+				// the interaction may create geometry
+				//inter->CreateStaticInteraction();
+			}
+		}
 	}
+	common->Printf( "interactionTable generated of size: %i entries\n", interactionTable.Size() );
 
 #ifdef _DEBUG
 	int end = Sys_Milliseconds();
 	int	msec = end - start;
 
-	common->Printf( "idRenderWorld::GenerateAllInteractions, msec = %i, staticAllocCount = %i.\n", msec, tr.staticAllocCount );
-#endif
-	// build the interaction table
-	int	count = 0;
-	for ( int i = 0 ; i < this->lightDefs.Num() ; i++ ) {
-		idRenderLightLocal *ldef = this->lightDefs[i];
-		if ( !ldef ) {
-			continue;
-		}
-		for ( idInteraction *inter = ldef->firstInteraction; inter != NULL; inter = inter->lightNext ) {
-			idRenderEntityLocal	*edef = inter->entityDef;
-			int key = (ldef->index << 16) + edef->index;
-
-			auto &cell = interactionTable.Find(key);
-			if (interactionTable.IsEmpty(cell)) {
-				cell.key = key;
-				cell.value = inter;
-				interactionTable.Added(cell);
-			}
-			count++;
-		}
-	}
-	common->Printf( "interactionTable generated of size: %i entries\n", interactionTable.Size() );
-#ifdef _DEBUG
 	common->Printf( "%i interactions take %i bytes\n", count, count * sizeof( idInteraction ) );
+	common->Printf( "idRenderWorld::GenerateAllInteractions, msec = %i, staticAllocCount = %i.\n", msec, tr.staticAllocCount );
 #endif
 
 	// entities flagged as noDynamicInteractions will no longer make any

@@ -549,6 +549,16 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 		}
 	}
 
+	// create static vertex/index buffers for all models
+	for( int i = 0; i < models.Num(); i++ ) {
+		idRenderModel *model = models[i];
+		if( model->IsLoaded() ) {
+			for( int j = 0; j < model->NumSurfaces(); j++ ) {
+				R_CreateStaticBuffersForTri( *( model->Surface( j )->geometry ) );
+			}
+		}
+	}
+
 	// _D3XP added this
 	int	end = Sys_Milliseconds();
 	common->Printf( "%5i models purged from previous level, ", purgeCount );

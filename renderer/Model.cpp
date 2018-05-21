@@ -2178,13 +2178,13 @@ void idRenderModelStatic::FreeVertexCache( void ) {
 			continue;
 		}
 		if ( tri->ambientCache ) {
-			vertexCache.Free( tri->ambientCache );
-			tri->ambientCache = NULL;
+			// we don't support freeing static data until next level load
+			tri->ambientCache = 0;
 		}
 		// static shadows may be present
 		if ( tri->shadowCache ) {
-			vertexCache.Free( tri->shadowCache );
-			tri->shadowCache = NULL;
+			// we don't support freeing static data until next level load
+			tri->shadowCache = 0;
 		}
 	}
 }

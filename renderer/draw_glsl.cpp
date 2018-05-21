@@ -165,7 +165,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 		if ( surf->dsFlags & DSF_SHADOW_MAP_ONLY )
 			continue;
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 3, 4, GL_UNSIGNED_BYTE, true, sizeof( idDrawVert ), &ac->color );
 		qglVertexAttribPointer( 11, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 		qglVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
@@ -211,6 +211,7 @@ void RB_GLSL_CreateDrawInteractions( const drawSurf_t *surf ) {
 }
 
 /*
+		idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
 ==================
 RB_GLSL_DrawLight_Stencil
 ==================
@@ -279,7 +280,7 @@ void RB_GLSL_DrawInteractions_ShadowMap( const drawSurf_t *surf, bool clear = fa
 			continue; // this flag is set by entities with parms.noShadow in R_LinkLightSurf (candles, torches, etc)
 		qglUniformMatrix4fv( shadowMapShader.modelMatrix, 1, false, surf->space->modelMatrix );
 		// set the vertex pointers
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
+		idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 		RB_DrawElementsWithCounters( surf->backendGeo );
 	}

@@ -1387,6 +1387,11 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 	int		width, height;
 	byte	*pic;
 
+	if( session->IsFrontend() ) {
+		common->Printf( "Trying to load image %s from frontend, deferring...\n", imgName.c_str() );
+		return;
+	}
+
 	// this is the ONLY place generatorFunction will ever be called
 	// Note from SteveL: Not true. generatorFunction is called during image reloading too.
 	if ( generatorFunction ) {

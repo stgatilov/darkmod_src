@@ -507,7 +507,7 @@ void RB_ShowLightCount( void ) {
 					continue;
 				}
 
-				const idDrawVert	*ac = (idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache );
+				const idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache );
 				//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), &ac->xyz );
 				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 				RB_DrawElementsWithCounters( surf->backendGeo );
@@ -575,8 +575,8 @@ void RB_ShowSilhouette( void ) {
 
 				const srfTriangles_t	*tri = surf->backendGeo;
 
-				//qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
-				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.Position( tri->shadowCache ) );
+				//qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), vertexCache.VertexPosition( tri->shadowCache ) );
+				qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), vertexCache.VertexPosition( tri->shadowCache ) );
 				qglBegin( GL_LINES );
 
 				for ( int j = 0 ; j < tri->numIndexes ; j+=3 ) {
@@ -665,7 +665,7 @@ static void RB_ShowShadowCount( void ) {
 					}
 				}
 
-				shadowCache_t *cache = (shadowCache_t *)vertexCache.Position( tri->shadowCache );
+				shadowCache_t *cache = (shadowCache_t *)vertexCache.VertexPosition( tri->shadowCache );
 				//qglVertexPointer( 4, GL_FLOAT, sizeof( *cache ), &cache->xyz );
 				qglVertexAttribPointer( 0, 4, GL_FLOAT, false, sizeof( shadowCache_t ), &cache->xyz );
 				RB_DrawElementsWithCounters( tri );

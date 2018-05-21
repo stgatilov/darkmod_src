@@ -81,7 +81,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		qglDrawElements( GL_TRIANGLES, 
 						tri->numIndexes,
 						GL_INDEX_TYPE,
-						vertexCache.Position( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
+						vertexCache.IndexPosition( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
 		if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) 
 			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
@@ -114,7 +114,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
 						GL_INDEX_TYPE,
-						vertexCache.Position( tri->indexCache ) );
+						vertexCache.IndexPosition( tri->indexCache ) );
 		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
 			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
@@ -144,7 +144,7 @@ void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
 		return;
 	}
 
-	const idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
+	const idDrawVert *ac = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
 	//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), &ac->xyz );
 	//qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -413,7 +413,7 @@ void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *sur
 
 	if ( texture->texgen & (/*TG_DIFFUSE_CUBE |*/ TG_SKYBOX_CUBE  | TG_WOBBLESKY_CUBE) ) {
 		qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ),
-			(void *)&(((idDrawVert *)vertexCache.Position( surf->backendGeo->ambientCache ))->st) );
+			(void *)&(((idDrawVert *)vertexCache.VertexPosition( surf->backendGeo->ambientCache ))->st) );
 	}
 	else if ( texture->texgen == TG_REFLECT_CUBE ) {
 		qglDisableClientState( GL_NORMAL_ARRAY );

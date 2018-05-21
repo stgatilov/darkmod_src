@@ -332,21 +332,18 @@ R_FreeStaticTriSurfVertexCaches
 void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) {
 	if ( tri->ambientSurface == NULL ) {
 		// this is a real model surface
-		vertexCache.Free( tri->ambientCache );
 		tri->ambientCache = NULL;
 	} else {
 		// this is a light interaction surface that references
 		// a different ambient model surface
 	}
 	if ( tri->indexCache ) {
-		vertexCache.Free( tri->indexCache );
 		tri->indexCache = NULL;
 	}
 	if ( tri->shadowCache && ( tri->shadowVertexes != NULL || tri->verts != NULL ) ) {
 		// if we don't have tri->shadowVertexes, these are a reference to a
 		// shadowCache on the original surface, which a vertex program
 		// will take care of making unique for each light
-		vertexCache.Free( tri->shadowCache );
 		tri->shadowCache = NULL;
 	}
 }
@@ -2125,3 +2122,40 @@ int R_DeformInfoMemoryUsed( deformInfo_t *deformInfo ) {
 	return total;
 }
 
+/*
+===================
+R_CreateStaticBuffersForTri
+
+For static surfaces, the indexes, ambient, and shadow buffers can be pre-created at load
+time, rather than being re-created each frame in the frame temporary buffers.
+===================
+*/
+void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
+	tri.indexCache = 0;
+	tri.ambientCache = 0;
+	tri.shadowCache = 0;
+
+	// index cache
+	if( tri.indexes != NULL && tri.numIndexes > 0 ) {
+		tri.indexCache = vertexCache.AllocStaticIndex( tri.indexes, ALIGN( tri.numIndexes * sizeof( tri.indexes[0] ), INDEX_CACHE_ALIGN ) );
+	}
+
+	// vertex cache
+	if( tri.verts != NULL && tri.numVerts > 0) {
+		tri.ambientCache = vertexCache.AllocStaticVertex( tri.verts, ALIGN( tri.numVerts * sizeof( tri.verts[0] ), VERTEX_CACHE_ALIGN ) );
+		// shadow cache
+		/*if( tri.shadowVertexes == NULL ) {
+			// the shadowVerts for normal models include all the xyz values duplicated
+			// for a W of 1 (near cap) and a W of 0 (end cap, projected to infinity)
+			const int shadowSize = ALIGN( tri.numVerts * 2 * sizeof( shadowCache_t ), VERTEX_CACHE_ALIGN );
+			if( tri.shadowVertexes == NULL ) {
+				tri.shadowVertexes = ( shadowCache_t * )Mem_Alloc16( shadowSize );
+				SIMDProcessor->CreateVertexProgramShadowCache( ( idVec4* )tri.shadowVertexes, tri.verts, tri.numVerts );
+			}
+		}*/
+	}
+
+	/*if( tri.shadowVertexes != NULL && tri.numVerts > 0 ) {
+		vertexCache.StaticAlloc( tri.shadowVertexes, ALIGN(tri.numVerts * 2 * sizeof( *tri.shadowVertexes ), VERTEX_CACHE_ALIGN), &tri.shadowCache );
+	}*/
+}

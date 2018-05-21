@@ -44,7 +44,7 @@ Create it if needed
 ==================
 */
 bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
-	if ( tri->ambientCache ) {
+	if ( vertexCache.CacheIsCurrent( tri->ambientCache ) ) {
 		return true;
 	}
 
@@ -53,7 +53,7 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 		R_DeriveTangents( tri );
 	}
 
-	vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache, false, true );
+	tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( tri->verts[0] ), VERTEX_CACHE_ALIGN ) );
 	if ( !tri->ambientCache ) {
 		return false;
 	}
@@ -70,11 +70,11 @@ This is used only for a specific light
 */
 void R_CreatePrivateShadowCache( srfTriangles_t *tri ) {
 
-	if ( !tri->shadowVertexes ) {
+	if ( !vertexCache.CacheIsCurrent( tri->shadowCache ) ) {
 		return;
 	}
 
-	vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+	tri->shadowCache = vertexCache.AllocVertex( tri->shadowVertexes, ALIGN( tri->numVerts * sizeof( *tri->shadowVertexes ), VERTEX_CACHE_ALIGN ) );
 }
 
 /*
@@ -114,7 +114,7 @@ void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) {
 
 #endif
 
-	vertexCache.Alloc( temp, tri->numVerts * 2 * sizeof( shadowCache_t ), &tri->shadowCache );
+	tri->shadowCache = vertexCache.AllocVertex( temp, ALIGN( tri->numVerts * 2 * sizeof( shadowCache_t ), VERTEX_CACHE_ALIGN ) );
 }
 
 /*
@@ -138,7 +138,7 @@ void R_SkyboxTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
 	}
 
-	surf->dynamicTexCoords = vertexCache.AllocFrameTemp( texCoords, size );
+	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
 }
 
 /*
@@ -214,7 +214,7 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 		R_LocalPointToGlobal( transform, v, texCoords[i] );
 	}
 
-	surf->dynamicTexCoords = vertexCache.AllocFrameTemp( texCoords, size );
+	surf->dynamicTexCoords = vertexCache.AllocVertex( texCoords, ALIGN( size, VERTEX_CACHE_ALIGN ) );
 }
 
 //=======================================================================================================
@@ -827,8 +827,6 @@ void R_AddLightSurfaces( void ) {
 			if ( !light->frustumTris->ambientCache ) {
 				R_CreateAmbientCache( light->frustumTris, false );
 			}
-			// touch the surface so it won't get purged
-			vertexCache.Touch( light->frustumTris->ambientCache );
 		}
 
 		// add the prelight shadows for the static world geometry
@@ -858,14 +856,10 @@ void R_AddLightSurfaces( void ) {
 			}
 #endif
 
-			// touch the shadow surface so it won't get purged
-			vertexCache.Touch( tri->shadowCache );
-
 			if ( r_useIndexBuffers.GetBool() ) {
-				if ( !tri->indexCache ) {
-					vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );
+				if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
+					tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
 				}
-				vertexCache.Touch( tri->indexCache );
 			}
 
 			R_LinkLightSurf( &vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME ? */ );
@@ -1232,13 +1226,10 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			if ( !R_CreateAmbientCache( tri, shader->ReceivesLighting() ) )
 				// don't add anything if the vertex cache was too full to give us an ambient cache
 				return;
-			// touch it so it won't get purged
-			vertexCache.Touch( tri->ambientCache );
 
-			if ( r_useIndexBuffers.GetBool() && !tri->indexCache ) 
-				vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );
-			if ( tri->indexCache ) 
-				vertexCache.Touch( tri->indexCache );
+			if ( r_useIndexBuffers.GetBool() && !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
+				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
+			}
 
 			// Soft Particles -- SteveL #3878
 			float particle_radius = -1.0f;		// Default = disallow softening, but allow modelDepthHack if specified in the decl.
