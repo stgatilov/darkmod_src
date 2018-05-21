@@ -24,13 +24,7 @@ $Author$ (Author of last commit)
 
 // vertex cache calls should only be made by the front end
 
-const int VERTCACHE_INDEX_MEMORY_PER_FRAME = 24 * 1024 * 1024;
-const int VERTCACHE_VERTEX_MEMORY_PER_FRAME = 24 * 1024 * 1024;
-
-const int STATIC_INDEX_MEMORY = 48 * 1024 * 1024;
-const int STATIC_VERTEX_MEMORY = 48 * 1024 * 1024;	// make sure it fits in VERTCACHE_OFFSET_MASK!
-
-const int VERTCACHE_NUM_FRAMES = 2;
+const int VERTCACHE_NUM_FRAMES = 3;
 
 const int VERTCACHE_STATIC = 1;					// in the static set, not the per-frame set
 const int VERTCACHE_SIZE_SHIFT = 1;
@@ -60,6 +54,7 @@ struct geoBufferSet_t {
 	int					allocations;	// number of index and vertex allocations combined
 	int					vertexMapOffset;
 	int					indexMapOffset;
+	GLsync				bufferLock;
 
 	geoBufferSet_t( GLenum usage = GL_DYNAMIC_DRAW_ARB );
 };
@@ -96,17 +91,19 @@ public:
 	}
 
 	// this data is valid until the next map load
-	vertCacheHandle_t AllocStaticVertex( const void * data, int bytes ) {
-		if( staticData.vertexMemUsed + bytes > STATIC_VERTEX_MEMORY ) {
-			common->FatalError( "AllocStaticVertex failed, increase STATIC_VERTEX_MEMORY" );
+	vertCacheHandle_t AllocStaticVertex( const void *data, int bytes ) {
+		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
+		if( handle == 0 ) {
+			common->FatalError( "AllocStaticVertex failed, increase r_staticVertexMemory" );
 		}
-		return ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
+		return handle;
 	}
-	vertCacheHandle_t AllocStaticIndex( const void * data, int bytes ) {
-		if( staticData.indexMemUsed + bytes > STATIC_INDEX_MEMORY ) {
-			common->FatalError( "AllocStaticIndex failed, increase STATIC_INDEX_MEMORY" );
+	vertCacheHandle_t AllocStaticIndex( const void *data, int bytes ) {
+		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
+		if( handle == 0 ) {
+			common->FatalError( "AllocStaticIndex failed, increase r_staticIndexMemory" );
 		}
-		return ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
+		return handle;
 	}
 
 	// Returns false if it's been purged
@@ -130,7 +127,10 @@ public:
 
 private:
 	static idCVar	r_showVertexCache;
-	static idCVar	r_vertexBufferMegs;
+	static idCVar	r_staticVertexMemory;
+	static idCVar	r_staticIndexMemory;
+	static idCVar	r_frameVertexMemory;
+	static idCVar	r_frameIndexMemory;
 
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use

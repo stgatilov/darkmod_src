@@ -1241,7 +1241,7 @@ void idInteraction::AddActiveInteraction( void ) {
 
 					// make sure the original surface has its ambient cache created
 					srfTriangles_t *tri = sint->ambientTris;
-					if ( !tri->ambientCache ) {
+					if ( !vertexCache.CacheIsCurrent( tri->ambientCache ) ) {
 						if ( !R_CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) {
 							// skip if we were out of vertex memory
 							continue;

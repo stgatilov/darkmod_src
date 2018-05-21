@@ -23,7 +23,11 @@ $Author$ (Author of last commit)
 
 #include "tr_local.h"
 
-idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "" );
+idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
+idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "40960", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 65535)" );
+idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 65535)" );
+idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary vertex memory, in kB (max 65535)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 65535)" );
 
 idVertexCache		vertexCache;
 
@@ -83,7 +87,28 @@ AllocGeoBufferSet
 static void AllocGeoBufferSet( geoBufferSet_t &gbs, const int vertexBytes, const int indexBytes ) {
 	gbs.vertexBuffer.AllocBufferObject( vertexBytes );
 	gbs.indexBuffer.AllocBufferObject( indexBytes );
+	gbs.bufferLock = 0;
 	ClearGeoBufferSet( gbs );
+}
+
+static void LockGeoBufferSet(geoBufferSet_t &gbs) {
+	gbs.bufferLock = qglFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+}
+
+static void WaitForGeoBufferSet(geoBufferSet_t &gbs) {
+	if (gbs.bufferLock == 0)
+		return;
+
+	GLenum result = qglClientWaitSync(gbs.bufferLock, 0, 1);
+	while (result != GL_ALREADY_SIGNALED && result != GL_CONDITION_SATISFIED) {
+		result = qglClientWaitSync(gbs.bufferLock, GL_SYNC_FLUSH_COMMANDS_BIT, 1000000);
+		if (result == GL_WAIT_FAILED) {
+			common->Warning("glClientWaitSync failed.\n");
+			break;
+		}
+	}
+	qglDeleteSync(gbs.bufferLock);
+	gbs.bufferLock = 0;
 }
 
 /*
@@ -159,9 +184,9 @@ void idVertexCache::Init() {
 
 	// set up the dynamic frame memory
 	for( int i = 0; i < VERTCACHE_NUM_FRAMES; ++i ) {
-		AllocGeoBufferSet( frameData[i], VERTCACHE_VERTEX_MEMORY_PER_FRAME, VERTCACHE_INDEX_MEMORY_PER_FRAME );
+		AllocGeoBufferSet( frameData[i], r_frameVertexMemory.GetInteger() * 1024, r_frameIndexMemory.GetInteger() * 1024 );
 	}
-	AllocGeoBufferSet( staticData, STATIC_VERTEX_MEMORY, STATIC_INDEX_MEMORY );
+	AllocGeoBufferSet( staticData, r_staticVertexMemory.GetInteger() * 1024, r_staticIndexMemory.GetInteger() * 1024 );
 
 	EndFrame();
 }
@@ -207,9 +232,18 @@ void idVertexCache::EndFrame() {
 	UnmapGeoBufferSet( frameData[listNum] );
 	UnmapGeoBufferSet( staticData );
 
+	// ensure no GL draws are still active on the next buffer to write to
+	int nextListNum = (listNum + 1) % VERTCACHE_NUM_FRAMES;
+	if (glConfig.fenceSyncAvailable) {
+		LockGeoBufferSet(frameData[backendListNum]);
+		WaitForGeoBufferSet(frameData[nextListNum]);
+	} else {
+		// this is going to stall, but it probably doesn't matter on such old GPUs...
+		qglFinish();
+	}
 	currentFrame++;
 	backendListNum = listNum;
-	listNum = (listNum + 1) % VERTCACHE_NUM_FRAMES;
+	listNum = nextListNum;
 	tempBufferUsed = 0;
 	staticBufferUsed = 0;
 
@@ -247,7 +281,8 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		endPos = vcs.indexMemUsed += bytes;
 		mapOffset = vcs.indexMapOffset;
 		if( endPos > vcs.indexBuffer.GetAllocedSize() ) {
-			common->Error( "Out of index cache" );
+			common->Warning( "Out of index cache" );
+			return 0;
 		}
 	}
 	else if( type == CACHE_VERTEX ) {
@@ -255,11 +290,13 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		endPos = vcs.vertexMemUsed += bytes;
 		mapOffset = vcs.vertexMapOffset;
 		if( endPos > vcs.vertexBuffer.GetAllocedSize() ) {
-			common->Error( "Out of vertex cache" );
+			common->Warning( "Out of vertex cache" );
+			return 0;
 		}
 	}
 	else {
 		assert( false );
+		return 0;
 	}
 
 	vcs.allocations++;
