@@ -576,7 +576,7 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_DRAW_VIEW:
 			v3d = ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys != NULL; // view is 2d or 3d
 			// duzenko #4425: create/switch to framebuffer object
-			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) // not lightgem
+			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= DARKMOD_LG_VIEWID)
 				if (!was2d) // don't switch to FBO if some 2d has happened (e.g. compass)
 					if ( v3d ) {
 						FB_TogglePrimary( true );
