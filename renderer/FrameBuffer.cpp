@@ -21,11 +21,12 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 bool primaryOn;
 bool depthCopiedThisView;
-GLuint fboPrimary, fboResolve, fboShadow, pbo;
-GLuint renderBufferColor, renderBufferDepthStencil;
+GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, pbo;
+GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
+GLuint postProcessWidth, postProcessHeight;
 int ShadowMipMap;
 
-void FB_Create( GLuint width, GLuint height, int msaa ) {
+void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if( !fboPrimary )
 		qglGenFramebuffers( 1, &fboPrimary );
 	if( msaa > 1 ) {
@@ -44,6 +45,26 @@ void FB_Create( GLuint width, GLuint height, int msaa ) {
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
 	}
+}
+
+void FB_CreatePostProcess( GLuint width, GLuint height ) {
+	if( !fboPostProcess )
+		qglGenFramebuffers( 1, &fboPostProcess );
+	if( !renderBufferPostProcess )
+		qglGenRenderbuffers( 1, &renderBufferPostProcess );
+	qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferPostProcess );
+	qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
+	qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
+	qglBindFramebuffer( GL_FRAMEBUFFER, fboPostProcess );
+	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferPostProcess );
+	int status = qglCheckFramebufferStatus( GL_FRAMEBUFFER );
+	if( GL_FRAMEBUFFER_COMPLETE != status ) {
+		common->Printf( "glCheckFramebufferStatus postProcess: %d\n", status );
+		qglDeleteFramebuffers( 1, &fboPostProcess );
+		fboPostProcess = 0; // try from scratch next time
+	}
+	postProcessWidth = width;
+	postProcessHeight = height;
 }
 
 void FB_ResolveMultisampling( GLbitfield mask, GLenum filter = GL_NEAREST ) {
@@ -162,7 +183,7 @@ void CheckCreatePrimary() {
 		r_fboSharedColor.ClearModified();
 		r_multiSamples.ClearModified();
 		int msaa = r_multiSamples.GetInteger();
-		FB_Create( curWidth, curHeight, msaa );
+		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
 		qglBindFramebuffer( GL_FRAMEBUFFER, (msaa > 1) ? fboResolve : fboPrimary );
 		// attach a texture to FBO color attachement point
 		if ( r_fboSharedColor.GetBool() || msaa > 1 )
@@ -257,6 +278,23 @@ void CheckCreateShadow() {
 	GL_CheckErrors();
 }
 
+void FB_SelectPrimary() {
+	if( primaryOn )
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+}
+
+void FB_SelectPostProcess() {
+	if( !primaryOn )
+		return;
+
+	GLuint curWidth = glConfig.vidWidth * r_fboResolution.GetFloat();
+	GLuint curHeight = glConfig.vidHeight * r_fboResolution.GetFloat();
+	if( !fboPostProcess || curWidth != postProcessWidth || curHeight != postProcessHeight ) {
+		FB_CreatePostProcess( curWidth, curHeight );
+	}
+	qglBindFramebuffer( GL_FRAMEBUFFER, fboPostProcess );
+}
+
 /*
 Soft shadows vendor specific implementation
 Intel: separate stencil buffer, direct access, awesome
@@ -335,7 +373,8 @@ void FB_ToggleShadow( bool on, bool clear ) {
 }
 
 void FB_Clear() {
-	fboPrimary = fboResolve = fboShadow = pbo = 0;
+	fboPrimary = fboResolve = fboShadow = fboPostProcess = pbo = 0;
+	renderBufferColor = renderBufferDepthStencil = renderBufferPostProcess = 0;
 }
 
 void EnterPrimary() {
