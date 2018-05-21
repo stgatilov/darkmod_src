@@ -3754,6 +3754,14 @@ void Cmd_ResetTimers_f(const idCmdArgs& args)
 }
 #endif // TIMING_BUILD 
 
+void idGameLocal::RenderLightgem() {
+	m_lightGem.Render();
+}
+
+void idGameLocal::SwapLightgemBuffers() {
+	m_lightGem.EndFrame();
+}
+
 /*
 =================
 idGameLocal::InitConsoleCommands

@@ -116,8 +116,6 @@ idCVar cv_show_health (							"tdm_show_health",					"0",            CVAR_ARCHIV
 
 idCVar cv_ai_show_aasfuncobstacle_state(		"tdm_ai_show_aasfuncobstacle_state",	"0",		CVAR_ARCHIVE | CVAR_GAME | CVAR_BOOL, "If true (nonzero), idFuncAASObstacles will show their state at spawn time and during changes." );
 
-// nbohr1more: remove cv_interaction_vfp_type as we can now use r_testARBProgram directly
-// idCVar cv_interaction_vfp_type("tdm_interaction_vfp_type",	"1", CVAR_ARCHIVE | CVAR_BOOL, "If 1, the new enhanced interaction are used. Set to 0 to use default interaction shader." );
 idCVar cv_tdm_widescreenmode("tdm_wideScreenMode",	"0", CVAR_ARCHIVE | CVAR_INTEGER, "The widescreen mode selected in the main menu (for internal use)." );
 idCVar cv_tdm_menu_music("tdm_menu_music",	"1", CVAR_ARCHIVE | CVAR_BOOL, "Whether to play background music in the main menu (for internal use)." );
 

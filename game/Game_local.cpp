@@ -321,7 +321,6 @@ void idGameLocal::Clear( void )
 	m_Interleave = 0;
 
 	m_lightGem.Clear();
-	m_DoLightgem = true;
 
 	m_uniqueMessageTag = 0; // grayman #3355
 
@@ -588,9 +587,6 @@ void idGameLocal::Init( void ) {
 	// Copy the old value here and set it when the map starts up.
 	m_walkSpeed = pm_walkspeed.GetFloat();
 
-	// Initialize the LightGem - J.C.Denton
-	m_lightGem.Initialize();
-
 	// grayman #3355 - Initialize the AI message tag
 	m_uniqueMessageTag = 0;
 
@@ -731,7 +727,6 @@ void idGameLocal::Shutdown( void ) {
 
 	Printf( "------------ Game Shutdown -----------\n" );
 	
-	m_lightGem.Deinitialize();
 #ifdef MULTIPLAYER
 	mpGame.Shutdown();
 #endif
@@ -3672,25 +3667,9 @@ bool idGameLocal::Draw( int clientNum )
 		return false;
 	}
 
-	if (0)
-	// Make the rendershot appear on the hud
-	// duzenko #4408 - moved this half from game tic
-	if (cv_lg_hud.GetInteger() == 0)
-	{
-		player->ProcessLightgem(true);
-	}
-
 	// render the scene
 	player->playerView.RenderPlayerView(player->hud);
 
-	if (0)
-		// Make the rendershot appear on the hud
-	if (cv_lg_hud.GetInteger() != 0)
-	{
-		player->ProcessLightgem(true);
-	}
-
-	m_DoLightgem = true;
 	return true;
 }
 
@@ -3699,10 +3678,7 @@ void idGameLocal::DrawLightgem( int clientNum ) {
 	if (!player) {
 		return;
 	}
-
-	if (cv_lg_hud.GetInteger() == 0) {
-		player->ProcessLightgem( true );
-	}
+	player->ProcessLightgem( true );
 }
 
 /*

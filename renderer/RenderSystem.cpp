@@ -115,7 +115,7 @@ R_IssueRenderCommands
 Called by R_EndFrame each frame
 ====================
 */
-static void R_IssueRenderCommands( frameData_t *frameData ) {
+void R_IssueRenderCommands( frameData_t *frameData ) {
 	emptyCommand_t *cmds = frameData->cmdHead;
 	if ( cmds->commandId == RC_NOP
 		&& !cmds->next ) {
@@ -641,6 +641,9 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 		double startLoop = Sys_GetClockTicks();
 		session->ActivateFrontend();
 		double endSignal = Sys_GetClockTicks();
+		// render lightgem
+		gameLocal.RenderLightgem();
+		double endLightgem = Sys_GetClockTicks();
 		// start the back end up again with the new command list
 		R_IssueRenderCommands( backendFrameData );
 		double endRender = Sys_GetClockTicks();
@@ -658,14 +661,15 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 			const double TO_MICROS = 1000000 / Sys_ClockTicksPerSecond();
 			static double lastEndTime = Sys_GetClockTicks();
 			double signalFrontend = (endSignal - startLoop) * TO_MICROS;
-			double render = (endRender - endSignal) * TO_MICROS;
+			double lightGem = (endLightgem - endSignal) * TO_MICROS;
+			double render = (endRender - endLightgem) * TO_MICROS;
 			double waitForFrontend = (endWait - endRender) * TO_MICROS;
 			double framePrep = ( startLoop - lastEndTime ) * TO_MICROS;
 			double totalFrameTime = ( endWait - lastEndTime ) * TO_MICROS;
 			lastEndTime = endWait;
 			
 			smpTimingsLogFile->Printf( "Frame %.7d: preparation %.2f - total frame time %.2f us\n", frameCount, framePrep, totalFrameTime );
-			smpTimingsLogFile->Printf( "  Backend: signal frontend %.2f us - render %.2f us - wait for frontend %.2f us\n", signalFrontend, render, waitForFrontend );
+			smpTimingsLogFile->Printf( "  Backend: signal frontend %.2f us - lightgem %.2f us - render %.2f us - wait for frontend %.2f us\n", signalFrontend, lightGem, render, waitForFrontend );
 			session->LogFrontendTimings( *smpTimingsLogFile );
 		}
 	} catch( std::shared_ptr<ErrorReportedException> e ) {
@@ -691,6 +695,9 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 
 	// we can now release the vertexes used this frame
 	vertexCache.EndFrame();
+
+	// swap lightgem render buffers
+	gameLocal.SwapLightgemBuffers();
 
 	if ( session->writeDemo ) {
 		session->writeDemo->WriteInt( DS_RENDER );

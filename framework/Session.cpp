@@ -2641,10 +2641,6 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 		renderSystem->EndFrame( NULL, NULL );
 	}
 
-	if( mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0 ) {
-		game->DrawLightgem( GetLocalClientNum() );
-	}
-
 	insideUpdateScreen = false;
 }
 
@@ -3002,6 +2998,11 @@ void idSessionLocal::RunGameTics() {
 }
 
 void idSessionLocal::DrawFrame() {
+	// draw lightgem
+	if (mapSpawned && !com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
+		game->DrawLightgem(GetLocalClientNum());
+	}
+
 	// render next frame
 	Draw();
 	// close any gui drawing

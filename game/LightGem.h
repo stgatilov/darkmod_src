@@ -16,38 +16,41 @@
 #define __LIGHTGEM_H__
 
 //----------------------------------
-// Preprocessor Constants
+// Constants
 //----------------------------------
-// Number of passes that we can do at most. This is 6 because it's simply a cube that is rendered 
-// from all sides. This is not needed though, because a top and a bottom render with a pyramidic
-// shape would be sufficient to cover all lighting situations. For silouhette detection we might
-// consider more stages though.
-#define DARKMOD_LG_MAX_RENDERPASSES			2
-#define DARKMOD_LG_MAX_IMAGESPLIT			4
-#define DARKMOD_LG_RENDER_MODEL				"models/darkmod/misc/system/lightgem.lwo"
-#define DARKMOD_LG_ENTITY_NAME				"lightgem_surface"
+// Number of different passes. Since the lightgem model is pyramid-shaped, we do one pass from above and
+// one from below. Each render is then split into 4 parts corresponding to the 4 pyramid sides.
+static const int	DARKMOD_LG_MAX_RENDERPASSES = 2;
+static const int	DARKMOD_LG_MAX_IMAGESPLIT   = 4;
+static const char * DARKMOD_LG_RENDER_MODEL		= "models/darkmod/misc/system/lightgem.lwo";
+static const char * DARKMOD_LG_ENTITY_NAME		= "lightgem_surface";
 // The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
-#define DARKMOD_LG_VIEWID					-1
+static const int	DARKMOD_LG_VIEWID			= -1;
 
-#define DARKMOD_LG_RENDER_WIDTH				64 // LG render resolution - keep it a power-of-two!
-#define DARKMOD_LG_RENDER_FOV				70.0f
-#define DARKMOD_LG_BPP						3 // 3 Channels of 8 bits
+static const int    DARKMOD_LG_RENDER_WIDTH		= 64; // LG render resolution - keep it a power-of-two!
+static const float  DARKMOD_LG_RENDER_FOV		= 70.0f;
+static const int	DARKMOD_LG_BPP				= 3; // 3 Channels of 8 bits
 
 // The colour is converted to a grayscale value which determines the state of the lightgem.
 // LightGem = (0.29900*R+0.58700*G+0.11400*B) * 0.0625
-
-#define DARKMOD_LG_MIN						1
-#define DARKMOD_LG_MAX						32
-#define DARKMOD_LG_FRACTION					(1.0f/32.0f)		// Do we use this?
-#define DARKMOD_LG_RED						0.29900f
-#define DARKMOD_LG_GREEN					0.58700f
-#define DARKMOD_LG_BLUE						0.11400f
-#define DARKMOD_LG_SCALE					(1.0f/255.0f)			// scaling factor for grayscale value
-#define DARKMOD_LG_TRIRATIO					(1.0f/((DARKMOD_LG_RENDER_WIDTH*DARKMOD_LG_RENDER_WIDTH)/4.0f))
+static const int	DARKMOD_LG_MIN				= 1;
+static const int	DARKMOD_LG_MAX				= 32;
+static const float	DARKMOD_LG_FRACTION			= 1.0f / 32.0f;	// Do we use this?
+static const float  DARKMOD_LG_RED				= 0.29900f;
+static const float  DARKMOD_LG_GREEN			= 0.58700f;
+static const float  DARKMOD_LG_BLUE				= 0.11400f;
+static const float  DARKMOD_LG_SCALE			= 1.0f / 255.0f;		// scaling factor for grayscale value
+static const float  DARKMOD_LG_TRIRATIO			= 1.0f / (DARKMOD_LG_RENDER_WIDTH*DARKMOD_LG_RENDER_WIDTH / 4.0f);
 
 //----------------------------------
 // Class Declarations.
 //----------------------------------
+struct emptyCommand_t;
+struct lightGemDrawCmds_t {
+	byte *			 imageBuffer;
+	emptyCommand_t * cmdHead;
+	emptyCommand_t * cmdTail;
+};
 
 class LightGem
 {
@@ -57,6 +60,9 @@ private:
 	idEntityPtr<idEntity>	m_LightgemSurface;
 
 	unsigned char*			m_LightgemImgBuffer;
+	lightGemDrawCmds_t		m_LightgemDrawCmds[2];
+	lightGemDrawCmds_t *	m_LightgemFrontDraw;
+	lightGemDrawCmds_t *	m_LightgemBackDraw;
 	renderView_t			m_Lightgem_rv;
 	float 					m_fColVal[DARKMOD_LG_MAX_IMAGESPLIT];
 
@@ -70,8 +76,6 @@ public:
 	//---------------------------------
 	// Initialization
 	//---------------------------------
-	void Initialize		();
-	void Deinitialize	();
 	void Clear			();
 
 	//---------------------------------
@@ -86,15 +90,18 @@ public:
 	//  that no multiple copies of it will exist.
 	//---------------------------------
 	void SpawnLightGemEntity( idMapFile *	a_mapFile );
-	void InitializeLightGemEntity(); 
+	void InitializeLightGemEntity();
 
 	//---------------------------------
 	// Calculation
 	//---------------------------------
-	float	Calculate		( idPlayer *	a_pPlayer );
+	float Calculate		( idPlayer *	a_pPlayer );	
+	void Render();
+	void EndFrame();
 
 private:
 	void AnalyzeRenderImage	( );
+	void AddRenderToBufferCommand();
 };
 
 #endif // __LIGHTGEM_H__

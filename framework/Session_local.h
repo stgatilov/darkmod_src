@@ -299,7 +299,6 @@ public:
 	void				EndAVICapture();
 
 	void				AdvanceRenderDemo( bool singleFrameOnly );
-	// void				RunGameTic();
 	void				RunGameTics();
 	void				DrawFrame();
 

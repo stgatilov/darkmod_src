@@ -948,10 +948,11 @@ public:
 	void					LoadLightMaterial(const char *Filename, idList<CLightMaterial *> *);
 
 	/**
-	 * CalcLightgem will do the rendersnapshot and analyze the snaphost image in order
-	 * to determine the lightvalue for the lightgem.
+	 * CalcLightgem will analyze the snaphost image in order to determine the lightvalue for the lightgem.
 	 */
 	float					CalcLightgem(idPlayer*);
+	void					RenderLightgem();
+	void					SwapLightgemBuffers();
 
 	bool					AddStim(idEntity *);
 	void					RemoveStim(idEntity *);
@@ -1110,7 +1111,6 @@ private:
 
 	byte					lagometer[ LAGO_IMG_HEIGHT ][ LAGO_IMG_WIDTH ][ 4 ];
 
-	bool					m_DoLightgem;		// Signal when the lightgem may be processed.
 	LightGem				m_lightGem;
 
 	int						m_uniqueMessageTag;	// grayman #3355 - unique number for tying AI barks and messages together 
