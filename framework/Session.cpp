@@ -421,6 +421,7 @@ void idSessionLocal::StartWipe( const char *_wipeMaterial, bool hold ) {
 	renderSystem->CropRenderSize( 640, 480, true );
 
 	Draw();
+	vertexCache.EndFrame();
 
 	renderSystem->CaptureRenderToImage( *globalImages->scratchImage );
 	renderSystem->UnCrop();
@@ -2001,6 +2002,8 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave, bool skipChe
 	    qglFinish();
 		renderSystem->CropRenderSize( 170, 110 ); // actual size from mainmenu_loadsave.gui
 		game->Draw( 0 );
+		// need to make the changes to the vertex cache accessible to the backend
+		vertexCache.EndFrame();
 
 		//stgatilov: render image to buffer and save via devIL
 		Image image;
