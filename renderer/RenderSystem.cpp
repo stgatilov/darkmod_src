@@ -630,7 +630,7 @@ Returns the number of msec spent in the back end
 =============
 */
 void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
-	static idFile* logFile = nullptr; 
+	static idFile* smpTimingsLogFile = nullptr; 
 
 	if ( !glConfig.isInitialized ) {
 		return;
@@ -638,24 +638,35 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 
 	try {
 		common->SetErrorIndirection( true );
-		int startLoop = Sys_Milliseconds();
+		double startLoop = Sys_GetClockTicks();
 		session->ActivateFrontend();
-		int endSignal = Sys_Milliseconds();
+		double endSignal = Sys_GetClockTicks();
 		// start the back end up again with the new command list
 		R_IssueRenderCommands( backendFrameData );
-		int endRender = Sys_Milliseconds();
+		double endRender = Sys_GetClockTicks();
 		session->WaitForFrontendCompletion();
-		int endWait = Sys_Milliseconds();
+		double endWait = Sys_GetClockTicks();
 		common->SetErrorIndirection( false );
 
 		if( r_logSmpTimings.GetBool() ) {
-			if( !logFile ) {
-				logFile = fileSystem->OpenFileWrite( "backend_timings.txt", "fs_savepath", "" );
+			if( !smpTimingsLogFile ) {
+				idStr fileName;
+				uint64_t currentTime = Sys_GetTimeMicroseconds();
+				sprintf( fileName, "smp_timings_%.20llu.txt", currentTime );
+				smpTimingsLogFile = fileSystem->OpenFileWrite( fileName, "fs_savepath", "" );
 			}
-			int signalFrontend = endSignal - startLoop;
-			int render = endRender - endSignal;
-			int waitForFrontend = endWait - endRender;
-			logFile->Printf( "Backend timing: signal %d - render %d - wait %d | begin %d - end %d\n", signalFrontend, render, waitForFrontend, startLoop, endWait );
+			const double TO_MICROS = 1000000 / Sys_ClockTicksPerSecond();
+			static double lastEndTime = Sys_GetClockTicks();
+			double signalFrontend = (endSignal - startLoop) * TO_MICROS;
+			double render = (endRender - endSignal) * TO_MICROS;
+			double waitForFrontend = (endWait - endRender) * TO_MICROS;
+			double framePrep = ( startLoop - lastEndTime ) * TO_MICROS;
+			double totalFrameTime = ( endWait - lastEndTime ) * TO_MICROS;
+			lastEndTime = endWait;
+			
+			smpTimingsLogFile->Printf( "Frame %.7d: preparation %.2f - total frame time %.2f us\n", frameCount, framePrep, totalFrameTime );
+			smpTimingsLogFile->Printf( "  Backend: signal frontend %.2f us - render %.2f us - wait for frontend %.2f us\n", signalFrontend, render, waitForFrontend );
+			session->LogFrontendTimings( *smpTimingsLogFile );
 		}
 	} catch( std::shared_ptr<ErrorReportedException> e ) {
 		session->WaitForFrontendCompletion();

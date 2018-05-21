@@ -114,6 +114,7 @@ public:
 	virtual void    RunGameTic() = 0;
 	virtual void	ActivateFrontend() = 0;
 	virtual void	WaitForFrontendCompletion() = 0;
+	virtual void	LogFrontendTimings( idFile& file ) const = 0;
 
 	// The render world and sound world used for this session.
 	idRenderWorld *	rw;

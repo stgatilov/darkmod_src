@@ -266,9 +266,14 @@ public:
 	volatile bool		frontendActive;
 	volatile bool		shutdownFrontend;
 	std::shared_ptr<ErrorReportedException> frontendException;
+	double				frontendTimeWaiting;
+	double				frontendTimeGameTics;
+	double				frontendTimeDrawing;
+	double				frontendTimeSignal;
 
 	void				FrontendThreadFunction();
 	bool				IsFrontend() const;
+	void				LogFrontendTimings( idFile& logFile ) const;
 
 	//=====================================
 	void				Clear();

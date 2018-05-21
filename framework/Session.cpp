@@ -3020,10 +3020,8 @@ Runs game tics and draw call creation in a background thread.
 ===============
 */
 void idSessionLocal::FrontendThreadFunction() {
-	idFile* logFile = nullptr;
-
 	while( true ) {
-		int beginLoop = Sys_Milliseconds(); 
+		double beginLoop = Sys_GetClockTicks();
 		{ // lock scope
 			std::unique_lock< std::mutex > lock( signalMutex );
 			// wait for render thread
@@ -3031,22 +3029,17 @@ void idSessionLocal::FrontendThreadFunction() {
 				signalFrontendThread.wait( lock );
 			}
 			if( shutdownFrontend ) {
-				if( logFile ) {
-					logFile->Flush();
-					fileSystem->CloseFile( logFile );
-				}
-				GLimp_DeactivateFrontendContext();
 				return;
 			}
 		}
-		int endWaitForRenderThread = Sys_Milliseconds();
-		int endGameTics, endDraw;
+		double endWaitForRenderThread = Sys_GetClockTicks();
+		double endGameTics = 0, endDraw = 0;
 		try {
 			RunGameTics();
-			endGameTics = Sys_Milliseconds();
+			endGameTics = Sys_GetClockTicks();
 
 			DrawFrame();
-			endDraw = Sys_Milliseconds();
+			endDraw = Sys_GetClockTicks();
 		} catch( std::shared_ptr< ErrorReportedException > e ) {
 			frontendException = e;
 		} 
@@ -3056,23 +3049,25 @@ void idSessionLocal::FrontendThreadFunction() {
 			frontendActive = false;
 			signalMainThread.notify_one();
 		}
-		int endSignalRenderThread = Sys_Milliseconds();
+		double endSignalRenderThread = Sys_GetClockTicks();
 
 		if( r_logSmpTimings.GetBool() ) {
-			int timeWaiting = endWaitForRenderThread - beginLoop;
-			int timeGameTics = endGameTics - endWaitForRenderThread;
-			int timeDrawing = endDraw - endGameTics;
-			int timeSignal = endSignalRenderThread - endDraw;
-			if( !logFile ) {
-				logFile = fileSystem->OpenFileWrite( "frontend_timings.txt", "fs_savepath", "" );
-			}
-			logFile->Printf( "Frontend timing: wait %d - gametics %d - drawing %d - signal %d\n", timeWaiting, timeGameTics, timeDrawing, timeSignal );
+			const double TO_MICROS = 1000000 / Sys_ClockTicksPerSecond();
+			frontendTimeWaiting = (endWaitForRenderThread - beginLoop) * TO_MICROS;
+			frontendTimeGameTics = (endGameTics - endWaitForRenderThread) * TO_MICROS;
+			frontendTimeDrawing = (endDraw - endGameTics) * TO_MICROS;
+			frontendTimeSignal = (endSignalRenderThread - endDraw) * TO_MICROS;
 		}
 	}
 }
 
 bool idSessionLocal::IsFrontend() const {
 	return std::this_thread::get_id() == frontendThread.get_id();
+}
+
+void idSessionLocal::LogFrontendTimings( idFile &logFile ) const {
+	logFile.Printf( "  Frontend: wait for signal %.2f us - gametics %.2f us - drawing %.2f us - signal backend %.2f us\n", 
+		frontendTimeWaiting, frontendTimeGameTics, frontendTimeDrawing, frontendTimeSignal );
 }
 
 /*
