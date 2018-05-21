@@ -403,25 +403,6 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	}
 	common->Printf( "succeeded\n" );
 
-	// create a secondary context to use for buffer loading by the frontend
-	common->Printf( "...creating secondary shared GL context: " );
-	if ( (win32.hSecondaryGLRC = qwglCreateContext( win32.hDC )) == 0 ) {
-		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
-		return false;
-	}
-	common->Printf( "succeeded\n" );
-
-	common->Printf( "...sharing contexts: " );
-	if ( wglShareLists( win32.hSecondaryGLRC, win32.hGLRC ) == FALSE ) {
-		qwglDeleteContext( win32.hSecondaryGLRC );
-		win32.hSecondaryGLRC = NULL;
-		qwglDeleteContext( win32.hGLRC );
-		win32.hGLRC = NULL;
-		common->Printf( S_COLOR_YELLOW "failed\n" S_COLOR_DEFAULT );
-		return false;
-	}
-	common->Printf( "succeeded\n" );
-
 	common->Printf( "...making context current: " );
 	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
 		qwglDeleteContext( win32.hGLRC );
@@ -431,7 +412,6 @@ static bool GLW_InitDriver( glimpParms_t parms ) {
 	}
 	common->Printf( "succeeded\n" );
 
-	//GLimp_InitGlewContext();
 	return true;
 }
 
@@ -927,13 +907,6 @@ void GLimp_Shutdown( void ) {
 		win32.hGLRC = NULL;
 	}
 
-	// delete hSecondaryGLRC
-	if ( win32.hSecondaryGLRC ) {
-		retVal = qwglDeleteContext( win32.hSecondaryGLRC ) != 0;
-		common->Printf( "...deleting secondary GL context: %s\n", success[retVal] );
-		win32.hSecondaryGLRC = NULL;
-	}
-
 	// release DC
 	if ( win32.hDC ) {
 		retVal = ReleaseDC( win32.hWnd, win32.hDC ) != 0;
@@ -1212,14 +1185,4 @@ GLExtension_t GLimp_ExtensionPointer( const char *name ) {
 	}
 
 	return proc;
-}
-
-void GLimp_ActivateFrontendContext() {
-	if ( qwglMakeCurrent( win32.hDC, win32.hSecondaryGLRC ) == FALSE ) {
-		common->Warning( "Could not activate secondary context in task thread" );
-	}
-}
-
-void GLimp_DeactivateFrontendContext() {
-	qwglMakeCurrent( NULL, NULL );
 }

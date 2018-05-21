@@ -60,9 +60,6 @@ idCVar r_softShadDebug( "ssdebug", "0", CVAR_RENDERER | CVAR_INTEGER, "Soft shad
 																	  "4 = show light attenuation. Can be used together, e.g. 5 = 4 + 1 = show lines and attenuation."); 
 idCVar r_softShadMaxSize( "ssmax", "20", CVAR_RENDERER | CVAR_FLOAT, "Soft shadows max penumbra size in pixels. FIXME: Probably wants changing to be a % of screen size.");
 */
-//idCVar r_useVertexBuffers( "r_useVertexBuffers", "1", CVAR_RENDERER | CVAR_INTEGER, "use ARB_vertex_buffer_object for vertexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
-// Serp - Enabled IndexBuffers by default, increases performance - however untested on a wide range of hardware.
-idCVar r_useIndexBuffers( "r_useIndexBuffers", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "use ARB_vertex_buffer_object for indexes", 0, 1, idCmdSystem::ArgCompletion_Integer<0,1>  );
 
 idCVar r_useStateCaching( "r_useStateCaching", "1", CVAR_RENDERER | CVAR_BOOL, "avoid redundant state changes in GL_*() calls" );
 
@@ -303,10 +300,10 @@ PFNGLMAPBUFFERARBPROC					qglMapBufferARB;
 PFNGLUNMAPBUFFERARBPROC					qglUnmapBufferARB;
 PFNGLGETBUFFERPARAMETERIVARBPROC		qglGetBufferParameterivARB;
 PFNGLGETBUFFERPOINTERVARBPROC			qglGetBufferPointervARB;
-PFNGLMAPBUFFERRANGEPROC					glMapBufferRange;
-PFNGLUNMAPBUFFERPROC					glUnmapBuffer;
-PFNGLFLUSHMAPPEDBUFFERRANGEPROC			glFlushMappedBufferRange;
-PFNGLBUFFERSUBDATAPROC					glBufferSubData;
+PFNGLMAPBUFFERRANGEPROC					qglMapBufferRange;
+PFNGLUNMAPBUFFERPROC					qglUnmapBuffer;
+PFNGLFLUSHMAPPEDBUFFERRANGEPROC			qglFlushMappedBufferRange;
+PFNGLBUFFERSUBDATAPROC					qglBufferSubData;
 
 // ARB_vertex_program / ARB_fragment_program
 PFNGLVERTEXATTRIBPOINTERARBPROC			qglVertexAttribPointer;
@@ -510,10 +507,10 @@ static void R_CheckPortableExtensions( void ) {
 	qglUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GLimp_ExtensionPointer( "glUnmapBufferARB");
 	qglGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GLimp_ExtensionPointer( "glGetBufferParameterivARB");
 	qglGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GLimp_ExtensionPointer( "glGetBufferPointervARB");
-	glMapBufferRange = ( PFNGLMAPBUFFERRANGEPROC )GLimp_ExtensionPointer( "glMapBufferRange" );
-	glFlushMappedBufferRange = ( PFNGLFLUSHMAPPEDBUFFERRANGEPROC )GLimp_ExtensionPointer( "glFlushMappedBufferRange" );
-	glUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
-	glBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
+	qglMapBufferRange = ( PFNGLMAPBUFFERRANGEPROC )GLimp_ExtensionPointer( "glMapBufferRange" );
+	qglFlushMappedBufferRange = ( PFNGLFLUSHMAPPEDBUFFERRANGEPROC )GLimp_ExtensionPointer( "glFlushMappedBufferRange" );
+	qglUnmapBuffer = ( PFNGLUNMAPBUFFERPROC )GLimp_ExtensionPointer( "glUnmapBuffer" );
+	qglBufferSubData = ( PFNGLBUFFERSUBDATAPROC )GLimp_ExtensionPointer( "glBufferSubData" );
 
 	// ARB_vertex_program
 	qglVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERARBPROC)GLimp_ExtensionPointer( "glVertexAttribPointerARB" );

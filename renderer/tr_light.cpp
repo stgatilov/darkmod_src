@@ -856,10 +856,8 @@ void R_AddLightSurfaces( void ) {
 			}
 #endif
 
-			if ( r_useIndexBuffers.GetBool() ) {
-				if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
-					tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
-				}
+			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
+				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
 
 			R_LinkLightSurf( &vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME ? */ );
@@ -1227,7 +1225,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 				// don't add anything if the vertex cache was too full to give us an ambient cache
 				return;
 
-			if ( r_useIndexBuffers.GetBool() && !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
+			if ( !vertexCache.CacheIsCurrent( tri->indexCache ) ) {
 				tri->indexCache = vertexCache.AllocIndex( tri->indexes, ALIGN( tri->numIndexes * sizeof( tri->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
 

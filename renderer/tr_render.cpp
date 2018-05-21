@@ -77,7 +77,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		}
 	}
 
-	if ( r_useIndexBuffers.GetBool() && tri->indexCache ) {
+	if ( tri->indexCache ) {
 		qglDrawElements( GL_TRIANGLES, 
 						tri->numIndexes,
 						GL_INDEX_TYPE,
@@ -85,10 +85,7 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) 
 			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
-		if ( r_useIndexBuffers.GetBool() ) {
-			vertexCache.UnbindIndex();
-			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
-		}
+		vertexCache.UnbindIndex();
 		qglDrawElements( GL_TRIANGLES, 
 						tri->numIndexes,
 						GL_INDEX_TYPE,
@@ -110,7 +107,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		backEnd.pc.c_shadowVertexes += tri->numVerts;
 	}
 
-	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) {
+	if ( tri->indexCache ) {
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
 						GL_INDEX_TYPE,
@@ -118,10 +115,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
 			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
-		if ( r_useIndexBuffers.GetBool() ) {
-			vertexCache.UnbindIndex();
-			//vertexCache.UnbindIndex(GL_ELEMENT_ARRAY_BUFFER);
-		}
+		vertexCache.UnbindIndex();
 		qglDrawElements( GL_TRIANGLES, 
 						numIndexes,
 						GL_INDEX_TYPE,

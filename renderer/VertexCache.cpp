@@ -49,10 +49,10 @@ MapGeoBufferSet
 */
 static void MapGeoBufferSet( geoBufferSet_t &gbs ) {
 	if( gbs.mappedVertexBase == NULL ) {
-		gbs.mappedVertexBase = ( byte * )gbs.vertexBuffer.MapBuffer( BM_WRITE, gbs.vertexMapOffset );
+		gbs.mappedVertexBase = ( byte * )gbs.vertexBuffer.MapBuffer( gbs.vertexMapOffset );
 	}
 	if( gbs.mappedIndexBase == NULL ) {
-		gbs.mappedIndexBase = ( byte * )gbs.indexBuffer.MapBuffer( BM_WRITE, gbs.indexMapOffset );
+		gbs.mappedIndexBase = ( byte * )gbs.indexBuffer.MapBuffer( gbs.indexMapOffset );
 	}
 }
 
@@ -81,24 +81,9 @@ AllocGeoBufferSet
 ==============
 */
 static void AllocGeoBufferSet( geoBufferSet_t &gbs, const int vertexBytes, const int indexBytes ) {
-	gbs.vertexBuffer.AllocBufferObject( NULL, vertexBytes );
-	gbs.indexBuffer.AllocBufferObject( NULL, indexBytes );
+	gbs.vertexBuffer.AllocBufferObject( vertexBytes );
+	gbs.indexBuffer.AllocBufferObject( indexBytes );
 	ClearGeoBufferSet( gbs );
-}
-
-idFile* cacheLogFile = nullptr;
-std::mutex logMutex;
-
-void CacheLog( const char* fmt, ... ) {
-	/*std::unique_lock<std::mutex> lock( logMutex );
-	if (cacheLogFile == nullptr) {
-	cacheLogFile = fileSystem->OpenFileWrite( "vertexcache.txt", "fs_savepath", "" );
-	}
-	va_list args;
-	va_start( args, fmt );
-	cacheLogFile->VPrintf( fmt, args );
-	va_end( args );
-	cacheLogFile->Flush();*/
 }
 
 /*
@@ -112,10 +97,10 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		vbo = 0;
 	} else if( CacheIsStatic( handle ) ) {
 		++staticBufferUsed;
-		vbo = (GLuint)staticData.vertexBuffer.GetAPIObject();
+		vbo = staticData.vertexBuffer.GetAPIObject();
 	} else {
 		++tempBufferUsed;
-		vbo = ( GLuint )frameData[backendListNum].vertexBuffer.GetAPIObject();
+		vbo = frameData[backendListNum].vertexBuffer.GetAPIObject();
 	}
 	if( vbo != currentVertexBuffer ) {
 		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, vbo );
@@ -135,11 +120,11 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		vbo = 0;
 	} else if( CacheIsStatic( handle ) ) {
 		++staticBufferUsed;
-		vbo = ( GLuint )staticData.indexBuffer.GetAPIObject();
+		vbo = staticData.indexBuffer.GetAPIObject();
 	}
 	else {
 		++tempBufferUsed;
-		vbo = ( GLuint )frameData[backendListNum].indexBuffer.GetAPIObject();
+		vbo = frameData[backendListNum].indexBuffer.GetAPIObject();
 	}
 	if( vbo != currentIndexBuffer ) {
 		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
@@ -149,12 +134,18 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 }
 
 void idVertexCache::UnbindIndex() {
-	qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
-	currentIndexBuffer = 0;
+	if( currentIndexBuffer != 0 ) {
+		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		currentIndexBuffer = 0;
+	}
 }
 
 
 //================================================================================
+
+geoBufferSet_t::geoBufferSet_t( GLenum usage ) : indexBuffer(GL_ELEMENT_ARRAY_BUFFER_ARB, usage), vertexBuffer(GL_ARRAY_BUFFER_ARB, usage) {}
+
+idVertexCache::idVertexCache() : staticData(GL_STATIC_DRAW_ARB) {}
 
 /*
 ===========
@@ -219,10 +210,6 @@ void idVertexCache::EndFrame() {
 	currentFrame++;
 	backendListNum = listNum;
 	listNum = (listNum + 1) % VERTCACHE_NUM_FRAMES;
-	staticAllocThisFrame = 0;
-	staticCountThisFrame = 0;
-	dynamicAllocThisFrame = 0;
-	dynamicCountThisFrame = 0;
 	tempBufferUsed = 0;
 	staticBufferUsed = 0;
 
@@ -232,8 +219,6 @@ void idVertexCache::EndFrame() {
 	staticData.indexMapOffset = staticData.indexMemUsed;
 	staticData.vertexMapOffset = staticData.vertexMemUsed;
 
-	// unbind vertex buffers so normal virtual memory will be used in case
-	// r_useVertexBuffers / r_useIndexBuffers
 	qglBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
 	qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 	currentVertexBuffer = 0;

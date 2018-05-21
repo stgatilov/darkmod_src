@@ -17,6 +17,9 @@ $Author$ (Author of last commit)
 
 ******************************************************************************/
 
+#ifndef __VERTEXCACHE_H__
+#define __VERTEXCACHE_H__
+
 #include "BufferObject.h"
 
 // vertex cache calls should only be made by the front end
@@ -48,8 +51,8 @@ enum cacheType_t {
 };
 
 struct geoBufferSet_t {
-	idIndexBuffer		indexBuffer;
-	idVertexBuffer		vertexBuffer;
+	BufferObject		indexBuffer;
+	BufferObject		vertexBuffer;
 	byte *				mappedVertexBase;
 	byte *				mappedIndexBase;
 	std::atomic<int>	indexMemUsed;
@@ -57,10 +60,14 @@ struct geoBufferSet_t {
 	int					allocations;	// number of index and vertex allocations combined
 	int					vertexMapOffset;
 	int					indexMapOffset;
+
+	geoBufferSet_t( GLenum usage = GL_DYNAMIC_DRAW_ARB );
 };
 
 class idVertexCache {
 public:
+	idVertexCache();
+
 	void			Init();
 	void			Shutdown();
 
@@ -72,8 +79,7 @@ public:
 	void *			VertexPosition( vertCacheHandle_t handle );
 	void *			IndexPosition( vertCacheHandle_t handle );
 
-	// if r_useIndexBuffers is enabled, but you need to draw something without
-	// an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
+	// if you need to draw something without an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
 	void			UnbindIndex();
 
 	// updates the counter for determining which temp space to use
@@ -126,14 +132,6 @@ private:
 	static idCVar	r_showVertexCache;
 	static idCVar	r_vertexBufferMegs;
 
-	int				staticCountTotal;
-	int				staticAllocTotal;		// for end of frame purging
-
-	int				staticAllocThisFrame;	// debug counter
-	int				staticCountThisFrame;
-	int				dynamicAllocThisFrame;
-	int				dynamicCountThisFrame;
-
 	int				currentFrame;			// for purgable block tracking
 	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
 	int				backendListNum;
@@ -144,10 +142,6 @@ private:
 	GLuint			currentVertexBuffer;
 	GLuint			currentIndexBuffer;
 
-	// High water marks for the per-frame buffers
-	int				mostUsedVertex;
-	int				mostUsedIndex;
-
 	int				staticBufferUsed;
 	int				tempBufferUsed;
 
@@ -155,4 +149,6 @@ private:
 	vertCacheHandle_t ActuallyAlloc( geoBufferSet_t & vcs, const void * data, int bytes, cacheType_t type );
 };
 
-extern	idVertexCache	vertexCache;
+extern idVertexCache vertexCache;
+
+#endif

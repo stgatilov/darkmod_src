@@ -35,7 +35,6 @@ Window win = 0;
 bool dga_found = false;
 
 static GLXContext ctx = NULL;
-static GLXContext frontendCtx = NULL;
 
 static bool vidmode_ext = false;
 static int vidmode_MajorVersion = 0, vidmode_MinorVersion = 0;	// major and minor of XF86VidExtensions
@@ -86,17 +85,6 @@ void GLimp_ActivateContext() {
 void GLimp_DeactivateContext() {
 	assert( dpy );
 	qglXMakeCurrent( dpy, None, NULL );
-}
-
-void GLimp_ActivateFrontendContext() {
-    assert( dpy );
-    assert( frontendCtx );
-    qglXMakeCurrent( dpy, win, frontendCtx );
-}
-
-void GLimp_DeactivateFrontendContext() {
-    assert( dpy );
-    qglXMakeCurrent( dpy, None, NULL );
 }
 
 /*
@@ -185,7 +173,6 @@ void GLimp_Shutdown() {
 	
 		GLimp_RestoreGamma();
 
-        qglXDestroyContext( dpy, frontendCtx );
 		qglXDestroyContext( dpy, ctx );
 
 #if !defined( ID_GL_HARDLINK )
@@ -518,7 +505,6 @@ int GLX_Init(glimpParms_t a) {
 	XFlush(dpy);
 	XSync(dpy, False);
 	ctx = qglXCreateContext(dpy, visinfo, NULL, True);
-    frontendCtx = qglXCreateContext(dpy, visinfo, ctx, True);
 	XSync(dpy, False);
 
 	// Free the visinfo after we're done with it

@@ -1251,7 +1251,7 @@ void idInteraction::AddActiveInteraction( void ) {
 					// reference the original surface's ambient cache
 					lightTris->ambientCache = tri->ambientCache;
 
-					if ( !vertexCache.CacheIsCurrent(lightTris->indexCache) && r_useIndexBuffers.GetBool() ) {
+					if ( !vertexCache.CacheIsCurrent(lightTris->indexCache) ) {
 						lightTris->indexCache = vertexCache.AllocIndex( lightTris->indexes, ALIGN( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
 					}
 					
@@ -1326,7 +1326,7 @@ void idInteraction::AddActiveInteraction( void ) {
 				}
 			}
 
-			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) && r_useIndexBuffers.GetBool() ) {
+			if ( !vertexCache.CacheIsCurrent( shadowTris->indexCache ) ) {
 				shadowTris->indexCache = vertexCache.AllocIndex( shadowTris->indexes, ALIGN( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), INDEX_CACHE_ALIGN ) );
 			}
 
