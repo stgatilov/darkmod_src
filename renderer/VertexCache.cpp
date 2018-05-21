@@ -61,6 +61,7 @@ static void MapGeoBufferSet( geoBufferSet_t &gbs ) {
 UnmapGeoBufferSet
 ==============
 */
+
 static void UnmapGeoBufferSet( geoBufferSet_t &gbs ) {
 	if( gbs.mappedVertexBase != NULL ) {
 		gbs.vertexBuffer.FlushBuffer( 0, gbs.vertexMemUsed - gbs.vertexMapOffset );
@@ -207,14 +208,8 @@ idVertexCache::EndFrame
 void idVertexCache::EndFrame() {
 	// display debug information
 	if ( r_showVertexCache.GetBool() ) {
-		common->Printf( "used temp buffers: %d - used static buffers: %d\n", tempBufferUsed, staticBufferUsed );
-
-		// TODO: replace with more meaningful output from the BufferObjects
-		/*common->Printf( "vertex dynamic:%i=%ik, static alloc:%i=%ik used:%i=%ik total:%i=%ik\n",
-			dynamicCountThisFrame, dynamicAllocThisFrame / 1024,
-			staticCountThisFrame, staticAllocThisFrame / 1024,
-			staticUseCount, staticUseSize / 1024,
-			staticCountTotal, staticAllocTotal / 1024 );*/
+		common->Printf( "(backend) used temp buffers: %d - used static buffers: %d\n", tempBufferUsed, staticBufferUsed );
+		common->Printf( "(frontend) temp vertex alloc: %d kB - temp index alloc: %d kB - static vertex alloc: %d kB - static index alloc: %d kB\n", frameData[listNum].vertexMemUsed / 1024, frameData[listNum].indexMemUsed / 1024, staticData.vertexMemUsed / 1024, staticData.indexMemUsed / 1024 );
 	}
 
 	// unmap the current frame so the GPU can read it

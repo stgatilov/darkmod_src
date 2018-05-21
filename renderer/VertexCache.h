@@ -21,17 +21,11 @@ $Author$ (Author of last commit)
 
 // vertex cache calls should only be made by the front end
 
-#define NUM_VERTEX_FRAMES			2
-#define FRAME_MEMORY_BYTES			0x200000 // frame size
-#define EXPAND_HEADERS				1024
+const int VERTCACHE_INDEX_MEMORY_PER_FRAME = 24 * 1024 * 1024;
+const int VERTCACHE_VERTEX_MEMORY_PER_FRAME = 24 * 1024 * 1024;
 
-const int VERTCACHE_INDEX_MEMORY_PER_FRAME = 16 * 1024 * 1024;
-const int VERTCACHE_VERTEX_MEMORY_PER_FRAME = 16 * 1024 * 1024;
-
-// there are a lot more static indexes than vertexes, because interactions are just new
-// index lists that reference existing vertexes
-const int STATIC_INDEX_MEMORY = 31 * 1024 * 1024;
-const int STATIC_VERTEX_MEMORY = 31 * 1024 * 1024;	// make sure it fits in VERTCACHE_OFFSET_MASK!
+const int STATIC_INDEX_MEMORY = 48 * 1024 * 1024;
+const int STATIC_VERTEX_MEMORY = 48 * 1024 * 1024;	// make sure it fits in VERTCACHE_OFFSET_MASK!
 
 const int VERTCACHE_NUM_FRAMES = 2;
 
@@ -39,9 +33,9 @@ const int VERTCACHE_STATIC = 1;					// in the static set, not the per-frame set
 const int VERTCACHE_SIZE_SHIFT = 1;
 const int VERTCACHE_SIZE_MASK = 0x7fffff;		// 8 megs 
 const int VERTCACHE_OFFSET_SHIFT = 24;
-const int VERTCACHE_OFFSET_MASK = 0x1ffffff;	// 32 megs 
-const int VERTCACHE_FRAME_SHIFT = 49;
-const int VERTCACHE_FRAME_MASK = 0x7fff;		// 15 bits = 32k frames to wrap around
+const int VERTCACHE_OFFSET_MASK = 0x3ffffff;	// 64 megs 
+const int VERTCACHE_FRAME_SHIFT = 50;
+const int VERTCACHE_FRAME_MASK = 0x3fff;		// 14 bits = 16k frames to wrap around
 
 const int VERTEX_CACHE_ALIGN = 32;
 const int INDEX_CACHE_ALIGN = 16;
@@ -87,9 +81,6 @@ public:
 	// Also prints debugging info when enabled
 	void			EndFrame();
 
-	// listVertexCache calls this
-	void			List();
-
 	// this data is only valid for one frame of rendering
 	vertCacheHandle_t AllocVertex( const void * data, int bytes ) {
 		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_VERTEX );
@@ -110,22 +101,6 @@ public:
 			common->FatalError( "AllocStaticIndex failed, increase STATIC_INDEX_MEMORY" );
 		}
 		return ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
-	}
-
-	byte *			  MappedVertexBuffer( vertCacheHandle_t handle ) {
-		assert( !CacheIsStatic( handle ) );
-		const uint64 offset = ( int )( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
-		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
-		assert( frameNum == ( currentFrame & VERTCACHE_FRAME_MASK ) );
-		return frameData[listNum].mappedVertexBase + offset;
-	}
-
-	byte *			  MappedIndexBuffer( vertCacheHandle_t handle ) {
-		assert( !CacheIsStatic( handle ) );
-		const uint64 offset = ( int )( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK;
-		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
-		assert( frameNum == ( currentFrame & VERTCACHE_FRAME_MASK ) );
-		return frameData[listNum].mappedIndexBase + offset;
 	}
 
 	// Returns false if it's been purged
