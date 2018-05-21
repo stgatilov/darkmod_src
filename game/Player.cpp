@@ -32,6 +32,7 @@
 #include "Inventory/Inventory.h"
 #include "Inventory/WeaponItem.h"
 #include "Shop/Shop.h"
+#include <numeric>
 
 /*
 ===============================================================================
@@ -3285,13 +3286,6 @@ void idPlayer::DrawHUD(idUserInterface *_hud)
 		}
 	}
 #endif
-
-	// Only use this if the old lightgem is selected. This may be usefull for
-	// slower machines.
-	if (cv_lg_weak.GetBool())
-	{
-		CalculateWeakLightgem();
-	}
 
 	// J.C.Denton Start
 	float fFadeDelay = Max(0.0001f, cv_lg_fade_delay.GetFloat() );		// Avoid divide by zero errors. 
@@ -9893,85 +9887,62 @@ bool idPlayer::NeedsIcon( void ) {
 
 int idPlayer::ProcessLightgem(bool processing)
 {
-	float fValue = m_fColVal;
-
-	int n = cv_lg_interleave.GetInteger();
-	
-	// nbohr1more #4369 Dynamic Lightgem Interleave
-	
-	int r = Max(1, cv_lg_interleave_min.GetInteger());
-	
-	static unsigned int t, frameTime, index, total, y, previous, previousTimes[FPS_FRAMES];
-	
-	t = gameLocal.time;
-	frameTime = t - previous;
-	previous = t;
-	
-	previousTimes[index % FPS_FRAMES] = frameTime;
-	index++;
-
-	// average multiple frames together to smooth changes out a bit
-	total = previousTimes[0] + previousTimes[1] + previousTimes[2] + (previousTimes[3] * 2) + ( previousTimes[4] * 3) + 1;
-	y  = (1000 * (FPS_FRAMES + 3) ) / total;
-	
-	// gameLocal.Printf ( " lg_fps %i\n", y );
-
-	
-    if ( cv_lg_interleave.GetInteger() > 0)
-    {	
-		if ( static_cast<int>(y) > r) // grayman - remove compiler warning
-		{
-			// gameLocal.Printf ( "Begin Dynamic lg_interleave" );
-			n = cv_lg_interleave.GetInteger();
-		}
-		else
-		{
-			// gameLocal.Printf ( "Below lg_interleave threshold" );
-			n = 1;
-		}
+	if( !processing || cv_lg_interleave.GetInteger() <= 0 ) {
+		return m_LightgemValue;
 	}
 
-	// Skip every nth frame according to the value set in 
-	if (processing && !cv_lg_weak.GetBool() && n > 0)
-	{
-		m_LightgemInterleave++;
+	// nbohr1more #4369 Dynamic Lightgem Interleave - determine if we should draw lightgem this frame
+	static int previousTime, previousTimes[FPS_FRAMES];
 
-		if (m_LightgemInterleave >= n)
-		{
-			m_LightgemInterleave = 0;
-			fValue = gameLocal.CalcLightgem(this);
+	// determine current fps rate	
+	int currentTime = gameLocal.time;
+	int frameTime = currentTime - previousTime;
+	previousTime = currentTime;
+	// average over the last few frames to smooth changes out a bit
+	for( int i = 1; i < FPS_FRAMES; ++i ) {
+		previousTimes[i - 1] = previousTimes[i];
+	}
+	previousTimes[FPS_FRAMES - 1] = frameTime;
+	int total = std::accumulate( previousTimes, previousTimes + FPS_FRAMES, 1 ) + previousTimes[FPS_FRAMES - 2] + 2 * previousTimes[FPS_FRAMES - 1];
+	int averageFps  = (1000 * (FPS_FRAMES + 3) ) / total;
+	
+	int minInterleaveFps = Max( 1, cv_lg_interleave_min.GetInteger() );
+	int interleaveFrames = ( averageFps >= minInterleaveFps ) ? cv_lg_interleave.GetInteger() : 1;
+
+	// Skip frames according to the value set in cv_lg_interleave
+	m_LightgemInterleave++;
+	if (m_LightgemInterleave >= interleaveFrames) {
+		m_LightgemInterleave = 0;
+		float value;
+		if( cv_lg_weak.GetBool() ) {
+			value = CalculateWeakLightgem();
+		} else {
+			value = gameLocal.CalcLightgem( this );
 		}
+		DM_LOG( LC_LIGHT, LT_DEBUG )LOGSTRING( "Averaged colorvalue total: %f\r", value );
+
+		value += cv_lg_adjust.GetFloat();
+		DM_LOG( LC_LIGHT, LT_DEBUG )LOGSTRING( "Adjustment %f\r", cv_lg_adjust.GetFloat() );
+
+		// Tels: #2324 Water should decrease visibility
+		// Subtract the adjustment value from the water body we are in so we can
+		// have clear water, murky water etc.
+		if( physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD )	{
+			float murkiness = physicsObj.GetWaterMurkiness();
+			value -= murkiness;
+		}
+
+		// Give the inventory items a chance to adjust the lightgem (fire arrow, crouching)
+		m_LightgemValue = GetLightgemModifier( int( DARKMOD_LG_MAX * value ) );
+
+		DM_LOG( LC_LIGHT, LT_DEBUG )LOGSTRING( "After player adjustment %d\r", m_LightgemValue );
 	}
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Averaged colorvalue total: %f\r", fValue);
-
-	fValue += cv_lg_adjust.GetFloat();
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("Adjustment %f\r", cv_lg_adjust.GetFloat());
-
-	// Tels: #2324 Water should decrease visibility
-	// Subtract the adjustment value from the water body we are in so we can
-	// have clear water, murky water etc.
-	if (physicsObj.GetWaterLevel() >= WATERLEVEL_HEAD)
-	{
-		float murkiness = physicsObj.GetWaterMurkiness();
-		fValue -= murkiness;
-		// gameLocal.Printf( "Water murkiness %0.2f, final value: %0.2f\n", murkiness, value);
-	}
-
-	m_fColVal = fValue;
-	m_LightgemValue = int(DARKMOD_LG_MAX * fValue);
-
-	// Give the inventory items a chance to adjust the lightgem (fire arrow, crouching)
-	m_LightgemValue = GetLightgemModifier(m_LightgemValue);
-
-	DM_LOG(LC_LIGHT, LT_DEBUG)LOGSTRING("After player adjustment %d\r", m_LightgemValue);
 
 	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
-
 	return m_LightgemValue;
 }
 
-void idPlayer::CalculateWeakLightgem()
+float idPlayer::CalculateWeakLightgem()
 {
 	double fx, fy;
 	idLight *helper;
@@ -10109,17 +10080,12 @@ void idPlayer::CalculateWeakLightgem()
 		}
 	}
 
-	m_LightgemValue = static_cast<int>(DARKMOD_LG_MAX * fLightgemVal);
-
-	// Clamp the result to [DARKMOD_LG_MIN .. DARKMOD_LG_MAX]
-	m_LightgemValue = idMath::ClampInt(DARKMOD_LG_MIN, DARKMOD_LG_MAX, m_LightgemValue);
-
 	// if the player is in a lit area and the lightgem would be totally dark we set it to at least
 	// one step higher.
-	if (bMinOneLight && m_LightgemValue <= DARKMOD_LG_MIN)
-	{
-		m_LightgemValue++;
+	if( bMinOneLight && fLightgemVal <= DARKMOD_LG_FRACTION )	{
+		fLightgemVal = 2 * DARKMOD_LG_FRACTION;
 	}
+	return (float) fLightgemVal;
 }
 
 int idPlayer::AddLight(idLight *light)

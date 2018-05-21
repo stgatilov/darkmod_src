@@ -842,7 +842,7 @@ public:
 	 * CalculateWeakLightgem (formerly AdjustLightgem) will do the "weak" 
 	 * lightgem calculation, based on a list of lights, not using the rendershot.
 	 */
-	void	CalculateWeakLightgem();
+	float	CalculateWeakLightgem();
 
 	// Register/unregister a light for the weak lightgem calculation
 	int		AddLight(idLight* lightToAdd);
