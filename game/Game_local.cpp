@@ -3504,15 +3504,6 @@ gameReturn_t idGameLocal::RunFrame( const usercmd_t *clientCmds ) {
 				}
 			}
 
-			// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
-			if (m_TriggerFinalSave)
-			{
-				m_TriggerFinalSave = false;
-
-				idStr savegameName = va("Mission %d Final Save", m_MissionManager->GetCurrentMissionIndex() + 1);
-				cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("savegame '%s'", savegameName.c_str()));
-			}
-
 			// see if a target_sessionCommand has forced a changelevel
 			if ( sessionCommand.Length() ) {
 				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );

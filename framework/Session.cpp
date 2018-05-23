@@ -19,6 +19,7 @@
 #include "Session_local.h"
 #include "../renderer/tr_local.h"
 #include "../renderer/FrameBuffer.h"
+#include "../game/Missions/MissionManager.h"
 
 idCVar	idSessionLocal::com_showAngles( "com_showAngles", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
 idCVar	idSessionLocal::com_minTics( "com_minTics", "1", CVAR_SYSTEM, "" );
@@ -2986,6 +2987,13 @@ void idSessionLocal::RunGameTic() {
 			SetGUI(guiRestartMenu, NULL);
 		} else if ( !idStr::Icmp( args.Argv(0), "disconnect" ) ) {
 			cmdSystem->BufferCommandText( CMD_EXEC_INSERT, "stoprecording ; disconnect" );
+			// Check for final save trigger - the player PVS is freed at this point, so we can go ahead and save the game
+			if( gameLocal.m_TriggerFinalSave ) {
+				gameLocal.m_TriggerFinalSave = false;
+
+				idStr savegameName = va( "Mission %d Final Save", gameLocal.m_MissionManager->GetCurrentMissionIndex() + 1 );
+				cmdSystem->BufferCommandText( CMD_EXEC_INSERT, va( "savegame '%s'", savegameName.c_str() ) );
+			}
 		}
 	}
 }
