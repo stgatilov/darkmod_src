@@ -369,8 +369,9 @@ exe_name = 'thedarkmod.' + ('x64' if TARGET_ARCH == 'x64' else cpu)
 # It copies executable into ../darkmod, which is default location of darkmod installation in development environment
 InstallAs( '../darkmod/' + exe_name, thedarkmod )
 # this runs always and produces TDM binary in local directory
-InstallAs( '#' + exe_name, thedarkmod )
 if ( BUILD == 'release' ):	# strip debug info in release
 	Command(exe_name, thedarkmod, "strip $SOURCE -o $TARGET")
+else:
+	InstallAs( '#' + exe_name, thedarkmod )
 
 # end targets ------------------------------------
