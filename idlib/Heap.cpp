@@ -20,14 +20,10 @@
 
 
 #ifndef USE_LIBC_MALLOC
-#if UINTPTR_MAX == UINT64_MAX
 	//stgatilov: idHeap seems to increase memory usage
 	//it was removed from Doom 3 BFG, and most likely it is worse than the now-default LFH
+	//besides, using standard heap makes it easier to analyze crash dumps and integrate heap profiling applications
 	#define USE_LIBC_MALLOC		1
-#else
-	//TODO: remove idHeap in 32-bit case too
-	#define USE_LIBC_MALLOC		1
-#endif
 #endif
 
 #ifndef CRASH_ON_STATIC_ALLOCATION
