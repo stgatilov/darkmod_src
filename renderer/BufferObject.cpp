@@ -122,7 +122,6 @@ AllocBufferObject
 */
 void BufferObject::AllocBufferObject( int allocSize ) {
 	assert( bufferObject == 0 );
-	assert_16_byte_aligned( data );
 
 	if( allocSize <= 0 ) {
 		idLib::Error( "BufferObject::AllocBufferObject: allocSize = %i", allocSize );
