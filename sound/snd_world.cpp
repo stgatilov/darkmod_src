@@ -2047,6 +2047,14 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				if ( finishedbuffers ) {
 					alSourceQueueBuffers( chan->openalSource, finishedbuffers, &buffers[0] );
 				}
+
+				// #4803 stgatilov: avoid offset overflow (which causes crash)
+				if (chan->openalStreamingOffset * sample->objectInfo.nChannels > INT_MAX - (1<<20)) {
+					//simply restart this sound (happens after 6.75 hours of repetition)
+					chan->trigger44kHzTime = current44kHz;
+					chan->openalStreamingOffset = 0;
+					common->Warning("Restarted sound to avoid offset overflow: %s", chan->leadinSample->name.c_str());
+				}
 			}
 			
 			// (re)start if needed..
