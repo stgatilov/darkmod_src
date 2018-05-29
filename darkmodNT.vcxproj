@@ -727,6 +727,7 @@
     <ClInclude Include="idlib\svnversion.h" />
     <ClInclude Include="idlib\Timer.h" />
     <ClInclude Include="idlib\Token.h" />
+    <ClInclude Include="renderer\BufferObject.h" />
     <ClInclude Include="renderer\Cinematic.h" />
     <ClInclude Include="renderer\CinematicFFMpeg.h" />
     <ClInclude Include="renderer\CinematicID.h" />
@@ -1173,6 +1174,7 @@
     <ClCompile Include="idlib\Str.cpp" />
     <ClCompile Include="idlib\Timer.cpp" />
     <ClCompile Include="idlib\Token.cpp" />
+    <ClCompile Include="renderer\BufferObject.cpp" />
     <ClCompile Include="renderer\Cinematic.cpp" />
     <ClCompile Include="renderer\CinematicFFMpeg.cpp" />
     <ClCompile Include="renderer\CinematicID.cpp" />
