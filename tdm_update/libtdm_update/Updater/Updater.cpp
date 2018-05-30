@@ -1667,8 +1667,27 @@ void Updater::InstallVCRedist()
 	};
 	//note: we need both 32-bit and 64-bit packages on 64-bit OS
 	for (int arch = 0; arch < (windowsIs64Bit ? 2 : 1); arch++) {
-		CHAR buffer[256];
+		CHAR buffer[256] = {0};
 		DWORD length = sizeof(buffer);
+
+		//query registry value (in WinXP-compatible way)
+		bool alreadyInstalled = false;
+		HKEY hkey = (HKEY)-1;
+		LSTATUS openErr = RegOpenKeyEx(HKEY_LOCAL_MACHINE, RegKeys[arch], 0, KEY_READ, &hkey);
+		if (ERROR_SUCCESS == openErr) {
+			DWORD type = (DWORD)-1;
+			LSTATUS queryErr = RegQueryValueEx(hkey, RegValue, NULL, &type, (BYTE*)buffer, &length);
+			if (ERROR_SUCCESS == queryErr && strncmp(buffer, CorrectVersion, strlen(CorrectVersion)) == 0)
+				alreadyInstalled = true;
+			RegCloseKey(hkey);
+		}
+		if (alreadyInstalled) {
+			TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(arch ? "64" : "32") + "-bit already installed.");
+			continue;
+		}
+
+		/*
+		//query registry value (requires at least Vista or XP 64-bit)
 		LSTATUS err = RegGetValue(
 			HKEY_LOCAL_MACHINE,
 			RegKeys[arch],
@@ -1681,7 +1700,7 @@ void Updater::InstallVCRedist()
 		if (err == ERROR_SUCCESS && strcmp(buffer, CorrectVersion) == 0) {
 			TraceLog::WriteLine(LOG_STANDARD, "VC redistributable " + std::string(arch ? "64" : "32") + "-bit already installed.");
 			continue;
-		}
+		}*/
 
 		//set redict installer path
 		fs::path redist_exe_path = GetTargetPath() / RedistFilename[arch];
@@ -1703,7 +1722,7 @@ void Updater::InstallVCRedist()
 
 		//wait for installer to complete (to avoid two installers simultaneously)
 		while (true) {
-			err = WaitForSingleObject(process.hProcess, 10000);
+			DWORD err = WaitForSingleObject(process.hProcess, 10000);
 			if (err == WAIT_FAILED)
 				ThrowWinApiError();
 			if (err != WAIT_TIMEOUT)
