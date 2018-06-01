@@ -905,6 +905,9 @@ void idRenderSystemLocal::CaptureRenderToImage( idImage &image ) {
 
 void idRenderSystemLocal::CaptureRenderToBuffer( unsigned char* buffer, bool usePbo )
 {
+	if( session->IsFrontend() ) {
+		common->Error( "CaptureRenderToBuffer called from frontend thread, not supported." );
+	}
 	if ( !glConfig.isInitialized )
 		return;
 
@@ -972,7 +975,10 @@ CaptureRenderToFile
 ==============
 */
 void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlpha ) {
-	if ( !glConfig.isInitialized ) 
+	if( session->IsFrontend() ) {
+		common->Error( "CaptureRenderToFile called from frontend thread, not supported." );
+	}
+	if( !glConfig.isInitialized )
 		return;
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
