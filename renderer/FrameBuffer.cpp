@@ -83,8 +83,14 @@ called when post-proceesing is about to start, needs pixels
 we need to copy render separately for water/smoke and then again for bloom
 */
 void FB_CopyColorBuffer() {
+	GL_SelectTexture( 0 );
 	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
+	}
+	if( !primaryOn ) {
+		globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
+			backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
+			backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
 	}
 }
 
