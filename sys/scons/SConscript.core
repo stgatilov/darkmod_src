@@ -25,6 +25,7 @@ Import( GLOBALS )
 Import( 'g_env_game' )
 
 renderer_string = ' \
+	BufferObject.cpp \
 	Cinematic.cpp \
 	CinematicID.cpp \
 	CinematicFFMpeg.cpp \
