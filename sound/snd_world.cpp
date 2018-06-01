@@ -19,6 +19,7 @@
 
 
 #include "snd_local.h"
+#include "limits.h"
 
 /*
 ==================
