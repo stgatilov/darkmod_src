@@ -412,7 +412,7 @@ static void	RB_SetBuffer( const void *data ) {
 
 	backEnd.frameCount = cmd->frameCount;
 
-	//if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
+	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
