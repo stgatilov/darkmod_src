@@ -392,8 +392,8 @@ void idSoundSample::CheckForDownSample( void ) {
 	}
 	soundCacheAllocator.Free( nonCacheData );
 	nonCacheData = (byte *)converted;
-	objectSize >>= 1;
-	objectMemSize >>= 1;
+	objectSize = shortSamples;
+	objectMemSize = shortSamples * sizeof( short );
 	objectInfo.nAvgBytesPerSec >>= 1;
 	objectInfo.nSamplesPerSec >>= 1;
 }
