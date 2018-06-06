@@ -25,9 +25,9 @@ $Author$ (Author of last commit)
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "65536", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 65535)" );
-idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 65535)" );
+idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 65535)" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary vertex memory, in kB (max 65535)" );
-idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 65535)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "20480", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 65535)" );
 
 idVertexCache		vertexCache;
 
@@ -200,8 +200,8 @@ the cached data isn't valid
 ===========
 */
 void idVertexCache::PurgeAll() {
-	Shutdown();
-	Init();
+	//Shutdown();
+	//Init();
 }
 
 /*
@@ -211,9 +211,16 @@ idVertexCache::Shutdown
 */
 void idVertexCache::Shutdown() {
 	for( int i = 0; i < VERTCACHE_NUM_FRAMES; ++i ) {
+		UnmapGeoBufferSet( frameData[i] );
+		ClearGeoBufferSet( frameData[i] );
 		frameData[i].vertexBuffer.FreeBufferObject();
 		frameData[i].indexBuffer.FreeBufferObject();
 	}
+
+	UnmapGeoBufferSet( staticData );
+	ClearGeoBufferSet( staticData );
+	staticData.vertexBuffer.FreeBufferObject();
+	staticData.indexBuffer.FreeBufferObject();
 }
 
 /*

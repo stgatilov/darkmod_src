@@ -1987,6 +1987,7 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		globalImages->PurgeAllImages();
 		// free the context and close the window
 		session->TerminateFrontendThread();
+		vertexCache.Shutdown();
 		GLimp_Shutdown();
 		glConfig.isInitialized = false;
 
