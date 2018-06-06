@@ -24,10 +24,10 @@ $Author$ (Author of last commit)
 #include "tr_local.h"
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
-idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "65536", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 65535)" );
-idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 65535)" );
-idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary vertex memory, in kB (max 65535)" );
-idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "20480", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 65535)" );
+idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "65535", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 131071)" );
+idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary vertex memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "20480", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 131071)" );
 
 idVertexCache		vertexCache;
 

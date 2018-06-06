@@ -30,9 +30,9 @@ const int VERTCACHE_STATIC = 1;					// in the static set, not the per-frame set
 const int VERTCACHE_SIZE_SHIFT = 1;
 const int VERTCACHE_SIZE_MASK = 0x7fffff;		// 8 megs 
 const int VERTCACHE_OFFSET_SHIFT = 24;
-const int VERTCACHE_OFFSET_MASK = 0x3ffffff;	// 64 megs 
-const int VERTCACHE_FRAME_SHIFT = 50;
-const int VERTCACHE_FRAME_MASK = 0x3fff;		// 14 bits = 16k frames to wrap around
+const int VERTCACHE_OFFSET_MASK = 0x7ffffff;	// 128 megs 
+const int VERTCACHE_FRAME_SHIFT = 51;
+const int VERTCACHE_FRAME_MASK = 0x1fff;		// 13 bits = 8k frames to wrap around
 
 const int VERTEX_CACHE_ALIGN = 32;
 const int INDEX_CACHE_ALIGN = 16;
