@@ -23,11 +23,13 @@ $Author$ (Author of last commit)
 
 #include "tr_local.h"
 
+const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK;
+
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
 idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "65535", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 131071)" );
 idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 131071)" );
-idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "12288", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary vertex memory, in kB (max 131071)" );
-idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "20480", CVAR_INTEGER | CVAR_RENDERER, "Amount of per-frame temporary index memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
+idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
 
 idVertexCache		vertexCache;
 
@@ -111,6 +113,16 @@ static void WaitForGeoBufferSet(geoBufferSet_t &gbs) {
 	gbs.bufferLock = 0;
 }
 
+static void FreeGeoBufferSet(geoBufferSet_t &gbs) {
+	gbs.vertexBuffer.FreeBufferObject();
+	gbs.indexBuffer.FreeBufferObject();
+}
+
+static void RecreateGeoBufferSet(geoBufferSet_t &gbs, int vertexBytes, int indexBytes) {
+	FreeGeoBufferSet( gbs );
+	AllocGeoBufferSet( gbs, vertexBytes, indexBytes );
+}
+
 /*
 ==============
 idVertexCache::VertexPosition
@@ -181,10 +193,15 @@ void idVertexCache::Init() {
 	listNum = 0;
 	backendListNum = 0;
 	currentFrame = 0;
+	currentIndexCacheSize = min( MAX_VERTCACHE_SIZE, r_frameIndexMemory.GetInteger() * 1024 );
+	currentVertexCacheSize = min( MAX_VERTCACHE_SIZE, r_frameVertexMemory.GetInteger() * 1024 );
+	if( currentIndexCacheSize <= 0 || currentVertexCacheSize <= 0 ) {
+		common->FatalError( "Dynamic vertex cache size is invalid. Please adjust r_frameIndexMemory and r_frameVertexMemory." );
+	}
 
 	// set up the dynamic frame memory
 	for( int i = 0; i < VERTCACHE_NUM_FRAMES; ++i ) {
-		AllocGeoBufferSet( frameData[i], r_frameVertexMemory.GetInteger() * 1024, r_frameIndexMemory.GetInteger() * 1024 );
+		AllocGeoBufferSet( frameData[i], currentVertexCacheSize, currentIndexCacheSize );
 	}
 	AllocGeoBufferSet( staticData, r_staticVertexMemory.GetInteger() * 1024, r_staticIndexMemory.GetInteger() * 1024 );
 
@@ -239,6 +256,22 @@ void idVertexCache::EndFrame() {
 	UnmapGeoBufferSet( frameData[listNum] );
 	UnmapGeoBufferSet( staticData );
 
+	// check if we need to increase the buffer size
+	if( frameData[listNum].indexMemUsed > currentIndexCacheSize ) {
+		common->Printf( "Exceeded index cache size (%d kb), resizing...\n", currentIndexCacheSize / 1024 );
+		while( currentIndexCacheSize < MAX_VERTCACHE_SIZE && currentIndexCacheSize < frameData[listNum].indexMemUsed ) {
+			currentIndexCacheSize = min( MAX_VERTCACHE_SIZE, currentIndexCacheSize * 2 );
+		}
+		common->Printf( "New index cache size: %d kb\n", currentIndexCacheSize / 1024 );
+	}
+	if( frameData[listNum].vertexMemUsed > currentVertexCacheSize ) {
+		common->Printf( "Exceeded vertex cache size (%d kb), resizing...\n", currentVertexCacheSize / 1024 );
+		while( currentVertexCacheSize < MAX_VERTCACHE_SIZE && currentVertexCacheSize < frameData[listNum].vertexMemUsed ) {
+			currentVertexCacheSize = min( MAX_VERTCACHE_SIZE, currentVertexCacheSize * 2 );
+		}
+		common->Printf( "New vertex cache size: %d kb\n", currentVertexCacheSize / 1024 );
+	}
+
 	// ensure no GL draws are still active on the next buffer to write to
 	int nextListNum = (listNum + 1) % VERTCACHE_NUM_FRAMES;
 	if (glConfig.fenceSyncAvailable) {
@@ -248,11 +281,18 @@ void idVertexCache::EndFrame() {
 		// this is going to stall, but it probably doesn't matter on such old GPUs...
 		qglFinish();
 	}
+
 	currentFrame++;
 	backendListNum = listNum;
 	listNum = nextListNum;
 	tempBufferUsed = 0;
 	staticBufferUsed = 0;
+
+	// check if we need to resize current buffer set
+	if( frameData[listNum].vertexBuffer.GetSize() < currentVertexCacheSize || frameData[listNum].indexBuffer.GetSize() < currentIndexCacheSize ) {
+		common->Printf( "Resizing current cache buffer set...\n" );
+		RecreateGeoBufferSet( frameData[listNum], currentVertexCacheSize, currentIndexCacheSize );
+	}
 
 	// prepare the next frame for writing to by the CPU
 	MapGeoBufferSet( frameData[listNum] );
@@ -288,7 +328,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		endPos = vcs.indexMemUsed += bytes;
 		mapOffset = vcs.indexMapOffset;
 		if( endPos > vcs.indexBuffer.GetAllocedSize() ) {
-			common->Warning( "Out of index cache" );
+			// out of index cache, will be resized next frame
 			return 0;
 		}
 	}
@@ -297,7 +337,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		endPos = vcs.vertexMemUsed += bytes;
 		mapOffset = vcs.vertexMapOffset;
 		if( endPos > vcs.vertexBuffer.GetAllocedSize() ) {
-			common->Warning( "Out of vertex cache" );
+			// out of vertex cache, will be resized next frame
 			return 0;
 		}
 	}
