@@ -1204,9 +1204,12 @@ bool RepackPK4(unzFile uf, const char *srcZipfile) {
 	SAFECALL(unzClose(uf), "Cannot close %s", srcZipfile);
 	SAFECALL(zipClose(zf, NULL), "Cannot finish %s", tempZipfile);
 
-	//replace the olf pk4 file
-	remove(srcZipfile);
-	SAFECALL(rename(tempZipfile, srcZipfile), "Cannot rename %s to %s", tempZipfile, srcZipfile);
+	//replace the old pk4 file
+	if (!fileSystem->CopyFile(tempZipfile, srcZipfile)) {
+		common->Warning("Cannot overwrite-copy %s to %s", tempZipfile, srcZipfile);
+		return false;
+	}
+	remove(tempZipfile);
 
 #undef SAFECALL
 	return true;
