@@ -236,7 +236,7 @@ public:
 	virtual int				GetReadCount( void ) { return readCount; }
 	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum );
 	virtual void			ClearDirCache( void );
-	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath );
+	virtual bool			CopyFile( const char *fromOSPath, const char *toOSPath );
 	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary );
 	virtual idFile *		MakeTemporaryFile( void );
 	virtual int				AddZipFile( const char *path );
@@ -309,7 +309,7 @@ private:
 	FILE *					OpenOSFile( const char *name, const char *mode, idStr *caseSensitiveName = NULL );
 	FILE *					OpenOSFileCorrectName( idStr &path, const char *mode );
 	int						DirectFileLength( FILE *o );
-	void					CopyFile( idFile *src, const char *toOSPath );
+	bool					CopyFile( idFile *src, const char *toOSPath );
 	int						AddUnique( const char *name, idStrList &list, idHashIndex &hashIndex ) const;
 	void					GetExtensionList( const char *extension, idStrList &extensionList ) const;
 	int						GetFileList( const char *relativePath, const idStrList &extensions, idStrList &list, idHashIndex &hashIndex, bool fullRelativePath, const char* gamedir = NULL );
@@ -564,14 +564,14 @@ idFileSystemLocal::CopyFile
 Copy a fully specified file from one place to another
 =================
 */
-void idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath ) {
+bool idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath ) {
 	FILE	*f;
 	byte	*buf;
 
 	common->Printf( "copy %s to %s\n", fromOSPath, toOSPath );
 	f = OpenOSFile( fromOSPath, "rb" );
 	if ( !f ) {
-		return;
+		return false;
 	}
 	fseek( f, 0, SEEK_END );
 	const int len = ftell( f );
@@ -588,13 +588,14 @@ void idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath )
 	if ( !f ) {
 		common->Printf( "could not create destination file\n" );
 		Mem_Free( buf );
-		return;
+		return false;
 	}
 	if ( fwrite( buf, 1, len, f ) != (unsigned int)len ) {
 		common->FatalError( "short write in idFileSystemLocal::CopyFile()\n" );
 	}
 	fclose( f );
 	Mem_Free( buf );
+	return true;
 }
 
 /*
@@ -602,7 +603,7 @@ void idFileSystemLocal::CopyFile( const char *fromOSPath, const char *toOSPath )
 idFileSystemLocal::CopyFile
 =================
 */
-void idFileSystemLocal::CopyFile( idFile *src, const char *toOSPath ) {
+bool idFileSystemLocal::CopyFile( idFile *src, const char *toOSPath ) {
 	FILE	*f;
 	byte	*buf;
 
@@ -621,13 +622,14 @@ void idFileSystemLocal::CopyFile( idFile *src, const char *toOSPath ) {
 	if ( !f ) {
 		common->Printf( "could not create destination file\n" );
 		Mem_Free( buf );
-		return;
+		return false;
 	}
 	if ( fwrite( buf, 1, len, f ) != (unsigned int)len ) {
 		common->FatalError( "Short write in idFileSystemLocal::CopyFile()\n" );
 	}
 	fclose( f );
 	Mem_Free( buf );
+	return true;
 }
 
 /*

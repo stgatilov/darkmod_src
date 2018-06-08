@@ -212,7 +212,7 @@ public:
 	virtual void			ClearDirCache( void ) = 0;
 
 							// don't use for large copies - allocates a single memory block for the copy
-	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath ) = 0;
+	virtual bool			CopyFile( const char *fromOSPath, const char *toOSPath ) = 0;
 
 							// lookup a relative path, return the size or 0 if not found
 	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isGamePak ) = 0;
