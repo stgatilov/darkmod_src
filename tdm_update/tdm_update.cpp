@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	}
 
 	TraceLog::WriteLine(LOG_STANDARD, 
-        (boost::format("TDM Updater v%s (c) 2009-2017 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION).str());
+        (boost::format("TDM Updater v%s/%d (c) 2009-2017 by tels & greebo. Part of The Dark Mod (http://www.thedarkmod.com).") % LIBTDM_UPDATE_VERSION % (sizeof(void*) * 8)).str());
 	TraceLog::WriteLine(LOG_STANDARD, "");
 
 	ConsoleUpdater updater(argc, argv);

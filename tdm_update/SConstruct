@@ -53,9 +53,13 @@ BUILD (default debug)
 	debug: -O -g
 	release: all optimisations, including CPU target etc.
 
+TARGET_ARCH (default: "x86")
+	Build for either x86 or x64 architecture.
+
 MACOSX_TARGET_ARCH (default 'i386')
 	The target architecture when building in Mac OS X.
 	valid values: 'ppc' or 'i386'. 
+	TODO (#4818): either remove this option or merge with TARGET_ARCH
 
 """
 
@@ -97,6 +101,7 @@ CXX = 'g++'
 JOBS = '1'
 BUILD = 'release'
 BASEFLAGS = ''
+TARGET_ARCH = 'x86'
 MACOSX_TARGET_ARCH = 'i386'
 
 # end default settings ---------------------------
@@ -107,6 +112,9 @@ for k in ARGUMENTS.keys():
 	exec_cmd = k + '=\'' + ARGUMENTS[k] + '\''
 	print 'Command line: ' + exec_cmd
 	exec( exec_cmd )
+
+if TARGET_ARCH == 'x32':
+	TARGET_ARCH = 'x86'
 
 # end command line settings ----------------------
 
@@ -156,9 +164,12 @@ CORECPPFLAGS.append( '-DXTHREADS' )
 BASECPPFLAGS.append( '-fmessage-length=0' )
 
 if ( g_os == 'Linux' or g_os == 'MacOSX' ):
-	# get the 64 bit machines on the distcc array to produce 32 bit binaries :)
-	BASECPPFLAGS.append( '-m32' )
-	BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x86' ):
+		BASECPPFLAGS.append( '-m32' )
+		BASELINKFLAGS.append( '-m32' )
+	if ( TARGET_ARCH == 'x64' ):
+		BASECPPFLAGS.append( '-m64' )
+		BASELINKFLAGS.append( '-m64' )
 
 	if g_os == 'Linux':
 		# help 64 bit machines to find the compatibility 32bit libraries
@@ -211,7 +222,7 @@ minizip_list = []
 libtdm_update_list = []
 
 # mark the globals
-GLOBALS = 'g_env g_os OPTCPPFLAGS minizip_list libtdm_update_list'
+GLOBALS = 'g_env g_os OPTCPPFLAGS minizip_list libtdm_update_list TARGET_ARCH'
 
 # end general configuration ----------------------
 

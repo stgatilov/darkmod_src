@@ -50,6 +50,15 @@ if g_os == 'MacOSX':
 		File('#/../macosx/boost/lib/libboost_system.a'),
 		File('#/../macosx/libcurl/libcurl.a')
 	])
+elif TARGET_ARCH == 'x64':
+	local_env.Append(LIBS = [
+		File('#/../linux/boost/lib64/libboost_filesystem.a'),
+		File('#/../linux/boost/lib64/libboost_program_options.a'),
+		File('#/../linux/boost/lib64/libboost_system.a'),
+		File('#/../linux/libcurl/lib64/libcurl.a'),
+		File('#/../linux/polarssl/lib64/libpolarssl.a'),
+		'rt',
+	])
 else:
 	local_env.Append(LIBS = [
 		File('#/../linux/boost/lib/libboost_filesystem.a'),
