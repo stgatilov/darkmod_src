@@ -806,15 +806,16 @@ void Updater::PerformDifferentialUpdateStep()
 	}
 
 #if WIN32
-	std::string tdmExecutableName = "TheDarkMod.exe";
+	const std::string tdmExecutableName[2] = {"TheDarkMod.exe", "TheDarkModx64.exe"};
 #else 
-	std::string tdmExecutableName = "thedarkmod.x86";
+	const std::string tdmExecutableName[2] = {"thedarkmod.x86", "thedarkmod.x64"};
 #endif
 
-	if (fs::exists(targetPath / tdmExecutableName))
-	{
+	for (int b = 0; b < 2; b++) {
+		auto executablePath = targetPath / tdmExecutableName[b];
 		// Set the executable bit on the TDM binary
-		File::MarkAsExecutable(targetPath / tdmExecutableName);
+		if (fs::exists(executablePath))
+			File::MarkAsExecutable(executablePath);
 	}
 
 	// Close the ZIP file before removing it
@@ -1238,14 +1239,6 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 
 	// tdm_update exists in its own PK4, so we can assume tdm_update and the TDM binaries will never be found in the same PK4.
 
-	bool TDMbinaryPresent = false; // grayman - true if this zip contains "TheDarkMod.exe" or "thedarkmod.x86"
-
-#ifdef WIN32
-	const std::string TDM_BINARY_NAME("TheDarkMod.exe");
-#else
-	const std::string TDM_BINARY_NAME("thedarkmod.x86");
-#endif
-
 	try
 	{
 		TraceLog::WriteLine(LOG_VERBOSE, "Extracting files from " + zipFilePath.string());
@@ -1255,13 +1248,6 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 		{
 			// Set the flag for later use
 			_updatingUpdater = true;
-		}
-
-		// Check if the archive contains the TDM binary
-		if (zipFile->ContainsFile(TDM_BINARY_NAME))
-		{
-			// Set the flag for later use
-			TDMbinaryPresent = true;
 		}
 
 		std::list<fs::path> extractedFiles;
@@ -1287,27 +1273,32 @@ void Updater::ExtractAndRemoveZip(const fs::path& zipFilePath)
 			// Prepare the update batch file
 			PrepareUpdateBatchFile(tempUpdater);
 		}
-		else if (TDMbinaryPresent)
+		else
 		{
-			// Update all files, but save the TDM binary; this will be handled separately
+			#if WIN32
+				const std::string tdmExecutableName[2] = {"TheDarkMod.exe", "TheDarkModx64.exe"};
+			#else 
+				const std::string tdmExecutableName[2] = {"thedarkmod.x86", "thedarkmod.x64"};
+			#endif
+
+			// Update all files, but save the TDM binaries; these will be handled separately
 			std::set<std::string> hardIgnoreList;
-			hardIgnoreList.insert(TDM_BINARY_NAME);
+			for (int b = 0; b < 2; b++)
+				hardIgnoreList.insert(tdmExecutableName[b]);
 
 			// Extract all but the TDM binary
 			// Ignore DoomConfig.cfg, etc. if already existing
 			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList, hardIgnoreList); 
 
-			// Extract the TDM binary
-			fs::path binaryFileName = destPath / TDM_BINARY_NAME;
-			zipFile->ExtractFileTo(TDM_BINARY_NAME, binaryFileName);
-
-			// Set the executable bit on the TDM binary
-			File::MarkAsExecutable(binaryFileName);
-		}
-		else
-		{
-			// Regular archive (without updater or TDM binary), extract all files, ignore existing DoomConfig.cfg
-			extractedFiles = zipFile->ExtractAllFilesTo(destPath, _ignoreList);
+			for (int b = 0; b < 2; b++) {
+				if (zipFile->ContainsFile(tdmExecutableName[b])) {
+					// Extract the TDM binary
+					fs::path binaryFileName = destPath / tdmExecutableName[b];
+					zipFile->ExtractFileTo(tdmExecutableName[b], binaryFileName);
+					// Set the executable bit on the TDM binary
+					File::MarkAsExecutable(tdmExecutableName[b]);
+				}
+			}
 		}
 
 		TraceLog::WriteLine(LOG_VERBOSE, "All files successfully extracted from " + zipFilePath.string());
