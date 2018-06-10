@@ -172,12 +172,14 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 
 	// catch normal maps first 
 	if ( minimumDepth == TD_BUMP ) {
-		if ( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() && glConfig.textureCompressionAvailable) {
-			return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		} else {
-			// we always need the alpha channel for bump maps for swizzling
-			return GL_RGBA8; 
+		if( globalImages->image_useCompression.GetBool() && globalImages->image_useNormalCompression.GetInteger() ) {
+			if( glConfig.textureCompressionRgtcAvailable && globalImages->image_useNormalCompression.GetInteger() > 1 )
+				return GL_COMPRESSED_RG_RGTC2;
+			if( glConfig.textureCompressionAvailable )
+				return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 		}
+		// we always need the alpha channel for bump maps for swizzling
+		return GL_RGBA8; 
 	}
 
 	// allow a complete override of image compression with a cvar
@@ -572,6 +574,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if (mipmapMode == 1) // duzenko #4401
 		qglTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	GL_CheckErrors();
 	if (mipmapMode == 2) // duzenko #4401
 		qglGenerateMipmap(GL_TEXTURE_2D);
 	if ( mipmapMode == 1 ) // duzenko #4401
@@ -656,55 +659,6 @@ void idImage::GenerateAttachment( int width, int height, textureFilter_t filter,
 		common->Error( "Unsupported format in GenerateAttachment\n" );
 	}
 }
-
-/*
-==================
-GenerateRenderTarget
-
-Stripped-down version of GenerateImage for generating textures to be used as color render targets.
-No mipmaps, no downsizing.
-Uses existing settings for width, height, intFormat, pixelDataFormat.
-intFormat and pixelDataFormat[0] & [1] correspond to the glTexImage2D parameters internalFormat, format, and type.
-No pixel data will be used to initialise the image, but you still need to specify compatible formats for all 3.
-==================
-
-void idImage::GenerateRendertarget() {
-	PurgeImage();
-
-	filter = TF_NEAREST;
-	allowDownSize = false;
-	repeat = TR_CLAMP_TO_BORDER;
-	depth = TD_HIGH_QUALITY;
-
-	// if we don't have a rendering context, just return after we
-	// have filled in the parms.  We must have the values set, or
-	// an image match from a shader before OpenGL starts would miss
-	// the generated texture
-	if ( !glConfig.isInitialized ) {
-		return;
-	}
-
-	// make sure it is a power of 2
-	if ( uploadWidth <= 0 || uploadHeight <= 0 || MakePowerOfTwo( uploadWidth ) != uploadWidth || MakePowerOfTwo( uploadHeight ) != uploadHeight ) 
-	{
-		common->Error( "idImage::GenerateRenderTarget: not a power of 2 image" );
-	}
-
-	// Ok to proceed
-	type = TT_2D;
-
-	qglGenTextures( 1, &texnum );
-	Bind();
-	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, uploadWidth, uploadHeight, 0, pixelDataFormat[0], pixelDataFormat[1], NULL );
-	
-		SetImageFilterAndRepeat();
-
-	// see if we messed anything up
-#ifdef _DEBUG
-	GL_CheckErrors();
-#endif
-} */ // ~SS
-
 
 /*
 ====================

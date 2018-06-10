@@ -51,7 +51,7 @@ idCVar idImageManager::image_colorMipLevels( "image_colorMipLevels", "0", CVAR_R
 idCVar idImageManager::image_preload( "image_preload", "1", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "if 0, dynamically load all images" );
 idCVar idImageManager::image_useCompression( "image_useCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "1 = load compressed (DDS) images, 0 = force everything to high quality. 0 does not work for TDM as all our textures are DDS." );
 idCVar idImageManager::image_useAllFormats( "image_useAllFormats", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "allow alpha/intensity/luminance/luminance+alpha" );
-idCVar idImageManager::image_useNormalCompression( "image_useNormalCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use rxgb compression for normal maps if available" );
+idCVar idImageManager::image_useNormalCompression( "image_useNormalCompression", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use rxgb compression for normal maps if available, 0 = no, 1 - GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, 2 = GL_COMPRESSED_RG_RGTC2" );
 idCVar idImageManager::image_usePrecompressedTextures( "image_usePrecompressedTextures", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "Use .dds files if present." );
 idCVar idImageManager::image_writePrecompressedTextures( "image_writePrecompressedTextures", "0", CVAR_RENDERER | CVAR_BOOL, "write .dds files if necessary" );
 idCVar idImageManager::image_writeNormalTGA( "image_writeNormalTGA", "0", CVAR_RENDERER | CVAR_BOOL, "write .tgas of the final normal maps for debugging" );
@@ -1024,14 +1024,19 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 	// FIXME - this probably isn't necessary... // Serp - this is a comment from the gpl release, check if it's really not needed
 	globalImages->ChangeTextureFilter();
 
-	bool	all = false;
+	bool	normalsOnly = false, force = false;
 	bool	checkPrecompressed = false;		// if we are doing this as a vid_restart, look for precompressed like normal
 
 	if ( args.Argc() == 2 ) {
 		if ( !idStr::Icmp( args.Argv(1), "all" ) ) {
-			all = true;
-		} else if ( !idStr::Icmp( args.Argv(1), "reload" ) ) {
-			all = true;
+			force = true;
+		}
+		else if ( !idStr::Icmp( args.Argv( 1 ), "bump" ) ) {
+			force = true;
+			normalsOnly = true;
+		}
+		else if ( !idStr::Icmp( args.Argv( 1 ), "reload" ) ) {
+			force = true;
 			checkPrecompressed = true;
 		} else {
 			common->Printf( "USAGE: reloadImages <all>\n" );
@@ -1041,7 +1046,9 @@ void R_ReloadImages_f( const idCmdArgs &args ) {
 
 	for ( int i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		image = globalImages->images[ i ];
-		image->Reload( checkPrecompressed, all );
+		if ( image->depth != TD_BUMP && normalsOnly )
+			continue;
+		image->Reload( checkPrecompressed, force );
 	}
 
 	if ( game ) {

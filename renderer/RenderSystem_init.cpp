@@ -451,6 +451,7 @@ static void R_CheckPortableExtensions( void ) {
 	} else {
 		glConfig.textureCompressionAvailable = false;
 	}
+	glConfig.textureCompressionRgtcAvailable = R_CheckExtension( "GL_ARB_texture_compression_rgtc" );
 
 	// GL_EXT_texture_filter_anisotropic
 	glConfig.anisotropicAvailable = R_CheckExtension( "GL_EXT_texture_filter_anisotropic" );
