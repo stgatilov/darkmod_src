@@ -120,7 +120,7 @@ BufferObject::~BufferObject() {
 AllocBufferObject
 ========================
 */
-void BufferObject::AllocBufferObject( int allocSize ) {
+void BufferObject::AllocBufferObject( int allocSize, const void *initialData ) {
 	assert( bufferObject == 0 );
 
 	if( allocSize <= 0 ) {
@@ -138,7 +138,7 @@ void BufferObject::AllocBufferObject( int allocSize ) {
 		common->FatalError( "BufferObject::AllocBufferObject: failed" );
 	}
 	qglBindBufferARB( bufferType, bufferObject );
-	qglBufferDataARB( bufferType, numBytes, nullptr, bufferUsage );
+	qglBufferDataARB( bufferType, numBytes, initialData, bufferUsage );
 
 	GLenum err = qglGetError();
 	if( err == GL_OUT_OF_MEMORY ) {

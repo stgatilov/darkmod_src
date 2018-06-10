@@ -78,6 +78,9 @@ public:
 	// Also prints debugging info when enabled
 	void			EndFrame();
 
+	// prepare a shadow buffer to fill the static cache during map load
+	void			PrepareStaticCacheForUpload();
+
 	// this data is only valid for one frame of rendering
 	vertCacheHandle_t AllocVertex( const void * data, int bytes ) {
 		return ActuallyAlloc( frameData[listNum], data, bytes, CACHE_VERTEX );
@@ -88,16 +91,22 @@ public:
 
 	// this data is valid until the next map load
 	vertCacheHandle_t AllocStaticVertex( const void *data, int bytes ) {
+		if( staticData.mappedVertexBase == nullptr ) {
+			common->Error( "AllocStaticVertex called, but static vertex cache is not ready for upload." );
+		}
 		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
 		if( handle == 0 ) {
-			common->FatalError( "AllocStaticVertex failed, increase r_staticVertexMemory" );
+			common->FatalError( "AllocStaticVertex failed, out of memory" );
 		}
 		return handle;
 	}
 	vertCacheHandle_t AllocStaticIndex( const void *data, int bytes ) {
+		if( staticData.mappedIndexBase == nullptr ) {
+			common->Error( "AllocStaticIndex called, but static index cache is not ready for upload." );
+		}
 		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
 		if( handle == 0 ) {
-			common->FatalError( "AllocStaticIndex failed, increase r_staticIndexMemory" );
+			common->FatalError( "AllocStaticIndex failed, out of memory" );
 		}
 		return handle;
 	}

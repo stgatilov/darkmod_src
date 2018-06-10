@@ -22,8 +22,6 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 const int MAX_VERTCACHE_SIZE = VERTCACHE_OFFSET_MASK;
 
 idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER | CVAR_RENDERER, "Show VertexCache usage statistics" );
-idCVar idVertexCache::r_staticVertexMemory( "r_staticVertexMemory", "65535", CVAR_INTEGER | CVAR_RENDERER, "Amount of static vertex memory, in kB (max 131071)" );
-idCVar idVertexCache::r_staticIndexMemory( "r_staticIndexMemory", "16384", CVAR_INTEGER | CVAR_RENDERER, "Amount of static index memory, in kB (max 131071)" );
 idCVar idVertexCache::r_frameVertexMemory( "r_frameVertexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary vertex memory, in kB (max 131071)" );
 idCVar idVertexCache::r_frameIndexMemory( "r_frameIndexMemory", "4096", CVAR_INTEGER | CVAR_RENDERER, "Initial amount of per-frame temporary index memory, in kB (max 131071)" );
 
@@ -119,6 +117,31 @@ static void RecreateGeoBufferSet(geoBufferSet_t &gbs, int vertexBytes, int index
 	AllocGeoBufferSet( gbs, vertexBytes, indexBytes );
 }
 
+static void PrepareStaticGeoBufferSet(geoBufferSet_t &gbs, int vertexBytes, int indexBytes) {
+	gbs.vertexBuffer.size = vertexBytes;
+	gbs.mappedVertexBase = ( byte* )Mem_Alloc16( gbs.vertexBuffer.GetAllocedSize() );
+	gbs.indexBuffer.size = indexBytes;
+	gbs.mappedIndexBase = ( byte* )Mem_Alloc16( gbs.indexBuffer.GetAllocedSize() );
+	gbs.bufferLock = 0;
+	ClearGeoBufferSet( gbs );
+}
+
+static void UploadStaticGeoBufferSet(geoBufferSet_t &gbs) {
+	if( gbs.mappedVertexBase != nullptr ) {
+		gbs.vertexBuffer.FreeBufferObject();
+		gbs.vertexBuffer.AllocBufferObject( gbs.vertexMemUsed, gbs.mappedVertexBase );
+		Mem_Free16( gbs.mappedVertexBase );
+		gbs.mappedVertexBase = nullptr;
+		common->Printf( "VertexCache static vertex buffer uploaded, memory used: %d kb\n", gbs.vertexBuffer.GetAllocedSize() / 1024 );
+	}
+	if( gbs.mappedIndexBase != nullptr ) {
+		gbs.indexBuffer.FreeBufferObject();
+		gbs.indexBuffer.AllocBufferObject( gbs.indexMemUsed, gbs.mappedIndexBase );
+		Mem_Free16( gbs.mappedIndexBase );
+		gbs.mappedIndexBase = 0;
+		common->Printf( "VertexCache static index buffer uploaded, memory used: %d kb\n", gbs.indexBuffer.GetAllocedSize() / 1024 );
+	}
+}
 /*
 ==============
 idVertexCache::VertexPosition
@@ -130,6 +153,9 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		vbo = 0;
 	} else if( CacheIsStatic( handle ) ) {
 		++staticBufferUsed;
+		if( staticData.mappedVertexBase != nullptr ) {
+			UploadStaticGeoBufferSet( staticData );
+		}
 		vbo = staticData.vertexBuffer.GetAPIObject();
 	} else {
 		++tempBufferUsed;
@@ -153,6 +179,9 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		vbo = 0;
 	} else if( CacheIsStatic( handle ) ) {
 		++staticBufferUsed;
+		if( staticData.mappedIndexBase != nullptr ) {
+			UploadStaticGeoBufferSet( staticData );
+		}
 		vbo = staticData.indexBuffer.GetAPIObject();
 	}
 	else {
@@ -199,7 +228,6 @@ void idVertexCache::Init() {
 	for( int i = 0; i < VERTCACHE_NUM_FRAMES; ++i ) {
 		AllocGeoBufferSet( frameData[i], currentVertexCacheSize, currentIndexCacheSize );
 	}
-	AllocGeoBufferSet( staticData, r_staticVertexMemory.GetInteger() * 1024, r_staticIndexMemory.GetInteger() * 1024 );
 
 	EndFrame();
 }
@@ -230,7 +258,6 @@ void idVertexCache::Shutdown() {
 		frameData[i].indexBuffer.FreeBufferObject();
 	}
 
-	UnmapGeoBufferSet( staticData );
 	ClearGeoBufferSet( staticData );
 	staticData.vertexBuffer.FreeBufferObject();
 	staticData.indexBuffer.FreeBufferObject();
@@ -250,7 +277,6 @@ void idVertexCache::EndFrame() {
 
 	// unmap the current frame so the GPU can read it
 	UnmapGeoBufferSet( frameData[listNum] );
-	UnmapGeoBufferSet( staticData );
 
 	// check if we need to increase the buffer size
 	if( frameData[listNum].indexMemUsed > currentIndexCacheSize ) {
@@ -302,6 +328,10 @@ void idVertexCache::EndFrame() {
 	currentIndexBuffer = 0;
 }
 
+void idVertexCache::PrepareStaticCacheForUpload() {
+	PrepareStaticGeoBufferSet( staticData, MAX_VERTCACHE_SIZE, MAX_VERTCACHE_SIZE );
+}
+
 /*
 ==============
 idVertexCache::ActuallyAlloc
@@ -348,7 +378,6 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 
 	// Actually perform the data transfer
 	if( data != NULL ) {
-		MapGeoBufferSet( vcs );
 		CopyBuffer( *base + offset - mapOffset, (byte*)data, bytes );
 	}
 
