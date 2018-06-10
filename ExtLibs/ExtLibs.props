@@ -8,11 +8,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>openal-soft-master\common;openal-soft-master\OpenAL32\Include;openal-soft-master\build;openal-soft-master\Alc;$(SolutionDir)/include/ffmpeg;$(SolutionDir)/lib/curl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>IL_STATIC_LIB;BUILDING_LIBCURL;MAKEDLL;AL_BUILD_LIBRARY;AL_ALEXT_PROTOTYPES;_LARGEFILE_SOURCE;_LARGE_FILES;restrict=;inline=__inline;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;strcasecmp=_stricmp;strncasecmp=_strnicmp;snprintf=_snprintf;OpenAL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>openal-soft-master\common;openal-soft-master\OpenAL32\Include;openal-soft-master\build;openal-soft-master\Alc;$(SolutionDir)/include/libpng;$(SolutionDir)/include/ffmpeg;$(SolutionDir)/lib/curl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_IL_BUILD_LIBRARY;BUILDING_LIBCURL;MAKEDLL;AL_BUILD_LIBRARY;AL_ALEXT_PROTOTYPES;_LARGEFILE_SOURCE;_LARGE_FILES;restrict=;inline=__inline;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;strcasecmp=_stricmp;strncasecmp=_strnicmp;OpenAL_EXPORTS;HAVE_STRUCT_TIMESPEC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>PolarSSL.lib;ZipLoader.lib;libpng.lib;DevIL.lib;libjpeg.lib;libavcodec.a;libavdevice.a;libavfilter.a;libavformat.a;libavutil.a;libswresample.a;libswscale.a;AdvAPI32.lib;ws2_32.lib;wldap32.lib;winmm.lib;Shell32.lib;oleaut32.lib;ole32.lib;User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DevIL.lib;PolarSSL.lib;ZipLoader.lib;charset.lib;iconv.lib;libavcodec.lib;libavdevice.lib;libavfilter.lib;libavformat.lib;libavutil.lib;libpostproc.lib;libswresample.lib;libswscale.lib;AdvAPI32.lib;ws2_32.lib;wldap32.lib;winmm.lib;Shell32.lib;oleaut32.lib;ole32.lib;User32.lib;Secur32.lib;legacy_stdio_definitions.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>

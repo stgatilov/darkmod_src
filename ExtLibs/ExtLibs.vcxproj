@@ -22,6 +22,7 @@
     <ProjectGuid>{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ExtLibs</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,7 +42,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>false</UseOfMfc>
@@ -438,6 +439,69 @@
     <ClCompile Include="..\lib\curl\warnless.c" />
     <ClCompile Include="..\lib\curl\wildcard.c" />
     <ClCompile Include="..\lib\curl\x509asn1.c" />
+    <ClCompile Include="..\lib\libjpeg\cdjpeg.c" />
+    <ClCompile Include="..\lib\libjpeg\jaricom.c" />
+    <ClCompile Include="..\lib\libjpeg\jcapimin.c" />
+    <ClCompile Include="..\lib\libjpeg\jcapistd.c" />
+    <ClCompile Include="..\lib\libjpeg\jcarith.c" />
+    <ClCompile Include="..\lib\libjpeg\jccoefct.c" />
+    <ClCompile Include="..\lib\libjpeg\jccolor.c" />
+    <ClCompile Include="..\lib\libjpeg\jcdctmgr.c" />
+    <ClCompile Include="..\lib\libjpeg\jchuff.c" />
+    <ClCompile Include="..\lib\libjpeg\jcinit.c" />
+    <ClCompile Include="..\lib\libjpeg\jcmainct.c" />
+    <ClCompile Include="..\lib\libjpeg\jcmarker.c" />
+    <ClCompile Include="..\lib\libjpeg\jcmaster.c" />
+    <ClCompile Include="..\lib\libjpeg\jcomapi.c" />
+    <ClCompile Include="..\lib\libjpeg\jcparam.c" />
+    <ClCompile Include="..\lib\libjpeg\jcprepct.c" />
+    <ClCompile Include="..\lib\libjpeg\jcsample.c" />
+    <ClCompile Include="..\lib\libjpeg\jctrans.c" />
+    <ClCompile Include="..\lib\libjpeg\jdapimin.c" />
+    <ClCompile Include="..\lib\libjpeg\jdapistd.c" />
+    <ClCompile Include="..\lib\libjpeg\jdarith.c" />
+    <ClCompile Include="..\lib\libjpeg\jdatadst.c" />
+    <ClCompile Include="..\lib\libjpeg\jdatasrc.c" />
+    <ClCompile Include="..\lib\libjpeg\jdcoefct.c" />
+    <ClCompile Include="..\lib\libjpeg\jdcolor.c" />
+    <ClCompile Include="..\lib\libjpeg\jddctmgr.c" />
+    <ClCompile Include="..\lib\libjpeg\jdhuff.c" />
+    <ClCompile Include="..\lib\libjpeg\jdinput.c" />
+    <ClCompile Include="..\lib\libjpeg\jdmainct.c" />
+    <ClCompile Include="..\lib\libjpeg\jdmarker.c" />
+    <ClCompile Include="..\lib\libjpeg\jdmaster.c" />
+    <ClCompile Include="..\lib\libjpeg\jdmerge.c" />
+    <ClCompile Include="..\lib\libjpeg\jdpostct.c" />
+    <ClCompile Include="..\lib\libjpeg\jdsample.c" />
+    <ClCompile Include="..\lib\libjpeg\jdtrans.c" />
+    <ClCompile Include="..\lib\libjpeg\jerror.c" />
+    <ClCompile Include="..\lib\libjpeg\jfdctflt.c" />
+    <ClCompile Include="..\lib\libjpeg\jfdctfst.c" />
+    <ClCompile Include="..\lib\libjpeg\jfdctint.c" />
+    <ClCompile Include="..\lib\libjpeg\jidctflt.c" />
+    <ClCompile Include="..\lib\libjpeg\jidctfst.c" />
+    <ClCompile Include="..\lib\libjpeg\jidctint.c" />
+    <ClCompile Include="..\lib\libjpeg\jmemmgr.c" />
+    <ClCompile Include="..\lib\libjpeg\jmemnobs.c" />
+    <ClCompile Include="..\lib\libjpeg\jquant1.c" />
+    <ClCompile Include="..\lib\libjpeg\jquant2.c" />
+    <ClCompile Include="..\lib\libjpeg\jutils.c" />
+    <ClCompile Include="..\lib\libjpeg\transupp.c" />
+    <ClCompile Include="..\lib\libpng\png.c" />
+    <ClCompile Include="..\lib\libpng\pngerror.c" />
+    <ClCompile Include="..\lib\libpng\pngget.c" />
+    <ClCompile Include="..\lib\libpng\pngmem.c" />
+    <ClCompile Include="..\lib\libpng\pngpread.c" />
+    <ClCompile Include="..\lib\libpng\pngread.c" />
+    <ClCompile Include="..\lib\libpng\pngrio.c" />
+    <ClCompile Include="..\lib\libpng\pngrtran.c" />
+    <ClCompile Include="..\lib\libpng\pngrutil.c" />
+    <ClCompile Include="..\lib\libpng\pngset.c" />
+    <ClCompile Include="..\lib\libpng\pngtrans.c" />
+    <ClCompile Include="..\lib\libpng\pngwio.c" />
+    <ClCompile Include="..\lib\libpng\pngwrite.c" />
+    <ClCompile Include="..\lib\libpng\pngwtran.c" />
+    <ClCompile Include="..\lib\libpng\pngwutil.c" />
     <ClCompile Include="..\sound\OggVorbis\oggsrc\bitwise.c" />
     <ClCompile Include="..\sound\OggVorbis\oggsrc\framing.c" />
     <ClCompile Include="..\sound\OggVorbis\vorbissrc\analysis.c" />

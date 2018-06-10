@@ -19,6 +19,8 @@
 
 #include "codec.h"
 
+#define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
+
 float glimit( const float val ) {
 	if (val<0) return 0;
 	if (val>255) return 255;
