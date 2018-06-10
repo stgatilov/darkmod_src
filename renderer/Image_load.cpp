@@ -562,7 +562,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	// one fragment program
 	// if the image is precompressed
 	// then it is loaded above and the swap never happens here
-	if ( depth == TD_BUMP ) {
+	if ( depth == TD_BUMP && (globalImages->image_useNormalCompression.GetInteger() < 2 || !glConfig.textureCompressionRgtcAvailable)  ) {
 		for ( int i = 0; i < scaled_width * scaled_height * 4; i += 4 ) {
 			scaledBuffer[ i + 3 ] = scaledBuffer[ i ];
 			scaledBuffer[ i ] = 0;

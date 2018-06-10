@@ -39,6 +39,7 @@ struct shadowMapProgram_t : lightProgram_t {
 
 struct interactionProgram_t : lightProgram_t {
 	GLint localViewOrigin;
+	GLint rgtc;
 		  
 	GLint lightProjectionS;
 	GLint lightProjectionT;
@@ -609,10 +610,13 @@ void interactionProgram_t::ChooseInteractionProgram() {
 void interactionProgram_t::Use() {
 	lightProgram_t::Use();
 	currrentInteractionShader = this;
+	qglUniform1f( rgtc, globalImages->image_useNormalCompression.GetInteger() == 2 && glConfig.textureCompressionRgtcAvailable ? 1 : 0 );
 }
 
 void interactionProgram_t::AfterLoad() {
 	lightProgram_t::AfterLoad();
+
+	rgtc = qglGetUniformLocation( program, "u_RGTC" );
 
 	localViewOrigin = qglGetUniformLocation( program, "u_viewOrigin" );
 	lightProjectionS = qglGetUniformLocation( program, "u_lightProjectionS" );
