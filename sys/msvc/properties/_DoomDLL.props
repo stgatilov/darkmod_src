@@ -14,7 +14,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>Shell32.lib;Gdi32.lib;Advapi32.lib;$(ExtLibsModule).lib;dbghelp.lib;dinput8.lib;dxguid.lib;glu32.lib;iphlpapi.lib;odbc32.lib;odbccp32.lib;opengl32.lib;winmm.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>openal\lib;sys\win32\dongle;$(SolutionDir)..\darkmod\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\darkmod\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalManifestDependencies>%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
       <SubSystem>Windows</SubSystem>
       <StackReserveSize>16777216</StackReserveSize>
