@@ -269,15 +269,15 @@ int main( int argc, char** argv ) {
 	generator = new idTypeInfoGen;
 
 	if ( argc > 1 ) {
-		sourcePath = idStr( "../"SOURCE_CODE_BASE_FOLDER"/" ) + argv[1];
+		sourcePath = idStr( "../" SOURCE_CODE_BASE_FOLDER "/" ) + argv[1];
 	} else {
-		sourcePath = "../"SOURCE_CODE_BASE_FOLDER"/game";
+		sourcePath = "../" SOURCE_CODE_BASE_FOLDER "/game";
 	}
 
 	if ( argc > 2 ) {
-		fileName = idStr( "../"SOURCE_CODE_BASE_FOLDER"/" ) + argv[2];
+		fileName = idStr( "../" SOURCE_CODE_BASE_FOLDER "/" ) + argv[2];
 	} else {
-		fileName = "../"SOURCE_CODE_BASE_FOLDER"/game/gamesys/GameTypeInfo.h";
+		fileName = "../" SOURCE_CODE_BASE_FOLDER "/game/gamesys/GameTypeInfo.h";
 	}
 
 	if ( argc > 3 ) {
