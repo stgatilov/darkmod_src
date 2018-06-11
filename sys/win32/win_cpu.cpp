@@ -23,6 +23,7 @@
 
 #if defined(_MSC_VER) && defined(_WIN64)
 #include <immintrin.h>
+#include <intrin.h>
 #endif
 
 /*

@@ -28,6 +28,9 @@
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
 //#include "Simd_AltiVec.h"
+#if defined(_MSC_VER) && defined(_WIN64)
+#include <intrin.h>
+#endif
 
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
