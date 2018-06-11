@@ -27,5 +27,8 @@
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(VC_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
 </Project>
