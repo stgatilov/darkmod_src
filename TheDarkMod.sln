@@ -21,6 +21,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DarkModTools", "engine.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExtLibs", "ExtLibs\ExtLibs.vcxproj", "{5F1A77C3-F94D-4C5F-B14B-03202CDFC317}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "natvis", "natvis", "{C9B22DDB-25E2-42DC-B156-79DBEF8434F5}"
+	ProjectSection(SolutionItems) = preProject
+		sys\msvc\natvis\game.natvis = sys\msvc\natvis\game.natvis
+		sys\msvc\natvis\idlib.natvis = sys\msvc\natvis\idlib.natvis
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug with inlines and memory log|Win32 = Debug with inlines and memory log|Win32
@@ -110,5 +116,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AC27665C-5C6D-417C-A49F-2C3B36DD0B3E}
 	EndGlobalSection
 EndGlobal
