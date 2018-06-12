@@ -13,6 +13,7 @@
       <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)/ExtLibs\openal-soft-master\include;$(SolutionDir)/include;$(SolutionDir)/include/zlib;$(SolutionDir)/include/devil;$(SolutionDir)/include/libjpeg;$(SolutionDir)/idlib;$(WindowsSDK_IncludePath);$(VC_IncludePath);$(UniversalCRT_IncludePath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MinimalRebuild>false</MinimalRebuild>
+      <DisableSpecificWarnings>4127;4458;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

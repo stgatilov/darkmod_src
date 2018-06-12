@@ -11,7 +11,6 @@
     <ClCompile>
       <PreprocessorDefinitions>__DOOM__;GAME_DLL;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)/game;$(SolutionDir)framework;;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>.\game\game.def</ModuleDefinitionFile>
