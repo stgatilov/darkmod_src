@@ -575,5 +575,3 @@ extern idSys *				sys;
 #endif /* !__SYS_PUBLIC__ */
 
 typedef unsigned long long uint64;
-// vertCacheHandle_t packs size, offset, and frame number into 64 bits
-typedef uint64 vertCacheHandle_t;

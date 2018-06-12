@@ -177,7 +177,7 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( !tri->ambientCache ) {
+	if ( !tri->ambientCache.IsValid() ) {
 		common->Printf( "RB_T_FillDepthBuffer: !tri->ambientCache\n" );
 		return;
 	}
@@ -827,7 +827,7 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 		return;
 	}
 
-	if ( !tri->ambientCache ) {
+	if ( !tri->ambientCache.IsValid() ) {
 		common->Printf( "RB_T_RenderShaderPasses: !tri->ambientCache\n" );
 		return;
 	}
@@ -1001,11 +1001,11 @@ static void RB_T_BlendLight( const drawSurf_t *surf ) {
 	}
 
 	// this gets used for both blend lights and shadow draws
-	if ( tri->ambientCache ) {
+	if ( tri->ambientCache.IsValid() ) {
 		idDrawVert	*ac = (idDrawVert *)vertexCache.VertexPosition( tri->ambientCache );
 		//qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	} else if (tri->shadowCache) {
+	} else if( tri->shadowCache.IsValid() ) {
 		shadowCache_t	*sc = (shadowCache_t *)vertexCache.VertexPosition( tri->shadowCache );
 		//qglVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
 		qglVertexAttribPointer( 0, 3, GL_FLOAT, false, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
@@ -1133,7 +1133,7 @@ static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurf
 	frustumTris = backEnd.vLight->frustumTris;
 
 	// if we ran out of vertex cache memory, skip it
-	if ( !frustumTris->ambientCache ) {
+	if ( !frustumTris->ambientCache.IsValid() ) {
 		return;
 	}
 	memset( &ds, 0, sizeof( ds ) );

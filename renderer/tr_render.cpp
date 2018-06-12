@@ -77,19 +77,16 @@ void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
 		}
 	}
 
-	if ( tri->indexCache ) {
+	if ( tri->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES, 
-						tri->numIndexes,
-						GL_INDEX_TYPE,
-						vertexCache.IndexPosition( tri->indexCache ) ); // This should cast later anyway, no need to do it twice
+		                 tri->numIndexes,
+		                 GL_INDEX_TYPE,
+		                 vertexCache.IndexPosition( tri->indexCache ) );
 		if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) 
 			backEnd.pc.c_vboIndexes += tri->numIndexes;
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, 
-						tri->numIndexes,
-						GL_INDEX_TYPE,
-						tri->indexes );
+		qglDrawElements( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
 	}
 }
 
@@ -107,19 +104,16 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		backEnd.pc.c_shadowVertexes += tri->numVerts;
 	}
 
-	if ( tri->indexCache ) {
+	if ( tri->indexCache.IsValid() ) {
 		qglDrawElements( GL_TRIANGLES, 
-						numIndexes,
-						GL_INDEX_TYPE,
-						vertexCache.IndexPosition( tri->indexCache ) );
+		                 numIndexes,
+		                 GL_INDEX_TYPE,
+		                 vertexCache.IndexPosition( tri->indexCache ) );
 		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
 			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
 		vertexCache.UnbindIndex();
-		qglDrawElements( GL_TRIANGLES, 
-						numIndexes,
-						GL_INDEX_TYPE,
-						tri->indexes );
+		qglDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, tri->indexes );
 	}
 }
 
@@ -133,7 +127,7 @@ Sets texcoord and vertex pointers
 */
 void RB_RenderTriangleSurface( const srfTriangles_t *tri ) {
 
-	if ( !tri->ambientCache ) {
+	if ( !tri->ambientCache.IsValid() ) {
 		RB_DrawElementsImmediate( tri );
 		return;
 	}
@@ -632,7 +626,7 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 	const bool useLightDepthBounds = r_useDepthBoundsTest.GetBool();
 	//anon end
 
-	if (!surf->backendGeo || !surf->backendGeo->ambientCache) 
+	if (!surf->backendGeo || !surf->backendGeo->ambientCache.IsValid()) 
 		return;
 	if ( vLight->lightShader->IsAmbientLight() ) {
 		if ( r_skipAmbient.GetInteger() == 2 )

@@ -173,7 +173,7 @@ void idGuiModel::EmitSurface( guiModelSurface_t *surf, float modelMatrix[16], fl
 	tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( tri->verts[0] ), VERTEX_CACHE_ALIGN ) );
 
 	// if we are out of vertex cache, don't create the surface
-	if ( !tri->ambientCache ) {
+	if ( !tri->ambientCache.IsValid() ) {
 		return;
 	}
 

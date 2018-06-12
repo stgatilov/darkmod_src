@@ -54,11 +54,7 @@ bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting ) {
 	}
 
 	tri->ambientCache = vertexCache.AllocVertex( tri->verts, ALIGN( tri->numVerts * sizeof( tri->verts[0] ), VERTEX_CACHE_ALIGN ) );
-	if ( !tri->ambientCache ) {
-		return false;
-	}
-
-	return true;
+	return tri->ambientCache.IsValid();
 }
 
 /*

@@ -1321,7 +1321,7 @@ void idInteraction::AddActiveInteraction( void ) {
 					shadowTris->shadowCache = sint->ambientTris->shadowCache;
 				}
 				// if we are out of vertex cache space, skip the interaction
-				if ( !shadowTris->shadowCache ) {
+				if ( !shadowTris->shadowCache.IsValid() ) {
 					continue;
 				}
 			}

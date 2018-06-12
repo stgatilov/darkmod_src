@@ -149,9 +149,9 @@ idVertexCache::VertexPosition
 */
 void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 	GLuint vbo;
-	if( handle == 0 ) {
+	if( !handle.IsValid() ) {
 		vbo = 0;
-	} else if( CacheIsStatic( handle ) ) {
+	} else if( handle.isStatic ) {
 		++staticBufferUsed;
 		if( staticData.mappedVertexBase != nullptr ) {
 			UploadStaticGeoBufferSet( staticData );
@@ -165,7 +165,7 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, vbo );
 		currentVertexBuffer = vbo;
 	}
-	return ( void * )( ( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK );
+	return ( void * )( handle.offset );
 }
 
 /*
@@ -175,9 +175,9 @@ idVertexCache::IndexPosition
 */
 void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 	GLuint vbo;
-	if( handle == 0 ) {
+	if( !handle.IsValid() ) {
 		vbo = 0;
-	} else if( CacheIsStatic( handle ) ) {
+	} else if( handle.isStatic ) {
 		++staticBufferUsed;
 		if( staticData.mappedIndexBase != nullptr ) {
 			UploadStaticGeoBufferSet( staticData );
@@ -192,7 +192,7 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
 		currentIndexBuffer = vbo;
 	}
-	return ( void * )( ( handle >> VERTCACHE_OFFSET_SHIFT ) & VERTCACHE_OFFSET_MASK );
+	return ( void * )( handle.offset );
 }
 
 void idVertexCache::UnbindIndex() {
@@ -339,7 +339,7 @@ idVertexCache::ActuallyAlloc
 */
 vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void * data, int bytes, cacheType_t type ) {
 	if( bytes == 0 ) {
-		return 0;
+		return NO_CACHE;
 	}
 
 	assert( ( ( ( UINT_PTR )( data ) ) & 15 ) == 0 );
@@ -355,7 +355,7 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		mapOffset = vcs.indexMapOffset;
 		if( endPos > vcs.indexBuffer.GetAllocedSize() ) {
 			// out of index cache, will be resized next frame
-			return 0;
+			return NO_CACHE;
 		}
 	}
 	else if( type == CACHE_VERTEX ) {
@@ -364,12 +364,12 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		mapOffset = vcs.vertexMapOffset;
 		if( endPos > vcs.vertexBuffer.GetAllocedSize() ) {
 			// out of vertex cache, will be resized next frame
-			return 0;
+			return NO_CACHE;
 		}
 	}
 	else {
 		assert( false );
-		return 0;
+		return NO_CACHE;
 	}
 
 	vcs.allocations++;
@@ -381,11 +381,10 @@ vertCacheHandle_t idVertexCache::ActuallyAlloc( geoBufferSet_t & vcs, const void
 		CopyBuffer( *base + offset - mapOffset, (byte*)data, bytes );
 	}
 
-	vertCacheHandle_t handle = ( ( uint64 )( currentFrame & VERTCACHE_FRAME_MASK ) << VERTCACHE_FRAME_SHIFT ) |
-		( ( uint64 )( offset & VERTCACHE_OFFSET_MASK ) << VERTCACHE_OFFSET_SHIFT ) |
-		( ( uint64 )( bytes & VERTCACHE_SIZE_MASK ) << VERTCACHE_SIZE_SHIFT );
-	if( &vcs == &staticData ) {
-		handle |= VERTCACHE_STATIC;
-	}
-	return handle;
+	return { 
+		static_cast<uint32_t>(bytes & VERTCACHE_SIZE_MASK), 
+		static_cast<uint32_t>(offset & VERTCACHE_OFFSET_MASK), 
+		static_cast<uint16_t>(currentFrame & VERTCACHE_FRAME_MASK), 
+		&vcs == &staticData 
+	};
 }

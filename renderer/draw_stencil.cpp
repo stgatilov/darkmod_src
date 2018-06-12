@@ -49,7 +49,7 @@ static void RB_T_Shadow( const drawSurf_t *surf ) {
 
 	tri = surf->backendGeo;
 
-	if ( !tri->shadowCache ) {
+	if ( !tri->shadowCache.IsValid() ) {
 		return;
 	}
 

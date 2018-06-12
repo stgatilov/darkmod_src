@@ -503,7 +503,7 @@ void RB_ShowLightCount( void ) {
 		for ( i = 0 ; i < 2 ; i++ ) {
 			for ( surf = i ? vLight->localInteractions: vLight->globalInteractions; surf; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
-				if (!surf->backendGeo->ambientCache) {
+				if (!surf->backendGeo->ambientCache.IsValid()) {
 					continue;
 				}
 
@@ -648,7 +648,7 @@ static void RB_ShowShadowCount( void ) {
 				; surf ; surf = (drawSurf_t *)surf->nextOnLight ) {
 				RB_SimpleSurfaceSetup( surf );
 				const srfTriangles_t	*tri = surf->backendGeo;
-				if ( !tri->shadowCache ) {
+				if ( !tri->shadowCache.IsValid() ) {
 					continue;
 				}
 

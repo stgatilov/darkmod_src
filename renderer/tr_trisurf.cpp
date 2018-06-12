@@ -332,19 +332,19 @@ R_FreeStaticTriSurfVertexCaches
 void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) {
 	if ( tri->ambientSurface == NULL ) {
 		// this is a real model surface
-		tri->ambientCache = NULL;
+		tri->ambientCache = NO_CACHE;
 	} else {
 		// this is a light interaction surface that references
 		// a different ambient model surface
 	}
-	if ( tri->indexCache ) {
-		tri->indexCache = NULL;
+	if( tri->indexCache.IsValid() ) {
+		tri->indexCache = NO_CACHE;
 	}
-	if ( tri->shadowCache && ( tri->shadowVertexes != NULL || tri->verts != NULL ) ) {
+	if ( tri->shadowCache.IsValid() && ( tri->shadowVertexes != NULL || tri->verts != NULL ) ) {
 		// if we don't have tri->shadowVertexes, these are a reference to a
 		// shadowCache on the original surface, which a vertex program
 		// will take care of making unique for each light
-		tri->shadowCache = NULL;
+		tri->shadowCache = NO_CACHE;
 	}
 }
 
@@ -2131,9 +2131,9 @@ time, rather than being re-created each frame in the frame temporary buffers.
 ===================
 */
 void R_CreateStaticBuffersForTri( srfTriangles_t & tri ) {
-	tri.indexCache = 0;
-	tri.ambientCache = 0;
-	tri.shadowCache = 0;
+	tri.indexCache = NO_CACHE;
+	tri.ambientCache = NO_CACHE;
+	tri.shadowCache = NO_CACHE;
 
 	// index cache
 	if( tri.indexes != NULL && tri.numIndexes > 0 ) {

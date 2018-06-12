@@ -17,6 +17,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 #define __VERTEXCACHE_H__
 
 #include "BufferObject.h"
+#include <atomic>
 
 // vertex cache calls should only be made by the front end
 
@@ -54,6 +55,22 @@ struct geoBufferSet_t {
 
 	geoBufferSet_t( GLenum usage = GL_DYNAMIC_DRAW_ARB );
 };
+
+/**
+ * Describes a single entry in the static or dynamic vertex or index cache in 64 bits.
+ */
+struct vertCacheHandle_t {
+	uint32_t	size		: 23;
+	uint32_t	offset		: 28;
+	uint16_t	frameNumber : 12;
+	bool		isStatic	:  1;
+
+	bool IsValid() const { 
+		return size != 0;
+	}
+};
+
+static const vertCacheHandle_t NO_CACHE = { 0, 0, 0, false };
 
 class idVertexCache {
 public:
@@ -95,7 +112,7 @@ public:
 			common->Error( "AllocStaticVertex called, but static vertex cache is not ready for upload." );
 		}
 		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_VERTEX );
-		if( handle == 0 ) {
+		if( !handle.IsValid() ) {
 			common->FatalError( "AllocStaticVertex failed, out of memory" );
 		}
 		return handle;
@@ -105,7 +122,7 @@ public:
 			common->Error( "AllocStaticIndex called, but static index cache is not ready for upload." );
 		}
 		vertCacheHandle_t handle = ActuallyAlloc( staticData, data, bytes, CACHE_INDEX );
-		if( handle == 0 ) {
+		if( !handle.IsValid() ) {
 			common->FatalError( "AllocStaticIndex failed, out of memory" );
 		}
 		return handle;
@@ -115,18 +132,10 @@ public:
 	// This can only be called by the front end, the back end should only be looking at
 	// vertCacheHandle_t that are already validated.
 	bool			CacheIsCurrent( const vertCacheHandle_t handle ) const {
-		if( CacheIsStatic( handle ) ) {
+		if( handle.isStatic ) {
 			return true;
 		}
-		const uint64 frameNum = ( int )( handle >> VERTCACHE_FRAME_SHIFT ) & VERTCACHE_FRAME_MASK;
-		if( frameNum != ( currentFrame & VERTCACHE_FRAME_MASK ) ) {
-			return false;
-		}
-		return true;
-	}
-
-	static bool		CacheIsStatic( const vertCacheHandle_t handle ) {
-		return ( handle & VERTCACHE_STATIC ) != 0;
+		return handle.frameNumber == ( currentFrame & VERTCACHE_FRAME_MASK );
 	}
 
 
