@@ -8,7 +8,6 @@
     <ClCompile>
       <AdditionalIncludeDirectories>mssdk/include;MayaImport/Maya5.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;MAYAIMPORT_EXPORTS;MAYA_IMPORT;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
