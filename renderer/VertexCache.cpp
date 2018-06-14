@@ -218,8 +218,8 @@ void idVertexCache::Init() {
 	listNum = 0;
 	backendListNum = 0;
 	currentFrame = 0;
-	currentIndexCacheSize = min( MAX_VERTCACHE_SIZE, r_frameIndexMemory.GetInteger() * 1024 );
-	currentVertexCacheSize = min( MAX_VERTCACHE_SIZE, r_frameVertexMemory.GetInteger() * 1024 );
+	currentIndexCacheSize = idMath::Imin( MAX_VERTCACHE_SIZE, r_frameIndexMemory.GetInteger() * 1024 );
+	currentVertexCacheSize = idMath::Imin( MAX_VERTCACHE_SIZE, r_frameVertexMemory.GetInteger() * 1024 );
 	if( currentIndexCacheSize <= 0 || currentVertexCacheSize <= 0 ) {
 		common->FatalError( "Dynamic vertex cache size is invalid. Please adjust r_frameIndexMemory and r_frameVertexMemory." );
 	}
@@ -282,14 +282,14 @@ void idVertexCache::EndFrame() {
 	if( frameData[listNum].indexMemUsed > currentIndexCacheSize ) {
 		common->Printf( "Exceeded index cache size (%d kb), resizing...\n", currentIndexCacheSize / 1024 );
 		while( currentIndexCacheSize < MAX_VERTCACHE_SIZE && currentIndexCacheSize < frameData[listNum].indexMemUsed ) {
-			currentIndexCacheSize = min( MAX_VERTCACHE_SIZE, currentIndexCacheSize * 2 );
+			currentIndexCacheSize = idMath::Imin( MAX_VERTCACHE_SIZE, currentIndexCacheSize * 2 );
 		}
 		common->Printf( "New index cache size: %d kb\n", currentIndexCacheSize / 1024 );
 	}
 	if( frameData[listNum].vertexMemUsed > currentVertexCacheSize ) {
 		common->Printf( "Exceeded vertex cache size (%d kb), resizing...\n", currentVertexCacheSize / 1024 );
 		while( currentVertexCacheSize < MAX_VERTCACHE_SIZE && currentVertexCacheSize < frameData[listNum].vertexMemUsed ) {
-			currentVertexCacheSize = min( MAX_VERTCACHE_SIZE, currentVertexCacheSize * 2 );
+			currentVertexCacheSize = idMath::Imin( MAX_VERTCACHE_SIZE, currentVertexCacheSize * 2 );
 		}
 		common->Printf( "New vertex cache size: %d kb\n", currentVertexCacheSize / 1024 );
 	}
