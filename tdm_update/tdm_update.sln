@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update", "tdm_update.vcxproj", "{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -21,52 +21,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tdm_update_mfc", "tdm_updat
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|Mixed Platforms = Debug|Mixed Platforms
 		Debug|Win32 = Debug|Win32
-		Release|Any CPU = Release|Any CPU
-		Release|Mixed Platforms = Release|Mixed Platforms
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Debug|Win32.Build.0 = Debug|Win32
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Release|Any CPU.ActiveCfg = Release|Win32
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Release|Win32.ActiveCfg = Release|Win32
 		{7DFE38AC-1418-4B91-A7CD-E6F18FB44F4D}.Release|Win32.Build.0 = Release|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Debug|Win32.ActiveCfg = Debug|Win32
 		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Debug|Win32.Build.0 = Debug|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Release|Any CPU.ActiveCfg = Release|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Release|Win32.ActiveCfg = Release|Win32
 		{46CC0F23-49E6-4FAB-A1A0-BD87C4792319}.Release|Win32.Build.0 = Release|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Debug|Win32.Build.0 = Debug|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Release|Any CPU.ActiveCfg = Release|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Release|Win32.ActiveCfg = Release|Win32
 		{A181019F-4348-4574-B88C-DEAAA2B5CB7D}.Release|Win32.Build.0 = Release|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Debug|Win32.ActiveCfg = Debug|Win32
 		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Debug|Win32.Build.0 = Debug|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Release|Any CPU.ActiveCfg = Release|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Release|Win32.ActiveCfg = Release|Win32
 		{D1A70E0F-90AF-443F-B512-8A25E99FE568}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
