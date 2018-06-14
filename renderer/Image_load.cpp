@@ -1623,6 +1623,7 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	backEnd.c_copyFrameBuffer++;
+	GL_CheckErrors();
 	//RB_DumpFramebuffer( imgName + ".tga" );
 }
 

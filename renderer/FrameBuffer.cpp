@@ -142,6 +142,7 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 	qglClear( GL_COLOR_BUFFER_BIT );
 	int backEndFinishTime = Sys_Milliseconds();
 	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
+	GL_CheckErrors();
 }
 
 void CheckCreatePrimary() {
@@ -400,6 +401,8 @@ void LeavePrimary() {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 		qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 	}
+	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
 		0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );
@@ -435,14 +438,6 @@ void LeavePrimary() {
 		qglPopMatrix();
 		qglMatrixMode( GL_MODELVIEW );
 		GL_SelectTexture( 0 );
-		/*if ( viewDef ) { // switch back to normal resolution for correct 2d
-			tr.renderCrops[tr.currentRenderCrop].width = glConfig.vidWidth;
-			tr.renderCrops[tr.currentRenderCrop].height = glConfig.vidHeight;
-			viewDef->viewport.x2 = glConfig.vidWidth - 1;
-			viewDef->viewport.y2 = glConfig.vidHeight - 1;
-			viewDef->scissor.x2 = glConfig.vidWidth - 1;
-			viewDef->scissor.y2 = glConfig.vidHeight - 1;
-			}*/
 	}
 	primaryOn = false;
 	if ( r_frontBuffer.GetBool() )
