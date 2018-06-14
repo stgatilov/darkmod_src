@@ -574,20 +574,18 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		case RC_NOP:
 			break;
 		case RC_DRAW_VIEW: {
-			viewDef_t &viewDef = *((const drawSurfsCommand_t *)cmds)->viewDef;
-			v3d = viewDef.viewEntitys != NULL; // view is 2d or 3d
-			// duzenko #4425: create/switch to framebuffer object
-			if ( !viewDef.IsLightGem() )
+			backEnd.viewDef = ((const drawSurfsCommand_t *)cmds)->viewDef;
+			v3d = backEnd.viewDef->viewEntitys != NULL; // view is 2d or 3d
+			if ( !backEnd.viewDef->IsLightGem() ) // duzenko #4425: create/switch to framebuffer object
 				if ( !was2d ) { // don't switch to FBO if some 2d has happened (e.g. compass)
-					if ( v3d ) {
+					if ( v3d )
 						FB_TogglePrimary( true );
-					}
 					else {
 						FB_TogglePrimary( false ); // duzenko: render 2d in default framebuffer, as well as all 3d until frame end
 						was2d = true;
 					}
 				}
-			RB_DrawView( cmds );
+			RB_DrawView();
 			if ( v3d )
 				c_draw3d++;
 			else

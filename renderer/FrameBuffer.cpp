@@ -375,6 +375,14 @@ void EnterPrimary() {
 		return;
 	CheckCreatePrimary();
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
+		backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
+		backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
+	qglScissor( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1,
+		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1,
+		backEnd.viewDef->scissor.x2 + 1 - backEnd.viewDef->scissor.x1,
+		backEnd.viewDef->scissor.y2 + 1 - backEnd.viewDef->scissor.y1 );
 	qglClear( GL_COLOR_BUFFER_BIT ); // otherwise transparent skybox blends with previous frame
 	primaryOn = true;
 	GL_CheckErrors();

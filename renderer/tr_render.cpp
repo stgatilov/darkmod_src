@@ -835,15 +835,8 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf
 RB_DrawView
 =============
 */
-void RB_DrawView( const void *data ) {
-	const drawSurfsCommand_t	*cmd;
-
-	cmd = (const drawSurfsCommand_t *)data;
-
-	backEnd.viewDef = cmd->viewDef;
-	
-	// we will need to do a new copyTexSubImage of the screen
-	// when a SS_POST_PROCESS material is used
+void RB_DrawView() {
+	// we will need to do a new copyTexSubImage of the screen when a SS_POST_PROCESS material is used
 	backEnd.currentRenderCopied = false;
 
 	// if there aren't any drawsurfs, do nothing

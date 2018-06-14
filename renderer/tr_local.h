@@ -1301,14 +1301,11 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 					  void (*triFunc_)( const drawSurf_t *) );
 void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, 
 										void (*triFunc_)( const drawSurf_t *) );
-void RB_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
 void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
 void RB_CreateSingleDrawInteractions( const drawSurf_t *surf/*, void (*DrawInteraction)(const drawInteraction_t *)*/ );
 
-const shaderStage_t *RB_SetLightTexture( const idRenderLightLocal *light );
-
-void RB_DrawView( const void *data );
+void RB_DrawView();
 
 void RB_BeginDrawingView (void);
 
