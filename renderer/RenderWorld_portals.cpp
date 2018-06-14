@@ -717,14 +717,12 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 
 		// remove decals that are completely faded away
 		R_FreeEntityDefFadedDecals( entity, tr.viewDef->renderView.time );
-
 		
 		// check for completely suppressing the model
 		if ( !r_skipSuppress.GetBool() ) {
 		    // nbohr1more: #4379 lightgem culling
-		    if ( (!entity->parms.isLightgem) && (entity->parms.noShadow) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )){
-			    continue;
-			}
+			if ( !entity->parms.isLightgem && entity->parms.noShadow && tr.viewDef->IsLightGem() )
+				continue;
 			if ( entity->parms.suppressSurfaceInViewID
 					&& entity->parms.suppressSurfaceInViewID == tr.viewDef->renderView.viewID ) {
 				continue;
@@ -733,7 +731,6 @@ void idRenderWorldLocal::AddAreaEntityRefs( int areaNum, const portalStack_t *ps
 					&& entity->parms.allowSurfaceInViewID != tr.viewDef->renderView.viewID ) {
 				continue;
 			}
-						 
 		}
 
 		// cull reference bounds

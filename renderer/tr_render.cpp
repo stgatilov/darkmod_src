@@ -98,7 +98,7 @@ May not use all the indexes in the surface if caps are skipped
 ================
 */
 void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) {
-	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_shadowElements++;
 		backEnd.pc.c_shadowIndexes += numIndexes;
 		backEnd.pc.c_shadowVertexes += tri->numVerts;
@@ -109,7 +109,7 @@ void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexe
 		                 numIndexes,
 		                 GL_INDEX_TYPE,
 		                 vertexCache.IndexPosition( tri->indexCache ) );
-		if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID)
+		if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() )
 			backEnd.pc.c_vboIndexes += numIndexes;
 	} else {
 		vertexCache.UnbindIndex();

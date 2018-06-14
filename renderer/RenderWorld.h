@@ -195,11 +195,17 @@ typedef struct renderLight_s {
 
 } renderLight_t;
 
+typedef enum {							// #define RENDERTOOLS_SKIP_ID			-1 // DARKMOD_LG_VIEWID
+	VID_LIGHTGEM =			-1,			// #define TR_SCREEN_VIEW_ID			 0 // viewIDs of 0 and above are those drawn on screen. Negative numbers are for special
+	VID_SUBVIEW =			0,			// non-visible renders: light gem (TDM), Sikk's depth render (Doom3) etc. The player's view
+	VID_PLAYER_VIEW =		1			// is 1 for single player mode, multiplayer uses 2+. 0 is for subviews: cameras, reflections etc.*/
+} viewID_t;								// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
+										// static const int	DARKMOD_LG_VIEWID =	-1;
 
 typedef struct renderView_s {
 	// player views will set this to a non-zero integer for model suppress / allow
 	// subviews (mirrors, cameras, etc) will always clear it to zero
-	int						viewID;
+	viewID_t				viewID;
 
 	// sized from 0 to SCREEN_WIDTH / SCREEN_HEIGHT (640/480), not actual resolution
 	int						x, y, width, height;

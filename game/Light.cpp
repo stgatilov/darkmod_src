@@ -183,7 +183,7 @@ void idGameEdit::ParseSpawnArgsToRenderLight( const idDict *args, renderLight_t 
 
 	if ( !args->GetBool( "ai_see", "1") ) // SteveL #4128
 	{
-		renderLight->suppressLightInViewID = DARKMOD_LG_VIEWID;
+		renderLight->suppressLightInViewID = VID_LIGHTGEM;
 	}
 }
 
@@ -1976,7 +1976,7 @@ bool idLight::IsSeenByAI( void ) const
 {
 	// For efficiency, re-use the renderLight lightgem flag rather than check the 
 	// "ai_see" spawnarg in an operation that happens very often.
-	return renderLight.suppressLightInViewID != DARKMOD_LG_VIEWID;
+	return renderLight.suppressLightInViewID != VID_LIGHTGEM;
 }
 
 // grayman #2603 - keep a list of switches for this light

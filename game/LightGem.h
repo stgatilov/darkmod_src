@@ -24,8 +24,6 @@ static const int	DARKMOD_LG_MAX_RENDERPASSES = 2;
 static const int	DARKMOD_LG_MAX_IMAGESPLIT   = 4;
 static const char * DARKMOD_LG_RENDER_MODEL		= "models/darkmod/misc/system/lightgem.lwo";
 static const char * DARKMOD_LG_ENTITY_NAME		= "lightgem_surface";
-// The lightgem viewid defines the viewid that is to be used for the lightgem surfacetestmodel
-static const int	DARKMOD_LG_VIEWID			= -1;
 
 static const int    DARKMOD_LG_RENDER_WIDTH		= 64; // LG render resolution - keep it a power-of-two!
 static const float  DARKMOD_LG_RENDER_FOV		= 70.0f;

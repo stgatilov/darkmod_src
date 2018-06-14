@@ -109,7 +109,7 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 		mapEnt->epairs.Set("noclipmodel", "1");
 	}
 
-	m_Lightgem_rv.viewID = DARKMOD_LG_VIEWID;
+	m_Lightgem_rv.viewID = VID_LIGHTGEM;
 	
 	m_Lightgem_rv.width = SCREEN_WIDTH;
 	m_Lightgem_rv.height = SCREEN_HEIGHT;
@@ -129,7 +129,7 @@ void LightGem::SpawnLightGemEntity( idMapFile *	a_mapFile )
 void LightGem::InitializeLightGemEntity( void )
 {
 	m_LightgemSurface = gameLocal.FindEntity(DARKMOD_LG_ENTITY_NAME);
-	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LG_VIEWID;
+	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = VID_LIGHTGEM;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->suppressShadowInViewID = 0;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noDynamicInteractions = false;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noShadow = true;
@@ -161,7 +161,7 @@ void LightGem::Restore( idRestoreGame & a_savedGame )
 		a_savedGame.ReadFloat(m_LightgemShotValue[i]);
 	}
 
-	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = DARKMOD_LG_VIEWID;
+	m_LightgemSurface.GetEntity()->GetRenderEntity()->allowSurfaceInViewID = VID_LIGHTGEM;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->suppressShadowInViewID = 0;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noDynamicInteractions = false;
 	m_LightgemSurface.GetEntity()->GetRenderEntity()->noShadow = true;
@@ -236,16 +236,16 @@ float LightGem::Calculate(idPlayer *player)
 	const int pdef = player->GetModelDefHandle();
 	const int playerid = prent->suppressSurfaceInViewID;
 	const int psid = prent->suppressShadowInViewID;
-	prent->suppressShadowInViewID = DARKMOD_LG_VIEWID;
-	prent->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
+	prent->suppressShadowInViewID = VID_LIGHTGEM;
+	prent->suppressSurfaceInViewID = VID_LIGHTGEM;
 
 	// And the player's head 
 	renderEntity_t* hrent = player->GetHeadEntity()->GetRenderEntity();
 	const int hdef = player->GetHeadEntity()->GetModelDefHandle();
 	const int headid = hrent->suppressSurfaceInViewID;
 	const int hsid = hrent->suppressShadowInViewID;
-	hrent->suppressShadowInViewID = DARKMOD_LG_VIEWID;
-	hrent->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
+	hrent->suppressShadowInViewID = VID_LIGHTGEM;
+	hrent->suppressSurfaceInViewID = VID_LIGHTGEM;
 
 	// Let the game know about the changes
 	gameRenderWorld->UpdateEntityDef(pdef, prent); 
@@ -266,8 +266,8 @@ float LightGem::Calculate(idPlayer *player)
 			heldRE = heldEnt->GetRenderEntity();
 			heldSurfID = heldRE->suppressSurfaceInViewID;
 			heldShadID = heldRE->suppressShadowInViewID;
-			heldRE->suppressShadowInViewID = DARKMOD_LG_VIEWID;
-			heldRE->suppressSurfaceInViewID = DARKMOD_LG_VIEWID;
+			heldRE->suppressShadowInViewID = VID_LIGHTGEM;
+			heldRE->suppressSurfaceInViewID = VID_LIGHTGEM;
 			gameRenderWorld->UpdateEntityDef( heldDef, heldRE );
 		}
 	}

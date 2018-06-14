@@ -1495,7 +1495,7 @@ void idImage::Bind() {
 
 
 	// bump our statistic counters
-	if (r_showPrimitives.GetBool() && backEnd.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID) {
+	if ( r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		frameUsed = backEnd.frameCount;
 		bindCount++;
 	}

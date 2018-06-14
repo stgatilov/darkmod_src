@@ -209,7 +209,7 @@ static viewDef_t *R_MirrorViewBySurface( drawSurf_t *drawSurf ) {
 	// copy the viewport size from the original
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
-	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 
 	parms->isSubview = true;
 	parms->isMirror = true;
@@ -263,7 +263,7 @@ static viewDef_t *R_XrayViewBySurface( drawSurf_t *drawSurf ) {
 	// copy the viewport size from the original
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.viewDef;
-	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 
 	parms->isSubview = true;
 	parms->isXraySubview = true;
@@ -294,7 +294,7 @@ static void R_RemoteRender( drawSurf_t *surf, textureStage_t *stage ) {
 	parms->isMirror = false;
 
 	parms->renderView = *surf->space->entityDef->parms.remoteRenderView;
-	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
+	parms->renderView.viewID = VID_SUBVIEW;	// clear to allow player bodies to show up, and suppress view weapons
 	parms->initialViewAreaOrigin = parms->renderView.vieworg;
 
 	tr.CropRenderSize( stage->width, stage->height );
@@ -387,7 +387,7 @@ void R_PortalRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect& scis
 	viewDef_t		*parms;
 	parms = (viewDef_t *)R_FrameAlloc( sizeof( *parms ) );
 	*parms = *tr.primaryView;
-	parms->renderView.viewID = 0;
+	parms->renderView.viewID = VID_SUBVIEW;
 	parms->numClipPlanes = 0;
 
 	parms->renderView.viewaxis = parms->renderView.viewaxis * gameLocal.GetLocalPlayer()->playerView.ShakeAxis();
@@ -664,7 +664,7 @@ bool R_GenerateSubViews( void ) {
 		return false;
 
 	// duzenko #4420: no mirrors on lightgem stage
-	if (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID) // DARKMOD_LG_VIEWID ?
+	if ( tr.viewDef->IsLightGem() )
 		return false;
 
 	subviews = false;

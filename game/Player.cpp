@@ -8687,7 +8687,7 @@ void idPlayer::OffsetThirdPersonView( float angle, float range, float height, bo
 
 	renderView->vieworg = view;
 	renderView->viewaxis = angles.ToMat3() * physicsObj.GetGravityAxis();
-	renderView->viewID = 0;
+	renderView->viewID = VID_SUBVIEW;
 }
 
 /*
@@ -8844,7 +8844,7 @@ void idPlayer::CalculateRenderView( void ) {
 	renderView->y = 0;
 	renderView->width = SCREEN_WIDTH;
 	renderView->height = SCREEN_HEIGHT;
-	renderView->viewID = 0;
+	renderView->viewID = VID_SUBVIEW;
 
 	// check if we should be drawing from a camera's POV
 	if ( !noclip && (gameLocal.GetCamera() || privateCameraView) ) {
@@ -8860,9 +8860,8 @@ void idPlayer::CalculateRenderView( void ) {
 			renderView->viewaxis = firstPersonViewAxis;
 
 			if ( !pm_thirdPerson.GetBool() ) {
-				// set the viewID to the clientNum + 1, so we can suppress the right player bodies and
-				// allow the right player view weapons
-				renderView->viewID = entityNumber + 1;
+				// set the viewID to the clientNum + 1, so we can suppress the right player bodies and allow the right player view weapons
+				renderView->viewID = VID_PLAYER_VIEW; //entityNumber + 1;
 			}
 		} else if ( pm_thirdPerson.GetBool() ) {
 			OffsetThirdPersonView( pm_thirdPersonAngle.GetFloat(), pm_thirdPersonRange.GetFloat(), pm_thirdPersonHeight.GetFloat(), pm_thirdPersonClip.GetBool() );
@@ -8875,7 +8874,7 @@ void idPlayer::CalculateRenderView( void ) {
 
 			// set the viewID to the clientNum + 1, so we can suppress the right player bodies and
 			// allow the right player view weapons
-			renderView->viewID = entityNumber + 1;
+			renderView->viewID = VID_PLAYER_VIEW;// entityNumber + 1;
 		}
 		
 		// field of view

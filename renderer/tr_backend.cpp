@@ -573,26 +573,29 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		switch ( cmds->commandId ) {
 		case RC_NOP:
 			break;
-		case RC_DRAW_VIEW:
-			v3d = ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys != NULL; // view is 2d or 3d
+		case RC_DRAW_VIEW: {
+			viewDef_t &viewDef = *((const drawSurfsCommand_t *)cmds)->viewDef;
+			v3d = viewDef.viewEntitys != NULL; // view is 2d or 3d
 			// duzenko #4425: create/switch to framebuffer object
-			if (((const drawSurfsCommand_t *)cmds)->viewDef->renderView.viewID >= DARKMOD_LG_VIEWID)
-				if (!was2d) // don't switch to FBO if some 2d has happened (e.g. compass)
+			if ( !viewDef.IsLightGem() )
+				if ( !was2d ) { // don't switch to FBO if some 2d has happened (e.g. compass)
 					if ( v3d ) {
 						FB_TogglePrimary( true );
-					} else {
+					}
+					else {
 						FB_TogglePrimary( false ); // duzenko: render 2d in default framebuffer, as well as all 3d until frame end
 						was2d = true;
 					}
-			RB_DrawView(cmds);
-			if (v3d) {
+				}
+			RB_DrawView( cmds );
+			if ( v3d )
 				c_draw3d++;
-			} else {
+			else
 				c_draw2d++;
-			}
-			if ( r_frontBuffer.GetBool() )
+			if ( r_frontBuffer.GetBool() ) // debug: put a breakpoint to see a per view render
 				qglFinish();
 			break;
+		}
 		case RC_SET_BUFFER:
 			RB_SetBuffer( cmds );
 			c_setBuffers++;

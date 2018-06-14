@@ -140,7 +140,7 @@ void R_ModulateLights_f( const idCmdArgs &args ) {
 	}
 
 	int count = 0;
-	float modulate[3] = {atof(args.Argv(1)), atof(args.Argv(2)), atof(args.Argv(3))};
+	double modulate[3] = {atof(args.Argv(1)), atof(args.Argv(2)), atof(args.Argv(3))};
 	idRenderLightLocal *light;
 
 	for (int i = 0 ; i < tr.primaryWorld->lightDefs.Num() ; i++ ) {

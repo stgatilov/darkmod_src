@@ -1006,9 +1006,8 @@ void idInteraction::CreateInteraction( const idRenderModel *model ) {
 		} */
 		
 		// nbohr1more: #4379 lightgem culling
-		if ((!HasShadows() ) && ( !shader->IsLightgemSurf() ) && (tr.viewDef->renderView.viewID == RENDERTOOLS_SKIP_ID )) {
+		if (!HasShadows() && !shader->IsLightgemSurf() && tr.viewDef->IsLightGem() )
 		    continue;
-			}
 
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() || r_shadows.GetInteger() == 2 ) {

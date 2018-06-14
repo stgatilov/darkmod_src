@@ -913,9 +913,8 @@ Reload the material displayed by r_showSurfaceInfo
 static void R_ReloadSurface_f( const idCmdArgs &args ) {
 
 	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
-	if ( tr.primaryView->renderView.viewID == RENDERTOOLS_SKIP_ID ) {
+	if ( tr.primaryView->IsLightGem() )
 		return;
-	}
 	
 	modelTrace_t mt;
 

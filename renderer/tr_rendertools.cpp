@@ -777,10 +777,9 @@ Debugging tool
 */
 static void RB_ShowSurfaceInfo( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 	
-	// Skip if the current render is the lightgem render (default RENDERTOOLS_SKIP_ID)
-	if ( !r_showSurfaceInfo.GetBool() || tr.primaryView->renderView.viewID == RENDERTOOLS_SKIP_ID ) {
+	// Skip if the current render is the lightgem render
+	if ( !r_showSurfaceInfo.GetBool() || tr.primaryView->IsLightGem() )
 		return;
-	}
 
 	modelTrace_t mt;
 

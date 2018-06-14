@@ -110,7 +110,7 @@ bool		idRenderWorldLocal::ProcessDemoCommand( idDemoFile *readDemo, renderView_t
 		break;
 
 	case DC_RENDERVIEW:
-		readDemo->ReadInt( renderView->viewID );
+		readDemo->ReadInt( (int&)renderView->viewID );
 		readDemo->ReadInt( renderView->x );
 		readDemo->ReadInt( renderView->y );
 		readDemo->ReadInt( renderView->width );

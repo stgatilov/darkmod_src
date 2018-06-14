@@ -1187,8 +1187,7 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 
 		// Don't put worldspawn particle textures (weather patches, mostly) on the drawSurf list for non-visible 
 		// views (in TDM, the light gem render). Important to block it before their verts are calculated -- SteveL #3970
-		if ( tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID
-			&& ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) )
+		if ( tr.viewDef->IsLightGem() && ( shader->Deform() == DFRM_PARTICLE || shader->Deform() == DFRM_PARTICLE2 ) )
 			continue;
 
 		// debugging tool to make sure we are have the correct pre-calculated bounds
@@ -1228,8 +1227,8 @@ static void R_AddAmbientDrawsurfs( viewEntity_t *vEntity ) {
 			// Soft Particles -- SteveL #3878
 			float particle_radius = -1.0f;		// Default = disallow softening, but allow modelDepthHack if specified in the decl.
 			if ( r_useSoftParticles.GetBool() 
-				&& !shader->ReceivesLighting()							// don't soften surfaces that are meant to be solid
-				&& tr.viewDef->renderView.viewID >= TR_SCREEN_VIEW_ID ) // Skip during "invisible" rendering passes (e.g. lightgem)
+				&& !shader->ReceivesLighting()	// don't soften surfaces that are meant to be solid
+				&& !tr.viewDef->IsLightGem() ) // Skip during "invisible" rendering passes (e.g. lightgem)
 			{
 				const idRenderModelPrt* prt = dynamic_cast<const idRenderModelPrt*>( def.parms.hModel );
 				if ( prt )
@@ -1336,13 +1335,9 @@ void R_AddModelSurfaces( void ) {
 			continue;
 		}
 
-		// Don't let particle entities re-instantiate their dynamic model during non-visible 
-		// views (in TDM, the light gem render) -- SteveL #3970
-		if ( tr.viewDef->renderView.viewID < TR_SCREEN_VIEW_ID
-			&& dynamic_cast<const idRenderModelPrt*>( vEntity->entityDef->parms.hModel ) != NULL )
-		{
+		// Don't let particle entities re-instantiate their dynamic model during non-visible views (in TDM, the light gem render) -- SteveL #3970
+		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>( vEntity->entityDef->parms.hModel ) != NULL )
 			continue;
-		}
 
 		// add the ambient surface if it has a visible rectangle
 		if ( !vEntity->scissorRect.IsEmpty() ) {

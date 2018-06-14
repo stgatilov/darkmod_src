@@ -1013,7 +1013,7 @@ void idRestoreGame::ReadRefSound( refSound_t &refSound ) {
 void idRestoreGame::ReadRenderView( renderView_t &view ) {
 	int i;
 
-	ReadInt( view.viewID );
+	ReadInt( (int&)view.viewID );
 	ReadInt( view.x );
 	ReadInt( view.y );
 	ReadInt( view.width );
