@@ -1100,6 +1100,10 @@ RB_T_BasicFog
 =====================
 */
 static void RB_T_BasicFog( const drawSurf_t *surf ) {
+
+    const srfTriangles_t *tri;
+	tri = surf->backendGeo;
+	
 	if ( backEnd.currentSpace != surf->space ) {
 		idPlane	local;
 
@@ -1112,7 +1116,8 @@ static void RB_T_BasicFog( const drawSurf_t *surf ) {
 		qglUniform4fv( fogShader.tex1PlaneT, 1, local.ToFloatPtr() );
 	}
 
-	RB_T_RenderTriangleSurface( surf );
+     RB_DrawElementsImmediate ( tri );
+	// RB_T_RenderTriangleSurface( surf );
 }
 
 /*
