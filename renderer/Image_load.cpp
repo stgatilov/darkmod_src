@@ -1607,8 +1607,6 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 	Bind();
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);
-	// extra copy when using AA
-	//FB_ResolveMultisampling();
 	// only resize if the current dimensions can't hold it at all, otherwise subview renderings could thrash this
 	if ( (useOversizedBuffer && (uploadWidth < imageWidth || uploadHeight < imageHeight))
 		|| (!useOversizedBuffer && (uploadWidth != imageWidth || uploadHeight != imageHeight)) ) {
@@ -1621,7 +1619,6 @@ void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bo
 		// it and don't try and do a texture compression or some other silliness
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 	}
-	//qglCopyImageSubData(globalImages->currentRenderImage->texnum, GL_TEXTURE_2D, 0, x, y, 0, texnum, GL_TEXTURE_2D, 0, x, y, 0, imageWidth, imageHeight, 0);
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

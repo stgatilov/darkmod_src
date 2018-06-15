@@ -536,9 +536,9 @@ void RB_CopyRender( const void *data ) {
 
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
-	if ( cmd.image )
+	/*if ( cmd.image )
 		cmd.image->CopyFramebuffer( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false );
-	if ( cmd.buffer )
+	if ( cmd.buffer )*/
 		FB_CopyRender( cmd );
 }
 

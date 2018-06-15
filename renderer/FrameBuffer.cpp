@@ -21,7 +21,7 @@ Project: The Dark Mod (http://www.thedarkmod.com/)
 
 bool primaryOn;
 bool depthCopiedThisView;
-GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, pbo;
+GLuint fboPrimary, fboResolve, fboShadow, fboPostProcess, fboCurrent, pbo;
 GLuint renderBufferColor, renderBufferDepthStencil, renderBufferPostProcess;
 GLuint postProcessWidth, postProcessHeight;
 int ShadowMipMap;
@@ -105,8 +105,8 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 	int backEndStartTime = Sys_Milliseconds();
 	if ( !primaryOn ) // #4425: not applicable, raises gl errors
 		qglReadBuffer( GL_BACK );
-	if ( r_frontBuffer.GetBool() )
-		qglFinish();
+	/*if ( r_frontBuffer.GetBool() )
+		qglFinish();*/
 	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboResolve );
@@ -114,35 +114,39 @@ void FB_CopyRender( const copyRenderCommand_t &cmd ) { // system mem only
 
 	//renderCrop_t rc = tr.renderCrops[tr.currentRenderCrop]; // copy because modified below
 	// #4395 lightem pixel pack buffer optimization
-	if ( cmd.usePBO && glConfig.pixelBufferAvailable ) {
-		static int pboSize = -1;
-		if ( !pbo ) {
-			pboSize = cmd.imageWidth * cmd.imageHeight * 3;
-			qglGenBuffersARB( 1, &pbo );
+	if ( cmd.buffer )
+		if ( cmd.usePBO && glConfig.pixelBufferAvailable ) {
+			static int pboSize = -1;
+			if ( !pbo ) {
+				pboSize = cmd.imageWidth * cmd.imageHeight * 3;
+				qglGenBuffersARB( 1, &pbo );
+				qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
+				qglBufferDataARB( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
+				qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
+			}
+			if ( cmd.imageWidth * cmd.imageHeight * 3 != pboSize )
+				common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", cmd.imageWidth, cmd.imageHeight, pboSize );
 			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-			qglBufferDataARB( GL_PIXEL_PACK_BUFFER, pboSize, NULL, GL_STREAM_READ );
+			unsigned char* ptr = (unsigned char*)qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
+			if ( ptr ) {
+				memcpy( cmd.buffer, ptr, pboSize );
+				qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
+			} else {
+				// #4395 vid_restart ?
+				pbo = 0;
+			}
+			qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, 0 );
+			//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
 			qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-		}
-		if ( cmd.imageWidth * cmd.imageHeight * 3 != pboSize )
-			common->Error( "CaptureRenderToBuffer: wrong PBO size %dx%d/%d", cmd.imageWidth, cmd.imageHeight, pboSize );
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, pbo );
-		unsigned char* ptr = (unsigned char*)qglMapBufferARB( GL_PIXEL_PACK_BUFFER, GL_READ_ONLY );
-		if ( ptr ) {
-			memcpy( cmd.buffer, ptr, pboSize );
-			qglUnmapBufferARB( GL_PIXEL_PACK_BUFFER );
-		} else {
-			// #4395 vid_restart ?
-			pbo = 0;
-		}
-		qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, 0 );
-		//qglReadPixels(rc->x, rc->y, rc->width, rc->height, GL_RGB, r_fboColorBits.GetInteger() == 15 ? GL_UNSIGNED_SHORT_5_5_5_1 : GL_UNSIGNED_BYTE, 0);
-		qglBindBufferARB( GL_PIXEL_PACK_BUFFER, 0 );
-	} else
-		qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, cmd.buffer );
+		} else
+			qglReadPixels( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, GL_RGB, GL_UNSIGNED_BYTE, cmd.buffer );
+
+		if ( cmd.image )
+			cmd.image->CopyFramebuffer( cmd.x, cmd.y, cmd.imageWidth, cmd.imageHeight, false );
 
 	if( primaryOn && r_multiSamples.GetInteger() > 1 )
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
-	qglClear( GL_COLOR_BUFFER_BIT );
+	//qglClear( GL_COLOR_BUFFER_BIT );
 	int backEndFinishTime = Sys_Milliseconds();
 	backEnd.pc.msec += backEndFinishTime - backEndStartTime;
 	GL_CheckErrors();
