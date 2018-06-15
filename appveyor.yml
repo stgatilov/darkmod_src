@@ -42,12 +42,16 @@ for:
   - sh: >-
       mkdir build
       
-      scons BUILD="release" TARGET_ARCH="x64" -j4 build
+      scons BUILD="release" TARGET_ARCH="x64" -j4 ..
 
   after_build:
   - sh: >-
+      cp ../darkmod/thedarkmod.x64 ../darkmod/*.so .
+
+      strip --strip-all thedarkmod.x64
+
       tar -cSvf thedarkmod.tar thedarkmod.x64 *.so
-      
+
       bzip2 thedarkmod.tar
 
   artifacts:
