@@ -139,7 +139,7 @@ public:
 	}
 
 
-private:
+public:
 	static idCVar	r_showVertexCache;
 	static idCVar	r_staticVertexMemory;
 	static idCVar	r_staticIndexMemory;

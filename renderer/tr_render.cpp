@@ -66,6 +66,10 @@ RB_DrawElementsWithCounters
 ================
 */
 void RB_DrawElementsWithCounters( const srfTriangles_t *tri ) {
+	if( vertexCache.currentVertexBuffer == 0 ) {
+		common->Printf( "RB_DrawElementsWithCounters called, but no vertex buffer is bound. Vertex cache resize?\n" );
+		return;
+	}
 	if (r_showPrimitives.GetBool() && !backEnd.viewDef->IsLightGem() ) {
 		backEnd.pc.c_drawElements++;
 		backEnd.pc.c_drawIndexes += tri->numIndexes;
