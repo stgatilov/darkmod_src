@@ -321,8 +321,6 @@ PFNGLDEPTHBOUNDSEXTPROC                 qglDepthBoundsEXT;
 // arb assembly info
 PFNGLGETPROGRAMIVARBPROC				qglGetProgramivARB;
 
-// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
-
 // Frame Buffer Objects
 PFNGLISRENDERBUFFERPROC					qglIsRenderbuffer;
 PFNGLBINDRENDERBUFFERPROC				qglBindRenderbuffer;
@@ -345,7 +343,7 @@ PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
 PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
-PFNGLCOPYIMAGESUBDATANVPROC				glCopyImageSubData;
+PFNGLCOPYIMAGESUBDATANVPROC				qglCopyImageSubData;
 
 // GLSL
 PFNGLATTACHSHADERPROC						qglAttachShader;
@@ -391,12 +389,6 @@ PFNGLBINDATTRIBLOCATIONPROC					qglBindAttribLocation;
 PFNGLFENCESYNCPROC						qglFenceSync;
 PFNGLCLIENTWAITSYNCPROC					qglClientWaitSync;
 PFNGLDELETESYNCPROC						qglDeleteSync;
-
-// State management
-//PFNGLBLENDEQUATIONPROC						qglBlendEquation;
-
-// -----====+++  END TDM ~SS Extensions  +++====-----   */
-
 
 /*
 =================
@@ -595,7 +587,7 @@ static void R_CheckPortableExtensions( void ) {
 		qglRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)GLimp_ExtensionPointer( "glRenderbufferStorageMultisample" );
 		qglFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)GLimp_ExtensionPointer( "glFramebufferTextureLayer" );
 		qglDrawBuffers = (PFNGLDRAWBUFFERSPROC)GLimp_ExtensionPointer( "glDrawBuffers" );
-		glCopyImageSubData = (PFNGLCOPYIMAGESUBDATANVPROC)GLimp_ExtensionPointer( "glCopyImageSubData" );
+		qglCopyImageSubData = (PFNGLCOPYIMAGESUBDATANVPROC)GLimp_ExtensionPointer( "glCopyImageSubData" );
 		// State management
 		//qglBlendEquation = (PFNGLBLENDEQUATIONPROC)GLimp_ExtensionPointer( "glBlendEquation" );
 	} else {

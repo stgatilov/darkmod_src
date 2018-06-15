@@ -136,8 +136,6 @@ extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	qglProgramLocalParameter4fvARB;
 // GL_EXT_depth_bounds_test
 extern PFNGLDEPTHBOUNDSEXTPROC              qglDepthBoundsEXT;
 
-// -----====+++  BEGIN TDM ~SS Extensions  +++====-----   
-
 // Frame Buffer Objects
 extern PFNGLISRENDERBUFFERPROC				qglIsRenderbuffer;
 extern PFNGLBINDRENDERBUFFERPROC			qglBindRenderbuffer;
@@ -160,7 +158,7 @@ extern PFNGLBLITFRAMEBUFFERPROC				qglBlitFramebuffer;
 extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC qglRenderbufferStorageMultisample;
 extern PFNGLFRAMEBUFFERTEXTURELAYERPROC		qglFramebufferTextureLayer;
 extern PFNGLDRAWBUFFERSPROC					qglDrawBuffers;
-extern PFNGLCOPYIMAGESUBDATANVPROC			glCopyImageSubData;
+extern PFNGLCOPYIMAGESUBDATANVPROC			qglCopyImageSubData;
 
 // GLSL
 extern PFNGLATTACHSHADERPROC				qglAttachShader;
@@ -201,10 +199,6 @@ extern PFNGLDELETESHADERPROC				qglDeleteShader;
 extern PFNGLGETPROGRAMIVPROC				qglGetProgramiv;
 extern PFNGLGETPROGRAMINFOLOGPROC			qglGetProgramInfoLog;
 extern PFNGLBINDATTRIBLOCATIONPROC			qglBindAttribLocation;
-
-// State management
-//stgatilov: this type breaks Linux build, and it is not used anyway
-//extern PFNGLBLENDEQUATIONPROC				qglBlendEquation;
 
 // arb assembly info
 extern PFNGLGETPROGRAMIVARBPROC			qglGetProgramivARB;

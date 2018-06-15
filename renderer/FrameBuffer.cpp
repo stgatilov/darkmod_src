@@ -67,7 +67,11 @@ void FB_CreatePostProcess( GLuint width, GLuint height ) {
 	postProcessHeight = height;
 }
 
-void FB_ResolveMultisampling( GLbitfield mask, GLenum filter = GL_NEAREST ) {
+/*
+When using AA, we can't just qglCopyTexImage2D from MSFB to a regular texture.
+This function blits to fboResolve, then we have a copy of MSFB in the currentRender texture
+*/
+void FB_ResolveMultisampling( GLbitfield mask, GLenum filter) {
 	qglDisable( GL_SCISSOR_TEST );
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboResolve );
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
@@ -76,7 +80,6 @@ void FB_ResolveMultisampling( GLbitfield mask, GLenum filter = GL_NEAREST ) {
 	qglBindFramebuffer( GL_DRAW_FRAMEBUFFER, fboPrimary );
 	qglEnable( GL_SCISSOR_TEST );
 }
-
 
 /*
 called when post-proceesing is about to start, needs pixels

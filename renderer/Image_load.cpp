@@ -1600,24 +1600,28 @@ void idImage::BindFragment() {
 /*
 ====================
 CopyFramebuffer
+x, y, imageWidth, imageHeigh for subviews are full screen size, scissored by backend.viewdef
 ====================
 */
 void idImage::CopyFramebuffer( int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer ) {
 	Bind();
 	if (!r_useFbo.GetBool()) // duzenko #4425: not applicable, raises gl errors
 		qglReadBuffer(GL_BACK);
-	// only resize if the current dimensions can't hold it at all,
-	// otherwise subview renderings could thrash this
+	// extra copy when using AA
+	//FB_ResolveMultisampling();
+	// only resize if the current dimensions can't hold it at all, otherwise subview renderings could thrash this
 	if ( (useOversizedBuffer && (uploadWidth < imageWidth || uploadHeight < imageHeight))
 		|| (!useOversizedBuffer && (uploadWidth != imageWidth || uploadHeight != imageHeight)) ) {
 		uploadWidth = imageWidth;
 		uploadHeight = imageHeight;
+		//qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL ); //NULL means reserve texture memory, but texels are undefined
 		qglCopyTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, x, y, imageWidth, imageHeight, 0 );
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
 		qglCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, x, y, imageWidth, imageHeight );
 	}
+	//qglCopyImageSubData(globalImages->currentRenderImage->texnum, GL_TEXTURE_2D, 0, x, y, 0, texnum, GL_TEXTURE_2D, 0, x, y, 0, imageWidth, imageHeight, 0);
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
