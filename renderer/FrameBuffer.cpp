@@ -444,6 +444,7 @@ void LeavePrimary() {
 		qglMatrixMode( GL_MODELVIEW );
 		GL_SelectTexture( 0 );
 	}
+	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	primaryOn = false;
 	if ( r_frontBuffer.GetBool() )
 		qglFinish();
