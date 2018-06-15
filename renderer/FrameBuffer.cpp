@@ -376,7 +376,7 @@ void EnterPrimary() {
 		return;
 	CheckCreatePrimary();
 	qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
-	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+	qglViewport( tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,	// FIXME: must not use tr in backend
 		tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
 		backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
 		backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1 );
@@ -401,8 +401,6 @@ void LeavePrimary() {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
 		qglBindFramebuffer( GL_READ_FRAMEBUFFER, fboResolve );
 	}
-	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	qglBlitFramebuffer( 0, 0, globalImages->currentRenderImage->uploadWidth, globalImages->currentRenderImage->uploadHeight,
 		0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR );

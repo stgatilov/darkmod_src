@@ -1366,6 +1366,7 @@ void RB_Bloom() {
 	int w = globalImages->currentRenderImage->uploadWidth, h = globalImages->currentRenderImage->uploadHeight;
 	if ( !w || !h ) // this has actually happened
 		return;
+	float	parm[4];
 
 	FB_SelectPostProcess();
 	// full screen blends
@@ -1382,7 +1383,6 @@ void RB_Bloom() {
 	qglEnable( GL_VERTEX_PROGRAM_ARB );
 	qglEnable( GL_FRAGMENT_PROGRAM_ARB );
 	GL_SelectTexture( 0 );
-	float	parm[4];
 
 	qglViewport( 0, 0, 256, 1 );
 	qglBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BLOOM_COOK_MATH1 );
@@ -1434,8 +1434,7 @@ void RB_Bloom() {
 	RB_DrawFullScreenQuad();
 	globalImages->bloomImage->CopyFramebuffer( 0, 0, w / 2, h / 2, false );
 
-	//FB_SelectPrimary();
-	//qglViewport( 0, 0, w, h );
+	FB_SelectPrimary();
 	FB_TogglePrimary( false );
 	GL_SelectTexture( 0 );
 	globalImages->currentRenderImage->Bind();
