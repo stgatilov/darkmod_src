@@ -341,7 +341,7 @@ typedef struct viewLight_s {
 	idVec3					globalLightOrigin;			// global light origin used by backend
 	idPlane					lightProject[4];			// light project used by backend
 	idPlane					fogPlane;					// fog plane for backend fog volume rendering
-	const srfTriangles_t *	frustumTris;				// light frustum for backend fog volume rendering
+	srfTriangles_t *		frustumTris;				// light frustum for backend fog volume rendering
 	const idMaterial *		lightShader;				// light shader used by backend
 	const float	*			shaderRegisters;			// shader registers used by backend
 	idImage *				falloffImage;				// falloff image used by backend

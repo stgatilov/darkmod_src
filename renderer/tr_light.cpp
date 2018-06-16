@@ -360,7 +360,9 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 		//anon end
 	} else
 		vLight->fogPlane = light->frustum[5];
-	vLight->frustumTris = light->frustumTris;
+	// make a copy of the frustum for backend rendering
+	vLight->frustumTris = ( srfTriangles_t* )R_FrameAlloc( sizeof( srfTriangles_t ) );
+	memcpy( vLight->frustumTris, light->frustumTris, sizeof( srfTriangles_t ) );
 	vLight->falloffImage = light->falloffImage;
 	vLight->lightShader = light->lightShader;
 	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
@@ -820,8 +822,8 @@ void R_AddLightSurfaces( void ) {
 		// fog lights will need to draw the light frustum triangles, so make sure they
 		// are in the vertex cache
 		if ( lightShader->IsFogLight() ) {
-			if ( !vertexCache.CacheIsCurrent(light->frustumTris->ambientCache) ) {
-				R_CreateAmbientCache( light->frustumTris, false );
+			if ( !vertexCache.CacheIsCurrent(vLight->frustumTris->ambientCache) ) {
+				R_CreateAmbientCache( vLight->frustumTris, false );
 			}
 		}
 
