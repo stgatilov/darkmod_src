@@ -275,6 +275,8 @@ extern idCVarSystem *		cvarSystem;
 ===============================================================================
 */
 
+#define BAD_CVAR ((idCVar *)(size_t)(-1LL))
+
 ID_INLINE void idCVar::Init( const char *name, const char *value, int flags, const char *description,
 							float valueMin, float valueMax, const char **valueStrings, argCompletion_t valueCompletion ) {
 	this->name = name;
@@ -289,7 +291,7 @@ ID_INLINE void idCVar::Init( const char *name, const char *value, int flags, con
 	this->integerValue = 0;
 	this->floatValue = 0.0f;
 	this->internalVar = this;
-	if ( staticVars != (idCVar *)0xFFFFFFFF ) {
+	if ( staticVars != BAD_CVAR) {
 		this->next = staticVars;
 		staticVars = this;
 	} else {
@@ -298,11 +300,11 @@ ID_INLINE void idCVar::Init( const char *name, const char *value, int flags, con
 }
 
 ID_INLINE void idCVar::RegisterStaticVars( void ) {
-	if ( staticVars != (idCVar *)0xFFFFFFFF ) {
+	if ( staticVars != BAD_CVAR) {
 		for ( idCVar *cvar = staticVars; cvar; cvar = cvar->next ) {
 			cvarSystem->Register( cvar );
 		}
-		staticVars = (idCVar *)0xFFFFFFFF;
+		staticVars = BAD_CVAR;
 	}
 }
 

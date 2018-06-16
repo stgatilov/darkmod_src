@@ -165,7 +165,7 @@ void *idVertexCache::VertexPosition( vertCacheHandle_t handle ) {
 		qglBindBufferARB( GL_ARRAY_BUFFER_ARB, vbo );
 		currentVertexBuffer = vbo;
 	}
-	return ( void * )( handle.offset );
+	return ( void * )( size_t )( handle.offset );
 }
 
 /*
@@ -192,7 +192,7 @@ void *idVertexCache::IndexPosition( vertCacheHandle_t handle ) {
 		qglBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, vbo );
 		currentIndexBuffer = vbo;
 	}
-	return ( void * )( handle.offset );
+	return ( void * )( size_t )( handle.offset );
 }
 
 void idVertexCache::UnbindIndex() {

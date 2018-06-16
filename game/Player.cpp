@@ -3179,7 +3179,7 @@ void idPlayer::PrintDebugHUD(void)
 	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
 	y += 12;
 	renderView->viewaxis.GetMat3Params(a, b, c);
-	sprintf(strText, "ViewMatrix:", renderView->vieworg.x, renderView->vieworg.y, renderView->vieworg.z);
+	sprintf(strText, "ViewMatrix:");
 	renderSystem->DrawSmallStringExt(1, y, strText.c_str( ), idVec4( 1, 1, 1, 1 ), false, declManager->FindMaterial( "textures/bigchars" ));
 	y += 12;
 	sprintf(strText, "x: %f   y: %f   z: %f", a.x, a.y, a.z);

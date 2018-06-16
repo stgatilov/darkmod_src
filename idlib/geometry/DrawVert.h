@@ -30,7 +30,7 @@ public:
 	idVec2			st;
 	idVec3			normal;
 	idVec3			tangents[2];
-	byte			color[4];
+	byte			color[4] = {0};
 #if 0 // was MACOS_X see comments concerning DRAWVERT_PADDED in Simd_Altivec.h 
 	float			padding;
 #endif

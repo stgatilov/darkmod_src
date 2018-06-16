@@ -481,7 +481,7 @@ void RB_ARB2_DrawInteractions( void ) {
 typedef struct {
 	GLenum			target;
 	GLuint			ident;
-	char*			name;
+	const char*		name;
 	GLuint          genId; // glsl program id
 } progDef_t;
 
@@ -681,8 +681,9 @@ int R_FindARBProgram( GLenum target, const char *program ) {
 	// add it to the list and load it
 	progs[i].ident = (program_t)0;	// will be gen'd by R_LoadARBProgram
 	progs[i].target = target;
-	progs[i].name = new char[strlen( program ) + 1];
-	strcpy( progs[i].name, program );	
+	char *progName = new char[strlen(program) + 1];
+	progs[i].name = progName;
+	strcpy(progName, program );
 	R_LoadARBProgram( i );
 
 	return progs[i].ident;

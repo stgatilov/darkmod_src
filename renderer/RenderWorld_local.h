@@ -91,7 +91,7 @@ struct InterTableHashFunction {
 		//note: f(x) = (A*x % P), where P = 2^31-1 is prime
 		static const unsigned MOD = ((1U<<31) - 1);
 		uint64_t prod = 0x04738F51ULL * (unsigned)idx;
-		unsigned mod = (prod >> 31) + prod & MOD;
+		unsigned mod = (prod >> 31) + (prod & MOD);
 		unsigned modm = mod - MOD;
 		mod = mod < MOD ? mod : modm;
 		return (int)mod;

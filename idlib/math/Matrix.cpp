@@ -6562,7 +6562,7 @@ idMatX::HessenbergReduction
 ============
 */
 void idMatX::HessenbergReduction( idMatX &H ) {
-	int i, j, m;
+	int i, j;
 	int low = 0;
 	int high = numRows - 1;
 	float scale, f, g, h;
@@ -6570,7 +6570,7 @@ void idMatX::HessenbergReduction( idMatX &H ) {
 
 	v.SetData( numRows, VECX_ALLOCA( numRows ) );
 
-	for ( m = low + 1; m <= high - 1; m++ ) {
+	for ( int m = low + 1; m <= high - 1; m++ ) {
 
 		scale = 0.0f;
 		for ( i = m; i <= high; i++ ) {

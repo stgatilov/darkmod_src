@@ -93,7 +93,7 @@ double Sys_ClockTicksPerSecond( void ) {
 
 	if ( !ticks ) {
 		HKEY hKey;
-		LPBYTE ProcSpeed;
+		uint64_t ProcSpeed;
 		DWORD buflen, ret;
 
 		if ( !RegOpenKeyEx( HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey ) ) {

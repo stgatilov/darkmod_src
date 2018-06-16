@@ -228,7 +228,11 @@ BASECPPFLAGS.append( BASEFLAGS )
 BASECPPFLAGS.append( '-pipe' )
 # warn all
 BASECPPFLAGS.append( '-Wall' )
-BASECPPFLAGS.append( '-Wno-unknown-pragmas' )
+BASECPPFLAGS.append( '-Wno-unknown-pragmas' )               # MSVC-specific pragmas
+BASECPPFLAGS.append( '-Wno-unused-variable' )               # too many, often happens from commenting out code
+BASECPPFLAGS.append( '-Wno-unused-but-set-variable' )       # useful for debugging, also may remain after commenting stuff
+BASECPPFLAGS.append( '-Wno-sign-compare' )                  # very nasty warning in the world of STL and size_t
+
 # this define is necessary to make sure threading support is enabled in X
 CORECPPFLAGS.append( '-DXTHREADS' )
 # don't wrap gcc messages
