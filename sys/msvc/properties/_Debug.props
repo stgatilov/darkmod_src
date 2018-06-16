@@ -17,7 +17,6 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <GenerateMapFile>true</GenerateMapFile>
     </Link>
   </ItemDefinitionGroup>
 </Project>
