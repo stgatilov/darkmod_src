@@ -857,7 +857,7 @@ void VPCALL idSIMD_SSE2::MixedSoundToSamples( short *samples, const float *mixBu
 //suitable for any compiler, OS and bitness  (intrinsics)
 //generally used on Windows 64-bit and all Linuxes
 
-#define OFFSETOF(s, m) ((int)(uintptr_t)&(((s*)NULL)->m))
+#define OFFSETOF(s, m) offsetof(s, m)
 #define SHUF(i0, i1, i2, i3) _MM_SHUFFLE(i3, i2, i1, i0)
 
 #define DOT_PRODUCT(xyz, a, b) \
@@ -972,11 +972,11 @@ template<class Lambda> static ID_INLINE void VertexMinMax( idVec3 &min, idVec3 &
 		rmin = _mm_min_ps(rmin, pos);
 		rmax = _mm_max_ps(rmax, pos);
 		if (i + 1 < count) {
-			__m128 pos = _mm_loadu_ps(&src[Index(i + 1)].xyz.x);
+			pos = _mm_loadu_ps(&src[Index(i + 1)].xyz.x);
 			rmin = _mm_min_ps(rmin, pos);
 			rmax = _mm_max_ps(rmax, pos);
 			if (i + 2 < count) {
-				__m128 pos = _mm_loadu_ps(&src[Index(i + 2)].xyz.x);
+				pos = _mm_loadu_ps(&src[Index(i + 2)].xyz.x);
 				rmin = _mm_min_ps(rmin, pos);
 				rmax = _mm_max_ps(rmax, pos);
 			}
