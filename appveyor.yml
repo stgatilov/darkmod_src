@@ -43,6 +43,8 @@ for:
       sudo apt-get -y install scons m4 subversion mesa-common-dev libxxf86vm-dev libopenal-dev libxext-dev
       
       if [ $PLATFORM = "Win32" ]; then
+      
+          sudo apt-get -y install g++-multilib libx11-dev:i386 libxxf86vm-dev:i386 libopenal-dev:i386 libxext-dev:i386
         
           export PLATFORM="x86"
         
