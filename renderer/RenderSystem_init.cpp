@@ -2234,10 +2234,6 @@ void idRenderSystemLocal::Init( void ) {
 	identitySpace.modelMatrix[0*4+0] = 1.0f;
 	identitySpace.modelMatrix[1*4+1] = 1.0f;
 	identitySpace.modelMatrix[2*4+2] = 1.0f;
-
-	// determine which back end we will use
-	// FIXME : ??? this is invalid here as there is not enough information to set it up correctly
-	//SetBackEndRenderer();
 }
 
 /*

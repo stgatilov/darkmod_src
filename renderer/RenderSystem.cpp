@@ -549,9 +549,6 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 		return;
 	}
 
-	// determine which back end we will use
-	//SetBackEndRenderer();
-
 	guiModel->Clear();
 
 	// for the larger-than-window tiled rendering screenshots
