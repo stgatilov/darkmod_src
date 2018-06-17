@@ -4,8 +4,12 @@ image:
 - Visual Studio 2017
 - Ubuntu
 
-configuration: Release
-platform: x64
+configuration:
+- release
+- debug
+platform:
+- Win32
+- x64
 shallow_clone: true
 
 test: off
@@ -37,16 +41,22 @@ for:
       sudo apt-get update
       
       sudo apt-get -y install scons m4 subversion mesa-common-dev libxxf86vm-dev libopenal-dev libxext-dev
+      
+      if [ $PLATFORM = "Win32" ]; then
+        
+          export PLATFORM="x86"
+        
+      fi
 
   build_script:
   - sh: >-
       mkdir build
       
-      scons BUILD="release" TARGET_ARCH="x64" -j4
+      scons BUILD="${CONFIGURATION}" TARGET_ARCH="${PLATFORM}" -j4
 
   after_build:
   - sh: >-
-      tar -cSvf thedarkmod.tar thedarkmod.x64 *.so
+      tar -cSvf thedarkmod.tar "thedarkmod.${PLATFORM}" *.so
 
       bzip2 thedarkmod.tar
 
