@@ -29,11 +29,11 @@ int ShadowMipMap;
 void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 	if( !fboPrimary )
 		qglGenFramebuffers( 1, &fboPrimary );
+	if( !renderBufferColor )
+		qglGenRenderbuffers( 1, &renderBufferColor );
 	if( msaa > 1 ) {
 		if( !fboResolve )
 			qglGenFramebuffers( 1, &fboResolve );
-		if( !renderBufferColor )
-			qglGenRenderbuffers( 1, &renderBufferColor );
 		if( !renderBufferDepthStencil )
 			qglGenRenderbuffers( 1, &renderBufferDepthStencil );
 		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
@@ -44,6 +44,12 @@ void FB_CreatePrimaryResolve( GLuint width, GLuint height, int msaa ) {
 		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
 		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferDepthStencil );
+	} else {
+		// only need the color render buffer, depth will be bound directly to texture
+		qglBindRenderbuffer( GL_RENDERBUFFER, renderBufferColor );
+		qglRenderbufferStorage( GL_RENDERBUFFER, GL_RGBA, width, height );
+		qglBindFramebuffer( GL_FRAMEBUFFER, fboPrimary );
+		qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, renderBufferColor );
 	}
 }
 
@@ -89,8 +95,7 @@ void FB_CopyColorBuffer() {
 	GL_SelectTexture( 0 );
 	if( primaryOn && r_multiSamples.GetInteger() > 1 ) {
 		FB_ResolveMultisampling( GL_COLOR_BUFFER_BIT );
-	}
-	if( !primaryOn ) {
+	} else {
 		globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
 			backEnd.viewDef->viewport.y1, backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1,
 			backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1, true );
@@ -184,9 +189,11 @@ void CheckCreatePrimary() {
 		int msaa = r_multiSamples.GetInteger();
 		FB_CreatePrimaryResolve( curWidth, curHeight, msaa );
 		qglBindFramebuffer( GL_FRAMEBUFFER, (msaa > 1) ? fboResolve : fboPrimary );
-		// attach a texture to FBO color attachement point
-		qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
-		// attach a renderbuffer to depth attachment point
+		if( msaa > 1 ) {
+			// attach a texture to FBO color attachment point
+			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, globalImages->currentRenderImage->texnum, 0 );
+		}
+		// attach a texture to depth attachment point
 		GLuint depthTex = globalImages->currentDepthImage->texnum;
 		if ( glConfig.vendor == glvIntel ) { // separate stencil, thank God
 			qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0 );
