@@ -25,18 +25,18 @@
 #include <emmintrin.h>
 #endif
 
-#ifdef __linux__
 #include "../../sys/sys_public.h"
+
+#ifdef __linux__
 #include <cassert>
 #include <float.h> // for FLT_MIN and FLT_MAX #3867
 #endif
 
 #ifdef MACOS_X
-// greebo: Include this for ID_INLINE
-#include "../../sys/sys_public.h"
-
+#ifdef(__ppc__)
 // for square root estimate instruction
 #include <ppc_intrinsics.h>
+#endif
 // for FLT_MIN
 #include <float.h>
 #endif
