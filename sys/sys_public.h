@@ -93,8 +93,13 @@
 
 #endif
 
+#if defined(__APPLE__)
+	//note: previously this macro was set in XCode projects, so it is used all over the code
+	//here we try to detect MacOS build and automatically set it
+	#define MACOS_X
+#endif
 // Mac OSX
-#if defined(MACOS_X) || defined(__APPLE__)
+#if defined(MACOS_X)
 
 #define BUILD_STRING				"MacOSX-universal"
 #define BUILD_OS_ID					1
