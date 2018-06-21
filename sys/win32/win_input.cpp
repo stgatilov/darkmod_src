@@ -798,6 +798,47 @@ void	Sys_GrabMouseCursor( bool grabIt ) {
 #endif
 }
 
+void Sys_AdjustMouseMovement(float &dx, float &dy) {
+	static int cp_mouseLastQuery = -1000000000;
+	if ((clock() - cp_mouseLastQuery) > CLOCKS_PER_SEC) {
+		//ask for mouse settings regularly, but at most once per second
+		bool init = (cp_mouseLastQuery == -1000000000);
+		cp_mouseLastQuery = clock();
+
+		//control panel parameters
+		SystemParametersInfo(SPI_GETMOUSESPEED, 0, &win32.cp_mouseSpeed, 0);
+		SystemParametersInfo(SPI_GETMOUSE, 0, win32.cp_mouseAccel, 0);
+
+		//DPI scaling settings (Windows 10)
+		if (init) {
+			win32.hShcoreDll = LoadLibrary("Shcore.dll");
+			win32.pfGetDpiForMonitor = win32.hShcoreDll ? (Win32Vars_t::GetDpiForMonitor_t)GetProcAddress(win32.hShcoreDll, "GetDpiForMonitor") : NULL;
+		}
+		if (win32.pfGetDpiForMonitor) {
+			HMONITOR hMon = MonitorFromWindow(win32.hWnd, MONITOR_DEFAULTTONEAREST);
+			if (hMon && hMon != INVALID_HANDLE_VALUE) {
+				UINT dpiX, dpiY;
+				HRESULT hr = win32.pfGetDpiForMonitor(hMon, 0/*MDT_Effective_DPI*/, &dpiX, &dpiY);
+				if (SUCCEEDED(hr)) {
+					win32.effectiveScreenDpi[0] = dpiX;
+					win32.effectiveScreenDpi[1] = dpiY;
+				}
+			}
+		}
+	}
+
+	// based on https://msdn.microsoft.com/en-us/library/windows/desktop/ms646260(v=vs.85).aspx
+	float fullDelta = idMath::Fmax(idMath::Fabs(dx), idMath::Fabs(dy));
+	if (win32.cp_mouseAccel[0] && fullDelta > win32.cp_mouseAccel[0]) {
+		dx *= 2.0f, dy *= 2.0f;
+		if (win32.cp_mouseAccel[2] == 2 && fullDelta > win32.cp_mouseAccel[1])
+			dx *= 2.0f, dy *= 2.0f;
+	}
+	dx *= (win32.cp_mouseSpeed * 0.1f) * (win32.effectiveScreenDpi[0] / 96.0f);
+	dy *= (win32.cp_mouseSpeed * 0.1f) * (win32.effectiveScreenDpi[1] / 96.0f);
+}
+
+
 //=====================================================================================
 
 static DIDEVICEOBJECTDATA polled_didod[ DINPUT_BUFFERSIZE ];  // Receives buffered data 

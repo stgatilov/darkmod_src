@@ -254,6 +254,15 @@ void Sys_GrabMouseCursor( bool grabIt ) {
 	}
 }
 
+void Sys_AdjustMouseMovement(float &dx, float &dy) {
+    //TODO: apply desktop acceleration settings
+    //supposedly, base them on:
+    //  mouse_accel_numerator;
+    //  mouse_accel_denominator;
+    //  mouse_threshold;
+    //just make sure they are available...
+}
+
 /**
  * XPending() actually performs a blocking read 
  *  if no events available. From Fakk2, by way of

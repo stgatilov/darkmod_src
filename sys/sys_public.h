@@ -368,6 +368,10 @@ void			Sys_EndMouseInputEvents( void );
 // operation like map loading, the system can release the mouse cursor
 // when in windowed mode
 void			Sys_GrabMouseCursor( bool grabIt );
+//stgatilov #4768: apply OS adjustments to raw mouse cursor movement (for one frame)
+//in case of Windows: sensitivity + acceleration from Control Panel, DPI scaling
+//it is used to make mouse in menu GUIs feel more like in OS
+void			Sys_AdjustMouseMovement(float &dx, float &dy);
 
 void			Sys_ShowWindow( bool show );
 bool			Sys_IsWindowVisible( void );

@@ -140,6 +140,17 @@ typedef struct {
 	LPDIRECTINPUTDEVICE8	g_pMouse;
 	LPDIRECTINPUTDEVICE8	g_pKeyboard;
 
+	//windows 10 dpi scaling api
+	HMODULE hShcoreDll = NULL;
+	typedef HRESULT(WINAPI* GetDpiForMonitor_t)(HMONITOR hmonitor, int dpiType, UINT *dpiX, UINT *dpiY);
+	GetDpiForMonitor_t pfGetDpiForMonitor = NULL;
+	//mouse settings in Control Panel: sensitivity, acceleration
+	int cp_mouseSpeed = 10;
+	int cp_mouseAccel[3] = { 0, 0, 0 };
+	//effective DPI scaling on the current monitor
+	//note: currently it is updated only when user moves mouse in menu
+	int effectiveScreenDpi[2] = { 96, 96 };
+
 	HANDLE			renderCommandsEvent;
 	HANDLE			renderCompletedEvent;
 	HANDLE			renderActiveEvent;
