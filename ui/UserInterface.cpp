@@ -342,8 +342,17 @@ const char *idUserInterfaceLocal::HandleEvent( const sysEvent_t *event, int _tim
 				w = 640.0f;
 				h = 480.0f;
 			}
-			cursorX += event->evValue * (640.0f / w);
-			cursorY += event->evValue2 * (480.0f / h);
+			float dx = event->evValue * (640.0f / w);
+			float dy = event->evValue2 * (480.0f / h);
+
+			//stgatilov #4768: allow customizing menu sensitivity
+			if (!cvarSystem->GetCVarBool("sensitivityMenuOverride")) {
+				//perform OS-specific adjustments, given that player did not disable them
+				Sys_AdjustMouseMovement(dx, dy);
+			}
+			float sens = cvarSystem->GetCVarFloat("sensitivityMenu");
+			cursorX += dx * sens;
+			cursorY += dy * sens;
 		}
 		else {
 			// not a fullscreen GUI but some ingame thing - no scaling needed

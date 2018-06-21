@@ -380,6 +380,8 @@ private:
 	static idCVar	in_toggleCrouch;
 	static idCVar	in_toggleZoom;
 	static idCVar	sensitivity;
+	static idCVar	sensitivityMenu;
+	static idCVar	sensitivityMenuOverride;
 	static idCVar	m_pitch;
 	static idCVar	m_yaw;
 	static idCVar	m_strafeScale;
@@ -396,7 +398,9 @@ idCVar idUsercmdGenLocal::in_alwaysRun( "in_alwaysRun", "0", CVAR_SYSTEM | CVAR_
 idCVar idUsercmdGenLocal::in_toggleRun( "in_toggleRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _speed button toggles run on/off - only in MP" );
 idCVar idUsercmdGenLocal::in_toggleCrouch( "in_toggleCrouch", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _movedown button toggles player crouching/standing" );
 idCVar idUsercmdGenLocal::in_toggleZoom( "in_toggleZoom", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "pressing _zoom button toggles zoom on/off" );
-idCVar idUsercmdGenLocal::sensitivity( "sensitivity", "5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse view sensitivity" );
+idCVar idUsercmdGenLocal::sensitivity( "sensitivity", "5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "Mouse view sensitivity (during gameplay)" );
+idCVar idUsercmdGenLocal::sensitivityMenu("sensitivityMenu", "1.0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "In menu GUIs: defines mouse sensitivity. ");
+idCVar idUsercmdGenLocal::sensitivityMenuOverride("sensitivityMenuOverride", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "In meni GUIs: ignore OS-specific mouse movement adjustments. ");
 idCVar idUsercmdGenLocal::m_pitch( "m_pitch", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse pitch scale" );
 idCVar idUsercmdGenLocal::m_yaw( "m_yaw", "0.022", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse yaw scale" );
 idCVar idUsercmdGenLocal::m_strafeScale( "m_strafeScale", "6.25", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "mouse strafe movement scale" );
