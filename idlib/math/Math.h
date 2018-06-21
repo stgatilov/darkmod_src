@@ -33,7 +33,7 @@
 #endif
 
 #ifdef MACOS_X
-#ifdef(__ppc__)
+#ifdef __ppc__
 // for square root estimate instruction
 #include <ppc_intrinsics.h>
 #endif
