@@ -15516,7 +15516,7 @@ void VPCALL idSIMD_SSE::NormalizeTangents( idDrawVert *verts, const int numVerts
 idSIMD_SSE::CreateShadowCache
 ============
 */
-int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *vertexCache, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) {
+int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *shadowVerts, int *vertRemap, const idVec3 &lightOrigin, const idDrawVert *verts, const int numVerts ) {
 #if 1
 	int outVerts;
 
@@ -15536,7 +15536,7 @@ int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *vertexCache, int *vertRemap, c
 
 		mov			edx, vertRemap
 		mov			esi, verts
-		mov			edi, vertexCache
+		mov			edi, shadowVerts
 		mov			eax, numVerts
 		and			eax, ~3
 		jz			done4
@@ -15655,18 +15655,18 @@ int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *vertexCache, int *vertRemap, c
 			continue;
 		}
 		const float *v = verts[i].xyz.ToFloatPtr();
-		vertexCache[outVerts+0][0] = v[0];
-		vertexCache[outVerts+0][1] = v[1];
-		vertexCache[outVerts+0][2] = v[2];
-		vertexCache[outVerts+0][3] = 1.0f;
+		shadowVerts[outVerts+0][0] = v[0];
+		shadowVerts[outVerts+0][1] = v[1];
+		shadowVerts[outVerts+0][2] = v[2];
+		shadowVerts[outVerts+0][3] = 1.0f;
 
 		// R_SetupProjection() builds the projection matrix with a slight crunch
 		// for depth, which keeps this w=0 division from rasterizing right at the
 		// wrap around point and causing depth fighting with the rear caps
-		vertexCache[outVerts+1][0] = v[0] - lightOrigin[0];
-		vertexCache[outVerts+1][1] = v[1] - lightOrigin[1];
-		vertexCache[outVerts+1][2] = v[2] - lightOrigin[2];
-		vertexCache[outVerts+1][3] = 0.0f;
+		shadowVerts[outVerts+1][0] = v[0] - lightOrigin[0];
+		shadowVerts[outVerts+1][1] = v[1] - lightOrigin[1];
+		shadowVerts[outVerts+1][2] = v[2] - lightOrigin[2];
+		shadowVerts[outVerts+1][3] = 0.0f;
 		vertRemap[i] = outVerts;
 		outVerts += 2;
 	}
@@ -15680,7 +15680,7 @@ int VPCALL idSIMD_SSE::CreateShadowCache( idVec4 *vertexCache, int *vertRemap, c
 idSIMD_SSE::CreateVertexProgramShadowCache
 ============
 */
-int VPCALL idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *vertexCache, const idDrawVert *verts, const int numVerts ) {
+int VPCALL idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *shadowVerts, const idDrawVert *verts, const int numVerts ) {
 #if 1
 
 	__asm {
@@ -15690,7 +15690,7 @@ int VPCALL idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *vertexCache, cons
 		movaps		xmm7, xmm4
 
 		mov			esi, verts
-		mov			edi, vertexCache
+		mov			edi, shadowVerts
 		mov			eax, numVerts
 		and			eax, ~3
 		jz			done4
@@ -15761,15 +15761,15 @@ int VPCALL idSIMD_SSE::CreateVertexProgramShadowCache( idVec4 *vertexCache, cons
 
 	for ( int i = 0; i < numVerts; i++ ) {
 		const float *v = verts[i].xyz.ToFloatPtr();
-		vertexCache[i*2+0][0] = v[0];
-		vertexCache[i*2+0][1] = v[1];
-		vertexCache[i*2+0][2] = v[2];
-		vertexCache[i*2+0][3] = 1.0f;
+		shadowVerts[i*2+0][0] = v[0];
+		shadowVerts[i*2+0][1] = v[1];
+		shadowVerts[i*2+0][2] = v[2];
+		shadowVerts[i*2+0][3] = 1.0f;
 
-		vertexCache[i*2+1][0] = v[0];
-		vertexCache[i*2+1][1] = v[1];
-		vertexCache[i*2+1][2] = v[2];
-		vertexCache[i*2+1][3] = 0.0f;
+		shadowVerts[i*2+1][0] = v[0];
+		shadowVerts[i*2+1][1] = v[1];
+		shadowVerts[i*2+1][2] = v[2];
+		shadowVerts[i*2+1][3] = 0.0f;
 	}
 	return numVerts * 2;
 
