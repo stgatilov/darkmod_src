@@ -253,6 +253,8 @@ if ( g_os == 'Linux' ):
 	if ( TARGET_ARCH == 'x64' ):
 		BASECPPFLAGS.append( '-m64' )
 		BASELINKFLAGS.append( '-m64' )
+		# current ffmpeg dep was built without -fPIC, so can't use position-independent code generation
+		BASELINKFLAGS.append( '-no-pie' )
     
 	if ( OPENMP != '0' ):
 		# openmp support for changes made to the renderer
