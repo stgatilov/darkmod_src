@@ -761,7 +761,7 @@ uintptr_t Sys_DLL_Load(const char *dllName) {
 
 		if ( idStr::IcmpPath( dllPath, loadedPath ) ) {
 			Sys_Printf( "ERROR: LoadLibrary '%s' wants to load '%s'\n", dllPath, loadedPath );
-			Sys_DLL_Unload( (int)libHandle );
+			Sys_DLL_Unload( (uintptr_t)libHandle );
 			return 0;
 		}
 	}
