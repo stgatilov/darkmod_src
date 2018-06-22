@@ -839,5 +839,59 @@ public:
 	void SetGuiInfo( idDict *dict );
 };
 
+
+//stgatilov: sometimes pointers are stored in idWinVar
+//so I added this type specifically for such hacky cases
+class idWinUIntPtr : public idWinVar {
+public:
+	idWinUIntPtr() : idWinVar() {};
+	~idWinUIntPtr() {};
+	virtual void Init(const char *_name, idWindow *win) {
+		idWinVar::Init(_name, win);
+		assert(!guiDict);
+	}
+	size_t &operator=(const size_t &other) {
+		data = other;
+		assert(!guiDict);
+		return data;
+	}
+	idWinUIntPtr &operator=(const idWinUIntPtr &other) {
+		idWinVar::operator=(other);
+		data = other.data;
+		return *this;
+	}
+	operator size_t() const {
+		return data;
+	}
+	virtual void Set(const char *val) {
+		data = atoi(val);
+		assert(!guiDict);
+	}
+
+	virtual void Update() {
+		const char *s = GetName();
+		assert(!guiDict);
+	}
+	virtual const char *c_str() const {
+		return va("%zu", data);
+	}
+
+	// SaveGames
+	virtual void WriteToSaveGame(idFile *savefile) {
+		assert(false);
+	}
+	virtual void ReadFromSaveGame(idFile *savefile) {
+		assert(false);
+	}
+
+	// no suitable conversion
+	virtual float x(void) const { assert(false); return 0.0f; };
+
+protected:
+	size_t data;
+};
+
+
+
 #endif /* !__WINVAR_H__ */
 
