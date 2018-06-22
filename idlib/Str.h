@@ -203,6 +203,7 @@ public:
 
 	// file name methods
 	int					FileNameHash( void ) const;						// hash key for the filename (skips extension)
+	idStr &				NormalizePath();								// stgatilov: remove stuff like "dir/.." from path, compress double slashes
 	idStr &				BackSlashesToSlashes( void );					// convert slashes
 	idStr &				SetFileExtension( const char *extension );		// set the given file extension
 	idStr &				StripFileExtension( void );						// remove any file extension

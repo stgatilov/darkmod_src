@@ -938,6 +938,44 @@ int idStr::FileNameHash( void ) const {
 	return hash;
 }
 
+
+idStr &idStr::NormalizePath() {
+	static const int MAX_STACK = 1024;
+	int start[MAX_STACK], end[MAX_STACK];
+	int cnt = 0;
+
+	//always take leading slash 'as is'
+	int outLen = 0;
+	if (len > 0 && data[0] == '\\' || data[0] == '/')
+		outLen++;
+
+	int st = 0;
+	for (int i = 0; i <= len; i++) {
+		if (i == len || data[i] == '\\' || data[i] == '/') {
+			if (i > st) {
+				int clen = i - st;
+				if (clen == 2 && data[st] == '.' && data[st + 1] == '.' && cnt > 0) {
+					//remove last component, ignore this '..'
+					cnt--;
+					outLen -= (end[cnt] - start[cnt] + 1);
+				}
+				else {
+					start[cnt] = st;
+					end[cnt] = i;
+					cnt++;
+					int addLen = clen + (i < len);
+					memmove(&data[outLen], &data[st], addLen);
+					outLen += addLen;
+				}
+			}
+			st = i + 1;
+		}
+	}
+	data[outLen] = 0;
+
+	return *this;
+}
+
 /*
 ============
 idStr::BackSlashesToSlashes
