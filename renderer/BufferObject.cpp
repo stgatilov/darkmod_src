@@ -178,7 +178,15 @@ void * BufferObject::MapBuffer( int mapOffset ) {
 	void *buffer = NULL;
 
 	qglBindBufferARB( bufferType, bufferObject );
-	buffer = qglMapBufferRange( bufferType, mapOffset, GetAllocedSize() - mapOffset, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT );
+	if (qglMapBufferRange) {
+		buffer = qglMapBufferRange(bufferType, mapOffset, GetAllocedSize() - mapOffset, GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_FLUSH_EXPLICIT_BIT);
+	}
+	else {
+		if (mapOffset != 0)
+			common->FatalError("Cannot map range of buffer starting from %d without glMapBufferRange", mapOffset);
+		buffer = qglMapBufferARB(bufferType, GL_WRITE_ONLY);
+	}
+
 	if( buffer == NULL ) {
 		common->Error( "BufferObject::MapBuffer: failed" );
 	}
@@ -197,7 +205,8 @@ void BufferObject::FlushBuffer( int offset, int length ) {
 	assert( IsMapped() );
 
 	qglBindBufferARB( bufferType, bufferObject );
-	qglFlushMappedBufferRange( bufferType, offset, length );
+	if (qglFlushMappedBufferRange)
+		qglFlushMappedBufferRange( bufferType, offset, length );
 }
 
 /*
