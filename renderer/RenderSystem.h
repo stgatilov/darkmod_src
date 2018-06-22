@@ -60,8 +60,11 @@ typedef struct glconfig_s {
 	bool				textureNonPowerOfTwoAvailable;
 	bool				depthBoundsTestAvailable;
 	bool				pixelBufferAvailable;
+	bool				mapBufferRangeAvailable;
 	bool				framebufferObjectAvailable;
 	bool				framebufferBlitAvailable;
+	bool				framebufferMultisampleAvailable;
+	bool				framebufferPackedDepthStencilAvailable;
 	bool				multipleRenderTargetsAvailable;		//glDrawBuffers
 	bool				fenceSyncAvailable;
 
