@@ -2087,7 +2087,7 @@ bool MergeMenu(CMenu * pMenuDestination, const CMenu * pMenuAdd, bool bTopLevel 
 			HMENU hNewMenu = NewPopupMenu.GetSafeHmenu();
 			if (pMenuDestination->InsertMenu(iInsertPosDefault,
 				MF_BYPOSITION | MF_POPUP | MF_ENABLED, 
-				(UINT)hNewMenu, sMenuAddString ))
+				(UINT_PTR)hNewMenu, sMenuAddString ))
 			{
 				// don't forget to correct the item count
 				iMenuDestItemCount++;
@@ -2158,7 +2158,7 @@ void CXYWnd::HandleDrop() {
 					if (pChild) {
 						pMakeEntityPop->AppendMenu (
 							MF_POPUP,
-							reinterpret_cast < unsigned int > (pChild->GetSafeHmenu()),
+							reinterpret_cast < UINT_PTR > (pChild->GetSafeHmenu()),
 							strActive
 						);
 						g_ptrMenus.Add(pChild);
@@ -2177,7 +2177,7 @@ void CXYWnd::HandleDrop() {
 				if (pChild) {
 					pMakeEntityPop->AppendMenu (
 						MF_POPUP,
-						reinterpret_cast < unsigned int > (pChild->GetSafeHmenu()),
+						reinterpret_cast < UINT_PTR > (pChild->GetSafeHmenu()),
 						strActive
 					);
 					g_ptrMenus.Add(pChild);
@@ -2193,7 +2193,7 @@ void CXYWnd::HandleDrop() {
 		if ( pMakeEntityPop != &m_mnuDrop ) {
 			m_mnuDrop.AppendMenu (
 				MF_POPUP,
-				reinterpret_cast < unsigned int > (pMakeEntityPop->GetSafeHmenu()),
+				reinterpret_cast < UINT_PTR > (pMakeEntityPop->GetSafeHmenu()),
 				"Make Entity"
 			);
 		}

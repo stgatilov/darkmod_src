@@ -150,7 +150,7 @@ void rvOpenFileDialog::UpdateFileList ( void )
 	HWND		list = GetDlgItem ( mWnd, IDC_TOOLS_FILELIST );
 	int			i;
 	int			filter;
-		
+
 	ListView_DeleteAllItems ( list );
 	
 	// Add all the folders first
@@ -266,7 +266,7 @@ void rvOpenFileDialog::HandleCommandOK ( void )
 			}
 			fileSystem->CloseFile ( file );
 		}
-				
+
 		EndDialog ( mWnd, 1 );
 	}		
 	
@@ -295,7 +295,7 @@ void rvOpenFileDialog::HandleInitDialog ( void )
 	SendMessage( mWndLookin,CBEM_SETIMAGELIST,0,(LPARAM) mImageList );
 	
 	// Back button is a bitmap button
-	SendMessage( GetDlgItem ( mWnd, IDC_TOOLS_BACK ), BM_SETIMAGE, IMAGE_BITMAP, (LONG) mBackBitmap );
+	SendMessage( GetDlgItem ( mWnd, IDC_TOOLS_BACK ), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM) mBackBitmap );
 	
 	// Allow custom titles
 	SetWindowText ( mWnd, mTitle );

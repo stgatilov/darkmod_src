@@ -43,7 +43,7 @@ public:
 
 	rvPropertyGrid ( );
 	
-	bool	Create			( HWND parent, int id, int style = 0 );
+	bool	Create			( HWND parent, UINT_PTR id, int style = 0 );
 
 	void	Move			( int x, int y, int w, int h, BOOL redraw = FALSE );
 

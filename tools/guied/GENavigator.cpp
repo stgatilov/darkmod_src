@@ -461,7 +461,7 @@ void rvGENavigator::AddWindow ( idWindow* window )
 	ZeroMemory ( &item, sizeof(item) );
 	item.mask = LVIF_PARAM|LVIF_STATE|LVIF_IMAGE;
 	item.iItem = ListView_GetItemCount ( mTree );	
-	item.lParam = (LONG) window;
+	item.lParam = (LPARAM) window;
 	item.iImage = 0;
 	item.state = rvGEWindowWrapper::GetWrapper(window)->IsSelected ()? LVIS_SELECTED:0;
 	item.stateMask = LVIS_SELECTED;
@@ -520,7 +520,7 @@ void rvGENavigator::Update ( void )
 	// For some reason the horizontal scrollbar wants to show up initially after an update
 	// so this forces it not to
 	RECT rClient;
-	GetClientRect ( mTree, &rClient );		
+	GetClientRect ( mTree, &rClient );
 	ListView_SetColumnWidth ( mTree, 0, rClient.right-rClient.left-1 );
 }
 

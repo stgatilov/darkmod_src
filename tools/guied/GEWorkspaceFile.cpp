@@ -34,7 +34,7 @@ bool rvGEWorkspace::SaveFile ( const char* filename )
 	idFile*		file;
 	idWindow*	window;
 
-	SetCursor ( LoadCursor ( NULL, MAKEINTRESOURCE(IDC_WAIT ) ) );
+	SetCursor ( LoadCursor ( NULL, IDC_WAIT ) );
 	
 	mFilename = filename;
 	
@@ -49,7 +49,7 @@ bool rvGEWorkspace::SaveFile ( const char* filename )
 	if ( !(file = fileSystem->OpenFileWrite ( tempfile ) ) )
 	{
 		int error = GetLastError ( );
-		SetCursor ( LoadCursor ( NULL, MAKEINTRESOURCE(IDC_ARROW ) ) );
+		SetCursor ( LoadCursor ( NULL, IDC_ARROW ) );
 		return false;
 	}
 	
@@ -62,7 +62,7 @@ bool rvGEWorkspace::SaveFile ( const char* filename )
 	if ( !CopyFile ( ospath, filename, FALSE ) )
 	{
 		DeleteFile ( ospath );
-		SetCursor ( LoadCursor ( NULL, MAKEINTRESOURCE(IDC_ARROW ) ) );
+		SetCursor ( LoadCursor ( NULL, IDC_ARROW ) );
 		return false;
 	}
 	
@@ -73,7 +73,7 @@ bool rvGEWorkspace::SaveFile ( const char* filename )
 	mNew      = false;
 	UpdateTitle ( );	
 
-	SetCursor ( LoadCursor ( NULL, MAKEINTRESOURCE(IDC_ARROW ) ) );
+	SetCursor ( LoadCursor ( NULL, IDC_ARROW ) );
 	
 	return true;
 }

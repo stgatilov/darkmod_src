@@ -27,7 +27,7 @@ void SpinButton_SetIncrement ( HWND hWnd, float inc )
 
 void SpinButton_SetRange ( HWND hWnd, float minRange, float maxRange )
 {
-	SendMessage ( hWnd, UDM_SETRANGE32, (LONG)(minRange*100.0f), (LONG)(maxRange*100.0f) );	
+	SendMessage ( hWnd, UDM_SETRANGE32, (WPARAM)(minRange*100.0f), (LPARAM)(maxRange*100.0f) );	
 }
 
 void SpinButton_HandleNotify ( NMHDR* hdr )
@@ -61,7 +61,7 @@ void SpinButton_HandleNotify ( NMHDR* hdr )
 	
 	LONG minRange;
 	LONG maxRange; 
-	SendMessage ( hdr->hwndFrom, UDM_GETRANGE32, (LONG)&minRange, (LONG)&maxRange );
+	SendMessage ( hdr->hwndFrom, UDM_GETRANGE32, (WPARAM)&minRange, (LPARAM)&maxRange );
 	if ( minRange !=  0 || maxRange != 0 )
 	{
 		float minRangef = (float)(long)minRange / 100.0f;

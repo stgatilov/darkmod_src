@@ -238,7 +238,7 @@ INT_PTR CPathTreeCtrl::OnToolHitTest(CPoint point, TOOLINFO * pTI) const {
 	if( nFlags & TVHT_ONITEM ) {
 		GetItemRect( hitem, &rect, TRUE );
 		pTI->hwnd = m_hWnd;
-		pTI->uId = (UINT)hitem;
+		pTI->uId = (UINT_PTR)hitem;
 		pTI->lpszText = LPSTR_TEXTCALLBACK;
 		pTI->rect = rect;
 		return pTI->uId;
@@ -256,12 +256,12 @@ BOOL CPathTreeCtrl::OnToolTipText( UINT id, NMHDR * pNMHDR, LRESULT * pResult ) 
 	TOOLTIPTEXTA* pTTTA = (TOOLTIPTEXTA*)pNMHDR;
 	TOOLTIPTEXTW* pTTTW = (TOOLTIPTEXTW*)pNMHDR;
 
-	UINT nID = pNMHDR->idFrom;
+	UINT_PTR nID = pNMHDR->idFrom;
 
 	*pResult = 0;
 
 	// Do not process the message from built in tooltip 
-	if( nID == (UINT)m_hWnd &&
+	if( nID == (UINT_PTR)m_hWnd &&
 			(( pNMHDR->code == TTN_NEEDTEXTA && pTTTA->uFlags & TTF_IDISHWND ) ||
 			( pNMHDR->code == TTN_NEEDTEXTW && pTTTW->uFlags & TTF_IDISHWND ) ) ) {
 		return FALSE;
@@ -284,7 +284,7 @@ BOOL CPathTreeCtrl::OnToolTipText( UINT id, NMHDR * pNMHDR, LRESULT * pResult ) 
 	if( nFlags & TVHT_ONITEM ) {
 		// relay message to parent
 		pTTTA->hdr.hwndFrom = GetSafeHwnd();
-		pTTTA->hdr.idFrom = (UINT) hitem;
+		pTTTA->hdr.idFrom = (UINT_PTR) hitem;
 		if ( GetParent()->SendMessage( WM_NOTIFY, ( TTN_NEEDTEXT << 16 ) | GetDlgCtrlID(), (LPARAM)pTTTA ) == FALSE ) {
 			return FALSE;
 		}

@@ -229,7 +229,7 @@ LRESULT CALLBACK rvGEProperties::WndProc ( HWND hWnd, UINT msg, WPARAM wParam, L
 									 !idStr::Icmp ( prop, "name" ) )
 								{
 									MessageBeep ( MB_ICONASTERISK );
-								}
+s								}
 								else
 								{
 									idDict tempstate;
@@ -260,7 +260,7 @@ LRESULT CALLBACK rvGEProperties::WndProc ( HWND hWnd, UINT msg, WPARAM wParam, L
 			// Attach the class to the window first
 			cs = (LPCREATESTRUCT) lParam;
 			kv = (rvGEProperties*) cs->lpCreateParams;
-			SetWindowLongPtr ( hWnd, GWLP_USERDATA, (LONG)kv );
+			SetWindowLongPtr ( hWnd, GWLP_USERDATA, (LONG_PTR)kv );
 
 			kv->mGrid.Create ( hWnd, 999, PGS_ALLOWINSERT );					
 			
