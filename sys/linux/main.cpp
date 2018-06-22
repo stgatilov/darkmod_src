@@ -275,22 +275,9 @@ Sys_GetClockticks
 ===============
 */
 double Sys_GetClockTicks( void ) {
-#if defined( __i386__ )
-	unsigned long lo, hi;
-
-	__asm__ __volatile__ (
-						  "push %%ebx\n"			\
-						  "xor %%eax,%%eax\n"		\
-						  "cpuid\n"					\
-						  "rdtsc\n"					\
-						  "mov %%eax,%0\n"			\
-						  "mov %%edx,%1\n"			\
-						  "pop %%ebx\n"
-						  : "=r" (lo), "=r" (hi) );
-	return (double) lo + (double) 0xFFFFFFFF * hi;
-#else
-    return 0.0;
-#endif
+	unsigned int hi, lo;
+	__asm__ volatile("rdtsc" : "=a" (lo), "=d" (hi));
+	return (double) (((uint64_t)hi << 32) | lo);
 }
 
 /*
