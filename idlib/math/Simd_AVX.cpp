@@ -57,7 +57,7 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 		frustumData[i + 16] = f[2];
 		frustumData[i + 24] = f[3];
 	}
-	__m256 fA = _mm256_load_ps( frustum[0].ToFloatPtr() );
+	__m256 fA = _mm256_load_ps( &frustumData[0] );
 	__m256 fB = _mm256_load_ps( &frustumData[8] );
 	__m256 fC = _mm256_load_ps( &frustumData[16] );
 	__m256 fD = _mm256_load_ps( &frustumData[24] );
