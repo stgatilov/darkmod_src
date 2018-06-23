@@ -1291,13 +1291,10 @@ void R_AddModelSurfaces( void ) {
 	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
 
 		idRenderEntityLocal &def = *vEntity->entityDef;
-		if ( def.dynamicModel ) { // debug filter
-			if ( r_skipModels.GetInteger() == 1 )
-				continue;
-		} else {
-			if ( r_skipModels.GetInteger() == 2 )
-				continue;
-		}
+		if ( r_skipModels.GetInteger() == 1 && def.dynamicModel ) // debug filters
+			continue;
+		if ( r_skipModels.GetInteger() == 2 && !def.dynamicModel )
+			continue;
 
 		if ( r_useEntityScissors.GetBool() ) {
 			// calculate the screen area covered by the entity
@@ -1306,31 +1303,31 @@ void R_AddModelSurfaces( void ) {
 			vEntity->scissorRect.Intersect( scissorRect );
 
 			if ( r_showEntityScissors.GetBool() ) {
-				R_ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
+				R_ShowColoredScreenRect( vEntity->scissorRect, def.index );
 			}
 		}
 
         float oldFloatTime = 0.0f;
         int oldTime = 0;
 
-		game->SelectTimeGroup( vEntity->entityDef->parms.timeGroup );
+		game->SelectTimeGroup( def.parms.timeGroup );
 
-		if ( vEntity->entityDef->parms.timeGroup ) {
+		if ( def.parms.timeGroup ) {
 			oldFloatTime = tr.viewDef->floatTime;
 			oldTime = tr.viewDef->renderView.time;
 
-			tr.viewDef->floatTime = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup ) * 0.001;
-			tr.viewDef->renderView.time = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup );
+			tr.viewDef->floatTime = game->GetTimeGroupTime( def.parms.timeGroup ) * 0.001;
+			tr.viewDef->renderView.time = game->GetTimeGroupTime( def.parms.timeGroup );
 		}
 
-		if ( tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 1 ) {
-			if ( vEntity->entityDef->parms.timeGroup ) {
+		if ( tr.viewDef->isXraySubview && def.parms.xrayIndex == 1 ) {
+			if ( def.parms.timeGroup ) {
 				tr.viewDef->floatTime = oldFloatTime;
 				tr.viewDef->renderView.time = oldTime;
 			}
 			continue;
-		} else if ( !tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 2 ) {
-			if ( vEntity->entityDef->parms.timeGroup ) {
+		} else if ( !tr.viewDef->isXraySubview && def.parms.xrayIndex == 2 ) {
+			if ( def.parms.timeGroup ) {
 				tr.viewDef->floatTime = oldFloatTime;
 				tr.viewDef->renderView.time = oldTime;
 			}
@@ -1338,14 +1335,14 @@ void R_AddModelSurfaces( void ) {
 		}
 
 		// Don't let particle entities re-instantiate their dynamic model during non-visible views (in TDM, the light gem render) -- SteveL #3970
-		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>( vEntity->entityDef->parms.hModel ) != NULL )
+		if ( tr.viewDef->IsLightGem() && dynamic_cast<const idRenderModelPrt*>(def.parms.hModel ) != NULL )
 			continue;
 
 		// add the ambient surface if it has a visible rectangle
 		if ( !vEntity->scissorRect.IsEmpty() ) {
-			model = R_EntityDefDynamicModel( vEntity->entityDef );
+			model = R_EntityDefDynamicModel( &def );
 			if ( model == NULL || model->NumSurfaces() <= 0 ) {
-				if ( vEntity->entityDef->parms.timeGroup ) {
+				if ( def.parms.timeGroup ) {
 					tr.viewDef->floatTime = oldFloatTime;
 					tr.viewDef->renderView.time = oldTime;
 				}
@@ -1362,8 +1359,8 @@ void R_AddModelSurfaces( void ) {
 		// for all the entity / light interactions on this entity, add them to the view
 		//
 		if ( tr.viewDef->isXraySubview ) {
-			if ( vEntity->entityDef->parms.xrayIndex == 2 ) {
-				for ( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
+			if ( def.parms.xrayIndex == 2 ) {
+				for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
 					next = inter->entityNext;
 					if ( inter->lightDef->viewCount != tr.viewCount ) {
 						continue;
@@ -1374,7 +1371,7 @@ void R_AddModelSurfaces( void ) {
 		} else {
 			// all empty interactions are at the end of the list so once the
 			// first is encountered all the remaining interactions are empty
-			for ( inter = vEntity->entityDef->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
+			for ( inter = def.firstInteraction; inter != NULL && !inter->IsEmpty(); inter = next ) {
 				next = inter->entityNext;
 
 				// skip any lights that aren't currently visible
@@ -1387,11 +1384,10 @@ void R_AddModelSurfaces( void ) {
 			}
 		}
 
-		if ( vEntity->entityDef->parms.timeGroup ) {
+		if ( def.parms.timeGroup ) {
 			tr.viewDef->floatTime = oldFloatTime;
 			tr.viewDef->renderView.time = oldTime;
 		}
-
 	}
 }
 

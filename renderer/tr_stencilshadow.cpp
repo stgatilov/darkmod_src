@@ -217,7 +217,6 @@ other surfaces, we could just compare indexes.
 ===============
 */
 static bool PointsOrdered( const idVec3 &a, const idVec3 &b ) {
-	float	i, j;
 
 	// vectors that wind up getting an equal hash value will
 	// potentially cause a misorder, which can show as a couple
@@ -228,10 +227,14 @@ static bool PointsOrdered( const idVec3 &a, const idVec3 &b ) {
 
 	// in the very rare case that these might be equal, all that would
 	// happen is an oportunity for a tiny rasterization shadow crack
-	i = a[0] + a[1]*127 + a[2]*1023;
-	j = b[0] + b[1]*127 + b[2]*1023;
+	/*float i = a[0] + a[1]*127 + a[2]*1023;
+	float j = b[0] + b[1]*127 + b[2]*1023;
+	return (bool)(i < j);*/
 
-	return (bool)(i < j);
+	// duzenko: code above is taking too much cpu time, try a shortcut
+	int *v1 = (int*)a.ToFloatPtr();
+	int *v2 = (int*)b.ToFloatPtr();
+	return (v1[0] ^ v1[1] ^ v1[2]) < (v2[0] ^ v2[1] ^ v2[2]);
 }
 
 /*

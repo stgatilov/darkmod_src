@@ -45,8 +45,8 @@ idSIMD_AVX::GetName
 ============
 */
 void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon ) {
-	extern idCVar r_ignore;
-	if ( !r_ignore.GetBool() ) { // hidden under this cvar for now
+	idCVar com_tempAllowAVX( "com_tempAllowAVX", "0", CVAR_SYSTEM, "to be removed before release" );
+	if ( !com_tempAllowAVX.GetBool() ) { // hidden under this cvar for now
 		return idSIMD_Generic::CullByFrustum( verts, numVerts, frustum, pointCull, epsilon );
 	}
 	const idVec4 &f0 = frustum[0].ToVec4(), &f1 = frustum[1].ToVec4(), &f2 = frustum[2].ToVec4(), 
