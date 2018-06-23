@@ -49,18 +49,12 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 	if ( !r_ignore.GetBool() ) { // hidden under this cvar for now
 		return idSIMD_Generic::CullByFrustum( verts, numVerts, frustum, pointCull, epsilon );
 	}
-	float frustumData[32]; // TODO replace with _mm256_set_ps
-	for ( int i = 0; i < 6; i++ ) {
-		auto f = frustum[i].ToFloatPtr();
-		frustumData[i] = f[0];
-		frustumData[i + 8] = f[1];
-		frustumData[i + 16] = f[2];
-		frustumData[i + 24] = f[3];
-	}
-	__m256 fA = _mm256_load_ps( &frustumData[0] );
-	__m256 fB = _mm256_load_ps( &frustumData[8] );
-	__m256 fC = _mm256_load_ps( &frustumData[16] );
-	__m256 fD = _mm256_load_ps( &frustumData[24] );
+	const idVec4 &f0 = frustum[0].ToVec4(), &f1 = frustum[1].ToVec4(), &f2 = frustum[2].ToVec4(), 
+		&f3 = frustum[3].ToVec4(), &f4 = frustum[4].ToVec4(), &f5 = frustum[5].ToVec4();
+	__m256 fA = _mm256_set_ps( 0, 0, f5.x, f4.x, f3.x, f2.x, f1.x, f0.x );
+	__m256 fB = _mm256_set_ps( 0, 0, f5.y, f4.y, f3.y, f2.y, f1.y, f0.y );
+	__m256 fC = _mm256_set_ps( 0, 0, f5.z, f4.z, f3.z, f2.z, f1.z, f0.z );
+	__m256 fD = _mm256_set_ps( 0, 0, f5.w, f4.w, f3.w, f2.w, f1.w, f0.w);
 	for ( int j = 0; j < numVerts; j++ ) {
 		auto &vec = verts[j].xyz;
 		__m256 vX = _mm256_set1_ps( vec.x );
@@ -76,7 +70,6 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 				fD
 			)
 		);
-		//_mm256_storeu_ps( distances, d );
 		const short mask6 = (1 << 6) - 1;
 		__m256 eps = _mm256_set1_ps( epsilon );
 		int mask_lo = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_LT_OQ ) );
@@ -85,5 +78,3 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
 	}
 }
-
-
