@@ -2969,3 +2969,22 @@ void VPCALL idSIMD_Generic::MixedSoundToSamples( short *samples, const float *mi
 		}
 	}
 }
+
+/*
+============
+idSIMD_Generic::CullByFrustum
+Moved from R_CalcPointCull
+============
+*/
+void VPCALL idSIMD_Generic::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon ) {
+	for ( int j = 0; j < numVerts; j++ ) {
+		idVec3 &vec = verts[j].xyz;
+		short bits = 0;
+		for ( int i = 0; i < 6; i++ ) {
+			float d = frustum[i].Distance( vec );
+			bits |= (d < epsilon) << i;
+			bits |= (d > -epsilon) << (i + 6);
+		}
+		pointCull[j] = bits;
+	}
+}

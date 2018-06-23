@@ -112,9 +112,6 @@ If a high order bit is clear, the point is outside the plane (definately negativ
 //#define	POINT_CULLED(p1) ( ( pointCull[p1] ^ 0xfc0 ) & 0xfc0 )
 #define	POINT_CULLED(p1) ( ( pointCull[p1] & 0xfc0 ) != 0xfc0 )
 
-//#define	LIGHT_CLIP_EPSILON	0.001f
-#define	LIGHT_CLIP_EPSILON		0.1f
-
 #define	MAX_CLIP_SIL_EDGES		2048
 static int	numClipSilEdges;
 static int	clipSilEdges[MAX_CLIP_SIL_EDGES][2];
@@ -750,26 +747,17 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 		}
 	}
 
-	// initialize point cull
-	for ( i = 0; i < tri->numVerts; i++ ) {
-		pointCull[i] = frontBits;
-	}
-
 	// if the surface is not completely inside the light frustum
-	if ( frontBits == ( ( ( 1 << 6 ) - 1 ) ) << 6 )
-		return;
-
-#if 1 // duzenko: don't use SIMD here because temp buffers are slow
-	for ( int j = 0; j < tri->numVerts; j++ ) {
-		idVec3 &vec = tri->verts[j].xyz;
-		short bits = 0;
-		for ( i = 0; i < 6; i++ ) {
-			float d = frustum[i].Distance( vec );
-			bits |= (d < LIGHT_CLIP_EPSILON) << i;
-			bits |= (d > -LIGHT_CLIP_EPSILON) << (i + 6);
+	if ( frontBits == (((1 << 6) - 1)) << 6 ) {
+		// initialize point cull
+		for ( i = 0; i < tri->numVerts; i++ ) {
+			pointCull[i] = frontBits;
 		}
-		pointCull[j] = bits;
+		return;
 	}
+
+#if 1 // duzenko: we have a generic and an AVX version of this routine, neither of them using temp buffers
+	SIMDProcessor->CullByFrustum( tri->verts, tri->numVerts, frustum, pointCull, LIGHT_CLIP_EPSILON );
 #else
 	float *planeSide;
 	byte *side1, *side2;

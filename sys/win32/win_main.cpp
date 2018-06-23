@@ -1154,6 +1154,9 @@ void Sys_Init( void ) {
 		}
 		if ( win32.cpuid & CPUID_SSE3 ) {
 			string += "SSE3 & ";
+		}		
+		if ( win32.cpuid & CPUID_AVX ) {
+			string += "AVX & ";
 		}
 /*		if ( win32.cpuid & CPUID_HTT ) {
 			string += "HTT & ";

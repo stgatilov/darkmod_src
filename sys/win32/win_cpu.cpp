@@ -351,7 +351,34 @@ static bool HasSSE3( void ) {
 	CPUID( 1, regs );
 
 	// bit 0 of ECX denotes SSE3 existence
-	if ( regs[_REG_ECX] & ( 1 << 0 ) ) {
+	if ( regs[_REG_ECX] & (1 << 0) ) {
+		return true;
+	}
+	return false;
+}
+
+/*
+================
+HasAVX
+================
+*/
+static bool HasAVX( void ) {
+	OSVERSIONINFOEX osvi;
+	ZeroMemory( &osvi, sizeof( osvi ) );
+	osvi.dwOSVersionInfoSize = sizeof( osvi );
+	GetVersionEx( (OSVERSIONINFO*)&osvi );
+	if ( osvi.dwMajorVersion < 6 )
+		return false;
+	if ( osvi.dwMajorVersion == 6 && osvi.dwMinorVersion < 1 )
+		return false;
+	if ( osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 1 && osvi.wServicePackMajor < 1 )
+		return false;
+
+	unsigned regs[4];
+	// get CPU feature bits
+	CPUID( 1, regs );
+	// bit 28 of ECX denotes AVX existence
+	if ( regs[_REG_ECX] & (1 << 28) ) {
 		return true;
 	}
 	return false;
@@ -596,6 +623,11 @@ cpuid_t Sys_GetCPUId( void ) {
 	// check for Streaming SIMD Extensions 3 aka Prescott's New Instructions
 	if ( HasSSE3() ) {
 		flags |= CPUID_SSE3;
+	}
+
+	// check for Streaming SIMD Extensions 3 aka Prescott's New Instructions
+	if ( HasAVX() ) {
+		flags |= CPUID_AVX;
 	}
 
 	// check for Hyper-Threading Technology

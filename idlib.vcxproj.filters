@@ -165,6 +165,9 @@
       <Filter>Text</Filter>
     </ClCompile>
     <ClCompile Include="idlib\StdFilesystem.cpp" />
+    <ClCompile Include="idlib\math\Simd_AVX.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="idlib\bv\Bounds.h">
@@ -369,6 +372,9 @@
     <ClInclude Include="idlib\StdFilesystem.h" />
     <ClInclude Include="idlib\containers\DenseHash.h">
       <Filter>Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="idlib\math\Simd_AVX.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -700,6 +700,7 @@
     <ClInclude Include="idlib\math\Random.h" />
     <ClInclude Include="idlib\math\Rotation.h" />
     <ClInclude Include="idlib\math\Simd.h" />
+    <ClInclude Include="idlib\math\Simd_AVX.h" />
     <ClInclude Include="idlib\math\Simd_Generic.h" />
     <ClInclude Include="idlib\math\Simd_MMX.h" />
     <ClInclude Include="idlib\math\Simd_SSE.h" />
@@ -1139,6 +1140,7 @@
     <ClCompile Include="idlib\math\Quat.cpp" />
     <ClCompile Include="idlib\math\Rotation.cpp" />
     <ClCompile Include="idlib\math\Simd.cpp" />
+    <ClCompile Include="idlib\math\Simd_AVX.cpp" />
     <ClCompile Include="idlib\math\Simd_Generic.cpp" />
     <ClCompile Include="idlib\math\Simd_MMX.cpp" />
     <ClCompile Include="idlib\math\Simd_SSE.cpp" />
