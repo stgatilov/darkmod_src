@@ -1167,10 +1167,24 @@ MAIN
 
 void R_RenderView( viewDef_t &parms );
 
-// performs radius cull first, then corner cull
-bool R_CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
 bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
 bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
+/*
+=================
+R_CullLocalBox
+
+// performs radius cull first, then corner cull
+Performs quick test before expensive test
+Returns true if the box is outside the given global frustum, (positive sides are out)
+Moved from tr_main.cpp to save on the function call cost
+=================
+*/
+ID_INLINE bool R_CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
+	if ( R_RadiusCullLocalBox( bounds, modelMatrix, numPlanes, planes ) ) {
+		return true;
+	}
+	return R_CornerCullLocalBox( bounds, modelMatrix, numPlanes, planes );
+}
 
 void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] );
 

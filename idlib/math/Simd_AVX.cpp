@@ -45,7 +45,7 @@ idSIMD_AVX::CullByFrustum2
 ============
 */
 void VPCALL idSIMD_AVX::CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) {
-	idCVar com_tempAllowAVX( "com_tempAllowAVX", "0", CVAR_SYSTEM, "to be removed before release" );
+	static idCVar com_tempAllowAVX( "com_tempAllowAVX", "0", CVAR_SYSTEM, "to be removed before release" );
 	if ( !com_tempAllowAVX.GetBool() ) { // hidden under this cvar for now
 		return idSIMD_SSE::CullByFrustum2( verts, numVerts, frustum, pointCull, epsilon );
 	}

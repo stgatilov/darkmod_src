@@ -265,9 +265,11 @@ void idMD5Mesh::UpdateSurface( const struct renderEntity_s *ent, const idJointMa
 	int i, base;
 	srfTriangles_t *tri;
 
-	tr.pc.c_deformedSurfaces++;
-	tr.pc.c_deformedVerts += deformInfo->numOutputVerts;
-	tr.pc.c_deformedIndexes += deformInfo->numIndexes;
+	if ( r_showDynamic.GetBool() ) {
+		tr.pc.c_deformedSurfaces++;
+		tr.pc.c_deformedVerts += deformInfo->numOutputVerts;
+		tr.pc.c_deformedIndexes += deformInfo->numIndexes;
+	}
 
 	surf->shader = shader;
 
