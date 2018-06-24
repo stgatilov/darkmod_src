@@ -1475,6 +1475,8 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	// shut down the existing game if it is running
 	UnloadMap();
 
+	R_ToggleSmpFrame(); // duzenko 4848: FIXME find a better place to clear the "next frame" data
+
 	// don't do the deferred caching if we are reloading the same map
 	if ( fullMapName == currentMapName ) {
 		reloadingSameMap = true;
