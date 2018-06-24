@@ -760,7 +760,7 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 	}
 
 #if 1 // duzenko: we have a generic and an AVX version of this routine, neither of them using temp buffers
-	SIMDProcessor->CullByFrustum( tri->verts, tri->numVerts, frustum, pointCull, LIGHT_CLIP_EPSILON );
+	SIMDProcessor->CullByFrustum2( tri->verts, tri->numVerts, frustum, pointCull, LIGHT_CLIP_EPSILON );
 #else
 	float *planeSide;
 	byte *side1, *side2;

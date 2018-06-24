@@ -182,27 +182,16 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 			float *planeSide = (float *)_alloca16(tri->numVerts * sizeof(float));
 
 			for (i = 0; i < 6; i++) {
-				// if completely infront of this clipping plane
+				// if completely in front of this clipping plane
 				if (frontBits & (1 << i)) {
 					continue;
 				}
 				SIMDProcessor->Dot(planeSide, cullInfo.localClipPlanes[i], tri->verts, tri->numVerts);
 				SIMDProcessor->CmpLT(cullInfo.cullBits, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts);
 			}
-#else // duzenko #4424: same as above but more like d3bfg: 1 pass through memory array, no memset and extra mem allocation
-			for (int j = 0; j < tri->numVerts; j++) {
-				byte b = 0;
-				idVec3 &vec = tri->verts[j].xyz;
-				for (int i = 0; i < 6; i++)	{
-					// if completely infront of this clipping plane
-					if ((frontBits & (1 << i)))
-						continue;
-					float d = cullInfo.localClipPlanes[i].Distance(vec);
-					b |= (d < LIGHT_CLIP_EPSILON) << i;
-				}
-				cullInfo.cullBits[j] = b;
+#else // duzenko #4848
+		SIMDProcessor->CullByFrustum( tri->verts, tri->numVerts, cullInfo.localClipPlanes, cullInfo.cullBits, LIGHT_CLIP_EPSILON );
 #endif
-		}
 	}
 }
 

@@ -26,5 +26,5 @@
 class idSIMD_AVX : public idSIMD_SSE3 {
 public:
 	virtual const char * VPCALL GetName( void ) const;
-	virtual void VPCALL CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon );
+	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon );
 };
