@@ -16945,4 +16945,58 @@ void VPCALL idSIMD_SSE::MixedSoundToSamples( short *samples, const float *mixBuf
 #endif
 }
 
+/*
+============
+idSIMD_SSE::CullByFrustum
+============
+*/
+void VPCALL idSIMD_SSE::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon ) {
+	const idVec4 &f0 = frustum[0].ToVec4(), &f1 = frustum[1].ToVec4(), &f2 = frustum[2].ToVec4(),
+		&f3 = frustum[3].ToVec4(), &f4 = frustum[4].ToVec4(), &f5 = frustum[5].ToVec4();
+	__m128 fA14 = _mm_set_ps( f3.x, f2.x, f1.x, f0.x );
+	__m128 fA56 = _mm_set_ps( 0, 0, f5.x, f4.x );
+	__m128 fB14 = _mm_set_ps( f3.y, f2.y, f1.y, f0.y );
+	__m128 fB56 = _mm_set_ps( 0, 0, f5.y, f4.y );
+	__m128 fC14 = _mm_set_ps( f3.z, f2.z, f1.z, f0.z );
+	__m128 fC56 = _mm_set_ps( 0, 0, f5.z, f4.z );
+	__m128 fD14 = _mm_set_ps( f3.w, f2.w, f1.w, f0.w );
+	__m128 fD56 = _mm_set_ps( 0, 0, f5.w, f4.w );
+	for ( int j = 0; j < numVerts; j++ ) {
+		auto &vec = verts[j].xyz;
+		__m128 vX = _mm_set1_ps( vec.x );
+		__m128 vY = _mm_set1_ps( vec.y );
+		__m128 vZ = _mm_set1_ps( vec.z );
+		__m128 d14 = _mm_add_ps(
+			_mm_add_ps(
+				_mm_mul_ps( fA14, vX ),
+				_mm_mul_ps( fB14, vY )
+			),
+			_mm_add_ps(
+				_mm_mul_ps( fC14, vZ ),
+				fD14
+			)
+		);
+		__m128 d56 = _mm_add_ps(
+			_mm_add_ps(
+				_mm_mul_ps( fA56, vX ),
+				_mm_mul_ps( fB56, vY )
+			),
+			_mm_add_ps(
+				_mm_mul_ps( fC56, vZ ),
+				fD56
+			)
+		);
+		const short mask6 = (1 << 6) - 1;
+		__m128 eps = _mm_set1_ps( epsilon );
+		int mask_lo14 = _mm_movemask_ps( _mm_cmplt_ps( d14, eps ) );
+		int mask_lo56 = _mm_movemask_ps( _mm_cmplt_ps( d56, eps ) );
+		eps = _mm_set1_ps( -epsilon );
+		int mask_hi14 = _mm_movemask_ps( _mm_cmpgt_ps( d14, eps ) );
+		int mask_hi56 = _mm_movemask_ps( _mm_cmpgt_ps( d56, eps ) );
+		int mask_lo = mask_lo14 | mask_lo56 << 4;
+		int mask_hi = mask_hi14 | mask_hi56 << 4;
+		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
+	}
+}
+
 #endif /* SIMD_USE_ASM */

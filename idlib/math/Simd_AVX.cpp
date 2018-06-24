@@ -41,13 +41,13 @@ const char * idSIMD_AVX::GetName( void ) const {
 
 /*
 ============
-idSIMD_AVX::GetName
+idSIMD_AVX::CullByFrustum
 ============
 */
 void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon ) {
 	idCVar com_tempAllowAVX( "com_tempAllowAVX", "0", CVAR_SYSTEM, "to be removed before release" );
 	if ( !com_tempAllowAVX.GetBool() ) { // hidden under this cvar for now
-		return idSIMD_Generic::CullByFrustum( verts, numVerts, frustum, pointCull, epsilon );
+		return idSIMD_SSE::CullByFrustum( verts, numVerts, frustum, pointCull, epsilon );
 	}
 	const idVec4 &f0 = frustum[0].ToVec4(), &f1 = frustum[1].ToVec4(), &f2 = frustum[2].ToVec4(), 
 		&f3 = frustum[3].ToVec4(), &f4 = frustum[4].ToVec4(), &f5 = frustum[5].ToVec4();
@@ -77,4 +77,5 @@ void VPCALL idSIMD_AVX::CullByFrustum( idDrawVert *verts, const int numVerts, co
 		int mask_hi = _mm256_movemask_ps( _mm256_cmp_ps( d, eps, _CMP_GT_OQ ) );
 		pointCull[j] = mask_lo & mask6 | (mask_hi & mask6) << 6;
 	}
+	_mm256_zeroupper();
 }
