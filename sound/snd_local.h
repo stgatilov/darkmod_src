@@ -838,7 +838,7 @@ public:
 
 	//stgatilov #4534: for playing sound from a video
 	idCinematic *cinematic;
-	void LoadFromCinematic(const idMaterial *material);
+	void LoadFromCinematic(idCinematic *cin);
 	bool FetchFromCinematic(int sampleOffset, int *sampleSize, float *output);
 };
 

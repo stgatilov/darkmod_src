@@ -877,6 +877,8 @@ cinData_t idCinematicFFMpeg::ImageForTime(int milliseconds) {
 		//so we open decoder and start video right now
 		Sys_EnterCriticalSection(CRITICAL_SECTION_DECODER);
 		bool ok = OpenDecoder();
+		res.imageWidth = _framebufferWidth;
+		res.imageHeight = _framebufferHeight;
 		_loopNumber = 0;
 		_loopDuration = 0;
 		_startTime = 0.001 * milliseconds;

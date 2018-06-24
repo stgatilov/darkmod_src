@@ -420,8 +420,7 @@ inline void IssueSoundSampleFailure(const char* message, ALenum errorCode, const
 	common->Error("%s: file: %s, error code: %d", message, soundName, errorCode);
 }
 
-void idSoundSample::LoadFromCinematic(const idMaterial *material) {
-	idCinematic *cin = material ? material->GetCinematic() : NULL;
+void idSoundSample::LoadFromCinematic(idCinematic *cin) {
 	if (!cin) {
 		MakeDefault();
 		return;
@@ -453,10 +452,18 @@ void idSoundSample::Load( void ) {
 	purged = false;
 	hardwareBuffer = false;
 
+	//stgatilov #4847: check if this sound was created via testVideo command
+	if (name.CmpPrefix("__testvideo") == 0) {
+		idCinematic *cin = 0;
+		sscanf(name.c_str(), "__testvideo:%p__", &cin);
+		return LoadFromCinematic(cin);
+	}
 	//stgatilov #4534: material name may be specified instead of sound file
 	//in such case this material must have cinematics, and sound is taken from there
-	if (const idMaterial *material = declManager->FindMaterial(name, false))
-		return LoadFromCinematic(material);
+	if (const idMaterial *material = declManager->FindMaterial(name, false)) {
+		idCinematic *cin = material->GetCinematic();
+		return LoadFromCinematic(cin);
+	}
 
 	timestamp = GetNewTimeStamp();
 

@@ -998,42 +998,59 @@ R_TestVideo_f
 Plays the cinematic file in a testImage
 =============
 */
-void R_TestVideo_f( const idCmdArgs &args ) {
-	if ( tr.testVideo ) {
-		delete tr.testVideo;
+static void TestVideoClean() {
+	if (tr.testVideo) {
+		tr.testVideo->Close();
 		tr.testVideo = NULL;
 	}
 	tr.testImage = NULL;
-
+}
+void R_TestVideo_f( const idCmdArgs &args ) {
+	TestVideoClean();
 	if ( args.Argc() < 2 ) {
 		return;
 	}
+	//stgatilov #4847: support testing FFmpeg videos with audio stream
+	bool withAudio = args.Argc() >= 3 && strcmp(args.Argv(2), "withAudio") == 0;
 
 	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	tr.testVideo = idCinematic::Alloc( nullptr );
-	tr.testVideo->InitFromFile( args.Argv( 1 ), true );
+	tr.testVideo = idCinematic::Alloc(args.Argv(1));
+	tr.testVideo->InitFromFile( args.Argv( 1 ), false, withAudio);
+	tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;
 
-	cinData_t	cin;
+	cinData_t cin;
 	cin = tr.testVideo->ImageForTime( 0 );
-	if ( !cin.image ) {
-		delete tr.testVideo;
-		tr.testVideo = NULL;
-		tr.testImage = NULL;
-		return;
+	if (!cin.image) {
+		common->Warning("Failed to get first frame from video file");
+		return TestVideoClean();
 	}
-
 	common->Printf( "%i x %i images\n", cin.imageWidth, cin.imageHeight );
-
 	int	len = tr.testVideo->AnimationLength();
 	common->Printf( "%5.1f seconds of video\n", len * 0.001 );
 
-	tr.testVideoStartTime = tr.primaryRenderView.time * 0.001;
+	if (withAudio) {
+		//stgatilov #4847: check that audio stream is peekable
+		float buff[4096] = { 0 };
+		int cnt = 1024;
+		bool ok = tr.testVideo->SoundForTimeInterval(0, &cnt, 44100, buff);
+		if (!ok) {
+			common->Warning("Failed to get first few sound samples from video file");
+			return TestVideoClean();
+		}
+		common->Printf("Sound stream opened\n");
 
-	// try to play the matching wav file
-	idStr	wavString = args.Argv( ( args.Argc() == 2 ) ? 1 : 2 );
-	wavString.StripFileExtension();
-	wavString = wavString + ".wav";
-	session->sw->PlayShaderDirectly( wavString.c_str() );
+		//create implicit sound shader with special name
+		char soundName[256];
+		idStr::snPrintf(soundName, sizeof(soundName), "__testvideo:%p__", tr.testVideo);
+		session->sw->PlayShaderDirectly(soundName);
+	}
+	else {
+		// try to play the matching wav file
+		idStr	wavString = args.Argv((args.Argc() == 2) ? 1 : 2);
+		wavString.StripFileExtension();
+		wavString = wavString + ".wav";
+		session->sw->PlayShaderDirectly(wavString.c_str());
+	}
 }
 
 static int R_QsortSurfaceAreas( const void *a, const void *b ) {

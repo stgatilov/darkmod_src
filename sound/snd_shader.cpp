@@ -78,9 +78,22 @@ idSoundShader::SetDefaultText
 ===================
 */
 bool idSoundShader::SetDefaultText( void ) {
-	idStr wavname;
+	idStr wavname = GetName();
 
-	wavname = GetName();
+	if (wavname.CmpPrefix("__testvideo")) {
+		//stgatilov #4847: this case is only used for testVideo command
+		//see R_TestVideo_f in RenderSystem_init.cpp
+		char generated[2048];
+		idStr::snPrintf(generated, sizeof(generated),
+			"sound %s // IMPLICITLY GENERATED\n"
+			"{\n"
+			"fromVideo %s\n"
+			"}\n"
+		, GetName(), wavname.c_str());
+		SetText(generated);
+		return true;
+	}
+
 	wavname.DefaultFileExtension( ".wav" );		// if the name has .ogg in it, that will stay
 
 	// if there exists a wav file with the same name
