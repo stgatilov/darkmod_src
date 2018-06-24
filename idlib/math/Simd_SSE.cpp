@@ -16951,16 +16951,14 @@ idSIMD_SSE::CullByFrustum
 ============
 */
 void VPCALL idSIMD_SSE::CullByFrustum( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short int *pointCull, float epsilon ) {
-	const idVec4 &f0 = frustum[0].ToVec4(), &f1 = frustum[1].ToVec4(), &f2 = frustum[2].ToVec4(),
-		&f3 = frustum[3].ToVec4(), &f4 = frustum[4].ToVec4(), &f5 = frustum[5].ToVec4();
-	__m128 fA14 = _mm_set_ps( f3.x, f2.x, f1.x, f0.x );
-	__m128 fA56 = _mm_set_ps( 0, 0, f5.x, f4.x );
-	__m128 fB14 = _mm_set_ps( f3.y, f2.y, f1.y, f0.y );
-	__m128 fB56 = _mm_set_ps( 0, 0, f5.y, f4.y );
-	__m128 fC14 = _mm_set_ps( f3.z, f2.z, f1.z, f0.z );
-	__m128 fC56 = _mm_set_ps( 0, 0, f5.z, f4.z );
-	__m128 fD14 = _mm_set_ps( f3.w, f2.w, f1.w, f0.w );
-	__m128 fD56 = _mm_set_ps( 0, 0, f5.w, f4.w );
+	__m128 fA14 = _mm_set_ps( frustum[3][0], frustum[2][0], frustum[1][0], frustum[0][0] );
+	__m128 fA56 = _mm_set_ps( 0, 0, frustum[5][0], frustum[4][0] );
+	__m128 fB14 = _mm_set_ps( frustum[3][1], frustum[2][1], frustum[1][1], frustum[0][1] );
+	__m128 fB56 = _mm_set_ps( 0, 0, frustum[5][1], frustum[4][1] );
+	__m128 fC14 = _mm_set_ps( frustum[3][2], frustum[2][2], frustum[1][2], frustum[0][2] );
+	__m128 fC56 = _mm_set_ps( 0, 0, frustum[5][2], frustum[4][2] );
+	__m128 fD14 = _mm_set_ps( frustum[3][3], frustum[2][3], frustum[1][3], frustum[0][3] );
+	__m128 fD56 = _mm_set_ps( 0, 0, frustum[5][3], frustum[4][3] );
 	for ( int j = 0; j < numVerts; j++ ) {
 		auto &vec = verts[j].xyz;
 		__m128 vX = _mm_set1_ps( vec.x );

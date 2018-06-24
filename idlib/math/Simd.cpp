@@ -36,7 +36,7 @@
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
 idSIMDProcessor *	SIMDProcessor = NULL;
-
+bool sse4_present;
 
 /*
 ================
@@ -56,10 +56,9 @@ idSIMD::InitProcessor
 ============
 */
 void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
-	cpuid_t cpuid;
 	idSIMDProcessor *newProcessor;
 
-	cpuid = idLib::sys->GetProcessorId();
+	cpuid_t cpuid = idLib::sys->GetProcessorId();
 
 	/*
 	* Tels: Bug #2413: Under Linux, cpuid_t is 0, so use inline assembly to get
@@ -149,6 +148,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 			cpuid & CPUID_SSE ? " SSE" : "",
 			cpuid & CPUID_SSE2 ? " SSE2" : "",
 			cpuid & CPUID_SSE3 ? " SSE3" : "",
+			cpuid & CPUID_SSE4 ? " SSE4" : "",
 			cpuid & CPUID_AVX ? " AVX" : "",
 			//cpuid & CPUID_3DNOW ? " 3DNow!" : "",
 			cpuid & CPUID_CMOV ? " CMOV" : "" );
@@ -190,11 +190,11 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 		idLib::sys->FPU_SetFTZ( true );
 		idLib::common->Printf( "enabled Flush-To-Zero mode\n" );
 	}
-
 	if ( cpuid & CPUID_DAZ ) {
 		idLib::sys->FPU_SetDAZ( true );
 		idLib::common->Printf( "enabled Denormals-Are-Zero mode\n" );
 	}
+	sse4_present = cpuid & CPUID_SSE4;
 }
 
 /*

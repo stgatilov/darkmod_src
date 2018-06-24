@@ -694,7 +694,7 @@ ID_INLINE void idStr::Empty( void ) {
 }
 
 ID_INLINE bool idStr::IsEmpty( void ) const {
-	return ( idStr::Cmp( data, "" ) == 0 );
+	return len == 0;
 }
 
 ID_INLINE void idStr::Clear( void ) {

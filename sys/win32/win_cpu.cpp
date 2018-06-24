@@ -359,6 +359,24 @@ static bool HasSSE3( void ) {
 
 /*
 ================
+HasSSE4
+================
+*/
+static bool HasSSE4( void ) {
+	unsigned regs[4];
+
+	// get CPU feature bits
+	CPUID( 1, regs );
+
+	// bit 19 of ECX denotes SSE4 existence
+	if ( regs[_REG_ECX] & (1 << 19) ) {
+		return true;
+	}
+	return false;
+}
+
+/*
+================
 HasAVX
 ================
 */
@@ -625,7 +643,12 @@ cpuid_t Sys_GetCPUId( void ) {
 		flags |= CPUID_SSE3;
 	}
 
-	// check for Streaming SIMD Extensions 3 aka Prescott's New Instructions
+	// check for Streaming SIMD Extensions 4
+	if ( HasSSE4() ) {
+		flags |= CPUID_SSE4;
+	}
+
+	// check for AVX
 	if ( HasAVX() ) {
 		flags |= CPUID_AVX;
 	}
