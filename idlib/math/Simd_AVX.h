@@ -23,8 +23,16 @@
 ===============================================================================
 */
 
+#ifdef __linux__
+#define ALLOW_AVX __attribute__ ((__target__ ("avx")))
+#else
+#define ALLOW_AVX
+#endif
+
+
+
 class idSIMD_AVX : public idSIMD_SSE3 {
 public:
 	virtual const char * VPCALL GetName( void ) const;
-	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon );
+	virtual void VPCALL CullByFrustum2( idDrawVert *verts, const int numVerts, const idPlane frustum[6], unsigned short *pointCull, float epsilon ) ALLOW_AVX;
 };

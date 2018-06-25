@@ -565,7 +565,8 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	if ( r_useCulling.GetInteger() < 2 )
 		return false;
 
-#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
+//#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
+#if 0		//does not compile on Linux
 	__m128 transformed[8];
 	// transform into world space
 	for ( i = 0; i < 8; i++ ) {
@@ -581,6 +582,8 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 		frust = planes + i;
 		__m128 f = _mm_load_ps( frust->ToFloatPtr() );
 		for ( j = 0; j < 8; j++ ) {
+			//stgatilov: this is slow, because horizontal sum takes all time
+			//better leave scalar code
 			__m128 m = _mm_mul_ps( f, transformed[j] );
 			float dist = m.m128_f32[0] + m.m128_f32[1] + m.m128_f32[2] + m.m128_f32[3];
 			if ( dist < 0 )
@@ -600,7 +603,7 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	for ( i = 0; i < numPlanes; i++ ) {
 		frust = planes + i;
 		for ( j = 0; j < 8; j++ ) {
-			float dist = frust->Distance( transformed[j].ToVec3() );
+			float dist = frust->Distance( transformed[j] );
 			if ( dist < 0 ) {
 				break;
 			}
