@@ -48,6 +48,17 @@ CopyBuffer
 #ifdef __SSE2__
 typedef unsigned int uint32;
 void CopyBuffer( byte * dst, const byte * src, int numBytes ) {
+	if (((size_t)dst | (size_t)src) & 15) {
+		//report error, but do not spam
+		static int reportedCount = 0;
+		if (reportedCount < 5) {
+			reportedCount++;
+			common->Warning("CopyBuffer: pointer not aligned, falling back to memcpy (slow)");
+		}
+		//use memcpy instead
+		memcpy(dst, src, numBytes);
+		return;
+	}
 	assert_16_byte_aligned( dst );
 	assert_16_byte_aligned( src );
 
