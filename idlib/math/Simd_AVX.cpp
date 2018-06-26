@@ -36,7 +36,7 @@ idSIMD_AVX::GetName
 ============
 */
 const char * idSIMD_AVX::GetName( void ) const {
-	return "MMX & SSE & SSE2 & SSE3 & AVX";
+	return "MMX & SSE* & AVX";
 }
 
 /*

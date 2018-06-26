@@ -1155,6 +1155,12 @@ void Sys_Init( void ) {
 		if ( win32.cpuid & CPUID_SSE3 ) {
 			string += "SSE3 & ";
 		}		
+		if (win32.cpuid & CPUID_SSSE3) {
+			string += "SSSE3 & ";
+		}
+		if (win32.cpuid & CPUID_SSE41) {
+			string += "SSE4.1 & ";
+		}
 		if ( win32.cpuid & CPUID_AVX ) {
 			string += "AVX & ";
 		}
@@ -1187,6 +1193,12 @@ void Sys_Init( void ) {
 				id |= CPUID_SSE2;
 			} else if ( token.Icmp( "sse3" ) == 0 ) {
 				id |= CPUID_SSE3;
+			} else if ( token.Icmp( "ssse3" ) == 0 ) {
+				id |= CPUID_SSSE3;
+			} else if ( token.Icmp( "sse4.1" ) == 0 ) {
+				id |= CPUID_SSE41;
+			} else if ( token.Icmp( "avx" ) == 0 ) {
+				id |= CPUID_AVX;
 /*			} else if ( token.Icmp( "htt" ) == 0 ) {
 				id |= CPUID_HTT;*/
 			}

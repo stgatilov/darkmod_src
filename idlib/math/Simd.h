@@ -195,6 +195,4 @@ public:
 // pointer to SIMD processor
 extern idSIMDProcessor *SIMDProcessor;
 
-extern bool sse4_present;
-
 #endif /* !__MATH_SIMD_H__ */

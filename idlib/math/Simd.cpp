@@ -129,7 +129,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s%s\n",
 			// Vendor
 			cpuid & CPUID_AMD ? "AMD" : 
 			cpuid & CPUID_INTEL ? "Intel" : 
@@ -144,14 +144,15 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 //		   	cores > 1 ? "cores" : "core",
 			// Flags
 			cpuid & CPUID_MMX ? " MMX" : "",
+			cpuid & CPUID_CMOV ? " CMOV" : "",
 			cpuid & CPUID_SSE ? " SSE" : "",
 			cpuid & CPUID_SSE2 ? " SSE2" : "",
 			cpuid & CPUID_SSE3 ? " SSE3" : "",
+			cpuid & CPUID_SSSE3 ? " SSSE3" : "",
 			cpuid & CPUID_SSE41 ? " SSE4.1" : "",
-			cpuid & CPUID_AVX ? " AVX" : "",
+			cpuid & CPUID_AVX ? " AVX" : ""
 			//cpuid & CPUID_3DNOW ? " 3DNow!" : "",
-			cpuid & CPUID_CMOV ? " CMOV" : "" );
-
+	);
 	if ( forceGeneric ) {
 
 		newProcessor = generic;
@@ -159,17 +160,24 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 	} else {
 
 		if ( !processor ) {
-			if ( (cpuid & CPUID_MMX) && (cpuid & CPUID_SSE) && (cpuid & CPUID_SSE2) && (cpuid & CPUID_SSE3) && (cpuid & CPUID_AVX) ) {
+			bool upToMMX = (cpuid & CPUID_MMX);
+			bool upToSSE = upToMMX && (cpuid & CPUID_SSE);
+			bool upToSSE2 = upToSSE && (cpuid & CPUID_SSE2);
+			bool upToSSE3 = upToSSE2 && (cpuid & CPUID_SSE3);
+			bool upToSSSE3 = upToSSE3 && (cpuid & CPUID_SSSE3);
+			bool upToSSE41 = upToSSSE3 && (cpuid & CPUID_SSE41);
+			bool upToAVX = upToSSE41 && (cpuid & CPUID_AVX);
+			if (upToAVX) {
 				processor = new idSIMD_AVX;
-			} else if ( (cpuid & CPUID_MMX) && (cpuid & CPUID_SSE) && (cpuid & CPUID_SSE2) && (cpuid & CPUID_SSE3) ) {
+			} else if (upToSSE3) {
 				processor = new idSIMD_SSE3;
-			} else if ( (cpuid & CPUID_MMX) && (cpuid & CPUID_SSE) && (cpuid & CPUID_SSE2) ) {
+			} else if (upToSSE2) {
 				processor = new idSIMD_SSE2;
-			} else if ( ( cpuid & CPUID_MMX ) && ( cpuid & CPUID_SSE ) ) {
+			} else if (upToSSE) {
 				processor = new idSIMD_SSE;
 /*			} else if ( ( cpuid & CPUID_MMX ) && ( cpuid & CPUID_3DNOW ) ) {
 				processor = new idSIMD_3DNow;*/
-			} else if ( ( cpuid & CPUID_MMX ) ) {
+			} else if (upToMMX) {
 				processor = new idSIMD_MMX;
 			} else {
 				processor = generic;
@@ -4115,6 +4123,12 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 				return;
 			}
 			p_simd = new idSIMD_SSE3();
+		} else if ( idStr::Icmp( argString, "AVX" ) == 0 ) {
+			if ( !( cpuid & CPUID_MMX ) || !( cpuid & CPUID_SSE ) || !( cpuid & CPUID_SSE2 ) || !( cpuid & CPUID_SSE3 ) || !( cpuid & CPUID_SSSE3 ) || !( cpuid & CPUID_SSE41 ) || !( cpuid & CPUID_AVX) ) {
+				common->Printf( "CPU does not support MMX & SSE* & AVX\n" );
+				return;
+			}
+			p_simd = new idSIMD_AVX();
 		/*} else if ( idStr::Icmp( argString, "AltiVec" ) == 0 ) {
 			if ( !( cpuid & CPUID_ALTIVEC ) ) {
 				common->Printf( "CPU does not support AltiVec\n" );
@@ -4123,7 +4137,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			p_simd = new idSIMD_AltiVec();*/
 		} else {
 			//common->Printf( "invalid argument, use: MMX, 3DNow, SSE, SSE2, SSE3, AltiVec\n" );
-			common->Printf( "invalid argument, use: MMX, SSE, SSE2, SSE3\n" );
+			common->Printf( "invalid argument, use: MMX, SSE, SSE2, SSE3, AVX\n" );
 			return;
 		}
 	}
