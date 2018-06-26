@@ -21,10 +21,7 @@
 #include <float.h>
 #include "win_local.h"
 
-#if defined(_MSC_VER) && defined(_WIN64)
-#include <immintrin.h>
-#include <intrin.h>
-#endif
+#include "immintrin.h"
 
 /*
 ==============================================================
@@ -362,13 +359,13 @@ static bool HasSSE3( void ) {
 HasSSE4
 ================
 */
-static bool HasSSE4( void ) {
+static bool HasSSE41( void ) {
 	unsigned regs[4];
 
 	// get CPU feature bits
 	CPUID( 1, regs );
 
-	// bit 19 of ECX denotes SSE4 existence
+	// bit 19 of ECX denotes SSE4.1 existence
 	if ( regs[_REG_ECX] & (1 << 19) ) {
 		return true;
 	}
@@ -381,23 +378,20 @@ HasAVX
 ================
 */
 static bool HasAVX( void ) {
-	OSVERSIONINFOEX osvi;
-	ZeroMemory( &osvi, sizeof( osvi ) );
-	osvi.dwOSVersionInfoSize = sizeof( osvi );
-	GetVersionEx( (OSVERSIONINFO*)&osvi );
-	if ( osvi.dwMajorVersion < 6 )
-		return false;
-	if ( osvi.dwMajorVersion == 6 && osvi.dwMinorVersion < 1 )
-		return false;
-	if ( osvi.dwMajorVersion == 6 && osvi.dwMinorVersion == 1 && osvi.wServicePackMajor < 1 )
-		return false;
-
 	unsigned regs[4];
 	// get CPU feature bits
 	CPUID( 1, regs );
-	// bit 28 of ECX denotes AVX existence
-	if ( regs[_REG_ECX] & (1 << 28) ) {
-		return true;
+	//https://github.com/Mysticial/FeatureDetector/blob/master/src/x86/cpu_x86.cpp#L53
+
+	//check if CPU supports AVX instructions
+	bool cpuAVXSupport = (regs[_REG_ECX] & (1 << 28)) != 0;
+	//check if xsave/xrstor instructions are enabled by OS for context switches
+	bool osUsesXsaveXrstor = (regs[_REG_ECX] & (1 << 27)) != 0;
+	if (cpuAVXSupport && osUsesXsaveXrstor) {
+		uint64_t xcrFeatureMask = _xgetbv(_XCR_XFEATURE_ENABLED_MASK);
+		//check if OS is configured to save/restore YMM registers on context switches
+		if ((xcrFeatureMask & 0x6) == 0x6)
+			return true;
 	}
 	return false;
 }
@@ -644,8 +638,8 @@ cpuid_t Sys_GetCPUId( void ) {
 	}
 
 	// check for Streaming SIMD Extensions 4
-	if ( HasSSE4() ) {
-		flags |= CPUID_SSE4;
+	if ( HasSSE41() ) {
+		flags |= CPUID_SSE41;
 	}
 
 	// check for AVX

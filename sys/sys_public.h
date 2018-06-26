@@ -219,8 +219,9 @@ typedef enum {
 	CPUID_SSE							= 0x00040,	// Streaming SIMD Extensions
 	CPUID_SSE2							= 0x00080,	// Streaming SIMD Extensions 2
 	CPUID_SSE3							= 0x00100,	// Streaming SIMD Extentions 3 aka Prescott's New Instructions
-	CPUID_SSE4							= 0x00200,	// Streaming SIMD Extentions 4 (Wolfdale/K10)
-	CPUID_AVX							= 0x00400,	// AVX extenstions (SandyBridge/FX)
+	CPUID_SSSE3							= 0x00200,	// Supplemental Streaming SIMD Extentions (Core 2)
+	CPUID_SSE41							= 0x00400,	// Streaming SIMD Extentions 4.1 (Penryn)
+	CPUID_AVX							= 0x00800,	// AVX extenstions (SandyBridge)
 	//CPUID_ALTIVEC						= 0x00200,	// AltiVec
 	//CPUID_HTT							= 0x01000,	// Hyper-Threading Technology
 	CPUID_CMOV							= 0x02000,	// Conditional Move (CMOV) and fast floating point comparison (FCOMI) instructions

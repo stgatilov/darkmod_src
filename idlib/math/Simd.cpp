@@ -36,7 +36,6 @@
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
 idSIMDProcessor *	SIMDProcessor = NULL;
-bool sse4_present;
 
 /*
 ================
@@ -130,7 +129,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 
 	// Print what we found to console
-	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s\n",
+	idLib::common->Printf( "Found %s CPU, features:%s%s%s%s%s%s%s\n",
 			// Vendor
 			cpuid & CPUID_AMD ? "AMD" : 
 			cpuid & CPUID_INTEL ? "Intel" : 
@@ -148,7 +147,7 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 			cpuid & CPUID_SSE ? " SSE" : "",
 			cpuid & CPUID_SSE2 ? " SSE2" : "",
 			cpuid & CPUID_SSE3 ? " SSE3" : "",
-			cpuid & CPUID_SSE4 ? " SSE4" : "",
+			cpuid & CPUID_SSE41 ? " SSE4.1" : "",
 			cpuid & CPUID_AVX ? " AVX" : "",
 			//cpuid & CPUID_3DNOW ? " 3DNow!" : "",
 			cpuid & CPUID_CMOV ? " CMOV" : "" );
@@ -194,7 +193,6 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 		idLib::sys->FPU_SetDAZ( true );
 		idLib::common->Printf( "enabled Denormals-Are-Zero mode\n" );
 	}
-	sse4_present = cpuid & CPUID_SSE4;
 }
 
 /*

@@ -16,8 +16,6 @@
 #ifndef __MATH_PLANE_H__
 #define __MATH_PLANE_H__
 
-#include <smmintrin.h>
-
 /*
 ===============================================================================
 
@@ -328,10 +326,6 @@ ID_INLINE idPlane &idPlane::RotateSelf( const idVec3 &origin, const idMat3 &axis
 }
 
 ID_INLINE float idPlane::Distance( const idVec3 &v ) const {
-	/*if ( sse4_present ) {
-		auto r = _mm_dp_ps( _mm_loadu_ps( &v.x ), _mm_loadu_ps( &a ), 0x7f );
-		return r.m128_f32[0];
-	}*/
 	return a * v.x + b * v.y + c * v.z + d;
 }
 
