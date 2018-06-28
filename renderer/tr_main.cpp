@@ -557,39 +557,74 @@ Returns true if the box is outside the given global frustum, (positive sides are
 =================
 */
 bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
-	int			i, j;
-	idVec3		v;
-	const idPlane *frust;
-
 	// we can disable box culling for experimental timing purposes
 	if ( r_useCulling.GetInteger() < 2 )
 		return false;
 
-//#if defined(__SSE__) || (defined(MACOS_X) && defined(__i386__))
-#if 0		//does not compile on Linux
-	__m128 transformed[8];
-	// transform into world space
-	for ( i = 0; i < 8; i++ ) {
-		v[0] = bounds[i & 1][0];
-		v[1] = bounds[(i >> 1) & 1][1];
-		v[2] = bounds[(i >> 2) & 1][2];
+	//stgatilov: while here is some vectorized version,
+	//we cannot enable it unless this place starts eating CPU time
+	//otherwise it is not even possible to say if the new approach is actually faster than the trivial one!
+#if 0 && defined(__SSE2__)
+#define SHUF(a, b, c, d) _MM_SHUFFLE(d, c, b, a)
+	/*//DEBUG: interleave two equivalent methods to see that they produce same stats with "r_showCull 1"
+	if (tr.frameCount & 1)
+	return R_CornerCullLocalBox( bounds, modelMatrix, numPlanes, planes );*/
 
-		R_LocalPointToGlobal( modelMatrix, v, *(idVec3*)&transformed[i] );
-		transformed[i].m128_f32[3] = 1.f;
-	}
-	// check against frustum planes
-	for ( i = 0; i < numPlanes; i++ ) {
-		frust = planes + i;
-		__m128 f = _mm_load_ps( frust->ToFloatPtr() );
-		for ( j = 0; j < 8; j++ ) {
-			//stgatilov: this is slow, because horizontal sum takes all time
-			//better leave scalar code
-			__m128 m = _mm_mul_ps( f, transformed[j] );
-			float dist = m.m128_f32[0] + m.m128_f32[1] + m.m128_f32[2] + m.m128_f32[3];
-			if ( dist < 0 )
-				break;
+	//prepare transposed modelview matrix
+	__m128 row0 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 row1 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 row2 = _mm_loadu_ps(&modelMatrix[8]);
+	__m128 row3 = _mm_loadu_ps(&modelMatrix[12]);
+	_MM_TRANSPOSE4_PS(row0, row1, row2, row3);
+
+	//load bounds to two vectors
+	static_assert(sizeof(idBounds) == 24, "idPlane must be tightly packed");
+	__m128 bmin = _mm_loadu_ps(&bounds[0].x);
+	__m128 bmax = _mm_loadu_ps(&bounds[0].z);
+	bmax = _mm_shuffle_ps(bmax, bmax, SHUF(1, 2, 3, 1));
+	//calculate center point and half-span
+	__m128 bctr = _mm_mul_ps(_mm_add_ps(bmax, bmin), _mm_set1_ps(0.5f));
+	__m128 bspan = _mm_mul_ps(_mm_sub_ps(bmax, bmin), _mm_set1_ps(0.5f));
+
+	for (int i = 0; i < numPlanes; i++) {
+		static_assert(sizeof(idPlane) == 16, "idPlane must be tightly packed");
+		//load plane XYZD
+		__m128 plane = _mm_loadu_ps(planes[i].ToFloatPtr());
+		//compute dot product of normal with each coordinate axis:
+		__m128 xxxx = _mm_shuffle_ps(plane, plane, SHUF(0, 0, 0, 0));
+		__m128 yyyy = _mm_shuffle_ps(plane, plane, SHUF(1, 1, 1, 1));
+		__m128 zzzz = _mm_shuffle_ps(plane, plane, SHUF(2, 2, 2, 2));
+		//get dots = [(Ax*N), (Ay*N), (Az*N), (O*N)] :
+		__m128 dots = _mm_add_ps(_mm_add_ps(_mm_mul_ps(row0, xxxx), _mm_mul_ps(row1, yyyy)), _mm_mul_ps(row2, zzzz));
+		//take absolute values of dot products (thus choosing side)
+		__m128 absDots = _mm_and_ps(dots, _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF)));
+
+		//calculate difference of two dot products  (we are taking minimum among distances)
+		__m128 work = _mm_sub_ps(_mm_mul_ps(bctr, dots), _mm_mul_ps(bspan, absDots));
+		//(horizontal sum of XYZ: ignore W)
+		__m128 res = work;
+		res = _mm_add_ss(res, _mm_shuffle_ps(work, work, SHUF(1, 1, 1, 1)));
+		res = _mm_add_ss(res, _mm_shuffle_ps(work, work, SHUF(2, 2, 2, 2)));
+		//do not forget to take translation and plane offset into account
+		__m128 inW = _mm_add_ps(plane, dots);
+		res = _mm_add_ss(res, _mm_shuffle_ps(inW, inW, SHUF(3, 3, 3, 3)));
+
+		//extract float and do the check
+		float dist = _mm_cvtss_f32(res);
+		if (dist >= 0.0f) {
+			//all points were behind one of the planes
+			tr.pc.c_box_cull_out++;
+			return true;
 		}
+	}
+	tr.pc.c_box_cull_in++;
+	return false;
+#undef SHUF
 #else
+	int			i, j;
+	idVec3		v;
+	const idPlane *frust;
+
 	idVec3		transformed[8];
 	// transform into world space
 	for ( i = 0; i < 8; i++ ) {
@@ -608,7 +643,6 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 				break;
 			}
 		}
-#endif
 		if ( j == 8 ) {
 			// all points were behind one of the planes
 			tr.pc.c_box_cull_out++;
@@ -619,6 +653,7 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	tr.pc.c_box_cull_in++;
 
 	return false;		// not culled
+#endif
 }
 
 /*
