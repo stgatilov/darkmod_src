@@ -7111,6 +7111,9 @@ void idPlayer::Move( void )
 	// play rope movement sounds
 	if (physicsObj.OnRope())
 	{
+		// nbohr1more: #4852 prevent flickering lantern on ropes and ladders
+		SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+		
 		// Correct for moving reference frame
 		int startTime = gameLocal.previousTime;
 		int endTime = gameLocal.time;
@@ -7156,6 +7159,10 @@ void idPlayer::Move( void )
 	// play climbing movement sounds
 	else if (AI_ONLADDER) 
 	{
+		
+		// nbohr1more: #4852 prevent flickering lantern on ropes and ladders
+		SetAnimState(ANIMCHANNEL_LEGS, "Legs_Idle", 4);
+		
 		// Correct for moving reference frame
 		int startTime = gameLocal.previousTime;
 		int endTime = gameLocal.time;
