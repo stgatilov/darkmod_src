@@ -222,19 +222,21 @@ static bool PointsOrdered( const idVec3 &a, const idVec3 &b ) {
 	// potentially cause a misorder, which can show as a couple
 	// crack pixels in a shadow
 
-	// scale by some odd numbers so -8, 8, 8 will not be equal
-	// to 8, -8, 8
-
-	// in the very rare case that these might be equal, all that would
-	// happen is an oportunity for a tiny rasterization shadow crack
-	/*float i = a[0] + a[1]*127 + a[2]*1023;
-	float j = b[0] + b[1]*127 + b[2]*1023;
-	return (bool)(i < j);*/
-
-	// duzenko: code above is taking too much cpu time, try a shortcut
+	// duzenko: floating point path is a bit complex, try a shortcut
 	int *v1 = (int*)a.ToFloatPtr();
 	int *v2 = (int*)b.ToFloatPtr();
-	return (v1[0] ^ v1[1] ^ v1[2]) < (v2[0] ^ v2[1] ^ v2[2]);
+	auto stage1 = (v1[0] ^ v1[1] ^ v1[2]) - (v2[0] ^ v2[1] ^ v2[2]);
+	if ( stage1 != 0 )
+		return stage1 > 0;
+	else {
+		// scale by some odd numbers so -8, 8, 8 will not be equal to 8, -8, 8
+
+		// in the very rare case that these might be equal, all that would
+		// happen is an oportunity for a tiny rasterization shadow crack
+		float i = a[0] + a[1]*127 + a[2]*1023;
+		float j = b[0] + b[1]*127 + b[2]*1023;
+		return (bool)(i < j);
+	}
 }
 
 /*
