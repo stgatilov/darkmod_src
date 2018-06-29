@@ -21,6 +21,7 @@
 #include <float.h>
 #include "win_local.h"
 
+#include "intrin.h"
 #include "immintrin.h"
 
 /*
