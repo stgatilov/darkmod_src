@@ -152,15 +152,11 @@ const char *Sys_EXEPath( void ) {
 }
 
 int Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) {
-	idStr		search;
-	struct _finddata_t findinfo;
-	int			findhandle;
-	int			flag;
-
 	if ( !extension) {
 		extension = "";
 	}
 
+	int flag;
 	// passing a slash as extension will find directories
 	if ( extension[0] == '/' && extension[1] == 0 ) {
 		extension = "";
@@ -169,12 +165,14 @@ int Sys_ListFiles( const char *directory, const char *extension, idStrList &list
 		flag = _A_SUBDIR;
 	}
 
+	idStr search;
 	sprintf( search, "%s\\*%s", directory, extension );
 
 	// search
 	list.Clear();
 
-	findhandle = _findfirst( search, &findinfo );
+	struct _finddata_t findinfo;
+	auto findhandle = _findfirst( search, &findinfo );
 	if ( findhandle == -1 ) {
 		return -1;
 	}

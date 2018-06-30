@@ -194,12 +194,17 @@ void idTypeInfoGen::ParseConstantValue( const char *scope, idParser &src, idStr 
 	idStr constantString;
 
 	int indent = 0;
+	int braceIndent = 0;
 	while( src.ReadToken( &token ) ) {
 		if ( token == "(" ) {
 			indent++;
-		} else if ( token == ")" ) {
+		} else if ( token == ")" && indent > 0) {
 			indent--;
-		} else if ( indent == 0 && ( token == ";" || token == "," || token == "}" ) ) {
+		} else if ( token == "{" ) {
+			braceIndent++;
+		} else if ( token == "}" && braceIndent > 0) {
+			braceIndent--;
+		} else if ( indent == 0 && braceIndent == 0 && ( token == ";" || token == "," || token == "}" ) ) {
 			src.UnreadToken( &token );
 			break;
 		} else if ( token.type == TT_NAME ) {
@@ -662,9 +667,11 @@ void idTypeInfoGen::ParseScope( const char *scope, bool isTemplate, idParser &sr
 				}
 
 				if ( src.CheckTokenString( "=" ) ) {
-
-					src.ExpectTokenString( "0" );
-
+					src.ReadToken(&token);
+					if (!(token == "0" || token == "delete" || token == "default")) {
+						src.Error("found '%s' after equal sign at method end", token.c_str());
+						break;
+					}
 				} else if ( src.CheckTokenString( "{" ) ) {
 					indent++;
 					while( indent > 1 && src.ReadToken( &token ) ) {
@@ -944,14 +951,14 @@ void idTypeInfoGen::WriteTypeInfo( const char *fileName ) const {
 		"typedef struct {\n"
 		"\t"	"const char * type;\n"
 		"\t"	"const char * name;\n"
-		"\t"	"int offset;\n"
-		"\t"	"int size;\n"
+		"\t"	"ptrdiff_t offset;\n"
+		"\t"	"ptrdiff_t size;\n"
 		"} classVariableInfo_t;\n"
 		"\n"
 		"typedef struct {\n"
 		"\t"	"const char * typeName;\n"
 		"\t"	"const char * superType;\n"
-		"\t"	"int size;\n"
+		"\t"	"ptrdiff_t size;\n"
 		"\t"	"const classVariableInfo_t * variables;\n"
 		"} classTypeInfo_t;\n"
 		"\n" );
@@ -1023,7 +1030,7 @@ void idTypeInfoGen::WriteTypeInfo( const char *fileName ) const {
 			if ( info->unnamed || info->isTemplate || info->variables[j].bits != 0 || info->variables[j].reference ) {
 				file->WriteFloatString( "//" );
 			}
-			file->WriteFloatString( "\t{ \"%s\", \"%s\", (int)(&((%s *)0)->%s), sizeof( ((%s *)0)->%s ) },\n",
+			file->WriteFloatString( "\t{ \"%s\", \"%s\", (ptrdiff_t)(&((%s *)0)->%s), sizeof( ((%s *)0)->%s ) },\n",
 									varType, varName, typeName.c_str(), varName, typeName.c_str(), varName );
 		}
 
