@@ -287,11 +287,21 @@ void idCollisionModelManagerLocal::TranslateTrmEdgeThroughPolygon( cm_traceWork_
 			start = tw->model->vertices[edge->vertexNum[0]].p;
 			end = tw->model->vertices[edge->vertexNum[1]].p;
 			tw->trace.c.normal = ( end - start ).Cross( trmEdge->end - trmEdge->start );
-			// FIXME: do this normalize when we know the first collision
 			tw->trace.c.normal.Normalize();
 			tw->trace.c.dist = tw->trace.c.normal * start;
 			// make sure the collision plane faces the trace model
-			if ( tw->trace.c.normal * trmEdge->start - tw->trace.c.dist < 0.0f ) {
+			bool revertNormal;
+			if (edge->normal != idVec3(0.0f, 0.0f, 0.0f)) {
+				// stgatilov #4853: use edge's normal to determine sign
+				float dot = edge->normal * tw->trace.c.normal;
+				revertNormal = dot < 0.0f;
+			}
+			else {
+				//original check for normal orientation (unstable)
+				float trmDot = tw->trace.c.normal * trmEdge->start;
+				revertNormal = trmDot - tw->trace.c.dist < 0.0f;
+			}
+			if (revertNormal) {
 				tw->trace.c.normal = -tw->trace.c.normal;
 				tw->trace.c.dist = -tw->trace.c.dist;
 			}
