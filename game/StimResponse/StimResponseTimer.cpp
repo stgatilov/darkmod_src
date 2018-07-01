@@ -19,8 +19,10 @@
 
 #include "StimResponseTimer.h"
 
-static_assert((size_t)&((TimerValue*)NULL)->Time.Millisecond == 4, "TimerValue type has wrong packing");
-static_assert((size_t)&((TimerValue*)NULL)->Val.Millisecond == 4, "TimerValue type has wrong packing");
+static_assert(offsetof(TimerValue, Time) == 0, "TimerValue type has wrong packing");
+static_assert(offsetof(TimerValue, Val) == 0, "TimerValue type has wrong packing");
+static_assert(offsetof(TimerValue::TimeView, Millisecond) == 4, "TimerValue type has wrong packing");
+static_assert(offsetof(TimerValue::ValView, Millisecond) == 4, "TimerValue type has wrong packing");
 
 /********************************************************************/
 /*                 CStimResponseTimer                               */
